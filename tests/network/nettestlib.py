@@ -23,6 +23,7 @@ import fcntl
 import functools
 import json
 import os
+import shutil
 import signal
 import struct
 import time
@@ -453,3 +454,14 @@ def wait_for_ipv6(iface, wait_for_scopes=None):
                             'given timeout.\n')
         else:
             raise
+
+
+@contextmanager
+def restore_resolv_conf():
+    RESOLV_CONF = '/etc/resolv.conf'
+    RESOLV_CONF_BACKUP = '/etc/resolv.conf.test-backup'
+    shutil.copy2(RESOLV_CONF, RESOLV_CONF_BACKUP)
+    try:
+        yield
+    finally:
+        shutil.copy2(RESOLV_CONF_BACKUP, RESOLV_CONF)

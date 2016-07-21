@@ -515,7 +515,8 @@ class ConfigWriter(object):
         if self.unifiedPersistence and utils.isOvirtNode():
             node_fs.Config().persist(fileName)
 
-    def _createConfFile(self, conf, name, ipv4, ipv6, mtu=None, **kwargs):
+    def _createConfFile(self, conf, name, ipv4, ipv6, mtu, nameservers,
+                        **kwargs):
         """ Create ifcfg-* file with proper fields per device """
         cfg = 'DEVICE=%s\n' % pipes.quote(name)
         cfg += conf
@@ -549,6 +550,9 @@ class ConfigWriter(object):
             elif ipv6.dhcpv6:
                 cfg += 'DHCPV6C=yes\n'
             cfg += 'IPV6_AUTOCONF=%s\n' % _to_ifcfg_bool(ipv6.ipv6autoconf)
+        if nameservers:
+            for i, nameserver in enumerate(nameservers[0:2], 1):
+                cfg += 'DNS{}={}\n'.format(i, nameserver)
 
         ifcfg_file = NET_CONF_PREF + name
         hook_dict = {'ifcfg_file': ifcfg_file,
@@ -574,7 +578,7 @@ class ConfigWriter(object):
             conf += 'BRIDGING_OPTS="%s"\n' % opts['custom']['bridge_opts']
 
         self._createConfFile(conf, bridge.name, bridge.ipv4, bridge.ipv6,
-                             bridge.mtu, **opts)
+                             bridge.mtu, bridge.nameservers, **opts)
 
     def addVlan(self, vlan, **opts):
         """ Create ifcfg-* file with proper fields for VLAN """
@@ -584,7 +588,7 @@ class ConfigWriter(object):
             conf += 'BRIDGE=%s\n' % pipes.quote(vlan.bridge.name)
         conf += 'ONBOOT=yes\n'
         self._createConfFile(conf, vlan.name, vlan.ipv4, vlan.ipv6, vlan.mtu,
-                             **opts)
+                             vlan.nameservers, **opts)
 
     def addBonding(self, bond, **opts):
         """ Create ifcfg-* file with proper fields for bond """
@@ -596,8 +600,9 @@ class ConfigWriter(object):
             conf += 'BRIDGE=%s\n' % pipes.quote(bond.bridge.name)
         conf += 'ONBOOT=yes\n'
 
-        ipv4, ipv6, mtu = self._getIfaceConfValues(bond)
-        self._createConfFile(conf, bond.name, ipv4, ipv6, mtu, **opts)
+        ipv4, ipv6, mtu, nameservers = self._getIfaceConfValues(bond)
+        self._createConfFile(conf, bond.name, ipv4, ipv6, mtu, nameservers,
+                             **opts)
 
         # create the bonding device to avoid initscripts noise
         with open(netinfo_bonding.BONDING_MASTERS) as info:
@@ -622,14 +627,16 @@ class ConfigWriter(object):
         if ethtool_opts:
             conf += 'ETHTOOL_OPTS=%s\n' % pipes.quote(ethtool_opts)
 
-        ipv4, ipv6, mtu = self._getIfaceConfValues(nic)
-        self._createConfFile(conf, nic.name, ipv4, ipv6, mtu, **opts)
+        ipv4, ipv6, mtu, nameservers = self._getIfaceConfValues(nic)
+        self._createConfFile(conf, nic.name, ipv4, ipv6, mtu, nameservers,
+                             **opts)
 
     @staticmethod
     def _getIfaceConfValues(iface):
         ipv4 = copy.deepcopy(iface.ipv4)
         ipv6 = copy.deepcopy(iface.ipv6)
         mtu = iface.mtu
+        nameservers = iface.nameservers
         if ifaceUsed(iface.name):
             confParams = misc.getIfaceCfg(iface.name)
             if not ipv4.address and ipv4.bootproto != 'dhcp':
@@ -649,7 +656,10 @@ class ConfigWriter(object):
                 mtu = confParams.get('MTU')
                 if mtu:
                     mtu = int(mtu)
-        return ipv4, ipv6, mtu
+            if iface.nameservers is None:
+                nameservers = [confParams[key] for key in ('DNS1', 'DNS2')
+                               if key in confParams]
+        return ipv4, ipv6, mtu, nameservers
 
     def removeNic(self, nic):
         cf = NET_CONF_PREF + nic

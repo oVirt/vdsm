@@ -89,7 +89,8 @@ def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
                          nic=None, mtu=None, ipaddr=None,
                          netmask=None, gateway=None, bootproto=None,
                          ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
-                         dhcpv6=None, defaultRoute=None, _netinfo=None,
+                         dhcpv6=None, defaultRoute=None, nameservers=None,
+                         _netinfo=None,
                          configurator=None, blockingdhcp=None,
                          opts=None):
     """
@@ -110,6 +111,7 @@ def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
     :param ipv6gateway: IPv6 address in format address[/prefixlen].
     :param ipv6autoconf: whether to use IPv6's stateless autoconfiguration.
     :param dhcpv6: whether to use DHCPv6.
+    :param nameservers: a list of DNS servers.
     :param _netinfo: network information snapshot.
     :param configurator: instance to use to apply the network configuration.
     :param blockingdhcp: whether to acquire dhcp IP config in a synced manner.
@@ -161,6 +163,7 @@ def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
         ipv6addr, ipv6gateway, defaultRoute, ipv6autoconf, dhcpv6)
     top_net_dev.blockingdhcp = (configurator._inRollback or
                                 utils.tobool(blockingdhcp))
+    top_net_dev.nameservers = nameservers
     return top_net_dev
 
 
@@ -182,7 +185,7 @@ def _alter_running_config(func):
 
 
 @_alter_running_config
-def _add_network(network, configurator,
+def _add_network(network, configurator, nameservers,
                  vlan=None, bonding=None, nic=None, ipaddr=None,
                  netmask=None, prefix=None, mtu=None, gateway=None,
                  dhcpv6=None, ipv6addr=None, ipv6gateway=None,
@@ -230,6 +233,7 @@ def _add_network(network, configurator,
         netmask=netmask, gateway=gateway, bootproto=bootproto, dhcpv6=dhcpv6,
         blockingdhcp=blockingdhcp, ipv6addr=ipv6addr, ipv6gateway=ipv6gateway,
         ipv6autoconf=ipv6autoconf, defaultRoute=defaultRoute,
+        nameservers=nameservers,
         _netinfo=_netinfo, configurator=configurator, opts=options)
 
     if bridged and network in _netinfo.bridges:

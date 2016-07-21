@@ -41,6 +41,7 @@ class NetDevice(object):
         self.configurator = configurator
         self.master = None
         self.duid_source = None
+        self.nameservers = None
 
     def __iter__(self):
         raise NotImplementedError
