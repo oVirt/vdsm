@@ -327,6 +327,10 @@ class NetFuncTestCase(VdsmTestCase):
                 # Links are sometimes marked as UNKNOWN after turned UP.
                 self.assertIn(operstate(dev).upper(), ('UP', 'UNKNOWN'))
 
+    def assertNameservers(self, nameservers):
+        self.assertEqual(nameservers,
+                         self.netinfo.nameservers[:len(nameservers)])
+
     def assert_kernel_vs_running_config(self):
         """
         This is a special test, that checks setup integrity through
