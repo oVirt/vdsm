@@ -812,7 +812,7 @@ def changelv(vg, lvs, attrs):
     cmd.extend(lvnames)
     rc, out, err = _lvminfo.cmd(tuple(cmd), _lvminfo._getVGDevs((vg, )))
     _lvminfo._invalidatelvs(vg, lvs)
-    if rc != 0 and len(out) < 1:
+    if rc != 0:
         raise se.StorageException("%d %s %s\n%s/%s" % (rc, out, err, vg, lvs))
 
 
