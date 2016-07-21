@@ -1201,9 +1201,11 @@ def activateLVs(vgName, lvNames):
             inactive.append(lvName)
 
     if active:
+        log.info("Refreshing lvs: vg=%s lvs=%s", vgName, active)
         refreshLVs(vgName, active)
 
     if inactive:
+        log.info("Activating lvs: vg=%s lvs=%s", vgName, inactive)
         _setLVAvailability(vgName, inactive, "y")
 
 
@@ -1212,6 +1214,7 @@ def deactivateLVs(vgName, lvNames):
     toDeactivate = [lvName for lvName in lvNames
                     if _isLVActive(vgName, lvName)]
     if toDeactivate:
+        log.info("Deactivating lvs: vg=%s lvs=%s", vgName, toDeactivate)
         _setLVAvailability(vgName, toDeactivate, "n")
 
 
