@@ -194,12 +194,12 @@ class Interface(Base):
 
     def setup(self):
         if self.is_hostdevice:
-            logging.debug('Detaching device %s from the host.' % self.hostdev)
+            logging.info('Detaching device %s from the host.' % self.hostdev)
             detach_detachable(self.hostdev)
 
     def teardown(self):
         if self.is_hostdevice:
-            self.log.debug('Reattaching device %s to host.' % self.hostdev)
+            self.log.info('Reattaching device %s to host.' % self.hostdev)
             try:
                 # TODO: avoid reattach when Engine can tell free VFs otherwise
                 reattach_detachable(self.hostdev)
