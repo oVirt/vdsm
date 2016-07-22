@@ -308,6 +308,9 @@ def _split_setup_actions(query, running_entries):
 
 
 def ovs_net2bridge(network_name):
+    if not _is_ovs_service_running():
+        return None
+
     return ovs_info.northbound2bridge(network_name)
 
 
