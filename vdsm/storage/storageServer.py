@@ -183,7 +183,7 @@ class MountConnection(object):
     CGROUP = None
     DIR = ""
 
-    log = logging.getLogger("Storage.StorageServer.MountConnection")
+    log = logging.getLogger("storage.StorageServer.MountConnection")
     localPathBase = "/tmp"
 
     @property
@@ -472,7 +472,7 @@ class NFSConnection(object):
 
 
 class IscsiConnection(object):
-    log = logging.getLogger("Storage.Server.ISCSI")
+    log = logging.getLogger("storage.Server.ISCSI")
 
     class Mismatch(Exception):
 
@@ -689,7 +689,7 @@ class IllegalAliasError(RuntimeError):
 
 
 class ConnectionAliasRegistrar(object):
-    log = logging.getLogger("Storage.StorageServer.ConnectionAliasRegistrar")
+    log = logging.getLogger("storage.StorageServer.ConnectionAliasRegistrar")
 
     def __init__(self, persistDir):
         self._aliases = {}
@@ -792,7 +792,7 @@ class ConnectionFactory(object):
 
 
 class ConnectionMonitor(object):
-    _log = logging.getLogger("Storage.ConnectionMonitor")
+    _log = logging.getLogger("storage.ConnectionMonitor")
 
     TAG = "managed"
 

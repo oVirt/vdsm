@@ -35,7 +35,7 @@ from vdsm.config import config
 from vdsm.common import zombiereaper
 from vdsm.storage import misc
 
-log = logging.getLogger("Storage.HBA")
+log = logging.getLogger("storage.HBA")
 
 ISCSI_INITIATOR_NAME = "/etc/iscsi/initiatorname.iscsi"
 INITIATOR_NAME = "InitiatorName"

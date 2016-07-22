@@ -43,7 +43,7 @@ rmanager = rm.ResourceManager.getInstance()
 
 DOMAIN_MNT_POINT = 'mnt'
 
-log = logging.getLogger('Storage.Volume')
+log = logging.getLogger('storage.Volume')
 
 
 def getBackingVolumePath(imgUUID, volUUID):
@@ -62,7 +62,7 @@ class VmVolumeInfo(object):
 
 
 class VolumeManifest(object):
-    log = logging.getLogger('Storage.VolumeManifest')
+    log = logging.getLogger('storage.VolumeManifest')
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         self.repoPath = repoPath
@@ -499,7 +499,7 @@ class VolumeManifest(object):
 
 
 class Volume(object):
-    log = logging.getLogger('Storage.Volume')
+    log = logging.getLogger('storage.Volume')
     manifestClass = VolumeManifest
 
     def __init__(self, manifest):

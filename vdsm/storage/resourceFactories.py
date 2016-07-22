@@ -33,7 +33,7 @@ import image
 
 rmanager = rm.ResourceManager.getInstance()
 
-log = logging.getLogger('Storage.ResourcesFactories')
+log = logging.getLogger('storage.ResourcesFactories')
 
 
 class LvmActivation(object):

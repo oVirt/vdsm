@@ -59,7 +59,7 @@ QCOW_OVERHEAD_FACTOR = 1.1
 #  - 2..100  (Unassigned)
 RESERVED_LEASES = 100
 
-log = logging.getLogger('Storage.Volume')
+log = logging.getLogger('storage.Volume')
 rmanager = rm.ResourceManager.getInstance()
 
 

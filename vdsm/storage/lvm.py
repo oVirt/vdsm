@@ -46,7 +46,7 @@ from vdsm.storage.constants import VG_EXTENT_SIZE_MB
 import multipath
 from vdsm.config import config
 
-log = logging.getLogger("Storage.LVM")
+log = logging.getLogger("storage.LVM")
 
 LVM_DEFAULT_TTL = 100
 

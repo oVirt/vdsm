@@ -171,7 +171,7 @@ class Request(object):
     """
     Internal request object, don't use directly
     """
-    _log = logging.getLogger("Storage.ResourceManager.Request")
+    _log = logging.getLogger("storage.ResourceManager.Request")
     namespace = property(lambda self: self._namespace)
     name = property(lambda self: self._name)
     fullName = property(lambda self: "%s.%s" % (self._namespace, self._name))
@@ -260,7 +260,7 @@ class ResourceRef(object):
     This object will auto release the referenced resource unless autorelease
     is set to `False`
     """
-    _log = logging.getLogger("Storage.ResourceManager.ResourceRef")
+    _log = logging.getLogger("storage.ResourceManager.ResourceRef")
     namespace = property(lambda self: self._namespace)
     name = property(lambda self: self._name)
     fullName = property(lambda self: "%s.%s" % (self._namespace, self._name))
@@ -350,7 +350,7 @@ class ResourceManager(object):
 
     This class is a singleton. use `getInstance()` to get the global instance
     """
-    _log = logging.getLogger("Storage.ResourceManager")
+    _log = logging.getLogger("storage.ResourceManager")
     _namespaceValidator = re.compile(r"^[\w\d_-]+$")
     _resourceNameValidator = re.compile(r"^[^\s.]+$")
 
@@ -724,7 +724,7 @@ class ResourceManager(object):
 
 
 class Owner(object):
-    log = logging.getLogger('Storage.ResourceManager.Owner')
+    log = logging.getLogger('storage.ResourceManager.Owner')
 
     def __init__(self, ownerobject, raiseonfailure=False):
         self.ownerobject = ownerobject

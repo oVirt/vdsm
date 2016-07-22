@@ -145,7 +145,7 @@ class PersistentDict(object):
     This class provides interface for a generic set of key=value pairs
     that can be accessed by any consumer
     """
-    log = logging.getLogger("Storage.PersistentDict")
+    log = logging.getLogger("storage.PersistentDict")
 
     @contextmanager
     def _accessWrapper(self):

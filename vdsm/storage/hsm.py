@@ -270,7 +270,7 @@ class HSM(object):
         saved on the disk.
     """
     pools = {}
-    log = logging.getLogger('Storage.HSM')
+    log = logging.getLogger('storage.HSM')
 
     @classmethod
     def validateSdUUID(cls, sdUUID):

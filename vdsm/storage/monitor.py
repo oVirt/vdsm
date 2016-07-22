@@ -31,7 +31,7 @@ from vdsm.storage import misc
 
 from .sdc import sdCache
 
-log = logging.getLogger('Storage.Monitor')
+log = logging.getLogger('storage.Monitor')
 
 
 class Status(object):
@@ -144,7 +144,7 @@ class DomainMonitor(object):
         # NOTE: This must be used in asynchronous mode to prevent blocking of
         # the checker event loop thread.
         self.onDomainStateChange = misc.Event(
-            "Storage.DomainMonitor.onDomainStateChange", sync=False)
+            "storage.DomainMonitor.onDomainStateChange", sync=False)
         self._checker = check.CheckService()
         self._checker.start()
 

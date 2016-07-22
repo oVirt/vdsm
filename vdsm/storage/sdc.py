@@ -59,7 +59,7 @@ class StorageDomainCache:
     the current system.
     """
 
-    log = logging.getLogger('Storage.StorageDomainCache')
+    log = logging.getLogger('storage.StorageDomainCache')
 
     STORAGE_UPDATED = 0
     STORAGE_STALE = 1

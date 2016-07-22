@@ -49,7 +49,7 @@ _refProcPool = {}
 
 elapsed_time = lambda: os.times()[4]
 
-log = logging.getLogger('Storage.oop')
+log = logging.getLogger('storage.oop')
 
 
 def stop():

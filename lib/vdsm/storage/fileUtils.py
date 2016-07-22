@@ -41,7 +41,7 @@ import six
 from vdsm import constants
 from vdsm.common.network import address
 
-log = logging.getLogger('Storage.fileUtils')
+log = logging.getLogger('storage.fileUtils')
 
 MIN_PORT = 1
 MAX_PORT = 65535

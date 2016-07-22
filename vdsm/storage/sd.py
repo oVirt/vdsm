@@ -299,7 +299,7 @@ SD_MD_FIELDS = {
 
 
 class StorageDomainManifest(object):
-    log = logging.getLogger("Storage.StorageDomainManifest")
+    log = logging.getLogger("storage.StorageDomainManifest")
 
     # version: clusterLockClass
     _domainLockTable = {
@@ -526,7 +526,7 @@ class StorageDomainManifest(object):
 
 
 class StorageDomain(object):
-    log = logging.getLogger("Storage.StorageDomain")
+    log = logging.getLogger("storage.StorageDomain")
     storage_repository = config.get('irs', 'repository')
     mdBackupVersions = config.get('irs', 'md_backup_versions')
     mdBackupDir = config.get('irs', 'md_backup_dir')

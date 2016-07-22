@@ -29,7 +29,7 @@ from vdsm.storage import exception
 
 class VolumeMetadata(object):
 
-    log = logging.getLogger('Storage.VolumeMetadata')
+    log = logging.getLogger('storage.VolumeMetadata')
 
     def __init__(self, domain, image, puuid, size, format,
                  type, voltype, disktype, description="",

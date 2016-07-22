@@ -61,7 +61,7 @@ from storage import image, lvm
 
 
 class VolumeArtifacts(object):
-    log = logging.getLogger('Storage.VolumeArtifacts')
+    log = logging.getLogger('storage.VolumeArtifacts')
 
     def __init__(self, sd_manifest, img_id, vol_id):
         """
@@ -179,7 +179,7 @@ class FileVolumeArtifacts(VolumeArtifacts):
         - create new volume -> change state to GARBAGE
         - destroy this volume -> change state to GARBAGE
     """
-    log = logging.getLogger('Storage.FileVolumeArtifacts')
+    log = logging.getLogger('storage.FileVolumeArtifacts')
 
     def __init__(self, sd_manifest, img_id, vol_id):
         super(FileVolumeArtifacts, self).__init__(sd_manifest, img_id,
@@ -351,7 +351,7 @@ class BlockVolumeArtifacts(VolumeArtifacts):
         - create new volume -> change state to GARBAGE
         - destroy this volume -> change state to GARBAGE
     """
-    log = logging.getLogger('Storage.BlockVolumeArtifacts')
+    log = logging.getLogger('storage.BlockVolumeArtifacts')
 
     def __init__(self, sd_manifest, img_id, vol_id):
         self.vol_class = sd_manifest.getVolumeClass()

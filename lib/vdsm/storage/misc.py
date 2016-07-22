@@ -62,14 +62,14 @@ UUID_HYPHENS = [8, 13, 18, 23]
 MEGA = 1 << 20
 UNLIMITED_THREADS = -1
 
-log = logging.getLogger('Storage.Misc')
+log = logging.getLogger('storage.Misc')
 
 
 def namedtuple2dict(nt):
     return dict(map(lambda f: (f, getattr(nt, f)), nt._fields))
 
 
-execCmdLogger = logging.getLogger('Storage.Misc.excCmd')
+execCmdLogger = logging.getLogger('storage.Misc.excCmd')
 
 
 execCmd = partial(commands.execCmd, execCmdLogger=execCmdLogger)
@@ -440,7 +440,7 @@ class SamplingMethod(object):
     Supporting parameters or exception passing to all functions would
     make the code much more complex for no reason.
     """
-    _log = logging.getLogger("Storage.SamplingMethod")
+    _log = logging.getLogger("storage.SamplingMethod")
 
     def __init__(self, func):
         self.__func = func
@@ -492,7 +492,7 @@ def getfds():
 
 class Event(object):
     def __init__(self, name, sync=False):
-        self._log = logging.getLogger("Storage.Event.%s" % name)
+        self._log = logging.getLogger("storage.Event.%s" % name)
         self.name = name
         self._syncRoot = threading.Lock()
         self._registrar = {}

@@ -41,7 +41,7 @@ from vdsm.exception import ActionStopped
 import task
 import resourceManager as rm
 
-log = logging.getLogger('Storage.Image')
+log = logging.getLogger('storage.Image')
 rmanager = rm.ResourceManager.getInstance()
 
 # Disk type
@@ -111,7 +111,7 @@ class Image:
     """ Actually represents a whole virtual disk.
         Consist from chain of volumes.
     """
-    log = logging.getLogger('Storage.Image')
+    log = logging.getLogger('storage.Image')
     _fakeTemplateLock = threading.Lock()
 
     @classmethod

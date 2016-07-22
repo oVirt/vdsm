@@ -96,7 +96,7 @@ def validateFileSystemFeatures(sdUUID, mountDir):
         oop.getProcessPool(sdUUID).directTouch(testFilePath)
     except OSError as e:
         if e.errno == errno.EINVAL:
-            log = logging.getLogger("Storage.fileSD")
+            log = logging.getLogger("storage.fileSD")
             log.error("Underlying file system doesn't support"
                       "direct IO")
             raise se.StorageDomainTargetUnsupported()
@@ -737,7 +737,7 @@ def _getMountsList(pattern="*"):
 
 
 def scanDomains(pattern="*"):
-    log = logging.getLogger("Storage.scanDomains")
+    log = logging.getLogger("storage.scanDomains")
 
     mntList = _getMountsList(pattern)
 

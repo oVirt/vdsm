@@ -91,7 +91,7 @@ Lease = collections.namedtuple("Lease", "name, path, offset")
 
 
 class SafeLease(object):
-    log = logging.getLogger("Storage.SafeLease")
+    log = logging.getLogger("storage.Safelease")
 
     lockUtilPath = config.get('irs', 'lock_util_path')
     lockCmd = config.get('irs', 'lock_cmd')
@@ -198,7 +198,7 @@ class SafeLease(object):
                            self._sdUUID)
 
 
-initSANLockLog = logging.getLogger("Storage.initSANLock")
+initSANLockLog = logging.getLogger("storage.initSANLock")
 
 
 def initSANLock(sdUUID, idsPath, lease):
@@ -223,7 +223,7 @@ class SANLock(object):
         sanlock.HOST_DEAD: HOST_STATUS_DEAD,
     }
 
-    log = logging.getLogger("Storage.SANLock")
+    log = logging.getLogger("storage.SANLock")
 
     _sanlock_fd = None
     _sanlock_lock = threading.Lock()
@@ -372,7 +372,7 @@ class SANLock(object):
 
 
 class LocalLock(object):
-    log = logging.getLogger("Storage.LocalLock")
+    log = logging.getLogger("storage.LocalLock")
 
     LVER = 0
 

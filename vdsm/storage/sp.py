@@ -68,7 +68,7 @@ class StoragePool(object):
     any heavy lifting activities until the time it is really needed.
     '''
 
-    log = logging.getLogger('Storage.StoragePool')
+    log = logging.getLogger('storage.StoragePool')
     storage_repository = config.get('irs', 'repository')
     lvExtendPolicy = config.get('irs', 'vol_extend_policy')
 

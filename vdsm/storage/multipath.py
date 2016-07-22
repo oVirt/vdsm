@@ -48,7 +48,7 @@ QUEUE = "queue"
 
 TOXIC_CHARS = '()*+?|^$.\\'
 
-log = logging.getLogger("Storage.Multipath")
+log = logging.getLogger("storage.Multipath")
 
 _SCSI_ID = utils.CommandPath("scsi_id",
                              "/usr/lib/udev/scsi_id",    # Fedora, EL7

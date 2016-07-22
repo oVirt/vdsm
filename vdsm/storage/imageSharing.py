@@ -25,7 +25,7 @@ from vdsm import constants
 from vdsm.storage import curlImgWrap
 from vdsm.storage import exception as se
 
-log = logging.getLogger("Storage.ImageSharing")
+log = logging.getLogger("storage.ImageSharing")
 # Time to wait from finishing writing data to dd, until dd exists,
 # Ensure that we don't keep the task active forever if dd cannot
 # access the storage.

@@ -68,7 +68,7 @@ SPECIAL_LVS = (sd.METADATA, sd.LEASES, sd.IDS, sd.INBOX, sd.OUTBOX, MASTERLV)
 MASTERLV_SIZE = "1024"  # In MiB = 2 ** 20 = 1024 ** 2 => 1GiB
 BlockSDVol = namedtuple("BlockSDVol", "name, image, parent")
 
-log = logging.getLogger("Storage.BlockSD")
+log = logging.getLogger("storage.BlockSD")
 
 # FIXME: Make this calculated from something logical
 RESERVED_METADATA_SIZE = 40 * (2 ** 20)
@@ -258,7 +258,7 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
 
 
 class VGTagMetadataRW(object):
-    log = logging.getLogger("Storage.Metadata.VGTagMetadataRW")
+    log = logging.getLogger("storage.Metadata.VGTagMetadataRW")
     METADATA_TAG_PREFIX = "MDT_"
     METADATA_TAG_PREFIX_LEN = len(METADATA_TAG_PREFIX)
 
@@ -301,7 +301,7 @@ class LvMetadataRW(object):
     """
     Block Storage Domain metadata implementation
     """
-    log = logging.getLogger("Storage.Metadata.LvMetadataRW")
+    log = logging.getLogger("storage.Metadata.LvMetadataRW")
 
     def __init__(self, vgName, lvName, offset, size):
         self._size = size
