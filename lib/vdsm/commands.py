@@ -26,6 +26,7 @@ import logging
 import os
 import select
 import signal
+import subprocess
 import threading
 import time
 from . import cmdutils
@@ -68,6 +69,8 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
     execCmdLogger.debug(cmdutils.command_log_line(printable, cwd=cwd))
 
     extra = {}
+    extra['stderr'] = subprocess.PIPE
+    extra['stdout'] = subprocess.PIPE
     if deathSignal is not None:
         extra['deathSignal'] = deathSignal
     p = CPopen(command, close_fds=True, cwd=cwd, env=env, **extra)
