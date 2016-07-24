@@ -37,9 +37,10 @@ _CONF_FILE = "/etc/multipath.conf"
 # "VDSM REVISION X.Y" tag.  Note that older version used "RHEV REVISION X.Y"
 # format.
 
-_CURRENT_TAG = "# VDSM REVISION 1.3"
+_CURRENT_TAG = "# VDSM REVISION 1.4"
 
 _OLD_TAGS = (
+    "# VDSM REVISION 1.3",
     "# VDSM REVISION 1.2",
     "# RHEV REVISION 1.1",
     "# RHEV REVISION 1.0",
@@ -59,12 +60,19 @@ _OLD_TAGS = (
 _PRIVATE_TAG = "# VDSM PRIVATE"
 _OLD_PRIVATE_TAG = "# RHEV PRIVATE"
 
+# Once multipathd notices that the last path has failed, it will check
+# all paths no_path_retry more times. If no paths are up, it will tell
+# the kernel to stop queuing.  After that, all outstanding and future
+# I/O will immediately be failed, until a path is restored. Once a path
+# is restored the delay is reset for the next time all paths fail.
+_NO_PATH_RETRY = 4
+
 _CONF_DATA = """\
 %(current_tag)s
 
 defaults {
     polling_interval            5
-    no_path_retry               fail
+    no_path_retry               %(no_path_retry)d
     user_friendly_names         no
     flush_on_last_del           yes
     fast_io_fail_tmo            5
@@ -78,10 +86,15 @@ devices {
         # These settings overrides built-in devices settings. It does not apply
         # to devices without built-in settings (these use the settings in the
         # "defaults" section), or to devices defined in the "devices" section.
-        # Note: This is not available yet on Fedora 21. For more info see
-        # https://bugzilla.redhat.com/1253799
         all_devs                yes
-        no_path_retry           fail
+
+        # Once multipathd notices that the last path has failed, it will
+        # check all paths no_path_retry more times. If no paths are up,
+        # it will tell the kernel to stop queuing.  After that, all
+        # outstanding and future I/O will immediately be failed, until a
+        # path is restored. Once a path is restored the delay is reset
+        # for the next time all paths fail.
+        no_path_retry           %(no_path_retry)d
     }
 }
 
@@ -90,10 +103,11 @@ devices {
 # multipathd.
 #
 # overrides {
-#      no_path_retry           fail
+#      no_path_retry            %(no_path_retry)d
 # }
 
-""" % {"current_tag": _CURRENT_TAG}
+""" % {"current_tag": _CURRENT_TAG,
+       "no_path_retry": _NO_PATH_RETRY}
 
 # If multipathd is up, it will be reloaded after configuration,
 # or started before vdsm starts, so service should not be stopped
