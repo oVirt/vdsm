@@ -421,17 +421,16 @@ class StatsCache(object):
         """
         with self._lock:
             first_batch, last_batch, interval = self._samples.stats()
+            stats_age = self._clock() - self._vm_last_timestamp[vmid]
 
             if first_batch is None:
-                return StatsSample(None, None, None, None)
+                return StatsSample(None, None, None, stats_age)
 
             first_sample = first_batch.get(vmid)
             last_sample = last_batch.get(vmid)
 
             if first_sample is None or last_sample is None:
-                return StatsSample(None, None, None, None)
-
-            stats_age = self._clock() - self._vm_last_timestamp[vmid]
+                return StatsSample(None, None, None, stats_age)
 
             return StatsSample(first_sample, last_sample,
                                interval, stats_age)

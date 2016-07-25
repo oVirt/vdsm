@@ -317,8 +317,10 @@ class StatsCacheTests(TestCaseBase):
             ({'a': 'foo'}, 1),
             ({'a': 'bar'}, 2)
         ))
+        self.fake_monotonic_time.freeze(value=3)
         res = self.cache.get('b')
         self.assertTrue(res.is_empty())
+        self.assertEqual(res.stats_age, 3)
 
     def test_put_overwrite(self):
         self._feed_cache((
@@ -355,10 +357,35 @@ class StatsCacheTests(TestCaseBase):
             # here we lost sampling for 'b'
             ({'a': 'baz', 'b': 'baz'}, 3),
         ))
+        self.fake_monotonic_time.freeze(value=4)
         self.assertEqual(self.cache.get('a'),
-                         ('bar', 'baz', 1, FakeClock.STEP))
+                         ('bar', 'baz', 1, 1))
         res = self.cache.get('b')
         self.assertTrue(res.is_empty())
+        self.assertEqual(res.stats_age, 1)
+
+    def test_missing_initially(self):
+        self._feed_cache((
+            ({'a': 'foo'}, 1),
+            ({'a': 'bar', 'b': 'baz'}, 2)
+        ))
+        self.fake_monotonic_time.freeze(value=3)
+        res = self.cache.get('b')
+        self.assertTrue(res.is_empty())
+        self.assertEqual(res.stats_age, 1)
+
+    def test_seen_long_ago(self):
+        # simulate a sample long evicted from the cache
+        self.cache.add('a')
+        # but the cache must not be empty!
+        self._feed_cache((
+            ({'b': 'foo'}, 1),
+            ({'b': 'foo', 'c': 'bar'}, 2),
+        ))
+        self.fake_monotonic_time.freeze(value=101)
+        res = self.cache.get('a')
+        self.assertTrue(res.is_empty())
+        self.assertEqual(res.stats_age, 100)
 
     def _feed_cache(self, samples):
         for sample in samples:
