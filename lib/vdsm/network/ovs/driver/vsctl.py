@@ -27,15 +27,11 @@ import uuid
 from vdsm.commands import execCmd
 from vdsm.network import errors as ne
 from vdsm.network.errors import ConfigNetworkError
-from vdsm.utils import CommandPath
+from vdsm.utils import CommandPath, memoized
 
 from . import (API as DriverAPI,
                Transaction as DriverTransaction,
                Command as DriverCommand)
-
-_EXT_OVS_VSCTL = CommandPath('ovs-vsctl',
-                             '/usr/sbin/ovs-vsctl',
-                             '/usr/bin/ovs-vsctl').cmd
 
 # TODO: add a test which checks if following lists are mutual exclusive
 # if there is just one item in a list, it is reported as single item
@@ -57,7 +53,7 @@ class Transaction(DriverTransaction):
         args = []
         for command in self.commands:
             args += ['--'] + command.cmd
-        exec_line = [_EXT_OVS_VSCTL] + ['--oneline', '--format=json'] + args
+        exec_line = [_ovs_vsctl_cmd()] + ['--oneline', '--format=json'] + args
         logging.debug('Executing commands: %s' % ' '.join(exec_line))
 
         rc, out, err = execCmd(exec_line)
@@ -240,3 +236,10 @@ def _normalize(heading, value):
     elif heading in _DB_ENTRIES_WHICH_SHOULD_NOT_BE_LIST:
         value = _convert_to_single(value)
     return value
+
+
+@memoized
+def _ovs_vsctl_cmd():
+    return CommandPath('ovs-vsctl',
+                       '/usr/sbin/ovs-vsctl',
+                       '/usr/bin/ovs-vsctl').cmd
