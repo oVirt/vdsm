@@ -70,12 +70,12 @@ def serve_clients(log):
     running = [True]
 
     def sigtermHandler(signum, frame):
-        log.debug("Received signal %s" % signum)
+        log.info("Received signal %s, shutting down" % signum)
         running[0] = False
 
     def sigusr1Handler(signum, frame):
         if irs:
-            log.debug("Received signal %s" % signum)
+            log.info("Received signal %s, stopping SPM" % signum)
             irs.spmStop(
                 irs.getConnectedStoragePoolsList()['poollist'][0])
 
