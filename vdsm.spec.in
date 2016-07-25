@@ -718,6 +718,9 @@ autoreconf -if
 %if ! 0%{?with_ovirt_imageio}
         --disable-ovirt-imageio \
 %endif
+%if ! 0%{?with_openvswitch}
+        --disable-openvswitch \
+%endif
 %if 0%{?with_ovirt_vmconsole}
         --with-ovirt-vmconsole-user=%{vmcon_user} \
         --with-ovirt-vmconsole-group=%{vmcon_group} \
