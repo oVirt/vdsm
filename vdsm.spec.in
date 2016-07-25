@@ -712,6 +712,10 @@ Requires:       fcoe-utils
 VDSM hook used for configure specified NICs as FCoE interface through custom
 network properties
 
+%post hook-fcoe
+%systemd_post lldpad.service
+%systemd_post fcoe.service
+
 %if 0%{?with_gluster_mgmt}
 %package gluster
 Summary:        Gluster Plugin for VDSM
@@ -808,6 +812,10 @@ install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf \
                  %{buildroot}%{_tmpfilesdir}/%{vdsm_name}.conf
 install -Dm 0644 init/systemd/unlimited-core.conf \
                  %{buildroot}%{_sysconfdir}/systemd/system/libvirtd.service.d/unlimited-core.conf
+
+%if 0%{?with_hooks}
+install -Dm 0644 vdsm_hooks/fcoe/85-vdsm-hook-fcoe.preset %{buildroot}/usr/lib/systemd/system-preset/
+%endif
 
 %if 0%{?rhel}
 # This is not commonplace, but we want /var/log/core to be a world-writable
@@ -1499,6 +1507,7 @@ exit 0
 
 %files hook-fcoe
 %defattr(-, root, root, -)
+/usr/lib/systemd/system-preset/85-vdsm-hook-fcoe.preset
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_fcoe
 
 %files hook-checkips

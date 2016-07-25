@@ -1,0 +1,5 @@
+# vdsm-hook-fcoe preset file enables services that it requires to run on boot
+
+enable lldpad.service
+enable fcoe.service
+

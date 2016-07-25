@@ -19,7 +19,9 @@
 #
 
 EXTRA_DIST = \
-	fcoe_before_network_setup.py
+	85-vdsm-hook-fcoe.preset \
+	fcoe_before_network_setup.py \
+	$(NULL)
 
 install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_network_setup
