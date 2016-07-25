@@ -229,17 +229,30 @@ class NumaNodeMemorySampleTests(TestCaseBase):
             self.assertEqual(memorySample.nodesMemSample, expected)
 
 
+class FakeClock(object):
+
+    STEP = 1
+
+    def __init__(self, value=0):
+        self.value = value
+        self._frozen = False
+
+    def freeze(self, value=None):
+        if value is not None:
+            self.value = value
+        self._frozen = True
+
+    def __call__(self):
+        if not self._frozen:
+            self.value += self.STEP
+        return self.value
+
+
 class StatsCacheTests(TestCaseBase):
 
-    FAKE_CLOCK_STEP = 1
-
     def setUp(self):
-        self.clock = 0
+        self.fake_monotonic_time = FakeClock()
         self.cache = sampling.StatsCache(clock=self.fake_monotonic_time)
-
-    def fake_monotonic_time(self):
-        self.clock += self.FAKE_CLOCK_STEP
-        return self.clock
 
     def test_empty(self):
         res = self.cache.get('x')  # vmid not relevant
@@ -261,8 +274,8 @@ class StatsCacheTests(TestCaseBase):
         self.assertEqual(res,
                          ('foo',
                           'bar',
-                          self.FAKE_CLOCK_STEP,
-                          self.FAKE_CLOCK_STEP))
+                          FakeClock.STEP,
+                          FakeClock.STEP))
 
     def test_get_batch(self):
         self._feed_cache((
@@ -317,8 +330,8 @@ class StatsCacheTests(TestCaseBase):
         self.assertEqual(res,
                          ('bar',
                           'baz',
-                          self.FAKE_CLOCK_STEP,
-                          self.FAKE_CLOCK_STEP))
+                          FakeClock.STEP,
+                          FakeClock.STEP))
 
     def test_put_out_of_order(self):
         self._feed_cache((
@@ -330,7 +343,7 @@ class StatsCacheTests(TestCaseBase):
         self.assertEqual(res,
                          ('foo',
                           'baz',
-                          self.FAKE_CLOCK_STEP,
+                          FakeClock.STEP,
                           0))
 
     def test_skip_one_cycle(self):
@@ -343,7 +356,7 @@ class StatsCacheTests(TestCaseBase):
             ({'a': 'baz', 'b': 'baz'}, 3),
         ))
         self.assertEqual(self.cache.get('a'),
-                         ('bar', 'baz', 1, self.FAKE_CLOCK_STEP))
+                         ('bar', 'baz', 1, FakeClock.STEP))
         self.assertEqual(self.cache.get('b'),
                          sampling.EMPTY_SAMPLE)
 
