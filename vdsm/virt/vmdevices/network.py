@@ -61,6 +61,9 @@ class Interface(Base):
             self.driver['queues'] = self.custom['queues']
         except KeyError:
             pass    # interface queues not specified
+        else:
+            if 'name' not in self.driver:
+                self.driver['name'] = 'vhost'
 
         try:
             self.sndbufParam = self.conf['custom']['sndbuf']
