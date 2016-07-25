@@ -91,6 +91,18 @@ class DhcpClient(object):
 
 
 def kill(device_name, family=4):
+    for pid, pid_file in _pid_lookup(device_name, family):
+        logging.info('Stopping dhclient -%s on %s', family, device_name)
+        kill_and_rm_pid(pid, pid_file)
+
+
+def is_active(device_name, family):
+    for pid, _ in _pid_lookup(device_name, family):
+        return True
+    return False
+
+
+def _pid_lookup(device_name, family):
     for pid in pgrep('dhclient'):
         try:
             with open('/proc/%s/cmdline' % pid) as cmdline:
@@ -113,9 +125,8 @@ def kill(device_name, family=4):
 
         if running_family != family:
             continue
-        logging.info('Stopping dhclient -%s before running our own on %s',
-                     family, device_name)
-        kill_and_rm_pid(pid, pid_file)
+
+        yield pid, pid_file
 
 
 @memoized
