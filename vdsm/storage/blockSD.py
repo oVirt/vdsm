@@ -232,6 +232,9 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
             log.debug('Zero volume %s task %s completed', volUUID, taskid)
         except Exception:
             log.exception('Zero volume %s task %s failed', volUUID, taskid)
+            # LV zeroing failed, so we must not remove it. The administrator
+            # can zero and remove it manually.
+            raise
 
         if config.getboolean('irs', 'discard_enable'):
             try:
