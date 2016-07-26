@@ -1144,7 +1144,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/bonding-name2numeric.json
 
 %files python
-%defattr(-, root, root, -)
 %{_mandir}/man1/vdsm-tool.1*
 %{_bindir}/vdsm-tool
 %dir %{python_sitelib}/%{vdsm_name}
@@ -1327,7 +1326,6 @@ exit 0
 
 %files tests
 %doc %{_datadir}/%{vdsm_name}/tests/README
-%defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/tests
 %dir %{_datadir}/%{vdsm_name}/tests/common
@@ -1396,7 +1394,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/integration/*.py*
 
 %files hook-openstacknet
-%defattr(-, root, root, -)
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_create/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_device_create/openstacknet_utils.py*
@@ -1418,7 +1415,6 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/openstacknet_utils.py*
 
 %files hook-ovs
-%defattr(-, root, root, -)
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_ovs
 %{_libexecdir}/%{vdsm_name}/ovs_migrate.py*
 %{_libexecdir}/%{vdsm_name}/ovs_utils.py*
@@ -1442,14 +1438,12 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/after_network_setup_fail/ovs_utils.py*
 
 %files hook-macspoof
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macspoof
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_macspoof
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_macspoof
 
 %if 0%{?with_vhostmd}
 %files hook-vhostmd
-%defattr(-, root, root, -)
 %license COPYING
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vhostmd
@@ -1465,157 +1459,125 @@ exit 0
 %endif
 
 %files hook-qemucmdline
-%defattr(-, root, root, -)
 %license COPYING
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_qemucmdline
 
 %files hook-ethtool-options
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/after_network_setup/30_ethtool_options
 
 %files hook-ipv6
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_ipv6
 
 %files hook-vmfex-dev
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_vmfex
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_migrate_destination/50_vmfex
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_vmfex
 
 %if 0%{?with_hooks}
 %files hook-allocate_net
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/10_allocate_net
 
 %files hook-checkimages
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/60_checkimages
 
 %files hook-fcoe
-%defattr(-, root, root, -)
 %{_libdir}/systemd/system-preset/85-vdsm-hook-fcoe.preset
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_fcoe
 
 %files hook-checkips
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/10_checkips
 %{_libexecdir}/%{vdsm_name}/hooks/checkipsd
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/checkips_utils.py*
 %{_unitdir}/vdsm-checkips.service
 
 %files hook-extra-ipv4-addrs
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/after_network_setup/40_extra_ipv4_addrs
 
 %files hook-diskunmap
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_diskunmap
 
 %files hook-fakevmstats
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_all_vm_stats/10_fakevmstats
 
 %files hook-fakesriov
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/after_hostdev_list_by_caps/10_fakesriov
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/10_fakesriov
 
 %files hook-fileinject
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_fileinject
 
 %files hook-floppy
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_floppy
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_floppy
 
 %files hook-hostusb
-%defattr(-, root, root, -)
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_hostusb
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_hostusb
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_hostusb
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_hostusb
 
 %files hook-httpsisoboot
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_httpsisoboot
 
 %files hook-hugepages
-%defattr(-, root, root, -)
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_hugepages
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_hugepages
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_hugepages
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_hugepages
 
 %files hook-isolatedprivatevlan
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_isolatedprivatevlan
 %config(noreplace) %{_sysconfdir}/libvirt/nwfilter/isolatedprivatevlan-vdsm.xml
 
 %files hook-macbind
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macbind
 
 %files hook-noipspoof
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_noipspoof
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_noipspoof
 
 %files hook-extnet
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_extnet
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_extnet
 
 %files hook-nestedvt
-%defattr(-, root, root, -)
 %{_sysconfdir}/modprobe.d/vdsm-nestedvt.conf
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_nestedvt
 
 %files hook-numa
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_numa
 
 %files hook-pincpu
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_pincpu
 
 %files hook-promisc
-%defattr(-, root, root, -)
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_promisc
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_start/50_promisc
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_destroy/50_promisc
 
 %files hook-qos
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_qos
 
 %files hook-scratchpad
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_scratchpad
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_scratchpad
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_scratchpad
 
 %files hook-smbios
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_smbios
 
 %files hook-spiceoptions
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_spiceoptions
 
 %files hook-vmdisk
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vmdisk
 
 %files hook-vmfex
-%defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vmfex
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vmfex
 %endif
 
 %files cli
-%defattr(-, root, root, -)
 %license COPYING
 %{_bindir}/vdsClient
 %dir %{_datadir}/%{vdsm_name}
@@ -1625,7 +1587,6 @@ exit 0
 %{_mandir}/man1/vdsClient.1*
 
 %files xmlrpc
-%defattr(-, root, root, -)
 %dir %{python_sitelib}/%{vdsm_name}
 %dir %{python_sitelib}/%{vdsm_name}/rpc
 %{python_sitelib}/%{vdsm_name}/rpc/bindingxmlrpc.py*
@@ -1656,14 +1617,12 @@ exit 0
 %{python_sitelib}/yajsonrpc/stompreactor.py*
 
 %files hook-faqemu
-%defattr(-, root, root, -)
 %license COPYING
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/10_faqemu
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/10_faqemu
 
 %if 0%{?with_gluster_mgmt}
 %files gluster
-%defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/gluster
 %dir %{python_sitelib}/%{vdsm_name}
