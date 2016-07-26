@@ -33,10 +33,6 @@ from .nettestlib import Bridge, requires_brctl
 from testlib import VdsmTestCase as TestCaseBase
 
 
-def _fakeTypeDetection(cls, devname):
-    pass
-
-
 @attr(type='unit')
 class TestIpwrapper(TestCaseBase):
     def testRouteFromText(self):

@@ -20,7 +20,6 @@
 #
 from __future__ import absolute_import
 import os
-from functools import partial
 import io
 
 from nose.plugins.attrib import attr
@@ -31,7 +30,6 @@ from vdsm.network.netinfo.cache import get
 from vdsm.utils import random_iface_name
 from vdsm import sysctl
 
-from .ipwrapper_test import _fakeTypeDetection
 from modprobe import RequireBondingMod
 from .nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
 from testlib import mock
@@ -148,8 +146,7 @@ class TestNetinfo(TestCaseBase):
     @mock.patch.object(ipwrapper.Link, '_hiddenNics', ['hid*'])
     @mock.patch.object(ipwrapper.Link, '_hiddenBonds', ['jb*'])
     @mock.patch.object(ipwrapper.Link, '_fakeNics', ['fake*'])
-    @mock.patch.object(ipwrapper.Link, '_detectType',
-                       partial(_fakeTypeDetection, ipwrapper.Link))
+    @mock.patch.object(ipwrapper.Link, '_detectType', lambda x: None)
     @mock.patch.object(ipwrapper, '_bondExists', lambda x: x == 'jbond')
     @mock.patch.object(misc, 'getLinks')
     def testNics(self, mock_getLinks):
