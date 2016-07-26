@@ -83,6 +83,7 @@ EXTRA_DIST = \
 	limits.conf \
 	logger.conf.in \
 	mk_sysprep_floppy.in \
+	vdsm-bonding-modprobe.conf \
 	mom.conf.in \
 	mom.d/00-defines.policy \
 	mom.d/01-parameters.policy \
@@ -121,6 +122,7 @@ install-data-local: \
 		install-data-libvirtpass \
 		install-data-logger \
 		install-data-logrotate \
+		install-data-modprobe \
 		install-data-mom \
 		install-data-networkmanager \
 		install-data-rwtab \
@@ -150,6 +152,7 @@ uninstall-local: \
 		uninstall-data-libvirtpass \
 		uninstall-data-logger \
 		uninstall-data-logrotate \
+		uninstall-data-modprobe \
 		uninstall-data-mom \
 		uninstall-data-networkmanager \
 		uninstall-data-rwtab \
@@ -205,6 +208,14 @@ install-data-logrotate:
 uninstall-data-logrotate:
 	$(RM) $(DESTDIR)$(vdsmconfdir)/logrotate/vdsm
 	$(RM) $(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
+
+install-data-modprobe:
+	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/modprobe.d
+	$(INSTALL_DATA) $(srcdir)/vdsm-bonding-modprobe.conf \
+		$(DESTDIR)$(sysconfdir)/modprobe.d/vdsm-bonding-modprobe.conf
+
+uninstall-data-modprobe:
+	$(RM) $(DESTDIR)$(sysconfdir)/modprobe.d/vdsm-bonding-modprobe.conf
 
 install-data-mom:
 	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)/mom.d
