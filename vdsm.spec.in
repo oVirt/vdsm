@@ -775,6 +775,8 @@ install -Dm 0644 init/systemd/mom-vdsm.service %{buildroot}%{_unitdir}/mom-vdsm.
 
 install -Dm 0644 vdsm/vdsm-modules-load.d.conf \
                  %{buildroot}%{_sysconfdir}/modules-load.d/vdsm.conf
+install -Dm 0644 vdsm/vdsm-bonding-modprobe.conf \
+                 %{buildroot}%{_sysconfdir}/modprobe.d/vdsm-bonding-modprobe.conf
 install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf \
                  %{buildroot}%{_tmpfilesdir}/%{vdsm_name}.conf
 install -Dm 0644 init/systemd/unlimited-core.conf \
@@ -918,6 +920,7 @@ exit 0
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/mnt
 %dir %{_libexecdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/vdsm.conf.d
+%dir %{_sysconfdir}/modprobe.d/
 %dir %{_sysconfdir}/NetworkManager
 %dir %{_sysconfdir}/NetworkManager/conf.d
 %dir %{_sysconfdir}/%{vdsm_name}
@@ -969,6 +972,7 @@ exit 0
 %config(noreplace) %{_sysconfdir}/modules-load.d/vdsm.conf
 %config(noreplace) %{_tmpfilesdir}/%{vdsm_name}.conf
 %{_sysconfdir}/dhcp/dhclient.d/sourceRoute.sh
+%{_sysconfdir}/modprobe.d/vdsm-bonding-modprobe.conf
 %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
 %{_sysconfdir}/libvirt/hooks/qemu
