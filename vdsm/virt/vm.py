@@ -1519,7 +1519,8 @@ class Vm(object):
 
         domxml.appendCpu()
 
-        domxml.appendNumaTune()
+        if 'numaTune' in self.conf:
+            domxml.appendNumaTune()
 
         domxml._appendAgentDevice(self._guestSocketFile.decode('utf-8'),
                                   vmchannels.DEVICE_NAME)

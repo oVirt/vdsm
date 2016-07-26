@@ -501,14 +501,13 @@ class Domain(object):
         </numatune>
         """
 
-        if 'numaTune' in self.conf:
-            numaTune = self.conf.get('numaTune')
-            if 'nodeset' in numaTune.keys():
-                mode = numaTune.get('mode', 'strict')
-                numatune = Element('numatune')
-                numatune.appendChildWithArgs('memory', mode=mode,
-                                             nodeset=numaTune['nodeset'])
-                self.dom.appendChild(numatune)
+        numaTune = self.conf.get('numaTune')
+        if 'nodeset' in numaTune.keys():
+            mode = numaTune.get('mode', 'strict')
+            numatune = Element('numatune')
+            numatune.appendChildWithArgs('memory', mode=mode,
+                                         nodeset=numaTune['nodeset'])
+            self.dom.appendChild(numatune)
 
     def _appendAgentDevice(self, path, name):
         """
