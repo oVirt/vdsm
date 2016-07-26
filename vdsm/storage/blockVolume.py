@@ -46,7 +46,6 @@ import task
 import lvm
 import resourceManager as rm
 from sdc import sdCache
-from resourceFactories import LVM_ACTIVATION_NAMESPACE
 
 
 BLOCK_SIZE = sc.BLOCK_SIZE
@@ -71,8 +70,8 @@ class BlockVolumeManifest(volume.VolumeManifest):
         volume.VolumeManifest.__init__(self, repoPath, sdUUID, imgUUID,
                                        volUUID)
         self.metaoff = None
-        self.lvmActivationNamespace = sd.getNamespace(self.sdUUID,
-                                                      LVM_ACTIVATION_NAMESPACE)
+        self.lvmActivationNamespace = sd.getNamespace(
+            self.sdUUID, sc.LVM_ACTIVATION_NAMESPACE)
 
     def getMetadataId(self):
         """
@@ -389,7 +388,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         cls.log.info("Tearing down volume %s/%s justme %s"
                      % (sdUUID, volUUID, justme))
         lvmActivationNamespace = sd.getNamespace(sdUUID,
-                                                 LVM_ACTIVATION_NAMESPACE)
+                                                 sc.LVM_ACTIVATION_NAMESPACE)
         rmanager.releaseResource(lvmActivationNamespace, volUUID)
         if not justme:
             try:

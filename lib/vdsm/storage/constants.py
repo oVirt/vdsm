@@ -22,7 +22,12 @@ from __future__ import absolute_import
 
 from vdsm import qemuimg
 
+# ResourceManager Lock Namespaces
 STORAGE = "Storage"
+LVM_ACTIVATION_NAMESPACE = 'lvmActivationNS'
+IMAGE_NAMESPACE = 'imageNS'
+VOLUME_NAMESPACE = 'volumeNS'
+
 SECTOR_SIZE = 512
 VG_EXTENT_SIZE_MB = 128
 

@@ -34,7 +34,6 @@ from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
 
 import image
 import resourceFactories
-from resourceFactories import IMAGE_NAMESPACE, VOLUME_NAMESPACE
 import resourceManager as rm
 from vdsm import concurrent
 from vdsm import constants
@@ -595,7 +594,7 @@ class StorageDomain(object):
         # Register image resource namespace
         imageResourceFactory = \
             resourceFactories.ImageResourceFactory(self.sdUUID)
-        imageResourcesNamespace = getNamespace(self.sdUUID, IMAGE_NAMESPACE)
+        imageResourcesNamespace = getNamespace(self.sdUUID, sc.IMAGE_NAMESPACE)
         try:
             rmanager.registerNamespace(imageResourcesNamespace,
                                        imageResourceFactory)
@@ -603,7 +602,8 @@ class StorageDomain(object):
             self.log.info("Resource namespace %s already registered",
                           imageResourcesNamespace)
 
-        volumeResourcesNamespace = getNamespace(self.sdUUID, VOLUME_NAMESPACE)
+        volumeResourcesNamespace = getNamespace(self.sdUUID,
+                                                sc.VOLUME_NAMESPACE)
         try:
             rmanager.registerNamespace(volumeResourcesNamespace,
                                        rm.SimpleResourceFactory())

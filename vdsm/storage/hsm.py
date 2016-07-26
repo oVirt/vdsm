@@ -75,7 +75,6 @@ import imagetickets
 import iscsi
 import taskManager
 import resourceManager as rm
-from resourceFactories import IMAGE_NAMESPACE
 import dispatcher
 import storageServer
 
@@ -1821,7 +1820,7 @@ class HSM(object):
         sdDom = sdCache.produce(sdUUID=sdUUID)
         repoPath = os.path.join(self.storage_repository, sdDom.getPools()[0])
 
-        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        imageResourcesNamespace = sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE)
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
                                       rm.LockType.shared):
             image.Image(repoPath).syncVolumeChain(sdUUID, imgUUID, volUUID,

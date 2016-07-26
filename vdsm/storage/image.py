@@ -39,7 +39,6 @@ import sd
 import imageSharing
 from vdsm.exception import ActionStopped
 import task
-import resourceFactories
 import resourceManager as rm
 
 log = logging.getLogger('Storage.Image')
@@ -376,8 +375,8 @@ class Image:
                            img)
             yield
 
-        dstImageResourcesNamespace = sd.getNamespace(
-            destDom.sdUUID, resourceFactories.IMAGE_NAMESPACE)
+        dstImageResourcesNamespace = sd.getNamespace(destDom.sdUUID,
+                                                     sc.IMAGE_NAMESPACE)
         # In destination domain we need to lock image's template if exists
         with rmanager.acquireResource(dstImageResourcesNamespace, pimg,
                                       rm.LockType.shared) \

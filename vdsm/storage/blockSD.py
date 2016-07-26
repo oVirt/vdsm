@@ -55,7 +55,6 @@ import lvm
 import blockVolume
 import multipath
 import resourceFactories
-from resourceFactories import LVM_ACTIVATION_NAMESPACE
 import iscsi
 from storage_mailbox import MAILBOX_SIZE
 import resourceManager as rm
@@ -838,7 +837,7 @@ class BlockStorageDomain(sd.StorageDomain):
         lvmActivationFactory = resourceFactories.LvmActivationFactory(
             self.sdUUID)
         lvmActivationNamespace = sd.getNamespace(self.sdUUID,
-                                                 LVM_ACTIVATION_NAMESPACE)
+                                                 sc.LVM_ACTIVATION_NAMESPACE)
         try:
             rmanager.registerNamespace(lvmActivationNamespace,
                                        lvmActivationFactory)

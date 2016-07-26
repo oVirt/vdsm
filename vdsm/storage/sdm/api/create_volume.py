@@ -26,7 +26,6 @@ from vdsm.storage import exception as se
 
 from storage import resourceManager as rm
 from storage import image, sd
-from storage.resourceFactories import IMAGE_NAMESPACE
 
 from . import base
 
@@ -44,7 +43,7 @@ class Job(base.Job):
 
         with self.sd_manifest.domain_lock(self.host_id):
             image_res_ns = sd.getNamespace(self.sd_manifest.sdUUID,
-                                           IMAGE_NAMESPACE)
+                                           sc.IMAGE_NAMESPACE)
             with rmanager.acquireResource(image_res_ns, self.vol_info.img_id,
                                           rm.LockType.exclusive):
                 artifacts = self.sd_manifest.get_volume_artifacts(

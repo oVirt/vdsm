@@ -36,7 +36,6 @@ from vdsm.storage.volumemetadata import VolumeMetadata
 import sd
 from sdc import sdCache
 import task
-import resourceFactories
 import resourceManager as rm
 rmanager = rm.ResourceManager.getInstance()
 
@@ -604,9 +603,7 @@ class Volume(object):
                      'dstFormat=%s srcParent=%s)', sdUUID, srcImg, srcVol,
                      dstFormat, srcParent)
 
-        imageResourcesNamespace = sd.getNamespace(
-            sdUUID,
-            resourceFactories.IMAGE_NAMESPACE)
+        imageResourcesNamespace = sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE)
 
         with rmanager.acquireResource(imageResourcesNamespace,
                                       srcImg, rm.LockType.exclusive):

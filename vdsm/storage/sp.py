@@ -48,7 +48,6 @@ import sd
 from vdsm.config import config
 from sdc import sdCache
 import image
-from resourceFactories import IMAGE_NAMESPACE
 import resourceManager as rm
 
 POOL_MASTER_DOMAIN = 'mastersd'
@@ -1347,7 +1346,7 @@ class StoragePool(object):
         sdCache.produce(sdUUID).extendVolume(volumeUUID, size, isShuttingDown)
 
     def extendVolumeSize(self, sdUUID, imgUUID, volUUID, newSize):
-        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        imageResourcesNamespace = sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE)
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
                                       rm.LockType.exclusive):
             return sdCache.produce(sdUUID) \
@@ -1529,10 +1528,11 @@ class StoragePool(object):
         :returns: a dict containing the UUID of the newly created image.
         :rtype: dict
         """
-        srcImageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        srcImageResourcesNamespace = sd.getNamespace(sdUUID,
+                                                     sc.IMAGE_NAMESPACE)
         if dstSdUUID not in (sdUUID, sd.BLANK_UUID):
             dstImageResourcesNamespace = sd.getNamespace(dstSdUUID,
-                                                         IMAGE_NAMESPACE)
+                                                         sc.IMAGE_NAMESPACE)
         else:
             dstImageResourcesNamespace = srcImageResourcesNamespace
 
@@ -1572,9 +1572,9 @@ class StoragePool(object):
         :type force: bool
         """
         srcImageResourcesNamespace = sd.getNamespace(srcDomUUID,
-                                                     IMAGE_NAMESPACE)
+                                                     sc.IMAGE_NAMESPACE)
         dstImageResourcesNamespace = sd.getNamespace(dstDomUUID,
-                                                     IMAGE_NAMESPACE)
+                                                     sc.IMAGE_NAMESPACE)
         # For MOVE_OP acquire exclusive lock
         # For COPY_OP shared lock is enough
         if op == image.MOVE_OP:
@@ -1615,8 +1615,8 @@ class StoragePool(object):
                             sparsified volume.
         :type dstVolUUID: UUID
         """
-        srcNamespace = sd.getNamespace(tmpSdUUID, IMAGE_NAMESPACE)
-        dstNamespace = sd.getNamespace(dstSdUUID, IMAGE_NAMESPACE)
+        srcNamespace = sd.getNamespace(tmpSdUUID, sc.IMAGE_NAMESPACE)
+        dstNamespace = sd.getNamespace(dstSdUUID, sc.IMAGE_NAMESPACE)
 
         # virt-sparsify writes to temporary volume when using --tmp:prebuilt,
         # so we acquire exclusive lock for the temporary image.
@@ -1647,8 +1647,8 @@ class StoragePool(object):
         :param dstSdUUID: The UUID of the storage domain you want to copy to.
         :type dstSdUUID: UUID
         """
-        srcImgResNs = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
-        dstImgResNs = sd.getNamespace(dstSdUUID, IMAGE_NAMESPACE)
+        srcImgResNs = sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE)
+        dstImgResNs = sd.getNamespace(dstSdUUID, sc.IMAGE_NAMESPACE)
 
         # Preparing the ordered resource list to be acquired
         resList = (rmanager.acquireResource(*x) for x in sorted((
@@ -1675,8 +1675,8 @@ class StoragePool(object):
         :param syncType: The type of sync to perform (all volumes, etc.).
         :type syncType: syncType enum
         """
-        srcImgResNs = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
-        dstImgResNs = sd.getNamespace(dstSdUUID, IMAGE_NAMESPACE)
+        srcImgResNs = sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE)
+        dstImgResNs = sd.getNamespace(dstSdUUID, sc.IMAGE_NAMESPACE)
 
         # Preparing the ordered resource list to be acquired
         resList = (rmanager.acquireResource(*x) for x in sorted((
@@ -1694,7 +1694,7 @@ class StoragePool(object):
         methodArgs.
         """
         imgResourceLock = rmanager.acquireResource(
-            sd.getNamespace(sdUUID, IMAGE_NAMESPACE), imgUUID,
+            sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE), imgUUID,
             rm.LockType.shared)
 
         with imgResourceLock:
@@ -1707,7 +1707,7 @@ class StoragePool(object):
         and methodArgs.
         """
         imgResourceLock = rmanager.acquireResource(
-            sd.getNamespace(sdUUID, IMAGE_NAMESPACE), imgUUID,
+            sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE), imgUUID,
             rm.LockType.exclusive)
 
         with imgResourceLock:
@@ -1724,7 +1724,7 @@ class StoragePool(object):
             startEvent.wait()
 
         imgResourceLock = rmanager.acquireResource(
-            sd.getNamespace(sdUUID, IMAGE_NAMESPACE), imgUUID,
+            sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE), imgUUID,
             rm.LockType.shared)
 
         with imgResourceLock:
@@ -1740,7 +1740,7 @@ class StoragePool(object):
         Download an image from a stream.
         """
         imgResourceLock = rmanager.acquireResource(
-            sd.getNamespace(sdUUID, IMAGE_NAMESPACE), imgUUID,
+            sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE), imgUUID,
             rm.LockType.exclusive)
 
         with imgResourceLock:
@@ -1770,9 +1770,9 @@ class StoragePool(object):
         :type force: bool
         """
         srcImageResourcesNamespace = sd.getNamespace(srcDomUUID,
-                                                     IMAGE_NAMESPACE)
+                                                     sc.IMAGE_NAMESPACE)
         dstImageResourcesNamespace = sd.getNamespace(dstDomUUID,
-                                                     IMAGE_NAMESPACE)
+                                                     sc.IMAGE_NAMESPACE)
 
         imgList = imgDict.keys()
         imgList.sort()
@@ -1803,7 +1803,7 @@ class StoragePool(object):
         :returns: A dict with a list of volume UUIDs in the corrected chain
         :rtype: dict
         """
-        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        imageResourcesNamespace = sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE)
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
                                       rm.LockType.exclusive):
             img = image.Image(self.poolPath)
@@ -1829,7 +1829,7 @@ class StoragePool(object):
         :param postZero: ?
         :type postZero: bool?
         """
-        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        imageResourcesNamespace = sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE)
 
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
                                       rm.LockType.exclusive):
@@ -1879,7 +1879,7 @@ class StoragePool(object):
         :returns: a dict with the UUID of the new volume.
         :rtype: dict
         """
-        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        imageResourcesNamespace = sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE)
 
         if imgUUID != srcImgUUID and srcImgUUID != sc.BLANK_UUID:
             srcDom = sdCache.produce(sdUUID)
@@ -1925,7 +1925,7 @@ class StoragePool(object):
                         have.
         :type imgUUID: UUID
         """
-        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        imageResourcesNamespace = sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE)
 
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
                                       rm.LockType.exclusive):
@@ -1979,7 +1979,7 @@ class StoragePool(object):
 
     def setVolumeDescription(self, sdUUID, imgUUID, volUUID, description):
         self.validatePoolSD(sdUUID)
-        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        imageResourcesNamespace = sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE)
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
                                       rm.LockType.exclusive):
             sdCache.produce(sdUUID).produceVolume(
@@ -1988,7 +1988,7 @@ class StoragePool(object):
 
     def setVolumeLegality(self, sdUUID, imgUUID, volUUID, legality):
         self.validatePoolSD(sdUUID)
-        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        imageResourcesNamespace = sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE)
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
                                       rm.LockType.exclusive):
             sdCache.produce(sdUUID).produceVolume(

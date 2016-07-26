@@ -21,6 +21,7 @@
 import os
 
 from vdsm.config import config
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 
 import logging
@@ -29,10 +30,6 @@ import resourceManager as rm
 from sdc import sdCache
 import sd
 import image
-
-LVM_ACTIVATION_NAMESPACE = 'lvmActivationNS'
-IMAGE_NAMESPACE = 'imageNS'
-VOLUME_NAMESPACE = 'volumeNS'
 
 rmanager = rm.ResourceManager.getInstance()
 
@@ -108,7 +105,7 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
         rm.SimpleResourceFactory.__init__(self)
         self.sdUUID = sdUUID
         self.volumeResourcesNamespace = sd.getNamespace(self.sdUUID,
-                                                        VOLUME_NAMESPACE)
+                                                        sc.VOLUME_NAMESPACE)
 
     def __getResourceCandidatesList(self, resourceName, lockType):
         """

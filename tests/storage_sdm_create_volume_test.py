@@ -29,11 +29,11 @@ from sdmtestlib import wait_for_job
 
 from vdsm import exception
 from vdsm import jobs
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 
 from storage import fileVolume, sd
 from storage import resourceManager as rm
-from storage.resourceFactories import IMAGE_NAMESPACE
 
 import storage.sdm.api.create_volume
 
@@ -124,7 +124,7 @@ class CreateVolumeTests(VdsmTestCase):
                          args['sd_manifest'].__calls__)
 
         # Verify that the image resource was locked and released
-        image_ns = sd.getNamespace(job.sd_manifest.sdUUID, IMAGE_NAMESPACE)
+        image_ns = sd.getNamespace(job.sd_manifest.sdUUID, sc.IMAGE_NAMESPACE)
         rm_args = (image_ns, job.vol_info.img_id, rm.LockType.exclusive)
         self.assertEqual([('acquireResource', rm_args, {}),
                           ('releaseResource', rm_args, {})],
