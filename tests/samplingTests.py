@@ -256,14 +256,14 @@ class StatsCacheTests(TestCaseBase):
 
     def test_empty(self):
         res = self.cache.get('x')  # vmid not relevant
-        self.assertEqual(res, sampling.EMPTY_SAMPLE)
+        self.assertTrue(res.is_empty())
 
     def test_not_enough_samples(self):
         self._feed_cache((
             ({'a': 42}, 1),
         ))
         res = self.cache.get('a')
-        self.assertEqual(res, sampling.EMPTY_SAMPLE)
+        self.assertTrue(res.is_empty())
 
     def test_get(self):
         self._feed_cache((
@@ -318,7 +318,7 @@ class StatsCacheTests(TestCaseBase):
             ({'a': 'bar'}, 2)
         ))
         res = self.cache.get('b')
-        self.assertEqual(res, sampling.EMPTY_SAMPLE)
+        self.assertTrue(res.is_empty())
 
     def test_put_overwrite(self):
         self._feed_cache((
@@ -357,8 +357,8 @@ class StatsCacheTests(TestCaseBase):
         ))
         self.assertEqual(self.cache.get('a'),
                          ('bar', 'baz', 1, FakeClock.STEP))
-        self.assertEqual(self.cache.get('b'),
-                         sampling.EMPTY_SAMPLE)
+        res = self.cache.get('b')
+        self.assertTrue(res.is_empty())
 
     def _feed_cache(self, samples):
         for sample in samples:

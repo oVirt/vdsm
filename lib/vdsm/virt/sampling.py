@@ -349,12 +349,18 @@ class SampleWindow(object):
         return sample
 
 
-StatsSample = namedtuple('StatsSample',
-                         ['first_value', 'last_value',
-                          'interval', 'stats_age'])
+_StatsSample = namedtuple('StatsSample',
+                          ['first_value', 'last_value',
+                           'interval', 'stats_age'])
 
 
-EMPTY_SAMPLE = StatsSample(None, None, None, None)
+class StatsSample(_StatsSample):
+    def is_empty(self):
+        return (
+            self.first_value is None and
+            self.last_value is None and
+            self.interval is None
+        )
 
 
 class StatsCache(object):
@@ -417,13 +423,13 @@ class StatsCache(object):
             first_batch, last_batch, interval = self._samples.stats()
 
             if first_batch is None:
-                return EMPTY_SAMPLE
+                return StatsSample(None, None, None, None)
 
             first_sample = first_batch.get(vmid)
             last_sample = last_batch.get(vmid)
 
             if first_sample is None or last_sample is None:
-                return EMPTY_SAMPLE
+                return StatsSample(None, None, None, None)
 
             stats_age = self._clock() - self._vm_last_timestamp[vmid]
 
