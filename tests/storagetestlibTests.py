@@ -24,6 +24,7 @@ from testlib import expandPermutations, permutations
 from testlib import namedTemporaryDir
 from testlib import VdsmTestCase
 from testlib import TEMPDIR
+from storagetestlib import FakeGuardedLock
 from storagetestlib import fake_env
 from storagetestlib import fake_block_env
 from storagetestlib import fake_file_env
@@ -271,3 +272,67 @@ def set_domain_metaparams(manifest, params):
     # XXX: Replace calls to this function with the proper manifest APIs once
     # the set* methods are moved from StorageDomain to StorageDomainManifest.
     manifest._metadata.update(params)
+
+
+class OtherFakeLock(FakeGuardedLock):
+    pass
+
+
+@expandPermutations
+class FakeGuardedLockTest(VdsmTestCase):
+
+    def test_properties(self):
+        a = FakeGuardedLock('ns', 'name', 'mode', [])
+        self.assertEqual('ns', a.ns)
+        self.assertEqual('name', a.name)
+        self.assertEqual('mode', a.mode)
+
+    def test_different_types_not_equal(self):
+        a = FakeGuardedLock('ns', 'name', 'mode', [])
+        b = OtherFakeLock('ns', 'name', 'mode', [])
+        self.assertFalse(a.__eq__(b))
+        self.assertTrue(a.__ne__(b))
+
+    def test_different_types_sortable(self):
+        a = FakeGuardedLock('nsA', 'name', 'mode', [])
+        b = OtherFakeLock('nsB', 'name', 'mode', [])
+        self.assertTrue(a < b)
+        self.assertFalse(b < a)
+        self.assertEqual([a, b], sorted([b, a]))
+
+    @permutations((
+        (('nsA', 'nameA', 'mode'), ('nsB', 'nameA', 'mode')),
+        (('nsA', 'nameA', 'mode'), ('nsA', 'nameB', 'mode')),
+    ))
+    def test_less_than(self, a, b):
+        ns_a, name_a, mode_a = a
+        ns_b, name_b, mode_b = b
+        b = FakeGuardedLock(ns_b, name_b, mode_b, [])
+        a = FakeGuardedLock(ns_a, name_a, mode_a, [])
+        self.assertLess(a, b)
+
+    def test_equality(self):
+        a = FakeGuardedLock('ns', 'name', 'mode', [])
+        b = FakeGuardedLock('ns', 'name', 'mode', [])
+        self.assertEqual(a, b)
+
+    def test_mode_used_for_equality(self):
+        a = FakeGuardedLock('nsA', 'nameA', 'modeA', [])
+        b = FakeGuardedLock('nsA', 'nameA', 'modeB', [])
+        self.assertNotEqual(a, b)
+
+    def test_mode_ignored_for_sorting(self):
+        a = FakeGuardedLock('nsA', 'nameA', 'modeA', [])
+        b = FakeGuardedLock('nsA', 'nameA', 'modeB', [])
+        self.assertFalse(a < b)
+        self.assertFalse(b < a)
+
+    def test_acquire_and_release(self):
+        log = []
+        expected = [('acquire', 'ns', 'name', 'mode'),
+                    ('release', 'ns', 'name', 'mode')]
+        lock = FakeGuardedLock('ns', 'name', 'mode', log)
+        lock.acquire()
+        self.assertEqual(expected[:1], log)
+        lock.release()
+        self.assertEqual(expected, log)

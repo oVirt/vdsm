@@ -34,6 +34,7 @@ dist_vdsmstorage_PYTHON = \
 	exception.py \
 	fileUtils.py \
 	fuser.py \
+	guarded.py \
 	hba.py \
 	misc.py \
 	mount.py \

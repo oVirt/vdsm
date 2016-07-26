@@ -123,6 +123,7 @@ test_modules = \
 	storage_asyncevent_test.py \
 	storage_check_test.py \
 	storage_directio_test.py \
+	storage_guarded_test.py \
 	storage_hsm_test.py \
 	storage_monitor_test.py \
 	storage_rwlock_test.py \
@@ -222,6 +223,7 @@ blacklist_modules_python3 = \
 	stompAsyncDispatcherTests.py \
 	stompTests.py \
 	storageMailboxTests.py \
+	storage_guarded_test.py \
 	storage_hsm_test.py \
 	storage_monitor_test.py \
 	storageServerTests.py \

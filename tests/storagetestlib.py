@@ -30,6 +30,7 @@ from vdsm import commands
 from vdsm import qemuimg
 from vdsm import utils
 from vdsm.storage import constants as sc
+from vdsm.storage import guarded
 
 from storage import sd, blockSD, fileSD, image, blockVolume, volume
 from storage import hsm
@@ -356,3 +357,37 @@ def make_qemu_chain(env, size, base_vol_fmt, chain_len):
         vol_list.append(vol)
         parent_vol_id = vol_id
     return vol_list
+
+
+class FakeGuardedLock(guarded.AbstractLock):
+    def __init__(self, ns, name, mode, log, acquire=None, release=None):
+        self._ns = ns
+        self._name = name
+        self._mode = mode
+        self._log = log
+        self._acquire_err = acquire
+        self._release_err = release
+
+    @property
+    def ns(self):
+        return self._ns
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def mode(self):
+        return self._mode
+
+    def acquire(self):
+        if self._acquire_err:
+            raise self._acquire_err()
+        entry = ('acquire', self._ns, self._name, self._mode)
+        self._log.append(entry)
+
+    def release(self):
+        if self._release_err:
+            raise self._release_err()
+        entry = ('release', self._ns, self._name, self._mode)
+        self._log.append(entry)

@@ -1237,6 +1237,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/exception.py*
 %{python_sitelib}/%{vdsm_name}/storage/fileUtils.py*
 %{python_sitelib}/%{vdsm_name}/storage/fuser.py*
+%{python_sitelib}/%{vdsm_name}/storage/guarded.py*
 %{python_sitelib}/%{vdsm_name}/storage/hba.py*
 %{python_sitelib}/%{vdsm_name}/storage/misc.py*
 %{python_sitelib}/%{vdsm_name}/storage/mount.py*
