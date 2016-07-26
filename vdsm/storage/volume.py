@@ -612,7 +612,7 @@ class Volume(object):
                      'dstFormat=%s srcParent=%s)', sdUUID, srcImg, srcVol,
                      dstFormat, srcParent)
 
-        imageResourcesNamespace = sd.getNamespace(sdUUID, sc.IMAGE_NAMESPACE)
+        imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
 
         with rmanager.acquireResource(imageResourcesNamespace,
                                       srcImg, rm.LockType.exclusive):

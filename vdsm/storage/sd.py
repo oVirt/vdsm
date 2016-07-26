@@ -633,7 +633,7 @@ class StorageDomain(object):
         # Register image resource namespace
         imageResourceFactory = \
             resourceFactories.ImageResourceFactory(self.sdUUID)
-        imageResourcesNamespace = getNamespace(self.sdUUID, sc.IMAGE_NAMESPACE)
+        imageResourcesNamespace = getNamespace(sc.IMAGE_NAMESPACE, self.sdUUID)
         try:
             rmanager.registerNamespace(imageResourcesNamespace,
                                        imageResourceFactory)
@@ -641,8 +641,8 @@ class StorageDomain(object):
             self.log.info("Resource namespace %s already registered",
                           imageResourcesNamespace)
 
-        volumeResourcesNamespace = getNamespace(self.sdUUID,
-                                                sc.VOLUME_NAMESPACE)
+        volumeResourcesNamespace = getNamespace(sc.VOLUME_NAMESPACE,
+                                                self.sdUUID)
         try:
             rmanager.registerNamespace(volumeResourcesNamespace,
                                        rm.SimpleResourceFactory())

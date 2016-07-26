@@ -71,7 +71,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
                                        volUUID)
         self.metaoff = None
         self.lvmActivationNamespace = sd.getNamespace(
-            self.sdUUID, sc.LVM_ACTIVATION_NAMESPACE)
+            sc.LVM_ACTIVATION_NAMESPACE, self.sdUUID)
 
     def getMetadataId(self):
         """
@@ -387,8 +387,8 @@ class BlockVolumeManifest(volume.VolumeManifest):
         """
         cls.log.info("Tearing down volume %s/%s justme %s"
                      % (sdUUID, volUUID, justme))
-        lvmActivationNamespace = sd.getNamespace(sdUUID,
-                                                 sc.LVM_ACTIVATION_NAMESPACE)
+        lvmActivationNamespace = sd.getNamespace(sc.LVM_ACTIVATION_NAMESPACE,
+                                                 sdUUID)
         rmanager.releaseResource(lvmActivationNamespace, volUUID)
         if not justme:
             try:

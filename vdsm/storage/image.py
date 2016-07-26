@@ -375,8 +375,8 @@ class Image:
                            img)
             yield
 
-        dstImageResourcesNamespace = sd.getNamespace(destDom.sdUUID,
-                                                     sc.IMAGE_NAMESPACE)
+        dstImageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE,
+                                                     destDom.sdUUID)
         # In destination domain we need to lock image's template if exists
         with rmanager.acquireResource(dstImageResourcesNamespace, pimg,
                                       rm.LockType.shared) \

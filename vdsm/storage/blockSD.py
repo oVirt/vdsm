@@ -848,8 +848,8 @@ class BlockStorageDomain(sd.StorageDomain):
         # Register lvm activation resource namespace for the underlying VG
         lvmActivationFactory = resourceFactories.LvmActivationFactory(
             self.sdUUID)
-        lvmActivationNamespace = sd.getNamespace(self.sdUUID,
-                                                 sc.LVM_ACTIVATION_NAMESPACE)
+        lvmActivationNamespace = sd.getNamespace(sc.LVM_ACTIVATION_NAMESPACE,
+                                                 self.sdUUID)
         try:
             rmanager.registerNamespace(lvmActivationNamespace,
                                        lvmActivationFactory)

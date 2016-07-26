@@ -104,8 +104,8 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
     def __init__(self, sdUUID):
         rm.SimpleResourceFactory.__init__(self)
         self.sdUUID = sdUUID
-        self.volumeResourcesNamespace = sd.getNamespace(self.sdUUID,
-                                                        sc.VOLUME_NAMESPACE)
+        self.volumeResourcesNamespace = sd.getNamespace(sc.VOLUME_NAMESPACE,
+                                                        self.sdUUID)
 
     def __getResourceCandidatesList(self, resourceName, lockType):
         """
