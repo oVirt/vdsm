@@ -51,4 +51,3 @@ vdsm-tool configure --force
 echo "######################### Starting up vdsm"
 systemctl start vdsmd
 echo "@@@@@@@@@@@@@@@@@@@@ DONE"
-echo -bond0 > /sys/class/net/bonding_masters
