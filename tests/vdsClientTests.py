@@ -549,20 +549,21 @@ class CannonizeHostPortTest(TestCaseBase):
             self._assertValidPort(port)
 
     def _assertValidAddress(self, addr):
-        if addr.count('.'):
-            if not _isIPv4Address(addr):
-                raise AssertionError('invalid IPv4 address: %s',
+        if addr != socket.gethostname():
+            if addr.count('.'):
+                if not _isIPv4Address(addr):
+                    raise AssertionError('invalid IPv4 address: %s',
+                                         addr)
+            elif addr.count(':'):
+                if not addr.startswith('[') or not addr.endswith(']'):
+                    raise AssertionError('malformed IPv6 address: %s',
+                                         addr)
+                if not _isIPv6Address(addr[1:-1]):
+                    raise AssertionError('invalid IPv6 address: %s',
+                                         addr)
+            else:
+                raise AssertionError('unrecognized IP address family: %s',
                                      addr)
-        elif addr.count(':'):
-            if not addr.startswith('[') or not addr.endswith(']'):
-                raise AssertionError('malformed IPv6 address: %s',
-                                     addr)
-            if not _isIPv6Address(addr[1:-1]):
-                raise AssertionError('invalid IPv6 address: %s',
-                                     addr)
-        elif addr != socket.gethostname():
-            raise AssertionError('unrecognized IP address family: %s',
-                                 addr)
 
     def _assertValidPort(self, port_str):
         try:
