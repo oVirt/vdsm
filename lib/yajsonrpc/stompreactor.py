@@ -18,8 +18,8 @@ import logging
 from collections import deque
 from uuid import uuid4
 import functools
-import threading
 
+from vdsm import concurrent
 from vdsm import utils
 from vdsm.config import config
 from vdsm.compat import json
@@ -586,9 +586,8 @@ def StandAloneRpcClient(host, port, request_queue, response_queue,
     reactor = Reactor()
 
     def start():
-        thread = threading.Thread(target=reactor.process_requests,
-                                  name='Client %s:%s' % (host, port))
-        thread.setDaemon(True)
+        thread = concurrent.thread(reactor.process_requests,
+                                   name='Client %s:%s' % (host, port))
         thread.start()
 
     client = StompClient(utils.create_connected_socket(host, port, sslctx),

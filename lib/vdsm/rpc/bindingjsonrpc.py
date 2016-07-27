@@ -15,12 +15,12 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 from __future__ import absolute_import
-import threading
 import logging
 
 from yajsonrpc import JsonRpcServer
 from yajsonrpc.stompreactor import StompReactor
 
+from vdsm import concurrent
 from vdsm import executor
 from vdsm.config import config
 
@@ -62,16 +62,14 @@ class BindingJsonRpc(object):
     def start(self):
         self._executor.start()
 
-        t = threading.Thread(target=self._server.serve_requests,
-                             name='JsonRpcServer')
-        t.setDaemon(True)
+        t = concurrent.thread(self._server.serve_requests,
+                              name='JsonRpcServer')
         t.start()
 
     def startReactor(self):
         reactorName = self._reactor.__class__.__name__
-        t = threading.Thread(target=self._reactor.process_requests,
-                             name='JsonRpc (%s)' % reactorName)
-        t.setDaemon(True)
+        t = concurrent.thread(self._reactor.process_requests,
+                              name='JsonRpc (%s)' % reactorName)
         t.start()
 
     def stop(self):
