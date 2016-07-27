@@ -29,7 +29,6 @@ import pwd
 import re
 import selinux
 import shutil
-import threading
 import uuid
 
 import six
@@ -39,6 +38,7 @@ from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 from vdsm.config import config
 from vdsm import commands
 from vdsm import cmdutils
+from vdsm import concurrent
 from vdsm import constants
 from vdsm import dsaversion
 from vdsm import hooks
@@ -877,9 +877,9 @@ def _ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP):
     if not iface.blockingdhcp and (iface.ipv4.bootproto == 'dhcp' or
                                    iface.ipv6.dhcpv6):
         # wait for dhcp in another thread, so vdsm won't get stuck (BZ#498940)
-        t = threading.Thread(target=_exec_ifup, name='ifup-waiting-on-dhcp',
-                             args=(iface, cgroup))
-        t.daemon = True
+        t = concurrent.thread(_exec_ifup,
+                              name='ifup-waiting-on-dhcp',
+                              args=(iface, cgroup))
         t.start()
     else:
         if not iface.master and (iface.ipv4 or iface.ipv6):

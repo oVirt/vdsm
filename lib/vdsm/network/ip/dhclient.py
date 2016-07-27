@@ -24,9 +24,9 @@ import errno
 import logging
 import os
 import subprocess
-import threading
 
 from vdsm import cmdutils
+from vdsm import concurrent
 from vdsm.network import errors as ne
 from vdsm.network.link import iface as linkiface
 from vdsm.commands import execCmd
@@ -77,9 +77,8 @@ class DhcpClient(object):
         if blocking:
             return self._dhclient()
         else:
-            t = threading.Thread(target=self._dhclient, name='vdsm-dhclient-%s'
-                                 % self.iface)
-            t.daemon = True
+            t = concurrent.thread(self._dhclient,
+                                  name='vdsm-dhclient-%s' % self.iface)
             t.start()
 
     def shutdown(self):
