@@ -26,6 +26,7 @@ import select
 import logging
 
 from vdsm.utils import NoIntrPoll
+from vdsm import concurrent
 
 # How many times a reconnect should be performed before a cooldown will be
 # applied
@@ -38,13 +39,11 @@ QEMU_GA_DEVICE_NAME = 'org.qemu.guest_agent.0'
 AGENT_DEVICE_NAMES = (DEVICE_NAME, QEMU_GA_DEVICE_NAME)
 
 
-class Listener(threading.Thread):
+class Listener(object):
     """
     An events driven listener which handle messages from virtual machines.
     """
     def __init__(self, log):
-        threading.Thread.__init__(self, name='VM Channels Listener')
-        self.daemon = True
         self.log = log
         self._quit = False
         self._epoll = select.epoll()
@@ -54,6 +53,12 @@ class Listener(threading.Thread):
         self._add_channels = {}
         self._del_channels = []
         self._timeout = None
+        self._thread = concurrent.thread(
+            self.run, name='VM Channels Listener'
+        )
+
+    def start(self):
+        self._thread.start()
 
     def _unregister_fd(self, fileno):
         try:
