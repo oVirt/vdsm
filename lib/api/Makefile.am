@@ -35,7 +35,3 @@ dist_vdsmrpc_DATA = \
 	vdsm-api-gluster.yml \
 	vdsm-events.yml \
 	$(NULL)
-
-all-local: \
-	$(nodist_noinst_DATA)
-
