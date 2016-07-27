@@ -184,6 +184,20 @@ class MountTests(TestCaseBase):
             mnt = mount.Mount(fs_spec, fs_file)
             self.assertEqual(mnt.isMounted(), equality)
 
+    @permutations([
+        # NFS4 using fsid=0 - kernel display mount as server://path instead of
+        # normalized server:/path
+        (b"server://a/b /mnt/server:_a_b nfs defaults 0 0",),
+
+        # Not seen yet, but it should work now
+        (b"server:/a//b /mnt/server:_a_b nfs defaults 0 0",),
+        (b"server:/a/b// /mnt/server:_a_b nfs defaults 0 0",),
+    ])
+    def test_is_mounted_normalize_kernel_mounts(self, mount_line):
+        with fake_mounts([mount_line]):
+            mnt = mount.Mount("server:/a/b", "/mnt/server:_a_b")
+            self.assertTrue(mnt.isMounted())
+
     def test_is_mounted_with_symlink(self):
         with namedTemporaryDir() as dir:
             file = os.path.join(dir, "file")
