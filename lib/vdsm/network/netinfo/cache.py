@@ -35,8 +35,7 @@ from vdsm.network.netlink import link as nl_link
 from .addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
 from . import bonding
 from . import bridges
-from .dhcp import (propose_updates_to_reported_dhcp,  update_reported_dhcp,
-                   dhcp_status, dhcp_faked_status)
+from .dhcp import set_netdev_dhcp_info, dhcp_status, dhcp_faked_status
 from .dns import get_host_nameservers
 from .mtus import getMtu
 from . import nics
@@ -89,8 +88,7 @@ def _get(vdsmnets=None):
         devinfo.update(_devinfo(dev, routes, ipaddrs))
 
     for network_name, network_info in six.iteritems(networking['networks']):
-        updates = propose_updates_to_reported_dhcp(network_info, networking)
-        update_reported_dhcp(updates, networking)
+        set_netdev_dhcp_info(network_info, networking)
         networking['networks'][network_name].update(LEGACY_SWITCH)
 
     report_network_qos(networking)

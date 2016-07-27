@@ -17,49 +17,15 @@
 #
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
-import six
 
 from . import addresses
 
-# possible names of dhclient's lease files (e.g. as NetworkManager's slave)
-DHCLIENT_LEASES_GLOBS = [
-    '/var/lib/dhclient/dhclient*.lease*',  # iproute2 configurator, initscripts
-    '/var/lib/NetworkManager/dhclient*-*.lease',
-]
 
-
-def propose_updates_to_reported_dhcp(network_info, networking):
-    """
-    Report DHCPv4/6 of a network's topmost device based on the network's
-    configuration, to fix bug #1184497 (DHCP still being reported for hours
-    after a network got static IP configuration, as reporting is based on
-    dhclient leases).
-    """
-    updated_networking = dict(bondings={}, bridges={}, nics={}, vlans={})
-    network_device = network_info['iface']
-
-    for devices in ('bridges', 'vlans', 'bondings', 'nics'):
-        dev_info = networking[devices].get(network_device)
-        if dev_info:
-            updated_networking[devices][network_device] = {
-                'dhcpv4': network_info['dhcpv4'],
-                'dhcpv6': network_info['dhcpv6'],
-            }
-            break
-
-    return updated_networking
-
-
-def update_reported_dhcp(replacement, networking):
-    """
-    For each network device (representing a network), apply updates to reported
-    DHCP-related fields, as prepared by _propose_updates_to_reported_dhcp.
-    """
-    for device_type, devices in six.iteritems(replacement):
-        for device_name, replacement_device_info in six.iteritems(devices):
-            device_info = networking[device_type][device_name]
-            device_info['dhcpv4'] = replacement_device_info['dhcpv4']
-            device_info['dhcpv6'] = replacement_device_info['dhcpv6']
+def set_netdev_dhcp_info(network_info, networking):
+    dev_info = _device_lookup(network_info['iface'], networking)
+    if dev_info:
+        dev_info['dhcpv4'] = network_info['dhcpv4']
+        dev_info['dhcpv6'] = network_info['dhcpv6']
 
 
 def dhcp_status(iface, ipaddrs):
@@ -83,3 +49,11 @@ def dhcp_faked_status(iface, ipaddrs, net_attrs):
         is_dhcpv4 = (net_attrs.get('bootproto', None) == 'dhcp')
         is_dhcpv6 = net_attrs.get('dhcpv6', False)
     return is_dhcpv4, is_dhcpv6
+
+
+def _device_lookup(netdev, networking):
+    for dev_type in ('bridges', 'vlans', 'bondings', 'nics'):
+        dev_info = networking[dev_type].get(netdev)
+        if dev_info:
+            return dev_info
+    return None
