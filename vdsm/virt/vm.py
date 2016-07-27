@@ -1376,7 +1376,7 @@ class Vm(object):
         return stats
 
     def isMigrating(self):
-        return self._migrationSourceThread.isAlive()
+        return self._migrationSourceThread.is_alive()
 
     def hasTransientDisks(self):
         for drive in self._devices[hwclass.DISK]:

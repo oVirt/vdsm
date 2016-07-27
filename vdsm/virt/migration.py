@@ -23,6 +23,7 @@ import threading
 import time
 import libvirt
 
+from vdsm import concurrent
 from vdsm import hooks
 from vdsm import kaxmlrpclib
 from vdsm import response
@@ -78,7 +79,7 @@ class MigrationLimitExceeded(RuntimeError):
     """
 
 
-class SourceThread(threading.Thread):
+class SourceThread(object):
     """
     A thread that takes care of migration on the source vdsm.
     """
@@ -119,7 +120,7 @@ class SourceThread(threading.Thread):
                 'code': 0,
                 'message': 'Migration in progress'}}
         self._progress = 0
-        threading.Thread.__init__(self)
+        self._thread = concurrent.thread(self.run)
         self._preparingMigrationEvt = True
         self._migrationCanceledEvt = threading.Event()
         self._monitorThread = None
@@ -134,6 +135,12 @@ class SourceThread(threading.Thread):
             self._use_convergence_schedule = True
             self.log.debug('convergence schedule set to: %s',
                            str(self._convergence_schedule))
+
+    def start(self):
+        self._thread.start()
+
+    def is_alive(self):
+        return self._thread.is_alive()
 
     @property
     def hibernating(self):
@@ -523,14 +530,12 @@ def exponential_downtime(downtime, steps):
         yield downtime
 
 
-class DowntimeThread(threading.Thread):
+class DowntimeThread(object):
 
     # avoid grow too large for large VMs
     _WAIT_STEP_LIMIT = 60  # seconds
 
     def __init__(self, vm, downtime, steps):
-        super(DowntimeThread, self).__init__()
-
         self._vm = vm
         self._downtime = downtime
         self._steps = steps
@@ -546,7 +551,16 @@ class DowntimeThread(threading.Thread):
         # we need the first value to support set_initial_downtime
         self._initial_downtime = next(self._downtimes)
 
-        self.daemon = True
+        self._thread = concurrent.thread(self.run)
+
+    def start(self):
+        self._thread.start()
+
+    def join(self):
+        self._thread.join()
+
+    def is_alive(self):
+        return self._thread.is_alive()
 
     @utils.traceback()
     def run(self):
@@ -595,7 +609,7 @@ class _FakeThreadInterface(object):
         pass
 
 
-class MonitorThread(threading.Thread):
+class MonitorThread(object):
     _MIGRATION_MONITOR_INTERVAL = config.getint(
         'vars', 'migration_monitor_interval')  # seconds
 
@@ -609,6 +623,13 @@ class MonitorThread(threading.Thread):
         self._conv_schedule = conv_schedule
         self._use_conv_schedule = use_conv_schedule
         self.downtime_thread = _FakeThreadInterface()
+        self._thread = concurrent.thread(self.run)
+
+    def start(self):
+        self._thread.start()
+
+    def join(self):
+        self._thread.join()
 
     @property
     def enabled(self):
