@@ -4696,15 +4696,23 @@ class Vm(object):
                 (size, domainID, volumeID))
 
 
-class LiveMergeCleanupThread(threading.Thread):
+class LiveMergeCleanupThread(object):
     def __init__(self, vm, job, drive, doPivot):
-        threading.Thread.__init__(self)
-        self.setDaemon(True)
         self.vm = vm
         self.job = job
         self.drive = drive
         self.doPivot = doPivot
         self.success = False
+        self._thread = concurrent.thread(self.run)
+
+    def start(self):
+        self._thread.start()
+
+    def join(self):
+        self._thread.join()
+
+    def isAlive(self):
+        return self._thread.is_alive()
 
     def tryPivot(self):
         # We call imageSyncVolumeChain which will mark the current leaf
