@@ -130,6 +130,7 @@ class VM(APIBase):
             raise exception.NoSuchVM(vmId=self._UUID)
         return vm
 
+    @api.method
     def changeCD(self, driveSpec):
         """
         Change the CD in the specified VM.
@@ -139,11 +140,9 @@ class VM(APIBase):
         :param driveSpec: specification of the new CD image. Either an
                 image path or a `storage`-centric quartet.
         """
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.changeCD(driveSpec)
+        return self.vm.changeCD(driveSpec)
 
+    @api.method
     def changeFloppy(self, driveSpec):
         """
         Change the floppy disk in the specified VM.
@@ -153,16 +152,11 @@ class VM(APIBase):
         :param driveSpec: specification of the new CD image. Either an
                 image path or a `storage`-centric quartet.
         """
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.changeFloppy(driveSpec)
+        return self.vm.changeFloppy(driveSpec)
 
+    @api.method
     def cont(self):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.cont()
+        return self.vm.cont()
 
     @api.method
     def create(self, vmParams):
@@ -261,62 +255,51 @@ class VM(APIBase):
             vmParams['volatileFloppy'] = True
         return vmParams
 
+    @api.method
     def desktopLock(self):
         """
         Lock user session in guest operating system using guest agent.
         """
-        try:
-            v = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            return errCode['noVM']
-        v.guestAgent.desktopLock()
-        if v.guestAgent.isResponsive():
+        self.vm.guestAgent.desktopLock()
+        if self.vm.guestAgent.isResponsive():
             return {'status': doneCode}
         else:
             return errCode['nonresp']
 
+    @api.method
     def desktopLogin(self, domain, username, password):
         """
         Log into guest operating system using guest agent.
         """
-        try:
-            v = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            return errCode['noVM']
-        v.guestAgent.desktopLogin(domain, username, password)
-        if v.guestAgent.isResponsive():
+        self.vm.guestAgent.desktopLogin(domain, username, password)
+        if self.vm.guestAgent.isResponsive():
             return {'status': doneCode}
         else:
             return errCode['nonresp']
 
+    @api.method
     def desktopLogoff(self, force):
         """
         Log out of guest operating system using guest agent.
         """
-        try:
-            v = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            return errCode['noVM']
-        v.guestAgent.desktopLogoff(force)
-        if v.guestAgent.isResponsive():
+        self.vm.guestAgent.desktopLogoff(force)
+        if self.vm.guestAgent.isResponsive():
             return {'status': doneCode}
         else:
             return errCode['nonresp']
 
+    @api.method
     def desktopSendHcCommand(self, message):
         """
         Send a command to the guest agent (depricated).
         """
-        try:
-            v = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            return errCode['noVM']
-        v.guestAgent.sendHcCmdToDesktop(message)
-        if v.guestAgent.isResponsive():
+        self.vm.guestAgent.sendHcCmdToDesktop(message)
+        if self.vm.guestAgent.isResponsive():
             return {'status': doneCode}
         else:
             return errCode['nonresp']
 
+    @api.method
     def destroy(self, gracefulAttempts=1):
         """
         Destroy the specified VM.
@@ -324,15 +307,13 @@ class VM(APIBase):
         self.log.debug('About to destroy VM %s', self._UUID)
 
         with self._cif.vmContainerLock:
-            v = self._cif.vmContainer.get(self._UUID)
-            if not v:
-                return errCode['noVM']
-            res = v.destroy(gracefulAttempts)
+            res = self.vm.destroy(gracefulAttempts)
             status = utils.picklecopy(res)
             if status['status']['code'] == 0:
                 status['status']['message'] = "Machine destroyed"
             return status
 
+    @api.method
     def getMigrationStatus(self):
         """
         Report status of a currently outgoing migration.
@@ -344,13 +325,14 @@ class VM(APIBase):
             return errCode['noVM']
         return {'status': doneCode, 'migrationStats': v.migrateStatus()}
 
+    @api.method
     def getStats(self):
         """
         Obtain statistics of the specified VM
         """
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
+        # for backward compatibility reasons, we need to
+        # do the instance check before to run the hooks.
+        vm = self.vm
 
         try:
             hooks.before_get_vm_stats()
@@ -358,10 +340,11 @@ class VM(APIBase):
             return response.error('hookError',
                                   'Hook error: ' + str(e))
 
-        stats = v.getStats().copy()
+        stats = vm.getStats().copy()
         stats = hooks.after_get_vm_stats([stats])[0]
         return {'status': doneCode, 'statsList': [stats]}
 
+    @api.method
     def hibernate(self, hibernationVolHandle):
         """
         Hibernate a VM.
@@ -376,26 +359,23 @@ class VM(APIBase):
             response['status']['message'] = 'Hibernation process starting'
         return response
 
+    @api.method
     def updateDevice(self, params):
         if 'deviceType' not in params:
             self.log.error('Missing a required parameters: deviceType')
             return {'status': {'code': errCode['MissParam']['status']['code'],
                                'message': 'Missing one of required '
                                           'parameters: deviceType'}}
-        try:
-            v = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            self.log.warning("vm %s doesn't exist", self._UUID)
-            return errCode['noVM']
-
         if params['deviceType'] == hwclass.NIC:
             if 'alias' not in params:
                 self.log.error('Missing the required alias parameters.')
                 return {'status':
                         {'code': errCode['MissParam']['status']['code'],
                          'message': 'Missing the required alias parameter'}}
-        return v.updateDevice(params)
 
+        return self.vm.updateDevice(params)
+
+    @api.method
     def hotplugNic(self, params):
         try:
             utils.validateMinimalKeySet(params, ('vmId', 'nic'))
@@ -404,32 +384,17 @@ class VM(APIBase):
             return {'status': {'code': errCode['MissParam']['status']['code'],
                                'message': 'Missing one of required '
                                           'parameters: vmId, nic'}}
-        try:
-            curVm = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            self.log.warning("vm %s doesn't exist", self._UUID)
-            return errCode['noVM']
+        return self.vm.hotplugNic(params)
 
-        return curVm.hotplugNic(params)
-
+    @api.method
     def hostdevHotplug(self, devices):
-        try:
-            curVm = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            self.log.warning("vm %s doesn't exist", self._UUID)
-            return errCode['noVM']
+        return self.vm.hostdevHotplug(devices)
 
-        return curVm.hostdevHotplug(devices)
-
+    @api.method
     def hostdevHotunplug(self, devices):
-        try:
-            curVm = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            self.log.warning("vm %s doesn't exist", self._UUID)
-            return errCode['noVM']
+        return self.vm.hostdevHotunplug(devices)
 
-        return curVm.hostdevHotunplug(devices)
-
+    @api.method
     def hotunplugNic(self, params):
         try:
             utils.validateMinimalKeySet(params, ('vmId', 'nic'))
@@ -438,14 +403,9 @@ class VM(APIBase):
             return {'status': {'code': errCode['MissParam']['status']['code'],
                                'message': 'Missing one of required '
                                           'parameters: vmId, nic'}}
-        try:
-            curVm = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            self.log.warning("vm %s doesn't exist", self._UUID)
-            return errCode['noVM']
+        return self.vm.hotunplugNic(params)
 
-        return curVm.hotunplugNic(params)
-
+    @api.method
     def hotplugDisk(self, params):
         try:
             utils.validateMinimalKeySet(params, ('vmId', 'drive'))
@@ -454,14 +414,9 @@ class VM(APIBase):
             return {'status': {'code': errCode['MissParam']['status']['code'],
                                'message': 'Missing one of required '
                                           'parameters: vmId, drive'}}
-        try:
-            curVm = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            self.log.warning("vm %s doesn't exist", self._UUID)
-            return errCode['noVM']
+        return self.vm.hotplugDisk(params)
 
-        return curVm.hotplugDisk(params)
-
+    @api.method
     def hotunplugDisk(self, params):
         try:
             utils.validateMinimalKeySet(params, ('vmId', 'drive'))
@@ -470,13 +425,7 @@ class VM(APIBase):
             return {'status': {'code': errCode['MissParam']['status']['code'],
                                'message': 'Missing one of required '
                                           'parameters: vmId, drive'}}
-        try:
-            curVm = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            self.log.warning("vm %s doesn't exist", self._UUID)
-            return errCode['noVM']
-
-        return curVm.hotunplugDisk(params)
+        return self.vm.hotunplugDisk(params)
 
     @api.method
     def hotplugLease(self, lease):
@@ -486,6 +435,7 @@ class VM(APIBase):
     def hotunplugLease(self, lease):
         return self.vm.hotunplugLease(lease)
 
+    @api.method
     def hotplugMemory(self, params):
         try:
             utils.validateMinimalKeySet(params, ('vmId', 'memory'))
@@ -495,13 +445,7 @@ class VM(APIBase):
                                'message': 'Missing one of required '
                                           'parameters: vmId, memory'}}
 
-        try:
-            curVm = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            self.log.warning("vm %s doesn't exist", self._UUID)
-            return errCode['noVM']
-
-        return curVm.hotplugMemory(params)
+        return self.vm.hotplugMemory(params)
 
     @api.method
     def hotunplugMemory(self, params):
@@ -511,12 +455,7 @@ class VM(APIBase):
             raise exception.MissingParameter(
                 "Missing one of the required parameters: "
                 "vmId, memory")
-        try:
-            curVm = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            raise exception.NoSuchVM(vmId=self._UUID)
-
-        return curVm.hotunplugMemory(params)
+        return self.vm.hotunplugMemory(params)
 
     def setNumberOfCpus(self, numberOfCpus):
 
@@ -526,26 +465,15 @@ class VM(APIBase):
             return {'status': {'code': errCode['MissParam']['status']['code'],
                                'message': 'Missing one of required '
                                           'parameters: vmId, numberOfCpus'}}
-        try:
-            curVm = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            self.log.warning("vm %s doesn't exist", self._UUID)
-            return errCode['noVM']
+        return self.vm.setNumberOfCpus(int(numberOfCpus))
 
-        return curVm.setNumberOfCpus(int(numberOfCpus))
-
+    @api.method
     def updateVmPolicy(self, params):
-        try:
-            curVm = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            self.log.warning("vm %s doesn't exist", self._UUID)
-            return errCode['noVM']
-
         # Remove the vmId parameter from params we do not need it anymore
         del params["vmId"]
+        return self.vm.updateVmPolicy(params)
 
-        return curVm.updateVmPolicy(params)
-
+    @api.method
     def migrate(self, params):
         """
         Migrate a VM to a remote host.
@@ -567,10 +495,10 @@ class VM(APIBase):
         """
         params['vmId'] = self._UUID
         self.log.debug(params)
-        try:
-            v = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            return errCode['noVM']
+
+        # we do this just to preserve the backward compatibility in
+        # the error path
+        vm = self.vm
 
         if params.get('mode') == 'file':
             if 'dst' not in params:
@@ -578,8 +506,9 @@ class VM(APIBase):
                     self._getHibernationPaths(params['hiberVolHandle'])
         else:
             params['mode'] = 'remote'
-        return v.migrate(params)
+        return vm.migrate(params)
 
+    @api.method
     def migrateChangeParams(self, params):
         """
         Change parameters of an ongoing migration
@@ -587,22 +516,16 @@ class VM(APIBase):
         :param params: a dictionary containing:
             *maxBandwidth* - new max bandwidth
         """
-        try:
-            v = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            return response.error('noVM')
-        return v.migrateChangeParams(params)
+        return self.vm.migrateChangeParams(params)
 
+    @api.method
     def migrateCancel(self):
         """
         Cancel a currently outgoing migration process.
         """
-        try:
-            v = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            return errCode['noVM']
-        return v.migrateCancel()
+        return self.vm.migrateCancel()
 
+    @api.method
     def migrationCreate(self, params, incomingLimit=None):
         """
         Start a migration-destination VM.
@@ -635,10 +558,8 @@ class VM(APIBase):
                 return response.error('migrateErr')
             return result
 
-        v = self._cif.vmContainer.get(self._UUID)
-
         try:
-            if not v.waitForMigrationDestinationPrepare():
+            if not self.vm.waitForMigrationDestinationPrepare():
                 return errCode['createErr']
         except exception.HookError as e:
             self.log.debug('Destination VM creation failed due to hook' +
@@ -649,18 +570,15 @@ class VM(APIBase):
         return {'status': doneCode, 'migrationPort': 0,
                 'params': result['vmList']}
 
+    @api.method
     def diskReplicateStart(self, srcDisk, dstDisk):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.diskReplicateStart(srcDisk, dstDisk)
+        return self.vm.diskReplicateStart(srcDisk, dstDisk)
 
+    @api.method
     def diskReplicateFinish(self, srcDisk, dstDisk):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.diskReplicateFinish(srcDisk, dstDisk)
+        return self.vm.diskReplicateFinish(srcDisk, dstDisk)
 
+    @api.method
     def diskSizeExtend(self, driveSpecs, newSize):
         if self._UUID == VM.BLANK_UUID:
             try:
@@ -671,16 +589,11 @@ class VM(APIBase):
                 return errCode['imageErr']
             return volume.updateSize(newSize)
         else:
-            v = self._cif.vmContainer.get(self._UUID)
-            if not v:
-                return errCode['noVM']
-            return v.diskSizeExtend(driveSpecs, newSize)
+            return self.vm.diskSizeExtend(driveSpecs, newSize)
 
+    @api.method
     def pause(self):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.pause()
+        return self.vm.pause()
 
     def reset(self):
         """
@@ -688,6 +601,7 @@ class VM(APIBase):
         """
         return errCode['noimpl']
 
+    @api.method
     def setTicket(self, password, ttl, existingConnAction, params):
         """
         Set the ticket (password) to be used to connect to a VM display
@@ -706,12 +620,9 @@ class VM(APIBase):
                                  the current client.
         :param additional parameters in dict format
         """
-        try:
-            v = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            return errCode['noVM']
-        return v.setTicket(password, ttl, existingConnAction, params)
+        return self.vm.setTicket(password, ttl, existingConnAction, params)
 
+    @api.method
     def shutdown(self, delay=None, message=None, reboot=False, timeout=None,
                  force=False):
         """
@@ -727,17 +638,14 @@ class VM(APIBase):
         :param force: True if shutdown/reboot desired by any means necessary
                       (forceful reboot/shutdown if all graceful methods fail)
         """
-        try:
-            v = self._cif.vmContainer[self._UUID]
-        except KeyError:
-            return errCode['noVM']
         if not delay:
             delay = config.get('vars', 'user_shutdown_timeout')
         if not message:
             message = USER_SHUTDOWN_MESSAGE
         if not timeout:
             timeout = config.getint('vars', 'sys_shutdown_timeout')
-        return v.shutdown(delay, message, reboot, timeout, force)
+
+        return self.vm.shutdown(delay, message, reboot, timeout, force)
 
     def _createSysprepFloppyFromInf(self, infFileBinary, floppyImage):
         try:
@@ -766,74 +674,60 @@ class VM(APIBase):
                  imageID=paramImageID, volumeID=paramVolumeID,
                  device='disk')
 
+    @api.method
     def freeze(self):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.freeze()
+        return self.vm.freeze()
 
+    @api.method
     def thaw(self):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.thaw()
+        return self.vm.thaw()
 
+    @api.method
     def snapshot(self, snapDrives, snapMemory=None, frozen=False):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
+        # for backward compatibility reasons, we need to
+        # do the instance check before to run the hooks.
+        vm = self.vm
+
         memoryParams = {}
         if snapMemory:
             memoryParams['dst'], memoryParams['dstparams'] = \
                 self._getHibernationPaths(snapMemory)
-        return v.snapshot(snapDrives, memoryParams, frozen=frozen)
 
+        return vm.snapshot(snapDrives, memoryParams, frozen=frozen)
+
+    @api.method
     def setBalloonTarget(self, target):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.setBalloonTarget(target)
+        return self.vm.setBalloonTarget(target)
 
+    @api.method
     def setCpuTuneQuota(self, quota):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.setCpuTuneQuota(quota)
+        return self.vm.setCpuTuneQuota(quota)
 
+    @api.method
     def getIoTune(self):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.getIoTuneResponse()
+        return self.vm.getIoTuneResponse()
 
+    @api.method
     def setIoTune(self, tunables):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.setIoTune(tunables)
+        return self.vm.setIoTune(tunables)
 
+    @api.method
     def getIoTunePolicy(self):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.getIoTunePolicyResponse()
+        return self.vm.getIoTunePolicyResponse()
 
+    @api.method
     def setCpuTunePeriod(self, period):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.setCpuTunePeriod(period)
+        return self.vm.setCpuTunePeriod(period)
 
     def getDiskAlignment(self, disk):
         if self._UUID != VM.BLANK_UUID:
             return errCode['noimpl']
         return self._cif.getDiskAlignment(disk)
 
+    @api.method
     def merge(self, drive, baseVolUUID, topVolUUID, bandwidth=0, jobUUID=None):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.merge(drive, baseVolUUID, topVolUUID, bandwidth, jobUUID)
+        return self.vm.merge(
+            drive, baseVolUUID, topVolUUID, bandwidth, jobUUID)
 
 
 class Volume(APIBase):
