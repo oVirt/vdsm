@@ -35,6 +35,8 @@ from vdsm import constants
 from vdsm import supervdsm
 from vdsm import utils
 
+from vdsm.storage import fileUtils
+
 # Common vfs types
 
 VFS_NFS = "nfs"
@@ -58,9 +60,11 @@ def _parseFstabLine(line):
     fs_freq = int(fs_freq)
     fs_passno = int(fs_passno)
 
-    # We expect normalized inputs for
-    # fs_spec and fs_file from the kernel.
-    fs_spec = _parseFstabPath(fs_spec)
+    # Using NFS4 the kernel shows the mount path with double slashes,
+    # regarless of the original (normalized) mount path.
+    fs_spec = fileUtils.normalize_path(_parseFstabPath(fs_spec))
+
+    # We expect normalized fs_file from the kernel.
     fs_file = _parseFstabPath(fs_file)
     for suffix in (" (deleted)", ):
         if not fs_file.endswith(suffix):

@@ -89,18 +89,19 @@ def transformPath(remotePath):
 
 def normalize_path(path):
     """
-    Normalizes a path using normpath.
-    This method expects an input of one of the forms:
-    1. "server:port:/path", where:
+    Normalizes any path using fileUtils.normpath.
+    The input's form can be:
+    1. Remote path - "server:port:/path", where:
         - The "port:" part is not mandatory.
         - The "server" part can be a dns name, an ipv4 address
         or an ipv6 address using quoted form.
         - If the input doesn't contain a colon, a HosttailError will be raised.
         Since this format is ambiguous, we treat an input that looks like a
         port as a port, and otherwise as a path without a leading slash.
-    2. "/path/to/device"
+    2. Local path - "/path/to/device"
+    3. Other, where we just call os.path.normpath.
     """
-    if path.startswith("/"):
+    if path.startswith("/") or ":" not in path:
         return normpath(path)
 
     host, tail = address.hosttail_split(path)

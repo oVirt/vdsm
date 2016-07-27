@@ -245,6 +245,10 @@ class TestNormalizePath(TestCaseBase):
         # Local paths
         ("/path/to/device", "/path/to/device"),
         ("/path/to//device/", "/path/to/device"),
+
+        # Other paths
+        ("proc", "proc"),
+        ("path//to///device/", "path/to/device"),
     ])
     def test_normalize_path_equals(self, path, normalized_path):
         self.assertEquals(normalized_path, fileUtils.normalize_path(path))
