@@ -39,7 +39,7 @@ network_modules = network/*_test.py
 
 test_modules = \
 	alignmentScanTests.py \
-	virt_api_test.py \
+	api_test.py \
 	blocksdTests.py \
 	blockVolumeTests.py \
 	bridgeTests.py \

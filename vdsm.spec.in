@@ -1292,7 +1292,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/validate_ovirt_certs.py*
 %{python_sitelib}/%{vdsm_name}/tool/vdsm-id.py*
 %{python_sitelib}/%{vdsm_name}/virt/__init__.py*
-%{python_sitelib}/%{vdsm_name}/virt/api.py*
 %{python_sitelib}/%{vdsm_name}/virt/guestagent.py*
 %{python_sitelib}/%{vdsm_name}/virt/periodic.py*
 %{python_sitelib}/%{vdsm_name}/virt/sampling.py*

@@ -22,7 +22,6 @@ include $(top_srcdir)/build-aux/Makefile.subs
 vdsmvirtdir = $(vdsmpylibdir)/virt
 dist_vdsmvirt_PYTHON = \
 	__init__.py \
-	api.py \
 	guestagent.py \
 	periodic.py \
 	sampling.py \

@@ -21,7 +21,7 @@
 from vdsm import exception
 from vdsm import response
 
-from vdsm.virt import api
+from vdsm.common import api
 
 from testlib import VdsmTestCase as TestCaseBase
 
