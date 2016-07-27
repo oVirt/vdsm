@@ -36,8 +36,6 @@ import sys
 import types
 import warnings
 
-from os.path import normpath
-
 import six
 
 from vdsm import constants
@@ -104,6 +102,22 @@ def normalize_path(path):
     else:
         tail = normpath(tail)
     return address.hosttail_join(host, tail)
+
+
+def normpath(path):
+    """
+    Normalize file system path.
+
+    POSIX allows both /path and //path. The second slash may be interpreted in
+    an implementation-defined manner. The Linux interpretation seems to be to
+    ignore the double slash, so it seems to be safe to remove it.
+
+    See https://bugs.python.org/issue26329 for more info.
+    """
+    path = os.path.normpath(path)
+    if path.startswith('//'):
+        path = path[1:]
+    return path
 
 
 def is_port(port_str):

@@ -180,10 +180,14 @@ class TestNormalizePath(TestCaseBase):
     @permutations([
         # Remote paths without a port
         ("server:/path", "server:/path"),
+        ("server://path", "server:/path"),
+        ("server:///path", "server:/path"),
         ("server:/path/", "server:/path"),
         ("server:/pa:th", "server:/pa:th"),
         ("server:/path//", "server:/path"),
         ("server:/", "server:/"),
+        ("server://", "server:/"),
+        ("server:///", "server:/"),
         ("12.34.56.78:/", "12.34.56.78:/"),
         ("[2001:db8::60fe:5bf:febc:912]:/", "[2001:db8::60fe:5bf:febc:912]:/"),
         ("server:01234:/", "server:01234:"),
