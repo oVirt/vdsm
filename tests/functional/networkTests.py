@@ -30,6 +30,7 @@ from nose.plugins.skip import SkipTest
 import vdsm.config
 from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm.network import ipwrapper
+from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
     routeExists, ruleExists, addrFlush, LinkType, getLinks, routeShowTable,
     linkDel, linkSet, addrAdd)
@@ -2219,10 +2220,8 @@ class NetworkTest(TestCaseBase):
                         client, family, dir, dateFormat)
                     try:
                         with running(dhclient_runner):
-                            _netinfo = vdsm.network.netinfo
-                            ipaddrs = _netinfo.addresses.getIpAddrs()
-                            is_dhcpv4, is_dhcpv6 = (
-                                _netinfo.dhcp.dhcp_status(client, ipaddrs))
+                            is_dhcpv4 = dhclient.is_active(client, family=4)
+                            is_dhcpv6 = dhclient.is_active(client, family=6)
                     except dhcp.ProcessCannotBeKilled:
                         raise SkipTest('dhclient could not be killed')
 

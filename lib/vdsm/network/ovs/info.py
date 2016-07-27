@@ -20,9 +20,9 @@ from __future__ import absolute_import
 
 import six
 
+from vdsm.network.ip import dhclient
 from vdsm.network.netinfo.addresses import (
     getIpAddrs, getIpInfo, is_ipv6_local_auto)
-from vdsm.network.netinfo.dhcp import dhcp_status
 from vdsm.network.netinfo.mtus import getMtu
 from vdsm.network.netinfo.routes import get_routes, get_gateway
 from vdsm.utils import rget
@@ -328,7 +328,8 @@ def _get_iface_info(iface, addresses, routes):
     ipv4gateway = get_gateway(routes, iface, family=4)
     ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(
         iface, addresses, ipv4gateway)
-    is_dhcpv4, is_dhcpv6 = dhcp_status(iface, addresses)
+    is_dhcpv4 = dhclient.is_active(iface, family=4)
+    is_dhcpv6 = dhclient.is_active(iface, family=6)
 
     return {'mtu': getMtu(iface), 'addr': ipv4addr, 'ipv4addrs': ipv4addrs,
             'gateway': ipv4gateway, 'netmask': ipv4netmask,

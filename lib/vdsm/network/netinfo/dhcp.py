@@ -18,37 +18,12 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
-from . import addresses
-
 
 def set_netdev_dhcp_info(network_info, networking):
     dev_info = _device_lookup(network_info['iface'], networking)
     if dev_info:
         dev_info['dhcpv4'] = network_info['dhcpv4']
         dev_info['dhcpv6'] = network_info['dhcpv6']
-
-
-def dhcp_status(iface, ipaddrs):
-    is_dhcpv4 = False
-    is_dhcpv6 = False
-    for ipaddr in ipaddrs[iface]:
-        if addresses.is_ipv4(ipaddr):
-            is_dhcpv4 |= addresses.is_dynamic(ipaddr)
-        elif addresses.is_ipv6(ipaddr):
-            is_dhcpv6 |= addresses.is_dynamic(ipaddr)
-    return is_dhcpv4, is_dhcpv6
-
-
-def dhcp_faked_status(iface, ipaddrs, net_attrs):
-    # If running config exists for this network, fake dhcp status
-    # and report the request (not the actual)
-    # Engine expects this behaviour.
-    if net_attrs is None:
-        is_dhcpv4, is_dhcpv6 = dhcp_status(iface, ipaddrs)
-    else:
-        is_dhcpv4 = (net_attrs.get('bootproto', None) == 'dhcp')
-        is_dhcpv6 = net_attrs.get('dhcpv6', False)
-    return is_dhcpv4, is_dhcpv6
 
 
 def _device_lookup(netdev, networking):

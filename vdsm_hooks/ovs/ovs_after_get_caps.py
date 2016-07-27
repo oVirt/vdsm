@@ -21,9 +21,9 @@ import re
 import sys
 import traceback
 
+from vdsm.network.ip import dhclient
 from vdsm.network.netconfpersistence import RunningConfig
-from vdsm.network.netinfo import (dhcp, routes as netinfo_routes, addresses,
-                                  mtus)
+from vdsm.network.netinfo import routes as netinfo_routes, addresses, mtus
 from vdsm.network.netinfo.bonding import parse_bond_options
 
 from hooking import execCmd
@@ -59,7 +59,8 @@ def _get_net_info(interface, routes):
     ipaddrs = addresses.getIpAddrs()
     addr, netmask, ipv4addrs, ipv6addrs = addresses.getIpInfo(interface,
                                                               ipaddrs)
-    dhcpv4, dhcpv6 = dhcp.dhcp_status(interface, ipaddrs)
+    dhcpv4 = dhclient.is_active(interface, family=4)
+    dhcpv6 = dhclient.is_active(interface, family=6)
     gateway = netinfo_routes.get_gateway(routes, interface)
     ipv6gateway = netinfo_routes.get_gateway(routes, interface, family=6)
 

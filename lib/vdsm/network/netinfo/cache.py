@@ -28,6 +28,7 @@ import six
 from vdsm.network import libvirt
 from vdsm.network import netinfo
 from vdsm.network.ip.address import ipv6_supported
+from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import getLinks
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netlink import link as nl_link
@@ -35,7 +36,7 @@ from vdsm.network.netlink import link as nl_link
 from .addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
 from . import bonding
 from . import bridges
-from .dhcp import set_netdev_dhcp_info, dhcp_status, dhcp_faked_status
+from .dhcp import set_netdev_dhcp_info
 from .dns import get_host_nameservers
 from .mtus import getMtu
 from . import nics
@@ -138,7 +139,8 @@ def _devinfo(link, routes, ipaddrs):
     ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(
         link.name, ipaddrs, gateway)
 
-    is_dhcpv4, is_dhcpv6 = dhcp_status(link.name, ipaddrs)
+    is_dhcpv4 = dhclient.is_active(link.name, family=4)
+    is_dhcpv6 = dhclient.is_active(link.name, family=6)
 
     return {'addr': ipv4addr,
             'ipv4addrs': ipv4addrs,
@@ -186,7 +188,8 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, net_attrs):
         ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(
             iface, ipaddrs, gateway)
 
-        is_dhcpv4, is_dhcpv6 = dhcp_faked_status(iface, ipaddrs, net_attrs)
+        is_dhcpv4 = dhclient.is_active(iface, family=4)
+        is_dhcpv6 = dhclient.is_active(iface, family=6)
 
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
