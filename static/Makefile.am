@@ -22,7 +22,19 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmconf_DATA = \
 	./etc/vdsm/logger.conf \
+	./etc/vdsm/mom.conf \
 	./etc/vdsm/svdsm.logger.conf \
+	$(NULL)
+
+vdsmconfmomdir = $(vdsmconfdir)/mom.d
+
+dist_vdsmconfmom_DATA = \
+	./etc/vdsm/mom.d/00-defines.policy \
+	./etc/vdsm/mom.d/01-parameters.policy \
+	./etc/vdsm/mom.d/02-balloon.policy \
+	./etc/vdsm/mom.d/03-ksm.policy \
+	./etc/vdsm/mom.d/04-cputune.policy \
+	./etc/vdsm/mom.d/05-iotune.policy \
 	$(NULL)
 
 CLEANFILES = \
@@ -31,5 +43,6 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	./etc/vdsm/logger.conf.in \
+	./etc/vdsm/mom.conf.in \
 	./etc/vdsm/svdsm.logger.conf.in \
 	$(NULL)

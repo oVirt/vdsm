@@ -47,7 +47,6 @@ nodist_vdsm_SCRIPTS = \
 	vdsm-store-net-config
 
 nodist_noinst_DATA = \
-	mom.conf \
 	sudoers.vdsm \
 	vdsm.rwtab \
 	$(NULL)
@@ -80,13 +79,6 @@ EXTRA_DIST = \
 	limits.conf \
 	mk_sysprep_floppy.in \
 	vdsm-bonding-modprobe.conf \
-	mom.conf.in \
-	mom.d/00-defines.policy \
-	mom.d/01-parameters.policy \
-	mom.d/02-balloon.policy \
-	mom.d/03-ksm.policy \
-	mom.d/04-cputune.policy \
-	mom.d/05-iotune.policy \
 	sourceRoute.sh \
 	sudoers.vdsm.in \
 	vdsm-gencerts.sh.in \
@@ -117,7 +109,6 @@ install-data-local: \
 		install-data-libvirtpass \
 		install-data-logrotate \
 		install-data-modprobe \
-		install-data-mom \
 		install-data-rwtab \
 		install-data-sudoers \
 		install-data-sysctl \
@@ -145,7 +136,6 @@ uninstall-local: \
 		uninstall-data-libvirtpass \
 		uninstall-data-logrotate \
 		uninstall-data-modprobe \
-		uninstall-data-mom \
 		uninstall-data-rwtab \
 		uninstall-data-sudoers \
 		uninstall-data-sysctl \
@@ -198,16 +188,6 @@ install-data-modprobe:
 uninstall-data-modprobe:
 	$(RM) $(DESTDIR)$(sysconfdir)/modprobe.d/vdsm-bonding-modprobe.conf
 
-install-data-mom:
-	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)/mom.d
-	$(INSTALL_DATA) mom.d/*.policy \
-		$(DESTDIR)$(vdsmconfdir)/mom.d
-	$(INSTALL_DATA) mom.conf \
-		$(DESTDIR)$(vdsmconfdir)/mom.conf
-
-uninstall-data-mom:
-		$(RM) $(DESTDIR)$(vdsmconfdir)/mom.d/*.policy
-		$(RM) $(DESTDIR)$(vdsmconfdir)/mom.conf
 
 install-data-sudoers:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sudoers.d

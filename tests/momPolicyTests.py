@@ -16,16 +16,17 @@ from unittest import TestCase
 class MomPolicyTests(TestCase):
     def _getPolicyContent(self, name):
         path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                            "../vdsm/mom.d",
+                            "../static/etc/vdsm/mom.d",
                             name)
         return open(path, "r").read()
 
     def _loadPolicyFile(self, policy, filename):
-        """Load MOM policy from vdsm/mom.d/+filename and apply it
+        """Load MOM policy from static/etc/vdsm/mom.d/+filename and apply it
            under the 'basename without extension' policy name.
 
            Example:
-           00-constants.policy is loaded from vdsm/mom.d/00-constants.policy
+           00-constants.policy is loaded from
+           static/etc/vdsm/mom.d/00-constants.policy
            and inserted as 00-costants policy.
         """
 

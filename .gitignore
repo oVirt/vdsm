@@ -41,6 +41,7 @@ lib/vdsm/vdscli.py
 lib/vdsm/vdsm.conf.sample
 results.log
 static/etc/vdsm/logger.conf
+static/etc/vdsm/mom.conf
 static/etc/vdsm/svdsm.logger.conf
 tags
 tests/crossImportsTests.py
@@ -57,7 +58,6 @@ vdsm-*.tar.gz
 vdsm.spec
 vdsm/dumpStorageTable.py
 vdsm/mk_sysprep_floppy
-vdsm/mom.conf
 vdsm/sos/vdsm.py
 vdsm/storage/lvm.env
 vdsm/storage/vdsm-lvm.rules
