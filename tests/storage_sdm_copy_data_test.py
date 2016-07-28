@@ -33,14 +33,32 @@ from sdmtestlib import wait_for_job
 from vdsm import jobs
 from vdsm import qemuimg
 from vdsm.storage import constants as sc
+from vdsm.storage import guarded
 
-from storage import blockVolume
+from storage import blockVolume, sd, volume
+from storage import resourceManager
 
 import storage.sdm.api.copy_data
 
 
+class fake_guarded_context(object):
+
+    def __init__(self):
+        self.locks = None
+
+    def __call__(self, locks):
+        self.locks = locks
+        return self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+
 @expandPermutations
-class CopyDataTests(VdsmTestCase):
+class TestCopyDataDIV(VdsmTestCase):
     SIZE = 1048576
 
     @contextmanager
@@ -48,6 +66,7 @@ class CopyDataTests(VdsmTestCase):
         with fake_env(storage_type) as env:
             rm = FakeResourceManager()
             with MonkeyPatchScope([
+                (guarded, 'context', fake_guarded_context()),
                 (storage.sdm.api.copy_data, 'sdCache', env.sdcache),
                 (blockVolume, 'rmanager', rm),
             ]):
@@ -68,6 +87,27 @@ class CopyDataTests(VdsmTestCase):
             qemuimg.create(vol.volumePath, size=self.SIZE,
                            format=qemuimg.FORMAT.QCOW2, backing=backing)
         return vol
+
+    def expected_locks(self, src_vol, dst_vol):
+        src_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, src_vol.sdUUID)
+        dst_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, dst_vol.sdUUID)
+        ret = [
+            # Domain lock for each volume
+            resourceManager.ResourceManagerLock(
+                sc.STORAGE, src_vol.sdUUID, resourceManager.LockType.shared),
+            resourceManager.ResourceManagerLock(
+                sc.STORAGE, dst_vol.sdUUID, resourceManager.LockType.shared),
+            # Image lock for each volume, exclusive for the destination
+            resourceManager.ResourceManagerLock(
+                src_img_ns, src_vol.imgUUID, resourceManager.LockType.shared),
+            resourceManager.ResourceManagerLock(
+                dst_img_ns, dst_vol.imgUUID,
+                resourceManager.LockType.exclusive),
+            # Volume lease for the destination volume
+            volume.VolumeLease(
+                0, dst_vol.sdUUID, dst_vol.imgUUID, dst_vol.volUUID)
+        ]
+        return ret
 
     @permutations((
         ('file', 'raw', 'raw'),
@@ -96,9 +136,12 @@ class CopyDataTests(VdsmTestCase):
                           img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
             dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
                         img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
-            job = storage.sdm.api.copy_data.Job(job_id, None, source, dest)
+            job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
+
             job.run()
             wait_for_job(job)
+            self.assertEqual(sorted(self.expected_locks(src_vol, dst_vol)),
+                             sorted(guarded.context.locks))
 
             self.assertEqual(jobs.STATUS.DONE, job.status)
             self.assertEqual(100.0, job.progress)
@@ -129,9 +172,11 @@ class CopyDataTests(VdsmTestCase):
                               img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
                 dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
                             img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
-                job = storage.sdm.api.copy_data.Job(job_id, None, source, dest)
+                job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
                 job.run()
                 wait_for_job(job)
+                self.assertEqual(sorted(self.expected_locks(src_vol, dst_vol)),
+                                 sorted(guarded.context.locks))
             verify_qemu_chain(dst_chain)
 
     # TODO: Missing tests:
