@@ -34,6 +34,7 @@ from nose.plugins.skip import SkipTest
 
 from vdsm.constants import EXT_BRCTL, EXT_TC
 from vdsm import cpuarch
+from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
     addrAdd, linkSet, linkAdd, linkDel, IPRoute2Error, netns_add, netns_delete,
     netns_exec)
@@ -465,3 +466,12 @@ def restore_resolv_conf():
         yield
     finally:
         shutil.copy2(RESOLV_CONF_BACKUP, RESOLV_CONF)
+
+
+@contextmanager
+def dhclient_run(iface):
+    dhclient.run(iface, blocking_dhcp=True)
+    try:
+        yield
+    finally:
+        dhclient.stop(iface)

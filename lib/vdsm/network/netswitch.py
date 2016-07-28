@@ -32,6 +32,7 @@ from vdsm.tool.service import service_status
 from vdsm.utils import memoized
 
 from . import connectivity
+from . import ifacquire
 from . import legacy_switch
 from . import errors as ne
 from .ovs import info as ovs_info
@@ -155,18 +156,20 @@ def _setup_ovs(networks, bondings, options, in_rollback):
     nets2remove.update(nets2edit)
 
     with Transaction(in_rollback=in_rollback) as config:
-        with ovs_switch.create_setup(_ovs_info) as s:
-            s.remove_nets(nets2remove)
-            s.remove_bonds(bonds2remove)
-            s.edit_bonds(bonds2edit)
-            s.add_bonds(bonds2add)
-            s.add_nets(nets2add)
-        _update_running_config(networks, bondings, config)
-        ovs_switch.cleanup()
-        _setup_ipv6autoconf(networks)
-        _set_ovs_links_up(nets2add, bonds2add, bonds2edit)
-        _setup_ovs_ip_config(nets2add, nets2remove)
-        connectivity.check(options)
+        with ifacquire.Transaction(ovs_netinfo['networks']) as acq:
+            with ovs_switch.create_setup(_ovs_info) as s:
+                s.remove_nets(nets2remove)
+                s.remove_bonds(bonds2remove)
+                s.edit_bonds(bonds2edit)
+                s.add_bonds(bonds2add)
+                s.add_nets(nets2add)
+                acq.acquire(s.acquired_ifaces)
+            _update_running_config(networks, bondings, config)
+            ovs_switch.cleanup()
+            _setup_ipv6autoconf(networks)
+            _set_ovs_links_up(nets2add, bonds2add, bonds2edit)
+            _setup_ovs_ip_config(nets2add, nets2remove)
+            connectivity.check(options)
 
 
 def _update_running_config(networks, bondings, running_config):

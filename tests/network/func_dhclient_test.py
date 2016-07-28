@@ -25,7 +25,7 @@ from nose.plugins.attrib import attr
 from vdsm.network.ipwrapper import linkSet, addrAdd
 
 from .netfunctestlib import NetFuncTestCase, NOCHK
-from .nettestlib import veth_pair, dnsmasq_run
+from .nettestlib import veth_pair, dnsmasq_run, dhclient_run
 
 NETWORK_NAME = 'test-network'
 VLAN = 10
@@ -71,5 +71,57 @@ class NetworkDhcpBasicLegacyTest(NetworkDhcpBasicTemplate):
 
 @attr(type='functional', switch='ovs')
 class NetworkDhcpBasicOvsTest(NetworkDhcpBasicTemplate):
+    __test__ = True
+    switch = 'ovs'
+
+
+@attr(type='functional')
+class StopDhclientOnUsedNicsTemplate(NetFuncTestCase):
+    __test__ = False
+
+    def test_attach_dhcp_nic_to_ipless_network(self):
+        with veth_pair() as (server, client):
+            addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
+            linkSet(server, ['up'])
+            with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO):
+                with dhclient_run(client):
+                    self.assertDhclient(client, family=4)
+
+                    NETCREATE = {NETWORK_NAME: {
+                        'nic': client, 'switch': self.switch}}
+                    with self.setupNetworks(NETCREATE, {}, NOCHK):
+                        nic_netinfo = self.netinfo.nics[client]
+                        self.assertDisabledIPv4(nic_netinfo)
+                        net_netinfo = self.netinfo.networks[NETWORK_NAME]
+                        self.assertDisabledIPv4(net_netinfo)
+
+    def test_attach_dhcp_nic_to_dhcp_bridged_network(self):
+        with veth_pair() as (server, client):
+            addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
+            linkSet(server, ['up'])
+            with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO):
+                with dhclient_run(client):
+                    self.assertDhclient(client, family=4)
+
+                    NETCREATE = {NETWORK_NAME: {
+                        'nic': client, 'bootproto': 'dhcp',
+                        'blockingdhcp': True, 'switch': self.switch}}
+                    with self.setupNetworks(NETCREATE, {}, NOCHK):
+                        nic_netinfo = self.netinfo.nics[client]
+                        self.assertDisabledIPv4(nic_netinfo)
+                        self.assertNoDhclient(client, family=4)
+                        net_netinfo = self.netinfo.networks[NETWORK_NAME]
+                        self.assertDHCPv4(net_netinfo)
+                        self.assertDhclient(NETWORK_NAME, family=4)
+
+
+@attr(type='functional', switch='legacy')
+class StopDhclientOnUsedNicsLegacyTest(StopDhclientOnUsedNicsTemplate):
+    __test__ = True
+    switch = 'legacy'
+
+
+@attr(type='functional', switch='ovs')
+class StopDhclientOnUsedNicsOvsTest(StopDhclientOnUsedNicsTemplate):
     __test__ = True
     switch = 'ovs'
