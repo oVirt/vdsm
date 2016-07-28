@@ -19,3 +19,17 @@
 #
 
 include $(top_srcdir)/build-aux/Makefile.subs
+
+vdsmconf_DATA = \
+	./etc/vdsm/logger.conf \
+	./etc/vdsm/svdsm.logger.conf \
+	$(NULL)
+
+CLEANFILES = \
+	$(vdsmconf_DATA) \
+	$(NULL)
+
+EXTRA_DIST = \
+	./etc/vdsm/logger.conf.in \
+	./etc/vdsm/svdsm.logger.conf.in \
+	$(NULL)

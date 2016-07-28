@@ -47,10 +47,8 @@ nodist_vdsm_SCRIPTS = \
 	vdsm-store-net-config
 
 nodist_noinst_DATA = \
-	logger.conf \
 	mom.conf \
 	sudoers.vdsm \
-	svdsm.logger.conf \
 	vdsm.rwtab \
 	$(NULL)
 
@@ -80,7 +78,6 @@ EXTRA_DIST = \
 	dumpStorageTable.py.in \
 	libvirt_password \
 	limits.conf \
-	logger.conf.in \
 	mk_sysprep_floppy.in \
 	vdsm-bonding-modprobe.conf \
 	mom.conf.in \
@@ -92,7 +89,6 @@ EXTRA_DIST = \
 	mom.d/05-iotune.policy \
 	sourceRoute.sh \
 	sudoers.vdsm.in \
-	svdsm.logger.conf.in \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
@@ -119,7 +115,6 @@ install-data-local: \
 		install-data-bonding-defaults \
 		install-data-dhclient-hooks \
 		install-data-libvirtpass \
-		install-data-logger \
 		install-data-logrotate \
 		install-data-modprobe \
 		install-data-mom \
@@ -148,7 +143,6 @@ uninstall-local: \
 		uninstall-data-bonding-defaults \
 		uninstall-data-dhclient-hooks \
 		uninstall-data-libvirtpass \
-		uninstall-data-logger \
 		uninstall-data-logrotate \
 		uninstall-data-modprobe \
 		uninstall-data-mom \
@@ -156,16 +150,6 @@ uninstall-local: \
 		uninstall-data-sudoers \
 		uninstall-data-sysctl \
 		uninstall-data-vdsmconf
-
-install-data-logger:
-	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)
-	$(INSTALL_DATA) logger.conf $(DESTDIR)$(vdsmconfdir)/logger.conf
-	$(INSTALL_DATA) svdsm.logger.conf \
-	    $(DESTDIR)$(vdsmconfdir)/svdsm.logger.conf
-
-uninstall-data-logger:
-	$(RM) $(DESTDIR)$(vdsmconfdir)/logger.conf
-	$(RM) $(DESTDIR)$(vdsmconfdir)/svdsm.logger.conf
 
 install-data-libvirtpass:
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/keys

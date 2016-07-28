@@ -40,6 +40,8 @@ lib/vdsm/tool/validate_ovirt_certs.py
 lib/vdsm/vdscli.py
 lib/vdsm/vdsm.conf.sample
 results.log
+static/etc/vdsm/logger.conf
+static/etc/vdsm/svdsm.logger.conf
 tags
 tests/crossImportsTests.py
 tests/run_tests.sh
@@ -54,7 +56,6 @@ tests/other.key
 vdsm-*.tar.gz
 vdsm.spec
 vdsm/dumpStorageTable.py
-vdsm/logger.conf
 vdsm/mk_sysprep_floppy
 vdsm/mom.conf
 vdsm/sos/vdsm.py
@@ -63,7 +64,6 @@ vdsm/storage/vdsm-lvm.rules
 vdsm/storage/vdsm_lvm_rules.template
 vdsm/storage/protect/spmprotect.sh
 vdsm/sudoers.vdsm
-vdsm/svdsm.logger.conf
 vdsm/vdscli.py
 vdsm/vdsm-gencerts.sh
 vdsm/vdsm-sosplugin.py
