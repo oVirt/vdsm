@@ -769,9 +769,6 @@ touch %{buildroot}@VDSMLOGDIR@/{connectivity.log,mom.log,supervdsm.log,vdsm.log}
 install -Dm 0644 vdsm/storage/vdsm-lvm.rules \
                  %{buildroot}%{_udevrulesdir}/12-vdsm-lvm.rules
 
-install -Dm 0644 vdsm/limits.conf \
-                 %{buildroot}/etc/security/limits.d/99-vdsm.conf
-
 install -Dm 0755 init/systemd/systemd-vdsmd %{buildroot}%{_libdir}/systemd/systemd-vdsmd
 install -Dm 0644 init/systemd/85-vdsmd.preset %{buildroot}%{_libdir}/systemd/system-preset/85-vdsmd.preset
 install -Dm 0644 init/systemd/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service

@@ -49,6 +49,12 @@ rwtab_DATA = \
 	./etc/rwtab.d/vdsm \
 	$(NULL)
 
+limitsdir = $(sysconfdir)/security/limits.d
+
+limits_DATA = \
+	./etc/security/limits.d/99-vdsm.conf \
+	$(NULL)
+
 CLEANFILES = \
 	$(rwtab_DATA) \
 	$(sudoers_DATA) \
@@ -56,6 +62,7 @@ CLEANFILES = \
 	$(NULL)
 
 EXTRA_DIST = \
+	$(limits_DATA) \
 	./etc/rwtab.d/vdsm.in \
 	./etc/sudoers.d/50_vdsm.in \
 	./etc/vdsm/logger.conf.in \

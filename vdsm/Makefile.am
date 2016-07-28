@@ -71,7 +71,6 @@ EXTRA_DIST = \
 	bonding-name2numeric.json \
 	dumpStorageTable.py.in \
 	libvirt_password \
-	limits.conf \
 	mk_sysprep_floppy.in \
 	vdsm-bonding-modprobe.conf \
 	sourceRoute.sh \
