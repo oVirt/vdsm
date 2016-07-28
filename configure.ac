@@ -394,16 +394,13 @@ AC_OUTPUT([
 	init/Makefile
 	init/systemd/Makefile
 	lib/Makefile
+	lib/api/Makefile
 	lib/vdsm/Makefile
 	lib/vdsm/common/Makefile
 	lib/vdsm/common/network/Makefile
-	lib/vdsm/profiling/Makefile
-	lib/vdsm/tool/Makefile
-	lib/vdsm/tool/configurators/Makefile
-	lib/api/Makefile
-	lib/yajsonrpc/Makefile
 	lib/vdsm/gluster/Makefile
 	lib/vdsm/host/Makefile
+	lib/vdsm/metrics/Makefile
 	lib/vdsm/network/Makefile
 	lib/vdsm/network/configurators/Makefile
 	lib/vdsm/network/ip/Makefile
@@ -412,31 +409,34 @@ AC_OUTPUT([
 	lib/vdsm/network/ovs/Makefile
 	lib/vdsm/network/ovs/driver/Makefile
 	lib/vdsm/network/tc/Makefile
-	lib/vdsm/metrics/Makefile
+	lib/vdsm/profiling/Makefile
 	lib/vdsm/rpc/Makefile
 	lib/vdsm/storage/Makefile
+	lib/vdsm/tool/Makefile
+	lib/vdsm/tool/configurators/Makefile
 	lib/vdsm/virt/Makefile
-        static/Makefile
+	lib/yajsonrpc/Makefile
+	static/Makefile
 	tests/Makefile
 	tests/common/Makefile
 	tests/cpuinfo/Makefile
-	tests/functional/Makefile
 	tests/devices/Makefile
-	tests/devices/parsing/Makefile
 	tests/devices/data/Makefile
+	tests/devices/parsing/Makefile
+	tests/functional/Makefile
 	tests/integration/Makefile
 	tests/network/Makefile
 	vdsm-tool/Makefile
 	vdsm/Makefile
 	vdsm/gluster/Makefile
 	vdsm/sos/Makefile
-	vdsm/supervdsm_api/Makefile
 	vdsm/storage/Makefile
 	vdsm/storage/imageRepository/Makefile
 	vdsm/storage/protect/Makefile
 	vdsm/storage/sdm/Makefile
 	vdsm/storage/sdm/api/Makefile
 	vdsm/storage/vdsm_lvm_rules.template
+	vdsm/supervdsm_api/Makefile
 	vdsm/virt/Makefile
 	vdsm/virt/vmdevices/Makefile
 	vdsm_hooks/Makefile
