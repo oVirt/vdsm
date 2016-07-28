@@ -67,6 +67,12 @@ modulesload_DATA = \
 	./etc/modules-load.d/vdsm.conf \
 	$(NULL)
 
+sysctldir = $(sysconfdir)/sysctl.d
+
+sysctl_DATA = \
+	./etc/sysctl.d/vdsm.conf \
+	$(NULL)
+
 CLEANFILES = \
 	$(rwtab_DATA) \
 	$(sudoers_DATA) \
@@ -76,6 +82,7 @@ CLEANFILES = \
 EXTRA_DIST = \
 	$(limits_DATA) \
 	$(modulesload_DATA) \
+	$(sysctl_DATA) \
 	$(vdsmconfrotate_DATA) \
 	./etc/rwtab.d/vdsm.in \
 	./etc/sudoers.d/50_vdsm.in \

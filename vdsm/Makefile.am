@@ -79,7 +79,6 @@ EXTRA_DIST = \
 	vdsm-libvirt-access.rules \
 	vdsm-logrotate \
 	vdsm-store-net-config.in \
-	vdsm-sysctl.conf \
 	vdsmd.8.in \
 	$(NULL)
 
@@ -98,7 +97,6 @@ install-data-local: \
 		install-data-libvirtpass \
 		install-data-logrotate \
 		install-data-modprobe \
-		install-data-sysctl \
 		install-data-vdsmconf
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/hsm-tasks
@@ -123,7 +121,6 @@ uninstall-local: \
 		uninstall-data-libvirtpass \
 		uninstall-data-logrotate \
 		uninstall-data-modprobe \
-		uninstall-data-sysctl \
 		uninstall-data-vdsmconf
 
 install-data-libvirtpass:
@@ -160,15 +157,6 @@ install-data-modprobe:
 
 uninstall-data-modprobe:
 	$(RM) $(DESTDIR)$(sysconfdir)/modprobe.d/vdsm-bonding-modprobe.conf
-
-
-install-data-sysctl:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sysctl.d
-	$(INSTALL_DATA) $(srcdir)/vdsm-sysctl.conf \
-		$(DESTDIR)$(sysconfdir)/sysctl.d/vdsm.conf
-
-uninstall-data-sysctl:
-	$(RM) $(DESTDIR)$(sysconfdir)/sysctl.d/vdsm.conf
 
 install-data-vdsmconf:
 	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)/vdsm.conf.d
