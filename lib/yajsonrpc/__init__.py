@@ -24,7 +24,8 @@ from vdsm.compat import json
 from vdsm.logUtils import Suppressed
 from vdsm.password import protect_passwords, unprotect_passwords
 from vdsm.utils import monotonic_time, traceback
-from vdsm.define import errCode
+from vdsm import exception
+
 
 __all__ = ["betterAsyncore", "stompreactor", "stomp"]
 
@@ -522,8 +523,8 @@ class JsonRpcServer(object):
         if not self._cif.ready:
             self.log.info("In recovery, ignoring '%s' in bridge with %s",
                           req.method, req.params)
-            # TODO: take the response from the exception instead of via errCode
-            return JsonRpcResponse(None, errCode['recovery'], req.id)
+            return JsonRpcResponse(
+                None, exception.RecoveryInProgress(), req.id)
 
         self.log.log(logLevel, "Calling '%s' in bridge with %s",
                      req.method, req.params)
