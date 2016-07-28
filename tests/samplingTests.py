@@ -264,6 +264,41 @@ class StatsCacheTests(TestCaseBase):
                           self.FAKE_CLOCK_STEP,
                           self.FAKE_CLOCK_STEP))
 
+    def test_get_batch(self):
+        self._feed_cache((
+            ({'a': 'old', 'b': 'old'}, 1),
+            ({'a': 'new', 'b': 'new'}, 2),
+            ({'a': 'exold', 'b': 'exold'}, 0)
+        ))
+        res = self.cache.get_batch()
+        self.assertEqual(
+            sorted(('a', 'b',)),
+            sorted(res.keys())
+        )
+
+    def test_get_batch_missing(self):
+        self._feed_cache((
+            ({'a': 'old', 'b': 'old'}, 1),
+            ({'a': 'new'}, 2),
+        ))
+        res = self.cache.get_batch()
+        self.assertEqual(
+            ['a', ],
+            sorted(res.keys())
+        )
+
+    def test_get_batch_alternating(self):
+        self._feed_cache((
+            ({'b': 'old'}, 1),
+            ({'a': 'new'}, 2),
+        ))
+        res = self.cache.get_batch()
+        self.assertEqual([], res.keys())
+
+    def test_get_batch_from_empty(self):
+        res = self.cache.get_batch()
+        self.assertIs(res, None)
+
     def test_get_missing(self):
         self._feed_cache((
             ({'a': 'foo'}, 1),

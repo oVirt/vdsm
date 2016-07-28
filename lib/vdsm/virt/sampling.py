@@ -427,6 +427,26 @@ class StatsCache(object):
             return StatsSample(first_sample, last_sample,
                                interval, stats_age)
 
+    def get_batch(self):
+        """
+        Return the available StatSample for the all VMs.
+        """
+        with self._lock:
+            first_batch, last_batch, interval = self._samples.stats()
+
+            if first_batch is None:
+                return None
+
+            ts = self._clock()
+            return {
+                vm_id: StatsSample(
+                    first_batch[vm_id], last_batch[vm_id], interval,
+                    ts - self._vm_last_timestamp[vm_id]
+                )
+                for vm_id in last_batch if (vm_id in first_batch and
+                                            vm_id in self._vm_last_timestamp)
+            }
+
     def clock(self):
         """
         Provide timestamp compatible with what put() expects
