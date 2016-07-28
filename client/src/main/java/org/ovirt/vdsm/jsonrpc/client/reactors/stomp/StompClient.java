@@ -12,6 +12,7 @@ import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.reduceGracePeriod;
 
 import java.nio.channels.Selector;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
@@ -19,6 +20,7 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.PlainClient;
 import org.ovirt.vdsm.jsonrpc.client.reactors.Reactor;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message;
 import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
+import org.ovirt.vdsm.jsonrpc.client.utils.retry.AwaitRetry;
 
 public class StompClient extends PlainClient {
 
@@ -26,33 +28,42 @@ public class StompClient extends PlainClient {
 
         @Override
         public void execute() throws ClientConnectionException {
+            connected = new CountDownLatch(1);
+            subscribed = new CountDownLatch(1);
+
+            Message message = new Message().connect().withHeader(HEADER_ACCEPT, "1.2").withHeader(HEADER_HOST,
+                    policy.getIdentifier());
+            int outgoing = 0;
+            int incoming = 0;
+            if (policy.isIncomingHeartbeat()) {
+                incoming = policy.getIncomingHeartbeat();
+            }
+            if (policy.isOutgoingHeartbeat()) {
+                outgoing = policy.getOutgoingHeartbeat();
+            }
+            if (incoming != 0 || outgoing != 0) {
+                message.withHeader(HEADER_HEART_BEAT, outgoing + "," + reduceGracePeriod(incoming));
+            }
+            sendNow(message.build());
+
+            subscribe(getResponseQueue());
+
+            String eventQueue = getEventQueue();
+            if (!isEmpty(eventQueue)) {
+                subscribe(eventQueue);
+            }
+
             try {
-                connected = new CountDownLatch(1);
-                subscribed = new CountDownLatch(1);
+                AwaitRetry.retry(new Callable<Void>() {
 
-                Message message = new Message().connect().withHeader(HEADER_ACCEPT, "1.2").withHeader(HEADER_HOST, policy.getIdentifier());
-                int outgoing = 0;
-                int incoming = 0;
-                if (policy.isIncomingHeartbeat()) {
-                    incoming = policy.getIncomingHeartbeat();
-                }
-                if (policy.isOutgoingHeartbeat()) {
-                    outgoing = policy.getOutgoingHeartbeat();
-                }
-                if (incoming != 0 || outgoing != 0) {
-                    message.withHeader(HEADER_HEART_BEAT, outgoing + "," + reduceGracePeriod(incoming));
-                }
-                sendNow(message.build());
+                    @Override
+                    public Void call() throws Exception {
+                        connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
+                        return null;
+                    }
 
-                subscribe(getResponseQueue());
-
-                String eventQueue = getEventQueue();
-                if (!isEmpty(eventQueue)) {
-                    subscribe(eventQueue);
-                }
-
-                connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
-            } catch (InterruptedException e) {
+                });
+            } catch (Exception e) {
                 disconnect("Waiting for connect interrupted");
                 throw new ClientConnectionException("Timeout during connection", e);
             }

@@ -12,6 +12,7 @@ import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.reduceGracePeriod;
 
 import java.nio.channels.Selector;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 
 import javax.net.ssl.SSLContext;
@@ -21,6 +22,7 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.Reactor;
 import org.ovirt.vdsm.jsonrpc.client.reactors.SSLClient;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message;
 import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
+import org.ovirt.vdsm.jsonrpc.client.utils.retry.AwaitRetry;
 
 public class SSLStompClient extends SSLClient {
 
@@ -104,11 +106,19 @@ public class SSLStompClient extends SSLClient {
 
     private void waitForConnect() throws ClientConnectionException {
         try {
-            this.connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
-        } catch (InterruptedException e) {
+            AwaitRetry.retry(new Callable<Void>() {
+
+                @Override
+                public Void call() throws Exception {
+                    connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
+                    return null;
+                }
+
+            });
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
-            disconnect("Waiting for connect interrupted");
-            throw new IllegalStateException("Communication interrupted");
+            disconnect("Waiting for connect failed");
+            throw new IllegalStateException("Communication failed");
         }
     }
 
