@@ -25,6 +25,7 @@ SUBDIRS = \
 	helpers \
 	init \
 	lib \
+	static \
 	vdsm \
 	vdsm-tool \
 	vdsm_hooks \

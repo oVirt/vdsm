@@ -416,6 +416,7 @@ AC_OUTPUT([
 	lib/vdsm/rpc/Makefile
 	lib/vdsm/storage/Makefile
 	lib/vdsm/virt/Makefile
+        static/Makefile
 	tests/Makefile
 	tests/common/Makefile
 	tests/cpuinfo/Makefile
