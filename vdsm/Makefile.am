@@ -78,7 +78,6 @@ EXTRA_DIST = \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
 	vdsm-logrotate \
-	vdsm-logrotate.conf \
 	vdsm-modules-load.d.conf \
 	vdsm-store-net-config.in \
 	vdsm-sysctl.conf \
@@ -147,16 +146,12 @@ uninstall-data-bonding-defaults:
 	$(RM) $(DESTDIR)$(vdsmdir)/bonding-name2numeric.json
 
 install-data-logrotate:
-	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)/logrotate
-	$(INSTALL_DATA) $(builddir)/vdsm-logrotate.conf \
-		$(DESTDIR)$(vdsmconfdir)/logrotate/vdsm
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/cron.hourly
 	$(INSTALL_SCRIPT) $(srcdir)/vdsm-logrotate \
 		$(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/cron.d
 
 uninstall-data-logrotate:
-	$(RM) $(DESTDIR)$(vdsmconfdir)/logrotate/vdsm
 	$(RM) $(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
 
 install-data-modprobe:

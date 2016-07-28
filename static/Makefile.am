@@ -37,6 +37,12 @@ dist_vdsmconfmom_DATA = \
 	./etc/vdsm/mom.d/05-iotune.policy \
 	$(NULL)
 
+vdsmconfrotatedir = $(vdsmconfdir)/logrotate
+
+vdsmconfrotate_DATA = \
+	./etc/vdsm/logrotate/vdsm \
+	$(NULL)
+
 sudoersdir = $(sysconfdir)/sudoers.d
 
 sudoers_DATA = \
@@ -63,6 +69,7 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	$(limits_DATA) \
+	$(vdsmconfrotate_DATA) \
 	./etc/rwtab.d/vdsm.in \
 	./etc/sudoers.d/50_vdsm.in \
 	./etc/vdsm/logger.conf.in \
