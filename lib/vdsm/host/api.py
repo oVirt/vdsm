@@ -110,8 +110,11 @@ def report_stats(hoststats):
         report[prefix + '.cpu.idle'] = hoststats['cpuIdle']
         report[prefix + '.cpu.sys_vdsmd'] = hoststats['cpuSysVdsmd']
         report[prefix + '.cpu.user_vdsmd'] = hoststats['cpuUserVdsmd']
-        report[prefix + '.cpu.ksm_pages'] = hoststats['ksmPages']
-        report[prefix + '.cpu.ksm_cpu_precent'] = hoststats['ksmCpu']
+
+        # only available when mom is configured to run
+        if 'ksmPages' in hoststats:
+            report[prefix + '.cpu.ksm_pages'] = hoststats['ksmPages']
+            report[prefix + '.cpu.ksm_cpu_precent'] = hoststats['ksmCpu']
 
         if hoststats['haStats']['configured']:
             report[prefix + '.ha_score'] = hoststats['haScore']
