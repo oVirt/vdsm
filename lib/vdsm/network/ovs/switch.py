@@ -66,6 +66,17 @@ class Setup(object):
         self._bridges_by_sb = ovs_info.bridges_by_sb
         self._northbounds_by_sb = ovs_info.northbounds_by_sb
 
+        self._acquired_ifaces = set()
+
+    @property
+    def acquired_ifaces(self):
+        """
+        Report the interfaces that have been added to networks/bondings, either
+        by add or edit actions, including ifaces that have been removed and
+        re-added to a different network/bonding.
+        """
+        return self._acquired_ifaces
+
     def __enter__(self):
         return self
 
@@ -87,6 +98,7 @@ class Setup(object):
             bridge = self._bridges_by_sb[bond]
 
             to_be_configured_slaves = attrs['nics']
+            self._acquired_ifaces.update(to_be_configured_slaves)
             running_bond = self._ovs_info.bridges[bridge]['ports'][bond]
             running_slaves = running_bond['bond']['slaves']
 
@@ -109,7 +121,9 @@ class Setup(object):
         for bond, attrs in six.iteritems(bonds):
             bridge = self._create_bridge()
             self._bridges_by_sb[bond] = bridge
-            self._create_sb_bond(bridge, bond, attrs['nics'])
+            to_be_configured_slaves = attrs['nics']
+            self._create_sb_bond(bridge, bond, to_be_configured_slaves)
+            self._acquired_ifaces.update(to_be_configured_slaves)
 
             self._transaction.add(*self._edit_mode(
                 bond, attrs.get('options', '')))
@@ -121,6 +135,7 @@ class Setup(object):
         attach = list(itertools.chain.from_iterable(
             self._ovsdb.attach_bond_slave(bond, slave)
             for slave in to_be_configured - running))
+
         detach = list(itertools.chain.from_iterable(
             self._ovsdb.detach_bond_slave(bond, slave)
             for slave in running - to_be_configured))
@@ -195,6 +210,8 @@ class Setup(object):
     def add_nets(self, nets):
         for net, attrs in six.iteritems(nets):
             nic = attrs.get('nic')
+            if nic:
+                self._acquired_ifaces.add(nic)
             bond = attrs.get('bonding')
             sb = nic or bond
             if sb in self._bridges_by_sb:

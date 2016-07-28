@@ -22,8 +22,10 @@ from __future__ import absolute_import
 
 from nose.plugins.attrib import attr
 
+from vdsm.network.ipwrapper import addrAdd
+
 from .netfunctestlib import NetFuncTestCase, NOCHK
-from .nettestlib import dummy_devices
+from .nettestlib import dummy_device, dummy_devices
 
 NETWORK_NAME = 'test-network'
 BOND_NAME = 'bond1'
@@ -31,6 +33,7 @@ VLAN = 10
 
 IPv4_ADDRESS = '192.0.2.1'
 IPv4_NETMASK = '255.255.255.0'
+IPv4_PREFIX_LEN = '24'
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
 
 IPv4 = [4]
@@ -114,5 +117,69 @@ class NetworkStaticIpBasicLegacyTest(NetworkStaticIpBasicTemplate):
 
 @attr(type='functional', switch='ovs')
 class NetworkStaticIpBasicOvsTest(NetworkStaticIpBasicTemplate):
+    __test__ = True
+    switch = 'ovs'
+
+
+@attr(type='functional')
+class AcquireNicsWithStaticIPTemplate(NetFuncTestCase):
+    __test__ = False
+
+    def test_attach_nic_with_ip_to_ipless_network(self):
+        with dummy_device() as nic:
+            addrAdd(nic, IPv4_ADDRESS, IPv4_PREFIX_LEN)
+
+            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': self.switch}}
+            with self.setupNetworks(NETCREATE, {}, NOCHK):
+                nic_netinfo = self.netinfo.nics[nic]
+                self.assertDisabledIPv4(nic_netinfo)
+
+    def test_attach_nic_with_ip_to_ip_network(self):
+        with dummy_device() as nic:
+            addrAdd(nic, IPv4_ADDRESS, IPv4_PREFIX_LEN)
+
+            NETCREATE = {
+                NETWORK_NAME: {'nic': nic, 'ipaddr': IPv4_ADDRESS,
+                               'netmask': IPv4_NETMASK, 'switch': self.switch}}
+            with self.setupNetworks(NETCREATE, {}, NOCHK):
+                nic_netinfo = self.netinfo.nics[nic]
+                self.assertDisabledIPv4(nic_netinfo)
+                self.assertNetworkIp(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+
+    def test_attach_nic_with_ip_as_a_slave_to_ipless_network(self):
+        with dummy_devices(2) as (nic1, nic2):
+            addrAdd(nic1, IPv4_ADDRESS, IPv4_PREFIX_LEN)
+
+            NETCREATE = {
+                NETWORK_NAME: {'bonding': BOND_NAME, 'switch': self.switch}}
+            BONDCREATE = {
+                BOND_NAME: {'nics': [nic1, nic2], 'switch': self.switch}}
+            with self.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
+                nic_netinfo = self.netinfo.nics[nic1]
+                self.assertDisabledIPv4(nic_netinfo)
+
+    def test_attach_nic_with_ip_as_a_slave_to_ip_network(self):
+        with dummy_devices(2) as (nic1, nic2):
+            addrAdd(nic1, IPv4_ADDRESS, IPv4_PREFIX_LEN)
+
+            NETCREATE = {
+                NETWORK_NAME: {'bonding': BOND_NAME, 'ipaddr': IPv4_ADDRESS,
+                               'netmask': IPv4_NETMASK, 'switch': self.switch}}
+            BONDCREATE = {
+                BOND_NAME: {'nics': [nic1, nic2], 'switch': self.switch}}
+            with self.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
+                nic_netinfo = self.netinfo.nics[nic1]
+                self.assertDisabledIPv4(nic_netinfo)
+                self.assertNetworkIp(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+
+
+@attr(type='functional', switch='legacy')
+class AcquireNicsWithStaticIPLegacyTest(AcquireNicsWithStaticIPTemplate):
+    __test__ = True
+    switch = 'legacy'
+
+
+@attr(type='functional', switch='ovs')
+class AcquireNicsWithStaticIPOvsTest(AcquireNicsWithStaticIPTemplate):
     __test__ = True
     switch = 'ovs'

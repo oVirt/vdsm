@@ -28,6 +28,7 @@ from nose.plugins.skip import SkipTest
 
 import vdsm.config
 from vdsm.network import kernelconfig
+from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.netinfo.nics import operstate
 
@@ -244,9 +245,7 @@ class NetFuncTestCase(VdsmTestCase):
         self.assertNotIn(bond, self.running_config.bonds)
 
     def assertNetworkIp(self, net, attrs):
-        if ('ipaddr' not in attrs and attrs.get('bootproto') != 'dhcp' and
-                'ipv6addr' not in attrs and 'dhcpv6' not in attrs and
-                'ipv6autoconf' not in attrs):
+        if _ipv4_is_unused(attrs) and _ipv6_is_unused(attrs):
             return
 
         network_netinfo = self.netinfo.networks[net]
@@ -271,6 +270,9 @@ class NetFuncTestCase(VdsmTestCase):
         if attrs.get('bootproto') == 'dhcp':
             self.assertDHCPv4(network_netinfo)
             self.assertDHCPv4(topdev_netinfo)
+        if _ipv4_is_unused(attrs):
+            self.assertDisabledIPv4(network_netinfo)
+            self.assertDisabledIPv4(topdev_netinfo)
 
         if 'ipv6addr' in attrs:
             self.assertStaticIPv6(attrs, network_netinfo)
@@ -296,10 +298,21 @@ class NetFuncTestCase(VdsmTestCase):
         self.assertNotEqual(ipinfo['addr'], '')
         self.assertGreater(len(ipinfo['ipv4addrs']), 0)
 
+    def assertDisabledIPv4(self, ipinfo):
+        self.assertFalse(ipinfo['dhcpv4'])
+        self.assertEqual(ipinfo['addr'], '')
+        self.assertEqual(ipinfo['ipv4addrs'], [])
+
     def assertDisabledIPv6(self, ipinfo):
         # TODO: We need to report if IPv6 is enabled on iface/host and
         # differentiate that from not acquiring an address.
         self.assertEqual([], ipinfo['ipv6addrs'])
+
+    def assertDhclient(self, iface, family):
+        return dhclient.is_active(iface, family)
+
+    def assertNoDhclient(self, iface, family):
+        self.assertFalse(self.assertDhclient(iface, family))
 
     def assertLinksUp(self, net, attrs):
         switch = attrs.get('switch', 'legacy')
@@ -334,6 +347,10 @@ class NetFuncTestCase(VdsmTestCase):
         # breaks.
         self.assertEqual(running_config['networks'], kernel_config['networks'])
         self.assertEqual(running_config['bonds'], kernel_config['bonds'])
+
+
+def _ipv4_is_unused(attrs):
+    return 'ipaddr' not in attrs and attrs.get('bootproto') != 'dhcp'
 
 
 def _ipv6_is_unused(attrs):
