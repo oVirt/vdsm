@@ -61,6 +61,12 @@ limits_DATA = \
 	./etc/security/limits.d/99-vdsm.conf \
 	$(NULL)
 
+modulesloaddir = $(sysconfdir)/modules-load.d
+
+modulesload_DATA = \
+	./etc/modules-load.d/vdsm.conf \
+	$(NULL)
+
 CLEANFILES = \
 	$(rwtab_DATA) \
 	$(sudoers_DATA) \
@@ -69,6 +75,7 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	$(limits_DATA) \
+	$(modulesload_DATA) \
 	$(vdsmconfrotate_DATA) \
 	./etc/rwtab.d/vdsm.in \
 	./etc/sudoers.d/50_vdsm.in \

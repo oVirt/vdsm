@@ -78,7 +78,6 @@ EXTRA_DIST = \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
 	vdsm-logrotate \
-	vdsm-modules-load.d.conf \
 	vdsm-store-net-config.in \
 	vdsm-sysctl.conf \
 	vdsmd.8.in \

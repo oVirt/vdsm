@@ -777,8 +777,6 @@ install -Dm 0644 init/systemd/supervdsmd.service %{buildroot}%{_unitdir}/supervd
 
 install -Dm 0644 init/systemd/mom-vdsm.service %{buildroot}%{_unitdir}/mom-vdsm.service
 
-install -Dm 0644 vdsm/vdsm-modules-load.d.conf \
-                 %{buildroot}%{_sysconfdir}/modules-load.d/vdsm.conf
 install -Dm 0644 vdsm/vdsm-bonding-modprobe.conf \
                  %{buildroot}%{_sysconfdir}/modprobe.d/vdsm-bonding-modprobe.conf
 install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf \
