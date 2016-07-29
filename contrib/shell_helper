@@ -139,6 +139,12 @@ del_bridges() {
     done
 }
 
+del_ovs_bridges() {
+    for bridge in `sudo ovs-vsctl list-br | grep vdsmbr_`; do
+        sudo ovs-vsctl del-br $bridge
+    done
+}
+
 del_test_nets() {
     cat << EOF | sudo python -
 from __future__ import print_function
@@ -188,6 +194,7 @@ emergency_net_cleanup() {
     del_veths
     del_bonds
     del_bridges
+    del_ovs_bridges
     del_test_nets
     del_net_persistency
 }
