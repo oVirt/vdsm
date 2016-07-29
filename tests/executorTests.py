@@ -116,7 +116,9 @@ class ExecutorTests(TestCaseBase):
 
     @slowtest
     def test_discarded_workers(self):
-        slow_tasks = [Task(wait=0.3) for n in range(10)]
+        n_slow_tasks = 10
+        barrier = concurrent.Barrier(n_slow_tasks + 1)
+        slow_tasks = [Task(start_barrier=barrier) for n in range(n_slow_tasks)]
         for task in slow_tasks:
             self.executor.dispatch(task, 0.1)
         # All workers are blocked on slow tasks
@@ -125,15 +127,14 @@ class ExecutorTests(TestCaseBase):
         tasks = [Task(wait=0.1) for n in range(20)]
         for task in tasks:
             self.executor.dispatch(task, 1.0)
-        time.sleep(0.3)
-        self.assertFalse([t for t in tasks if not task.executed.is_set()])
-        self.assertFalse([t for t in slow_tasks if not task.executed.is_set()])
+        self.assertFalse([t for t in tasks if not task.executed.wait(1)])
+        barrier.wait(timeout=3)
+        self.assertFalse([t for t in slow_tasks if not task.executed.wait(1)])
         # Discarded workers should exit, executor should operate normally
         tasks = [Task(wait=0.1) for n in range(20)]
         for task in tasks:
             self.executor.dispatch(task, 1.0)
-        time.sleep(0.3)
-        self.assertFalse([t for t in tasks if not task.executed.is_set()])
+        self.assertFalse([t for t in tasks if not task.executed.wait(1)])
 
     @slowtest
     def test_max_workers(self):
