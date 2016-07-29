@@ -6391,7 +6391,7 @@ types:
             added: '4.0'
 
         -   description: Provides host DNS servers from /etc/resolve.conf
-            name: dnss
+            name: nameservers
             type:
             - string
             added: '4.0'

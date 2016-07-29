@@ -58,7 +58,7 @@ class TestNetinfo(TestCaseBase):
             'nameserver 8.8.8.8\n'
             'nameserver 8.8.4.4\n'
         )
-        dnss = ['192.168.0.100', '8.8.8.8', '8.8.4.4']
+        nameservers = ['192.168.0.100', '8.8.8.8', '8.8.4.4']
         with namedTemporaryDir() as temp_dir:
             file_path = os.path.join(temp_dir, 'resolv.conf')
 
@@ -68,7 +68,7 @@ class TestNetinfo(TestCaseBase):
                         file_object.write(content)
 
                     self.assertEqual(
-                        dns.get_host_nameservers(), dnss)
+                        dns.get_host_nameservers(), nameservers)
 
     def testNetmaskConversions(self):
         path = os.path.join(os.path.dirname(__file__), "netmaskconversions")

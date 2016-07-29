@@ -61,7 +61,7 @@ def _get(vdsmnets=None):
     :return: Dict of networking devices with all their details.
     """
     networking = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
-                  'vlans': {}, 'dnss': get_host_nameservers()}
+                  'vlans': {}, 'nameservers': get_host_nameservers()}
     paddr = bonding.permanent_address()
     ipaddrs = getIpAddrs()
     routes = get_routes()
