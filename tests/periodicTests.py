@@ -114,6 +114,26 @@ class PeriodicOperationTests(TestCaseBase):
         self.assertTrue(invoked.is_set())
         self.assertTrue(TIMES <= invokations[0] <= TIMES+1)
 
+    def test_repeating_if_raises(self):
+        PERIOD = 0.1
+        TIMES = 5
+
+        def _work():
+            pass
+
+        exc = _FakeExecutor(fail=True, max_attempts=TIMES)
+        op = periodic.Operation(_work, period=PERIOD,
+                                scheduler=self.sched,
+                                executor=exc)
+        op.start()
+        completed = exc.done.wait(PERIOD * TIMES + PERIOD)
+        # depending on timing, _work may be triggered one more time.
+        # nothing prevents this, although is unlikely.
+        # we don't care of this case
+        op.stop()
+        self.assertTrue(completed)
+        self.assertTrue(TIMES <= exc.attempts <= TIMES+1)
+
     def test_stop(self):
         PERIOD = 0.1
 
@@ -314,10 +334,19 @@ class _Nop(periodic._RunnableOnVm):
 
 class _FakeExecutor(object):
 
-    def __init__(self, fail=False):
+    def __init__(self, fail=False, max_attempts=None):
         self._fail = fail
+        self._max_attempts = max_attempts
+        self.attempts = 0
+        self.done = threading.Event()
 
     def dispatch(self, func, timeout):
+        if (self._max_attempts is not None and
+           self.attempts == self._max_attempts):
+            self.done.set()
+
+        self.attempts += 1
+
         if self._fail:
             raise executor.TooManyTasks()
         else:
