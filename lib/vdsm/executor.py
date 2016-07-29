@@ -152,7 +152,7 @@ class Executor(object):
 
     @property
     def _active_workers(self):
-        return len([w for w in self._workers if not w.discarded])
+        return len([w for w in tuple(self._workers) if not w.discarded])
 
     @property
     def _total_workers(self):
