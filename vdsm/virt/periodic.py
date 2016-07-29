@@ -194,8 +194,13 @@ class Operation(object):
         Send `func' to Executor to be run as soon as possible.
         """
         self._call = None
-        self._executor.dispatch(self, self._timeout)
-        self._step()
+        try:
+            self._executor.dispatch(self, self._timeout)
+        except executor.TooManyTasks:
+            self._log.warning('could not run %s, executor queue full',
+                              self._func)
+        finally:
+            self._step()
 
     def __str__(self):
         return '<Operation action=%s at 0x%x>' % (
