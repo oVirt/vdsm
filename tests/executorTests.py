@@ -126,17 +126,14 @@ class ExecutorTests(TestCaseBase):
         for task in tasks:
             self.executor.dispatch(task, 1.0)
         time.sleep(0.3)
-        for task in tasks:
-            self.assertTrue(task.executed.is_set())
-        for task in slow_tasks:
-            self.assertTrue(task.executed.is_set())
+        self.assertFalse([t for t in tasks if not task.executed.is_set()])
+        self.assertFalse([t for t in slow_tasks if not task.executed.is_set()])
         # Discarded workers should exit, executor should operate normally
         tasks = [Task(wait=0.1) for n in range(20)]
         for task in tasks:
             self.executor.dispatch(task, 1.0)
         time.sleep(0.3)
-        for task in tasks:
-            self.assertTrue(task.executed.is_set())
+        self.assertFalse([t for t in tasks if not task.executed.is_set()])
 
     @slowtest
     def test_max_workers(self):
