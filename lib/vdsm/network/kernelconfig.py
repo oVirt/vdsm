@@ -26,6 +26,7 @@ from vdsm import constants
 from vdsm.network.netinfo import addresses
 from vdsm.network.netinfo import bonding
 from vdsm.network.netinfo import bridges
+from vdsm.network.netinfo import dns
 from vdsm.network.netinfo import routes
 from vdsm.network.netconfpersistence import BaseConfig
 
@@ -84,6 +85,7 @@ def _translate_netinfo_net(net, net_attr, netinfo_):
     _translate_ipaddr(attributes, net_attr)
     _translate_hostqos(attributes, net_attr)
     _translate_switch_type(attributes, net_attr)
+    _translate_nameservers(attributes)
 
     return attributes
 
@@ -155,6 +157,11 @@ def _translate_hostqos(attributes, net_attr):
 
 def _translate_switch_type(attributes, net_attr):
     attributes['switch'] = net_attr['switch']
+
+
+def _translate_nameservers(attributes):
+    nservers = dns.get_host_nameservers() if attributes['defaultRoute'] else []
+    attributes['nameservers'] = nservers
 
 
 def _remove_zero_values_in_net_qos(net_qos):

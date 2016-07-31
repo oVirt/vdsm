@@ -217,6 +217,7 @@ def setupNetworks(networks, bondings, options):
                         ipv6autoconf="0|1"
                         dhcpv6="0|1"
                         defaultRoute=True|False
+                        nameservers=[<dns1>, <dns2> ...]"
                         switch="legacy|..."
                         (other options will be passed to the config file AS-IS)
                         -- OR --
