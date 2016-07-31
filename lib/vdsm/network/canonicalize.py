@@ -21,7 +21,7 @@ from __future__ import absolute_import
 
 import six
 
-from .netinfo import (bridges, mtus, bonding)
+from .netinfo import bridges, mtus, bonding, dns
 from vdsm import utils
 
 from .errors import ConfigNetworkError
@@ -46,6 +46,7 @@ def canonicalize_networks(nets):
         _canonicalize_ipv6(attrs)
         _canonicalize_switch_type_net(attrs)
         _canonicalize_ip_default_route(attrs)
+        _canonicalize_nameservers(attrs)
 
 
 def canonicalize_bondings(bonds):
@@ -128,3 +129,12 @@ def _canonicalize_switch_type_bond(data):
 def _canonicalize_ip_default_route(data):
     if 'defaultRoute' not in data:
         data['defaultRoute'] = False
+
+
+def _canonicalize_nameservers(data):
+    if 'nameservers' not in data:
+        # Nameservers are relevant only for the management network.
+        if data['defaultRoute']:
+            data['nameservers'] = dns.get_host_nameservers()
+        else:
+            data['nameservers'] = []

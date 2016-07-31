@@ -5261,6 +5261,13 @@ types:
             type: boolean
 
         -   defaultvalue: no-default
+            description: List of nameservers
+            name: nameservers
+            type:
+            - string
+            added: '4.0'
+
+        -   defaultvalue: no-default
             description: Specify Switch. Legacy is used if not passed
             name: switch
             type: string
