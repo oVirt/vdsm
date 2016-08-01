@@ -549,7 +549,7 @@ class CannonizeHostPortTest(TestCaseBase):
             self._assertValidPort(port)
 
     def _assertValidAddress(self, addr):
-        if addr != socket.gethostname():
+        if addr != 'localhost':
             if '.' in addr:
                 if not _isIPv4Address(addr):
                     raise AssertionError('invalid IPv4 address: %s',
