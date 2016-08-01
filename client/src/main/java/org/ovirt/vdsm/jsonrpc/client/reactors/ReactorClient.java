@@ -268,14 +268,31 @@ public abstract class ReactorClient {
     }
 
     protected void closeChannel() {
-        try {
-            if (this.channel != null) {
-                this.channel.close();
+        final Callable<Void> callable = new Callable<Void>() {
+
+            @Override
+            public Void call() throws Exception {
+                if (lock.tryLock()) {
+                    try {
+                        if (channel != null) {
+                            channel.close();
+                        }
+                    } catch (IOException e) {
+                        // Ignore
+                    } finally {
+                        channel = null;
+                        lock.unlock();
+                    }
+                } else {
+                    scheduleTask(this);
+                }
+                return null;
             }
-        } catch (IOException e) {
-            // Ignore
-        } finally {
-            this.channel = null;
+        };
+        try {
+            callable.call();
+        } catch (Exception e) {
+            log.warn("Closing channel failed", e);
         }
     }
 
