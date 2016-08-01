@@ -22,8 +22,6 @@ from __future__ import absolute_import
 
 from functools import partial
 from uuid import uuid4
-import socket
-
 
 import six
 from yajsonrpc import stompreactor
@@ -199,7 +197,7 @@ def _create(requestQueue,
             useSSL=None,
             responseQueue=None):
     if host is None:
-        host = socket.gethostname()
+        host = 'localhost'
     if port is None:
         port = int(config.getint('addresses', 'management_port'))
 
