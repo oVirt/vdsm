@@ -79,9 +79,19 @@ modprobe_DATA = \
 	./etc/modprobe.d/vdsm-bonding-modprobe.conf \
 	$(NULL)
 
+systemdunitdir = $(SYSTEMD_UNIT_DIR)
+
+systemdunit_DATA = \
+	./usr/lib/systemd/system/mom-vdsm.service \
+	./usr/lib/systemd/system/supervdsmd.service \
+	./usr/lib/systemd/system/vdsm-network.service \
+	./usr/lib/systemd/system/vdsmd.service \
+	$(NULL)
+
 CLEANFILES = \
 	$(rwtab_DATA) \
 	$(sudoers_DATA) \
+	$(systemdunit_DATA) \
 	$(vdsmconf_DATA) \
 	$(NULL)
 
@@ -96,4 +106,8 @@ EXTRA_DIST = \
 	./etc/vdsm/logger.conf.in \
 	./etc/vdsm/mom.conf.in \
 	./etc/vdsm/svdsm.logger.conf.in \
+	./usr/lib/systemd/system/mom-vdsm.service.in \
+	./usr/lib/systemd/system/supervdsmd.service.in \
+	./usr/lib/systemd/system/vdsm-network.service.in \
+	./usr/lib/systemd/system/vdsmd.service.in \
 	$(NULL)

@@ -25,12 +25,8 @@ config.status
 configure
 cscope.out
 doc/build
-init/systemd/supervdsmd.service
 init/systemd/systemd-vdsmd
 init/systemd/vdsm-tmpfiles.d.conf
-init/systemd/vdsmd.service
-init/systemd/vdsm-network.service
-init/systemd/mom-vdsm.service
 init/vdsmd_init_common.sh
 lib/api/vdsm-api.html
 lib/vdsm/config.py
@@ -42,6 +38,10 @@ lib/vdsm/vdsm.conf.sample
 results.log
 static/etc/rwtab.d/vdsm
 static/etc/sudoers.d/50_vdsm
+static/usr/lib/systemd/system/mom-vdsm.service
+static/usr/lib/systemd/system/supervdsmd.service
+static/usr/lib/systemd/system/vdsm-network.service
+static/usr/lib/systemd/system/vdsmd.service
 static/etc/vdsm/logger.conf
 static/etc/vdsm/mom.conf
 static/etc/vdsm/svdsm.logger.conf

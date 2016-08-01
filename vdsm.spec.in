@@ -771,11 +771,6 @@ install -Dm 0644 vdsm/storage/vdsm-lvm.rules \
 
 install -Dm 0755 init/systemd/systemd-vdsmd %{buildroot}%{_libdir}/systemd/systemd-vdsmd
 install -Dm 0644 init/systemd/85-vdsmd.preset %{buildroot}%{_libdir}/systemd/system-preset/85-vdsmd.preset
-install -Dm 0644 init/systemd/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service
-install -Dm 0644 init/systemd/vdsm-network.service %{buildroot}%{_unitdir}/vdsm-network.service
-install -Dm 0644 init/systemd/supervdsmd.service %{buildroot}%{_unitdir}/supervdsmd.service
-
-install -Dm 0644 init/systemd/mom-vdsm.service %{buildroot}%{_unitdir}/mom-vdsm.service
 
 install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf \
                  %{buildroot}%{_tmpfilesdir}/%{vdsm_name}.conf
