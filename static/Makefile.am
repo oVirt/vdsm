@@ -73,6 +73,12 @@ sysctl_DATA = \
 	./etc/sysctl.d/vdsm.conf \
 	$(NULL)
 
+modprobedir = $(sysconfdir)/modprobe.d
+
+modprobe_DATA = \
+	./etc/modprobe.d/vdsm-bonding-modprobe.conf \
+	$(NULL)
+
 CLEANFILES = \
 	$(rwtab_DATA) \
 	$(sudoers_DATA) \
@@ -81,6 +87,7 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	$(limits_DATA) \
+	$(modprobe_DATA) \
 	$(modulesload_DATA) \
 	$(sysctl_DATA) \
 	$(vdsmconfrotate_DATA) \

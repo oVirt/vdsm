@@ -72,7 +72,6 @@ EXTRA_DIST = \
 	dumpStorageTable.py.in \
 	libvirt_password \
 	mk_sysprep_floppy.in \
-	vdsm-bonding-modprobe.conf \
 	sourceRoute.sh \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
@@ -96,7 +95,6 @@ install-data-local: \
 		install-data-dhclient-hooks \
 		install-data-libvirtpass \
 		install-data-logrotate \
-		install-data-modprobe \
 		install-data-vdsmconf
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/hsm-tasks
@@ -120,7 +118,6 @@ uninstall-local: \
 		uninstall-data-dhclient-hooks \
 		uninstall-data-libvirtpass \
 		uninstall-data-logrotate \
-		uninstall-data-modprobe \
 		uninstall-data-vdsmconf
 
 install-data-libvirtpass:
@@ -149,14 +146,6 @@ install-data-logrotate:
 
 uninstall-data-logrotate:
 	$(RM) $(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
-
-install-data-modprobe:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/modprobe.d
-	$(INSTALL_DATA) $(srcdir)/vdsm-bonding-modprobe.conf \
-		$(DESTDIR)$(sysconfdir)/modprobe.d/vdsm-bonding-modprobe.conf
-
-uninstall-data-modprobe:
-	$(RM) $(DESTDIR)$(sysconfdir)/modprobe.d/vdsm-bonding-modprobe.conf
 
 install-data-vdsmconf:
 	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)/vdsm.conf.d
