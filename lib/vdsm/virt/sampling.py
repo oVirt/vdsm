@@ -33,6 +33,7 @@ import time
 
 from vdsm import numa
 from vdsm import utils
+from vdsm.config import config
 from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
 from vdsm.host import api as hostapi
 from vdsm.network import ipwrapper
@@ -44,6 +45,7 @@ from vdsm.virt.utils import ExpiringCache
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
     _THP_STATE_PATH = '/sys/kernel/mm/redhat_transparent_hugepage/enabled'
+_METRICS_ENABLED = config.getboolean('metrics', 'enabled')
 
 
 class InterfaceSample(object):
@@ -533,7 +535,8 @@ class VMBulkSampler(object):
         finally:
             if acquired:
                 self._sampling.release()
-        self._send_metrics()
+        if _METRICS_ENABLED:
+            self._send_metrics()
 
     def _send_metrics(self):
         vms = self._get_vms()
@@ -584,7 +587,7 @@ class HostMonitor(object):
         sample = HostSample(self._pid)
         self._samples.append(sample)
 
-        if self._cif:
+        if self._cif and _METRICS_ENABLED:
             stats = hostapi.get_stats(self._cif, self._samples.stats())
             hostapi.report_stats(stats)
 
