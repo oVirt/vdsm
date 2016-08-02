@@ -349,7 +349,7 @@ class AsyncDispatcher(object):
 
     def handle_read(self, dispatcher):
         parser = self._parser
-        pending = getattr(dispatcher, 'pending', lambda: 0)
+        pending = getattr(dispatcher.socket, 'pending', lambda: 0)
         todo = self._bufferSize
 
         while todo:
