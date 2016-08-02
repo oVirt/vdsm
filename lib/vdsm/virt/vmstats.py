@@ -190,23 +190,23 @@ def cpu_count(stats, sample):
             logging.error('Failed to get VM cpu count')
 
 
-def report_stats(vms_stats):
-    report = {}
+def send_metrics(vms_stats):
+    data = {}
     try:
         for vm_uuid in vms_stats:
             prefix = "vms." + vm_uuid
             stat = vms_stats[vm_uuid]
-            report[prefix + '.cpu.user'] = stat['cpuUser']
-            report[prefix + '.cpu.sys'] = stat['cpuSys']
-            report[prefix + '.cpu.usage'] = stat['cpuUsage']
+            data[prefix + '.cpu.user'] = stat['cpuUser']
+            data[prefix + '.cpu.sys'] = stat['cpuSys']
+            data[prefix + '.cpu.usage'] = stat['cpuUsage']
 
-            report[prefix + '.balloon.max'] = \
+            data[prefix + '.balloon.max'] = \
                 stat['balloonInfo']['balloon_max']
-            report[prefix + '.balloon.min'] = \
+            data[prefix + '.balloon.min'] = \
                 stat['balloonInfo']['balloon_min']
-            report[prefix + '.balloon.target'] = \
+            data[prefix + '.balloon.target'] = \
                 stat['balloonInfo']['balloon_target']
-            report[prefix + '.balloon.cur'] = \
+            data[prefix + '.balloon.cur'] = \
                 stat['balloonInfo']['balloon_cur']
 
             if 'disks' in stat:
@@ -214,43 +214,43 @@ def report_stats(vms_stats):
                     diskprefix = prefix + '.vm_disk.' + disk
                     diskinfo = stat['disks'][disk]
 
-                    report[diskprefix + '.read.latency'] = \
+                    data[diskprefix + '.read.latency'] = \
                         diskinfo['readLatency']
-                    report[diskprefix + '.read.ops'] = \
+                    data[diskprefix + '.read.ops'] = \
                         diskinfo['readOps']
-                    report[diskprefix + '.read.bytes'] = \
+                    data[diskprefix + '.read.bytes'] = \
                         diskinfo['readBytes']
-                    report[diskprefix + '.read.rate'] = \
+                    data[diskprefix + '.read.rate'] = \
                         diskinfo['readRate']
 
-                    report[diskprefix + '.write.bytes'] = \
+                    data[diskprefix + '.write.bytes'] = \
                         diskinfo['writtenBytes']
-                    report[diskprefix + '.write.ops'] = \
+                    data[diskprefix + '.write.ops'] = \
                         diskinfo['writeOps']
-                    report[diskprefix + '.write.latency'] = \
+                    data[diskprefix + '.write.latency'] = \
                         diskinfo['writeLatency']
-                    report[diskprefix + '.write.rate'] = \
+                    data[diskprefix + '.write.rate'] = \
                         diskinfo['writeRate']
 
-                    report[diskprefix + '.apparent_size'] = \
+                    data[diskprefix + '.apparent_size'] = \
                         diskinfo['apparentsize']
-                    report[diskprefix + '.flush_latency'] = \
+                    data[diskprefix + '.flush_latency'] = \
                         diskinfo['flushLatency']
-                    report[diskprefix + '.true_size'] = \
+                    data[diskprefix + '.true_size'] = \
                         diskinfo['truesize']
 
             if 'network' in stat:
                 for interface in stat['network']:
                     netprefix = prefix + '.network_interfaces.' + interface
                     if_info = stat['network'][interface]
-                    report[netprefix + '.speed'] = if_info['speed']
-                    report[netprefix + '.rx.bytes'] = if_info['rx']
-                    report[netprefix + '.rx.errors'] = if_info['rxErrors']
-                    report[netprefix + '.rx.dropped'] = if_info['rxDropped']
+                    data[netprefix + '.speed'] = if_info['speed']
+                    data[netprefix + '.rx.bytes'] = if_info['rx']
+                    data[netprefix + '.rx.errors'] = if_info['rxErrors']
+                    data[netprefix + '.rx.dropped'] = if_info['rxDropped']
 
-                    report[netprefix + '.tx.bytes'] = if_info['tx']
-                    report[netprefix + '.tx.errors'] = if_info['txErrors']
-                    report[netprefix + '.tx.dropped'] = if_info['txDropped']
+                    data[netprefix + '.tx.bytes'] = if_info['tx']
+                    data[netprefix + '.tx.errors'] = if_info['txErrors']
+                    data[netprefix + '.tx.dropped'] = if_info['txDropped']
 
         # Guest cpu-count,apps list, status, mac addr, client IP,
         # display type, kvm enabled, username, vcpu info, vm jobs,
@@ -258,9 +258,9 @@ def report_stats(vms_stats):
         #
         # are all meta-data that should be published separately
 
-        metrics.send(report)
+        metrics.send(data)
     except KeyError:
-        logging.exception('Report vm stats failed')
+        logging.exception('VM metrics collection failed')
 
 
 def _nic_traffic(vm_obj, name, model, mac,
