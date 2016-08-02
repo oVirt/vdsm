@@ -42,23 +42,6 @@ from vdsm import panic
 import testlib
 
 
-class FakeSanlock(object):
-    """
-    Minimal test double exposing what the tests needs at this point.
-    """
-    HOST_UNKNOWN = 1
-    HOST_FREE = 2
-    HOST_LIVE = 3
-    HOST_FAIL = 4
-    HOST_DEAD = 5
-
-    def init_resource(self, sdUUID, volUUID, lockDisk):
-        pass
-
-
-sys.modules.update({'sanlock': FakeSanlock()})
-
-
 def findRemove(listR, value):
     """used to test if a value exist, if it is, return true and remove it."""
     try:

@@ -24,6 +24,7 @@ python34-nose
 python34-six
 python34
 rpm-build
+sanlock-python
 sudo
 yum
 yum-utils

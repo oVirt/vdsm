@@ -88,6 +88,7 @@ BuildRequires: python-pthreading
 BuildRequires: qemu-img
 BuildRequires: rpm-python
 BuildRequires: python-blivet
+BuildRequires: sanlock-python
 
 %if 0%{?with_openvswitch}
 BuildRequires: openvswitch >= 2.0.0
