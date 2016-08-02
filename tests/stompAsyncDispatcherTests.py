@@ -61,6 +61,8 @@ class TestFrameHandler(object):
 
 class TestDispatcher(object):
 
+    socket = None
+
     def __init__(self, data):
         self._data = data
 
