@@ -550,7 +550,7 @@ class VMBulkSampler(object):
                                    vm_sample.interval)
             for vm_id, vm_sample in vm_samples.items()
         }
-        vmstats.report_stats(stats)
+        vmstats.send_metrics(stats)
 
     def _get_responsive_doms(self):
         vms = self._get_vms()
@@ -589,7 +589,7 @@ class HostMonitor(object):
 
         if self._cif and _METRICS_ENABLED:
             stats = hostapi.get_stats(self._cif, self._samples.stats())
-            hostapi.report_stats(stats)
+            hostapi.send_metrics(stats)
 
         second_last = self._samples.last(nth=2)
         if second_last is None:
