@@ -16,6 +16,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from testlib import forked
 from testlib import VdsmTestCase as TestCaseBase
 import testValidation
 from vdsm import supervdsm
@@ -24,24 +25,27 @@ from pwd import getpwnam
 import os
 
 
-class TestSuperVdsmRemotly(TestCaseBase):
-
-    def dropPrivileges(self):
+def dropPrivileges():
         vdsm_uid, vdsm_gid = getpwnam(VDSM_USER)[2:4:]
         os.setgroups([])
         os.setgid(vdsm_gid)
         os.setuid(vdsm_uid)
 
+
+class TestSuperVdsmRemotly(TestCaseBase):
+
+    @forked
     @testValidation.ValidateRunningAsRoot
     def testPingCall(self):
-        self.dropPrivileges()
+        dropPrivileges()
         proxy = supervdsm.getProxy()
         self.assertTrue(proxy.ping())
 
     # This requires environment with tmpfs mounted to /sys/kernel/mm/ksm
+    @forked
     @testValidation.ValidateRunningAsRoot
     def testKsmAction(self):
-        self.dropPrivileges()
+        dropPrivileges()
         proxy = supervdsm.getProxy()
         ksmParams = {"run": 0,
                      "merge_across_nodes": 1,
