@@ -22,7 +22,7 @@ from vdsm.commands import execCmd
 from vdsm.network.ovs.driver import create
 
 
-TEST_BRIDGE = 'ovs-test-br0'
+TEST_BRIDGE = 'vdsmbr_test'
 TEST_BRIDGES = (TEST_BRIDGE, 'ovs-test-br1')
 TEST_BOND = 'bond.ovs.test'
 
