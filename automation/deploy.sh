@@ -41,8 +41,6 @@ EOF
 
 echo "######################### Cleaning up caches"
 dnf clean all
-echo "######################### Installing numactl"
-dnf install --nogpgcheck -y numactl # Fix for bz:1287862
 echo "######################### Installing vdsm"
 dnf install --nogpgcheck -y vdsm vdsm-cli vdsm-tests python-pip
 pip install nose-timer
