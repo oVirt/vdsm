@@ -1,10 +1,10 @@
 domains:
-    vdsm_functional_tests_host-fc23:
+    vdsm_functional_tests_host-fc24:
       nics:
         - net: vdsm_functional_tests_lago
       memory: 512
       disks:
-        - template_name: fedora23_host
+        - template_name: fc24-base
           type: template
           name: root
           dev: sda3

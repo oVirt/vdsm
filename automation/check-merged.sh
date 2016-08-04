@@ -55,7 +55,7 @@ lago ovirt reposetup \
 
 VMS_PREFIX="vdsm_functional_tests_host-"
 failed=0
-for distro in fc23; do
+for distro in fc24; do
     vm_name="${VMS_PREFIX}${distro}"
     # starting vms one by one to avoid exhausting memory in the host, it will
     lago start "$vm_name"
