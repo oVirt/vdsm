@@ -43,12 +43,20 @@ sudoers_DATA = \
 	./etc/sudoers.d/50_vdsm \
 	$(NULL)
 
+rwtabdir = $(sysconfdir)/rwtab.d
+
+rwtab_DATA = \
+	./etc/rwtab.d/vdsm \
+	$(NULL)
+
 CLEANFILES = \
+	$(rwtab_DATA) \
 	$(sudoers_DATA) \
 	$(vdsmconf_DATA) \
 	$(NULL)
 
 EXTRA_DIST = \
+	./etc/rwtab.d/vdsm.in \
 	./etc/sudoers.d/50_vdsm.in \
 	./etc/vdsm/logger.conf.in \
 	./etc/vdsm/mom.conf.in \

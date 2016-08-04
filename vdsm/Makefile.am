@@ -46,10 +46,6 @@ nodist_vdsm_SCRIPTS = \
 	mk_sysprep_floppy \
 	vdsm-store-net-config
 
-nodist_noinst_DATA = \
-	vdsm.rwtab \
-	$(NULL)
-
 dist_vdsm_SCRIPTS = \
 	get-conf-item \
 	set-conf-item \
@@ -87,7 +83,6 @@ EXTRA_DIST = \
 	vdsm-modules-load.d.conf \
 	vdsm-store-net-config.in \
 	vdsm-sysctl.conf \
-	vdsm.rwtab.in \
 	vdsmd.8.in \
 	$(NULL)
 
@@ -106,7 +101,6 @@ install-data-local: \
 		install-data-libvirtpass \
 		install-data-logrotate \
 		install-data-modprobe \
-		install-data-rwtab \
 		install-data-sysctl \
 		install-data-vdsmconf
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)
@@ -132,7 +126,6 @@ uninstall-local: \
 		uninstall-data-libvirtpass \
 		uninstall-data-logrotate \
 		uninstall-data-modprobe \
-		uninstall-data-rwtab \
 		uninstall-data-sysctl \
 		uninstall-data-vdsmconf
 
@@ -153,14 +146,6 @@ install-data-bonding-defaults:
 uninstall-data-bonding-defaults:
 	$(RM) $(DESTDIR)$(vdsmdir)/bonding-defaults.json
 	$(RM) $(DESTDIR)$(vdsmdir)/bonding-name2numeric.json
-
-install-data-rwtab:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/rwtab.d
-	$(INSTALL_DATA) vdsm.rwtab \
-		$(DESTDIR)$(sysconfdir)/rwtab.d/vdsm
-
-uninstall-data-rwtab:
-	$(RM) $(DESTDIR)$(sysconfdir)/rwtab.d/vdsm
 
 install-data-logrotate:
 	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)/logrotate

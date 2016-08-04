@@ -40,6 +40,7 @@ lib/vdsm/tool/validate_ovirt_certs.py
 lib/vdsm/vdscli.py
 lib/vdsm/vdsm.conf.sample
 results.log
+static/etc/rwtab.d/vdsm
 static/etc/sudoers.d/50_vdsm
 static/etc/vdsm/logger.conf
 static/etc/vdsm/mom.conf
@@ -68,7 +69,6 @@ vdsm/vdscli.py
 vdsm/vdsm-gencerts.sh
 vdsm/vdsm-sosplugin.py
 vdsm/vdsm-store-net-config
-vdsm/vdsm.rwtab
 vdsm/vdsmd.8
 vdsm-tool/vdsm-tool.1
 vdsm/rpc/vdsm-api.html
