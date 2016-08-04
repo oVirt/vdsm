@@ -44,6 +44,7 @@ echo "######################### Cleaning up caches"
 dnf clean all
 echo "######################### Installing vdsm"
 dnf install --nogpgcheck -y vdsm vdsm-cli vdsm-tests python-pip
+dnf install -y python-mock
 pip install nose-timer
 echo "######################### Configuring vdsm"
 vdsm-tool configure --force
