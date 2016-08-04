@@ -40,6 +40,7 @@ lib/vdsm/tool/validate_ovirt_certs.py
 lib/vdsm/vdscli.py
 lib/vdsm/vdsm.conf.sample
 results.log
+static/etc/sudoers.d/50_vdsm
 static/etc/vdsm/logger.conf
 static/etc/vdsm/mom.conf
 static/etc/vdsm/svdsm.logger.conf
@@ -63,7 +64,6 @@ vdsm/storage/lvm.env
 vdsm/storage/vdsm-lvm.rules
 vdsm/storage/vdsm_lvm_rules.template
 vdsm/storage/protect/spmprotect.sh
-vdsm/sudoers.vdsm
 vdsm/vdscli.py
 vdsm/vdsm-gencerts.sh
 vdsm/vdsm-sosplugin.py

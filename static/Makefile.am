@@ -37,11 +37,19 @@ dist_vdsmconfmom_DATA = \
 	./etc/vdsm/mom.d/05-iotune.policy \
 	$(NULL)
 
+sudoersdir = $(sysconfdir)/sudoers.d
+
+sudoers_DATA = \
+	./etc/sudoers.d/50_vdsm \
+	$(NULL)
+
 CLEANFILES = \
+	$(sudoers_DATA) \
 	$(vdsmconf_DATA) \
 	$(NULL)
 
 EXTRA_DIST = \
+	./etc/sudoers.d/50_vdsm.in \
 	./etc/vdsm/logger.conf.in \
 	./etc/vdsm/mom.conf.in \
 	./etc/vdsm/svdsm.logger.conf.in \

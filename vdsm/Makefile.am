@@ -47,7 +47,6 @@ nodist_vdsm_SCRIPTS = \
 	vdsm-store-net-config
 
 nodist_noinst_DATA = \
-	sudoers.vdsm \
 	vdsm.rwtab \
 	$(NULL)
 
@@ -80,7 +79,6 @@ EXTRA_DIST = \
 	mk_sysprep_floppy.in \
 	vdsm-bonding-modprobe.conf \
 	sourceRoute.sh \
-	sudoers.vdsm.in \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
@@ -100,7 +98,6 @@ all-local: \
 	$(nodist_man8_MANS)
 
 install-data-hook:
-	chmod 440 $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm
 	chmod 775 $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 install-data-local: \
@@ -110,7 +107,6 @@ install-data-local: \
 		install-data-logrotate \
 		install-data-modprobe \
 		install-data-rwtab \
-		install-data-sudoers \
 		install-data-sysctl \
 		install-data-vdsmconf
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)
@@ -137,7 +133,6 @@ uninstall-local: \
 		uninstall-data-logrotate \
 		uninstall-data-modprobe \
 		uninstall-data-rwtab \
-		uninstall-data-sudoers \
 		uninstall-data-sysctl \
 		uninstall-data-vdsmconf
 
@@ -188,14 +183,6 @@ install-data-modprobe:
 uninstall-data-modprobe:
 	$(RM) $(DESTDIR)$(sysconfdir)/modprobe.d/vdsm-bonding-modprobe.conf
 
-
-install-data-sudoers:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sudoers.d
-	$(INSTALL_DATA) sudoers.vdsm \
-		$(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm
-
-uninstall-data-sudoers:
-	$(RM) $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm
 
 install-data-sysctl:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sysctl.d
