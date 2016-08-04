@@ -29,7 +29,7 @@ dnf install --nogpgcheck -y libvirt-daemon
 rm -rf /var/cache/libvirt/qemu/capabilities
 systemctl restart libvirtd.service || :
 
-# enable the local repo
+# enable the local repo, cost=1 to keep it in high priority
 cat > /etc/yum.repos.d/local-ovirt.repo <<EOF
 [localsync]
 name=Latest oVirt nightly
@@ -37,6 +37,7 @@ baseurl=http://$ADDR:8585/$DIST/
 enabled=1
 skip_if_unavailable=1
 gpgcheck=0
+cost=1
 EOF
 
 echo "######################### Cleaning up caches"

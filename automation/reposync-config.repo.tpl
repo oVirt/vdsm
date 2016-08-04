@@ -11,12 +11,12 @@ gpgcheck=0
 name=oVirt Master Nightly Test Releases
 baseurl=http://resources.ovirt.org/pub/ovirt-master-snapshot/rpm/fc24/
 exclude=vdsm-* ovirt-node-* *-debuginfo ovirt-engine-appliance ovirt*engine* *win* *jboss*
-enabled=0
+enabled=1
 gpgcheck=0
 
 [ovirt-master-snapshot-static-fc24]
 name=oVirt Master Nightly Statics
 baseurl=http://resources.ovirt.org/pub/ovirt-master-snapshot-static/rpm/fc24/
 exclude=jasperreports-server ovirt-guest-tools-iso ovirt-engine-jboss-as *wildfly*
-enabled=0
+enabled=1
 gpgcheck=0
