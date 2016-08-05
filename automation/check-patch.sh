@@ -7,7 +7,7 @@ set -xe
 easy_install pip
 pip install -U nose==1.3.7 tox==2.1.1
 
-./autogen.sh --system --enable-hooks
+./autogen.sh --system --enable-hooks --enable-vhostmd
 
 make check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 

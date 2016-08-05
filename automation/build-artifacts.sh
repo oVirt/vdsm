@@ -10,7 +10,7 @@ cp $PWD/automation/index.html "$EXPORTS"
 
 # autogen may already have been executed by check-patch.sh
 if [ ! -f Makefile ]; then
-  ./autogen.sh --system --enable-hooks
+  ./autogen.sh --system --enable-hooks --enable-vhostmd
 fi
 
 make
