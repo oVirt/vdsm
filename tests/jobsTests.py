@@ -19,9 +19,11 @@
 
 import uuid
 
-from vdsm import jobs, response, exception
+from vdsm import exception, jobs, response, schedule
 
+from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase, expandPermutations, permutations
+from testlib import make_config
 from testlib import wait_for_job
 
 
@@ -51,6 +53,10 @@ class BarJob(TestingJob):
     _JOB_TYPE = 'bar'
 
 
+class AutodeleteJob(TestingJob):
+    autodelete = True
+
+
 class ProgressingJob(jobs.Job):
 
     def __init__(self):
@@ -66,12 +72,23 @@ class ProgressingJob(jobs.Job):
         self._progress = value
 
 
+class FakeScheduler(object):
+
+    def __init__(self):
+        self.calls = []
+
+    def schedule(self, delay, callable):
+        self.calls.append((delay, callable))
+        return schedule.ScheduledCall(delay, callable)
+
+
 @expandPermutations
 class JobsTests(VdsmTestCase):
     TIMEOUT = 1
 
     def setUp(self):
-        jobs.start(None)
+        self.scheduler = FakeScheduler()
+        jobs.start(self.scheduler)
 
     def tearDown(self):
         jobs._clear()
@@ -267,3 +284,36 @@ class JobsTests(VdsmTestCase):
         self.run_job(job)
         self.assertEqual(jobs.STATUS.FAILED, job.status)
         self.assertIsInstance(job.error, exception.VdsmException)
+
+    def _verify_autodelete(self, job, expected_delay):
+        self.assertEqual(1, len(self.scheduler.calls))
+        delay, callable = self.scheduler.calls[0]
+        self.assertEqual(expected_delay, delay)
+        self.assertIn(job.id, jobs.info())
+        callable()
+        self.assertNotIn(job.id, jobs.info())
+
+    @permutations(((None, ), (Exception(),)))
+    def test_autodelete_when_finished(self, error):
+        cfg = make_config([('jobs', 'autodelete_delay', '10')])
+        job = AutodeleteJob(exception=error)
+        jobs.add(job)
+        with MonkeyPatchScope([(jobs, 'config', cfg)]):
+            self.run_job(job)
+            self._verify_autodelete(job, 10)
+
+    def test_autodelete_when_aborted(self):
+        cfg = make_config([('jobs', 'autodelete_delay', '10')])
+        job = AutodeleteJob()
+        jobs.add(job)
+        with MonkeyPatchScope([(jobs, 'config', cfg)]):
+            job.abort()
+            self._verify_autodelete(job, 10)
+
+    def test_autodelete_disabled(self):
+        cfg = make_config([('jobs', 'autodelete_delay', '-1')])
+        job = AutodeleteJob()
+        jobs.add(job)
+        with MonkeyPatchScope([(jobs, 'config', cfg)]):
+            self.run_job(job)
+            self.assertEqual(0, len(self.scheduler.calls))

@@ -24,6 +24,7 @@ import threading
 
 from vdsm import exception
 from vdsm import response
+from vdsm.config import config
 
 
 _lock = threading.Lock()
@@ -66,6 +67,10 @@ class AbortNotSupported(ClientError):
 
 class Job(object):
     _JOB_TYPE = None
+
+    # If set to True, jobs of this class will be automatically deleted when
+    # aborted or finished after a configurable delay.
+    autodelete = False
 
     def __init__(self, job_id, description=''):
         self._id = job_id
@@ -116,11 +121,17 @@ class Job(object):
         return self.status in (STATUS.PENDING, STATUS.RUNNING)
 
     def abort(self):
+        # TODO: Don't abort if not pending and not running
         logging.info('Job %r aborting...', self._id)
         self._abort()
         self._status = STATUS.ABORTED
+        # We MUST NOT autodelete a job if abort failed.  Otherwise there could
+        # still be ongoing operations on storage without any associated job.
+        if self.autodelete:
+            self._autodelete()
 
     def run(self):
+        # TODO: Don't run if aborted or not pending
         self._status = STATUS.RUNNING
         try:
             self._run()
@@ -133,6 +144,9 @@ class Job(object):
             self._status = STATUS.FAILED
         else:
             self._status = STATUS.DONE
+        finally:
+            if self.autodelete:
+                self._autodelete()
 
     def _abort(self):
         """
@@ -147,6 +161,18 @@ class Job(object):
         Must be implemented by child class
         """
         raise NotImplementedError()
+
+    def _autodelete(self):
+        timeout = config.getint("jobs", "autodelete_delay")
+        if timeout >= 0:
+            _scheduler.schedule(timeout, self._delete)
+
+    def _delete(self):
+        logging.info("Autodeleting job %r", self.info())
+        try:
+            _delete(self._id)
+        except Exception:
+            logging.exception("Cannot delete job %s", self._id)
 
     def __repr__(self):
         s = "<{self.__class__.__name__} id={self.id} status={self.status} "

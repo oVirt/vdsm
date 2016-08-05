@@ -394,6 +394,14 @@ parameters = [
             '/sys/block/<device>/queue/discard_max_bytes is not zero.'),
     ]),
 
+    # Section: [jobs]
+    ('jobs', [
+        ('autodelete_delay', '3600',
+            'Automatically delete completed jobs from memory after the '
+            'specified delay (in seconds).  When this value is negative '
+            'autodelete will be disabled.'),
+    ]),
+
     # Section: [addresses]
     ('addresses', [
 
