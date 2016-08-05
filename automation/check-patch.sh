@@ -7,7 +7,7 @@ set -xe
 easy_install pip
 pip install -U nose==1.3.7 tox==2.1.1
 
-./autogen.sh --system --enable-hooks
+./autogen.sh --system --enable-hooks --enable-vhostmd
 
 debuginfo-install -y python
 
