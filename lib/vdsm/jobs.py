@@ -27,6 +27,7 @@ from vdsm import response
 
 _lock = threading.Lock()
 _jobs = {}
+_scheduler = None
 
 
 class STATUS:
@@ -132,8 +133,9 @@ class Job(object):
         return s.format(self=self, id=id(self))
 
 
-def start():
-    pass
+def start(scheduler):
+    global _scheduler
+    _scheduler = scheduler
 
 
 def stop():
