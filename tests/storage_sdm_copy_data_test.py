@@ -28,7 +28,7 @@ from storagetestlib import fake_env
 from storagetestlib import make_qemu_chain, write_qemu_chain, verify_qemu_chain
 from storagetestlib import ChainVerificationError
 from testlib import VdsmTestCase, expandPermutations, permutations
-from sdmtestlib import wait_for_job
+from testlib import wait_for_job
 
 from vdsm import jobs
 from vdsm import qemuimg

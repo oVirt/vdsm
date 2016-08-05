@@ -22,6 +22,7 @@ from __future__ import absolute_import
 import logging
 import threading
 
+from vdsm import exception
 from vdsm import response
 
 
@@ -119,11 +120,31 @@ class Job(object):
         logging.info('Job %r aborting...', self._id)
         self._abort()
 
+    def run(self):
+        self._status = STATUS.RUNNING
+        try:
+            self._run()
+        except Exception as e:
+            logging.exception("Job (id=%s desc=%s) failed",
+                              self.id, self.description)
+            if not isinstance(e, exception.VdsmException):
+                e = exception.GeneralException(str(e))
+            self._error = e
+            self._status = STATUS.FAILED
+        else:
+            self._status = STATUS.DONE
+
     def _abort(self):
         """
         May be implemented by child class
         """
         raise AbortNotSupported()
+
+    def _run(self):
+        """
+        Must be implemented by child class
+        """
+        raise NotImplementedError()
 
     def __repr__(self):
         s = "<{self.__class__.__name__} id={self.id} status={self.status} "

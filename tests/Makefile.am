@@ -127,7 +127,6 @@ test_modules = \
 	storage_hsm_test.py \
 	storage_monitor_test.py \
 	storage_rwlock_test.py \
-	storage_sdm_api_test.py \
 	storage_sdm_copy_data_test.py \
 	storage_sdm_create_volume_test.py \
 	storage_volume_test.py \
@@ -230,7 +229,6 @@ blacklist_modules_python3 = \
 	storageServerTests.py \
 	storage_rwlock_test.py \
 	storage_blkdiscard_test.py \
-	storage_sdm_api_test.py \
 	storage_sdm_create_volume_test.py \
 	storage_sdm_copy_data_test.py \
 	storage_volume_test.py \
@@ -342,7 +340,6 @@ dist_vdsmtests_PYTHON = \
 	fake-ssh-add \
 	fake-ssh-agent \
 	monkeypatch.py \
-	sdmtestlib.py \
 	storagefakelib.py \
 	storagetestlib.py \
 	testlib.py \

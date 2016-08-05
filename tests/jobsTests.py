@@ -22,18 +22,25 @@ import uuid
 from vdsm import jobs, response, exception
 
 from testlib import VdsmTestCase, expandPermutations, permutations
+from testlib import wait_for_job
 
 
 class TestingJob(jobs.Job):
     _JOB_TYPE = 'testing'
 
-    def __init__(self, status=jobs.STATUS.PENDING):
+    def __init__(self, status=jobs.STATUS.PENDING, exception=None):
         jobs.Job.__init__(self, str(uuid.uuid4()))
         self._aborted = False
         self._status = status
+        self._exception = exception
 
     def _abort(self):
         self._aborted = True
+
+    def _run(self):
+        assert(self.status == jobs.STATUS.RUNNING)
+        if self._exception:
+            raise self._exception
 
 
 class FooJob(TestingJob):
@@ -68,6 +75,11 @@ class JobsTests(VdsmTestCase):
 
     def tearDown(self):
         jobs.stop()
+
+    def run_job(self, job):
+        self.assertEqual(jobs.STATUS.PENDING, job.status)
+        job.run()
+        wait_for_job(job)
 
     def test_job_initial_state(self):
         job = TestingJob()
@@ -230,3 +242,22 @@ class JobsTests(VdsmTestCase):
         job.progress = 32
         rep = repr(job)
         self.assertIn("progress=32%", rep)
+
+    def test_running_states(self):
+        job = TestingJob()
+        self.run_job(job)
+        self.assertEqual(jobs.STATUS.DONE, job.status)
+
+    def test_default_exception(self):
+        message = "testing failure"
+        job = TestingJob(exception=Exception(message))
+        self.run_job(job)
+        self.assertEqual(jobs.STATUS.FAILED, job.status)
+        self.assertIsInstance(job.error, exception.GeneralException)
+        self.assertIn(message, str(job.error))
+
+    def test_vdsm_exception(self):
+        job = TestingJob(exception=exception.VdsmException())
+        self.run_job(job)
+        self.assertEqual(jobs.STATUS.FAILED, job.status)
+        self.assertIsInstance(job.error, exception.VdsmException)

@@ -35,6 +35,7 @@ from six.moves import configparser
 from six.moves import range
 import tempfile
 import threading
+import time
 from contextlib import contextmanager
 import xml.etree.ElementTree as ET
 
@@ -579,3 +580,11 @@ def read_data(filename):
     path = os.path.join(dir_name, 'data', filename)
     with open(path) as src:
         return src.read()
+
+
+def wait_for_job(job):
+    """
+    Wait for a jobs.Job to complete (either success or failure)
+    """
+    while job.active:
+        time.sleep(1)

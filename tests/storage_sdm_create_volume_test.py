@@ -25,7 +25,7 @@ import uuid
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeResourceManager
 from testlib import VdsmTestCase, recorded, expandPermutations, permutations
-from sdmtestlib import wait_for_job
+from testlib import wait_for_job
 
 from vdsm import exception
 from vdsm import jobs
