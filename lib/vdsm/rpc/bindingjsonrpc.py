@@ -35,7 +35,7 @@ class BindingJsonRpc(object):
     log = logging.getLogger('BindingJsonRpc')
 
     def __init__(self, bridge, subs, timeout, scheduler, cif):
-        self._executor = executor.Executor(name="jsonrpc.Executor",
+        self._executor = executor.Executor(name="jsonrpc",
                                            workers_count=_THREADS,
                                            max_tasks=_TASKS,
                                            scheduler=scheduler)
