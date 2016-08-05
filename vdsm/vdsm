@@ -34,6 +34,7 @@ from vdsm import commands
 from vdsm import constants
 from vdsm import dsaversion
 from vdsm import health
+from vdsm import jobs
 from vdsm import schedule
 from vdsm import utils
 from vdsm import libvirtconnection
@@ -99,6 +100,7 @@ def serve_clients(log):
         scheduler = schedule.Scheduler(name="vdsm.Scheduler",
                                        clock=utils.monotonic_time)
         scheduler.start()
+        jobs.start()
 
         from clientIF import clientIF  # must import after config is read
         cif = clientIF.getInstance(irs, log, scheduler)
@@ -119,6 +121,7 @@ def serve_clients(log):
             periodic.stop()
             cif.prepareForShutdown()
             scheduler.stop()
+            jobs.stop()
     finally:
         libvirtconnection.stop_event_loop(wait=False)
 

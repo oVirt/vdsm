@@ -64,7 +64,10 @@ class JobsTests(VdsmTestCase):
     TIMEOUT = 1
 
     def setUp(self):
-        jobs._clear()
+        jobs.start()
+
+    def tearDown(self):
+        jobs.stop()
 
     def test_job_initial_state(self):
         job = TestingJob()

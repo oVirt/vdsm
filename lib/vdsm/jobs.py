@@ -132,9 +132,11 @@ class Job(object):
         return s.format(self=self, id=id(self))
 
 
-# This helper should only be called by test code.  Everything else should be
-# using the public APIs.
-def _clear():
+def start():
+    pass
+
+
+def stop():
     with _lock:
         _jobs.clear()
 
