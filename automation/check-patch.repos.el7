@@ -1,5 +1,5 @@
 ovirt-snapshot,http://resources.ovirt.org/pub/ovirt-4.0-snapshot/rpm/$distro
-ovirt-snapshot-static,http://resources.ovirt.org/pub/ovirt-master-snapshot-static/rpm/$distro
+ovirt-snapshot-static,http://resources.ovirt.org/pub/ovirt-4.0-snapshot-static/rpm/$distro
 centos-glusterfs,http://mirror.centos.org/centos/7/storage/x86_64/gluster-3.7/
 centos-ovirt40-candidate,http://cbs.centos.org/repos/virt7-ovirt-40-candidate/x86_64/os/
 ovirt-ci-tools,http://resources.ovirt.org/repos/ci-tools/$distro
