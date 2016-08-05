@@ -181,6 +181,14 @@ class VolumeManifest(object):
     def isSparse(self):
         return self.getType() == sc.SPARSE_VOL
 
+    def getLeaseStatus(self):
+        sd_manifest = sdCache.produce_manifest(self.sdUUID)
+        if not sd_manifest.hasVolumeLeases():
+            return sc.LEASE_UNSUPPORTED
+        ver, host_id = sd_manifest.inquireVolumeLease(self.imgUUID,
+                                                      self.volUUID)
+        return sc.LEASE_FREE if host_id is None else sc.LEASE_EXCLUSIVE
+
     def metadata2info(self, meta):
         return {
             "uuid": self.volUUID,
@@ -217,6 +225,7 @@ class VolumeManifest(object):
             info['apparentsize'] = str(vsize)
             info['truesize'] = str(avsize)
             info['status'] = "OK"
+            info['lease'] = self.getLeaseStatus()
         except se.StorageException as e:
             self.log.debug("exception: %s:%s" % (str(e.message), str(e.value)))
             info['apparentsize'] = "0"

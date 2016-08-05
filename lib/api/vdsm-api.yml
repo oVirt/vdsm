@@ -6869,6 +6869,17 @@ types:
             LEAF: The Volume is a writable leaf
             SHARED: The Volume is a shared template
 
+    VolumeLeaseStatus: &VolumeLeaseStatus
+        added: '4.1'
+        description: An enumeration of Volume Lease statuses
+        name: VolumeLeaseStatus
+        type: enum
+        values:
+            UNSUPPORTED: The Storage Domain does not support volume leases
+            FREE: The lease is free
+            EXCLUSIVE: The lease is held in exclusive mode
+            SHARED: The lease is held in shared mode
+
     VolumeInfo: &VolumeInfo
         added: '3.1'
         description: Information about a Volume.
@@ -6947,6 +6958,10 @@ types:
         -   description: The Image associated with the Volume
             name: image
             type: *UUID
+
+        -   description: The status of the Volume lease
+            name: lease
+            type: *VolumeLeaseStatus
         type: object
 
     VolumeSizeInfo: &VolumeSizeInfo
