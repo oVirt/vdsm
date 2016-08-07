@@ -978,7 +978,7 @@ exit 0
 %config(noreplace) %{_sysconfdir}/rwtab.d/vdsm
 %config(noreplace) %{_sysconfdir}/sysctl.d/vdsm.conf
 %config(noreplace) %{_sysconfdir}/modules-load.d/vdsm.conf
-%config(noreplace) %{_tmpfilesdir}/%{vdsm_name}.conf
+%{_tmpfilesdir}/%{vdsm_name}.conf
 %{_sysconfdir}/dhcp/dhclient.d/sourceRoute.sh
 %{_sysconfdir}/modprobe.d/vdsm-bonding-modprobe.conf
 %{_sysconfdir}/sudoers.d/50_vdsm
