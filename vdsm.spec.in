@@ -42,8 +42,8 @@
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
 %endif
 
-%global _udevrulesdir /usr/lib/udev/rules.d/
-%global _udevexecdir /usr/lib/udev/
+%global _udevrulesdir %{_libdir}/udev/rules.d/
+%global _udevexecdir %{_libdir}/udev/
 
 # Disable debuginfo package, since vdsm is a meta-package
 %global debug_package %{nil}
@@ -773,8 +773,8 @@ install -Dm 0644 vdsm/storage/vdsm-lvm.rules \
 install -Dm 0644 vdsm/limits.conf \
                  %{buildroot}/etc/security/limits.d/99-vdsm.conf
 
-install -Dm 0755 init/systemd/systemd-vdsmd %{buildroot}/usr/lib/systemd/systemd-vdsmd
-install -Dm 0644 init/systemd/85-vdsmd.preset %{buildroot}/usr/lib/systemd/system-preset/85-vdsmd.preset
+install -Dm 0755 init/systemd/systemd-vdsmd %{buildroot}%{_libdir}/systemd/systemd-vdsmd
+install -Dm 0644 init/systemd/85-vdsmd.preset %{buildroot}%{_libdir}/systemd/system-preset/85-vdsmd.preset
 install -Dm 0644 init/systemd/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service
 install -Dm 0644 init/systemd/vdsm-network.service %{buildroot}%{_unitdir}/vdsm-network.service
 install -Dm 0644 init/systemd/supervdsmd.service %{buildroot}%{_unitdir}/supervdsmd.service
@@ -791,7 +791,7 @@ install -Dm 0644 init/systemd/unlimited-core.conf \
                  %{buildroot}%{_sysconfdir}/systemd/system/libvirtd.service.d/unlimited-core.conf
 
 %if 0%{?with_hooks}
-install -Dm 0644 vdsm_hooks/fcoe/85-vdsm-hook-fcoe.preset %{buildroot}/usr/lib/systemd/system-preset/
+install -Dm 0644 vdsm_hooks/fcoe/85-vdsm-hook-fcoe.preset %{buildroot}%{_libdir}/systemd/system-preset/
 %endif
 
 %if 0%{?rhel}
@@ -914,8 +914,8 @@ exit 0
 %doc lib/vdsm/vdsm.conf.sample
 %doc README.logging
 %license COPYING
-/usr/lib/systemd/systemd-vdsmd
-/usr/lib/systemd/system-preset/85-vdsmd.preset
+%{_libdir}/systemd/systemd-vdsmd
+%{_libdir}/systemd/system-preset/85-vdsmd.preset
 %{_unitdir}/vdsmd.service
 %{_unitdir}/vdsm-network.service
 %{_unitdir}/supervdsmd.service
@@ -1494,7 +1494,7 @@ exit 0
 
 %files hook-fcoe
 %defattr(-, root, root, -)
-/usr/lib/systemd/system-preset/85-vdsm-hook-fcoe.preset
+%{_libdir}/systemd/system-preset/85-vdsm-hook-fcoe.preset
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_fcoe
 
 %files hook-checkips
