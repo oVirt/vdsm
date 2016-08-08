@@ -29,7 +29,7 @@ from ovirt_imageio_common import directio
 from vdsm import concurrent
 from vdsm import libvirtconnection
 from vdsm import utils
-
+from vdsm.password import ProtectedPassword
 
 _start = utils.monotonic_time()
 
@@ -113,7 +113,7 @@ def get_password(options):
         write_output('>>> Reading password from file %s' %
                      options.password_file)
     with open(options.password_file, 'r') as f:
-        return f.read()
+        return ProtectedPassword(f.read())
 
 
 def main():
