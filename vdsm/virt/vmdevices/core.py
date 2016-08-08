@@ -36,7 +36,8 @@ class SkipDevice(Exception):
 
 class Base(vmxml.Device):
     __slots__ = ('deviceType', 'device', 'alias', 'specParams', 'deviceId',
-                 'conf', 'log', '_deviceXML', 'type', 'custom')
+                 'conf', 'log', '_deviceXML', 'type', 'custom',
+                 'is_hostdevice')
 
     def __init__(self, conf, log, **kwargs):
         self.conf = conf
@@ -50,6 +51,7 @@ class Base(vmxml.Device):
                 self.log.debug('Ignoring param (%s, %s) in %s', attr, value,
                                self.__class__.__name__)
         self._deviceXML = None
+        self.is_hostdevice = False
 
     def __str__(self):
         attrs = [':'.join((a, str(getattr(self, a, None)))) for a in dir(self)
