@@ -40,6 +40,7 @@ class PciDevice(core.Base):
         self.hostAddress = self._deviceParams.get('address')
         self.numa_node = self._deviceParams.get('numa_node', None)
         self.name = self.device
+        self.is_hostdevice = True
 
     def setup(self):
         self.log.info('Detaching device %s from the host.' % self.device)
@@ -156,6 +157,7 @@ class UsbDevice(core.Base):
         self.hostAddress = device_params.get('address')
         self.numa_node = None
         self.name = self.device
+        self.is_hostdevice = True
 
     def setup(self):
         detach_detachable(self.device)
@@ -246,6 +248,7 @@ class ScsiDevice(core.Base):
         self.name = self.device
         self.bus_address, self.adapter = scsi_address_to_adapter(
             self.hostAddress)
+        self.is_hostdevice = True
 
     def setup(self):
         detach_detachable(self.device)
