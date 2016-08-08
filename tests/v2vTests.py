@@ -579,6 +579,63 @@ class v2vTests(TestCaseBase):
         self.assertEqual(out, msg)
 
 
+@expandPermutations
+class PipelineProcTests(TestCaseBase):
+
+    PROC_WAIT_TIMEOUT = 30
+
+    def testRun(self):
+        msg = 'foo\nbar'
+        p1 = v2v._simple_exec_cmd(['echo', '-n', msg],
+                                  stdout=subprocess.PIPE)
+        p2 = v2v._simple_exec_cmd(['cat'],
+                                  stdin=p1.stdout,
+                                  stdout=subprocess.PIPE)
+
+        p = v2v.PipelineProc(p1, p2)
+        self.assertEqual(p.pids, [p1.pid, p2.pid])
+
+        ret = p.wait(self.PROC_WAIT_TIMEOUT)
+        self.assertEqual(ret, True)
+
+        out = p.stdout.read()
+        self.assertEqual(out, msg)
+
+    @permutations([
+        # (cmd1, cmd2, returncode)
+        ['false', 'true', 1],
+        ['true', 'false', 1],
+        ['true', 'true', 0],
+    ])
+    def testReturncode(self, cmd1, cmd2, returncode):
+        p1 = v2v._simple_exec_cmd([cmd1],
+                                  stdout=subprocess.PIPE)
+        p2 = v2v._simple_exec_cmd([cmd2],
+                                  stdin=p1.stdout,
+                                  stdout=subprocess.PIPE)
+        p = v2v.PipelineProc(p1, p2)
+        p.wait(self.PROC_WAIT_TIMEOUT)
+        self.assertEqual(p.returncode, returncode)
+
+    @permutations([
+        # (cmd1, cmd2, waitRet)
+        [['sleep', '1'], ['sleep', '1'], True],
+        [['sleep', '1'], ['sleep', '3'], False],
+        [['sleep', '3'], ['sleep', '1'], False],
+        [['sleep', '3'], ['sleep', '3'], False],
+    ])
+    def testWait(self, cmd1, cmd2, waitRet):
+        p1 = v2v._simple_exec_cmd(cmd1,
+                                  stdout=subprocess.PIPE)
+        p2 = v2v._simple_exec_cmd(cmd2,
+                                  stdin=p1.stdout,
+                                  stdout=subprocess.PIPE)
+        p = v2v.PipelineProc(p1, p2)
+        ret = p.wait(2)
+        p.kill()
+        self.assertEqual(ret, waitRet)
+
+
 class MockVirConnectTests(TestCaseBase):
     def setUp(self):
         self._vms = [MockVirDomain(*spec) for spec in VM_SPECS]

@@ -34,6 +34,7 @@ import os
 import re
 import signal
 import tarfile
+import time
 import threading
 import xml.etree.ElementTree as ET
 import zipfile
@@ -46,7 +47,8 @@ from vdsm.compat import CPopen
 from vdsm.constants import P_VDSM_RUN, EXT_KVM_2_OVIRT
 from vdsm.define import errCode, doneCode
 from vdsm import cmdutils, concurrent, libvirtconnection, response
-from vdsm.utils import traceback, CommandPath, NICENESS, IOCLASS
+from vdsm.utils import monotonic_time, traceback, CommandPath, \
+    NICENESS, IOCLASS
 
 try:
     import ovirt_imageio_common
@@ -637,6 +639,82 @@ class KVMCommand(V2VCommand):
         for vol in self._prepared_volumes:
             ret.append(vol['path'])
         return ret
+
+
+class PipelineProc(object):
+
+    def __init__(self, proc1, proc2):
+        self._procs = (proc1, proc2)
+        self._stdout = proc2.stdout
+
+    def kill(self):
+        """
+        Kill all processes in a pipeline.
+
+        Some of the processes may have already terminated, but some may be
+        still running. Regular kill() raises OSError if the process has already
+        terminated. Since we are dealing with multiple processes, to avoid any
+        confusion we do not raise OSError at all.
+        """
+        for p in self._procs:
+            logging.debug("Killing pid=%d", p.pid)
+            try:
+                p.kill()
+            except OSError as e:
+                # Probably the process has already terminated
+                if e.errno != errno.ESRCH:
+                    raise e
+
+    @property
+    def pids(self):
+        return [p.pid for p in self._procs]
+
+    @property
+    def returncode(self):
+        """
+        Returns None if any of the processes is still running. Returns 0 if all
+        processes have finished with a zero exit code, otherwise return first
+        nonzero exit code.
+        """
+        ret = 0
+        for p in self._procs:
+            p.poll()
+            if p.returncode is None:
+                return None
+            if p.returncode != 0 and ret == 0:
+                # One of the processes has failed
+                ret = p.returncode
+
+        # All processes have finished
+        return ret
+
+    @property
+    def stdout(self):
+        return self._stdout
+
+    def wait(self, timeout=None):
+        if timeout is not None:
+            deadline = monotonic_time() + timeout
+        else:
+            deadline = None
+
+        for p in self._procs:
+            if deadline is not None:
+                # NOTE: CPopen doesn't support timeout argument.
+                while monotonic_time() < deadline:
+                    p.poll()
+                    if p.returncode is not None:
+                        break
+                    time.sleep(1)
+            else:
+                p.wait()
+
+        if deadline is not None:
+            if deadline < monotonic_time() or self.returncode is None:
+                # Timed out
+                return False
+
+        return True
 
 
 class ImportVm(object):
