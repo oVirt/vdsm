@@ -79,7 +79,7 @@ BuildRequires: openssl
 BuildRequires: policycoreutils-python
 BuildRequires: psmisc
 BuildRequires: PyYAML
-BuildRequires: python-cpopen >= 1.4
+BuildRequires: python-cpopen >= 1.4-1
 BuildRequires: python-inotify
 BuildRequires: python-ioprocess >= 0.16.1-1
 BuildRequires: python-pthreading
