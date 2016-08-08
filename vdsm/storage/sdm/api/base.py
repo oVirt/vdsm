@@ -24,7 +24,6 @@ import logging
 
 from vdsm import jobs
 from vdsm import exception
-from vdsm.storage.threadlocal import vars
 
 
 class Job(jobs.Job):
@@ -38,7 +37,6 @@ class Job(jobs.Job):
 
     def run(self):
         self._status = jobs.STATUS.RUNNING
-        vars.job_id = self.id
         try:
             self._run()
         except Exception as e:
@@ -50,5 +48,3 @@ class Job(jobs.Job):
             self._status = jobs.STATUS.FAILED
         else:
             self._status = jobs.STATUS.DONE
-        finally:
-            vars.job_id = None

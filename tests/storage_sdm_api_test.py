@@ -25,7 +25,6 @@ from sdmtestlib import wait_for_job
 
 from vdsm import jobs
 from vdsm import exception
-from vdsm.storage.threadlocal import vars
 
 from storage.sdm.api import base
 
@@ -34,10 +33,8 @@ class ApiBaseTests(VdsmTestCase):
 
     def run_job(self, job):
         self.assertEqual(jobs.STATUS.PENDING, job.status)
-        self.assertIsNone(getattr(vars, 'job_id', None))
         job.run()
         wait_for_job(job)
-        self.assertIsNone(getattr(vars, 'job_id', None))
 
     def test_states(self):
         job = TestingJob()
@@ -68,6 +65,5 @@ class TestingJob(base.Job):
 
     def _run(self):
         assert(self.status == jobs.STATUS.RUNNING)
-        assert(vars.job_id == self.id)
         if self.exception:
             raise self.exception
