@@ -42,9 +42,10 @@ import libvirt
 
 from vdsm.commands import execCmd
 from vdsm.common import zombiereaper
+from vdsm.compat import CPopen
 from vdsm.constants import P_VDSM_RUN, EXT_KVM_2_OVIRT
 from vdsm.define import errCode, doneCode
-from vdsm import libvirtconnection, response, concurrent
+from vdsm import cmdutils, concurrent, libvirtconnection, response
 from vdsm.utils import traceback, CommandPath, NICENESS, IOCLASS
 
 try:
@@ -1143,3 +1144,18 @@ def _add_networks_ovf_info(vm, node, ns):
         else:
             net['type'] = 'interface'
         vm['networks'].append(net)
+
+
+def _simple_exec_cmd(command, env=None, nice=None, ioclass=None,
+                     stdin=None, stdout=None, stderr=None):
+
+    command = cmdutils.wrap_command(command, with_ioclass=ioclass,
+                                    ioclassdata=None, with_nice=nice,
+                                    with_setsid=False, with_sudo=False,
+                                    reset_cpu_affinity=True)
+
+    logging.debug(cmdutils.command_log_line(command, cwd=None))
+
+    p = CPopen(command, close_fds=True, cwd=None, env=env,
+               stdin=stdin, stdout=stdout, stderr=stderr)
+    return p

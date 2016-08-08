@@ -20,6 +20,7 @@
 from collections import namedtuple
 from contextlib import contextmanager
 from StringIO import StringIO
+import subprocess
 import tarfile
 import zipfile
 import uuid
@@ -558,6 +559,24 @@ class v2vTests(TestCaseBase):
             job.wait()
 
             self.assertEqual(job.status, v2v.STATUS.DONE)
+
+    def testSimpleExecCmd(self):
+        p = v2v._simple_exec_cmd(['cat'],
+                                 stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE)
+        msg = "test\ntest"
+        p.stdin.write(msg)
+        p.stdin.close()
+        p.wait()
+        out = p.stdout.read()
+        self.assertEqual(out, msg)
+
+        p = v2v._simple_exec_cmd(['/bin/sh', '-c', 'echo -en "%s" >&2' % msg],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT)
+        p.wait()
+        out = p.stdout.read()
+        self.assertEqual(out, msg)
 
 
 class MockVirConnectTests(TestCaseBase):
