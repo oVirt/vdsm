@@ -758,7 +758,6 @@ sed -i -e 's/@SSL_IMPLEMENTATION@/m2c/g' lib/vdsm/config.py
 sed -i -e 's\@VDSMRPCPYLIBDIR@\%{python_sitelib}/%{vdsm_name}/rpc\g' lib/vdsm/constants.py
 
 %install
-rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
 
 # Creating VDSM logs in this session to avoid rpmbuild
@@ -810,9 +809,6 @@ install -Dm 0755 vdsm/virt/libvirt-hook.sh \
 
 %check
 make tests
-
-%clean
-rm -rf %{buildroot}
 
 %pre
 # Force standard locale behavior (English)
@@ -909,7 +905,6 @@ fi
 exit 0
 
 %files
-%defattr(-, root, root, -)
 %doc README
 %doc lib/vdsm/vdsm.conf.sample
 %doc README.logging
