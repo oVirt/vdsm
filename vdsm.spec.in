@@ -1413,8 +1413,6 @@ exit 0
 
 %files hook-ovs
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_ovs
-%{_libexecdir}/%{vdsm_name}/ovs_migrate.py*
-%{_libexecdir}/%{vdsm_name}/ovs_utils.py*
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/50_ovs
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/ovs_utils.py*
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/50_ovs

@@ -25,11 +25,6 @@ include $(top_srcdir)/build-aux/Makefile.subs
 nodist_noinst_DATA = \
 	sudoers
 
-dist_vdsmexec_SCRIPTS = \
-	ovs_migrate.py \
-	ovs_utils.py \
-	$(NULL)
-
 CLEANFILES = \
 	$(nodist_noinst_DATA)
 
