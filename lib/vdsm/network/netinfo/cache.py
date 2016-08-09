@@ -225,6 +225,7 @@ class NetInfo(object):
         self.nics = _netinfo['nics']
         self.bondings = _netinfo['bondings']
         self.bridges = _netinfo['bridges']
+        self.nameservers = _netinfo['nameservers']
 
     def del_network(self, network):
         del self.networks[network]
@@ -361,3 +362,4 @@ class CachingNetInfo(NetInfo):
         self.nics = _netinfo['nics']
         self.bondings = _netinfo['bondings']
         self.bridges = _netinfo['bridges']
+        self.nameservers = _netinfo['nameservers']

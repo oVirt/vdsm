@@ -88,7 +88,9 @@ FAKE_NETINFO = {
             'bridged': True, 'ipv6addrs': ['fe80::b88d:23ff:fe4d:d741/64'],
             'gateway': '', 'bootproto4': 'none', 'netmask': '', 'stp': 'off',
             'ipv4addrs': [], 'mtu': '1500', 'ipv6gateway': '::', 'ports':
-            [BOND_NAME + '.' + VLAN]}}}
+            [BOND_NAME + '.' + VLAN]}},
+    'nameservers': [],
+}
 
 
 FAKE_IFCFGS = {

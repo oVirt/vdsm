@@ -139,7 +139,7 @@ class TestNetmodels(TestCaseBase):
     def testTextualRepr(self):
         _netinfo = {'networks': {}, 'vlans': {},
                     'nics': ['testnic1', 'testnic2'],
-                    'bondings': {}, 'bridges': {}}
+                    'bondings': {}, 'bridges': {}, 'nameservers': []}
         fakeInfo = CachingNetInfo(_netinfo)
         nic1 = Nic('testnic1', None, _netinfo=fakeInfo)
         nic2 = Nic('testnic2', None, _netinfo=fakeInfo)
@@ -175,7 +175,7 @@ class TestNetmodels(TestCaseBase):
     def testIterNetworkHierarchy(self):
         _netinfo = {'networks': {}, 'vlans': {},
                     'nics': ['testnic1', 'testnic2'],
-                    'bondings': {}, 'bridges': {}}
+                    'bondings': {}, 'bridges': {}, 'nameservers': []}
         fakeInfo = CachingNetInfo(_netinfo)
         # Vlanned and bonded VM network
         nic1 = Nic('testnic1', configurator=None, _netinfo=fakeInfo)
