@@ -20,9 +20,11 @@
 
 from __future__ import absolute_import
 
+from vdsm.network.errors import ERR_BAD_PARAMS
+
 from nose.plugins.attrib import attr
 
-from .netfunctestlib import NetFuncTestCase, NOCHK
+from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
 from .nettestlib import dummy_device, restore_resolv_conf
 
 NETWORK_NAME = 'test-network'
@@ -66,6 +68,19 @@ class NetworkDNSTemplate(NetFuncTestCase):
             with restore_resolv_conf():
                 with self.setupNetworks(NETCREATE, {}, NOCHK):
                     self.assertNameservers(original_nameservers)
+
+    def test_set_nameservers_on_non_default_network(self):
+        with dummy_device() as nic:
+            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': self.switch,
+                                        'nameservers': NAMESERVERS,
+                                        'defaultRoute': False,
+                                        'ipaddr': IPv4_ADDRESS,
+                                        'netmask': IPv4_NETMASK,
+                                        'gateway': IPv4_GATEWAY,
+                                        }}
+            with self.assertRaises(SetupNetworksError) as err:
+                self.setupNetworks(NETCREATE, {}, NOCHK)
+            self.assertEqual(err.exception.status, ERR_BAD_PARAMS)
 
 
 @attr(type='functional', switch='legacy')
