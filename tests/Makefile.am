@@ -236,7 +236,6 @@ blacklist_modules_python3 = \
 	storagetestlibTests.py \
 	tasksetTests.py \
 	toolBondingTests.py \
-	toolTests.py \
 	transportWrapperTests.py \
 	unicode_test.py \
 	utilsTests.py \

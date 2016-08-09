@@ -28,6 +28,7 @@ import monkeypatch
 from testlib import expandPermutations, make_config, VdsmTestCase
 from testValidation import ValidateRunningAsRoot
 from unittest import TestCase
+import io
 import tempfile
 import os
 import shutil
@@ -486,6 +487,20 @@ class ConfigFileTests(TestCase):
                                        "key4=val\n"
                                        "# end conf-3.4.4\n")
 
+    def testEncoding(self):
+        self._writeConf("")
+        with ConfigFile(self.tname,
+                        version='3.4.4',
+                        sectionStart="# start conf",
+                        sectionEnd="# end conf") as conf:
+            conf.addEntry("key1", "\xd7\x99\xd7\xa0\xd7\x99\xd7\x91")
+
+        with io.open(self.tname, 'r', encoding='utf8') as f:
+            self.assertEqual(f.read(),
+                             "# start conf-3.4.4\n"
+                             "key1=\xd7\x99\xd7\xa0\xd7\x99\xd7\x91\n"
+                             "# end conf-3.4.4\n")
+
     def testPrefixAndPrepend(self):
         self._writeConf("/var/log/libvirt/libvirtd.log {\n"
                         "        weekly\n"
@@ -496,7 +511,7 @@ class ConfigFileTests(TestCase):
                         sectionEnd="# end conf",
                         prefix="# comment ") as conf:
                     conf.prefixLines()
-                    conf.prependSection("Some text to\n"
+                    conf.prependSection(u"Some text to\n"
                                         "add at the top\n")
         with open(self.tname, 'r') as f:
             self.assertEqual(f.read(),

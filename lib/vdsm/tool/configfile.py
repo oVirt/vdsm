@@ -115,7 +115,7 @@ class ConfigFile(object):
         confpat = re.compile(r'^\s*(?P<key>[^=\s#]*)\s*=')
         oldlines = []
         oldentries = set()
-        with open(self._filename, 'r') as f:
+        with io.open(self._filename, 'r', encoding='utf8') as f:
             for line in f:
                 if self._remove:
                     if (self._rmstate == BEFORE and
@@ -144,10 +144,10 @@ class ConfigFile(object):
             return oldlines, oldentries
 
     def _start(self):
-        return "%s-%s\n" % (self._sectionStart, self._version)
+        return u"%s-%s\n" % (self._sectionStart, self._version)
 
     def _end(self):
-        return "%s-%s\n" % (self._sectionEnd, self._version)
+        return u"%s-%s\n" % (self._sectionEnd, self._version)
 
     def _writeSection(self, f):
         f.write(self._start())
@@ -158,7 +158,7 @@ class ConfigFile(object):
         f.write(self._start())
         for key, val in sorted(self._entries.items()):
             if key not in oldentries:
-                f.write("{k}={v}\n".format(k=key, v=val))
+                f.write(u"{k}={v}\n".format(k=key, v=val))
         f.write(self._end())
 
     def __exit__(self, exec_ty, exec_val, tb):
@@ -168,7 +168,7 @@ class ConfigFile(object):
             fd, tname = tempfile.mkstemp(dir=os.path.dirname(self._filename))
             try:
                 oldlines, oldentries = self._getOldContent()
-                with os.fdopen(fd, 'w', ) as f:
+                with io.open(fd, 'w', encoding='utf8') as f:
                     if self._section:
                         self._writeSection(f)
                     f.writelines(oldlines)
@@ -233,7 +233,7 @@ class ConfigFile(object):
         """
         Notice this method can be called out of context since it is read only
         """
-        with open(self._filename, 'r') as f:
+        with io.open(self._filename, 'r', encoding='utf8') as f:
             for line in f:
                 if line == self._start():
                     return True
@@ -261,7 +261,7 @@ class ParserWrapper(object):
         return self.wrapped.getint('root', option)
 
     def read(self, path):
-        with open(path, 'r') as f:
+        with io.open(path, 'r', encoding='utf8') as f:
             return self.wrapped.readfp(
-                io.StringIO(u'[root]\n' + f.read().decode())
+                io.StringIO(u'[root]\n' + f.read())
             )
