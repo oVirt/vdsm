@@ -37,7 +37,7 @@ from vdsm.network import ipwrapper
 from vdsm.network import libvirt
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 
-from . ip import address as ipaddress
+from . ip import address as ipaddress, validator as ipvalidator
 from . canonicalize import canonicalize_networks, canonicalize_bondings
 from . errors import RollbackIncomplete
 from . import netconfpersistence
@@ -266,6 +266,7 @@ def _setup_networks(networks, bondings, options):
     canonicalize_bondings(bondings)
 
     logging.debug('Validating configuration')
+    ipvalidator.validate(networks)
     netswitch.validate(networks, bondings)
 
     bondings, networks, options = _apply_hook(bondings, networks, options)
