@@ -363,7 +363,10 @@ def _ipv6_is_unused(attrs):
 
 
 class SetupNetworksError(Exception):
-    pass
+    def __init__(self, status, msg):
+        super(SetupNetworksError, self).__init__(msg)
+        self.status = status
+        self.msg = msg
 
 
 class SetupNetworks(object):
@@ -378,7 +381,7 @@ class SetupNetworks(object):
 
         status, msg = self.vdsm_proxy.setupNetworks(networks, bonds, options)
         if status != SUCCESS:
-            raise SetupNetworksError(msg)
+            raise SetupNetworksError(status, msg)
 
         try:
             self.post_setup_hook()
@@ -395,7 +398,7 @@ class SetupNetworks(object):
     def __exit__(self, type, value, traceback):
         status, msg = self._cleanup()
         if type is None and status != SUCCESS:
-            raise SetupNetworksError(msg)
+            raise SetupNetworksError(status, msg)
 
     def _cleanup(self):
         networks_caps = self.vdsm_proxy.netinfo.networks
