@@ -101,7 +101,8 @@ class TestConfigNetwork(TestCaseBase):
                 'fakebr1': {'ports': ['bond00']},
                 'fakebr2': {'ports': ['eth7.1']}
             },
-            'bondings': {'bond00': {'slaves': ['eth5', 'eth6']}}
+            'bondings': {'bond00': {'slaves': ['eth5', 'eth6']}},
+            'nameservers': [],
         }
 
         fakeInfo = netinfo.cache.CachingNetInfo(_netinfo)
