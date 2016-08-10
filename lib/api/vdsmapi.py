@@ -145,7 +145,7 @@ class Schema(object):
     def _report_inconsistency(self, message):
         if self._strict_mode:
             raise JsonRpcInvalidParamsError(message)
-        else:
+        elif config.getboolean('devel', 'python_warnings_enable'):
             warnings.warn(message, Inconsistency)
 
     def verify_args(self, class_name, method_name, args):
