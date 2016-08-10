@@ -26,14 +26,6 @@ if sys.version_info[0] == 2:
     import pthreading
     pthreading.monkey_patch()
 
-import warnings
-import logging
-
-warnings.simplefilter("always")
-if hasattr(logging, 'captureWarnings'):
-    # Python 2.6 does not have captureWarnings, though luck
-    logging.captureWarnings(True)
-
 
 from vdsm.common import zombiereaper
 zombiereaper.registerSignalHandler()

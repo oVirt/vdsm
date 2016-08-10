@@ -483,9 +483,6 @@ parameters = [
         ('cpu_profile_clock', 'cpu',
             'Sets the underlying clock type (cpu, wall)'),
 
-        ('python_warnings_enable', 'false',
-            'Display python warnings in the log'),
-
         ('memory_profile_enable', 'false',
             'Enable whole process profiling (requires dowser profiler).'),
 
