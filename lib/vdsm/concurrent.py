@@ -175,8 +175,8 @@ def thread(func, args=(), kwargs=None, name=None, daemon=True, logger=None):
 
     @utils.traceback(on=logger)
     def run():
-        if name is not None:
-            pthread.setname(name[:15])
+        pthread_name = threading.current_thread().name
+        pthread.setname(pthread_name[:15])
         return func(*args, **kwargs)
 
     thread = threading.Thread(target=run, name=name)
