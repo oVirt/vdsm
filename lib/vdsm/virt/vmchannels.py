@@ -54,7 +54,7 @@ class Listener(object):
         self._del_channels = []
         self._timeout = None
         self._thread = concurrent.thread(
-            self.run, name='VM Channels Listener'
+            self.run, name='vmchannels'
         )
 
     def start(self):
