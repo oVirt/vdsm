@@ -77,7 +77,7 @@ _COMMAND_CONVERTER = {
     'getVolumeInfo': 'Volume.getInfo',
     'getVmStats': 'VM.getStats',
     'getVolumeSize': 'Volume.getSize',
-    'getVolumesList': 'Image.getVolumes',
+    'getVolumesList': 'StorageDomain.getVolumes',
     'glusterTasksList': 'GlusterTask.list',
     'glusterVolumeCreate': 'GlusterVolume.create',
     'glusterVolumeSet': 'GlusterVolume.set',
