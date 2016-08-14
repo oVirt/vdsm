@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,13 +19,13 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from collections import defaultdict
-import errno
 import argparse
-import socket
 
 from . import expose
 
-from vdsm import vdscli
+from vdsm import client
+from vdsm.config import config
+from vdsm import utils
 
 # BLANK_UUID is re-declared here since it cannot be imported properly. This
 # constant should be introduced under lib publicly available
@@ -34,19 +34,6 @@ _NAME = 'dump-volume-chains'
 
 
 class DumpChainsError(Exception):
-    pass
-
-
-class ServerError(DumpChainsError):
-    def __init__(self, server_result):
-        self.code = server_result['status']['code']
-        self.message = server_result['status']['message']
-
-    def __str__(self):
-        return 'server error. code: %s message: %s' % (self.code, self.message)
-
-
-class ConnectionRefusedError(Exception):
     pass
 
 
@@ -89,23 +76,12 @@ def dump_chains(*args):
     them in an ordered fashion with optional additional info per volume.
     """
     parsed_args = _parse_args(args)
-    server = _connect_to_server(parsed_args.host, parsed_args.port,
-                                parsed_args.use_ssl)
-    image_chains, volumes_info = _get_volumes_chains(
-        server, parsed_args.sd_uuid)
-
-    _print_volume_chains(image_chains, volumes_info)
-
-
-def _connect_to_server(host, port, use_ssl):
-    host_port = "%s:%s" % (host, port)
-    try:
-        return vdscli.connect(host_port, use_ssl)
-    except socket.error as e:
-        if e[0] == errno.ECONNREFUSED:
-            raise ConnectionRefusedError(
-                "Connection to %s refused" % (host_port,))
-        raise
+    server = client.connect(parsed_args.host, parsed_args.port,
+                            use_tls=parsed_args.use_ssl)
+    with utils.closing(server):
+        image_chains, volumes_info = _get_volumes_chains(
+            server, parsed_args.sd_uuid)
+        _print_volume_chains(image_chains, volumes_info)
 
 
 def _parse_args(args):
@@ -114,34 +90,38 @@ def _parse_args(args):
     parser.add_argument('-u', '--unsecured', action='store_false',
                         dest='use_ssl', default=True,
                         help="use unsecured connection")
-    parser.add_argument('-H', '--host', default=vdscli.ADDRESS)
-    parser.add_argument('-p', '--port', default=vdscli.PORT)
+    parser.add_argument('-H', '--host', default='localhost')
+    parser.add_argument(
+        '-p', '--port', default=config.getint('addresses', 'management_port'))
 
     return parser.parse_args(args=args[1:])
 
 
-def _get_volume_info(server, vol_uuid, img_uuid, sd_uuid, sp_uuid):
-    res = _call_server(server.getVolumeInfo, sd_uuid, sp_uuid, img_uuid,
-                       vol_uuid)
-    return res['info']
-
-
 def _get_volumes_chains(server, sd_uuid):
-    sp_uuid = _get_sp_uuid(server)
-    images_uuids = _get_all_images(server, sd_uuid)
+    """there can be only one storage pool in a single VDSM context"""
+    pools = server.Host.getConnectedStoragePools()
+    if not pools:
+        raise NoConnectedStoragePoolError('There is no connected storage '
+                                          'pool to this server')
+    sp_uuid, = pools
+    images_uuids = server.StorageDomain.getImages(storagedomainID=sd_uuid)
 
     image_chains = {}  # {image_uuid -> vol_chain}
     volumes_info = {}  # {vol_uuid-> vol_info}
 
     for img_uuid in images_uuids:
-        volumes = _get_volumes_for_image(server, img_uuid, sd_uuid, sp_uuid)
+        volumes = server.StorageDomain.getVolumes(
+            storagedomainID=sd_uuid, storagepoolID=sp_uuid,
+            imageID=img_uuid)
 
         # to avoid 'double parent' bug here we don't use a dictionary
         volumes_children = []  # [(parent_vol_uuid, child_vol_uuid),]
 
         for vol_uuid in volumes:
-            vol_info = _get_volume_info(server, vol_uuid, img_uuid, sd_uuid,
-                                        sp_uuid)
+            vol_info = server.Volume.getInfo(
+                volumeID=vol_uuid, storagepoolID=sp_uuid,
+                storagedomainID=sd_uuid, imageID=img_uuid)
+
             volumes_info[vol_uuid] = vol_info
 
             parent_uuid = vol_info['parent']
@@ -153,16 +133,6 @@ def _get_volumes_chains(server, sd_uuid):
             image_chains[img_uuid] = e
 
     return image_chains, volumes_info
-
-
-def _get_all_images(server, sd_uuid):
-    res = _call_server(server.getImagesList, sd_uuid)
-    return res['imageslist']
-
-
-def _get_volumes_for_image(server, img_uuid, sd_uuid, sp_uuid):
-    res = _call_server(server.getVolumesList, sd_uuid, sp_uuid, img_uuid)
-    return res['uuidlist']
 
 
 def _build_volume_chain(volumes_children):
@@ -187,19 +157,6 @@ def _build_volume_chain(volumes_children):
         raise OrphanVolumes(volumes_children)
 
     return chain
-
-
-def _get_sp_uuid(server):
-    """there can be only one storage pool in a single VDSM context"""
-    pools = _call_server(server.getConnectedStoragePoolsList)
-    try:
-        sp_uuid, = pools['poollist']
-    except ValueError:
-        if not pools['poollist']:
-            raise NoConnectedStoragePoolError('There is no connected storage '
-                                              'pool to this server')
-    else:
-        return sp_uuid
 
 
 def _print_volume_chains(image_chains, volumes_info):
@@ -240,10 +197,3 @@ def _print_vol_info(volume_info):
 
 def _print_line(body, title=''):
     print('{0:^13}{1}'.format(title, body))
-
-
-def _call_server(method, *args):
-    res = method(*args)
-    if res['status']['code']:
-        raise ServerError(res)
-    return res
