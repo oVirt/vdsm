@@ -22,10 +22,10 @@ import itertools
 
 import six
 
-from vdsm.network import ipwrapper
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.libvirt import networks as libvirt_nets
+from vdsm.network.link import iface
 from vdsm.network.netinfo.cache import (libvirtNets2vdsm, get as netinfo_get,
                                         CachingNetInfo)
 from vdsm.tool.service import service_status
@@ -239,8 +239,7 @@ def _ipv6_conf_params(attrs):
 def set_ovs_links_up(nets2add, bonds2add, bonds2edit):
     # TODO: Make this universal for legacy and ovs.
     for dev in _gather_ovs_ifaces(nets2add, bonds2add, bonds2edit):
-        # TODO: Create a link package/module and use link.up(dev).
-        ipwrapper.linkSet(dev, ['up'])
+        iface.up(dev)
 
 
 def _gather_ovs_ifaces(nets2add, bonds2add, bonds2edit):
