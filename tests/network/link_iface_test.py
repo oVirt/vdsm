@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,27 +16,32 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
-SUBDIRS = configurators ip link netinfo netlink ovs tc
+from nose.plugins.attrib import attr
 
-include $(top_srcdir)/build-aux/Makefile.subs
+from testlib import VdsmTestCase as TestCaseBase
 
-vdsmnetworkdir = $(vdsmpylibdir)/network
-dist_vdsmnetwork_PYTHON = \
-	__init__.py \
-	api.py \
-	errors.py \
-	canonicalize.py \
-	connectivity.py \
-	ifacquire.py \
-	ipwrapper.py \
-	kernelconfig.py \
-	legacy_switch.py \
-	libvirt.py \
-	models.py \
-	netconfpersistence.py \
-	netswitch.py \
-	sourceroute.py \
-	sourceroutethread.py \
-	utils.py \
-	$(NULL)
+from .nettestlib import dummy_device
+
+from vdsm.network.link import iface
+
+
+@attr(type='integration')
+class LinkIfaceTests(TestCaseBase):
+
+    def test_iface_up(self):
+        with dummy_device() as nic:
+            iface.up(nic)
+            self.assertTrue(iface.is_up(nic))
+
+    def test_iface_down(self):
+        with dummy_device() as nic:
+            iface.up(nic)
+            iface.down(nic)
+            self.assertFalse(iface.is_up(nic))
+
+    def test_iface_notpromisc(self):
+        with dummy_device() as nic:
+            iface.up(nic)
+            self.assertFalse(iface.is_promisc(nic))

@@ -29,13 +29,13 @@ from . import _char_proto, _int_char_proto, _int_proto, _void_proto
 from . import LIBNL_ROUTE, _nl_geterror, _pool, _none_proto
 from . import _addr_to_str, CHARBUFFSIZE
 
-IFF_UP = 1 << 0
+IFF_UP = 1 << 0             # Device administrative status.
 IFF_BROADCAST = 1 << 1
 IFF_DEBUG = 1 << 2
 IFF_LOOPBACK = 1 << 3
 IFF_POINTOPOINT = 1 << 4
 IFF_NOTRAILERS = 1 << 5
-IFF_RUNNING = 1 << 6
+IFF_RUNNING = 1 << 6        # Device operational_status
 IFF_NOARP = 1 << 7
 IFF_PROMISC = 1 << 8
 IFF_ALLMULTI = 1 << 9
@@ -70,6 +70,20 @@ def iter_links():
             while link:
                 yield _link_info(link, cache=cache)
                 link = _nl_cache_get_next(link)
+
+
+def is_link_up(link_flags, check_oper_status):
+    """
+    Check link status based on device status flags.
+    :param link_flags: Status flags.
+    :param check_oper_status: If set, the operational status of the link is
+    checked in addition to the administrative status.
+    :return:
+    """
+    iface_up = link_flags & IFF_UP
+    if check_oper_status:
+        iface_up = iface_up and (link_flags & IFF_RUNNING)
+    return bool(iface_up)
 
 
 def _link_info(link, cache=None):
