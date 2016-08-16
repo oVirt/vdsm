@@ -976,6 +976,8 @@ def _add_vm(conn, vms, vm):
     except ET.ParseError as e:
         logging.error('error parsing domain xml: %s', e)
         return
+    if not _block_disk_supported(conn, root):
+        return
     try:
         _add_general_info(root, params)
     except InvalidVMConfiguration as e:
@@ -989,6 +991,16 @@ def _add_vm(conn, vms, vm):
     for disk in params['disks']:
         _add_disk_info(conn, disk)
     vms.append(params)
+
+
+def _block_disk_supported(conn, root):
+    '''
+    Currently we do not support importing VMs with block device from
+    Xen on Rhel 5.x
+    '''
+    if conn.getType() == 'Xen':
+        return len(root.findall('.//disk[@type="block"]')) == 0
+    return True
 
 
 def _add_vm_info(vm, params):
