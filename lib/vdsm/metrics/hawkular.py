@@ -41,7 +41,7 @@ def start(address):
     if _running:
         raise RuntimeError('trying to start reporter while running')
     logging.info("Starting hawkular reporter")
-    concurrent.thread(_run, name='hawkular', address=address).start()
+    concurrent.thread(_run, name='hawkular', args=(address,)).start()
     _running = True
 
 
