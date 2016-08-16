@@ -1143,19 +1143,10 @@ def removeLVs(vgName, lvNames):
         raise se.CannotRemoveLogicalVolume(vgName, str(lvNames))
 
 
-# TODO: kill this, inline into extendLV and reduceLV.
-def _resizeLV(op, vgName, lvName, size):
-    """
-    Size units: MB (1024 ** 2 = 2 ** 20)B.
-    """
-    # WARNING! From man vgs:
-    # All sizes are output in these units: (h)uman-readable, (b)ytes,
-    # (s)ectors,(k)ilobytes, (m)egabytes, (g)igabytes, (t)erabytes,
-    # (p)etabytes, (e)xabytes.
-    # Capitalise to use multiples of 1000 (S.I.) instead of 1024.
-    cmd = (op,) + LVM_NOBACKUP
-    cmd += ("--size", "%sm" % (size,), "%s/%s" % (vgName, lvName))
-    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
+def extendLV(vgName, lvName, size_mb):
+    cmd = ("lvextend",) + LVM_NOBACKUP
+    cmd += ("--size", "%sm" % (size_mb,), "%s/%s" % (vgName, lvName))
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName,)))
     if rc != 0:
         # Since this runs only on the SPM, assume that cached vg and lv
         # metadata is correct.
@@ -1165,46 +1156,54 @@ def _resizeLV(op, vgName, lvName, size):
         # Convert sizes to extents to match lvm behavior.
         extent_size = int(vg.extent_size)
         lv_extents = int(lv.size) // extent_size
-        requested_size = size * constants.MEGAB
+        requested_size = size_mb * constants.MEGAB
         requested_extents = (requested_size + extent_size - 1) // extent_size
 
-        if op == "lvextend":
-            if lv_extents >= requested_extents:
-                log.debug("LV %s/%s already extended (extents=%d, "
-                          "requested=%d)",
-                          vgName, lvName, lv_extents, requested_extents)
-                return
+        if lv_extents >= requested_extents:
+            log.debug("LV %s/%s already extended (extents=%d, requested=%d)",
+                      vgName, lvName, lv_extents, requested_extents)
+            return
 
-            needed_extents = requested_extents - lv_extents
-            free_extents = int(vg.free_count)
-            if free_extents < needed_extents:
-                raise se.VolumeGroupSizeError(
-                    "Not enough free extents to extend LV %s/%s (free=%d, "
-                    "needed=%d)"
-                    % (vgName, lvName, needed_extents, free_extents))
-        elif op == "lvreduce":
-            if lv_extents <= requested_extents:
-                # May happen since callers do not calculate size in extents.
-                log.debug("LV %s/%s already reduced (extents=%d, "
-                          "requested=%d)",
-                          vgName, lvName, lv_extents, requested_extents)
-                return
-        else:
-            raise RuntimeError("Invalid resize operation %r" % op)
+        needed_extents = requested_extents - lv_extents
+        free_extents = int(vg.free_count)
+        if free_extents < needed_extents:
+            raise se.VolumeGroupSizeError(
+                "Not enough free extents for extending LV %s/%s (free=%d, "
+                "needed=%d)"
+                % (vgName, lvName, free_extents, needed_extents))
 
-        # TODO: add and raise LogicalVolumeReduceError for lvreduce
-        raise se.LogicalVolumeExtendError(vgName, lvName, "%sM" % (size, ))
+        raise se.LogicalVolumeExtendError(vgName, lvName, "%sm" % (size_mb,))
 
     _lvminfo._invalidatevgs(vgName)
     _lvminfo._invalidatelvs(vgName, lvName)
 
 
-def extendLV(vgName, lvName, size):
-    _resizeLV("lvextend", vgName, lvName, size)
+def reduceLV(vgName, lvName, size_mb):
+    cmd = ("lvreduce",) + LVM_NOBACKUP
+    cmd += ("--size", "%sm" % (size_mb,), "%s/%s" % (vgName, lvName))
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName,)))
+    if rc != 0:
+        # Since this runs only on the SPM, assume that cached vg and lv
+        # metadata is correct.
+        vg = getVG(vgName)
+        lv = getLV(vgName, lvName)
 
+        # Convert sizes to extents
+        extent_size = int(vg.extent_size)
+        lv_extents = int(lv.size) // extent_size
+        requested_size = size_mb * constants.MEGAB
+        requested_extents = (requested_size + extent_size - 1) // extent_size
 
-def reduceLV(vgName, lvName, size):
-    _resizeLV("lvreduce", vgName, lvName, size)
+        if lv_extents <= requested_extents:
+            log.debug("LV %s/%s already reduced (extents=%d, requested=%d)",
+                      vgName, lvName, lv_extents, requested_extents)
+            return
+
+        # TODO: add and raise LogicalVolumeReduceError
+        raise se.LogicalVolumeExtendError(vgName, lvName, "%sm" % (size_mb,))
+
+    _lvminfo._invalidatevgs(vgName)
+    _lvminfo._invalidatelvs(vgName, lvName)
 
 
 def activateLVs(vgName, lvNames):
