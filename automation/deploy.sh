@@ -25,7 +25,7 @@ fi
 
 
 # Fix for bz:1195882
-dnf install --nogpgcheck -y libvirt-daemon
+yum install --nogpgcheck -y libvirt-daemon
 rm -rf /var/cache/libvirt/qemu/capabilities
 systemctl restart libvirtd.service || :
 
@@ -41,10 +41,12 @@ cost=1
 EOF
 
 echo "######################### Cleaning up caches"
-dnf clean all
+yum clean all
+echo "######################### Installing epel repository"
+yum install -y epel-release
 echo "######################### Installing vdsm"
-dnf install --nogpgcheck -y vdsm vdsm-cli vdsm-tests python-pip
-dnf install -y python-mock
+yum install --nogpgcheck -y vdsm vdsm-cli vdsm-tests python-pip
+yum install -y python-mock
 pip install nose-timer
 echo "######################### Configuring vdsm"
 vdsm-tool configure --force
