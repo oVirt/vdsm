@@ -196,6 +196,7 @@ blacklist_modules_python3 = \
 	network/hook_ovs_test.py \
 	network/iproute2_test.py \
 	network/ipwrapper_test.py \
+	network/link_bond_test.py \
 	network/link_iface_test.py \
 	network/netlink_test.py \
 	network/netinfo_test.py \
