@@ -198,7 +198,7 @@ blacklist_modules_python3 = \
 	network/ip_test.py \
 	network/iproute2_test.py \
 	network/ipwrapper_test.py \
-	network/link_test.py \
+	network/netlink_test.py \
 	network/netinfo_test.py \
 	network/ovs_driver_test.py \
 	network/ovs_info_test.py \
