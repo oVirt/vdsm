@@ -34,8 +34,7 @@ PATHSUBST = sed \
 	-e "s,[@]VDSMLIBDIR[@],$(vdsmlibdir),g" \
 	-e "s,[@]VDSMLOGDIR[@],$(vdsmlogdir),g" \
 	-e "s,[@]VDSMREPO[@],$(vdsmrepo),g" \
-	-e "s,[@]VDSMRUNDIR[@],$(vdsmrundir),g" \
-	-e "s,[@]VDSMUPGRADEDIR[@],$(vdsmupgradedir),g"
+	-e "s,[@]VDSMRUNDIR[@],$(vdsmrundir),g"
 
 CONFIGSUBST = $(top_builddir)/config.status --file=-
 

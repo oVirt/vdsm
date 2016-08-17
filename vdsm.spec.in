@@ -324,18 +324,6 @@ Requires:       python >= 2.6
 %description yajsonrpc
 A JSON RPC server and client implementation.
 
-%package reg
-Summary:        VDSM registration package
-BuildArch:      noarch
-Requires: %{name} = %{version}-%{release}
-Requires: m2crypto
-Requires: openssl
-Conflicts: ovirt-node < 3.0.4
-
-%description reg
-VDSM registration package. Used to register a Linux host to a Virtualization
-Manager.
-
 %package python
 Summary:        VDSM python libraries
 Requires:       %{name}-api = %{version}-%{release}

@@ -255,13 +255,6 @@ AC_SUBST([vdsmtooldir], ['${vdsmpylibdir}/tool'])
 AC_SUBST([configuratorsdir], ['${vdsmtooldir}/configurators'])
 AC_SUBST([vdsmtestsdir], ['${datarootdir}/vdsm/tests'])
 
-# VDSM registration default paths
-AC_SUBST([vdsmregdir], ['${datarootdir}/vdsm-reg'])
-AC_SUBST([vdsmbootstrapdir], ['${datarootdir}/vdsm-bootstrap'])
-AC_SUBST([vdsmregconfdir], ['${sysconfdir}/vdsm-reg'])
-AC_SUBST([vdsmreglogdir], ['${localstatedir}/log/vdsm-reg'])
-AC_SUBST([vdsmupgradedir], ['/data/updates'])
-
 # VDSM service
 AC_SUBST([SERVICE_STOP_TIMEOUT], ['10'])
 
