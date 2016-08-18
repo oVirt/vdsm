@@ -42,8 +42,6 @@
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
 %endif
 
-%global _udevexecdir %{_libdir}/udev/
-
 # Disable debuginfo package, since vdsm is a meta-package
 %global debug_package %{nil}
 
