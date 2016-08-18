@@ -3512,6 +3512,16 @@ class HSM(object):
         self.taskMng.scheduleJob("sdm", None, vars.task,
                                  job.description, job.run)
 
+    def _get_hostid(self):
+        # Currently we use the pool.id as the hostid for all storage domains.
+        # If we get rid of the storage pool then we need to add an interface
+        # to fetch the hostid from the StorageDomainManifest object.
+        try:
+            pool = self.pools.values()[0]
+        except IndexError:
+            raise se.StoragePoolNotConnected()
+        return pool.id
+
     @public
     def sdm_create_volume(self, job_id, vol_info):
         vol_info = sdm.api.create_volume.CreateVolumeInfo(vol_info)
@@ -3523,5 +3533,6 @@ class HSM(object):
 
     @public
     def sdm_copy_data(self, job_id, source, destination):
-        job = sdm.api.copy_data.Job(job_id, None, source, destination)
+        job = sdm.api.copy_data.Job(job_id, self._get_hostid(),
+                                    source, destination)
         self.sdm_schedule(job)
