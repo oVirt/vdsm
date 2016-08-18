@@ -70,7 +70,7 @@ vdsm/vdscli.py
 vdsm/vdsm-gencerts.sh
 vdsm/vdsm-sosplugin.py
 vdsm/vdsm-store-net-config
-vdsm/vdsmd.8
+static/usr/share/man/man8/vdsmd.8
 vdsm-tool/vdsm-tool.1
 vdsm/rpc/vdsm-api.html
 vdsm_hooks/openstacknet/sudoers

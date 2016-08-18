@@ -54,9 +54,6 @@ dist_vdsm_SCRIPTS = \
 	vdsm-restore-net-config \
 	$(NULL)
 
-nodist_man8_MANS = \
-	vdsmd.8
-
 CLEANFILES = \
 	config.log \
 	$(nodist_vdsm_SCRIPTS) \
@@ -76,7 +73,6 @@ EXTRA_DIST = \
 	vdsm-libvirt-access.rules \
 	vdsm-logrotate \
 	vdsm-store-net-config.in \
-	vdsmd.8.in \
 	$(NULL)
 
 all-local: \

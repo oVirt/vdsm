@@ -20,6 +20,9 @@
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
+man8_MANS = \
+	./usr/share/man/man8/vdsmd.8
+
 vdsm_DATA = \
 	./usr/share/vdsm/bonding-defaults.json \
 	./usr/share/vdsm/bonding-name2numeric.json \
@@ -99,6 +102,7 @@ CLEANFILES = \
 	$(sudoers_DATA) \
 	$(systemdunit_DATA) \
 	$(vdsmconf_DATA) \
+	$(man8_MANS) \
 	$(NULL)
 
 EXTRA_DIST = \
@@ -118,4 +122,5 @@ EXTRA_DIST = \
 	./usr/lib/systemd/system/vdsm-network.service.in \
 	./usr/lib/systemd/system/vdsm-network-init.service.in \
 	./usr/lib/systemd/system/vdsmd.service.in \
+	./usr/share/man/man8/vdsmd.8.in \
 	$(NULL)
