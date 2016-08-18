@@ -108,7 +108,7 @@ def download_volume(con, vol, dest, bufsize):
 
 def get_password(options):
     if not options.password_file:
-        return ''
+        return None
     if options.verbose:
         write_output('>>> Reading password from file %s' %
                      options.password_file)
