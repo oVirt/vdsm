@@ -67,8 +67,6 @@ CLEANFILES = \
 	$(nodist_man8_MANS)
 
 EXTRA_DIST = \
-	bonding-defaults.json \
-	bonding-name2numeric.json \
 	dumpStorageTable.py.in \
 	libvirt_password \
 	mk_sysprep_floppy.in \
@@ -91,7 +89,6 @@ install-data-hook:
 	chmod 775 $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 install-data-local: \
-		install-data-bonding-defaults \
 		install-data-dhclient-hooks \
 		install-data-libvirtpass \
 		install-data-logrotate \
@@ -115,7 +112,6 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 uninstall-local: \
-		uninstall-data-bonding-defaults \
 		uninstall-data-dhclient-hooks \
 		uninstall-data-libvirtpass \
 		uninstall-data-logrotate \
@@ -128,16 +124,6 @@ install-data-libvirtpass:
 
 uninstall-data-libvirtpass:
 	$(RM) $(DESTDIR)$(vdsmtsdir)/keys/libvirt_password
-
-install-data-bonding-defaults:
-	$(INSTALL_DATA) -m 600 $(srcdir)/bonding-defaults.json \
-		$(DESTDIR)$(vdsmdir)/bonding-defaults.json
-	$(INSTALL_DATA) -m 600 $(srcdir)/bonding-name2numeric.json \
-		$(DESTDIR)$(vdsmdir)/bonding-name2numeric.json
-
-uninstall-data-bonding-defaults:
-	$(RM) $(DESTDIR)$(vdsmdir)/bonding-defaults.json
-	$(RM) $(DESTDIR)$(vdsmdir)/bonding-name2numeric.json
 
 install-data-logrotate:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/cron.hourly

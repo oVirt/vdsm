@@ -39,7 +39,7 @@ from monkeypatch import MonkeyPatch, MonkeyClass
 @attr(type='unit')
 @MonkeyClass(bonding, 'BONDING_DEFAULTS', bonding.BONDING_DEFAULTS
              if os.path.exists(bonding.BONDING_DEFAULTS)
-             else '../vdsm/bonding-defaults.json')
+             else '../static/usr/share/vdsm/bonding-defaults.json')
 class TestNetmodels(TestCaseBase):
 
     def testIsVlanIdValid(self):

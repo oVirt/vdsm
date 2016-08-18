@@ -20,6 +20,11 @@
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
+vdsm_DATA = \
+	./usr/share/vdsm/bonding-defaults.json \
+	./usr/share/vdsm/bonding-name2numeric.json \
+	$(NULL)
+
 vdsmconf_DATA = \
 	./etc/vdsm/logger.conf \
 	./etc/vdsm/mom.conf \
@@ -102,6 +107,7 @@ EXTRA_DIST = \
 	$(modulesload_DATA) \
 	$(sysctl_DATA) \
 	$(vdsmconfrotate_DATA) \
+	$(vdsm_DATA) \
 	./etc/rwtab.d/vdsm.in \
 	./etc/sudoers.d/50_vdsm.in \
 	./etc/vdsm/logger.conf.in \

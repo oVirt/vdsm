@@ -235,7 +235,7 @@ class TestNetinfo(TestCaseBase):
     @mock.patch.object(bonding, 'BONDING_DEFAULTS',
                        bonding.BONDING_DEFAULTS
                        if os.path.exists(bonding.BONDING_DEFAULTS)
-                       else '../vdsm/bonding-defaults.json')
+                       else '../static/usr/share/vdsm/bonding-defaults.json')
     @attr(type='integration')
     @ValidateRunningAsRoot
     @RequireBondingMod
@@ -270,12 +270,22 @@ class TestNetinfo(TestCaseBase):
         opts.pop('mode')
         return opts
 
+    @mock.patch.object(bonding, 'BONDING_NAME2NUMERIC_PATH',
+                       bonding.BONDING_NAME2NUMERIC_PATH
+                       if os.path.exists(bonding.BONDING_NAME2NUMERIC_PATH)
+                       else
+                       '../static/usr/share/vdsm/bonding-name2numeric.json')
     def test_get_bonding_option_numeric_val_exists(self):
         mode_num = bonding.BONDING_MODES_NAME_TO_NUMBER["balance-rr"]
         self.assertNotEqual(bonding.get_bonding_option_numeric_val(
                             mode_num, "ad_select", "stable"),
                             None)
 
+    @mock.patch.object(bonding, 'BONDING_NAME2NUMERIC_PATH',
+                       bonding.BONDING_NAME2NUMERIC_PATH
+                       if os.path.exists(bonding.BONDING_NAME2NUMERIC_PATH)
+                       else
+                       '../static/usr/share/vdsm/bonding-name2numeric.json')
     def test_get_bonding_option_numeric_val_does_not_exists(self):
         mode_num = bonding.BONDING_MODES_NAME_TO_NUMBER["balance-rr"]
         self.assertEqual(bonding.get_bonding_option_numeric_val(
