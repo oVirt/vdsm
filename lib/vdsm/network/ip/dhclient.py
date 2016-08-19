@@ -78,7 +78,7 @@ class DhcpClient(object):
             return self._dhclient()
         else:
             t = concurrent.thread(self._dhclient,
-                                  name='vdsm-dhclient-%s' % self.iface)
+                                  name='dhclient/%s' % self.iface)
             t.start()
 
     def shutdown(self):
