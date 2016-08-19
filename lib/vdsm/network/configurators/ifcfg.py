@@ -878,7 +878,7 @@ def _ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP):
                                    iface.ipv6.dhcpv6):
         # wait for dhcp in another thread, so vdsm won't get stuck (BZ#498940)
         t = concurrent.thread(_exec_ifup,
-                              name='ifup-waiting-on-dhcp',
+                              name='ifup/%s' % iface,
                               args=(iface, cgroup))
         t.start()
     else:
