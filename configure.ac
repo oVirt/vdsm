@@ -72,8 +72,10 @@ AC_PROG_SED
 AC_PROG_MAKE_SET
 AC_PROG_MKDIR_P
 
+if test ! "${with_maven}" = "no"; then
 AC_ARG_VAR([MVN], [path to mvn utility])
 AC_CHECK_PROGS([MVN], [mvn])
+fi
 AC_ARG_VAR([JAVAC], [path to java compiler])
 AC_CHECK_PROGS([JAVAC], [javac])
 AC_ARG_VAR([jar], [path to jar utility])
