@@ -85,7 +85,9 @@ BuildRequires: python-ioprocess >= 0.16.1-1
 BuildRequires: python-pthreading
 BuildRequires: qemu-img
 BuildRequires: rpm-python
+%if 0%{?with_gluster_mgmt}
 BuildRequires: python-blivet
+%endif
 BuildRequires: sanlock-python
 
 %if 0%{?with_openvswitch}
