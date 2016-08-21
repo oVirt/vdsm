@@ -154,12 +154,10 @@ class vdsm(Plugin, RedHatPlugin):
                     cli.StoragePool.getSpmStatus,
                     storagepoolID=pool)
 
-        self.collectExtOutput(
-            '/bin/su vdsm -s %s %s/dumpStorageTable.pyc' % (
-                '@PYTHON@',
-                '@VDSMDIR@',
-            )
-        )
+            sd_uuids = cli.Host.getStorageDomains()
+
+        for sd_uuid in sd_uuids:
+            self.collectExtOutput("vdsm-tool dump-volume-chains %s" % sd_uuid)
 
     def _addVdsmRunDir(self):
         """Add everything under /var/run/vdsm except possibly confidential
