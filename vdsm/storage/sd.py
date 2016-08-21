@@ -26,6 +26,7 @@ from collections import namedtuple
 import codecs
 from contextlib import contextmanager
 
+from vdsm.common import exception
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -331,6 +332,9 @@ class StorageDomainManifest(object):
         else:
             return value in ("0.10", qemuimg.default_qcow2_compat())
 
+    def supports_device_reduce(self):
+        return False
+
     def replaceMetadata(self, md):
         self._metadata = md
 
@@ -378,6 +382,9 @@ class StorageDomainManifest(object):
 
     def resizePV(self, guid):
         pass
+
+    def movePV(self, src_device, dst_devices):
+        raise exception.UnsupportedOperation()
 
     def getFormat(self):
         return str(self.getVersion())
@@ -477,6 +484,14 @@ class StorageDomainManifest(object):
             yield
         finally:
             self.releaseDomainLock()
+
+    @contextmanager
+    def domain_id(self, host_id):
+        self.acquireHostId(host_id)
+        try:
+            yield
+        finally:
+            self.releaseHostId(host_id)
 
     def inquireDomainLock(self):
         return self._domainLock.inquire(self.getDomainLease())

@@ -29,4 +29,5 @@ dist_vdsmsdmapi_PYTHON = \
 	copy_data.py \
 	create_volume.py \
 	sparsify_volume.py \
+	move_device.py \
 	$(NULL)

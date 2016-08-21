@@ -82,6 +82,7 @@ import storageServer
 
 import sdm.api.create_volume
 import sdm.api.copy_data
+import sdm.api.move_device
 import sdm.api.sparsify_volume
 import sdm.api.amend_volume
 
@@ -102,6 +103,16 @@ STORAGE_CONNECTION_DIR = os.path.join(constants.P_VDSM_LIB, "connections/")
 QEMU_READABLE_TIMEOUT = 30
 
 HSM_DOM_MON_LOCK = "HsmDomainMonitorLock"
+
+# a host is being assigned with a host id in a storage pool when it's
+# connected to a pool.
+# Some verbs can be executed by hosts that aren't connected to a pool
+# and to be executed on domain that isn't part of the pool - therefore
+# we can't rely on having a usable and meaningful host id for the operation.
+# using 1 as the host id is good enough as those verbs should be executed
+# only on storage domains that aren't being accessed by any other host
+# - therefore this id shouldn't be in use.
+DISCONNECTED_HOST_ID = 1
 
 
 def public(f=None, **kwargs):
@@ -3562,3 +3573,19 @@ class HSM(object):
     @public
     def sdm_merge(self, job_id, subchain_info):
         raise NotImplementedError()
+
+    @public
+    def sdm_move_domain_device(self, job_id, move_params):
+        """
+        Moves the data stored on a PV to other PVs that are part of the Storage
+        Domain.
+
+        :param job_id: The UUID of the job.
+        :type job_id: UUID
+        :param move_params: The move operation params
+        :type move_params:
+            `storage.sdm.api.move_device.StorageDomainMoveDeviceParams`
+        """
+        job = sdm.api.move_device.Job(job_id, DISCONNECTED_HOST_ID,
+                                      move_params)
+        self.sdm_schedule(job)

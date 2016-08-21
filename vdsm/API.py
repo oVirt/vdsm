@@ -1659,3 +1659,6 @@ class SDM(APIBase):
 
     def merge(self, job_id, subchain_info):
         return self._irs.sdm_merge(job_id, subchain_info)
+
+    def move_domain_device(self, job_id, move_params):
+        return self._irs.sdm_move_domain_device(job_id, move_params)

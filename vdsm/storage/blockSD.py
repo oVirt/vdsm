@@ -410,6 +410,9 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         self.log.info("META MAPPING: %s" % meta)
         return meta
 
+    def supports_device_reduce(self):
+        return self.getVersion() not in VERS_METADATA_LV
+
     def getMonitoringPath(self):
         return lvm.lvPath(self.sdUUID, sd.METADATA)
 
@@ -461,6 +464,26 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                 metadata first device.
         """
         return os.path.basename(lvm.getVgMetadataPv(self.sdUUID))
+
+    def _validateNotFirstMetadataLVDevice(self, guid):
+        if self.getMetadataLVDevice() == guid:
+            raise se.ForbiddenPhysicalVolumeOperation(
+                "This PV is the first metadata LV device")
+
+    def _validateNotVgMetadataDevice(self, guid):
+        if self.getVgMetadataDevice() == guid:
+            raise se.ForbiddenPhysicalVolumeOperation(
+                "This PV is used by LVM to store the VG metadata")
+
+    def _validatePVsPartOfVG(self, pv, dstPVs=None):
+        vgPvs = {os.path.basename(pv) for pv in lvm.listPVNames(self.sdUUID)}
+        if pv not in vgPvs:
+            raise se.NoSuchPhysicalVolume(pv, self.sdUUID)
+        if dstPVs:
+            unrelated_pvs = set(dstPVs) - vgPvs
+            if unrelated_pvs:
+                raise se.NoSuchDestinationPhysicalVolumes(
+                    ', '.join(unrelated_pvs), self.sdUUID)
 
     @classmethod
     def getMetaDataMapping(cls, vgName, oldMapping={}):
@@ -573,6 +596,14 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             self.updateMapping()
             newsize = self.metaSize(self.sdUUID)
             lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
+
+    def movePV(self, src_device, dst_devices):
+        self._validatePVsPartOfVG(src_device, dst_devices)
+        self._validateNotFirstMetadataLVDevice(src_device)
+        self._validateNotVgMetadataDevice(src_device)
+        # TODO: check if we can avoid using _extendlock here
+        with self._extendlock:
+            lvm.movePV(self.sdUUID, src_device, dst_devices)
 
     def getVolumeClass(self):
         """

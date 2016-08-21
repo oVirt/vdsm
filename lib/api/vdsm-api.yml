@@ -7305,6 +7305,27 @@ types:
             type: *UUID
         type: object
 
+    StorageDomainDeviceMoveParams: &StorageDomainDeviceMoveParams
+        added: '4.1'
+        description: An descriptor for a storage domain device data move
+            operation.
+        name: StorageDomainDeviceMoveParams
+        properties:
+        -   description: The UUID of the Storage Domain
+            name: sd_id
+            type: *UUID
+
+        -   description: The GUID of the block device
+            name: guid
+            type: string
+
+        -   defaultvalue: null
+            description: Optional list of target block device GUIDs
+            name: dst_guids
+            type:
+            - string
+        type: object
+
 
 Host.setupNetworks:
     added: '3.1'
@@ -10229,3 +10250,16 @@ SDM.amend_volume:
                      in a volume.
         name: vol_attr
         type: *VolumeAttributes
+
+SDM.move_domain_device:
+    added: '4.1'
+    description: Moves the data stored on a Storage Domain block device PV to
+        other PVs that are part of the domain.
+    params:
+    -   description: A UUID to be used for tracking the job progress
+        name: job_id
+        type: *UUID
+
+    -   description: The move operation parameters
+        name: move_params
+        type: *StorageDomainDeviceMoveParams

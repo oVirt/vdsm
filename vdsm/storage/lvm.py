@@ -38,6 +38,7 @@ from itertools import chain
 from subprocess import list2cmdline
 
 from vdsm import constants
+from vdsm.common import exception
 from vdsm.storage import devicemapper
 from vdsm.storage import exception as se
 from vdsm.storage import misc
@@ -900,6 +901,44 @@ def resizePV(vgName, guid):
         raise se.CouldNotResizePhysicalVolume(pvName, err)
     _lvminfo._invalidatepvs(pvName)
     _lvminfo._invalidatevgs(vgName)
+
+
+def movePV(vgName, src_device, dst_devices):
+    """
+    Moves the data stored on a PV to other PVs that are part of the VG.
+
+    Raises se.CouldNotMovePVData if pvmove fails
+    """
+
+    # TODO: we are pending on a lvm bug that causes the pvmove execution to
+    # return before it was actually completed. Will be removed as soon as we'll
+    # depend on a version with a fix.
+    raise exception.UnsupportedOperation()
+
+    pvName = _fqpvname(src_device)
+
+    # we invalidate the pv as we can't rely on the cache for checking the
+    # current state
+    _lvminfo._invalidatepvs(pvName)
+    pv = getPV(pvName)
+    if pv.pe_alloc_count == "0":
+        log.info("No data to move on pv %s (vg %s), considering as successful",
+                 pvName, vgName)
+        return
+
+    cmd = ["pvmove", pvName]
+    if dst_devices:
+        cmd.extend(_fqpvname(pdev) for pdev in dst_devices)
+
+    log.info("Moving pv %s data (vg %s)", pvName, vgName)
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
+    # We invalidate all the caches even on failure so we'll have up to date
+    # data after moving data within the vg.
+    _lvminfo._invalidatepvs(pvName)
+    _lvminfo._invalidatelvs(vgName)
+    _lvminfo._invalidatevgs(vgName)
+    if rc != 0:
+        raise se.CouldNotMovePVData(pvName, vgName, err)
 
 
 def getVG(vgName):

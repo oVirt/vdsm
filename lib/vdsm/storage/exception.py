@@ -782,6 +782,11 @@ class StorageDomainAccessError(StorageException):
     message = "Domain is either partially accessible or entirely inaccessible"
 
 
+class StorageDomainVersionError(StorageException):
+    code = 380
+    message = "Unsupported Storage Domain version"
+
+
 class StorageDomainAlreadyAttached(StorageException):
     def __init__(self, spUUID, sdUUID):
         self.value = "domain=%s, pool=%s" % (sdUUID, spUUID)
@@ -1562,6 +1567,39 @@ class UnexpectedVolumeGroupMetadata(StorageException):
         self.value = "reason=%s" % reason
     code = 616
     message = "Volume Group metadata isn't as expected"
+
+
+class ForbiddenPhysicalVolumeOperation(StorageException):
+    code = 617
+    message = "The operation couldn't be performed on the provided pv"
+
+    def __init__(self, reason):
+        self.value = "reason=%s" % reason
+
+
+class CouldNotMovePVData(StorageException):
+    code = 618
+    message = "Could not move PV data, there might be leftovers that require" \
+              " manual handling - please refer to the pvmove man page"
+
+    def __init__(self, pvname, vgname, err):
+        self.value = "pvname=%s vgname=%s err=%s" % (pvname, vgname, err)
+
+
+class NoSuchPhysicalVolume(StorageException):
+    code = 619
+    message = "No such PV"
+
+    def __init__(self, pvname, vgname):
+        self.value = "pvname=%s vgname=%s" % (pvname, vgname)
+
+
+class NoSuchDestinationPhysicalVolumes(StorageException):
+    code = 620
+    message = "No such destination PVs"
+
+    def __init__(self, pvs, vgname):
+        self.value = "pvs=%s vgname=%s" % (pvs, vgname)
 
 
 #################################################
