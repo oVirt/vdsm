@@ -221,7 +221,7 @@ types:
                 unmapped in a single discard operation. 0 means that the device
                 does not support discard functionality.
             name: discard_max_bytes
-            type: uint
+            type: ulong
 
         -   description: Indicates whether or not the device deterministically
                 returns zeroes when a discarded area is read.
