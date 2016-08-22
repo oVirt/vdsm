@@ -84,3 +84,28 @@ def is_error(res, err=None):
             return code == errCode[err]["status"]["code"]
         else:
             return code != doneCode["code"]
+
+
+def is_valid(res):
+    """
+    Return True if the argument is a valid response,
+    False otherwise. A valid response is produced
+    by success() and error() functions, and looks like:
+    response = {
+      # ...
+      status: {
+        # ...
+        code: INTEGER,
+        message: STRING,
+      }
+    }
+    """
+    # catching AttributeError is even uglier
+    if not isinstance(res, dict):
+        return False
+    try:
+        status = res["status"]
+    except KeyError:
+        return False
+    else:
+        return "message" in status and "code" in status

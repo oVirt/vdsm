@@ -97,6 +97,27 @@ class ResponseTests(TestCaseBase):
                           response.is_error,
                           {'status': {}})
 
+    @permutations([
+        # res
+        [response.success()],
+        [response.success(foo='bar', a=42)],
+        [response.error('noVM')],
+        [{'status': {'code': '0', 'message': 'ok', 'foo': 'bar'}}],
+    ])
+    def test_is_valid(self, res):
+        self.assertTrue(response.is_valid(res))
+
+    @permutations([
+        # res
+        [('foo', 'bar')],
+        [['foo', 'bar']],
+        [{'code': 42}],
+        [{'message': 'foobar'}],
+        [{'success': True}],
+    ])
+    def test_is_not_valid(self, res):
+        self.assertFalse(response.is_valid(res))
+
     def test_malformed_exception_contains_response(self):
         bad_res = {}
         try:
