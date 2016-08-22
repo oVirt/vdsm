@@ -55,10 +55,11 @@ def method(func, *args, **kwargs):
         if not isinstance(e, exception.VdsmException):
             e = exception.GeneralException(str(e))
         return e.response()
-
     _log.debug("FINISH %s response=%s", func.__name__, ret)
 
+    # FIXME: this is temporary to allow gradual upgrade of VM API methods.
+    if response.is_valid(ret):
+        return ret
     if ret is None:
         return response.success()
-    else:
-        return response.success(**ret)
+    return response.success(**ret)

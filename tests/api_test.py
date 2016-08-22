@@ -88,6 +88,11 @@ class TestResponse(TestCaseBase):
         expected = exception.GeneralException(str(exc)).response()
         self.assertEquals(res, expected)
 
+    def test_passthrough(self):
+        foo = 'foo'
+        res = self.vm.succeed_passthrough(foo=foo)
+        self.assertEquals(res, response.success(foo=foo))
+
 
 class FakeVM(object):
 
@@ -110,3 +115,7 @@ class FakeVM(object):
     @api.method
     def succeed_with_kwargs(self, **kwargs):
         return {"kwargs": kwargs}
+
+    @api.method
+    def succeed_passthrough(self, foo):
+        return response.success(foo=foo)
