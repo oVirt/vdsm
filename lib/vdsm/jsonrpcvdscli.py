@@ -223,10 +223,14 @@ def _create(requestQueue,
         lazy_start=False)
 
 
-def connect(requestQueue, stompClient=None,
+def connect(requestQueue=None, stompClient=None,
             host=None, port=None,
             useSSL=None,
             responseQueue=None, xml_compat=True):
+    if not requestQueue:
+        request_queues = config.get("addresses", "request_queues")
+        requestQueue = request_queues.split(",")[0]
+
     if not stompClient:
         client = _create(requestQueue,
                          host, port, useSSL,
