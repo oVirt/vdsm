@@ -10,6 +10,7 @@ Syntax:
 Where:
     VM_ID should be replaced with the vm id.'''
 
+from contextlib import closing
 import libvirt
 import os
 import time
@@ -17,7 +18,7 @@ import traceback
 import hooking
 from openstacknet_utils import MARK_FOR_UNPAUSE_PATH
 from openstacknet_utils import VM_ID_KEY
-from vdsm import vdscli
+from vdsm import jsonrpcvdscli
 
 
 OPENSTACK_NIC_WAIT_TIME = 15
@@ -26,7 +27,8 @@ OPENSTACK_NIC_WAIT_TIME = 15
 def resume_paused_vm(vm_id):
     unpause_file = MARK_FOR_UNPAUSE_PATH % vm_id
     if os.path.isfile(unpause_file):
-        vdscli.connect().cont(vm_id)
+        with closing(jsonrpcvdscli.connect()) as server:
+            server.cont(vm_id)
         os.remove(unpause_file)
 
 
