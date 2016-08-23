@@ -2807,6 +2807,8 @@ class HSM(object):
         info["vgUUID"] = str(pv.vg_uuid)
         info["pvUUID"] = str(pv.uuid)
         info["GUID"] = str(pv.guid)
+        info["discard_max_bytes"] = devInfo["discard_max_bytes"]
+        info["discard_zeroes_data"] = devInfo["discard_zeroes_data"]
         return info
 
     @deprecated
