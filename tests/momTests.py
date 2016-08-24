@@ -19,6 +19,8 @@
 
 from unittest import TestCase
 import logging
+import shutil
+import tempfile
 import threading
 from vdsm.define import Mbytes
 from vdsm.momIF import MomClient
@@ -30,7 +32,7 @@ import monkeypatch
 from vdsm import cpuarch
 
 MOM_CONF = "/dev/null"
-MOM_PORT = os.path.join(os.path.dirname(__file__), "test_mom_vdsm.sock")
+MOM_SOCK = "test_mom_vdsm.sock"
 
 
 class DummyMomApi(object):
@@ -67,12 +69,20 @@ class BrokenMomApi(object):
 # added during the tests.
 @monkeypatch.MonkeyClass(logging.getLogger().manager, "loggerDict", {})
 class MomPolicyTests(TestCase):
+
+    _TMP_DIR = tempfile.gettempdir()
+
     def setUp(self):
+        self._tmp_dir = tempfile.mkdtemp(dir=self._TMP_DIR)
         self.config_overrides = configparser.SafeConfigParser()
         self.config_overrides.add_section("logging")
         self.config_overrides.set("logging", "log", "stdio")
         self.config_overrides.add_section("main")
-        self.config_overrides.set("main", "rpc-port", str(MOM_PORT))
+        self.config_overrides.set("main", "rpc-port",
+                                  os.path.join(self._tmp_dir, MOM_SOCK))
+
+    def tearDown(self):
+        shutil.rmtree(self._tmp_dir)
 
     def _getMomClient(self):
         return MomClient(MOM_CONF, self.config_overrides)
