@@ -34,6 +34,7 @@ dist_vdsmtool_PYTHON = \
 	dummybr.py \
 	dump_bonding_opts.py \
 	dump_volume_chains.py \
+	network.py \
 	nwfilter.py \
 	configfile.py \
 	configurator.py \

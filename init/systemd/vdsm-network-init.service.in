@@ -1,0 +1,15 @@
+[Unit]
+Description=Virtual Desktop Server Manager network IP+link restoration
+Wants=network.target
+Requires=@OPENVSWITCHSERVICE@
+After=@OPENVSWITCHSERVICE@
+Before=libvirtd.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/sysconfig/vdsm
+ExecStart=@BINDIR@/vdsm-tool restore-nets-init
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -166,9 +166,9 @@ def _setup_ovs(networks, bondings, options, in_rollback):
                 acq.acquire(s.acquired_ifaces)
             _update_running_config(networks, bondings, config)
             ovs_switch.cleanup()
-            _setup_ipv6autoconf(networks)
-            _set_ovs_links_up(nets2add, bonds2add, bonds2edit)
-            _setup_ovs_ip_config(nets2add, nets2remove)
+            setup_ipv6autoconf(networks)
+            set_ovs_links_up(nets2add, bonds2add, bonds2edit)
+            setup_ovs_ip_config(nets2add, nets2remove)
             connectivity.check(options)
 
 
@@ -193,7 +193,7 @@ def _update_running_config(networks, bondings, running_config):
             running_config.setBonding(bond, attrs)
 
 
-def _setup_ovs_ip_config(nets2add, nets2remove):
+def setup_ovs_ip_config(nets2add, nets2remove):
     # TODO: This should be moved to network/api.py when we solve rollback
     # transactions.
     for net in nets2remove:
@@ -236,7 +236,7 @@ def _ipv6_conf_params(attrs):
             attrs.get('dhcpv6'))
 
 
-def _set_ovs_links_up(nets2add, bonds2add, bonds2edit):
+def set_ovs_links_up(nets2add, bonds2add, bonds2edit):
     # TODO: Make this universal for legacy and ovs.
     for dev in _gather_ovs_ifaces(nets2add, bonds2add, bonds2edit):
         # TODO: Create a link package/module and use link.up(dev).
@@ -285,7 +285,7 @@ def _is_ovs_service_running():
     return service_status('openvswitch', verbose=False) == 0
 
 
-def _setup_ipv6autoconf(networks):
+def setup_ipv6autoconf(networks):
     # TODO: Move func to IP or LINK level.
     # TODO: Implicitly disable ipv6 on SB iface/s and fake ifaces (br, bond).
     for net, attrs in six.iteritems(networks):

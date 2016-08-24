@@ -26,6 +26,7 @@ nodist_noinst_DATA = \
 	systemd-vdsmd \
 	vdsmd.service \
 	vdsm-network.service \
+	vdsm-network-init.service \
 	vdsm-tmpfiles.d.conf \
 	$(NULL)
 
@@ -41,6 +42,7 @@ EXTRA_DIST = \
 	systemd-vdsmd.in \
 	vdsmd.service.in \
 	vdsm-network.service.in \
+	vdsm-network-init.service.in \
 	vdsm-tmpfiles.d.conf.in \
 	unlimited-core.conf \
 	$(NULL)

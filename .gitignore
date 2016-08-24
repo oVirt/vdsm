@@ -29,6 +29,7 @@ init/systemd/systemd-vdsmd
 init/systemd/vdsm-tmpfiles.d.conf
 init/systemd/vdsmd.service
 init/systemd/vdsm-network.service
+init/systemd/vdsm-network-init.service
 init/systemd/mom-vdsm.service
 init/vdsmd_init_common.sh
 lib/api/vdsm-api.html
