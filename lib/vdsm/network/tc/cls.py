@@ -19,6 +19,8 @@
 from __future__ import absolute_import
 from copy import deepcopy
 
+import six
+
 from . import _parser
 from . import _wrapper
 
@@ -120,7 +122,7 @@ def _adapt_qos_options_link_share_for_reporting(qos_opts):
     adapted_qos_ops = deepcopy(qos_opts)
     hfsc = adapted_qos_ops.get('hfsc', {})
     link_share = hfsc.get('ls', {})
-    for k in link_share.iterkeys():
+    for k in six.iterkeys(link_share):
         link_share[k] /= 8
     return adapted_qos_ops
 

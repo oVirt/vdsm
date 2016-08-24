@@ -25,14 +25,14 @@ import time
 import os
 import sys
 from binascii import unhexlify
-from itertools import izip_longest
 from subprocess import Popen, PIPE
 
 from nose.plugins.attrib import attr
 
 import six
+from six.moves import zip_longest
 
-from hostdevTests import Connection
+from vmfakecon import Connection
 from testlib import (VdsmTestCase as TestCaseBase, permutations,
                      expandPermutations)
 from testValidation import ValidateRunningAsRoot, stresstest
@@ -170,8 +170,8 @@ class TestFilters(TestCaseBase):
         with open(path) as tc_filter_show:
             data = tc_filter_show.read()
 
-        for parsed, correct in izip_longest(tc._filters(None, out=data),
-                                            filters):
+        for parsed, correct in zip_longest(tc._filters(None, out=data),
+                                           filters):
             self.assertEqual(parsed, correct)
 
     def test_qdiscs(self):
@@ -220,8 +220,8 @@ class TestFilters(TestCaseBase):
                           'target': 5000.0, 'interval': 150000.0,
                           'ecn': True}},
         )
-        for parsed, correct in izip_longest(tc.qdiscs(None, out=data),
-                                            qdiscs):
+        for parsed, correct in zip_longest(tc.qdiscs(None, out=data),
+                                           qdiscs):
             self.assertEqual(parsed, correct)
 
     def test_classes(self):
@@ -265,8 +265,8 @@ class TestFilters(TestCaseBase):
              'leaf': '5000:', 'hfsc': {'ls': {'m1': 0, 'd': 0,
                                               'm2': reported_ls_5000}}},
         )
-        for parsed, correct in izip_longest(tc.classes(None, out=data),
-                                            classes):
+        for parsed, correct in zip_longest(tc.classes(None, out=data),
+                                           classes):
             self.assertEqual(parsed, correct)
 
 
