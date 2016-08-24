@@ -26,7 +26,7 @@ import uuid
 from monkeypatch import Patch
 from testlib import VdsmTestCase, XMLTestCase
 from testlib import expandPermutations, permutations
-import vmfakelib
+import vmfakecon
 
 from vdsm import libvirtconnection
 from vdsm import response
@@ -70,7 +70,7 @@ class SecretTests(VdsmTestCase):
     def test_register(self):
         params = make_secret(password="12345678")
         sec = secret.Secret(params)
-        con = vmfakelib.Connection()
+        con = vmfakecon.Connection()
         sec.register(con)
         virsec = con.secrets[sec.uuid]
         self.assertEqual(virsec.value, "12345678")
@@ -153,7 +153,7 @@ class SecretXMLTests(XMLTestCase):
 class APITests(VdsmTestCase):
 
     def setUp(self):
-        self.connection = vmfakelib.Connection()
+        self.connection = vmfakecon.Connection()
         self.patch = Patch([
             (libvirtconnection, 'get', lambda: self.connection)
         ])
@@ -165,9 +165,9 @@ class APITests(VdsmTestCase):
 
     def test_clear(self):
         self.connection.secrets = {
-            "uuid1": vmfakelib.Secret(self.connection, "uuid1", "ceph",
+            "uuid1": vmfakecon.Secret(self.connection, "uuid1", "ceph",
                                       "ovirt/name1", None),
-            "uuid2": vmfakelib.Secret(self.connection, "uuid2", "ceph",
+            "uuid2": vmfakecon.Secret(self.connection, "uuid2", "ceph",
                                       "name2", None),
         }
         secret.clear()
@@ -176,11 +176,11 @@ class APITests(VdsmTestCase):
 
     def test_clear_skip_failed(self):
         def fail():
-            raise vmfakelib.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
+            raise vmfakecon.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
         self.connection.secrets = {
-            "uuid1": vmfakelib.Secret(self.connection, "uuid1", "ceph",
+            "uuid1": vmfakecon.Secret(self.connection, "uuid1", "ceph",
                                       "ovirt/name1", None),
-            "uuid2": vmfakelib.Secret(self.connection, "uuid2", "ceph",
+            "uuid2": vmfakecon.Secret(self.connection, "uuid2", "ceph",
                                       "ovirt/name2", None),
         }
         self.connection.secrets["uuid1"].undefine = fail
@@ -227,9 +227,9 @@ class APITests(VdsmTestCase):
 
     def test_register_clear(self):
         self.connection.secrets = {
-            "uuid1": vmfakelib.Secret(self.connection, "uuid1", "ceph",
+            "uuid1": vmfakecon.Secret(self.connection, "uuid1", "ceph",
                                       "ovirt/name1", None),
-            "uuid2": vmfakelib.Secret(self.connection, "uuid2", "ceph",
+            "uuid2": vmfakecon.Secret(self.connection, "uuid2", "ceph",
                                       "name2", None),
         }
         sec = make_secret()
@@ -246,7 +246,7 @@ class APITests(VdsmTestCase):
 
     def test_register_libvirt_error(self):
         def fail(xml):
-            raise vmfakelib.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
+            raise vmfakecon.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
         self.connection.secretDefineXML = fail
         res = secret.register([make_secret()])
         self.assertEqual(res, response.error("secretRegisterErr"))
@@ -280,7 +280,7 @@ class APITests(VdsmTestCase):
 
     def test_unregister_libvirt_error(self):
         def fail(uuid):
-            raise vmfakelib.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
+            raise vmfakecon.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
         self.connection.secretLookupByUUIDString = fail
         res = secret.unregister([str(uuid.uuid4())])
         self.assertEqual(res, response.error("secretUnregisterErr"))
