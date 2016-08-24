@@ -73,8 +73,8 @@ class ifcfgConfigWriterTests(TestCaseBase):
         aXml = ET.tostring(ET.fromstring(a))
         bXml = ET.tostring(ET.fromstring(b))
 
-        aXmlNrml = re.sub('>\s*\n\s*<', '><', aXml).strip()
-        bXmlNrml = re.sub('>\s*\n\s*<', '><', bXml).strip()
+        aXmlNrml = re.sub(b'>\s*\n\s*<', b'><', aXml).strip()
+        bXmlNrml = re.sub(b'>\s*\n\s*<', b'><', bXml).strip()
 
         self.assertEqual(aXmlNrml, bXmlNrml, msg)
 

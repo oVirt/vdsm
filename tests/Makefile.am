@@ -191,7 +191,6 @@ blacklist_modules_python3 = \
 	momTests.py \
 	monkeypatchTests.py \
 	mountTests.py \
-	network/conf_test.py \
 	network/hook_ovs_test.py \
 	network/iproute2_test.py \
 	network/ipwrapper_test.py \
