@@ -88,7 +88,7 @@ class ExpiringCache(object):
         with self._lock:
             del self._items[key]
 
-    def __nonzero__(self):
+    def __bool__(self):
         now = self._clock()
         with self._lock:
             expired_keys = [
@@ -99,6 +99,9 @@ class ExpiringCache(object):
                 del self._items[key]
 
             return bool(self._items)
+
+    def __nonzero__(self):  # TODO: drop when py2 is no longer needed
+        return self.__bool__()
 
     # private
 
