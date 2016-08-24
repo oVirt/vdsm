@@ -375,3 +375,45 @@ def net2vlan(network_name):
     # Using RunningConfig avoids the need to require root access.
     net_attr = RunningConfig().networks.get(network_name)
     return net_attr.get('vlan') if net_attr else None
+
+
+def switch_type_change_needed(nets, bonds, running_config):
+    """
+    Check if we have to do switch type change in order to set up requested
+    networks and bondings. Note that this functions should be called only
+    after canonicalization and verification of the input.
+    """
+    running = _get_switch_type(running_config.networks, running_config.bonds)
+    requested = _get_switch_type(nets, bonds)
+    return running and requested and running != requested
+
+
+def _get_switch_type(nets, bonds):
+    """
+    Get switch type from nets and bonds validated for switch type change.
+    Validation makes sure, that all entries share the same switch type and
+    therefore it is possible to return first found switch type.
+    """
+    for entries in nets, bonds:
+        for attrs in six.itervalues(entries):
+            if 'remove' not in attrs:
+                return attrs['switch']
+    return None
+
+
+def validate_switch_type_change(nets, bonds, running_config):
+    for requests in nets, bonds:
+        for attrs in six.itervalues(requests):
+            if 'remove' in attrs:
+                raise ne.ConfigNetworkError(
+                    ne.ERR_BAD_PARAMS,
+                    'Switch type change request cannot contain removals')
+
+    if frozenset(running_config.networks) != frozenset(nets):
+        raise ne.ConfigNetworkError(
+            ne.ERR_BAD_PARAMS,
+            'All networks must be reconfigured on switch type change')
+    if frozenset(running_config.bonds) != frozenset(bonds):
+        raise ne.ConfigNetworkError(
+            ne.ERR_BAD_PARAMS,
+            'All bondings must be reconfigured on switch type change')
