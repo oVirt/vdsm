@@ -21,6 +21,7 @@
 import errno
 import logging
 import os
+import selinux
 
 import blivet
 import blivet.formats
@@ -54,6 +55,9 @@ _lvchangeCommandPath = utils.CommandPath("lvchange",
 _vgscanCommandPath = utils.CommandPath("vgscan",
                                        "/sbin/vgscan",
                                        "/usr/sbin/vgscan",)
+_semanageCommandPath = utils.CommandPath("semanage",
+                                         "/sbin/semanage",
+                                         "/usr/sbin/semanage",)
 
 # All size are in MiB unless otherwise specified
 DEFAULT_CHUNK_SIZE_KB = 256
@@ -313,4 +317,18 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         raise ge.GlusterHostStorageDeviceVGScanFailedException(rc, out, err)
     fstab.FsTab().add(thinlv.path, mountPoint,
                       DEFAULT_FS_TYPE, mntOpts=[DEFAULT_MOUNT_OPTIONS])
+
+    # If selinux is enabled, set correct selinux labels on the brick.
+    if selinux.is_selinux_enabled():
+        rc, out, err = commands.execCmd([_semanageCommandPath.cmd,
+                                         'fcontext', '-a', '-t',
+                                         'glusterd_brick_t', mountPoint])
+        if rc:
+            raise ge.GlusterHostFailedToSetSelinuxContext(mountPoint, rc,
+                                                          out, err)
+        try:
+            selinux.restorecon(mountPoint, recursive=True)
+        except OSError as e:
+            errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)
+            raise ge.GlusterHostFailedToRunRestorecon(mountPoint, err=errMsg)
     return _getDeviceDict(thinlv)
