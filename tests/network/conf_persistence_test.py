@@ -159,7 +159,7 @@ class TransactionTests(TestCaseBase):
                 _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
                 raise TestException()
 
-        diff, ex_type, _ = roi.exception
+        diff, ex_type, _ = roi.exception.args
         self.assertEquals(diff.networks[NETWORK], {'remove': True})
         self.assertEquals(ex_type, TestException)
         file_path = os.path.join(self.tempdir, 'nets', NETWORK)
