@@ -455,7 +455,10 @@ class ImportVm(object):
             logging.info('Job %r finished import successfully', self._id)
 
     def _execution_environments(self):
-        env = {'LIBGUESTFS_BACKEND': 'direct'}
+        # Provide some sane environment
+        env = os.environ.copy()
+        # virt-v2v specific variables
+        env['LIBGUESTFS_BACKEND'] = 'direct'
         if 'virtio_iso_path' in self._vminfo:
             env['VIRTIO_WIN'] = self._vminfo['virtio_iso_path']
         return env
