@@ -37,7 +37,7 @@ from vdsm.network import netswitch
 from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.netinfo import nics, misc
 from vdsm.network.netinfo.cache import NetInfo
-from vdsm.constants import P_VDSM_RUN
+from vdsm.network.netrestore import NETS_RESTORED_MARK
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig, \
     CONF_PERSIST_DIR, BaseConfig
 from vdsm import sysctl
@@ -52,7 +52,6 @@ from vdsm.network.api import setupNetworks, change_numvfs
 
 _ALL_DEVICES_UP_TIMEOUT = 5
 
-_NETS_RESTORED_MARK = os.path.join(P_VDSM_RUN, 'nets_restored')
 _VIRTUAL_FUNCTIONS_PATH = os.path.join(CONF_PERSIST_DIR, 'virtual_functions')
 
 
@@ -431,7 +430,7 @@ def touch_file(file_path):
 
 
 def restore(args):
-    if not args.force and _nets_already_restored(_NETS_RESTORED_MARK):
+    if not args.force and _nets_already_restored(NETS_RESTORED_MARK):
         logging.info('networks already restored. doing nothing.')
         return
 
@@ -450,7 +449,7 @@ def restore(args):
     else:
         logging.info('restoration completed successfully.')
 
-    touch_file(_NETS_RESTORED_MARK)
+    touch_file(NETS_RESTORED_MARK)
 
 
 if __name__ == '__main__':
@@ -470,7 +469,7 @@ if __name__ == '__main__':
                     "configuration. In order to avoid this use --no-flush.")
     parser = argparse.ArgumentParser(description=restore_help)
 
-    force_option_help = ("Restore networks even if the " + _NETS_RESTORED_MARK
+    force_option_help = ("Restore networks even if the " + NETS_RESTORED_MARK
                          + " mark exists. The mark is created upon a previous "
                            "successful restore")
     parser.add_argument('--force', action='store_true', default=False,

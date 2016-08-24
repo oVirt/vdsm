@@ -85,6 +85,7 @@ systemdunit_DATA = \
 	./usr/lib/systemd/system/mom-vdsm.service \
 	./usr/lib/systemd/system/supervdsmd.service \
 	./usr/lib/systemd/system/vdsm-network.service \
+	./usr/lib/systemd/system/vdsm-network-init.service \
 	./usr/lib/systemd/system/vdsmd.service \
 	$(NULL)
 
@@ -109,5 +110,6 @@ EXTRA_DIST = \
 	./usr/lib/systemd/system/mom-vdsm.service.in \
 	./usr/lib/systemd/system/supervdsmd.service.in \
 	./usr/lib/systemd/system/vdsm-network.service.in \
+	./usr/lib/systemd/system/vdsm-network-init.service.in \
 	./usr/lib/systemd/system/vdsmd.service.in \
 	$(NULL)

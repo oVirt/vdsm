@@ -832,6 +832,7 @@ fi
 %systemd_post vdsmd.service
 %systemd_post supervdsmd.service
 %systemd_post vdsm-network.service
+%systemd_post vdsm-network-init.service
 %systemd_post mom-vdsm.service
 %systemd_post ksmtuned.service
 
@@ -845,6 +846,7 @@ if [ "$1" -eq 0 ]; then
 fi
 %systemd_preun vdsmd.service
 %systemd_preun vdsm-network.service
+%systemd_preun vdsm-network-init.service
 %systemd_preun supervdsmd.service
 %systemd_preun mom-vdsm.service
 %systemd_preun ksmtuned.service
@@ -888,6 +890,7 @@ exit 0
 %{_libdir}/systemd/system-preset/85-vdsmd.preset
 %{_unitdir}/vdsmd.service
 %{_unitdir}/vdsm-network.service
+%{_unitdir}/vdsm-network-init.service
 %{_unitdir}/supervdsmd.service
 %{_unitdir}/mom-vdsm.service
 %{_sysconfdir}/systemd/system/libvirtd.service.d/unlimited-core.conf
@@ -1205,6 +1208,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/ovs/driver/vsctl.py*
 %{python_sitelib}/%{vdsm_name}/network/models.py*
 %{python_sitelib}/%{vdsm_name}/network/netconfpersistence.py*
+%{python_sitelib}/%{vdsm_name}/network/netrestore.py*
 %{python_sitelib}/%{vdsm_name}/network/netswitch.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroute.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroutethread.py*
@@ -1279,6 +1283,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sebool.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/multipath.py*
 %{python_sitelib}/%{vdsm_name}/tool/dump_volume_chains.py*
+%{python_sitelib}/%{vdsm_name}/tool/network.py*
 %{python_sitelib}/%{vdsm_name}/tool/register.py*
 %{python_sitelib}/%{vdsm_name}/tool/restore_nets.py*
 %{python_sitelib}/%{vdsm_name}/tool/service.py*

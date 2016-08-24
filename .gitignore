@@ -41,6 +41,7 @@ static/etc/sudoers.d/50_vdsm
 static/usr/lib/systemd/system/mom-vdsm.service
 static/usr/lib/systemd/system/supervdsmd.service
 static/usr/lib/systemd/system/vdsm-network.service
+static/usr/lib/systemd/system/vdsm-network-init.service
 static/usr/lib/systemd/system/vdsmd.service
 static/etc/vdsm/logger.conf
 static/etc/vdsm/mom.conf

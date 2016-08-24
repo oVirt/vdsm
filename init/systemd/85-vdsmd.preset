@@ -4,6 +4,7 @@
 enable vdsmd.service
 enable supervdsmd.service
 enable vdsm-network.service
+enable vdsm-network-init.service
 enable mom-vdsm.service
 
 disable ksmtuned.service
