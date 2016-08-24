@@ -477,6 +477,28 @@ class GlusterHostStorageDeviceVGScanFailedException(GlusterHostException):
     message = "vgscan failed"
 
 
+class GlusterHostFailedToSetSelinuxContext(GlusterHostException):
+    code = 4420
+
+    def __init__(self, brickMountPoint=None, rc=0, out=(), err=()):
+        self.rc = rc
+        self.out = out
+        self.err = err
+        self.message = "Failed to set selinux context on the brick : %s" \
+                       % brickMountPoint
+
+
+class GlusterHostFailedToRunRestorecon(GlusterHostException):
+    code = 4421
+
+    def __init__(self, brickMountPoint=None, rc=0, out=(), err=()):
+        self.rc = rc
+        self.out = out
+        self.err = err
+        self.message = "Failed to run restorecon on the brick : %s" \
+                       % brickMountPoint
+
+
 # Hook
 class GlusterHookException(GlusterException):
     code = 4500
