@@ -38,6 +38,7 @@ from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
     addrAdd, linkSet, linkAdd, linkDel, IPRoute2Error, netns_add, netns_delete,
     netns_exec)
+from vdsm.network.link import iface as linkiface
 from vdsm.network.netlink import monitor
 from vdsm.commands import execCmd
 from vdsm.utils import CommandPath, random_iface_name
@@ -312,6 +313,7 @@ def dummy_device(prefix='dummy_', max_length=11):
     dummy_interface = Dummy(prefix, max_length)
     dummy_name = dummy_interface.create()
     try:
+        linkiface.up(dummy_name)
         yield dummy_name
     finally:
         dummy_interface.remove()
