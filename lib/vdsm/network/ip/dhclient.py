@@ -60,12 +60,13 @@ class DhcpClient(object):
         if os.path.exists(os.path.join(netinfo.NET_PATH, self.iface)):
             kill(self.iface, self.family)
         cmd = [DHCLIENT_BINARY.cmd, '-%s' % self.family, '-1', '-pf',
-               self.pidFile, '-lf', self.leaseFile, self.iface]
+               self.pidFile, '-lf', self.leaseFile]
         if not self.default_route:
             # Instruct Fedora/EL's dhclient-script not to set gateway on iface
             cmd += ['-e', 'DEFROUTE=no']
         if self.duid_source_file and supports_duid_file():
             cmd += ['-df', self.duid_source_file]
+        cmd += [self.iface]
         cmd = cmdutils.systemd_run(cmd, scope=True, slice=self._cgroup)
         return execCmd(cmd)
 
