@@ -166,6 +166,11 @@ def disable_ipv6_local_auto(dev):
     sysctl.disable_ipv6_local_auto(dev)
 
 
+def disable_ipv6(iface):
+    if ipv6_supported():
+        sysctl.disable_ipv6(iface)
+
+
 def add(iface, ipv4, ipv6):
     if ipv4.address:
         ipwrapper.addrAdd(iface, ipv4.address, ipv4.netmask)
