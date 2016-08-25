@@ -26,6 +26,7 @@ import six
 
 from nose.plugins.skip import SkipTest
 
+from vdsm import utils
 import vdsm.config
 from vdsm.network import kernelconfig
 from vdsm.network.ip import dhclient
@@ -51,6 +52,9 @@ USING_UNIFIED_PERSISTENCE = (
     vdsm.config.config.get('vars', 'net_persistence') == 'unified')
 
 NOCHK = {'connectivityCheck': False}
+
+IFCFG_DIR = '/etc/sysconfig/network-scripts/'
+IFCFG_PREFIX = IFCFG_DIR + 'ifcfg-'
 
 
 def requires_ipaddress():
@@ -414,6 +418,15 @@ class SetupNetworks(object):
         BONDSETUP = {bond: {'remove': True}
                      for bond in self.setup_bonds if bond in bonds_caps}
         status, msg = self.vdsm_proxy.setupNetworks(NETSETUP, BONDSETUP, NOCHK)
+
+        nics_used = [attr['nic']
+                     for attr in six.itervalues(self.setup_networks)
+                     if 'nic' in attr]
+        for attr in six.itervalues(self.setup_bonds):
+            nics_used += attr['nics']
+        for nic in nics_used:
+            utils.rmFile(IFCFG_PREFIX + nic)
+
         return status, msg
 
 
