@@ -1662,3 +1662,6 @@ class SDM(APIBase):
 
     def move_domain_device(self, job_id, move_params):
         return self._irs.sdm_move_domain_device(job_id, move_params)
+
+    def reduce_domain(self, job_id, reduce_params):
+        return self._irs.sdm_reduce_domain(job_id, reduce_params)

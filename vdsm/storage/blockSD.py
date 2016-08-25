@@ -27,9 +27,12 @@ import re
 from StringIO import StringIO
 import time
 import functools
+import sys
 from collections import namedtuple
 from contextlib import contextmanager
 from operator import itemgetter
+
+import six
 
 from vdsm import cmdutils
 from vdsm import concurrent
@@ -604,6 +607,34 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         # TODO: check if we can avoid using _extendlock here
         with self._extendlock:
             lvm.movePV(self.sdUUID, src_device, dst_devices)
+
+    def reduceVG(self, guid):
+        self._validatePVsPartOfVG(guid)
+        self._validateNotFirstMetadataLVDevice(guid)
+        self._validateNotVgMetadataDevice(guid)
+        with self._extendlock:
+            try:
+                lvm.reduceVG(self.sdUUID, guid)
+            except Exception:
+                exc = sys.exc_info()
+            else:
+                exc = None
+
+            # We update the mapping even in case of failure to reduce,
+            # this operation isn't be executed often so we prefer to be on
+            # the safe side on case something has changed.
+            try:
+                self.updateMapping()
+            except Exception:
+                if exc is None:
+                    raise
+                log.exception("Failed to update the domain metadata mapping")
+
+            if exc:
+                try:
+                    six.reraise(*exc)
+                finally:
+                    del exc
 
     def getVolumeClass(self):
         """

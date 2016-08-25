@@ -7326,6 +7326,20 @@ types:
             - string
         type: object
 
+    StorageDomainReduceParams: &StorageDomainReduceParams
+        added: '4.1'
+        description: An descriptor for a storage domain reduce operation.
+        name: StorageDomainReduceParams
+        properties:
+        -   description: The UUID of the Storage Domain
+            name: sd_id
+            type: *UUID
+
+        -   description: The GUID of the block device to reduce from the domain
+            name: guid
+            type: string
+        type: object
+
 
 Host.setupNetworks:
     added: '3.1'
@@ -10263,3 +10277,17 @@ SDM.move_domain_device:
     -   description: The move operation parameters
         name: move_params
         type: *StorageDomainDeviceMoveParams
+
+SDM.reduce_domain:
+    added: '4.1'
+    description: Reduces a device from a block Storage Domain, should be
+        executed after the data has been moved from the device using
+        SDM.move_domain_device
+    params:
+    -   description: A UUID to be used for tracking the job progress
+        name: job_id
+        type: *UUID
+
+    -   description: The reduce operation parameters
+        name: reduce_params
+        type: *StorageDomainReduceParams

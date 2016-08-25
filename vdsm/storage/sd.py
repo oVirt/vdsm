@@ -386,6 +386,9 @@ class StorageDomainManifest(object):
     def movePV(self, src_device, dst_devices):
         raise exception.UnsupportedOperation()
 
+    def reduceVG(self, guid):
+        raise exception.UnsupportedOperation()
+
     def getFormat(self):
         return str(self.getVersion())
 

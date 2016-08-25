@@ -1338,6 +1338,14 @@ class DeviceBlockSizeError(StorageException):
     message = "Device block size is not supported"
 
 
+class VolumeGroupReduceError(StorageException):
+    code = 519
+    message = "Cannot reduce the Volume Group"
+
+    def __init__(self, vgname, pvname, err):
+        self.value = "vgname=%s pvname=%s err=%s" % (vgname, pvname, err)
+
+
 class CannotCreateLogicalVolume(StorageException):
     code = 550
     message = "Cannot create Logical Volume"

@@ -85,6 +85,7 @@ import sdm.api.copy_data
 import sdm.api.move_device
 import sdm.api.sparsify_volume
 import sdm.api.amend_volume
+import sdm.api.reduce_domain
 
 GUID = "guid"
 NAME = "name"
@@ -3588,4 +3589,19 @@ class HSM(object):
         """
         job = sdm.api.move_device.Job(job_id, DISCONNECTED_HOST_ID,
                                       move_params)
+        self.sdm_schedule(job)
+
+    @public
+    def sdm_reduce_domain(self, job_id, reduce_params):
+        """
+        Reduces a device from a block-based Storage Domain.
+
+        :param job_id: The UUID of the job.
+        :type job_id: UUID
+        :param reduce_params: The reduce operation parameters
+        :type reduce_params:
+            'storage.sdm.api.reduce_domain.StorageDomainReduceParams'
+        """
+        job = sdm.api.reduce_domain.Job(job_id, DISCONNECTED_HOST_ID,
+                                        reduce_params)
         self.sdm_schedule(job)

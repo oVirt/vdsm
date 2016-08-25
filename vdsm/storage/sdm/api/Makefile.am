@@ -30,4 +30,5 @@ dist_vdsmsdmapi_PYTHON = \
 	create_volume.py \
 	sparsify_volume.py \
 	move_device.py \
+	reduce_domain.py \
 	$(NULL)

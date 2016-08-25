@@ -1060,6 +1060,17 @@ def extendVG(vgName, devices, force):
         raise se.VolumeGroupExtendError(vgName, pvs)
 
 
+def reduceVG(vgName, device):
+    pvName = _fqpvname(device)
+    log.info("Removing pv %s from vg %s", pvName, vgName)
+    cmd = ["vgreduce", vgName, pvName]
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
+    if rc != 0:
+        raise se.VolumeGroupReduceError(vgName, pvName, err)
+    _lvminfo._invalidatepvs(pvName)
+    _lvminfo._invalidatevgs(vgName)
+
+
 def chkVG(vgName):
     cmd = ["vgck", vgName]
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
