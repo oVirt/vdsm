@@ -530,11 +530,13 @@ class ConfigWriter(object):
             cfg += 'BOOTPROTO=none\n'
         elif ipv4.bootproto:
             cfg += 'BOOTPROTO=%s\n' % pipes.quote(ipv4.bootproto)
-            if (ipv4.bootproto == 'dhcp' and
-                    os.path.exists(os.path.join(NET_PATH, name))):
-                # Ask dhclient to stop any dhclient running for the device
-                dhclient.kill(name)
-                address.flush(name, family=4)
+
+        # FIXME: Move this out, it is unrelated to a conf file creation.
+        if os.path.exists(os.path.join(NET_PATH, name)):
+            # Ask dhclient to stop any dhclient running for the device
+            dhclient.kill(name)
+            address.flush(name, family=4)
+
         if mtu:
             cfg += 'MTU=%d\n' % mtu
         if ipv4.defaultRoute is not None:
