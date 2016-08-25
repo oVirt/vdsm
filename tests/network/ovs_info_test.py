@@ -102,7 +102,6 @@ class TestOvsInfo(VdsmTestCase):
                         'ports': {
                             TEST_BOND: {
                                 'bond': {
-                                    'active_slave': None,
                                     'fake_iface': False,
                                     'lacp': None,
                                     'bond_mode': 'active-backup',
@@ -131,6 +130,9 @@ class TestOvsInfo(VdsmTestCase):
                 ovs_info = info.OvsInfo()
 
                 obtained_bridges = ovs_info.bridges
+                # Normalize obtained_bridges (remove 'active_slave')
+                obtained_bridges[TEST_BRIDGE]['ports'][TEST_BOND]['bond'].pop(
+                    'active_slave')
                 self.assertEqual(obtained_bridges, expected_bridges)
 
                 obtained_bridges_by_sb = ovs_info.bridges_by_sb

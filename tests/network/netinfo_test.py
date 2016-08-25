@@ -409,9 +409,7 @@ class TestIPv6Addresses(TestCaseBase):
             ipwrapper.addrAdd(dev, '2001::88', '64', family=6)
             ip_addrs = addresses.getIpAddrs()[dev]
             self.assertEqual(True, addresses.is_ipv6_local_auto(dev))
-            self.assertEqual(
-                1, len(ip_addrs),
-                'too many addresses %s' % (ip_addrs, ))
+            self.assertEqual(2, len(ip_addrs))
             self.assertTrue(addresses.is_ipv6(ip_addrs[0]))
             self.assertTrue(not addresses.is_dynamic(ip_addrs[0]))
 
