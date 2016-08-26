@@ -245,6 +245,7 @@ class Vm(object):
         self._destroy_requested = threading.Event()
         self._recovery_file = recovery.File(self.conf['vmId'])
         self._monitorResponse = 0
+        self._post_copy = False
         self.memCommitted = 0
         self._consoleDisconnectAction = ConsoleDisconnectAction.LOCK_SCREEN
         self._confLock = threading.Lock()
@@ -321,6 +322,10 @@ class Vm(object):
     @property
     def domain(self):
         return self._domain
+
+    @property
+    def post_copy(self):
+        return self._post_copy
 
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
@@ -1487,6 +1492,27 @@ class Vm(object):
             self._guestCpuLock.release()
 
         return response.success()
+
+    def switch_migration_to_post_copy(self):
+        """
+        Request to switch the currently running migration to post-copy mode.
+
+        :return: Whether the request was successful.
+        :rtype: bool
+
+        .. note::
+
+          This call just requests switching the migration to post-copy mode
+          asynchronously.  The actual change of the migration mode should
+          happen shortly afterwards and it should be reported via the
+          corresponding libvirt event.
+        """
+        self.log.info('Switching to post-copy migration')
+        result = self._dom.migrateStartPostCopy(0)
+        success = result >= 0
+        if success:
+            self._post_copy = True
+        return success
 
     def _customDevices(self):
         """

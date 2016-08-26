@@ -61,6 +61,7 @@ incomingMigrations = DynamicBoundedSemaphore(
 
 
 CONVERGENCE_SCHEDULE_SET_DOWNTIME = "setDowntime"
+CONVERGENCE_SCHEDULE_POST_COPY = "postcopy"
 CONVERGENCE_SCHEDULE_SET_ABORT = "abort"
 
 
@@ -481,11 +482,26 @@ class SourceThread(object):
                      (libvirt.VIR_MIGRATE_COMPRESSED if
                          self._compressed else 0) |
                      (libvirt.VIR_MIGRATE_AUTO_CONVERGE if
-                         self._autoConverge else 0))
+                         self._autoConverge else 0) |
+                     self._post_copy_flag(self._convergence_schedule))
 
             self._vm._dom.migrateToURI3(duri, params, flags)
         else:
             self._raiseAbortError()
+
+    def _post_copy_flag(self, convergence_schedule):
+        # Migration may fail immediately when VIR_MIGRATE_POSTCOPY flag is
+        # present in the following situations:
+        # - The transport is not capable of full bidirectional
+        #   connectivity: RDMA, tunnelled, pipe.
+        # - Huge pages are used (doesn't apply to transparent huge pages).
+        # - QEMU uses a file as a backing for memory.
+        # - Perhaps non-shared block storage may cause some trouble.
+        for s in self._convergence_schedule.get('stalling', []):
+            action = s.get('action', {}).get('name')
+            if action == CONVERGENCE_SCHEDULE_POST_COPY:
+                return libvirt.VIR_MIGRATE_POSTCOPY
+        return 0
 
     def _perform_with_downtime_thread(self, duri, muri):
         self._vm.log.debug('performing migration with downtime thread')
@@ -687,7 +703,18 @@ class MonitorThread(object):
             progress = Progress.from_job_stats(job_stats)
 
             now = time.time()
-            if not self._use_conv_schedule and\
+            if self._vm.post_copy:
+                # Post-copy mode is a final state of a migration -- it either
+                # completes or fails and stops the VM, there is no way to
+                # continue with the migration in either case.  So we won't
+                # handle any further schedule actions once post-copy is
+                # successfully started.  It's still recommended to put the
+                # abort action after the post-copy action in the schedule, for
+                # the case when it's not possible to switch to the post-copy
+                # mode for some reason.
+                self._vm.log.debug('Post-copy migration still in progress: %d',
+                                   progress.data_remaining)
+            elif not self._use_conv_schedule and\
                     (0 < migrationMaxTime < now - self._startTime):
                 self._vm.log.warn('The migration took %d seconds which is '
                                   'exceeding the configured maximum time '
@@ -708,7 +735,8 @@ class MonitorThread(object):
                     ' Refer to RHBZ#919201.',
                     progress.data_remaining / Mbytes, lowmark / Mbytes)
 
-            if lastDataRemaining is not None and\
+            if not self._vm.post_copy and\
+                    lastDataRemaining is not None and\
                     lastDataRemaining < progress.data_remaining:
                 iterationCount += 1
                 self._vm.log.debug('new iteration detected: %i',
@@ -764,6 +792,11 @@ class MonitorThread(object):
             self._vm.log.debug('Setting downtime to %d',
                                downtime)
             self._vm._dom.migrateSetMaxDowntime(downtime, 0)
+        elif action == CONVERGENCE_SCHEDULE_POST_COPY:
+            if not self._vm.switch_migration_to_post_copy():
+                # Do nothing for now; the next action will be invoked after a
+                # while
+                self._vm.log.warn('Failed to switch to post-copy migration')
         elif action == CONVERGENCE_SCHEDULE_SET_ABORT:
             self._vm.log.warn('Aborting migration')
             self._vm._dom.abortJob()

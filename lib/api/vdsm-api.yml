@@ -2938,7 +2938,7 @@ types:
             - string
 
         -   description: The name of the action (e.g.
-                abort, setDowntime)
+                abort, setDowntime, postcopy)
             name: name
             type: string
         type: object
