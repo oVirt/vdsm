@@ -25,4 +25,5 @@ dist_vdsmnetlink_PYTHON = \
 	link.py \
 	monitor.py \
 	route.py \
+	waitfor.py \
 	$(NULL)
