@@ -18,12 +18,10 @@
 #
 from __future__ import absolute_import
 
-import logging
-
 from vdsm.network import ipwrapper
 from vdsm.network.netlink import link
 from vdsm.network.netlink.link import get_link, is_link_up
-from vdsm.network.netlink.monitor import Monitor
+from vdsm.network.netlink.waitfor import waitfor_linkup
 
 
 STATE_UP = 'up'
@@ -64,14 +62,6 @@ def is_promisc(dev):
     return bool(get_link(dev)['flags'] & link.IFF_PROMISC)
 
 
-def _up_blocking(dev, oper_blocking):
-    iface_up_check = is_oper_up if oper_blocking else is_up
-    with Monitor(groups=('link',), timeout=2, silent_timeout=True) as mon:
+def _up_blocking(dev, link_blocking):
+    with waitfor_linkup(dev, link_blocking):
         ipwrapper.linkSet(dev, [STATE_UP])
-        if iface_up_check(dev):
-            return
-        mon_device = (e for e in mon if e.get('name') == dev)
-        for event in mon_device:
-            logging.info('Monitor event: %s', event)
-            if is_link_up(event.get('flags', 0), oper_blocking):
-                return

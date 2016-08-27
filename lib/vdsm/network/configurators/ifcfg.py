@@ -53,7 +53,7 @@ from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netinfo import (bonding as netinfo_bonding, mtus, nics,
                                   vlans, misc, NET_PATH)
 from vdsm.network.netinfo.cache import ifaceUsed
-from vdsm.network.netlink import monitor
+from vdsm.network.netlink import waitfor
 
 if utils.isOvirtNode():
     from ovirt.node.utils import fs as node_fs
@@ -868,12 +868,11 @@ def _ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP):
     else:
         if not iface.master and (iface.ipv4 or iface.ipv6):
             if iface.ipv4:
-                expected_event = {'label': iface.name, 'family': 'inet',
-                                  'scope': 'global'}
+                wait_for_ip = waitfor.waitfor_ipv4_addr
             elif iface.ipv6:
-                expected_event = {'label': iface.name, 'family': 'inet6',
-                                  'scope': 'global'}
-            with _wait_for_event(iface, expected_event):
+                wait_for_ip = waitfor.waitfor_ipv6_addr
+
+            with wait_for_ip(iface.name):
                 _exec_ifup(iface, cgroup)
         else:
             _exec_ifup(iface, cgroup)
@@ -1000,31 +999,3 @@ def _get_unified_persistence_ifcfg():
         ifcfgs.add(ROUTE_PATH % top_level_device)
 
     return ifcfgs
-
-
-def _is_subdict(subdict, superdict):
-    return all(item in frozenset(superdict.items())
-               for item in frozenset(subdict.items()))
-
-
-@contextmanager
-def _wait_for_event(iface, expected_event, timeout=10):
-    with monitor.Monitor(groups=('ipv4-ifaddr', 'ipv6-ifaddr'),
-                         timeout=timeout) as mon:
-        try:
-            yield
-        finally:
-            caught_events = []
-            try:
-                for event in mon:
-                    caught_events.append(event)
-                    if _is_subdict(expected_event, event):
-                        return
-            except monitor.MonitorError as e:
-                if e[0] == monitor.E_TIMEOUT:
-                    logging.warning('Expected event "%s" of interface "%s" '
-                                    'was not caught within the given timeout. '
-                                    'Caught events: %s', expected_event, iface,
-                                    caught_events)
-                else:
-                    raise
