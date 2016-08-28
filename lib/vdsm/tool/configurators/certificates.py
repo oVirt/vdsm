@@ -68,11 +68,5 @@ def isconfigured():
 
 
 def _certsExist():
-    config.read(
-        os.path.join(
-            SYSCONF_PATH,
-            'vdsm/vdsm.conf'
-        )
-    )
     return not config.getboolean('vars', 'ssl') or\
         os.path.isfile(CERT_FILE)
