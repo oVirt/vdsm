@@ -150,8 +150,8 @@ Requires: nfs-utils
 Requires: m2crypto
 Requires: libnl3
 Requires: curl
-Requires: %{name}-xmlrpc = %{version}
-Requires: %{name}-jsonrpc = %{version}
+Requires: %{name}-xmlrpc = %{version}-%{release}
+Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: safelease >= 1.0-7
 Requires: mom >= 0.5.3
 Requires(pre): shadow-utils
@@ -259,8 +259,8 @@ Requires: tree
 Requires: dosfstools
 Requires: genisoimage
 Requires: libselinux-python
-Requires: %{name}-python = %{version}
-Requires: %{name}-hook-vmfex-dev = %{version}
+Requires: %{name}-python = %{version}-%{release}
+Requires: %{name}-hook-vmfex-dev = %{version}-%{release}
 Requires: NetworkManager-config-server
 
 Requires(post): /usr/sbin/saslpasswd2
@@ -282,8 +282,8 @@ tasks, statistics gathering, and log collection.
 %package cli
 Summary:        VDSM command line interface
 BuildArch:      noarch
-Requires: %{name}-python = %{version}
-Requires: %{name}-xmlrpc = %{version}
+Requires: %{name}-python = %{version}-%{release}
+Requires: %{name}-xmlrpc = %{version}-%{release}
 
 %description cli
 Call VDSM commands from the command line. Used for testing and debugging.
@@ -291,7 +291,7 @@ Call VDSM commands from the command line. Used for testing and debugging.
 %package xmlrpc
 Summary:        VDSM xmlrpc API
 BuildArch:      noarch
-Requires: %{name}-python = %{version}
+Requires: %{name}-python = %{version}-%{release}
 
 
 %description xmlrpc
@@ -308,9 +308,9 @@ Contains api schema files
 %package jsonrpc
 Summary:        VDSM API Server
 BuildArch:      noarch
-Requires:       %{name}-python = %{version}
-Requires:       %{name}-api = %{version}
-Requires:       %{name}-yajsonrpc = %{version}
+Requires:       %{name}-python = %{version}-%{release}
+Requires:       %{name}-api = %{version}-%{release}
+Requires:       %{name}-yajsonrpc = %{version}-%{release}
 Obsoletes:      %{name}-api < 4.16
 
 %description jsonrpc
@@ -326,7 +326,7 @@ A JSON RPC server and client implementation.
 
 %package python
 Summary:        VDSM python libraries
-Requires:       %{name}-api = %{version}
+Requires:       %{name}-api = %{version}-%{release}
 BuildArch:      noarch
 Requires:       python-cpopen >= 1.4
 Requires:       m2crypto
@@ -351,7 +351,7 @@ fi
 %package tests
 Summary:        VDSM Test Suite
 BuildArch:      noarch
-Requires:       %{name} = %{version}
+Requires:       %{name} = %{version}-%{release}
 Requires:       dracut
 Requires:       python-nose
 
@@ -377,7 +377,7 @@ using the QEMU disk image utility.
 
 %package hook-checkips
 Summary:        Check connectivity from the host to designated IPs
-Requires:       %{name} = %{version}
+Requires:       %{name} = %{version}-%{release}
 
 %description hook-checkips
 VDSM hook used to check connectivity from the host network to designated IPs
@@ -399,7 +399,7 @@ VDSM hooks which allow to activate disk UNMAP.
 %package hook-ethtool-options
 Summary:        Allow setting custom ethtool options for vdsm controlled nics
 BuildArch:      noarch
-Requires:       %{name} = %{version}
+Requires:       %{name} = %{version}-%{release}
 
 %description hook-ethtool-options
 VDSM hook used for applying custom network properties that define ethtool
@@ -461,7 +461,7 @@ on all of the the VM's interfaces.
 %package hook-extnet
 Summary:        Force a vNIC to connect to a specific libvirt network
 BuildArch:      noarch
-Requires:       %{name} = %{version}
+Requires:       %{name} = %{version}-%{release}
 
 %description hook-extnet
 VDSM hook which allows to connect a vNIC to a libvirt network that is managed
@@ -568,7 +568,7 @@ Hook for OpenStack Network vNICs.
 %package hook-ovs
 Summary:        Open vSwitch support for VDSM
 BuildArch:      noarch
-Requires:       %{name} = %{version}
+Requires:       %{name} = %{version}-%{release}
 Requires:       openvswitch >= 2.0.0
 
 %description hook-ovs
@@ -644,7 +644,7 @@ Hook for vmfex.
 %package hook-vmfex-dev
 Summary:        VM-FEX vNIC support for VDSM
 BuildArch:      noarch
-Requires:       %{name} = %{version}
+Requires:       %{name} = %{version}-%{release}
 Conflicts:      hook-vmfex
 
 %description hook-vmfex-dev
@@ -670,7 +670,7 @@ properties
 %package hook-fcoe
 Summary:        Hook to enable FCoE support
 BuildArch:      noarch
-Requires:       %{name} = %{version}
+Requires:       %{name} = %{version}-%{release}
 Requires:       fcoe-utils
 
 %description hook-fcoe
@@ -685,7 +685,7 @@ network properties
 %package gluster
 Summary:        Gluster Plugin for VDSM
 BuildArch:      noarch
-Requires: %{name} = %{version}
+Requires: %{name} = %{version}-%{release}
 Requires: glusterfs-server >= %{gluster_version}
 Requires: glusterfs-api >= %{gluster_version}
 Requires: glusterfs-geo-replication >= %{gluster_version}
