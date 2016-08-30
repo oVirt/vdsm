@@ -84,6 +84,7 @@ class MockVirDomain(object):
         self._id = id
         self._active = active
         self._has_snapshots = has_snapshots
+        self._disk_type = 'file'
 
     def name(self):
         return self._name
@@ -106,6 +107,9 @@ class MockVirDomain(object):
     def isActive(self):
         return self._active
 
+    def setDiskType(self, disk_type):
+        self._disk_type = disk_type
+
     def XMLDesc(self, flags=0):
         return """
 <domain type='vmware' id='15'>
@@ -122,7 +126,7 @@ class MockVirDomain(object):
     <on_reboot>restart</on_reboot>
     <on_crash>destroy</on_crash>
     <devices>
-        <disk type='file' device='disk'>
+        <disk type='{disk_type}' device='disk'>
             <source file='[datastore1] RHEL/RHEL_{name}.vmdk'/>
             <target dev='sda' bus='scsi'/>
             <address type='drive' controller='0' bus='0' target='0' unit='0'/>
@@ -140,6 +144,7 @@ class MockVirDomain(object):
 </domain>""".format(
             name=self._name,
             uuid=self._uuid,
+            disk_type=self._disk_type,
             mac=self._mac_address)
 
     def hasCurrentSnapshot(self):
@@ -151,12 +156,16 @@ class MockVirConnect(object):
 
     def __init__(self, vms):
         self._vms = vms
+        self._type = 'ESX'
 
     def close(self):
         pass
 
+    def setType(self, type_name):
+        self._type = type_name
+
     def getType(self):
-        return "ESX"
+        return self._type
 
     def listAllDomains(self):
         return [vm for vm in self._vms]
@@ -511,6 +520,22 @@ class v2vTests(TestCaseBase):
     @MonkeyPatch(v2v, '_SSH_AGENT', FAKE_SSH_AGENT)
     def testSuccessfulXenImport(self):
         self._commonConvertExternalVM(self.xen_url)
+
+    def testXenBlockDevice(self):
+        def _connect(uri, username, passwd):
+            self._vms[0].setDiskType('block')
+            conn = MockVirConnect(vms=self._vms)
+            conn.setType('Xen')
+            return conn
+
+        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
+                                _connect)]):
+            vms = v2v.get_external_vms(self.xen_url, 'user',
+                                       ProtectedPassword('password'),
+                                       None)['vmList']
+
+        self.assertEqual(len(vms), len(VM_SPECS) - 1)
+        self.assertTrue(self._vms[0] not in vms)
 
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     @MonkeyPatch(v2v, '_LOG_DIR', None)
