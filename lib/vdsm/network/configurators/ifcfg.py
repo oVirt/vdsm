@@ -861,7 +861,8 @@ def _ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP):
             with wait_for_ip(iface.name):
                 _exec_ifup(iface, cgroup)
         else:
-            _exec_ifup(iface, cgroup)
+            with waitfor.waitfor_linkup(iface.name):
+                _exec_ifup(iface, cgroup)
 
 
 def _restore_default_bond_options(bond_name, desired_options):
