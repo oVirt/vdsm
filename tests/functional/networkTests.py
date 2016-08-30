@@ -30,6 +30,7 @@ from nose.plugins.skip import SkipTest
 import vdsm.config
 from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm.network import ipwrapper
+from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
     routeExists, ruleExists, addrFlush, LinkType, getLinks, routeShowTable,
     linkDel, linkSet, addrAdd)
@@ -1429,6 +1430,12 @@ class NetworkTest(TestCaseBase):
             self.assertFalse(_get_blocking_dhcp(NETWORK_NAME))
 
             self.vdsm_net.save_config()
+
+            # Terminate the dhclient spawned by the setup to avoid a race
+            # with the source route thread.
+            dhclient.kill(client)
+            # TODO: Fix sourceroute thread and make sure it fails supervdsm
+            # if it is crashes.
 
             with dnsmasq_run(server, DHCP_RANGE_FROM, DHCP_RANGE_TO,
                              DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, IP_GATEWAY):
