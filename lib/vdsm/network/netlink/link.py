@@ -29,6 +29,26 @@ from . import _char_proto, _int_char_proto, _int_proto, _void_proto
 from . import LIBNL_ROUTE, _nl_geterror, _pool, _none_proto
 from . import _addr_to_str, CHARBUFFSIZE
 
+IFF_UP = 1 << 0
+IFF_BROADCAST = 1 << 1
+IFF_DEBUG = 1 << 2
+IFF_LOOPBACK = 1 << 3
+IFF_POINTOPOINT = 1 << 4
+IFF_NOTRAILERS = 1 << 5
+IFF_RUNNING = 1 << 6
+IFF_NOARP = 1 << 7
+IFF_PROMISC = 1 << 8
+IFF_ALLMULTI = 1 << 9
+IFF_MASTER = 1 << 10
+IFF_SLAVE = 1 << 11
+IFF_MULTICAST = 1 << 12
+IFF_PORTSEL = 1 << 13
+IFF_AUTOMEDIA = 1 << 14
+IFF_DYNAMIC = 1 << 15
+IFF_LOWER_UP = 1 << 16
+IFF_DORMANT = 1 << 17
+IFF_ECHO = 1 << 18
+
 
 def get_link(name):
     """Returns the information dictionary of the name specified link."""
