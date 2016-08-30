@@ -1428,6 +1428,12 @@ class NetworkTest(TestCaseBase):
 
             self.vdsm_net.save_config()
 
+            # Terminate the dhclient spawned by the setup to avoid a race
+            # with the source route thread.
+            dhclient.kill(client)
+            # TODO: Fix sourceroute thread and make sure it fails supervdsm
+            # if it is crashes.
+
             with dnsmasq_run(server, DHCP_RANGE_FROM, DHCP_RANGE_TO,
                              DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, IP_GATEWAY):
                 with namedTemporaryDir(dir='/var/lib/dhclient') as dhdir:
