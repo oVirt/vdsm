@@ -32,6 +32,8 @@ from vdsm.network.link import iface as linkiface
 from vdsm.commands import execCmd
 from vdsm.utils import CommandPath, memoized, pgrep, kill_and_rm_pid
 
+from . import address
+
 DHCLIENT_BINARY = CommandPath('dhclient', '/sbin/dhclient')
 DHCLIENT_CGROUP = 'vdsm-dhclient'
 LEASE_DIR = '/var/lib/dhclient'
@@ -58,6 +60,8 @@ class DhcpClient(object):
     def _dhclient(self):
         if linkiface.exists(self.iface):
             kill(self.iface, self.family)
+            address.flush(self.iface, family=self.family)
+
         cmd = [DHCLIENT_BINARY.cmd, '-%s' % self.family, '-1', '-pf',
                self.pidFile, '-lf', self.leaseFile]
         if not self.default_route:
@@ -87,14 +91,17 @@ class DhcpClient(object):
             else:
                 raise
         else:
+            logging.info('Stopping dhclient-%s on %s', self.family, self.iface)
             kill_and_rm_pid(pid, self.pidFile)
+            if linkiface.exists(self.iface):
+                address.flush(self.iface)
 
 
 def kill(device_name, family=4):
     if not linkiface.exists(device_name):
         return
     for pid, pid_file in _pid_lookup(device_name, family):
-        logging.info('Stopping dhclient -%s on %s', family, device_name)
+        logging.info('Stopping dhclient-%s on %s', family, device_name)
         kill_and_rm_pid(pid, pid_file)
 
 
