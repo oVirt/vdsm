@@ -91,6 +91,8 @@ class DhcpClient(object):
 
 
 def kill(device_name, family=4):
+    if not linkiface.exists(device_name):
+        return
     for pid, pid_file in _pid_lookup(device_name, family):
         logging.info('Stopping dhclient -%s on %s', family, device_name)
         kill_and_rm_pid(pid, pid_file)
