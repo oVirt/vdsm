@@ -1223,9 +1223,14 @@ class Vm(object):
             stats.update(self._getDownVmStats())
         else:
             stats.update(self._getConfigVmStats())
-            stats.update(self._getRunningVmStats())
+            if self.isMigrating() and self.post_copy:
+                # Stats are on the destination during post-copy migration,
+                # except for migration progress, which is always on the source.
+                stats['migrationProgress'] = self._get_vm_migration_progress()
+            else:
+                stats.update(self._getRunningVmStats())
+                stats.update(self._getGuestStats())
             stats['status'] = self._getVmStatus()
-            stats.update(self._getGuestStats())
         return stats
 
     def _getDownVmStats(self):
@@ -1279,7 +1284,7 @@ class Vm(object):
             if 'pauseCode' in self.conf:
                 stats['pauseCode'] = self.conf['pauseCode']
         if self.isMigrating():
-            stats['migrationProgress'] = self.migrateStatus()['progress']
+            stats['migrationProgress'] = self._get_vm_migration_progress()
 
         try:
             # Prevent races with the creation thread.
@@ -1376,6 +1381,9 @@ class Vm(object):
             return _getVmStatusFromGuest()
         else:
             return self.lastStatus
+
+    def _get_vm_migration_progress(self):
+        return self.migrateStatus()['progress']
 
     def _getGraphicsStats(self):
         def getInfo(dev):
