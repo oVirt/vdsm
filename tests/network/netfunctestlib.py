@@ -31,7 +31,7 @@ import vdsm.config
 from vdsm.network import kernelconfig
 from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported
-from vdsm.network.netinfo.nics import operstate
+from vdsm.network.link.iface import is_oper_up
 
 from testlib import VdsmTestCase
 
@@ -328,8 +328,7 @@ class NetFuncTestCase(VdsmTestCase):
                 net, attrs, self.netinfo)
         if expected_links:
             for dev in expected_links:
-                # Links are sometimes marked as UNKNOWN after turned UP.
-                self.assertIn(operstate(dev).upper(), ('UP', 'UNKNOWN'))
+                self.assertTrue(is_oper_up(dev), 'Dev {} is DOWN'.format(dev))
 
     def assertNameservers(self, nameservers):
         self.assertEqual(nameservers,
