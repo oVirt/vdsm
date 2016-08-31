@@ -28,7 +28,7 @@ import threading
 
 from vdsm import cmdutils
 from vdsm.network import errors as ne
-from vdsm.network import netinfo
+from vdsm.network.link import iface as linkiface
 from vdsm.commands import execCmd
 from vdsm.utils import CommandPath, memoized, pgrep, kill_and_rm_pid
 
@@ -56,8 +56,7 @@ class DhcpClient(object):
         self._cgroup = cgroup
 
     def _dhclient(self):
-        # Ask dhclient to stop any dhclient running for the device
-        if os.path.exists(os.path.join(netinfo.NET_PATH, self.iface)):
+        if linkiface.exists(self.iface):
             kill(self.iface, self.family)
         cmd = [DHCLIENT_BINARY.cmd, '-%s' % self.family, '-1', '-pf',
                self.pidFile, '-lf', self.leaseFile]

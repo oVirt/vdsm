@@ -18,6 +18,8 @@
 #
 from __future__ import absolute_import
 
+import os
+
 from vdsm.network import ipwrapper
 from vdsm.network.netlink import link
 from vdsm.network.netlink.link import get_link, is_link_up
@@ -26,6 +28,8 @@ from vdsm.network.netlink.waitfor import waitfor_linkup
 
 STATE_UP = 'up'
 STATE_DOWN = 'down'
+
+NET_PATH = '/sys/class/net'
 
 
 def up(dev, admin_blocking=True, oper_blocking=False):
@@ -60,6 +64,10 @@ def is_oper_up(dev):
 
 def is_promisc(dev):
     return bool(get_link(dev)['flags'] & link.IFF_PROMISC)
+
+
+def exists(dev):
+    return os.path.exists(os.path.join(NET_PATH, dev))
 
 
 def _up_blocking(dev, link_blocking):
