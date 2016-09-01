@@ -41,14 +41,14 @@ class ExecCmdTest(TestCaseBase):
     def testNormal(self, cmd):
         rc, out, _ = commands.execCmd(cmd(('echo', 'hello world')))
         self.assertEquals(rc, 0)
-        self.assertEquals(out[0], 'hello world')
+        self.assertEquals(out[0].decode(), 'hello world')
 
     @permutations(CMD_TYPES)
     def testIoClass(self, cmd):
         rc, out, _ = commands.execCmd(cmd(('ionice',)), ioclass=2,
                                       ioclassdata=3)
         self.assertEquals(rc, 0)
-        self.assertEquals(out[0].strip(), 'best-effort: prio 3')
+        self.assertEquals(out[0].decode().strip(), 'best-effort: prio 3')
 
     @permutations(CMD_TYPES)
     def testNice(self, cmd):

@@ -169,7 +169,6 @@ blacklist_modules_python3 = \
 	cPopenTests.py \
 	capsTests.py \
 	clientifTests.py \
-	commands_test.py \
 	deviceTests.py \
 	devices/parsing/complex_vm_tests.py \
 	domain_manifest_test.py \
