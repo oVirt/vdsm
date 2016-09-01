@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 import six
 
+from vdsm.network.link.bond import Bond
 from vdsm.network.netinfo.addresses import (
     getIpAddrs, getIpInfo, is_ipv6_local_auto)
 from vdsm.network.netinfo.dhcp import dhcp_status
@@ -211,12 +212,21 @@ def create_netinfo(ovs_info):
 
 def _get_network_info(northbound, bridge, southbound, ports, stp, addresses,
                       routes):
+    # OVS networks do not use the OVS bonds, they use external linux bonds.
+    bond = Bond(southbound)
+    if bond.exists():
+        bond_name = bond.master
+        nics = list(bond.slaves)
+    else:
+        bond_name = ''
+        nics = [southbound]
+
     tag = ports[northbound]['tag']
     network_info = {
         'iface': northbound,
         'bridged': True,
-        'bond': '',
-        'nics': [southbound],
+        'bond': bond_name,
+        'nics': nics,
         'ports': _get_net_ports(bridge, northbound, southbound, tag, ports),
         'stp': stp,
         'switch': 'ovs'
@@ -257,7 +267,7 @@ def _get_iface_info(iface, addresses, routes):
             'ipv6autoconf': is_ipv6_local_auto(iface), 'dhcpv6': is_dhcpv6}
 
 
-def fake_bridgeless(ovs_netinfo, nic_netinfo, running_bridgeless_networks):
+def fake_bridgeless(ovs_netinfo, kernel_netinfo, running_bridgeless_networks):
     """
     An OVS setup does not support bridgeless networks. Requested bridgeless
     networks (as seen in running_config) are faked to appear as if they are
@@ -265,15 +275,22 @@ def fake_bridgeless(ovs_netinfo, nic_netinfo, running_bridgeless_networks):
     faked bridge and creating the faked device that replaces it (vlan, bond
     or a nic).
     """
+    nics_netinfo = kernel_netinfo['nics']
+    bonds_netinfo = kernel_netinfo['bondings']
+
     for net in running_bridgeless_networks:
         net_attrs = ovs_netinfo['networks'][net]
         iface_type, iface_name = _bridgeless_fake_iface(net_attrs)
 
+        # NICs and BONDs are kernel devices, VLANs are OVS devices.
         if iface_type == 'nics':
-            nic_netinfo[iface_name].update(_shared_net_attrs(net_attrs))
+            devtype_netinfo = nics_netinfo
+        elif iface_type == 'bondings':
+            devtype_netinfo = bonds_netinfo
         else:
-            ovs_netinfo[iface_type][iface_name].update(
-                _shared_net_attrs(net_attrs))
+            devtype_netinfo = ovs_netinfo[iface_type]
+
+        devtype_netinfo[iface_name].update(_shared_net_attrs(net_attrs))
 
         ovs_netinfo['networks'][net]['iface'] = iface_name
 

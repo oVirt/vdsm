@@ -28,6 +28,7 @@ from vdsm import utils
 from .configurators import ifcfg
 from .ip import address
 from .ip import dhclient
+from .link import iface as linkiface
 
 
 ACQUIRED_IFCFG_TAG = u'# This device is now owned by VDSM.\n'
@@ -137,6 +138,8 @@ def _set_ifcfg_param(iface, key, value):
 
 
 def _release_non_ifcfg_iface(iface):
+    if not linkiface.exists(iface):
+        return
     # TODO: Tell NetworkManager to unmanage this iface.
     dhclient.kill(iface, family=4)
     dhclient.kill(iface, family=6)
