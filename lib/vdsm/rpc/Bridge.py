@@ -110,7 +110,7 @@ class DynamicBridge(object):
         try:
             className, methodName = method.split('.', 1)
             self._schema.get_method(vdsmapi.MethodRep(className, methodName))
-        except (KeyError, ValueError):
+        except (vdsmapi.MethodNotFound, ValueError):
             raise yajsonrpc.JsonRpcMethodNotFoundError(method)
         return partial(self._dynamicMethod, className, methodName)
 
