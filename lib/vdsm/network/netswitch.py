@@ -26,6 +26,8 @@ from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.libvirt import networks as libvirt_nets
 from vdsm.network.link import iface
+from vdsm.network.link.bond import Bond
+from vdsm.network.link.setup import SetupBonds
 from vdsm.network.netinfo.cache import (libvirtNets2vdsm, get as netinfo_get,
                                         CachingNetInfo)
 from vdsm.tool.service import service_status
@@ -73,6 +75,18 @@ def _split_switch_type_entries(entries, running_entries):
         if 'remove' in attrs:
             running_attrs = running_entries.get(name, {})
             switch_type = running_attrs.get('switch')
+
+            # When removing a network/bond, we try to determine its switch
+            # type from the netinfo report.
+            # This is not always possible, specifically with bonds owned by ovs
+            # but not successfully deployed (not saved in running config).
+            if (switch_type == legacy_switch.SWITCH_TYPE and
+                    Bond(name).exists() and
+                    not legacy_switch.ConfiguratorClass.owned_device(name)):
+                # If not owned by Legacy, assume OVS and let it be removed in
+                # the OVS way.
+                switch_type = ovs_switch.SWITCH_TYPE
+
         else:
             switch_type = attrs['switch']
         store_entry(name, attrs, switch_type)
@@ -144,24 +158,31 @@ def _setup_legacy(networks, bondings, options, in_rollback):
 def _setup_ovs(networks, bondings, options, in_rollback):
     _ovs_info = ovs_info.OvsInfo()
     ovs_netinfo = ovs_info.create_netinfo(_ovs_info)
+    _netinfo = netinfo()
 
     nets2add, nets2edit, nets2remove = _split_setup_actions(
         networks, ovs_netinfo['networks'])
     bonds2add, bonds2edit, bonds2remove = _split_setup_actions(
-        bondings, ovs_netinfo['bondings'])
+        bondings, _netinfo['bondings'])
 
     # TODO: If a nework is to be edited, we remove it and recreate again.
     # We should implement editation.
     nets2add.update(nets2edit)
     nets2remove.update(nets2edit)
 
+    # FIXME: we are not able to move a nic from bond to network in one setup
     with Transaction(in_rollback=in_rollback) as config:
+        setup_bonds = SetupBonds(bonds2add, bonds2edit, bonds2remove, config)
         with ifacquire.Transaction(ovs_netinfo['networks']) as acq:
-            with ovs_switch.create_setup(_ovs_info) as s:
-                s.remove_nets(nets2remove)
-                s.add_nets(nets2add)
-                acq.acquire(s.acquired_ifaces)
-            _update_running_config(networks, bondings, config)
+            with ovs_switch.create_setup(_ovs_info) as setup_ovs:
+                setup_ovs.remove_nets(nets2remove)
+                setup_bonds.remove_bonds()
+                acq.acquire(setup_bonds.ifaces_for_acquirement)
+                setup_bonds.edit_bonds()
+                setup_bonds.add_bonds()
+                setup_ovs.add_nets(nets2add)
+                acq.acquire(setup_ovs.acquired_ifaces)
+            _update_networks_running_config(networks, config)
             ovs_switch.cleanup()
             setup_ipv6autoconf(networks)
             set_ovs_links_up(nets2add, bonds2add, bonds2edit)
@@ -169,25 +190,19 @@ def _setup_ovs(networks, bondings, options, in_rollback):
             connectivity.check(options)
 
 
-def _update_running_config(networks, bondings, running_config):
-    """Update running_config with expected configuration.
+# TODO: We should use KernelConfig when it will be fully reliable.
+def _update_networks_running_config(networks, running_config):
+    """
+    Update running_config with the networks configuration.
 
-    This have to be done as soon as we do any changes in the system. This
-    information will be used to generate rollback query.
-
-    TODO: We can use KernelConfig when it will be fully reliable.
+    This step has to be done as soon as we apply the changes in the system.
+    The running config will be used to generate the rollback query.
     """
     for net, attrs in six.iteritems(networks):
         if 'remove' in attrs:
             running_config.removeNetwork(net)
         else:
             running_config.setNetwork(net, attrs)
-
-    for bond, attrs in six.iteritems(bondings):
-        if 'remove' in attrs:
-            running_config.removeBonding(bond)
-        else:
-            running_config.setBonding(bond, attrs)
 
 
 def setup_ovs_ip_config(nets2add, nets2remove):
@@ -271,12 +286,29 @@ def netinfo(compatibility=None):
             net for net, attrs in six.iteritems(running_networks)
             if attrs['switch'] == 'ovs' and not attrs['bridged']]
         ovs_info.fake_bridgeless(
-            ovs_netinfo, _netinfo['nics'], bridgeless_ovs_nets)
+            ovs_netinfo, _netinfo, bridgeless_ovs_nets)
 
         for type, entries in six.iteritems(ovs_netinfo):
             _netinfo[type].update(entries)
 
+        _set_bond_type_by_usage(_netinfo)
+
     return _netinfo
+
+
+def _set_bond_type_by_usage(_netinfo):
+    """
+    Engine uses bond switch type to indicate what switch type implementation
+    the bond belongs to (as each is implemented and managed differently).
+    In both cases, the bond used is a linux bond.
+    Therefore, even though the bond is detected as a 'legacy' one, it is
+    examined against the running config for the switch that uses it and updates
+    its switch type accordingly.
+    """
+    for bond, bond_attrs in six.iteritems(RunningConfig().bonds):
+        if (bond_attrs['switch'] == ovs_switch.SWITCH_TYPE and
+                bond in _netinfo['bondings']):
+            _netinfo['bondings'][bond]['switch'] = ovs_switch.SWITCH_TYPE
 
 
 @memoized

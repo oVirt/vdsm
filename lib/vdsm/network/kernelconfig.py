@@ -207,12 +207,8 @@ def _normalize_bonding_opts(config_copy):
         # TODO: globalize default bond options from Bond in models.py
         normalized_opts = _parse_bond_options(
             bond_attr.get('options'))
-        if "mode" not in normalized_opts:
-            if bond_attr.get('switch') == 'ovs':
-                # Mode 0 is not available in OVS.
-                normalized_opts["mode"] = '1'
-            else:
-                normalized_opts["mode"] = '0'
+        if 'mode' not in normalized_opts:
+            normalized_opts['mode'] = '0'
         normalized_opts.pop('custom', None)
         bond_attr['options'] = bonding.bondOptsForIfcfg(normalized_opts)
     # before d18e2f10 bondingOptions were also part of networks, so in case

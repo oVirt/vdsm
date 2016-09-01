@@ -23,8 +23,8 @@ import random
 import six
 
 from vdsm.network.link.bond import Bond
-from vdsm.network.netlink import link
 from vdsm.network.netinfo.nics import nics
+from vdsm.network.netlink import link
 from vdsm.utils import random_iface_name
 
 from . import driver
@@ -186,6 +186,7 @@ def _cleanup_unused_bridges(ovsdb):
     return [ovsdb.del_br(bridge) for bridge in _unused_bridges()]
 
 
+# TODO: we can just check for bridges with no NB port
 def _unused_bridges():
     unused_bridges = set()
     ovs_info = info.OvsInfo()

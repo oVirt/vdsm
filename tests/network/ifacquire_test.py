@@ -76,6 +76,7 @@ class AcquireNicTest(VdsmTestCase):
         mock_kill.assert_not_called()
         mock_flush.assert_not_called()
 
+    @mock.patch.object(ifacquire.linkiface, 'exists', lambda x: True)
     @mock.patch.object(ifacquire.os.path, 'isfile', lambda x: False)
     @mock.patch.object(ifacquire.address, 'flush', return_value=None)
     @mock.patch.object(ifacquire.dhclient, 'kill', return_value=None)
