@@ -32,7 +32,6 @@ from __future__ import absolute_import
 import errno
 import logging
 import os
-import Queue
 import random
 import re
 import string
@@ -42,7 +41,9 @@ import weakref
 
 from array import array
 from functools import wraps, partial
-from itertools import imap
+
+from six.moves import map
+from six.moves import queue
 
 from vdsm import commands
 from vdsm import concurrent
@@ -65,7 +66,7 @@ log = logging.getLogger('Storage.Misc')
 
 
 def namedtuple2dict(nt):
-    return dict(imap(lambda f: (f, getattr(nt, f)), nt._fields))
+    return dict(map(lambda f: (f, getattr(nt, f)), nt._fields))
 
 
 execCmdLogger = logging.getLogger('Storage.Misc.excCmd')
@@ -578,7 +579,7 @@ def itmap(func, iterable, maxthreads=UNLIMITED_THREADS):
     if maxthreads < 1 and maxthreads != UNLIMITED_THREADS:
         raise ValueError("Wrong input to function itmap: %s", maxthreads)
 
-    respQueue = Queue.Queue()
+    respQueue = queue.Queue()
 
     def wrapper(value):
         try:
@@ -608,7 +609,7 @@ def itmap(func, iterable, maxthreads=UNLIMITED_THREADS):
         maxthreads -= 1
 
     # waiting for rest threads to end
-    for i in xrange(threadsCount):
+    for i in range(threadsCount):
         yield respQueue.get()
 
 
