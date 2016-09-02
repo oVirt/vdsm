@@ -27,9 +27,10 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 nodist_noinst_DATA = \
 	vdsm-checkips.service \
-	config.log
+	$(NULL)
 
 CLEANFILES = \
+	config.log \
 	$(nodist_noinst_DATA)
 
 EXTRA_DIST = \
