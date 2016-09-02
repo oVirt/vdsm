@@ -18,6 +18,8 @@
 #
 from __future__ import absolute_import
 
+from contextlib import contextmanager
+import logging
 import socket
 import struct
 
@@ -179,26 +181,40 @@ def disable_ipv6(iface):
 
 def add(iface, ipv4, ipv6):
     if ipv4.address:
-        ipwrapper.addrAdd(iface, ipv4.address, ipv4.netmask)
-        if ipv4.gateway and ipv4.defaultRoute:
-            ipwrapper.routeAdd(['default', 'via', ipv4.gateway])
+        _add_ipv4_address(iface, ipv4)
     if ipv6:
         _add_ipv6_address(iface, ipv6)
     elif ipv6_supported():
         sysctl.disable_ipv6(iface)
 
 
+def _add_ipv4_address(iface, ipv4):
+    ipwrapper.addrAdd(iface, ipv4.address, ipv4.netmask)
+    if ipv4.gateway and ipv4.defaultRoute:
+        _set_default_route(ipv4.gateway, family=4)
+
+
 def _add_ipv6_address(iface, ipv6):
     if ipv6.address:
         ipv6addr, ipv6netmask = ipv6.address.split('/')
         ipwrapper.addrAdd(iface, ipv6addr, ipv6netmask, family=6)
-        if ipv6.gateway:
-            ipwrapper.routeAdd(['default', 'via', ipv6.gateway],
-                               dev=iface, family=6)
+        if ipv6.gateway and ipv6.defaultRoute:
+            _set_default_route(ipv6.gateway, family=6, dev=iface)
     if ipv6.ipv6autoconf is not None:
         with open('/proc/sys/net/ipv6/conf/%s/autoconf' % iface,
                   'w') as ipv6_autoconf:
             ipv6_autoconf.write('1' if ipv6.ipv6autoconf else '0')
+
+
+@contextmanager
+def _set_default_route(gateway, family, dev=None):
+    try:
+        ipwrapper.routeAdd(['default', 'via', gateway], family=family, dev=dev)
+    except ipwrapper.IPRoute2Error:  # there already is a default route
+        logging.warning(
+            'Existing default route will be removed so a new one can be set.')
+        ipwrapper.routeDel('default', family=family)
+        ipwrapper.routeAdd(['default', 'via', gateway], family=family, dev=dev)
 
 
 def flush(iface, family='both'):
