@@ -109,20 +109,20 @@ class OnlineCpusFunctionsTests(VdsmTestCase):
 
     @permutations([
         # raw_value, cpu_set
-        ['0', set((0,))],
-        ['0,1,2,3', set(range(4))],
-        ['0-3', set(range(4))],
-        ['0-1,3', set((0, 1, 3))],
-        ['0-2,5-7', set((0, 1, 2, 5, 6, 7))],
+        [b'0', set((0,))],
+        [b'0,1,2,3', set(range(4))],
+        [b'0-3', set(range(4))],
+        [b'0-1,3', set((0, 1, 3))],
+        [b'0-2,5-7', set((0, 1, 2, 5, 6, 7))],
         # as seen on ppc64 20151130
-        ['8,16,24,32,40,48,56,64,72,80,88,96,104,112,120,128,136,144,152',
+        [b'8,16,24,32,40,48,56,64,72,80,88,96,104,112,120,128,136,144,152',
          set((8, 16, 24, 32, 40, 48, 56, 64, 72, 80,
               88, 96, 104, 112, 120, 128, 136, 144, 152))],
     ])
     def test_online_cpus(self, raw_value, cpu_set):
 
         with tempfile.NamedTemporaryFile() as f:
-            f.write('%s\n' % raw_value)
+            f.write(raw_value + b'\n')
             f.flush()
             with MonkeyPatchScope([(taskset, "_SYS_ONLINE_CPUS", f.name)]):
                 self.assertEqual(taskset.online_cpus(), cpu_set)

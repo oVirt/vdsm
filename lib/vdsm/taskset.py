@@ -101,7 +101,7 @@ def _cpu_set_from_output(line):
     pid ${PID}'s current affinity mask: ${HEXMASK}
     and return a list of strings, each one being is a cpu index.
     """
-    hexmask = line.rsplit(":", 1)[1].strip()
+    hexmask = line.decode().rsplit(":", 1)[1].strip()
     mask = int(hexmask, 16)
     return frozenset(i for i in range(mask.bit_length()) if mask & (1 << i))
 

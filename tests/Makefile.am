@@ -234,7 +234,6 @@ blacklist_modules_python3 = \
 	storage_volume_metadata_test.py \
 	storagefakelibTests.py \
 	storagetestlibTests.py \
-	tasksetTests.py \
 	toolBondingTests.py \
 	transportWrapperTests.py \
 	unicode_test.py \
