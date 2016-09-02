@@ -464,7 +464,7 @@ def wait_for_ipv6(iface, wait_for_scopes=None):
                         return
 
     except monitor.MonitorError as e:
-        if e[0] == monitor.E_TIMEOUT:
+        if e.args[0] == monitor.E_TIMEOUT:
             raise Exception(
                 'IPv6 addresses has not been caught within 20sec.\n'
                 'Event log: {}\n'.format(logevents))
