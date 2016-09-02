@@ -15,6 +15,7 @@
 
 from __future__ import absolute_import
 import logging
+import six
 import socket
 from uuid import uuid4
 from collections import deque
@@ -101,7 +102,7 @@ class Frame(object):
             headers = {}
 
         self.headers = headers
-        if isinstance(body, unicode):
+        if six.PY3 or (six.PY2 and isinstance(body, unicode)):
             body = body.encode('utf-8')
 
         self.body = body
@@ -147,11 +148,13 @@ def decodeValue(s):
     except KeyError as e:
         raise ValueError("Containes invalid escape squence `\\%s`" % e.args[0])
 
-    return s.decode('utf-8')
+    if six.PY2 or (six.PY3 and isinstance(s, bytes)):
+        s = s.decode('utf-8')
+    return s
 
 
 def encodeValue(s):
-    if isinstance(s, unicode):
+    if six.PY3 or (six.PY2 and isinstance(s, unicode)):
         s = s.encode('utf-8')
     elif isinstance(s, int):
         s = str(s)
