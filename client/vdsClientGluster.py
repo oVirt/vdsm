@@ -1274,7 +1274,7 @@ def getGlusterCmdDict(serv):
          'glusterVolumeHealInfo': (
              serv.do_glusterVolumeHealInfo,
              ('[volumeName=<volume_name>]\n\t'
-              '<volume_name> is existing volume name '
+              '<volume_name> is existing volume name ',
               'lists self-heal info for the gluster volume'
               ))
          }
