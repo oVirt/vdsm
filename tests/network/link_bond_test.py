@@ -71,6 +71,12 @@ class LinkBondTests(TestCaseBase):
                 # TODO: Support options
                 self.assertEqual(bond.options, None)
 
+    def test_bond_list(self):
+        with bond_device() as b1, bond_device() as b2, bond_device() as b3:
+            actual_bond_set = set(Bond.bonds())
+            expected_bond_set = set([b1.master, b2.master, b3.master])
+            self.assertLessEqual(expected_bond_set, actual_bond_set)
+
 
 @contextmanager
 def bond_device(prefix='bond_', max_length=11):

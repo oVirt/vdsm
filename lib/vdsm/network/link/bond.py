@@ -68,6 +68,10 @@ class BondAPI(object):
     def active_slave(self):
         pass
 
+    @staticmethod
+    def bonds():
+        pass
+
     @property
     def master(self):
         return self._master
@@ -144,6 +148,11 @@ class BondSysFS(BondAPI):
     def active_slave(self):
         with open(self.BONDING_ACTIVE_SLAVE % self._master) as f:
             return f.readline().rstrip()
+
+    @staticmethod
+    def bonds():
+        with open(BondSysFS.BONDING_MASTERS) as f:
+            return f.read().rstrip().split()
 
     def _import_existing(self):
         with open(self.BONDING_SLAVES % self._master) as f:
