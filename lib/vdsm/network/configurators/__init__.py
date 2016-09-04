@@ -97,6 +97,10 @@ class Configurator(object):
     def removeSourceRoute(self, routes, rules, device):
         raise NotImplementedError
 
+    @staticmethod
+    def owned_device(device):
+        raise NotImplementedError
+
     def configureLibvirtNetwork(self, network, iface):
         self.configApplier.createLibvirtNetwork(network,
                                                 isinstance(iface, Bridge),
