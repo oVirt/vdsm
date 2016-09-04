@@ -33,7 +33,6 @@ from vdsm.storage import directio
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage.misc import deprecated
-from vdsm.storage.misc import logskip
 from vdsm.storage.threadlocal import vars
 from vdsm.storage.volumemetadata import VolumeMetadata
 import vdsm.utils as utils
@@ -361,7 +360,6 @@ class BlockVolumeManifest(volume.VolumeManifest):
 
         return alloc_size
 
-    @logskip("ResourceManager")
     def llPrepare(self, rw=False, setrw=False):
         """
         Perform low level volume use preparation

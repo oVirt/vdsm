@@ -30,7 +30,6 @@ Various storage misc procedures
 from __future__ import absolute_import
 
 import errno
-import inspect
 import logging
 import os
 import Queue
@@ -39,13 +38,11 @@ import re
 import string
 import struct
 import threading
-import types
 import weakref
 
 from array import array
-from collections import defaultdict
 from functools import wraps, partial
-from itertools import chain, imap
+from itertools import imap
 
 from vdsm import commands
 from vdsm import concurrent
@@ -71,96 +68,10 @@ def namedtuple2dict(nt):
     return dict(imap(lambda f: (f, getattr(nt, f)), nt._fields))
 
 
-class _LogSkip(object):
-    _ignoreMap = defaultdict(list)
-    ALL_KEY = "##ALL##"
-
-    @classmethod
-    def registerSkip(cls, codeId, loggerName=None):
-        if loggerName is None:
-            loggerName = cls.ALL_KEY
-
-        cls._ignoreMap[loggerName].append(codeId)
-
-    @classmethod
-    def checkForSkip(cls, codeId, loggerName):
-        return codeId in chain(cls._ignoreMap[cls.ALL_KEY],
-                               cls._ignoreMap[loggerName])
-
-    @classmethod
-    def wrap(cls, func, loggerName):
-        cls.registerSkip(id(func.__code__), loggerName)
-        return func
+execCmdLogger = logging.getLogger('Storage.Misc.excCmd')
 
 
-def logskip(var):
-    if isinstance(var, types.StringTypes):
-        return lambda func: _LogSkip.wrap(func, var)
-    return _LogSkip.wrap(var, None)
-
-
-@logskip
-def enableLogSkip(logger, *args, **kwargs):
-    skipFunc = partial(findCaller, *args, **kwargs)
-    logger.findCaller = types.MethodType(lambda self: skipFunc(),
-                                         logger, logger.__class__)
-
-    return logger
-
-
-def _shouldLogSkip(skipUp, ignoreSourceFiles, ignoreMethodNames,
-                   logSkipName, code, filename):
-    if logSkipName is not None:
-        if _LogSkip.checkForSkip(id(code), logSkipName):
-            return True
-    if (skipUp > 0):
-        return True
-    if (os.path.splitext(filename)[0] in ignoreSourceFiles):
-        return True
-    if (code.co_name in ignoreMethodNames):
-        return True
-
-    return False
-
-
-def findCaller(skipUp=0, ignoreSourceFiles=(), ignoreMethodNames=(),
-               logSkipName=None):
-    """
-    Find the stack frame of the caller so that we can note the source
-    file name, line number and function name.
-    """
-    # Ignore file extension can be either py or pyc
-    ignoreSourceFiles = [os.path.splitext(sf)[0] for sf in
-                         chain(ignoreSourceFiles, [logging._srcfile])]
-    frame = inspect.currentframe().f_back
-
-    result = "(unknown file)", 0, "(unknown function)"
-    # pop frames until you find an unfiltered one
-    while hasattr(frame, "f_code"):
-        code = frame.f_code
-        filename = os.path.normcase(code.co_filename)
-
-        logSkip = _shouldLogSkip(skipUp, ignoreSourceFiles, ignoreMethodNames,
-                                 logSkipName, code, filename)
-
-        if logSkip:
-            skipUp -= 1
-            frame = frame.f_back
-            continue
-
-        result = (filename, frame.f_lineno, code.co_name)
-        break
-
-    return result
-
-
-execCmdLogger = enableLogSkip(logging.getLogger('Storage.Misc.excCmd'),
-                              ignoreSourceFiles=[__file__],
-                              logSkipName="Storage.Misc.excCmd")
-
-
-execCmd = partial(logskip("Storage.Misc.excCmd")(commands.execCmd),
-                  execCmdLogger=execCmdLogger)
+execCmd = partial(commands.execCmd, execCmdLogger=execCmdLogger)
 
 
 watchCmd = partial(commands.watchCmd, execCmdLogger=execCmdLogger)

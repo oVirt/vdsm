@@ -33,7 +33,7 @@ from testlib import temporaryPath
 from testlib import namedTemporaryDir
 from testlib import permutations, expandPermutations
 from testlib import TEMPDIR
-import inspect
+
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import exception
@@ -999,42 +999,6 @@ class ExecCmd(TestCaseBase):
         utils.retry(AssertionError, test, tries=10, sleep=0.1)
         proc.kill()
         proc.wait()
-
-
-class FindCallerTests(TestCaseBase):
-
-    def _assertFindCaller(self, callback):
-        frame = inspect.currentframe()
-        code = frame.f_code
-        filename = os.path.normcase(code.co_filename)
-        # Make sure these two lines follow each other
-        result = (filename, frame.f_lineno + 1, code.co_name)
-        self.assertEquals(result, callback())
-
-    def testSkipUp(self):
-        def _foo():
-            return misc.findCaller(1)
-
-        self._assertFindCaller(_foo)
-
-    def testLogSkipName(self):
-        @misc.logskip("Freeze the Atlantic")
-        def _foo():
-            return misc.findCaller(logSkipName="Freeze the Atlantic")
-
-        self._assertFindCaller(_foo)
-
-    def testMethodIgnore(self):
-        def _foo():
-            return misc.findCaller(ignoreMethodNames=["_foo"])
-
-        self._assertFindCaller(_foo)
-
-    def testNoSkip(self):
-        def _foo():
-            return misc.findCaller()
-
-        self.assertRaises(AssertionError, self._assertFindCaller, _foo)
 
 
 class SamplingMethodTests(TestCaseBase):

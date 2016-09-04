@@ -31,7 +31,6 @@ from vdsm.logUtils import SimpleLogAdapter
 from vdsm import concurrent
 from vdsm import utils
 from vdsm.storage import exception as se
-from vdsm.storage import misc
 from vdsm.storage import rwlock
 
 
@@ -190,15 +189,6 @@ class Request(object):
         self.reqID = str(uuid4())
         self._log = SimpleLogAdapter(self._log, {"ResName": self.fullName,
                                                  "ReqID": self.reqID})
-
-        # Because findCaller is expensive. We make sure it wll be printed
-        # before calculating it
-        if logging.getLogger("Storage.ResourceManager.ResourceRef").\
-                isEnabledFor(logging.WARN):
-            createdAt = misc.findCaller(ignoreSourceFiles=[__file__],
-                                        logSkipName="ResourceManager")
-            self._log.debug("Request was made in '%s' line '%d' at '%s'",
-                            *createdAt)
 
     def cancel(self):
         with self._syncRoot:

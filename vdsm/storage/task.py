@@ -53,7 +53,6 @@ from contextlib import contextmanager
 from functools import wraps
 
 from vdsm.storage import exception as se
-from vdsm.storage import misc
 from vdsm.storage.threadlocal import vars
 
 import uuid
@@ -1353,7 +1352,6 @@ class Task:
             i += 1
         return s
 
-    @misc.logskip("ResourceManager")
     def getExclusiveLock(
         self,
         namespace,
@@ -1365,7 +1363,6 @@ class Task:
                               resourceManager.LockType.exclusive,
                               timeout)
 
-    @misc.logskip("ResourceManager")
     def getSharedLock(self,
                       namespace,
                       resName,
