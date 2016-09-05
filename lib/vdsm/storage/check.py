@@ -80,7 +80,8 @@ class CheckService(object):
     def __init__(self):
         self._lock = threading.Lock()
         self._loop = asyncevent.EventLoop()
-        self._thread = concurrent.thread(self._loop.run_forever)
+        self._thread = concurrent.thread(self._loop.run_forever,
+                                         name="check/loop")
         self._checkers = {}
 
     def start(self):
