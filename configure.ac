@@ -1,6 +1,6 @@
 dnl
 dnl vdsm-jsonrpc-java - vdsm json rpc
-dnl Copyright (C) 2013 Red Hat, Inc.
+dnl Copyright (C) 2013-2016 Red Hat, Inc.
 dnl
 dnl This library is free software; you can redistribute it and/or
 dnl modify it under the terms of the GNU Lesser General Public
@@ -20,14 +20,14 @@ dnl
 AC_PREREQ(2.60)
 
 define([VERSION_MAJOR], [1])
-define([VERSION_MINOR], [2])
-define([VERSION_FIX], [5])
+define([VERSION_MINOR], [3])
+define([VERSION_FIX], [1])
 define([VERSION_NUMBER], VERSION_MAJOR[.]VERSION_MINOR[.]VERSION_FIX)
-define([VERSION_SUFFIX], [])
+define([VERSION_SUFFIX], [_master])
 
 AC_INIT([vdsm-jsonrpc-java], VERSION_NUMBER[]VERSION_SUFFIX)
 PACKAGE_RPM_VERSION="VERSION_NUMBER"
-PACKAGE_RPM_RELEASE="1"
+PACKAGE_RPM_RELEASE="$(echo VERSION_SUFFIX | sed 's/^_//')"
 PACKAGE_MAVEN_VERSION="VERSION_MAJOR.VERSION_MINOR.VERSION_FIX"
 AC_SUBST([PACKAGE_RPM_VERSION])
 AC_SUBST([PACKAGE_RPM_RELEASE])
@@ -55,9 +55,9 @@ AC_ARG_WITH(
 
 AC_ARG_WITH(
 	[maven-version-snapshot],
-	[AS_HELP_STRING([--with-maven-version-snapshot], [maven version snapshot @<:@default=no@:>@])],
+	[AS_HELP_STRING([--with-maven-version-snapshot], [maven version snapshot @<:@default=yes@:>@])],
 	,
-	[with_maven_version_snapshot="no"]
+	[with_maven_version_snapshot="yes"]
 )
 
 AC_ARG_WITH(
