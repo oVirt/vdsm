@@ -40,6 +40,7 @@ _COMMAND_CONVERTER = {
     'activateStorageDomain': 'StorageDomain.activate',
     'connectStoragePool': 'StoragePool.connect',
     'connectStorageServer': 'StoragePool.connectStorageServer',
+    'cont': 'VM.cont',
     'clearTask': 'Task.clear',
     'create': 'VM.create',
     'createStorageDomain': 'StorageDomain.create',
