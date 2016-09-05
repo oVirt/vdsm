@@ -787,19 +787,19 @@ class MonitorThread(object):
 
     def _execute_action_with_params(self, action_with_params):
         action = str(action_with_params['name'])
+        vm = self._vm
         if action == CONVERGENCE_SCHEDULE_SET_DOWNTIME:
             downtime = int(action_with_params['params'][0])
-            self._vm.log.debug('Setting downtime to %d',
-                               downtime)
-            self._vm._dom.migrateSetMaxDowntime(downtime, 0)
+            vm.log.debug('Setting downtime to %d', downtime)
+            vm._dom.migrateSetMaxDowntime(downtime, 0)
         elif action == CONVERGENCE_SCHEDULE_POST_COPY:
             if not self._vm.switch_migration_to_post_copy():
                 # Do nothing for now; the next action will be invoked after a
                 # while
-                self._vm.log.warn('Failed to switch to post-copy migration')
+                vm.log.warn('Failed to switch to post-copy migration')
         elif action == CONVERGENCE_SCHEDULE_SET_ABORT:
-            self._vm.log.warn('Aborting migration')
-            self._vm._dom.abortJob()
+            vm.log.warn('Aborting migration')
+            vm._dom.abortJob()
             self.stop()
 
 
