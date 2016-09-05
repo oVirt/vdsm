@@ -77,6 +77,31 @@ class LinkBondTests(TestCaseBase):
             expected_bond_set = set([b1.master, b2.master, b3.master])
             self.assertLessEqual(expected_bond_set, actual_bond_set)
 
+    def test_bond_create_failure_on_slave_add(self):
+        with dummy_devices(2) as (nic1, nic2):
+            with bond_device() as base_bond:
+                base_bond.add_slaves((nic1, nic2))
+
+                bond_name = random_iface_name('bond_', max_length=11)
+                with self.assertRaises(IOError):
+                    with Bond(bond_name) as broken_bond:
+                        broken_bond.create()
+                        broken_bond.add_slaves((nic1, nic2))
+                self.assertFalse(Bond(bond_name).exists())
+
+    def test_bond_edit_failure_on_slave_add(self):
+        with dummy_devices(2) as (nic1, nic2):
+            with bond_device() as base_bond, bond_device() as edit_bond:
+                base_bond.add_slaves((nic1,))
+                edit_bond.add_slaves((nic2,))
+
+                with self.assertRaises(IOError):
+                    with Bond(edit_bond.master) as broken_bond:
+                        self.assertTrue(broken_bond.exists())
+                        broken_bond.add_slaves((nic1,))
+                self.assertTrue(edit_bond.exists())
+                self.assertEqual(set((nic2,)), edit_bond.slaves)
+
 
 @contextmanager
 def bond_device(prefix='bond_', max_length=11):

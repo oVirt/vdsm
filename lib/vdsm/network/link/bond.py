@@ -37,6 +37,12 @@ class BondAPI(object):
         if self.exists():
             self._import_existing()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        pass
+
     @abc.abstractmethod
     def create(self):
         pass
@@ -112,6 +118,16 @@ class BondSysFS(BondAPI):
     def __init__(self, name, slaves=(), options=None):
         super(BondSysFS, self).__init__(name, slaves, options)
 
+    def __enter__(self):
+        self._init_exists = self.exists()
+        self._init_slaves = self._slaves
+        self._init_options = self._options
+        return self
+
+    def __exit__(self, ex_type, ex_value, traceback):
+        if ex_type is not None:
+            self._revert_transaction()
+
     def create(self):
         with open(self.BONDING_MASTERS, 'w') as f:
             f.write('+%s' % self._master)
@@ -159,6 +175,21 @@ class BondSysFS(BondAPI):
             self._slaves = set(f.readline().split())
         # TODO: Support options
         self._options = None
+
+    def _revert_transaction(self):
+        if self.exists():
+            # Did not exist, partially created (some slaves failed to be added)
+            if not self._init_exists:
+                self.destroy()
+            # Existed, failed on some editing (slaves or options editing)
+            else:
+                slaves2remove = self._slaves - self._init_slaves
+                slaves2add = self._init_slaves - self._slaves
+                self.del_slaves(slaves2remove)
+                self.add_slaves(slaves2add)
+                # TODO: Options support
+        # We assume that a non existing bond with a failed transaction is not
+        # a reasonable scenario and leave it to upper levels to handle it.
 
 
 # TODO: Use a configuration parameter to determine which driver to use.
