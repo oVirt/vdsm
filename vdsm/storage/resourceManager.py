@@ -334,8 +334,11 @@ class ResourceRef(object):
                 # deadlock. This is why I need to use a timer. It will defer
                 # the operation and use a different context.
                 ResourceManager.getInstance().releaseResource(namespace, name)
-            concurrent.thread(release, args=(self._log, self.namespace,
-                                             self.name)).start()
+            t = concurrent.thread(
+                release,
+                args=(self._log, self.namespace, self.name),
+                name="rm/" + self.name[:8])
+            t.start()
             self._isValid = False
 
     def __repr__(self):
