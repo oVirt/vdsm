@@ -35,7 +35,6 @@ from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
 import image
 import resourceFactories
 import resourceManager as rm
-from vdsm import concurrent
 from vdsm import constants
 import outOfProcess as oop
 
@@ -535,11 +534,6 @@ class StorageDomain(object):
     def __init__(self, manifest):
         self._manifest = manifest
         self._lock = threading.Lock()
-        self.stat = None
-
-    def __del__(self):
-        if self.stat:
-            concurrent.thread(self.stat.stop).start()
 
     @property
     def sdUUID(self):

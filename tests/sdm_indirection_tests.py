@@ -272,7 +272,6 @@ class FakeBlockStorageDomain(blockSD.BlockStorageDomain):
     manifestClass = FakeBlockDomainManifest
 
     def __init__(self):
-        self.stat = None
         self._manifest = self.manifestClass()
 
 
@@ -280,7 +279,6 @@ class FakeFileStorageDomain(fileSD.FileStorageDomain):
     manifestClass = FakeFileDomainManifest
 
     def __init__(self):
-        self.stat = None
         self._manifest = self.manifestClass()
 
 
