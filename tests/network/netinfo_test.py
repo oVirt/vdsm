@@ -409,12 +409,12 @@ class TestIPv6Addresses(TestCaseBase):
         IPV6_NETADDRESS = '2001:1:1:1'
         IPV6_NETPREFIX_LEN = '64'
         with veth_pair() as (server, client):
+            ipwrapper.addrAdd(server, IPV6_NETADDRESS + '::1',
+                              IPV6_NETPREFIX_LEN, family=6)
+            ipwrapper.linkSet(server, ['up'])
             with dnsmasq_run(server, ipv6_slaac_prefix=IPV6_NETADDRESS + '::'):
                 with wait_for_ipv6(client):
                     ipwrapper.linkSet(client, ['up'])
-                    ipwrapper.linkSet(server, ['up'])
-                    ipwrapper.addrAdd(server, IPV6_NETADDRESS + '::1',
-                                      IPV6_NETPREFIX_LEN, family=6)
 
                 # Expecting link and global addresses on client iface
                 # The addresses are given randomly, so we sort them

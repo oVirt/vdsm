@@ -436,12 +436,14 @@ def requires_tun(f):
 @contextmanager
 def wait_for_ipv6(iface, wait_for_scopes=None):
     """Wait for iface to get their IPv6 addresses with netlink Monitor"""
+    logevents = []
     if not wait_for_scopes:
         wait_for_scopes = ['global', 'link']
     try:
         with monitor.Monitor(groups=('ipv6-ifaddr',), timeout=20) as mon:
             yield
             for event in mon:
+                logevents.append(event)
                 dev_name = event.get('label')
                 if (dev_name == iface and
                         event.get('event') == 'new_addr' and
@@ -453,8 +455,9 @@ def wait_for_ipv6(iface, wait_for_scopes=None):
 
     except monitor.MonitorError as e:
         if e[0] == monitor.E_TIMEOUT:
-            raise Exception('IPv6 addresses has not been caught within the '
-                            'given timeout.\n')
+            raise Exception(
+                'IPv6 addresses has not been caught within 20sec.\n'
+                'Event log: {}\n'.format(logevents))
         else:
             raise
 
