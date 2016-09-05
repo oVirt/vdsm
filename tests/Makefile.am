@@ -303,6 +303,7 @@ dist_vdsmtests_DATA = \
 	caps_libvirt_multiqemu.out \
 	cpu_map.xml \
 	caps_numactl_4_nodes.out \
+	fake-virt-v2v.err \
 	fake-virt-v2v.out \
 	glusterGeoRepStatus.xml \
 	glusterSnapshotConfig.xml \

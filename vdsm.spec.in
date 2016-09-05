@@ -1331,6 +1331,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/fake-ssh-agent
 %{_datadir}/%{vdsm_name}/tests/fake-virt-v2v
 %{_datadir}/%{vdsm_name}/tests/fake-virt-v2v.out
+%{_datadir}/%{vdsm_name}/tests/fake-virt-v2v.err
 %{_datadir}/%{vdsm_name}/tests/cpu_map.xml
 %{_datadir}/%{vdsm_name}/tests/devices/*.py*
 %{_datadir}/%{vdsm_name}/tests/devices/parsing/*.py*
