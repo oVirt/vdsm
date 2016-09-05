@@ -377,7 +377,7 @@ class HSM(object):
             self.log.debug("HSM is ready")
 
         storageRefreshThread = concurrent.thread(storageRefresh,
-                                                 name="storageRefresh",
+                                                 name="hsm/init",
                                                  logger=self.log.name)
         storageRefreshThread.start()
 
