@@ -445,10 +445,12 @@ class StoragePool(object):
                     self._upgradeCallback)
                 self.log.debug("Running initial domain upgrade threads")
                 for sdUUID in self._domainsToUpgrade:
-                    concurrent.thread(self._upgradeCallback,
-                                      args=(sdUUID, True),
-                                      kwargs={"__securityOverride": True},
-                                      logger=self.log.name).start()
+                    t = concurrent.thread(self._upgradeCallback,
+                                          args=(sdUUID, True),
+                                          kwargs={"__securityOverride": True},
+                                          name="upgrade/" + sdUUID[:7],
+                                          logger=self.log.name)
+                    t.start()
         except rm.RequestTimedOutError:
             raise se.PoolUpgradeInProgress(self.spUUID)
 
