@@ -30,6 +30,7 @@ Various storage misc procedures
 from __future__ import absolute_import
 
 import errno
+import itertools
 import logging
 import os
 import random
@@ -491,6 +492,9 @@ def getfds():
 
 
 class Event(object):
+
+    _count = itertools.count()
+
     def __init__(self, name, sync=False):
         self._log = logging.getLogger("storage.Event.%s" % name)
         self.name = name
@@ -521,8 +525,7 @@ class Event(object):
                     if self._sync:
                         func(*args, **kwargs)
                     else:
-                        concurrent.thread(func, args=args,
-                                          kwargs=kwargs).start()
+                        self._start_thread(func, args, kwargs)
                 except:
                     self._log.warn("Could not run registered method because "
                                    "of an exception", exc_info=True)
@@ -531,7 +534,12 @@ class Event(object):
 
     def emit(self, *args, **kwargs):
         if len(self._registrar) > 0:
-            concurrent.thread(self._emit, args=args, kwargs=kwargs).start()
+            self._start_thread(self._emit, args, kwargs)
+
+    def _start_thread(self, func, args, kwargs):
+        name = "event/%d" % next(self._count)
+        t = concurrent.thread(func, args=args, kwargs=kwargs, name=name)
+        t.start()
 
 
 def killall(name, signum, group=False):
