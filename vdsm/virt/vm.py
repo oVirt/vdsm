@@ -1465,6 +1465,7 @@ class Vm(object):
             return self._migrationSourceThread.status
         except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
+                self.log.warning("Failed to cancel migration: %s", e)
                 return response.error('migCancelErr')
             raise
         except virdomain.NotConnectedError:
