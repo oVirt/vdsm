@@ -252,7 +252,8 @@ class DomainMonitor(object):
 class MonitorThread(object):
 
     def __init__(self, sdUUID, hostId, interval, changeEvent, checker):
-        self.thread = concurrent.thread(self._run, logger=log.name)
+        self.thread = concurrent.thread(self._run, logger=log.name,
+                                        name="monitor/" + sdUUID[:7])
         self.stopEvent = threading.Event()
         self.domain = None
         self.sdUUID = sdUUID
