@@ -1181,13 +1181,12 @@ class Vm(object):
 
     def getStats(self):
         """
-        used by API.Vm.getStats
+        Used by API.Vm.getStats.
 
-        WARNING: this method should only gather statistics by copying data.
-        Especially avoid costly and dangerous ditrect calls to the _dom
+        WARNING: This method should only gather statistics by copying data.
+        Especially avoid costly and dangerous direct calls to the _dom
         attribute. Use the periodic operations instead!
         """
-
         stats = {'statusTime': self._get_status_time()}
         if self.lastStatus == vmstatus.DOWN:
             stats.update(self._getDownVmStats())
