@@ -514,8 +514,11 @@ class Task:
             if (self.cleanPolicy == TaskCleanType.auto and
                     self.store is not None):
                 taskDir = os.path.join(self.store, self.id)
-            concurrent.thread(finalize,
-                              args=(self.log, self.resOwner, taskDir)).start()
+            t = concurrent.thread(
+                finalize,
+                args=(self.log, self.resOwner, taskDir),
+                name="task/" + self.id[:8])
+            t.start()
 
     def _done(self):
         self.resOwner.releaseAll()
