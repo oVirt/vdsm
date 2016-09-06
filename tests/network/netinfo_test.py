@@ -248,19 +248,26 @@ class TestNetinfo(TestCaseBase):
 
             try:  # no error is anticipated but let's make sure we can clean up
                 self.assertEqual(
-                    bonding._getBondingOptions(bondName), {}, "This test fails"
-                    " when a new bonding option is added to the kernel. Please"
-                    " run vdsm-tool dump-bonding-options` and retest.")
+                    self._bond_opts_without_mode(bondName), {},
+                    'This test fails when a new bonding option is added to '
+                    'the kernel. Please run vdsm-tool dump-bonding-options` '
+                    'and retest.')
 
                 with open(bonding.BONDING_OPT % (bondName, 'miimon'),
                           'w') as opt:
                     opt.write(INTERVAL)
 
-                self.assertEqual(bonding._getBondingOptions(bondName),
+                self.assertEqual(self._bond_opts_without_mode(bondName),
                                  {'miimon': INTERVAL})
 
             finally:
                 bonds.write('-' + bondName)
+
+    @staticmethod
+    def _bond_opts_without_mode(bond_name):
+        opts = bonding._getBondingOptions(bond_name)
+        opts.pop('mode')
+        return opts
 
     def test_get_bonding_option_numeric_val_exists(self):
         mode_num = bonding.BONDING_MODES_NAME_TO_NUMBER["balance-rr"]
