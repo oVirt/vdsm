@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 import abc
+import logging
 import os
 import six
 
@@ -126,23 +127,29 @@ class BondSysFS(BondAPI):
 
     def __exit__(self, ex_type, ex_value, traceback):
         if ex_type is not None:
+            logging.info('Bond {} transaction failed, reverting...'.format(
+                self._master))
             self._revert_transaction()
 
     def create(self):
         with open(self.BONDING_MASTERS, 'w') as f:
             f.write('+%s' % self._master)
+        logging.info('Bond {} has been created.'.format(self._master))
         if self._slaves:
             self.add_slaves(self._slaves)
 
     def destroy(self):
         with open(self.BONDING_MASTERS, 'w') as f:
             f.write('-%s' % self._master)
+        logging.info('Bond {} has been destroyed.'.format(self._master))
 
     def add_slaves(self, slaves):
         for slave in slaves:
             iface.down(slave)
             with open(self.BONDING_SLAVES % self._master, 'w') as f:
                 f.write('+%s' % slave)
+            logging.info('Slave {} has been added to bond {}.'.format(
+                slave, self._master))
             self._slaves.add(slave)
 
     def del_slaves(self, slaves):
@@ -150,6 +157,8 @@ class BondSysFS(BondAPI):
             iface.down(slave)
             with open(self.BONDING_SLAVES % self._master, 'w') as f:
                 f.write('-%s' % slave)
+            logging.info('Slave {} has been removed from bond {}.'.format(
+                slave, self._master))
             self._slaves.remove(slave)
 
     def set_options(self, options):
@@ -157,6 +166,7 @@ class BondSysFS(BondAPI):
         for key, value in options:
             with open(self.BONDING_OPT % (self._master, key), 'w') as f:
                 f.write(value)
+        logging.info('Bond {} options set: {}.'.format(self._master, options))
 
     def exists(self):
         return os.path.exists(self.BONDING_PATH % self._master)
