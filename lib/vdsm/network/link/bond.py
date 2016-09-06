@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 import abc
+from contextlib import contextmanager
 import logging
 import os
 import six
@@ -149,18 +150,20 @@ class BondSysFS(BondAPI):
 
     def add_slaves(self, slaves):
         for slave in slaves:
-            iface.down(slave)
-            with open(self.BONDING_SLAVES % self._master, 'w') as f:
-                f.write('+%s' % slave)
+            with _preserve_iface_state(slave):
+                iface.down(slave)
+                with open(self.BONDING_SLAVES % self._master, 'w') as f:
+                    f.write('+%s' % slave)
             logging.info('Slave {} has been added to bond {}.'.format(
                 slave, self._master))
             self._slaves.add(slave)
 
     def del_slaves(self, slaves):
         for slave in slaves:
-            iface.down(slave)
-            with open(self.BONDING_SLAVES % self._master, 'w') as f:
-                f.write('-%s' % slave)
+            with _preserve_iface_state(slave):
+                iface.down(slave)
+                with open(self.BONDING_SLAVES % self._master, 'w') as f:
+                    f.write('-%s' % slave)
             logging.info('Slave {} has been removed from bond {}.'.format(
                 slave, self._master))
             self._slaves.remove(slave)
@@ -204,6 +207,16 @@ class BondSysFS(BondAPI):
                 # TODO: Options support
         # We assume that a non existing bond with a failed transaction is not
         # a reasonable scenario and leave it to upper levels to handle it.
+
+
+@contextmanager
+def _preserve_iface_state(dev):
+    dev_was_up = iface.is_up(dev)
+    try:
+        yield
+    finally:
+        if dev_was_up and not iface.is_up(dev):
+            iface.up(dev)
 
 
 # TODO: Use a configuration parameter to determine which driver to use.
