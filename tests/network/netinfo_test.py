@@ -35,7 +35,7 @@ from .nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
 from testlib import mock
 from testlib import VdsmTestCase as TestCaseBase, namedTemporaryDir
 from testValidation import ValidateRunningAsRoot
-from testValidation import brokentest
+from testValidation import broken_on_ci
 
 # speeds defined in ethtool
 ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
@@ -230,7 +230,7 @@ class TestNetinfo(TestCaseBase):
                 self.assertEqual(
                     misc.getIfaceCfg(deviceName)['NETMASK'], '255.255.0.0')
 
-    @brokentest("Skipped becasue it breaks randomly on the CI")
+    @broken_on_ci(exception=AssertionError)
     @mock.patch.object(bonding, 'BONDING_DEFAULTS',
                        bonding.BONDING_DEFAULTS
                        if os.path.exists(bonding.BONDING_DEFAULTS)
@@ -404,6 +404,7 @@ class TestIPv6Addresses(TestCaseBase):
             self.assertTrue(addresses.is_ipv6(ip_addrs[0]))
             self.assertTrue(not addresses.is_dynamic(ip_addrs[0]))
 
+    @broken_on_ci()
     @ValidateRunningAsRoot
     def test_local_auto_with_dynamic_address_from_ra(self):
         IPV6_NETADDRESS = '2001:1:1:1'
