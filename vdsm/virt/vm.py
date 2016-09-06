@@ -4433,6 +4433,25 @@ class Vm(object):
         if not self._can_merge_into(drive, baseInfo, topInfo):
             return errCode['destVolumeTooSmall']
 
+        # If the base volume format is RAW and its size is smaller than its
+        # capacity (this could happen because the engine extended the base
+        # volume), we have to refresh the volume to cause lvm to get current lv
+        # size from storage, and update the kernel so the lv reflects the real
+        # size on storage. Not refreshing the volume may fail live merge.
+        # This could happen if disk extended after taking a snapshot but before
+        # performing the live merge.  See https://bugzilla.redhat.com/1367281
+        if (drive.chunked and
+                baseInfo['format'] == 'RAW' and
+                int(baseInfo['apparentsize']) < int(baseInfo['capacity'])):
+            self.log.info("Refreshing raw volume %r (apparentsize=%s, "
+                          "capacity=%s)",
+                          baseVolUUID, baseInfo['apparentsize'],
+                          baseInfo['capacity'])
+            self.__refreshDriveVolume({
+                'domainID': drive.domainID, 'poolID': drive.poolID,
+                'imageID': drive.imageID, 'volumeID': baseVolUUID,
+            })
+
         # Take the jobs lock here to protect the new job we are tracking from
         # being cleaned up by queryBlockJobs() since it won't exist right away
         with self._jobsLock:
