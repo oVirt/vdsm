@@ -97,6 +97,10 @@ class BondAPI(object):
     def down(self):
         self._setlinks(up=False)
 
+    def refresh(self):
+        if self.exists():
+            self._import_existing()
+
     @abc.abstractmethod
     def _import_existing(self):
         pass
