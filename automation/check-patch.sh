@@ -4,6 +4,9 @@ EXPORT_DIR="$PWD/exported-artifacts"
 
 set -xe
 
+# This allows us to check whether we are running under Jenkins or not.
+export VDSM_AUTOMATION=1
+
 easy_install pip
 pip install -U nose==1.3.7 tox==2.1.1
 

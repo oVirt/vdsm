@@ -134,6 +134,23 @@ def brokentest(msg="Test failed but it is known to be broken"):
     return wrap
 
 
+def broken_on_ci(exception=Exception,
+                 msg='Test failed but it is known to be broken on CI'):
+    def wrap(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                return f(*args, **kwargs)
+            except exception:
+                if os.environ.get('VDSM_AUTOMATION'):
+                    raise SkipTest(msg)
+                else:
+                    raise
+        return wrapper
+
+    return wrap
+
+
 def stresstest(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
