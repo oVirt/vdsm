@@ -262,6 +262,7 @@ class Vm(object):
         self._migrationSourceThread = migration.SourceThread(self)
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
         self._incomingMigrationFinished = threading.Event()
+        self._incoming_migration_vm_running = threading.Event()
         self._volPrepareLock = threading.Lock()
         self._initTimePauseCode = None
         self._initTimeRTC = int(self.conf.get('timeOffset', 0))
@@ -551,6 +552,11 @@ class Vm(object):
             if ('migrationDest' in self.conf or 'restoreState' in self.conf) \
                     and self.lastStatus != vmstatus.DOWN:
                 self._completeIncomingMigration()
+            if self.lastStatus == vmstatus.MIGRATION_DESTINATION:
+                # Waiting for post-copy migration to finish before we can
+                # change status to UP.
+                self._incomingMigrationFinished.wait(
+                    config.getint('vars', 'migration_destination_timeout'))
 
             self.lastStatus = vmstatus.UP
             if self._initTimePauseCode:
@@ -2988,7 +2994,8 @@ class Vm(object):
             if self._needToWaitForMigrationToComplete():
                 usedTimeout = self._waitForUnderlyingMigration()
                 self._attachLibvirtDomainAfterMigration(
-                    self._incomingMigrationFinished.isSet(), usedTimeout)
+                    self._incoming_migration_vm_running.is_set(),
+                    usedTimeout)
             # else domain connection already established earlier
             self._domDependentInit()
             del self.conf['migrationDest']
@@ -3040,7 +3047,7 @@ class Vm(object):
     def _waitForUnderlyingMigration(self):
         timeout = config.getint('vars', 'migration_destination_timeout')
         self.log.debug("Waiting %s seconds for end of migration", timeout)
-        self._incomingMigrationFinished.wait(timeout)
+        self._incoming_migration_vm_running.wait(timeout)
         return timeout
 
     def _attachLibvirtDomainAfterMigration(self, migrationFinished, timeout):
@@ -3058,7 +3065,7 @@ class Vm(object):
                         raise MigrationError("Migration Error - Timed out "
                                              "(did not receive success "
                                              "event)")
-                self.log.debug("NOTE: incomingMigrationFinished event has "
+                self.log.debug("NOTE: incoming_migration_vm_running event has "
                                "not been set and wait timed out after %d "
                                "seconds. Current VM state: %d, reason %d. "
                                "Continuing with VM initialization anyway.",
@@ -3990,7 +3997,7 @@ class Vm(object):
             self._monitorable = False
             self.lastStatus = vmstatus.POWERING_DOWN
             # Terminate the VM's creation thread.
-            self._incomingMigrationFinished.set()
+            self._incoming_migration_vm_running.set()
             self.guestAgent.stop()
             if self._dom.connected:
                 result = self._destroyVm(gracefulAttempts)
@@ -4222,6 +4229,8 @@ class Vm(object):
                     pass
                 else:
                     hooks.after_vm_pause(domxml, self.conf)
+            elif detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_POSTCOPY_FAILED:
+                pass  # will be handled in a followup patch
 
         elif event == libvirt.VIR_DOMAIN_EVENT_RESUMED:
             self._setGuestCpuRunning(True)
@@ -4238,9 +4247,19 @@ class Vm(object):
                     pass
                 else:
                     hooks.after_vm_cont(domxml, self.conf)
-            elif (detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_MIGRATED and
-                  self.lastStatus == vmstatus.MIGRATION_DESTINATION):
+            elif (self.lastStatus == vmstatus.MIGRATION_DESTINATION and
+                  detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_MIGRATED):
+                self._incoming_migration_vm_running.set()
                 self._incomingMigrationFinished.set()
+            elif (self.lastStatus == vmstatus.MIGRATION_DESTINATION and
+                  detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_POSTCOPY):
+                # When we enter post-copy mode, the VM starts actually
+                # running on the destination, so we should unblock the
+                # start up processing here.  The only exception is status,
+                # which must still signal incoming migration to not confuse
+                # Engine.
+                self._incoming_migration_vm_running.set()
+                self.log.info("Migration switched to post-copy mode")
 
     def _updateDevicesDomxmlCache(self, xml):
         """
