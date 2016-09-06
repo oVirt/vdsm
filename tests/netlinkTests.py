@@ -105,7 +105,6 @@ class NetlinkEventMonitorTests(TestCaseBase):
                 {'event': 'del_link', 'name': nic}]
             events_ipv6 = [
                 {'event': 'new_addr', 'family': 'inet6'},
-                {'event': 'del_neigh'},
                 {'event': 'del_addr', 'family': 'inet6'}]
             if is_disabled_ipv6():
                 return deque(events_add + events_del)
