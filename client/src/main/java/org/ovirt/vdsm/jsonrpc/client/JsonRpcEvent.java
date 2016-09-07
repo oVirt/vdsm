@@ -94,7 +94,7 @@ public class JsonRpcEvent {
      *
      * @param method - Name of the method which will be executed remotely.
      * @param params - Parameters used to execute method.
-     * @return
+     * @return <code>JsonRpcEvent</code> representing an event.
      * @throws IOException - The exception thrown if params cannot be serialized.
      */
     public static JsonRpcEvent fromMethodAndParams(String method, Map<String, Object> params) throws IOException {
