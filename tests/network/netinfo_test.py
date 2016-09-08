@@ -27,6 +27,7 @@ from nose.plugins.attrib import attr
 from vdsm.network import ipwrapper
 from vdsm.network.netinfo import addresses, bonding, dns, misc, nics, routes
 from vdsm.network.netinfo.cache import get
+from vdsm.network.netlink import waitfor
 from vdsm.utils import random_iface_name
 from vdsm import sysctl
 
@@ -337,12 +338,19 @@ class TestNetinfo(TestCaseBase):
         IP_ADDR3_CIDR = self._cidr_form(IP_ADDR3, 32)
         IPV6_ADDR_CIDR = self._cidr_form(IPV6_ADDR, IPV6_PREFIX_LENGTH)
         with dummy_device() as device:
-            ipwrapper.addrAdd(device, IP_ADDR, PREFIX_LENGTH)
-            ipwrapper.addrAdd(device, IP_ADDR_SECOND, PREFIX_LENGTH)
-            ipwrapper.addrAdd(device, IP_ADDR2, PREFIX_LENGTH)
-            ipwrapper.addrAdd(device, IPV6_ADDR, IPV6_PREFIX_LENGTH, family=6)
+            with waitfor.waitfor_ipv4_addr(device):
+                ipwrapper.addrAdd(device, IP_ADDR, PREFIX_LENGTH)
+            with waitfor.waitfor_ipv4_addr(device):
+                ipwrapper.addrAdd(device, IP_ADDR_SECOND, PREFIX_LENGTH)
+            with waitfor.waitfor_ipv4_addr(device):
+                ipwrapper.addrAdd(device, IP_ADDR2, PREFIX_LENGTH)
+            with waitfor.waitfor_ipv6_addr(device):
+                ipwrapper.addrAdd(
+                    device, IPV6_ADDR, IPV6_PREFIX_LENGTH, family=6)
             # 32 bit addresses are reported slashless by netlink
-            ipwrapper.addrAdd(device, IP_ADDR3, 32)
+            with waitfor.waitfor_ipv4_addr(device):
+                ipwrapper.addrAdd(device, IP_ADDR3, 32)
+
             self.assertEqual(
                 get_ip_info(device),
                 (IP_ADDR, NET_MASK,
