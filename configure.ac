@@ -236,7 +236,7 @@ AC_SUBST([SNLKGROUP], [sanlock])
 AC_SUBST([CDROMGROUP], [cdrom])
 
 # Systemd units default path
-AC_SUBST([SYSTEMD_UNIT_DIR], ['/usr/lib/systemd/system'])
+AC_SUBST([SYSTEMD_UNIT_DIR], ['${prefix}/lib/systemd/system'])
 
 # VDSM default paths
 AC_SUBST([vdsmdir], ['${datarootdir}/vdsm'])
