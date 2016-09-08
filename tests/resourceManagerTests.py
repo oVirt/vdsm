@@ -27,6 +27,8 @@ import types
 from resource import getrlimit, RLIMIT_NPROC
 
 import storage.resourceManager as resourceManager
+from storagefakelib import FakeResourceManager
+from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import slowtest, stresstest
 
@@ -705,3 +707,53 @@ class ResourceManagerTests(TestCaseBase):
         except:
             resourceManager.ResourceManager._instance = None
             raise
+
+
+@expandPermutations
+class ResourceManagerLockTest(TestCaseBase):
+
+    def test_properties(self):
+        a = resourceManager.ResourceManagerLock('ns', 'name', 'mode')
+        self.assertEqual('ns', a.ns)
+        self.assertEqual('name', a.name)
+        self.assertEqual('mode', a.mode)
+
+    @permutations((
+        (('nsA', 'nameA', 'mode'), ('nsB', 'nameA', 'mode')),
+        (('nsA', 'nameA', 'mode'), ('nsA', 'nameB', 'mode')),
+    ))
+    def test_less_than(self, a, b):
+        b = resourceManager.ResourceManagerLock(*b)
+        a = resourceManager.ResourceManagerLock(*a)
+        self.assertLess(a, b)
+
+    def test_equality(self):
+        a = resourceManager.ResourceManagerLock('ns', 'name', 'mode')
+        b = resourceManager.ResourceManagerLock('ns', 'name', 'mode')
+        self.assertEqual(a, b)
+
+    def test_mode_used_for_equality(self):
+        a = resourceManager.ResourceManagerLock('nsA', 'nameA', 'modeA')
+        b = resourceManager.ResourceManagerLock('nsA', 'nameA', 'modeB')
+        self.assertNotEqual(a, b)
+
+    def test_mode_ignored_for_sorting(self):
+        a = resourceManager.ResourceManagerLock('nsA', 'nameA', 'modeA')
+        b = resourceManager.ResourceManagerLock('nsA', 'nameA', 'modeB')
+        self.assertFalse(a < b)
+        self.assertFalse(b < a)
+
+    def test_acquire_release(self):
+        fake_rm = FakeResourceManager()
+
+        lock = resourceManager.ResourceManagerLock(
+            'ns_A', 'name_A', resourceManager.LockType.shared)
+        lock._rm = fake_rm
+        expected = []
+        lock.acquire()
+        expected.append(('acquireResource',
+                         (lock.ns, lock.name, lock.mode), {}))
+        self.assertEqual(expected, fake_rm.__calls__)
+        lock.release()
+        expected.append(('releaseResource', (lock.ns, lock.name), {}))
+        self.assertEqual(expected, fake_rm.__calls__)

@@ -31,6 +31,7 @@ from vdsm.logUtils import SimpleLogAdapter
 from vdsm import concurrent
 from vdsm import utils
 from vdsm.storage import exception as se
+from vdsm.storage import guarded
 from vdsm.storage import rwlock
 
 
@@ -1005,3 +1006,32 @@ class Owner(object):
 
     def __str__(self):
         return str(self.ownerobject)
+
+
+class ResourceManagerLock(guarded.AbstractLock):
+    """
+    Extend AbstractLock to enable Resources to be used with guarded utilities.
+    """
+    def __init__(self, ns, name, mode):
+        self._ns = ns
+        self._name = name
+        self._mode = mode
+        self._rm = ResourceManager.getInstance()
+
+    @property
+    def ns(self):
+        return self._ns
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def mode(self):
+        return self._mode
+
+    def acquire(self):
+        self._rm.acquireResource(self.ns, self.name, self.mode)
+
+    def release(self):
+        self._rm.releaseResource(self.ns, self.name)
