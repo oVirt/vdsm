@@ -28,6 +28,7 @@ from vdsm import qemuimg
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
+from vdsm.storage import guarded
 from vdsm.storage import misc
 from vdsm.storage.misc import deprecated
 from vdsm.storage.threadlocal import vars
@@ -1182,3 +1183,34 @@ class Volume(object):
     @classmethod
     def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
         return cls.manifestClass.getImageVolumes(repoPath, sdUUID, imgUUID)
+
+
+class VolumeLease(guarded.AbstractLock):
+    """
+    Extend AbstractLock so Volume Leases may be used with guarded utilities.
+    """
+    def __init__(self, host_id, sd_id, img_id, vol_id):
+        self._host_id = host_id
+        self._sd_id = sd_id
+        self._img_id = img_id
+        self._vol_id = vol_id
+
+    @property
+    def ns(self):
+        return sd.getNamespace(sc.VOLUME_LEASE_NAMESPACE, self._sd_id)
+
+    @property
+    def name(self):
+        return self._vol_id
+
+    @property
+    def mode(self):
+        return rm.LockType.exclusive  # All volume leases are exclusive
+
+    def acquire(self):
+        dom = sdCache.produce_manifest(self._sd_id)
+        dom.acquireVolumeLease(self._host_id, self._img_id, self._vol_id)
+
+    def release(self):
+        dom = sdCache.produce_manifest(self._sd_id)
+        dom.releaseVolumeLease(self._img_id, self._vol_id)
