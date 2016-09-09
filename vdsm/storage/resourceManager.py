@@ -62,14 +62,6 @@ class LockType:
         if ltype not in validValues:
             raise ValueError("invalid lock type '%s'" % ltype)
 
-    @classmethod
-    def fromState(cls, lockstate):
-        if lockstate == LockState.shared:
-            return cls.shared
-        elif lockstate == LockState.locked:
-            return cls.exclusive
-        raise ValueError("invalid lockstate %s" % lockstate)
-
 
 class LockState:
     free = "free"
