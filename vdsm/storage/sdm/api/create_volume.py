@@ -45,7 +45,7 @@ class Job(base.Job):
             image_res_ns = sd.getNamespace(sc.IMAGE_NAMESPACE,
                                            self.sd_manifest.sdUUID)
             with rmanager.acquireResource(image_res_ns, self.vol_info.img_id,
-                                          rm.LockType.exclusive):
+                                          rm.EXCLUSIVE):
                 artifacts = self.sd_manifest.get_volume_artifacts(
                     self.vol_info.img_id, self.vol_info.vol_id)
                 artifacts.create(

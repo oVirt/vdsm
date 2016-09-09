@@ -126,7 +126,7 @@ class ResourceManagerTests(TestCaseBase):
     def testErrorInFactory(self):
         manager = self.manager
         req = manager.registerResource("error", "resource",
-                                       resourceManager.LockType.exclusive,
+                                       resourceManager.EXCLUSIVE,
                                        lambda req, res: 1)
         self.assertTrue(req.canceled())
 
@@ -153,10 +153,9 @@ class ResourceManagerTests(TestCaseBase):
 
         manager = self.manager
         exclusive1 = manager.acquireResource(
-            "failAfterSwitch", "resource", resourceManager.LockType.exclusive)
+            "failAfterSwitch", "resource", resourceManager.EXCLUSIVE)
         sharedReq1 = manager.registerResource(
-            "failAfterSwitch", "resource", resourceManager.LockType.shared,
-            callback)
+            "failAfterSwitch", "resource", resourceManager.SHARED, callback)
         exclusive1.release()
         self.assertTrue(sharedReq1.canceled())
         self.assertEquals(resources[0], None)
@@ -172,11 +171,9 @@ class ResourceManagerTests(TestCaseBase):
     def testRequestInvalidResource(self):
         manager = self.manager
         self.assertRaises(ValueError, manager.acquireResource,
-                          "storage", "DOT.DOT",
-                          resourceManager.LockType.shared)
+                          "storage", "DOT.DOT", resourceManager.SHARED)
         self.assertRaises(ValueError, manager.acquireResource,
-                          "DOT.DOT", "resource",
-                          resourceManager.LockType.shared)
+                          "DOT.DOT", "resource", resourceManager.SHARED)
 
     def testReleaseInvalidResource(self):
         manager = self.manager
@@ -190,7 +187,7 @@ class ResourceManagerTests(TestCaseBase):
         s = StringIO
         with manager.acquireResource(
                 "string", "test",
-                resourceManager.LockType.exclusive) as resource:
+                resourceManager.EXCLUSIVE) as resource:
             for attr in dir(s):
                 if attr == "close":
                     continue
@@ -200,7 +197,7 @@ class ResourceManagerTests(TestCaseBase):
         manager = self.manager
         with manager.acquireResource(
                 "string", "test",
-                resourceManager.LockType.exclusive) as resource:
+                resourceManager.EXCLUSIVE) as resource:
             try:
                 resource.THERE_IS_NO_WAY_I_EXIST
             except AttributeError:
@@ -220,7 +217,7 @@ class ResourceManagerTests(TestCaseBase):
 
         manager = self.manager
         req = manager.registerResource(
-            "string", "resource", resourceManager.LockType.shared, callback)
+            "string", "resource", resourceManager.SHARED, callback)
         try:
             req.grant()
         except AttributeError:
@@ -242,7 +239,7 @@ class ResourceManagerTests(TestCaseBase):
 
         manager = self.manager
         req = manager.registerResource(
-            "string", "resource", resourceManager.LockType.shared, callback)
+            "string", "resource", resourceManager.SHARED, callback)
         try:
             str(req)
         finally:
@@ -259,9 +256,9 @@ class ResourceManagerTests(TestCaseBase):
 
         manager = self.manager
         req1 = manager.registerResource(
-            "string", "resource", resourceManager.LockType.exclusive, callback)
+            "string", "resource", resourceManager.EXCLUSIVE, callback)
         req2 = manager.registerResource(
-            "string", "resource", resourceManager.LockType.exclusive, callback)
+            "string", "resource", resourceManager.EXCLUSIVE, callback)
 
         self.assertNotEqual(req1, req2)
         self.assertEqual(req1, req1)
@@ -288,9 +285,9 @@ class ResourceManagerTests(TestCaseBase):
 
         manager = self.manager
         blocker = manager.acquireResource("string", "resource",
-                                          resourceManager.LockType.exclusive)
+                                          resourceManager.EXCLUSIVE)
         req = manager.registerResource(
-            "string", "resource", resourceManager.LockType.exclusive, callback)
+            "string", "resource", resourceManager.EXCLUSIVE, callback)
 
         req.cancel()
 
@@ -306,7 +303,7 @@ class ResourceManagerTests(TestCaseBase):
             resources.insert(0, res)
 
         req = resourceManager.Request(
-            "namespace", "name", resourceManager.LockType.exclusive, callback)
+            "namespace", "name", resourceManager.EXCLUSIVE, callback)
         req.grant()
         self.assertRaises(resourceManager.RequestAlreadyProcessedError,
                           req.grant)
@@ -317,9 +314,9 @@ class ResourceManagerTests(TestCaseBase):
 
         manager = self.manager
         blocker = manager.acquireResource("string", "resource",
-                                          resourceManager.LockType.exclusive)
+                                          resourceManager.EXCLUSIVE)
         req = manager.registerResource(
-            "string", "resource", resourceManager.LockType.exclusive, callback)
+            "string", "resource", resourceManager.EXCLUSIVE, callback)
 
         req.cancel()
 
@@ -332,13 +329,13 @@ class ResourceManagerTests(TestCaseBase):
 
         manager = self.manager
         req = manager.registerResource(
-            "string", "resource", resourceManager.LockType.exclusive, callback)
+            "string", "resource", resourceManager.EXCLUSIVE, callback)
         req.wait()
 
     def testRereleaseResource(self):
         manager = self.manager
         res = manager.acquireResource("string", "resource",
-                                      resourceManager.LockType.exclusive)
+                                      resourceManager.EXCLUSIVE)
         res.release()
         res.release()
 
@@ -350,17 +347,17 @@ class ResourceManagerTests(TestCaseBase):
 
         manager = self.manager
         exclusive1 = manager.acquireResource(
-            "string", "resource", resourceManager.LockType.exclusive)
+            "string", "resource", resourceManager.EXCLUSIVE)
         sharedReq1 = manager.registerResource(
-            "string", "resource", resourceManager.LockType.shared, callback)
+            "string", "resource", resourceManager.SHARED, callback)
         sharedReq2 = manager.registerResource(
-            "string", "resource", resourceManager.LockType.shared, callback)
+            "string", "resource", resourceManager.SHARED, callback)
         exclusiveReq1 = manager.registerResource(
-            "string", "resource", resourceManager.LockType.exclusive, callback)
+            "string", "resource", resourceManager.EXCLUSIVE, callback)
         sharedReq3 = manager.registerResource(
-            "string", "resource", resourceManager.LockType.shared, callback)
+            "string", "resource", resourceManager.SHARED, callback)
         sharedReq4 = manager.registerResource(
-            "string", "resource", resourceManager.LockType.shared, callback)
+            "string", "resource", resourceManager.SHARED, callback)
 
         self.assertFalse(sharedReq1.granted())
         self.assertFalse(sharedReq2.granted())
@@ -398,19 +395,19 @@ class ResourceManagerTests(TestCaseBase):
 
         manager = self.manager
         exclusive1 = manager.acquireResource(
-            namespace, "resource", resourceManager.LockType.exclusive)
+            namespace, "resource", resourceManager.EXCLUSIVE)
         sharedReq1 = manager.registerResource(
-            namespace, "resource", resourceManager.LockType.shared, callback)
+            namespace, "resource", resourceManager.SHARED, callback)
         sharedReq2 = manager.registerResource(
-            namespace, "resource", resourceManager.LockType.shared, callback)
+            namespace, "resource", resourceManager.SHARED, callback)
         exclusive2 = manager.registerResource(
-            namespace, "resource", resourceManager.LockType.exclusive,
+            namespace, "resource", resourceManager.EXCLUSIVE,
             callback)
         exclusive3 = manager.registerResource(
-            namespace, "resource", resourceManager.LockType.exclusive,
+            namespace, "resource", resourceManager.EXCLUSIVE,
             callback)
         sharedReq3 = manager.registerResource(
-            namespace, "resource", resourceManager.LockType.shared, callback)
+            namespace, "resource", resourceManager.SHARED, callback)
 
         self.assertEquals(exclusive1.read(), "resource:exclusive")
         exclusive1.release()
@@ -437,21 +434,21 @@ class ResourceManagerTests(TestCaseBase):
     def testResourceAcquireTimeout(self):
         manager = self.manager
         exclusive1 = manager.acquireResource(
-            "string", "resource", resourceManager.LockType.exclusive)
+            "string", "resource", resourceManager.EXCLUSIVE)
         self.assertRaises(resourceManager.RequestTimedOutError,
                           manager.acquireResource, "string", "resource",
-                          resourceManager.LockType.exclusive, 1)
+                          resourceManager.EXCLUSIVE, 1)
         exclusive1.release()
 
     def testResourceAcquireInvalidTimeout(self):
         manager = self.manager
         self.assertRaises(TypeError, manager.acquireResource, "string",
-                          "resource", resourceManager.LockType.exclusive, "A")
+                          "resource", resourceManager.EXCLUSIVE, "A")
 
     def testResourceInvalidation(self):
         manager = self.manager
         resource = manager.acquireResource("string", "test",
-                                           resourceManager.LockType.exclusive)
+                                           resourceManager.EXCLUSIVE)
         try:
             resource.write("dsada")
         except:
@@ -473,7 +470,7 @@ class ResourceManagerTests(TestCaseBase):
         manager = self.manager
         self.log.info("Acquiring resource", extra={'resource': "bob"})
         res = manager.acquireResource("storage", "resource",
-                                      resourceManager.LockType.shared)
+                                      resourceManager.SHARED)
         resProxy = proxy(res)
         res = None
         # wait for object to die
@@ -493,9 +490,9 @@ class ResourceManagerTests(TestCaseBase):
     def testAcquireResourceShared(self):
         manager = self.manager
         res1 = manager.acquireResource("storage", "resource",
-                                       resourceManager.LockType.shared)
+                                       resourceManager.SHARED)
         res2 = manager.acquireResource("storage", "resource",
-                                       resourceManager.LockType.shared, 10)
+                                       resourceManager.SHARED, 10)
 
         res1.release()
         res2.release()
@@ -505,12 +502,12 @@ class ResourceManagerTests(TestCaseBase):
         self.assertEquals(manager.getResourceStatus("storage", "resource"),
                           resourceManager.LockState.free)
         exclusive1 = manager.acquireResource(
-            "storage", "resource", resourceManager.LockType.exclusive)
+            "storage", "resource", resourceManager.EXCLUSIVE)
         self.assertEquals(manager.getResourceStatus("storage", "resource"),
                           resourceManager.LockState.locked)
         exclusive1.release()
         shared1 = manager.acquireResource("storage", "resource",
-                                          resourceManager.LockType.shared)
+                                          resourceManager.SHARED)
         self.assertEquals(manager.getResourceStatus("storage", "resource"),
                           resourceManager.LockState.shared)
         shared1.release()
@@ -526,7 +523,7 @@ class ResourceManagerTests(TestCaseBase):
         manager = self.manager
         try:
             manager.acquireResource("null", "resource",
-                                    resourceManager.LockType.exclusive)
+                                    resourceManager.EXCLUSIVE)
         except KeyError:
             return
 
@@ -540,16 +537,16 @@ class ResourceManagerTests(TestCaseBase):
 
         manager = self.manager
         exclusive1 = manager.acquireResource(
-            "storage", "resource", resourceManager.LockType.exclusive)
+            "storage", "resource", resourceManager.EXCLUSIVE)
         sharedReq1 = manager.registerResource(
-            "storage", "resource", resourceManager.LockType.shared, callback)
+            "storage", "resource", resourceManager.SHARED, callback)
         sharedReq2 = manager.registerResource(
-            "storage", "resource", resourceManager.LockType.shared, callback)
+            "storage", "resource", resourceManager.SHARED, callback)
         exclusiveReq1 = manager.registerResource(
-            "storage", "resource", resourceManager.LockType.exclusive,
+            "storage", "resource", resourceManager.EXCLUSIVE,
             callback)
         exclusiveReq2 = manager.registerResource(
-            "storage", "resource", resourceManager.LockType.exclusive,
+            "storage", "resource", resourceManager.EXCLUSIVE,
             callback)
 
         self.assertFalse(sharedReq1.granted())
@@ -583,13 +580,13 @@ class ResourceManagerTests(TestCaseBase):
 
         manager = self.manager
         exclusiveReq1 = manager.registerResource(
-            "storage", "resource", resourceManager.LockType.exclusive,
+            "storage", "resource", resourceManager.EXCLUSIVE,
             callback)
         exclusiveReq2 = manager.registerResource(
-            "storage", "resource", resourceManager.LockType.exclusive,
+            "storage", "resource", resourceManager.EXCLUSIVE,
             callback)
         exclusiveReq3 = manager.registerResource(
-            "storage", "resource", resourceManager.LockType.exclusive,
+            "storage", "resource", resourceManager.EXCLUSIVE,
             callback)
 
         self.assertTrue(exclusiveReq1.granted())
@@ -632,7 +629,7 @@ class ResourceManagerTests(TestCaseBase):
             threadLimit.release()
 
         def releaseShared(req, res):
-            self.assertEquals(req.lockType, resourceManager.LockType.shared)
+            self.assertEquals(req.lockType, resourceManager.SHARED)
             res.release()
             threadLimit.release()
 
@@ -643,8 +640,7 @@ class ResourceManagerTests(TestCaseBase):
         manager = self.manager
         rnd = Random()
 
-        lockTranslator = [resourceManager.LockType.exclusive,
-                          resourceManager.LockType.shared]
+        lockTranslator = [resourceManager.EXCLUSIVE, resourceManager.SHARED]
 
         threads = []
         for i in range(procLimit / 2):
@@ -747,7 +743,7 @@ class ResourceManagerLockTest(TestCaseBase):
         fake_rm = FakeResourceManager()
 
         lock = resourceManager.ResourceManagerLock(
-            'ns_A', 'name_A', resourceManager.LockType.shared)
+            'ns_A', 'name_A', resourceManager.SHARED)
         lock._rm = fake_rm
         expected = []
         lock.acquire()
@@ -759,7 +755,7 @@ class ResourceManagerLockTest(TestCaseBase):
         self.assertEqual(expected, fake_rm.__calls__)
 
     def test_repr(self):
-        mode = resourceManager.LockType.shared
+        mode = resourceManager.SHARED
         lock = resourceManager.ResourceManagerLock('ns', 'name', mode)
         lock_string = str(lock)
         self.assertIn("ResourceManagerLock", lock_string)

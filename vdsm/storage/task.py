@@ -1363,7 +1363,7 @@ class Task:
                               'task_resource_default_timeout')):
         self.resOwner.acquire(namespace,
                               resName,
-                              resourceManager.LockType.exclusive,
+                              resourceManager.EXCLUSIVE,
                               timeout)
 
     def getSharedLock(self,
@@ -1373,5 +1373,5 @@ class Task:
                                             'task_resource_default_timeout')):
         self.resOwner.acquire(namespace,
                               resName,
-                              resourceManager.LockType.shared,
+                              resourceManager.SHARED,
                               timeout)

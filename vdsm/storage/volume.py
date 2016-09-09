@@ -651,8 +651,8 @@ class Volume(object):
 
         imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
 
-        with rmanager.acquireResource(imageResourcesNamespace,
-                                      srcImg, rm.LockType.exclusive):
+        with rmanager.acquireResource(imageResourcesNamespace, srcImg,
+                                      rm.EXCLUSIVE):
             vol = sdCache.produce(sdUUID).produceVolume(srcImg, srcVol)
             vol.prepare(rw=True, chainrw=True, setrw=True)
 
@@ -1241,7 +1241,7 @@ class VolumeLease(guarded.AbstractLock):
 
     @property
     def mode(self):
-        return rm.LockType.exclusive  # All volume leases are exclusive
+        return rm.EXCLUSIVE  # All volume leases are exclusive
 
     def acquire(self):
         dom = sdCache.produce_manifest(self._sd_id)

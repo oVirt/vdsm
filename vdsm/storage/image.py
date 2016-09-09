@@ -377,7 +377,7 @@ class Image:
                                                      destDom.sdUUID)
         # In destination domain we need to lock image's template if exists
         with rmanager.acquireResource(dstImageResourcesNamespace, pimg,
-                                      rm.LockType.shared) \
+                                      rm.SHARED) \
                 if pimg != sc.BLANK_UUID else justLogIt(imgUUID):
             if fakeTemplate:
                 self.createFakeTemplate(destDom.sdUUID, volParams)

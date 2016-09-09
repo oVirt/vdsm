@@ -154,7 +154,7 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
                 if len(volUUIDChain) > 0:
                     volRes = rmanager.acquireResource(
                         self.volumeResourcesNamespace,
-                        template, rm.LockType.shared,
+                        template, rm.SHARED,
                         timeout=self.resource_default_timeout)
                 else:
                     volRes = rmanager.acquireResource(

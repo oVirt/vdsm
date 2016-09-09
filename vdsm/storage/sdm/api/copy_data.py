@@ -112,9 +112,8 @@ class CopyDataDivEndpoint(properties.Owner):
     @property
     def locks(self):
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, self.sd_id)
-        mode = rm.LockType.exclusive if self._writable else rm.LockType.shared
-        ret = [rm.ResourceManagerLock(sc.STORAGE, self.sd_id,
-                                      rm.LockType.shared),
+        mode = rm.EXCLUSIVE if self._writable else rm.SHARED
+        ret = [rm.ResourceManagerLock(sc.STORAGE, self.sd_id, rm.SHARED),
                rm.ResourceManagerLock(img_ns, self.img_id, mode)]
         if self._writable:
             ret.append(volume.VolumeLease(self._host_id, self.sd_id,

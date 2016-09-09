@@ -125,7 +125,7 @@ class CreateVolumeTests(VdsmTestCase):
 
         # Verify that the image resource was locked and released
         image_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, job.sd_manifest.sdUUID)
-        rm_args = (image_ns, job.vol_info.img_id, rm.LockType.exclusive)
+        rm_args = (image_ns, job.vol_info.img_id, rm.EXCLUSIVE)
         self.assertEqual([('acquireResource', rm_args, {}),
                           ('releaseResource', rm_args, {})],
                          self.rm.__calls__)

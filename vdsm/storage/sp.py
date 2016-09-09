@@ -140,15 +140,14 @@ class StoragePool(object):
             return
 
         domain = sdCache.produce(sdUUID)
-        with rmanager.acquireResource(sc.STORAGE, self.spUUID,
-                                      rm.LockType.shared):
+        with rmanager.acquireResource(sc.STORAGE, self.spUUID, rm.SHARED):
             if sdUUID not in self.getDomains(activeOnly=True):
                 self.log.debug("Domain %s is not an active pool domain, "
                                "skipping domain links refresh",
                                sdUUID)
                 return
             with rmanager.acquireResource(sc.STORAGE, sdUUID + "_repo",
-                                          rm.LockType.exclusive):
+                                          rm.EXCLUSIVE):
                 self.log.debug("Refreshing domain links for %s", sdUUID)
                 self._refreshDomainLinks(domain)
 
@@ -175,9 +174,8 @@ class StoragePool(object):
             return
 
         with rmanager.acquireResource(sc.STORAGE, "upgrade_" + self.spUUID,
-                                      rm.LockType.shared):
-            with rmanager.acquireResource(sc.STORAGE, sdUUID,
-                                          rm.LockType.exclusive):
+                                      rm.SHARED):
+            with rmanager.acquireResource(sc.STORAGE, sdUUID, rm.EXCLUSIVE):
                 if sdUUID not in self._domainsToUpgrade:
                     return
 
@@ -350,7 +348,7 @@ class StoragePool(object):
     def _shutDownUpgrade(self):
         self.log.debug("Shutting down upgrade process")
         with rmanager.acquireResource(sc.STORAGE, "upgrade_" + self.spUUID,
-                                      rm.LockType.exclusive):
+                                      rm.EXCLUSIVE):
             try:
                 self.domainMonitor.onDomainStateChange.unregister(
                     self._upgradeCallback)
@@ -421,14 +419,13 @@ class StoragePool(object):
     def _upgradePool(self, targetDomVersion, lockTimeout=None):
         try:
             with rmanager.acquireResource(sc.STORAGE, "upgrade_" + self.spUUID,
-                                          rm.LockType.exclusive,
-                                          timeout=lockTimeout):
+                                          rm.EXCLUSIVE, timeout=lockTimeout):
                 sd.validateDomainVersion(targetDomVersion)
                 self.log.info("Trying to upgrade master domain `%s`",
                               self.masterDomain.sdUUID)
                 with rmanager.acquireResource(sc.STORAGE,
                                               self.masterDomain.sdUUID,
-                                              rm.LockType.exclusive):
+                                              rm.EXCLUSIVE):
                     self._convertDomain(self.masterDomain,
                                         str(targetDomVersion))
 
@@ -1350,7 +1347,7 @@ class StoragePool(object):
     def extendVolumeSize(self, sdUUID, imgUUID, volUUID, newSize):
         imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
-                                      rm.LockType.exclusive):
+                                      rm.EXCLUSIVE):
             return sdCache.produce(sdUUID) \
                 .produceVolume(imgUUID, volUUID).extendSize(int(newSize))
 
@@ -1539,9 +1536,9 @@ class StoragePool(object):
             dstImageResourcesNamespace = srcImageResourcesNamespace
 
         with nested(rmanager.acquireResource(srcImageResourcesNamespace,
-                                             srcImgUUID, rm.LockType.shared),
+                                             srcImgUUID, rm.SHARED),
                     rmanager.acquireResource(dstImageResourcesNamespace,
-                                             dstImgUUID, rm.LockType.exclusive)
+                                             dstImgUUID, rm.EXCLUSIVE)
                     ):
             dstUUID = image.Image(self.poolPath).copyCollapsed(
                 sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
@@ -1580,16 +1577,16 @@ class StoragePool(object):
         # For MOVE_OP acquire exclusive lock
         # For COPY_OP shared lock is enough
         if op == image.MOVE_OP:
-            srcLock = rm.LockType.exclusive
+            srcLock = rm.EXCLUSIVE
         elif op == image.COPY_OP:
-            srcLock = rm.LockType.shared
+            srcLock = rm.SHARED
         else:
             raise se.MoveImageError(imgUUID)
 
         with nested(rmanager.acquireResource(srcImageResourcesNamespace,
                                              imgUUID, srcLock),
                     rmanager.acquireResource(dstImageResourcesNamespace,
-                                             imgUUID, rm.LockType.exclusive)):
+                                             imgUUID, rm.EXCLUSIVE)):
             image.Image(self.poolPath).move(srcDomUUID, dstDomUUID, imgUUID,
                                             vmUUID, op, postZero, force)
 
@@ -1627,10 +1624,10 @@ class StoragePool(object):
         # Since source volume is only a parent of temporary volume, we don't
         # need to acquire any lock for it.
         with nested(
-            rmanager.acquireResource(srcNamespace, tmpImgUUID,
-                                     rm.LockType.exclusive),
-            rmanager.acquireResource(dstNamespace, dstImgUUID,
-                                     rm.LockType.exclusive)):
+                rmanager.acquireResource(srcNamespace, tmpImgUUID,
+                                         rm.EXCLUSIVE),
+                rmanager.acquireResource(dstNamespace, dstImgUUID,
+                                         rm.EXCLUSIVE)):
             image.Image(self.poolPath).sparsify(
                 tmpSdUUID, tmpImgUUID, tmpVolUUID, dstSdUUID, dstImgUUID,
                 dstVolUUID)
@@ -1654,8 +1651,8 @@ class StoragePool(object):
 
         # Preparing the ordered resource list to be acquired
         resList = (rmanager.acquireResource(*x) for x in sorted((
-            (srcImgResNs, imgUUID, rm.LockType.shared),
-            (dstImgResNs, imgUUID, rm.LockType.exclusive),
+            (srcImgResNs, imgUUID, rm.SHARED),
+            (dstImgResNs, imgUUID, rm.EXCLUSIVE),
         )))
 
         with nested(*resList):
@@ -1682,8 +1679,8 @@ class StoragePool(object):
 
         # Preparing the ordered resource list to be acquired
         resList = (rmanager.acquireResource(*x) for x in sorted((
-            (srcImgResNs, imgUUID, rm.LockType.shared),
-            (dstImgResNs, imgUUID, rm.LockType.exclusive),
+            (srcImgResNs, imgUUID, rm.SHARED),
+            (dstImgResNs, imgUUID, rm.EXCLUSIVE),
         )))
 
         with nested(*resList):
@@ -1696,8 +1693,7 @@ class StoragePool(object):
         methodArgs.
         """
         imgResourceLock = rmanager.acquireResource(
-            sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID), imgUUID,
-            rm.LockType.shared)
+            sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID), imgUUID, rm.SHARED)
 
         with imgResourceLock:
             return image.Image(self.poolPath) \
@@ -1709,8 +1705,7 @@ class StoragePool(object):
         and methodArgs.
         """
         imgResourceLock = rmanager.acquireResource(
-            sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID), imgUUID,
-            rm.LockType.exclusive)
+            sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID), imgUUID, rm.EXCLUSIVE)
 
         with imgResourceLock:
             return image.Image(self.poolPath) \
@@ -1726,8 +1721,7 @@ class StoragePool(object):
             startEvent.wait()
 
         imgResourceLock = rmanager.acquireResource(
-            sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID), imgUUID,
-            rm.LockType.shared)
+            sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID), imgUUID, rm.SHARED)
 
         with imgResourceLock:
             try:
@@ -1742,8 +1736,7 @@ class StoragePool(object):
         Download an image from a stream.
         """
         imgResourceLock = rmanager.acquireResource(
-            sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID), imgUUID,
-            rm.LockType.exclusive)
+            sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID), imgUUID, rm.EXCLUSIVE)
 
         with imgResourceLock:
             try:
@@ -1782,9 +1775,9 @@ class StoragePool(object):
         resourceList = []
         for imgUUID in imgList:
             resourceList.append(rmanager.acquireResource(
-                srcImageResourcesNamespace, imgUUID, rm.LockType.exclusive))
+                srcImageResourcesNamespace, imgUUID, rm.EXCLUSIVE))
             resourceList.append(rmanager.acquireResource(
-                dstImageResourcesNamespace, imgUUID, rm.LockType.exclusive))
+                dstImageResourcesNamespace, imgUUID, rm.EXCLUSIVE))
 
         with nested(*resourceList):
             image.Image(self.poolPath).multiMove(
@@ -1807,7 +1800,7 @@ class StoragePool(object):
         """
         imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
-                                      rm.LockType.exclusive):
+                                      rm.EXCLUSIVE):
             img = image.Image(self.poolPath)
             chain = img.reconcileVolumeChain(sdUUID, imgUUID, leafVolUUID)
         return dict(volumes=chain)
@@ -1834,7 +1827,7 @@ class StoragePool(object):
         imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
 
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
-                                      rm.LockType.exclusive):
+                                      rm.EXCLUSIVE):
             image.Image(self.poolPath).merge(
                 sdUUID, vmUUID, imgUUID, ancestor, successor, postZero)
 
@@ -1892,7 +1885,7 @@ class StoragePool(object):
                 if srcVol.getParent() == sc.BLANK_UUID:
                     with rmanager.acquireResource(imageResourcesNamespace,
                                                   srcImgUUID,
-                                                  rm.LockType.exclusive):
+                                                  rm.EXCLUSIVE):
 
                         self.log.debug("volume %s is not shared. "
                                        "Setting it as shared", srcVolUUID)
@@ -1901,7 +1894,7 @@ class StoragePool(object):
                     raise se.VolumeNonShareable(srcVol)
 
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
-                                      rm.LockType.exclusive):
+                                      rm.EXCLUSIVE):
             newVolUUID = sdCache.produce(sdUUID).createVolume(
                 imgUUID=imgUUID, size=size, volFormat=volFormat,
                 preallocate=preallocate, diskType=diskType, volUUID=volUUID,
@@ -1930,7 +1923,7 @@ class StoragePool(object):
         imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
 
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
-                                      rm.LockType.exclusive):
+                                      rm.EXCLUSIVE):
             dom = sdCache.produce(sdUUID)
             for volUUID in volumes:
                 dom.produceVolume(imgUUID, volUUID).delete(
@@ -1983,7 +1976,7 @@ class StoragePool(object):
         self.validatePoolSD(sdUUID)
         imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
-                                      rm.LockType.exclusive):
+                                      rm.EXCLUSIVE):
             sdCache.produce(sdUUID).produceVolume(
                 imgUUID=imgUUID,
                 volUUID=volUUID).setDescription(descr=description)
@@ -1992,7 +1985,7 @@ class StoragePool(object):
         self.validatePoolSD(sdUUID)
         imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
-                                      rm.LockType.exclusive):
+                                      rm.EXCLUSIVE):
             sdCache.produce(sdUUID).produceVolume(
                 imgUUID=imgUUID,
                 volUUID=volUUID).setLegality(legality=legality)

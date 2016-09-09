@@ -58,7 +58,7 @@ class VolumeLeaseTest(VdsmTestCase):
         self.assertEqual(sd.getNamespace(sc.VOLUME_LEASE_NAMESPACE, 'dom'),
                          a.ns)
         self.assertEqual('vol', a.name)
-        self.assertEqual(rm.LockType.exclusive, a.mode)
+        self.assertEqual(rm.EXCLUSIVE, a.mode)
 
     @permutations((
         (('domA', 'img', 'vol'), ('domB', 'img', 'vol')),

@@ -371,7 +371,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         """
         if setrw:
             self.setrw(rw=rw)
-        access = rm.LockType.exclusive if rw else rm.LockType.shared
+        access = rm.EXCLUSIVE if rw else rm.SHARED
         activation = rmanager.acquireResource(self.lvmActivationNamespace,
                                               self.volUUID, access)
         activation.autoRelease = False

@@ -976,8 +976,7 @@ class HSM(object):
                 "spUUID=%s, msdUUID=%s, masterVersion=%s, hostID=%s, "
                 "domainsMap=%s" %
                 (spUUID, msdUUID, masterVersion, hostID, domainsMap)))
-        with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
-                                      rm.LockType.exclusive):
+        with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK, rm.EXCLUSIVE):
             return self._connectStoragePool(
                 spUUID, hostID, msdUUID, masterVersion, domainsMap)
 
@@ -1015,7 +1014,7 @@ class HSM(object):
         except se.StoragePoolUnknown:
             pass  # pool not connected yet
         else:
-            with rmanager.acquireResource(STORAGE, spUUID, rm.LockType.shared):
+            with rmanager.acquireResource(STORAGE, spUUID, rm.SHARED):
                 # FIXME: this breaks in case of a race as it assumes that the
                 # pool is still available. At the moment we maintain this
                 # behavior as it's inherited from the previous implementation
@@ -1025,7 +1024,7 @@ class HSM(object):
                                         masterVersion, domainsMap)
                 return True
 
-        with rmanager.acquireResource(STORAGE, spUUID, rm.LockType.exclusive):
+        with rmanager.acquireResource(STORAGE, spUUID, rm.EXCLUSIVE):
             try:
                 pool = self.getPool(spUUID)
             except se.StoragePoolUnknown:
@@ -1091,8 +1090,7 @@ class HSM(object):
 
     def _disconnectPool(self, pool, hostID, remove):
         pool.validateNotSPM()
-        with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
-                                      rm.LockType.exclusive):
+        with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK, rm.EXCLUSIVE):
             res = pool.disconnect()
             del self.pools[pool.spUUID]
         return res
@@ -1817,7 +1815,7 @@ class HSM(object):
 
         imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
-                                      rm.LockType.shared):
+                                      rm.SHARED):
             image.Image(repoPath).syncVolumeChain(sdUUID, imgUUID, volUUID,
                                                   newChain)
 
@@ -3237,8 +3235,7 @@ class HSM(object):
         for sdUUID in activeDoms:
             dom = sdCache.produce(sdUUID=sdUUID)
             if dom.isData():
-                with rmanager.acquireResource(STORAGE, sdUUID,
-                                              rm.LockType.shared):
+                with rmanager.acquireResource(STORAGE, sdUUID, rm.SHARED):
                     try:
                         imgs = dom.getAllImages()
                     except se.StorageDomainDoesNotExist:
@@ -3467,8 +3464,7 @@ class HSM(object):
     @deprecated
     @public
     def startMonitoringDomain(self, sdUUID, hostID, options=None):
-        with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
-                                      rm.LockType.exclusive):
+        with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK, rm.EXCLUSIVE):
             # Note: We cannot raise here StorageDomainIsMemberOfPool, as it
             # will break old hosted engine agent.
             self.domainMonitor.startMonitoring(sdUUID, int(hostID), False)
@@ -3476,8 +3472,7 @@ class HSM(object):
     @deprecated
     @public
     def stopMonitoringDomain(self, sdUUID, options=None):
-        with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
-                                      rm.LockType.exclusive):
+        with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK, rm.EXCLUSIVE):
             if sdUUID in self.domainMonitor.poolDomains:
                 raise se.StorageDomainIsMemberOfPool(sdUUID)
             self.domainMonitor.stopMonitoring([sdUUID])

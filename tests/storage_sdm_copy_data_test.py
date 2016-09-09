@@ -106,15 +106,14 @@ class TestCopyDataDIV(VdsmTestCase):
         ret = [
             # Domain lock for each volume
             resourceManager.ResourceManagerLock(
-                sc.STORAGE, src_vol.sdUUID, resourceManager.LockType.shared),
+                sc.STORAGE, src_vol.sdUUID, resourceManager.SHARED),
             resourceManager.ResourceManagerLock(
-                sc.STORAGE, dst_vol.sdUUID, resourceManager.LockType.shared),
+                sc.STORAGE, dst_vol.sdUUID, resourceManager.SHARED),
             # Image lock for each volume, exclusive for the destination
             resourceManager.ResourceManagerLock(
-                src_img_ns, src_vol.imgUUID, resourceManager.LockType.shared),
+                src_img_ns, src_vol.imgUUID, resourceManager.SHARED),
             resourceManager.ResourceManagerLock(
-                dst_img_ns, dst_vol.imgUUID,
-                resourceManager.LockType.exclusive),
+                dst_img_ns, dst_vol.imgUUID, resourceManager.EXCLUSIVE),
             # Volume lease for the destination volume
             volume.VolumeLease(
                 0, dst_vol.sdUUID, dst_vol.imgUUID, dst_vol.volUUID)

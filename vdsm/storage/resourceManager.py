@@ -52,9 +52,8 @@ class RequestTimedOutError(ResourceManagerError):
 #        enums.
 
 
-class LockType:
-    shared = "shared"
-    exclusive = "exclusive"
+SHARED = "shared"
+EXCLUSIVE = "exclusive"
 
 
 class LockState:
@@ -80,9 +79,9 @@ class LockState:
 
     @classmethod
     def fromType(cls, locktype):
-        if str(locktype) == LockType.shared:
+        if str(locktype) == SHARED:
             return cls.shared
-        if str(locktype) == LockType.exclusive:
+        if str(locktype) == EXCLUSIVE:
             return cls.locked
         raise ValueError("invalid locktype %s" % locktype)
 
@@ -527,7 +526,7 @@ class ResourceManager(object):
         if not self._resourceNameValidator.match(name):
             raise ValueError("Invalid resource name '%s'" % name)
 
-        if lockType not in (LockType.shared, LockType.exclusive):
+        if lockType not in (SHARED, EXCLUSIVE):
             raise ValueError("invalid lock type %r" % lockType)
 
         request = Request(namespace, name, lockType, callback)
@@ -550,8 +549,8 @@ class ResourceManager(object):
                         raise KeyError("No such resource '%s'" % (fullName))
                 else:
                     if len(resource.queue) == 0 and \
-                            resource.currentLock == LockType.shared and \
-                            request.lockType == LockType.shared:
+                            resource.currentLock == SHARED and \
+                            request.lockType == SHARED:
                         resource.activeUsers += 1
                         self._log.debug("Resource '%s' found in shared state "
                                         "and queue is empty, Joining current "
@@ -680,7 +679,7 @@ class ResourceManager(object):
                         break
 
                 # If the lock is exclusive were done
-                if resource.currentLock == LockType.exclusive:
+                if resource.currentLock == EXCLUSIVE:
                     return
 
                 # Keep granting shared locks
@@ -693,7 +692,7 @@ class ResourceManager(object):
                         resource.queue.pop()
                         continue
 
-                    if nextRequest.lockType == LockType.exclusive:
+                    if nextRequest.lockType == EXCLUSIVE:
                         break
 
                     nextRequest = resource.queue.pop()
