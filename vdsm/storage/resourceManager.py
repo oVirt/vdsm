@@ -56,12 +56,6 @@ class LockType:
     shared = "shared"
     exclusive = "exclusive"
 
-    @classmethod
-    def validate(cls, ltype):
-        validValues = ["shared", "exclusive"]
-        if ltype not in validValues:
-            raise ValueError("invalid lock type '%s'" % ltype)
-
 
 class LockState:
     free = "free"
@@ -533,7 +527,8 @@ class ResourceManager(object):
         if not self._resourceNameValidator.match(name):
             raise ValueError("Invalid resource name '%s'" % name)
 
-        LockType.validate(lockType)
+        if lockType not in (LockType.shared, LockType.exclusive):
+            raise ValueError("invalid lock type %r" % lockType)
 
         request = Request(namespace, name, lockType, callback)
         self._log.debug("Trying to register resource '%s' for lock type '%s'",
