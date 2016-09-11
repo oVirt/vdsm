@@ -42,15 +42,34 @@ def waitfor_linkup(iface, oper_blocking=True, timeout=10):
 
 
 @contextmanager
-def waitfor_ipv4_addr(iface, timeout=10):
+def waitfor_ipv4_addr(iface, address=None, timeout=10):
+    """
+    Silently block until an ipv4 global scope address message is detected from
+    the kernel (through netlink).
+    :param iface: The device name.
+    :param address: Optional CIDR address expected - <address/bitmask>
+                    Note that for a full mask(32) address, no mask is specified
+    :param timeout: The maximum time in seconds to wait for the message.
+    """
     expected_event = {'label': iface, 'family': 'inet', 'scope': 'global'}
+    if address:
+        expected_event.update(address=address)
     with _wait_for_event(iface, expected_event, timeout):
         yield
 
 
 @contextmanager
-def waitfor_ipv6_addr(iface, timeout=10):
+def waitfor_ipv6_addr(iface, address=None, timeout=10):
+    """
+    Silently block until an ipv6 global scope address message is detected from
+    the kernel (through netlink).
+    :param iface: The device name.
+    :param address: Optional CIDR address expected - <address/bitmask>
+    :param timeout: The maximum time in seconds to wait for the message.
+    """
     expected_event = {'label': iface, 'family': 'inet6', 'scope': 'global'}
+    if address:
+        expected_event.update(address=address)
     with _wait_for_event(iface, expected_event, timeout):
         yield
 

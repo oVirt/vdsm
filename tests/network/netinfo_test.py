@@ -333,41 +333,41 @@ class TestNetinfo(TestCaseBase):
         PREFIX_LENGTH = 24
         IPV6_PREFIX_LENGTH = 64
         IP_ADDR_CIDR = self._cidr_form(IP_ADDR, PREFIX_LENGTH)
-        IP_ADDR_SECOND_CIDR = self._cidr_form(IP_ADDR_SECOND, PREFIX_LENGTH)
+        IP_ADDR_2ND_CIDR = self._cidr_form(IP_ADDR_SECOND, PREFIX_LENGTH)
         IP_ADDR2_CIDR = self._cidr_form(IP_ADDR2, PREFIX_LENGTH)
         IP_ADDR3_CIDR = self._cidr_form(IP_ADDR3, 32)
         IPV6_ADDR_CIDR = self._cidr_form(IPV6_ADDR, IPV6_PREFIX_LENGTH)
         with dummy_device() as device:
-            with waitfor.waitfor_ipv4_addr(device):
+            with waitfor.waitfor_ipv4_addr(device, address=IP_ADDR_CIDR):
                 ipwrapper.addrAdd(device, IP_ADDR, PREFIX_LENGTH)
-            with waitfor.waitfor_ipv4_addr(device):
+            with waitfor.waitfor_ipv4_addr(device, address=IP_ADDR_2ND_CIDR):
                 ipwrapper.addrAdd(device, IP_ADDR_SECOND, PREFIX_LENGTH)
-            with waitfor.waitfor_ipv4_addr(device):
+            with waitfor.waitfor_ipv4_addr(device, address=IP_ADDR2_CIDR):
                 ipwrapper.addrAdd(device, IP_ADDR2, PREFIX_LENGTH)
-            with waitfor.waitfor_ipv6_addr(device):
+            with waitfor.waitfor_ipv6_addr(device, address=IPV6_ADDR_CIDR):
                 ipwrapper.addrAdd(
                     device, IPV6_ADDR, IPV6_PREFIX_LENGTH, family=6)
             # 32 bit addresses are reported slashless by netlink
-            with waitfor.waitfor_ipv4_addr(device):
+            with waitfor.waitfor_ipv4_addr(device, address=IP_ADDR3):
                 ipwrapper.addrAdd(device, IP_ADDR3, 32)
 
             self.assertEqual(
                 get_ip_info(device),
                 (IP_ADDR, NET_MASK,
                  [IP_ADDR_CIDR, IP_ADDR2_CIDR, IP_ADDR3_CIDR,
-                  IP_ADDR_SECOND_CIDR],
+                  IP_ADDR_2ND_CIDR],
                  [IPV6_ADDR_CIDR]))
             self.assertEqual(
                 get_ip_info(device, ipv4_gateway=IP_ADDR_GW),
                 (IP_ADDR, NET_MASK,
                  [IP_ADDR_CIDR, IP_ADDR2_CIDR, IP_ADDR3_CIDR,
-                  IP_ADDR_SECOND_CIDR],
+                  IP_ADDR_2ND_CIDR],
                  [IPV6_ADDR_CIDR]))
             self.assertEqual(
                 get_ip_info(device, ipv4_gateway=IP_ADDR2_GW),
                 (IP_ADDR2, NET_MASK,
                  [IP_ADDR_CIDR, IP_ADDR2_CIDR, IP_ADDR3_CIDR,
-                  IP_ADDR_SECOND_CIDR],
+                  IP_ADDR_2ND_CIDR],
                  [IPV6_ADDR_CIDR]))
 
     def test_netinfo_ignoring_link_scope_ip(self):
