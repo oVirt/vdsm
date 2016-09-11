@@ -267,7 +267,7 @@ def NoIntrPoll(pollfun, timeout=-1):
     """
     # When the timeout < 0 we shouldn't compute a new timeout after an
     # interruption.
-    endtime = None if timeout < 0 else time.time() + timeout
+    endtime = None if timeout < 0 else monotonic_time() + timeout
 
     while True:
         try:
@@ -277,7 +277,7 @@ def NoIntrPoll(pollfun, timeout=-1):
                 raise
 
         if endtime is not None:
-            timeout = max(0, endtime - time.time())
+            timeout = max(0, endtime - monotonic_time())
 
 
 class CommandStream(object):
