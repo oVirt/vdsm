@@ -84,6 +84,12 @@ abs_imports: all
 	    echo "Missing absolute_import in $$f"; exit 1; fi; \
 	done;
 
+PYTHON_CHECKERS = pyflakes pep8
+
+.PHONY: py_checkers
+py_checkers:
+	tox -- $(PYTHON_CHECKERS)
+
 .PHONY: pyflakes
 pyflakes: tox
 	tox -- pyflakes
@@ -117,7 +123,7 @@ python3: all
 	fi
 
 # Note: dependencies ordered by time needed to run them
-check: gitignore abs_imports python3 pyflakes pep8 tests
+check: gitignore abs_imports python3 py_checkers tests
 
 check-recursive:
 	@true
