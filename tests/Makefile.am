@@ -367,10 +367,14 @@ run_modules += $(network_modules)
 run_modules += $(device_modules)
 run_modules += $(common_modules)
 
+# Disable builtin (recursive) check target.
+check-recursive:
+	@true
+
 # crossImportsTests.py has to be run separate due to different tests which
 # load modules first, making the env dirty. Unloading python modules
 # is not supported, see http://bugs.python.org/issue9072 .
-check-local:
+check:
 	@echo '*** Running tests.  To skip this step place NOSE_EXCLUDE=.* ***'
 	@echo '*** into your environment.  Do not submit untested code!    ***'
 	$(top_srcdir)/tests/run_tests_local.sh $(args) crossImportsTests.py
