@@ -371,6 +371,10 @@ run_modules += $(common_modules)
 check-recursive:
 	@true
 
+check-net:
+	@echo '*** Running networking tests. ***'
+	@$(top_srcdir)/tests/run_tests_local.sh $(args) $(network_modules)
+
 # crossImportsTests.py has to be run separate due to different tests which
 # load modules first, making the env dirty. Unloading python modules
 # is not supported, see http://bugs.python.org/issue9072 .
