@@ -86,6 +86,8 @@ from __future__ import absolute_import
 import base64
 import uuid
 
+import six
+
 from vdsm.password import ProtectedPassword
 
 
@@ -253,6 +255,7 @@ class OwnerType(type):
         return instance
 
 
+@six.add_metaclass(OwnerType)
 class Owner(object):
     """
     Base class for classes using properties
@@ -261,4 +264,3 @@ class Owner(object):
     will be automatically named and required properties will raise ValueError
     if not initialized.
     """
-    __metaclass__ = OwnerType
