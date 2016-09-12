@@ -120,8 +120,8 @@ def serve_clients(log):
             health.stop()
             periodic.stop()
             cif.prepareForShutdown()
-            scheduler.stop()
             jobs.stop()
+            scheduler.stop()
     finally:
         libvirtconnection.stop_event_loop(wait=False)
 
