@@ -28,7 +28,6 @@ import types
 import weakref
 
 from functools import partial
-from warnings import warn
 
 from ioprocess import IOProcess
 
@@ -237,9 +236,6 @@ class _IOProcessOs(object):
         except OSError as e:
             if e.errno != errno.ENOTEMPTY:
                 raise
-
-        warn("Renaming a non-empty directory is not an atomic operation",
-             DeprecationWarning)
 
         _IOProcessFileUtils(self._iop).cleanupdir(newpath, False)
         self.mkdir(newpath)
