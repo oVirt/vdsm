@@ -29,10 +29,10 @@ from storage import sd
 from storage import blockSD
 from storage import blockVolume
 
+log = logging.getLogger("storage.format")
+
 
 def __convertDomainMetadataToTags(domain, targetVersion):
-    log = logging.getLogger('storage.DomainMetadataToTags')
-
     newMetadata = blockSD.TagBasedSDMetadata(domain.sdUUID)
     oldMetadata = domain._metadata
 
@@ -73,7 +73,6 @@ def __convertDomainMetadataToTags(domain, targetVersion):
 
 
 def v2DomainConverter(repoPath, hostId, domain, isMsd):
-    log = logging.getLogger('storage.v2DomainConverter')
     targetVersion = 2
 
     if domain.getStorageType() in sd.BLOCK_DOMAIN_TYPES:
@@ -88,8 +87,6 @@ def v2DomainConverter(repoPath, hostId, domain, isMsd):
 
 
 def v3DomainConverter(repoPath, hostId, domain, isMsd):
-    log = logging.getLogger('storage.v3DomainConverter')
-
     targetVersion = 3
     currentVersion = domain.getVersion()
 
