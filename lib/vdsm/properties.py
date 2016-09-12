@@ -153,7 +153,7 @@ class Enum(Property):
 class String(Property):
 
     def validate(self, value):
-        if not isinstance(value, basestring):
+        if not isinstance(value, six.string_types):
             raise ValueError("Invalid value %r for string property %s" %
                              (value, self.name))
         return value
