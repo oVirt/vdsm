@@ -306,6 +306,7 @@ class StorageDomainManifest(object):
         0: clusterlock.SafeLease,
         2: clusterlock.SafeLease,
         3: clusterlock.SANLock,
+        4: clusterlock.SANLock,
     }
 
     def __init__(self, sdUUID, domaindir, metadata):

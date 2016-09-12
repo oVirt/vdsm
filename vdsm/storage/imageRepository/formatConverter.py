@@ -341,10 +341,18 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
     domain._clusterLock = newClusterLock
 
 
+def v4DomainConverter(repoPath, hostId, domain, isMsd):
+    targetVersion = 4
+    domain.setMetaParam(sd.DMDK_VERSION, targetVersion)
+    log.debug("Conversion of domain %s to version = %s has been completed.",
+              domain.sdUUID, targetVersion)
+
+
 _IMAGE_REPOSITORY_CONVERSION_TABLE = {
     ('0', '2'): v2DomainConverter,
     ('0', '3'): v3DomainConverter,
     ('2', '3'): v3DomainConverter,
+    ('3', '4'): v4DomainConverter,
 }
 
 
