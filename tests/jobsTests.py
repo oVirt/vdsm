@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import threading
 import uuid
 
 from vdsm import exception, jobs, response, schedule
@@ -24,6 +25,7 @@ from vdsm import exception, jobs, response, schedule
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase, expandPermutations, permutations
 from testlib import make_config
+from testlib import start_thread
 from testlib import wait_for_job
 
 
@@ -70,6 +72,21 @@ class ProgressingJob(jobs.Job):
     @progress.setter
     def progress(self, value):
         self._progress = value
+
+
+class StuckJob(TestingJob):
+
+    def __init__(self):
+        TestingJob.__init__(self)
+        self.event_running = threading.Event()
+        self.event_aborted = threading.Event()
+
+    def _run(self):
+        self.event_running.set()
+        self.event_aborted.wait(1)
+
+    def _abort(self):
+        self.event_aborted.set()
 
 
 class FakeScheduler(object):
@@ -180,6 +197,16 @@ class JobsTests(VdsmTestCase):
         jobs.abort(job.id)
         self.assertEqual(jobs.STATUS.ABORTED, job.status)
         self.assertTrue(job._aborted)
+
+    def test_abort_running_job(self):
+        job = StuckJob()
+        jobs.add(job)
+        t = start_thread(job.run)
+        job.event_running.wait(1)
+        self.assertEqual(jobs.STATUS.RUNNING, job.status)
+        jobs.abort(job.id)
+        t.join()
+        self.assertEqual(jobs.STATUS.ABORTED, job.status)
 
     @permutations([
         [jobs.STATUS.ABORTED, jobs.JobNotActive.name],

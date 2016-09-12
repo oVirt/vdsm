@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -81,6 +81,7 @@ class Job(object):
         self._id = job_id
         self._status = STATUS.PENDING
         self._description = description
+        self._status_lock = threading.Lock()
         self._error = None
 
     @property
@@ -126,36 +127,42 @@ class Job(object):
         return self.status in (STATUS.PENDING, STATUS.RUNNING)
 
     def abort(self):
-        if not self.active:
-            raise JobNotActive()
-        logging.info('Job %r aborting...', self._id)
-        self._abort()
-        self._status = STATUS.ABORTED
+        with self._status_lock:
+            if not self.active:
+                raise JobNotActive()
+            logging.info('Job %r aborting...', self._id)
+            self._abort()
+            self._status = STATUS.ABORTED
+
         # We MUST NOT autodelete a job if abort failed.  Otherwise there could
         # still be ongoing operations on storage without any associated job.
         if self.autodelete:
             self._autodelete()
 
     def run(self):
-        if self.status == STATUS.ABORTED:
-            logging.debug('Refusing to run aborted job %r', self._id)
-            return
-        if self.status != STATUS.PENDING:
-            raise RuntimeError('Attempted to run job %r from state %r' %
-                               (self._id, self.status))
-        self._status = STATUS.RUNNING
+        with self._status_lock:
+            if self.status == STATUS.ABORTED:
+                logging.debug('Refusing to run aborted job %r', self._id)
+                return
+            if self.status != STATUS.PENDING:
+                raise RuntimeError('Attempted to run job %r from state %r' %
+                                   (self._id, self.status))
+            self._status = STATUS.RUNNING
         try:
             self._run()
+            status = STATUS.DONE
         except Exception as e:
+            status = STATUS.FAILED
             logging.exception("Job (id=%s desc=%s) failed",
                               self.id, self.description)
             if not isinstance(e, exception.VdsmException):
                 e = exception.GeneralException(str(e))
             self._error = e
-            self._status = STATUS.FAILED
-        else:
-            self._status = STATUS.DONE
         finally:
+            with self._status_lock:
+                if self.status == STATUS.ABORTED:
+                    return
+                self._status = status
             if self.autodelete:
                 self._autodelete()
 
