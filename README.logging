@@ -45,8 +45,7 @@ vdsClient -s 0 setLogLevel DEBUG
 2. silence virt logs, show only warnings, errors or worse:
 vdsClient -s 0 setLogLevel WARNING virt
 
-3. same as #2, for storage (case is significant here)
-vdsClient -s 0 setLogLevel WARNING Storage
+3. same as #2, for storage
 vdsClient -s 0 setLogLevel WARNING storage
 
 4. silence JSONRPC logs:
