@@ -347,6 +347,11 @@ class HostdevDetachFailed(VdsmException):
     message = 'Could not detach host device'
 
 
+class JobNotActive(VdsmException):
+    code = 84
+    message = 'Job is not active'
+
+
 class RecoveryInProgress(VdsmException):
     code = 99
     message = 'Recovering from crash or Initializing'

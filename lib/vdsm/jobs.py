@@ -60,6 +60,11 @@ class JobNotDone(ClientError):
     name = 'JobNotDone'
 
 
+class JobNotActive(ClientError):
+    ''' Job is not running or pending '''
+    name = 'JobNotActive'
+
+
 class AbortNotSupported(ClientError):
     ''' This type of job does not support aborting '''
     name = 'AbortNotSupported'
@@ -121,7 +126,8 @@ class Job(object):
         return self.status in (STATUS.PENDING, STATUS.RUNNING)
 
     def abort(self):
-        # TODO: Don't abort if not pending and not running
+        if not self.active:
+            raise JobNotActive()
         logging.info('Job %r aborting...', self._id)
         self._abort()
         self._status = STATUS.ABORTED
@@ -131,7 +137,12 @@ class Job(object):
             self._autodelete()
 
     def run(self):
-        # TODO: Don't run if aborted or not pending
+        if self.status == STATUS.ABORTED:
+            logging.debug('Refusing to run aborted job %r', self._id)
+            return
+        if self.status != STATUS.PENDING:
+            raise RuntimeError('Attempted to run job %r from state %r' %
+                               (self._id, self.status))
         self._status = STATUS.RUNNING
         try:
             self._run()

@@ -173,12 +173,24 @@ class JobsTests(VdsmTestCase):
         self.assertEqual({}, jobs.info(job_type=bar.job_type,
                                        job_ids=[foo.id]))
 
-    def test_abort_job(self):
-        job = TestingJob()
+    @permutations([[jobs.STATUS.PENDING], [jobs.STATUS.RUNNING]])
+    def test_abort_job(self, status):
+        job = TestingJob(status)
         jobs.add(job)
         jobs.abort(job.id)
         self.assertEqual(jobs.STATUS.ABORTED, job.status)
         self.assertTrue(job._aborted)
+
+    @permutations([
+        [jobs.STATUS.ABORTED, jobs.JobNotActive.name],
+        [jobs.STATUS.DONE, jobs.JobNotActive.name],
+        [jobs.STATUS.FAILED, jobs.JobNotActive.name]
+    ])
+    def test_abort_from_invalid_state(self, status, err):
+        job = TestingJob(status)
+        jobs.add(job)
+        res = jobs.abort(job.id)
+        self.assertEqual(response.error(err), res)
 
     def test_abort_unknown_job(self):
         self.assertEqual(response.error(jobs.NoSuchJob.name),
@@ -270,6 +282,20 @@ class JobsTests(VdsmTestCase):
         job = TestingJob()
         self.run_job(job)
         self.assertEqual(jobs.STATUS.DONE, job.status)
+
+    def test_run_aborted_job(self):
+        job = TestingJob(jobs.STATUS.ABORTED, exception=AssertionError)
+        job.run()
+        self.assertEqual(jobs.STATUS.ABORTED, job.status)
+
+    @permutations([
+        [jobs.STATUS.RUNNING],
+        [jobs.STATUS.DONE],
+        [jobs.STATUS.FAILED]
+    ])
+    def test_run_from_invalid_state(self, state):
+        job = TestingJob(state)
+        self.assertRaises(RuntimeError, job.run)
 
     def test_default_exception(self):
         message = "testing failure"

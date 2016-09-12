@@ -73,6 +73,7 @@ errCode = {
     'V2VNoSuchOvf': exception.V2VNoSuchOVF().response(),
     'JobNotDone': exception.JobNotDone().response(),
     'JobExists': exception.JobExists().response(),
+    'JobNotActive': exception.JobNotActive().response(),
     'hotplugMem': exception.HotplugMemFailed().response(),
     'ksmErr': exception.KSMUpdateFailed().response(),
     'secretBadRequestErr': exception.BadSecretRequest().response(),
