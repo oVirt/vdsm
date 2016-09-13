@@ -53,12 +53,6 @@ def _importVdsmPylibModule(fullName):
         search = os.path.join(search, name)
     return module
 
-def _connectToVdsm():
-    requestQueues = config.get("addresses", "request_queues")
-    requestQueue = requestQueues.split(",")[0]
-    return jsonrpcvdscli.connect(requestQueue=requestQueue)
-
-config = _importVdsmPylibModule("vdsm.config").config
 jsonrpcvdscli = _importVdsmPylibModule("vdsm.jsonrpcvdscli")
 
 
@@ -133,7 +127,7 @@ class vdsm(Plugin, RedHatPlugin):
         self.collectExtOutput("/sbin/iscsiadm -m node")
         self.collectExtOutput("/sbin/iscsiadm -m session")
 
-        with closing(_connectToVdsm()) as cli:
+        with closing(jsonrpcvdscli.connect()) as cli:
             self.addObjectAsFile(cli.getVdsCapabilities(), "getVdsCapabilities")
             self.addObjectAsFile(cli.getVdsStats(), "getVdsStats")
             self.addObjectAsFile(cli.getAllVmStats(), "getAllVmStats")
