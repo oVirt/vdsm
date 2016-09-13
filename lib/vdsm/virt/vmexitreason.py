@@ -31,6 +31,7 @@ MIGRATION_FAILED = 8
 LIBVIRT_DOMAIN_MISSING = 9
 DESTROYED_ON_STARTUP = 10
 HOST_SHUTDOWN = 11
+POSTCOPY_MIGRATION_FAILED = 12
 
 
 exitReasons = {
@@ -46,4 +47,5 @@ exitReasons = {
     LIBVIRT_DOMAIN_MISSING: 'Failed to find the libvirt domain',
     DESTROYED_ON_STARTUP: 'VM destroyed during the startup',
     HOST_SHUTDOWN: 'VM has been terminated on the host',
+    POSTCOPY_MIGRATION_FAILED: 'Migration failed in post-copy',
 }

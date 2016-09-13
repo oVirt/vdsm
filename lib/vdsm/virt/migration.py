@@ -275,6 +275,11 @@ class SourceThread(object):
             self.status = response.error('migrateErr')
         self.log.error(message)
         if not self.hibernating and self._destServer is not None:
+            if self._vm.post_copy == PostCopyPhase.RUNNING:
+                # We can't recover a VM after a failed post-copy migration.
+                # And the destination takes care of the situation itself.
+                self._vm.handle_failed_post_copy(clean_vm=True)
+                return
             try:
                 self._destServer.destroy(self._vm.id)
             except Exception:

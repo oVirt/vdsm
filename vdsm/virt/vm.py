@@ -4253,6 +4253,29 @@ class Vm(object):
         """
         pass
 
+    def handle_failed_post_copy(self, clean_vm=False):
+        # After a failed post-copy migration, the VM remains in a paused state
+        # on both the ends of the migration. There is currently no way to
+        # recover it, since the VM is missing some memory pages on the
+        # destination and the old snapshot at the source doesn't know about the
+        # changes made to the external world (network, storage, ...) during the
+        # post-copy phase. The best what we can do in such a situation is to
+        # destroy the paused VM instances on both the ends before someone tries
+        # to resume any of them, causing confusion at best or more damages in
+        # the worse case. We must also inform Engine about the fatal state of
+        # the failed migration, so we can't destroy the VM immediately on the
+        # destination (but we can do it on the source). We report the VM as
+        # down on the destination to Engine and wait for destroy request from
+        # it.
+        self.log.warning("Migration failed in post-copy, "
+                         "the VM will be destroyed")
+        self.setDownStatus(ERROR,
+                           vmexitreason.POSTCOPY_MIGRATION_FAILED)
+        if clean_vm:
+            self.destroy()
+        else:
+            self.doDestroy(1)
+
     def onLibvirtLifecycleEvent(self, event, detail, opaque):
         self.log.debug('event %s detail %s opaque %s',
                        eventToString(event), detail, opaque)
@@ -4295,7 +4318,8 @@ class Vm(object):
                     self.conf['pauseCode'] = 'POSTCOPY'
                 self.send_status_event(pauseCode='POSTCOPY')
             elif detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_POSTCOPY_FAILED:
-                pass  # will be handled in a followup patch
+                # This event may be received only on the destination.
+                self.handle_failed_post_copy()
 
         elif event == libvirt.VIR_DOMAIN_EVENT_RESUMED:
             self._setGuestCpuRunning(True)
