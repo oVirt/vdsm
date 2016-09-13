@@ -326,14 +326,6 @@ def Image_prepare_Ret(ret):
     return {'path': ret['path']}
 
 
-def remove_status_from_ret(ret):
-    """
-    seprate status from the actual result
-    """
-    del ret['status']
-    return ret
-
-
 ##
 # Possible ways to override a command:
 # - Supply a custom call function if the function name doesn't map directly to
@@ -359,10 +351,8 @@ command_info = {
     'Host_getStorageDomains': {'ret': 'domlist'},
     'Host_getStorageRepoStats': {'ret': Host_getStorageRepoStats_Ret},
     'Host_hostdevListByCaps': {'ret': 'deviceList'},
-    'Host_getVMList': {'call': Host_getVMList_Call,
-                       'ret': remove_status_from_ret},
-    'Host_getVMFullList': {'call': Host_getVMFullList_Call,
-                           'ret': remove_status_from_ret},
+    'Host_getVMList': {'call': Host_getVMList_Call, 'ret': 'vmList'},
+    'Host_getVMFullList': {'call': Host_getVMFullList_Call, 'ret': 'vmList'},
     'Host_getAllVmStats': {'ret': 'statsList'},
     'Host_setupNetworks': {'ret': 'status'},
     'Host_setKsmTune': {'ret': 'status'},
