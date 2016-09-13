@@ -261,6 +261,11 @@ class Ifcfg(Configurator):
             if set_mtu is not None:
                 ipwrapper.linkSet(bonding.name, ['mtu', str(set_mtu)])
 
+            # If the bond was bridged, we must remove BRIDGE parameter from its
+            # ifcfg configuration file.
+            if bonding.bridge:
+                self.configApplier.dropBridgeParameter(bonding.name)
+
     def removeNic(self, nic, remove_even_if_used=False):
         if not self.owned_device(nic.name):
             self.normalize_device_filename(nic.name)
@@ -779,6 +784,23 @@ class ConfigWriter(object):
         slaves = netinfo_bonding.slaves(bonding)
         for slave in slaves:
             self.setIfaceMtu(slave, newmtu)
+
+    def dropBridgeParameter(self, iface_name):
+        iface_conf_path = NET_CONF_PREF + iface_name
+
+        if not os.path.isfile(iface_conf_path):
+            return
+
+        with open(iface_conf_path) as f:
+            config_lines = f.readlines()
+
+        config_lines_without_comments_and_bridge = [
+            line for line in config_lines
+            if (not line.startswith('#') and
+                not line.startswith('BRIDGE'))]
+
+        self.writeConfFile(iface_conf_path,
+                           ''.join(config_lines_without_comments_and_bridge))
 
 
 def stop_devices(device_ifcfgs):
