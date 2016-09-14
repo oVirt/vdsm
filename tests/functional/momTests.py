@@ -29,7 +29,7 @@ from math import ceil
 import testValidation
 from testlib import VdsmTestCase as TestCaseBase
 from nose.plugins.skip import SkipTest
-from vdsm.define import errCode
+from vdsm.common.define import errCode
 from utils import VdsProxy, SUCCESS
 
 

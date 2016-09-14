@@ -32,7 +32,7 @@ from vdsm import vdscli
 from vdsm import jsonrpcvdscli
 from vdsm.compat import pickle
 from vdsm.config import config
-from vdsm.define import NORMAL, Mbytes
+from vdsm.common.define import NORMAL, Mbytes
 from vdsm.sslcompat import sslutils
 from vdsm.virt.utils import DynamicBoundedSemaphore
 from yajsonrpc import \

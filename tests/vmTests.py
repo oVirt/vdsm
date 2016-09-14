@@ -50,7 +50,7 @@ from virt.vmdevices.storage import DISK_TYPE
 from virt.vmdevices.network import Interface
 from vdsm import constants
 from vdsm import cpuarch
-from vdsm import define
+from vdsm.common import define
 from vdsm import osinfo
 from vdsm import password
 from vdsm import response

@@ -20,8 +20,8 @@
 
 
 from __future__ import absolute_import
-from vdsm.define import doneCode
-from vdsm.define import errCode
+from vdsm.common.define import doneCode
+from vdsm.common.define import errCode
 
 
 class MalformedResponse(Exception):

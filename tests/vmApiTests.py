@@ -22,7 +22,7 @@ from __future__ import absolute_import
 from vdsm.virt import vmexitreason
 
 from virt import vm
-from vdsm import define
+from vdsm.common import define
 from testlib import VdsmTestCase as TestCaseBase
 from vdsm import utils
 from api import vdsmapi

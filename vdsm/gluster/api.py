@@ -23,7 +23,7 @@ import fcntl
 import os
 import selinux
 from functools import wraps
-from vdsm.define import doneCode
+from vdsm.common.define import doneCode
 from vdsm.gluster import exception as ge
 from vdsm.storage import mount
 from vdsm import constants

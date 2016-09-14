@@ -19,8 +19,8 @@
 #
 
 from vdsm import response
-from vdsm.define import doneCode
-from vdsm.define import errCode
+from vdsm.common.define import doneCode
+from vdsm.common.define import errCode
 
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase

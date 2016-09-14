@@ -50,7 +50,7 @@ from virt import migration
 from virt.vmdevices import graphics
 from virt.vmdevices import hwclass
 from vdsm.compat import pickle
-from vdsm.define import doneCode, errCode
+from vdsm.common.define import doneCode, errCode
 import caps
 from vdsm.config import config
 from vdsm.virt import sampling

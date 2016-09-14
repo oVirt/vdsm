@@ -19,9 +19,9 @@
 #
 from __future__ import absolute_import
 
+from vdsm.common.define import doneCode, errCode
 from vdsm import response
 from vdsm import utils
-from vdsm.define import doneCode, errCode
 
 
 class VmPowerDown(object):

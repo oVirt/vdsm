@@ -34,7 +34,7 @@ from vdsm.password import (ProtectedPassword,
 from vdsm import concurrent
 from vdsm import utils
 from vdsm import xmlrpc
-from vdsm.define import doneCode, errCode
+from vdsm.common.define import doneCode, errCode
 from vdsm.logUtils import Suppressed
 from vdsm.network.netinfo.addresses import getDeviceByIP
 import API

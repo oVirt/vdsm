@@ -29,7 +29,7 @@ from vdsm.virt import vmexitreason
 from vdsm.virt import virdomain
 
 from virt.vmdevices import hwclass
-from vdsm import define
+from vdsm.common import define
 from vdsm import hooks
 from vdsm import libvirtconnection
 from vdsm import password

@@ -28,8 +28,8 @@ from vdsm import cpuarch
 from vdsm import hooks
 from vdsm import utils
 from vdsm import metrics
+from vdsm.common.define import Kbytes, Mbytes
 from vdsm.config import config
-from vdsm.define import Kbytes, Mbytes
 from vdsm.virt import vmstatus
 
 haClient = None

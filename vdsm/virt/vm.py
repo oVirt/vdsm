@@ -50,7 +50,7 @@ from vdsm import supervdsm
 from vdsm import utils
 from vdsm.compat import pickle
 from vdsm.config import config
-from vdsm.define import ERROR, NORMAL, doneCode, errCode
+from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.logUtils import SimpleLogAdapter
 from vdsm.network import api as net_api
 from vdsm.storage import fileUtils

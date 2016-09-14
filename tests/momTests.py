@@ -22,7 +22,7 @@ import logging
 import shutil
 import tempfile
 import threading
-from vdsm.define import Mbytes
+from vdsm.common.define import Mbytes
 from vdsm.momIF import MomClient
 from mom import unixrpc
 from six.moves import configparser

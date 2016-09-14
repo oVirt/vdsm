@@ -22,8 +22,8 @@ from __future__ import absolute_import
 
 import logging
 import socket
+from vdsm.common.define import Mbytes
 from vdsm.config import config
-from vdsm.define import Mbytes
 
 from vdsm.cpuarch import PAGE_SIZE_BYTES
 

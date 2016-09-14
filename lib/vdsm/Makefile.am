@@ -29,7 +29,6 @@ dist_vdsmpylib_PYTHON = \
 	concurrent.py \
 	cpuarch.py \
 	cpuinfo.py \
-	define.py \
 	dmidecodeUtil.py \
 	executor.py \
 	health.py \
