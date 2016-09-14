@@ -25,9 +25,9 @@ import API
 import yajsonrpc
 from api import vdsmapi
 
+from vdsm.common.exception import VdsmException
 from vdsm.config import config
 from vdsm.network.netinfo.addresses import getDeviceByIP
-from vdsm.exception import VdsmException
 
 
 try:

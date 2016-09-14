@@ -33,9 +33,9 @@ from operator import itemgetter
 
 from vdsm import cmdutils
 from vdsm import concurrent
+from vdsm.common import exception
 from vdsm.config import config
 from vdsm import constants
-from vdsm import exception
 from vdsm import utils
 from vdsm.storage import blkdiscard
 from vdsm.storage import clusterlock

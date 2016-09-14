@@ -21,10 +21,10 @@ from threading import Lock, Event
 
 from vdsm.compat import json
 
+from vdsm.common import exception
 from vdsm.logUtils import Suppressed
 from vdsm.password import protect_passwords, unprotect_passwords
 from vdsm.utils import monotonic_time, traceback
-from vdsm import exception
 
 
 __all__ = ["betterAsyncore", "stompreactor", "stomp"]

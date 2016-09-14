@@ -22,7 +22,7 @@ from __future__ import absolute_import
 import logging
 import threading
 
-from vdsm import exception
+from vdsm.common import exception
 from vdsm import response
 from vdsm.config import config
 

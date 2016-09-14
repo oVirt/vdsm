@@ -22,7 +22,7 @@ import errno
 import os
 import sanlock
 
-from vdsm import exception
+from vdsm.common import exception
 from vdsm import qemuimg
 from vdsm.commands import grepCmd
 from vdsm.storage import constants as sc

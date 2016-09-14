@@ -19,7 +19,8 @@
 #
 
 from testlib import VdsmTestCase
-from vdsm.exception import VdsmException, GeneralException, ActionStopped
+from vdsm.common.exception import VdsmException, GeneralException
+from vdsm.common.exception import ActionStopped
 
 
 class TestVdsmException(VdsmTestCase):

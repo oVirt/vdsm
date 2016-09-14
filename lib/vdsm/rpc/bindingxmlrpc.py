@@ -27,6 +27,7 @@ import libvirt
 import threading
 import re
 
+from vdsm.common.exception import VdsmException
 from vdsm.password import (ProtectedPassword,
                            protect_passwords,
                            unprotect_passwords)
@@ -37,7 +38,6 @@ from vdsm.define import doneCode, errCode
 from vdsm.logUtils import Suppressed
 from vdsm.network.netinfo.addresses import getDeviceByIP
 import API
-from vdsm.exception import VdsmException
 
 try:
     from gluster.api import getGlusterMethods

@@ -28,7 +28,6 @@ from vdsm import commands
 from vdsm import utils
 from clientIF import clientIF
 from vdsm import constants
-from vdsm import exception
 from vdsm import logUtils
 from vdsm import hooks
 from vdsm import hostdev
@@ -37,6 +36,7 @@ from vdsm import supervdsm
 from vdsm import throttledlog
 from vdsm import jobs
 from vdsm import v2v
+from vdsm.common import exception
 from vdsm.host import api as hostapi
 from vdsm.logUtils import AllVmStatsValue, Suppressed
 from vdsm.storage import clusterlock

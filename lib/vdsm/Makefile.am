@@ -31,7 +31,6 @@ dist_vdsmpylib_PYTHON = \
 	cpuinfo.py \
 	define.py \
 	dmidecodeUtil.py \
-	exception.py \
 	executor.py \
 	health.py \
 	hooks.py \

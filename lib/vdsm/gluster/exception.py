@@ -32,7 +32,7 @@
 #
 from __future__ import absolute_import
 
-from vdsm.exception import VdsmException
+from vdsm.common.exception import VdsmException
 
 
 class GlusterException(VdsmException):

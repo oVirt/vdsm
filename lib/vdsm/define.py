@@ -19,7 +19,7 @@
 #
 
 from __future__ import absolute_import
-from . import exception
+from vdsm.common import exception
 
 # TODO: Drop after callers changed to raise the exceptions
 errCode = {

@@ -25,7 +25,7 @@ import sanlock
 from vdsm import cmdutils
 from vdsm import qemuimg
 from vdsm import constants
-from vdsm import exception
+from vdsm.common import exception
 from vdsm.config import config
 from vdsm.storage import blkdiscard
 from vdsm.storage import constants as sc

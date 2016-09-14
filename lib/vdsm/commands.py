@@ -31,8 +31,8 @@ import threading
 import time
 from . import cmdutils
 from .compat import CPopen
-from .exception import ActionStopped
 from .utils import NoIntrPoll, stripNewLines, terminating
+from vdsm.common.exception import ActionStopped
 from vdsm import constants
 
 # Buffsize is 1K because I tested it on some use cases and 1K was fastest. If

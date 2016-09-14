@@ -25,7 +25,7 @@ import os
 import re
 import signal
 
-from . import exception
+from vdsm.common import exception
 from . import utils
 from . import cmdutils
 from . import commands

@@ -20,7 +20,7 @@
 
 from __future__ import absolute_import
 
-from vdsm import exception
+from vdsm.common import exception
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 

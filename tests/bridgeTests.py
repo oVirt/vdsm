@@ -20,7 +20,7 @@
 #
 import imp
 
-from vdsm.exception import GeneralException
+from vdsm.common.exception import GeneralException
 from vdsm.rpc.Bridge import DynamicBridge
 from yajsonrpc import JsonRpcError
 

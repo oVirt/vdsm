@@ -27,7 +27,7 @@ from storagefakelib import FakeResourceManager
 from testlib import VdsmTestCase, recorded, expandPermutations, permutations
 from testlib import wait_for_job
 
-from vdsm import exception
+from vdsm.common import exception
 from vdsm import jobs
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se

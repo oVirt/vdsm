@@ -37,7 +37,7 @@ from vdsm.storage.threadlocal import vars
 from sdc import sdCache
 import sd
 import imageSharing
-from vdsm.exception import ActionStopped
+from vdsm.common.exception import ActionStopped
 import task
 import resourceManager as rm
 

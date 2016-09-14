@@ -20,7 +20,7 @@
 
 from __future__ import absolute_import
 
-from vdsm.exception import GeneralException
+from vdsm.common.exception import GeneralException
 from vdsm.storage import exception as storage_exception
 
 from testlib import VdsmTestCase as TestCaseBase

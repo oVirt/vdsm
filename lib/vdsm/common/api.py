@@ -22,7 +22,8 @@ from __future__ import absolute_import
 from functools import wraps
 import logging
 
-from vdsm import exception
+from . import exception
+
 from vdsm import response
 
 

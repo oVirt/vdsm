@@ -36,8 +36,8 @@ from testlib import TEMPDIR
 
 from vdsm import cmdutils
 from vdsm import commands
-from vdsm import exception
 from vdsm import utils
+from vdsm.common import exception
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
 

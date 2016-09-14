@@ -18,10 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from vdsm import exception
 from vdsm import response
 
 from vdsm.common import api
+from vdsm.common import exception
 
 from testlib import VdsmTestCase as TestCaseBase
 

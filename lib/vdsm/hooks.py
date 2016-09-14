@@ -32,8 +32,8 @@ import os.path
 import sys
 import tempfile
 
+from vdsm.common import exception
 from . import commands
-from . import exception
 from .constants import P_VDSM_HOOKS, P_VDSM, P_VDSM_RUN
 
 _LAUNCH_FLAGS_FILE = 'launchflags'
