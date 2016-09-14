@@ -34,7 +34,6 @@ IPv4_GATEWAY = '192.0.2.254'
 IPv4_NETMASK = '255.255.255.0'
 
 
-@attr(type='functional')
 class NetworkDNSTemplate(NetFuncTestCase):
     __test__ = False
 

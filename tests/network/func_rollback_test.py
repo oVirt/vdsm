@@ -33,7 +33,6 @@ IPv4_ADDRESS = '192.0.2.1'
 IPv4_NETMASK = '255.255.255.0'
 
 
-@attr(type='functional')
 class NetworkRollbackTemplate(NetFuncTestCase):
     __test__ = False
 

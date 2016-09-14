@@ -28,7 +28,6 @@ from .nettestlib import dummy_devices
 BOND_NAME = 'bond1'
 
 
-@attr(type='functional')
 class BondBasicTemplate(NetFuncTestCase):
     __test__ = False
 

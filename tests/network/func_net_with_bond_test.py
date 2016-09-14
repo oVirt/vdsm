@@ -35,7 +35,6 @@ VLAN1 = 10
 VLAN2 = 20
 
 
-@attr(type='functional')
 class NetworkWithBondTemplate(NetFuncTestCase):
     __test__ = False
 

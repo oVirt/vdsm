@@ -42,7 +42,6 @@ IPv6 = [6]
 IPv4IPv6 = [4, 6]
 
 
-@attr(type='functional')
 class NetworkStaticIpBasicTemplate(NetFuncTestCase):
     __test__ = False
 
@@ -146,7 +145,6 @@ class NetworkStaticIpBasicOvsTest(NetworkStaticIpBasicTemplate):
     switch = 'ovs'
 
 
-@attr(type='functional')
 class AcquireNicsWithStaticIPTemplate(NetFuncTestCase):
     __test__ = False
 
