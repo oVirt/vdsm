@@ -1034,7 +1034,11 @@ class ResourceManagerLock(guarded.AbstractLock):
         return self._mode
 
     def acquire(self):
-        self._rm.acquireResource(self.ns, self.name, self.mode)
+        res = self._rm.acquireResource(self.ns, self.name, self.mode)
+        # Locks are released by default then the last reference is garbage
+        # collected.  Since we don't need the reference we'll just disable
+        # autoRelease.
+        res.autoRelease = False
 
     def release(self):
         self._rm.releaseResource(self.ns, self.name)
