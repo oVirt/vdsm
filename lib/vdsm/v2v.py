@@ -44,10 +44,11 @@ import libvirt
 
 from vdsm.commands import execCmd, BUFFSIZE
 from vdsm.common.define import errCode, doneCode
+from vdsm.common import response
 from vdsm.common import zombiereaper
 from vdsm.compat import CPopen
 from vdsm.constants import P_VDSM_LOG, P_VDSM_RUN, EXT_KVM_2_OVIRT
-from vdsm import cmdutils, concurrent, libvirtconnection, response
+from vdsm import cmdutils, concurrent, libvirtconnection
 from vdsm.utils import monotonic_time, traceback, CommandPath, \
     NICENESS, IOCLASS
 

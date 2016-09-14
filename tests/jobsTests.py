@@ -20,8 +20,8 @@
 import threading
 import uuid
 
-from vdsm.common import exception
-from vdsm import jobs, response, schedule
+from vdsm.common import exception, response
+from vdsm import jobs, schedule
 
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase, expandPermutations, permutations

@@ -23,7 +23,7 @@ import logging
 import threading
 
 from vdsm.common import exception
-from vdsm import response
+from vdsm.common import response
 from vdsm.config import config
 
 

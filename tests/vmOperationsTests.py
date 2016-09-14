@@ -30,10 +30,10 @@ from vdsm.virt import virdomain
 
 from virt.vmdevices import hwclass
 from vdsm.common import define
+from vdsm.common import response
 from vdsm import hooks
 from vdsm import libvirtconnection
 from vdsm import password
-from vdsm import response
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase

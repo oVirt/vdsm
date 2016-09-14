@@ -23,8 +23,7 @@ from functools import wraps
 import logging
 
 from . import exception
-
-from vdsm import response
+from . import response
 
 
 _log = logging.getLogger("virt.api")

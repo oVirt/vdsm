@@ -52,7 +52,6 @@ dist_vdsmpylib_PYTHON = \
 	protocoldetector.py \
 	pthread.py \
 	qemuimg.py \
-	response.py \
 	schedule.py \
 	sslcompat.py \
 	sslutils.py \

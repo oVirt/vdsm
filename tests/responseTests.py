@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from vdsm import response
+from vdsm.common import response
 from vdsm.common.define import doneCode
 from vdsm.common.define import errCode
 

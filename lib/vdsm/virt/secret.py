@@ -25,8 +25,8 @@ import libvirt
 import logging
 import uuid
 
+from vdsm.common import response
 from vdsm import libvirtconnection
-from vdsm import response
 
 
 def register(secrets, clear=False):

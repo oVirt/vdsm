@@ -31,12 +31,12 @@ from vdsm import constants
 from vdsm import logUtils
 from vdsm import hooks
 from vdsm import hostdev
-from vdsm import response
 from vdsm import supervdsm
 from vdsm import throttledlog
 from vdsm import jobs
 from vdsm import v2v
 from vdsm.common import exception
+from vdsm.common import response
 from vdsm.host import api as hostapi
 from vdsm.logUtils import AllVmStatsValue, Suppressed
 from vdsm.storage import clusterlock

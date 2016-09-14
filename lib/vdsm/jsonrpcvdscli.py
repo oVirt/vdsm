@@ -31,7 +31,7 @@ from yajsonrpc import \
     CALL_TIMEOUT
 
 from api import vdsmapi
-from vdsm import response
+from vdsm.common import response
 from .config import config
 from . import sslutils
 

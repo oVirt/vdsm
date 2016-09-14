@@ -29,7 +29,7 @@ import libvirt
 from vdsm import constants
 from vdsm import cpuarch
 from vdsm import libvirtconnection
-from vdsm import response
+from vdsm.common import response
 from vdsm.virt import sampling
 
 import clientIF

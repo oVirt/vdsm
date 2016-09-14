@@ -27,10 +27,10 @@ import time
 
 import libvirt
 
+from vdsm.common import response
 from vdsm.compat import pickle
 from vdsm import constants
 from vdsm import libvirtconnection
-from vdsm import response
 from vdsm import utils
 from vdsm.virt import vmchannels
 from vdsm.virt import vmstatus

@@ -26,7 +26,7 @@ import libvirt
 from vdsm import concurrent
 from vdsm import hooks
 from vdsm import kaxmlrpclib
-from vdsm import response
+from vdsm.common import response
 from vdsm import utils
 from vdsm import vdscli
 from vdsm import jsonrpcvdscli

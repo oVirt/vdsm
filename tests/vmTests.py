@@ -51,9 +51,9 @@ from virt.vmdevices.network import Interface
 from vdsm import constants
 from vdsm import cpuarch
 from vdsm.common import define
+from vdsm.common import response
 from vdsm import osinfo
 from vdsm import password
-from vdsm import response
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import find_xml_element

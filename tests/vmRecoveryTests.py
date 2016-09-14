@@ -23,10 +23,10 @@ import contextlib
 import os
 
 from virt import recovery
+from vdsm.common import response
 from vdsm.compat import pickle
 from vdsm import constants
 from vdsm import cpuarch
-from vdsm import response
 
 
 from monkeypatch import MonkeyPatchScope

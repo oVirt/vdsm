@@ -26,9 +26,9 @@ import libvirt
 from six.moves import range
 from six.moves import zip
 
+from vdsm.common import response
 from vdsm.config import config
 from vdsm.virt import vmstatus
-from vdsm import response
 from virt import migration
 
 from monkeypatch import MonkeyPatchScope

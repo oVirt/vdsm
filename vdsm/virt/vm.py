@@ -36,6 +36,7 @@ import xml.etree.ElementTree as ET
 import libvirt
 
 # vdsm imports
+from vdsm.common import response
 from vdsm import concurrent
 from vdsm import constants
 from vdsm import cpuarch
@@ -45,7 +46,6 @@ from vdsm import libvirtconnection
 from vdsm import numa
 from vdsm import osinfo
 from vdsm import qemuimg
-from vdsm import response
 from vdsm import supervdsm
 from vdsm import utils
 from vdsm.compat import pickle

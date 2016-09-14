@@ -47,7 +47,7 @@ from vdsm import concurrent
 from vdsm import numa
 from vdsm import utils
 from vdsm import supervdsm
-from vdsm import response
+from vdsm.common import response
 
 from virt import migration
 from virt import recovery
