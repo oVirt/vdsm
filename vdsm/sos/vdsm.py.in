@@ -126,6 +126,7 @@ class vdsm(Plugin, RedHatPlugin):
         self.collectExtOutput("/usr/bin/iostat")
         self.collectExtOutput("/sbin/iscsiadm -m node")
         self.collectExtOutput("/sbin/iscsiadm -m session")
+        self.collectExtOutput("/usr/sbin/nodectl info")
 
         with closing(jsonrpcvdscli.connect()) as cli:
             self.addObjectAsFile(cli.getVdsCapabilities(), "getVdsCapabilities")
