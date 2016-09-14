@@ -200,6 +200,9 @@ def setup_ovs_ip_config(nets2add, nets2remove):
         _drop_dhcp_config(net)
 
     for net, attrs in six.iteritems(nets2add):
+        sb = attrs.get('bonding') or attrs.get('nic')
+        address.disable_ipv6(sb)
+
         _set_static_ip_config(net, attrs)
         _set_dhcp_config(net, attrs)
 
