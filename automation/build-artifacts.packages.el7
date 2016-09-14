@@ -11,6 +11,7 @@ policycoreutils-python
 PyYAML
 python-blivet
 python-coverage
+python-decorator
 python-devel
 python-nose
 python-inotify

@@ -117,6 +117,15 @@ BuildRequires: libtool
 
 BuildRequires: systemd-units
 
+%if 0%{?rhel}
+BuildRequires: python-decorator
+%endif # rhel
+
+%if 0%{?fedora}
+BuildRequires: python2-decorator
+BuildRequires: python3-decorator
+%endif
+
 # Numactl is not available on s390[x] and ARM
 %ifnarch s390 s390x %{arm}
 Requires: numactl
@@ -261,6 +270,14 @@ Requires: libselinux-python
 Requires: %{name}-python = %{version}-%{release}
 Requires: %{name}-hook-vmfex-dev = %{version}-%{release}
 Requires: NetworkManager-config-server
+
+%if 0%{?rhel}
+Requires: python-decorator
+%endif
+
+%if 0%{?fedora}
+Requires: python2-decorator
+%endif
 
 Requires(post): /usr/sbin/saslpasswd2
 

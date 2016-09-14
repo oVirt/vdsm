@@ -19,8 +19,9 @@
 #
 from __future__ import absolute_import
 
-from functools import wraps
 import logging
+
+from decorator import decorator
 
 from . import exception
 from . import response
@@ -29,7 +30,8 @@ from . import response
 _log = logging.getLogger("virt.api")
 
 
-def method(func):
+@decorator
+def method(func, *args, **kwargs):
     """
     Decorate an instance method, and return a response according to the
     outcome of the call.
@@ -45,23 +47,18 @@ def method(func):
     general exception response with the details of the original error.
     """
 
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
+    _log.debug("START %s args=%s kwargs=%s", func.__name__, args, kwargs)
+    try:
+        ret = func(*args, **kwargs)
+    except Exception as e:
+        _log.exception("FINISH %s error=%s", func.__name__, e)
+        if not isinstance(e, exception.VdsmException):
+            e = exception.GeneralException(str(e))
+        return e.response()
 
-        _log.debug("START %s args=%s kwargs=%s", func.__name__, args, kwargs)
-        try:
-            ret = func(self, *args, **kwargs)
-        except Exception as e:
-            _log.exception("FINISH %s error=%s", func.__name__, e)
-            if not isinstance(e, exception.VdsmException):
-                e = exception.GeneralException(str(e))
-            return e.response()
+    _log.debug("FINISH %s response=%s", func.__name__, ret)
 
-        _log.debug("FINISH %s response=%s", func.__name__, ret)
-
-        if ret is None:
-            return response.success()
-        else:
-            return response.success(**ret)
-
-    return wrapper
+    if ret is None:
+        return response.success()
+    else:
+        return response.success(**ret)

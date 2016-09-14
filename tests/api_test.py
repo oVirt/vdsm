@@ -18,11 +18,23 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import inspect
+
 from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import response
 
 from testlib import VdsmTestCase as TestCaseBase
+
+
+class TestApiMethod(TestCaseBase):
+
+    def test_preserve_signature(self):
+        vm = FakeVM()
+        args = inspect.getargspec(vm.fail)
+        self.assertEqual(args.args, ['self', 'exc'])
+        self.assertEqual(args.varargs, None)
+        self.assertEqual(args.keywords, None)
 
 
 class TestResponse(TestCaseBase):
