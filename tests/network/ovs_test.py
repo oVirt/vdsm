@@ -111,7 +111,7 @@ class ValidationTests(TestCaseBase):
         fake_kernel_nics = ['eth0']
         nets = {}
         running_nets = {}
-        with self.assertRaises(ne.ConfigNetworkError):
+        with self.assertNotRaises():
             ovs_validator.validate_bond_configuration(
                 'bond1', {'nics': ['eth0'], 'switch': 'ovs'}, nets,
                 running_nets, fake_kernel_nics)
@@ -120,7 +120,7 @@ class ValidationTests(TestCaseBase):
         fake_kernel_nics = ['eth0']
         nets = {}
         running_nets = {}
-        with self.assertRaises(ne.ConfigNetworkError):
+        with self.assertNotRaises():
             ovs_validator.validate_bond_configuration(
                 'bond1', {'nics': ['eth0', 'eth0'], 'switch': 'ovs'}, nets,
                 running_nets, fake_kernel_nics)
@@ -214,7 +214,4 @@ class SetupTransactionTests(TestCaseBase):
         ovs_info = MockedOvsInfo()
         with ovs_switch.Setup(self.ovsdb, ovs_info) as s:
             s.remove_nets({})
-            s.remove_bonds({})
-            s.edit_bonds({})
-            s.add_bonds({})
             s.add_nets({})

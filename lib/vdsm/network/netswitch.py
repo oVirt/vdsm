@@ -159,9 +159,6 @@ def _setup_ovs(networks, bondings, options, in_rollback):
         with ifacquire.Transaction(ovs_netinfo['networks']) as acq:
             with ovs_switch.create_setup(_ovs_info) as s:
                 s.remove_nets(nets2remove)
-                s.remove_bonds(bonds2remove)
-                s.edit_bonds(bonds2edit)
-                s.add_bonds(bonds2add)
                 s.add_nets(nets2add)
                 acq.acquire(s.acquired_ifaces)
             _update_running_config(networks, bondings, config)

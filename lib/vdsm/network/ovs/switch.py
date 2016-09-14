@@ -18,14 +18,12 @@
 #
 from __future__ import absolute_import
 
-import itertools
 import random
 
 import six
 
-from vdsm.network import errors as ne
+from vdsm.network.link.bond import Bond
 from vdsm.network.netlink import link
-from vdsm.network.netinfo import bonding
 from vdsm.network.netinfo.nics import nics
 from vdsm.utils import random_iface_name
 
@@ -38,14 +36,15 @@ BRIDGE_PREFIX = 'vdsmbr_'
 
 
 def validate_network_setup(nets, bonds):
-    _netinfo = info.create_netinfo(info.OvsInfo())
+    ovs_networks = info.create_netinfo(info.OvsInfo())['networks']
     kernel_nics = nics()
+    kernel_bonds = Bond.bonds()
     for net, attrs in six.iteritems(nets):
         validator.validate_net_configuration(
-            net, attrs, bonds, _netinfo['bondings'], kernel_nics)
+            net, attrs, bonds, kernel_bonds, kernel_nics)
     for bond, attrs in six.iteritems(bonds):
         validator.validate_bond_configuration(
-            bond, attrs, nets, _netinfo['networks'], kernel_nics)
+            bond, attrs, nets, ovs_networks, kernel_nics)
 
 
 def cleanup():
@@ -88,105 +87,6 @@ class Setup(object):
         else:
             six.reraise(type, value, traceback)
 
-    def remove_bonds(self, bonds):
-        self._transaction.add(
-            *[self._ovsdb.del_port(bond) for bond in bonds])
-
-    def edit_bonds(self, bonds):
-        detach_commands = []
-        attach_commands = []
-
-        for bond, attrs in six.iteritems(bonds):
-            bridge = self._bridges_by_sb[bond]
-
-            to_be_configured_slaves = attrs['nics']
-            self._acquired_ifaces.update(to_be_configured_slaves)
-            running_bond = self._ovs_info.bridges[bridge]['ports'][bond]
-            running_slaves = running_bond['bond']['slaves']
-
-            detach, attach = self._edit_slaves(
-                bond, running_slaves, to_be_configured_slaves)
-            detach_commands.extend(detach)
-            attach_commands.extend(attach)
-
-            attach_commands.extend(
-                self._edit_mode(bond, attrs.get('options', '')))
-
-        self._transaction.add(*detach_commands)
-        self._transaction.add(*attach_commands)
-
-    def add_bonds(self, bonds):
-        """
-        On a bond creation, OVS bridge is created. Northbound port (network)
-        then can be attached to it.
-        """
-        for bond, attrs in six.iteritems(bonds):
-            bridge = self._create_bridge()
-            self._bridges_by_sb[bond] = bridge
-            to_be_configured_slaves = attrs['nics']
-            self._create_sb_bond(bridge, bond, to_be_configured_slaves)
-            self._acquired_ifaces.update(to_be_configured_slaves)
-
-            self._transaction.add(*self._edit_mode(
-                bond, attrs.get('options', '')))
-
-    def _edit_slaves(self, bond, running_slaves, to_be_configured_slaves):
-        running = frozenset(running_slaves)
-        to_be_configured = frozenset(to_be_configured_slaves)
-
-        attach = list(itertools.chain.from_iterable(
-            self._ovsdb.attach_bond_slave(bond, slave)
-            for slave in to_be_configured - running))
-
-        detach = list(itertools.chain.from_iterable(
-            self._ovsdb.detach_bond_slave(bond, slave)
-            for slave in running - to_be_configured))
-
-        return detach, attach
-
-    def _edit_mode(self, bond, options):
-        # TODO: Support setup of all OVS bond-related attributes and move
-        # fallback setup into a separate function.
-
-        commands = []
-
-        parsed_options = bonding.parse_bond_options(options)
-        mode = parsed_options.get('mode')
-        miimon = parsed_options.get('miimon')
-
-        bond_mode = 'active-backup'
-        if mode is None:
-            lacp = 'off'
-        else:
-            if mode in ('1', bonding.BONDING_MODES_NUMBER_TO_NAME['1']):
-                lacp = 'off'
-            elif mode in ('4', bonding.BONDING_MODES_NUMBER_TO_NAME['4']):
-                lacp = 'active'
-            else:
-                # TODO: Validation should be moved to validator.py as soon as
-                # we implement bond options canonicalization.
-                raise ne.ConfigNetworkError(
-                    ne.ERR_BAD_PARAMS,
-                    'Mode {} is not available for OVS bondings'.format(mode))
-        commands.append(self._ovsdb.set_port_attr(
-            bond, 'bond_mode', bond_mode))
-        commands.append(self._ovsdb.set_port_attr(bond, 'lacp', lacp))
-
-        if miimon is None:
-            bond_detect_mode = 'carrier'
-            bond_miimon_interval = None
-        else:
-            bond_detect_mode = 'miimon'
-            bond_miimon_interval = miimon
-        commands.append(self._ovsdb.set_port_attr(
-            bond, 'other_config:bond-detect-mode', bond_detect_mode))
-        if bond_miimon_interval is not None:
-            commands.append(self._ovsdb.set_port_attr(
-                bond, 'other_config:bond-miimon-interval',
-                bond_miimon_interval))
-
-        return commands
-
     def remove_nets(self, nets):
         ovs_netinfo = info.create_netinfo(self._ovs_info)
         running_networks = ovs_netinfo['networks']
@@ -212,21 +112,21 @@ class Setup(object):
     def add_nets(self, nets):
         for net, attrs in six.iteritems(nets):
             nic = attrs.get('nic')
-            if nic:
-                self._acquired_ifaces.add(nic)
             bond = attrs.get('bonding')
             sb = nic or bond
+            self._acquired_ifaces.add(sb)
             if sb in self._bridges_by_sb:
                 bridge = self._bridges_by_sb[sb]
             else:
                 bridge = self._create_bridge()
-                self._bridges_by_sb[nic] = bridge
-                self._create_sb_nic(bridge, nic)
+                self._bridges_by_sb[sb] = bridge
+                self._create_sb_nic(bridge, sb)
 
             self._create_nb(bridge, net)
             vlan = attrs.get('vlan')
             if vlan is not None:
                 self._set_vlan(net, vlan)
+            # FIXME: What about an existing bond?
             if nic is not None and vlan is None:
                 self._copy_nic_hwaddr_to_nb(net, nic)
 
@@ -262,12 +162,6 @@ class Setup(object):
         self._transaction.add(self._ovsdb.add_port(bridge, nic))
         self._transaction.add(self._ovsdb.set_port_attr(
             nic, 'other_config:vdsm_level', info.SOUTHBOUND))
-
-    def _create_sb_bond(self, bridge, bond, slaves):
-        self._transaction.add(self._ovsdb.add_bond(
-            bridge, bond, slaves, fake_iface=True))
-        self._transaction.add(self._ovsdb.set_port_attr(
-            bond, 'other_config:vdsm_level', info.SOUTHBOUND))
 
 
 def _random_unicast_local_mac():

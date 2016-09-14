@@ -98,17 +98,14 @@ class TestOvsInfo(VdsmTestCase):
                         'stp': False,
                         'ports': {
                             nic: {
-                                'bond': None,
                                 'level': info.SOUTHBOUND,
                                 'tag': None
                             },
                             TEST_VLANED_NETWORK: {
-                                'bond': None,
                                 'level': info.NORTHBOUND,
                                 'tag': TEST_VLAN
                             },
                             TEST_BRIDGE: {
-                                'bond': None,
                                 'level': None,
                                 'tag': None
                             }
@@ -132,22 +129,18 @@ class MockedOvsInfo(info.OvsInfo):
                 'stp': False,
                 'ports': {
                     TEST_NETWORK: {
-                        'bond': None,
                         'level': info.NORTHBOUND,
                         'tag': None
                     },
                     TEST_VLANED_NETWORK: {
-                        'bond': None,
                         'level': info.NORTHBOUND,
                         'tag': TEST_VLAN
                     },
                     TEST_BRIDGE: {
-                        'bond': None,
                         'level': None,
                         'tag': None
                     },
                     TEST_NIC: {
-                        'bond': None,
                         'level': info.SOUTHBOUND,
                         'tag': None
                     }
@@ -201,7 +194,6 @@ class TestOvsNetInfo(VdsmTestCase):
                 'vlanid': TEST_VLAN
                 }
             },
-        'bondings': {},
         'bridges': {
             TEST_NETWORK: {
                 'addr': TEST_ADDRESS,
@@ -292,7 +284,6 @@ class TestOvsNetInfo(VdsmTestCase):
                 'vlanid': TEST_VLAN
             }
         },
-        'bondings': {},
         'bridges': {},
         'vlans': {
             TEST_VLANED_NIC: {
