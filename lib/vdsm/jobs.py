@@ -116,9 +116,9 @@ class Job(object):
         return self.status in (STATUS.PENDING, STATUS.RUNNING)
 
     def abort(self):
-        self._status = STATUS.ABORTED
         logging.info('Job %r aborting...', self._id)
         self._abort()
+        self._status = STATUS.ABORTED
 
     def run(self):
         self._status = STATUS.RUNNING
@@ -137,6 +137,8 @@ class Job(object):
     def _abort(self):
         """
         May be implemented by child class
+        - Must raise if the job could not be aborted
+        - Must not raise if the job was aborted
         """
         raise AbortNotSupported()
 
