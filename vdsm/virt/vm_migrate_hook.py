@@ -179,7 +179,7 @@ def _vmconf_display(vm_conf):
 
 def _vm_item(vdscli, vm_uuid):
     result = vdscli.fullList(fullStatus=True, vmList=(vm_uuid,))
-    return result['vmList'][0] if len(result['vmList']) else None
+    return result['items'][0] if len(result['items']) else None
 
 
 def _vdscli():

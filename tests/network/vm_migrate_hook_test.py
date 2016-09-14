@@ -31,7 +31,7 @@ from virt import vm_migrate_hook
 class MockVdscli(object):
     @staticmethod
     def fullList(*args, **kwargs):
-        return {'vmList': [VM_FULL_LIST]}
+        return {'items': [VM_FULL_LIST]}
 
 
 class MockJsonrpcvdscli(object):
