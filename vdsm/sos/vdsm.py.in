@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2014 Red Hat, Inc.
+# Copyright 2008-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -112,6 +112,7 @@ class vdsm(Plugin, RedHatPlugin):
         self.collectExtOutput("/usr/bin/iostat")
         self.collectExtOutput("/sbin/iscsiadm -m node")
         self.collectExtOutput("/sbin/iscsiadm -m session")
+        self.collectExtOutput("/usr/sbin/nodectl info")
         sslopt = ['', '-s '][config.getboolean('vars', 'ssl')]
         vdsclient = "/usr/bin/vdsClient " + sslopt + "0 "
         self.collectExtOutput(vdsclient + "getVdsCapabilities")
