@@ -57,25 +57,15 @@ def validate_net_configuration(net, attrs, to_be_configured_bonds,
 
 # TODO: Pass all nets and bonds to validator at once, not one by one.
 def validate_bond_configuration(bond, attrs, nets, running_nets, kernel_nics):
-    """Validate bonding parameters which are not verified by OVS itself.
-
-    OVS database commands used for bond's editation do not verify slaves'
-    existence and their minimal amount.
-
-    Checked by OVS:
-        - bond mode
-        - lacp
-    """
     if 'remove' in attrs:
         _validate_bond_removal(bond, nets, running_nets)
+    elif 'nics' in attrs:
+        _validate_bond_addition(attrs['nics'], kernel_nics)
     else:
-        _validate_bond_addition(attrs.get('nics'), kernel_nics)
+        raise ne.ConfigNetworkError(ne.ERR_BAD_NIC, 'Missing nics attribute')
 
 
 def _validate_bond_addition(nics, kernel_nics):
-    if nics is None or len(set(nics)) < 2:
-        raise ne.ConfigNetworkError(
-            ne.ERR_BAD_BONDING, 'OVS bond requires at least 2 slaves')
     for nic in nics:
         if nic not in kernel_nics:
             raise ne.ConfigNetworkError(

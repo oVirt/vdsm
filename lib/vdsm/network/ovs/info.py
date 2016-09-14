@@ -26,7 +26,6 @@ from vdsm.network.netinfo.addresses import (
 from vdsm.network.netinfo.mtus import getMtu
 from vdsm.network.netinfo.routes import (get_routes, get_gateway,
                                          is_default_route)
-from vdsm.utils import rget
 from . import driver
 
 
@@ -50,13 +49,6 @@ EMPTY_PORT_INFO = {
 SHARED_NETWORK_ATTRIBUTES = [
     'mtu', 'addr', 'ipv4addrs', 'gateway', 'ipv4defaultroute', 'netmask',
     'dhcpv4', 'ipv6addrs', 'ipv6autoconf', 'ipv6gateway', 'dhcpv6']
-
-BOND_CONFIGURABLES = [
-    'bond_mode',
-    'lacp',
-    'other_config:bond-detect-mode',
-    'other_config:bond-miimon-interval'
-]
 
 
 class OvsDB(object):
@@ -101,7 +93,8 @@ class OvsInfo(object):
 
         for bridge, attrs in six.iteritems(self.bridges):
             bridge_sb = self.southbound_port(attrs['ports'])
-            bridges_by_sb[bridge_sb] = bridge
+            if bridge_sb:
+                bridges_by_sb[bridge_sb] = bridge
 
         return bridges_by_sb
 
@@ -128,37 +121,10 @@ class OvsInfo(object):
         return {'ports': ports_info, 'stp': stp}
 
     def _port_attr(self, port_entry):
-        bond_info = (self._bond_info(port_entry) if self._is_bond(port_entry)
-                     else None)
         tag = port_entry['tag']
         level = port_entry['other_config'].get('vdsm_level')
 
-        return {'bond': bond_info, 'tag': tag, 'level': level}
-
-    @staticmethod
-    def _is_bond(port_entry):
-        """
-        OVS implicitly defines a port as bond when it has two or more
-        interfaces set on it.
-        """
-        return len(port_entry['interfaces']) >= 2
-
-    def _bond_info(self, port_entry):
-        slaves = sorted([self._ifaces_uuids[uuid]['name']
-                         for uuid in port_entry['interfaces']])
-
-        active_slave = self._ifaces_macs.get(
-            port_entry['bond_active_slave'], {})
-        active_slave_name = active_slave.get('name')
-
-        fake_iface = port_entry['bond_fake_iface']
-
-        bond_info = {'slaves': slaves, 'active_slave': active_slave_name,
-                     'fake_iface': fake_iface}
-        for key in BOND_CONFIGURABLES:
-            bond_info[key] = rget(port_entry, key.split(':'))
-
-        return bond_info
+        return {'tag': tag, 'level': level}
 
     @staticmethod
     def southbound_port(ports):
@@ -169,11 +135,6 @@ class OvsInfo(object):
     def northbound_ports(ports):
         return (port for port, attrs in six.iteritems(ports)
                 if attrs['level'] == NORTHBOUND)
-
-    @staticmethod
-    def bonds(ports):
-        return ((port, attrs['bond']) for port, attrs in six.iteritems(ports)
-                if attrs['bond'])
 
 
 def get_netinfo():
@@ -234,7 +195,7 @@ def create_netinfo(ovs_info):
     addresses = getIpAddrs()
     routes = get_routes()
 
-    _netinfo = {'networks': {}, 'bondings': {}}
+    _netinfo = {'networks': {}}
 
     for bridge, bridge_attrs in six.iteritems(ovs_info.bridges):
         ports = bridge_attrs['ports']
@@ -248,24 +209,17 @@ def create_netinfo(ovs_info):
                 northbound_port, bridge, southbound, ports, stp, addresses,
                 routes)
 
-        for bond, bond_attrs in ovs_info.bonds(ports):
-            _netinfo['bondings'][bond] = _get_bond_info(bond_attrs)
-
     return _netinfo
 
 
 def _get_network_info(northbound, bridge, southbound, ports, stp, addresses,
                       routes):
-    southbound_bond_attrs = ports[southbound]['bond']
-    bond = southbound if southbound_bond_attrs else ''
-    nics = (southbound_bond_attrs['slaves'] if southbound_bond_attrs
-            else [southbound])
     tag = ports[northbound]['tag']
     network_info = {
         'iface': northbound,
         'bridged': True,
-        'bond': bond,
-        'nics': nics,
+        'bond': '',
+        'nics': [southbound],
         'ports': _get_net_ports(bridge, northbound, southbound, tag, ports),
         'stp': stp,
         'switch': 'ovs'
@@ -291,38 +245,6 @@ def _get_net_ports(bridge, northbound, southbound, net_tag, ports):
                       port_attrs['level'] not in (SOUTHBOUND, NORTHBOUND))]
 
     return net_ports
-
-
-def _get_bond_info(bond_attrs):
-    bond_info = {
-        'slaves': bond_attrs['slaves'],
-        # TODO: what should we report when no slave is active?
-        'active_slave': (bond_attrs['active_slave'] or
-                         bond_attrs['slaves'][0]),
-        'opts': _get_bond_opts(bond_attrs),
-        'switch': 'ovs'
-    }
-    bond_info.update(EMPTY_PORT_INFO)
-    return bond_info
-
-
-def _get_bond_opts(bond_attrs):
-    opts = {}
-
-    lacp = bond_attrs['lacp']
-    bond_mode = bond_attrs['bond_mode']
-    if lacp == 'active':
-        mode = '4'
-    elif bond_mode == 'active-backup' or bond_mode is None:
-        mode = '1'
-    opts['mode'] = mode
-
-    bond_detect_mode = bond_attrs['other_config:bond-detect-mode']
-    if bond_detect_mode == 'miimon':
-        bond_miimon_interval = bond_attrs['other_config:bond-miimon-interval']
-        opts['miimon'] = bond_miimon_interval
-
-    return opts
 
 
 def _get_iface_info(iface, addresses, routes):
