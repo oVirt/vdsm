@@ -162,8 +162,7 @@ def start(scheduler):
 
 
 def stop():
-    with _lock:
-        _jobs.clear()
+    pass
 
 
 def delete(job_id):
@@ -222,3 +221,9 @@ def _delete(job_id):
         if job.active:
             raise JobNotDone("Job %r is %s" % (job_id, job.status))
         del _jobs[job_id]
+
+
+# This should only be used by test code!
+def _clear():
+    with _lock:
+        _jobs.clear()

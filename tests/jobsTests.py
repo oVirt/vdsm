@@ -74,7 +74,7 @@ class JobsTests(VdsmTestCase):
         jobs.start(None)
 
     def tearDown(self):
-        jobs.stop()
+        jobs._clear()
 
     def run_job(self, job):
         self.assertEqual(jobs.STATUS.PENDING, job.status)
