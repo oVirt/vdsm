@@ -20,6 +20,8 @@
 
 from __future__ import absolute_import
 
+import os
+
 from nose.plugins.attrib import attr
 
 from .netfunctestlib import NetFuncTestCase, NOCHK
@@ -69,6 +71,28 @@ class NetworkBasicTemplate(NetFuncTestCase):
 class NetworkBasicLegacyTest(NetworkBasicTemplate):
     __test__ = True
     switch = 'legacy'
+
+    def test_add_net_based_on_device_with_non_standard_ifcfg_file(self):
+        with dummy_device() as nic:
+            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': self.switch}}
+            NETREMOVE = {NETWORK_NAME: {'remove': True}}
+            with self.setupNetworks(NETCREATE, {}, NOCHK):
+                self.setupNetworks(NETREMOVE, {}, NOCHK)
+                self.assertNoNetwork(NETWORK_NAME)
+
+                NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
+                NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
+
+                nic_ifcfg_file = NET_CONF_PREF + nic
+                self.assertTrue(os.path.exists(nic_ifcfg_file))
+                nic_ifcfg_badname_file = nic_ifcfg_file + 'tail123'
+                os.rename(nic_ifcfg_file, nic_ifcfg_badname_file)
+
+                # Up until now, we have set the test setup, now start the test.
+                with self.setupNetworks(NETCREATE, {}, NOCHK):
+                    self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+                    self.assertTrue(os.path.exists(nic_ifcfg_file))
+                    self.assertFalse(os.path.exists(nic_ifcfg_badname_file))
 
 
 @attr(type='functional', switch='ovs')
