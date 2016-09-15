@@ -24,7 +24,7 @@ from copy import deepcopy
 from nose.plugins.attrib import attr
 
 from .nettestlib import dummy_device
-from .ovsnettestlib import OvsService, TEST_BRIDGE, TEST_BOND
+from .ovsnettestlib import OvsService, TEST_BRIDGE
 from monkeypatch import MonkeyPatch
 from testValidation import ValidateRunningAsRoot
 from testlib import VdsmTestCase
@@ -37,26 +37,23 @@ TEST_NETWORK = 'test-network'
 TEST_ADDRESS = '192.168.1.10'
 TEST_NETMASK = '255.255.255.0'
 TEST_ADDRESS_WITH_PREFIX = '192.168.1.10/24'
+TEST_NIC = 'eth0'
 TEST_VLAN = 10
-TEST_VLANED_BOND = '%s.%s' % (TEST_BOND, TEST_VLAN)
+TEST_VLANED_NIC = '%s.%s' % (TEST_NIC, TEST_VLAN)
 TEST_VLANED_NETWORK = 'test-network' + str(TEST_VLAN)
 
 
 @contextmanager
-def _setup_ovs_network(ovsdb, nic1, nic2):
+def _setup_ovs_network(ovsdb, sb_iface):
 
     def _bridge():
         return ovsdb.add_br(TEST_BRIDGE)
 
-    def _bond():
+    def _attach_southbound():
         commands = []
-        commands.append(ovsdb.add_bond(TEST_BRIDGE, TEST_BOND, [nic1, nic2]))
+        commands.append(ovsdb.add_port(TEST_BRIDGE, sb_iface))
         commands.append(ovsdb.set_port_attr(
-            TEST_BOND, 'bond_mode', 'active-backup'))
-        commands.append(ovsdb.set_port_attr(
-            TEST_BOND, 'other_config:bond-detect-mode', 'carrier'))
-        commands.append(ovsdb.set_port_attr(
-            TEST_BOND, 'other_config:vdsm_level', info.SOUTHBOUND))
+            sb_iface, 'other_config:vdsm_level', info.SOUTHBOUND))
         return commands
 
     def _northbound_port():
@@ -72,7 +69,7 @@ def _setup_ovs_network(ovsdb, nic1, nic2):
 
     with ovsdb.transaction() as t:
         t.add(_bridge())
-        t.add(*_bond())
+        t.add(*_attach_southbound())
         t.add(*_northbound_port())
 
     try:
@@ -93,22 +90,15 @@ class TestOvsInfo(VdsmTestCase):
     def tearDown(self):
         self.ovs_service.teardown()
 
-    def test_ovs_info(self):
-        with dummy_device() as nic1, dummy_device() as nic2:
-            with _setup_ovs_network(self.ovsdb, nic1, nic2):
+    def test_ovs_info_with_sb_nic(self):
+        with dummy_device() as nic:
+            with _setup_ovs_network(self.ovsdb, nic):
                 expected_bridges = {
                     TEST_BRIDGE: {
                         'stp': False,
                         'ports': {
-                            TEST_BOND: {
-                                'bond': {
-                                    'fake_iface': False,
-                                    'lacp': None,
-                                    'bond_mode': 'active-backup',
-                                    'other_config:bond-detect-mode': 'carrier',
-                                    'other_config:bond-miimon-interval': None,
-                                    'slaves': sorted([nic1, nic2])
-                                },
+                            nic: {
+                                'bond': None,
                                 'level': info.SOUTHBOUND,
                                 'tag': None
                             },
@@ -125,19 +115,14 @@ class TestOvsInfo(VdsmTestCase):
                         }
                     }
                 }
-                expected_bridges_by_sb = {TEST_BOND: TEST_BRIDGE}
 
                 ovs_info = info.OvsInfo()
 
                 obtained_bridges = ovs_info.bridges
-                # Normalize obtained_bridges (remove 'active_slave')
-                obtained_bridges[TEST_BRIDGE]['ports'][TEST_BOND]['bond'].pop(
-                    'active_slave')
                 self.assertEqual(obtained_bridges, expected_bridges)
 
                 obtained_bridges_by_sb = ovs_info.bridges_by_sb
-                self.assertEqual(
-                    obtained_bridges_by_sb, expected_bridges_by_sb)
+                self.assertEqual(obtained_bridges_by_sb, {nic: TEST_BRIDGE})
 
 
 class MockedOvsInfo(info.OvsInfo):
@@ -146,19 +131,6 @@ class MockedOvsInfo(info.OvsInfo):
             TEST_BRIDGE: {
                 'stp': False,
                 'ports': {
-                    TEST_BOND: {
-                        'bond': {
-                            'active_slave': None,
-                            'fake_iface': False,
-                            'lacp': None,
-                            'bond_mode': 'active-backup',
-                            'other_config:bond-detect-mode': 'carrier',
-                            'other_config:bond-miimon-interval': None,
-                            'slaves': ['eth0', 'eth1']
-                        },
-                        'level': info.SOUTHBOUND,
-                        'tag': None
-                    },
                     TEST_NETWORK: {
                         'bond': None,
                         'level': info.NORTHBOUND,
@@ -173,6 +145,11 @@ class MockedOvsInfo(info.OvsInfo):
                         'bond': None,
                         'level': None,
                         'tag': None
+                    },
+                    TEST_NIC: {
+                        'bond': None,
+                        'level': info.SOUTHBOUND,
+                        'tag': None
                     }
                 }
             }
@@ -186,79 +163,61 @@ class TestOvsNetInfo(VdsmTestCase):
         'networks': {
             TEST_NETWORK: {
                 'addr': TEST_ADDRESS,
-                'bond': TEST_BOND,
+                'bond': '',
                 'bridged': True,
                 'dhcpv4': False,
                 'dhcpv6': False,
                 'gateway': '',
-                'ipv4defaultroute': False,
                 'iface': TEST_NETWORK,
                 'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv4defaultroute': False,
                 'ipv6addrs': [],
                 'ipv6autoconf': True,
                 'ipv6gateway': '::',
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
-                'nics': ['eth0', 'eth1'],
-                'ports': [TEST_BOND],
+                'nics': [TEST_NIC],
+                'ports': [TEST_NIC],
                 'stp': False,
-                'switch': 'ovs',
+                'switch': 'ovs'
             },
             TEST_VLANED_NETWORK: {
                 'addr': TEST_ADDRESS,
-                'bond': TEST_BOND,
+                'bond': '',
                 'bridged': True,
                 'dhcpv4': False,
                 'dhcpv6': False,
                 'gateway': '',
-                'ipv4defaultroute': False,
                 'iface': TEST_VLANED_NETWORK,
                 'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv4defaultroute': False,
                 'ipv6addrs': [],
                 'ipv6autoconf': True,
                 'ipv6gateway': '::',
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
-                'nics': ['eth0', 'eth1'],
-                'ports': [TEST_VLANED_BOND],
+                'nics': [TEST_NIC],
+                'ports': [TEST_VLANED_NIC],
                 'stp': False,
                 'switch': 'ovs',
                 'vlanid': TEST_VLAN
-            }
-        },
-        'bondings': {
-            TEST_BOND: {
-                'active_slave': 'eth0',
-                'addr': '',
-                'dhcpv4': False,
-                'dhcpv6': False,
-                'gateway': '',
-                'ipv4defaultroute': False,
-                'ipv4addrs': [],
-                'ipv6addrs': [],
-                'ipv6autoconf': False,
-                'ipv6gateway': '',
-                'mtu': 1500,
-                'netmask': '',
-                'opts': {'mode': '1'},
-                'slaves': ['eth0', 'eth1'],
-                'switch': 'ovs'
-            }
-        },
+                }
+            },
+        'bondings': {},
         'bridges': {
             TEST_NETWORK: {
                 'addr': TEST_ADDRESS,
                 'dhcpv4': False,
                 'dhcpv6': False,
                 'gateway': '',
-                'ipv4defaultroute': False,
                 'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv4defaultroute': False,
                 'ipv6addrs': [],
                 'ipv6autoconf': True,
                 'ipv6gateway': '::',
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
-                'ports': [TEST_BOND],
+                'ports': [TEST_NIC],
                 'stp': False
             },
             TEST_VLANED_NETWORK: {
@@ -266,26 +225,26 @@ class TestOvsNetInfo(VdsmTestCase):
                 'dhcpv4': False,
                 'dhcpv6': False,
                 'gateway': '',
-                'ipv4defaultroute': False,
                 'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv4defaultroute': False,
                 'ipv6addrs': [],
                 'ipv6autoconf': True,
                 'ipv6gateway': '::',
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
-                'ports': [TEST_VLANED_BOND],
+                'ports': [TEST_VLANED_NIC],
                 'stp': False
             }
         },
         'vlans': {
-            TEST_VLANED_BOND: {
+            TEST_VLANED_NIC: {
                 'addr': '',
                 'dhcpv4': False,
                 'dhcpv6': False,
                 'gateway': '',
-                'ipv4defaultroute': False,
-                'iface': TEST_BOND,
+                'iface': TEST_NIC,
                 'ipv4addrs': [],
+                'ipv4defaultroute': False,
                 'ipv6addrs': [],
                 'ipv6autoconf': False,
                 'ipv6gateway': '',
@@ -296,79 +255,61 @@ class TestOvsNetInfo(VdsmTestCase):
         }
     }
 
-    TEST_BRIDGELESS_NETINFO = {
+    TEST_BRIDGELESS_OVS_NETINFO = {
         'networks': {
             TEST_NETWORK: {
                 'addr': TEST_ADDRESS,
-                'bond': TEST_BOND,
+                'bond': '',
                 'bridged': False,
                 'dhcpv4': False,
                 'dhcpv6': False,
                 'gateway': '',
-                'ipv4defaultroute': False,
-                'iface': TEST_BOND,
+                'iface': TEST_NIC,
                 'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv4defaultroute': False,
                 'ipv6addrs': [],
                 'ipv6autoconf': True,
                 'ipv6gateway': '::',
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
-                'nics': ['eth0', 'eth1'],
-                'ports': [TEST_BOND],
+                'nics': [TEST_NIC],
+                'ports': [TEST_NIC],
                 'stp': False,
-                'switch': 'ovs',
+                'switch': 'ovs'
             },
             TEST_VLANED_NETWORK: {
                 'addr': TEST_ADDRESS,
-                'bond': TEST_BOND,
+                'bond': '',
                 'bridged': False,
                 'dhcpv4': False,
                 'dhcpv6': False,
                 'gateway': '',
-                'ipv4defaultroute': False,
-                'iface': TEST_VLANED_BOND,
+                'iface': TEST_VLANED_NIC,
                 'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv4defaultroute': False,
                 'ipv6addrs': [],
                 'ipv6autoconf': True,
                 'ipv6gateway': '::',
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
-                'nics': ['eth0', 'eth1'],
-                'ports': [TEST_VLANED_BOND],
+                'nics': [TEST_NIC],
+                'ports': [TEST_VLANED_NIC],
                 'stp': False,
                 'switch': 'ovs',
                 'vlanid': TEST_VLAN
             }
         },
-        'bondings': {
-            TEST_BOND: {
-                'active_slave': 'eth0',
-                'addr': TEST_ADDRESS,
-                'dhcpv4': False,
-                'dhcpv6': False,
-                'gateway': '',
-                'ipv4defaultroute': False,
-                'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
-                'ipv6addrs': [],
-                'ipv6autoconf': True,
-                'ipv6gateway': '::',
-                'mtu': 1500,
-                'netmask': TEST_NETMASK,
-                'opts': {'mode': '1'},
-                'slaves': ['eth0', 'eth1'],
-                'switch': 'ovs'
-            }
-        },
+        'bondings': {},
         'bridges': {},
         'vlans': {
-            TEST_VLANED_BOND: {
+            TEST_VLANED_NIC: {
                 'addr': TEST_ADDRESS,
                 'dhcpv4': False,
                 'dhcpv6': False,
                 'gateway': '',
-                'ipv4defaultroute': False,
-                'iface': TEST_BOND,
+                'iface': TEST_NIC,
                 'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv4defaultroute': False,
                 'ipv6addrs': [],
                 'ipv6autoconf': True,
                 'ipv6gateway': '::',
@@ -376,6 +317,38 @@ class TestOvsNetInfo(VdsmTestCase):
                 'netmask': TEST_NETMASK,
                 'vlanid': TEST_VLAN
             }
+        }
+    }
+
+    TEST_NIC_NETINFO = {
+        TEST_NIC: {
+            'addr': '',
+            'dhcpv4': False,
+            'dhcpv6': False,
+            'gateway': '',
+            'ipv4addrs': [],
+            'ipv4defaultroute': False,
+            'ipv6addrs': [],
+            'ipv6autoconf': True,
+            'ipv6gateway': '::',
+            'mtu': 1500,
+            'netmask': ''
+        }
+    }
+
+    TEST_BRIDGELESS_NIC_NETINFO = {
+        TEST_NIC: {
+            'addr': TEST_ADDRESS,
+            'dhcpv4': False,
+            'dhcpv6': False,
+            'gateway': '',
+            'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+            'ipv4defaultroute': False,
+            'ipv6addrs': [],
+            'ipv6autoconf': True,
+            'ipv6gateway': '::',
+            'mtu': 1500,
+            'netmask': TEST_NETMASK
         }
     }
 
@@ -396,10 +369,10 @@ class TestOvsNetInfo(VdsmTestCase):
         fake_running_bridgeless_ovs_networks = {
             TEST_NETWORK, TEST_VLANED_NETWORK}
         test_ovs_netinfo = deepcopy(self.TEST_OVS_NETINFO)
-        test_nic_netinfo = {}  # under bonding, should not be touched
+        test_nic_netinfo = deepcopy(self.TEST_NIC_NETINFO)
 
         info.fake_bridgeless(test_ovs_netinfo, test_nic_netinfo,
                              fake_running_bridgeless_ovs_networks)
 
-        self.assertEqual(test_ovs_netinfo, self.TEST_BRIDGELESS_NETINFO)
-        self.assertEqual(test_nic_netinfo, {})
+        self.assertEqual(test_ovs_netinfo, self.TEST_BRIDGELESS_OVS_NETINFO)
+        self.assertEqual(test_nic_netinfo, self.TEST_BRIDGELESS_NIC_NETINFO)
