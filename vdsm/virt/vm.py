@@ -245,7 +245,7 @@ class Vm(object):
         self._destroy_requested = threading.Event()
         self._recovery_file = recovery.File(self.conf['vmId'])
         self._monitorResponse = 0
-        self._post_copy = False
+        self._post_copy = migration.PostCopyPhase.NONE
         self.memCommitted = 0
         self._consoleDisconnectAction = ConsoleDisconnectAction.LOCK_SCREEN
         self._confLock = threading.Lock()
@@ -1526,7 +1526,7 @@ class Vm(object):
         result = self._dom.migrateStartPostCopy(0)
         success = result >= 0
         if success:
-            self._post_copy = True
+            self._post_copy = migration.PostCopyPhase.REQUESTED
         return success
 
     def _customDevices(self):
@@ -4236,6 +4236,9 @@ class Vm(object):
                     pass
                 else:
                     hooks.after_vm_pause(domxml, self.conf)
+            elif detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_POSTCOPY:
+                self._post_copy = migration.PostCopyPhase.RUNNING
+                self.log.debug("Migration entered post-copy mode")
             elif detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_POSTCOPY_FAILED:
                 pass  # will be handled in a followup patch
 

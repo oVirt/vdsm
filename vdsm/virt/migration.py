@@ -80,6 +80,12 @@ class MigrationLimitExceeded(RuntimeError):
     """
 
 
+class PostCopyPhase:
+    NONE = 0
+    REQUESTED = 1
+    RUNNING = 2
+
+
 class SourceThread(object):
     """
     A thread that takes care of migration on the source vdsm.
@@ -703,7 +709,7 @@ class MonitorThread(object):
             progress = Progress.from_job_stats(job_stats)
 
             now = time.time()
-            if self._vm.post_copy:
+            if self._vm.post_copy != PostCopyPhase.NONE:
                 # Post-copy mode is a final state of a migration -- it either
                 # completes or fails and stops the VM, there is no way to
                 # continue with the migration in either case.  So we won't
@@ -712,8 +718,15 @@ class MonitorThread(object):
                 # abort action after the post-copy action in the schedule, for
                 # the case when it's not possible to switch to the post-copy
                 # mode for some reason.
-                self._vm.log.debug('Post-copy migration still in progress: %d',
-                                   progress.data_remaining)
+                if self._vm.post_copy == PostCopyPhase.RUNNING:
+                    # If post-copy is not RUNNING then we are in the interim
+                    # phase (which should be short) between initiating the
+                    # post-copy migration and the actual start of the post-copy
+                    # migration.  Nothing needs to be done in that case.
+                    self._vm.log.debug(
+                        'Post-copy migration still in progress: %d',
+                        progress.data_remaining
+                    )
             elif not self._use_conv_schedule and\
                     (0 < migrationMaxTime < now - self._startTime):
                 self._vm.log.warn('The migration took %d seconds which is '
