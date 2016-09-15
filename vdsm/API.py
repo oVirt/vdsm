@@ -958,9 +958,8 @@ class StorageDomain(APIBase):
     def attach(self, storagepoolID):
         return self._irs.attachStorageDomain(self._UUID, storagepoolID)
 
-    def create(self, domainType, typeArgs, name, domainClass, version=None):
-        if version is None:
-            version = constants.SUPPORTED_DOMAIN_VERSIONS[0]
+    def create(self, domainType, typeArgs, name, domainClass,
+               version=constants.SUPPORTED_DOMAIN_VERSIONS[0]):
         return self._irs.createStorageDomain(domainType, self._UUID, name,
                                              typeArgs, domainClass, version)
 
