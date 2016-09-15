@@ -534,6 +534,8 @@ class clientIF(object):
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG:
                 action, = args[:-1]
                 v.onWatchdogEvent(action)
+            elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_JOB_COMPLETED:
+                v.onJobCompleted(args)
             else:
                 v.log.warning('unknown eventid %s args %s', eventid, args)
 

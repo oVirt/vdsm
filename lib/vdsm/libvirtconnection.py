@@ -176,7 +176,8 @@ def get(target=None, killOnFailure=True):
                            libvirt.VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON,
                            libvirt.VIR_DOMAIN_EVENT_ID_GRAPHICS,
                            libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB,
-                           libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG):
+                           libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG,
+                           libvirt.VIR_DOMAIN_EVENT_ID_JOB_COMPLETED):
                     conn.domainEventRegisterAny(None,
                                                 ev,
                                                 target.dispatchLibvirtEvents,

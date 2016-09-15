@@ -309,6 +309,7 @@ class Vm(object):
         self._vmJobs = None
         self._clientPort = ''
         self._monitorable = False
+        self._post_copy_downtime = None
 
     @property
     def monitorable(self):
@@ -1469,7 +1470,19 @@ class Vm(object):
             self._guestCpuLock.release()
 
     def migrateStatus(self):
-        return self._migrationSourceThread.getStat()
+        status = self._migrationSourceThread.getStat()
+        if self._post_copy_downtime is not None:
+            status['downtime'] = self._post_copy_downtime
+        return status
+
+    def onJobCompleted(self, args):
+        stats = args[0]
+        if 'downtime' in stats:
+            # downtime_net doesn't make sense and is not available after
+            # post-copy.  So we must use `downtime' here, which is somewhat
+            # different value and is not resilient against time differences on
+            # the hosts.
+            self._post_copy_downtime = stats['downtime']
 
     def migrateCancel(self):
         self._acquireCpuLockWithTimeout()
