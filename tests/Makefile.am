@@ -345,6 +345,7 @@ dist_vdsmtests_PYTHON = \
 	testlib.py \
 	testrunner.py \
 	testValidation.py \
+	vmfakecon.py \
 	vmfakelib.py \
 	$(NULL)
 
