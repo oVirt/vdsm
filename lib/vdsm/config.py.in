@@ -315,9 +315,11 @@ parameters = [
         ('scsi_rescan_maximal_timeout', '30',
             'The maximal number of seconds to wait for scsi scan to return.'),
 
-        ('scsi_settle_timeout', '5',
-            'Maximum number of seconds to wait until udev events are handled '
-            'after modifying scsi interconnects.'),
+        ('udev_settle_timeout', '5',
+            'Maximum number of seconds to wait until udev events are '
+            'processed. Used after rescanning iSCSI and FC connections, '
+            'after connecting to iSCSI target, and after mounting and '
+            'umounting file systems.'),
 
         ('sd_health_check_delay', '10',
             'Storage domain health check delay, the amount of seconds to '

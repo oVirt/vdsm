@@ -78,7 +78,7 @@ def rescan():
     # Scanning SCSI interconnects starts a storm of udev events. Wait until all
     # events are processed, ensuring detection of new devices and creation or
     # update of multipath devices.
-    timeout = config.getint('irs', 'scsi_settle_timeout')
+    timeout = config.getint('irs', 'udev_settle_timeout')
     udevadm.settle(timeout)
 
 

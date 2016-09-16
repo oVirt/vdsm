@@ -209,7 +209,7 @@ class Mount(object):
         TODO: find a way to wait for the specific event.
         """
         with utils.stopwatch("Waiting for udev mount events", log=self.log):
-            timeout = config.getint('irs', 'scsi_settle_timeout')
+            timeout = config.getint('irs', 'udev_settle_timeout')
             udevadm.settle(timeout)
 
     def isMounted(self):
