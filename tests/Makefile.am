@@ -177,7 +177,6 @@ blacklist_modules_python3 = \
 	fileSDTests.py \
 	fileUtilTests.py \
 	fileVolumeTests.py \
-	fuserTests.py \
 	gluster_cli_tests.py \
 	guestagentTests.py \
 	hooksTests.py \
@@ -196,7 +195,6 @@ blacklist_modules_python3 = \
 	network/hook_ovs_test.py \
 	network/iproute2_test.py \
 	network/ipwrapper_test.py \
-	network/link_bond_test.py \
 	network/link_iface_test.py \
 	network/netlink_test.py \
 	network/netinfo_test.py \
@@ -217,7 +215,6 @@ blacklist_modules_python3 = \
 	schemaTests.py \
 	schemaValidationTest.py \
 	sdm_indirection_tests.py \
-	sparsifyTests.py \
 	stompAdapterTests.py \
 	stompAsyncClientTests.py \
 	stompAsyncDispatcherTests.py \
@@ -237,12 +234,10 @@ blacklist_modules_python3 = \
 	storagefakelibTests.py \
 	storagetestlibTests.py \
 	toolBondingTests.py \
-	transportWrapperTests.py \
 	unicode_test.py \
 	utilsTests.py \
 	v2vTests.py \
 	vdscliTests.py \
-	verify.py \
 	vmApiTests.py \
 	vmMigrationTests.py \
 	vmOperationsTests.py \
