@@ -136,7 +136,6 @@ def connect(hostPort=None, useSSL=None, tsPath=None,
         server = xmlrpclib.Server('http://%s' % hostPort, transport)
     return server
 
-warnings.simplefilter("always", category=DeprecationWarning)
 warnings.warn(
     "vdscli uses xmlrpc. since ovirt 3.6 xmlrpc is deprecated, please use "
     "vdsm.jsonrpcvdscli", DeprecationWarning, stacklevel=2)
