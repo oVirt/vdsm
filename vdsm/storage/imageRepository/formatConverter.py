@@ -18,6 +18,19 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+"""
+FormatConverter - Responsible for the storage domains' version.
+
+A storage domain's version reflects its meta data compatibility.
+This module is usually being used for upgrade process, once a Data Center
+will be able to use the new functionaility reflected by its storage domain's
+new version.
+Supported storage formats - Data storage domain should be supported
+for version 3 and 4.
+Version 4 is different from version 3 by supporting qcow version 1.1 as
+well the old qcow 0.10 version which was supported in version 3 and below.
+"""
+
 import logging
 
 from vdsm import constants
