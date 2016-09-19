@@ -20,6 +20,7 @@
 #
 
 
+import os
 from collections import namedtuple
 from vdsm.utils import CommandPath
 from vdsm.storage.misc import execCmd
@@ -41,10 +42,12 @@ class VirtAlignError(Exception):
 def runScanArgs(*args):
     cmd = [_virtAlignmentScan.cmd]
     cmd.extend(args)
-    # TODO: remove the environment variable when the issue in
+    # TODO: remove the environment when the issue in
     # virt-alignment-scan/libvirt is resolved
     # http://bugzilla.redhat.com/1151838
-    return execCmd(cmd, env={'LIBGUESTFS_BACKEND': 'direct'})
+    env = os.environ.copy()
+    env['LIBGUESTFS_BACKEND'] = 'direct'
+    return execCmd(cmd, env=env)
 
 
 def scanImage(image_path):
