@@ -38,10 +38,10 @@ from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
     addrAdd, linkSet, linkAdd, linkDel, IPRoute2Error, netns_add, netns_delete,
     netns_exec)
-from vdsm.network.link import iface as linkiface
+from vdsm.network.link import iface as linkiface, bond as linkbond
 from vdsm.network.netlink import monitor
 from vdsm.commands import execCmd
-from vdsm.utils import CommandPath, random_iface_name
+from vdsm.utils import CommandPath, memoized, random_iface_name
 
 from . import dhcp
 from . import firewall
@@ -477,3 +477,19 @@ def dhclient_run(iface):
         yield
     finally:
         dhclient.stop(iface)
+
+
+def check_sysfs_bond_permission():
+    if not _has_sysfs_bond_permission():
+        raise SkipTest('This test requires sysfs bond write access')
+
+
+@memoized
+def _has_sysfs_bond_permission():
+    bond = linkbond.BondSysFS(random_iface_name('check_', max_length=11))
+    try:
+        bond.create()
+        bond.destroy()
+    except IOError:
+        return False
+    return True
