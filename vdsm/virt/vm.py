@@ -1230,6 +1230,7 @@ class Vm(object):
                 # Stats are on the destination during post-copy migration,
                 # except for migration progress, which is always on the source.
                 stats['migrationProgress'] = self._get_vm_migration_progress()
+                stats.update(self._getVmPauseCodeStats())
             else:
                 stats.update(self._getRunningVmStats())
                 stats.update(self._getGuestStats())
@@ -1283,9 +1284,7 @@ class Vm(object):
             'clientIp': self.conf.get('clientIp', ''),
         }
 
-        with self._confLock:
-            if 'pauseCode' in self.conf:
-                stats['pauseCode'] = self.conf['pauseCode']
+        stats.update(self._getVmPauseCodeStats())
         if self.isMigrating():
             stats['migrationProgress'] = self._get_vm_migration_progress()
 
@@ -1354,6 +1353,13 @@ class Vm(object):
         if self._vmJobs is not None:
             stats['vmJobs'] = self._vmJobs
 
+        return stats
+
+    def _getVmPauseCodeStats(self):
+        stats = {}
+        with self._confLock:
+            if 'pauseCode' in self.conf:
+                stats['pauseCode'] = self.conf['pauseCode']
         return stats
 
     def _getVmStatus(self):
@@ -4256,6 +4262,9 @@ class Vm(object):
             elif detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_POSTCOPY:
                 self._post_copy = migration.PostCopyPhase.RUNNING
                 self.log.debug("Migration entered post-copy mode")
+                with self._confLock:
+                    self.conf['pauseCode'] = 'POSTCOPY'
+                self.send_status_event(pauseCode='POSTCOPY')
             elif detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_POSTCOPY_FAILED:
                 pass  # will be handled in a followup patch
 
