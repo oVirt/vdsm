@@ -55,10 +55,11 @@ class ListOVSAcquiredIfacesTests(VdsmTestCase):
             mock.patch('vdsm.network.ovs.switch.link.get_link',
                        return_value={'address': '01:23:45:67:89:ab'}):
 
-            with switch.Setup(ovsdb, _ovs_info) as s:
-                s.add_nets(nets2add)
+            setup = switch.NetsAdditionSetup(ovsdb, _ovs_info)
+            with setup.add(nets2add):
+                pass
 
-                self.assertEqual(s.acquired_ifaces, expected_ifaces)
+            self.assertEqual(setup.acquired_ifaces, expected_ifaces)
 
 
 def _init_ovs_info(mock_ovs_info):
