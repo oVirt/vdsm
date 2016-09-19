@@ -33,6 +33,7 @@ from vdsm import executor
 from vdsm import host
 from vdsm import libvirtconnection
 from vdsm.config import config
+from vdsm.virt import migration
 from vdsm.virt import sampling
 from vdsm.virt import virdomain
 from vdsm.virt import vmstatus
@@ -312,6 +313,9 @@ class _RunnableOnVm(object):
             self._vm.log.warning('could not run on %s: domain not connected',
                                  self._vm.id)
         except libvirt.libvirtError as e:
+            if self._vm.post_copy != migration.PostCopyPhase.NONE:
+                # race on entering post-copy, VM paused now
+                return
             if e.get_error_code() in (
                 # race on shutdown/migration completion
                 libvirt.VIR_ERR_NO_DOMAIN,

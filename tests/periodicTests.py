@@ -27,6 +27,7 @@ import libvirt
 from vdsm import executor
 from vdsm import schedule
 from vdsm.utils import monotonic_time
+from vdsm.virt import migration
 from vdsm.virt import periodic
 from vdsm.virt import vmstatus
 
@@ -382,6 +383,7 @@ class _FakeVM(object):
         self.migrating = False
         self.lastStatus = vmstatus.UP
         self.monitorable = True
+        self.post_copy = migration.PostCopyPhase.NONE
 
     def isDomainReadyForCommands(self):
         return True

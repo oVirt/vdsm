@@ -312,7 +312,9 @@ class Vm(object):
 
     @property
     def monitorable(self):
-        if 'migrationDest' in self.conf or 'restoreState' in self.conf:
+        if 'migrationDest' in self.conf or \
+           'restoreState' in self.conf or \
+           self.post_copy != migration.PostCopyPhase.NONE:
             return False
         return self._monitorable
 
