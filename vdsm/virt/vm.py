@@ -1187,10 +1187,11 @@ class Vm(object):
             event_data = self._getExitedVmStats()
         except DoubleDownError:
             pass
-        try:
-            self.guestAgent.stop()
-        except Exception:
-            pass
+        if self.post_copy == migration.PostCopyPhase.NONE:
+            try:
+                self.guestAgent.stop()
+            except Exception:
+                pass
         self.saveState()
         if event_data:
             self.send_status_event(**event_data)
@@ -1523,10 +1524,18 @@ class Vm(object):
           corresponding libvirt event.
         """
         self.log.info('Switching to post-copy migration')
+        self.guestAgent.stop()
         result = self._dom.migrateStartPostCopy(0)
         success = result >= 0
         if success:
             self._post_copy = migration.PostCopyPhase.REQUESTED
+        else:
+            try:
+                self.guestAgent.start()
+            except Exception:
+                self.log.exception("Failed to start guest agent after "
+                                   "unsuccessful switch to post-copy "
+                                   "migration")
         return success
 
     def _customDevices(self):
