@@ -157,11 +157,11 @@ def _setup_legacy(networks, bondings, options, in_rollback):
 
 def _setup_ovs(networks, bondings, options, in_rollback):
     _ovs_info = ovs_info.OvsInfo()
-    ovs_netinfo = ovs_info.create_netinfo(_ovs_info)
+    ovs_nets = ovs_info.create_netinfo(_ovs_info)['networks']
     _netinfo = netinfo()
 
     nets2add, nets2edit, nets2remove = _split_setup_actions(
-        networks, ovs_netinfo['networks'])
+        networks, ovs_nets)
     bonds2add, bonds2edit, bonds2remove = _split_setup_actions(
         bondings, _netinfo['bondings'])
 
@@ -173,36 +173,38 @@ def _setup_ovs(networks, bondings, options, in_rollback):
     # FIXME: we are not able to move a nic from bond to network in one setup
     with Transaction(in_rollback=in_rollback) as config:
         setup_bonds = SetupBonds(bonds2add, bonds2edit, bonds2remove, config)
-        with ifacquire.Transaction(ovs_netinfo['networks']) as acq:
-            with ovs_switch.create_setup(_ovs_info) as setup_ovs:
-                setup_ovs.remove_nets(nets2remove)
-                setup_bonds.remove_bonds()
-                acq.acquire(setup_bonds.ifaces_for_acquirement)
-                setup_bonds.edit_bonds()
-                setup_bonds.add_bonds()
-                setup_ovs.add_nets(nets2add)
-                acq.acquire(setup_ovs.acquired_ifaces)
-            _update_networks_running_config(networks, config)
+        with ifacquire.Transaction(ovs_nets) as acq:
+            _remove_networks(nets2remove, _ovs_info, config)
+
+            setup_bonds.remove_bonds()
+
+            acq.acquire(setup_bonds.ifaces_for_acquirement)
+            setup_bonds.edit_bonds()
+            setup_bonds.add_bonds()
+
+            _add_networks(nets2add, _ovs_info, config, acq)
+
             ovs_switch.cleanup()
             setup_ipv6autoconf(networks)
             set_ovs_links_up(nets2add, bonds2add, bonds2edit)
             setup_ovs_ip_config(nets2add, nets2remove)
+
             connectivity.check(options)
 
 
-# TODO: We should use KernelConfig when it will be fully reliable.
-def _update_networks_running_config(networks, running_config):
-    """
-    Update running_config with the networks configuration.
+def _remove_networks(nets2remove, ovs_info, config):
+    net_rem_setup = ovs_switch.create_network_removal_setup(ovs_info)
+    net_rem_setup.remove(nets2remove)
+    for net, attrs in six.iteritems(nets2remove):
+        config.removeNetwork(net)
 
-    This step has to be done as soon as we apply the changes in the system.
-    The running config will be used to generate the rollback query.
-    """
-    for net, attrs in six.iteritems(networks):
-        if 'remove' in attrs:
-            running_config.removeNetwork(net)
-        else:
-            running_config.setNetwork(net, attrs)
+
+def _add_networks(nets2add, ovs_info, config, acq):
+    net_add_setup = ovs_switch.create_network_addition_setup(ovs_info)
+    with net_add_setup.add(nets2add):
+        acq.acquire(net_add_setup.acquired_ifaces)
+    for net, attrs in six.iteritems(nets2add):
+        config.setNetwork(net, attrs)
 
 
 def setup_ovs_ip_config(nets2add, nets2remove):
