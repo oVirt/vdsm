@@ -293,6 +293,8 @@ class SourceThread(object):
             self._vm.stopped_migrated_event_processed.wait()
             self._vm.setDownStatus(NORMAL, vmexitreason.MIGRATION_SUCCEEDED)
             self.status['status']['message'] = 'Migration done'
+            if self._vm.post_copy == PostCopyPhase.RUNNING:
+                self._vm.destroy()
         else:
             # don't pickle transient params
             for ignoreParam in ('displayIp', 'display', 'pid'):
