@@ -21,21 +21,18 @@ from __future__ import absolute_import
 from contextlib import contextmanager
 
 from nose.plugins.attrib import attr
-from nose.plugins.skip import SkipTest
 
 from testlib import VdsmTestCase as TestCaseBase
 
-from .nettestlib import dummy_devices
+from .nettestlib import dummy_devices, check_sysfs_bond_permission
 
 from vdsm.network.link import iface
 from vdsm.network.link.bond import Bond
-from vdsm.network.link.bond import BondSysFS
 from vdsm.utils import random_iface_name
 
 
 def setup_module():
-    if not _has_sysfs_bond_permission():
-        raise SkipTest("This test requires sysfs bond write access")
+    check_sysfs_bond_permission()
 
 
 @attr(type='integration')
@@ -112,13 +109,3 @@ def bond_device(prefix='bond_', max_length=11):
         yield bond
     finally:
         bond.destroy()
-
-
-def _has_sysfs_bond_permission():
-    bond = BondSysFS(random_iface_name('check_', max_length=11))
-    try:
-        bond.create()
-        bond.destroy()
-    except IOError:
-        return False
-    return True
