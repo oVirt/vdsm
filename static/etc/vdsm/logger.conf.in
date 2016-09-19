@@ -1,5 +1,5 @@
 [loggers]
-keys=root,vds,storage,virt,ovirt_hosted_engine_ha,ovirt_hosted_engine_ha_config,IOProcess,connectivity
+keys=root,vds,storage,virt,ovirt_hosted_engine_ha,ovirt_hosted_engine_ha_config,IOProcess,connectivity,devel
 
 [handlers]
 keys=console,syslog,logfile,connlogfile
@@ -52,6 +52,12 @@ propagate=0
 level=INFO
 handlers=logfile
 qualname=virt
+propagate=0
+
+[logger_devel]
+level=ERROR
+handlers=logfile
+qualname=devel
 propagate=0
 
 [handler_syslog]
