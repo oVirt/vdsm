@@ -246,6 +246,16 @@ class TestVmMigrate(TestCaseBase):
                     )
 
 
+class TestPostCopy(TestCaseBase):
+
+    def test_post_copy_status(self):
+        with fake.VM(status=vmstatus.MIGRATION_SOURCE,
+                     post_copy=migration.PostCopyPhase.RUNNING,
+                     params={'vmType': 'kvm'}) as testvm:
+            stats = testvm.getStats()
+        self.assertEquals(stats['status'], vmstatus.PAUSED)
+
+
 # stolen^Wborrowed from itertools recipes
 def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."

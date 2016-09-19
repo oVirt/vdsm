@@ -1370,6 +1370,12 @@ class Vm(object):
                 return self._guestEvent
             return vmstatus.UP
 
+        if self.lastStatus == vmstatus.MIGRATION_SOURCE and \
+           self.post_copy == migration.PostCopyPhase.RUNNING:
+            # We are still in MIGRATION_SOURCE state, but Engine developers
+            # prefer to get the actual libvirt state, which is PAUSED during
+            # post-copy migration (until it switches to DOWN).
+            return vmstatus.PAUSED
         statuses = (vmstatus.SAVING_STATE, vmstatus.RESTORING_STATE,
                     vmstatus.MIGRATION_SOURCE, vmstatus.MIGRATION_DESTINATION,
                     vmstatus.PAUSED, vmstatus.DOWN)

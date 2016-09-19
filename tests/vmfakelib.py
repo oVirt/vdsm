@@ -237,7 +237,8 @@ class ConfStub(object):
 @contextmanager
 def VM(params=None, devices=None, runCpu=False,
        arch=cpuarch.X86_64, status=None,
-       cif=None, create_device_objects=False):
+       cif=None, create_device_objects=False,
+       post_copy=None):
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),
                                (libvirtconnection, 'get', Connection),
@@ -258,6 +259,8 @@ def VM(params=None, devices=None, runCpu=False,
             fake._guestCpuRunning = runCpu
             if status is not None:
                 fake._lastStatus = status
+            if post_copy is not None:
+                fake._post_copy = post_copy
             sampling.stats_cache.add(fake.id)
             yield fake
 
