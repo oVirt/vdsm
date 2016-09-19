@@ -101,14 +101,16 @@ def info(image, format=None):
     return info
 
 
-def create(image, size=None, format=None, backing=None, backingFormat=None):
+def create(image, size=None, format=None, qcow2Compat=None,
+           backing=None, backingFormat=None):
     cmd = [_qemuimg.cmd, "create"]
     cwdPath = None
 
     if format:
         cmd.extend(("-f", format))
         if format == FORMAT.QCOW2:
-            cmd.extend(('-o', 'compat=' + _qcow2_compat()))
+            qcow2Compat = _validate_qcow2_compat(qcow2Compat)
+            cmd.extend(('-o', 'compat=' + qcow2Compat))
 
     if backing:
         if not os.path.isabs(backing):
@@ -153,7 +155,7 @@ def check(image, format=None):
 
 
 def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
-            backing=None, backingFormat=None):
+            dstQcow2Compat=None, backing=None, backingFormat=None):
     cmd = [_qemuimg.cmd, "convert", "-p", "-t", "none", "-T", "none"]
     options = []
     cwdPath = None
@@ -166,7 +168,8 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
     if dstFormat:
         cmd.extend(("-O", dstFormat))
         if dstFormat == FORMAT.QCOW2:
-            options.append('compat=' + _qcow2_compat())
+            qcow2Compat = _validate_qcow2_compat(dstQcow2Compat)
+            options.append('compat=' + qcow2Compat)
 
     if backing:
         if not os.path.isabs(backing):
@@ -306,7 +309,7 @@ def rebase(image, backing, format=None, backingFormat=None, unsafe=False,
         raise QImgError(rc, out, err)
 
 
-def _qcow2_compat():
+def default_qcow2_compat():
     value = config.get('irs', 'qcow2_compat')
     if value not in _QCOW2_COMPAT_SUPPORTED:
         raise exception.InvalidConfiguration(
@@ -319,3 +322,11 @@ def _parse_qemuimg_json(output):
     if not isinstance(obj, dict):
         raise ValueError("not a JSON object")
     return obj
+
+
+def _validate_qcow2_compat(value):
+    if value is None:
+        return default_qcow2_compat()
+    if value not in _QCOW2_COMPAT_SUPPORTED:
+        raise ValueError("Invalid compat version %r" % value)
+    return value

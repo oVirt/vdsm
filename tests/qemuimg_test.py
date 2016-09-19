@@ -169,6 +169,22 @@ class CreateTests(TestCaseBase):
                                (commands, 'execCmd', create)]):
             qemuimg.create('image', format='qcow2')
 
+    def test_qcow2_compat_version3(self):
+
+        def create(cmd, **kw):
+            expected = [QEMU_IMG, 'create', '-f', 'qcow2', '-o', 'compat=1.1',
+                        'image']
+            self.assertEqual(cmd, expected)
+            return 0, '', ''
+
+        with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
+                               (commands, 'execCmd', create)]):
+            qemuimg.create('image', format='qcow2', qcow2Compat='1.1')
+
+    def test_qcow2_compat_invalid(self):
+        with self.assertRaises(ValueError):
+            qemuimg.create('image', format='qcow2', qcow2Compat='1.11')
+
     def test_invalid_config(self):
         config = make_config([('irs', 'qcow2_compat', '1.2')])
         with MonkeyPatchScope([(qemuimg, 'config', config)]):
@@ -196,6 +212,17 @@ class ConvertTests(TestCaseBase):
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
                                (qemuimg, 'QemuImgOperation', convert)]):
             qemuimg.convert('src', 'dst', dstFormat='qcow2')
+
+    def test_qcow2_compat_version3(self):
+        def convert(cmd, **kw):
+            expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
+                        'src', '-O', 'qcow2', '-o', 'compat=1.1', 'dst']
+            self.assertEqual(cmd, expected)
+
+        with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
+                               (qemuimg, 'QemuImgOperation', convert)]):
+            qemuimg.convert('src', 'dst', dstFormat='qcow2',
+                            dstQcow2Compat='1.1')
 
     def test_qcow2_no_backing_file(self):
         def convert(cmd, **kw):
@@ -242,6 +269,12 @@ class ConvertTests(TestCaseBase):
                                (qemuimg, 'QemuImgOperation', convert)]):
             qemuimg.convert('src', 'dst', dstFormat='qcow2',
                             backing='bak', backingFormat='qcow2')
+
+    def test_qcow2_compat_invalid(self):
+        with self.assertRaises(ValueError):
+            qemuimg.convert('image', 'dst', dstFormat='qcow2',
+                            backing='bak', backingFormat='qcow2',
+                            dstQcow2Compat='1.11')
 
 
 class CheckTests(TestCaseBase):
