@@ -31,7 +31,7 @@ log = logging.getLogger('storage.workarounds')
 VM_CONF_SIZE_BLK = 20
 
 
-def detect_format(srcVol, dstVol):
+def invalid_vm_conf_disk(vol):
     """
     set VM metadata images format to RAW
 
@@ -47,18 +47,15 @@ def detect_format(srcVol, dstVol):
     Since VM metadata volumes with this problem may still exist in storage we
     must keep using this workaround to avoid problems with copying VM disks.
     """
-    src_format = srcVol.getFormat()
-    size_in_blk = srcVol.getSize()
-    if src_format == sc.COW_FORMAT and size_in_blk == VM_CONF_SIZE_BLK:
-        info = qemuimg.info(srcVol.getVolumePath())
+    if vol.getFormat() == sc.COW_FORMAT and vol.getSize() == VM_CONF_SIZE_BLK:
+        info = qemuimg.info(vol.getVolumePath())
         actual_format = info['format']
 
         if actual_format == qemuimg.FORMAT.RAW:
             log.warning("Incorrect volume format %r has been detected"
                         " for volume %r, using the actual format %r.",
                         qemuimg.FORMAT.QCOW2,
-                        srcVol.volUUID,
+                        vol.volUUID,
                         qemuimg.FORMAT.RAW)
-            return qemuimg.FORMAT.RAW, qemuimg.FORMAT.RAW
-
-    return sc.fmt2str(src_format), sc.fmt2str(dstVol.getFormat())
+            return True
+    return False

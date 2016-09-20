@@ -455,8 +455,12 @@ class Image:
                 try:
                     dstVol = destDom.produceVolume(imgUUID=imgUUID,
                                                    volUUID=srcVol.volUUID)
-                    srcFormat, dstFormat = workarounds.detect_format(srcVol,
-                                                                     dstVol)
+
+                    if workarounds.invalid_vm_conf_disk(srcVol):
+                        srcFormat = dstFormat = qemuimg.FORMAT.RAW
+                    else:
+                        srcFormat = sc.fmt2str(srcVol.getFormat())
+                        dstFormat = sc.fmt2str(dstVol.getFormat())
 
                     parentVol = dstVol.getParentVolume()
 
