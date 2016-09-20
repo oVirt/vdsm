@@ -1,5 +1,6 @@
 #
-# Copyright (c) 2012, Sasha Tomic <tomic80@gmail.com>
+# Copyright (c) 2012-2016 Red Hat, Inc.
+# Copyright (c) 2012 Sasha Tomic <tomic80@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
