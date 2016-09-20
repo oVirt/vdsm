@@ -184,7 +184,6 @@ def _setup_ovs(networks, bondings, options, in_rollback):
 
             _add_networks(nets2add, _ovs_info, config, acq)
 
-            ovs_switch.cleanup()
             setup_ipv6autoconf(networks)
             set_ovs_links_up(nets2add, bonds2add, bonds2edit)
             setup_ovs_ip_config(nets2add, nets2remove)

@@ -48,12 +48,6 @@ def validate_network_setup(nets, bonds):
             bond, attrs, nets, ovs_networks, kernel_nics)
 
 
-def cleanup():
-    ovsdb = driver.create()
-    with ovsdb.transaction() as t:
-        t.add(*_cleanup_unused_bridges(ovsdb))
-
-
 def create_network_removal_setup(ovs_info):
     ovsdb = driver.create()
     return NetsRemovalSetup(ovsdb, ovs_info)
@@ -80,15 +74,19 @@ class NetsRemovalSetup(object):
                 self._detach_unused_southbound(sb)
 
     def _remove_northbound(self, net, sb):
+        bridge = self._ovs_info.bridges_by_sb[sb]
+        self._ovs_info.bridges[bridge]['ports'].pop(net)
         self._ovs_info.northbounds_by_sb[sb].discard(net)
         self._transaction.add(self._ovsdb.del_port(net))
 
     def _detach_unused_southbound(self, sb):
         if sb and not self._ovs_info.northbounds_by_sb[sb]:
             self._ovs_info.northbounds_by_sb.pop(sb)
-            self._ovs_info.bridges_by_sb.pop(sb)
+            bridge_without_sb = self._ovs_info.bridges_by_sb.pop(sb)
+            self._ovs_info.bridges.pop(bridge_without_sb)
 
             self._transaction.add(self._ovsdb.del_port(sb))
+            self._transaction.add(self._ovsdb.del_br(bridge_without_sb))
 
     @staticmethod
     def _get_southbound(net, running_networks):
@@ -190,26 +188,3 @@ def _random_unicast_local_mac():
 
 def _get_mac(iface):
     return link.get_link(iface)['address']
-
-
-def _cleanup_unused_bridges(ovsdb):
-    """
-    Remove bridges with no ports. Southbound ports are detached from bridge by
-    Setup.remove_bonds() and Setup.detach_unused_sb_nics(). Northbound ports
-    are detached by Setup.remove_nets().
-    """
-    return [ovsdb.del_br(bridge) for bridge in _unused_bridges()]
-
-
-# TODO: we can just check for bridges with no NB port
-def _unused_bridges():
-    unused_bridges = set()
-    ovs_info = info.OvsInfo()
-    for bridge, attrs in six.iteritems(ovs_info.bridges):
-        ports = attrs['ports']
-        northbound_ports = ovs_info.northbound_ports(ports)
-        southbound_port = ovs_info.southbound_port(ports)
-        if (bridge.startswith(BRIDGE_PREFIX) and not list(northbound_ports) and
-                not southbound_port):
-            unused_bridges.add(bridge)
-    return unused_bridges
