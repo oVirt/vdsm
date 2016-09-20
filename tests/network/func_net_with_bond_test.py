@@ -22,9 +22,10 @@ from contextlib import contextmanager
 
 from nose.plugins.attrib import attr
 
+from vdsm.network import errors as ne
 from vdsm.network.configurators.ifcfg import ifup, ifdown
 
-from .netfunctestlib import NetFuncTestCase, NOCHK
+from .netfunctestlib import NetFuncTestCase, SetupNetworksError, NOCHK
 from .nettestlib import dummy_device
 
 NETWORK1_NAME = 'test-network1'
@@ -55,6 +56,35 @@ class NetworkWithBondTemplate(NetFuncTestCase):
                 yield
 
                 self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+
+    def test_add_the_same_nic_to_net_and_bond_in_one_step(self):
+        with dummy_device() as nic:
+            NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': self.switch}}
+            BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': self.switch}}
+
+            with self.assertRaises(SetupNetworksError) as e:
+                self.setupNetworks(NETCREATE, BONDCREATE, NOCHK)
+            self.assertEqual(e.exception.status, ne.ERR_USED_NIC)
+
+    def test_add_bond_with_nic_that_is_already_used_by_network(self):
+        with dummy_device() as nic:
+            NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': self.switch}}
+            BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': self.switch}}
+
+            with self.setupNetworks(NETCREATE, {}, NOCHK):
+                with self.assertRaises(SetupNetworksError) as e:
+                    self.setupNetworks({}, BONDCREATE, NOCHK)
+                self.assertEqual(e.exception.status, ne.ERR_USED_NIC)
+
+    def test_add_network_with_nic_that_is_already_used_by_bond(self):
+        with dummy_device() as nic:
+            NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': self.switch}}
+            BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': self.switch}}
+
+            with self.setupNetworks({}, BONDCREATE, NOCHK):
+                with self.assertRaises(SetupNetworksError) as e:
+                    self.setupNetworks(NETCREATE, {}, NOCHK)
+                self.assertEqual(e.exception.status, ne.ERR_USED_NIC)
 
 
 @attr(type='functional', switch='legacy')
