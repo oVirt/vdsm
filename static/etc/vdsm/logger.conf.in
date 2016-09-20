@@ -61,7 +61,7 @@ qualname=devel
 propagate=0
 
 [handler_syslog]
-level=WARNING
+level=WARN
 class=handlers.SysLogHandler
 formatter=sysform
 args=('/dev/log', handlers.SysLogHandler.LOG_USER)
@@ -92,7 +92,7 @@ format: %(asctime)s:%(levelname)s:%(message)s
 format: %(message)s
 
 [formatter_long]
-format: %(asctime)s %(levelname)-7s (%(threadName)s) [%(name)s] %(message)s (%(module)s:%(lineno)d)
+format: %(asctime)s %(levelname)-5s (%(threadName)s) [%(name)s] %(message)s (%(module)s:%(lineno)d)
 
 [formatter_sysform]
 format= vdsm %(name)s %(levelname)s %(message)s

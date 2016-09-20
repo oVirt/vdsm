@@ -126,6 +126,11 @@ def run():
         raise FatalError("Cannot configure logging: %s" % e)
 
     logging.addLevelName(5, 'TRACE')
+
+    # Shorten WARNING and CRITICAL to make the log align nicer.
+    logging.addLevelName(logging.WARNING, 'WARN')
+    logging.addLevelName(logging.CRITICAL, 'CRIT')
+
     logging.TRACE = 5  # impolite but helpful
     log = logging.getLogger('vds')
     try:
