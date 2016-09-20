@@ -104,11 +104,11 @@ class SimpleLogAdapter(logging.LoggerAdapter):
 
         Would produce this message::
 
-            "task=`xxxyyy`res=`foo.bar.baz`::Message"
+            "(task='xxxyyy', res='foo.bar.baz') Message"
         """
         self.logger = logger
-        items = "".join("%s=`%s`" % (k, v) for k, v in context.iteritems())
-        self.prefix = items + "::"
+        items = ", ".join("%s='%s'" % (k, v) for k, v in context.iteritems())
+        self.prefix = "(%s) " % items
 
     def process(self, msg, kwargs):
         return self.prefix + msg, kwargs
