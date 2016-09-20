@@ -23,8 +23,7 @@ import six
 from vdsm.network import errors as ne
 
 
-def validate_net_configuration(net, attrs, to_be_configured_bonds,
-                               running_bonds, kernel_nics):
+def validate_net_configuration(net, attrs, bonds, running_bonds, kernel_nics):
     """Test if network meets logical Vdsm requiremets.
 
     Bridgeless networks are allowed in order to support Engine requirements.
@@ -40,8 +39,9 @@ def validate_net_configuration(net, attrs, to_be_configured_bonds,
         if nic and nic not in kernel_nics:
             raise ne.ConfigNetworkError(
                 ne.ERR_BAD_NIC, 'Nic %s does not exist' % nic)
-        if bond and (bond not in running_bonds and
-                     bond not in to_be_configured_bonds):
+        running_bond = bond in running_bonds
+        bond2setup = bond in bonds and 'remove' not in bonds[bond]
+        if bond and not running_bond and not bond2setup:
             raise ne.ConfigNetworkError(
                 ne.ERR_BAD_BONDING, 'Bond %s does not exist' % bond)
     else:
@@ -63,6 +63,27 @@ def validate_bond_configuration(bond, attrs, nets, running_nets, kernel_nics):
         _validate_bond_addition(attrs['nics'], kernel_nics)
     else:
         raise ne.ConfigNetworkError(ne.ERR_BAD_NIC, 'Missing nics attribute')
+
+
+def validate_nic_usage(req_nets, req_bonds,
+                       kernel_nets_nics, kernel_bonds_slaves):
+    request_bonds_slaves = set()
+    for bond_attr in six.itervalues(req_bonds):
+        if 'remove' in bond_attr:
+            continue
+        request_bonds_slaves |= set(bond_attr['nics'])
+
+    request_nets_nics = set()
+    for net_attr in six.itervalues(req_nets):
+        if 'remove' in net_attr:
+            continue
+        request_nets_nics |= set([net_attr.get('nic')] or [])
+
+    shared_nics = ((request_bonds_slaves | kernel_bonds_slaves) &
+                   (request_nets_nics | kernel_nets_nics))
+    if shared_nics:
+        raise ne.ConfigNetworkError(
+            ne.ERR_USED_NIC, 'Nics with multiple usages: %s' % shared_nics)
 
 
 def _validate_bond_addition(nics, kernel_nics):
