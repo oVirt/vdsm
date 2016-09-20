@@ -188,6 +188,27 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
     return QemuImgOperation(cmd, cwd=cwdPath)
 
 
+def commit(top, topFormat, base=None):
+    cmd = [_qemuimg.cmd, "commit", "-p", "-t", "none"]
+
+    if base:
+        cmd.extend(("-b", base))
+    else:
+        # When base volume isn't provided, we add '-d' option in order not
+        # to empty the top volume. Emptying the volume may leave the data
+        # on the underlying storage. This is critical mainly when volume
+        # wipe before delete is required.
+        cmd.append("-d")
+
+    cmd.extend(("-f", topFormat))
+
+    cmd.append(top)
+
+    # For simplicity, we always run commit in the image directory.
+    workdir = os.path.dirname(top)
+    return QemuImgOperation(cmd, cwd=workdir)
+
+
 class QemuImgOperation(object):
     REGEXPR = re.compile(r'\s*\(([\d.]+)/100%\)\s*')
 

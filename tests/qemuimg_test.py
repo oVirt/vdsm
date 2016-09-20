@@ -23,6 +23,7 @@ import os
 from functools import partial
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
+from storagetestlib import qemu_pattern_write, qemu_pattern_verify
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import make_config
@@ -362,3 +363,82 @@ class QemuImgProgressTests(TestCaseBase):
 
         p.poll()
         self.assertEquals(p.finished, True)
+
+
+@expandPermutations
+class TestCommit(TestCaseBase):
+
+    @permutations([
+        # qcow2_compat, base, top, use_base
+        # Merging internal volume into its parent volume in raw format
+        ("1.1", 0, 1, False),
+        ("1.1", 0, 1, True),
+        ("0.10", 0, 1, False),
+        ("0.10", 0, 1, True),
+        # Merging internal volume into its parent volume in cow format
+        ("1.1", 1, 2, True),
+        ("0.10", 1, 2, True),
+        # Merging a subchain
+        ("1.1", 1, 3, True),
+        ("0.10", 1, 3, True),
+        # Merging the entire chain into the base
+        ("1.1", 0, 3, True),
+        ("0.10", 0, 3, True)
+    ])
+    def test_commit(self, qcow2_compat, base, top, use_base):
+        size = 1048576
+        with namedTemporaryDir() as tmpdir:
+            chain = []
+            parent = None
+            # Create a chain of 4 volumes.
+            for i in range(4):
+                vol = os.path.join(tmpdir, "vol%d.img" % i)
+                format = (qemuimg.FORMAT.RAW if i == 0 else
+                          qemuimg.FORMAT.QCOW2)
+                make_image(vol, size, format, i, qcow2_compat, parent)
+                blocks = os.stat(vol).st_blocks
+                chain.append((vol, blocks))
+                parent = vol
+
+            base_vol = chain[base][0]
+            top_vol = chain[top][0]
+            op = qemuimg.commit(top_vol,
+                                topFormat=qemuimg.FORMAT.QCOW2,
+                                base=base_vol if use_base else None)
+            op.wait_for_completion()
+
+            for i in range(base, top + 1):
+                offset = "{}k".format(i)
+                pattern = 0xf0 + i
+                # The base volume must have the data from all the volumes
+                # merged into it.
+                format = (qemuimg.FORMAT.RAW if i == 0 else
+                          qemuimg.FORMAT.QCOW2)
+                qemu_pattern_verify(base_vol, format, offset=offset,
+                                    len='1k', pattern=pattern)
+                if i > base:
+                    # internal and top volumes should keep the data, we
+                    # may want to wipe this data when deleting the volumes
+                    # later.
+                    vol, blocks = chain[i]
+                    self.assertEqual(os.stat(vol).st_blocks, blocks)
+
+    def test_commit_progress(self):
+        with namedTemporaryDir() as tmpdir:
+            size = 1048576
+            base = os.path.join(tmpdir, "base.img")
+            make_image(base, size, qemuimg.FORMAT.RAW, 0, "1.1")
+
+            top = os.path.join(tmpdir, "top.img")
+            make_image(top, size, qemuimg.FORMAT.QCOW2, 1, "1.1", base)
+
+            op = qemuimg.commit(top, topFormat=qemuimg.FORMAT.QCOW2)
+            op.wait_for_completion()
+            self.assertEquals(100, op.progress)
+
+
+def make_image(path, size, format, index, qcow2_compat, backing=None):
+    qemuimg.create(path, size=size, format=format, qcow2Compat=qcow2_compat,
+                   backing=backing)
+    qemu_pattern_write(path, format, offset="%dk" % index, len='1k',
+                       pattern=0xf0 + index)
