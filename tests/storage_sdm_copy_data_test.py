@@ -35,6 +35,7 @@ from vdsm import jobs
 from vdsm import qemuimg
 from vdsm.storage import constants as sc
 from vdsm.storage import guarded
+from vdsm.storage import workarounds
 
 from storage import blockVolume, sd, volume
 from storage import resourceManager
@@ -60,7 +61,7 @@ class fake_guarded_context(object):
 
 @expandPermutations
 class TestCopyDataDIV(VdsmTestCase):
-    SIZE = 1048576
+    DEFAULT_SIZE = 1048576
 
     def setUp(self):
         self.scheduler = FakeScheduler()
@@ -70,7 +71,8 @@ class TestCopyDataDIV(VdsmTestCase):
         jobs._clear()
 
     @contextmanager
-    def get_vols(self, storage_type, src_fmt, dst_fmt, chain_length=1):
+    def get_vols(self, storage_type, src_fmt, dst_fmt, chain_length=1,
+                 size=DEFAULT_SIZE):
         with fake_env(storage_type) as env:
             rm = FakeResourceManager()
             with MonkeyPatchScope([
@@ -78,21 +80,19 @@ class TestCopyDataDIV(VdsmTestCase):
                 (storage.sdm.api.copy_data, 'sdCache', env.sdcache),
                 (blockVolume, 'rmanager', rm),
             ]):
-                src_vols = make_qemu_chain(env, self.SIZE, src_fmt,
-                                           chain_length)
-                dst_vols = make_qemu_chain(env, self.SIZE, dst_fmt,
-                                           chain_length)
+                src_vols = make_qemu_chain(env, size, src_fmt, chain_length)
+                dst_vols = make_qemu_chain(env, size, dst_fmt, chain_length)
                 yield (src_vols, dst_vols)
 
     def make_volume(self, env, img_id, vol_id, parent_vol_id, vol_fmt):
         if parent_vol_id != sc.BLANK_UUID:
             vol_fmt = sc.COW_FORMAT
-        env.make_volume(self.SIZE, img_id, vol_id,
+        env.make_volume(self.DEFAULT_SIZE, img_id, vol_id,
                         parent_vol_id=parent_vol_id, vol_format=vol_fmt)
         vol = env.sd_manifest.produceVolume(img_id, vol_id)
         if vol_fmt == sc.COW_FORMAT:
             backing = parent_vol_id if parent_vol_id != sc.BLANK_UUID else None
-            qemuimg.create(vol.volumePath, size=self.SIZE,
+            qemuimg.create(vol.volumePath, size=self.DEFAULT_SIZE,
                            format=qemuimg.FORMAT.QCOW2, backing=backing)
         return vol
 
@@ -186,6 +186,40 @@ class TestCopyDataDIV(VdsmTestCase):
                 self.assertEqual(sorted(self.expected_locks(src_vol, dst_vol)),
                                  sorted(guarded.context.locks))
             verify_qemu_chain(dst_chain)
+
+    def test_bad_vm_configuration_volume(self):
+        """
+        When copying a volume containing VM configuration information the
+        volume format may be set incorrectly due to an old bug.  Check that the
+        workaround we have in place allows the copy to proceed without error.
+        """
+        job_id = str(uuid.uuid4())
+        vm_conf_size = workarounds.VM_CONF_SIZE_BLK * sc.BLOCK_SIZE
+        vm_conf_data = "VM Configuration"
+
+        with self.get_vols('file', sc.COW_FORMAT, sc.COW_FORMAT,
+                           size=vm_conf_size) as (src_chain, dst_chain):
+            src_vol = src_chain[0]
+            dst_vol = dst_chain[0]
+
+            # Corrupt the COW volume by writing raw data.  This simulates how
+            # these "problem" volumes were created in the first place.
+            with open(src_vol.getVolumePath(), "w") as f:
+                f.write(vm_conf_data)
+
+            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
+                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
+            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
+                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+            job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
+            job.run()
+            wait_for_job(job)
+            self.assertEqual(jobs.STATUS.DONE, job.status)
+
+            # Verify that the copy succeeded
+            with open(dst_vol.getVolumePath(), "r") as f:
+                # Qemu pads the file to a 1k boundary with null bytes
+                self.assertTrue(f.read().startswith(vm_conf_data))
 
     # TODO: Missing tests:
     # Copy between 2 different domains

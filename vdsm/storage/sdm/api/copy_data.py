@@ -27,6 +27,7 @@ from vdsm import properties
 from vdsm import qemuimg
 from vdsm.storage import constants as sc
 from vdsm.storage import guarded
+from vdsm.storage import workarounds
 
 from storage import resourceManager as rm
 from storage import sd
@@ -64,11 +65,19 @@ class Job(base.Job):
                 if self._status == jobs.STATUS.ABORTED:
                     return
 
+                # Workaround for volumes containing VM configuration info that
+                # were created with invalid vdsm metadata.
+                if self._source.is_invalid_vm_conf_disk():
+                    src_format = dst_format = qemuimg.FORMAT.RAW
+                else:
+                    src_format = self._source.qemu_format
+                    dst_format = self._dest.qemu_format
+
                 self._operation = qemuimg.convert(
                     self._source.path,
                     self._dest.path,
-                    srcFormat=self._source.qemu_format,
-                    dstFormat=self._dest.qemu_format,
+                    srcFormat=src_format,
+                    dstFormat=dst_format,
                     backing=self._dest.backing_path,
                     backingFormat=self._dest.backing_qemu_format)
                 self._operation.wait_for_completion()
@@ -111,9 +120,11 @@ class CopyDataDivEndpoint(properties.Owner):
     def path(self):
         return self._vol.getVolumePath()
 
+    def is_invalid_vm_conf_disk(self):
+        return workarounds.invalid_vm_conf_disk(self._vol)
+
     @property
     def qemu_format(self):
-        # TODO: Use Image._detect_format to handle broken VM md images.
         return sc.fmt2str(self._vol.getFormat())
 
     @property
