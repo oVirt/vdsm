@@ -21,8 +21,9 @@ import threading
 import uuid
 
 from vdsm.common import exception, response
-from vdsm import jobs, schedule
+from vdsm import jobs
 
+from fakelib import FakeScheduler
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase, expandPermutations, permutations
 from testlib import make_config
@@ -88,16 +89,6 @@ class StuckJob(TestingJob):
 
     def _abort(self):
         self.event_aborted.set()
-
-
-class FakeScheduler(object):
-
-    def __init__(self):
-        self.calls = []
-
-    def schedule(self, delay, callable):
-        self.calls.append((delay, callable))
-        return schedule.ScheduledCall(delay, callable)
 
 
 @expandPermutations

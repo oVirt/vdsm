@@ -22,6 +22,7 @@ from __future__ import absolute_import
 import uuid
 from contextlib import contextmanager
 
+from fakelib import FakeScheduler
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeResourceManager
 from storagetestlib import fake_env
@@ -60,6 +61,13 @@ class fake_guarded_context(object):
 @expandPermutations
 class TestCopyDataDIV(VdsmTestCase):
     SIZE = 1048576
+
+    def setUp(self):
+        self.scheduler = FakeScheduler()
+        jobs.start(self.scheduler)
+
+    def tearDown(self):
+        jobs._clear()
 
     @contextmanager
     def get_vols(self, storage_type, src_fmt, dst_fmt, chain_length=1):

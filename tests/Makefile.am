@@ -331,6 +331,7 @@ dist_vdsmtests_PYTHON = \
 	$(test_modules) \
 	apiData.py \
 	hookValidation.py \
+	fakelib.py \
 	fake-virt-v2v \
 	fake-ssh-add \
 	fake-ssh-agent \
