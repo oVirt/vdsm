@@ -43,4 +43,5 @@ dist_vdsmstorage_PYTHON = \
 	securable.py \
 	threadlocal.py \
 	volumemetadata.py \
+	workarounds.py \
 	$(NULL)

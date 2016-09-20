@@ -1264,6 +1264,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/securable.py*
 %{python_sitelib}/%{vdsm_name}/storage/threadlocal.py*
 %{python_sitelib}/%{vdsm_name}/storage/volumemetadata.py*
+%{python_sitelib}/%{vdsm_name}/storage/workarounds.py*
 %{python_sitelib}/%{vdsm_name}/properties.py*
 %{python_sitelib}/%{vdsm_name}/protocoldetector.py*
 %{python_sitelib}/%{vdsm_name}/pthread.py*

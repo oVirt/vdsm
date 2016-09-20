@@ -32,6 +32,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
+from vdsm.storage import workarounds
 from vdsm.storage.threadlocal import vars
 
 from sdc import sdCache
@@ -68,9 +69,6 @@ MOVE_OP = 2
 OP_TYPES = {UNKNOWN_OP: 'UNKNOWN', COPY_OP: 'COPY', MOVE_OP: 'MOVE'}
 
 RENAME_RANDOM_STRING_LEN = 8
-
-# Size in blocks of the conf file generated during RAM snapshot operation.
-VM_CONF_SIZE_BLK = 20
 
 # Temporary size of a volume when we optimize out the prezeroing
 TEMPORARY_VOLUME_SIZE = 20480  # in sectors (10M)
@@ -457,7 +455,8 @@ class Image:
                 try:
                     dstVol = destDom.produceVolume(imgUUID=imgUUID,
                                                    volUUID=srcVol.volUUID)
-                    srcFormat, dstFormat = self._detect_format(srcVol, dstVol)
+                    srcFormat, dstFormat = workarounds.detect_format(srcVol,
+                                                                     dstVol)
 
                     parentVol = dstVol.getParentVolume()
 
@@ -491,28 +490,6 @@ class Image:
         finally:
             # teardown volumes
             self.__cleanupMove(srcLeafVol, dstLeafVol)
-
-    def _detect_format(self, srcVol, dstVol):
-        """
-        VM metadata image format is RAW, whereas in .meta file it's COW:
-        see bz#1282239. Hence, detecting metadata files by size and format
-        mis-correlation.
-        """
-        src_format = srcVol.getFormat()
-        size_in_blk = srcVol.getSize()
-        if src_format == sc.COW_FORMAT and size_in_blk == VM_CONF_SIZE_BLK:
-            info = qemuimg.info(srcVol.getVolumePath())
-            actual_format = info['format']
-
-            if actual_format == qemuimg.FORMAT.RAW:
-                self.log.warning("Incorrect volume format %r has been detected"
-                                 " for volume %r, using the actual format %r.",
-                                 qemuimg.FORMAT.QCOW2,
-                                 srcVol.volUUID,
-                                 qemuimg.FORMAT.RAW)
-                return qemuimg.FORMAT.RAW, qemuimg.FORMAT.RAW
-
-        return sc.fmt2str(src_format), sc.fmt2str(dstVol.getFormat())
 
     def _finalizeDestinationImage(self, destDom, imgUUID, chains, force):
         for srcVol in chains['srcChain']:

@@ -132,6 +132,7 @@ test_modules = \
 	storage_volume_test.py \
 	storage_volume_artifacts_test.py \
 	storage_volume_metadata_test.py \
+	storage_workarounds_test.py \
 	tasksetTests.py \
 	testlibTests.py \
 	toolTests.py \
@@ -231,6 +232,7 @@ blacklist_modules_python3 = \
 	storage_volume_test.py \
 	storage_volume_artifacts_test.py \
 	storage_volume_metadata_test.py \
+	storage_workarounds_test.py \
 	storagefakelibTests.py \
 	storagetestlibTests.py \
 	toolBondingTests.py \
