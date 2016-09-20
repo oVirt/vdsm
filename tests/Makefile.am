@@ -98,7 +98,7 @@ test_modules = \
 	properties_test.py \
 	protocoldetectorTests.py \
 	pthreadTests.py \
-	qemuimgTests.py \
+	qemuimg_test.py \
 	resourceManagerTests.py \
 	responseTests.py \
 	rngsources_test.py \
@@ -209,7 +209,7 @@ blacklist_modules_python3 = \
 	persistentDictTests.py \
 	properties_test.py \
 	protocoldetectorTests.py \
-	qemuimgTests.py \
+	qemuimg_test.py \
 	resourceManagerTests.py \
 	samplingTests.py \
 	schemaTests.py \
