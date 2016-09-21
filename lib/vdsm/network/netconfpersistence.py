@@ -240,6 +240,10 @@ class Transaction(object):
         else:
             config_diff = self.base_config.diffFrom(self.config)
             if config_diff:
+                logging.warning(
+                    'Failed setup transaction,'
+                    'reverting to last known good network.',
+                    exc_info=(ex_type, ex_value, ex_traceback))
                 raise ne.RollbackIncomplete(config_diff, ex_type, ex_value)
 
 
