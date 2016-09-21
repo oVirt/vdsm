@@ -51,6 +51,10 @@ class FakeDomainManifest(object):
         pass
 
     @recorded
+    def qcow2_compat(self):
+        pass
+
+    @recorded
     def getVersion(self):
         pass
 
@@ -692,6 +696,7 @@ class DomainTestMixin(object):
         ['getMDPath', 0],
         ['getMetaParam', 1],
         ['getVersion', 0],
+        ['qcow2_compat', 0],
         ['getMetadata', 0],
         ['getFormat', 0],
         ['getPools', 0],

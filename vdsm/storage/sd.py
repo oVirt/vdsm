@@ -36,6 +36,7 @@ import image
 import resourceFactories
 import resourceManager as rm
 from vdsm import constants
+from vdsm import qemuimg
 import outOfProcess as oop
 
 from vdsm.config import config
@@ -318,6 +319,11 @@ class StorageDomainManifest(object):
     @property
     def oop(self):
         return oop.getProcessPool(self.sdUUID)
+
+    def qcow2_compat(self):
+        if self.getVersion() >= 4:
+            return "1.1"
+        return qemuimg.default_qcow2_compat()
 
     def replaceMetadata(self, md):
         self._metadata = md
@@ -606,6 +612,9 @@ class StorageDomain(object):
     @property
     def oop(self):
         return self._manifest.oop
+
+    def qcow2_compat(self):
+        return self._manifest.qcow2_compat()
 
     def _makeClusterLock(self, domVersion=None):
         return self._manifest._makeDomainLock(domVersion)
