@@ -708,6 +708,7 @@ class MonitorThread(object):
                 continue
 
             progress = Progress.from_job_stats(job_stats)
+            self._vm.send_migration_status_event()
 
             now = time.time()
             if self._vm.post_copy != PostCopyPhase.NONE:

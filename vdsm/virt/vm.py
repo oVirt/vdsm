@@ -361,6 +361,17 @@ class Vm(object):
         stats.update(kwargs)
         self._notify('VM_status', stats)
 
+    def send_migration_status_event(self):
+        migrate_status = self.migrateStatus()
+        postcopy = self._post_copy == migration.PostCopyPhase.RUNNING
+        status = {
+            'progress': migrate_status['progress'],
+            'postcopy': postcopy,
+        }
+        if 'downtime' in migrate_status:
+            status['downtime'] = migrate_status['downtime']
+        self._notify('VM_migration_status', status)
+
     def _notify(self, operation, params):
         sub_id = '|virt|%s|%s' % (operation, self.id)
         self.cif.notify(sub_id, **{self.id: params})
@@ -1483,6 +1494,7 @@ class Vm(object):
             # different value and is not resilient against time differences on
             # the hosts.
             self._post_copy_downtime = stats['downtime']
+        self.send_migration_status_event()
 
     def migrateCancel(self):
         self._acquireCpuLockWithTimeout()

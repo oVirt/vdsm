@@ -171,6 +171,30 @@ types:
         type: map
         value-type: *StatusDetails
 
+    MigrationStatus: &MigrationStatus
+        name: MigrationStatus
+        description: Miscellaneous information about migration in progress or a
+            completed migration.
+        properties:
+        -   name: progress
+        -   type: float
+        -   description: Migration progress in percent.
+
+        -   name: downtime
+        -   type: float
+        -   defaultvalue: no-default
+        -   description: Downtime of a completed migration in ms. For
+                migrations finishing in pre-copy mode, it is the measured time
+                needed to transfer the data during downtime. For post-copy
+                migrations, it is the computed (may not be exact) downtime of
+                the paused VM.
+
+        -   name: postcopy
+        -   type: boolean
+        -   defaultvalue: False
+        -   description: Indicates whether the migration has entered post-copy
+                mode.
+
 '|virt|VM_status|':
     description: Provides status information about virtual machines
     params:
@@ -182,6 +206,21 @@ types:
     -   name: no_name
         type: *StatusMap
         description: A map containing vm status details
+
+'|virt|VM_migration_status|':
+    description: Provides migration status information about a VM.
+    params:
+    -   name: notify_time
+        type: uint
+        description: auto generated based on monotonic time when an event was
+            sent
+
+    -   name: VmMigrationStatus
+        type: map
+        key-type: *UUID
+        value-type: *MigrationStatus
+        description: A mapping of VM migration status details indexed by VM
+            UUID.
 
 '|net|host_conn|':
     description: Gives a hint to a client that capabilities needs to be
