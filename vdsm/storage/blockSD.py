@@ -811,6 +811,9 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                   sd.LEASE_BLOCKS)
         return clusterlock.Lease(volUUID, self.getLeasesFilePath(), offset)
 
+    def teardownVolume(self, imgUUID, volUUID):
+        lvm.deactivateLVs(self.sdUUID, [volUUID])
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
