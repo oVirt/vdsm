@@ -66,6 +66,7 @@ from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket
 from storage import outOfProcess as oop
 from storage import sd
+from storage import sdc
 
 # local imports
 # In future those should be imported via ..
@@ -4936,6 +4937,12 @@ class LiveMergeCleanupThread(threading.Thread):
                                self.drive.imageID, baseVolUUID,
                                topVolInfo['capacity'])
 
+    def teardown_top_volume(self):
+        # TODO move this method to storage public API
+        sd_manifest = sdc.sdCache.produce_manifest(self.drive.domainID)
+        sd_manifest.teardownVolume(self.drive.imageID,
+                                   self.job['topVolume'])
+
     @utils.traceback()
     def run(self):
         self.update_base_size()
@@ -4946,6 +4953,7 @@ class LiveMergeCleanupThread(threading.Thread):
         self.vm._syncVolumeChain(self.drive)
         if self.doPivot:
             self.vm.startDisksStatsCollection()
+        self.teardown_top_volume()
         self.success = True
         self.vm.log.info("Synchronization completed (job %s)",
                          self.job['jobID'])

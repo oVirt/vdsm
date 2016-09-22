@@ -487,6 +487,14 @@ class StorageDomainManifest(object):
         if preallocate is not None and preallocate not in sc.VOL_TYPE:
             raise se.IncorrectType(preallocate)
 
+    def teardownVolume(self, imgUUID, volUUID):
+        """
+        Called when a volume is detached from a prepared image during live
+        merge flow. In this case, the volume will not be torn down when
+        the image is torn down.
+        This does nothing, subclass should override this if needed.
+        """
+
 
 class StorageDomain(object):
     log = logging.getLogger("Storage.StorageDomain")

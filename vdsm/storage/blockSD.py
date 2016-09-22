@@ -799,6 +799,9 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         if preallocate == sc.SPARSE_VOL and volFormat == sc.RAW_FORMAT:
             raise se.IncorrectFormat(sc.type2name(volFormat))
 
+    def teardownVolume(self, imgUUID, volUUID):
+        lvm.deactivateLVs(self.sdUUID, [volUUID])
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
