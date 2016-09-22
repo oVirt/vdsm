@@ -995,7 +995,7 @@ def _add_vm(conn, vms, vm):
     _add_graphics(root, params)
     _add_video(root, params)
     for disk in params['disks']:
-        _add_disk_info(conn, disk)
+        _add_disk_info(conn, disk, vm)
     vms.append(params)
 
 
@@ -1046,11 +1046,20 @@ def _add_general_info(root, params):
         params['arch'] = e.get('arch')
 
 
-def _add_disk_info(conn, disk):
+def _add_disk_info(conn, disk, vm):
     if 'alias' in disk.keys():
         try:
-            vol = conn.storageVolLookupByPath(disk['alias'])
-            _, capacity, alloc = vol.info()
+            if disk['disktype'] == 'file':
+                vol = conn.storageVolLookupByPath(disk['alias'])
+                _, capacity, alloc = vol.info()
+            elif disk['disktype'] == 'block':
+                vol = vm.blockInfo(disk['alias'])
+                # We use the physical for allocation
+                # in blockInfo can report 0
+                capacity, _, alloc = vol
+            else:
+                logging.error('Unsupported disk type: %r', disk['disktype'])
+
         except libvirt.libvirtError:
             logging.exception("Error getting disk size")
         else:
@@ -1071,17 +1080,29 @@ def _convert_disk_format(format):
 def _add_disks(root, params):
     params['disks'] = []
     disks = root.findall('.//disk[@type="file"]')
+    disks = disks + root.findall('.//disk[@type="block"]')
     for disk in disks:
         d = {}
+        disktype = disk.get('type')
         device = disk.get('device')
         if device is not None:
             d['type'] = device
         target = disk.find('./target/[@dev]')
         if target is not None:
             d['dev'] = target.get('dev')
-        source = disk.find('./source/[@file]')
-        if source is not None:
-            d['alias'] = source.get('file')
+        if disktype == 'file':
+            d['disktype'] = 'file'
+            source = disk.find('./source/[@file]')
+            if source is not None:
+                d['alias'] = source.get('file')
+        elif disktype == 'block':
+            d['disktype'] = 'block'
+            source = disk.find('./source/[@dev]')
+            if source is not None:
+                d['alias'] = source.get('dev')
+        else:
+            logging.error('Unsupported disk type: %r', type)
+
         driver = disk.find('./driver/[@type]')
         if driver is not None:
             try:

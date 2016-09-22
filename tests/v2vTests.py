@@ -64,6 +64,7 @@ FAKE_SSH_ADD = CommandPath('fake-ssh-add',
                            os.path.abspath('fake-ssh-add'))
 FAKE_SSH_AGENT = CommandPath('fake-ssh-agent',
                              os.path.abspath('fake-ssh-agent'))
+BLOCK_DEV_PATH = '/dev/mapper/vdev'
 
 
 def _mac_from_uuid(vm_uuid):
@@ -127,7 +128,7 @@ class MockVirDomain(object):
     <on_crash>destroy</on_crash>
     <devices>
         <disk type='{disk_type}' device='disk'>
-            <source file='[datastore1] RHEL/RHEL_{name}.vmdk'/>
+            <source file='[datastore1] RHEL/RHEL_{name}.vmdk' dev='{block}'/>
             <target dev='sda' bus='scsi'/>
             <address type='drive' controller='0' bus='0' target='0' unit='0'/>
         </disk>
@@ -143,12 +144,16 @@ class MockVirDomain(object):
     </devices>
 </domain>""".format(
             name=self._name,
+            block=BLOCK_DEV_PATH,
             uuid=self._uuid,
             disk_type=self._disk_type,
             mac=self._mac_address)
 
     def hasCurrentSnapshot(self):
         return self._has_snapshots
+
+    def blockInfo(self, source):
+        return [9000000000, 5000000000, 5000000000]
 
 
 # FIXME: extend vmfakelib allowing to set predefined domain in Connection class
@@ -516,6 +521,22 @@ class v2vTests(TestCaseBase):
     @MonkeyPatch(v2v, '_SSH_AGENT', FAKE_SSH_AGENT)
     def testSuccessfulXenImport(self):
         self._commonConvertExternalVM(self.xen_url)
+
+    def testBlockDevice(self):
+        def _connect(uri, username, passwd):
+            for vm in self._vms:
+                vm.setDiskType('block')
+            conn = MockVirConnect(vms=self._vms)
+            return conn
+
+        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
+                                _connect)]):
+            vms = v2v.get_external_vms(self.xen_url, 'user',
+                                       ProtectedPassword('password'),
+                                       None)['vmList']
+
+        self.assertEqual(len(vms), len(VM_SPECS))
+        self.assertEqual(BLOCK_DEV_PATH, vms[0]['disks'][0]['alias'])
 
     def testXenBlockDevice(self):
         def _connect(uri, username, passwd):
