@@ -29,6 +29,7 @@ except ImportError:
 
 from vdsm.rpc import Bridge
 from api import vdsmapi
+from testlib import Sigargs
 from testlib import VdsmTestCase as TestCaseBase
 
 from contextlib import contextmanager
@@ -169,12 +170,12 @@ class SchemaValidation(TestCaseBase):
                 yield class_name, class_obj
 
     def _get_args(self, method_obj):
-        args = inspect.getargspec(method_obj).args
+        args = Sigargs(method_obj).args
         args.remove('self')
         return args
 
     def _get_default_args(self, method_obj):
-        argSpec = inspect.getargspec(method_obj)
+        argSpec = Sigargs(method_obj)
         if argSpec.defaults:
             return argSpec.args[- len(argSpec.defaults):]
         else:

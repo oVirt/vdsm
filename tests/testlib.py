@@ -67,6 +67,53 @@ _ARCH_REAL = platform.machine()
 _ARCH_FAKE = 'x86_64'
 
 
+class Sigargs(object):
+
+    def __init__(self, func):
+        try:
+            from inspect import signature
+            self._py3 = True
+        except ImportError:  # py2
+            from inspect import getargspec as signature
+            self._py3 = False
+        self._sig = signature(func)
+
+    @property
+    def args(self):
+        if self._py3:
+            args = ['self']
+            args.extend([arg.name for arg in self._sig.parameters.values()])
+            return args
+        else:
+            return self._sig.args
+
+    @property
+    def varargs(self):
+        if self._py3:
+            varargs = [arg.name for arg in self._sig.parameters.values()
+                       if arg.kind == arg.VAR_KEYWORD]
+            return None if varargs == [] else varargs
+        else:
+            return self._sig.varargs
+
+    @property
+    def keywords(self):
+        if self._py3:
+            keywords = [arg.name for arg in self._sig.parameters.values()
+                        if arg.kind == arg.KEYWORD_ONLY]
+            return None if keywords == [] else keywords
+        else:
+            return self._sig.keywords
+
+    @property
+    def defaults(self):
+        if self._py3:
+            return [arg.name for arg in self._sig.parameters.values()
+                    if arg.default]
+        else:
+            return self._sig.defaults
+
+
 def dummyTextGenerator(size):
     text = ("Lorem ipsum dolor sit amet, consectetur adipisicing elit, "
             "sed do eiusmod tempor incididunt ut labore et dolore magna "
