@@ -90,6 +90,8 @@ _COMMAND_CONVERTER = {
     'hotunplugDisk': 'VM.hotunplugDisk',
     'hotunplugNic': 'VM.hotunplugNic',
     'list': 'Host.getVMList',
+    'migrate': 'VM.migrate',
+    'migrateStatus': 'VM.getMigrationStatus',
     'migrationCreate': 'VM.migrationCreate',
     'ping': 'Host.ping',
     'prepareImage': 'Image.prepare',
