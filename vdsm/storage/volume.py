@@ -497,6 +497,20 @@ class VolumeManifest(object):
         """
         pass
 
+    @contextmanager
+    def operation(self):
+        """
+        Must be called with the Volume Lease held.
+
+        In order to detect interrupted datapath operations a volume should be
+        marked ILLEGAL prior to the first modification of data and subsequently
+        marked LEGAL again once the operation has completed.  Thus, if an
+        interruption occurs the volume will remain in an ILLEGAL state.
+        """
+        self.setLegality(sc.ILLEGAL_VOL)
+        yield
+        self.setLegality(sc.LEGAL_VOL)
+
 
 class Volume(object):
     log = logging.getLogger('storage.Volume')

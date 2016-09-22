@@ -23,7 +23,9 @@ from __future__ import absolute_import
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeStorageDomainCache
 from storagetestlib import FakeSD
+from storagetestlib import fake_env
 from testlib import expandPermutations, permutations
+from testlib import make_uuid
 from testlib import recorded
 from testlib import VdsmTestCase
 
@@ -34,6 +36,7 @@ from storage import sd
 from storage import volume
 
 HOST_ID = 1
+MB = 1048576
 
 
 class FakeSDManifest(object):
@@ -92,3 +95,45 @@ class VolumeLeaseTest(VdsmTestCase):
             self.assertEqual(expected[:1], manifest.__calls__)
             lock.release()
             self.assertEqual(expected, manifest.__calls__)
+
+
+@expandPermutations
+class VolumeManifestTest(VdsmTestCase):
+
+    def test_operation(self):
+        img_id = make_uuid()
+        vol_id = make_uuid()
+
+        with fake_env('file') as env:
+            env.make_volume(MB, img_id, vol_id)
+            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+            vol.setMetadata = CountedInstanceMethod(vol.setMetadata)
+            self.assertEqual(sc.LEGAL_VOL, vol.getLegality())
+            with vol.operation():
+                self.assertEqual(sc.ILLEGAL_VOL, vol.getLegality())
+                self.assertEqual(1, vol.setMetadata.nr_calls)
+            self.assertEqual(sc.LEGAL_VOL, vol.getLegality())
+            self.assertEqual(2, vol.setMetadata.nr_calls)
+
+    def test_operation_fail_inside_context(self):
+        img_id = make_uuid()
+        vol_id = make_uuid()
+
+        with fake_env('file') as env:
+            env.make_volume(MB, img_id, vol_id)
+            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+            self.assertEqual(sc.LEGAL_VOL, vol.getLegality())
+            with self.assertRaises(ValueError):
+                with vol.operation():
+                    raise ValueError()
+            self.assertEqual(sc.ILLEGAL_VOL, vol.getLegality())
+
+
+class CountedInstanceMethod(object):
+    def __init__(self, method):
+        self._method = method
+        self.nr_calls = 0
+
+    def __call__(self, *args, **kwargs):
+        self.nr_calls += 1
+        return self._method(*args, **kwargs)
