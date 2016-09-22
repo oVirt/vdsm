@@ -80,6 +80,7 @@ test_modules = \
 	hwinfo_test.py \
 	jobs_test.py \
 	libvirtconnection_test.py \
+	loopback_test.py \
 	mkimage_test.py \
 	modprobe.py \
 	moduleloader_test.py \
@@ -190,6 +191,7 @@ blacklist_modules_python3 = \
 	hostdev_test.py \
 	hoststats_test.py \
 	hugepages_test.py \
+	loopback_test.py \
 	mkimage_test.py \
 	mompolicy_test.py \
 	mom_test.py \
@@ -347,6 +349,7 @@ dist_vdsmtests_PYTHON = \
 	hookValidation.py \
 	fakelib.py \
 	fakesanlock.py \
+	loopback.py \
 	monkeypatch.py \
 	storagefakelib.py \
 	storagetestlib.py \
