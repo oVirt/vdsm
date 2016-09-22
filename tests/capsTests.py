@@ -108,10 +108,10 @@ class TestCaps(TestCaseBase):
 
     def testEmulatedMachines(self):
         capsData = self._readCaps("caps_libvirt_amd_6274.out")
-        machines = machinetype.emulated_machines(cpuarch.X86_64,
-                                                 capsData)
-        expectedMachines = ['pc-1.0', 'pc', 'isapc', 'pc-0.12', 'pc-0.13',
-                            'pc-0.10', 'pc-0.11', 'pc-0.14', 'pc-0.15']
+        machines = set(machinetype.emulated_machines(cpuarch.X86_64,
+                                                     capsData))
+        expectedMachines = {'pc-1.0', 'pc', 'isapc', 'pc-0.12', 'pc-0.13',
+                            'pc-0.10', 'pc-0.11', 'pc-0.14', 'pc-0.15'}
         self.assertEqual(machines, expectedMachines)
 
     def test_parseKeyVal(self):
@@ -123,11 +123,11 @@ class TestCaps(TestCaseBase):
             self.assertEqual(res, caps._parseKeyVal(lines, s))
 
     def test_parse_node_version(self):
-        inputs = ('',
-                  'VERSION = 1\n',
-                  'RELEASE = 2\n',
-                  'VERSION = 1\nRELEASE = 2\n',
-                  'VERSIO = 1\nRELEASE = 2\n')
+        inputs = (b'',
+                  b'VERSION = 1\n',
+                  b'RELEASE = 2\n',
+                  b'VERSION = 1\nRELEASE = 2\n',
+                  b'VERSIO = 1\nRELEASE = 2\n')
         expected_results = (('', ''),
                             ('1', ''),
                             ('', '2'),
@@ -288,16 +288,16 @@ class TestCaps(TestCaseBase):
 
     def test_get_emulated_machines(self):
         capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
-        result = machinetype.emulated_machines('x86_64', capsData)
-        expected = ['rhel6.3.0', 'rhel6.1.0', 'rhel6.2.0', 'pc', 'rhel5.4.0',
+        result = set(machinetype.emulated_machines('x86_64', capsData))
+        expected = {'rhel6.3.0', 'rhel6.1.0', 'rhel6.2.0', 'pc', 'rhel5.4.0',
                     'rhel5.4.4', 'rhel6.4.0', 'rhel6.0.0', 'rhel6.5.0',
-                    'rhel5.5.0']
+                    'rhel5.5.0'}
         self.assertEqual(expected, result)
 
     def test_get_emulated_machinesCanonical(self):
         capsData = self._readCaps("caps_libvirt_intel_E5606.out")
-        result = machinetype.emulated_machines('x86_64', capsData)
-        expected = ['pc-i440fx-rhel7.1.0',
+        result = set(machinetype.emulated_machines('x86_64', capsData))
+        expected = {'pc-i440fx-rhel7.1.0',
                     'rhel6.3.0',
                     'pc-q35-rhel7.0.0',
                     'rhel6.1.0',
@@ -309,13 +309,13 @@ class TestCaps(TestCaseBase):
                     'rhel6.4.0',
                     'rhel6.0.0',
                     'rhel6.5.0',
-                    'pc-i440fx-rhel7.0.0']
+                    'pc-i440fx-rhel7.0.0'}
         self.assertEqual(expected, result)
 
     def test_get_emulated_machinesWithTwoQEMUInstalled(self):
         capsData = self._readCaps("caps_libvirt_multiqemu.out")
-        result = machinetype.emulated_machines('x86_64', capsData)
-        expected = ['pc-i440fx-rhel7.1.0',
+        result = set(machinetype.emulated_machines('x86_64', capsData))
+        expected = {'pc-i440fx-rhel7.1.0',
                     'rhel6.3.0',
                     'pc-q35-rhel7.0.0',
                     'rhel6.1.0',
@@ -327,7 +327,7 @@ class TestCaps(TestCaseBase):
                     'rhel6.4.0',
                     'rhel6.0.0',
                     'rhel6.5.0',
-                    'pc-i440fx-rhel7.0.0']
+                    'pc-i440fx-rhel7.0.0'}
         self.assertEqual(expected, result)
 
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {

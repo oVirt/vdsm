@@ -169,7 +169,6 @@ blacklist_modules_python3 = \
 	bridgeTests.py \
 	bulk_sampling_test.py \
 	cPopenTests.py \
-	capsTests.py \
 	clientifTests.py \
 	deviceTests.py \
 	devices/parsing/complex_vm_tests.py \
