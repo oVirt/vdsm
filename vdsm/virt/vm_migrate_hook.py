@@ -37,6 +37,10 @@ class VmMigrationHookError(Exception):
     pass
 
 
+class VmMigrationMissingDisplayConf(Exception):
+    pass
+
+
 def main(domain, event, phase, stdin=sys.stdin, stdout=sys.stdout, *args):
     if event not in ('migrate', 'restore'):
         sys.exit(0)
@@ -77,7 +81,15 @@ def _process_domxml(tree):
     if 'devices' not in target_vm_conf:
         raise VmMigrationHookError('No devices entity in VM conf')
 
-    _set_graphics(devices, target_vm_conf)
+    try:
+        _set_graphics(devices, target_vm_conf)
+    except VmMigrationMissingDisplayConf:
+        # Due to a bug (https://bugzilla.redhat.com/show_bug.cgi?id=1379122)
+        # in Engine, there can be a scenario where the domxml
+        # includes a graphics section, however, the VM config on target does
+        # not. In such cases, ignore and do not touch this section.
+        pass
+
     _set_bridge_interfaces(devices, target_vm_conf)
 
 
@@ -174,7 +186,7 @@ def _vmconf_display(vm_conf):
         if params and 'displayNetwork' in params and 'displayIp' in params:
             return params['displayNetwork'], params['displayIp']
 
-    raise VmMigrationHookError('VM conf graphics not detected')
+    raise VmMigrationMissingDisplayConf('VM conf graphics not detected')
 
 
 def _vm_item(vdscli, vm_uuid):
