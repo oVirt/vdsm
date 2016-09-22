@@ -801,6 +801,21 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     def teardownVolume(self, imgUUID, volUUID):
         lvm.deactivateLVs(self.sdUUID, [volUUID])
+        self.removeVolumeRunLink(imgUUID, volUUID)
+
+    def removeVolumeRunLink(self, imgUUID, volUUID):
+        """
+        Remove /run/vdsm/storage/sdUUID/imgUUID/volUUID
+        """
+        vol_run_link = os.path.join(constants.P_VDSM_STORAGE,
+                                    self.sdUUID, imgUUID, volUUID)
+        self.log.info("Unlinking volme runtime link: %r", vol_run_link)
+        try:
+            os.unlink(vol_run_link)
+        except OSError as e:
+            if e.error != errno.ENOENT:
+                raise
+            self.log.debug("Volume run link %r does not exist", vol_run_link)
 
 
 class BlockStorageDomain(sd.StorageDomain):
