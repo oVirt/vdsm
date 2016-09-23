@@ -20,11 +20,14 @@ from __future__ import absolute_import
 
 from contextlib import contextmanager
 
+import ctypes
+
 from nose.plugins.attrib import attr
 
 from testlib import VdsmTestCase as TestCaseBase
 
 from .nettestlib import dummy_devices, check_sysfs_bond_permission
+from testValidation import broken_on_ci
 
 from vdsm.network.link import iface
 from vdsm.network.link.bond import Bond
@@ -38,16 +41,19 @@ def setup_module():
 @attr(type='integration')
 class LinkBondTests(TestCaseBase):
 
+    @broken_on_ci(exception=ctypes.ArgumentError)
     def test_bond_without_slaves(self):
         with bond_device() as bond:
             self.assertFalse(iface.is_up(bond.master))
 
+    @broken_on_ci(exception=ctypes.ArgumentError)
     def test_bond_with_slaves(self):
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as bond:
                 bond.add_slaves((nic1, nic2))
                 self.assertFalse(iface.is_up(bond.master))
 
+    @broken_on_ci(exception=ctypes.ArgumentError)
     def test_bond_devices_are_up(self):
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as bond:
@@ -57,6 +63,7 @@ class LinkBondTests(TestCaseBase):
                 self.assertTrue(iface.is_up(nic2))
                 self.assertTrue(iface.is_up(bond.master))
 
+    @broken_on_ci(exception=ctypes.ArgumentError)
     def test_bond_exists(self):
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as _bond:
@@ -74,6 +81,7 @@ class LinkBondTests(TestCaseBase):
             expected_bond_set = set([b1.master, b2.master, b3.master])
             self.assertLessEqual(expected_bond_set, actual_bond_set)
 
+    @broken_on_ci(exception=ctypes.ArgumentError)
     def test_bond_create_failure_on_slave_add(self):
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as base_bond:
@@ -86,6 +94,7 @@ class LinkBondTests(TestCaseBase):
                         broken_bond.add_slaves((nic1, nic2))
                 self.assertFalse(Bond(bond_name).exists())
 
+    @broken_on_ci(exception=ctypes.ArgumentError)
     def test_bond_edit_failure_on_slave_add(self):
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as base_bond, bond_device() as edit_bond:
