@@ -1149,8 +1149,6 @@ class BlockStorageDomain(sd.StorageDomain):
                 self.log.debug("path to image directory already exists: %s",
                                dst)
             else:
-                self.log.error("Failed to create path to image directory: %s",
-                               dst)
                 raise
         return dst
 
@@ -1184,7 +1182,6 @@ class BlockStorageDomain(sd.StorageDomain):
                 if e.errno == errno.EEXIST:
                     self.log.debug("img run vol already exists: %s", dstVol)
                 else:
-                    self.log.error("Failed to create img run vol: %s", dstVol)
                     raise
 
         return imgRunDir
