@@ -726,8 +726,10 @@ class Volume(object):
             self.log.debug('cloning volume %s to %s', self.volumePath,
                            dstPath)
             parent = getBackingVolumePath(self.imgUUID, self.volUUID)
+            domain = sdCache.produce(self.sdUUID)
             qemuimg.create(dstPath, backing=parent,
                            format=sc.fmt2str(volFormat),
+                           qcow2Compat=domain.qcow2_compat(),
                            backingFormat=sc.fmt2str(self.getFormat()))
             self.teardown(self.sdUUID, self.volUUID)
         except Exception as e:
