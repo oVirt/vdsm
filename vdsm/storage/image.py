@@ -477,6 +477,7 @@ class Image:
                         dstVol.getVolumePath(),
                         srcFormat=srcFormat,
                         dstFormat=dstFormat,
+                        dstQcow2Compat=destDom.qcow2_compat(),
                         backing=backing,
                         backingFormat=backingFormat)
                     with utils.stopwatch("Copy volume %s" % srcVol.volUUID):
@@ -864,7 +865,8 @@ class Image:
                         volParams['path'],
                         dstPath,
                         srcFormat=sc.fmt2str(volParams['volFormat']),
-                        dstFormat=sc.fmt2str(dstVolFormat))
+                        dstFormat=sc.fmt2str(dstVolFormat),
+                        dstQcow2Compat=destDom.qcow2_compat())
                     with utils.stopwatch("Copy volume %s" % srcVol.volUUID):
                         self._wait_for_qemuimg_operation(operation)
                 except ActionStopped:
@@ -1108,7 +1110,8 @@ class Image:
                         srcVolParams['path'],
                         newVol.getVolumePath(),
                         srcFormat=sc.fmt2str(srcVolParams['volFormat']),
-                        dstFormat=sc.fmt2str(volParams['volFormat']))
+                        dstFormat=sc.fmt2str(volParams['volFormat']),
+                        qcow2Compat=sdDom.qcow2_compat())
                     with utils.stopwatch("Copy volume %s" % srcVol.volUUID):
                         self._wait_for_qemuimg_operation(operation)
                 except qemuimg.QImgError:
