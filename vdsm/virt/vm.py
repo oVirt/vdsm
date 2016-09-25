@@ -2706,7 +2706,10 @@ class Vm(object):
             prefix="%s-%s." % (diskParams['domainID'], diskParams['volumeID']))
 
         try:
-            qemuimg.create(transientPath, format=qemuimg.FORMAT.QCOW2,
+            sdDom = sdc.sdCache.produce_manifest(diskParams['domainID'])
+            qemuimg.create(transientPath,
+                           format=qemuimg.FORMAT.QCOW2,
+                           qcow2Compat=sdDom.qcow2_compat(),
                            backing=diskParams['path'],
                            backingFormat=driveFormat)
             os.fchmod(transientHandle, 0o660)
