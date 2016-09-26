@@ -277,7 +277,6 @@ class TestCopyDataDIV(VdsmTestCase):
 
     # TODO: Missing tests:
     # Copy between 2 different domains
-    # Abort before copy
 
 
 class FakeQemuConvertChecker(object):
