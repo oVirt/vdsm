@@ -33,10 +33,12 @@ class VolumeMetadata(object):
 
     def __init__(self, domain, image, puuid, size, format,
                  type, voltype, disktype, description="",
-                 legality=constants.ILLEGAL_VOL, ctime=None, mtime=None):
+                 legality=constants.ILLEGAL_VOL, ctime=None, mtime=None,
+                 generation=constants.DEFAULT_GENERATION):
         assert(isinstance(size, int))
         assert(ctime is None or isinstance(ctime, int))
         assert(mtime is None or isinstance(mtime, int))
+        assert(isinstance(generation, int))
 
         # Storage domain UUID
         self.domain = domain
@@ -62,6 +64,8 @@ class VolumeMetadata(object):
         self.ctime = int(time.time()) if ctime is None else ctime
         # Volume modification time (unused and should be zero)
         self.mtime = 0 if mtime is None else mtime
+        # Generation increments each time certain operations complete
+        self.generation = generation
 
     @classmethod
     def from_lines(cls, lines):
@@ -86,7 +90,14 @@ class VolumeMetadata(object):
                        description=md[constants.DESCRIPTION],
                        legality=md[constants.LEGALITY],
                        ctime=int(md[constants.CTIME]),
-                       mtime=int(md[constants.MTIME]))
+                       mtime=int(md[constants.MTIME]),
+                       # generation was added to the set of metadata keys well
+                       # after the above fields.  Therefore, it may not exist
+                       # on storage for pre-existing volumes.  In that case we
+                       # report a default value of 0 which will be written to
+                       # the volume metadata on the next metadata change.
+                       generation=int(md.get(constants.GENERATION,
+                                             constants.DEFAULT_GENERATION)))
         except KeyError as e:
             raise exception.MetaDataKeyNotFoundError(
                 "Missing metadata key: %s: found: %s" % (e, md))
@@ -144,4 +155,5 @@ class VolumeMetadata(object):
             constants.PUUID: self.puuid,
             constants.MTIME: str(self.mtime),
             constants.LEGALITY: self.legality,
+            constants.GENERATION: self.generation,
         }

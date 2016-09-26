@@ -44,7 +44,8 @@ def make_init_params(**kwargs):
         voltype=sc.type2name(sc.LEAF_VOL),
         disktype=image.SYSTEM_DISK_TYPE,
         description="",
-        legality=sc.LEGAL_VOL)
+        legality=sc.LEGAL_VOL,
+        generation=sc.DEFAULT_GENERATION)
     res.update(kwargs)
     return res
 
@@ -64,6 +65,7 @@ def make_md_dict(**kwargs):
         sc.MTIME: '0',
         sc.CTIME: '0',
         sc.POOL: '',
+        sc.GENERATION: '1',
     }
     res.update(kwargs)
     return res
@@ -96,7 +98,8 @@ class VolumeMetadataTests(VdsmTestCase):
             PUUID=params['puuid'],
             SIZE=str(params['size']),
             TYPE=params['type'],
-            VOLTYPE=params['voltype'])
+            VOLTYPE=params['voltype'],
+            GEN=params['generation'])
 
         with MonkeyPatchScope([[time, 'time', lambda: FAKE_TIME]]):
             info = volume.VolumeMetadata(**params).legacy_info()
@@ -110,6 +113,7 @@ class VolumeMetadataTests(VdsmTestCase):
             DISKTYPE=%(disktype)s
             DOMAIN=%(domain)s
             FORMAT=%(format)s
+            GEN=%(generation)s
             IMAGE=%(image)s
             LEGALITY=%(legality)s
             MTIME=0
@@ -137,9 +141,10 @@ class VolumeMetadataTests(VdsmTestCase):
         params = make_init_params(**{param: 'not_an_int'})
         self.assertRaises(AssertionError, volume.VolumeMetadata, **params)
 
-    @permutations([[key] for key in make_md_dict() if key != sc.POOL])
+    @permutations([[key] for key in make_md_dict()
+                   if key not in (sc.POOL, sc.GENERATION)])
     def test_from_lines_missing_key(self, required_key):
-        data = make_md_dict(CTIME=None, MTIME=None, POOL=None)
+        data = make_md_dict(POOL=None)
         data[required_key] = None
         lines = make_lines(**data)
         self.assertRaises(se.MetaDataKeyNotFoundError,
@@ -179,3 +184,9 @@ class VolumeMetadataTests(VdsmTestCase):
         self.assertEqual(int(data[sc.MTIME]), md.mtime)
         self.assertEqual(int(data[sc.CTIME]), md.ctime)
         self.assertEqual(data[sc.LEGALITY], md.legality)
+        self.assertEqual(int(data[sc.GENERATION]), md.generation)
+
+    def test_generation_default(self):
+        lines = make_lines(GEN=None)
+        md = volume.VolumeMetadata.from_lines(lines)
+        self.assertEqual(sc.DEFAULT_GENERATION, md.generation)

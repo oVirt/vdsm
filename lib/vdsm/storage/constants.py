@@ -125,6 +125,7 @@ IMAGE = "IMAGE"
 DESCRIPTION = "DESCRIPTION"
 LEGALITY = "LEGALITY"
 MTIME = "MTIME"
+GENERATION = "GEN"  # Added in 4.1
 POOL = MDK_POOLS  # Deprecated
 
 # In block storage, metadata size is limited to BLOCK_SIZE (512), to
@@ -153,9 +154,10 @@ POOL = MDK_POOLS  # Deprecated
 # SIZE=2147483648                             # size in blocks
 # TYPE=PREALLOCATED                           # PREALLOCATED|UNKNOWN|SPARSE
 # VOLTYPE=INTERNAL                            # INTERNAL|SHARED|LEAF
+# GEN=999                                     # int
 # EOF
 #
-# This content requires 273 bytes, leaving 239 bytes for the description
+# This content requires 281 bytes, leaving 231 bytes for the description
 # field. OVF_STORE JSON format needs up to 175 bytes.
 #
 # We use a limit of 210 bytes for the description field, leaving couple
@@ -163,6 +165,14 @@ POOL = MDK_POOLS  # Deprecated
 # ascii values, but limit non-ascii values, which are encoded by engine
 # using 4 bytes per character.
 DESCRIPTION_SIZE = 210
+
+# The GEN metadata key may not exist in volume metadata since it has been added
+# after many volumes had been created on storage.  When missing, we default its
+# value to 0 which will be written back to the metadata during the next change.
+# Generation is a monotonically increasing integer that will wrap back to 0
+# after reaching its maximum value.
+DEFAULT_GENERATION = 0
+MAX_GENERATION = 999  # Since this is represented in ASCII, limit to 3 places
 
 # Block volume metadata tags
 TAG_PREFIX_MD = "MD_"
