@@ -2120,35 +2120,35 @@ types:
         description: I/O tune parameters for the VM disk device.
         name: VmDiskDeviceIoTuneParams
         properties:
-        -   defaultvalue: needs updating
-            description: Write throughput limit in bytes per
-                second.
-            name: write_bytes_sec
-            type: uint
-
-        -   defaultvalue: needs updating
-            description: Read I/O operations limit per second.
-            name: read_iops_sec
-            type: uint
-
-        -   defaultvalue: needs updating
-            description: Read throughput limit in bytes per
-                second.
-            name: read_bytes_sec
-            type: uint
-
-        -   defaultvalue: needs updating
+        -   defaultvalue: 0 - means unlimited
             description: Total throughput limit in bytes per
                 second.
             name: total_bytes_sec
             type: uint
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: 0 - means unlimited
+            description: Read throughput limit in bytes per
+                second.
+            name: read_bytes_sec
+            type: uint
+
+        -   defaultvalue: 0 - means unlimited
+            description: Write throughput limit in bytes per
+                second.
+            name: write_bytes_sec
+            type: uint
+
+        -   defaultvalue: 0 - means unlimited
             description: Total I/O operations limit per second.
             name: total_iops_sec
             type: uint
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: 0 - means unlimited
+            description: Read I/O operations limit per second.
+            name: read_iops_sec
+            type: uint
+
+        -   defaultvalue: 0 - means unlimited
             description: Write I/O operations limit per second.
             name: write_iops_sec
             type: uint
@@ -2841,6 +2841,10 @@ types:
 
         -   description: The amount of pages to scan during one cycle.
             name: pages_to_scan
+            type: int
+
+        -   description:
+            name: merge_across_nodes
             type: int
         type: object
 
