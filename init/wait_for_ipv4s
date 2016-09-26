@@ -11,7 +11,7 @@ from os.path import isfile, join
 import sys
 
 from vdsm.network.configurators.ifcfg import NET_CONF_DIR
-from vdsm.network.configurators.ifcfg import ConfigWriter
+from vdsm.network.configurators.ifcfg import CONFFILE_HEADER_SIGNATURE
 from vdsm.network.netinfo.addresses import getIpInfo
 from vdsm.network.netlink import monitor
 
@@ -24,7 +24,7 @@ def _get_vdsm_ip_onboot_devs():
     for ifcfg in ifcfgs:
         with open(join(NET_CONF_DIR, ifcfg)) as f:
             config = f.read()
-            if (config.startswith(ConfigWriter.CONFFILE_HEADER_BASE) and
+            if (config.startswith(CONFFILE_HEADER_SIGNATURE) and
                     '\nONBOOT=yes\n' in config and '\nIPADDR=' in config):
                 vdsm_ip_onboot_devs.add(ifcfg[6:])
     return vdsm_ip_onboot_devs
