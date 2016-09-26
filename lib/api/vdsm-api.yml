@@ -6962,6 +6962,13 @@ types:
         -   description: The status of the Volume lease
             name: lease
             type: *VolumeLeaseStatus
+
+        -   description: A monotonically increasing number, incremented each
+                         time a volume operation is completed successfully.
+                         The maximum value is 999 and the next increment will
+                         reset the value to 0.
+            name: generation
+            type: uint
         type: object
 
     VolumeSizeInfo: &VolumeSizeInfo

@@ -128,6 +128,19 @@ class VolumeManifestTest(VdsmTestCase):
                     raise ValueError()
             self.assertEqual(sc.ILLEGAL_VOL, vol.getLegality())
 
+    @permutations(((None, 0), (100, 100)))
+    def test_get_info_generation_id(self, orig_gen, info_gen):
+        img_id = make_uuid()
+        vol_id = make_uuid()
+
+        with fake_env('file') as env:
+            env.make_volume(MB, img_id, vol_id)
+            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+            vol.getLeaseStatus = lambda: 'unused'
+            if orig_gen is not None:
+                vol.setMetaParam(sc.GENERATION, orig_gen)
+            self.assertEqual(info_gen, vol.getInfo()['generation'])
+
 
 class CountedInstanceMethod(object):
     def __init__(self, method):
