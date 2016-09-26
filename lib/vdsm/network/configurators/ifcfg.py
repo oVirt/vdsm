@@ -469,13 +469,6 @@ class ConfigWriter(object):
 
             logging.info('Loaded %s', fpath)
 
-    def _ownedIfcfg(self, fpath):
-        if not os.path.isfile(fpath):
-            return False
-        with open(fpath) as confFile:
-            content = confFile.readline()
-            return content.startswith(self.CONFFILE_HEADER_BASE)
-
     def loadBackups(self):
         """ Load persistent backups into memory """
         # Load logical networks
