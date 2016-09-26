@@ -19,6 +19,7 @@
 #
 from __future__ import absolute_import
 
+import threading
 from contextlib import contextmanager
 
 from fakelib import FakeScheduler
@@ -221,7 +222,60 @@ class TestCopyDataDIV(VdsmTestCase):
                 # Qemu pads the file to a 1k boundary with null bytes
                 self.assertTrue(f.read().startswith(vm_conf_data))
 
+    @permutations((
+        ('file', None, sc.LEGAL_VOL, jobs.STATUS.DONE),
+        ('file', RuntimeError, sc.ILLEGAL_VOL, jobs.STATUS.FAILED),
+        ('block', None, sc.LEGAL_VOL, jobs.STATUS.DONE),
+        ('block', RuntimeError, sc.ILLEGAL_VOL, jobs.STATUS.FAILED),
+    ))
+    def test_volume_operation(self, env_type, error,
+                              final_legality, final_status):
+        job_id = make_uuid()
+        fmt = sc.RAW_FORMAT
+        with self.get_vols(env_type, fmt, fmt) as (src_chain, dst_chain):
+            src_vol = src_chain[0]
+            dst_vol = dst_chain[0]
+            self.assertEqual(sc.LEGAL_VOL, dst_vol.getLegality())
+            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
+                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
+            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
+                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+            fake_convert = FakeQemuConvertChecker(src_vol, dst_vol,
+                                                  error=error)
+            with MonkeyPatchScope([(qemuimg, 'convert', fake_convert)]):
+                job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
+                job.run()
+
+            self.assertEqual(final_status, job.status)
+            self.assertEqual(final_legality, dst_vol.getLegality())
+
     # TODO: Missing tests:
     # Copy between 2 different domains
     # Abort before copy
     # Abort during copy
+
+
+class FakeQemuConvertChecker(object):
+    def __init__(self, src_vol, dst_vol, error=None):
+        self.src_vol = src_vol
+        self.dst_vol = dst_vol
+        self.error = error
+        self.ready_event = threading.Event()
+
+    def __call__(self, *args, **kwargs):
+        assert sc.LEGAL_VOL == self.src_vol.getLegality()
+        assert sc.ILLEGAL_VOL == self.dst_vol.getLegality()
+        return FakeQemuImgOperation(self.ready_event, self.error)
+
+
+class FakeQemuImgOperation(object):
+    def __init__(self, ready_event, error):
+        self.error = error
+        ready_event.set()
+
+    def abort(self):
+        pass
+
+    def wait_for_completion(self):
+        if self.error:
+            raise self.error()

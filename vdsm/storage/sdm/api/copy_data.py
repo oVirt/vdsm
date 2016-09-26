@@ -73,14 +73,15 @@ class Job(base.Job):
                     src_format = self._source.qemu_format
                     dst_format = self._dest.qemu_format
 
-                self._operation = qemuimg.convert(
-                    self._source.path,
-                    self._dest.path,
-                    srcFormat=src_format,
-                    dstFormat=dst_format,
-                    backing=self._dest.backing_path,
-                    backingFormat=self._dest.backing_qemu_format)
-                self._operation.wait_for_completion()
+                with self._dest.volume_operation():
+                    self._operation = qemuimg.convert(
+                        self._source.path,
+                        self._dest.path,
+                        srcFormat=src_format,
+                        dstFormat=dst_format,
+                        backing=self._dest.backing_path,
+                        backingFormat=self._dest.backing_qemu_format)
+                    self._operation.wait_for_completion()
 
 
 def _create_endpoint(params, host_id, writable):
@@ -140,6 +141,10 @@ class CopyDataDivEndpoint(properties.Owner):
         if not parent_vol:
             return None
         return sc.fmt2str(parent_vol.getFormat())
+
+    @property
+    def volume_operation(self):
+        return self._vol.operation
 
     @contextmanager
     def prepare(self):
