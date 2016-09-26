@@ -153,6 +153,7 @@ class VolumeManifestTest(VdsmTestCase):
             vol.setMetaParam(sc.GENERATION, 100)
             with vol.operation(generation):
                 pass
+            self.assertEqual(generation + 1, vol.getMetaParam(sc.GENERATION))
 
     @permutations(((100, 99), (100, 101)))
     def test_operation_invalid_generation_raises(self, actual_generation,
@@ -167,6 +168,24 @@ class VolumeManifestTest(VdsmTestCase):
             with self.assertRaises(se.GenerationMismatch):
                 with vol.operation(requested_generation):
                     pass
+            self.assertEqual(actual_generation,
+                             vol.getMetaParam(sc.GENERATION))
+
+    @permutations((
+        (sc.MAX_GENERATION, 0),
+        (sc.MAX_GENERATION - 1, sc.MAX_GENERATION),
+    ))
+    def test_generation_wrapping(self, first_gen, next_gen):
+        img_id = make_uuid()
+        vol_id = make_uuid()
+
+        with fake_env('file') as env:
+            env.make_volume(MB, img_id, vol_id)
+            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+            vol.setMetaParam(sc.GENERATION, first_gen)
+            with vol.operation(first_gen):
+                pass
+            self.assertEqual(next_gen, vol.getMetaParam(sc.GENERATION))
 
 
 class CountedInstanceMethod(object):

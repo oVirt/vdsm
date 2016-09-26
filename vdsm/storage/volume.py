@@ -56,6 +56,11 @@ def getBackingVolumePath(imgUUID, volUUID):
     return volUUID
 
 
+def _next_generation(current_generation):
+    # Increment a generation value and wrap to 0 after MAX_GENERATION
+    return (current_generation + 1) % (sc.MAX_GENERATION + 1)
+
+
 class VmVolumeInfo(object):
     TYPE_PATH = "path"
     TYPE_NETWORK = "network"
@@ -506,7 +511,10 @@ class VolumeManifest(object):
         In order to detect interrupted datapath operations a volume should be
         marked ILLEGAL prior to the first modification of data and subsequently
         marked LEGAL again once the operation has completed.  Thus, if an
-        interruption occurs the volume will remain in an ILLEGAL state.
+        interruption occurs the volume will remain in an ILLEGAL state.  When
+        the volume is legal we want to call volume.getInfo to determine if this
+        operation has not been started or has finished successfully.  We enable
+        this by incrementing the generation after the operation completes.
 
         If generation is given we check that the volume's generation matches.
         """
@@ -515,7 +523,15 @@ class VolumeManifest(object):
             raise se.GenerationMismatch(requested_gen, actual_gen)
         self.setLegality(sc.ILLEGAL_VOL)
         yield
-        self.setLegality(sc.LEGAL_VOL)
+        # Note: We intentionally do not use a try block here because we don't
+        # want the following code to run if there was an error.
+        #
+        # IMPORTANT: In order to provide an atomic state change, both legality
+        # and the generation must be updated together in one write.
+        metadata = self.getMetadata()
+        metadata[sc.LEGALITY] = sc.LEGAL_VOL
+        metadata[sc.GENERATION] = _next_generation(actual_gen)
+        self.setMetadata(metadata)
 
 
 class Volume(object):
