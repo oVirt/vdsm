@@ -30,6 +30,7 @@ from testlib import recorded
 from testlib import VdsmTestCase
 
 from vdsm.storage import constants as sc
+from vdsm.storage import exception as se
 
 from storage import resourceManager as rm
 from storage import sd
@@ -140,6 +141,32 @@ class VolumeManifestTest(VdsmTestCase):
             if orig_gen is not None:
                 vol.setMetaParam(sc.GENERATION, orig_gen)
             self.assertEqual(info_gen, vol.getInfo()['generation'])
+
+    def test_operation_valid_generation(self):
+        img_id = make_uuid()
+        vol_id = make_uuid()
+        generation = 100
+
+        with fake_env('file') as env:
+            env.make_volume(MB, img_id, vol_id)
+            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+            vol.setMetaParam(sc.GENERATION, 100)
+            with vol.operation(generation):
+                pass
+
+    @permutations(((100, 99), (100, 101)))
+    def test_operation_invalid_generation_raises(self, actual_generation,
+                                                 requested_generation):
+        img_id = make_uuid()
+        vol_id = make_uuid()
+
+        with fake_env('file') as env:
+            env.make_volume(MB, img_id, vol_id)
+            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+            vol.setMetaParam(sc.GENERATION, actual_generation)
+            with self.assertRaises(se.GenerationMismatch):
+                with vol.operation(requested_generation):
+                    pass
 
 
 class CountedInstanceMethod(object):

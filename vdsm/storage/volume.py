@@ -499,7 +499,7 @@ class VolumeManifest(object):
         pass
 
     @contextmanager
-    def operation(self):
+    def operation(self, requested_gen=None):
         """
         Must be called with the Volume Lease held.
 
@@ -507,7 +507,12 @@ class VolumeManifest(object):
         marked ILLEGAL prior to the first modification of data and subsequently
         marked LEGAL again once the operation has completed.  Thus, if an
         interruption occurs the volume will remain in an ILLEGAL state.
+
+        If generation is given we check that the volume's generation matches.
         """
+        actual_gen = self.getMetaParam(sc.GENERATION)
+        if requested_gen is not None and actual_gen != requested_gen:
+            raise se.GenerationMismatch(requested_gen, actual_gen)
         self.setLegality(sc.ILLEGAL_VOL)
         yield
         self.setLegality(sc.LEGAL_VOL)
