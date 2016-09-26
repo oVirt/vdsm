@@ -4,12 +4,14 @@ import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.ALL;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.parse;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcEvent;
 import org.ovirt.vdsm.jsonrpc.client.utils.LockWrapper;
@@ -59,12 +61,9 @@ public class SubscriptionHolder {
 
     private void filter() {
         String[] ids = this.getParsedId();
-        this.filteredId = new ArrayList<>();
-        for (String id : ids) {
-            if (!ALL.equals(id)) {
-                this.filteredId.add(id);
-            }
-        }
+        this.filteredId = Arrays.asList(ids).stream()
+                .filter(id -> !ALL.equals(id))
+                .collect(Collectors.toList());
     }
 
     /**

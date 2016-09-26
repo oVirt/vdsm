@@ -70,50 +70,37 @@ public abstract class Reactor extends Thread {
      * Processing channels.
      */
     private void processChannels() {
-        for (final SelectionKey key : this.selector.selectedKeys()) {
-            if (!key.isValid()) {
-                continue;
-            }
+        this.selector.selectedKeys().stream()
+                .filter(key -> key.isValid())
+                .filter(key -> !(key.isAcceptable() && ((ReactorListener) key.attachment()).accept() == null))
+                .forEach(key -> {
+                    if (key.isReadable() || key.isWritable()) {
+                        final ReactorClient client = (ReactorClient) key.attachment();
+                        try {
+                            client.process();
+                        } catch (IOException | ClientConnectionException ex) {
+                            logException(LOG, "Unable to process messages: " + ex.getMessage(), ex);
+                            client.disconnect(ex.getMessage() != null ? ex.getMessage() : "Unable to process messages");
+                            key.cancel();
+                        } catch (Throwable e) {
+                            logException(LOG, "Internal server error: " + e.getMessage(), e);
+                            client.disconnect(e.getMessage() != null ? e.getMessage() : "Internal server error");
+                            key.cancel();
+                        }
+                    }
 
-            if (key.isAcceptable()) {
-                final ReactorListener obj = (ReactorListener) key.attachment();
-                final ReactorClient client = obj.accept();
-                if (client == null) {
-                    continue;
-                }
-            }
+                    checkActions(this.selector.keys());
 
-            if (key.isValid() && (key.isReadable() || key.isWritable())) {
-                final ReactorClient client = (ReactorClient) key.attachment();
-                try {
-                    client.process();
-                } catch (IOException | ClientConnectionException ex) {
-                    logException(LOG, "Unable to process messages: " + ex.getMessage(), ex);
-                    client.disconnect(ex.getMessage() != null ? ex.getMessage() : "Unable to process messages");
-                    key.cancel();
-                } catch (Throwable e) {
-                    logException(LOG, "Internal server error: " + e.getMessage(), e);
-                    client.disconnect(e.getMessage() != null ? e.getMessage() : "Internal server error");
-                    key.cancel();
-                }
-            }
-
-            checkActions(this.selector.keys());
-
-            if (!key.channel().isOpen()) {
-                key.cancel();
-            }
-        }
+                    if (!key.channel().isOpen()) {
+                        key.cancel();
+                    }
+                });
     }
 
     private void checkActions(Set<SelectionKey> keys) {
-        for (SelectionKey key : keys) {
-            Object attachement = key.attachment();
-            if (ReactorClient.class.isInstance(attachement)) {
-                final ReactorClient client = (ReactorClient) attachement;
-                client.performAction();
-            }
-        }
+        keys.stream()
+                .filter(key -> ReactorClient.class.isInstance(key.attachment()))
+                .forEach(key -> ((ReactorClient) key.attachment()).performAction());
     }
 
     public void queueFuture(Future<?> f) {

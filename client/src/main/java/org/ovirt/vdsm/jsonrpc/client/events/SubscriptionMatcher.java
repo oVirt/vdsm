@@ -136,14 +136,14 @@ public class SubscriptionMatcher {
         if (values == null) {
             return;
         }
-        for (SubscriptionHolder value : values) {
-            List<String> fids = value.getFilteredId();
-            int size = fids.size();
-            fids.retainAll(Arrays.asList(ids));
-            if (predicate.apply(size, fids.size())) {
-                holders.add(value);
-            }
-        }
+        values.stream()
+                .filter(value -> {
+                    List<String> fids = value.getFilteredId();
+                    int size = fids.size();
+                    fids.retainAll(Arrays.asList(ids));
+                    return predicate.apply(size, fids.size());
+                })
+                .forEach(value -> holders.add(value));
     }
 
     /**

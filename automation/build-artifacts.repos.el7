@@ -1,0 +1,3 @@
+ovirt-master-snapshot-static,http://resources.ovirt.org/pub/ovirt-master-snapshot-static/rpm/$distro
+# For maven
+centos,https://cbs.centos.org/repos/virt7-ovirt-41-candidate/x86_64/os/

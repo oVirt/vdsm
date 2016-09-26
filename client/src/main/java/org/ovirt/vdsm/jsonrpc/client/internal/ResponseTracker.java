@@ -156,21 +156,16 @@ public class ResponseTracker implements Runnable {
                 removeNodes(this.hostToId.get(code), errorResponse);
             } else {
                 String hostname = code.substring(0, code.indexOf(":"));
-                Set<String> keys = this.hostToId.keySet();
-                for (String key : keys) {
-                    if (key.startsWith(hostname)) {
-                        removeNodes(this.hostToId.get(key), errorResponse);
-                    }
-                }
+                this.hostToId.keySet().stream()
+                        .filter(key -> key.startsWith(hostname))
+                        .forEach(key -> removeNodes(this.hostToId.get(key), errorResponse));
             }
         }
     }
 
     private void removeNodes(List<JsonNode> nodes, JsonRpcResponse errorResponse) {
-        for (JsonNode id : nodes) {
-            if (NullNode.class.isInstance(id))
-                continue;
-            remove(this.map.get(id), id, errorResponse);
-        }
+        nodes.stream()
+                .filter(id -> !NullNode.class.isInstance(id))
+                .forEach(id -> remove(this.map.get(id), id, errorResponse));
     }
 }

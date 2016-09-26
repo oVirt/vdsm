@@ -85,9 +85,8 @@ public class CommandFactory {
                         return new Message().error().withHeader(HEADER_MESSAGE, "Missing required header");
                     }
 
-                    for (MessageListener el : eventListeners) {
-                        el.onMessageReceived(message.getContent());
-                    }
+                    eventListeners.stream()
+                            .forEach(el -> el.onMessageReceived(message.getContent()));
 
                     return null;
                 }

@@ -42,7 +42,7 @@ vdsm-jsonrpc-java-client-$(PACKAGE_MAVEN_VERSION).jar: \
 		$(NULL)
 	$(MKDIR_P) target
 	$(JAVAC) \
-		-source 1.7 -target 1.7 \
+		-source 1.8 -target 1.8 \
 		-cp $(JACKSON_MAPPER_ASL):$(JACKSON_CORE_ASL):${SLF4J_JAR} \
 		-d target \
 		$$(find src/main -name '*.java')

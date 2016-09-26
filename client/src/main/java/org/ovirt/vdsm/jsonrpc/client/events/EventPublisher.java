@@ -80,12 +80,10 @@ public class EventPublisher implements Publisher<Map<String, Object>, EventSubsc
      */
     public void process(JsonRpcEvent event) {
         Set<SubscriptionHolder> holders = matcher.match(event);
-        for (SubscriptionHolder holder : holders) {
-            holder.putEvent(event);
-            if (holder.canProcess()) {
-                this.executorService.submit(new EventCallable(holder, this.decomposer));
-            }
-        }
+        holders.stream()
+                .peek(holder -> holder.putEvent(event))
+                .filter(holder -> holder.canProcess())
+                .forEach(holder -> this.executorService.submit(new EventCallable(holder, this.decomposer)));
     }
 
     /**
