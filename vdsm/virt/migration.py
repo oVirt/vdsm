@@ -769,7 +769,7 @@ class Progress(_Progress):
             stats[libvirt.VIR_DOMAIN_JOB_MEMORY_REMAINING],
             stats[libvirt.VIR_DOMAIN_JOB_MEMORY_BPS],
             stats[libvirt.VIR_DOMAIN_JOB_MEMORY_CONSTANT],
-            stats[libvirt.VIR_DOMAIN_JOB_COMPRESSION_BYTES],
+            stats.get(libvirt.VIR_DOMAIN_JOB_COMPRESSION_BYTES, 0),
             # available since libvirt 1.3
             stats.get('memory_dirty_rate', -1),
             # available since libvirt 1.3
