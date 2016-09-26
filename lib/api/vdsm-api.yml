@@ -7093,6 +7093,11 @@ types:
         -   description: The UUID of the Volume
             name: vol_id
             type: *UUID
+
+        -   description: The expected generation of the Volume
+            name: generation
+            type: uint
+            defaultvalue: null
         type: object
 
     CopyDataEndpoint: &CopyDataEndpoint

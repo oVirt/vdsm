@@ -37,6 +37,7 @@ from vdsm import jobs
 from vdsm import qemuimg
 from vdsm.common import exception
 from vdsm.storage import constants as sc
+from vdsm.storage import exception as se
 from vdsm.storage import guarded
 from vdsm.storage import workarounds
 
@@ -225,23 +226,27 @@ class TestCopyDataDIV(VdsmTestCase):
                 self.assertTrue(f.read().startswith(vm_conf_data))
 
     @permutations((
-        ('file', None, sc.LEGAL_VOL, jobs.STATUS.DONE),
-        ('file', RuntimeError, sc.ILLEGAL_VOL, jobs.STATUS.FAILED),
-        ('block', None, sc.LEGAL_VOL, jobs.STATUS.DONE),
-        ('block', RuntimeError, sc.ILLEGAL_VOL, jobs.STATUS.FAILED),
+        ('file', None, sc.LEGAL_VOL, jobs.STATUS.DONE, 1),
+        ('file', RuntimeError, sc.ILLEGAL_VOL, jobs.STATUS.FAILED, 0),
+        ('block', None, sc.LEGAL_VOL, jobs.STATUS.DONE, 1),
+        ('block', RuntimeError, sc.ILLEGAL_VOL, jobs.STATUS.FAILED, 0),
     ))
     def test_volume_operation(self, env_type, error,
-                              final_legality, final_status):
+                              final_legality, final_status, final_gen):
         job_id = make_uuid()
         fmt = sc.RAW_FORMAT
         with self.get_vols(env_type, fmt, fmt) as (src_chain, dst_chain):
             src_vol = src_chain[0]
             dst_vol = dst_chain[0]
+
             self.assertEqual(sc.LEGAL_VOL, dst_vol.getLegality())
             source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
+                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID,
+                          generation=0)
             dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID,
+                        generation=0)
+
             fake_convert = FakeQemuConvertChecker(src_vol, dst_vol,
                                                   error=error)
             with MonkeyPatchScope([(qemuimg, 'convert', fake_convert)]):
@@ -250,6 +255,7 @@ class TestCopyDataDIV(VdsmTestCase):
 
             self.assertEqual(final_status, job.status)
             self.assertEqual(final_legality, dst_vol.getLegality())
+            self.assertEqual(final_gen, dst_vol.getMetaParam(sc.GENERATION))
 
     @permutations((('file',), ('block',)))
     def test_abort_during_copy(self, env_type):
@@ -257,10 +263,13 @@ class TestCopyDataDIV(VdsmTestCase):
         with self.get_vols(env_type, fmt, fmt) as (src_chain, dst_chain):
             src_vol = src_chain[0]
             dst_vol = dst_chain[0]
+            gen_id = dst_vol.getMetaParam(sc.GENERATION)
             source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
-                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
+                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID,
+                          generation=0)
             dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
-                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID,
+                        generation=gen_id)
             fake_convert = FakeQemuConvertChecker(src_vol, dst_vol,
                                                   wait_for_abort=True)
             with MonkeyPatchScope([(qemuimg, 'convert', fake_convert)]):
@@ -274,6 +283,27 @@ class TestCopyDataDIV(VdsmTestCase):
                     raise RuntimeError("Timeout waiting for thread")
                 self.assertEqual(jobs.STATUS.ABORTED, job.status)
                 self.assertEqual(sc.ILLEGAL_VOL, dst_vol.getLegality())
+                self.assertEqual(gen_id, dst_vol.getMetaParam(sc.GENERATION))
+
+    def test_wrong_generation(self):
+        fmt = sc.RAW_FORMAT
+        with self.get_vols('block', fmt, fmt) as (src_chain, dst_chain):
+            src_vol = src_chain[0]
+            dst_vol = dst_chain[0]
+            generation = dst_vol.getMetaParam(sc.GENERATION)
+            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
+                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID,
+                          generation=0)
+            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
+                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID,
+                        generation=generation + 1)
+            job_id = make_uuid()
+            job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
+            job.run()
+            self.assertEqual(jobs.STATUS.FAILED, job.status)
+            self.assertEqual(se.GenerationMismatch.code, job.error.code)
+            self.assertEqual(sc.LEGAL_VOL, dst_vol.getLegality())
+            self.assertEqual(generation, dst_vol.getMetaParam(sc.GENERATION))
 
     # TODO: Missing tests:
     # Copy between 2 different domains

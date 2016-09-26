@@ -20,6 +20,7 @@
 
 from __future__ import absolute_import
 from contextlib import contextmanager
+from functools import partial
 import logging
 
 from vdsm import jobs
@@ -96,11 +97,14 @@ class CopyDataDivEndpoint(properties.Owner):
     sd_id = properties.UUID(required=True)
     img_id = properties.UUID(required=True)
     vol_id = properties.UUID(required=True)
+    generation = properties.Integer(required=False, minval=0,
+                                    maxval=sc.MAX_GENERATION)
 
     def __init__(self, params, host_id, writable):
         self.sd_id = params.get('sd_id')
         self.img_id = params.get('img_id')
         self.vol_id = params.get('vol_id')
+        self.generation = params.get('generation')
         self._host_id = host_id
         self._writable = writable
         self._vol = None
@@ -144,7 +148,7 @@ class CopyDataDivEndpoint(properties.Owner):
 
     @property
     def volume_operation(self):
-        return self._vol.operation
+        return partial(self._vol.operation, self.generation)
 
     @contextmanager
     def prepare(self):
