@@ -2108,36 +2108,39 @@ types:
         description: I/O tune parameters for the VM disk device.
         name: VmDiskDeviceIoTuneParams
         properties:
-        -   defaultvalue: needs updating
-            description: Write throughput limit in bytes per
-                second.
-            name: write_bytes_sec
-            type: uint
-
-        -   defaultvalue: needs updating
-            description: Read I/O operations limit per second.
-            name: read_iops_sec
-            type: uint
-
-        -   defaultvalue: needs updating
-            description: Read throughput limit in bytes per
-                second.
-            name: read_bytes_sec
-            type: uint
-
-        -   defaultvalue: needs updating
-            description: Total throughput limit in bytes per
-                second.
+        -   defaultvalue: 0
+            description: Total throughput limit in bytes per second.
+                Value 0 means unlimited.
             name: total_bytes_sec
             type: uint
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: 0
+            description: Read throughput limit in bytes per second.
+                Value 0 means unlimited.
+            name: read_bytes_sec
+            type: uint
+
+        -   defaultvalue: 0
+            description: Write throughput limit in bytes per second.
+                Value 0 means unlimited.
+            name: write_bytes_sec
+            type: uint
+
+        -   defaultvalue: 0
             description: Total I/O operations limit per second.
+                Value 0 means unlimited.
             name: total_iops_sec
             type: uint
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: 0
+            description: Read I/O operations limit per second.
+                Value 0 means unlimited.
+            name: read_iops_sec
+            type: uint
+
+        -   defaultvalue: 0
             description: Write I/O operations limit per second.
+                Value 0 means unlimited.
             name: write_iops_sec
             type: uint
         type: object
@@ -2829,6 +2832,10 @@ types:
 
         -   description: The amount of pages to scan during one cycle.
             name: pages_to_scan
+            type: int
+
+        -   description:
+            name: merge_across_nodes
             type: int
         type: object
 
