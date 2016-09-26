@@ -30,10 +30,12 @@ from storagetestlib import make_qemu_chain, write_qemu_chain, verify_qemu_chain
 from storagetestlib import ChainVerificationError
 from testlib import make_uuid
 from testlib import VdsmTestCase, expandPermutations, permutations
+from testlib import start_thread
 from testlib import wait_for_job
 
 from vdsm import jobs
 from vdsm import qemuimg
+from vdsm.common import exception
 from vdsm.storage import constants as sc
 from vdsm.storage import guarded
 from vdsm.storage import workarounds
@@ -249,33 +251,67 @@ class TestCopyDataDIV(VdsmTestCase):
             self.assertEqual(final_status, job.status)
             self.assertEqual(final_legality, dst_vol.getLegality())
 
+    @permutations((('file',), ('block',)))
+    def test_abort_during_copy(self, env_type):
+        fmt = sc.RAW_FORMAT
+        with self.get_vols(env_type, fmt, fmt) as (src_chain, dst_chain):
+            src_vol = src_chain[0]
+            dst_vol = dst_chain[0]
+            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
+                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
+            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
+                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+            fake_convert = FakeQemuConvertChecker(src_vol, dst_vol,
+                                                  wait_for_abort=True)
+            with MonkeyPatchScope([(qemuimg, 'convert', fake_convert)]):
+                job_id = make_uuid()
+                job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
+                t = start_thread(job.run)
+                fake_convert.ready_event.wait()
+                job.abort()
+                t.join(1)
+                if t.isAlive():
+                    raise RuntimeError("Timeout waiting for thread")
+                self.assertEqual(jobs.STATUS.ABORTED, job.status)
+                self.assertEqual(sc.ILLEGAL_VOL, dst_vol.getLegality())
+
     # TODO: Missing tests:
     # Copy between 2 different domains
     # Abort before copy
-    # Abort during copy
 
 
 class FakeQemuConvertChecker(object):
-    def __init__(self, src_vol, dst_vol, error=None):
+    def __init__(self, src_vol, dst_vol, error=None, wait_for_abort=False):
         self.src_vol = src_vol
         self.dst_vol = dst_vol
         self.error = error
+        self.wait_for_abort = wait_for_abort
         self.ready_event = threading.Event()
 
     def __call__(self, *args, **kwargs):
         assert sc.LEGAL_VOL == self.src_vol.getLegality()
         assert sc.ILLEGAL_VOL == self.dst_vol.getLegality()
-        return FakeQemuImgOperation(self.ready_event, self.error)
+        return FakeQemuImgOperation(self.ready_event, self.wait_for_abort,
+                                    self.error)
 
 
 class FakeQemuImgOperation(object):
-    def __init__(self, ready_event, error):
+    def __init__(self, ready_event, wait_for_abort, error):
+        self.ready_event = ready_event
+        self.wait_for_abort = wait_for_abort
         self.error = error
-        ready_event.set()
+        self.abort_event = threading.Event()
 
     def abort(self):
-        pass
+        self.abort_event.set()
 
     def wait_for_completion(self):
+        self.ready_event.set()
         if self.error:
             raise self.error()
+        if self.wait_for_abort:
+            if not self.abort_event.wait(1):
+                raise RuntimeError("Timeout waiting to finish, broken test?")
+            # We must raise here like the real class so the calling code knows
+            # the "command" was interrupted.
+            raise exception.ActionStopped()
