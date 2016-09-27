@@ -225,7 +225,7 @@ Requires: kernel >= 3.10.0-327.18.1.el7
 Requires: lvm2 >= 7:2.02.130-5.el7_2.5
 Requires: python >= 2.7.5-18.el7_1.1
 Requires: policycoreutils-python
-Requires: selinux-policy-targeted >= 3.13.1-16.el7
+Requires: selinux-policy-targeted >= 3.13.1-60.el7
 Requires: systemd >= 219-11.el7
 %if ! 0%{?centos}
 # TODO drop this if when this initscripts is available on centos
