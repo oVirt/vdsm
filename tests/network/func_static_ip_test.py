@@ -122,6 +122,17 @@ class NetworkStaticIpBasicTemplate(NetFuncTestCase):
             with self.setupNetworks(netcreate, bondcreate, NOCHK):
                 self.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
 
+    def test_add_net_with_prefix(self):
+        with dummy_device() as nic:
+            network_attrs = {'nic': nic,
+                             'ipaddr': IPv4_ADDRESS,
+                             'prefix': IPv4_PREFIX_LEN,
+                             'switch': self.switch}
+            netcreate = {NETWORK_NAME: network_attrs}
+
+            with self.setupNetworks(netcreate, {}, NOCHK):
+                self.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
+
 
 @attr(type='functional', switch='legacy')
 class NetworkStaticIpBasicLegacyTest(NetworkStaticIpBasicTemplate):

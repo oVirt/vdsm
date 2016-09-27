@@ -30,7 +30,6 @@ from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
 from vdsm.network import libvirt
 from vdsm.network.netinfo import NET_PATH
-from vdsm.network.netinfo import addresses
 from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo import mtus
 from vdsm.network.netinfo import nics as netinfo_nics
@@ -187,7 +186,7 @@ def _alter_running_config(func):
 @_alter_running_config
 def _add_network(network, configurator, nameservers,
                  vlan=None, bonding=None, nic=None, ipaddr=None,
-                 netmask=None, prefix=None, mtu=None, gateway=None,
+                 netmask=None, mtu=None, gateway=None,
                  dhcpv6=None, ipv6addr=None, ipv6gateway=None,
                  ipv6autoconf=None, bridged=True, _netinfo=None, hostQos=None,
                  defaultRoute=None, blockingdhcp=False, **options):
@@ -201,16 +200,6 @@ def _add_network(network, configurator, nameservers,
     if network == '':
         raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
                                  'Empty network names are not valid')
-    if prefix:
-        if netmask:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
-                                     'Both PREFIX and NETMASK supplied')
-        else:
-            try:
-                netmask = addresses.prefix2netmask(int(prefix))
-            except ValueError as ve:
-                raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Bad prefix: %s' %
-                                         ve)
 
     logging.debug('Validating network...')
     if network in _netinfo.networks:

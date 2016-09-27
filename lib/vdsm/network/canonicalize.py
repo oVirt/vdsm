@@ -22,6 +22,7 @@ from __future__ import absolute_import
 import six
 
 from .netinfo import bridges, mtus, bonding, dns
+from .netinfo.addresses import prefix2netmask
 from vdsm import utils
 
 from .errors import ConfigNetworkError
@@ -47,6 +48,7 @@ def canonicalize_networks(nets):
         _canonicalize_switch_type_net(attrs)
         _canonicalize_ip_default_route(attrs)
         _canonicalize_nameservers(attrs)
+        _canonicalize_prefix(attrs)
 
 
 def canonicalize_bondings(bonds):
@@ -138,3 +140,15 @@ def _canonicalize_nameservers(data):
             data['nameservers'] = dns.get_host_nameservers()
         else:
             data['nameservers'] = []
+
+
+def _canonicalize_prefix(data):
+    prefix = data.pop('prefix', None)
+    if prefix:
+        if 'netmask' in data:
+            raise ConfigNetworkError(
+                ne.ERR_BAD_PARAMS, 'Both PREFIX and NETMASK supplied')
+        try:
+            data['netmask'] = prefix2netmask(int(prefix))
+        except ValueError as ve:
+            raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Bad prefix: %s' % ve)

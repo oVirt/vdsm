@@ -209,7 +209,7 @@ def setupNetworks(networks, bondings, options):
                         bonding="<name>" | nic="<name>"
                         (bonding and nics are mutually exclusive)
                         ipaddr="<ipv4>"
-                        netmask="<ipv4>"
+                        netmask="<ipv4>" | prefix=<prefixlen>
                         gateway="<ipv4>"
                         bootproto="..."
                         ipv6addr="<ipv6>[/<prefixlen>]"
