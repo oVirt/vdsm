@@ -28,6 +28,7 @@ import os
 import pickle
 import platform
 import unittest
+import uuid
 from functools import wraps
 import shutil
 import sys
@@ -588,3 +589,10 @@ def wait_for_job(job):
     """
     while job.active:
         time.sleep(1)
+
+
+def make_uuid():
+    """
+    Return a new UUID version 4 string for use with vdsm APIs
+    """
+    return str(uuid.uuid4())
