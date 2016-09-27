@@ -32,6 +32,7 @@ from vdsm.network import kernelconfig
 from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.link.iface import is_oper_up
+from vdsm.network.netinfo.addresses import prefix2netmask
 
 from testlib import VdsmTestCase
 
@@ -287,7 +288,8 @@ class NetFuncTestCase(VdsmTestCase):
     def assertStaticIPv4(self, netattrs, ipinfo):
         requires_ipaddress()
         address = netattrs['ipaddr']
-        netmask = netattrs['netmask']
+        netmask = (netattrs.get('netmask') or
+                   prefix2netmask(int(netattrs.get('prefix'))))
         self.assertEqual(address, ipinfo['addr'])
         self.assertEqual(netmask, ipinfo['netmask'])
         ipv4 = ipaddress.IPv4Interface(
