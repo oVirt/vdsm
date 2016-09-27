@@ -1777,7 +1777,7 @@ class StorageDomainIsMemberOfPool(StorageException):
 
 #################################################
 #  SDM Errors
-#  Range: 909-910
+#  Range: 910-919
 #################################################
 
 class DomainHasGarbage(StorageException):
@@ -1786,3 +1786,11 @@ class DomainHasGarbage(StorageException):
 
     def __init__(self, reason):
         self.value = reason
+
+
+class GenerationMismatch(StorageException):
+    code = 911
+    message = "The provided generation does not match the actual generation"
+
+    def __init__(self, requested, actual):
+        self.value = "requested=%s, actual=%s" % (requested, actual)
