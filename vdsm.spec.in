@@ -238,7 +238,7 @@ Requires: policycoreutils-python
 Requires: sed >= 4.2.1-10
 Requires: ed
 Requires: lvm2 >= 2.02.132
-Requires: selinux-policy-targeted >= 3.12.1-177
+Requires: selinux-policy-targeted >= 3.13-1
 # In order to avoid a policycoreutils bug (rhbz 889698) when selinux is
 # disabled we now require the version 2.1.13-55 (or newer) of Fedora.
 Requires: policycoreutils >= 2.1.13-55
