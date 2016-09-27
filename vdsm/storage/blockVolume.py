@@ -468,8 +468,9 @@ class BlockVolume(volume.Volume):
                          "sectors", sc.type2name(volFormat), volPath,
                          size)
             if volFormat == sc.COW_FORMAT:
-                qemuimg.create(
-                    volPath, size * BLOCK_SIZE, sc.fmt2str(volFormat))
+                qemuimg.create(volPath,
+                               size=size * BLOCK_SIZE,
+                               format=sc.fmt2str(volFormat))
         else:
             # Create hardlink to template and its meta file
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s",

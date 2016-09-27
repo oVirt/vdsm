@@ -142,7 +142,9 @@ class VolumeArtifacts(object):
 
     def _initialize_volume(self, vol_format, size):
         if vol_format == sc.COW_FORMAT:
-            qemuimg.create(self.volume_path, size, sc.fmt2str(vol_format))
+            qemuimg.create(self.volume_path,
+                           size=size,
+                           format=sc.fmt2str(vol_format))
 
 
 class FileVolumeArtifacts(VolumeArtifacts):
