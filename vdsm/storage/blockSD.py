@@ -445,6 +445,15 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             # FIXME: following line.
             lvm.extendLV(self.sdUUID, volumeUUID, size)  # , isShuttingDown)
 
+    def getMetadataLVDevice(self):
+        """
+        Returns the first device of the domain metadata lv.
+        NOTE: This device may not be the same device as the vg
+                metadata device.
+        """
+        dev, _ = lvm.getFirstExt(self.sdUUID, sd.METADATA)
+        return os.path.basename(dev)
+
     @classmethod
     def getMetaDataMapping(cls, vgName, oldMapping={}):
         firstDev, firstExtent = lvm.getFirstExt(vgName, sd.METADATA)
@@ -1119,6 +1128,7 @@ class BlockStorageDomain(sd.StorageDomain):
         vg = lvm.getVG(self.sdUUID)  # vg.name = self.sdUUID
         info['vguuid'] = vg.uuid
         info['state'] = vg.partial
+        info['metadataDevice'] = self._manifest.getMetadataLVDevice()
         return info
 
     def getStats(self):

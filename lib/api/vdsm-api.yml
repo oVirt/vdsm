@@ -5740,6 +5740,12 @@ types:
         -   description: The Storage Domain UUID
             name: uuid
             type: *UUID
+
+        -   defaultvalue: null
+            description: The GUID of the first device containing the domain
+                metadata lv for block storage domains only
+            name: metadataDevice
+            type: string
         type: object
 
     StorageDomainStatus: &StorageDomainStatus
