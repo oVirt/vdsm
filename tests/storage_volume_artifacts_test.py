@@ -19,9 +19,9 @@
 #
 
 import os
-import uuid
 
 from monkeypatch import MonkeyPatchScope
+from testlib import make_uuid
 from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 from testValidation import brokentest
@@ -62,8 +62,8 @@ BASE_PARAMS = {
 class VolumeArtifactsTestsMixin(object):
 
     def setUp(self):
-        self.img_id = str(uuid.uuid4())
-        self.vol_id = str(uuid.uuid4())
+        self.img_id = make_uuid()
+        self.vol_id = make_uuid()
 
     def test_state_missing(self):
         with self.fake_env() as env:
@@ -107,7 +107,7 @@ class VolumeArtifactsTestsMixin(object):
             first.create(*BASE_PARAMS[sc.RAW_FORMAT])
             first.commit()
             second = env.sd_manifest.get_volume_artifacts(
-                self.img_id, str(uuid.uuid4()))
+                self.img_id, make_uuid())
             self.assertRaises(se.InvalidParameterException,
                               second.create, *BASE_PARAMS[sc.COW_FORMAT])
 
@@ -118,7 +118,7 @@ class VolumeArtifactsTestsMixin(object):
             first.create(*BASE_PARAMS[sc.RAW_FORMAT])
             first.commit()
             second = env.sd_manifest.get_volume_artifacts(
-                self.img_id, str(uuid.uuid4()))
+                self.img_id, make_uuid())
             self.assertRaises(se.InvalidParameterException, second.create,
                               *BASE_PARAMS[sc.RAW_FORMAT])
 
@@ -329,8 +329,8 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
 class FileVolumeArtifactVisibilityTests(VdsmTestCase):
 
     def setUp(self):
-        self.img_id = str(uuid.uuid4())
-        self.vol_id = str(uuid.uuid4())
+        self.img_id = make_uuid()
+        self.vol_id = make_uuid()
 
     def test_getallimages(self):
         # The current behavior of getAllImages is to report garbage image
@@ -563,8 +563,8 @@ class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
 class BlockVolumeArtifactVisibilityTests(VdsmTestCase):
 
     def setUp(self):
-        self.img_id = str(uuid.uuid4())
-        self.vol_id = str(uuid.uuid4())
+        self.img_id = make_uuid()
+        self.vol_id = make_uuid()
 
     def test_getallimages(self):
         # The current behavior of getAllImages for block domains does not

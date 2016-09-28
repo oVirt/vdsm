@@ -18,9 +18,9 @@
 #
 
 import os
-import uuid
 
 from testlib import expandPermutations, permutations
+from testlib import make_uuid
 from testlib import namedTemporaryDir
 from testlib import VdsmTestCase
 from testlib import TEMPDIR
@@ -72,8 +72,8 @@ class FakeFileEnvTests(VdsmTestCase):
 
     def test_volume_structure(self):
         with fake_file_env() as env:
-            img_id = str(uuid.uuid4())
-            vol_id = str(uuid.uuid4())
+            img_id = make_uuid()
+            vol_id = make_uuid()
             make_file_volume(env.sd_manifest, 0, img_id, vol_id)
             image_dir = env.sd_manifest.getImagePath(img_id)
             files = (vol_id, vol_id + sc.LEASE_FILEEXT,
@@ -85,8 +85,8 @@ class FakeFileEnvTests(VdsmTestCase):
     def test_volume_metadata_io(self):
         with fake_file_env() as env:
             size = 1 * MB
-            img_id = str(uuid.uuid4())
-            vol_id = str(uuid.uuid4())
+            img_id = make_uuid()
+            vol_id = make_uuid()
             make_file_volume(env.sd_manifest, size, img_id, vol_id)
             vol = env.sd_manifest.produceVolume(img_id, vol_id)
             desc = 'foo'
@@ -144,8 +144,8 @@ class FakeBlockEnvTests(VdsmTestCase):
     def test_volume_size_alignment(self, size_param):
         with fake_block_env() as env:
             sd_id = env.sd_manifest.sdUUID
-            img_id = str(uuid.uuid4())
-            vol_id = str(uuid.uuid4())
+            img_id = make_uuid()
+            vol_id = make_uuid()
             make_block_volume(env.lvm, env.sd_manifest, size_param,
                               img_id, vol_id)
             vol = env.sd_manifest.produceVolume(img_id, vol_id)
@@ -161,8 +161,8 @@ class FakeBlockEnvTests(VdsmTestCase):
     def test_volume_metadata_io(self):
         with fake_block_env() as env:
             sd_id = env.sd_manifest.sdUUID
-            img_id = str(uuid.uuid4())
-            vol_id = str(uuid.uuid4())
+            img_id = make_uuid()
+            vol_id = make_uuid()
             size_mb = sc.VG_EXTENT_SIZE_MB
             size = size_mb * MB
             size_blk = size_mb * MB / sc.BLOCK_SIZE
@@ -182,8 +182,8 @@ class FakeBlockEnvTests(VdsmTestCase):
     def test_volume_accessibility(self):
         with fake_block_env() as env:
             sd_id = env.sd_manifest.sdUUID
-            img_id = str(uuid.uuid4())
-            vol_id = str(uuid.uuid4())
+            img_id = make_uuid()
+            vol_id = make_uuid()
             make_block_volume(env.lvm, env.sd_manifest, 1 * MB, img_id, vol_id)
 
             self.assertTrue(os.path.isfile(env.lvm.lvPath(sd_id, vol_id)))

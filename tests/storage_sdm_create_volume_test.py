@@ -20,10 +20,10 @@
 from __future__ import absolute_import
 
 from contextlib import contextmanager
-import uuid
 
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeResourceManager
+from testlib import make_uuid
 from testlib import VdsmTestCase, recorded, expandPermutations, permutations
 from testlib import wait_for_job
 
@@ -84,17 +84,17 @@ class FakeVolumeArtifacts(object):
 
 
 def _get_vol_info():
-    return dict(sd_id=str(uuid.uuid4()), img_id=str(uuid.uuid4()),
-                vol_id=str(uuid.uuid4()), virtual_size=2048,
+    return dict(sd_id=make_uuid(), img_id=make_uuid(),
+                vol_id=make_uuid(), virtual_size=2048,
                 vol_format='RAW', disk_type='SYSTEM')
 
 
 class CreateVolumeTests(VdsmTestCase):
 
     def _get_args(self):
-        job_id = str(uuid.uuid4())
+        job_id = make_uuid()
         host_id = 1
-        sd_manifest = FakeDomainManifest(str(uuid.uuid4()))
+        sd_manifest = FakeDomainManifest(make_uuid())
         vol_info = _get_vol_info()
         vol_info_obj = storage.sdm.api.create_volume.CreateVolumeInfo(vol_info)
         return dict(job_id=job_id, host_id=host_id, sd_manifest=sd_manifest,

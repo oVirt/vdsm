@@ -19,8 +19,8 @@
 #
 
 from __future__ import absolute_import
-import uuid
 
+from testlib import make_uuid
 from testlib import VdsmTestCase
 from storagetestlib import fake_file_env
 
@@ -35,8 +35,8 @@ VM_CONF_SIZE = workarounds.VM_CONF_SIZE_BLK * sc.BLOCK_SIZE
 
 
 def make_volume(env, size, md_fmt, real_fmt):
-    img_id = str(uuid.uuid4())
-    vol_id = str(uuid.uuid4())
+    img_id = make_uuid()
+    vol_id = make_uuid()
     env.make_volume(size, img_id, vol_id, vol_format=md_formats[md_fmt])
     vol = env.sd_manifest.produceVolume(img_id, vol_id)
     qemuimg.create(vol.getVolumePath(), size, qemu_formats[real_fmt])

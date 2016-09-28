@@ -19,8 +19,8 @@
 
 import textwrap
 import time
-import uuid
 
+from testlib import make_uuid
 from testlib import VdsmTestCase, permutations, expandPermutations
 from monkeypatch import MonkeyPatchScope
 
@@ -35,9 +35,9 @@ FAKE_TIME = 1461095629
 
 def make_init_params(**kwargs):
     res = dict(
-        domain=str(uuid.uuid4()),
-        image=str(uuid.uuid4()),
-        puuid=str(uuid.uuid4()),
+        domain=make_uuid(),
+        image=make_uuid(),
+        puuid=make_uuid(),
         size=1024 * MB,
         format=sc.type2name(sc.RAW_FORMAT),
         type=sc.type2name(sc.SPARSE_VOL),

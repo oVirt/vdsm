@@ -18,11 +18,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from uuid import uuid4
 import threading
 import os
 import shutil
 
+from testlib import make_uuid
 from testlib import VdsmTestCase as TestCaseBase
 
 import storage.storage_mailbox as sm
@@ -33,7 +33,7 @@ import tempfile
 
 class StoragePoolStub(object):
     def __init__(self):
-        self.spUUID = str(uuid4())
+        self.spUUID = make_uuid()
         self.storage_repository = tempfile.mkdtemp(dir='/var/tmp')
         self.__masterDir = os.path.join(self.storage_repository, self.spUUID,
                                         "mastersd", DOMAIN_META_DATA)

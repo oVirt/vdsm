@@ -18,11 +18,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import uuid
 from contextlib import contextmanager
 
 from monkeypatch import MonkeyPatchScope
 from testlib import make_config
+from testlib import make_uuid
 from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 from storagetestlib import fake_file_env
@@ -112,8 +112,8 @@ class VerifyUntrustedVolumeTest(VdsmTestCase):
     @contextmanager
     def fake_volume(self, vol_fmt):
         with fake_file_env() as env:
-            img_id = str(uuid.uuid4())
-            vol_id = str(uuid.uuid4())
+            img_id = make_uuid()
+            vol_id = make_uuid()
             make_file_volume(env.sd_manifest, self.SIZE, img_id, vol_id,
                              vol_format=vol_fmt)
             yield env.sd_manifest.produceVolume(img_id, vol_id)

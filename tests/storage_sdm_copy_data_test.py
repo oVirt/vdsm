@@ -19,7 +19,6 @@
 #
 from __future__ import absolute_import
 
-import uuid
 from contextlib import contextmanager
 
 from fakelib import FakeScheduler
@@ -28,6 +27,7 @@ from storagefakelib import FakeResourceManager
 from storagetestlib import fake_env
 from storagetestlib import make_qemu_chain, write_qemu_chain, verify_qemu_chain
 from storagetestlib import ChainVerificationError
+from testlib import make_uuid
 from testlib import VdsmTestCase, expandPermutations, permutations
 from testlib import wait_for_job
 
@@ -130,7 +130,7 @@ class TestCopyDataDIV(VdsmTestCase):
     def test_intra_domain_copy(self, env_type, src_fmt, dst_fmt):
         src_fmt = sc.name2type(src_fmt)
         dst_fmt = sc.name2type(dst_fmt)
-        job_id = str(uuid.uuid4())
+        job_id = make_uuid()
 
         with self.get_vols(env_type, src_fmt, dst_fmt) as (src_chain,
                                                            dst_chain):
@@ -173,7 +173,7 @@ class TestCopyDataDIV(VdsmTestCase):
                                                      dst_chain):
             write_qemu_chain(src_chain)
             for index in copy_seq:
-                job_id = str(uuid.uuid4())
+                job_id = make_uuid()
                 src_vol = src_chain[index]
                 dst_vol = dst_chain[index]
                 source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
@@ -193,7 +193,7 @@ class TestCopyDataDIV(VdsmTestCase):
         volume format may be set incorrectly due to an old bug.  Check that the
         workaround we have in place allows the copy to proceed without error.
         """
-        job_id = str(uuid.uuid4())
+        job_id = make_uuid()
         vm_conf_size = workarounds.VM_CONF_SIZE_BLK * sc.BLOCK_SIZE
         vm_conf_data = "VM Configuration"
 

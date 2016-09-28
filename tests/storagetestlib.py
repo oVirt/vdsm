@@ -17,10 +17,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import os
-import uuid
 from contextlib import contextmanager
 
-from testlib import make_file, namedTemporaryDir
+from testlib import make_file, make_uuid, namedTemporaryDir
 from storagefakelib import FakeLVM
 from storagefakelib import FakeStorageDomainCache
 from monkeypatch import MonkeyPatchScope
@@ -139,16 +138,16 @@ def make_sd_metadata(sduuid, version=3, dom_class=sd.DATA_DOMAIN, pools=None):
     md[sd.DMDK_SDUUID] = sduuid
     md[sd.DMDK_VERSION] = version
     md[sd.DMDK_CLASS] = dom_class
-    md[sd.DMDK_POOLS] = pools if pools is not None else [str(uuid.uuid4())]
+    md[sd.DMDK_POOLS] = pools if pools is not None else [make_uuid()]
     return md
 
 
 def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None):
     if sduuid is None:
-        sduuid = str(uuid.uuid4())
+        sduuid = make_uuid()
     if devices is None:
         devices = get_random_devices()
-    spuuid = str(uuid.uuid4())
+    spuuid = make_uuid()
 
     fake_lvm.createVG(sduuid, devices, blockSD.STORAGE_DOMAIN_TAG,
                       blockSD.VG_METADATASIZE)
@@ -188,8 +187,8 @@ def get_metafile_path(domaindir):
 
 
 def make_filesd_manifest(tmpdir):
-    spuuid = str(uuid.uuid4())
-    sduuid = str(uuid.uuid4())
+    spuuid = make_uuid()
+    sduuid = make_uuid()
 
     domain_path = os.path.join(tmpdir, spuuid, sduuid)
     metafile = get_metafile_path(domain_path)
@@ -340,11 +339,11 @@ def verify_qemu_chain(vol_list):
 
 def make_qemu_chain(env, size, base_vol_fmt, chain_len):
     vol_list = []
-    img_id = str(uuid.uuid4())
+    img_id = make_uuid()
     parent_vol_id = sc.BLANK_UUID
     vol_fmt = base_vol_fmt
     for i in range(chain_len):
-        vol_id = str(uuid.uuid4())
+        vol_id = make_uuid()
         if parent_vol_id != sc.BLANK_UUID:
             vol_fmt = sc.COW_FORMAT
         env.make_volume(size, img_id, vol_id,
