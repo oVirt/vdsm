@@ -738,8 +738,6 @@ def _initpvs(devices, metadataSize, force=False):
         log.error("%s, %s", out, err)
         raise se.PhysDevInitializationError(str(devices))
 
-    return (set(devices), set(), rc, out, err)
-
 
 def getLvDmName(vgName, lvName):
     return "%s-%s" % (vgName.replace("-", "--"), lvName)
