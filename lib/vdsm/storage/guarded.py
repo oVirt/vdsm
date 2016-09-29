@@ -19,7 +19,9 @@
 #
 
 from __future__ import absolute_import
+import itertools
 import logging
+import operator
 import sys
 
 import six
@@ -29,6 +31,16 @@ log = logging.getLogger('storage.guarded')
 
 class ReleaseError(Exception):
     pass
+
+
+class Deadlock(Exception):
+    msg = "Attempt to lock will deadlock: {self.locks}"
+
+    def __init__(self, locks):
+        self.locks = locks
+
+    def __str__(self):
+        return self.msg.format(self=self)
 
 
 class context(object):
@@ -48,6 +60,9 @@ class context(object):
     acquired in sorted order.  When exiting the context the locks are released
     in reverse order.  Errors are handled as gracefully as possible with any
     acquired locks being released in the proper order.
+
+    Attemping to lock the same lock twice with differnt mode is not supported
+    and will raise a Deadlock exception with the conflicting locks.
     """
 
     def __init__(self, locks):
@@ -55,8 +70,22 @@ class context(object):
         Receives a variable number of locks which must descend from
         AbstractLock.  The locks are deduplicated and sorted.
         """
-        self._locks = sorted(set(locks))
+        self._locks = self._validate(locks)
         self._held_locks = []
+
+    def _validate(self, locks):
+        """
+        Remove duplicate locks and sort the locks.
+
+        Raises Deadlock if trying to take the same lock with different modes.
+        """
+        locks = sorted(set(locks))
+        by_ns_name = operator.attrgetter("ns", "name")
+        for _, group in itertools.groupby(locks, by_ns_name):
+            group = list(group)
+            if len(group) > 1:
+                raise Deadlock(group)
+        return locks
 
     def __enter__(self):
         for lock in self._locks:

@@ -188,3 +188,19 @@ class ContextTest(VdsmTestCase):
             with guarded.context(locks):
                 raise RuntimeError()
         self.assertEqual(expected, log)
+
+    def test_deadlock(self):
+        log = []
+        locks = [
+            FakeGuardedLock('00_storage', 'dom', 'shared', log),
+            # Attemting to lock next locks will deadlock in resourceManager.
+            FakeGuardedLock('02_img.dom', 'img', 'exclusive', log),
+            FakeGuardedLock('02_img.dom', 'img', 'shared', log),
+            FakeGuardedLock('03_vol.dom', 'vol', 'exclusive', log),
+        ]
+        # Creating a context should raise
+        with self.assertRaises(guarded.Deadlock):
+            with guarded.context(locks):
+                pass
+        # Without locking any of the locks
+        self.assertEqual([], log)
