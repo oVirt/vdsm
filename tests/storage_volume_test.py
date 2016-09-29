@@ -97,6 +97,15 @@ class VolumeLeaseTest(VdsmTestCase):
             lock.release()
             self.assertEqual(expected, manifest.__calls__)
 
+    def test_repr(self):
+        lock = volume.VolumeLease(HOST_ID, 'dom', 'img', 'vol')
+        lock_string = str(lock)
+        self.assertIn("VolumeLease", lock_string)
+        self.assertIn("ns=04_lease_dom", lock_string)
+        self.assertIn("name=vol", lock_string)
+        self.assertIn("mode=exclusive", lock_string)
+        self.assertIn("%x" % id(lock), lock_string)
+
 
 @expandPermutations
 class VolumeManifestTest(VdsmTestCase):

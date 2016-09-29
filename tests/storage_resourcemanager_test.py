@@ -757,3 +757,13 @@ class ResourceManagerLockTest(TestCaseBase):
         lock.release()
         expected.append(('releaseResource', (lock.ns, lock.name), {}))
         self.assertEqual(expected, fake_rm.__calls__)
+
+    def test_repr(self):
+        mode = resourceManager.LockType.shared
+        lock = resourceManager.ResourceManagerLock('ns', 'name', mode)
+        lock_string = str(lock)
+        self.assertIn("ResourceManagerLock", lock_string)
+        self.assertIn("ns=ns", lock_string)
+        self.assertIn("name=name", lock_string)
+        self.assertIn("mode=" + mode, lock_string)
+        self.assertIn("%x" % id(lock), lock_string)
