@@ -325,6 +325,12 @@ class StorageDomainManifest(object):
             return "1.1"
         return qemuimg.default_qcow2_compat()
 
+    def supports_qcow2_compat(self, value):
+        if self.getVersion() >= 4:
+            return qemuimg.supports_compat(value)
+        else:
+            return value in ("0.10", qemuimg.default_qcow2_compat())
+
     def replaceMetadata(self, md):
         self._metadata = md
 

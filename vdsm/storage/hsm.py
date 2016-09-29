@@ -1500,17 +1500,10 @@ class HSM(object):
             # Vdsm depends on qemu-img 2.3.0 or later which always reports
             # 'compat' for qcow2 volumes.
             qemu_compat = qemu_info["compat"]
-            if not qemuimg.supports_compat(qemu_compat):
+            if not dom.supports_qcow2_compat(qemu_compat):
                 raise se.ImageVerificationError(
-                    "qcow2 compat %r is not supported" % qemu_compat)
-
-            # Although we can handle both 0.1 and 1.1 compat qcow2 files, we
-            # currently limit support to one or the other via the vdsm config.
-            # Once both are supported concurrently this check can be removed.
-            required_compat = config.get('irs', 'qcow2_compat')
-            if qemu_compat != required_compat:
-                raise se.ImageVerificationError(
-                    "qcow2 compat %r not supported by this host" % qemu_compat)
+                    "qcow2 compat %r not supported on this domain" %
+                    qemu_compat)
 
     def validateImageMove(self, srcDom, dstDom, imgUUID):
         """

@@ -85,15 +85,37 @@ class VerifyUntrustedVolumeTest(VdsmTestCase):
                                   vol.sdUUID, vol.imgUUID, vol.volUUID)
 
     @permutations((
-        ('0.10', '1.1'),
-        ('1.1', '0.10'),
+        ('0.10', '0.10', 4),
+        ('1.1', '0.10', 4),
+        ('0.10', '1.1', 4),
+        ('1.1', '1.1', 4),
+        ('0.10', '0.10', 3),
+        ('1.1', '1.1', 3),
     ))
-    def test_disabled_compat_raises(self, qemu_compat, hsm_compat):
-        with self.fake_volume(sc.COW_FORMAT) as vol:
-            create_conf = make_config([('irs', 'qcow2_compat', qemu_compat)])
-            check_conf = make_config([('irs', 'qcow2_compat', hsm_compat)])
+    def test_valid_qcow2_compat(self, hsm_compat, config_compat, sd_version):
+        with self.fake_volume(vol_fmt=sc.COW_FORMAT,
+                              sd_version=sd_version) as vol:
+            create_conf = make_config([('irs', 'qcow2_compat', config_compat)])
+            info = {"format": qemuimg.FORMAT.QCOW2, "compat": hsm_compat}
             with MonkeyPatchScope([(qemuimg, 'config', create_conf),
-                                   (hsm, 'config', check_conf)]):
+                                   (qemuimg, 'info', lambda unused: info)]):
+                qemuimg.create(vol.volumePath, size=self.SIZE,
+                               format=qemuimg.FORMAT.QCOW2)
+                h = FakeHSM()
+                self.assertNotRaises(h.verify_untrusted_volume, 'sp',
+                                     vol.sdUUID, vol.imgUUID, vol.volUUID)
+
+    @permutations((
+        ('1.1', '0.10', 3),
+    ))
+    def test_disabled_compat_raises(self, hsm_compat, config_compat,
+                                    sd_version):
+        with self.fake_volume(vol_fmt=sc.COW_FORMAT,
+                              sd_version=sd_version) as vol:
+            create_conf = make_config([('irs', 'qcow2_compat', config_compat)])
+            info = {"format": qemuimg.FORMAT.QCOW2, "compat": hsm_compat}
+            with MonkeyPatchScope([(qemuimg, 'config', create_conf),
+                                   (qemuimg, 'info', lambda unused: info)]):
                 qemuimg.create(vol.volumePath, size=self.SIZE,
                                format=qemuimg.FORMAT.QCOW2)
                 h = FakeHSM()
@@ -110,8 +132,8 @@ class VerifyUntrustedVolumeTest(VdsmTestCase):
                                      vol.sdUUID, vol.imgUUID, vol.volUUID)
 
     @contextmanager
-    def fake_volume(self, vol_fmt):
-        with fake_file_env() as env:
+    def fake_volume(self, vol_fmt, sd_version=3):
+        with fake_file_env(sd_version=sd_version) as env:
             img_id = make_uuid()
             vol_id = make_uuid()
             make_file_volume(env.sd_manifest, self.SIZE, img_id, vol_id,
