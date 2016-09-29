@@ -1235,7 +1235,7 @@ class Vm(object):
         """
         provides all the stats which will not change after a VM is booted.
         Please note that some values are provided by client (engine)
-        but can change as result as interaction with libvirt (display*)
+        but can change as a result of interaction with libvirt
         """
         stats = {
             'vmId': self.conf['vmId'],
