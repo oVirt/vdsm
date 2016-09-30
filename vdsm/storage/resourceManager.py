@@ -345,19 +345,6 @@ class ResourceManager(object):
     _instance = None
     _singletonLock = threading.Lock()
 
-    class ResourceInfo(object):
-        """
-        Resource struct
-        """
-        def __init__(self, realObj, namespace, name):
-            self.queue = []
-            self.activeUsers = 0
-            self.currentLock = None
-            self.realObj = realObj
-            self.namespace = namespace
-            self.name = name
-            self.fullName = "%s.%s" % (namespace, name)
-
     def __init__(self):
         self._syncRoot = rwlock.RWLock()
         self._namespaces = {}
@@ -575,8 +562,7 @@ class ResourceManager(object):
                     contextCleanup.defer(request.cancel)
                     return RequestRef(request)
 
-                resource = resources[name] = ResourceManager.ResourceInfo(
-                    obj, namespace, name)
+                resource = resources[name] = ResourceInfo(obj, namespace, name)
                 resource.currentLock = request.lockType
                 resource.activeUsers += 1
 
@@ -711,6 +697,20 @@ class Namespace(object):
         self.resources = {}
         self.lock = threading.Lock()  # rwlock.RWLock()
         self.factory = factory
+
+
+class ResourceInfo(object):
+    """
+    Resource struct
+    """
+    def __init__(self, realObj, namespace, name):
+        self.queue = []
+        self.activeUsers = 0
+        self.currentLock = None
+        self.realObj = realObj
+        self.namespace = namespace
+        self.name = name
+        self.fullName = "%s.%s" % (namespace, name)
 
 
 class Owner(object):
