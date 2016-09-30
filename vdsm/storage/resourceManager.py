@@ -358,15 +358,6 @@ class ResourceManager(object):
             self.name = name
             self.fullName = "%s.%s" % (namespace, name)
 
-    class Namespace(object):
-        """
-        Namespace struct
-        """
-        def __init__(self, factory):
-            self.resources = {}
-            self.lock = threading.Lock()  # rwlock.RWLock()
-            self.factory = factory
-
     def __init__(self):
         self._syncRoot = rwlock.RWLock()
         self._namespaces = {}
@@ -404,7 +395,7 @@ class ResourceManager(object):
 
             self._log.debug("Registering namespace '%s'", namespace)
 
-            self._namespaces[namespace] = ResourceManager.Namespace(factory)
+            self._namespaces[namespace] = Namespace(factory)
 
     def unregisterNamespace(self, namespace):
         with self._syncRoot.exclusive:
@@ -710,6 +701,16 @@ class ResourceManager(object):
                     self._log.debug("Request '%s' was granted (%d "
                                     "active users)", nextRequest,
                                     resource.activeUsers)
+
+
+class Namespace(object):
+    """
+    Namespace struct
+    """
+    def __init__(self, factory):
+        self.resources = {}
+        self.lock = threading.Lock()  # rwlock.RWLock()
+        self.factory = factory
 
 
 class Owner(object):
