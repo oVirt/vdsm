@@ -100,6 +100,8 @@ class SourceThread(threading.Thread):
         self._dstparams = dstparams
         self._enableGuestEvents = kwargs.get('enableGuestEvents', False)
         self._machineParams = {}
+        # TODO: utils.tobool shouldn't be used in this constructor, the
+        # conversions should be handled properly in the API layer
         self._tunneled = utils.tobool(tunneled)
         self._abortOnError = utils.tobool(abortOnError)
         self._consoleAddress = consoleAddress
@@ -110,8 +112,8 @@ class SourceThread(threading.Thread):
             kwargs.get('maxBandwidth') or
             config.getint('vars', 'migration_max_bandwidth')
         )
-        self._autoConverge = autoConverge
-        self._compressed = compressed
+        self._autoConverge = utils.tobool(autoConverge)
+        self._compressed = utils.tobool(compressed)
         self._incomingLimit = kwargs.get('incomingLimit')
         self._outgoingLimit = kwargs.get('outgoingLimit')
         self.status = {
