@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2011 Red Hat, Inc.
+# Copyright 2008-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,8 +33,8 @@ needs to set up a connection.
 from __future__ import absolute_import
 from __future__ import print_function
 
-import xmlrpclib
-import httplib
+import six.moves.xmlrpc_client
+import six.moves.http_client
 import socket
 
 # It would have been nicer to make these server-specific and not module-wide
@@ -48,19 +48,19 @@ CONNECTTIMEOUT = 160
 
 def Server(url, *args, **kwargs):
     kwargs['transport'] = TcpkeepTransport()
-    server = xmlrpclib.Server(url, *args, **kwargs)
+    server = six.moves.xmlrpc_client.Server(url, *args, **kwargs)
     return server
 
 ServerProxy = Server
 
 
-class TcpkeepTransport(xmlrpclib.Transport):
+class TcpkeepTransport(six.moves.xmlrpc_client.Transport):
 
     def make_connection(self, host):
         return TcpkeepHTTPConnection(host)
 
 
-class TcpkeepHTTPConnection(httplib.HTTPConnection):
+class TcpkeepHTTPConnection(six.moves.http_client.HTTPConnection):
     def connect(self):
         """Connect to the host and port specified in __init__.
 
@@ -110,7 +110,7 @@ import ssl
 
 def SslServer(url, ctx, *args, **kwargs):
     kwargs['transport'] = TcpkeepSafeTransport(ctx)
-    server = xmlrpclib.Server(url, *args, **kwargs)
+    server = six.moves.xmlrpc_client.Server(url, *args, **kwargs)
     return server
 
 SslServerProxy = SslServer

@@ -35,7 +35,7 @@ from vdsm import commands
 from vdsm import utils
 from vdsm.gluster import exception as ge
 
-import fstab
+from . import fstab
 from . import gluster_mgmt_api
 
 

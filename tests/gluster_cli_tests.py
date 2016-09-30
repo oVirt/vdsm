@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+
+import six
 
 from testlib import VdsmTestCase as TestCaseBase
 from gluster import cli as gcli
@@ -446,7 +448,7 @@ class GlusterCliTests(TestCaseBase):
 """
         tree = etree.fromstring(out)
         status = gcli._parseVolumeStatusClients(tree)
-        self.assertEquals(status.keys(), ['bricks', 'name'])
+        self.assertEquals(set(six.iterkeys(status)), {'bricks', 'name'})
         self.assertEquals(status['name'], 'music')
         oBricks = [{'brick': '192.168.122.2:/tmp/music-b1',
                     'hostuuid':

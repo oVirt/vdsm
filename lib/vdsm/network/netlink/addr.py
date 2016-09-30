@@ -1,4 +1,4 @@
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,7 +79,7 @@ def _addr_flags(addr):
     """Returns the textual representation of the address flags"""
     flags = (c_char * (CHARBUFFSIZE * 2))()
     return frozenset(_rtnl_addr_flags2str(_rtnl_addr_get_flags(addr), flags,
-                     sizeof(flags)).split(','))
+                     sizeof(flags)).split(b','))
 
 
 # C function prototypes

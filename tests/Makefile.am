@@ -177,7 +177,6 @@ blacklist_modules_python3 = \
 	fileSDTests.py \
 	fileUtilTests.py \
 	fileVolumeTests.py \
-	gluster_cli_tests.py \
 	guestagentTests.py \
 	hooksTests.py \
 	hostdevTests.py \
