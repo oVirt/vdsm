@@ -361,10 +361,6 @@ class ResourceManager(object):
 
         return cls._instance
 
-    def listNamespaces(self):
-        with self._syncRoot.shared:
-            return self._namespaces.keys()
-
     def registerNamespace(self, namespace, factory, force=False):
         if not self._namespaceValidator.match(namespace):
             raise ValueError("Illegal namespace '%s'" % namespace)

@@ -461,11 +461,6 @@ class ResourceManagerTests(TestCaseBase):
         manager.registerNamespace(
             "storage", resourceManager.SimpleResourceFactory(), True)
 
-    def testListNamespaces(self):
-        manager = self.manager
-        namespaces = manager.listNamespaces()
-        self.assertEquals(len(namespaces), 7)
-
     def testResourceAutorelease(self):
         manager = self.manager
         self.log.info("Acquiring resource", extra={'resource': "bob"})
