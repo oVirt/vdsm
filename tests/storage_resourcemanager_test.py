@@ -28,6 +28,7 @@ from resource import getrlimit, RLIMIT_NPROC
 
 from storage import resourceManager as rm
 
+from monkeypatch import MonkeyPatch
 from storagefakelib import FakeResourceManager
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase as TestCaseBase
@@ -112,30 +113,39 @@ class FailAfterSwitchFactory(rm.SimpleResourceFactory):
         return s
 
 
-class ResourceManagerTests(TestCaseBase):
-    def setUp(self):
-        manager = self.manager = rm.ResourceManager.getInstance()
-        manager.registerNamespace("storage", rm.SimpleResourceFactory())
-        manager.registerNamespace("null", NullResourceFactory())
-        manager.registerNamespace("string", StringResourceFactory())
-        manager.registerNamespace("error", ErrorResourceFactory())
-        manager.registerNamespace("switchfail", SwitchFailFactory())
-        manager.registerNamespace("crashy", CrashOnCloseFactory())
-        manager.registerNamespace("failAfterSwitch", FailAfterSwitchFactory())
+def manager():
+    """
+    Create fresh ResourceManager instance for testing.
+    """
+    manager = rm.ResourceManager()
+    manager.registerNamespace("storage", rm.SimpleResourceFactory())
+    manager.registerNamespace("null", NullResourceFactory())
+    manager.registerNamespace("string", StringResourceFactory())
+    manager.registerNamespace("error", ErrorResourceFactory())
+    manager.registerNamespace("switchfail", SwitchFailFactory())
+    manager.registerNamespace("crashy", CrashOnCloseFactory())
+    manager.registerNamespace("failAfterSwitch", FailAfterSwitchFactory())
+    return manager
 
+
+class ResourceManagerTests(TestCaseBase):
+
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testErrorInFactory(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         req = manager.registerResource("error", "resource", rm.EXCLUSIVE,
                                        lambda req, res: 1)
         self.assertTrue(req.canceled())
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testSingleton(self):
         a = rm.ResourceManager.getInstance()
         b = rm.ResourceManager.getInstance()
         self.assertEquals(id(a), id(b))
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testRegisterInvalidNamespace(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         try:
             manager.registerNamespace("I.HEART.DOTS",
                                       rm.SimpleResourceFactory())
@@ -144,13 +154,14 @@ class ResourceManagerTests(TestCaseBase):
 
         self.fail("Managed to register an invalid namespace")
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testFailCreateAfterSwitch(self):
         resources = []
 
         def callback(req, res):
             resources.append(res)
 
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         exclusive1 = manager.acquireResource(
             "failAfterSwitch", "resource", rm.EXCLUSIVE)
         sharedReq1 = manager.registerResource(
@@ -159,30 +170,35 @@ class ResourceManagerTests(TestCaseBase):
         self.assertTrue(sharedReq1.canceled())
         self.assertEquals(resources[0], None)
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testReregisterNamespace(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         self.assertRaises((ValueError, KeyError), manager.registerNamespace,
                           "storage", rm.SimpleResourceFactory())
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testResourceSwitchLockTypeFail(self):
         self.testResourceLockSwitch("switchfail")
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testRequestInvalidResource(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         self.assertRaises(ValueError, manager.acquireResource,
                           "storage", "DOT.DOT", rm.SHARED)
         self.assertRaises(ValueError, manager.acquireResource,
                           "DOT.DOT", "resource", rm.SHARED)
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testReleaseInvalidResource(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         self.assertRaises(ValueError, manager.releaseResource,
                           "DONT_EXIST", "resource")
         self.assertRaises(ValueError, manager.releaseResource, "storage",
                           "DOT")
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testResourceWrapper(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         s = StringIO
         with manager.acquireResource(
                 "string", "test",
@@ -192,8 +208,9 @@ class ResourceManagerTests(TestCaseBase):
                     continue
                 self.assertTrue(hasattr(resource, attr))
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testAccessAttributeNotExposedByWrapper(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         with manager.acquireResource(
                 "string", "test",
                 rm.EXCLUSIVE) as resource:
@@ -208,13 +225,14 @@ class ResourceManagerTests(TestCaseBase):
 
         self.fail("Managed to access an attribute not exposed by wrapper")
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testAccessAttributeNotExposedByRequestRef(self):
         resources = []
 
         def callback(req, res):
             resources.insert(0, res)
 
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         req = manager.registerResource(
             "string", "resource", rm.SHARED, callback)
         try:
@@ -230,13 +248,14 @@ class ResourceManagerTests(TestCaseBase):
 
         self.fail("Managed to access an attribute not exposed by wrapper")
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testRequestRefStr(self):
         resources = []
 
         def callback(req, res):
             resources.insert(0, res)
 
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         req = manager.registerResource(
             "string", "resource", rm.SHARED, callback)
         try:
@@ -245,6 +264,7 @@ class ResourceManagerTests(TestCaseBase):
             req.wait()
             resources[0].release()
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testRequestRefCmp(self):
         resources = []
         requests = []
@@ -253,7 +273,7 @@ class ResourceManagerTests(TestCaseBase):
             resources.insert(0, res)
             requests.insert(0, req)
 
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         req1 = manager.registerResource(
             "string", "resource", rm.EXCLUSIVE, callback)
         req2 = manager.registerResource(
@@ -276,13 +296,14 @@ class ResourceManagerTests(TestCaseBase):
 
         self.assertNotEqual(req1, "STUFF")
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testRequestRecancel(self):
         resources = []
 
         def callback(req, res):
             resources.insert(0, res)
 
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         blocker = manager.acquireResource("string", "resource", rm.EXCLUSIVE)
         req = manager.registerResource(
             "string", "resource", rm.EXCLUSIVE, callback)
@@ -293,6 +314,7 @@ class ResourceManagerTests(TestCaseBase):
 
         blocker.release()
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testRequestRegrant(self):
         resources = []
 
@@ -303,11 +325,12 @@ class ResourceManagerTests(TestCaseBase):
         req.grant()
         self.assertRaises(rm.RequestAlreadyProcessedError, req.grant)
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testRequestWithBadCallbackOnCancel(self):
         def callback(req, res):
             raise Exception("BUY MILK!")
 
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         blocker = manager.acquireResource("string", "resource", rm.EXCLUSIVE)
         req = manager.registerResource(
             "string", "resource", rm.EXCLUSIVE, callback)
@@ -316,29 +339,32 @@ class ResourceManagerTests(TestCaseBase):
 
         blocker.release()
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testRequestWithBadCallbackOnGrant(self):
         def callback(req, res):
             res.release()
             raise Exception("BUY MILK!")
 
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         req = manager.registerResource(
             "string", "resource", rm.EXCLUSIVE, callback)
         req.wait()
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testRereleaseResource(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         res = manager.acquireResource("string", "resource", rm.EXCLUSIVE)
         res.release()
         res.release()
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testCancelExclusiveBetweenShared(self):
         resources = []
 
         def callback(req, res):
             resources.insert(0, res)
 
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         exclusive1 = manager.acquireResource(
             "string", "resource", rm.EXCLUSIVE)
         sharedReq1 = manager.registerResource(
@@ -377,16 +403,18 @@ class ResourceManagerTests(TestCaseBase):
         while len(resources) > 0:
             resources.pop().release()
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testCrashOnSwitch(self):
         self.testResourceLockSwitch("crashy")
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testResourceLockSwitch(self, namespace="string"):
         resources = []
 
         def callback(req, res):
             resources.insert(0, res)
 
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         exclusive1 = manager.acquireResource(
             namespace, "resource", rm.EXCLUSIVE)
         sharedReq1 = manager.registerResource(
@@ -422,8 +450,9 @@ class ResourceManagerTests(TestCaseBase):
         hash(exclusive3)
         hash(sharedReq3)
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testResourceAcquireTimeout(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         exclusive1 = manager.acquireResource(
             "string", "resource", rm.EXCLUSIVE)
         self.assertRaises(rm.RequestTimedOutError,
@@ -431,13 +460,15 @@ class ResourceManagerTests(TestCaseBase):
                           rm.EXCLUSIVE, 1)
         exclusive1.release()
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testResourceAcquireInvalidTimeout(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         self.assertRaises(TypeError, manager.acquireResource, "string",
                           "resource", rm.EXCLUSIVE, "A")
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testResourceInvalidation(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         resource = manager.acquireResource("string", "test",
                                            rm.EXCLUSIVE)
         try:
@@ -447,12 +478,14 @@ class ResourceManagerTests(TestCaseBase):
         resource.release()
         self.assertRaises(Exception, resource.write, "test")
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testForceRegisterNamespace(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         manager.registerNamespace("storage", rm.SimpleResourceFactory(), True)
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testResourceAutorelease(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         self.log.info("Acquiring resource", extra={'resource': "bob"})
         res = manager.acquireResource("storage", "resource", rm.SHARED)
         resProxy = proxy(res)
@@ -471,16 +504,18 @@ class ResourceManagerTests(TestCaseBase):
                 break
             time.sleep(1)
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testAcquireResourceShared(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         res1 = manager.acquireResource("storage", "resource", rm.SHARED)
         res2 = manager.acquireResource("storage", "resource", rm.SHARED, 10)
 
         res1.release()
         res2.release()
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testResourceStatuses(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         self.assertEquals(manager.getResourceStatus("storage", "resource"),
                           rm.LockState.free)
         exclusive1 = manager.acquireResource(
@@ -500,8 +535,9 @@ class ResourceManagerTests(TestCaseBase):
 
         self.fail("Managed to get status on a non existing resource")
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testAcquireNonExistingResource(self):
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         try:
             manager.acquireResource("null", "resource", rm.EXCLUSIVE)
         except KeyError:
@@ -509,13 +545,14 @@ class ResourceManagerTests(TestCaseBase):
 
         self.fail("Managed to get status on a non existing resource")
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testAcquireResourceExclusive(self):
         resources = []
 
         def callback(req, res):
             resources.append(res)
 
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         exclusive1 = manager.acquireResource(
             "storage", "resource", rm.EXCLUSIVE)
         sharedReq1 = manager.registerResource(
@@ -550,13 +587,14 @@ class ResourceManagerTests(TestCaseBase):
         self.assertTrue(exclusiveReq2.granted())
         resources.pop().release()  # exclusiveReq 2
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testCancelRequest(self):
         resources = []
 
         def callback(req, res):
             resources.append(res)
 
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         exclusiveReq1 = manager.registerResource(
             "storage", "resource", rm.EXCLUSIVE, callback)
         exclusiveReq2 = manager.registerResource(
@@ -577,6 +615,7 @@ class ResourceManagerTests(TestCaseBase):
         self.assertTrue(exclusiveReq3.granted())
         resources.pop().release()  # exclusiveReq 3
 
+    @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     @slowtest
     @stresstest
     def testStressTest(self):
@@ -612,7 +651,7 @@ class ResourceManagerTests(TestCaseBase):
             res.release()
             threadLimit.release()
 
-        manager = self.manager
+        manager = rm.ResourceManager.getInstance()
         rnd = Random()
 
         lockTranslator = [rm.EXCLUSIVE, rm.SHARED]
@@ -662,22 +701,6 @@ class ResourceManagerTests(TestCaseBase):
 
         for t in releaseThreads:
             t.join()
-
-    def tearDown(self):
-        manager = self.manager
-
-        manager.unregisterNamespace("null")
-
-        try:
-            manager.unregisterNamespace("storage")
-            manager.unregisterNamespace("string")
-            manager.unregisterNamespace("error")
-            manager.unregisterNamespace("switchfail")
-            manager.unregisterNamespace("crashy")
-            manager.unregisterNamespace("failAfterSwitch")
-        except:
-            rm.ResourceManager._instance = None
-            raise
 
 
 @expandPermutations
