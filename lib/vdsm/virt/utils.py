@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+import six
 
 """
 shared utilities and common code for the virt package
@@ -93,7 +94,7 @@ class ExpiringCache(object):
         with self._lock:
             expired_keys = [
                 key for key, (expiration, _)
-                in self._items.iteritems()
+                in six.iteritems(self._items)
                 if expiration <= now]
             for key in expired_keys:
                 del self._items[key]

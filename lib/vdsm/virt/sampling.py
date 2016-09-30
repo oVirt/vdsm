@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+import six
 
 """
 Support for VM and host statistics sampling.
@@ -279,12 +280,12 @@ class HostSample(TimedSample):
     def to_connlog(self):
         text = ', '.join(
             ('%s:(%s)' % (ifid, ifacesample.to_connlog()))
-            for (ifid, ifacesample) in self.interfaces.iteritems())
+            for (ifid, ifacesample) in six.iteritems(self.interfaces))
         return ('recent_client:%s, ' % self.recentClient) + text
 
     def connlog_diff(self, other):
         text = ''
-        for ifid, sample in self.interfaces.iteritems():
+        for ifid, sample in six.iteritems(self.interfaces):
             if ifid in other.interfaces:
                 diff = sample.connlog_diff(other.interfaces[ifid])
                 if diff:
@@ -292,7 +293,7 @@ class HostSample(TimedSample):
             else:
                 text += 'new %s:(%s) ' % (ifid, sample.to_connlog())
 
-        for ifid, sample in other.interfaces.iteritems():
+        for ifid, sample in six.iteritems(other.interfaces):
             if ifid not in self.interfaces:
                 text += 'dropped %s:(%s) ' % (ifid, sample.to_connlog())
 
@@ -560,14 +561,14 @@ class VMBulkSampler(object):
                                    vm_sample.first_value,
                                    vm_sample.last_value,
                                    vm_sample.interval)
-            for vm_id, vm_sample in vm_samples.items()
+            for vm_id, vm_sample in six.iteritems(vm_samples)
         }
         vmstats.send_metrics(stats)
 
     def _get_responsive_doms(self):
         vms = self._get_vms()
         doms = []
-        for vm_id, vm_obj in vms.iteritems():
+        for vm_id, vm_obj in six.iteritems(vms):
             to_skip = self._skip_doms.get(vm_id, False)
             if to_skip:
                 continue

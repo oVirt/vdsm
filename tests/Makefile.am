@@ -166,7 +166,6 @@ blacklist_modules_python3 = \
 	blockVolumeTests.py \
 	blocksdTests.py \
 	bridgeTests.py \
-	bulk_sampling_test.py \
 	clientifTests.py \
 	deviceTests.py \
 	devices/parsing/complex_vm_tests.py \
