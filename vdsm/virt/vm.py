@@ -806,15 +806,32 @@ class Vm(object):
         for drive in drives:
             self._createTransientDisk(drive)
 
-    def _onQemuDeath(self):
+    def _getShutdownReason(self, stopped_shutdown):
+        with self._shutdownLock:
+            reason = self._shutdownReason
+        if stopped_shutdown:
+            # do not overwrite admin shutdown, if present
+            if reason is None:
+                # seen_shutdown is used to detect VMs that have been
+                # stopped by sending them SIG_TERM (e.g. system shutdown).
+                # In that case libvirt and qemu report a user initiated
+                # shutdown that is not correct.
+                # BZ on libvirt: https://bugzilla.redhat.com/1384007
+                seen_shutdown = not self.guestAgent or \
+                    self.guestAgent.has_seen_shutdown()
+                if seen_shutdown:
+                    reason = vmexitreason.USER_SHUTDOWN
+                else:
+                    reason = vmexitreason.HOST_SHUTDOWN
+        return reason
+
+    def _onQemuDeath(self, reason):
         self.log.info('underlying process disconnected')
         self._dom = virdomain.Disconnected(self.id)
         # Try release VM resources first, if failed stuck in 'Powering Down'
         # state
         result = self.releaseVm()
         if not result['status']['code']:
-            with self._shutdownLock:
-                reason = self._shutdownReason
             if reason is None:
                 self.setDownStatus(ERROR, vmexitreason.LOST_QEMU_CONNECTION)
             else:
@@ -4317,12 +4334,9 @@ class Vm(object):
                     self.lastStatus == vmstatus.SAVING_STATE):
                 hooks.after_vm_hibernate(self._domain.xml, self.conf)
             else:
-                if detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN:
-                    with self._shutdownLock:
-                        if self._shutdownReason is None:
-                            # do not overwrite admin shutdown, if present
-                            self._shutdownReason = vmexitreason.USER_SHUTDOWN
-                self._onQemuDeath()
+                reason = self._getShutdownReason(
+                    detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN)
+                self._onQemuDeath(reason)
         elif event == libvirt.VIR_DOMAIN_EVENT_SUSPENDED:
             self._setGuestCpuRunning(False)
             self._logGuestCpuStatus('onSuspend')
