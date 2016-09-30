@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014,2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ USER_SHUTDOWN = 7
 MIGRATION_FAILED = 8
 LIBVIRT_DOMAIN_MISSING = 9
 DESTROYED_ON_STARTUP = 10
+HOST_SHUTDOWN = 11
 
 
 exitReasons = {
@@ -44,4 +45,5 @@ exitReasons = {
     MIGRATION_FAILED: 'VM failed to migrate',
     LIBVIRT_DOMAIN_MISSING: 'Failed to find the libvirt domain',
     DESTROYED_ON_STARTUP: 'VM destroyed during the startup',
+    HOST_SHUTDOWN: 'VM has been terminated on the host',
 }
