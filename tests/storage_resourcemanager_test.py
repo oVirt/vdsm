@@ -115,9 +115,9 @@ class FailAfterSwitchFactory(rm.SimpleResourceFactory):
 
 def manager():
     """
-    Create fresh ResourceManager instance for testing.
+    Create fresh _ResourceManager instance for testing.
     """
-    manager = rm.ResourceManager()
+    manager = rm._ResourceManager()
     manager.registerNamespace("storage", rm.SimpleResourceFactory())
     manager.registerNamespace("null", NullResourceFactory())
     manager.registerNamespace("string", StringResourceFactory())

@@ -330,7 +330,7 @@ class ResourceRef(object):
             repr(self.__wrappedObject) if self.isValid else None)
 
 
-class ResourceManager(object):
+class _ResourceManager(object):
     """
     Manages all the resources in the application.
 
@@ -1007,7 +1007,7 @@ class ResourceManagerLock(guarded.AbstractLock):
 
 
 # The single resource manager - this instance is monkeypatched by the tests.
-_manager = ResourceManager()
+_manager = _ResourceManager()
 
 
 # Public api - client should use only these to manage resources.
