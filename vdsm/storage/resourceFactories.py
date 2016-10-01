@@ -31,8 +31,6 @@ from sdc import sdCache
 import sd
 import image
 
-rmanager = rm.ResourceManager.getInstance()
-
 log = logging.getLogger('storage.ResourcesFactories')
 
 
@@ -152,12 +150,12 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
         try:
             if template:
                 if len(volUUIDChain) > 0:
-                    volRes = rmanager.acquireResource(
+                    volRes = rm.acquireResource(
                         self.volumeResourcesNamespace,
                         template, rm.SHARED,
                         timeout=self.resource_default_timeout)
                 else:
-                    volRes = rmanager.acquireResource(
+                    volRes = rm.acquireResource(
                         self.volumeResourcesNamespace,
                         template, lockType,
                         timeout=self.resource_default_timeout)
@@ -165,7 +163,7 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
 
             # Acquire 'lockType' volume locks
             for volUUID in volUUIDChain:
-                volRes = rmanager.acquireResource(
+                volRes = rm.acquireResource(
                     self.volumeResourcesNamespace,
                     volUUID, lockType,
                     timeout=self.resource_default_timeout)
