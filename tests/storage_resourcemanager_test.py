@@ -132,9 +132,8 @@ class ResourceManagerTests(TestCaseBase):
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testErrorInFactory(self):
-        manager = rm.ResourceManager.getInstance()
-        req = manager.registerResource("error", "resource", rm.EXCLUSIVE,
-                                       lambda req, res: 1)
+        req = rm._registerResource(
+            "error", "resource", rm.EXCLUSIVE, lambda req, res: 1)
         self.assertTrue(req.canceled())
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
@@ -145,10 +144,8 @@ class ResourceManagerTests(TestCaseBase):
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testRegisterInvalidNamespace(self):
-        manager = rm.ResourceManager.getInstance()
         try:
-            manager.registerNamespace("I.HEART.DOTS",
-                                      rm.SimpleResourceFactory())
+            rm.registerNamespace("I.HEART.DOTS", rm.SimpleResourceFactory())
         except ValueError:
             return
 
@@ -161,10 +158,9 @@ class ResourceManagerTests(TestCaseBase):
         def callback(req, res):
             resources.append(res)
 
-        manager = rm.ResourceManager.getInstance()
-        exclusive1 = manager.acquireResource(
+        exclusive1 = rm.acquireResource(
             "failAfterSwitch", "resource", rm.EXCLUSIVE)
-        sharedReq1 = manager.registerResource(
+        sharedReq1 = rm._registerResource(
             "failAfterSwitch", "resource", rm.SHARED, callback)
         exclusive1.release()
         self.assertTrue(sharedReq1.canceled())
@@ -172,8 +168,7 @@ class ResourceManagerTests(TestCaseBase):
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testReregisterNamespace(self):
-        manager = rm.ResourceManager.getInstance()
-        self.assertRaises((ValueError, KeyError), manager.registerNamespace,
+        self.assertRaises((ValueError, KeyError), rm.registerNamespace,
                           "storage", rm.SimpleResourceFactory())
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
@@ -182,27 +177,22 @@ class ResourceManagerTests(TestCaseBase):
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testRequestInvalidResource(self):
-        manager = rm.ResourceManager.getInstance()
-        self.assertRaises(ValueError, manager.acquireResource,
+        self.assertRaises(ValueError, rm.acquireResource,
                           "storage", "DOT.DOT", rm.SHARED)
-        self.assertRaises(ValueError, manager.acquireResource,
+        self.assertRaises(ValueError, rm.acquireResource,
                           "DOT.DOT", "resource", rm.SHARED)
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testReleaseInvalidResource(self):
-        manager = rm.ResourceManager.getInstance()
-        self.assertRaises(ValueError, manager.releaseResource,
+        self.assertRaises(ValueError, rm.releaseResource,
                           "DONT_EXIST", "resource")
-        self.assertRaises(ValueError, manager.releaseResource, "storage",
+        self.assertRaises(ValueError, rm.releaseResource, "storage",
                           "DOT")
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testResourceWrapper(self):
-        manager = rm.ResourceManager.getInstance()
         s = StringIO
-        with manager.acquireResource(
-                "string", "test",
-                rm.EXCLUSIVE) as resource:
+        with rm.acquireResource("string", "test", rm.EXCLUSIVE) as resource:
             for attr in dir(s):
                 if attr == "close":
                     continue
@@ -210,10 +200,7 @@ class ResourceManagerTests(TestCaseBase):
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testAccessAttributeNotExposedByWrapper(self):
-        manager = rm.ResourceManager.getInstance()
-        with manager.acquireResource(
-                "string", "test",
-                rm.EXCLUSIVE) as resource:
+        with rm.acquireResource("string", "test", rm.EXCLUSIVE) as resource:
             try:
                 resource.THERE_IS_NO_WAY_I_EXIST
             except AttributeError:
@@ -232,9 +219,7 @@ class ResourceManagerTests(TestCaseBase):
         def callback(req, res):
             resources.insert(0, res)
 
-        manager = rm.ResourceManager.getInstance()
-        req = manager.registerResource(
-            "string", "resource", rm.SHARED, callback)
+        req = rm._registerResource("string", "resource", rm.SHARED, callback)
         try:
             req.grant()
         except AttributeError:
@@ -255,9 +240,7 @@ class ResourceManagerTests(TestCaseBase):
         def callback(req, res):
             resources.insert(0, res)
 
-        manager = rm.ResourceManager.getInstance()
-        req = manager.registerResource(
-            "string", "resource", rm.SHARED, callback)
+        req = rm._registerResource("string", "resource", rm.SHARED, callback)
         try:
             str(req)
         finally:
@@ -273,10 +256,9 @@ class ResourceManagerTests(TestCaseBase):
             resources.insert(0, res)
             requests.insert(0, req)
 
-        manager = rm.ResourceManager.getInstance()
-        req1 = manager.registerResource(
+        req1 = rm._registerResource(
             "string", "resource", rm.EXCLUSIVE, callback)
-        req2 = manager.registerResource(
+        req2 = rm._registerResource(
             "string", "resource", rm.EXCLUSIVE, callback)
 
         self.assertNotEqual(req1, req2)
@@ -303,9 +285,8 @@ class ResourceManagerTests(TestCaseBase):
         def callback(req, res):
             resources.insert(0, res)
 
-        manager = rm.ResourceManager.getInstance()
-        blocker = manager.acquireResource("string", "resource", rm.EXCLUSIVE)
-        req = manager.registerResource(
+        blocker = rm.acquireResource("string", "resource", rm.EXCLUSIVE)
+        req = rm._registerResource(
             "string", "resource", rm.EXCLUSIVE, callback)
 
         req.cancel()
@@ -330,9 +311,8 @@ class ResourceManagerTests(TestCaseBase):
         def callback(req, res):
             raise Exception("BUY MILK!")
 
-        manager = rm.ResourceManager.getInstance()
-        blocker = manager.acquireResource("string", "resource", rm.EXCLUSIVE)
-        req = manager.registerResource(
+        blocker = rm.acquireResource("string", "resource", rm.EXCLUSIVE)
+        req = rm._registerResource(
             "string", "resource", rm.EXCLUSIVE, callback)
 
         req.cancel()
@@ -345,15 +325,13 @@ class ResourceManagerTests(TestCaseBase):
             res.release()
             raise Exception("BUY MILK!")
 
-        manager = rm.ResourceManager.getInstance()
-        req = manager.registerResource(
+        req = rm._registerResource(
             "string", "resource", rm.EXCLUSIVE, callback)
         req.wait()
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testRereleaseResource(self):
-        manager = rm.ResourceManager.getInstance()
-        res = manager.acquireResource("string", "resource", rm.EXCLUSIVE)
+        res = rm.acquireResource("string", "resource", rm.EXCLUSIVE)
         res.release()
         res.release()
 
@@ -364,18 +342,16 @@ class ResourceManagerTests(TestCaseBase):
         def callback(req, res):
             resources.insert(0, res)
 
-        manager = rm.ResourceManager.getInstance()
-        exclusive1 = manager.acquireResource(
-            "string", "resource", rm.EXCLUSIVE)
-        sharedReq1 = manager.registerResource(
+        exclusive1 = rm.acquireResource("string", "resource", rm.EXCLUSIVE)
+        sharedReq1 = rm._registerResource(
             "string", "resource", rm.SHARED, callback)
-        sharedReq2 = manager.registerResource(
+        sharedReq2 = rm._registerResource(
             "string", "resource", rm.SHARED, callback)
-        exclusiveReq1 = manager.registerResource(
+        exclusiveReq1 = rm._registerResource(
             "string", "resource", rm.EXCLUSIVE, callback)
-        sharedReq3 = manager.registerResource(
+        sharedReq3 = rm._registerResource(
             "string", "resource", rm.SHARED, callback)
-        sharedReq4 = manager.registerResource(
+        sharedReq4 = rm._registerResource(
             "string", "resource", rm.SHARED, callback)
 
         self.assertFalse(sharedReq1.granted())
@@ -414,18 +390,16 @@ class ResourceManagerTests(TestCaseBase):
         def callback(req, res):
             resources.insert(0, res)
 
-        manager = rm.ResourceManager.getInstance()
-        exclusive1 = manager.acquireResource(
-            namespace, "resource", rm.EXCLUSIVE)
-        sharedReq1 = manager.registerResource(
+        exclusive1 = rm.acquireResource(namespace, "resource", rm.EXCLUSIVE)
+        sharedReq1 = rm._registerResource(
             namespace, "resource", rm.SHARED, callback)
-        sharedReq2 = manager.registerResource(
+        sharedReq2 = rm._registerResource(
             namespace, "resource", rm.SHARED, callback)
-        exclusive2 = manager.registerResource(
+        exclusive2 = rm._registerResource(
             namespace, "resource", rm.EXCLUSIVE, callback)
-        exclusive3 = manager.registerResource(
+        exclusive3 = rm._registerResource(
             namespace, "resource", rm.EXCLUSIVE, callback)
-        sharedReq3 = manager.registerResource(
+        sharedReq3 = rm._registerResource(
             namespace, "resource", rm.SHARED, callback)
 
         self.assertEquals(exclusive1.read(), "resource:exclusive")
@@ -452,25 +426,20 @@ class ResourceManagerTests(TestCaseBase):
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testResourceAcquireTimeout(self):
-        manager = rm.ResourceManager.getInstance()
-        exclusive1 = manager.acquireResource(
-            "string", "resource", rm.EXCLUSIVE)
+        exclusive1 = rm.acquireResource("string", "resource", rm.EXCLUSIVE)
         self.assertRaises(rm.RequestTimedOutError,
-                          manager.acquireResource, "string", "resource",
+                          rm.acquireResource, "string", "resource",
                           rm.EXCLUSIVE, 1)
         exclusive1.release()
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testResourceAcquireInvalidTimeout(self):
-        manager = rm.ResourceManager.getInstance()
-        self.assertRaises(TypeError, manager.acquireResource, "string",
+        self.assertRaises(TypeError, rm.acquireResource, "string",
                           "resource", rm.EXCLUSIVE, "A")
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testResourceInvalidation(self):
-        manager = rm.ResourceManager.getInstance()
-        resource = manager.acquireResource("string", "test",
-                                           rm.EXCLUSIVE)
+        resource = rm.acquireResource("string", "test", rm.EXCLUSIVE)
         try:
             resource.write("dsada")
         except:
@@ -480,14 +449,12 @@ class ResourceManagerTests(TestCaseBase):
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testForceRegisterNamespace(self):
-        manager = rm.ResourceManager.getInstance()
-        manager.registerNamespace("storage", rm.SimpleResourceFactory(), True)
+        rm.registerNamespace("storage", rm.SimpleResourceFactory(), True)
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testResourceAutorelease(self):
-        manager = rm.ResourceManager.getInstance()
         self.log.info("Acquiring resource", extra={'resource': "bob"})
-        res = manager.acquireResource("storage", "resource", rm.SHARED)
+        res = rm.acquireResource("storage", "resource", rm.SHARED)
         resProxy = proxy(res)
         res = None
         # wait for object to die
@@ -499,36 +466,33 @@ class ResourceManagerTests(TestCaseBase):
             pass
         self.log.info("Waiting for autoclean")
         while True:
-            resStatus = manager.getResourceStatus("storage", "resource")
+            resStatus = rm._getResourceStatus("storage", "resource")
             if resStatus == rm.LockState.free:
                 break
             time.sleep(1)
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testAcquireResourceShared(self):
-        manager = rm.ResourceManager.getInstance()
-        res1 = manager.acquireResource("storage", "resource", rm.SHARED)
-        res2 = manager.acquireResource("storage", "resource", rm.SHARED, 10)
+        res1 = rm.acquireResource("storage", "resource", rm.SHARED)
+        res2 = rm.acquireResource("storage", "resource", rm.SHARED, 10)
 
         res1.release()
         res2.release()
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testResourceStatuses(self):
-        manager = rm.ResourceManager.getInstance()
-        self.assertEquals(manager.getResourceStatus("storage", "resource"),
+        self.assertEquals(rm._getResourceStatus("storage", "resource"),
                           rm.LockState.free)
-        exclusive1 = manager.acquireResource(
-            "storage", "resource", rm.EXCLUSIVE)
-        self.assertEquals(manager.getResourceStatus("storage", "resource"),
+        exclusive1 = rm.acquireResource("storage", "resource", rm.EXCLUSIVE)
+        self.assertEquals(rm._getResourceStatus("storage", "resource"),
                           rm.LockState.locked)
         exclusive1.release()
-        shared1 = manager.acquireResource("storage", "resource", rm.SHARED)
-        self.assertEquals(manager.getResourceStatus("storage", "resource"),
+        shared1 = rm.acquireResource("storage", "resource", rm.SHARED)
+        self.assertEquals(rm._getResourceStatus("storage", "resource"),
                           rm.LockState.shared)
         shared1.release()
         try:
-            self.assertEquals(manager.getResourceStatus("null", "resource"),
+            self.assertEquals(rm._getResourceStatus("null", "resource"),
                               rm.LockState.free)
         except KeyError:
             return
@@ -537,9 +501,8 @@ class ResourceManagerTests(TestCaseBase):
 
     @MonkeyPatch(rm.ResourceManager, "_instance", manager())
     def testAcquireNonExistingResource(self):
-        manager = rm.ResourceManager.getInstance()
         try:
-            manager.acquireResource("null", "resource", rm.EXCLUSIVE)
+            rm.acquireResource("null", "resource", rm.EXCLUSIVE)
         except KeyError:
             return
 
@@ -552,16 +515,14 @@ class ResourceManagerTests(TestCaseBase):
         def callback(req, res):
             resources.append(res)
 
-        manager = rm.ResourceManager.getInstance()
-        exclusive1 = manager.acquireResource(
-            "storage", "resource", rm.EXCLUSIVE)
-        sharedReq1 = manager.registerResource(
+        exclusive1 = rm.acquireResource("storage", "resource", rm.EXCLUSIVE)
+        sharedReq1 = rm._registerResource(
             "storage", "resource", rm.SHARED, callback)
-        sharedReq2 = manager.registerResource(
+        sharedReq2 = rm._registerResource(
             "storage", "resource", rm.SHARED, callback)
-        exclusiveReq1 = manager.registerResource(
+        exclusiveReq1 = rm._registerResource(
             "storage", "resource", rm.EXCLUSIVE, callback)
-        exclusiveReq2 = manager.registerResource(
+        exclusiveReq2 = rm._registerResource(
             "storage", "resource", rm.EXCLUSIVE, callback)
 
         self.assertFalse(sharedReq1.granted())
@@ -594,12 +555,11 @@ class ResourceManagerTests(TestCaseBase):
         def callback(req, res):
             resources.append(res)
 
-        manager = rm.ResourceManager.getInstance()
-        exclusiveReq1 = manager.registerResource(
+        exclusiveReq1 = rm._registerResource(
             "storage", "resource", rm.EXCLUSIVE, callback)
-        exclusiveReq2 = manager.registerResource(
+        exclusiveReq2 = rm._registerResource(
             "storage", "resource", rm.EXCLUSIVE, callback)
-        exclusiveReq3 = manager.registerResource(
+        exclusiveReq3 = rm._registerResource(
             "storage", "resource", rm.EXCLUSIVE, callback)
 
         self.assertTrue(exclusiveReq1.granted())
@@ -637,9 +597,10 @@ class ResourceManagerTests(TestCaseBase):
 
         def register():
             time.sleep(rnd.randint(0, 4))
-            manager.registerResource(
-                "string", "resource", lockTranslator[rnd.randint(0, 1)],
-                callback)
+            rm._registerResource("string",
+                                 "resource",
+                                 lockTranslator[rnd.randint(0, 1)],
+                                 callback)
             threadLimit.release()
 
         def releaseShared(req, res):
@@ -651,7 +612,6 @@ class ResourceManagerTests(TestCaseBase):
             res.release()
             threadLimit.release()
 
-        manager = rm.ResourceManager.getInstance()
         rnd = Random()
 
         lockTranslator = [rm.EXCLUSIVE, rm.SHARED]
