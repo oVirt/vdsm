@@ -29,8 +29,6 @@ from storage import image, sd
 
 from . import base
 
-rmanager = rm.ResourceManager.getInstance()
-
 
 class Job(base.Job):
     def __init__(self, job_id, host_id, sd_manifest, vol_info):
@@ -44,8 +42,8 @@ class Job(base.Job):
         with self.sd_manifest.domain_lock(self.host_id):
             image_res_ns = sd.getNamespace(sc.IMAGE_NAMESPACE,
                                            self.sd_manifest.sdUUID)
-            with rmanager.acquireResource(image_res_ns, self.vol_info.img_id,
-                                          rm.EXCLUSIVE):
+            with rm.acquireResource(image_res_ns, self.vol_info.img_id,
+                                    rm.EXCLUSIVE):
                 artifacts = self.sd_manifest.get_volume_artifacts(
                     self.vol_info.img_id, self.vol_info.vol_id)
                 artifacts.create(

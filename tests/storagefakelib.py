@@ -30,6 +30,7 @@ from vdsm.storage.constants import VG_EXTENT_SIZE_MB
 from vdsm import utils
 
 from storage import lvm as real_lvm
+from storage import resourceManager as rm
 
 
 class FakeLVM(object):
@@ -277,6 +278,9 @@ def fake_lvm_uuid():
 
 
 class FakeResourceManager(object):
+
+    SHARED = rm.SHARED
+    EXCLUSIVE = rm.EXCLUSIVE
 
     @recorded
     @contextmanager

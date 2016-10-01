@@ -82,7 +82,7 @@ class TestCopyDataDIV(VdsmTestCase):
             with MonkeyPatchScope([
                 (guarded, 'context', fake_guarded_context()),
                 (storage.sdm.api.copy_data, 'sdCache', env.sdcache),
-                (blockVolume, 'rmanager', rm),
+                (blockVolume, 'rm', rm),
             ]):
                 src_vols = make_qemu_chain(env, size, src_fmt, chain_length)
                 dst_vols = make_qemu_chain(env, size, dst_fmt, chain_length)

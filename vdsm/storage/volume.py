@@ -38,8 +38,6 @@ import sd
 from sdc import sdCache
 import task
 import resourceManager as rm
-rmanager = rm.ResourceManager.getInstance()
-
 
 DOMAIN_MNT_POINT = 'mnt'
 
@@ -651,8 +649,7 @@ class Volume(object):
 
         imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
 
-        with rmanager.acquireResource(imageResourcesNamespace, srcImg,
-                                      rm.EXCLUSIVE):
+        with rm.acquireResource(imageResourcesNamespace, srcImg, rm.EXCLUSIVE):
             vol = sdCache.produce(sdUUID).produceVolume(srcImg, srcVol)
             vol.prepare(rw=True, chainrw=True, setrw=True)
 

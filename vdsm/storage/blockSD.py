@@ -862,15 +862,13 @@ class BlockStorageDomain(sd.StorageDomain):
         """
         sd.StorageDomain._registerResourceNamespaces(self)
 
-        rmanager = rm.ResourceManager.getInstance()
         # Register lvm activation resource namespace for the underlying VG
         lvmActivationFactory = resourceFactories.LvmActivationFactory(
             self.sdUUID)
         lvmActivationNamespace = sd.getNamespace(sc.LVM_ACTIVATION_NAMESPACE,
                                                  self.sdUUID)
         try:
-            rmanager.registerNamespace(lvmActivationNamespace,
-                                       lvmActivationFactory)
+            rm.registerNamespace(lvmActivationNamespace, lvmActivationFactory)
         except KeyError:
             self.log.info("Resource namespace %s already registered",
                           lvmActivationNamespace)

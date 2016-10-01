@@ -641,14 +641,12 @@ class StorageDomain(object):
         Register resources namespaces and create
         factories for it.
         """
-        rmanager = rm.ResourceManager.getInstance()
         # Register image resource namespace
         imageResourceFactory = \
             resourceFactories.ImageResourceFactory(self.sdUUID)
         imageResourcesNamespace = getNamespace(sc.IMAGE_NAMESPACE, self.sdUUID)
         try:
-            rmanager.registerNamespace(imageResourcesNamespace,
-                                       imageResourceFactory)
+            rm.registerNamespace(imageResourcesNamespace, imageResourceFactory)
         except KeyError:
             self.log.info("Resource namespace %s already registered",
                           imageResourcesNamespace)
@@ -656,8 +654,8 @@ class StorageDomain(object):
         volumeResourcesNamespace = getNamespace(sc.VOLUME_NAMESPACE,
                                                 self.sdUUID)
         try:
-            rmanager.registerNamespace(volumeResourcesNamespace,
-                                       rm.SimpleResourceFactory())
+            rm.registerNamespace(volumeResourcesNamespace,
+                                 rm.SimpleResourceFactory())
         except KeyError:
             self.log.info("Resource namespace %s already registered",
                           volumeResourcesNamespace)

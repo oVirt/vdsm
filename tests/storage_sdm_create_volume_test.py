@@ -103,7 +103,7 @@ class CreateVolumeTests(VdsmTestCase):
     @contextmanager
     def _fake_env(self):
         self.rm = FakeResourceManager()
-        with MonkeyPatchScope([(storage.sdm.api.create_volume, 'rmanager',
+        with MonkeyPatchScope([(storage.sdm.api.create_volume, 'rm',
                                 self.rm)]):
             yield
 

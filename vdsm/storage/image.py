@@ -43,7 +43,6 @@ import task
 import resourceManager as rm
 
 log = logging.getLogger('storage.Image')
-rmanager = rm.ResourceManager.getInstance()
 
 # Disk type
 UNKNOWN_DISK_TYPE = 0
@@ -376,8 +375,7 @@ class Image:
         dstImageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE,
                                                      destDom.sdUUID)
         # In destination domain we need to lock image's template if exists
-        with rmanager.acquireResource(dstImageResourcesNamespace, pimg,
-                                      rm.SHARED) \
+        with rm.acquireResource(dstImageResourcesNamespace, pimg, rm.SHARED) \
                 if pimg != sc.BLANK_UUID else justLogIt(imgUUID):
             if fakeTemplate:
                 self.createFakeTemplate(destDom.sdUUID, volParams)

@@ -60,7 +60,6 @@ QCOW_OVERHEAD_FACTOR = 1.1
 RESERVED_LEASES = 100
 
 log = logging.getLogger('storage.Volume')
-rmanager = rm.ResourceManager.getInstance()
 
 
 class BlockVolumeManifest(volume.VolumeManifest):
@@ -372,8 +371,8 @@ class BlockVolumeManifest(volume.VolumeManifest):
         if setrw:
             self.setrw(rw=rw)
         access = rm.EXCLUSIVE if rw else rm.SHARED
-        activation = rmanager.acquireResource(self.lvmActivationNamespace,
-                                              self.volUUID, access)
+        activation = rm.acquireResource(self.lvmActivationNamespace,
+                                        self.volUUID, access)
         activation.autoRelease = False
 
     @classmethod
@@ -387,7 +386,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
                      % (sdUUID, volUUID, justme))
         lvmActivationNamespace = sd.getNamespace(sc.LVM_ACTIVATION_NAMESPACE,
                                                  sdUUID)
-        rmanager.releaseResource(lvmActivationNamespace, volUUID)
+        rm.releaseResource(lvmActivationNamespace, volUUID)
         if not justme:
             try:
                 pvolUUID = getVolumeTag(sdUUID, volUUID, sc.TAG_PREFIX_PARENT)
