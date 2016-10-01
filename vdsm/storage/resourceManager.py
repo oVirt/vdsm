@@ -292,13 +292,11 @@ class ResourceRef(object):
                                "ignored.")
                 return
 
-            ResourceManager.getInstance().releaseResource(self.namespace,
-                                                          self.name)
+            releaseResource(self.namespace, self.name)
             self._isValid = False
 
     def getStatus(self):
-        return ResourceManager.getInstance().getResourceStatus(self.namespace,
-                                                               self.name)
+        return _getResourceStatus(self.namespace, self.name)
 
     def __enter__(self):
         return self
@@ -318,7 +316,7 @@ class ResourceRef(object):
                 # might try to acquire the lock in a locked context and reach a
                 # deadlock. This is why I need to use a timer. It will defer
                 # the operation and use a different context.
-                ResourceManager.getInstance().releaseResource(namespace, name)
+                releaseResource(namespace, name)
             t = concurrent.thread(
                 release,
                 args=(self._log, self.namespace, self.name),
@@ -336,30 +334,16 @@ class ResourceManager(object):
     """
     Manages all the resources in the application.
 
-    This class is a singleton. use `getInstance()` to get the global instance
+    This class is for internal usage only, clients should use the module
+    interface.
     """
     _log = logging.getLogger("storage.ResourceManager")
     _namespaceValidator = re.compile(r"^[\w\d_-]+$")
     _resourceNameValidator = re.compile(r"^[^\s.]+$")
 
-    _instance = None
-    _singletonLock = threading.Lock()
-
     def __init__(self):
         self._syncRoot = rwlock.RWLock()
         self._namespaces = {}
-
-    @classmethod
-    def getInstance(cls):
-        """
-        Get the global resource manager
-        """
-        if cls._instance is None:
-            with cls._singletonLock:
-                if cls._instance is None:
-                    cls._instance = ResourceManager()
-
-        return cls._instance
 
     def registerNamespace(self, namespace, factory, force=False):
         if not self._namespaceValidator.match(namespace):
@@ -782,8 +766,6 @@ class Owner(object):
         if raiseonfailure is None:
             raiseonfailure = self.raiseonfailure
 
-        manager = ResourceManager.getInstance()
-
         if timeout_ms is not None:
             timeout = timeout_ms / 1000.0
 
@@ -796,8 +778,8 @@ class Owner(object):
                                      "already acquired" % (self, fullName))
 
                 try:
-                    resource = manager.acquireResource(namespace, name,
-                                                       locktype, timeout)
+                    resource = acquireResource(namespace, name, locktype,
+                                               timeout)
                     self.resources[resource.fullName] = resource
 
                     if hasattr(self.ownerobject, "resourceAcquired"):
@@ -844,8 +826,6 @@ class Owner(object):
             raise ValueError("Owner %s: acquire: resource %s is already "
                              "acquired" % (self, fullName))
 
-        manager = ResourceManager.getInstance()
-
         self.lock.acquire()
         try:
             if fullName in self.requests:
@@ -853,8 +833,8 @@ class Owner(object):
                                  (fullName, self))
 
             try:
-                request = manager.registerResource(namespace, name, locktype,
-                                                   self._onRequestFinished)
+                request = _registerResource(namespace, name, locktype,
+                                            self._onRequestFinished)
             except ValueError as ex:
                 self.log.debug("%s: request for '%s' could not be processed "
                                "(%s)", self, fullName, ex)
@@ -1002,7 +982,6 @@ class ResourceManagerLock(guarded.AbstractLock):
         self._ns = ns
         self._name = name
         self._mode = mode
-        self._rm = ResourceManager.getInstance()
 
     @property
     def ns(self):
@@ -1017,45 +996,43 @@ class ResourceManagerLock(guarded.AbstractLock):
         return self._mode
 
     def acquire(self):
-        res = self._rm.acquireResource(self.ns, self.name, self.mode)
+        res = acquireResource(self.ns, self.name, self.mode)
         # Locks are released by default then the last reference is garbage
         # collected.  Since we don't need the reference we'll just disable
         # autoRelease.
         res.autoRelease = False
 
     def release(self):
-        self._rm.releaseResource(self.ns, self.name)
+        releaseResource(self.ns, self.name)
+
+
+# The single resource manager - this instance is monkeypatched by the tests.
+_manager = ResourceManager()
 
 
 # Public api - client should use only these to manage resources.
 
 def registerNamespace(namespace, factory, force=False):
-    manager = ResourceManager.getInstance()
-    manager.registerNamespace(namespace, factory, force=force)
+    _manager.registerNamespace(namespace, factory, force=force)
 
 
 def unregisterNamespace(namespace):
-    manager = ResourceManager.getInstance()
-    manager.unregisterNamespace(namespace)
+    _manager.unregisterNamespace(namespace)
 
 
 def acquireResource(namespace, name, lockType, timeout=None):
-    manager = ResourceManager.getInstance()
-    return manager.acquireResource(namespace, name, lockType, timeout=timeout)
+    return _manager.acquireResource(namespace, name, lockType, timeout=timeout)
 
 
 def releaseResource(namespace, name):
-    manager = ResourceManager.getInstance()
-    manager.releaseResource(namespace, name)
+    _manager.releaseResource(namespace, name)
 
 
 # Private apis for the tests - clients should never use these!
 
 def _registerResource(namespace, name, lockType, callback):
-    manager = ResourceManager.getInstance()
-    return manager.registerResource(namespace, name, lockType, callback)
+    return _manager.registerResource(namespace, name, lockType, callback)
 
 
 def _getResourceStatus(namespace, name):
-    manager = ResourceManager.getInstance()
-    return manager.getResourceStatus(namespace, name)
+    return _manager.getResourceStatus(namespace, name)
