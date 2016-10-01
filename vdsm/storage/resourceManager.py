@@ -1025,3 +1025,37 @@ class ResourceManagerLock(guarded.AbstractLock):
 
     def release(self):
         self._rm.releaseResource(self.ns, self.name)
+
+
+# Public api - client should use only these to manage resources.
+
+def registerNamespace(namespace, factory, force=False):
+    manager = ResourceManager.getInstance()
+    manager.registerNamespace(namespace, factory, force=force)
+
+
+def unregisterNamespace(namespace):
+    manager = ResourceManager.getInstance()
+    manager.unregisterNamespace(namespace)
+
+
+def acquireResource(namespace, name, lockType, timeout=None):
+    manager = ResourceManager.getInstance()
+    return manager.acquireResource(namespace, name, lockType, timeout=timeout)
+
+
+def releaseResource(namespace, name):
+    manager = ResourceManager.getInstance()
+    manager.releaseResource(namespace, name)
+
+
+# Private apis for the tests - clients should never use these!
+
+def _registerResource(namespace, name, lockType, callback):
+    manager = ResourceManager.getInstance()
+    return manager.registerResource(namespace, name, lockType, callback)
+
+
+def _getResourceStatus(namespace, name):
+    manager = ResourceManager.getInstance()
+    return manager.getResourceStatus(namespace, name)
