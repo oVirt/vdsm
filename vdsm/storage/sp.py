@@ -426,13 +426,10 @@ class StoragePool(object):
                     self._convertDomain(self.masterDomain,
                                         str(targetDomVersion))
 
-                self.log.debug("Marking all domains for upgrade")
-                self._domainsToUpgrade = self.getDomains(activeOnly=True)\
-                    .keys()
-                try:
-                    self._domainsToUpgrade.remove(self.masterDomain.sdUUID)
-                except ValueError:
-                    pass
+                self.log.debug("Marking active domains for upgrade")
+                domains = self.getDomains(activeOnly=True)
+                domains.pop(self.masterDomain.sdUUID, None)
+                self._domainsToUpgrade = domains.keys()
 
                 self.log.debug("Registering with state change event")
                 self.domainMonitor.onDomainStateChange.register(
