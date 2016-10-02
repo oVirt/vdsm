@@ -1528,7 +1528,8 @@ class StoragePool(object):
         with nested(rm.acquireResource(src_img_ns, srcImgUUID, rm.SHARED),
                     rm.acquireResource(dst_img_ns, dstImgUUID, rm.EXCLUSIVE)
                     ):
-            dstUUID = image.Image(self.poolPath).copyCollapsed(
+            img = image.Image(self.poolPath)
+            dstUUID = img.copyCollapsed(
                 sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
                 dstVolUUID, descr, dstSdUUID, volType, volFormat, preallocate,
                 postZero, force)
@@ -1571,8 +1572,9 @@ class StoragePool(object):
 
         with nested(rm.acquireResource(src_img_ns, imgUUID, srcLock),
                     rm.acquireResource(dst_img_ns, imgUUID, rm.EXCLUSIVE)):
-            image.Image(self.poolPath).move(srcDomUUID, dstDomUUID, imgUUID,
-                                            vmUUID, op, postZero, force)
+            img = image.Image(self.poolPath)
+            img.move(srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero,
+                     force)
 
     def sparsifyImage(self, tmpSdUUID, tmpImgUUID, tmpVolUUID, dstSdUUID,
                       dstImgUUID, dstVolUUID):
@@ -1610,9 +1612,9 @@ class StoragePool(object):
         with nested(
                 rm.acquireResource(srcNamespace, tmpImgUUID, rm.EXCLUSIVE),
                 rm.acquireResource(dstNamespace, dstImgUUID, rm.EXCLUSIVE)):
-            image.Image(self.poolPath).sparsify(
-                tmpSdUUID, tmpImgUUID, tmpVolUUID, dstSdUUID, dstImgUUID,
-                dstVolUUID)
+            img = image.Image(self.poolPath)
+            img.sparsify(tmpSdUUID, tmpImgUUID, tmpVolUUID, dstSdUUID,
+                         dstImgUUID, dstVolUUID)
 
     def cloneImageStructure(self, sdUUID, imgUUID, dstSdUUID):
         """
@@ -1638,8 +1640,8 @@ class StoragePool(object):
         )))
 
         with nested(*resList):
-            image.Image(self.poolPath).cloneStructure(
-                sdUUID, imgUUID, dstSdUUID)
+            img = image.Image(self.poolPath)
+            img.cloneStructure(sdUUID, imgUUID, dstSdUUID)
 
     def syncImageData(self, sdUUID, imgUUID, dstSdUUID, syncType):
         """
@@ -1666,8 +1668,8 @@ class StoragePool(object):
         )))
 
         with nested(*resList):
-            image.Image(self.poolPath).syncData(
-                sdUUID, imgUUID, dstSdUUID, syncType)
+            img = image.Image(self.poolPath)
+            img.syncData(sdUUID, imgUUID, dstSdUUID, syncType)
 
     def uploadImage(self, methodArgs, sdUUID, imgUUID, volUUID=None):
         """
@@ -1752,8 +1754,8 @@ class StoragePool(object):
                 dst_img_ns, imgUUID, rm.EXCLUSIVE))
 
         with nested(*resourceList):
-            image.Image(self.poolPath).multiMove(
-                srcDomUUID, dstDomUUID, imgDict, vmUUID, force)
+            img = image.Image(self.poolPath)
+            img.multiMove(srcDomUUID, dstDomUUID, imgDict, vmUUID, force)
 
     def reconcileVolumeChain(self, sdUUID, imgUUID, leafVolUUID):
         """
@@ -1798,8 +1800,8 @@ class StoragePool(object):
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
 
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
-            image.Image(self.poolPath).merge(
-                sdUUID, vmUUID, imgUUID, ancestor, successor, postZero)
+            img = image.Image(self.poolPath)
+            img.merge(sdUUID, vmUUID, imgUUID, ancestor, successor, postZero)
 
     def createVolume(self, sdUUID, imgUUID, size, volFormat, preallocate,
                      diskType, volUUID=None, desc="",
