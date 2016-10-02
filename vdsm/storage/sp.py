@@ -1942,14 +1942,14 @@ class StoragePool(object):
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
-            vol.setDescription(descr=description)
+            vol.setDescription(description)
 
     def setVolumeLegality(self, sdUUID, imgUUID, volUUID, legality):
         self.validatePoolSD(sdUUID)
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
-            vol.setLegality(legality=legality)
+            vol.setLegality(legality)
 
     def getVmsList(self, sdUUID):
         self.validatePoolSD(sdUUID)
@@ -1972,7 +1972,7 @@ class StoragePool(object):
 
     def setSDDescription(self, sd, description):
         self.validatePoolSD(sd.sdUUID)
-        sd.setDescription(descr=description)
+        sd.setDescription(description)
 
     def getAllTasksStatuses(self):
         return self.taskMng.getAllTasksStatuses("spm")
