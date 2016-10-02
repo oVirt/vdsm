@@ -1848,8 +1848,7 @@ class StoragePool(object):
 
         if imgUUID != srcImgUUID and srcImgUUID != sc.BLANK_UUID:
             srcDom = sdCache.produce(sdUUID)
-            srcVol = srcDom.produceVolume(imgUUID=srcImgUUID,
-                                          volUUID=srcVolUUID)
+            srcVol = srcDom.produceVolume(srcImgUUID, srcVolUUID)
 
             if not srcVol.isShared():
                 if srcVol.getParent() == sc.BLANK_UUID:
@@ -1943,16 +1942,14 @@ class StoragePool(object):
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             sdCache.produce(sdUUID).produceVolume(
-                imgUUID=imgUUID,
-                volUUID=volUUID).setDescription(descr=description)
+                imgUUID, volUUID).setDescription(descr=description)
 
     def setVolumeLegality(self, sdUUID, imgUUID, volUUID, legality):
         self.validatePoolSD(sdUUID)
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             sdCache.produce(sdUUID).produceVolume(
-                imgUUID=imgUUID,
-                volUUID=volUUID).setLegality(legality=legality)
+                imgUUID, volUUID).setLegality(legality=legality)
 
     def getVmsList(self, sdUUID):
         self.validatePoolSD(sdUUID)
