@@ -1360,16 +1360,16 @@ class StoragePool(object):
                                                self.masterDomain.sdUUID)
 
         poolInfo = {
-            'type': msdInfo['type'],
-            'name': '',
             'domains': '',
+            'isoprefix': '',
+            'lver': LVER_INVALID,
             'master_uuid': self.masterDomain.sdUUID,
             'master_ver': self._backend.getMasterVersion(),
-            'lver': LVER_INVALID,
-            'spm_id': SPM_ID_FREE,
-            'version': str(msdInfo['version']),
-            'isoprefix': '',
+            'name': '',
             'pool_status': 'connected',
+            'spm_id': SPM_ID_FREE,
+            'type': msdInfo['type'],
+            'version': str(msdInfo['version']),
         }
 
         poolInfo.update(self._backend.getInfo())
