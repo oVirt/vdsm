@@ -1523,18 +1523,14 @@ class StoragePool(object):
         :returns: a dict containing the UUID of the newly created image.
         :rtype: dict
         """
-        srcImageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE,
-                                                     sdUUID)
+        src_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         if dstSdUUID not in (sdUUID, sd.BLANK_UUID):
-            dstImageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE,
-                                                         dstSdUUID)
+            dst_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, dstSdUUID)
         else:
-            dstImageResourcesNamespace = srcImageResourcesNamespace
+            dst_img_ns = src_img_ns
 
-        with nested(rm.acquireResource(srcImageResourcesNamespace,
-                                       srcImgUUID, rm.SHARED),
-                    rm.acquireResource(dstImageResourcesNamespace,
-                                       dstImgUUID, rm.EXCLUSIVE)
+        with nested(rm.acquireResource(src_img_ns, srcImgUUID, rm.SHARED),
+                    rm.acquireResource(dst_img_ns, dstImgUUID, rm.EXCLUSIVE)
                     ):
             dstUUID = image.Image(self.poolPath).copyCollapsed(
                 sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
@@ -1566,10 +1562,8 @@ class StoragePool(object):
         :param force: Should the operation be forced.
         :type force: bool
         """
-        srcImageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE,
-                                                     srcDomUUID)
-        dstImageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE,
-                                                     dstDomUUID)
+        src_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, srcDomUUID)
+        dst_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, dstDomUUID)
         # For MOVE_OP acquire exclusive lock
         # For COPY_OP shared lock is enough
         if op == image.MOVE_OP:
@@ -1579,10 +1573,8 @@ class StoragePool(object):
         else:
             raise se.MoveImageError(imgUUID)
 
-        with nested(rm.acquireResource(srcImageResourcesNamespace,
-                                       imgUUID, srcLock),
-                    rm.acquireResource(dstImageResourcesNamespace,
-                                       imgUUID, rm.EXCLUSIVE)):
+        with nested(rm.acquireResource(src_img_ns, imgUUID, srcLock),
+                    rm.acquireResource(dst_img_ns, imgUUID, rm.EXCLUSIVE)):
             image.Image(self.poolPath).move(srcDomUUID, dstDomUUID, imgUUID,
                                             vmUUID, op, postZero, force)
 
@@ -1758,10 +1750,8 @@ class StoragePool(object):
         :param force: Should the operation be forced.
         :type force: bool
         """
-        srcImageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE,
-                                                     srcDomUUID)
-        dstImageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE,
-                                                     dstDomUUID)
+        src_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, srcDomUUID)
+        dst_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, dstDomUUID)
 
         imgList = imgDict.keys()
         imgList.sort()
@@ -1769,9 +1759,9 @@ class StoragePool(object):
         resourceList = []
         for imgUUID in imgList:
             resourceList.append(rm.acquireResource(
-                srcImageResourcesNamespace, imgUUID, rm.EXCLUSIVE))
+                src_img_ns, imgUUID, rm.EXCLUSIVE))
             resourceList.append(rm.acquireResource(
-                dstImageResourcesNamespace, imgUUID, rm.EXCLUSIVE))
+                dst_img_ns, imgUUID, rm.EXCLUSIVE))
 
         with nested(*resourceList):
             image.Image(self.poolPath).multiMove(
