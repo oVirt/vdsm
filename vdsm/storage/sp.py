@@ -316,8 +316,8 @@ class StoragePool(object):
                 # mailbox and the "self._setSecure() call"
 
                 # FIXME : Use a system wide grouping mechanism
-                if (self.lvExtendPolicy == "ON"
-                        and self.masterDomain.supportsMailbox):
+                if (self.lvExtendPolicy == "ON" and
+                        self.masterDomain.supportsMailbox):
                     self.masterDomain.prepareMailbox()
                     self.spmMailer = storage_mailbox.SPM_MailMonitor(self,
                                                                      maxHostID)
