@@ -1342,9 +1342,8 @@ class StoragePool(object):
         sdCache.produce(sdUUID).extendVolume(volumeUUID, size, isShuttingDown)
 
     def extendVolumeSize(self, sdUUID, imgUUID, volUUID, newSize):
-        imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
-        with rm.acquireResource(imageResourcesNamespace, imgUUID,
-                                rm.EXCLUSIVE):
+        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             return sdCache.produce(sdUUID) \
                 .produceVolume(imgUUID, volUUID).extendSize(int(newSize))
 
@@ -1793,9 +1792,8 @@ class StoragePool(object):
         :returns: A dict with a list of volume UUIDs in the corrected chain
         :rtype: dict
         """
-        imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
-        with rm.acquireResource(imageResourcesNamespace, imgUUID,
-                                rm.EXCLUSIVE):
+        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             img = image.Image(self.poolPath)
             chain = img.reconcileVolumeChain(sdUUID, imgUUID, leafVolUUID)
         return dict(volumes=chain)
@@ -1819,10 +1817,9 @@ class StoragePool(object):
         :param postZero: ?
         :type postZero: bool?
         """
-        imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
 
-        with rm.acquireResource(imageResourcesNamespace, imgUUID,
-                                rm.EXCLUSIVE):
+        with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             image.Image(self.poolPath).merge(
                 sdUUID, vmUUID, imgUUID, ancestor, successor, postZero)
 
@@ -1869,7 +1866,7 @@ class StoragePool(object):
         :returns: a dict with the UUID of the new volume.
         :rtype: dict
         """
-        imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
 
         if imgUUID != srcImgUUID and srcImgUUID != sc.BLANK_UUID:
             srcDom = sdCache.produce(sdUUID)
@@ -1878,9 +1875,7 @@ class StoragePool(object):
 
             if not srcVol.isShared():
                 if srcVol.getParent() == sc.BLANK_UUID:
-                    with rm.acquireResource(imageResourcesNamespace,
-                                            srcImgUUID,
-                                            rm.EXCLUSIVE):
+                    with rm.acquireResource(img_ns, srcImgUUID, rm.EXCLUSIVE):
 
                         self.log.debug("volume %s is not shared. "
                                        "Setting it as shared", srcVolUUID)
@@ -1888,8 +1883,7 @@ class StoragePool(object):
                 else:
                     raise se.VolumeNonShareable(srcVol)
 
-        with rm.acquireResource(imageResourcesNamespace, imgUUID,
-                                rm.EXCLUSIVE):
+        with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             newVolUUID = sdCache.produce(sdUUID).createVolume(
                 imgUUID=imgUUID, size=size, volFormat=volFormat,
                 preallocate=preallocate, diskType=diskType, volUUID=volUUID,
@@ -1915,10 +1909,9 @@ class StoragePool(object):
                         have.
         :type imgUUID: UUID
         """
-        imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
 
-        with rm.acquireResource(imageResourcesNamespace, imgUUID,
-                                rm.EXCLUSIVE):
+        with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             dom = sdCache.produce(sdUUID)
             for volUUID in volumes:
                 dom.produceVolume(imgUUID, volUUID).delete(
@@ -1969,18 +1962,16 @@ class StoragePool(object):
 
     def setVolumeDescription(self, sdUUID, imgUUID, volUUID, description):
         self.validatePoolSD(sdUUID)
-        imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
-        with rm.acquireResource(imageResourcesNamespace, imgUUID,
-                                rm.EXCLUSIVE):
+        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             sdCache.produce(sdUUID).produceVolume(
                 imgUUID=imgUUID,
                 volUUID=volUUID).setDescription(descr=description)
 
     def setVolumeLegality(self, sdUUID, imgUUID, volUUID, legality):
         self.validatePoolSD(sdUUID)
-        imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
-        with rm.acquireResource(imageResourcesNamespace, imgUUID,
-                                rm.EXCLUSIVE):
+        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             sdCache.produce(sdUUID).produceVolume(
                 imgUUID=imgUUID,
                 volUUID=volUUID).setLegality(legality=legality)
