@@ -1678,10 +1678,8 @@ class StoragePool(object):
         Upload an image to a remote endpoint using the specified method and
         methodArgs.
         """
-        imgResourceLock = rm.acquireResource(
-            sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID), imgUUID, rm.SHARED)
-
-        with imgResourceLock:
+        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        with rm.acquireResource(img_ns, imgUUID, rm.SHARED):
             return image.Image(self.poolPath) \
                 .upload(methodArgs, sdUUID, imgUUID, volUUID)
 
@@ -1690,10 +1688,8 @@ class StoragePool(object):
         Download an image from a remote endpoint using the specified method
         and methodArgs.
         """
-        imgResourceLock = rm.acquireResource(
-            sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID), imgUUID, rm.EXCLUSIVE)
-
-        with imgResourceLock:
+        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             return image.Image(self.poolPath) \
                 .download(methodArgs, sdUUID, imgUUID, volUUID)
 
@@ -1706,10 +1702,8 @@ class StoragePool(object):
         while not startEvent.is_set():
             startEvent.wait()
 
-        imgResourceLock = rm.acquireResource(
-            sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID), imgUUID, rm.SHARED)
-
-        with imgResourceLock:
+        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        with rm.acquireResource(img_ns, imgUUID, rm.SHARED):
             try:
                 return image.Image(self.poolPath) \
                     .copyFromImage(methodArgs, sdUUID, imgUUID, volUUID)
@@ -1721,10 +1715,8 @@ class StoragePool(object):
         """
         Download an image from a stream.
         """
-        imgResourceLock = rm.acquireResource(
-            sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID), imgUUID, rm.EXCLUSIVE)
-
-        with imgResourceLock:
+        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             try:
                 return image.Image(self.poolPath) \
                     .copyToImage(methodArgs, sdUUID, imgUUID, volUUID)
