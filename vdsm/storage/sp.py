@@ -68,7 +68,6 @@ class StoragePool(object):
 
     log = logging.getLogger('storage.StoragePool')
     storage_repository = config.get('irs', 'repository')
-    lvExtendPolicy = config.get('irs', 'vol_extend_policy')
 
     def __init__(self, spUUID, domainMonitor, taskManager):
         self._secured = threading.Event()
@@ -315,9 +314,7 @@ class StoragePool(object):
                 # commands are allowed to run to prevent a race between the
                 # mailbox and the "self._setSecure() call"
 
-                # FIXME : Use a system wide grouping mechanism
-                if (self.lvExtendPolicy == "ON" and
-                        self.masterDomain.supportsMailbox):
+                if self.masterDomain.supportsMailbox:
                     self.masterDomain.prepareMailbox()
                     self.spmMailer = storage_mailbox.SPM_MailMonitor(self,
                                                                      maxHostID)
@@ -450,8 +447,7 @@ class StoragePool(object):
         if self.hsmMailer:
             return
 
-        if (self.lvExtendPolicy == "ON" and
-                self.masterDomain.supportsMailbox):
+        if self.masterDomain.supportsMailbox:
             self.hsmMailer = storage_mailbox.HSM_Mailbox(self.id, self.spUUID)
             self.log.debug("HSM mailbox ready for pool %s on master "
                            "domain %s", self.spUUID, self.masterDomain.sdUUID)
