@@ -1340,8 +1340,8 @@ class StoragePool(object):
     def extendVolumeSize(self, sdUUID, imgUUID, volUUID, newSize):
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
-            return sdCache.produce(sdUUID) \
-                .produceVolume(imgUUID, volUUID).extendSize(int(newSize))
+            vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
+            return vol.extendSize(int(newSize))
 
     @unsecured
     def getVersion(self):
@@ -1676,8 +1676,8 @@ class StoragePool(object):
         """
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.SHARED):
-            return image.Image(self.poolPath) \
-                .upload(methodArgs, sdUUID, imgUUID, volUUID)
+            img = image.Image(self.poolPath)
+            return img.upload(methodArgs, sdUUID, imgUUID, volUUID)
 
     def downloadImage(self, methodArgs, sdUUID, imgUUID, volUUID=None):
         """
@@ -1686,8 +1686,8 @@ class StoragePool(object):
         """
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
-            return image.Image(self.poolPath) \
-                .download(methodArgs, sdUUID, imgUUID, volUUID)
+            img = image.Image(self.poolPath)
+            return img.download(methodArgs, sdUUID, imgUUID, volUUID)
 
     def uploadImageToStream(self, methodArgs, callback, startEvent, sdUUID,
                             imgUUID, volUUID=None):
@@ -1701,8 +1701,8 @@ class StoragePool(object):
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.SHARED):
             try:
-                return image.Image(self.poolPath) \
-                    .copyFromImage(methodArgs, sdUUID, imgUUID, volUUID)
+                img = image.Image(self.poolPath)
+                return img.copyFromImage(methodArgs, sdUUID, imgUUID, volUUID)
             finally:
                 callback()
 
@@ -1714,8 +1714,8 @@ class StoragePool(object):
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             try:
-                return image.Image(self.poolPath) \
-                    .copyToImage(methodArgs, sdUUID, imgUUID, volUUID)
+                img = image.Image(self.poolPath)
+                return img.copyToImage(methodArgs, sdUUID, imgUUID, volUUID)
             finally:
                 callback()
 
