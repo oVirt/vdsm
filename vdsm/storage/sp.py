@@ -1404,7 +1404,6 @@ class StoragePool(object):
             'master_ver': self._backend.getMasterVersion(),
             'lver': LVER_INVALID,
             'spm_id': SPM_ID_FREE,
-            'pool_status': 'uninitialized',
             'version': str(msdInfo['version']),
             'isoprefix': '',
             'pool_status': 'connected',
