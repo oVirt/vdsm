@@ -1232,8 +1232,7 @@ class StoragePool(object):
             fileUtils.createdir(os.path.join(domaindir, sd.DOMAIN_META_DATA))
             fileUtils.createdir(os.path.join(domaindir, sd.DOMAIN_IMAGES))
         # Add the file domains
-        for domUUID, domaindir in fileSD.scanDomains():  \
-                # [(fileDomUUID, file_domaindir)]
+        for domUUID, domaindir in fileSD.scanDomains():
             if domUUID in domUUIDs:
                 domDirs[domUUID] = domaindir
 
