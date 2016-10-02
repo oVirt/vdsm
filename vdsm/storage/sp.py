@@ -1891,8 +1891,8 @@ class StoragePool(object):
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             dom = sdCache.produce(sdUUID)
             for volUUID in volumes:
-                dom.produceVolume(imgUUID, volUUID).delete(
-                    postZero=postZero, force=force)
+                vol = dom.produceVolume(imgUUID, volUUID)
+                vol.delete(postZero=postZero, force=force)
 
     def purgeImage(self, sdUUID, imgUUID, volsByImg):
         """
@@ -1941,15 +1941,15 @@ class StoragePool(object):
         self.validatePoolSD(sdUUID)
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
-            sdCache.produce(sdUUID).produceVolume(
-                imgUUID, volUUID).setDescription(descr=description)
+            vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
+            vol.setDescription(descr=description)
 
     def setVolumeLegality(self, sdUUID, imgUUID, volUUID, legality):
         self.validatePoolSD(sdUUID)
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
-            sdCache.produce(sdUUID).produceVolume(
-                imgUUID, volUUID).setLegality(legality=legality)
+            vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
+            vol.setLegality(legality=legality)
 
     def getVmsList(self, sdUUID):
         self.validatePoolSD(sdUUID)
