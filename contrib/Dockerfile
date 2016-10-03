@@ -4,15 +4,17 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
   yum install -y \
     PyYAML \
     autoconf \
-    automake git \
+    automake \
     dosfstools \
     e2fsprogs \
     genisoimage \
+    git \
     libselinux-python \
     libvirt-python \
     make \
+    mom \
     psmisc \
-    python-cpopen mom \
+    python-cpopen \
     python-decorator \
     python-devel \
     python-inotify \
