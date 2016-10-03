@@ -35,7 +35,7 @@ class ProcessWatcherTests(VdsmTestCase):
     def assertUnexpectedCall(self, data):
         raise AssertionError("Unexpected data: %r" % data)
 
-    def _startCommand(self, command):
+    def startCommand(self, command):
         return compat.CPopen(command)
 
     @permutations([
@@ -53,7 +53,7 @@ class ProcessWatcherTests(VdsmTestCase):
 
         cmd[-1] = cmd[-1] % text
 
-        c = self._startCommand(cmd)
+        c = self.startCommand(cmd)
         watcher = procwatch.ProcessWatcher(
             c,
             recv_data if recv_out else self.assertUnexpectedCall,
@@ -80,7 +80,7 @@ class ProcessWatcherTests(VdsmTestCase):
             # defined in the parent function.
             operator.iadd(received, buffer)
 
-        c = self._startCommand(cmd)
+        c = self.startCommand(cmd)
         watcher = procwatch.ProcessWatcher(
             c,
             recv_data if recv_out else self.assertUnexpectedCall,
@@ -99,7 +99,7 @@ class ProcessWatcherTests(VdsmTestCase):
         self.assertEqual(text, str(received))
 
     def test_timeout(self):
-        c = self._startCommand(["sleep", "5"])
+        c = self.startCommand(["sleep", "5"])
         watcher = procwatch.ProcessWatcher(c, self.assertUnexpectedCall,
                                            self.assertUnexpectedCall)
 
@@ -117,7 +117,7 @@ class ProcessWatcherTests(VdsmTestCase):
         ('terminate', -signal.SIGTERM),
     ))
     def test_signals(self, method, expected_retcode):
-        c = self._startCommand(["sleep", "2"])
+        c = self.startCommand(["sleep", "2"])
         watcher = procwatch.ProcessWatcher(c, self.assertUnexpectedCall,
                                            self.assertUnexpectedCall)
 
