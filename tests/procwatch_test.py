@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 import operator
 import signal
+import subprocess
 
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
@@ -129,4 +130,7 @@ class ProcessWatcherTests(VdsmTestCase):
         raise AssertionError("Unexpected data: %r" % data)
 
     def start_process(self, cmd):
-        return compat.CPopen(cmd)
+        return compat.CPopen(cmd,
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
