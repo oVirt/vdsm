@@ -50,8 +50,8 @@ class ProcessWatcherTests(VdsmTestCase):
         c = self.startCommand(cmd)
         watcher = procwatch.ProcessWatcher(
             c,
-            recv_data if recv_out else self.assertUnexpectedCall,
-            recv_data if recv_err else self.assertUnexpectedCall)
+            recv_data if recv_out else self.unexpected_data,
+            recv_data if recv_err else self.unexpected_data)
 
         while not watcher.closed:
             watcher.receive()
@@ -77,8 +77,8 @@ class ProcessWatcherTests(VdsmTestCase):
         c = self.startCommand(cmd)
         watcher = procwatch.ProcessWatcher(
             c,
-            recv_data if recv_out else self.assertUnexpectedCall,
-            recv_data if recv_err else self.assertUnexpectedCall)
+            recv_data if recv_out else self.unexpected_data,
+            recv_data if recv_err else self.unexpected_data)
 
         c.stdin.write(text)
         c.stdin.flush()
@@ -94,8 +94,8 @@ class ProcessWatcherTests(VdsmTestCase):
 
     def test_timeout(self):
         c = self.startCommand(["sleep", "5"])
-        watcher = procwatch.ProcessWatcher(c, self.assertUnexpectedCall,
-                                           self.assertUnexpectedCall)
+        watcher = procwatch.ProcessWatcher(
+            c, self.unexpected_data, self.unexpected_data)
 
         with self.assertElapsed(2):
             watcher.receive(2)
@@ -112,8 +112,8 @@ class ProcessWatcherTests(VdsmTestCase):
     ))
     def test_signals(self, method, expected_retcode):
         c = self.startCommand(["sleep", "2"])
-        watcher = procwatch.ProcessWatcher(c, self.assertUnexpectedCall,
-                                           self.assertUnexpectedCall)
+        watcher = procwatch.ProcessWatcher(
+            c, self.unexpected_data, self.unexpected_data)
 
         getattr(c, method)()
 
@@ -125,7 +125,7 @@ class ProcessWatcherTests(VdsmTestCase):
 
         self.assertEqual(retcode, expected_retcode)
 
-    def assertUnexpectedCall(self, data):
+    def unexpected_data(self, data):
         raise AssertionError("Unexpected data: %r" % data)
 
     def startCommand(self, command):
