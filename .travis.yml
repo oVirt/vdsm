@@ -9,7 +9,7 @@ git:
 
 before_install:
   - docker --version
-  - docker pull edwardhaas/ovirt-vdsm-dev
+  - docker pull nirs/vdsm-centos
 
 script:
-  - docker run --rm=true -it -v `pwd`:/vdsm:rw edwardhaas/ovirt-vdsm-dev /bin/bash -c "cd /vdsm && ./autogen.sh --system && make; make check-unit"
+  - docker run --rm -it -v `pwd`:/vdsm:Z nirs/vdsm-centos bash -c "cd /vdsm && ./autogen.sh --system && make; make check"
