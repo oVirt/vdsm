@@ -30,7 +30,7 @@ from vdsm import procwatch
 
 
 @expandPermutations
-class CommandStreamTests(VdsmTestCase):
+class ProcessWatcherTests(VdsmTestCase):
 
     def assertUnexpectedCall(self, data):
         raise AssertionError("Unexpected data: %r" % data)
@@ -54,13 +54,13 @@ class CommandStreamTests(VdsmTestCase):
         cmd[-1] = cmd[-1] % text
 
         c = self._startCommand(cmd)
-        p = procwatch.CommandStream(
+        watcher = procwatch.ProcessWatcher(
             c,
             recv_data if recv_out else self.assertUnexpectedCall,
             recv_data if recv_err else self.assertUnexpectedCall)
 
-        while not p.closed:
-            p.receive()
+        while not watcher.closed:
+            watcher.receive()
 
         retcode = c.wait()
 
@@ -81,7 +81,7 @@ class CommandStreamTests(VdsmTestCase):
             operator.iadd(received, buffer)
 
         c = self._startCommand(cmd)
-        p = procwatch.CommandStream(
+        watcher = procwatch.ProcessWatcher(
             c,
             recv_data if recv_out else self.assertUnexpectedCall,
             recv_data if recv_err else self.assertUnexpectedCall)
@@ -90,8 +90,8 @@ class CommandStreamTests(VdsmTestCase):
         c.stdin.flush()
         c.stdin.close()
 
-        while not p.closed:
-            p.receive()
+        while not watcher.closed:
+            watcher.receive()
 
         retcode = c.wait()
 
@@ -100,13 +100,13 @@ class CommandStreamTests(VdsmTestCase):
 
     def test_timeout(self):
         c = self._startCommand(["sleep", "5"])
-        p = procwatch.CommandStream(c, self.assertUnexpectedCall,
-                                    self.assertUnexpectedCall)
+        watcher = procwatch.ProcessWatcher(c, self.assertUnexpectedCall,
+                                           self.assertUnexpectedCall)
 
         with self.assertElapsed(2):
-            p.receive(2)
+            watcher.receive(2)
 
-        self.assertEqual(p.closed, False)
+        self.assertEqual(watcher.closed, False)
 
         c.terminate()
 
@@ -118,14 +118,14 @@ class CommandStreamTests(VdsmTestCase):
     ))
     def test_signals(self, method, expected_retcode):
         c = self._startCommand(["sleep", "2"])
-        p = procwatch.CommandStream(c, self.assertUnexpectedCall,
-                                    self.assertUnexpectedCall)
+        watcher = procwatch.ProcessWatcher(c, self.assertUnexpectedCall,
+                                           self.assertUnexpectedCall)
 
         getattr(c, method)()
 
         try:
             with self.assertElapsed(0):
-                p.receive(2)
+                watcher.receive(2)
         finally:
             retcode = c.wait()
 

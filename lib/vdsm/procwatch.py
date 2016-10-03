@@ -27,7 +27,7 @@ import select
 from vdsm import utils
 
 
-class CommandStream(object):
+class ProcessWatcher(object):
 
     def __init__(self, command, stdoutcb, stderrcb):
         self._command = command

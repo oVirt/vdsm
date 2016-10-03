@@ -224,7 +224,7 @@ class QemuImgOperation(object):
                                     with_ioclass=utils.IOCLASS.IDLE)
         _log.debug(cmdutils.command_log_line(cmd, cwd=cwd))
         self._command = CPopen(cmd, cwd=cwd, deathSignal=signal.SIGKILL)
-        self._stream = procwatch.CommandStream(
+        self._watcher = procwatch.ProcessWatcher(
             self._command, self._recvstdout, self._recvstderr)
 
     def _recvstderr(self, buffer):
@@ -268,9 +268,9 @@ class QemuImgOperation(object):
         return self._command.poll() is not None
 
     def poll(self, timeout=None):
-        self._stream.receive(timeout=timeout)
+        self._watcher.receive(timeout=timeout)
 
-        if not self._stream.closed:
+        if not self._watcher.closed:
             return
 
         self._command.wait()
