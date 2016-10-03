@@ -32,12 +32,6 @@ from vdsm import procwatch
 @expandPermutations
 class ProcessWatcherTests(VdsmTestCase):
 
-    def assertUnexpectedCall(self, data):
-        raise AssertionError("Unexpected data: %r" % data)
-
-    def startCommand(self, command):
-        return compat.CPopen(command)
-
     @permutations([
         (['echo', '-n', '%s'], True, False),
         (['sh', '-c', 'echo -n "%s" >&2'], False, True),
@@ -130,3 +124,9 @@ class ProcessWatcherTests(VdsmTestCase):
             retcode = c.wait()
 
         self.assertEqual(retcode, expected_retcode)
+
+    def assertUnexpectedCall(self, data):
+        raise AssertionError("Unexpected data: %r" % data)
+
+    def startCommand(self, command):
+        return compat.CPopen(command)
