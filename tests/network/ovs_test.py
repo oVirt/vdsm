@@ -216,4 +216,5 @@ class SetupTransactionTests(TestCaseBase):
         net_rem_setup.remove({})
 
         net_add_setup = ovs_switch.NetsAdditionSetup(self.ovsdb, ovs_info)
-        net_add_setup.add({})
+        with net_add_setup.add({}):
+            pass
