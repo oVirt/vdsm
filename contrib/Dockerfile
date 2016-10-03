@@ -20,7 +20,6 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     python-inotify \
     python-ioprocess \
     python-netaddr \
-    python-nose \
     python-pthreading \
     python-setuptools \
     python-six \
@@ -31,5 +30,4 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     which \
     && \
   easy_install pip && \
-  easy_install pyflakes && \
-  pip install pep8==1.5.6
+  pip install nose==1.3.7 tox==2.1.1 mock
