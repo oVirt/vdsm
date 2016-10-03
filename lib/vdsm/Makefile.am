@@ -48,6 +48,7 @@ dist_vdsmpylib_PYTHON = \
 	panic.py \
 	password.py \
 	ppc64HardwareInfo.py \
+	procwatch.py \
 	properties.py \
 	protocoldetector.py \
 	pthread.py \

@@ -29,6 +29,7 @@ from vdsm.common import exception
 from . import utils
 from . import cmdutils
 from . import commands
+from . import procwatch
 from .compat import CPopen
 from . config import config
 
@@ -223,7 +224,7 @@ class QemuImgOperation(object):
                                     with_ioclass=utils.IOCLASS.IDLE)
         _log.debug(cmdutils.command_log_line(cmd, cwd=cwd))
         self._command = CPopen(cmd, cwd=cwd, deathSignal=signal.SIGKILL)
-        self._stream = utils.CommandStream(
+        self._stream = procwatch.CommandStream(
             self._command, self._recvstdout, self._recvstderr)
 
     def _recvstderr(self, buffer):
