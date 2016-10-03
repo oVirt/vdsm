@@ -47,16 +47,16 @@ class ProcessWatcherTests(VdsmTestCase):
 
         cmd[-1] = cmd[-1] % text
 
-        c = self.startCommand(cmd)
+        process = self.start_process(cmd)
         watcher = procwatch.ProcessWatcher(
-            c,
+            process,
             recv_data if recv_out else self.unexpected_data,
             recv_data if recv_err else self.unexpected_data)
 
         while not watcher.closed:
             watcher.receive()
 
-        retcode = c.wait()
+        retcode = process.wait()
 
         self.assertEqual(retcode, 0)
         self.assertEqual(text, received)
@@ -74,59 +74,59 @@ class ProcessWatcherTests(VdsmTestCase):
             # defined in the parent function.
             operator.iadd(received, buffer)
 
-        c = self.startCommand(cmd)
+        process = self.start_process(cmd)
         watcher = procwatch.ProcessWatcher(
-            c,
+            process,
             recv_data if recv_out else self.unexpected_data,
             recv_data if recv_err else self.unexpected_data)
 
-        c.stdin.write(text)
-        c.stdin.flush()
-        c.stdin.close()
+        process.stdin.write(text)
+        process.stdin.flush()
+        process.stdin.close()
 
         while not watcher.closed:
             watcher.receive()
 
-        retcode = c.wait()
+        retcode = process.wait()
 
         self.assertEqual(retcode, 0)
         self.assertEqual(text, str(received))
 
     def test_timeout(self):
-        c = self.startCommand(["sleep", "5"])
+        process = self.start_process(["sleep", "5"])
         watcher = procwatch.ProcessWatcher(
-            c, self.unexpected_data, self.unexpected_data)
+            process, self.unexpected_data, self.unexpected_data)
 
         with self.assertElapsed(2):
             watcher.receive(2)
 
         self.assertEqual(watcher.closed, False)
 
-        c.terminate()
+        process.terminate()
 
-        self.assertEqual(c.wait(), -signal.SIGTERM)
+        self.assertEqual(process.wait(), -signal.SIGTERM)
 
     @permutations((
         ('kill', -signal.SIGKILL),
         ('terminate', -signal.SIGTERM),
     ))
     def test_signals(self, method, expected_retcode):
-        c = self.startCommand(["sleep", "2"])
+        process = self.start_process(["sleep", "2"])
         watcher = procwatch.ProcessWatcher(
-            c, self.unexpected_data, self.unexpected_data)
+            process, self.unexpected_data, self.unexpected_data)
 
-        getattr(c, method)()
+        getattr(process, method)()
 
         try:
             with self.assertElapsed(0):
                 watcher.receive(2)
         finally:
-            retcode = c.wait()
+            retcode = process.wait()
 
         self.assertEqual(retcode, expected_retcode)
 
     def unexpected_data(self, data):
         raise AssertionError("Unexpected data: %r" % data)
 
-    def startCommand(self, command):
-        return compat.CPopen(command)
+    def start_process(self, cmd):
+        return compat.CPopen(cmd)
