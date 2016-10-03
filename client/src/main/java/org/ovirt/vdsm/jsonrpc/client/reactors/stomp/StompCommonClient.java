@@ -24,6 +24,7 @@ import java.util.concurrent.Future;
 
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcResponse;
+import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
 import org.ovirt.vdsm.jsonrpc.client.reactors.Reactor;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message;
@@ -206,8 +207,8 @@ public abstract class StompCommonClient extends ReactorClient {
         this.send(HEARTBEAT_FRAME);
     }
 
-    public void validate() {
-        if (!StompClientPolicy.class.isInstance(this.policy)) {
+    public void validate(ClientPolicy policy) {
+        if (!StompClientPolicy.class.isInstance(policy)) {
             throw new IllegalStateException("Wrong policy type");
         }
     }
