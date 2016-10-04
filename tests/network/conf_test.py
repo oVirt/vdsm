@@ -23,11 +23,9 @@
 from __future__ import absolute_import
 import os
 import pwd
-import re
 import shutil
 import subprocess
 import tempfile
-import xml.etree.ElementTree as ET
 
 from vdsm.network import libvirt
 from vdsm.network.configurators import ifcfg
@@ -64,19 +62,6 @@ class ifcfgConfigWriterTests(TestCaseBase):
                 with open(fn) as f:
                     restoredContent = f.read()
                 self.assertEqual(content, restoredContent)
-
-    def assertEqualXml(self, a, b, msg=None):
-        """
-        Compare two xml strings for equality.
-        """
-
-        aXml = ET.tostring(ET.fromstring(a))
-        bXml = ET.tostring(ET.fromstring(b))
-
-        aXmlNrml = re.sub(b'>\s*\n\s*<', b'><', aXml).strip()
-        bXmlNrml = re.sub(b'>\s*\n\s*<', b'><', bXml).strip()
-
-        self.assertEqual(aXmlNrml, bXmlNrml, msg)
 
     def setUp(self):
         self._tempdir = tempfile.mkdtemp()
@@ -134,26 +119,3 @@ class ifcfgConfigWriterTests(TestCaseBase):
             self._cw.restorePersistentBackup()
 
             self._assertFilesRestored()
-
-    def testCreateNetXmlBridged(self):
-        expectedDoc = """<network>
-                           <name>vdsm-awesome_net</name>
-                           <forward mode='bridge'/>
-                           <bridge name='awesome_net'/>
-                         </network>"""
-        actualDoc = libvirt.createNetworkDef('awesome_net', bridged=True)
-
-        self.assertEqualXml(expectedDoc, actualDoc)
-
-    def testCreateNetXml(self):
-        iface = "dummy"
-        expectedDoc = ("""<network>
-                            <name>vdsm-awesome_net</name>
-                            <forward mode='passthrough'>
-                            <interface dev='%s'/>
-                            </forward>
-                          </network>""" % iface)
-        actualDoc = libvirt.createNetworkDef('awesome_net', bridged=False,
-                                             iface=iface)
-
-        self.assertEqualXml(expectedDoc, actualDoc)
