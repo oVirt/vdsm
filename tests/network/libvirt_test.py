@@ -28,41 +28,41 @@ from nose.plugins.attrib import attr
 from testlib import VdsmTestCase as TestCaseBase
 
 
+NETWORK = 'awesome_net'
+LIBVIRT_NETWORK = 'vdsm-' + NETWORK
+IFACE = 'dummy'
+
+
 @attr(type='unit')
 class LibvirtTests(TestCaseBase):
 
-    def assertEqualXml(self, a, b, msg=None):
-        """
-        Compare two xml strings for equality.
-        """
+    def assertEqualXml(self, a, b):
+        """Compare two xml strings for equality"""
 
-        aXml = ET.tostring(ET.fromstring(a))
-        bXml = ET.tostring(ET.fromstring(b))
+        a_xml = ET.tostring(ET.fromstring(a))
+        b_xml = ET.tostring(ET.fromstring(b))
 
-        aXmlNrml = re.sub(b'>\s*\n\s*<', b'><', aXml).strip()
-        bXmlNrml = re.sub(b'>\s*\n\s*<', b'><', bXml).strip()
+        a_xml_normalized = re.sub(b'>\s*\n\s*<', b'><', a_xml).strip()
+        b_xml_normalized = re.sub(b'>\s*\n\s*<', b'><', b_xml).strip()
 
-        self.assertEqual(aXmlNrml, bXmlNrml, msg)
+        self.assertEqual(a_xml_normalized, b_xml_normalized)
 
-    def testCreateNetXmlBridged(self):
-        expectedDoc = """<network>
-                           <name>vdsm-awesome_net</name>
-                           <forward mode='bridge'/>
-                           <bridge name='awesome_net'/>
-                         </network>"""
-        actualDoc = libvirt.createNetworkDef('awesome_net', bridged=True)
+    def test_create_net_xml_with_bridge(self):
+        expected_doc = """<network>
+                            <name>{}</name>
+                            <forward mode='bridge'/>
+                            <bridge name='{}'/>
+                         </network>""".format(LIBVIRT_NETWORK, NETWORK)
+        actual_doc = libvirt.createNetworkDef(NETWORK, bridged=True)
+        self.assertEqualXml(expected_doc, actual_doc)
 
-        self.assertEqualXml(expectedDoc, actualDoc)
-
-    def testCreateNetXml(self):
-        iface = "dummy"
-        expectedDoc = ("""<network>
-                            <name>vdsm-awesome_net</name>
+    def test_create_net_xml_with_iface(self):
+        expected_doc = """<network>
+                            <name>{}</name>
                             <forward mode='passthrough'>
-                            <interface dev='%s'/>
+                              <interface dev='{}'/>
                             </forward>
-                          </network>""" % iface)
-        actualDoc = libvirt.createNetworkDef('awesome_net', bridged=False,
-                                             iface=iface)
-
-        self.assertEqualXml(expectedDoc, actualDoc)
+                          </network>""".format(LIBVIRT_NETWORK, IFACE)
+        actual_doc = libvirt.createNetworkDef(
+            NETWORK, bridged=False, iface=IFACE)
+        self.assertEqualXml(expected_doc, actual_doc)
