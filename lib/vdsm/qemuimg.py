@@ -270,7 +270,7 @@ class QemuImgOperation(object):
     def poll(self, timeout=None):
         self._watcher.receive(timeout=timeout)
 
-        if not self._watcher.closed:
+        if self._watcher.watching:
             return
 
         self._process.wait()

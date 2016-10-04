@@ -53,7 +53,7 @@ class ProcessWatcherTests(VdsmTestCase):
             recv_data if recv_out else self.unexpected_data,
             recv_data if recv_err else self.unexpected_data)
 
-        while not watcher.closed:
+        while watcher.watching:
             watcher.receive()
 
         retcode = process.wait()
@@ -84,7 +84,7 @@ class ProcessWatcherTests(VdsmTestCase):
         process.stdin.flush()
         process.stdin.close()
 
-        while not watcher.closed:
+        while watcher.watching:
             watcher.receive()
 
         retcode = process.wait()
@@ -100,7 +100,7 @@ class ProcessWatcherTests(VdsmTestCase):
         with self.assertElapsed(2):
             watcher.receive(2)
 
-        self.assertEqual(watcher.closed, False)
+        self.assertEqual(watcher.watching, True)
 
         process.terminate()
 

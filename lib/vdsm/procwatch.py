@@ -63,8 +63,8 @@ class ProcessWatcher(object):
                 self._poll_event(fileno)
 
     @property
-    def closed(self):
-        return len(self._iocb) == 0
+    def watching(self):
+        return bool(self._iocb)
 
     def receive(self, timeout=None):
         """
@@ -76,7 +76,7 @@ class ProcessWatcher(object):
         else:
             endtime = utils.monotonic_time() + timeout
 
-        while not self.closed:
+        while self.watching:
             if timeout is not None:
                 poll_remaining = endtime - utils.monotonic_time()
                 if poll_remaining <= 0:
