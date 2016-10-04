@@ -33,11 +33,12 @@ _scheduler = None
 
 
 class STATUS:
-    PENDING = 'pending'  # Job has not started yet
-    RUNNING = 'running'  # Job is running
-    DONE = 'done'        # Job has finished successfully
-    ABORTED = 'aborted'  # Job was aborted by user request
-    FAILED = 'failed'    # Job has failed
+    PENDING = 'pending'    # Job has not started yet
+    RUNNING = 'running'    # Job is running
+    DONE = 'done'          # Job has finished successfully
+    ABORTING = 'aborting'  # Job is running but abort is in progress
+    ABORTED = 'aborted'    # Job was aborted by user request
+    FAILED = 'failed'      # Job has failed
 
 
 class ClientError(Exception):
@@ -128,49 +129,105 @@ class Job(object):
 
     def abort(self):
         with self._status_lock:
-            if not self.active:
+            if self.status == STATUS.PENDING:
+                # Autodelete should only be handled here for pending state.
+                # There is no operation running so we can go straight to
+                # aborted state.  In all other cases, autodelete is handled as
+                # the _run method finishes.
+                self._status = STATUS.ABORTED
+                logging.info("Aborted pending job %r.", self.id)
+                self._autodelete_if_required()
+            elif self.status == STATUS.RUNNING:
+                self._status = STATUS.ABORTING
+                logging.info("Aborting job %r...", self.id)
+                self._abort()
+            elif self.status == STATUS.ABORTING:
+                logging.info("Retrying abort job %r...", self.id)
+                self._abort()
+            else:
                 raise JobNotActive()
-            logging.info('Job %r aborting...', self._id)
-            self._abort()
-            self._status = STATUS.ABORTED
-
-        # We MUST NOT autodelete a job if abort failed.  Otherwise there could
-        # still be ongoing operations on storage without any associated job.
-        if self.autodelete:
-            self._autodelete()
 
     def run(self):
+        if not self._may_run():
+            return
+        try:
+            self._run()
+        except exception.ActionStopped:
+            self._abort_completed()
+        except Exception as e:
+            self._run_failed(e)
+        else:
+            self._run_completed()
+        finally:
+            self._autodelete_if_required()
+
+    def _may_run(self):
+        """
+        Check if the job should enter the running state.  Allowed origin states
+        are aborted and pending.  If a pending job had been aborted we quietly
+        refuse to run it.  The common case is to move a job from pending to
+        running.
+        """
         with self._status_lock:
             if self.status == STATUS.ABORTED:
                 logging.debug('Refusing to run aborted job %r', self._id)
-                return
+                return False
             if self.status != STATUS.PENDING:
                 raise RuntimeError('Attempted to run job %r from state %r' %
                                    (self._id, self.status))
             self._status = STATUS.RUNNING
-        try:
-            self._run()
-            status = STATUS.DONE
-        except Exception as e:
-            status = STATUS.FAILED
-            logging.exception("Job (id=%s desc=%s) failed",
-                              self.id, self.description)
+            logging.info("Running job %r...", self.id)
+            return True
+
+    def _abort_completed(self):
+        """
+        The job's _run method raised ActionStopped which indicates that all
+        steps required to abort the job have been completed.  We move the job
+        from the intermediate aborting state to the final aborted state.
+        """
+        with self._status_lock:
+            if self.status == STATUS.ABORTING:
+                logging.info("Abort completed for job %r", self.id)
+            else:
+                logging.warning("Unexpected ActionStopped exception in "
+                                "job %r with status %r",
+                                self.id, self.status)
+            self._status = STATUS.ABORTED
+
+    def _run_completed(self):
+        """
+        The job's _run method finished successfully.  Update state to done.
+        """
+        with self._status_lock:
+            self._status = STATUS.DONE
+            logging.info("Job %r completed", self.id)
+
+    def _run_failed(self, e):
+        """
+        The job's _run method failed and raised an exception.  If we were in
+        the process of aborting we consider the abort operation finished.
+        Otherwise, move the job to failed state.
+        """
+        with self._status_lock:
+            if self.status == STATUS.ABORTING:
+                self._status = STATUS.ABORTED
+                logging.exception("Exception while aborting job %r", self.id)
+            else:
+                self._status = STATUS.FAILED
+                logging.exception("Job %r failed", self.id)
             if not isinstance(e, exception.VdsmException):
                 e = exception.GeneralException(str(e))
             self._error = e
-        finally:
-            with self._status_lock:
-                if self.status == STATUS.ABORTED:
-                    return
-                self._status = status
-            if self.autodelete:
-                self._autodelete()
 
     def _abort(self):
         """
-        May be implemented by child class
-        - Must raise if the job could not be aborted
-        - Must not raise if the job was aborted
+        May be implemented by child class.  This is an asynchronous operation
+        which should trigger the abort quickly and return.  A successful return
+        does not mean the job has stopped.  The caller must wait for the job
+        status to change to aborted.
+        - Should raise if the job could not be aborted
+        - A successful abort must cause the job's _run method to raise an
+          ActionStopped exception.
         """
         raise AbortNotSupported()
 
@@ -180,10 +237,13 @@ class Job(object):
         """
         raise NotImplementedError()
 
-    def _autodelete(self):
-        timeout = config.getint("jobs", "autodelete_delay")
-        if timeout >= 0:
-            _scheduler.schedule(timeout, self._delete)
+    def _autodelete_if_required(self):
+        if self.autodelete:
+            timeout = config.getint("jobs", "autodelete_delay")
+            if timeout >= 0:
+                logging.info("Job %r will be deleted in %d seconds",
+                             self.id, timeout)
+                _scheduler.schedule(timeout, self._delete)
 
     def _delete(self):
         logging.info("Autodeleting job %r", self.info())

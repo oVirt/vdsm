@@ -86,6 +86,7 @@ class StuckJob(TestingJob):
     def _run(self):
         self.event_running.set()
         self.event_aborted.wait(1)
+        raise exception.ActionStopped()
 
     def _abort(self):
         self.event_aborted.set()
@@ -182,13 +183,16 @@ class JobsTests(VdsmTestCase):
         self.assertEqual({}, jobs.info(job_type=bar.job_type,
                                        job_ids=[foo.id]))
 
-    @permutations([[jobs.STATUS.PENDING], [jobs.STATUS.RUNNING]])
-    def test_abort_job(self, status):
+    @permutations([
+        [jobs.STATUS.PENDING, jobs.STATUS.ABORTED, False],
+        [jobs.STATUS.RUNNING, jobs.STATUS.ABORTING, True],
+    ])
+    def test_abort_job(self, status, aborted_status, did_abort):
         job = TestingJob(status)
         jobs.add(job)
         jobs.abort(job.id)
-        self.assertEqual(jobs.STATUS.ABORTED, job.status)
-        self.assertTrue(job._aborted)
+        self.assertEqual(aborted_status, job.status)
+        self.assertEqual(did_abort, job._aborted)
 
     def test_abort_running_job(self):
         job = StuckJob()
@@ -217,15 +221,10 @@ class JobsTests(VdsmTestCase):
 
     def test_abort_not_supported(self):
         job = jobs.Job(str(uuid.uuid4()))
+        job._status = jobs.STATUS.RUNNING
         jobs.add(job)
         self.assertEqual(response.error(jobs.AbortNotSupported.name),
                          jobs.abort(job.id))
-
-    def test_abort_failed(self):
-        job = jobs.Job(str(uuid.uuid4()))
-        jobs.add(job)
-        jobs.abort(job.id)
-        self.assertEqual(jobs.STATUS.PENDING, job.status)
 
     @permutations([
         [jobs.STATUS.PENDING, True],
