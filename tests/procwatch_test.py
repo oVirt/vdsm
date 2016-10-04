@@ -38,7 +38,7 @@ class ProcessWatcherTests(VdsmTestCase):
         (['sh', '-c', 'echo -n "%s" >&2'], False, True),
     ])
     def test_receive(self, cmd, recv_out, recv_err):
-        text = bytes('Hello World')
+        text = 'Hello World'
         received = bytearray()
 
         def recv_data(buffer):
@@ -60,14 +60,14 @@ class ProcessWatcherTests(VdsmTestCase):
         retcode = process.wait()
 
         self.assertEqual(retcode, 0)
-        self.assertEqual(text, received)
+        self.assertEqual(text, received.decode('ascii'))
 
     @permutations([
         (['cat'], True, False),
         (['sh', '-c', 'cat >&2'], False, True),
     ])
     def test_write(self, cmd, recv_out, recv_err):
-        text = bytes('Hello World')
+        data = b'Hello World'
         received = bytearray()
 
         def recv_data(buffer):
@@ -81,7 +81,7 @@ class ProcessWatcherTests(VdsmTestCase):
             recv_data if recv_out else self.unexpected_data,
             recv_data if recv_err else self.unexpected_data)
 
-        process.stdin.write(text)
+        process.stdin.write(data)
         process.stdin.flush()
         process.stdin.close()
 
@@ -91,7 +91,7 @@ class ProcessWatcherTests(VdsmTestCase):
         retcode = process.wait()
 
         self.assertEqual(retcode, 0)
-        self.assertEqual(text, str(received))
+        self.assertEqual(data, received)
 
     def test_timeout(self):
         process = self.start_process(["sleep", "5"])
