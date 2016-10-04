@@ -105,6 +105,7 @@ class AcceptorTests(VdsmTestCase):
     BUFSIZE = 512
 
     def setUp(self):
+        self.reactor = None
         self.acceptor = None
         self.acceptor_address = None
 
