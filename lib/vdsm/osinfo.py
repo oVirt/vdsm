@@ -23,7 +23,6 @@ import itertools
 import glob
 import linecache
 import logging
-import time
 import os
 
 from vdsm import utils
@@ -186,14 +185,8 @@ def package_versions():
         except ValueError:
             logging.error('kernel release not found', exc_info=True)
             ver, rel = '0', '0'
-        try:
-            t = ret[3].split()[2:]
-            del t[4]  # Delete timezone
-            t = time.mktime(time.strptime(' '.join(t)))
-        except ValueError:
-            logging.error('kernel build time not found', exc_info=True)
-            t = '0'
-        return dict(version=ver, release=rel, buildtime=t)
+
+        return dict(version=ver, release=rel)
 
     pkgs = {'kernel': kernelDict()}
 
@@ -227,7 +220,6 @@ def package_versions():
                     pkgs[pkg] = {
                         'version': mi['version'],
                         'release': mi['release'],
-                        'buildtime': mi['buildtime'],
                     }
         except Exception:
             logging.error('', exc_info=True)
@@ -254,7 +246,7 @@ def package_versions():
                 deb_pkg = KEY_PACKAGES[pkg]
                 ver = cache[deb_pkg].installed.version
                 # Debian just offers a version
-                pkgs[pkg] = dict(version=ver, release="", buildtime="")
+                pkgs[pkg] = dict(version=ver, release="")
             except Exception:
                 logging.error('', exc_info=True)
 

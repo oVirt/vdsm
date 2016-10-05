@@ -5443,10 +5443,6 @@ types:
         description: Information about an installed piece of software.
         name: SoftwarePackageInfo
         properties:
-        -   description: The time and date the software was built
-            name: buildtime
-            type: long
-
         -   description: The release number for this version
             name: release
             type: string
