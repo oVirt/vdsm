@@ -12,4 +12,4 @@ before_install:
   - docker pull nirs/vdsm-centos
 
 script:
-  - docker run --rm -it -v `pwd`:/vdsm:Z nirs/vdsm-centos bash -c "cd /vdsm && ./autogen.sh --system && make; make check"
+  - docker run --privileged --rm -it -v `pwd`:/vdsm:Z nirs/vdsm-centos bash -c "cd /vdsm && ./autogen.sh --system && make; make check"
