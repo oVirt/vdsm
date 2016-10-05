@@ -275,7 +275,8 @@ class TestCopyDataDIV(VdsmTestCase):
                 job_id = make_uuid()
                 job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
                 t = start_thread(job.run)
-                fake_convert.ready_event.wait()
+                if not fake_convert.ready_event.wait(1):
+                    raise RuntimeError("Timeout waiting for thread")
                 job.abort()
                 t.join(1)
                 if t.isAlive():
