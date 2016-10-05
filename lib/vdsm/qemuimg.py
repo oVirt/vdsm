@@ -219,6 +219,17 @@ def commit(top, topFormat, base=None):
     return QemuImgOperation(cmd, cwd=workdir)
 
 
+def map(image):
+    cmd = [_qemuimg.cmd, "map", "--output", "json", image]
+    # For simplicity, we always run commit in the image directory.
+    workdir = os.path.dirname(image)
+    out = _run_cmd(cmd, cwd=workdir)
+    try:
+        return json.loads(out)
+    except ValueError:
+        raise InvalidOutput(cmd, out, "Failed to process qemuimg map output")
+
+
 class QemuImgOperation(object):
     REGEXPR = re.compile(r'\s*\(([\d.]+)/100%\)\s*')
 

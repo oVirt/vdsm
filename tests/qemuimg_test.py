@@ -437,6 +437,129 @@ class TestCommit(TestCaseBase):
             self.assertEquals(100, op.progress)
 
 
+@expandPermutations
+class TestMap(TestCaseBase):
+
+    @permutations([
+        # format, qcow2_compat
+        (qemuimg.FORMAT.RAW, "0.10"),
+        (qemuimg.FORMAT.RAW, "1.1"),
+        (qemuimg.FORMAT.QCOW2, "0.10"),
+        (qemuimg.FORMAT.QCOW2, "1.1"),
+    ])
+    def test_empty_image(self, format, qcow2_compat):
+        with namedTemporaryDir() as tmpdir:
+            size = 1048576
+            image = os.path.join(tmpdir, "base.img")
+            qemuimg.create(image, size=size, format=format,
+                           qcow2Compat=qcow2_compat)
+
+            expected = [
+                # single run - empty
+                {
+                    "start": 0,
+                    "length": size,
+                    "data": False,
+                    "zero": True,
+                },
+            ]
+
+            self.check_map(qemuimg.map(image), expected)
+
+    @permutations([
+        # length, qcow2_compat
+        (4 * 1024, "0.10"),
+        (4 * 1024, "1.1"),
+        (64 * 1024, "0.10"),
+        (64 * 1024, "1.1"),
+    ])
+    def test_one_block_raw(self, length, qcow2_compat):
+        with namedTemporaryDir() as tmpdir:
+            size = 1048576
+            offset = 64 * 1024
+            image = os.path.join(tmpdir, "base.img")
+            fmt = qemuimg.FORMAT.RAW
+            qemuimg.create(image, size=size, format=fmt)
+            qemu_pattern_write(image, fmt, offset=offset, len=length,
+                               pattern=0xf0)
+
+            expected = [
+                # run 1 - empty
+                {
+                    "start": 0,
+                    "length": offset,
+                    "data": False,
+                    "zero": True,
+                },
+                # run 2 - data
+                {
+                    "start": offset,
+                    "offset": offset,
+                    "length": length,
+                    "data": True,
+                    "zero": False,
+                },
+                # run 3 - empty
+                {
+                    "start": offset + length,
+                    "length": size - offset - length,
+                    "data": False,
+                    "zero": True,
+                },
+            ]
+
+            self.check_map(qemuimg.map(image), expected)
+
+    @permutations([
+        # offset, length, expected_length, expected_start, qcow2_compat
+        (64 * 1024, 4 * 1024, 65536, "0.10"),
+        (64 * 1024, 4 * 1024, 65536, "1.1"),
+        (64 * 1024, 72 * 1024, 131072, "0.10"),
+        (64 * 1024, 72 * 1024, 131072, "1.1"),
+    ])
+    def test_one_block_qcow2(self, offset, length, expected_length,
+                             qcow2_compat):
+        with namedTemporaryDir() as tmpdir:
+            image = os.path.join(tmpdir, "base.img")
+            fmt = qemuimg.FORMAT.QCOW2
+            size = 1048576
+            qemuimg.create(image, size=size, format=fmt)
+            qemu_pattern_write(image, fmt, offset=offset, len=length,
+                               pattern=0xf0)
+
+            expected = [
+                # run 1 - empty
+                {
+                    "start": 0,
+                    "length": offset,
+                    "data": False,
+                    "zero": True,
+                },
+                # run 2 - data
+                {
+                    "start": offset,
+                    "length": expected_length,
+                    "data": True,
+                    "zero": False,
+                },
+                # run 3 - empty
+                {
+                    "start": offset + expected_length,
+                    "length": size - offset - expected_length,
+                    "data": False,
+                    "zero": True,
+                },
+            ]
+
+            self.check_map(qemuimg.map(image), expected)
+
+    def check_map(self, actual, expected):
+        self.assertEqual(len(actual), len(expected))
+        for actual, expected in zip(actual, expected):
+            for key in expected:
+                self.assertEqual(actual[key], expected[key])
+
+
 def make_image(path, size, format, index, qcow2_compat, backing=None):
     qemuimg.create(path, size=size, format=format, qcow2Compat=qcow2_compat,
                    backing=backing)
