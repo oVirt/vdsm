@@ -211,10 +211,14 @@ class TestVmOperations(TestCaseBase):
             testvm._dom = fake.Domain()
             self.assertTrue(testvm.isDomainReadyForCommands())
 
-    def testDomainDisappearedNotReadyForCommands(self):
+    @permutations([
+        # code, text
+        [libvirt.VIR_ERR_NO_DOMAIN, "Disappeared domain"],
+        [libvirt.VIR_ERR_OPERATION_INVALID, "Operation invalid"],
+    ])
+    def testIgnoreKnownErrors(self, code, text):
         def _fail(*args):
-            raise_libvirt_error(libvirt.VIR_ERR_NO_DOMAIN,
-                                "Disappeared domain")
+            raise_libvirt_error(code, text)
 
         with fake.VM() as testvm:
             dom = fake.Domain()

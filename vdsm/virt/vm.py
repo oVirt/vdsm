@@ -2922,8 +2922,10 @@ class Vm(object):
             # to avoid racy checks.
             return False
         except libvirt.libvirtError as e:
-            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                # same as NotConnectedError above: possible race on shutdown
+            if e.get_error_code() in (
+                libvirt.VIR_ERR_NO_DOMAIN,  # race on shutdown
+                libvirt.VIR_ERR_OPERATION_INVALID,  # race on migration end
+            ):
                 return False
             else:
                 raise
