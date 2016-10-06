@@ -2121,35 +2121,38 @@ types:
         name: VmDiskDeviceIoTuneParams
         properties:
         -   defaultvalue: 0
-            description: Total throughput limit in bytes per
-                second.
+            description: Total throughput limit in bytes per second.
+                Value 0 means unlimited.
             name: total_bytes_sec
             type: uint
 
         -   defaultvalue: 0
-            description: Read throughput limit in bytes per
-                second.
+            description: Read throughput limit in bytes per second.
+                Value 0 means unlimited.
             name: read_bytes_sec
             type: uint
 
         -   defaultvalue: 0
-            description: Write throughput limit in bytes per
-                second.
+            description: Write throughput limit in bytes per second.
+                Value 0 means unlimited.
             name: write_bytes_sec
             type: uint
 
         -   defaultvalue: 0
             description: Total I/O operations limit per second.
+                Value 0 means unlimited.
             name: total_iops_sec
             type: uint
 
         -   defaultvalue: 0
             description: Read I/O operations limit per second.
+                Value 0 means unlimited.
             name: read_iops_sec
             type: uint
 
         -   defaultvalue: 0
             description: Write I/O operations limit per second.
+                Value 0 means unlimited.
             name: write_iops_sec
             type: uint
         type: object
