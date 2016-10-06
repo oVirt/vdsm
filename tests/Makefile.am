@@ -119,7 +119,7 @@ test_modules = \
 	storagefakelibTests.py \
 	storageMailboxTests.py \
 	storageServerTests.py \
-	storagetestlibTests.py \
+	storagetestlib_test.py \
 	storage_asyncevent_test.py \
 	storage_check_test.py \
 	storage_directio_test.py \
@@ -233,7 +233,7 @@ blacklist_modules_python3 = \
 	storage_volume_metadata_test.py \
 	storage_workarounds_test.py \
 	storagefakelibTests.py \
-	storagetestlibTests.py \
+	storagetestlib_test.py \
 	toolBondingTests.py \
 	unicode_test.py \
 	utilsTests.py \
