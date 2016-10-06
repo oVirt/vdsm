@@ -90,9 +90,7 @@ def info(image, format=None):
         cmd.extend(("-f", format))
 
     cmd.append(image)
-    rc, out, err = commands.execCmd(cmd, raw=True)
-    if rc != 0:
-        raise QImgError(cmd, rc, out, err)
+    out = _run_cmd(cmd)
 
     try:
         qemu_info = _parse_qemuimg_json(out)
@@ -144,10 +142,7 @@ def create(image, size=None, format=None, qcow2Compat=None,
     if size is not None:
         cmd.append(str(size))
 
-    rc, out, err = commands.execCmd(cmd, cwd=cwdPath)
-
-    if rc != 0:
-        raise QImgError(cmd, rc, out, err)
+    _run_cmd(cmd, cwd=cwdPath)
 
 
 def check(image, format=None):
@@ -157,11 +152,7 @@ def check(image, format=None):
         cmd.extend(("-f", format))
 
     cmd.append(image)
-    rc, out, err = commands.execCmd(cmd, raw=True)
-
-    # FIXME: handle different error codes and raise errors accordingly
-    if rc != 0:
-        raise QImgError(cmd, rc, out, err)
+    out = _run_cmd(cmd)
 
     try:
         qemu_check = _parse_qemuimg_json(out)
@@ -323,10 +314,7 @@ def resize(image, newSize, format=None):
         cmd.extend(("-f", format))
 
     cmd.extend((image, str(newSize)))
-    rc, out, err = commands.execCmd(cmd)
-
-    if rc != 0:
-        raise QImgError(cmd, rc, out, err)
+    _run_cmd(cmd)
 
 
 def rebase(image, backing, format=None, backingFormat=None, unsafe=False,
@@ -374,3 +362,10 @@ def _validate_qcow2_compat(value):
     if value not in _QCOW2_COMPAT_SUPPORTED:
         raise ValueError("Invalid compat version %r" % value)
     return value
+
+
+def _run_cmd(cmd, cwd=None):
+    rc, out, err = commands.execCmd(cmd, raw=True, cwd=cwd)
+    if rc != 0:
+        raise QImgError(cmd, rc, out, err)
+    return out
