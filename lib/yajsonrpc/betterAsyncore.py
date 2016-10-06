@@ -69,6 +69,12 @@ class Dispatcher(asyncore.dispatcher):
     def handle_write(self):
         self._delegate_call("handle_write")
 
+    def close(self):
+        if self.closing:
+            return
+        self.closing = True
+        asyncore.dispatcher.close(self)
+
     def switch_implementation(self, impl):
         self.__impl = impl
 
