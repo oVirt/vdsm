@@ -224,8 +224,8 @@ class MultiProtocolAcceptor:
 
     def stop(self):
         self.log.debug("Stopping Acceptor")
-        self._reactor.stop()
         self._acceptor.close()
+        self._reactor.stop()
 
 
 class _CannotDetectProtocol(Exception):
