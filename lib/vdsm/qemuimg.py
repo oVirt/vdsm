@@ -65,6 +65,24 @@ class QImgError(Exception):
             self.cmd, self.ecode, self.stdout, self.stderr, self.message)
 
 
+class InvalidOutput(QImgError):
+    """
+    Raised when the command output is not valid.
+    """
+
+    ecode = 0
+    stderr = ""
+
+    def __init__(self, cmd, stdout, message):
+        self.cmd = cmd
+        self.stdout = stdout
+        self.message = message
+
+    def __str__(self):
+        return "cmd=%s, stdout=%s, message=%s" % (
+            self.cmd, self.stdout, self.message)
+
+
 def info(image, format=None):
     cmd = [_qemuimg.cmd, "info", "--output", "json"]
 
@@ -79,7 +97,7 @@ def info(image, format=None):
     try:
         qemu_info = _parse_qemuimg_json(out)
     except ValueError:
-        raise QImgError(cmd, rc, out, err, "Failed to process qemu-img output")
+        raise InvalidOutput(cmd, out, "Failed to process qemu-img output")
 
     try:
         info = {
@@ -87,7 +105,7 @@ def info(image, format=None):
             'virtualsize': qemu_info['virtual-size'],
         }
     except KeyError as key:
-        raise QImgError(cmd, rc, out, err, "Missing field: %r" % key)
+        raise InvalidOutput(cmd, out, "Missing field: %r" % key)
 
     if 'cluster-size' in qemu_info:
         info['clustersize'] = qemu_info['cluster-size']
@@ -97,8 +115,7 @@ def info(image, format=None):
         try:
             info['compat'] = qemu_info['format-specific']['data']['compat']
         except KeyError:
-            raise QImgError(cmd, rc, out, err,
-                            "'compat' expected but not found")
+            raise InvalidOutput(cmd, out, "'compat' expected but not found")
 
     return info
 
@@ -149,12 +166,11 @@ def check(image, format=None):
     try:
         qemu_check = _parse_qemuimg_json(out)
     except ValueError:
-        raise QImgError(cmd, rc, out, err, "Failed to process qemu-img output")
+        raise InvalidOutput(cmd, out, "Failed to process qemu-img output")
     try:
         return {"offset": qemu_check["image-end-offset"]}
     except KeyError:
-        raise QImgError(cmd, rc, out, err,
-                        "unable to parse qemu-img check output")
+        raise InvalidOutput(cmd, out, "unable to parse qemu-img check output")
 
 
 def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
