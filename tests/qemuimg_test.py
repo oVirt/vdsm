@@ -408,14 +408,14 @@ class TestCommit(TestCaseBase):
             op.wait_for_completion()
 
             for i in range(base, top + 1):
-                offset = "{}k".format(i)
+                offset = i * 1024
                 pattern = 0xf0 + i
                 # The base volume must have the data from all the volumes
                 # merged into it.
                 format = (qemuimg.FORMAT.RAW if i == 0 else
                           qemuimg.FORMAT.QCOW2)
                 qemu_pattern_verify(base_vol, format, offset=offset,
-                                    len='1k', pattern=pattern)
+                                    len=1024, pattern=pattern)
                 if i > base:
                     # internal and top volumes should keep the data, we
                     # may want to wipe this data when deleting the volumes
@@ -440,5 +440,6 @@ class TestCommit(TestCaseBase):
 def make_image(path, size, format, index, qcow2_compat, backing=None):
     qemuimg.create(path, size=size, format=format, qcow2Compat=qcow2_compat,
                    backing=backing)
-    qemu_pattern_write(path, format, offset="%dk" % index, len='1k',
+    offset = index * 1024
+    qemu_pattern_write(path, format, offset=offset, len=1024,
                        pattern=0xf0 + index)

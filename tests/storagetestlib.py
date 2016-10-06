@@ -272,16 +272,16 @@ class ChainVerificationError(AssertionError):
     pass
 
 
-def qemu_pattern_write(path, format, offset='512', len='1k', pattern=5):
-    write_cmd = 'write -P %d %s %s' % (pattern, offset, len)
+def qemu_pattern_write(path, format, offset=512, len=1024, pattern=5):
+    write_cmd = 'write -P %d %d %d' % (pattern, offset, len)
     cmd = ['qemu-io', '-f', format, '-c', write_cmd, path]
     rc, out, err = commands.execCmd(cmd, raw=True)
     if rc != 0:
         raise cmdutils.Error(cmd, rc, out, err)
 
 
-def qemu_pattern_verify(path, format, offset='512', len='1k', pattern=5):
-    read_cmd = 'read -P %d -s 0 -l %s %s %s' % (pattern, len, offset, len)
+def qemu_pattern_verify(path, format, offset=512, len=1024, pattern=5):
+    read_cmd = 'read -P %d -s 0 -l %d %d %d' % (pattern, len, offset, len)
     cmd = ['qemu-io', '-f', format, '-c', read_cmd, path]
     rc, out, err = commands.execCmd(cmd, raw=True)
     if rc != 0:
@@ -304,10 +304,10 @@ def write_qemu_chain(vol_list):
     # This allows us to verify the integrity of the whole chain.
     for i, vol in enumerate(vol_list):
         vol_fmt = sc.fmt2str(vol.getFormat())
-        offset = "{}k".format(i)
+        offset = i * 1024
         pattern = 0xf0 + i
         qemu_pattern_write(vol.volumePath, vol_fmt, offset=offset,
-                           len='1k', pattern=pattern)
+                           len=1024, pattern=pattern)
 
 
 def verify_qemu_chain(vol_list):
@@ -317,24 +317,24 @@ def verify_qemu_chain(vol_list):
     top_vol = vol_list[-1]
     top_vol_fmt = sc.fmt2str(top_vol.getFormat())
     for i, vol in enumerate(vol_list):
-        offset = "{}k".format(i)
+        offset = i * 1024
         pattern = 0xf0 + i
 
         # Check that the correct pattern can be read through the top volume
         qemu_pattern_verify(top_vol.volumePath, top_vol_fmt, offset=offset,
-                            len='1k', pattern=pattern)
+                            len=1024, pattern=pattern)
 
         # Check the volume where the pattern was originally written
         vol_fmt = sc.fmt2str(vol.getFormat())
-        qemu_pattern_verify(vol.volumePath, vol_fmt, offset=offset, len='1k',
+        qemu_pattern_verify(vol.volumePath, vol_fmt, offset=offset, len=1024,
                             pattern=pattern)
 
         # Check that the next offset contains zeroes.  If we know this layer
         # has zeroes at next_offset we can be sure that data read at the same
         # offset in the next layer belongs to that layer.
-        next_offset = "{}K".format(i + 1)
+        next_offset = (i + 1) * 1024
         qemu_pattern_verify(vol.volumePath, vol_fmt, offset=next_offset,
-                            len='1k', pattern=0)
+                            len=1024, pattern=0)
 
 
 def make_qemu_chain(env, size, base_vol_fmt, chain_len):
