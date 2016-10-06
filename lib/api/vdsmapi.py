@@ -92,7 +92,7 @@ class Schema(object):
         try:
             for path in paths:
                 with open(path) as f:
-                    loaded_schema = yaml.load(f)
+                    loaded_schema = yaml.load(f, Loader=yaml.CLoader)
 
                 types = loaded_schema.pop('types')
                 self._types.update(types)
