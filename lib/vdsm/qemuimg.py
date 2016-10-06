@@ -53,15 +53,16 @@ def supports_compat(compat):
 
 
 class QImgError(Exception):
-    def __init__(self, ecode, stdout, stderr, message=None):
+    def __init__(self, cmd, ecode, stdout, stderr, message=None):
+        self.cmd = cmd
         self.ecode = ecode
         self.stdout = stdout
         self.stderr = stderr
         self.message = message
 
     def __str__(self):
-        return "ecode=%s, stdout=%s, stderr=%s, message=%s" % (
-            self.ecode, self.stdout, self.stderr, self.message)
+        return "cmd=%s, ecode=%s, stdout=%s, stderr=%s, message=%s" % (
+            self.cmd, self.ecode, self.stdout, self.stderr, self.message)
 
 
 def info(image, format=None):
@@ -73,12 +74,12 @@ def info(image, format=None):
     cmd.append(image)
     rc, out, err = commands.execCmd(cmd, raw=True)
     if rc != 0:
-        raise QImgError(rc, out, err)
+        raise QImgError(cmd, rc, out, err)
 
     try:
         qemu_info = _parse_qemuimg_json(out)
     except ValueError:
-        raise QImgError(rc, out, err, "Failed to process qemu-img output")
+        raise QImgError(cmd, rc, out, err, "Failed to process qemu-img output")
 
     try:
         info = {
@@ -86,7 +87,7 @@ def info(image, format=None):
             'virtualsize': qemu_info['virtual-size'],
         }
     except KeyError as key:
-        raise QImgError(rc, out, err, "Missing field: %r" % key)
+        raise QImgError(cmd, rc, out, err, "Missing field: %r" % key)
 
     if 'cluster-size' in qemu_info:
         info['clustersize'] = qemu_info['cluster-size']
@@ -96,7 +97,8 @@ def info(image, format=None):
         try:
             info['compat'] = qemu_info['format-specific']['data']['compat']
         except KeyError:
-            raise QImgError(rc, out, err, "'compat' expected but not found")
+            raise QImgError(cmd, rc, out, err,
+                            "'compat' expected but not found")
 
     return info
 
@@ -128,7 +130,7 @@ def create(image, size=None, format=None, qcow2Compat=None,
     rc, out, err = commands.execCmd(cmd, cwd=cwdPath)
 
     if rc != 0:
-        raise QImgError(rc, out, err)
+        raise QImgError(cmd, rc, out, err)
 
 
 def check(image, format=None):
@@ -142,16 +144,17 @@ def check(image, format=None):
 
     # FIXME: handle different error codes and raise errors accordingly
     if rc != 0:
-        raise QImgError(rc, out, err)
+        raise QImgError(cmd, rc, out, err)
 
     try:
         qemu_check = _parse_qemuimg_json(out)
     except ValueError:
-        raise QImgError(rc, out, err, "Failed to process qemu-img output")
+        raise QImgError(cmd, rc, out, err, "Failed to process qemu-img output")
     try:
         return {"offset": qemu_check["image-end-offset"]}
     except KeyError:
-        raise QImgError(rc, out, err, "unable to parse qemu-img check output")
+        raise QImgError(cmd, rc, out, err,
+                        "unable to parse qemu-img check output")
 
 
 def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
@@ -219,10 +222,13 @@ class QemuImgOperation(object):
         self._stdout = bytearray()
         self._stderr = bytearray()
 
-        cmd = cmdutils.wrap_command(cmd, with_nice=utils.NICENESS.HIGH,
-                                    with_ioclass=utils.IOCLASS.IDLE)
-        _log.debug(cmdutils.command_log_line(cmd, cwd=cwd))
-        self._command = CPopen(cmd, cwd=cwd, deathSignal=signal.SIGKILL)
+        self.cmd = cmdutils.wrap_command(
+            cmd,
+            with_nice=utils.NICENESS.HIGH,
+            with_ioclass=utils.IOCLASS.IDLE)
+        _log.debug(cmdutils.command_log_line(self.cmd, cwd=cwd))
+        self._command = CPopen(self.cmd, cwd=cwd,
+                               deathSignal=signal.SIGKILL)
         self._stream = utils.CommandStream(
             self._command, self._recvstdout, self._recvstderr)
 
@@ -279,7 +285,8 @@ class QemuImgOperation(object):
 
         cmdutils.retcode_log_line(self._command.returncode, self.error)
         if self._command.returncode != 0:
-            raise QImgError(self._command.returncode, "", self.error)
+            raise QImgError(self.cmd, self._command.returncode, "",
+                            self.error)
 
     def wait_for_completion(self):
         timeout = config.getint("irs", "progress_interval")
@@ -303,7 +310,7 @@ def resize(image, newSize, format=None):
     rc, out, err = commands.execCmd(cmd)
 
     if rc != 0:
-        raise QImgError(rc, out, err)
+        raise QImgError(cmd, rc, out, err)
 
 
 def rebase(image, backing, format=None, backingFormat=None, unsafe=False,
@@ -327,7 +334,7 @@ def rebase(image, backing, format=None, backingFormat=None, unsafe=False,
         ioclass=utils.IOCLASS.IDLE)
 
     if rc != 0:
-        raise QImgError(rc, out, err)
+        raise QImgError(cmd, rc, out, err)
 
 
 def default_qcow2_compat():
