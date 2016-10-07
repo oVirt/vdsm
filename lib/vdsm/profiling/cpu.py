@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,18 +45,78 @@ _CLOCK = config.get('devel', 'cpu_profile_clock')
 _THREADS = True
 
 _lock = threading.Lock()
+_profiler = None
+
+
+class Profiler(object):
+
+    def __init__(self, filename, format='pstat', clock='cpu', builtins=True,
+                 threads=True):
+        self.filename = filename
+        self.format = format
+        self.clock = clock
+        self.builtins = builtins
+        self.threads = threads
+
+    def start(self):
+        # Lazy import so we do not effect runtime environment if profiling is
+        # not used.
+        global yappi
+        import yappi
+
+        # yappi start semantics are a bit too liberal, returning success if
+        # yappi is already started, happily having two different code paths
+        # that thinks they own the single process profiler.
+        if yappi.is_running():
+            raise UsageError('CPU profiler is already running')
+
+        logging.info("Starting CPU profiling")
+        yappi.set_clock_type(self.clock)
+        yappi.start(builtins=self.builtins, profile_threads=self.threads)
+
+    def stop(self):
+        if not yappi.is_running():
+            raise UsageError("CPU profiler is not running")
+
+        logging.info("Stopping CPU profiling")
+        yappi.stop()
+        stats = yappi.get_func_stats()
+        stats.save(self.filename, self.format)
+        yappi.clear_stats()
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, t, v, tb):
+        try:
+            self.stop()
+        except Exception:
+            if t is None:
+                raise
+            # Do not hide original exception
+            logging.exception("Error stopping profiler")
 
 
 def start():
     """ Starts application wide CPU profiling """
+    global _profiler
     if is_enabled():
-        _start_profiling(_CLOCK, _BUILTINS, _THREADS)
+        with _lock:
+            if _profiler:
+                raise UsageError('CPU profiler is already running')
+            _profiler = Profiler(_FILENAME, format=_FORMAT, clock=_CLOCK,
+                                 builtins=_BUILTINS, threads=_THREADS)
+            _profiler.start()
 
 
 def stop():
     """ Stops application wide CPU profiling """
+    global _profiler
     if is_enabled():
-        _stop_profiling(_FILENAME, _FORMAT)
+        with _lock:
+            _profiler.stop()
+            _profiler = None
 
 
 def is_enabled():
@@ -79,36 +139,9 @@ def profile(filename, format=_FORMAT, clock=_CLOCK, builtins=_BUILTINS,
     def decorator(f):
         @wraps(f)
         def wrapper(*a, **kw):
-            _start_profiling(clock, builtins, threads)
-            try:
+            profiler = Profiler(filename, format=format, clock=clock,
+                                builtins=builtins, threads=threads)
+            with profiler:
                 return f(*a, **kw)
-            finally:
-                _stop_profiling(filename, format)
         return wrapper
     return decorator
-
-
-def _start_profiling(clock, builtins, threads):
-    global yappi
-    logging.debug("Starting CPU profiling")
-
-    import yappi
-
-    with _lock:
-        # yappi start semantics are a bit too liberal, returning success if
-        # yappi is already started, happily having too different code paths
-        # that thinks they own the single process profiler.
-        if yappi.is_running():
-            raise UsageError('CPU profiler is already running')
-        yappi.set_clock_type(clock)
-        yappi.start(builtins=builtins, profile_threads=threads)
-
-
-def _stop_profiling(filename, format):
-    logging.debug("Stopping CPU profiling")
-    with _lock:
-        if yappi.is_running():
-            yappi.stop()
-            stats = yappi.get_func_stats()
-            stats.save(filename, format)
-            yappi.clear_stats()
