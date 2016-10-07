@@ -471,8 +471,9 @@ class PasswordDecodeTests(VdsmTestCase):
 
     def test_decode(self):
         obj = self.Cls()
-        obj.password = ProtectedPassword(base64.b64encode(b"12345678"))
-        self.assertEqual(b"12345678", obj.password.value)
+        data = b"\x80\x81\x82\x83"
+        obj.password = ProtectedPassword(base64.b64encode(data))
+        self.assertEqual(data, obj.password.value)
 
     def test_invalid(self):
         obj = self.Cls()
