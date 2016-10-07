@@ -467,6 +467,9 @@ parameters = [
         ('cpu_profile_enable', 'false',
             'Enable whole process profiling (requires yappi profiler).'),
 
+        ('cpu_profile_filename', '@VDSMRUNDIR@/vdsmd.prof',
+            'Profile file name (@VDSMRUNDIR@/vdsmd.prof)'),
+
         ('cpu_profile_format', 'pstat',
             'Profile file format (pstat, callgrind, ystat)'),
 

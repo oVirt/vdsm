@@ -25,10 +25,8 @@ This module provides cpu profiling.
 
 from functools import wraps
 import logging
-import os
 import threading
 
-from vdsm import constants
 from vdsm.config import config
 
 from .errors import UsageError
@@ -37,8 +35,6 @@ from .errors import UsageError
 yappi = None
 
 # Defaults
-
-_FILENAME = os.path.join(constants.P_VDSM_RUN, 'vdsmd.prof')
 
 _lock = threading.Lock()
 _profiler = None
@@ -102,7 +98,7 @@ def start():
             if _profiler:
                 raise UsageError('CPU profiler is already running')
             _profiler = Profiler(
-                _FILENAME,
+                config.get('devel', 'cpu_profile_filename'),
                 format=config.get('devel', 'cpu_profile_format'),
                 clock=config.get('devel', 'cpu_profile_clock'),
                 builtins=config.getboolean('devel', 'cpu_profile_builtins'),
