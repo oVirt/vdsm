@@ -281,6 +281,11 @@ class Ifcfg(Configurator):
             if set_mtu is not None:
                 ipwrapper.linkSet(nic.name, ['mtu', str(set_mtu)])
 
+            # If the nic was bridged, we must remove BRIDGE parameter from its
+            # ifcfg configuration file.
+            if nic.bridge:
+                self.configApplier.dropBridgeParameter(nic.name)
+
     def _getFilePath(self, fileType, device):
         return os.path.join(NET_CONF_DIR, '%s-%s' % (fileType, device))
 
