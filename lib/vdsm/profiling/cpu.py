@@ -39,10 +39,6 @@ yappi = None
 # Defaults
 
 _FILENAME = os.path.join(constants.P_VDSM_RUN, 'vdsmd.prof')
-_FORMAT = config.get('devel', 'cpu_profile_format')
-_BUILTINS = config.getboolean('devel', 'cpu_profile_builtins')
-_CLOCK = config.get('devel', 'cpu_profile_clock')
-_THREADS = True
 
 _lock = threading.Lock()
 _profiler = None
@@ -105,8 +101,12 @@ def start():
         with _lock:
             if _profiler:
                 raise UsageError('CPU profiler is already running')
-            _profiler = Profiler(_FILENAME, format=_FORMAT, clock=_CLOCK,
-                                 builtins=_BUILTINS, threads=_THREADS)
+            _profiler = Profiler(
+                _FILENAME,
+                format=config.get('devel', 'cpu_profile_format'),
+                clock=config.get('devel', 'cpu_profile_clock'),
+                builtins=config.getboolean('devel', 'cpu_profile_builtins'),
+                threads=True)
             _profiler.start()
 
 
@@ -128,8 +128,8 @@ def is_running():
         return yappi and yappi.is_running()
 
 
-def profile(filename, format=_FORMAT, clock=_CLOCK, builtins=_BUILTINS,
-            threads=_THREADS):
+def profile(filename, format='pstat', clock='cpu', builtins=True,
+            threads=True):
     """
     Profile decorated function, saving profile to filename using format.
 
