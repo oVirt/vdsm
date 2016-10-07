@@ -207,7 +207,6 @@ blacklist_modules_python3 = \
 	outOfProcessTests.py \
 	periodicTests.py \
 	persistentDictTests.py \
-	properties_test.py \
 	protocoldetectorTests.py \
 	qemuimg_test.py \
 	storage_resourcemanager_test.py \
