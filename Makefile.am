@@ -19,6 +19,9 @@
 #
 TOX_MIN_VERSION = 2.1.1
 
+# We don't want the standard gnu file setup (README, INSTALL, etc.)
+AUTOMAKE_OPTIONS = foreign
+
 SUBDIRS = \
 	client \
 	contrib \
@@ -42,6 +45,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 EXTRA_DIST = \
 	.gitignore \
 	README.logging \
+	README.md \
 	autobuild.sh \
 	autogen.sh \
 	build-aux/pkg-version \

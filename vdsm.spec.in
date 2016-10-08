@@ -895,7 +895,7 @@ fi
 exit 0
 
 %files
-%doc README
+%doc README.md
 %doc lib/vdsm/vdsm.conf.sample
 %doc README.logging
 %license COPYING

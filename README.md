@@ -1,5 +1,4 @@
-         Vdsm: Virtual Desktop Server Manager
-         ====================================
+# Vdsm: Virtual Desktop Server Manager
 
 The Vdsm service exposes an API for managing virtualization
 hosts running the KVM hypervisor technology. Vdsm manages and monitors
@@ -7,53 +6,53 @@ the host's storage, memory and networks as well as virtual machine
 creation, other host administration tasks, statistics gathering, and
 log collection.
 
-Installation
-============
+
+## Installation
 
 The Vdsm service can be used by following the standard autotools
 installation process, documented in the INSTALL file. As a quick
 start you can do
 
-   ./configure --prefix=/usr --sysconfdir=/etc \
+    ./configure --prefix=/usr --sysconfdir=/etc \
         --localstatedir=/var --libdir=/usr/lib
-   make
-   sudo make install
+    make
+    sudo make install
 
 In order to start vdsm at first try, please perform:
 
-   vdsm-tool configure [--force]
+    vdsm-tool configure [--force]
 
-   * --force flag will override old conf files with vdsm defaults and restart
-     services that were configured (if were already running)
+`--force` flag will override old conf files with vdsm defaults and
+restart services that were configured (if were already running)
 
-Packaging
-=========
+
+## Packaging
 
 The 'vdsm.spec' file demonstrates how to distribute Vdsm as an RPM
 package.
 
-Getting Help
-============
+
+## Getting Help
 
 There are two mailing lists for discussions:
 
-  - For technical discussions about the project and its code base.
+- For technical discussions about the project and its code base.
 
-    http://lists.ovirt.org/mailman/listinfo/devel
+  http://lists.ovirt.org/mailman/listinfo/devel
 
-  - For questions by users, who do not want to be swamped by
-    technicalities.
+- For questions by users, who do not want to be swamped by
+  technicalities.
 
-    http://lists.ovirt.org/mailman/listinfo/users
+  http://lists.ovirt.org/mailman/listinfo/users
 
 The developers also hang out on IRC at #vdsm hosted on freenode.net
 
 The latest upstream code can be obtained from GIT:
 
-   git clone https://gerrit.ovirt.org/vdsm
+    git clone https://gerrit.ovirt.org/vdsm
 
-Licensing
-=========
+
+## Licensing
 
 Vdsm is provided under the terms of the GNU General Public License,
 version 2 or later. Please see the COPYING file for complete GPLv2+
@@ -71,5 +70,3 @@ contained in the combination.
 If you modify this program, you may extend this exception to your
 version, but you are not obligated to do so.  If you do not wish to do
 so, delete this exception statement from your version.
-
--- End of readme
