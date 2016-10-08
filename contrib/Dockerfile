@@ -5,6 +5,7 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     PyYAML \
     autoconf \
     automake \
+    bridge-utils \
     dosfstools \
     e2fsprogs \
     genisoimage \
@@ -13,6 +14,7 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     libvirt-python \
     make \
     mom \
+    openvswitch \
     psmisc \
     python-cpopen \
     python-decorator \
