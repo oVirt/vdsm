@@ -29,6 +29,7 @@ from vdsm.common import exception
 from . import utils
 from . import cmdutils
 from . import commands
+from . import procwatch
 from .compat import CPopen
 from . config import config
 
@@ -222,9 +223,9 @@ class QemuImgOperation(object):
         cmd = cmdutils.wrap_command(cmd, with_nice=utils.NICENESS.HIGH,
                                     with_ioclass=utils.IOCLASS.IDLE)
         _log.debug(cmdutils.command_log_line(cmd, cwd=cwd))
-        self._command = CPopen(cmd, cwd=cwd, deathSignal=signal.SIGKILL)
-        self._stream = utils.CommandStream(
-            self._command, self._recvstdout, self._recvstderr)
+        self._process = CPopen(cmd, cwd=cwd, deathSignal=signal.SIGKILL)
+        self._watcher = procwatch.ProcessWatcher(
+            self._process, self._recvstdout, self._recvstderr)
 
     def _recvstderr(self, buffer):
         self._stderr += buffer
@@ -264,22 +265,22 @@ class QemuImgOperation(object):
 
     @property
     def finished(self):
-        return self._command.poll() is not None
+        return self._process.poll() is not None
 
     def poll(self, timeout=None):
-        self._stream.receive(timeout=timeout)
+        self._watcher.receive(timeout=timeout)
 
-        if not self._stream.closed:
+        if self._watcher.watching:
             return
 
-        self._command.wait()
+        self._process.wait()
 
         if self._aborted:
             raise exception.ActionStopped()
 
-        cmdutils.retcode_log_line(self._command.returncode, self.error)
-        if self._command.returncode != 0:
-            raise QImgError(self._command.returncode, "", self.error)
+        cmdutils.retcode_log_line(self._process.returncode, self.error)
+        if self._process.returncode != 0:
+            raise QImgError(self._process.returncode, "", self.error)
 
     def wait_for_completion(self):
         timeout = config.getint("irs", "progress_interval")
@@ -288,9 +289,9 @@ class QemuImgOperation(object):
             _log.debug('qemu-img operation progress: %s%%', self.progress)
 
     def abort(self):
-        if self._command.poll() is None:
+        if self._process.poll() is None:
             self._aborted = True
-            self._command.terminate()
+            self._process.terminate()
 
 
 def resize(image, newSize, format=None):

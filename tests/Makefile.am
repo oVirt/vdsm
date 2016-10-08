@@ -95,6 +95,7 @@ test_modules = \
 	periodicTests.py \
 	permutationTests.py \
 	persistentDictTests.py \
+	procwatch_test.py \
 	properties_test.py \
 	protocoldetectorTests.py \
 	pthreadTests.py \
