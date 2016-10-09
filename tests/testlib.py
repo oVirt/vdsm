@@ -518,7 +518,7 @@ def forked(f):
                     os.write(w, pickle.dumps(e))
                     os._exit(1)
             else:
-                _, status = os.waitpid(pid, 0)
+                _, status = osutils.uninterruptible(os.waitpid, pid, 0)
                 if status != 0:
                     e = pickle.loads(os.read(r, 4006))
                     raise e
