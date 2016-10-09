@@ -7,9 +7,14 @@ services:
 git:
   depth: 9999999
 
+env:
+  matrix:
+    - DOCKER_IMAGE=nirs/vdsm-centos
+    - DOCKER_IMAGE=nirs/vdsm-fedora
+
 before_install:
   - docker --version
-  - docker pull nirs/vdsm-centos
+  - docker pull $DOCKER_IMAGE
 
 script:
-  - docker run --privileged --rm -it -v `pwd`:/vdsm:Z nirs/vdsm-centos bash -c "cd /vdsm && ./autogen.sh --system && make; make check"
+  - docker run --privileged --rm -it -v `pwd`:/vdsm:Z $DOCKER_IMAGE bash -c "cd /vdsm && ./autogen.sh --system && make && make check"
