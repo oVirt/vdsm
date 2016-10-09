@@ -453,8 +453,8 @@ def remove_vm_launch_flags_file(vm_id):
 
 
 def _getHookInfo(dir):
-    return dict([(os.path.basename(script), _getScriptInfo(script))
-                 for script in _scriptsPerDir(dir)])
+    return dict((os.path.basename(script), _getScriptInfo(script))
+                for script in _scriptsPerDir(dir))
 
 
 def installed():
