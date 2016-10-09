@@ -62,7 +62,6 @@ BuildRequires: python
 BuildRequires: python2-devel
 BuildRequires: python-mock
 BuildRequires: python-netaddr
-BuildRequires: python-nose
 BuildRequires: python-six >= 1.9.0
 BuildRequires: rpm-build
 
@@ -794,9 +793,6 @@ install -Dm 0644 vdsm/vdsm-libvirt-access.rules \
 # Install the libvirt hook for cleaning up the XML
 install -Dm 0755 vdsm/virt/libvirt-hook.sh \
                  %{buildroot}%{_sysconfdir}/libvirt/hooks/qemu
-
-%check
-make tests
 
 %pre
 # Force standard locale behavior (English)

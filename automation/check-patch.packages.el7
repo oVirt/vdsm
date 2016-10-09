@@ -18,7 +18,6 @@ python-inotify
 python-ioprocess
 python-mock
 python-netaddr
-python-nose
 python-pthreading
 python-rtslib
 python-setuptools

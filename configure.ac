@@ -308,12 +308,6 @@ if test "x$PYTHON_CONFIG" = "x"; then
   AC_MSG_ERROR([python-devel not found, please install it.])
 fi
 
-# Checking for nosetests
-AC_PATH_PROG([NOSETESTS], [nosetests])
-if test "x$NOSETESTS" = "x"; then
-  AC_MSG_ERROR([python-nose not found, please install it.])
-fi
-
 # Checking for python modules (sorted, please keep in order)
 AX_PYTHON_MODULE([argparse], [fatal], python2)
 AX_PYTHON_MODULE([cpopen], [fatal], python2)
