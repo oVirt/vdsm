@@ -245,7 +245,6 @@ blacklist_modules_python3 = \
 	storage_volume_metadata_test.py \
 	storage_volume_test.py \
 	storage_workarounds_test.py \
-	toolbonding_test.py \
 	unicode_test.py \
 	utils_test.py \
 	v2v_test.py \

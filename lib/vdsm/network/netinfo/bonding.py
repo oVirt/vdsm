@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Hat, Inc.
+# Copyright 2015-2017 Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,12 @@ from __future__ import absolute_import
 import errno
 from functools import partial
 from glob import iglob
+import io
 import json
 import logging
 import os
+
+import six
 
 from vdsm import constants
 from vdsm.network.ipwrapper import Link
@@ -151,7 +154,7 @@ def bond_opts_name2numeric_filtered(bond):
     e.g. 'ad_num_ports' or 'slaves'.
     """
     return dict(((opt, val) for (opt, val)
-                 in _bond_opts_name2numeric(bond).iteritems()
+                 in six.iteritems(_bond_opts_name2numeric(bond))
                  if opt not in EXCLUDED_BONDING_ENTRIES))
 
 
@@ -192,7 +195,7 @@ def _bond_opts_name2numeric(bond):
 
 def _bond_opts_name2numeric_scan(opt_path):
     vals = {}
-    with open(opt_path, 'w') as opt_file:
+    with io.open(opt_path, 'wb', buffering=0) as opt_file:
         for numeric_val in range(32):
             name, numeric = _bond_opts_name2numeric_getval(opt_path, opt_file,
                                                            numeric_val)
@@ -206,8 +209,7 @@ def _bond_opts_name2numeric_scan(opt_path):
 
 def _bond_opts_name2numeric_getval(opt_path, opt_write_file, numeric_val):
     try:
-        opt_write_file.write(str(numeric_val))
-        opt_write_file.flush()
+        opt_write_file.write(str(numeric_val).encode('utf8'))
     except IOError as e:
         if e.errno in (errno.EINVAL, errno.EPERM, errno.EACCES):
             return None, None
