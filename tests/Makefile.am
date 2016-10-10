@@ -195,7 +195,6 @@ blacklist_modules_python3 = \
 	network/netinfo_test.py \
 	network/ovs_driver_test.py \
 	network/ovs_info_test.py \
-	network/ovs_test.py \
 	network/tc_test.py \
 	network/unified_persistence_test.py \
 	numaUtilsTests.py \
