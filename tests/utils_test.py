@@ -106,9 +106,12 @@ class TestTerminating(TestCaseBase):
             raise FakeKillError("fake kill exception")
 
         self.proc.kill = fake_kill
-        with utils.terminating(self.proc):
-            self.assertIsNone(self.proc.poll())
+        with self.assertRaises(utils.TerminatingFailure) as e:
+            with utils.terminating(self.proc):
+                self.assertIsNone(self.proc.poll())
 
+        self.assertEqual(e.exception.pid, self.proc.pid)
+        self.assertEqual(type(e.exception.error), FakeKillError)
         self.assertIsNone(self.proc.returncode)
 
 
