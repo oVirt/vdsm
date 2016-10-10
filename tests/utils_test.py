@@ -93,19 +93,19 @@ class TestTerminating(TestCaseBase):
             self.kill_proc()
             self.proc.wait()
 
-    def test_terminating(self):
+    def test_process_running(self):
         with utils.terminating(self.proc):
             self.assertIsNone(self.proc.poll())
         self.assertEqual(self.proc.returncode, -signal.SIGKILL)
 
-    def test_terminating_with_kill_exception(self):
+    def test_kill_failure(self):
         class FakeKillError(Exception):
             pass
 
-        def fake_kill():
+        def fail():
             raise FakeKillError("fake kill exception")
 
-        self.proc.kill = fake_kill
+        self.proc.kill = fail
         with self.assertRaises(utils.TerminatingFailure) as e:
             with utils.terminating(self.proc):
                 self.assertIsNone(self.proc.poll())
