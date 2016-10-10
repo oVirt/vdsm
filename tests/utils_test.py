@@ -98,6 +98,18 @@ class TestTerminating(TestCaseBase):
             self.assertIsNone(self.proc.poll())
         self.assertEqual(self.proc.returncode, -signal.SIGKILL)
 
+    def test_process_zombie(self):
+        self.proc.terminate()
+        wait_for_zombie(self.proc, 1)
+
+        def fail():
+            raise RuntimeError("Attempt to kill a zombie process")
+
+        self.proc.kill = fail
+        with utils.terminating(self.proc):
+            pass
+        self.assertEqual(self.proc.returncode, -signal.SIGTERM)
+
     def test_kill_failure(self):
         class FakeKillError(Exception):
             pass
@@ -113,6 +125,25 @@ class TestTerminating(TestCaseBase):
         self.assertEqual(e.exception.pid, self.proc.pid)
         self.assertEqual(type(e.exception.error), FakeKillError)
         self.assertIsNone(self.proc.returncode)
+
+
+def wait_for_zombie(proc, timeout, interval=0.1):
+    interval = min(interval, timeout)
+    deadline = utils.monotonic_time() + timeout
+    while True:
+        time.sleep(interval)
+        if is_zombie(proc):
+            return
+        if utils.monotonic_time() > deadline:
+            raise RuntimeError("Timeout waiting for process")
+
+
+def is_zombie(proc):
+    proc_stat = "/proc/%d/stat" % proc.pid
+    with open(proc_stat) as f:
+        line = f.readline()
+    state = line.split()[2]
+    return state == "Z"
 
 
 class TestRetry(TestCaseBase):
