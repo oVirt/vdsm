@@ -44,6 +44,7 @@ from vdsm.storage import constants as sc
 MB = 1024 ** 2
 
 
+@expandPermutations
 class FakeFileEnvTests(VdsmTestCase):
 
     def test_no_fakelvm(self):
@@ -69,6 +70,22 @@ class FakeFileEnvTests(VdsmTestCase):
             domain_dir = env.sd_manifest.domaindir
             manifest = fileSD.FileStorageDomainManifest(domain_dir)
             self.assertEqual(desc, manifest.getMetaParam(sd.DMDK_DESCRIPTION))
+
+    @permutations((("file",), ("block",),))
+    def test_default_domain_version(self, env_type):
+        with fake_env(env_type) as env:
+            self.assertEquals(3, env.sd_manifest.getVersion())
+
+    @permutations((
+        # env_type, sd_version
+        ("file", 3),
+        ("file", 4),
+        ("block", 3),
+        ("block", 4),
+    ))
+    def test_domain_version(self, env_type, sd_version):
+        with fake_env(env_type, sd_version=sd_version) as env:
+            self.assertEquals(sd_version, env.sd_manifest.getVersion())
 
     def test_volume_structure(self):
         with fake_file_env() as env:

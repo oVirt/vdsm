@@ -72,9 +72,9 @@ class FakeBlockEnv(object):
 
 
 @contextmanager
-def fake_file_env(obj=None):
+def fake_file_env(obj=None, sd_version=3):
     with namedTemporaryDir() as tmpdir:
-        sd_manifest = make_filesd_manifest(tmpdir)
+        sd_manifest = make_filesd_manifest(tmpdir, sd_version=sd_version)
         fake_sdc = FakeStorageDomainCache()
         with MonkeyPatchScope([
             [sd, 'storage_repository', tmpdir],
@@ -89,7 +89,7 @@ def fake_file_env(obj=None):
 
 
 @contextmanager
-def fake_block_env(obj=None):
+def fake_block_env(obj=None, sd_version=3):
     with namedTemporaryDir() as tmpdir:
         lvm = FakeLVM(tmpdir)
         fake_sdc = FakeStorageDomainCache()
@@ -101,7 +101,8 @@ def fake_block_env(obj=None):
             (volume, 'sdCache', fake_sdc),
             (hsm, 'sdCache', fake_sdc),
         ]):
-            sd_manifest = make_blocksd_manifest(tmpdir, lvm)
+            sd_manifest = make_blocksd_manifest(tmpdir, lvm,
+                                                sd_version=sd_version)
             fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
             try:
                 yield FakeBlockEnv(tmpdir, sd_manifest, fake_sdc, lvm)
@@ -109,11 +110,11 @@ def fake_block_env(obj=None):
                 oop.stop()
 
 
-def fake_env(storage_type):
+def fake_env(storage_type, sd_version=3):
     if storage_type == 'file':
-        return fake_file_env()
+        return fake_file_env(sd_version=sd_version)
     elif storage_type == 'block':
-        return fake_block_env()
+        return fake_block_env(sd_version=sd_version)
     else:
         raise ValueError("Invalid storage_type: %r" % storage_type)
 
@@ -142,7 +143,8 @@ def make_sd_metadata(sduuid, version=3, dom_class=sd.DATA_DOMAIN, pools=None):
     return md
 
 
-def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None):
+def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None,
+                          sd_version=3):
     if sduuid is None:
         sduuid = make_uuid()
     if devices is None:
@@ -159,7 +161,7 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None):
     fake_lvm.createLV(sduuid, blockSD.MASTERLV, blockSD.MASTERLV_SIZE)
 
     # We'll store the domain metadata in the VG's tags
-    metadata = make_sd_metadata(sduuid, pools=[spuuid])
+    metadata = make_sd_metadata(sduuid, version=sd_version, pools=[spuuid])
     assert(metadata[sd.DMDK_VERSION] >= 3)  # Tag based MD is V3 and above
     tag_md = blockSD.TagBasedSDMetadata(sduuid)
     tag_md.update(metadata)
@@ -186,7 +188,7 @@ def get_metafile_path(domaindir):
     return os.path.join(domaindir, sd.DOMAIN_META_DATA, sd.METADATA)
 
 
-def make_filesd_manifest(tmpdir):
+def make_filesd_manifest(tmpdir, sd_version=3):
     spuuid = make_uuid()
     sduuid = make_uuid()
 
@@ -194,7 +196,8 @@ def make_filesd_manifest(tmpdir):
     metafile = get_metafile_path(domain_path)
     make_file(metafile)
     metadata = fileSD.FileSDMetadata(metafile)
-    metadata.update(make_sd_metadata(sduuid, pools=[spuuid]))
+    metadata.update(make_sd_metadata(sduuid, version=sd_version,
+                                     pools=[spuuid]))
 
     manifest = fileSD.FileStorageDomainManifest(domain_path, metadata)
     os.makedirs(os.path.join(manifest.domaindir, sd.DOMAIN_IMAGES))
