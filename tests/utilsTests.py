@@ -105,6 +105,7 @@ class TerminatingTests(TestCaseBase):
     def tearDown(self):
         if self.proc.poll() is None:
             self.kill_proc()
+            self.proc.wait()
 
     def test_terminating(self):
         with utils.terminating(self.proc):
