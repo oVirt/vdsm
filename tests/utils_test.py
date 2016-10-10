@@ -110,6 +110,18 @@ class TestTerminating(TestCaseBase):
             pass
         self.assertEqual(self.proc.returncode, -signal.SIGTERM)
 
+    def test_process_terminated(self):
+        self.proc.terminate()
+        self.proc.wait()
+
+        def fail():
+            raise RuntimeError("Attempt to kill a terminated process")
+
+        self.proc.kill = fail
+        with utils.terminating(self.proc):
+            pass
+        self.assertEqual(self.proc.returncode, -signal.SIGTERM)
+
     def test_kill_failure(self):
         class FakeKillError(Exception):
             pass
