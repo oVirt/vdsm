@@ -2738,12 +2738,12 @@ class Vm(object):
         qos = self._getVmPolicy()
         ioTuneList = qos.getElementsByTagName("ioTune")
         if not ioTuneList or not ioTuneList[0].hasChildNodes():
-            return response.success(ioTunePolicy=[])
+            return response.success(ioTunePolicyList=[])
 
         for device in ioTuneList[0].getElementsByTagName("device"):
             tunables.append(io_tune_dom_to_values(device))
 
-        return response.success(ioTunePolicy=tunables)
+        return response.success(ioTunePolicyList=tunables)
 
     def getIoTune(self):
         resultList = []
@@ -2776,7 +2776,7 @@ class Vm(object):
                 else:
                     return response.error('updateIoTuneErr', e.message)
 
-        return response.success(ioTune=resultList)
+        return response.success(ioTuneList=resultList)
 
     def setIoTune(self, tunables):
         for io_tune_change in tunables:
