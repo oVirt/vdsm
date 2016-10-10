@@ -297,6 +297,12 @@ class AsyncProc(object):
     def poll(self):
         return self.returncode
 
+    def send_signal(self, signo):
+        self._proc.send_signal(signo)
+
+    def terminate(self):
+        self._proc.terminate()
+
     def kill(self):
         try:
             self._proc.kill()
