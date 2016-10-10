@@ -97,9 +97,7 @@ class TerminatingTests(TestCaseBase):
 
     def setUp(self):
         self.proc = commands.execCmd([EXT_SLEEP, "2"], sync=False)
-        self.proc_path = "/proc/%d" % self.proc.pid
         self.kill_proc = self.proc.kill
-        self.assertTrue(os.path.exists(self.proc_path))
         self.reaped = set()
 
     def tearDown(self):
@@ -109,8 +107,9 @@ class TerminatingTests(TestCaseBase):
 
     def test_terminating(self):
         with utils.terminating(self.proc):
-            self.assertTrue(os.path.exists(self.proc_path))
-        self.assertTrue(wait_for_removal(self.proc_path, timeout=1))
+            self.assertIsNone(self.proc.poll())
+        proc_path = "/proc/%d" % self.proc.pid
+        self.assertTrue(wait_for_removal(proc_path, timeout=1))
 
     def test_terminating_with_kill_exception(self):
         class FakeKillError(Exception):
@@ -125,7 +124,7 @@ class TerminatingTests(TestCaseBase):
                                 )]):
             self.proc.kill = fake_kill
             with utils.terminating(self.proc):
-                self.assertTrue(os.path.exists(self.proc_path))
+                self.assertIsNone(self.proc.poll())
             self.assertTrue(self.proc.pid not in self.reaped)
 
     def test_terminating_with_infected_kill(self):
@@ -135,7 +134,7 @@ class TerminatingTests(TestCaseBase):
                                 )]):
             self.proc.kill = lambda: None
             with utils.terminating(self.proc):
-                self.assertTrue(os.path.exists(self.proc_path))
+                self.assertIsNone(self.proc.poll())
             self.assertTrue(self.proc.pid in self.reaped)
 
 
