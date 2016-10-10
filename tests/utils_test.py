@@ -86,16 +86,18 @@ class TestTerminating(TestCaseBase):
 
     def setUp(self):
         self.proc = commands.execCmd([EXT_SLEEP, "2"], sync=False)
-        self.kill_proc = self.proc.kill
+        self.proc_poll = self.proc.poll
+        self.proc_kill = self.proc.kill
+        self.proc_wait = self.proc.wait
 
     def tearDown(self):
-        if self.proc.poll() is None:
-            self.kill_proc()
-            self.proc.wait()
+        if self.proc_poll() is None:
+            self.proc_kill()
+            self.proc_wait()
 
     def test_process_running(self):
         with utils.terminating(self.proc):
-            self.assertIsNone(self.proc.poll())
+            self.assertIsNone(self.proc_poll())
         self.assertEqual(self.proc.returncode, -signal.SIGKILL)
 
     def test_process_zombie(self):
@@ -122,21 +124,42 @@ class TestTerminating(TestCaseBase):
             pass
         self.assertEqual(self.proc.returncode, -signal.SIGTERM)
 
-    def test_kill_failure(self):
-        class FakeKillError(Exception):
-            pass
-
+    def test_poll_failure(self):
         def fail():
-            raise FakeKillError("fake kill exception")
+            raise ExpectedFailure("Fake poll failure")
+
+        self.proc.poll = fail
+        self.check_failure()
+
+    def test_kill_failure(self):
+        def fail():
+            raise ExpectedFailure("Fake kill failure")
 
         self.proc.kill = fail
+        self.check_failure()
+
+    def test_wait_failure(self):
+        def fail():
+            raise ExpectedFailure("Fake wait failure")
+
+        self.proc.wait = fail
+        self.check_failure()
+
+    def check_failure(self):
         with self.assertRaises(utils.TerminatingFailure) as e:
             with utils.terminating(self.proc):
-                self.assertIsNone(self.proc.poll())
+                self.assertIsNone(self.proc_poll())
 
         self.assertEqual(e.exception.pid, self.proc.pid)
-        self.assertEqual(type(e.exception.error), FakeKillError)
-        self.assertIsNone(self.proc.returncode)
+        self.assertEqual(type(e.exception.error), ExpectedFailure)
+
+        # Note: We cannot check return code since AsyncProc.returncode is a
+        # property calling poll(). The return code here may be None or -9,
+        # depeending on timing.
+
+
+class ExpectedFailure(Exception):
+    pass
 
 
 def wait_for_zombie(proc, timeout, interval=0.1):
