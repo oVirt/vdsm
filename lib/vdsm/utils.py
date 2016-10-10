@@ -738,8 +738,7 @@ def terminating(proc):
             if proc.poll() is None:
                 logging.debug('Terminating process pid=%d' % proc.pid)
                 proc.kill()
-                if proc.poll() is None:
-                    zombiereaper.autoReapPID(proc.pid)
+                proc.wait()
         except Exception:
             logging.exception('Failed to kill process %d' % proc.pid)
 
