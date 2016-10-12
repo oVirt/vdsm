@@ -199,9 +199,9 @@ emergency_net_cleanup() {
     del_net_persistency
 }
 
-vdsm_pep8() {
+vdsm_flake8() {
     pushd $VDSM_DIR
-    ./autogen.sh --system && ./configure && make pep8
+    ./autogen.sh --system && ./configure && make flake8
     popd
 }
 

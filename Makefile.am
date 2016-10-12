@@ -58,7 +58,6 @@ EXTRA_DIST = \
 	vdsm.spec \
 	vdsm.spec.in \
 	tox.ini \
-	tox.sh \
 	$(NULL)
 
 CLEANFILES = \
@@ -88,19 +87,9 @@ abs_imports: all
 	    echo "Missing absolute_import in $$f"; exit 1; fi; \
 	done;
 
-PYTHON_CHECKERS = pyflakes pep8
-
-.PHONY: py_checkers
-py_checkers:
-	tox -- $(PYTHON_CHECKERS)
-
-.PHONY: pyflakes
-pyflakes: tox
-	tox -- pyflakes
-
-.PHONY: pep8
-pep8: tox
-	tox -- pep8
+.PHONY: flake8
+flake8: tox
+	tox -e flake8
 
 .PHONY: tox
 tox:
@@ -127,7 +116,7 @@ python3: all
 	fi
 
 # Note: dependencies ordered by time needed to run them
-check: gitignore abs_imports python3 py_checkers tests
+check: gitignore abs_imports python3 flake8 tests
 
 check-recursive:
 	@true
