@@ -121,6 +121,9 @@ ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %changelog
+* Wed Oct 12 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.2.6
+- make sure that channel is protected by the lock
+
 * Wed Jun 29 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.2.5
 - wait on close
 
