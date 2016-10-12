@@ -16,6 +16,11 @@ debuginfo-install -y python
 
 TIMEOUT=600 make check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 
+# Generate coverage report in HTML format
+pushd tests
+coverage html -d "$EXPORT_DIR/htmlcov"
+popd
+
 # enable complex globs
 shopt -s extglob
 # In case of vdsm specfile or any Makefile.am file modification in commit,
@@ -24,8 +29,3 @@ if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.i
     ./automation/build-artifacts.sh
     yum -y install "$EXPORT_DIR/"!(*.src).rpm
 fi
-
-# Generate coverage report in HTML format
-pushd tests
-coverage html -d "$EXPORT_DIR/htmlcov"
-popd
