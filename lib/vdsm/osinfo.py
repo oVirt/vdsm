@@ -178,17 +178,7 @@ def selinux_status():
 
 
 def package_versions():
-    def kernelDict():
-        ret = os.uname()
-        try:
-            ver, rel = ret[2].split('-', 1)
-        except ValueError:
-            logging.error('kernel release not found', exc_info=True)
-            ver, rel = '0', '0'
-
-        return dict(version=ver, release=rel)
-
-    pkgs = {'kernel': kernelDict()}
+    pkgs = {'kernel': _runtime_kernel_version()}
 
     if _release_name() in (OSName.RHEVH, OSName.OVIRT, OSName.FEDORA,
                            OSName.RHEL, OSName.POWERKVM):
@@ -251,3 +241,14 @@ def package_versions():
                 logging.error('', exc_info=True)
 
     return pkgs
+
+
+def _runtime_kernel_version():
+    ret = os.uname()
+    try:
+        ver, rel = ret[2].split('-', 1)
+    except ValueError:
+        logging.error('kernel release not found', exc_info=True)
+        ver, rel = '0', '0'
+
+    return dict(version=ver, release=rel)
