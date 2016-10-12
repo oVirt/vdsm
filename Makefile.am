@@ -131,12 +131,7 @@ check-unit:
 
 .PHONY: tests
 tests:
-	@version=`nosetests --version | cut -d' ' -f3`; \
-	if build-aux/vercmp $$version "1.3.7"; then \
-	  echo "Error: NOSE is too old, please install NOSE 1.3.7 or later"; \
-	  exit 1; \
-	fi
-	@$(MAKE) -C tests/ check
+	tox -e tests
 
 all-local: \
 	vdsm.spec

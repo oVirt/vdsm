@@ -8,7 +8,7 @@ set -xe
 export VDSM_AUTOMATION=1
 
 easy_install pip
-pip install -U nose==1.3.7 tox==2.1.1
+pip install -U tox==2.1.1
 
 ./autogen.sh --system --enable-hooks --enable-vhostmd
 
