@@ -234,8 +234,8 @@ public abstract class ReactorClient {
 
     private void processHeartbeat() {
         if (!this.isInInit() && this.policy.isIncomingHeartbeat() && this.isIncomingHeartbeatExeeded()) {
-            log.debug("Heartbeat exeeded. Closing channel");
-            this.disconnect("Heartbeat exeeded");
+            log.debug("Heartbeat exceeded. Closing channel");
+            this.disconnect("Heartbeat exceeded");
         }
     }
 
