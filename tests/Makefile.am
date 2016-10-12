@@ -44,7 +44,6 @@ test_modules = \
 	blockVolumeTests.py \
 	bridgeTests.py \
 	bulk_sampling_test.py \
-	cPopenTests.py \
 	capsTests.py \
 	clientifTests.py \
 	cmdutilsTests.py \
@@ -168,7 +167,6 @@ blacklist_modules_python3 = \
 	blocksdTests.py \
 	bridgeTests.py \
 	bulk_sampling_test.py \
-	cPopenTests.py \
 	clientifTests.py \
 	deviceTests.py \
 	devices/parsing/complex_vm_tests.py \

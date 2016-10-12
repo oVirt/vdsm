@@ -13,9 +13,10 @@ From within the source directory you can execute all tests:
 From within an installed directory:
     ./run_tests.sh *.py
 
-Individual files or test cases can be specified:
-    ./run_tests.sh cPopenTests.py
-    ./run_tests.sh cPopenTests.py:TestCPopen.testEcho
+Individual files, test cases class or test function can be specified:
+    ./run_tests.sh foo_test.py
+    ./run_tests.sh foo_test:TestBar
+    ./run_tests.sh foo_test:TestBar.test_baz
 
 Enabling slow tests:
 -------------------
