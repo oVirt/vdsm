@@ -129,7 +129,8 @@ class vdsm(Plugin, RedHatPlugin):
         self.collectExtOutput("/usr/sbin/nodectl info")
 
         with closing(jsonrpcvdscli.connect()) as cli:
-            self.addObjectAsFile(cli.getVdsCapabilities(), "getVdsCapabilities")
+            self.addObjectAsFile(
+                cli.getVdsCapabilities(), "getVdsCapabilities")
             self.addObjectAsFile(cli.getVdsStats(), "getVdsStats")
             self.addObjectAsFile(cli.getAllVmStats(), "getAllVmStats")
             self.addObjectAsFile(cli.list(), "list")
