@@ -633,7 +633,8 @@ class TestVm(XMLTestCase):
             </qos>
             """)
 
-            self.assertEqual(expected_xml, self._xml_sanitizer(dom._metadata))
+            self.assertXMLEqual(expected_xml,
+                                self._xml_sanitizer(dom._metadata))
 
     def testCpuTune(self):
         LIMIT = 50
@@ -829,7 +830,8 @@ class TestVm(XMLTestCase):
             </qos>
             """)
 
-            self.assertEqual(expected_xml, self._xml_sanitizer(dom._metadata))
+            self.assertXMLEqual(expected_xml,
+                                self._xml_sanitizer(dom._metadata))
 
     def testGetIoTunePolicy(self):
         with fake.VM() as machine:
@@ -932,8 +934,8 @@ class TestVm(XMLTestCase):
             # Test that caches were properly updated
             self.assertEqual(drives[0].specParams["ioTune"],
                              expected_io_tune[drives[0].name])
-            self.assertEqual(self._xml_sanitizer(drives[0]._deviceXML),
-                             self._xml_sanitizer(expected_xml))
+            self.assertXMLEqual(self._xml_sanitizer(drives[0]._deviceXML),
+                                self._xml_sanitizer(expected_xml))
 
     def testSdIds(self):
         """
