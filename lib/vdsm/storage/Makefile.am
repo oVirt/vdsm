@@ -50,4 +50,5 @@ dist_vdsmstorage_PYTHON = \
 	threadlocal.py \
 	volumemetadata.py \
 	workarounds.py \
+	xlease.py \
 	$(NULL)
