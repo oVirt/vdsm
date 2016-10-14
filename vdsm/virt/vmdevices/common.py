@@ -24,6 +24,7 @@ from . import core
 from . import graphics
 from . import hostdevice
 from . import hwclass
+from . import lease
 from . import network
 from . import storage
 
@@ -86,5 +87,6 @@ def update_device_info(vm, devices):
     core.Console.update_device_info(vm, devices[hwclass.CONSOLE])
     hostdevice.HostDevice.update_device_info(vm, devices[hwclass.HOSTDEV])
     core.Memory.update_device_info(vm, devices[hwclass.MEMORY])
+    lease.Device.update_device_info(vm, devices[hwclass.LEASE])
     # Obtain info of all unknown devices. Must be last!
     _update_unknown_device_info(vm)

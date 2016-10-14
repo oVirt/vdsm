@@ -26,9 +26,9 @@ from vdsm import cpuarch
 from vdsm import utils
 
 from .. import vmxml
+from . import core
 from . import hwclass
-
-from .core import Base
+from . import lease
 
 DEFAULT_INTERFACE_FOR_ARCH = {
     cpuarch.X86_64: 'ide',
@@ -55,7 +55,7 @@ class DRIVE_SHARED_TYPE:
         return (cls.NONE, cls.EXCLUSIVE, cls.SHARED, cls.TRANSIENT)
 
 
-class Drive(Base):
+class Drive(core.Base):
     __slots__ = ('iface', '_path', 'readonly', 'bootOrder', 'domainID',
                  'poolID', 'imageID', 'UUID', 'volumeID', 'format',
                  'propagateErrors', 'address', 'apparentsize', 'volumeInfo',
@@ -386,13 +386,11 @@ class Drive(Base):
 
     def getLeasesXML(self):
         """
-        Create domxml for the drive lease.
+        Get lease device elements for drive leases.
 
-        <lease>
-            <key>volumeID</key>
-            <lockspace>domainID</lockspace>
-            <target offset="0" path="/path/to/lease"/>
-        </lease>
+        See `.lease.Device.getXML` for more info.
+
+        :returns: generator of `..vmxml.Element` instances
         """
         if not self.hasVolumeLeases:
             return  # empty items generator
@@ -401,13 +399,13 @@ class Drive(Base):
         # when libvirt will support shared leases this will loop over all the
         # volumes
         for volInfo in self.volumeChain[-1:]:
-            lease = vmxml.Element('lease')
-            lease.appendChildWithArgs('key', text=volInfo['volumeID'])
-            lease.appendChildWithArgs('lockspace',
-                                      text=volInfo['domainID'])
-            lease.appendChildWithArgs('target', path=volInfo['leasePath'],
-                                      offset=str(volInfo['leaseOffset']))
-            yield lease
+            device = lease.Device(self.conf,
+                                  self.log,
+                                  lease_id=volInfo['volumeID'],
+                                  sd_id=volInfo['domainID'],
+                                  path=volInfo['leasePath'],
+                                  offset=volInfo['leaseOffset'])
+            yield device.getXML()
 
     def getXML(self):
         """

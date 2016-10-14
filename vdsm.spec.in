@@ -907,6 +907,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/vmdevices/graphics.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/hostdevice.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/hwclass.py*
+%{_datadir}/%{vdsm_name}/virt/vmdevices/lease.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/network.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/storage.py*
 
