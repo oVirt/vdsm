@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import SimpleXMLRPCServer
+import six.moves.xmlrpc_server
 import threading
 from _ssl import SSLError
 from contextlib import contextmanager
@@ -51,8 +51,8 @@ class TestingService():
 class TestServer():
 
     def __init__(self, useSSL, path):
-        self.server = SimpleXMLRPCServer.SimpleXMLRPCServer((HOST, 0),
-                                                            logRequests=False)
+        self.server = six.moves.xmlrpc_server.SimpleXMLRPCServer(
+            (HOST, 0), logRequests=False)
         if useSSL:
             KEY_FILE = os.path.join(path, 'keys/vdsmkey.pem')
             CRT_FILE = os.path.join(path, 'certs/vdsmcert.pem')
