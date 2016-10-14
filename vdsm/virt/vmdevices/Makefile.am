@@ -26,6 +26,7 @@ dist_vmdevices_PYTHON = \
 	graphics.py \
 	hostdevice.py \
 	hwclass.py \
+	lease.py \
 	network.py \
 	storage.py \
 	$(NULL)

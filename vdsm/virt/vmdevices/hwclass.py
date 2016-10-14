@@ -35,6 +35,7 @@ SMARTCARD = 'smartcard'
 TPM = 'tpm'
 HOSTDEV = 'hostdev'
 MEMORY = 'memory'
+LEASE = 'lease'
 
 
 # libvirt is not giving back aliases

@@ -158,6 +158,7 @@ test_modules = \
 	verify.py \
 	vmApiTests.py \
 	vmfakelibTests.py \
+	vmLeaseTests.py \
 	vmMigrationTests.py \
 	vmOperationsTests.py \
 	vmRecoveryTests.py \
