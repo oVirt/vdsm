@@ -271,7 +271,8 @@ class Vm(object):
             self._lastStatus = vmstatus.RESTORING_STATE
         else:
             self._lastStatus = vmstatus.WAIT_FOR_LAUNCH
-        self._migrationSourceThread = migration.SourceThread(self)
+        self._migrationSourceThread = migration.SourceThread(self,
+                                                             recovery=recover)
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
         self._incomingMigrationFinished = threading.Event()
         self._incoming_migration_vm_running = threading.Event()
@@ -347,14 +348,23 @@ class Vm(object):
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
         # non-obvious recursive locking in the following flow:
-        # _set_lastStatus() -> saveState() -> status() -> _get_lastStatus().
+        # set_last_status() -> saveState() -> status() -> _get_lastStatus().
         status = self._lastStatus
         if not self._guestCpuRunning and status in vmstatus.PAUSED_STATES:
             return vmstatus.PAUSED
         return status
 
-    def _set_lastStatus(self, value):
+    def set_last_status(self, value, check_last_status=None):
         with self._statusLock:
+            if check_last_status is not None and \
+               self._lastStatus != check_last_status:
+                # The point of this check is to avoid using _statusLock outside
+                # this method. We may want to set a certain status during
+                # recovery, but we want to give a priority to status changes
+                # that can happen concurrently such as those based on life
+                # cycle events. If that happens, we don't override the
+                # concurrently set status and simply return.
+                return
             if self._lastStatus == vmstatus.DOWN:
                 self.log.warning(
                     'trying to set state to %s when already Down',
@@ -399,7 +409,7 @@ class Vm(object):
         """
         return str(int(utils.monotonic_time() * 1000))
 
-    lastStatus = property(_get_lastStatus, _set_lastStatus)
+    lastStatus = property(_get_lastStatus, set_last_status)
 
     def __getNextIndex(self, used):
         for n in xrange(max(used or [0]) + 2):
@@ -585,7 +595,11 @@ class Vm(object):
                 self._incomingMigrationFinished.wait(
                     config.getint('vars', 'migration_destination_timeout'))
 
-            self.lastStatus = vmstatus.UP
+            if self.recovering and \
+               self._lastStatus == vmstatus.WAIT_FOR_LAUNCH:
+                self._recover_status()
+            else:
+                self.lastStatus = vmstatus.UP
             if self._initTimePauseCode:
                 with self._confLock:
                     self.conf['pauseCode'] = self._initTimePauseCode
@@ -629,6 +643,45 @@ class Vm(object):
             if acquired:
                 self.log.debug('Releasing incoming migration semaphore')
                 migration.incomingMigrations.release()
+
+    def _recover_status(self):
+        try:
+            state, reason = self._dom.state(0)
+        except libvirt.libvirtError:
+            # We proceed with the best effort setting in case of error.
+            self.set_last_status(vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
+            return
+        if state == libvirt.VIR_DOMAIN_PAUSED:
+            if reason == libvirt.VIR_DOMAIN_PAUSED_POSTCOPY:
+                self.set_last_status(vmstatus.MIGRATION_SOURCE,
+                                     vmstatus.WAIT_FOR_LAUNCH)
+                self._initTimePauseCode = 'POSTCOPY'
+                self._post_copy = migration.PostCopyPhase.RUNNING
+            elif reason == libvirt.VIR_DOMAIN_PAUSED_MIGRATION:
+                self.set_last_status(vmstatus.MIGRATION_SOURCE,
+                                     vmstatus.WAIT_FOR_LAUNCH)
+            elif reason == libvirt.VIR_DOMAIN_PAUSED_POSTCOPY_FAILED:
+                self.log.warning("VM is after post-copy failure, "
+                                 "destroying it: %s" % (self.id,))
+                self.setDownStatus(
+                    ERROR, vmexitreason.POSTCOPY_MIGRATION_FAILED)
+                self.destroy()
+            else:
+                self.set_last_status(vmstatus.PAUSED, vmstatus.WAIT_FOR_LAUNCH)
+        elif state == libvirt.VIR_DOMAIN_RUNNING:
+            try:
+                job_stats = self._dom.jobStats()
+            except libvirt.libvirtError:
+                self.set_last_status(vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
+            else:
+                if migration.ongoing(job_stats):
+                    self.set_last_status(vmstatus.MIGRATION_SOURCE,
+                                         vmstatus.WAIT_FOR_LAUNCH)
+                else:
+                    self.set_last_status(vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
+        else:
+            self.log.error("Unexpected VM state: %s (reason %s)",
+                           state, reason)
 
     def disableDriveMonitor(self):
         self._driveMonitorEnabled = False
@@ -1470,7 +1523,7 @@ class Vm(object):
         return stats
 
     def isMigrating(self):
-        return self._migrationSourceThread.is_alive()
+        return self._migrationSourceThread.migrating()
 
     def hasTransientDisks(self):
         for drive in self._devices[hwclass.DISK]:
@@ -1522,6 +1575,35 @@ class Vm(object):
             key = 'downtime_net'
         self._migration_downtime = stats.get(key)
         self.send_migration_status_event()
+        if self._migrationSourceThread.recovery:
+            # This Vdsm instance didn't start the migration and the source
+            # thread is not running. We can't rely on the source thread to put
+            # the VM in the proper state and we must do it here (just on best
+            # effort base).
+            self._finish_migration_recovery()
+
+    def _finish_migration_recovery(self):
+        try:
+            state, reason = self._dom.state(0)
+        except libvirt.libvirtError as e:
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                # Migration successfully finished, domain already gone;
+                # we handle it the same way below as a still present domain
+                # in a shut off state.
+                self.log.info("Domain is gone after migration recovery")
+                state = libvirt.VIR_DOMAIN_SHUTOFF
+                reason = libvirt.VIR_DOMAIN_SHUTOFF_MIGRATED
+            else:
+                raise
+        if state == libvirt.VIR_DOMAIN_SHUTOFF and \
+           reason == libvirt.VIR_DOMAIN_SHUTOFF_MIGRATED:
+            self.setDownStatus(NORMAL, vmexitreason.MIGRATION_SUCCEEDED)
+            if self.post_copy == migration.PostCopyPhase.RUNNING:
+                # Engine doesn't call destroy after post-copy.
+                self.destroy()
+        else:
+            self.log.warning("Unhandled state after a recovered migration: "
+                             "%s, %s", state, reason)
 
     @api.logged(on='vdsm.api')
     def migrateCancel(self):
@@ -4496,10 +4578,20 @@ class Vm(object):
                     pass
                 else:
                     hooks.after_vm_cont(domxml, self.conf)
-            elif (self.lastStatus == vmstatus.MIGRATION_DESTINATION and
-                  detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_MIGRATED):
-                self._incoming_migration_vm_running.set()
-                self._incomingMigrationFinished.set()
+            elif detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_MIGRATED:
+                if self.lastStatus == vmstatus.MIGRATION_DESTINATION:
+                    self._incoming_migration_vm_running.set()
+                    self._incomingMigrationFinished.set()
+                elif self.lastStatus == vmstatus.MIGRATION_SOURCE:
+                    # Failed migration on the source.  This is normally handled
+                    # within the source thread after the migrateToURI3 call
+                    # finishes.  But if the VM was migrating during recovery,
+                    # there is source thread running and there is no
+                    # migrateToURI3 call to wait for migration completion.
+                    # So we must tell the source thread to check for this
+                    # situation and perform migration cleanup if necessary
+                    # (most notably setting the VM status to UP).
+                    self._migrationSourceThread.recovery_cleanup()
             elif (self.lastStatus == vmstatus.MIGRATION_DESTINATION and
                   detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_POSTCOPY):
                 # When we enter post-copy mode, the VM starts actually

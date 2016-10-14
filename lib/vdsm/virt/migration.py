@@ -98,7 +98,7 @@ class SourceThread(object):
                  mode=MODE_REMOTE, method=METHOD_ONLINE,
                  tunneled=False, dstqemu='', abortOnError=False,
                  consoleAddress=None, compressed=False,
-                 autoConverge=False, **kwargs):
+                 autoConverge=False, recovery=False, **kwargs):
         self.log = vm.log
         self._vm = vm
         self._dst = dst
@@ -150,12 +150,26 @@ class SourceThread(object):
             self.log.debug('convergence schedule set to: %s',
                            str(self._convergence_schedule))
         self._started = False
+        self._recovery = recovery
 
     def start(self):
         self._thread.start()
 
     def is_alive(self):
         return self._thread.is_alive()
+
+    def migrating(self):
+        """
+        Return whether the thread currently manages a migration.
+
+        That can be a migration directly supervised by the source thread and
+        other threads (such as the downtime thread) or just an indirectly
+        managed migration (detected on Vdsm recovery) without the threads
+        actually running.
+        """
+        return (self.is_alive() or
+                (self._recovery and
+                 self._vm.lastStatus == vmstatus.MIGRATION_SOURCE))
 
     @property
     def hibernating(self):
@@ -300,7 +314,10 @@ class SourceThread(object):
         elif self._enableGuestEvents:
             self._vm.guestAgent.events.after_migration_failure()
         # either way, migration has finished
-        self._vm.lastStatus = vmstatus.UP
+        if self._recovery:
+            self._vm.set_last_status(vmstatus.UP, vmstatus.MIGRATION_SOURCE)
+        else:
+            self._vm.lastStatus = vmstatus.UP
         self._vm.send_status_event()
 
     def _finishSuccessfully(self):
@@ -371,7 +388,39 @@ class SourceThread(object):
                            self._outgoingLimit)
             SourceThread.ongoingMigrations.bound = self._outgoingLimit
 
+    @property
+    def recovery(self):
+        """
+        Return whether the source thread handles a recovered migration.
+
+        This is when we detect the VM is migrating in Vdsm recovery and the
+        source thread is not actually running.
+
+        This serves to handle a possible already running migration detected
+        during Vdsm recovery, for which no regular source thread exists.  We
+        don't try to touch such a migration, but we still must ensure at least
+        basic sanity:
+
+        - Indication that the migration is running.
+        - Canceling the migration.
+        - Putting the VM into proper status after migration failure (in case
+          the migration succeeds, we rely on the fact that the VM disappears
+          and Vdsm detects that sooner or later).
+
+        .. note::
+
+           Just setting this flag doesn't mean that any migration is actually
+           running, it just means that if a migration is running then the
+           migration was started by another Vdsm instance.  When this flag is
+           set then the VM may be actually migrating only if its status is
+           `vmstatus.MIGRATION_SOURCE` or `vmstatus.WAIT_FOR_LAUNCH` (the
+           latter is mostly irrelevant since we prevent most actions in that
+           status).
+        """
+        return self._recovery
+
     def run(self):
+        self._recovery = False
         self._update_outgoing_limit()
         try:
             startTime = time.time()
@@ -576,6 +625,22 @@ class SourceThread(object):
         except libvirt.libvirtError:
             if not self._preparingMigrationEvt:
                 raise
+        if self._recovery:
+            self._recover("Migration stopped")
+
+    def recovery_cleanup(self):
+        """
+        Finish and cleanup recovery migration if necessary.
+
+        This is to handle the situation when we detect a failed migration
+        outside the source thread.  The source thread usually handles failed
+        migrations itself.  But the thread is not running after recovery so in
+        such a case the source thread must be notified about the failed
+        migration.  This is what this method serves for.
+        """
+        if self._recovery and \
+           self._vm.lastStatus == vmstatus.MIGRATION_SOURCE:
+            self._recover("Migration failed")
 
 
 def exponential_downtime(downtime, steps):

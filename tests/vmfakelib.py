@@ -380,4 +380,7 @@ class MigrationSourceThread(object):
     def is_alive(self):
         return self._alive
 
+    def migrating(self):
+        return self.is_alive()
+
     isAlive = is_alive
