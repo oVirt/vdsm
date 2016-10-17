@@ -122,7 +122,8 @@ class SourceThread(object):
                 'code': 0,
                 'message': 'Migration in progress'}}
         self._progress = 0
-        self._thread = concurrent.thread(self.run)
+        self._thread = concurrent.thread(
+            self.run, name='migsrc/' + self._vm.id[:8])
         self._preparingMigrationEvt = True
         self._migrationCanceledEvt = threading.Event()
         self._monitorThread = None
@@ -553,7 +554,8 @@ class DowntimeThread(object):
         # we need the first value to support set_initial_downtime
         self._initial_downtime = next(self._downtimes)
 
-        self._thread = concurrent.thread(self.run)
+        self._thread = concurrent.thread(
+            self.run, name='migdwn/' + self._vm.id[:8])
 
     def start(self):
         self._thread.start()
@@ -625,7 +627,8 @@ class MonitorThread(object):
         self._conv_schedule = conv_schedule
         self._use_conv_schedule = use_conv_schedule
         self.downtime_thread = _FakeThreadInterface()
-        self._thread = concurrent.thread(self.run)
+        self._thread = concurrent.thread(
+            self.run, name='migmon/' + self._vm.id[:8])
 
     def start(self):
         self._thread.start()

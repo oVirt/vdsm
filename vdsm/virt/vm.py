@@ -246,6 +246,7 @@ class Vm(object):
             self.conf['smp'] = '1'
         self.cif = cif
         self.log = SimpleLogAdapter(self.log, {"vmId": self.conf['vmId']})
+        self.id = self.conf['vmId']
         self._destroy_requested = threading.Event()
         self._recovery_file = recovery.File(self.conf['vmId'])
         self._monitorResponse = 0
@@ -264,7 +265,6 @@ class Vm(object):
         self._migrationSourceThread = migration.SourceThread(self)
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
         self._incomingMigrationFinished = threading.Event()
-        self.id = self.conf['vmId']
         self._volPrepareLock = threading.Lock()
         self._initTimePauseCode = None
         self._initTimeRTC = int(self.conf.get('timeOffset', 0))
