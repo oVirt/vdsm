@@ -5190,13 +5190,18 @@ class Vm(object):
                       reason)
 
     def _setUnresponsiveIfTimeout(self, stats, statsAge):
-        if (not self.isMigrating()
-                and statsAge > config.getint('vars', 'vm_command_timeout')
-                and stats['monitorResponse'] != '-1'):
-            self.log.warning('monitor become unresponsive'
-                             ' (command timeout, age=%s)',
-                             statsAge)
-            stats['monitorResponse'] = '-1'
+        if self.isMigrating():
+            return
+        # we don't care about decimals here
+        if statsAge < config.getint('vars', 'vm_command_timeout'):
+            return
+        if stats['monitorResponse'] == '-1':
+            return
+
+        self.log.warning('monitor became unresponsive'
+                         ' (command timeout, age=%s)',
+                         statsAge)
+        stats['monitorResponse'] = '-1'
 
     def updateNumaInfo(self):
         self._numaInfo = numaUtils.getVmNumaNodeRuntimeInfo(self)
