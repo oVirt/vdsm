@@ -104,7 +104,7 @@ class clientIF(object):
             self._netConfigDirty = False
             self._prepareMOM()
             secret.clear()
-            concurrent.thread(self._recoverThread, name='clientIFinit').start()
+            concurrent.thread(self._recoverThread, name='vmrecovery').start()
             self.channelListener.settimeout(
                 config.getint('vars', 'guest_agent_timeout'))
             self.channelListener.start()
