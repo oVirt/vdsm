@@ -5189,18 +5189,18 @@ class Vm(object):
                       'running' if self._guestCpuRunning else 'stopped',
                       reason)
 
-    def _setUnresponsiveIfTimeout(self, stats, statsAge):
+    def _setUnresponsiveIfTimeout(self, stats, stats_age):
         if self.isMigrating():
             return
         # we don't care about decimals here
-        if statsAge < config.getint('vars', 'vm_command_timeout'):
+        if stats_age < config.getint('vars', 'vm_command_timeout'):
             return
         if stats['monitorResponse'] == '-1':
             return
 
         self.log.warning('monitor became unresponsive'
                          ' (command timeout, age=%s)',
-                         statsAge)
+                         stats_age)
         stats['monitorResponse'] = '-1'
 
     def updateNumaInfo(self):
