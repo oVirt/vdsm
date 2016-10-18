@@ -498,15 +498,31 @@ class Domain(object):
 
         <numatune>
             <memory mode='strict' nodeset='0-1'/>
+            <memnode cellid='0' mode='strict' nodeset='1'>
         </numatune>
         """
 
         numaTune = self.conf.get('numaTune')
-        if 'nodeset' in numaTune.keys():
-            mode = numaTune.get('mode', 'strict')
-            numatune = Element('numatune')
-            numatune.appendChildWithArgs('memory', mode=mode,
+
+        numatune = Element('numatune')
+        mode = numaTune.get('mode', 'strict')
+
+        numaTuneExists = False
+
+        if 'nodeset' in numaTune:
+            numaTuneExists = True
+            numatune.appendChildWithArgs('memory',
+                                         mode=mode,
                                          nodeset=numaTune['nodeset'])
+
+        for memnode in numaTune.get('memnodes', []):
+            numaTuneExists = True
+            numatune.appendChildWithArgs('memnode',
+                                         mode=mode,
+                                         cellid=memnode['vmNodeIndex'],
+                                         nodeset=memnode['nodeset'])
+
+        if numaTuneExists:
             self.dom.appendChild(numatune)
 
     def appendHostdevNumaTune(self, devices):

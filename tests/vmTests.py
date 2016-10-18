@@ -415,12 +415,19 @@ class TestVm(XMLTestCase):
         numatuneXML = """
           <numatune>
               <memory mode="strict" nodeset="0-1"/>
+              <memnode cellid="0" mode="strict" nodeset="1"/>
+              <memnode cellid="1" mode="strict" nodeset="0"/>
           </numatune> """
 
         vmConf = {'cpuType': "Opteron_G4,+sse4_1,+sse4_2,-svm",
                   'smpCoresPerSocket': 2, 'smpThreadsPerCore': 2,
                   'cpuPinning': {'0': '0-1', '1': '2-3'},
-                  'numaTune': {'mode': 'strict', 'nodeset': '0-1'},
+                  'numaTune': {'mode': 'strict',
+                               'nodeset': '0-1',
+                               'memnodes': [
+                                   {'vmNodeIndex': '0', 'nodeset': '1'},
+                                   {'vmNodeIndex': '1', 'nodeset': '0'}
+                               ]},
                   'guestNumaNodes': [{'cpus': '0-1', 'memory': '5120',
                                       'nodeIndex': 0},
                                      {'cpus': '2,3', 'memory': '5120',

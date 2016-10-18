@@ -4606,6 +4606,19 @@ types:
         type: map
         value-type: *NumaNode
 
+    MemNode: &MemNode
+        added: '4.1'
+        description: Pinning of a VM NUMA node to host NUMA nodes
+        name: MemNode
+        properties:
+        -   description: VM NUMA node index
+            name: vmNodeIndex
+            type: string
+
+        -   description: List of host numa nodes
+            name: nodeset
+            type: string
+
     NumaTune: &NumaTune
         added: '3.4'
         description: Information about a vm numatune configuration
@@ -4621,6 +4634,11 @@ types:
                 for the format details.
             name: nodeset
             type: string
+        -   description: List of pinning information
+            name: memnodes
+            type:
+            - *MemNode
+
         type: object
 
     OSName: &OSName
