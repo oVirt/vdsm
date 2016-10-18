@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 
 from collections import defaultdict, namedtuple
+import logging
 import os.path
 import xml.etree.cElementTree as ET
 
@@ -260,7 +261,20 @@ def getVmNumaNodeRuntimeInfo(vm):
         vcpu_to_vnode = _get_mapping_vcpu_to_vnode(vm)
 
         for vcpu_id, pcpu_id in vcpu_to_pcpu.iteritems():
-            vnode_index = str(vcpu_to_vnode[vcpu_id])
+            try:
+                vnode_index = str(vcpu_to_vnode[vcpu_id])
+            except KeyError:
+                # Not all CPUs are mapped to NUMA nodes, e.g.:
+                # - We don't assign hotplugged CPUs to NUMA nodes.
+                # - When Engine assigns equal number of CPUs to each of the
+                #   NUMA nodes, the contingent remaining CPUs are left
+                #   unassigned.
+                # We simply skip the unassigned CPUs here.
+                log = logging.getLogger('NUMA')
+                log.debug("Virtual CPU #%s not assigned to any virtual "
+                          "NUMA node",
+                          vcpu_id)
+                continue
             vm_numa_placement[vnode_index].add(pcpu_to_pnode[pcpu_id])
             vm_numa_placement[vnode_index].update(
                 vcpu_to_pnode.get(vcpu_id, ()))
