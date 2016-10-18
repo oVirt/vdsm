@@ -401,6 +401,10 @@ AC_OUTPUT([
 	static/Makefile
 	tests/Makefile
 	tests/common/Makefile
+	tests/containers/Makefile
+	tests/containers/data/Makefile
+	tests/containers/fake/Makefile
+	tests/containers/fake/bin/Makefile
 	tests/cpuinfo/Makefile
 	tests/devices/Makefile
 	tests/devices/data/Makefile

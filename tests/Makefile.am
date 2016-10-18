@@ -22,6 +22,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 SUBDIRS = \
 	  common \
+	  containers \
 	  cpuinfo \
 	  functional \
 	  devices \
@@ -30,6 +31,8 @@ SUBDIRS = \
 	  $(NULL)
 
 common_modules = common/*_test.py
+
+containers_modules = containers/*_test.py
 
 device_modules = \
 	devices/parsing/complex_vm_tests.py \
@@ -349,6 +352,7 @@ make_certificates: makecert.sh
 	./makecert.sh
 
 run_modules  = $(test_modules)
+run_modules += $(containers_modules)
 run_modules += $(network_modules)
 run_modules += $(device_modules)
 run_modules += $(common_modules)
