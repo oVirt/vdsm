@@ -41,10 +41,10 @@ class IPv4(object):
                 raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Must specify '
                                          'netmask to configure ip for '
                                          'network.')
-            self.validateAddress(address)
-            self.validateNetmask(netmask)
+            IPv4.validateAddress(address)
+            IPv4.validateNetmask(netmask)
             if gateway:
-                self.validateGateway(gateway)
+                IPv4.validateGateway(gateway)
         else:
             if netmask or gateway:
                 raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Specified netmask '
@@ -70,18 +70,18 @@ class IPv4(object):
                                              self.gateway, self.defaultRoute,
                                              self.bootproto)
 
-    @classmethod
-    def validateAddress(cls, address):
+    @staticmethod
+    def validateAddress(address):
         try:
             socket.inet_pton(socket.AF_INET, address)
         except socket.error:
             raise ConfigNetworkError(ne.ERR_BAD_ADDR, '%r is not a valid IPv4 '
                                      'address.' % address)
 
-    @classmethod
-    def validateNetmask(cls, netmask):
+    @staticmethod
+    def validateNetmask(netmask):
         try:
-            cls.validateAddress(netmask)
+            IPv4.validateAddress(netmask)
         except ConfigNetworkError as cne:
             cne.message = '%r is not a valid IPv4 netmask.' % netmask
             raise
@@ -90,11 +90,11 @@ class IPv4(object):
             raise ConfigNetworkError(ne.ERR_BAD_ADDR, '%r is not a valid IPv4 '
                                      'netmask.' % netmask)
 
-    @classmethod
-    def validateGateway(cls, gateway):
+    @staticmethod
+    def validateGateway(gateway):
         '''Validates the gateway form.'''
         try:
-            cls.validateAddress(gateway)
+            IPv4.validateAddress(gateway)
         except ConfigNetworkError as cne:
             cne.message = '%r is not a valid IPv4 gateway' % gateway
             raise
@@ -104,9 +104,9 @@ class IPv6(object):
     def __init__(self, address=None, gateway=None, defaultRoute=None,
                  ipv6autoconf=None, dhcpv6=None):
         if address:
-            self.validateAddress(address)
+            IPv6.validateAddress(address)
             if gateway:
-                self.validateGateway(gateway)
+                IPv6.validateGateway(gateway)
         elif gateway:
             raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Specified gateway but '
                                      'not ip address.')
@@ -131,8 +131,8 @@ class IPv6(object):
             self.address, self.gateway, self.defaultRoute, self.ipv6autoconf,
             self.dhcpv6)
 
-    @classmethod
-    def validateAddress(cls, address):
+    @staticmethod
+    def validateAddress(address):
         addr = address.split('/', 1)
         try:
             socket.inet_pton(socket.AF_INET6, addr[0])
@@ -140,10 +140,10 @@ class IPv6(object):
             raise ConfigNetworkError(ne.ERR_BAD_ADDR, '%r is not a valid IPv6 '
                                      'address.' % address)
         if len(addr) == 2:
-            cls.validatePrefixlen(addr[1])
+            IPv6.validatePrefixlen(addr[1])
 
-    @classmethod
-    def validatePrefixlen(cls, prefixlen):
+    @staticmethod
+    def validatePrefixlen(prefixlen):
         try:
             prefixlen = int(prefixlen)
             if prefixlen < 0 or prefixlen > 127:
@@ -153,10 +153,10 @@ class IPv6(object):
             raise ConfigNetworkError(ne.ERR_BAD_ADDR, '%r is not valid '
                                      'IPv6 prefixlen.' % prefixlen)
 
-    @classmethod
-    def validateGateway(cls, gateway):
+    @staticmethod
+    def validateGateway(gateway):
         try:
-            cls.validateAddress(gateway)
+            IPv6.validateAddress(gateway)
         except ConfigNetworkError as cne:
             cne.message = '%r is not a valid IPv6 gateway.'
             raise
