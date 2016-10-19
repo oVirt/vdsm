@@ -1,5 +1,13 @@
 #!/bin/sh
 
+#
+# NOTE: We don't rely on system to run logrotate for us on purpose. By
+# default system invokes logrotate on daily basis, but that is not good
+# enough for us. VDSM can generate large amount of logs during peek periods. 
+# Therefore we prefer to run logrotate manually on a *hourly* basis.
+#
+# See: https://bugzilla.redhat.com/1113264
+#
 /usr/sbin/logrotate /etc/vdsm/logrotate/vdsm
 
 EXITVALUE=$?
