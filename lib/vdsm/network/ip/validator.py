@@ -23,12 +23,32 @@ import six
 
 from vdsm.network import errors as ne
 
+from .address import IPv4, IPv6
+
 
 def validate(nets):
     for net, attrs in six.iteritems(nets):
         if 'remove' in attrs:
             continue
-        elif attrs['nameservers'] and not attrs['defaultRoute']:
-            raise ne.ConfigNetworkError(
-                ne.ERR_BAD_PARAMS,
-                'Name servers may only be defined on the default host network')
+        _validate_nameservers(net, attrs)
+
+
+def _validate_nameservers(net, attrs):
+    if attrs['nameservers']:
+        _validate_nameservers_network(attrs)
+        _validate_nameservers_address(attrs['nameservers'])
+
+
+def _validate_nameservers_network(attrs):
+    if not attrs['defaultRoute']:
+        raise ne.ConfigNetworkError(
+            ne.ERR_BAD_PARAMS,
+            'Name servers may only be defined on the default host network')
+
+
+def _validate_nameservers_address(nameservers_addr):
+    for addr in nameservers_addr:
+        if ':' in addr:
+            IPv6.validateAddress(addr)
+        else:
+            IPv4.validateAddress(addr)
