@@ -580,8 +580,9 @@ class FakeVM(object):
         self.drives = drives if drives is not None else []
         self.migrationPending = False
 
-    def incomingMigrationPending(self):
-        return self.migrationPending
+    @property
+    def monitorable(self):
+        return not self.migrationPending
 
     def getNicDevices(self):
         return self.nics

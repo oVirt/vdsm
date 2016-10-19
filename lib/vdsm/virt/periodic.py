@@ -290,7 +290,7 @@ class _RunnableOnVm(object):
     def required(self):
         # Disable everything until the migration destination VM
         # is fully started, to avoid false positives log spam.
-        return not self._vm.incomingMigrationPending()
+        return self._vm.monitorable
 
     @property
     def runnable(self):
