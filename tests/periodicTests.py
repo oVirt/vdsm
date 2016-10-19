@@ -196,6 +196,15 @@ class PeriodicOperationTests(TestCaseBase):
 VM_NUM = 5  # just a number, no special meaning
 
 
+VM_IDS = [
+    [()],
+    [((0,))],
+    [((0, 2))],
+    [((VM_NUM-1,))],
+    [((VM_NUM-2, VM_NUM-1))]
+]
+
+
 @expandPermutations
 class VmDispatcherTests(TestCaseBase):
 
@@ -206,31 +215,23 @@ class VmDispatcherTests(TestCaseBase):
 
         _Visitor.VMS.clear()
 
-    @permutations([[()],
-                   [((0,))],
-                   [((0, 2))],
-                   [((VM_NUM-1,))],
-                   [((VM_NUM-2, VM_NUM-1))]])
+    @permutations(VM_IDS)
     def test_dispatch(self, failed_ids):
         for i in failed_ids:
             with self.cif.vmContainerLock:
                 vm_id = _fake_vm_id(i)
                 self.cif.vmContainer[vm_id].fail_required = True
 
-        op = periodic.VmDispatcher(
-            self.cif.getVMs, _FakeExecutor(), _Visitor, 0)
-        # we don't care about executor (hence the simplistic fake)
-        op()
+        self._check_dispatching(failed_ids)
 
-        vms = self.cif.getVMs()
-        expected = (
-            set(vms.keys()) -
-            set(_fake_vm_id(i) for i in failed_ids))
-        for vm_id in expected:
-            self.assertEqual(_Visitor.VMS.get(vm_id), 1)
+    @permutations(VM_IDS)
+    def test_skip_not_monitorable(self, unmonitorable_ids):
+        for i in unmonitorable_ids:
+            with self.cif.vmContainerLock:
+                vm_id = _fake_vm_id(i)
+                self.cif.vmContainer[vm_id].monitorable = False
 
-        for vm_id in failed_ids:
-            self.assertEqual(_Visitor.VMS.get(vm_id), None)
+        self._check_dispatching(unmonitorable_ids)
 
     def test_dispatch_fails(self):
         """
@@ -247,6 +248,24 @@ class VmDispatcherTests(TestCaseBase):
 
         self.assertEqual(set(skipped),
                          set(self.cif.getVMs().keys()))
+
+    def _check_dispatching(self, skip_ids):
+        op = periodic.VmDispatcher(
+            self.cif.getVMs, _FakeExecutor(), _Visitor, 0)
+        # we don't care about executor (hence the simplistic fake)
+        op()
+
+        for vm_id in skip_ids:
+            self.assertNotIn(_fake_vm_id(vm_id), _Visitor.VMS)
+
+        vms = self.cif.getVMs()
+
+        expected = (
+            set(vms.keys()) -
+            set(_fake_vm_id(i) for i in skip_ids)
+        )
+        for vm_id in expected:
+            self.assertEqual(_Visitor.VMS.get(vm_id), 1)
 
     def _make_fake_vms(self):
         for i in range(VM_NUM):
@@ -304,13 +323,13 @@ class _Visitor(periodic._RunnableOnVm):
     def required(self):
         if getattr(self._vm, 'fail_required', False):
             raise ValueError('required failed')
-        return True
+        return super(_Visitor, self).required
 
     @property
     def runnable(self):
         if getattr(self._vm, 'fail_runnable', False):
             raise ValueError('runnable failed')
-        return True
+        return super(_Visitor, self).runnable
 
     def _execute(self):
         _Visitor.VMS[self._vm.id] += 1
@@ -360,6 +379,10 @@ class _FakeVM(object):
         self.name = vmName
         self.migrating = False
         self.lastStatus = vmstatus.UP
+        self.monitorable = True
+
+    def isDomainReadyForCommands(self):
+        return True
 
     def isMigrating(self):
         return self.migrating

@@ -503,6 +503,11 @@ class FakeVM(object):
         self.id = str(uuid.uuid4())
         self.nics = nics if nics is not None else []
         self.drives = drives if drives is not None else []
+        self.migrationPending = False
+
+    @property
+    def monitorable(self):
+        return not self.migrationPending
 
     def getNicDevices(self):
         return self.nics
