@@ -312,6 +312,13 @@ class Vm(object):
         self._numaInfo = {}
         self._vmJobs = None
         self._clientPort = ''
+        self._monitorable = False
+
+    @property
+    def monitorable(self):
+        if 'migrationDest' in self.conf or 'restoreState' in self.conf:
+            return False
+        return self._monitorable
 
     @property
     def start_time(self):
@@ -769,9 +776,6 @@ class Vm(object):
             if acquired:
                 self.log.debug('Releasing incoming migration semaphore')
                 migration.incomingMigrations.release()
-
-    def incomingMigrationPending(self):
-        return 'migrationDest' in self.conf or 'restoreState' in self.conf
 
     def stopDisksStatsCollection(self):
         self._volumesPrepared = False
@@ -1411,12 +1415,19 @@ class Vm(object):
             stats['migrationProgress'] = self.migrateStatus()['progress']
 
         try:
+            # Prevent races with the creation thread.
+            # Mimicing < 3.5 code, the creation thread marks the VM as
+            # monitorable only after the stats cache is initialized.
+            # Here we need to do the reverse: check first if a VM is
+            # monitorable, and only if it is, consider the stats_age.
+            monitorable = self._monitorable
             vm_sample = sampling.stats_cache.get(self.id)
             decStats = vmstats.produce(self,
                                        vm_sample.first_value,
                                        vm_sample.last_value,
                                        vm_sample.interval)
-            self._setUnresponsiveIfTimeout(stats, vm_sample.stats_age)
+            if monitorable:
+                self._setUnresponsiveIfTimeout(stats, vm_sample.stats_age)
         except Exception:
             self.log.exception("Error fetching vm stats")
         else:
@@ -1823,6 +1834,7 @@ class Vm(object):
 
         self._guestEventTime = self._startTime
         sampling.stats_cache.add(self.id)
+        self._monitorable = True
         try:
             self.guestAgent.start()
         except Exception:
@@ -4085,6 +4097,10 @@ class Vm(object):
                         nic.portMirroring.remove(network)
 
             self.log.info('Release VM resources')
+            # this must be done *before* self._cleanupStatsCache() to preserve
+            # the invariant: if a VM is monitorable, it has a stats cache
+            # entry, to avoid false positives when reporting stats too old.
+            self._monitorable = False
             self.lastStatus = vmstatus.POWERING_DOWN
             # Terminate the VM's creation thread.
             self._incomingMigrationFinished.set()
