@@ -1,4 +1,5 @@
 #!/bin/sh
+errors=0
 
 #
 # NOTE: We don't rely on system to run logrotate for us on purpose. By
@@ -13,6 +14,7 @@
 EXITVALUE=$?
 if [ $EXITVALUE != 0 ]; then
     /usr/bin/logger -t logrotate "ALERT exited abnormally with [$EXITVALUE]"
+    errors=$((errors+1))
 fi
 
 if [ -d /var/log/core ] ; then
@@ -20,6 +22,7 @@ if [ -d /var/log/core ] ; then
     EXITVALUE=$?
     if [ $EXITVALUE != 0 ]; then
         /usr/bin/logger -t logrotate "ALERT clean old core files exited abnormally with [$EXITVALUE]"
+        errors=$((errors+1))
     fi
 fi
 
@@ -28,7 +31,12 @@ if [ -d /var/log/vdsm/import ] ; then
     EXITVALUE=$?
     if [ $EXITVALUE != 0 ]; then
         /usr/bin/logger -t logrotate "ALERT clean of old import log files exited abnormally with [$EXITVALUE]"
+        errors=$((errors+1))
     fi
 fi
 
-exit $EXITVALUE
+if [ $errors -ne 0 ]; then
+    exit 1
+fi
+
+exit 0
