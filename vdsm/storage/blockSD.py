@@ -751,7 +751,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         freeSlot = (SD_METADATA_SIZE + self.logBlkSize - 1) / self.logBlkSize
 
         for offset, size in occupiedSlots:
-            if offset - freeSlot > slotSize:
+            if offset >= freeSlot + slotSize:
                 break
 
             freeSlot = offset + size

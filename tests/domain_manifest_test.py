@@ -23,6 +23,9 @@ import uuid
 from vdsm.storage import constants as sc
 
 from testlib import VdsmTestCase, recorded
+from testlib import make_uuid
+from testlib import expandPermutations, permutations
+
 from storagetestlib import (
     make_file_volume,
     fake_block_env,
@@ -144,19 +147,28 @@ class BlockManifestTests(VdsmTestCase):
             self.assertEquals(1024, new_manifest.phyBlkSize)
 
 
+@expandPermutations
 class BlockDomainMetadataSlotTests(VdsmTestCase):
 
-    def test_metaslot_selection(self):
+    @permutations([
+        # used_slots, free_slot
+        # Note: the first 4 slots (0-3) are reserved for domain metadata
+        ([], 4),
+        ([4], 5),
+        ([5], 4),
+        ([4, 6], 5),
+        ([4, 7], 5),
+    ])
+    def test_metaslot_selection(self, used_slots, free_slot):
         with fake_block_env() as env:
-            lvs = ('0b6287f0-3679-4c4d-8be5-9bbfe3ec9c1f',
-                   'ea13af29-b64a-4d1a-b35f-3e6ab15c3b04')
-            for lv, offset in zip(lvs, [4, 7]):
+            for offset in used_slots:
+                lv = make_uuid()
                 sduuid = env.sd_manifest.sdUUID
                 env.lvm.createLV(sduuid, lv, VOLSIZE / MB)
                 tag = sc.TAG_PREFIX_MD + str(offset)
                 env.lvm.addtag(sduuid, lv, tag)
             with env.sd_manifest.acquireVolumeMetadataSlot(None, 1) as mdSlot:
-                self.assertEqual(mdSlot, 5)
+                self.assertEqual(mdSlot, free_slot)
 
     def test_metaslot_lock(self):
         with fake_block_env() as env:
