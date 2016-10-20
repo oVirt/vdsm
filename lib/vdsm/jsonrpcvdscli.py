@@ -59,6 +59,7 @@ _COMMAND_CONVERTER = {
     'getAllTasksInfo': 'Host.getAllTasksInfo',
     'getAllTasksStatuses': 'Host.getAllTasksStatuses',
     'getAllVmStats': 'Host.getAllVmStats',
+    'getAllVmIoTunePolicies': 'Host.getAllVmIoTunePolicies',
     'getConnectedStoragePoolsList': 'Host.getConnectedStoragePools',
     'getDeviceList': 'Host.getDeviceList',
     'getImagesList': 'StorageDomain.getImages',

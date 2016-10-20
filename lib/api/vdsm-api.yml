@@ -6031,6 +6031,28 @@ types:
             type: *VmDiskDeviceIoTuneParams
         type: object
 
+    BulkIoTunePolicy: &BulkIoTunePolicy
+        added: '4.0'
+        description: Io tune policy info and current values for a vm
+        name: BulkIoTunePolicy
+        properties:
+        -   description: Io tune policy info
+            name: policy
+            type: *VmDiskDeviceTuneLimits
+
+        -   description: Io tune policy current values
+            name: current_values
+            type: *VmDiskDeviceTuneParams
+        type: object
+
+    BulkIoTunePolicyMap: &BulkIoTunePolicyMap
+         added: '4.0'
+         name: BulkIoTunePolicyMap
+         description: A map of io tune policies for all VMs
+         key-type: *UUID
+         value-type: *BulkIoTunePolicy
+         type: map
+
     UpdateVmPolicyParams: &UpdateVmPolicyParams
         added: '3.4'
         description: QoS policy update data
@@ -7646,6 +7668,13 @@ Host.getAllVmStats:
         description: A list of stats for all VMs
         type:
         - *VmStats
+
+Host.getAllVmIoTunePolicies:
+    added: '4.0'
+    description: Get io tune policies for all virtual machines.
+    return:
+        description: A map of io tune policies for all VMs
+        type: *BulkIoTunePolicyMap
 
 Host.hostdevListByCaps:
     added: '3.6'

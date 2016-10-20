@@ -855,7 +855,7 @@ class TestVm(XMLTestCase):
             """
             machine._dom = dom
 
-            tunables = machine.getIoTunePolicy()
+            tunables = machine.getIoTunePolicyResponse()
             expected = [
                 {'name': u'test-device-by-name',
                  'maximum': {

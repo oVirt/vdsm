@@ -780,7 +780,7 @@ class VM(APIBase):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:
             return errCode['noVM']
-        return v.getIoTune()
+        return v.getIoTuneResponse()
 
     def setIoTune(self, tunables):
         v = self._cif.vmContainer.get(self._UUID)
@@ -792,7 +792,7 @@ class VM(APIBase):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:
             return errCode['noVM']
-        return v.getIoTunePolicy()
+        return v.getIoTunePolicyResponse()
 
     def setCpuTunePeriod(self, period):
         v = self._cif.vmContainer.get(self._UUID)
@@ -1394,6 +1394,14 @@ class Global(APIBase):
         throttledlog.info('getAllVmStats', "Current getAllVmStats: %s",
                           AllVmStatsValue(statsList))
         return {'status': doneCode, 'statsList': Suppressed(statsList)}
+
+    def getAllVmIoTunePolicies(self):
+        """
+        Get IO tuning policies of all running VMs.
+        """
+        io_tune_policies_dict = self._cif.getAllVmIoTunePolicies()
+        return {'status': doneCode,
+                'io_tune_policies_dict': io_tune_policies_dict}
 
     def hostdevListByCaps(self, caps=None):
         devices = hostdev.list_by_caps(caps)

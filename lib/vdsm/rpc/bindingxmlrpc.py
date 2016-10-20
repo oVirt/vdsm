@@ -561,6 +561,10 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.getAllVmStats()
 
+    def getAllVmIoTunePolicies(self):
+        api = API.Global()
+        return api.getAllVmIoTunePolicies()
+
     def hostdevListByCaps(self, caps=None):
         api = API.Global()
         return api.hostdevListByCaps(caps)
@@ -1073,6 +1077,7 @@ class BindingXMLRPC(object):
                 (self.getStats, 'getVdsStats'),
                 (self.vmGetStats, 'getVmStats'),
                 (self.getAllVmStats, 'getAllVmStats'),
+                (self.getAllVmIoTunePolicies, 'getAllVmIoTunePolicies'),
                 (self.hostdevListByCaps, 'hostdevListByCaps'),
                 (self.hostdevChangeNumvfs, 'hostdevChangeNumvfs'),
                 (self.hostdevReattach, 'hostdevReattach'),
