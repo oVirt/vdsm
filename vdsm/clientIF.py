@@ -441,6 +441,13 @@ class clientIF(object):
     def getAllVmStats(self):
         return [v.getStats() for v in self.vmContainer.values()]
 
+    def getAllVmIoTunePolicies(self):
+        vm_io_tune_policies = {}
+        for v in self.vmContainer.values():
+                vm_io_tune_policies[v.id] = {'policy': v.getIoTunePolicy(),
+                                             'current_values': v.getIoTune()}
+        return vm_io_tune_policies
+
     def createStompClient(self, client_socket):
         if 'jsonrpc' in self.bindings:
             json_binding = self.bindings['jsonrpc']

@@ -2763,19 +2763,29 @@ class Vm(object):
         else:
             return None
 
+    def getIoTunePolicyResponse(self):
+        tunables = self.getIoTunePolicy()
+        return response.success(ioTunePolicyList=tunables)
+
     def getIoTunePolicy(self):
         tunables = []
         qos = self._getVmPolicy()
         ioTuneList = qos.getElementsByTagName("ioTune")
         if not ioTuneList or not ioTuneList[0].hasChildNodes():
-            return response.success(ioTunePolicyList=[])
+            return []
 
         for device in ioTuneList[0].getElementsByTagName("device"):
             tunables.append(io_tune_dom_to_values(device))
 
-        return response.success(ioTunePolicyList=tunables)
+        return tunables
 
     def getIoTune(self):
+        result = self.getIoTuneResponse()
+        if response.is_error(result):
+            return []
+        return result.get('ioTuneList', [])
+
+    def getIoTuneResponse(self):
         resultList = []
 
         for device in self.getDiskDevices():
@@ -2802,8 +2812,10 @@ class Vm(object):
             except libvirt.libvirtError as e:
                 self.log.exception("getVmIoTune failed")
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                    self.log.error('noVM')
                     return response.error('noVM')
                 else:
+                    self.log.error('updateIoTuneErr', e.message)
                     return response.error('updateIoTuneErr', e.message)
 
         return response.success(ioTuneList=resultList)
