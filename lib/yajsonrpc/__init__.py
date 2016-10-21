@@ -573,7 +573,7 @@ class JsonRpcServer(object):
         ctx = _JsonRpcServeRequestContext(client, server_address)
 
         try:
-            rawRequests = json.loads(msg)
+            rawRequests = msg
         except:
             ctx.addResponse(JsonRpcResponse(None, JsonRpcParseError(), None))
             ctx.sendReply()
