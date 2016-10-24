@@ -22,7 +22,9 @@ from nose.plugins.attrib import attr
 
 from testlib import VdsmTestCase
 
+from vdsm.network import errors as ne
 from vdsm.network.ip import address
+from vdsm.network.ip import validator
 
 
 @attr(type='unit')
@@ -44,3 +46,42 @@ class TestAddressIP(VdsmTestCase):
         self.assertEqual(None, ip.address)
         self.assertEqual(None, ip.gateway)
         self.assertEqual(None, ip.defaultRoute)
+
+
+@attr(type='unit')
+class TestIPValidator(VdsmTestCase):
+
+    def test_ignore_remove_networks(self):
+        validator.validate({'NET0': {'remove': True,
+                                     'defaultRoute': False,
+                                     'nameservers': ['8.8.8.8']}})
+
+    def test_nameserver_defined_on_a_non_primary_network_fails(self):
+        with self.assertRaises(ne.ConfigNetworkError) as cne:
+            validator.validate({'NET0': {'defaultRoute': False,
+                                         'nameservers': ['8.8.8.8']}})
+        self.assertEqual(cne.exception.errCode, ne.ERR_BAD_PARAMS)
+
+    def test_nameserver_faulty_ipv4_address(self):
+        with self.assertRaises(ne.ConfigNetworkError) as cne:
+            validator.validate({'NET0': {'defaultRoute': True,
+                                         'nameservers': ['a.8.8.8']}})
+        self.assertEqual(cne.exception.errCode, ne.ERR_BAD_ADDR)
+
+    def test_nameserver_faulty_ipv6_address(self):
+        with self.assertRaises(ne.ConfigNetworkError) as cne:
+            validator.validate({'NET0': {'defaultRoute': True,
+                                         'nameservers': ['2001:bla::1']}})
+        self.assertEqual(cne.exception.errCode, ne.ERR_BAD_ADDR)
+
+    def test_nameserver_valid_ipv4_address(self):
+        validator.validate({'NET0': {'defaultRoute': True,
+                                     'nameservers': ['8.8.8.8']}})
+
+    def test_nameserver_valid_ipv6_address(self):
+        validator.validate({'NET0': {'defaultRoute': True,
+                                     'nameservers': ['2001::1']}})
+
+    def test_nameserver_address_with_zone_identifier(self):
+        validator.validate({'NET0': {'defaultRoute': True,
+                                     'nameservers': ['fe80::1%eth1']}})

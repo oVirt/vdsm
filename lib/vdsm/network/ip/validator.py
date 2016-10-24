@@ -48,7 +48,19 @@ def _validate_nameservers_network(attrs):
 
 def _validate_nameservers_address(nameservers_addr):
     for addr in nameservers_addr:
+        addr = _normalize_address(addr)
         if ':' in addr:
             IPv6.validateAddress(addr)
         else:
             IPv4.validateAddress(addr)
+
+
+def _normalize_address(addr):
+    """
+    The nameserver address may be tailed with the interface from which it
+    should be reached: 'fe80::1%eth0'
+    Please see zone identifier RFC for more information:
+        https://tools.ietf.org/html/rfc6874
+    For the purpose of address validation, such tail is ignored.
+    """
+    return addr.split('%', 1)[0]
