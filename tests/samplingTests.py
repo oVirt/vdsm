@@ -57,13 +57,6 @@ class InterfaceSampleTests(TestCaseBase):
     def setUp(self):
         self.NEW_VLAN = 'vlan_%s' % (random.randint(0, 1000))
 
-    def testDiff(self):
-        lo = ipwrapper.getLink('lo')
-        s0 = sampling.InterfaceSample(lo)
-        s1 = sampling.InterfaceSample(lo)
-        s1.operstate = 'x'
-        self.assertEquals('operstate:x', s1.connlog_diff(s0))
-
     @ValidateRunningAsRoot
     def testHostSampleReportsNewInterface(self):
         interfaces_before = set(
@@ -163,12 +156,6 @@ class HostStatsMonitorTests(TestCaseBase):
             def __init__(self, *args):
                 self.id = FakeHostSample.counter
                 FakeHostSample.counter += 1
-
-            def to_connlog(self):
-                pass
-
-            def connlog_diff(self, *args):
-                pass
 
         with MonkeyPatchScope([(sampling, 'HostSample', FakeHostSample)]):
             hs = sampling.HostMonitor(samples=samples)

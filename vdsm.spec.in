@@ -708,7 +708,7 @@ make DESTDIR=%{buildroot} install
 # Creating VDSM logs in this session to avoid rpmbuild
 # complain during the build
 install -dDm 0755 %{buildroot}@VDSMLOGDIR@
-touch %{buildroot}@VDSMLOGDIR@/{connectivity.log,mom.log,supervdsm.log,vdsm.log}
+touch %{buildroot}@VDSMLOGDIR@/{mom.log,supervdsm.log,vdsm.log}
 
 # Install the lvm rules
 install -Dm 0644 vdsm/storage/vdsm-lvm.rules \
@@ -760,9 +760,9 @@ fi
 # After vdsm install we should create the logs files.
 # In the install session we create it but since we use
 # the ghost macro (in files session) the files are not included
-touch @VDSMLOGDIR@/{connectivity.log,mom.log,supervdsm.log,vdsm.log}
-chmod 0644 @VDSMLOGDIR@/{connectivity.log,mom.log,supervdsm.log,vdsm.log}
-chown @VDSMUSER@:@VDSMGROUP@ @VDSMLOGDIR@/{connectivity.log,mom.log,vdsm.log}
+touch @VDSMLOGDIR@/{mom.log,supervdsm.log,vdsm.log}
+chmod 0644 @VDSMLOGDIR@/{mom.log,supervdsm.log,vdsm.log}
+chown @VDSMUSER@:@VDSMGROUP@ @VDSMLOGDIR@/{mom.log,vdsm.log}
 chown root:root @VDSMLOGDIR@/supervdsm.log
 
 # Have moved vdsm section in /etc/sysctl.conf to /etc/sysctl.d/vdsm.conf.
@@ -851,7 +851,6 @@ exit 0
 %{_sysconfdir}/systemd/system/libvirtd.service.d/unlimited-core.conf
 
 %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@
-%ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/connectivity.log
 %ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/mom.log
 %ghost %config %attr(0644, root, root) @VDSMLOGDIR@/supervdsm.log
 %ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/vdsm.log

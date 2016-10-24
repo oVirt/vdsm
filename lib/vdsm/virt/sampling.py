@@ -103,23 +103,6 @@ class InterfaceSample(object):
         self.speed = _getLinkSpeed(link)
         self.duplex = _getDuplex(ifid)
 
-    _LOGGED_ATTRS = ('operstate', 'speed', 'duplex')
-
-    def _log_attrs(self, attrs):
-        return ' '.join(
-            '%s:%s' % (attr, getattr(self, attr)) for attr in attrs)
-
-    def to_connlog(self):
-        return self._log_attrs(self._LOGGED_ATTRS)
-
-    def connlog_diff(self, other):
-        """Return a textual description of the interesting stuff new to self
-        and missing in 'other'."""
-
-        return self._log_attrs(
-            attr for attr in self._LOGGED_ATTRS
-            if getattr(self, attr) != getattr(other, attr))
-
 
 class TotalCpuSample(object):
     """
@@ -276,31 +259,6 @@ class HostSample(TimedSample):
                 self.recentClient = False
             else:
                 raise
-
-    def to_connlog(self):
-        text = ', '.join(
-            ('%s:(%s)' % (ifid, ifacesample.to_connlog()))
-            for (ifid, ifacesample) in six.iteritems(self.interfaces))
-        return ('recent_client:%s, ' % self.recentClient) + text
-
-    def connlog_diff(self, other):
-        text = ''
-        for ifid, sample in six.iteritems(self.interfaces):
-            if ifid in other.interfaces:
-                diff = sample.connlog_diff(other.interfaces[ifid])
-                if diff:
-                    text += '%s:(%s) ' % (ifid, diff)
-            else:
-                text += 'new %s:(%s) ' % (ifid, sample.to_connlog())
-
-        for ifid, sample in six.iteritems(other.interfaces):
-            if ifid not in self.interfaces:
-                text += 'dropped %s:(%s) ' % (ifid, sample.to_connlog())
-
-        if self.recentClient != other.recentClient:
-            text += 'recent_client:%s' % self.recentClient
-
-        return text
 
 
 _MINIMUM_SAMPLES = 1
@@ -589,7 +547,6 @@ host_samples = SampleWindow(size=HOST_STATS_AVERAGING_WINDOW)
 
 
 class HostMonitor(object):
-    _CONNLOG = logging.getLogger('connectivity')
 
     def __init__(self, samples=host_samples, cif=None):
         self._samples = samples
@@ -603,14 +560,6 @@ class HostMonitor(object):
         if self._cif and _METRICS_ENABLED:
             stats = hostapi.get_stats(self._cif, self._samples.stats())
             hostapi.send_metrics(stats)
-
-        second_last = self._samples.last(nth=2)
-        if second_last is None:
-            self._CONNLOG.debug('%s', sample.to_connlog())
-        else:
-            diff = sample.connlog_diff(second_last)
-            if diff:
-                self._CONNLOG.debug('%s', diff)
 
 
 def _getLinkSpeed(dev):

@@ -1,8 +1,8 @@
 [loggers]
-keys=root,vds,storage,virt,ovirt_hosted_engine_ha,ovirt_hosted_engine_ha_config,IOProcess,connectivity,devel
+keys=root,vds,storage,virt,ovirt_hosted_engine_ha,ovirt_hosted_engine_ha_config,IOProcess,devel
 
 [handlers]
-keys=console,syslog,logfile,connlogfile
+keys=console,syslog,logfile
 
 [formatters]
 keys=long,simple,none,sysform
@@ -42,12 +42,6 @@ handlers=logfile
 qualname=IOProcess
 propagate=0
 
-[logger_connectivity]
-level=INFO
-handlers=connlogfile
-qualname=connectivity
-propagate=0
-
 [logger_virt]
 level=INFO
 handlers=logfile
@@ -72,13 +66,6 @@ args=('@VDSMUSER@', '@VDSMGROUP@', '@VDSMLOGDIR@/vdsm.log',)
 filters=storage.misc.TracebackRepeatFilter
 level=DEBUG
 formatter=long
-
-[handler_connlogfile]
-class=logging.handlers.WatchedFileHandler
-args=('@VDSMLOGDIR@/connectivity.log',)
-filters=storage.misc.TracebackRepeatFilter
-level=DEBUG
-formatter=simple
 
 [handler_console]
 class: StreamHandler
