@@ -2937,9 +2937,7 @@ class HSM(object):
         fullTargets = []
         partialTargets = []
         for target in targets:
-            fullTargets.append("%s:%d,%d %s" %
-                               (target.portal.hostname, target.portal.port,
-                                target.tpgt, target.iqn))
+            fullTargets.append(str(target))
             partialTargets.append(target.iqn)
 
         return dict(targets=partialTargets, fullTargets=fullTargets)
