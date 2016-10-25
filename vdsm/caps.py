@@ -168,7 +168,7 @@ def get():
     caps['operatingSystem'] = osinfo.version()
     caps['uuid'] = host.uuid()
     caps['packages2'] = osinfo.package_versions()
-    caps['kernelArgs'] = osinfo.kernel_args()
+    caps['realtimeKernel'] = osinfo.runtime_kernel_flags().realtime
     caps['emulatedMachines'] = machinetype.emulated_machines(
         cpuarch.effective())
     caps['ISCSIInitiatorName'] = _getIscsiIniName()

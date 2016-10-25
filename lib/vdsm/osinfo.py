@@ -25,6 +25,8 @@ import linecache
 import logging
 import os
 
+from collections import namedtuple
+
 from vdsm import utils
 
 # For debian systems we can use python-apt if available
@@ -46,6 +48,9 @@ try:
     glusterEnabled = True
 except ImportError:
     glusterEnabled = False
+
+
+KernelFlags = namedtuple('KernelFlags', 'version, realtime')
 
 
 class OSName:
@@ -178,7 +183,7 @@ def selinux_status():
 
 
 def package_versions():
-    pkgs = {'kernel': _runtime_kernel_version()}
+    pkgs = {'kernel': runtime_kernel_flags().version}
 
     if _release_name() in (OSName.RHEVH, OSName.OVIRT, OSName.FEDORA,
                            OSName.RHEL, OSName.POWERKVM):
@@ -243,7 +248,7 @@ def package_versions():
     return pkgs
 
 
-def _runtime_kernel_version():
+def runtime_kernel_flags():
     ret = os.uname()
     try:
         ver, rel = ret[2].split('-', 1)
@@ -251,4 +256,6 @@ def _runtime_kernel_version():
         logging.error('kernel release not found', exc_info=True)
         ver, rel = '0', '0'
 
-    return dict(version=ver, release=rel)
+    realtime = 'RT' in ret[3]
+
+    return KernelFlags(dict(version=ver, release=rel), realtime)

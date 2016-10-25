@@ -6489,6 +6489,13 @@ types:
             name: kernelArgs
             type: string
             added: '4.0'
+
+        -   defaultvalue: no-default
+            description: Indication whether the running kernel is compiled
+                with RT_PREEMPT enabled
+            name: realtimeKernel
+            type: boolean
+            added: '4.1'
         type: object
 
     VmShortStatus: &VmShortStatus
