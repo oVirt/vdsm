@@ -24,6 +24,7 @@ from collections import namedtuple
 from threading import Lock
 
 from vdsm import constants
+from vdsm.common.network.address import hosttail_split
 from vdsm.storage import misc
 from vdsm.utils import AsyncProcessOperation
 
@@ -239,11 +240,9 @@ def discoverydb_discover(discoveryType, iface, portal):
     if rc == 0:
         res = []
         for line in out:
-            if line.startswith("["):  # skip IPv6 targets
-                continue
             rest, iqn = line.split()
             rest, tpgt = rest.split(",")
-            ip, port = rest.split(":")
+            ip, port = hosttail_split(rest)
             res.append((ip, int(port), int(tpgt), iqn))
 
         return res
