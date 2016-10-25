@@ -169,6 +169,7 @@ def get():
     caps['uuid'] = host.uuid()
     caps['packages2'] = osinfo.package_versions()
     caps['realtimeKernel'] = osinfo.runtime_kernel_flags().realtime
+    caps['nestedVirtualization'] = osinfo.nested_virtualization().enabled
     caps['emulatedMachines'] = machinetype.emulated_machines(
         cpuarch.effective())
     caps['ISCSIInitiatorName'] = _getIscsiIniName()

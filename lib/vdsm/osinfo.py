@@ -27,6 +27,7 @@ import os
 
 from collections import namedtuple
 
+from vdsm import cpuarch
 from vdsm import utils
 
 # For debian systems we can use python-apt if available
@@ -51,6 +52,8 @@ except ImportError:
 
 
 KernelFlags = namedtuple('KernelFlags', 'version, realtime')
+NestedVirtualization = namedtuple('NestedVirtualization',
+                                  'enabled, kvm_module')
 
 
 class OSName:
@@ -248,6 +251,7 @@ def package_versions():
     return pkgs
 
 
+@utils.memoized
 def runtime_kernel_flags():
     ret = os.uname()
     try:
@@ -259,3 +263,20 @@ def runtime_kernel_flags():
     realtime = 'RT' in ret[3]
 
     return KernelFlags(dict(version=ver, release=rel), realtime)
+
+
+@utils.memoized
+def nested_virtualization():
+    if cpuarch.is_ppc(cpuarch.real()):
+        return NestedVirtualization(False, None)
+
+    for kvm_module in ("kvm_intel", "kvm_amd"):
+        kvm_module_path = "/sys/module/%s/parameters/nested" % kvm_module
+        try:
+            with open(kvm_module_path) as f:
+                if f.readline().strip() in ("Y", "1"):
+                    return NestedVirtualization(True, kvm_module)
+        except IOError:
+            logging.debug('Could not determine status of nested '
+                          'virtualization', exc_info=True)
+            return NestedVirtualization(False, None)

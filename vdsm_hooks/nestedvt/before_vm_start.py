@@ -21,26 +21,19 @@
 
 import hooking
 
+from vdsm import osinfo
+
 cpu_nested_features = {
     "kvm_intel": "vmx",
     "kvm_amd": "svm",
 }
 
-for kvm_mod in ("kvm_intel", "kvm_amd"):
-    kvm_mod_path = "/sys/module/%s/parameters/nested" % kvm_mod
-    try:
-        with open(kvm_mod_path) as f:
-            if f.readline().strip() in ("Y", "1"):
-                break
-    except IOError:
-        pass
-else:
-    kvm_mod = None
+nestedvt = osinfo.nested_virtualization()
 
-if kvm_mod:
+if nestedvt.enabled:
     domxml = hooking.read_domxml()
     feature_vmx = domxml.createElement("feature")
-    feature_vmx.setAttribute("name", cpu_nested_features[kvm_mod])
+    feature_vmx.setAttribute("name", cpu_nested_features[nestedvt.kvm_module])
     feature_vmx.setAttribute("policy", "require")
     domxml.getElementsByTagName("cpu")[0].appendChild(feature_vmx)
     hooking.write_domxml(domxml)

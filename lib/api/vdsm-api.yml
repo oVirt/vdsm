@@ -6496,6 +6496,13 @@ types:
             name: realtimeKernel
             type: boolean
             added: '4.1'
+
+        -   defaultvalue: no-default
+            description: Indication whether the system is capable of nested
+                virtualization (considers platform & module options).
+            name: nestedVirtualization
+            type: boolean
+            added: '4.1'
         type: object
 
     VmShortStatus: &VmShortStatus
