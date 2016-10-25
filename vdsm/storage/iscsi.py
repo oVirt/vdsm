@@ -34,6 +34,7 @@ from threading import RLock
 
 from vdsm import supervdsm
 from vdsm.config import config
+from vdsm.common.network.address import hosttail_join
 from vdsm.network.netinfo.routes import getRouteDeviceTo
 from vdsm.password import ProtectedPassword
 from vdsm.storage import devicemapper
@@ -41,8 +42,31 @@ from vdsm.storage import misc
 
 import iscsiadm
 
-IscsiPortal = namedtuple("IscsiPortal", "hostname, port")
-IscsiTarget = namedtuple("IscsiTarget", "portal, tpgt, iqn")
+
+class IscsiPortal(namedtuple("IscsiPortal", "hostname, port")):
+    """
+    Represents transport (TCP) address like defined in rfc 3721 or
+    Network Portal of rfc 3720.
+    """
+    def __str__(self):
+        return hosttail_join(self.hostname, str(self.port))
+
+
+class IscsiTarget(namedtuple("IscsiTarget", "portal, tpgt, iqn")):
+    """
+    Represents the iSCSI Address like defined in rfc 3721 or
+    the target record of rfc 3720 Appendix D.
+    """
+    def __str__(self):
+        return "%s %s" % (self.address, self.iqn)
+
+    @property
+    def address(self):
+        """
+        Gets the TargetAddress like defined in rfc 3720 section 12.8.
+        """
+        return "%s,%s" % (self.portal, self.tpgt)
+
 
 DEFAULT_TPGT = 1
 ISCSI_DEFAULT_PORT = 3260
@@ -189,23 +213,22 @@ def addIscsiNode(iface, target, credentials=None):
     # bounded iface. Explicitly specifying tpgt on iSCSI login imposes creation
     # of the node record in the new style format which enables to access a
     # portal through multiple ifaces for multipathing.
-    portalStr = "%s:%d,%d" % (target.portal.hostname, target.portal.port,
-                              target.tpgt)
     with _iscsiadmTransactionLock:
-        iscsiadm.node_new(iface.name, portalStr, target.iqn)
+        iscsiadm.node_new(iface.name, target.address, target.iqn)
         try:
             if credentials is not None:
                 for key, value in credentials.getIscsiadmOptions():
                     key = "node.session." + key
-                    iscsiadm.node_update(iface.name, portalStr, target.iqn,
-                                         key, value, hideValue=True)
+                    iscsiadm.node_update(iface.name, target.address,
+                                         target.iqn, key, value,
+                                         hideValue=True)
 
             setRpFilterIfNeeded(iface.netIfaceName, target.portal.hostname,
                                 True)
 
-            iscsiadm.node_login(iface.name, portalStr, target.iqn)
+            iscsiadm.node_login(iface.name, target.address, target.iqn)
 
-            iscsiadm.node_update(iface.name, portalStr, target.iqn,
+            iscsiadm.node_update(iface.name, target.address, target.iqn,
                                  "node.startup", "manual")
         except:
             removeIscsiNode(iface, target)
@@ -216,24 +239,21 @@ def removeIscsiNode(iface, target):
     # Basically this command deleting a node record (see addIscsiNode).
     # Once we create a record in the new style format by specifying a tpgt,
     # we delete it in the same way.
-    portalStr = "%s:%d,%d" % (target.portal.hostname, target.portal.port,
-                              target.tpgt)
     with _iscsiadmTransactionLock:
         try:
-            iscsiadm.node_disconnect(iface.name, portalStr, target.iqn)
+            iscsiadm.node_disconnect(iface.name, target.address, target.iqn)
         except iscsiadm.IscsiSessionNotFound:
             pass
 
-        iscsiadm.node_delete(iface.name, portalStr, target.iqn)
+        iscsiadm.node_delete(iface.name, target.address, target.iqn)
         setRpFilterIfNeeded(iface.netIfaceName, target.portal.hostname, False)
 
 
 def addIscsiPortal(iface, portal, credentials=None):
     discoverType = "sendtargets"
-    portalStr = "%s:%d" % (portal.hostname, portal.port)
 
     with _iscsiadmTransactionLock:
-        iscsiadm.discoverydb_new(discoverType, iface.name, portalStr)
+        iscsiadm.discoverydb_new(discoverType, iface.name, str(portal))
 
         try:
             # Push credentials
@@ -241,7 +261,7 @@ def addIscsiPortal(iface, portal, credentials=None):
                 for key, value in credentials.getIscsiadmOptions():
                     key = "discovery.sendtargets." + key
                     iscsiadm.discoverydb_update(discoverType, iface.name,
-                                                portalStr, key, value,
+                                                str(portal), key, value,
                                                 hideValue=True)
 
         except:
@@ -251,21 +271,19 @@ def addIscsiPortal(iface, portal, credentials=None):
 
 def deleteIscsiPortal(iface, portal):
     discoverType = "sendtargets"
-    portalStr = "%s:%d" % (portal.hostname, portal.port)
-    iscsiadm.discoverydb_delete(discoverType, iface.name, portalStr)
+    iscsiadm.discoverydb_delete(discoverType, iface.name, str(portal))
 
 
 def discoverSendTargets(iface, portal, credentials=None):
     # Because proper discovery actually has to clear the DB having multiple
     # discoveries at once will cause unpredictable results
     discoverType = "sendtargets"
-    portalStr = "%s:%d" % (portal.hostname, portal.port)
 
     with _iscsiadmTransactionLock:
         addIscsiPortal(iface, portal, credentials)
         try:
             targets = iscsiadm.discoverydb_discover(discoverType, iface.name,
-                                                    portalStr)
+                                                    str(portal))
         finally:
             deleteIscsiPortal(iface, portal)
 

@@ -140,3 +140,39 @@ def protected(password):
     if password is None:
         return None
     return ProtectedPassword(password)
+
+
+@expandPermutations
+class TestIscsiPortal(TestCaseBase):
+
+    @permutations([
+        ("192.0.2.23", 5003, "192.0.2.23:5003"),
+        ("3ffe:2a00:100:7031::1", 3260, "[3ffe:2a00:100:7031::1]:3260"),
+        ("::192.0.2.5", 3260, "[::192.0.2.5]:3260"),
+        ("moredisks.example.com", 5003, "moredisks.example.com:5003"),
+        ("fe80::5054:ff:fe69:d588%ens3", 3260,
+         "[fe80::5054:ff:fe69:d588%ens3]:3260")
+    ])
+    def test_str(self, hostname, port, expected):
+        self.assertEquals(str(iscsi.IscsiPortal(hostname, port)), expected)
+
+
+class TestIscsiTarget(TestCaseBase):
+
+    def test_str(self):
+        target = iscsi.IscsiTarget(
+            iscsi.IscsiPortal(
+                "3ffe:2a00:100:7031::1",
+                3260),
+            1, "iqn.2014-06.com.example:t1")
+        self.assertEquals(
+            str(target),
+            "[3ffe:2a00:100:7031::1]:3260,1 iqn.2014-06.com.example:t1")
+
+    def test_address(self):
+        target = iscsi.IscsiTarget(
+            iscsi.IscsiPortal(
+                "3ffe:2a00:100:7031::1",
+                3260),
+            2, "iqn.2014-06.com.example:t1")
+        self.assertEquals(target.address, "[3ffe:2a00:100:7031::1]:3260,2")
