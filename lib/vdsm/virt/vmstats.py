@@ -319,7 +319,7 @@ def networks(vm, stats, first_sample, last_sample, interval):
     last_indexes = _find_bulk_stats_reverse_map(last_sample, 'net')
 
     for nic in vm.getNicDevices():
-        if nic.name.startswith('hostdev'):
+        if nic.is_hostdevice:
             continue
 
         # may happen if nic is a new hot-plugged one

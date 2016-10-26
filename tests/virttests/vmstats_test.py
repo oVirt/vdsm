@@ -331,7 +331,8 @@ class NetworkStatsTests(VmStatsTestCase):
 
     def test_nic_have_all_keys(self):
         nic = FakeNic(name='vnet0', model='virtio',
-                      mac_addr='00:1a:4a:16:01:51')
+                      mac_addr='00:1a:4a:16:01:51',
+                      is_hostdevice=False)
         testvm = FakeVM(nics=(nic,))
 
         stats = vmstats._nic_traffic(
@@ -345,7 +346,8 @@ class NetworkStatsTests(VmStatsTestCase):
     def test_networks_have_all_keys(self):
         nics = (
             FakeNic(name='vnet0', model='virtio',
-                    mac_addr='00:1a:4a:16:01:51'),
+                    mac_addr='00:1a:4a:16:01:51',
+                    is_hostdevice=False),
         )
         vm = FakeVM(nics=nics)
 
@@ -359,7 +361,8 @@ class NetworkStatsTests(VmStatsTestCase):
     def test_networks_good_interval(self):
         nics = (
             FakeNic(name='vnet0', model='virtio',
-                    mac_addr='00:1a:4a:16:01:51'),
+                    mac_addr='00:1a:4a:16:01:51',
+                    is_hostdevice=False),
         )
         vm = FakeVM(nics=nics)
 
@@ -374,7 +377,8 @@ class NetworkStatsTests(VmStatsTestCase):
     def test_networks_bad_interval(self, interval):
         nics = (
             FakeNic(name='vnet0', model='virtio',
-                    mac_addr='00:1a:4a:16:01:51'),
+                    mac_addr='00:1a:4a:16:01:51',
+                    is_hostdevice=False),
         )
         vm = FakeVM(nics=nics)
 
@@ -393,7 +397,8 @@ class NetworkStatsTests(VmStatsTestCase):
     def test_networks_missing_key(self, key):
         nics = (
             FakeNic(name='vnet0', model='virtio',
-                    mac_addr='00:1a:4a:16:01:51'),
+                    mac_addr='00:1a:4a:16:01:51',
+                    is_hostdevice=False),
         )
         vm = FakeVM(nics=nics)
         vm.migrationPending = True
@@ -602,10 +607,11 @@ def _ensure_delta(stats_before, stats_after, key, delta):
 
 class FakeNic(object):
 
-    def __init__(self, name, model, mac_addr):
+    def __init__(self, name, model, mac_addr, is_hostdevice):
         self.name = name
         self.nicModel = model
         self.macAddr = mac_addr
+        self.is_hostdevice = is_hostdevice
 
 
 class FakeDrive(object):
