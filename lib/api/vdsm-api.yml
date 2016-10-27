@@ -7774,6 +7774,12 @@ ISCSIConnection.discoverSendTargets:
         description: The password associated with the given username
         name: password
         type: string
+
+    -   defaultvalue: false
+        added: '4.1'
+        description: If true, the returned list includes porals on IPv6
+        name: ipv6_enabled
+        type: boolean
     return:
         description: 'A list of discovered targets in the form:
             ''<host>:<port>,<tpgt><iqn>'''

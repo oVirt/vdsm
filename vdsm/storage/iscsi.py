@@ -51,6 +51,9 @@ class IscsiPortal(namedtuple("IscsiPortal", "hostname, port")):
     def __str__(self):
         return hosttail_join(self.hostname, str(self.port))
 
+    def is_ipv6(self):
+        return ":" in self.hostname
+
 
 class IscsiTarget(namedtuple("IscsiTarget", "portal, tpgt, iqn")):
     """

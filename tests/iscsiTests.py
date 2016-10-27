@@ -156,6 +156,17 @@ class TestIscsiPortal(TestCaseBase):
     def test_str(self, hostname, port, expected):
         self.assertEquals(str(iscsi.IscsiPortal(hostname, port)), expected)
 
+    @permutations([
+        ("192.0.2.23", 5003, False),
+        ("3ffe:2a00:100:7031::1", 3260, True),
+        ("::192.0.2.5", 3260, True),
+        ("moredisks.example.com", 5003, False),
+        ("fe80::5054:ff:fe69:d588%ens3", 3260, True)
+    ])
+    def test_is_ipv6(self, hostname, port, expected):
+        target = iscsi.IscsiPortal(hostname, port)
+        self.assertEquals(target.is_ipv6(), expected)
+
 
 class TestIscsiTarget(TestCaseBase):
 

@@ -2915,6 +2915,7 @@ class HSM(object):
         """
         ip = con['connection']
         port = int(con['port'])
+        ipv6_enabled = con['ipv6_enabled']
         username = con['user']
         password = con['password']
         if username == "":
@@ -2937,8 +2938,9 @@ class HSM(object):
         fullTargets = []
         partialTargets = []
         for target in targets:
-            fullTargets.append(str(target))
-            partialTargets.append(target.iqn)
+            if ipv6_enabled or not target.portal.is_ipv6():
+                fullTargets.append(str(target))
+                partialTargets.append(target.iqn)
 
         return dict(targets=partialTargets, fullTargets=fullTargets)
 
