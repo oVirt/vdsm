@@ -9,9 +9,10 @@ Welcome to VDSM's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-   infra/index.rst
+   build/apidoc/vdsm.rst
+
 
 Indices and tables
 ==================

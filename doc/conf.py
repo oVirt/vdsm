@@ -198,3 +198,16 @@ latex_documents = [('index', 'Vdsm.tex', u'VDSM Documentation',
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'http://docs.python.org/': None}
+
+autodoc_default_flags = ['members', 'undoc-members', 'special-members',
+                         'show-inheritance']
+
+
+def skip_uninteresting_objects(app, what, name, obj, skip, options):
+    if name in ('__dict__', '__module__', '__slots__', '__weakref__',):
+        return True
+    return skip
+
+
+def setup(app):
+    app.connect('autodoc-skip-member', skip_uninteresting_objects)
