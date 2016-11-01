@@ -639,8 +639,9 @@ class ConfigWriter(object):
 
         if mtu:
             cfg += 'MTU=%d\n' % mtu
-        if ipv4.defaultRoute is not None:
-            cfg += 'DEFROUTE=%s\n' % _to_ifcfg_bool(ipv4.defaultRoute)
+        is_default_route = ipv4.defaultRoute and (ipv4.gateway or
+                                                  ipv4.bootproto == 'dhcp')
+        cfg += 'DEFROUTE=%s\n' % _to_ifcfg_bool(is_default_route)
         cfg += 'NM_CONTROLLED=no\n'
         enable_ipv6 = ipv6.address or ipv6.ipv6autoconf or ipv6.dhcpv6
         cfg += 'IPV6INIT=%s\n' % _to_ifcfg_bool(enable_ipv6)
