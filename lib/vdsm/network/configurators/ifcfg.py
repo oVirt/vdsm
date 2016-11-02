@@ -107,7 +107,7 @@ class Ifcfg(Configurator):
 
     def configureBridge(self, bridge, **opts):
         if not self.owned_device(bridge.name):
-            self.normalize_device_filename(bridge.name)
+            IfcfgAcquire.acquire_device(bridge.name)
         self.configApplier.addBridge(bridge, **opts)
         ifdown(bridge.name)
         if bridge.port:
@@ -117,7 +117,7 @@ class Ifcfg(Configurator):
 
     def configureVlan(self, vlan, **opts):
         if not self.owned_device(vlan.name):
-            self.normalize_device_filename(vlan.name)
+            IfcfgAcquire.acquire_device(vlan.name)
         self.configApplier.addVlan(vlan, **opts)
         vlan.device.configure(**opts)
         self._addSourceRoute(vlan)
@@ -125,7 +125,7 @@ class Ifcfg(Configurator):
 
     def configureBond(self, bond, **opts):
         if not self.owned_device(bond.name):
-            self.normalize_device_filename(bond.name)
+            IfcfgAcquire.acquire_device(bond.name)
         self.configApplier.addBonding(bond, **opts)
         if not vlans.is_vlanned(bond.name):
             for slave in bond.slaves:
@@ -151,7 +151,7 @@ class Ifcfg(Configurator):
         nicsToAdd = nicsToSet - currentNics
 
         if not self.owned_device(bond.name):
-            self.normalize_device_filename(bond.name)
+            IfcfgAcquire.acquire_device(bond.name)
 
         # Create bond configuration in case it was a non ifcfg controlled bond.
         # Needed to be before slave configuration for initscripts to add slave
@@ -191,7 +191,7 @@ class Ifcfg(Configurator):
 
     def configureNic(self, nic, **opts):
         if not self.owned_device(nic.name):
-            self.normalize_device_filename(nic.name)
+            IfcfgAcquire.acquire_device(nic.name)
         self.configApplier.addNic(nic, **opts)
         self._addSourceRoute(nic)
         if nic.bond is None:
@@ -201,7 +201,7 @@ class Ifcfg(Configurator):
 
     def removeBridge(self, bridge):
         if not self.owned_device(bridge.name):
-            self.normalize_device_filename(bridge.name)
+            IfcfgAcquire.acquire_device(bridge.name)
         DynamicSourceRoute.addInterfaceTracking(bridge)
         ifdown(bridge.name)
         self._removeSourceRoute(bridge, StaticSourceRoute)
@@ -212,7 +212,7 @@ class Ifcfg(Configurator):
 
     def removeVlan(self, vlan):
         if not self.owned_device(vlan.name):
-            self.normalize_device_filename(vlan.name)
+            IfcfgAcquire.acquire_device(vlan.name)
         DynamicSourceRoute.addInterfaceTracking(vlan)
         ifdown(vlan.name)
         self._removeSourceRoute(vlan, StaticSourceRoute)
@@ -235,7 +235,7 @@ class Ifcfg(Configurator):
 
     def removeBond(self, bonding):
         if not self.owned_device(bonding.name):
-            self.normalize_device_filename(bonding.name)
+            IfcfgAcquire.acquire_device(bonding.name)
         to_be_removed = self._ifaceDownAndCleanup(bonding)
         if to_be_removed:
             self.configApplier.removeBonding(bonding.name)
@@ -266,7 +266,7 @@ class Ifcfg(Configurator):
 
     def removeNic(self, nic, remove_even_if_used=False):
         if not self.owned_device(nic.name):
-            self.normalize_device_filename(nic.name)
+            IfcfgAcquire.acquire_device(nic.name)
         to_be_removed = self._ifaceDownAndCleanup(nic, remove_even_if_used)
         if to_be_removed:
             self.configApplier.removeNic(nic.name)
@@ -324,20 +324,27 @@ class Ifcfg(Configurator):
         else:
             return content.startswith(CONFFILE_HEADER_SIGNATURE)
 
+
+class IfcfgAcquire(object):
     @staticmethod
-    def normalize_device_filename(device):
+    def acquire_device(device):
         """
         Attempts to detect a device ifcfg file and rename it to a vdsm
         supported format.
         In case of multiple ifcfg files that treat the same device, all except
         the first are deleted.
         """
+        device_files = IfcfgAcquire._collect_device_files(device)
+        IfcfgAcquire._normalize_device_filenames(device, device_files)
+
+    @staticmethod
+    def _collect_device_files(device):
         device_files = []
         paths = glob.iglob(NET_CONF_PREF + '*')
         for ifcfg_file in paths:
             with open(ifcfg_file) as f:
                 for line in f:
-                    if line.startswith('#'):
+                    if len(line) < 2 and line.startswith('#'):
                         continue
                     key, value = line.rstrip().split('=', 1)
                     if value and value[0] == '\"' and value[-1] == '\"':
@@ -346,6 +353,10 @@ class Ifcfg(Configurator):
                         if value == device:
                             device_files.append(ifcfg_file)
                         break
+        return device_files
+
+    @staticmethod
+    def _normalize_device_filenames(device, device_files):
         if device_files:
             os.rename(device_files[0], NET_CONF_PREF + device)
             for filepath in device_files[1:]:
