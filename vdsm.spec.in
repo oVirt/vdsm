@@ -105,7 +105,7 @@ Requires: curl
 Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: safelease >= 1.0-7
-Requires: mom >= 0.5.3
+Requires: mom >= 0.5.8
 Requires(pre): shadow-utils
 
 Obsoletes: %{name}-infra <= 4.18
