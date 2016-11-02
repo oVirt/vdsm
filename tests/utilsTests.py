@@ -673,6 +673,38 @@ import vmTestsData
             "picklecopy [%f] not faster than deepcopy [%f]" % (hack, base))
 
 
+class UserError(Exception):
+    """ A special excpetion for testing errors during object life """
+
+
+class CloseError(Exception):
+    """ A special exception for testing errors during closing an object """
+
+
+class Closer:
+    def __init__(self):
+        self.was_closed = False
+
+    def close(self):
+        self.was_closed = True
+        raise CloseError
+
+
+class ClosingTests(TestCaseBase):
+    def test_error_before_close(self):
+        c = Closer()
+        with self.assertRaises(UserError):
+            with utils.closing(c):
+                raise UserError
+            self.assertTrue(c.was_closed)
+
+    def test_error_while_closing(self):
+        c = Closer()
+        with self.assertRaises(CloseError):
+            with utils.closing(c):
+                pass
+
+
 @expandPermutations
 class MemoizedTests(TestCaseBase):
 

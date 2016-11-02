@@ -428,6 +428,32 @@ def listSplit(l, elem, maxSplits=None):
     return splits + [l]
 
 
+class closing(object):
+    """
+    Context Manager that is responsible for closing the object it gets upon
+    completion of the with statement.
+    __exit__ will be called in the end of the with statement and in case of
+    exception during the object lifetime.
+
+    Adaptation from https://docs.python.org/2.7/library/contextlib.html
+    """
+    def __init__(self, obj, log="utils.closing"):
+        self.obj = obj
+        self.log = log
+
+    def __enter__(self):
+        return self.obj
+
+    def __exit__(self, t, v, tb):
+        try:
+            self.obj.close()
+        except Exception:
+            if t is None:
+                raise
+            log = logging.getLogger(self.log)
+            log.exception("Error closing %s", self.obj)
+
+
 class memoized(object):
     """
     Decorator that caches a function's return value each time it is called.
