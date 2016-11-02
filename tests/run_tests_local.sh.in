@@ -1,6 +1,6 @@
 #!/bin/sh
 if [ -z "$PYTHON_EXE" ]; then
-    PYTHON_EXE="@PYTHON@"
+    PYTHON_EXE="python2"
 fi
 
 export \
