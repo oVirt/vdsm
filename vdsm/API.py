@@ -342,23 +342,18 @@ class VM(APIBase):
         """
         Obtain statistics of the specified VM
         """
-        return self._getStats()
-
-    def _getStats(self, runHooks=True):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:
             return errCode['noVM']
 
-        if runHooks:
-            try:
-                hooks.before_get_vm_stats()
-            except exception.HookError as e:
-                return response.error('hookError',
-                                      'Hook error: ' + str(e))
+        try:
+            hooks.before_get_vm_stats()
+        except exception.HookError as e:
+            return response.error('hookError',
+                                  'Hook error: ' + str(e))
 
         stats = v.getStats().copy()
-        if runHooks:
-            stats = hooks.after_get_vm_stats([stats])[0]
+        stats = hooks.after_get_vm_stats([stats])[0]
         return {'status': doneCode, 'statsList': [stats]}
 
     def hibernate(self, hibernationVolHandle):
