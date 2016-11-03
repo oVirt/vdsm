@@ -78,7 +78,9 @@ class TestNumaUtils(TestCaseBase):
             sample = [(0, 1, 19590000000, 1),
                       (1, 1, 10710000000, 1),
                       (2, 1, 19590000000, 0),
-                      (3, 1, 19590000000, 2)]
+                      (3, 1, 19590000000, 2),
+                      # CPU not assigned by Engine, should be ignored:
+                      (4, 1, 10710000000, 0)]
             with MonkeyPatchScope([(numa, "_get_vcpu_positioning",
                                   lambda vm: sample)]):
                 vm_numa_info = numa.getVmNumaNodeRuntimeInfo(testvm)
