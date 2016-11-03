@@ -120,6 +120,7 @@ class Ifcfg(Configurator):
     def configureVlan(self, vlan, **opts):
         if not self.owned_device(vlan.name):
             IfcfgAcquire.acquire_device(vlan.name)
+            IfcfgAcquire.acquire_vlan_device(vlan.name)
         self.configApplier.addVlan(vlan, **opts)
         vlan.device.configure(**opts)
         self._addSourceRoute(vlan)
@@ -215,6 +216,7 @@ class Ifcfg(Configurator):
     def removeVlan(self, vlan):
         if not self.owned_device(vlan.name):
             IfcfgAcquire.acquire_device(vlan.name)
+            IfcfgAcquire.acquire_vlan_device(vlan.name)
         DynamicSourceRoute.addInterfaceTracking(vlan)
         ifdown(vlan.name)
         self._removeSourceRoute(vlan, StaticSourceRoute)
@@ -340,6 +342,16 @@ class IfcfgAcquire(object):
         IfcfgAcquire._normalize_device_filenames(device, device_files)
 
     @staticmethod
+    def acquire_vlan_device(device):
+        """
+        VLAN devices may be represented in an ifcfg configuration syntax that
+        is different from the common case. Specifically when being created
+        using Network Manager.
+        """
+        device_files = IfcfgAcquire._collect_vlan_device_files(device)
+        IfcfgAcquire._normalize_device_filenames(device, device_files)
+
+    @staticmethod
     def _collect_device_files(device):
         device_files = []
         paths = glob.iglob(NET_CONF_PREF + '*')
@@ -356,6 +368,29 @@ class IfcfgAcquire(object):
                             device_files.append(ifcfg_file)
                         break
         return device_files
+
+    @staticmethod
+    def _collect_vlan_device_files(device):
+        device_files = []
+        paths = glob.iglob(NET_CONF_PREF + '*')
+        for ifcfg_file in paths:
+            with open(ifcfg_file) as f:
+                conf = dict(IfcfgAcquire._config_entry(line)
+                            for line in f
+                            if len(line) > 1 and not line.startswith('#'))
+                is_vlan_device = conf.get('TYPE', '').upper() == 'VLAN'
+                config_device = '{}.{}'.format(conf.get('PHYSDEV'),
+                                               conf.get('VLAN_ID'))
+                if is_vlan_device and config_device == device:
+                    device_files.append(ifcfg_file)
+        return device_files
+
+    @staticmethod
+    def _config_entry(line):
+        key, value = line.rstrip().split('=', 1)
+        if value and value[0] == '\"' and value[-1] == '\"':
+            value = value[1:-1]
+        return key.upper(), value
 
     @staticmethod
     def _normalize_device_filenames(device, device_files):

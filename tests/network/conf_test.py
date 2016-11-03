@@ -34,7 +34,7 @@ from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase, mock
 
 
 @attr(type='unit')
@@ -119,3 +119,96 @@ class ifcfgConfigWriterTests(TestCaseBase):
             self._cw.restorePersistentBackup()
 
             self._assertFilesRestored()
+
+
+IFCFG_ETH_CONF = """DEVICE="testdevice"
+ONBOOT=yes
+NETBOOT=yes
+UUID="237dcf6d-516d-4a85-8651-f81e2f4a6238"
+IPV6INIT=yes
+BOOTPROTO=dhcp
+TYPE=Ethernet
+NAME="enp0s25"
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+HWADDR=68:F7:28:C3:CE:E5
+PEERDNS=yes
+PEERROUTES=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+"""
+
+IFCFG_VLAN_CONF = """VLAN=yes
+TYPE=Vlan
+PHYSDEV=testdevice
+VLAN_ID=100
+REORDER_HDR=0
+BOOTPROTO=none
+IPADDR=19.19.19.19
+PREFIX=29
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_FAILURE_FATAL=no
+NAME=vlan
+UUID=95d45ecb-99f8-46cd-8942-a34cb5c1e321
+ONBOOT=yes
+
+"""
+
+
+@attr(type='unit')
+@mock.patch.object(ifcfg.utils, 'rmFile')
+@mock.patch.object(ifcfg.os, 'rename')
+@mock.patch.object(ifcfg.glob, 'iglob')
+@mock.patch.object(ifcfg, 'open', create=True)
+class IfcfgAcquireTests(TestCaseBase):
+
+    def test_acquire_iface_given_non_standard_filename(self,
+                                                       mock_open,
+                                                       mock_list_files,
+                                                       mock_rename,
+                                                       mock_rmfile):
+        ifcfg.open.return_value.__enter__.return_value = IFCFG_ETH_CONF.split()
+        mock_list_files.return_value = ['filename1']
+
+        ifcfg.IfcfgAcquire.acquire_device('testdevice')
+
+        mock_rename.assert_called_once_with(
+            'filename1', ifcfg.NET_CONF_PREF + 'testdevice')
+
+    def test_acquire_iface_given_multiple_files_for_the_iface(self,
+                                                              mock_open,
+                                                              mock_list_files,
+                                                              mock_rename,
+                                                              mock_rmfile):
+        ifcfg.open.return_value.__enter__.return_value = IFCFG_ETH_CONF.split()
+        mock_list_files.return_value = ['filename1', 'filename2']
+
+        ifcfg.IfcfgAcquire.acquire_device('testdevice')
+
+        mock_rename.assert_called_once_with(
+            'filename1', ifcfg.NET_CONF_PREF + 'testdevice')
+        mock_rmfile.assert_called_once_with('filename2')
+
+    def test_acquire_vlan_iface_given_nm_unique_config(self,
+                                                       mock_open,
+                                                       mock_list_files,
+                                                       mock_rename,
+                                                       mock_rmfile):
+        conf_list = IFCFG_VLAN_CONF.split()
+        ifcfg.open.return_value.__enter__.return_value = conf_list
+        mock_list_files.return_value = ['filename1', 'filename2']
+
+        ifcfg.IfcfgAcquire.acquire_vlan_device('testdevice.100')
+
+        mock_rename.assert_called_once_with(
+            'filename1', ifcfg.NET_CONF_PREF + 'testdevice.100')
+        mock_rmfile.assert_called_once_with('filename2')
