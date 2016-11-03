@@ -55,6 +55,7 @@ from vdsm.logUtils import SimpleLogAdapter
 from vdsm.network import api as net_api
 from vdsm.storage import fileUtils
 from vdsm.virt import guestagent
+from vdsm.virt import migration
 from vdsm.virt import sampling
 from vdsm.virt import vmchannels
 from vdsm.virt import vmexitreason
@@ -73,7 +74,6 @@ import caps
 
 # local package imports
 from .domain_descriptor import DomainDescriptor, MutableDomainDescriptor
-from . import migration
 from . import recovery
 from . import vmdevices
 from .vmdevices import hwclass

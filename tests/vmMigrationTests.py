@@ -28,8 +28,8 @@ from six.moves import zip
 
 from vdsm.common import response
 from vdsm.config import config
+from vdsm.virt import migration
 from vdsm.virt import vmstatus
-from virt import migration
 
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase

@@ -42,11 +42,11 @@ from vdsm.logUtils import AllVmStatsValue, Suppressed
 from vdsm.storage import clusterlock
 from vdsm.storage import misc
 from vdsm.storage import constants as sc
+from vdsm.virt import migration
 from vdsm.virt import secret
 import storage.volume
 import storage.sd
 import storage.image
-from virt import migration
 from virt.vmdevices import graphics
 from virt.vmdevices import hwclass
 from vdsm.compat import pickle

@@ -28,6 +28,7 @@ vdsmvirtdir = $(vdsmpylibdir)/virt
 dist_vdsmvirt_PYTHON = \
 	__init__.py \
 	guestagent.py \
+	migration.py \
 	periodic.py \
 	sampling.py \
 	secret.py \

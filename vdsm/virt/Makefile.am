@@ -26,7 +26,6 @@ vdsm_virtdir = $(vdsmdir)/virt
 dist_vdsm_virt_PYTHON = \
 	__init__.py \
 	domain_descriptor.py \
-	migration.py \
 	recovery.py \
 	vm.py \
 	vm_migrate_hook.py \

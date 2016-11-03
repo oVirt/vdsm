@@ -37,6 +37,7 @@ from vdsm.common.define import doneCode, errCode
 from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.momIF import MomClient
 from vdsm.sslcompat import sslutils
+from vdsm.virt import migration
 from vdsm.virt import secret
 from vdsm.virt import vmstatus
 from vdsm.virt.vmchannels import Listener
@@ -49,7 +50,6 @@ from vdsm import utils
 from vdsm import supervdsm
 from vdsm.common import response
 
-from virt import migration
 from virt import recovery
 from virt import vm
 from virt.vm import Vm
