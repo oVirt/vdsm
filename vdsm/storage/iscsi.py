@@ -73,7 +73,6 @@ class IscsiTarget(namedtuple("IscsiTarget", "portal, tpgt, iqn")):
 
 DEFAULT_TPGT = 1
 ISCSI_DEFAULT_PORT = 3260
-SCAN_PATTERN = "/sys/class/scsi_host/host*/scan"
 
 IscsiSession = namedtuple("IscsiSession", "id, iface, target, credentials")
 
