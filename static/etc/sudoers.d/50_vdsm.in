@@ -10,11 +10,6 @@ Cmnd_Alias VDSM_STORAGE = \
     @CHOWN_PATH@ @METADATAUSER@\:@METADATAGROUP@ *, \
     @ISCSIADM_PATH@ *, \
     @LVM_PATH@, \
-    @CAT_PATH@ /sys/block/*/device/../../*, \
-    @CAT_PATH@ /sys/devices/platform/host*, \
-    @DD_PATH@ of=/sys/class/scsi_host/host*/scan, \
-    @DD_PATH@, \
-    @MULTIPATH_PATH@, \
     @SETSID_PATH@ @IONICE_PATH@ -c ? -n ? @SU_PATH@ vdsm -s /bin/sh -c /usr/libexec/vdsm/spmprotect.sh*, \
     @SERVICE_PATH@ vdsmd *, \
     @REBOOT_PATH@ -f
