@@ -1,7 +1,8 @@
 [Unit]
 Description=Virtual Desktop Server Manager network IP+link restoration
 Wants=network.target
-Requires=@OPENVSWITCHSERVICE@
+# do not require openvswitch until it starts on AMD (BZ#1378501)
+Wants=@OPENVSWITCHSERVICE@
 After=@OPENVSWITCHSERVICE@
 Before=libvirtd.service
 
