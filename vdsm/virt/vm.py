@@ -255,7 +255,8 @@ class Vm(object):
         self._confLock = threading.Lock()
         self._jobsLock = threading.Lock()
         self._statusLock = threading.Lock()
-        self._creationThread = concurrent.thread(self._startUnderlyingVm)
+        self._creationThread = concurrent.thread(self._startUnderlyingVm,
+                                                 name="vm/" + self.id[:8])
         if 'migrationDest' in self.conf:
             self._lastStatus = vmstatus.MIGRATION_DESTINATION
         elif 'restoreState' in self.conf:
@@ -4766,7 +4767,7 @@ class LiveMergeCleanupThread(object):
         self.drive = drive
         self.doPivot = doPivot
         self.success = False
-        self._thread = concurrent.thread(self.run)
+        self._thread = concurrent.thread(self.run, name="merge/" + vm.id[:8])
 
     def start(self):
         self._thread.start()
