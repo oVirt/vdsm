@@ -102,7 +102,8 @@ class Monitor(object):
         else:
             self._groups = _GROUPS.keys()
         self._queue = queue.Queue()
-        self._scan_thread = concurrent.thread(self._scan)
+        self._scan_thread = concurrent.thread(self._scan,
+                                              name="netlink/events")
         self._scanning_started = threading.Event()
         self._scanning_stopped = threading.Event()
 
