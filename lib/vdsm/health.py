@@ -54,7 +54,7 @@ class Monitor(object):
 
     def __init__(self, interval):
         self._interval = interval
-        self._thread = concurrent.thread(self._run)
+        self._thread = concurrent.thread(self._run, name="health")
         self._done = threading.Event()
         self._last = ProcStat()
         self._stats = {}
