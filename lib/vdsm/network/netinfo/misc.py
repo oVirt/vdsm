@@ -32,9 +32,13 @@ NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
 
 
 def getIfaceCfg(iface):
+    return ifcfg_config(NET_CONF_PREF + iface)
+
+
+def ifcfg_config(ifcfg_file):
     ifaceCfg = {}
     try:
-        with open(NET_CONF_PREF + iface) as f:
+        with open(ifcfg_file) as f:
             for line in shlex.split(f, comments=True):
                 k, v = line.split('=', 1)
                 if k in _IFCFG_ZERO_SUFFIXED:

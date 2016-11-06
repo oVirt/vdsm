@@ -21,6 +21,7 @@
 #
 
 from __future__ import absolute_import
+
 import os
 import pwd
 import re
@@ -28,6 +29,15 @@ import shutil
 import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
+
+# Due to shlex, we are forced to choose the stream type per the python version.
+# It is used to mock the returned 'file' from open() which shlex consumes.
+# On PY2, shlex can consume a (byte) string and not a unicode (opposite on PY3)
+import six
+if six.PY2:
+    from io import BytesIO as Stream
+else:
+    from io import StringIO as Stream
 
 from vdsm.network import libvirt
 from vdsm.network.configurators import ifcfg
@@ -206,7 +216,7 @@ ONBOOT=yes
 @mock.patch.object(ifcfg.utils, 'rmFile')
 @mock.patch.object(ifcfg.os, 'rename')
 @mock.patch.object(ifcfg.glob, 'iglob')
-@mock.patch.object(ifcfg, 'open', create=True)
+@mock.patch.object(ifcfg.misc, 'open', create=True)
 class IfcfgAcquireTests(TestCaseBase):
 
     def test_acquire_iface_given_non_standard_filename(self,
@@ -214,7 +224,8 @@ class IfcfgAcquireTests(TestCaseBase):
                                                        mock_list_files,
                                                        mock_rename,
                                                        mock_rmfile):
-        ifcfg.open.return_value.__enter__.return_value = IFCFG_ETH_CONF.split()
+        mock_open.return_value.__enter__.side_effect = lambda: Stream(
+            IFCFG_ETH_CONF)
         mock_list_files.return_value = ['filename1']
 
         ifcfg.IfcfgAcquire.acquire_device('testdevice')
@@ -227,7 +238,8 @@ class IfcfgAcquireTests(TestCaseBase):
                                                               mock_list_files,
                                                               mock_rename,
                                                               mock_rmfile):
-        ifcfg.open.return_value.__enter__.return_value = IFCFG_ETH_CONF.split()
+        mock_open.return_value.__enter__.side_effect = lambda: Stream(
+            IFCFG_ETH_CONF)
         mock_list_files.return_value = ['filename1', 'filename2']
 
         ifcfg.IfcfgAcquire.acquire_device('testdevice')
@@ -241,8 +253,8 @@ class IfcfgAcquireTests(TestCaseBase):
                                                        mock_list_files,
                                                        mock_rename,
                                                        mock_rmfile):
-        conf_list = IFCFG_VLAN_CONF.split()
-        ifcfg.open.return_value.__enter__.return_value = conf_list
+        mock_open.return_value.__enter__.side_effect = lambda: Stream(
+            IFCFG_VLAN_CONF)
         mock_list_files.return_value = ['filename1', 'filename2']
 
         ifcfg.IfcfgAcquire.acquire_vlan_device('testdevice.100')

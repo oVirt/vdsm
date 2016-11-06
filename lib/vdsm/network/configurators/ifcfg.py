@@ -354,17 +354,9 @@ class IfcfgAcquire(object):
         device_files = []
         paths = glob.iglob(NET_CONF_PREF + '*')
         for ifcfg_file in paths:
-            with open(ifcfg_file) as f:
-                for line in f:
-                    if len(line) < 2 and line.startswith('#'):
-                        continue
-                    key, value = line.rstrip().split('=', 1)
-                    if value and value[0] == '\"' and value[-1] == '\"':
-                        value = value[1:-1]
-                    if key.upper() == 'DEVICE':
-                        if value == device:
-                            device_files.append(ifcfg_file)
-                        break
+            conf = misc.ifcfg_config(ifcfg_file)
+            if conf.get('DEVICE') == device:
+                device_files.append(ifcfg_file)
         return device_files
 
     @staticmethod
@@ -372,15 +364,12 @@ class IfcfgAcquire(object):
         device_files = []
         paths = glob.iglob(NET_CONF_PREF + '*')
         for ifcfg_file in paths:
-            with open(ifcfg_file) as f:
-                conf = dict(IfcfgAcquire._config_entry(line)
-                            for line in f
-                            if len(line) > 1 and not line.startswith('#'))
-                is_vlan_device = conf.get('TYPE', '').upper() == 'VLAN'
-                config_device = '{}.{}'.format(conf.get('PHYSDEV'),
-                                               conf.get('VLAN_ID'))
-                if is_vlan_device and config_device == device:
-                    device_files.append(ifcfg_file)
+            conf = misc.ifcfg_config(ifcfg_file)
+            is_vlan_device = conf.get('TYPE', '').upper() == 'VLAN'
+            config_device = '{}.{}'.format(conf.get('PHYSDEV'),
+                                           conf.get('VLAN_ID'))
+            if is_vlan_device and config_device == device:
+                device_files.append(ifcfg_file)
         return device_files
 
     @staticmethod
