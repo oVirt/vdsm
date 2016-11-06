@@ -749,7 +749,7 @@ class ImportVm(object):
         self._proc = None
 
     def start(self):
-        self._thread = concurrent.thread(self._run)
+        self._thread = concurrent.thread(self._run, name="v2v/" + self._id[:8])
         self._thread.start()
 
     def wait(self):
