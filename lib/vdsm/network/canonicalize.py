@@ -132,10 +132,15 @@ def _canonicalize_ip_default_route(data):
     if 'defaultRoute' not in data:
         data['defaultRoute'] = False
 
+    custom_default_route = utils.rget(data, ('custom', 'default_route'))
+    if custom_default_route is not None:
+        data['defaultRoute'] = utils.tobool(custom_default_route)
+
 
 def _canonicalize_nameservers(data):
     if 'nameservers' not in data:
-        # Nameservers are relevant only for the management network.
+        # Nameservers are relevant only for the default route network (usually
+        # the management network)
         if data['defaultRoute']:
             data['nameservers'] = dns.get_host_nameservers()
         else:
