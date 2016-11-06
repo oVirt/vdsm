@@ -236,7 +236,7 @@ class HSM_MailMonitor(object):
         tpSize = config.getint('irs', 'thread_pool_size') / 2
         waitTimeout = 3
         maxTasks = config.getint('irs', 'max_tasks')
-        self.tp = ThreadPool(tpSize, waitTimeout, maxTasks)
+        self.tp = ThreadPool("mailbox-hsm", tpSize, waitTimeout, maxTasks)
         self._stop = False
         self._flush = False
         self._queue = queue
@@ -267,7 +267,7 @@ class HSM_MailMonitor(object):
         self._initMailbox()  # Read initial mailbox state
         self._msgCounter = 0
         self._sendMail()  # Clear outgoing mailbox
-        self._thread = concurrent.thread(self.run, name="mailbox/hsm",
+        self._thread = concurrent.thread(self.run, name="mailbox-hsm",
                                          logger=self.log.name)
         self._thread.start()
 
@@ -532,7 +532,7 @@ class SPM_MailMonitor:
         tpSize = config.getint('irs', 'thread_pool_size') / 2
         waitTimeout = 3
         maxTasks = config.getint('irs', 'max_tasks')
-        self.tp = ThreadPool(tpSize, waitTimeout, maxTasks)
+        self.tp = ThreadPool("mailbox-spm", tpSize, waitTimeout, maxTasks)
         #  *** IMPORTANT NOTE: The SPM's inbox is the HSMs' outbox and vice
         #                      versa *** #
         self._inbox = os.path.join(self._spmStorageDir, self._poolID,
@@ -578,7 +578,7 @@ class SPM_MailMonitor:
             self.log.warning("SPM_MailMonitor couldn't clear outgoing mail, "
                              "dd failed")
 
-        t = concurrent.thread(self.run, name="mailbox/spm",
+        t = concurrent.thread(self.run, name="mailbox-spm",
                               logger=self.log.name)
         t.start()
         self.log.debug('SPM_MailMonitor created for pool %s' % self._poolID)

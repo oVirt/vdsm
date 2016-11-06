@@ -8,6 +8,7 @@
 
 from __future__ import print_function
 
+import itertools
 import logging
 import threading
 
@@ -25,12 +26,15 @@ class ThreadPool:
 
     log = logging.getLogger('storage.ThreadPool')
 
-    def __init__(self, numThreads, waitTimeout=3, maxTasks=100):
+    def __init__(self, name, numThreads, waitTimeout=3, maxTasks=100):
 
         """Initialize the thread pool with numThreads workers."""
 
-        self.log.debug("Enter - numThreads: %s, waitTimeout: %s, maxTasks: %s",
-                       numThreads, waitTimeout, maxTasks)
+        self.log.debug("Enter - name: %s, numThreads: %s, waitTimeout: %s, "
+                       "maxTasks: %s",
+                       name, numThreads, waitTimeout, maxTasks)
+        self._name = name
+        self._count = itertools.count()
         self.__threads = []
         self._taskThread = {}
         self.__resizeLock = threading.Condition(threading.Lock())
@@ -84,7 +88,8 @@ class ThreadPool:
 
         # If we need to grow the pool, do so
         while newNumThreads > len(self.__threads):
-            newThread = WorkerThread(self)
+            name = "%s/%d" % (self._name, next(self._count))
+            newThread = WorkerThread(self, name)
             self.__threads.append(newThread)
             newThread.start()
         # If we need to shrink the pool, do so
@@ -175,10 +180,10 @@ class WorkerThread(object):
 
     log = logging.getLogger('storage.ThreadPool.WorkerThread')
 
-    def __init__(self, pool):
+    def __init__(self, pool, name):
 
         """ Initialize the thread and remember the pool. """
-        self._thread = concurrent.thread(self.run)
+        self._thread = concurrent.thread(self.run, name=name)
         self.__pool = pool
         self.__isDying = False
 
@@ -198,18 +203,21 @@ class WorkerThread(object):
                 self.__pool.__tasks.put((id, cmd, args, callback))
             elif callback is None:
                 self.__pool.setRunningTask(True)
-                self._thread.name = id
-                self.log.debug("Task: %s running: %s with: %s" %
-                               (id, repr(cmd), repr(args)))
+                self.log.debug("Worker %s running task %s (cmd=%r, args=%r)",
+                               self._thread.name, id, cmd, args)
                 cmd(args)
                 self.__pool.setRunningTask(False)
             else:
                 self.__pool.setRunningTask(True)
-                self._thread.name = id
+                self.log.debug("Worker %s running task %s (callback=%r, "
+                               "cmd=%r, args=%r)",
+                               self._thread.name, id, callback, cmd, args)
                 callback(cmd(args))
                 self.__pool.setRunningTask(False)
         except Exception:
-            self.log.error("Task %s failed" % repr(cmd), exc_info=True)
+            self.log.exception("Worker %s failed to run task %s (callback=%r, "
+                               "cmd=%r, args=%r)",
+                               self._thread.name, id, callback, cmd, args)
 
     def run(self):
 
@@ -260,7 +268,7 @@ if __name__ == "__main__":
 
     # Create a pool with three worker threads
 
-    pool = ThreadPool(100)
+    pool = ThreadPool("work", 100)
 
     # Insert tasks into the queue and let them run
     print("Running tasks: ", pool.getRunningTasks(), "\n")

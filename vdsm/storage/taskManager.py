@@ -37,7 +37,7 @@ class TaskManager:
                  waitTimeout=3,
                  maxTasks=config.getint('irs', 'max_tasks')):
         self.storage_repository = config.get('irs', 'repository')
-        self.tp = ThreadPool(tpSize, waitTimeout, maxTasks)
+        self.tp = ThreadPool("tasks", tpSize, waitTimeout, maxTasks)
         self._tasks = {}
         self._unqueuedTasks = []
         self._insertTaskLock = threading.Lock()
