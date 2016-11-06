@@ -55,7 +55,7 @@ class Barrier(object):
     out, all threads waiting on this stage will timeout, since threads are
     waiting to each other.
 
-    Example usage:
+    Example usage::
 
         barrier = Barrier(5)
 

@@ -171,7 +171,7 @@ class DirectioChecker(object):
     Checker is not thread safe. Use EventLoop.call_soon_threadsafe() to start
     or stop a checker. The only thread safe method is wait().
 
-    Usage:
+    Usage::
 
         # Start the event loop thread
 

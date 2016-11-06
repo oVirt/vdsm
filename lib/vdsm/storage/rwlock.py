@@ -30,7 +30,7 @@ class RWLock(object):
     into a queue, and will be served in the order of the request.
 
     To acquire a write lock, use acquire_write(), followed by release() when
-    you are done.
+    you are done::
 
         lock.acquire_write()
 
@@ -38,7 +38,7 @@ class RWLock(object):
 
         lock.release()
 
-    If possible, use the RWLock.exclusive contextmanager:
+    If possible, use the RWLock.exclusive contextmanager::
 
         with lock.exclusive:
             do stuff that require an exclusive lock..
@@ -48,7 +48,7 @@ class RWLock(object):
     threads are served in the order they requested the lock.
 
     To acquire a read lock, use acquire_read(), followed by release() when you
-    are done:
+    are done::
 
         lock.acquire_read()
 
@@ -56,7 +56,7 @@ class RWLock(object):
 
         lock.release()
 
-    If possible, use the RWLock.shared contextmanager:
+    If possible, use the RWLock.shared contextmanager::
 
         with lock.shared:
             do stuff that require a shared lock..
