@@ -141,7 +141,7 @@ def tmap(func, iterable):
 
     threads = []
     for i, arg in enumerate(args):
-        t = thread(worker, args=(i, func, arg))
+        t = thread(worker, args=(i, func, arg), name="tmap/%d" % i)
         t.start()
         threads.append(t)
 
