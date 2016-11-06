@@ -595,6 +595,7 @@ def itmap(func, iterable, maxthreads=UNLIMITED_THREADS):
         except Exception as e:
             respQueue.put(e)
 
+    threadsCreated = 0
     threadsCount = 0
     for arg in iterable:
         if maxthreads != UNLIMITED_THREADS:
@@ -611,8 +612,10 @@ def itmap(func, iterable, maxthreads=UNLIMITED_THREADS):
                     maxthreads += 1
                     threadsCount -= 1
 
-        t = concurrent.thread(wrapper, args=(arg,))
+        name = "itmap/%d" % threadsCreated
+        t = concurrent.thread(wrapper, args=(arg,), name=name)
         t.start()
+        threadsCreated += 1
         threadsCount += 1
         maxthreads -= 1
 
