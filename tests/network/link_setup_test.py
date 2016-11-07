@@ -39,14 +39,17 @@ class LinkSetupBondTests(VdsmTestCase):
         config_mock = ConfMock()
 
         bond_slaves = ['nic1', 'nic2']
-        bond_attrs = {'nics': bond_slaves}
+        bond_options = 'mode=1 miimon=120 custom=foo:bar'
+        bond_attrs = {'nics': bond_slaves, 'options': bond_options}
         setup_new_bond = {BOND1_NAME: bond_attrs}
         setup_bonds = linksetup.SetupBonds(setup_new_bond, {}, {}, config_mock)
         setup_bonds.add_bonds()
 
         self.assertEqual(set(bond_slaves + [BOND1_NAME]),
                          setup_bonds.ifaces_for_acquirement)
-        BondMock.assert_called_once_with(BOND1_NAME, slaves=set(bond_slaves))
+        BondMock.assert_called_once_with(
+            BOND1_NAME, slaves=set(bond_slaves),
+            options={'mode': '1', 'miimon': '120', 'custom': {'foo': 'bar'}})
         config_mock.setBonding.assert_called_once_with(BOND1_NAME, bond_attrs)
         self._assert_ip_flush_called(bond_slaves, dhclient_mock, address_mock)
 
@@ -67,7 +70,8 @@ class LinkSetupBondTests(VdsmTestCase):
         config_mock = ConfMock()
 
         bond_slaves = {'nic1', 'nic2'}
-        bond_attrs = {'nics': list(bond_slaves)}
+        bond_options = 'mode=1 miimon=120 custom=foo:bar'
+        bond_attrs = {'nics': list(bond_slaves), 'options': bond_options}
         setup_edit_bond = {BOND1_NAME: bond_attrs}
 
         setup_bonds = linksetup.SetupBonds({}, setup_edit_bond, {},

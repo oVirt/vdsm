@@ -69,12 +69,11 @@ class SetupBonds(object):
 
         for bond, attrs in init_bond_pool:
             with bond:
+                if 'options' in attrs:
+                    bond.set_options(parse_bond_options(attrs['options']))
                 requested_slaves = frozenset(attrs['nics'])
                 slaves2add = self._slaves2add(bond.slaves, requested_slaves)
                 bond.add_slaves(slaves2add)
-
-            # TODO: Options
-            # attrs.get('options', '')
 
             self._config.setBonding(bond.master, attrs)
 
@@ -84,11 +83,13 @@ class SetupBonds(object):
     def add_bonds(self):
         for bond_name, attrs in six.iteritems(self._bonds2add):
             requested_slaves = set(attrs['nics'])
-            with Bond(bond_name, slaves=requested_slaves) as bond:
+            if 'options' in attrs:
+                requested_options = parse_bond_options(attrs['options'])
+            else:
+                requested_options = None
+            with Bond(bond_name, slaves=requested_slaves,
+                      options=requested_options) as bond:
                 bond.create()
-
-            # TODO: Options
-            # attrs.get('options', '')
 
             self._config.setBonding(bond_name, attrs)
 

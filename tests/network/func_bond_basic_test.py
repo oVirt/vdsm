@@ -39,6 +39,15 @@ class BondBasicTemplate(NetFuncTestCase):
             with self.setupNetworks({}, BONDCREATE, NOCHK):
                 self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
+    def test_add_bond_with_two_nics_and_options(self):
+        with dummy_devices(2) as (nic1, nic2):
+            BONDCREATE = {BOND_NAME: {
+                'nics': [nic1, nic2], 'options': 'mode=3 miimon=150',
+                'switch': self.switch}}
+
+            with self.setupNetworks({}, BONDCREATE, NOCHK):
+                self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+
     def test_remove_bond(self):
         with dummy_devices(2) as (nic1, nic2):
             BONDCREATE = {
@@ -80,7 +89,7 @@ class BondBasicTemplate(NetFuncTestCase):
         with dummy_devices(2) as nics:
             BONDCREATE = {BOND_NAME: {'nics': nics,
                                       'switch': self.switch,
-                                      'options': 'mode=1'}}
+                                      'options': 'mode=1 miimon=150'}}
             BONDEDIT = {BOND_NAME: {'nics': nics,
                                     'switch': self.switch,
                                     'options': 'mode=3'}}
