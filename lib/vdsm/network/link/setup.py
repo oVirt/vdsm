@@ -65,7 +65,10 @@ class SetupBonds(object):
                 bond.del_slaves(slaves2remove)
 
             # Saving only a partial bond config, overwritten in the next step.
-            self._config.setBonding(bond.master, {'nics': list(bond.slaves)})
+            self._config.setBonding(
+                bond.master,
+                {'nics': list(bond.slaves), 'options': bond.options,
+                 'switch': attrs['switch']})
 
         for bond, attrs in init_bond_pool:
             with bond:

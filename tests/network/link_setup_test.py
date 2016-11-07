@@ -40,7 +40,8 @@ class LinkSetupBondTests(VdsmTestCase):
 
         bond_slaves = ['nic1', 'nic2']
         bond_options = 'mode=1 miimon=120 custom=foo:bar'
-        bond_attrs = {'nics': bond_slaves, 'options': bond_options}
+        bond_attrs = {'nics': bond_slaves, 'options': bond_options,
+                      'switch': 'foo'}
         setup_new_bond = {BOND1_NAME: bond_attrs}
         setup_bonds = linksetup.SetupBonds(setup_new_bond, {}, {}, config_mock)
         setup_bonds.add_bonds()
@@ -71,7 +72,8 @@ class LinkSetupBondTests(VdsmTestCase):
 
         bond_slaves = {'nic1', 'nic2'}
         bond_options = 'mode=1 miimon=120 custom=foo:bar'
-        bond_attrs = {'nics': list(bond_slaves), 'options': bond_options}
+        bond_attrs = {'nics': list(bond_slaves), 'options': bond_options,
+                      'switch': 'foo'}
         setup_edit_bond = {BOND1_NAME: bond_attrs}
 
         setup_bonds = linksetup.SetupBonds({}, setup_edit_bond, {},
