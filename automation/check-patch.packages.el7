@@ -21,9 +21,6 @@ python-pthreading
 python-rtslib
 python-setuptools
 python-six
-python34-nose
-python34-six
-python34
 rpm-build
 sanlock-python
 sudo
