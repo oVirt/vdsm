@@ -22,6 +22,11 @@ from collections import deque
 from vdsm import utils
 import re
 
+# REQUIRED_FOR: engine-3.5
+# safe to remove when 3.5 support is dropped
+LEGACY_SUBSCRIPTION_ID_REQUEST = "/queue/_local/vdsm/requests"
+LEGACY_SUBSCRIPTION_ID_RESPONSE = "/queue/_local/vdsm/reponses"
+
 _RE_ESCAPE_SEQUENCE = re.compile(r"\\(.)")
 
 _RE_ENCODE_CHARS = re.compile(r"[\r\n\\:]")

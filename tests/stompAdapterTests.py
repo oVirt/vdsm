@@ -25,7 +25,8 @@ from yajsonrpc.betterAsyncore import Reactor
 from yajsonrpc.stomp import \
     Command, \
     Frame, \
-    Headers
+    Headers, \
+    LEGACY_SUBSCRIPTION_ID_REQUEST
 from yajsonrpc.stompreactor import StompAdapterImpl
 
 
@@ -260,7 +261,7 @@ class SendFrameTest(TestCaseBase):
         self.assertTrue(len(ids) == 1)
 
     def test_send_legacy(self):
-        dest = 'jms.topic.vdsm_requests'
+        dest = LEGACY_SUBSCRIPTION_ID_REQUEST
         frame = Frame(command=Command.SEND,
                       headers={Headers.DESTINATION: dest,
                                Headers.REPLY_TO: 'jms.topic.vdsm_responses',
