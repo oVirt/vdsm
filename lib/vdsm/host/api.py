@@ -22,7 +22,6 @@ from __future__ import absolute_import
 import errno
 import logging
 import time
-from . import uuid
 from . import stats
 from vdsm import cpuarch
 from vdsm import hooks
@@ -82,7 +81,7 @@ def get_stats(cif, sample):
 
 
 def send_metrics(hoststats):
-    prefix = "hosts." + uuid()
+    prefix = "hosts"
     data = {}
 
     try:

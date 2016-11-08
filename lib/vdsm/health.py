@@ -28,7 +28,6 @@ from . config import config
 from . import concurrent
 from . import cpuarch
 from . import metrics
-from . import host
 
 _monitor = None
 
@@ -122,7 +121,7 @@ class Monitor(object):
                        self._stats['threads'])
 
     def _report_stats(self):
-        prefix = "hosts." + host.uuid() + ".vdsm"
+        prefix = "hosts.vdsm"
         report = {}
         report[prefix + '.gc.uncollectable'] = \
             self._stats['uncollectable_obj']
