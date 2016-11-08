@@ -124,8 +124,6 @@ def send_metrics(hoststats):
                 if_info = hoststats['network'][interface]
                 net_prefix = prefix + '.nic.' + interface
                 data[net_prefix + '.speed'] = if_info['speed']
-                data[net_prefix + '.rx_rate'] = if_info['rxRate']
-                data[net_prefix + '.tx_rate'] = if_info['txRate']
                 data[net_prefix + '.rx_errors'] = if_info['rxErrors']
                 data[net_prefix + '.tx_errors'] = if_info['txErrors']
                 data[net_prefix + '.rx_dropped'] = if_info['rxDropped']
