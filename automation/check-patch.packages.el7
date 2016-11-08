@@ -2,14 +2,13 @@ autoconf
 automake
 gdb
 git
-lago
-lago-ovirt
 libguestfs-tools-c
 m2crypto
 make
 mom
 openvswitch
 policycoreutils-python
+PyYAML
 python-blivet
 python-coverage
 python-decorator
@@ -30,5 +29,3 @@ sanlock-python
 sudo
 yum
 yum-utils
-# Needed by lago
-grubby
