@@ -241,7 +241,7 @@ def send_metrics(vms_stats):
 
             if 'network' in stat:
                 for interface in stat['network']:
-                    netprefix = prefix + '.network_interfaces.' + interface
+                    netprefix = prefix + '.nic.' + interface
                     if_info = stat['network'][interface]
                     data[netprefix + '.speed'] = if_info['speed']
                     data[netprefix + '.rx.bytes'] = if_info['rx']
