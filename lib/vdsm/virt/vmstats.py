@@ -211,7 +211,7 @@ def send_metrics(vms_stats):
 
             if 'disks' in stat:
                 for disk in stat['disks']:
-                    diskprefix = prefix + '.vm_disk.' + disk
+                    diskprefix = prefix + '.disk.' + disk
                     diskinfo = stat['disks'][disk]
 
                     data[diskprefix + '.read.latency'] = \
