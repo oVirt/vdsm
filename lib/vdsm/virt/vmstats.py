@@ -244,13 +244,13 @@ def send_metrics(vms_stats):
                     netprefix = prefix + '.nic.' + interface
                     if_info = stat['network'][interface]
                     data[netprefix + '.speed'] = if_info['speed']
-                    data[netprefix + '.rx.bytes'] = if_info['rx']
-                    data[netprefix + '.rx.errors'] = if_info['rxErrors']
-                    data[netprefix + '.rx.dropped'] = if_info['rxDropped']
+                    data[netprefix + '.rx_bytes'] = if_info['rx']
+                    data[netprefix + '.rx_errors'] = if_info['rxErrors']
+                    data[netprefix + '.rx_dropped'] = if_info['rxDropped']
 
-                    data[netprefix + '.tx.bytes'] = if_info['tx']
-                    data[netprefix + '.tx.errors'] = if_info['txErrors']
-                    data[netprefix + '.tx.dropped'] = if_info['txDropped']
+                    data[netprefix + '.tx_bytes'] = if_info['tx']
+                    data[netprefix + '.tx_errors'] = if_info['txErrors']
+                    data[netprefix + '.tx_dropped'] = if_info['txDropped']
 
         # Guest cpu-count,apps list, status, mac addr, client IP,
         # display type, kvm enabled, username, vcpu info, vm jobs,
