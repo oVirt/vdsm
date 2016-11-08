@@ -514,13 +514,15 @@ class VMBulkSampler(object):
         vm_samples = self._stats_cache.get_batch()
         if vm_samples is None:
             return
-        stats = {
-            vm_id: vmstats.produce(vms[vm_id],
-                                   vm_sample.first_value,
-                                   vm_sample.last_value,
-                                   vm_sample.interval)
-            for vm_id, vm_sample in six.iteritems(vm_samples)
-        }
+        stats = {}
+        for vm_id, vm_sample in six.iteritems(vm_samples):
+            vm_obj = vms[vm_id]
+            vm_data = vmstats.produce(vm_obj,
+                                      vm_sample.first_value,
+                                      vm_sample.last_value,
+                                      vm_sample.interval)
+            vm_data["vmName"] = vm_obj.name
+            stats[vm_id] = vm_data
         vmstats.send_metrics(stats)
 
     def _get_responsive_doms(self):

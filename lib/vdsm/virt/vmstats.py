@@ -194,8 +194,8 @@ def send_metrics(vms_stats):
     data = {}
     try:
         for vm_uuid in vms_stats:
-            prefix = "vms." + vm_uuid
             stat = vms_stats[vm_uuid]
+            prefix = "vms." + stat['vmName']
             data[prefix + '.cpu.user'] = stat['cpuUser']
             data[prefix + '.cpu.sys'] = stat['cpuSys']
             data[prefix + '.cpu.usage'] = stat['cpuUsage']
