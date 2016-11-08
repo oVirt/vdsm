@@ -452,8 +452,8 @@ parameters = [
 
     # Section: [metrics]
     ('metrics', [
-        ('enabled', 'true',
-            'Enable metrics collection (default true)'),
+        ('enabled', 'false',
+            'Enable metrics collection (default false)'),
 
         ('collector_address', 'localhost',
             'Metrics collector address (default localhost)'),
