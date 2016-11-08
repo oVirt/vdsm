@@ -18,7 +18,6 @@ python-ioprocess
 python-mock
 python-netaddr
 python-pthreading
-python-rtslib
 python-six
 python34-nose
 python34-six

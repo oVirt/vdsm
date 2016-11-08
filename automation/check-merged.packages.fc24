@@ -22,7 +22,6 @@ python-ioprocess
 python-mock
 python-netaddr
 python-pthreading
-python-rtslib
 python-six
 python3-decorator
 python3-netaddr
