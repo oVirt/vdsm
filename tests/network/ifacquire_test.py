@@ -41,12 +41,15 @@ PARTIALLY_ACQUIRED_NIC_IFCFG = ifacquire.ACQUIRED_IFCFG_PREFIX + [
     'MTU=1500\n',
     'NM_CONTROLLED=no  # Set by VDSM\n']
 
-FULLY_ACQUIRED_NIC_IFCFG = ifacquire.ACQUIRED_IFCFG_PREFIX + [
+IFCFG_WITHOUT_NEEDED_CHANGES = [
     'DEVICE=' + NIC_NAME + '\n',
     'BOOTPROTO=dhcp\n',
     'ONBOOT=no  # Changed by VDSM, original: ONBOOT=yes\n',
     'MTU=1500\n',
     'NM_CONTROLLED=no  # Set by VDSM\n']
+
+FULLY_ACQUIRED_NIC_IFCFG = (
+    ifacquire.ACQUIRED_IFCFG_PREFIX + IFCFG_WITHOUT_NEEDED_CHANGES)
 
 NETINFO_NETS = {
     'net1': {
@@ -97,6 +100,12 @@ class AcquireNicTest(VdsmTestCase):
     def test_acquire_once_owned_ifcfg_nic(self):
         self._test_acquire_ifcfg_nic(
             original_ifcfg=FULLY_ACQUIRED_NIC_IFCFG,
+            ifcfg_after_turn_down=FULLY_ACQUIRED_NIC_IFCFG,
+            ifcfg_after_disable_onboot=FULLY_ACQUIRED_NIC_IFCFG)
+
+    def test_acquire_prepared_nic(self):
+        self._test_acquire_ifcfg_nic(
+            original_ifcfg=IFCFG_WITHOUT_NEEDED_CHANGES,
             ifcfg_after_turn_down=FULLY_ACQUIRED_NIC_IFCFG,
             ifcfg_after_disable_onboot=FULLY_ACQUIRED_NIC_IFCFG)
 

@@ -119,22 +119,34 @@ def _disable_onboot_ifcfg_iface(iface):
 def _set_ifcfg_param(iface, key, value):
     with utils.atomic_file_write(ifcfg.NET_CONF_PREF + iface, 'r+') as f:
         lines = f.readlines()
+        lines = _mark_ifcfg_with_prefix(lines)
 
-        if lines[0] != ACQUIRED_IFCFG_TAG:
-            lines = ACQUIRED_IFCFG_PREFIX + lines
-
-        configured = False
-        for i, line in enumerate(lines):
-            parsed_line = re.split('=| |\n', line)
-            if parsed_line[0] == key and parsed_line[1] != value:
-                lines[i] = '{}={}  # Changed by VDSM, original: {}'.format(
-                    key, value, lines[i])
-                configured = True
-        if not configured:
+        line_index, current_value = _ifcfg_key_lookup(lines, key)
+        if line_index is None:
             lines.append('{}={}  # Set by VDSM\n'.format(key, value))
+        else:
+            if current_value != value:
+                lines[line_index] = (
+                    '{}={}  # Changed by VDSM, original: {}'.format(
+                        key, value, lines[line_index]))
 
         f.seek(0)
         f.writelines(lines)
+
+
+def _mark_ifcfg_with_prefix(lines):
+    if lines[0] == ACQUIRED_IFCFG_TAG:
+        return lines
+    else:
+        return ACQUIRED_IFCFG_PREFIX + lines
+
+
+def _ifcfg_key_lookup(lines, key):
+    for i, line in enumerate(lines):
+        parsed_line = re.split('=| |\n', line)
+        if parsed_line[0] == key:
+            return i, parsed_line[1]
+    return None, None
 
 
 def _release_non_ifcfg_iface(iface):
