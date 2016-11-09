@@ -19,6 +19,8 @@
 #
 
 from __future__ import absolute_import
+
+import logging
 import shlex
 
 from vdsm.network.ipwrapper import getLinks
@@ -44,8 +46,8 @@ def ifcfg_config(ifcfg_file):
                 if k in _IFCFG_ZERO_SUFFIXED:
                     k = k[:-1]
                 ifaceCfg[k] = v
-    except Exception:
-        pass
+    except:
+        logging.exception('error reading ifcfg file {}'.format(ifcfg_file))
     return ifaceCfg
 
 

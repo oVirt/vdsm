@@ -238,6 +238,14 @@ class TestNetinfo(TestCaseBase):
         self.assertEqual(resulted_ifcfg['GATEWAY'], gateway)
         self.assertEqual(resulted_ifcfg['NETMASK'], netmask)
 
+    @mock.patch.object(misc, 'open', create=True)
+    def test_missing_ifcfg_file(self, mock_open):
+        mock_open.return_value.__enter__.side_effect = IOError()
+
+        ifcfg = misc.getIfaceCfg('eth0')
+
+        self.assertEqual(ifcfg, {})
+
     @broken_on_ci(exception=AssertionError)
     @mock.patch.object(bonding, 'BONDING_DEFAULTS',
                        bonding.BONDING_DEFAULTS
