@@ -31,7 +31,7 @@ def getUUID(*args):
     """
     if len(args) > 1:
         raise ExtraArgsError()
-    hostUUID = host.uuid(False)
+    hostUUID = host.uuid()
     if hostUUID is None:
         raise EnvironmentError('Cannot retrieve host UUID')
     sys.stdout.write(hostUUID + '\n')
