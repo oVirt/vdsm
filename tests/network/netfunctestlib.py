@@ -20,6 +20,7 @@
 
 from __future__ import absolute_import
 
+from contextlib import contextmanager
 from copy import deepcopy
 
 import six
@@ -374,6 +375,13 @@ class NetFuncTestCase(VdsmTestCase):
         # breaks.
         self.assertEqual(running_config['networks'], kernel_config['networks'])
         self.assertEqual(running_config['bonds'], kernel_config['bonds'])
+
+    @contextmanager
+    def reset_persistent_config(self):
+        try:
+            yield
+        finally:
+            self.vdsm_proxy.setSafeNetworkConfig()
 
 
 def _ipv4_is_unused(attrs):

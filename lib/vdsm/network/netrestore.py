@@ -26,6 +26,8 @@ import six
 
 from vdsm.config import config
 from vdsm.constants import P_VDSM_RUN
+from vdsm.network.link import setup
+from vdsm.network.link.bond import Bond
 from vdsm.utils import tobool
 
 from . import netswitch
@@ -60,13 +62,22 @@ def init_nets():
         with _try2execute('IPv6autoconf for {} failed.'.format(net)):
             netswitch.setup_ipv6autoconf({net: attrs})
 
-    for net, attrs in six.iteritems(nets):
-        with _try2execute('Setting links up for {} failed.'.format(net)):
-            netswitch.set_ovs_links_up({net: attrs}, {}, {})
+    for bond_name, attrs in six.iteritems(bonds):
+        with _try2execute('Restoration of bond {} failed.'.format(bond_name)):
+            requested_slaves = set(attrs['nics'])
+            requested_options = (setup.parse_bond_options(attrs['options'])
+                                 if 'options' in attrs else None)
+            with Bond(bond_name, slaves=requested_slaves,
+                      options=requested_options) as bond:
+                bond.create()
 
     for bond, attrs in six.iteritems(bonds):
         with _try2execute('Setting links up for {} failed.'.format(bond)):
             netswitch.set_ovs_links_up({}, {bond: attrs}, {})
+
+    for net, attrs in six.iteritems(nets):
+        with _try2execute('Setting links up for {} failed.'.format(net)):
+            netswitch.set_ovs_links_up({net: attrs}, {}, {})
 
     for net, attrs in six.iteritems(nets):
         with _try2execute('IP config for {} failed.'.format(net)):
