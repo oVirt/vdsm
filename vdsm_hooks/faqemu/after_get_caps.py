@@ -51,6 +51,8 @@ _X86_64_MACHINES = ['pc-i440fx-rhel7.1.0',
                     'rhel6.4.0',
                     'rhel6.0.0',
                     'rhel6.5.0']
+_AARCH64_MACHINES = ['virt',
+                     'virt-rhel7.3.0']
 
 
 def _usage():
@@ -91,6 +93,10 @@ def _fake_caps_arch(caps, arch):
         caps['emulatedMachines'] = _PPC64LE_MACHINES
         caps['cpuModel'] = 'POWER 8(fake)'
         caps['cpuFlags'] = 'powernv,model_POWER8'
+    elif cpuarch.is_arm(arch):
+        caps['emulatedMachines'] = _AARCH64_MACHINES
+        caps['cpuModel'] = 'AARCH64 (fake)'
+        caps['cpuFlags'] = ''
     else:
         raise cpuarch.UnsupportedArchitecture(arch)
 
