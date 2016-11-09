@@ -22,15 +22,35 @@ from __future__ import absolute_import
 import six
 
 from vdsm.network import errors as ne
+from vdsm.network.netconfpersistence import RunningConfig
 
 from .address import IPv4, IPv6
 
 
 def validate(nets):
+    default_route_nets = set()
+    no_default_route_nets = set()
     for net, attrs in six.iteritems(nets):
         if 'remove' in attrs:
             continue
         _validate_nameservers(net, attrs)
+
+        if attrs['defaultRoute']:
+            default_route_nets.add(net)
+        else:
+            no_default_route_nets.add(net)
+
+    _validate_default_route(default_route_nets, no_default_route_nets)
+
+
+def _validate_default_route(default_route_nets, no_default_route_nets):
+    for net, attrs in six.iteritems(RunningConfig().networks):
+        if attrs['defaultRoute'] and net not in no_default_route_nets:
+            default_route_nets.add(net)
+    if len(default_route_nets) > 1:
+        raise ne.ConfigNetworkError(
+            ne.ERR_BAD_PARAMS,
+            'Only a singe default route network is allowed.')
 
 
 def _validate_nameservers(net, attrs):
