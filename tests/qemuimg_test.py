@@ -480,7 +480,8 @@ class TestMap(TestCaseBase):
             offset = 64 * 1024
             image = os.path.join(tmpdir, "base.img")
             fmt = qemuimg.FORMAT.RAW
-            qemuimg.create(image, size=size, format=fmt)
+            qemuimg.create(image, size=size, format=fmt,
+                           qcow2Compat=qcow2_compat)
             qemu_pattern_write(image, fmt, offset=offset, len=length,
                                pattern=0xf0)
 
@@ -524,7 +525,8 @@ class TestMap(TestCaseBase):
             image = os.path.join(tmpdir, "base.img")
             fmt = qemuimg.FORMAT.QCOW2
             size = 1048576
-            qemuimg.create(image, size=size, format=fmt)
+            qemuimg.create(image, size=size, format=fmt,
+                           qcow2Compat=qcow2_compat)
             qemu_pattern_write(image, fmt, offset=offset, len=length,
                                pattern=0xf0)
 
