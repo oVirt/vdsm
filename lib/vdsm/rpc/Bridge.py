@@ -422,6 +422,7 @@ command_info = {
     'Volume_create': {'ret': 'uuid'},
     'Volume_delete': {'ret': 'uuid'},
     'Volume_getInfo': {'ret': 'info'},
+    'Volume_getQemuImageInfo': {'ret': 'info'},
     'Volume_getPath': {'ret': 'path'},
     'Volume_getSize': {'ret': Volume_getsize_Ret},
     'Volume_extendSize': {'ret': 'uuid'},

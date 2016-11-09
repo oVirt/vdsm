@@ -563,6 +563,25 @@ types:
             TEMP: The disk is used for temporary storage space
             UNKNOWN: The type is not specified
 
+    QemuImageFormat: &QemuImageFormat
+        added: '4.1'
+        description: An enumeration of qemu image format.
+        name: QemuImageFormat
+        type: enum
+        values:
+            raw: The Volume writes raw data directly to the backing image
+            qcow2: The Volume uses the Qemu Qcow image format
+
+    Qcow2Compat: &Qcow2Compat
+        added: '4.1'
+        description: An enumeration of qcow compat version.
+        name: Qcow2Compat
+        type: enum
+        values:
+            0.10: qemu versions 0.10 which are supported by QCOW2
+            1.1: qemu versions starting with 1.1 which are supported by
+                 QCOW2 version 3.
+
     VolumeFormat: &VolumeFormat
         added: '3.1'
         description: An enumeration of Volume data formats.
@@ -7040,6 +7059,31 @@ types:
             type: uint
         type: object
 
+    QemuImageInfo: &QemuImageInfo
+        added: '4.1'
+        description: Volume's information returned from qemuimg info.
+        name: QemuImageInfo
+        properties:
+        -   description: The format used to write data to the Volume
+            name: format
+            type: *QemuImageFormat
+        -   description: The size of the Volume (in bytes)
+            name: virtualsize
+            type: uint
+        -   description: The cluster size of the Volume in bytes.
+            name: clustersize
+            type: uint
+        -   description: The backing file name.
+                         New volumes will always use uuid of the volume,
+                         while old volumes will use relative path of the volume
+                         (../image-uuid/vol-uuid).
+            name: backingfile
+            type: string
+        -   description: The compat version.
+            name: compat
+            type: *Qcow2Compat
+        type: object
+
     VolumeSizeInfo: &VolumeSizeInfo
         added: '3.1'
         description: 'Volume size information:'
@@ -9772,6 +9816,32 @@ Volume.getInfo:
     return:
         description: Volume information
         type: *VolumeInfo
+
+Volume.getQemuImageInfo:
+    added: '4.1'
+    description: Information returned from qemuimg info about a Volume.
+                 This verb must be called when the volume is prepared.
+                 The caller is responsible to prepare and teardown
+                 the image.
+    params:
+    -   description: The UUID of the Volume
+        name: volumeID
+        type: *UUID
+
+    -   description: The Storage Pool associated with the Volume
+        name: storagepoolID
+        type: *UUID
+
+    -   description: The Storage Domain associated with the Volume
+        name: storagedomainID
+        type: *UUID
+
+    -   description: The Image associated with the Volume
+        name: imageID
+        type: *UUID
+    return:
+        description: The Volume's qemuimg info
+        type: *QemuImageInfo
 
 Volume.getSize:
     added: '3.1'

@@ -3041,6 +3041,30 @@ class HSM(object):
         return dict(info=info)
 
     @public
+    def getQemuImageInfo(self, sdUUID, spUUID, imgUUID, volUUID, options=None):
+        """
+        Gets a volume's qemuimg info.
+        This command should work only if the volume was already prepared.
+
+        :param sdUUID: The UUID of the storage domain that owns the volume.
+        :type sdUUID: UUID
+        :param spUUID: The UUID of the storage pool that owns the volume.
+        :type spUUID: UUID
+        :param imgUUID: The UUID of the image contained on the volume.
+        :type imgUUID: UUID
+        :param volUUID: The UUID of the volume you want to get the info on.
+        :type volUUID: UUID
+
+        :returns: The volume information as returned by qemu-img info command.
+        :rtype: dict
+        """
+        vars.task.getSharedLock(STORAGE, sdUUID)
+        sd = sdCache.produce(sdUUID)
+        vol = sd.produceVolume(imgUUID, volUUID)
+        info = vol.getQemuImageInfo()
+        return dict(info=info)
+
+    @public
     def appropriateDevice(self, guid, thiefId):
         """
         Change ownership of the guid device to vdsm:qemu

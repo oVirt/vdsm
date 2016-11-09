@@ -249,6 +249,13 @@ class VolumeManifest(object):
                       self.sdUUID, self.imgUUID, self.volUUID, str(info))
         return info
 
+    def getQemuImageInfo(self):
+        """
+        Returns volume information as returned by qemu-img info command
+        """
+        return qemuimg.info(self.getVolumePath(),
+                            sc.fmt2str(self.getFormat()))
+
     def getVolumeParams(self, bs=sc.BLOCK_SIZE):
         volParams = {}
         volParams['volUUID'] = self.volUUID
@@ -1165,6 +1172,9 @@ class Volume(object):
 
     def getInfo(self):
         return self._manifest.getInfo()
+
+    def getQemuImageInfo(self):
+        return self._manifest.getQemuImageInfo()
 
     def getParentVolume(self):
         """
