@@ -29,8 +29,9 @@ from .config import config
 X86_64 = 'x86_64'
 PPC64 = 'ppc64'
 PPC64LE = 'ppc64le'
+AARCH64 = 'aarch64'
 
-SUPPORTED_ARCHITECTURES = (X86_64, PPC64, PPC64LE)
+SUPPORTED_ARCHITECTURES = (X86_64, PPC64, PPC64LE, AARCH64)
 
 PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 
@@ -87,6 +88,10 @@ def is_ppc(arch):
 
 def is_x86(arch):
     return arch == X86_64
+
+
+def is_arm(arch):
+    return arch == AARCH64
 
 
 def _supported(target_arch):
