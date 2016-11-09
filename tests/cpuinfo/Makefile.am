@@ -23,4 +23,5 @@ vdsmcpudatatestsdir = ${vdsmtestsdir}/cpuinfo
 dist_vdsmcpudatatests_DATA = \
 	cpuinfo_E5649_x86_64.out \
 	cpuinfo_POWER8E_ppc64le.out \
+	cpuinfo_aarch64.out \
 	$(NULL)

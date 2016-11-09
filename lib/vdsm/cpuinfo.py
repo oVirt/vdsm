@@ -49,6 +49,10 @@ def _cpuinfo():
         fields['platform'] = 'unavailable'
         fields['machine'] = 'unavailable'
         fields['ppcmodel'] = 'unavailable'
+    if cpuarch.is_arm(cpuarch.real()):
+        fields['platform'] = 'unavailable'
+        fields['machine'] = 'unavailable'
+        fields['ppcmodel'] = 'unavailable'
 
     with open(_PATH) as info:
         for line in info:
@@ -59,11 +63,17 @@ def _cpuinfo():
 
             if key == 'flags':  # x86_64
                 fields['flags'] = value.split()
+            elif key == 'Features':  # aarch64
+                fields['flags'] = value.split()
             elif key == 'cpu MHz':  # x86_64
+                fields['frequency'] = value
+            elif key == 'BogoMIPS':  # aarch64
                 fields['frequency'] = value
             elif key == 'clock':  # ppc64, ppc64le
                 fields['frequency'] = value[:-3]
             elif key == 'model name':  # x86_64
+                fields['model'] = value
+            elif key == 'CPU part':  # aarch64
                 fields['model'] = value
             elif key == 'model':  # ppc64le
                 fields['ppcmodel'] = value

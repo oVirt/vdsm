@@ -70,6 +70,14 @@ class TestCpuInfo(TestCaseBase):
         self.assertEqual(cpuinfo.platform(), 'PowerNV')
         self.assertEqual(cpuinfo.machine(), 'PowerNV 8247-22L')
 
+    @MonkeyPatch(cpuinfo, '_PATH', _outfile('cpuinfo_aarch64.out'))
+    @MonkeyPatch(platform, 'machine', lambda: cpuarch.AARCH64)
+    def test_cpuinfo_aarch64(self):
+        self.assertEqual(cpuinfo.flags(), ['fp', 'asimd', 'evtstrm'])
+        self.assertEqual(cpuinfo.frequency(), '100.00')
+        self.assertEqual(cpuinfo.model(),
+                         '0x000')
+
     @MonkeyPatch(cpuinfo, '_PATH', _outfile('cpuinfo_E5649_x86_64.out'))
     @MonkeyPatch(platform, 'machine', lambda: 'noarch')
     def test_cpuinfo_unsupported_arch(self):
