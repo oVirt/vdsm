@@ -18,13 +18,20 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 
+import logging
+
+
 DNS_CONF_FILE = '/etc/resolv.conf'
 
 
 def get_host_nameservers():
     """Returns a list of nameservers listed in /etc/resolv.conf"""
-    with open(DNS_CONF_FILE, 'r') as file_object:
-        file_text = file_object.read()
+    try:
+        with open(DNS_CONF_FILE, 'r') as file_object:
+            file_text = file_object.read()
+    except IOError as e:
+        logging.warning('Failed to read {}: {}'.format(DNS_CONF_FILE, e))
+        return []
     return _parse_nameservers(file_text)
 
 

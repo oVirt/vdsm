@@ -38,6 +38,7 @@ from .ipwrapper_test import _fakeTypeDetection
 from modprobe import RequireBondingMod
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from .nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
+from testlib import mock
 from testlib import VdsmTestCase as TestCaseBase, namedTemporaryDir
 from testValidation import ValidateRunningAsRoot
 from testValidation import broken_on_ci
@@ -69,6 +70,14 @@ class TestNetinfo(TestCaseBase):
 
                     self.assertEqual(
                         dns.get_host_nameservers(), nameservers)
+
+    @mock.patch.object(dns, 'open', create=True)
+    def test_get_host_nameservers_no_resolvconf(self, mock_open):
+        mock_open.return_value.__enter__.side_effect = IOError()
+
+        nameservers = dns.get_host_nameservers()
+
+        self.assertEqual(nameservers, [])
 
     def testNetmaskConversions(self):
         path = os.path.join(os.path.dirname(__file__), "netmaskconversions")
