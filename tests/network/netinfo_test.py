@@ -65,6 +65,14 @@ class TestNetinfo(TestCaseBase):
 
                     self.assertEqual(dns.get_host_nameservers(), nameservers)
 
+    @mock.patch.object(dns, 'open', create=True)
+    def test_get_host_nameservers_no_resolvconf(self, mock_open):
+        mock_open.return_value.__enter__.side_effect = IOError()
+
+        nameservers = dns.get_host_nameservers()
+
+        self.assertEqual(nameservers, [])
+
     def testNetmaskConversions(self):
         path = os.path.join(os.path.dirname(__file__), "netmaskconversions")
         with open(path) as netmaskFile:
