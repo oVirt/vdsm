@@ -23,10 +23,8 @@ from collections import deque
 from vdsm import utils
 import re
 
-# REQUIRED_FOR: engine-3.5
-# safe to remove when 3.5 support is dropped
-LEGACY_SUBSCRIPTION_ID_REQUEST = "/queue/_local/vdsm/requests"
-LEGACY_SUBSCRIPTION_ID_RESPONSE = "/queue/_local/vdsm/reponses"
+SUBSCRIPTION_ID_REQUEST = "jms.topic.vdsm_requests"
+SUBSCRIPTION_ID_RESPONSE = "jms.topic.vdsm_responses"
 
 _RE_ESCAPE_SEQUENCE = re.compile(r"\\(.)")
 

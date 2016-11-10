@@ -201,11 +201,6 @@ class StompAdapterImpl(object):
                                   frame.headers.get(stomp.Headers.REPLY_TO),
                                   frame.body)
             return
-        elif stomp.LEGACY_SUBSCRIPTION_ID_REQUEST == destination:
-            self._handle_internal(dispatcher,
-                                  stomp.LEGACY_SUBSCRIPTION_ID_RESPONSE,
-                                  frame.body)
-            return
         else:
             try:
                 subs = self._sub_dests[destination]
@@ -324,7 +319,7 @@ class StompServer(object):
     """
     Sends message to all subscribes that subscribed to destination.
     """
-    def send(self, message, destination=stomp.LEGACY_SUBSCRIPTION_ID_RESPONSE):
+    def send(self, message, destination=stomp.SUBSCRIPTION_ID_RESPONSE):
         resp = json.loads(message)
         response_id = resp.get("id")
 
@@ -404,7 +399,7 @@ class StompClient(object):
         self._reactor.wakeup()
         return sub
 
-    def send(self, message, destination=stomp.LEGACY_SUBSCRIPTION_ID_RESPONSE,
+    def send(self, message, destination=stomp.SUBSCRIPTION_ID_RESPONSE,
              headers=None):
         self.log.debug("Sending response")
         self._aclient.send(

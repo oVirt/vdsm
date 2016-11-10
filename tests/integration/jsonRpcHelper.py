@@ -31,8 +31,8 @@ from vdsm.rpc.bindingxmlrpc import BindingXMLRPC, XmlDetector
 from yajsonrpc.betterAsyncore import Reactor
 from yajsonrpc.stompreactor import StompDetector, StompRpcClient
 from yajsonrpc.stomp import (
-    LEGACY_SUBSCRIPTION_ID_REQUEST,
-    LEGACY_SUBSCRIPTION_ID_RESPONSE
+    SUBSCRIPTION_ID_REQUEST,
+    SUBSCRIPTION_ID_RESPONSE
 )
 from yajsonrpc import Notification
 from vdsm.config import config
@@ -90,7 +90,7 @@ class FakeClientIf(object):
 
 @contextmanager
 def constructAcceptor(log, ssl, jsonBridge,
-                      dest=LEGACY_SUBSCRIPTION_ID_RESPONSE):
+                      dest=SUBSCRIPTION_ID_RESPONSE):
     sslctx = DEAFAULT_SSL_CONTEXT if ssl else None
     reactor = Reactor()
     acceptor = MultiProtocolAcceptor(
@@ -159,8 +159,8 @@ def constructClient(log, bridge, ssl, type):
             def client(client_socket):
                 return StompRpcClient(
                     reactor.createClient(client_socket),
-                    LEGACY_SUBSCRIPTION_ID_REQUEST,
-                    LEGACY_SUBSCRIPTION_ID_RESPONSE,
+                    SUBSCRIPTION_ID_REQUEST,
+                    SUBSCRIPTION_ID_RESPONSE,
                 )
 
         def clientFactory():
