@@ -66,6 +66,7 @@ from testlib import make_config
 from testlib import recorded
 from testlib import XMLTestCase
 from vdsm import host
+from vdsm import hugepages
 from vdsm import utils
 from vdsm import libvirtconnection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
@@ -442,6 +443,34 @@ class TestVm(XMLTestCase):
             domxml.appendInput()
             xml = find_xml_element(domxml.toxml(), './devices/input')
             self.assertXMLEqual(xml, inputXML)
+
+    def testMemoryBackingXMLDefault(self):
+        memorybacking_xml = """
+          <memoryBacking>
+            <hugepages>
+              <page size="2048" />
+            </hugepages>
+          </memoryBacking>"""
+
+        domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.X86_64)
+        domxml.appendMemoryBacking(
+            hugepages.DEFAULT_HUGEPAGESIZE[cpuarch.real()]
+        )
+        xml = find_xml_element(domxml.toxml(), './memoryBacking')
+        self.assertXMLEqual(xml, memorybacking_xml)
+
+    def testMemoryBackingXML(self):
+        memorybacking_xml = """
+          <memoryBacking>
+            <hugepages>
+              <page size="1048576" />
+            </hugepages>
+          </memoryBacking>"""
+
+        domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.X86_64)
+        domxml.appendMemoryBacking(1048576)
+        xml = find_xml_element(domxml.toxml(), './memoryBacking')
+        self.assertXMLEqual(xml, memorybacking_xml)
 
     def testIoTuneException(self):
         SERIAL = '54-a672-23e5b495a9ea'

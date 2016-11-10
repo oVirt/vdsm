@@ -48,7 +48,6 @@ SUBDIRS += \
 	floppy \
 	hostusb \
 	httpsisoboot \
-	hugepages \
 	isolatedprivatevlan \
 	macbind \
 	nestedvt \

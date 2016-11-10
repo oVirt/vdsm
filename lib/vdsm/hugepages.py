@@ -117,7 +117,8 @@ def _alloc(count, size, path):
     with _LOCK:
         ret = supervdsm.getProxy().hugepages_alloc(count, path)
         if ret != count:
-            ret = supervdsm.getProxy().hugepages_alloc(-ret, path)
+            supervdsm.getProxy().hugepages_alloc(-ret, path)
+            raise NonContignuousMemory
 
     return ret
 

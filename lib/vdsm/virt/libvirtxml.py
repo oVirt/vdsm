@@ -501,6 +501,16 @@ class Domain(object):
     def appendDeviceXML(self, deviceXML):
         self._devices.appendChild(etree_element=vmxml.parse_xml(deviceXML))
 
+    def appendMemoryBacking(self, hugepagesz):
+        memorybacking = vmxml.Element('memoryBacking',)
+        hugepages_element = vmxml.Element('hugepages')
+
+        hugepages_element.appendChildWithArgs(
+            'page', size=str(hugepagesz)
+        )
+        memorybacking.appendChild(hugepages_element)
+        self.dom.appendChild(memorybacking)
+
     def toxml(self):
         return vmxml.format_xml(self.dom, pretty=True)
 

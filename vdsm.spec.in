@@ -498,14 +498,6 @@ Let the VM boot from an ISO image made available via an https URL without
 the need to import the ISO into an ISO storage domain.
 It doesn't support plain http.
 
-%package hook-hugepages
-Summary:        Huge pages enable user to handle VM with 2048KB page files.
-BuildArch:      noarch
-
-%description hook-hugepages
-Hook is getting number of huge pages reserve them for the VM,
-and enable user to handle VM with 2048KB page files.
-
 %package hook-isolatedprivatevlan
 Summary:        Isolated network environment for VMs
 BuildArch:      noarch
@@ -1524,12 +1516,6 @@ exit 0
 
 %files hook-httpsisoboot
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_httpsisoboot
-
-%files hook-hugepages
-%{_sysconfdir}/sudoers.d/50_vdsm_hook_hugepages
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_hugepages
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_hugepages
-%{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_hugepages
 
 %files hook-isolatedprivatevlan
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_isolatedprivatevlan

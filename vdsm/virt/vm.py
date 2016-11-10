@@ -24,6 +24,7 @@ from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 import itertools
 import logging
+import math
 import os
 import tempfile
 import threading
@@ -46,6 +47,7 @@ from vdsm import containersconnection
 from vdsm import cpuarch
 from vdsm import hooks
 from vdsm import host
+from vdsm import hugepages
 from vdsm import libvirtconnection
 from vdsm import osinfo
 from vdsm import qemuimg
@@ -374,6 +376,12 @@ class Vm(object):
     @property
     def post_copy(self):
         return self._post_copy
+
+    @property
+    def hugepages(self):
+        custom = self.conf.get('custom', {})
+        hugepages_enabled = int(custom.get('hugepages', 0))
+        return hugepages_enabled > 0
 
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
@@ -1816,6 +1824,22 @@ class Vm(object):
                 dev._deviceXML = deviceXML
                 domxml.appendDeviceXML(deviceXML)
 
+    def _prepare_hugepages(self):
+        vm_mem_size_kb = self.mem_size_mb() * 1024
+        vm_hugepagesz = hugepages.DEFAULT_HUGEPAGESIZE[cpuarch.real()]
+
+        num_hugepages = int(math.ceil(
+            vm_mem_size_kb /
+            vm_hugepagesz
+        ))
+        self.log.info(
+            'Allocating %s (%s) hugepages (memsize %s)',
+            num_hugepages,
+            vm_hugepagesz,
+            vm_mem_size_kb
+        )
+        hugepages.alloc(num_hugepages)
+
     def _buildDomainXML(self):
         if 'xml' in self.conf:
             xml_str = self.conf['xml']
@@ -1839,6 +1863,12 @@ class Vm(object):
 
         domxml = libvirtxml.Domain(self.conf, self.log, self.arch)
         domxml.appendOs(use_serial_console=(serial_console is not None))
+
+        if self.hugepages:
+            self._prepare_hugepages()
+            domxml.appendMemoryBacking(
+                hugepages.DEFAULT_HUGEPAGESIZE[cpuarch.real()]
+            )
 
         if cpuarch.is_x86(self.arch):
             osd = osinfo.version()
@@ -1903,6 +1933,27 @@ class Vm(object):
         self._cleanupStatsCache()
         for con in self._devices[hwclass.CONSOLE]:
             con.cleanup()
+        if self.hugepages:
+            self._cleanup_hugepages()
+
+    def _cleanup_hugepages(self):
+        vm_mem_size_kb = self.mem_size_mb() * 1024
+        vm_hugepagesz = hugepages.DEFAULT_HUGEPAGESIZE[cpuarch.real()]
+
+        num_hugepages = int(math.ceil(
+            vm_mem_size_kb /
+            vm_hugepagesz
+        ))
+        self.log.info(
+            'Deallocating %s (%s) hugepages (memsize %s)',
+            num_hugepages,
+            vm_hugepagesz,
+            vm_mem_size_kb
+        )
+        try:
+            hugepages.dealloc(num_hugepages)
+        except Exception:
+            self.log.info('Deallocation of hugepages failed')
 
     def _teardown_devices(self, devices=None):
         """
@@ -4718,6 +4769,9 @@ class Vm(object):
         for dev in self._customDevices():
             hooks.before_device_migrate_destination(
                 dev._deviceXML, self._custom, dev.custom)
+
+        if self.hugepages:
+            self._prepare_hugepages()
 
         hooks.before_vm_migrate_destination(srcDomXML, self._custom)
         return True
