@@ -36,6 +36,7 @@ from vdsm import dsaversion
 from vdsm import hooks
 from vdsm import host
 from vdsm import hostdev
+from vdsm import hugepages
 from vdsm import libvirtconnection
 from vdsm import machinetype
 from vdsm import numa
@@ -209,6 +210,7 @@ def get():
         caps['additionalFeatures'].extend(glusterAdditionalFeatures())
     caps['containers'] = containersconnection.is_supported()
     caps['hostedEngineDeployed'] = _isHostedEngineDeployed()
+    caps['hugepages'] = hugepages.supported()
     return caps
 
 

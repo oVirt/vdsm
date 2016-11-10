@@ -6842,6 +6842,13 @@ types:
             name: hostedEngineDeployed
             type: boolean
             added: '4.1'
+
+        -   defaultvalue: no-default
+            description: A list of available hugepage sizes (in kb)
+            name: hugepages
+            type:
+                - int
+            added: '4.2'
         type: object
 
     VmShortStatus: &VmShortStatus

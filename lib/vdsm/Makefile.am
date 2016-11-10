@@ -38,6 +38,7 @@ dist_vdsmpylib_PYTHON = \
 	health.py \
 	hooks.py \
 	hostdev.py \
+	hugepages.py \
 	jobs.py \
 	jsonrpcvdscli.py \
 	kaxmlrpclib.py \

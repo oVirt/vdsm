@@ -77,6 +77,7 @@ test_modules = \
 	hooks_test.py \
 	hostdev_test.py \
 	hoststats_test.py \
+	hugepages_test.py \
 	hwinfo_test.py \
 	jobs_test.py \
 	libvirtconnection_test.py \
