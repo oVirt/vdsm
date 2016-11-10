@@ -194,23 +194,7 @@ class VM(APIBase):
                     self.log.error("Error restoring VM parameters",
                                    exc_info=True)
 
-            requiredParams = ['vmId', 'memSize']
-            for param in requiredParams:
-                if param not in vmParams:
-                    self.log.error('Missing required parameter %s' % (param))
-                    raise exception.MissingParameter(
-                        'Missing required parameter %s' % (param))
-            try:
-                misc.validateUUID(vmParams['vmId'])
-            except:
-                raise exception.MissingParameter('vmId must be a valid UUID')
-            if vmParams['memSize'] == 0:
-                raise exception.MissingParameter(
-                    'Must specify nonzero memSize')
-
-            if vmParams.get('boot') == 'c' and 'hda' not in vmParams \
-                    and not vmParams.get('drives'):
-                raise exception.MissingParameter('missing boot disk')
+            self._validate_vm_params(vmParams)
 
             if 'vmType' not in vmParams:
                 vmParams['vmType'] = 'kvm'
@@ -246,6 +230,25 @@ class VM(APIBase):
         except:
             self.log.debug("Error creating VM", exc_info=True)
             raise exception.UnexpectedError()
+
+    def _validate_vm_params(self, vmParams):
+        requiredParams = ['vmId', 'memSize']
+        for param in requiredParams:
+            if param not in vmParams:
+                self.log.error('Missing required parameter %s' % (param))
+                raise exception.MissingParameter(
+                    'Missing required parameter %s' % (param))
+        try:
+            misc.validateUUID(vmParams['vmId'])
+        except:
+            raise exception.MissingParameter('vmId must be a valid UUID')
+        if vmParams['memSize'] == 0:
+            raise exception.MissingParameter(
+                'Must specify nonzero memSize')
+
+        if vmParams.get('boot') == 'c' and 'hda' not in vmParams \
+                and not vmParams.get('drives'):
+            raise exception.MissingParameter('missing boot disk')
 
     def desktopLock(self):
         """
