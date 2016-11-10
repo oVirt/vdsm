@@ -73,7 +73,7 @@ class TestNetinfo(TestCaseBase):
 
         self.assertEqual(nameservers, [])
 
-    def testNetmaskConversions(self):
+    def test_netmask_conversions(self):
         path = os.path.join(os.path.dirname(__file__), "netmaskconversions")
         with open(path) as netmaskFile:
             for line in netmaskFile:
@@ -85,11 +85,11 @@ class TestNetinfo(TestCaseBase):
         self.assertRaises(ValueError, addresses.prefix2netmask, -1)
         self.assertRaises(ValueError, addresses.prefix2netmask, 33)
 
-    def testSpeedInvalidNic(self):
+    def test_speed_invalid_nic(self):
         nicName = '0' * 20  # devices can't have so long names
         self.assertEqual(nics.speed(nicName), 0)
 
-    def testSpeedInRange(self):
+    def test_speed_in_range(self):
         for d in nics.nics():
             s = nics.speed(d)
             self.assertFalse(s < 0)
@@ -97,7 +97,7 @@ class TestNetinfo(TestCaseBase):
 
     @mock.patch.object(nics, 'operstate')
     @mock.patch.object(nics.io, 'open')
-    def testValidNicSpeed(self, mock_io_open, mock_operstate):
+    def test_valid_nic_speed(self, mock_io_open, mock_operstate):
         values = ((0,           nics.OPERSTATE_UP, 0),
                   (-10,         nics.OPERSTATE_UP, 0),
                   (2 ** 16 - 1, nics.OPERSTATE_UP, 0),
@@ -115,7 +115,7 @@ class TestNetinfo(TestCaseBase):
 
     @mock.patch('vdsm.network.netinfo.cache.libvirt.networks',
                 lambda: {'fake': {'bridged': True}})
-    def testGetNonExistantBridgeInfo(self):
+    def test_get_non_existant_bridge_info(self):
         # Getting info of non existing bridge should not raise an exception,
         # just log a traceback. If it raises an exception the test will fail as
         # it should.
@@ -123,7 +123,7 @@ class TestNetinfo(TestCaseBase):
 
     @mock.patch('vdsm.network.netinfo.cache.getLinks')
     @mock.patch('vdsm.network.netinfo.cache.libvirt.networks')
-    def testGetEmpty(self, mock_networks, mock_getLinks):
+    def test_get_empty(self, mock_networks, mock_getLinks):
         result = {}
         result.update(get())
         self.assertEqual(result['networks'], {})
@@ -132,11 +132,11 @@ class TestNetinfo(TestCaseBase):
         self.assertEqual(result['bondings'], {})
         self.assertEqual(result['vlans'], {})
 
-    def testIPv4toMapped(self):
+    def test_ipv4_to_mapped(self):
         self.assertEqual('::ffff:127.0.0.1',
                          addresses.IPv4toMapped('127.0.0.1'))
 
-    def testGetDeviceByIP(self):
+    def test_get_device_by_ip(self):
         NL_ADDRESS4 = {'label': 'iface0',
                        'address': '127.0.0.1/32',
                        'family': 'inet'}
@@ -158,7 +158,7 @@ class TestNetinfo(TestCaseBase):
     @mock.patch.object(ipwrapper.Link, '_detectType', lambda x: None)
     @mock.patch.object(ipwrapper, '_bondExists', lambda x: x == 'jbond')
     @mock.patch.object(misc, 'getLinks')
-    def testNics(self, mock_getLinks):
+    def test_nics(self, mock_getLinks):
         """
         managed by vdsm: em, me, fake0, fake1
         not managed due to hidden bond (jbond) enslavement: me0, me1
@@ -207,7 +207,7 @@ class TestNetinfo(TestCaseBase):
     @attr(type='integration')
     @ValidateRunningAsRoot
     @mock.patch.object(ipwrapper.Link, '_fakeNics', ['veth_*', 'dummy_*'])
-    def testFakeNics(self):
+    def test_fake_nics(self):
         with veth_pair() as (v1a, v1b):
             with dummy_device() as d1:
                 fakes = set([d1, v1a, v1b])
@@ -224,7 +224,7 @@ class TestNetinfo(TestCaseBase):
                                  'hidden devices %s is shown in nics %s' %
                                  (hiddens, _nics))
 
-    def testGetIfaceCfg(self):
+    def test_get_iface_cfg(self):
         deviceName = "___This_could_never_be_a_device_name___"
         ifcfg = ('GATEWAY0=1.1.1.1\n' 'NETMASK=255.255.0.0\n')
         with namedTemporaryDir() as tempDir:
@@ -247,7 +247,7 @@ class TestNetinfo(TestCaseBase):
     @attr(type='integration')
     @ValidateRunningAsRoot
     @RequireBondingMod
-    def testGetBondingOptions(self):
+    def test_get_bonding_options(self):
         INTERVAL = '12345'
         bondName = random_iface_name()
 
