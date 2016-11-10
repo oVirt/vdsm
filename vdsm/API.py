@@ -196,17 +196,7 @@ class VM(APIBase):
 
             self._validate_vm_params(vmParams)
 
-            if 'vmType' not in vmParams:
-                vmParams['vmType'] = 'kvm'
-            elif vmParams['vmType'] == 'kvm':
-                if 'kvmEnable' not in vmParams:
-                    vmParams['kvmEnable'] = 'true'
-
-            if 'sysprepInf' in vmParams:
-                if not vmParams.get('floppy'):
-                    vmParams['floppy'] = '%s%s.vfd' % (constants.P_VDSM_RUN,
-                                                       vmParams['vmId'])
-                vmParams['volatileFloppy'] = True
+            self._fix_vm_params(vmParams)
 
             if 'sysprepInf' in vmParams:
                 if not self._createSysprepFloppyFromInf(vmParams['sysprepInf'],
@@ -249,6 +239,20 @@ class VM(APIBase):
         if vmParams.get('boot') == 'c' and 'hda' not in vmParams \
                 and not vmParams.get('drives'):
             raise exception.MissingParameter('missing boot disk')
+
+    def _fix_vm_params(self, vmParams):
+        if 'vmType' not in vmParams:
+            vmParams['vmType'] = 'kvm'
+        elif vmParams['vmType'] == 'kvm':
+            if 'kvmEnable' not in vmParams:
+                vmParams['kvmEnable'] = 'true'
+
+        if 'sysprepInf' in vmParams:
+            if not vmParams.get('floppy'):
+                vmParams['floppy'] = '%s%s.vfd' % (
+                    constants.P_VDSM_RUN, vmParams['vmId'])
+            vmParams['volatileFloppy'] = True
+        return vmParams
 
     def desktopLock(self):
         """
