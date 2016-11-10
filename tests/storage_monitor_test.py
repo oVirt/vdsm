@@ -18,12 +18,13 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import Queue
 import logging
 import threading
 import time
 
 from contextlib import contextmanager
+
+from six.moves import queue
 
 from vdsm.storage import exception as se
 
@@ -181,13 +182,13 @@ class MonitorEnv(object):
         self.thread = thread
         self.event = event
         self.checker = checker
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
         self.thread.cycleCallback = self._callback
 
     def wait_for_cycle(self):
         try:
             self.queue.get(True, CYCLE_TIMEOUT)
-        except Queue.Empty:
+        except queue.Empty:
             raise RuntimeError("Timeout waiting for monitor cycle")
 
     def _callback(self):

@@ -25,7 +25,8 @@ import weakref
 from functools import partial
 from contextlib import nested
 from uuid import uuid4
-from Queue import Queue
+
+from six.moves.queue import Queue
 
 from vdsm.logUtils import SimpleLogAdapter
 from vdsm import concurrent

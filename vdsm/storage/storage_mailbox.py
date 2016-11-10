@@ -22,11 +22,12 @@ import os
 import errno
 import time
 import threading
-import Queue
 import struct
 import logging
 
 import uuid
+
+from six.moves import queue
 
 from vdsm.config import config
 from vdsm.storage import misc
@@ -185,7 +186,7 @@ class HSM_Mailbox:
         self._poolID = str(poolID)
         self._monitorInterval = monitorInterval
         self._spmStorageDir = config.get('irs', 'repository')
-        self._queue = Queue.Queue(-1)
+        self._queue = queue.Queue(-1)
         #  *** IMPORTANT NOTE: The SPM's inbox is the HSMs' outbox and vice
         #                      versa *** #
         self._inbox = os.path.join(self._spmStorageDir, self._poolID,
@@ -455,7 +456,7 @@ class HSM_MailMonitor(object):
                             self._handleMessage(message)
                             message = None
                             sendMail = True
-                        except Queue.Empty:
+                        except queue.Empty:
                             pass
 
                     if self._stop:
@@ -472,7 +473,7 @@ class HSM_MailMonitor(object):
                             self._handleMessage(message)
                             message = None
                             sendMail = True
-                        except Queue.Empty:
+                        except queue.Empty:
                             empty = True
 
                     if self._flush:

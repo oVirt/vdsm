@@ -13,7 +13,7 @@ import itertools
 import logging
 import threading
 
-from Queue import Queue, Empty
+from six.moves.queue import Queue, Empty
 from time import sleep
 
 from vdsm import concurrent
