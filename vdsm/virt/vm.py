@@ -2992,10 +2992,8 @@ class Vm(object):
             self._syncGuestTime()
         elif 'migrationDest' in self.conf:
             if self._needToWaitForMigrationToComplete():
-                usedTimeout = self._waitForUnderlyingMigration()
-                self._attachLibvirtDomainAfterMigration(
-                    self._incoming_migration_vm_running.is_set(),
-                    usedTimeout)
+                finished, timeout = self._waitForUnderlyingMigration()
+                self._attachLibvirtDomainAfterMigration(finished, timeout)
             # else domain connection already established earlier
             self._domDependentInit()
             del self.conf['migrationDest']
@@ -3047,8 +3045,8 @@ class Vm(object):
     def _waitForUnderlyingMigration(self):
         timeout = config.getint('vars', 'migration_destination_timeout')
         self.log.debug("Waiting %s seconds for end of migration", timeout)
-        self._incoming_migration_vm_running.wait(timeout)
-        return timeout
+        finished = self._incoming_migration_vm_running.wait(timeout)
+        return finished, timeout
 
     def _attachLibvirtDomainAfterMigration(self, migrationFinished, timeout):
         try:
