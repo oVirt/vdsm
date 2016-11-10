@@ -35,6 +35,7 @@ from vdsm import supervdsm
 from vdsm import throttledlog
 from vdsm import jobs
 from vdsm import v2v
+from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import response
 from vdsm.host import api as hostapi
@@ -156,6 +157,7 @@ class VM(APIBase):
             return errCode['noVM']
         return v.cont()
 
+    @api.method
     def create(self, vmParams):
         """
         Start up a virtual machine.
@@ -167,7 +169,7 @@ class VM(APIBase):
         try:
             if vmParams.get('vmId') in self._cif.vmContainer:
                 self.log.warning('vm %s already exists' % vmParams['vmId'])
-                return errCode['exist']
+                raise exception.VMExists()
 
             if 'hiberVolHandle' in vmParams:
                 vmParams['restoreState'], paramFilespec = \
@@ -196,26 +198,19 @@ class VM(APIBase):
             for param in requiredParams:
                 if param not in vmParams:
                     self.log.error('Missing required parameter %s' % (param))
-                    return {'status': {'code': errCode['MissParam']
-                                                      ['status']['code'],
-                                       'message': 'Missing required '
-                                       'parameter %s' % (param)}}
+                    raise exception.MissingParameter(
+                        'Missing required parameter %s' % (param))
             try:
                 misc.validateUUID(vmParams['vmId'])
             except:
-                return {'status': {'code': errCode['MissParam']
-                                                  ['status']['code'],
-                                   'message': 'vmId must be a valid UUID'}}
+                raise exception.MissingParameter('vmId must be a valid UUID')
             if vmParams['memSize'] == 0:
-                return {'status': {'code': errCode['MissParam']
-                                                  ['status']['code'],
-                                   'message': 'Must specify nonzero memSize'}}
+                raise exception.MissingParameter(
+                    'Must specify nonzero memSize')
 
             if vmParams.get('boot') == 'c' and 'hda' not in vmParams \
                     and not vmParams.get('drives'):
-                return {'status': {'code': errCode['MissParam']
-                                                  ['status']['code'],
-                                   'message': 'missing boot disk'}}
+                raise exception.MissingParameter('missing boot disk')
 
             if 'vmType' not in vmParams:
                 vmParams['vmType'] = 'kvm'
@@ -232,27 +227,25 @@ class VM(APIBase):
             if 'sysprepInf' in vmParams:
                 if not self._createSysprepFloppyFromInf(vmParams['sysprepInf'],
                                                         vmParams['floppy']):
-                    return {'status': {'code': errCode['createErr']
-                                                      ['status']['code'],
-                                       'message': 'Failed to create '
-                                                  'sysprep floppy image. '
-                                                  'No space on /tmp?'}}
+                    raise exception.CannotCreateVM(
+                        'Failed to create sysprep floppy image. '
+                        'No space on /tmp?')
 
             if not graphics.isSupportedDisplayType(vmParams):
-                return {'status': {'code': errCode['createErr']
-                                                  ['status']['code'],
-                                   'message': 'Unknown display type %s' %
-                                              vmParams.get('display')}}
+                raise exception.CannotCreateVM(
+                    'Unknown display type %s' % vmParams.get('display'))
             return self._cif.createVm(vmParams)
 
         except OSError as e:
             self.log.debug("OS Error creating VM", exc_info=True)
-            return {'status': {'code': errCode['createErr']['status']['code'],
-                               'message': 'Failed to create VM. '
-                                          'No space on /tmp? ' + e.message}}
+            raise exception.CannotCreateVM(
+                'Failed to create VM. No space on /tmp? %s' % e.message)
+        except exception.VdsmException:
+            # TODO: remove when the transition to @api.method is completed.
+            raise  # do not interfer with api.method()
         except:
             self.log.debug("Error creating VM", exc_info=True)
-            return errCode['unexpected']
+            raise exception.UnexpectedError()
 
     def desktopLock(self):
         """
