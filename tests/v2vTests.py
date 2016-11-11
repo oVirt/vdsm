@@ -445,18 +445,18 @@ class v2vTests(TestCaseBase):
                 )
 
     def testOutputParser(self):
-        output = ''.join(['[   0.0] Opening the source -i libvirt ://roo...\n',
-                          '[   1.0] Creating an overlay to protect the f...\n',
-                          '[  88.0] Copying disk 1/2 to /tmp/v2v/0000000...\n',
-                          '    (0/100%)\r',
-                          '    (50/100%)\r',
-                          '    (100/100%)\r',
-                          '[ 180.0] Copying disk 2/2 to /tmp/v2v/100000-...\n',
-                          '    (0/100%)\r',
-                          '    (50/100%)\r',
-                          '    (100/100%)\r',
-                          '[ 256.0] Creating output metadata',
-                          '[ 256.0] Finishing off'])
+        output = ('[   0.0] Opening the source -i libvirt ://roo...\n'
+                  '[   1.0] Creating an overlay to protect the f...\n'
+                  '[  88.0] Copying disk 1/2 to /tmp/v2v/0000000...\n'
+                  '    (0/100%)\r'
+                  '    (50/100%)\r'
+                  '    (100/100%)\r'
+                  '[ 180.0] Copying disk 2/2 to /tmp/v2v/100000-...\n'
+                  '    (0/100%)\r'
+                  '    (50/100%)\r'
+                  '    (100/100%)\r'
+                  '[ 256.0] Creating output metadata'
+                  '[ 256.0] Finishing off')
 
         parser = v2v.OutputParser()
         events = list(parser.parse(StringIO(output)))
