@@ -422,7 +422,7 @@ def _getScriptInfo(path):
     try:
         with open(path) as f:
             md5 = hashlib.md5(f.read()).hexdigest()
-    except:
+    except EnvironmentError:
         md5 = ''
     return {'md5': md5}
 
