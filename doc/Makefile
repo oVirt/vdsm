@@ -3,7 +3,7 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = PYTHONPATH=../vdsm:../:$$PYTHONPATH sphinx-build
+SPHINXBUILD   = PYTHONPATH=../vdsm:../:$$PYTHONPATH sphinx-build -j 4
 PAPER         =
 BUILDDIR      = build
 VDSM_SRC_DIR  = ../lib/vdsm
