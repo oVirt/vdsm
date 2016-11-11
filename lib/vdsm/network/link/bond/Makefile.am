@@ -16,9 +16,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-SUBDIRS = bond
-
 include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmnetworklinkdir = $(vdsmpylibdir)/network/link
-dist_vdsmnetworklink_PYTHON = *.py
+vdsmnetworklinkbonddir = $(vdsmpylibdir)/network/link/bond
+dist_vdsmnetworklinkbond_PYTHON = *.py

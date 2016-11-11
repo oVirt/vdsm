@@ -18,99 +18,13 @@
 #
 from __future__ import absolute_import
 
-import abc
 from contextlib import contextmanager
 import logging
 import os
-import six
 
-from . import iface
+from vdsm.network.link import iface
 
-
-@six.add_metaclass(abc.ABCMeta)
-class BondAPI(object):
-    """
-    Bond driver interface.
-    """
-    def __init__(self, name, slaves=(), options=None):
-        self._master = name
-        self._slaves = set(slaves)
-        self._options = options
-        if self.exists():
-            self._import_existing()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):
-        pass
-
-    @abc.abstractmethod
-    def create(self):
-        pass
-
-    @abc.abstractmethod
-    def destroy(self):
-        pass
-
-    @abc.abstractmethod
-    def add_slaves(self, slaves):
-        pass
-
-    @abc.abstractmethod
-    def del_slaves(self, slaves):
-        pass
-
-    @abc.abstractmethod
-    def set_options(self, options):
-        """
-        Set bond options, overriding existing or default ones.
-        """
-        pass
-
-    @abc.abstractmethod
-    def exists(self):
-        pass
-
-    @abc.abstractmethod
-    def active_slave(self):
-        pass
-
-    @staticmethod
-    def bonds():
-        pass
-
-    @property
-    def master(self):
-        return self._master
-
-    @property
-    def slaves(self):
-        return self._slaves
-
-    @property
-    def options(self):
-        return self._options
-
-    def up(self):
-        self._setlinks(up=True)
-
-    def down(self):
-        self._setlinks(up=False)
-
-    def refresh(self):
-        if self.exists():
-            self._import_existing()
-
-    @abc.abstractmethod
-    def _import_existing(self):
-        pass
-
-    def _setlinks(self, up):
-        setstate = iface.up if up else iface.down
-        setstate(self._master)
-        for slave in self._slaves:
-            setstate(slave)
+from . import BondAPI
 
 
 class BondSysFS(BondAPI):
@@ -219,12 +133,4 @@ def _preserve_iface_state(dev):
             iface.up(dev)
 
 
-# TODO: Use a configuration parameter to determine which driver to use.
-def _bond_driver():
-    """
-    Return the bond driver implementation.
-    """
-    return BondSysFS
-
-
-Bond = _bond_driver()
+Bond = BondSysFS

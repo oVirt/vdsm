@@ -499,7 +499,8 @@ def check_sysfs_bond_permission():
 
 @memoized
 def _has_sysfs_bond_permission():
-    bond = linkbond.BondSysFS(random_iface_name('check_', max_length=11))
+    BondSysFS = linkbond.sysfs_driver.BondSysFS
+    bond = BondSysFS(random_iface_name('check_', max_length=11))
     try:
         bond.create()
         bond.destroy()
