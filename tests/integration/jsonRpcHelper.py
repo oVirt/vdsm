@@ -17,14 +17,15 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import httplib
 import logging
 import os.path
 import threading
 from collections import defaultdict
 
+import six.moves.http_client
+
 import API
-from xmlrpclib import Transport, dumps, Fault
+from six.moves.xmlrpc_client import Transport, dumps, Fault
 from contextlib import contextmanager
 from itertools import product
 from vdsm.rpc.bindingxmlrpc import BindingXMLRPC, XmlDetector
@@ -209,5 +210,5 @@ class CustomTransport(Transport):
         def connect(self):
             self.sock = socket
 
-        connection = httplib.HTTPConnection
+        connection = six.moves.http_client.HTTPConnection
         connection.connect = connect
