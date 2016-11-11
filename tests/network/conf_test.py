@@ -28,14 +28,7 @@ import shutil
 import subprocess
 import tempfile
 
-# Due to shlex, we are forced to choose the stream type per the python version.
-# It is used to mock the returned 'file' from open() which shlex consumes.
-# On PY2, shlex can consume a (byte) string and not a unicode (opposite on PY3)
-import six
-if six.PY2:
-    from io import BytesIO as Stream
-else:
-    from io import StringIO as Stream
+from six import StringIO
 
 from vdsm.network import libvirt
 from vdsm.network.configurators import ifcfg
@@ -186,7 +179,7 @@ class IfcfgAcquireTests(TestCaseBase):
                                                        mock_list_files,
                                                        mock_rename,
                                                        mock_rmfile):
-        mock_open.return_value.__enter__.side_effect = lambda: Stream(
+        mock_open.return_value.__enter__.side_effect = lambda: StringIO(
             IFCFG_ETH_CONF)
         mock_list_files.return_value = ['filename1']
 
@@ -200,7 +193,7 @@ class IfcfgAcquireTests(TestCaseBase):
                                                               mock_list_files,
                                                               mock_rename,
                                                               mock_rmfile):
-        mock_open.return_value.__enter__.side_effect = lambda: Stream(
+        mock_open.return_value.__enter__.side_effect = lambda: StringIO(
             IFCFG_ETH_CONF)
         mock_list_files.return_value = ['filename1', 'filename2']
 
@@ -215,7 +208,7 @@ class IfcfgAcquireTests(TestCaseBase):
                                                        mock_list_files,
                                                        mock_rename,
                                                        mock_rmfile):
-        mock_open.return_value.__enter__.side_effect = lambda: Stream(
+        mock_open.return_value.__enter__.side_effect = lambda: StringIO(
             IFCFG_VLAN_CONF)
         mock_list_files.return_value = ['filename1', 'filename2']
 
