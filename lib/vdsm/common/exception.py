@@ -293,7 +293,7 @@ class BadSecretRequest(VdsmException):
 
 
 class SecretRegistrationFailed(VdsmException):
-    code = 73,
+    code = 73
     message = 'Error registering Libvirt secret'
 
 
