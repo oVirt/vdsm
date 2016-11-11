@@ -33,7 +33,6 @@ import shutil
 import stat
 import subprocess
 import sys
-import types
 
 import six
 
@@ -214,7 +213,7 @@ def createdir(dirPath, mode=None):
 
 
 def resolveUid(user):
-    if isinstance(user, types.StringTypes):
+    if isinstance(user, six.string_types):
         uid = pwd.getpwnam(user).pw_uid
     else:
         uid = int(user)
@@ -222,7 +221,7 @@ def resolveUid(user):
 
 
 def resolveGid(group):
-    if isinstance(group, types.StringTypes):
+    if isinstance(group, six.string_types):
         gid = grp.getgrnam(group).gr_gid
     else:
         gid = int(group)

@@ -212,7 +212,6 @@ blacklist_modules_python3 = \
 	storage_blockvolume_test.py \
 	storage_fakelib_test.py \
 	storage_filesd_test.py \
-	storage_fileutil_test.py \
 	storage_filevolume_test.py \
 	storage_guarded_test.py \
 	storage_hsm_test.py \
