@@ -91,6 +91,10 @@ abs_imports: all
 flake8: tox
 	tox -e flake8
 
+.PHONY: imports
+imports: tox
+	tox -e imports
+
 .PHONY: tox
 tox:
 	out=`tox --version`; \
@@ -116,7 +120,7 @@ python3: all
 	fi
 
 # Note: dependencies ordered by time needed to run them
-check: gitignore abs_imports python3 flake8 tests
+check: gitignore abs_imports imports python3 flake8 tests
 
 check-recursive:
 	@true

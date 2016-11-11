@@ -318,6 +318,7 @@ dist_vdsmtests_DATA = \
 dist_vdsmtests_PYTHON = \
 	$(test_modules) \
 	apiData.py \
+	check_imports.py \
 	hookValidation.py \
 	fakelib.py \
 	fake-virt-v2v \
