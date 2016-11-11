@@ -19,7 +19,7 @@
 #
 from __future__ import absolute_import
 
-from itertools import tee, izip, product
+from itertools import tee, product
 
 import libvirt
 
@@ -261,7 +261,7 @@ def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
     a, b = tee(iterable)
     next(b, None)
-    return izip(a, b)
+    return zip(a, b)
 
 
 def _linear_downtime(downtime, steps):
