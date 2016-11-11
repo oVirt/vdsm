@@ -32,7 +32,7 @@ from vdsm.storage import exception as se
 
 import threading
 from copy import deepcopy
-from itertools import ifilter
+from six.moves import filter as ifilter
 
 SHA_CKSUM_TAG = "_SHA_CKSUM"
 
