@@ -47,7 +47,6 @@ static/etc/vdsm/logger.conf
 static/etc/vdsm/mom.conf
 static/etc/vdsm/svdsm.logger.conf
 tags
-tests/crossImportsTests.py
 tests/run_tests.sh
 tests/run_tests_local.sh
 tests/server.p12

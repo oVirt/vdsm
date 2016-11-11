@@ -243,10 +243,6 @@ blacklist_modules_python3 = \
 	vmfakelibTests.py \
 	$(NULL)
 
-nodist_vdsmtests_PYTHON = \
-	crossImportsTests.py \
-	$(NULL)
-
 CLEANFILES = \
 	$(nodist_vdsmtests_PYTHON) \
 	$(dist_noinst_DATA) \
@@ -254,7 +250,6 @@ CLEANFILES = \
 	$(NULL)
 
 EXTRA_DIST = \
-	crossImportsTests.py.in \
 	makecert.sh \
 	tests_child.py \
 	$(NULL)
@@ -365,13 +360,9 @@ check-net:
 	@echo '*** Running networking tests. ***'
 	@$(top_srcdir)/tests/run_tests_local.sh $(args) $(network_modules)
 
-# crossImportsTests.py has to be run separate due to different tests which
-# load modules first, making the env dirty. Unloading python modules
-# is not supported, see http://bugs.python.org/issue9072 .
 check:
 	@echo '*** Running tests.  To skip this step place NOSE_EXCLUDE=.* ***'
 	@echo '*** into your environment.  Do not submit untested code!    ***'
-	$(top_srcdir)/tests/run_tests_local.sh $(args) crossImportsTests.py
 	$(top_srcdir)/tests/run_tests_local.sh $(args) $(run_modules)
 	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then \
 		all_modules=`mktemp`; \
