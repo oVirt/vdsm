@@ -21,7 +21,7 @@ import time
 from weakref import proxy
 from random import Random
 import threading
-from thread import error as ThreadError
+from six.moves._thread import error as ThreadError
 from StringIO import StringIO
 import types
 from resource import getrlimit, RLIMIT_NPROC
