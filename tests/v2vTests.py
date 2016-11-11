@@ -19,7 +19,7 @@
 
 from collections import namedtuple
 from contextlib import contextmanager
-from StringIO import StringIO
+from io import StringIO
 import subprocess
 import tarfile
 import zipfile
@@ -445,18 +445,18 @@ class v2vTests(TestCaseBase):
                 )
 
     def testOutputParser(self):
-        output = ('[   0.0] Opening the source -i libvirt ://roo...\n'
-                  '[   1.0] Creating an overlay to protect the f...\n'
-                  '[  88.0] Copying disk 1/2 to /tmp/v2v/0000000...\n'
-                  '    (0/100%)\r'
-                  '    (50/100%)\r'
-                  '    (100/100%)\r'
-                  '[ 180.0] Copying disk 2/2 to /tmp/v2v/100000-...\n'
-                  '    (0/100%)\r'
-                  '    (50/100%)\r'
-                  '    (100/100%)\r'
-                  '[ 256.0] Creating output metadata'
-                  '[ 256.0] Finishing off')
+        output = (u'[   0.0] Opening the source -i libvirt ://roo...\n'
+                  u'[   1.0] Creating an overlay to protect the f...\n'
+                  u'[  88.0] Copying disk 1/2 to /tmp/v2v/0000000...\n'
+                  u'    (0/100%)\r'
+                  u'    (50/100%)\r'
+                  u'    (100/100%)\r'
+                  u'[ 180.0] Copying disk 2/2 to /tmp/v2v/100000-...\n'
+                  u'    (0/100%)\r'
+                  u'    (50/100%)\r'
+                  u'    (100/100%)\r'
+                  u'[ 256.0] Creating output metadata'
+                  u'[ 256.0] Finishing off')
 
         parser = v2v.OutputParser()
         events = list(parser.parse(StringIO(output)))
