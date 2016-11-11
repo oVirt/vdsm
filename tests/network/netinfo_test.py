@@ -36,7 +36,7 @@ from vdsm import sysctl
 from modprobe import RequireBondingMod
 from .nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
 from testlib import mock
-from testlib import VdsmTestCase as TestCaseBase, namedTemporaryDir
+from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
 from testValidation import broken_on_ci
 
@@ -224,20 +224,19 @@ class TestNetinfo(TestCaseBase):
                                  'hidden devices %s is shown in nics %s' %
                                  (hiddens, _nics))
 
-    def test_get_iface_cfg(self):
-        deviceName = "___This_could_never_be_a_device_name___"
-        ifcfg = ('GATEWAY0=1.1.1.1\n' 'NETMASK=255.255.0.0\n')
-        with namedTemporaryDir() as tempDir:
-            ifcfgPrefix = os.path.join(tempDir, 'ifcfg-')
-            filePath = ifcfgPrefix + deviceName
+    @mock.patch.object(misc, 'open', create=True)
+    def test_get_ifcfg(self, mock_open):
+        gateway = '1.1.1.1'
+        netmask = '255.255.0.0'
 
-            with mock.patch.object(misc, 'NET_CONF_PREF', ifcfgPrefix):
-                with open(filePath, 'w') as ifcfgFile:
-                    ifcfgFile.write(ifcfg)
-                self.assertEqual(
-                    misc.getIfaceCfg(deviceName)['GATEWAY'], '1.1.1.1')
-                self.assertEqual(
-                    misc.getIfaceCfg(deviceName)['NETMASK'], '255.255.0.0')
+        ifcfg = "GATEWAY0={}\nNETMASK={}\n".format(gateway, netmask)
+        ifcfg_stream = six.StringIO(ifcfg)
+        mock_open.return_value.__enter__.return_value = ifcfg_stream
+
+        resulted_ifcfg = misc.getIfaceCfg('eth0')
+
+        self.assertEqual(resulted_ifcfg['GATEWAY'], gateway)
+        self.assertEqual(resulted_ifcfg['NETMASK'], netmask)
 
     @broken_on_ci(exception=AssertionError)
     @mock.patch.object(bonding, 'BONDING_DEFAULTS',
