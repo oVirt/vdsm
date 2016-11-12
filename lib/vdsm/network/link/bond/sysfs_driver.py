@@ -25,6 +25,7 @@ import os
 from vdsm.network.link import iface
 
 from . import BondAPI
+from . import sysfs_options
 
 
 class BondSysFS(BondAPI):
@@ -33,7 +34,6 @@ class BondSysFS(BondAPI):
     BONDING_PATH = '/sys/class/net/%s/bonding'
     BONDING_SLAVES = BONDING_PATH + '/slaves'
     BONDING_ACTIVE_SLAVE = BONDING_PATH + '/active_slave'
-    BONDING_OPT = BONDING_PATH + '/%s'
 
     def __init__(self, name, slaves=(), options=None):
         super(BondSysFS, self).__init__(name, slaves, options)
@@ -84,9 +84,7 @@ class BondSysFS(BondAPI):
 
     def set_options(self, options):
         self._options = dict(options)
-        for key, value in options:
-            with open(self.BONDING_OPT % (self._master, key), 'w') as f:
-                f.write(value)
+        sysfs_options.set_options(self._master, options)
         logging.info('Bond {} options set: {}.'.format(self._master, options))
 
     def exists(self):
