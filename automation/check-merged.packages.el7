@@ -19,6 +19,7 @@ python-mock
 python-netaddr
 python-pthreading
 python-six
+python-requests
 python34-nose
 python34-six
 python34

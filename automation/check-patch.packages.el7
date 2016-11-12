@@ -20,6 +20,7 @@ python-netaddr
 python-pthreading
 python-setuptools
 python-six
+python-requests
 rpm-build
 sanlock-python
 sudo
