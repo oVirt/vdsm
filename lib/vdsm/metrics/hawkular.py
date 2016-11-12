@@ -25,10 +25,15 @@ import logging
 import threading
 
 import six
-from hawkular import metrics
 
+from vdsm import compat
 from vdsm import concurrent
 from vdsm.config import config
+
+try:
+    from hawkular import metrics
+except ImportError as e:
+    raise compat.Unsupported(str(e))
 
 _running = False
 _queue = collections.deque(maxlen=config.getint('metrics', 'queue_size'))

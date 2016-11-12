@@ -24,15 +24,18 @@ from six.moves import xmlrpc_client as xmlrpclib
 import socket
 import ssl
 
+from vdsm import compat
 from vdsm import constants
 from vdsm.utils import (
     monotonic_time,
 )
 from .config import config
 
-from M2Crypto import SSL, X509, threading
-from M2Crypto.SSL import SSLError
-
+try:
+    from M2Crypto import SSL, X509, threading
+    from M2Crypto.SSL import SSLError
+except ImportError as e:
+    raise compat.Unsupported(str(e))
 
 DEFAULT_ACCEPT_TIMEOUT = 5
 SOCKET_DEFAULT_TIMEOUT = socket._GLOBAL_DEFAULT_TIMEOUT

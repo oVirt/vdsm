@@ -53,3 +53,9 @@ try:
 except ImportError:
     from vdsm.common.contextlib import suppress
     suppress  # yep, this is needed twice.
+
+
+class Unsupported(ImportError):
+    """
+    Raised when a feature is not supported on this platform.
+    """

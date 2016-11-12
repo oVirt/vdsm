@@ -20,8 +20,13 @@
 
 from __future__ import absolute_import
 
-import statsd
 import six
+from vdsm import compat
+
+try:
+    import statsd
+except ImportError as e:
+    raise compat.Unsupported(str(e))
 
 _client = None
 
