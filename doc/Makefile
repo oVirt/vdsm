@@ -3,7 +3,12 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = PYTHONPATH=../vdsm:../:$$PYTHONPATH sphinx-build -j 4
+
+# Needed since we have wrong imports in vdsm.rpc modules, depending on API from
+# vdsm directory.
+# TODO: remove when the issue is fixed.
+SPHINXBUILD   = PYTHONPATH=../vdsm:$(PYTHONPATH) sphinx-build -j 4
+
 PAPER         =
 BUILDDIR      = build
 VDSM_SRC_DIR  = ../lib/vdsm
