@@ -441,16 +441,19 @@ class TestCommit(TestCaseBase):
 @expandPermutations
 class TestMap(TestCaseBase):
 
-    @permutations([
-        # format, qcow2_compat
-        (qemuimg.FORMAT.QCOW2, "0.10"),
-        (qemuimg.FORMAT.QCOW2, "1.1"),
-    ])
-    def test_empty_image(self, format, qcow2_compat):
+    # We test only qcow2 images since this is the only use case that we need
+    # now.  Testing raw images is tricky, the result depends on the file system
+    # supporting SEEK_DATA and SEEK_HOLE. If these are supported, empty image
+    # will be seen as one block with data=False. If not supported (seen on
+    # travis-ci), empty image will be seen as one block with data=True.
+    FORMAT = qemuimg.FORMAT.QCOW2
+
+    @permutations([["0.10"], ["1.1"]])
+    def test_empty_image(self, qcow2_compat):
         with namedTemporaryDir() as tmpdir:
             size = 1048576
             image = os.path.join(tmpdir, "base.img")
-            qemuimg.create(image, size=size, format=format,
+            qemuimg.create(image, size=size, format=self.FORMAT,
                            qcow2Compat=qcow2_compat)
 
             expected = [
@@ -472,15 +475,13 @@ class TestMap(TestCaseBase):
         (64 * 1024, 72 * 1024, 131072, "0.10"),
         (64 * 1024, 72 * 1024, 131072, "1.1"),
     ])
-    def test_one_block_qcow2(self, offset, length, expected_length,
-                             qcow2_compat):
+    def test_one_block(self, offset, length, expected_length, qcow2_compat):
         with namedTemporaryDir() as tmpdir:
-            image = os.path.join(tmpdir, "base.img")
-            fmt = qemuimg.FORMAT.QCOW2
             size = 1048576
-            qemuimg.create(image, size=size, format=fmt,
+            image = os.path.join(tmpdir, "base.img")
+            qemuimg.create(image, size=size, format=self.FORMAT,
                            qcow2Compat=qcow2_compat)
-            qemu_pattern_write(image, fmt, offset=offset, len=length,
+            qemu_pattern_write(image, self.FORMAT, offset=offset, len=length,
                                pattern=0xf0)
 
             expected = [
