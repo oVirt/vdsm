@@ -48,7 +48,12 @@ class TestAddressIP(VdsmTestCase):
         self.assertEqual(None, ip.defaultRoute)
 
 
+class DummyRunningConfig(object):
+    networks = {}
+
+
 @attr(type='unit')
+@mock.patch.object(validator, 'RunningConfig', DummyRunningConfig)
 class TestIPNameserverValidator(VdsmTestCase):
 
     def test_ignore_remove_networks(self):
@@ -88,13 +93,14 @@ class TestIPNameserverValidator(VdsmTestCase):
 
 
 @attr(type='unit')
+@mock.patch.object(validator, 'RunningConfig')
 class TestIPDefaultRouteValidator(VdsmTestCase):
 
-    def test_request_one_defroute_no_existing_defroute(self):
+    def test_request_one_defroute_no_existing_defroute(self, mockRConfig):
+        mockRConfig.return_value.networks = {}
         validator.validate({'NET0': {'defaultRoute': True,
                                      'nameservers': ['8.8.8.8']}})
 
-    @mock.patch.object(validator, 'RunningConfig')
     def test_request_no_defroute_no_existing_defroute(self, mockRConfig):
         mockRConfig.return_value.networks = {
             'NET88': {'defaultRoute': False, 'nameservers': []}}
@@ -102,7 +108,6 @@ class TestIPDefaultRouteValidator(VdsmTestCase):
         validator.validate({'NET0': {'defaultRoute': False,
                                      'nameservers': []}})
 
-    @mock.patch.object(validator, 'RunningConfig')
     def test_request_one_defroute_existing_same_defroute(self, mockRConfig):
         netname = 'NET0'
         mockRConfig.return_value.networks = {
@@ -111,7 +116,6 @@ class TestIPDefaultRouteValidator(VdsmTestCase):
         validator.validate({netname: {'defaultRoute': True,
                                       'nameservers': ['8.8.8.8']}})
 
-    @mock.patch.object(validator, 'RunningConfig')
     def test_request_one_defroute_removing_existing_different_defroute(
             self, mockRConfig):
         mockRConfig.return_value.networks = {
@@ -122,14 +126,14 @@ class TestIPDefaultRouteValidator(VdsmTestCase):
                             'NET88': {'defaultRoute': False,
                                       'nameservers': []}})
 
-    def test_request_multi_defroute(self):
+    def test_request_multi_defroute(self, mockRConfig):
+        mockRConfig.return_value.networks = {}
         with self.assertRaises(ne.ConfigNetworkError):
             validator.validate({'NET0': {'defaultRoute': True,
                                          'nameservers': ['8.8.8.8']},
                                 'NET88': {'defaultRoute': True,
                                           'nameservers': ['8.8.8.8']}})
 
-    @mock.patch.object(validator, 'RunningConfig')
     def test_request_one_defroute_existing_different_defroute(self,
                                                               mockRConfig):
         mockRConfig.return_value.networks = {
@@ -139,7 +143,6 @@ class TestIPDefaultRouteValidator(VdsmTestCase):
             validator.validate({'NET0': {'defaultRoute': True,
                                          'nameservers': ['8.8.8.8']}})
 
-    @mock.patch.object(validator, 'RunningConfig')
     def test_request_multi_defroute_removing_existing_different_defroute(
             self, mockRConfig):
         mockRConfig.return_value.networks = {
