@@ -30,16 +30,16 @@ from vdsm.network import errors
 from vdsm.network.models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
 from vdsm.network.models import hierarchy_backing_device, hierarchy_vlan_tag
 from vdsm.network.models import _nicSort
+from testlib import VdsmTestCase as TestCaseBase, mock
 
-from testlib import VdsmTestCase as TestCaseBase
-
-from monkeypatch import MonkeyPatch, MonkeyClass
+from monkeypatch import MonkeyPatch
 
 
 @attr(type='unit')
-@MonkeyClass(bonding, 'BONDING_DEFAULTS', bonding.BONDING_DEFAULTS
-             if os.path.exists(bonding.BONDING_DEFAULTS)
-             else '../static/usr/share/vdsm/bonding-defaults.json')
+@mock.patch('vdsm.network.link.bond.sysfs_options.BONDING_DEFAULTS',
+            bonding.BONDING_DEFAULTS
+            if os.path.exists(bonding.BONDING_DEFAULTS)
+            else '../static/usr/share/vdsm/bonding-defaults.json')
 class TestNetmodels(TestCaseBase):
 
     def testIsVlanIdValid(self):

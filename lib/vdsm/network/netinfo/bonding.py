@@ -22,7 +22,6 @@ from functools import partial
 from glob import iglob
 import json
 import logging
-import six
 import os
 
 from vdsm import constants
@@ -32,8 +31,27 @@ from vdsm.utils import memoized
 from .misc import visible_devs
 from . import nics
 
+# In order to limit the scope of change, this module is now acting as a proxy
+# to the link.bond.sysfs_options module.
+from vdsm.network.link.bond.sysfs_options import _bond_opts_read_elements
+from vdsm.network.link.bond.sysfs_options import _bondOpts, bondOpts
+from vdsm.network.link.bond.sysfs_options import _getBondingOptions
+from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
+from vdsm.network.link.bond.sysfs_options import getAllDefaultBondingOptions
+from vdsm.network.link.bond.sysfs_options import EXCLUDED_BONDING_ENTRIES
+from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NAME_TO_NUMBER
+from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NUMBER_TO_NAME
+from vdsm.network.link.bond.sysfs_options import BONDING_DEFAULTS
+from vdsm.network.link.setup import parse_bond_options
+bondOpts
+getDefaultBondingOptions
+getAllDefaultBondingOptions
+parse_bond_options
+BONDING_MODES_NAME_TO_NUMBER
+BONDING_MODES_NUMBER_TO_NAME
+BONDING_DEFAULTS
+
 BONDING_ACTIVE_SLAVE = '/sys/class/net/%s/bonding/active_slave'
-BONDING_DEFAULTS = constants.P_VDSM + 'bonding-defaults.json'
 BONDING_FAILOVER_MODES = frozenset(('1', '3'))
 BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))
 BONDING_NAME2NUMERIC_PATH = constants.P_VDSM + 'bonding-name2numeric.json'
@@ -41,23 +59,6 @@ BONDING_MASTERS = '/sys/class/net/bonding_masters'
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
 BONDING_SLAVE_OPT = '/sys/class/net/%s/bonding_slave/%s'
-EXCLUDED_BONDING_ENTRIES = frozenset((
-    'slaves', 'active_slave', 'mii_status', 'queue_id', 'ad_aggregator',
-    'ad_num_ports', 'ad_actor_key', 'ad_partner_key', 'ad_partner_mac',
-    'ad_actor_system'
-))
-
-BONDING_MODES_NAME_TO_NUMBER = {
-    'balance-rr': '0',
-    'active-backup': '1',
-    'balance-xor': '2',
-    'broadcast': '3',
-    '802.3ad': '4',
-    'balance-tlb': '5',
-    'balance-alb': '6',
-}
-BONDING_MODES_NUMBER_TO_NAME = dict(
-    (v, k) for k, v in six.iteritems(BONDING_MODES_NAME_TO_NUMBER))
 
 bondings = partial(visible_devs, Link.isBOND)
 
@@ -102,74 +103,6 @@ def _active_slave(bond_name):
     """
     with open(BONDING_ACTIVE_SLAVE % bond_name) as f:
         return f.readline().rstrip()
-
-
-def _getBondingOptions(bond_name):
-    """
-    Return non-empty options differing from defaults, excluding not actual or
-    not applicable options, e.g. 'ad_num_ports' or 'slaves' and always return
-    bonding mode even if it's default, e.g. 'mode=0'
-    """
-    opts = bondOpts(bond_name)
-    mode = opts['mode'][-1] if 'mode' in opts else None
-    defaults = getDefaultBondingOptions(mode)
-
-    return dict(((opt, val[-1]) for (opt, val) in opts.iteritems()
-                 if val and (val != defaults.get(opt) or opt == "mode")))
-
-
-def bondOpts(bond_name, keys=None):
-    """
-    Return a dictionary in the same format as _bondOpts(). Exclude entries that
-    are not bonding options, e.g. 'ad_num_ports' or 'slaves'.
-    """
-    return dict(((opt, val) for
-                 (opt, val) in _bondOpts(bond_name, keys).iteritems()
-                 if opt not in EXCLUDED_BONDING_ENTRIES))
-
-
-@memoized
-def getDefaultBondingOptions(mode=None):
-    """
-    Return default options for the given mode. If it is None, return options
-    for the default mode (usually '0').
-    """
-    defaults = getAllDefaultBondingOptions()
-
-    if mode is None:
-        mode = defaults['0']['mode'][-1]
-
-    return defaults[mode]
-
-
-def _bond_opts_read_elements(file_path):
-    with open(file_path) as f:
-        return [el for el in f.read().rstrip().split(' ') if el]
-
-
-def _bondOpts(bond_name, keys=None):
-    """ Returns a dictionary of bond option name and a values iterable. E.g.,
-    {'mode': ('balance-rr', '0'), 'xmit_hash_policy': ('layer2', '0')}
-    """
-    if keys is None:
-        paths = iglob(BONDING_OPT % (bond_name, '*'))
-    else:
-        paths = (BONDING_OPT % (bond_name, key) for key in keys)
-    opts = {}
-    for path in paths:
-        opts[os.path.basename(path)] = _bond_opts_read_elements(path)
-
-    return opts
-
-
-@memoized
-def getAllDefaultBondingOptions():
-    """
-    Return default options per mode, in a dictionary of dictionaries. All keys
-    are numeric modes stored as strings for coherence with 'mode' option value.
-    """
-    with open(BONDING_DEFAULTS) as defaults:
-        return json.loads(defaults.read())
 
 
 def speed(bond_name):
@@ -283,26 +216,3 @@ def _bond_opts_name2numeric_getval(opt_path, opt_write_file, numeric_val):
             raise
 
     return _bond_opts_read_elements(opt_path)
-
-
-def parse_bond_options(options, keep_custom=False):
-    """
-    Parse bonding options into dictionary, if keep_custom is set to True,
-    custom option will not be recursively parsed.
-
-    >>> parse_bond_options('mode=4 custom=foo:yes,bar:no')
-    {'custom': {'bar': 'no', 'foo': 'yes'}, 'mode': '4'}
-    """
-    def _string_to_dict(str, div, eq):
-        if options == '':
-            return {}
-        return dict(option.split(eq, 1)
-                    for option in str.strip(div).split(div))
-    if options:
-        d_options = _string_to_dict(options, ' ', '=')
-        if d_options.get('custom') and not keep_custom:
-            d_options['custom'] = _string_to_dict(d_options['custom'], ',',
-                                                  ':')
-        return d_options
-    else:
-        return {}
