@@ -443,8 +443,6 @@ class TestMap(TestCaseBase):
 
     @permutations([
         # format, qcow2_compat
-        (qemuimg.FORMAT.RAW, "0.10"),
-        (qemuimg.FORMAT.RAW, "1.1"),
         (qemuimg.FORMAT.QCOW2, "0.10"),
         (qemuimg.FORMAT.QCOW2, "1.1"),
     ])
@@ -460,51 +458,6 @@ class TestMap(TestCaseBase):
                 {
                     "start": 0,
                     "length": size,
-                    "data": False,
-                    "zero": True,
-                },
-            ]
-
-            self.check_map(qemuimg.map(image), expected)
-
-    @permutations([
-        # length, qcow2_compat
-        (4 * 1024, "0.10"),
-        (4 * 1024, "1.1"),
-        (64 * 1024, "0.10"),
-        (64 * 1024, "1.1"),
-    ])
-    def test_one_block_raw(self, length, qcow2_compat):
-        with namedTemporaryDir() as tmpdir:
-            size = 1048576
-            offset = 64 * 1024
-            image = os.path.join(tmpdir, "base.img")
-            fmt = qemuimg.FORMAT.RAW
-            qemuimg.create(image, size=size, format=fmt,
-                           qcow2Compat=qcow2_compat)
-            qemu_pattern_write(image, fmt, offset=offset, len=length,
-                               pattern=0xf0)
-
-            expected = [
-                # run 1 - empty
-                {
-                    "start": 0,
-                    "length": offset,
-                    "data": False,
-                    "zero": True,
-                },
-                # run 2 - data
-                {
-                    "start": offset,
-                    "offset": offset,
-                    "length": length,
-                    "data": True,
-                    "zero": False,
-                },
-                # run 3 - empty
-                {
-                    "start": offset + length,
-                    "length": size - offset - length,
                     "data": False,
                     "zero": True,
                 },
