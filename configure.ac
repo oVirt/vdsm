@@ -309,13 +309,6 @@ if test "x$PYTHON_CONFIG" = "x"; then
 fi
 
 # Checking for python modules (sorted, please keep in order)
-AX_PYTHON_MODULE([argparse], [fatal], python2)
-AX_PYTHON_MODULE([cpopen], [fatal], python2)
-AX_PYTHON_MODULE([libvirt], [fatal], python2)
-AX_PYTHON_MODULE([netaddr], [fatal], python2)
-AX_PYTHON_MODULE([pthreading], [fatal], python2)
-AX_PYTHON_MODULE([pyinotify], [fatal], python2)
-AX_PYTHON_MODULE([selinux], [fatal], python2)
 AX_PYTHON_MODULE([six], [fatal], python2)
 
 # External programs (sorted, please keep in order)
