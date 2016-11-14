@@ -146,7 +146,6 @@ _spec = {
         'divisor': _parser.parse_int,
         'ecn': _parser.parse_true,
         'ewma': _parser.parse_int,
-        'ewma': _parser.parse_int,
         'flows': _parse_sfq_flows,
         'headdrop': _parser.parse_true,
         'limit': _parse_limit,
