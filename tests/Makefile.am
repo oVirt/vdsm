@@ -139,7 +139,7 @@ test_modules = \
 	transportWrapperTests.py \
 	throttledlog_test.py \
 	unicode_test.py \
-	utilsTests.py \
+	utils_test.py \
 	vdscliTests.py \
 	vdsClientTests.py \
 	vdsmapi_test.py \
@@ -228,7 +228,7 @@ blacklist_modules_python3 = \
 	storagetestlib_test.py \
 	toolBondingTests.py \
 	unicode_test.py \
-	utilsTests.py \
+	utils_test.py \
 	v2vTests.py \
 	vdscliTests.py \
 	vmApiTests.py \
