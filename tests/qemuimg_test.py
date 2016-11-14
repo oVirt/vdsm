@@ -523,6 +523,29 @@ class TestMap(TestCaseBase):
                     raise MapMismatch(msg, expected, actual)
 
 
+@expandPermutations
+class TestAmend(TestCaseBase):
+
+    @permutations([
+        # qcow2_compat, desired_qcow2_compat
+        ("0.10", "1.1"),
+        ("0.10", "0.10"),
+        ("1.1", "1.1"),
+    ])
+    @MonkeyPatch(qemuimg, 'config', CONFIG)
+    def test_empty_image(self, qcow2_compat, desired_qcow2_compat):
+        with namedTemporaryDir() as tmpdir:
+            base_path = os.path.join(tmpdir, 'base.img')
+            leaf_path = os.path.join(tmpdir, 'leaf.img')
+            size = 1048576
+            qemuimg.create(base_path, size=size, format=qemuimg.FORMAT.RAW)
+            qemuimg.create(leaf_path, format=qemuimg.FORMAT.QCOW2,
+                           backing=base_path)
+            qemuimg.amend(leaf_path, desired_qcow2_compat)
+            self.assertEquals(qemuimg.info(leaf_path)['compat'],
+                              desired_qcow2_compat)
+
+
 def make_image(path, size, format, index, qcow2_compat, backing=None):
     qemuimg.create(path, size=size, format=format, qcow2Compat=qcow2_compat,
                    backing=backing)

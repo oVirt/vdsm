@@ -230,6 +230,16 @@ def map(image):
         raise InvalidOutput(cmd, out, "Failed to process qemuimg map output")
 
 
+def amend(image, compat):
+    if compat not in _QCOW2_COMPAT_SUPPORTED:
+        raise ValueError("Invalid compat version %r" % compat)
+
+    # For simplicity, we always run commit in the image directory.
+    workdir = os.path.dirname(image)
+    cmd = [_qemuimg.cmd, "amend", "-o", "compat=" + compat, image]
+    _run_cmd(cmd, cwd=workdir)
+
+
 class QemuImgOperation(object):
     REGEXPR = re.compile(r'\s*\(([\d.]+)/100%\)\s*')
 
