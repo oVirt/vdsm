@@ -40,8 +40,6 @@ network_modules = network/*_test.py
 test_modules = \
 	alignmentScanTests.py \
 	api_test.py \
-	blocksdTests.py \
-	blockVolumeTests.py \
 	bridgeTests.py \
 	bulk_sampling_test.py \
 	capsTests.py \
@@ -54,15 +52,11 @@ test_modules = \
 	cpuProfileTests.py \
 	deviceTests.py \
 	domainDescriptorTests.py \
-	domain_manifest_test.py \
 	encodingTests.py \
 	exception_test.py \
 	executorTests.py \
 	eventfd_test.py \
 	filecontrol_test.py \
-	fileSDTests.py \
-	fileVolumeTests.py \
-	fileUtilTests.py \
 	fuserTests.py \
 	gluster_cli_tests.py \
 	gluster_exception_test.py \
@@ -72,40 +66,30 @@ test_modules = \
 	hostdevTests.py \
 	hoststatsTests.py \
 	hwinfo_test.py \
-	imagetickets_test.py \
-	iscsiTests.py \
 	jobsTests.py \
 	libvirtconnectionTests.py \
 	logutils_test.py \
-	lvmTests.py \
-	miscTests.py \
 	mkimageTests.py \
 	modprobe.py \
 	moduleloader_test.py \
 	monkeypatchTests.py \
 	momTests.py \
 	momPolicyTests.py \
-	mountTests.py \
 	numaUtilsTests.py \
-	outOfProcessTests.py \
 	osinfo_test.py \
 	osutils_test.py \
 	passwordsTests.py \
 	periodicTests.py \
 	permutationTests.py \
-	persistentDictTests.py \
 	properties_test.py \
 	protocoldetectorTests.py \
 	pthreadTests.py \
 	qemuimg_test.py \
-	storage_resourcemanager_test.py \
 	responseTests.py \
 	rngsources_test.py \
 	samplingTests.py \
 	scheduleTests.py \
 	schemaValidationTest.py \
-	sdm_indirection_tests.py \
-	securableTests.py \
 	sigutils_test.py \
 	sparsifyTests.py \
 	sslTests.py \
@@ -113,24 +97,40 @@ test_modules = \
 	stompAsyncClientTests.py \
 	stompAsyncDispatcherTests.py \
 	stompTests.py \
-	storage_blkdiscard_test.py \
-	storage_exception_test.py \
-	storagefakelibTests.py \
-	storageMailboxTests.py \
-	storageServerTests.py \
-	storagetestlib_test.py \
 	storage_asyncevent_test.py \
+	storage_blkdiscard_test.py \
+	storage_blocksd_test.py \
+	storage_blockvolume_test.py \
 	storage_check_test.py \
 	storage_directio_test.py \
+	storage_exception_test.py \
+	storage_fakelib_test.py \
+	storage_filesd_test.py \
+	storage_fileutil_test.py \
+	storage_filevolume_test.py \
 	storage_guarded_test.py \
 	storage_hsm_test.py \
+	storage_imagetickets_test.py \
+	storage_iscsi_test.py \
+	storage_lvm_test.py \
+	storage_mailbox_test.py \
+	storage_misc_test.py \
 	storage_monitor_test.py \
+	storage_mount_test.py \
+	storage_outofprocess_test.py \
+	storage_persistentdict_test.py \
+	storage_resourcemanager_test.py \
 	storage_rwlock_test.py \
+	storage_sd_manifest_test.py \
 	storage_sdm_copy_data_test.py \
 	storage_sdm_create_volume_test.py \
-	storage_volume_test.py \
+	storage_sdm_indirection_tests.py \
+	storage_securable_test.py \
+	storage_storageserver_test.py \
+	storage_testlib_test.py \
 	storage_volume_artifacts_test.py \
 	storage_volume_metadata_test.py \
+	storage_volume_test.py \
 	storage_workarounds_test.py \
 	tasksetTests.py \
 	testlibTests.py \
@@ -163,30 +163,19 @@ test_modules = \
 
 blacklist_modules_python3 = \
 	alignmentScanTests.py \
-	blockVolumeTests.py \
-	blocksdTests.py \
 	bridgeTests.py \
 	clientifTests.py \
 	deviceTests.py \
 	devices/parsing/complex_vm_tests.py \
-	domain_manifest_test.py \
 	encodingTests.py \
-	fileSDTests.py \
-	fileUtilTests.py \
-	fileVolumeTests.py \
 	guestagentTests.py \
 	hooksTests.py \
 	hostdevTests.py \
 	hoststatsTests.py \
-	imagetickets_test.py \
-	iscsiTests.py \
-	lvmTests.py \
-	miscTests.py \
 	mkimageTests.py \
 	momPolicyTests.py \
 	momTests.py \
 	monkeypatchTests.py \
-	mountTests.py \
 	network/iproute2_test.py \
 	network/ipwrapper_test.py \
 	network/link_iface_test.py \
@@ -197,35 +186,46 @@ blacklist_modules_python3 = \
 	network/tc_test.py \
 	network/unified_persistence_test.py \
 	numaUtilsTests.py \
-	outOfProcessTests.py \
 	periodicTests.py \
-	persistentDictTests.py \
 	protocoldetectorTests.py \
 	qemuimg_test.py \
-	storage_resourcemanager_test.py \
 	samplingTests.py \
 	schemaTests.py \
 	schemaValidationTest.py \
-	sdm_indirection_tests.py \
 	stompAdapterTests.py \
 	stompAsyncClientTests.py \
 	stompAsyncDispatcherTests.py \
 	stompTests.py \
-	storageMailboxTests.py \
+	storage_blkdiscard_test.py \
+	storage_blocksd_test.py \
+	storage_blockvolume_test.py \
+	storage_fakelib_test.py \
+	storage_filesd_test.py \
+	storage_fileutil_test.py \
+	storage_filevolume_test.py \
 	storage_guarded_test.py \
 	storage_hsm_test.py \
+	storage_imagetickets_test.py \
+	storage_iscsi_test.py \
+	storage_lvm_test.py \
+	storage_mailbox_test.py \
+	storage_misc_test.py \
 	storage_monitor_test.py \
-	storageServerTests.py \
+	storage_mount_test.py \
+	storage_outofprocess_test.py \
+	storage_persistentdict_test.py \
+	storage_resourcemanager_test.py \
 	storage_rwlock_test.py \
-	storage_blkdiscard_test.py \
-	storage_sdm_create_volume_test.py \
+	storage_sd_manifest_test.py \
 	storage_sdm_copy_data_test.py \
-	storage_volume_test.py \
+	storage_sdm_create_volume_test.py \
+	storage_sdm_indirection_tests.py \
+	storage_storageserver_test.py \
+	storage_testlib_test.py \
 	storage_volume_artifacts_test.py \
 	storage_volume_metadata_test.py \
+	storage_volume_test.py \
 	storage_workarounds_test.py \
-	storagefakelibTests.py \
-	storagetestlib_test.py \
 	toolBondingTests.py \
 	unicode_test.py \
 	utils_test.py \
