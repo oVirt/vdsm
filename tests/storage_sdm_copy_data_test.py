@@ -169,6 +169,44 @@ class TestCopyDataDIV(VdsmTestCase):
                                  sorted(guarded.context.locks))
             verify_qemu_chain(env.dst_chain)
 
+    @permutations((
+        # env_type, src_compat, sd_version
+        # Old storage domain, we supported only 0.10
+        ('file', '0.10', 3),
+        ('block', '0.10', 3),
+        # New domain old volume
+        ('file', '0.10', 4),
+        ('block', '0.10', 4),
+        # New domain, new volumes
+        ('file', '1.1', 4),
+        ('block', '1.1', 4),
+    ))
+    def test_qcow2_compat(self, env_type, qcow2_compat, sd_version):
+        src_fmt = sc.name2type("cow")
+        dst_fmt = sc.name2type("cow")
+        job_id = make_uuid()
+
+        with self.make_env(env_type, src_fmt, dst_fmt, sd_version=sd_version,
+                           src_qcow2_compat=qcow2_compat) as env:
+            src_vol = env.src_chain[0]
+            dst_vol = env.dst_chain[0]
+            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
+                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
+            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
+                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+            job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
+
+            job.run()
+            wait_for_job(job)
+
+            actual_compat = qemuimg.info(dst_vol.volumePath)['compat']
+            self.assertEqual(actual_compat, env.sd_manifest.qcow2_compat())
+
+    # TODO: Missing tests:
+    # We should a test of copying from old domain (version=3)
+    # to a new domain (domain=4) or the opposite (from 4 to 3),
+    # but we still don't have infrastracture for this yet.
+
     def test_bad_vm_configuration_volume(self):
         """
         When copying a volume containing VM configuration information the

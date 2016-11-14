@@ -80,6 +80,7 @@ class Job(base.Job):
                         self._dest.path,
                         srcFormat=src_format,
                         dstFormat=dst_format,
+                        dstQcow2Compat=self._dest.qcow2_compat,
                         backing=self._dest.backing_path,
                         backingFormat=self._dest.backing_qemu_format)
                     self._operation.wait_for_completion()
@@ -137,6 +138,11 @@ class CopyDataDivEndpoint(properties.Owner):
         if not parent_vol:
             return None
         return volume.getBackingVolumePath(self.img_id, parent_vol.volUUID)
+
+    @property
+    def qcow2_compat(self):
+        dom = sdCache.produce_manifest(self.sd_id)
+        return dom.qcow2_compat()
 
     @property
     def backing_qemu_format(self):
