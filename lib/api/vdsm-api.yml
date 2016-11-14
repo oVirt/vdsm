@@ -2707,6 +2707,10 @@ types:
         -   description: The name of the attached host bridge device
             name: network
             type: string
+
+        -   description: The name of the referenced network filter
+            name: filter
+            type: string
         type: object
 
     HotplugNicParams: &HotplugNicParams
@@ -7089,6 +7093,10 @@ types:
                 If the network name is an empty string, it deactivates the
                 link and disassociates the vnic from its current network.
             name: network
+            type: string
+
+        -   description: The name of the referenced network filter
+            name: filter
             type: string
         type: object
 
