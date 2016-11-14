@@ -3608,3 +3608,9 @@ class HSM(object):
         job = sdm.api.reduce_domain.Job(job_id, DISCONNECTED_HOST_ID,
                                         reduce_params)
         self.sdm_schedule(job)
+
+    @public
+    def sdm_set_volume_generation(self, job_id, vol_info, new_gen):
+        job = sdm.api.set_volume_generation.Job(job_id, self._get_hostid(),
+                                                vol_info, new_gen)
+        self.sdm_schedule(job)

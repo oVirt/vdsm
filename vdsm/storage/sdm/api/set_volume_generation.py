@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,18 +18,25 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
+from __future__ import absolute_import
 
-vdsmsdmapidir = $(vdsmdir)/storage/sdm/api
+from vdsm.storage import guarded
 
-dist_vdsmsdmapi_PYTHON = \
-	__init__.py \
-	amend_volume.py \
-	base.py \
-	copy_data.py \
-	create_volume.py \
-	sparsify_volume.py \
-	move_device.py \
-	reduce_domain.py \
-	set_volume_generation.py \
-	$(NULL)
+from . import base
+from storage.sdm.api.copy_data import CopyDataDivEndpoint
+
+
+class Job(base.Job):
+    """
+    Change a volume's generation ID from a known value to a new value.
+    """
+
+    def __init__(self, job_id, host_id, vol_info, new_gen):
+        super(Job, self).__init__(job_id, 'set_volume_generation', host_id)
+        self._endpoint = CopyDataDivEndpoint(vol_info, host_id, writable=True)
+        self._new_gen = new_gen
+
+    def _run(self):
+        with guarded.context(self._endpoint.locks):
+            self._endpoint.volume.set_generation(self._endpoint.generation,
+                                                 self._new_gen)

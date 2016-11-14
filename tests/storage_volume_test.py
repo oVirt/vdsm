@@ -196,6 +196,28 @@ class VolumeManifestTest(VdsmTestCase):
                 pass
             self.assertEqual(next_gen, vol.getMetaParam(sc.GENERATION))
 
+    def test_set_generation_wrong_current_value(self):
+        img_id = make_uuid()
+        vol_id = make_uuid()
+
+        with fake_env('file') as env:
+            env.make_volume(MB, img_id, vol_id)
+            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+            vol.setMetaParam(sc.GENERATION, 1)
+            self.assertRaises(se.GenerationMismatch,
+                              vol.set_generation, 0, 2)
+
+    def test_set_generation(self):
+        img_id = make_uuid()
+        vol_id = make_uuid()
+
+        with fake_env('file') as env:
+            env.make_volume(MB, img_id, vol_id)
+            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+            vol.setMetaParam(sc.GENERATION, 1)
+            vol.set_generation(1, 2)
+            self.assertEqual(2, vol.getMetaParam(sc.GENERATION))
+
 
 class CountedInstanceMethod(object):
     def __init__(self, method):
