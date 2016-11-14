@@ -152,8 +152,8 @@ def attr(element, attribute):
     :type element: DOM element
     :param attribute: attribute name to look for
     :type attribute: basestring
-    :returns: the corresponding attribute value or empty string (if no element
-      with `tag` or exists or `attribute` is not present)
+    :returns: the corresponding attribute value or empty string (if `attribute`
+      is not present)
     :rtype: basestring
     """
     # Minidom returns unicodes, except for empty strings.
