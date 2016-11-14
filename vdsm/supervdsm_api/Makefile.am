@@ -23,6 +23,7 @@ supervdsm_apidir = $(vdsmdir)/supervdsm_api
 dist_supervdsm_api_PYTHON = \
 	__init__.py \
 	test.py \
+	containers.py \
 	hwinfo.py \
 	ksm.py \
 	mkimage.py \

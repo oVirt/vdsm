@@ -654,6 +654,14 @@ Requires: xfsprogs
 Gluster plugin enables VDSM to serve Gluster functionalities.
 %endif
 
+%package containers
+Summary: Container support for Vdsm
+BuildArch: noarch
+Requires: %{name} = %{version}-%{release}
+
+%description containers
+Enables VDSM to manage containers alongside virtual machines.
+
 %prep
 %setup -q
 
@@ -1573,6 +1581,11 @@ exit 0
 %{_datadir}/%{vdsm_name}/gluster/storagedev.py*
 %{_datadir}/%{vdsm_name}/gluster/tasks.py*
 %endif
+
+%files containers
+%defattr(-, root, root, -)
+%dir %{_datadir}/%{vdsm_name}
+%{_datadir}/%{vdsm_name}/supervdsm_api/containers.py*
 
 
 %changelog
