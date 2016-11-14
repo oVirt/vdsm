@@ -73,18 +73,6 @@ class TestCopyDataDIV(VdsmTestCase):
                 dst_vols = make_qemu_chain(env, size, dst_fmt, chain_length)
                 yield (src_vols, dst_vols)
 
-    def make_volume(self, env, img_id, vol_id, parent_vol_id, vol_fmt):
-        if parent_vol_id != sc.BLANK_UUID:
-            vol_fmt = sc.COW_FORMAT
-        env.make_volume(self.DEFAULT_SIZE, img_id, vol_id,
-                        parent_vol_id=parent_vol_id, vol_format=vol_fmt)
-        vol = env.sd_manifest.produceVolume(img_id, vol_id)
-        if vol_fmt == sc.COW_FORMAT:
-            backing = parent_vol_id if parent_vol_id != sc.BLANK_UUID else None
-            qemuimg.create(vol.volumePath, size=self.DEFAULT_SIZE,
-                           format=qemuimg.FORMAT.QCOW2, backing=backing)
-        return vol
-
     def expected_locks(self, src_vol, dst_vol):
         src_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, src_vol.sdUUID)
         dst_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, dst_vol.sdUUID)
