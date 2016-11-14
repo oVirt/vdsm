@@ -1307,47 +1307,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    def testSetupNetworksResizeBond(self, bridged):
-        with dummyIf(4) as nics:
-            with self.vdsm_net.pinger():
-                bondings = {BONDING_NAME: dict(nics=nics[:2],
-                                               bridged=bridged)}
-                status, msg = self.setupNetworks({}, bondings, {})
-
-                self.assertEquals(status, SUCCESS, msg)
-
-                self.assertBondExists(BONDING_NAME, nics=nics[:2])
-                self._assert_exact_bond_opts(BONDING_NAME, [])
-
-                # Increase bond size
-                bondings[BONDING_NAME]['nics'] = nics
-                status, msg = self.setupNetworks({}, bondings, {})
-
-                self.assertEquals(status, SUCCESS, msg)
-
-                self.assertBondExists(BONDING_NAME, nics)
-                self._assert_exact_bond_opts(BONDING_NAME, [])
-
-                # Reduce bond size
-                REQMODE_BROADCAST = '3'
-                bondings[BONDING_NAME]['nics'] = nics[:3]
-                bondings[BONDING_NAME]['options'] = ('mode=%s' %
-                                                     REQMODE_BROADCAST)
-                status, msg = self.setupNetworks({}, bondings, {})
-
-                self.assertEquals(status, SUCCESS, msg)
-
-                self.assertBondExists(BONDING_NAME, nics[:3])
-                self._assert_exact_bond_opts(
-                    BONDING_NAME, [bondings[BONDING_NAME]['options']])
-
-                bondings = {BONDING_NAME: dict(remove=True)}
-                status, msg = self.setupNetworks({}, bondings, {})
-
-                self.assertEquals(status, SUCCESS, msg)
-
-    @cleanupNet
-    @permutations([[True], [False]])
     def testBondHwAddress(self, bridged=True):
         """
         Test that bond mac address is independent of the ordering of nics arg

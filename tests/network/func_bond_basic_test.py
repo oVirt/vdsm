@@ -77,6 +77,32 @@ class BondBasicTemplate(NetFuncTestCase):
                 self.assertBond(BOND1, BONDEDIT[BOND1])
                 self.assertBond(BOND2, BONDEDIT[BOND2])
 
+    def test_bond_mode_change(self):
+        with dummy_devices(2) as nics:
+            BONDCREATE = {BOND_NAME: {'nics': nics,
+                                      'switch': self.switch,
+                                      'options': 'mode=1'}}
+            BONDEDIT = {BOND_NAME: {'nics': nics,
+                                    'switch': self.switch,
+                                    'options': 'mode=3'}}
+            with self.setupNetworks({}, BONDCREATE, NOCHK):
+                self.setupNetworks({}, BONDEDIT, NOCHK)
+                self.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
+
+    def test_resize_bond(self):
+        with dummy_devices(4) as (nic1, nic2, nic3, nic4):
+            bond = {BOND_NAME: {'nics': [nic1, nic2],
+                                'switch': self.switch}}
+
+            with self.setupNetworks({}, bond, NOCHK):
+                bond[BOND_NAME]['nics'] += [nic3, nic4]
+                self.setupNetworks({}, bond, NOCHK)
+                self.assertBond(BOND_NAME, bond[BOND_NAME])
+
+                bond[BOND_NAME]['nics'].remove(nic4)
+                self.setupNetworks({}, bond, NOCHK)
+                self.assertBond(BOND_NAME, bond[BOND_NAME])
+
 
 @attr(type='functional', switch='legacy')
 class BondBasicLegacyTest(BondBasicTemplate):
