@@ -7154,6 +7154,7 @@ types:
     CopyDataDIVEndpoint: &CopyDataDIVEndpoint
         added: '4.1'
         description: An endpoint describing a Volume on a vdsm Storage Domain.
+        name: CopyDataDIVEndpoint
         properties:
         -   description: The UUID of the Storage Domain
             name: sd_id
