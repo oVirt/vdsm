@@ -20,7 +20,7 @@
 
 CONF_TO_DOMXML_X86_64 = [({
     'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
-    'smp': '8', 'memSize': '1024', 'memGuaranteedSize': '512',
+    'memSize': '1024', 'memGuaranteedSize': '512',
     'displayPort': '-1', 'vmName': 'testVm',
     'display': 'vnc', 'emulatedMachine': 'pc',
     'boot': '', 'timeOffset': 0,
@@ -88,7 +88,7 @@ CONF_TO_DOMXML_X86_64 = [({
 
 CONF_TO_DOMXML_PPC64 = [({
     'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
-    'smp': '8', 'memSize': '1024', 'memGuaranteedSize': '512',
+    'memSize': '1024', 'memGuaranteedSize': '512',
     'displayPort': '-1', 'vmName': 'testVm',
     'display': 'vnc', 'emulatedMachine': 'pc',
     'boot': '', 'timeOffset': 0,

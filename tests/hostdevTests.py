@@ -225,11 +225,6 @@ DEVICES_PROCESSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                      u'scsi_target2_0_0': {'capability': 'scsi_target',
                                            'is_assignable': 'true',
                                            'parent': 'scsi_host2'},
-                     u'block_sda_ssd': {'capability': 'storage',
-                                        'product': 'SSD',
-                                        'parent': 'scsi_0_0_0_0',
-                                        'is_assignable': 'true',
-                                        'vendor': 'ATA'},
                      u'pci_0000_00_02_0': {'product': '2nd Generation Core '
                                            'Processor Family Integrated '
                                            'Graphics Controller',
