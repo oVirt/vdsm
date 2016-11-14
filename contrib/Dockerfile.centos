@@ -23,6 +23,7 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     python-ioprocess \
     python-netaddr \
     python-pthreading \
+    python-requests \
     python-setuptools \
     python-six \
     python34 \
