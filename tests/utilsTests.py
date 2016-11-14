@@ -82,7 +82,7 @@ class FakeMonotonicTime(object):
         self.patch.revert()
 
 
-class TerminatingTests(TestCaseBase):
+class TestTerminating(TestCaseBase):
 
     def setUp(self):
         self.proc = commands.execCmd([EXT_SLEEP, "2"], sync=False)
@@ -112,7 +112,7 @@ class TerminatingTests(TestCaseBase):
         self.assertIsNone(self.proc.returncode)
 
 
-class RetryTests(TestCaseBase):
+class TestRetry(TestCaseBase):
     def testStopCallback(self):
         counter = [0]
         limit = 4
@@ -199,7 +199,7 @@ class RetryTests(TestCaseBase):
         self.assertEqual(counter[0], tries)
 
 
-class PidStatTests(TestCaseBase):
+class TestPidStat(TestCaseBase):
 
     @MonkeyPatch(cmdutils, "_USING_CPU_AFFINITY", False)
     def test_without_affinity(self):
@@ -215,7 +215,7 @@ class PidStatTests(TestCaseBase):
         sproc.wait()
 
 
-class PgrepTests(TestCaseBase):
+class TestPgrep(TestCaseBase):
     def test(self):
         sleepProcs = []
         for i in range(3):
@@ -232,7 +232,7 @@ class PgrepTests(TestCaseBase):
             proc.wait()
 
 
-class GetCmdArgsTests(TestCaseBase):
+class TestGetCmdArgs(TestCaseBase):
     def test(self):
         args = [EXT_SLEEP, "4"]
         sproc = commands.execCmd(args, sync=False)
@@ -257,7 +257,7 @@ class GetCmdArgsTests(TestCaseBase):
             sproc.wait()
 
 
-class CommandPathTests(TestCaseBase):
+class TestCommandPath(TestCaseBase):
     def testExisting(self):
         cp = utils.CommandPath('sh', 'utter nonsense', '/bin/sh')
         self.assertEquals(cp.cmd, '/bin/sh')
@@ -279,7 +279,7 @@ class CommandPathTests(TestCaseBase):
 
 
 @expandPermutations
-class GeneralUtilsTests(TestCaseBase):
+class TestGeneralUtils(TestCaseBase):
     def testPanic(self):
         self.assertRaises(AssertionError, panic.panic, "panic test")
 
@@ -330,7 +330,7 @@ class GeneralUtilsTests(TestCaseBase):
             'bye')
 
 
-class AsyncProcessOperationTests(TestCaseBase):
+class TestAsyncProcessOperation(TestCaseBase):
     def _echo(self, text):
         proc = commands.execCmd(["echo", "-n", "test"], sync=False)
 
@@ -392,7 +392,7 @@ class AsyncProcessOperationTests(TestCaseBase):
         self.assertNotEquals(err, None)
 
 
-class CallbackChainTests(TestCaseBase):
+class TestCallbackChain(TestCaseBase):
     def testCanPassIterableOfCallbacks(self):
         f = lambda: False
         callbacks = [f] * 10
@@ -456,7 +456,7 @@ def loghandler(handler, logger=""):
         log.removeHandler(handler)
 
 
-class TracebackTests(TestCaseBase):
+class TestTraceback(TestCaseBase):
 
     def __init__(self, *a, **kw):
         self.record = None
@@ -504,7 +504,7 @@ class TracebackTests(TestCaseBase):
         self.record = record
 
 
-class RollbackContextTests(TestCaseBase):
+class TestRollbackContext(TestCaseBase):
 
     class UndoException(Exception):
         """A special exception for testing exceptions during undo functions"""
@@ -604,7 +604,7 @@ class RollbackContextTests(TestCaseBase):
         self.fail("Exception was not raised")
 
 
-class ExecCmdAffinityTests(TestCaseBase):
+class TestExecCmdAffinity(TestCaseBase):
 
     CPU_SET = frozenset([0])
 
@@ -648,7 +648,7 @@ class ExecCmdAffinityTests(TestCaseBase):
             proc.kill()
 
 
-class PickleCopyTests(TestCaseBase):
+class TestPickleCopy(TestCaseBase):
     def test_picklecopy_exact(self):
         self.assertEqual(utils.picklecopy(VM_STATUS_DUMP),
                          copy.deepcopy(VM_STATUS_DUMP))
@@ -690,7 +690,7 @@ class Closer:
         raise CloseError
 
 
-class ClosingTests(TestCaseBase):
+class TestClosing(TestCaseBase):
     def test_error_before_close(self):
         c = Closer()
         with self.assertRaises(UserError):
@@ -706,7 +706,7 @@ class ClosingTests(TestCaseBase):
 
 
 @expandPermutations
-class MemoizedTests(TestCaseBase):
+class TestMemoized(TestCaseBase):
 
     def setUp(self):
         self.values = {}
@@ -766,7 +766,7 @@ def memoized_function(test, *args):
 
 
 @expandPermutations
-class RoundTests(TestCaseBase):
+class TestRound(TestCaseBase):
 
     @permutations([
         # n, size, result
@@ -781,7 +781,7 @@ class RoundTests(TestCaseBase):
 
 
 @expandPermutations
-class CommandStreamTests(TestCaseBase):
+class TestCommandStream(TestCaseBase):
 
     def assertUnexpectedCall(self, data):
         raise AssertionError("Unexpected data: %r" % data)
@@ -897,7 +897,7 @@ class FakeLogger(object):
         return self.level <= level
 
 
-class StopwatchTests(TestCaseBase):
+class TestStopwatch(TestCaseBase):
 
     def test_notset(self):
         log = FakeLogger(logging.NOTSET)
@@ -973,7 +973,7 @@ class TestWeakmethod(TestCaseBase):
         self.assertRaises(utils.InvalidatedWeakRef, method)
 
 
-class NoIntrPollTests(TestCaseBase):
+class TestNoIntrPoll(TestCaseBase):
     RETRIES = 3
     SLEEP_INTERVAL = 0.1
 
