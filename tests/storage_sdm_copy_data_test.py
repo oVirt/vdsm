@@ -60,18 +60,26 @@ class TestCopyDataDIV(VdsmTestCase):
         jobs._clear()
 
     @contextmanager
-    def get_vols(self, storage_type, src_fmt, dst_fmt, chain_length=1,
-                 size=DEFAULT_SIZE):
-        with fake_env(storage_type) as env:
+    def make_env(self, storage_type, src_fmt, dst_fmt, chain_length=1,
+                 size=DEFAULT_SIZE, sd_version=3, src_qcow2_compat='0.10'):
+        with fake_env(storage_type, sd_version=sd_version) as env:
             rm = FakeResourceManager()
             with MonkeyPatchScope([
                 (guarded, 'context', fake_guarded_context()),
                 (storage.sdm.api.copy_data, 'sdCache', env.sdcache),
                 (blockVolume, 'rm', rm),
             ]):
-                src_vols = make_qemu_chain(env, size, src_fmt, chain_length)
-                dst_vols = make_qemu_chain(env, size, dst_fmt, chain_length)
-                yield (src_vols, dst_vols)
+                # Create existing volume - may use compat 0.10 or 1.1.
+                src_vols = make_qemu_chain(env, size, src_fmt, chain_length,
+                                           qcow2_compat=src_qcow2_compat)
+                # New volumes are always created using the domain
+                # prefered format.
+                sd_compat = env.sd_manifest.qcow2_compat()
+                dst_vols = make_qemu_chain(env, size, dst_fmt, chain_length,
+                                           qcow2_compat=sd_compat)
+                env.src_chain = src_vols
+                env.dst_chain = dst_vols
+                yield env
 
     def expected_locks(self, src_vol, dst_vol):
         src_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, src_vol.sdUUID)
@@ -108,13 +116,12 @@ class TestCopyDataDIV(VdsmTestCase):
         dst_fmt = sc.name2type(dst_fmt)
         job_id = make_uuid()
 
-        with self.get_vols(env_type, src_fmt, dst_fmt) as (src_chain,
-                                                           dst_chain):
-            src_vol = src_chain[0]
-            dst_vol = dst_chain[0]
-            write_qemu_chain(src_chain)
+        with self.make_env(env_type, src_fmt, dst_fmt) as env:
+            src_vol = env.src_chain[0]
+            dst_vol = env.dst_chain[0]
+            write_qemu_chain(env.src_chain)
             self.assertRaises(ChainVerificationError,
-                              verify_qemu_chain, dst_chain)
+                              verify_qemu_chain, env.dst_chain)
 
             source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
                           img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
@@ -130,7 +137,7 @@ class TestCopyDataDIV(VdsmTestCase):
             self.assertEqual(jobs.STATUS.DONE, job.status)
             self.assertEqual(100.0, job.progress)
             self.assertNotIn('error', job.info())
-            verify_qemu_chain(dst_chain)
+            verify_qemu_chain(env.dst_chain)
             self.assertEqual(sc.fmt2str(dst_fmt),
                              qemuimg.info(dst_vol.volumePath)['format'])
 
@@ -144,14 +151,13 @@ class TestCopyDataDIV(VdsmTestCase):
         src_fmt = sc.name2type(src_fmt)
         dst_fmt = sc.name2type(dst_fmt)
         nr_vols = len(copy_seq)
-        with self.get_vols(env_type, src_fmt, dst_fmt,
-                           chain_length=nr_vols) as (src_chain,
-                                                     dst_chain):
-            write_qemu_chain(src_chain)
+        with self.make_env(env_type, src_fmt, dst_fmt,
+                           chain_length=nr_vols) as env:
+            write_qemu_chain(env.src_chain)
             for index in copy_seq:
                 job_id = make_uuid()
-                src_vol = src_chain[index]
-                dst_vol = dst_chain[index]
+                src_vol = env.src_chain[index]
+                dst_vol = env.dst_chain[index]
                 source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
                               img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
                 dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
@@ -161,7 +167,7 @@ class TestCopyDataDIV(VdsmTestCase):
                 wait_for_job(job)
                 self.assertEqual(sorted(self.expected_locks(src_vol, dst_vol)),
                                  sorted(guarded.context.locks))
-            verify_qemu_chain(dst_chain)
+            verify_qemu_chain(env.dst_chain)
 
     def test_bad_vm_configuration_volume(self):
         """
@@ -173,10 +179,10 @@ class TestCopyDataDIV(VdsmTestCase):
         vm_conf_size = workarounds.VM_CONF_SIZE_BLK * sc.BLOCK_SIZE
         vm_conf_data = "VM Configuration"
 
-        with self.get_vols('file', sc.COW_FORMAT, sc.COW_FORMAT,
-                           size=vm_conf_size) as (src_chain, dst_chain):
-            src_vol = src_chain[0]
-            dst_vol = dst_chain[0]
+        with self.make_env('file', sc.COW_FORMAT, sc.COW_FORMAT,
+                           size=vm_conf_size) as env:
+            src_vol = env.src_chain[0]
+            dst_vol = env.dst_chain[0]
 
             # Corrupt the COW volume by writing raw data.  This simulates how
             # these "problem" volumes were created in the first place.
@@ -207,9 +213,9 @@ class TestCopyDataDIV(VdsmTestCase):
                               final_legality, final_status, final_gen):
         job_id = make_uuid()
         fmt = sc.RAW_FORMAT
-        with self.get_vols(env_type, fmt, fmt) as (src_chain, dst_chain):
-            src_vol = src_chain[0]
-            dst_vol = dst_chain[0]
+        with self.make_env(env_type, fmt, fmt) as env:
+            src_vol = env.src_chain[0]
+            dst_vol = env.dst_chain[0]
 
             self.assertEqual(sc.LEGAL_VOL, dst_vol.getLegality())
             source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
@@ -232,9 +238,9 @@ class TestCopyDataDIV(VdsmTestCase):
     @permutations((('file',), ('block',)))
     def test_abort_during_copy(self, env_type):
         fmt = sc.RAW_FORMAT
-        with self.get_vols(env_type, fmt, fmt) as (src_chain, dst_chain):
-            src_vol = src_chain[0]
-            dst_vol = dst_chain[0]
+        with self.make_env(env_type, fmt, fmt) as env:
+            src_vol = env.src_chain[0]
+            dst_vol = env.dst_chain[0]
             gen_id = dst_vol.getMetaParam(sc.GENERATION)
             source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
                           img_id=src_vol.imgUUID, vol_id=src_vol.volUUID,
@@ -260,9 +266,9 @@ class TestCopyDataDIV(VdsmTestCase):
 
     def test_wrong_generation(self):
         fmt = sc.RAW_FORMAT
-        with self.get_vols('block', fmt, fmt) as (src_chain, dst_chain):
-            src_vol = src_chain[0]
-            dst_vol = dst_chain[0]
+        with self.make_env('block', fmt, fmt) as env:
+            src_vol = env.src_chain[0]
+            dst_vol = env.dst_chain[0]
             generation = dst_vol.getMetaParam(sc.GENERATION)
             source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
                           img_id=src_vol.imgUUID, vol_id=src_vol.volUUID,
