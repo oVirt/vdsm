@@ -182,6 +182,9 @@ cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{pac
 %endif
 
 %changelog
+* Mon Nov 14 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.1.16
+- Reconnect enhancement
+
 * Tue Jan 19 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.1.7-1
 - Exception shouldn't be recursive
 

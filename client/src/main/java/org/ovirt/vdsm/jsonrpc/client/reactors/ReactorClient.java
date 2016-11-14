@@ -50,7 +50,7 @@ public abstract class ReactorClient {
     private long lastIncomingHeartbeat = 0;
     private long lastOutgoingHeartbeat = 0;
     private AtomicBoolean closing = new AtomicBoolean();
-    protected ClientPolicy policy = new DefaultConnectionRetryPolicy();
+    protected volatile ClientPolicy policy = new DefaultConnectionRetryPolicy();
     protected final List<MessageListener> eventListeners;
     protected final Reactor reactor;
     protected final Deque<ByteBuffer> outbox;
@@ -78,17 +78,8 @@ public abstract class ReactorClient {
     }
 
     public void setClientPolicy(ClientPolicy policy) {
+        this.validate(policy);
         this.policy = policy;
-        this.validate();
-        if (!isOpen()) {
-            return;
-        }
-        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
-            if (isOpen() && !this.closing.get()) {
-                scheduleClose("Policy reset");
-                this.closing.set(true);
-            }
-        }
     }
 
     public ClientPolicy getRetryPolicy() {
@@ -366,7 +357,7 @@ public abstract class ReactorClient {
     /**
      * Validates policy when it is set.
      */
-    public abstract void validate();
+    public abstract void validate(ClientPolicy policy);
 
     /**
      * @return the peer certificates of the current session
