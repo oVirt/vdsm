@@ -25,6 +25,7 @@ from contextlib import contextmanager
 from fakelib import FakeScheduler
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeResourceManager
+from storagefakelib import fake_guarded_context
 from storagetestlib import fake_env
 from storagetestlib import make_qemu_chain, write_qemu_chain, verify_qemu_chain
 from storagetestlib import ChainVerificationError
@@ -45,22 +46,6 @@ from storage import blockVolume, sd, volume
 from storage import resourceManager
 
 import storage.sdm.api.copy_data
-
-
-class fake_guarded_context(object):
-
-    def __init__(self):
-        self.locks = None
-
-    def __call__(self, locks):
-        self.locks = locks
-        return self
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
 
 
 @expandPermutations
