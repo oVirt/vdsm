@@ -1592,7 +1592,21 @@ exit 0
 %files containers
 %defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}
+%dir %{python_sitelib}/%{vdsm_name}
+%dir %{python_sitelib}/%{vdsm_name}/virt/containers
 %{_datadir}/%{vdsm_name}/supervdsm_api/containers.py*
+%{python_sitelib}/%{vdsm_name}/virt/containers/__init__.py*
+%{python_sitelib}/%{vdsm_name}/virt/containers/cgroups.py*
+%{python_sitelib}/%{vdsm_name}/virt/containers/command.py*
+%{python_sitelib}/%{vdsm_name}/virt/containers/connection.py*
+%{python_sitelib}/%{vdsm_name}/virt/containers/docker.py*
+%{python_sitelib}/%{vdsm_name}/virt/containers/domain.py*
+%{python_sitelib}/%{vdsm_name}/virt/containers/doms.py*
+%{python_sitelib}/%{vdsm_name}/virt/containers/errors.py*
+%{python_sitelib}/%{vdsm_name}/virt/containers/events.py*
+%{python_sitelib}/%{vdsm_name}/virt/containers/monitoring.py*
+%{python_sitelib}/%{vdsm_name}/virt/containers/runner.py*
+%{python_sitelib}/%{vdsm_name}/virt/containers/xmlfile.py*
 
 
 %changelog

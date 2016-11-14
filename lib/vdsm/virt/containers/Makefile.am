@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,21 +19,18 @@
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS=containers
-
-vdsmvirtdir = $(vdsmpylibdir)/virt
-dist_vdsmvirt_PYTHON = \
+vdsmvirtcontainersdir = $(vdsmpylibdir)/virt/containers
+dist_vdsmvirtcontainers_PYTHON = \
+	cgroups.py \
+	command.py \
+	connection.py \
+	docker.py \
+	domain.py \
+	doms.py \
+	errors.py \
+	events.py \
 	__init__.py \
-	guestagent.py \
-	periodic.py \
-	sampling.py \
-	secret.py \
-	utils.py \
-	virdomain.py \
-	vmchannels.py \
-	vmexitreason.py \
-	vmpowerdown.py \
-	vmstats.py \
-	vmstatus.py \
-	xmlconstants.py \
+	monitoring.py \
+	runner.py \
+	xmlfile.py \
 	$(NULL)

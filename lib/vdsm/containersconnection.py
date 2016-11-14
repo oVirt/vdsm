@@ -30,6 +30,7 @@ try:
     import vdsm.virt.containers.runner
     from vdsm.virt.containers.docker import available as is_supported
     from vdsm.virt.containers import monitorAllDomains as monitor
+    from vdsm.virt.containers import prepare as prepare
     from vdsm.virt.containers import recoveryAllDomains as recovery
     # silence pyflakes
     is_supported
@@ -38,6 +39,7 @@ try:
 except ImportError:
     is_supported = lambda: False
     monitor = lambda: None
+    prepare = lambda: None
     recovery = lambda: []
 
 
