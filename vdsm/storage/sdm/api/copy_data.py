@@ -123,18 +123,18 @@ class CopyDataDivEndpoint(properties.Owner):
 
     @property
     def path(self):
-        return self._vol.getVolumePath()
+        return self.volume.getVolumePath()
 
     def is_invalid_vm_conf_disk(self):
-        return workarounds.invalid_vm_conf_disk(self._vol)
+        return workarounds.invalid_vm_conf_disk(self.volume)
 
     @property
     def qemu_format(self):
-        return sc.fmt2str(self._vol.getFormat())
+        return sc.fmt2str(self.volume.getFormat())
 
     @property
     def backing_path(self):
-        parent_vol = self._vol.getParentVolume()
+        parent_vol = self.volume.getParentVolume()
         if not parent_vol:
             return None
         return volume.getBackingVolumePath(self.img_id, parent_vol.volUUID)
@@ -146,21 +146,26 @@ class CopyDataDivEndpoint(properties.Owner):
 
     @property
     def backing_qemu_format(self):
-        parent_vol = self._vol.getParentVolume()
+        parent_vol = self.volume.getParentVolume()
         if not parent_vol:
             return None
         return sc.fmt2str(parent_vol.getFormat())
 
     @property
     def volume_operation(self):
-        return partial(self._vol.operation, self.generation)
+        return partial(self.volume.operation, self.generation)
+
+    @property
+    def volume(self):
+        if self._vol is None:
+            dom = sdCache.produce_manifest(self.sd_id)
+            self._vol = dom.produceVolume(self.img_id, self.vol_id)
+        return self._vol
 
     @contextmanager
     def prepare(self):
-        dom = sdCache.produce_manifest(self.sd_id)
-        self._vol = dom.produceVolume(self.img_id, self.vol_id)
-        self._vol.prepare(rw=self._writable, justme=True)
+        self.volume.prepare(rw=self._writable, justme=True)
         try:
             yield
         finally:
-            self._vol.teardown(self.sd_id, self.vol_id, justme=True)
+            self.volume.teardown(self.sd_id, self.vol_id, justme=True)
