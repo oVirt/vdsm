@@ -1,6 +1,6 @@
 #!/usr/bin/python2
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,13 +22,18 @@
 import os
 import subprocess
 import hooking
-from vdsm import vdscli
 
-s = vdscli.connect()
+from vdsm import client
+from vdsm.config import config
+from vdsm import utils
 
-res = s.list(True)
-if res['status']['code'] == 0:
-    if not [v for v in res['vmList']
+
+use_tls = config.getboolean('vars', 'ssl')
+
+cli = client.connect('localhost', use_tls=use_tls)
+with utils.closing(cli):
+    res = cli.Host.getVMFullList()
+    if not [v for v in res
             if v.get('vmId') != os.environ.get('vmId') and
             hooking.tobool(v.get('custom', {}).get('sap_agent', False))]:
         subprocess.call(['/usr/bin/sudo', '-n', '/sbin/service', 'vhostmd',
