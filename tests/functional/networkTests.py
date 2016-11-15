@@ -2685,31 +2685,6 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
             self.assertBondDoesntExist(BONDING_NAME, nics)
 
-    @permutations([[{}], [{'options': 'mode=1'}], [{'options': 'mode=0'}]])
-    @cleanupNet
-    @ValidateRunningAsRoot
-    def test_bondmode_in_capabilities(self, mode_arg):
-        with dummyIf(2) as nics:
-            if mode_arg:
-                origin_mode = mode_arg.get("options").split("=")[1]
-            else:
-                origin_mode = '0'
-            bonding = {'nics': nics}
-            bonding.update(mode_arg)
-            status, msg = self.setupNetworks(
-                {},
-                {BONDING_NAME: bonding},
-                NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertBondExists(BONDING_NAME, nics)
-            status, msg, info = self.vdsm_net.getVdsCapabilities()
-            mode = info['bondings'][BONDING_NAME]['opts'].get('mode')
-            self.assertEqual(mode, origin_mode)
-            status, msg = self.setupNetworks(
-                {}, {BONDING_NAME: {'remove': True}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertBondDoesntExist(BONDING_NAME, nics)
-
     @cleanupNet
     @ValidateRunningAsRoot
     def test_remove_bond_under_network(self):
