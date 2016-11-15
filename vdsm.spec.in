@@ -57,7 +57,9 @@ Source0:        %{vdsm_name}-%{version}.tar.gz
 
 %{!?_licensedir:%global license %%doc}
 
+BuildRequires: openssl
 BuildRequires: python
+BuildRequires: python-six >= 1.9.0
 BuildRequires: python2-devel
 BuildRequires: rpm-build
 BuildRequires: systemd-units
