@@ -10,7 +10,7 @@ import java.util.concurrent.FutureTask;
  *
  */
 public final class ReactorScheduler {
-    final private Queue<Future<?>> pendingOperations;
+    private Queue<Future<?>> pendingOperations;
 
     public ReactorScheduler() {
         this.pendingOperations = new ConcurrentLinkedQueue<>();
@@ -22,8 +22,10 @@ public final class ReactorScheduler {
 
     public void performPendingOperations() {
         boolean remove = false;
-        for (int i = 0; i < pendingOperations.size(); i++) {
-            Future<?> task = pendingOperations.peek();
+        Queue<Future<?>> operations = pendingOperations;
+        pendingOperations = new ConcurrentLinkedQueue<>();
+        for (int i = 0; i < operations.size(); i++) {
+            Future<?> task = operations.peek();
             if (task instanceof FutureTask) {
                 ((FutureTask<?>) task).run();
                 remove = true;
@@ -37,7 +39,7 @@ public final class ReactorScheduler {
             }
 
             if (remove) {
-                pendingOperations.remove(task);
+                operations.remove(task);
                 i--;
             }
         }
