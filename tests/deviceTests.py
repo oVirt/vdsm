@@ -316,6 +316,38 @@ class TestVmDevices(XMLTestCase):
         self.assert_dom_xml_equal(iface.getXML(), interfaceXML)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
+                 'getProxy', lambda: MockedProxy())
+    def testInterfaceXMLFilterParameters(self):
+        interfaceXML = """
+            <interface type="bridge"> <address %s/>
+                <mac address="52:54:00:59:F5:3F"/>
+                <model type="virtio"/>
+                <source bridge="ovirtmgmt"/>
+                <filterref filter="clean-traffic">
+                    <parameter name='IP' value='10.0.0.1'/>
+                    <parameter name='IP' value='10.0.0.2'/>
+                </filterref>
+                <boot order="1"/>
+                <driver name="vhost"/>
+                <tune>
+                    <sndbuf>0</sndbuf>
+                </tune>
+            </interface>""" % self.PCI_ADDR
+
+        dev = {'nicModel': 'virtio', 'macAddr': '52:54:00:59:F5:3F',
+               'network': 'ovirtmgmt', 'address': self.PCI_ADDR_DICT,
+               'device': 'bridge', 'type': 'interface',
+               'bootOrder': '1', 'filter': 'clean-traffic',
+               'filterParameters': [
+                   {'name': 'IP', 'value': '10.0.0.1'},
+                   {'name': 'IP', 'value': '10.0.0.2'},
+                   ]}
+
+        self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
+        iface = vmdevices.network.Interface(self.conf, self.log, **dev)
+        self.assert_dom_xml_equal(iface.getXML(), interfaceXML)
+
+    @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: MockedProxy(ovs_bridge='ovirtmgmt'))
     @MonkeyPatch(vmdevices.network.net_api, 'net2vlan', lambda x: 101)
     def testInterfaceOnOvsWithVlanXML(self):

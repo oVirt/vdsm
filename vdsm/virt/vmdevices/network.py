@@ -33,7 +33,7 @@ from .. import vmxml
 
 class Interface(Base):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
-                 'linkActive', 'portMirroring', 'filter',
+                 'linkActive', 'portMirroring', 'filter', 'filterParameters',
                  'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev',
                  'is_hostdevice')
 
@@ -47,6 +47,8 @@ class Interface(Base):
             elif attr == 'network' and value == '':
                 kwargs[attr] = net_api.DUMMY_BRIDGE
         super(Interface, self).__init__(conf, log, **kwargs)
+        if not hasattr(self, 'filterParameters'):
+            self.filterParameters = []
         self.sndbufParam = False
         self.is_hostdevice = self.device == hwclass.HOSTDEV
         self.vlanId = self.specParams.get('vlanid')
@@ -97,7 +99,9 @@ class Interface(Base):
             <model type="virtio"/>
             <source bridge="engine"/>
             [<driver name="vhost/qemu" queues="int"/>]
-            [<filterref filter='filter name'/>]
+            [<filterref filter='filter name'>
+              [<parameter name='parameter name' value='parameter value'>]
+             </filterref>]
             [<tune><sndbuf>0</sndbuf></tune>]
             [<link state='up|down'/>]
             [<bandwidth>
@@ -146,7 +150,8 @@ class Interface(Base):
                 iface.appendChildWithArgs('source', bridge=self.network)
 
         if hasattr(self, 'filter'):
-            iface.appendChildWithArgs('filterref', filter=self.filter)
+            filter = iface.appendChildWithArgs('filterref', filter=self.filter)
+            self._set_parameters_filter(filter)
 
         if hasattr(self, 'linkActive'):
             iface.appendChildWithArgs('link', state='up'
@@ -177,6 +182,15 @@ class Interface(Base):
         if vlan_tag:
             vlan = iface.appendChildWithArgs('vlan')
             vlan.appendChildWithArgs('tag', id=str(vlan_tag))
+
+    def _set_parameters_filter(self, filter):
+        for name, value in self._filter_parameter_map():
+            filter.appendChildWithArgs('parameter', name=name, value=value)
+
+    def _filter_parameter_map(self):
+        for parameter in self.filterParameters:
+            if 'name' in parameter and 'value' in parameter:
+                yield parameter['name'], parameter['value']
 
     def paramsToBandwidthXML(self, specParams, oldBandwidth=None):
         """Returns a valid libvirt xml dom element object."""

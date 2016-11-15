@@ -2656,6 +2656,21 @@ types:
             rtl8139: Emulated rtl8139 NIC
             virtio: Paravirtual network interface
 
+    VmInterfaceDeviceFilterParameters: &VmInterfaceDeviceFilterParameters
+        added: '4.1'
+        description: The tuple of the name and the value of a network
+                filter parameter.
+        name: VmInterfaceDeviceFilterParameters
+        properties:
+        -   description: The name of the parameter
+            name: name
+            type: string
+
+        -   description: The value of the parameter
+            name: value
+            type: string
+        type: object
+
     VmInterfaceDevice: &VmInterfaceDevice
         added: '3.1'
         description: Properties of a VM network interface device.
@@ -2730,6 +2745,14 @@ types:
         -   description: The name of the referenced network filter
             name: filter
             type: string
+
+        -   defaultvalue: '[]'
+            description: The list of parameters of the network filter.
+                    Applicable only if 'filter' is supplied.
+            name: filterParameters
+            type:
+            - *VmInterfaceDeviceFilterParameters
+            added: '4.1'
         type: object
 
     HotplugNicParams: &HotplugNicParams
@@ -7142,6 +7165,14 @@ types:
         -   description: The name of the referenced network filter
             name: filter
             type: string
+
+        -   defaultvalue: '[]'
+            description: The list of parameters of the network filter.
+                   Applicable only if 'filter' is supplied.
+            name: filterParameters
+            type:
+            - *VmInterfaceDeviceFilterParameters
+            added: '4.1'
         type: object
 
     vmUpdateGraphicsDeviceParams: &vmUpdateGraphicsDeviceParams
