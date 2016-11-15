@@ -519,6 +519,8 @@ class VolumeManifest(object):
         actual_gen = self.getMetaParam(sc.GENERATION)
         if requested_gen is not None and actual_gen != requested_gen:
             raise se.GenerationMismatch(requested_gen, actual_gen)
+        self.log.info("Starting operation on volume %s generation %d",
+                      self.volUUID, actual_gen)
         self.setLegality(sc.ILLEGAL_VOL)
         yield
         # Note: We intentionally do not use a try block here because we don't
@@ -526,10 +528,13 @@ class VolumeManifest(object):
         #
         # IMPORTANT: In order to provide an atomic state change, both legality
         # and the generation must be updated together in one write.
+        next_gen = _next_generation(actual_gen)
         metadata = self.getMetadata()
         metadata[sc.LEGALITY] = sc.LEGAL_VOL
-        metadata[sc.GENERATION] = _next_generation(actual_gen)
+        metadata[sc.GENERATION] = next_gen
         self.setMetadata(metadata)
+        self.log.info("Operation completed on volume %s generation %d",
+                      self.volUUID, next_gen)
 
 
 class Volume(object):
