@@ -214,22 +214,22 @@ def send_metrics(vms_stats):
                     diskprefix = prefix + '.disk.' + disk
                     diskinfo = stat['disks'][disk]
 
-                    data[diskprefix + '.read.latency'] = \
+                    data[diskprefix + '.read_latency'] = \
                         diskinfo['readLatency']
-                    data[diskprefix + '.read.ops'] = \
+                    data[diskprefix + '.read_ops'] = \
                         diskinfo['readOps']
-                    data[diskprefix + '.read.bytes'] = \
+                    data[diskprefix + '.read_bytes'] = \
                         diskinfo['readBytes']
-                    data[diskprefix + '.read.rate'] = \
+                    data[diskprefix + '.read_rate'] = \
                         diskinfo['readRate']
 
-                    data[diskprefix + '.write.bytes'] = \
+                    data[diskprefix + '.write_bytes'] = \
                         diskinfo['writtenBytes']
-                    data[diskprefix + '.write.ops'] = \
+                    data[diskprefix + '.write_ops'] = \
                         diskinfo['writeOps']
-                    data[diskprefix + '.write.latency'] = \
+                    data[diskprefix + '.write_latency'] = \
                         diskinfo['writeLatency']
-                    data[diskprefix + '.write.rate'] = \
+                    data[diskprefix + '.write_rate'] = \
                         diskinfo['writeRate']
 
                     data[diskprefix + '.apparent_size'] = \
