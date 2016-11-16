@@ -24,7 +24,6 @@ except ImportError:
     import sos.plugintools
     Plugin = RedHatPlugin = sos.plugintools.PluginBase
 
-from contextlib import closing
 import json
 import os
 import stat
@@ -53,7 +52,8 @@ def _importVdsmPylibModule(fullName):
         search = os.path.join(search, name)
     return module
 
-jsonrpcvdscli = _importVdsmPylibModule("vdsm.jsonrpcvdscli")
+client = _importVdsmPylibModule("vdsm.client")
+utils = _importVdsmPylibModule("vdsm.utils")
 
 
 class vdsm(Plugin, RedHatPlugin):
@@ -84,8 +84,12 @@ class vdsm(Plugin, RedHatPlugin):
         else:
             self.addCopySpec(path)
 
-    def addObjectAsFile(self, obj, name):
-        self.addStringAsFile(json.dumps(obj), name)
+    def collectVdsmCommand(self, name, call, **kwargs):
+        try:
+            result = call(**kwargs)
+            self.addStringAsFile(json.dumps(result), name)
+        except Exception as e:
+            self.addStringAsFile(str(e), name)
 
     def setup(self):
         os.environ["LVM_SYSTEM_DIR"] = "@VDSMRUNDIR@/lvm"
@@ -127,22 +131,28 @@ class vdsm(Plugin, RedHatPlugin):
         self.collectExtOutput("/sbin/iscsiadm -m session")
         self.collectExtOutput("/usr/sbin/nodectl info")
 
-        with closing(jsonrpcvdscli.connect()) as cli:
-            self.addObjectAsFile(
-                cli.getVdsCapabilities(), "getVdsCapabilities")
-            self.addObjectAsFile(cli.getVdsStats(), "getVdsStats")
-            self.addObjectAsFile(cli.getAllVmStats(), "getAllVmStats")
-            self.addObjectAsFile(cli.list(), "list")
-            self.addObjectAsFile(cli.getDeviceList(), "getDeviceList")
-            self.addObjectAsFile(cli.getAllTasksInfo(), "getAllTasksInfo")
-            self.addObjectAsFile(
-                cli.getAllTasksStatuses(), "getAllTasksStatuses")
+        cli = client.connect('localhost')
+        with utils.closing(cli):
+            self.collectVdsmCommand(
+                "Host.getCapabilities", cli.Host.getCapabilities)
+            self.collectVdsmCommand("Host.getStats", cli.Host.getStats)
+            self.collectVdsmCommand(
+                "Host.getAllVmStats", cli.Host.getAllVmStats)
+            self.collectVdsmCommand(
+                "Host.getVMList", cli.Host.getVMList)
+            self.collectVdsmCommand(
+                "Host.getDeviceList", cli.Host.getDeviceList)
+            self.collectVdsmCommand(
+                "Host.getAllTasksInfo", cli.Host.getAllTasksInfo)
+            self.collectVdsmCommand(
+                "Host.getAllTasksStatuses", cli.Host.getAllTasksStatuses)
 
-            if "items" in cli.getConnectedStoragePoolsList():
-                pools_list = cli.getConnectedStoragePoolsList()["items"]
-                for pool in pools_list:
-                    self.addObjectAsFile(
-                        cli.getSpmStatus(pool), "getSpmStatus " + pool)
+            pools_list = cli.Host.getConnectedStoragePools()
+            for pool in pools_list:
+                self.collectVdsmCommand(
+                    "StoragePool.getSpmStatus " + pool,
+                    cli.StoragePool.getSpmStatus,
+                    storagepoolID=pool)
 
         self.collectExtOutput(
             '/bin/su vdsm -s %s %s/dumpStorageTable.pyc' % (
