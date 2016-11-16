@@ -132,7 +132,7 @@ class TestVm(XMLTestCase):
            </domain>"""
 
         domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
-        self.assertXMLEqual(domxml.dom.toxml(), expectedXML)
+        self.assertXMLEqual(domxml.toxml(), expectedXML)
 
     def testOSXMLBootMenu(self):
         vmConfs = (
@@ -185,7 +185,7 @@ class TestVm(XMLTestCase):
             conf.update(self.conf)
             domxml = vmxml.Domain(conf, self.log, cpuarch.X86_64)
             domxml.appendOs()
-            xml = find_xml_element(domxml.dom.toxml(), './os')
+            xml = find_xml_element(domxml.toxml(), './os')
             self.assertXMLEqual(xml, osXML)
 
     def testOSXMLX86_64(self):
@@ -216,7 +216,7 @@ class TestVm(XMLTestCase):
             vmConf.update(self.conf)
             domxml = vmxml.Domain(vmConf, self.log, cpuarch.X86_64)
             domxml.appendOs()
-            xml = find_xml_element(domxml.dom.toxml(), './os')
+            xml = find_xml_element(domxml.toxml(), './os')
             self.assertXMLEqual(xml, osXML)
 
     def testOSPPCXML(self):
@@ -245,7 +245,7 @@ class TestVm(XMLTestCase):
             vmConf.update(self.conf)
             domxml = vmxml.Domain(vmConf, self.log, cpuarch.PPC64)
             domxml.appendOs()
-            xml = find_xml_element(domxml.dom.toxml(), './os')
+            xml = find_xml_element(domxml.toxml(), './os')
             self.assertXMLEqual(xml, osXML)
 
     def testFeaturesXML(self):
@@ -255,7 +255,7 @@ class TestVm(XMLTestCase):
             </features>"""
         domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
         domxml.appendFeatures()
-        xml = find_xml_element(domxml.dom.toxml(), './features')
+        xml = find_xml_element(domxml.toxml(), './features')
         self.assertXMLEqual(xml, featuresXML)
 
     def testFeaturesHyperVXML(self):
@@ -272,7 +272,7 @@ class TestVm(XMLTestCase):
         conf.update(self.conf)
         domxml = vmxml.Domain(conf, self.log, cpuarch.X86_64)
         domxml.appendFeatures()
-        xml = find_xml_element(domxml.dom.toxml(), './features')
+        xml = find_xml_element(domxml.toxml(), './features')
         self.assertXMLEqual(xml, featuresXML)
 
     def testSysinfoXML(self):
@@ -293,7 +293,7 @@ class TestVm(XMLTestCase):
                                    product, version, serial, self.conf['vmId'])
         domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
         domxml.appendSysinfo(product, version, serial)
-        xml = find_xml_element(domxml.dom.toxml(), './sysinfo')
+        xml = find_xml_element(domxml.toxml(), './sysinfo')
         self.assertXMLEqual(xml, sysinfoXML)
 
     @permutations([
@@ -323,7 +323,7 @@ class TestVm(XMLTestCase):
             </console>"""
         dev = {'device': 'console', 'specParams': {'consoleType': 'virtio'}}
         console = vmdevices.core.Console(self.conf, self.log, **dev)
-        self.assertXMLEqual(console.getXML().toxml(), consoleXML)
+        self.assertXMLEqual(vmxml.format_xml(console.getXML()), consoleXML)
 
     def testConsoleXMLSerial(self):
         consoleXML = """
@@ -332,7 +332,7 @@ class TestVm(XMLTestCase):
             </console>"""
         dev = {'device': 'console', 'specParams': {'consoleType': 'serial'}}
         console = vmdevices.core.Console(self.conf, self.log, **dev)
-        self.assertXMLEqual(console.getXML().toxml(), consoleXML)
+        self.assertXMLEqual(vmxml.format_xml(console.getXML()), consoleXML)
 
     def testConsoleXMLDefault(self):
         consoleXML = """
@@ -341,7 +341,7 @@ class TestVm(XMLTestCase):
             </console>"""
         dev = {'device': 'console'}
         console = vmdevices.core.Console(self.conf, self.log, **dev)
-        self.assertXMLEqual(console.getXML().toxml(), consoleXML)
+        self.assertXMLEqual(vmxml.format_xml(console.getXML()), consoleXML)
 
     def testSerialDeviceXML(self):
         serialXML = """
@@ -350,7 +350,8 @@ class TestVm(XMLTestCase):
             </serial>"""
         dev = {'device': 'console'}
         console = vmdevices.core.Console(self.conf, self.log, **dev)
-        self.assertXMLEqual(console.getSerialDeviceXML().toxml(), serialXML)
+        self.assertXMLEqual(vmxml.format_xml(console.getSerialDeviceXML()),
+                            serialXML)
 
     def testUnixSocketSerialDeviceXML(self):
         path = "/var/run/ovirt-vmconsole-console/%s.sock" % self.conf['vmId']
@@ -361,7 +362,8 @@ class TestVm(XMLTestCase):
             </serial>""" % path
         dev = {'device': 'console', 'specParams': {'enableSocket': True}}
         console = vmdevices.core.Console(self.conf, self.log, **dev)
-        self.assertXMLEqual(console.getSerialDeviceXML().toxml(), serialXML)
+        self.assertXMLEqual(vmxml.format_xml(console.getSerialDeviceXML()),
+                            serialXML)
 
     def testClockXML(self):
         clockXML = """
@@ -373,7 +375,7 @@ class TestVm(XMLTestCase):
         self.conf['timeOffset'] = '-3600'
         domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
         domxml.appendClock()
-        xml = find_xml_element(domxml.dom.toxml(), './clock')
+        xml = find_xml_element(domxml.toxml(), './clock')
         self.assertXMLEqual(xml, clockXML)
 
     def testHyperVClockXML(self):
@@ -388,7 +390,7 @@ class TestVm(XMLTestCase):
         conf.update(self.conf)
         domxml = vmxml.Domain(conf, self.log, cpuarch.X86_64)
         domxml.appendClock()
-        xml = find_xml_element(domxml.dom.toxml(), './clock')
+        xml = find_xml_element(domxml.toxml(), './clock')
         self.assertXMLEqual(xml, clockXML)
 
     def testCpuXML(self):
@@ -434,7 +436,7 @@ class TestVm(XMLTestCase):
         domxml = vmxml.Domain(vmConf, self.log, cpuarch.X86_64)
         domxml.appendCpu()
         domxml.appendNumaTune()
-        xml = domxml.dom.toxml()
+        xml = domxml.toxml()
         self.assertXMLEqual(find_xml_element(xml, "./cpu"), cpuXML)
         self.assertXMLEqual(find_xml_element(xml, "./cputune"), cputuneXML)
         self.assertXMLEqual(find_xml_element(xml, './numatune'), numatuneXML)
@@ -450,7 +452,7 @@ class TestVm(XMLTestCase):
         channelXML = channelXML % (name, path)
         domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
         domxml._appendAgentDevice(path, name)
-        xml = find_xml_element(domxml.dom.toxml(), './devices/channel')
+        xml = find_xml_element(domxml.toxml(), './devices/channel')
         self.assertXMLEqual(xml, channelXML)
 
     def testInputXMLX86_64(self):
@@ -463,7 +465,7 @@ class TestVm(XMLTestCase):
             vmConf.update(self.conf)
             domxml = vmxml.Domain(vmConf, self.log, cpuarch.X86_64)
             domxml.appendInput()
-            xml = find_xml_element(domxml.dom.toxml(), './devices/input')
+            xml = find_xml_element(domxml.toxml(), './devices/input')
             self.assertXMLEqual(xml, inputXML)
 
     def testInputXMLPPC64(self):
@@ -476,7 +478,7 @@ class TestVm(XMLTestCase):
             vmConf.update(self.conf)
             domxml = vmxml.Domain(vmConf, self.log, cpuarch.PPC64)
             domxml.appendInput()
-            xml = find_xml_element(domxml.dom.toxml(), './devices/input')
+            xml = find_xml_element(domxml.toxml(), './devices/input')
             self.assertXMLEqual(xml, inputXML)
 
     def testIoTuneException(self):
@@ -540,13 +542,15 @@ class TestVm(XMLTestCase):
     def testGetVmPolicySucceded(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain()
-            self.assertXMLEqual(testvm._getVmPolicy().toxml(), '<qos/>')
+            self.assertXMLEqual(vmxml.format_xml(testvm._getVmPolicy()),
+                                '<qos/>')
 
     def testGetVmPolicyEmptyOnNoMetadata(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(
                 virtError=libvirt.VIR_ERR_NO_DOMAIN_METADATA)
-            self.assertXMLEqual(testvm._getVmPolicy().toxml(), '<qos/>')
+            self.assertXMLEqual(vmxml.format_xml(testvm._getVmPolicy()),
+                                '<qos/>')
 
     def testGetVmPolicyFailOnNoDomain(self):
         with fake.VM() as testvm:

@@ -28,6 +28,7 @@ from testlib import permutations, expandPermutations
 from vdsm import constants
 from vdsm import utils
 
+from virt import vmxml
 from virt.vmdevices import storage
 from virt.vmdevices.storage import Drive, DISK_TYPE, DRIVE_SHARED_TYPE
 
@@ -219,7 +220,7 @@ class DriveXMLTests(XMLTestCase):
         # Patch to skip the block device checking.
         if is_block_device is not None:
             drive._blockDev = is_block_device
-        self.assertXMLEqual(drive.getXML().toxml(), xml)
+        self.assertXMLEqual(vmxml.format_xml(drive.getXML()), xml)
 
 
 class DriveReplicaXML(XMLTestCase):
@@ -297,7 +298,7 @@ class DriveReplicaXML(XMLTestCase):
         drive = Drive(vm_conf, self.log, **device_conf)
         # Patch to skip the block device checking.
         drive._blockDev = is_block_device
-        self.assertXMLEqual(drive.getReplicaXML().toxml(), xml)
+        self.assertXMLEqual(vmxml.format_xml(drive.getReplicaXML()), xml)
 
 
 @expandPermutations
@@ -595,7 +596,7 @@ class TestDriveLeases(XMLTestCase):
             <target offset="0" path="path" />
         </lease>
         """
-        self.assertXMLEqual(leases[0].toxml(), xml)
+        self.assertXMLEqual(vmxml.format_xml(leases[0]), xml)
 
 
 @expandPermutations

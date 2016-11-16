@@ -144,6 +144,22 @@ class TestVmXmlHelpers(XMLTestCase):
         hello = hello[:1] + hello[2:]
         self.assertEqual(updated_hello, hello)
 
+    def test_namespaces(self):
+        expected_xml = '''
+        <domain xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
+          <metadata>
+            <ovirt:qos/>
+          </metadata>
+        </domain>
+        '''
+        domain = vmxml.Element('domain')
+        metadata = vmxml.Element('metadata')
+        domain.appendChild(metadata)
+        qos = vmxml.Element('qos', namespace='ovirt',
+                            namespace_uri='http://ovirt.org/vm/tune/1.0')
+        metadata.appendChild(qos)
+        self.assertXMLEqual(vmxml.format_xml(domain), expected_xml)
+
 
 @expandPermutations
 class TestDomainDescriptor(VmXmlTestCase):

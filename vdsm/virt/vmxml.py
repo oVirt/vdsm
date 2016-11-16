@@ -18,10 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import itertools
 from operator import itemgetter
-import xml.dom
-import xml.dom.minidom
 import xml.etree.ElementTree as etree
 
 from vdsm import constants
@@ -53,8 +50,7 @@ def parse_xml(xml_string):
     :returns: DOM element created by parsing `xml_string`
     :rtype: DOM element
     """
-    parsed = xml.dom.minidom.parseString(xml_string)
-    return parsed.firstChild
+    return etree.fromstring(xml_string)
 
 
 def format_xml(element):
@@ -64,9 +60,9 @@ def format_xml(element):
     :param element: DOM element to export
     :type element: DOM element
     :returns: XML corresponding to `element` content
-    :rtype: basestring
+    :rtype: string
     """
-    return element.toxml(encoding='UTF-8')
+    return etree.tostring(element, encoding='UTF-8')
 
 
 def find_all(element, tag_):
@@ -82,10 +78,9 @@ def find_all(element, tag_):
     :returns: all elements with given `tag`
     :rtype: sequence of DOM elements
     """
-    if isinstance(element, xml.dom.minidom.Element) and \
-       tag(element) == tag_:
+    if tag(element) == tag_:
         yield element
-    for elt in element.getElementsByTagName(tag_):
+    for elt in element.findall('.//' + tag_):
         yield elt
 
 
@@ -142,7 +137,7 @@ def tag(element):
     :returns: tag of the element
     :rtype: basestring
     """
-    return element.tagName
+    return element.tag
 
 
 def attr(element, attribute):
@@ -157,8 +152,8 @@ def attr(element, attribute):
       is not present)
     :rtype: basestring
     """
-    # Minidom returns unicodes, except for empty strings.
-    return element.getAttribute(attribute)
+    # etree returns unicodes, except for empty strings.
+    return element.get(attribute, '')
 
 
 def attributes(element):
@@ -171,7 +166,7 @@ def attributes(element):
       (basestrings)
     :rtype: dictionary
     """
-    return {a: attr(element, a) for a in element.attributes.keys()}
+    return {a: attr(element, a) for a in element.keys()}
 
 
 def set_attr(element, attribute, value):
@@ -185,7 +180,7 @@ def set_attr(element, attribute, value):
     :param value: new value of the attribute
     :type value: basestring
     """
-    element.setAttribute(attribute, value)
+    element.set(attribute, value)
 
 
 def text(element):
@@ -198,10 +193,7 @@ def text(element):
       contain any text)
     :rtype: basestring
     """
-    child_node = element.firstChild
-    if child_node is None:
-        return ''
-    return child_node.nodeValue
+    return element.text or ''
 
 
 def children(element, tag=None):
@@ -216,11 +208,10 @@ def children(element, tag=None):
     :rtype: iterator providing the selected children
 
     """
-    children = [n for n in element.childNodes
-                if n.localName is not None and  # skip text bodies
-                (tag is None or n.nodeName == tag)]
-    # Make sure we don't return a list, just an iterator
-    return itertools.chain(children)
+    if tag is None:
+        return iter(element)
+    else:
+        return element.iterfind('./' + tag)
 
 
 def append_child(element, child):
@@ -233,7 +224,7 @@ def append_child(element, child):
     :type child: DOM element
 
     """
-    element.appendChild(child)
+    element.append(child)
 
 
 def remove_child(element, child):
@@ -246,7 +237,7 @@ def remove_child(element, child):
     :type child: DOM element
 
     """
-    element.removeChild(child)
+    element.remove(child)
 
 
 def has_channel(domXML, name):
@@ -310,12 +301,13 @@ class Device(object):
 
 class Element(object):
 
-    def __init__(self, tagName, text=None, namespaceUri=None, **attrs):
-        if namespaceUri is not None:
-            self._elem = xml.dom.minidom.Document().createElementNS(
-                namespaceUri, tagName)
-        else:
-            self._elem = xml.dom.minidom.Document().createElement(tagName)
+    def __init__(self, tagName, text=None, namespace=None, namespace_uri=None,
+                 **attrs):
+        if namespace_uri is not None:
+            tagName = '{%s}%s' % (namespace_uri, tagName,)
+            if namespace is not None:
+                etree.register_namespace(namespace, namespace_uri)
+        self._elem = etree.Element(tagName)
         self.setAttrs(**attrs)
         if text is not None:
             self.appendTextNode(text)
@@ -323,23 +315,28 @@ class Element(object):
     def __getattr__(self, name):
         return getattr(self._elem, name)
 
+    def __len__(self):
+        return len(self._elem)
+
+    def __iter__(self):
+        return iter(self._elem)
+
     def setAttrs(self, **attrs):
         for attrName, attrValue in attrs.iteritems():
-            self._elem.setAttribute(attrName, attrValue)
+            self._elem.set(attrName, attrValue)
 
     def setAttr(self, attrName, attrValue):
-        self._elem.setAttribute(attrName, attrValue)
+        self._elem.set(attrName, attrValue)
 
     def appendTextNode(self, text):
-        textNode = xml.dom.minidom.Document().createTextNode(text)
-        self._elem.appendChild(textNode)
+        self._elem.text = text
 
     def appendChild(self, element):
-        self._elem.appendChild(element)
+        self._elem.append(element)
 
     def appendChildWithArgs(self, childName, text=None, **attrs):
         child = Element(childName, text, **attrs)
-        self._elem.appendChild(child)
+        self._elem.append(child)
         return child
 
 
@@ -440,11 +437,9 @@ class Domain(object):
         self.dom.appendChild(metadata)
 
     def _appendMetadataQOS(self, metadata):
-        metadata.appendChild(Element(METADATA_VM_TUNE_PREFIX + ':' +
-                                     METADATA_VM_TUNE_ELEMENT,
-                                     namespaceUri=METADATA_VM_TUNE_URI))
-        self.dom.setAttr('xmlns:' + METADATA_VM_TUNE_PREFIX,
-                         METADATA_VM_TUNE_URI)
+        metadata.appendChild(Element(METADATA_VM_TUNE_ELEMENT,
+                                     namespace=METADATA_VM_TUNE_PREFIX,
+                                     namespace_uri=METADATA_VM_TUNE_URI))
 
     def appendOs(self, use_serial_console=False):
         """

@@ -54,6 +54,8 @@ import vdsm
 
 from vdsm.common import osutils
 
+from virt import vmxml
+
 from monkeypatch import Patch
 from testValidation import SlowTestsPlugin, StressTestsPlugin
 
@@ -298,6 +300,10 @@ class XMLTestCase(VdsmTestCase):
         self.assertEqual(actualXML, expectedXML,
                          "XMLs are different:\nActual:\n%s\nExpected:\n%s\n" %
                          (actualXML, expectedXML))
+
+    def assert_dom_xml_equal(self, dom, expected_xml):
+        xml = vmxml.format_xml(dom)
+        self.assertXMLEqual(xml, expected_xml)
 
 
 def find_xml_element(xml, match):
