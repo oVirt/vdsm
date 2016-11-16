@@ -54,6 +54,8 @@ class BondSysFS(BondAPI):
         with open(self.BONDING_MASTERS, 'w') as f:
             f.write('+%s' % self._master)
         logging.info('Bond {} has been created.'.format(self._master))
+        if self._options:
+            self.set_options(self._options)
         if self._slaves:
             self.add_slaves(self._slaves)
 
@@ -83,9 +85,28 @@ class BondSysFS(BondAPI):
             self._slaves.remove(slave)
 
     def set_options(self, options):
-        self._options = dict(options)
-        sysfs_options.set_options(self._master, options)
+        current_options = sysfs_options.get_options(self._master)
+        if options != current_options:
+            mode_will_be_changed = ('mode' in options and
+                                    current_options['mode'] != options['mode'])
+            if mode_will_be_changed:
+                with _preserve_iface_state(self._master):
+                    iface.down(self._master)
+                    with self._temporarily_detached_slaves():
+                        sysfs_options.set_options(self._master, options)
+            else:
+                sysfs_options.set_options(self._master, options)
         logging.info('Bond {} options set: {}.'.format(self._master, options))
+        self._options = options
+
+    @contextmanager
+    def _temporarily_detached_slaves(self):
+        slaves = self._get_slaves()
+        self.del_slaves(slaves)
+        try:
+            yield
+        finally:
+            self.add_slaves(slaves)
 
     def exists(self):
         return os.path.exists(self.BONDING_PATH % self._master)
@@ -100,10 +121,12 @@ class BondSysFS(BondAPI):
             return f.read().rstrip().split()
 
     def _import_existing(self):
+        self._slaves = self._get_slaves()
+        self._options = sysfs_options.get_options(self._master)
+
+    def _get_slaves(self):
         with open(self.BONDING_SLAVES % self._master) as f:
-            self._slaves = set(f.readline().split())
-        # TODO: Support options
-        self._options = None
+            return set(f.readline().split())
 
     def _revert_transaction(self):
         if self.exists():
@@ -115,8 +138,8 @@ class BondSysFS(BondAPI):
                 slaves2remove = self._slaves - self._init_slaves
                 slaves2add = self._init_slaves - self._slaves
                 self.del_slaves(slaves2remove)
+                self.set_options(self._init_options)
                 self.add_slaves(slaves2add)
-                # TODO: Options support
         # We assume that a non existing bond with a failed transaction is not
         # a reasonable scenario and leave it to upper levels to handle it.
 

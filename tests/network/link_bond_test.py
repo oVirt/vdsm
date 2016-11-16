@@ -19,18 +19,20 @@
 from __future__ import absolute_import
 
 from contextlib import contextmanager
+import os
 
 import ctypes
 
 from nose.plugins.attrib import attr
 
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase, mock
 
 from .nettestlib import dummy_devices, check_sysfs_bond_permission
 from testValidation import broken_on_ci
 
 from vdsm.network.link import iface
 from vdsm.network.link.bond import Bond
+from vdsm.network.link.bond import sysfs_options
 from vdsm.utils import random_iface_name
 
 
@@ -39,6 +41,12 @@ def setup_module():
 
 
 @attr(type='integration')
+# TODO: We should get rid of this patch in future patches and replace it with a
+# stream that we update for each run (scanning the bond modes).
+@mock.patch.object(sysfs_options, 'BONDING_DEFAULTS',
+                   sysfs_options.BONDING_DEFAULTS
+                   if os.path.exists(sysfs_options.BONDING_DEFAULTS)
+                   else '../static/usr/share/vdsm/bonding-defaults.json')
 class LinkBondTests(TestCaseBase):
 
     @broken_on_ci(exception=ctypes.ArgumentError)
@@ -65,15 +73,16 @@ class LinkBondTests(TestCaseBase):
 
     @broken_on_ci(exception=ctypes.ArgumentError)
     def test_bond_exists(self):
+        OPTIONS = {'mode': '1', 'miimon': '300'}
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as _bond:
+                _bond.set_options(OPTIONS)
                 _bond.add_slaves((nic1, nic2))
                 _bond.up()
 
                 bond = Bond(_bond.master)
                 self.assertEqual(bond.slaves, set((nic1, nic2)))
-                # TODO: Support options
-                self.assertEqual(bond.options, None)
+                self.assertEqual(bond.options, OPTIONS)
 
     def test_bond_list(self):
         with bond_device() as b1, bond_device() as b2, bond_device() as b3:
@@ -107,6 +116,63 @@ class LinkBondTests(TestCaseBase):
                         broken_bond.add_slaves((nic1,))
                 self.assertTrue(edit_bond.exists())
                 self.assertEqual(set((nic2,)), edit_bond.slaves)
+
+    @broken_on_ci(exception=ctypes.ArgumentError)
+    def test_bond_set_options(self):
+        OPTIONS = {'mode': '1', 'miimon': '300'}
+
+        with dummy_devices(2) as (nic1, nic2):
+            with bond_device() as bond:
+                bond.set_options(OPTIONS)
+                bond.add_slaves((nic1, nic2))
+                bond.up()
+
+                _bond = Bond(bond.master)
+                self.assertEqual(_bond.options, OPTIONS)
+
+    @broken_on_ci(exception=ctypes.ArgumentError)
+    def test_bond_edit_options(self):
+        OPTIONS_A = {'mode': '1', 'miimon': '300'}
+        OPTIONS_B = {'mode': '2'}
+        OPTIONS_C = {'mode': '2', 'miimon': '150'}
+
+        with dummy_devices(2) as (nic1, nic2):
+            with bond_device() as bond:
+                bond.set_options(OPTIONS_A)
+                bond.add_slaves((nic1, nic2))
+                _bond = Bond(bond.master)
+                self.assertEqual(_bond.options, OPTIONS_A)
+
+                bond.set_options(OPTIONS_B)
+                _bond.refresh()
+                self.assertEqual(_bond.options, OPTIONS_B)
+
+                bond.set_options(OPTIONS_C)
+                _bond.refresh()
+                self.assertEqual(_bond.options, OPTIONS_C)
+
+
+@attr(type='integration')
+# TODO: We should get rid of this patch in future patches and replace it with a
+# stream that we update for each run (scanning the bond modes).
+@mock.patch.object(sysfs_options, 'BONDING_DEFAULTS',
+                   sysfs_options.BONDING_DEFAULTS
+                   if os.path.exists(sysfs_options.BONDING_DEFAULTS)
+                   else '../static/usr/share/vdsm/bonding-defaults.json')
+class LinkBondSysFSTests(TestCaseBase):
+
+    @broken_on_ci(exception=ctypes.ArgumentError)
+    def test_do_not_detach_slaves_while_changing_options(self):
+        OPTIONS = {'miimon': '110'}
+
+        with dummy_devices(2) as (nic1, nic2):
+            with bond_device() as bond:
+                bond.add_slaves((nic1, nic2))
+                mock_slaves = bond.del_slaves = bond.add_slaves = mock.Mock()
+
+                bond.set_options(OPTIONS)
+
+                mock_slaves.assert_not_called()
 
 
 @contextmanager

@@ -59,9 +59,42 @@ BONDING_MODES_NUMBER_TO_NAME = dict(
 
 
 def set_options(bond, options):
-    for key, value in options:
-        with open(BONDING_OPT % (bond, key), 'w') as f:
-            f.write(value)
+    current_mode = _bondOpts(bond, ('mode',))['mode'][-1]
+    desired_mode = options.get('mode') or current_mode
+
+    if desired_mode != current_mode:
+        _set_mode(bond, desired_mode)
+    current_options = get_options(bond)
+    _set_options(bond, options, current_options)
+    _set_untouched_options_to_defaults(
+        bond, desired_mode, options, current_options)
+
+
+def _set_mode(bond, mode):
+    _set_option(bond, 'mode', mode)
+
+
+def _set_options(bond, options, current_options):
+    for key, value in six.iteritems(options):
+        if key not in ('mode', 'custom') and (
+                key not in current_options or value != current_options[key]):
+            _set_option(bond, key, value)
+
+
+def _set_untouched_options_to_defaults(bond, mode, options, current_options):
+    for key, value in six.iteritems(getDefaultBondingOptions(mode)):
+        if (key != 'mode' and key not in options and key in current_options and
+                value):
+            _set_option(bond, key, value[-1])
+
+
+def _set_option(bond, key, value):
+    with open(BONDING_OPT % (bond, key), 'w') as f:
+        f.write(value)
+
+
+def get_options(bond):
+    return _getBondingOptions(bond)
 
 
 def _bondOpts(bond_name, keys=None):
@@ -94,7 +127,7 @@ def _getBondingOptions(bond_name):
     mode = opts['mode'][-1] if 'mode' in opts else None
     defaults = getDefaultBondingOptions(mode)
 
-    return dict(((opt, val[-1]) for (opt, val) in opts.iteritems()
+    return dict(((opt, val[-1]) for (opt, val) in six.iteritems(opts)
                  if val and (val != defaults.get(opt) or opt == "mode")))
 
 
@@ -104,7 +137,7 @@ def bondOpts(bond_name, keys=None):
     are not bonding options, e.g. 'ad_num_ports' or 'slaves'.
     """
     return dict(((opt, val) for
-                 (opt, val) in _bondOpts(bond_name, keys).iteritems()
+                 (opt, val) in six.iteritems(_bondOpts(bond_name, keys))
                  if opt not in EXCLUDED_BONDING_ENTRIES))
 
 
