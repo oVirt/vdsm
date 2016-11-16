@@ -81,6 +81,7 @@ EXTRA_DIST = \
 	libvirt_password \
 	limits.conf \
 	logger.conf.in \
+	lvmlocal.conf \
 	mk_sysprep_floppy.in \
 	vdsm-bonding-modprobe.conf \
 	mom.conf.in \
@@ -126,7 +127,8 @@ install-data-local: \
 		install-data-rwtab \
 		install-data-sudoers \
 		install-data-sysctl \
-		install-data-vdsmconf
+		install-data-vdsmconf \
+		install-data-lvmlocal-conf
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/hsm-tasks
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/mnt
@@ -155,7 +157,9 @@ uninstall-local: \
 		uninstall-data-rwtab \
 		uninstall-data-sudoers \
 		uninstall-data-sysctl \
-		uninstall-data-vdsmconf
+		uninstall-data-vdsmconf \
+		uninstall-data-lvmlocal-conf \
+		$(NULL)
 
 install-data-logger:
 	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)
@@ -255,3 +259,9 @@ install-data-dhclient-hooks:
 
 uninstall-data-dhclient-hooks:
 	$(RM) $(DESTDIR)$(sysconfdir)/dhcp/dhclient.d/sourceRoute.sh
+
+install-data-lvmlocal-conf:
+	$(INSTALL_DATA) lvmlocal.conf $(DESTDIR)$(vdsmdir)/lvmlocal.conf
+
+uninstall-data-lvmlocal-conf:
+	$(RM) $(DESTDIR)$(vdsmdir)/lvmlocal.conf
