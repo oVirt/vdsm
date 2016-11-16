@@ -1074,6 +1074,7 @@ exit 0
 %defattr(644, %{vdsm_user}, %{vdsm_group}, -)
 %{_datadir}/%{vdsm_name}/bonding-defaults.json
 %{_datadir}/%{vdsm_name}/bonding-name2numeric.json
+%{_datadir}/%{vdsm_name}/lvmlocal.conf
 
 %files python
 %{_mandir}/man1/vdsm-tool.1*

@@ -29,6 +29,7 @@ dist_bin_SCRIPTS = \
 vdsm_DATA = \
 	./usr/share/vdsm/bonding-defaults.json \
 	./usr/share/vdsm/bonding-name2numeric.json \
+	./usr/share/vdsm/lvmlocal.conf \
 	$(NULL)
 
 vdsmconf_DATA = \
