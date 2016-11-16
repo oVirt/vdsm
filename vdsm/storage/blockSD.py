@@ -982,7 +982,7 @@ class BlockStorageDomain(sd.StorageDomain):
                                                  self.sdUUID)
         try:
             rm.registerNamespace(lvmActivationNamespace, lvmActivationFactory)
-        except KeyError:
+        except rm.NamespaceRegistered:
             self.log.info("Resource namespace %s already registered",
                           lvmActivationNamespace)
 

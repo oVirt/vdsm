@@ -161,8 +161,8 @@ class ResourceManagerTests(TestCaseBase):
         self.assertEqual(resources[0], None)
 
     @MonkeyPatch(rm, "_manager", manager())
-    def testReregisterNamespace(self):
-        self.assertRaises((ValueError, KeyError), rm.registerNamespace,
+    def testRegisterExistingNamespace(self):
+        self.assertRaises(rm.NamespaceRegistered, rm.registerNamespace,
                           "storage", rm.SimpleResourceFactory())
 
     @MonkeyPatch(rm, "_manager", manager())

@@ -42,6 +42,10 @@ class ResourceManagerError(Exception):
     pass
 
 
+class NamespaceRegistered(ResourceManagerError):
+    """ Raised if a namesapce is already registered """
+
+
 class RequestAlreadyProcessedError(ResourceManagerError):
     pass
 
@@ -351,11 +355,13 @@ class _ResourceManager(object):
             raise ValueError("Illegal namespace '%s'" % namespace)
 
         if namespace in self._namespaces:
-            raise KeyError("Namespace '%s' already exists." % namespace)
+            raise NamespaceRegistered("Namespace '%s' already registered"
+                                      % namespace)
 
         with self._syncRoot.exclusive:
             if namespace in self._namespaces:
-                raise KeyError("Namespace '%s' already exists." % namespace)
+                raise NamespaceRegistered("Namespace '%s' already registered"
+                                          % namespace)
 
             self._log.debug("Registering namespace '%s'", namespace)
 

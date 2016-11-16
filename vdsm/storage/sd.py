@@ -726,7 +726,7 @@ class StorageDomain(object):
         imageResourcesNamespace = getNamespace(sc.IMAGE_NAMESPACE, self.sdUUID)
         try:
             rm.registerNamespace(imageResourcesNamespace, imageResourceFactory)
-        except KeyError:
+        except rm.NamespaceRegistered:
             self.log.info("Resource namespace %s already registered",
                           imageResourcesNamespace)
 
@@ -735,7 +735,7 @@ class StorageDomain(object):
         try:
             rm.registerNamespace(volumeResourcesNamespace,
                                  rm.SimpleResourceFactory())
-        except KeyError:
+        except rm.NamespaceRegistered:
             self.log.info("Resource namespace %s already registered",
                           volumeResourcesNamespace)
 
