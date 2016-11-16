@@ -346,20 +346,16 @@ class _ResourceManager(object):
         self._syncRoot = rwlock.RWLock()
         self._namespaces = {}
 
-    def registerNamespace(self, namespace, factory, force=False):
+    def registerNamespace(self, namespace, factory):
         if not self._namespaceValidator.match(namespace):
             raise ValueError("Illegal namespace '%s'" % namespace)
 
-        if (namespace in self._namespaces) and not force:
-                raise KeyError("Namespace '%s' already exists." % namespace)
+        if namespace in self._namespaces:
+            raise KeyError("Namespace '%s' already exists." % namespace)
 
         with self._syncRoot.exclusive:
-            if (namespace in self._namespaces):
-                if force:
-                    self._unregisterNamespaceLocked(namespace)
-                else:
-                    raise KeyError("Namespace '%s' already exists." %
-                                   namespace)
+            if namespace in self._namespaces:
+                raise KeyError("Namespace '%s' already exists." % namespace)
 
             self._log.debug("Registering namespace '%s'", namespace)
 
@@ -1013,8 +1009,8 @@ _manager = _ResourceManager()
 
 # Public api - client should use only these to manage resources.
 
-def registerNamespace(namespace, factory, force=False):
-    _manager.registerNamespace(namespace, factory, force=force)
+def registerNamespace(namespace, factory):
+    _manager.registerNamespace(namespace, factory)
 
 
 def unregisterNamespace(namespace):

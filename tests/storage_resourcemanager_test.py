@@ -442,10 +442,6 @@ class ResourceManagerTests(TestCaseBase):
         self.assertRaises(Exception, resource.write, "test")
 
     @MonkeyPatch(rm, "_manager", manager())
-    def testForceRegisterNamespace(self):
-        rm.registerNamespace("storage", rm.SimpleResourceFactory(), True)
-
-    @MonkeyPatch(rm, "_manager", manager())
     def testResourceAutorelease(self):
         self.log.info("Acquiring resource", extra={'resource': "bob"})
         res = rm.acquireResource("storage", "resource", rm.SHARED)
