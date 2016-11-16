@@ -18,7 +18,6 @@
 #
 from __future__ import absolute_import
 
-from contextlib import contextmanager
 import logging
 import socket
 import struct
@@ -206,7 +205,6 @@ def _add_ipv6_address(iface, ipv6):
             ipv6_autoconf.write('1' if ipv6.ipv6autoconf else '0')
 
 
-@contextmanager
 def _set_default_route(gateway, family, dev=None):
     try:
         ipwrapper.routeAdd(['default', 'via', gateway], family=family, dev=dev)
