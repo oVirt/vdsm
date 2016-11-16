@@ -23,7 +23,6 @@ supervdsm_apidir = $(vdsmdir)/supervdsm_api
 dist_supervdsm_api_PYTHON = \
 	__init__.py \
 	test.py \
-	containers.py \
 	hwinfo.py \
 	ksm.py \
 	mkimage.py \
@@ -32,3 +31,7 @@ dist_supervdsm_api_PYTHON = \
 	udev.py \
 	virt.py \
 	$(NULL)
+
+if CONTAINERS
+dist_supervdsm_api_PYTHON += containers.py
+endif

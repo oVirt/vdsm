@@ -7,7 +7,8 @@ make distclean
     --disable-ovirt-imageio \
     --disable-ovirt-vmconsole \
     --enable-vhostmd \
-    --enable-hooks
+    --enable-hooks \
+    --enable-containers
 make srpm
 
 echo

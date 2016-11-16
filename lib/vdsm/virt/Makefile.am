@@ -19,7 +19,10 @@
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS=containers
+SUBDIRS=$(NULL)
+if CONTAINERS
+SUBDIRS+=containers
+endif
 
 vdsmvirtdir = $(vdsmpylibdir)/virt
 dist_vdsmvirt_PYTHON = \

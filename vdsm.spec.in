@@ -20,6 +20,7 @@
 %global with_hooks @HOOKS@
 %global with_vhostmd @VHOSTMD@
 %global with_python3 @PYTHON3_SUPPORT@
+%global with_containers @CONTAINERS@
 
 %ifarch ppc64le
 %global with_openvswitch 0
@@ -696,6 +697,9 @@ autoreconf -if
         --with-ovirt-vmconsole-user='@VDSMUSER@' \
         --with-ovirt-vmconsole-group='@VDSMGROUP@' \
 %endif
+%if 0%{?with_containers}
+        --enable-containers \
+%endif
         --with-qemu-kvm='@QEMU_KVM_PKG@' \
         --with-qemu-img='@QEMU_IMG_PKG@'
 
@@ -1299,12 +1303,14 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_multiqemu.out
 %{_datadir}/%{vdsm_name}/tests/caps_numactl_4_nodes.out
 %{_datadir}/%{vdsm_name}/tests/common/*.py*
+%if 0%{?with_containers}
 %{_datadir}/%{vdsm_name}/tests/containers/*.py*
 # FIXME
 #%{_datadir}/%{vdsm_name}/tests/containers/data/bin/*.txt
 #%{_datadir}/%{vdsm_name}/tests/containers/data/bin/*.xml
 #%{_datadir}/%{vdsm_name}/tests/containers/fake/bin/*
 #%{_datadir}/%{vdsm_name}/tests/containers/fake/cgroups.tgz
+%endif
 %{_datadir}/%{vdsm_name}/tests/cpuinfo/*.out
 %{_datadir}/%{vdsm_name}/tests/fake-ssh-add
 %{_datadir}/%{vdsm_name}/tests/fake-ssh-agent
@@ -1595,6 +1601,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/gluster/tasks.py*
 %endif
 
+%if 0%{?with_containers}
 %files containers
 %defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}
@@ -1613,6 +1620,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virt/containers/monitoring.py*
 %{python_sitelib}/%{vdsm_name}/virt/containers/runner.py*
 %{python_sitelib}/%{vdsm_name}/virt/containers/xmlfile.py*
+%endif
 
 
 %changelog
