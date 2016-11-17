@@ -31,6 +31,7 @@ from __future__ import absolute_import
 import logging
 
 from vdsm import qemuimg
+from vdsm import utils
 
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -69,4 +70,5 @@ class Job(base.Job):
                     self.subchain.top_vol.getVolumePath(),
                     topFormat=sc.fmt2str(self.subchain.top_vol.getFormat()),
                     base=self.subchain.base_vol.getVolumePath())
-                self.operation.wait_for_completion()
+                with utils.closing(self.operation):
+                    self.operation.wait_for_completion()
