@@ -294,15 +294,14 @@ def NoIntrPoll(pollfun, timeout=-1):
 
 class CommandStream(object):
     def __init__(self, command, stdoutcb, stderrcb):
-        self._command = command
         self._poll = select.epoll()
         self._iocb = {}
 
         # In case both stderr and stdout are using the same fd the
         # output is squashed to the stdout (given the order of the
         # entries in the dictionary)
-        self._iocb[self._command.stderr.fileno()] = stderrcb
-        self._iocb[self._command.stdout.fileno()] = stdoutcb
+        self._iocb[command.stderr.fileno()] = stderrcb
+        self._iocb[command.stdout.fileno()] = stdoutcb
 
         for fd in self._iocb:
             self._poll.register(fd, select.EPOLLIN)
