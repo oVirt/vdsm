@@ -290,6 +290,11 @@ class QemuImgOperation(object):
 
     @property
     def progress(self):
+        """
+        Returns operation progress as float between 0 and 100.
+
+        This method is threadsafe and may be called from any thread.
+        """
         return self._progress
 
     @property
@@ -323,6 +328,16 @@ class QemuImgOperation(object):
             _log.debug('qemu-img operation progress: %s%%', self.progress)
 
     def abort(self):
+        """
+        Aborts running operation by sending a termination signal to the
+        underlying qemu-img process.
+
+        Note: this is asynchronous operation, returning before the process was
+        terminated. You must use wait_for_completion to wait for the underlying
+        qemu-img process.
+
+        This method is threadsafe and may be called from any thread.
+        """
         if self._command.poll() is None:
             self._aborted = True
             self._command.terminate()
