@@ -101,7 +101,7 @@ def connect(host, port, use_tls=True, timeout=60):
     try:
         client = stompreactor.SimpleClient(host, port, use_tls)
     except Exception as e:
-        raise ClientError("connect", None, e)
+        raise ConnectionError(host, port, use_tls, timeout, e)
 
     return _Client(client, timeout)
 
@@ -114,6 +114,18 @@ class Error(Exception):
 
     def __str__(self):
         return self.msg.format(self=self)
+
+
+class ConnectionError(Error):
+    msg = ("Connection to {self.host}:{self.port} with use_tls={self.use_tls},"
+           " timeout={self.timeout} failed: {self.reason}")
+
+    def __init__(self, host, port, use_tls, timeout, reason):
+        self.host = host
+        self.port = port
+        self.use_tls = use_tls
+        self.timeout = timeout
+        self.reason = reason
 
 
 class TimeoutError(Error):
