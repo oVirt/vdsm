@@ -158,7 +158,6 @@ public class JsonRpcServer extends Thread {
     }
 
     private void readMessage(SocketChannel socketChannel) throws IOException {
-        assert this.ibuff != null;
         socketChannel.read(this.ibuff);
 
         if (this.ibuff.hasRemaining()) {

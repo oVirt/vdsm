@@ -30,7 +30,6 @@ public final class ReactorScheduler {
                 ((FutureTask<?>) task).run();
                 remove = true;
             } else {
-                assert (task instanceof ChainedOperation);
                 ChainedOperation<?> co = (ChainedOperation<?>) task;
                 co.call();
                 if (co.isDone()) {
