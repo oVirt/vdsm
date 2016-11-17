@@ -26,6 +26,7 @@ import logging
 from vdsm import jobs
 from vdsm import properties
 from vdsm import qemuimg
+from vdsm import utils
 from vdsm.storage import constants as sc
 from vdsm.storage import guarded
 from vdsm.storage import workarounds
@@ -83,7 +84,8 @@ class Job(base.Job):
                         dstQcow2Compat=self._dest.qcow2_compat,
                         backing=self._dest.backing_path,
                         backingFormat=self._dest.backing_qemu_format)
-                    self._operation.wait_for_completion()
+                    with utils.closing(self._operation):
+                        self._operation.wait_for_completion()
 
 
 def _create_endpoint(params, host_id, writable):
