@@ -881,9 +881,9 @@ class TestCommandStream(TestCaseBase):
             c,
             recv_data if recv_out else self.assertUnexpectedCall,
             recv_data if recv_err else self.assertUnexpectedCall)
-
-        while not p.closed:
-            p.receive()
+        with utils.closing(p):
+            while not p.closed:
+                p.receive()
 
         retcode = c.wait()
 
@@ -908,13 +908,13 @@ class TestCommandStream(TestCaseBase):
             c,
             recv_data if recv_out else self.assertUnexpectedCall,
             recv_data if recv_err else self.assertUnexpectedCall)
+        with utils.closing(p):
+            c.stdin.write(text)
+            c.stdin.flush()
+            c.stdin.close()
 
-        c.stdin.write(text)
-        c.stdin.flush()
-        c.stdin.close()
-
-        while not p.closed:
-            p.receive()
+            while not p.closed:
+                p.receive()
 
         retcode = c.wait()
 
@@ -925,11 +925,11 @@ class TestCommandStream(TestCaseBase):
         c = self._startCommand(["sleep", "5"])
         p = utils.CommandStream(c, self.assertUnexpectedCall,
                                 self.assertUnexpectedCall)
+        with utils.closing(p):
+            with self.assertElapsed(2):
+                p.receive(2)
 
-        with self.assertElapsed(2):
-            p.receive(2)
-
-        self.assertEqual(p.closed, False)
+            self.assertEqual(p.closed, False)
 
         c.terminate()
 
@@ -943,14 +943,14 @@ class TestCommandStream(TestCaseBase):
         c = self._startCommand(["sleep", "2"])
         p = utils.CommandStream(c, self.assertUnexpectedCall,
                                 self.assertUnexpectedCall)
+        with utils.closing(p):
+            getattr(c, method)()
 
-        getattr(c, method)()
-
-        try:
-            with self.assertElapsed(0):
-                p.receive(2)
-        finally:
-            retcode = c.wait()
+            try:
+                with self.assertElapsed(0):
+                    p.receive(2)
+            finally:
+                retcode = c.wait()
 
         self.assertEqual(retcode, expected_retcode)
 

@@ -345,6 +345,9 @@ class CommandStream(object):
 
             self._poll_timeout(poll_remaining)
 
+    def close(self):
+        self._poll.close()
+
 
 def stripNewLines(lines):
     return [l[:-1] if l.endswith('\n') else l for l in lines]
