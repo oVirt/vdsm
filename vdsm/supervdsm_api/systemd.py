@@ -31,12 +31,6 @@ _SYSTEMCTL = utils.CommandPath("systemctl",
                                )
 
 
-_MACHINECTL = utils.CommandPath("machinectl",
-                                "/bin/machinectl",
-                                "/usr/bin/machinectl",
-                                )
-
-
 _ACCOUNTING = (
     cmdutils.Accounting.CPU,
     cmdutils.Accounting.Memory,
@@ -60,11 +54,4 @@ def systemd_run(unit_name, cgroup_slice, *args):
 def systemctl_stop(name):
     return commands.execCmd(
         [_SYSTEMCTL.cmd, 'stop', name],
-    )
-
-
-@expose
-def machinectl_poweroff(name):
-    return commands.execCmd(
-        [_MACHINECTL.cmd, 'poweroff', name],
     )
