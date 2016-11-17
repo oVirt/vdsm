@@ -983,8 +983,8 @@ class BlockStorageDomain(sd.StorageDomain):
         try:
             rm.registerNamespace(lvmActivationNamespace, lvmActivationFactory)
         except rm.NamespaceRegistered:
-            self.log.info("Resource namespace %s already registered",
-                          lvmActivationNamespace)
+            self.log.debug("Resource namespace %s already registered",
+                           lvmActivationNamespace)
 
     @classmethod
     def metaSize(cls, vgroup):

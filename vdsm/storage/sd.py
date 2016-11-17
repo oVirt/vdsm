@@ -727,8 +727,8 @@ class StorageDomain(object):
         try:
             rm.registerNamespace(imageResourcesNamespace, imageResourceFactory)
         except rm.NamespaceRegistered:
-            self.log.info("Resource namespace %s already registered",
-                          imageResourcesNamespace)
+            self.log.debug("Resource namespace %s already registered",
+                           imageResourcesNamespace)
 
         volumeResourcesNamespace = getNamespace(sc.VOLUME_NAMESPACE,
                                                 self.sdUUID)
@@ -736,8 +736,8 @@ class StorageDomain(object):
             rm.registerNamespace(volumeResourcesNamespace,
                                  rm.SimpleResourceFactory())
         except rm.NamespaceRegistered:
-            self.log.info("Resource namespace %s already registered",
-                          volumeResourcesNamespace)
+            self.log.debug("Resource namespace %s already registered",
+                           volumeResourcesNamespace)
 
     def produceVolume(self, imgUUID, volUUID):
         """
