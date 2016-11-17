@@ -32,6 +32,7 @@ from testlib import namedTemporaryDir
 from vdsm.common import exception
 from vdsm import qemuimg
 from vdsm import commands
+from vdsm import utils
 
 QEMU_IMG = qemuimg._qemuimg.cmd
 
@@ -315,17 +316,18 @@ class QemuImgProgressTests(TestCaseBase):
 
     def test_failure(self):
         p = qemuimg.QemuImgOperation(['false'])
-        self.assertRaises(qemuimg.QImgError, p.poll)
+        with utils.closing(p):
+            self.assertRaises(qemuimg.QImgError, p.poll)
 
     def test_progress_simple(self):
         p = qemuimg.QemuImgOperation(['true'])
+        with utils.closing(p):
+            for progress in self._progress_iterator():
+                p._recvstdout(self.PROGRESS_FORMAT % progress)
+                self.assertEquals(p.progress, progress)
 
-        for progress in self._progress_iterator():
-            p._recvstdout(self.PROGRESS_FORMAT % progress)
-            self.assertEquals(p.progress, progress)
-
-        p.poll()
-        self.assertEquals(p.finished, True)
+            p.poll()
+            self.assertEquals(p.finished, True)
 
     @permutations([
         (("    (1/100%)\r", "    (2/100%)\r"), (1, 2)),
@@ -334,36 +336,36 @@ class QemuImgProgressTests(TestCaseBase):
     ])
     def test_partial(self, output_list, progress_list):
         p = qemuimg.QemuImgOperation(['true'])
-
-        for output, progress in zip(output_list, progress_list):
-            p._recvstdout(output)
-            self.assertEquals(p.progress, progress)
-        p.poll()
-        self.assertEquals(p.finished, True)
+        with utils.closing(p):
+            for output, progress in zip(output_list, progress_list):
+                p._recvstdout(output)
+                self.assertEquals(p.progress, progress)
+            p.poll()
+            self.assertEquals(p.finished, True)
 
     def test_progress_batch(self):
         p = qemuimg.QemuImgOperation(['true'])
+        with utils.closing(p):
+            p._recvstdout(
+                (self.PROGRESS_FORMAT % 10.00) +
+                (self.PROGRESS_FORMAT % 25.00) +
+                (self.PROGRESS_FORMAT % 33.33))
 
-        p._recvstdout(
-            (self.PROGRESS_FORMAT % 10.00) +
-            (self.PROGRESS_FORMAT % 25.00) +
-            (self.PROGRESS_FORMAT % 33.33))
+            self.assertEquals(p.progress, 33.33)
 
-        self.assertEquals(p.progress, 33.33)
-
-        p.poll()
-        self.assertEquals(p.finished, True)
+            p.poll()
+            self.assertEquals(p.finished, True)
 
     def test_unexpected_output(self):
         p = qemuimg.QemuImgOperation(['true'])
+        with utils.closing(p):
+            self.assertRaises(ValueError, p._recvstdout, 'Hello World\r')
 
-        self.assertRaises(ValueError, p._recvstdout, 'Hello World\r')
+            p._recvstdout('Hello ')
+            self.assertRaises(ValueError, p._recvstdout, 'World\r')
 
-        p._recvstdout('Hello ')
-        self.assertRaises(ValueError, p._recvstdout, 'World\r')
-
-        p.poll()
-        self.assertEquals(p.finished, True)
+            p.poll()
+            self.assertEquals(p.finished, True)
 
 
 @expandPermutations
@@ -406,7 +408,8 @@ class TestCommit(TestCaseBase):
             op = qemuimg.commit(top_vol,
                                 topFormat=qemuimg.FORMAT.QCOW2,
                                 base=base_vol if use_base else None)
-            op.wait_for_completion()
+            with utils.closing(op):
+                op.wait_for_completion()
 
             for i in range(base, top + 1):
                 offset = i * 1024
@@ -434,8 +437,9 @@ class TestCommit(TestCaseBase):
             make_image(top, size, qemuimg.FORMAT.QCOW2, 1, "1.1", base)
 
             op = qemuimg.commit(top, topFormat=qemuimg.FORMAT.QCOW2)
-            op.wait_for_completion()
-            self.assertEquals(100, op.progress)
+            with utils.closing(op):
+                op.wait_for_completion()
+                self.assertEquals(100, op.progress)
 
 
 @expandPermutations

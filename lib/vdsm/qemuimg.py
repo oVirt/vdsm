@@ -24,6 +24,7 @@ import logging
 import os
 import re
 import signal
+import threading
 
 from vdsm.common import exception
 from . import utils
@@ -244,6 +245,7 @@ class QemuImgOperation(object):
     REGEXPR = re.compile(r'\s*\(([\d.]+)/100%\)\s*')
 
     def __init__(self, cmd, cwd=None):
+        self._lock = threading.Lock()
         self._aborted = False
         self._progress = 0.0
 
@@ -338,9 +340,17 @@ class QemuImgOperation(object):
 
         This method is threadsafe and may be called from any thread.
         """
-        if self._command.poll() is None:
-            self._aborted = True
-            self._command.terminate()
+        with self._lock:
+            if self._command is None:
+                return
+            if self._command.poll() is None:
+                self._aborted = True
+                self._command.terminate()
+
+    def close(self):
+        with self._lock:
+            self._stream.close()
+            self._command = None
 
 
 def resize(image, newSize, format=None):
