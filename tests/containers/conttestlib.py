@@ -28,7 +28,6 @@ import shutil
 import tarfile
 import tempfile
 import uuid
-import unittest
 import xml.etree.ElementTree as ET
 
 from vdsm import commands
@@ -43,27 +42,8 @@ import vdsm.virt.containers.runner
 import vdsm.virt.containers.xmlfile
 
 from monkeypatch import MonkeyPatchScope, Patch
+from testlib import VdsmTestCase as TestCase
 from testlib import recorded
-
-
-class TestCase(unittest.TestCase):
-
-    def assertNotRaises(self, callableObj=None, *args, **kwargs):
-        # This is required when any exception raised during the call should be
-        # considered as a test failure.
-        context = not_raises(self)
-        if callableObj is None:
-            return context
-        with context:
-            callableObj(*args, **kwargs)
-
-
-@contextmanager
-def not_raises(test_case):
-    try:
-        yield
-    except Exception as e:
-        raise test_case.failureException("Exception raised: %s" % e)
 
 
 class FakeRuntime(vdsm.virt.containers.docker.Runtime):
@@ -170,6 +150,10 @@ class FakeSuperVdsm(object):
     def docker_net_create(self, subnet, gw, nic, network):
         data = '%s %s %s %s\n' % (subnet, gw, nic, network)
         return 0, data, ''
+
+    @recorded
+    def docker_net_remove(self, network):
+        return 0, network, ''
 
     @recorded
     def systemctl_stop(self, name):
