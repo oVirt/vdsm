@@ -113,6 +113,7 @@ class NetFuncTestCase(VdsmTestCase):
         self.assertVlan(netattrs)
         self.assertNetworkIp(netname, netattrs)
         self.assertLinksUp(netname, netattrs)
+        self.assertNetworkSwitchType(netname, netattrs)
 
     def assertHostQos(self, netname, netattrs):
         network_caps = self.netinfo.networks[netname]
@@ -208,12 +209,18 @@ class NetFuncTestCase(VdsmTestCase):
         self.update_running_config()
         self.assertNotIn(net, self.running_config.networks)
 
+    def assertNetworkSwitchType(self, netname, netattrs):
+        requested_switch = netattrs.get('switch', 'legacy')
+        running_switch = self.netinfo.networks[netname]['switch']
+        self.assertEqual(requested_switch, running_switch)
+
     def assertBond(self, bond, attrs):
         self.assertBondExists(bond)
         self.assertBondSlaves(bond, attrs['nics'])
         if 'options' in attrs:
             self.assertBondOptions(bond, attrs['options'])
         self.assertBondExistsInRunninng(bond, attrs['nics'])
+        self.assertBondSwitchType(bond, attrs)
 
     def assertBondExists(self, bond):
         self.assertIn(bond, self.netinfo.bondings)
@@ -234,6 +241,11 @@ class NetFuncTestCase(VdsmTestCase):
         self.assertIn(bond, self.running_config.bonds)
         self.assertEqual(
             set(nics), set(self.running_config.bonds[bond]['nics']))
+
+    def assertBondSwitchType(self, bondname, bondattrs):
+        requested_switch = bondattrs.get('switch', 'legacy')
+        running_switch = self.netinfo.bondings[bondname]['switch']
+        self.assertEqual(requested_switch, running_switch)
 
     def assertNoBond(self, bond):
         self.assertNoBondExists(bond)
