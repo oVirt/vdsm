@@ -61,22 +61,22 @@ class _AcceptorImpl(object):
         return False
 
     def handle_accept(self, dispatcher):
+        pair = dispatcher.accept()
+        if pair is None:
+            return  # Not ready yet
+
+        # WARNING: we must not raise socket.error here - asyncore wrongly
+        # assumes that unhandled socket.error in handle_accept is related
+        # to the listen socket and will close it.
+        client, addr = pair
+        self.log.info("Accepted connection from %s:%d", addr[0], addr[1])
         try:
-            client, addr = dispatcher.socket.accept()
+            client.setblocking(0)
+            self._dispatcher_factory(client)
         except socket.error:
-            pass
-        else:
-            # WARNING: we must not raise socket.error here - asyncore wrongly
-            # assumes that unhandled socket.error in handle_accept is related
-            # to the listen socket and will close it.
-            self.log.info("Accepted connection from %s:%d", addr[0], addr[1])
-            try:
-                client.setblocking(0)
-                self._dispatcher_factory(client)
-            except socket.error:
-                self.log.exception("Error creating dispatcher for %s:%d",
-                                   addr[0], addr[1])
-                client.close()
+            self.log.exception("Error creating dispatcher for %s:%d",
+                               addr[0], addr[1])
+            client.close()
 
     def handle_close(self, dispatcher):
         dispatcher.close()
