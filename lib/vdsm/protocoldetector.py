@@ -23,6 +23,7 @@ from __future__ import absolute_import
 import logging
 import socket
 
+from vdsm import panic
 from vdsm.common import filecontrol
 from vdsm.utils import monotonic_time
 from vdsm.sslcompat import SSLHandshakeDispatcher
@@ -78,8 +79,17 @@ class _AcceptorImpl(object):
                                addr[0], addr[1])
             client.close()
 
+    def handle_error(self, dispatcher):
+        err = dispatcher.socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+        if err != 0:
+            self.log.exception("Unrecoverable error on listen socket")
+            self.handle_close(dispatcher)
+        else:
+            self.log.exception("Unhandled exception in acceptor")
+
     def handle_close(self, dispatcher):
-        dispatcher.close()
+        # We cannot handle this, so the best way is to die loudly.
+        panic.panic("Listen socket was closed: %s", dispatcher.socket)
 
 
 class _ProtocolDetector(object):
