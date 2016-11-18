@@ -66,10 +66,17 @@ class _AcceptorImpl(object):
         except socket.error:
             pass
         else:
-            client.setblocking(0)
-            self.log.info("Accepting connection from %s:%d",
-                          *client.getpeername()[0:2])
-            self._dispatcher_factory(client)
+            # WARNING: we must not raise socket.error here - asyncore wrongly
+            # assumes that unhandled socket.error in handle_accept is related
+            # to the listen socket and will close it.
+            try:
+                client.setblocking(0)
+                self.log.info("Accepted connection from %s:%d",
+                              *client.getpeername()[0:2])
+                self._dispatcher_factory(client)
+            except socket.error:
+                self.log.exception("Error creating dispatcher")
+                client.close()
 
     def handle_close(self, dispatcher):
         dispatcher.close()
