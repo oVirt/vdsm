@@ -7257,6 +7257,28 @@ types:
         values:
         - *CopyDataDIVEndpoint
 
+    SubchainInfo: &SubchainInfo
+        added: '4.1'
+        description: A descriptor for a (cold) merge volumes operation.
+        name: SubchainInfo
+        properties:
+        -   description: The UUID of the Storage Domain
+            name: sd_id
+            type: *UUID
+
+        -   description: The UUID of the Image
+            name: img_id
+            type: *UUID
+
+        -   description: The UUID of the top Volume
+            name: top_id
+            type: *UUID
+
+        -   description: The UUID of the base Volume
+            name: base_id
+            type: *UUID
+        type: object
+
 
 Host.setupNetworks:
     added: '3.1'
