@@ -111,6 +111,11 @@ parameters = [
             'How often (in seconds) should the monitor thread pulse, 0 means '
             'the thread is disabled.'),
 
+        ('migration_ovs_hook_enabled', 'false',
+            'Whether migration hook should be enabled or not. It must be used '
+            'if you need to support VM migration between hosts with OVS '
+            'switch involved as VDSM network configurator.'),
+
         ('hidden_nics', 'w*,usb*',
             'Comma-separated list of fnmatch-patterns for host nics to be '
             'hidden from vdsm.'),

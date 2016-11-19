@@ -91,6 +91,8 @@ class TestOvsHookMigration(XMLTestCase):
                                       is_dest_ovs=False,
                                       is_vlan_net=True)
 
+    # mock migration_ovs_hook_enabled
+    @mock.patch('vdsm.config.config.get', lambda *x: 'true')
     @mock.patch.object(vm_migrate_hook, 'jsonrpcvdscli', MockJsonrpcvdscli)
     @mock.patch.object(vm_migrate_hook.net_api, 'net2vlan')
     @mock.patch.object(vm_migrate_hook.net_api, 'ovs_bridge')

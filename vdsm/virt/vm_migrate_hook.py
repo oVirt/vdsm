@@ -27,6 +27,7 @@ import xml.etree.cElementTree as ET
 from vdsm import jsonrpcvdscli
 from vdsm.config import config
 from vdsm.network import api as net_api
+from vdsm.utils import tobool
 
 
 _DEBUG_MODE = False
@@ -42,6 +43,9 @@ class VmMigrationMissingDisplayConf(Exception):
 
 
 def main(domain, event, phase, stdin=sys.stdin, stdout=sys.stdout, *args):
+    if not tobool(config.get('vars', 'migration_ovs_hook_enabled')):
+        sys.exit(0)
+
     if event not in ('migrate', 'restore'):
         sys.exit(0)
 
