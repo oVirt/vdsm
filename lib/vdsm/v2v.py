@@ -490,7 +490,10 @@ class V2VCommand(object):
     def _password_file(self):
         fd = os.open(self._passwd_file, os.O_WRONLY | os.O_CREAT, 0o600)
         try:
-            os.write(fd, self._password.value)
+            if self._password.value is None:
+                os.write(fd, "")
+            else:
+                os.write(fd, self._password.value)
         finally:
             os.close(fd)
         try:
@@ -617,10 +620,12 @@ class KVMCommand(V2VCommand):
 
     def _command(self):
         cmd = [EXT_KVM_2_OVIRT,
-               '--uri', self._uri,
-               '--username', self._username,
-               '--password-file', self._passwd_file,
-               '--source']
+               '--uri', self._uri]
+        if self._username is not None:
+            cmd.extend([
+                '--username', self._username,
+                '--password-file', self._passwd_file])
+        cmd.append('--source')
         cmd.extend(self._source_images())
         cmd.append('--dest')
         cmd.extend(self._dest_images())
