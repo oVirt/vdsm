@@ -29,6 +29,7 @@ import timeit
 from contextlib import contextmanager
 
 from testValidation import slowtest
+from testValidation import brokentest
 from testlib import VdsmTestCase
 from testlib import make_uuid
 from testlib import namedTemporaryDir
@@ -37,11 +38,36 @@ from vdsm import utils
 from vdsm.storage import xlease
 
 
+class ReadError(Exception):
+    """ Raised to simulate read errors """
+
+
+class WriteError(Exception):
+    """ Raised to simulate read errors """
+
+
+class FailingReader(xlease.DirectFile):
+    def readinto(self, buf):
+        raise ReadError
+
+
+class FailingWriter(xlease.DirectFile):
+    def write(self, buf):
+        raise WriteError
+
+
 class TestIndex(VdsmTestCase):
 
     def test_format(self):
         with make_index() as index:
             self.assertEqual(index.leases(), {})
+
+    def test_create_read_failure(self):
+        with make_leases() as path:
+            file = FailingReader(path)
+            with utils.closing(file):
+                with self.assertRaises(ReadError):
+                    xlease.Index("lockspace", file)
 
     def test_lookup_missing(self):
         with make_index() as index:
@@ -65,6 +91,19 @@ class TestIndex(VdsmTestCase):
         self.assertEqual(lease_info.resource, lease_id)
         self.assertEqual(lease_info.path, index.path)
         self.assertTrue(start_time <= lease_info.modified <= start_time + 1)
+
+    @brokentest("not implemented yet")
+    def test_add_write_failure(self):
+        with make_index() as base:
+            file = FailingWriter(base.path)
+            with utils.closing(file):
+                index = xlease.Index(base.lockspace, file)
+                with utils.closing(index):
+                    lease_id = make_uuid()
+                    with self.assertRaises(WriteError):
+                        index.add(lease_id)
+                    # Must succeed becuase writng to storage failed
+                    self.assertNotIn(lease_id, index.leases())
 
     def test_leases(self):
         with make_index() as index:
@@ -103,6 +142,19 @@ class TestIndex(VdsmTestCase):
             lease_id = make_uuid()
             with self.assertRaises(xlease.NoSuchLease):
                 index.remove(lease_id)
+
+    @brokentest("not implemented yet")
+    def test_remove_write_failure(self):
+        record = xlease.Record(make_uuid(), xlease.RECORD_STALE)
+        with make_index((42, record)) as base:
+            file = FailingWriter(base.path)
+            with utils.closing(file):
+                index = xlease.Index(base.lockspace, file)
+                with utils.closing(index):
+                    with self.assertRaises(WriteError):
+                        index.remove(record.resource)
+                    # Must succeed becuase writng to storage failed
+                    self.assertIn(record.resource, index.leases())
 
     def test_add_first_free_slot(self):
         with make_index() as index:
