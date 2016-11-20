@@ -228,7 +228,7 @@ parameters = [
         ('libvirt_env_variable_log_outputs', '',
             'Specify the output to track libvirt calls'),
 
-        ('transient_disks_repository', '@VDSMLIBDIR@/transient',
+        ('transient_disks_repository', '@VDSMLIBDIR@/transient',  # NOQA: E501 (potentially long line)
             'Local path to the transient disks repository.'),
 
         ('ssl_protocol', 'tlsv1',
@@ -279,7 +279,7 @@ parameters = [
     # Section: [mom]
     ('mom', [
 
-        ('conf', '@CONFDIR@/mom.conf', 'mom configuration file'),
+        ('conf', '@CONFDIR@/mom.conf', 'mom configuration file'),  # NOQA: E501 (potentially long line)
 
         ('tuning_policy', '01-parameters',
             'name of the mom policy to be updated from '
@@ -331,7 +331,7 @@ parameters = [
             'NFS mount options, comma-separated list (NB: no white space '
             'allowed!)'),
 
-        ('lock_util_path', '@LIBEXECDIR@', None),
+        ('lock_util_path', '@LIBEXECDIR@', None),  # NOQA: E501 (potentially long line)
 
         ('lock_cmd', 'spmprotect.sh', None),
 
@@ -346,7 +346,7 @@ parameters = [
 
         ('md_backup_versions', '30', None),
 
-        ('md_backup_dir', '@BACKUPDIR@', None),
+        ('md_backup_dir', '@BACKUPDIR@', None),  # NOQA: E501 (potentially long line)
 
         ('maximum_allowed_pvs', '8',
             'The number of PVs per VG has a hard-coded limit of 10.'),

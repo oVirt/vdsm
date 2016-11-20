@@ -92,7 +92,7 @@ class vdsm(Plugin, RedHatPlugin):
             self.addStringAsFile(str(e), name)
 
     def setup(self):
-        os.environ["LVM_SYSTEM_DIR"] = "@VDSMRUNDIR@/lvm"
+        os.environ["LVM_SYSTEM_DIR"] = "@VDSMRUNDIR@/lvm"  # NOQA: E501 (potentially long line)
         self.addForbiddenPath('/etc/pki/vdsm/keys/*')
         self.addForbiddenPath('/etc/pki/vdsm/libvirt-spice/*-key.*')
         self.addForbiddenPath('/etc/pki/libvirt/private/*')
@@ -104,8 +104,8 @@ class vdsm(Plugin, RedHatPlugin):
         logsize = self.getOption('logsize')
         self.__addCopySpecLogLimit("/var/log/vdsm/*", logsize)
         self._addVdsmRunDir()
-        self.addCopySpec("@HOOKSDIR@")
-        self.addCopySpec("@VDSMLIBDIR@")
+        self.addCopySpec("@HOOKSDIR@")  # NOQA: E501 (potentially long line)
+        self.addCopySpec("@VDSMLIBDIR@")  # NOQA: E501 (potentially long line)
         self.addCopySpec("/var/log/ovirt.log")
         self.addCopySpec("/var/log/sanlock.log")
         p = subprocess.Popen(['/usr/bin/pgrep', 'qemu-kvm'],
@@ -165,7 +165,7 @@ class vdsm(Plugin, RedHatPlugin):
 
         import glob
 
-        for f in glob.glob("@VDSMRUNDIR@/*"):
+        for f in glob.glob("@VDSMRUNDIR@/*"):  # NOQA: E501 (potentially long line)
             if not f.endswith('.vfd') and not f.endswith('/isoUploader') \
                     and not f.endswith('/storage') \
                     and not stat.S_ISSOCK(os.stat(f).st_mode):
