@@ -844,7 +844,8 @@ class ImportVm(object):
                 self._status = STATUS.FAILED
                 self._description = str(ex)
                 try:
-                    self._abort()
+                    if self._proc is not None:
+                        self._abort()
                 except Exception as e:
                     logging.exception('Job %r, error trying to abort: %r',
                                       self._id, e)
@@ -903,6 +904,11 @@ class ImportVm(object):
 
     def _abort(self):
         self._aborted = True
+        if self._proc is None:
+            logging.warning(
+                'Ignoring request to abort job %r; the job failed to start',
+                self._id)
+            return
         if self._proc.returncode is None:
             logging.debug('Job %r killing virt-v2v process', self._id)
             try:
