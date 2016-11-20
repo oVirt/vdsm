@@ -3620,11 +3620,6 @@ types:
             name: keyMap
             type: string
 
-        -   defaultvalue: false
-            description: disable security ticketing
-            name: disableTicketing
-            type: boolean
-
         -   defaultvalue: null
             description: Address of the display network
             name: displayNetwork

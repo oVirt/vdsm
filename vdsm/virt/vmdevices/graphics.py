@@ -36,7 +36,6 @@ LIBVIRT_PORT_AUTOSELECT = '-1'
 
 _LEGACY_MAP = {
     'keyboardLayout': 'keyMap',
-    'spiceDisableTicketing': 'disableTicketing',
     'displayNetwork': 'displayNetwork',
     'spiceSecureChannels': 'spiceSecureChannels',
     'copyPasteEnable': 'copyPasteEnable',
@@ -161,9 +160,8 @@ class Graphics(Base):
         return graphics
 
     def _setPasswd(self, attrs):
-        if not utils.tobool(self.specParams.get('disableTicketing', False)):
-            attrs['passwd'] = '*****'
-            attrs['passwdValidTo'] = '1970-01-01T00:00:01'
+        attrs['passwd'] = '*****'
+        attrs['passwdValidTo'] = '1970-01-01T00:00:01'
 
     def setupPassword(self, devXML):
         self._setPasswd(devXML.attrib)
