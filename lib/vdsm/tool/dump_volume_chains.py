@@ -76,11 +76,11 @@ def dump_chains(*args):
     them in an ordered fashion with optional additional info per volume.
     """
     parsed_args = _parse_args(args)
-    server = client.connect(parsed_args.host, parsed_args.port,
-                            use_tls=parsed_args.use_ssl)
-    with utils.closing(server):
+    cli = client.connect(parsed_args.host, parsed_args.port,
+                         use_tls=parsed_args.use_ssl)
+    with utils.closing(cli):
         image_chains, volumes_info = _get_volumes_chains(
-            server, parsed_args.sd_uuid)
+            cli, parsed_args.sd_uuid)
         _print_volume_chains(image_chains, volumes_info)
 
 
@@ -97,20 +97,20 @@ def _parse_args(args):
     return parser.parse_args(args=args[1:])
 
 
-def _get_volumes_chains(server, sd_uuid):
+def _get_volumes_chains(cli, sd_uuid):
     """there can be only one storage pool in a single VDSM context"""
-    pools = server.Host.getConnectedStoragePools()
+    pools = cli.Host.getConnectedStoragePools()
     if not pools:
         raise NoConnectedStoragePoolError('There is no connected storage '
                                           'pool to this server')
     sp_uuid, = pools
-    images_uuids = server.StorageDomain.getImages(storagedomainID=sd_uuid)
+    images_uuids = cli.StorageDomain.getImages(storagedomainID=sd_uuid)
 
     image_chains = {}  # {image_uuid -> vol_chain}
     volumes_info = {}  # {vol_uuid-> vol_info}
 
     for img_uuid in images_uuids:
-        volumes = server.StorageDomain.getVolumes(
+        volumes = cli.StorageDomain.getVolumes(
             storagedomainID=sd_uuid, storagepoolID=sp_uuid,
             imageID=img_uuid)
 
@@ -118,7 +118,7 @@ def _get_volumes_chains(server, sd_uuid):
         volumes_children = []  # [(parent_vol_uuid, child_vol_uuid),]
 
         for vol_uuid in volumes:
-            vol_info = server.Volume.getInfo(
+            vol_info = cli.Volume.getInfo(
                 volumeID=vol_uuid, storagepoolID=sp_uuid,
                 storagedomainID=sd_uuid, imageID=img_uuid)
 
