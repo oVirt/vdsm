@@ -97,7 +97,10 @@ from yajsonrpc import stompreactor
 import yajsonrpc
 
 
-def connect(host, port, use_tls=True, timeout=60):
+DEFAULT_PORT = 54321
+
+
+def connect(host, port=DEFAULT_PORT, use_tls=True, timeout=60):
     try:
         client = stompreactor.SimpleClient(host, port, use_tls)
     except Exception as e:
