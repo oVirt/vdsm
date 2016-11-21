@@ -8,11 +8,13 @@ Conflicts=momd.service ksmtuned.service
 Type=simple
 LimitCORE=infinity
 ExecStart=/usr/sbin/momd -c /etc/vdsm/mom.conf
-Restart=on-failure
-RestartSec=10
+Restart=always
+RestartSec=5
 User=@VDSMUSER@
 Group=@VDSMGROUP@
 TimeoutStopSec=@SERVICE_STOP_TIMEOUT@
+StartLimitBurst=10
+StartLimitInterval=120
 
 [Install]
 WantedBy=multi-user.target
