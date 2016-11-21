@@ -620,6 +620,14 @@ class GetFileStatsError(StorageException):
 #  Domains Exceptions
 #################################################
 
+class DiscardIsNotSupported(StorageException):
+    code = 349
+    message = "Discard is not supported by storage domain"
+
+    def __init__(self, sdUUID, reason):
+        self.value = "sdUUID=%s, reason=%s" % (sdUUID, reason)
+
+
 class StorageDomainActionError(StorageException):
     code = 350
     message = "Error in storage domain action"

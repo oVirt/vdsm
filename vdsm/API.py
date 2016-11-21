@@ -833,12 +833,13 @@ class Volume(APIBase):
         self._imgUUID = imgUUID
 
     def copy(self, dstSdUUID, dstImgUUID, dstVolUUID, desc, volType,
-             volFormat, preallocate, postZero, force):
+             volFormat, preallocate, postZero, force, discard=False):
         vmUUID = ''   # vmUUID is never used
         return self._irs.copyImage(self._sdUUID, self._spUUID, vmUUID,
                                    self._imgUUID, self._UUID, dstImgUUID,
                                    dstVolUUID, desc, dstSdUUID, volType,
-                                   volFormat, preallocate, postZero, force)
+                                   volFormat, preallocate, postZero, force,
+                                   discard)
 
     def create(self, size, volFormat, preallocate, diskType, desc,
                srcImgUUID, srcVolUUID, initialSize=None):
@@ -848,10 +849,10 @@ class Volume(APIBase):
                                       srcImgUUID, srcVolUUID,
                                       initialSize=initialSize)
 
-    def delete(self, postZero, force):
+    def delete(self, postZero, force, discard=False):
         return self._irs.deleteVolume(self._sdUUID, self._spUUID,
                                       self._imgUUID, [self._UUID], postZero,
-                                      force)
+                                      force, discard)
 
     def verify_untrusted(self):
         return self._irs.verify_untrusted_volume(self._spUUID, self._sdUUID,
@@ -914,30 +915,31 @@ class Image(APIBase):
         self._spUUID = spUUID
         self._sdUUID = sdUUID
 
-    def delete(self, postZero, force):
+    def delete(self, postZero, force, discard=False):
         return self._irs.deleteImage(self._sdUUID, self._spUUID, self._UUID,
-                                     postZero, force)
+                                     postZero, force, discard)
 
-    def deleteVolumes(self, volumeList, postZero=False, force=False):
+    def deleteVolumes(self, volumeList, postZero=False, force=False,
+                      discard=False):
         return self._irs.deleteVolume(self._sdUUID, self._spUUID, self._UUID,
-                                      volumeList, postZero, force)
+                                      volumeList, postZero, force, discard)
 
     def getVolumes(self):
         return self._irs.getVolumesList(self._sdUUID, self._spUUID, self._UUID)
 
-    def mergeSnapshots(self, ancestor, successor, postZero):
+    def mergeSnapshots(self, ancestor, successor, postZero, discard=False):
         vmUUID = ''   # Not used
         # XXX: On success, self._sdUUID needs to be updated
         return self._irs.mergeSnapshots(self._sdUUID, self._spUUID, vmUUID,
                                         self._UUID, ancestor, successor,
-                                        postZero)
+                                        postZero, discard)
 
-    def move(self, dstSdUUID, operation, postZero, force):
+    def move(self, dstSdUUID, operation, postZero, force, discard=False):
         vmUUID = ''   # Not used
         # XXX: On success, self._sdUUID needs to be updated
         return self._irs.moveImage(self._spUUID, self._sdUUID, dstSdUUID,
                                    self._UUID, vmUUID, operation, postZero,
-                                   force)
+                                   force, discard)
 
     def sparsify(self, tmpVolUUID, dstSdUUID, dstImgUUID, dstVolUUID):
         return self._irs.sparsifyImage(self._spUUID, self._sdUUID, self._UUID,

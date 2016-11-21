@@ -1503,7 +1503,7 @@ class StoragePool(object):
 
     def copyImage(self, sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
                   dstVolUUID, descr, dstSdUUID, volType, volFormat,
-                  preallocate, postZero, force):
+                  preallocate, postZero, force, discard):
         """
         Creates a new template/volume from VM.
         It does this it by collapse and copy the whole chain
@@ -1540,6 +1540,9 @@ class StoragePool(object):
         :type postZero: ?
         :param force: Should the copy be forced.
         :type force: bool
+        :param discard: Should the destination volume be discarded before
+                        copying data to it.
+        :type discard: bool
 
         :returns: a dict containing the UUID of the newly created image.
         :rtype: dict
@@ -1557,12 +1560,12 @@ class StoragePool(object):
             dstUUID = img.copyCollapsed(
                 sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
                 dstVolUUID, descr, dstSdUUID, volType, volFormat, preallocate,
-                postZero, force)
+                postZero, force, discard)
 
         return dict(uuid=dstUUID)
 
     def moveImage(self, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero,
-                  force):
+                  force, discard):
         """
         Moves or Copies an image between storage domains within the same
         storage pool.
@@ -1583,6 +1586,8 @@ class StoragePool(object):
         :param postZero: ?
         :param force: Should the operation be forced.
         :type force: bool
+        :param discard: Discard the image before deletion
+        :type discard: bool
         """
         src_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, srcDomUUID)
         dst_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, dstDomUUID)
@@ -1599,7 +1604,7 @@ class StoragePool(object):
                     rm.acquireResource(dst_img_ns, imgUUID, rm.EXCLUSIVE)):
             img = image.Image(self.poolPath)
             img.move(srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero,
-                     force)
+                     force, discard)
 
     def sparsifyImage(self, tmpSdUUID, tmpImgUUID, tmpVolUUID, dstSdUUID,
                       dstImgUUID, dstVolUUID):
@@ -1804,7 +1809,7 @@ class StoragePool(object):
         return dict(volumes=chain)
 
     def mergeSnapshots(self, sdUUID, vmUUID, imgUUID, ancestor, successor,
-                       postZero):
+                       postZero, discard):
         """
         Merges the source volume to the destination volume.
 
@@ -1821,12 +1826,15 @@ class StoragePool(object):
         :type successor: UUID
         :param postZero: ?
         :type postZero: bool?
+        :param discard: discard the successor before removal
+        :type discard: bool
         """
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
 
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             img = image.Image(self.poolPath)
-            img.merge(sdUUID, vmUUID, imgUUID, ancestor, successor, postZero)
+            img.merge(sdUUID, vmUUID, imgUUID, ancestor, successor, postZero,
+                      discard)
 
     def prepareMerge(self, subchainInfo):
         """
@@ -1912,7 +1920,7 @@ class StoragePool(object):
                 initialSize=initialSize)
         return dict(uuid=newVolUUID)
 
-    def deleteVolume(self, sdUUID, imgUUID, volumes, postZero, force):
+    def deleteVolume(self, sdUUID, imgUUID, volumes, postZero, force, discard):
         """
         Deletes a given volume.
 
@@ -1936,9 +1944,9 @@ class StoragePool(object):
             dom = sdCache.produce(sdUUID)
             for volUUID in volumes:
                 vol = dom.produceVolume(imgUUID, volUUID)
-                vol.delete(postZero=postZero, force=force)
+                vol.delete(postZero=postZero, force=force, discard=discard)
 
-    def purgeImage(self, sdUUID, imgUUID, volsByImg):
+    def purgeImage(self, sdUUID, imgUUID, volsByImg, discard):
         """
         Free the space taken by a given list of volumes belonging to imgUUID.
 
@@ -1948,9 +1956,11 @@ class StoragePool(object):
         :type imgUUID: UUID
         :param volsByImg: List of the volumes to remove.
         :type volsByImg: list
+        :param discard: discard the volumes before removal
+        :type discard: bool
         """
         domain = sdCache.produce(sdUUID=sdUUID)
-        domain.purgeImage(sdUUID, imgUUID, volsByImg)
+        domain.purgeImage(sdUUID, imgUUID, volsByImg, discard)
 
     def deleteImage(self, domain, imgUUID, volsByImg):
         """

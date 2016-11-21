@@ -222,8 +222,10 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
             self.log.error("image: %s can't be moved", currImgDir)
             raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
 
-    def purgeImage(self, sdUUID, imgUUID, volsImgs):
+    def purgeImage(self, sdUUID, imgUUID, volsImgs, discard):
         self.log.debug("Purging image %s", imgUUID)
+        if discard:
+            raise se.DiscardIsNotSupported(sdUUID, "file storage domain")
         toDelDir = self.getDeletedImagePath(imgUUID)
         for volUUID in volsImgs:
             volPath = os.path.join(toDelDir, volUUID)
@@ -487,9 +489,11 @@ class FileStorageDomain(sd.StorageDomain):
     def validateMasterMount(self):
         return self.oop.fileUtils.pathExists(self.getMasterDir())
 
-    def zeroImage(self, sdUUID, imgUUID, volsImgs):
+    def zeroImage(self, sdUUID, imgUUID, volsImgs, discard):
         self.log.warning("image %s on a fileSD %s won't be zeroed." %
                          (imgUUID, sdUUID))
+        if discard:
+            raise se.DiscardIsNotSupported(sdUUID, "file storage domain")
         self.deleteImage(sdUUID, imgUUID, volsImgs)
 
     def deactivateImage(self, imgUUID):

@@ -212,7 +212,7 @@ def deleteVolumes(sdUUID, vols):
     lvm.removeLVs(sdUUID, vols)
 
 
-def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
+def zeroImgVolumes(sdUUID, imgUUID, volUUIDs, discard):
     taskid = vars.task.id
     aborting = vars.task.aborting
 
@@ -238,11 +238,14 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
             # can zero and remove it manually.
             raise
 
-        if config.getboolean('irs', 'discard_enable'):
+        discardEnable = config.getboolean('irs', 'discard_enable')
+        if discard or discardEnable:
             try:
                 blkdiscard.blkdiscard(path)
             except cmdutils.Error as e:
-                log.warning('Discarding %s failed: %s', path, e)
+                log.warning('Discarding %s failed '
+                            '(discard=%s, discard_enable=%s): %s',
+                            path, discard, discardEnable, e)
 
         try:
             log.debug('Removing volume %s task %s', volUUID, taskid)
@@ -701,7 +704,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         toDel = self._getImgExclusiveVols(imgUUID, volsImgs)
         self._markForDelVols(sdUUID, imgUUID, toDel, sd.REMOVED_IMAGE_PREFIX)
 
-    def purgeImage(self, sdUUID, imgUUID, volsImgs):
+    def purgeImage(self, sdUUID, imgUUID, volsImgs, discard):
         taskid = vars.task.id
 
         def purge_volume(volUUID):
@@ -709,11 +712,14 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                            volUUID, taskid)
             path = lvm.lvPath(sdUUID, volUUID)
 
-            if config.getboolean('irs', 'discard_enable'):
+            discardEnable = config.getboolean('irs', 'discard_enable')
+            if discard or discardEnable:
                 try:
                     blkdiscard.blkdiscard(path)
                 except cmdutils.Error as e:
-                    self.log.warning('Discarding %s failed: %s', path, e)
+                    log.warning('Discarding %s failed '
+                                '(discard=%s, discard_enable=%s): %s',
+                                path, discard, discardEnable, e)
 
             self.log.debug('Removing volume %s task %s', volUUID, taskid)
             deleteVolumes(sdUUID, volUUID)
@@ -1215,11 +1221,11 @@ class BlockStorageDomain(sd.StorageDomain):
     def rmDCImgDir(self, imgUUID, volsImgs):
         return self._manifest.rmDCImgDir(imgUUID, volsImgs)
 
-    def zeroImage(self, sdUUID, imgUUID, volsImgs):
+    def zeroImage(self, sdUUID, imgUUID, volsImgs, discard):
         toZero = self._manifest._getImgExclusiveVols(imgUUID, volsImgs)
         self._manifest._markForDelVols(sdUUID, imgUUID, toZero,
                                        sd.ZEROED_IMAGE_PREFIX)
-        zeroImgVolumes(sdUUID, imgUUID, toZero)
+        zeroImgVolumes(sdUUID, imgUUID, toZero, discard)
         self.rmDCImgDir(imgUUID, volsImgs)
 
     def deactivateImage(self, imgUUID):

@@ -1410,13 +1410,13 @@ class HSM(object):
 
     @public
     def deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False,
-                     force=False):
+                     force=False, discard=False):
         """
         Delete a volume
         """
         argsStr = "sdUUID=%s, spUUID=%s, imgUUID=%s, volumes=%s, " \
-                  "postZero=%s, force=%s" % (sdUUID, spUUID, imgUUID, volumes,
-                                             postZero, force)
+                  "postZero=%s, force=%s, discard=%s" %\
+                  (sdUUID, spUUID, imgUUID, volumes, postZero, force, discard)
         vars.task.setDefaultException(se.CannotDeleteVolume(argsStr))
         # Validates that the pool is connected. WHY?
         pool = self.getPool(spUUID)
@@ -1425,11 +1425,11 @@ class HSM(object):
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(spUUID, "deleteVolume", pool.deleteVolume, sdUUID,
                           imgUUID, volumes, misc.parseBool(postZero),
-                          misc.parseBool(force))
+                          misc.parseBool(force), discard)
 
     @public
     def deleteImage(self, sdUUID, spUUID, imgUUID, postZero=False,
-                    force=False):
+                    force=False, discard=False):
         """
         Delete Image folder with all volumes
 
@@ -1469,7 +1469,7 @@ class HSM(object):
             # postZero implies block domain. Backup domains are always NFS
             # hence no need to create fake template if postZero is true.
             self._spmSchedule(spUUID, "zeroImage_%s" % imgUUID, dom.zeroImage,
-                              sdUUID, imgUUID, volsByImg)
+                              sdUUID, imgUUID, volsByImg, discard)
         else:
             if fakeTUUID:
                 tParams = dom.produceVolume(imgUUID, fakeTUUID).\
@@ -1480,7 +1480,8 @@ class HSM(object):
                                                spUUID))
                 img.createFakeTemplate(sdUUID=sdUUID, volParams=tParams)
             self._spmSchedule(spUUID, "purgeImage_%s" % imgUUID,
-                              pool.purgeImage, sdUUID, imgUUID, volsByImg)
+                              pool.purgeImage, sdUUID, imgUUID, volsByImg,
+                              discard)
 
     @public
     def verify_untrusted_volume(self, spUUID, sdUUID, imgUUID, volUUID):
@@ -1546,14 +1547,15 @@ class HSM(object):
 
     @public
     def moveImage(self, spUUID, srcDomUUID, dstDomUUID, imgUUID, vmUUID,
-                  op, postZero=False, force=False):
+                  op, postZero=False, force=False, discard=False):
         """
         Move/Copy image between storage domains within same storage pool
         """
         argsStr = ("spUUID=%s, srcDomUUID=%s, dstDomUUID=%s, imgUUID=%s, "
-                   "vmUUID=%s, op=%s, force=%s, postZero=%s force=%s" %
+                   "vmUUID=%s, op=%s, force=%s, postZero=%s, force=%s,"
+                   "discard=%s" %
                    (spUUID, srcDomUUID, dstDomUUID, imgUUID, vmUUID, op,
-                    force, postZero, force))
+                    force, postZero, force, discard))
         vars.task.setDefaultException(se.MoveImageError("%s" % argsStr))
         if srcDomUUID == dstDomUUID:
             raise se.InvalidParameterException(
@@ -1586,7 +1588,7 @@ class HSM(object):
         self._spmSchedule(
             spUUID, "moveImage_%s" % imgUUID, pool.moveImage, srcDomUUID,
             dstDomUUID, imgUUID, vmUUID, op, misc.parseBool(postZero),
-            misc.parseBool(force))
+            misc.parseBool(force), discard)
 
     @public
     def sparsifyImage(self, spUUID, tmpSdUUID, tmpImgUUID, tmpVolUUID,
@@ -1745,7 +1747,8 @@ class HSM(object):
             self, sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
             dstVolUUID, description='', dstSdUUID=sd.BLANK_UUID,
             volType=sc.SHARED_VOL, volFormat=sc.UNKNOWN_VOL,
-            preallocate=sc.UNKNOWN_VOL, postZero=False, force=False):
+            preallocate=sc.UNKNOWN_VOL, postZero=False, force=False,
+            discard=False):
         """
         Create new template/volume from VM.
         Do it by collapse and copy the whole chain (baseVolUUID->srcVolUUID)
@@ -1753,10 +1756,10 @@ class HSM(object):
         argsStr = ("sdUUID=%s, spUUID=%s, vmUUID=%s, srcImgUUID=%s, "
                    "srcVolUUID=%s, dstImgUUID=%s, dstVolUUID=%s, "
                    "description=%s, dstSdUUID=%s, volType=%s, volFormat=%s, "
-                   "preallocate=%s force=%s, postZero=%s" %
+                   "preallocate=%s force=%s, postZero=%s, discard=%s" %
                    (sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID,
                     dstImgUUID, dstVolUUID, description, dstSdUUID, volType,
-                    volFormat, preallocate, force, postZero))
+                    volFormat, preallocate, force, postZero, discard))
         vars.task.setDefaultException(se.TemplateCreationError("%s" % argsStr))
         # Validate imgUUID in case of copy inside source domain itself
         if dstSdUUID in (sdUUID, sd.BLANK_UUID):
@@ -1790,7 +1793,7 @@ class HSM(object):
             spUUID, "copyImage_%s" % dstImgUUID, pool.copyImage, sdUUID,
             vmUUID, srcImgUUID, srcVolUUID, dstImgUUID, dstVolUUID,
             description, dstSdUUID, volType, volFormat, preallocate,
-            misc.parseBool(postZero), misc.parseBool(force))
+            misc.parseBool(postZero), misc.parseBool(force), discard)
 
     @public
     def imageSyncVolumeChain(self, sdUUID, imgUUID, volUUID, newChain):
@@ -1831,21 +1834,21 @@ class HSM(object):
 
     @public
     def mergeSnapshots(self, sdUUID, spUUID, vmUUID, imgUUID, ancestor,
-                       successor, postZero=False):
+                       successor, postZero=False, discard=False):
         """
         Merge source volume to the destination volume.
         """
         argsStr = ("sdUUID=%s, spUUID=%s, vmUUID=%s, imgUUID=%s, "
-                   "ancestor=%s, successor=%s, postZero=%s" %
+                   "ancestor=%s, successor=%s, postZero=%s, discard=%s" %
                    (sdUUID, spUUID, vmUUID, imgUUID, ancestor, successor,
-                    postZero))
+                    postZero, discard))
         vars.task.setDefaultException(se.MergeSnapshotsError("%s" % argsStr))
         pool = self.getPool(spUUID)
         sdCache.produce(sdUUID=sdUUID)
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(
             spUUID, "mergeSnapshots", pool.mergeSnapshots, sdUUID, vmUUID,
-            imgUUID, ancestor, successor, misc.parseBool(postZero))
+            imgUUID, ancestor, successor, misc.parseBool(postZero), discard)
 
     @public
     def reconstructMaster(self, spUUID, poolName, masterDom, domDict,

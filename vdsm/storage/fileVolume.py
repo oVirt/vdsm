@@ -453,14 +453,17 @@ class FileVolume(volume.Volume):
     def removeMetadata(self):
         self._manifest.removeMetadata()
 
-    def delete(self, postZero, force):
+    def delete(self, postZero, force, discard):
         """
         Delete volume.
             'postZero' - zeroing file before deletion
             'force' - required to remove shared and internal volumes
+            'discard' - discard volume before deletion
         """
         self.log.info("Request to delete volume %s", self.volUUID)
 
+        if discard:
+            raise se.DiscardIsNotSupported(self.sdUUID, "file storage domain")
         vol_path = self.getVolumePath()
         lease_path = self._manifest.leaseVolumePath(vol_path)
 

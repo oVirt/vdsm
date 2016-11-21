@@ -501,10 +501,11 @@ class BlockVolume(volume.Volume):
     def removeMetadata(self, metaId):
         self._manifest.removeMetadata(metaId)
 
-    def delete(self, postZero, force):
+    def delete(self, postZero, force, discard):
         """ Delete volume
             'postZero' - zeroing file before deletion
             'force' is required to remove shared and internal volumes
+            'discard' - discard lv before deletion
         """
         self.log.info("Request to delete LV %s of image %s in VG %s ",
                       self.volUUID, self.imgUUID, self.sdUUID)
@@ -546,8 +547,9 @@ class BlockVolume(volume.Volume):
         # Mark volume as illegal before deleting
         self.setLegality(sc.ILLEGAL_VOL)
 
-        discard = config.getboolean('irs', 'discard_enable')
-        if postZero or discard:
+        discardEnable = config.getboolean('irs', 'discard_enable')
+        discardVolume = discard or discardEnable
+        if postZero or discardVolume:
             self.prepare(justme=True, rw=True, chainrw=force, setrw=True,
                          force=True)
             try:
@@ -560,11 +562,13 @@ class BlockVolume(volume.Volume):
                     except Exception:
                         self.log.error("Unexpected error", exc_info=True)
                         raise se.VolumesZeroingError(vol_path)
-                if discard:
+                if discardVolume:
                     try:
                         blkdiscard.blkdiscard(vol_path)
                     except cmdutils.Error as e:
-                        log.warning('Discarding %s failed: %s', vol_path, e)
+                        log.warning('Discarding %s failed '
+                                    '(discard=%s, discard_enable=%s): %s',
+                                    vol_path, discard, discardEnable, e)
             finally:
                 self.teardown(self.sdUUID, self.volUUID, justme=True)
 

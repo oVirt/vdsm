@@ -7978,6 +7978,11 @@ Image.delete:
     -   description: Force the operation and do not perform any validation
         name: force
         type: boolean
+
+    -   defaultvalue: false
+        description: If true, discard the image and its volumes before deletion
+        name: discard
+        type: boolean
     return:
         description: A task UUID
         type: *UUID
@@ -8011,6 +8016,11 @@ Image.deleteVolumes:
     -   defaultvalue: false
         description: Force the operation and do not perform any validation
         name: force
+        type: boolean
+
+    -   defaultvalue: false
+        description: If true, discard the volumes before deletion
+        name: discard
         type: boolean
     return:
         description: A task UUID
@@ -8063,6 +8073,11 @@ Image.mergeSnapshots:
     -   description: If True, overwrite successor with zeroes after conversion
         name: postZero
         type: boolean
+
+    -   defaultvalue: false
+        description: If true, discard the successor after conversion
+        name: discard
+        type: boolean
     return:
         description: A task UUID
         type: *UUID
@@ -8098,6 +8113,11 @@ Image.move:
 
     -   description: Force the operation and do not perform any validation
         name: force
+        type: boolean
+
+    -   defaultvalue: false
+        description: If true, discard the volume before deletion
+        name: discard
         type: boolean
     return:
         description: A task UUID
@@ -9790,6 +9810,11 @@ Volume.copy:
     -   description: If dstVolUUID already exists, overwrite it
         name: force
         type: boolean
+
+    -   defaultvalue: false
+        description: Discard the destination volume before copying new data
+        name: discard
+        type: boolean
     return:
         description: A task UUID
         type: *UUID
@@ -9881,6 +9906,12 @@ Volume.delete:
     -   description: Remove even if VolumeRole is SHARED or INTERNAL
         name: force
         type: boolean
+
+    -   defaultvalue: false
+        description: Discard the volume before deletion
+        name: discard
+        type: boolean
+
     return:
         description: A task UUID
         type: *UUID

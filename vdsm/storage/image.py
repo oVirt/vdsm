@@ -73,7 +73,7 @@ RENAME_RANDOM_STRING_LEN = 8
 TEMPORARY_VOLUME_SIZE = 20480  # in sectors (10M)
 
 
-def _deleteImage(dom, imgUUID, postZero):
+def _deleteImage(dom, imgUUID, postZero, discard):
     """This ancillary function will be removed.
 
     Replaces Image.delete() in Image.[copyCollapsed(), move(), multimove()].
@@ -84,7 +84,7 @@ def _deleteImage(dom, imgUUID, postZero):
         log.warning("No volumes found for image %s. %s", imgUUID, allVols)
         return
     elif postZero:
-        dom.zeroImage(dom.sdUUID, imgUUID, imgVols)
+        dom.zeroImage(dom.sdUUID, imgUUID, imgVols, discard)
     else:
         dom.deleteImage(dom.sdUUID, imgUUID, imgVols)
 
@@ -513,13 +513,15 @@ class Image:
                 self.log.error("Unexpected error", exc_info=True)
                 raise se.DestImageActionError(imgUUID, destDom.sdUUID, str(e))
 
-    def move(self, srcSdUUID, dstSdUUID, imgUUID, vmUUID, op, postZero, force):
+    def move(self, srcSdUUID, dstSdUUID, imgUUID, vmUUID, op, postZero, force,
+             discard):
         """
         Move/Copy image between storage domains within same storage pool
         """
         self.log.info("srcSdUUID=%s dstSdUUID=%s imgUUID=%s vmUUID=%s op=%s "
-                      "force=%s postZero=%s", srcSdUUID, dstSdUUID, imgUUID,
-                      vmUUID, OP_TYPES[op], str(force), str(postZero))
+                      "force=%s postZero=%s discard=%s", srcSdUUID, dstSdUUID,
+                      imgUUID, vmUUID, OP_TYPES[op], str(force), str(postZero),
+                      discard)
 
         destDom = sdCache.produce(dstSdUUID)
         # If image already exists check whether it illegal/fake, overwrite it
@@ -530,7 +532,7 @@ class Image:
         if force:
             self.log.info("delete image %s on domain %s before overwriting",
                           imgUUID, destDom.sdUUID)
-            _deleteImage(destDom, imgUUID, postZero)
+            _deleteImage(destDom, imgUUID, postZero, discard)
 
         chains = self._createTargetImage(destDom, srcSdUUID, imgUUID)
         self._interImagesCopy(destDom, srcSdUUID, imgUUID, chains)
@@ -548,7 +550,7 @@ class Image:
             # TODO: Should raise here.
             try:
                 dom = sdCache.produce(srcSdUUID)
-                _deleteImage(dom, imgUUID, postZero)
+                _deleteImage(dom, imgUUID, postZero, discard)
             except se.StorageException:
                 self.log.warning("Failed to remove img: %s from srcDom %s: "
                                  "after it was copied to: %s", imgUUID,
@@ -746,18 +748,19 @@ class Image:
 
     def copyCollapsed(self, sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
                       dstVolUUID, descr, dstSdUUID, volType, volFormat,
-                      preallocate, postZero, force):
+                      preallocate, postZero, force, discard):
         """
         Create new template/volume from VM.
         Do it by collapse and copy the whole chain (baseVolUUID->srcVolUUID)
         """
         self.log.info("sdUUID=%s vmUUID=%s srcImgUUID=%s srcVolUUID=%s "
                       "dstImgUUID=%s dstVolUUID=%s dstSdUUID=%s volType=%s "
-                      "volFormat=%s preallocate=%s force=%s postZero=%s",
+                      "volFormat=%s preallocate=%s force=%s postZero=%s "
+                      "discard=%s",
                       sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
                       dstVolUUID, dstSdUUID, volType,
-                      sc.type2name(volFormat),
-                      sc.type2name(preallocate), str(force), str(postZero))
+                      sc.type2name(volFormat), sc.type2name(preallocate),
+                      str(force), str(postZero), discard)
         try:
             srcVol = dstVol = None
 
@@ -820,7 +823,7 @@ class Image:
                 if force:
                     self.log.info("delete image %s on domain %s before "
                                   "overwriting", dstImgUUID, dstSdUUID)
-                    _deleteImage(destDom, dstImgUUID, postZero)
+                    _deleteImage(destDom, dstImgUUID, postZero, discard)
 
                 # To avoid 'prezeroing' preallocated volume on NFS domain,
                 # we create the target volume with minimal size and after that
@@ -953,7 +956,7 @@ class Image:
                               "-> %s", srcVol.volUUID, ancestor, successor,
                               exc_info=True)
 
-    def removeSubChain(self, sdDom, imgUUID, chain, postZero):
+    def removeSubChain(self, sdDom, imgUUID, chain, postZero, discard):
         """
         Remove all volumes in the sub-chain
         """
@@ -971,7 +974,7 @@ class Image:
             self.log.info("Remove volume %s from image %s", srcVol.volUUID,
                           imgUUID)
             vol = srcVol.getParentVolume()
-            srcVol.delete(postZero=postZero, force=True)
+            srcVol.delete(postZero=postZero, force=True, discard=discard)
             chain.remove(srcVol.volUUID)
             srcVol = vol
 
@@ -1239,15 +1242,16 @@ class Image:
         dom.deactivateImage(imgUUID)
         return actualVolumes
 
-    def merge(self, sdUUID, vmUUID, imgUUID, ancestor, successor, postZero):
+    def merge(self, sdUUID, vmUUID, imgUUID, ancestor, successor, postZero,
+              discard):
         """Merge source volume to the destination volume.
             'successor' - source volume UUID
             'ancestor' - destination volume UUID
         """
-        self.log.info("sdUUID=%s vmUUID=%s"
-                      " imgUUID=%s ancestor=%s successor=%s postZero=%s",
-                      sdUUID, vmUUID, imgUUID,
-                      ancestor, successor, str(postZero))
+        self.log.info("sdUUID=%s vmUUID=%s imgUUID=%s ancestor=%s successor=%s"
+                      "postZero=%s discard=%s",
+                      sdUUID, vmUUID, imgUUID, ancestor, successor,
+                      str(postZero), discard)
         sdDom = sdCache.produce(sdUUID)
         allVols = sdDom.getAllVolumes()
         volsImgs = sd.getVolsOfImage(allVols, imgUUID)
@@ -1319,7 +1323,8 @@ class Image:
 
         try:
             # remove all snapshots from 'ancestor' to 'successor'
-            self.removeSubChain(sdDom, imgUUID, chainToRemove, postZero)
+            self.removeSubChain(sdDom, imgUUID, chainToRemove, postZero,
+                                discard)
         except Exception:
             self.log.error("Failure to remove subchain %s -> %s in image %s",
                            ancestor, successor, imgUUID, exc_info=True)
