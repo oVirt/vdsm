@@ -98,10 +98,11 @@ def serve_clients(log):
         scheduler = schedule.Scheduler(name="vdsm.Scheduler",
                                        clock=time.monotonic_time)
         scheduler.start()
-        jobs.start(scheduler)
 
         from clientIF import clientIF  # must import after config is read
         cif = clientIF.getInstance(irs, log, scheduler)
+
+        jobs.start(scheduler, cif)
 
         install_manhole({'irs': irs, 'cif': cif})
 

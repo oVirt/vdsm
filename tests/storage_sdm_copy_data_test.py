@@ -22,6 +22,7 @@ from __future__ import absolute_import
 import threading
 from contextlib import contextmanager
 
+from fakelib import FakeNotifier
 from fakelib import FakeScheduler
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeResourceManager
@@ -55,7 +56,8 @@ class TestCopyDataDIV(VdsmTestCase):
 
     def setUp(self):
         self.scheduler = FakeScheduler()
-        jobs.start(self.scheduler)
+        self.notifier = FakeNotifier()
+        jobs.start(self.scheduler, self.notifier)
 
     def tearDown(self):
         jobs._clear()

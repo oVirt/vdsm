@@ -60,3 +60,12 @@ class FakeLogger(object):
 
     def isEnabledFor(self, level):
         return level >= self.level
+
+
+class FakeNotifier(object):
+
+    def __init__(self):
+        self.calls = []
+
+    def notify(self, event_id, params=None):
+        self.calls.append((event_id, params))

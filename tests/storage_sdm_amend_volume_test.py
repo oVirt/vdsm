@@ -21,6 +21,7 @@ from __future__ import absolute_import
 
 from contextlib import contextmanager
 
+from fakelib import FakeNotifier
 from fakelib import FakeScheduler
 from monkeypatch import MonkeyPatchScope, MonkeyPatch
 from storagetestlib import make_qemu_chain
@@ -52,7 +53,8 @@ class TestAmendVolume(VdsmTestCase):
 
     def setUp(self):
         self.scheduler = FakeScheduler()
-        jobs.start(self.scheduler)
+        self.notifier = FakeNotifier()
+        jobs.start(self.scheduler, self.notifier)
 
     def tearDown(self):
         jobs._clear()

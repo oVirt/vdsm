@@ -179,6 +179,8 @@ class clientIF(object):
             notification = Notification(event_id, _send_notification,
                                         json_binding.bridge.event_schema)
             notification.emit(params)
+            self.log.debug("Sending notification %s with params %s ",
+                           event_id, params)
         except KeyError:
             self.log.warning("Attempt to send an event when jsonrpc binding"
                              " not available")

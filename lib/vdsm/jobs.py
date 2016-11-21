@@ -30,6 +30,8 @@ from vdsm.config import config
 _lock = threading.Lock()
 _jobs = {}
 _scheduler = None
+# Message notification service
+_notifier = None
 
 
 class STATUS:
@@ -137,6 +139,7 @@ class Job(object):
                 self._status = STATUS.ABORTED
                 logging.info("Aborted pending job %r.", self.id)
                 self._autodelete_if_required()
+                self._send_event()
             elif self.status == STATUS.RUNNING:
                 self._status = STATUS.ABORTING
                 logging.info("Aborting job %r...", self.id)
@@ -160,6 +163,7 @@ class Job(object):
             self._run_completed()
         finally:
             self._autodelete_if_required()
+            self._send_event()
 
     def _may_run(self):
         """
@@ -252,6 +256,9 @@ class Job(object):
         except Exception:
             logging.exception("Cannot delete job %s", self._id)
 
+    def _send_event(self):
+        _notifier.notify('|jobs|status|%s' % self.id, params=self.info())
+
     def __repr__(self):
         s = "<{self.__class__.__name__} id={self.id} status={self.status} "
         if self.progress is not None:
@@ -260,9 +267,11 @@ class Job(object):
         return s.format(self=self, id=id(self))
 
 
-def start(scheduler):
+def start(scheduler, notifier):
     global _scheduler
+    global _notifier
     _scheduler = scheduler
+    _notifier = notifier
 
 
 def stop():
