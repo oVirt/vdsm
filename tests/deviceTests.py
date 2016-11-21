@@ -410,6 +410,35 @@ class TestVmDevices(XMLTestCase):
         bandwith = iface.paramsToBandwidthXML(NEW_OUT, orig_bandwidth)
         self.assert_dom_xml_equal(bandwith, updatedBwidthXML)
 
+    @MonkeyPatch(vmdevices.network.supervdsm,
+                 'getProxy', lambda: MockedProxy(lambda: None))
+    def test_interface_update(self):
+        devices = [{'nicModel': 'virtio', 'network': 'ovirtmgmt',
+                    'macAddr': '52:54:00:59:F5:3F',
+                    'device': 'bridge', 'type': 'interface', 'alias': 'net1',
+                    'linkActive': 'true',
+                    'specParams': {'inbound': {'average': 1000, 'peak': 5000,
+                                               'burst': 1024},
+                                   'outbound': {'average': 128, 'burst': 256}},
+                    }]
+        params = {'linkActive': 'true', 'alias': 'net1',
+                  'deviceType': 'interface', 'network': 'ovirtmgmt2',
+                  'specParams': {'inbound': {}, 'outbound': {}}}
+        updated_xml = '''
+            <interface type="bridge">
+              <mac address="52:54:00:59:F5:3F"/>
+              <model type="virtio"/>
+              <source bridge="ovirtmgmt2"/>
+              <virtualport type="openvswitch"/>
+              <link state="up"/>
+              <bandwidth/>
+            </interface>
+        '''
+        with fake.VM(devices=devices, create_device_objects=True) as testvm:
+            testvm._dom = fake.Domain()
+            testvm.updateDevice(params)
+            self.assertXMLEqual(testvm._dom.devXml, updated_xml)
+
     def testControllerXML(self):
         devConfs = [
             {'device': 'ide', 'index': '0', 'address': self.PCI_ADDR_DICT},

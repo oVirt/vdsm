@@ -340,6 +340,16 @@ class Element(object):
         self._elem.append(child)
         return child
 
+    def replaceChild(self, new_element, old_element):
+        for c in list(children(self._elem)):
+            if c is old_element or \
+               (isinstance(c, Element) and c._elem is old_element):
+                self._elem.remove(c)
+                break
+        else:
+            raise NotFound(old_element)
+        self._elem.append(new_element)
+
 
 class Domain(object):
 
