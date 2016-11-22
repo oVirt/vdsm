@@ -31,3 +31,11 @@ class NMDbus(object):
     @staticmethod
     def init():
         NMDbus.bus = dbus.SystemBus()
+
+
+class NMDbusManager(object):
+
+    def __init__(self):
+        mng_proxy = NMDbus.bus.get_object(NMDbus.NM_IF_NAME, NMDbus.NM_PATH)
+        self.properties = dbus.Interface(mng_proxy, NMDbus.DBUS_PROPERTIES)
+        self.interface = dbus.Interface(mng_proxy, NMDbus.NM_IF_NAME)

@@ -26,6 +26,7 @@ from testValidation import broken_on_ci, ValidateRunningAsRoot
 from .nmnettestlib import iface_name, NMService, nm_connection
 
 from vdsm.network.nm.nmdbus import NMDbus
+from vdsm.network.nm.nmdbus.active import NMDbusActiveConnections
 from vdsm.network.nm.nmdbus.settings import NMDbusSettings
 
 
@@ -67,3 +68,36 @@ class TestNMConnectionSettings(VdsmTestCase):
                 con_count += 1
 
             self.assertGreaterEqual(con_count, 1)
+
+
+@attr(type='integration')
+class TestNMActiveConnections(VdsmTestCase):
+
+    def test_active_connections_properties_existence(self):
+        nm_active_cons = NMDbusActiveConnections()
+
+        iface = iface_name()
+        with nm_connection(iface, IPV4ADDR):
+            con_count = 0
+            for connection in nm_active_cons.connections():
+                assert connection.id is not None
+                assert connection.uuid is not None
+                assert connection.type is not None
+                assert connection.master_con_path is not None
+
+                con_count += 1
+
+            self.assertGreaterEqual(con_count, 1)
+
+    def test_active_connections_properties_vs_connection_settings(self):
+        nm_active_cons = NMDbusActiveConnections()
+        nm_settings = NMDbusSettings()
+
+        iface = iface_name()
+        with nm_connection(iface, IPV4ADDR):
+            for active_con in nm_active_cons.connections():
+                settings_con = nm_settings.connection(active_con.con_path)
+
+                assert active_con.uuid == settings_con.connection.uuid
+                assert active_con.type == settings_con.connection.type
+                assert active_con.id == settings_con.connection.id
