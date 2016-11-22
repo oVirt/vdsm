@@ -3548,3 +3548,14 @@ class HSM(object):
         """
         job = sdm.api.sparsify_volume.Job(job_id, self._get_hostid(), vol_info)
         self.sdm_schedule(job)
+
+    def sdm_prepare_merge(self, job_id, subchain_info):
+        raise NotImplementedError()
+
+    @public
+    def sdm_merge(self, job_id, subchain_info):
+        raise NotImplementedError()
+
+    @public
+    def sdm_finalize_merge(self, job_id, subchain_info):
+        raise NotImplementedError()

@@ -10138,3 +10138,45 @@ SDM.sparsify_volume:
     -   description: Address of the Volume to be processed
         name: vol_info
         type: *CopyDataDIVEndpoint
+
+SDM.prepare_merge:
+    added: '4.1'
+    description: This operation is required before performing (cold) merge.
+        Prepare merge will calculate the required allocation for base volume,
+        extend the base volume and mark it as ILLEGAL.
+        This operation must be run on the SPM.
+    params:
+    -   description: A UUID to be used for tracking the job progress
+        name: job_id
+        type: *UUID
+
+    -   description: Subchain to prepare
+        name: subchain_info
+        type: *SubchainInfo
+
+SDM.merge:
+    added: '4.1'
+    description: Merge data from top volume to base volume.
+    params:
+    -   description: A UUID to be used for tracking the job progress
+        name: job_id
+        type: *UUID
+
+    -   description: Subchain to merge
+        name: subchain_info
+        type: *SubchainInfo
+
+SDM.finalize_merge:
+    added: '4.1'
+    description: This operation is required after (cold) merge completes.
+        Finalize will update qemu chain and vdsm chain to reflect the new
+        chain after the merge.
+        This operation must be run on the SPM.
+    params:
+    -   description: A UUID to be used for tracking the job progress
+        name: job_id
+        type: *UUID
+
+    -   description: Merge subchain info
+        name: subchain_info
+        type: *SubchainInfo
