@@ -85,6 +85,7 @@ Requires: dmidecode
 Requires: virt-v2v
 %endif
 
+Requires: dbus-python
 Requires: ethtool
 Requires: which
 Requires: sudo >= 1.7.3
@@ -1099,6 +1100,8 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/network/link/bond
 %dir %{python_sitelib}/%{vdsm_name}/network/netinfo
 %dir %{python_sitelib}/%{vdsm_name}/network/netlink
+%dir %{python_sitelib}/%{vdsm_name}/network/nm
+%dir %{python_sitelib}/%{vdsm_name}/network/nm/nmdbus
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs/driver
 %dir %{python_sitelib}/%{vdsm_name}/network/tc
@@ -1168,6 +1171,8 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/netlink/monitor.py*
 %{python_sitelib}/%{vdsm_name}/network/netlink/route.py*
 %{python_sitelib}/%{vdsm_name}/network/netlink/waitfor.py*
+%{python_sitelib}/%{vdsm_name}/network/nm/*.py*
+%{python_sitelib}/%{vdsm_name}/network/nm/nmdbus/*.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/info.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/switch.py*

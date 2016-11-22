@@ -1,5 +1,6 @@
 autoconf
 automake
+dbus-python
 gdb
 git
 libguestfs-tools-c
@@ -24,6 +25,7 @@ python-pthreading
 python-setuptools
 python-six
 python-requests
+python3-dbus
 python3-decorator
 python3-netaddr
 python3-nose

@@ -1,0 +1,91 @@
+# Copyright 2016 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+from __future__ import absolute_import
+
+from contextlib import contextmanager
+
+from vdsm.commands import execCmd
+from vdsm.utils import CommandPath
+
+from .nettestlib import random_iface_name
+
+
+SYSTEMCTL = CommandPath('systemctl', '/bin/systemctl', '/usr/bin/systemctl')
+
+NM_SERVICE = 'NetworkManager'
+NMCLI_BINARY = CommandPath('nmcli', '/usr/bin/nmcli')
+
+
+class NMService(object):
+    def __init__(self):
+        rc, out, err = execCmd([SYSTEMCTL.cmd, 'status', NM_SERVICE])
+        self.nm_init_state_is_up = (rc == 0)
+
+    def setup(self):
+        if not self.nm_init_state_is_up:
+            execCmd([SYSTEMCTL.cmd, 'start', NM_SERVICE])
+
+    def teardown(self):
+        if not self.nm_init_state_is_up:
+            execCmd([SYSTEMCTL.cmd, 'stop', NM_SERVICE])
+
+
+def iface_name():
+    return random_iface_name('bond_', max_length=11)
+
+
+@contextmanager
+def nm_connection(iface_name, ipv4addr, connection_name=None):
+    """
+    Setting up a connection with an IP address, removing it at exit.
+    In case connection_name is not provided, it will use the name of the iface.
+    """
+    if connection_name is None:
+        connection_name = iface_name
+
+    _create_connection(connection_name, iface_name, ipv4addr)
+    try:
+        yield
+    finally:
+        _remove_connection(connection_name)
+
+
+def _create_connection(connection_name, iface_name, ipv4addr):
+    command = [NMCLI_BINARY.cmd, 'con', 'add', 'con-name', connection_name,
+               'ifname', iface_name, 'save', 'no', 'type', 'bond',
+               'ip4', ipv4addr]
+    _exec_cmd(command)
+
+
+def _remove_connection(connection_name):
+    command = [NMCLI_BINARY.cmd, 'con', 'del', connection_name]
+    _exec_cmd(command)
+
+
+def _exec_cmd(command):
+    rc, out, err = execCmd(command)
+
+    if rc:
+        raise NMCliError(rc, ' '.join(err))
+
+    return out
+
+
+class NMCliError(Exception):
+    pass

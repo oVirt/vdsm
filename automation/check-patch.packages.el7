@@ -1,5 +1,6 @@
 autoconf
 automake
+dbus-python
 gdb
 git
 libguestfs-tools-c
