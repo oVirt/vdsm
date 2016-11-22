@@ -582,6 +582,18 @@ types:
             1.1: qemu versions starting with 1.1 which are supported by
                  QCOW2 version 3.
 
+    VolumeAttributes: &VolumeAttributes
+        added: '4.1'
+        description: Possible attributes which are allowed to be changed
+                     in a volume.
+        name: VolumeAttributes
+        properties:
+        -   defaultvalue: null
+            description: The compat version for qcow volume.
+            name: compat
+            type: *Qcow2Compat
+        type: object
+
     VolumeFormat: &VolumeFormat
         added: '3.1'
         description: An enumeration of Volume data formats.
@@ -10175,3 +10187,21 @@ SDM.finalize_merge:
     -   description: Merge subchain info
         name: subchain_info
         type: *SubchainInfo
+
+SDM.amend_volume:
+    added: '4.1'
+    description: Amend the volume with specific parameters described
+                 in the vol_attr.
+    params:
+    -   description: A UUID to be used for tracking the job progress
+        name: job_id
+        type: *UUID
+
+    -   description: The volume to amend.
+        name: vol_info
+        type: *CopyDataDIVEndpoint
+
+    -   description: The possible attributes which are allowed to be changed
+                     in a volume.
+        name: vol_attr
+        type: *VolumeAttributes
