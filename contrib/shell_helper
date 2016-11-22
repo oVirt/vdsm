@@ -3,14 +3,15 @@
 # .zshrc.
 
 VDSM_DIR=~/code/vdsm
+RPMDIR=`rpm --eval %_rpmdir`
 
 _latest_version() {
-    ls ~/rpmbuild/RPMS/*/vdsm* -t -w 1 | head -1 | sed 's/.*vdsm-[a-z]*-//;s/.noarch.rpm//'
+    ls "$RPMDIR"/*/vdsm* -t -w 1 | head -1 | sed 's/.*vdsm-[a-z]*-//;s/.noarch.rpm//'
 }
 
 _latest_rpms() {
     local VERSION=$(_latest_version)
-    find ~/rpmbuild/RPMS/ -iname "*$VERSION*.rpm" | egrep "vdsm-[0-9]|python|cli|xmlrpc|jsonrpc|tests|infra|api|hook-vmfex-dev"
+    find "$RPMDIR"/ -iname "*$VERSION*.rpm" | egrep "vdsm-[0-9]|python|cli|xmlrpc|jsonrpc|tests|infra|api|hook-vmfex-dev"
 }
 
 vdsm_configure_force() {
