@@ -4050,11 +4050,6 @@ types:
             name: maxVCpus
             type: uint
 
-        -   description: A comma-separated list of NIC models in use by the
-                VM
-            name: nicModel
-            type: string
-
         -   defaultvalue: qemu64
             description: The type of CPU being emulated special values
                 'hostPassthrough' and 'hostModel' are reserved for

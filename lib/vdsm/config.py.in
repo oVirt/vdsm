@@ -81,11 +81,6 @@ parameters = [
             'To apply options to a single interface, '
             'set ethtool_opts.iface_name.'),
 
-        ('nic_model', 'rtl8139,pv',
-            'NIC model is rtl8139, ne2k_pci pv or any other valid device '
-            'recognized by kvm/qemu if a coma separated list given then a '
-            'NIC per device will be created.'),
-
         ('migration_destination_timeout', '21600',
             'Maximum time the destination waits for the migration to finish.'),
 

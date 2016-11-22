@@ -243,8 +243,6 @@ class VM(APIBase):
                                                   ['status']['code'],
                                    'message': 'Unknown display type %s' %
                                               vmParams.get('display')}}
-            if 'nicModel' not in vmParams:
-                vmParams['nicModel'] = config.get('vars', 'nic_model')
             return self._cif.createVm(vmParams)
 
         except OSError as e:

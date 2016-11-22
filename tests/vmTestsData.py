@@ -359,7 +359,6 @@ VM_STATUS_DUMP = {
     'maxVCpus': '16',
     'memGuaranteedSize': 16,
     'memSize': 16,
-    'nicModel': 'rtl8139,pv',
     'nice': '0',
     'pid': '0',
     'smartcardEnable': 'false',

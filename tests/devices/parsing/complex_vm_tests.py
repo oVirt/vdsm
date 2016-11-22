@@ -64,7 +64,7 @@ class TestSRiovXmlParsing(XMLTestCase, verify.DeviceMixin):
 
     def test_sriov_vm(self):
         params = {
-            'nicModel': 'rtl8139,pv', 'name': 'SRiovVm',
+            'name': 'SRiovVm',
             'displaySecurePort': '-1', 'memSize': '256', 'displayPort': '-1',
             'display': 'qxl'}
 
