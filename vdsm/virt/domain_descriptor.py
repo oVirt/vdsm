@@ -56,7 +56,7 @@ class MutableDomainDescriptor(object):
         """
         Return the vm memory from xml in MiB
         """
-        memory = vmxml.find_first(self._dom, "memory")
+        memory = vmxml.find_first(self._dom, "memory", None)
         return int(vmxml.text(memory)) // 1024 if memory is not None else None
 
 

@@ -20,7 +20,8 @@
 #
 
 from virt.domain_descriptor import DomainDescriptor
-from testlib import VdsmTestCase
+from testlib import VdsmTestCase, permutations, expandPermutations
+
 
 NO_DEVICES = """
 <domain>
@@ -55,6 +56,17 @@ REORDERED_DEVICES = """
 </domain>
 """
 
+MEMORY_SIZE = """
+<domain>
+    <uuid>xyz</uuid>
+    <memory unit=\'KiB\'>1048576</memory>
+    <devices>
+        <device name="bar"/>
+        <device name="foo"/>
+    </devices>
+</domain>
+"""
+
 
 class DevicesHashTests(VdsmTestCase):
 
@@ -77,3 +89,14 @@ class DevicesHashTests(VdsmTestCase):
         desc1 = DomainDescriptor(SOME_DEVICES)
         desc2 = DomainDescriptor(SOME_DEVICES)
         self.assertEqual(desc1.devices_hash, desc2.devices_hash)
+
+
+@expandPermutations
+class DomainDescriptorTests(VdsmTestCase):
+
+    @permutations([[NO_DEVICES, None],
+                   [EMPTY_DEVICES, None],
+                   [MEMORY_SIZE, 1024]])
+    def test_memory_size(self, domain_xml, result):
+        desc = DomainDescriptor(domain_xml)
+        self.assertEqual(desc.get_memory_size(), result)
