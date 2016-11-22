@@ -2769,10 +2769,10 @@ types:
             type: *VmInterfaceDevice
         type: object
 
-    ImageInfo: &ImageInfo
+    PreparedImageInfo: &PreparedImageInfo
         added: '4.0'
         description: Information about a prepared image
-        name: ImageInfo
+        name: PreparedImageInfo
         properties:
         -   description: The image path
             name: path
@@ -8214,7 +8214,7 @@ Image.prepare:
     return:
         description: Information about prepared image
         added: '4.0'
-        type: *ImageInfo
+        type: *PreparedImageInfo
 
 Image.teardown:
     added: '3.4'
