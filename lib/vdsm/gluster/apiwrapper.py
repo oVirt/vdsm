@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -349,3 +349,20 @@ class GlusterSnapshot(GlusterApiBase):
 
     def configSet(self, optionName, optionValue):
         return self._gluster.snapshotConfigSet(optionName, optionValue)
+
+
+class GlusterEvent(GlusterApiBase):
+    def __init__(self):
+        GlusterApiBase.__init__(self)
+
+    def webhookAdd(self, url, bearerToken):
+        return self._gluster.webhookAdd(url, bearerToken)
+
+    def webhookUpdate(self, url, bearerToken):
+        return self._gluster.webhookUpdate(url, bearerToken)
+
+    def webhookSync(self):
+        return self._gluster.webhookSync()
+
+    def webhookDelete(self, url):
+        return self._gluster.webhookDelete(url)

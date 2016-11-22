@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -788,3 +788,29 @@ class GlusterSnapshotConfigGetFailedException(
 class GlusterSnapshotInfoFailedException(GlusterSnapshotException):
     code = 4709
     message = "Snapshot Info failed"
+
+
+# Events
+class GlusterEventException(GlusterException):
+    code = 4750
+    message = "Gluster Events Exception"
+
+
+class GlusterWebhookAddException(GlusterEventException):
+    code = 4751
+    message = "Failed to add webhook"
+
+
+class GlusterWebhookUpdateException(GlusterEventException):
+    code = 4752
+    message = "Failed to update webhook"
+
+
+class GlusterWebhookSyncException(GlusterEventException):
+    code = 4753
+    message = "Failed to sync webhooks"
+
+
+class GlusterWebhookDeleteException(GlusterEventException):
+    code = 4754
+    message = "Failed to delete webhook"

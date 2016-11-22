@@ -28,8 +28,7 @@
 %global with_openvswitch @OPENVSWITCH@
 %endif
 
-# Glusterfs package version
-%global gluster_version 3.7.1
+%global gluster_version  3.10
 
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
@@ -655,6 +654,7 @@ Requires: %{name} = %{version}-%{release}
 Requires: glusterfs-server >= %{gluster_version}
 Requires: glusterfs-api >= %{gluster_version}
 Requires: glusterfs-geo-replication >= %{gluster_version}
+Requires: glusterfs-events >= %{gluster_version}
 Requires: python-magic
 %if 0%{?fedora} >= 25
 Requires: iproute-tc
@@ -1629,6 +1629,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/gluster
 %{python_sitelib}/%{vdsm_name}/gluster/api.py*
 %{python_sitelib}/%{vdsm_name}/gluster/apiwrapper.py*
+%{python_sitelib}/%{vdsm_name}/gluster/events.py*
 %{python_sitelib}/%{vdsm_name}/gluster/fstab.py*
 %{python_sitelib}/%{vdsm_name}/gluster/fence.py*
 %{python_sitelib}/%{vdsm_name}/gluster/gfapi.py*

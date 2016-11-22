@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -776,6 +776,22 @@ class GlusterApi(object):
     @exportAsVerb
     def volumeHealInfo(self, volumeName, options=None):
         return {'healInfo': self.svdsmProxy.glusterVolumeHealInfo(volumeName)}
+
+    @exportAsVerb
+    def webhookAdd(self, url, bearerToken, options=None):
+        self.svdsmProxy.glusterWebhookAdd(url, bearerToken)
+
+    @exportAsVerb
+    def webhookUpdate(self, url, bearerToken, options=None):
+        self.svdsmProxy.glusterWebhookUpdate(url, bearerToken)
+
+    @exportAsVerb
+    def webhookSync(self, options=None):
+        self.svdsmProxy.glusterWebhookSync()
+
+    @exportAsVerb
+    def webhookDelete(self, url, options=None):
+        self.svdsmProxy.glusterWebhookDelete(url)
 
 
 def getGlusterMethods(gluster):

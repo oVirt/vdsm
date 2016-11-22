@@ -2108,3 +2108,51 @@ GlusterVolume.healInfo:
         description: Volume self heal information.
         type:
         - *HealInfo
+
+GlusterEvent.webhookAdd:
+    added: '4.2'
+    description: Register the Webhook to receive gluster events
+    params:
+    -   description: URL of Webhook
+        name: url
+        type: string
+
+    -   description:  Bearer Token
+        name: bearerToken
+        type: string
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterEvent.webhookUpdate:
+    added: '4.2'
+    description: Update the Webhook with new bearer token
+    params:
+    -   description: URL of Webhook
+        name: url
+        type: string
+
+    -   description:  Bearer Token
+        name: bearerToken
+        type: string
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterEvent.webhookSync:
+    added: '4.2'
+    description: Sync the webhooks across all nodes in the cluster
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterEvent.webhookDelete:
+    added: '4.2'
+    description: Delete the registered Webhook
+    params:
+    -   description: URL of Webhook
+        name: url
+        type: string
+    return:
+        description: Success or failure
+        type: boolean
