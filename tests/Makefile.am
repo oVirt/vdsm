@@ -44,6 +44,7 @@ device_modules = \
 network_modules = network/*_test.py
 
 test_modules = \
+	API_test.py \
 	alignmentScanTests.py \
 	api_test.py \
 	bridgeTests.py \
@@ -169,6 +170,7 @@ test_modules = \
 	$(NULL)
 
 blacklist_modules_python3 = \
+	API_test.py \
 	alignmentScanTests.py \
 	bridgeTests.py \
 	clientifTests.py \
