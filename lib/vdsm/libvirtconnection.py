@@ -35,6 +35,11 @@ from .tool.configurators import passwd
 log = logging.getLogger()
 
 
+# TODO: Remove this once we depend on libvirt 2.0
+if not hasattr(libvirt, 'VIR_DOMAIN_EVENT_ID_JOB_COMPLETED'):
+    libvirt.VIR_DOMAIN_EVENT_ID_JOB_COMPLETED = 'fake'
+
+
 class _EventLoop:
     def __init__(self):
         self.run = False
@@ -178,6 +183,9 @@ def get(target=None, killOnFailure=True):
                            libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB,
                            libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG,
                            libvirt.VIR_DOMAIN_EVENT_ID_JOB_COMPLETED):
+                    # TODO: Remove this once we depend on libvirt 2.0
+                    if ev == 'fake':
+                        continue
                     conn.domainEventRegisterAny(None,
                                                 ev,
                                                 target.dispatchLibvirtEvents,
