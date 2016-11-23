@@ -133,6 +133,13 @@ RECORD_FREE = b"F"
 # be rebuild from storage.
 RECORD_STALE = b"S"
 
+# State names reported in leases
+RECORD_STATES = {
+    RECORD_USED: "USED",
+    RECORD_FREE: "FREE",
+    RECORD_STALE: "STALE",
+}
+
 RECORD_SEP = b":"
 RECORD_TERM = b"\n"
 
@@ -403,10 +410,15 @@ class Index(object):
         log.debug("Getting all leases for lockspace %r", self._lockspace)
         leases = {}
         for recnum in range(MAX_RECORDS):
+            # TODO: handle bad records - currently will raise InvalidRecord and
+            # fail the request.
             record = self._buf.read_record(recnum)
-            # TODO: report record state
-            if record.state == RECORD_USED:
-                leases[record.resource] = self._lease_offset(recnum)
+            if record.state != RECORD_FREE:
+                leases[record.resource] = {
+                    "offset": self._lease_offset(recnum),
+                    "state": RECORD_STATES[record.state],
+                    "modified": record.modified,
+                }
         return leases
 
     def close(self):

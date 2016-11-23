@@ -58,6 +58,9 @@ class TestIndex(VdsmTestCase):
             with utils.closing(file):
                 index = xlease.Index("lockspace", file)
                 with utils.closing(index):
+                    leases = index.leases()
+                    self.assertEqual(leases[record.resource]["state"],
+                                     "STALE")
                     with self.assertRaises(xlease.StaleLease):
                         index.lookup(record.resource)
 
@@ -73,15 +76,13 @@ class TestIndex(VdsmTestCase):
 
     def test_leases(self):
         with make_index() as index:
-            leases = [make_uuid() for i in range(3)]
-            for lease in leases:
-                index.add(lease)
-            expected = {
-                leases[0]: xlease.LEASE_BASE,
-                leases[1]: xlease.LEASE_BASE + xlease.LEASE_SIZE,
-                leases[2]: xlease.LEASE_BASE + xlease.LEASE_SIZE * 2,
-            }
-            self.assertEqual(index.leases(), expected)
+            uuid = make_uuid()
+            lease_info = index.add(uuid)
+            leases = index.leases()
+            self.assertEqual(len(leases), 1)
+            self.assertEqual(leases[uuid]["offset"], xlease.LEASE_BASE)
+            self.assertEqual(leases[uuid]["state"], "USED")
+            self.assertEqual(leases[uuid]["modified"], lease_info.modified)
 
     def test_add_exists(self):
         with make_index() as index:
@@ -103,11 +104,7 @@ class TestIndex(VdsmTestCase):
             for lease in leases:
                 index.add(lease)
             index.remove(leases[1])
-            expected = {
-                leases[0]: xlease.LEASE_BASE,
-                leases[2]: xlease.LEASE_BASE + xlease.LEASE_SIZE * 2,
-            }
-            self.assertEqual(index.leases(), expected)
+            self.assertNotIn(leases[1], index.leases())
 
     def test_remove_missing(self):
         with make_index() as index:
@@ -117,17 +114,22 @@ class TestIndex(VdsmTestCase):
 
     def test_add_first_free_slot(self):
         with make_index() as index:
-            leases = [make_uuid() for i in range(4)]
-            for lease in leases[:3]:
-                index.add(lease)
-            index.remove(leases[1])
-            index.add(leases[3])
-            expected = {
-                leases[0]: xlease.LEASE_BASE,
-                leases[3]: xlease.LEASE_BASE + xlease.LEASE_SIZE,
-                leases[2]: xlease.LEASE_BASE + xlease.LEASE_SIZE * 2,
-            }
-            self.assertEqual(index.leases(), expected)
+            uuids = [make_uuid() for i in range(4)]
+            for uuid in uuids[:3]:
+                index.add(uuid)
+            index.remove(uuids[1])
+            index.add(uuids[3])
+            leases = index.leases()
+            # The first lease in the first slot
+            self.assertEqual(leases[uuids[0]]["offset"],
+                             xlease.LEASE_BASE)
+            # The forth lease was added in the second slot after the second
+            # lease was removed.
+            self.assertEqual(leases[uuids[3]]["offset"],
+                             xlease.LEASE_BASE + xlease.LEASE_SIZE)
+            # The third lease in the third slot
+            self.assertEqual(leases[uuids[2]]["offset"],
+                             xlease.LEASE_BASE + xlease.LEASE_SIZE * 2)
 
     @slowtest
     def test_time_lookup(self):
