@@ -26,6 +26,7 @@ from virt import recovery
 from vdsm.common import response
 from vdsm.compat import pickle
 from vdsm import constants
+from vdsm import containersconnection
 from vdsm import cpuarch
 
 
@@ -210,8 +211,11 @@ class RecoveryAllVmsTests(TestCaseBase):
     def test_without_any_vms(self):
 
         with namedTemporaryDir() as tmpdir:
-            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir + '/'),
-                                   (recovery, '_list_domains', lambda: [])]):
+            with MonkeyPatchScope([
+                (constants, 'P_VDSM_RUN', tmpdir + '/'),
+                (recovery, '_list_domains', lambda: []),
+                (containersconnection, 'recovery', lambda: []),
+            ]):
                 fakecif = fake.ClientIF()
                 recovery.all_domains(fakecif)
                 self.assertEqual(fakecif.vmContainer, {})
