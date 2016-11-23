@@ -239,6 +239,13 @@ AC_ARG_WITH(
 )
 AC_SUBST([LIBVIRT_SERVICE_DEFAULT], ["${with_libvirt_service_default}"])
 
+AC_ARG_WITH(
+    [data-center],
+    [AS_HELP_STRING([--with-data-center=FILE],
+                    [configure full path of ovirt data center, @<:@default=/rhev/data-center@:>@])],
+    [with_data_center="${withval}"],
+    [with_data_center="/rhev/data-center"])
+AC_SUBST([vdsmrepo], [${with_data_center}])
 
 # Users and groups
 AC_SUBST([VDSMUSER], [vdsm])
@@ -262,7 +269,6 @@ AC_SUBST([vdsmbackupdir], ['${vdsmlogdir}/backup'])
 AC_SUBST([vdsmexecdir], ['${libexecdir}/vdsm'])
 AC_SUBST([vdsmhooksdir], ['${vdsmexecdir}/hooks'])
 AC_SUBST([vdsmtsdir], ['${sysconfdir}/pki/vdsm'])
-AC_SUBST([vdsmrepo], ['/rhev/data-center'])
 AC_SUBST([vdsmpylibdir], ['${pythondir}/vdsm'])
 AC_SUBST([vdsmnetinfodir], ['${vdsmpylibdir}/network/netinfo'])
 AC_SUBST([vdsmtooldir], ['${vdsmpylibdir}/tool'])

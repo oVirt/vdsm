@@ -710,7 +710,8 @@ autoreconf -if
         --enable-containers \
 %endif
         --with-qemu-kvm='@QEMU_KVM_PKG@' \
-        --with-qemu-img='@QEMU_IMG_PKG@'
+        --with-qemu-img='@QEMU_IMG_PKG@' \
+        --with-data-center='@VDSMREPO@'
 
 make
 # Setting software_version and software_revision in dsaversion.py
@@ -873,12 +874,12 @@ exit 0
 %{_unitdir}/mom-vdsm.service
 %{_sysconfdir}/systemd/system/libvirtd.service.d/unlimited-core.conf
 
-%dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@
+%dir %attr(-, %{vdsm_user}, %{vdsm_group}) @VDSMREPO@
 %ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/mom.log
 %ghost %config %attr(0644, root, root) @VDSMLOGDIR@/supervdsm.log
 %ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/vdsm.log
-%ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/hsm-tasks
-%ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/mnt
+%ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @VDSMREPO@/hsm-tasks
+%ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @VDSMREPO@/mnt
 %dir %{_libexecdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/vdsm.conf.d
 %dir %{_sysconfdir}/modprobe.d/
