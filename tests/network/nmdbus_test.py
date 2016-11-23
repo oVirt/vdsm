@@ -23,10 +23,11 @@ from nose.plugins.attrib import attr
 from testlib import VdsmTestCase
 from testValidation import broken_on_ci, ValidateRunningAsRoot
 
-from .nmnettestlib import iface_name, NMService, nm_connection
+from .nmnettestlib import iface_name, NMService, nm_connections
 
 from vdsm.network.nm.nmdbus import NMDbus
 from vdsm.network.nm.nmdbus.active import NMDbusActiveConnections
+from vdsm.network.nm.nmdbus.device import NMDbusDevice
 from vdsm.network.nm.nmdbus.settings import NMDbusSettings
 
 
@@ -55,7 +56,7 @@ class TestNMConnectionSettings(VdsmTestCase):
         nm_settings = NMDbusSettings()
 
         iface = iface_name()
-        with nm_connection(iface, IPV4ADDR):
+        with nm_connections(iface, IPV4ADDR):
             con_count = 0
             for nm_con in nm_settings.connections():
                 if nm_con.connection.type in ('802-11-wireless', 'vpn'):
@@ -77,7 +78,7 @@ class TestNMActiveConnections(VdsmTestCase):
         nm_active_cons = NMDbusActiveConnections()
 
         iface = iface_name()
-        with nm_connection(iface, IPV4ADDR):
+        with nm_connections(iface, IPV4ADDR):
             con_count = 0
             for connection in nm_active_cons.connections():
                 assert connection.id is not None
@@ -94,10 +95,60 @@ class TestNMActiveConnections(VdsmTestCase):
         nm_settings = NMDbusSettings()
 
         iface = iface_name()
-        with nm_connection(iface, IPV4ADDR):
+        with nm_connections(iface, IPV4ADDR):
             for active_con in nm_active_cons.connections():
                 settings_con = nm_settings.connection(active_con.con_path)
 
                 assert active_con.uuid == settings_con.connection.uuid
                 assert active_con.type == settings_con.connection.type
                 assert active_con.id == settings_con.connection.id
+
+
+@attr(type='integration')
+class TestNMDevice(VdsmTestCase):
+
+    def test_device_attributes_existence(self):
+        nm_device = NMDbusDevice()
+        nm_settings = NMDbusSettings()
+
+        device_count = 0
+        for device in nm_device.devices():
+            assert device.interface is not None
+            assert device.state is not None
+            assert device.active_connection_path is not None
+            assert device.connections_path is not None
+
+            for connection_path in device.connections_path:
+                settings_con = nm_settings.connection(connection_path)
+                assert settings_con.connection.uuid is not None
+
+            device_count += 1
+
+        self.assertGreaterEqual(device_count, 1)
+
+    def test_device_with_single_connection(self):
+        self._test_device_with_n_connections(1)
+
+    def test_device_with_multiple_connections(self):
+        self._test_device_with_n_connections(2)
+
+    def _test_device_with_n_connections(self, con_count):
+        nm_device = NMDbusDevice()
+        nm_settings = NMDbusSettings()
+        nm_act_cons = NMDbusActiveConnections()
+
+        configured_connections = set()
+        active_connections = set()
+
+        iface = iface_name()
+        with nm_connections(iface, IPV4ADDR, con_count=con_count):
+            device = nm_device.device(iface)
+            for connection_path in device.connections_path:
+                settings_con = nm_settings.connection(connection_path)
+                configured_connections.add(settings_con.connection.id)
+
+            ac = nm_act_cons.connection(device.active_connection_path)
+            active_connections.add(ac.id)
+
+        self.assertEqual(con_count, len(configured_connections))
+        self.assertEqual(set([iface + '0']), active_connections)

@@ -51,7 +51,7 @@ def iface_name():
 
 
 @contextmanager
-def nm_connection(iface_name, ipv4addr, connection_name=None):
+def nm_connections(iface_name, ipv4addr, connection_name=None, con_count=1):
     """
     Setting up a connection with an IP address, removing it at exit.
     In case connection_name is not provided, it will use the name of the iface.
@@ -59,11 +59,13 @@ def nm_connection(iface_name, ipv4addr, connection_name=None):
     if connection_name is None:
         connection_name = iface_name
 
-    _create_connection(connection_name, iface_name, ipv4addr)
+    for i in range(con_count):
+        _create_connection(connection_name + str(i), iface_name, ipv4addr)
     try:
         yield
     finally:
-        _remove_connection(connection_name)
+        for i in range(con_count):
+            _remove_connection(connection_name + str(i))
 
 
 def _create_connection(connection_name, iface_name, ipv4addr):
