@@ -25,6 +25,7 @@ from vdsm.utils import CommandPath
 
 from .nettestlib import random_iface_name
 
+TEST_LINK_TYPE = 'bond'
 
 SYSTEMCTL = CommandPath('systemctl', '/bin/systemctl', '/usr/bin/systemctl')
 
@@ -70,7 +71,7 @@ def nm_connections(iface_name, ipv4addr, connection_name=None, con_count=1):
 
 def _create_connection(connection_name, iface_name, ipv4addr):
     command = [NMCLI_BINARY.cmd, 'con', 'add', 'con-name', connection_name,
-               'ifname', iface_name, 'save', 'no', 'type', 'bond',
+               'ifname', iface_name, 'save', 'no', 'type', TEST_LINK_TYPE,
                'ip4', ipv4addr]
     _exec_cmd(command)
 

@@ -20,12 +20,15 @@ from __future__ import absolute_import
 
 from nose.plugins.attrib import attr
 
+from dbus.exceptions import DBusException
+
 from testlib import VdsmTestCase
 from testValidation import broken_on_ci, ValidateRunningAsRoot
 
-from .nmnettestlib import iface_name, NMService, nm_connections
+from .nmnettestlib import iface_name, TEST_LINK_TYPE, NMService, nm_connections
 
 from vdsm.network.nm.nmdbus import NMDbus
+from vdsm.network.nm.nmdbus import types
 from vdsm.network.nm.nmdbus.active import NMDbusActiveConnections
 from vdsm.network.nm.nmdbus.device import NMDbusDevice
 from vdsm.network.nm.nmdbus.settings import NMDbusSettings
@@ -152,3 +155,30 @@ class TestNMDevice(VdsmTestCase):
 
         self.assertEqual(con_count, len(configured_connections))
         self.assertEqual(set([iface + '0']), active_connections)
+
+
+@attr(type='integration')
+class TestNMConnectionCreation(VdsmTestCase):
+
+    def test_nm_connection_lifetime(self):
+        nm_act_cons = NMDbusActiveConnections()
+        nm_device = NMDbusDevice()
+
+        iface = iface_name()
+        with nm_connections(iface, IPV4ADDR):
+            active_con_path = nm_device.device(iface).active_connection_path
+            active_con = nm_act_cons.connection(active_con_path)
+
+            self.assertEqual(TEST_LINK_TYPE, str(active_con.type))
+            self.assertEqual(types.NMActiveConnectionState.ACTIVATED,
+                             active_con.state)
+
+        self._assert_no_device(iface)
+
+    def _assert_no_device(self, iface):
+        nm_device = NMDbusDevice()
+        with self.assertRaises(DBusException) as ex:
+            nm_device.device(iface)
+
+        self.assertEqual('No device found for the requested iface.',
+                         ex.exception.message)
