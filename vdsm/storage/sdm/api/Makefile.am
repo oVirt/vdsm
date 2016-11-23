@@ -24,6 +24,7 @@ vdsmsdmapidir = $(vdsmdir)/storage/sdm/api
 
 dist_vdsmsdmapi_PYTHON = \
 	__init__.py \
+	amend_volume.py \
 	base.py \
 	copy_data.py \
 	create_volume.py \

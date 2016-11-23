@@ -82,6 +82,7 @@ import storageServer
 import sdm.api.create_volume
 import sdm.api.copy_data
 import sdm.api.sparsify_volume
+import sdm.api.amend_volume
 
 GUID = "guid"
 NAME = "name"
@@ -3551,7 +3552,11 @@ class HSM(object):
 
     @public
     def sdm_amend_volume(self, job_id, vol_info, vol_attr):
-        raise NotImplementedError()
+        job = sdm.api.amend_volume.Job(job_id,
+                                       self._get_hostid(),
+                                       vol_info,
+                                       vol_attr)
+        self.sdm_schedule(job)
 
     def sdm_prepare_merge(self, job_id, subchain_info):
         raise NotImplementedError()
