@@ -49,20 +49,12 @@ class TestIndex(VdsmTestCase):
                 index.lookup(make_uuid())
 
     def test_lookup_stale(self):
-        with make_index() as base:
-            record = xlease.Record(make_uuid(), xlease.RECORD_STALE)
-            with io.open(base.path, "r+b") as f:
-                f.seek(xlease.RECORD_BASE)
-                f.write(record.bytes())
-            file = xlease.DirectFile(base.path)
-            with utils.closing(file):
-                index = xlease.Index("lockspace", file)
-                with utils.closing(index):
-                    leases = index.leases()
-                    self.assertEqual(leases[record.resource]["state"],
-                                     "STALE")
-                    with self.assertRaises(xlease.StaleLease):
-                        index.lookup(record.resource)
+        record = xlease.Record(make_uuid(), xlease.RECORD_STALE)
+        with make_index((42, record)) as index:
+            leases = index.leases()
+            self.assertEqual(leases[record.resource]["state"], "STALE")
+            with self.assertRaises(xlease.StaleLease):
+                index.lookup(record.resource)
 
     def test_add(self):
         with make_index() as index:
@@ -188,14 +180,16 @@ def bench():
 
 
 @contextmanager
-def make_index():
+def make_index(*records):
     with make_leases() as path:
         lockspace = os.path.basename(os.path.dirname(path))
+        format_index(lockspace, path)
+        if records:
+            write_records(records, lockspace, path)
         file = xlease.DirectFile(path)
         with utils.closing(file):
             index = xlease.Index(lockspace, file)
-            with utils.closing(index, log="test"):
-                index.format()
+            with utils.closing(index):
                 yield index
 
 
@@ -206,3 +200,21 @@ def make_leases():
         with io.open(path, "wb") as f:
             f.truncate(xlease.INDEX_SIZE)
         yield path
+
+
+def format_index(lockspace, path):
+    file = xlease.DirectFile(path)
+    with utils.closing(file):
+        index = xlease.Index(lockspace, file)
+        with utils.closing(index):
+            index.format()
+
+
+def write_records(records, lockspace, path):
+    file = xlease.DirectFile(path)
+    with utils.closing(file):
+        buf = xlease.IndexBuffer(file)
+        with utils.closing(buf):
+            for recnum, record in records:
+                buf.write_record(recnum, record)
+                buf.dump_record(recnum, file)
