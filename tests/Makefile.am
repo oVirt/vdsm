@@ -54,8 +54,8 @@ test_modules = \
 	commands_test.py \
 	concurrentTests.py \
 	config_test.py \
+	cpu_profile_test.py \
 	cpuinfo_test.py \
-	cpuProfileTests.py \
 	deviceTests.py \
 	domainDescriptorTests.py \
 	encodingTests.py \
