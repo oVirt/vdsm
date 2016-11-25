@@ -18,9 +18,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import copy
 from operator import itemgetter
 import xml.etree.ElementTree as etree
 
+from vdsm.common import xmlutils
 from vdsm.virt import xmlconstants
 from vdsm import constants
 from vdsm import cpuarch
@@ -54,15 +56,20 @@ def parse_xml(xml_string):
     return etree.fromstring(xml_string)
 
 
-def format_xml(element):
+def format_xml(element, pretty=False):
     """
     Export given DOM element to XML string.
 
     :param element: DOM element to export
     :type element: DOM element
+    :param pretty: whether to make the output more human readable
+    :type pretty: boolean
     :returns: XML corresponding to `element` content
     :rtype: string
     """
+    if pretty:
+        element = copy.deepcopy(element)
+        xmlutils.indent(element, 0)
     return etree.tostring(element, encoding='UTF-8')
 
 
@@ -819,7 +826,7 @@ class Domain(object):
         self._devices.appendChild(parse_xml(deviceXML))
 
     def toxml(self):
-        return format_xml(self.dom)
+        return format_xml(self.dom, pretty=True)
 
     def _getSmp(self):
         return self.conf.get('smp', '1')

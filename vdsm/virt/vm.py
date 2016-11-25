@@ -2074,7 +2074,7 @@ class Vm(object):
 
         nicParams = params['nic']
         nic = vmdevices.network.Interface(self.conf, self.log, **nicParams)
-        nicXml = vmxml.format_xml(nic.getXML())
+        nicXml = vmxml.format_xml(nic.getXML(), pretty=True)
         nicXml = hooks.before_nic_hotplug(nicXml, self.conf,
                                           params=nic.custom)
         nic._deviceXML = nicXml
@@ -2334,7 +2334,7 @@ class Vm(object):
                 vnicXML.appendChild(newBandwidth)
             else:
                 vnicXML.replaceChild(newBandwidth, oldBandwidth)
-        vnicStrXML = vmxml.format_xml(vnicXML)
+        vnicStrXML = vmxml.format_xml(vnicXML, pretty=True)
         try:
             try:
                 vnicStrXML = hooks.before_update_device(vnicStrXML, self.conf,
@@ -2437,7 +2437,7 @@ class Vm(object):
                 for network in nicParams['portMirroring']:
                     supervdsm.getProxy().unsetPortMirroring(network, nic.name)
 
-            nicXml = vmxml.format_xml(nic.getXML())
+            nicXml = vmxml.format_xml(nic.getXML(), pretty=True)
             hooks.before_nic_hotunplug(nicXml, self.conf,
                                        params=nic.custom)
             # TODO: this is debug information. For 3.6.x we still need to
@@ -2893,7 +2893,7 @@ class Vm(object):
         if drive.hasVolumeLeases:
             return response.error('noimpl')
 
-        driveXml = vmxml.format_xml(drive.getXML())
+        driveXml = vmxml.format_xml(drive.getXML(), pretty=True)
         # TODO: this is debug information. For 3.6.x we still need to
         # see the XML even with 'info' as default level.
         self.log.info("Hotplug disk xml: %s" % (driveXml))
@@ -2944,7 +2944,7 @@ class Vm(object):
         if drive.hasVolumeLeases:
             return response.error('noimpl')
 
-        driveXml = vmxml.format_xml(drive.getXML())
+        driveXml = vmxml.format_xml(drive.getXML(), pretty=True)
         # TODO: this is debug information. For 3.6.x we still need to
         # see the XML even with 'info' as default level.
         self.log.info("Hotunplug disk xml: %s", driveXml)

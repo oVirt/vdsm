@@ -20,6 +20,9 @@
 #
 from __future__ import absolute_import
 
+import re
+import xml.etree.ElementTree as etree
+
 from vdsm import cpuarch
 from vdsm.virt import vmchannels
 
@@ -91,6 +94,8 @@ class TestVmXmlHelpers(XMLTestCase):
       <hello lang="english">hello</hello>
       <hello cyrillic="yes" lang="русский">здра́вствуйте</hello>
       <bye>good bye<hello lang="čeština">dobrý den</hello></bye>
+      <container><subelement/></container>
+      <container><subelement>some content</subelement></container>
       <empty/>
     </topelement>
     '''
@@ -101,6 +106,37 @@ class TestVmXmlHelpers(XMLTestCase):
     def test_import_export(self):
         xml = vmxml.format_xml(self._dom)
         self.assertXMLEqual(xml, self._XML)
+
+    def test_pretty_format_formatting(self):
+        xml = re.sub(' *\n *', '', self._XML)
+        dom = vmxml.parse_xml(xml)
+        pretty = vmxml.format_xml(dom, pretty=True)
+        self.assertEqual(pretty, '''<?xml version='1.0' encoding='UTF-8'?>
+<topelement>
+    <hello lang="english">hello</hello>
+    <hello cyrillic="yes" lang="русский">здра́вствуйте</hello>
+    <bye>good bye<hello lang="čeština">dobrý den</hello>
+    </bye>
+    <container>
+        <subelement />
+    </container>
+    <container>
+        <subelement>some content</subelement>
+    </container>
+    <empty />
+</topelement>
+''')
+
+    def test_pretty_format_safety(self):
+        # Check that dom is not modified in format_xml; we check that by
+        # comparing the exported forms of `dom' created before and after
+        # format_xml call.
+        xml = re.sub(' *\n *', '', self._XML)
+        dom = vmxml.parse_xml(xml)
+        exported_1 = etree.tostring(dom)
+        vmxml.format_xml(dom, pretty=True)
+        exported_2 = etree.tostring(dom)
+        self.assertEqual(exported_1, exported_2)
 
     @permutations([[None, 'topelement', 1],
                    ['topelement', 'topelement', 1],
@@ -146,7 +182,7 @@ class TestVmXmlHelpers(XMLTestCase):
                    ['bye', 'hello', 1],
                    ['empty', 'hello', 0],
                    ['topelement', 'none', 0],
-                   ['topelement', None, 4],
+                   ['topelement', None, 6],
                    ])
     def test_children(self, start_tag, tag, number):
         element = vmxml.find_first(self._dom, start_tag)
