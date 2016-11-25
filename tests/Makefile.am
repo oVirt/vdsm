@@ -64,6 +64,7 @@ test_modules = \
 	exception_test.py \
 	executorTests.py \
 	eventfd_test.py \
+	fakesanlock_test.py \
 	filecontrol_test.py \
 	fuserTests.py \
 	gluster_cli_tests.py \
@@ -331,6 +332,7 @@ dist_vdsmtests_PYTHON = \
 	check_imports.py \
 	hookValidation.py \
 	fakelib.py \
+	fakesanlock.py \
 	fake-virt-v2v \
 	fake-ssh-add \
 	fake-ssh-agent \
