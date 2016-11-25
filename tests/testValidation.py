@@ -152,10 +152,15 @@ def brokentest(reason):
     return wrap
 
 
-def broken_on_ci(reason, exception=Exception):
+def broken_on_ci(reason, exception=Exception, name="OVIRT_CI"):
     """
-    Mark a test as broken on the CI, where VDSM_AUTOMATION environment variable
-    is defined.
+    Mark a test as broken on the CI.
+
+    By defualt, this will skip failing tests run in ovirt CI, when OVIRT_CI
+    environment variable is defined.
+
+    To use on travis-ci, use name="TRAVIS_CI".  If a test is broken on both
+    ovirt CI and travis-ci, mark it separately for each.
 
     Usage::
 
@@ -185,7 +190,7 @@ def broken_on_ci(reason, exception=Exception):
             try:
                 return f(*args, **kwargs)
             except exception:
-                if os.environ.get('VDSM_AUTOMATION'):
+                if os.environ.get(name):
                     raise SkipTest(reason)
                 else:
                     raise
