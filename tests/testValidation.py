@@ -252,6 +252,29 @@ def xfail(reason):
     return wrap
 
 
+def skipif(cond, reason):
+    """
+    Skip a test if cond is True.
+
+    Usage::
+
+        @skipif(six.PY3, "Needs porting to python 3")
+        def test_rusty_pyton_2_code(self):
+            ...
+    """
+    _check_decorator_misuse(reason)
+
+    def wrap(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if cond:
+                raise SkipTest(reason)
+            return f(*args, **kwargs)
+        return wrapper
+
+    return wrap
+
+
 def brokentest(reason):
     """
     Mark a test as broken.
