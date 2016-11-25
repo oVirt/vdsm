@@ -49,19 +49,19 @@ def setup_module():
                    else '../static/usr/share/vdsm/bonding-defaults.json')
 class LinkBondTests(TestCaseBase):
 
-    @broken_on_ci(exception=ctypes.ArgumentError)
+    @broken_on_ci("TODO: provide a reason", exception=ctypes.ArgumentError)
     def test_bond_without_slaves(self):
         with bond_device() as bond:
             self.assertFalse(iface.is_up(bond.master))
 
-    @broken_on_ci(exception=ctypes.ArgumentError)
+    @broken_on_ci("TODO: provide a reason", exception=ctypes.ArgumentError)
     def test_bond_with_slaves(self):
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as bond:
                 bond.add_slaves((nic1, nic2))
                 self.assertFalse(iface.is_up(bond.master))
 
-    @broken_on_ci(exception=ctypes.ArgumentError)
+    @broken_on_ci("TODO: provide a reason", exception=ctypes.ArgumentError)
     def test_bond_devices_are_up(self):
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as bond:
@@ -71,7 +71,7 @@ class LinkBondTests(TestCaseBase):
                 self.assertTrue(iface.is_up(nic2))
                 self.assertTrue(iface.is_up(bond.master))
 
-    @broken_on_ci(exception=ctypes.ArgumentError)
+    @broken_on_ci("TODO: provide a reason", exception=ctypes.ArgumentError)
     def test_bond_exists(self):
         OPTIONS = {'mode': '1', 'miimon': '300'}
         with dummy_devices(2) as (nic1, nic2):
@@ -90,7 +90,7 @@ class LinkBondTests(TestCaseBase):
             expected_bond_set = set([b1.master, b2.master, b3.master])
             self.assertLessEqual(expected_bond_set, actual_bond_set)
 
-    @broken_on_ci(exception=ctypes.ArgumentError)
+    @broken_on_ci("TODO: provide a reason", exception=ctypes.ArgumentError)
     def test_bond_create_failure_on_slave_add(self):
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as base_bond:
@@ -103,7 +103,7 @@ class LinkBondTests(TestCaseBase):
                         broken_bond.add_slaves((nic1, nic2))
                 self.assertFalse(Bond(bond_name).exists())
 
-    @broken_on_ci(exception=ctypes.ArgumentError)
+    @broken_on_ci("TODO: provide a reason", exception=ctypes.ArgumentError)
     def test_bond_edit_failure_on_slave_add(self):
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as base_bond, bond_device() as edit_bond:
@@ -117,7 +117,7 @@ class LinkBondTests(TestCaseBase):
                 self.assertTrue(edit_bond.exists())
                 self.assertEqual(set((nic2,)), edit_bond.slaves)
 
-    @broken_on_ci(exception=ctypes.ArgumentError)
+    @broken_on_ci("TODO: provide a reason", exception=ctypes.ArgumentError)
     def test_bond_set_options(self):
         OPTIONS = {'mode': '1', 'miimon': '300'}
 
@@ -130,7 +130,7 @@ class LinkBondTests(TestCaseBase):
                 _bond = Bond(bond.master)
                 self.assertEqual(_bond.options, OPTIONS)
 
-    @broken_on_ci(exception=ctypes.ArgumentError)
+    @broken_on_ci("TODO: provide a reason", exception=ctypes.ArgumentError)
     def test_bond_edit_options(self):
         OPTIONS_A = {'mode': '1', 'miimon': '300'}
         OPTIONS_B = {'mode': '2'}
@@ -161,7 +161,7 @@ class LinkBondTests(TestCaseBase):
                    else '../static/usr/share/vdsm/bonding-defaults.json')
 class LinkBondSysFSTests(TestCaseBase):
 
-    @broken_on_ci(exception=ctypes.ArgumentError)
+    @broken_on_ci("TODO: provide a reason", exception=ctypes.ArgumentError)
     def test_do_not_detach_slaves_while_changing_options(self):
         OPTIONS = {'miimon': '110'}
 

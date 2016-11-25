@@ -246,7 +246,7 @@ class TestNetinfo(TestCaseBase):
 
         self.assertEqual(ifcfg, {})
 
-    @broken_on_ci(exception=AssertionError)
+    @broken_on_ci("TODO: provide a reason", exception=AssertionError)
     @mock.patch.object(bonding, 'BONDING_DEFAULTS',
                        bonding.BONDING_DEFAULTS
                        if os.path.exists(bonding.BONDING_DEFAULTS)
@@ -444,7 +444,7 @@ class TestIPv6Addresses(TestCaseBase):
             self.assertTrue(addresses.is_ipv6(ip_addrs[0]))
             self.assertTrue(not addresses.is_dynamic(ip_addrs[0]))
 
-    @broken_on_ci()
+    @broken_on_ci("TODO: provide a reason")
     @ValidateRunningAsRoot
     def test_local_auto_with_dynamic_address_from_ra(self):
         IPV6_NETADDRESS = '2001:1:1:1'

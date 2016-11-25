@@ -47,7 +47,7 @@ class SchedulerTests(VdsmTestCase):
         if self.scheduler:
             self.scheduler.stop(wait=True)
 
-    @broken_on_ci(msg="timing sensitive, may fail on overloaded machine")
+    @broken_on_ci("timing sensitive, may fail on overloaded machine")
     @permutations(PERMUTATIONS)
     def test_schedule_after(self, clock):
         self.create_scheduler(clock)
@@ -62,7 +62,7 @@ class SchedulerTests(VdsmTestCase):
         self.assertTrue(task1.call_time < deadline + self.GRACETIME)
         self.assertEquals(task2.call_time, None)
 
-    @broken_on_ci(msg="timing sensitive, may fail on overloaded machine")
+    @broken_on_ci("timing sensitive, may fail on overloaded machine")
     @permutations(PERMUTATIONS)
     def test_schedule_before(self, clock):
         self.create_scheduler(clock)
@@ -77,7 +77,7 @@ class SchedulerTests(VdsmTestCase):
         self.assertTrue(task1.call_time < deadline + self.GRACETIME)
         self.assertEquals(task2.call_time, None)
 
-    @broken_on_ci(msg="timing sensitive, may fail on overloaded machine")
+    @broken_on_ci("timing sensitive, may fail on overloaded machine")
     @permutations(PERMUTATIONS)
     def test_continue_after_failures(self, clock):
         self.create_scheduler(clock)
