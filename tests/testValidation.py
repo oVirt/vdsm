@@ -121,21 +121,20 @@ def slowtest(f):
     return wrapper
 
 
-def brokentest(msg="Test failed but it is known to be broken"):
+def brokentest(reason):
     def wrap(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
             try:
                 return f(*args, **kwargs)
             except:
-                raise SkipTest(msg)
+                raise SkipTest(reason)
         return wrapper
 
     return wrap
 
 
-def broken_on_ci(exception=Exception,
-                 msg='Test failed but it is known to be broken on CI'):
+def broken_on_ci(reason, exception=Exception):
     def wrap(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
@@ -143,7 +142,7 @@ def broken_on_ci(exception=Exception,
                 return f(*args, **kwargs)
             except exception:
                 if os.environ.get('VDSM_AUTOMATION'):
-                    raise SkipTest(msg)
+                    raise SkipTest(reason)
                 else:
                     raise
         return wrapper
