@@ -29,7 +29,6 @@ import timeit
 from contextlib import contextmanager
 
 from testValidation import slowtest
-from testValidation import brokentest
 from testlib import VdsmTestCase
 from testlib import make_uuid
 from testlib import namedTemporaryDir
@@ -92,7 +91,6 @@ class TestIndex(VdsmTestCase):
         self.assertEqual(lease_info.path, index.path)
         self.assertTrue(start_time <= lease_info.modified <= start_time + 1)
 
-    @brokentest("not implemented yet")
     def test_add_write_failure(self):
         with make_index() as base:
             file = FailingWriter(base.path)
@@ -143,7 +141,6 @@ class TestIndex(VdsmTestCase):
             with self.assertRaises(xlease.NoSuchLease):
                 index.remove(lease_id)
 
-    @brokentest("not implemented yet")
     def test_remove_write_failure(self):
         record = xlease.Record(make_uuid(), xlease.RECORD_STALE)
         with make_index((42, record)) as base:
@@ -268,5 +265,7 @@ def write_records(records, lockspace, path):
         buf = xlease.IndexBuffer(file)
         with utils.closing(buf):
             for recnum, record in records:
-                buf.write_record(recnum, record)
-                buf.dump_record(recnum, file)
+                block = buf.copy_block(recnum)
+                with utils.closing(block):
+                    block.write_record(recnum, record)
+                    block.dump(file)

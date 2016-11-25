@@ -364,8 +364,7 @@ class Index(object):
             raise NoSpace(lease_id)
 
         record = Record(lease_id, RECORD_USED)
-        self._buf.write_record(recnum, record)
-        self._buf.dump_record(recnum, self._file)
+        self._write_record(recnum, record)
 
         return LeaseInfo(self._lockspace, lease_id, self._file.name,
                          self._lease_offset(recnum), record.modified)
@@ -386,8 +385,7 @@ class Index(object):
             raise NoSuchLease(lease_id)
 
         record = Record(BLANK_UUID, RECORD_FREE)
-        self._buf.write_record(recnum, record)
-        self._buf.dump_record(recnum, self._file)
+        self._write_record(recnum, record)
 
     def format(self):
         """
@@ -396,7 +394,10 @@ class Index(object):
         Raises:
         - OSError if I/O operation failed
         """
-        # TODO: write metadata
+        # TODO:
+        # - write metadata block
+        # - mark the index as illegal before dumping it, and
+        #   mark as legal only if dump was successful.
         log.info("Formatting index for lockspace %r", self._lockspace)
         record = Record(BLANK_UUID, RECORD_FREE)
         for recnum in range(MAX_RECORDS):
@@ -427,6 +428,20 @@ class Index(object):
 
     def _lease_offset(self, recnum):
         return LEASE_BASE + (recnum * LEASE_SIZE)
+
+    def _write_record(self, recnum, record):
+        """
+        Change record recnum atomically.
+
+        Copy the block where the record is located, modify it and write the
+        block to storage. If this suceeds, write the record to the index
+        buffer.
+        """
+        block = self._buf.copy_block(recnum)
+        with utils.closing(block):
+            block.write_record(recnum, record)
+            block.dump(self._file)
+        self._buf.write_record(recnum, record)
 
 
 class IndexBuffer(object):
@@ -467,27 +482,15 @@ class IndexBuffer(object):
 
     def write_record(self, recnum, record):
         """
-        Write record recnum with lease_id and modified time. The record is not
-        written to storage; call dump_record to write it.
+        Write record recnum to index.
+
+        The caller is responsible for writing the record to storage before
+        updating the index, otherwise the index would not reflect the state on
+        storage.
         """
         offset = self._record_offset(recnum)
         self._buf.seek(offset)
         self._buf.write(record.bytes())
-
-    def dump_record(self, recnum, file):
-        """
-        Write the block where record is located to storage and wait until the
-        data reach storage.
-        """
-        offset = self._record_offset(recnum)
-        block_start = offset - (offset % BLOCK_SIZE)
-        if PY2:
-            block = buffer(self._buf, block_start, BLOCK_SIZE)
-        else:
-            block = memoryview(self._buf)[block_start:block_start + BLOCK_SIZE]
-        file.seek(block_start)
-        file.write(block)
-        os.fsync(file.fileno())
 
     def dump(self, file):
         """
@@ -499,6 +502,11 @@ class IndexBuffer(object):
         file.write(self._buf)
         os.fsync(file.fileno())
 
+    def copy_block(self, recnum):
+        offset = self._record_offset(recnum)
+        block_start = offset - (offset % BLOCK_SIZE)
+        return RecordBlock(self._buf, block_start)
+
     def close(self):
         self._buf.close()
 
@@ -507,6 +515,56 @@ class IndexBuffer(object):
 
     def _record_number(self, offset):
         return (offset - RECORD_BASE) // RECORD_SIZE
+
+
+class RecordBlock(object):
+    """
+    A block sized buffer holding lease records.
+    """
+
+    def __init__(self, index_buf, offset):
+        """
+        Initialize a RecordBlock from an index buffer, copying the block
+        starting at offset.
+
+        Arguments:
+            index_buf (IndexBuffer): the buffer holding the block contents
+            offset (int): offset in of this block in index_buf
+        """
+        self._offset = offset
+        self._buf = mmap.mmap(-1, BLOCK_SIZE, mmap.MAP_SHARED)
+        self._buf[:] = index_buf[offset:offset + BLOCK_SIZE]
+
+    def write_record(self, recnum, record):
+        """
+        Write record at recnum.
+
+        Raises ValueError if this block does not contain recnum.
+        """
+        offset = self._record_offset(recnum)
+        self._buf.seek(offset)
+        self._buf.write(record.bytes())
+
+    def dump(self, file):
+        """
+        Write the block to storage and wait until the data reach storage.
+
+        This is atomic operation, the block is either fully written to storage
+        or not.
+        """
+        file.seek(self._offset)
+        file.write(self._buf)
+        os.fsync(file.fileno())
+
+    def close(self):
+        self._buf.close()
+
+    def _record_offset(self, recnum):
+        offset = RECORD_BASE + recnum * RECORD_SIZE - self._offset
+        last_offset = BLOCK_SIZE - RECORD_SIZE
+        if not 0 <= offset <= last_offset:
+            raise ValueError("recnum %s out of range for this block" % recnum)
+        return offset
 
 
 class DirectFile(object):
