@@ -25,6 +25,8 @@ from tempfile import mkstemp
 import os
 import time
 
+import six
+
 from vdsm.storage import mount
 from vdsm.storage.misc import execCmd
 
@@ -35,6 +37,7 @@ from testlib import namedTemporaryDir, temporaryPath
 from testlib import expandPermutations, permutations
 from testValidation import ValidateRunningAsRoot
 from testValidation import broken_on_ci
+from testValidation import skipif
 from testValidation import stresstest
 import monkeypatch
 
@@ -124,6 +127,7 @@ class TestMountHash(TestCaseBase):
 @expandPermutations
 class MountTests(TestCaseBase):
 
+    @skipif(six.PY3, "needs porting to python 3")
     @ValidateRunningAsRoot
     @broken_on_ci("mount check fails after successful mount", name="TRAVIS_CI")
     def testLoopMount(self):
@@ -137,6 +141,7 @@ class MountTests(TestCaseBase):
                 finally:
                     m.umount()
 
+    @skipif(six.PY3, "needs porting to python 3")
     @ValidateRunningAsRoot
     @broken_on_ci("mount check fails after successful mount", name="TRAVIS_CI")
     def testSymlinkMount(self):
@@ -194,6 +199,7 @@ class MountTests(TestCaseBase):
             mnt = mount.Mount("server:/a/b", "/mnt/server:_a_b")
             self.assertTrue(mnt.isMounted())
 
+    @skipif(six.PY3, "needs porting to python 3")
     def test_is_mounted_with_symlink(self):
         with namedTemporaryDir() as dir:
             file = os.path.join(dir, "file")
@@ -229,6 +235,7 @@ def fake_mounts(mount_lines):
 
 class TestRemoteSdIsMounted(TestCaseBase):
 
+    @skipif(six.PY3, "needs porting to python 3")
     def test_is_mounted(self):
         with fake_mounts([b"server:/path "
                           b"/rhev/data-center/mnt/server:_path "
@@ -236,6 +243,7 @@ class TestRemoteSdIsMounted(TestCaseBase):
             self.assertTrue(mount.isMounted(
                             b"/rhev/data-center/mnt/server:_path"))
 
+    @skipif(six.PY3, "needs porting to python 3")
     def test_is_mounted_deleted(self):
         with fake_mounts([b"server:/path "
                           br"/rhev/data-center/mnt/server:_path\040(deleted) "
@@ -243,18 +251,21 @@ class TestRemoteSdIsMounted(TestCaseBase):
             self.assertTrue(mount.isMounted(
                             b"/rhev/data-center/mnt/server:_path"))
 
+    @skipif(six.PY3, "needs porting to python 3")
     def test_path_with_spaces(self):
         with fake_mounts(
                 [br"server:/a\040b /mnt/server:_a\040b nfs4 opts 0 0"]):
             self.assertTrue(mount.isMounted(b"/mnt/server:_a b"))
             self.assertFalse(mount.isMounted(br"/mnt/server:_a\040b"))
 
+    @skipif(six.PY3, "needs porting to python 3")
     def test_path_with_backslash(self):
         with fake_mounts(
                 [br"server:/a\134040b /mnt/server:_a\134040b nfs4 opts 0 0"]):
             self.assertTrue(mount.isMounted(br"/mnt/server:_a\040b"))
             self.assertFalse(mount.isMounted(br"/mnt/server:_a\134040b"))
 
+    @skipif(six.PY3, "needs porting to python 3")
     def test_is_not_mounted(self):
         with fake_mounts([b"server:/path "
                           b"/rhev/data-center/mnt/server:_path "
@@ -266,6 +277,7 @@ class TestRemoteSdIsMounted(TestCaseBase):
 @expandPermutations
 class TestIsMountedTiming(TestCaseBase):
 
+    @skipif(six.PY3, "needs porting to python 3")
     @stresstest
     @permutations([[1], [50], [100], [1000]])
     def test_is_mounted(self, count):
