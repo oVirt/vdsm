@@ -122,6 +122,24 @@ def slowtest(f):
 
 
 def brokentest(reason):
+    """
+    Mark a test as broken.
+
+    Usage::
+
+        @brokentest("why it is broken...")
+        def test_will_skip_on_failure(self):
+            ...
+
+    WARNING: Must be used as a function call. This usage::
+
+        @brokentest
+        def test_will_never_run(self):
+            ...
+
+    Will disabled the test slienly, it will never run and hide real errors in
+    the code.
+    """
     def wrap(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
@@ -135,6 +153,32 @@ def brokentest(reason):
 
 
 def broken_on_ci(reason, exception=Exception):
+    """
+    Mark a test as broken on the CI, where VDSM_AUTOMATION environment variable
+    is defined.
+
+    Usage::
+
+        @broken_on_ci("why it is broken...")
+        def test_will_skip_on_failure(self):
+            ...
+
+    To skip only if certain expection was raised, you can specify the
+    expection::
+
+        @broken_on_ci("why it is broken...", exception=OSError)
+        def test_will_skip_on_os_error(self):
+            ...
+
+    WARNING: Must be used as a function call. This usage::
+
+        @broken_on_ci
+        def test_will_never_run(self):
+            ...
+
+    Will disabled the test slienly, it will never run and hide real errors in
+    the code.
+    """
     def wrap(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
