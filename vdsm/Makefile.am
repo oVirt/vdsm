@@ -39,9 +39,6 @@ nodist_vdsmexec_SCRIPTS = \
 	vdsm-gencerts.sh \
 	$(NULL)
 
-nodist_vdsm_PYTHON = \
-	dumpStorageTable.py
-
 nodist_vdsm_SCRIPTS = \
 	mk_sysprep_floppy \
 	vdsm-store-net-config
@@ -60,11 +57,9 @@ CLEANFILES = \
 	$(nodist_vdsmlib_PYTHON) \
 	$(nodist_noinst_DATA) \
 	$(nodist_vdsmexec_SCRIPTS) \
-	$(nodist_vdsm_PYTHON) \
 	$(nodist_man8_MANS)
 
 EXTRA_DIST = \
-	dumpStorageTable.py.in \
 	libvirt_password \
 	mk_sysprep_floppy.in \
 	sourceRoute.sh \
@@ -76,7 +71,6 @@ EXTRA_DIST = \
 	$(NULL)
 
 all-local: \
-	$(nodist_vdsm_PYTHON) \
 	$(nodist_vdsm_SCRIPTS) \
 	$(nodist_noinst_DATA) \
 	$(nodist_man8_MANS)

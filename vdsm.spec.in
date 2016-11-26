@@ -1048,7 +1048,6 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_ifcfg_write
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_ifcfg_write
 
-%{_datadir}/%{vdsm_name}/dumpStorageTable.py*
 %{_datadir}/%{vdsm_name}/get-conf-item
 %{_datadir}/%{vdsm_name}/set-conf-item
 %dir %{_datadir}/%{vdsm_name}/gluster
