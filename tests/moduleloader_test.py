@@ -41,11 +41,11 @@ class ImportModulesTest(TestCaseBase):
             sys.path.insert(0, os.path.dirname(path))
             yield importlib.import_module(os.path.basename(path))
 
-    @permutations(
-        [(('a.py', 'b.py'), ('a', 'b')),
-         (('a.py', 'b.py', 'a.pyioas'), ('a', 'b')),
-         (('a.py', 'b.py', '_my.py'), ('a', 'b', '_my'))]
-    )
+    @permutations([
+        (('a.py', 'b.py'), ('a', 'b')),
+        (('a.py', 'b.py', 'a.pyioas'), ('a', 'b')),
+        (('a.py', 'b.py', '_my.py'), ('a', 'b', '_my')),
+    ])
     @forked
     def test_import_modules(self, files, expected_modules):
         with self._setup_test_modules(files) as module_name:
