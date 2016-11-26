@@ -44,9 +44,9 @@ class ImportModulesTest(TestCaseBase):
 
     @permutations(
         [(('a.py', 'b.py'), ('a', 'b')),
-         (('a.py', 'b.py', 'a.pyc', 'a.pyioas'), ('a', 'b')),
-         (('a.py', 'b.py', 'a.pyc', 'a.py'), ('a', 'b')),
-         (('a.py', 'b.py', 'a.pyc', '_my.py'), ('a', 'b', '_my'))]
+         (('a.py', 'b.py', 'a.pyioas'), ('a', 'b')),
+         (('a.py', 'b.py', 'a.py'), ('a', 'b')),
+         (('a.py', 'b.py', '_my.py'), ('a', 'b', '_my'))]
     )
     @forked
     def test_import_modules(self, files, expected_modules):
