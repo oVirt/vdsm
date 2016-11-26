@@ -19,6 +19,46 @@
 #
 
 from __future__ import absolute_import
+
+
+class Unsupported(ImportError):
+    """
+    Raised when a feature is not supported on this platform.
+    """
+
+
+class MissingModule(object):
+    """
+    Placeholder for missing module.
+
+    Can be used when a 3rd party module is not available on this platform, but
+    the code using the module can still partly work, or be tested on the
+    platform without the module.  Any operation on the module will raise
+    Unsupported exception.
+
+    Example usage::
+
+        try:
+            import foobar
+        except ImportError:
+            if six.PY2:
+                raise
+            # foobar is not available yet on python 3 but we can still
+            # test this code using fakefoobar.
+            foobar = compat.MissingModule("foobar is missing")
+
+    This will raise compat.Unsupported::
+
+        foobar.do_something()
+    """
+
+    def __init__(self, message):
+        self._message = message
+
+    def __getattr__(self, name):
+        raise Unsupported(self._message)
+
+
 try:
     import cPickle as pickle
     pickle  # make pyflakes happy
@@ -60,9 +100,3 @@ try:
 except ImportError:
     from vdsm.common.glob import escape as glob_escape
     glob_escape  # make pyflakes happy
-
-
-class Unsupported(ImportError):
-    """
-    Raised when a feature is not supported on this platform.
-    """
