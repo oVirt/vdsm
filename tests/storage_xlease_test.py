@@ -58,109 +58,109 @@ class FailingWriter(xlease.DirectFile):
 class TestIndex(VdsmTestCase):
 
     def test_format(self):
-        with make_index() as index:
-            self.assertEqual(index.leases(), {})
+        with make_volume() as vol:
+            self.assertEqual(vol.leases(), {})
 
     def test_create_read_failure(self):
         with make_leases() as path:
             file = FailingReader(path)
             with utils.closing(file):
                 with self.assertRaises(ReadError):
-                    xlease.Index("lockspace", file)
+                    xlease.LeasesVolume("lockspace", file)
 
     def test_lookup_missing(self):
-        with make_index() as index:
+        with make_volume() as vol:
             with self.assertRaises(xlease.NoSuchLease):
-                index.lookup(make_uuid())
+                vol.lookup(make_uuid())
 
     def test_lookup_stale(self):
         record = xlease.Record(make_uuid(), xlease.RECORD_STALE)
-        with make_index((42, record)) as index:
-            leases = index.leases()
+        with make_volume((42, record)) as vol:
+            leases = vol.leases()
             self.assertEqual(leases[record.resource]["state"], "STALE")
             with self.assertRaises(xlease.StaleLease):
-                index.lookup(record.resource)
+                vol.lookup(record.resource)
 
     def test_add(self):
-        with make_index() as index:
+        with make_volume() as vol:
             lease_id = make_uuid()
             start_time = int(time.time())
-            lease_info = index.add(lease_id)
-        self.assertEqual(lease_info.lockspace, index.lockspace)
+            lease_info = vol.add(lease_id)
+        self.assertEqual(lease_info.lockspace, vol.lockspace)
         self.assertEqual(lease_info.resource, lease_id)
-        self.assertEqual(lease_info.path, index.path)
+        self.assertEqual(lease_info.path, vol.path)
         self.assertTrue(start_time <= lease_info.modified <= start_time + 1)
 
     def test_add_write_failure(self):
-        with make_index() as base:
+        with make_volume() as base:
             file = FailingWriter(base.path)
             with utils.closing(file):
-                index = xlease.Index(base.lockspace, file)
-                with utils.closing(index):
+                vol = xlease.LeasesVolume(base.lockspace, file)
+                with utils.closing(vol):
                     lease_id = make_uuid()
                     with self.assertRaises(WriteError):
-                        index.add(lease_id)
+                        vol.add(lease_id)
                     # Must succeed becuase writng to storage failed
-                    self.assertNotIn(lease_id, index.leases())
+                    self.assertNotIn(lease_id, vol.leases())
 
     def test_leases(self):
-        with make_index() as index:
+        with make_volume() as vol:
             uuid = make_uuid()
-            lease_info = index.add(uuid)
-            leases = index.leases()
+            lease_info = vol.add(uuid)
+            leases = vol.leases()
             self.assertEqual(len(leases), 1)
             self.assertEqual(leases[uuid]["offset"], xlease.LEASE_BASE)
             self.assertEqual(leases[uuid]["state"], "USED")
             self.assertEqual(leases[uuid]["modified"], lease_info.modified)
 
     def test_add_exists(self):
-        with make_index() as index:
+        with make_volume() as vol:
             lease_id = make_uuid()
-            index.add(lease_id)
+            vol.add(lease_id)
             with self.assertRaises(xlease.LeaseExists):
-                index.add(lease_id)
+                vol.add(lease_id)
 
     def test_lookup_exists(self):
-        with make_index() as index:
+        with make_volume() as vol:
             lease_id = make_uuid()
-            add_info = index.add(lease_id)
-            lookup_info = index.lookup(lease_id)
+            add_info = vol.add(lease_id)
+            lookup_info = vol.lookup(lease_id)
             self.assertEqual(add_info, lookup_info)
 
     def test_remove_exists(self):
-        with make_index() as index:
+        with make_volume() as vol:
             leases = [make_uuid() for i in range(3)]
             for lease in leases:
-                index.add(lease)
-            index.remove(leases[1])
-            self.assertNotIn(leases[1], index.leases())
+                vol.add(lease)
+            vol.remove(leases[1])
+            self.assertNotIn(leases[1], vol.leases())
 
     def test_remove_missing(self):
-        with make_index() as index:
+        with make_volume() as vol:
             lease_id = make_uuid()
             with self.assertRaises(xlease.NoSuchLease):
-                index.remove(lease_id)
+                vol.remove(lease_id)
 
     def test_remove_write_failure(self):
         record = xlease.Record(make_uuid(), xlease.RECORD_STALE)
-        with make_index((42, record)) as base:
+        with make_volume((42, record)) as base:
             file = FailingWriter(base.path)
             with utils.closing(file):
-                index = xlease.Index(base.lockspace, file)
-                with utils.closing(index):
+                vol = xlease.LeasesVolume(base.lockspace, file)
+                with utils.closing(vol):
                     with self.assertRaises(WriteError):
-                        index.remove(record.resource)
+                        vol.remove(record.resource)
                     # Must succeed becuase writng to storage failed
-                    self.assertIn(record.resource, index.leases())
+                    self.assertIn(record.resource, vol.leases())
 
     def test_add_first_free_slot(self):
-        with make_index() as index:
+        with make_volume() as vol:
             uuids = [make_uuid() for i in range(4)]
             for uuid in uuids[:3]:
-                index.add(uuid)
-            index.remove(uuids[1])
-            index.add(uuids[3])
-            leases = index.leases()
+                vol.add(uuid)
+            vol.remove(uuids[1])
+            vol.add(uuids[3])
+            leases = vol.leases()
             # The first lease in the first slot
             self.assertEqual(leases[uuids[0]]["offset"],
                              xlease.LEASE_BASE)
@@ -187,16 +187,16 @@ lease_id = make_uuid()
 def bench():
     file = xlease.DirectFile(path)
     with utils.closing(file):
-        index = xlease.Index(lockspace, file)
-        with utils.closing(index, log="test"):
+        vol = xlease.LeasesVolume(lockspace, file)
+        with utils.closing(vol, log="test"):
             try:
-                index.lookup(lease_id)
+                vol.lookup(lease_id)
             except xlease.NoSuchLease:
                 pass
 """
-        with make_index() as index:
+        with make_volume() as vol:
             count = 1000
-            elapsed = timeit.timeit("bench()", setup=setup % index.path,
+            elapsed = timeit.timeit("bench()", setup=setup % vol.path,
                                     number=count)
             print("%d lookups in %.6f seconds (%.6f seconds per lookup)"
                   % (count, elapsed, elapsed / count))
@@ -216,30 +216,30 @@ def bench():
     lease_id = make_uuid()
     file = xlease.DirectFile(path)
     with utils.closing(file):
-        index = xlease.Index(lockspace, file)
-        with utils.closing(index, log="test"):
-            index.add(lease_id)
+        vol = xlease.LeasesVolume(lockspace, file)
+        with utils.closing(vol, log="test"):
+            vol.add(lease_id)
 """
-        with make_index() as index:
+        with make_volume() as vol:
             count = 100
-            elapsed = timeit.timeit("bench()", setup=setup % index.path,
+            elapsed = timeit.timeit("bench()", setup=setup % vol.path,
                                     number=count)
             print("%d adds in %.6f seconds (%.6f seconds per add)"
                   % (count, elapsed, elapsed / count))
 
 
 @contextmanager
-def make_index(*records):
+def make_volume(*records):
     with make_leases() as path:
         lockspace = os.path.basename(os.path.dirname(path))
-        format_index(lockspace, path)
+        format_vol(lockspace, path)
         if records:
             write_records(records, lockspace, path)
         file = xlease.DirectFile(path)
         with utils.closing(file):
-            index = xlease.Index(lockspace, file)
-            with utils.closing(index):
-                yield index
+            vol = xlease.LeasesVolume(lockspace, file)
+            with utils.closing(vol):
+                yield vol
 
 
 @contextmanager
@@ -251,21 +251,21 @@ def make_leases():
         yield path
 
 
-def format_index(lockspace, path):
+def format_vol(lockspace, path):
     file = xlease.DirectFile(path)
     with utils.closing(file):
-        index = xlease.Index(lockspace, file)
-        with utils.closing(index):
-            index.format()
+        vol = xlease.LeasesVolume(lockspace, file)
+        with utils.closing(vol):
+            vol.format()
 
 
 def write_records(records, lockspace, path):
     file = xlease.DirectFile(path)
     with utils.closing(file):
-        buf = xlease.IndexBuffer(file)
-        with utils.closing(buf):
+        index = xlease.VolumeIndex(file)
+        with utils.closing(index):
             for recnum, record in records:
-                block = buf.copy_block(recnum)
+                block = index.copy_block(recnum)
                 with utils.closing(block):
                     block.write_record(recnum, record)
                     block.dump(file)

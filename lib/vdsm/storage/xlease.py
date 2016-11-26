@@ -289,14 +289,17 @@ class Record(object):
         return self._modified
 
 
-class Index(object):
+class LeasesVolume(object):
     """
-    Lease index stored at the start of the xleases volume.
+    Volume holding sanlock leases.
 
-    The index is read from stroage when creating an instance, but never read
-    again from storage. To update the index from storage, recreate it.
+    The volume contains sanlock leases slots. The first lease slot is used for
+    the index keeping volume metadata and the mapping from lease id to leased
+    offset.
 
-    Changes to the index are written immediately back to storage.
+    The index is read when creting an instance, and ever read again. To read
+    the data from storage, recreated the index. Changes to the the insntace are
+    written immediately to storage.
     """
 
     def __init__(self, lockspace, file):
@@ -304,7 +307,7 @@ class Index(object):
                   lockspace, file.name)
         self._lockspace = lockspace
         self._file = file
-        self._buf = IndexBuffer(file)
+        self._index = VolumeIndex(file)
 
     @property
     def lockspace(self):
@@ -326,11 +329,11 @@ class Index(object):
         # TODO: validate lease id is lower case uuid
         log.debug("Looking up lease %r in lockspace %r",
                   lease_id, self._lockspace)
-        recnum = self._buf.find_record(lease_id)
+        recnum = self._index.find_record(lease_id)
         if recnum == -1:
             raise NoSuchLease(lease_id)
 
-        record = self._buf.read_record(recnum)
+        record = self._index.read_record(recnum)
         if record.state == RECORD_STALE:
             raise StaleLease(lease_id, record.modified)
 
@@ -350,16 +353,16 @@ class Index(object):
         # TODO: validate lease id is lower case uuid
         log.info("Adding lease %r in lockspace %r",
                  lease_id, self._lockspace)
-        recnum = self._buf.find_record(lease_id)
+        recnum = self._index.find_record(lease_id)
         if recnum != -1:
-            record = self._buf.read_record(recnum)
+            record = self._index.read_record(recnum)
             if record.state == RECORD_STALE:
                 # TODO: rebuild this record instead of failing
                 raise StaleLease(lease_id, record.modified)
             else:
                 raise LeaseExists(lease_id, record.modified)
 
-        recnum = self._buf.find_record(BLANK_UUID)
+        recnum = self._index.find_record(BLANK_UUID)
         if recnum == -1:
             raise NoSpace(lease_id)
 
@@ -380,7 +383,7 @@ class Index(object):
         # TODO: validate lease id is lower case uuid
         log.info("Removing lease %r in lockspace %r",
                  lease_id, self._lockspace)
-        recnum = self._buf.find_record(lease_id)
+        recnum = self._index.find_record(lease_id)
         if recnum == -1:
             raise NoSuchLease(lease_id)
 
@@ -401,8 +404,8 @@ class Index(object):
         log.info("Formatting index for lockspace %r", self._lockspace)
         record = Record(BLANK_UUID, RECORD_FREE)
         for recnum in range(MAX_RECORDS):
-            self._buf.write_record(recnum, record)
-        self._buf.dump(self._file)
+            self._index.write_record(recnum, record)
+        self._index.dump(self._file)
 
     def leases(self):
         """
@@ -413,7 +416,7 @@ class Index(object):
         for recnum in range(MAX_RECORDS):
             # TODO: handle bad records - currently will raise InvalidRecord and
             # fail the request.
-            record = self._buf.read_record(recnum)
+            record = self._index.read_record(recnum)
             if record.state != RECORD_FREE:
                 leases[record.resource] = {
                     "offset": self._lease_offset(recnum),
@@ -424,7 +427,7 @@ class Index(object):
 
     def close(self):
         log.debug("Closing index for lockspace %r", self._lockspace)
-        self._buf.close()
+        self._index.close()
 
     def _lease_offset(self, recnum):
         return LEASE_BASE + (recnum * LEASE_SIZE)
@@ -437,18 +440,22 @@ class Index(object):
         block to storage. If this suceeds, write the record to the index
         buffer.
         """
-        block = self._buf.copy_block(recnum)
+        block = self._index.copy_block(recnum)
         with utils.closing(block):
             block.write_record(recnum, record)
             block.dump(self._file)
-        self._buf.write_record(recnum, record)
+        self._index.write_record(recnum, record)
 
 
-class IndexBuffer(object):
+class VolumeIndex(object):
+    """
+    Index manintaing volume metadata and the mapping from lease id to lease
+    offset.
+    """
 
     def __init__(self, file):
         """
-        Initialzie a buffer using file.
+        Initialzie a volume index from file.
         """
         self._buf = mmap.mmap(-1, INDEX_SIZE, mmap.MAP_SHARED)
         try:
@@ -528,7 +535,7 @@ class RecordBlock(object):
         starting at offset.
 
         Arguments:
-            index_buf (IndexBuffer): the buffer holding the block contents
+            index_buf (mmap.mmap): the buffer holding the block contents
             offset (int): offset in of this block in index_buf
         """
         self._offset = offset
