@@ -45,7 +45,6 @@ class ImportModulesTest(TestCaseBase):
     @permutations(
         [(('a.py', 'b.py'), ('a', 'b')),
          (('a.py', 'b.py', 'a.pyioas'), ('a', 'b')),
-         (('a.py', 'b.py', 'a.py'), ('a', 'b')),
          (('a.py', 'b.py', '_my.py'), ('a', 'b', '_my'))]
     )
     @forked
