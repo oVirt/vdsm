@@ -28,6 +28,8 @@ import timeit
 
 from contextlib import contextmanager
 
+from fakesanlock import FakeSanlock
+from monkeypatch import MonkeyPatch
 from testValidation import slowtest
 from testlib import VdsmTestCase
 from testlib import make_uuid
@@ -81,15 +83,20 @@ class TestIndex(VdsmTestCase):
             with self.assertRaises(xlease.StaleLease):
                 vol.lookup(record.resource)
 
+    @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_add(self):
         with make_volume() as vol:
             lease_id = make_uuid()
             start_time = int(time.time())
-            lease_info = vol.add(lease_id)
-        self.assertEqual(lease_info.lockspace, vol.lockspace)
-        self.assertEqual(lease_info.resource, lease_id)
-        self.assertEqual(lease_info.path, vol.path)
-        self.assertTrue(start_time <= lease_info.modified <= start_time + 1)
+            lease = vol.add(lease_id)
+            self.assertEqual(lease.lockspace, vol.lockspace)
+            self.assertEqual(lease.resource, lease_id)
+            self.assertEqual(lease.path, vol.path)
+            self.assertTrue(start_time <= lease.modified <= start_time + 1)
+            sanlock = xlease.sanlock
+            res = sanlock.read_resource(lease.path, lease.offset)
+            self.assertEqual(res["lockspace"], lease.lockspace)
+            self.assertEqual(res["resource"], lease.resource)
 
     def test_add_write_failure(self):
         with make_volume() as base:
@@ -103,6 +110,7 @@ class TestIndex(VdsmTestCase):
                     # Must succeed becuase writng to storage failed
                     self.assertNotIn(lease_id, vol.leases())
 
+    @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_leases(self):
         with make_volume() as vol:
             uuid = make_uuid()
@@ -113,13 +121,19 @@ class TestIndex(VdsmTestCase):
             self.assertEqual(leases[uuid]["state"], "USED")
             self.assertEqual(leases[uuid]["modified"], lease_info.modified)
 
+    @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_add_exists(self):
         with make_volume() as vol:
             lease_id = make_uuid()
-            vol.add(lease_id)
+            lease = vol.add(lease_id)
             with self.assertRaises(xlease.LeaseExists):
                 vol.add(lease_id)
+            sanlock = xlease.sanlock
+            res = sanlock.read_resource(lease.path, lease.offset)
+            self.assertEqual(res["lockspace"], lease.lockspace)
+            self.assertEqual(res["resource"], lease.resource)
 
+    @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_lookup_exists(self):
         with make_volume() as vol:
             lease_id = make_uuid()
@@ -127,13 +141,21 @@ class TestIndex(VdsmTestCase):
             lookup_info = vol.lookup(lease_id)
             self.assertEqual(add_info, lookup_info)
 
+    @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_remove_exists(self):
         with make_volume() as vol:
             leases = [make_uuid() for i in range(3)]
             for lease in leases:
                 vol.add(lease)
-            vol.remove(leases[1])
-            self.assertNotIn(leases[1], vol.leases())
+            lease = vol.lookup(leases[1])
+            vol.remove(lease.resource)
+            self.assertNotIn(lease.resource, vol.leases())
+            sanlock = xlease.sanlock
+            res = sanlock.read_resource(lease.path, lease.offset)
+            # There is no sanlock api for removing a resource, so we mark a
+            # removed resource with empty (invalid) lockspace and lease id.
+            self.assertEqual(res["lockspace"], "")
+            self.assertEqual(res["resource"], "")
 
     def test_remove_missing(self):
         with make_volume() as vol:
@@ -153,6 +175,7 @@ class TestIndex(VdsmTestCase):
                     # Must succeed becuase writng to storage failed
                     self.assertIn(record.resource, vol.leases())
 
+    @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_add_first_free_slot(self):
         with make_volume() as vol:
             uuids = [make_uuid() for i in range(4)]
@@ -202,6 +225,7 @@ def bench():
                   % (count, elapsed, elapsed / count))
 
     @slowtest
+    @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_time_add(self):
         setup = """
 import os
@@ -224,6 +248,8 @@ def bench():
             count = 100
             elapsed = timeit.timeit("bench()", setup=setup % vol.path,
                                     number=count)
+            # Note: this does not include the time to create the real sanlock
+            # resource.
             print("%d adds in %.6f seconds (%.6f seconds per add)"
                   % (count, elapsed, elapsed / count))
 

@@ -68,6 +68,17 @@ import time
 
 from collections import namedtuple
 
+import six
+
+try:
+    import sanlock
+except ImportError:
+    if six.PY2:
+        raise
+    # Sanlock is not available yet in python 3, but we can still test this code
+    # with fakesanlock and keep this code python 3 compatible.
+    sanlock = None
+
 from vdsm import utils
 from vdsm.common.osutils import uninterruptible
 
@@ -188,7 +199,7 @@ class NoSpace(Error):
 
 
 class InvalidRecord(Error):
-    msg = "Inavlid record ({self.reason}): {self.record}"
+    msg = "Invalid record ({self.reason}): {self.record}"
 
     def __init__(self, reason, record):
         self.reason = reason
@@ -297,8 +308,8 @@ class LeasesVolume(object):
     the index keeping volume metadata and the mapping from lease id to leased
     offset.
 
-    The index is read when creting an instance, and ever read again. To read
-    the data from storage, recreated the index. Changes to the the insntace are
+    The index is read when creating an instance, and ever read again. To read
+    the data from storage, recreated the index. Changes to the instance are
     written immediately to storage.
     """
 
@@ -349,6 +360,7 @@ class LeasesVolume(object):
         - InvalidRecord if corrupted lease record is found
         - NoSpace if all slots are allocated
         - OSError if I/O operation failed
+        - sanlock.SanlockException if sanlock operation failed.
         """
         # TODO: validate lease id is lower case uuid
         log.info("Adding lease %r in lockspace %r",
@@ -369,8 +381,12 @@ class LeasesVolume(object):
         record = Record(lease_id, RECORD_USED)
         self._write_record(recnum, record)
 
-        return LeaseInfo(self._lockspace, lease_id, self._file.name,
-                         self._lease_offset(recnum), record.modified)
+        offset = self._lease_offset(recnum)
+        sanlock.write_resource(self._lockspace, lease_id,
+                               [(self._file.name, offset)])
+
+        return LeaseInfo(self._lockspace, lease_id, self._file.name, offset,
+                         record.modified)
 
     def remove(self, lease_id):
         """
@@ -379,6 +395,7 @@ class LeasesVolume(object):
         Raises:
         - NoSuchLease if lease was not found
         - OSError if I/O operation failed
+        - sanlock.SanlockException if sanlock operation failed.
         """
         # TODO: validate lease id is lower case uuid
         log.info("Removing lease %r in lockspace %r",
@@ -389,6 +406,13 @@ class LeasesVolume(object):
 
         record = Record(BLANK_UUID, RECORD_FREE)
         self._write_record(recnum, record)
+
+        # TODO: remove the sanlock resource
+        # There is no sanlock api for removing a resource.
+        # This is a hack until we find a better way.
+        # Need to discuss this with David Teigland.
+        offset = self._lease_offset(recnum)
+        sanlock.write_resource("", "", [(self._file.name, offset)])
 
     def format(self):
         """
@@ -434,11 +458,10 @@ class LeasesVolume(object):
 
     def _write_record(self, recnum, record):
         """
-        Change record recnum atomically.
+        Write record recnum to storage atomically.
 
         Copy the block where the record is located, modify it and write the
-        block to storage. If this suceeds, write the record to the index
-        buffer.
+        block to storage. If this succeeds, write the record to the index.
         """
         block = self._index.copy_block(recnum)
         with utils.closing(block):
@@ -449,13 +472,13 @@ class LeasesVolume(object):
 
 class VolumeIndex(object):
     """
-    Index manintaing volume metadata and the mapping from lease id to lease
+    Index maintaining volume metadata and the mapping from lease id to lease
     offset.
     """
 
     def __init__(self, file):
         """
-        Initialzie a volume index from file.
+        Initialize a volume index from file.
         """
         self._buf = mmap.mmap(-1, INDEX_SIZE, mmap.MAP_SHARED)
         try:
