@@ -26,6 +26,7 @@ import sys
 from vdsm import moduleloader
 from vdsm import utils
 from testlib import permutations, expandPermutations, namedTemporaryDir
+from testlib import forked
 from testlib import VdsmTestCase as TestCaseBase
 
 
@@ -47,6 +48,7 @@ class ImportModulesTest(TestCaseBase):
          (('a.py', 'b.py', 'a.pyc', 'a.py'), ('a', 'b')),
          (('a.py', 'b.py', 'a.pyc', '_my.py'), ('a', 'b', '_my'))]
     )
+    @forked
     def test_import_modules(self, files, expected_modules):
         with self._setup_test_modules(files) as module_name:
             result = moduleloader.load_modules(module_name)
