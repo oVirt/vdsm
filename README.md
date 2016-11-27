@@ -51,9 +51,8 @@ the same host which runs Vdsm. At the moment, only docker is supported.
 
 To check if the Vdsm is properly configured to run containers, just do:
 
-# vdsClient -s 0 getVdsCaps | grep containers
-
-	containers = True
+    # vdsClient -s 0 getVdsCaps | grep containers
+            containers = True
 
 This means that this Vdsm could also run docker containers.
 
@@ -61,7 +60,7 @@ Any Engine >= 3.6 could handle containers - they are just VMs from its perspecti
 You just need to set a few custom properties. Run this command
 on your Engine host:
 
-# engine-config -s UserDefinedVMProperties='volumeMap=^[a-zA-Z_-]+:[a-zA-Z_-]+$;containerImage=^[a-zA-Z]+(://|)[a-zA-Z]+$;containerType=^docker$' --cver=4.1
+    # engine-config -s UserDefinedVMProperties='volumeMap=^[a-zA-Z_-]+:[a-zA-Z_-]+$;containerImage=^[a-zA-Z]+(://|)[a-zA-Z]+$;containerType=^docker$' --cver=4.1
 
 replace --cver=4.1 with the version of the Engine you are using.
 There is no need to configure the regular expressions to match your environment,
