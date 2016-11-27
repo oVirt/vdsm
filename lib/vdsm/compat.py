@@ -63,10 +63,8 @@ class MissingModule(object):
 
 try:
     import cPickle as pickle
-    pickle  # make pyflakes happy
 except ImportError:  # py3
-    import pickle
-    pickle  # yep, this is needed twice.
+    import pickle  # NOQA: F401 (unused import)
 
 try:
     # on RHEL/Centos 6.x, the JSON module in the python standard
@@ -75,32 +73,24 @@ try:
     # In general, speedups are first found on the
     # simplejson package.
     import simplejson as json
-    json  # make pyflakes happy
 except ImportError:
     # no big deal, fallback to standard library
-    import json
-    json  # yep, this is needed twice.
+    import json  # NOQA: F401 (unused import)
 
 if six.PY2:
     from cpopen import CPopen
-    CPopen  # make pyflakes happy
 else:
-    from subprocess import Popen as CPopen
-    CPopen  # make pyflakes happy
+    from subprocess import Popen as CPopen  # NOQA: F401 (unused import)
 
 try:
     from contextlib import suppress
-    suppress  # make pyflakes happy
 except ImportError:
-    from vdsm.common.contextlib import suppress
-    suppress  # yep, this is needed twice.
+    from vdsm.common.contextlib import suppress  # NOQA: F401 (unused import)
 
 try:
     from glob import escape as glob_escape
-    glob_escape  # make pyflakes happy
 except ImportError:
-    from vdsm.common.glob import escape as glob_escape
-    glob_escape  # make pyflakes happy
+    from vdsm.common.glob import escape as glob_escape  # NOQA: F401 (unused import)
 
 try:
     import sanlock
