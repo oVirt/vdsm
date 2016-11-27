@@ -31,6 +31,7 @@ from contextlib import contextmanager
 from fakesanlock import FakeSanlock
 from monkeypatch import MonkeyPatch
 from testValidation import slowtest
+from testValidation import brokentest
 from testlib import VdsmTestCase
 from testlib import make_uuid
 from testlib import namedTemporaryDir
@@ -110,6 +111,24 @@ class TestIndex(VdsmTestCase):
                     # Must succeed becuase writng to storage failed
                     self.assertNotIn(lease_id, vol.leases())
 
+    @brokentest("not implemented yet")
+    @MonkeyPatch(xlease, "sanlock", FakeSanlock())
+    def test_add_sanlock_failure(self):
+        with make_volume() as vol:
+            lease_id = make_uuid()
+            sanlock = xlease.sanlock
+            # Make sanlock fail to write a resource
+            sanlock.errors["write_resource"] = sanlock.SanlockException
+            with self.assertRaises(sanlock.SanlockException):
+                vol.add(lease_id)
+            # We should have a stale lease record
+            lease = vol.leases()[lease_id]
+            self.assertEqual(lease["state"], "STALE")
+            # There should be no lease on storage
+            with self.assertRaises(sanlock.SanlockException) as e:
+                sanlock.read_resource(vol.path, lease["offset"])
+            self.assertEqual(e.exception.errno, sanlock.SANLK_LEADER_MAGIC)
+
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_leases(self):
         with make_volume() as vol:
@@ -174,6 +193,26 @@ class TestIndex(VdsmTestCase):
                         vol.remove(record.resource)
                     # Must succeed becuase writng to storage failed
                     self.assertIn(record.resource, vol.leases())
+
+    @brokentest("not implemented yet")
+    @MonkeyPatch(xlease, "sanlock", FakeSanlock())
+    def test_remove_sanlock_failure(self):
+        with make_volume() as vol:
+            lease_id = make_uuid()
+            vol.add(lease_id)
+            sanlock = xlease.sanlock
+            # Make sanlock fail to remove a resource (currnently removing a
+            # resouce by writing invalid lockspace and resoruce name).
+            sanlock.errors["write_resource"] = sanlock.SanlockException
+            with self.assertRaises(sanlock.SanlockException):
+                vol.remove(lease_id)
+            # We should have a stale lease record
+            lease = vol.leases()[lease_id]
+            self.assertEqual(lease["state"], "STALE")
+            # There lease should still be on storage
+            res = sanlock.read_resource(vol.path, lease["offset"])
+            self.assertEqual(res["lockspace"], vol.lockspace)
+            self.assertEqual(res["resource"], lease_id)
 
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_add_first_free_slot(self):
