@@ -63,7 +63,6 @@ import io
 import logging
 import mmap
 import os
-import sys
 import time
 
 from collections import namedtuple
@@ -156,8 +155,6 @@ RECORD_TERM = b"\n"
 
 # Placeholder lease id for free records.
 BLANK_UUID = "00000000-0000-0000-0000-000000000000"
-
-PY2 = sys.version_info[0] == 2
 
 log = logging.getLogger("storage.xlease")
 
@@ -613,7 +610,7 @@ class DirectFile(object):
 
     def readinto(self, buf):
         pos = 0
-        if PY2:
+        if six.PY2:
             # There is no way to create a writable memoryview on mmap object in
             # python 2, so we must read into a temporary buffer and copy into
             # the given buffer.
@@ -634,7 +631,7 @@ class DirectFile(object):
     def write(self, buf):
         pos = 0
         while pos < len(buf):
-            if PY2:
+            if six.PY2:
                 wbuf = buffer(buf, pos)
             else:
                 wbuf = memoryview(buf)[pos:]
