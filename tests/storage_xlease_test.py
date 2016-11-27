@@ -31,7 +31,6 @@ from contextlib import contextmanager
 from fakesanlock import FakeSanlock
 from monkeypatch import MonkeyPatch
 from testValidation import slowtest
-from testValidation import brokentest
 from testlib import VdsmTestCase
 from testlib import make_uuid
 from testlib import namedTemporaryDir
@@ -111,7 +110,6 @@ class TestIndex(VdsmTestCase):
                     # Must succeed becuase writng to storage failed
                     self.assertNotIn(lease_id, vol.leases())
 
-    @brokentest("not implemented yet")
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_add_sanlock_failure(self):
         with make_volume() as vol:
@@ -194,7 +192,6 @@ class TestIndex(VdsmTestCase):
                     # Must succeed becuase writng to storage failed
                     self.assertIn(record.resource, vol.leases())
 
-    @brokentest("not implemented yet")
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_remove_sanlock_failure(self):
         with make_volume() as vol:

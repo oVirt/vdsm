@@ -375,12 +375,15 @@ class LeasesVolume(object):
         if recnum == -1:
             raise NoSpace(lease_id)
 
-        record = Record(lease_id, RECORD_USED)
+        record = Record(lease_id, RECORD_STALE)
         self._write_record(recnum, record)
 
         offset = self._lease_offset(recnum)
         sanlock.write_resource(self._lockspace, lease_id,
                                [(self._file.name, offset)])
+
+        record = Record(lease_id, RECORD_USED)
+        self._write_record(recnum, record)
 
         return LeaseInfo(self._lockspace, lease_id, self._file.name, offset,
                          record.modified)
@@ -401,7 +404,7 @@ class LeasesVolume(object):
         if recnum == -1:
             raise NoSuchLease(lease_id)
 
-        record = Record(BLANK_UUID, RECORD_FREE)
+        record = Record(lease_id, RECORD_STALE)
         self._write_record(recnum, record)
 
         # TODO: remove the sanlock resource
@@ -410,6 +413,9 @@ class LeasesVolume(object):
         # Need to discuss this with David Teigland.
         offset = self._lease_offset(recnum)
         sanlock.write_resource("", "", [(self._file.name, offset)])
+
+        record = Record(BLANK_UUID, RECORD_FREE)
+        self._write_record(recnum, record)
 
     def format(self):
         """
