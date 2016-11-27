@@ -78,8 +78,7 @@ def copyToImage(dstImgPath, methodArgs):
     totalSize = getLengthFromArgs(methodArgs)
     fileObj = methodArgs['fileObj']
     cmd = [constants.EXT_DD, "of=%s" % dstImgPath, "bs=%s" % constants.MEGAB]
-    p = commands.execCmd(cmd, sudo=False, sync=False,
-                         deathSignal=signal.SIGKILL)
+    p = commands.execCmd(cmd, sync=False, deathSignal=signal.SIGKILL)
     try:
         _copyData(fileObj, p.stdin, totalSize)
         p.stdin.close()

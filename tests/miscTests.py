@@ -320,7 +320,7 @@ class AsyncProcTests(TestCaseBase):
 
 class DdWatchCopy(TestCaseBase):
 
-    def testNonAlignedCopy(self, sudo=False):
+    def testNonAlignedCopy(self):
         """
         Test that copying a file with odd length works.
         """

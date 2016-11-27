@@ -245,8 +245,7 @@ class PgrepTests(TestCaseBase):
     def test(self):
         sleepProcs = []
         for i in range(3):
-            sleepProcs.append(commands.execCmd([EXT_SLEEP, "3"], sync=False,
-                              sudo=False))
+            sleepProcs.append(commands.execCmd([EXT_SLEEP, "3"], sync=False))
 
         pids = utils.pgrep(EXT_SLEEP)
         for proc in sleepProcs:
