@@ -93,6 +93,8 @@ from __future__ import absolute_import
 import functools
 import uuid
 
+from api import vdsmapi
+
 from yajsonrpc import stompreactor
 import yajsonrpc
 
@@ -165,6 +167,7 @@ class Namespace(object):
     def __init__(self, name, call):
         self._name = name
         self._call = call
+        self.methods = []
 
     def __getattr__(self, method_name):
         return functools.partial(self._call, self._name, method_name)
@@ -178,15 +181,16 @@ class _Client(object):
     def __init__(self, client, default_timeout):
         self._client = client
         self._default_timeout = default_timeout
-        self.Host = Namespace("Host", self._call)
-        self.Image = Namespace("Image", self._call)
-        self.LVMVolumeGroup = Namespace("LVMVolumeGroup", self._call)
-        self.SDM = Namespace("SDM", self._call)
-        self.StorageDomain = Namespace("StorageDomain", self._call)
-        self.StoragePool = Namespace("StoragePool", self._call)
-        self.Task = Namespace("Task", self._call)
-        self.VM = Namespace("VM", self._call)
-        self.Volume = Namespace("Volume", self._call)
+        schema_path = vdsmapi.find_schema()
+        self._schema = vdsmapi.Schema([schema_path], False)
+        self._create_namespaces()
+
+    def _create_namespaces(self):
+        for method in self._schema.get_methods:
+            namespace, method = method.split('.', 1)
+            if not hasattr(self, namespace):
+                setattr(self, namespace, Namespace(namespace, self._call))
+            getattr(self, namespace).methods.append(method)
 
     def _call(self, namespace, method_name, **kwargs):
         """
