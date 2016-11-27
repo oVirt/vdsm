@@ -20,6 +20,8 @@
 
 from __future__ import absolute_import
 
+import six
+
 
 class Unsupported(ImportError):
     """
@@ -79,8 +81,7 @@ except ImportError:
     import json
     json  # yep, this is needed twice.
 
-import sys
-if sys.version_info[0] == 2:
+if six.PY2:
     from cpopen import CPopen
     CPopen  # make pyflakes happy
 else:
