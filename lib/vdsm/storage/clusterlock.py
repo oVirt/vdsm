@@ -30,13 +30,12 @@ import threading
 
 from contextlib import nested
 
-import sanlock
-
 from vdsm import constants
 from vdsm import utils
 
 from vdsm.common import errors
 from vdsm.common import osutils
+from vdsm.compat import sanlock
 from vdsm.config import config
 from vdsm.storage import exception as se
 from vdsm.storage import misc

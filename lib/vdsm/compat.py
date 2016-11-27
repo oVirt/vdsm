@@ -101,3 +101,13 @@ try:
 except ImportError:
     from vdsm.common.glob import escape as glob_escape
     glob_escape  # make pyflakes happy
+
+try:
+    import sanlock
+except ImportError:
+    if six.PY2:
+        raise
+    # sanlock is not avilable yet on python3, but we can still test the modules
+    # using it with fakesanlock, avoiding python3 regressions.
+    # TODO: remove when sanlock is available on python 3.
+    sanlock = MissingModule("sanlock is not available in python 3")

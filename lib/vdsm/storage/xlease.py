@@ -139,18 +139,10 @@ from contextlib import contextmanager
 
 import six
 
-try:
-    import sanlock
-except ImportError:
-    if six.PY2:
-        raise
-    # Sanlock is not available yet in python 3, but we can still test this code
-    # with fakesanlock and keep this code python 3 compatible.
-    sanlock = None
-
 from vdsm import utils
 from vdsm.common import errors
 from vdsm.common.osutils import uninterruptible
+from vdsm.compat import sanlock
 from vdsm.storage import fsutils
 
 # TODO: Support 4K block size.  This should be encapsulated in the Index class
