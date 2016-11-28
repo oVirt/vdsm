@@ -37,6 +37,7 @@ from vdsm.panic import panic
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
+from vdsm.storage import merge
 from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage.securable import secured, unsecured
@@ -1826,6 +1827,23 @@ class StoragePool(object):
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             img = image.Image(self.poolPath)
             img.merge(sdUUID, vmUUID, imgUUID, ancestor, successor, postZero)
+
+    def prepareMerge(self, subchainInfo):
+        """
+        This operation is required before performing (cold) merge.
+        Prepare merge will calculate the required allocation for base volume,
+        extend the base volume or enlarge it (if the size of volume being
+        removed is larger than the base size), and mark it as ILLEGAL.
+        """
+        merge.prepare(subchainInfo)
+
+    def finalizeMerge(self, subchainInfo):
+        """
+        This operation is required after (cold) merge completes.
+        Finalize will update qcow metadata and the vdsm volume metadata to
+        reflect that a volume is being removed from the chain.
+        """
+        merge.finalize(subchainInfo)
 
     def createVolume(self, sdUUID, imgUUID, size, volFormat, preallocate,
                      diskType, volUUID=None, desc="",

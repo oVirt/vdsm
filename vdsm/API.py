@@ -1203,6 +1203,12 @@ class StoragePool(APIBase):
     def removeVM(self, vmUUID, storagedomainID=None):
         return self._irs.removeVM(self._UUID, vmUUID, storagedomainID)
 
+    def prepareMerge(self, subchainInfo):
+        return self._irs.prepareMerge(self._UUID, subchainInfo)
+
+    def finalizeMerge(self, subchainInfo):
+        return self._irs.finalizeMerge(self._UUID, subchainInfo)
+
 
 class Global(APIBase):
     ctorArgs = []

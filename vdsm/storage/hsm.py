@@ -51,6 +51,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import imagetickets
 from vdsm.storage import iscsi
+from vdsm.storage import merge
 from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage import outOfProcess as oop
@@ -3495,6 +3496,28 @@ class HSM(object):
                             their meaning.
         """
         return {'domains': self.domainMonitor.getHostStatus(domains)}
+
+    @public
+    def prepareMerge(self, spUUID, subchainInfo):
+        msg = "spUUID=%s, subchainInfo=%s" % (spUUID, subchainInfo)
+        vars.task.setDefaultException(se.StorageException(msg))
+        subchain = merge.SubchainInfo(subchainInfo, self._get_hostid())
+        pool = self.getPool(spUUID)
+        sdCache.produce(subchain.sd_id)
+        vars.task.getSharedLock(STORAGE, subchain.sd_id)
+        self._spmSchedule(spUUID, "prepareMerge", pool.prepareMerge,
+                          subchain)
+
+    @public
+    def finalizeMerge(self, spUUID, subchainInfo):
+        msg = "spUUID=%s, subchainInfo=%s" % (spUUID, subchainInfo)
+        vars.task.setDefaultException(se.StorageException(msg))
+        subchain = merge.SubchainInfo(subchainInfo, self._get_hostid())
+        pool = self.getPool(spUUID)
+        sdCache.produce(subchain.sd_id)
+        vars.task.getSharedLock(STORAGE, subchain.sd_id)
+        self._spmSchedule(spUUID, "finalizeMerge", pool.finalizeMerge,
+                          subchain)
 
     def sdm_schedule(self, job):
         """

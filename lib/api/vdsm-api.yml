@@ -9032,6 +9032,41 @@ StoragePool.removeVM:
         name: storagedomainID
         type: *UUID
 
+StoragePool.prepareMerge:
+    added: '4.1'
+    description: This operation is required before performing (cold) merge.
+        Prepare merge will calculate the required allocation for base volume,
+        extend the base volume or enlarge it (if the size of volume being
+        removed is larger than the base size), and mark it as ILLEGAL.
+    params:
+    -   description: The UUID of the Storage Pool
+        name: storagepoolID
+        type: *UUID
+
+    -   description: Subchain to prepare
+        name: subchainInfo
+        type: *SubchainInfo
+    return:
+        description: A task UUID
+        type: *UUID
+
+StoragePool.finalizeMerge:
+    added: '4.1'
+    description: This operation is required after (cold) merge completes.
+        Finalize will update qcow metadata and the vdsm volume metadata to
+        reflect that a volume is being removed from the chain.
+    params:
+    -   description: The UUID of the Storage Pool
+        name: storagepoolID
+        type: *UUID
+
+    -   description: Subchain to finalize
+        name: subchainInfo
+        type: *SubchainInfo
+    return:
+        description: A task UUID
+        type: *UUID
+
 Task.clear:
     added: '3.1'
     description: Discard information about a finished Task.

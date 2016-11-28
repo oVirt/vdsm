@@ -1,3 +1,4 @@
+#
 # Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,39 +18,12 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
+from __future__ import absolute_import
 
-vdsmstoragedir = $(vdsmpylibdir)/storage
 
-dist_vdsmstorage_PYTHON = \
-	__init__.py \
-	asyncevent.py \
-	blkdiscard.py \
-	check.py \
-	clusterlock.py \
-	constants.py \
-	curlImgWrap.py \
-	devicemapper.py \
-	directio.py \
-	exception.py \
-	fileUtils.py \
-	fuser.py \
-	guarded.py \
-	hba.py \
-	imageSharing.py \
-	imagetickets.py \
-	iscsi.py \
-	iscsiadm.py \
-	merge.py \
-	misc.py \
-	mount.py \
-	outOfProcess.py \
-	persistent.py \
-	rwlock.py \
-	securable.py \
-	threadPool.py \
-	threadlocal.py \
-	volumemetadata.py \
-	workarounds.py \
-	xlease.py \
-	$(NULL)
+def prepare(subchainInfo):
+    raise NotImplementedError()
+
+
+def finalize(subchainInfo):
+    raise NotImplementedError()

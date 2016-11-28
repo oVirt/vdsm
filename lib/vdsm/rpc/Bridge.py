@@ -388,6 +388,8 @@ command_info = {
     'StoragePool_getSpmStatus': {'ret': 'spm_st'},
     'StoragePool_spmStart': {'ret': 'uuid'},
     'StoragePool_upgrade': {'ret': 'upgradeStatus'},
+    'StoragePool_prepareMerge': {'ret': 'uuid'},
+    'StoragePool_finalizeMerge': {'ret': 'uuid'},
     'Task_getInfo': {'ret': 'TaskInfo'},
     'Task_getStatus': {'ret': 'taskStatus'},
     'VM_changeCD': {'ret': 'vmList'},
