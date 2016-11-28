@@ -69,6 +69,43 @@ class UnsuitableSCSIDevice(Exception):
     pass
 
 
+class _DeviceTreeCache(object):
+
+    def __init__(self, devices):
+        self._parent_to_device_name = {}
+        # Store a reference so we can look up the params
+        self.devices = devices
+        self._populate(devices)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self._invalidate()
+
+    def get_by_parent(self, capability, parent_name):
+        try:
+            return self.devices[
+                self._parent_to_device_params[capability][parent_name]]
+        except KeyError:
+            return None
+
+    def _populate(self, devices):
+        self._parent_to_device_params = collections.defaultdict(dict)
+
+        for device_name, device_params in devices.items():
+            try:
+                parent = device_params['parent']
+            except KeyError:
+                continue
+
+            self._parent_to_device_params[
+                device_params['capability']][parent] = device_name
+
+    def _invalidate(self):
+        self._parent_to_device_params = {}
+
+
 def _data_processor(target_bus='_ANY'):
     """
     Register function as a data processor for device processing code.
@@ -300,8 +337,7 @@ def _process_parent(device_xml):
     return {}
 
 
-@_data_processor('scsi')
-def _process_scsi_device_params(device_xml):
+def _process_scsi_device_params(device_name, cache):
     """
     The information we need about SCSI device is contained within multiple
     sysfs devices:
@@ -316,34 +352,21 @@ def _process_scsi_device_params(device_xml):
     If the device is queried in hostdev object creation flow, vendor and
     product are still unnecessary, but udev_path becomes essential.
     """
-    def is_parent(device, parent_name):
-        try:
-            return parent_name == device['params']['parent']
-        except KeyError:
-            return False
-
-    def find_device_by_parent(device_cap, parent_name):
-        for device in list_by_caps(device_cap).values():
-            if is_parent(device, parent_name):
-                return device
-
     params = {}
 
-    scsi_name = device_xml.find('name').text
-    storage_dev_params = find_device_by_parent(['storage'], scsi_name)
+    storage_dev_params = cache.get_by_parent('storage', device_name)
     if storage_dev_params:
         for attr in ('vendor', 'product'):
             try:
-                res = storage_dev_params['params'][attr]
+                res = storage_dev_params[attr]
             except KeyError:
                 pass
             else:
                 params[attr] = res
 
-    scsi_generic_dev_params = find_device_by_parent(['scsi_generic'],
-                                                    scsi_name)
+    scsi_generic_dev_params = cache.get_by_parent('scsi_generic', device_name)
     if scsi_generic_dev_params:
-        params['udev_path'] = scsi_generic_dev_params['params']['udev_path']
+        params['udev_path'] = scsi_generic_dev_params['udev_path']
 
     return params
 
@@ -372,15 +395,34 @@ def _process_device_params(device_xml):
 def _get_device_ref_and_params(device_name):
     libvirt_device = libvirtconnection.get().\
         nodeDeviceLookupByName(device_name)
-    return libvirt_device, _process_device_params(libvirt_device.XMLDesc(0))
+    params = _process_device_params(libvirt_device.XMLDesc(0))
+
+    if params['capability'] != 'scsi':
+        return libvirt_device, params
+
+    flags = (_LIBVIRT_DEVICE_FLAGS['storage'] +
+             _LIBVIRT_DEVICE_FLAGS['scsi_generic'])
+    devices = dict((device.name(), _process_device_params(device.XMLDesc(0)))
+                   for device in libvirtconnection.get().listAllDevices(flags))
+    with _DeviceTreeCache(devices) as cache:
+        params.update(_process_scsi_device_params(device_name, cache))
+
+    return libvirt_device, params
 
 
 def _get_devices_from_libvirt(flags=0):
     """
     Returns all available host devices from libvirt processd to dict
     """
-    return dict((device.name(), _process_device_params(device.XMLDesc(0)))
-                for device in libvirtconnection.get().listAllDevices(flags))
+    devices = dict((device.name(), _process_device_params(device.XMLDesc(0)))
+                   for device in libvirtconnection.get().listAllDevices(flags))
+
+    with _DeviceTreeCache(devices) as cache:
+        for device_name, device_params in devices.items():
+            if device_params['capability'] == 'scsi':
+                device_params.update(
+                    _process_scsi_device_params(device_name, cache))
+    return devices
 
 
 def list_by_caps(caps=None):
