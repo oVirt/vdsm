@@ -263,6 +263,10 @@ class Controller(Base):
         if self.device == 'virtio-serial':
             ctrl.setAttrs(index='0', ports='16')
 
+        iothread = self.specParams.get('ioThreadId', None)
+        if iothread is not None:
+            ctrl.appendChildWithArgs('driver', iothread=iothread)
+
         return ctrl
 
     @classmethod

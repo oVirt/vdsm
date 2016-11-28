@@ -444,6 +444,11 @@ class TestVmDevices(XMLTestCase):
             {'device': 'ide', 'index': '0', 'address': self.PCI_ADDR_DICT},
             {'device': 'scsi', 'index': '0', 'model': 'virtio-scsi',
              'address': self.PCI_ADDR_DICT},
+            {'device': 'scsi', 'index': '0', 'model': 'virtio-scsi',
+             'address': self.PCI_ADDR_DICT, 'specParams': {}},
+            {'device': 'scsi', 'model': 'virtio-scsi', 'index': '0',
+             'specParams': {'ioThreadId': '0'},
+             'address': self.PCI_ADDR_DICT},
             {'device': 'virtio-serial', 'address': self.PCI_ADDR_DICT},
             {'device': 'usb', 'model': 'ich9-ehci1', 'index': '0',
              'master': {'startport': '0'}, 'address': self.PCI_ADDR_DICT}]
@@ -456,6 +461,17 @@ class TestVmDevices(XMLTestCase):
             """
             <controller index="0" model="virtio-scsi" type="scsi">
                 <address %s/>
+            </controller>""",
+
+            """
+            <controller index="0" model="virtio-scsi" type="scsi">
+                <address %s/>
+            </controller>""",
+
+            """
+            <controller index="0" model="virtio-scsi" type="scsi">
+                <address %s/>
+                <driver iothread="0"/>
             </controller>""",
 
             """
