@@ -3514,15 +3514,15 @@ class HSM(object):
         self.taskMng.scheduleJob("sdm", None, vars.task,
                                  job.description, job.run)
 
-    @property
-    def pool(self):
+    def _get_hostid(self):
         # Currently we use the pool.id as the hostid for all storage domains.
         # If we get rid of the storage pool then we need to add an interface
         # to fetch the hostid from the StorageDomainManifest object.
         try:
-            return self.pools.values()[0]
+            pool = self.pools.values()[0]
         except IndexError:
             raise se.StoragePoolNotConnected()
+        return pool.id
 
     @public
     def sdm_create_volume(self, job_id, vol_info):
@@ -3535,7 +3535,7 @@ class HSM(object):
 
     @public
     def sdm_copy_data(self, job_id, source, destination):
-        job = sdm.api.copy_data.Job(job_id, self.pool.id,
+        job = sdm.api.copy_data.Job(job_id, self._get_hostid(),
                                     source, destination)
         self.sdm_schedule(job)
 
@@ -3546,7 +3546,7 @@ class HSM(object):
         space on storage domain using virt-sparsify --inplace (without using
         a temporary volume).
         """
-        job = sdm.api.sparsify_volume.Job(job_id, self.pool.id, vol_info)
+        job = sdm.api.sparsify_volume.Job(job_id, self._get_hostid(), vol_info)
         self.sdm_schedule(job)
 
     def sdm_prepare_merge(self, job_id, subchain_info):
