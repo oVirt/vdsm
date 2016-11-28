@@ -6131,6 +6131,44 @@ types:
          value-type: *BulkIoTunePolicy
          type: map
 
+    Lease: &Lease
+        name: Lease
+        description: External sanlock lease
+        type: object
+        added: '4.1'
+        properties:
+        -   name: sd_id
+            description: The storage domain id where this lease is stored
+            type: *UUID
+
+        -   name: lease_id
+            description: The unique id of this lease
+            type: *UUID
+
+    LeaseInfo: &LeaseInfo
+        name: LeaseInfo
+        type: object
+        added: '4.1'
+        description: Information about external sanlock lease
+        properties:
+        -   name: sd_id
+            type: *UUID
+            description: The storage domain id where this lease is stored
+
+        -   name: lease_id
+            type: *UUID
+            description: The id of this lease
+
+        -   name: path
+            type: string
+            description: The path to the lease file. Set when a lease is
+                         created and valid until the lease is remvoed.
+
+        -   name: offset
+            type: ulong
+            description: The offset of the lease in the lease file. Set when a
+                         lease is created and valid until the lease is removed.
+
     LeaseStatus: &LeaseStatus
         added: '4.1'
         description: The status of a sanlock lease
@@ -6144,11 +6182,13 @@ types:
             name: owners
             type:
             - uint
+
         -   description: A monotonically increasing unsigned 64 bit
                 integer, incremented each time a lease is acquired
                 successfully.
             name: version
             type: int
+
         type: object
 
     UpdateVmPolicyParams: &UpdateVmPolicyParams
@@ -8363,6 +8403,66 @@ Image.reconcileVolumeChain:
              chain
         type:
         - *UUID
+
+Lease.create:
+    added: '4.1'
+    description: Create an external lease (only on the SPM host)
+    params:
+    -   name: lease
+        type: *Lease
+        description: The lease to create
+
+    return:
+        description: A task UUID
+        type: *UUID
+
+Lease.delete:
+    added: '4.1'
+    description: Delete an external lease (only on the SPM host)
+    params:
+    -   name: lease
+        type: *Lease
+        description: The lease to delete
+
+    return:
+        description: A task UUID
+        type: *UUID
+
+Lease.rebuild_leases:
+    added: '4.1'
+    description: Rebuild external leases index on storage domain
+    params:
+    -   name: sd_id
+        type: *UUID
+        description: The storage domain where external leases volume is located
+
+    return:
+        description: A task UUID
+        type: *UUID
+
+Lease.info:
+    added: '4.1'
+    description: Return external lease information
+    params:
+    -   name: lease
+        type: *Lease
+        description: The lease to query
+
+    return:
+        description: Information about this lease
+        type: *LeaseInfo
+
+Lease.status:
+    added: '4.1'
+    description: Return the underlying sanlock lease status
+    params:
+    -   name: lease
+        type: *Lease
+        description: Lease to query
+
+    return:
+        description: Information about the sanlock lease status
+        type: *LeaseStatus
 
 LVMVolumeGroup.create:
     added: '3.1'
