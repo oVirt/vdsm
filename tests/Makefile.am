@@ -46,7 +46,7 @@ network_modules = network/*_test.py
 test_modules = \
 	API_test.py \
 	alignmentScanTests.py \
-	api_test.py \
+	api_response_test.py \
 	bridgeTests.py \
 	bulk_sampling_test.py \
 	capsTests.py \
