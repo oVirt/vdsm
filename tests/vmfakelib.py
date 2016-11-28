@@ -33,6 +33,7 @@ from vdsm import constants
 from vdsm import cpuarch
 from vdsm import libvirtconnection
 from vdsm import response
+from vdsm.utils import memoized
 from vdsm.virt import sampling
 
 import clientIF
@@ -41,6 +42,58 @@ from virt import vm
 from testlib import namedTemporaryDir
 from testlib import recorded
 from monkeypatch import MonkeyPatchScope
+
+
+_SCSI = """
+<device>
+    <name>scsi_{0}_0_0_0</name>
+    <path>/sys/devices/pci0000:00/0000:00:1f.2/ata5/host4/target4:0:0/
+{0}:0:0:0</path>
+    <parent>scsi_target4_0_0</parent>
+    <driver>
+        <name>sd</name>
+    </driver>
+    <capability type='scsi'>
+        <host>4</host>
+        <bus>0</bus>
+        <target>0</target>
+        <lun>0</lun>
+        <type>disk</type>
+    </capability>
+</device>
+"""
+
+_STORAGE = """
+<device>
+    <name>block_sdb_Samsung_SSD_850_PRO_256GB_{0}</name>
+    <path>/sys/devices/pci0000:00/0000:00:1f.2/ata5/host4/target4:0:0/
+{0}:0:0:0/block/sdb</path>
+    <parent>scsi_{0}_0_0_0</parent>
+    <capability type='storage'>
+        <block>/dev/sdb</block>
+        <bus>ata</bus>
+        <drive_type>disk</drive_type>
+        <model>Samsung SSD 850</model>
+        <vendor>ATA</vendor>
+        <serial>Samsung_SSD_850_PRO_256GB_{0}</serial>
+        <size>256060514304</size>
+        <logical_block_size>512</logical_block_size>
+        <num_blocks>500118192</num_blocks>
+    </capability>
+</device>
+"""
+
+_SCSI_GENERIC = """
+<device>
+    <name>scsi_generic_sg{0}</name>
+    <path>/sys/devices/pci0000:00/0000:00:1f.2/ata5/host4/target4:0:0/
+4:0:0:0/scsi_generic/sg{0}</path>
+    <parent>scsi_{0}_0_0_0</parent>
+    <capability type='scsi_generic'>
+        <char>/dev/sg1</char>
+    </capability>
+</device>
+"""
 
 
 def Error(code, msg="fake error"):
@@ -106,6 +159,29 @@ class Connection(object):
             device_xml = device_xml_file.read()
 
         return VirNodeDeviceStub(device_xml)
+
+    @memoized
+    def __hostdevtree(self):
+        def string_to_stub(xml_template, index):
+            filled_template = xml_template.format(index)
+            final_xml = filled_template.replace('  ', '').replace('\n', '')
+            return VirNodeDeviceStub(final_xml)
+
+        fakelib_path = os.path.realpath(__file__)
+        dir_name = os.path.split(fakelib_path)[0]
+        xml_path = os.path.join(dir_name, 'devices', 'data', 'devicetree.xml')
+
+        ret = []
+        with open(xml_path, 'r') as device_xml_file:
+            for device in device_xml_file:
+                ret.append(VirNodeDeviceStub(device))
+
+        for index in range(5, 1000):
+            ret.append(string_to_stub(_SCSI, index))
+            ret.append(string_to_stub(_STORAGE, index))
+            ret.append(string_to_stub(_SCSI_GENERIC, index))
+
+        return ret
 
 
 class Secret(object):

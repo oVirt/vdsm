@@ -23,6 +23,7 @@ vdsmdevdatatestsdir = ${vdsmtestsdir}/devices/data
 dist_vdsmdevdatatests_DATA = \
 	block_sda_ssd.xml \
 	computer.xml \
+	devicetree.xml \
 	net_em1_28_d2_44_55_66_88.xml \
 	pci_0000_00_02_0.xml \
 	pci_0000_00_09_0.xml \

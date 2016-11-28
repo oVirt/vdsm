@@ -25,6 +25,7 @@ from virt.vmdevices import hostdevice, network, hwclass
 
 from testlib import VdsmTestCase as TestCaseBase, XMLTestCase
 from testlib import permutations, expandPermutations
+from testValidation import slowtest
 from monkeypatch import MonkeyClass
 
 from vdsm import hooks
@@ -403,6 +404,14 @@ class Connection(fake.Connection):
             return [device for device in self._virNodeDevices if
                     flags & hostdev._LIBVIRT_DEVICE_FLAGS[device.capability]]
 
+    def listAllDevices2(self, flags=0):
+        if not flags:
+            return self.__hostdevtree()
+        else:
+            devices = self.__hostdevtree()
+            return [device for device in devices if
+                    flags & hostdev._LIBVIRT_DEVICE_FLAGS[device.capability]]
+
 
 def _fake_totalvfs(device_name):
     if device_name == 'pci_0000_05_00_1':
@@ -475,6 +484,20 @@ class HostdevTests(TestCaseBase):
         for cap in caps:
             self.assertTrue(set(DEVICES_BY_CAPS[cap].keys()).
                             issubset(devices.keys()))
+
+
+@MonkeyClass(Connection, 'listAllDevices', Connection.listAllDevices2)
+@MonkeyClass(libvirtconnection, 'get', Connection)
+@MonkeyClass(hostdev, '_sriov_totalvfs', _fake_totalvfs)
+@MonkeyClass(hostdev, '_pci_header_type', lambda _: 0)
+@MonkeyClass(hooks, 'after_hostdev_list_by_caps', lambda json: json)
+class HostdevPerformanceTests(TestCaseBase):
+
+    @slowtest
+    def test_3k_storage_devices(self):
+        devices = hostdev.list_by_caps()
+        self.assertEqual(len(devices),
+                         len(libvirtconnection.get().listAllDevices2()))
 
 
 @expandPermutations
