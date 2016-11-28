@@ -225,6 +225,10 @@ class TestPgrep(TestCaseBase):
             for i in range(3):
                 proc = commands.execCmd([EXT_SLEEP, "3"], sync=False)
                 sleepProcs.append(proc)
+            # There is no guarantee which process run first after forking a
+            # child process, make sure all the children are runing before we
+            # look for them.
+            time.sleep(0.5)
             pids = utils.pgrep(EXT_SLEEP)
             for proc in sleepProcs:
                 self.assertTrue(proc.pid in pids,
