@@ -66,7 +66,7 @@ class TestVMBulkSampling(TestCaseBase):
         conn = FakeConnection(vms=vms)
         cache = FakeStatsCache()
 
-        sampler = sampling.VMBulkSampler(conn, conn.getVMs, cache)
+        sampler = sampling.VMBulkstatsMonitor(conn, conn.getVMs, cache)
 
         with cache.await_completion(self.CALL_TIMEOUT):
             self.exc.dispatch(sampler, self.CALL_TIMEOUT)
@@ -82,7 +82,7 @@ class TestVMBulkSampling(TestCaseBase):
         conn = FakeConnection(vms=vms)
         cache = FakeStatsCache()
 
-        sampler = sampling.VMBulkSampler(conn, conn.getVMs, cache)
+        sampler = sampling.VMBulkstatsMonitor(conn, conn.getVMs, cache)
 
         with conn.stuck(self.TIMEOUT * 2):
             with cache.await_completion(self.TIMEOUT):
@@ -103,7 +103,7 @@ class TestVMBulkSampling(TestCaseBase):
         conn = FakeConnection(vms=vms)
         cache = FakeStatsCache()
 
-        sampler = sampling.VMBulkSampler(conn, conn.getVMs, cache)
+        sampler = sampling.VMBulkstatsMonitor(conn, conn.getVMs, cache)
 
         with conn.stuck(self.TIMEOUT * 2):
             with cache.await_completion(self.TIMEOUT, expected=2):
@@ -125,7 +125,7 @@ class TestVMBulkSampling(TestCaseBase):
         conn = FakeConnection(vms=vms)
         cache = FakeStatsCache()
 
-        sampler = sampling.VMBulkSampler(conn, conn.getVMs, cache)
+        sampler = sampling.VMBulkstatsMonitor(conn, conn.getVMs, cache)
 
         with conn.stuck(self.TIMEOUT * 2):
             with cache.await_completion(self.TIMEOUT):

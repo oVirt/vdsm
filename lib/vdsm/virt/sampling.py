@@ -460,7 +460,7 @@ stats_cache = StatsCache()
 _TTL = 40.0
 
 
-class VMBulkSampler(object):
+class VMBulkstatsMonitor(object):
     def __init__(self, conn, get_vms, stats_cache,
                  stats_flags=0, ttl=_TTL):
         self._conn = conn
@@ -469,7 +469,7 @@ class VMBulkSampler(object):
         self._stats_flags = stats_flags
         self._skip_doms = ExpiringCache(ttl)
         self._sampling = threading.Semaphore()  # used as glorified counter
-        self._log = logging.getLogger("virt.sampling.VMBulkSampler")
+        self._log = logging.getLogger("virt.sampling.VMBulkstatsMonitor")
 
     def __call__(self):
         log_status = True
