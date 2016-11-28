@@ -85,12 +85,6 @@ FMT2STR = {
     RAW_FORMAT: qemuimg.FORMAT.RAW,
 }
 
-# Volume lease states
-LEASE_UNSUPPORTED = "UNSUPPORTED"  # The Storage Domain does not support leases
-LEASE_FREE = "FREE"                # The lease is available
-LEASE_EXCLUSIVE = "EXCLUSIVE"      # The lease is held in exlusive mode
-LEASE_SHARED = "SHARED"            # The lease is held in shared mode
-
 BLANK_UUID = "00000000-0000-0000-0000-000000000000"
 
 

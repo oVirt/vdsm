@@ -6131,6 +6131,29 @@ types:
          value-type: *BulkIoTunePolicy
          type: map
 
+    LeaseStatus: &LeaseStatus
+        added: '4.1'
+        description: The status of a sanlock lease
+        name: LeaseStatus
+        properties:
+        -   description: The host ids of the hosts owning this lease. If
+                empty, the lease is free; otherwise the lease is acquired.
+                If a lease is exclusive, contains the host id of the
+                single host owning this lease. If a lease is shared,
+                there may be multiple host ids.
+            name: owners
+            type:
+            - uint
+        -   description: Whether the lease may be owned by multiple hosts.
+            name: shared
+            type: boolean
+        -   description: A monotonically increasing unsigned 64 bit
+                integer, incremented each time a lease is acquired
+                successfully.
+            name: version
+            type: int
+        type: object
+
     UpdateVmPolicyParams: &UpdateVmPolicyParams
         added: '3.4'
         description: QoS policy update data
@@ -7001,17 +7024,6 @@ types:
             LEAF: The Volume is a writable leaf
             SHARED: The Volume is a shared template
 
-    VolumeLeaseStatus: &VolumeLeaseStatus
-        added: '4.1'
-        description: An enumeration of Volume Lease statuses
-        name: VolumeLeaseStatus
-        type: enum
-        values:
-            UNSUPPORTED: The Storage Domain does not support volume leases
-            FREE: The lease is free
-            EXCLUSIVE: The lease is held in exclusive mode
-            SHARED: The lease is held in shared mode
-
     VolumeInfo: &VolumeInfo
         added: '3.1'
         description: Information about a Volume.
@@ -7091,9 +7103,11 @@ types:
             name: image
             type: *UUID
 
-        -   description: The status of the Volume lease
+        -   defaultvalue: null
+            description: The status of the Volume lease, or null if this
+                         storage domains does not support volume leases.
             name: lease
-            type: *VolumeLeaseStatus
+            type: *LeaseStatus
 
         -   description: A monotonically increasing number, incremented each
                          time a volume operation is completed successfully.

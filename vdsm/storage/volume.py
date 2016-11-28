@@ -188,10 +188,13 @@ class VolumeManifest(object):
     def getLeaseStatus(self):
         sd_manifest = sdCache.produce_manifest(self.sdUUID)
         if not sd_manifest.hasVolumeLeases():
-            return sc.LEASE_UNSUPPORTED
-        ver, host_id = sd_manifest.inquireVolumeLease(self.imgUUID,
-                                                      self.volUUID)
-        return sc.LEASE_FREE if host_id is None else sc.LEASE_EXCLUSIVE
+            return None
+        version, host_id = sd_manifest.inquireVolumeLease(self.imgUUID,
+                                                          self.volUUID)
+        # TODO: Move this logic to clusterlock and fix callers to handle list
+        # of owners instead of None.
+        owners = [host_id] if host_id is not None else []
+        return dict(owners=owners, shared=False, version=version)
 
     def metadata2info(self, meta):
         return {
