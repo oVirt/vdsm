@@ -244,17 +244,18 @@ class PidStatTests(TestCaseBase):
 class PgrepTests(TestCaseBase):
     def test(self):
         sleepProcs = []
-        for i in range(3):
-            sleepProcs.append(commands.execCmd([EXT_SLEEP, "3"], sync=False))
-
-        pids = utils.pgrep(EXT_SLEEP)
-        for proc in sleepProcs:
-            self.assertTrue(proc.pid in pids, "pid %d was not located by pgrep"
-                            % proc.pid)
-
-        for proc in sleepProcs:
-            proc.kill()
-            proc.wait()
+        try:
+            for i in range(3):
+                proc = commands.execCmd([EXT_SLEEP, "3"], sync=False)
+                sleepProcs.append(proc)
+            pids = utils.pgrep(EXT_SLEEP)
+            for proc in sleepProcs:
+                self.assertTrue(proc.pid in pids,
+                                "pid %d was not located by pgrep" % proc.pid)
+        finally:
+            for proc in sleepProcs:
+                proc.kill()
+                proc.wait()
 
 
 class GetCmdArgsTests(TestCaseBase):
