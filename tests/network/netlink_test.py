@@ -36,7 +36,7 @@ IP_CIDR = '24'
 
 class NetlinkEventMonitorTests(TestCaseBase):
 
-    TIMEOUT = 1
+    TIMEOUT = 5
 
     @ValidateRunningAsRoot
     def test_iterate_after_events(self):
