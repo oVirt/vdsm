@@ -24,6 +24,8 @@ import sys
 import traceback
 import xml.etree.cElementTree as ET
 
+import six
+
 from vdsm import jsonrpcvdscli
 from vdsm.config import config
 from vdsm.network import api as net_api
@@ -32,6 +34,13 @@ from vdsm.utils import tobool
 
 _DEBUG_MODE = False
 LOG_FILE = '/tmp/libvirthook_ovs_migrate.log'
+
+INTERFACE_CUSTOM_PROPERTY_BLACKLIST = frozenset([
+    ('ifacemacspoof',),
+    ('provider_type', 'EXTERNAL_NETWORK'),
+    ('provider_type', 'OPENSTACK_NETWORK'),
+    ('vmfex',),
+])
 
 
 class VmMigrationHookError(Exception):
@@ -98,19 +107,25 @@ def _process_domxml(tree):
 
 
 def _set_bridge_interfaces(devices, target_vm_conf):
-    target_vm_nets_by_vnic_mac = {dev['macAddr']: dev['network']
-                                  for dev in target_vm_conf['devices']
-                                  if dev.get('type') == 'interface'}
+
+    target_vm_conf_by_mac = {dev['macAddr']: dev
+                             for dev in target_vm_conf['devices']
+                             if dev.get('type') == 'interface'}
+
     for interface in devices.findall('interface'):
         if interface.get('type') == 'bridge':
-            _bind_iface_to_bridge(interface, target_vm_nets_by_vnic_mac)
+            _bind_iface_to_bridge(interface, target_vm_conf_by_mac)
 
 
-def _bind_iface_to_bridge(interface, target_vm_nets_by_vnic_mac):
+def _bind_iface_to_bridge(interface, target_vm_conf_by_mac):
     elem_macaddr = interface.find('mac')
     mac_addr = elem_macaddr.get('address')
+    target_conf = target_vm_conf_by_mac[mac_addr]
 
-    target_vm_net = target_vm_nets_by_vnic_mac[mac_addr]
+    if _protected_customized_interface(target_conf):
+        return
+
+    target_vm_net = target_conf['network']
     target_ovs_bridge = net_api.ovs_bridge(target_vm_net)
     if target_ovs_bridge:
         _bind_iface_to_ovs_bridge(interface, target_ovs_bridge, target_vm_net)
@@ -202,6 +217,15 @@ def _vdscli():
     request_queues = config.get('addresses', 'request_queues')
     request_queue = request_queues.split(',')[0]
     return jsonrpcvdscli.connect(request_queue)
+
+
+def _protected_customized_interface(target_conf):
+    custom_properties = target_conf.get('custom', {})
+    for key, value in six.iteritems(custom_properties):
+        if ((key,) in INTERFACE_CUSTOM_PROPERTY_BLACKLIST or
+                (key, value) in INTERFACE_CUSTOM_PROPERTY_BLACKLIST):
+            return True
+    return False
 
 
 @contextmanager
