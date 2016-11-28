@@ -1872,3 +1872,12 @@ class WrongParentVolume(StorageException):
 
     def __init__(self, vol_id, parent_id):
         self.value = "vol_id=%s, parent_id=%s" % (vol_id, parent_id)
+
+
+class UnexpectedVolumeState(StorageException):
+    code = 922
+    message = "Unexpected volume state."
+
+    def __init__(self, base_vol_id, expected, actual):
+        self.value = ("vol_id=%s, expected=%s, actual=%s" % (
+                      base_vol_id, expected, actual))

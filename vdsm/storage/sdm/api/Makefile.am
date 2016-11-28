@@ -28,6 +28,7 @@ dist_vdsmsdmapi_PYTHON = \
 	base.py \
 	copy_data.py \
 	create_volume.py \
+	merge.py \
 	sparsify_volume.py \
 	move_device.py \
 	reduce_domain.py \

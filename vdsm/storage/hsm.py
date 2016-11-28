@@ -82,6 +82,7 @@ import storageServer
 
 import sdm.api.create_volume
 import sdm.api.copy_data
+import sdm.api.merge
 import sdm.api.move_device
 import sdm.api.sparsify_volume
 import sdm.api.amend_volume
@@ -3576,7 +3577,9 @@ class HSM(object):
 
     @public
     def sdm_merge(self, job_id, subchain_info):
-        raise NotImplementedError()
+        subchain = merge.SubchainInfo(subchain_info, self._pool.id)
+        job = sdm.api.merge.Job(job_id, subchain)
+        self.sdm_schedule(job)
 
     @public
     def sdm_move_domain_device(self, job_id, move_params):
