@@ -1657,11 +1657,5 @@ class SDM(APIBase):
     def amend_volume(self, job_id, vol_info, vol_attr):
         return self._irs.sdm_amend_volume(job_id, vol_info, vol_attr)
 
-    def prepare_merge(self, job_id, subchain_info):
-        return self._irs.sdm_prepare_merge(job_id, subchain_info)
-
     def merge(self, job_id, subchain_info):
         return self._irs.sdm_merge(job_id, subchain_info)
-
-    def finalize_merge(self, job_id, subchain_info):
-        return self._irs.sdm_finalize_merge(job_id, subchain_info)
