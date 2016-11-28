@@ -112,13 +112,15 @@ import yajsonrpc
 DEFAULT_PORT = 54321
 
 
-def connect(host, port=DEFAULT_PORT, use_tls=True, timeout=60):
+def connect(
+        host, port=DEFAULT_PORT, use_tls=True, timeout=60,
+        gluster_enabled=False):
     try:
         client = stompreactor.SimpleClient(host, port, use_tls)
     except Exception as e:
         raise ConnectionError(host, port, use_tls, timeout, e)
 
-    return _Client(client, timeout)
+    return _Client(client, timeout, gluster_enabled)
 
 
 class Error(Exception):
@@ -195,12 +197,14 @@ class _Client(object):
     A wrapper class for client class. Encapulates client run and responsible
     for closing client connection in the end of its run.
     """
-    def __init__(self, client, default_timeout):
+    def __init__(self, client, default_timeout, gluster_enabled=False):
         self._client = client
         self._default_timeout = default_timeout
         try:
-            schema_path = vdsmapi.find_schema()
-            self._schema = vdsmapi.Schema([schema_path], False)
+            schema_paths = [vdsmapi.find_schema()]
+            if gluster_enabled:
+                schema_paths.append(vdsmapi.find_schema('vdsm-api-gluster'))
+            self._schema = vdsmapi.Schema(schema_paths, False)
         except vdsmapi.SchemaNotFound as e:
             raise MissingSchemaError(e)
         self._create_namespaces()
