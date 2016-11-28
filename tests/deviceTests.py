@@ -439,6 +439,43 @@ class TestVmDevices(XMLTestCase):
             testvm.updateDevice(params)
             self.assertXMLEqual(testvm._dom.devXml, updated_xml)
 
+    def testUpdateDriverInSriovInterface(self):
+        interface_xml = """<?xml version="1.0" encoding="utf-8"?>
+        <domain type="kvm"
+          xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
+          <devices>
+            <interface type='hostdev' managed='no'>
+              <source>
+               <address type='pci' domain='0x0000' bus='0x00' slot='0x07'
+               function='0x0'/>
+              </source>
+              <driver name='vfio' queues='10'/>
+              <mac address='ff:ff:ff:ff:ff:ff'/>
+              <vlan>
+                <tag id='3'/>
+              </vlan>
+              <boot order='9'/>
+            </interface>
+          </devices>
+        </domain>"""
+        with fake.VM() as testvm:
+            interface_conf = {
+                'type': hwclass.NIC, 'device': 'hostdev',
+                'hostdev': 'pci_0000_00_07_0', 'macAddr': 'ff:ff:ff:ff:ff:ff',
+                'specParams': {'vlanid': 3}, 'bootOrder': '9'}
+            interface_dev = vmdevices.network.Interface(
+                testvm.conf, testvm.log, **interface_conf)
+
+            testvm.conf['devices'] = [interface_conf]
+            device_conf = [interface_dev]
+            testvm._domain = DomainDescriptor(interface_xml)
+
+            vmdevices.network.Interface.update_device_info(
+                testvm, device_conf)
+
+            self.assertEqual(interface_dev.driver,
+                             {'queues': '10', 'name': 'vfio'})
+
     def testControllerXML(self):
         devConfs = [
             {'device': 'ide', 'index': '0', 'address': self.PCI_ADDR_DICT},
