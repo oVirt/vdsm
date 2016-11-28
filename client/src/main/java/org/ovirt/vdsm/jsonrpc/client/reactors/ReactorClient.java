@@ -137,8 +137,8 @@ public abstract class ReactorClient {
             if (!isOpen()) {
                 throw new ClientConnectionException("Connection failed");
             }
-            postConnect(getPostConnectCallback());
             this.closing.set(false);
+            postConnect(getPostConnectCallback());
         } catch (InterruptedException | ExecutionException e) {
             logException(log, "Exception during connection", e);
             final String message = "Connection issue " + e.getMessage();
@@ -169,6 +169,7 @@ public abstract class ReactorClient {
     }
 
     public final void disconnect(String message) {
+        this.closing.set(true);
         byte[] response = buildNetworkResponse(message);
         postDisconnect();
         closeChannel();
@@ -180,6 +181,7 @@ public abstract class ReactorClient {
     }
 
     private Future<Void> scheduleClose(final String message) {
+        this.closing.set(true);
         final Callable<Void> disconnectCallable = new Callable<Void>() {
             @Override
             public Void call() {
@@ -252,6 +254,7 @@ public abstract class ReactorClient {
     }
 
     protected void closeChannel() {
+        this.closing.set(true);
         final Callable<Void> callable = new Callable<Void>() {
 
             @Override
