@@ -112,7 +112,7 @@ echo "81212590184644762"
         with namedTemporaryDir() as dirName:
             # two nested with blocks to be python 2.6 friendly
             with tempfile.NamedTemporaryFile(dir=dirName, delete=False) as f:
-                code = """#!/usr/bin/python
+                code = """#!/usr/bin/python2
 
 import os
 import hooking

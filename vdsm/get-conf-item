@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 # Access python's config files from bash.
 # Usage: get-conf-item filename.conf section item default

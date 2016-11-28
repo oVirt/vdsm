@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python2 -u
 #
 # Copyright 2014-2016 Red Hat, Inc.
 #

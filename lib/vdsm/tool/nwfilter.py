@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/python2
 # Copyright 2012-2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify

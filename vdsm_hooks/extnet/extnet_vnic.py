@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 """
 Tweak an interface defintion so that its source is forced to be a specified
 network. Applied on a per vnic basis, it gets triggered and used by two
