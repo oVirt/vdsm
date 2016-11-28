@@ -231,8 +231,7 @@ class TestPgrep(TestCaseBase):
             time.sleep(0.5)
             pids = utils.pgrep(EXT_SLEEP)
             for proc in sleepProcs:
-                self.assertTrue(proc.pid in pids,
-                                "pid %d was not located by pgrep" % proc.pid)
+                self.assertIn(proc.pid, pids)
         finally:
             for proc in sleepProcs:
                 proc.kill()
