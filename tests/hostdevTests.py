@@ -25,7 +25,6 @@ from virt.vmdevices import hostdevice, network, hwclass
 
 from testlib import VdsmTestCase as TestCaseBase, XMLTestCase
 from testlib import permutations, expandPermutations
-from testValidation import slowtest
 from monkeypatch import MonkeyClass
 
 from vdsm import hooks
@@ -493,7 +492,6 @@ class HostdevTests(TestCaseBase):
 @MonkeyClass(hooks, 'after_hostdev_list_by_caps', lambda json: json)
 class HostdevPerformanceTests(TestCaseBase):
 
-    @slowtest
     def test_3k_storage_devices(self):
         devices = hostdev.list_by_caps()
         self.assertEqual(len(devices),
