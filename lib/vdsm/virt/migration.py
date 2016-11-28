@@ -287,6 +287,10 @@ class SourceThread(object):
     def _finishSuccessfully(self):
         self._progress = 100
         if not self.hibernating:
+            # TODO: We could use a timeout on the wait to be more robust
+            # against "impossible" failures. But we don't have a good value to
+            # use here now.
+            self._vm.stopped_migrated_event_processed.wait()
             self._vm.setDownStatus(NORMAL, vmexitreason.MIGRATION_SUCCEEDED)
             self.status['status']['message'] = 'Migration done'
         else:

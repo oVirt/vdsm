@@ -278,6 +278,7 @@ class Vm(object):
         self._vmStartEvent = threading.Event()
         self._vmAsyncStartError = None
         self._vmCreationEvent = threading.Event()
+        self.stopped_migrated_event_processed = threading.Event()
         self._pathsPreparedEvent = threading.Event()
         self._devices = self._emptyDevMap()
 
@@ -4258,10 +4259,13 @@ class Vm(object):
         if event == libvirt.VIR_DOMAIN_EVENT_STOPPED:
             if (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_MIGRATED and
                     self.lastStatus == vmstatus.MIGRATION_SOURCE):
-                hooks.after_vm_migrate_source(self._domain.xml, self.conf)
-                for dev in self._customDevices():
-                    hooks.after_device_migrate_source(
-                        dev._deviceXML, self.conf, dev.custom)
+                try:
+                    hooks.after_vm_migrate_source(self._domain.xml, self.conf)
+                    for dev in self._customDevices():
+                        hooks.after_device_migrate_source(
+                            dev._deviceXML, self.conf, dev.custom)
+                finally:
+                    self.stopped_migrated_event_processed.set()
             elif (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SAVED and
                     self.lastStatus == vmstatus.SAVING_STATE):
                 hooks.after_vm_hibernate(self._domain.xml, self.conf)
