@@ -39,9 +39,23 @@ _DOCKER = utils.CommandPath("docker",
 
 
 # TODO: networking
-RunConfig = collections.namedtuple(
-    'RunConfig', ['image_path', 'volume_paths', 'volume_mapping',
-                  'memory_size_mib', 'network'])
+_RunConfig = collections.namedtuple(
+    '_RunConfig', ['image_path', 'volume_paths', 'volume_mapping',
+                   'memory_size_mib', 'network'])
+
+
+class RunConfig(_RunConfig):
+
+    @classmethod
+    def from_domain(cls, dom):
+        mem = dom.memory()
+        path, volumes = dom.drives()
+        mapping = dom.drives_map()
+        try:
+            net = dom.network()
+        except xmlfile.ConfigError:
+            net = config.get('containers', 'network_name')
+        return cls(path, volumes, mapping, mem, net)
 
 
 class Runtime(object):
@@ -93,14 +107,7 @@ class Runtime(object):
     def configure(self, xml_tree):
         self._log.debug('configuring runtime %r', self.uuid)
         dom = xmlfile.DomainParser(xml_tree, self._uuid, self._log)
-        mem = dom.memory()
-        path, volumes = dom.drives()
-        mapping = dom.drives_map()
-        try:
-            net = dom.network()
-        except xmlfile.ConfigError:
-            net = config.get('containers', 'network_name')
-        self._run_conf = RunConfig(path, volumes, mapping, mem, net)
+        self._run_conf = RunConfig.from_domain(dom)
         self._log.debug('configured runtime %s: %s',
                         self.uuid, self._run_conf)
 
