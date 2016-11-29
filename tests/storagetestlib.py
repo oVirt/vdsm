@@ -253,7 +253,7 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
             voluuid, sc.VOLUME_MDNUMBLKS) as slot:
         lvm.addtag(sduuid, voluuid, "%s%s" % (sc.TAG_PREFIX_MD, slot))
         lvm.addtag(sduuid, voluuid, "%s%s" % (sc.TAG_PREFIX_PARENT,
-                                              sc.BLANK_UUID))
+                                              parent_vol_id))
         lvm.addtag(sduuid, voluuid, "%s%s" % (sc.TAG_PREFIX_IMAGE, imguuid))
 
     vol_class = sd_manifest.getVolumeClass()
