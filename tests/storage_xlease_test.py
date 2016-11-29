@@ -23,7 +23,6 @@ from __future__ import print_function
 
 import io
 import os
-import time
 import timeit
 
 from contextlib import contextmanager
@@ -75,24 +74,22 @@ class TestIndex(VdsmTestCase):
             with self.assertRaises(xlease.NoSuchLease):
                 vol.lookup(make_uuid())
 
-    def test_lookup_stale(self):
-        record = xlease.Record(make_uuid(), xlease.RECORD_STALE)
+    def test_lookup_updating(self):
+        record = xlease.Record(make_uuid(), 0, updating=True)
         with make_volume((42, record)) as vol:
             leases = vol.leases()
-            self.assertEqual(leases[record.resource]["state"], "STALE")
-            with self.assertRaises(xlease.StaleLease):
+            self.assertTrue(leases[record.resource]["updating"])
+            with self.assertRaises(xlease.LeaseUpdating):
                 vol.lookup(record.resource)
 
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_add(self):
         with make_volume() as vol:
             lease_id = make_uuid()
-            start_time = int(time.time())
             lease = vol.add(lease_id)
             self.assertEqual(lease.lockspace, vol.lockspace)
             self.assertEqual(lease.resource, lease_id)
             self.assertEqual(lease.path, vol.path)
-            self.assertTrue(start_time <= lease.modified <= start_time + 1)
             sanlock = xlease.sanlock
             res = sanlock.read_resource(lease.path, lease.offset)
             self.assertEqual(res["lockspace"], lease.lockspace)
@@ -119,9 +116,9 @@ class TestIndex(VdsmTestCase):
             sanlock.errors["write_resource"] = sanlock.SanlockException
             with self.assertRaises(sanlock.SanlockException):
                 vol.add(lease_id)
-            # We should have a stale lease record
+            # We should have an updating lease record
             lease = vol.leases()[lease_id]
-            self.assertEqual(lease["state"], "STALE")
+            self.assertTrue(lease["updating"])
             # There should be no lease on storage
             with self.assertRaises(sanlock.SanlockException) as e:
                 sanlock.read_resource(vol.path, lease["offset"])
@@ -133,10 +130,13 @@ class TestIndex(VdsmTestCase):
             uuid = make_uuid()
             lease_info = vol.add(uuid)
             leases = vol.leases()
-            self.assertEqual(len(leases), 1)
-            self.assertEqual(leases[uuid]["offset"], xlease.LEASE_BASE)
-            self.assertEqual(leases[uuid]["state"], "USED")
-            self.assertEqual(leases[uuid]["modified"], lease_info.modified)
+            expected = {
+                uuid: {
+                    "offset": lease_info.offset,
+                    "updating": False,
+                }
+            }
+            self.assertEqual(leases, expected)
 
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_add_exists(self):
@@ -181,7 +181,7 @@ class TestIndex(VdsmTestCase):
                 vol.remove(lease_id)
 
     def test_remove_write_failure(self):
-        record = xlease.Record(make_uuid(), xlease.RECORD_STALE)
+        record = xlease.Record(make_uuid(), 0, updating=True)
         with make_volume((42, record)) as base:
             file = FailingWriter(base.path)
             with utils.closing(file):
@@ -203,9 +203,9 @@ class TestIndex(VdsmTestCase):
             sanlock.errors["write_resource"] = sanlock.SanlockException
             with self.assertRaises(sanlock.SanlockException):
                 vol.remove(lease_id)
-            # We should have a stale lease record
+            # We should have an updating lease record
             lease = vol.leases()[lease_id]
-            self.assertEqual(lease["state"], "STALE")
+            self.assertTrue(lease["updating"])
             # There lease should still be on storage
             res = sanlock.read_resource(vol.path, lease["offset"])
             self.assertEqual(res["lockspace"], vol.lockspace)
@@ -222,14 +222,14 @@ class TestIndex(VdsmTestCase):
             leases = vol.leases()
             # The first lease in the first slot
             self.assertEqual(leases[uuids[0]]["offset"],
-                             xlease.LEASE_BASE)
+                             xlease.USER_RESOURCE_BASE)
             # The forth lease was added in the second slot after the second
             # lease was removed.
             self.assertEqual(leases[uuids[3]]["offset"],
-                             xlease.LEASE_BASE + xlease.LEASE_SIZE)
+                             xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE)
             # The third lease in the third slot
             self.assertEqual(leases[uuids[2]]["offset"],
-                             xlease.LEASE_BASE + xlease.LEASE_SIZE * 2)
+                             xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 2)
 
     @slowtest
     def test_time_lookup(self):
@@ -309,7 +309,7 @@ def make_leases():
     with namedTemporaryDir() as tmpdir:
         path = os.path.join(tmpdir, "xleases")
         with io.open(path, "wb") as f:
-            f.truncate(xlease.INDEX_SIZE)
+            f.truncate(xlease.USER_RESOURCE_BASE)
         yield path
 
 

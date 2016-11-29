@@ -20,40 +20,108 @@
 
 """
 xlease - manage external leases
+===============================
 
-External leases are stored in the xleases special volume. A lease is a 2048
-blocks area at some offset in the xleases volume, associated with a lockspace
-(the domain id) and a unique name. Sanlock does not manage the mapping between
-the lease name and the offset of the lease; this module removes this gap.
+Overview
+--------
 
-This module manages the mapping between Sanlock resource name and lease offset.
-When creating a lease, we find the first free slot, allocate it for the lease,
-and create a sanlock resource at the associated offset. If the xleases volume
-is full, we extend it to make room for more leases. This operation must be
-performed only on the SPM.
+External leases are stored in the xleases special volume. A lease is a
+2048 blocks area at some offset in the xleases volume, associated with a
+lockspace (the domain id) and a unique name. Sanlock does not manage the
+mapping between the lease name and the offset of the lease; this module
+removes this gap.
 
-Once a lease is created, any host can get the lease offset using the lease id
-and use the lease offset to acquire the sanlock resource.
+This module manages the mapping between Sanlock resource name and lease
+offset.  When creating a lease, we find the first free slot, allocate it
+for the lease, and create a sanlock resource at the associated offset.
+If the xleases volume is full, we extend it to make room for more
+leases. This operation must be performed only on the SPM.
 
-When removing a lease, we clear the sanlock resource and mark the slot as free
-in the index. This operation must also be done on the SPM.
+Once a lease is created, any host can get the lease offset using the
+lease id and use the lease offset to acquire the sanlock resource.
 
-Sanlock keeps the lockspace name and the resource name in the lease area.  We
-can rebuild the mapping from lease id to lease offset by reading all the
-resources in a volume . The index is actually a cache of the actual data on
-storage.
+When removing a lease, we clear the sanlock resource and mark the slot
+as free in the index. This operation must also be done on the SPM.
 
-The index format is:
+Sanlock keeps the lockspace name and the resource name in the lease
+area.  We can rebuild the mapping from lease id to lease offset by
+reading all the resources in a volume . The index is actually a cache of
+the actual data on storage.
 
-block       used for
----------------------------------
-0-3         metadata
-4-503       lease records 0-3999
-504-2047    unused
 
-The lease offset is:
+Leases volume format
+--------------------
 
-    lease_base + record_number * lease_size
+The volume format was designed so it will be possible to use the same
+format in a future sanlock version that will manage the internal index
+itself.
+
+The volume is composed of "slots" where each slot is 1MiB for 512 bytes
+sector size, and 8MiB for 4K sectors.
+
+1. Lockspace slot
+2. Index slot
+3. Sanlock internal resource slot
+4. User resources slots
+
+The lockspace slot
+------------------
+
+In vdsm it starts at offset 0, and unused, since vdsm is using the "ids"
+special volume for the lockspace. In a future storage format we may
+remove the "ids" volume and use the integrated sanlock volume format.
+
+The index slot
+--------------
+
+The index keeps the mapping between lease id and lease offset. The index
+is composed of sectors, 512 bytes or 4K bytes depending on the
+underlying storage.
+
+The first block of the index is the metadata block, using this format:
+
+- magic number (0x12152016)
+- padding byte
+- version (string, 4 bytes)
+- padding byte
+- lockspace (string, 48 bytes)
+- padding
+- timestamp (string, 10 bytes)
+- padding
+- updating flag (1 byte)
+- padding
+- newline
+
+The next blocks are record blocks containing 8 records for sector size
+of 512 bytes, or 64 records for sector size of 4K.
+
+Each record contain these fields:
+
+- resource name (string, 48 bytes)
+- padding byte
+- offset  (string, 11 bytes)
+- padding byte
+- updating flag (1 byte)
+- reserved (1 byte)
+- newline
+
+The lease offset associated with a record is computed from the record
+offset.  This ensures the integrity of the index; there is no way to
+have two records pointing to the same offset.
+
+To make debugging easier, the offset is also included in record itself,
+but the program managing the index should never use this value.
+
+The sanlock internal resource slot
+----------------------------------
+
+This slot is reserved for sanlock for synchronizing access to the index.
+This area is not used in vdsm.
+
+The user resources slots
+------------------------
+
+This is where user leases are created.
 
 """
 
@@ -63,7 +131,7 @@ import io
 import logging
 import mmap
 import os
-import time
+import struct
 
 from collections import namedtuple
 
@@ -88,18 +156,21 @@ from vdsm.common.osutils import uninterruptible
 from vdsm.storage.constants import BLOCK_SIZE
 
 # Size required for Sanlock lease.
-LEASE_SIZE = 2048 * BLOCK_SIZE
+SLOT_SIZE = 2048 * BLOCK_SIZE
 
-# The first lease slot is used for the index.
-LEASE_BASE = LEASE_SIZE
+# Volume layout - offset from start of the volume.
+LOCKSPACE_BASE = 0
+INDEX_BASE = SLOT_SIZE
+PRIVATE_RESOURCE_BASE = 2 * SLOT_SIZE
+USER_RESOURCE_BASE = 3 * SLOT_SIZE
 
 # The first blocks are used for index matadata
-METADATA_SIZE = 4 * BLOCK_SIZE
+METADATA_SIZE = BLOCK_SIZE
 
-# The offset of the first lease record
+# The offset of the first lease record from INDEX_BASE
 RECORD_BASE = METADATA_SIZE
 
-# The number of lease records supported. We can use up 16352 records, but I
+# The number of lease records supported. We can use about 16000 records, but I
 # don't expect that we will need more than 2000 vm leases per data center.  To
 # be on the safe size, lets double that number.  Note that we need 1GiB lease
 # space for 1024 leases.
@@ -113,48 +184,20 @@ RECORD_SIZE = 64
 # Each lookup will read this size from storage.
 INDEX_SIZE = METADATA_SIZE + (MAX_RECORDS * RECORD_SIZE)
 
-# Record format - everything is text to make it easy to debug using standard
-# tools like less and grep, but using fixed width to make it efficient if we
-# integrate it into sanlock later.
-#
-# The format is:
-#
-#     <resource-name>:<state>:<timestamp>:<padding>\n
-#
-# Used record::
-#
-#     34e5a2a8-1a4d-45a0-a4b2-c88157f7a5a9:U:1479914506:0000000000000\n
-#
-# Stale record::
-#
-#     cce4623a-6229-447f-8156-c8d61d826085:S:1479914511:0000000000000\n
-#
-# Free record::
-#
-#     00000000-0000-0000-0000-000000000000:F:1479914552:0000000000000\n
+# lease_id \0 offset \0 updating reserved \n
+RECORD_STRUCT = struct.Struct("48s x 11s x 3c")
 
-# A sanlock resource exists for this lease record.
-RECORD_USED = b"U"
+# lease_id \0
+LOOKUP_STRUCT = struct.Struct("48s x")
 
-# Record is not used.
-RECORD_FREE = b"F"
-
-# Add or remove operation is in progress or was interrupted. The record should
-# be rebuild from storage.
-RECORD_STALE = b"S"
-
-# State names reported in leases
-RECORD_STATES = {
-    RECORD_USED: "USED",
-    RECORD_FREE: "FREE",
-    RECORD_STALE: "STALE",
-}
-
-RECORD_SEP = b":"
 RECORD_TERM = b"\n"
 
-# Placeholder lease id for free records.
-BLANK_UUID = "00000000-0000-0000-0000-000000000000"
+# Sentinel for marking a free record
+BLANK_LEASE = ""
+
+# Flags
+FLAG_NONE = b"-"
+FLAG_UPDATING = b"u"
 
 log = logging.getLogger("storage.xlease")
 
@@ -176,19 +219,11 @@ class NoSuchLease(Error):
 
 
 class LeaseExists(Error):
-    msg = "Lease {self.lease_id} exists since {self.modified}"
-
-    def __init__(self, lease_id, modified):
-        self.lease_id = lease_id
-        self.modified = modified
+    msg = "Lease {self.lease_id} exists"
 
 
-class StaleLease(Error):
-    msg = "Lease {self.lease_id} is stale since {self.modified}"
-
-    def __init__(self, lease_id, modified):
-        self.lease_id = lease_id
-        self.modified = modified
+class LeaseUpdating(Error):
+    msg = "Lease {self.lease_id} is updating"
 
 
 class NoSpace(Error):
@@ -207,8 +242,7 @@ LeaseInfo = namedtuple("LeaseInfo", (
     "lockspace",        # Sanlock lockspace name
     "resource",         # Sanlock resource name
     "path",             # Path to lease file or block device
-    "offset",           # Offset in lease file
-    "modified",         # Modification time in seconds since epoch
+    "offset",           # Offset in path
 ))
 
 
@@ -229,43 +263,38 @@ class Record(object):
             InvalidRecord if record is not in the right format or a field
                 cannot be parsed.
         """
-        if len(record) != RECORD_SIZE:
-            raise InvalidRecord("incorrect length", record)
-
         try:
-            resource, state, modified, padding = record.split(RECORD_SEP, 4)
-        except ValueError:
-            raise InvalidRecord("incorrect number of fields", record)
+            resource, offset, updating, _, _ = RECORD_STRUCT.unpack(record)
+        except struct.error as e:
+            raise InvalidRecord("cannot unpack: %s" % e, record)
 
+        resource = resource.rstrip(b"\0")
         try:
             resource = resource.decode("ascii")
         except UnicodeDecodeError:
             raise InvalidRecord("cannot decode resource %r" % resource, record)
 
-        if state not in (RECORD_USED, RECORD_FREE, RECORD_STALE):
-            raise InvalidRecord("invalid state %r" % state, record)
+        updating = (updating == FLAG_UPDATING)
 
         try:
-            modified = int(modified)
+            offset = int(offset)
         except ValueError:
-            raise InvalidRecord("cannot parse timestamp %r" % modified, record)
+            raise InvalidRecord("cannot parse offset %r" % offset, record)
 
-        return cls(resource, state, modified=modified)
+        return cls(resource, offset, updating=updating)
 
-    def __init__(self, resource, state, modified=None):
+    def __init__(self, resource, offset, updating=False):
         """
         Initialize a record.
 
         Arguments:
             resource (string): UUID string
-            state (enum): record state (RECORD_USED, RECORD_STALE, RECORD_FREE)
-            modified (int): modification time in seconds since the epoch
+            offset (int): offset of the lease from start of volume
+            updating (bool): whether record is updating
         """
-        if modified is None:
-            modified = int(time.time())
         self._resource = resource
-        self._state = state
-        self._modified = modified
+        self._offset = offset
+        self._updating = updating
 
     def bytes(self):
         """
@@ -274,27 +303,25 @@ class Record(object):
         Returns:
             bytes object.
         """
-        data = (self._resource.encode("ascii") +
-                RECORD_SEP +
-                self._state +
-                RECORD_SEP +
-                b"%010d" % self._modified +
-                RECORD_SEP)
-        padding = RECORD_SIZE - len(data) - 1
-        data += b"0" * padding + RECORD_TERM
-        return data
+        return RECORD_STRUCT.pack(
+            self._resource.encode("ascii"),
+            b"%011d" % self._offset,
+            FLAG_UPDATING if self.updating else FLAG_NONE,
+            FLAG_NONE,
+            RECORD_TERM,
+        )
 
     @property
     def resource(self):
         return self._resource
 
     @property
-    def state(self):
-        return self._state
+    def offset(self):
+        return self._offset
 
     @property
-    def modified(self):
-        return self._modified
+    def updating(self):
+        return self._updating
 
 
 class LeasesVolume(object):
@@ -334,7 +361,6 @@ class LeasesVolume(object):
         - InvalidRecord if corrupted lease record is found
         - OSError if io operation failed
         """
-        # TODO: validate lease id is lower case uuid
         log.debug("Looking up lease %r in lockspace %r",
                   lease_id, self._lockspace)
         recnum = self._index.find_record(lease_id)
@@ -342,11 +368,11 @@ class LeasesVolume(object):
             raise NoSuchLease(lease_id)
 
         record = self._index.read_record(recnum)
-        if record.state == RECORD_STALE:
-            raise StaleLease(lease_id, record.modified)
+        if record.updating:
+            raise LeaseUpdating(lease_id)
 
-        return LeaseInfo(self._lockspace, lease_id, self._file.name,
-                         self._lease_offset(recnum), record.modified)
+        offset = self._lease_offset(recnum)
+        return LeaseInfo(self._lockspace, lease_id, self._file.name, offset)
 
     def add(self, lease_id):
         """
@@ -359,34 +385,32 @@ class LeasesVolume(object):
         - OSError if I/O operation failed
         - sanlock.SanlockException if sanlock operation failed.
         """
-        # TODO: validate lease id is lower case uuid
         log.info("Adding lease %r in lockspace %r",
                  lease_id, self._lockspace)
         recnum = self._index.find_record(lease_id)
         if recnum != -1:
             record = self._index.read_record(recnum)
-            if record.state == RECORD_STALE:
+            if record.updating:
                 # TODO: rebuild this record instead of failing
-                raise StaleLease(lease_id, record.modified)
+                raise LeaseUpdating(lease_id)
             else:
-                raise LeaseExists(lease_id, record.modified)
+                raise LeaseExists(lease_id)
 
-        recnum = self._index.find_record(BLANK_UUID)
+        recnum = self._index.find_record(BLANK_LEASE)
         if recnum == -1:
             raise NoSpace(lease_id)
 
-        record = Record(lease_id, RECORD_STALE)
+        offset = self._lease_offset(recnum)
+        record = Record(lease_id, offset, updating=True)
         self._write_record(recnum, record)
 
-        offset = self._lease_offset(recnum)
         sanlock.write_resource(self._lockspace, lease_id,
                                [(self._file.name, offset)])
 
-        record = Record(lease_id, RECORD_USED)
+        record = Record(lease_id, offset)
         self._write_record(recnum, record)
 
-        return LeaseInfo(self._lockspace, lease_id, self._file.name, offset,
-                         record.modified)
+        return LeaseInfo(self._lockspace, lease_id, self._file.name, offset)
 
     def remove(self, lease_id):
         """
@@ -397,26 +421,25 @@ class LeasesVolume(object):
         - OSError if I/O operation failed
         - sanlock.SanlockException if sanlock operation failed.
         """
-        # TODO: validate lease id is lower case uuid
         log.info("Removing lease %r in lockspace %r",
                  lease_id, self._lockspace)
         recnum = self._index.find_record(lease_id)
         if recnum == -1:
             raise NoSuchLease(lease_id)
 
-        record = Record(lease_id, RECORD_STALE)
+        offset = self._lease_offset(recnum)
+        record = Record(lease_id, offset, updating=True)
         self._write_record(recnum, record)
 
-        # TODO: remove the sanlock resource
-        # There is no sanlock api for removing a resource.
-        # This is a hack until we find a better way.
-        # Need to discuss this with David Teigland.
-        offset = self._lease_offset(recnum)
+        # There is no way to remove a resource, so we write an invalid resource
+        # with empty resource and lockspace values.
+        # TODO: Use SANLK_WRITE_CLEAR, expected in rhel 7.4.
         sanlock.write_resource("", "", [(self._file.name, offset)])
 
-        record = Record(BLANK_UUID, RECORD_FREE)
+        record = Record(BLANK_LEASE, offset)
         self._write_record(recnum, record)
 
+    # TODO: move to module and use fresh index for writing.
     def format(self):
         """
         Format index, deleting all existing records.
@@ -425,12 +448,13 @@ class LeasesVolume(object):
         - OSError if I/O operation failed
         """
         # TODO:
+        # - write metadata block with the updating flag
+        # - dump the buffer
         # - write metadata block
-        # - mark the index as illegal before dumping it, and
-        #   mark as legal only if dump was successful.
         log.info("Formatting index for lockspace %r", self._lockspace)
-        record = Record(BLANK_UUID, RECORD_FREE)
         for recnum in range(MAX_RECORDS):
+            offset = self._lease_offset(recnum)
+            record = Record(BLANK_LEASE, offset)
             self._index.write_record(recnum, record)
         self._index.dump(self._file)
 
@@ -444,11 +468,13 @@ class LeasesVolume(object):
             # TODO: handle bad records - currently will raise InvalidRecord and
             # fail the request.
             record = self._index.read_record(recnum)
-            if record.state != RECORD_FREE:
+            # Record can be:
+            # - free - empty resource
+            # - used - non empty resource, may be updating
+            if record.resource:
                 leases[record.resource] = {
                     "offset": self._lease_offset(recnum),
-                    "state": RECORD_STATES[record.state],
-                    "modified": record.modified,
+                    "updating": record.updating,
                 }
         return leases
 
@@ -457,7 +483,7 @@ class LeasesVolume(object):
         self._index.close()
 
     def _lease_offset(self, recnum):
-        return LEASE_BASE + (recnum * LEASE_SIZE)
+        return USER_RESOURCE_BASE + (recnum * SLOT_SIZE)
 
     def _write_record(self, recnum, record):
         """
@@ -485,7 +511,7 @@ class VolumeIndex(object):
         """
         self._buf = mmap.mmap(-1, INDEX_SIZE, mmap.MAP_SHARED)
         try:
-            file.seek(0)
+            file.seek(INDEX_BASE)
             file.readinto(self._buf)
         except:
             self._buf.close()
@@ -496,12 +522,13 @@ class VolumeIndex(object):
         Search for lease_id record. Returns record number if found, -1
         otherwise.
         """
-        prefix = lease_id.encode("ascii") + RECORD_SEP
+        prefix = LOOKUP_STRUCT.pack(lease_id.encode("ascii"))
+
+        # TODO: continue search if offset is not aligned to record size.
         offset = self._buf.find(prefix, RECORD_BASE)
         if offset == -1:
             return -1
 
-        # TODO: check alignment
         return self._record_number(offset)
 
     def read_record(self, recnum):
@@ -531,7 +558,7 @@ class VolumeIndex(object):
         storage. This is not atomic operation; if the operation fail, some
         blocks may not be written.
         """
-        file.seek(0)
+        file.seek(INDEX_BASE)
         file.write(self._buf)
         os.fsync(file.fileno())
 
@@ -585,7 +612,7 @@ class RecordBlock(object):
         This is atomic operation, the block is either fully written to storage
         or not.
         """
-        file.seek(self._offset)
+        file.seek(INDEX_BASE + self._offset)
         file.write(self._buf)
         os.fsync(file.fileno())
 
@@ -623,6 +650,7 @@ class DirectFile(object):
             rbuf = mmap.mmap(-1, len(buf), mmap.MAP_SHARED)
             with utils.closing(rbuf, log=log.name):
                 while pos < len(buf):
+                    # TODO: Handle EOF
                     nread = uninterruptible(self._file.readinto, rbuf)
                     buf.write(rbuf[:nread])
                     pos += nread
@@ -631,7 +659,9 @@ class DirectFile(object):
             # without any copies using a memoryview.
             while pos < len(buf):
                 rbuf = memoryview(buf)[pos:]
-                pos += uninterruptible(self._file.readinto, rbuf)
+                # TODO: Handle EOF
+                nread = uninterruptible(self._file.readinto, rbuf)
+                pos += nread
         return pos
 
     def write(self, buf):
