@@ -106,6 +106,15 @@ class _DeviceTreeCache(object):
         self._parent_to_device_params = {}
 
 
+@utils.memoized
+def _data_processors_map():
+    data_processors_map = {}
+    for capability in _LIBVIRT_DEVICE_FLAGS:
+        data_processors_map[capability] = (_DATA_PROCESSORS['_ANY'] +
+                                           _DATA_PROCESSORS[capability])
+    return data_processors_map
+
+
 def _data_processor(target_bus='_ANY'):
     """
     Register function as a data processor for device processing code.
@@ -383,10 +392,7 @@ def _process_device_params(device_xml):
     caps = devXML.find('capability')
     params['capability'] = caps.attrib['type']
 
-    data_processors = (_DATA_PROCESSORS['_ANY'] +
-                       _DATA_PROCESSORS[params['capability']])
-
-    for data_processor in data_processors:
+    for data_processor in _data_processors_map()[params['capability']]:
         params.update(data_processor(devXML))
 
     return params
