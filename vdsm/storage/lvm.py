@@ -51,7 +51,7 @@ log = logging.getLogger("storage.LVM")
 LVM_DEFAULT_TTL = 100
 
 PV_FIELDS = ("uuid,name,size,vg_name,vg_uuid,pe_start,pe_count,"
-             "pe_alloc_count,mda_count,dev_size")
+             "pe_alloc_count,mda_count,dev_size,mda_used_count")
 VG_FIELDS = ("uuid,name,attr,size,free,extent_size,extent_count,free_count,"
              "tags,vg_mda_size,vg_mda_free,lv_count,pv_count,pv_name")
 LV_FIELDS = "uuid,name,vg_name,attr,size,seg_start_pe,devices,tags"
@@ -555,6 +555,26 @@ class LVMCache(object):
                 reloaded = self._reloadpvs(stalepvs)
                 pvs.update(reloaded)
         return pvs.values()
+
+    def getPvs(self, vgName):
+        """
+        Returns the pvs of the given vg.
+        Reloads pvs only once if some of the pvs are missing or stale.
+        """
+        stalepvs = []
+        pvs = []
+        vg = self.getVg(vgName)
+        for pvName in vg.pv_name:
+            pv = self._pvs.get(pvName)
+            if pv is None or isinstance(pv, Stub):
+                stalepvs.append(pvName)
+            else:
+                pvs.append(pv)
+
+        if stalepvs:
+            reloadedpvs = self._reloadpvs(pvName=stalepvs)
+            pvs.extend(reloadedpvs.values())
+        return pvs
 
     def getVg(self, vgName):
         # Get specific VG
@@ -1357,6 +1377,27 @@ def replaceVGTag(vg, oldTag, newTag):
 
 def getFirstExt(vg, lv):
     return getLV(vg, lv).devices.strip(" )").split("(")
+
+
+def getVgMetadataPv(vgName):
+    pvs = _lvminfo.getPvs(vgName)
+    mdpvs = [pv for pv in pvs
+             if not isinstance(pv, Stub) and _isMetadataPv(pv)]
+    if len(mdpvs) != 1:
+        raise se.UnexpectedVolumeGroupMetadata("Expected one metadata pv in "
+                                               "vg: %s, vg pvs: %s" %
+                                               (vgName, pvs))
+    return mdpvs[0].name
+
+
+def _isMetadataPv(pv):
+    """
+    This method returns boolean indicating whether the passed pv is used for
+    storing the vg metadata. When we create a vg we create on all the pvs 2
+    metadata areas but enable them only on one of the pvs, for that pv the
+    mda_used_count should be therefore 2 - see createVG().
+    """
+    return pv.mda_used_count == '2'
 
 
 def listPVNames(vgName):

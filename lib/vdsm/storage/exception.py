@@ -1557,6 +1557,13 @@ class CouldNotResizePhysicalVolume(StorageException):
     message = "Could not resize PV"
 
 
+class UnexpectedVolumeGroupMetadata(StorageException):
+    def __init__(self, reason):
+        self.value = "reason=%s" % reason
+    code = 616
+    message = "Volume Group metadata isn't as expected"
+
+
 #################################################
 #  SPM/HSM Exceptions
 #################################################

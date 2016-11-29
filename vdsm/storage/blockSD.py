@@ -454,6 +454,14 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         dev, _ = lvm.getFirstExt(self.sdUUID, sd.METADATA)
         return os.path.basename(dev)
 
+    def getVgMetadataDevice(self):
+        """
+        Returns the device containing the domain vg metadata.
+        NOTE: This device may not be the same device as the lv
+                metadata first device.
+        """
+        return os.path.basename(lvm.getVgMetadataPv(self.sdUUID))
+
     @classmethod
     def getMetaDataMapping(cls, vgName, oldMapping={}):
         firstDev, firstExtent = lvm.getFirstExt(vgName, sd.METADATA)
@@ -1129,6 +1137,7 @@ class BlockStorageDomain(sd.StorageDomain):
         info['vguuid'] = vg.uuid
         info['state'] = vg.partial
         info['metadataDevice'] = self._manifest.getMetadataLVDevice()
+        info['vgMetadataDevice'] = self._manifest.getVgMetadataDevice()
         return info
 
     def getStats(self):

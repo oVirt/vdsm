@@ -258,7 +258,8 @@ class FakeLVM(object):
                      pe_count=str(pe_count),
                      pe_alloc_count='0',
                      mda_count=str(self._PV_MDA_COUNT),
-                     dev_size=str(self._PV_SIZE))
+                     dev_size=str(self._PV_SIZE),
+                     mda_used_count='0')
         self.pvmd[pv_name] = pv_md
 
     def _calc_vg_pe_count(self, vg_name):

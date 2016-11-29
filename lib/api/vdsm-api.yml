@@ -5746,6 +5746,12 @@ types:
                 metadata lv for block storage domains only
             name: metadataDevice
             type: string
+
+        -   defaultvalue: null
+            description: The GUID of the device containing the domain vg
+                metadata for block storage domains (optional)
+            name: vgMetadataDevice
+            type: string
         type: object
 
     StorageDomainStatus: &StorageDomainStatus
