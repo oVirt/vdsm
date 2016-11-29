@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 
 import os
+import re
 import xml.etree.ElementTree as etree
 
 import libvirt
@@ -117,10 +118,9 @@ class VirNodeDeviceStub(object):
 
     def __init__(self, xml):
         self.xml = xml
-        xml_processed = etree.fromstring(self.XMLDesc(0).decode(
-            'ascii', errors='ignore'))
-        self._name = xml_processed.find('name').text
-        self.capability = xml_processed.find('capability').attrib['type']
+        self._name = re.search('(?<=<name>).*?(?=</name>)', xml).group(0)
+        self.capability = re.search('(?<=capability type=[\'"]).*?(?=[\'"]>)',
+                                    xml).group(0)
 
     def XMLDesc(self, flags=0):
         return self.xml
