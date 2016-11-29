@@ -22,7 +22,7 @@ from __future__ import absolute_import
 import collections
 import functools
 import os
-import xml.etree.ElementTree as etree
+import xml.etree.cElementTree as etree
 
 import libvirt
 
