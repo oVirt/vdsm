@@ -345,7 +345,7 @@ def _process_parent(device_xml):
     return {}
 
 
-@_data_processor()
+@_data_processor('pci')
 def _process_numa(device_xml):
     numa_node = device_xml.find('./capability/numa')
     if numa_node is not None:
