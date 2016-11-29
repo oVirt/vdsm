@@ -30,6 +30,21 @@ from . import response
 _log = logging.getLogger("virt.api")
 
 
+def logged(on=""):
+    @decorator
+    def method(func, *args, **kwargs):
+        log = logging.getLogger(on)
+        log.info('START %s args=%s kwargs=%s', func.__name__, args, kwargs)
+        try:
+            ret = func(*args, **kwargs)
+        except Exception as exc:
+            log.info("FINISH %s error=%s", func.__name__, exc)
+            raise
+        log.info('FINISH %s return=%s', func.__name__, ret)
+        return ret
+    return method
+
+
 @decorator
 def method(func, *args, **kwargs):
     """
