@@ -96,7 +96,10 @@ class Runtime(object):
         mem = dom.memory()
         path, volumes = dom.drives()
         mapping = dom.drives_map()
-        net = dom.network()
+        try:
+            net = dom.network()
+        except xmlfile.ConfigError:
+            net = config.get('containers', 'network_name')
         self._run_conf = RunConfig(path, volumes, mapping, mem, net)
         self._log.debug('configured runtime %s: %s',
                         self.uuid, self._run_conf)

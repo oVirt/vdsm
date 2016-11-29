@@ -525,9 +525,10 @@ parameters = [
         ('cgroup_slice', 'machine',
             'The cgroup slice where containers will be started.'),
 
-        ('network_name', 'ovirt',
-            "Human-friendly name for the configuration of the containers' "
-            "runtime network. Used only for identification."),
+        ('network_name', 'bridge',
+            "The container-engine specific identifier of the network where "
+            "containers will be placed, if no explicit configuration is "
+            "received from Engine. "),
 
         ('network_bridge', 'ovirtmgmt',
             "Network bridge to use for the containers' networking"),
