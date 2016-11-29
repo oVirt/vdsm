@@ -59,6 +59,7 @@ class PCIHeaderType:
     ENDPOINT = 0
     BRIDGE = 1
     CARDBUS_BRIDGE = 2
+    UNKNOWN = 99
 
 
 class NoIOMMUSupportException(Exception):
@@ -163,8 +164,7 @@ def _pci_header_type(device_name):
             f.seek(0x0e)
             header_type = ord(f.read(1)) & 0x7f
     except IOError:
-        # Not a PCI device, we have to treat all of these as assignable.
-        return PCIHeaderType.ENDPOINT
+        return PCIHeaderType.UNKNOWN
 
     return int(header_type)
 
@@ -245,17 +245,17 @@ def _process_usb_address(device_xml):
     return _process_address(device_xml, ('bus', 'device'))
 
 
-@_data_processor()
+@_data_processor('pci')
 def _process_assignability(device_xml):
     is_assignable = None
 
-    name = device_xml.find('name').text
     physfn = device_xml.find('./capability/capability')
 
     if physfn is not None:
         if physfn.attrib['type'] in ('pci-bridge', 'cardbus-bridge'):
             is_assignable = 'false'
     if is_assignable is None:
+        name = device_xml.find('name').text
         is_assignable = str(_pci_header_type(name) ==
                             PCIHeaderType.ENDPOINT).lower()
 
@@ -391,6 +391,7 @@ def _process_device_params(device_xml):
 
     caps = devXML.find('capability')
     params['capability'] = caps.attrib['type']
+    params['is_assignable'] = 'true'
 
     for data_processor in _data_processors_map()[params['capability']]:
         params.update(data_processor(devXML))
