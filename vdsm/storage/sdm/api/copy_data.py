@@ -164,8 +164,8 @@ class CopyDataDivEndpoint(properties.Owner):
 
     @contextmanager
     def prepare(self):
-        self.volume.prepare(rw=self._writable, justme=True)
+        self.volume.prepare(rw=self._writable, justme=False)
         try:
             yield
         finally:
-            self.volume.teardown(self.sd_id, self.vol_id, justme=True)
+            self.volume.teardown(self.sd_id, self.vol_id, justme=False)
