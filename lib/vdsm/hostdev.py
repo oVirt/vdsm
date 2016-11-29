@@ -325,13 +325,13 @@ def _process_physfn(device_xml):
 def _process_productinfo(device_xml):
     params = {}
 
-    for element in ('vendor', 'product', 'interface'):
-        elementXML = device_xml.find('./capability/{}'.format(element))
-        if elementXML is not None:
-            if 'id' in elementXML.attrib:
-                params[element + '_id'] = elementXML.attrib['id']
-            if elementXML.text:
-                params[element] = elementXML.text
+    capabilities = device_xml.findall('./capability/')
+    for capability in capabilities:
+        if capability.tag in ('vendor', 'product', 'interface'):
+            if 'id' in capability.attrib:
+                params[capability.tag + '_id'] = capability.attrib['id']
+            if capability.text:
+                params[capability.tag] = capability.text
 
     return params
 
