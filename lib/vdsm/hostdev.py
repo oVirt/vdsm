@@ -21,6 +21,7 @@ from __future__ import absolute_import
 
 import collections
 import functools
+import hashlib
 import os
 import xml.etree.cElementTree as etree
 
@@ -53,6 +54,8 @@ _LIBVIRT_DEVICE_FLAGS = {
 }
 
 _DATA_PROCESSORS = collections.defaultdict(list)
+_last_alldevices_hash = None
+_device_tree_cache = {}
 
 
 class PCIHeaderType:
@@ -114,6 +117,15 @@ def _data_processors_map():
         data_processors_map[capability] = (_DATA_PROCESSORS['_ANY'] +
                                            _DATA_PROCESSORS[capability])
     return data_processors_map
+
+
+def __device_tree_hash(list_of_nodedev):
+    """
+    The hash generation works iff the order of devices returned from libvirt is
+    stable.
+    """
+    return hashlib.sha256(
+        str((device.XMLDesc(0) for device in list_of_nodedev))).hexdigest()
 
 
 def _data_processor(target_bus='_ANY'):
@@ -407,10 +419,7 @@ def _get_device_ref_and_params(device_name):
     if params['capability'] != 'scsi':
         return libvirt_device, params
 
-    flags = (_LIBVIRT_DEVICE_FLAGS['storage'] +
-             _LIBVIRT_DEVICE_FLAGS['scsi_generic'])
-    devices = dict((device.name(), _process_device_params(device.XMLDesc(0)))
-                   for device in libvirtconnection.get().listAllDevices(flags))
+    devices = _get_devices_from_libvirt()
     with _DeviceTreeCache(devices) as cache:
         params.update(_process_scsi_device_params(device_name, cache))
 
@@ -421,14 +430,26 @@ def _get_devices_from_libvirt(flags=0):
     """
     Returns all available host devices from libvirt processd to dict
     """
+    libvirt_devices = libvirtconnection.get().listAllDevices(flags)
+    global _last_alldevices_hash
+    global _device_tree_cache
+
+    if (flags == 0 and
+            __device_tree_hash(libvirt_devices) == _last_alldevices_hash):
+        return _device_tree_cache
+
     devices = dict((device.name(), _process_device_params(device.XMLDesc(0)))
-                   for device in libvirtconnection.get().listAllDevices(flags))
+                   for device in libvirt_devices)
 
     with _DeviceTreeCache(devices) as cache:
         for device_name, device_params in devices.items():
             if device_params['capability'] == 'scsi':
                 device_params.update(
                     _process_scsi_device_params(device_name, cache))
+
+    if flags == 0:
+        _device_tree_cache = devices
+        _last_alldevices_hash = __device_tree_hash(libvirt_devices)
     return devices
 
 
