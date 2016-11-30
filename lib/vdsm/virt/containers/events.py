@@ -49,7 +49,7 @@ class Handler(object):
         # TODO: weakrefs?
         cb = _Callback(conn, dom, func, opaque)
         # TODO: debug?
-        self._log.info('[%s] %i -> %s', self._name, event_id, cb)
+        self._log.debug('[%s] %i -> %s', self._name, event_id, cb)
         with self._lock:
             self.events[event_id].append(cb)
 
@@ -74,8 +74,8 @@ class Handler(object):
         if callback is not None:
             return callback
         if self._parent is not None:
-            self._log.warning('[%s] unknown event %r',
-                              self._name, event_id)
+            self._log.debug('[%s] unknown event %r',
+                            self._name, event_id)
             return self._parent.get_callbacks(event_id)
         return None
 

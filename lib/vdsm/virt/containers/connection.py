@@ -50,7 +50,7 @@ class Connection(object):
 
     def domainEventRegisterAny(self, dom, eventID, cb, opaque):
         handler = events.root if dom is None else dom.events
-        self._log.info(
+        self._log.debug(
             '[%s] using handler %r for %i',
             self._name, handler, eventID)
         handler.register(eventID, self, dom, cb, opaque)
