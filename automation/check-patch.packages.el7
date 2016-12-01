@@ -16,6 +16,7 @@ python-devel
 python-inotify
 python-ioprocess
 python-mock
+python-magic
 python-netaddr
 python-pthreading
 python-setuptools

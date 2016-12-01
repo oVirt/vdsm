@@ -40,7 +40,7 @@ from vdsm.network.netinfo.addresses import getDeviceByIP
 import API
 
 try:
-    from gluster.api import getGlusterMethods
+    from vdsm.gluster.api import getGlusterMethods
 
     _glusterEnabled = True
 except ImportError:

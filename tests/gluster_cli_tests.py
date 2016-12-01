@@ -21,7 +21,7 @@
 import six
 
 from testlib import VdsmTestCase as TestCaseBase
-from gluster import cli as gcli
+from vdsm.gluster import cli as gcli
 import xml.etree.cElementTree as etree
 from nose.plugins.skip import SkipTest
 import glusterTestData
@@ -1120,7 +1120,8 @@ class GlusterCliTests(TestCaseBase):
 
     def test_parseStorageDevices(self):
         try:
-            from gluster.storagedev import _parseDevices as parseStorageDevices
+            from vdsm.gluster.storagedev import _parseDevices \
+                as parseStorageDevices
         except ImportError as e:
             raise SkipTest('%s' % e)
 

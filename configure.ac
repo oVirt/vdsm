@@ -434,7 +434,6 @@ AC_OUTPUT([
 	tests/network/Makefile
 	vdsm-tool/Makefile
 	vdsm/Makefile
-	vdsm/gluster/Makefile
 	vdsm/sos/Makefile
 	vdsm/storage/Makefile
 	vdsm/storage/imageRepository/Makefile

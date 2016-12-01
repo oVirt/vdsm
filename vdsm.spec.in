@@ -1054,9 +1054,9 @@ exit 0
 
 %{_datadir}/%{vdsm_name}/get-conf-item
 %{_datadir}/%{vdsm_name}/set-conf-item
-%dir %{_datadir}/%{vdsm_name}/gluster
-%{_datadir}/%{vdsm_name}/gluster/__init__.py*
-%{_datadir}/%{vdsm_name}/gluster/cli.py*
+%dir %{python_sitelib}/%{vdsm_name}/gluster
+%{python_sitelib}/%{vdsm_name}/gluster/__init__.py*
+%{python_sitelib}/%{vdsm_name}/gluster/cli.py*
 %{python_sitelib}/sos/plugins/vdsm.py*
 %{_udevrulesdir}/12-vdsm-lvm.rules
 /etc/security/limits.d/99-vdsm.conf
@@ -1593,21 +1593,20 @@ exit 0
 
 %if 0%{?with_gluster_mgmt}
 %files gluster
-%dir %{_datadir}/%{vdsm_name}
-%dir %{_datadir}/%{vdsm_name}/gluster
+%license COPYING
 %dir %{python_sitelib}/%{vdsm_name}
 %dir %{python_sitelib}/%{vdsm_name}/rpc
-%license COPYING
-%{_datadir}/%{vdsm_name}/gluster/api.py*
-%{_datadir}/%{vdsm_name}/gluster/apiwrapper.py*
-%{_datadir}/%{vdsm_name}/gluster/fstab.py*
+%dir %{python_sitelib}/%{vdsm_name}/gluster
+%{python_sitelib}/%{vdsm_name}/gluster/api.py*
+%{python_sitelib}/%{vdsm_name}/gluster/apiwrapper.py*
+%{python_sitelib}/%{vdsm_name}/gluster/fstab.py*
 %{python_sitelib}/%{vdsm_name}/gluster/fence.py*
+%{python_sitelib}/%{vdsm_name}/gluster/gfapi.py*
+%{python_sitelib}/%{vdsm_name}/gluster/hooks.py*
+%{python_sitelib}/%{vdsm_name}/gluster/services.py*
+%{python_sitelib}/%{vdsm_name}/gluster/storagedev.py*
+%{python_sitelib}/%{vdsm_name}/gluster/tasks.py*
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.yml
-%{_datadir}/%{vdsm_name}/gluster/gfapi.py*
-%{_datadir}/%{vdsm_name}/gluster/hooks.py*
-%{_datadir}/%{vdsm_name}/gluster/services.py*
-%{_datadir}/%{vdsm_name}/gluster/storagedev.py*
-%{_datadir}/%{vdsm_name}/gluster/tasks.py*
 %endif
 
 %if 0%{?with_containers}

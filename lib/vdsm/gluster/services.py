@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
 from vdsm.gluster import exception as ge
 from vdsm.tool import service

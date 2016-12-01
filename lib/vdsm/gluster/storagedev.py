@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
 import errno
 import logging
@@ -34,8 +35,7 @@ from blivet import udev
 from vdsm import commands
 from vdsm import utils
 from vdsm.gluster import exception as ge
-
-from . import fstab
+from vdsm.gluster import fstab
 from . import gluster_mgmt_api
 
 

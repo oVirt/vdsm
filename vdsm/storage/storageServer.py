@@ -31,6 +31,7 @@ from vdsm.config import config
 from vdsm import supervdsm
 from vdsm import udevadm
 from vdsm import utils
+from vdsm.gluster import cli as gluster_cli
 from vdsm.gluster import exception as ge
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
@@ -40,7 +41,6 @@ from vdsm.storage import mount
 from vdsm.storage.mount import MountError
 
 import fileSD
-import gluster.cli
 
 
 IscsiConnectionParameters = namedtuple("IscsiConnectionParameters",
@@ -244,7 +244,7 @@ class GlusterFSConnection(MountConnection):
         self._volinfo = None
         self._volfileserver, volname = self._remotePath.split(":", 1)
         self._volname = volname.strip('/')
-        self._have_gluster_cli = gluster.cli.exists()
+        self._have_gluster_cli = gluster_cli.exists()
 
     @property
     def options(self):

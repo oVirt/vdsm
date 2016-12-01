@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
 import calendar
 import logging
@@ -29,6 +30,7 @@ from vdsm import commands
 from vdsm import utils
 from vdsm.gluster import exception as ge
 from vdsm.network.netinfo import addresses
+
 from . import gluster_mgmt_api, gluster_api
 
 _glusterCommandPath = utils.CommandPath("gluster",

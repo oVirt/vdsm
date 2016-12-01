@@ -24,12 +24,21 @@ vdsmglusterdir = $(vdsmpylibdir)/gluster
 
 common = \
 	__init__.py \
+	cli.py \
 	exception.py \
 	$(NULL)
 
 if GLUSTER_MGMT
 gluster_mgmt = \
+	api.py \
+	apiwrapper.py \
 	fence.py \
+	fstab.py \
+	gfapi.py \
+	hooks.py \
+	services.py \
+	storagedev.py \
+	tasks.py \
 	$(NULL)
 endif
 

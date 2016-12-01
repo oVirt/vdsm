@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
 import errno
 import fcntl
@@ -25,6 +26,7 @@ import selinux
 from functools import wraps
 from vdsm.common.define import doneCode
 from vdsm.gluster import exception as ge
+from vdsm.gluster import fstab
 from vdsm.storage import mount
 from vdsm import constants
 from vdsm import commands
@@ -34,7 +36,6 @@ from pwd import getpwnam
 
 from . import gluster_mgmt_api
 from . import safeWrite
-import fstab
 import logging
 
 _SUCCESS = {'status': doneCode}

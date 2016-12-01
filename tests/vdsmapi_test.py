@@ -25,7 +25,7 @@ from yajsonrpc import JsonRpcError
 from testlib import VdsmTestCase as TestCaseBase
 
 try:
-    import gluster.apiwrapper as gapi
+    import vdsm.gluster.apiwrapper as gapi
     _glusterEnabled = True
     gapi
 except ImportError:

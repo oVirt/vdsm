@@ -48,7 +48,7 @@ except:
 
 from multiprocessing import Pipe, Process
 try:
-    from gluster import listPublicFunctions
+    from vdsm.gluster import listPublicFunctions
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False

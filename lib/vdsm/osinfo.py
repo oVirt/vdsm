@@ -44,8 +44,8 @@ except ImportError:
     pass
 
 try:
-    from gluster.api import GLUSTER_RPM_PACKAGES
-    from gluster.api import GLUSTER_DEB_PACKAGES
+    from vdsm.gluster.api import GLUSTER_RPM_PACKAGES
+    from vdsm.gluster.api import GLUSTER_DEB_PACKAGES
     glusterEnabled = True
 except ImportError:
     glusterEnabled = False

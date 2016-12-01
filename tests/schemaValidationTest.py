@@ -22,7 +22,7 @@ import os
 
 import API
 try:
-    import gluster.apiwrapper as gapi
+    import vdsm.gluster.apiwrapper as gapi
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False

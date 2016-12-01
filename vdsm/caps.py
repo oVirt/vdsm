@@ -200,7 +200,7 @@ def get():
     caps['hostdevPassthrough'] = str(hostdev.is_supported()).lower()
     caps['additionalFeatures'] = []
     if osinfo.glusterEnabled:
-        from gluster.api import glusterAdditionalFeatures
+        from vdsm.gluster.api import glusterAdditionalFeatures
         caps['additionalFeatures'].extend(glusterAdditionalFeatures())
     caps['containers'] = containersconnection.is_supported()
     return caps

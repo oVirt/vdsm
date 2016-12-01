@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
 import os
 import stat
@@ -28,7 +29,7 @@ import logging
 import selinux
 from functools import wraps
 
-from vdsm.gluster import exception as ge
+import vdsm.gluster.exception as ge
 
 from . import gluster_mgmt_api
 from . import safeWrite

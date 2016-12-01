@@ -54,7 +54,7 @@ from virt import recovery
 from virt import vm
 from virt.vm import Vm
 try:
-    import gluster.api as gapi
+    import vdsm.gluster.api as gapi
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False

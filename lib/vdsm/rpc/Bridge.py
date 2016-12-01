@@ -31,7 +31,7 @@ from vdsm.network.netinfo.addresses import getDeviceByIP
 
 
 try:
-    import gluster.apiwrapper as gapi
+    import vdsm.gluster.apiwrapper as gapi
     from vdsm.gluster import exception as ge
     _glusterEnabled = True
 except ImportError:
