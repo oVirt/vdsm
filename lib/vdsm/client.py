@@ -68,6 +68,11 @@ Setting timeout per command::
 
     cli.Host.getVMList(_timeout=180)
 
+ConnectionError: client can't connect to vdsm::
+
+    vdsm.client.ConnectionError: Connection to localhost:54321 with
+    use_tls=True, timeout=60 failed: [Errno 111] Connection refused
+
 ClientError will be raised when we cannot send a request to the server::
 
     vdsm.client.ClientError: Error sending request: [Errno 111]
