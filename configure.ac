@@ -295,23 +295,6 @@ AC_ARG_WITH(
     [SMBIOS_OSNAME="oVirt Node"])
 AC_SUBST([SMBIOS_OSNAME])
 
-# Package names
-AC_ARG_WITH(
-    [qemu-kvm],
-    [AS_HELP_STRING([--with-qemu-kvm=PKGNAME],
-                    [package name for qemu-kvm @<:@default=qemu-kvm@:>@])],
-    [QEMU_KVM_PKG="${withval}"],
-    [QEMU_KVM_PKG="qemu-kvm"])
-AC_SUBST([QEMU_KVM_PKG])
-
-AC_ARG_WITH(
-    [qemu-img],
-    [AS_HELP_STRING([--with-qemu-img=PKGNAME],
-                    [package name for qemu-img @<:@default=qemu-img@:>@])],
-    [QEMU_IMG_PKG="${withval}"],
-    [QEMU_IMG_PKG="qemu-img"])
-AC_SUBST([QEMU_IMG_PKG])
-
 if test "$PYTHON3_SUPPORT" = "1"; then
   AC_PATH_PROG([PYTHON3], [python3])
   if test "x$PYTHON3" = "x"; then

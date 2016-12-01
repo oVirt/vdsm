@@ -709,8 +709,6 @@ autoreconf -if
 %if 0%{?with_containers}
         --enable-containers \
 %endif
-        --with-qemu-kvm='@QEMU_KVM_PKG@' \
-        --with-qemu-img='@QEMU_IMG_PKG@' \
         --with-data-center='@VDSMREPO@'
 
 make
