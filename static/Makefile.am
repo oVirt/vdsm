@@ -57,12 +57,6 @@ sudoers_DATA = \
 	./etc/sudoers.d/50_vdsm \
 	$(NULL)
 
-rwtabdir = $(sysconfdir)/rwtab.d
-
-rwtab_DATA = \
-	./etc/rwtab.d/vdsm \
-	$(NULL)
-
 limitsdir = $(sysconfdir)/security/limits.d
 
 limits_DATA = \
@@ -98,7 +92,6 @@ systemdunit_DATA = \
 	$(NULL)
 
 CLEANFILES = \
-	$(rwtab_DATA) \
 	$(sudoers_DATA) \
 	$(systemdunit_DATA) \
 	$(vdsmconf_DATA) \
@@ -112,7 +105,6 @@ EXTRA_DIST = \
 	$(sysctl_DATA) \
 	$(vdsmconfrotate_DATA) \
 	$(vdsm_DATA) \
-	./etc/rwtab.d/vdsm.in \
 	./etc/sudoers.d/50_vdsm.in \
 	./etc/vdsm/logger.conf.in \
 	./etc/vdsm/mom.conf.in \

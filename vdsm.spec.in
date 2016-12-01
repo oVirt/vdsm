@@ -926,7 +926,6 @@ exit 0
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/mom.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/mom.d/*.policy
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logrotate/vdsm
-%config(noreplace) %{_sysconfdir}/rwtab.d/vdsm
 %config(noreplace) %{_sysconfdir}/sysctl.d/vdsm.conf
 %config(noreplace) %{_sysconfdir}/modules-load.d/vdsm.conf
 %{_tmpfilesdir}/%{vdsm_name}.conf
