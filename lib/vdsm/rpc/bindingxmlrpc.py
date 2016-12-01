@@ -345,12 +345,12 @@ class BindingXMLRPC(object):
 
         self.server.register_introspection_functions()
         for (method, name) in globalMethods:
-            self.server.register_function(wrapApiMethod(method), name)
+            self.server.register_function(_wrap_api_method(method), name)
         for (method, name) in irsMethods:
             self.server.register_function(wrapIrsMethod(method), name)
         if _glusterEnabled and self.cif.gluster:
             for (method, name) in getGlusterMethods(self.cif.gluster):
-                self.server.register_function(wrapApiMethod(method), name)
+                self.server.register_function(_wrap_api_method(method), name)
 
     #
     # Callable methods:
@@ -1209,7 +1209,7 @@ class BindingXMLRPC(object):
                 (self.sdm_create_volume, 'sdm_create_volume'))
 
 
-def wrapApiMethod(f):
+def _wrap_api_method(f):
     def wrapper(*args, **kwargs):
         start_time = utils.monotonic_time()
         res = {}
