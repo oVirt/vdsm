@@ -268,7 +268,7 @@ class HSM(object):
         A string containing the path of the directory where backups of tasks a
         saved on the disk.
     """
-    pools = {}
+    _pool = sp.DisconnectedPool()
     log = logging.getLogger('storage.HSM')
 
     @classmethod
@@ -323,9 +323,13 @@ class HSM(object):
 
     @classmethod
     def getPool(cls, spUUID):
-        if spUUID not in cls.pools:
-            raise se.StoragePoolUnknown(spUUID)
-        return cls.pools[spUUID]
+        if cls._pool.is_connected() and cls._pool.spUUID == spUUID:
+            return cls._pool
+        raise se.StoragePoolUnknown(spUUID)
+
+    @classmethod
+    def setPool(cls, pool):
+        cls._pool = pool
 
     def __init__(self):
         """
@@ -518,8 +522,8 @@ class HSM(object):
         :type options: list
         """
         vars.task.setDefaultException(se.StoragePoolActionError())
-
-        return dict(poollist=self.pools.keys())
+        pools = [self._pool.spUUID] if self._pool.is_connected() else []
+        return dict(poollist=pools)
 
     @public
     def spmStart(self, spUUID, prevID, prevLVER,
@@ -762,28 +766,18 @@ class HSM(object):
         return dict(size=str(pv.size))
 
     def _deatchStorageDomainFromOldPools(self, sdUUID):
-        # We are called with blank pool uuid, to avoid changing exiting
-        # API which we want to drop in next version anyway.
-        # So to get the pool we use the fact that there can be only one
-        # pool, and get the host id from it.
-        if len(self.pools) > 1:
-            raise AssertionError("Multiple pools are not supported")
-        try:
-            pool = self.pools.values()[0]
-        except IndexError:
-            raise se.StoragePoolNotConnected()
-
+        host_id = self._pool.id
         dom = sdCache.produce(sdUUID=sdUUID)
-        dom.acquireHostId(pool.id)
+        dom.acquireHostId(host_id)
         try:
-            dom.acquireClusterLock(pool.id)
+            dom.acquireClusterLock(host_id)
             try:
                 for domPoolUUID in dom.getPools():
                     dom.detach(domPoolUUID)
             finally:
                 dom.releaseClusterLock()
         finally:
-            dom.releaseHostId(pool.id)
+            dom.releaseHostId(host_id)
 
     @public
     def forcedDetachStorageDomain(self, sdUUID, spUUID, options=None):
@@ -1001,11 +995,8 @@ class HSM(object):
     def _connectStoragePool(self, spUUID, hostID, msdUUID,
                             masterVersion, domainsMap=None, options=None):
         misc.validateUUID(spUUID, 'spUUID')
-
-        # TBD: To support multiple pool connection on single host,
-        # we'll need to remove this validation
-        if len(self.pools) and spUUID not in self.pools:
-            raise se.CannotConnectMultiplePools(str(self.pools.keys()))
+        if self._pool.is_connected() and self._pool.spUUID != spUUID:
+            raise se.CannotConnectMultiplePools(self._pool.spUUID)
 
         try:
             self.getPool(spUUID)
@@ -1043,7 +1034,7 @@ class HSM(object):
 
             res = pool.connect(hostID, msdUUID, masterVersion)
             if res:
-                self.pools[spUUID] = pool
+                self.setPool(pool)
             return res
 
     @public
@@ -1075,8 +1066,7 @@ class HSM(object):
         try:
             pool = self.getPool(spUUID)
         except se.StoragePoolUnknown:
-            self.log.warning("disconnect sp: %s failed. Known pools %s",
-                             spUUID, self.pools)
+            self.log.warning("Already disconnected from %r", spUUID)
             return
 
         self.getPool(spUUID).validateNotSPM()
@@ -1090,7 +1080,7 @@ class HSM(object):
         pool.validateNotSPM()
         with rm.acquireResource(STORAGE, HSM_DOM_MON_LOCK, rm.EXCLUSIVE):
             res = pool.disconnect()
-            del self.pools[pool.spUUID]
+            self.setPool(sp.DisconnectedPool())
         return res
 
     @public
@@ -2158,11 +2148,9 @@ class HSM(object):
         :options: ?
         """
         # getSharedLock(tasksResource...)
-        try:
-            sp = self.pools.values()[0]
-        except IndexError:
+        if not self._pool.is_connected():
             raise se.SpmStatusError()
-        allTasksStatus = sp.getAllTasksStatuses()
+        allTasksStatus = self._pool.getAllTasksStatuses()
         return dict(allTasksStatus=allTasksStatus)
 
     @public
@@ -2200,11 +2188,9 @@ class HSM(object):
         :rtype: dict
         """
         # getSharedLock(tasksResource...)
-        try:
-            sp = self.pools.values()[0]
-        except IndexError:
+        if not self._pool.is_connected():
             raise se.SpmStatusError()
-        allTasksInfo = sp.getAllTasksInfo()
+        allTasksInfo = self._pool.getAllTasksInfo()
         return dict(allTasksInfo=allTasksInfo)
 
     @public
@@ -2634,9 +2620,12 @@ class HSM(object):
         # getSharedLock(connectionsResource...)
 
         vars.task.getExclusiveLock(STORAGE, sdUUID)
-        for p in self.pools.values():
-            # Avoid format if domain part of connected pool
-            domDict = p.getDomains()
+        # Avoid format if domain part of connected pool
+        try:
+            domDict = self._pool.getDomains()
+        except se.StoragePoolNotConnected:
+            pass
+        else:
             if sdUUID in domDict.keys():
                 raise se.CannotFormatStorageDomainInConnectedPool(sdUUID)
 
@@ -3278,15 +3267,17 @@ class HSM(object):
             sp.StoragePool.cleanupMasterMount()
             self.__releaseLocks()
 
-            for spUUID in self.pools:
+            try:
                 # Stop spmMailer thread
-                if self.pools[spUUID].spmMailer:
-                    self.pools[spUUID].spmMailer.stop()
-                    self.pools[spUUID].spmMailer.tp.joinAll(waitForTasks=False)
+                if self._pool.spmMailer:
+                    self._pool.spmMailer.stop()
+                    self._pool.spmMailer.tp.joinAll(waitForTasks=False)
 
                 # Stop hsmMailer thread
-                if self.pools[spUUID].hsmMailer:
-                    self.pools[spUUID].hsmMailer.stop()
+                if self._pool.hsmMailer:
+                    self._pool.hsmMailer.stop()
+            except se.StoragePoolNotConnected:
+                pass
 
             # Stop repoStat threads
             try:
@@ -3515,29 +3506,18 @@ class HSM(object):
         self.taskMng.scheduleJob("sdm", None, vars.task,
                                  job.description, job.run)
 
-    def _get_hostid(self):
-        # Currently we use the pool.id as the hostid for all storage domains.
-        # If we get rid of the storage pool then we need to add an interface
-        # to fetch the hostid from the StorageDomainManifest object.
-        try:
-            pool = self.pools.values()[0]
-        except IndexError:
-            raise se.StoragePoolNotConnected()
-        return pool.id
-
     @public
     def sdm_create_volume(self, job_id, vol_info):
+        host_id = self._pool.id
         vol_info = sdm.api.create_volume.CreateVolumeInfo(vol_info)
         dom_manifest = sdCache.produce_manifest(vol_info.sd_id)
-        host_id = self.domainMonitor.getHostId(vol_info.sd_id)
         job = sdm.api.create_volume.Job(job_id, host_id, dom_manifest,
                                         vol_info)
         self.sdm_schedule(job)
 
     @public
     def sdm_copy_data(self, job_id, source, destination):
-        job = sdm.api.copy_data.Job(job_id, self._get_hostid(),
-                                    source, destination)
+        job = sdm.api.copy_data.Job(job_id, self._pool.id, source, destination)
         self.sdm_schedule(job)
 
     @public
@@ -3547,14 +3527,12 @@ class HSM(object):
         space on storage domain using virt-sparsify --inplace (without using
         a temporary volume).
         """
-        job = sdm.api.sparsify_volume.Job(job_id, self._get_hostid(), vol_info)
+        job = sdm.api.sparsify_volume.Job(job_id, self._pool.id, vol_info)
         self.sdm_schedule(job)
 
     @public
     def sdm_amend_volume(self, job_id, vol_info, vol_attr):
-        job = sdm.api.amend_volume.Job(job_id,
-                                       self._get_hostid(),
-                                       vol_info,
+        job = sdm.api.amend_volume.Job(job_id, self._pool.id, vol_info,
                                        vol_attr)
         self.sdm_schedule(job)
 

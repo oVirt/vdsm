@@ -59,6 +59,31 @@ SPM_ID_FREE = -1
 LVER_INVALID = -1
 
 
+class DisconnectedPool(object):
+    """
+    Dummy storage pool used when we are not connected to a storage pool.
+
+    Any access will fail with se.StoragePoolNotConnected.
+
+    This avoids races such as::
+
+        if self._pool:
+            # Pool was not None, but now it is None
+            self._pool.do_something()
+
+    With this dummy pool, you should simply use the pool::
+
+        self._pool.do_something()
+
+    If the pool is not connected, we raise the correct error.
+    """
+    def is_connected(self):
+        return False
+
+    def __getattr__(self, name):
+        raise se.StoragePoolNotConnected
+
+
 @secured
 class StoragePool(object):
     '''
@@ -104,6 +129,10 @@ class StoragePool(object):
     @unsecured
     def _setUnsecure(self):
         self._secured.clear()
+
+    @unsecured
+    def is_connected(self):
+        return True
 
     @unsecured
     def getSpmStatus(self):
