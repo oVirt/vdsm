@@ -29,7 +29,6 @@ import requests
 import selinux
 
 from . import expose
-from .. import utils
 
 from vdsm.utils import tobool
 from vdsm import host
@@ -266,18 +265,11 @@ class Register(object):
         __VDSM_ID = "/etc/vdsm/vdsm.id"
 
         if self.vdsm_uuid and os.path.exists(__VDSM_ID):
-            if utils.isOvirtNode():
-                from ovirt.node.utils.fs import Config
-                Config().unpersist(__VDSM_ID)
             os.unlink(__VDSM_ID)
 
         if not os.path.exists(__VDSM_ID):
             with open(__VDSM_ID, 'w') as f:
                 f.write(self.uuid)
-
-            if utils.isOvirtNode():
-                from ovirt.node.utils.fs import Config
-                Config().persist(__VDSM_ID)
 
         self.logger.info("Host UUID: {u}".format(u=self.uuid))
 
@@ -294,9 +286,6 @@ class Register(object):
             if not os.path.exists(self.ca_dir):
                 os.makedirs(self.ca_dir, 0o755)
                 self._silent_restorecon(self.ca_dir)
-                if utils.isOvirtNode():
-                    from ovirt.node.utils.fs import Config
-                    Config().persist(self.ca_dir)
 
             res = self._execute_http_request(self.url_CA,
                                              cert_validation=False)
@@ -328,10 +317,6 @@ class Register(object):
         self.logger.info("Calculated fingerprint: {f}".format(
                          f=self.fprint))
 
-        if utils.isOvirtNode():
-            from ovirt.node.utils.fs import Config
-            Config().persist(self.ca_engine)
-
     def download_ssh(self):
         """
         Download ssh authorized keys and save it in the node
@@ -345,9 +330,6 @@ class Register(object):
         if not os.path.exists(_auth_keys_dir):
             os.makedirs(_auth_keys_dir, 0o700)
             self._silent_restorecon(_auth_keys_dir)
-            if utils.isOvirtNode():
-                from ovirt.node.utils.fs import Config
-                Config().persist(_auth_keys_dir)
             os.chown(_auth_keys_dir, _uid, _uid)
 
         res = self._execute_http_request(self.url_ssh_key)
@@ -368,9 +350,6 @@ class Register(object):
             os.chown(_auth_keys, _uid, _uid)
 
         os.unlink(f.name)
-        if utils.isOvirtNode():
-            from ovirt.node.utils.fs import Config
-            Config().persist(_auth_keys)
 
     def execute_registration(self):
         """
