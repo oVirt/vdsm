@@ -72,6 +72,25 @@ class TestNMConnectionSettings(VdsmTestCase):
 
             self.assertGreaterEqual(con_count, 1)
 
+    def test_delete_a_non_active_connection(self):
+        nm_settings = NMDbusSettings()
+
+        iface = iface_name()
+        with nm_connections(iface, IPV4ADDR, con_count=2):
+            con_count_pre_delete = sum(1 for _ in nm_settings.connections())
+            con = self._connection_to_delete(nm_settings, iface + '0')
+
+            con.delete()
+
+            con_count_post_delete = sum(1 for _ in nm_settings.connections())
+            self.assertEqual(con_count_pre_delete, con_count_post_delete + 1)
+
+    @staticmethod
+    def _connection_to_delete(nm_settings, con_name):
+        for nm_con in nm_settings.connections():
+            if nm_con.connection.id == con_name:
+                return nm_con
+
 
 @attr(type='integration')
 class TestNMActiveConnections(VdsmTestCase):

@@ -78,7 +78,11 @@ def _create_connection(connection_name, iface_name, ipv4addr):
 
 def _remove_connection(connection_name):
     command = [NMCLI_BINARY.cmd, 'con', 'del', connection_name]
-    _exec_cmd(command)
+    try:
+        _exec_cmd(command)
+    except NMCliError as ex:
+        if 'Error: unknown connection' not in ex.args[1]:
+            raise
 
 
 def _exec_cmd(command):

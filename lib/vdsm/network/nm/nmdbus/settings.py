@@ -47,7 +47,11 @@ class _NMDbusConnectionSettings(object):
     def __init__(self, connection_path):
         con_proxy = NMDbus.bus.get_object(NMDbus.NM_IF_NAME, connection_path)
         con_settings = dbus.Interface(con_proxy, self.NM_SETTINGS_CON_IF_NAME)
+        self._con_settings = con_settings
         self._config = con_settings.GetSettings()
+
+    def delete(self):
+        self._con_settings.Delete()
 
     @property
     def connection(self):
