@@ -127,6 +127,11 @@ class Domain(object):
         # TODO: does this count as hack?
         return [[], []]
 
+    def metadata(self):
+        errors.throw(
+            code=libvirt.VIR_ERR_NO_DOMAIN_METADATA
+        )
+
     def _startup(self):
         self._log.debug('clearing XML cache for %r', self.UUIDString())
         self._xml_file.clear()
