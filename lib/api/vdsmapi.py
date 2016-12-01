@@ -80,8 +80,8 @@ def find_schema(schema_name='vdsm-api'):
         if os.path.exists(path):
             return path
 
-    raise SchemaNotFound("Unable to find API schema file in %s or %s",
-                         localpath, installedpath)
+    raise SchemaNotFound("Unable to find API schema file in %s or %s" %
+                         (localpath, installedpath))
 
 
 class MethodRep(object):
