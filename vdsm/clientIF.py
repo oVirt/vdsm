@@ -94,7 +94,7 @@ class clientIF(object):
         self._subscriptions = defaultdict(list)
         self._scheduler = scheduler
         if _glusterEnabled:
-            self.gluster = gapi.GlusterApi(self, log)
+            self.gluster = gapi.GlusterApi()
         else:
             self.gluster = None
         try:

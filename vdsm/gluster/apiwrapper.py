@@ -17,7 +17,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from clientIF import clientIF
 from gluster.api import GlusterApi, META_VOLUME
 
 
@@ -25,8 +24,7 @@ class GlusterApiBase(object):
     ctorArgs = []
 
     def __init__(self):
-        self._cif = clientIF.getInstance()
-        self._gluster = GlusterApi(self._cif, self._cif.log)
+        self._gluster = GlusterApi()
 
 
 class GlusterHook(GlusterApiBase):

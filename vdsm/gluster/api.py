@@ -287,9 +287,7 @@ class GlusterApi(object):
 
     """
 
-    def __init__(self, cif, log):
-        self.cif = cif
-        self.log = log
+    def __init__(self):
         self.svdsmProxy = svdsm.getProxy()
 
     @exportAsVerb

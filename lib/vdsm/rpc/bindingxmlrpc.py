@@ -345,12 +345,14 @@ class BindingXMLRPC(object):
 
         self.server.register_introspection_functions()
         for (method, name) in globalMethods:
-            self.server.register_function(_wrap_api_method(method), name)
+            self.server.register_function(_wrap_api_method(method, self.cif),
+                                          name)
         for (method, name) in irsMethods:
             self.server.register_function(wrapIrsMethod(method), name)
         if _glusterEnabled and self.cif.gluster:
             for (method, name) in getGlusterMethods(self.cif.gluster):
-                self.server.register_function(_wrap_api_method(method), name)
+                self.server.register_function(
+                    _wrap_api_method(method, self.cif), name)
 
     #
     # Callable methods:
@@ -1209,7 +1211,7 @@ class BindingXMLRPC(object):
                 (self.sdm_create_volume, 'sdm_create_volume'))
 
 
-def _wrap_api_method(f):
+def _wrap_api_method(f, cif):
     def wrapper(*args, **kwargs):
         start_time = utils.monotonic_time()
         res = {}
@@ -1250,23 +1252,22 @@ def _wrap_api_method(f):
 
             # Logging current call
             logStr = 'client [%s]::call %s with %s %s' % \
-                (getattr(f.__self__.cif.threadLocal, 'client', ''),
+                (getattr(cif.threadLocal, 'client', ''),
                  f.__name__, displayArgs, kwargs)
 
             # if flowID exists
-            if getattr(f.__self__.cif.threadLocal, 'flowID', None) is not None:
-                logStr += " flowID [%s]" % f.__self__.cif.threadLocal.flowID
+            if getattr(cif.threadLocal, 'flowID', None) is not None:
+                logStr += " flowID [%s]" % cif.threadLocal.flowID
 
             # Ready to show the log into vdsm.log
-            f.__self__.log.log(logLevel, logStr)
+            cif.log.log(logLevel, logStr)
 
-            if f.__self__.cif.ready:
+            if cif.ready:
                 res = f(*args, **kwargs)
             else:
                 res = errCode['recovery']
 
-            f.__self__.cif.log.log(logLevel, 'return %s with %s',
-                                   f.__name__, res)
+            cif.log.log(logLevel, 'return %s with %s', f.__name__, res)
 
             # Ugly hack, but this code is going to be deleted soon.
             if isinstance(res.get('statsList'), Suppressed):
@@ -1274,26 +1275,26 @@ def _wrap_api_method(f):
 
             return res
         except libvirt.libvirtError as e:
-            f.__self__.cif.log.error("libvirt error", exc_info=True)
+            cif.log.error("libvirt error", exc_info=True)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 res = errCode['noVM']
             else:
                 res = errCode['unexpected']
             return res
         except VdsmException as e:
-            f.__self__.cif.log.error("vdsm exception occured", exc_info=True)
+            cif.log.error("vdsm exception occured", exc_info=True)
             res = e.response()
             return res
         except:
-            f.__self__.cif.log.error("unexpected error", exc_info=True)
+            cif.log.error("unexpected error", exc_info=True)
             res = errCode['unexpected']
             return res
         finally:
-            f.__self__.cif.log.info("RPC call %s finished (code=%s) in "
-                                    "%.2f seconds",
-                                    f.__name__,
-                                    res.get('status', {}).get('code'),
-                                    utils.monotonic_time() - start_time)
+            cif.log.info("RPC call %s finished (code=%s) in "
+                         "%.2f seconds",
+                         f.__name__,
+                         res.get('status', {}).get('code'),
+                         utils.monotonic_time() - start_time)
     wrapper.__name__ = f.__name__
     wrapper.__doc__ = f.__doc__
     return wrapper
