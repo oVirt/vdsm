@@ -399,8 +399,8 @@ class StorageDomainManifest(object):
     def acquireHostId(self, hostId, async=False):
         self._domainLock.acquireHostId(hostId, async)
 
-    def releaseHostId(self, hostId, async=False):
-        self._domainLock.releaseHostId(hostId, async, False)
+    def releaseHostId(self, hostId, async=False, unused=False):
+        self._domainLock.releaseHostId(hostId, async, unused)
 
     def hasHostId(self, hostId):
         return self._domainLock.hasHostId(hostId)
@@ -669,7 +669,7 @@ class StorageDomain(object):
         self._manifest.acquireHostId(hostId, async)
 
     def releaseHostId(self, hostId, async=False, unused=False):
-        self._manifest.releaseHostId(hostId, async)
+        self._manifest.releaseHostId(hostId, async, unused)
 
     def hasHostId(self, hostId):
         return self._manifest.hasHostId(hostId)

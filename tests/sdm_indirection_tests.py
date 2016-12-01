@@ -119,7 +119,7 @@ class FakeDomainManifest(object):
         pass
 
     @recorded
-    def releaseHostId(self, hostId, async=False):
+    def releaseHostId(self, hostId, async=False, unused=False):
         pass
 
     @recorded
@@ -686,7 +686,7 @@ class DomainTestMixin(object):
         ['getAllVolumes', 0],
         ['getReservedId', 0],
         ['acquireHostId', 2],
-        ['releaseHostId', 2],
+        ['releaseHostId', 3],
         ['hasHostId', 1],
         ['getHostStatus', 1],
         ['hasVolumeLeases', 0],
