@@ -37,7 +37,7 @@ def docker_net_inspect(network):
         'network',
         'inspect',
         network,
-    ])
+    ], raw=True)
 
 
 @expose
