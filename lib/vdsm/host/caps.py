@@ -43,6 +43,11 @@ from vdsm import osinfo
 from vdsm import supervdsm
 from vdsm import utils
 
+try:
+    import ovirt_hosted_engine_ha.client.client as haClient
+except ImportError:
+    haClient = None
+
 
 def _getFreshCapsXMLStr():
     return libvirtconnection.get().getCapabilities()
@@ -203,6 +208,7 @@ def get():
         from vdsm.gluster.api import glusterAdditionalFeatures
         caps['additionalFeatures'].extend(glusterAdditionalFeatures())
     caps['containers'] = containersconnection.is_supported()
+    caps['hostedEngineDeployed'] = _isHostedEngineDeployed()
     return caps
 
 
@@ -242,3 +248,18 @@ def _getVersionInfo():
                             ' libvirt from the virt-preview repository')
 
     return dsaversion.version_info
+
+
+def _isHostedEngineDeployed():
+    if not haClient:
+        return False
+
+    client = haClient.HAClient()
+    try:
+        is_deployed = client.is_deployed
+    except AttributeError:
+        logging.warning("The installed version of hosted engine doesn't "
+                        "support the checking of deployment status.")
+        return False
+
+    return is_deployed()

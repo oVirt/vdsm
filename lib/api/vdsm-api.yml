@@ -6598,6 +6598,13 @@ types:
             name: containers
             type: boolean
             added: '4.1'
+
+        -   defaultvalue: false
+            description: Indicates whether hosted engine has been deployed on
+                the host
+            name: hostedEngineDeployed
+            type: boolean
+            added: '4.1'
         type: object
 
     VmShortStatus: &VmShortStatus
