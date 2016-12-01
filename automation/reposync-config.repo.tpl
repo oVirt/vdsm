@@ -21,8 +21,8 @@ exclude=jasperreports-server ovirt-guest-tools-iso ovirt-engine-jboss-as *wildfl
 enabled=1
 gpgcheck=0
 
-[centos-ovirt40-candidate-el7]
+[centos-ovirt40-release-el7]
 name=CentOS-7 - oVirt 4.0
-baseurl=http://cbs.centos.org/repos/virt7-ovirt-40-candidate/x86_64/os/
+baseurl=http://mirror.centos.org/centos/7/virt/x86_64/ovirt-4.0/
 gpgcheck=0
 enabled=1

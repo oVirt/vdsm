@@ -132,14 +132,8 @@ Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-lock-sanlock
 
 %if 0%{?rhel}
-%if 0%{?centos}
-# TODO drop this once CentOS 7.3 is available
-Requires: libvirt-daemon-kvm >= 1.2.17-13.el7_2.5
-Requires: libvirt-python >= 1.2.17-2
-%else # rhel
 Requires: libvirt-daemon-kvm >= 2.0.0-10
 Requires: libvirt-python >= 2.0.0-2
-%endif
 %else # fedora
 Requires: libvirt-daemon-kvm >= 2.2.0-1
 Requires: libvirt-python >= 2.2.0-1
@@ -196,14 +190,7 @@ Requires: systemd >= 209
 %endif
 
 %if 0%{?rhel}
-%if 0%{?centos}
-# TODO drop this once CentOS 7.3 is available
-Requires: qemu-kvm-rhev >= 10:2.3.0-31.el7_2.16
-Requires: qemu-img-rhev >= 10:2.3.0-31.el7_2.16
-%else # rhel
-# require 7.3 GA version
 Requires: qemu-kvm-rhev >= 10:2.6.0-2
-%endif
 %else # fedora
 Requires: qemu-kvm >= 2:2.7.0-7
 %endif
