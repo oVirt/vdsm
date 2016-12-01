@@ -175,9 +175,7 @@ class ConfigFile(object):
                     if self._entries:
                         self._writeEntries(f, oldentries)
 
-                utils.unpersist(self._filename)
                 os.rename(tname, self._filename)
-                utils.persist(self._filename)
 
                 if self._oldmod != os.stat(self._filename).st_mode:
                     os.chmod(self._filename, self._oldmod)
