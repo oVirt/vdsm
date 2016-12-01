@@ -73,6 +73,11 @@ ConnectionError: client can't connect to vdsm::
     vdsm.client.ConnectionError: Connection to localhost:54321 with
     use_tls=True, timeout=60 failed: [Errno 111] Connection refused
 
+MissingSchemaError: there was an error parsing the schema::
+
+    vdsm.client.MissingSchemaError: Error parsing schema: Unable to find API
+    schema file
+
 ClientError will be raised when we cannot send a request to the server::
 
     vdsm.client.ClientError: Error sending request: [Errno 111]
@@ -138,6 +143,13 @@ class ConnectionError(Error):
         self.reason = reason
 
 
+class MissingSchemaError(Error):
+    msg = "Error parsing schema: {self.reason}"
+
+    def __init__(self, reason):
+        self.reason = reason
+
+
 class TimeoutError(Error):
     msg = ("Request {self.cmd} with args {self.params} timed out "
            "after {self.timeout} seconds")
@@ -186,8 +198,11 @@ class _Client(object):
     def __init__(self, client, default_timeout):
         self._client = client
         self._default_timeout = default_timeout
-        schema_path = vdsmapi.find_schema()
-        self._schema = vdsmapi.Schema([schema_path], False)
+        try:
+            schema_path = vdsmapi.find_schema()
+            self._schema = vdsmapi.Schema([schema_path], False)
+        except vdsmapi.SchemaNotFound as e:
+            raise MissingSchemaError(e)
         self._create_namespaces()
 
     def _create_namespaces(self):
