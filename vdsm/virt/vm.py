@@ -4833,6 +4833,9 @@ class Vm(object):
             return
         if stats['monitorResponse'] == '-1':
             return
+        # TODO: remove once we have real monitoring for containers
+        if not is_kvm(self.conf):
+            return
 
         self.log.warning('monitor became unresponsive'
                          ' (command timeout, age=%s)',
