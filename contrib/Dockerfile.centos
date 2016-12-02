@@ -16,11 +16,13 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     mom \
     openvswitch \
     psmisc \
+    python-blivet \
     python-cpopen \
     python-decorator \
     python-devel \
     python-inotify \
     python-ioprocess \
+    python-magic \
     python-netaddr \
     python-pthreading \
     python-requests \
