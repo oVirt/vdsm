@@ -121,8 +121,17 @@ ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %changelog
+* Fri Dec 2 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.3.5
+- stop processing if closing
+
+* Fri Nov 18 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.3.4
+- Closing channel could take too much reactor's time
+
 * Fri Nov 4 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.3.3
-- Release of 1.3.3
+- Release for 4.1
+
+* Wed Oct 12 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.3.2
+- No reconnect during setupNetworks
 
 * Mon Sep 5 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.3.1
 - Release of 1.3.1
