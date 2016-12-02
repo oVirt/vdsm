@@ -36,6 +36,7 @@ from testlib import VdsmTestCase as TestCaseBase
 from testlib import namedTemporaryDir, temporaryPath
 from testlib import expandPermutations, permutations
 from testValidation import ValidateRunningAsRoot
+from testValidation import broken_on_ci
 import monkeypatch
 
 FLOPPY_SIZE = (2 ** 20) * 4
@@ -125,6 +126,7 @@ class TestMountHash(TestCaseBase):
 class MountTests(TestCaseBase):
 
     @ValidateRunningAsRoot
+    @broken_on_ci("mount check fails after successful mount", name="TRAVIS_CI")
     def testLoopMount(self):
         with namedTemporaryDir() as mpath:
             # two nested with blocks to be python 2.6 friendly
@@ -140,6 +142,7 @@ class MountTests(TestCaseBase):
                         udevadm.settle(5)
 
     @ValidateRunningAsRoot
+    @broken_on_ci("mount check fails after successful mount", name="TRAVIS_CI")
     def testSymlinkMount(self):
         with namedTemporaryDir() as root_dir:
             backing_image = os.path.join(root_dir, 'backing.img')
