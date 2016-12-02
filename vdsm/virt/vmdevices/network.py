@@ -251,7 +251,6 @@ class Interface(Base):
             driver = ({'name': vmxml.attr(xdrivers, 'name'),
                        'queues': vmxml.attr(xdrivers, 'queues')}
                       if xdrivers else {})
-            driver = vmxml.find_attr(x, 'driver', ('name', 'queues',))
             if devType == 'hostdev':
                 name = alias
                 model = 'passthrough'
