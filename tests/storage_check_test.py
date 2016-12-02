@@ -31,6 +31,7 @@ from monkeypatch import MonkeyPatchScope
 from testValidation import slowtest
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
+from testlib import start_thread
 from testlib import temporaryPath
 
 from vdsm import concurrent
@@ -122,13 +123,13 @@ class TestDirectioChecker(VdsmTestCase):
                 self.assertGreater(actual, expected - clock_res)
                 self.assertLess(actual, expected + clock_res)
 
+    # In the idle state the checker is not running so there is nothing to
+    # cleanup.
+
     def test_idle_stop_ignored(self):
-        self.checks = 1
         checker = check.DirectioChecker(self.loop, "/path", self.complete)
         checker.stop()  # Will be ignored
-        checker.start()
-        self.loop.run_forever()
-        self.assertTrue(checker.is_running())
+        self.assertFalse(checker.is_running())
 
     def test_idle_repr(self):
         checker = check.DirectioChecker(self.loop, "/path", self.complete)
@@ -137,40 +138,68 @@ class TestDirectioChecker(VdsmTestCase):
         self.assertIn(check.IDLE, str(checker))
         self.assertNotIn("next_check=", str(checker))
 
+    # In the running state, the checker complete callback will stop the event
+    # loop. We need to run the loop until it is stopped.
+
     def test_running_start_raises(self):
         checker = check.DirectioChecker(self.loop, "/path", self.complete)
         checker.start()
-        self.assertRaises(RuntimeError, checker.start)
+        try:
+            self.assertRaises(RuntimeError, checker.start)
+        finally:
+            self.loop.run_forever()
 
     def test_running_repr(self):
         checker = check.DirectioChecker(self.loop, "/path", self.complete)
         checker.start()
-        print(checker)
-        self.assertIn("/path", str(checker))
-        self.assertIn(check.RUNNING, str(checker))
-        self.assertIn("next_check=", str(checker))
+        try:
+            print(checker)
+            self.assertIn("/path", str(checker))
+            self.assertIn(check.RUNNING, str(checker))
+            self.assertIn("next_check=", str(checker))
+        finally:
+            self.loop.run_forever()
+
+    # In the stopping state, the checker will not call the complete callback.
+    # We need to wait on the checker and stop the loop when it completes.
 
     def test_stopping_stop_ignored(self):
         checker = check.DirectioChecker(self.loop, "/path", self.complete)
         checker.start()
-        checker.stop()
-        checker.stop()  # Will be ignored
-        self.assertTrue(checker.is_running())
+        try:
+            checker.stop()
+            checker.stop()  # Will be ignored
+            self.assertTrue(checker.is_running())
+        finally:
+            start_thread(self.wait_for_checker, checker)
+            self.loop.run_forever()
 
     def test_stopping_start_raises(self):
         checker = check.DirectioChecker(self.loop, "/path", self.complete)
         checker.start()
-        checker.stop()
-        self.assertRaises(RuntimeError, checker.start)
+        try:
+            checker.stop()
+            self.assertRaises(RuntimeError, checker.start)
+        finally:
+            start_thread(self.wait_for_checker, checker)
+            self.loop.run_forever()
 
     def test_stopping_repr(self):
         checker = check.DirectioChecker(self.loop, "/path", self.complete)
         checker.start()
-        checker.stop()
-        print(checker)
-        self.assertIn("/path", str(checker))
-        self.assertIn(check.STOPPING, str(checker))
-        self.assertNotIn("next_check=", str(checker))
+        try:
+            checker.stop()
+            print(checker)
+            self.assertIn("/path", str(checker))
+            self.assertIn(check.STOPPING, str(checker))
+            self.assertNotIn("next_check=", str(checker))
+        finally:
+            start_thread(self.wait_for_checker, checker)
+            self.loop.run_forever()
+
+    def wait_for_checker(self, checker):
+        checker.wait(5)
+        self.loop.call_soon_threadsafe(self.loop.stop)
 
 
 @expandPermutations
