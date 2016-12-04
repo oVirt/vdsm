@@ -77,7 +77,10 @@ for distro in el7; do
                     --with-xunit \
                     --xunit-file=/tmp/nosetests-${distro}.xml \
                     -s \
-                    $FUNCTIONAL_TESTS_LIST \
+                    $FUNCTIONAL_TESTS_LIST
+                ./run_tests.sh \
+                    -a type=functional,switch=legacy \
+                    network/func_*_test.py \
             " \
         || failed=$?
         kill $PID
