@@ -24,6 +24,7 @@ vdsmnetworkconfiguratorsdir = $(vdsmpylibdir)/network/configurators
 dist_vdsmnetworkconfigurators_PYTHON = \
 	__init__.py \
 	ifcfg.py \
+	ifcfg_acquire.py \
 	iproute2.py \
 	pyroute_two.py \
 	qos.py \

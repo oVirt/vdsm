@@ -32,6 +32,7 @@ from six import StringIO
 
 from vdsm.network import libvirt
 from vdsm.network.configurators import ifcfg
+from vdsm.network.configurators import ifcfg_acquire
 
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
@@ -168,11 +169,11 @@ ONBOOT=yes
 
 
 @attr(type='unit')
-@mock.patch.object(ifcfg.utils, 'rmFile')
-@mock.patch.object(ifcfg.os, 'rename')
-@mock.patch.object(ifcfg.glob, 'iglob')
-@mock.patch.object(ifcfg.misc, 'open', create=True)
-class IfcfgAcquireTests(TestCaseBase):
+@mock.patch.object(ifcfg_acquire.utils, 'rmFile')
+@mock.patch.object(ifcfg_acquire.os, 'rename')
+@mock.patch.object(ifcfg_acquire.glob, 'iglob')
+@mock.patch.object(ifcfg_acquire.misc, 'open', create=True)
+class IfcfgAcquireNMofflineTests(TestCaseBase):
 
     def test_acquire_iface_given_non_standard_filename(self,
                                                        mock_open,
@@ -183,10 +184,10 @@ class IfcfgAcquireTests(TestCaseBase):
             IFCFG_ETH_CONF)
         mock_list_files.return_value = ['filename1']
 
-        ifcfg.IfcfgAcquire.acquire_device('testdevice')
+        ifcfg_acquire.IfcfgAcquire.acquire_device('testdevice')
 
         mock_rename.assert_called_once_with(
-            'filename1', ifcfg.NET_CONF_PREF + 'testdevice')
+            'filename1', ifcfg_acquire.NET_CONF_PREF + 'testdevice')
 
     def test_acquire_iface_given_multiple_files_for_the_iface(self,
                                                               mock_open,
@@ -197,10 +198,10 @@ class IfcfgAcquireTests(TestCaseBase):
             IFCFG_ETH_CONF)
         mock_list_files.return_value = ['filename1', 'filename2']
 
-        ifcfg.IfcfgAcquire.acquire_device('testdevice')
+        ifcfg_acquire.IfcfgAcquire.acquire_device('testdevice')
 
         mock_rename.assert_called_once_with(
-            'filename1', ifcfg.NET_CONF_PREF + 'testdevice')
+            'filename1', ifcfg_acquire.NET_CONF_PREF + 'testdevice')
         mock_rmfile.assert_called_once_with('filename2')
 
     def test_acquire_vlan_iface_given_nm_unique_config(self,
@@ -212,8 +213,8 @@ class IfcfgAcquireTests(TestCaseBase):
             IFCFG_VLAN_CONF)
         mock_list_files.return_value = ['filename1', 'filename2']
 
-        ifcfg.IfcfgAcquire.acquire_vlan_device('testdevice.100')
+        ifcfg_acquire.IfcfgAcquire.acquire_vlan_device('testdevice.100')
 
         mock_rename.assert_called_once_with(
-            'filename1', ifcfg.NET_CONF_PREF + 'testdevice.100')
+            'filename1', ifcfg_acquire.NET_CONF_PREF + 'testdevice.100')
         mock_rmfile.assert_called_once_with('filename2')
