@@ -52,7 +52,8 @@ def iface_name():
 
 
 @contextmanager
-def nm_connections(iface_name, ipv4addr, connection_name=None, con_count=1):
+def nm_connections(iface_name, ipv4addr, connection_name=None, con_count=1,
+                   save=False):
     """
     Setting up a connection with an IP address, removing it at exit.
     In case connection_name is not provided, it will use the name of the iface.
@@ -61,7 +62,8 @@ def nm_connections(iface_name, ipv4addr, connection_name=None, con_count=1):
         connection_name = iface_name
 
     for i in range(con_count):
-        _create_connection(connection_name + str(i), iface_name, ipv4addr)
+        _create_connection(
+            connection_name + str(i), iface_name, ipv4addr, save)
     try:
         yield
     finally:
@@ -69,10 +71,10 @@ def nm_connections(iface_name, ipv4addr, connection_name=None, con_count=1):
             _remove_connection(connection_name + str(i))
 
 
-def _create_connection(connection_name, iface_name, ipv4addr):
+def _create_connection(connection_name, iface_name, ipv4addr, save):
     command = [NMCLI_BINARY.cmd, 'con', 'add', 'con-name', connection_name,
-               'ifname', iface_name, 'save', 'no', 'type', TEST_LINK_TYPE,
-               'ip4', ipv4addr]
+               'ifname', iface_name, 'save', 'yes' if save else 'no',
+               'type', TEST_LINK_TYPE, 'ip4', ipv4addr]
     _exec_cmd(command)
 
 

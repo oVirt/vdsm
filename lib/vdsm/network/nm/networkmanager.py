@@ -21,7 +21,7 @@ from __future__ import absolute_import
 from vdsm.commands import execCmd
 from vdsm.utils import CommandPath, memoized
 
-from .nmdbus import NMDbus
+from .nmdbus import NMDbus, NMDbusIfcfgRH1
 from .nmdbus.active import NMDbusActiveConnections
 from .nmdbus.device import NMDbusDevice
 from .nmdbus.settings import NMDbusSettings
@@ -74,3 +74,13 @@ class Device(object):
             if (not active_connection or
                     connection.connection.uuid != active_connection.uuid):
                 yield self._nm_settings.connection(connection_path)
+
+
+def ifcfg2connection(ifcfg_file_path):
+    """
+    Given an ifcfg full file path,
+    return a tuple of the NM connection uuid and path.
+    In case no connection is found for the given file, return (None, None).
+    """
+    nm_ifcfg = NMDbusIfcfgRH1()
+    return nm_ifcfg.ifcfg2connection(ifcfg_file_path)

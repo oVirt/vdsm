@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 import dbus
+from dbus.exceptions import DBusException
 
 
 class NMDbus(object):
@@ -39,3 +40,31 @@ class NMDbusManager(object):
         mng_proxy = NMDbus.bus.get_object(NMDbus.NM_IF_NAME, NMDbus.NM_PATH)
         self.properties = dbus.Interface(mng_proxy, NMDbus.DBUS_PROPERTIES)
         self.interface = dbus.Interface(mng_proxy, NMDbus.NM_IF_NAME)
+
+
+class NMDbusIfcfgRH1(object):
+    NM_IFCFGRH_IF_NAME = 'com.redhat.ifcfgrh1'
+    NM_IFCFGRH_PATH = '/com/redhat/ifcfgrh1'
+
+    ERROR_INV_CON = "ifcfg file '{}' unknown"
+
+    def __init__(self):
+        ifcfg_proxy = NMDbus.bus.get_object(NMDbusIfcfgRH1.NM_IFCFGRH_IF_NAME,
+                                            NMDbusIfcfgRH1.NM_IFCFGRH_PATH)
+        self.ifcfg = dbus.Interface(ifcfg_proxy,
+                                    NMDbusIfcfgRH1.NM_IFCFGRH_IF_NAME)
+
+    def ifcfg2connection(self, ifcfg_path):
+        """
+        Given an ifcfg full file path,
+        return a tuple of the NM connection uuid and path.
+        In case no connection is found for the given file, return (None, None).
+        """
+        con_info = (None, None)
+        try:
+            con_info = self.ifcfg.GetIfcfgDetails(ifcfg_path)
+        except DBusException as ex:
+            if NMDbusIfcfgRH1.ERROR_INV_CON.format(ifcfg_path) != ex.args[0]:
+                raise
+
+        return con_info

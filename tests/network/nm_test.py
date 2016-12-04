@@ -19,6 +19,8 @@
 #
 from __future__ import absolute_import
 
+import glob
+
 from nose.plugins.attrib import attr
 
 from dbus.exceptions import DBusException
@@ -73,3 +75,38 @@ class TestNMConnectionCleanup(VdsmTestCase):
             device.cleanup_inactive_connections()
 
             self.assertEqual(1, sum(1 for _ in device.connections()))
+
+
+@attr(type='functional')
+class TestNMIfcfg2Connection(VdsmTestCase):
+
+    NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
+    NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
+
+    def test_detect_connection_based_on_ifcfg_file(self):
+        """
+        NM may use ifcfg files as its storage format for connections via the
+        ifcfg-rh settings plugin.
+        This is the default option under RHEL/Centos/Fedora.
+        When a connection is defined, it is saved in an ifcfg file, however,
+        the filename is not recorded in NM records.
+        In some scenarios, it is useful look for the ifcfg filename based on
+        a given connection or the other way around, looking for the connection
+        given the filename.
+        """
+        iface = iface_name()
+        with nm_connections(iface, IPV4ADDR, con_count=3, save=True):
+            device = networkmanager.Device(iface)
+            expected_uuids = {con.connection.uuid
+                              for con in device.connections()}
+
+            actual_uuids = {networkmanager.ifcfg2connection(file)[0]
+                            for file in TestNMIfcfg2Connection._ifcfg_files()}
+
+            self.assertLessEqual(expected_uuids, actual_uuids)
+
+    @staticmethod
+    def _ifcfg_files():
+        paths = glob.iglob(TestNMIfcfg2Connection.NET_CONF_PREF + '*')
+        for ifcfg_file_name in paths:
+            yield ifcfg_file_name
