@@ -171,9 +171,10 @@ class TMapTests(VdsmTestCase):
 
     def test_concurrency(self):
         start = time.time()
-        concurrent.tmap(time.sleep, [0.1] * 10)
+        concurrent.tmap(time.sleep, [0.5] * 10)
         elapsed = time.time() - start
-        self.assertTrue(0.1 < elapsed < 0.2)
+        self.assertGreater(elapsed, 0.5)
+        self.assertLess(elapsed, 1.0)
 
     def test_error(self):
         error = RuntimeError("No result for you!")
