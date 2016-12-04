@@ -1,0 +1,30 @@
+#!/bin/sh
+# Watch a python process and terminated it with a backtrace after a timeout.
+#
+# Usage:
+#     py-watch PID TIMEOUT
+
+watched_pid=$1
+timeout=$2
+
+function terminate_jobs {
+    running_jobs=$(jobs -pr)
+    if [ -n "$running_jobs" ]; then
+        kill $running_jobs
+    fi
+}
+
+trap terminate_jobs EXIT
+
+sleep $timeout
+echo
+echo "========================================================================"
+echo "=                       Watched process timed out                      ="
+echo "========================================================================"
+echo
+gdb -p $watched_pid --batch -ex "thread apply all py-bt"
+echo
+echo "========================================================================"
+echo "=                      Terminating watched process                     ="
+echo "========================================================================"
+kill -KILL $watched_pid

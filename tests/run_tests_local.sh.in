@@ -3,6 +3,15 @@ if [ -z "$PYTHON_EXE" ]; then
     PYTHON_EXE="python2"
 fi
 
+function terminate_jobs {
+    running_jobs=$(jobs -pr)
+    if [ -n "$running_jobs" ]; then
+        kill $running_jobs
+    fi
+}
+
+trap terminate_jobs EXIT
+
 export \
     LC_ALL=C \
     NOSE_LOGFORMAT='%(asctime)s %(levelname)-5s (%(threadName)s) [%(name)s] %(message)s (%(module)s:%(lineno)d)' \
@@ -15,29 +24,7 @@ export \
 runner_pid=$!
 
 if [ -n "$TIMEOUT" ]; then
-    (
-        sleep $TIMEOUT
-        echo
-        echo "========================================================================"
-        echo "=           Timeout completing tests - extracting stacktrace           ="
-        echo "========================================================================"
-        echo
-        gdb -p $runner_pid --batch -ex "thread apply all py-bt"
-        echo
-        echo "========================================================================"
-        echo "=                        Aborting tests                                ="
-        echo "========================================================================"
-        kill -KILL $runner_pid
-        sleep 5
-    ) &
-    watcher_pid=$!
+    ./py-watch $runner_pid $TIMEOUT &
 fi
 
 wait $runner_pid
-runner_status=$?
-
-if [ -n "$TIMEOUT" ]; then
-    kill -TERM $watcher_pid
-fi
-
-exit $runner_status

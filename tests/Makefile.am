@@ -261,6 +261,7 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	makecert.sh \
+	py-watch \
 	tests_child.py \
 	$(NULL)
 
