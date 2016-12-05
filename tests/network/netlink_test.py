@@ -27,7 +27,7 @@ from vdsm.network.netlink import monitor
 from vdsm.sysctl import is_disabled_ipv6
 from vdsm.utils import monotonic_time
 
-from testValidation import ValidateRunningAsRoot
+from testValidation import ValidateRunningAsRoot, broken_on_ci
 from testlib import start_thread, VdsmTestCase as TestCaseBase
 
 IP_ADDRESS = '192.0.2.1'
@@ -118,6 +118,7 @@ class NetlinkEventMonitorTests(TestCaseBase):
             while True:
                 next(iterator)
 
+    @broken_on_ci('Sometimes we miss some events on CI', AssertionError)
     @ValidateRunningAsRoot
     def test_events_keys(self):
         def _simplify_event(event):
