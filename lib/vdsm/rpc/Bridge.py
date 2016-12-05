@@ -23,8 +23,8 @@ import types
 
 import API
 import yajsonrpc
-from api import vdsmapi
 
+from vdsm.api import vdsmapi
 from vdsm.common.exception import VdsmException
 from vdsm.config import config
 from vdsm.network.netinfo.addresses import getDeviceByIP

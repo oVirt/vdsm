@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2015 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@ try:
 except ImportError:
     _glusterEnabled = False
 
+from vdsm.api import vdsmapi
 from vdsm.rpc import Bridge
-from api import vdsmapi
 from testlib import Sigargs
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -91,7 +91,7 @@ class SchemaValidation(TestCaseBase):
         for tail in ('vdsm-api.yml', 'vdsm-api-gluster.yml',
                      'vdsm-events.yml'):
             yield os.path.join(
-                dirName, '..', 'lib', 'api', tail)
+                dirName, '..', 'lib', 'vdsm', 'api', tail)
 
     def _validate(self, api_mod):
         with schema_not_found():

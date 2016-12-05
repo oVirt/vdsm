@@ -30,7 +30,7 @@ from yajsonrpc import \
     JsonRpcNoResponseError, \
     CALL_TIMEOUT
 
-from api import vdsmapi
+from vdsm.api import vdsmapi
 from vdsm.common import response
 from .config import config
 from . import sslutils

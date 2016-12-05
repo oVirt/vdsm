@@ -15,7 +15,7 @@ fi
 
 make
 
-cp $PWD/lib/api/vdsm-api.html "$EXPORTS"
+cp $PWD/lib/vdsm/api/vdsm-api.html "$EXPORTS"
 
 # tests will be done elsewhere
 yum-builddep ./vdsm.spec
