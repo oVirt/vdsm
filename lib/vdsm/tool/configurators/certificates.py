@@ -23,10 +23,8 @@ import sys
 from vdsm.config import config
 
 from . import YES, NO
-from vdsm.tool.validate_ovirt_certs import validate_ovirt_certs
 from vdsm import constants
 from vdsm.commands import execCmd
-from vdsm.utils import isOvirtNode
 
 
 def validate():
@@ -54,8 +52,6 @@ def _exec_vdsm_gencerts():
 
 def configure():
     _exec_vdsm_gencerts()
-    if isOvirtNode():
-        validate_ovirt_certs()
 
 
 def isconfigured():

@@ -21,14 +21,6 @@ SUBDIRS=configurators
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-EXTRA_DIST = \
-	validate_ovirt_certs.py.in \
-	$(NULL)
-
-nodist_vdsmtool_PYTHON = \
-	validate_ovirt_certs.py \
-	$(NULL)
-
 dist_vdsmtool_PYTHON = \
 	__init__.py \
 	dummybr.py \

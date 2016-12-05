@@ -145,13 +145,6 @@ Runs the upgrade operation again, even if this operation has been performed prev
 .RE
 .RE
 .TP
-Options for the \fIvalidate_ovirt_certs\fP module:
-.RS
-.TP
-.B validate-ovirt-certs
-Validates \fIvdsmcert.pem\fP against \fIcacert.pem\fP. If the current \fIcacert.pem\fP is invalid, the command will find a valid certificate file and replace the old \fIcacert.pem\fP with that certificate, and then persist that change.
-.RE
-.TP
 Options for the \fIvdsm-id\fP module:
 .RS
 .TP

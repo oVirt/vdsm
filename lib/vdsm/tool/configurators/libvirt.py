@@ -24,14 +24,9 @@ import sys
 
 from vdsm.config import config
 
-from . import InvalidRun, NO, MAYBE
+from . import NO, MAYBE
 from vdsm.tool.configfile import ConfigFile, ParserWrapper
-from vdsm.tool.validate_ovirt_certs import validate_ovirt_certs
-from vdsm import utils
 from vdsm import constants
-
-if utils.isOvirtNode():
-    from ovirt.node.utils.fs import Config as NodeCfg
 
 
 requires = frozenset(('certificates',))
@@ -44,12 +39,6 @@ def _getFile(fname):
 
 
 def configure():
-    if utils.isOvirtNode():
-        if not os.path.exists(constants.P_VDSM_CERT):
-            raise InvalidRun(
-                "vdsm: Missing certificate, vdsm not registered")
-        validate_ovirt_certs()
-
     # Remove a previous configuration (if present)
     removeConf()
 
@@ -192,14 +181,11 @@ def _removeFile(content, vdsmConfiguration):
     """
     delete a file if it exists.
     """
-    if utils.isOvirtNode():
-        NodeCfg().delete(content['path'])
-    else:
-        try:
-            os.unlink(content['path'])
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
+    try:
+        os.unlink(content['path'])
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
 
 
 def _removeSection(path):
