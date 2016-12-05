@@ -79,6 +79,7 @@ def start(cif, scheduler):
             config.getint('irs', 'vol_size_sample_interval')),
 
         # needs dispatching becuse access FS and libvirt data
+        # Ignored by new engine, has to be kept for BC sake.
         per_vm_operation(
             NumaInfoMonitor,
             config.getint('vars', 'vm_sample_numa_interval')),
