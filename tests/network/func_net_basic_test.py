@@ -26,6 +26,7 @@ from nose.plugins.attrib import attr
 
 from .netfunctestlib import NetFuncTestCase, NOCHK
 from .nettestlib import dummy_device
+from .nmnettestlib import iface_name, nm_connections, is_networkmanager_running
 
 NETWORK_NAME = 'test-network'
 VLAN = 10
@@ -71,7 +72,13 @@ class NetworkBasicLegacyTest(NetworkBasicTemplate):
     __test__ = True
     switch = 'legacy'
 
+    NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
+    NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
+
     def test_add_net_based_on_device_with_non_standard_ifcfg_file(self):
+        if is_networkmanager_running():
+            self.skipTest('NetworkManager is running.')
+
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': self.switch}}
             NETREMOVE = {NETWORK_NAME: {'remove': True}}
@@ -79,10 +86,7 @@ class NetworkBasicLegacyTest(NetworkBasicTemplate):
                 self.setupNetworks(NETREMOVE, {}, NOCHK)
                 self.assertNoNetwork(NETWORK_NAME)
 
-                NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
-                NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
-
-                nic_ifcfg_file = NET_CONF_PREF + nic
+                nic_ifcfg_file = self.NET_CONF_PREF + nic
                 self.assertTrue(os.path.exists(nic_ifcfg_file))
                 nic_ifcfg_badname_file = nic_ifcfg_file + 'tail123'
                 os.rename(nic_ifcfg_file, nic_ifcfg_badname_file)
@@ -92,6 +96,21 @@ class NetworkBasicLegacyTest(NetworkBasicTemplate):
                     self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
                     self.assertTrue(os.path.exists(nic_ifcfg_file))
                     self.assertFalse(os.path.exists(nic_ifcfg_badname_file))
+
+    def test_add_net_based_on_device_with_multiple_nm_connections(self):
+        if not is_networkmanager_running():
+            self.skipTest('NetworkManager is not running.')
+
+        IPv4_ADDRESS = '192.0.2.1'
+        iface = iface_name()
+        NET = {NETWORK_NAME: {'bonding': iface, 'switch': self.switch}}
+        with nm_connections(iface, IPv4_ADDRESS, con_count=3):
+            with self.setupNetworks(NET, {}, NOCHK):
+                self.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
+
+            # The bond was acquired, therefore VDSM needs to clean it.
+            BONDREMOVE = {iface: {'remove': True}}
+            self.setupNetworks({}, BONDREMOVE, NOCHK)
 
 
 @attr(type='functional', switch='ovs')

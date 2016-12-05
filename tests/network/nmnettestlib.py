@@ -47,6 +47,11 @@ class NMService(object):
             execCmd([SYSTEMCTL.cmd, 'stop', NM_SERVICE])
 
 
+def is_networkmanager_running():
+    rc, _, _ = execCmd([SYSTEMCTL.cmd, 'status', NM_SERVICE])
+    return rc == 0
+
+
 def iface_name():
     return random_iface_name('bond', max_length=11, digit_only=True)
 

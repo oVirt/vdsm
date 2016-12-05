@@ -23,6 +23,8 @@ import os
 
 from vdsm import utils
 from vdsm.network.netinfo import misc
+from vdsm.network.nm import networkmanager
+from vdsm.network.nm.errors import NMDeviceNotFoundError
 
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
@@ -32,14 +34,67 @@ NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
 class IfcfgAcquire(object):
     @staticmethod
     def acquire_device(device):
+        if networkmanager.is_running():
+            IfcfgAcquireNMonline.acquire_device(device)
+        else:
+            IfcfgAcquireNMoffline.acquire_device(device)
+
+    @staticmethod
+    def acquire_vlan_device(device):
+        if networkmanager.is_running():
+            IfcfgAcquireNMonline.acquire_vlan_device(device)
+        else:
+            IfcfgAcquireNMoffline.acquire_vlan_device(device)
+
+
+class IfcfgAcquireNMonline(object):
+    @staticmethod
+    def acquire_device(device):
+        try:
+            dev = networkmanager.Device(device)
+        except NMDeviceNotFoundError:
+            return
+
+        dev.cleanup_inactive_connections()
+
+        active_connection = dev.active_connection
+        if not active_connection:
+            return
+
+        fpath = IfcfgAcquireNMonline._ifcfg_file_lookup(active_connection.uuid)
+        if fpath:
+            os.rename(fpath, NET_CONF_PREF + device)
+
+    @staticmethod
+    def acquire_vlan_device(device):
+        return
+
+    @staticmethod
+    def _ifcfg_file_lookup(connection_uuid):
+        for ifcfg_file in IfcfgAcquireNMonline._ifcfg_files():
+            uuid, _ = networkmanager.ifcfg2connection(ifcfg_file)
+            if uuid and uuid == connection_uuid:
+                return ifcfg_file
+        return None
+
+    @staticmethod
+    def _ifcfg_files():
+        paths = glob.iglob(NET_CONF_PREF + '*')
+        for ifcfg_file_name in paths:
+            yield ifcfg_file_name
+
+
+class IfcfgAcquireNMoffline(object):
+    @staticmethod
+    def acquire_device(device):
         """
         Attempts to detect a device ifcfg file and rename it to a vdsm
         supported format.
         In case of multiple ifcfg files that treat the same device, all except
         the first are deleted.
         """
-        device_files = IfcfgAcquire._collect_device_files(device)
-        IfcfgAcquire._normalize_device_filenames(device, device_files)
+        device_files = IfcfgAcquireNMoffline._collect_device_files(device)
+        IfcfgAcquireNMoffline._normalize_device_filenames(device, device_files)
 
     @staticmethod
     def acquire_vlan_device(device):
@@ -48,8 +103,8 @@ class IfcfgAcquire(object):
         is different from the common case. Specifically when being created
         using Network Manager.
         """
-        device_files = IfcfgAcquire._collect_vlan_device_files(device)
-        IfcfgAcquire._normalize_device_filenames(device, device_files)
+        device_files = IfcfgAcquireNMoffline._collect_vlan_device_files(device)
+        IfcfgAcquireNMoffline._normalize_device_filenames(device, device_files)
 
     @staticmethod
     def _collect_device_files(device):

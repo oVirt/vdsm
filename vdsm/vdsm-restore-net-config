@@ -40,6 +40,7 @@ from vdsm.network.netinfo.cache import NetInfo
 from vdsm.network.netrestore import NETS_RESTORED_MARK
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig, \
     CONF_PERSIST_DIR, BaseConfig
+from vdsm.network.nm import networkmanager
 from vdsm import sysctl
 from vdsm.utils import monotonic_time
 
@@ -116,6 +117,8 @@ def unified_restoration():
     Builds a setupNetworks command from the persistent configuration to set it
     as running configuration.
     """
+    networkmanager.init()
+
     _remove_networks_in_running_config()
 
     _restore_non_vdsm_net_devices()
