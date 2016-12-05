@@ -31,7 +31,6 @@ common_modules = \
 	common/network_test.py \
 	common/osutils_test.py \
 	common/proc_test.py \
-	common/properties_test.py \
 	common/pthread_test.py \
 	common/validate_test.py \
 	$(NULL)
