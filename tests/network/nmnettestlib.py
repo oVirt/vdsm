@@ -48,7 +48,7 @@ class NMService(object):
 
 
 def iface_name():
-    return random_iface_name('bond_', max_length=11)
+    return random_iface_name('bond', max_length=11, digit_only=True)
 
 
 @contextmanager
