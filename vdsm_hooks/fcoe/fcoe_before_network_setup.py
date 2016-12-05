@@ -86,7 +86,6 @@ def _configure(interface, custom_params):
         outfile.write(CONFFILE_HEADER + "\n")
         for name, value in six.iteritems(config):
             outfile.write('%s="%s"\n' % (name, value))
-    utils.persist(filename)
 
 
 def _unconfigure(interface):
@@ -95,7 +94,6 @@ def _unconfigure(interface):
     """
     filename = _get_config_name(interface)
     if os.path.exists(filename):
-        utils.unpersist(filename)
         utils.rmFile(filename)
 
 

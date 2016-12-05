@@ -64,18 +64,9 @@ SUBDIRS += \
 	$(NULL)
 endif
 
-dist_vdsmexec_SCRIPTS = \
-	unpersist-vdsm-hook
-
-nodist_vdsmexec_SCRIPTS = \
-	persist-vdsm-hooks
-
 CLEANFILES = \
 	config.log \
 	$(nodist_vdsmexec_SCRIPTS)
-
-EXTRA_DIST = \
-	persist-vdsm-hooks.in
 
 VDSMHOOKS = \
 	before_device_create \
