@@ -24,7 +24,6 @@ import errno
 import json
 import logging
 import os
-import pwd
 
 import six
 
@@ -176,12 +175,6 @@ class Config(BaseConfig):
                 raise
         with open(path, 'w') as configurationFile:
             json.dump(config, configurationFile, indent=4)
-
-        # Set owner to vdsm (required by ovirt-node)
-        vdsm_uid = pwd.getpwnam(constants.VDSM_USER).pw_uid
-        os.chown(os.path.dirname(dirPath), vdsm_uid, -1)
-        os.chown(dirPath, vdsm_uid, -1)
-        os.chown(path, vdsm_uid, -1)
 
     @staticmethod
     def _removeConfig(path):

@@ -20,9 +20,7 @@
 
 from __future__ import absolute_import
 import json
-from monkeypatch import MonkeyPatch
 import os
-import pwd
 from shutil import rmtree
 import tempfile
 
@@ -91,7 +89,6 @@ class NetConfPersistenceTests(TestCaseBase):
         persistence.removeBonding(BONDING)
         self.assertTrue(persistence.bonds.get(BONDING) is None)
 
-    @MonkeyPatch(pwd, 'getpwnam', lambda name: pwd.getpwuid(os.geteuid()))
     def testSaveAndDelete(self):
         persistence = Config(self.tempdir)
         persistence.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
@@ -138,7 +135,6 @@ class TransactionTests(TestCaseBase):
     def tearDown(self):
         rmtree(self.tempdir)
 
-    @MonkeyPatch(pwd, 'getpwnam', lambda name: pwd.getpwuid(os.geteuid()))
     def test_successful_setup(self):
         with Transaction(config=self.config) as _config:
             _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
