@@ -3453,7 +3453,7 @@ class Vm(object):
         # When creating memory snapshot libvirt will pause the vm
         should_freeze = not (memoryParams or frozen)
 
-        snapxml = snap.toprettyxml()
+        snapxml = vmxml.format_xml(snap)
         # TODO: this is debug information. For 3.6.x we still need to
         # see the XML even with 'info' as default level.
         self.log.info(snapxml)
