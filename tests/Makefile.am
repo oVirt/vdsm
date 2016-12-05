@@ -202,7 +202,6 @@ blacklist_modules_python3 = \
 	protocoldetectorTests.py \
 	qemuimg_test.py \
 	samplingTests.py \
-	schemaTests.py \
 	schemaValidationTest.py \
 	stompAdapterTests.py \
 	stompAsyncClientTests.py \
