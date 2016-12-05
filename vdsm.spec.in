@@ -1567,13 +1567,13 @@ exit 0
 %{python_sitelib}/yajsonrpc/__init__.py*
 
 %files api
-%doc lib/api/vdsm-api.html
+%doc lib/vdsm/api/vdsm-api.html
 %dir %{python_sitelib}/%{vdsm_name}
+%dir %{python_sitelib}/%{vdsm_name}/api
 %dir %{python_sitelib}/%{vdsm_name}/rpc
+%{python_sitelib}/%{vdsm_name}/api/*.py*
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api.yml
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-events.yml
-%{python_sitelib}/api/vdsmapi.py*
-%{python_sitelib}/api/__init__.py*
 %if ! 0%{?with_gluster_mgmt}
 %exclude %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.yml
 %endif

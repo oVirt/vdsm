@@ -26,7 +26,7 @@ from contextlib import contextmanager
 
 import six
 
-from api import vdsmapi
+from vdsm.api import vdsmapi
 
 html_escape_table = {
     "&": "&amp;",

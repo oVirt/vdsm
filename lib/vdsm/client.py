@@ -103,7 +103,7 @@ from __future__ import absolute_import
 import functools
 import uuid
 
-from api import vdsmapi
+from vdsm.api import vdsmapi
 
 from yajsonrpc import stompreactor
 import yajsonrpc

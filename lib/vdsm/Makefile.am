@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2016 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS=common tool profiling rpc network virt storage host metrics gluster \
-	supervdsm_api
+SUBDIRS=api common tool profiling rpc network virt storage host metrics \
+	 gluster supervdsm_api
 
 dist_vdsmpylib_PYTHON = \
 	__init__.py \

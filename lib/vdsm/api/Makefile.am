@@ -1,5 +1,4 @@
-#
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,4 +16,36 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from __future__ import absolute_import
+include $(top_srcdir)/build-aux/Makefile.subs
+
+vdsmapidir = $(vdsmpylibdir)/api
+vdsmrpcdir = $(vdsmpylibdir)/rpc
+
+dist_vdsmapi_PYTHON = \
+	__init__.py \
+	vdsmapi.py \
+	$(NULL)
+
+CLEANFILES = \
+	vdsm-api.html \
+	$(NULL)
+
+EXTRA_DIST = \
+	schema_to_html.py \
+	$(NULL)
+
+dist_vdsmrpc_DATA = \
+	vdsm-api.yml \
+	vdsm-api-gluster.yml \
+	vdsm-events.yml \
+	$(NULL)
+
+nodist_noinst_DATA = \
+	vdsm-api.html \
+	$(NULL)
+
+vdsm-api.html: schema_to_html.py vdsm-api.yml
+	@echo "  Generate $@"
+	chmod u+w $(srcdir)
+	PYTHONPATH=$(srcdir)/../../:$(srcdir)/../../vdsm \
+		$(PYTHON) schema_to_html.py vdsm-api.yml $@
