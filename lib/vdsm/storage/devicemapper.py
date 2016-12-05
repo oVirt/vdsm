@@ -157,7 +157,7 @@ PATH_STATUS_RE = re.compile(r"(?P<devnum>\d+:\d+)\s+(?P<status>[AF])")
 
 
 def _getPathsStatus():
-    cmd = [EXT_DMSETUP, "status"]
+    cmd = [EXT_DMSETUP, "status", "--target", "multipath"]
     rc, out, err = misc.execCmd(cmd)
     if rc != 0:
         raise Exception("Could not get device statuses")
