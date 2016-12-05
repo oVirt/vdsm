@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 multipath module provides helper procedures for configuring multipath
 daemon and maintaining its state
 """
+from __future__ import absolute_import
 import os
 import errno
 from glob import glob

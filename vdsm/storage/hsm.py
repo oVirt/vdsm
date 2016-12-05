@@ -53,6 +53,7 @@ from vdsm.storage import imagetickets
 from vdsm.storage import iscsi
 from vdsm.storage import misc
 from vdsm.storage import mount
+from vdsm.storage import multipath
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import types
 from vdsm.storage.constants import STORAGE
@@ -71,7 +72,6 @@ import nfsSD
 import glusterSD
 import localFsSD
 import lvm
-import multipath
 from sdc import sdCache
 import image
 import merge

@@ -42,9 +42,9 @@ from vdsm.common import exception
 from vdsm.storage import devicemapper
 from vdsm.storage import exception as se
 from vdsm.storage import misc
+from vdsm.storage import multipath
 from vdsm.storage.constants import VG_EXTENT_SIZE_MB
 
-import multipath
 from vdsm.config import config
 
 log = logging.getLogger("storage.LVM")

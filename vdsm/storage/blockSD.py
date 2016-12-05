@@ -49,6 +49,7 @@ from vdsm.storage import fileUtils
 from vdsm.storage import iscsi
 from vdsm.storage import misc
 from vdsm.storage import mount
+from vdsm.storage import multipath
 from vdsm.storage.persistent import PersistentDict, DictValidator
 from vdsm.storage.threadlocal import vars
 import vdsm.supervdsm as svdsm
@@ -57,7 +58,6 @@ import sd
 from sdm import volume_artifacts
 import lvm
 import blockVolume
-import multipath
 import resourceFactories
 from storage_mailbox import MAILBOX_SIZE
 import resourceManager as rm

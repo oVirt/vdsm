@@ -42,6 +42,7 @@ dist_vdsmstorage_PYTHON = \
 	iscsiadm.py \
 	misc.py \
 	mount.py \
+	multipath.py \
 	outOfProcess.py \
 	persistent.py \
 	rwlock.py \

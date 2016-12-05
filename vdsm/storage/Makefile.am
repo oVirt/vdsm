@@ -38,7 +38,6 @@ dist_vdsmstorage_PYTHON = \
 	lvm.py \
 	merge.py \
 	monitor.py \
-	multipath.py \
 	nfsSD.py \
 	resourceFactories.py \
 	resourceManager.py \
