@@ -183,9 +183,6 @@ parameters = [
 
         ('vm_sample_jobs_interval', '15', None),
 
-        ('vm_sample_numa_interval', '600',
-            'How often should we sample NUMA CPU assignments'),
-
         ('host_sample_stats_interval', '15', None),
 
         ('ssl', 'true',

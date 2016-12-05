@@ -292,9 +292,6 @@ class SuperVdsm(object):
             raise self._exception()
         return self._pid
 
-    def getVcpuNumaMemoryMapping(self, vmName):
-        return {0: [0, 1], 1: [0, 1], 2: [0, 1], 3: [0, 1]}
-
     def prepareVmChannel(self, path, group=None):
         self.prepared_path = path
         self.prepared_path_group = group

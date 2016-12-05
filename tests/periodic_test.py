@@ -22,8 +22,6 @@ from collections import defaultdict
 import threading
 import time
 
-import libvirt
-
 from vdsm import executor
 from vdsm import schedule
 from vdsm.utils import monotonic_time
@@ -279,42 +277,6 @@ class VmDispatcherTests(TestCaseBase):
             with self.cif.vmContainerLock:
                 self.cif.vmContainer[vm_id] = _FakeVM(
                     vm_id, vm_id)
-
-
-@expandPermutations
-class NumaInfoMonitorTests(TestCaseBase):
-
-    def setUp(self):
-        self.vm_id = _fake_vm_id(0)
-        self.vm = _FakeVM(self.vm_id, self.vm_id)
-        self.op = periodic.NumaInfoMonitor(self.vm)
-
-    @permutations([
-        # errcode, migrating, last_status
-        [libvirt.VIR_ERR_NO_DOMAIN, True, vmstatus.UP],
-        [libvirt.VIR_ERR_NO_DOMAIN, False, vmstatus.DOWN],
-    ])
-    def test_swallow_exceptions(self, errcode, migrating, last_status):
-
-        def fail(*args):
-            raise fake.Error(errcode)
-
-        self.vm.updateNumaInfo = fail
-
-        self.vm.migrating = migrating
-        self.vm.lastStatus = last_status
-        self.assertNotRaises(self.op)
-
-    def test_propagate_exceptions(self):
-
-        def fail(*args):
-            raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN)
-
-        self.vm.updateNumaInfo = fail
-
-        self.vm.migrating = False
-        self.vm.lastStatus = vmstatus.UP
-        self.assertRaises(libvirt.libvirtError, self.op)
 
 
 def _fake_vm_id(i):

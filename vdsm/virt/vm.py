@@ -45,7 +45,6 @@ from vdsm import cpuarch
 from vdsm import hooks
 from vdsm import host
 from vdsm import libvirtconnection
-from vdsm import numa
 from vdsm import osinfo
 from vdsm import qemuimg
 from vdsm import supervdsm
@@ -325,7 +324,6 @@ class Vm(object):
         self._shutdownReason = None
         self._vcpuLimit = None
         self._vcpuTuneInfo = {}
-        self._numaInfo = {}
         self._vmJobs = None
         self._clientPort = ''
         self._monitorable = False
@@ -1405,8 +1403,6 @@ class Vm(object):
                                   self.guestAgent.diskMappingHash)))
         if self._watchdogEvent:
             stats['watchdogEvent'] = self._watchdogEvent
-        if self._numaInfo:
-            stats['vNodeRuntimeInfo'] = self._numaInfo
         if self._vcpuLimit:
             stats['vcpuUserLimit'] = self._vcpuLimit
 
@@ -1800,7 +1796,6 @@ class Vm(object):
         self._teardown_devices()
         cleanup_guest_socket(self._qemuguestSocketFile)
         self._cleanupStatsCache()
-        numa.invalidateNumaCache(self)
         for con in self._devices[hwclass.CONSOLE]:
             con.cleanup()
 
@@ -5097,9 +5092,6 @@ class Vm(object):
                          ' (command timeout, age=%s)',
                          stats_age)
         stats['monitorResponse'] = '-1'
-
-    def updateNumaInfo(self):
-        self._numaInfo = numa.getVmNumaNodeRuntimeInfo(self)
 
     @property
     def hasGuestNumaNode(self):

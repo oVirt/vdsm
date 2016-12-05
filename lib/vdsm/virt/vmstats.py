@@ -256,7 +256,7 @@ def send_metrics(vms_stats):
 
         # Guest cpu-count,apps list, status, mac addr, client IP,
         # display type, kvm enabled, username, vcpu info, vm jobs,
-        # displayinfo, hash, acpi, fqdn, vm uuid, pid, vNodeRuntimeInfo,
+        # displayinfo, hash, acpi, fqdn, vm uuid, pid,
         #
         # are all meta-data that should be published separately
 

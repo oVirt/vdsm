@@ -86,7 +86,6 @@ test_modules = \
 	monkeypatch_test.py \
 	mom_test.py \
 	mompolicy_test.py \
-	numautils_test.py \
 	osinfo_test.py \
 	osutils_test.py \
 	passwords_test.py \
@@ -207,7 +206,6 @@ blacklist_modules_python3 = \
 	network/ovs_info_test.py \
 	network/tc_test.py \
 	network/unified_persistence_test.py \
-	numautils_test.py \
 	periodic_test.py \
 	protocoldetector_test.py \
 	qemuimg_test.py \

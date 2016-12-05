@@ -19,12 +19,10 @@
 from __future__ import absolute_import
 
 import os
-import re
 import stat
 
 from vdsm.constants import P_LIBVIRT_VMCHANNELS, P_OVIRT_VMCONSOLES
 from vdsm.storage.fileUtils import resolveGid
-from vdsm import numa
 
 from . import expose
 
@@ -49,20 +47,3 @@ def getVmPid(vmName):
     pidFile = "/var/run/libvirt/qemu/%s.pid" % vmName
     with open(pidFile) as pid:
         return pid.read()
-
-
-@expose
-def getVcpuNumaMemoryMapping(vmName):
-    vmPid = getVmPid(vmName)
-    vCpuPids = numa.getVcpuPid(vmName)
-    vCpuIdxToNode = {}
-    for vCpuIndex, vCpuPid in vCpuPids.iteritems():
-        numaMapsFile = "/proc/%s/task/%s/numa_maps" % (vmPid, vCpuPid)
-        try:
-            with open(numaMapsFile, 'r') as f:
-                mappingNodes = map(
-                    int, re.findall('N(\d+)=\d+', f.read()))
-                vCpuIdxToNode[vCpuIndex] = list(set(mappingNodes))
-        except IOError:
-            continue
-    return vCpuIdxToNode

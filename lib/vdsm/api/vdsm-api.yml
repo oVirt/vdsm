@@ -4987,16 +4987,6 @@ types:
             d: Boot from the first cdrom device
             n: Boot from the network
 
-    VmNumaNodeRuntimeInfoMap: &VmNumaNodeRuntimeInfoMap
-        added: '3.4'
-        description: A mapping of vm numa node runtime pinning to
-            host numa node information indexed by node index.
-        key-type: string
-        name: VmNumaNodeRuntimeInfoMap
-        type: map
-        value-type:
-        - int
-
     VmJobInfo: &VmJobInfo
         added: '3.4'
         description: Information about a currently active block
@@ -5207,14 +5197,6 @@ types:
         -   description: The IP address of the client connected to the display
             name: clientIp
             type: string
-
-        -   defaultvalue: {}
-            description: Information about the vm numa node runtime pinning
-                to host numa node.
-            name: vNodeRuntimeInfo
-            added: '3.4'
-            deprecated: '4.1'
-            type: *VmNumaNodeRuntimeInfoMap
 
         -   description: Indicates the reason a VM has been paused
             name: pauseCode

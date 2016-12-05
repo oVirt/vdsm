@@ -81,12 +81,6 @@ def start(cif, scheduler):
             UpdateVolumes,
             config.getint('irs', 'vol_size_sample_interval')),
 
-        # Needs dispatching because it accesses FS and libvirt data.
-        # Ignored by new engine, has to be kept for BC sake.
-        per_vm_operation(
-            NumaInfoMonitor,
-            config.getint('vars', 'vm_sample_numa_interval')),
-
         # Job monitoring need QEMU monitor access.
         per_vm_operation(
             BlockjobMonitor,
@@ -349,23 +343,6 @@ class UpdateVolumes(_RunnableOnVm):
             # we must make sure we don't overwrite good data
             # with stale old data.
             self._vm.updateDriveVolume(drive)
-
-
-class NumaInfoMonitor(_RunnableOnVm):
-
-    @property
-    def required(self):
-        return (super(NumaInfoMonitor, self).required and
-                self._vm.hasGuestNumaNode)
-
-    @property
-    def runnable(self):
-        # NUMA operations don't require QEMU monitor access
-        # (inspected libvirt sources v1.2.17)
-        return True
-
-    def _execute(self):
-        self._vm.updateNumaInfo()
 
 
 class BlockjobMonitor(_RunnableOnVm):
