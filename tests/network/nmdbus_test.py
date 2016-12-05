@@ -20,13 +20,12 @@ from __future__ import absolute_import
 
 from nose.plugins.attrib import attr
 
-from dbus.exceptions import DBusException
-
 from testlib import VdsmTestCase
 from testValidation import broken_on_ci, ValidateRunningAsRoot
 
 from .nmnettestlib import iface_name, TEST_LINK_TYPE, NMService, nm_connections
 
+from vdsm.network.nm.errors import NMDeviceNotFoundError
 from vdsm.network.nm.nmdbus import NMDbus
 from vdsm.network.nm.nmdbus import types
 from vdsm.network.nm.nmdbus.active import NMDbusActiveConnections
@@ -177,8 +176,5 @@ class TestNMConnectionCreation(VdsmTestCase):
 
     def _assert_no_device(self, iface):
         nm_device = NMDbusDevice()
-        with self.assertRaises(DBusException) as ex:
+        with self.assertRaises(NMDeviceNotFoundError):
             nm_device.device(iface)
-
-        self.assertEqual('No device found for the requested iface.',
-                         ex.exception.message)

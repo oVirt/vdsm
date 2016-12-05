@@ -19,6 +19,9 @@
 from __future__ import absolute_import
 
 import dbus
+from dbus.exceptions import DBusException
+
+from vdsm.network.nm.errors import NMDeviceNotFoundError
 
 from . import NMDbus, NMDbusManager
 
@@ -34,7 +37,11 @@ class NMDbusDevice(object):
             yield _NMDbusDeviceProperties(self._properties(device))
 
     def device(self, iface_name):
-        device = self.manager.interface.GetDeviceByIpIface(iface_name)
+        try:
+            device = self.manager.interface.GetDeviceByIpIface(iface_name)
+        except DBusException as ex:
+            if ex.args[0] == 'No device found for the requested iface.':
+                raise NMDeviceNotFoundError()
         return _NMDbusDeviceProperties(self._properties(device))
 
     def _properties(self, device):
