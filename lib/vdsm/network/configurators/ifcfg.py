@@ -55,9 +55,6 @@ from vdsm.network.netinfo import (bonding as netinfo_bonding, mtus, nics,
 from vdsm.network.netinfo.cache import ifaceUsed
 from vdsm.network.netlink import waitfor
 
-if utils.isOvirtNode():
-    from ovirt.node.utils import fs as node_fs
-
 from . import Configurator, getEthtoolOpts
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from ..models import Nic, Bridge
@@ -401,11 +398,7 @@ class ConfigWriter(object):
 
     @staticmethod
     def _removeFile(filename):
-        """Remove file (directly or using oVirt node's library)"""
-        if utils.isOvirtNode():
-            node_fs.Config().delete(filename)  # unpersists and shreds the file
-        else:
-            utils.rmFile(filename)
+        utils.rmFile(filename)
         logging.debug("Removed file %s", filename)
 
     def createLibvirtNetwork(self, network, bridged=True, iface=None,
@@ -610,10 +603,6 @@ class ConfigWriter(object):
         except:
             logging.debug('ignoring restorecon error in case '
                           'SElinux is disabled', exc_info=True)
-
-        # make sure that ifcfg files are always persisted by the node
-        if self.unifiedPersistence and utils.isOvirtNode():
-            node_fs.Config().persist(fileName)
 
     def _createConfFile(self, conf, name, ipv4, ipv6, mtu, nameservers,
                         **kwargs):
