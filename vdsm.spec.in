@@ -255,6 +255,15 @@ Requires: %{name}-python = %{version}-%{release}
 An XMLRPC interface for interacting with vdsmd. Primary control interface for
 ovirt-engine and vdsClient.
 
+%package client
+Summary:        VDSM client
+BuildArch:      noarch
+Requires: %{name}-api = %{version}-%{release}
+Requires: %{name}-yajsonrpc = %{version}-%{release}
+
+%description client
+Access vdsm API from the command line.
+
 %package api
 Summary:        VDSM API
 BuildArch:      noarch
@@ -1555,6 +1564,12 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}
 %dir %{python_sitelib}/%{vdsm_name}/rpc
 %{python_sitelib}/%{vdsm_name}/rpc/bindingxmlrpc.py*
+
+%files client
+%dir %{python_sitelib}/vdsmclient
+%{python_sitelib}/vdsmclient/__init__.py*
+%{python_sitelib}/vdsmclient/client.py*
+%{python_sitelib}/yajsonrpc/__init__.py*
 
 %files jsonrpc
 %dir %{python_sitelib}/%{vdsm_name}
