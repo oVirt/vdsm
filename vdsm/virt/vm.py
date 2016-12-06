@@ -4694,10 +4694,12 @@ class Vm(object):
             # TODO: Allocation information is not available in the XML.  Switch
             # to the new interface once it becomes available in libvirt.
             alloc = None
-            if vmxml.find_first(diskXML, 'backingStore', None) is None:
+            backingstore = next(vmxml.children(diskXML, 'backingStore'), None)
+            if backingstore is None:
                 self.log.warning("<backingStore/> missing from backing "
                                  "chain for drive %s", drive.name)
                 break
+            diskXML = backingstore
             entry = VolumeChainEntry(pathToVolID(drive, path), path, alloc)
             volChain.insert(0, entry)
         return volChain or None
