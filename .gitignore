@@ -22,3 +22,8 @@ tmp.*
 target
 pom.xml
 .project
+
+# Intellij
+.idea/
+*.iws
+*.iml
