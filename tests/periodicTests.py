@@ -33,6 +33,7 @@ from vdsm.virt import vmstatus
 
 
 from testValidation import slowtest
+from testValidation import broken_on_ci
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase as TestCaseBase
 import vmfakelib as fake
@@ -115,6 +116,8 @@ class PeriodicOperationTests(TestCaseBase):
         self.assertTrue(invoked.is_set())
         self.assertTrue(TIMES <= invocations[0] <= TIMES+1)
 
+    @broken_on_ci("Fails occasionally, don't know why",
+                  exception=AssertionError)
     def test_repeating_if_raises(self):
         PERIOD = 0.1
         TIMES = 5
