@@ -121,6 +121,9 @@ ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %changelog
+* Tue Dec 6 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.2.10
+- Safe publication of the queue to avoid job loss
+
 * Wed Oct 12 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.2.6
 - make sure that channel is protected by the lock
 
