@@ -38,6 +38,7 @@ import logging
 
 from vdsm import constants
 from vdsm import properties
+from vdsm import qemuimg
 from vdsm import utils
 
 from vdsm.config import config
@@ -210,5 +211,48 @@ def _extend_base_allocation(base_vol, top_vol):
     dom.extendVolume(base_vol.volUUID, actual_alloc_mb)
 
 
-def finalize(subchainInfo):
-    raise NotImplementedError()
+def finalize(subchain):
+    log.info("Finalizing subchain after merge: %s", subchain)
+    with guarded.context(subchain.locks):
+        with subchain.prepare():
+            subchain.validate()
+
+            # Base volume must be ILLEGAL. Otherwise, VM could be run while
+            # performing cold merge.
+            base_legality = subchain.base_vol.getLegality()
+            if base_legality == sc.LEGAL_VOL:
+                raise se.UnexpectedVolumeState(
+                    subchain.base_id, sc.ILLEGAL_VOL, base_legality)
+
+            dom = sdCache.produce_manifest(subchain.sd_id)
+            _update_qemu_metadata(dom, subchain)
+            _update_vdsm_metadata(dom, subchain)
+            subchain.base_vol.setLegality(sc.LEGAL_VOL)
+
+
+def _update_qemu_metadata(dom, subchain):
+    children = subchain.top_vol.getChildren()
+    if children:
+        # Top has children, update qcow metadata by rebasing -u
+        child = dom.produceVolume(subchain.img_id,
+                                  children[0])
+        log.info("Updating qemu metadata, rebasing volume %s into "
+                 "volume %s",
+                 child.volUUID, subchain.base_vol.volUUID)
+        qemuimg.rebase(image=child.volumePath,
+                       backing=subchain.base_vol.volumePath,
+                       format=qemuimg.FORMAT.QCOW2,
+                       backingFormat=qemuimg.FORMAT.QCOW2,
+                       unsafe=True)
+
+
+def _update_vdsm_metadata(dom, subchain):
+    orig_top_id = subchain.chain[-1]
+    new_chain = subchain.chain[:]
+    new_chain.remove(subchain.top_id)
+    log.info("Updating Vdsm metadata, syncing new chain: %s",
+             new_chain)
+    repoPath = dom.getRepoPath()
+    image_repo = image.Image(repoPath)
+    image_repo.syncVolumeChain(subchain.sd_id, subchain.img_id, orig_top_id,
+                               new_chain)

@@ -24,22 +24,27 @@ from collections import namedtuple
 from functools import partial
 
 from monkeypatch import MonkeyPatchScope
-from storagefakelib import fake_guarded_context
 from storagefakelib import FakeResourceManager
 from storagetestlib import fake_env
+from storagefakelib import fake_guarded_context
 from storagetestlib import make_qemu_chain
 from testValidation import brokentest
 from testlib import make_uuid
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase
 
+from vdsm import qemuimg
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
 
+from storage import blockVolume
 from storage import fileVolume
-from storage import blockVolume, image, merge, resourceManager, sd, volume
-
+from storage import merge
+from storage import image
+from storage import resourceManager
+from storage import sd
+from storage import volume
 
 MB = 1024 ** 2
 GB = 1024 ** 3
@@ -118,6 +123,7 @@ class FakeImage(object):
 
 class TestSubchainInfo(VdsmTestCase):
 
+    # TODO: use one make_env for all tests?
     @contextmanager
     def make_env(self, sd_type='file', format='raw', chain_len=2,
                  shared=False):
@@ -283,3 +289,99 @@ class TestPrepareMerge(VdsmTestCase):
             volume.VolumeLease(subchain.host_id, subchain.sd_id,
                                subchain.img_id, subchain.base_id)
         ]
+
+
+class FakeSyncVolumeChain(object):
+
+    def __call__(self, sd_id, img_id, vol_id, actual_chain):
+        self.sd_id = sd_id
+        self.img_id = img_id
+        self.vol_id = vol_id
+        self.actual_chain = actual_chain
+
+
+@expandPermutations
+class TestFinalizeMerge(VdsmTestCase):
+
+    # TODO: use one make_env for all tests?
+    @contextmanager
+    def make_env(self, sd_type='block', format='raw', chain_len=2):
+        size = 1048576
+        base_fmt = sc.name2type(format)
+        with fake_env(sd_type) as env:
+            rm = FakeResourceManager()
+            with MonkeyPatchScope([
+                (guarded, 'context', fake_guarded_context()),
+                (merge, 'sdCache', env.sdcache),
+                (blockVolume, 'rm', rm),
+                (image, 'Image', FakeImage),
+            ]):
+                env.chain = make_qemu_chain(env, size, base_fmt, chain_len)
+
+                def fake_chain(self, sdUUID, imgUUID, volUUID=None):
+                    return env.chain
+
+                image.Image.getChain = fake_chain
+                image.Image.syncVolumeChain = FakeSyncVolumeChain()
+
+                yield env
+
+    def test_validate_illegal_base(self):
+        with self.make_env(sd_type='file', chain_len=3) as env:
+            base_vol = env.chain[0]
+            # This volume was *not* prepared
+            base_vol.setLegality(sc.LEGAL_VOL)
+            top_vol = env.chain[1]
+
+            subchain_info = dict(sd_id=base_vol.sdUUID,
+                                 img_id=base_vol.imgUUID,
+                                 base_id=base_vol.volUUID,
+                                 top_id=top_vol.volUUID,
+                                 base_generation=0)
+
+            subchain = merge.SubchainInfo(subchain_info, 0)
+            with self.assertRaises(se.UnexpectedVolumeState):
+                merge.finalize(subchain)
+
+    @permutations([
+        # sd_type, chain_len, base_index, top_index
+        ('file', 2, 0, 1),
+        ('block', 2, 0, 1),
+        ('file', 4, 1, 2),
+        ('block', 4, 1, 2),
+    ])
+    def test_finalize(self, sd_type, chain_len, base_index, top_index):
+        with self.make_env(sd_type=sd_type, chain_len=chain_len) as env:
+            base_vol = env.chain[base_index]
+            # This volume *was* prepared
+            base_vol.setLegality(sc.ILLEGAL_VOL)
+
+            top_vol = env.chain[top_index]
+            subchain_info = dict(sd_id=base_vol.sdUUID,
+                                 img_id=base_vol.imgUUID,
+                                 base_id=base_vol.volUUID,
+                                 top_id=top_vol.volUUID,
+                                 base_generation=0)
+            subchain = merge.SubchainInfo(subchain_info, 0)
+
+            merge.finalize(subchain)
+
+            # If top has a child, the child must now be rebased on base.
+            if top_vol is not env.chain[-1]:
+                child_vol = env.chain[top_index + 1]
+                info = qemuimg.info(child_vol.volumePath)
+                self.assertEquals(info['backingfile'], base_vol.volumePath)
+
+            # verify syncVolumeChain arguments
+            self.assertEquals(image.Image.syncVolumeChain.sd_id,
+                              subchain.sd_id)
+            self.assertEquals(image.Image.syncVolumeChain.img_id,
+                              subchain.img_id)
+            self.assertEquals(image.Image.syncVolumeChain.vol_id,
+                              env.chain[-1].volUUID)
+            new_chain = [vol.volUUID for vol in env.chain]
+            new_chain.remove(top_vol.volUUID)
+            self.assertEquals(image.Image.syncVolumeChain.actual_chain,
+                              new_chain)
+
+            self.assertEquals(base_vol.getLegality(), sc.LEGAL_VOL)
