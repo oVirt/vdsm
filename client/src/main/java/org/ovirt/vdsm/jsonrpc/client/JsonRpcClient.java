@@ -4,6 +4,7 @@ import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.getTimeout;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.jsonToByteArray;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Future;
 
 import org.codehaus.jackson.JsonNode;
@@ -95,7 +96,7 @@ public class JsonRpcClient {
     private void retryCall(final JsonRpcRequest request, final JsonRpcCall call) throws ClientConnectionException {
         ResponseTracking tracking =
                 new ResponseTracking(request, call, new RetryContext(policy), getTimeout(this.policy.getRetryTimeOut(),
-                        this.policy.getTimeUnit()), this.client, request.getMethod() != "Host.ping");
+                        this.policy.getTimeUnit()), this.client, !Objects.equals(request.getMethod(), "Host.ping"));
         this.tracker.registerTrackingRequest(request, tracking);
     }
 
