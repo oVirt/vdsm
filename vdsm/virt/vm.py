@@ -3085,6 +3085,8 @@ class Vm(object):
         elif 'migrationDest' in self.conf:
             if self._needToWaitForMigrationToComplete():
                 finished, timeout = self._waitForUnderlyingMigration()
+                if self._destroy_requested.is_set():
+                    raise DestroyedOnStartupError()
                 self._attachLibvirtDomainAfterMigration(finished, timeout)
             # else domain connection already established earlier
             self._domDependentInit()
