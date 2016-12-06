@@ -530,9 +530,6 @@ parameters = [
             "containers will be placed, if no explicit configuration is "
             "received from Engine. "),
 
-        ('network_bridge', 'ovirtmgmt',
-            "Network bridge to use for the containers' networking"),
-
         ('network_gateway', '10.1.0.1',
             "The network gateway for the containers' network"),
 
