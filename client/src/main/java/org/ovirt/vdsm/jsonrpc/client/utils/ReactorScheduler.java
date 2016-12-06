@@ -10,7 +10,7 @@ import java.util.concurrent.FutureTask;
  */
 public final class ReactorScheduler {
 
-    private volatile Queue<Future<?>> pendingOperations;
+    private Queue<Future<?>> pendingOperations;
 
     public ReactorScheduler() {
         this.pendingOperations = new ConcurrentLinkedQueue<>();
@@ -21,8 +21,8 @@ public final class ReactorScheduler {
     }
 
     public void performPendingOperations() {
-        Queue<Future<?>> operations = pendingOperations;
-        pendingOperations = new ConcurrentLinkedQueue<>();
-        operations.forEach(task -> ((FutureTask<?>) task).run());
+        while (!pendingOperations.isEmpty()) {
+            ((FutureTask)pendingOperations.poll()).run();
+        }
     }
 }
