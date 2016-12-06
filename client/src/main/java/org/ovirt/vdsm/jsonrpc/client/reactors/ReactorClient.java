@@ -116,8 +116,8 @@ public abstract class ReactorClient {
                     }, this.policy));
             this.channel = task.get();
 
+            final long timeout = getTimeout(policy.getRetryTimeOut(), policy.getTimeUnit());
             while (!this.channel.finishConnect()) {
-                final long timeout = getTimeout(policy.getRetryTimeOut(), policy.getTimeUnit());
 
                 final FutureTask<SocketChannel> connectTask = scheduleTask(new Retryable<SocketChannel>(
                         new Callable<SocketChannel>() {
