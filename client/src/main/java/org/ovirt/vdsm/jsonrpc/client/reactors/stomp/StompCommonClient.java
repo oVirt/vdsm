@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
@@ -60,12 +59,9 @@ public abstract class StompCommonClient extends ReactorClient {
         }
 
         final ReactorClient client = this;
-        scheduleTask(new Callable<Void>() {
-            @Override
-            public Void call() throws ClientConnectionException {
-                client.updateInterestedOps();
-                return null;
-            }
+        scheduleTask(() -> {
+            client.updateInterestedOps();
+            return null;
         });
     }
 

@@ -12,7 +12,6 @@ import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.reduceGracePeriod;
 
 import java.nio.channels.Selector;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 
 import javax.net.ssl.SSLContext;
@@ -106,14 +105,9 @@ public class SSLStompClient extends SSLClient {
 
     private void waitForConnect() throws ClientConnectionException {
         try {
-            AwaitRetry.retry(new Callable<Void>() {
-
-                @Override
-                public Void call() throws Exception {
-                    connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
-                    return null;
-                }
-
+            AwaitRetry.retry(() -> {
+                connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
+                return null;
             });
         } catch (Exception e) {
             log.error(e.getMessage(), e);

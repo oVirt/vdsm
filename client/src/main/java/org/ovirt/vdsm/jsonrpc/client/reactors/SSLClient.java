@@ -11,7 +11,6 @@ import java.nio.channels.SocketChannel;
 import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
@@ -108,14 +107,11 @@ public abstract class SSLClient extends StompCommonClient {
         final Runnable op = pendingOperations();
         if (op != null) {
             key.interestOps(0);
-            scheduleTask(new Callable<Void>() {
-                @Override
-                public Void call() {
-                    op.run();
-                    updateInterestedOps();
-                    selector.wakeup();
-                    return null;
-                }
+            scheduleTask(() -> {
+                op.run();
+                updateInterestedOps();
+                selector.wakeup();
+                return null;
             });
         }
 
@@ -129,17 +125,12 @@ public abstract class SSLClient extends StompCommonClient {
     protected void postConnect(OneTimeCallback callback) throws ClientConnectionException {
         try {
             final ReactorClient client = this;
-            final FutureTask<SelectionKey> task = scheduleTask(new Retryable<SelectionKey>(
-                    new Callable<SelectionKey>() {
-
-                        @Override
-                        public SelectionKey call() throws ClosedChannelException {
-                            if (!SSLClient.this.isOpen()) {
-                                throw new ClosedChannelException();
-                            }
-                            return channel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE , client);
-                        }
-                    }, this.policy));
+            final FutureTask<SelectionKey> task = scheduleTask(new Retryable<>(() -> {
+                if (!SSLClient.this.isOpen()) {
+                    throw new ClosedChannelException();
+                }
+                return channel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, client);
+            }, this.policy));
 
             key = task.get();
 

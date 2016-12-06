@@ -6,7 +6,6 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
@@ -59,17 +58,12 @@ public abstract class PlainClient extends StompCommonClient {
     protected void postConnect(OneTimeCallback callback) throws ClientConnectionException {
         try {
             final ReactorClient client = this;
-            final FutureTask<SelectionKey> task = scheduleTask(new Retryable<SelectionKey>(
-                    new Callable<SelectionKey>() {
-
-                        @Override
-                        public SelectionKey call() throws ClosedChannelException {
-                            if (!PlainClient.this.isOpen()) {
-                                throw new ClosedChannelException();
-                            }
-                            return channel.register(selector, SelectionKey.OP_READ, client);
-                        }
-                    }, this.policy));
+            final FutureTask<SelectionKey> task = scheduleTask(new Retryable<>(() -> {
+                if (!PlainClient.this.isOpen()) {
+                    throw new ClosedChannelException();
+                }
+                return channel.register(selector, SelectionKey.OP_READ, client);
+            }, this.policy));
 
             key = task.get();
         } catch (InterruptedException | ExecutionException e) {

@@ -97,38 +97,29 @@ public abstract class ReactorClient {
             if (isOpen()) {
                 return;
             }
-            final FutureTask<SocketChannel> task = scheduleTask(new Retryable<SocketChannel>(
-                    new Callable<SocketChannel>() {
-                        @Override
-                        public SocketChannel call() throws IOException {
+            final FutureTask<SocketChannel> task = scheduleTask(new Retryable<>(() -> {
+                InetAddress address = InetAddress.getByName(hostname);
+                log.info("Connecting to " + address);
 
-                            InetAddress address = InetAddress.getByName(hostname);
-                            log.info("Connecting to " + address);
+                final InetSocketAddress addr = new InetSocketAddress(address, port);
+                final SocketChannel socketChannel = SocketChannel.open();
 
-                            final InetSocketAddress addr = new InetSocketAddress(address, port);
-                            final SocketChannel socketChannel = SocketChannel.open();
+                socketChannel.configureBlocking(false);
+                socketChannel.connect(addr);
 
-                            socketChannel.configureBlocking(false);
-                            socketChannel.connect(addr);
-
-                            return socketChannel;
-                        }
-                    }, this.policy));
+                return socketChannel;
+            }, this.policy));
             this.channel = task.get();
 
             while (!this.channel.finishConnect()) {
                 final long timeout = getTimeout(policy.getRetryTimeOut(), policy.getTimeUnit());
 
-                final FutureTask<SocketChannel> connectTask = scheduleTask(new Retryable<SocketChannel>(
-                        new Callable<SocketChannel>() {
-                            @Override
-                            public SocketChannel call() throws ConnectException {
-                                if (System.currentTimeMillis() >= timeout) {
-                                    throw new ConnectException("Connection timeout");
-                                }
-                                return null;
-                            }
-                        }, this.policy));
+                final FutureTask<SocketChannel> connectTask = scheduleTask(new Retryable<>(() -> {
+                    if (System.currentTimeMillis() >= timeout) {
+                        throw new ConnectException("Connection timeout");
+                    }
+                    return null;
+                }, this.policy));
                 connectTask.get();
             }
 
@@ -182,14 +173,10 @@ public abstract class ReactorClient {
 
     private Future<Void> scheduleClose(final String message) {
         this.closing.set(true);
-        final Callable<Void> disconnectCallable = new Callable<Void>() {
-            @Override
-            public Void call() {
-                disconnect(message);
-                return null;
-            }
-        };
-        return scheduleTask(disconnectCallable);
+        return scheduleTask(() -> {
+            disconnect(message);
+            return null;
+        });
     }
 
     protected <T> FutureTask<T> scheduleTask(Callable<T> callable) {
