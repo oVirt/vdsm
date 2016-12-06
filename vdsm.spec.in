@@ -322,7 +322,7 @@ Summary:        VDSM Test Suite
 BuildArch:      noarch
 Requires:       %{name} = %{version}-%{release}
 Requires:       dracut
-Requires:       python-nose
+Requires:       python-nose python-ipaddress
 
 %description tests
 A test suite for verifying the functionality of a running vdsm instance
