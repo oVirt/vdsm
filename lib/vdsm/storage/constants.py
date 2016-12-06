@@ -32,6 +32,7 @@ VOLUME_LEASE_NAMESPACE = "04_lease"
 
 SECTOR_SIZE = 512
 VG_EXTENT_SIZE_MB = 128
+COW_OVERHEAD = 1.1
 
 # At the moment this is static and it has been introduced to group all the
 # previous implicit references to the block size in FileVolume. In the future

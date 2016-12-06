@@ -1855,3 +1855,20 @@ class GenerationMismatch(StorageException):
 
     def __init__(self, requested, actual):
         self.value = "requested=%s, actual=%s" % (requested, actual)
+
+
+class VolumeIsNotInChain(StorageException):
+    code = 920
+    message = "Volume is not part of the chain."
+
+    def __init__(self, sd_id, img_id, vol_id):
+        self.value = ("sd_id=%s, img_id=%s, vol_id=%s" %
+                      (vol_id, sd_id, img_id))
+
+
+class WrongParentVolume(StorageException):
+    code = 921
+    message = "Wrong parent volume."
+
+    def __init__(self, vol_id, parent_id):
+        self.value = "vol_id=%s, parent_id=%s" % (vol_id, parent_id)

@@ -51,7 +51,6 @@ from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import imagetickets
 from vdsm.storage import iscsi
-from vdsm.storage import merge
 from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage import outOfProcess as oop
@@ -74,6 +73,7 @@ import lvm
 import multipath
 from sdc import sdCache
 import image
+import merge
 import taskManager
 import resourceManager as rm
 import dispatcher

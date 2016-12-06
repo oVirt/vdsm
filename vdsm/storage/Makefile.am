@@ -36,6 +36,7 @@ dist_vdsmstorage_PYTHON = \
 	image.py \
 	localFsSD.py \
 	lvm.py \
+	merge.py \
 	monitor.py \
 	multipath.py \
 	nfsSD.py \
