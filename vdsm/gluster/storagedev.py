@@ -327,7 +327,10 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
             raise ge.GlusterHostFailedToSetSelinuxContext(mountPoint, rc,
                                                           out, err)
         try:
-            selinux.restorecon(mountPoint, recursive=True)
+            # mountPoint can be of 'unicode' type when its passed through
+            # jsonrpc. restorecon calls into a C API that needs a char *.
+            # Thus, it is necessary to encode unicode to a utf-8 string.
+            selinux.restorecon(mountPoint.encode('utf-8'), recursive=True)
         except OSError as e:
             errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)
             raise ge.GlusterHostFailedToRunRestorecon(mountPoint, err=errMsg)
