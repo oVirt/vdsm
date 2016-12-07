@@ -51,6 +51,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import imagetickets
 from vdsm.storage import iscsi
+from vdsm.storage import lvm
 from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage import multipath
@@ -71,7 +72,6 @@ import blockSD
 import nfsSD
 import glusterSD
 import localFsSD
-import lvm
 from sdc import sdCache
 import image
 import merge

@@ -31,6 +31,7 @@ from vdsm.storage import blkdiscard
 from vdsm.storage import constants as sc
 from vdsm.storage import directio
 from vdsm.storage import exception as se
+from vdsm.storage import lvm
 from vdsm.storage import misc
 from vdsm.storage.misc import deprecated
 from vdsm.storage.threadlocal import vars
@@ -42,7 +43,6 @@ import image
 import sd
 import blockSD
 import task
-import lvm
 import resourceManager as rm
 from sdc import sdCache
 

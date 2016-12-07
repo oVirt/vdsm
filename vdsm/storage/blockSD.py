@@ -47,6 +47,7 @@ from vdsm.storage import directio
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import iscsi
+from vdsm.storage import lvm
 from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage import multipath
@@ -56,7 +57,6 @@ import vdsm.supervdsm as svdsm
 
 import sd
 from sdm import volume_artifacts
-import lvm
 import blockVolume
 import resourceFactories
 from storage_mailbox import MAILBOX_SIZE

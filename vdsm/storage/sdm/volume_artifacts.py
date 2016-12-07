@@ -55,9 +55,10 @@ import os
 from vdsm import qemuimg
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import lvm
 from vdsm.storage.volumemetadata import VolumeMetadata
 
-from storage import image, lvm
+from storage import image
 
 
 class VolumeArtifacts(object):

@@ -40,6 +40,7 @@ dist_vdsmstorage_PYTHON = \
 	imagetickets.py \
 	iscsi.py \
 	iscsiadm.py \
+	lvm.py \
 	misc.py \
 	mount.py \
 	multipath.py \

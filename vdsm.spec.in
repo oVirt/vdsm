@@ -938,7 +938,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/image.py*
 %{_datadir}/%{vdsm_name}/storage/localFsSD.py*
 %{_datadir}/%{vdsm_name}/storage/lvm.env
-%{_datadir}/%{vdsm_name}/storage/lvm.py*
 %{_datadir}/%{vdsm_name}/storage/merge.py*
 %{_datadir}/%{vdsm_name}/storage/nfsSD.py*
 %{_datadir}/%{vdsm_name}/storage/resourceFactories.py*
@@ -1200,6 +1199,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/imagetickets.py*
 %{python_sitelib}/%{vdsm_name}/storage/iscsi.py*
 %{python_sitelib}/%{vdsm_name}/storage/iscsiadm.py*
+%{python_sitelib}/%{vdsm_name}/storage/lvm.py*
 %{python_sitelib}/%{vdsm_name}/storage/misc.py*
 %{python_sitelib}/%{vdsm_name}/storage/mount.py*
 %{python_sitelib}/%{vdsm_name}/storage/multipath.py*

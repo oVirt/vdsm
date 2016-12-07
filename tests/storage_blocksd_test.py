@@ -26,7 +26,7 @@ from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase as TestCaseBase
 
 from storage import blockSD
-from storage import lvm
+from vdsm.storage import lvm
 from vdsm import constants
 
 # Make it easy to test the values we care about

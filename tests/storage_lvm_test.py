@@ -21,7 +21,7 @@
 
 from testlib import VdsmTestCase as TestCaseBase
 
-import storage.lvm as lvm
+import vdsm.storage.lvm as lvm
 
 
 class LvmTests(TestCaseBase):

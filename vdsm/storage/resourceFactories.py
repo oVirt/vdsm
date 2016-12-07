@@ -23,9 +23,9 @@ import os
 from vdsm.config import config
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import lvm
 
 import logging
-import lvm
 import resourceManager as rm
 from sdc import sdCache
 import sd

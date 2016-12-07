@@ -23,6 +23,7 @@ import os
 from vdsm import utils
 from vdsm.storage import exception as se
 from vdsm.storage import constants as sc
+from vdsm.storage import lvm as real_lvm
 
 from testlib import VdsmTestCase, namedTemporaryDir
 from testlib import permutations, expandPermutations
@@ -33,7 +34,6 @@ from storagefakelib import FakeStorageDomainCache
 from storagetestlib import FakeSD
 
 from storage import blockSD
-from storage import lvm as real_lvm
 
 
 MB = 1024 ** 2
