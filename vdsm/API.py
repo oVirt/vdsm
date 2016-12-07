@@ -330,6 +330,7 @@ class VM(APIBase):
         """
         Report status of a currently outgoing migration.
         """
+        # No longer called from Engine >= 4.1, replaced by events.
         try:
             v = self._cif.vmContainer[self._UUID]
         except KeyError:

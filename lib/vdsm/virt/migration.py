@@ -168,17 +168,6 @@ class SourceThread(object):
             else:
                 self._progress = 0
         self.status['progress'] = self._progress
-
-        try:
-            stat = self._vm._dom.jobStats(
-                libvirt.VIR_DOMAIN_JOB_STATS_COMPLETED)
-        except libvirt.libvirtError as e:
-            self.log.debug("Cannot retrieve completed migration stats "
-                           "from libvirt: %s", e)
-        else:
-            if 'downtime_net' in stat:
-                self.status['downtime'] = stat['downtime_net']
-
         return self.status
 
     def _createClient(self, port):

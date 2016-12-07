@@ -309,7 +309,7 @@ class Vm(object):
         self._vmJobs = None
         self._clientPort = ''
         self._monitorable = False
-        self._post_copy_downtime = None
+        self._migration_downtime = None
 
     @property
     def monitorable(self):
@@ -1471,6 +1471,7 @@ class Vm(object):
                 return response.error('exist')
             if self.hasTransientDisks():
                 return response.error('transientErr')
+            self._migration_downtime = None
             self._migrationSourceThread = migration.SourceThread(
                 self, **params)
             self._migrationSourceThread.start()
@@ -1482,18 +1483,21 @@ class Vm(object):
 
     def migrateStatus(self):
         status = self._migrationSourceThread.getStat()
-        if self._post_copy_downtime is not None:
-            status['downtime'] = self._post_copy_downtime
+        if self._migration_downtime is not None:
+            status['downtime'] = self._migration_downtime
         return status
 
     def onJobCompleted(self, args):
         stats = args[0]
-        if 'downtime' in stats:
+        if self.post_copy == migration.PostCopyPhase.RUNNING:
             # downtime_net doesn't make sense and is not available after
             # post-copy.  So we must use `downtime' here, which is somewhat
-            # different value and is not resilient against time differences on
-            # the hosts.
-            self._post_copy_downtime = stats['downtime']
+            # different value and is not resilient against time differences
+            # on the hosts.
+            key = 'downtime'
+        else:
+            key = 'downtime_net'
+        self._migration_downtime = stats.get(key)
         self.send_migration_status_event()
 
     def migrateCancel(self):
