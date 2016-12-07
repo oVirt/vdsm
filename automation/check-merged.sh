@@ -54,6 +54,29 @@ rm -rf /var/lib/lago/repos/local-vdsm*
 lago ovirt reposetup \
     --reposync-yum-config ../reposync-config.repo
 
+function run_func_tests {
+    # start lago http server in order to access internal repo
+    lago ovirt serve &
+    PID=$!
+    # Mock the KSM directory, we do not want real KSM to be affected
+    lago shell "$vm_name" -c "mount -t tmpfs tmpfs /sys/kernel/mm/ksm"
+
+    lago shell "$vm_name" -c \
+        " \
+            cd /usr/share/vdsm/tests
+            ./run_tests.sh \
+                --with-xunit \
+                --xunit-file=/tmp/nosetests-${distro}.xml \
+                -s \
+                $FUNCTIONAL_TESTS_LIST
+            ./run_tests.sh \
+                -a type=functional,switch=legacy \
+                network/func_*_test.py \
+        " \
+    || failed=$?
+    kill $PID
+}
+
 VMS_PREFIX="vdsm_functional_tests_host-"
 failed=0
 for distro in el7; do
@@ -63,29 +86,7 @@ for distro in el7; do
     # the ovirt deploy is needed because it will not start the local repo
     # otherwise
     lago ovirt deploy
-    {
-        # start lago http server in order to access internal repo
-        lago ovirt serve &
-        PID=$!
-        # Mock the KSM directory, we do not want real KSM to be affected
-        lago shell "$vm_name" -c "mount -t tmpfs tmpfs /sys/kernel/mm/ksm"
-
-        lago shell "$vm_name" -c \
-            " \
-                cd /usr/share/vdsm/tests
-                ./run_tests.sh \
-                    --with-xunit \
-                    --xunit-file=/tmp/nosetests-${distro}.xml \
-                    -s \
-                    $FUNCTIONAL_TESTS_LIST
-                ./run_tests.sh \
-                    -a type=functional,switch=legacy \
-                    network/func_*_test.py \
-            " \
-        || failed=$?
-        kill $PID
-    } | tee "$EXPORTS/functional_tests_stdout.$distro.log"
-
+    run_func_tests | tee "$EXPORTS/functional_tests_stdout.$distro.log"
     lago copy-from-vm \
         "$vm_name" \
         "/tmp/nosetests-${distro}.xml" \
