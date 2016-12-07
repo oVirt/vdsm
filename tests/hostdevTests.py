@@ -390,6 +390,15 @@ DEVICES_BY_CAPS = {'': {u'pci_0000_00_1b_0':
 
 class Connection(fake.Connection):
 
+    inst = None
+
+    @classmethod
+    def get(cls, *args):
+        if not cls.inst:
+            cls.inst = cls(*args)
+
+        return cls.inst
+
     def __init__(self, *args):
         self._virNodeDevices = [
             self.nodeDeviceLookupByName(device) for device in
@@ -486,7 +495,7 @@ class HostdevTests(TestCaseBase):
 
 
 @MonkeyClass(Connection, 'listAllDevices', Connection.listAllDevices2)
-@MonkeyClass(libvirtconnection, 'get', Connection)
+@MonkeyClass(libvirtconnection, 'get', Connection.get)
 @MonkeyClass(hostdev, '_sriov_totalvfs', _fake_totalvfs)
 @MonkeyClass(hostdev, '_pci_header_type', lambda _: 0)
 @MonkeyClass(hooks, 'after_hostdev_list_by_caps', lambda json: json)
