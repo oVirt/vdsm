@@ -29,6 +29,7 @@ from storagefakelib import fake_guarded_context
 from storagetestlib import fake_env
 from storagetestlib import make_qemu_chain, write_qemu_chain, verify_qemu_chain
 from storagetestlib import ChainVerificationError
+from testValidation import broken_on_ci
 from testlib import make_uuid
 from testlib import VdsmTestCase, expandPermutations, permutations
 from testlib import start_thread
@@ -273,6 +274,7 @@ class TestCopyDataDIV(VdsmTestCase):
             self.assertEqual(final_legality, dst_vol.getLegality())
             self.assertEqual(final_gen, dst_vol.getMetaParam(sc.GENERATION))
 
+    @broken_on_ci("depends on slave's storage operation time")
     @permutations((('file',), ('block',)))
     def test_abort_during_copy(self, env_type):
         fmt = sc.RAW_FORMAT
