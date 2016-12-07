@@ -1485,6 +1485,7 @@ class Vm(object):
         status = self._migrationSourceThread.getStat()
         if self._migration_downtime is not None:
             status['downtime'] = self._migration_downtime
+            status['progress'] = 100
         return status
 
     def onJobCompleted(self, args):
