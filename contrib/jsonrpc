@@ -67,7 +67,6 @@ parameters interactively::
 import argparse
 import json
 import os
-import pprint
 import sys
 
 from vdsm import client
@@ -100,7 +99,7 @@ def main(args):
         with utils.closing(cli):
             command = getattr(getattr(cli, namespace), method)
             result = command(**request_params)
-            pprint.pprint(result)
+            print(json.dumps(result, indent=4))
     except UsageError as e:
         parser.error(str(e))
     except Exception as e:
