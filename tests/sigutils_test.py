@@ -27,6 +27,7 @@ import subprocess
 import time
 
 from nose import tools
+from testValidation import broken_on_ci
 from testlib import VdsmTestCase
 
 CHILD_SCRIPT = 'tests_child.py'
@@ -64,6 +65,7 @@ class TestSigutils(VdsmTestCase):
             assert_read(child.stdout, b'signal sigusr1\n')
             assert_read(child.stdout, b'done\n')
 
+    @broken_on_ci("timing sensitive")
     def test_signal_timeout(self):
         TIMEOUT = 0.2
         with child_test('check_signal_timeout', str(TIMEOUT)) as child:
