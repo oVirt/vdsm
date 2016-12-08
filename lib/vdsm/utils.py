@@ -54,15 +54,6 @@ import weakref
 
 from vdsm.common import zombiereaper
 
-try:
-    from ovirt.node.utils.fs import Config
-    persist = Config().persist
-    unpersist = Config().unpersist
-except ImportError:
-    persist = lambda name: None
-    unpersist = lambda name: None
-
-
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
     _THP_STATE_PATH = '/sys/kernel/mm/redhat_transparent_hugepage/enabled'
@@ -635,12 +626,6 @@ class AsyncProcessOperation(object):
     def __del__(self):
         if self._proc.returncode is None:
             zombiereaper.autoReapPID(self._proc.pid)
-
-
-@memoized
-def isOvirtNode():
-    return (os.path.exists('/etc/rhev-hypervisor-release') or
-            bool(glob.glob('/etc/ovirt-node-*-release')))
 
 
 def anyFnmatch(name, patterns):
