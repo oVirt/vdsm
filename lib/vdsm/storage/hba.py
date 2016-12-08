@@ -96,7 +96,7 @@ def getiSCSIInitiators():
                     hba = {'InitiatorName': line.split("=")[1].strip()}
                     hbas.append(hba)
                     break
-    except OSError:
+    except EnvironmentError:
         pass
 
     return hbas
