@@ -51,10 +51,6 @@ def configure():
     rc, _, err = commands.execCmd(script, data=libvirt_password())
     if rc != 0:
         raise RuntimeError("Set password failed: %s" % (err,))
-    if utils.isOvirtNode():
-        # It seems that all /etc/libvirt folder is persisted in node,
-        # but better to persist the db file explicitly
-        utils.persist(_LIBVIRT_SASLDB)
 
 
 def removeConf():
