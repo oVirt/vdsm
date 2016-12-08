@@ -334,11 +334,6 @@ class LibvirtModuleConfigureTests(TestCase):
                 libvirt,
                 'FILES',
                 FakeFiles
-            ),
-            (
-                utils,
-                'isOvirtNode',
-                lambda: False
             )
         ])
 
