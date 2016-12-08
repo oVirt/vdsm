@@ -6,6 +6,7 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     autoconf \
     automake \
     bridge-utils \
+    dbus-python \
     dosfstools \
     e2fsprogs \
     genisoimage \
