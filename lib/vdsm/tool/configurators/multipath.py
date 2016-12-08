@@ -28,7 +28,6 @@ import time
 from . import YES, NO
 from vdsm.tool import service
 from vdsm import commands
-from vdsm import utils
 from vdsm import constants
 
 
@@ -112,7 +111,6 @@ def configure():
         backup = _CONF_FILE + '.' + time.strftime("%Y%m%d%H%M")
         shutil.copyfile(_CONF_FILE, backup)
         sys.stdout.write("Backup previous multipath.conf to %r\n" % backup)
-        utils.persist(backup)
 
     with tempfile.NamedTemporaryFile(
             mode="wb",
@@ -125,15 +123,10 @@ def configure():
             if selinux.is_selinux_enabled():
                 selinux.restorecon(f.name)
             os.chmod(f.name, 0o644)
-            # On ovirt node multipath.conf is a bind mount and rename will fail
-            # if we do not unpersist first, making this non-atomic.
-            utils.unpersist(_CONF_FILE)
             os.rename(f.name, _CONF_FILE)
         except:
             os.unlink(f.name)
             raise
-
-    utils.persist(_CONF_FILE)
 
     # Flush all unused multipath device maps
     commands.execCmd([constants.EXT_MULTIPATH, "-F"])
