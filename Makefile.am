@@ -131,7 +131,7 @@ check-all:
 
 .PHONY: check-unit
 check-unit:
-	$(MAKE) -C tests/ check args='-a type=unit'
+	$(MAKE) -C tests/ check NOSE_EVAL_ATTR="type=='unit'"
 
 .PHONY: tests
 tests:
