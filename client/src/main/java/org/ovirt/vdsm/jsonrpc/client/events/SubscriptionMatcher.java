@@ -6,6 +6,7 @@ import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.isEmpty;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.parse;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -119,13 +120,7 @@ public class SubscriptionMatcher {
         };
         addHolders(subscriptions, this.operation, 2, ids, predicate);
         addHolders(subscriptions, this.component, 1, ids, predicate);
-        addHolders(subscriptions, this.receiver, 0, ids, new Predicate() {
-
-            @Override
-            public boolean apply(int one, int two) {
-                return two > 0;
-            }
-        });
+        addHolders(subscriptions, this.receiver, 0, ids, predicate);
         return subscriptions;
     }
 
@@ -141,7 +136,8 @@ public class SubscriptionMatcher {
                     List<String> fids = value.getFilteredId();
                     int size = fids.size();
                     fids.retainAll(Arrays.asList(ids));
-                    return predicate.apply(size, fids.size());
+                    int count = Collections.frequency(Arrays.asList(ids), ALL);
+                    return predicate.apply(size, fids.size()) || count == 3;
                 })
                 .forEach(value -> holders.add(value));
     }

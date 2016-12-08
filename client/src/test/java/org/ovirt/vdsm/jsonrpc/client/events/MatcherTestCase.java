@@ -249,4 +249,25 @@ public class MatcherTestCase {
         Set<SubscriptionHolder> holders = matcher.match(event);
         assertEquals(1, holders.size());
     }
+
+    @Test
+    public void testVmMigrationSubscription() {
+        EventSubscriber subscriber = mock(EventSubscriber.class);
+        when(subscriber.getSubscriptionId()).thenReturn("*|*|VM_migration_status|*");
+        SubscriptionHolder holder = new SubscriptionHolder(subscriber, new AtomicInteger());
+
+        EventSubscriber subscriber2 = mock(EventSubscriber.class);
+        when(subscriber2.getSubscriptionId()).thenReturn("10.35.0.96|*|VM_status|*");
+        SubscriptionHolder holder2 = new SubscriptionHolder(subscriber2, new AtomicInteger());
+
+        SubscriptionMatcher matcher = new SubscriptionMatcher();
+        matcher.add(holder);
+        matcher.add(holder2);
+
+        JsonRpcEvent event = mock(JsonRpcEvent.class);
+        when(event.getMethod()).thenReturn("10.35.0.96|virt|VM_migration_status|d4b04c1d-c2bc-41e3-add7");
+
+        Set<SubscriptionHolder> holders = matcher.match(event);
+        assertEquals(1, holders.size());
+    }
 }
