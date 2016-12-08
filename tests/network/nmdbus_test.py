@@ -20,8 +20,10 @@ from __future__ import absolute_import
 
 from nose.plugins.attrib import attr
 
+from dbus.exceptions import DBusException
+
 from testlib import VdsmTestCase
-from testValidation import broken_on_ci, ValidateRunningAsRoot
+from testValidation import ValidateRunningAsRoot
 
 from .nmnettestlib import iface_name, TEST_LINK_TYPE, NMService, nm_connections
 
@@ -38,20 +40,25 @@ IPV4ADDR = '10.1.1.1/29'
 _nm_service = None
 
 
-@broken_on_ci('NetworkManager should not be started on CI nodes')
 @ValidateRunningAsRoot
 def setup_module():
     global _nm_service
     _nm_service = NMService()
     _nm_service.setup()
-    NMDbus.init()
+    try:
+        NMDbus.init()
+    except DBusException as ex:
+        # Unfortunately, nose labeling does not operate on module fixtures.
+        # We let the test fail if init was not successful.
+        if 'Failed to connect to socket' not in ex.args[0]:
+            raise
 
 
 def teardown_module():
     _nm_service.teardown()
 
 
-@attr(type='integration')
+@attr(type='functional')
 class TestNMConnectionSettings(VdsmTestCase):
 
     def test_configured_connections_attributes_existence(self):
@@ -92,7 +99,7 @@ class TestNMConnectionSettings(VdsmTestCase):
                 return nm_con
 
 
-@attr(type='integration')
+@attr(type='functional')
 class TestNMActiveConnections(VdsmTestCase):
 
     def test_active_connections_properties_existence(self):
@@ -125,7 +132,7 @@ class TestNMActiveConnections(VdsmTestCase):
                 assert active_con.id == settings_con.connection.id
 
 
-@attr(type='integration')
+@attr(type='functional')
 class TestNMDevice(VdsmTestCase):
 
     def test_device_attributes_existence(self):
@@ -175,7 +182,7 @@ class TestNMDevice(VdsmTestCase):
         self.assertEqual(set([iface + '0']), active_connections)
 
 
-@attr(type='integration')
+@attr(type='functional')
 class TestNMConnectionCreation(VdsmTestCase):
 
     def test_nm_connection_lifetime(self):
