@@ -12,8 +12,8 @@ import org.junit.Test;
 
 public class StompInternalTest {
 
-    private final static String HOSTNAME = "localhost";
-    private final static int TIMEOUT = 10;
+    private static final String HOSTNAME = "localhost";
+    private static final int TIMEOUT = 10;
 
     @Test
     public void testConnection() throws IOException, InterruptedException {

@@ -29,7 +29,7 @@ public abstract class TestJsonRpcClient {
     private ResponseWorker responseWorker;
     private JsonRpcClient client;
     private ReactorTestHelper helper;
-    private final static int PLAIN_PORT = 9090;
+    private static final int PLAIN_PORT = 9090;
 
     protected abstract ReactorTestHelper getHelper();
 
@@ -110,8 +110,8 @@ public abstract class TestJsonRpcClient {
         final JsonNode params = jsonFromString("{\"text\": \"Hello World\"}");
         final JsonNode id1 = jsonFromString("123");
         final JsonNode id2 = jsonFromString("1234");
-        JsonRpcRequest[] requests =
-                new JsonRpcRequest[] { new JsonRpcRequest("echo", params, id1), new JsonRpcRequest("echo", params, id2) };
+        JsonRpcRequest[] requests = new JsonRpcRequest[] { new JsonRpcRequest("echo", params, id1),
+                new JsonRpcRequest("echo", params, id2) };
 
         List<JsonRpcResponse> resps = batchCall(Arrays.asList(requests));
 

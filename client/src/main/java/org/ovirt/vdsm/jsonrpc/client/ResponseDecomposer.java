@@ -45,7 +45,7 @@ public class ResponseDecomposer {
     /**
      * Decomposes response to provided type.
      * @param clazz - Class to which response will be decomposed.
-     * @param <T> -Type of the object to which response will be decomposed. 
+     * @param <T> -Type of the object to which response will be decomposed.
      * @return Decomposed response of provided type.
      */
     @SuppressWarnings("unchecked")
@@ -68,7 +68,7 @@ public class ResponseDecomposer {
      * Decomposes response to provided typed array.
      * @param array - An array of objects to be decomposed.
      * @param clazz - Class to which response will be decomposed.
-     * @param <T> -Type of the object to which response will be decomposed. 
+     * @param <T> -Type of the object to which response will be decomposed.
      * @param subtypeKey - The key which is used to store objects in decomposed map.
      * @return Decomposed response of provided type.
      */
@@ -80,7 +80,7 @@ public class ResponseDecomposer {
                 Map map = new HashMap<>();
                 map.put(subtypeKey, array[i]);
                 result[i] = (T) map;
-            } else { 
+            } else {
                 result[i] = (T) array;
             }
         }

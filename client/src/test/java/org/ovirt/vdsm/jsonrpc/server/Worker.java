@@ -16,7 +16,7 @@ import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 
 public class Worker extends Thread {
-    private final static int TIMEOUT_SEC = 300;
+    private static final int TIMEOUT_SEC = 300;
     private BlockingQueue<ServerDataEvent> queue = new ArrayBlockingQueue<>(1);
     private Map<String, Processor> responses = new HashMap<>();
     private static ObjectMapper mapper = new ObjectMapper();

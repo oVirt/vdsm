@@ -1,17 +1,21 @@
 package org.reactivestreams;
 
 /**
- * Will receive call to {@link #onSubscribe(Subscription)} once after passing an instance of {@link Subscriber} to {@link Publisher#subscribe(Subscriber)}.
+ * Will receive call to {@link #onSubscribe(Subscription)} once after passing an instance of {@link Subscriber}
+ * to {@link Publisher#subscribe(Subscriber)}.
  * <p>
  * No further notifications will be received until {@link Subscription#request(int)} is called.
  * <p>
  * After signaling demand:
  * <ul>
- * <li>One or more invocations of {@link #onNext(Object)} up to the maximum number defined by {@link Subscription#request(int)}</li>
- * <li>Single invocation of {@link #onError(Throwable)} or {@link Subscriber#onComplete()} which signals a terminal state after which no further events will be sent.
+ * <li>One or more invocations of {@link #onNext(Object)} up to the maximum number defined by
+ * {@link Subscription#request(int)}</li>
+ * <li>Single invocation of {@link #onError(Throwable)} or {@link Subscriber#onComplete()} which signals a terminal
+ * state after which no further events will be sent.
  * </ul>
  * <p>
- * Demand can be signaled via {@link Subscription#request(int)} whenever the {@link Subscriber} instance is capable of handling more.
+ * Demand can be signaled via {@link Subscription#request(int)} whenever the {@link Subscriber} instance is capable
+ * of handling more.
  *
  * @param <T> the Type of element signaled.
  */
@@ -21,7 +25,8 @@ public interface Subscriber<T> {
      * <p>
      * No data will start flowing until {@link Subscription#request(int)} is invoked.
      * <p>
-     * It is the responsibility of this {@link Subscriber} instance to call {@link Subscription#request(int)} whenever more data is wanted.
+     * It is the responsibility of this {@link Subscriber} instance to call {@link Subscription#request(int)}
+     * whenever more data is wanted.
      * <p>
      * The {@link Publisher} will send notifications only in response to {@link Subscription#request(int)}.
      *

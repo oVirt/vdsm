@@ -43,7 +43,8 @@ public class SSLStompClient extends SSLClient {
                 subscribe(eventQueue);
             }
 
-            Message message = new Message().connect().withHeader(HEADER_ACCEPT, "1.2").withHeader(HEADER_HOST, policy.getIdentifier());
+            Message message = new Message().connect().withHeader(HEADER_ACCEPT, "1.2").withHeader(HEADER_HOST,
+                    policy.getIdentifier());
             int outgoing = 0;
             int incoming = 0;
             if (policy.isIncomingHeartbeat()) {

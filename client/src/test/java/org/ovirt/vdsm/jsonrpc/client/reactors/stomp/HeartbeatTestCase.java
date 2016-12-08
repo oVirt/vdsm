@@ -31,8 +31,8 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener.EventListener;
 @RunWith(Theories.class)
 public class HeartbeatTestCase {
 
-    private final static String HOSTNAME = "localhost";
-    private final static int WAIT_TIMEOUT = 10;
+    private static final String HOSTNAME = "localhost";
+    private static final int WAIT_TIMEOUT = 10;
 
     @DataPoint
     public static int heartbeat_1 = 3000;

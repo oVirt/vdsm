@@ -161,6 +161,7 @@ public class ClientPolicy {
 
     @Override
     public ClientPolicy clone() throws CloneNotSupportedException {
-        return new ClientPolicy(this.retryTimeOut, this.retryNumber, this.incomingHeartbeat, this.outgoingHeartbeat, this.exceptions);
+        return new ClientPolicy(this.retryTimeOut, this.retryNumber, this.incomingHeartbeat, this.outgoingHeartbeat,
+                this.exceptions);
     }
 }

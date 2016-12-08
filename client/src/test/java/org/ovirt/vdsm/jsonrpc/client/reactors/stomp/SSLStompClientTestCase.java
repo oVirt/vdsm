@@ -34,11 +34,11 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener.EventListener;
 
 public class SSLStompClientTestCase {
     private static final String CHAR_LIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-    private final static int TIMEOUT_SEC = 20;
-    private final static String HOSTNAME = "localhost";
-    private final static String KEYSTORE_NAME = "keystore";
-    private final static String TRUSTSTORE_NAME = "truststore";
-    private final static String PASSWORD = "mypass";
+    private static final int TIMEOUT_SEC = 20;
+    private static final String HOSTNAME = "localhost";
+    private static final String KEYSTORE_NAME = "keystore";
+    private static final String TRUSTSTORE_NAME = "truststore";
+    private static final String PASSWORD = "mypass";
     private Reactor listeningReactor;
     private Reactor sendingReactor;
     private TestManagerProvider provider;
@@ -77,7 +77,8 @@ public class SSLStompClientTestCase {
         int port = 60627;
         final BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(5);
         ReactorClient client = this.sendingReactor.createClient(HOSTNAME, port);
-        client.setClientPolicy(new StompClientPolicy(180000, 0, 1000000, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
+        client.setClientPolicy(
+                new StompClientPolicy(180000, 0, 1000000, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
         client.addEventListener(new ReactorClient.MessageListener() {
 
             @Override
@@ -167,7 +168,8 @@ public class SSLStompClientTestCase {
         assertNotNull(listener);
 
         ReactorClient client = this.sendingReactor.createClient(HOSTNAME, listener.getPort());
-        client.setClientPolicy(new StompClientPolicy(180000, 0, 1000000, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
+        client.setClientPolicy(
+                new StompClientPolicy(180000, 0, 1000000, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
         client.addEventListener(new ReactorClient.MessageListener() {
 
             @Override

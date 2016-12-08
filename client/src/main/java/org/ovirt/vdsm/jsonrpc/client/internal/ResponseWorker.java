@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class ResponseWorker extends Thread {
     private final LinkedBlockingQueue<MessageContext> queue;
-    private final static ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private ResponseTracker tracker;
     private EventPublisher publisher;
     private static Logger log = LoggerFactory.getLogger(ResponseWorker.class);
@@ -128,7 +128,7 @@ public final class ResponseWorker extends Thread {
     private void processIncomingObject(JsonRpcClient client, JsonNode node) {
         final JsonNode id = node.get("id");
         final JsonNode error = node.get("error");
-        if ((error != null && !NullNode.class.isInstance(error))) {
+        if (error != null && !NullNode.class.isInstance(error)) {
             JsonRpcResponse response = JsonRpcResponse.fromJsonNode(node);
             Map<String, Object> map = mapValues(response.getError());
             Object code = map.get("code");
@@ -147,7 +147,7 @@ public final class ResponseWorker extends Thread {
             return;
         }
 
-        if ((id == null || NullNode.class.isInstance(id))) {
+        if (id == null || NullNode.class.isInstance(id)) {
             JsonRpcEvent event = JsonRpcEvent.fromJsonNode(node);
             String method = client.getHostname() + event.getMethod();
             event.setMethod(method);

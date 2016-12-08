@@ -15,7 +15,7 @@ import org.codehaus.jackson.node.TextNode;
  */
 public class RequestBuilder {
 
-    private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private final ObjectNode parameters;
     private final String methodName;
 

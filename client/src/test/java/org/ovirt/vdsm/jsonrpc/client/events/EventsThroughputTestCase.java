@@ -94,8 +94,9 @@ public class EventsThroughputTestCase {
         public void run() {
             long start = System.currentTimeMillis();
             for (int i = 0; i < Integer.MAX_VALUE; i++) {
-                if (!this.isRunning)
+                if (!this.isRunning) {
                     break;
+                }
                 publisher.process(EVENT);
             }
             int time = (int) (System.currentTimeMillis() - start) / 1000;

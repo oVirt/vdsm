@@ -12,7 +12,7 @@ import org.codehaus.jackson.map.ObjectMapper;
  *
  */
 public class ResponseBuilder {
-    private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private JsonNode result;
     private JsonNode error;
     private JsonNode id;

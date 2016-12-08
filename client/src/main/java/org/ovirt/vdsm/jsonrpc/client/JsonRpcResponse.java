@@ -14,7 +14,7 @@ import org.codehaus.jackson.node.ObjectNode;
  *
  */
 public final class JsonRpcResponse {
-    private final static ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private JsonNode result;
     private JsonNode error;
     private JsonNode id;

@@ -32,9 +32,9 @@ import org.reactivestreams.Subscription;
 @Ignore
 public class EventsIntegrationTestCase {
 
-    private final static String HOSTNAME = "localhost";
-    private final static int PORT = 0;
-    private final static int LIMIT = 10;
+    private static final String HOSTNAME = "localhost";
+    private static final int PORT = 0;
+    private static final int LIMIT = 10;
 
     private Reactor sendingReactor;
     private Reactor listeningReactor;
@@ -70,7 +70,8 @@ public class EventsIntegrationTestCase {
         ReactorListener listener = futureListener.get();
 
         ReactorClient client = this.sendingReactor.createClient(HOSTNAME, listener.getPort());
-        client.setClientPolicy(new StompClientPolicy(180000, 0, 1000000, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
+        client.setClientPolicy(
+                new StompClientPolicy(180000, 0, 1000000, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
 
         ResponseWorker worker = ReactorFactory.getWorker(Runtime.getRuntime().availableProcessors());
         worker.register(client);
@@ -124,7 +125,7 @@ public class EventsIntegrationTestCase {
     }
 
     class EventGenerator implements Runnable {
-        private final static long TIMEOUT = 50;
+        private static final long TIMEOUT = 50;
         private ReactorClient client;
         private int counter;
         private boolean isRunning = true;

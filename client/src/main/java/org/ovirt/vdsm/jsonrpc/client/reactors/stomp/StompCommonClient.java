@@ -32,8 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class StompCommonClient extends ReactorClient {
-    public final static String DEFAULT_REQUEST_QUEUE = "jms.queue.requests";
-    public final static String DEFAULT_RESPONSE_QUEUE = "jms.queue.reponses";
+    public static final String DEFAULT_REQUEST_QUEUE = "jms.queue.requests";
+    public static final String DEFAULT_RESPONSE_QUEUE = "jms.queue.reponses";
     protected ByteBuffer headerBuffer = ByteBuffer.allocate(BUFFER_SIZE);
     protected Message message;
     protected CountDownLatch connected;
@@ -96,8 +96,8 @@ public abstract class StompCommonClient extends ReactorClient {
 
     @Override
     public Future<Void> close() {
-        subscriptionIds.stream()
-                .forEach(subscriptionId -> send(new Message().unsubscribe().withHeader(HEADER_ID, subscriptionId).build()));
+        subscriptionIds.stream().forEach(
+                subscriptionId -> send(new Message().unsubscribe().withHeader(HEADER_ID, subscriptionId).build()));
         send(new Message().disconnect().withHeader(HEADER_RECEIPT, UUID.randomUUID().toString()).build());
         return super.close();
     }

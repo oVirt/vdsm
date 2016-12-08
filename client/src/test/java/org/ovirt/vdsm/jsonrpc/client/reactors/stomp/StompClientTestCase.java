@@ -25,8 +25,8 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener.EventListener;
 
 public class StompClientTestCase {
-    private final static int TIMEOUT_SEC = 20;
-    private final static String HOSTNAME = "localhost";
+    private static final int TIMEOUT_SEC = 20;
+    private static final String HOSTNAME = "localhost";
     private StompReactor listeningReactor;
     private StompReactor sendingReactor;
 
@@ -77,7 +77,8 @@ public class StompClientTestCase {
         assertNotNull(listener);
 
         ReactorClient client = this.sendingReactor.createClient(HOSTNAME, listener.getPort());
-        client.setClientPolicy(new StompClientPolicy(180000, 0, 1000000, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
+        client.setClientPolicy(
+                new StompClientPolicy(180000, 0, 1000000, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
         client.addEventListener(new ReactorClient.MessageListener() {
 
             @Override

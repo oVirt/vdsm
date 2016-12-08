@@ -13,10 +13,10 @@ import org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils;
  *
  */
 public class JsonRpcEvent {
-    public final static String ERROR_KEY = "communicationError";
-    private final static ObjectMapper MAPPER = new ObjectMapper();
-    public final static String MESSAGE_FORMAT =
+    public static final String ERROR_KEY = "communicationError";
+    public static final String MESSAGE_FORMAT =
             "{\"jsonrpc\": \"2.0\", \"method\": \"%s\", \"params\": %s}";
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private String method;
     private JsonNode params;
 
@@ -103,10 +103,10 @@ public class JsonRpcEvent {
     }
 
     /**
-     * @see JsonRpcEvent#fromJsonNode(JsonNode)
-     *
      * @param message - byte array representation of the notification.
      * @return Request object.
+     *
+     * @see JsonRpcEvent#fromJsonNode(JsonNode)
      */
     public static JsonRpcEvent fromByteArray(byte[] message) {
         try {

@@ -20,9 +20,11 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ManagerProvider;
 
 public class TestManagerProvider extends ManagerProvider {
 
-    private final static String KEY_STORE_FILE = "/home/pkliczewski/git/vdsm-jsonrpc-java/client/src/test/resources/jsonrpc-tests.p12";
-    private final static String TRUST_STORE_FILE = "/home/pkliczewski/git/vdsm-jsonrpc-java/client/src/test/resources/jsonrpc-tests.p12";
-    private final static String PASSWORD = "x";
+    private static final String KEY_STORE_FILE = "/home/pkliczewski/git/vdsm-jsonrpc-java/client/src/"
+            + "test/resources/jsonrpc-tests.p12";
+    private static final String TRUST_STORE_FILE = "/home/pkliczewski/git/vdsm-jsonrpc-java/client/src/"
+            + "test/resources/jsonrpc-tests.p12";
+    private static final String PASSWORD = "x";
     private InputStream keyStream;
     private InputStream trustStream;
     private String pass;

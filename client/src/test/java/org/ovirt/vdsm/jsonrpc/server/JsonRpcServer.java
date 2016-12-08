@@ -148,7 +148,7 @@ public class JsonRpcServer extends Thread {
     private void processIncoming(SocketChannel socketChannel) throws IOException {
         boolean prev = !(this.ibuff == null);
         while (this.ibuff == null != prev) {
-            prev = (this.ibuff == null);
+            prev = this.ibuff == null;
             if (this.ibuff == null) {
                 readSize(socketChannel);
             } else {

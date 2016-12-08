@@ -71,7 +71,7 @@ public class BatchCall implements Future<List<JsonRpcResponse>>, JsonRpcCall {
 
     @Override
     public boolean isDone() {
-        return (latch.getCount() == 0);
+        return latch.getCount() == 0;
     }
 
     public List<JsonNode> getId() {

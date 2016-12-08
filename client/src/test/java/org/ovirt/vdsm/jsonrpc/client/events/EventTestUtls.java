@@ -6,7 +6,7 @@ import java.util.concurrent.ForkJoinWorkerThread;
 
 public class EventTestUtls {
 
-    public final static String MESSAGE_CONTENT =
+    public static final String MESSAGE_CONTENT =
             "{\"jsonrpc\": \"2.0\", \"method\": \"|testcase|test|update\", \"params\": {\"value\": 42}}";
 
     static class ResponseForkJoinWorkerThread extends ForkJoinWorkerThread {

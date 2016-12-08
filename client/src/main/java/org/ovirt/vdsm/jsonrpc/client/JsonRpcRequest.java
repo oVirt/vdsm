@@ -12,7 +12,7 @@ import org.codehaus.jackson.node.ObjectNode;
  *
  */
 public class JsonRpcRequest {
-    private final static ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private String method;
     private JsonNode params;
     private JsonNode id;
@@ -93,10 +93,10 @@ public class JsonRpcRequest {
     }
 
     /**
-     * @see JsonRpcRequest#fromJsonNode(JsonNode)
-     *
      * @param message - byte array representation of the request.
      * @return Request object.
+     *
+     * @see JsonRpcRequest#fromJsonNode(JsonNode)
      */
     public static JsonRpcRequest fromByteArray(byte[] message) {
         try {

@@ -41,7 +41,7 @@ public class Call implements Future<JsonRpcResponse>, JsonRpcCall {
     public JsonNode getId() {
         return this.batchCall.getId().get(0);
     }
-    
+
     @Override
     public JsonRpcResponse get() throws InterruptedException,
             ExecutionException {

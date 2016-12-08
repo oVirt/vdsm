@@ -41,7 +41,8 @@ public class ResponseWorkerTestCase {
     @Test
     public void testIncomingMessage() throws InterruptedException {
         final String message =
-                "{\"params\": {\"82318566-6bf4-4381-8682-d672d88350bb\": \"Up\"}, \"jsonrpc\": \"2.0\", \"method\": \"|virt|VM_status|82318566-6bf4-4381-8682-d672d88350bb\"}";
+                "{\"params\": {\"82318566-6bf4-4381-8682-d672d88350bb\": \"Up\"}, \"jsonrpc\": \"2.0\", \"method\":"
+                + " \"|virt|VM_status|82318566-6bf4-4381-8682-d672d88350bb\"}";
         final CountDownLatch latch = new CountDownLatch(1);
 
         EventSubscriber subscriber = new EventSubscriber("*|virt|VM_status|*") {

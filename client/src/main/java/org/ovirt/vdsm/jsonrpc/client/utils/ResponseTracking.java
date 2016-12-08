@@ -14,7 +14,8 @@ public class ResponseTracking {
     private ReactorClient client;
     private boolean resetConnection;
 
-    public ResponseTracking(JsonRpcRequest request, JsonRpcCall call, RetryContext context, long timeout, ReactorClient client, boolean resetConnection) {
+    public ResponseTracking(JsonRpcRequest request, JsonRpcCall call, RetryContext context, long timeout,
+            ReactorClient client, boolean resetConnection) {
         this.request = request;
         this.timeout = timeout;
         this.call = call;

@@ -32,9 +32,9 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.MessageListener;
 @Ignore
 public class TestReactor {
 
-    private final static int TIMEOUT_SEC = 6;
-    private final static String HOSTNAME = "127.0.0.1";
-    private final static String DATA = "Hello World!";
+    private static final int TIMEOUT_SEC = 6;
+    private static final String HOSTNAME = "127.0.0.1";
+    private static final String DATA = "Hello World!";
     private Reactor reactorForListener;
     private Reactor reactorForClient;
 
@@ -100,7 +100,8 @@ public class TestReactor {
     }
 
     @Test
-    public void testRetryConnectionBetweenListenerAndClient() throws InterruptedException, ExecutionException, ClientConnectionException {
+    public void testRetryConnectionBetweenListenerAndClient()
+            throws InterruptedException, ExecutionException, ClientConnectionException {
         final BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(1);
         final ExecutorService executorService = Executors.newCachedThreadPool();
 

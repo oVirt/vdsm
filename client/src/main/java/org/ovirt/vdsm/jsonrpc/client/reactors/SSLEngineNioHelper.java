@@ -18,7 +18,7 @@ import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
  */
 public class SSLEngineNioHelper {
 
-    private final static int MAX_ATTEMPTS = 10;
+    private static final int MAX_ATTEMPTS = 10;
     private final SocketChannel channel;
     private final SSLEngine engine;
     private final ByteBuffer appBuffer;
@@ -65,7 +65,6 @@ public class SSLEngineNioHelper {
                     retry = false;
                     read += result.bytesProduced();
                 }
-                ;
             }
             this.packatPeerBuffer.compact();
         }

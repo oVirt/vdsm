@@ -27,22 +27,22 @@ import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
 import org.ovirt.vdsm.jsonrpc.client.internal.ResponseWorker;
 import org.ovirt.vdsm.jsonrpc.client.reactors.Reactor;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
+import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.MessageListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorFactory;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorType;
-import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.MessageListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompClientPolicy;
 
 // it takes too long to have it as part of build process
 @Ignore
 public class JsonRpcClientConnectivityTestCase {
 
-    private final static String HOSTNAME = "127.0.0.1";
-    private final static int PORT = 54321;
-    private final static int CONNECTION_RETRY = 1;
-    private final static int TIMEOUT = 1000;
-    private final static int TIMEOUT_SEC = 3;
-    private final static int HEART_BEAT = 1000;
+    private static final String HOSTNAME = "127.0.0.1";
+    private static final int PORT = 54321;
+    private static final int CONNECTION_RETRY = 1;
+    private static final int TIMEOUT = 1000;
+    private static final int TIMEOUT_SEC = 3;
+    private static final int HEART_BEAT = 1000;
 
     private Reactor getReactor() throws ClientConnectionException {
         return ReactorFactory.getReactor(null, ReactorType.STOMP);
@@ -53,7 +53,8 @@ public class JsonRpcClientConnectivityTestCase {
         // Given
         Reactor reactor = getReactor();
         final ReactorClient client = reactor.createClient(HOSTNAME, 3333);
-        client.setClientPolicy(new StompClientPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
+        client.setClientPolicy(new StompClientPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class,
+                DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
         ResponseWorker worker = ReactorFactory.getWorker(Runtime.getRuntime().availableProcessors());
         JsonRpcClient jsonClient = worker.register(client);
         JsonRpcRequest request = mock(JsonRpcRequest.class);
@@ -96,7 +97,8 @@ public class JsonRpcClientConnectivityTestCase {
 
         Reactor reactor = getReactor();
         final ReactorClient client = reactor.createClient(HOSTNAME, PORT);
-        client.setClientPolicy(new StompClientPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
+        client.setClientPolicy(new StompClientPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class,
+                DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
         ResponseWorker worker = ReactorFactory.getWorker(Runtime.getRuntime().availableProcessors());
         JsonRpcClient jsonClient = worker.register(client);
         jsonClient.setRetryPolicy(new ClientPolicy(TIMEOUT, 2, HEART_BEAT));
@@ -146,7 +148,8 @@ public class JsonRpcClientConnectivityTestCase {
 
         Reactor reactor = getReactor();
         final ReactorClient client = reactor.createClient(HOSTNAME, PORT + 1);
-        client.setClientPolicy(new StompClientPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
+        client.setClientPolicy(new StompClientPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class,
+                DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
         ResponseWorker worker = ReactorFactory.getWorker(Runtime.getRuntime().availableProcessors());
         JsonRpcClient jsonClient = worker.register(client);
         jsonClient.setRetryPolicy(new ClientPolicy(TIMEOUT, 2, HEART_BEAT));
@@ -154,8 +157,8 @@ public class JsonRpcClientConnectivityTestCase {
         final JsonNode params = jsonFromString("{\"text\": \"Hello World\"}");
         final JsonNode id1 = jsonFromString("123");
         final JsonNode id2 = jsonFromString("1234");
-        JsonRpcRequest[] requests =
-                new JsonRpcRequest[] { new JsonRpcRequest("echo", params, id1), new JsonRpcRequest("echo", params, id2) };
+        JsonRpcRequest[] requests = new JsonRpcRequest[] { new JsonRpcRequest("echo", params, id1),
+                new JsonRpcRequest("echo", params, id2) };
 
         assertNotNull(jsonClient);
         assertFalse(client.isOpen());

@@ -301,9 +301,9 @@ public abstract class ReactorClient {
      *
      * @param buff
      *            provided buffer to be read.
+     * @return Number of bytes read.
      * @throws IOException
      *             when networking issue occurs.
-     * @return Number of bytes read.
      */
     protected abstract int read(ByteBuffer buff) throws IOException;
 
@@ -363,6 +363,8 @@ public abstract class ReactorClient {
 
     /**
      * Validates policy when it is set.
+     *
+     * @param policy - validated policy
      */
     public abstract void validate(ClientPolicy policy);
 

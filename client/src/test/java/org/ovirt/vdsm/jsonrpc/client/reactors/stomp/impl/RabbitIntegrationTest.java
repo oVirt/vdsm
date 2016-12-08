@@ -16,8 +16,8 @@ import org.junit.Test;
 @Ignore
 public class RabbitIntegrationTest {
 
-    private final static String HOSTNAME = "localhost";
-    private final static int PORT = 61613;
+    private static final String HOSTNAME = "localhost";
+    private static final int PORT = 61613;
 
     @Test
     public void testSubscription() throws IOException, InterruptedException {
@@ -26,13 +26,13 @@ public class RabbitIntegrationTest {
 
         StompClient subClient = new StompClient(HOSTNAME, PORT);
         client.subscribe("/queue/stomp", new Listener() {
-            
+
             @Override
             public void update(String content) {
                 assertEquals("Hello World!", content);
                 updated.countDown();
             }
-            
+
             @Override
             public void error(Map<String, String> error) {
                 fail();

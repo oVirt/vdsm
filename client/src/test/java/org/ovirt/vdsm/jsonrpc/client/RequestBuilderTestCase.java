@@ -14,8 +14,6 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.junit.Test;
-import org.ovirt.vdsm.jsonrpc.client.JsonRpcRequest;
-import org.ovirt.vdsm.jsonrpc.client.RequestBuilder;
 
 public class RequestBuilderTestCase {
 
@@ -82,7 +80,6 @@ public class RequestBuilderTestCase {
         assertEquals(map.get("memSize"), vmParams.get("memSize"));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testSimpleRequestWithOptional() throws JsonParseException, JsonMappingException, IOException {
         // given
@@ -90,41 +87,40 @@ public class RequestBuilderTestCase {
         assertRequestWithOptional(param, param);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testSimpleRequestWithOptionalNonString() throws JsonParseException, JsonMappingException, IOException {
         Boolean param = Boolean.FALSE;
         assertRequestWithOptional(param, param);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testSimpleRequestWithOptionalNull() throws JsonParseException, JsonMappingException, IOException {
         Boolean param = null;
         assertRequestWithOptional(param, param);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testSimpleRequestWithOptionalEmptyString() throws JsonParseException, JsonMappingException, IOException {
+    public void testSimpleRequestWithOptionalEmptyString()
+            throws JsonParseException, JsonMappingException, IOException {
         Object parameter = "";
         assertRequestWithOptional(parameter, null);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testSimpleRequestWithOptionalPrimitiveBoolean() throws JsonParseException, JsonMappingException, IOException {
+    public void testSimpleRequestWithOptionalPrimitiveBoolean()
+            throws JsonParseException, JsonMappingException, IOException {
         boolean parameter = true;
         assertRequestWithOptional(parameter, parameter);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testSimpleRequestWithOptionalPrimitiveInteger() throws JsonParseException, JsonMappingException, IOException {
+    public void testSimpleRequestWithOptionalPrimitiveInteger()
+            throws JsonParseException, JsonMappingException, IOException {
         int parameter = 444;
         assertRequestWithOptional(parameter, parameter);
     }
 
+    @SuppressWarnings("unchecked")
     private void assertRequestWithOptional(Object parameter, Object expected) throws JsonParseException,
             JsonMappingException, IOException {
         // when
