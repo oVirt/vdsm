@@ -46,7 +46,6 @@ def _upgrade_seal(upgrade):
     except (OSError, IOError):
         _get_upgrade_log().exception("Failed to seal upgrade %s", upgrade.name)
     else:
-        utils.persist(seal_file)
         _get_upgrade_log().debug("Upgrade %s successfully performed",
                                  upgrade.name)
 
