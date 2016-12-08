@@ -294,11 +294,11 @@ def bench():
 def make_volume(*records):
     with make_leases() as path:
         lockspace = os.path.basename(os.path.dirname(path))
-        format_vol(lockspace, path)
-        if records:
-            write_records(records, lockspace, path)
         file = xlease.DirectFile(path)
         with utils.closing(file):
+            xlease.format_index(lockspace, file)
+            if records:
+                write_records(records, lockspace, file)
             vol = xlease.LeasesVolume(lockspace, file)
             with utils.closing(vol):
                 yield vol
@@ -313,21 +313,11 @@ def make_leases():
         yield path
 
 
-def format_vol(lockspace, path):
-    file = xlease.DirectFile(path)
-    with utils.closing(file):
-        vol = xlease.LeasesVolume(lockspace, file)
-        with utils.closing(vol):
-            vol.format()
-
-
-def write_records(records, lockspace, path):
-    file = xlease.DirectFile(path)
-    with utils.closing(file):
-        index = xlease.VolumeIndex(file)
-        with utils.closing(index):
-            for recnum, record in records:
-                block = index.copy_block(recnum)
-                with utils.closing(block):
-                    block.write_record(recnum, record)
-                    block.dump(file)
+def write_records(records, lockspace, file):
+    index = xlease.VolumeIndex(file)
+    with utils.closing(index):
+        for recnum, record in records:
+            block = index.copy_block(recnum)
+            with utils.closing(block):
+                block.write_record(recnum, record)
+                block.dump(file)

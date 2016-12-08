@@ -371,7 +371,7 @@ class LeasesVolume(object):
         if record.updating:
             raise LeaseUpdating(lease_id)
 
-        offset = self._lease_offset(recnum)
+        offset = lease_offset(recnum)
         return LeaseInfo(self._lockspace, lease_id, self._file.name, offset)
 
     def add(self, lease_id):
@@ -400,7 +400,7 @@ class LeasesVolume(object):
         if recnum == -1:
             raise NoSpace(lease_id)
 
-        offset = self._lease_offset(recnum)
+        offset = lease_offset(recnum)
         record = Record(lease_id, offset, updating=True)
         self._write_record(recnum, record)
 
@@ -427,7 +427,7 @@ class LeasesVolume(object):
         if recnum == -1:
             raise NoSuchLease(lease_id)
 
-        offset = self._lease_offset(recnum)
+        offset = lease_offset(recnum)
         record = Record(lease_id, offset, updating=True)
         self._write_record(recnum, record)
 
@@ -438,25 +438,6 @@ class LeasesVolume(object):
 
         record = Record(BLANK_LEASE, offset)
         self._write_record(recnum, record)
-
-    # TODO: move to module and use fresh index for writing.
-    def format(self):
-        """
-        Format index, deleting all existing records.
-
-        Raises:
-        - OSError if I/O operation failed
-        """
-        # TODO:
-        # - write metadata block with the updating flag
-        # - dump the buffer
-        # - write metadata block
-        log.info("Formatting index for lockspace %r", self._lockspace)
-        for recnum in range(MAX_RECORDS):
-            offset = self._lease_offset(recnum)
-            record = Record(BLANK_LEASE, offset)
-            self._index.write_record(recnum, record)
-        self._index.dump(self._file)
 
     def leases(self):
         """
@@ -473,7 +454,7 @@ class LeasesVolume(object):
             # - used - non empty resource, may be updating
             if record.resource:
                 leases[record.resource] = {
-                    "offset": self._lease_offset(recnum),
+                    "offset": lease_offset(recnum),
                     "updating": record.updating,
                 }
         return leases
@@ -481,9 +462,6 @@ class LeasesVolume(object):
     def close(self):
         log.debug("Closing index for lockspace %r", self._lockspace)
         self._index.close()
-
-    def _lease_offset(self, recnum):
-        return USER_RESOURCE_BASE + (recnum * SLOT_SIZE)
 
     def _write_record(self, recnum, record):
         """
@@ -497,6 +475,35 @@ class LeasesVolume(object):
             block.write_record(recnum, record)
             block.dump(self._file)
         self._index.write_record(recnum, record)
+
+
+def format_index(lockspace, file):
+    """
+    Format xleases volume index, deleting all existing records.
+
+    Should be used only when creating a new leases volume, or if the volume
+    should be repaired. Afterr formatting the index, the index can be rebuilt
+    from storage contents.
+
+    Raises:
+    - OSError if I/O operation failed
+    """
+    log.info("Formatting index for lockspace %r", lockspace)
+    # TODO:
+    # - write metadata block with the updating flag
+    # - dump the buffer
+    # - write metadata block
+    index = VolumeIndex(file)
+    with utils.closing(index):
+        for recnum in range(MAX_RECORDS):
+            offset = lease_offset(recnum)
+            record = Record(BLANK_LEASE, offset)
+            index.write_record(recnum, record)
+        index.dump(file)
+
+
+def lease_offset(recnum):
+    return USER_RESOURCE_BASE + (recnum * SLOT_SIZE)
 
 
 class VolumeIndex(object):
