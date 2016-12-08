@@ -4986,9 +4986,8 @@ class LiveMergeCleanupThread(threading.Thread):
 
     def teardown_top_volume(self):
         # TODO move this method to storage public API
-        sd_manifest = sdc.sdCache.produce_manifest(self.drive.domainID)
-        sd_manifest.teardownVolume(self.drive.imageID,
-                                   self.job['topVolume'])
+        sd = sdc.sdCache.produce(self.drive.domainID)
+        sd.teardownVolume(self.drive.imageID, self.job['topVolume'])
 
     @utils.traceback()
     def run(self):
