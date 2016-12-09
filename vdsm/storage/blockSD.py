@@ -66,7 +66,12 @@ STORAGE_DOMAIN_TAG = "RHAT_storage_domain"
 STORAGE_UNREADY_DOMAIN_TAG = STORAGE_DOMAIN_TAG + "_UNREADY"
 
 MASTERLV = "master"
-SPECIAL_LVS = (sd.METADATA, sd.LEASES, sd.IDS, sd.INBOX, sd.OUTBOX, MASTERLV)
+
+# Special lvs available since storage domain version 0
+SPECIAL_LVS_V0 = sd.SPECIAL_VOLUMES_V0 + (MASTERLV,)
+
+# Special lvs avilable since storage domain version 4.
+SPECIAL_LVS_V4 = sd.SPECIAL_VOLUMES_V4 + (MASTERLV,)
 
 MASTERLV_SIZE = "1024"  # In MiB = 2 ** 20 = 1024 ** 2 => 1GiB
 BlockSDVol = namedtuple("BlockSDVol", "name, image, parent")
@@ -170,7 +175,7 @@ def _getVolsTree(sdUUID):
                 vols[lv.name] = BlockSDVol(lv.name, image, parent)
                 break
         else:
-            if lv.name not in SPECIAL_LVS:
+            if lv.name not in SPECIAL_LVS_V4:
                 log.warning("Ignoring Volume %s that lacks minimal tag set"
                             "tags %s" % (lv.name, lv.tags))
     return vols
@@ -406,6 +411,13 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             # Such domains supported only 512 sizes
             self.logBlkSize = 512
             self.phyBlkSize = 512
+
+    @classmethod
+    def special_volumes(cls, version):
+        if cls.supports_external_leases(version):
+            return SPECIAL_LVS_V4
+        else:
+            return SPECIAL_LVS_V0
 
     def readMetadataMapping(self):
         meta = self.getMetadata()
@@ -783,8 +795,9 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         domMD = os.path.join(self.domaindir, sd.DOMAIN_META_DATA)
         fileUtils.createdir(domMD)
 
-        lvm.activateLVs(self.sdUUID, SPECIAL_LVS)
-        for lvName in SPECIAL_LVS:
+        special_lvs = self.special_volumes(self.getVersion())
+        lvm.activateLVs(self.sdUUID, special_lvs)
+        for lvName in special_lvs:
             dst = os.path.join(domMD, lvName)
             if not os.path.lexists(dst):
                 src = lvm.lvPath(self.sdUUID, lvName)
@@ -849,8 +862,9 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
     def _getOccupiedMetadataSlots(self):
         stripPrefix = lambda s, pfx: s[len(pfx):]
         occupiedSlots = []
+        special_lvs = self.special_volumes(self.getVersion())
         for lv in lvm.getLV(self.sdUUID):
-            if lv.name in SPECIAL_LVS:
+            if lv.name in special_lvs:
                 # Special LVs have no mapping
                 continue
 
@@ -923,7 +937,11 @@ class BlockStorageDomain(sd.StorageDomain):
     def __init__(self, sdUUID):
         manifest = self.manifestClass(sdUUID)
         sd.StorageDomain.__init__(self, manifest)
-        lvm.activateLVs(self.sdUUID, SPECIAL_LVS)
+
+        # TODO: Move this to manifest.activate_special_lvs
+        special_lvs = manifest.special_volumes(manifest.getVersion())
+        lvm.activateLVs(self.sdUUID, special_lvs)
+
         self.metavol = lvm.lvPath(self.sdUUID, sd.METADATA)
 
         # Check that all devices in the VG have the same logical and physical
@@ -1014,10 +1032,16 @@ class BlockStorageDomain(sd.StorageDomain):
         mapping = cls.getMetaDataMapping(vgName)
 
         # Create the rest of the BlockSD internal volumes
-        for metaFile, metaSizeMb in sd.SPECIAL_VOLUME_SIZES_MIB.iteritems():
-            lvm.createLV(vgName, metaFile, metaSizeMb)
+        special_lvs = cls.manifestClass.special_volumes(version)
+        for name, size_mb in sd.SPECIAL_VOLUME_SIZES_MIB.iteritems():
+            if name in special_lvs:
+                lvm.createLV(vgName, name, size_mb)
 
         lvm.createLV(vgName, MASTERLV, MASTERLV_SIZE)
+
+        if cls.supports_external_leases(version):
+            xleases_path = _external_leases_path(vgName)
+            cls.format_external_leases(vgName, xleases_path)
 
         # Create VMS file system
         _createVMSfs(os.path.join("/dev", vgName, MASTERLV))
@@ -1515,6 +1539,35 @@ class BlockStorageDomain(sd.StorageDomain):
         Return a type specific volume generator object
         """
         return blockVolume.BlockVolume
+
+    # External leases support
+
+    def external_leases_path(self):
+        """
+        Return the path to te external leases volume.
+        """
+        return _external_leases_path(self.sdUUID)
+
+    def create_external_leases(self):
+        """
+        Create the external leases special volume.
+
+        Called during upgrade from version 3 to version 4.
+        """
+        path = self.external_leases_path()
+        try:
+            lvm.getLV(self.sdUUID, sd.XLEASES)
+        except se.LogicalVolumeDoesNotExistError:
+            self.log.info("Creating external leases volume %s", path)
+            size = sd.SPECIAL_VOLUME_SIZES_MIB[sd.XLEASES]
+            lvm.createLV(self.sdUUID, sd.XLEASES, size)
+        else:
+            self.log.info("Reusing external leases volume %s", path)
+            lvm.activateLVs(self.sdUUID, [sd.XLEASES])
+
+
+def _external_leases_path(sdUUID):
+    return lvm.lvPath(sdUUID, sd.XLEASES)
 
 
 def _createVMSfs(dev):

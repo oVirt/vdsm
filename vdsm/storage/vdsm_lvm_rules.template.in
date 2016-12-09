@@ -59,7 +59,7 @@ ENV{DM_LV_NAME}=="_remove_me_%(temp)s_%(uuid)s", OWNER:="@VDSMUSER@", GROUP:="@Q
 ENV{DM_LV_NAME}=="metadata|inbox|outbox", MODE:="0600", OWNER:="@VDSMUSER@", GROUP:="@QEMUGROUP@", GOTO="lvm_end"
 
 # Special volumes used by sanlock
-ENV{DM_LV_NAME}=="ids|leases", MODE:="0660", OWNER:="@VDSMUSER@", GROUP:="@SNLKGROUP@", GOTO="lvm_end"
+ENV{DM_LV_NAME}=="ids|leases|xleases", MODE:="0660", OWNER:="@VDSMUSER@", GROUP:="@SNLKGROUP@", GOTO="lvm_end"
 
 LABEL="lvm_end"
 """)

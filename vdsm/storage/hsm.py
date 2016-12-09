@@ -389,7 +389,7 @@ class HSM(object):
 
         def storageRefresh():
             sdCache.refreshStorage()
-            lvm.bootstrap(refreshlvs=blockSD.SPECIAL_LVS)
+            lvm.bootstrap(refreshlvs=blockSD.SPECIAL_LVS_V4)
             self._ready = True
             self.log.debug("HSM is ready")
 

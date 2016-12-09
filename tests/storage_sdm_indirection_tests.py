@@ -241,6 +241,11 @@ class FakeBlockDomainManifest(FakeDomainManifest):
     def getVolumeLease(self, imgUUID, volUUID):
         pass
 
+    @classmethod
+    @recorded
+    def supports_external_leases(cls, version):
+        pass
+
 
 class FakeFileDomainManifest(FakeDomainManifest):
     def __init__(self):
@@ -269,6 +274,11 @@ class FakeFileDomainManifest(FakeDomainManifest):
 
     @recorded
     def getVolumeLease(self, imgUUID, volUUID):
+        pass
+
+    @classmethod
+    @recorded
+    def supports_external_leases(cls, version):
         pass
 
 
@@ -652,6 +662,12 @@ class RedirectionChecker(object):
 
 @expandPermutations
 class DomainTestMixin(object):
+
+    @permutations([
+        ['supports_external_leases', 1],
+    ])
+    def test_class_methods(self, fn, nargs):
+        self.checker.check_classmethod_call(fn, nargs)
 
     @permutations([
         ['sdUUID', 'a6ecac0a-5c6b-46d7-9ba5-df8b34df2d01'],
