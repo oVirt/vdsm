@@ -39,6 +39,12 @@ class LocalFsStorageDomainManifest(fileSD.FileStorageDomainManifest):
         4: clusterlock.LocalLock,
     }
 
+    # External leases support
+
+    @classmethod
+    def supports_external_leases(cls, version):
+        return False
+
 
 class LocalFsStorageDomain(fileSD.FileStorageDomain):
     manifestClass = LocalFsStorageDomainManifest

@@ -155,8 +155,11 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None,
     fake_lvm.createLV(sduuid, sd.METADATA, blockSD.SD_METADATA_SIZE)
 
     # Create the rest of the special LVs
-    for metafile, sizemb in sd.SPECIAL_VOLUME_SIZES_MIB.iteritems():
-        fake_lvm.createLV(sduuid, metafile, sizemb)
+    special = blockSD.BlockStorageDomainManifest.special_volumes(sd_version)
+    for name, size_mb in sd.SPECIAL_VOLUME_SIZES_MIB.iteritems():
+        if name in special:
+            fake_lvm.createLV(sduuid, name, size_mb)
+
     fake_lvm.createLV(sduuid, blockSD.MASTERLV, blockSD.MASTERLV_SIZE)
 
     # We'll store the domain metadata in the VG's tags
