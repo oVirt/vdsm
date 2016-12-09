@@ -1,7 +1,6 @@
 [Unit]
 Description=Virtual Desktop Server Manager network IP+link restoration
 Wants=network.target
-Requires=@OPENVSWITCHSERVICE@
 After=@OPENVSWITCHSERVICE@
 Before=libvirtd.service
 
