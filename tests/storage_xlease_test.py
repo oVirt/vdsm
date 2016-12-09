@@ -23,6 +23,7 @@ from __future__ import print_function
 
 import io
 import os
+import time
 import timeit
 
 from contextlib import contextmanager
@@ -58,6 +59,72 @@ class FailingWriter(xlease.DirectFile):
 
 class TestIndex(VdsmTestCase):
 
+    @MonkeyPatch(time, 'time', lambda: 123456789)
+    def test_metadata(self):
+        with make_volume() as vol:
+            lockspace = os.path.basename(os.path.dirname(vol.path))
+            self.assertEqual(vol.version, 1)
+            self.assertEqual(vol.lockspace, lockspace)
+            self.assertEqual(vol.mtime, 123456789)
+            self.assertEqual(vol.updating, False)
+
+    def test_magic_big_endian(self):
+        with make_volume() as vol:
+            with io.open(vol.path, "rb") as f:
+                f.seek(xlease.INDEX_BASE)
+                self.assertEqual(f.read(4), b"\x12\x15\x20\x16")
+
+    def test_bad_magic(self):
+        with make_leases() as path:
+            self.check_invalid_metadata(path)
+
+    def test_bad_version(self):
+        with make_volume() as vol:
+            with io.open(vol.path, "r+b") as f:
+                f.seek(xlease.INDEX_BASE + 5)
+                f.write(b"blah")
+            self.check_invalid_metadata(vol.path)
+
+    def test_unsupported_version(self):
+        with make_volume() as vol:
+            md = xlease.IndexMetadata(2, "lockspace")
+            with io.open(vol.path, "r+b") as f:
+                f.seek(xlease.INDEX_BASE)
+                f.write(md.bytes())
+            self.check_invalid_metadata(vol.path)
+
+    def test_bad_lockspace(self):
+        with make_volume() as vol:
+            with io.open(vol.path, "r+b") as f:
+                f.seek(xlease.INDEX_BASE + 10)
+                f.write(b"\xf0")
+            self.check_invalid_metadata(vol.path)
+
+    def test_bad_mtime(self):
+        with make_volume() as vol:
+            with io.open(vol.path, "r+b") as f:
+                f.seek(xlease.INDEX_BASE + 59)
+                f.write(b"not a number")
+            self.check_invalid_metadata(vol.path)
+
+    def check_invalid_metadata(self, path):
+        file = xlease.DirectFile(path)
+        with utils.closing(file):
+            with self.assertRaises(xlease.InvalidMetadata):
+                xlease.LeasesVolume(file)
+
+    def test_updating(self):
+        with make_volume() as vol:
+            md = xlease.IndexMetadata(xlease.INDEX_VERSION, "lockspace",
+                                      updating=True)
+            with io.open(vol.path, "r+b") as f:
+                f.seek(xlease.INDEX_BASE)
+                f.write(md.bytes())
+            file = xlease.DirectFile(vol.path)
+            with utils.closing(file):
+                vol = xlease.LeasesVolume(file)
+                self.assertEqual(vol.updating, True)
+
     def test_format(self):
         with make_volume() as vol:
             self.assertEqual(vol.leases(), {})
@@ -67,7 +134,7 @@ class TestIndex(VdsmTestCase):
             file = FailingReader(path)
             with utils.closing(file):
                 with self.assertRaises(ReadError):
-                    xlease.LeasesVolume("lockspace", file)
+                    xlease.LeasesVolume(file)
 
     def test_lookup_missing(self):
         with make_volume() as vol:
@@ -99,7 +166,7 @@ class TestIndex(VdsmTestCase):
         with make_volume() as base:
             file = FailingWriter(base.path)
             with utils.closing(file):
-                vol = xlease.LeasesVolume(base.lockspace, file)
+                vol = xlease.LeasesVolume(file)
                 with utils.closing(vol):
                     lease_id = make_uuid()
                     with self.assertRaises(WriteError):
@@ -185,7 +252,7 @@ class TestIndex(VdsmTestCase):
         with make_volume((42, record)) as base:
             file = FailingWriter(base.path)
             with utils.closing(file):
-                vol = xlease.LeasesVolume(base.lockspace, file)
+                vol = xlease.LeasesVolume(file)
                 with utils.closing(vol):
                     with self.assertRaises(WriteError):
                         vol.remove(record.resource)
@@ -246,7 +313,7 @@ lease_id = make_uuid()
 def bench():
     file = xlease.DirectFile(path)
     with utils.closing(file):
-        vol = xlease.LeasesVolume(lockspace, file)
+        vol = xlease.LeasesVolume(file)
         with utils.closing(vol, log="test"):
             try:
                 vol.lookup(lease_id)
@@ -276,7 +343,7 @@ def bench():
     lease_id = make_uuid()
     file = xlease.DirectFile(path)
     with utils.closing(file):
-        vol = xlease.LeasesVolume(lockspace, file)
+        vol = xlease.LeasesVolume(file)
         with utils.closing(vol, log="test"):
             vol.add(lease_id)
 """
@@ -299,7 +366,7 @@ def make_volume(*records):
             xlease.format_index(lockspace, file)
             if records:
                 write_records(records, lockspace, file)
-            vol = xlease.LeasesVolume(lockspace, file)
+            vol = xlease.LeasesVolume(file)
             with utils.closing(vol):
                 yield vol
 
@@ -317,7 +384,7 @@ def write_records(records, lockspace, file):
     index = xlease.VolumeIndex(file)
     with utils.closing(index):
         for recnum, record in records:
-            block = index.copy_block(recnum)
+            block = index.copy_record_block(recnum)
             with utils.closing(block):
                 block.write_record(recnum, record)
                 block.dump(file)

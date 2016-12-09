@@ -86,7 +86,7 @@ The first block of the index is the metadata block, using this format:
 - padding byte
 - lockspace (string, 48 bytes)
 - padding
-- timestamp (string, 10 bytes)
+- mtime (string, 10 bytes)
 - padding
 - updating flag (1 byte)
 - padding
@@ -132,6 +132,7 @@ import logging
 import mmap
 import os
 import struct
+import time
 
 from collections import namedtuple
 
@@ -183,6 +184,17 @@ RECORD_SIZE = 64
 
 # Each lookup will read this size from storage.
 INDEX_SIZE = METADATA_SIZE + (MAX_RECORDS * RECORD_SIZE)
+
+# Current index format
+INDEX_VERSION = 1
+
+# magic \0 version \0 lockspace \0 mtime \0 updating \0...\n
+# Note: using big endian byte order (>) so index created on little endian and
+# big endian create the same format on storage.
+META_STRUCT = struct.Struct(">i x 4s x 48s x 10s x c 440x c")
+
+# Magic number indetifying the index slot.
+INDEX_MAGIC = 0x12152016
 
 # lease_id \0 offset \0 updating reserved \n
 RECORD_STRUCT = struct.Struct("48s x 11s x 3c")
@@ -238,12 +250,128 @@ class InvalidRecord(Error):
         self.record = record
 
 
+class InvalidMetadata(Error):
+    msg = "Invalid index metadata ({self.reason}): {self.data!r}"
+
+    def __init__(self, reason, data):
+        self.reason = reason
+        self.data = data
+
+
 LeaseInfo = namedtuple("LeaseInfo", (
     "lockspace",        # Sanlock lockspace name
     "resource",         # Sanlock resource name
     "path",             # Path to lease file or block device
     "offset",           # Offset in path
 ))
+
+
+class IndexMetadata(object):
+
+    @classmethod
+    def fromebytes(cls, data):
+        """
+        Parse metadata block from storage and create a metadata object.
+
+        Arguments:
+            data (bytes): first block, 512 bytes
+
+        Returns:
+            Metadata object
+
+        Raises:
+            InvalidMetadata if data is not in the right format or a field
+                cannot be parsed.
+        """
+        try:
+            magic, version, lockspace, mtime, updating, _ = \
+                META_STRUCT.unpack(data)
+        except struct.error as e:
+            raise InvalidMetadata("cannot unpack: %s" % e, data)
+
+        if magic != INDEX_MAGIC:
+            raise InvalidMetadata("invalid magic: %s" % magic, data)
+
+        try:
+            version = int(version)
+        except ValueError:
+            raise InvalidMetadata("invalid version: %s" % version, data)
+
+        if version != INDEX_VERSION:
+            raise InvalidMetadata("unsupported version %s" % version, data)
+
+        lockspace = lockspace.rstrip(b"\0")
+        try:
+            lockspace = lockspace.decode("ascii")
+        except UnicodeDecodeError:
+            raise InvalidMetadata("cannot decode lockspace %r" %
+                                  lockspace, data)
+
+        try:
+            mtime = int(mtime)
+        except ValueError:
+            raise InvalidMetadata("cannot parse mtime %r" %
+                                  mtime, data)
+
+        updating = (updating == FLAG_UPDATING)
+
+        return cls(version, lockspace, mtime=mtime, updating=updating)
+
+    def __init__(self, version, lockspace, mtime=None, updating=False):
+        """
+        Initialize a metadata block.
+
+        Arguments:
+            version (int): index format
+            lockspace (string): lockspace name
+            mtime (int): seconds since epoch
+            updating (bool): whether index is updating
+        """
+        if mtime is None:
+            mtime = int(time.time())
+        self._version = version
+        self._lockspace = lockspace
+        self._mtime = mtime
+        self._updating = updating
+
+    @property
+    def version(self):
+        return self._version
+
+    @property
+    def lockspace(self):
+        return self._lockspace
+
+    @property
+    def mtime(self):
+        return self._mtime
+
+    @property
+    def updating(self):
+        return self._updating
+
+    def bytes(self):
+        """
+        Returns metadata in storage format.
+
+        Returns:
+            bytes object.
+        """
+        return META_STRUCT.pack(
+            INDEX_MAGIC,
+            b"%04d" % self._version,
+            self._lockspace.encode("ascii"),
+            b"%010d" % self._mtime,
+            FLAG_UPDATING if self._updating else FLAG_NONE,
+            RECORD_TERM,
+        )
+
+    def __repr__(self):
+        return ("<IndexMetadata version={self.version}, "
+                "lockspace={self.lockspace!r}, "
+                "mtime={self.mtime}, "
+                "updating={self.updating} "
+                "at {addr:#x}>").format(self=self, addr=id(self))
 
 
 class Record(object):
@@ -337,20 +465,36 @@ class LeasesVolume(object):
     written immediately to storage.
     """
 
-    def __init__(self, lockspace, file):
-        log.debug("Loading index for lockspace %r from %r",
-                  lockspace, file.name)
-        self._lockspace = lockspace
+    def __init__(self, file):
+        log.debug("Loading index from %r", file.name)
         self._file = file
         self._index = VolumeIndex(file)
-
-    @property
-    def lockspace(self):
-        return self._lockspace
+        try:
+            self._md = self._index.read_metadata()
+        except:
+            self._index.close()
+            raise
+        log.debug("Loaded %s", self._md)
 
     @property
     def path(self):
         return self._file.name
+
+    @property
+    def lockspace(self):
+        return self._md.lockspace
+
+    @property
+    def version(self):
+        return self._md.version
+
+    @property
+    def mtime(self):
+        return self._md.mtime
+
+    @property
+    def updating(self):
+        return self._md.updating
 
     def lookup(self, lease_id):
         """
@@ -362,7 +506,7 @@ class LeasesVolume(object):
         - OSError if io operation failed
         """
         log.debug("Looking up lease %r in lockspace %r",
-                  lease_id, self._lockspace)
+                  lease_id, self.lockspace)
         recnum = self._index.find_record(lease_id)
         if recnum == -1:
             raise NoSuchLease(lease_id)
@@ -372,7 +516,7 @@ class LeasesVolume(object):
             raise LeaseUpdating(lease_id)
 
         offset = lease_offset(recnum)
-        return LeaseInfo(self._lockspace, lease_id, self._file.name, offset)
+        return LeaseInfo(self.lockspace, lease_id, self._file.name, offset)
 
     def add(self, lease_id):
         """
@@ -386,7 +530,7 @@ class LeasesVolume(object):
         - sanlock.SanlockException if sanlock operation failed.
         """
         log.info("Adding lease %r in lockspace %r",
-                 lease_id, self._lockspace)
+                 lease_id, self.lockspace)
         recnum = self._index.find_record(lease_id)
         if recnum != -1:
             record = self._index.read_record(recnum)
@@ -404,13 +548,13 @@ class LeasesVolume(object):
         record = Record(lease_id, offset, updating=True)
         self._write_record(recnum, record)
 
-        sanlock.write_resource(self._lockspace, lease_id,
+        sanlock.write_resource(self.lockspace, lease_id,
                                [(self._file.name, offset)])
 
         record = Record(lease_id, offset)
         self._write_record(recnum, record)
 
-        return LeaseInfo(self._lockspace, lease_id, self._file.name, offset)
+        return LeaseInfo(self.lockspace, lease_id, self._file.name, offset)
 
     def remove(self, lease_id):
         """
@@ -422,7 +566,7 @@ class LeasesVolume(object):
         - sanlock.SanlockException if sanlock operation failed.
         """
         log.info("Removing lease %r in lockspace %r",
-                 lease_id, self._lockspace)
+                 lease_id, self.lockspace)
         recnum = self._index.find_record(lease_id)
         if recnum == -1:
             raise NoSuchLease(lease_id)
@@ -443,7 +587,7 @@ class LeasesVolume(object):
         """
         Return all leases in the index
         """
-        log.debug("Getting all leases for lockspace %r", self._lockspace)
+        log.debug("Getting all leases for lockspace %r", self.lockspace)
         leases = {}
         for recnum in range(MAX_RECORDS):
             # TODO: handle bad records - currently will raise InvalidRecord and
@@ -460,7 +604,7 @@ class LeasesVolume(object):
         return leases
 
     def close(self):
-        log.debug("Closing index for lockspace %r", self._lockspace)
+        log.debug("Closing index for lockspace %r", self.lockspace)
         self._index.close()
 
     def _write_record(self, recnum, record):
@@ -470,7 +614,7 @@ class LeasesVolume(object):
         Copy the block where the record is located, modify it and write the
         block to storage. If this succeeds, write the record to the index.
         """
-        block = self._index.copy_block(recnum)
+        block = self._index.copy_record_block(recnum)
         with utils.closing(block):
             block.write_record(recnum, record)
             block.dump(self._file)
@@ -488,18 +632,28 @@ def format_index(lockspace, file):
     Raises:
     - OSError if I/O operation failed
     """
-    log.info("Formatting index for lockspace %r", lockspace)
-    # TODO:
-    # - write metadata block with the updating flag
-    # - dump the buffer
-    # - write metadata block
+    log.info("Formatting index for lockspace %r (version=%d)",
+             lockspace, INDEX_VERSION)
     index = VolumeIndex(file)
     with utils.closing(index):
+        # Create index in updating state
+        metadata = IndexMetadata(INDEX_VERSION, lockspace, updating=True)
+        index.write_metadata(metadata)
+
+        # Write empty records
         for recnum in range(MAX_RECORDS):
             offset = lease_offset(recnum)
             record = Record(BLANK_LEASE, offset)
             index.write_record(recnum, record)
+
+        # Attempt to write index to file
         index.dump(file)
+
+        # Clear updating flag
+        metadata = IndexMetadata(INDEX_VERSION, lockspace)
+        block = ChangeBlock(metadata.bytes(), 0)
+        with utils.closing(block):
+            block.dump(file)
 
 
 def lease_offset(recnum):
@@ -559,6 +713,29 @@ class VolumeIndex(object):
         self._buf.seek(offset)
         self._buf.write(record.bytes())
 
+    def read_metadata(self):
+        """
+        Read metadata block.
+
+        The caller is responsible for writing the block to storage before
+        updating the index, otherwise the index would not reflect the state on
+        storage.
+        """
+        self._buf.seek(0)
+        data = self._buf.read(BLOCK_SIZE)
+        return IndexMetadata.fromebytes(data)
+
+    def write_metadata(self, metadata):
+        """
+        Write metadata block to index.
+
+        The caller is responsible for writing the block to storage before
+        updating the index, otherwise the index would not reflect the state on
+        storage.
+        """
+        self._buf.seek(0)
+        self._buf.write(metadata.bytes())
+
     def dump(self, file):
         """
         Write the entire buffer to storage and wait until the data reach
@@ -569,10 +746,10 @@ class VolumeIndex(object):
         file.write(self._buf)
         os.fsync(file.fileno())
 
-    def copy_block(self, recnum):
+    def copy_record_block(self, recnum):
         offset = self._record_offset(recnum)
         block_start = offset - (offset % BLOCK_SIZE)
-        return RecordBlock(self._buf, block_start)
+        return ChangeBlock(self._buf, block_start)
 
     def close(self):
         self._buf.close()
@@ -584,23 +761,27 @@ class VolumeIndex(object):
         return (offset - RECORD_BASE) // RECORD_SIZE
 
 
-class RecordBlock(object):
+class ChangeBlock(object):
     """
-    A block sized buffer holding lease records.
+    A block sized buffer for writing changes atomically to storage.
+
+    To change a block of data, create a ChangeBlock from the original buffer.
+    Modify the change block and dump it to storage. If the write was
+    successful, modify the original buffer.
     """
 
-    def __init__(self, index_buf, offset):
+    def __init__(self, buf, offset):
         """
-        Initialize a RecordBlock from an index buffer, copying the block
-        starting at offset.
+        Initialize a ChangeBlock from a buffer, copying the block starting at
+        offset.
 
         Arguments:
-            index_buf (mmap.mmap): the buffer holding the block contents
+            buf (buffer): the buffer holding the block contents
             offset (int): offset in of this block in index_buf
         """
         self._offset = offset
         self._buf = mmap.mmap(-1, BLOCK_SIZE, mmap.MAP_SHARED)
-        self._buf[:] = index_buf[offset:offset + BLOCK_SIZE]
+        self._buf[:] = buf[offset:offset + BLOCK_SIZE]
 
     def write_record(self, recnum, record):
         """
