@@ -469,8 +469,9 @@ class LeasesVolume(object):
     def __init__(self, file):
         log.debug("Loading index from %r", file.name)
         self._file = file
-        self._index = VolumeIndex(file)
+        self._index = VolumeIndex()
         try:
+            self._index.load(file)
             self._md = self._index.read_metadata()
         except:
             self._index.close()
@@ -634,7 +635,7 @@ def format_index(lockspace, file):
     """
     log.info("Formatting index for lockspace %r (version=%d)",
              lockspace, INDEX_VERSION)
-    index = VolumeIndex(file)
+    index = VolumeIndex()
     with utils.closing(index):
         # Create index in updating state
         metadata = IndexMetadata(INDEX_VERSION, lockspace, updating=True)
@@ -664,17 +665,8 @@ class VolumeIndex(object):
     offset.
     """
 
-    def __init__(self, file):
-        """
-        Initialize a volume index from file.
-        """
+    def __init__(self):
         self._buf = mmap.mmap(-1, INDEX_SIZE, mmap.MAP_SHARED)
-        try:
-            file.seek(INDEX_BASE)
-            file.readinto(self._buf)
-        except:
-            self._buf.close()
-            raise
 
     def find_record(self, lease_id):
         """
@@ -745,6 +737,13 @@ class VolumeIndex(object):
         """
         self._buf.seek(0)
         self._buf.write(metadata.bytes())
+
+    def load(self, file):
+        """
+        Read index from file, replacing current contents of the index.
+        """
+        file.seek(INDEX_BASE)
+        file.readinto(self._buf)
 
     def dump(self, file):
         """
