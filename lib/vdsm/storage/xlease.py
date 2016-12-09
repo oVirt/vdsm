@@ -204,9 +204,6 @@ LOOKUP_STRUCT = struct.Struct("48s x")
 
 RECORD_TERM = b"\n"
 
-# Sentinel for marking a free record
-BLANK_LEASE = ""
-
 # Flags
 FLAG_NONE = b"-"
 FLAG_UPDATING = b"u"
@@ -452,6 +449,10 @@ class Record(object):
         return self._updating
 
 
+# Record with empty values, mark a free record in the index.
+EMPTY_RECORD = Record("", 0)
+
+
 class LeasesVolume(object):
     """
     Volume holding sanlock leases.
@@ -540,7 +541,7 @@ class LeasesVolume(object):
             else:
                 raise LeaseExists(lease_id)
 
-        recnum = self._index.find_record(BLANK_LEASE)
+        recnum = self._index.find_free_record()
         if recnum == -1:
             raise NoSpace(lease_id)
 
@@ -580,8 +581,7 @@ class LeasesVolume(object):
         # TODO: Use SANLK_WRITE_CLEAR, expected in rhel 7.4.
         sanlock.write_resource("", "", [(self._file.name, offset)])
 
-        record = Record(BLANK_LEASE, offset)
-        self._write_record(recnum, record)
+        self._write_record(recnum, EMPTY_RECORD)
 
     def leases(self):
         """
@@ -642,9 +642,7 @@ def format_index(lockspace, file):
 
         # Write empty records
         for recnum in range(MAX_RECORDS):
-            offset = lease_offset(recnum)
-            record = Record(BLANK_LEASE, offset)
-            index.write_record(recnum, record)
+            index.write_record(recnum, EMPTY_RECORD)
 
         # Attempt to write index to file
         index.dump(file)
@@ -687,6 +685,18 @@ class VolumeIndex(object):
 
         # TODO: continue search if offset is not aligned to record size.
         offset = self._buf.find(prefix, RECORD_BASE)
+        if offset == -1:
+            return -1
+
+        return self._record_number(offset)
+
+    def find_free_record(self):
+        """
+        Find the first free record. Returns record number if found, -1
+        otherwise.
+        """
+        # TODO: continue search if offset is not aligned to record size.
+        offset = self._buf.find(EMPTY_RECORD.bytes(), RECORD_BASE)
         if offset == -1:
             return -1
 
