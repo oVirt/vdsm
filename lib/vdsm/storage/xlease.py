@@ -247,8 +247,23 @@ class InvalidRecord(Error):
         self.record = record
 
 
-class InvalidMetadata(Error):
-    msg = "Invalid index metadata ({self.reason}): {self.data!r}"
+class InvalidIndex(Error):
+    """
+    Base class for errors aboout unusable index.
+    """
+
+
+class IndexIsUpdating(InvalidIndex):
+    msg = ("Index is updating or an update operation was aborted, the index "
+           "must be formatted or rebuilt from storage: {self.metadata}")
+
+    def __init__(self, metadata):
+        self.metadata = metadata
+
+
+class InvalidMetadata(InvalidIndex):
+    msg = ("Invalid index metadata ({self.reason}), the index must be "
+           "formatted or rebuilt from storage: {self.data!r}")
 
     def __init__(self, reason, data):
         self.reason = reason
@@ -473,6 +488,8 @@ class LeasesVolume(object):
         try:
             self._index.load(file)
             self._md = self._index.read_metadata()
+            if self._md.updating:
+                raise IndexIsUpdating(self._md)
         except:
             self._index.close()
             raise
@@ -493,10 +510,6 @@ class LeasesVolume(object):
     @property
     def mtime(self):
         return self._md.mtime
-
-    @property
-    def updating(self):
-        return self._md.updating
 
     def lookup(self, lease_id):
         """

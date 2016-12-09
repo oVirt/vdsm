@@ -66,7 +66,6 @@ class TestIndex(VdsmTestCase):
             self.assertEqual(vol.version, 1)
             self.assertEqual(vol.lockspace, lockspace)
             self.assertEqual(vol.mtime, 123456789)
-            self.assertEqual(vol.updating, False)
 
     def test_magic_big_endian(self):
         with make_volume() as vol:
@@ -76,14 +75,14 @@ class TestIndex(VdsmTestCase):
 
     def test_bad_magic(self):
         with make_leases() as path:
-            self.check_invalid_metadata(path)
+            self.check_invalid_index(path)
 
     def test_bad_version(self):
         with make_volume() as vol:
             with io.open(vol.path, "r+b") as f:
                 f.seek(xlease.INDEX_BASE + 5)
                 f.write(b"blah")
-            self.check_invalid_metadata(vol.path)
+            self.check_invalid_index(vol.path)
 
     def test_unsupported_version(self):
         with make_volume() as vol:
@@ -91,27 +90,21 @@ class TestIndex(VdsmTestCase):
             with io.open(vol.path, "r+b") as f:
                 f.seek(xlease.INDEX_BASE)
                 f.write(md.bytes())
-            self.check_invalid_metadata(vol.path)
+            self.check_invalid_index(vol.path)
 
     def test_bad_lockspace(self):
         with make_volume() as vol:
             with io.open(vol.path, "r+b") as f:
                 f.seek(xlease.INDEX_BASE + 10)
                 f.write(b"\xf0")
-            self.check_invalid_metadata(vol.path)
+            self.check_invalid_index(vol.path)
 
     def test_bad_mtime(self):
         with make_volume() as vol:
             with io.open(vol.path, "r+b") as f:
                 f.seek(xlease.INDEX_BASE + 59)
                 f.write(b"not a number")
-            self.check_invalid_metadata(vol.path)
-
-    def check_invalid_metadata(self, path):
-        file = xlease.DirectFile(path)
-        with utils.closing(file):
-            with self.assertRaises(xlease.InvalidMetadata):
-                xlease.LeasesVolume(file)
+            self.check_invalid_index(vol.path)
 
     def test_updating(self):
         with make_volume() as vol:
@@ -120,10 +113,14 @@ class TestIndex(VdsmTestCase):
             with io.open(vol.path, "r+b") as f:
                 f.seek(xlease.INDEX_BASE)
                 f.write(md.bytes())
-            file = xlease.DirectFile(vol.path)
-            with utils.closing(file):
+            self.check_invalid_index(vol.path)
+
+    def check_invalid_index(self, path):
+        file = xlease.DirectFile(path)
+        with utils.closing(file):
+            with self.assertRaises(xlease.InvalidIndex):
                 vol = xlease.LeasesVolume(file)
-                self.assertEqual(vol.updating, True)
+                vol.close()
 
     def test_format(self):
         with make_volume() as vol:
