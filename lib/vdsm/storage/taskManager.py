@@ -18,15 +18,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import absolute_import
 import os
 import logging
 import threading
 
 from vdsm.config import config
 from vdsm.storage import exception as se
+from vdsm.storage.task import Task, Job, TaskCleanType
 from vdsm.storage.threadPool import ThreadPool
-
-from task import Task, Job, TaskCleanType
 
 
 class TaskManager:

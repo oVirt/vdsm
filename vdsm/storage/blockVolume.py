@@ -34,6 +34,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage import misc
 from vdsm.storage import resourceManager as rm
+from vdsm.storage import task
 from vdsm.storage.misc import deprecated
 from vdsm.storage.threadlocal import vars
 from vdsm.storage.volumemetadata import VolumeMetadata
@@ -43,7 +44,6 @@ import volume
 import image
 import sd
 import blockSD
-import task
 from sdc import sdCache
 
 

@@ -57,6 +57,7 @@ from vdsm.storage import mount
 from vdsm.storage import multipath
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import resourceManager as rm
+from vdsm.storage import taskManager
 from vdsm.storage import types
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.constants import SECTOR_SIZE
@@ -76,7 +77,6 @@ import localFsSD
 from sdc import sdCache
 import image
 import merge
-import taskManager
 import dispatcher
 import storageServer
 

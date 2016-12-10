@@ -49,6 +49,8 @@ dist_vdsmstorage_PYTHON = \
 	resourceManager.py \
 	rwlock.py \
 	securable.py \
+	task.py \
+	taskManager.py \
 	threadPool.py \
 	threadlocal.py \
 	types.py \

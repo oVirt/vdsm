@@ -29,6 +29,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage import outOfProcess as oop
+from vdsm.storage import task
 from vdsm.storage.misc import deprecated
 from vdsm.storage.threadlocal import vars
 from vdsm.storage.volumemetadata import VolumeMetadata
@@ -38,7 +39,6 @@ import volume
 import image
 import sd
 import fileSD
-import task
 
 META_FILEEXT = ".meta"
 LEASE_FILEOFFSET = 0

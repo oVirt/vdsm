@@ -23,8 +23,8 @@ from functools import wraps
 
 from vdsm.config import config
 from vdsm.storage import exception as se
+from vdsm.storage import task
 
-import task
 
 _EXPORTED_ATTRIBUTE = "__dispatcher_exported__"
 

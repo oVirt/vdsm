@@ -947,8 +947,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/spbackends.py*
 %{_datadir}/%{vdsm_name}/storage/storage_mailbox.py*
 %{_datadir}/%{vdsm_name}/storage/storageServer.py*
-%{_datadir}/%{vdsm_name}/storage/taskManager.py*
-%{_datadir}/%{vdsm_name}/storage/task.py*
 %{_datadir}/%{vdsm_name}/storage/volume.py*
 %{_datadir}/%{vdsm_name}/storage/imageRepository/__init__.py*
 %{_datadir}/%{vdsm_name}/storage/imageRepository/formatConverter.py*
@@ -1207,6 +1205,8 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/resourceManager.py*
 %{python_sitelib}/%{vdsm_name}/storage/rwlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/securable.py*
+%{python_sitelib}/%{vdsm_name}/storage/task.py*
+%{python_sitelib}/%{vdsm_name}/storage/taskManager.py*
 %{python_sitelib}/%{vdsm_name}/storage/threadPool.py*
 %{python_sitelib}/%{vdsm_name}/storage/threadlocal.py*
 %{python_sitelib}/%{vdsm_name}/storage/types.py*

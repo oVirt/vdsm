@@ -45,8 +45,6 @@ dist_vdsmstorage_PYTHON = \
 	spbackends.py \
 	storage_mailbox.py \
 	storageServer.py \
-	taskManager.py \
-	task.py \
 	volume.py
 
 dist_vdsmexec_SCRIPTS = \

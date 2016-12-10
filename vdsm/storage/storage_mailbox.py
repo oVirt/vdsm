@@ -31,11 +31,12 @@ from six.moves import queue
 
 from vdsm.config import config
 from vdsm.storage import misc
+from vdsm.storage import task
 from vdsm.storage.exception import InvalidParameterException
 from vdsm.storage.threadPool import ThreadPool
 
 import sd
-import task
+
 from vdsm import concurrent
 from vdsm import constants
 

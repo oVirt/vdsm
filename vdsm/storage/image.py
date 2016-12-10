@@ -34,13 +34,13 @@ from vdsm.storage import fileUtils
 from vdsm.storage import imageSharing
 from vdsm.storage import misc
 from vdsm.storage import resourceManager as rm
+from vdsm.storage import task
 from vdsm.storage import workarounds
 from vdsm.storage.threadlocal import vars
 
 from sdc import sdCache
 import sd
 from vdsm.common.exception import ActionStopped
-import task
 
 log = logging.getLogger('storage.Image')
 
