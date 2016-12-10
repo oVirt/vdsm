@@ -37,11 +37,11 @@ from vdsm import qemuimg
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
+from vdsm.storage import resourceManager
 
 from storage import image
 from storage import merge
 from storage import blockVolume, sd, volume
-from storage import resourceManager
 
 import storage.sdm.api.merge
 

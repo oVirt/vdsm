@@ -51,6 +51,7 @@ from vdsm.storage import lvm
 from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage import multipath
+from vdsm.storage import resourceManager as rm
 from vdsm.storage.persistent import PersistentDict, DictValidator
 from vdsm.storage.threadlocal import vars
 import vdsm.supervdsm as svdsm
@@ -60,7 +61,6 @@ from sdm import volume_artifacts
 import blockVolume
 import resourceFactories
 from storage_mailbox import MAILBOX_SIZE
-import resourceManager as rm
 
 STORAGE_DOMAIN_TAG = "RHAT_storage_domain"
 STORAGE_UNREADY_DOMAIN_TAG = STORAGE_DOMAIN_TAG + "_UNREADY"

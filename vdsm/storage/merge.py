@@ -45,9 +45,9 @@ from vdsm.config import config
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
+from vdsm.storage import resourceManager as rm
 
 from storage import image
-from storage import resourceManager as rm
 from storage import sd
 from storage import volume
 from storage.sdc import sdCache

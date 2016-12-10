@@ -39,6 +39,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
 from vdsm.storage import mount
+from vdsm.storage import resourceManager as rm
 from vdsm.storage import xlease
 from vdsm.storage.securable import secured, unsecured
 
@@ -50,7 +51,6 @@ from vdsm.config import config
 from sdc import sdCache
 import image
 import merge
-import resourceManager as rm
 
 POOL_MASTER_DOMAIN = 'mastersd'
 

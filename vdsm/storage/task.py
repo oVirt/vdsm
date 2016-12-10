@@ -55,9 +55,9 @@ from functools import wraps
 from vdsm.storage import exception as se
 from vdsm.storage.threadlocal import vars
 from vdsm.storage import outOfProcess as oop
+from vdsm.storage import resourceManager
 
 import uuid
-import resourceManager
 from weakref import proxy
 from vdsm import concurrent
 from vdsm.config import config

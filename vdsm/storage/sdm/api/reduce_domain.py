@@ -20,11 +20,11 @@
 
 from __future__ import absolute_import
 
-from storage import resourceManager as rm
 from storage.sdc import sdCache
 from vdsm import properties
 from vdsm.storage import exception as se
 from vdsm.storage.constants import STORAGE
+from vdsm.storage import resourceManager as rm
 
 from . import base
 

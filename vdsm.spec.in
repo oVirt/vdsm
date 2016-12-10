@@ -941,7 +941,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/merge.py*
 %{_datadir}/%{vdsm_name}/storage/nfsSD.py*
 %{_datadir}/%{vdsm_name}/storage/resourceFactories.py*
-%{_datadir}/%{vdsm_name}/storage/resourceManager.py*
 %{_datadir}/%{vdsm_name}/storage/sdc.py*
 %{_datadir}/%{vdsm_name}/storage/sd.py*
 %{_datadir}/%{vdsm_name}/storage/sp.py*
@@ -1205,6 +1204,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/multipath.py*
 %{python_sitelib}/%{vdsm_name}/storage/outOfProcess.py*
 %{python_sitelib}/%{vdsm_name}/storage/persistent.py*
+%{python_sitelib}/%{vdsm_name}/storage/resourceManager.py*
 %{python_sitelib}/%{vdsm_name}/storage/rwlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/securable.py*
 %{python_sitelib}/%{vdsm_name}/storage/threadPool.py*

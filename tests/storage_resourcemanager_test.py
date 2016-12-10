@@ -26,7 +26,7 @@ from StringIO import StringIO
 import types
 from resource import getrlimit, RLIMIT_NPROC
 
-from storage import resourceManager as rm
+from vdsm.storage import resourceManager as rm
 
 from monkeypatch import MonkeyPatch
 from storagefakelib import FakeResourceManager

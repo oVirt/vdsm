@@ -46,6 +46,7 @@ dist_vdsmstorage_PYTHON = \
 	multipath.py \
 	outOfProcess.py \
 	persistent.py \
+	resourceManager.py \
 	rwlock.py \
 	securable.py \
 	threadPool.py \

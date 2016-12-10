@@ -27,10 +27,9 @@ from testlib import make_file, recorded
 
 from vdsm.storage import exception as se
 from vdsm.storage import lvm as real_lvm
+from vdsm.storage import resourceManager as rm
 from vdsm.storage.constants import VG_EXTENT_SIZE_MB
 from vdsm import utils
-
-from storage import resourceManager as rm
 
 
 class FakeLVM(object):

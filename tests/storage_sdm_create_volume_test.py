@@ -31,9 +31,9 @@ from vdsm.common import exception
 from vdsm import jobs
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import resourceManager as rm
 
 from storage import fileVolume, sd
-from storage import resourceManager as rm
 
 import storage.sdm.api.create_volume
 

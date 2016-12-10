@@ -41,10 +41,10 @@ from vdsm.common import exception
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
+from vdsm.storage import resourceManager
 from vdsm.storage import workarounds
 
 from storage import blockVolume, sd, volume
-from storage import resourceManager
 
 import storage.sdm.api.copy_data
 

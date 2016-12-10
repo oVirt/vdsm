@@ -31,6 +31,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import guarded
 from vdsm.storage import misc
+from vdsm.storage import resourceManager as rm
 from vdsm.storage.misc import deprecated
 from vdsm.storage.threadlocal import vars
 from vdsm.storage.volumemetadata import VolumeMetadata
@@ -38,7 +39,6 @@ from vdsm.storage.volumemetadata import VolumeMetadata
 import sd
 from sdc import sdCache
 import task
-import resourceManager as rm
 
 DOMAIN_MNT_POINT = 'mnt'
 
