@@ -37,13 +37,13 @@ from vdsm.panic import panic
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
+from vdsm.storage import mailbox
 from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import xlease
 from vdsm.storage.securable import secured, unsecured
 
-import storage_mailbox
 import blockSD
 import fileSD
 import sd
@@ -349,10 +349,10 @@ class StoragePool(object):
                     self.masterDomain.prepareMailbox()
                     inbox = self._master_volume_path("inbox")
                     outbox = self._master_volume_path("outbox")
-                    self.spmMailer = storage_mailbox.SPM_MailMonitor(
+                    self.spmMailer = mailbox.SPM_MailMonitor(
                         self, maxHostID, inbox, outbox)
                     self.spmMailer.registerMessageType('xtnd', partial(
-                        storage_mailbox.SPM_Extend_Message.processRequest,
+                        mailbox.SPM_Extend_Message.processRequest,
                         self))
                     self.log.debug("SPM mailbox ready for pool %s on master "
                                    "domain %s", self.spUUID,
@@ -484,7 +484,7 @@ class StoragePool(object):
             # NOTE: The SPM's inbox is the HSM's outbox and vice versa
             outbox = self._master_volume_path("inbox")
             inbox = self._master_volume_path("outbox")
-            self.hsmMailer = storage_mailbox.HSM_Mailbox(
+            self.hsmMailer = mailbox.HSM_Mailbox(
                 self.id, self.spUUID, inbox, outbox)
             self.log.debug("HSM mailbox ready for pool %s on master "
                            "domain %s", self.spUUID, self.masterDomain.sdUUID)

@@ -41,6 +41,7 @@ dist_vdsmstorage_PYTHON = \
 	iscsi.py \
 	iscsiadm.py \
 	lvm.py \
+	mailbox.py \
 	misc.py \
 	mount.py \
 	multipath.py \

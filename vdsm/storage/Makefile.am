@@ -43,7 +43,6 @@ dist_vdsmstorage_PYTHON = \
 	sd.py \
 	sp.py \
 	spbackends.py \
-	storage_mailbox.py \
 	storageServer.py \
 	volume.py
 

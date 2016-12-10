@@ -24,9 +24,8 @@ import threading
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import temporaryPath
 
+import vdsm.storage.mailbox as sm
 from vdsm.utils import retry
-
-import storage.storage_mailbox as sm
 
 MAX_HOSTS = 10
 MAILER_TIMEOUT = 6

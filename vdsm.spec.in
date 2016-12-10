@@ -942,7 +942,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/sd.py*
 %{_datadir}/%{vdsm_name}/storage/sp.py*
 %{_datadir}/%{vdsm_name}/storage/spbackends.py*
-%{_datadir}/%{vdsm_name}/storage/storage_mailbox.py*
 %{_datadir}/%{vdsm_name}/storage/storageServer.py*
 %{_datadir}/%{vdsm_name}/storage/volume.py*
 %{_datadir}/%{vdsm_name}/storage/imageRepository/__init__.py*
@@ -1198,6 +1197,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/iscsi.py*
 %{python_sitelib}/%{vdsm_name}/storage/iscsiadm.py*
 %{python_sitelib}/%{vdsm_name}/storage/lvm.py*
+%{python_sitelib}/%{vdsm_name}/storage/mailbox.py*
 %{python_sitelib}/%{vdsm_name}/storage/misc.py*
 %{python_sitelib}/%{vdsm_name}/storage/mount.py*
 %{python_sitelib}/%{vdsm_name}/storage/multipath.py*
