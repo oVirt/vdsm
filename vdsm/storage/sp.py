@@ -347,8 +347,10 @@ class StoragePool(object):
 
                 if self.masterDomain.supportsMailbox:
                     self.masterDomain.prepareMailbox()
-                    self.spmMailer = storage_mailbox.SPM_MailMonitor(self,
-                                                                     maxHostID)
+                    inbox = self._master_volume_path("inbox")
+                    outbox = self._master_volume_path("outbox")
+                    self.spmMailer = storage_mailbox.SPM_MailMonitor(
+                        self, maxHostID, inbox, outbox)
                     self.spmMailer.registerMessageType('xtnd', partial(
                         storage_mailbox.SPM_Extend_Message.processRequest,
                         self))
@@ -479,7 +481,11 @@ class StoragePool(object):
             return
 
         if self.masterDomain.supportsMailbox:
-            self.hsmMailer = storage_mailbox.HSM_Mailbox(self.id, self.spUUID)
+            # NOTE: The SPM's inbox is the HSM's outbox and vice versa
+            outbox = self._master_volume_path("inbox")
+            inbox = self._master_volume_path("outbox")
+            self.hsmMailer = storage_mailbox.HSM_Mailbox(
+                self.id, self.spUUID, inbox, outbox)
             self.log.debug("HSM mailbox ready for pool %s on master "
                            "domain %s", self.spUUID, self.masterDomain.sdUUID)
 
@@ -2072,3 +2078,8 @@ class StoragePool(object):
             # We cannot fail the task as engine is not checking tasks errors.
             self.log.info("Lease already deleted: %s:%s",
                           lease.sd_id, lease.lease_id)
+
+    def _master_volume_path(self, vol):
+        return os.path.join(
+            self.storage_repository, self.spUUID,
+            POOL_MASTER_DOMAIN, sd.DOMAIN_META_DATA, vol)

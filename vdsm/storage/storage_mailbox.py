@@ -35,8 +35,6 @@ from vdsm.storage import task
 from vdsm.storage.exception import InvalidParameterException
 from vdsm.storage.threadPool import ThreadPool
 
-import sd
-
 from vdsm import concurrent
 from vdsm import constants
 
@@ -182,23 +180,18 @@ class HSM_Mailbox:
 
     log = logging.getLogger('storage.Mailbox.HSM')
 
-    def __init__(self, hostID, poolID, monitorInterval=2):
+    def __init__(self, hostID, poolID, inbox, outbox, monitorInterval=2):
         self._hostID = str(hostID)
         self._poolID = str(poolID)
         self._monitorInterval = monitorInterval
-        self._spmStorageDir = config.get('irs', 'repository')
         self._queue = queue.Queue(-1)
-        #  *** IMPORTANT NOTE: The SPM's inbox is the HSMs' outbox and vice
-        #                      versa *** #
-        self._inbox = os.path.join(self._spmStorageDir, self._poolID,
-                                   "mastersd", sd.DOMAIN_META_DATA, "outbox")
+        self._inbox = inbox
         if not os.path.exists(self._inbox):
             self.log.error("HSM_Mailbox create failed - inbox %s does not "
                            "exist" % repr(self._inbox))
             raise RuntimeError("HSM_Mailbox create failed - inbox %s does not "
                                "exist" % repr(self._inbox))
-        self._outbox = os.path.join(self._spmStorageDir, self._poolID,
-                                    "mastersd", sd.DOMAIN_META_DATA, "inbox")
+        self._outbox = outbox
         if not os.path.exists(self._outbox):
             self.log.error("HSM_Mailbox create failed - outbox %s does not "
                            "exist" % repr(self._outbox))
@@ -252,7 +245,6 @@ class HSM_MailMonitor(object):
         self._outgoingMail = EMPTYMAILBOX
         self._incomingMail = EMPTYMAILBOX
         # TODO: add support for multiple paths (multiple mailboxes)
-        self._spmStorageDir = config.get('irs', 'repository')
         self._inCmd = [constants.EXT_DD,
                        'if=' + str(inbox),
                        'iflag=direct,fullblock',
@@ -531,28 +523,27 @@ class SPM_MailMonitor:
     def unregisterMessageType(self, messageType):
         del self._messageTypes[messageType]
 
-    def __init__(self, pool, maxHostID, monitorInterval=2):
+    def __init__(self, pool, maxHostID, inbox, outbox, monitorInterval=2):
+        """
+        Note: inbox paramerter here should point to the HSM's outbox
+        mailbox file, and vice versa.
+        """
         self._messageTypes = {}
         # Save arguments
         self._stop = False
         self._stopped = False
         self._poolID = str(pool.spUUID)
-        self._spmStorageDir = pool.storage_repository
         tpSize = config.getint('irs', 'thread_pool_size') / 2
         waitTimeout = wait_timeout(monitorInterval)
         maxTasks = config.getint('irs', 'max_tasks')
         self.tp = ThreadPool("mailbox-spm", tpSize, waitTimeout, maxTasks)
-        #  *** IMPORTANT NOTE: The SPM's inbox is the HSMs' outbox and vice
-        #                      versa *** #
-        self._inbox = os.path.join(self._spmStorageDir, self._poolID,
-                                   "mastersd", sd.DOMAIN_META_DATA, "inbox")
+        self._inbox = inbox
         if not os.path.exists(self._inbox):
             self.log.error("SPM_MailMonitor create failed - inbox %s does not "
                            "exist" % repr(self._inbox))
             raise RuntimeError("SPM_MailMonitor create failed - inbox %s does "
                                "not exist" % repr(self._inbox))
-        self._outbox = os.path.join(self._spmStorageDir, self._poolID,
-                                    "mastersd", sd.DOMAIN_META_DATA, "outbox")
+        self._outbox = outbox
         if not os.path.exists(self._outbox):
             self.log.error("SPM_MailMonitor create failed - outbox %s does "
                            "not exist" % repr(self._outbox))

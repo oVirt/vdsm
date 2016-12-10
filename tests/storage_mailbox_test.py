@@ -18,19 +18,14 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import logging
-import os
-import shutil
-import tempfile
+import contextlib
 import threading
 
-from testlib import make_config
 from testlib import VdsmTestCase as TestCaseBase
-from monkeypatch import MonkeyPatchScope
+from testlib import temporaryPath
 
 from vdsm.utils import retry
 
-from storage.sd import DOMAIN_META_DATA
 import storage.storage_mailbox as sm
 
 MAX_HOSTS = 10
@@ -38,38 +33,28 @@ MAILER_TIMEOUT = 6
 MONITOR_INTERVAL = 0.1
 
 
+@contextlib.contextmanager
+def mailbox_file():
+    with temporaryPath(
+            data=sm.EMPTYMAILBOX * MAX_HOSTS, dir='/var/tmp') as path:
+        yield path
+
+
 class StoragePoolStub(object):
     def __init__(self):
         self.spUUID = '5d928855-b09b-47a7-b920-bd2d2eb5808c'
-        self.storage_repository = tempfile.mkdtemp(dir='/var/tmp')
-
-    def __enter__(self):
-        masterdir = os.path.join(
-            self.storage_repository, self.spUUID, "mastersd", DOMAIN_META_DATA)
-
-        os.makedirs(masterdir)
-
-        for fname in ["id", "inbox", "outbox"]:
-            with open(os.path.join(masterdir, fname), "w") as f:
-                f.write(sm.EMPTYMAILBOX * MAX_HOSTS)
-
-        return self
-
-    def __exit__(self, type, value, traceback):
-        try:
-            shutil.rmtree(self.storage_repository)
-        except OSError:
-            if type is None:
-                raise
-            logging.exception("rmtree(%s) failed", self.storage_repository)
 
 
 class SPM_MailMonitorTests(TestCaseBase):
 
     def testThreadLeak(self):
-        with StoragePoolStub() as pool:
+        pool = StoragePoolStub()
+        with mailbox_file() as inbox, mailbox_file() as outbox:
             mailer = sm.SPM_MailMonitor(
-                pool, 100, monitorInterval=MONITOR_INTERVAL)
+                pool, 100,
+                inbox=inbox,
+                outbox=outbox,
+                monitorInterval=MONITOR_INTERVAL)
             try:
                 threadCount = len(threading.enumerate())
                 mailer.stop()
@@ -95,39 +80,42 @@ class TestMailbox(TestCaseBase):
             received_messages.append((msg_id, data))
             msg_processed.set()
 
-        with StoragePoolStub() as pool:
-            config_tweak = make_config([
-                ("irs", "repository", pool.storage_repository)])
-            with MonkeyPatchScope([(sm, "config", config_tweak)]):
-                hsm_mb = sm.HSM_Mailbox(
-                    hostID=7, poolID=pool.spUUID,
+        pool = StoragePoolStub()
+        with mailbox_file() as inbox, mailbox_file() as outbox:
+            hsm_mb = sm.HSM_Mailbox(
+                hostID=7, poolID=pool.spUUID,
+                inbox=outbox,
+                outbox=inbox,
+                monitorInterval=MONITOR_INTERVAL)
+            try:
+                spm_mm = sm.SPM_MailMonitor(
+                    pool, MAX_HOSTS,
+                    inbox=inbox,
+                    outbox=outbox,
                     monitorInterval=MONITOR_INTERVAL)
                 try:
-                    spm_mm = sm.SPM_MailMonitor(
-                        pool, MAX_HOSTS, monitorInterval=MONITOR_INTERVAL)
-                    try:
-                        spm_mm.registerMessageType("xtnd", spm_callback)
+                    spm_mm.registerMessageType("xtnd", spm_callback)
 
-                        VOL_DATA = dict(
-                            poolID=pool.spUUID,
-                            domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
-                            volumeID='d772f1c6-3ebb-43c3-a42e-73fcd8255a5f')
-                        REQUESTED_SIZE = 100
+                    VOL_DATA = dict(
+                        poolID=pool.spUUID,
+                        domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
+                        volumeID='d772f1c6-3ebb-43c3-a42e-73fcd8255a5f')
+                    REQUESTED_SIZE = 100
 
-                        hsm_mb.sendExtendMsg(VOL_DATA, REQUESTED_SIZE)
+                    hsm_mb.sendExtendMsg(VOL_DATA, REQUESTED_SIZE)
 
-                        if not msg_processed.wait(10 * MONITOR_INTERVAL):
-                            expired = True
-                    finally:
-                        spm_mm.stop()
-                        self.assertTrue(
-                            spm_mm.wait(timeout=MAILER_TIMEOUT),
-                            msg='spm_mm.wait: Timeout expired')
+                    if not msg_processed.wait(10 * MONITOR_INTERVAL):
+                        expired = True
                 finally:
-                    hsm_mb.stop()
+                    spm_mm.stop()
                     self.assertTrue(
-                        hsm_mb.wait(timeout=MAILER_TIMEOUT),
-                        msg='hsm_mb.wait: Timeout expired')
+                        spm_mm.wait(timeout=MAILER_TIMEOUT),
+                        msg='spm_mm.wait: Timeout expired')
+            finally:
+                hsm_mb.stop()
+                self.assertTrue(
+                    hsm_mb.wait(timeout=MAILER_TIMEOUT),
+                    msg='hsm_mb.wait: Timeout expired')
 
         self.assertFalse(expired, 'message was not processed on time')
         self.assertEqual(received_messages, [(449, (
