@@ -54,13 +54,12 @@ rm -rf /var/lib/lago/repos/local-vdsm*
 lago ovirt reposetup \
     --reposync-yum-config ../reposync-config.repo
 
-function run_func_tests {
-    # start lago http server in order to access internal repo
-    lago ovirt serve &
-    PID=$!
-    # Mock the KSM directory, we do not want real KSM to be affected
+function mount_tmpfs {
     lago shell "$vm_name" -c "mount -t tmpfs tmpfs /sys/kernel/mm/ksm"
+}
 
+function run_functional_tests {
+    local res=0
     lago shell "$vm_name" -c \
         " \
             cd /usr/share/vdsm/tests
@@ -69,12 +68,20 @@ function run_func_tests {
                 --xunit-file=/tmp/nosetests-${distro}.xml \
                 -s \
                 $FUNCTIONAL_TESTS_LIST
+        " || res=$?
+    return $res
+}
+
+function run_network_tests {
+    local res=0
+    lago shell "$vm_name" -c \
+        " \
+            cd /usr/share/vdsm/tests
             ./run_tests.sh \
                 -a type=functional,switch=legacy \
-                network/func_*_test.py \
-        " \
-    || failed=$?
-    kill $PID
+                network/func_*_test.py
+        " || res=$?
+    return $res
 }
 
 VMS_PREFIX="vdsm_functional_tests_host-"
@@ -86,7 +93,21 @@ for distro in el7; do
     # the ovirt deploy is needed because it will not start the local repo
     # otherwise
     lago ovirt deploy
-    run_func_tests | tee "$EXPORTS/functional_tests_stdout.$distro.log"
+
+    lago ovirt serve &
+    PID=$?
+
+    mount_tmpfs
+
+    run_functional_tests | tee "$EXPORTS/functional_tests_stdout.$distro.log"
+    failed="${PIPESTATUS[0]}"
+
+    run_network_tests | tee -a "$EXPORTS/functional_tests_stdout.$distro.log"
+    res="${PIPESTATUS[0]}"
+    [ "$res" -ne 0 ] && failed="$res"
+
+    kill $PID
+
     lago copy-from-vm \
         "$vm_name" \
         "/tmp/nosetests-${distro}.xml" \
