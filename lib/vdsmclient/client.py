@@ -72,10 +72,12 @@ from __future__ import absolute_import
 import argparse
 import json
 import os
+import six
 import sys
 
 from vdsm import client
 from vdsm import utils
+from vdsm.api import vdsmapi
 
 
 class UsageError(Exception):
@@ -83,7 +85,9 @@ class UsageError(Exception):
 
 
 def main(args=None):
-    parser = option_parser()
+    schema = find_schema()
+    namespaces = create_namespaces(schema)
+    parser = option_parser(namespaces)
     args = parser.parse_args(args)
     try:
         if args.method_args and args.file is not None:
@@ -111,7 +115,31 @@ def main(args=None):
         fail(e)
 
 
-def option_parser():
+def add_command_arguments(namespaces, subparsers):
+    for namespace in six.iterkeys(namespaces):
+        parser = subparsers.add_parser(namespace, help='')
+        parser.set_defaults(namespace=namespace)
+        methods = parser.add_subparsers(title=namespace + ' methods',
+                                        metavar='method [arg=value]')
+        for method in namespaces[namespace]:
+            command = methods.add_parser(
+                method['name'],
+                help=method['description'],
+                formatter_class=argparse.RawTextHelpFormatter)
+            command.set_defaults(method=method['name'])
+            method_args = '\n'.join(
+                ['{}: {}'.format(key, val)
+                 for key, val in six.iteritems(method['args'])])
+            if method_args:
+                method_args += \
+                    '\n\n\nJSON representation:\n' + \
+                    method['args_dict']
+            command.add_argument('method_args', metavar='arg=value',
+                                 type=str, nargs='*',
+                                 help=method_args)
+
+
+def option_parser(namespaces):
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--host', dest="host", default="localhost",
                         help="host address (default localhost)")
@@ -124,14 +152,12 @@ def option_parser():
     parser.set_defaults(use_tls=True)
     parser.add_argument('--timeout', dest="timeout", default=60, type=float,
                         help="timeout (default 60 seconds)")
-    parser.add_argument("namespace", help="method namespace")
-    parser.add_argument("method", help="remote method name")
     parser.add_argument('-f', '--file', dest="file",
                         help="read method parameters from json file. Set to"
-                             " '-' to read from standard input")
-    parser.add_argument('method_args', metavar='method_args', type=str,
-                        nargs='*',
-                        help='method arguments: name1=value1 name2=value2')
+                        " '-' to read from standard input")
+    subparsers = parser.add_subparsers(title='Namespaces',
+                                       metavar='namespace method [arg=value]')
+    add_command_arguments(namespaces, subparsers)
     return parser
 
 
@@ -164,6 +190,33 @@ def parse_file(filename):
         return json.loads(data)
     except (TypeError, ValueError) as e:
         raise UsageError(str(e))
+
+
+def find_schema():
+    try:
+        schema_paths = [vdsmapi.find_schema()]
+        schema = vdsmapi.Schema(schema_paths, False)
+    except vdsmapi.SchemaNotFound as e:
+        raise client.MissingSchemaError(e)
+    return schema
+
+
+def create_namespaces(schema):
+    namespaces = {}
+    for method in schema.get_methods:
+        namespace, command_name = method.split('.', 1)
+        if namespace not in namespaces:
+            namespaces[namespace] = []
+        command = {}
+        command['name'] = command_name
+        method_rep = vdsmapi.MethodRep(namespace, command_name)
+        command['description'] = schema.get_method_description(method_rep)
+        command['args_dict'] = schema.get_args_dict(namespace, command_name)
+        command['args'] = {}
+        for arg in schema.get_args(method_rep):
+            command['args'][arg.get('name')] = arg.get('description')
+        namespaces[namespace].append(command)
+    return namespaces
 
 
 def fail(msg):
