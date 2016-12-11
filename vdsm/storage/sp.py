@@ -39,6 +39,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
 from vdsm.storage import mount
+from vdsm.storage import xlease
 from vdsm.storage.securable import secured, unsecured
 
 import storage_mailbox
@@ -2033,3 +2034,33 @@ class StoragePool(object):
 
     def getAllTasksInfo(self):
         return self.taskMng.getAllTasksInfo("spm")
+
+    # Lease operations
+
+    def create_lease(self, lease):
+        """
+        SPM task function for creating external lease.
+
+        Succeeds if external lease was created or already exists.
+        """
+        dom = sdCache.produce(lease.sd_id)
+        try:
+            dom.create_lease(lease.lease_id)
+        except xlease.LeaseExists:
+            # We cannot fail the task as engine is not checking tasks errors.
+            self.log.info("Reusing existing lease: %s:%s",
+                          lease.sd_id, lease.lease_id)
+
+    def delete_lease(self, lease):
+        """
+        SPM task function for deleting external lease.
+
+        Succeeds if external lease was deleted or do not exists.
+        """
+        dom = sdCache.produce(lease.sd_id)
+        try:
+            dom.delete_lease(lease.lease_id)
+        except xlease.NoSuchLease:
+            # We cannot fail the task as engine is not checking tasks errors.
+            self.log.info("Lease already deleted: %s:%s",
+                          lease.sd_id, lease.lease_id)

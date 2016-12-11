@@ -345,6 +345,11 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         path = vol.getVolumePath() + LEASE_FILEEXT
         return clusterlock.Lease(volUUID, path, fileVolume.LEASE_FILEOFFSET)
 
+    # External leases support
+
+    def external_leases_path(self):
+        return os.path.join(self.getMDPath(), sd.XLEASES)
+
 
 class FileStorageDomain(sd.StorageDomain):
     manifestClass = FileStorageDomainManifest
@@ -734,9 +739,6 @@ class FileStorageDomain(sd.StorageDomain):
         return fileVolume.FileVolume
 
     # External leases support
-
-    def external_leases_path(self):
-        return os.path.join(self.getMDPath(), sd.XLEASES)
 
     def create_external_leases(self):
         """

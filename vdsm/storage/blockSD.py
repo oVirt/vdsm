@@ -930,6 +930,14 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                 raise
             self.log.debug("Volume run link %r does not exist", vol_run_link)
 
+    # External leases support
+
+    def external_leases_path(self):
+        """
+        Return the path to the external leases volume.
+        """
+        return _external_leases_path(self.sdUUID)
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
@@ -1541,12 +1549,6 @@ class BlockStorageDomain(sd.StorageDomain):
         return blockVolume.BlockVolume
 
     # External leases support
-
-    def external_leases_path(self):
-        """
-        Return the path to te external leases volume.
-        """
-        return _external_leases_path(self.sdUUID)
 
     def create_external_leases(self):
         """

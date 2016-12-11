@@ -54,6 +54,7 @@ from vdsm.storage import iscsi
 from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage import outOfProcess as oop
+from vdsm.storage import types
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.constants import SECTOR_SIZE
 from vdsm.storage.misc import deprecated
@@ -3618,3 +3619,52 @@ class HSM(object):
         job = sdm.api.set_volume_generation.Job(job_id, self._pool.id,
                                                 vol_info, new_gen)
         self.sdm_schedule(job)
+
+    # Lease operations
+
+    @public
+    def create_lease(self, lease):
+        lease = types.Lease(lease)
+        self._check_pool_connected()
+        # TODO: can we move lock into the pool?
+        vars.task.getSharedLock(STORAGE, lease.sd_id)
+        self._spmSchedule(self._pool.spUUID, "create_lease",
+                          self._pool.create_lease, lease)
+
+    @public
+    def delete_lease(self, lease):
+        lease = types.Lease(lease)
+        self._check_pool_connected()
+        # TODO: can we move lock into the pool?
+        vars.task.getSharedLock(STORAGE, lease.sd_id)
+        self._spmSchedule(self._pool.spUUID, "delete_lease",
+                          self._pool.delete_lease, lease)
+
+    @public
+    def lease_info(self, lease):
+        lease = types.Lease(lease)
+        self._check_pool_connected()
+        with rm.acquireResource(STORAGE, lease.sd_id, rm.SHARED):
+            dom = sdCache.produce_manifest(lease.sd_id)
+            info = dom.lease_info(lease.lease_id)
+        lease_info = dict(sd_id=info.lockspace,
+                          lease_id=info.resource,
+                          path=info.path,
+                          offset=info.offset)
+        return dict(result=lease_info)
+
+    # Optional lease operations - not used yet from engine.
+
+    @public
+    def lease_status(self, lease):
+        raise NotImplementedError
+
+    @public
+    def rebuild_leases(self, sd_id):
+        raise NotImplementedError
+
+    # Validations
+
+    def _check_pool_connected(self):
+        if not self._pool.is_connected():
+            raise se.StoragePoolNotConnected

@@ -430,6 +430,11 @@ command_info = {
     'Volume_extendSize': {'ret': 'uuid'},
     'Host_getAllTasks': {'ret': 'tasks'},
     'Host_getJobs': {'ret': 'jobs'},
+    'Lease_create': {'ret': 'uuid'},
+    'Lease_delete': {'ret': 'uuid'},
+    'Lease_rebuild_leases': {'ret': 'uuid'},
+    'Lease_info': {'ret': 'result'},
+    'Lease_status': {'ret': 'result'},
 }
 
 

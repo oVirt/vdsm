@@ -171,6 +171,10 @@ class FakeDomainManifest(object):
                                    preallocate=None):
         pass
 
+    @recorded
+    def external_leases_path(self):
+        pass
+
 
 class FakeBlockDomainManifest(FakeDomainManifest):
     def __init__(self):
@@ -736,6 +740,7 @@ class DomainTestMixin(object):
         ['refresh', 0],
         ['validateCreateVolumeParams', 3],
         ['getVolumeLease', 2],
+        ['external_leases_path', 0],
     ])
     def test_common_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
