@@ -398,6 +398,7 @@ AC_OUTPUT([
 	lib/vdsm/profiling/Makefile
 	lib/vdsm/rpc/Makefile
 	lib/vdsm/storage/Makefile
+	lib/vdsm/supervdsm_api/Makefile
 	lib/vdsm/tool/Makefile
 	lib/vdsm/tool/configurators/Makefile
 	lib/vdsm/virt/Makefile
@@ -426,7 +427,6 @@ AC_OUTPUT([
 	vdsm/storage/sdm/Makefile
 	vdsm/storage/sdm/api/Makefile
 	vdsm/storage/vdsm_lvm_rules.template
-	vdsm/supervdsm_api/Makefile
 	vdsm/virt/Makefile
 	vdsm/virt/vmdevices/Makefile
 	vdsm_hooks/Makefile

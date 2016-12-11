@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = sos storage virt supervdsm_api
+SUBDIRS = sos storage virt
 
 include $(top_srcdir)/build-aux/Makefile.subs
 

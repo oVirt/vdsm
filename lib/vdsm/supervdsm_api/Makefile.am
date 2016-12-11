@@ -19,7 +19,7 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
-supervdsm_apidir = $(vdsmdir)/supervdsm_api
+supervdsm_apidir = $(vdsmpylibdir)/supervdsm_api
 dist_supervdsm_api_PYTHON = \
 	__init__.py \
 	test.py \
