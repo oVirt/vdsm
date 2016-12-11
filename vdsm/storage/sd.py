@@ -32,6 +32,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage import outOfProcess as oop
+from vdsm.storage import rwlock
 from vdsm.storage import xlease
 from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
 
@@ -329,6 +330,7 @@ class StorageDomainManifest(object):
         self.domaindir = domaindir
         self.replaceMetadata(metadata)
         self._domainLock = self._makeDomainLock()
+        self._external_leases_lock = rwlock.RWLock()
 
     def special_volumes(cls, version):
         """
@@ -590,6 +592,31 @@ class StorageDomainManifest(object):
         Return True if this domain supports external leases, False otherwise.
         """
         return version >= 4
+
+    def external_leases_path(self):
+        """
+        Return the path to the external leases volume.
+        """
+        raise NotImplementedError
+
+    @property
+    def external_leases_lock(self):
+        """
+        Return the external leases readers-writer lock.
+        """
+        return self._external_leases_lock
+
+    def lease_info(self, lease_id):
+        """
+        Return information about external lease that can be used to acquire or
+        release the lease.
+
+        May be called on any host.
+        """
+        with self.external_leases_lock.shared:
+            path = self.external_leases_path()
+            with _external_leases_volume(path) as vol:
+                return vol.lookup(lease_id)
 
 
 class StorageDomain(object):
@@ -1107,23 +1134,61 @@ class StorageDomain(object):
         WARNING: destructive operation, must not be called on active external
         leases volume.
 
-        TODO: should move to storage domain subclasses os each subclass can use
+        TODO: should move to storage domain subclasses of each subclass can use
         its own backend.
+
+        Must be called only on the SPM.
         """
         backend = xlease.DirectFile(path)
         with utils.closing(backend):
             xlease.format_index(lockspace, backend)
 
     def external_leases_path(self):
-        """
-        Return the path to te external leases volume.
-        """
-        raise NotImplementedError
+        return self._manifest.external_leases_path()
 
     def create_external_leases(self):
         """
         Create the external leases special volume.
 
         Called during upgrade from version 3 to version 4.
+
+        Must be called only on the SPM.
         """
         raise NotImplementedError
+
+    def create_lease(self, lease_id):
+        """
+        Create an external lease on the external leases volume.
+
+        Must be called only on the SPM.
+        """
+        with self._manifest.external_leases_lock.exclusive:
+            path = self.external_leases_path()
+            with _external_leases_volume(path) as vol:
+                vol.add(lease_id)
+
+    def delete_lease(self, lease_id):
+        """
+        Delete an external lease on the external leases volume.
+
+        Must be called only on the SPM.
+        """
+        with self._manifest.external_leases_lock.exclusive:
+            path = self.external_leases_path()
+            with _external_leases_volume(path) as vol:
+                vol.remove(lease_id)
+
+
+@contextmanager
+def _external_leases_volume(path):
+    """
+    Context manager returning the external leases volume.
+
+    The caller is responsible for holding the external_leases_lock in the
+    correct mode.
+    """
+    backend = xlease.DirectFile(path)
+    with utils.closing(backend):
+        vol = xlease.LeasesVolume(backend)
+        with utils.closing(vol):
+            yield vol

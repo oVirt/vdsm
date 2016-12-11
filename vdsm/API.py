@@ -1670,3 +1670,22 @@ class SDM(APIBase):
 
     def set_volume_generation(self, job_id, vol_info, new_gen):
         return self._irs.sdm_set_volume_generation(job_id, vol_info, new_gen)
+
+
+class Lease(APIBase):
+    ctorArgs = []
+
+    def create(self, lease):
+        return self._irs.create_lease(lease)
+
+    def delete(self, lease):
+        return self._irs.delete_lease(lease)
+
+    def info(self, lease):
+        return self._irs.lease_info(lease)
+
+    def status(self, lease):
+        return self._irs.lease_status(lease)
+
+    def rebuild_leases(self, sd_id):
+        return self._irs.rebuild_leases(sd_id)

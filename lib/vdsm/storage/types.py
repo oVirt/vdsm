@@ -1,3 +1,4 @@
+#
 # Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,39 +18,26 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
+"""
+types - vdsm storage types
 
-vdsmstoragedir = $(vdsmpylibdir)/storage
+This module include the storage types mentioned in vdsm schema.  The purpose of
+these types is to validate the input and provide an easy way to pass the
+arguments around.
+"""
 
-dist_vdsmstorage_PYTHON = \
-	__init__.py \
-	asyncevent.py \
-	blkdiscard.py \
-	check.py \
-	clusterlock.py \
-	constants.py \
-	curlImgWrap.py \
-	devicemapper.py \
-	directio.py \
-	exception.py \
-	fileUtils.py \
-	fuser.py \
-	guarded.py \
-	hba.py \
-	imageSharing.py \
-	imagetickets.py \
-	iscsi.py \
-	iscsiadm.py \
-	misc.py \
-	mount.py \
-	outOfProcess.py \
-	persistent.py \
-	rwlock.py \
-	securable.py \
-	threadPool.py \
-	threadlocal.py \
-	types.py \
-	volumemetadata.py \
-	workarounds.py \
-	xlease.py \
-	$(NULL)
+from __future__ import absolute_import
+
+from vdsm import properties
+
+
+class Lease(properties.Owner):
+    """
+    External sanlock lease.
+    """
+    sd_id = properties.UUID(required=True)
+    lease_id = properties.UUID(required=True)
+
+    def __init__(self, params):
+        self.sd_id = params.get("sd_id")
+        self.lease_id = params.get("lease_id")
