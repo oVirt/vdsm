@@ -1,3 +1,4 @@
+# Copyright 2014-2017 Red Hat, Inc.
 # Copyright (C) 2014 Saggi Mizrahi, Red Hat Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -515,13 +516,14 @@ class AsyncClient(object):
         raise StompError(frame, frame.body)
 
     def send(self, destination, data="", headers=None):
-        if not self._connected.wait(timeout=CALL_TIMEOUT):
-            raise StompError("Timeout occured during connecting")
-
         final_headers = {"destination": destination}
         if headers is not None:
             final_headers.update(headers)
-        self.queue_frame(Frame(Command.SEND, final_headers, data))
+        frame = Frame(Command.SEND, final_headers, data)
+        if not self._connected.wait(timeout=CALL_TIMEOUT):
+            raise StompError(frame, "Timeout occured during connecting")
+
+        self.queue_frame(frame)
 
     def subscribe(self, destination, ack=None, sub_id=None,
                   message_handler=None):
