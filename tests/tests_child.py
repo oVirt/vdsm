@@ -26,7 +26,6 @@ import sys
 import time
 import threading
 
-sys.path.insert(0, '../../..')
 from vdsm.common import sigutils
 
 
