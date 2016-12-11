@@ -462,8 +462,8 @@ class NetworkTest(TestCaseBase):
                 'sampleTime is not monotonically increasing')
 
             diff = (curTxStat - prevTxStat)
-            self.assertTrue(ARP_REQUEST_SIZE <= diff
-                            <= (ARP_REQUEST_SIZE + DHCP_PACKET_SIZE),
+            self.assertTrue(ARP_REQUEST_SIZE <= diff <=
+                            (ARP_REQUEST_SIZE + DHCP_PACKET_SIZE),
                             '%s is out of range' % diff)
 
         with veth_pair() as (left, right):

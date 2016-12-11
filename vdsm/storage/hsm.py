@@ -3372,8 +3372,8 @@ class HSM(object):
 
             # For unreachable domains repoStats will return disktotal and
             # diskfree as None.
-            if (repoStats[sdUUID]['disktotal'] is not None
-                    and repoStats[sdUUID]['diskfree'] is not None):
+            if (repoStats[sdUUID]['disktotal'] is not None and
+                    repoStats[sdUUID]['diskfree'] is not None):
                 domInfo[sdUUID]['disktotal'] = repoStats[sdUUID]['disktotal']
                 domInfo[sdUUID]['diskfree'] = repoStats[sdUUID]['diskfree']
 

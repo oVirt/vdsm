@@ -300,8 +300,8 @@ class BlockVolumeManifest(volume.VolumeManifest):
         metaSdUUID, mdSlot = metaId
 
         leasePath = manifest.getLeasesFilePath()
-        leaseOffset = ((mdSlot + RESERVED_LEASES)
-                       * manifest.logBlkSize * sd.LEASE_BLOCKS)
+        leaseOffset = ((mdSlot + RESERVED_LEASES) *
+                       manifest.logBlkSize * sd.LEASE_BLOCKS)
 
         sanlock.init_resource(sdUUID, volUUID, [(leasePath, leaseOffset)])
 
@@ -349,8 +349,8 @@ class BlockVolumeManifest(volume.VolumeManifest):
         if preallocate == sc.SPARSE_VOL:
             if initial_size:
                 initial_size = int(initial_size * QCOW_OVERHEAD_FACTOR)
-                alloc_size = ((initial_size + SECTORS_TO_MB - 1)
-                              / SECTORS_TO_MB)
+                alloc_size = ((initial_size + SECTORS_TO_MB - 1) /
+                              SECTORS_TO_MB)
             else:
                 alloc_size = config.getint("irs",
                                            "volume_utilization_chunk_mb")

@@ -1381,8 +1381,8 @@ class Image:
         vol = self._activateVolumeForImportExport(domain, imgUUID, volUUID)
         try:
             # Extend the volume (if relevant) to the image size
-            vol.extend(imageSharing.getLengthFromArgs(methodArgs)
-                       / sc.BLOCK_SIZE)
+            vol.extend(imageSharing.getLengthFromArgs(methodArgs) /
+                       sc.BLOCK_SIZE)
             imageSharing.copyToImage(vol.getVolumePath(), methodArgs)
         finally:
             domain.deactivateImage(imgUUID)

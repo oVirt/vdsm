@@ -192,12 +192,12 @@ def update_io_tune_dom(ioTune, tunables):
 
     for limit_object in tunables:
         old_tune = None
-        if ("name" in limit_object
-                and limit_object["name"] in ioTuneByName):
+        if ("name" in limit_object and
+                limit_object["name"] in ioTuneByName):
             old_tune = ioTuneByName[limit_object["name"]]
             vmxml.remove_child(ioTune, old_tune)
-        elif ("path" in limit_object
-                and limit_object["path"] in ioTuneByPath):
+        elif ("path" in limit_object and
+                limit_object["path"] in ioTuneByPath):
             old_tune = ioTuneByPath[limit_object["path"]]
             vmxml.remove_child(ioTune, old_tune)
 
@@ -211,12 +211,12 @@ def update_io_tune_dom(ioTune, tunables):
 
         # Make sure everything is OK when the same name is passed
         # twice by updating the index
-        if ("name" in limit_object
-                and limit_object["name"] in ioTuneByName):
+        if ("name" in limit_object and
+                limit_object["name"] in ioTuneByName):
             ioTuneByName[limit_object["name"]] = new_tune
 
-        if ("path" in limit_object
-                and limit_object["path"] in ioTuneByPath):
+        if ("path" in limit_object and
+                limit_object["path"] in ioTuneByPath):
             ioTuneByPath[limit_object["path"]] = new_tune
 
     return count

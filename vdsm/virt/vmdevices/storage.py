@@ -109,8 +109,8 @@ class Drive(Base):
                 # verify that the cached path is the one used in libvirt.
                 # We already hit few times the problem that after a live
                 # migration the paths were not in sync anymore (BZ#1059482).
-                if (hasattr(d, 'alias') and d.alias == alias
-                        and d.path != devPath):
+                if (hasattr(d, 'alias') and d.alias == alias and
+                        d.path != devPath):
                     vm.log.warning('updating drive %s path from %s to %s',
                                    d.alias, d.path, devPath)
                     d.path = devPath
@@ -129,8 +129,8 @@ class Drive(Base):
             for dev in vm.conf['devices']:
                 # See comment in previous loop. This part is used to update
                 # the vm configuration as well.
-                if ('alias' in dev and dev['alias'] == alias
-                        and dev['path'] != devPath):
+                if ('alias' in dev and dev['alias'] == alias and
+                        dev['path'] != devPath):
                     vm.log.warning('updating drive %s config path from %s '
                                    'to %s', dev['alias'], dev['path'],
                                    devPath)

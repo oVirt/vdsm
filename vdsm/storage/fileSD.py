@@ -385,8 +385,8 @@ class FileStorageDomain(sd.StorageDomain):
             else:
                 prevMailboxFileSize = mailboxStat.st_size
 
-            if (prevMailboxFileSize is None
-                    or prevMailboxFileSize < mailboxByteSize):
+            if (prevMailboxFileSize is None or
+                    prevMailboxFileSize < mailboxByteSize):
                 self.log.info('preparing storage domain %s mailbox file %s '
                               '(%s bytes)', mailboxFile, mailboxByteSize)
                 self.oop.truncateFile(

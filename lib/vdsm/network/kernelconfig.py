@@ -46,8 +46,8 @@ class KernelConfig(BaseConfig):
 
     def __eq__(self, other):
         normalized_other = normalize(other)
-        return (self.networks == normalized_other.networks
-                and self.bonds == normalized_other.bonds)
+        return (self.networks == normalized_other.networks and
+                self.bonds == normalized_other.bonds)
 
     def _analyze_netinfo_nets(self, netinfo):
         for net, net_attr in netinfo.networks.iteritems():

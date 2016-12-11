@@ -234,8 +234,8 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
 
         # if we claim that we were the SPM (but we're currently not) we
         # have to make sure that we're not returning stale data
-        if (poolMeta[PMDK_SPM_ID] == self.id
-           and not self.spmRole == SPM_ACQUIRED):
+        if (poolMeta[PMDK_SPM_ID] == self.id and
+                not self.spmRole == SPM_ACQUIRED):
             self.invalidateMetadata()
             poolMeta = self._getPoolMD(self.masterDomain)
 

@@ -72,8 +72,8 @@ def _secure_method(method):
     def wrapper(self, *args, **kwargs):
         override = kwargs.pop(OVERRIDE_ARG, False)
 
-        if not (getattr(self, SECURE_METHOD_NAME)() is True
-                or override is True):
+        if not (getattr(self, SECURE_METHOD_NAME)() is True or
+                override is True):
             raise SecureError("Secured object is not in safe state")
 
         return method(self, *args, **kwargs)

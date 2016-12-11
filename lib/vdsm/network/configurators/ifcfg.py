@@ -999,8 +999,8 @@ def _restore_default_bond_options(bond_name, desired_options):
     desired_options = dict(p.split('=', 1) for p in desired_options.split())
     current_opts = netinfo_bonding.bondOpts(bond_name)
     current_mode = current_opts['mode']
-    desired_mode = (_get_mode_from_desired_options(desired_options)
-                    or current_mode)
+    desired_mode = (_get_mode_from_desired_options(desired_options) or
+                    current_mode)
 
     if desired_mode != current_mode:
         try:

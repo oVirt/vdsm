@@ -84,8 +84,8 @@ def _is_gluster_quorum_met(volumeInfo, volStatus, hostUuid):
 
 def _get_brick(hostUuid, brickName, volStatus):
         bricks = [brick for brick in volStatus.get('bricks')
-                  if brick.get('hostuuid') == hostUuid
-                  and brick.get('brick') == brickName]
+                  if brick.get('hostuuid') == hostUuid and
+                  brick.get('brick') == brickName]
         if bricks:
             return bricks[0]
         else:

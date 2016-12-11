@@ -2697,9 +2697,9 @@ class Vm(object):
 
     def _findDeviceByNameOrPath(self, device_name, device_path):
         for device in self._devices[hwclass.DISK]:
-            if ((device.name == device_name
-                or ("path" in device and device["path"] == device_path))
-                    and isVdsmImage(device)):
+            if ((device.name == device_name or
+                ("path" in device and device["path"] == device_path)) and
+                    isVdsmImage(device)):
                 return device
         else:
             return None
@@ -3604,8 +3604,8 @@ class Vm(object):
         # Looking for the replication blockJob info (checking its presence)
         blkJobInfo = self._dom.blockJobInfo(drive.name, 0)
 
-        if (not isinstance(blkJobInfo, dict)
-                or 'cur' not in blkJobInfo or 'end' not in blkJobInfo):
+        if (not isinstance(blkJobInfo, dict) or
+                'cur' not in blkJobInfo or 'end' not in blkJobInfo):
             self.log.error("Replication job not found (drive: %r, "
                            "srcDisk: %r, job: %r)",
                            drive.name, srcDisk, blkJobInfo)

@@ -129,8 +129,8 @@ class Configurator(object):
             logging.debug("Adding source route: name=%s, addr=%s, netmask=%s, "
                           "gateway=%s" % (netEnt.name, ipv4.address,
                                           ipv4.netmask, ipv4.gateway))
-            if (ipv4.gateway in (None, '0.0.0.0')
-               or not ipv4.address or not ipv4.netmask):
+            if (ipv4.gateway in (None, '0.0.0.0') or
+               not ipv4.address or not ipv4.netmask):
                     logging.warning(
                         'invalid input for source routing: name=%s, '
                         'addr=%s, netmask=%s, gateway=%s',
