@@ -278,7 +278,7 @@ class TestCaps(TestCaseBase):
             'n270': 'Intel',
             'SandyBridge': 'Intel',
             'kvm64': None
-            }
+        }
         self.assertEqual(expected, result)
 
     def test_getAllCpuModels_noArch(self):

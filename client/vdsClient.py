@@ -2943,7 +2943,7 @@ if __name__ == '__main__':
             '    clear:         if true, clear other registered secrets',
             'Example:',
             '    vdsClient -s 0 registerSecrets secrets.json',
-            )),
+        )),
         'unregisterSecrets': (serv.unregisterSecrets, (
             '<uuid> ...',
             'Unregister libvirt secrets registered for uuids'
@@ -2953,7 +2953,7 @@ if __name__ == '__main__':
             '    vdsClient -s 0 unregisterSecrets \ ',
             '        3a27b133-abb2-4302-8891-bd0a4032866f \ ',
             '        2638b449-e076-474e-8e72-0a3130cd8f7b',
-            )),
+        )),
     }
     if _glusterEnabled:
         commands.update(ge.getGlusterCmdDict(serv))

@@ -244,16 +244,14 @@ class TestRemoteSdIsMounted(TestCaseBase):
                             b"/rhev/data-center/mnt/server:_path"))
 
     def test_path_with_spaces(self):
-        with fake_mounts([
-                br"server:/a\040b /mnt/server:_a\040b nfs4 opts 0 0"
-                ]):
+        with fake_mounts(
+                [br"server:/a\040b /mnt/server:_a\040b nfs4 opts 0 0"]):
             self.assertTrue(mount.isMounted(b"/mnt/server:_a b"))
             self.assertFalse(mount.isMounted(br"/mnt/server:_a\040b"))
 
     def test_path_with_backslash(self):
-        with fake_mounts([
-                br"server:/a\134040b /mnt/server:_a\134040b nfs4 opts 0 0"
-                ]):
+        with fake_mounts(
+                [br"server:/a\134040b /mnt/server:_a\134040b nfs4 opts 0 0"]):
             self.assertTrue(mount.isMounted(br"/mnt/server:_a\040b"))
             self.assertFalse(mount.isMounted(br"/mnt/server:_a\134040b"))
 

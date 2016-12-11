@@ -334,14 +334,15 @@ class TestVmDevices(XMLTestCase):
                 </tune>
             </interface>""" % self.PCI_ADDR
 
-        dev = {'nicModel': 'virtio', 'macAddr': '52:54:00:59:F5:3F',
-               'network': 'ovirtmgmt', 'address': self.PCI_ADDR_DICT,
-               'device': 'bridge', 'type': 'interface',
-               'bootOrder': '1', 'filter': 'clean-traffic',
-               'filterParameters': [
-                   {'name': 'IP', 'value': '10.0.0.1'},
-                   {'name': 'IP', 'value': '10.0.0.2'},
-                   ]}
+        dev = {
+            'nicModel': 'virtio', 'macAddr': '52:54:00:59:F5:3F',
+            'network': 'ovirtmgmt', 'address': self.PCI_ADDR_DICT,
+            'device': 'bridge', 'type': 'interface',
+            'bootOrder': '1', 'filter': 'clean-traffic',
+            'filterParameters': [
+                {'name': 'IP', 'value': '10.0.0.1'},
+                {'name': 'IP', 'value': '10.0.0.2'},
+            ]}
 
         self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
         iface = vmdevices.network.Interface(self.conf, self.log, **dev)

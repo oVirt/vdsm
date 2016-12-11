@@ -534,12 +534,12 @@ class ValidateInt(TestCaseBase):
 @expandPermutations
 class ValidateSize(TestCaseBase):
 
-    @permutations([
+    @permutations(
         # size, result
-        ("512", 1),
-        ("513", 2),
-        (u"1073741824", 2097152),
-        ])
+        [("512", 1),
+         ("513", 2),
+         (u"1073741824", 2097152),
+         ])
     def test_valid_size(self, size, result):
         self.assertEqual(misc.validateSize(size, "size"), result)
 

@@ -31,25 +31,25 @@ from testlib import VdsmTestCase as TestCaseBase
 @expandPermutations
 class BlockVolumeSizeTests(TestCaseBase):
 
-    @permutations([
+    @permutations(
         # (preallocate, capacity, initial_size), result
-        [(sc.PREALLOCATED_VOL, 2048, None), 1],
-        [(sc.PREALLOCATED_VOL, 2049, None), 2],
-        [(sc.PREALLOCATED_VOL, 2097152, None), 1024],
-        [(sc.SPARSE_VOL, 9999, None),
-         config.getint("irs", "volume_utilization_chunk_mb")],
-        [(sc.SPARSE_VOL, 8388608, 1860), 1],
-        [(sc.SPARSE_VOL, 8388608, 1870), 2],
-        ])
+        [[(sc.PREALLOCATED_VOL, 2048, None), 1],
+         [(sc.PREALLOCATED_VOL, 2049, None), 2],
+         [(sc.PREALLOCATED_VOL, 2097152, None), 1024],
+         [(sc.SPARSE_VOL, 9999, None),
+          config.getint("irs", "volume_utilization_chunk_mb")],
+         [(sc.SPARSE_VOL, 8388608, 1860), 1],
+         [(sc.SPARSE_VOL, 8388608, 1870), 2],
+         ])
     def test_block_volume_size(self, args, result):
         size = BlockVolume.calculate_volume_alloc_size(*args)
         self.assertEqual(size, result)
 
-    @permutations([
+    @permutations(
         # preallocate
-        [sc.PREALLOCATED_VOL],
-        [sc.SPARSE_VOL],
-        ])
+        [[sc.PREALLOCATED_VOL],
+         [sc.SPARSE_VOL],
+         ])
     def test_fail_invalid_block_volume_size(self, preallocate):
         with self.assertRaises(se.InvalidParameterException):
             BlockVolume.calculate_volume_alloc_size(preallocate, 2048, 2049)

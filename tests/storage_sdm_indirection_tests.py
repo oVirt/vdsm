@@ -720,7 +720,7 @@ class DomainTestMixin(object):
         ['refresh', 0],
         ['validateCreateVolumeParams', 3],
         ['getVolumeLease', 2],
-        ])
+    ])
     def test_common_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
 
@@ -796,7 +796,7 @@ class VolumeTestMixin(object):
         ['imagePath', '/a/b'],
         ['volumePath', '/a/b/c'],
         ['voltype', None],
-        ])
+    ])
     def test_property(self, prop, val):
         self.assertEqual(getattr(self.volume, prop), val)
 
@@ -844,7 +844,7 @@ class VolumeTestMixin(object):
         ['_share', 1],
         ['_shareLease', 1],
         ['prepare', 5]
-        ])
+    ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
 
@@ -856,7 +856,7 @@ class VolumeTestMixin(object):
         ['newVolumeLease', 3],
         ['getImageVolumes', 3],
         ['teardown', 3],
-        ])
+    ])
     def test_class_methods(self, fn, nargs):
         self.checker.check_classmethod_call(fn, nargs)
 
@@ -870,7 +870,7 @@ class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
 
     @permutations([
         ['metaoff', None],
-        ])
+    ])
     def test_block_property(self, prop, val):
         self.assertEqual(getattr(self.volume, prop), val)
 
@@ -885,13 +885,13 @@ class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
         ['_setrw', 1],
         ['getDevPath', 0],
         ['removeMetadata', 1],
-        ])
+    ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
 
     @permutations([
         ['calculate_volume_alloc_size', 3],
-        ])
+    ])
     def test_block_classmethod(self, fn, nargs):
         self.checker.check_classmethod_call(fn, nargs)
 
@@ -905,7 +905,7 @@ class FileVolumeTests(VolumeTestMixin, VdsmTestCase):
 
     @permutations([
         ['oop', 'oop'],
-        ])
+    ])
     def test_file_property(self, prop, val):
         self.assertEqual(getattr(self.volume, prop), val)
 
@@ -915,12 +915,12 @@ class FileVolumeTests(VolumeTestMixin, VdsmTestCase):
         ['_getLeaseVolumePath', 1],
         ['_setrw', 1],
         ['removeMetadata', 0],
-        ])
+    ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
 
     @permutations([
         ['file_setrw', 2],
-        ])
+    ])
     def test_class_methods(self, fn, nargs):
         self.checker.check_classmethod_call(fn, nargs)

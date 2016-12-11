@@ -227,8 +227,8 @@ class TestOvsNetInfo(VdsmTestCase):
                 'stp': False,
                 'switch': 'ovs',
                 'vlanid': TEST_VLAN
-                }
-            },
+            }
+        },
         'bridges': {
             TEST_NETWORK: {
                 'addr': TEST_ADDRESS,

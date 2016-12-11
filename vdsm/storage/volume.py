@@ -210,7 +210,7 @@ class VolumeManifest(object):
             "mtime": "0",
             "legality": meta.get(sc.LEGALITY, ""),
             "generation": meta.get(sc.GENERATION, sc.DEFAULT_GENERATION)
-            }
+        }
 
     def getInfo(self):
         """

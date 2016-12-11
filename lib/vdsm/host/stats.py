@@ -149,11 +149,11 @@ def _get_interfaces_stats(first_sample, last_sample):
         thisRx = (
             last_sample.interfaces[ifid].rx -
             first_sample.interfaces[ifid].rx
-            ) % NETSTATS_BOUND
+        ) % NETSTATS_BOUND
         thisTx = (
             last_sample.interfaces[ifid].tx -
             first_sample.interfaces[ifid].tx
-            ) % NETSTATS_BOUND
+        ) % NETSTATS_BOUND
         iface = last_sample.interfaces[ifid]
         stats['network'][ifid] = {
             'name': ifid, 'speed': str(ifrate),

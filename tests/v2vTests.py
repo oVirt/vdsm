@@ -438,7 +438,7 @@ class v2vTests(TestCaseBase):
                 sorted(vm['vmName'] for vm in vms),
                 sorted(spec.name for spec in VM_SPECS
                        if spec.active == active)
-                )
+            )
 
     def testOutputParser(self):
         output = (u'[   0.0] Opening the source -i libvirt ://roo...\n'
