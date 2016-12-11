@@ -317,8 +317,9 @@ class NetworkTest(TestCaseBase):
         # TODO: we should try and call this logic always during
         # TODO: assertBondExists and be stricter. Will probably need to fix a
         # TODO: few tests
-        self.assertEqual(set(self._get_active_bond_opts(bond))-set(["mode=0"]),
-                         set(opts)-set(["mode=0"]))
+        self.assertEqual(
+            set(self._get_active_bond_opts(bond)) - set(["mode=0"]),
+            set(opts) - set(["mode=0"]))
 
     def _get_active_bond_opts(self, bondName):
         netinfo = self.vdsm_net.netinfo

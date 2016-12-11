@@ -176,17 +176,17 @@ def _all_domains_running(cif):
         if vm_state.load(cif):
             cif.log.info(
                 'recovery [1:%d/%d]: recovered domain %s',
-                idx+1, num_doms, vm_id)
+                idx + 1, num_doms, vm_id)
         else:
             cif.log.info(
                 'recovery [1:%d/%d]: loose domain %s found, killing it.',
-                idx+1, num_doms, vm_id)
+                idx + 1, num_doms, vm_id)
             try:
                 v.destroy()
             except libvirt.libvirtError:
                 cif.log.exception(
                     'recovery [1:%d/%d]: failed to kill loose domain %s',
-                    idx+1, num_doms, vm_id)
+                    idx + 1, num_doms, vm_id)
 
 
 def _all_domains_from_files(cif):
@@ -202,11 +202,11 @@ def _all_domains_from_files(cif):
         if vm_state.load(cif):
             cif.log.info(
                 'recovery [2:%d/%d]: recovered domain %s'
-                ' from data file', idx+1, num_rec_vms, vm_state.vmid)
+                ' from data file', idx + 1, num_rec_vms, vm_state.vmid)
         else:
             cif.log.warning(
                 'recovery [2:%d/%d]: VM %s failed to recover from data'
-                ' file, reported as Down', idx+1, num_rec_vms, vm_state.vmid)
+                ' file, reported as Down', idx + 1, num_rec_vms, vm_state.vmid)
 
 
 def _find_vdsm_vms_from_files(cif):

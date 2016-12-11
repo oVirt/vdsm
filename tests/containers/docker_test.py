@@ -104,7 +104,7 @@ class RuntimeConfigurationTests(conttestlib.RunnableTestCase):
               <link state="up"/>
             </interface>
           </devices>
-        </domain>""".format(mem=MEM*1024, path=PATH, net=NET))
+        </domain>""".format(mem=MEM * 1024, path=PATH, net=NET))
         self.assertNotRaises(self.base.configure, root)
         conf = self.base._run_conf
         self.assertEquals(conf.image_path, PATH)

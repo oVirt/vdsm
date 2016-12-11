@@ -511,7 +511,7 @@ class TestConfigureOutbound(TestCaseBase):
                 client = IperfClient(server_ip, client_ip, test_time=60)
                 client.start()
                 max_rate = max([float(
-                    interval['streams'][0]['bits_per_second'])/(2**10)
+                    interval['streams'][0]['bits_per_second']) / (2**10)
                     for interval in client.out['intervals']])
                 self.assertTrue(0 < max_rate < limit_kbps * 1.5)
 

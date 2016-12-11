@@ -118,7 +118,7 @@ def _cpulist_parse(cpu_range):
     for item in cpu_range.split(','):
         if '-' in item:
             begin, end = item.split('-', 1)
-            cpus.extend(range(int(begin), int(end)+1))
+            cpus.extend(range(int(begin), int(end) + 1))
         else:
             cpus.append(int(item))
     return frozenset(cpus)

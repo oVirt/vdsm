@@ -236,7 +236,7 @@ class QemuPatternVerificationTest(VdsmTestCase):
 
     @permutations((
         (0, 128),
-        (10*1024, 5*1024)
+        (10 * 1024, 5 * 1024)
     ))
     def test_match_custom_offset_and_len(self, offset, len):
         with namedTemporaryDir() as tmpdir:

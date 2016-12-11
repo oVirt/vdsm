@@ -114,7 +114,7 @@ class PeriodicOperationTests(TestCaseBase):
         # we don't care of this case
         op.stop()
         self.assertTrue(invoked.is_set())
-        self.assertTrue(TIMES <= invocations[0] <= TIMES+1)
+        self.assertTrue(TIMES <= invocations[0] <= TIMES + 1)
 
     @broken_on_ci("Fails occasionally, don't know why",
                   exception=AssertionError)
@@ -136,7 +136,7 @@ class PeriodicOperationTests(TestCaseBase):
         # we don't care of this case
         op.stop()
         self.assertTrue(completed)
-        self.assertTrue(TIMES <= exc.attempts <= TIMES+1)
+        self.assertTrue(TIMES <= exc.attempts <= TIMES + 1)
 
     def test_stop(self):
         PERIOD = 0.1
@@ -194,9 +194,9 @@ class PeriodicOperationTests(TestCaseBase):
         op.stop()
         self.assertTrue(done.is_set())
         self.assertTrue(executions[1] >= invocations[1])
-        self.assertTrue(TIMES <= invocations[0] <= TIMES+1)
+        self.assertTrue(TIMES <= invocations[0] <= TIMES + 1)
         # one execution never completed
-        self.assertEqual(executions[0], invocations[0]-1)
+        self.assertEqual(executions[0], invocations[0] - 1)
 
 
 VM_NUM = 5  # just a number, no special meaning
@@ -206,8 +206,8 @@ VM_IDS = [
     [()],
     [((0,))],
     [((0, 2))],
-    [((VM_NUM-1,))],
-    [((VM_NUM-2, VM_NUM-1))]
+    [((VM_NUM - 1,))],
+    [((VM_NUM - 2, VM_NUM - 1))]
 ]
 
 

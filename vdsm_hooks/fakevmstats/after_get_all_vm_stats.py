@@ -32,7 +32,7 @@ import random
 
 from vdsm.config import config
 
-QUARTER_GB = 1024*1024*256
+QUARTER_GB = 1024 * 1024 * 256
 GB = QUARTER_GB * 4
 
 # Config
@@ -131,10 +131,10 @@ def randomizeRuntimeStats(stats):
 
     # Network:
     for net in stats['network'].values():
-        net['rxDropped'] = str(random.randint(0, 2*31))
-        net['rxErrors'] = str(random.randint(0, 2*31))
-        net['txDropped'] = str(random.randint(0, 2*31))
-        net['txErrors'] = str(random.randint(0, 2*31))
+        net['rxDropped'] = str(random.randint(0, 2 * 31))
+        net['rxErrors'] = str(random.randint(0, 2 * 31))
+        net['txDropped'] = str(random.randint(0, 2 * 31))
+        net['txErrors'] = str(random.randint(0, 2 * 31))
 
     # Fake guest-agent reports:
     stats['session'] = 'Unknown'

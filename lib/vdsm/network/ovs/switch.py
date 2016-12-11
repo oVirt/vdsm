@@ -182,7 +182,7 @@ def _random_unicast_local_mac():
     macaddr |= 0x020000000000  # locally administered
     macaddr &= 0xfeffffffffff  # unicast
     macaddr_str = '{:0>12x}'.format(macaddr)
-    return ':'.join([macaddr_str[i:i+2]
+    return ':'.join([macaddr_str[i:i + 2]
                      for i in range(0, len(macaddr_str), 2)])
 
 

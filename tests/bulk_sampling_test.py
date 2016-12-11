@@ -224,7 +224,7 @@ class FakeVM(object):
 
 def make_vms(num=1):
     vms = {}
-    for index in range(1, num+1):
+    for index in range(1, num + 1):
         vm = FakeVM(str(index))
         vms[vm.id] = vm
     return vms

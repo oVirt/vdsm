@@ -102,7 +102,7 @@ class TestVmMigrationDowntimeSequence(TestCaseBase):
 
         # ...but what matters is that after that, it stays lower.
         for i, (a, b) in enumerate(zip(exp[1:], lin[1:])):
-            msg = 'step=%i/%i exp=%f lin=%f' % (i+1, steps, a, b)
+            msg = 'step=%i/%i exp=%f lin=%f' % (i + 1, steps, a, b)
             self.assertTrue(a <= b, msg)
 
     @permutations(_PARAMS)

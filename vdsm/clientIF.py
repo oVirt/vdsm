@@ -570,9 +570,9 @@ class clientIF(object):
                 if self._enabled:
                     self.log.info(
                         'recovery [%d/%d]: preparing paths for'
-                        ' domain %s',  idx+1, num_vm_objects, vm_obj.id)
+                        ' domain %s', idx + 1, num_vm_objects, vm_obj.id)
                     vm_obj.preparePaths()
             except:
                 self.log.exception(
                     "recovery [%d/%d]: failed for vm %s",
-                    idx+1, num_vm_objects, vm_obj.id)
+                    idx + 1, num_vm_objects, vm_obj.id)

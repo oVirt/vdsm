@@ -32,7 +32,7 @@ def pretty_print(data):
             line
             for line
             in data.toprettyxml(
-                indent=' '*2,
+                indent=' ' * 2,
                 encoding='UTF-8',
             ).split('\n')
             if line.strip()
@@ -55,7 +55,7 @@ def increase_devices_boot_order(devices):
                         str(
                             int(
                                 boot.getAttribute('order')
-                            )+1
+                            ) + 1
                         )
                     )
                 except ValueError:

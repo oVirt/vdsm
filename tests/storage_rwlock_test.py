@@ -312,5 +312,5 @@ class RWLockStressTests(VdsmTestCase):
 def stats(seq):
     seq = sorted(seq)
     avg = sum(seq) / float(len(seq))
-    med = seq[len(seq)/2]
+    med = seq[len(seq) / 2]
     return avg, med, seq[0], seq[-1]
