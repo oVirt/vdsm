@@ -504,7 +504,7 @@ class VMBulkSampler(object):
         if log_status:
             self._log.debug(
                 'sampled timestamp %r elapsed %.3f acquired %r domains %s',
-                timestamp,  self._stats_cache.clock() - timestamp, acquired,
+                timestamp, self._stats_cache.clock() - timestamp, acquired,
                 'all' if fast_path else len(doms))
         if _METRICS_ENABLED:
             self._send_metrics()

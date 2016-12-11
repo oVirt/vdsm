@@ -201,18 +201,18 @@ class ConfiguratorTests(VdsmTestCase):
         setattr(c, 'name', "Mock")
 
         for (isconfigured, isvalid, force, expected) in (
-            (YES,          True,    True,  False),
-            (YES,          True,    False, False),
-            (YES,          False,   True,  InvalidConfig),
-            (YES,          False,   False, InvalidConfig),
-            (NO,           True,    True,  True),
-            (NO,           True,    False, True),
-            (NO,           False,   True,  True),
-            (NO,           False,   False, True),
-            (MAYBE,        True,    True,  True),
-            (MAYBE,        True,    False, False),
-            (MAYBE,        False,   True,  True),
-            (MAYBE,        False,   False, InvalidConfig),
+            (YES, True, True, False),
+            (YES, True, False, False),
+            (YES, False, True, InvalidConfig),
+            (YES, False, False, InvalidConfig),
+            (NO, True, True, True),
+            (NO, True, False, True),
+            (NO, False, True, True),
+            (NO, False, False, True),
+            (MAYBE, True, True, True),
+            (MAYBE, True, False, False),
+            (MAYBE, False, True, True),
+            (MAYBE, False, False, InvalidConfig),
         ):
             setattr(c, 'isconfigured', lambda: isconfigured)
             setattr(c, 'validate', lambda: isvalid)

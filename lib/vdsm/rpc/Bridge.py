@@ -412,7 +412,7 @@ command_info = {
     'VM_pause': {'ret': VM_running_state_change_Ret},
     'VM_setCpuTunePeriod': {'ret': 'status'},
     'VM_setCpuTuneQuota': {'ret': 'status'},
-    'VM_hotplugMemory':  {'ret': 'vmList'},
+    'VM_hotplugMemory': {'ret': 'vmList'},
     'VM_setNumberOfCpus': {'ret': 'vmList'},
     'VM_setIoTune': {'ret': 'status'},
     'VM_setBalloonTarget': {'ret': 'status'},

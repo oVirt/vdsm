@@ -1207,7 +1207,7 @@ class TestWaitForRemoval(TestCaseBase):
     """
 
     drive_file = Drive({}, log=logging.getLogger(''), index=0, iface="",
-                       path='test_path',  diskType=DISK_TYPE.FILE)
+                       path='test_path', diskType=DISK_TYPE.FILE)
     drive_network = Drive({}, log=logging.getLogger(''), index=0, iface="",
                           path='test_path', diskType=DISK_TYPE.NETWORK)
     drive_block = Drive({}, log=logging.getLogger(''), index=0, iface="",

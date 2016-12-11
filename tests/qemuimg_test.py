@@ -329,7 +329,7 @@ class QemuImgProgressTests(TestCaseBase):
 
     @permutations([
         (("    (1/100%)\r", "    (2/100%)\r"), (1, 2)),
-        (("    (1/10", "0%)\r    (2/10"),      (0, 1)),
+        (("    (1/10", "0%)\r    (2/10"), (0, 1)),
         (("    (1/10", "0%)\r    (2/100%)\r"), (0, 2)),
     ])
     def test_partial(self, output_list, progress_list):

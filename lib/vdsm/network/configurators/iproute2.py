@@ -183,7 +183,7 @@ class Iproute2(Configurator):
                 self._removeSourceRoute(bonding, DynamicSourceRoute)
 
             if bonding.on_removal_just_detach_from_network:
-                self.configApplier.setIfaceMtu(bonding.name,  mtus.DEFAULT_MTU)
+                self.configApplier.setIfaceMtu(bonding.name, mtus.DEFAULT_MTU)
                 self.configApplier.ifdown(bonding)
             else:
                 self._destroyBond(bonding)

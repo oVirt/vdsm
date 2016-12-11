@@ -529,7 +529,7 @@ class CpuStatsTests(VmStatsTestCase):
         res = vmstats.cpu(stats, first_sample, last_sample,
                           self.INTERVAL)
         self.assertEqual(stats, {
-                         'cpuUser':  0.6840879,
+                         'cpuUser': 0.6840879,
                          'cpuSys': 0.2,
                          'cpuUsage': '11260000000',
                          })

@@ -98,14 +98,14 @@ class TestNetinfo(TestCaseBase):
     @mock.patch.object(nics, 'operstate')
     @mock.patch.object(nics.io, 'open')
     def test_valid_nic_speed(self, mock_io_open, mock_operstate):
-        values = ((0,           nics.OPERSTATE_UP, 0),
-                  (-10,         nics.OPERSTATE_UP, 0),
+        values = ((0, nics.OPERSTATE_UP, 0),
+                  (-10, nics.OPERSTATE_UP, 0),
                   (2 ** 16 - 1, nics.OPERSTATE_UP, 0),
                   (2 ** 32 - 1, nics.OPERSTATE_UP, 0),
-                  (123,         nics.OPERSTATE_UP, 123),
-                  ('',          nics.OPERSTATE_UP, 0),
-                  ('',          'unknown',    0),
-                  (123,         'unknown',    0))
+                  (123, nics.OPERSTATE_UP, 123),
+                  ('', nics.OPERSTATE_UP, 0),
+                  ('', 'unknown', 0),
+                  (123, 'unknown', 0))
 
         for passed, operstate, expected in values:
             mock_io_open.return_value = io.BytesIO(str(passed))
