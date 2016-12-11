@@ -232,10 +232,6 @@ class FakeIRS(object):
         return 0
 
 
-def hypervisorConnect(uri, username, passwd):
-    return MockVirConnect()
-
-
 def read_ovf(ovf_path):
     return """<?xml version="1.0" encoding="UTF-8"?>
 <Envelope xmlns="http://schemas.dmtf.org/ovf/envelope/1"
