@@ -883,7 +883,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/API.py*
 %{_datadir}/%{vdsm_name}/hooking.py*
 %{_datadir}/%{vdsm_name}/mk_sysprep_floppy
-%{_datadir}/%{vdsm_name}/mkimage.py*
 %{_datadir}/%{vdsm_name}/sitecustomize.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer
 %{_datadir}/%{vdsm_name}/vdsm
@@ -1137,6 +1136,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/metrics/*.py*
 %{python_sitelib}/%{vdsm_name}/moduleloader.py*
 %{python_sitelib}/%{vdsm_name}/momIF.py*
+%{python_sitelib}/%{vdsm_name}/mkimage.py*
 %{python_sitelib}/%{vdsm_name}/network/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/api.py*
 %{python_sitelib}/%{vdsm_name}/network/configurators/__init__.py*

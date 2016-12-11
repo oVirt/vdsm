@@ -38,7 +38,7 @@ from testValidation import checkSudo, ValidateRunningAsRoot
 
 from vdsm.commands import execCmd
 from vdsm.storage import mount
-import mkimage
+from vdsm import mkimage
 
 
 @expandPermutations

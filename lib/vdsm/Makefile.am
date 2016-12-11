@@ -45,6 +45,7 @@ dist_vdsmpylib_PYTHON = \
 	machinetype.py \
 	moduleloader.py \
 	momIF.py \
+	mkimage.py \
 	numa.py \
 	osinfo.py \
 	panic.py \

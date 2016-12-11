@@ -27,7 +27,6 @@ dist_vdsm_PYTHON = \
 	API.py \
 	clientIF.py \
 	hooking.py \
-	mkimage.py \
 	sitecustomize.py \
 	$(NULL)
 
