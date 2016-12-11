@@ -403,7 +403,8 @@ class FileStorageDomain(sd.StorageDomain):
             if (prevMailboxFileSize is None or
                     prevMailboxFileSize < mailboxByteSize):
                 self.log.info('preparing storage domain %s mailbox file %s '
-                              '(%s bytes)', mailboxFile, mailboxByteSize)
+                              '(%s bytes)', self.sdUUID, mailboxFile,
+                              mailboxByteSize)
                 self.oop.truncateFile(
                     mailboxFilePath, mailboxByteSize, METADATA_PERMISSIONS)
 

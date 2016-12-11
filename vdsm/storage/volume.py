@@ -1050,7 +1050,7 @@ class Volume(object):
     def syncMetadata(self):
         volFormat = self.getFormat()
         if volFormat != sc.RAW_FORMAT:
-            self.log.error("impossible to update metadata for volume %s ",
+            self.log.error("impossible to update metadata for volume %s "
                            "its format is not RAW", self.volUUID)
             return
 

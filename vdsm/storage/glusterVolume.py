@@ -57,7 +57,7 @@ class GlusterVolume(fileVolume.FileVolume):
             self.log.warning("Unable to find transport type for GlusterFS"
                              " volume %s. GlusterFS server = %s."
                              "Defaulting to tcp",
-                             (volname, volfileServer), exc_info=True)
+                             volname, volfileServer, exc_info=True)
             volTrans = VOLUME_TRANS_MAP['TCP']
 
         # Use default port
