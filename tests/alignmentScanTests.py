@@ -1,5 +1,6 @@
 #!/usr/bin/python2
 #
+# Copyright (c) 2016 Red Hat, Inc.
 # Copyright (c) 2012, Sasha Tomic <tomic80@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -26,7 +27,7 @@ from nose.plugins.skip import SkipTest
 from vdsm.storage.misc import execCmd
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import brokentest, slowtest
-from alignmentScan import runScanArgs, scanImage, VirtAlignError
+from vdsm.alignmentScan import runScanArgs, scanImage, VirtAlignError
 
 
 def mkimage(imagepath, aligned=True):

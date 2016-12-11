@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ from collections import defaultdict
 from yajsonrpc.betterAsyncore import Reactor
 from yajsonrpc.stompreactor import StompClient, StompRpcServer
 from yajsonrpc import Notification, JsonRpcBindingsError
-import alignmentScan
 from vdsm.config import config
 from vdsm.common.define import doneCode, errCode
 from vdsm.protocoldetector import MultiProtocolAcceptor
@@ -43,6 +42,7 @@ from vdsm.virt import vmstatus
 from vdsm.virt.vmchannels import Listener
 from vdsm.virt.utils import isVdsmImage
 import libvirt
+from vdsm import alignmentScan
 from vdsm import libvirtconnection
 from vdsm import concurrent
 from vdsm import numa

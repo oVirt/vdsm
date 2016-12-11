@@ -879,7 +879,6 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/storage/imageRepository
 %dir %{_datadir}/%{vdsm_name}/virt
 %dir %{_datadir}/%{vdsm_name}/virt/vmdevices
-%{_datadir}/%{vdsm_name}/alignmentScan.py*
 %{_datadir}/%{vdsm_name}/clientIF.py*
 %{_datadir}/%{vdsm_name}/daemonAdapter
 %{_datadir}/%{vdsm_name}/API.py*
@@ -1093,6 +1092,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/supervdsm_api
 %dir %{python_sitelib}/%{vdsm_name}/virt
 %{python_sitelib}/%{vdsm_name}/__init__.py*
+%{python_sitelib}/%{vdsm_name}/alignmentScan.py*
 %{python_sitelib}/%{vdsm_name}/client.py*
 %{python_sitelib}/%{vdsm_name}/cmdutils.py*
 %{python_sitelib}/%{vdsm_name}/compat.py*

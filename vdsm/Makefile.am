@@ -23,7 +23,6 @@ SUBDIRS = sos storage virt
 include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_vdsm_PYTHON = \
-	alignmentScan.py \
 	API.py \
 	clientIF.py \
 	hooking.py \

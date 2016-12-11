@@ -24,6 +24,7 @@ SUBDIRS=common tool profiling rpc network virt storage host metrics gluster \
 
 dist_vdsmpylib_PYTHON = \
 	__init__.py \
+	alignmentScan.py \
 	client.py \
 	cmdutils.py \
 	compat.py \
