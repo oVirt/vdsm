@@ -40,13 +40,17 @@ from vdsm.network.ipwrapper import (
     addrAdd, linkSet, linkAdd, linkDel, IPRoute2Error, netns_add, netns_delete,
     netns_exec)
 from vdsm.network.link import iface as linkiface, bond as linkbond
+from vdsm.network.link.bond.sysfs_options import BONDING_DEFAULTS
 from vdsm.network.netinfo import routes
 from vdsm.network.netlink import monitor
 from vdsm.commands import execCmd
+from vdsm.tool.dump_bonding_opts import main as dump_bonding_opts
 from vdsm.utils import CommandPath, memoized, random_iface_name
 
 from . import dhcp
 from . import firewall
+
+ALTERNATIVE_BONDING_DEFAULTS = '../static/usr/share/vdsm/bonding-defaults.json'
 
 EXT_IP = "/sbin/ip"
 _IPERF3_BINARY = CommandPath('iperf3', '/usr/bin/iperf3')
@@ -497,6 +501,19 @@ def restore_resolv_conf():
 def check_sysfs_bond_permission():
     if not _has_sysfs_bond_permission():
         raise SkipTest('This test requires sysfs bond write access')
+
+
+@memoized
+def bonding_default_fpath():
+    if _has_sysfs_bond_permission():
+        dump_bonding_opts()
+
+    if os.path.exists(BONDING_DEFAULTS):
+        file_path = BONDING_DEFAULTS
+    else:
+        file_path = ALTERNATIVE_BONDING_DEFAULTS
+
+    return file_path
 
 
 @contextmanager

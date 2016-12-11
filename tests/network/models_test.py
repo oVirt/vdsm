@@ -20,11 +20,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
-import os
 
 from nose.plugins.attrib import attr
 
-from vdsm.network.netinfo import bonding, mtus
+from vdsm.network.netinfo import mtus
 from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network import errors
 from vdsm.network.models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
@@ -34,12 +33,12 @@ from testlib import VdsmTestCase as TestCaseBase, mock
 
 from monkeypatch import MonkeyPatch
 
+from .nettestlib import bonding_default_fpath
+
 
 @attr(type='unit')
 @mock.patch('vdsm.network.link.bond.sysfs_options.BONDING_DEFAULTS',
-            bonding.BONDING_DEFAULTS
-            if os.path.exists(bonding.BONDING_DEFAULTS)
-            else '../static/usr/share/vdsm/bonding-defaults.json')
+            bonding_default_fpath())
 class TestNetmodels(TestCaseBase):
 
     def testIsVlanIdValid(self):

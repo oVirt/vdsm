@@ -35,11 +35,14 @@ from vdsm.utils import random_iface_name
 from vdsm import sysctl
 
 from modprobe import RequireBondingMod
-from .nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
 from testlib import mock
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
 from testValidation import broken_on_ci
+
+from .nettestlib import bonding_default_fpath
+from .nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
+
 
 # speeds defined in ethtool
 ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
@@ -248,10 +251,7 @@ class TestNetinfo(TestCaseBase):
 
     @broken_on_ci('Bond options scanning is fragile on CI',
                   exception=AssertionError)
-    @mock.patch.object(bonding, 'BONDING_DEFAULTS',
-                       bonding.BONDING_DEFAULTS
-                       if os.path.exists(bonding.BONDING_DEFAULTS)
-                       else '../static/usr/share/vdsm/bonding-defaults.json')
+    @mock.patch.object(bonding, 'BONDING_DEFAULTS', bonding_default_fpath())
     @attr(type='integration')
     @ValidateRunningAsRoot
     @RequireBondingMod
