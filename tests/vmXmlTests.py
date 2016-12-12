@@ -26,6 +26,7 @@ from vdsm.virt import vmchannels
 from virt import domain_descriptor
 from virt import vmxml
 
+from testValidation import brokentest
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase, permutations, expandPermutations
 
@@ -182,6 +183,21 @@ class TestVmXmlHelpers(XMLTestCase):
                             namespace_uri='http://ovirt.org/vm/tune/1.0')
         metadata.appendChild(qos)
         self.assertXMLEqual(vmxml.format_xml(domain), expected_xml)
+
+    @brokentest('find_first returns the innermost nested element')
+    def test_find_first_nested(self):
+        XML = u'''<?xml version="1.0" ?>
+        <topelement>
+          <subelement id="1">
+              <subelement id="2"/>
+          </subelement>
+        </topelement>
+        '''
+        dom = vmxml.parse_xml(XML)
+        sub1 = vmxml.find_first(dom, 'subelement')  # outermost
+        sub2 = vmxml.find_first(sub1, 'subelement')  # innermost
+        last = vmxml.find_first(sub2, 'subelement')
+        self.assertIsNot(sub2, last)
 
 
 @expandPermutations
