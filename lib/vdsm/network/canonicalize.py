@@ -22,8 +22,8 @@ from __future__ import absolute_import
 import six
 
 from .netinfo import bridges, mtus, bonding, dns
-from .netinfo.addresses import prefix2netmask
 from vdsm import utils
+from vdsm.network.ip.address import prefix2netmask
 
 from .errors import ConfigNetworkError
 from . import errors as ne

@@ -27,6 +27,7 @@ import six
 from nose.plugins.attrib import attr
 
 from vdsm.network import ipwrapper
+from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.netinfo import addresses, bonding, dns, misc, nics, routes
 from vdsm.network.netinfo.cache import get
 from vdsm.network.netlink import waitfor
@@ -80,10 +81,9 @@ class TestNetinfo(TestCaseBase):
                 if line.startswith('#'):
                     continue
                 bitmask, address = [value.strip() for value in line.split()]
-                self.assertEqual(addresses.prefix2netmask(int(bitmask)),
-                                 address)
-        self.assertRaises(ValueError, addresses.prefix2netmask, -1)
-        self.assertRaises(ValueError, addresses.prefix2netmask, 33)
+                self.assertEqual(prefix2netmask(int(bitmask)), address)
+        self.assertRaises(ValueError, prefix2netmask, -1)
+        self.assertRaises(ValueError, prefix2netmask, 33)
 
     def test_speed_invalid_nic(self):
         nicName = '0' * 20  # devices can't have so long names

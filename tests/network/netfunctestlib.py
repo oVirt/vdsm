@@ -31,9 +31,8 @@ from vdsm import utils
 import vdsm.config
 from vdsm.network import kernelconfig
 from vdsm.network.ip import dhclient
-from vdsm.network.ip.address import ipv6_supported
+from vdsm.network.ip.address import ipv6_supported, prefix2netmask
 from vdsm.network.link.iface import is_oper_up
-from vdsm.network.netinfo.addresses import prefix2netmask
 
 from testlib import VdsmTestCase
 
