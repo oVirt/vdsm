@@ -129,7 +129,11 @@ class Schema(object):
         try:
             for path in paths:
                 with open(path) as f:
-                    loaded_schema = yaml.load(f, Loader=yaml.CLoader)
+                    if hasattr(yaml, 'CLoader'):
+                        loader = yaml.CLoader
+                    else:
+                        loader = yaml.Loader
+                    loaded_schema = yaml.load(f, Loader=loader)
 
                 types = loaded_schema.pop('types')
                 self._types.update(types)
