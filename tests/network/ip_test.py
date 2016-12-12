@@ -23,29 +23,7 @@ from nose.plugins.attrib import attr
 from testlib import VdsmTestCase, mock
 
 from vdsm.network import errors as ne
-from vdsm.network.ip import address
 from vdsm.network.ip import validator
-
-
-@attr(type='unit')
-class TestAddressIP(VdsmTestCase):
-
-    def test_ipv4_clean_init(self):
-        ip = address.IPv4()
-        self._assert_ip_clean_init(ip)
-        self.assertEqual(None, ip.bootproto)
-        self.assertEqual(None, ip.netmask)
-
-    def test_ipv6_clean_init(self):
-        ip = address.IPv6()
-        self._assert_ip_clean_init(ip)
-        self.assertEqual(None, ip.ipv6autoconf)
-        self.assertEqual(None, ip.dhcpv6)
-
-    def _assert_ip_clean_init(self, ip):
-        self.assertEqual(None, ip.address)
-        self.assertEqual(None, ip.gateway)
-        self.assertEqual(None, ip.defaultRoute)
 
 
 class DummyRunningConfig(object):
