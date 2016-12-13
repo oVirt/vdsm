@@ -1109,7 +1109,7 @@ class Image:
                         newVol.getVolumePath(),
                         srcFormat=sc.fmt2str(srcVolParams['volFormat']),
                         dstFormat=sc.fmt2str(volParams['volFormat']),
-                        qcow2Compat=sdDom.qcow2_compat())
+                        dstQcow2Compat=sdDom.qcow2_compat())
                     with utils.stopwatch("Copy volume %s" % srcVol.volUUID):
                         self._wait_for_qemuimg_operation(operation)
                 except qemuimg.QImgError:
