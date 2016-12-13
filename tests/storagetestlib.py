@@ -27,7 +27,6 @@ from monkeypatch import MonkeyPatchScope
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import qemuimg
-from vdsm import utils
 from vdsm.storage import constants as sc
 from vdsm.storage import guarded
 from vdsm.storage import outOfProcess as oop
@@ -244,10 +243,14 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
     if not os.path.exists(imagedir):
         os.makedirs(imagedir)
 
-    size_mb = utils.round(size, MB) / MB
-    lvm.createLV(sduuid, voluuid, size_mb)
-    lv_size = int(lvm.getLV(sduuid, voluuid).size)
-    lv_size_blk = lv_size / sc.BLOCK_SIZE
+    size_blk = (size + sc.BLOCK_SIZE - 1) / sc.BLOCK_SIZE
+    lv_size = sd_manifest.getVolumeClass().calculate_volume_alloc_size(
+        prealloc, size_blk, None)
+    lvm.createLV(sduuid, voluuid, lv_size)
+    # LVM may create the volume with a larger size due to extent granularity
+    lv_size_blk = int(lvm.getLV(sduuid, voluuid).size) / sc.BLOCK_SIZE
+    if lv_size_blk > size_blk:
+        size_blk = lv_size_blk
 
     with sd_manifest.acquireVolumeMetadataSlot(
             voluuid, sc.VOLUME_MDNUMBLKS) as slot:
@@ -262,7 +265,7 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
         sduuid,
         imguuid,
         parent_vol_id,
-        lv_size_blk,
+        size_blk,
         sc.type2name(vol_format),
         sc.type2name(prealloc),
         sc.type2name(sc.LEAF_VOL),

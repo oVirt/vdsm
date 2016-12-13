@@ -20,6 +20,7 @@
 from contextlib import contextmanager
 import os
 
+from vdsm import utils
 from vdsm.storage import exception as se
 from vdsm.storage import constants as sc
 
@@ -187,6 +188,16 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
 
             # As documented in FakeLVM, devices is not emulated and is None
             self.assertIsNone(lv.devices)
+
+    def test_lv_create_round_up_size(self):
+        with self.base_config() as lvm:
+            vg = lvm.getVG(self.VG_NAME)
+            extent_size_mb = int(vg.extent_size) // MB
+            odd_size_mb = extent_size_mb - 1
+            lvm.createLV(self.VG_NAME, self.LV_NAME, odd_size_mb)
+            rounded_up_size_mb = utils.round(odd_size_mb, extent_size_mb)
+            lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
+            self.assertEqual(int(lv.size), rounded_up_size_mb * MB)
 
     def test_lv_no_activate(self):
         """
