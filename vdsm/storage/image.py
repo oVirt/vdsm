@@ -1004,7 +1004,7 @@ class Image:
         return chain
 
     def _baseCowVolumeMerge(self, sdDom, srcVolParams, volParams, newSize,
-                            chain):
+                            chain, discard):
         """
         Merge snapshot with base COW volume
         """
@@ -1065,7 +1065,7 @@ class Image:
         # Step 4: Delete temporary volume
         tmpVol.teardown(sdUUID=tmpVol.sdUUID, volUUID=tmpVol.volUUID,
                         justme=True)
-        tmpVol.delete(postZero=False, force=True)
+        tmpVol.delete(postZero=False, force=True, discard=discard)
 
         # Prepare chain for future erase
         chain.remove(srcVolParams['volUUID'])
@@ -1306,7 +1306,7 @@ class Image:
                 self.log.info("4 steps merge: src = %s dst = %s",
                               srcVol.getVolumePath(), dstVol.getVolumePath())
                 chainToRemove = self._baseCowVolumeMerge(
-                    sdDom, srcVolParams, volParams, reqSize, chain)
+                    sdDom, srcVolParams, volParams, reqSize, chain, discard)
 
             # This is unrecoverable point, clear all recoveries
             vars.task.clearRecoveries()
