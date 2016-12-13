@@ -683,6 +683,7 @@ class Vm(object):
         self._dom = virdomain.Disconnected(self.id)
         # Try release VM resources first, if failed stuck in 'Powering Down'
         # state
+        self._destroy_requested.set()
         result = self.releaseVm()
         if not result['status']['code']:
             if reason is None:
