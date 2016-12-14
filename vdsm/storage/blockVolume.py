@@ -71,6 +71,10 @@ class BlockVolumeManifest(volume.VolumeManifest):
         self.lvmActivationNamespace = sd.getNamespace(
             sc.LVM_ACTIVATION_NAMESPACE, self.sdUUID)
 
+    @classmethod
+    def is_block(cls):
+        return True
+
     def getMetadataId(self):
         """
         Get the metadata Id
