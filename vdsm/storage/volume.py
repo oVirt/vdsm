@@ -846,7 +846,7 @@ class Volume(object):
         vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
         pvol = vol.getParentVolume()
         # Remove volume
-        vol.delete(postZero=False, force=True)
+        vol.delete(postZero=False, force=True, discard=False)
         if len(cls.getImageVolumes(repoPath, sdUUID, imgUUID)):
             # Don't remove the image folder itself
             return
