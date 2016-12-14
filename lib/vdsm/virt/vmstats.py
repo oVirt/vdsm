@@ -200,14 +200,15 @@ def send_metrics(vms_stats):
             data[prefix + '.cpu.sys'] = stat['cpuSys']
             data[prefix + '.cpu.usage'] = stat['cpuUsage']
 
-            data[prefix + '.balloon.max'] = \
-                stat['balloonInfo']['balloon_max']
-            data[prefix + '.balloon.min'] = \
-                stat['balloonInfo']['balloon_min']
-            data[prefix + '.balloon.target'] = \
-                stat['balloonInfo']['balloon_target']
-            data[prefix + '.balloon.cur'] = \
-                stat['balloonInfo']['balloon_cur']
+            if stat['balloonInfo']:
+                data[prefix + '.balloon.max'] = \
+                    stat['balloonInfo']['balloon_max']
+                data[prefix + '.balloon.min'] = \
+                    stat['balloonInfo']['balloon_min']
+                data[prefix + '.balloon.target'] = \
+                    stat['balloonInfo']['balloon_target']
+                data[prefix + '.balloon.cur'] = \
+                    stat['balloonInfo']['balloon_cur']
 
             if 'disks' in stat:
                 for disk in stat['disks']:
