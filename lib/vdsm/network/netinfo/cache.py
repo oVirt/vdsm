@@ -78,8 +78,11 @@ def _networks_report(vdsmnets, routes, ipaddrs, devices_info):
         nets_info = libvirtNets2vdsm(libvirt.networks(), routes, ipaddrs)
     else:
         nets_info = vdsmnets
+
     for network_info in six.itervalues(nets_info):
+        network_info.update(_dhcp_info(network_info['iface']))
         network_info.update(LEGACY_SWITCH)
+
     report_network_qos(nets_info, devices_info)
     return nets_info
 
@@ -139,9 +142,7 @@ def libvirtNets2vdsm(nets, routes=None, ipAddrs=None):
         try:
             # Pass the iface if the net is _not_ bridged, the bridge otherwise
             devname = netAttr.get('iface', net)
-            netdata = _getNetInfo(devname, netAttr['bridged'], routes, ipAddrs)
-            netdata.update(_dhcp_info(devname))
-            d[net] = netdata
+            d[net] = _getNetInfo(devname, netAttr['bridged'], routes, ipAddrs)
         except KeyError:
             continue  # Do not report missing libvirt networks.
     return d
