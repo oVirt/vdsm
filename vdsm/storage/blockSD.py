@@ -451,6 +451,8 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
         with self._extendlock:
+            self.log.debug("Extending thinly-provisioned LV for volume %s to "
+                           "%d MB", volumeUUID, size)
             # FIXME: following line.
             lvm.extendLV(self.sdUUID, volumeUUID, size)  # , isShuttingDown)
 
