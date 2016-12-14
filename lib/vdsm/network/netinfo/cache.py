@@ -35,7 +35,6 @@ from vdsm.network.netlink import link as nl_link
 from .addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
 from . import bonding
 from . import bridges
-from .dhcp import set_netdev_dhcp_info
 from .dns import get_host_nameservers
 from .mtus import getMtu
 from . import nics
@@ -58,44 +57,58 @@ def _get(vdsmnets=None):
     retrieving data from libvirt.
     :return: Dict of networking devices with all their details.
     """
-    networking = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
-                  'vlans': {}, 'nameservers': get_host_nameservers()}
     paddr = bonding.permanent_address()
     ipaddrs = getIpAddrs()
     routes = get_routes()
 
-    if vdsmnets is None:
-        libvirt_nets = libvirt.networks()
-        networking['networks'] = libvirtNets2vdsm(libvirt_nets, routes,
-                                                  ipaddrs)
-    else:
-        networking['networks'] = vdsmnets
+    devices_info = _devices_report(ipaddrs, routes, paddr)
+    nets_info = _networks_report(vdsmnets, routes, ipaddrs, devices_info)
 
+    networking_report = {'networks': nets_info}
+    networking_report.update(devices_info)
+
+    networking_report['nameservers'] = get_host_nameservers()
+    networking_report['supportsIPv6'] = ipv6_supported()
+
+    return networking_report
+
+
+def _networks_report(vdsmnets, routes, ipaddrs, devices_info):
+    if vdsmnets is None:
+        nets_info = libvirtNets2vdsm(libvirt.networks(), routes, ipaddrs)
+    else:
+        nets_info = vdsmnets
+    for network_info in six.itervalues(nets_info):
+        network_info.update(LEGACY_SWITCH)
+    report_network_qos(nets_info, devices_info)
+    return nets_info
+
+
+def _devices_report(ipaddrs, routes, paddr):
+    devs_report = {'bondings': {}, 'bridges': {}, 'nics': {}, 'vlans': {}}
+
+    devinfo_by_devname = {}
     for dev in (link for link in getLinks() if not link.isHidden()):
         if dev.isBRIDGE():
-            devinfo = networking['bridges'][dev.name] = bridges.info(dev)
+            devinfo = devs_report['bridges'][dev.name] = bridges.info(dev)
         elif dev.isNICLike():
-            devinfo = networking['nics'][dev.name] = nics.info(dev, paddr)
+            devinfo = devs_report['nics'][dev.name] = nics.info(dev, paddr)
             devinfo.update(bonding.get_bond_slave_agg_info(dev.name))
         elif dev.isBOND():
-            devinfo = networking['bondings'][dev.name] = bonding.info(dev)
+            devinfo = devs_report['bondings'][dev.name] = bonding.info(dev)
             devinfo.update(bonding.get_bond_agg_info(dev.name))
             devinfo.update(LEGACY_SWITCH)
         elif dev.isVLAN():
-            devinfo = networking['vlans'][dev.name] = vlans.info(dev)
+            devinfo = devs_report['vlans'][dev.name] = vlans.info(dev)
         else:
             continue
         devinfo.update(_devinfo(dev, routes, ipaddrs))
-        devinfo.update(_dhcp_info(dev.name))
+        devinfo_by_devname[dev.name] = devinfo
 
-    for network_name, network_info in six.iteritems(networking['networks']):
-        set_netdev_dhcp_info(network_info, networking)
-        networking['networks'][network_name].update(LEGACY_SWITCH)
+    for devname, devinfo in devinfo_by_devname.items():
+        devinfo.update(_dhcp_info(devname))
 
-    report_network_qos(networking)
-    networking['supportsIPv6'] = ipv6_supported()
-
-    return networking
+    return devs_report
 
 
 def get(vdsmnets=None, compatibility=None):

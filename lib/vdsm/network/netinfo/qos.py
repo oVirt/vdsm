@@ -27,22 +27,22 @@ NON_VLANNED_ID = 5000
 DEFAULT_CLASSID = '%x' % NON_VLANNED_ID
 
 
-def report_network_qos(netinfo):
+def report_network_qos(nets_info, devs_info):
     """Augment netinfo information with QoS data for the engine"""
     qdiscs = defaultdict(list)
     for qdisc in tc.qdiscs(dev=None):  # None -> all dev qdiscs
         qdiscs[qdisc['dev']].append(qdisc)
-    for net, attrs in netinfo['networks'].iteritems():
+    for net, attrs in nets_info.iteritems():
         iface = attrs['iface']
-        if iface in netinfo['bridges']:
+        if iface in devs_info['bridges']:
             host_ports = [port for port in attrs['ports'] if
                           not port.startswith('vnet')]
             if not host_ports:  # Port-less bridge
                 continue
             iface, = host_ports
-        if iface in netinfo['vlans']:
-            vlan_id = netinfo['vlans'][iface]['vlanid']
-            iface = netinfo['vlans'][iface]['iface']
+        if iface in devs_info['vlans']:
+            vlan_id = devs_info['vlans'][iface]['vlanid']
+            iface = devs_info['vlans'][iface]['iface']
             iface_qdiscs = qdiscs.get(iface)
             if iface_qdiscs is None:
                 continue
