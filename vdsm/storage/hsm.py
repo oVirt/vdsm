@@ -3516,7 +3516,7 @@ class HSM(object):
     def prepareMerge(self, spUUID, subchainInfo):
         msg = "spUUID=%s, subchainInfo=%s" % (spUUID, subchainInfo)
         vars.task.setDefaultException(se.StorageException(msg))
-        subchain = merge.SubchainInfo(subchainInfo, self._get_hostid())
+        subchain = merge.SubchainInfo(subchainInfo, self._pool.id)
         pool = self.getPool(spUUID)
         sdCache.produce(subchain.sd_id)
         vars.task.getSharedLock(STORAGE, subchain.sd_id)
@@ -3527,7 +3527,7 @@ class HSM(object):
     def finalizeMerge(self, spUUID, subchainInfo):
         msg = "spUUID=%s, subchainInfo=%s" % (spUUID, subchainInfo)
         vars.task.setDefaultException(se.StorageException(msg))
-        subchain = merge.SubchainInfo(subchainInfo, self._get_hostid())
+        subchain = merge.SubchainInfo(subchainInfo, self._pool.id)
         pool = self.getPool(spUUID)
         sdCache.produce(subchain.sd_id)
         vars.task.getSharedLock(STORAGE, subchain.sd_id)
