@@ -301,6 +301,44 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
             self.assertEqual('a', lv.attr.state)
             self.assertTrue(os.path.exists(lv_path))
 
+    def test_extend_lv_resizes_lv(self):
+        with self.base_config() as lvm:
+            lvm.createLV(self.VG_NAME, self.LV_NAME, self.LV_SIZE_MB,
+                         activate=False)
+            vg = lvm.getVG(self.VG_NAME)
+            lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
+            extent_size_mb = int(vg.extent_size) // MB
+            new_size_mb = int(lv.size) // MB + extent_size_mb
+            lvm.extendLV(self.VG_NAME, self.LV_NAME, new_size_mb)
+            lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
+            self.assertEqual(int(lv.size), new_size_mb * MB)
+
+    def test_extend_lv_resize_not_needed(self):
+        with self.base_config() as lvm:
+            lvm.createLV(self.VG_NAME, self.LV_NAME, self.LV_SIZE_MB,
+                         activate=False)
+            vg = lvm.getVG(self.VG_NAME)
+            lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
+            extent_size_mb = int(vg.extent_size) // MB
+            orig_size_mb = int(lv.size) // MB
+            new_size_mb = orig_size_mb - extent_size_mb
+            lvm.extendLV(self.VG_NAME, self.LV_NAME, new_size_mb)
+            lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
+            self.assertEqual(int(lv.size), orig_size_mb * MB)
+
+    def test_extend_lv_round_up_to_extent_size(self):
+        with self.base_config() as lvm:
+            lvm.createLV(self.VG_NAME, self.LV_NAME, self.LV_SIZE_MB,
+                         activate=False)
+            vg = lvm.getVG(self.VG_NAME)
+            lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
+            extent_size_mb = int(vg.extent_size) // MB
+            new_size_mb = int(lv.size) // MB + 1
+            expected_size_mb = int(lv.size) // MB + extent_size_mb
+            lvm.extendLV(self.VG_NAME, self.LV_NAME, new_size_mb)
+            lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
+            self.assertEqual(int(lv.size), expected_size_mb * MB)
+
     def test_lv_io(self):
         with self.base_config() as lvm:
             msg = "Hello World!"

@@ -92,6 +92,21 @@ class FakeLVM(object):
     def invalidateVG(self, vgName):
         pass
 
+    def _size_param_to_bytes(self, size):
+        # Size is received as a string in MB.  We need to convert it to bytes
+        # and round it up to a multiple of the VG extent size.
+        extent_size = VG_EXTENT_SIZE_MB << 20
+        size = int(size) << 20
+        return utils.round(size, extent_size)
+
+    def _create_lv_file(self, vgName, lvName, activate, size):
+        # Create an LV as a regular file so we have a place to write data
+        if activate:
+            lv_path = self.lvPath(vgName, lvName)
+        else:
+            lv_path = self._lvPathInactive(vgName, lvName)
+        make_file(lv_path, size)
+
     def createLV(self, vgName, lvName, size, activate=True, contiguous=False,
                  initialTags=()):
         try:
@@ -99,13 +114,7 @@ class FakeLVM(object):
         except KeyError:
             raise se.CannotCreateLogicalVolume(vgName, lvName)
 
-        # Size is received as a string in MB.  We need to convert it to bytes
-        # and round it up to a multiple of the VG extent size.
-        try:
-            size = int(size) << 20
-        except ValueError:
-            raise se.CannotCreateLogicalVolume(vgName, lvName)
-        size = utils.round(size, int(vg_md['extent_size']))
+        size = self._size_param_to_bytes(size)
 
         # devices is hard to emulate properly (must have a PE allocator that
         # works the same as for LVM).  Since we don't need this value, use None
@@ -140,12 +149,7 @@ class FakeLVM(object):
         self.lvmd[(vgName, lvName)] = lv_md
         self.vgmd[vgName]['lv_count'] = str(lv_count)
 
-        # Create an LV as a regular file so we have a place to write data
-        if activate:
-            lv_path = self.lvPath(vgName, lvName)
-        else:
-            lv_path = self._lvPathInactive(vgName, lvName)
-        make_file(lv_path, size)
+        self._create_lv_file(vgName, lvName, activate, size)
 
     def activateLVs(self, vgName, lvNames):
         for lv in lvNames:
@@ -237,6 +241,22 @@ class FakeLVM(object):
                     for vg, lv in self.lvmd if vg == vgName]
         else:
             return self._getLV(vgName, lvName)
+
+    def extendLV(self, vgName, lvName, size_mb):
+        try:
+            lv = self.lvmd[(vgName, lvName)]
+        except KeyError:
+            raise se.LogicalVolumeExtendError(vgName, lvName,
+                                              "%sm" % (size_mb,))
+        size = self._size_param_to_bytes(size_mb)
+        current_size = int(lv["size"])
+        if current_size >= size:
+            # In real lvm code we call call lvm and check after the call if the
+            # lvm is already in the corect size.
+            return
+        lv['size'] = str(size)
+        self._create_lv_file(vgName, lvName, lv['active'], size)
+        # TODO: vg free extent accounting
 
     def fake_lv_symlink_create(self, vg_name, lv_name):
         volpath = self.lvPath(vg_name, lv_name)
