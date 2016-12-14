@@ -30,7 +30,6 @@ from vdsm.network import netinfo
 from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import getLinks
-from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netlink import link as nl_link
 
 from .addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
@@ -87,6 +86,7 @@ def _get(vdsmnets=None):
         else:
             continue
         devinfo.update(_devinfo(dev, routes, ipaddrs))
+        devinfo.update(_dhcp_info(dev.name))
 
     for network_name, network_info in six.iteritems(networking['networks']):
         set_netdev_dhcp_info(network_info, networking)
@@ -116,7 +116,6 @@ def _stringify_mtus(netinfo_data):
 
 
 def libvirtNets2vdsm(nets, routes=None, ipAddrs=None):
-    running_config = RunningConfig()
     if routes is None:
         routes = get_routes()
     if ipAddrs is None:
@@ -126,12 +125,20 @@ def libvirtNets2vdsm(nets, routes=None, ipAddrs=None):
     for net, netAttr in six.iteritems(nets):
         try:
             # Pass the iface if the net is _not_ bridged, the bridge otherwise
-            d[net] = _getNetInfo(netAttr.get('iface', net), netAttr['bridged'],
-                                 routes, ipAddrs,
-                                 running_config.networks.get(net, None))
+            devname = netAttr.get('iface', net)
+            netdata = _getNetInfo(devname, netAttr['bridged'], routes, ipAddrs)
+            netdata.update(_dhcp_info(devname))
+            d[net] = netdata
         except KeyError:
             continue  # Do not report missing libvirt networks.
     return d
+
+
+def _dhcp_info(iface):
+    is_dhcpv4 = dhclient.is_active(iface, family=4)
+    is_dhcpv6 = dhclient.is_active(iface, family=6)
+
+    return {'dhcpv4': is_dhcpv4, 'dhcpv6': is_dhcpv6}
 
 
 def _devinfo(link, routes, ipaddrs):
@@ -139,17 +146,12 @@ def _devinfo(link, routes, ipaddrs):
     ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(
         link.name, ipaddrs, gateway)
 
-    is_dhcpv4 = dhclient.is_active(link.name, family=4)
-    is_dhcpv6 = dhclient.is_active(link.name, family=6)
-
     return {'addr': ipv4addr,
             'ipv4addrs': ipv4addrs,
             'ipv6addrs': ipv6addrs,
             'ipv6autoconf': is_ipv6_local_auto(link.name),
             'gateway': gateway,
             'ipv6gateway': get_gateway(routes, link.name, family=6),
-            'dhcpv4': is_dhcpv4,
-            'dhcpv6': is_dhcpv6,
             'mtu': link.mtu,
             'netmask': ipv4netmask,
             'ipv4defaultroute': is_default_route(gateway)}
@@ -171,7 +173,7 @@ def ifaceUsed(iface):
     return False
 
 
-def _getNetInfo(iface, bridged, routes, ipaddrs, net_attrs):
+def _getNetInfo(iface, bridged, routes, ipaddrs):
     """Returns a dictionary of properties about the network's interface status.
     Raises a KeyError if the iface does not exist."""
     data = {}
@@ -189,13 +191,8 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, net_attrs):
         ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(
             iface, ipaddrs, gateway)
 
-        is_dhcpv4 = dhclient.is_active(iface, family=4)
-        is_dhcpv6 = dhclient.is_active(iface, family=6)
-
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
-                     'dhcpv4': is_dhcpv4,
-                     'dhcpv6': is_dhcpv6,
                      'ipv4addrs': ipv4addrs,
                      'ipv6addrs': ipv6addrs,
                      'ipv6autoconf': is_ipv6_local_auto(iface),
