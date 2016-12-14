@@ -194,7 +194,7 @@ def get_ova_info(ova_path):
         raise V2VError('Error reading ovf from ova, position: %r' % e.position)
 
     vm = {}
-    _add_general_ovf_info(vm, root, ns, ova_path)
+    _add_general_ovf_info(vm, root, ns)
     _add_disks_ovf_info(vm, root, ns)
     _add_networks_ovf_info(vm, root, ns)
 
@@ -1072,13 +1072,13 @@ def _read_ovf_from_tar_ova(ova_path):
         raise ClientError('OVA does not contains file with .ovf suffix')
 
 
-def _add_general_ovf_info(vm, node, ns, ova_path):
+def _add_general_ovf_info(vm, node, ns):
     vm['status'] = 'Down'
     vmName = node.find('./ovf:VirtualSystem/ovf:Name', ns)
     if vmName is not None:
         vm['vmName'] = vmName.text
     else:
-        vm['vmName'] = os.path.splitext(os.path.basename(ova_path))[0]
+        raise V2VError('Error parsing ovf information: no ovf:Name')
 
     memSize = node.find('.//ovf:Item[rasd:ResourceType="%d"]/'
                         'rasd:VirtualQuantity' % _OVF_RESOURCE_MEMORY, ns)
