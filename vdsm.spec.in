@@ -1575,6 +1575,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/rpc/bindingxmlrpc.py*
 
 %files client
+%{_bindir}/vdsm-client
 %dir %{python_sitelib}/vdsmclient
 %{python_sitelib}/vdsmclient/__init__.py*
 %{python_sitelib}/vdsmclient/client.py*
