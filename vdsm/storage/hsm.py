@@ -87,6 +87,7 @@ import sdm.api.move_device
 import sdm.api.sparsify_volume
 import sdm.api.amend_volume
 import sdm.api.reduce_domain
+import sdm.api.set_volume_generation
 
 GUID = "guid"
 NAME = "name"
@@ -3614,6 +3615,6 @@ class HSM(object):
 
     @public
     def sdm_set_volume_generation(self, job_id, vol_info, new_gen):
-        job = sdm.api.set_volume_generation.Job(job_id, self._get_hostid(),
+        job = sdm.api.set_volume_generation.Job(job_id, self._pool.id,
                                                 vol_info, new_gen)
         self.sdm_schedule(job)
