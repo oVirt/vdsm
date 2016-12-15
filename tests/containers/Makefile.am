@@ -18,19 +18,16 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-vdsmcontainerstestsdir = ${vdsmtestsdir}/containers
+vdsmconttestsdir = ${vdsmtestsdir}/containers
 
 SUBDIRS = \
 	  data \
 	  fake \
 	  $(NULL)
 
-dist_vdsmcontainerstests_PYTHON = \
+dist_vdsmconttests_PYTHON = \
 	__init__.py \
 	*_test.py \
 	conttestlib.py \
-	$(NULL)
-
-dist_vdsmcontainerstests_DATA = \
 	$(NULL)
 

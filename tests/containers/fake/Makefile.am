@@ -18,13 +18,13 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-vdsmcontainerstestsfakedir = ${vdsmcontainerstestsdir}/fake
+vdsmcontfaketestsdir = ${vdsmtestsdir}/containers/fake
 
 SUBDIRS = \
 	  bin \
 	  $(NULL)
 
-dist_noinst_DATA = \
+dist_vdsmcontfaketests_DATA = \
 	cgroups.tgz \
 	$(NULL)
 

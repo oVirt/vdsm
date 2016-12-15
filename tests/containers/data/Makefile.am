@@ -18,9 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-vdsmcontainerstestsdatadir = ${vdsmcontainerstestsdir}/data
+vdsmcontdatatestsdir = ${vdsmtestsdir}/containers/data
 
-dist_noinst_DATA = \
+dist_vdsmcontdatatests_DATA = \
 	*.xml \
 	*.txt \
 	$(NULL)

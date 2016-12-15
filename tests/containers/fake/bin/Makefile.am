@@ -18,9 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-vdsmcontainerstestsfakebindir = ${vdsmcontainerstestsfakedir}/bin
+vdsmcontfakebintestsdir = ${vdsmtestsdir}/containers/fake/bin
 
-dist_noinst_DATA = \
+dist_vdsmcontfakebintests_DATA = \
 	docker \
 	systemctl \
 	systemd-run \

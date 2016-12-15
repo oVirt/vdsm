@@ -1281,6 +1281,12 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/tests
 %dir %{_datadir}/%{vdsm_name}/tests/common
+%if 0%{?with_containers}
+%dir %{_datadir}/%{vdsm_name}/tests/containers
+%dir %{_datadir}/%{vdsm_name}/tests/containers/data
+%dir %{_datadir}/%{vdsm_name}/tests/containers/fake
+%dir %{_datadir}/%{vdsm_name}/tests/containers/fake/bin
+%endif
 %dir %{_datadir}/%{vdsm_name}/tests/cpuinfo
 %dir %{_datadir}/%{vdsm_name}/tests/functional
 %dir %{_datadir}/%{vdsm_name}/tests/devices
@@ -1304,11 +1310,10 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/common/*.py*
 %if 0%{?with_containers}
 %{_datadir}/%{vdsm_name}/tests/containers/*.py*
-# FIXME
-#%{_datadir}/%{vdsm_name}/tests/containers/data/bin/*.txt
-#%{_datadir}/%{vdsm_name}/tests/containers/data/bin/*.xml
-#%{_datadir}/%{vdsm_name}/tests/containers/fake/bin/*
-#%{_datadir}/%{vdsm_name}/tests/containers/fake/cgroups.tgz
+%{_datadir}/%{vdsm_name}/tests/containers/data/*.txt
+%{_datadir}/%{vdsm_name}/tests/containers/data/*.xml
+%{_datadir}/%{vdsm_name}/tests/containers/fake/bin/*
+%{_datadir}/%{vdsm_name}/tests/containers/fake/cgroups.tgz
 %endif
 %{_datadir}/%{vdsm_name}/tests/cpuinfo/*.out
 %{_datadir}/%{vdsm_name}/tests/fake-ssh-add
