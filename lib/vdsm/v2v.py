@@ -1095,6 +1095,14 @@ def _add_general_ovf_info(vm, node, ns, ova_path):
         raise V2VError('Error parsing ovf information: no cpu info')
 
 
+def _get_max_disk_size(populated_size, size):
+    if populated_size is None:
+        return size
+    if size is None:
+        return populated_size
+    return str(max(int(populated_size), int(size)))
+
+
 def _add_disks_ovf_info(vm, node, ns):
     vm['disks'] = []
     for d in node.findall(".//ovf:DiskSection/ovf:Disk", ns):
@@ -1106,7 +1114,9 @@ def _add_disks_ovf_info(vm, node, ns):
                           fileref, ns)
         if alias is not None:
             disk['alias'] = alias.attrib.get('{%s}href' % _OVF_NS)
-            disk['allocation'] = str(alias.attrib.get('{%s}size' % _OVF_NS))
+            populated_size = d.attrib.get('{%s}populatedSize' % _OVF_NS, None)
+            size = alias.attrib.get('{%s}size' % _OVF_NS)
+            disk['allocation'] = _get_max_disk_size(populated_size, size)
         else:
             raise V2VError('Error parsing ovf information: disk href info')
         vm['disks'].append(disk)

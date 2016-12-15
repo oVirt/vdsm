@@ -234,9 +234,11 @@ def read_ovf(ovf_path):
 sourceAllocationSettingData">
   <References>
     <File ovf:href="First-disk1.vmdk" ovf:id="file1" ovf:size="349405696"/>
+    <File ovf:href="First-disk2.vmdk" ovf:id="file2" ovf:size="349405696"/>
   </References>
   <DiskSection>
     <Disk ovf:capacity="32" ovf:fileRef="file1"/>
+    <Disk ovf:capacity="32" ovf:populatedSize="698811392" ovf:fileRef="file2"/>
   </DiskSection>
   <VirtualSystem ovf:id="First">
     <Name>First</Name>
