@@ -889,7 +889,11 @@ def _block_disk_supported(conn, root):
     Xen on Rhel 5.x
     '''
     if conn.getType() == 'Xen':
-        return len(root.findall('.//disk[@type="block"]')) == 0
+        block_disks = root.findall('.//disk[@type="block"]')
+        block_disks = [d for d in block_disks
+                       if d.attrib.get('device', None) == "disk"]
+        return len(block_disks) == 0
+
     return True
 
 
