@@ -39,6 +39,9 @@ DHCLIENT_CGROUP = 'vdsm-dhclient'
 LEASE_DIR = '/var/lib/dhclient'
 LEASE_FILE = os.path.join(LEASE_DIR, 'dhclient{0}--{1}.lease')
 
+DHCP4 = 'dhcpv4'
+DHCP6 = 'dhcpv6'
+
 
 class DhcpClient(object):
     PID_FILE = '/var/run/dhclient%s-%s.pid'
@@ -110,14 +113,30 @@ def is_active(device_name, family):
     return False
 
 
+def dhcp_info(devices):
+    info = {devname: {DHCP4: False, DHCP6: False} for devname in devices}
+
+    for pid in pgrep('dhclient'):
+        args = _read_cmdline(pid)
+        if not args:
+            continue
+
+        dev = args[-1]
+        if dev not in info:
+            continue
+
+        dhcp_version_key = DHCP6 if '-6' in args[:-1] else DHCP4
+        info[dev][dhcp_version_key] = True
+
+    return info
+
+
 def _pid_lookup(device_name, family):
     for pid in pgrep('dhclient'):
-        try:
-            with open('/proc/%s/cmdline' % pid) as cmdline:
-                args = cmdline.read().strip('\0').split('\0')
-        except IOError as ioe:
-            if ioe.errno == errno.ENOENT:  # exited before we read cmdline
-                continue
+        args = _read_cmdline(pid)
+        if not args:
+            continue
+
         if args[-1] != device_name:  # dhclient of another device
             continue
         tokens = iter(args)
@@ -135,6 +154,16 @@ def _pid_lookup(device_name, family):
             continue
 
         yield pid, pid_file
+
+
+def _read_cmdline(pid):
+    try:
+        with open('/proc/%s/cmdline' % pid) as cmdline:
+            return cmdline.read().strip('\0').split('\0')
+    except IOError as ioe:
+        if ioe.errno != errno.ENOENT:
+            raise
+    return None
 
 
 @memoized

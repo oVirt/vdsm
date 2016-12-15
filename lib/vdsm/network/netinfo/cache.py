@@ -79,11 +79,15 @@ def _networks_report(vdsmnets, routes, ipaddrs, devices_info):
     else:
         nets_info = vdsmnets
 
+    ifaces = {net_info['iface'] for net_info in six.itervalues(nets_info)}
+    dhcp_info = dhclient.dhcp_info(ifaces)
+
     for network_info in six.itervalues(nets_info):
-        network_info.update(_dhcp_info(network_info['iface']))
+        network_info.update(dhcp_info[network_info['iface']])
         network_info.update(LEGACY_SWITCH)
 
     report_network_qos(nets_info, devices_info)
+
     return nets_info
 
 
@@ -108,8 +112,9 @@ def _devices_report(ipaddrs, routes, paddr):
         devinfo.update(_devinfo(dev, routes, ipaddrs))
         devinfo_by_devname[dev.name] = devinfo
 
+    dhcp_info = dhclient.dhcp_info(frozenset(devinfo_by_devname))
     for devname, devinfo in devinfo_by_devname.items():
-        devinfo.update(_dhcp_info(devname))
+        devinfo.update(dhcp_info[devname])
 
     return devs_report
 
@@ -146,13 +151,6 @@ def libvirtNets2vdsm(nets, routes=None, ipAddrs=None):
         except KeyError:
             continue  # Do not report missing libvirt networks.
     return d
-
-
-def _dhcp_info(iface):
-    is_dhcpv4 = dhclient.is_active(iface, family=4)
-    is_dhcpv6 = dhclient.is_active(iface, family=6)
-
-    return {'dhcpv4': is_dhcpv4, 'dhcpv6': is_dhcpv6}
 
 
 def _devinfo(link, routes, ipaddrs):
