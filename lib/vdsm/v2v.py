@@ -160,9 +160,9 @@ def get_external_vms(uri, username, password, vm_names=None):
                                                  username=username,
                                                  passwd=password)
     except libvirt.libvirtError as e:
-        logging.error('error connection to hypervisor: %r', e.message)
+        logging.exception('error connecting to hypervisor')
         return {'status': {'code': errCode['V2VConnection']['status']['code'],
-                           'message': e.message}}
+                           'message': str(e)}}
 
     with closing(conn):
         vms = []
@@ -180,8 +180,8 @@ def get_external_vm_names(uri, username, password):
                                                  username=username,
                                                  passwd=password)
     except libvirt.libvirtError as e:
-        logging.error('error connecting to hypervisor: %r', e.message)
-        return response.error('V2VConnection', e.message)
+        logging.exception('error connecting to hypervisor')
+        return response.error('V2VConnection', str(e))
 
     with closing(conn):
         vms = [vm.name() for vm in _list_domains(conn)]
@@ -801,7 +801,7 @@ class ImportVm(object):
             else:
                 logging.exception("Job %r failed", self._id)
                 self._status = STATUS.FAILED
-                self._description = ex.message
+                self._description = str(ex)
                 try:
                     self._abort()
                 except Exception as e:
