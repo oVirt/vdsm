@@ -536,6 +536,9 @@ class clientIF(object):
                 v.onWatchdogEvent(action)
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_JOB_COMPLETED:
                 v.onJobCompleted(args)
+            elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_DEVICE_REMOVED:
+                device_alias, = args[:-1]
+                v.onDeviceRemoved(device_alias)
             else:
                 v.log.warning('unknown eventid %s args %s', eventid, args)
 

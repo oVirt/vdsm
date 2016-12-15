@@ -36,6 +36,7 @@ import libvirt
 
 # vdsm imports
 from vdsm.common import api
+from vdsm.common import exception
 from vdsm.common import response
 from vdsm import concurrent
 from vdsm import constants
@@ -2547,6 +2548,32 @@ class Vm(object):
 
     def _update_memory_info(self):
         self.conf['memSize'] = self.domain.get_memory_size()
+        self.log.debug("New memory size: %s MiB", self.conf['memSize'])
+
+    @api.logged(on='vdsm.api')
+    def hotunplugMemory(self, params):
+        if self.isMigrating():
+            raise exception.MigrationInProgress()
+
+        alias = params['memory']['alias']
+        for dev in self._devices[hwclass.MEMORY][:]:
+            if dev.alias == alias:
+                device = dev
+                break
+        else:
+            raise LookupError("Memory device not found", params['memory'])
+
+        device_xml = vmxml.format_xml(device.getXML())
+        self.log.info("Hotunplug memory xml: %s", device_xml)
+
+        try:
+            self._dom.detachDevice(device_xml)
+        except libvirt.libvirtError as e:
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                raise exception.NoSuchVm(vmId=self.id)
+            raise exception.HotunplugMemFailed(str(e), vmId=self.id)
+
+        return response.success()
 
     @api.logged(on='vdsm.api')
     def setNumberOfCpus(self, numberOfCpus):
@@ -4926,6 +4953,53 @@ class Vm(object):
     @property
     def hasGuestNumaNode(self):
         return 'guestNumaNodes' in self.conf
+
+    def onDeviceRemoved(self, device_alias):
+        self.log.info("Device removal reported: %s", device_alias)
+
+        # We currently hotunplug all devices synchronously, except for memory.
+        device_hwclass = hwclass.MEMORY
+
+        for dev in self.conf['devices'][:]:
+            if dev.get('alias') == device_alias:
+                if dev['type'] != device_hwclass:
+                    return
+                with self._confLock:
+                    self.conf['devices'].remove(dev)
+                break
+        else:
+            self.log.warning("Removed device not found in conf: %s",
+                             device_alias)
+
+        for dev in self._devices[device_hwclass][:]:
+            if getattr(dev, 'alias', None) == device_alias:
+                device = dev
+                break
+        else:
+            self.log.warning("Removed device not found in devices: %s",
+                             device_alias)
+            return
+        self._devices[device_hwclass].remove(device)
+
+        self.saveState()
+        device.teardown()
+
+        # TODO: Remove the following domain descriptor update once
+        # https://bugzilla.redhat.com/1414393 is fixed. Domain descriptor is
+        # already updated in saveState call above. But due to the bug the
+        # device may still be present in the domain XML and get removed only
+        # shortly afterwards. So let's try once again if needed. If the device
+        # is still present in the domain XML after the additional update (it's
+        # probably not that much likely) we don't care much. This callback
+        # currently handles only memory devices and the main purpose of the
+        # update is to get the current memory size. But Engine doesn't use
+        # that value, we just log it and expose it in the stats.
+        xpath = ".//alias[@name='%s']" % (device_alias,)
+        if self._domain.devices.find(xpath) is not None:
+            self._updateDomainDescriptor()
+
+        if isinstance(device, vmdevices.core.Memory):
+            self._update_memory_info()
 
     # Accessing storage
 

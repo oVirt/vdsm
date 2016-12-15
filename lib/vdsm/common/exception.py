@@ -384,6 +384,11 @@ class JobNotActive(VdsmException):
     message = 'Job is not active'
 
 
+class HotunplugMemFailed(ContextException):
+    code = 85
+    message = 'Failed to hotunplug memory'
+
+
 class RecoveryInProgress(VdsmException):
     code = 99
     message = 'Recovering from crash or Initializing'
