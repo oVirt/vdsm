@@ -503,6 +503,21 @@ class VM(APIBase):
 
         return curVm.hotplugMemory(params)
 
+    @api.method
+    def hotunplugMemory(self, params):
+        try:
+            utils.validateMinimalKeySet(params, ('vmId', 'memory'))
+        except ValueError:
+            raise exception.MissingParameter(
+                "Missing one of the required parameters: "
+                "vmId, memory")
+        try:
+            curVm = self._cif.vmContainer[self._UUID]
+        except KeyError:
+            raise exception.NoSuchVm(vmId=self._UUID)
+
+        return curVm.hotunplugMemory(params)
+
     def setNumberOfCpus(self, numberOfCpus):
 
         if self._UUID is None or numberOfCpus is None:

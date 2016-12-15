@@ -10328,6 +10328,18 @@ VM.hotplugMemory:
         description: The VM definition, as updated
         type: *VmDefinition
 
+VM.hotunplugMemory:
+    added: '4.1'
+    description: Hotunplug memory from a running VM
+    params:
+    -   name: vmID
+        type: *UUID
+        description: The UUID of the VM
+
+    -   name: params
+        type: *HotplugMemoryParams
+        description: The VM UUID and memory device information
+
 VM.setNumberOfCpus:
     added: '3.4'
     description: Set the number CPUs for a VM

@@ -384,6 +384,11 @@ class JobNotActive(VdsmException):
     message = 'Job is not active'
 
 
+class HotunplugMemFailed(ContextException):
+    code = 85
+    message = 'Failed to hotunplug memory'
+
+
 class HotplugLeaseFailed(ContextException):
     code = 86
     message = 'Failed to hotplug lease'
