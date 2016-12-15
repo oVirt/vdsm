@@ -23,6 +23,9 @@ include $(top_srcdir)/build-aux/Makefile.subs
 man8_MANS = \
 	./usr/share/man/man8/vdsmd.8
 
+dist_bin_SCRIPTS = \
+	./usr/bin/vdsm-client
+
 vdsm_DATA = \
 	./usr/share/vdsm/bonding-defaults.json \
 	./usr/share/vdsm/bonding-name2numeric.json \
