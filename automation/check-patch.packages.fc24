@@ -32,6 +32,7 @@ python3-nose
 python3-six
 python3-yaml
 rpm-build
+rpmlint
 sanlock-python
 sudo
 yum

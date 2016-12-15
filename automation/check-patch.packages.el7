@@ -24,6 +24,7 @@ python-setuptools
 python-six
 python-requests
 rpm-build
+rpmlint
 sanlock-python
 sudo
 yum
