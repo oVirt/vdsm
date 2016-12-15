@@ -189,12 +189,16 @@ class VolumeManifest(object):
         sd_manifest = sdCache.produce_manifest(self.sdUUID)
         if not sd_manifest.hasVolumeLeases():
             return None
+
+        # Version is always None when a lease is not acquired, although sanlock
+        # always report the version. The clusterlock should be fixed to match
+        # the schema.
         version, host_id = sd_manifest.inquireVolumeLease(self.imgUUID,
                                                           self.volUUID)
         # TODO: Move this logic to clusterlock and fix callers to handle list
         # of owners instead of None.
         owners = [host_id] if host_id is not None else []
-        return dict(owners=owners, shared=False, version=version)
+        return dict(owners=owners, version=version)
 
     def metadata2info(self, meta):
         return {
