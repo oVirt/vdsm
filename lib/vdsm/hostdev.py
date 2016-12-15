@@ -124,8 +124,10 @@ def __device_tree_hash(list_of_nodedev):
     The hash generation works iff the order of devices returned from libvirt is
     stable.
     """
-    return hashlib.sha256(
-        str((device.XMLDesc(0) for device in list_of_nodedev))).hexdigest()
+    current_hash = hashlib.sha256()
+    for device in list_of_nodedev:
+        current_hash.update(device.XMLDesc(0))
+    return current_hash.hexdigest()
 
 
 def _data_processor(target_bus='_ANY'):
