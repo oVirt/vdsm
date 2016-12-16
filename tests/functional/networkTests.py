@@ -1830,7 +1830,7 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @ValidatesHook('before_network_setup', 'testBeforeNetworkSetup.py', True,
-                   "#!/usr/bin/env python\n"
+                   "#!/usr/bin/python2\n"
                    "import json\n"
                    "import os\n"
                    "\n"

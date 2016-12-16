@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/python2
 """
 FCoE hook:
    if fcoe = true custom networks was specified enable FCoE for specified NIC

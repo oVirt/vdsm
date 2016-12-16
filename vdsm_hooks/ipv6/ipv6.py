@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/python2
 # Copyright 2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
