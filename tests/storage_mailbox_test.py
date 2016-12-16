@@ -63,10 +63,13 @@ class SPM_MailMonitorTests(TestCaseBase):
     def testThreadLeak(self):
         with StoragePoolStub() as pool:
             mailer = sm.SPM_MailMonitor(pool, 100)
-            threadCount = len(threading.enumerate())
-            mailer.stop()
-            mailer.run()
+            try:
+                threadCount = len(threading.enumerate())
+                mailer.stop()
+                mailer.run()
 
-            t = lambda: self.assertEquals(
-                threadCount, len(threading.enumerate()))
-            retry(AssertionError, t, timeout=4, sleep=0.1)
+                t = lambda: self.assertEquals(
+                    threadCount, len(threading.enumerate()))
+                retry(AssertionError, t, timeout=4, sleep=0.1)
+            finally:
+                self.assertTrue(mailer.wait(timeout=6))

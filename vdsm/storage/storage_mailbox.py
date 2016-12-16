@@ -579,10 +579,14 @@ class SPM_MailMonitor:
             self.log.warning("SPM_MailMonitor couldn't clear outgoing mail, "
                              "dd failed")
 
-        t = concurrent.thread(self.run, name="mailbox-spm",
-                              logger=self.log.name)
-        t.start()
+        self._thread = concurrent.thread(
+            self.run, name="mailbox-spm", logger=self.log.name)
+        self._thread.start()
         self.log.debug('SPM_MailMonitor created for pool %s' % self._poolID)
+
+    def wait(self, timeout=None):
+        self._thread.join(timeout=timeout)
+        return not self._thread.is_alive()
 
     def stop(self):
         self._stop = True
