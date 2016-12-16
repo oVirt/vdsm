@@ -558,8 +558,9 @@ class VolumeManifest(object):
         actual_gen = self.getMetaParam(sc.GENERATION)
         if requested_gen is not None and actual_gen != requested_gen:
             raise se.GenerationMismatch(requested_gen, actual_gen)
-        self.log.info("Starting operation on volume %s generation %d",
-                      self.volUUID, actual_gen)
+        self.log.info("Starting volume operation on %s (generation=%d, "
+                      "set_illegal=%s)",
+                      self.volUUID, actual_gen, set_illegal)
         if set_illegal:
             self.setLegality(sc.ILLEGAL_VOL)
 
@@ -575,7 +576,7 @@ class VolumeManifest(object):
             metadata[sc.LEGALITY] = sc.LEGAL_VOL
         metadata[sc.GENERATION] = next_gen
         self.setMetadata(metadata)
-        self.log.info("Operation completed on volume %s generation %d",
+        self.log.info("Volume operation completed on %s (generation=%d)",
                       self.volUUID, next_gen)
 
     def set_generation(self, current_gen, next_gen):
