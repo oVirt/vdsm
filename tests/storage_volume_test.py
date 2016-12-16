@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from contextlib import contextmanager
 
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeStorageDomainCache
@@ -110,13 +111,17 @@ class VolumeLeaseTest(VdsmTestCase):
 @expandPermutations
 class VolumeManifestTest(VdsmTestCase):
 
-    def test_operation(self):
+    @contextmanager
+    def volume(self):
         img_id = make_uuid()
         vol_id = make_uuid()
-
         with fake_env('file') as env:
             env.make_volume(MB, img_id, vol_id)
             vol = env.sd_manifest.produceVolume(img_id, vol_id)
+            yield vol
+
+    def test_operation(self):
+        with self.volume() as vol:
             vol.setMetadata = CountedInstanceMethod(vol.setMetadata)
             self.assertEqual(sc.LEGAL_VOL, vol.getLegality())
             with vol.operation():
@@ -126,12 +131,7 @@ class VolumeManifestTest(VdsmTestCase):
             self.assertEqual(2, vol.setMetadata.nr_calls)
 
     def test_operation_fail_inside_context(self):
-        img_id = make_uuid()
-        vol_id = make_uuid()
-
-        with fake_env('file') as env:
-            env.make_volume(MB, img_id, vol_id)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        with self.volume() as vol:
             self.assertEqual(sc.LEGAL_VOL, vol.getLegality())
             with self.assertRaises(ValueError):
                 with vol.operation():
@@ -140,26 +140,16 @@ class VolumeManifestTest(VdsmTestCase):
 
     @permutations(((None, 0), (100, 100)))
     def test_get_info_generation_id(self, orig_gen, info_gen):
-        img_id = make_uuid()
-        vol_id = make_uuid()
-
-        with fake_env('file') as env:
-            env.make_volume(MB, img_id, vol_id)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        with self.volume() as vol:
             vol.getLeaseStatus = lambda: 'unused'
             if orig_gen is not None:
                 vol.setMetaParam(sc.GENERATION, orig_gen)
             self.assertEqual(info_gen, vol.getInfo()['generation'])
 
     def test_operation_valid_generation(self):
-        img_id = make_uuid()
-        vol_id = make_uuid()
         generation = 100
-
-        with fake_env('file') as env:
-            env.make_volume(MB, img_id, vol_id)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
-            vol.setMetaParam(sc.GENERATION, 100)
+        with self.volume() as vol:
+            vol.setMetaParam(sc.GENERATION, generation)
             with vol.operation(generation):
                 pass
             self.assertEqual(generation + 1, vol.getMetaParam(sc.GENERATION))
@@ -167,12 +157,7 @@ class VolumeManifestTest(VdsmTestCase):
     @permutations(((100, 99), (100, 101)))
     def test_operation_invalid_generation_raises(self, actual_generation,
                                                  requested_generation):
-        img_id = make_uuid()
-        vol_id = make_uuid()
-
-        with fake_env('file') as env:
-            env.make_volume(MB, img_id, vol_id)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        with self.volume() as vol:
             vol.setMetaParam(sc.GENERATION, actual_generation)
             with self.assertRaises(se.GenerationMismatch):
                 with vol.operation(requested_generation):
@@ -185,24 +170,14 @@ class VolumeManifestTest(VdsmTestCase):
         (sc.MAX_GENERATION - 1, sc.MAX_GENERATION),
     ))
     def test_generation_wrapping(self, first_gen, next_gen):
-        img_id = make_uuid()
-        vol_id = make_uuid()
-
-        with fake_env('file') as env:
-            env.make_volume(MB, img_id, vol_id)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        with self.volume() as vol:
             vol.setMetaParam(sc.GENERATION, first_gen)
             with vol.operation(first_gen):
                 pass
             self.assertEqual(next_gen, vol.getMetaParam(sc.GENERATION))
 
     def test_operation_on_illegal_volume(self):
-        img_id = make_uuid()
-        vol_id = make_uuid()
-
-        with fake_env('file') as env:
-            env.make_volume(MB, img_id, vol_id)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        with self.volume() as vol:
             # This volume was illegal before the operation
             vol.setMetaParam(sc.LEGALITY, sc.ILLEGAL_VOL)
             vol.setMetaParam(sc.GENERATION, 0)
@@ -215,12 +190,7 @@ class VolumeManifestTest(VdsmTestCase):
             self.assertEqual(sc.ILLEGAL_VOL, vol.getMetaParam(sc.LEGALITY))
 
     def test_operation_modifying_metadata(self):
-        img_id = make_uuid()
-        vol_id = make_uuid()
-
-        with fake_env('file') as env:
-            env.make_volume(MB, img_id, vol_id)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        with self.volume() as vol:
             with vol.operation(requested_gen=0, set_illegal=False):
                 vol.setMetaParam(sc.DESCRIPTION, "description")
             # Metadata changes inside the context should not be overriden by
@@ -228,23 +198,13 @@ class VolumeManifestTest(VdsmTestCase):
             self.assertEqual("description", vol.getMetaParam(sc.DESCRIPTION))
 
     def test_set_generation_wrong_current_value(self):
-        img_id = make_uuid()
-        vol_id = make_uuid()
-
-        with fake_env('file') as env:
-            env.make_volume(MB, img_id, vol_id)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        with self.volume() as vol:
             vol.setMetaParam(sc.GENERATION, 1)
             self.assertRaises(se.GenerationMismatch,
                               vol.set_generation, 0, 2)
 
     def test_set_generation(self):
-        img_id = make_uuid()
-        vol_id = make_uuid()
-
-        with fake_env('file') as env:
-            env.make_volume(MB, img_id, vol_id)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        with self.volume() as vol:
             vol.setMetaParam(sc.GENERATION, 1)
             vol.set_generation(1, 2)
             self.assertEqual(2, vol.getMetaParam(sc.GENERATION))
