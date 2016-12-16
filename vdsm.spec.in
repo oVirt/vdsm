@@ -1060,11 +1060,6 @@ exit 0
 %dir %{_localstatedir}/lib/%{vdsm_name}/netconfback
 %dir %{_localstatedir}/lib/%{vdsm_name}/persistence
 %dir %{_localstatedir}/lib/%{vdsm_name}/upgrade
-%dir %{_localstatedir}/run/%{vdsm_name}
-%dir %{_localstatedir}/run/%{vdsm_name}/sourceRoutes
-%dir %{_localstatedir}/run/%{vdsm_name}/trackedInterfaces
-%ghost %dir %{_localstatedir}/run/%{vdsm_name}/payload
-%dir %{_localstatedir}/run/%{vdsm_name}/v2v
 %dir %{_localstatedir}/log/%{vdsm_name}
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
 %dir %{_localstatedir}/log/%{vdsm_name}/import

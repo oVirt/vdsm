@@ -28,5 +28,7 @@ shopt -s extglob
 if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.in|Makefile.am' ; then
     ./automation/build-artifacts.sh
     yum -y install "$EXPORT_DIR/"!(*.src).rpm
+    export LC_ALL=C  # no idea why this is suddenly needed
     rpmlint "$EXPORT_DIR/"*.src.rpm
+    ! rpmlint "$EXPORT_DIR/"!(*.src).rpm | grep dir-or-file-in-var-run
 fi
