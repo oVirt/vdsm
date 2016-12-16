@@ -120,7 +120,9 @@ class TestVm(XMLTestCase):
 
     def testDomXML(self):
         expectedXML = """
-           <domain xmlns:ns0="http://ovirt.org/vm/tune/1.0" type="kvm">
+          <domain type="kvm"
+                  xmlns:ns0="http://ovirt.org/vm/tune/1.0"
+                  xmlns:ns1="http://ovirt.org/vm/1.0">
               <name>testVm</name>
               <uuid>9ffe28b6-6134-4b1e-8804-1185f49c436f</uuid>
               <memory>1048576</memory>
@@ -129,6 +131,7 @@ class TestVm(XMLTestCase):
               <devices/>
               <metadata>
                  <ns0:qos/>
+                 <ns1:vm/>
               </metadata>
            </domain>"""
 

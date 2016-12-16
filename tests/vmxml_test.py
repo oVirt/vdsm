@@ -232,16 +232,16 @@ def run():
 
     def test_namespaces(self):
         expected_xml = '''
-        <domain xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
+        <domain xmlns:ovirt-tune="http://ovirt.org/vm/tune/1.0">
           <metadata>
-            <ovirt:qos/>
+            <ovirt-tune:qos/>
           </metadata>
         </domain>
         '''
         domain = vmxml.Element('domain')
         metadata = vmxml.Element('metadata')
         domain.appendChild(metadata)
-        qos = vmxml.Element('qos', namespace='ovirt',
+        qos = vmxml.Element('qos', namespace='ovirt-tune',
                             namespace_uri='http://ovirt.org/vm/tune/1.0')
         metadata.appendChild(qos)
         self.assertXMLEqual(vmxml.format_xml(domain), expected_xml)
@@ -304,9 +304,12 @@ class TestVmXmlMetadata(XMLTestCase):
 
     def test_no_custom(self):
         expected = """
-          <domain type="kvm" xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
+          <domain type="kvm"
+                  xmlns:ovirt-tune="http://ovirt.org/vm/tune/1.0"
+                  xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
             <metadata>
-              <ovirt:qos/>
+              <ovirt-tune:qos/>
+              <ovirt-vm:vm/>
             </metadata>
           </domain>
         """
@@ -326,9 +329,12 @@ class TestVmXmlMetadata(XMLTestCase):
     ])
     def test_no_container_data(self, conf):
         expected = """
-          <domain type="kvm" xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
+          <domain type="kvm"
+                  xmlns:ovirt-tune="http://ovirt.org/vm/tune/1.0"
+                  xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
             <metadata>
-              <ovirt:qos/>
+              <ovirt-tune:qos/>
+              <ovirt-vm:vm/>
             </metadata>
           </domain>
         """
@@ -341,11 +347,13 @@ class TestVmXmlMetadata(XMLTestCase):
     def test_container_data(self):
         expected = """
           <domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
-                  xmlns:ns1="http://ovirt.org/vm/containers/1.0"
+                  xmlns:ns1="http://ovirt.org/vm/1.0"
+                  xmlns:ns2="http://ovirt.org/vm/containers/1.0"
                   type="kvm">
             <metadata>
               <ns0:qos />
-              <ns1:container image="foobar">foobar</ns1:container>
+              <ns1:vm/>
+              <ns2:container image="foobar">foobar</ns2:container>
             </metadata>
           </domain>
         """
@@ -364,16 +372,18 @@ class TestVmXmlMetadata(XMLTestCase):
     def test_container_data_drive_map(self):
         expected = """
           <domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
-                  xmlns:ns1="http://ovirt.org/vm/containers/1.0"
-                  xmlns:ns2="http://ovirt.org/vm/containers/drivemap/1.0"
+                  xmlns:ns1="http://ovirt.org/vm/1.0"
+                  xmlns:ns2="http://ovirt.org/vm/containers/1.0"
+                  xmlns:ns3="http://ovirt.org/vm/containers/drivemap/1.0"
                   type="kvm">
             <metadata>
               <ns0:qos />
-              <ns1:container image="foobar">foobar</ns1:container>
-              <ns2:drivemap>
-                <ns2:volume drive="vda" name="data1" />
-                <ns2:volume drive="vdb" name="data2" />
-              </ns2:drivemap>
+              <ns1:vm/>
+              <ns2:container image="foobar">foobar</ns2:container>
+              <ns3:drivemap>
+                <ns3:volume drive="vda" name="data1" />
+                <ns3:volume drive="vdb" name="data2" />
+              </ns3:drivemap>
             </metadata>
           </domain>
         """

@@ -60,7 +60,8 @@ def _get_vdsm_domains():
     Return a list of Domains created by VDSM.
     """
     return [dom_obj for dom_obj, dom_xml in _list_domains()
-            if vmxml.has_channel(dom_xml, vmchannels.DEVICE_NAME)]
+            if vmxml.has_channel(dom_xml, vmchannels.DEVICE_NAME) or
+            vmxml.has_vdsm_metadata(dom_xml)]
 
 
 class File(object):

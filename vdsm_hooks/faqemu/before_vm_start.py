@@ -440,7 +440,9 @@ def _channel_remove_spicevmc_test():
 @workaround_testcase()
 def _memory_lower_max_test():
     domxml = minidom.parseString('''
-    <domain type="kvm" xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
+    <domain type="kvm"
+            xmlns:ovirt-tune="http://ovirt.org/vm/tune/1.0"
+            xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
         <currentMemory>1048576</currentMemory>
         <maxMemory slots="16">4294967296</maxMemory>
     </domain>

@@ -29,9 +29,12 @@ from vdsm import constants
 from vdsm import cpuarch
 from vdsm import utils
 
+METADATA_VM_VDSM_URI = 'http://ovirt.org/vm/1.0'
+METADATA_VM_VDSM_ELEMENT = 'vm'
+METADATA_VM_VDSM_PREFIX = 'ovirt-vm'
 METADATA_VM_TUNE_URI = 'http://ovirt.org/vm/tune/1.0'
 METADATA_VM_TUNE_ELEMENT = 'qos'
-METADATA_VM_TUNE_PREFIX = 'ovirt'
+METADATA_VM_TUNE_PREFIX = 'ovirt-tune'
 
 _BOOT_MENU_TIMEOUT = 10000  # milliseconds
 
@@ -263,6 +266,17 @@ def has_channel(domXML, name):
     return False
 
 
+def has_vdsm_metadata(domXML):
+    domObj = etree.fromstring(domXML)
+    metadata = domObj.findall('metadata')
+    nsdict = {METADATA_VM_VDSM_PREFIX, METADATA_VM_VDSM_URI}
+    vdsmtag = METADATA_VM_VDSM_PREFIX + ':' + METADATA_VM_VDSM_ELEMENT
+    for md in metadata:
+        if len(md.findall(vdsmtag, nsdict)) > 0:
+            return True
+    return False
+
+
 def device_address(device_xml, index=0):
     """
     Obtain device's address from libvirt
@@ -442,10 +456,12 @@ class Domain(object):
         """
         Add the namespaced qos metadata element to the domain
 
-        <domain xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
+        <domain xmlns:ovirt-tune="http://ovirt.org/vm/tune/1.0"
+                xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
         ...
            <metadata>
-              <ovirt:qos xmlns:ovirt=>
+              <ovirt-tune:qos xmlns:ovirt-tune=>
+              <ovirt-vm:vm xmlns:ovirt-vm=>
            </metadata>
         ...
         </domain>
@@ -453,6 +469,7 @@ class Domain(object):
 
         metadata = Element('metadata')
         self._appendMetadataQOS(metadata)
+        self._appendMetadataVDSM(metadata)
         self._appendMetadataContainer(metadata)
         self.dom.appendChild(metadata)
 
@@ -460,6 +477,11 @@ class Domain(object):
         metadata.appendChild(Element(METADATA_VM_TUNE_ELEMENT,
                                      namespace=METADATA_VM_TUNE_PREFIX,
                                      namespace_uri=METADATA_VM_TUNE_URI))
+
+    def _appendMetadataVDSM(self, metadata):
+        metadata.appendChild(Element(METADATA_VM_VDSM_ELEMENT,
+                                     namespace=METADATA_VM_VDSM_PREFIX,
+                                     namespace_uri=METADATA_VM_VDSM_URI))
 
     def _appendMetadataContainer(self, metadata):
         custom = self.conf.get('custom', {})
