@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import logging
 import threading
 import os
 import shutil
@@ -35,24 +36,36 @@ class StoragePoolStub(object):
     def __init__(self):
         self.spUUID = make_uuid()
         self.storage_repository = tempfile.mkdtemp(dir='/var/tmp')
-        self.__masterDir = os.path.join(self.storage_repository, self.spUUID,
-                                        "mastersd", DOMAIN_META_DATA)
 
-        os.makedirs(self.__masterDir)
+    def __enter__(self):
+        masterdir = os.path.join(
+            self.storage_repository, self.spUUID, "mastersd", DOMAIN_META_DATA)
+
+        os.makedirs(masterdir)
+
         for fname in ["id", "inbox", "outbox"]:
-            with open(os.path.join(self.__masterDir, fname), "w") as f:
+            with open(os.path.join(masterdir, fname), "w") as f:
                 f.write("DATA")
 
-    def __del__(self):
-        # rmtree removes the folder as well
-        shutil.rmtree(self.storage_repository)
+        return self
+
+    def __exit__(self, type, value, traceback):
+        try:
+            shutil.rmtree(self.storage_repository)
+        except OSError:
+            if type is None:
+                raise
+            logging.exception("rmtree(%s) failed", self.storage_repository)
 
 
 class SPM_MailMonitorTests(TestCaseBase):
     def testThreadLeak(self):
-        mailer = sm.SPM_MailMonitor(StoragePoolStub(), 100)
-        threadCount = len(threading.enumerate())
-        mailer.stop()
-        mailer.run()
-        t = lambda: self.assertEquals(threadCount, len(threading.enumerate()))
-        retry(AssertionError, t, timeout=4, sleep=0.1)
+        with StoragePoolStub() as pool:
+            mailer = sm.SPM_MailMonitor(pool, 100)
+            threadCount = len(threading.enumerate())
+            mailer.stop()
+            mailer.run()
+
+            t = lambda: self.assertEquals(
+                threadCount, len(threading.enumerate()))
+            retry(AssertionError, t, timeout=4, sleep=0.1)
