@@ -19,17 +19,18 @@
 #
 
 import logging
-import threading
 import os
 import shutil
+import tempfile
+import threading
 
 from testlib import make_uuid
 from testlib import VdsmTestCase as TestCaseBase
 
-import storage.storage_mailbox as sm
-from storage.sd import DOMAIN_META_DATA
 from vdsm.utils import retry
-import tempfile
+
+from storage.sd import DOMAIN_META_DATA
+import storage.storage_mailbox as sm
 
 
 class StoragePoolStub(object):
