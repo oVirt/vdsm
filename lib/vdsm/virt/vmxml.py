@@ -269,7 +269,7 @@ def has_channel(domXML, name):
 def has_vdsm_metadata(domXML):
     domObj = etree.fromstring(domXML)
     metadata = domObj.findall('metadata')
-    nsdict = {METADATA_VM_VDSM_PREFIX, METADATA_VM_VDSM_URI}
+    nsdict = {METADATA_VM_VDSM_PREFIX: METADATA_VM_VDSM_URI}
     vdsmtag = METADATA_VM_VDSM_PREFIX + ':' + METADATA_VM_VDSM_ELEMENT
     for md in metadata:
         if len(md.findall(vdsmtag, nsdict)) > 0:

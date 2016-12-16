@@ -29,7 +29,7 @@ CONF_TO_DOMXML_X86_64 = [({
     'smp': '1', 'cpuPinning': {}, 'numaTune': {}, 'maxVCpus': '160',
     'tabletEnable': False,
     'displayNetwork': 'mydisp', 'custom': {},
-    'guestNumaNodes': []},
+    'guestNumaNodes': [], 'agentChannelName': 'com.redhat.rhevm.vdsm'},
 
     """<?xml version="1.0" encoding="utf-8"?>
        <domain type="kvm"
@@ -42,9 +42,9 @@ CONF_TO_DOMXML_X86_64 = [({
             <vcpu current="1">160</vcpu>
             <devices>
                 <channel type="unix">
-                    <target name="com.redhat.rhevm.vdsm" type="virtio"/>
+                    <target name="%(agentChannelName)s" type="virtio"/>
                     <source mode="bind"
-       path="/var/lib/libvirt/qemu/channels/%(vmId)s.com.redhat.rhevm.vdsm"/>
+       path="/var/lib/libvirt/qemu/channels/%(vmId)s.%(agentChannelName)s"/>
                 </channel>
                 <channel type="unix">
                     <target name="org.qemu.guest_agent.0" type="virtio"/>
@@ -99,7 +99,7 @@ CONF_TO_DOMXML_PPC64 = [({
     'smp': '1', 'cpuPinning': {}, 'numaTune': {}, 'maxVCpus': '160',
     'tabletEnable': False,
     'displayNetwork': 'mydisp', 'custom': {},
-    'guestNumaNodes': []},
+    'guestNumaNodes': [], 'agentChannelName': 'com.redhat.rhevm.vdsm'},
 
     """<?xml version="1.0" encoding="utf-8"?>
        <domain type="kvm"
@@ -112,9 +112,9 @@ CONF_TO_DOMXML_PPC64 = [({
             <vcpu current="1">160</vcpu>
             <devices>
                 <channel type="unix">
-                    <target name="com.redhat.rhevm.vdsm" type="virtio"/>
+                    <target name="%(agentChannelName)s" type="virtio"/>
                     <source mode="bind"
-       path="/var/lib/libvirt/qemu/channels/%(vmId)s.com.redhat.rhevm.vdsm"/>
+       path="/var/lib/libvirt/qemu/channels/%(vmId)s.%(agentChannelName)s"/>
                 </channel>
                 <channel type="unix">
                     <target name="org.qemu.guest_agent.0" type="virtio"/>

@@ -6902,6 +6902,14 @@ types:
             name: maxVCpus
             type: string
             datatype: uint
+        -   added: '4.2'
+            defaultvalue: null
+            description: The name to use for the oVirt guest agent channel.
+                         When not specified the legacy name
+                         'com.redhat.rhevm.vdsm' will be used.
+            name: agentChannelName
+            type: string
+
         type: object
 
     VmStats: &VmStats

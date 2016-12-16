@@ -301,7 +301,9 @@ class Vm(object):
             self._connection = containersconnection.get(cif)
         if 'vmName' not in self.conf:
             self.conf['vmName'] = 'n%s' % self.id
-        self._guestSocketFile = self._makeChannelPath(vmchannels.DEVICE_NAME)
+        self._agent_channel_name = self.conf.get('agentChannelName',
+                                                 vmchannels.DEVICE_NAME)
+        self._guestSocketFile = self._makeChannelPath(self._agent_channel_name)
         self._qemuguestSocketFile = self._makeChannelPath(
             vmchannels.QEMU_GA_DEVICE_NAME)
         self.guestAgent = guestagent.GuestAgent(
@@ -1755,7 +1757,7 @@ class Vm(object):
                     list(itertools.chain(*self._devices.values())))
 
         domxml._appendAgentDevice(self._guestSocketFile.decode('utf-8'),
-                                  vmchannels.DEVICE_NAME)
+                                  self._agent_channel_name)
         domxml._appendAgentDevice(self._qemuguestSocketFile.decode('utf-8'),
                                   vmchannels.QEMU_GA_DEVICE_NAME)
         domxml.appendInput()
@@ -1842,8 +1844,10 @@ class Vm(object):
         This is necessary to prevent incoming migrations, restoring of VMs and
         the upgrade of VDSM with running VMs to fail on this.
         """
+        known_channel_names = (vmchannels.QEMU_GA_DEVICE_NAME,
+                               self._agent_channel_name)
         for name, path in self._domain.all_channels():
-            if name not in vmchannels.AGENT_DEVICE_NAMES:
+            if name not in known_channel_names:
                 continue
 
             uuidPath = self._makeChannelPath(name)

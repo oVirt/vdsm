@@ -153,14 +153,20 @@ class RecoveryFunctionsTests(TestCaseBase):
         'novdsm': CONF_TO_DOMXML_NO_VDSM,
     }
 
-    def _buildAllDomains(self, arch):
+    def _buildAllDomains(self, arch, channelName=None):
         for conf, _ in self._CONFS[arch]:
+            if channelName is not None:
+                conf = conf.copy()
+                conf['agentChannelName'] = channelName
             with fake.VM(conf, arch=arch) as v:
                 domXml = v._buildDomainXML()
                 yield fake.Domain(domXml, vmId=v.id), domXml
 
-    def _getAllDomains(self, arch):
+    def _getAllDomains(self, arch, channelName=None):
         for conf, rawXml in self._CONFS[arch]:
+            if channelName is not None:
+                conf = conf.copy()
+                conf['agentChannelName'] = channelName
             domXml = rawXml % conf
             yield fake.Domain(domXml, vmId=conf['vmId']), domXml
 
@@ -172,6 +178,15 @@ class RecoveryFunctionsTests(TestCaseBase):
     def testGetVDSMDomains(self, arch):
         with MonkeyPatchScope([(recovery, '_list_domains',
                                 lambda: self._buildAllDomains(arch)),
+                               (cpuarch, 'effective', lambda: arch)]):
+            self.assertEqual([v.UUIDString()
+                             for v in recovery._get_vdsm_domains()],
+                             self._getAllDomainIds(arch))
+
+    @permutations([[cpuarch.X86_64], [cpuarch.PPC64]])
+    def testGetVDSMDomainsWithChannel(self, arch):
+        with MonkeyPatchScope([(recovery, '_list_domains',
+                                lambda: self._buildAllDomains(arch, 'chan')),
                                (cpuarch, 'effective', lambda: arch)]):
             self.assertEqual([v.UUIDString()
                              for v in recovery._get_vdsm_domains()],
