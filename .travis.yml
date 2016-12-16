@@ -7,9 +7,14 @@ services:
 git:
   depth: 9999999
 
+env:
+  matrix:
+    - DOCKER_IMAGE=nirs/vdsm-centos
+    - DOCKER_IMAGE=nirs/vdsm-fedora
+
 before_install:
   - docker --version
-  - docker pull edwardhaas/ovirt-vdsm-dev
+  - docker pull $DOCKER_IMAGE
 
 script:
-  - docker run --rm=true -it -v `pwd`:/vdsm:rw edwardhaas/ovirt-vdsm-dev /bin/bash -c "cd /vdsm && ./autogen.sh --system && make; make check-unit"
+  - docker run --env TRAVIS_CI=1 --privileged --rm -it -v `pwd`:/vdsm:Z $DOCKER_IMAGE bash -c "cd /vdsm && ./autogen.sh --system && make && make check"
