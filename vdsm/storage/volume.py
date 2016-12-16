@@ -516,26 +516,53 @@ class VolumeManifest(object):
         pass
 
     @contextmanager
-    def operation(self, requested_gen=None):
+    def operation(self, requested_gen=None, set_illegal=True):
         """
+        If generation is given check that the volume's generation matches, and
+        raise se.GenerationMismatch if not.
+
+        If set_illegal is True, set volume to illegal before starting the
+        operation.
+
+        When the operation ends, increase the generation of the volume, and if
+        set_illegal was True, mark the volume as legal.
+
         Must be called with the Volume Lease held.
 
         In order to detect interrupted datapath operations a volume should be
         marked ILLEGAL prior to the first modification of data and subsequently
         marked LEGAL again once the operation has completed.  Thus, if an
         interruption occurs the volume will remain in an ILLEGAL state.  When
-        the volume is legal we want to call volume.getInfo to determine if this
+        the volume is legal we want to call Volume.getInfo to determine if this
         operation has not been started or has finished successfully.  We enable
         this by incrementing the generation after the operation completes.
 
-        If generation is given we check that the volume's generation matches.
+        During some operations the volume is already illegal when we start the
+        operation, so we should not modify the legality of the volume during
+        the operation. For example, in cold merge and image upload, we set the
+        volume to illegal in the beginning of the flow, and set it to legal on
+        the end on the flow.
+
+        Example usage::
+
+            with volume.operation(7):
+                # volume is illegal here...
+
+            # generation increased to 8
+
+            with volume.operation(8, set_illegal=False):
+                # volume legality unchanged
+
+            # generation increased to 9
         """
         actual_gen = self.getMetaParam(sc.GENERATION)
         if requested_gen is not None and actual_gen != requested_gen:
             raise se.GenerationMismatch(requested_gen, actual_gen)
         self.log.info("Starting operation on volume %s generation %d",
                       self.volUUID, actual_gen)
-        self.setLegality(sc.ILLEGAL_VOL)
+        if set_illegal:
+            self.setLegality(sc.ILLEGAL_VOL)
+
         yield
         # Note: We intentionally do not use a try block here because we don't
         # want the following code to run if there was an error.
@@ -544,7 +571,8 @@ class VolumeManifest(object):
         # and the generation must be updated together in one write.
         next_gen = _next_generation(actual_gen)
         metadata = self.getMetadata()
-        metadata[sc.LEGALITY] = sc.LEGAL_VOL
+        if set_illegal:
+            metadata[sc.LEGALITY] = sc.LEGAL_VOL
         metadata[sc.GENERATION] = next_gen
         self.setMetadata(metadata)
         self.log.info("Operation completed on volume %s generation %d",

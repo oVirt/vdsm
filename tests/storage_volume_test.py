@@ -196,6 +196,37 @@ class VolumeManifestTest(VdsmTestCase):
                 pass
             self.assertEqual(next_gen, vol.getMetaParam(sc.GENERATION))
 
+    def test_operation_on_illegal_volume(self):
+        img_id = make_uuid()
+        vol_id = make_uuid()
+
+        with fake_env('file') as env:
+            env.make_volume(MB, img_id, vol_id)
+            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+            # This volume was illegal before the operation
+            vol.setMetaParam(sc.LEGALITY, sc.ILLEGAL_VOL)
+            vol.setMetaParam(sc.GENERATION, 0)
+            with vol.operation(requested_gen=0, set_illegal=False):
+                # It should remain illegal during the operation
+                self.assertEqual(sc.ILLEGAL_VOL, vol.getMetaParam(sc.LEGALITY))
+                pass
+            self.assertEqual(1, vol.getMetaParam(sc.GENERATION))
+            # It should remain illegal after the operation
+            self.assertEqual(sc.ILLEGAL_VOL, vol.getMetaParam(sc.LEGALITY))
+
+    def test_operation_modifying_metadata(self):
+        img_id = make_uuid()
+        vol_id = make_uuid()
+
+        with fake_env('file') as env:
+            env.make_volume(MB, img_id, vol_id)
+            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+            with vol.operation(requested_gen=0, set_illegal=False):
+                vol.setMetaParam(sc.DESCRIPTION, "description")
+            # Metadata changes inside the context should not be overriden by
+            # wirting the new generation.
+            self.assertEqual("description", vol.getMetaParam(sc.DESCRIPTION))
+
     def test_set_generation_wrong_current_value(self):
         img_id = make_uuid()
         vol_id = make_uuid()
