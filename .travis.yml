@@ -9,8 +9,8 @@ git:
 
 env:
   matrix:
-    - DOCKER_IMAGE=nirs/vdsm-centos
-    - DOCKER_IMAGE=nirs/vdsm-fedora
+    - DOCKER_IMAGE=ovirtorg/vdsm-test-centos
+    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora
 
 before_install:
   - docker --version
