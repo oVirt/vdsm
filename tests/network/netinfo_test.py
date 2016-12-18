@@ -242,7 +242,8 @@ class TestNetinfo(TestCaseBase):
                 self.assertEqual(
                     misc.getIfaceCfg(deviceName)['NETMASK'], '255.255.0.0')
 
-    @broken_on_ci("TODO: provide a reason", exception=AssertionError)
+    @broken_on_ci('Bond options scanning is fragile on CI',
+                  exception=AssertionError)
     @MonkeyPatch(bonding, 'BONDING_DEFAULTS', bonding.BONDING_DEFAULTS
                  if os.path.exists(bonding.BONDING_DEFAULTS)
                  else '../vdsm/bonding-defaults.json')
@@ -422,7 +423,7 @@ class TestIPv6Addresses(TestCaseBase):
             self.assertTrue(addresses.is_ipv6(ip_addrs[0]))
             self.assertTrue(not addresses.is_dynamic(ip_addrs[0]))
 
-    @broken_on_ci("TODO: provide a reason")
+    @broken_on_ci('Using dnsmasq for ipv6 RA is unstable on CI')
     @ValidateRunningAsRoot
     def test_local_auto_with_dynamic_address_from_ra(self):
         IPV6_NETADDRESS = '2001:1:1:1'
