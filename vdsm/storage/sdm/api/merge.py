@@ -64,9 +64,7 @@ class Job(base.Job):
                                                sc.ILLEGAL_VOL,
                                                base_legality)
 
-            # TODO Use volume operation. It cannot be used now since it
-            # changes volume legality.
-            with self.subchain.prepare():
+            with self.subchain.prepare(), self.subchain.volume_operation():
                 self.operation = qemuimg.commit(
                     self.subchain.top_vol.getVolumePath(),
                     topFormat=sc.fmt2str(self.subchain.top_vol.getFormat()),

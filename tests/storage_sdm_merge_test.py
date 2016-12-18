@@ -124,6 +124,9 @@ class TestMergeSubchain(VdsmTestCase):
             self.assertEqual(sorted(self.expected_locks(base_vol)),
                              sorted(guarded.context.locks))
 
+            self.assertEqual(base_vol.getLegality(), sc.ILLEGAL_VOL)
+            self.assertEqual(base_vol.getMetaParam(sc.GENERATION), 1)
+
     def expected_locks(self, base_vol):
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, base_vol.sdUUID)
         ret = [
@@ -173,6 +176,7 @@ class TestMergeSubchain(VdsmTestCase):
             pattern = 0xf0 + base_index
             qemu_pattern_verify(base_vol.volumePath, qemuimg.FORMAT.RAW,
                                 offset=offset, len=1024, pattern=pattern)
+            self.assertEqual(base_vol.getMetaParam(sc.GENERATION), 0)
 
     def test_merge_legal_base(self):
         job_id = make_uuid()
@@ -193,3 +197,4 @@ class TestMergeSubchain(VdsmTestCase):
             wait_for_job(job)
             self.assertEquals(job.status, jobs.STATUS.FAILED)
             self.assertEquals(type(job.error), se.UnexpectedVolumeState)
+            self.assertEqual(base_vol.getMetaParam(sc.GENERATION), 0)

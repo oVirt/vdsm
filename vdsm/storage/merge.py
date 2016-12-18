@@ -132,6 +132,10 @@ class SubchainInfo(properties.Owner):
         if self.top_vol.isShared():
             raise se.SharedVolumeNonWritable(self.top_vol)
 
+    def volume_operation(self):
+        return self.base_vol.operation(requested_gen=self.base_generation,
+                                       set_illegal=False)
+
     @contextmanager
     def prepare(self):
         top_index = self.chain.index(self.top_id)
