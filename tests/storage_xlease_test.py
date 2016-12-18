@@ -254,7 +254,7 @@ def bench():
                 pass
 """
         with make_volume() as vol:
-            count = 1000
+            count = 100
             elapsed = timeit.timeit("bench()", setup=setup % vol.path,
                                     number=count)
             print("%d lookups in %.6f seconds (%.6f seconds per lookup)"
