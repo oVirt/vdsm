@@ -55,7 +55,6 @@ except ImportError:
     _glusterEnabled = False
 
 from vdsm import utils
-from vdsm import sysctl
 from vdsm import supervdsm_api
 from vdsm.storage import fuser
 from vdsm.storage import hba
@@ -228,14 +227,6 @@ class _SuperVdsm(object):
     @logDecorator
     def hbaRescan(self):
         return hba._rescan()
-
-    @logDecorator
-    def set_rp_filter_loose(self, dev):
-        sysctl.set_rp_filter_loose(dev)
-
-    @logDecorator
-    def set_rp_filter_strict(self, dev):
-        sysctl.set_rp_filter_strict(dev)
 
 
 def terminate(signo, frame):
