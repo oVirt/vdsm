@@ -20,7 +20,6 @@
 
 from __future__ import absolute_import
 from contextlib import contextmanager
-from functools import partial
 import logging
 
 from vdsm import jobs
@@ -152,15 +151,14 @@ class CopyDataDivEndpoint(properties.Owner):
         return sc.fmt2str(parent_vol.getFormat())
 
     @property
-    def volume_operation(self):
-        return partial(self.volume.operation, self.generation)
-
-    @property
     def volume(self):
         if self._vol is None:
             dom = sdCache.produce_manifest(self.sd_id)
             self._vol = dom.produceVolume(self.img_id, self.vol_id)
         return self._vol
+
+    def volume_operation(self):
+        return self.volume.operation(self.generation)
 
     @contextmanager
     def prepare(self):
