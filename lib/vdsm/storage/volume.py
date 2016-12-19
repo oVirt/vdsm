@@ -890,6 +890,39 @@ class Volume(object):
                      'ctime %s', pid, ctime)
 
     @classmethod
+    # metaID0 is different between file and block volumes. For file volumes,
+    # the value is the volume path, while for block volumes, the value is the
+    # storage domain UUID.
+    def renameLeaseRollback(cls, taskObj, metaID0, leaseOffset, sdUUID,
+                            volUUID):
+        cls.log.info("Rolling back lease rename (metaID0=%s, "
+                     "leaseOffset=%s, sdUUID=%s, volUUID=%s)",
+                     metaID0, leaseOffset, sdUUID, volUUID)
+        try:
+            metaID = (metaID0, int(leaseOffset))
+            cls.newVolumeLease(metaID, sdUUID, volUUID)
+        except Exception:
+            cls.log.exception("Could not rollback lease rename (metaID=%s, "
+                              "sdUUID=%s, volUUID=%s)",
+                              metaID, sdUUID, volUUID)
+
+    def renameLease(self, metaID, newUUID, recovery=True):
+        self.log.debug("Renaming volume lease %s to %s",
+                       self.volUUID, newUUID)
+        if recovery:
+            clsModule, clsName = self._getModuleAndClass()
+            vars.task.pushRecovery(
+                task.Recovery(
+                    "Rename lease rollback: " + newUUID,
+                    clsModule,
+                    clsName,
+                    "renameLeaseRollback",
+                    # Convert metaID to strings because task.Recovery supports
+                    # only string types.
+                    [metaID[0], str(metaID[1]), self.sdUUID, self.volUUID]))
+        self.newVolumeLease(metaID, self.sdUUID, newUUID)
+
+    @classmethod
     def rebaseVolumeRollback(cls, taskObj, sdUUID, srcImg,
                              srcVol, dstFormat, srcParent, unsafe):
         """
