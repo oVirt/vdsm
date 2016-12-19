@@ -23,7 +23,6 @@ TOX_MIN_VERSION = 2.5.0
 AUTOMAKE_OPTIONS = foreign
 
 SUBDIRS = \
-	client \
 	contrib \
 	helpers \
 	init \

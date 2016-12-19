@@ -369,7 +369,6 @@ AC_PATH_PROG([WGET_PATH], [wget], [/usr/bin/wget])
 # Keep sorted
 AC_OUTPUT([
 	Makefile
-	client/Makefile
 	contrib/Makefile
 	helpers/Makefile
 	init/Makefile

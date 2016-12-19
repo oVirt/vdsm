@@ -19,7 +19,6 @@ build-aux/depcomp
 build-aux/install-sh
 build-aux/missing
 build-aux/py-compile
-client/vdsClient
 config.log
 config.status
 configure

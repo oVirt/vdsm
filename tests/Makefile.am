@@ -156,7 +156,6 @@ test_modules = \
 	unicode_test.py \
 	utils_test.py \
 	vdscli_test.py \
-	vdsclient_test.py \
 	vdsmapi_test.py \
 	vdsmdumpchains_test.py \
 	verify.py \

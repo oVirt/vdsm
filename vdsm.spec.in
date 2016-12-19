@@ -233,16 +233,6 @@ Linux hosts. VDSM manages and monitors the host's storage, memory and
 networks as well as virtual machine creation, other host administration
 tasks, statistics gathering, and log collection.
 
-%package cli
-Summary:        VDSM command line interface
-BuildArch:      noarch
-Requires: %{name}-client = %{version}-%{release}
-Requires: %{name}-python = %{version}-%{release}
-Requires: %{name}-xmlrpc = %{version}-%{release}
-
-%description cli
-Call VDSM commands from the command line. Used for testing and debugging.
-
 %package xmlrpc
 Summary:        VDSM xmlrpc API
 BuildArch:      noarch
@@ -256,8 +246,11 @@ ovirt-engine and vdsClient.
 %package client
 Summary:        VDSM client
 BuildArch:      noarch
+# A hack for unbreaking external packages that expect vdsm-cli.
+Provides: %{name}-cli
 Requires: %{name}-api = %{version}-%{release}
 Requires: %{name}-yajsonrpc = %{version}-%{release}
+Obsoletes: %{name}-cli <= 4.18
 
 %description client
 Access vdsm API from the command line.
@@ -1526,15 +1519,6 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vmfex
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vmfex
 %endif
-
-%files cli
-%license COPYING
-%{_bindir}/vdsClient
-%dir %{_datadir}/%{vdsm_name}
-%{_datadir}/%{vdsm_name}/vdsClient.py*
-%{_datadir}/%{vdsm_name}/vdsClientGluster.py*
-%{_sysconfdir}/bash_completion.d/vdsClient
-%{_mandir}/man1/vdsClient.1*
 
 %files xmlrpc
 %dir %{python_sitelib}/%{vdsm_name}
