@@ -734,7 +734,15 @@ class BlockVolume(volume.Volume):
                 name, "blockVolume", "BlockVolume", "renameVolumeRollback",
                 [self.sdUUID, newUUID, self.volUUID]))
 
+        # Save the metadaId before renaming the LV, because getMetadataId()
+        # uses the volume UUID and we need the metadataId before perform the
+        # rename.
+        metadataId = self.getMetadataId()
+
         lvm.renameLV(self.sdUUID, self.volUUID, newUUID)
+
+        self.renameLease(metadataId, newUUID, recovery=recovery)
+
         self._manifest.volUUID = newUUID
         self._manifest.volumePath = os.path.join(self.imagePath, newUUID)
 
