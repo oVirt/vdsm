@@ -25,6 +25,7 @@ from contextlib import contextmanager
 import image
 
 from vdsm import qemuimg
+from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
@@ -193,8 +194,13 @@ class VolumeManifest(object):
         # Version is always None when a lease is not acquired, although sanlock
         # always report the version. The clusterlock should be fixed to match
         # the schema.
-        version, host_id = sd_manifest.inquireVolumeLease(self.imgUUID,
-                                                          self.volUUID)
+        try:
+            version, host_id = sd_manifest.inquireVolumeLease(self.imgUUID,
+                                                              self.volUUID)
+        except clusterlock.InvalidLeaseName as e:
+            self.log.warning("Cannot get lease status: %s", e)
+            return None
+
         # TODO: Move this logic to clusterlock and fix callers to handle list
         # of owners instead of None.
         owners = [host_id] if host_id is not None else []

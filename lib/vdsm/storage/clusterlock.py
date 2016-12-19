@@ -71,7 +71,36 @@ HOST_STATUS_FAIL = "fail"
 HOST_STATUS_DEAD = "dead"
 
 
-class MultipleLeasesNotSupported(Exception):
+class Error(Exception):
+    def __str__(self):
+        return self.msg.format(self=self)
+
+
+class InvalidLeaseName(Error):
+    """
+    Raise when lease name does not match sanlock resource name on storage.
+
+    After legacy cold merge, we used to rename the temporary "<uuid>_MERGE"
+    volume to "<uuid>". However, the volume lease was not updated, and still
+    carry the old name "<uuid>_MERGE". Sanlock does not allow acquiring a lease
+    or even querying a lease with the wrong lease name.  Because the lease name
+    does not match the resource, this resource is not usable, and any flow
+    trying to take a volume lease will fail.  Practically, this means this
+    volume does not have a lease.
+
+    We plan to fix the legacy cold merge code causing this, but the bad leases
+    are out in the wild, and we must handle them.
+    """
+
+    msg = ("Sanlock resource name {self.resource} does not match lease name "
+           "{self.lease}, this lease must be repaired.")
+
+    def __init__(self, resource, lease):
+        self.resource = resource
+        self.lease = lease
+
+
+class MultipleLeasesNotSupported(Error):
     """
     Raised when trying to use multiple leases on a cluster lock that
     supports only single lease.
@@ -82,9 +111,6 @@ class MultipleLeasesNotSupported(Exception):
     def __init__(self, action, lease):
         self.action = action
         self.lease = lease
-
-    def __str__(self):
-        return self.msg.format(self=self)
 
 
 Lease = collections.namedtuple("Lease", "name, path, offset")
@@ -344,6 +370,9 @@ class SANLock(object):
 
     def inquire(self, lease):
         resource = sanlock.read_resource(lease.path, lease.offset)
+        if resource["resource"] != lease.name:
+            raise InvalidLeaseName(resource["resource"], lease)
+
         owners = sanlock.read_resource_owners(self._sdUUID, lease.name,
                                               [(lease.path, lease.offset)])
 
