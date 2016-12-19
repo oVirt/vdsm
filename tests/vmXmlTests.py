@@ -19,8 +19,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+from __future__ import print_function
 
+import os.path
 import re
+import timeit
 import xml.etree.ElementTree as etree
 
 from vdsm import cpuarch
@@ -29,7 +32,7 @@ from vdsm.virt import vmchannels
 from virt import domain_descriptor
 from virt import vmxml
 
-from testValidation import brokentest
+from testValidation import brokentest, slowtest
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase, permutations, expandPermutations
 
@@ -137,6 +140,29 @@ class TestVmXmlHelpers(XMLTestCase):
         vmxml.format_xml(dom, pretty=True)
         exported_2 = etree.tostring(dom)
         self.assertEqual(exported_1, exported_2)
+
+    @slowtest
+    def test_pretty_format_timing(self):
+        test_path = os.path.realpath(__file__)
+        dir_name = os.path.split(test_path)[0]
+        xml_path = os.path.join(dir_name, 'devices', 'data',
+                                'testComplexVm.xml')
+        xml = re.sub(' *\n *', '', open(xml_path).read())
+        setup = """
+import re
+from virt import vmxml
+xml = re.sub(' *\\n *', '', '''%s''')
+dom = vmxml.parse_xml(xml)
+def run():
+    vmxml.format_xml(dom, pretty=%%s)""" % (xml,)
+        repetitions = 100
+        elapsed = timeit.timeit('run()', setup=(setup % ('False',)),
+                                number=repetitions)
+        elapsed_pretty = timeit.timeit('run()', setup=(setup % ('True',)),
+                                       number=repetitions)
+        print('slowdown: %d%% (%.3f s per one domain)' %
+              (100 * (elapsed_pretty - elapsed) / elapsed,
+               (elapsed_pretty - elapsed) / repetitions,))
 
     @permutations([[None, 'topelement', 1],
                    ['topelement', 'topelement', 1],
