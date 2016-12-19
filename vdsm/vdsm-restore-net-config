@@ -128,21 +128,22 @@ def unified_restoration():
 
     _verify_all_devices_are_up(list(_owned_ifcfg_files()))
 
-    with _update_running_config(persistent_config):
+    _wait_for_for_all_devices_up(
+        available_config.networks.keys() + available_config.bonds.keys())
 
-        _wait_for_for_all_devices_up(
-            available_config.networks.keys() + available_config.bonds.keys())
-        if ipv6_supported():
-            _restore_disable_ipv6()
-        changed_config = _filter_changed_nets_bonds(available_config)
-        nets = changed_config.networks
-        bonds = changed_config.bonds
-        if nets or bonds:
-            _convert_to_blocking_dhcp(nets)
+    if ipv6_supported():
+        _restore_disable_ipv6()
+
+    classified_conf = _classify_nets_bonds_config(available_config)
+    setup_nets, setup_bonds, keep_nets, keep_bonds = classified_conf
+
+    with _update_running_config(keep_nets, keep_bonds):
+        if setup_nets or setup_bonds:
+            _convert_to_blocking_dhcp(setup_nets)
             logging.debug('Calling setupNetworks with networks (%s) '
-                          'and bond (%s).', nets, bonds)
-            setupNetworks(nets, bonds, {'connectivityCheck': False,
-                                        '_inRollback': True})
+                          'and bond (%s).', setup_nets, setup_bonds)
+            setupNetworks(setup_nets, setup_bonds,
+                          {'connectivityCheck': False, '_inRollback': True})
 
 
 def _verify_all_devices_are_up(owned_ifcfg_files):
@@ -170,16 +171,17 @@ def _upgrade_onboot(ifcfg_file):
 
 
 @contextmanager
-def _update_running_config(persistent_config):
-    """We must recreate RunningConfig so that following setSafeNetworkConfig
+def _update_running_config(networks, bonds):
+    """
+    Recreate RunningConfig so that following setSafeNetworkConfig
     will persist a valid configuration.
 
     If the setup fails for any reason, cleanup running config.
     """
     running_config = RunningConfig()
-    for net, net_attr in persistent_config.networks.iteritems():
+    for net, net_attr in networks.iteritems():
         running_config.setNetwork(net, net_attr)
-    for bonding, bonding_attr in persistent_config.bonds.iteritems():
+    for bonding, bonding_attr in bonds.iteritems():
         running_config.setBonding(bonding, bonding_attr)
     running_config.save()
 
@@ -257,38 +259,48 @@ def _filter_available(persistent_config):
     return BaseConfig(available_nets, available_bonds)
 
 
-def _filter_changed_nets_bonds(persistent_config):
-    """filter-out unchanged networks and bond, so that we are left only with
-    changes that must be applied"""
+def _classify_nets_bonds_config(persistent_config):
+    """
+    Return the configuration of networks and bonds, separating the ones changed
+    and the ones unchanged:
+    changed_nets, changed_bonds, unchanged_nets, unchanged_bonds
+    """
+    current_config = kernelconfig.KernelConfig(NetInfo(netswitch.netinfo()))
+    desired_config = kernelconfig.normalize(persistent_config)
 
-    kernel_config = kernelconfig.KernelConfig(NetInfo(netswitch.netinfo()))
-    normalized_config = kernelconfig.normalize(persistent_config)
+    changed_nets_names, unchanged_nets_names = _classify_entities_difference(
+        desired_config.networks, current_config.networks)
 
-    changed_bonds_names = _find_changed_or_missing(normalized_config.bonds,
-                                                   kernel_config.bonds)
-    changed_nets_names = _find_changed_or_missing(normalized_config.networks,
-                                                  kernel_config.networks)
-    changed_nets = dict((net, persistent_config.networks[net])
-                        for net in changed_nets_names)
-    changed_bonds = dict((bond, persistent_config.bonds[bond])
-                         for bond in changed_bonds_names)
+    changed_bonds_names, unchanged_bonds_names = _classify_entities_difference(
+        desired_config.bonds, current_config.bonds)
 
-    return BaseConfig(changed_nets, changed_bonds)
+    changed_nets = {net: persistent_config.networks[net]
+                    for net in changed_nets_names}
+    changed_bonds = {bond: persistent_config.bonds[bond]
+                     for bond in changed_bonds_names}
+    unchanged_nets = {net: persistent_config.networks[net]
+                      for net in unchanged_nets_names}
+    unchanged_bonds = {bond: persistent_config.bonds[bond]
+                       for bond in unchanged_bonds_names}
+
+    return changed_nets, changed_bonds, unchanged_nets, unchanged_bonds
 
 
-def _find_changed_or_missing(persisted, current):
+def _classify_entities_difference(desired, current):
     changed_or_missing = []
-    for name, persisted_attrs in persisted.iteritems():
+    unchanged = []
+    for name, desired_attrs in desired.iteritems():
         current_attrs = current.get(name)
-        if current_attrs != persisted_attrs:
-            logging.info("%s is different or missing from persistent "
-                         "configuration. current: %s, persisted: %s",
-                         name, current_attrs, persisted_attrs)
+        if current_attrs != desired_attrs:
             changed_or_missing.append(name)
+            logging.info('%s is different or missing from persistent '
+                         'configuration. current: %s, persisted: %s',
+                         name, current_attrs, desired_attrs)
         else:
-            logging.info("%s was not changed since last time it was persisted,"
-                         " skipping restoration.", name)
-    return changed_or_missing
+            unchanged.append(name)
+            logging.info('%s was not changed since last time it was persisted,'
+                         ' skipping restoration.', name)
+    return changed_or_missing, unchanged
 
 
 def _find_nets_with_available_devices(available_bonds, available_nics,
