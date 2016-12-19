@@ -394,6 +394,9 @@ check:
 			$(top_srcdir)/tests/run_tests_local.sh "$$modules"; \
 	fi
 
+# Disable builtin %.out rule, overrwriting out files
+%.out: ;
+
 run_%.sh: run_%.sh.in
 	@echo "  SED $@"; $(PATHSUBST) $< |$(CONFIGSUBST) >$@
 	chmod a+x "$@"
