@@ -10,6 +10,7 @@ m2crypto
 make
 mom
 openvswitch
+ovirt-imageio-common
 policycoreutils-python
 PyYAML
 python-blivet

@@ -16,6 +16,7 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     make \
     mom \
     openvswitch \
+    ovirt-imageio-common \
     psmisc \
     python-blivet \
     python-cpopen \
