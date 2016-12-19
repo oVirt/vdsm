@@ -29,17 +29,17 @@ vdsm_restart() {
 
 vdsm_caps_nonsecure() {
     if [ -t 1 ]; then
-        sudo vdsClient 0 getVdsCaps | less
+        sudo vdsm-client --unsecure Host getCapabilities | less
     else
-        sudo vdsClient 0 getVdsCaps
+        sudo vdsm-client --unsecure Host getCapabilities
     fi
 }
 
 vdsm_caps() {
     if [ -t 1 ]; then
-        sudo vdsClient -s 0 getVdsCaps | less
+        sudo vdsm-client Host getCapabilities | less
     else
-        sudo vdsClient -s 0 getVdsCaps
+        sudo vdsm-client Host getCapabilities
     fi
 }
 
