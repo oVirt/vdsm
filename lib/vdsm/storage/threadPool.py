@@ -204,21 +204,22 @@ class WorkerThread(object):
                 self.__pool.__tasks.put((id, cmd, args, callback))
             elif callback is None:
                 self.__pool.setRunningTask(True)
-                self.log.debug("Worker %s running task %s (cmd=%r, args=%r)",
-                               self._thread.name, id, cmd, args)
+                self.log.info("START task %s (cmd=%r, args=%r)",
+                              id, cmd, args)
                 cmd(args)
+                self.log.info("FINISH task %s", id)
                 self.__pool.setRunningTask(False)
             else:
                 self.__pool.setRunningTask(True)
-                self.log.debug("Worker %s running task %s (callback=%r, "
-                               "cmd=%r, args=%r)",
-                               self._thread.name, id, callback, cmd, args)
+                self.log.info("START task %s (callback=%r, cmd=%r, args=%r)",
+                              id, callback, cmd, args)
                 callback(cmd(args))
+                self.log.info("FINISH task %s", id)
                 self.__pool.setRunningTask(False)
         except Exception:
-            self.log.exception("Worker %s failed to run task %s (callback=%r, "
+            self.log.exception("FINISH task %s failed (callback=%r, "
                                "cmd=%r, args=%r)",
-                               self._thread.name, id, callback, cmd, args)
+                               id, callback, cmd, args)
 
     def run(self):
 
