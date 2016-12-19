@@ -302,7 +302,7 @@ class Vm(object):
         if 'vmName' not in self.conf:
             self.conf['vmName'] = 'n%s' % self.id
         self._agent_channel_name = self.conf.get('agentChannelName',
-                                                 vmchannels.DEVICE_NAME)
+                                                 vmchannels.LEGACY_DEVICE_NAME)
         self._guestSocketFile = self._makeChannelPath(self._agent_channel_name)
         self._qemuguestSocketFile = self._makeChannelPath(
             vmchannels.QEMU_GA_DEVICE_NAME)

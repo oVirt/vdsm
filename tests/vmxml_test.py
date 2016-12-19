@@ -63,7 +63,7 @@ class TestVmXmlFunctions(VmXmlTestCase):
     def test_has_channel(self, arch):
         for _, dom_xml in self._build_domain_xml(arch):
             self.assertEqual(True, vmxml.has_channel(
-                dom_xml, vmchannels.DEVICE_NAME))
+                dom_xml, vmchannels.LEGACY_DEVICE_NAME))
 
     @permutations([
         # custom, mapping

@@ -1011,7 +1011,7 @@ class TestVm(XMLTestCase):
         with fake.VM(self.conf) as testvm:
             self.assertEqual(
                 testvm._guestSocketFile,
-                testvm._makeChannelPath(vmchannels.DEVICE_NAME))
+                testvm._makeChannelPath(vmchannels.LEGACY_DEVICE_NAME))
 
     def test_spice_restore_set_passwd(self):
         # stolen from VDSM logs
