@@ -565,7 +565,7 @@ class ConfigWriter(object):
         if os.path.exists(os.path.join(NET_PATH, name)):
             # Ask dhclient to stop any dhclient running for the device
             dhclient.kill(name)
-            address.flush(name, family=4)
+            address.flush(name)
 
         if mtu:
             cfg += 'MTU=%d\n' % mtu
