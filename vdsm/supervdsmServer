@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import argparse
 from pwd import getpwnam
 import sys
 import os
@@ -24,7 +25,6 @@ import errno
 import importlib
 import pkgutil
 from functools import wraps
-import getopt
 import resource
 import signal
 import logging
@@ -242,8 +242,12 @@ def terminate(signo, frame):
     _running = False
 
 
-def main(sockfile, pidfile=None):
+def main(args):
     log = logging.getLogger("SuperVdsm.Server")
+    parser = option_parser()
+    args = parser.parse_args(args=args)
+    sockfile = args.sockfile
+    pidfile = args.pidfile
     if not config.getboolean('vars', 'core_dump_enable'):
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     sigutils.register()
@@ -318,29 +322,14 @@ def main(sockfile, pidfile=None):
         sys.exit(1)
 
 
-def _usage():
-    print "Usage:  supervdsmServer --sockfile=fullPath [--pidfile=fullPath]"
-
-
-def _parse_args():
-    argDict = {}
-    opts, args = getopt.getopt(sys.argv[1:], "h", ["sockfile=", "pidfile="])
-    for o, v in opts:
-        o = o.lower()
-        if o == "--sockfile":
-            argDict['sockfile'] = v
-        elif o == "--pidfile":
-            argDict['pidfile'] = v
-        else:
-            _usage()
-            sys.exit(1)
-    if 'sockfile' not in argDict:
-        _usage()
-        sys.exit(1)
-
-    return argDict
+def option_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--sockfile', dest='sockfile', required=True,
+                        help="socket file path")
+    parser.add_argument('--pidfile', dest='pidfile', default=None,
+                        help="pid file path")
+    return parser
 
 
 if __name__ == '__main__':
-    argDict = _parse_args()
-    main(**argDict)
+    main(sys.argv[1:])
