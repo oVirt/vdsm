@@ -237,7 +237,12 @@ class VolumeManifest(object):
             info['apparentsize'] = str(vsize)
             info['truesize'] = str(avsize)
             info['status'] = "OK"
-            info['lease'] = self.getLeaseStatus()
+            # 'lease' is an optional property with null as the default value.
+            # If volume doesn't have 'lease', we will not return it as part
+            # of the volume info.
+            leasestatus = self.getLeaseStatus()
+            if leasestatus:
+                info['lease'] = leasestatus
         except se.StorageException as e:
             self.log.debug("exception: %s:%s" % (str(e.message), str(e.value)))
             info['apparentsize'] = "0"
