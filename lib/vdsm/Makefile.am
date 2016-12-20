@@ -61,6 +61,7 @@ dist_vdsmpylib_PYTHON = \
 	sslcompat.py \
 	sslutils.py \
 	supervdsm.py \
+	supervdsm_server.py \
 	sysctl.py \
 	taskset.py \
 	throttledlog.py \

@@ -1234,6 +1234,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/sslcompat.py*
 %{python_sitelib}/%{vdsm_name}/sslutils.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm.py*
+%{python_sitelib}/%{vdsm_name}/supervdsm_server.py*
 %{python_sitelib}/%{vdsm_name}/sysctl.py*
 %{python_sitelib}/%{vdsm_name}/taskset.py*
 %{python_sitelib}/%{vdsm_name}/throttledlog.py*
