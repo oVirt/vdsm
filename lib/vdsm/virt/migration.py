@@ -438,16 +438,18 @@ class SourceThread(object):
                     raise MigrationDestinationSetupError(
                         'migration destination error: ' +
                         result['status']['message'])
+
             if config.getboolean('vars', 'ssl'):
                 transport = 'tls'
             else:
                 transport = 'tcp'
-            duri = 'qemu+%s://%s/system' % (transport, self.remoteHost)
-            if self._vm.conf['_migrationParams']['dstqemu']:
-                muri = 'tcp://%s' % \
-                       self._vm.conf['_migrationParams']['dstqemu']
+            duri = 'qemu+{}://{}/system'.format(transport, self.remoteHost)
+
+            dstqemu = self._vm.conf['_migrationParams']['dstqemu']
+            if dstqemu:
+                muri = 'tcp://{}'.format(dstqemu)
             else:
-                muri = 'tcp://%s' % self.remoteHost
+                muri = 'tcp://{}'.format(self.remoteHost)
 
             self._vm.log.info('starting migration to %s '
                               'with miguri %s', duri, muri)
