@@ -57,6 +57,7 @@ public final class ReactorListener {
             } catch (IOException e1) {
                 // ignore
             }
+            throw e;
         }
 
         return serverSocketChannel;

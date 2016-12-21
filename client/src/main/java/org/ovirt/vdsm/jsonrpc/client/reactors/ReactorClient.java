@@ -278,9 +278,10 @@ public abstract class ReactorClient {
         return Objects.hashCode(this.channel);
     }
 
-    public void performAction() {
+    public void performAction() throws IOException, ClientConnectionException {
         if (!this.isInInit() && this.policy.isOutgoingHeartbeat() && this.isOutgoingHeartbeatExeeded()) {
             this.sendHeartbeat();
+            this.processOutgoing();
         }
     }
 

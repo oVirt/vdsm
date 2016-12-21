@@ -96,6 +96,7 @@ public abstract class StompCommonClient extends ReactorClient {
 
     @Override
     public Future<Void> close() {
+        clean();
         subscriptionIds.stream().forEach(
                 subscriptionId -> send(new Message().unsubscribe().withHeader(HEADER_ID, subscriptionId).build()));
         send(new Message().disconnect().withHeader(HEADER_RECEIPT, UUID.randomUUID().toString()).build());
@@ -111,20 +112,15 @@ public abstract class StompCommonClient extends ReactorClient {
             }
             updateLastIncomingHeartbeat();
 
-            this.message = getMessage(headerBuffer, read);
+            this.message = getMessage(headerBuffer, headerBuffer.position());
             if (this.message == null) {
-                clean();
                 return;
             }
             int contentLength = this.message.getContentLength();
             if (contentLength == -1) {
                 // only for control messages, all other have the header
                 // according to stomp spec: The commands and headers are encoded in UTF-8
-                String[] messages = new String(headerBuffer.array(), UTF8).split(END_OF_MESSAGE);
-                for (String message : messages) {
-                    message = message + END_OF_MESSAGE;
-                    emitOnMessageReceived(Message.parse(message.getBytes(UTF8)));
-                }
+                emitOnMessageReceived(this.message);
                 return;
             }
             int length = this.message.getContent().length;

@@ -10,6 +10,6 @@ import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
  */
 public class DefaultConnectionRetryPolicy extends ClientPolicy {
     public DefaultConnectionRetryPolicy() {
-        super(2000, 0, 10000, IOException.class);
+        super(2000, 0, 0, IOException.class);
     }
 }

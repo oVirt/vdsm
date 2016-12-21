@@ -187,15 +187,30 @@ public class Message {
 
     public static Message parse(byte[] array) throws ClientConnectionException {
         String[] message = new String(array, UTF8).split("\n");
+
+        if (message.length == 0) {
+            return null;
+        }
+
         // let us see stomp control messages
-        LOG.debug(new String(array, UTF8));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(new String(array, UTF8));
+        }
+
+        int line = 0;
+        String msg = message[line];
+        while (msg.length() == 0) {
+            line++;
+            msg = message[line];
+        }
+
         Message result = new Message();
-        if (message.length <= 2) {
+        if (message.length - line <= 2) {
             // heart-beat
             return null;
         }
         try {
-            Command parsedCommand = Command.valueOf(message[0]);
+            Command parsedCommand = Command.valueOf(message[line]);
             result.setCommand(parsedCommand.toString());
         } catch (IllegalArgumentException e) {
             if (LOG.isDebugEnabled()) {
@@ -205,19 +220,19 @@ public class Message {
         }
 
         Map<String, String> headers = new HashMap<>();
-        int i = 1;
-        String currentLine = message[i];
+        line++;
+        String currentLine = message[line];
         while (currentLine.length() > 0) {
             int ind = currentLine.indexOf(':');
             String key = currentLine.substring(0, ind);
             String value = currentLine.substring(ind + 1, currentLine.length());
             headers.put(key, value);
-            currentLine = message[++i];
+            currentLine = message[++line];
         }
         result.withHeaders(headers);
         // ignore blank line between headers and content
-        i = i + 1;
-        result.withContent(getContent(array, message, i));
+        line++;
+        result.withContent(getContent(array, message, line));
         return result;
     }
 

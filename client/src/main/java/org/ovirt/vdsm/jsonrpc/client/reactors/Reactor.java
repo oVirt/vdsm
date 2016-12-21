@@ -79,28 +79,35 @@ public abstract class Reactor extends Thread {
                         try {
                             client.process();
                         } catch (IOException | ClientConnectionException ex) {
-                            logException(LOG, "Unable to process messages: " + ex.getMessage(), ex);
-                            client.disconnect(ex.getMessage() != null ? ex.getMessage() : "Unable to process messages");
-                            key.cancel();
+                            handleException(ex, client, key, "Unable to process messages ");
                         } catch (Throwable e) {
-                            logException(LOG, "Internal server error: " + e.getMessage(), e);
-                            client.disconnect(e.getMessage() != null ? e.getMessage() : "Internal server error");
-                            key.cancel();
+                            handleException(e, client, key, "Internal server error ");
                         }
                     }
-
-                    checkActions(this.selector.keys());
 
                     if (!key.channel().isOpen()) {
                         key.cancel();
                     }
                 });
+
+        checkActions(this.selector.keys());
     }
 
     private void checkActions(Set<SelectionKey> keys) {
-        keys.stream()
-                .filter(key -> ReactorClient.class.isInstance(key.attachment()))
-                .forEach(key -> ((ReactorClient) key.attachment()).performAction());
+        keys.stream().filter(key -> ReactorClient.class.isInstance(key.attachment())).forEach(key -> {
+            final ReactorClient client = (ReactorClient) key.attachment();
+            try {
+                client.performAction();
+            } catch (IOException | ClientConnectionException e) {
+                handleException(e, client, key, "Unable to process messages ");
+            }
+        });
+    }
+
+    private void handleException(Throwable t, ReactorClient client, SelectionKey key, String message) {
+        logException(LOG, message + t.getMessage(), t);
+        client.disconnect(t.getMessage() != null ? t.getMessage() : message);
+        key.cancel();
     }
 
     public void queueFuture(Future<?> f) {

@@ -78,6 +78,7 @@ public class JsonRpcClient {
     public Future<JsonRpcResponse> call(JsonRpcRequest req) throws ClientConnectionException {
         final Call call = new Call(req);
         this.tracker.registerCall(req, call);
+        retryCall(req, call);
         try {
             this.getClient().sendMessage(jsonToByteArray(req.toJson()));
         } finally {
@@ -112,6 +113,7 @@ public class JsonRpcClient {
         final BatchCall call = new BatchCall(requests);
         for (final JsonRpcRequest request : requests) {
             this.tracker.registerCall(request, call);
+            retryCall(request, call);
         }
         try {
             this.getClient().sendMessage(jsonToByteArray(requests));
