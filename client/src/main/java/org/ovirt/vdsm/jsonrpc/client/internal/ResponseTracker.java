@@ -70,7 +70,9 @@ public class ResponseTracker implements Runnable {
     }
 
     public JsonRpcCall removeCall(JsonNode id) {
-        return this.runningCalls.remove(id);
+        JsonRpcCall call = this.runningCalls.remove(id);
+        removeRequestFromTracking(id);
+        return call;
     }
 
     public void registerTrackingRequest(JsonRpcRequest req, ResponseTracking tracking) {
