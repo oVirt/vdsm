@@ -43,7 +43,7 @@ nodist_vdsm_SCRIPTS = \
 dist_vdsm_SCRIPTS = \
 	get-conf-item \
 	set-conf-item \
-	supervdsmServer \
+	supervdsmd \
 	vdsm \
 	vdsm-restore-net-config \
 	$(NULL)
