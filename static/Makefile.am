@@ -31,6 +31,10 @@ vdsm_DATA = \
 	./usr/share/vdsm/bonding-name2numeric.json \
 	$(NULL)
 
+dist_vdsm_SCRIPTS = \
+	./usr/sbin/supervdsmd \
+	$(NULL)
+
 vdsmconf_DATA = \
 	./etc/vdsm/logger.conf \
 	./etc/vdsm/mom.conf \
