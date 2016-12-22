@@ -183,7 +183,7 @@ def _update_base_capacity(base_vol, top_vol):
         return
 
     if base_vol.getFormat() == sc.RAW_FORMAT:
-        log.info("Updating baes capacity, extending size of raw base "
+        log.info("Updating base capacity, extending size of raw base "
                  "volume to %d",
                  top_size)
         # extendSize can run on only SPM so only StorageDomain implement it.
