@@ -140,11 +140,7 @@ Requires: libvirt-python >= 2.2.0-1
 %endif
 
 # iscsi-intiator versions
-%if 0%{?rhel}
-Requires: iscsi-initiator-utils
-%else # fedora
 Requires: iscsi-initiator-utils >= 6.2.0.873-21
-%endif
 
 Requires: sanlock >= 2.8-2, sanlock-python
 
