@@ -62,6 +62,7 @@ BuildRequires: openssl
 BuildRequires: python
 BuildRequires: python-six >= 1.9.0
 BuildRequires: python2-devel
+BuildRequires: PyYAML
 BuildRequires: rpm-build
 BuildRequires: systemd-units
 
