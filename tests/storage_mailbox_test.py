@@ -24,7 +24,6 @@ import shutil
 import tempfile
 import threading
 
-from testValidation import slowtest
 from testlib import make_config
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatchScope
@@ -36,6 +35,7 @@ import storage.storage_mailbox as sm
 
 MAX_HOSTS = 10
 MAILER_TIMEOUT = 6
+MONITOR_INTERVAL = 0.1
 
 
 class StoragePoolStub(object):
@@ -65,10 +65,11 @@ class StoragePoolStub(object):
 
 
 class SPM_MailMonitorTests(TestCaseBase):
-    @slowtest
+
     def testThreadLeak(self):
         with StoragePoolStub() as pool:
-            mailer = sm.SPM_MailMonitor(pool, 100)
+            mailer = sm.SPM_MailMonitor(
+                pool, 100, monitorInterval=MONITOR_INTERVAL)
             try:
                 threadCount = len(threading.enumerate())
                 mailer.stop()
@@ -84,9 +85,8 @@ class SPM_MailMonitorTests(TestCaseBase):
 
 
 class TestMailbox(TestCaseBase):
-    @slowtest
+
     def test_send_receive(self):
-        MONITOR_INTERVAL = 0.1
         msg_processed = threading.Event()
         expired = False
         received_messages = []

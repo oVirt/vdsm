@@ -238,7 +238,7 @@ class HSM_MailMonitor(object):
     def __init__(self, inbox, outbox, hostID, queue, monitorInterval):
         # Save arguments
         tpSize = config.getint('irs', 'thread_pool_size') / 2
-        waitTimeout = 3
+        waitTimeout = wait_timeout(monitorInterval)
         maxTasks = config.getint('irs', 'max_tasks')
         self.tp = ThreadPool("mailbox-hsm", tpSize, waitTimeout, maxTasks)
         self._stop = False
@@ -538,7 +538,7 @@ class SPM_MailMonitor:
         self._poolID = str(pool.spUUID)
         self._spmStorageDir = pool.storage_repository
         tpSize = config.getint('irs', 'thread_pool_size') / 2
-        waitTimeout = 3
+        waitTimeout = wait_timeout(monitorInterval)
         maxTasks = config.getint('irs', 'max_tasks')
         self.tp = ThreadPool("mailbox-spm", tpSize, waitTimeout, maxTasks)
         #  *** IMPORTANT NOTE: The SPM's inbox is the HSMs' outbox and vice
@@ -803,3 +803,12 @@ class SPM_MailMonitor:
             self.tp.joinAll(waitForTasks=False)
             self.log.info("SPM_MailMonitor - Incoming mail monitoring thread "
                           "stopped")
+
+
+def wait_timeout(monitor_interval):
+    """
+    Designed to return 3 seconds wait timeout for monitor interval of 2
+    seconds, keeping the behaivor in runtime the same as it was in the last 8
+    years, while allowing shorter times for testing.
+    """
+    return monitor_interval * 3 / 2
