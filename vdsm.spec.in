@@ -173,9 +173,7 @@ Requires: kernel >= 4.1.6
 Requires: python >= 2.7.3
 Requires: initscripts >= 9.42.2-1
 Requires: e2fsprogs >= 1.41.14
-%if 0%{?fedora} >= 23
 Requires: policycoreutils-python-utils
-%endif # fedora 23
 Requires: policycoreutils-python
 Requires: sed >= 4.2.1-10
 Requires: ed
