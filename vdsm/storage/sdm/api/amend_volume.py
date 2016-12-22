@@ -21,12 +21,18 @@
 
 from __future__ import absolute_import
 
+from contextlib import contextmanager
+
 from vdsm import qemuimg
+from vdsm import properties
 from vdsm.storage import constants as sc
 from vdsm.storage import guarded
+
+from storage import resourceManager as rm
+from storage import sd
+from storage import volume
 from storage.sdc import sdCache
 
-from .copy_data import CopyDataDivEndpoint
 from . import base
 
 
@@ -45,13 +51,7 @@ class Job(base.Job):
 
     def __init__(self, job_id, host_id, vol_info, qcow2_attr):
         super(Job, self).__init__(job_id, 'amend_volume', host_id)
-
-        # TODO: The copy data should prepare only the volume
-        # although it prepare the whole image for now.
-        # Also, once the operation fails the image will becone illegal,
-        # this is a bug that should be fixed for other operations other than
-        # copy_data
-        self._vol_info = CopyDataDivEndpoint(vol_info, host_id, writable=True)
+        self._vol_info = VolumeInfo(vol_info, host_id)
 
         # Add validation in a new class for volume attribute
         # We cuurently can't use the validation properties.enum
@@ -86,3 +86,60 @@ class Qcow2Attributes(object):
         if not qemuimg.supports_compat(compat):
             raise ValueError("Unsupported qcow2 compat %s" % compat)
         self.compat = compat
+
+
+class VolumeInfo(properties.Owner):
+    """
+    VolumInfo should be used for performing qemu metadata operations
+    on any volume in a chain except shared volume.
+    A volume is prepared in read-write mode.
+    While performing operations, the volume is not set as illegal since
+    fail to amend a qcow volume should not reflect on the disk capability
+    to be used in a VM.
+    """
+    sd_id = properties.UUID(required=True)
+    img_id = properties.UUID(required=True)
+    vol_id = properties.UUID(required=True)
+    generation = properties.Integer(required=True, minval=0,
+                                    maxval=sc.MAX_GENERATION)
+
+    def __init__(self, params, host_id):
+        self.sd_id = params.get('sd_id')
+        self.img_id = params.get('img_id')
+        self.vol_id = params.get('vol_id')
+        self.generation = params.get('generation')
+        self._host_id = host_id
+        self._vol = None
+
+    @property
+    def locks(self):
+        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, self.sd_id)
+        return [
+            rm.ResourceManagerLock(sc.STORAGE, self.sd_id, rm.SHARED),
+            rm.ResourceManagerLock(img_ns, self.img_id, rm.EXCLUSIVE),
+            volume.VolumeLease(self._host_id, self.sd_id, self.img_id,
+                               self.vol_id)
+        ]
+
+    @property
+    def path(self):
+        return self.volume.getVolumePath()
+
+    @property
+    def volume(self):
+        if self._vol is None:
+            dom = sdCache.produce_manifest(self.sd_id)
+            self._vol = dom.produceVolume(self.img_id, self.vol_id)
+        return self._vol
+
+    def volume_operation(self):
+        return self.volume.operation(requested_gen=self.generation,
+                                     set_illegal=False)
+
+    @contextmanager
+    def prepare(self):
+        self.volume.prepare(rw=True, justme=True)
+        try:
+            yield
+        finally:
+            self.volume.teardown(self.sd_id, self.vol_id, justme=True)

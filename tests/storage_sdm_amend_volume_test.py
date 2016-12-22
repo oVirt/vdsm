@@ -76,7 +76,8 @@ class TestAmendVolume(VdsmTestCase):
             generation = env_vol.getMetaParam(sc.GENERATION)
             self.assertEqual('0.10', env_vol.getQemuImageInfo()['compat'])
             vol = dict(endpoint_type='div', sd_id=env_vol.sdUUID,
-                       img_id=env_vol.imgUUID, vol_id=env_vol.volUUID)
+                       img_id=env_vol.imgUUID, vol_id=env_vol.volUUID,
+                       generation=generation)
             qcow2_attr = dict(compat='1.1')
             job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
             job.run()
@@ -94,7 +95,8 @@ class TestAmendVolume(VdsmTestCase):
             env_vol = env.chain[0]
             generation = env_vol.getMetaParam(sc.GENERATION)
             vol = dict(endpoint_type='div', sd_id=env_vol.sdUUID,
-                       img_id=env_vol.imgUUID, vol_id=env_vol.volUUID)
+                       img_id=env_vol.imgUUID, vol_id=env_vol.volUUID,
+                       generation=generation)
             qcow2_attr = dict(compat='1.1')
             job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
             job.run()
@@ -112,7 +114,8 @@ class TestAmendVolume(VdsmTestCase):
             env_vol = env.chain[0]
             generation = env_vol.getMetaParam(sc.GENERATION)
             vol = dict(endpoint_type='div', sd_id=env_vol.sdUUID,
-                       img_id=env_vol.imgUUID, vol_id=env_vol.volUUID)
+                       img_id=env_vol.imgUUID, vol_id=env_vol.volUUID,
+                       generation=generation)
             qcow2_attr = dict(compat='1.1')
             job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
             job.run()
