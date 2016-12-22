@@ -160,6 +160,7 @@ Requires: device-mapper-multipath >= 0.4.9-80
 Requires: policycoreutils-python
 Requires: fence-agents-all
 Requires: systemd >= 219-11
+Requires: initscripts >= 9.49.31
 
 %if 0%{?rhel}
 Requires: e2fsprogs
@@ -167,12 +168,10 @@ Requires: kernel >= 3.10.0-327.18.1.el7
 Requires: lvm2 >= 7:2.02.130-5.el7_2.5
 Requires: python >= 2.7.5-18.el7_1.1
 Requires: selinux-policy-targeted >= 3.13.1-60.el7
-Requires: initscripts >= 9.49.30-1.el7_2.3
 %else
 Requires: kernel >= 4.1.6
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
-Requires: initscripts >= 9.42.2-1
 Requires: e2fsprogs >= 1.41.14
 Requires: policycoreutils-python-utils
 Requires: sed >= 4.2.1-10
