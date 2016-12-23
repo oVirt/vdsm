@@ -428,19 +428,19 @@ class TestIPv6Addresses(TestCaseBase):
     def test_local_auto_when_ipv6_is_disabled(self):
         with dummy_device() as dev:
             sysctl.disable_ipv6(dev)
-            self.assertEqual(False, addresses.is_ipv6_local_auto(dev))
+            self.assertFalse(addresses.is_ipv6_local_auto(dev))
 
     @ValidateRunningAsRoot
     def test_local_auto_without_router_advertisement_server(self):
         with dummy_device() as dev:
-            self.assertEqual(True, addresses.is_ipv6_local_auto(dev))
+            self.assertTrue(addresses.is_ipv6_local_auto(dev))
 
     @ValidateRunningAsRoot
     def test_local_auto_with_static_address_without_ra_server(self):
         with dummy_device() as dev:
             ipwrapper.addrAdd(dev, '2001::88', '64', family=6)
             ip_addrs = addresses.getIpAddrs()[dev]
-            self.assertEqual(True, addresses.is_ipv6_local_auto(dev))
+            self.assertTrue(addresses.is_ipv6_local_auto(dev))
             self.assertEqual(2, len(ip_addrs))
             self.assertTrue(addresses.is_ipv6(ip_addrs[0]))
             self.assertTrue(not addresses.is_dynamic(ip_addrs[0]))
