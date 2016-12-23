@@ -153,6 +153,34 @@ class ProcessLeakPlugin(Plugin):
         return frozenset(int(pid) for pid in out.splitlines())
 
 
+class FileLeakPlugin(Plugin):
+    """
+    Check whether a test (or the code it triggers) open files and do not close
+    them.
+    """
+    name = 'file-leak-check'
+    FD_DIR = '/proc/%s/fd' % os.getpid()
+
+    def _fd_desc(self, fd):
+        try:
+            return os.readlink(os.path.join(self.FD_DIR, fd))
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise
+            return 'fd:%s' % fd
+
+    def _open_files(self):
+        return frozenset(self._fd_desc(fd) for fd in os.listdir(self.FD_DIR))
+
+    def startTest(self, test):
+        self._start_files = self._open_files()
+
+    def stopTest(self, test):
+        leaked_files = self._open_files() - self._start_files
+        if leaked_files:
+            raise Exception('This test leaked files: %s' % leaked_files)
+
+
 def ValidateRunningAsRoot(f):
     @wraps(f)
     def wrapper(*args, **kwargs):

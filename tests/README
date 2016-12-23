@@ -65,6 +65,18 @@ To run the entire test suit with process leak detection:
 
     make check NOSE_WITH_PROCESS_LEAK_CHECK=1
 
+Enabling file leak check
+------------------------
+
+To find tests leaking file descriptors, you can enable the process leak checker
+plugin:
+
+    ./run_tests_local.sh --with-file-leak-check filename [...]
+
+To run the entire test suit with file leak detection:
+
+    make check NOSE_WITH_FILE_LEAK_CHECK=1
+
 Control verbose level:
 ---------------------
 

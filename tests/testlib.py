@@ -63,6 +63,7 @@ from testValidation import (
     StressTestsPlugin,
     ThreadLeakPlugin,
     ProcessLeakPlugin,
+    FileLeakPlugin,
 )
 
 # /tmp may use tempfs filesystem, not suitable for some of the test assuming a
@@ -440,6 +441,7 @@ def run():
     conf.plugins.addPlugin(StressTestsPlugin())
     conf.plugins.addPlugin(ThreadLeakPlugin())
     conf.plugins.addPlugin(ProcessLeakPlugin())
+    conf.plugins.addPlugin(FileLeakPlugin())
 
     runner = VdsmTestRunner(stream=conf.stream,
                             verbosity=conf.verbosity,
