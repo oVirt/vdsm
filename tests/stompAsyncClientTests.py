@@ -32,9 +32,9 @@ class AsyncClientTest(TestCaseBase):
 
         req_frame = client.pop_message()
 
-        self.assertEquals(req_frame.command, Command.CONNECT)
-        self.assertEquals(req_frame.headers[Headers.ACCEPT_VERSION], '1.2')
-        self.assertEquals(req_frame.headers[Headers.HEARTEBEAT], '0,5000')
+        self.assertEqual(req_frame.command, Command.CONNECT)
+        self.assertEqual(req_frame.headers[Headers.ACCEPT_VERSION], '1.2')
+        self.assertEqual(req_frame.headers[Headers.HEARTEBEAT], '0,5000')
 
     def test_subscribe(self):
         client = AsyncClient()
@@ -45,10 +45,10 @@ class AsyncClientTest(TestCaseBase):
 
         req_frame = client.pop_message()
         self.assertTrue(len(client._subscriptions) == 1)
-        self.assertEquals(req_frame.command, Command.SUBSCRIBE)
-        self.assertEquals(req_frame.headers['destination'], 'jms.queue.events')
-        self.assertEquals(req_frame.headers['id'], id)
-        self.assertEquals(req_frame.headers['ack'], 'client')
+        self.assertEqual(req_frame.command, Command.SUBSCRIBE)
+        self.assertEqual(req_frame.headers['destination'], 'jms.queue.events')
+        self.assertEqual(req_frame.headers['id'], id)
+        self.assertEqual(req_frame.headers['ack'], 'client')
 
     def test_manage_subscription(self):
         client = AsyncClient()
@@ -86,12 +86,12 @@ class AsyncClientTest(TestCaseBase):
         client.send('jms.topic.vdsm_requests', data, headers)
 
         req_frame = client.pop_message()
-        self.assertEquals(req_frame.command, Command.SEND)
+        self.assertEqual(req_frame.command, Command.SEND)
         self.assertEquals(req_frame.headers['destination'],
                           'jms.topic.vdsm_requests')
         self.assertEquals(req_frame.headers[Headers.REPLY_TO],
                           'jms.topic.vdsm_responses')
-        self.assertEquals(req_frame.body, data)
+        self.assertEqual(req_frame.body, data)
 
     def test_receive_connected(self):
         client = AsyncClient()
@@ -122,7 +122,7 @@ class AsyncClientTest(TestCaseBase):
 
         client.handle_frame(None, frame)
 
-        self.assertEquals(frame, client.pop_message())
+        self.assertEqual(frame, client.pop_message())
 
     def test_receive_error(self):
         client = AsyncClient()

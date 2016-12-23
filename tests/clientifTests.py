@@ -90,7 +90,7 @@ class ClientIFTests(TestCaseBase):
     def assertCalled(self, funcName):
         sv = clientIF.supervdsm.getProxy()
         name, args, kwargs = sv.calls[0]
-        self.assertEquals(name, funcName)
+        self.assertEqual(name, funcName)
 
     def assertNotCalled(self, funcName):
         sv = clientIF.supervdsm.getProxy()
@@ -106,7 +106,7 @@ class ClientIFTests(TestCaseBase):
     def testStringAsDrive(self):
         with temporaryPath() as f:
             volPath = self.cif.prepareVolumePath(f)
-            self.assertEquals(volPath, f)
+            self.assertEqual(volPath, f)
 
     def testBadDrive(self):
         assert not os.path.exists(INEXISTENT_PATH)
@@ -118,7 +118,7 @@ class ClientIFTests(TestCaseBase):
     def testCDRomFromPayload(self):
         # bz1047356
         volPath = self.cif.prepareVolumePath(fakePayloadDrive())
-        self.assertEquals(volPath, FAKE_ISOFS_PATH)
+        self.assertEqual(volPath, FAKE_ISOFS_PATH)
         self.assertCalled('mkIsoFs')
 
     @MonkeyPatch(clientIF, 'supervdsm', FakeSuperVdsm())
@@ -134,7 +134,7 @@ class ClientIFTests(TestCaseBase):
         payloadDrive = fakePayloadDrive()
         del payloadDrive['specParams']['vmPayload']['volId']
         volPath = self.cif.prepareVolumePath(payloadDrive)
-        self.assertEquals(volPath, FAKE_ISOFS_PATH)
+        self.assertEqual(volPath, FAKE_ISOFS_PATH)
         self.assertCalled('mkIsoFs')
 
     @MonkeyPatch(clientIF, 'supervdsm', FakeSuperVdsm())
@@ -142,7 +142,7 @@ class ClientIFTests(TestCaseBase):
         drive = fakeDrive()
         del drive['specParams']
         volPath = self.cif.prepareVolumePath(drive)
-        self.assertEquals(volPath, ISOFS_PATH)
+        self.assertEqual(volPath, ISOFS_PATH)
         # this is a fallback case explicitely marked
         # as 'for Backward Compatibility sake'
         # in the code
@@ -162,14 +162,14 @@ class ClientIFTests(TestCaseBase):
         drive['specParams']['path'] = ''
         drive['path'] = ''
         volPath = self.cif.prepareVolumePath(drive)
-        self.assertEquals(volPath, '')
+        self.assertEqual(volPath, '')
         # real drive, but not iso image attached.
         self.assertNotCalled('mkIsoFs')
 
     @MonkeyPatch(clientIF, 'supervdsm', FakeSuperVdsm())
     def testCDromPath(self):
         volPath = self.cif.prepareVolumePath(fakeDrive())
-        self.assertEquals(volPath, ISOFS_PATH)
+        self.assertEqual(volPath, ISOFS_PATH)
         # mkIsoFs should be called only to generate images
         # on the flight if payload is given (cloud-init)
         self.assertNotCalled('mkIsoFs')
@@ -186,7 +186,7 @@ class ClientIFTests(TestCaseBase):
         drive['device'] = 'tape'
         # fallback case: we must use the top-level key 'path'
         volPath = self.cif.prepareVolumePath(drive)
-        self.assertEquals(volPath, ISOFS_PATH)
+        self.assertEqual(volPath, ISOFS_PATH)
 
     @MonkeyPatch(clientIF, 'supervdsm', FakeSuperVdsm())
     def testSuperVdsmFailure(self):
@@ -234,8 +234,8 @@ class TestNotification(TestCaseBase):
         self.cif._recovery = True
         self.assertFalse(self.cif.ready)
         self.cif.notify('test_event')
-        self.assertEquals(self.serv.notifications, [])
+        self.assertEqual(self.serv.notifications, [])
 
     def _assertEvent(self, event, method):
         ev = json.loads(event)
-        self.assertEquals(ev["method"], method)
+        self.assertEqual(ev["method"], method)

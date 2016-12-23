@@ -658,21 +658,21 @@ class UpgradeTests(TestCase):
     def testRunOnce(self):
         upgrade_obj = self.UpgraduratorTM()
         ret = upgrade.apply_upgrade(upgrade_obj, 'test')
-        self.assertEquals(ret, 0)
-        self.assertEquals(upgrade_obj.invocations, 1)
+        self.assertEqual(ret, 0)
+        self.assertEqual(upgrade_obj.invocations, 1)
         self.assertSealed('test')
 
     def testErrorInUpgrade(self):
         bad = self.BadUpgraduratorTM()
         ret = upgrade.apply_upgrade(bad, 'foobar')
-        self.assertEquals(ret, 1)
+        self.assertEqual(ret, 1)
         self.assertNotSealed('bad')
 
     def testRunMany(self):
         upgrade_obj = self.UpgraduratorTM()
         for _ in range(5):
             upgrade.apply_upgrade(upgrade_obj, 'test')
-        self.assertEquals(upgrade_obj.invocations, 1)
+        self.assertEqual(upgrade_obj.invocations, 1)
         self.assertSealed('test')
 
     def testRunAgain(self):
@@ -680,19 +680,19 @@ class UpgradeTests(TestCase):
         self.assertNotSealed('test')
         upgrade.apply_upgrade(upgrade_obj, 'test')
         self.assertSealed('test')
-        self.assertEquals(upgrade_obj.invocations, 1)
+        self.assertEqual(upgrade_obj.invocations, 1)
         upgrade.apply_upgrade(upgrade_obj, 'test')
-        self.assertEquals(upgrade_obj.invocations, 1)
+        self.assertEqual(upgrade_obj.invocations, 1)
         upgrade.apply_upgrade(upgrade_obj, 'test', '--run-again')
-        self.assertEquals(upgrade_obj.invocations, 2)
+        self.assertEqual(upgrade_obj.invocations, 2)
         upgrade.apply_upgrade(upgrade_obj, 'test')
-        self.assertEquals(upgrade_obj.invocations, 2)
+        self.assertEqual(upgrade_obj.invocations, 2)
         self.assertSealed('test')
 
     def testUpgradeArgs(self):
         upgrade_obj = self.UpgraduratorTM()
         upgrade.apply_upgrade(upgrade_obj, 'test', '1', '2', '3')
-        self.assertEquals(upgrade_obj.args, ['1', '2', '3'])
+        self.assertEqual(upgrade_obj.args, ['1', '2', '3'])
 
     def testParams(self):
         upgrade_obj = self.UpgraduratorTM()

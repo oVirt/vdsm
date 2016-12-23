@@ -160,8 +160,8 @@ class TransactionTests(TestCaseBase):
                 raise TestException()
 
         diff, ex_type, _ = roi.exception.args
-        self.assertEquals(diff.networks[NETWORK], {'remove': True})
-        self.assertEquals(ex_type, TestException)
+        self.assertEqual(diff.networks[NETWORK], {'remove': True})
+        self.assertEqual(ex_type, TestException)
         file_path = os.path.join(self.tempdir, 'nets', NETWORK)
         self.assertFalse(os.path.exists(file_path))
 

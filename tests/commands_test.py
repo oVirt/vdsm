@@ -40,21 +40,21 @@ class ExecCmdTest(TestCaseBase):
     @permutations(CMD_TYPES)
     def testNormal(self, cmd):
         rc, out, _ = commands.execCmd(cmd(('echo', 'hello world')))
-        self.assertEquals(rc, 0)
-        self.assertEquals(out[0].decode(), 'hello world')
+        self.assertEqual(rc, 0)
+        self.assertEqual(out[0].decode(), 'hello world')
 
     @permutations(CMD_TYPES)
     def testIoClass(self, cmd):
         rc, out, _ = commands.execCmd(cmd(('ionice',)), ioclass=2,
                                       ioclassdata=3)
-        self.assertEquals(rc, 0)
-        self.assertEquals(out[0].decode().strip(), 'best-effort: prio 3')
+        self.assertEqual(rc, 0)
+        self.assertEqual(out[0].decode().strip(), 'best-effort: prio 3')
 
     @permutations(CMD_TYPES)
     def testNice(self, cmd):
         rc, out, _ = commands.execCmd(cmd(('cat', '/proc/self/stat')), nice=7)
-        self.assertEquals(rc, 0)
-        self.assertEquals(int(out[0].split()[18]), 7)
+        self.assertEqual(rc, 0)
+        self.assertEqual(int(out[0].split()[18]), 7)
 
     @permutations(CMD_TYPES)
     def testSetSid(self, cmd):
@@ -69,8 +69,8 @@ class ExecCmdTest(TestCaseBase):
         rc, out, _ = commands.execCmd(cmd(('grep',
                                       'Uid', '/proc/self/status')),
                                       sudo=True)
-        self.assertEquals(rc, 0)
-        self.assertEquals(int(out[0].split()[2]), 0)
+        self.assertEqual(rc, 0)
+        self.assertEqual(int(out[0].split()[2]), 0)
 
 
 class ExecCmdStressTest(TestCaseBase):

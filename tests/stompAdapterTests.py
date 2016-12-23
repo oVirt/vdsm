@@ -88,9 +88,9 @@ class ConnectFrameTest(TestCaseBase):
         adapter.handle_frame(TestDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
-        self.assertEquals(resp_frame.command, Command.CONNECTED)
-        self.assertEquals(resp_frame.headers['version'], '1.2')
-        self.assertEquals(resp_frame.headers[Headers.HEARTEBEAT], '8000,0')
+        self.assertEqual(resp_frame.command, Command.CONNECTED)
+        self.assertEqual(resp_frame.headers['version'], '1.2')
+        self.assertEqual(resp_frame.headers[Headers.HEARTEBEAT], '8000,0')
 
     def test_min_heartbeat(self):
         frame = Frame(Command.CONNECT,
@@ -101,9 +101,9 @@ class ConnectFrameTest(TestCaseBase):
         adapter.handle_frame(TestDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
-        self.assertEquals(resp_frame.command, Command.CONNECTED)
-        self.assertEquals(resp_frame.headers['version'], '1.2')
-        self.assertEquals(resp_frame.headers[Headers.HEARTEBEAT], '1000,0')
+        self.assertEqual(resp_frame.command, Command.CONNECTED)
+        self.assertEqual(resp_frame.headers['version'], '1.2')
+        self.assertEqual(resp_frame.headers[Headers.HEARTEBEAT], '1000,0')
 
     def test_unsuported_version(self):
         frame = Frame(Command.CONNECT,
@@ -113,8 +113,8 @@ class ConnectFrameTest(TestCaseBase):
         adapter.handle_frame(TestDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
-        self.assertEquals(resp_frame.command, Command.ERROR)
-        self.assertEquals(resp_frame.body, 'Version unsupported')
+        self.assertEqual(resp_frame.command, Command.ERROR)
+        self.assertEqual(resp_frame.body, 'Version unsupported')
 
     def test_no_heartbeat(self):
         frame = Frame(Command.CONNECT,
@@ -124,9 +124,9 @@ class ConnectFrameTest(TestCaseBase):
         adapter.handle_frame(TestDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
-        self.assertEquals(resp_frame.command, Command.CONNECTED)
-        self.assertEquals(resp_frame.headers['version'], '1.2')
-        self.assertEquals(resp_frame.headers[Headers.HEARTEBEAT], '0,0')
+        self.assertEqual(resp_frame.command, Command.CONNECTED)
+        self.assertEqual(resp_frame.headers['version'], '1.2')
+        self.assertEqual(resp_frame.headers[Headers.HEARTEBEAT], '0,0')
 
     def test_no_headers(self):
         frame = Frame(Command.CONNECT)
@@ -135,8 +135,8 @@ class ConnectFrameTest(TestCaseBase):
         adapter.handle_frame(TestDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
-        self.assertEquals(resp_frame.command, Command.ERROR)
-        self.assertEquals(resp_frame.body, 'Version unsupported')
+        self.assertEqual(resp_frame.command, Command.ERROR)
+        self.assertEqual(resp_frame.body, 'Version unsupported')
 
 
 class SubscriptionFrameTest(TestCaseBase):
@@ -167,7 +167,7 @@ class SubscriptionFrameTest(TestCaseBase):
         adapter.handle_frame(TestDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
-        self.assertEquals(resp_frame.command, Command.ERROR)
+        self.assertEqual(resp_frame.command, Command.ERROR)
         self.assertEquals(resp_frame.body,
                           'Missing destination or subscription id header')
 
@@ -180,7 +180,7 @@ class SubscriptionFrameTest(TestCaseBase):
         adapter.handle_frame(TestDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
-        self.assertEquals(resp_frame.command, Command.ERROR)
+        self.assertEqual(resp_frame.command, Command.ERROR)
         self.assertEquals(resp_frame.body,
                           'Missing destination or subscription id header')
 
@@ -223,7 +223,7 @@ class UnsubscribeFrameTest(TestCaseBase):
 
         self.assertTrue(len(adapter._sub_ids) == 0)
         self.assertTrue(len(destinations) == 1)
-        self.assertEquals(destinations['jms.queue.events'], [subscription2])
+        self.assertEqual(destinations['jms.queue.events'], [subscription2])
 
     def test_no_id(self):
         frame = Frame(Command.UNSUBSCRIBE)
@@ -232,8 +232,8 @@ class UnsubscribeFrameTest(TestCaseBase):
         adapter.handle_frame(TestDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
-        self.assertEquals(resp_frame.command, Command.ERROR)
-        self.assertEquals(resp_frame.body, 'Missing id header')
+        self.assertEqual(resp_frame.command, Command.ERROR)
+        self.assertEqual(resp_frame.body, 'Missing id header')
 
 
 class SendFrameTest(TestCaseBase):
@@ -257,7 +257,7 @@ class SendFrameTest(TestCaseBase):
         data = adapter.pop_message()
         self.assertIsNot(data, None)
         request = JsonRpcRequest.decode(data)
-        self.assertEquals(request.method, 'Host.getAllVmStats')
+        self.assertEqual(request.method, 'Host.getAllVmStats')
         self.assertTrue(len(ids) == 1)
 
     def test_send_legacy(self):
@@ -280,7 +280,7 @@ class SendFrameTest(TestCaseBase):
         data = adapter.pop_message()
         self.assertIsNot(data, None)
         request = JsonRpcRequest.decode(data)
-        self.assertEquals(request.method, 'Host.getAllVmStats')
+        self.assertEqual(request.method, 'Host.getAllVmStats')
         self.assertTrue(len(ids) == 1)
 
     def test_send_no_destination(self):
@@ -291,8 +291,8 @@ class SendFrameTest(TestCaseBase):
         adapter.handle_frame(TestDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
-        self.assertEquals(resp_frame.command, Command.ERROR)
-        self.assertEquals(resp_frame.body, 'Subscription not available')
+        self.assertEqual(resp_frame.command, Command.ERROR)
+        self.assertEqual(resp_frame.body, 'Subscription not available')
 
     def test_send_batch(self):
         body = ('[{"jsonrpc":"2.0","method":"Host.getAllVmStats","params":{},'
@@ -337,4 +337,4 @@ class SendFrameTest(TestCaseBase):
         adapter.handle_frame(TestDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
-        self.assertEquals(resp_frame.command, Command.MESSAGE)
+        self.assertEqual(resp_frame.command, Command.MESSAGE)

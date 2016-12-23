@@ -54,15 +54,15 @@ class ConnectionAPITests(conttestlib.RunnableTestCase):
             conn = Connection()
             guid = dom.UUIDString()
             dom2 = conn.lookupByUUIDString(guid)
-        self.assertEquals(dom2.UUIDString(), guid)
+        self.assertEqual(dom2.UUIDString(), guid)
 
     def test_list_all_domains_none(self):
         conn = Connection()
-        self.assertEquals(conn.listAllDomains(0), [])
+        self.assertEqual(conn.listAllDomains(0), [])
 
     def test_list_domains_id_none(self):
         conn = Connection()
-        self.assertEquals(conn.listDomainsID(), [])
+        self.assertEqual(conn.listDomainsID(), [])
 
 
 class FakeDomain(object):

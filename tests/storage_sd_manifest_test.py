@@ -70,13 +70,13 @@ class FileManifestTests(VdsmTestCase):
         with fake_file_env() as env:
             isopath = os.path.join(env.sd_manifest.domaindir, sd.DOMAIN_IMAGES,
                                    sd.ISO_IMAGE_UUID)
-            self.assertEquals(isopath, env.sd_manifest.getIsoDomainImagesDir())
+            self.assertEqual(isopath, env.sd_manifest.getIsoDomainImagesDir())
 
     def test_getmdpath(self):
         with fake_file_env() as env:
             sd_manifest = env.sd_manifest
             mdpath = os.path.join(sd_manifest.domaindir, sd.DOMAIN_META_DATA)
-            self.assertEquals(mdpath, env.sd_manifest.getMDPath())
+            self.assertEqual(mdpath, env.sd_manifest.getMDPath())
 
     def test_getmetaparam(self):
         with fake_file_env() as env:
@@ -125,8 +125,8 @@ class BlockManifestTests(VdsmTestCase):
 
     def test_getblocksize_defaults(self):
         with fake_block_env() as env:
-            self.assertEquals(512, env.sd_manifest.logBlkSize)
-            self.assertEquals(512, env.sd_manifest.phyBlkSize)
+            self.assertEqual(512, env.sd_manifest.logBlkSize)
+            self.assertEqual(512, env.sd_manifest.phyBlkSize)
 
     def test_overwrite_blocksize(self):
         metadata = {sd.DMDK_VERSION: 3,
@@ -136,15 +136,15 @@ class BlockManifestTests(VdsmTestCase):
             # Replacing the metadata will not overwrite these values since they
             # are set only in the manifest constructor.
             env.sd_manifest.replaceMetadata(metadata)
-            self.assertEquals(512, env.sd_manifest.logBlkSize)
-            self.assertEquals(512, env.sd_manifest.phyBlkSize)
+            self.assertEqual(512, env.sd_manifest.logBlkSize)
+            self.assertEqual(512, env.sd_manifest.phyBlkSize)
 
             # If we supply values in the metadata used to construct the
             # manifest then those values will apply.
             new_manifest = blockSD.BlockStorageDomainManifest(
                 env.sd_manifest.sdUUID, metadata)
-            self.assertEquals(2048, new_manifest.logBlkSize)
-            self.assertEquals(1024, new_manifest.phyBlkSize)
+            self.assertEqual(2048, new_manifest.logBlkSize)
+            self.assertEqual(1024, new_manifest.phyBlkSize)
 
 
 @expandPermutations

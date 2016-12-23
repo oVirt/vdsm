@@ -158,7 +158,7 @@ class ResourceManagerTests(TestCaseBase):
             "failAfterSwitch", "resource", rm.SHARED, callback)
         exclusive1.release()
         self.assertTrue(sharedReq1.canceled())
-        self.assertEquals(resources[0], None)
+        self.assertEqual(resources[0], None)
 
     @MonkeyPatch(rm, "_manager", manager())
     def testReregisterNamespace(self):
@@ -396,17 +396,17 @@ class ResourceManagerTests(TestCaseBase):
         sharedReq3 = rm._registerResource(
             namespace, "resource", rm.SHARED, callback)
 
-        self.assertEquals(exclusive1.read(), "resource:exclusive")
+        self.assertEqual(exclusive1.read(), "resource:exclusive")
         exclusive1.release()
-        self.assertEquals(resources[-1].read(), "resource:shared")
+        self.assertEqual(resources[-1].read(), "resource:shared")
         resources.pop().release()
-        self.assertEquals(resources[-1].read(), "")
+        self.assertEqual(resources[-1].read(), "")
         resources.pop().release()
-        self.assertEquals(resources[-1].read(), "resource:exclusive")
+        self.assertEqual(resources[-1].read(), "resource:exclusive")
         resources.pop().release()
-        self.assertEquals(resources[-1].read(), "")
+        self.assertEqual(resources[-1].read(), "")
         resources.pop().release()
-        self.assertEquals(resources[-1].read(), "resource:shared")
+        self.assertEqual(resources[-1].read(), "resource:shared")
         resources.pop().release()
         # This part is to stop pyflakes for complaining, the reason I need the
         # resourcesRefs alive is so that the manage will not autocollect during
@@ -598,7 +598,7 @@ class ResourceManagerTests(TestCaseBase):
             threadLimit.release()
 
         def releaseShared(req, res):
-            self.assertEquals(req.lockType, rm.SHARED)
+            self.assertEqual(req.lockType, rm.SHARED)
             res.release()
             threadLimit.release()
 

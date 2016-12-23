@@ -107,9 +107,9 @@ class RuntimeConfigurationTests(conttestlib.RunnableTestCase):
         </domain>""".format(mem=MEM * 1024, path=PATH, net=NET))
         self.assertNotRaises(self.base.configure, root)
         conf = self.base._run_conf
-        self.assertEquals(conf.image_path, PATH)
-        self.assertEquals(conf.memory_size_mib, MEM)
-        self.assertEquals(conf.network, NET)
+        self.assertEqual(conf.image_path, PATH)
+        self.assertEqual(conf.memory_size_mib, MEM)
+        self.assertEqual(conf.network, NET)
 
     def test_config_ovirt_vm(self):
         root = ET.fromstring(conttestlib.full_dom_xml())
@@ -117,7 +117,7 @@ class RuntimeConfigurationTests(conttestlib.RunnableTestCase):
         conf = self.base._run_conf
         self.assertTrue(conf.image_path)
         self.assertTrue(conf.memory_size_mib)
-        self.assertEquals(conf.network, "ovirtmgmt")
+        self.assertEqual(conf.network, "ovirtmgmt")
 
     # TODO: test error paths in configure()
 
@@ -176,7 +176,7 @@ class NetworkTests(conttestlib.RunnableTestCase):
     def test_subnet(self):
         NAME = 'test'
         net = docker.Network(NAME)
-        self.assertEquals(net.subnet, "10.1.0.0/20")
+        self.assertEqual(net.subnet, "10.1.0.0/20")
 
     def test_existing_false_before_load(self):
         NAME = 'test'
@@ -198,7 +198,7 @@ class NetworkTests(conttestlib.RunnableTestCase):
             subnet='192.168.192.0',
             mask='26'
         )
-        self.assertEquals(net.subnet, "192.168.192.0/26")
+        self.assertEqual(net.subnet, "192.168.192.0/26")
 
     def test_load_missing(self):
         NAME = 'notexists'

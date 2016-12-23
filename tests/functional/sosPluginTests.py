@@ -44,4 +44,4 @@ class SosPluginTest(TestCaseBase):
             # successful and print exception to stdout. So check the keyword of
             # exception in output.
             index = stdout.find('Traceback (most recent call last):')
-            self.assertEquals(index, -1, "sosreport raised an exception")
+            self.assertEqual(index, -1, "sosreport raised an exception")

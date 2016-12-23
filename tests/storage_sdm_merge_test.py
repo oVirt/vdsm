@@ -106,7 +106,7 @@ class TestMergeSubchain(VdsmTestCase):
             job = storage.sdm.api.merge.Job(job_id, subchain)
             job.run()
             wait_for_job(job)
-            self.assertEquals(job.status, jobs.STATUS.DONE)
+            self.assertEqual(job.status, jobs.STATUS.DONE)
 
             # Verify that the chain data was merged
             for i in range(base_index, top_index + 1):
@@ -167,8 +167,8 @@ class TestMergeSubchain(VdsmTestCase):
             job = storage.sdm.api.merge.Job(job_id, subchain)
             job.run()
             wait_for_job(job)
-            self.assertEquals(job.status, jobs.STATUS.FAILED)
-            self.assertEquals(type(job.error), se.VolumeIsNotInChain)
+            self.assertEqual(job.status, jobs.STATUS.FAILED)
+            self.assertEqual(type(job.error), se.VolumeIsNotInChain)
 
             # Check that validate is called *before* attempting - verify that
             # the chain data was *not* merged
@@ -195,6 +195,6 @@ class TestMergeSubchain(VdsmTestCase):
             job = storage.sdm.api.merge.Job(job_id, subchain)
             job.run()
             wait_for_job(job)
-            self.assertEquals(job.status, jobs.STATUS.FAILED)
-            self.assertEquals(type(job.error), se.UnexpectedVolumeState)
+            self.assertEqual(job.status, jobs.STATUS.FAILED)
+            self.assertEqual(type(job.error), se.UnexpectedVolumeState)
             self.assertEqual(base_vol.getMetaParam(sc.GENERATION), 0)

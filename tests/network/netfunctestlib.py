@@ -148,7 +148,7 @@ class NetFuncTestCase(VdsmTestCase):
             iface = nic or bond
 
         network_caps = self.netinfo.networks[netname]
-        self.assertEquals(iface, network_caps['iface'])
+        self.assertEqual(iface, network_caps['iface'])
 
     def assertVlan(self, netattrs):
         vlan = netattrs.get('vlan')

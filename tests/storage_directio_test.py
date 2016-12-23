@@ -38,21 +38,21 @@ class TestDirectFile(TestCaseBase):
     def test_read(self, size):
         with temporaryPath(data=self.DATA) as srcPath, \
                 directio.DirectFile(srcPath, "r") as f:
-            self.assertEquals(f.read(size), self.DATA[:size])
+            self.assertEqual(f.read(size), self.DATA[:size])
 
     @permutations([[1 * BLOCK_SIZE], [2 * BLOCK_SIZE]])
     def test_seek_and_read(self, offset):
         with temporaryPath(data=self.DATA) as srcPath, \
                 directio.DirectFile(srcPath, "r") as f:
             f.seek(offset)
-            self.assertEquals(f.read(), self.DATA[offset:])
+            self.assertEqual(f.read(), self.DATA[offset:])
 
     def test_write(self):
         with temporaryPath() as srcPath, \
                 directio.DirectFile(srcPath, "w") as f:
             f.write(self.DATA)
             with io.open(srcPath, "rb") as f:
-                self.assertEquals(f.read(), self.DATA)
+                self.assertEqual(f.read(), self.DATA)
 
     def test_small_writes(self):
         with temporaryPath() as srcPath, \
@@ -61,7 +61,7 @@ class TestDirectFile(TestCaseBase):
             f.write(self.DATA[BLOCK_SIZE:])
 
             with io.open(srcPath, "rb") as f:
-                self.assertEquals(f.read(), self.DATA)
+                self.assertEqual(f.read(), self.DATA)
 
     def test_write_unaligned(self):
         with temporaryPath(data=self.DATA) as srcPath, \
@@ -80,7 +80,7 @@ class TestDirectFile(TestCaseBase):
                 f.write(self.DATA[BLOCK_SIZE:])
 
             with io.open(srcPath, "rb") as f:
-                self.assertEquals(f.read(), self.DATA)
+                self.assertEqual(f.read(), self.DATA)
 
     def test_readlines(self):
         with temporaryPath(data=self.DATA) as srcPath, \
@@ -93,4 +93,4 @@ class TestDirectFile(TestCaseBase):
         with temporaryPath(data=self.DATA) as srcPath, \
                 directio.DirectFile(srcPath, "r") as direct_file, \
                 io.open(srcPath, "rb") as buffered_file:
-            self.assertEquals(direct_file.read(), buffered_file.read())
+            self.assertEqual(direct_file.read(), buffered_file.read())

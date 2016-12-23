@@ -47,7 +47,7 @@ class XMLFileTests(conttestlib.TestCase):
     def test_save(self):
         root = ET.fromstring(conttestlib.minimal_dom_xml())
         with self.test_env() as xf:
-            self.assertEquals(os.listdir(xmlfile.STATE_DIR), [])
+            self.assertEqual(os.listdir(xmlfile.STATE_DIR), [])
             self.assertNotRaises(xf.save, root)
             self.assertTrue(len(os.listdir(xmlfile.STATE_DIR)), 1)
 
@@ -60,7 +60,7 @@ class XMLFileTests(conttestlib.TestCase):
             xml_copy = xmlfile.XMLFile.encode(new_root)
             # FIXME: nasty trick to tidy up the XML
             xml_ref = xmlfile.XMLFile.encode(root)
-            self.assertEquals(xml_ref, xml_copy)
+            self.assertEqual(xml_ref, xml_copy)
 
     def test_clear(self):
         xml_data = conttestlib.minimal_dom_xml()
@@ -69,4 +69,4 @@ class XMLFileTests(conttestlib.TestCase):
             xf.save(root)
             self.assertTrue(len(os.listdir(xmlfile.STATE_DIR)), 1)
             self.assertNotRaises(xf.clear)
-            self.assertEquals(os.listdir(xmlfile.STATE_DIR), [])
+            self.assertEqual(os.listdir(xmlfile.STATE_DIR), [])

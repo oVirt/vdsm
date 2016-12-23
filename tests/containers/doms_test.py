@@ -38,7 +38,7 @@ class DomsTests(conttestlib.TestCase):
         conttestlib.clear_doms()
 
     def test_empty(self):
-        self.assertEquals(doms.get_all(), [])
+        self.assertEqual(doms.get_all(), [])
 
     def test_add(self):
         for _ in range(NUM):
@@ -57,7 +57,7 @@ class DomsTests(conttestlib.TestCase):
     def test_get_all(self):
         dom_list = _fill_doms(NUM)
         all_doms = doms.get_all()
-        self.assertEquals(len(all_doms), len(dom_list))
+        self.assertEqual(len(all_doms), len(dom_list))
         dom_uuids = set(d.uuid for d in dom_list)
         for dom in all_doms:
             self.assertIn(dom.UUIDString(), dom_uuids)

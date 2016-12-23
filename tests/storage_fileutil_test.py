@@ -205,4 +205,4 @@ class TestNormalizePath(TestCaseBase):
         ("path//to///device/", "path/to/device"),
     ])
     def test_normalize_path_equals(self, path, normalized_path):
-        self.assertEquals(normalized_path, fileUtils.normalize_path(path))
+        self.assertEqual(normalized_path, fileUtils.normalize_path(path))

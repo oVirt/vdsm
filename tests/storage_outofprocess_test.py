@@ -49,7 +49,7 @@ class OopWrapperTests(TestCaseBase):
             name = proc._commthread.getName()
             pids.append(int(re.search(r'\d+', name).group()))
 
-        self.assertEquals(pids[0], pids[1])
+        self.assertEqual(pids[0], pids[1])
 
     def testDifferentPoolName(self):
         poolA = "A"
@@ -72,12 +72,12 @@ class OopWrapperTests(TestCaseBase):
             oop.getProcessPool(poolA)
             time.sleep(oop.IOPROC_IDLE_TIME + 1)
             oop.getProcessPool(poolB)
-            self.assertEquals(wrapper(), None)
+            self.assertEqual(wrapper(), None)
             gc.collect()
             time.sleep(1)
             gc.collect()
             try:
-                self.assertEquals(ioproc(), None)
+                self.assertEqual(ioproc(), None)
             except AssertionError:
                 logging.info("GARBAGE: %s", gc.garbage)
                 refs = gc.get_referrers(ioproc())
@@ -91,17 +91,17 @@ class OopWrapperTests(TestCaseBase):
                   real discretion."""
         # Henry Steele Commager
 
-        self.assertEquals(self.pool._ioproc.echo(data), data)
+        self.assertEqual(self.pool._ioproc.echo(data), data)
 
     def testFileUtilsCall(self):
         """fileUtils is a custom module and calling it might break even though
         built in module calls arn't broken"""
         path = "/dev/null"
-        self.assertEquals(self.pool.fileUtils.pathExists(path), True)
+        self.assertEqual(self.pool.fileUtils.pathExists(path), True)
 
     def testSubModuleCall(self):
         path = "/dev/null"
-        self.assertEquals(self.pool.os.path.exists(path), True)
+        self.assertEqual(self.pool.os.path.exists(path), True)
 
     def testUtilsFuncs(self):
         tmpfd, tmpfile = tempfile.mkstemp()

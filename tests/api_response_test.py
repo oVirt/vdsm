@@ -43,25 +43,25 @@ class TestResponse(TestCaseBase):
 
     def test_success_without_return(self):
         res = self.vm.succeed()
-        self.assertEquals(res, response.success())
+        self.assertEqual(res, response.success())
 
     def test_success_with_return_dict(self):
         vmList = ['foobar']
         res = self.vm.succeed_with_return({'vmList': vmList})
-        self.assertEquals(response.is_error(res), False)
-        self.assertEquals(res['vmList'], vmList)
+        self.assertEqual(response.is_error(res), False)
+        self.assertEqual(res['vmList'], vmList)
 
     def test_success_with_args(self):
         args = ("foo", "bar")
         res = self.vm.succeed_with_args(*args)
-        self.assertEquals(response.is_error(res), False)
+        self.assertEqual(response.is_error(res), False)
         self.assertEqual(res['args'], args)
 
     def test_success_with_kwargs(self):
         kwargs = {"foo": "bar"}
         res = self.vm.succeed_with_kwargs(**kwargs)
         self.assertEqual(res['kwargs'], kwargs)
-        self.assertEquals(response.is_error(res), False)
+        self.assertEqual(response.is_error(res), False)
 
     def test_success_with_wrong_return(self):
         vmList = ['foobar']  # wrong type as per @api.method contract
@@ -72,25 +72,25 @@ class TestResponse(TestCaseBase):
     def test_success_with_return_dict_override_message(self):
         message = 'this message overrides the default'
         res = self.vm.succeed_with_return({'message': message})
-        self.assertEquals(response.is_error(res), False)
-        self.assertEquals(res['status']['message'], message)
+        self.assertEqual(response.is_error(res), False)
+        self.assertEqual(res['status']['message'], message)
 
     def test_fail_with_vdsm_exception(self):
         exc = exception.NoSuchVM()
         res = self.vm.fail(exc)
         expected = exception.NoSuchVM().response()
-        self.assertEquals(res, expected)
+        self.assertEqual(res, expected)
 
     def test_fail_with_general_exception(self):
         exc = ValueError()
         res = self.vm.fail(exc)
         expected = exception.GeneralException(str(exc)).response()
-        self.assertEquals(res, expected)
+        self.assertEqual(res, expected)
 
     def test_passthrough(self):
         foo = 'foo'
         res = self.vm.succeed_passthrough(foo=foo)
-        self.assertEquals(res, response.success(foo=foo))
+        self.assertEqual(res, response.success(foo=foo))
 
 
 class FakeVM(object):

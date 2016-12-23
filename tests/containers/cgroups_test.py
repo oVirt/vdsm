@@ -28,7 +28,7 @@ class CgroupTests(conttestlib.CgroupTestCase):
 
     def test_empty_cgroups(self):
         mon = vdsm.virt.containers.cgroups.Monitorable(self.pid)
-        self.assertEquals(mon.cgroups, ())
+        self.assertEqual(mon.cgroups, ())
 
     def test_empty_cpuacct(self):
         mon = vdsm.virt.containers.cgroups.Monitorable(self.pid)
@@ -50,7 +50,7 @@ class CgroupTests(conttestlib.CgroupTestCase):
 
     def test_pid_matches(self):
         mon = vdsm.virt.containers.cgroups.Monitorable(self.pid)
-        self.assertEquals(mon.pid, self.pid)
+        self.assertEqual(mon.pid, self.pid)
 
     def test_setup(self):
         mon = vdsm.virt.containers.cgroups.Monitorable(self.pid)
@@ -66,4 +66,4 @@ class CgroupTests(conttestlib.CgroupTestCase):
     def test_update_without_setup(self):
         mon = vdsm.virt.containers.cgroups.Monitorable(self.pid)
         mon.update()
-        self.assertEquals(mon.cgroups, ())
+        self.assertEqual(mon.cgroups, ())

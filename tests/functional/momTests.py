@@ -37,7 +37,7 @@ def skipNoMOM(method):
     @wraps(method)
     def wrapped(self, *args, **kwargs):
         status, msg, info = self.s.getVdsCapabilities()
-        self.assertEquals(status, SUCCESS)
+        self.assertEqual(status, SUCCESS)
         if not info['packages2'].get('mom'):
             raise SkipTest('MOM is not installed')
         return method(self, *args, **kwargs)

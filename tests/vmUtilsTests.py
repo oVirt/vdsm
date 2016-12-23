@@ -61,7 +61,7 @@ class ExpiringCacheOperationTests(TestCaseBase):
     def test_delitem_existing_key(self):
         self.cache['the answer'] = 42
         del self.cache['the answer']
-        self.assertEquals(self.cache.get('the answer'), None)
+        self.assertEqual(self.cache.get('the answer'), None)
 
     def test_delitem_missing_key(self):
         def _del(key):

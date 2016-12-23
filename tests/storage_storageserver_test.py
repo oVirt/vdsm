@@ -181,7 +181,7 @@ class GlusterFSConnectionTests(VdsmTestCase):
         gluster = GlusterFSConnection(spec="gluster-server:/music")
         expected_backup_servers = \
             "backup-volfile-servers=192.168.122.5:192.168.122.2:192.168.122.3"
-        self.assertEquals(gluster.options, expected_backup_servers)
+        self.assertEqual(gluster.options, expected_backup_servers)
 
     @MonkeyPatch(gluster_cli, 'exists', lambda: True)
     @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
@@ -202,7 +202,7 @@ class GlusterFSConnectionTests(VdsmTestCase):
         gluster = GlusterFSConnection(spec="gluster-server:/music")
         expected_backup_servers = \
             "backup-volfile-servers=192.168.122.5:192.168.122.2:192.168.122.3"
-        self.assertEquals(gluster.options, expected_backup_servers)
+        self.assertEqual(gluster.options, expected_backup_servers)
 
     @MonkeyPatch(gluster_cli, 'exists', lambda: True)
     @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
@@ -219,7 +219,7 @@ class GlusterFSConnectionTests(VdsmTestCase):
                                       options="option1=val1")
         expected_options = \
             "option1=val1,backup-volfile-servers=192.168.122.2:192.168.122.3"
-        self.assertEquals(gluster.options, expected_options)
+        self.assertEqual(gluster.options, expected_options)
 
     @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
     def test_gluster_replica1_mount_options(self):
@@ -232,7 +232,7 @@ class GlusterFSConnectionTests(VdsmTestCase):
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
         gluster = GlusterFSConnection(spec="192.168.122.1:/music")
-        self.assertEquals(gluster.options, "")
+        self.assertEqual(gluster.options, "")
 
     def test_user_provided_gluster_mount_options(self):
 
@@ -242,7 +242,7 @@ class GlusterFSConnectionTests(VdsmTestCase):
         user_options = "backup-volfile-servers=server1:server2"
         gluster = GlusterFSConnection(spec="192.168.122.1:/music",
                                       options=user_options)
-        self.assertEquals(gluster.options, user_options)
+        self.assertEqual(gluster.options, user_options)
 
     @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
     @MonkeyPatch(GlusterFSConnection, 'ALLOWED_REPLICA_COUNTS', ('1', '3'))
@@ -260,7 +260,7 @@ class GlusterFSConnectionTests(VdsmTestCase):
     @MonkeyPatch(gluster_cli, 'exists', lambda: False)
     def test_glusterfs_cli_missing(self):
         gluster = GlusterFSConnection(spec="192.168.122.1:/music")
-        self.assertEquals(gluster.options, "")
+        self.assertEqual(gluster.options, "")
 
 
 @expandPermutations
@@ -285,4 +285,4 @@ class GlusterFSNotAccessibleConnectionTests(VdsmTestCase):
 
         gluster = GlusterFSConnection(spec="192.168.122.1:/music",
                                       options=userMountOptions)
-        self.assertEquals(gluster.options, userMountOptions)
+        self.assertEqual(gluster.options, userMountOptions)

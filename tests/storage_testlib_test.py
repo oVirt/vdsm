@@ -74,7 +74,7 @@ class FakeFileEnvTests(VdsmTestCase):
     @permutations((("file",), ("block",),))
     def test_default_domain_version(self, env_type):
         with fake_env(env_type) as env:
-            self.assertEquals(3, env.sd_manifest.getVersion())
+            self.assertEqual(3, env.sd_manifest.getVersion())
 
     @permutations((
         # env_type, sd_version
@@ -85,7 +85,7 @@ class FakeFileEnvTests(VdsmTestCase):
     ))
     def test_domain_version(self, env_type, sd_version):
         with fake_env(env_type, sd_version=sd_version) as env:
-            self.assertEquals(sd_version, env.sd_manifest.getVersion())
+            self.assertEqual(sd_version, env.sd_manifest.getVersion())
 
     def test_volume_structure(self):
         with fake_file_env() as env:

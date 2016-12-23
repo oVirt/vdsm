@@ -515,7 +515,7 @@ class TestVm(XMLTestCase):
             with self.assertRaises(Exception) as cm:
                 drive.getXML()
 
-            self.assertEquals(cm.exception.args[0], exceptionMsg)
+            self.assertEqual(cm.exception.args[0], exceptionMsg)
 
     @MonkeyPatch(cpuarch, 'effective', lambda: cpuarch.X86_64)
     @MonkeyPatch(osinfo, 'version', lambda: {
@@ -1109,7 +1109,7 @@ class TestVm(XMLTestCase):
                 VolumeChainEntry(uuid='2', path='/foo/zap', allocation=None),
                 VolumeChainEntry(uuid='1', path='/foo/bar', allocation=None),
             ]
-            self.assertEquals(info, expected)
+            self.assertEqual(info, expected)
 
 
 class FakeDrive(object):

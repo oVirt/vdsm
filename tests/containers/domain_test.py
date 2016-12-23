@@ -115,7 +115,7 @@ class DomainAPITests(conttestlib.RunnableTestCase):
     def test_controlInfo(self):
         with conttestlib.fake_runtime_domain() as dom:
             info = dom.controlInfo()
-        self.assertEquals(len(info), 3)
+        self.assertEqual(len(info), 3)
         # TODO: more testing
 
     def test_vcpus(self):
@@ -148,10 +148,10 @@ class RegistrationTests(conttestlib.RunnableTestCase):
             )
 
         existing_doms = doms.get_all()
-        self.assertEquals(len(existing_doms), 1)
-        self.assertEquals(dom.ID, existing_doms[0].ID)
+        self.assertEqual(len(existing_doms), 1)
+        self.assertEqual(dom.ID, existing_doms[0].ID)
         dom.destroy()
-        self.assertEquals(doms.get_all(), [])
+        self.assertEqual(doms.get_all(), [])
 
     def test_destroy_unregistered(self):
         # you need to call create() to register into `doms'.
@@ -160,7 +160,7 @@ class RegistrationTests(conttestlib.RunnableTestCase):
                 conttestlib.minimal_dom_xml()
             )
 
-        self.assertEquals(doms.get_all(), [])
+        self.assertEqual(doms.get_all(), [])
         self.assertRaises(libvirt.libvirtError, dom.destroy)
 
     def test_destroy_unregistered_forcefully(self):
@@ -196,8 +196,8 @@ class RecoveryTests(conttestlib.TestCase):
                 )
 
         existing_doms = doms.get_all()
-        self.assertEquals(len(existing_doms), 1)
-        self.assertEquals(existing_doms[0].UUIDString(), vm_uuid)
+        self.assertEqual(len(existing_doms), 1)
+        self.assertEqual(existing_doms[0].UUIDString(), vm_uuid)
         self.assertTrue(self.runtime.recovered)
 
 

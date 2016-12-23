@@ -65,8 +65,8 @@ class RecoveryTests(conttestlib.RunnableTestCase):
                 xf = xmlfile.XMLFile(vm_uuid)
                 save_xml(xf, conttestlib.minimal_dom_xml(vm_uuid=vm_uuid))
                 recovered_doms = containers.recoveryAllDomains()
-                self.assertEquals(len(recovered_doms), 1)
-                self.assertEquals(recovered_doms[0].UUIDString(), vm_uuid)
+                self.assertEqual(len(recovered_doms), 1)
+                self.assertEqual(recovered_doms[0].UUIDString(), vm_uuid)
 
     def test_recoverAllDomains_with_exceptions(self):
         vm_uuids = [

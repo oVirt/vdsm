@@ -206,7 +206,7 @@ class TestProgress(TestCaseBase):
         self.job_stats[libvirt.VIR_DOMAIN_JOB_DATA_REMAINING] = data_remaining
         self.job_stats[libvirt.VIR_DOMAIN_JOB_DATA_TOTAL] = data_total
         prog = migration.Progress.from_job_stats(self.job_stats)
-        self.assertEquals(prog.percentage, progress)
+        self.assertEqual(prog.percentage, progress)
 
     @permutations([
         # job_type, ongoing
@@ -217,7 +217,7 @@ class TestProgress(TestCaseBase):
     ])
     def test_ongoing(self, job_type, ongoing):
         self.job_stats['type'] = job_type
-        self.assertEquals(migration.ongoing(self.job_stats), ongoing)
+        self.assertEqual(migration.ongoing(self.job_stats), ongoing)
 
 
 @expandPermutations
@@ -253,7 +253,7 @@ class TestPostCopy(TestCaseBase):
                      post_copy=migration.PostCopyPhase.RUNNING,
                      params={'vmType': 'kvm'}) as testvm:
             stats = testvm.getStats()
-        self.assertEquals(stats['status'], vmstatus.PAUSED)
+        self.assertEqual(stats['status'], vmstatus.PAUSED)
 
 
 # stolen^Wborrowed from itertools recipes

@@ -441,7 +441,7 @@ class HostdevTests(TestCaseBase):
                 _ADDITIONAL_DEVICE).XMLDesc()
         )
 
-        self.assertEquals(ADDITIONAL_DEVICE_PROCESSED, deviceXML)
+        self.assertEqual(ADDITIONAL_DEVICE_PROCESSED, deviceXML)
 
     def testProcessDeviceParamsInvalidEncoding(self):
         deviceXML = hostdev._process_device_params(
@@ -449,7 +449,7 @@ class HostdevTests(TestCaseBase):
                 _COMPUTER_DEVICE).XMLDesc()
         )
 
-        self.assertEquals(_COMPUTER_DEVICE_PROCESSED, deviceXML)
+        self.assertEqual(_COMPUTER_DEVICE_PROCESSED, deviceXML)
 
     def testProcessSRIOV_PFDeviceParams(self):
         deviceXML = hostdev._process_device_params(
@@ -457,7 +457,7 @@ class HostdevTests(TestCaseBase):
                 _SRIOV_PF).XMLDesc()
         )
 
-        self.assertEquals(_SRIOV_PF_PROCESSED, deviceXML)
+        self.assertEqual(_SRIOV_PF_PROCESSED, deviceXML)
 
     def testProcessSRIOV_VFDeviceParams(self):
         deviceXML = hostdev._process_device_params(
@@ -465,7 +465,7 @@ class HostdevTests(TestCaseBase):
                 _SRIOV_VF).XMLDesc()
         )
 
-        self.assertEquals(_SRIOV_VF_PROCESSED, deviceXML)
+        self.assertEqual(_SRIOV_VF_PROCESSED, deviceXML)
 
     def testProcessNetDeviceParams(self):
         deviceXML = hostdev._process_device_params(
@@ -473,7 +473,7 @@ class HostdevTests(TestCaseBase):
                 _NET_DEVICE).XMLDesc()
         )
 
-        self.assertEquals(_NET_DEVICE_PROCESSED, deviceXML)
+        self.assertEqual(_NET_DEVICE_PROCESSED, deviceXML)
 
     def testGetDevicesFromLibvirt(self):
         libvirt_devices = hostdev._get_devices_from_libvirt()

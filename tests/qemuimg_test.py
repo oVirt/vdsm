@@ -324,10 +324,10 @@ class QemuImgProgressTests(TestCaseBase):
         with utils.closing(p):
             for progress in self._progress_iterator():
                 p._recvstdout(self.PROGRESS_FORMAT % progress)
-                self.assertEquals(p.progress, progress)
+                self.assertEqual(p.progress, progress)
 
             p.poll()
-            self.assertEquals(p.finished, True)
+            self.assertEqual(p.finished, True)
 
     @permutations([
         (("    (1/100%)\r", "    (2/100%)\r"), (1, 2)),
@@ -339,9 +339,9 @@ class QemuImgProgressTests(TestCaseBase):
         with utils.closing(p):
             for output, progress in zip(output_list, progress_list):
                 p._recvstdout(output)
-                self.assertEquals(p.progress, progress)
+                self.assertEqual(p.progress, progress)
             p.poll()
-            self.assertEquals(p.finished, True)
+            self.assertEqual(p.finished, True)
 
     def test_progress_batch(self):
         p = qemuimg.QemuImgOperation(['true'])
@@ -351,10 +351,10 @@ class QemuImgProgressTests(TestCaseBase):
                 (self.PROGRESS_FORMAT % 25.00) +
                 (self.PROGRESS_FORMAT % 33.33))
 
-            self.assertEquals(p.progress, 33.33)
+            self.assertEqual(p.progress, 33.33)
 
             p.poll()
-            self.assertEquals(p.finished, True)
+            self.assertEqual(p.finished, True)
 
     def test_unexpected_output(self):
         p = qemuimg.QemuImgOperation(['true'])
@@ -365,7 +365,7 @@ class QemuImgProgressTests(TestCaseBase):
             self.assertRaises(ValueError, p._recvstdout, 'World\r')
 
             p.poll()
-            self.assertEquals(p.finished, True)
+            self.assertEqual(p.finished, True)
 
 
 @expandPermutations
@@ -439,7 +439,7 @@ class TestCommit(TestCaseBase):
             op = qemuimg.commit(top, topFormat=qemuimg.FORMAT.QCOW2)
             with utils.closing(op):
                 op.wait_for_completion()
-                self.assertEquals(100, op.progress)
+                self.assertEqual(100, op.progress)
 
 
 @expandPermutations

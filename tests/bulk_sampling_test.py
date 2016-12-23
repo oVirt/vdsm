@@ -160,8 +160,8 @@ class TestVMBulkSampling(TestCaseBase):
     def assertCallSequence(self, actual_calls, expected_calls):
         for actual, expected in zip(actual_calls, expected_calls):
             # we don't care about the arguments
-            self.assertEquals(actual[0], expected)
-        self.assertEquals(len(actual_calls), len(expected_calls))
+            self.assertEqual(actual[0], expected)
+        self.assertEqual(len(actual_calls), len(expected_calls))
 
 
 class FakeStatsCache(object):

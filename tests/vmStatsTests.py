@@ -507,7 +507,7 @@ class CpuStatsTests(VmStatsTestCase):
         res = vmstats.cpu(stats, {}, {}, self.INTERVAL)
         self.assertEqual(stats,
                          {'cpuUser': 0.0, 'cpuSys': 0.0})
-        self.assertEquals(res, None)
+        self.assertEqual(res, None)
 
     def test_only_cpu_user_system(self):
         stats = {}
@@ -518,7 +518,7 @@ class CpuStatsTests(VmStatsTestCase):
                          'cpuSys': 0.2,
                          'cpuUsage': '11260000000',
                          })
-        self.assertEquals(res, None)
+        self.assertEqual(res, None)
 
     def test_update_all_keys(self):
         stats = {}

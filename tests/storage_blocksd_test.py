@@ -42,19 +42,19 @@ class MatadataValidityTests(TestCaseBase):
 
     def test_valid_ok(self):
         vg = VG(self.MIN_MD_SIZE, self.MIN_MD_FREE)
-        self.assertEquals(True, blockSD.metadataValidity(vg)['mdavalid'])
+        self.assertEqual(True, blockSD.metadataValidity(vg)['mdavalid'])
 
     def test_valid_bad(self):
         vg = VG(self.MIN_MD_SIZE - 1, self.MIN_MD_FREE)
-        self.assertEquals(False, blockSD.metadataValidity(vg)['mdavalid'])
+        self.assertEqual(False, blockSD.metadataValidity(vg)['mdavalid'])
 
     def test_threshold_ok(self):
         vg = VG(self.MIN_MD_SIZE, self.MIN_MD_FREE + 1)
-        self.assertEquals(True, blockSD.metadataValidity(vg)['mdathreshold'])
+        self.assertEqual(True, blockSD.metadataValidity(vg)['mdathreshold'])
 
     def test_threshold_bad(self):
         vg = VG(self.MIN_MD_SIZE, self.MIN_MD_FREE)
-        self.assertEquals(False, blockSD.metadataValidity(vg)['mdathreshold'])
+        self.assertEqual(False, blockSD.metadataValidity(vg)['mdathreshold'])
 
 
 def fakeGetLV(vgName):

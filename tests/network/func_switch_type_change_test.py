@@ -257,7 +257,7 @@ class SwitchValidationTemplate(NetFuncTestCase):
             with self.setupNetworks(NETSETUP_SOURCE, {}, NOCHK):
                 with self.assertRaises(SetupNetworksError) as e:
                     self.setupNetworks(NETSETUP_TARGET, {}, NOCHK)
-                self.assertEquals(e.exception.status, ne.ERR_BAD_PARAMS)
+                self.assertEqual(e.exception.status, ne.ERR_BAD_PARAMS)
                 self.assertNetwork(NET1_NAME, NETSETUP_SOURCE[NET1_NAME])
                 self.assertNetwork(NET2_NAME, NETSETUP_SOURCE[NET2_NAME])
 
@@ -274,7 +274,7 @@ class SwitchValidationTemplate(NetFuncTestCase):
             with self.setupNetworks(NETSETUP_SOURCE, {}, NOCHK):
                 with self.assertRaises(SetupNetworksError) as e:
                     self.setupNetworks(NETSETUP_TARGET, {}, NOCHK)
-                self.assertEquals(e.exception.status, ne.ERR_BAD_PARAMS)
+                self.assertEqual(e.exception.status, ne.ERR_BAD_PARAMS)
                 self.assertNetwork(NET1_NAME, NETSETUP_SOURCE[NET1_NAME])
                 self.assertNetwork(NET2_NAME, NETSETUP_SOURCE[NET2_NAME])
 

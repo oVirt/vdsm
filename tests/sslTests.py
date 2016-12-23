@@ -112,7 +112,7 @@ class VerifyingTransportTests(TestCaseBase):
 
     def test_valid(self):
         with verifyingclient(KEY_FILE, CRT_FILE) as client:
-            self.assertEquals(client.add(2, 3), 5)
+            self.assertEqual(client.add(2, 3), 5)
 
     def test_different_signature_chain(self):
         with verifyingclient(OTHER_KEY_FILE, OTHER_CRT_FILE) as client:
@@ -326,7 +326,7 @@ class SSLTests(TestCaseBase):
             "-cert", self.certfile,
             "-key", self.keyfile,
         ])
-        self.assertEquals(rc, 0)
+        self.assertEqual(rc, 0)
 
     def testSessionIsCached(self):
         """
@@ -348,7 +348,7 @@ class SSLTests(TestCaseBase):
             "-key", self.keyfile,
             "-sess_out", sessionDetailsFile.name,
         ])
-        self.assertEquals(rc, 0)
+        self.assertEqual(rc, 0)
 
         # Get the session id from the output of the command:
         firstSessionId = self.extractField("Session-ID", out)
@@ -360,7 +360,7 @@ class SSLTests(TestCaseBase):
             "-key", self.keyfile,
             "-sess_in", sessionDetailsFile.name,
         ])
-        self.assertEquals(rc, 0)
+        self.assertEqual(rc, 0)
 
         # Get the session id again:
         secondSessionId = self.extractField("Session-ID", out)
@@ -371,7 +371,7 @@ class SSLTests(TestCaseBase):
         os.remove(sessionDetailsFile.name)
 
         # Compare the session ids:
-        self.assertEquals(secondSessionId, firstSessionId)
+        self.assertEqual(secondSessionId, firstSessionId)
 
 
 # The address of the tests server:

@@ -61,7 +61,7 @@ class TestVMCreate(TestCaseBase):
             self.assertTrue(response.is_error(res, 'exist'))
         finally:
             del self.cif.vmContainer[vm.id]
-        self.assertEquals(self.cif.vmContainer, {})
+        self.assertEqual(self.cif.vmContainer, {})
 
     def test_create_without_id(self):
         res = self.vm.create({})
@@ -98,7 +98,7 @@ class TestVMCreate(TestCaseBase):
         }
         res = self.vm.create(vmParams)
         self.assertFalse(response.is_error(res))
-        self.assertEquals(vmParams.get('vmType'), 'kvm')
+        self.assertEqual(vmParams.get('vmType'), 'kvm')
 
     def test_create_fix_param_kvmEnable(self):
         vmParams = {
@@ -132,7 +132,7 @@ class TestVMCreate(TestCaseBase):
 
         res = self.vm.create(vmParams)
         self.assertFalse(response.is_error(res))
-        self.assertEquals(refParams, vmParams)
+        self.assertEqual(refParams, vmParams)
 
     def test_hibernation_params_wrong_format(self):
         vmParams = {}
@@ -148,7 +148,7 @@ class TestVMCreate(TestCaseBase):
 
         res = self.vm.create(vmParams)
         self.assertFalse(response.is_error(res))
-        self.assertEquals(refParams, vmParams)
+        self.assertEqual(refParams, vmParams)
 
     def test_hibernation_params(self):
         vmParams = {}
@@ -163,7 +163,7 @@ class TestVMCreate(TestCaseBase):
 
         self.assertFalse(response.is_error(res))
         for param in extraParams:
-            self.assertEquals(extraParams[param], vmParams[param])
+            self.assertEqual(extraParams[param], vmParams[param])
 
 
 class FakeClientIF(object):

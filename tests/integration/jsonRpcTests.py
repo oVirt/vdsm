@@ -111,7 +111,7 @@ class JsonRpcServerTests(TestCaseBase):
                 self.log.info("Calling 'echo'")
                 if type == "xml":
                     response = client.send("echo", (data,))
-                    self.assertEquals(response, data)
+                    self.assertEqual(response, data)
                 else:
                     self.assertEquals(self._callTimeout(client, "echo",
                                       (data,), CALL_ID), data)
@@ -125,7 +125,7 @@ class JsonRpcServerTests(TestCaseBase):
             with self._client(clientFactory) as client:
                 if type == "xml":
                         response = client.send("echo", (data,))
-                        self.assertEquals(response, data)
+                        self.assertEqual(response, data)
                 else:
                     self.assertEquals(self._callTimeout(client, "echo",
                                       {'text': data}, CALL_ID), data)
@@ -182,7 +182,7 @@ class JsonRpcServerTests(TestCaseBase):
                 else:
                     res = self._callTimeout(client, "ping", [],
                                             CALL_ID)
-                    self.assertEquals(res, True)
+                    self.assertEqual(res, True)
 
     @permutations(PERMUTATIONS)
     def testDoubleResponse(self, ssl, type):
@@ -194,13 +194,13 @@ class JsonRpcServerTests(TestCaseBase):
                     pass
                 else:
                     def callback(client, event, params):
-                        self.assertEquals(event, 'vdsm.double_response')
-                        self.assertEquals(params['content'], True)
+                        self.assertEqual(event, 'vdsm.double_response')
+                        self.assertEqual(params['content'], True)
 
                     client.registerEventCallback(callback)
                     res = self._callTimeout(client, "double_response", [],
                                             CALL_ID)
-                    self.assertEquals(res, 'sent')
+                    self.assertEqual(res, 'sent')
 
     @slowtest
     @permutations(PERMUTATIONS)

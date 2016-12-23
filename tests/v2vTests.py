@@ -489,7 +489,7 @@ class v2vTests(TestCaseBase):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
                                        ProtectedPassword('password'),
                                        None)['vmList']
-        self.assertEquals(len(vms), 1)
+        self.assertEqual(len(vms), 1)
         self._assertVmMatchesSpec(vms[0], VM_SPECS[0])
         for disk in vms[0]['disks']:
             self.assertNotIn('capacity', disk)
@@ -497,24 +497,24 @@ class v2vTests(TestCaseBase):
 
     def _assertVmDisksMatchSpec(self, vm, spec):
         disk = vm['disks'][0]
-        self.assertEquals(disk['dev'], 'sda')
+        self.assertEqual(disk['dev'], 'sda')
         self.assertEquals(disk['alias'],
                           '[datastore1] RHEL/RHEL_%s.vmdk' % spec.name)
         self.assertIn('capacity', disk)
         self.assertIn('allocation', disk)
 
     def _assertVmMatchesSpec(self, vm, spec):
-        self.assertEquals(vm['vmId'], spec.uuid)
-        self.assertEquals(vm['memSize'], 2048)
-        self.assertEquals(vm['smp'], 1)
-        self.assertEquals(len(vm['disks']), 1)
-        self.assertEquals(len(vm['networks']), 1)
-        self.assertEquals(vm['has_snapshots'], spec.has_snapshots)
+        self.assertEqual(vm['vmId'], spec.uuid)
+        self.assertEqual(vm['memSize'], 2048)
+        self.assertEqual(vm['smp'], 1)
+        self.assertEqual(len(vm['disks']), 1)
+        self.assertEqual(len(vm['networks']), 1)
+        self.assertEqual(vm['has_snapshots'], spec.has_snapshots)
 
         network = vm['networks'][0]
-        self.assertEquals(network['type'], 'bridge')
-        self.assertEquals(network['macAddr'], _mac_from_uuid(spec.uuid))
-        self.assertEquals(network['bridge'], 'VM Network')
+        self.assertEqual(network['type'], 'bridge')
+        self.assertEqual(network['macAddr'], _mac_from_uuid(spec.uuid))
+        self.assertEqual(network['bridge'], 'VM Network')
 
     def testSuccessfulVMWareImport(self):
         self._commonConvertExternalVM(self.vpx_url)
@@ -710,7 +710,7 @@ class MockVirConnectTests(TestCaseBase):
 
     def test_lookup_by_name(self):
         vm = self._mock.lookupByName('RHEL_0')
-        self.assertEquals('RHEL_0', vm.name())
+        self.assertEqual('RHEL_0', vm.name())
 
     def test_lookup_by_name_failed(self):
         self.assertRaises(libvirt.libvirtError, self._mock.lookupByName,
@@ -718,7 +718,7 @@ class MockVirConnectTests(TestCaseBase):
 
     def test_lookup_by_id(self):
         vm = self._mock.lookupByID(0)
-        self.assertEquals(0, vm.ID())
+        self.assertEqual(0, vm.ID())
 
     def test_lookup_by_id_failed(self):
         self.assertRaises(libvirt.libvirtError, self._mock.lookupByID, 99)
@@ -756,18 +756,18 @@ class TestGetOVAInfo(TestCaseBase):
             yield base, ovfpath, ovapath
 
     def check(self, vm):
-        self.assertEquals(vm['vmName'], 'First')
-        self.assertEquals(vm['memSize'], 2048)
-        self.assertEquals(vm['smp'], 1)
+        self.assertEqual(vm['vmName'], 'First')
+        self.assertEqual(vm['memSize'], 2048)
+        self.assertEqual(vm['smp'], 1)
 
         disk = vm['disks'][0]
-        self.assertEquals(disk['allocation'], '349405696')
-        self.assertEquals(disk['capacity'], '34359738368')
-        self.assertEquals(disk['type'], 'disk')
-        self.assertEquals(disk['alias'], 'First-disk1.vmdk')
+        self.assertEqual(disk['allocation'], '349405696')
+        self.assertEqual(disk['capacity'], '34359738368')
+        self.assertEqual(disk['type'], 'disk')
+        self.assertEqual(disk['alias'], 'First-disk1.vmdk')
 
         network = vm['networks'][0]
-        self.assertEquals(network['bridge'], 'VM Network')
-        self.assertEquals(network['model'], 'E1000')
-        self.assertEquals(network['type'], 'bridge')
-        self.assertEquals(network['dev'], 'Ethernet 1')
+        self.assertEqual(network['bridge'], 'VM Network')
+        self.assertEqual(network['model'], 'E1000')
+        self.assertEqual(network['type'], 'bridge')
+        self.assertEqual(network['dev'], 'Ethernet 1')

@@ -43,7 +43,7 @@ class TestUnicode(VdsmTestCase):
 
     @permutations(ENCODE)
     def test_encode(self, value, encoded):
-        self.assertEquals(value.encode("utf8"), encoded)
+        self.assertEqual(value.encode("utf8"), encoded)
 
     @permutations(ENCODE)
     def test_str(self, value, encoded):
@@ -51,17 +51,17 @@ class TestUnicode(VdsmTestCase):
 
     @permutations(DECODE)
     def test_decode(self, value, decoded):
-        self.assertEquals(value.decode("utf8"), decoded)
+        self.assertEqual(value.decode("utf8"), decoded)
 
     @permutations(DECODE)
     def test_unicode(self, value, decoded):
-        self.assertEquals(unicode(value), decoded)
+        self.assertEqual(unicode(value), decoded)
 
     def test_mix_add(self):
-        self.assertEquals(u'\u05d0' + '\xd7\x91', u'\u05d0\u05d1')
+        self.assertEqual(u'\u05d0' + '\xd7\x91', u'\u05d0\u05d1')
 
     def test_mix_format_str(self):
-        self.assertEquals(u'\u05d0%s' % '\xd7\x91', u'\u05d0\u05d1')
+        self.assertEqual(u'\u05d0%s' % '\xd7\x91', u'\u05d0\u05d1')
 
     def test_mix_format_unicode(self):
-        self.assertEquals('\xd7\x90%s' % u'\u05d1', u'\u05d0\u05d1')
+        self.assertEqual('\xd7\x90%s' % u'\u05d1', u'\u05d0\u05d1')

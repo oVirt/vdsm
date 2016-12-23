@@ -288,7 +288,7 @@ class ThreadsProfileTests(ProfileTests):
         stats = open_ystats(FILENAME)
         name = function_name(self.worker_function)
         func = find_function(stats, __file__, name)
-        self.assertEquals(func.ncall, 1)
+        self.assertEqual(func.ncall, 1)
 
     @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'cpu_profile_enable', 'false')]))
@@ -300,7 +300,7 @@ class ThreadsProfileTests(ProfileTests):
         stats = open_ystats(FILENAME)
         name = function_name(self.worker_function)
         func = find_function(stats, __file__, name)
-        self.assertEquals(func.ncall, 1)
+        self.assertEqual(func.ncall, 1)
 
     @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'cpu_profile_enable', 'false')]))

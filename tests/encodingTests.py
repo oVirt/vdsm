@@ -36,4 +36,4 @@ class EncodingTests(TestCaseBase):
     @permutations(PERMUTATIONS)
     def test_encoding_value(self, value):
         encoded = encodeValue(value)
-        self.assertEquals(value, decodeValue(encoded))
+        self.assertEqual(value, decodeValue(encoded))

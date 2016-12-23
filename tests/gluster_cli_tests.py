@@ -157,7 +157,7 @@ class GlusterCliTests(TestCaseBase):
                        'volumeStatus': gcli.VolumeStatus.OFFLINE,
                        'volumeType': 'DISTRIBUTE'}}
         volumeInfo = gcli._parseVolumeInfo(tree)
-        self.assertEquals(volumeInfo, oVolumeInfo)
+        self.assertEqual(volumeInfo, oVolumeInfo)
 
     def test_parseVolumeInfo(self):
         self._parseVolumeInfo_empty_test()
@@ -396,7 +396,7 @@ class GlusterCliTests(TestCaseBase):
                          'sizeTotal': '7982.934'}],
              'name': 'music'}
         status = gcli._parseVolumeStatusDetail(tree)
-        self.assertEquals(status, oStatus)
+        self.assertEqual(status, oStatus)
 
     def _parseVolumeStatusClients_test(self):
         out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -458,8 +458,8 @@ class GlusterCliTests(TestCaseBase):
 """
         tree = etree.fromstring(out)
         status = gcli._parseVolumeStatusClients(tree)
-        self.assertEquals(set(six.iterkeys(status)), {'bricks', 'name'})
-        self.assertEquals(status['name'], 'music')
+        self.assertEqual(set(six.iterkeys(status)), {'bricks', 'name'})
+        self.assertEqual(status['name'], 'music')
         oBricks = [{'brick': '192.168.122.2:/tmp/music-b1',
                     'hostuuid':
                     'f06b108e-a780-4519-bb22-c3083a1e3f8a',
@@ -478,7 +478,7 @@ class GlusterCliTests(TestCaseBase):
                                       {'bytesRead': '10864',
                                        'bytesWrite': '12816',
                                        'hostname': '192.168.122.2:1010'}]}]
-        self.assertEquals(status['bricks'], oBricks)
+        self.assertEqual(status['bricks'], oBricks)
 
     def _parseVolumeStatusMem_test(self):
         out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -1116,7 +1116,7 @@ class GlusterCliTests(TestCaseBase):
              'name': 'music'}
         tree = etree.fromstring(out)
         status = gcli._parseVolumeStatusMem(tree)
-        self.assertEquals(status, ostatus)
+        self.assertEqual(status, ostatus)
 
     def test_parseStorageDevices(self):
         try:
@@ -1126,7 +1126,7 @@ class GlusterCliTests(TestCaseBase):
             raise SkipTest('%s' % e)
 
         status = parseStorageDevices(glusterTestData.glusterStorageDevData())
-        self.assertEquals(status, glusterTestData.GLUSTER_STORAGE_DEVICES)
+        self.assertEqual(status, glusterTestData.GLUSTER_STORAGE_DEVICES)
 
     def test_parseVolumeStatus(self):
         self._parseVolumeStatus_test()
@@ -1139,14 +1139,14 @@ class GlusterCliTests(TestCaseBase):
             out = f.read()
         tree = etree.fromstring(out)
         status = gcli._parseVolumeProfileInfo(tree, False)
-        self.assertEquals(status, glusterTestData.PROFILE_INFO)
+        self.assertEqual(status, glusterTestData.PROFILE_INFO)
 
     def _parseVolumeProfileInfoNfs_test(self):
         with open("glusterVolumeProfileInfoNfs.xml") as f:
             out = f.read()
         tree = etree.fromstring(out)
         status = gcli._parseVolumeProfileInfo(tree, True)
-        self.assertEquals(status, glusterTestData.PROFILE_INFO_NFS)
+        self.assertEqual(status, glusterTestData.PROFILE_INFO_NFS)
 
     def test_parseVolumeProfileInfo(self):
         self._parseVolumeProfileInfo_test()
@@ -1174,7 +1174,7 @@ class GlusterCliTests(TestCaseBase):
             out = f.read()
         tree = etree.fromstring(out)
         status = gcli._parseVolumeTasks(tree)
-        self.assertEquals(status, glusterTestData.GLUSTER_VOLUME_TASKS)
+        self.assertEqual(status, glusterTestData.GLUSTER_VOLUME_TASKS)
 
     def test_parseGeoRepStatus(self):
         with open("glusterGeoRepStatus.xml") as f:
@@ -1182,28 +1182,28 @@ class GlusterCliTests(TestCaseBase):
         tree = etree.fromstring(out)
         gcli._TIME_ZONE = 'IST'
         status = gcli._parseGeoRepStatus(tree)
-        self.assertEquals(status, glusterTestData.GLUSTER_GEOREP_STATUS)
+        self.assertEqual(status, glusterTestData.GLUSTER_GEOREP_STATUS)
 
     def test_parseVolumeGeoRepConfig(self):
         with open("glusterVolumeGeoRepConfigList.xml") as f:
             out = f.read()
         tree = etree.fromstring(out)
         status = gcli._parseVolumeGeoRepConfig(tree)
-        self.assertEquals(status, glusterTestData.GLUSTER_GEOREP_CONFIG_LIST)
+        self.assertEqual(status, glusterTestData.GLUSTER_GEOREP_CONFIG_LIST)
 
     def test_parseSnapshotRestore(self):
         with open("glusterSnapshotRestore.xml") as f:
             out = f.read()
         tree = etree.fromstring(out)
         status = gcli._parseRestoredSnapshot(tree)
-        self.assertEquals(status, glusterTestData.GLUSTER_SNAPSHOT_RESTORE)
+        self.assertEqual(status, glusterTestData.GLUSTER_SNAPSHOT_RESTORE)
 
     def test_parseSnapshotConfigList(self):
         with open("glusterSnapshotConfig.xml") as f:
             out = f.read()
         tree = etree.fromstring(out)
         status = gcli._parseSnapshotConfigList(tree)
-        self.assertEquals(status, glusterTestData.GLUSTER_SNAPSHOT_CONFIG_LIST)
+        self.assertEqual(status, glusterTestData.GLUSTER_SNAPSHOT_CONFIG_LIST)
 
     def test_parseAllVolumeSnapshotList(self):
         with open("glusterSnapshotList.xml") as f:
@@ -1220,7 +1220,7 @@ class GlusterCliTests(TestCaseBase):
         tree = etree.fromstring(out)
         gcli._TIME_ZONE = 'IST'
         status = gcli._parseVolumeSnapshotList(tree)
-        self.assertEquals(status, glusterTestData.GLUSTER_VOLUME_SNAPSHOT_LIST)
+        self.assertEqual(status, glusterTestData.GLUSTER_VOLUME_SNAPSHOT_LIST)
 
     def test_parseVolumeSnapshotListEmpty(self):
         with open("glusterVolumeSnapshotListEmpty.xml") as f:
@@ -1229,7 +1229,7 @@ class GlusterCliTests(TestCaseBase):
         gcli._TIME_ZONE = 'IST'
         status = gcli._parseVolumeSnapshotList(tree)
         expected = {}
-        self.assertEquals(status, expected)
+        self.assertEqual(status, expected)
 
     def test_parseAllVolumeSnapshotListEmpty(self):
         with open("glusterSnapshotListEmpty.xml") as f:
@@ -1238,11 +1238,11 @@ class GlusterCliTests(TestCaseBase):
         gcli._TIME_ZONE = 'IST'
         status = gcli._parseAllVolumeSnapshotList(tree)
         expected = {}
-        self.assertEquals(status, expected)
+        self.assertEqual(status, expected)
 
     def test_parseVolumeHealInfo(self):
         with open("glusterVolumeHealInfo.xml") as f:
             out = f.read()
         tree = etree.fromstring(out)
         healInfo = gcli._parseVolumeHealInfo(tree)
-        self.assertEquals(healInfo, glusterTestData.GLUSTER_VOLUME_HEAL_INFO)
+        self.assertEqual(healInfo, glusterTestData.GLUSTER_VOLUME_HEAL_INFO)

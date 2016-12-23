@@ -113,8 +113,8 @@ class StompTests(TestCaseBase):
                                          'jms.queue.events', sslctx, False)
 
             def callback(client, event, params):
-                self.assertEquals(event, 'vdsm.event')
-                self.assertEquals(params['content'], True)
+                self.assertEqual(event, 'vdsm.event')
+                self.assertEqual(params['content'], True)
                 done.set()
 
             client.registerEventCallback(callback)

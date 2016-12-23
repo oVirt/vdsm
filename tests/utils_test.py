@@ -202,7 +202,7 @@ class TestRetry(TestCaseBase):
         self.assertRaises(RuntimeError, utils.retry, foo, tries=(limit + 10),
                           sleep=0, stopCallback=stopCallback)
         # Make sure we had the proper amount of iterations before failing
-        self.assertEquals(counter[0], limit)
+        self.assertEqual(counter[0], limit)
 
     @brokentest("deadline is not respected")
     def testTimeoutDeadlineReached(self):
@@ -278,8 +278,8 @@ class TestPidStat(TestCaseBase):
         pid = int(stats.pid)
         # procName comes in the format of (procname)
         name = stats.comm
-        self.assertEquals(pid, sproc.pid)
-        self.assertEquals(name, args[0])
+        self.assertEqual(pid, sproc.pid)
+        self.assertEqual(name, args[0])
         sproc.kill()
         sproc.wait()
 
@@ -332,7 +332,7 @@ class TestGetCmdArgs(TestCaseBase):
 class TestCommandPath(TestCaseBase):
     def testExisting(self):
         cp = utils.CommandPath('sh', 'utter nonsense', '/bin/sh')
-        self.assertEquals(cp.cmd, '/bin/sh')
+        self.assertEqual(cp.cmd, '/bin/sh')
 
     def testExistingNotInPaths(self):
         """Tests if CommandPath can find the executable like the 'which' unix
@@ -346,7 +346,7 @@ class TestCommandPath(TestCaseBase):
         try:
             utils.CommandPath(NAME, 'utter nonsense').cmd
         except OSError as e:
-            self.assertEquals(e.errno, errno.ENOENT)
+            self.assertEqual(e.errno, errno.ENOENT)
             self.assertIn(NAME, e.strerror)
 
 
@@ -377,9 +377,9 @@ class TestGeneralUtils(TestCaseBase):
         with open(path) as f:
             meminfo = utils._parseMemInfo(f.readlines())
         # testing some random fields
-        self.assertEquals(meminfo['NFS_Unstable'], 0)
-        self.assertEquals(meminfo['KernelStack'], 2760)
-        self.assertEquals(meminfo['Inactive'], 1432748)
+        self.assertEqual(meminfo['NFS_Unstable'], 0)
+        self.assertEqual(meminfo['KernelStack'], 2760)
+        self.assertEqual(meminfo['Inactive'], 1432748)
 
     @permutations([
         ([], []),
@@ -389,7 +389,7 @@ class TestGeneralUtils(TestCaseBase):
         (['a', 'a', 'b', 'c', 'a', 'd'], ['a', 'b', 'c', 'd'])
     ])
     def test_unique(self, iterable, unique_items):
-        self.assertEquals(utils.unique(iterable,), unique_items)
+        self.assertEqual(utils.unique(iterable,), unique_items)
 
     def test_rget_key_exists(self):
         self.assertEqual(
@@ -425,19 +425,19 @@ class TestAsyncProcessOperation(TestCaseBase):
 
     def test(self):
         aop = self._sleep(1)
-        self.assertEquals(aop.result(), ((0, "", ""), None))
+        self.assertEqual(aop.result(), ((0, "", ""), None))
 
     def testAlreadyExitedSuccess(self):
         aop = self._sleep(0)
         time.sleep(1)
-        self.assertEquals(aop.result(), ((0, "", ""), None))
+        self.assertEqual(aop.result(), ((0, "", ""), None))
 
     def testAlreadyExitedFail(self):
         aop = self._sleep("hello")
         time.sleep(1)
         ((rc, out, err), err) = aop.result()
-        self.assertEquals(err, None)
-        self.assertEquals(rc, 1)
+        self.assertEqual(err, None)
+        self.assertEqual(rc, 1)
 
     def testWait(self):
         aop = self._sleep(1)
@@ -445,7 +445,7 @@ class TestAsyncProcessOperation(TestCaseBase):
 
     def testParser(self):
         aop = self._echo("test")
-        self.assertEquals(aop.result(), ("test", None))
+        self.assertEqual(aop.result(), ("test", None))
 
     def testStop(self):
         aop = self._sleep(10)
@@ -460,7 +460,7 @@ class TestAsyncProcessOperation(TestCaseBase):
     def testException(self):
         aop = self._fail(1)
         res, err = aop.result()
-        self.assertEquals(res, None)
+        self.assertEqual(res, None)
         self.assertNotEquals(err, None)
 
 
@@ -502,7 +502,7 @@ class TestCallbackChain(TestCaseBase):
         chain = utils.CallbackChain([callback] * n)
         chain.start()
         chain.join()
-        self.assertEquals(counter[0], 5)
+        self.assertEqual(counter[0], 5)
 
     def testArgsPassedToCallback(self):
         callbackArgs = ('arg', 42, 'and another')
@@ -540,7 +540,7 @@ class TestTraceback(TestCaseBase):
             raise Exception
         with loghandler(self):
             self.assertRaises(Exception, fail)
-        self.assertEquals(self.record.name, "root")
+        self.assertEqual(self.record.name, "root")
         self.assertTrue(self.record.exc_text is not None)
 
     def testOn(self):
@@ -551,7 +551,7 @@ class TestTraceback(TestCaseBase):
             raise Exception
         with loghandler(self, logger=logger):
             self.assertRaises(Exception, fail)
-        self.assertEquals(self.record.name, logger)
+        self.assertEqual(self.record.name, logger)
 
     def testMsg(self):
         @utils.traceback(msg="WAT")
@@ -559,7 +559,7 @@ class TestTraceback(TestCaseBase):
             raise Exception
         with loghandler(self):
             self.assertRaises(Exception, fail)
-        self.assertEquals(self.record.message, "WAT")
+        self.assertEqual(self.record.message, "WAT")
 
     # Logging handler interface
 
@@ -599,7 +599,7 @@ class TestRollbackContext(TestCaseBase):
         with utils.RollbackContext() as rollback:
             rollback.prependDefer(self._callDef)
 
-        self.assertEquals(self._called, 1)
+        self.assertEqual(self._called, 1)
 
     def testRaise(self):
         """
@@ -612,7 +612,7 @@ class TestRollbackContext(TestCaseBase):
                 rollback.prependDefer(self._raiseDef)
                 rollback.prependDefer(self._callDef)
         except Exception:
-            self.assertEquals(self._called, 2)
+            self.assertEqual(self._called, 2)
             return
 
         self.fail("Exception was not raised")
@@ -631,7 +631,7 @@ class TestRollbackContext(TestCaseBase):
                 rollback.prependDefer(self._raiseDef, RuntimeError())
                 rollback.prependDefer(self._callDef)
         except RuntimeError:
-            self.assertEquals(self._called, 3)
+            self.assertEqual(self._called, 3)
             return
         except Exception:
             self.fail("Wrong exception was raised")
@@ -695,12 +695,12 @@ class TestExecCmdAffinity(TestCaseBase):
     @MonkeyPatch(cmdutils, '_USING_CPU_AFFINITY', True)
     def testResetAffinityWhenConfigured(self):
         taskset.set(os.getpid(), self.CPU_SET)
-        self.assertEquals(taskset.get(os.getpid()), self.CPU_SET)
+        self.assertEqual(taskset.get(os.getpid()), self.CPU_SET)
 
         try:
             proc = commands.execCmd((EXT_SLEEP, '30s'), sync=False)
 
-            self.assertEquals(taskset.get(proc.pid), online_cpus())
+            self.assertEqual(taskset.get(proc.pid), online_cpus())
         finally:
             proc.kill()
 
@@ -708,14 +708,14 @@ class TestExecCmdAffinity(TestCaseBase):
     @MonkeyPatch(cmdutils, '_USING_CPU_AFFINITY', True)
     def testKeepAffinity(self):
         taskset.set(os.getpid(), self.CPU_SET)
-        self.assertEquals(taskset.get(os.getpid()), self.CPU_SET)
+        self.assertEqual(taskset.get(os.getpid()), self.CPU_SET)
 
         try:
             proc = commands.execCmd((EXT_SLEEP, '30s'),
                                     sync=False,
                                     resetCpuAffinity=False)
 
-            self.assertEquals(taskset.get(proc.pid), self.CPU_SET)
+            self.assertEqual(taskset.get(proc.pid), self.CPU_SET)
         finally:
             proc.kill()
 
@@ -1023,7 +1023,7 @@ class TestWeakmethod(TestCaseBase):
 
         obj = ObjectWithDel()
         obj.public = _leaking_wrapper(obj.public)
-        self.assertEquals(obj.public(), ("public", (), {}))
+        self.assertEqual(obj.public(), ("public", (), {}))
         del obj
         gc.collect()
         self.assertIn(ObjectWithDel, [type(obj) for obj in gc.garbage])
@@ -1031,7 +1031,7 @@ class TestWeakmethod(TestCaseBase):
     def test_without_reference_cycle(self):
         obj = ObjectWithDel()
         obj.public = utils.weakmethod(obj.public)
-        self.assertEquals(obj.public(), ("public", (), {}))
+        self.assertEqual(obj.public(), ("public", (), {}))
         del obj
         gc.collect()
         self.assertNotIn(ObjectWithDel, [type(obj) for obj in gc.garbage])
@@ -1040,7 +1040,7 @@ class TestWeakmethod(TestCaseBase):
         obj = ObjectWithDel()
         method = utils.weakmethod(obj.public)
         obj.public = method
-        self.assertEquals(obj.public(), ("public", (), {}))
+        self.assertEqual(obj.public(), ("public", (), {}))
         del obj
         self.assertRaises(utils.InvalidatedWeakRef, method)
 

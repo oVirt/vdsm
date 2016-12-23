@@ -195,7 +195,7 @@ class VirtTestBase(TestCaseBase, verify.DeviceMixin):
         if targetUptime > 0:
             self.assertTrue(int(result['elapsedTime']) >= targetUptime)
         else:
-            self.assertEquals(result['status'], vmstatus.UP)
+            self.assertEqual(result['status'], vmstatus.UP)
 
     def _waitForBoot(self, vmid):
         self.retryAssert(partial(self.assertQemuSetupComplete, vmid),

@@ -228,7 +228,7 @@ class TestPrepareMerge(VdsmTestCase):
             self.assertEqual(sorted(self.expected_locks(env.subchain)),
                              sorted(guarded.context.locks))
             base_vol = env.subchain.base_vol
-            self.assertEquals(sc.ILLEGAL_VOL, base_vol.getLegality())
+            self.assertEqual(sc.ILLEGAL_VOL, base_vol.getLegality())
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
             new_base_alloc = env.sd_manifest.getVSize(base_vol.imgUUID,
                                                       base_vol.volUUID)
@@ -247,7 +247,7 @@ class TestPrepareMerge(VdsmTestCase):
             self.assertEqual(sorted(self.expected_locks(env.subchain)),
                              sorted(guarded.context.locks))
             base_vol = env.subchain.base_vol
-            self.assertEquals(sc.ILLEGAL_VOL, base_vol.getLegality())
+            self.assertEqual(sc.ILLEGAL_VOL, base_vol.getLegality())
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
             new_base_alloc = env.sd_manifest.getVSize(base_vol.imgUUID,
                                                       base_vol.volUUID)
@@ -262,7 +262,7 @@ class TestPrepareMerge(VdsmTestCase):
         with make_env('file', base, top) as env:
             merge.prepare(env.subchain)
             base_vol = env.subchain.base_vol
-            self.assertEquals(sc.ILLEGAL_VOL, base_vol.getLegality())
+            self.assertEqual(sc.ILLEGAL_VOL, base_vol.getLegality())
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
             self.assertEqual(expected.virtual * GB, new_base_size)
 
@@ -275,7 +275,7 @@ class TestPrepareMerge(VdsmTestCase):
         with make_env('file', base, top) as env:
             merge.prepare(env.subchain)
             base_vol = env.subchain.base_vol
-            self.assertEquals(sc.ILLEGAL_VOL, base_vol.getLegality())
+            self.assertEqual(sc.ILLEGAL_VOL, base_vol.getLegality())
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
             self.assertEqual(expected.virtual * GB, new_base_size)
 
@@ -370,7 +370,7 @@ class TestFinalizeMerge(VdsmTestCase):
             if top_vol is not env.chain[-1]:
                 child_vol = env.chain[top_index + 1]
                 info = qemuimg.info(child_vol.volumePath)
-                self.assertEquals(info['backingfile'], base_vol.volumePath)
+                self.assertEqual(info['backingfile'], base_vol.volumePath)
 
             # verify syncVolumeChain arguments
             self.assertEquals(image.Image.syncVolumeChain.sd_id,
@@ -384,4 +384,4 @@ class TestFinalizeMerge(VdsmTestCase):
             self.assertEquals(image.Image.syncVolumeChain.actual_chain,
                               new_chain)
 
-            self.assertEquals(base_vol.getLegality(), sc.LEGAL_VOL)
+            self.assertEqual(base_vol.getLegality(), sc.LEGAL_VOL)

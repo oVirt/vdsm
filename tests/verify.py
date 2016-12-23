@@ -66,4 +66,4 @@ class DeviceMixin(object):
         # Every alias has to be unique to the host. If this
         # condition doesn't hold, we may have identified the same XML chunk
         # as two different devices
-        self.assertEquals(len(aliases), len(set(aliases)))
+        self.assertEqual(len(aliases), len(set(aliases)))

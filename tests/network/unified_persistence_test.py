@@ -138,5 +138,5 @@ class unfiedPersistenceTests(TestCaseBase):
                  (misc, 'NET_CONF_PREF', FAKE_NET_CONF_PREF)]):
                 networks, bonds = unified_persistence._getNetInfo()
 
-        self.assertEquals(set(networks), set([NETWORK_NAME]))
-        self.assertEquals(set(bonds), set([BOND_NAME]))
+        self.assertEqual(set(networks), set([NETWORK_NAME]))
+        self.assertEqual(set(bonds), set([BOND_NAME]))

@@ -187,7 +187,7 @@ class ITMap(TestCaseBase):
         self.assertFalse(afterTime - currentTime < 1,
                          msg="Operation was too fast, not all threads were "
                              "initiated as desired (with 1 thread delay)")
-        self.assertEquals(ret, data)
+        self.assertEqual(ret, data)
 
     def testMaxAvailableProcesses(self):
         def dummy(arg):
@@ -197,11 +197,11 @@ class ITMap(TestCaseBase):
         # properly with their limitations
         data = frozenset(range(oop.HELPERS_PER_DOMAIN + 1))
         ret = frozenset(misc.itmap(dummy, data, misc.UNLIMITED_THREADS))
-        self.assertEquals(ret, data)
+        self.assertEqual(ret, data)
 
     def testMoreThreadsThanArgs(self):
         data = [1]
-        self.assertEquals(list(misc.itmap(int, data, 80)), data)
+        self.assertEqual(list(misc.itmap(int, data, 80)), data)
 
     def testInvalidITMapParams(self):
         data = 1
@@ -217,16 +217,16 @@ class ParseHumanReadableSize(TestCaseBase):
         for i in range(1, 1000):
             for schar, power in [("T", 40), ("G", 30), ("M", 20), ("K", 10)]:
                 expected = misc.parseHumanReadableSize("%d%s" % (i, schar))
-                self.assertEquals(expected, (2 ** power) * i)
+                self.assertEqual(expected, (2 ** power) * i)
 
     def testInvalidInput(self):
         """
         Test that parsing handles invalid input correctly
         """
-        self.assertEquals(misc.parseHumanReadableSize("T"), 0)
-        self.assertEquals(misc.parseHumanReadableSize("TNT"), 0)
+        self.assertEqual(misc.parseHumanReadableSize("T"), 0)
+        self.assertEqual(misc.parseHumanReadableSize("TNT"), 0)
         self.assertRaises(AttributeError, misc.parseHumanReadableSize, 5)
-        self.assertEquals(misc.parseHumanReadableSize("4.3T"), 0)
+        self.assertEqual(misc.parseHumanReadableSize("4.3T"), 0)
 
 
 class AsyncProcTests(TestCaseBase):
@@ -242,7 +242,7 @@ class AsyncProcTests(TestCaseBase):
         p.stdin.write(data)
         p.stdin.flush()
         self.log.info("Written data reading")
-        self.assertEquals(p.stdout.read(len(data)), data)
+        self.assertEqual(p.stdout.read(len(data)), data)
 
     def testMutiWrite(self):
         data = """The Doctor: Androzani Major was becoming quite developed
@@ -259,7 +259,7 @@ class AsyncProcTests(TestCaseBase):
         p.stdin.write(data[halfPoint:])
         p.stdin.flush()
         self.log.info("Written data reading")
-        self.assertEquals(p.stdout.read(len(data)), data)
+        self.assertEqual(p.stdout.read(len(data)), data)
 
     def testWriteLargeData(self):
         data = """The Doctor: Davros, if you had created a virus in your
@@ -287,7 +287,7 @@ class AsyncProcTests(TestCaseBase):
         p.stdin.write(data)
         p.stdin.flush()
         self.log.info("Written data reading")
-        self.assertEquals(p.stdout.read(len(data)), data)
+        self.assertEqual(p.stdout.read(len(data)), data)
 
     def testWaitTimeout(self):
         ttl = 2
@@ -314,7 +314,7 @@ class AsyncProcTests(TestCaseBase):
                 "and the intelligent are full of doubt")
         p = commands.execCmd([EXT_DD], data=data, sync=False)
         p.stdin.close()
-        self.assertEquals(p.stdout.read(len(data)).strip(), data)
+        self.assertEqual(p.stdout.read(len(data)).strip(), data)
 
 
 class DdWatchCopy(TestCaseBase):
@@ -343,7 +343,7 @@ class DdWatchCopy(TestCaseBase):
                     readData = dp.read()
 
         # Compare
-        self.assertEquals(readData, data)
+        self.assertEqual(readData, data)
 
     def _createDataFile(self, data, repetitions):
         fd, path = tempfile.mkstemp(dir=TEMPDIR)
@@ -351,7 +351,7 @@ class DdWatchCopy(TestCaseBase):
         try:
             for i in range(repetitions):
                 os.write(fd, data)
-            self.assertEquals(os.stat(path).st_size, misc.MEGA)
+            self.assertEqual(os.stat(path).st_size, misc.MEGA)
         except:
             os.unlink(path)
             raise
@@ -371,12 +371,12 @@ class DdWatchCopy(TestCaseBase):
             rc, out, err = misc.ddWatchCopy(
                 "/dev/zero", path, None, misc.MEGA, os.stat(path).st_size)
 
-            self.assertEquals(rc, 0)
-            self.assertEquals(os.stat(path).st_size, misc.MEGA * 2)
+            self.assertEqual(rc, 0)
+            self.assertEqual(os.stat(path).st_size, misc.MEGA * 2)
 
             with open(path, "r") as f:
                 for i in range(repetitions):
-                    self.assertEquals(f.read(len(data)), data)
+                    self.assertEqual(f.read(len(data)), data)
         finally:
             os.unlink(path)
 
@@ -390,22 +390,22 @@ class DdWatchCopy(TestCaseBase):
             with open(path, "a") as f:  # Appending additional data
                 f.write(add_data)
 
-            self.assertEquals(os.stat(path).st_size, misc.MEGA + len(add_data))
+            self.assertEqual(os.stat(path).st_size, misc.MEGA + len(add_data))
 
             # Using os.stat(path).st_size is part of the test, please do not
             # remove or change.
             rc, out, err = misc.ddWatchCopy(
                 "/dev/zero", path, None, misc.MEGA, os.stat(path).st_size)
 
-            self.assertEquals(rc, 0)
+            self.assertEqual(rc, 0)
             self.assertEquals(os.stat(path).st_size,
                               misc.MEGA * 2 + len(add_data))
 
             with open(path, "r") as f:
                 for i in range(repetitions):
-                    self.assertEquals(f.read(len(data)), data)
+                    self.assertEqual(f.read(len(data)), data)
                 # Checking the additional data
-                self.assertEquals(f.read(len(add_data)), add_data)
+                self.assertEqual(f.read(len(add_data)), add_data)
         finally:
             os.unlink(path)
 
@@ -436,7 +436,7 @@ class DdWatchCopy(TestCaseBase):
                     readData = f.read()
 
         # Comapre
-        self.assertEquals(readData, data)
+        self.assertEqual(readData, data)
 
     def testNonExistingFile(self):
         """
@@ -616,7 +616,7 @@ class UuidPack(TestCaseBase):
         for i in range(1000):
             origUuid = str(uuid.uuid4())
             packedUuid = misc.packUuid(origUuid)
-            self.assertEquals(misc.unpackUuid(packedUuid), origUuid)
+            self.assertEqual(misc.unpackUuid(packedUuid), origUuid)
 
 
 class Checksum(TestCaseBase):
@@ -628,7 +628,7 @@ class Checksum(TestCaseBase):
         """
         with open("/dev/urandom", "rb") as f:
             data = f.read(50)
-        self.assertEquals(misc.checksum(data, 16), misc.checksum(data, 16))
+        self.assertEqual(misc.checksum(data, 16), misc.checksum(data, 16))
 
 
 class ParseBool(TestCaseBase):
@@ -637,13 +637,13 @@ class ParseBool(TestCaseBase):
         """
         Compare valid inputs with expected results.
         """
-        self.assertEquals(misc.parseBool(True), True)
-        self.assertEquals(misc.parseBool(False), False)
-        self.assertEquals(misc.parseBool("true"), True)
-        self.assertEquals(misc.parseBool("tRue"), True)
-        self.assertEquals(misc.parseBool("false"), False)
-        self.assertEquals(misc.parseBool("fAlse"), False)
-        self.assertEquals(misc.parseBool("BOB"), False)
+        self.assertEqual(misc.parseBool(True), True)
+        self.assertEqual(misc.parseBool(False), False)
+        self.assertEqual(misc.parseBool("true"), True)
+        self.assertEqual(misc.parseBool("tRue"), True)
+        self.assertEqual(misc.parseBool("false"), False)
+        self.assertEqual(misc.parseBool("fAlse"), False)
+        self.assertEqual(misc.parseBool("BOB"), False)
 
     def testInvalidInput(self):
         """
@@ -659,11 +659,11 @@ class AlignData(TestCaseBase):
         """
         Test various inputs and see that they are correct.
         """
-        self.assertEquals(misc._alignData(100, 100), (4, 25, 25))
-        self.assertEquals(misc._alignData(512, 512), (512, 1, 1))
-        self.assertEquals(misc._alignData(1, 1024), (1, 1, 1024))
-        self.assertEquals(misc._alignData(10240, 512), (512, 20, 1))
-        self.assertEquals(misc._alignData(1, 1), (1, 1, 1))
+        self.assertEqual(misc._alignData(100, 100), (4, 25, 25))
+        self.assertEqual(misc._alignData(512, 512), (512, 1, 1))
+        self.assertEqual(misc._alignData(1, 1024), (1, 1, 1024))
+        self.assertEqual(misc._alignData(10240, 512), (512, 20, 1))
+        self.assertEqual(misc._alignData(1, 1), (1, 1, 1))
 
 
 class ValidateDDBytes(TestCaseBase):
@@ -750,7 +750,7 @@ class ReadBlock(TestCaseBase):
 
         os.unlink(path)
 
-        self.assertEquals(block[0], expectedResultData)
+        self.assertEqual(block[0], expectedResultData)
 
     def testInvalidOffset(self):
         """
@@ -883,8 +883,8 @@ class WatchCmd(TestCaseBase):
         data = data.strip()
         ret, out, err = watchCmd([EXT_ECHO, "-n", data], lambda: False)
 
-        self.assertEquals(ret, 0)
-        self.assertEquals(out, data.splitlines())
+        self.assertEqual(ret, 0)
+        self.assertEqual(out, data.splitlines())
 
     def testStop(self):
         """
@@ -906,7 +906,7 @@ class WatchCmd(TestCaseBase):
         line = "Real stupidity beats artificial intelligence every time."
         # (C) Terry Pratchet - Hogfather
         ret, stdout, stderr = watchCmd([EXT_ECHO, line], lambda: False)
-        self.assertEquals(stdout[0], line)
+        self.assertEqual(stdout[0], line)
 
     def testStdErr(self):
         """
@@ -919,7 +919,7 @@ class WatchCmd(TestCaseBase):
         code = "import sys; sys.stderr.write('%s')" % line
         ret, stdout, stderr = watchCmd([EXT_PYTHON, "-c", code],
                                        lambda: False)
-        self.assertEquals(stderr[0], line)
+        self.assertEqual(stderr[0], line)
 
     def testLeakFd(self):
         """
@@ -931,8 +931,8 @@ class WatchCmd(TestCaseBase):
         openFds = openFdNum()
         self.testStdOut()
         gc.collect()
-        self.assertEquals(len(gc.garbage), 0)
-        self.assertEquals(openFdNum(), openFds)
+        self.assertEqual(len(gc.garbage), 0)
+        self.assertEqual(openFdNum(), openFds)
 
 
 class ExecCmd(TestCaseBase):
@@ -943,7 +943,7 @@ class ExecCmd(TestCaseBase):
         """
         ret, out, err = commands.execCmd([EXT_ECHO])
 
-        self.assertEquals(ret, 0)
+        self.assertEqual(ret, 0)
 
     @MonkeyPatch(cmdutils, "_USING_CPU_AFFINITY", True)
     def testNoCommandWithAffinity(self):
@@ -963,7 +963,7 @@ class ExecCmd(TestCaseBase):
                "and not let your weirdness mess up my day"
         # (C) Nickolodeon - Invader Zim
         ret, stdout, stderr = commands.execCmd((EXT_ECHO, line))
-        self.assertEquals(stdout[0], line)
+        self.assertEqual(stdout[0], line)
 
     def testStdErr(self):
         """
@@ -975,7 +975,7 @@ class ExecCmd(TestCaseBase):
         # (C) Fox - The X Files
         code = "import sys; sys.stderr.write('%s')" % line
         ret, stdout, stderr = commands.execCmd([EXT_PYTHON, "-c", code])
-        self.assertEquals(stderr[0], line)
+        self.assertEqual(stderr[0], line)
 
     def testSudo(self):
         """
@@ -985,7 +985,7 @@ class ExecCmd(TestCaseBase):
         cmd = [EXT_WHOAMI]
         checkSudo(cmd)
         ret, stdout, stderr = commands.execCmd(cmd, sudo=True)
-        self.assertEquals(stdout[0], SUDO_USER)
+        self.assertEqual(stdout[0], SUDO_USER)
 
     def testNice(self):
         cmd = ["sleep", "10"]
@@ -993,7 +993,7 @@ class ExecCmd(TestCaseBase):
 
         def test():
             nice = utils.pidStat(proc.pid).nice
-            self.assertEquals(nice, 10)
+            self.assertEqual(nice, 10)
 
         utils.retry(AssertionError, test, tries=10, sleep=0.1)
         proc.kill()

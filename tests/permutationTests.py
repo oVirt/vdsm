@@ -57,4 +57,4 @@ SUM_PREMUTATIONS = (("recursive",),
 class SumTests(TestCaseBase):
     @permutations(SUM_PREMUTATIONS)
     def test(self, strategy):
-        self.assertEquals(mysum((1, 2, 3), strategy), 6)
+        self.assertEqual(mysum((1, 2, 3), strategy), 6)

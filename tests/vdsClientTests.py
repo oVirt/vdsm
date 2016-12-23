@@ -83,7 +83,7 @@ class fakeXMLRPCServer(object):
                 {'code': 1, 'message': conList}}
 
     def desktopLogin(self, vmId, domain, user, password):
-        self.testCase.assertEquals(password, 'password')
+        self.testCase.assertEqual(password, 'password')
         return {'status': {'code': 0, 'message': ''}}
 
 
@@ -160,17 +160,17 @@ class vdsClientTest(TestCaseBase):
 
         # test parsing only arguments
         r1 = serv.do_create(['/dev/null'] + allArgs)
-        self.assertEquals(r1, expectResult)
+        self.assertEqual(r1, expectResult)
 
         # test parsing only configure file
         with configFile(allArgs) as conf:
             r2 = serv.do_create([conf])
-        self.assertEquals(r2, expectResult)
+        self.assertEqual(r2, expectResult)
 
         # test parsing configure file and arguments
         with configFile(plainArgs) as conf:
             r3 = serv.do_create([conf] + nestArgs)
-        self.assertEquals(r3, expectResult)
+        self.assertEqual(r3, expectResult)
 
         # changing one argument should result a different dictionary
         allArgs[-1] = 'cpuPinning={0:1,1:0}'

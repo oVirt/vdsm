@@ -47,4 +47,4 @@ class TestBridgeOverwrite(TestCaseBase):
         expected_err = _BRCTL_DEV_EXISTS % self._bridge.devName
         popen = Popen([EXT_BRCTL, 'addbr', self._bridge.devName], stderr=PIPE)
         err = popen.stderr.read().strip()
-        self.assertEquals(expected_err, err)
+        self.assertEqual(expected_err, err)

@@ -102,7 +102,7 @@ procs_blocked 0
     def testBootTimeExtra(self):
         with MonkeyPatchScope([(hoststats, '_PROC_STAT_PATH',
                                 self._extra_path)]):
-            self.assertEquals(hoststats.get_boot_time(), 1395249141)
+            self.assertEqual(hoststats.get_boot_time(), 1395249141)
 
 
 class HostStatsThreadTests(TestCaseBase):
@@ -180,4 +180,4 @@ class HostStatsThreadTests(TestCaseBase):
             'cpuLoad': 0.0,
         }
         hoststats.start(lambda: 0)
-        self.assertEquals(hoststats.produce(None, None), expected)
+        self.assertEqual(hoststats.produce(None, None), expected)

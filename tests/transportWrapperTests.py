@@ -31,4 +31,4 @@ class TransportTest(TestCaseBase):
     def testTransportWrapper(self):
         transport = wrap_transport(FakeTransport())
         response = 'My response'
-        self.assertEquals(response, transport.parse_response(response))
+        self.assertEqual(response, transport.parse_response(response))

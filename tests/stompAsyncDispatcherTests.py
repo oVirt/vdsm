@@ -109,8 +109,8 @@ class AsyncDispatcherTest(TestCaseBase):
 
         self.assertTrue(frame_handler.has_outgoing_messages)
         recv_frame = frame_handler.pop_message()
-        self.assertEquals(Command.MESSAGE, recv_frame.command)
-        self.assertEquals(body, recv_frame.body)
+        self.assertEqual(Command.MESSAGE, recv_frame.command)
+        self.assertEqual(body, recv_frame.body)
 
     def test_heartbeat_calc(self):
         dispatcher = AsyncDispatcher(
@@ -119,7 +119,7 @@ class AsyncDispatcherTest(TestCaseBase):
         )
         dispatcher.setHeartBeat(8000, 0)
 
-        self.assertEquals(6, dispatcher.next_check_interval())
+        self.assertEqual(6, dispatcher.next_check_interval())
 
     def test_heartbeat_exceeded(self):
         frame_handler = TestFrameHandler()

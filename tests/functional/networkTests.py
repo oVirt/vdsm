@@ -276,7 +276,7 @@ class NetworkTest(TestCaseBase):
             expected_iface = vlan_name
         else:
             expected_iface = physical_iface
-        self.assertEquals(network_netinfo['iface'], expected_iface)
+        self.assertEqual(network_netinfo['iface'], expected_iface)
         if 'vlan' in network_config:
             self.assertTrue(isinstance(netinfo.vlans[vlan_name]['vlanid'],
                                        int))
@@ -397,7 +397,7 @@ class NetworkTest(TestCaseBase):
         # REQUIRED_FOR engine < 3.7
         mtu = str(mtu)
         for elem in elems:
-            self.assertEquals(mtu, self.vdsm_net.getMtu(elem))
+            self.assertEqual(mtu, self.vdsm_net.getMtu(elem))
 
     def assert_active_slave_exists(self, bondName, nics):
         netinfo = self.vdsm_net.netinfo
@@ -844,7 +844,7 @@ class NetworkTest(TestCaseBase):
             net_untagged = NETWORK_NAME
             networks = {net_untagged: dict(nic=nic, bridged=bridged)}
             status, msg = self.setupNetworks(networks, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(net_untagged, bridged=bridged)
 
             other_net_untagged = NETWORK_NAME + '2'
@@ -856,7 +856,7 @@ class NetworkTest(TestCaseBase):
             net_tagged = NETWORK_NAME + '3'
             networks = {net_tagged: dict(nic=nic, bridged=bridged, vlan='100')}
             status, msg = self.setupNetworks(networks, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(net_tagged, bridged=bridged)
 
             other_net_same_tag = NETWORK_NAME + '4'
@@ -869,14 +869,14 @@ class NetworkTest(TestCaseBase):
             networks = {other_net_same_tag: dict(nic=another_nic,
                                                  bridged=bridged, vlan='100')}
             status, msg = self.setupNetworks(networks, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(other_net_same_tag)
 
             other_net_different_tag = NETWORK_NAME + '5'
             networks = {other_net_different_tag: dict(nic=nic, bridged=bridged,
                                                       vlan='200')}
             status, msg = self.setupNetworks(networks, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(other_net_different_tag, bridged=bridged)
 
             nets_to_clean = [net_untagged, net_tagged, other_net_same_tag,
@@ -891,7 +891,7 @@ class NetworkTest(TestCaseBase):
                             yet_another_tagged_bridged: dict(
                                 nic=yet_another_nic, bridged=True, vlan='300')}
                 status, msg = self.setupNetworks(networks, {}, NOCHK)
-                self.assertEquals(status, SUCCESS, msg)
+                self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(yet_another_bridged, bridged=True)
                 self.assertNetworkExists(yet_another_tagged_bridged,
                                          bridged=True)
@@ -919,7 +919,7 @@ class NetworkTest(TestCaseBase):
             tap = Tap(prefix='vnet')
             tap.addDevice()
             rc, _, _ = execCmd([EXT_BRCTL, 'addif', NETWORK_NAME, tap.devName])
-            self.assertEquals(rc, 0, 'brctl addif failed: rc=%s' % (rc,))
+            self.assertEqual(rc, 0, 'brctl addif failed: rc=%s' % (rc,))
             return tap
 
         STANDARD, BIG = 1500, 2000
@@ -928,7 +928,7 @@ class NetworkTest(TestCaseBase):
             first_net = {NETWORK_NAME: dict(bridged=True, nic=first,
                                             mtu=STANDARD)}
             status, msg = self.setupNetworks(first_net, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
             self.assertMtu(STANDARD, NETWORK_NAME, first)
             bridge_index = get_bridge_index()
             # simulate a vm connected to the bridge
@@ -937,9 +937,9 @@ class NetworkTest(TestCaseBase):
                 second_net = {NETWORK_NAME: dict(bridged=True, nic=second,
                                                  mtu=BIG, vlan=VLAN_ID)}
                 status, msg = self.setupNetworks(second_net, {}, NOCHK)
-                self.assertEquals(status, SUCCESS, msg)
+                self.assertEqual(status, SUCCESS, msg)
                 second_bridge_index = get_bridge_index()
-                self.assertEquals(bridge_index, second_bridge_index)
+                self.assertEqual(bridge_index, second_bridge_index)
             finally:
                 tap.delDevice()
             # the kernel bridge driver automatically updates the bridge to the
@@ -950,9 +950,9 @@ class NetworkTest(TestCaseBase):
                 # verify that the ifcfg configuration files are also updated
                 # with the new MTU
                 rc, _, _ = execCmd([EXT_IFDOWN, NETWORK_NAME])
-                self.assertEquals(rc, 0, 'ifdown failed: rc=%s' % (rc,))
+                self.assertEqual(rc, 0, 'ifdown failed: rc=%s' % (rc,))
                 rc, _, _ = execCmd([EXT_IFUP, NETWORK_NAME])
-                self.assertEquals(rc, 0, 'ifup failed: rc=%s' % (rc,))
+                self.assertEqual(rc, 0, 'ifup failed: rc=%s' % (rc,))
                 self.vdsm_net.refreshNetinfo()
                 self.assertMtu(BIG, NETWORK_NAME, second)
 
@@ -960,12 +960,12 @@ class NetworkTest(TestCaseBase):
                 NETWORK_NAME: dict(bridged=True, nic=second, mtu=BIG,
                                    ipaddr=IP_ADDRESS, netmask=IP_MASK)}
             status, msg = self.setupNetworks(third_net, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
             self.assertNotEqual(second_bridge_index, get_bridge_index())
 
             status, msg = self.setupNetworks({NETWORK_NAME: {'remove': True}},
                                              {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
     @permutations([[True], [False]])
@@ -976,7 +976,7 @@ class NetworkTest(TestCaseBase):
             status, msg = self.setupNetworks(
                 networks, {BONDING_NAME: dict(nics=nics)}, NOCHK)
 
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
             self.assertBondExists(BONDING_NAME, nics)
@@ -990,7 +990,7 @@ class NetworkTest(TestCaseBase):
                 bondings = {BONDING_NAME: dict(nics=nics[1:3])}
                 status, msg = self.setupNetworks(networks, bondings, NOCHK)
 
-                self.assertEquals(status, SUCCESS, msg)
+                self.assertEqual(status, SUCCESS, msg)
 
                 self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
                 self.assertNetworkExists(netName, bridged=bridged)
@@ -1001,7 +1001,7 @@ class NetworkTest(TestCaseBase):
                         netName: dict(remove=True)}
             bondings = {BONDING_NAME: dict(remove=True)}
             status, msg = self.setupNetworks(networks, bondings, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
     @permutations([[True], [False]])
@@ -1022,7 +1022,7 @@ class NetworkTest(TestCaseBase):
             bondings = {BONDING_NAME: dict(nics=nics[:2])}
             status, msg = self.setupNetworks(networks, bondings, NOCHK)
 
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             self.assertMtu(MIDI, NETWORK_NAME + '2', BONDING_NAME, nics[0],
                            nics[1])
@@ -1034,7 +1034,7 @@ class NetworkTest(TestCaseBase):
                             bridged=bridged)}
             status, msg = self.setupNetworks(network, {}, NOCHK)
 
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             self.assertNetworkExists(NETWORK_NAME + '3', bridged=bridged)
             self.assertMtu(JUMBO, NETWORK_NAME + '3', BONDING_NAME, nics[0],
@@ -1045,7 +1045,7 @@ class NetworkTest(TestCaseBase):
             status, msg = self.setupNetworks(
                 {NETWORK_NAME + '3': dict(remove=True)}, {}, NOCHK)
 
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             self.assertMtu(MIDI, NETWORK_NAME + '2', BONDING_NAME, nics[0],
                            nics[1])
@@ -1055,7 +1055,7 @@ class NetworkTest(TestCaseBase):
             status, msg = self.setupNetworks(
                 {NETWORK_NAME + '2': dict(remove=True)}, {}, NOCHK)
 
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             self.assertMtu(DEFAULT_MTU, BONDING_NAME, nics[0], nics[1])
 
@@ -1064,7 +1064,7 @@ class NetworkTest(TestCaseBase):
             status, msg = self.setupNetworks(
                 {}, {BONDING_NAME: dict(nics=nics)}, NOCHK)
 
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             self.assertMtu(DEFAULT_MTU, BONDING_NAME,
                            nics[0], nics[1], nics[2])
@@ -1073,7 +1073,7 @@ class NetworkTest(TestCaseBase):
                 {NETWORK_NAME + '1': dict(remove=True)},
                 {BONDING_NAME: dict(remove=True)}, NOCHK)
 
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             # Add additional nic to a bond on a non default mtu network
             # Expect to see nics MTU to be non default.
@@ -1082,18 +1082,18 @@ class NetworkTest(TestCaseBase):
                             bridged=bridged)}
             bondings = {BONDING_NAME: dict(nics=nics[:2])}
             status, msg = self.setupNetworks(network, bondings, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             status, msg = self.setupNetworks(
                 {}, {BONDING_NAME: dict(nics=nics)}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             self.assertMtu(JUMBO, BONDING_NAME, nics[0], nics[1], nics[2])
 
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: dict(remove=True)},
                 {BONDING_NAME: dict(remove=True)}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
     @permutations([[True], [False]])
@@ -1103,7 +1103,7 @@ class NetworkTest(TestCaseBase):
                                            bridged=bridged)}
             status, msg = self.setupNetworks(
                 networks, {BONDING_NAME: dict(nics=nics)}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
             self.assertBondExists(BONDING_NAME, nics)
@@ -1112,14 +1112,14 @@ class NetworkTest(TestCaseBase):
             networks = {NETWORK_NAME: dict(nic=nics[0], bridged=bridged)}
             status, msg = self.setupNetworks(
                 networks, {BONDING_NAME: dict(remove=True)}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
             self.assertBondDoesntExist(BONDING_NAME, nics)
 
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: dict(remove=True)}, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
     @permutations([[True], [False]])
@@ -1129,7 +1129,7 @@ class NetworkTest(TestCaseBase):
                                            bridged=bridged)}
             bondings = {BONDING_NAME: dict(nics=nics[:2])}
             status, msg = self.setupNetworks(networks, bondings, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
             self.assertBondExists(BONDING_NAME, nics[:2])
@@ -1140,7 +1140,7 @@ class NetworkTest(TestCaseBase):
                 status, msg = self.setupNetworks(
                     {}, {BONDING_NAME: dict(nics=nics)}, NOCHK)
 
-                self.assertEquals(status, SUCCESS, msg)
+                self.assertEqual(status, SUCCESS, msg)
 
                 self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
                 self.assertBondExists(BONDING_NAME, nics)
@@ -1148,7 +1148,7 @@ class NetworkTest(TestCaseBase):
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: dict(remove=True)},
                 {BONDING_NAME: dict(remove=True)}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
     def _createBondedNetAndCheck(self, netNum, bondDict, bridged,
                                  **networkOpts):
@@ -1158,7 +1158,7 @@ class NetworkTest(TestCaseBase):
                                   **networkOpts)}
         status, msg = self.setupNetworks(
             networks, {BONDING_NAME: bondDict}, {})
-        self.assertEquals(status, SUCCESS, msg)
+        self.assertEqual(status, SUCCESS, msg)
         self.assertNetworkExists(netName, bridged=bridged)
         self.assertBondExists(BONDING_NAME, bondDict['nics'],
                               bondDict.get('options'))
@@ -1211,7 +1211,7 @@ class NetworkTest(TestCaseBase):
                                 num in range(5))
                 status, msg = self.setupNetworks(
                     networks, {BONDING_NAME: dict(remove=True)}, {})
-                self.assertEquals(status, SUCCESS, msg)
+                self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
     @permutations([[True], [False]])
@@ -1240,7 +1240,7 @@ class NetworkTest(TestCaseBase):
                                 num in range(3))
                 status, msg = self.setupNetworks(
                     networks, {BONDING_NAME: dict(remove=True)}, {})
-                self.assertEquals(status, SUCCESS, msg)
+                self.assertEqual(status, SUCCESS, msg)
 
     def _createVlanedNetOverNicAndCheck(self, netNum, bridged, **networkOpts):
         netName = NETWORK_NAME + str(netNum)
@@ -1248,7 +1248,7 @@ class NetworkTest(TestCaseBase):
                                   vlan=str(int(VLAN_ID) + netNum),
                                   **networkOpts)}
         status, msg = self.setupNetworks(networks, {}, {})
-        self.assertEquals(status, SUCCESS, msg)
+        self.assertEqual(status, SUCCESS, msg)
         self.assertNetworkExists(netName, bridged=bridged)
         if 'mtu' in networkOpts:
             self.assertMtu(networkOpts['mtu'], netName)
@@ -1278,7 +1278,7 @@ class NetworkTest(TestCaseBase):
                 networks = dict((NETWORK_NAME + str(num), {'remove': True}) for
                                 num in range(3))
                 status, msg = self.setupNetworks(networks, {}, {})
-                self.assertEquals(status, SUCCESS, msg)
+                self.assertEqual(status, SUCCESS, msg)
 
     @permutations([[True], [False]])
     def testSetupNetworksAddBadParams(self, bridged):
@@ -1318,19 +1318,19 @@ class NetworkTest(TestCaseBase):
                                        'bonding': BONDING_NAME}}
                 bonds = {BONDING_NAME: {'nics': nics}}
                 status, msg = self.setupNetworks(nets, bonds, NOCHK)
-                self.assertEquals(status, SUCCESS, msg)
+                self.assertEqual(status, SUCCESS, msg)
                 hwaddr = self.vdsm_net.netinfo.bondings[BONDING_NAME]['hwaddr']
 
                 status, msg = self.setupNetworks(
                     {NETWORK_NAME: {'remove': True}},
                     {BONDING_NAME: {'remove': True}}, NOCHK)
-                self.assertEquals(status, SUCCESS, msg)
+                self.assertEqual(status, SUCCESS, msg)
 
                 return hwaddr
 
             macAddress1 = _getBondHwAddress(nics[0], nics[1])
             macAddress2 = _getBondHwAddress(nics[1], nics[0])
-            self.assertEquals(macAddress1, macAddress2)
+            self.assertEqual(macAddress1, macAddress2)
 
     @cleanupNet
     @permutations([[True], [False]])
@@ -1343,7 +1343,7 @@ class NetworkTest(TestCaseBase):
             nic, = nics
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'nic': nic, 'bridged': bridged}}, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
 
@@ -1355,7 +1355,7 @@ class NetworkTest(TestCaseBase):
 
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             self.vdsm_net.save_config()
 
@@ -1381,7 +1381,7 @@ class NetworkTest(TestCaseBase):
                               'bootproto': 'dhcp', 'blockingdhcp': False}
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: dhcp_async_net}, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             self.assertNetworkExists(NETWORK_NAME)
             self.assertFalse(_get_blocking_dhcp(NETWORK_NAME))
@@ -1406,7 +1406,7 @@ class NetworkTest(TestCaseBase):
             # cleanup
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
     def testRemovingBridgeDoesNotLeaveBridge(self):
@@ -1415,17 +1415,17 @@ class NetworkTest(TestCaseBase):
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'nic': nic, 'STP': 'no', 'bridged': 'true',
                                 'mtu': 1500}}, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
             bridge = ipwrapper.getLink(NETWORK_NAME)
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'nic': nic, 'bridged': 'false', 'mtu': 1500}},
                 {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
             self.assertNotIn(
                 bridge.name, (l.name for l in ipwrapper.getLinks()))
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
     @requiresUnifiedPersistence("with ifcfg persistence, "
                                 "vdsm-restore-net-config selective restoration"
@@ -1476,7 +1476,7 @@ class NetworkTest(TestCaseBase):
                      BOND_MISSING: {'nics': [nic_b]}
                      }
             status, msg = self.setupNetworks(nets, bonds, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
             _assert_all_nets_exist()
             try:
                 self.vdsm_net.save_config()
@@ -1599,7 +1599,7 @@ class NetworkTest(TestCaseBase):
                      BOND_CHANGED: {'nics': [nic_c], 'options': "mode=4"}
                      }
             status, msg = self.setupNetworks(nets, bonds, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
             _assert_all_nets_exist()
             try:
                 self.vdsm_net.save_config()
@@ -1614,7 +1614,7 @@ class NetworkTest(TestCaseBase):
 
                 status, msg = self.setupNetworks(
                     {NET_ADDITIONAL: net_additional_attrs}, {}, NOCHK)
-                self.assertEquals(status, SUCCESS, msg)
+                self.assertEqual(status, SUCCESS, msg)
                 _assert_all_nets_exist()
                 _verify_running_config_intact()
                 self.assertEqual({'ifcfg-%s' % NET_ADDITIONAL,
@@ -1640,7 +1640,7 @@ class NetworkTest(TestCaseBase):
                     {BOND_CHANGED: {'remove': True},
                      BOND_UNCHANGED: {'remove': True}},
                     NOCHK)
-                self.assertEquals(status, SUCCESS, msg)
+                self.assertEqual(status, SUCCESS, msg)
                 self.vdsm_net.save_config()
                 self.assertNetworkDoesntExist(NET_MGMT)
                 self.assertNetworkDoesntExist(NET_UNCHANGED)
@@ -1661,11 +1661,11 @@ class NetworkTest(TestCaseBase):
                 {NETWORK_NAME: {'nic': nic, 'IPV6_AUTOCONF': 'no',
                                 'PEERNTP': 'yes', 'IPV6INIT': 'no'}},
                 {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(NETWORK_NAME)
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkDoesntExist(NETWORK_NAME)
 
     @cleanupNet
@@ -1678,7 +1678,7 @@ class NetworkTest(TestCaseBase):
             nic, = nics
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'nic': nic, 'bridged': bridged}}, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
 
@@ -2352,7 +2352,7 @@ class NetworkTest(TestCaseBase):
             bonds = {BONDING_NAME: {'nics': nics}}
 
             status, msg = self.setupNetworks(networks, bonds, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
             for network, attributes in networks.iteritems():
                 self.assertNetworkExists(network)
                 self.assertMtu(attributes['mtu'], network)
@@ -2366,7 +2366,7 @@ class NetworkTest(TestCaseBase):
                 networks[network] = {'remove': True}
             bonds[BONDING_NAME] = {'remove': True}
             status, msg = self.setupNetworks(networks, bonds, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
     @slowtest
     @cleanupNet
@@ -2389,7 +2389,7 @@ class NetworkTest(TestCaseBase):
             network = {NETWORK_NAME: {'vlan': VLAN_ID, 'bridged': bridged,
                                       'nic': nic}}
             status, msg = self.setupNetworks(network, {}, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             network = {NETWORK_NAME: {'vlan': VLAN_ID, 'bridged': True,
                                       'bonding': BONDING_NAME,
@@ -2414,7 +2414,7 @@ class NetworkTest(TestCaseBase):
                                       'bonding': BONDING_NAME}}
             bonding = {BONDING_NAME: {'nics': nics}}
             status, msg = self.setupNetworks(network, bonding, NOCHK)
-            self.assertEquals(status, SUCCESS, msg)
+            self.assertEqual(status, SUCCESS, msg)
 
             network = {NETWORK_NAME: {'vlan': VLAN_ID, 'bridged': True,
                                       'bonding': BONDING_NAME,
@@ -2466,7 +2466,7 @@ class NetworkTest(TestCaseBase):
                             },
                             {},
                             NOCHK)
-                        self.assertEquals(status, SUCCESS, msg)
+                        self.assertEqual(status, SUCCESS, msg)
                         self.assertNetworkExists(NETWORK_NAME)
 
                         # Verify that dhclient is running for the device

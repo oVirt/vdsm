@@ -60,7 +60,7 @@ class SchedulerTests(VdsmTestCase):
         task1.wait(delay + self.GRACETIME)
         self.assertTrue(deadline <= task1.call_time)
         self.assertTrue(task1.call_time < deadline + self.GRACETIME)
-        self.assertEquals(task2.call_time, None)
+        self.assertEqual(task2.call_time, None)
 
     @broken_on_ci("timing sensitive, may fail on overloaded machine")
     @permutations(PERMUTATIONS)
@@ -75,7 +75,7 @@ class SchedulerTests(VdsmTestCase):
         task1.wait(delay + self.GRACETIME)
         self.assertTrue(deadline <= task1.call_time)
         self.assertTrue(task1.call_time < deadline + self.GRACETIME)
-        self.assertEquals(task2.call_time, None)
+        self.assertEqual(task2.call_time, None)
 
     @broken_on_ci("timing sensitive, may fail on overloaded machine")
     @permutations(PERMUTATIONS)
@@ -97,7 +97,7 @@ class SchedulerTests(VdsmTestCase):
         call.cancel()
         self.assertFalse(call.valid())
         task.wait(delay + self.GRACETIME)
-        self.assertEquals(task.call_time, None)
+        self.assertEqual(task.call_time, None)
 
     @stresstest
     @permutations(PERMUTATIONS)
@@ -114,7 +114,7 @@ class SchedulerTests(VdsmTestCase):
         last_task = tasks[-1][0]
         last_task.wait(delay + self.GRACETIME)
         for task, call in tasks:
-            self.assertEquals(task.call_time, None)
+            self.assertEqual(task.call_time, None)
 
     @permutations(PERMUTATIONS)
     def test_stop_scheduler(self, clock):
@@ -124,7 +124,7 @@ class SchedulerTests(VdsmTestCase):
         self.scheduler.schedule(delay, task)
         self.scheduler.stop()
         task.wait(delay + self.GRACETIME)
-        self.assertEquals(task.call_time, None)
+        self.assertEqual(task.call_time, None)
 
     @stresstest
     @permutations(PERMUTATIONS)
@@ -140,7 +140,7 @@ class SchedulerTests(VdsmTestCase):
         last_task = tasks[-1][0]
         last_task.wait(delay + self.GRACETIME)
         for task, call in tasks:
-            self.assertEquals(task.call_time, None)
+            self.assertEqual(task.call_time, None)
 
     @stresstest
     @permutations(PERMUTATIONS)

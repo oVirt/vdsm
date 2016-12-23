@@ -68,7 +68,7 @@ class ValidationTests(TestCaseBase):
             ovs_validator.validate_net_configuration(
                 'net1', {'nic': 'eth0', 'switch': 'ovs'},
                 fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
-        self.assertEquals(e.exception.args[0], ne.ERR_BAD_NIC)
+        self.assertEqual(e.exception.args[0], ne.ERR_BAD_NIC)
 
     def test_add_network_with_non_existing_bond(self):
         fake_running_bonds = {}
@@ -78,7 +78,7 @@ class ValidationTests(TestCaseBase):
             ovs_validator.validate_net_configuration(
                 'net1', {'bonding': 'bond1', 'switch': 'ovs'},
                 fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
-        self.assertEquals(e.exception.args[0], ne.ERR_BAD_BONDING)
+        self.assertEqual(e.exception.args[0], ne.ERR_BAD_BONDING)
 
     def test_add_network_with_to_be_added_bond(self):
         fake_running_bonds = {}
@@ -169,7 +169,7 @@ class ValidationTests(TestCaseBase):
             ovs_validator.validate_bond_configuration(
                 'bond1', {'remove': True}, nets, running_nets,
                 fake_kernel_nics)
-        self.assertEquals(e.exception.args[0], ne.ERR_USED_BOND)
+        self.assertEqual(e.exception.args[0], ne.ERR_USED_BOND)
 
     def test_remove_bond_attached_to_network_that_will_use_nic(self):
         fake_kernel_nics = ['eth0', 'eth1']
@@ -188,7 +188,7 @@ class ValidationTests(TestCaseBase):
             ovs_validator.validate_bond_configuration(
                 'bond1', {'remove': True}, nets, running_nets,
                 fake_kernel_nics)
-        self.assertEquals(e.exception.args[0], ne.ERR_USED_BOND)
+        self.assertEqual(e.exception.args[0], ne.ERR_USED_BOND)
 
 
 class MockedOvsInfo(ovs_info.OvsInfo):

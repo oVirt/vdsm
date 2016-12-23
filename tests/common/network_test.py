@@ -84,4 +84,4 @@ class TestIpAddressHostTail(VdsmTestCase):
          "[[2001:db8::60fe:5bf:febc:912]]:/path"),
     ])
     def test_hosttail_join(self, host, tail, expected):
-        self.assertEquals(expected, ipaddress.hosttail_join(host, tail))
+        self.assertEqual(expected, ipaddress.hosttail_join(host, tail))

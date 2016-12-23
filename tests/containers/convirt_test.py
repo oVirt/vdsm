@@ -67,7 +67,7 @@ class APITests(conttestlib.RunnableTestCase):
             libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN
         ), ]
 
-        self.assertEquals(delivered, expected)
+        self.assertEqual(delivered, expected)
 
     def test_prepare_succeed(self):
         with tmp_state_dir():

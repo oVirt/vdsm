@@ -69,7 +69,7 @@ class MonitoringTests(conttestlib.RunnableTestCase):
 
             monitoring.watchdog(_fake_get_all)
 
-        self.assertEquals(delivered, [])
+        self.assertEqual(delivered, [])
 
 
 def _handler(*args, **kwargs):
