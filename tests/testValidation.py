@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2014 Red Hat, Inc.
+# Copyright 2009-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ import errno
 from functools import wraps
 import os
 import subprocess
+import threading
 
 from nose.plugins.skip import SkipTest
 from nose.plugins import Plugin
@@ -87,6 +88,24 @@ class StressTestsPlugin(Plugin):
         Plugin.configure(self, options, conf)
         if options.enable_stress_tests:
             StressTestsPlugin.enabled = True
+
+
+class ThreadLeakPlugin(Plugin):
+    """
+    Check whether a test (or the code it triggers) leaks threads
+    """
+    name = 'thread-leak-check'
+
+    def _threads(self):
+        return frozenset(threading.enumerate())
+
+    def startTest(self, test):
+        self._start_threads = self._threads()
+
+    def stopTest(self, test):
+        leaked_threads = self._threads() - self._start_threads
+        if leaked_threads:
+            raise Exception('This test leaked threads: %s ' % leaked_threads)
 
 
 def ValidateRunningAsRoot(f):

@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,8 @@ from vdsm.common import xmlutils
 from virt import vmxml
 
 from monkeypatch import Patch
-from testValidation import SlowTestsPlugin, StressTestsPlugin
+from testValidation import (
+    SlowTestsPlugin, StressTestsPlugin, ThreadLeakPlugin)
 
 # /tmp may use tempfs filesystem, not suitable for some of the test assuming a
 # filesystem with direct io support.
@@ -433,6 +434,7 @@ def run():
                          plugins=core.DefaultPluginManager())
     conf.plugins.addPlugin(SlowTestsPlugin())
     conf.plugins.addPlugin(StressTestsPlugin())
+    conf.plugins.addPlugin(ThreadLeakPlugin())
 
     runner = VdsmTestRunner(stream=conf.stream,
                             verbosity=conf.verbosity,
