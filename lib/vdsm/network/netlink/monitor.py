@@ -61,6 +61,7 @@ class Monitor(object):
     mon.stop()
     for event in mon:
         handle event
+    mon.wait()
 
     Monitoring events synchronously:
     mon = Monitor()
@@ -69,6 +70,7 @@ class Monitor(object):
         if foo:
             mon.stop()
         handle event
+    mon.wait()
 
     Monitoring events with defined timeout. If timeout expires during
     iteration and silent_timeout is set to False, MonitorError(E_TIMEOUT) is
@@ -77,6 +79,7 @@ class Monitor(object):
     mon.start()
     for event in mon:
         handle event
+    mon.wait()
 
     Monitor defined groups (monitor everything if not set):
     mon = Monitor(groups=('link', 'ipv4-route'))
@@ -85,6 +88,7 @@ class Monitor(object):
         if foo:
             mon.stop()
         handle event
+    mon.wait()
 
     Possible groups: link, notify, neigh, tc, ipv4-ifaddr, ipv4-mroute,
     ipv4-route, ipv6-ifaddr, ipv6-mroute, ipv6-route, ipv6-ifinfo,
@@ -124,6 +128,7 @@ class Monitor(object):
     def __exit__(self, exc_type, exc_value, exc_traceback):
         if not self.is_stopped():
             self.stop()
+        self.wait()
 
     def start(self):
         if self._timeout:
@@ -168,10 +173,12 @@ class Monitor(object):
             self._scanning_stopped.set()
             self._scanning_started.wait()
             os.write(self._pipetrick[1], b'c')
-            self._scan_thread.join()
 
     def is_stopped(self):
         return self._scanning_stopped.is_set()
+
+    def wait(self):
+        self._scan_thread.join()
 
 
 # libnl/include/linux/rtnetlink.h
