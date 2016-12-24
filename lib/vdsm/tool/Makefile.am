@@ -39,6 +39,7 @@ dist_vdsmtool_PYTHON = \
 	vdsm-id.py \
 	common.py \
 	check_volume_leases.py \
+	xleases.py \
 	$(NULL)
 
 CLEANFILES = \
