@@ -74,8 +74,7 @@ class Job(base.Job):
             self._validate()
             with self._vol_info.prepare():
                 with self._vol_info.volume_operation():
-                    qemuimg.amend(self._vol_info.path,
-                                  self._vol_attr.compat)
+                    qemuimg.amend(self._vol_info.path, self._vol_attr.compat)
 
 
 class VolumeAttributes(object):
