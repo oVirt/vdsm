@@ -41,25 +41,29 @@ Invoking methods with simple parameters::
 For invokinng methods with many or complex parameters, you can read the
 parameters from a file:
 
-    # vdsm-client StorageDomain activate -f sd-activate
+    # vdsm-client Lease info -f lease.json
     ...
 
-where file content is::
+where lease.json file content is::
+
     {
-        "storagedomainID": "75ab40e3-06b1-4a54-a825-2df7a40b93b2",
-        "storagepoolID": "b3f6fa00-b315-4ad4-8108-f73da817b5c5"
+        "lease": {
+            "sd_id": "75ab40e3-06b1-4a54-a825-2df7a40b93b2",
+            "lease_id": "b3f6fa00-b315-4ad4-8108-f73da817b5c5"
+        }
     }
 
 It is also possible to read parameters from standard input, creating complex
 parameters interactively::
 
-    # vdsm-client StorageDomain activate -f -
+    # cat <<EOF | vdsm-client Lease info -f -
     {
-        "storagedomainID": "75ab40e3-06b1-4a54-a825-2df7a40b93b2",
-        "storagepoolID": "b3f6fa00-b315-4ad4-8108-f73da817b5c5"
+        "lease": {
+            "sd_id": "75ab40e3-06b1-4a54-a825-2df7a40b93b2",
+            "lease_id": "b3f6fa00-b315-4ad4-8108-f73da817b5c5"
+        }
     }
-
-    (Press Ctrl + D to finish)
+    EOF
 
 """
 
