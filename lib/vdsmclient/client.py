@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright 2016 Red Hat, Inc.
 #
@@ -164,7 +163,3 @@ def parse_file(filename):
 def fail(msg):
     sys.stderr.write("%s: %s\n" % (os.path.basename(sys.argv[0]), msg))
     sys.exit(1)
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
