@@ -19,7 +19,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 """
-jsonrpc - simple Vdsm jsonrpc client
+vdsm-client - simple Vdsm jsonrpc client
 
 This is a simple generic client that does not know anything about the available
 methods and parameters. The user should consult the schema to construct request
@@ -31,18 +31,18 @@ Future version should parse the schema and provide online help.
 
 Invoking simple methods::
 
-    # jsonrpc Host getVMList
+    # vdsm-client Host getVMList
     ['b3f6fa00-b315-4ad4-8108-f73da817b5c5']
 
 Invoking methods with simple parameters::
 
-    # jsonrpc VM getStats vmID=b3f6fa00-b315-4ad4-8108-f73da817b5c5
+    # vdsm-client VM getStats vmID=b3f6fa00-b315-4ad4-8108-f73da817b5c5
     ...
 
 For invokinng methods with many or complex parameters, you can read the
 parameters from a file:
 
-    # jsonrpc StorageDomain activate -f sd-activate
+    # vdsm-client StorageDomain activate -f sd-activate
     ...
 
 where file content is::
@@ -54,7 +54,7 @@ where file content is::
 It is also possible to read parameters from standard input, creating complex
 parameters interactively::
 
-    # jsonrpc StorageDomain activate -f -
+    # vdsm-client StorageDomain activate -f -
     {
         "storagedomainID": "75ab40e3-06b1-4a54-a825-2df7a40b93b2",
         "storagepoolID": "b3f6fa00-b315-4ad4-8108-f73da817b5c5"
