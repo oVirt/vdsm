@@ -78,9 +78,9 @@ class UsageError(Exception):
     """ Raised when usage is wrong """
 
 
-def main(args):
+def main(args=None):
     parser = option_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(args)
     try:
         if args.method_args and args.file is not None:
             raise UsageError("Conflicting command line parameters: %r and "
