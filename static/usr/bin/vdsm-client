@@ -18,8 +18,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import sys
-
 from vdsmclient import client
 
-client.main(sys.argv)
+client.main()
