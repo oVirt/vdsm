@@ -27,6 +27,7 @@ dist_vdsmnetworktests_PYTHON = \
 	firewall.py \
 	netfunctestlib.py \
 	nettestlib.py \
+	nmnettestlib.py \
 	ovsnettestlib.py \
 	$(NULL)
 
