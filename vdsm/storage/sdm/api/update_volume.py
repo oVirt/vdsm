@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,20 +18,24 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmsdmapidir = $(vdsmdir)/storage/sdm/api
+from __future__ import absolute_import
 
-dist_vdsmsdmapi_PYTHON = \
-	__init__.py \
-	amend_volume.py \
-	base.py \
-	copy_data.py \
-	create_volume.py \
-	merge.py \
-	sparsify_volume.py \
-	move_device.py \
-	reduce_domain.py \
-	set_volume_generation.py \
-	update_volume.py \
-	$(NULL)
+from vdsm.storage import guarded
+from vdsm.storage import types
+
+from .copy_data import CopyDataDivEndpoint
+from . import base
+
+
+class Job(base.Job):
+
+    def __init__(self, job_id, host_id, vol_info, vol_attr):
+        super(Job, self).__init__(job_id, 'update_volume', host_id)
+        self._endpoint = CopyDataDivEndpoint(vol_info, host_id, writable=True)
+        self._vol_attr = types.VolumeAttributes(vol_attr)
+
+    def _run(self):
+        with guarded.context(self._endpoint.locks):
+            self._endpoint.volume.update_attributes(self._endpoint.generation,
+                                                    self._vol_attr)

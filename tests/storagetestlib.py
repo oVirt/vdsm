@@ -132,6 +132,9 @@ class FakeSD(object):
     def manifest(self):
         return self._manifest
 
+    def getVersion(self):
+        return self._manifest.getVersion()
+
 
 def make_sd_metadata(sduuid, version=3, dom_class=sd.DATA_DOMAIN, pools=None):
     md = FakeMetadata()

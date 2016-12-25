@@ -89,6 +89,7 @@ import sdm.api.sparsify_volume
 import sdm.api.amend_volume
 import sdm.api.reduce_domain
 import sdm.api.set_volume_generation
+import sdm.api.update_volume
 
 GUID = "guid"
 NAME = "name"
@@ -3575,6 +3576,12 @@ class HSM(object):
     def sdm_amend_volume(self, job_id, vol_info, qcow2_attr):
         job = sdm.api.amend_volume.Job(job_id, self._pool.id, vol_info,
                                        qcow2_attr)
+        self.sdm_schedule(job)
+
+    @public
+    def sdm_update_volume(self, job_id, vol_info, vol_attr):
+        job = sdm.api.update_volume.Job(job_id, self._pool.id, vol_info,
+                                        vol_attr)
         self.sdm_schedule(job)
 
     @public

@@ -341,6 +341,14 @@ class CannotSparsifyVolume(StorageException):
     message = "Cannot sparsify volume"
 
 
+class InvalidVolumeUpdate(StorageException):
+    code = 235
+    message = "Cannot update volume attributes"
+
+    def __init__(self, vol_id, reason):
+        self.value = "vol_id=%s, reason=%s" % (vol_id, reason)
+
+
 #################################################
 #  Images Exceptions
 #################################################

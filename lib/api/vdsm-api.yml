@@ -7396,6 +7396,41 @@ types:
             type: string
         type: object
 
+    VolumeAttributes: &VolumeAttributes
+        added: '4.1'
+        description: Possible attributes which are allowed to be changed
+                     in a volume.
+        name: VolumeAttributes
+        properties:
+        -   defaultvalue: null
+            description: Legality of the volume.
+            name: legality
+            type: *VolumeLegality
+
+        -   defaultvalue: null
+            description: Description of the volume.
+                         Up to 210 bytes. Longer values will be truncated
+            name: description
+            type: string
+
+        -   defaultvalue: null
+            description: Change a volume's generation from a known value to a
+                         new value. The maximum value is 999 and the next
+                         increment will reset the value to 0. On each call to
+                         update_volume, the generation is increased, unless
+                         specified here. In that case, the provided generation
+                         will be used
+            name: generation
+            type: uint
+
+        -   defaultvalue: null
+            description: Type of the volume. The only valid value is SHARED.
+                         Only a leaf volume without a parent can be changed to
+                         shared.
+            name: type
+            type: *VolumeRole
+        type: object
+
 
 Host.setupNetworks:
     added: '3.1'
@@ -10454,3 +10489,23 @@ SDM.set_volume_generation:
     -   description: The new generation value
         name: new_gen
         type: uint
+
+SDM.update_volume:
+    added: '4.1'
+    description: Update the volume with specific parameters described
+                 in the vol_attr. Each call increases the generation,
+                 unless it is specified in the attributes then the
+                 provided will be used.
+    params:
+    -   description: A UUID to be used for tracking the job progress
+        name: job_id
+        type: *UUID
+
+    -   description: The volume to update.
+        name: vol_info
+        type: *CopyDataDIVEndpoint
+
+    -   description: The possible attributes which are allowed to be changed
+                     in a volume.
+        name: vol_attr
+        type: *VolumeAttributes

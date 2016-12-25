@@ -979,6 +979,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/sdm/api/merge.py*
 %{_datadir}/%{vdsm_name}/storage/sdm/api/sparsify_volume.py*
 %{_datadir}/%{vdsm_name}/storage/sdm/api/set_volume_generation.py*
+%{_datadir}/%{vdsm_name}/storage/sdm/api/update_volume.py*
 %{_libexecdir}/%{vdsm_name}/spmprotect.sh
 %{_libexecdir}/%{vdsm_name}/spmstop.sh
 %dir %{_libexecdir}/%{vdsm_name}/hooks
