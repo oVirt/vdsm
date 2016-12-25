@@ -131,7 +131,13 @@ class vdsm(Plugin, RedHatPlugin):
         self.collectExtOutput("/sbin/iscsiadm -m session")
         self.collectExtOutput("/usr/sbin/nodectl info")
 
-        cli = client.connect('localhost')
+        try:
+            cli = client.connect('localhost')
+        except Exception as e:
+            self.addStringAsFile(
+                "Cannot connect to vdsm: %s" % e, "client.connect")
+            return
+
         with utils.closing(cli):
             self.collectVdsmCommand(
                 "Host.getCapabilities", cli.Host.getCapabilities)
