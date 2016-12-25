@@ -404,6 +404,71 @@ class VolumeManifest(object):
         self.setrw(rw=False)
         return self.voltype
 
+    def update_attributes(self, generation, vol_attr):
+        """
+        If generation is given check that the volume's generation matches, and
+        raise se.GenerationMismatch if not.
+
+        When the operation ends, increase the generation of the volume, unless
+        it was provided. In this case the generation passed will be used.
+
+        The volume type can be updated only from LEAF to SHARED for volumes
+        without a parent.
+
+        The description is limited to 210 bytes. Longer description will be
+        truncated.
+
+        The Volume Lease must be held.
+        """
+        meta = self.getMetadata()
+
+        if generation != meta[sc.GENERATION]:
+            raise se.GenerationMismatch(generation, meta[sc.GENERATION])
+
+        if vol_attr.type is not None:
+            if meta[sc.VOLTYPE] != sc.type2name(sc.LEAF_VOL):
+                raise se.InvalidVolumeUpdate(
+                    self.volUUID, "%s Volume cannot be updated to %s"
+                                  % (meta[sc.VOLTYPE], vol_attr.type))
+
+            # In block volume the parent is saved in LV tag
+            # In File volume, getParent will read the metadata again
+            puuid = self.getParent()
+            if puuid is not None and puuid != sc.BLANK_UUID:
+                raise se.InvalidVolumeUpdate(
+                    self.volUUID, "Volume with parent %s cannot update to %s"
+                                  % (puuid, vol_attr.type))
+
+            meta[sc.VOLTYPE] = vol_attr.type
+
+        if vol_attr.legality is not None:
+            if meta[sc.LEGALITY] == vol_attr.legality:
+                raise se.InvalidVolumeUpdate(
+                    self.volUUID, "%s Volume cannot be updated to %s"
+                                  % (vol_attr.legality, vol_attr.legality))
+
+            meta[sc.LEGALITY] = vol_attr.legality
+
+        if vol_attr.description is not None:
+            desc = VolumeMetadata.validate_description(vol_attr.description)
+            meta[sc.DESCRIPTION] = desc
+
+        if vol_attr.generation is not None:
+            next_gen = vol_attr.generation
+        else:
+            next_gen = _next_generation(meta[sc.GENERATION])
+
+        meta[sc.GENERATION] = next_gen
+
+        self.log.info("Updating volume attributes on %s"
+                      " (generation=%d, attributes=%s)",
+                      self.volUUID, next_gen, vol_attr)
+        self.setMetadata(meta)
+
+        if vol_attr.type is not None:
+            # Note: must match setShared logic
+            self.voltype = vol_attr.type
+
     def setSize(self, size):
         self.setMetaParam(sc.SIZE, size)
 
