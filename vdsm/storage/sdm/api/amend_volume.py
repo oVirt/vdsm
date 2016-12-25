@@ -43,7 +43,7 @@ class Error(Exception):
 
 class Job(base.Job):
 
-    def __init__(self, job_id, host_id, vol_info, vol_attr):
+    def __init__(self, job_id, host_id, vol_info, qcow2_attr):
         super(Job, self).__init__(job_id, 'amend_volume', host_id)
 
         # TODO: The copy data should prepare only the volume
@@ -56,7 +56,7 @@ class Job(base.Job):
         # Add validation in a new class for volume attribute
         # We cuurently can't use the validation properties.enum
         # since it doesn't support optional enum.
-        self._vol_attr = VolumeAttributes(vol_attr)
+        self._qcow2_attr = Qcow2Attributes(qcow2_attr)
 
     def _validate(self):
         if self._vol_info.volume.getFormat() != sc.COW_FORMAT:
@@ -64,21 +64,20 @@ class Job(base.Job):
         if self._vol_info.volume.isShared():
             raise Error(self._vol_info.vol_id, "volume is shared")
         sd = sdCache.produce_manifest(self._vol_info.sd_id)
-        if not sd.supports_qcow2_compat(self._vol_attr.compat):
+        if not sd.supports_qcow2_compat(self._qcow2_attr.compat):
             raise Error(self._vol_info.vol_id,
                         "storage domain %s does not support compat %s" %
-                        (self._vol_info.sd_id, self._vol_attr.compat))
+                        (self._vol_info.sd_id, self._qcow2_attr.compat))
 
     def _run(self):
         with guarded.context(self._vol_info.locks):
             self._validate()
             with self._vol_info.prepare():
                 with self._vol_info.volume_operation():
-                    qemuimg.amend(self._vol_info.path,
-                                  self._vol_attr.compat)
+                    qemuimg.amend(self._vol_info.path, self._qcow2_attr.compat)
 
 
-class VolumeAttributes(object):
+class Qcow2Attributes(object):
 
     def __init__(self, params):
         compat = params.get("compat")

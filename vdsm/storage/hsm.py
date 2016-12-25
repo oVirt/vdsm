@@ -3572,9 +3572,9 @@ class HSM(object):
         self.sdm_schedule(job)
 
     @public
-    def sdm_amend_volume(self, job_id, vol_info, vol_attr):
+    def sdm_amend_volume(self, job_id, vol_info, qcow2_attr):
         job = sdm.api.amend_volume.Job(job_id, self._pool.id, vol_info,
-                                       vol_attr)
+                                       qcow2_attr)
         self.sdm_schedule(job)
 
     @public

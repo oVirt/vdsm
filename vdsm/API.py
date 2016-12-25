@@ -1656,8 +1656,8 @@ class SDM(APIBase):
     def sparsify_volume(self, job_id, vol_info):
         return self._irs.sdm_sparsify_volume(job_id, vol_info)
 
-    def amend_volume(self, job_id, vol_info, vol_attr):
-        return self._irs.sdm_amend_volume(job_id, vol_info, vol_attr)
+    def amend_volume(self, job_id, vol_info, qcow2_attr):
+        return self._irs.sdm_amend_volume(job_id, vol_info, qcow2_attr)
 
     def merge(self, job_id, subchain_info):
         return self._irs.sdm_merge(job_id, subchain_info)
