@@ -31,13 +31,6 @@ if [[ -d "$PREFIX" ]]; then
     rm -rf "$PREFIX"
 fi
 
-
-# Ugly hack to include local built rpms
-sed -e "s|@PWD@|$PWD|g" automation/reposync-config.repo.tpl \
-> automation/reposync-config.repo
-rm -rf /var/lib/lago/reposync/local-vdsm-build-*
-createrepo exported-artifacts
-
 # Fix when running in an el* chroot in fc2* host
 [[ -e /usr/bin/qemu-kvm ]] \
 || ln -s /usr/libexec/qemu-kvm /usr/bin/qemu-kvm
@@ -53,9 +46,9 @@ cd "$PREFIX"
 
 # Make sure that there are no cached local repos, will not be needed once lago
 # can handle local rpms properly
-rm -rf /var/lib/lago/repos/local-vdsm*
 lago ovirt reposetup \
-    --reposync-yum-config ../reposync-config.repo
+    --reposync-yum-config /dev/null \
+    --custom-source "rec:file://$PWD/exported-artifacts"
 
 function mount_tmpfs {
     lago shell "$vm_name" -c "mount -t tmpfs tmpfs /sys/kernel/mm/ksm"
@@ -93,6 +86,7 @@ for distro in el7; do
     vm_name="${VMS_PREFIX}${distro}"
     # starting vms one by one to avoid exhausting memory in the host, it will
     lago start "$vm_name"
+    lago copy-to-vm "$vm_name" /etc/yum/yum.conf /etc/yum/yum.conf
     # the ovirt deploy is needed because it will not start the local repo
     # otherwise
     lago ovirt deploy

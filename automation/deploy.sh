@@ -42,8 +42,6 @@ EOF
 
 echo "######################### Cleaning up caches"
 yum clean all
-echo "######################### Installing epel repository"
-yum install -y epel-release
 echo "######################### Installing vdsm"
 yum install --nogpgcheck -y vdsm vdsm-cli vdsm-tests python-pip
 yum install -y python-mock
