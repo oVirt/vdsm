@@ -1,5 +1,8 @@
 #!/bin/bash -ex
 export LIBGUESTFS_BACKEND=direct
+# ensure /dev/kvm exists, otherwise it will still use
+# direct backend, but without KVM(much slower).
+! [[ -c "/dev/kvm" ]] && mknod /dev/kvm c 10 232
 PREFIX="$PWD"/automation/vdsm_functional
 EXPORTS="$PWD"/exported-artifacts
 TEST_PATH="functional"
