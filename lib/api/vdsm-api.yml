@@ -582,11 +582,11 @@ types:
             1.1: qemu versions starting with 1.1 which are supported by
                  QCOW2 version 3.
 
-    VolumeAttributes: &VolumeAttributes
+    Qcow2Attributes: &Qcow2Attributes
         added: '4.1'
-        description: Possible attributes which are allowed to be changed
-                     in a volume.
-        name: VolumeAttributes
+        description: Possible QCOW2 attributes which are allowed
+                     to be changed in a volume using qcow2 format.
+        name: Qcow2Attributes
         properties:
         -   defaultvalue: null
             description: The compat version for qcow volume.
@@ -10397,7 +10397,7 @@ SDM.merge:
 SDM.amend_volume:
     added: '4.1'
     description: Amend the volume with specific parameters described
-                 in the vol_attr.
+                 in the qcow2_attr.
     params:
     -   description: A UUID to be used for tracking the job progress
         name: job_id
@@ -10407,10 +10407,10 @@ SDM.amend_volume:
         name: vol_info
         type: *CopyDataDIVEndpoint
 
-    -   description: The possible attributes which are allowed to be changed
-                     in a volume.
-        name: vol_attr
-        type: *VolumeAttributes
+    -   description: Possible QCOW2 attributes which are allowed
+                     to be changed in a volume using qcow2 format.
+        name: qcow2_attr
+        type: *Qcow2Attributes
 
 SDM.move_domain_device:
     added: '4.1'
