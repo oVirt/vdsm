@@ -778,6 +778,8 @@ chmod 0644 @VDSMLOGDIR@/{mom.log,supervdsm.log,vdsm.log}
 chown @VDSMUSER@:@VDSMGROUP@ @VDSMLOGDIR@/{mom.log,vdsm.log}
 chown root:root @VDSMLOGDIR@/supervdsm.log
 
+systemd-tmpfiles --create %{vdsm_name}.conf
+
 # Have moved vdsm section in /etc/sysctl.conf to /etc/sysctl.d/vdsm.conf.
 # So Remove them if it is played with /etc/sysctl.conf.
 if grep -q "# VDSM section begin" /etc/sysctl.conf; then
