@@ -95,7 +95,7 @@ for distro in el7; do
     lago ovirt deploy
 
     lago ovirt serve &
-    PID=$?
+    PID=$!
 
     mount_tmpfs
 
