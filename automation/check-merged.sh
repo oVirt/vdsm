@@ -98,16 +98,16 @@ for distro in el7; do
     lago ovirt deploy
 
     lago ovirt serve &
-    PID=$?
+    PID=$!
 
     mount_tmpfs
 
     run_functional_tests | tee "$EXPORTS/functional_tests_stdout.$distro.log"
     failed="${PIPESTATUS[0]}"
 
-#    run_network_tests | tee -a "$EXPORTS/functional_tests_stdout.$distro.log"
-#    res="${PIPESTATUS[0]}"
-#    [ "$res" -ne 0 ] && failed="$res"
+    run_network_tests | tee -a "$EXPORTS/functional_tests_stdout.$distro.log"
+    res="${PIPESTATUS[0]}"
+    [ "$res" -ne 0 ] && failed="$res"
 
     kill $PID
 
