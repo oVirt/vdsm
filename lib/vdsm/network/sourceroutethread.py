@@ -36,11 +36,13 @@ configurator = Iproute2()
 
 class DHClientEventHandler(pyinotify.ProcessEvent):
     def process_IN_CLOSE_WRITE_filePath(self, sourceRouteFilePath):
-        logging.debug("Responding to DHCP response in %s", sourceRouteFilePath)
         with open(sourceRouteFilePath, 'r') as sourceRouteFile:
             sourceRouteContents = sourceRouteFile.read().split()
             action = sourceRouteContents[0]
             device = sourceRouteContents[-1]
+
+            logging.debug(
+                'Responding to DHCP response for %s/%s', action, device)
 
             if DynamicSourceRoute.isVDSMInterface(device):
                 if action == 'configure':

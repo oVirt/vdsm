@@ -96,11 +96,13 @@ class DynamicSourceRoute(StaticSourceRoute):
     @staticmethod
     def addInterfaceTracking(device):
         if device.ipv4.bootproto == 'dhcp':
+            logging.debug('Add iface tracking for device %s', device)
             open(DynamicSourceRoute.getTrackingFilePath(device.name), 'a').\
                 close()
 
     @staticmethod
     def removeInterfaceTracking(device):
+        logging.debug('Remove iface tracking for device %s', device)
         rmFile(DynamicSourceRoute.getTrackingFilePath(device))
 
     @staticmethod
