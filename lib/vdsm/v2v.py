@@ -1001,9 +1001,18 @@ def _add_vm(conn, vms, vm):
     _add_disks(root, params)
     _add_graphics(root, params)
     _add_video(root, params)
+
+    disk_info = None
     for disk in params['disks']:
-        _add_disk_info(conn, disk, vm)
-    vms.append(params)
+        disk_info = _get_disk_info(conn, disk, vm)
+        if disk_info is None:
+            break
+        disk.update(disk_info)
+    if disk_info is not None:
+        vms.append(params)
+    else:
+        logging.warning('Cannot add VM %s due to disk storage error',
+                        vm.name())
 
 
 def _block_disk_supported(conn, root):
@@ -1057,7 +1066,7 @@ def _add_general_info(root, params):
         params['arch'] = e.get('arch')
 
 
-def _add_disk_info(conn, disk, vm):
+def _get_disk_info(conn, disk, vm):
     if 'alias' in disk.keys():
         try:
             if disk['disktype'] == 'file':
@@ -1073,9 +1082,10 @@ def _add_disk_info(conn, disk, vm):
 
         except libvirt.libvirtError:
             logging.exception("Error getting disk size")
+            return None
         else:
-            disk['capacity'] = str(capacity)
-            disk['allocation'] = str(alloc)
+            return {'capacity': str(capacity), 'allocation': str(alloc)}
+    return {}
 
 
 def _convert_disk_format(format):
