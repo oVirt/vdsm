@@ -116,9 +116,7 @@ done
 
 lago cleanup
 
-[[ -e "logs" ]] \
-&& {
-    tar cvzf "$EXPORTS/lago-logs.tar.gz" logs
-}
+mkdir "$EXPORTS"/lago-logs
+cp "$PREFIX"/current/logs/*.log "$EXPORTS"/lago-logs
 
 exit $failed
