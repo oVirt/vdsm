@@ -334,11 +334,7 @@ class v2vTests(TestCaseBase):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
                                        ProtectedPassword('password'),
                                        None)['vmList']
-        self.assertEqual(len(vms), 1)
-        self._assertVmMatchesSpec(vms[0], VM_SPECS[0])
-        for disk in vms[0]['disks']:
-            self.assertNotIn('capacity', disk)
-            self.assertNotIn('allocation', disk)
+        self.assertEqual(len(vms), 0)
 
     def _assertVmDisksMatchSpec(self, vm, spec):
         disk = vm['disks'][0]
