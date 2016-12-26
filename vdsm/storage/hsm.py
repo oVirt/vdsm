@@ -2798,6 +2798,8 @@ class HSM(object):
         info["devcapacity"] = str(pv.dev_size)
         info["vgUUID"] = str(pv.vg_uuid)
         info["pvUUID"] = str(pv.uuid)
+        info["pe_count"] = str(pv.pe_count)
+        info["pe_alloc_count"] = str(pv.pe_alloc_count)
         info["GUID"] = str(pv.guid)
         info["discard_max_bytes"] = devInfo["discard_max_bytes"]
         info["discard_zeroes_data"] = devInfo["discard_zeroes_data"]
