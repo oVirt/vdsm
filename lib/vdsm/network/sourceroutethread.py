@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 import logging
 import os
+import shlex
 import threading
 
 import pyinotify
@@ -30,38 +31,48 @@ from .configurators.iproute2 import Iproute2
 from .sourceroute import DynamicSourceRoute
 
 
+ACTION_KEY = 'action'
+IPADDR_KEY = 'ip'
+IPMASK_KEY = 'mask'
+IPROUTE_KEY = 'route'
+IFACE_KEY = 'iface'
+
+
 SOURCE_ROUTES_FOLDER = P_VDSM_RUN + 'sourceRoutes'
 configurator = Iproute2()
 
 
 class DHClientEventHandler(pyinotify.ProcessEvent):
+
     def process_IN_CLOSE_WRITE_filePath(self, sourceRouteFilePath):
-        with open(sourceRouteFilePath, 'r') as sourceRouteFile:
-            sourceRouteContents = sourceRouteFile.read().split()
-            action = sourceRouteContents[0]
-            device = sourceRouteContents[-1]
+        dhcp_response = _dhcp_response(sourceRouteFilePath)
+        action = dhcp_response.get(ACTION_KEY)
+        device = dhcp_response.get(IFACE_KEY)
 
-            logging.debug(
-                'Responding to DHCP response for %s/%s', action, device)
+        if device is None:
+            logging.warning('DHCP response with no device')
+            return
 
-            if DynamicSourceRoute.isVDSMInterface(device):
-                if action == 'configure':
-                    ip = sourceRouteContents[1]
-                    mask = sourceRouteContents[2]
-                    gateway = sourceRouteContents[3]
-                    if gateway in (None, '0.0.0.0') or not ip or not mask:
-                        logging.error('invalid DHCP response %s',
-                                      sourceRouteContents)
-                    else:
-                        DynamicSourceRoute(device, configurator,
-                                           ip, mask, gateway).configure()
+        logging.debug('Received DHCP response for %s/%s', action, device)
+
+        if DynamicSourceRoute.isVDSMInterface(device):
+            if action == 'configure':
+                ip = dhcp_response.get(IPADDR_KEY)
+                mask = dhcp_response.get(IPMASK_KEY)
+                gateway = dhcp_response.get(IPROUTE_KEY)
+
+                if ip and mask and gateway not in (None, '0.0.0.0'):
+                    DynamicSourceRoute(
+                        device, configurator, ip, mask, gateway).configure()
                 else:
-                    DynamicSourceRoute(device, configurator,
-                                       None, None, None).remove()
+                    logging.warning('Partial DHCP response %s', dhcp_response)
             else:
-                logging.info("interface %s is not a libvirt interface", device)
+                DynamicSourceRoute(
+                    device, configurator, None, None, None).remove()
+        else:
+            logging.info("interface %s is not a libvirt interface", device)
 
-            DynamicSourceRoute.removeInterfaceTracking(device)
+        DynamicSourceRoute.removeInterfaceTracking(device)
 
         os.remove(sourceRouteFilePath)
 
@@ -94,3 +105,15 @@ def _subscribeToInotifyLoop():
             SOURCE_ROUTES_FOLDER + '/' + filePath)
 
     notifier.loop()
+
+
+def _dhcp_response(fpath):
+    data = {}
+    try:
+        with open(fpath) as f:
+            for line in shlex.split(f):
+                k, v = line.split('=', 1)
+                data[k] = v
+    except:
+        logging.exception('Error reading dhcp response file {}'.format(fpath))
+    return data
