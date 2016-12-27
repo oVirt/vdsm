@@ -9,6 +9,7 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     dbus-python \
     dosfstools \
     e2fsprogs \
+    gcc \
     genisoimage \
     git \
     libselinux-python \
@@ -32,6 +33,7 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     python34 \
     python34-nose \
     python34-six \
+    redhat-rpm-config \
     sanlock-python \
     which \
     && \

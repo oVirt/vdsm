@@ -9,6 +9,7 @@ RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     dbus-python \
     dosfstools \
     e2fsprogs \
+    gcc \
     genisoimage \
     git \
     libselinux-python \
@@ -39,6 +40,7 @@ RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     python3-nose \
     python3-six \
     python3-yaml \
+    redhat-rpm-config \
     sanlock-python \
     sudo \
     systemd \
