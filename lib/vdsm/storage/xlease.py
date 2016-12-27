@@ -135,6 +135,7 @@ import struct
 import time
 
 from collections import namedtuple
+from contextlib import contextmanager
 
 import six
 
@@ -650,22 +651,12 @@ def format_index(lockspace, file):
              lockspace, INDEX_VERSION)
     index = VolumeIndex()
     with utils.closing(index):
-        # Create index in updating state
-        metadata = IndexMetadata(INDEX_VERSION, lockspace, updating=True)
-        index.write_metadata(metadata)
-
-        # Write empty records
-        for recnum in range(MAX_RECORDS):
-            index.write_record(recnum, EMPTY_RECORD)
-
-        # Attempt to write index to file
-        index.dump(file)
-
-        # Clear updating flag
-        metadata = IndexMetadata(INDEX_VERSION, lockspace)
-        block = ChangeBlock(metadata.bytes(), 0)
-        with utils.closing(block):
-            block.dump(file)
+        with index.updating(lockspace, file):
+            # Write empty records
+            for recnum in range(MAX_RECORDS):
+                index.write_record(recnum, EMPTY_RECORD)
+            # Attempt to write index to file
+            index.dump(file)
 
 
 def lease_offset(recnum):
@@ -772,6 +763,29 @@ class VolumeIndex(object):
         offset = self._record_offset(recnum)
         block_start = offset - (offset % BLOCK_SIZE)
         return ChangeBlock(self._buf, block_start)
+
+    @contextmanager
+    def updating(self, lockspace, file):
+        """
+        Context manager for index updates.
+
+        Before entering the context, mark the index as updating. When exiting
+        cleanly from the context, clear the updating flag. If the user code
+        fails, the index will be left in updating state.
+        """
+        # Mark as updating
+        metadata = IndexMetadata(INDEX_VERSION, lockspace, updating=True)
+        self.write_metadata(metadata)
+
+        # Call withotu try-finally intentionally, so failure in the caller code
+        # will leave the index mark as "updating".
+        yield
+
+        # Clear updating flag
+        metadata = IndexMetadata(INDEX_VERSION, lockspace)
+        block = ChangeBlock(metadata.bytes(), 0)
+        with utils.closing(block):
+            block.dump(file)
 
     def close(self):
         self._buf.close()
