@@ -35,6 +35,7 @@ from testlib import VdsmTestCase
 from testlib import make_uuid
 from testlib import namedTemporaryDir
 
+from vdsm import constants
 from vdsm import utils
 from vdsm.storage import xlease
 
@@ -354,6 +355,17 @@ def bench():
                   % (count, elapsed, elapsed / count))
 
 
+class TestDirectFile(VdsmTestCase):
+
+    # TODO: test other methods
+
+    def test_size(self):
+        with make_leases() as path:
+            file = xlease.DirectFile(path)
+            with utils.closing(file):
+                self.assertEqual(file.size(), constants.GIB)
+
+
 @contextmanager
 def make_volume(*records):
     with make_leases() as path:
@@ -373,7 +385,7 @@ def make_leases():
     with namedTemporaryDir() as tmpdir:
         path = os.path.join(tmpdir, "xleases")
         with io.open(path, "wb") as f:
-            f.truncate(xlease.USER_RESOURCE_BASE)
+            f.truncate(constants.GIB)
         yield path
 
 

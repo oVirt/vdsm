@@ -889,5 +889,13 @@ class DirectFile(object):
     def seek(self, offset, whence=os.SEEK_SET):
         return self._file.seek(offset, whence)
 
+    def size(self):
+        """
+        Return actual file size, should work with both file and block device.
+        """
+        with io.open(self._path, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            return f.tell()
+
     def close(self):
         self._file.close()
