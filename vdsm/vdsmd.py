@@ -1,0 +1,267 @@
+#
+# Copyright 2009-2016 Red Hat, Inc. and/or its affiliates.
+#
+# Licensed to you under the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.  See the files README and
+# LICENSE_GPL_v2 which accompany this distribution.
+#
+from __future__ import absolute_import
+from __future__ import print_function
+import sys
+
+# When using Python 2, we must monkey patch threading module before importing
+# any other module.
+if sys.version_info[0] == 2:
+    import pthreading
+    pthreading.monkey_patch()
+
+import os
+import signal
+import getpass
+import pwd
+import grp
+import threading
+import logging
+import syslog
+import resource
+import tempfile
+from logging import config as lconfig
+
+from vdsm import commands
+from vdsm import constants
+from vdsm import dsaversion
+from vdsm import health
+from vdsm import jobs
+from vdsm import schedule
+from vdsm import utils
+from vdsm import libvirtconnection
+from vdsm import containersconnection
+from vdsm import taskset
+from vdsm import metrics
+from vdsm.common import sigutils
+from vdsm.common import zombiereaper
+from vdsm.config import config
+from vdsm.panic import panic
+from vdsm.profiling import profile
+from vdsm.virt import periodic
+
+from storage.dispatcher import Dispatcher
+from storage.hsm import HSM
+
+
+loggerConfFile = constants.P_VDSM_CONF + 'logger.conf'
+
+
+class FatalError(Exception):
+    """ Raised when vdsm fail to start """
+
+
+def serve_clients(log):
+    cif = None
+    irs = None
+    scheduler = None
+    running = [True]
+
+    def sigtermHandler(signum, frame):
+        log.info("Received signal %s, shutting down" % signum)
+        running[0] = False
+
+    def sigusr1Handler(signum, frame):
+        if irs:
+            log.info("Received signal %s, stopping SPM" % signum)
+            irs.spmStop(
+                irs.getConnectedStoragePoolsList()['poollist'][0])
+
+    sigutils.register()
+    signal.signal(signal.SIGTERM, sigtermHandler)
+    signal.signal(signal.SIGUSR1, sigusr1Handler)
+    zombiereaper.registerSignalHandler()
+
+    profile.start()
+    metrics.start()
+
+    containersconnection.prepare()
+    libvirtconnection.start_event_loop()
+
+    try:
+        if config.getboolean('irs', 'irs_enable'):
+            try:
+                irs = Dispatcher(HSM())
+            except:
+                panic("Error initializing IRS")
+
+        scheduler = schedule.Scheduler(name="vdsm.Scheduler",
+                                       clock=utils.monotonic_time)
+        scheduler.start()
+        jobs.start(scheduler)
+
+        from clientIF import clientIF  # must import after config is read
+        cif = clientIF.getInstance(irs, log, scheduler)
+
+        install_manhole({'irs': irs, 'cif': cif})
+
+        cif.start()
+        periodic.start(cif, scheduler)
+        health.start()
+        try:
+            while running[0]:
+                sigutils.wait_for_signal()
+
+            profile.stop()
+        finally:
+            metrics.stop()
+            health.stop()
+            periodic.stop()
+            cif.prepareForShutdown()
+            jobs.stop()
+            scheduler.stop()
+    finally:
+        libvirtconnection.stop_event_loop(wait=False)
+
+
+def run():
+    try:
+        lconfig.fileConfig(loggerConfFile, disable_existing_loggers=False)
+    except RuntimeError as e:
+        raise FatalError("Cannot configure logging: %s" % e)
+
+    logging.addLevelName(5, 'TRACE')
+
+    # Shorten WARNING and CRITICAL to make the log align nicer.
+    logging.addLevelName(logging.WARNING, 'WARN')
+    logging.addLevelName(logging.CRITICAL, 'CRIT')
+
+    logging.TRACE = 5  # impolite but helpful
+    log = logging.getLogger('vds')
+    try:
+        logging.root.handlers.append(logging.StreamHandler())
+        log.handlers.append(logging.StreamHandler())
+
+        sysname, nodename, release, version, machine = os.uname()
+        log.info('(PID: %s) I am the actual vdsm %s %s (%s)',
+                 os.getpid(), dsaversion.raw_version_revision, nodename,
+                 release)
+
+        try:
+            __set_cpu_affinity()
+        except Exception:
+            log.exception('Failed to set affinity, running without')
+
+        serve_clients(log)
+    except:
+        log.error("Exception raised", exc_info=True)
+
+    log.info("Stopping threads")
+    for t in threading.enumerate():
+        if hasattr(t, 'stop'):
+            log.info("Stopping %s", t)
+            t.stop()
+
+    me = threading.current_thread()
+    for t in threading.enumerate():
+        if t is not me:
+            log.debug("%s is still running", t)
+
+    log.info("Exiting")
+
+
+def install_manhole(locals):
+    if not config.getboolean('devel', 'manhole_enable'):
+        return
+
+    import manhole
+
+    # locals:             Set the locals in the manhole shell
+    # socket_path:        Set to create secure and easy to use manhole socket,
+    #                     instead of /tmp/manhole-<vdsm-pid>.
+    # daemon_connection:  Enable to ensure that manhole connection thread will
+    #                     not block shutdown.
+    # patch_fork:         Disable to avoid creation of a manhole thread in the
+    #                     child process after fork.
+    # sigmask:            Disable to avoid pointless modification of the
+    #                     process signal mask if signlfd module is available.
+    # redirect_stderr:    Disable since Python prints ignored exepctions to
+    #                     stderr.
+
+    path = os.path.join(constants.P_VDSM_RUN, 'vdsmd.manhole')
+    manhole.install(locals=locals, socket_path=path, daemon_connection=True,
+                    patch_fork=False, sigmask=None, redirect_stderr=False)
+
+
+def __assertLogPermission():
+    if not os.access(constants.P_VDSM_LOG, os.W_OK):
+        raise FatalError("Cannot access vdsm log dirctory")
+
+    logfile = constants.P_VDSM_LOG + "/vdsm.log"
+    if not os.path.exists(logfile):
+        # if file not exist, and vdsm has an access to log directory- continue
+        return
+
+    if not os.access(logfile, os.W_OK):
+        raise FatalError("Cannot access vdsm log file")
+
+
+def __assertVdsmUser():
+    username = getpass.getuser()
+    if username != constants.VDSM_USER:
+        raise FatalError("Not running as %r, trying to run as %r"
+                         % (constants.VDSM_USER, username))
+    group = grp.getgrnam(constants.VDSM_GROUP)
+    if (constants.VDSM_USER not in group.gr_mem) and \
+       (pwd.getpwnam(constants.VDSM_USER).pw_gid != group.gr_gid):
+        raise FatalError("Vdsm user is not in KVM group")
+
+
+def __assertSudoerPermissions():
+    rc = 1
+    with tempfile.NamedTemporaryFile() as dst:
+        # This cmd choice is arbitrary to validate that sudoes.d/50_vdsm file
+        # is read properly
+        cmd = [constants.EXT_CHOWN, "%s:%s" %
+               (constants.VDSM_USER, constants.QEMU_PROCESS_GROUP), dst.name]
+        rc, _, stderr = commands.execCmd(cmd, sudo=True)
+
+    if rc != 0:
+        raise FatalError("Vdsm user could not manage to run sudo operation: "
+                         "(stderr: %s). Verify sudoer rules configuration" %
+                         (stderr))
+
+
+def __set_cpu_affinity():
+    cpu_affinity = config.get('vars', 'cpu_affinity')
+    if cpu_affinity == "":
+        return
+
+    online_cpus = taskset.online_cpus()
+
+    log = logging.getLogger('vds')
+
+    if len(online_cpus) == 1:
+        log.debug('Only one cpu detected: affinity disabled')
+        return
+
+    if cpu_affinity.lower() == taskset.AUTOMATIC:
+        cpu_set = frozenset((taskset.pick_cpu(online_cpus),))
+    else:
+        cpu_set = frozenset(int(cpu.strip())
+                            for cpu in cpu_affinity.split(","))
+
+    log.info('VDSM will run with cpu affinity: %s', cpu_set)
+    taskset.set(os.getpid(), cpu_set, all_tasks=True)
+
+
+def main():
+    try:
+        __assertVdsmUser()
+        __assertLogPermission()
+        __assertSudoerPermissions()
+
+        if not config.getboolean('vars', 'core_dump_enable'):
+            resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+
+        run()
+    except FatalError as e:
+        syslog.syslog("VDSM failed to start: %s" % e)
+        # Make it easy to debug via the shell
+        raise

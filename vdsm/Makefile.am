@@ -27,6 +27,7 @@ dist_vdsm_PYTHON = \
 	clientIF.py \
 	hooking.py \
 	sitecustomize.py \
+	vdsmd.py \
 	$(NULL)
 
 dist_vdsmexec_SCRIPTS = \
