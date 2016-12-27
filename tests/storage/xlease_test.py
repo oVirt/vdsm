@@ -140,6 +140,44 @@ class TestIndex(VdsmTestCase):
         with make_volume() as vol:
             self.assertEqual(vol.leases(), {})
 
+    @MonkeyPatch(xlease, "sanlock", FakeSanlock())
+    def test_rebuild_empty(self):
+        with make_volume() as vol:
+            fake_sanlock = xlease.sanlock
+            # Add underlying sanlock resources
+            for i in [3, 4, 6]:
+                resource = "%04d" % i
+                offset = xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * i
+                fake_sanlock.write_resource(
+                    vol.lockspace, resource, [(vol.path, offset)])
+            # The index is empty
+            assert vol.leases() == {}
+
+            # After rebuilding the index it should contain all the underlying
+            # resources.
+            file = xlease.DirectFile(vol.path)
+            with utils.closing(file):
+                xlease.rebuild_index(vol.lockspace, file)
+            expected = {
+                "0003": {
+                    "offset": xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 3,
+                    "updating": False,
+                },
+                "0004": {
+                    "offset": xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 4,
+                    "updating": False,
+                },
+                "0006": {
+                    "offset": xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 6,
+                    "updating": False,
+                },
+            }
+            file = xlease.DirectFile(vol.path)
+            with utils.closing(file):
+                vol = xlease.LeasesVolume(file)
+                with utils.closing(vol):
+                    assert vol.leases() == expected
+
     def test_create_read_failure(self):
         with make_leases() as path:
             file = FailingReader(path)
