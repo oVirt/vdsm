@@ -206,6 +206,14 @@ RECORD_TERM = b"\n"
 FLAG_NONE = b"-"
 FLAG_UPDATING = b"u"
 
+# Sanlock error codes (from sanlock_rv.h)
+
+# Returned when trying to read a resource and there is not magic number at the
+# start of the leader block. This means the resource never existed or was
+# deleted.
+SANLK_LEADER_MAGIC = -223
+
+
 log = logging.getLogger("storage.xlease")
 
 # TODO: Move errors to storage.exception?
@@ -239,6 +247,14 @@ class InvalidRecord(Error):
     def __init__(self, reason, record):
         self.reason = reason
         self.record = record
+
+
+class NoSuchResource(Error):
+    msg = "No such resource {self.path, self.offset}"
+
+    def __init__(self, path, offset):
+        self.path = path
+        self.offset = offset
 
 
 class InvalidIndex(Error):
@@ -278,6 +294,13 @@ LeaseInfo = namedtuple("LeaseInfo", (
     "resource",         # Sanlock resource name
     "path",             # Path to lease file or block device
     "offset",           # Offset in path
+))
+
+
+ResourceInfo = namedtuple("ResourceInfo", (
+    "lockspace",        # Sanlock lockspace name
+    "resource",         # Sanlock resource name
+    "version",          # Sanlock resource version
 ))
 
 
@@ -659,6 +682,68 @@ def format_index(lockspace, file):
                 index.write_record(recnum, EMPTY_RECORD)
             # Attempt to write index to file
             index.dump(file)
+
+
+def rebuild_index(lockspace, file):
+    """
+    Rebuild xleases volume index from underlying storage.
+
+    This operation synchronizes the index with the actual sanlock resource on
+    storage, assuming that existing sanlock resources are the one and only
+    truth.
+
+    Like format_index, if the operation fails the index is left in "updating"
+    state.
+
+    Raises:
+    - OSError if I/O operation failed
+    - sanlock.SanlockException if sanlock operation failed
+    """
+    log.info("Rebuilding index for lockspace %r (version=%d)",
+             lockspace, INDEX_VERSION)
+    index = VolumeIndex()
+    with utils.closing(index):
+        with index.updating(lockspace, file):
+            # Read resources and write records
+            max_offset = file.size() - SLOT_SIZE
+            for recnum in range(MAX_RECORDS):
+                offset = lease_offset(recnum)
+                if offset > max_offset:
+                    index.write_record(recnum, EMPTY_RECORD)
+                    continue
+                try:
+                    res = read_resource(file.name, offset)
+                except NoSuchResource:
+                    record = EMPTY_RECORD
+                else:
+                    log.debug("Restoring lease %s", res)
+                    record = Record(res.resource, offset)
+                index.write_record(recnum, record)
+
+            # Attempt to write index to file
+            log.debug("Writing new index")
+            index.dump(file)
+
+
+def read_resource(path, offset):
+    """
+    Helper for reading sanlock resoruces, supporting both non-existing and
+    deleted resources.
+
+    Returns: ResourceInfo
+    Raises: NoSuchResource if there is no resource at this offset
+    """
+    try:
+        res = sanlock.read_resource(path, offset)
+    except sanlock.SanlockException as e:
+        if e.errno != SANLK_LEADER_MAGIC:
+            raise
+        raise NoSuchResource(path, offset)
+    if res["resource"] == "":
+        # lease deleted with a version of sanlock not supporting
+        # resource clearning.
+        raise NoSuchResource(path, offset)
+    return ResourceInfo(res["lockspace"], res["resource"], res["version"])
 
 
 def lease_offset(recnum):
