@@ -253,25 +253,24 @@ def __set_cpu_affinity():
 
 
 def main():
-    __assertVdsmUser()
-    __assertLogPermission()
-    __assertSudoerPermissions()
-
-    if not config.getboolean('vars', 'core_dump_enable'):
-        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-
-    if os.getsid(0) != os.getpid():
-        # Modern init systems such as systemd can provide us a clean daemon
-        # environment. So we setpgrp only when run by traditional init system
-        # that does not prepare the environment.
-        os.setpgrp()
-    run()
-
-
-if __name__ == '__main__':
     try:
-        main()
+        __assertVdsmUser()
+        __assertLogPermission()
+        __assertSudoerPermissions()
+
+        if not config.getboolean('vars', 'core_dump_enable'):
+            resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+
+        if os.getsid(0) != os.getpid():
+            # Modern init systems such as systemd can provide us a clean daemon
+            # environment. So we setpgrp only when run by traditional init
+            # system that does not prepare the environment.
+            os.setpgrp()
+        run()
     except FatalError as e:
         syslog.syslog("VDSM failed to start: %s" % e)
         # Make it easy to debug via the shell
         raise
+
+if __name__ == '__main__':
+    main()
