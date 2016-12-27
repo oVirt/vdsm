@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+
+from contextlib import contextmanager
 import logging
 import os
 import shlex
@@ -42,10 +44,22 @@ SOURCE_ROUTES_FOLDER = P_VDSM_RUN + 'sourceRoutes'
 configurator = Iproute2()
 
 
-class DHClientEventHandler(pyinotify.ProcessEvent):
+def start():
+    thread = threading.Thread(target=_monitor_dhcp_responses,
+                              name='sourceRoute')
+    thread.daemon = True
+    thread.start()
 
-    def process_IN_CLOSE_WRITE_filePath(self, sourceRouteFilePath):
-        dhcp_response = _dhcp_response(sourceRouteFilePath)
+
+class DHClientEventHandler(pyinotify.ProcessEvent):
+    def process_IN_CLOSE_WRITE(self, event):
+        _dhcp_response_handler(event.pathname)
+
+
+def _dhcp_response_handler(data_filepath):
+    with _cleaning_file(data_filepath):
+        dhcp_response = _dhcp_response_data(data_filepath)
+
         action = dhcp_response.get(ACTION_KEY)
         device = dhcp_response.get(IFACE_KEY)
 
@@ -56,40 +70,47 @@ class DHClientEventHandler(pyinotify.ProcessEvent):
         logging.debug('Received DHCP response for %s/%s', action, device)
 
         if DynamicSourceRoute.isVDSMInterface(device):
-            if action == 'configure':
-                ip = dhcp_response.get(IPADDR_KEY)
-                mask = dhcp_response.get(IPMASK_KEY)
-                gateway = dhcp_response.get(IPROUTE_KEY)
-
-                if ip and mask and gateway not in (None, '0.0.0.0'):
-                    DynamicSourceRoute(
-                        device, configurator, ip, mask, gateway).configure()
-                else:
-                    logging.warning('Partial DHCP response %s', dhcp_response)
-            else:
-                DynamicSourceRoute(
-                    device, configurator, None, None, None).remove()
+            _process_dhcp_response_actions(action, device, dhcp_response)
         else:
-            logging.info("interface %s is not a libvirt interface", device)
+            logging.info('Interface %s is not a libvirt interface', device)
 
         DynamicSourceRoute.removeInterfaceTracking(device)
 
-        os.remove(sourceRouteFilePath)
 
-    def process_IN_CLOSE_WRITE(self, event):
-        self.process_IN_CLOSE_WRITE_filePath(event.pathname)
+@contextmanager
+def _cleaning_file(filepath):
+    try:
+        yield
+    finally:
+        os.remove(filepath)
 
 
-def start():
-    thread = threading.Thread(target=_subscribeToInotifyLoop,
-                              name='sourceRoute')
-    thread.daemon = True
-    thread.start()
+def _process_dhcp_response_actions(action, device, dhcp_response):
+    if action == 'configure':
+        _dhcp_configure_action(dhcp_response, device)
+    else:
+        _dhcp_remove_action(device)
+
+
+def _dhcp_configure_action(dhcp_response, device):
+    ip = dhcp_response.get(IPADDR_KEY)
+    mask = dhcp_response.get(IPMASK_KEY)
+    gateway = dhcp_response.get(IPROUTE_KEY)
+
+    if ip and mask and gateway not in (None, '0.0.0.0'):
+        DynamicSourceRoute(
+            device, configurator, ip, mask, gateway).configure()
+    else:
+        logging.warning('Partial DHCP response %s', dhcp_response)
+
+
+def _dhcp_remove_action(device):
+    DynamicSourceRoute(device, configurator, None, None, None).remove()
 
 
 @utils.traceback()
-def _subscribeToInotifyLoop():
-    logging.debug("sourceRouteThread.subscribeToInotifyLoop started")
+def _monitor_dhcp_responses():
+    logging.debug('Starting to monitor dhcp responses')
 
     # Subscribe to pyinotify event
     watchManager = pyinotify.WatchManager()
@@ -101,13 +122,12 @@ def _subscribeToInotifyLoop():
     # Run sorted so that if multiple files exist for an interface, we'll
     # execute them alphabetically and thus according to their time stamp
     for filePath in sorted(os.listdir(SOURCE_ROUTES_FOLDER)):
-        handler.process_IN_CLOSE_WRITE_filePath(
-            SOURCE_ROUTES_FOLDER + '/' + filePath)
+        _dhcp_response_handler(SOURCE_ROUTES_FOLDER + '/' + filePath)
 
     notifier.loop()
 
 
-def _dhcp_response(fpath):
+def _dhcp_response_data(fpath):
     data = {}
     try:
         with open(fpath) as f:
