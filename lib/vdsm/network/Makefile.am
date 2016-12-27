@@ -28,6 +28,7 @@ dist_vdsmnetwork_PYTHON = \
 	errors.py \
 	canonicalize.py \
 	connectivity.py \
+	dhclient_monitor.py \
 	ifacquire.py \
 	ipwrapper.py \
 	kernelconfig.py \
@@ -38,6 +39,5 @@ dist_vdsmnetwork_PYTHON = \
 	netrestore.py \
 	netswitch.py \
 	sourceroute.py \
-	sourceroutethread.py \
 	utils.py \
 	$(NULL)

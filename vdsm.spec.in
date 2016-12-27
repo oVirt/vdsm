@@ -1142,6 +1142,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/errors.py*
 %{python_sitelib}/%{vdsm_name}/network/canonicalize.py*
 %{python_sitelib}/%{vdsm_name}/network/connectivity.py*
+%{python_sitelib}/%{vdsm_name}/network/dhclient_monitor.py*
 %{python_sitelib}/%{vdsm_name}/network/ip/*.py*
 %{python_sitelib}/%{vdsm_name}/network/ifacquire.py*
 %{python_sitelib}/%{vdsm_name}/network/ipwrapper.py*
@@ -1170,7 +1171,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/netrestore.py*
 %{python_sitelib}/%{vdsm_name}/network/netswitch.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroute.py*
-%{python_sitelib}/%{vdsm_name}/network/sourceroutethread.py*
 %{python_sitelib}/%{vdsm_name}/network/tc/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/tc/_parser.py*
 %{python_sitelib}/%{vdsm_name}/network/tc/_wrapper.py*

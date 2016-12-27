@@ -40,13 +40,13 @@ IPROUTE_KEY = 'route'
 IFACE_KEY = 'iface'
 
 
-SOURCE_ROUTES_FOLDER = P_VDSM_RUN + 'sourceRoutes'
+MONITOR_FOLDER = P_VDSM_RUN + 'sourceRoutes'
 configurator = Iproute2()
 
 
 def start():
     thread = threading.Thread(target=_monitor_dhcp_responses,
-                              name='sourceRoute')
+                              name='dhclient-monitor')
     thread.daemon = True
     thread.start()
 
@@ -116,13 +116,13 @@ def _monitor_dhcp_responses():
     watchManager = pyinotify.WatchManager()
     handler = DHClientEventHandler()
     notifier = pyinotify.Notifier(watchManager, handler)
-    watchManager.add_watch(SOURCE_ROUTES_FOLDER, pyinotify.IN_CLOSE_WRITE)
+    watchManager.add_watch(MONITOR_FOLDER, pyinotify.IN_CLOSE_WRITE)
 
     # Run once manually in case dhclient operated while supervdsm was down
     # Run sorted so that if multiple files exist for an interface, we'll
     # execute them alphabetically and thus according to their time stamp
-    for filePath in sorted(os.listdir(SOURCE_ROUTES_FOLDER)):
-        _dhcp_response_handler(SOURCE_ROUTES_FOLDER + '/' + filePath)
+    for filePath in sorted(os.listdir(MONITOR_FOLDER)):
+        _dhcp_response_handler(MONITOR_FOLDER + '/' + filePath)
 
     notifier.loop()
 

@@ -67,7 +67,7 @@ from vdsm.storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from vdsm.storage.iscsi import readSessionInfo as _readSessionInfo
 from vdsm.supervdsm import _SuperVdsmManager
 
-from vdsm.network import sourceroutethread
+from vdsm.network import dhclient_monitor
 from vdsm.network.nm import networkmanager
 
 from vdsm.storage.multipath import getScsiSerial as _getScsiSerial
@@ -307,7 +307,7 @@ def main(args):
 
             log.debug("Started serving super vdsm object")
 
-            sourceroutethread.start()
+            dhclient_monitor.start()
             networkmanager.init()
 
             while _running:
