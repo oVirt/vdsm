@@ -3686,14 +3686,18 @@ class HSM(object):
                           offset=info.offset)
         return dict(result=lease_info)
 
+    @public
+    def rebuild_leases(self, sd_id):
+        self._check_pool_connected()
+        # TODO: can we move lock into the pool?
+        vars.task.getSharedLock(STORAGE, sd_id)
+        self._spmSchedule(self._pool.spUUID, "rebuild_leases",
+                          self._pool.rebuild_leases, sd_id)
+
     # Optional lease operations - not used yet from engine.
 
     @public
     def lease_status(self, lease):
-        raise NotImplementedError
-
-    @public
-    def rebuild_leases(self, sd_id):
         raise NotImplementedError
 
     # Validations
