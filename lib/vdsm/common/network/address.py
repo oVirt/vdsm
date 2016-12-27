@@ -31,7 +31,7 @@ def hosttail_split(hosttail):
     brackets.
     """
     try:
-        if _is_ipv6_addr_soft_check(hosttail):
+        if _is_literal_ipv6_addr_soft_check(hosttail):
             host, tail = _ipv6addr_hosttail_split(hosttail)
         else:
             host, tail = hosttail.split(':', 1)
@@ -58,7 +58,7 @@ def hosttail_join(host, tail):
     return host + ':' + tail
 
 
-def _is_ipv6_addr_soft_check(addr):
+def _is_literal_ipv6_addr_soft_check(addr):
     return addr.startswith('[')
 
 
