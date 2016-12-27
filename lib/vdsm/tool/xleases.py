@@ -66,11 +66,58 @@ def format_xleases(*args):
         vdsm-tool format-xleases sd-id /dev/sd-id/xleases
         lvchange -an sd-id/xleases
     """
-    parser = argparse.ArgumentParser()
-    parser.add_argument('sd_id', help="storage domain UUID")
-    parser.add_argument('path', help="path to xleases volume")
-    args = parser.parse_args(args[1:])
-
+    args = parse_args(args)
     backend = xlease.DirectFile(args.path)
     with utils.closing(backend):
         xlease.format_index(args.sd_id, backend)
+
+
+@expose('rebuild-xleases')
+def rebuild_xleases(*args):
+    """
+    rebuild-xleases sd_id path
+
+    WARNING:
+
+        This is a destructive operation - you must put the storage
+        domain into maintenance before running this tool.
+
+    Rebuild the xleases volume index, restoring all sanlock resource on
+    the xleases volume. If you want to drop all leases in the index, use
+    format-xleases.
+
+    Notes:
+
+    - With iSCSI based storage you may need to connect to the traget
+      using iscsiadm.
+
+    - With file based storage, you may need to mount the storage domain.
+
+    - With block based stoage, you need to activate the xleases logical
+      volume before the operation, and deactivate after the operation.
+
+    If rebuilding fails, the volume will not be usable (it will be
+    marked as "updating"), but the operation can be tried again.
+
+    Rebuilding xleases volume on file storage:
+
+        PATH=/rhev/data-center/mnt/server:_path/sd-id/dom_md/xleases
+        vdsm-tool rebuild-xleases sd-id $PATH
+
+    Rebuilding the xleases volume on block storage:
+
+        lvchange -ay sd-id/xleases
+        vdsm-tool rebuild-xleases sd-id /dev/sd-id/xleases
+        lvchange -an sd-id/xleases
+    """
+    args = parse_args(args)
+    backend = xlease.DirectFile(args.path)
+    with utils.closing(backend):
+        xlease.rebuild_index(args.sd_id, backend)
+
+
+def parse_args(args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('sd_id', help="storage domain UUID")
+    parser.add_argument('path', help="path to xleases volume")
+    return parser.parse_args(args[1:])
