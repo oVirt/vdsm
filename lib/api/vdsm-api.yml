@@ -5733,7 +5733,7 @@ types:
             type: int
 
         -   description: The type of backing storage used by this domain
-            name: domainType
+            name: type
             type: *StorageDomainType
 
         -   description: The human-readable name for this Storage Domain
