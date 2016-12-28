@@ -58,6 +58,23 @@ def hosttail_join(host, tail):
     return host + ':' + tail
 
 
+def normalize_literal_addr(addr):
+    """
+    Given a valid IP address, return it in a literal form.
+    """
+    if _is_literal_ipv6_addr_soft_check(addr):
+        res = addr
+    elif _is_ipv6_addr_soft_check(addr):
+        res = '[{}]'.format(addr)
+    else:
+        res = addr
+    return res
+
+
+def _is_ipv6_addr_soft_check(addr):
+    return addr.count(':') > 1
+
+
 def _is_literal_ipv6_addr_soft_check(addr):
     return addr.startswith('[')
 

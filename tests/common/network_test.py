@@ -68,6 +68,22 @@ class TestIpAddressHostTail(VdsmTestCase):
         self.assertNotEqual(('2001::1', '4321'),
                             ipaddress.hosttail_split('2001::1:4321'))
 
+    def test_literal_ipv4_addr(self):
+        self.assertEqual('1.2.3.4',
+                         ipaddress.normalize_literal_addr('1.2.3.4'))
+
+    def test_literal_ipv6_addr(self):
+        self.assertEqual('[2001::1]',
+                         ipaddress.normalize_literal_addr('2001::1'))
+
+    def test_literal_namedhost(self):
+        self.assertEqual('namedhost',
+                         ipaddress.normalize_literal_addr('namedhost'))
+
+    def test_literal_ipv6_already_literal(self):
+        self.assertEqual('[2001::1]',
+                         ipaddress.normalize_literal_addr('[2001::1]'))
+
     @permutations([
         # Valid host
         ("server", "/", "server:/"),
