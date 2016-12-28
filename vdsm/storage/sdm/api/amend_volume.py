@@ -48,13 +48,13 @@ class Job(base.Job):
 
         # TODO: The copy data should prepare only the volume
         # although it prepare the whole image for now.
-        # Also, once the operation fails the image will becone illegal,
+        # Also, once the operation fails the image will become illegal,
         # this is a bug that should be fixed for other operations other than
         # copy_data
         self._vol_info = CopyDataDivEndpoint(vol_info, host_id, writable=True)
 
         # Add validation in a new class for volume attribute
-        # We cuurently can't use the validation properties.enum
+        # We currently can't use the validation properties.enum
         # since it doesn't support optional enum.
         self._vol_attr = VolumeAttributes(vol_attr)
 
