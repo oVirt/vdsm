@@ -72,6 +72,8 @@ function run_network_tests {
     local res=0
     lago shell "$vm_name" -c \
         " \
+            systemctl stop NetworkManager
+            systemctl mask NetworkManager
             cd /usr/share/vdsm/tests
             ./run_tests.sh \
                 -a type=functional,switch=legacy \
