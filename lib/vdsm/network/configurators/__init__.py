@@ -28,7 +28,6 @@ from vdsm.network.netinfo import mtus
 from ..errors import RollbackIncomplete
 from . import qos
 from ..models import Bond, Bridge, hierarchy_vlan_tag, hierarchy_backing_device
-from ..sourceroute import StaticSourceRoute
 
 
 class Configurator(object):
@@ -121,29 +120,6 @@ class Configurator(object):
         dev_name = hierarchy_backing_device(top_device).name
         vlan_tag = hierarchy_vlan_tag(top_device)
         qos.remove_outbound(dev_name, vlan_tag)
-
-    def _addSourceRoute(self, netEnt):
-        ipv4 = netEnt.ipv4
-        # bootproto is None for both static and no bootproto
-        if ipv4.bootproto != 'dhcp' and netEnt.master is None:
-            logging.debug("Adding source route: name=%s, addr=%s, netmask=%s, "
-                          "gateway=%s" % (netEnt.name, ipv4.address,
-                                          ipv4.netmask, ipv4.gateway))
-            if (ipv4.gateway in (None, '0.0.0.0') or
-               not ipv4.address or not ipv4.netmask):
-                    logging.warning(
-                        'invalid input for source routing: name=%s, '
-                        'addr=%s, netmask=%s, gateway=%s',
-                        netEnt.name, ipv4.address, ipv4.netmask,
-                        ipv4.gateway)
-            else:
-                StaticSourceRoute(netEnt.name, self, ipv4.address,
-                                  ipv4.netmask, ipv4.gateway).configure()
-
-    def _removeSourceRoute(self, netEnt, sourceRouteClass):
-        if netEnt.ipv4.bootproto != 'dhcp' and netEnt.master is None:
-            logging.debug("Removing source route for device %s", netEnt.name)
-            sourceRouteClass(netEnt.name, self, None, None, None).remove()
 
     def _setNewMtu(self, iface, ifaceVlans):
         """

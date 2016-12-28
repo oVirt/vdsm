@@ -205,7 +205,7 @@ class Ifcfg(Configurator):
             IfcfgAcquire.acquire_device(bridge.name)
         DynamicSourceRoute.addInterfaceTracking(bridge)
         ifdown(bridge.name)
-        self._removeSourceRoute(bridge, StaticSourceRoute)
+        self._removeSourceRoute(bridge)
         commands.execCmd([constants.EXT_BRCTL, 'delbr', bridge.name])
         self.configApplier.removeBridge(bridge.name)
         if bridge.port:
@@ -217,7 +217,7 @@ class Ifcfg(Configurator):
             IfcfgAcquire.acquire_vlan_device(vlan.name)
         DynamicSourceRoute.addInterfaceTracking(vlan)
         ifdown(vlan.name)
-        self._removeSourceRoute(vlan, StaticSourceRoute)
+        self._removeSourceRoute(vlan)
         self.configApplier.removeVlan(vlan.name)
         vlan.device.remove()
 
@@ -227,13 +227,30 @@ class Ifcfg(Configurator):
         to_be_removed = remove_even_if_used or not ifaceUsed(iface.name)
         if to_be_removed:
             ifdown(iface.name)
-        self._removeSourceRoute(iface, StaticSourceRoute)
+        self._removeSourceRoute(iface)
         return to_be_removed
 
     def _addSourceRoute(self, netEnt):
         """For ifcfg tracking can be done together with route/rule addition"""
-        super(Ifcfg, self)._addSourceRoute(netEnt)
+        ipv4 = netEnt.ipv4
+        if ipv4.bootproto != 'dhcp' and netEnt.master is None:
+            valid_args = (ipv4.address and ipv4.netmask and
+                          ipv4.gateway not in (None, '0.0.0.0'))
+            if valid_args:
+                StaticSourceRoute(netEnt.name, self, ipv4.address,
+                                  ipv4.netmask, ipv4.gateway).configure()
+            else:
+                logging.warning(
+                    'Invalid input for source routing: '
+                    'name=%s, addr=%s, netmask=%s, gateway=%s',
+                    netEnt.name, ipv4.address, ipv4.netmask, ipv4.gateway)
+
         DynamicSourceRoute.addInterfaceTracking(netEnt)
+
+    def _removeSourceRoute(self, netEnt):
+        if netEnt.ipv4.bootproto != 'dhcp' and netEnt.master is None:
+            logging.debug("Removing source route for device %s", netEnt.name)
+            StaticSourceRoute(netEnt.name, self, None, None, None).remove()
 
     def removeBond(self, bonding):
         if not self.owned_device(bonding.name):

@@ -1,4 +1,4 @@
-# Copyright 2013-2014 Red Hat, Inc.
+# Copyright 2013-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -155,7 +155,7 @@ class Iproute2(Configurator):
     def removeBridge(self, bridge):
         DynamicSourceRoute.addInterfaceTracking(bridge)
         self.configApplier.ifdown(bridge)
-        self._removeSourceRoute(bridge, DynamicSourceRoute)
+        self._removeSourceRoute(bridge)
         self.configApplier.removeBridge(bridge)
         if bridge.port:
             bridge.port.remove()
@@ -163,7 +163,7 @@ class Iproute2(Configurator):
     def removeVlan(self, vlan):
         DynamicSourceRoute.addInterfaceTracking(vlan)
         self.configApplier.ifdown(vlan)
-        self._removeSourceRoute(vlan, DynamicSourceRoute)
+        self._removeSourceRoute(vlan)
         self.configApplier.removeVlan(vlan)
         vlan.device.remove()
 
@@ -180,7 +180,7 @@ class Iproute2(Configurator):
             if bonding.master is None:
                 address.flush(bonding.name)
                 DynamicSourceRoute.addInterfaceTracking(bonding)
-                self._removeSourceRoute(bonding, DynamicSourceRoute)
+                self._removeSourceRoute(bonding)
 
             if bonding.on_removal_just_detach_from_network:
                 self.configApplier.setIfaceMtu(bonding.name, mtus.DEFAULT_MTU)
@@ -204,7 +204,7 @@ class Iproute2(Configurator):
             if nic.master is None:
                 address.flush(nic.name)
                 DynamicSourceRoute.addInterfaceTracking(nic)
-                self._removeSourceRoute(nic, DynamicSourceRoute)
+                self._removeSourceRoute(nic)
             else:
                 self.configApplier.setIfaceMtu(nic.name, mtus.DEFAULT_MTU)
                 self.configApplier.ifdown(nic)
@@ -234,6 +234,25 @@ class Iproute2(Configurator):
 
         for rule in rules:
             ruleDel(rule)
+
+    def _addSourceRoute(self, netEnt):
+        ipv4 = netEnt.ipv4
+        if ipv4.bootproto != 'dhcp' and netEnt.master is None:
+            valid_args = (ipv4.address and ipv4.netmask and
+                          ipv4.gateway not in (None, '0.0.0.0'))
+            if valid_args:
+                DynamicSourceRoute(netEnt.name, self, ipv4.address,
+                                   ipv4.netmask, ipv4.gateway).configure()
+            else:
+                logging.warning(
+                    'Invalid input for source routing: '
+                    'name=%s, addr=%s, netmask=%s, gateway=%s',
+                    netEnt.name, ipv4.address, ipv4.netmask, ipv4.gateway)
+
+    def _removeSourceRoute(self, netEnt):
+        if netEnt.ipv4.bootproto != 'dhcp' and netEnt.master is None:
+            logging.debug("Removing source route for device %s", netEnt.name)
+            DynamicSourceRoute(netEnt.name, self, None, None, None).remove()
 
 
 class ConfigApplier(object):
