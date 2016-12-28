@@ -221,6 +221,9 @@ class HSM_Mailbox:
             self.log.warning("HSM_MailboxMonitor - No mail monitor object "
                              "available to stop")
 
+    def wait(self, timeout=None):
+        return self._mailman.wait(timeout)
+
     def flushMessages(self):
         if self._mailman:
             self._mailman.immFlush()
@@ -288,6 +291,10 @@ class HSM_MailMonitor(object):
 
     def immFlush(self):
         self._flush = True
+
+    def wait(self, timeout=None):
+        self._thread.join(timeout=timeout)
+        return not self._thread.is_alive()
 
     def _handleResponses(self, newMsgs):
         rc = False

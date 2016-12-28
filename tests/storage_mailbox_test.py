@@ -120,8 +120,7 @@ class TestMailbox(TestCaseBase):
                         self.assertTrue(spm_mm.wait(timeout=6))
                 finally:
                     hsm_mb.stop()
-                    hsm_mb._mailman._thread.join(timeout=6)
-                    self.assertFalse(hsm_mb._mailman._thread.is_alive())
+                    self.assertTrue(hsm_mb.wait(timeout=6))
 
         self.assertFalse(expired, 'message was not processed on time')
         self.assertEqual(received_messages, [(449, (
