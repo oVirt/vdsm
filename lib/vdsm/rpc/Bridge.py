@@ -436,22 +436,3 @@ command_info = {
     'Lease_info': {'ret': 'result'},
     'Lease_status': {'ret': 'result'},
 }
-
-
-def fieldClone(oldName, newName, obj):
-    if oldName in obj:
-        obj[newName] = obj[oldName]
-    elif newName in obj:
-        obj[oldName] = obj[newName]
-
-
-typefixups = {
-    'VmDevice': partial(fieldClone, 'type', 'deviceType'),
-    'BlockDevicePathInfo': partial(fieldClone, 'type', 'deviceType'),
-    'VolumeGroupInfo': partial(fieldClone, 'type', 'deviceType'),
-    'VmDeviceAddress': partial(fieldClone, 'type', 'addressType'),
-    'IscsiCredentials': partial(fieldClone, 'type', 'authType'),
-    'ConnectionRefArgs': partial(fieldClone, 'type', 'connType'),
-    'VolumeInfo': partial(fieldClone, 'type', 'allocType'),
-    'StorageDomainInfo': partial(fieldClone, 'class', 'domainClass'),
-}
