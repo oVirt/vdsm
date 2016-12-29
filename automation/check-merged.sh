@@ -116,8 +116,6 @@ done
 
 lago cleanup
 
-cat "$EXPORTS/functional_tests_stdout.$distro.log"
-
 [[ -e "logs" ]] \
 && {
     tar cvzf "$EXPORTS/lago-logs.tar.gz" logs
