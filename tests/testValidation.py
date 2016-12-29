@@ -214,6 +214,49 @@ def slowtest(f):
     return wrapper
 
 
+def xfail(reason):
+    """
+    Mark a test as expected failure.
+
+    This decorator should be used to mark good tests as expected failure. In
+    this case the test is good, but the code is broken, and cannot be fix yet.
+
+    The test will skip with the reason message if the test fail, and fail if
+    the test succeeds, since this means the code is working and we can remove
+    this decorator.
+
+    This is a poor man implementation of pytest.mark.xfail, see
+    http://doc.pytest.org/en/latest/skipping.html
+
+    Usage::
+
+        @xfail("why this test canonot pass now...")
+        def test_broken_code(self):
+            ...
+
+    WARNING: Must be used as a function call. This usage::
+
+        @xfail
+        def test_will_never_run(self):
+            ...
+
+    Will disabled the test slienly, it will never run and hide real errors in
+    the code.
+    """
+    def wrap(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                f(*args, **kwargs)
+            except:
+                raise SkipTest(reason)
+            else:
+                raise AssertionError("This test is expected to fail")
+        return wrapper
+
+    return wrap
+
+
 def brokentest(reason):
     """
     Mark a test as broken.
