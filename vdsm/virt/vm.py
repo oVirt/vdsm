@@ -109,6 +109,16 @@ class BlockJobExistsError(Exception):
     pass
 
 
+class BlockCopyActiveError(Exception):
+    msg = "Block copy job {self.job_id} is not ready for commit"
+
+    def __init__(self, job_id):
+        self.job_id = job_id
+
+    def __str__(self):
+        return self.msg.format(self=self)
+
+
 VALID_STATES = (vmstatus.DOWN, vmstatus.MIGRATION_DESTINATION,
                 vmstatus.MIGRATION_SOURCE, vmstatus.PAUSED,
                 vmstatus.POWERING_DOWN, vmstatus.REBOOT_IN_PROGRESS,
@@ -4957,6 +4967,11 @@ class LiveMergeCleanupThread(object):
         try:
             flags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
             ret = self.vm._dom.blockJobAbort(self.drive.name, flags)
+        except libvirt.libvirtError as e:
+            self.vm.enableDriveMonitor()
+            if e.get_error_code() != libvirt.VIR_ERR_BLOCK_COPY_ACTIVE:
+                raise
+            raise BlockCopyActiveError(self.job['jobID'])
         except:
             self.vm.enableDriveMonitor()
             raise
@@ -4993,7 +5008,12 @@ class LiveMergeCleanupThread(object):
     def run(self):
         self.update_base_size()
         if self.doPivot:
-            self.tryPivot()
+            try:
+                self.tryPivot()
+            except BlockCopyActiveError as e:
+                self.vm.log.warning("Pivot failed: %s", e)
+                return
+
         self.vm.log.info("Synchronizing volume chain after live merge "
                          "(job %s)", self.job['jobID'])
         self.vm._syncVolumeChain(self.drive)
