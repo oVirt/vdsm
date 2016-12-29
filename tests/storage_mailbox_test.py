@@ -35,6 +35,7 @@ from storage.sd import DOMAIN_META_DATA
 import storage.storage_mailbox as sm
 
 MAX_HOSTS = 10
+MAILER_TIMEOUT = 6
 
 
 class StoragePoolStub(object):
@@ -77,7 +78,9 @@ class SPM_MailMonitorTests(TestCaseBase):
                     threadCount, len(threading.enumerate()))
                 retry(AssertionError, t, timeout=4, sleep=0.1)
             finally:
-                self.assertTrue(mailer.wait(timeout=6))
+                self.assertTrue(
+                    mailer.wait(timeout=MAILER_TIMEOUT),
+                    msg='mailer.wait: Timeout expired')
 
 
 class TestMailbox(TestCaseBase):
@@ -117,10 +120,14 @@ class TestMailbox(TestCaseBase):
                             expired = True
                     finally:
                         spm_mm.stop()
-                        self.assertTrue(spm_mm.wait(timeout=6))
+                        self.assertTrue(
+                            spm_mm.wait(timeout=MAILER_TIMEOUT),
+                            msg='spm_mm.wait: Timeout expired')
                 finally:
                     hsm_mb.stop()
-                    self.assertTrue(hsm_mb.wait(timeout=6))
+                    self.assertTrue(
+                        hsm_mb.wait(timeout=MAILER_TIMEOUT),
+                        msg='hsm_mb.wait: Timeout expired')
 
         self.assertFalse(expired, 'message was not processed on time')
         self.assertEqual(received_messages, [(449, (
