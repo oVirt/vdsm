@@ -1760,7 +1760,10 @@ class NetworkTest(TestCaseBase):
             status, msg = self.setupNetworks(
                 {DEFAULT_GATEWAY_NET: {'remove': True}}, {}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
-            self.assertEqual(None, getDefaultGateway())
+
+            dg_obj = getDefaultGateway()
+            if dg_obj:
+                self.assertNotEqual(IP[0]['gateway'], dg_obj.via)
 
     @cleanupNet
     def testAddVlanedBridgeless(self):
