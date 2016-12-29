@@ -34,6 +34,7 @@ from vdsm import jsonrpcvdscli
 from vdsm.compat import pickle
 from vdsm.config import config
 from vdsm.common.define import NORMAL, Mbytes
+from vdsm.common.network.address import normalize_literal_addr
 from vdsm.sslcompat import sslutils
 from vdsm.virt.utils import DynamicBoundedSemaphore
 from yajsonrpc import \
@@ -443,13 +444,16 @@ class SourceThread(object):
                 transport = 'tls'
             else:
                 transport = 'tcp'
-            duri = 'qemu+{}://{}/system'.format(transport, self.remoteHost)
+            duri = 'qemu+{}://{}/system'.format(
+                transport, normalize_literal_addr(self.remoteHost))
 
             dstqemu = self._vm.conf['_migrationParams']['dstqemu']
             if dstqemu:
-                muri = 'tcp://{}'.format(dstqemu)
+                muri = 'tcp://{}'.format(
+                    normalize_literal_addr(dstqemu))
             else:
-                muri = 'tcp://{}'.format(self.remoteHost)
+                muri = 'tcp://{}'.format(
+                    normalize_literal_addr(self.remoteHost))
 
             self._vm.log.info('starting migration to %s '
                               'with miguri %s', duri, muri)
