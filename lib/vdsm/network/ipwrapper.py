@@ -472,8 +472,7 @@ def _execCmd(command):
     returnCode, output, error = execCmd(command)
 
     if returnCode:
-        raise IPRoute2Error(error)
-
+        raise IPRoute2Error(returnCode, error)
     return output
 
 
