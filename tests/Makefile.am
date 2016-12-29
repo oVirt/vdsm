@@ -192,6 +192,7 @@ blacklist_modules_python3 = \
 	momPolicyTests.py \
 	momTests.py \
 	monkeypatchTests.py \
+	network/ip_address_test.py \
 	network/iproute2_test.py \
 	network/ipwrapper_test.py \
 	network/link_bond_test.py \

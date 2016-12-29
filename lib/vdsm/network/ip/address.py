@@ -179,18 +179,21 @@ def disable_ipv6(iface):
 
 
 def add(iface, ipv4, ipv6):
-    if ipv4.address:
+    if ipv4:
         _add_ipv4_address(iface, ipv4)
     if ipv6:
+        sysctl.enable_ipv6(iface)
+        flush(iface, family=6)
         _add_ipv6_address(iface, ipv6)
     elif ipv6_supported():
         sysctl.disable_ipv6(iface)
 
 
 def _add_ipv4_address(iface, ipv4):
-    ipwrapper.addrAdd(iface, ipv4.address, ipv4.netmask)
-    if ipv4.gateway and ipv4.defaultRoute:
-        set_default_route(ipv4.gateway, family=4)
+    if ipv4.address:
+        ipwrapper.addrAdd(iface, ipv4.address, ipv4.netmask)
+        if ipv4.gateway and ipv4.defaultRoute:
+            set_default_route(ipv4.gateway, family=4)
 
 
 def _add_ipv6_address(iface, ipv6):
