@@ -22,6 +22,7 @@ import logging
 
 from vdsm.network.ipwrapper import IPRoute2Error
 from vdsm.network.ipwrapper import routeGet, Route, routeShowGateways
+from vdsm.network.ipwrapper import route6_show_gateways
 from vdsm.network.netlink import route as nl_route
 
 
@@ -46,11 +47,24 @@ def getDefaultGateway():
     return Route.fromText(output[0]) if output else None
 
 
+def ipv6_default_gateway():
+    output = route6_show_gateways('main')
+    return Route.fromText(output[0]) if output else None
+
+
 def is_default_route(gateway):
     if not gateway:
         return False
 
     dg = getDefaultGateway()
+    return (gateway == dg.via) if dg else False
+
+
+def is_ipv6_default_route(gateway):
+    if not gateway:
+        return False
+
+    dg = ipv6_default_gateway()
     return (gateway == dg.via) if dg else False
 
 

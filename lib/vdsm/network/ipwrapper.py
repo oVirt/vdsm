@@ -483,6 +483,12 @@ def routeShowGateways(table):
     return _execCmd(command)
 
 
+def route6_show_gateways(table):
+    command = [_IP_BINARY.cmd, '-6', 'route', 'show', 'to', '::/0', 'table',
+               table]
+    return _execCmd(command)
+
+
 def routeShowTable(table):
     command = [_IP_BINARY.cmd, '-oneline', 'route', 'show', 'table', table]
     return _execCmd(command)

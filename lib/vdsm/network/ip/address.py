@@ -190,7 +190,7 @@ def add(iface, ipv4, ipv6):
 def _add_ipv4_address(iface, ipv4):
     ipwrapper.addrAdd(iface, ipv4.address, ipv4.netmask)
     if ipv4.gateway and ipv4.defaultRoute:
-        _set_default_route(ipv4.gateway, family=4)
+        set_default_route(ipv4.gateway, family=4)
 
 
 def _add_ipv6_address(iface, ipv6):
@@ -198,14 +198,14 @@ def _add_ipv6_address(iface, ipv6):
         ipv6addr, ipv6netmask = ipv6.address.split('/')
         ipwrapper.addrAdd(iface, ipv6addr, ipv6netmask, family=6)
         if ipv6.gateway and ipv6.defaultRoute:
-            _set_default_route(ipv6.gateway, family=6, dev=iface)
+            set_default_route(ipv6.gateway, family=6, dev=iface)
     if ipv6.ipv6autoconf is not None:
         with open('/proc/sys/net/ipv6/conf/%s/autoconf' % iface,
                   'w') as ipv6_autoconf:
             ipv6_autoconf.write('1' if ipv6.ipv6autoconf else '0')
 
 
-def _set_default_route(gateway, family, dev=None):
+def set_default_route(gateway, family, dev=None):
     try:
         ipwrapper.routeAdd(['default', 'via', gateway], family=family, dev=dev)
     except ipwrapper.IPRoute2Error:  # there already is a default route

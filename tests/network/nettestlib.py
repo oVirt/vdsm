@@ -34,11 +34,13 @@ from nose.plugins.skip import SkipTest
 
 from vdsm.constants import EXT_BRCTL, EXT_TC
 from vdsm import cpuarch
+from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
     addrAdd, linkSet, linkAdd, linkDel, IPRoute2Error, netns_add, netns_delete,
     netns_exec)
 from vdsm.network.link import iface as linkiface, bond as linkbond
+from vdsm.network.netinfo import routes
 from vdsm.network.netlink import monitor
 from vdsm.commands import execCmd
 from vdsm.utils import CommandPath, memoized, random_iface_name
@@ -495,6 +497,22 @@ def restore_resolv_conf():
 def check_sysfs_bond_permission():
     if not _has_sysfs_bond_permission():
         raise SkipTest('This test requires sysfs bond write access')
+
+
+@contextmanager
+def preserve_default_route():
+    ipv4_dg_data = routes.getDefaultGateway()
+    ipv4_gateway = ipv4_dg_data.via if ipv4_dg_data else None
+    ipv6_dg_data = routes.ipv6_default_gateway()
+    ipv6_gateway = ipv6_dg_data.via if ipv6_dg_data else None
+
+    try:
+        yield
+    finally:
+        if ipv4_gateway and not routes.is_default_route(ipv4_gateway):
+            address.set_default_route(ipv4_gateway, family=4)
+        if ipv6_gateway and not routes.is_ipv6_default_route(ipv6_gateway):
+            address.set_default_route(ipv4_gateway, family=6)
 
 
 @memoized
