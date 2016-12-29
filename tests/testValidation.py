@@ -17,14 +17,20 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+
 import errno
-from functools import wraps
+import json
 import os
 import subprocess
 import threading
 
+from functools import wraps
+
 from nose.plugins.skip import SkipTest
 from nose.plugins import Plugin
+
+from vdsm import utils
+from vdsm.compat import CPopen
 
 
 class SlowTestsPlugin(Plugin):
@@ -106,6 +112,45 @@ class ThreadLeakPlugin(Plugin):
         leaked_threads = self._threads() - self._start_threads
         if leaked_threads:
             raise Exception('This test leaked threads: %s ' % leaked_threads)
+
+
+class ProcessLeakPlugin(Plugin):
+    """
+    Fail tests that leaked child processes.
+
+    Tests starting child process must wait for the child process before
+    returning from the test. Not waiting may casue the test or the next test to
+    fail when the child process exit and the test framework received unexpected
+    SIGCHLD.
+
+    Running the tests with --with-process-leak-check will fail any test that
+    leaked a child process.
+    """
+    PGREP_CMD = ("pgrep", "-P", "%s" % os.getpid())
+    name = 'process-leak-check'
+
+    def startTest(self, test):
+        self._start_processes = self._child_processes()
+
+    def stopTest(self, test):
+        leaked_processes = self._child_processes() - self._start_processes
+        if leaked_processes:
+            info = [dict(pid=pid, cmdline=utils.getCmdArgs(pid))
+                    for pid in leaked_processes]
+            raise AssertionError("Test leaked child processes:\n" +
+                                 json.dumps(info, indent=4))
+
+    def _child_processes(self):
+        proc = CPopen(self.PGREP_CMD, stdin=None, stdout=subprocess.PIPE,
+                      stderr=subprocess.PIPE)
+        out, err = proc.communicate()
+        # EXIT STATUS
+        # 0      One or more processes matched the criteria.
+        # 1      No processes matched.
+        if proc.returncode not in (0, 1):
+            raise RuntimeError("Error running pgrep: [%d] %s"
+                               % (proc.returncode, err))
+        return frozenset(int(pid) for pid in out.splitlines())
 
 
 def ValidateRunningAsRoot(f):

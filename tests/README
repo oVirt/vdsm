@@ -53,6 +53,18 @@ To run the entire test suit with thread leak detection:
 
     make check NOSE_WITH_THREAD_LEAK_CHECK=1
 
+Enabling processs leak check
+----------------------------
+
+To find tests leaking child processes, you can enable the process leak checker
+plugin:
+
+    ./run_tests_local.sh --with-process-leak-check filename [...]
+
+To run the entire test suit with process leak detection:
+
+    make check NOSE_WITH_PROCESS_LEAK_CHECK=1
+
 Control verbose level:
 ---------------------
 

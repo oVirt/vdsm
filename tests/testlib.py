@@ -59,7 +59,11 @@ from virt import vmxml
 
 from monkeypatch import Patch
 from testValidation import (
-    SlowTestsPlugin, StressTestsPlugin, ThreadLeakPlugin)
+    SlowTestsPlugin,
+    StressTestsPlugin,
+    ThreadLeakPlugin,
+    ProcessLeakPlugin,
+)
 
 # /tmp may use tempfs filesystem, not suitable for some of the test assuming a
 # filesystem with direct io support.
@@ -435,6 +439,7 @@ def run():
     conf.plugins.addPlugin(SlowTestsPlugin())
     conf.plugins.addPlugin(StressTestsPlugin())
     conf.plugins.addPlugin(ThreadLeakPlugin())
+    conf.plugins.addPlugin(ProcessLeakPlugin())
 
     runner = VdsmTestRunner(stream=conf.stream,
                             verbosity=conf.verbosity,
