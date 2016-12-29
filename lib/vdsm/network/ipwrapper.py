@@ -502,8 +502,8 @@ def routeAdd(route, family=4, dev=None):
     _execCmd(command)
 
 
-def routeDel(route):
-    command = [_IP_BINARY.cmd, 'route', 'del']
+def routeDel(route, family):
+    command = [_IP_BINARY.cmd, '-%s' % family, 'route', 'del']
     command += route
     _execCmd(command)
 

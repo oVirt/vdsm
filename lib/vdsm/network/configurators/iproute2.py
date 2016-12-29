@@ -223,7 +223,7 @@ class Iproute2(Configurator):
     def removeSourceRoute(routes, rules, device):
         for route in routes:
             try:
-                routeDel(route)
+                routeDel(route, family=4)
             except IPRoute2Error as e:
                 if 'No such process' in e.message[0]:
                     # The kernel or dhclient has won the race and removed the
