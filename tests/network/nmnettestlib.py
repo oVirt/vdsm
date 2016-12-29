@@ -21,9 +21,10 @@ from __future__ import absolute_import
 from contextlib import contextmanager
 
 from vdsm.commands import execCmd
+from vdsm.network.link import iface as linkiface
 from vdsm.utils import CommandPath
 
-from .nettestlib import random_iface_name
+from .nettestlib import dummy_device, random_iface_name
 
 TEST_LINK_TYPE = 'bond'
 
@@ -31,6 +32,7 @@ SYSTEMCTL = CommandPath('systemctl', '/bin/systemctl', '/usr/bin/systemctl')
 
 NM_SERVICE = 'NetworkManager'
 NMCLI_BINARY = CommandPath('nmcli', '/usr/bin/nmcli')
+IP_BINARY = CommandPath('ip', '/sbin/ip')
 
 
 class NMService(object):
@@ -66,14 +68,19 @@ def nm_connections(iface_name, ipv4addr, connection_name=None, con_count=1,
     if connection_name is None:
         connection_name = iface_name
 
-    for i in range(con_count):
-        _create_connection(
-            connection_name + str(i), iface_name, ipv4addr, save)
-    try:
-        yield
-    finally:
+    with dummy_device() as slave:
         for i in range(con_count):
-            _remove_connection(connection_name + str(i))
+            _create_connection(
+                connection_name + str(i), iface_name, ipv4addr, save)
+
+        # For the bond to be operationally up (carrier-up), add a slave
+        _add_slave_to_bond(bond=iface_name, slave=slave)
+
+        try:
+            yield
+        finally:
+            for i in range(con_count):
+                _remove_connection(connection_name + str(i))
 
 
 def _create_connection(connection_name, iface_name, ipv4addr, save):
@@ -90,6 +97,12 @@ def _remove_connection(connection_name):
     except NMCliError as ex:
         if 'Error: unknown connection' not in ex.args[1]:
             raise
+
+
+def _add_slave_to_bond(bond, slave):
+    linkiface.down(slave)
+    command = [IP_BINARY.cmd, 'link', 'set', slave, 'master', bond]
+    _exec_cmd(command)
 
 
 def _exec_cmd(command):
