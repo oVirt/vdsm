@@ -211,7 +211,7 @@ def set_default_route(gateway, family, dev=None):
     except ipwrapper.IPRoute2Error:  # there already is a default route
         logging.warning(
             'Existing default route will be removed so a new one can be set.')
-        ipwrapper.routeDel('default', family=family)
+        ipwrapper.routeDel(['default'], family=family)
         ipwrapper.routeAdd(['default', 'via', gateway], family=family, dev=dev)
 
 
