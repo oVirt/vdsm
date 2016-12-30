@@ -197,7 +197,7 @@ class ITMap(TestCaseBase):
 
     def testInvalidITMapParams(self):
         data = 1
-        self.assertRaises(ValueError, misc.itmap(int, data, 0).next)
+        self.assertRaises(ValueError, lambda: next(misc.itmap(int, data, 0)))
 
 
 class ParseHumanReadableSize(TestCaseBase):

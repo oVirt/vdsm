@@ -79,9 +79,9 @@ class FakeTimeGen(object):
         self._chain = itertools.chain(list)
 
     def get_fake_time(self):
-        next = self._chain.next()
-        print(next)
-        return next
+        next_time = next(self._chain)
+        print(next_time)
+        return next_time
 
 
 class AsyncDispatcherTest(TestCaseBase):

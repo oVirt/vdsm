@@ -269,8 +269,8 @@ def package_versions():
 
             for pkg, names in KEY_PACKAGES.iteritems():
                 try:
-                    mi = itertools.chain(*[ts.dbMatch('name', name)
-                                           for name in names]).next()
+                    mi = next(itertools.chain(
+                        *[ts.dbMatch('name', name) for name in names]))
                 except StopIteration:
                     logging.debug("rpm package %s not found",
                                   KEY_PACKAGES[pkg])

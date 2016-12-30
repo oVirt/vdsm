@@ -158,19 +158,19 @@ def randomizeRuntimeStats(stats):
     diskUsage.append(createDiskUsage('/boot', 'ext4', 1 * GB))
     diskUsage.append(createDiskUsage('/home', 'ext4', 50 * GB))
     # Add guest-specific number of extra mounts
-    for i in range(vmDigest.next() % MAX_DYNAMIC_MOUNTS):
+    for i in range(next(vmDigest) % MAX_DYNAMIC_MOUNTS):
         diskUsage.append(createDiskUsage('/mount/dynamic-%d' % i, 'ext4',
-                                         vmDigest.next() * GB))
+                                         next(vmDigest) * GB))
     stats['diskUsage'] = diskUsage
 
     # Each vm between 1 to 3 ifaces, not dynamic:
     netIfaces = []
-    for i in range(1 + (vmDigest.next() % 3)):
+    for i in range(1 + (next(vmDigest) % 3)):
         netif = {}
-        hw = map(lambda x: vmDigest.next(), range(6))
+        hw = map(lambda x: next(vmDigest), range(6))
         netif['hw'] = ETH_HW_ADDR_FORMAT % (hw[0], hw[1], hw[2], hw[3], hw[4],
                                             hw[5])
-        inet = map(lambda x: vmDigest.next(), range(4))
+        inet = map(lambda x: next(vmDigest), range(4))
         netif['inet'] = ['%d.%d.%d.%d' % (inet[0], inet[1], inet[2], inet[3])]
         # For simplicty purposes, the ipv6 addresses are transition from ipv4
         netif['inet6'] = ['0:0:0:0:0:ffff:%x%02x:%x%02x' % (inet[0], inet[1],

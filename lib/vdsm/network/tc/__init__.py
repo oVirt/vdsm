@@ -79,7 +79,7 @@ def setPortMirroring(network, target):
     _addTarget(network, QDISC_INGRESS, target)
 
     qdisc.replace(network, 'prio', parent=None)
-    qdisc_id = _qdiscs_of_device(network).next()
+    qdisc_id = next(_qdiscs_of_device(network))
     _addTarget(network, qdisc_id, target)
     ipwrapper.getLink(network).promisc = True
 
@@ -98,7 +98,7 @@ def unsetPortMirroring(network, target):
     '''
     acts = _delTarget(network, QDISC_INGRESS, target)
     try:
-        qdisc_id = _qdiscs_of_device(network).next()
+        qdisc_id = next(_qdiscs_of_device(network))
         acts += _delTarget(network, qdisc_id, target)
     except StopIteration:
         pass
