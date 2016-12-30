@@ -5750,7 +5750,7 @@ types:
             type: int
 
         -   description: The Storage Domain class
-            name: domainClass
+            name: class
             type: *StorageDomainImageClass
 
         -   description: Contains the Host ID of the Storage Pool Manager
