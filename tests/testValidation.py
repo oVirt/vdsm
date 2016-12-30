@@ -18,11 +18,12 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import errno
-import os
-from nose.plugins.skip import SkipTest
 from functools import wraps
-from nose.plugins import Plugin
+import os
 import subprocess
+
+from nose.plugins.skip import SkipTest
+from nose.plugins import Plugin
 
 
 class SlowTestsPlugin(Plugin):
