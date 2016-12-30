@@ -32,6 +32,8 @@ from nose.plugins import Plugin
 from vdsm import utils
 from vdsm.compat import CPopen
 
+import six
+
 
 class SlowTestsPlugin(Plugin):
     """
@@ -233,16 +235,9 @@ def xfail(reason):
         @xfail("why this test canonot pass now...")
         def test_broken_code(self):
             ...
-
-    WARNING: Must be used as a function call. This usage::
-
-        @xfail
-        def test_will_never_run(self):
-            ...
-
-    Will disabled the test slienly, it will never run and hide real errors in
-    the code.
     """
+    _check_decorator_misuse(reason)
+
     def wrap(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
@@ -266,16 +261,9 @@ def brokentest(reason):
         @brokentest("why it is broken...")
         def test_will_skip_on_failure(self):
             ...
-
-    WARNING: Must be used as a function call. This usage::
-
-        @brokentest
-        def test_will_never_run(self):
-            ...
-
-    Will disabled the test slienly, it will never run and hide real errors in
-    the code.
     """
+    _check_decorator_misuse(reason)
+
     def wrap(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
@@ -310,16 +298,9 @@ def broken_on_ci(reason, exception=Exception, name="OVIRT_CI"):
         @broken_on_ci("why it is broken...", exception=OSError)
         def test_will_skip_on_os_error(self):
             ...
-
-    WARNING: Must be used as a function call. This usage::
-
-        @broken_on_ci
-        def test_will_never_run(self):
-            ...
-
-    Will disabled the test slienly, it will never run and hide real errors in
-    the code.
     """
+    _check_decorator_misuse(reason)
+
     def wrap(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
@@ -361,3 +342,17 @@ def checkSudo(cmd):
 
     if p.returncode != 0:
         raise SkipTest("Test requires SUDO configuration (%s)" % err.strip())
+
+
+def _check_decorator_misuse(arg):
+    """
+    Validate decorator correct usage by checking the decorator first
+    argument type.
+    The decorators checked by this function are expected to be used as a
+    function where their first argument type is a string.
+    Decorators that are not used as a function call, have their single argument
+    as the method they wrap, which is not of type string.
+    """
+    if not isinstance(arg, six.string_types):
+        raise TypeError("First argument should be a string. "
+                        "Has the decorator been used as a function call?")
