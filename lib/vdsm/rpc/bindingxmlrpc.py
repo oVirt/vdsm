@@ -112,7 +112,7 @@ class BindingXMLRPC(object):
             HEADER_CONTENT_TYPE = 'content-type'
             HEADER_CONTENT_RANGE = 'content-range'
 
-            class RequestException():
+            class RequestException(Exception):
                 def __init__(self, httpStatusCode, errorMessage):
                     self.httpStatusCode = httpStatusCode
                     self.errorMessage = errorMessage
