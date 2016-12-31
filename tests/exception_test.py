@@ -19,8 +19,12 @@
 #
 
 from testlib import VdsmTestCase
-from vdsm.common.exception import VdsmException, GeneralException
-from vdsm.common.exception import ActionStopped
+from vdsm.common.exception import (
+    ActionStopped,
+    ContextException,
+    GeneralException,
+    VdsmException,
+)
 
 
 class TestVdsmException(VdsmTestCase):
@@ -35,6 +39,38 @@ class TestVdsmException(VdsmTestCase):
 
     def test_response(self):
         e = VdsmException()
+        self.assertEqual(e.response(), {"status": e.info()})
+
+
+class TestContextException(VdsmTestCase):
+
+    def test_context_no_arguments(self):
+        e = ContextException()
+        self.assertEqual(e.context, {})
+
+    def test_context_single_argument(self):
+        e = ContextException("not hot enough")
+        self.assertEqual(e.context, dict(reason="not hot enough"))
+
+    def test_context_explicit_reason(self):
+        e = ContextException(reason="not hot enough")
+        self.assertEqual(e.context, dict(reason="not hot enough"))
+
+    def test_context_reason_and_kwargs(self):
+        e = ContextException("not hot enough", temperature=42)
+        self.assertEqual(e.context,
+                         dict(reason="not hot enough", temperature=42))
+
+    def test_str(self):
+        e = ContextException("not hot enough", temperature=42)
+        self.assertEqual(str(e), "%s: %s" % (e.message, e.context))
+
+    def test_info(self):
+        e = ContextException("not hot enough", temperature=42)
+        self.assertEqual(e.info(), {"code": 0, "message": str(e)})
+
+    def test_response(self):
+        e = ContextException("not hot enough", temperature=42)
         self.assertEqual(e.response(), {"status": e.info()})
 
 

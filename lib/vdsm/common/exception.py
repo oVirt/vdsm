@@ -34,6 +34,38 @@ class VdsmException(Exception):
         return {'status': self.info()}
 
 
+class ContextException(VdsmException):
+    """
+    Adds reason and context arguments for better error messages.
+
+    This is a temporary class to be used while we convert old exceptions to the
+    new calling style. Once all calls are using kwargs call style, we merge
+    this class into VdsmException.
+    """
+
+    def __init__(self, reason=None, **kwargs):
+        """
+        There are 3 ways to initialize an instance:
+
+        - no arguments - discouraged in general, but there may be valid use
+          cases for this.
+        - reason only - prevent unexpected failures in runtime when trying to
+          use this exception in the usual way.
+        - reason and kwargs - the recommended way to use this class.
+
+        All the arguments are stored in the context instance variable.
+        """
+        self.context = kwargs
+        if reason:
+            self.context["reason"] = reason
+
+    def __str__(self):
+        if self.context:
+            return "%s: %s" % (self.message, self.context)
+        else:
+            return self.message
+
+
 class NoSuchVM(VdsmException):
     code = 1
     message = 'Virtual machine does not exist'
