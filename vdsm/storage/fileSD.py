@@ -753,7 +753,7 @@ class FileStorageDomain(sd.StorageDomain):
         try:
             proc.truncateFile(path, size, METADATA_PERMISSIONS, creatExcl=True)
         except OSError as e:
-            if e.rrrno == errno.EEXIST:
+            if e.errno == errno.EEXIST:
                 self.log.info("Reusing external leases volume %s", path)
 
 
