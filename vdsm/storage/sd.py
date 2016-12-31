@@ -332,6 +332,7 @@ class StorageDomainManifest(object):
         self._domainLock = self._makeDomainLock()
         self._external_leases_lock = rwlock.RWLock()
 
+    @classmethod
     def special_volumes(cls, version):
         """
         Return the special volumes managed by this storage domain.
