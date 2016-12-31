@@ -89,7 +89,7 @@ class _AcceptorImpl(object):
 
     def handle_close(self, dispatcher):
         # We cannot handle this, so the best way is to die loudly.
-        panic.panic("Listen socket was closed: %s", dispatcher.socket)
+        panic.panic("Listen socket was closed: %s" % dispatcher.socket)
 
 
 class _ProtocolDetector(object):
