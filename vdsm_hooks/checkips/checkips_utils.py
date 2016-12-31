@@ -1,4 +1,3 @@
-#!/usr/bin/python2
 #
 # Copyright 2008-2016 Red Hat, Inc.
 #

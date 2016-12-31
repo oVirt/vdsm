@@ -1,4 +1,3 @@
-#! /usr/bin/python2
 # Copyright 2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -56,7 +55,3 @@ def main(*args):
     if not os.path.exists('/sys/class/net/%s' % DUMMY_BRIDGE):
         createEphemeralBridge(DUMMY_BRIDGE)
     addBridgeToLibvirt(DUMMY_BRIDGE)
-
-
-if __name__ == '__main__':
-    main()

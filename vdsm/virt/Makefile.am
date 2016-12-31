@@ -28,7 +28,6 @@ dist_vdsm_virt_PYTHON = \
 	domain_descriptor.py \
 	recovery.py \
 	vm.py \
-	vm_migrate_hook.py \
 	vmtune.py \
 	vmxml.py \
 	$(NULL)

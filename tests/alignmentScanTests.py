@@ -1,4 +1,3 @@
-#!/usr/bin/python2
 #
 # Copyright (c) 2016 Red Hat, Inc.
 # Copyright (c) 2012, Sasha Tomic <tomic80@gmail.com>

@@ -343,9 +343,6 @@ dist_vdsmtests_PYTHON = \
 	hookValidation.py \
 	fakelib.py \
 	fakesanlock.py \
-	fake-virt-v2v \
-	fake-ssh-add \
-	fake-ssh-agent \
 	monkeypatch.py \
 	storagefakelib.py \
 	storagetestlib.py \
@@ -357,8 +354,10 @@ dist_vdsmtests_PYTHON = \
 	$(NULL)
 
 dist_vdsmtests_SCRIPTS = \
+	fake-virt-v2v \
+	fake-ssh-add \
+	fake-ssh-agent \
 	run_tests.sh \
-	testValidation.py \
 	$(NULL)
 
 all-local: \

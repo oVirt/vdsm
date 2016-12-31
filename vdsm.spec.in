@@ -896,7 +896,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/recovery.py*
 %{_datadir}/%{vdsm_name}/virt/vmtune.py*
 %{_datadir}/%{vdsm_name}/virt/vm.py*
-%{_datadir}/%{vdsm_name}/virt/vm_migrate_hook.py*
 %{_datadir}/%{vdsm_name}/virt/vmxml.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/__init__.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/common.py*

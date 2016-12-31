@@ -1,4 +1,3 @@
-#! /usr/bin/python2
 # Copyright 2012-2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -92,6 +91,3 @@ class NoMacSpoofingFilter(NwFilter):
                       <filterref filter='no-mac-spoofing'/>
                       <filterref filter='no-arp-mac-spoofing'/>
                   </filter> '''
-
-if __name__ == '__main__':
-    main()
