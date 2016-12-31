@@ -114,8 +114,8 @@ class CopyUserModeToGroupTests(TestCaseBase):
             for initialMode, expectedMode in self.modesList:
                 os.chmod(path, initialMode)
                 fileUtils.copyUserModeToGroup(path)
-                self.assertEquals(os.stat(path).st_mode & self.MODE_MASK,
-                                  expectedMode)
+                self.assertEqual(os.stat(path).st_mode & self.MODE_MASK,
+                                 expectedMode)
 
 
 class TestAtomicSymlink(TestCaseBase):

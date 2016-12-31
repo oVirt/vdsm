@@ -113,8 +113,8 @@ class JsonRpcServerTests(TestCaseBase):
                     response = client.send("echo", (data,))
                     self.assertEqual(response, data)
                 else:
-                    self.assertEquals(self._callTimeout(client, "echo",
-                                      (data,), CALL_ID), data)
+                    self.assertEqual(self._callTimeout(client, "echo",
+                                     (data,), CALL_ID), data)
 
     @permutations(PERMUTATIONS)
     def testMethodCallArgDict(self, ssl, type):
@@ -127,8 +127,8 @@ class JsonRpcServerTests(TestCaseBase):
                         response = client.send("echo", (data,))
                         self.assertEqual(response, data)
                 else:
-                    self.assertEquals(self._callTimeout(client, "echo",
-                                      {'text': data}, CALL_ID), data)
+                    self.assertEqual(self._callTimeout(client, "echo",
+                                     {'text': data}, CALL_ID), data)
 
     @permutations(PERMUTATIONS)
     def testMethodMissingMethod(self, ssl, type):
@@ -145,7 +145,7 @@ class JsonRpcServerTests(TestCaseBase):
                         self._callTimeout(client, missing_method, [],
                                           CALL_ID)
 
-                    self.assertEquals(
+                    self.assertEqual(
                         cm.exception.code,
                         JsonRpcMethodNotFoundError(missing_method).code)
                     self.assertIn(missing_method, cm.exception.message)
@@ -166,8 +166,8 @@ class JsonRpcServerTests(TestCaseBase):
                         self._callTimeout(client, "echo", [],
                                           CALL_ID)
 
-                    self.assertEquals(cm.exception.code,
-                                      JsonRpcInternalError().code)
+                    self.assertEqual(cm.exception.code,
+                                     JsonRpcInternalError().code)
 
     @permutations(PERMUTATIONS)
     def testMethodReturnsNullAndServerReturnsTrue(self, ssl, type):
@@ -215,8 +215,8 @@ class JsonRpcServerTests(TestCaseBase):
                     with self.assertRaises(JsonRpcError) as cm:
                         self._callTimeout(client, "slow_response", [], CALL_ID)
 
-                    self.assertEquals(cm.exception.code,
-                                      JsonRpcNoResponseError().code)
+                    self.assertEqual(cm.exception.code,
+                                     JsonRpcNoResponseError().code)
 
     @MonkeyPatch(executor.Executor, 'dispatch', dispatch)
     @permutations(PERMUTATIONS)
@@ -231,5 +231,5 @@ class JsonRpcServerTests(TestCaseBase):
                     with self.assertRaises(JsonRpcError) as cm:
                         self._callTimeout(client, "no_method", [], CALL_ID)
 
-                    self.assertEquals(cm.exception.code,
-                                      JsonRpcInternalError().code)
+                    self.assertEqual(cm.exception.code,
+                                     JsonRpcInternalError().code)

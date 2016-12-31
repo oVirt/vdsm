@@ -546,8 +546,8 @@ class TestAmend(TestCaseBase):
             qemuimg.create(leaf_path, format=qemuimg.FORMAT.QCOW2,
                            backing=base_path)
             qemuimg.amend(leaf_path, desired_qcow2_compat)
-            self.assertEquals(qemuimg.info(leaf_path)['compat'],
-                              desired_qcow2_compat)
+            self.assertEqual(qemuimg.info(leaf_path)['compat'],
+                             desired_qcow2_compat)
 
 
 def make_image(path, size, format, index, qcow2_compat, backing=None):

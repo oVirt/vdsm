@@ -72,8 +72,8 @@ procs_blocked 0
     def testBootTimeOk(self):
         with MonkeyPatchScope([(hoststats, '_PROC_STAT_PATH',
                                 self._good_path)]):
-            self.assertEquals(hoststats.get_boot_time(),
-                              1395249141)
+            self.assertEqual(hoststats.get_boot_time(),
+                             1395249141)
 
     def testBootTimeEmpty(self):
         with MonkeyPatchScope([(hoststats, '_PROC_STAT_PATH',

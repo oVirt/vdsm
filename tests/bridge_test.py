@@ -136,16 +136,16 @@ class BridgeTests(TestCaseBase):
                   "agent": "apc_snmp", "username": "emesika",
                   "password": "pass", "action": "off", "options": "port=15"}
 
-        self.assertEquals(bridge.dispatch('Host.fenceNode')(**params),
-                          {'power': 'on'})
+        self.assertEqual(bridge.dispatch('Host.fenceNode')(**params),
+                         {'power': 'on'})
 
     @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
     def testMethodWithNoParams(self):
         bridge = DynamicBridge()
 
         bridge.register_server_address('127.0.0.1')
-        self.assertEquals(bridge.dispatch('Host.getCapabilities')()
-                          ['My caps'], 'My capabilites')
+        self.assertEqual(bridge.dispatch('Host.getCapabilities')()
+                         ['My caps'], 'My capabilites')
         bridge.unregister_server_address()
 
     @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
@@ -166,7 +166,7 @@ class BridgeTests(TestCaseBase):
         with self.assertRaises(JsonRpcError) as e:
             bridge.dispatch('Host.ping')()
 
-        self.assertEquals(e.exception.code, 100)
+        self.assertEqual(e.exception.code, 100)
 
     @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
     def testMethodWithIntParam(self):

@@ -84,8 +84,8 @@ class ResponseTests(TestCaseBase):
     ))
     def test_is_specific_error(self, actual_err, expected_err):
         match = actual_err == expected_err
-        self.assertEquals(match, response.is_error(response.error(actual_err),
-                                                   err=expected_err))
+        self.assertEqual(match, response.is_error(response.error(actual_err),
+                                                  err=expected_err))
 
     def test_malformed_empty(self):
         self.assertRaises(response.MalformedResponse,

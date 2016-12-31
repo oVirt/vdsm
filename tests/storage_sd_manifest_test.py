@@ -81,8 +81,8 @@ class FileManifestTests(VdsmTestCase):
     def test_getmetaparam(self):
         with fake_file_env() as env:
             sd_manifest = env.sd_manifest
-            self.assertEquals(sd_manifest.sdUUID,
-                              sd_manifest.getMetaParam(sd.DMDK_SDUUID))
+            self.assertEqual(sd_manifest.sdUUID,
+                             sd_manifest.getMetaParam(sd.DMDK_SDUUID))
 
     def test_getallimages(self):
         with fake_file_env() as env:
@@ -120,8 +120,8 @@ class BlockManifestTests(VdsmTestCase):
 
     def test_getmetaparam(self):
         with fake_block_env() as env:
-            self.assertEquals(env.sd_manifest.sdUUID,
-                              env.sd_manifest.getMetaParam(sd.DMDK_SDUUID))
+            self.assertEqual(env.sd_manifest.sdUUID,
+                             env.sd_manifest.getMetaParam(sd.DMDK_SDUUID))
 
     def test_getblocksize_defaults(self):
         with fake_block_env() as env:

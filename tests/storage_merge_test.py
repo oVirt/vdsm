@@ -379,15 +379,15 @@ class TestFinalizeMerge(VdsmTestCase):
                 self.assertEqual(info['backingfile'], base_vol.volumePath)
 
             # verify syncVolumeChain arguments
-            self.assertEquals(image.Image.syncVolumeChain.sd_id,
-                              subchain.sd_id)
-            self.assertEquals(image.Image.syncVolumeChain.img_id,
-                              subchain.img_id)
-            self.assertEquals(image.Image.syncVolumeChain.vol_id,
-                              env.chain[-1].volUUID)
+            self.assertEqual(image.Image.syncVolumeChain.sd_id,
+                             subchain.sd_id)
+            self.assertEqual(image.Image.syncVolumeChain.img_id,
+                             subchain.img_id)
+            self.assertEqual(image.Image.syncVolumeChain.vol_id,
+                             env.chain[-1].volUUID)
             new_chain = [vol.volUUID for vol in env.chain]
             new_chain.remove(top_vol.volUUID)
-            self.assertEquals(image.Image.syncVolumeChain.actual_chain,
-                              new_chain)
+            self.assertEqual(image.Image.syncVolumeChain.actual_chain,
+                             new_chain)
 
             self.assertEqual(base_vol.getLegality(), sc.LEGAL_VOL)

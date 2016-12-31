@@ -77,8 +77,8 @@ class TestQdisc(TestCaseBase):
 
     def testQdiscsOfDevice(self):
         self._addIngress()
-        self.assertEquals(("ffff:", ),
-                          tuple(tc._qdiscs_of_device(self._bridge.devName)))
+        self.assertEqual(("ffff:", ),
+                         tuple(tc._qdiscs_of_device(self._bridge.devName)))
 
     def testReplacePrio(self):
         self._addIngress()

@@ -44,7 +44,7 @@ class MonitoringTests(conttestlib.RunnableTestCase):
             conn.domainEventRegisterAny(dom, evt, _cb, None)
             monitoring.watchdog(lambda: [])
 
-        self.assertEquals(delivered, [(
+        self.assertEqual(delivered, [(
             conn,
             dom,
             libvirt.VIR_DOMAIN_EVENT_STOPPED,

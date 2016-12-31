@@ -312,8 +312,8 @@ class TestGetCmdArgs(TestCaseBase):
         try:
             cmd_args = utils.getCmdArgs(sproc.pid)
             # let's ignore optional taskset at the beginning
-            self.assertEquals(cmd_args[-len(args):],
-                              tuple(args))
+            self.assertEqual(cmd_args[-len(args):],
+                             tuple(args))
         finally:
             sproc.kill()
             sproc.wait()
@@ -323,8 +323,8 @@ class TestGetCmdArgs(TestCaseBase):
         sproc = commands.execCmd(args, sync=False)
         sproc.kill()
         try:
-            test = lambda: self.assertEquals(utils.getCmdArgs(sproc.pid),
-                                             tuple())
+            test = lambda: self.assertEqual(utils.getCmdArgs(sproc.pid),
+                                            tuple())
             utils.retry(AssertionError, test, tries=10, sleep=0.1)
         finally:
             sproc.wait()
@@ -687,8 +687,8 @@ class TestExecCmdAffinity(TestCaseBase):
         try:
             proc = commands.execCmd((EXT_SLEEP, '30s'), sync=False)
 
-            self.assertEquals(taskset.get(proc.pid),
-                              taskset.get(os.getpid()))
+            self.assertEqual(taskset.get(proc.pid),
+                             taskset.get(os.getpid()))
         finally:
             proc.kill()
 

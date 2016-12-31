@@ -339,8 +339,8 @@ class v2vTests(TestCaseBase):
     def _assertVmDisksMatchSpec(self, vm, spec):
         disk = vm['disks'][0]
         self.assertEqual(disk['dev'], 'sda')
-        self.assertEquals(disk['alias'],
-                          '[datastore1] RHEL/RHEL_%s.vmdk' % spec.name)
+        self.assertEqual(disk['alias'],
+                         '[datastore1] RHEL/RHEL_%s.vmdk' % spec.name)
         self.assertIn('capacity', disk)
         self.assertIn('allocation', disk)
 

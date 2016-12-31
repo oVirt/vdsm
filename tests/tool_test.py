@@ -217,7 +217,7 @@ class ConfiguratorTests(VdsmTestCase):
             setattr(c, 'isconfigured', lambda: isconfigured)
             setattr(c, 'validate', lambda: isvalid)
             if isinstance(expected, bool):
-                self.assertEquals(
+                self.assertEqual(
                     configurator._should_configure(c, force),
                     expected
                 )
@@ -418,7 +418,7 @@ class LibvirtModuleConfigureTests(TestCase):
             ('LCONF', 'empty'),
             ('QCONF', 'empty'),
         )
-        self.assertEquals(
+        self.assertEqual(
             libvirt.isconfigured(),
             NO
         )

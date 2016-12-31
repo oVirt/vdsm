@@ -44,8 +44,8 @@ class VMQosTests(VirtTestBase):
 
     def assertCallSucceeded(self, result):
         code, message = result
-        self.assertEquals(code, SUCCESS,
-                          'error code: %s, message: %s' % (code, message))
+        self.assertEqual(code, SUCCESS,
+                         'error code: %s, message: %s' % (code, message))
 
     @requireKVM
     @skipNoMOM

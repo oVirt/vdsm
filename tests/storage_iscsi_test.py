@@ -175,7 +175,7 @@ class TestIscsiTarget(TestCaseBase):
                 "3ffe:2a00:100:7031::1",
                 3260),
             1, "iqn.2014-06.com.example:t1")
-        self.assertEquals(
+        self.assertEqual(
             str(target),
             "[3ffe:2a00:100:7031::1]:3260,1 iqn.2014-06.com.example:t1")
 

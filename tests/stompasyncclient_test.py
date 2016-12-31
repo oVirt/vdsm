@@ -89,10 +89,10 @@ class AsyncClientTest(TestCaseBase):
 
         req_frame = client.pop_message()
         self.assertEqual(req_frame.command, Command.SEND)
-        self.assertEquals(req_frame.headers['destination'],
-                          'jms.topic.vdsm_requests')
-        self.assertEquals(req_frame.headers[Headers.REPLY_TO],
-                          'jms.topic.vdsm_responses')
+        self.assertEqual(req_frame.headers['destination'],
+                         'jms.topic.vdsm_requests')
+        self.assertEqual(req_frame.headers[Headers.REPLY_TO],
+                         'jms.topic.vdsm_responses')
         self.assertEqual(req_frame.body, data)
 
     def test_receive_connected(self):

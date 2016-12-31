@@ -96,9 +96,9 @@ class StompTests(TestCaseBase):
                                                    'jms.topic.vdsm_requests',
                                                    str(uuid4()),
                                                    sslctx)) as client:
-                self.assertEquals(client.callMethod('echo', (data,),
-                                                    str(uuid4())),
-                                  data)
+                self.assertEqual(client.callMethod('echo', (data,),
+                                                   str(uuid4())),
+                                 data)
 
     @brokentest('This test randomly fails on CI with JsonRpcNoResponseError')
     @permutations(_USE_SSL)

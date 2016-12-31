@@ -141,10 +141,10 @@ class GlusterFSConnectionTests(VdsmTestCase):
 
     def test_mountpoint(self):
         mount_con = GlusterFSConnection("server:/volume", mountClass=FakeMount)
-        self.assertEquals(mount_con._mount.fs_spec,
-                          "server:/volume")
-        self.assertEquals(mount_con._mount.fs_file,
-                          "/tmp/glusterSD/server:_volume")
+        self.assertEqual(mount_con._mount.fs_spec,
+                         "server:/volume")
+        self.assertEqual(mount_con._mount.fs_file,
+                         "/tmp/glusterSD/server:_volume")
 
     @MonkeyPatch(gluster_cli, 'exists', lambda: True)
     @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
@@ -160,8 +160,8 @@ class GlusterFSConnectionTests(VdsmTestCase):
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
         gluster = GlusterFSConnection(spec="192.168.122.1:/music")
-        self.assertEquals(gluster.options,
-                          "backup-volfile-servers=192.168.122.2:192.168.122.3")
+        self.assertEqual(gluster.options,
+                         "backup-volfile-servers=192.168.122.2:192.168.122.3")
 
     @MonkeyPatch(gluster_cli, 'exists', lambda: True)
     @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())

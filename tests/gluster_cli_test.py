@@ -177,10 +177,10 @@ class GlusterCliTests(TestCaseBase):
             gcli._parsePeerStatus(tree, 'fedora-16-test',
                                   '711d2887-3222-46d8-801a-7e3f646bdd4d',
                                   gcli.HostStatus.CONNECTED)
-        self.assertEquals(hostList,
-                          [{'hostname': 'fedora-16-test',
-                            'uuid': '711d2887-3222-46d8-801a-7e3f646bdd4d',
-                            'status': gcli.HostStatus.CONNECTED}])
+        self.assertEqual(hostList,
+                         [{'hostname': 'fedora-16-test',
+                           'uuid': '711d2887-3222-46d8-801a-7e3f646bdd4d',
+                           'status': gcli.HostStatus.CONNECTED}])
 
     def _parsePeerStatus_test(self):
         out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -218,19 +218,19 @@ class GlusterCliTests(TestCaseBase):
             gcli._parsePeerStatus(tree, 'fedora-16-test',
                                   '711d2887-3222-46d8-801a-7e3f646bdd4d',
                                   gcli.HostStatus.CONNECTED)
-        self.assertEquals(hostList,
-                          [{'hostname': 'fedora-16-test',
-                            'uuid': '711d2887-3222-46d8-801a-7e3f646bdd4d',
-                            'status': gcli.HostStatus.CONNECTED},
-                           {'hostname': '192.168.2.21',
-                            'uuid': '610f466c-781a-4e04-8f67-8eba9a201867',
-                            'status': gcli.HostStatus.CONNECTED},
-                           {'hostname': 'FC16-1',
-                            'uuid': '12345678-781a-aaaa-bbbb-8eba9a201867',
-                            'status': gcli.HostStatus.DISCONNECTED},
-                           {'hostname': 'FC16-2',
-                            'uuid': '12345678-cccc-aaaa-bbbb-8eba9a201867',
-                            'status': gcli.HostStatus.UNKNOWN}])
+        self.assertEqual(hostList,
+                         [{'hostname': 'fedora-16-test',
+                           'uuid': '711d2887-3222-46d8-801a-7e3f646bdd4d',
+                           'status': gcli.HostStatus.CONNECTED},
+                          {'hostname': '192.168.2.21',
+                           'uuid': '610f466c-781a-4e04-8f67-8eba9a201867',
+                           'status': gcli.HostStatus.CONNECTED},
+                          {'hostname': 'FC16-1',
+                           'uuid': '12345678-781a-aaaa-bbbb-8eba9a201867',
+                           'status': gcli.HostStatus.DISCONNECTED},
+                          {'hostname': 'FC16-2',
+                           'uuid': '12345678-cccc-aaaa-bbbb-8eba9a201867',
+                           'status': gcli.HostStatus.UNKNOWN}])
 
     def test_parsePeerStatus(self):
         self._parsePeerStatus_empty_test()
@@ -302,34 +302,34 @@ class GlusterCliTests(TestCaseBase):
 """
         tree = etree.fromstring(out)
         status = gcli._parseVolumeStatus(tree)
-        self.assertEquals(status,
-                          {'bricks': [{'brick': '192.168.122.2:/tmp/music-b1',
-                                       'hostuuid':
-                                       'f06b108e-a780-4519-bb22-c3083a1e3f8a',
-                                       'pid': '1313',
-                                       'port': '49152',
-                                       'rdma_port': 'N/A',
-                                       'status': 'ONLINE'},
-                                      {'brick': '192.168.122.2:/tmp/music-b2',
-                                       'hostuuid':
-                                       'f06b108e-a780-4519-bb22-c3083a1e3f8a',
-                                       'pid': '1335',
-                                       'port': '49153',
-                                       'rdma_port': 'N/A',
-                                       'status': 'ONLINE'}],
-                           'name': 'music',
-                           'nfs': [{'hostname': '192.168.122.2',
-                                    'hostuuid':
-                                    'f06b108e-a780-4519-bb22-c3083a1e3f8a',
-                                    'pid': '1357',
-                                    'port': '38467',
-                                    'rdma_port': 'N/A',
-                                    'status': 'ONLINE'}],
-                           'shd': [{'hostname': '192.168.122.2',
-                                    'hostuuid':
-                                    'f06b108e-a780-4519-bb22-c3083a1e3f8a',
-                                    'pid': '1375',
-                                    'status': 'ONLINE'}]})
+        self.assertEqual(status,
+                         {'bricks': [{'brick': '192.168.122.2:/tmp/music-b1',
+                                      'hostuuid':
+                                      'f06b108e-a780-4519-bb22-c3083a1e3f8a',
+                                      'pid': '1313',
+                                      'port': '49152',
+                                      'rdma_port': 'N/A',
+                                      'status': 'ONLINE'},
+                                     {'brick': '192.168.122.2:/tmp/music-b2',
+                                      'hostuuid':
+                                      'f06b108e-a780-4519-bb22-c3083a1e3f8a',
+                                      'pid': '1335',
+                                      'port': '49153',
+                                      'rdma_port': 'N/A',
+                                      'status': 'ONLINE'}],
+                          'name': 'music',
+                          'nfs': [{'hostname': '192.168.122.2',
+                                   'hostuuid':
+                                   'f06b108e-a780-4519-bb22-c3083a1e3f8a',
+                                   'pid': '1357',
+                                   'port': '38467',
+                                   'rdma_port': 'N/A',
+                                   'status': 'ONLINE'}],
+                          'shd': [{'hostname': '192.168.122.2',
+                                   'hostuuid':
+                                   'f06b108e-a780-4519-bb22-c3083a1e3f8a',
+                                   'pid': '1375',
+                                   'status': 'ONLINE'}]})
 
     def _parseVolumeStatusDetail_test(self):
         out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -1157,8 +1157,8 @@ class GlusterCliTests(TestCaseBase):
             out = f.read()
         tree = etree.fromstring(out)
         status = gcli._parseVolumeRebalanceRemoveBrickStatus(tree, 'rebalance')
-        self.assertEquals(status,
-                          glusterTestData.REBALANCE_REMOVE_BRICK_STATUS)
+        self.assertEqual(status,
+                         glusterTestData.REBALANCE_REMOVE_BRICK_STATUS)
 
     def test_parseVolumeRemoveBricksStatus(self):
         with open("glusterVolumeRemoveBricksStatus.xml") as f:
@@ -1166,8 +1166,8 @@ class GlusterCliTests(TestCaseBase):
         tree = etree.fromstring(out)
         status = gcli._parseVolumeRebalanceRemoveBrickStatus(tree,
                                                              'remove-brick')
-        self.assertEquals(status,
-                          glusterTestData.REBALANCE_REMOVE_BRICK_STATUS)
+        self.assertEqual(status,
+                         glusterTestData.REBALANCE_REMOVE_BRICK_STATUS)
 
     def test_parseVolumeTasks(self):
         with open("glusterVolumeTasks.xml") as f:
@@ -1211,8 +1211,8 @@ class GlusterCliTests(TestCaseBase):
         tree = etree.fromstring(out)
         gcli._TIME_ZONE = 'IST'
         status = gcli._parseAllVolumeSnapshotList(tree)
-        self.assertEquals(status,
-                          glusterTestData.GLUSTER_ALL_VOLUME_SNAPSHOT_LIST)
+        self.assertEqual(status,
+                         glusterTestData.GLUSTER_ALL_VOLUME_SNAPSHOT_LIST)
 
     def test_parseVolumeSnapshotList(self):
         with open("glusterVolumeSnapshotList.xml") as f:

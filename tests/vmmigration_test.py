@@ -149,8 +149,8 @@ class MigrationParamsTests(TestCaseBase):
     def test_params_stored(self):
         with fake.VM() as testvm:
             with testvm.migration_parameters(self.params):
-                self.assertEquals(testvm.conf['_migrationParams'],
-                                  self.params)
+                self.assertEqual(testvm.conf['_migrationParams'],
+                                 self.params)
 
     def test_params_removed(self):
         with fake.VM() as testvm:
@@ -240,7 +240,7 @@ class TestVmMigrate(TestCaseBase):
             ]):
                 with fake.VM(status=vm_status, cif=self.cif) as testvm:
                     res = testvm.migrate({})  # no params needed
-                    self.assertEquals(
+                    self.assertEqual(
                         response.is_error(res, error_code),
                         is_error,
                     )

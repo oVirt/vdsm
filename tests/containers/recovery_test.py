@@ -85,8 +85,8 @@ class RecoveryTests(conttestlib.RunnableTestCase):
 
                 recovered_doms = containers.recoveryAllDomains()
                 recovered_uuids = set(vm_uuids[1:])
-                self.assertEquals(len(recovered_doms),
-                                  len(recovered_uuids))
+                self.assertEqual(len(recovered_doms),
+                                 len(recovered_uuids))
                 for dom in recovered_doms:
                     self.assertIn(dom.UUIDString(), recovered_uuids)
 

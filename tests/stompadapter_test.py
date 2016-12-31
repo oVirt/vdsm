@@ -153,10 +153,10 @@ class SubscriptionFrameTest(TestCaseBase):
         adapter.handle_frame(TestDispatcher(adapter), frame)
 
         subscription = destinations['jms.queue.events'][0]
-        self.assertEquals(subscription.id,
-                          'ad052acb-a934-4e10-8ec3-00c7417ef8d1')
-        self.assertEquals(subscription.destination,
-                          'jms.queue.events')
+        self.assertEqual(subscription.id,
+                         'ad052acb-a934-4e10-8ec3-00c7417ef8d1')
+        self.assertEqual(subscription.destination,
+                         'jms.queue.events')
 
     def test_no_destination(self):
         frame = Frame(Command.SUBSCRIBE,
@@ -168,8 +168,8 @@ class SubscriptionFrameTest(TestCaseBase):
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.ERROR)
-        self.assertEquals(resp_frame.body,
-                          'Missing destination or subscription id header')
+        self.assertEqual(resp_frame.body,
+                         'Missing destination or subscription id header')
 
     def test_no_id(self):
         frame = Frame(Command.SUBSCRIBE,
@@ -181,8 +181,8 @@ class SubscriptionFrameTest(TestCaseBase):
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.ERROR)
-        self.assertEquals(resp_frame.body,
-                          'Missing destination or subscription id header')
+        self.assertEqual(resp_frame.body,
+                         'Missing destination or subscription id header')
 
 
 class UnsubscribeFrameTest(TestCaseBase):

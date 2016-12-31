@@ -398,8 +398,8 @@ class DdWatchCopy(TestCaseBase):
                 "/dev/zero", path, None, misc.MEGA, os.stat(path).st_size)
 
             self.assertEqual(rc, 0)
-            self.assertEquals(os.stat(path).st_size,
-                              misc.MEGA * 2 + len(add_data))
+            self.assertEqual(os.stat(path).st_size,
+                             misc.MEGA * 2 + len(add_data))
 
             with open(path, "r") as f:
                 for i in range(repetitions):

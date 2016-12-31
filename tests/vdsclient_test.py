@@ -434,38 +434,38 @@ class vdsClientTest(TestCaseBase):
     def testPlainParseArgs(self):
         fixture = "key1=val1,key2=val2,key3=val3"
         args = vdsClient.parseArgs(fixture)
-        self.assertEquals(args, {'key1': 'val1', 'key2': 'val2',
-                                 'key3': 'val3'})
+        self.assertEqual(args, {'key1': 'val1', 'key2': 'val2',
+                                'key3': 'val3'})
 
     def testQuotedParseArgs(self):
         fixture = "key1=\"val1\",'key2'=val2,key3='val3'"
         args = vdsClient.parseArgs(fixture)
-        self.assertEquals(args, {'key1': 'val1', 'key2': 'val2',
-                                 'key3': 'val3'})
+        self.assertEqual(args, {'key1': 'val1', 'key2': 'val2',
+                                'key3': 'val3'})
 
     def testQuotedCommasParseArgs(self):
         fixture = "key1=val1,\"k,e,y,2\"=val2,key3='v,a,l,3'"
         args = vdsClient.parseArgs(fixture)
-        self.assertEquals(args, {'key1': 'val1', 'k,e,y,2': 'val2',
-                                 'key3': 'v,a,l,3'})
+        self.assertEqual(args, {'key1': 'val1', 'k,e,y,2': 'val2',
+                                'key3': 'v,a,l,3'})
 
     def testEscapedQuotesParseArgs(self):
         fixture = "k\\\'ey1=v\\\"al1,key2=\"va\\\"l2\",key3=val3"
         args = vdsClient.parseArgs(fixture)
-        self.assertEquals(args, {'k\'ey1': 'v"al1', 'key2': 'va"l2',
-                                 'key3': 'val3'})
+        self.assertEqual(args, {'k\'ey1': 'v"al1', 'key2': 'va"l2',
+                                'key3': 'val3'})
 
     def testEscapedCommasParseArgs(self):
         fixture = "key1=val1,key2=v\\,al2,key3=val3"
         args = vdsClient.parseArgs(fixture)
-        self.assertEquals(args, {'key1': 'val1', 'key2': 'v,al2',
-                                 'key3': 'val3'})
+        self.assertEqual(args, {'key1': 'val1', 'key2': 'v,al2',
+                                'key3': 'val3'})
 
     def testNoValueArgs(self):
         fixture = "key1=val1,key2=,key3=val3"
         args = vdsClient.parseArgs(fixture)
-        self.assertEquals(args, {'key1': 'val1', 'key2': '',
-                                 'key3': 'val3'})
+        self.assertEqual(args, {'key1': 'val1', 'key2': '',
+                                'key3': 'val3'})
 
     @permutations([
         ['', None],

@@ -40,8 +40,8 @@ class ConnectionTests(conttestlib.RunnableTestCase):
         conttestlib.clear_events(events.root)
 
     def test_without_registered(self):
-        self.assertEquals(tuple(sorted(events.root.registered)),
-                          tuple())
+        self.assertEqual(tuple(sorted(events.root.registered)),
+                         tuple())
 
     def test_register_any(self):
         libvirt_events = (
@@ -58,8 +58,8 @@ class ConnectionTests(conttestlib.RunnableTestCase):
         for ev in libvirt_events:
             conn.domainEventRegisterAny(None, ev, _handler, ev)
 
-        self.assertEquals(tuple(sorted(libvirt_events)),
-                          tuple(sorted(events.root.registered)))
+        self.assertEqual(tuple(sorted(libvirt_events)),
+                         tuple(sorted(events.root.registered)))
 
     def test_register_specific_dom(self):
         evt = libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE
@@ -74,10 +74,10 @@ class ConnectionTests(conttestlib.RunnableTestCase):
         conn.domainEventRegisterAny(dom, evt, _cb, None)
 
         # FIXME
-        self.assertEquals(tuple(),
-                          tuple(sorted(events.root.registered)))
-        self.assertEquals((evt,),
-                          tuple(sorted(dom.events.registered)))
+        self.assertEqual(tuple(),
+                         tuple(sorted(events.root.registered)))
+        self.assertEqual((evt,),
+                         tuple(sorted(dom.events.registered)))
 
         dom.events.fire(evt, None)
         self.assertTrue(called[0])

@@ -126,8 +126,8 @@ class DomainAPITests(conttestlib.RunnableTestCase):
     def test_info(self):
         with conttestlib.fake_runtime_domain() as dom:
             info = dom.info()
-        self.assertEquals(info[0],
-                          libvirt.VIR_DOMAIN_RUNNING)
+        self.assertEqual(info[0],
+                         libvirt.VIR_DOMAIN_RUNNING)
 
 
 class UnsupportedAPITests(conttestlib.RunnableTestCase):

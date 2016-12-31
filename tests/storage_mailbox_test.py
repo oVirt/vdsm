@@ -75,7 +75,7 @@ class SPM_MailMonitorTests(TestCaseBase):
                 mailer.stop()
                 mailer.run()
 
-                t = lambda: self.assertEquals(
+                t = lambda: self.assertEqual(
                     threadCount, len(threading.enumerate()))
                 retry(AssertionError, t, timeout=4, sleep=0.1)
             finally:

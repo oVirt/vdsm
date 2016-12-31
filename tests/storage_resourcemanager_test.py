@@ -471,19 +471,19 @@ class ResourceManagerTests(TestCaseBase):
 
     @MonkeyPatch(rm, "_manager", manager())
     def testResourceStatuses(self):
-        self.assertEquals(rm._getResourceStatus("storage", "resource"),
-                          rm.LockState.free)
+        self.assertEqual(rm._getResourceStatus("storage", "resource"),
+                         rm.LockState.free)
         exclusive1 = rm.acquireResource("storage", "resource", rm.EXCLUSIVE)
-        self.assertEquals(rm._getResourceStatus("storage", "resource"),
-                          rm.LockState.locked)
+        self.assertEqual(rm._getResourceStatus("storage", "resource"),
+                         rm.LockState.locked)
         exclusive1.release()
         shared1 = rm.acquireResource("storage", "resource", rm.SHARED)
-        self.assertEquals(rm._getResourceStatus("storage", "resource"),
-                          rm.LockState.shared)
+        self.assertEqual(rm._getResourceStatus("storage", "resource"),
+                         rm.LockState.shared)
         shared1.release()
         try:
-            self.assertEquals(rm._getResourceStatus("null", "resource"),
-                              rm.LockState.free)
+            self.assertEqual(rm._getResourceStatus("null", "resource"),
+                             rm.LockState.free)
         except KeyError:
             return
 
@@ -558,7 +558,7 @@ class ResourceManagerTests(TestCaseBase):
 
         exclusiveReq2.cancel()
         self.assertTrue(exclusiveReq2.canceled())
-        self.assertEquals(resources.pop(), None)  # exclusiveReq 2
+        self.assertEqual(resources.pop(), None)  # exclusiveReq 2
 
         resources.pop().release()  # exclusiveReq 1
 

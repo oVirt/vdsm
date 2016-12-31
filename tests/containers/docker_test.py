@@ -66,7 +66,7 @@ class RuntimeConfigurationTests(conttestlib.RunnableTestCase):
         root = ET.fromstring(conttestlib.metadata_drive_map_dom_xml())
         self.assertNotRaises(self.base.configure, root)
         conf = self.base._run_conf
-        self.assertEquals(conf.volume_mapping, {
+        self.assertEqual(conf.volume_mapping, {
             "data": "vda",
         })  # FIXME
 

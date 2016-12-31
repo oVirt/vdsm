@@ -65,8 +65,8 @@ class DomsTests(conttestlib.TestCase):
     def test_get_by_uuid(self):
         dom_list = _fill_doms(NUM)
         # random pick
-        self.assertEquals(dom_list[1],
-                          doms.get_by_uuid(dom_list[1].uuid))
+        self.assertEqual(dom_list[1],
+                         doms.get_by_uuid(dom_list[1].uuid))
 
 
 def _fill_doms(num):
