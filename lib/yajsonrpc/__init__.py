@@ -40,7 +40,7 @@ class JsonRpcError(RuntimeError):
     def __init__(self, code, msg):
         self.code = code
         self.message = msg
-        super(RuntimeError, self).__init__(
+        super(JsonRpcError, self).__init__(
             "[%d] %s" % (self.code, self.message)
         )
 

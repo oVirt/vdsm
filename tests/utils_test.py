@@ -532,7 +532,7 @@ class TestTraceback(TestCaseBase):
 
     def __init__(self, *a, **kw):
         self.record = None
-        super(TestCaseBase, self).__init__(*a, **kw)
+        super(TestTraceback, self).__init__(*a, **kw)
 
     def testDefaults(self):
         @utils.traceback()
