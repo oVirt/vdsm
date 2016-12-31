@@ -22,5 +22,4 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_noinst_PYTHON = \
 	nfs-check.py \
-	ivdsm.py \
 	$(NULL)
