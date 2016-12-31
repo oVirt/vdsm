@@ -526,15 +526,15 @@ class HostdevCreationTests(XMLTestCase):
             'smp': '8', 'maxVCpus': '160',
             'memSize': '1024', 'memGuaranteedSize': '512'}
 
-    @permutations([[device] for device in _PCI_DEVICES + _USB_DEVICES +
-                   [_SCSI_DEVICES[2]]])
+    @permutations([[device_name] for device_name in _PCI_DEVICES +
+                   _USB_DEVICES + [_SCSI_DEVICES[2]]])
     def testCreateHostDevice(self, device_name):
         dev_spec = {'type': 'hostdev', 'device': device_name}
         device = hostdevice.HostDevice(self.conf, self.log, **dev_spec)
         self.assertXMLEqual(vmxml.format_xml(device.getXML()),
                             _DEVICE_XML[device_name] % ('',))
 
-    @permutations([[device] for device in _PCI_DEVICES])
+    @permutations([[device_name] for device_name in _PCI_DEVICES])
     def testCreatePCIHostDeviceWithAddress(self, device_name):
         dev_spec = {'type': 'hostdev', 'device': device_name, 'address':
                     self._PCI_ADDRESS}
