@@ -178,7 +178,7 @@ class GlusterService(service):
     def do_glusterVolumeRemoveBrickStart(self, args):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
-        brickList = params('bricks', '').split(',')
+        brickList = params.get('bricks', '').split(',')
         replicaCount = params.get('replica', '')
 
         status = self.s.glusterVolumeRemoveBrickStart(volumeName,
