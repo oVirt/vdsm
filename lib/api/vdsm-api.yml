@@ -2405,6 +2405,7 @@ types:
             smartcard: A smartcard device
             sound: A sound card or PC speaker
             video: A video card
+            lease: A lease device
 
     VmDiskDevice: &VmDiskDevice
         added: '3.1'
@@ -2566,6 +2567,24 @@ types:
 
         -   description: The UUID of the VM to modify
             name: vmId
+            type: *UUID
+        type: object
+
+    VmLeaseDevice: &VmLeaseDevice
+        added: '4.1'
+        description: Properties of a VM lease device.
+        name: VmLeaseDevice
+        properties:
+        -   description: The device type ("lease")
+            name: type
+            type: *VmDeviceType
+
+        -   name: sd_id
+            description: The storage domain id where this lease is stored
+            type: *UUID
+
+        -   name: lease_id
+            description: The unique id of this lease
             type: *UUID
         type: object
 
@@ -3904,6 +3923,7 @@ types:
         - *VmHostDevice
         - *VmRngDevice
         - *VmTpmDevice
+        - *VmLeaseDevice
 
     VmType: &VmType
         added: '3.1'
