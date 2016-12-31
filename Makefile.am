@@ -87,6 +87,10 @@ abs_imports: all
 	    echo "Missing absolute_import in $$f"; exit 1; fi; \
 	done;
 
+.PHONY: pylint
+pylint: tox
+	tox -e pylint
+
 .PHONY: flake8
 flake8: tox
 	tox -e flake8
