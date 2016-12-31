@@ -89,12 +89,12 @@ class ExampleConnection(object):
         Don't use this to monitor connection health"""
         pass
 
-    def __eq__(self):
+    def __eq__(self, other):
         """Implement this! It will be used to detect multiple connections to
         the same target"""
         pass
 
-    def __ne__(self):
+    def __ne__(self, other):
         """Must be implemented otherwise != operator will return True for equal
         objects"""
 
