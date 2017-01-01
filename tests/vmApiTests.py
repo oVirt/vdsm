@@ -73,7 +73,7 @@ class TestVmStats(TestSchemaCompliancyBase):
             self.assertVmStatsSchemaCompliancy('ExitedVmStats',
                                                testvm.getStats())
 
-    @brokentest
+    @brokentest('Racy test, see http://gerrit.ovirt.org/37275')
     def testRunningStats(self):
         with fake.VM(_VM_PARAMS) as testvm:
             self.assertVmStatsSchemaCompliancy('RunningVmStats',
@@ -82,7 +82,7 @@ class TestVmStats(TestSchemaCompliancyBase):
 
 class TestApiAllVm(TestSchemaCompliancyBase):
 
-    @brokentest
+    @brokentest('Racy test, see http://gerrit.ovirt.org/36894')
     def testAllVmStats(self):
         with fake.VM(_VM_PARAMS) as testvm:
             with MonkeyPatchScope([(clientIF, 'getInstance',
