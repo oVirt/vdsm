@@ -27,7 +27,6 @@ from contextlib import contextmanager
 
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
-from testValidation import brokentest
 from monkeypatch import MonkeyPatch
 
 from vdsm import vdscli
@@ -502,14 +501,6 @@ class CannonizeHostPortTest(TestCaseBase):
         self._assertIsIpAddressWithPort(res)
         # address must include the given port
         self.assertTrue(res.endswith(str(port)))
-
-    @brokentest
-    def testEmptyAddress(self):
-        # TODO: fix cannonizeHostPort to handle this error or to
-        # raise a more meaningful error
-        self.assertRaises(ValueError,
-                          vdscli.cannonizeHostPort,
-                          '')
 
     def testAddressNoPort(self):
         self._assertIsIpAddressWithPort(
