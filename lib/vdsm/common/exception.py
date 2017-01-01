@@ -66,7 +66,7 @@ class ContextException(VdsmException):
             return self.message
 
 
-class NoSuchVM(VdsmException):
+class NoSuchVM(ContextException):
     code = 1
     message = 'Virtual machine does not exist'
 
@@ -214,7 +214,7 @@ class HotunplugNicFailed(VdsmException):
     message = 'Failed to hotunplug NIC'
 
 
-class MigrationInProgress(VdsmException):
+class MigrationInProgress(ContextException):
     code = 51
     message = 'Command not supported during migration'
 
