@@ -123,6 +123,13 @@ class VM(APIBase):
         APIBase.__init__(self)
         self._UUID = UUID
 
+    @property
+    def vm(self):
+        vm = self._cif.vmContainer.get(self._UUID)
+        if vm is None:
+            raise exception.NoSuchVM(vmId=self._UUID)
+        return vm
+
     def changeCD(self, driveSpec):
         """
         Change the CD in the specified VM.
@@ -470,6 +477,14 @@ class VM(APIBase):
             return errCode['noVM']
 
         return curVm.hotunplugDisk(params)
+
+    @api.method
+    def hotplugLease(self, lease):
+        return self.vm.hotplugLease(lease)
+
+    @api.method
+    def hotunplugLease(self, lease):
+        return self.vm.hotunplugLease(lease)
 
     def hotplugMemory(self, params):
         try:

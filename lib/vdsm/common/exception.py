@@ -389,6 +389,16 @@ class HotunplugMemFailed(ContextException):
     message = 'Failed to hotunplug memory'
 
 
+class HotplugLeaseFailed(ContextException):
+    code = 86
+    message = 'Failed to hotplug lease'
+
+
+class HotunplugLeaseFailed(ContextException):
+    code = 87
+    message = 'Failed to hotunplug lease'
+
+
 class RecoveryInProgress(VdsmException):
     code = 99
     message = 'Recovering from crash or Initializing'
