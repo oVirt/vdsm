@@ -69,20 +69,8 @@ class StaticSourceRoute(object):
                 Rule(destination=self._network, table=self._table,
                      srcDevice=self.device)]
 
-    def configure(self):
-        logging.info(("Configuring gateway - ip: %s, network: %s, " +
-                      "subnet: %s, gateway: %s, table: %s, device: %s") %
-                     (self._ipaddr, self._network, self._mask, self._gateway,
-                      self._table, self.device))
-
-        routes = self._buildRoutes()
-        rules = self._buildRules()
-
-        try:
-            self._configurator.configureSourceRoute(routes, rules, self.device)
-        except IPRoute2Error as e:
-            logging.error('ip binary failed during source route configuration'
-                          ': %s', e.message)
+    def config_request(self):
+        return self._buildRoutes(), self._buildRules(), self.device
 
     def remove(self):
         self._configurator.removeSourceRoute(None, None, self.device)

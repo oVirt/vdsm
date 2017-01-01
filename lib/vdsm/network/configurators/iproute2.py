@@ -213,11 +213,16 @@ class Iproute2(Configurator):
 
     @staticmethod
     def configureSourceRoute(routes, rules, device):
-        for route in routes:
-            routeAdd(route)
+        try:
+            for route in routes:
+                routeAdd(route)
 
-        for rule in rules:
-            ruleAdd(rule)
+            for rule in rules:
+                ruleAdd(rule)
+
+        except IPRoute2Error as e:
+            logging.error('ip binary failed during source route configuration'
+                          ': %s', e.message)
 
     @staticmethod
     def removeSourceRoute(routes, rules, device):
@@ -241,8 +246,9 @@ class Iproute2(Configurator):
             valid_args = (ipv4.address and ipv4.netmask and
                           ipv4.gateway not in (None, '0.0.0.0'))
             if valid_args:
-                DynamicSourceRoute(netEnt.name, self, ipv4.address,
-                                   ipv4.netmask, ipv4.gateway).configure()
+                sroute = DynamicSourceRoute(netEnt.name, self, ipv4.address,
+                                            ipv4.netmask, ipv4.gateway)
+                self.configureSourceRoute(*sroute.config_request())
             else:
                 logging.warning(
                     'Invalid input for source routing: '

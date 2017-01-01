@@ -237,8 +237,10 @@ class Ifcfg(Configurator):
             valid_args = (ipv4.address and ipv4.netmask and
                           ipv4.gateway not in (None, '0.0.0.0'))
             if valid_args:
-                StaticSourceRoute(netEnt.name, self, ipv4.address,
-                                  ipv4.netmask, ipv4.gateway).configure()
+                sroute = StaticSourceRoute(netEnt.name, self, ipv4.address,
+                                           ipv4.netmask, ipv4.gateway)
+                self.configureSourceRoute(*sroute.config_request())
+
             else:
                 logging.warning(
                     'Invalid input for source routing: '

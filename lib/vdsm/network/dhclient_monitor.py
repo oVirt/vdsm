@@ -98,8 +98,8 @@ def _dhcp_configure_action(dhcp_response, device):
     gateway = dhcp_response.get(IPROUTE_KEY)
 
     if ip and mask and gateway not in (None, '0.0.0.0'):
-        DynamicSourceRoute(
-            device, configurator, ip, mask, gateway).configure()
+        sroute = DynamicSourceRoute(device, configurator, ip, mask, gateway)
+        configurator.configureSourceRoute(*sroute.config_request())
     else:
         logging.warning('Partial DHCP response %s', dhcp_response)
 
