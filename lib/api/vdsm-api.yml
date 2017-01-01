@@ -10234,6 +10234,7 @@ Volume.refresh:
 
 Volume.setDescription:
     added: '3.1'
+    deprecated: '4.1'
     description: Set the Volume description field.
     params:
     -   description: The UUID of the Volume
@@ -10259,6 +10260,7 @@ Volume.setDescription:
 
 Volume.setLegality:
     added: '3.1'
+    deprecated: '4.1'
     description: Set the legality of a Volume.
     params:
     -   description: The UUID of the Volume

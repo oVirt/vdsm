@@ -1225,6 +1225,7 @@ class HSM(object):
         TODO: Remove when the support for 3.5 clusters is dropped.
         """
 
+    @deprecated
     @public
     def setVolumeDescription(self, sdUUID, spUUID, imgUUID, volUUID,
                              description, options=None):
@@ -1247,6 +1248,7 @@ class HSM(object):
         pool = self.getPool(spUUID)
         pool.setVolumeDescription(sdUUID, imgUUID, volUUID, description)
 
+    @deprecated
     @public
     def setVolumeLegality(self, sdUUID, spUUID, imgUUID, volUUID, legality,
                           options=None):
