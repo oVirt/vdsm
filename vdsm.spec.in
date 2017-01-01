@@ -233,6 +233,7 @@ tasks, statistics gathering, and log collection.
 %package cli
 Summary:        VDSM command line interface
 BuildArch:      noarch
+Requires: %{name}-client = %{version}-%{release}
 Requires: %{name}-python = %{version}-%{release}
 Requires: %{name}-xmlrpc = %{version}-%{release}
 
