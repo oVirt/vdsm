@@ -28,7 +28,6 @@ from vdsm.constants import P_VDSM_RUN
 from vdsm.network import libvirt
 from vdsm.utils import rmFile
 
-from .ipwrapper import IPRoute2Error
 from .ipwrapper import Route
 from .ipwrapper import routeShowTable
 from .ipwrapper import Rule
@@ -39,9 +38,8 @@ TRACKED_INTERFACES_FOLDER = P_VDSM_RUN + 'trackedInterfaces'
 
 
 class StaticSourceRoute(object):
-    def __init__(self, device, configurator, ipaddr, mask, gateway):
+    def __init__(self, device, ipaddr, mask, gateway):
         self.device = device
-        self._configurator = configurator
         self._ipaddr = ipaddr
         self._mask = mask
         self._gateway = gateway
@@ -69,11 +67,11 @@ class StaticSourceRoute(object):
                 Rule(destination=self._network, table=self._table,
                      srcDevice=self.device)]
 
-    def config_request(self):
+    def requested_config(self):
         return self._buildRoutes(), self._buildRules(), self.device
 
-    def remove(self):
-        self._configurator.removeSourceRoute(None, None, self.device)
+    def current_config(self):
+        return (), (), self.device
 
 
 class DynamicSourceRoute(StaticSourceRoute):
@@ -149,20 +147,11 @@ class DynamicSourceRoute(StaticSourceRoute):
 
         return rules
 
-    def remove(self):
-        logging.info("Removing gateway - device: %s", self.device)
-
-        rules = self._getRules(self.device)
-        if rules:
-            table = self._getTable(rules)
-            if table:
-                try:
-                    self._configurator.removeSourceRoute(
-                        self._getRoutes(table), rules,
-                        self.device)
-                except IPRoute2Error as e:
-                    logging.error('ip binary failed during source route '
-                                  'removal: %s' % e.message)
+    def current_config(self):
+        rules = self._getRules(self.device) or ()
+        table = self._getTable(rules) if rules else ()
+        routes = self._getRoutes(table) if table else ()
+        return routes, rules, self.device
 
     @staticmethod
     def _isLibvirtInterfaceFallback(device):

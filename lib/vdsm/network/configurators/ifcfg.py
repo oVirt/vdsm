@@ -237,9 +237,9 @@ class Ifcfg(Configurator):
             valid_args = (ipv4.address and ipv4.netmask and
                           ipv4.gateway not in (None, '0.0.0.0'))
             if valid_args:
-                sroute = StaticSourceRoute(netEnt.name, self, ipv4.address,
+                sroute = StaticSourceRoute(netEnt.name, ipv4.address,
                                            ipv4.netmask, ipv4.gateway)
-                self.configureSourceRoute(*sroute.config_request())
+                self.configureSourceRoute(*sroute.requested_config())
 
             else:
                 logging.warning(
@@ -252,7 +252,8 @@ class Ifcfg(Configurator):
     def _removeSourceRoute(self, netEnt):
         if netEnt.ipv4.bootproto != 'dhcp' and netEnt.master is None:
             logging.debug("Removing source route for device %s", netEnt.name)
-            StaticSourceRoute(netEnt.name, self, None, None, None).remove()
+            sroute = StaticSourceRoute(netEnt.name, None, None, None)
+            self.removeSourceRoute(*sroute.current_config())
 
     def removeBond(self, bonding):
         if not self.owned_device(bonding.name):

@@ -191,7 +191,7 @@ def _cleanup_qos_definition(qos):
 
 def _get_source_route(device_name, ipv4_address):
     return sourceroute.StaticSourceRoute(
-        device_name, None, ipv4_address, IP_MASK, IP_GATEWAY)
+        device_name, ipv4_address, IP_MASK, IP_GATEWAY)
 
 
 def requiresUnifiedPersistence(reason):

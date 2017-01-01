@@ -226,19 +226,25 @@ class Iproute2(Configurator):
 
     @staticmethod
     def removeSourceRoute(routes, rules, device):
-        for route in routes:
-            try:
-                routeDel(route, family=4)
-            except IPRoute2Error as e:
-                if 'No such process' in e.message[0]:
-                    # The kernel or dhclient has won the race and removed the
-                    # route already. We have yet to remove routing rules.
-                    pass
-                else:
-                    raise
+        try:
+            for route in routes:
+                try:
+                    routeDel(route, family=4)
+                except IPRoute2Error as e:
+                    if 'No such process' in e.message[0]:
+                        # The kernel or dhclient has won the race and removed
+                        # the route already.
+                        # We have yet to remove routing rules.
+                        pass
+                    else:
+                        raise
 
-        for rule in rules:
-            ruleDel(rule)
+            for rule in rules:
+                ruleDel(rule)
+
+        except IPRoute2Error as e:
+            logging.error('ip binary failed during source route '
+                          'removal: %s' % e.message)
 
     def _addSourceRoute(self, netEnt):
         ipv4 = netEnt.ipv4
@@ -246,9 +252,9 @@ class Iproute2(Configurator):
             valid_args = (ipv4.address and ipv4.netmask and
                           ipv4.gateway not in (None, '0.0.0.0'))
             if valid_args:
-                sroute = DynamicSourceRoute(netEnt.name, self, ipv4.address,
+                sroute = DynamicSourceRoute(netEnt.name, ipv4.address,
                                             ipv4.netmask, ipv4.gateway)
-                self.configureSourceRoute(*sroute.config_request())
+                self.configureSourceRoute(*sroute.requested_config())
             else:
                 logging.warning(
                     'Invalid input for source routing: '
@@ -258,7 +264,8 @@ class Iproute2(Configurator):
     def _removeSourceRoute(self, netEnt):
         if netEnt.ipv4.bootproto != 'dhcp' and netEnt.master is None:
             logging.debug("Removing source route for device %s", netEnt.name)
-            DynamicSourceRoute(netEnt.name, self, None, None, None).remove()
+            sroute = DynamicSourceRoute(netEnt.name, None, None, None)
+            self.removeSourceRoute(*sroute.current_config())
 
 
 class ConfigApplier(object):
