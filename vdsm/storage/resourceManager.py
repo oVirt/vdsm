@@ -850,7 +850,7 @@ class Owner(object):
                 self.log.warn("Unexpected exception caught while owner '%s' "
                               "tried to acquire '%s'", self, fullName,
                               exc_info=True)
-                raise se.ResourceException()
+                raise se.ResourceException(fullName)
 
             if hasattr(self.ownerobject, "resourceRegistered"):
                 self.ownerobject.resourceRegistered(namespace, name, locktype)
