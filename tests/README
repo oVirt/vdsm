@@ -42,6 +42,17 @@ To enable stress tests:
 
 Stress tests are also enabled if NOSE_STRESS_TESTS environment variable is set.
 
+Enabling threads leak check
+---------------------------
+
+To find tests leaking threads, you can enable the thread leak checker plugin:
+
+    ./run_tests_local.sh --with-thread-leak-check filename [...]
+
+To run the entire test suit with thread leak detection:
+
+    make check NOSE_WITH_THREAD_LEAK_CHECK=1
+
 Control verbose level:
 ---------------------
 
