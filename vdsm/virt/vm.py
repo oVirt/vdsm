@@ -36,6 +36,7 @@ import libvirt
 
 # vdsm imports
 from vdsm.common import api
+from vdsm.common import exception
 from vdsm.common import response
 from vdsm import concurrent
 from vdsm import constants
@@ -2983,6 +2984,72 @@ class Vm(object):
             self._cleanupDrives(drive)
 
         return {'status': doneCode, 'vmList': self.status()}
+
+    @api.logged(on='vdsm.api')
+    def hotplugLease(self, params):
+        if self.isMigrating():
+            raise exception.MigrationInProgress(vmId=self.id)
+
+        vmdevices.lease.prepare(self.cif.irs, [params])
+        lease = vmdevices.lease.Device(self.conf, self.log, **params)
+
+        leaseXml = vmxml.format_xml(lease.getXML(), pretty=True)
+        self.log.info("Hotplug lease xml: %s", leaseXml)
+
+        try:
+            self._dom.attachDevice(leaseXml)
+        except libvirt.libvirtError as e:
+            # TODO: repeated in many places, move to domain wrapper?
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                raise exception.NoSuchVM(vmId=self.id)
+            raise exception.HotplugLeaseFailed(reason=str(e), lease=lease)
+
+        self._devices[hwclass.LEASE].append(lease)
+
+        with self._confLock:
+            self.conf['devices'].append(params)
+        self.saveState()
+
+        return response.success(vmList=self.status())
+
+    @api.logged(on='vdsm.api')
+    def hotunplugLease(self, params):
+        if self.isMigrating():
+            raise exception.MigrationInProgress(vmId=self.id)
+
+        try:
+            lease = vmdevices.lease.find_device(self._devices, params)
+        except LookupError:
+            raise exception.HotunplugLeaseFailed(reason="No such lease",
+                                                 lease=params)
+
+        leaseXml = vmxml.format_xml(lease.getXML(), pretty=True)
+        self.log.info("Hotunplug lease xml: %s", leaseXml)
+
+        try:
+            self._dom.detachDevice(leaseXml)
+            self._waitForDeviceRemoval(lease)
+        except HotunplugTimeout as e:
+            raise exception.HotunplugLeaseFailed(reason=str(e), lease=lease)
+        except libvirt.libvirtError as e:
+            # TODO: repeated in many places, move to domain wrapper?
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                raise exception.NoSuchVM(vmId=self.id)
+            raise exception.HotunplugLeaseFailed(reason=str(e), lease=lease)
+
+        self._devices[hwclass.LEASE].remove(lease)
+
+        try:
+            conf = vmdevices.lease.find_conf(self.conf, lease)
+        except LookupError:
+            # Unepected, but should not break successful unplug.
+            self.log.warning("No conf for lease %s", lease)
+        else:
+            with self._confLock:
+                self.conf['devices'].remove(conf)
+            self.saveState()
+
+        return response.success(vmList=self.status())
 
     def _waitForDeviceRemoval(self, device):
         """

@@ -9632,6 +9632,36 @@ VM.hotunplugDisk:
         description: The VM definition, as updated
         type: *VmDefinition
 
+VM.hotplugLease:
+    added: '4.1'
+    description: Add a new lease device to a running VM.
+    params:
+    -   description: The UUID of the VM
+        name: vmID
+        type: *UUID
+
+    -   description: The lease to plug
+        name: lease
+        type: *VmLeaseDevice
+    return:
+        description: The VM definition, as updated
+        type: *VmDefinition
+
+VM.hotunplugLease:
+    added: '4.1'
+    description: Remove a lease device from a running VM.
+    params:
+    -   description: The UUID of the VM
+        name: vmID
+        type: *UUID
+
+    -   description: The lease to unplug
+        name: lease
+        type: *VmLeaseDevice
+    return:
+        description: The VM definition, as updated
+        type: *VmDefinition
+
 VM.migrate:
     added: '3.1'
     description: Migrate a VM to a remote host.
