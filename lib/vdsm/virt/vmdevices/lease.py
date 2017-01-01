@@ -99,6 +99,7 @@ See also
 from __future__ import absolute_import
 
 import logging
+import xml.etree.ElementTree as ET
 
 from vdsm.common import response
 from vdsm.virt import vmxml
@@ -178,6 +179,15 @@ class Device(core.Base):
         lease.appendChildWithArgs('target', path=self.path,
                                   offset=str(self.offset))
         return lease
+
+    def is_attached_to(self, xml_string):
+        # TODO: verify also path and offset? not sure what should we do it we
+        # find a lease with correct sd_id and lease_id, but wrong path and
+        # offset.
+        xpath = ("./devices/lease[key='{self.lease_id}']"
+                 "[lockspace='{self.sd_id}']").format(self=self)
+        dom = ET.fromstring(xml_string)
+        return bool(dom.findall(xpath))
 
     def __repr__(self):
         return ("<lease.Device sd_id={self.sd_id}, "

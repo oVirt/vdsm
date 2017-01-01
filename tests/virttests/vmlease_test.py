@@ -160,6 +160,60 @@ class TestFindDevice(VdsmTestCase):
         return {vmdevices.hwclass.LEASE: leases}
 
 
+@expandPermutations
+class TestIsAttahedTo(VdsmTestCase):
+
+    XML = """
+    <domain type='kvm' id='vm-id'>
+      <devices>
+        <lease>
+          <lockspace>sd-1</lockspace>
+          <key>lease-2</key>
+          <target path="/dev/sd-1/xleases" offset="4194304" />
+        </lease>
+        <lease>
+          <lockspace>sd-2</lockspace>
+          <key>lease-1</key>
+          <target path="/dev/sd-2/xleases" offset="3145728" />
+        </lease>
+      </devices>
+    </domain>
+    """
+
+    def setUp(self):
+        # TODO: replace with @skipif when available
+        if not six.PY2:
+            raise SkipTest("vmdevices not compatible with python 3")
+
+    @permutations([
+        ("sd-1", "lease-2", 4194304),
+        ("sd-2", "lease-1", 3145728),
+    ])
+    def test_attached(self, sd_id, lease_id, offset):
+        kwargs = {"type": vmdevices.hwclass.LEASE,
+                  "sd_id": sd_id,
+                  "lease_id": lease_id,
+                  "path": "/dev/%s/xleases" % sd_id,
+                  "offset": offset}
+        lease = vmdevices.lease.Device({}, self.log, **kwargs)
+        self.assertTrue(lease.is_attached_to(self.XML),
+                        "lease %r is not attached to %s" % (lease, self.XML))
+
+    @permutations([
+        ("sd-1", "lease-1", 3145728),
+        ("sd-2", "lease-2", 4194304),
+    ])
+    def test_not_attached(self, sd_id, lease_id, offset):
+        kwargs = {"type": vmdevices.hwclass.LEASE,
+                  "sd_id": sd_id,
+                  "lease_id": lease_id,
+                  "path": "/dev/%s/xleases" % sd_id,
+                  "offset": offset}
+        lease = vmdevices.lease.Device({}, self.log, **kwargs)
+        self.assertFalse(lease.is_attached_to(self.XML),
+                         "lease %r is attached to %s" % (lease, self.XML))
+
+
 class FakeStorage(object):
     """
     An object implementing the lease_info interface.
