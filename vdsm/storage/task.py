@@ -908,7 +908,7 @@ class Task:
                     raise se.TaskAborted("shutting down")
                 self.log.debug("Task.run: running job %s: %s" % (i, j))
                 self._updateResult(
-                    0, 'running job {0} of {0}'.format(i + 1, len(self.jobs)),
+                    0, 'running job {0} of {1}'.format(i + 1, len(self.jobs)),
                     '')
                 result = self._run(j.run)
                 if result is None:
