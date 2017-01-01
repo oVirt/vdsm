@@ -488,6 +488,11 @@ class Drive(core.Base):
         dom = ET.fromstring(xml_string)
         return bool(dom.findall(self._xpath))
 
+    def __repr__(self):
+        return ("<Drive name={self.name}, type={self.diskType}, "
+                "path={self.path} "
+                "at {addr:#x}>").format(self=self, addr=id(self))
+
 
 def _getSourceXML(drive):
     source = vmxml.Element('source')

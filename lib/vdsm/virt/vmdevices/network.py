@@ -315,3 +315,11 @@ class Interface(Base):
                 if network:
                     nicDev['network'] = network
                 vm.conf['devices'].append(nicDev)
+
+    def __repr__(self):
+        s = ('<Interface name={name}, type={self.device}, mac={self.macAddr} '
+             'at {addr:#x}>')
+        # TODO: make name require argument
+        return s.format(self=self,
+                        name=getattr(self, 'name', None),
+                        addr=id(self))
