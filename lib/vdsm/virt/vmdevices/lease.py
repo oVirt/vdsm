@@ -104,6 +104,7 @@ from vdsm.common import response
 from vdsm.virt import vmxml
 
 from . import core
+from . import hwclass
 
 log = logging.getLogger("virt.lease")
 
@@ -184,6 +185,24 @@ class Device(core.Base):
                 "path={self.path}, "
                 "offset={self.offset} "
                 "at {addr:#x}>").format(self=self, addr=id(self))
+
+
+def find_device(vm_devices, query):
+    """
+    Find lease device in vm devices.
+
+    :param dict devices: vm devices dict
+    :param dict query: attribues to match (sd_id, lease_id). Typically this is
+        the lease params sent from engine.
+
+    :returns: `lease.Device` if device was found
+    :raises: `LookupError` if device was not found
+    """
+    leases = vm_devices[hwclass.LEASE][:]
+    for dev in leases:
+        if dev.sd_id == query["sd_id"] and dev.lease_id == query["lease_id"]:
+            return dev
+    raise LookupError("No such lease %s" % query)
 
 
 def prepare(storage, devices):

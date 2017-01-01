@@ -33,6 +33,24 @@ from testlib import XMLTestCase
 from testlib import expandPermutations, permutations
 
 
+LEASE_DEVICES = (
+    {
+        "type": vmdevices.hwclass.LEASE,
+        "sd_id": "sd-1",
+        "lease_id": "lease-2",
+        "path": "/dev/sd-1/xleases",
+        "offset": 4194304
+    },
+    {
+        "type": vmdevices.hwclass.LEASE,
+        "sd_id": "sd-2",
+        "lease_id": "lease-1",
+        "path": "/data-center/mnt/server:_export/sd-2/dom_md/xleases",
+        "offset": 3145728
+    },
+)
+
+
 @expandPermutations
 class TestDevice(XMLTestCase):
 
@@ -107,6 +125,39 @@ class TestPrepare(VdsmTestCase):
                   "lease_id": "lease_id"}
         with self.assertRaises(vmdevices.lease.CannotPrepare):
             vmdevices.lease.prepare(storage, [device])
+
+
+@expandPermutations
+class TestFindDevice(VdsmTestCase):
+
+    def setUp(self):
+        # TODO: replace with @skipif when available
+        if not six.PY2:
+            raise SkipTest("vmdevices not compatible with python 3")
+
+    @permutations([
+        ("sd-1", "lease-2"),
+        ("sd-2", "lease-1"),
+    ])
+    def test_found(self, sd_id, lease_id):
+        query = {"sd_id": sd_id, "lease_id": lease_id}
+        lease = vmdevices.lease.find_device(self.devices(), query)
+        self.assertEqual(lease.sd_id, sd_id)
+        self.assertEqual(lease.lease_id, lease_id)
+
+    @permutations([
+        ("sd-1", "lease-1"),
+        ("sd-2", "lease-2"),
+    ])
+    def test_lookup_error(self, sd_id, lease_id):
+        query = {"sd_id": sd_id, "lease_id": lease_id}
+        with self.assertRaises(LookupError):
+            vmdevices.lease.find_device(self.devices(), query)
+
+    def devices(self):
+        leases = [vmdevices.lease.Device({}, self.log, **kwargs)
+                  for kwargs in LEASE_DEVICES]
+        return {vmdevices.hwclass.LEASE: leases}
 
 
 class FakeStorage(object):
