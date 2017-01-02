@@ -10496,22 +10496,6 @@ SDM.reduce_domain:
         name: reduce_params
         type: *StorageDomainReduceParams
 
-SDM.set_volume_generation:
-    added: '4.1'
-    description: Change a volume's generation from a known value to a new value
-    params:
-    -   description: A UUID to be used for tracking the job progress
-        name: job_id
-        type: *UUID
-
-    -   description: Information about the volume to be manipulated
-        name: vol_info
-        type: *CopyDataDIVEndpoint
-
-    -   description: The new generation value
-        name: new_gen
-        type: uint
-
 SDM.update_volume:
     added: '4.1'
     description: Update the volume with specific parameters described

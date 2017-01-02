@@ -655,24 +655,6 @@ class VolumeManifest(object):
         self.log.info("Volume operation completed on %s (generation=%d)",
                       self.volUUID, next_gen)
 
-    def set_generation(self, current_gen, next_gen):
-        """
-        Change the volume generation id from a known value to a new value.
-        To ensure we are changing from a known state the current_gen paramater
-        must match the volume's current generation.  Otherwise a
-        GenerationMismatch exception is raised.
-
-        The Volume Lease must be held.
-        """
-        actual_gen = self.getMetaParam(sc.GENERATION)
-        if current_gen != actual_gen:
-            raise se.GenerationMismatch(current_gen, actual_gen)
-        metadata = self.getMetadata()
-        metadata[sc.GENERATION] = next_gen
-        self.log.info("Changing generation on volume %s from %d to %d",
-                      self.volUUID, current_gen, next_gen)
-        self.setMetadata(metadata)
-
 
 class Volume(object):
     log = logging.getLogger('storage.Volume')

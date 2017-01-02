@@ -136,7 +136,6 @@ test_modules = \
 	storage_sdm_create_volume_test.py \
 	storage_sdm_indirection_tests.py \
 	storage_sdm_merge_test.py \
-	storage_sdm_set_volume_generation_test.py \
 	storage_sdm_update_volume_test.py \
 	storage_securable_test.py \
 	storage_storageserver_test.py \
@@ -238,7 +237,6 @@ blacklist_modules_python3 = \
 	storage_sdm_create_volume_test.py \
 	storage_sdm_indirection_tests.py \
 	storage_sdm_merge_test.py \
-	storage_sdm_set_volume_generation_test.py \
 	storage_sdm_update_volume_test.py \
 	storage_storageserver_test.py \
 	storage_testlib_test.py \

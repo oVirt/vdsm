@@ -197,18 +197,6 @@ class VolumeManifestTest(VdsmTestCase):
             # wirting the new generation.
             self.assertEqual("description", vol.getMetaParam(sc.DESCRIPTION))
 
-    def test_set_generation_wrong_current_value(self):
-        with self.volume() as vol:
-            vol.setMetaParam(sc.GENERATION, 1)
-            self.assertRaises(se.GenerationMismatch,
-                              vol.set_generation, 0, 2)
-
-    def test_set_generation(self):
-        with self.volume() as vol:
-            vol.setMetaParam(sc.GENERATION, 1)
-            vol.set_generation(1, 2)
-            self.assertEqual(2, vol.getMetaParam(sc.GENERATION))
-
 
 class CountedInstanceMethod(object):
     def __init__(self, method):

@@ -88,7 +88,6 @@ import sdm.api.move_device
 import sdm.api.sparsify_volume
 import sdm.api.amend_volume
 import sdm.api.reduce_domain
-import sdm.api.set_volume_generation
 import sdm.api.update_volume
 
 GUID = "guid"
@@ -3623,12 +3622,6 @@ class HSM(object):
         """
         job = sdm.api.reduce_domain.Job(job_id, DISCONNECTED_HOST_ID,
                                         reduce_params)
-        self.sdm_schedule(job)
-
-    @public
-    def sdm_set_volume_generation(self, job_id, vol_info, new_gen):
-        job = sdm.api.set_volume_generation.Job(job_id, self._pool.id,
-                                                vol_info, new_gen)
         self.sdm_schedule(job)
 
     # Lease operations

@@ -1668,9 +1668,6 @@ class SDM(APIBase):
     def reduce_domain(self, job_id, reduce_params):
         return self._irs.sdm_reduce_domain(job_id, reduce_params)
 
-    def set_volume_generation(self, job_id, vol_info, new_gen):
-        return self._irs.sdm_set_volume_generation(job_id, vol_info, new_gen)
-
     def update_volume(self, job_id, vol_info, vol_attr):
         return self._irs.sdm_update_volume(job_id, vol_info, vol_attr)
 
