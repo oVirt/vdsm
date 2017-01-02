@@ -33,7 +33,7 @@ from vdsm import v2v
 from vdsm import libvirtconnection
 from vdsm.password import ProtectedPassword
 from vdsm.commands import execCmd
-from vdsm.utils import CommandPath
+from vdsm.utils import CommandPath, terminating
 
 
 from testlib import VdsmTestCase as TestCaseBase, recorded
@@ -482,18 +482,19 @@ class PipelineProcTests(TestCaseBase):
         msg = 'foo\nbar'
         p1 = v2v._simple_exec_cmd(['echo', '-n', msg],
                                   stdout=subprocess.PIPE)
-        p2 = v2v._simple_exec_cmd(['cat'],
-                                  stdin=p1.stdout,
-                                  stdout=subprocess.PIPE)
+        with terminating(p1):
+            p2 = v2v._simple_exec_cmd(['cat'],
+                                      stdin=p1.stdout,
+                                      stdout=subprocess.PIPE)
+            with terminating(p2):
+                p = v2v.PipelineProc(p1, p2)
+                self.assertEqual(p.pids, [p1.pid, p2.pid])
 
-        p = v2v.PipelineProc(p1, p2)
-        self.assertEqual(p.pids, [p1.pid, p2.pid])
+                ret = p.wait(self.PROC_WAIT_TIMEOUT)
+                self.assertEqual(ret, True)
 
-        ret = p.wait(self.PROC_WAIT_TIMEOUT)
-        self.assertEqual(ret, True)
-
-        out = p.stdout.read()
-        self.assertEqual(out, msg)
+                out = p.stdout.read()
+                self.assertEqual(out, msg)
 
     @permutations([
         # (cmd1, cmd2, returncode)
@@ -504,12 +505,14 @@ class PipelineProcTests(TestCaseBase):
     def testReturncode(self, cmd1, cmd2, returncode):
         p1 = v2v._simple_exec_cmd([cmd1],
                                   stdout=subprocess.PIPE)
-        p2 = v2v._simple_exec_cmd([cmd2],
-                                  stdin=p1.stdout,
-                                  stdout=subprocess.PIPE)
-        p = v2v.PipelineProc(p1, p2)
-        p.wait(self.PROC_WAIT_TIMEOUT)
-        self.assertEqual(p.returncode, returncode)
+        with terminating(p1):
+            p2 = v2v._simple_exec_cmd([cmd2],
+                                      stdin=p1.stdout,
+                                      stdout=subprocess.PIPE)
+            with terminating(p2):
+                p = v2v.PipelineProc(p1, p2)
+                p.wait(self.PROC_WAIT_TIMEOUT)
+                self.assertEqual(p.returncode, returncode)
 
     @permutations([
         # (cmd1, cmd2, waitRet)
@@ -521,13 +524,15 @@ class PipelineProcTests(TestCaseBase):
     def testWait(self, cmd1, cmd2, waitRet):
         p1 = v2v._simple_exec_cmd(cmd1,
                                   stdout=subprocess.PIPE)
-        p2 = v2v._simple_exec_cmd(cmd2,
-                                  stdin=p1.stdout,
-                                  stdout=subprocess.PIPE)
-        p = v2v.PipelineProc(p1, p2)
-        ret = p.wait(2)
-        p.kill()
-        self.assertEqual(ret, waitRet)
+        with terminating(p1):
+            p2 = v2v._simple_exec_cmd(cmd2,
+                                      stdin=p1.stdout,
+                                      stdout=subprocess.PIPE)
+            with terminating(p2):
+                p = v2v.PipelineProc(p1, p2)
+                ret = p.wait(2)
+                p.kill()
+                self.assertEqual(ret, waitRet)
 
 
 class MockVirConnectTests(TestCaseBase):
