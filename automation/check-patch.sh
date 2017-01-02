@@ -30,5 +30,9 @@ if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.i
     yum -y install "$EXPORT_DIR/"!(*.src).rpm
     export LC_ALL=C  # no idea why this is suddenly needed
     rpmlint "$EXPORT_DIR/"*.src.rpm
-    ! rpmlint "$EXPORT_DIR/"!(*.src).rpm | grep '\(dir-or-file-in-var-run\|wrong-script-interpreter\|non-executable-script\)'
+
+    # TODO: fix spec to stop ignoring the few current errors
+    ! rpmlint "$EXPORT_DIR/"!(*.src).rpm | grep ': E: ' | grep -v explicit-lib-dependency | \
+        grep -v no-binary | grep -v zero-length | \
+        grep -v non-readable | grep -v non-standard-dir-perm
 fi
