@@ -18,6 +18,8 @@
 #
 from __future__ import absolute_import
 
+from glob import iglob
+import logging
 import six
 import xml.etree.cElementTree as etree
 from xml.sax.saxutils import escape
@@ -126,3 +128,33 @@ def networks():
                 nets[netname]['bridge'] = xml.find('.//bridge').get('name')
                 nets[netname]['bridged'] = True
     return nets
+
+
+def is_libvirt_device(device):
+    try:
+        libvirt_nets = networks()
+    except libvirtError:
+        logging.error('Libvirt failed to answer. It might be the case that'
+                      ' this call is being run before libvirt startup. '
+                      ' Thus, check if vdsm owns %s an alternative way' %
+                      device)
+        return _is_device_configured_in_a_network(device)
+    libvirt_devices = [net.get('bridge') or net.get('iface')
+                       for net in six.itervalues(libvirt_nets)]
+    return device in libvirt_devices
+
+
+def _is_device_configured_in_a_network(device):
+    """
+    Checks whether the device belongs to libvirt when libvirt is not yet
+    running (network.service runs before libvirtd is started). To do so,
+    it must check if there is an autostart network that uses the device.
+    """
+    bridged_name = "bridge name='%s'" % device
+    bridgeless_name = "interface dev='%s'" % device
+    for filename in iglob('/etc/libvirt/qemu/networks/autostart/vdsm-*'):
+        with open(filename) as xml_file:
+            xml_content = xml_file.read()
+            if bridged_name in xml_content or bridgeless_name in xml_content:
+                return True
+    return False
