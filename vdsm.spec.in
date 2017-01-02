@@ -893,7 +893,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/mk_sysprep_floppy
 %{_datadir}/%{vdsm_name}/sitecustomize.py*
 %{_datadir}/%{vdsm_name}/supervdsmd
-%{_datadir}/%{vdsm_name}/vdsm
+%{_datadir}/%{vdsm_name}/vdsmd
 %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
 %{_datadir}/%{vdsm_name}/vdsmd.py*
