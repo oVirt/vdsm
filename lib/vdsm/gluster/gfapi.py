@@ -218,7 +218,7 @@ from vdsm import commands
 def volumeStatvfs(volumeName, host=GLUSTER_VOL_HOST,
                   port=GLUSTER_VOL_PORT,
                   protocol=GLUSTER_VOL_PROTOCOL):
-    module = "gluster.gfapi"
+    module = "vdsm.gluster.gfapi"
     command = [constants.EXT_PYTHON, '-m', module, '-v', volumeName,
                '-p', str(port), '-H', host, '-t', protocol, '-c', 'statvfs']
 
