@@ -45,6 +45,7 @@ from vdsm import hooks
 from vdsm import sysctl
 from vdsm import utils
 
+from vdsm.network import ifacetracking
 from vdsm.network import ipwrapper
 from vdsm.network import libvirt
 from vdsm.network.ip import address
@@ -59,7 +60,7 @@ from . import Configurator, getEthtoolOpts
 from .ifcfg_acquire import IfcfgAcquire
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from ..models import Nic, Bridge
-from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
+from ..sourceroute import StaticSourceRoute
 from ..utils import remove_custom_bond_option
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
@@ -203,7 +204,8 @@ class Ifcfg(Configurator):
     def removeBridge(self, bridge):
         if not self.owned_device(bridge.name):
             IfcfgAcquire.acquire_device(bridge.name)
-        DynamicSourceRoute.addInterfaceTracking(bridge)
+        if bridge.ipv4.bootproto == 'dhcp':
+            ifacetracking.add(bridge.name)
         ifdown(bridge.name)
         self._removeSourceRoute(bridge)
         commands.execCmd([constants.EXT_BRCTL, 'delbr', bridge.name])
@@ -215,7 +217,8 @@ class Ifcfg(Configurator):
         if not self.owned_device(vlan.name):
             IfcfgAcquire.acquire_device(vlan.name)
             IfcfgAcquire.acquire_vlan_device(vlan.name)
-        DynamicSourceRoute.addInterfaceTracking(vlan)
+        if vlan.ipv4.bootproto == 'dhcp':
+            ifacetracking.add(vlan.name)
         ifdown(vlan.name)
         self._removeSourceRoute(vlan)
         self.configApplier.removeVlan(vlan.name)
@@ -223,7 +226,8 @@ class Ifcfg(Configurator):
 
     def _ifaceDownAndCleanup(self, iface, remove_even_if_used=False):
         """Returns True iff the iface is to be removed."""
-        DynamicSourceRoute.addInterfaceTracking(iface)
+        if iface.ipv4.bootproto == 'dhcp':
+            ifacetracking.add(iface.name)
         to_be_removed = remove_even_if_used or not ifaceUsed(iface.name)
         if to_be_removed:
             ifdown(iface.name)
@@ -247,7 +251,8 @@ class Ifcfg(Configurator):
                     'name=%s, addr=%s, netmask=%s, gateway=%s',
                     netEnt.name, ipv4.address, ipv4.netmask, ipv4.gateway)
 
-        DynamicSourceRoute.addInterfaceTracking(netEnt)
+        if netEnt.ipv4.bootproto == 'dhcp':
+            ifacetracking.add(netEnt.name)
 
     def _removeSourceRoute(self, netEnt):
         if netEnt.ipv4.bootproto != 'dhcp' and netEnt.master is None:

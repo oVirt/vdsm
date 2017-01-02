@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 import logging
 
+from vdsm.network import ifacetracking
 from vdsm.network import ipwrapper
 from vdsm.network import libvirt
 from vdsm.network.ip import address
@@ -75,7 +76,8 @@ class Iproute2(Configurator):
         if bridge.port:
             bridge.port.configure(**opts)
             self.configApplier.addBridgePort(bridge)
-        DynamicSourceRoute.addInterfaceTracking(bridge)
+        if bridge.ipv4.bootproto == 'dhcp':
+            ifacetracking.add(bridge.name)
         self.configApplier.setIfaceConfigAndUp(bridge)
         self._addSourceRoute(bridge)
         if 'custom' in opts and 'bridge_opts' in opts['custom']:
@@ -85,7 +87,8 @@ class Iproute2(Configurator):
     def configureVlan(self, vlan, **opts):
         vlan.device.configure(**opts)
         self.configApplier.addVlan(vlan)
-        DynamicSourceRoute.addInterfaceTracking(vlan)
+        if vlan.ipv4.bootproto == 'dhcp':
+            ifacetracking.add(vlan.name)
         self.configApplier.setIfaceConfigAndUp(vlan)
         self._addSourceRoute(vlan)
 
@@ -98,7 +101,8 @@ class Iproute2(Configurator):
             if slave.name not in bonding.slaves(bond.name):
                 self.configApplier.addBondSlave(bond, slave)
                 slave.configure(**opts)
-        DynamicSourceRoute.addInterfaceTracking(bond)
+        if bond.ipv4.bootproto == 'dhcp':
+            ifacetracking.add(bond.name)
         self.configApplier.setIfaceConfigAndUp(bond)
         self._addSourceRoute(bond)
         self.runningConfig.setBonding(
@@ -141,7 +145,8 @@ class Iproute2(Configurator):
                         'switch': 'legacy'})
 
     def configureNic(self, nic, **opts):
-        DynamicSourceRoute.addInterfaceTracking(nic)
+        if nic.ipv4.bootproto == 'dhcp':
+            ifacetracking.add(nic.name)
         self.configApplier.setIfaceConfigAndUp(nic)
         self._addSourceRoute(nic)
 
@@ -153,7 +158,8 @@ class Iproute2(Configurator):
                 [_ETHTOOL_BINARY.cmd, '-K', nic.name] + ethtool_opts.split())
 
     def removeBridge(self, bridge):
-        DynamicSourceRoute.addInterfaceTracking(bridge)
+        if bridge.ipv4.bootproto == 'dhcp':
+            ifacetracking.add(bridge.name)
         self.configApplier.ifdown(bridge)
         self._removeSourceRoute(bridge)
         self.configApplier.removeBridge(bridge)
@@ -161,7 +167,8 @@ class Iproute2(Configurator):
             bridge.port.remove()
 
     def removeVlan(self, vlan):
-        DynamicSourceRoute.addInterfaceTracking(vlan)
+        if vlan.ipv4.bootproto == 'dhcp':
+            ifacetracking.add(vlan.name)
         self.configApplier.ifdown(vlan)
         self._removeSourceRoute(vlan)
         self.configApplier.removeVlan(vlan)
@@ -179,7 +186,8 @@ class Iproute2(Configurator):
         if toBeRemoved:
             if bonding.master is None:
                 address.flush(bonding.name)
-                DynamicSourceRoute.addInterfaceTracking(bonding)
+                if bonding.ipv4.bootproto == 'dhcp':
+                    ifacetracking.add(bonding.name)
                 self._removeSourceRoute(bonding)
 
             if bonding.on_removal_just_detach_from_network:
@@ -203,7 +211,8 @@ class Iproute2(Configurator):
         if toBeRemoved:
             if nic.master is None:
                 address.flush(nic.name)
-                DynamicSourceRoute.addInterfaceTracking(nic)
+                if nic.ipv4.bootproto == 'dhcp':
+                    ifacetracking.add(nic.name)
                 self._removeSourceRoute(nic)
             else:
                 self.configApplier.setIfaceMtu(nic.name, mtus.DEFAULT_MTU)

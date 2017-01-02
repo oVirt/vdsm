@@ -17,14 +17,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
-import os
 
 import logging
 import netaddr
 
 from vdsm.constants import P_VDSM_RUN
-from vdsm.network import libvirt
-from vdsm.utils import rmFile
 
 from .ipwrapper import Route
 from .ipwrapper import routeShowTable
@@ -73,21 +70,6 @@ class StaticSourceRoute(object):
 
 
 class DynamicSourceRoute(StaticSourceRoute):
-    @staticmethod
-    def getTrackingFilePath(device):
-        return os.path.join(TRACKED_INTERFACES_FOLDER, device)
-
-    @staticmethod
-    def addInterfaceTracking(device):
-        if device.ipv4.bootproto == 'dhcp':
-            logging.debug('Add iface tracking for device %s', device)
-            open(DynamicSourceRoute.getTrackingFilePath(device.name), 'a').\
-                close()
-
-    @staticmethod
-    def removeInterfaceTracking(device):
-        logging.debug('Remove iface tracking for device %s', device)
-        rmFile(DynamicSourceRoute.getTrackingFilePath(device))
 
     @staticmethod
     def _getRoutes(table):
@@ -150,10 +132,3 @@ class DynamicSourceRoute(StaticSourceRoute):
         table = self._getTable(rules) if rules else ()
         routes = self._getRoutes(table) if table else ()
         return routes, rules, self.device
-
-    @staticmethod
-    def isVDSMInterface(device):
-        if os.path.exists(DynamicSourceRoute.getTrackingFilePath(device)):
-            return True
-        else:
-            return libvirt.is_libvirt_device(device)

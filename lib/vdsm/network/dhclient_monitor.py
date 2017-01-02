@@ -28,6 +28,8 @@ import pyinotify
 
 from vdsm.constants import P_VDSM_RUN
 from vdsm import utils
+from vdsm.network import ifacetracking
+from vdsm.network import libvirt
 
 from .configurators.iproute2 import Iproute2
 from .sourceroute import DynamicSourceRoute
@@ -69,12 +71,12 @@ def _dhcp_response_handler(data_filepath):
 
         logging.debug('Received DHCP response for %s/%s', action, device)
 
-        if DynamicSourceRoute.isVDSMInterface(device):
+        if _is_vdsm_interface(device):
             _process_dhcp_response_actions(action, device, dhcp_response)
         else:
             logging.info('Interface %s is not a libvirt interface', device)
 
-        DynamicSourceRoute.removeInterfaceTracking(device)
+        ifacetracking.remove(device)
 
 
 @contextmanager
@@ -139,3 +141,10 @@ def _dhcp_response_data(fpath):
     except:
         logging.exception('Error reading dhcp response file {}'.format(fpath))
     return data
+
+
+def _is_vdsm_interface(device_name):
+    if ifacetracking.is_tracked(device_name):
+        return True
+    else:
+        return libvirt.is_libvirt_device(device_name)
