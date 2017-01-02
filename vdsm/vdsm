@@ -261,11 +261,6 @@ def main():
         if not config.getboolean('vars', 'core_dump_enable'):
             resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 
-        if os.getsid(0) != os.getpid():
-            # Modern init systems such as systemd can provide us a clean daemon
-            # environment. So we setpgrp only when run by traditional init
-            # system that does not prepare the environment.
-            os.setpgrp()
         run()
     except FatalError as e:
         syslog.syslog("VDSM failed to start: %s" % e)
