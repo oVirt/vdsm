@@ -28,7 +28,7 @@ install-data-local:
 		$(DESTDIR)$(vdsmhooksdir)/before_vm_start/50_isolatedprivatevlan
 
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/libvirt/nwfilter
-	$(INSTALL_SCRIPT) $(srcdir)/isolatedprivatevlan-vdsm.xml \
+	$(INSTALL_DATA) $(srcdir)/isolatedprivatevlan-vdsm.xml \
 		$(DESTDIR)$(sysconfdir)/libvirt/nwfilter/isolatedprivatevlan-vdsm.xml
 
 uninstall-local:

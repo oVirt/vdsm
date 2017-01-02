@@ -1495,7 +1495,7 @@ exit 0
 
 %files hook-isolatedprivatevlan
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_isolatedprivatevlan
-%config(noreplace) %{_sysconfdir}/libvirt/nwfilter/isolatedprivatevlan-vdsm.xml
+%{_sysconfdir}/libvirt/nwfilter/isolatedprivatevlan-vdsm.xml
 
 %files hook-macbind
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macbind
