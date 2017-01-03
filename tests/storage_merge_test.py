@@ -121,6 +121,7 @@ class FakeImage(object):
         pass
 
 
+@expandPermutations
 class TestSubchainInfo(VdsmTestCase):
 
     # TODO: use one make_env for all tests?
@@ -135,7 +136,6 @@ class TestSubchainInfo(VdsmTestCase):
                 (guarded, 'context', fake_guarded_context()),
                 (merge, 'sdCache', env.sdcache),
                 (blockVolume, 'rm', rm),
-                (volume.VolumeManifest, 'isShared', lambda self: shared),
             ]):
                 env.chain = make_qemu_chain(env, size, base_fmt, chain_len)
 
@@ -197,10 +197,16 @@ class TestSubchainInfo(VdsmTestCase):
             subchain = merge.SubchainInfo(subchain_info, 0)
             self.assertRaises(se.WrongParentVolume, subchain.validate)
 
-    def test_validate_is_not_shared(self):
+    @permutations((
+        # shared volume
+        (0,),
+        (1,),
+    ))
+    def test_validate_vol_is_not_shared(self, shared_vol):
         with self.make_env(chain_len=3, shared=True) as env:
             base_vol = env.chain[0]
             top_vol = env.chain[1]
+            env.chain[shared_vol].setShared()
             subchain_info = dict(sd_id=top_vol.sdUUID,
                                  img_id=top_vol.imgUUID,
                                  base_id=base_vol.volUUID,
