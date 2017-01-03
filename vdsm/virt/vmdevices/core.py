@@ -265,7 +265,7 @@ class Controller(Base):
 
         iothread = self.specParams.get('ioThreadId', None)
         if iothread is not None:
-            ctrl.appendChildWithArgs('driver', iothread=iothread)
+            ctrl.appendChildWithArgs('driver', iothread=str(iothread))
 
         return ctrl
 
