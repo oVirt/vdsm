@@ -11,6 +11,11 @@ easy_install pip
 pip install -U tox==2.5.0
 
 ./autogen.sh --system --enable-hooks --enable-vhostmd
+make
+
+# Lint python files changed in this patch. We run this only to show the errors
+# as the code is not clean enugh to pass this check.
+make pylint-diff || true
 
 debuginfo-install -y python
 

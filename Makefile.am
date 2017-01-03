@@ -87,7 +87,23 @@ abs_imports: all
 
 .PHONY: pylint
 pylint: tox
-	tox -e pylint
+	tox -e pylint \
+		vdsm/API.py \
+		vdsm/clientIF.py \
+		vdsm/sitecustomize.py \
+		vdsm/hooking.py \
+		vdsm/vdsmd.py \
+		vdsm/storage \
+		vdsm/virt \
+		lib/vdsm \
+		lib/vdsmclient \
+		lib/yajsonrpc \
+		$(NULL)
+
+.PHONY: pylint-diff
+pylint-diff: tox
+	modules=`git diff-tree --no-commit-id --name-only -r HEAD | egrep '\.py$$'`; \
+	if [ -n "$$modules" ]; then tox -e pylint $$modules; fi
 
 .PHONY: flake8
 flake8: tox
