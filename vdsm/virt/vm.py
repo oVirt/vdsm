@@ -3881,26 +3881,33 @@ class Vm(object):
                 blockdev = 'sda'
             else:
                 blockdev = 'hdc'
+            iface = None
         else:
             # > 4.0 - variable cdrom interface/index
             drivespec = cdromspec['path']
             blockdev = vmdevices.storage.makeName(
                 cdromspec['iface'], cdromspec['index'])
+            iface = cdromspec['iface']
 
-        return self._changeBlockDev('cdrom', blockdev, drivespec)
+        return self._changeBlockDev('cdrom', blockdev, drivespec, iface)
 
     @api.logged(on='vdsm.api')
     def changeFloppy(self, drivespec):
         return self._changeBlockDev('floppy', 'fda', drivespec)
 
-    def _changeBlockDev(self, vmDev, blockdev, drivespec):
+    def _changeBlockDev(self, vmDev, blockdev, drivespec, iface=None):
         try:
             path = self.cif.prepareVolumePath(drivespec)
         except VolumeError:
             return response.error('imageErr')
         diskelem = vmxml.Element('disk', type='file', device=vmDev)
         diskelem.appendChildWithArgs('source', file=path)
-        diskelem.appendChildWithArgs('target', dev=blockdev)
+
+        target = {'dev': blockdev}
+        if iface:
+            target['bus'] = iface
+
+        diskelem.appendChildWithArgs('target', **target)
 
         try:
             self._dom.updateDeviceFlags(vmxml.format_xml(diskelem),
