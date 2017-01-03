@@ -121,7 +121,7 @@ class Monitor(object):
         self.start()
         return self
 
-    def __exit__(self, groups, timeout, silent_timeout):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         if not self.is_stopped():
             self.stop()
 
