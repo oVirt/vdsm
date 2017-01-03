@@ -20,13 +20,15 @@ from __future__ import absolute_import
 
 from contextlib import contextmanager
 
+import six
+
 from nose.plugins.attrib import attr
 
 from vdsm.network import errors as ne
 from vdsm.network.configurators.ifcfg import ifup, ifdown
 
 from .netfunctestlib import NetFuncTestCase, SetupNetworksError, NOCHK
-from .nettestlib import dummy_device
+from .nettestlib import dummy_device, dummy_devices
 
 NETWORK1_NAME = 'test-network1'
 NETWORK2_NAME = 'test-network2'
@@ -84,6 +86,28 @@ class NetworkWithBondTemplate(NetFuncTestCase):
                 with self.assertRaises(SetupNetworksError) as e:
                     self.setupNetworks(NETCREATE, {}, NOCHK)
                 self.assertEqual(e.exception.status, ne.ERR_USED_NIC)
+
+    def test_add_bridged_network_with_multiple_vlans_over_a_bond(self):
+        self._test_add_network_with_multiple_vlans_over_a_bond()
+
+    def test_add_bridgeless_network_with_multiple_vlans_over_a_bond(self):
+        self._test_add_network_with_multiple_vlans_over_a_bond(bridged=False)
+
+    def _test_add_network_with_multiple_vlans_over_a_bond(self, bridged=True):
+        with dummy_devices(2) as nics:
+            netsetup = {}
+            VLAN_COUNT = 3
+            for tag in range(VLAN_COUNT):
+                net_name = '{}{}'.format(NETWORK1_NAME, tag)
+                netsetup[net_name] = {'vlan': tag,
+                                      'bonding': BOND_NAME,
+                                      'bridged': bridged,
+                                      'switch': self.switch}
+            BONDCREATE = {BOND_NAME: {'nics': nics, 'switch': self.switch}}
+
+            with self.setupNetworks(netsetup, BONDCREATE, NOCHK):
+                for netname, netattrs in six.iteritems(netsetup):
+                    self.assertNetwork(netname, netattrs)
 
 
 @attr(type='functional', switch='legacy')

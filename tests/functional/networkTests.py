@@ -489,35 +489,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    def testSetupNetworksAddBondWithManyVlans(self, bridged):
-        VLAN_COUNT = 5
-        network_names = [NETWORK_NAME + str(tag) for tag in range(VLAN_COUNT)]
-        with dummyIf(2) as nics:
-            networks = dict((vlan_net,
-                             {'vlan': str(tag), 'bonding': BONDING_NAME,
-                              'bridged': bridged})
-                            for tag, vlan_net in enumerate(network_names))
-            bondings = {BONDING_NAME: {'nics': nics}}
-
-            status, msg = self.setupNetworks(networks, bondings, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            for vlan_net in network_names:
-                self.assertNetworkExists(vlan_net, bridged)
-                self.assertBondExists(BONDING_NAME, nics)
-                self.assertVlanExists(BONDING_NAME + '.' +
-                                      networks[vlan_net]['vlan'])
-
-            status, msg = self.setupNetworks(
-                {vlan_net: {'remove': True} for vlan_net in network_names},
-                {BONDING_NAME: {'remove': True}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            for vlan_net in network_names:
-                self.assertNetworkDoesntExist(vlan_net)
-                self.assertVlanDoesntExist(BONDING_NAME + '.' +
-                                           networks[vlan_net]['vlan'])
-
-    @cleanupNet
-    @permutations([[True], [False]])
     def testSetupNetworksAddDelBondedNetwork(self, bridged):
         with dummyIf(2) as nics:
             status, msg = self.setupNetworks(
