@@ -164,6 +164,22 @@ class FakeLVM(object):
                 lv_md['active'] = True
                 lv_md['attr']['state'] = 'a'
 
+    def deactivateLVs(self, vgName, lvNames):
+        active_lvs = [lv for lv in lvNames
+                      if self._is_lv_active(vgName, lv)]
+        for lv in active_lvs:
+            self._deactivate_lv(vgName, lv)
+
+    def _is_lv_active(self, vg, lv):
+        return os.path.exists(self.lvPath(vg, lv))
+
+    def _deactivate_lv(self, vg, lv):
+        lv_md = self.lvmd[(vg, lv)]
+        os.rename(self.lvPath(vg, lv),
+                  self._lvPathInactive(vg, lv))
+        lv_md['active'] = False
+        lv_md['attr']['state'] = '-'
+
     def addtag(self, vg, lv, tag):
         try:
             lv_md = self.lvmd[(vg, lv)]

@@ -301,6 +301,37 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
             self.assertEqual('a', lv.attr.state)
             self.assertTrue(os.path.exists(lv_path))
 
+    def test_deactivate_lv(self):
+        with self.base_config() as lvm:
+            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB))
+            lvm.deactivateLVs(self.VG_NAME, [self.LV_NAME])
+            lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
+            self.assertFalse(lv.active)
+            self.assertEqual('-', lv.attr.state)
+            lv_path = lvm.lvPath(self.VG_NAME, self.LV_NAME)
+            self.assertFalse(os.path.exists(lv_path))
+
+    def test_deactivate_inactive_lv(self):
+        with self.base_config() as lvm:
+            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
+                         activate=False)
+            # Deactivating inactive lvs should do nothing, simulating the
+            # real code.
+            lvm.deactivateLVs(self.VG_NAME, [self.LV_NAME])
+            lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
+            self.assertFalse(lv.active)
+            self.assertEqual('-', lv.attr.state)
+            lv_path = lvm.lvPath(self.VG_NAME, self.LV_NAME)
+            self.assertFalse(os.path.exists(lv_path))
+
+    def test_deactivate_non_existed_lv(self):
+        with self.base_config() as lvm:
+            # Deactivating non-existed lvs should do nothing, simulating the
+            # real code.
+            lvm.deactivateLVs(self.VG_NAME, [self.LV_NAME])
+            lv_path = lvm.lvPath(self.VG_NAME, self.LV_NAME)
+            self.assertFalse(os.path.exists(lv_path))
+
     def test_extend_lv_resizes_lv(self):
         with self.base_config() as lvm:
             lvm.createLV(self.VG_NAME, self.LV_NAME, self.LV_SIZE_MB,
