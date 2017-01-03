@@ -137,7 +137,7 @@ public abstract class ReactorClient {
             throw new ClientConnectionException(e);
         } catch (IOException e) {
             closeChannel();
-            throw new ClientConnectionException("Connection failed");
+            throw new ClientConnectionException("Connection failed", e);
         }
     }
 
