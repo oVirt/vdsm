@@ -3916,7 +3916,7 @@ class Vm(object):
             self._dom.updateDeviceFlags(vmxml.format_xml(diskelem),
                                         libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE)
         except Exception:
-            self.log.debug("updateDeviceFlags failed", exc_info=True)
+            self.log.exception("updateDeviceFlags failed")
             self.cif.teardownVolumePath(drivespec)
             return response.error('changeDisk')
         if vmDev in self.conf:
