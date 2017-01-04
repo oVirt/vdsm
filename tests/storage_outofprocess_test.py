@@ -38,8 +38,7 @@ class OopWrapperTests(TestCaseBase):
         self.pool = oop.getGlobalProcPool()
 
     def tearDown(self):
-        self.pool._ioproc.close()
-        oop._refProcPool = {}
+        oop.stop()
 
     def testSamePoolName(self):
         poolA = "A"
