@@ -1,7 +1,9 @@
 ovirt-snapshot,http://resources.ovirt.org/pub/ovirt-master-snapshot/rpm/$distro
 ovirt-snapshot-static,http://resources.ovirt.org/pub/ovirt-master-snapshot-static/rpm/$distro
 centos-glusterfs,http://mirror.centos.org/centos/7/storage/x86_64/gluster-3.8/
-centos-ovirt40-release,http://mirror.centos.org/centos/7/virt/$basearch/ovirt-4.0/
+centos-ovirt40-release-x86_64,http://mirror.centos.org/centos/7/virt/x86_64/ovirt-4.0/
+centos-ovirt40-release-ppc64le,https://cbs.centos.org/repos/virt7-ovirt-40-release/ppc64le/os/
+centos-ovirt-common-release-ppc64le,https://cbs.centos.org/repos/virt7-ovirt-common-release/ppc64le/os/
 ovirt-ci-tools,http://resources.ovirt.org/repos/ci-tools/$distro
 lago,http://resources.ovirt.org/repos/lago/stable/0.0/rpm/$distro
 epel,http://download.fedoraproject.org/pub/epel/7/$basearch/
