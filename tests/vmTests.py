@@ -872,6 +872,16 @@ class TestVm(XMLTestCase):
             ]
             self.assertEqual(tunables['ioTunePolicyList'], expected)
 
+    @permutations([['<empty/>'], [None]])
+    def testNoIoTunePolicy(self, metadata):
+        with fake.VM() as machine:
+            dom = fake.Domain()
+            dom._metadata = metadata
+            machine._dom = dom
+
+            tunables = machine.getIoTunePolicyResponse()
+            self.assertEqual(tunables['ioTunePolicyList'], [])
+
     def testSetIoTune(self):
 
         drives = [

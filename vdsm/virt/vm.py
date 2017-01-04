@@ -2710,7 +2710,7 @@ class Vm(object):
                 return None
 
         metadata = vmxml.parse_xml(metadata_xml)
-        return vmxml.find_first(metadata, METADATA_VM_TUNE_ELEMENT)
+        return vmxml.find_first(metadata, METADATA_VM_TUNE_ELEMENT, None)
 
     def _findDeviceByNameOrPath(self, device_name, device_path):
         for device in self._devices[hwclass.DISK]:
@@ -2728,9 +2728,11 @@ class Vm(object):
     def getIoTunePolicy(self):
         tunables = []
         qos = self._getVmPolicy()
+        if qos is None:
+            return tunables
         io_tune = vmxml.find_first(qos, "ioTune", None)
         if io_tune is None:
-            return []
+            return tunables
 
         for device in vmxml.find_all(io_tune, "device"):
             tunables.append(io_tune_dom_to_values(device))
