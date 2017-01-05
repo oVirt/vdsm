@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@ from testlib import permutations, expandPermutations
 
 from vdsm import constants
 from vdsm import utils
+from vdsm.virt import vmxml
 
-from virt import vmxml
 from virt.vmdevices import storage
 from virt.vmdevices.storage import Drive, DISK_TYPE, DRIVE_SHARED_TYPE
 

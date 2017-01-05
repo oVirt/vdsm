@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2014 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@ dist_vdsm_virt_PYTHON = \
 	recovery.py \
 	vm.py \
 	vmtune.py \
-	vmxml.py \
 	$(NULL)
 
 dist_vdsmexec_SCRIPTS = \

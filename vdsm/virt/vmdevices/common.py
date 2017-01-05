@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from .. import vmxml
+from vdsm.virt import vmxml
 
 from . import core
 from . import graphics

@@ -1,6 +1,6 @@
 #
 # Copyright IBM Corp. 2012
-# Copyright 2013-2016 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,7 +42,6 @@ from virt.vm import HotunplugTimeout, VolumeChainEntry
 from virt import vmdevices
 from virt.vmdevices import hwclass
 from virt.vmtune import io_tune_merge, io_tune_dom_to_values, io_tune_to_dom
-from virt import vmxml
 from virt.vmdevices.storage import Drive
 from virt.vmdevices.storage import DISK_TYPE
 from virt.vmdevices.network import Interface
@@ -50,6 +49,7 @@ from vdsm import constants
 from vdsm import cpuarch
 from vdsm.common import define
 from vdsm.common import response
+from vdsm.virt import vmxml
 from vdsm import osinfo
 from vdsm import password
 from testlib import VdsmTestCase as TestCaseBase

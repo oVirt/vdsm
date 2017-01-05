@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,9 +25,9 @@ from nose.plugins.skip import SkipTest
 
 from vdsm.common import exception
 from vdsm.common import response
+from vdsm.virt import vmxml
 
 from virt import vmdevices
-from virt import vmxml
 
 from testlib import VdsmTestCase
 from testlib import XMLTestCase

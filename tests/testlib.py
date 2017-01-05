@@ -54,8 +54,7 @@ import vdsm
 
 from vdsm.common import osutils
 from vdsm.common import xmlutils
-
-from virt import vmxml
+from vdsm.virt import vmxml
 
 from monkeypatch import Patch
 from testValidation import (

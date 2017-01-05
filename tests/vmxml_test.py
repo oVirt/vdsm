@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2014, 2016 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,9 +28,9 @@ import xml.etree.ElementTree as etree
 
 from vdsm import cpuarch
 from vdsm.virt import vmchannels
+from vdsm.virt import vmxml
 
 from virt import domain_descriptor
-from virt import vmxml
 
 from testValidation import brokentest, slowtest
 from testlib import VdsmTestCase as TestCaseBase
@@ -150,7 +150,7 @@ class TestVmXmlHelpers(XMLTestCase):
         xml = re.sub(' *\n *', '', open(xml_path).read())
         setup = """
 import re
-from virt import vmxml
+from vdsm.virt import vmxml
 xml = re.sub(' *\\n *', '', '''%s''')
 dom = vmxml.parse_xml(xml)
 def run():

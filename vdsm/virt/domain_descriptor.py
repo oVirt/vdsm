@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from . import vmxml
+from vdsm.virt import vmxml
 
 
 class MutableDomainDescriptor(object):

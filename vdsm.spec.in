@@ -893,7 +893,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/recovery.py*
 %{_datadir}/%{vdsm_name}/virt/vmtune.py*
 %{_datadir}/%{vdsm_name}/virt/vm.py*
-%{_datadir}/%{vdsm_name}/virt/vmxml.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/__init__.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/common.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/core.py*
@@ -1276,6 +1275,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virt/vmpowerdown.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmstats.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmstatus.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmxml.py*
 %{python_sitelib}/%{vdsm_name}/virt/xmlconstants.py*
 
 %files tests

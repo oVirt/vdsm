@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,8 @@
 
 import vmfakelib as fake
 
-from virt import vmxml
+from vdsm.virt import vmxml
+
 from virt.vmdevices import hostdevice, network, hwclass
 
 from testlib import VdsmTestCase as TestCaseBase, XMLTestCase

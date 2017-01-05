@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2015 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,9 +35,8 @@ from vdsm import libvirtconnection
 from vdsm import utils
 from vdsm.virt import vmchannels
 from vdsm.virt import vmstatus
+from vdsm.virt import vmxml
 from vdsm.virt.utils import isVdsmImage
-
-from . import vmxml
 
 
 def _list_domains():

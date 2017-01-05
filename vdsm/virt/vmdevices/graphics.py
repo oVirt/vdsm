@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2014 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,8 +24,7 @@ from vdsm import supervdsm
 from vdsm.network import api as net_api
 from vdsm import utils
 from vdsm.config import config
-
-from .. import vmxml
+from vdsm.virt import vmxml
 
 from . import hwclass
 from .core import Base

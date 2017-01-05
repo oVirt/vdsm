@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,10 +24,10 @@ from vdsm.host import rngsources
 from vdsm import constants
 from vdsm import supervdsm
 from vdsm import utils
+from vdsm.virt import vmxml
 from vdsm.virt.utils import cleanup_guest_socket
 
 from . import hwclass
-from .. import vmxml
 
 
 class SkipDevice(Exception):

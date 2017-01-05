@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2016 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -65,7 +65,10 @@ from vdsm.virt import vmexitreason
 from vdsm.virt import virdomain
 from vdsm.virt import vmstats
 from vdsm.virt import vmstatus
+from vdsm.virt import vmxml
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
+from vdsm.virt.vmxml import METADATA_VM_TUNE_URI, METADATA_VM_TUNE_ELEMENT
+from vdsm.virt.vmxml import METADATA_VM_TUNE_PREFIX
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
 
 # local imports. TODO: move to vdsm.storage
@@ -80,9 +83,6 @@ from .vmdevices import hwclass
 from .vmdevices.storage import DISK_TYPE
 from .vmtune import update_io_tune_dom, collect_inner_elements
 from .vmtune import io_tune_values_to_dom, io_tune_dom_to_values
-from . import vmxml
-from .vmxml import METADATA_VM_TUNE_URI, METADATA_VM_TUNE_ELEMENT
-from .vmxml import METADATA_VM_TUNE_PREFIX
 
 
 # A libvirt constant for undefined cpu quota
