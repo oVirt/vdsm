@@ -401,6 +401,7 @@ AC_OUTPUT([
 	lib/vdsm/tool/configurators/Makefile
 	lib/vdsm/virt/Makefile
 	lib/vdsm/virt/containers/Makefile
+	lib/vdsm/virt/vmdevices/Makefile
 	lib/vdsmclient/Makefile
 	lib/yajsonrpc/Makefile
 	static/Makefile
@@ -428,7 +429,6 @@ AC_OUTPUT([
 	vdsm/storage/sdm/api/Makefile
 	vdsm/storage/vdsm_lvm_rules.template
 	vdsm/virt/Makefile
-	vdsm/virt/vmdevices/Makefile
 	vdsm_hooks/Makefile
 	vdsm_hooks/allocate_net/Makefile
 	vdsm_hooks/checkimages/Makefile

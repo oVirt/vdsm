@@ -1,10 +1,10 @@
 import os
 
 from vdsm.virt import domain_descriptor
+from vdsm.virt.vmdevices import hwclass
 
 from testlib import XMLTestCase
 
-from virt.vmdevices import hwclass
 import vmfakelib as fake
 
 import verify

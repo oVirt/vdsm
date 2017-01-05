@@ -873,7 +873,6 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/storage
 %dir %{_datadir}/%{vdsm_name}/storage/imageRepository
 %dir %{_datadir}/%{vdsm_name}/virt
-%dir %{_datadir}/%{vdsm_name}/virt/vmdevices
 %{_datadir}/%{vdsm_name}/clientIF.py*
 %{_datadir}/%{vdsm_name}/daemonAdapter
 %{_datadir}/%{vdsm_name}/API.py*
@@ -887,15 +886,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsmd.py*
 %{_datadir}/%{vdsm_name}/virt/__init__.py*
 %{_datadir}/%{vdsm_name}/virt/vm.py*
-%{_datadir}/%{vdsm_name}/virt/vmdevices/__init__.py*
-%{_datadir}/%{vdsm_name}/virt/vmdevices/common.py*
-%{_datadir}/%{vdsm_name}/virt/vmdevices/core.py*
-%{_datadir}/%{vdsm_name}/virt/vmdevices/graphics.py*
-%{_datadir}/%{vdsm_name}/virt/vmdevices/hostdevice.py*
-%{_datadir}/%{vdsm_name}/virt/vmdevices/hwclass.py*
-%{_datadir}/%{vdsm_name}/virt/vmdevices/lease.py*
-%{_datadir}/%{vdsm_name}/virt/vmdevices/network.py*
-%{_datadir}/%{vdsm_name}/virt/vmdevices/storage.py*
 
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
@@ -1078,6 +1068,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/storage
 %dir %{python_sitelib}/%{vdsm_name}/supervdsm_api
 %dir %{python_sitelib}/%{vdsm_name}/virt
+%dir %{python_sitelib}/%{vdsm_name}/virt/vmdevices
 %{python_sitelib}/%{vdsm_name}/__init__.py*
 %{python_sitelib}/%{vdsm_name}/alignmentScan.py*
 %{python_sitelib}/%{vdsm_name}/client.py*
@@ -1268,6 +1259,15 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virt/secret.py*
 %{python_sitelib}/%{vdsm_name}/virt/utils.py*
 %{python_sitelib}/%{vdsm_name}/virt/virdomain.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmdevices/__init__.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmdevices/common.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmdevices/core.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmdevices/graphics.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmdevices/hostdevice.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmdevices/hwclass.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmdevices/lease.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmdevices/network.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmdevices/storage.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmchannels.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmexitreason.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmpowerdown.py*

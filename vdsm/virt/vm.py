@@ -70,6 +70,9 @@ from vdsm.virt import vmtune
 from vdsm.virt import vmxml
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.domain_descriptor import MutableDomainDescriptor
+from vdsm.virt import vmdevices
+from vdsm.virt.vmdevices import hwclass
+from vdsm.virt.vmdevices.storage import DISK_TYPE
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.vmtune import update_io_tune_dom, collect_inner_elements
 from vdsm.virt.vmtune import io_tune_values_to_dom, io_tune_dom_to_values
@@ -80,11 +83,6 @@ from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
 # local imports. TODO: move to vdsm.storage
 from storage import sd
 from storage import sdc
-
-# local package imports
-from . import vmdevices
-from .vmdevices import hwclass
-from .vmdevices.storage import DISK_TYPE
 
 # A libvirt constant for undefined cpu quota
 _NO_CPU_QUOTA = 0

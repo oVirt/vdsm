@@ -38,14 +38,14 @@ from vdsm.virt import vmstats
 from vdsm.virt import vmstatus
 from vdsm.virt.vmtune import (io_tune_merge, io_tune_dom_to_values,
                               io_tune_to_dom)
+from vdsm.virt import vmdevices
+from vdsm.virt.vmdevices import hwclass
+from vdsm.virt.vmdevices.storage import Drive
+from vdsm.virt.vmdevices.storage import DISK_TYPE
+from vdsm.virt.vmdevices.network import Interface
 
 from virt import vm
 from virt.vm import HotunplugTimeout, VolumeChainEntry
-from virt import vmdevices
-from virt.vmdevices import hwclass
-from virt.vmdevices.storage import Drive
-from virt.vmdevices.storage import DISK_TYPE
-from virt.vmdevices.network import Interface
 from vdsm import constants
 from vdsm import cpuarch
 from vdsm.common import define

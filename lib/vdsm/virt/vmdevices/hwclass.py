@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,15 +17,27 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
-from . import core
-from . import hostdevice
-from . import hwclass
-from . import graphics
-from . import lease
-from . import network
-from . import storage
-from . import common
 
-# Silence pyflakes
-common, core, graphics, hostdevice, hwclass, lease, network, storage
+DISK = 'disk'
+NIC = 'interface'
+VIDEO = 'video'
+GRAPHICS = 'graphics'
+SOUND = 'sound'
+CONTROLLER = 'controller'
+GENERAL = 'general'
+BALLOON = 'balloon'
+REDIR = 'redir'
+RNG = 'rng'
+WATCHDOG = 'watchdog'
+CONSOLE = 'console'
+SMARTCARD = 'smartcard'
+TPM = 'tpm'
+HOSTDEV = 'hostdev'
+MEMORY = 'memory'
+LEASE = 'lease'
+
+
+# libvirt is not giving back aliases
+WITHOUT_ALIAS = GRAPHICS

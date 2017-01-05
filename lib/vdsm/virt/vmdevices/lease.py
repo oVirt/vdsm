@@ -96,6 +96,7 @@ See also
   `vdsm.storage.xlease`
 
 """
+from __future__ import absolute_import
 
 import logging
 

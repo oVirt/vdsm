@@ -1,6 +1,6 @@
 #
 # Copyright IBM Corp. 2012
-# Copyright 2013-2015 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@ from nose.plugins.skip import SkipTest
 
 from vdsm.virt import vmexitreason
 from vdsm.virt import virdomain
+from vdsm.virt.vmdevices import hwclass
 
-from virt.vmdevices import hwclass
 from vdsm.common import define
 from vdsm.common import response
 from vdsm import hooks

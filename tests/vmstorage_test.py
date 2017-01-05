@@ -28,9 +28,8 @@ from testlib import permutations, expandPermutations
 from vdsm import constants
 from vdsm import utils
 from vdsm.virt import vmxml
-
-from virt.vmdevices import storage
-from virt.vmdevices.storage import Drive, DISK_TYPE, DRIVE_SHARED_TYPE
+from vdsm.virt.vmdevices import storage
+from vdsm.virt.vmdevices.storage import Drive, DISK_TYPE, DRIVE_SHARED_TYPE
 
 
 class DriveXMLTests(XMLTestCase):

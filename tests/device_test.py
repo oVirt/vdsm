@@ -21,11 +21,10 @@
 import os.path
 
 from vdsm import constants
+from vdsm.virt import vmdevices
 from vdsm.virt.domain_descriptor import DomainDescriptor
-
-from virt import vmdevices
-from virt.vmdevices import graphics
-from virt.vmdevices import hwclass
+from vdsm.virt.vmdevices import graphics
+from vdsm.virt.vmdevices import hwclass
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import permutations, expandPermutations, make_config

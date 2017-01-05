@@ -21,8 +21,7 @@
 import vmfakelib as fake
 
 from vdsm.virt import vmxml
-
-from virt.vmdevices import hostdevice, network, hwclass
+from vdsm.virt.vmdevices import hostdevice, network, hwclass
 
 from testlib import VdsmTestCase as TestCaseBase, XMLTestCase
 from testlib import permutations, expandPermutations

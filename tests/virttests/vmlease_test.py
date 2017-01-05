@@ -25,9 +25,8 @@ from nose.plugins.skip import SkipTest
 
 from vdsm.common import exception
 from vdsm.common import response
+from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
-
-from virt import vmdevices
 
 from testlib import VdsmTestCase
 from testlib import XMLTestCase

@@ -19,7 +19,7 @@
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS=$(NULL)
+SUBDIRS = vmdevices
 if CONTAINERS
 SUBDIRS+=containers
 endif

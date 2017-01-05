@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2012 Adam Litke, IBM Corporation
-# Copyright (C) 2012-2016 Red Hat, Inc.
+# Copyright (C) 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,12 +49,12 @@ from vdsm.virt import secret
 import storage.volume
 import storage.sd
 import storage.image
-from virt.vmdevices import graphics
-from virt.vmdevices import hwclass
 from vdsm.compat import pickle
 from vdsm.common.define import doneCode, errCode
 from vdsm.config import config
 from vdsm.virt import sampling
+from vdsm.virt.vmdevices import graphics
+from vdsm.virt.vmdevices import hwclass
 
 
 haClient = None  # Define here to work around pyflakes issue #13

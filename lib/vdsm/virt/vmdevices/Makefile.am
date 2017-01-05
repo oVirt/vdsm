@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+vmdevicesdir = $(vdsmpylibdir)/virt/vmdevices
 
-vmdevicesdir = $(vdsmdir)/virt/vmdevices
 dist_vmdevices_PYTHON = \
 	__init__.py \
 	common.py \
