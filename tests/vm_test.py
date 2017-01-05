@@ -36,12 +36,13 @@ from vdsm.virt import vmchannels
 from vdsm.virt import vmexitreason
 from vdsm.virt import vmstats
 from vdsm.virt import vmstatus
+from vdsm.virt.vmtune import (io_tune_merge, io_tune_dom_to_values,
+                              io_tune_to_dom)
 
 from virt import vm
 from virt.vm import HotunplugTimeout, VolumeChainEntry
 from virt import vmdevices
 from virt.vmdevices import hwclass
-from virt.vmtune import io_tune_merge, io_tune_dom_to_values, io_tune_to_dom
 from virt.vmdevices.storage import Drive
 from virt.vmdevices.storage import DISK_TYPE
 from virt.vmdevices.network import Interface

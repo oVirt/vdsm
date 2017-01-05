@@ -26,7 +26,6 @@ vdsm_virtdir = $(vdsmdir)/virt
 dist_vdsm_virt_PYTHON = \
 	__init__.py \
 	vm.py \
-	vmtune.py \
 	$(NULL)
 
 dist_vdsmexec_SCRIPTS = \
