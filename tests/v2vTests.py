@@ -17,18 +17,18 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from collections import namedtuple
 from contextlib import contextmanager
 from io import StringIO
 import subprocess
 import tarfile
 import zipfile
-import uuid
 
 import libvirt
 import os
 
 from testlib import namedTemporaryDir, permutations, expandPermutations
+from v2v_testlib import VM_SPECS, MockVirDomain, MockVirConnect
+from v2v_testlib import _mac_from_uuid, BLOCK_DEV_PATH
 from vdsm import v2v
 from vdsm import libvirtconnection
 from vdsm.password import ProtectedPassword
@@ -42,167 +42,12 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 import vmfakelib as fake
 
 
-VmSpec = namedtuple('VmSpec',
-                    ['name', 'uuid', 'id', 'active', 'has_snapshots'])
-
-VM_SPECS = (
-    VmSpec("RHEL_0", str(uuid.uuid4()), id=0, active=True,
-           has_snapshots=False),
-    VmSpec("RHEL_1", str(uuid.uuid4()), id=1, active=True,
-           has_snapshots=False),
-    VmSpec("RHEL_2", str(uuid.uuid4()), id=2, active=False,
-           has_snapshots=False),
-    VmSpec("RHEL_3", str(uuid.uuid4()), id=3, active=False,
-           has_snapshots=False),
-    VmSpec("RHEL_4", str(uuid.uuid4()), id=4, active=False,
-           has_snapshots=True),
-)
-
 FAKE_VIRT_V2V = CommandPath('fake-virt-v2v',
                             os.path.abspath('fake-virt-v2v'))
 FAKE_SSH_ADD = CommandPath('fake-ssh-add',
                            os.path.abspath('fake-ssh-add'))
 FAKE_SSH_AGENT = CommandPath('fake-ssh-agent',
                              os.path.abspath('fake-ssh-agent'))
-BLOCK_DEV_PATH = '/dev/mapper/vdev'
-
-
-def _mac_from_uuid(vm_uuid):
-    return "52:54:%s:%s:%s:%s" % (
-        vm_uuid[:2], vm_uuid[2:4], vm_uuid[4:6], vm_uuid[6:8])
-
-
-class MockVirDomain(object):
-
-    def __init__(self, name="RHEL",
-                 vm_uuid="564d7cb4-8e3d-06ec-ce82-7b2b13c6a611",
-                 id=0,
-                 active=False,
-                 has_snapshots=False):
-        self._name = name
-        self._uuid = vm_uuid
-        self._mac_address = _mac_from_uuid(vm_uuid)
-        self._id = id
-        self._active = active
-        self._has_snapshots = has_snapshots
-        self._disk_type = 'file'
-
-    def name(self):
-        return self._name
-
-    def UUID(self):
-        return self._uuid
-
-    def ID(self):
-        return self._id
-
-    def state(self, flags=0):
-        """
-        VIR_DOMAIN_RUNNING = 1
-        VIR_DOMAIN_SHUTOFF = 5
-        """
-        if self._active:
-            return [1, 0]
-        return [5, 0]
-
-    def isActive(self):
-        return self._active
-
-    def setDiskType(self, disk_type):
-        self._disk_type = disk_type
-
-    def XMLDesc(self, flags=0):
-        return """
-<domain type='vmware' id='15'>
-    <name>{name}</name>
-    <uuid>{uuid}</uuid>
-    <memory unit='KiB'>2097152</memory>
-    <currentMemory unit='KiB'>2097152</currentMemory>
-    <vcpu placement='static'>1</vcpu>
-    <os>
-        <type arch='x86_64'>hvm</type>
-    </os>
-    <clock offset='utc'/>
-    <on_poweroff>destroy</on_poweroff>
-    <on_reboot>restart</on_reboot>
-    <on_crash>destroy</on_crash>
-    <devices>
-        <disk type='{disk_type}' device='disk'>
-            <source file='[datastore1] RHEL/RHEL_{name}.vmdk' dev='{block}'/>
-            <target dev='sda' bus='scsi'/>
-            <address type='drive' controller='0' bus='0' target='0' unit='0'/>
-        </disk>
-        <controller type='scsi' index='0' model='vmpvscsi'/>
-        <interface type='bridge'>
-            <mac address='{mac}'/>
-            <source bridge='VM Network'/>
-            <model type='vmxnet3'/>
-        </interface>
-        <video>
-            <model type='vmvga' vram='8192'/>
-        </video>
-    </devices>
-</domain>""".format(
-            name=self._name,
-            block=BLOCK_DEV_PATH,
-            uuid=self._uuid,
-            disk_type=self._disk_type,
-            mac=self._mac_address)
-
-    def hasCurrentSnapshot(self):
-        return self._has_snapshots
-
-    def blockInfo(self, source):
-        return [9000000000, 5000000000, 5000000000]
-
-
-# FIXME: extend vmfakelib allowing to set predefined domain in Connection class
-class MockVirConnect(object):
-
-    def __init__(self, vms):
-        self._vms = vms
-        self._type = 'ESX'
-
-    def close(self):
-        pass
-
-    def setType(self, type_name):
-        self._type = type_name
-
-    def getType(self):
-        return self._type
-
-    def listAllDomains(self):
-        return [vm for vm in self._vms]
-
-    def listDefinedDomains(self):
-        # listDefinedDomains return only inactive domains
-        return [vm.name() for vm in self._vms if not vm.isActive()]
-
-    def listDomainsID(self):
-        # listDomainsID return only active domains
-        return [vm.ID() for vm in self._vms if vm.isActive()]
-
-    def lookupByName(self, name):
-        for vm in self._vms:
-            if vm.name() == name:
-                return vm
-        raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN,
-                         'virDomainLookupByName() failed')
-
-    def lookupByID(self, id):
-        for vm in self._vms:
-            if vm.ID() == id:
-                return vm
-        raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN,
-                         'virDomainLookupByID() failed')
-
-    def storageVolLookupByPath(self, name):
-        return MockVirConnect.Volume()
-
-    class Volume(object):
-        def info(self):
-            return [0, 0, 0]
 
 
 def legacylistAllDomains():
