@@ -69,7 +69,33 @@ class TestKvm2Ovirt(TestCaseBase):
                     '--username', 'user',
                     '--password-file', env.password,
                     '--source', '/fake/source',
-                    '--dest', env.destination]
+                    '--dest', env.destination,
+                    '--storage-type', 'file',
+                    '--vm-name', self._vms[0].name()]
+
+            kvm2ovirt.main(args)
+
+            with open(env.destination) as f:
+                actual = f.read()
+            self.assertEqual(actual, FakeVolume().data())
+
+    def test_download_block(self):
+        conn = MockVirConnect(vms=self._vms)
+
+        def connect(uri, username, password):
+            return conn
+
+        with MonkeyPatchScope([
+            (libvirtconnection, 'open_connection', connect),
+        ]), make_env() as env:
+            args = ['kvm2ovirt',
+                    '--uri', 'qemu+tcp://domain',
+                    '--username', 'user',
+                    '--password-file', env.password,
+                    '--source', '/fake/source',
+                    '--dest', env.destination,
+                    '--storage-type', 'block',
+                    '--vm-name', self._vms[0].name()]
 
             kvm2ovirt.main(args)
 

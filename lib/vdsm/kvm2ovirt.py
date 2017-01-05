@@ -35,9 +35,28 @@ from vdsm.password import ProtectedPassword
 _start = None
 
 
+class VMAdapter(object):
+    def __init__(self, vm, src):
+        self._vm = vm
+        self._src = src
+        self._pos = 0
+
+    def read(self, size):
+        buf = self._vm.blockPeek(self._src, self._pos, size)
+        self._pos += len(buf)
+        return buf
+
+    def finish(self):
+        pass
+
+
 class StreamAdapter(object):
     def __init__(self, stream):
         self.read = stream.recv
+        self._stream = stream
+
+    def finish(self):
+        self._stream.finish()
 
 
 def arguments(args):
@@ -53,6 +72,10 @@ def arguments(args):
                         help='Source remote volumes path')
     parser.add_argument('--dest', dest='dest', nargs='+', required=True,
                         help='Destination local volumes path')
+    parser.add_argument('--storage-type', dest='storagetype', nargs='+',
+                        required=True, help='Storage type (file or block)')
+    parser.add_argument('--vm-name', dest='vmname', required=True,
+                        help='Libvirt source VM name')
     parser.add_argument('--bufsize', dest='bufsize', default=1048576,
                         type=int, help='Size of packets in bytes, default'
                         '1048676')
@@ -96,15 +119,11 @@ def progress(op, estimated_size):
         th.join()
 
 
-def download_volume(con, vol, dest, bufsize):
-    estimated_size = vol.info()[1]
-    stream = con.newStream()
-    vol.download(stream, 0, 0, 0)
-    sr = StreamAdapter(stream)
-    op = directio.Receive(dest, sr, buffersize=bufsize)
+def download_disk(adapter, estimated_size, size, dest, bufsize):
+    op = directio.Receive(dest, adapter, size=size, buffersize=bufsize)
     with progress(op, estimated_size):
         op.run()
-    stream.finish()
+    adapter.finish()
 
 
 def get_password(options):
@@ -117,26 +136,67 @@ def get_password(options):
         return ProtectedPassword(f.read())
 
 
+def handle_file(con, diskno, src, dst, options):
+    write_output('Copying disk %d/%d to %s' % (diskno, len(options.source),
+                                               dst))
+    vol = con.storageVolLookupByPath(src)
+    _, capacity, allocation = vol.info()
+    if options.verbose:
+        write_output('>>> disk %d, capacity: %d allocation %d' %
+                     (diskno, capacity, allocation))
+
+    estimated_size = capacity
+    stream = con.newStream()
+    vol.download(stream, 0, 0, 0)
+    sr = StreamAdapter(stream)
+    # No need to pass the size, volume download will return -1
+    # when stream finish
+    download_disk(sr, estimated_size, None, dst, options.bufsize)
+
+
+def handle_block(con, diskno, src, dst, options):
+    write_output('Copying disk %d/%d to %s' % (diskno, len(options.source),
+                                               dst))
+    vm = con.lookupByName(options.vmname)
+    info = vm.blockInfo(src)
+    physical = info[2]
+    if options.verbose:
+        capacity = info[0]
+        write_output('>>> disk %d, capacity: %d physical %d' %
+                     (diskno, capacity, physical))
+
+    vmAdapter = VMAdapter(vm, src)
+    download_disk(vmAdapter, physical, physical, dst, options.bufsize)
+
+
+def validate_disks(options):
+    if not (len(options.source) == len(options.dest) and
+            len(options.source) == len(options.storagetype)):
+        write_output('>>> source, dest, and storage-type have different'
+                     ' lengths')
+        sys.exit(1)
+    elif not all(st in ("file", "block") for st in options.storagetype):
+        write_output('>>> unsupported storage type. (supported: file, block)')
+        sys.exit(1)
+
+
 def main(argv=None):
     global _start
     _start = utils.monotonic_time()
 
     options = arguments(argv or sys.argv)
+    validate_disks(options)
 
     con = libvirtconnection.open_connection(options.uri,
                                             options.username,
                                             get_password(options))
 
-    disk_count = len(options.source)
-    bufsize = options.bufsize
     write_output('preparing for copy')
-    disks = itertools.izip(options.source, options.dest)
-    for diskno, (src, dst) in enumerate(disks, start=1):
-        vol = con.storageVolLookupByPath(src)
-        write_output('Copying disk %d/%d to %s' % (diskno, disk_count, dst))
-        if options.verbose:
-            write_output('>>> disk %d, capacity: %d allocation %d' %
-                         (diskno, vol.info()[1], vol.info()[2]))
-        download_volume(con, vol, dst, bufsize)
+    disks = itertools.izip(options.source, options.dest, options.storagetype)
+    for diskno, (src, dst, fmt) in enumerate(disks, start=1):
+        if fmt == 'file':
+            handle_file(con, diskno, src, dst, options)
+        elif fmt == 'block':
+            handle_block(con, diskno, src, dst, options)
         diskno = diskno + 1
     write_output('Finishing off')

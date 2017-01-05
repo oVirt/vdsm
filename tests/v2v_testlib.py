@@ -66,6 +66,9 @@ class FakeVolume(object):
     def data(self):
         return self._bytes.getvalue()
 
+    def seek(self, pos):
+        self._bytes.seek(pos)
+
 
 class FakeStream(object):
     def __init__(self):
@@ -92,6 +95,7 @@ class MockVirDomain(object):
         self._active = active
         self._has_snapshots = has_snapshots
         self._disk_type = 'file'
+        self._block_disk = FakeVolume()
 
     def name(self):
         return self._name
@@ -159,7 +163,13 @@ class MockVirDomain(object):
         return self._has_snapshots
 
     def blockInfo(self, source):
-        return [10000000, 10000000, 10000000]
+        # capacity, allocation, physical
+        info = self._block_disk.info()
+        return [info[1], info[2], info[1]]
+
+    def blockPeek(self, disk, pos, size):
+        self._block_disk.seek(pos)
+        return self._block_disk.read(size)
 
 
 # FIXME: extend vmfakelib allowing to set predefined domain in Connection class
