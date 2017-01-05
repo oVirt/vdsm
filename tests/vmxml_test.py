@@ -27,10 +27,10 @@ import timeit
 import xml.etree.ElementTree as etree
 
 from vdsm import cpuarch
+from vdsm.virt import domain_descriptor
 from vdsm.virt import vmchannels
 from vdsm.virt import vmxml
 
-from virt import domain_descriptor
 
 from testValidation import brokentest, slowtest
 from testlib import VdsmTestCase as TestCaseBase

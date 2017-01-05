@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2015 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,11 +21,11 @@
 import os.path
 
 from vdsm import constants
+from vdsm.virt.domain_descriptor import DomainDescriptor
 
 from virt import vmdevices
 from virt.vmdevices import graphics
 from virt.vmdevices import hwclass
-from virt.domain_descriptor import DomainDescriptor
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import permutations, expandPermutations, make_config

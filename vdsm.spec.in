@@ -889,7 +889,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
 %{_datadir}/%{vdsm_name}/vdsmd.py*
 %{_datadir}/%{vdsm_name}/virt/__init__.py*
-%{_datadir}/%{vdsm_name}/virt/domain_descriptor.py*
 %{_datadir}/%{vdsm_name}/virt/recovery.py*
 %{_datadir}/%{vdsm_name}/virt/vmtune.py*
 %{_datadir}/%{vdsm_name}/virt/vm.py*
@@ -1263,6 +1262,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/upgrade.py*
 %{python_sitelib}/%{vdsm_name}/tool/vdsm-id.py*
 %{python_sitelib}/%{vdsm_name}/virt/__init__.py*
+%{python_sitelib}/%{vdsm_name}/virt/domain_descriptor.py*
 %{python_sitelib}/%{vdsm_name}/virt/guestagent.py*
 %{python_sitelib}/%{vdsm_name}/virt/migration.py*
 %{python_sitelib}/%{vdsm_name}/virt/periodic.py*

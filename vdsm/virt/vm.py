@@ -66,6 +66,8 @@ from vdsm.virt import virdomain
 from vdsm.virt import vmstats
 from vdsm.virt import vmstatus
 from vdsm.virt import vmxml
+from vdsm.virt.domain_descriptor import DomainDescriptor
+from vdsm.virt.domain_descriptor import MutableDomainDescriptor
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.vmxml import METADATA_VM_TUNE_URI, METADATA_VM_TUNE_ELEMENT
 from vdsm.virt.vmxml import METADATA_VM_TUNE_PREFIX
@@ -76,7 +78,6 @@ from storage import sd
 from storage import sdc
 
 # local package imports
-from .domain_descriptor import DomainDescriptor, MutableDomainDescriptor
 from . import recovery
 from . import vmdevices
 from .vmdevices import hwclass

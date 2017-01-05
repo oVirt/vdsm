@@ -25,7 +25,6 @@ include $(top_srcdir)/build-aux/Makefile.subs
 vdsm_virtdir = $(vdsmdir)/virt
 dist_vdsm_virt_PYTHON = \
 	__init__.py \
-	domain_descriptor.py \
 	recovery.py \
 	vm.py \
 	vmtune.py \
