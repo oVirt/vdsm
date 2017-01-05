@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2016 Red Hat, Inc.
+# Copyright 2009-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,6 +47,7 @@ from vdsm.config import config
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import devicemapper
+from vdsm.storage import dispatcher
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import imagetickets
@@ -77,7 +78,6 @@ import localFsSD
 from sdc import sdCache
 import image
 import merge
-import dispatcher
 import storageServer
 
 

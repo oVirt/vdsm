@@ -45,9 +45,9 @@ from vdsm.config import config
 from vdsm.network.initializer import init_unprivileged_network_components
 from vdsm.panic import panic
 from vdsm.profiling import profile
+from vdsm.storage.dispatcher import Dispatcher
 from vdsm.virt import periodic
 
-from storage.dispatcher import Dispatcher
 from storage.hsm import HSM
 
 

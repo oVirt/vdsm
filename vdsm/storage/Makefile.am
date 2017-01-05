@@ -27,7 +27,6 @@ dist_vdsmstorage_PYTHON = \
 	__init__.py \
 	blockSD.py \
 	blockVolume.py \
-	dispatcher.py \
 	fileSD.py \
 	fileVolume.py \
 	glusterSD.py \

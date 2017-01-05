@@ -75,7 +75,7 @@ class clientIF(object):
         Initialize the (single) clientIF instance
 
         :param irs: a Dispatcher object to be used as this object's irs.
-        :type irs: :class:`storage.dispatcher.Dispatcher`
+        :type irs: :class:`vdsm.storage.dispatcher.Dispatcher`
         :param log: a log object to be used for this object's logging.
         :type log: :class:`logging.Logger`
         """

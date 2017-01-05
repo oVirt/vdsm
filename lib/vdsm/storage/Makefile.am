@@ -31,6 +31,7 @@ dist_vdsmstorage_PYTHON = \
 	curlImgWrap.py \
 	devicemapper.py \
 	directio.py \
+	dispatcher.py \
 	exception.py \
 	fileUtils.py \
 	fuser.py \
