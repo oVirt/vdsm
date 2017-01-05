@@ -624,11 +624,16 @@ class KVMCommand(V2VCommand):
         if self._username is not None:
             cmd.extend([
                 '--username', self._username,
-                '--password-file', self._passwd_file])
-        cmd.append('--source')
-        cmd.extend(self._source_images())
+                '--password-file', self._passwd_file,
+                '--source'])
+        src, fmt = self._source_images()
+        cmd.extend(src)
         cmd.append('--dest')
         cmd.extend(self._dest_images())
+        cmd.append('--storage-type')
+        cmd.extend(fmt)
+        cmd.append('--vm-name')
+        cmd.append(self._vminfo['vmName'])
         return cmd
 
     @contextmanager
@@ -647,11 +652,13 @@ class KVMCommand(V2VCommand):
                 params = {}
                 root = ET.fromstring(vm.XMLDesc(0))
                 _add_disks(root, params)
-                ret = []
+                src = []
+                fmt = []
                 for disk in params['disks']:
                     if 'alias' in disk:
-                        ret.append(disk['alias'])
-                return ret
+                        src.append(disk['alias'])
+                        fmt.append(disk['disktype'])
+                return src, fmt
 
     def _dest_images(self):
         ret = []
