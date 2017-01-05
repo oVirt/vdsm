@@ -685,20 +685,17 @@ class TestPickleCopy(TestCaseBase):
         setup = """
 import copy
 from vdsm import utils
-import vmTestsData
+from vmTestsData import VM_STATUS_DUMP
 """
-        base = timeit.timeit('copy.deepcopy(vmTestsData.VM_STATUS_DUMP)',
-                             setup=setup,
-                             number=1000)
-        hack = timeit.timeit('utils.picklecopy(vmTestsData.VM_STATUS_DUMP)',
-                             setup=setup,
-                             number=1000)
-        # to justify this hack, it needs to be significantly faster, not
-        # just a bit faster, hence the divisor
-        # assertLess* requires python 2.7
-        self.assertTrue(
-            hack < base / 2,
-            "picklecopy [%f] not faster than deepcopy [%f]" % (hack, base))
+        deepcopy = timeit.timeit('copy.deepcopy(VM_STATUS_DUMP)',
+                                 setup=setup,
+                                 number=1000)
+        picklecopy = timeit.timeit('utils.picklecopy(VM_STATUS_DUMP)',
+                                   setup=setup,
+                                   number=1000)
+        print("deepcopy: %.3f, picklecopy: %.3f"
+              % (deepcopy, picklecopy), end=" ")
+        self.assertLess(picklecopy, deepcopy)
 
 
 class UserError(Exception):
