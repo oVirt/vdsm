@@ -216,10 +216,10 @@ def _parseVolumeStatusDetail(tree):
                                  'hostuuid': value['peerid'],
                                  'sizeTotal': '%.3f' % (value['sizeTotal'],),
                                  'sizeFree': '%.3f' % (value['sizeFree'],),
-                                 'device': value['device'],
-                                 'blockSize': value['blockSize'],
-                                 'mntOptions': value['mntOptions'],
-                                 'fsName': value['fsName']})
+                                 'device': value.get('device', ''),
+                                 'blockSize': value.get('blockSize', ''),
+                                 'mntOptions': value.get('mntOptions', ''),
+                                 'fsName': value.get('fsName', '')})
     return status
 
 
