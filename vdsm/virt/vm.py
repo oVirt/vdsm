@@ -59,6 +59,7 @@ from vdsm.storage import fileUtils
 from vdsm.storage import outOfProcess as oop
 from vdsm.virt import guestagent
 from vdsm.virt import migration
+from vdsm.virt import recovery
 from vdsm.virt import sampling
 from vdsm.virt import vmchannels
 from vdsm.virt import vmexitreason
@@ -78,7 +79,6 @@ from storage import sd
 from storage import sdc
 
 # local package imports
-from . import recovery
 from . import vmdevices
 from .vmdevices import hwclass
 from .vmdevices.storage import DISK_TYPE

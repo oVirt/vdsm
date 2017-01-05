@@ -889,7 +889,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
 %{_datadir}/%{vdsm_name}/vdsmd.py*
 %{_datadir}/%{vdsm_name}/virt/__init__.py*
-%{_datadir}/%{vdsm_name}/virt/recovery.py*
 %{_datadir}/%{vdsm_name}/virt/vmtune.py*
 %{_datadir}/%{vdsm_name}/virt/vm.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/__init__.py*
@@ -1266,6 +1265,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virt/guestagent.py*
 %{python_sitelib}/%{vdsm_name}/virt/migration.py*
 %{python_sitelib}/%{vdsm_name}/virt/periodic.py*
+%{python_sitelib}/%{vdsm_name}/virt/recovery.py*
 %{python_sitelib}/%{vdsm_name}/virt/sampling.py*
 %{python_sitelib}/%{vdsm_name}/virt/secret.py*
 %{python_sitelib}/%{vdsm_name}/virt/utils.py*

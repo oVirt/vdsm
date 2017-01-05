@@ -31,6 +31,7 @@ dist_vdsmvirt_PYTHON = \
 	guestagent.py \
 	migration.py \
 	periodic.py \
+	recovery.py \
 	sampling.py \
 	secret.py \
 	utils.py \

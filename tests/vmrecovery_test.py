@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,9 +22,9 @@ from __future__ import absolute_import
 import contextlib
 import os
 
-from virt import recovery
 from vdsm.common import response
 from vdsm.compat import pickle
+from vdsm.virt import recovery
 from vdsm import constants
 from vdsm import containersconnection
 from vdsm import cpuarch

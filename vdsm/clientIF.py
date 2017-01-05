@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2016 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.momIF import MomClient
 from vdsm.sslcompat import sslutils
 from vdsm.virt import migration
+from vdsm.virt import recovery
 from vdsm.virt import secret
 from vdsm.virt import vmstatus
 from vdsm.virt.vmchannels import Listener
@@ -50,7 +51,6 @@ from vdsm import utils
 from vdsm import supervdsm
 from vdsm.common import response
 
-from virt import recovery
 from virt import vm
 from virt.vm import Vm
 try:
