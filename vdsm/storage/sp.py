@@ -924,9 +924,15 @@ class StoragePool(object):
                              sdUUID, self.spUUID)
             return
 
-        # We must always acquire a host id, since even if this domain is being
-        # monitored, it may not have a host id yet.
-        dom.acquireHostId(self.id)
+        # When attaching a the hosted engine storage domain, the domain host id
+        # is already acquired, and must not be released.
+        domainHasHostId = dom.hasHostId(self.id)
+
+        if domainHasHostId:
+            self.log.info("Domain %s has host id %s, attaching live domain",
+                          sdUUID, self.id)
+        else:
+            dom.acquireHostId(self.id)
 
         try:
             dom.acquireClusterLock(self.id)
@@ -950,14 +956,16 @@ class StoragePool(object):
                 dom.releaseClusterLock()
 
         finally:
-            # If we are monitoring this domain, we must not release the host
-            # id, as it will kill any process holding a resource on this
-            # domain, such as the qemu process running the hosted engine vm.
-            # TODO: Remove this check when the cluster lock supports reference
-            # counting.
-            if self.domainMonitor.isMonitoring(sdUUID):
-                self.log.debug("Domain %s is being monitored, leaving the "
-                               "host id acquired", sdUUID)
+            # If the domain has a host id, or we are monitoring this domain,
+            # we must not release the host id, as it will kill any process
+            # holding a resource on this domain, such as the qemu process
+            # running the hosted engine vm.
+            if domainHasHostId:
+                self.log.debug("Domain %s has host id %s, leaving the "
+                               "host id acquired", sdUUID, self.id)
+            elif self.domainMonitor.isMonitoring(sdUUID):
+                self.log.debug("Domain %s is being monitored, leaving host "
+                               "id %s acquired", sdUUID, self.id)
             else:
                 dom.releaseHostId(self.id)
 
