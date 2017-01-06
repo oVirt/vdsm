@@ -22,8 +22,9 @@ from contextlib import contextmanager
 from ctypes import (CDLL, CFUNCTYPE, c_char, c_char_p, c_int, c_void_p,
                     c_size_t, get_errno, py_object, sizeof)
 from functools import partial
-from six.moves.queue import Empty, Queue
 from threading import BoundedSemaphore
+
+from six.moves import queue
 
 _POOL_SIZE = 5
 _NETLINK_ROUTE = 0
@@ -48,7 +49,7 @@ class NLSocketPool(object):
         if size <= 0:
             raise ValueError('Invalid socket pool size %r. Must be positive')
         self._semaphore = BoundedSemaphore(size)
-        self._sockets = Queue(maxsize=size)
+        self._sockets = queue.Queue(maxsize=size)
 
     @contextmanager
     def socket(self):
@@ -56,7 +57,7 @@ class NLSocketPool(object):
         with self._semaphore:
             try:
                 sock = self._sockets.get_nowait()
-            except Empty:
+            except queue.Empty:
                 sock = _open_socket()
             try:
                 yield sock
