@@ -80,6 +80,7 @@ class Dnsmasq():
 
     def stop(self):
         self.proc.kill()
+        self.proc.wait()
         logging.debug(''.join(self.proc.stderr))
 
 
