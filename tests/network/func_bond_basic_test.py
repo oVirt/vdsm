@@ -122,3 +122,29 @@ class BondBasicLegacyTest(BondBasicTemplate):
 class BondBasicOvsTest(BondBasicTemplate):
     __test__ = True
     switch = 'ovs'
+
+
+class BondOptionsTestTemplate(NetFuncTestCase):
+    __test__ = False
+
+    def test_bond_mode_1(self):
+        with dummy_devices(2) as (nic1, nic2):
+            BONDCREATE = {BOND_NAME: {
+                'nics': [nic1, nic2],
+                'options': 'mode=1 primary=' + nic1,
+                'switch': self.switch}}
+
+            with self.setupNetworks({}, BONDCREATE, NOCHK):
+                self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+
+
+@attr(type='functional', switch='legacy')
+class BondOptionsLegacyTest(BondOptionsTestTemplate):
+    __test__ = True
+    switch = 'legacy'
+
+
+@attr(type='functional', switch='ovs')
+class BondOptionsOvsTest(BondOptionsTestTemplate):
+    __test__ = True
+    switch = 'ovs'

@@ -489,26 +489,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    def testSetupNetworksAddDelBondedNetwork(self, bridged):
-        with dummyIf(2) as nics:
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME:
-                    {'bonding': BONDING_NAME, 'bridged': bridged}},
-                {BONDING_NAME: {'nics': nics, 'options': 'mode=1 primary=' +
-                                nics[0]}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETWORK_NAME, bridged)
-            self.assertBondExists(BONDING_NAME, nics, 'mode=1 primary=' +
-                                  nics[0])
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'remove': True}},
-                {BONDING_NAME: {'remove': True}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkDoesntExist(NETWORK_NAME)
-
-    @cleanupNet
-    @permutations([[True], [False]])
     def testSetupNetworksAddOverExistingBond(self, bridged=True):
         with dummyIf(2) as nics:
             status, msg = self.setupNetworks(
