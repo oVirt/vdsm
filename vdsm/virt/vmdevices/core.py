@@ -616,7 +616,6 @@ class Memory(Base):
                         dev['address'] = address
                         dev['alias'] = alias
                         break
-        vm.conf['memSize'] = vm.domain.get_memory_size()
 
     def getXML(self):
         """
