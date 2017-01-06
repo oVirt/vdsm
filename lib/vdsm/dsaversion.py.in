@@ -32,6 +32,6 @@ version_info = {
     'version_name': version_name,
     'software_version': software_version,
     'software_revision': software_revision,
-    'supportedENGINEs': ['4.0', '4.1'],
-    'clusterLevels': ['3.6', '4.0', '4.1'],
+    'supportedENGINEs': ['4.0', '4.1', '4.2'],
+    'clusterLevels': ['3.6', '4.0', '4.1', '4.2'],
 }
