@@ -161,6 +161,47 @@ class TestFindDevice(VdsmTestCase):
 
 
 @expandPermutations
+class TestFindConf(VdsmTestCase):
+
+    def setUp(self):
+        # TODO: replace with @skipif when available
+        if not six.PY2:
+            raise SkipTest("vmdevices not compatible with python 3")
+
+    @permutations([
+        ("sd-1", "lease-2", 4194304),
+        ("sd-2", "lease-1", 3145728),
+    ])
+    def test_find(self, sd_id, lease_id, offset):
+        kwargs = {"type": vmdevices.hwclass.LEASE,
+                  "sd_id": sd_id,
+                  "lease_id": lease_id,
+                  "path": "/dev/%s/xleases" % sd_id,
+                  "offset": offset}
+        lease = vmdevices.lease.Device({}, self.log, **kwargs)
+        conf = vmdevices.lease.find_conf(self.conf(), lease)
+        self.assertEqual(conf["sd_id"], sd_id)
+        self.assertEqual(conf["lease_id"], lease_id)
+
+    @permutations([
+        ("sd-1", "lease-1", 3145728),
+        ("sd-2", "lease-2", 4194304),
+    ])
+    def test_lookup_error(self, sd_id, lease_id, offset):
+        kwargs = {"type": vmdevices.hwclass.LEASE,
+                  "sd_id": sd_id,
+                  "lease_id": lease_id,
+                  "path": "/dev/%s/xleases" % sd_id,
+                  "offset": offset}
+        lease = vmdevices.lease.Device({}, self.log, **kwargs)
+        with self.assertRaises(LookupError):
+            vmdevices.lease.find_conf(self.conf(), lease)
+
+    def conf(elf):
+        return {"devices": LEASE_DEVICES}
+
+
+@expandPermutations
 class TestIsAttahedTo(VdsmTestCase):
 
     XML = """
