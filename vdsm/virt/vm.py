@@ -1812,6 +1812,7 @@ class Vm(object):
         self._fixLegacyRngConf()
 
         self._getUnderlyingVmDevicesInfo()
+        self._update_memory_info()
         self._updateAgentChannels()
 
         # Currently there is no protection agains mirroring a network twice,
@@ -2536,6 +2537,7 @@ class Vm(object):
             self.conf['devices'].append(memParams)
         self._updateDomainDescriptor()
         device.update_device_info(self, self._devices[hwclass.MEMORY])
+        self._update_memory_info()
         # TODO: this is raceful (as the similar code of hotplugDisk
         # and hotplugNic, as a concurrent call of hotplug can change
         # vm.conf before we return.
@@ -2544,6 +2546,9 @@ class Vm(object):
         hooks.after_memory_hotplug(deviceXml)
 
         return {'status': doneCode, 'vmList': self.status()}
+
+    def _update_memory_info(self):
+        self.conf['memSize'] = self.domain.get_memory_size()
 
     @api.logged(on='vdsm.api')
     def setNumberOfCpus(self, numberOfCpus):
