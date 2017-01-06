@@ -26,6 +26,5 @@ dist_vdsmnetworkconfigurators_PYTHON = \
 	ifcfg.py \
 	ifcfg_acquire.py \
 	iproute2.py \
-	pyroute_two.py \
 	qos.py \
 	$(NULL)
