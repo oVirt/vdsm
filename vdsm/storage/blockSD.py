@@ -34,14 +34,13 @@ from operator import itemgetter
 
 import six
 
-from vdsm import cmdutils
 from vdsm import concurrent
 from vdsm.common import exception
 from vdsm.common.threadlocal import vars
 from vdsm.config import config
 from vdsm import constants
 from vdsm import utils
-from vdsm.storage import blkdiscard
+from vdsm.storage import blockdev
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import directio
@@ -211,7 +210,7 @@ def deleteVolumes(sdUUID, vols):
 
 def zeroImgVolumes(sdUUID, imgUUID, volUUIDs, discard):
     taskid = vars.task.id
-    aborting = vars.task.aborting
+    task = vars.task
 
     try:
         lvm.changelv(sdUUID, volUUIDs, ("--permission", "rw"))
@@ -223,26 +222,13 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs, discard):
     def zeroVolume(volUUID):
         log.debug('Zero volume thread started for '
                   'volume %s task %s', volUUID, taskid)
+
         path = lvm.lvPath(sdUUID, volUUID)
-        size = multipath.getDeviceSize(lvm.lvDmDev(sdUUID, volUUID))
 
-        try:
-            misc.ddWatchCopy("/dev/zero", path, aborting, size)
-            log.debug('Zero volume %s task %s completed', volUUID, taskid)
-        except Exception:
-            log.exception('Zero volume %s task %s failed', volUUID, taskid)
-            # LV zeroing failed, so we must not remove it. The administrator
-            # can zero and remove it manually.
-            raise
+        blockdev.zero(path, task=task)
 
-        discardEnable = config.getboolean('irs', 'discard_enable')
-        if discard or discardEnable:
-            try:
-                blkdiscard.blkdiscard(path)
-            except cmdutils.Error as e:
-                log.warning('Discarding %s failed '
-                            '(discard=%s, discard_enable=%s): %s',
-                            path, discard, discardEnable, e)
+        if discard or blockdev.discard_enabled():
+            blockdev.discard(path)
 
         try:
             log.debug('Removing volume %s task %s', volUUID, taskid)
@@ -718,14 +704,8 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                            volUUID, taskid)
             path = lvm.lvPath(sdUUID, volUUID)
 
-            discardEnable = config.getboolean('irs', 'discard_enable')
-            if discard or discardEnable:
-                try:
-                    blkdiscard.blkdiscard(path)
-                except cmdutils.Error as e:
-                    log.warning('Discarding %s failed '
-                                '(discard=%s, discard_enable=%s): %s',
-                                path, discard, discardEnable, e)
+            if discard or blockdev.discard_enabled():
+                blockdev.discard(path)
 
             self.log.debug('Removing volume %s task %s', volUUID, taskid)
             deleteVolumes(sdUUID, volUUID)

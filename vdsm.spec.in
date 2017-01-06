@@ -1196,6 +1196,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/asyncevent.py*
 %{python_sitelib}/%{vdsm_name}/storage/asyncutils.py*
 %{python_sitelib}/%{vdsm_name}/storage/blkdiscard.py*
+%{python_sitelib}/%{vdsm_name}/storage/blockdev.py*
 %{python_sitelib}/%{vdsm_name}/storage/check.py*
 %{python_sitelib}/%{vdsm_name}/storage/clusterlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/compat.py*

@@ -21,14 +21,12 @@
 import os
 import logging
 
-from vdsm import cmdutils
 from vdsm import constants
 from vdsm import qemuimg
-from vdsm.common import exception
 from vdsm.common import fileutils
 from vdsm.common.threadlocal import vars
 from vdsm.config import config
-from vdsm.storage import blkdiscard
+from vdsm.storage import blockdev
 from vdsm.storage import constants as sc
 from vdsm.storage import directio
 from vdsm.storage import exception as se
@@ -568,7 +566,6 @@ class BlockVolume(volume.Volume):
                       self.volUUID, self.imgUUID, self.sdUUID)
 
         vol_path = self.getVolumePath()
-        size = self.getVolumeSize(bs=1)
         offs = self.getMetaOffset()
 
         # On block storage domains we store a volume's parent UUID in two
@@ -604,28 +601,16 @@ class BlockVolume(volume.Volume):
         # Mark volume as illegal before deleting
         self.setLegality(sc.ILLEGAL_VOL)
 
-        discardEnable = config.getboolean('irs', 'discard_enable')
-        discardVolume = discard or discardEnable
-        if postZero or discardVolume:
+        discard_needed = discard or blockdev.discard_enabled()
+        if postZero or discard_needed:
             self.prepare(justme=True, rw=True, chainrw=force, setrw=True,
                          force=True)
             try:
                 if postZero:
-                    try:
-                        misc.ddWatchCopy("/dev/zero", vol_path,
-                                         vars.task.aborting, int(size))
-                    except exception.ActionStopped:
-                        raise
-                    except Exception:
-                        self.log.error("Unexpected error", exc_info=True)
-                        raise se.VolumesZeroingError(vol_path)
-                if discardVolume:
-                    try:
-                        blkdiscard.blkdiscard(vol_path)
-                    except cmdutils.Error as e:
-                        log.warning('Discarding %s failed '
-                                    '(discard=%s, discard_enable=%s): %s',
-                                    vol_path, discard, discardEnable, e)
+                    blockdev.zero(vol_path, task=vars.task)
+
+                if discard_needed:
+                    blockdev.discard(vol_path)
             finally:
                 self.teardown(self.sdUUID, self.volUUID, justme=True)
 

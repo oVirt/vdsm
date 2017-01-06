@@ -111,6 +111,7 @@ test_modules = \
 	storage_asyncevent_test.py \
 	storage_asyncutils_test.py \
 	storage_blkdiscard_test.py \
+	storage_blockdev_test.py \
 	storage_blocksd_test.py \
 	storage_blockvolume_test.py \
 	storage_check_test.py \

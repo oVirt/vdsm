@@ -26,6 +26,7 @@ dist_vdsmstorage_PYTHON = \
 	asyncevent.py \
 	asyncutils.py \
 	blkdiscard.py \
+	blockdev.py \
 	check.py \
 	clusterlock.py \
 	compat.py \
