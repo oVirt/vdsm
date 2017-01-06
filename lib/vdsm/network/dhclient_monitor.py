@@ -116,6 +116,7 @@ def _monitor_dhcp_responses():
     watchManager = pyinotify.WatchManager()
     handler = DHClientEventHandler()
     notifier = pyinotify.Notifier(watchManager, handler)
+    # pylint: disable=no-member
     watchManager.add_watch(MONITOR_FOLDER, pyinotify.IN_CLOSE_WRITE)
 
     # Run once manually in case dhclient operated while supervdsm was down
