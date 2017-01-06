@@ -214,6 +214,24 @@ def find_device(vm_devices, query):
     raise LookupError("No such lease %s" % query)
 
 
+def find_conf(vm_conf, lease):
+    """
+    Find lease conf in vm conf
+
+    :param dict vm_conf: vm conf dict
+    :param `lease.Device` lease: lease device to look up
+    :returns: conf dict if conf was found
+    :raises: `LookupError` if conf was not found
+    """
+    devices = vm_conf["devices"][:]
+    for conf in devices:
+        if (conf['type'] == hwclass.LEASE and
+                conf['sd_id'] == lease.sd_id and
+                conf['lease_id'] == lease.lease_id):
+            return conf
+    raise LookupError("No conf for %r" % lease)
+
+
 def prepare(storage, devices):
     """
     Add lease path and offset to devices with partial information.
