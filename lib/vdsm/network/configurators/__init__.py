@@ -35,6 +35,7 @@ class Configurator(object):
         self.configApplier = configApplier
         self._inRollback = inRollback
         self._libvirtAdded = set()
+        self.runningConfig = None
 
     def __enter__(self):
         self.begin()
@@ -62,6 +63,12 @@ class Configurator(object):
         # self.runningConfig will have all the changes that were applied before
         # we needed to rollback.
         return RunningConfig().diffFrom(self.runningConfig)
+
+    def begin(self):
+        raise NotImplementedError
+
+    def commit(self):
+        raise NotImplementedError
 
     def configureBridge(self, bridge, **opts):
         raise NotImplementedError
