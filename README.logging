@@ -26,7 +26,7 @@ The basic syntax is:
 
 # vdsClient [-s] SERVER setLogLevel LEVEL [LOGGER]
 
-`LEVEL` is one of TRACE, DEBUG, INFO, WARN
+`LEVEL` is one of DEBUG, INFO, WARN
 `LOGGER` is any logger Vdsm uses. Please check the configuration file
 to learn about some predefined loggers.
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import print_function
-import logging
 from collections import namedtuple
 import json
 import timeit
@@ -189,7 +188,6 @@ d = {u'netIfaces': [
 class TestGuestIF(TestCaseBase):
 
     def test_handleMessage(self):
-        logging.TRACE = 5
         fakeGuestAgent = guestagent.GuestAgent(None, None, self.log,
                                                lambda: None)
         testCase = namedtuple('testCase', 'msgType, message, assertDict')
@@ -201,7 +199,6 @@ class TestGuestIF(TestCaseBase):
                 self.assertEqual(fakeGuestAgent.guestInfo[k], v)
 
     def test_guestinfo_encapsulation(self):
-        logging.TRACE = 5
         fake_guest_agent = guestagent.GuestAgent(None, None, self.log,
                                                  lambda: None)
         fake_guest_agent._handleMessage(_MSG_TYPES[0], _INPUTS[0])
@@ -231,7 +228,6 @@ class TestGuestIFHandleData(TestCaseBase):
 
     # perform general setup tasks
     def setUp(self):
-        logging.TRACE = 5
         self.fakeGuestAgent = guestagent.GuestAgent(None, None, self.log,
                                                     lambda: None)
         self.fakeGuestAgent.MAX_MESSAGE_SIZE = 100

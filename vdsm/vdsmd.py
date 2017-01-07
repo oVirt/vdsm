@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2016 Red Hat, Inc. and/or its affiliates.
+# Copyright 2009-2017 Red Hat, Inc. and/or its affiliates.
 #
 # Licensed to you under the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -126,13 +126,10 @@ def run():
     except RuntimeError as e:
         raise FatalError("Cannot configure logging: %s" % e)
 
-    logging.addLevelName(5, 'TRACE')
-
     # Shorten WARNING and CRITICAL to make the log align nicer.
     logging.addLevelName(logging.WARNING, 'WARN')
     logging.addLevelName(logging.CRITICAL, 'CRIT')
 
-    logging.TRACE = 5  # impolite but helpful
     log = logging.getLogger('vds')
     try:
         logging.root.handlers.append(logging.StreamHandler())

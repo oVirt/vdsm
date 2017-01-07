@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2016 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 from __future__ import absolute_import
 
 import contextlib
-import logging
 import time
 import socket
 import errno
@@ -328,10 +327,10 @@ class GuestAgent(object):
         message = (json.dumps(args) + '\n').encode('utf8')
         # TODO: socket is non-blocking, handle possible EAGAIN
         self._sock.sendall(message)
-        self.log.log(logging.TRACE, 'sent %r', message)
+        self.log.debug('sent %r', message)
 
     def _handleMessage(self, message, args):
-        self.log.log(logging.TRACE, "Guest's message %s: %s", message, args)
+        self.log.debug("Guest's message %s: %s", message, args)
         if message == 'heartbeat':
             self.guestInfo['memUsage'] = int(args['free-ram'])
             # ovirt-guest-agent reports the following fields in 'memory-stat':
@@ -530,7 +529,7 @@ class GuestAgent(object):
         self.guestInfo['memUsage'] = 0
         if self.guestStatus not in (vmstatus.POWERING_DOWN,
                                     vmstatus.REBOOT_IN_PROGRESS):
-            self.log.log(logging.TRACE, "Guest connection timed out")
+            self.log.debug("Guest connection timed out")
             self.guestStatus = None
 
     def _clearReadBuffer(self):

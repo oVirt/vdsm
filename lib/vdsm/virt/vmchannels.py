@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@ import errno
 import threading
 import time
 import select
-import logging
 
 from vdsm.utils import NoIntrPoll
 from vdsm import concurrent
@@ -163,8 +162,7 @@ class Listener(object):
             if obj.get('cooldown'):
                 if (now - obj['cooldown_time']) >= self._timeout:
                     obj['cooldown'] = False
-                    self.log.log(logging.TRACE, "Reconnect attempt fileno "
-                                 "%d", fileno)
+                    self.log.debug("Reconnect attempt fileno %d", fileno)
                 else:
                     continue
 
@@ -185,8 +183,8 @@ class Listener(object):
                     if obj['reconnects'] >= COOLDOWN_RECONNECT_THRESHOLD:
                         obj['cooldown_time'] = time.time()
                         obj['cooldown'] = True
-                        self.log.log(logging.TRACE, "fileno %d was moved into "
-                                     "cooldown", fileno)
+                        self.log.debug(
+                            "fileno %d was moved into cooldown", fileno)
 
     def _wait_for_events(self):
         """ Wait for an epoll event and handle channels' timeout. """
