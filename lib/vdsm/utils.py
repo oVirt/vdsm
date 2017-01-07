@@ -730,12 +730,13 @@ def create_connected_socket(host, port, sslctx=None, timeout=None):
 
 
 @contextmanager
-def stopwatch(message, log=logging.getLogger('vds.stopwatch')):
-    if log.isEnabledFor(logging.DEBUG):
+def stopwatch(message, level=logging.DEBUG,
+              log=logging.getLogger('vds.stopwatch')):
+    if log.isEnabledFor(level):
         start = vdsm_time.monotonic_time()
         yield
         elapsed = vdsm_time.monotonic_time() - start
-        log.debug("%s: %.2f seconds", message, elapsed)
+        log.log(level, "%s: %.2f seconds", message, elapsed)
     else:
         yield
 

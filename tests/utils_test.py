@@ -834,25 +834,32 @@ class TestCommandStream(TestCaseBase):
         self.assertEqual(retcode, expected_retcode)
 
 
+@expandPermutations
 class TestStopwatch(TestCaseBase):
 
-    def test_notset(self):
-        log = FakeLogger(logging.NOTSET)
+    @permutations([(logging.NOTSET,), (logging.DEBUG,)])
+    def test_default_level_log(self, level):
+        log = FakeLogger(level)
         with utils.stopwatch("message", log=log):
-            pass
+            time.sleep(0.01)
         self.assertNotEqual(log.messages, [])
+        level, message, kwargs = log.messages[0]
+        print("Logged: %s" % message, end=" ")
+        self.assertEqual(level, logging.DEBUG)
+        self.assertTrue(message.startswith("message"),
+                        "Unexpected message: %s" % message)
 
-    def test_debug(self):
-        log = FakeLogger(logging.DEBUG)
-        with utils.stopwatch("message", log=log):
-            pass
-        self.assertNotEqual(log.messages, [])
-
-    def test_info(self):
+    def test_default_level_no_log(self):
         log = FakeLogger(logging.INFO)
         with utils.stopwatch("message", log=log):
             pass
         self.assertEqual(log.messages, [])
+
+    def test_custom_level_log(self):
+        log = FakeLogger(logging.INFO)
+        with utils.stopwatch("message", level=logging.INFO, log=log):
+            pass
+        self.assertNotEqual(log.messages, [])
 
 
 class ObjectWithDel(object):
