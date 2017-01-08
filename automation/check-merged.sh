@@ -82,6 +82,7 @@ function run_network_tests {
     return $res
 }
 
+mkdir "$EXPORTS"/lago-logs
 VMS_PREFIX="vdsm_functional_tests_host-"
 failed=0
 for distro in el7; do
@@ -111,12 +112,12 @@ for distro in el7; do
         "$vm_name" \
         "/tmp/nosetests-${distro}.xml" \
         "$EXPORTS/nosetests-${distro}.xml" || :
+    lago collect --output "$EXPORTS"/lago-logs
     lago stop "$vm_name"
 done
 
 lago cleanup
 
-mkdir "$EXPORTS"/lago-logs
 cp "$PREFIX"/current/logs/*.log "$EXPORTS"/lago-logs
 
 exit $failed

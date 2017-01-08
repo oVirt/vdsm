@@ -13,6 +13,8 @@ domains:
         ovirt-role: host
         deploy-scripts:
           - $LAGO_INITFILE_PATH/deploy.sh
+      artifacts:
+          - /var/log
 
 nets:
   vdsm_functional_tests_lago:
