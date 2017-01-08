@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+import logging
 import threading
 from collections import namedtuple
 
@@ -151,7 +152,7 @@ def tmap(func, iterable):
     return results
 
 
-def thread(func, args=(), kwargs=None, name=None, daemon=True, logger=None):
+def thread(func, args=(), kwargs=None, name=None, daemon=True, log=None):
     """
     Create a thread for runnning func with args.
 
@@ -167,13 +168,15 @@ def thread(func, args=(), kwargs=None, name=None, daemon=True, logger=None):
 
     daemon      If True, create a daemon thread.
 
-    logger      If set, unhandled exception will be logged on this logger.
+    log         If set, unhandled exception will be logged on this logger.
                 Otherwise the root logger will be used.
     """
     if kwargs is None:
         kwargs = {}
+    if log is None:
+        log = logging.getLogger()
 
-    @utils.traceback(on=logger)
+    @utils.traceback(on=log.name)
     def run():
         pthread_name = threading.current_thread().name
         pthread.setname(pthread_name[:15])

@@ -248,8 +248,7 @@ class _Worker(object):
         self._discarded = False
         self._task_counter = 0
         self._lock = threading.Lock()
-        self._thread = concurrent.thread(self._run, name=name,
-                                         logger=self._log.name)
+        self._thread = concurrent.thread(self._run, name=name, log=self._log)
         self._log.debug('Starting worker %s' % name)
         self._thread.start()
         self._task = None

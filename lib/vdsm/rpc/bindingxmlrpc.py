@@ -75,7 +75,7 @@ class BindingXMLRPC(object):
             self.log.info("XMLRPC server stopped")
 
         self._thread = concurrent.thread(threaded_start, name='BindingXMLRPC',
-                                         logger=self.log.name)
+                                         log=self.log)
         self._thread.start()
 
     def add_socket(self, connected_socket, socket_address):

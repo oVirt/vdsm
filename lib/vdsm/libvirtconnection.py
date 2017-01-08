@@ -43,7 +43,7 @@ class _EventLoop:
     def start(self):
         assert not self.run
         self.__thread = concurrent.thread(self.__run, name="libvirt/events",
-                                          logger=log.name)
+                                          log=log)
         self.run = True
         self.__thread.start()
 

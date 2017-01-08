@@ -273,7 +273,7 @@ class HSM_MailMonitor(object):
         self._msgCounter = 0
         self._sendMail()  # Clear outgoing mailbox
         self._thread = concurrent.thread(self.run, name="mailbox-hsm",
-                                         logger=self.log.name)
+                                         log=self.log)
         self._thread.start()
 
     def _initMailbox(self):
@@ -588,7 +588,7 @@ class SPM_MailMonitor:
                              "dd failed")
 
         self._thread = concurrent.thread(
-            self.run, name="mailbox-spm", logger=self.log.name)
+            self.run, name="mailbox-spm", log=self.log)
         self._thread.start()
         self.log.debug('SPM_MailMonitor created for pool %s' % self._poolID)
 

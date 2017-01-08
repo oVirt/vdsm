@@ -468,7 +468,7 @@ class StoragePool(object):
                                           args=(sdUUID, True),
                                           kwargs={"__securityOverride": True},
                                           name="upgrade/" + sdUUID[:7],
-                                          logger=self.log.name)
+                                          log=self.log)
                     t.start()
         except rm.RequestTimedOutError:
             raise se.PoolUpgradeInProgress(self.spUUID)

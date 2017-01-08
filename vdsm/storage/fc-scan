@@ -54,8 +54,7 @@ class Scan(object):
         self.thread = None
 
     def start(self):
-        self.thread = concurrent.thread(self.run, logger=log.name,
-                                        name=self.host)
+        self.thread = concurrent.thread(self.run, name=self.host, log=log)
         self.thread.start()
 
     def wait(self):

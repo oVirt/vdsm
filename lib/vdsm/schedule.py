@@ -92,7 +92,7 @@ class Scheduler(object):
         self._running = False
         self._calls = []
         self._thread = concurrent.thread(self._run, name=self._name,
-                                         logger=self._log.name)
+                                         log=self._log)
 
     def start(self):
         self._log.debug("Starting scheduler %s", self._name)

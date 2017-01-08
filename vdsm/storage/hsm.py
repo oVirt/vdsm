@@ -396,7 +396,7 @@ class HSM(object):
 
         storageRefreshThread = concurrent.thread(storageRefresh,
                                                  name="hsm/init",
-                                                 logger=self.log.name)
+                                                 log=self.log)
         storageRefreshThread.start()
 
         monitorInterval = config.getint('irs', 'sd_health_check_delay')

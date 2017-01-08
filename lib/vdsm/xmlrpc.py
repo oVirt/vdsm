@@ -72,7 +72,7 @@ class SimpleThreadedXMLRPCServer(SimpleXMLRPCDispatcher):
             return
         self.log.info("Starting request handler for %s:%d", addr[0], addr[1])
         t = concurrent.thread(self._process_requests, args=(sock, addr),
-                              logger=self.log.name)
+                              log=self.log)
         t.start()
 
     def server_close(self):
