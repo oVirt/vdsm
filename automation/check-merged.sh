@@ -48,7 +48,7 @@ cd "$PREFIX"
 # can handle local rpms properly
 lago ovirt reposetup \
     --reposync-yum-config /dev/null \
-    --custom-source "rec:file://$PWD/exported-artifacts"
+    --custom-source "dir:$EXPORTS"
 
 function mount_tmpfs {
     lago shell "$vm_name" -c "mount -t tmpfs tmpfs /sys/kernel/mm/ksm"
