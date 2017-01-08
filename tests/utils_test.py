@@ -46,6 +46,7 @@ from vdsm import panic
 from monkeypatch import MonkeyPatch
 from vmTestsData import VM_STATUS_DUMP
 from monkeypatch import Patch
+from fakelib import FakeLogger
 from testlib import forked, online_cpus, namedTemporaryDir
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
@@ -953,20 +954,6 @@ class TestCommandStream(TestCaseBase):
                 retcode = c.wait()
 
         self.assertEqual(retcode, expected_retcode)
-
-
-class FakeLogger(object):
-
-    def __init__(self, level):
-        self.level = level
-        self.messages = []
-
-    def debug(self, fmt, *args):
-        # Will fail bad logging call with mismatched fmt and args
-        self.messages.append(fmt % args)
-
-    def isEnabledFor(self, level):
-        return self.level <= level
 
 
 class TestStopwatch(TestCaseBase):
