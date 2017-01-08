@@ -38,63 +38,70 @@ _STATE_OUTGOING = 2
 _STATE_ONESHOT = 4
 
 
-class JsonRpcError(RuntimeError):
-    def __init__(self, code, msg):
+class JsonRpcError(exception.VdsmException):
+    def __str__(self):
+        return self.message.format(self=self)
+
+    def __init__(self, code, message):
         self.code = code
-        self.message = msg
-        super(JsonRpcError, self).__init__(
-            "[%d] %s" % (self.code, self.message)
-        )
+        self.message = message
 
 
 class JsonRpcParseError(JsonRpcError):
-    def __init__(self):
-        JsonRpcError.__init__(self, -32700,
-                              "Invalid JSON was received by the server. "
-                              "An error occurred on the server while parsing "
-                              "the JSON text.")
+        def __init__(self):
+            self.code = -32700
+            self.message = "Invalid JSON was received by the server. "
+            "An error occurred on the server while parsing "
+            "the JSON text."
 
 
 class JsonRpcInvalidRequestError(JsonRpcError):
-    log = logging.getLogger("JsonRpcInvalidRequestError")
+    code = -32600
+    message = "Invalid request {self.request}: {self.reason}"
 
-    def __init__(self, object_name, msg_content):
-        self.log.error("Invalid message found %s", msg_content)
-        JsonRpcError.__init__(self, -32600,
-                              "The JSON sent is not a valid Request object "
-                              "with " + object_name)
+    def __init__(self, request, reason):
+        self.request = request
+        self.reason = reason
 
 
 class JsonRpcMethodNotFoundError(JsonRpcError):
+    code = -32601
+    message = ("The method {self.method_name} does not exist or is not"
+               "available.")
+
     def __init__(self, method_name):
-        JsonRpcError.__init__(
-            self, -32601,
-            "The method %r does not exist or is not available." % method_name)
+        self.method_name = method_name
 
 
 class JsonRpcInvalidParamsError(JsonRpcError):
-    def __init__(self, msg="Invalid method parameter(s)."):
-        JsonRpcError.__init__(self, -32602, msg)
+    code = -32602
+    message = "Invalid method parameter(s): {self.params}"
+
+    def __init__(self, params=None):
+        self.params = params
 
 
 class JsonRpcInternalError(JsonRpcError):
-    def __init__(self, msg=None):
-        if not msg:
-            msg = "Internal JSON-RPC error."
-        JsonRpcError.__init__(self, -32603, msg)
+    code = -32603
+
+    def __init__(self, message=None):
+        if not message:
+            message = "Internal JSON-RPC error."
+        self.message = message
 
 
 class JsonRpcBindingsError(JsonRpcError):
     def __init__(self):
-        JsonRpcError.__init__(self, -32604,
-                              "Missing bindings for JSON-RPC.")
+        self.code = -32604
+        self.message = "Missing bindings for JSON-RPC."
 
 
 class JsonRpcNoResponseError(JsonRpcError):
+    code = -32605
+    message = "No response for JSON-RPC {self.method} request."
+
     def __init__(self, method=''):
-        JsonRpcError.__init__(self, -32605,
-                              "No response for JSON-RPC "
-                              "%s request." % method)
+        self.method = method
 
 
 class JsonRpcRequest(object):
@@ -115,18 +122,19 @@ class JsonRpcRequest(object):
     @staticmethod
     def fromRawObject(obj):
         if obj.get("jsonrpc") != "2.0":
-            raise JsonRpcInvalidRequestError("wrong protocol version", obj)
+            raise JsonRpcInvalidRequestError(obj, "Wrong protocol version")
 
         method = obj.get("method")
         if method is None:
-            raise JsonRpcInvalidRequestError("missing method header", obj)
+            raise JsonRpcInvalidRequestError(
+                obj, "missing method header in method")
 
         reqId = obj.get("id")
         # when sending notifications id is not provided
 
         params = obj.get('params', [])
         if not isinstance(params, (list, dict)):
-            raise JsonRpcInvalidRequestError("wrong params type", obj)
+            raise JsonRpcInvalidRequestError(obj, "wrong params type")
 
         return JsonRpcRequest(method, protect_passwords(params), reqId)
 
@@ -179,11 +187,11 @@ class JsonRpcResponse(object):
     @staticmethod
     def fromRawObject(obj):
         if obj.get("jsonrpc") != "2.0":
-            raise JsonRpcInvalidRequestError("wrong protocol version", obj)
+            raise JsonRpcInvalidRequestError(obj, "wrong protocol version")
 
         if "result" not in obj and "error" not in obj:
-            raise JsonRpcInvalidRequestError("missing result or error info",
-                                             obj)
+            raise JsonRpcInvalidRequestError(
+                obj, "missing result or error info")
 
         result = obj.get("result")
         error = obj.get("error")
@@ -609,7 +617,7 @@ class JsonRpcServer(object):
             else:
                 res = method(**params)
             self._bridge.unregister_server_address()
-        except JsonRpcError as e:
+        except exception.VdsmException as e:
             return JsonRpcResponse(None, e, req.id)
         except Exception as e:
             self.log.exception("Internal server error")
@@ -650,8 +658,7 @@ class JsonRpcServer(object):
                 ctx.addResponse(
                     JsonRpcResponse(None,
                                     JsonRpcInvalidRequestError(
-                                        'request batch is empty',
-                                        rawRequests),
+                                        rawRequests, "request batch is empty"),
                                     None))
                 ctx.sendReply()
                 return
@@ -665,7 +672,7 @@ class JsonRpcServer(object):
             try:
                 req = JsonRpcRequest.fromRawObject(rawRequest)
                 requests.append(req)
-            except JsonRpcError as err:
+            except exception.VdsmException as err:
                 ctx.addResponse(JsonRpcResponse(None, err, None))
             except:
                 ctx.addResponse(JsonRpcResponse(None,

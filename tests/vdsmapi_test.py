@@ -83,7 +83,7 @@ class DataVerificationTests(TestCaseBase):
             _schema.schema().verify_retval(
                 vdsmapi.MethodRep('Host', 'getCapabilities'), ret)
 
-        self.assertIn('My caps', e.exception.message)
+        self.assertIn('My caps', str(e.exception))
 
     def test_unknown_param(self):
         params = {u"storagepoolID": u"00000002-0002-0002-0002-0000000000f6",
@@ -94,7 +94,7 @@ class DataVerificationTests(TestCaseBase):
             _schema.schema().verify_args(
                 vdsmapi.MethodRep('StorageDomain', 'detach'), params)
 
-        self.assertIn('onlyForce', e.exception.message)
+        self.assertIn('onlyForce', str(e.exception))
 
     def test_wrong_param_type(self):
         params = {u"storagepoolID": u"00000000-0000-0000-0000-000000000000",
@@ -109,7 +109,7 @@ class DataVerificationTests(TestCaseBase):
                 vdsmapi.MethodRep('StoragePool', 'disconnectStorageServer'),
                 params)
 
-        self.assertIn('StorageDomainType', e.exception.message)
+        self.assertIn('StorageDomainType', str(e.exception))
 
     def test_list_ret(self):
         ret = [{u"status": 0, u"id": u"f6de012c-be35-47cb-94fb-f01074a5f9ef"}]
