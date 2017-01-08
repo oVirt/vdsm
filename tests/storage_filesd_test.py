@@ -30,7 +30,6 @@ from testlib import VdsmTestCase as TestCaseBase
 from testlib import expandPermutations
 from testlib import namedTemporaryDir
 from testlib import permutations
-from testValidation import xfail
 
 from vdsm.storage import fileUtils
 from vdsm.storage import outOfProcess as oop
@@ -221,7 +220,6 @@ class TestScanDomains(TestCaseBase):
                             for domain in domains[sd_type]])
             self.assertEqual(set(fileSD.scanDomains(scan_pattern)), expected)
 
-    @xfail("IPV6 addresses are not supported yet")
     def test_nfs_with_IPV6_address(self):
         with fake_repo() as repo:
             nfs_sd = add_filesd(repo, "[201::1]:/path", str(uuid.uuid4()))
