@@ -176,7 +176,7 @@ def thread(func, args=(), kwargs=None, name=None, daemon=True, log=None):
     if log is None:
         log = logging.getLogger()
 
-    @utils.traceback(on=log.name)
+    @utils.traceback(log=log)
     def run():
         pthread_name = threading.current_thread().name
         pthread.setname(pthread_name[:15])

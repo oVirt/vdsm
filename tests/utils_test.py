@@ -20,7 +20,6 @@
 
 from __future__ import print_function
 import collections
-import contextlib
 import copy
 import cpopen
 import errno
@@ -519,62 +518,18 @@ class TestCallbackChain(TestCaseBase):
         chain.join()
 
 
-@contextlib.contextmanager
-def loghandler(handler, logger=""):
-    log = logging.getLogger(logger)
-    log.addHandler(handler)
-    try:
-        yield {}
-    finally:
-        log.removeHandler(handler)
-
-
 class TestTraceback(TestCaseBase):
 
-    def __init__(self, *a, **kw):
-        self.record = None
-        super(TestTraceback, self).__init__(*a, **kw)
+    def test_failure(self):
+        log = FakeLogger()
 
-    def testDefaults(self):
-        @utils.traceback()
+        @utils.traceback(log=log, msg="message")
         def fail():
             raise Exception
-        with loghandler(self):
-            self.assertRaises(Exception, fail)
-        self.assertEqual(self.record.name, "root")
-        self.assertTrue(self.record.exc_text is not None)
 
-    def testOn(self):
-        logger = "test"
-
-        @utils.traceback(on=logger)
-        def fail():
-            raise Exception
-        with loghandler(self, logger=logger):
-            self.assertRaises(Exception, fail)
-        self.assertEqual(self.record.name, logger)
-
-    def testMsg(self):
-        @utils.traceback(msg="WAT")
-        def fail():
-            raise Exception
-        with loghandler(self):
-            self.assertRaises(Exception, fail)
-        self.assertEqual(self.record.message, "WAT")
-
-    # Logging handler interface
-
-    level = logging.DEBUG
-
-    def acquire(self):
-        pass
-
-    def release(self):
-        pass
-
-    def handle(self, record):
-        assert self.record is None
-        self.record = record
+        self.assertRaises(Exception, fail)
+        self.assertEqual(log.messages,
+                         [(logging.ERROR, "message", {"exc_info": True})])
 
 
 class TestRollbackContext(TestCaseBase):

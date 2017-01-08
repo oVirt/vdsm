@@ -559,7 +559,7 @@ class JsonRpcServer(object):
                 res = res.value
             return JsonRpcResponse(res, None, req.id)
 
-    @traceback(on=log.name)
+    @traceback(log=log)
     def serve_requests(self):
         while True:
             obj = self._workQueue.get()

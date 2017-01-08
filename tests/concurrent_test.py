@@ -18,10 +18,12 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import time
+import logging
 import random
 import threading
+import time
 
+from fakelib import FakeLogger
 from testlib import VdsmTestCase, expandPermutations, permutations
 from testValidation import slowtest, stresstest
 
@@ -258,3 +260,16 @@ class ThreadTests(VdsmTestCase):
         t.join()
         self.assertEqual(args, self.args)
         self.assertEqual(kwargs, self.kwargs)
+
+    def test_log_traceback_on_failure(self):
+        def run():
+            raise RuntimeError("Threads are evil")
+
+        log = FakeLogger()
+        t = concurrent.thread(run, log=log)
+        t.start()
+        t.join()
+
+        self.assertEqual(log.messages, [
+            (logging.ERROR, "Unhandled exception", {"exc_info": True}),
+        ])
