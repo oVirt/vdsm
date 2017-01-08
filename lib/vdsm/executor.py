@@ -228,6 +228,7 @@ class Executor(object):
         name = "%s/%d" % (self.name, self._worker_id)
         self._worker_id += 1
         worker = _Worker(self, self._scheduler, name)
+        worker.start()
         self._workers.add(worker)
 
 
@@ -249,13 +250,15 @@ class _Worker(object):
         self._task_counter = 0
         self._lock = threading.Lock()
         self._thread = concurrent.thread(self._run, name=name, log=self._log)
-        self._log.debug('Starting worker %s' % name)
-        self._thread.start()
         self._task = None
 
     @property
     def name(self):
         return self._thread.name
+
+    def start(self):
+        self._log.debug('Starting worker %s' % self.name)
+        self._thread.start()
 
     def join(self):
         self._log.debug('Waiting for worker %s', self.name)
