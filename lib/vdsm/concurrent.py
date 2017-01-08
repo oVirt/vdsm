@@ -176,11 +176,17 @@ def thread(func, args=(), kwargs=None, name=None, daemon=True, log=None):
     if log is None:
         log = logging.getLogger()
 
-    @utils.traceback(log=log)
     def run():
-        pthread_name = threading.current_thread().name
-        pthread.setname(pthread_name[:15])
-        return func(*args, **kwargs)
+        thread = threading.current_thread()
+        try:
+            log.debug("START thread %s (func=%s, args=%s, kwargs=%s)",
+                      thread, func, args, kwargs)
+            pthread.setname(thread.name[:15])
+            ret = func(*args, **kwargs)
+            log.debug("FINISH thread %s", thread)
+            return ret
+        except Exception:
+            log.exception("FINISH thread %s failed", thread)
 
     thread = threading.Thread(target=run, name=name)
     thread.daemon = daemon

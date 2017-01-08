@@ -261,7 +261,32 @@ class ThreadTests(VdsmTestCase):
         self.assertEqual(args, self.args)
         self.assertEqual(kwargs, self.kwargs)
 
-    def test_log_traceback_on_failure(self):
+    def test_log_success(self):
+        log = FakeLogger()
+
+        def run():
+            log.debug("Threads are cool")
+
+        t = concurrent.thread(run, log=log)
+        t.start()
+        t.join()
+
+        level, message, kwargs = log.messages[0]
+        self.assertEqual(level, logging.DEBUG)
+        self.assertTrue(message.startswith("START thread"),
+                        "Unxpected message: %s" % message)
+        self.assertEqual(kwargs, {})
+
+        self.assertEqual(log.messages[1],
+                         (logging.DEBUG, "Threads are cool", {}))
+
+        level, message, kwargs = log.messages[2]
+        self.assertEqual(level, logging.DEBUG)
+        self.assertTrue(message.startswith("FINISH thread"),
+                        "Unxpected message: %s" % message)
+        self.assertEqual(kwargs, {})
+
+    def test_log_failure(self):
         def run():
             raise RuntimeError("Threads are evil")
 
@@ -270,6 +295,13 @@ class ThreadTests(VdsmTestCase):
         t.start()
         t.join()
 
-        self.assertEqual(log.messages, [
-            (logging.ERROR, "Unhandled exception", {"exc_info": True}),
-        ])
+        level, message, kwargs = log.messages[0]
+        self.assertEqual(level, logging.DEBUG)
+        self.assertTrue(message.startswith("START thread"),
+                        "Unxpected message: %s" % message)
+
+        level, message, kwargs = log.messages[1]
+        self.assertEqual(level, logging.ERROR)
+        self.assertTrue(message.startswith("FINISH thread"),
+                        "Unxpected message: %s" % message)
+        self.assertEqual(kwargs, {"exc_info": True})
