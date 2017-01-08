@@ -658,7 +658,11 @@ Requires: glusterfs-server >= %{gluster_version}
 Requires: glusterfs-api >= %{gluster_version}
 Requires: glusterfs-geo-replication >= %{gluster_version}
 Requires: python-magic
+%if 0%{?fedora} >= 25
+Requires: python-blivet1
+%else
 Requires: python-blivet
+%endif
 Requires: xfsprogs
 
 %description gluster
