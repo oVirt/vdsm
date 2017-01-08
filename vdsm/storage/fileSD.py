@@ -26,6 +26,7 @@ import glob
 import fnmatch
 import re
 
+from vdsm.compat import glob_escape
 from vdsm.storage import clusterlock
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
@@ -785,8 +786,11 @@ def scanDomains(pattern="*"):
 
     def collectMetaFiles(possibleDomain):
         try:
+            # Since glob treats values between brackets as character ranges,
+            # and since IPV6 addresses contain brackets, we should escape the
+            # possibleDomain that we pass to glob.
             metaFiles = oop.getProcessPool(possibleDomain).glob.glob(
-                os.path.join(possibleDomain,
+                os.path.join(glob_escape(possibleDomain),
                              constants.UUID_GLOB_PATTERN,
                              sd.DOMAIN_META_DATA))
 
