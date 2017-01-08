@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import logging
 from vdsm import schedule
 
 
@@ -29,3 +30,33 @@ class FakeScheduler(object):
     def schedule(self, delay, callable):
         self.calls.append((delay, callable))
         return schedule.ScheduledCall(delay, callable)
+
+
+class FakeLogger(object):
+
+    def __init__(self, level=logging.DEBUG):
+        self.level = level
+        self.messages = []
+
+    def log(self, level, fmt, *args, **kwargs):
+        if self.isEnabledFor(level):
+            # Will fail if fmt does not match args
+            self.messages.append((level, fmt % args, kwargs))
+
+    def debug(self, fmt, *args):
+        self.log(logging.DEBUG, fmt, *args)
+
+    def info(self, fmt, *args):
+        self.log(logging.INFO, fmt, *args)
+
+    def warning(self, fmt, *args):
+        self.log(logging.WARNING, fmt, *args)
+
+    def error(self, fmt, *args):
+        self.log(logging.ERROR, fmt, *args)
+
+    def exception(self, fmt, *args):
+        self.log(logging.ERROR, fmt, *args, exc_info=True)
+
+    def isEnabledFor(self, level):
+        return level >= self.level
