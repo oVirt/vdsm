@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,12 +19,14 @@
 #
 from __future__ import absolute_import
 
+import datetime
 import grp
 import logging
 import logging.handlers
 import os
 import pwd
 import sys
+from dateutil import tz
 from functools import wraps
 from inspect import ismethod
 
@@ -206,6 +208,24 @@ class UserGroupEnforcingHandler(logging.handlers.WatchedFileHandler):
             raise RuntimeError(
                 "Attempt to open log with incorrect credentials")
         return logging.handlers.WatchedFileHandler._open(self)
+
+
+class TimezoneFormatter(logging.Formatter):
+    def converter(self, timestamp):
+        return datetime.datetime.fromtimestamp(timestamp,
+                                               tz.tzlocal())
+
+    def formatTime(self, record, datefmt=None):
+        ct = self.converter(record.created)
+        if datefmt:
+            s = ct.strftime(datefmt, ct)
+        else:
+            s = "%s,%03d%s" % (
+                ct.strftime('%Y-%m-%d %H:%M:%S'),
+                record.msecs,
+                ct.strftime('%z')
+            )
+        return s
 
 
 class Suppressed(object):

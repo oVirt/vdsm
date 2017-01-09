@@ -20,6 +20,7 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     psmisc \
     python-blivet \
     python-cpopen \
+    python-dateutil \
     python-decorator \
     python-devel \
     python-inotify \

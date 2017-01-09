@@ -13,6 +13,7 @@ policycoreutils-python
 PyYAML
 python-blivet
 python-coverage
+python-dateutil
 python-decorator
 python-devel
 python-inotify
