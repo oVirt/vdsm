@@ -22,5 +22,5 @@ vdsmdevparsingtestsdir = ${vdsmtestsdir}/devices/parsing
 
 dist_vdsmdevparsingtests_PYTHON = \
 	__init__.py \
-	complex_vm_tests.py \
+	complex_vm_test.py \
 	$(NULL)

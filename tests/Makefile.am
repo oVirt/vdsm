@@ -38,74 +38,74 @@ common_modules = common/*_test.py
 containers_modules = containers/*_test.py
 
 device_modules = \
-	devices/parsing/complex_vm_tests.py \
+	devices/parsing/complex_vm_test.py \
 	$(NULL)
 
 network_modules = network/*_test.py
 
 test_modules = \
 	API_test.py \
-	alignmentScanTests.py \
+	alignmentscan_test.py \
 	api_response_test.py \
-	bridgeTests.py \
+	bridge_test.py \
 	bulk_sampling_test.py \
-	capsTests.py \
-	clientifTests.py \
-	cmdutilsTests.py \
+	caps_test.py \
+	clientif_test.py \
+	cmdutils_test.py \
 	commands_test.py \
-	concurrentTests.py \
+	concurrent_test.py \
 	config_test.py \
 	containersconnection_test.py \
 	cpu_profile_test.py \
 	cpuinfo_test.py \
-	deviceTests.py \
-	domainDescriptorTests.py \
-	encodingTests.py \
+	device_test.py \
+	domaindescriptor_test.py \
+	encoding_test.py \
 	exception_test.py \
-	executorTests.py \
+	executor_test.py \
 	eventfd_test.py \
 	fakesanlock_test.py \
 	filecontrol_test.py \
-	fuserTests.py \
-	gluster_cli_tests.py \
+	fuser_test.py \
+	gluster_cli_test.py \
 	gluster_exception_test.py \
 	glusterTestData.py \
-	guestagentTests.py \
-	hooksTests.py \
-	hostdevTests.py \
-	hoststatsTests.py \
+	guestagent_test.py \
+	hooks_test.py \
+	hostdev_test.py \
+	hoststats_test.py \
 	hwinfo_test.py \
-	jobsTests.py \
-	libvirtconnectionTests.py \
+	jobs_test.py \
+	libvirtconnection_test.py \
 	logutils_test.py \
-	mkimageTests.py \
+	mkimage_test.py \
 	modprobe.py \
 	moduleloader_test.py \
-	monkeypatchTests.py \
-	momTests.py \
-	momPolicyTests.py \
-	numaUtilsTests.py \
+	monkeypatch_test.py \
+	mom_test.py \
+	mompolicy_test.py \
+	numautils_test.py \
 	osinfo_test.py \
 	osutils_test.py \
-	passwordsTests.py \
-	periodicTests.py \
-	permutationTests.py \
+	passwords_test.py \
+	periodic_test.py \
+	permutation_test.py \
 	properties_test.py \
-	protocoldetectorTests.py \
-	pthreadTests.py \
+	protocoldetector_test.py \
+	pthread_test.py \
 	qemuimg_test.py \
-	responseTests.py \
+	response_test.py \
 	rngsources_test.py \
-	samplingTests.py \
-	scheduleTests.py \
-	schemaValidationTest.py \
+	sampling_test.py \
+	schedule_test.py \
+	schemavalidation_test.py \
 	sigutils_test.py \
-	sparsifyTests.py \
-	sslTests.py \
-	stompAdapterTests.py \
-	stompAsyncClientTests.py \
-	stompAsyncDispatcherTests.py \
-	stompTests.py \
+	sparsify_test.py \
+	ssl_test.py \
+	stompadapter_test.py \
+	stompasyncclient_test.py \
+	stompasyncdispatcher_test.py \
+	stomp_test.py \
 	storage_asyncevent_test.py \
 	storage_blkdiscard_test.py \
 	storage_blocksd_test.py \
@@ -134,7 +134,7 @@ test_modules = \
 	storage_sdm_amend_volume_test.py \
 	storage_sdm_copy_data_test.py \
 	storage_sdm_create_volume_test.py \
-	storage_sdm_indirection_tests.py \
+	storage_sdm_indirection_test.py \
 	storage_sdm_merge_test.py \
 	storage_sdm_update_volume_test.py \
 	storage_securable_test.py \
@@ -145,73 +145,74 @@ test_modules = \
 	storage_volume_test.py \
 	storage_workarounds_test.py \
 	storage_xlease_test.py \
-	tasksetTests.py \
-	testlibTests.py \
-	toolTests.py \
-	toolBondingTests.py \
-	transportWrapperTests.py \
+	taskset_test.py \
+	testlib_test.py \
+	tool_test.py \
+	toolbonding_test.py \
+	transportwrapper_test.py \
 	throttledlog_test.py \
 	unicode_test.py \
 	utils_test.py \
-	vdscliTests.py \
-	vdsClientTests.py \
+	vdscli_test.py \
+	vdsclient_test.py \
 	vdsmapi_test.py \
-	vdsmDumpChainsTests.py \
+	vdsmdumpchains_test.py \
 	verify.py \
-	vmApiTests.py \
-	vmfakelibTests.py \
-	vmLeaseTests.py \
-	vmMigrationTests.py \
-	vmOperationsTests.py \
-	vmRecoveryTests.py \
-	vmSecretTests.py \
-	vmStatsTests.py \
-	vmStorageTests.py \
-	vmTests.py \
+	vmapi_test.py \
+	vmfakelib_test.py \
+	vmlease_test.py \
+	vmmigration_test.py \
+	vmoperations_test.py \
+	vmrecovery_test.py \
+	vmsecret_test.py \
+	vmstats_test.py \
+	vmstorage_test.py \
+	vm_test.py \
 	vmTestsData.py \
-	vmUtilsTests.py \
-	vmXmlTests.py \
-	v2vTests.py \
+	vmutils_test.py \
+	vmxml_test.py \
+	v2v_test.py \
 	zombiereaper_test.py \
 	$(NULL)
 
 blacklist_modules_python3 = \
 	API_test.py \
-	alignmentScanTests.py \
-	bridgeTests.py \
-	clientifTests.py \
-	deviceTests.py \
-	devices/parsing/complex_vm_tests.py \
-	encodingTests.py \
-	guestagentTests.py \
-	hooksTests.py \
-	hostdevTests.py \
-	hoststatsTests.py \
-	mkimageTests.py \
-	momPolicyTests.py \
-	momTests.py \
-	monkeypatchTests.py \
+	alignmentscan_test.py \
+	bridge_test.py \
+	clientif_test.py \
+	device_test.py \
+	devices/parsing/complex_vm_test.py \
+	encoding_test.py \
+	guestagent_test.py \
+	hooks_test.py \
+	hostdev_test.py \
+	hoststats_test.py \
+	mkimage_test.py \
+	mompolicy_test.py \
+	mom_test.py \
+	monkeypatch_test.py \
 	network/ip_address_test.py \
 	network/iproute2_test.py \
 	network/ipwrapper_test.py \
 	network/link_bond_test.py \
 	network/link_iface_test.py \
+	network/models_test.py \
 	network/netlink_test.py \
 	network/netinfo_test.py \
 	network/ovs_driver_test.py \
 	network/ovs_info_test.py \
 	network/tc_test.py \
 	network/unified_persistence_test.py \
-	numaUtilsTests.py \
-	periodicTests.py \
-	protocoldetectorTests.py \
+	numautils_test.py \
+	periodic_test.py \
+	protocoldetector_test.py \
 	qemuimg_test.py \
-	samplingTests.py \
-	schemaValidationTest.py \
-	stompAdapterTests.py \
-	stompAsyncClientTests.py \
-	stompAsyncDispatcherTests.py \
-	stompTests.py \
+	sampling_test.py \
+	schemavalidation_test.py \
+	stompadapter_test.py \
+	stompasyncclient_test.py \
+	stompasyncdispatcher_test.py \
+	stomp_test.py \
 	storage_blkdiscard_test.py \
 	storage_blocksd_test.py \
 	storage_blockvolume_test.py \
@@ -235,7 +236,7 @@ blacklist_modules_python3 = \
 	storage_sdm_amend_volume_test.py \
 	storage_sdm_copy_data_test.py \
 	storage_sdm_create_volume_test.py \
-	storage_sdm_indirection_tests.py \
+	storage_sdm_indirection_test.py \
 	storage_sdm_merge_test.py \
 	storage_sdm_update_volume_test.py \
 	storage_storageserver_test.py \
@@ -244,21 +245,21 @@ blacklist_modules_python3 = \
 	storage_volume_metadata_test.py \
 	storage_volume_test.py \
 	storage_workarounds_test.py \
-	toolBondingTests.py \
+	toolbonding_test.py \
 	unicode_test.py \
 	utils_test.py \
-	v2vTests.py \
-	vdscliTests.py \
-	vmApiTests.py \
-	vmMigrationTests.py \
-	vmOperationsTests.py \
-	vmRecoveryTests.py \
-	vmSecretTests.py \
-	vmStorageTests.py \
-	vmTests.py \
-	vmUtilsTests.py \
-	vmXmlTests.py \
-	vmfakelibTests.py \
+	v2v_test.py \
+	vdscli_test.py \
+	vmapi_test.py \
+	vmmigration_test.py \
+	vmoperations_test.py \
+	vmrecovery_test.py \
+	vmsecret_test.py \
+	vmstorage_test.py \
+	vm_test.py \
+	vmutils_test.py \
+	vmxml_test.py \
+	vmfakelib_test.py \
 	$(NULL)
 
 CLEANFILES = \

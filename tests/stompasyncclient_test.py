@@ -21,7 +21,9 @@ from uuid import uuid4
 
 from testlib import VdsmTestCase as TestCaseBase
 from yajsonrpc.stomp import AsyncClient, Command, Frame, Headers, StompError
-from stompAdapterTests import TestSubscription
+
+# TODO: Fix this bad import, test modules are not libraries.
+from stompadapter_test import TestSubscription
 
 
 class AsyncClientTest(TestCaseBase):
