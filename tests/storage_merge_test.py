@@ -25,9 +25,11 @@ from functools import partial
 
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeResourceManager
-from storagetestlib import fake_env
 from storagefakelib import fake_guarded_context
+from storagetestlib import fake_env
 from storagetestlib import make_qemu_chain
+from storagetestlib import qemu_pattern_verify
+from storagetestlib import qemu_pattern_write
 from testValidation import brokentest
 from testlib import make_uuid
 from testlib import expandPermutations, permutations
@@ -393,3 +395,39 @@ class TestFinalizeMerge(VdsmTestCase):
                              new_chain)
 
             self.assertEqual(base_vol.getLegality(), sc.LEGAL_VOL)
+
+    @permutations([
+        # base_fmt
+        ('raw',),
+        ('cow',),
+    ])
+    def test_chain_after_finalize(self, base_fmt):
+        with self.make_env(format=base_fmt, chain_len=3) as env:
+            base_vol = env.chain[0]
+            base_vol.setLegality(sc.ILLEGAL_VOL)
+            # We write data to the base and will read it from the child volume
+            # to verify that the chain is valid after qemu-rebase.
+            offset = 0
+            pattern = 0xf0
+            length = 1024
+            qemu_pattern_write(base_vol.volumePath,
+                               sc.fmt2str(base_vol.getFormat()),
+                               offset=offset,
+                               len=length, pattern=pattern)
+
+            top_vol = env.chain[1]
+            child_vol = env.chain[2]
+
+            subchain_info = dict(sd_id=base_vol.sdUUID,
+                                 img_id=base_vol.imgUUID,
+                                 base_id=base_vol.volUUID,
+                                 top_id=top_vol.volUUID,
+                                 base_generation=0)
+            subchain = merge.SubchainInfo(subchain_info, 0)
+
+            merge.finalize(subchain)
+
+            qemu_pattern_verify(child_vol.volumePath,
+                                sc.fmt2str(child_vol.getFormat()),
+                                offset=offset,
+                                len=length, pattern=pattern)
