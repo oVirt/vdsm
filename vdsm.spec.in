@@ -62,6 +62,7 @@ BuildRequires: openssl
 BuildRequires: python
 BuildRequires: python-cpopen
 BuildRequires: python-six >= 1.9.0
+BuildRequires: python-dateutil
 BuildRequires: python2-devel
 BuildRequires: PyYAML
 BuildRequires: rpm-build
@@ -96,6 +97,7 @@ Requires: xz
 Requires: ntp
 Requires: iproute >= 3.10.0
 Requires: PyYAML
+Requires: python-dateutil
 Requires: python-netaddr
 Requires: python-inotify
 Requires: python-cpopen >= 1.4

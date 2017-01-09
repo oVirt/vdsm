@@ -11,6 +11,7 @@ openvswitch
 policycoreutils-python
 python-blivet
 python-coverage
+python-dateutil
 python-decorator
 python-devel
 python-inotify

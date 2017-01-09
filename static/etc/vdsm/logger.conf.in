@@ -80,6 +80,7 @@ format: %(message)s
 
 [formatter_long]
 format: %(asctime)s %(levelname)-5s (%(threadName)s) [%(name)s] %(message)s (%(module)s:%(lineno)d)
+class: vdsm.logUtils.TimezoneFormatter
 
 [formatter_sysform]
 format= vdsm %(name)s %(levelname)s %(message)s

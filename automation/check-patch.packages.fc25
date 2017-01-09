@@ -17,6 +17,8 @@ PyYAML
 python-blivet1
 python-coverage
 python2-decorator
+python2-dateutil
+python3-dateutil
 python-devel
 python-inotify
 python-ioprocess
