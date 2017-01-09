@@ -193,7 +193,7 @@ Requires: systemd >= 209
 %endif
 
 %if 0%{?rhel}
-Requires: qemu-kvm-rhev >= 10:2.6.0-2
+Requires: qemu-kvm-rhev >= 10:2.6.0-28.el7_3.3
 %else # fedora
 Requires: qemu-kvm >= 2:2.7.0-7
 %endif
