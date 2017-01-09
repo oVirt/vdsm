@@ -526,15 +526,6 @@ BuildArch:      noarch
 %description hook-openstacknet
 Hook for OpenStack Network vNICs.
 
-%package hook-ovs
-Summary:        Open vSwitch support for VDSM
-BuildArch:      noarch
-Requires:       %{name} = %{version}-%{release}
-Requires:       openvswitch >= 2.0.0
-
-%description hook-ovs
-Hook for Open vSwitch support.
-
 %package hook-pincpu
 Summary:        Hook pin VM so specific CPUs
 BuildArch:      noarch
@@ -1387,27 +1378,6 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_migrate_destination/openstacknet_utils.py*
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/openstacknet_utils.py*
-
-%files hook-ovs
-%{_sysconfdir}/sudoers.d/50_vdsm_hook_ovs
-%{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/50_ovs
-%{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/ovs_utils.py*
-%{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/50_ovs
-%{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/ovs_utils.py*
-%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_ovs
-%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/ovs_utils.py*
-%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_ovs
-%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/ovs_utils.py*
-%{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_ovs
-%{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/ovs_setup_ip.py*
-%{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/ovs_setup_libvirt.py*
-%{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/ovs_setup_mtu.py*
-%{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/ovs_setup_ovs.py*
-%{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/ovs_utils.py*
-%{_libexecdir}/%{vdsm_name}/hooks/after_network_setup/50_ovs
-%{_libexecdir}/%{vdsm_name}/hooks/after_network_setup/ovs_utils.py*
-%{_libexecdir}/%{vdsm_name}/hooks/after_network_setup_fail/50_ovs
-%{_libexecdir}/%{vdsm_name}/hooks/after_network_setup_fail/ovs_utils.py*
 
 %files hook-macspoof
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macspoof
