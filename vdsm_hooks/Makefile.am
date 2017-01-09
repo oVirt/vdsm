@@ -24,7 +24,6 @@ SUBDIRS = \
 	ipv6 \
 	macspoof \
 	openstacknet \
-	ovs \
 	qemucmdline \
 	vhostmd \
 	vmfex_dev

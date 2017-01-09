@@ -1,3 +1,0 @@
-vdsm  ALL=(ALL) NOPASSWD: /sbin/ip
-vdsm  ALL=(ALL) NOPASSWD: /usr/sbin/ovs-vsctl, /usr/bin/ovs-vsctl
-vdsm  ALL=(ALL) NOPASSWD: /usr/sbin/ovs-appctl, /usr/bin/ovs-appctl
