@@ -247,7 +247,7 @@ def _update_qemu_metadata(dom, subchain):
                        backing=volume.getBackingVolumePath(subchain.img_id,
                                                            subchain.base_id),
                        format=qemuimg.FORMAT.QCOW2,
-                       backingFormat=qemuimg.FORMAT.QCOW2,
+                       backingFormat=sc.fmt2str(subchain.base_vol.getFormat()),
                        unsafe=True)
 
 
