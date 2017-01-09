@@ -121,6 +121,11 @@ ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %changelog
+* Mon Jan 9 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.4.0
+- Make sure to match host properly
+- Add cause exception upon re-throwing IOException in ReactorClient
+- Frame split when using multiple hosts
+
 * Fri Dec 2 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.3.5
 - stop processing if closing
 
