@@ -19,8 +19,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from virt.domain_descriptor import DomainDescriptor
-from testlib import VdsmTestCase, permutations, expandPermutations
+from virt.domain_descriptor import DomainDescriptor, MutableDomainDescriptor
+from testlib import VdsmTestCase, XMLTestCase, permutations, expandPermutations
 
 
 NO_DEVICES = """
@@ -92,7 +92,7 @@ class DevicesHashTests(VdsmTestCase):
 
 
 @expandPermutations
-class DomainDescriptorTests(VdsmTestCase):
+class DomainDescriptorTests(XMLTestCase):
 
     @permutations([[NO_DEVICES, None],
                    [EMPTY_DEVICES, None],
@@ -100,3 +100,14 @@ class DomainDescriptorTests(VdsmTestCase):
     def test_memory_size(self, domain_xml, result):
         desc = DomainDescriptor(domain_xml)
         self.assertEqual(desc.get_memory_size(), result)
+
+    def test_xml(self):
+        desc = DomainDescriptor(SOME_DEVICES)
+        self.assertXMLEqual(desc.xml, SOME_DEVICES)
+
+
+class MutableDomainDescriptorTests(XMLTestCase):
+
+    def test_xml(self):
+        desc = MutableDomainDescriptor(SOME_DEVICES)
+        self.assertXMLEqual(desc.xml, SOME_DEVICES)

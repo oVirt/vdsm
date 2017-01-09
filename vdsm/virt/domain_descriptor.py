@@ -31,7 +31,7 @@ class MutableDomainDescriptor(object):
 
     @property
     def xml(self):
-        return vmxml.parse_xml(self._dom)
+        return vmxml.format_xml(self._dom)
 
     @property
     def devices(self):
