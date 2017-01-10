@@ -588,24 +588,35 @@ class Memory(Base):
 
     @classmethod
     def update_device_info(cls, vm, device_conf):
-        for x in vm.domain.get_device_elements('memory'):
-            alias = vmxml.find_attr(x, 'alias', 'name')
-            # Get device address
-            address = vmxml.device_address(x)
-
-            for mem in device_conf:
-                if not hasattr(mem, 'address') or not hasattr(mem, 'alias'):
-                    mem.alias = alias
-                    mem.address = address
-                    break
-            # Update vm's conf with address
-            for dev in vm.conf['devices']:
-                if ((dev['type'] == hwclass.MEMORY) and
-                        (not dev.get('address') or not dev.get('alias'))):
-                    dev['address'] = address
-                    dev['alias'] = alias
-                    break
-            vm.conf['memSize'] = vm.domain.get_memory_size()
+        conf_aliases = frozenset([getattr(conf, 'alias')
+                                  for conf in device_conf
+                                  if hasattr(conf, 'alias')])
+        dev_aliases = frozenset([dev['alias']
+                                 for dev in vm.conf['devices']
+                                 if 'alias' in dev])
+        for element in vm.domain.get_device_elements('memory'):
+            alias = vmxml.find_attr(element, 'alias', 'name')
+            address = vmxml.device_address(element)
+            node = int(vmxml.text(vmxml.find_first(element, 'node')))
+            size = int(vmxml.text(vmxml.find_first(element, 'size')))
+            if alias not in conf_aliases:
+                for conf in device_conf:
+                    if not hasattr(conf, 'alias') and \
+                       conf.node == node and \
+                       conf.size == size:
+                        conf.address = address
+                        conf.alias = alias
+                        break
+            if alias not in dev_aliases:
+                for dev in vm.conf['devices']:
+                    if dev['type'] == hwclass.MEMORY and \
+                       dev.get('alias') is None and \
+                       dev.get('node') == node and \
+                       dev.get('size', 0) * 1024 == size:
+                        dev['address'] = address
+                        dev['alias'] = alias
+                        break
+        vm.conf['memSize'] = vm.domain.get_memory_size()
 
     def getXML(self):
         """
