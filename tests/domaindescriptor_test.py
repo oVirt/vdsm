@@ -101,13 +101,15 @@ class DomainDescriptorTests(XMLTestCase):
         desc = DomainDescriptor(domain_xml)
         self.assertEqual(desc.get_memory_size(), result)
 
-    def test_xml(self):
-        desc = DomainDescriptor(SOME_DEVICES)
+    @permutations([[DomainDescriptor], [MutableDomainDescriptor]])
+    def test_xml(self, descriptor):
+        desc = descriptor(SOME_DEVICES)
         self.assertXMLEqual(desc.xml, SOME_DEVICES)
 
-
-class MutableDomainDescriptorTests(XMLTestCase):
-
-    def test_xml(self):
-        desc = MutableDomainDescriptor(SOME_DEVICES)
-        self.assertXMLEqual(desc.xml, SOME_DEVICES)
+    @permutations([[DomainDescriptor, 'device', 2],
+                   [DomainDescriptor, 'nonexistent', 0],
+                   [MutableDomainDescriptor, 'device', 2],
+                   [MutableDomainDescriptor, 'nonexistent', 0]])
+    def test_device_elements(self, descriptor, tag, result):
+        desc = descriptor(SOME_DEVICES)
+        self.assertEqual(len(list(desc.get_device_elements(tag))), result)
