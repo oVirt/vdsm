@@ -12,7 +12,7 @@ except:
     from six.moves import configparser
     config = configparser.ConfigParser()
 
-(dummy, fname, section, item, value) = sys.argv
+(_, fname, section, item, value) = sys.argv
 config.read(fname)
 if not config.has_section(section):
     config.add_section(section)
