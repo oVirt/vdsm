@@ -36,6 +36,7 @@ from storagetestlib import ChainVerificationError
 
 from storage import blockSD, fileSD, fileVolume, sd
 
+from vdsm import cmdutils
 from vdsm import qemuimg
 from vdsm import utils
 from vdsm.storage import constants as sc
@@ -284,6 +285,40 @@ class QemuPatternVerificationTest(VdsmTestCase):
             write_qemu_chain(bad_list)
             self.assertRaises(ChainVerificationError,
                               verify_qemu_chain, vol_list)
+
+    @permutations([(qemuimg.FORMAT.QCOW2,), (qemuimg.FORMAT.RAW,)])
+    def test_read_missing_file_raises(self, format):
+        with self.assertRaises(cmdutils.Error):
+            qemu_pattern_verify("/no/such/file", format)
+
+    def test_read_wrong_format_raises(self):
+        with namedTemporaryDir() as tmpdir:
+            path = os.path.join(tmpdir, "test.qcow2")
+            qemuimg.create(path, "1m", qemuimg.FORMAT.RAW)
+            with self.assertRaises(cmdutils.Error):
+                qemu_pattern_verify(path, qemuimg.FORMAT.QCOW2)
+
+    def test_read_bad_chain_raises(self):
+        with namedTemporaryDir() as tmpdir:
+            # Create a good chain.
+            base_qcow2 = os.path.join(tmpdir, "base.qcow2")
+            qemuimg.create(base_qcow2, "1m", qemuimg.FORMAT.QCOW2)
+            top = os.path.join(tmpdir, "top.qcow2")
+            qemuimg.create(top, "1m", qemuimg.FORMAT.QCOW2, backing=base_qcow2,
+                           backingFormat=qemuimg.FORMAT.QCOW2)
+
+            # Create a broken chain using unsafe rebase with the wrong backing
+            # format.
+            base_raw = os.path.join(tmpdir, "base.raw")
+            qemuimg.create(base_raw, "1m", qemuimg.FORMAT.RAW)
+            qemuimg.rebase(top,
+                           backing=base_raw,
+                           format=qemuimg.FORMAT.QCOW2,
+                           backingFormat=qemuimg.FORMAT.QCOW2,
+                           unsafe=True)
+
+            with self.assertRaises(cmdutils.Error):
+                qemu_pattern_verify(top, qemuimg.FORMAT.QCOW2)
 
 
 def set_domain_metaparams(manifest, params):
