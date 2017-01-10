@@ -1339,6 +1339,18 @@ class Global(APIBase):
         return dict(status=doneCode)
 
     # VM-related functions
+    def dumpxmls(self, vmList=()):
+        """
+        Return a map of VM UUID to libvirt's domain XML.
+        It is conceptually equivalent to calling 'dumpxml' for each VM.
+
+        :param vmList: UUIDs of VMs to return the domain XML for.
+        :type vmList: list
+        """
+        domxmls = {vmId: self._cif.vmContainer[vmId].domain.xml
+                   for vmId in vmList}
+        return response.success(domxmls=domxmls)
+
     def getVMList(self, fullStatus=False, vmList=(), onlyUUID=False):
         """ return a list of known VMs with full (or partial) config each """
         # To improve complexity, convert 'vms' to set(vms)

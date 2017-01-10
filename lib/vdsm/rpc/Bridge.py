@@ -351,6 +351,7 @@ command_info = {
     'Host_getStorageDomains': {'ret': 'domlist'},
     'Host_getStorageRepoStats': {'ret': Host_getStorageRepoStats_Ret},
     'Host_hostdevListByCaps': {'ret': 'deviceList'},
+    'Host_dumpxmls': {'ret': 'domxmls'},
     'Host_getVMList': {'call': Host_getVMList_Call, 'ret': 'vmList'},
     'Host_getVMFullList': {'call': Host_getVMFullList_Call, 'ret': 'vmList'},
     'Host_getAllVmStats': {'ret': 'statsList'},

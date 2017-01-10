@@ -8017,6 +8017,20 @@ Host.getVMList:
         type:
         - *VmInfo
 
+Host.dumpxmls:
+    added: '4.2'
+    description: Get Libvirt domain XML of the given VMs.
+    params:
+    -   defaultvalue: ()
+        description: A list of VM UUIDs to return domain XMLs for.
+        name: vmList
+        type:
+        - *UUID
+    return:
+        description: A map of VM UUID to of domain XML.
+        type:
+        - *StringMap
+
 Host.getExternalVMs:
     added: '3.6'
     description: Get information about the not-KVM virtual machines.
