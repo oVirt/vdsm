@@ -244,7 +244,8 @@ def _update_qemu_metadata(dom, subchain):
                  "volume %s",
                  child.volUUID, subchain.base_vol.volUUID)
         qemuimg.rebase(image=child.volumePath,
-                       backing=subchain.base_vol.volumePath,
+                       backing=volume.getBackingVolumePath(subchain.img_id,
+                                                           subchain.base_id),
                        format=qemuimg.FORMAT.QCOW2,
                        backingFormat=qemuimg.FORMAT.QCOW2,
                        unsafe=True)
