@@ -46,7 +46,7 @@ class AsyncClientTest(TestCaseBase):
                          sub_id=id)
 
         req_frame = client.pop_message()
-        self.assertTrue(len(client._subscriptions) == 1)
+        self.assertEqual(len(client._subscriptions), 1)
         self.assertEqual(req_frame.command, Command.SUBSCRIBE)
         self.assertEqual(req_frame.headers['destination'], 'jms.queue.events')
         self.assertEqual(req_frame.headers['id'], id)
@@ -59,7 +59,7 @@ class AsyncClientTest(TestCaseBase):
                                         ack='client',
                                         sub_id=str(uuid4()))
         client.unsubscribe(subscription)
-        self.assertTrue(len(client._subscriptions) == 0)
+        self.assertEqual(len(client._subscriptions), 0)
 
     def test_unsubscribe_with_different_id(self):
         client = AsyncClient()
@@ -73,7 +73,7 @@ class AsyncClientTest(TestCaseBase):
         client.unsubscribe(TestSubscription('jms.queue.events',
                                             'ad052acb-a934-4e10-8ec3'))
 
-        self.assertTrue(len(client._subscriptions) == 1)
+        self.assertEqual(len(client._subscriptions), 1)
         self.assertFalse(client.has_outgoing_messages)
 
     def test_send(self):

@@ -201,8 +201,8 @@ class UnsubscribeFrameTest(TestCaseBase):
         adapter._sub_ids['ad052acb-a934-4e10-8ec3-00c7417ef8d1'] = subscription
         adapter.handle_frame(TestDispatcher(adapter), frame)
 
-        self.assertTrue(len(adapter._sub_ids) == 0)
-        self.assertTrue(len(destinations) == 0)
+        self.assertEqual(len(adapter._sub_ids), 0)
+        self.assertEqual(len(destinations), 0)
 
     def test_multipe_subscriptions(self):
         frame = Frame(Command.UNSUBSCRIBE,
@@ -221,8 +221,8 @@ class UnsubscribeFrameTest(TestCaseBase):
         adapter._sub_ids['ad052acb-a934-4e10-8ec3-00c7417ef8d1'] = subscription
         adapter.handle_frame(TestDispatcher(adapter), frame)
 
-        self.assertTrue(len(adapter._sub_ids) == 0)
-        self.assertTrue(len(destinations) == 1)
+        self.assertEqual(len(adapter._sub_ids), 0)
+        self.assertEqual(len(destinations), 1)
         self.assertEqual(destinations['jms.queue.events'], [subscription2])
 
     def test_no_id(self):
@@ -258,7 +258,7 @@ class SendFrameTest(TestCaseBase):
         self.assertIsNot(data, None)
         request = JsonRpcRequest.decode(data)
         self.assertEqual(request.method, 'Host.getAllVmStats')
-        self.assertTrue(len(ids) == 1)
+        self.assertEqual(len(ids), 1)
 
     def test_send_legacy(self):
         dest = SUBSCRIPTION_ID_REQUEST
@@ -281,7 +281,7 @@ class SendFrameTest(TestCaseBase):
         self.assertIsNot(data, None)
         request = JsonRpcRequest.decode(data)
         self.assertEqual(request.method, 'Host.getAllVmStats')
-        self.assertTrue(len(ids) == 1)
+        self.assertEqual(len(ids), 1)
 
     def test_send_no_destination(self):
         frame = Frame(Command.SEND,
@@ -314,7 +314,7 @@ class SendFrameTest(TestCaseBase):
 
         data = adapter.pop_message()
         self.assertIsNot(data, None)
-        self.assertTrue(len(ids) == 2)
+        self.assertEqual(len(ids), 2)
 
     def test_send_broker(self):
         frame = Frame(command=Command.SEND,

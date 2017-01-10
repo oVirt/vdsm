@@ -145,7 +145,7 @@ class TestVmDevices(XMLTestCase):
                    {'type': 'graphics', 'device': secondary}]
         with fake.VM(self.conf, devices) as testvm:
             devs = testvm._devSpecMapFromConf()
-            self.assertTrue(len(devs['graphics']) == 2)
+            self.assertEqual(len(devs['graphics']), 2)
 
     @permutations([['vnc'], ['spice']])
     def testGraphicsDeviceDuplicated(self, devType):
