@@ -376,7 +376,9 @@ class TestFinalizeMerge(VdsmTestCase):
             if top_vol is not env.chain[-1]:
                 child_vol = env.chain[top_index + 1]
                 info = qemuimg.info(child_vol.volumePath)
-                self.assertEqual(info['backingfile'], base_vol.volumePath)
+                self.assertEqual(info['backingfile'],
+                                 volume.getBackingVolumePath(subchain.img_id,
+                                                             subchain.base_id))
 
             # verify syncVolumeChain arguments
             self.assertEqual(image.Image.syncVolumeChain.sd_id,
