@@ -200,6 +200,7 @@ blacklist_modules_python3 = \
 	network/link_iface_test.py \
 	network/netlink_test.py \
 	network/netinfo_test.py \
+	network/sourceroute_test.py \
 	network/ovs_driver_test.py \
 	network/ovs_info_test.py \
 	network/tc_test.py \

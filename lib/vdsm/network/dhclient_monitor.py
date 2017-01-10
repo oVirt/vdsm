@@ -31,8 +31,7 @@ from vdsm import utils
 from vdsm.network import ifacetracking
 from vdsm.network import libvirt
 
-from .configurators.iproute2 import Iproute2
-from .sourceroute import DynamicSourceRoute
+from . import sourceroute
 
 
 ACTION_KEY = 'action'
@@ -43,7 +42,6 @@ IFACE_KEY = 'iface'
 
 
 MONITOR_FOLDER = P_VDSM_RUN + 'sourceRoutes'
-configurator = Iproute2()
 
 
 def start():
@@ -100,15 +98,13 @@ def _dhcp_configure_action(dhcp_response, device):
     gateway = dhcp_response.get(IPROUTE_KEY)
 
     if ip and mask and gateway not in (None, '0.0.0.0'):
-        sroute = DynamicSourceRoute(device, ip, mask, gateway)
-        configurator.configureSourceRoute(*sroute.requested_config())
+        sourceroute.add(device, ip, mask, gateway)
     else:
         logging.warning('Partial DHCP response %s', dhcp_response)
 
 
 def _dhcp_remove_action(device):
-    sroute = DynamicSourceRoute(device, None, None, None)
-    configurator.removeSourceRoute(*sroute.current_config())
+    sourceroute.remove(device)
 
 
 @utils.traceback()
