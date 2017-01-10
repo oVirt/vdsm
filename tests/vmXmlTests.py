@@ -265,19 +265,24 @@ def run():
 @expandPermutations
 class TestDomainDescriptor(VmXmlTestCase):
 
-    @permutations([[cpuarch.X86_64], [cpuarch.PPC64]])
-    def test_all_channels_vdsm_domain(self, arch):
+    @permutations([[domain_descriptor.DomainDescriptor, cpuarch.X86_64],
+                   [domain_descriptor.DomainDescriptor, cpuarch.PPC64],
+                   [domain_descriptor.MutableDomainDescriptor, cpuarch.X86_64]]
+                  )
+    def test_all_channels_vdsm_domain(self, descriptor, arch):
         for _, dom_xml in self._build_domain_xml(arch):
-            dom = domain_descriptor.DomainDescriptor(dom_xml)
+            dom = descriptor(dom_xml)
             channels = list(dom.all_channels())
             self.assertTrue(len(channels) >=
                             len(vmchannels.AGENT_DEVICE_NAMES))
             for name, path in channels:
                 self.assertIn(name, vmchannels.AGENT_DEVICE_NAMES)
 
-    def test_all_channels_extra_domain(self):
+    @permutations([[domain_descriptor.DomainDescriptor],
+                   [domain_descriptor.MutableDomainDescriptor]])
+    def test_all_channels_extra_domain(self, descriptor):
         for conf, raw_xml in CONF_TO_DOMXML_NO_VDSM:
-            dom = domain_descriptor.DomainDescriptor(raw_xml % conf)
+            dom = descriptor(raw_xml % conf)
             self.assertNotEquals(sorted(dom.all_channels()),
                                  sorted(vmchannels.AGENT_DEVICE_NAMES))
 

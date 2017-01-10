@@ -38,7 +38,7 @@ class MutableDomainDescriptor(object):
         return vmxml.find_first(self._dom, 'devices', None)
 
     def get_device_elements(self, tagName):
-        return vmxml.find_all(self._devices, tagName)
+        return vmxml.find_all(self.devices, tagName)
 
     @property
     def devices_hash(self):
@@ -46,7 +46,7 @@ class MutableDomainDescriptor(object):
         return hash(vmxml.format_xml(devices) if devices is not None else '')
 
     def all_channels(self):
-        for channel in vmxml.find_all(self._devices, 'channel'):
+        for channel in vmxml.find_all(self.devices, 'channel'):
             name = vmxml.find_attr(channel, 'target', 'name')
             path = vmxml.find_attr(channel, 'source', 'path')
             if name and path:
