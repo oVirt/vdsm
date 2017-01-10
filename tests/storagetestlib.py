@@ -296,7 +296,7 @@ def qemu_pattern_verify(path, format, offset=512, len=1024, pattern=5):
     read_cmd = 'read -P %d -s 0 -l %d %d %d' % (pattern, len, offset, len)
     cmd = ['qemu-io', '-f', format, '-c', read_cmd, path]
     rc, out, err = commands.execCmd(cmd, raw=True)
-    if rc != 0:
+    if rc != 0 or err != "":
         raise cmdutils.Error(cmd, rc, out, err)
     if "Pattern verification failed" in out:
         raise ChainVerificationError("Verification of volume %s failed. "
