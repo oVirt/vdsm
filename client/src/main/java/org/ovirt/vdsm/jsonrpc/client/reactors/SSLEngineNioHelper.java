@@ -64,6 +64,10 @@ public class SSLEngineNioHelper {
                     read += result.bytesProduced();
                     retry = false;
                     break;
+                case CLOSED:
+                    read = 0;
+                    retry = false;
+                    break;
                 default:
                     if (HandshakeStatus.NEED_TASK.equals(result.getHandshakeStatus())
                             || !this.appPeerBuffer.hasRemaining()) {

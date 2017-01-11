@@ -129,6 +129,7 @@ public abstract class ReactorClient {
                 throw new ClientConnectionException("Connection failed");
             }
             this.closing.set(false);
+            clean();
             postConnect(getPostConnectCallback());
         } catch (InterruptedException | ExecutionException e) {
             logException(log, "Exception during connection", e);
@@ -161,6 +162,7 @@ public abstract class ReactorClient {
 
     public final void disconnect(String message) {
         this.closing.set(true);
+        clean();
         byte[] response = buildNetworkResponse(message);
         postDisconnect();
         closeChannel();
@@ -173,6 +175,7 @@ public abstract class ReactorClient {
 
     private Future<Void> scheduleClose(final String message) {
         this.closing.set(true);
+        clean();
         return scheduleTask(() -> {
             disconnect(message);
             return null;
@@ -186,6 +189,9 @@ public abstract class ReactorClient {
     }
 
     public void process() throws IOException, ClientConnectionException {
+        if (this.closing.get()) {
+            return;
+        }
         processIncoming();
         if (this.closing.get()) {
             return;
@@ -242,6 +248,7 @@ public abstract class ReactorClient {
 
     protected void closeChannel() {
         this.closing.set(true);
+        clean();
         final Callable<Void> callable = new Callable<Void>() {
 
             @Override
@@ -368,6 +375,11 @@ public abstract class ReactorClient {
      * @param policy - validated policy
      */
     public abstract void validate(ClientPolicy policy);
+
+    /**
+     * Cleans internal state.
+     */
+    protected abstract void clean();
 
     /**
      * @return the peer certificates of the current session
