@@ -411,14 +411,14 @@ class TestCommit(TestCaseBase):
             with utils.closing(op):
                 op.wait_for_completion()
 
+            base_fmt = (qemuimg.FORMAT.RAW if base == 0 else
+                        qemuimg.FORMAT.QCOW2)
             for i in range(base, top + 1):
                 offset = i * 1024
                 pattern = 0xf0 + i
                 # The base volume must have the data from all the volumes
                 # merged into it.
-                format = (qemuimg.FORMAT.RAW if i == 0 else
-                          qemuimg.FORMAT.QCOW2)
-                qemu_pattern_verify(base_vol, format, offset=offset,
+                qemu_pattern_verify(base_vol, base_fmt, offset=offset,
                                     len=1024, pattern=pattern)
                 if i > base:
                     # internal and top volumes should keep the data, we
