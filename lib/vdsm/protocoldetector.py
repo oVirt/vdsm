@@ -20,6 +20,7 @@
 
 from __future__ import absolute_import
 
+import errno
 import logging
 import socket
 
@@ -119,7 +120,7 @@ class _ProtocolDetector(object):
         try:
             data = sock.recv(self._required_size, socket.MSG_PEEK)
         except socket.error as why:
-            if why.args[0] == socket.EWOULDBLOCK:
+            if why.args[0] == errno.EWOULDBLOCK:
                 return
             dispatcher.handle_error()
             return
