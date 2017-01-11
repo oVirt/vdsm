@@ -23,7 +23,6 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('args')
 parser.add_argument('-ic', dest='inputConnection',
                     help='Set input libvirt connectio url')
 parser.add_argument('-o', dest='output',
@@ -55,7 +54,7 @@ parser.add_argument('-x', dest='libguestfsTrace',
                     help='Enable tracing of libguestfs API calls.')
 parser.add_argument('vmname')
 
-options = parser.parse_args(sys.argv)
+options = parser.parse_args()
 elapsed_time = 0
 
 
