@@ -115,10 +115,9 @@ class TestMergeSubchain(VdsmTestCase):
                 # We expect to read all data from top
                 qemu_pattern_verify(top_vol.volumePath, qemuimg.FORMAT.QCOW2,
                                     offset=offset, len=1024, pattern=pattern)
-                base_format = (qemuimg.FORMAT.RAW if i == 0 else
-                               qemuimg.FORMAT.QCOW2)
                 # And base, since top was merged into base
-                qemu_pattern_verify(base_vol.volumePath, base_format,
+                qemu_pattern_verify(base_vol.volumePath,
+                                    sc.fmt2str(base_vol.getFormat()),
                                     offset=offset, len=1024, pattern=pattern)
 
             self.assertEqual(sorted(self.expected_locks(base_vol)),
