@@ -97,6 +97,16 @@ class SubchainInfo(properties.Owner):
             repoPath = dom.getRepoPath()
             image_repo = image.Image(repoPath)
             chain = image_repo.getChain(self.sd_id, self.img_id)
+            # When the VM is cloned from a template, the root volume of the
+            # volumes chain is a shared volume. Shared volumes are not returned
+            # in the volumes list when calling Image.getChain hence, we have to
+            # add that volume manually.
+            template = chain[0].getParentVolume()
+            if template is not None:
+                if not template.isShared():
+                    raise se.UnexpectedVolumeState(
+                        template.volUUID, "Shared", "Not Shared")
+                chain.insert(0, template)
             self._chain = [vol.volUUID for vol in chain]
         return self._chain
 
@@ -144,9 +154,10 @@ class SubchainInfo(properties.Owner):
         for vol_id in chain_to_prepare:
             force = True if vol_id == self.base_id else False
             vol = dom.produceVolume(self.img_id, vol_id)
+            rw = True if vol_id == self.base_id else False
             # TODO: to improve this late to use subchain.top_vol
             # subchain.base_vol.
-            vol.prepare(justme=True, force=force)
+            vol.prepare(rw=rw, justme=True, force=force)
         try:
             yield
         finally:
