@@ -272,7 +272,7 @@ def create_ssl_context():
             protocol = (
                 ssl.PROTOCOL_SSLv23
                 if config.get('vars', 'ssl_protocol') == 'sslv23'
-                else ssl.PROTOCOL_TLSv1
+                else ssl.PROTOCOL_TLSv1_2
             )
             sslctx = SSLContext(key_file=constants.KEY_FILE,
                                 cert_file=constants.CERT_FILE,
