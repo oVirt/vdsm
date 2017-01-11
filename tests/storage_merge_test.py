@@ -298,6 +298,12 @@ class TestPrepareMerge(VdsmTestCase):
                                subchain.img_id, subchain.base_id)
         ]
 
+    # TODO: Once BZ 1411103 is fixed, add unit tests for preparing the chain
+    # required for prepare step:
+    # 1. Test a chain of 2 volumes
+    # 2. Chain that has a shared volume (to simulate cloning a VM from a
+    #    template)
+
 
 class FakeSyncVolumeChain(object):
 
@@ -350,6 +356,12 @@ class TestFinalizeMerge(VdsmTestCase):
             subchain = merge.SubchainInfo(subchain_info, 0)
             with self.assertRaises(se.UnexpectedVolumeState):
                 merge.finalize(subchain)
+
+    # TODO: Once BZ 1411103 is fixed, add unit tests for preparing the chain
+    # required for finalize step:
+    # 1. Test a chain of 2 volumes
+    # 2. Test a c hain of more than 2 volumes and verify that top's parent is
+    #    prepared
 
     @permutations([
         # sd_type, chain_len, base_index, top_index
