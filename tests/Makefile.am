@@ -123,6 +123,7 @@ test_modules = \
 	storage_iscsi_test.py \
 	storage_lvm_test.py \
 	storage_mailbox_test.py \
+	storage_merge_test.py \
 	storage_misc_test.py \
 	storage_monitor_test.py \
 	storage_mount_test.py \
@@ -227,6 +228,7 @@ blacklist_modules_python3 = \
 	storage_iscsi_test.py \
 	storage_lvm_test.py \
 	storage_mailbox_test.py \
+	storage_merge_test.py \
 	storage_misc_test.py \
 	storage_monitor_test.py \
 	storage_mount_test.py \
