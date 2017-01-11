@@ -229,6 +229,9 @@ def _extend_base_allocation(base_vol, top_vol):
 def finalize(subchain):
     log.info("Finalizing subchain after merge: %s", subchain)
     with guarded.context(subchain.locks):
+        # TODO: As each cold merge step - prepare, merge and finalize -
+        # requires different volumes to be prepared, we will add a prepare
+        # helper for each step.
         with subchain.prepare():
             subchain.validate()
 
@@ -254,12 +257,18 @@ def _update_qemu_metadata(dom, subchain):
         log.info("Updating qemu metadata, rebasing volume %s into "
                  "volume %s",
                  child.volUUID, subchain.base_vol.volUUID)
-        qemuimg.rebase(image=child.volumePath,
-                       backing=volume.getBackingVolumePath(subchain.img_id,
-                                                           subchain.base_id),
-                       format=qemuimg.FORMAT.QCOW2,
-                       backingFormat=sc.fmt2str(subchain.base_vol.getFormat()),
-                       unsafe=True)
+        child.prepare(rw=True, justme=True)
+        try:
+            backing = volume.getBackingVolumePath(subchain.img_id,
+                                                  subchain.base_id)
+            backing_format = sc.fmt2str(subchain.base_vol.getFormat())
+            qemuimg.rebase(image=child.volumePath,
+                           backing=backing,
+                           format=qemuimg.FORMAT.QCOW2,
+                           backingFormat=backing_format,
+                           unsafe=True)
+        finally:
+            child.teardown(subchain.sd_id, child.volUUID, justme=True)
 
 
 def _update_vdsm_metadata(dom, subchain):
