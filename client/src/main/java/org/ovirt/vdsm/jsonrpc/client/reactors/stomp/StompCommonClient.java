@@ -120,7 +120,16 @@ public abstract class StompCommonClient extends ReactorClient {
             if (contentLength == -1) {
                 // only for control messages, all other have the header
                 // according to stomp spec: The commands and headers are encoded in UTF-8
-                emitOnMessageReceived(this.message);
+                String[] messages = new String(headerBuffer.array(), UTF8).split(END_OF_MESSAGE);
+                for (String msg : messages) {
+                    Message mesg = Message.parse((msg + END_OF_MESSAGE).getBytes(UTF8));
+                    int contLen = mesg.getContentLength();
+                    if (contLen != -1 && contLen != mesg.getContent().length - 1) {
+                        this.message = mesg;
+                        break;
+                    }
+                    emitOnMessageReceived(mesg);
+                }
                 return;
             }
             int length = this.message.getContent().length;
@@ -158,7 +167,7 @@ public abstract class StompCommonClient extends ReactorClient {
         return Message.parse(array);
     }
 
-    private void clean() {
+    protected void clean() {
         headerBuffer = ByteBuffer.allocate(BUFFER_SIZE);
         this.ibuff = null;
         this.message = null;
