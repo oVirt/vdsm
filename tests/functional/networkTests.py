@@ -599,6 +599,18 @@ class NetworkTest(TestCaseBase):
             self.assertNetworkDoesntExist(NETWORK_NAME)
 
     @cleanupNet
+    @permutations([[True], [False]])
+    def testFailWithInvalidBondingName(self, bridged):
+        with dummyIf(2) as nics:
+            invalid_bond_names = ('bond', 'bonda', 'bond0a', 'jamesbond007')
+            for bond_name in invalid_bond_names:
+                status, msg = self.setupNetworks(
+                    {NETWORK_NAME: {'bonding': bond_name,
+                                    'bridged': bridged}},
+                    {bond_name: {'nics': nics}}, NOCHK)
+                self.assertEqual(status, errors.ERR_BAD_BONDING, msg)
+
+    @cleanupNet
     def testFailWithInvalidBridgeName(self):
         invalid_bridge_names = ('a' * 16, 'a b', 'a\tb', 'a.b', 'a:b')
         for bridge_name in invalid_bridge_names:
