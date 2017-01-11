@@ -1334,6 +1334,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/network/ip_route_show_table_all.out
 %{_datadir}/%{vdsm_name}/tests/network/netmaskconversions
 %{_datadir}/%{vdsm_name}/tests/network/tc_filter_show.out
+%{_datadir}/%{vdsm_name}/tests/virttests/*.py*
 %{_datadir}/%{vdsm_name}/tests/run_tests.sh
 %{_datadir}/%{vdsm_name}/tests/toolTests_empty.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_lconf_ssl.conf

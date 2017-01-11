@@ -27,6 +27,7 @@ SUBDIRS = \
 	  devices \
 	  integration \
 	  network \
+	  virttests \
 	  $(NULL)
 
 if CONTAINERS
@@ -43,19 +44,19 @@ device_modules = \
 
 network_modules = network/*_test.py
 
+virt_modules = virttests/*_test.py
+
 test_modules = \
 	API_test.py \
 	alignmentscan_test.py \
 	api_response_test.py \
 	bridge_test.py \
-	bulk_sampling_test.py \
 	caps_test.py \
 	clientif_test.py \
 	cmdutils_test.py \
 	commands_test.py \
 	concurrent_test.py \
 	config_test.py \
-	containersconnection_test.py \
 	cpu_profile_test.py \
 	cpuinfo_test.py \
 	device_test.py \
@@ -161,12 +162,10 @@ test_modules = \
 	verify.py \
 	vmapi_test.py \
 	vmfakelib_test.py \
-	vmlease_test.py \
 	vmmigration_test.py \
 	vmoperations_test.py \
 	vmrecovery_test.py \
 	vmsecret_test.py \
-	vmstats_test.py \
 	vmstorage_test.py \
 	vm_test.py \
 	vmTestsData.py \
@@ -378,6 +377,7 @@ endif
 run_modules += $(network_modules)
 run_modules += $(device_modules)
 run_modules += $(common_modules)
+run_modules += $(virt_modules)
 
 # Disable builtin (recursive) check target.
 check-recursive:
@@ -386,6 +386,10 @@ check-recursive:
 check-net:
 	@echo '*** Running networking tests. ***'
 	@$(top_srcdir)/tests/run_tests_local.sh $(network_modules)
+
+check-virt:
+	@echo '*** Running virt tests. ***'
+	@$(top_srcdir)/tests/run_tests_local.sh $(virt_modules)
 
 check:
 	@echo '*** Running tests.  To skip this step place NOSE_EXCLUDE=.* ***'
