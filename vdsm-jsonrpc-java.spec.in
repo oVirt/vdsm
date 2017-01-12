@@ -121,6 +121,9 @@ ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %changelog
+* Thu Jan 12 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.4.1
+- handle ssl closed status
+
 * Mon Jan 9 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.4.0
 - Make sure to match host properly
 - Add cause exception upon re-throwing IOException in ReactorClient
