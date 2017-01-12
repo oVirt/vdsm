@@ -66,9 +66,7 @@ from vdsm.storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from vdsm.storage.iscsi import readSessionInfo as _readSessionInfo
 from vdsm.supervdsm import _SuperVdsmManager
 
-from vdsm.network import dhclient_monitor
-from vdsm.network import sourceroute
-from vdsm.network.nm import networkmanager
+from vdsm.network.initializer import init_privileged_network_components
 
 from vdsm.storage.multipath import getScsiSerial as _getScsiSerial
 from vdsm.storage import multipath
@@ -299,7 +297,7 @@ def main(args):
 
             log.debug("Started serving super vdsm object")
 
-            _network_init()
+            init_privileged_network_components()
 
             while _running:
                 sigutils.wait_for_signal()
@@ -321,28 +319,3 @@ def option_parser():
     parser.add_argument('--pidfile', dest='pidfile', default=None,
                         help="pid file path")
     return parser
-
-
-def _network_init():
-    # These proxy funcs are defined to assure correct func signature.
-    def _add_sourceroute(iface, ip, mask, route):
-        sourceroute.add(iface, ip, mask, route)
-
-    def _remove_sourceroute(iface):
-        sourceroute.remove(iface)
-
-    dhclient_monitor.register_action_handler(
-        action_type=dhclient_monitor.ActionType.CONFIGURE,
-        action_function=_add_sourceroute,
-        required_fields=(dhclient_monitor.ResponseField.IFACE,
-                         dhclient_monitor.ResponseField.IPADDR,
-                         dhclient_monitor.ResponseField.IPMASK,
-                         dhclient_monitor.ResponseField.IPROUTE))
-
-    dhclient_monitor.register_action_handler(
-        action_type=dhclient_monitor.ActionType.REMOVE,
-        action_function=_remove_sourceroute,
-        required_fields=(dhclient_monitor.ResponseField.IFACE,))
-
-    dhclient_monitor.start()
-    networkmanager.init()

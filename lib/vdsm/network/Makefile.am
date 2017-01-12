@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ dist_vdsmnetwork_PYTHON = \
 	dhclient_monitor.py \
 	ifacetracking.py \
 	ifacquire.py \
+	initializer.py \
 	ipwrapper.py \
 	kernelconfig.py \
 	legacy_switch.py \
