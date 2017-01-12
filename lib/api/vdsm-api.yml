@@ -948,6 +948,11 @@ types:
             description: current allocation bytes
             name: allocation
             type: uint
+
+        -   defaultvalue: null
+            description: device argument (disk, cdrom, lun)
+            name: type
+            type: string
         type: object
 
     ExternalNetworkInfo: &ExternalNetworkInfo
@@ -972,6 +977,11 @@ types:
 
         -   description: network type (bridge, network)
             name: type
+            type: string
+
+        -   defaultvalue: null
+            description: interface model
+            name: model
             type: string
         type: object
 
