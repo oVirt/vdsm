@@ -25,6 +25,7 @@ import os
 from nose.plugins.attrib import attr
 
 from testlib import VdsmTestCase as TestCaseBase
+from testValidation import ValidateRunningAsRoot
 from monkeypatch import MonkeyPatch
 
 from .nettestlib import dummy_device
@@ -65,6 +66,7 @@ class TestFilters(TestCaseBase):
 @attr(type='integration')
 class TestSourceRoute(TestCaseBase):
 
+    @ValidateRunningAsRoot
     def test_sourceroute_add_remove_and_read(self):
         with dummy_device() as nic:
             addrAdd(nic, IPV4_ADDRESS, IPV4_MASK)

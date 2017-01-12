@@ -24,11 +24,17 @@ from contextlib import contextmanager
 from nose.plugins.attrib import attr
 
 from testlib import VdsmTestCase
+from testValidation import ValidateRunningAsRoot
 
 from vdsm.network.ip.rule import IPRule, IPRuleData
 
 
 IPV4_ADDRESS1 = '192.168.99.1'
+
+
+@ValidateRunningAsRoot
+def setup_module():
+    pass
 
 
 @attr(type='integration')
