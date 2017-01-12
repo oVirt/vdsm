@@ -52,9 +52,28 @@ parser.add_argument('-v', dest='verbose',
 parser.add_argument('-x', dest='libguestfsTrace',
                     action='store_true',
                     help='Enable tracing of libguestfs API calls.')
-parser.add_argument('vmname')
+parser.add_argument('vmname', nargs='?')
 
 options = parser.parse_args()
+if options.vmname is None:
+    if not options.machineReadable:
+        sys.stderr.write(
+                "Either VM name or --machine-readable must be specified\n")
+        parser.print_usage()
+        sys.exit(1)
+
+    # Output some capabilities and quit
+    print("virt-v2v")
+    print("libguestfs-rewrite")
+    print("vdsm-compat-option")
+    print("input:libvirt")
+    print("input:ova")
+    print("output:rhev")
+    print("output:vdsm")
+    print("convert:enterprise-linux")
+    print("convert:windows")
+    sys.exit(0)
+
 elapsed_time = 0
 
 

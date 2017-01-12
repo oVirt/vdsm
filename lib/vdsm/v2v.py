@@ -49,7 +49,7 @@ from vdsm.common import zombiereaper
 from vdsm.compat import CPopen
 from vdsm.constants import P_VDSM_LOG, P_VDSM_RUN, EXT_KVM_2_OVIRT
 from vdsm import cmdutils, concurrent, libvirtconnection
-from vdsm.utils import monotonic_time, traceback, CommandPath, \
+from vdsm.utils import monotonic_time, terminating, traceback, CommandPath, \
     NICENESS, IOCLASS
 
 try:
@@ -391,6 +391,7 @@ class V2VCommand(object):
         self._prepared_volumes = []
         self._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % vmid)
         self._base_command = [_VIRT_V2V.cmd, '-v', '-x']
+        self._query_v2v_caps()
 
     def execute(self):
         raise NotImplementedError("Subclass must implement this")
@@ -505,6 +506,26 @@ class V2VCommand(object):
             except Exception:
                 logging.exception("Job %r error removing passwd file: %s",
                                   self._vmid, self._passwd_file)
+
+    def _query_v2v_caps(self):
+        self._v2v_caps = frozenset()
+        p = _simple_exec_cmd([_VIRT_V2V.cmd, '--machine-readable'],
+                             env=os.environ.copy(),
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        with terminating(p):
+            try:
+                out, err = p.communicate()
+            except Exception:
+                logging.exception('Terminating virt-v2v process after error')
+                raise
+        if p.returncode != 0:
+            raise V2VProcessError(
+                'virt-v2v exited with code: %d, stderr: %r' %
+                (p.returncode, err))
+
+        self._v2v_caps = frozenset(out.splitlines())
+        logging.debug("Detected virt-v2v capabilities: %r", self._v2v_caps)
 
 
 class LibvirtCommand(V2VCommand):

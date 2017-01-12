@@ -472,6 +472,13 @@ class v2vTests(TestCaseBase):
         out = p.stdout.read()
         self.assertEqual(out, msg)
 
+    @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
+    def testV2VCapabilities(self):
+        cmd = v2v.V2VCommand(None, None, None)
+        self.assertIn('virt-v2v', cmd._v2v_caps)
+        self.assertIn('input:libvirt', cmd._v2v_caps)
+        self.assertIn('output:vdsm', cmd._v2v_caps)
+
 
 @expandPermutations
 class PipelineProcTests(TestCaseBase):
