@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,6 +53,13 @@ try:
 except ImportError:
     from vdsm.common.contextlib import suppress
     suppress  # yep, this is needed twice.
+
+try:
+    from glob import escape as glob_escape
+    glob_escape  # make pyflakes happy
+except ImportError:
+    from vdsm.common.glob import escape as glob_escape
+    glob_escape  # make pyflakes happy
 
 
 class Unsupported(ImportError):
