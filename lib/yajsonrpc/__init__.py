@@ -380,6 +380,12 @@ class JsonRpcClient(object):
         if ctx.isDone():
             self._finalizeCtx(ctx)
 
+    def subscribe(self, queue_name):
+        return self._transport.subscribe(queue_name)
+
+    def unsubscribe(self, sub):
+        self._transport.unsubscribe(sub)
+
     def _finalizeCtx(self, ctx):
         if not ctx.isDone():
             return

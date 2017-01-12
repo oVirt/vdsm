@@ -399,6 +399,9 @@ class StompClient(object):
         self._reactor.wakeup()
         return sub
 
+    def unsubscribe(self, sub):
+        self._aclient.unsubscribe(sub)
+
     def send(self, message, destination=stomp.SUBSCRIPTION_ID_RESPONSE,
              headers=None):
         self.log.debug("Sending response")
@@ -552,6 +555,12 @@ class ClientRpcTransportAdapter(object):
             self._destination,
             headers,
         )
+
+    def subscribe(self, queue_name):
+        return self._client.subscribe(queue_name, sub_id=str(uuid4()))
+
+    def unsubscribe(self, sub):
+        self._client.unsubscribe(sub)
 
     def _handle_message(self, sub, frame):
         self._message_handler((self, frame.body))
