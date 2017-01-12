@@ -516,7 +516,10 @@ class VMBulkSampler(object):
             return
         stats = {}
         for vm_id, vm_sample in six.iteritems(vm_samples):
-            vm_obj = vms[vm_id]
+            vm_obj = vms.get(vm_id)
+            if vm_obj is None:
+                # unknown VM, such as an external VM
+                continue
             vm_data = vmstats.produce(vm_obj,
                                       vm_sample.first_value,
                                       vm_sample.last_value,
