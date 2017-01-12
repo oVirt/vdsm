@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -68,6 +68,7 @@ test_modules = \
 	fakesanlock_test.py \
 	filecontrol_test.py \
 	fuser_test.py \
+	glob_test.py \
 	gluster_cli_test.py \
 	gluster_exception_test.py \
 	glusterTestData.py \
