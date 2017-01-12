@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -153,6 +153,7 @@ class SSLHandshakeDispatcher(object):
     """
     log = logging.getLogger("ProtocolDetector.SSLHandshakeDispatcher")
     SSL_HANDSHAKE_TIMEOUT = 10
+    LOCAL_ADDRESSES = ('127.0.0.1', '::1', '::ffff:127.0.0.1')
 
     def __init__(
         self,
@@ -237,7 +238,9 @@ class SSLHandshakeDispatcher(object):
 
     @staticmethod
     def compare_names(src_addr, cert_common_name):
-        if src_addr == cert_common_name or src_addr == '127.0.0.1':
+        if src_addr == cert_common_name:
+            return True
+        elif src_addr in SSLHandshakeDispatcher.LOCAL_ADDRESSES:
             return True
         else:
             return (cert_common_name.lower() ==
