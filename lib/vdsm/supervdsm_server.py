@@ -1,4 +1,4 @@
-# Copyright 2011-2016 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,6 +67,7 @@ from vdsm.storage.iscsi import readSessionInfo as _readSessionInfo
 from vdsm.supervdsm import _SuperVdsmManager
 
 from vdsm.network import dhclient_monitor
+from vdsm.network import sourceroute
 from vdsm.network.nm import networkmanager
 
 from vdsm.storage.multipath import getScsiSerial as _getScsiSerial
@@ -298,8 +299,7 @@ def main(args):
 
             log.debug("Started serving super vdsm object")
 
-            dhclient_monitor.start()
-            networkmanager.init()
+            _network_init()
 
             while _running:
                 sigutils.wait_for_signal()
@@ -321,3 +321,28 @@ def option_parser():
     parser.add_argument('--pidfile', dest='pidfile', default=None,
                         help="pid file path")
     return parser
+
+
+def _network_init():
+    # These proxy funcs are defined to assure correct func signature.
+    def _add_sourceroute(iface, ip, mask, route):
+        sourceroute.add(iface, ip, mask, route)
+
+    def _remove_sourceroute(iface):
+        sourceroute.remove(iface)
+
+    dhclient_monitor.register_action_handler(
+        action_type=dhclient_monitor.ActionType.CONFIGURE,
+        action_function=_add_sourceroute,
+        required_fields=(dhclient_monitor.ResponseField.IFACE,
+                         dhclient_monitor.ResponseField.IPADDR,
+                         dhclient_monitor.ResponseField.IPMASK,
+                         dhclient_monitor.ResponseField.IPROUTE))
+
+    dhclient_monitor.register_action_handler(
+        action_type=dhclient_monitor.ActionType.REMOVE,
+        action_function=_remove_sourceroute,
+        required_fields=(dhclient_monitor.ResponseField.IFACE,))
+
+    dhclient_monitor.start()
+    networkmanager.init()

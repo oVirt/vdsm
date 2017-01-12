@@ -1,4 +1,4 @@
-# Copyright 2013-2014 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,17 +31,23 @@ from vdsm import utils
 from vdsm.network import ifacetracking
 from vdsm.network import libvirt
 
-from . import sourceroute
-
-
-ACTION_KEY = 'action'
-IPADDR_KEY = 'ip'
-IPMASK_KEY = 'mask'
-IPROUTE_KEY = 'route'
-IFACE_KEY = 'iface'
-
 
 MONITOR_FOLDER = P_VDSM_RUN + 'sourceRoutes'
+
+_action_handler_db = []
+
+
+class ActionType(object):
+    CONFIGURE = 'configure'
+    REMOVE = 'remove'
+
+
+class ResponseField(object):
+    ACTION = 'action'
+    IPADDR = 'ip'
+    IPMASK = 'mask'
+    IPROUTE = 'route'
+    IFACE = 'iface'
 
 
 def start():
@@ -49,6 +55,23 @@ def start():
                               name='dhclient-monitor')
     thread.daemon = True
     thread.start()
+
+
+def register_action_handler(action_type, action_function, required_fields):
+    """
+    Register an action, which is to be executed when a dhcp response is
+    accepted with the matching action type and the required data fields.
+
+    The only action type supported for the moment is ActionType.CONFIGURE
+    The default action is REMOVE.
+
+    The action function provided is called with the required fields as kwargs.
+
+    The required_fields is a tuple of all the fields that must exist for the
+    action handler to be executed.
+    The action_function must include all specified fields with exact naming.
+    """
+    _action_handler_db.append((action_type, action_function, required_fields))
 
 
 class DHClientEventHandler(pyinotify.ProcessEvent):
@@ -60,17 +83,17 @@ def _dhcp_response_handler(data_filepath):
     with _cleaning_file(data_filepath):
         dhcp_response = _dhcp_response_data(data_filepath)
 
-        action = dhcp_response.get(ACTION_KEY)
-        device = dhcp_response.get(IFACE_KEY)
+        action = dhcp_response.get(ResponseField.ACTION)
+        device = dhcp_response.get(ResponseField.IFACE)
 
         if device is None:
             logging.warning('DHCP response with no device')
             return
 
-        logging.debug('Received DHCP response for %s/%s', action, device)
+        logging.debug('Received DHCP response: %s', dhcp_response)
 
         if _is_vdsm_interface(device):
-            _process_dhcp_response_actions(action, device, dhcp_response)
+            _process_dhcp_response_actions(action, dhcp_response)
         else:
             logging.info('Interface %s is not a libvirt interface', device)
 
@@ -85,26 +108,18 @@ def _cleaning_file(filepath):
         os.remove(filepath)
 
 
-def _process_dhcp_response_actions(action, device, dhcp_response):
-    if action == 'configure':
-        _dhcp_configure_action(dhcp_response, device)
-    else:
-        _dhcp_remove_action(device)
+def _process_dhcp_response_actions(action, dhcp_response):
+    _normalize_response(dhcp_response)
+
+    for action_handler in _action_handlers(action):
+        _, action_function, required_fields = action_handler
+        if set(required_fields) <= set(dhcp_response):
+            fields = {k: dhcp_response[k] for k in required_fields}
+            action_function(**fields)
 
 
-def _dhcp_configure_action(dhcp_response, device):
-    ip = dhcp_response.get(IPADDR_KEY)
-    mask = dhcp_response.get(IPMASK_KEY)
-    gateway = dhcp_response.get(IPROUTE_KEY)
-
-    if ip and mask and gateway not in (None, '0.0.0.0'):
-        sourceroute.add(device, ip, mask, gateway)
-    else:
-        logging.warning('Partial DHCP response %s', dhcp_response)
-
-
-def _dhcp_remove_action(device):
-    sourceroute.remove(device)
+def _action_handlers(action_type):
+    return (ah for ah in _action_handler_db if ah[0] == action_type)
 
 
 @utils.traceback()
@@ -144,3 +159,10 @@ def _is_vdsm_interface(device_name):
         return True
     else:
         return libvirt.is_libvirt_device(device_name)
+
+
+def _normalize_response(response):
+    # A zeroed route field is equivalent to no route field.
+    route_field = ResponseField.IPROUTE
+    if route_field in response and response[route_field] == '0.0.0.0':
+        response.pop(ResponseField.IPROUTE)
