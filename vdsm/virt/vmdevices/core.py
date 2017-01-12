@@ -95,7 +95,10 @@ class Base(vmxml.Device):
 
     def teardown(self):
         """
-        Actions to be executed after VM is destroyed.
+        Actions to be executed after the device was destroyed.
+
+        The device can be destroyed either because the whole VM was destroyed
+        or because the device was unplugged from the VM.
         """
         pass
 
