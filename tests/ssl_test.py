@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -392,6 +392,10 @@ class CompareNameTest(TestCaseBase):
     def test_local_addresses(self):
         self.assertTrue(SSLHandshakeDispatcher.compare_names(
             '127.0.0.1', 'example.com'))
+        self.assertTrue(SSLHandshakeDispatcher.compare_names(
+            '::1', 'example.com'))
+        self.assertTrue(SSLHandshakeDispatcher.compare_names(
+            '::ffff:127.0.0.1', 'example.com'))
 
 
 # The address of the tests server:
