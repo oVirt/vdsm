@@ -18,24 +18,26 @@
 #
 from __future__ import absolute_import
 
+from vdsm import supervdsm
 from vdsm.network import dhclient_monitor
-from vdsm.network import sourceroute
 from vdsm.network.nm import networkmanager
 
 
 def init_privileged_network_components():
-    _init_sourceroute()
-    dhclient_monitor.start()
     networkmanager.init()
 
 
+def init_unprivileged_network_components():
+    _init_sourceroute()
+    dhclient_monitor.start()
+
+
 def _init_sourceroute():
-    # These proxy funcs are defined to assure correct func signature.
     def _add_sourceroute(iface, ip, mask, route):
-        sourceroute.add(iface, ip, mask, route)
+        supervdsm.getProxy().add_sourceroute(iface, ip, mask, route)
 
     def _remove_sourceroute(iface):
-        sourceroute.remove(iface)
+        supervdsm.getProxy().remove_sourceroute(iface)
 
     dhclient_monitor.register_action_handler(
         action_type=dhclient_monitor.ActionType.CONFIGURE,

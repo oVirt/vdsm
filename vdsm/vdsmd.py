@@ -42,6 +42,7 @@ from vdsm import metrics
 from vdsm.common import sigutils
 from vdsm.common import zombiereaper
 from vdsm.config import config
+from vdsm.network.initializer import init_unprivileged_network_components
 from vdsm.panic import panic
 from vdsm.profiling import profile
 from vdsm.virt import periodic
@@ -102,6 +103,9 @@ def serve_clients(log):
         install_manhole({'irs': irs, 'cif': cif})
 
         cif.start()
+
+        init_unprivileged_network_components()
+
         periodic.start(cif, scheduler)
         health.start()
         try:

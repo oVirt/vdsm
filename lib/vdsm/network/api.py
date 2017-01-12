@@ -35,6 +35,7 @@ from vdsm import hooks
 from vdsm import udevadm
 from vdsm.network import ipwrapper
 from vdsm.network import libvirt
+from vdsm.network import sourceroute
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 
 from . ip import address as ipaddress, validator as ipvalidator
@@ -322,3 +323,11 @@ def setSafeNetworkConfig():
     """Declare current network configuration as 'safe'"""
     commands.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
                      config.get('vars', 'net_persistence')])
+
+
+def add_sourceroute(iface, ip, mask, route):
+    sourceroute.add(iface, ip, mask, route)
+
+
+def remove_sourceroute(iface):
+    sourceroute.remove(iface)
