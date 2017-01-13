@@ -32,7 +32,7 @@ from vdsm.network import ifacetracking
 from vdsm.network import libvirt
 
 
-MONITOR_FOLDER = P_VDSM_RUN + 'sourceRoutes'
+MONITOR_FOLDER = P_VDSM_RUN + 'dhclientmon'
 
 _action_handler_db = []
 

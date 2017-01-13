@@ -7,10 +7,10 @@ IPROUTE_KEY="route"
 IFACE_KEY="iface"
 
 timeStamp=`date +%s.%N`
-DATA_PATH="/var/run/vdsm/sourceRoutes"
+DATA_PATH="/var/run/vdsm/dhclientmon"
 DATA_PFILE="$DATA_PATH/$timeStamp"
 
-sourceRoute_config() {
+dhclientmon_config() {
     local cont
 
     cont="$ACTION_KEY=configure"$'\n'
@@ -29,7 +29,7 @@ sourceRoute_config() {
     echo "$cont" > "$DATA_PFILE"
 }
 
-sourceRoute_restore() {
+dhclientmon_restore() {
     local cont
 
     if [ -n "$interface" ] && [ "$reason" == "STOP" ]; then

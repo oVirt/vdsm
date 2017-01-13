@@ -57,9 +57,9 @@ CLEANFILES = \
 	$(nodist_man8_MANS)
 
 EXTRA_DIST = \
+	dhclientmon.sh \
 	libvirt_password \
 	mk_sysprep_floppy.in \
-	sourceRoute.sh \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
@@ -89,7 +89,7 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)/import
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)
-	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/sourceRoutes
+	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/dhclientmon
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/trackedInterfaces
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/payload
 	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/netconfback
@@ -129,9 +129,9 @@ uninstall-data-vdsmconf:
 
 install-data-dhclient-hooks:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/dhcp/dhclient.d
-	$(INSTALL_DATA) sourceRoute.sh \
-		$(DESTDIR)$(sysconfdir)/dhcp/dhclient.d/sourceRoute.sh
-	chmod 755 $(DESTDIR)$(sysconfdir)/dhcp/dhclient.d/sourceRoute.sh
+	$(INSTALL_DATA) dhclientmon.sh \
+		$(DESTDIR)$(sysconfdir)/dhcp/dhclient.d/dhclientmon.sh
+	chmod 755 $(DESTDIR)$(sysconfdir)/dhcp/dhclient.d/dhclientmon.sh
 
 uninstall-data-dhclient-hooks:
-	$(RM) $(DESTDIR)$(sysconfdir)/dhcp/dhclient.d/sourceRoute.sh
+	$(RM) $(DESTDIR)$(sysconfdir)/dhcp/dhclient.d/dhclientmon.sh
