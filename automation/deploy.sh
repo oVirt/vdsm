@@ -32,7 +32,7 @@ systemctl restart libvirtd.service || :
 # enable the local repo, cost=1 to keep it in high priority
 cat > /etc/yum.repos.d/local-ovirt.repo <<EOF
 [localsync]
-name=Latest oVirt nightly
+name=VDSM artifacts
 baseurl=http://$ADDR:8585/$DIST/
 enabled=1
 skip_if_unavailable=0
