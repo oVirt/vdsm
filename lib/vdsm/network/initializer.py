@@ -27,8 +27,9 @@ def init_privileged_network_components():
     networkmanager.init()
 
 
-def init_unprivileged_network_components():
+def init_unprivileged_network_components(cif):
     _init_sourceroute()
+    _register_notifications(cif)
     dhclient_monitor.start()
 
 
@@ -50,3 +51,15 @@ def _init_sourceroute():
         action_type=dhclient_monitor.ActionType.REMOVE,
         action_function=_remove_sourceroute,
         required_fields=(dhclient_monitor.ResponseField.IFACE,))
+
+
+def _register_notifications(cif):
+    def _notify(**kwargs):
+        cif.notify('|net|host_conn|no_id')
+
+    dhclient_monitor.register_action_handler(
+        action_type=dhclient_monitor.ActionType.CONFIGURE,
+        action_function=_notify,
+        required_fields=(dhclient_monitor.ResponseField.IFACE,
+                         dhclient_monitor.ResponseField.IPADDR,
+                         dhclient_monitor.ResponseField.IPMASK))

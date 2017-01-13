@@ -104,7 +104,7 @@ def serve_clients(log):
 
         cif.start()
 
-        init_unprivileged_network_components()
+        init_unprivileged_network_components(cif)
 
         periodic.start(cif, scheduler)
         health.start()
