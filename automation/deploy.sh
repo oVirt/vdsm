@@ -38,6 +38,7 @@ enabled=1
 skip_if_unavailable=0
 gpgcheck=0
 cost=1
+proxy=_none_
 EOF
 
 echo "######################### Cleaning up caches"
