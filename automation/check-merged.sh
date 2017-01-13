@@ -3,7 +3,8 @@ export LIBGUESTFS_BACKEND=direct
 # ensure /dev/kvm exists, otherwise it will still use
 # direct backend, but without KVM(much slower).
 ! [[ -c "/dev/kvm" ]] && mknod /dev/kvm c 10 232
-PREFIX="$PWD"/automation/vdsm_functional
+AUTOMATION="$PWD"/automation
+PREFIX="$AUTOMATION"/vdsm_functional
 EXPORTS="$PWD"/exported-artifacts
 TEST_PATH="functional"
 FUNCTIONAL_TESTS_LIST=" \
@@ -21,7 +22,7 @@ DISABLE_TESTS_LIST=" \
     $TEST_PATH/networkTestsOVS.py"
 
 # Creates RPMS
-./automation/build-artifacts.sh
+"$AUTOMATION"/build-artifacts.sh
 
 if [[ -d "$PREFIX" ]]; then
     pushd "$PREFIX"
@@ -38,7 +39,7 @@ fi
 
 lago init \
     "$PREFIX" \
-    automation/lago-env.yml
+    "$AUTOMATION"/lago-env.yml
 # If testing locally in the rh office you can use the option
 # --template-repo-path=http://10.35.18.63/repo/repo.metadata
 
