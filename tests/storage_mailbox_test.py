@@ -31,6 +31,7 @@ import storage.storage_mailbox as sm
 MAX_HOSTS = 10
 MAILER_TIMEOUT = 6
 MONITOR_INTERVAL = 0.1
+SPUUID = '5d928855-b09b-47a7-b920-bd2d2eb5808c'
 
 
 @contextlib.contextmanager
@@ -40,18 +41,12 @@ def mailbox_file():
         yield path
 
 
-class StoragePoolStub(object):
-    def __init__(self):
-        self.spUUID = '5d928855-b09b-47a7-b920-bd2d2eb5808c'
-
-
 class SPM_MailMonitorTests(TestCaseBase):
 
     def testThreadLeak(self):
-        pool = StoragePoolStub()
         with mailbox_file() as inbox, mailbox_file() as outbox:
             mailer = sm.SPM_MailMonitor(
-                pool, 100,
+                SPUUID, 100,
                 inbox=inbox,
                 outbox=outbox,
                 monitorInterval=MONITOR_INTERVAL)
@@ -80,16 +75,15 @@ class TestMailbox(TestCaseBase):
             received_messages.append((msg_id, data))
             msg_processed.set()
 
-        pool = StoragePoolStub()
         with mailbox_file() as inbox, mailbox_file() as outbox:
             hsm_mb = sm.HSM_Mailbox(
-                hostID=7, poolID=pool.spUUID,
+                hostID=7, poolID=SPUUID,
                 inbox=outbox,
                 outbox=inbox,
                 monitorInterval=MONITOR_INTERVAL)
             try:
                 spm_mm = sm.SPM_MailMonitor(
-                    pool, MAX_HOSTS,
+                    SPUUID, MAX_HOSTS,
                     inbox=inbox,
                     outbox=outbox,
                     monitorInterval=MONITOR_INTERVAL)
@@ -97,7 +91,7 @@ class TestMailbox(TestCaseBase):
                     spm_mm.registerMessageType("xtnd", spm_callback)
 
                     VOL_DATA = dict(
-                        poolID=pool.spUUID,
+                        poolID=SPUUID,
                         domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
                         volumeID='d772f1c6-3ebb-43c3-a42e-73fcd8255a5f')
                     REQUESTED_SIZE = 100

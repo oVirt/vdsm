@@ -523,7 +523,7 @@ class SPM_MailMonitor:
     def unregisterMessageType(self, messageType):
         del self._messageTypes[messageType]
 
-    def __init__(self, pool, maxHostID, inbox, outbox, monitorInterval=2):
+    def __init__(self, poolID, maxHostID, inbox, outbox, monitorInterval=2):
         """
         Note: inbox paramerter here should point to the HSM's outbox
         mailbox file, and vice versa.
@@ -532,7 +532,7 @@ class SPM_MailMonitor:
         # Save arguments
         self._stop = False
         self._stopped = False
-        self._poolID = str(pool.spUUID)
+        self._poolID = poolID
         tpSize = config.getint('irs', 'thread_pool_size') / 2
         waitTimeout = wait_timeout(monitorInterval)
         maxTasks = config.getint('irs', 'max_tasks')
