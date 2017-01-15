@@ -275,26 +275,37 @@ class SANLock(object):
 
     def acquireHostId(self, hostId, async):
         with self._lock:
-            self.log.info("Acquiring host id for domain %s (id: %s)",
-                          self._sdUUID, hostId)
+            self.log.info("Acquiring host id for domain %s (id=%s, async=%s)",
+                          self._sdUUID, hostId, async)
 
             try:
-                sanlock.add_lockspace(self._sdUUID, hostId, self._idsPath,
-                                      async=async)
+                with utils.stopwatch("sanlock.add_lockspace"):
+                    sanlock.add_lockspace(self._sdUUID, hostId, self._idsPath,
+                                          async=async)
             except sanlock.SanlockException as e:
                 if e.errno == errno.EINPROGRESS:
                     # if the request is not asynchronous wait for the ongoing
-                    # lockspace operation to complete
-                    if not async and not sanlock.inq_lockspace(
-                            self._sdUUID, hostId, self._idsPath, wait=True):
-                        raise se.AcquireHostIdFailure(self._sdUUID, e)
-                    # else silently continue, the host id has been acquired
-                    # or it's in the process of being acquired (async)
-                elif e.errno != errno.EEXIST:
+                    # lockspace operation to complete else silently continue,
+                    # the host id has been acquired or it's in the process of
+                    # being acquired (async).
+                    if not async:
+                        if not sanlock.inq_lockspace(self._sdUUID, hostId,
+                                                     self._idsPath, wait=True):
+                            raise se.AcquireHostIdFailure(self._sdUUID, e)
+                        self.log.info("Host id for domain %s successfully "
+                                      "acquired (id=%s, async=%s)",
+                                      self._sdUUID, hostId, async)
+                elif e.errno == errno.EEXIST:
+                    self.log.info("Host id for domain %s already acquired "
+                                  "(id=%s, async=%s)",
+                                  self._sdUUID, hostId, async)
+                else:
                     raise se.AcquireHostIdFailure(self._sdUUID, e)
-
-            self.log.debug("Host id for domain %s successfully acquired "
-                           "(id: %s)", self._sdUUID, hostId)
+            else:
+                if not async:
+                    self.log.info("Host id for domain %s successfully "
+                                  "acquired (id=%s, async=%s)",
+                                  self._sdUUID, hostId, async)
 
     def releaseHostId(self, hostId, async, unused):
         with self._lock:
