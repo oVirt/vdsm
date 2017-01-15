@@ -566,9 +566,13 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
 
-            # Both domain status and path status succeed, acquire host id
+            # Both domain status and path status succeed
             env.wait_for_cycle()
             env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
+            self.assertFalse(domain.acquired)
+
+            # Acquire host id on the next cycle
+            env.wait_for_cycle()
             self.assertTrue(domain.acquired)
 
     def test_acquire_host_id_after_error(self):
@@ -582,9 +586,13 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             env.wait_for_cycle()
             del domain.errors["selftest"]
 
-            # Both domain status and path status succeed, acquire host id
+            # Both domain status and path status succeed
             env.wait_for_cycle()
             env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
+            self.assertFalse(domain.acquired)
+
+            # Acquire host id on the next cycle
+            env.wait_for_cycle()
             self.assertTrue(domain.acquired)
 
     def test_acquire_host_id_if_lost(self):
@@ -593,9 +601,14 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
 
-            # Both domain status and path status succeed, acquire host id
+            # Both domain status and path status succeed
             env.wait_for_cycle()
             env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
+            self.assertFalse(domain.acquired)
+
+            # Acquire host id on the next cycle
+            env.wait_for_cycle()
+            self.assertTrue(domain.acquired)
 
             # Simulate loosing host id - acquire again because status is valid
             domain.acquired = False
@@ -631,8 +644,11 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             env.wait_for_cycle()
             self.assertFalse(domain.acquired)
             del domain.errors["acquireHostId"]
-            env.wait_for_cycle()
             env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
+            self.assertFalse(domain.acquired)
+
+            # Acquire on next cycle
+            env.wait_for_cycle()
             self.assertTrue(domain.acquired)
 
     def test_refresh(self):
@@ -671,6 +687,8 @@ class TestMonitorThreadStopping(VdsmTestCase):
             env.thread.start()
             env.wait_for_cycle()
             env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
+            # Acquire on next cycle
+            env.wait_for_cycle()
         self.assertTrue(domain.acquired)
 
     def test_stop_while_blocked(self):
