@@ -83,13 +83,28 @@ function run_network_tests {
     return $res
 }
 
+function prepare_and_copy_yum_conf {
+    local vm_name="$1"
+    local tempfile=$(mktemp XXXXXX)
+
+    cat /etc/yum/yum.conf 2>/dev/null | \
+    grep -v "reposdir" | \
+    "$AUTOMATION"/exclude_from_conf 'vdsm*' > "$tempfile"
+
+    lago copy-to-vm "$vm_name" "$tempfile" /etc/yum/yum.conf
+    rm "$tempfile"
+}
+
+mkdir "$EXPORTS"/lago-logs
 VMS_PREFIX="vdsm_functional_tests_host-"
 failed=0
 for distro in el7; do
     vm_name="${VMS_PREFIX}${distro}"
     # starting vms one by one to avoid exhausting memory in the host, it will
     lago start "$vm_name"
-    lago copy-to-vm "$vm_name" /etc/yum/yum.conf /etc/yum/yum.conf
+
+    prepare_and_copy_yum_conf "$vm_name"
+
     # the ovirt deploy is needed because it will not start the local repo
     # otherwise
     lago ovirt deploy
@@ -112,16 +127,12 @@ for distro in el7; do
         "$vm_name" \
         "/tmp/nosetests-${distro}.xml" \
         "$EXPORTS/nosetests-${distro}.xml" || :
+    lago collect --output "$EXPORTS"/lago-logs
     lago stop "$vm_name"
 done
 
 lago cleanup
 
-cat "$EXPORTS/functional_tests_stdout.$distro.log"
-
-[[ -e "logs" ]] \
-&& {
-    tar cvzf "$EXPORTS/lago-logs.tar.gz" logs
-}
+cp "$PREFIX"/current/logs/*.log "$EXPORTS"/lago-logs
 
 exit $failed

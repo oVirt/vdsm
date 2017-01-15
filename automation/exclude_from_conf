@@ -1,0 +1,20 @@
+#!/usr/bin/python2
+import sys
+import ConfigParser
+
+
+def main():
+    _, exclude_term = sys.argv
+
+    config = ConfigParser.ConfigParser()
+    config.readfp(sys.stdin)
+
+    for section in config.sections():
+        if section == 'main':
+            continue
+        config.set(section, 'exclude', exclude_term)
+    config.write(sys.stdout)
+
+
+if __name__ == '__main__':
+    sys.exit(main() or 0)
