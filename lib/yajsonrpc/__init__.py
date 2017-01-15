@@ -18,13 +18,15 @@ import logging
 from six.moves import queue
 from threading import Lock, Event
 
-from vdsm.common.compat import json
+from vdsm.common import exception as vdsmexception
 
-from vdsm.common import exception
+from vdsm.common.compat import json
 from vdsm.common.logutils import Suppressed, traceback
 from vdsm.common.threadlocal import vars
 from vdsm.common.time import monotonic_time
 from vdsm.common.password import protect_passwords, unprotect_passwords
+
+from yajsonrpc import exception
 
 __all__ = ["betterAsyncore", "stompreactor", "stomp"]
 
@@ -33,66 +35,6 @@ CALL_TIMEOUT = 15
 _STATE_INCOMING = 1
 _STATE_OUTGOING = 2
 _STATE_ONESHOT = 4
-
-
-class JsonRpcErrorBase(exception.ContextException):
-    """ Base class for JSON RPC errors """
-
-
-class JsonRpcParseError(JsonRpcErrorBase):
-    code = -32700
-    message = ("Invalid JSON was received by the server. "
-               "An error occurred on the server while parsing "
-               "the JSON text.")
-
-
-class JsonRpcInvalidRequestError(JsonRpcErrorBase):
-    code = -32600
-    message = "Invalid request"
-
-
-class JsonRpcMethodNotFoundError(JsonRpcErrorBase):
-    code = -32601
-    message = ("The method does not exist or is not "
-               "available")
-
-
-class JsonRpcInvalidParamsError(JsonRpcErrorBase):
-    code = -32602
-    message = "Invalid method parameter(s)"
-
-
-class JsonRpcInternalError(JsonRpcErrorBase):
-    code = -32603
-    message = "Internal JSON-RPC error"
-
-
-class JsonRpcBindingsError(JsonRpcErrorBase):
-    code = -32604
-    message = "Missing bindings for JSON-RPC."
-
-
-class JsonRpcNoResponseError(JsonRpcErrorBase):
-    code = -32605
-    message = "No response for JSON-RPC request"
-
-
-class JsonRpcServerError(JsonRpcErrorBase):
-    """
-    Legacy API methods return an error code instead of raising an exception.
-    This class is used to wrap the returned code and message.
-
-    It is also used on the client side, when an error is returned
-    in JsonRpcResponse.
-    """
-
-    def __init__(self, code, message):
-        self.code = code
-        self.message = message
-
-    @classmethod
-    def from_dict(cls, d):
-        return cls(d["code"], d["message"])
 
 
 class JsonRpcRequest(object):
@@ -106,21 +48,21 @@ class JsonRpcRequest(object):
         try:
             obj = json.loads(msg, encoding='utf-8')
         except:
-            raise JsonRpcParseError()
+            raise exception.JsonRpcParseError()
 
         return cls.fromRawObject(obj)
 
     @staticmethod
     def fromRawObject(obj):
         if obj.get("jsonrpc") != "2.0":
-            raise JsonRpcInvalidRequestError(
+            raise exception.JsonRpcInvalidRequestError(
                 "Wrong protocol version",
                 request=obj
             )
 
         method = obj.get("method")
         if method is None:
-            raise JsonRpcInvalidRequestError(
+            raise exception.JsonRpcInvalidRequestError(
                 "missing method header in method",
                 request=obj
             )
@@ -130,7 +72,7 @@ class JsonRpcRequest(object):
 
         params = obj.get('params', [])
         if not isinstance(params, (list, dict)):
-            raise JsonRpcInvalidRequestError(
+            raise exception.JsonRpcInvalidRequestError(
                 "wrong params type",
                 request=obj
             )
@@ -186,13 +128,13 @@ class JsonRpcResponse(object):
     @staticmethod
     def fromRawObject(obj):
         if obj.get("jsonrpc") != "2.0":
-            raise JsonRpcInvalidRequestError(
+            raise exception.JsonRpcInvalidRequestError(
                 "wrong protocol version",
                 request=obj
             )
 
         if "result" not in obj and "error" not in obj:
-            raise JsonRpcInvalidRequestError(
+            raise exception.JsonRpcInvalidRequestError(
                 "missing result or error info",
                 request=obj
             )
@@ -201,7 +143,7 @@ class JsonRpcResponse(object):
 
         error = None
         if "error" in obj:
-            error = JsonRpcServerError.from_dict(obj["error"])
+            error = exception.JsonRpcServerError.from_dict(obj["error"])
 
         reqId = obj.get("id")
 
@@ -316,7 +258,8 @@ class _JsonRpcServeRequestContext(object):
             try:
                 encodedObjects.append(response.encode())
             except:  # Error encoding data
-                response = JsonRpcResponse(None, JsonRpcInternalError(),
+                response = JsonRpcResponse(None,
+                                           exception.JsonRpcInternalError(),
                                            response.id)
                 encodedObjects.append(response.encode())
 
@@ -374,7 +317,7 @@ class JsonRpcClient(object):
     def callMethod(self, methodName, params=[], rid=None):
         responses = self.call(JsonRpcRequest(methodName, params, rid))
         if responses is None:
-            raise JsonRpcNoResponseError(method=methodName)
+            raise exception.JsonRpcNoResponseError(method=methodName)
 
         response = responses[0]
         if response.error:
@@ -641,13 +584,13 @@ class JsonRpcServer(object):
             self.log.info("In recovery, ignoring '%s' in bridge with %s",
                           req.method, req.params)
             return JsonRpcResponse(
-                None, exception.RecoveryInProgress(), req.id)
+                None, vdsmexception.RecoveryInProgress(), req.id)
 
         self.log.log(logLevel, "Calling '%s' in bridge with %s",
                      req.method, req.params)
         try:
             method = self._bridge.dispatch(req.method)
-        except JsonRpcMethodNotFoundError as e:
+        except exception.JsonRpcMethodNotFoundError as e:
             if req.isNotification():
                 return None
 
@@ -662,11 +605,12 @@ class JsonRpcServer(object):
             else:
                 res = method(**params)
             self._bridge.unregister_server_address()
-        except exception.VdsmException as e:
+        except vdsmexception.VdsmException as e:
             return JsonRpcResponse(None, e, req.id)
         except Exception as e:
             self.log.exception("Internal server error")
-            return JsonRpcResponse(None, JsonRpcInternalError(str(e)), req.id)
+            return JsonRpcResponse(
+                None, exception.JsonRpcInternalError(str(e)), req.id)
         else:
             res = True if res is None else res
             self.log.log(logLevel, "Return '%s' in bridge with %s",
@@ -693,7 +637,8 @@ class JsonRpcServer(object):
         try:
             rawRequests = json.loads(msg)
         except:
-            ctx.addResponse(JsonRpcResponse(None, JsonRpcParseError(), None))
+            ctx.addResponse(JsonRpcResponse(
+                None, exception.JsonRpcParseError(), None))
             ctx.sendReply()
             return
 
@@ -701,12 +646,10 @@ class JsonRpcServer(object):
             # Empty batch request
             if len(rawRequests) == 0:
                 ctx.addResponse(
-                    JsonRpcResponse(None,
-                                    JsonRpcInvalidRequestError(
-                                        "request batch is empty",
-                                        request=rawRequests
-                                    ),
-                                    None))
+                    JsonRpcResponse(
+                        None, exception.JsonRpcInvalidRequestError(
+                            "request batch is empty", request=rawRequests),
+                        None))
                 ctx.sendReply()
                 return
         else:
@@ -719,12 +662,11 @@ class JsonRpcServer(object):
             try:
                 req = JsonRpcRequest.fromRawObject(rawRequest)
                 requests.append(req)
-            except exception.VdsmException as err:
+            except vdsmexception.VdsmException as err:
                 ctx.addResponse(JsonRpcResponse(None, err, None))
             except:
-                ctx.addResponse(JsonRpcResponse(None,
-                                                JsonRpcInternalError(),
-                                                None))
+                ctx.addResponse(JsonRpcResponse(
+                    None, exception.JsonRpcInternalError(), None))
 
         ctx.setRequests(requests)
 
@@ -743,14 +685,14 @@ class JsonRpcServer(object):
                 self._threadFactory(
                     JsonRpcTask(self._serveRequest, ctx, request)
                 )
-            except exception.ContextException as e:
+            except vdsmexception.ContextException as e:
                 ctx.requestDone(JsonRpcResponse(None, e, request.id))
             except Exception as e:
                 self.log.exception("could not serve request %s", request)
                 ctx.requestDone(
                     JsonRpcResponse(
                         None,
-                        JsonRpcInternalError(
+                        exception.JsonRpcInternalError(
                             str(e)
                         ),
                         request.id

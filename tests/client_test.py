@@ -39,7 +39,9 @@ from vdsm.client import \
     ServerError, \
     TimeoutError
 
-import yajsonrpc
+from yajsonrpc.exception import \
+    JsonRpcMethodNotFoundError, \
+    JsonRpcInternalError
 from vdsm.common import exception
 
 CALL_TIMEOUT = 3
@@ -64,12 +66,12 @@ class _Bridge(object):
     def dispatch(self, method):
         class_name, method_name = method.split('.', 1)
         if class_name != "Test":
-            raise yajsonrpc.JsonRpcMethodNotFoundError(method=method)
+            raise JsonRpcMethodNotFoundError(method=method)
 
         try:
             return getattr(self, method_name)
         except AttributeError:
-            raise yajsonrpc.JsonRpcMethodNotFoundError(method=method)
+            raise JsonRpcMethodNotFoundError(method=method)
 
     def echo(self, text):
         self.log.info("ECHO: '%s'", text)
@@ -151,9 +153,7 @@ class VdsmClientTests(VdsmTestCase):
                 client.Test.missingMethod()
 
             self.assertEqual(
-                ex.exception.code,
-                yajsonrpc.JsonRpcMethodNotFoundError("").code
-            )
+                ex.exception.code, JsonRpcMethodNotFoundError("").code)
             self.assertIn("missingMethod", ex.exception.message)
 
     @skipif(six.PY3, "Needs porting to python 3")
@@ -168,10 +168,7 @@ class VdsmClientTests(VdsmTestCase):
             with self.assertRaises(ServerError) as ex:
                 client.Test.echo()
 
-            self.assertEqual(
-                ex.exception.code,
-                yajsonrpc.JsonRpcInternalError().code
-            )
+            self.assertEqual(ex.exception.code, JsonRpcInternalError().code)
 
     @skipif(six.PY3, "Needs porting to python 3")
     @slowtest

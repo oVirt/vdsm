@@ -36,12 +36,12 @@ from jsonRpcHelper import \
     constructClient, \
     constructAcceptor
 
-from yajsonrpc import \
+from yajsonrpc import JsonRpcRequest
+from yajsonrpc.exception import \
     JsonRpcErrorBase, \
     JsonRpcMethodNotFoundError, \
     JsonRpcNoResponseError, \
-    JsonRpcInternalError, \
-    JsonRpcRequest
+    JsonRpcInternalError
 
 from yajsonrpc.stomp import Disconnected
 from yajsonrpc.stompreactor import SimpleClient

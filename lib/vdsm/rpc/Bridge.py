@@ -1,4 +1,4 @@
-# Copyright (C) 2012 - 2016 Adam Litke, IBM Corporation
+# Copyright (C) 2012 - 2017 Adam Litke, IBM Corporation
 # Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -21,7 +21,7 @@ import logging
 import threading
 import types
 
-import yajsonrpc
+from yajsonrpc import exception
 
 from vdsm import API
 from vdsm.api import vdsmapi
@@ -110,7 +110,7 @@ class DynamicBridge(object):
             className, methodName = method.split('.', 1)
             self._schema.get_method(vdsmapi.MethodRep(className, methodName))
         except (vdsmapi.MethodNotFound, ValueError):
-            raise yajsonrpc.JsonRpcMethodNotFoundError(method=method)
+            raise exception.JsonRpcMethodNotFoundError(method=method)
         return partial(self._dynamicMethod, className, methodName)
 
     def _convert_class_name(self, name):
@@ -204,7 +204,7 @@ class DynamicBridge(object):
                 raise InvalidCall(fn, methodArgs, e)
 
         if result['status']['code']:
-            raise yajsonrpc.JsonRpcServerError.from_dict(result['status'])
+            raise exception.JsonRpcServerError.from_dict(result['status'])
 
         retfield = command_info.get(cmd, {}).get('ret')
         if isinstance(retfield, types.FunctionType):

@@ -30,8 +30,9 @@ from weakref import proxy
 from collections import defaultdict
 
 from yajsonrpc.betterAsyncore import Reactor
+from yajsonrpc.exception import JsonRpcBindingsError
 from yajsonrpc.stompreactor import StompClient, StompRpcServer
-from yajsonrpc import Notification, JsonRpcBindingsError
+from yajsonrpc import Notification
 from vdsm import sslutils
 from vdsm.config import config
 from vdsm.common.define import doneCode, errCode

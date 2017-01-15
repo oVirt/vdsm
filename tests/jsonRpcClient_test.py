@@ -22,6 +22,7 @@ from contextlib import contextmanager
 from six.moves import queue
 
 import yajsonrpc
+from yajsonrpc.exception import JsonRpcInvalidRequestError
 from testlib import VdsmTestCase
 
 
@@ -106,5 +107,5 @@ class JsonRpcClientTests(VdsmTestCase):
             client.subscribe(queue_name, event_queue)
 
             msg = '{ "key": "value", "array": [2,1,3,4] }'
-            with self.assertRaises(yajsonrpc.JsonRpcInvalidRequestError):
+            with self.assertRaises(JsonRpcInvalidRequestError):
                 self.transport.send(msg, queue_name)

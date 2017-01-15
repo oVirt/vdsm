@@ -22,7 +22,7 @@ from __future__ import absolute_import
 import json
 
 from vdsm.api import vdsmapi
-from yajsonrpc import JsonRpcErrorBase
+from yajsonrpc.exception import JsonRpcErrorBase
 
 from testlib import VdsmTestCase as TestCaseBase
 

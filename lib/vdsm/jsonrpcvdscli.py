@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@ import six
 from yajsonrpc import stompreactor
 from yajsonrpc import \
     JsonRpcRequest, \
-    JsonRpcNoResponseError, \
     CALL_TIMEOUT
+from yajsonrpc.exception import JsonRpcNoResponseError
 
 from vdsm.api import vdsmapi
 from vdsm.common import response

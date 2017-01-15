@@ -27,7 +27,7 @@ import yaml
 
 from vdsm import utils
 from vdsm.common.logutils import Suppressed
-from yajsonrpc import JsonRpcInvalidParamsError
+from yajsonrpc.exception import JsonRpcInvalidParamsError
 
 
 PRIMITIVE_TYPES = {'boolean': lambda value: isinstance(value, bool),

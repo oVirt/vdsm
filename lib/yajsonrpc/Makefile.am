@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2011 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ yajsonrpcdir = $(pythondir)/yajsonrpc
 dist_yajsonrpc_PYTHON = \
 	__init__.py \
 	betterAsyncore.py \
+	exception.py \
 	stompreactor.py \
 	stomp.py \
 	$(NULL)
