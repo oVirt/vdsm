@@ -493,9 +493,6 @@ class MonitorThread(object):
             status = Status(path_status, self.status._domain_status)
             self._updateStatus(status)
 
-        if self._shouldAcquireHostId():
-            self._acquireHostId()
-
     def _stopCheckingPath(self):
         """
         Called during monitor shutdown, must not raise!
