@@ -402,7 +402,8 @@ class v2vTests(TestCaseBase):
     def testSuccessfulImportOVA(self):
         with temporary_ovf_dir() as ovapath, \
                 namedTemporaryDir() as v2v._LOG_DIR:
-            v2v.convert_ova(ovapath, self.vminfo, self.job_id, FakeIRS())
+            v2v.convert_ova(ovapath, self.vminfo, self.job_id, FakeIRS(),
+                            None)
             job = v2v._jobs[self.job_id]
             job.wait()
 
@@ -448,7 +449,8 @@ class v2vTests(TestCaseBase):
                                     ProtectedPassword('mypassword'),
                                     self.vminfo,
                                     self.job_id,
-                                    FakeIRS())
+                                    FakeIRS(),
+                                    None)
             job = v2v._jobs[self.job_id]
             job.wait()
 
@@ -474,10 +476,26 @@ class v2vTests(TestCaseBase):
 
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     def testV2VCapabilities(self):
-        cmd = v2v.V2VCommand(None, None, None)
+        cmd = v2v.V2VCommand(None, None, None, None)
         self.assertIn('virt-v2v', cmd._v2v_caps)
         self.assertIn('input:libvirt', cmd._v2v_caps)
         self.assertIn('output:vdsm', cmd._v2v_caps)
+
+    @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
+    def testQcow2Compat(self):
+        # Make sure we raise on invalid compat version
+        with self.assertRaises(ValueError):
+            cmd = v2v.V2VCommand(None, None, None, 'foobar')
+
+        # Make sure vdsm-compat capability is supported
+        cmd = v2v.V2VCommand(None, None, None, None)
+        self.assertIn('vdsm-compat-option', cmd._v2v_caps)
+
+        # Look for the command line argument
+        cmd = v2v.V2VCommand(None, None, None, '1.1')
+        self.assertIn('--vdsm-compat', cmd._base_command)
+        i = cmd._base_command.index('--vdsm-compat')
+        self.assertEquals('1.1', cmd._base_command[i + 1])
 
 
 @expandPermutations

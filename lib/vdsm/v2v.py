@@ -73,6 +73,7 @@ _SSH_AUTH_RE = '(SSH_AUTH_SOCK)=([^;]+).*;\nSSH_AGENT_PID=(\d+)'
 _OVF_RESOURCE_CPU = 3
 _OVF_RESOURCE_MEMORY = 4
 _OVF_RESOURCE_NETWORK = 10
+_QCOW2_COMPAT_SUPPORTED = ('0.10', '1.1')
 
 # OVF Specification:
 # https://www.iso.org/obp/ui/#iso:std:iso-iec:17203:ed-1:v1:en
@@ -188,11 +189,13 @@ def get_external_vm_names(uri, username, password):
         return response.success(vmNames=vms)
 
 
-def convert_external_vm(uri, username, password, vminfo, job_id, irs):
+def convert_external_vm(uri, username, password, vminfo, job_id, irs,
+                        qcow2_compat):
     if uri.startswith(_XEN_SSH_PROTOCOL):
-        command = XenCommand(uri, vminfo, job_id, irs)
+        command = XenCommand(uri, vminfo, job_id, irs, qcow2_compat)
     elif uri.startswith(_VMWARE_PROTOCOL):
-        command = LibvirtCommand(uri, username, password, vminfo, job_id, irs)
+        command = LibvirtCommand(uri, username, password, vminfo, job_id,
+                                 irs, qcow2_compat)
     elif uri.startswith(_KVM_PROTOCOL):
         if ovirt_imageio_common is None:
             raise V2VError('Unsupported protocol KVM, ovirt_imageio_common'
@@ -206,8 +209,8 @@ def convert_external_vm(uri, username, password, vminfo, job_id, irs):
     return {'status': doneCode}
 
 
-def convert_ova(ova_path, vminfo, job_id, irs):
-    command = OvaCommand(ova_path, vminfo, job_id, irs)
+def convert_ova(ova_path, vminfo, job_id, irs, qcow2_compat):
+    command = OvaCommand(ova_path, vminfo, job_id, irs, qcow2_compat)
     job = ImportVm(job_id, command)
     job.start()
     _add_job(job_id, job)
@@ -384,7 +387,7 @@ class SSHAgent(object):
 
 
 class V2VCommand(object):
-    def __init__(self, vminfo, vmid, irs):
+    def __init__(self, vminfo, vmid, irs, qcow2_compat):
         self._vminfo = vminfo
         self._vmid = vmid
         self._irs = irs
@@ -392,6 +395,21 @@ class V2VCommand(object):
         self._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % vmid)
         self._base_command = [_VIRT_V2V.cmd, '-v', '-x']
         self._query_v2v_caps()
+        if qcow2_compat is not None:
+            if qcow2_compat not in _QCOW2_COMPAT_SUPPORTED:
+                logging.error('Invalid QCOW2 compat version %r' %
+                              qcow2_compat)
+                raise ValueError('Invalid QCOW2 compat version %r' %
+                                 qcow2_compat)
+            if 'vdsm-compat-option' in self._v2v_caps:
+                self._base_command.extend(['--vdsm-compat', qcow2_compat])
+            elif qcow2_compat != '0.10':
+                # Note: this check should be changed or removed once the
+                # default in virt-v2v changes
+                raise V2VError(
+                    'virt-v2v does not support vdsm-compat option, '
+                    'but qcow2 compat version %r was requested',
+                    qcow2_compat)
 
     def execute(self):
         raise NotImplementedError("Subclass must implement this")
@@ -529,8 +547,9 @@ class V2VCommand(object):
 
 
 class LibvirtCommand(V2VCommand):
-    def __init__(self, uri, username, password, vminfo, vmid, irs):
-        super(LibvirtCommand, self).__init__(vminfo, vmid, irs)
+    def __init__(self, uri, username, password, vminfo, vmid, irs,
+                 qcow2_compat):
+        super(LibvirtCommand, self).__init__(vminfo, vmid, irs, qcow2_compat)
         self._uri = uri
         self._username = username
         self._password = password
@@ -562,8 +581,8 @@ class LibvirtCommand(V2VCommand):
 
 
 class OvaCommand(V2VCommand):
-    def __init__(self, ova_path, vminfo, vmid, irs):
-        super(OvaCommand, self).__init__(vminfo, vmid, irs)
+    def __init__(self, ova_path, vminfo, vmid, irs, qcow2_compat):
+        super(OvaCommand, self).__init__(vminfo, vmid, irs, qcow2_compat)
         self._ova_path = ova_path
 
     def _command(self):
@@ -599,8 +618,8 @@ class XenCommand(V2VCommand):
     - host must be in ~/.ssh/known_hosts (done automatically
       by ssh to the host before importing vm)
     """
-    def __init__(self, uri, vminfo, job_id, irs):
-        super(XenCommand, self).__init__(vminfo, job_id, irs)
+    def __init__(self, uri, vminfo, job_id, irs, qcow2_compat):
+        super(XenCommand, self).__init__(vminfo, job_id, irs, qcow2_compat)
         self._uri = uri
         self._ssh_agent = SSHAgent()
 
@@ -635,7 +654,7 @@ class XenCommand(V2VCommand):
 
 class KVMCommand(V2VCommand):
     def __init__(self, uri, username, password, vminfo, vmid, irs):
-        super(KVMCommand, self).__init__(vminfo, vmid, irs)
+        super(KVMCommand, self).__init__(vminfo, vmid, irs, None)
         self._uri = uri
         self._username = username
         self._password = password
