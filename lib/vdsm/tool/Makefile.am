@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_vdsmtool_PYTHON = \
 	__init__.py \
+	confmeta.py \
 	dummybr.py \
 	dump_bonding_opts.py \
 	dump_volume_chains.py \
