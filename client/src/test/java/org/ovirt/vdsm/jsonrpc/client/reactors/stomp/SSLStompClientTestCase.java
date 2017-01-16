@@ -34,7 +34,7 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener.EventListener;
 
 public class SSLStompClientTestCase {
     private static final String CHAR_LIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-    private static final int TIMEOUT_SEC = 2;
+    private static final int TIMEOUT_SEC = 3;
     private static final String HOSTNAME = "localhost";
     private static final String KEYSTORE_NAME = "keystore";
     private static final String TRUSTSTORE_NAME = "truststore";
