@@ -284,6 +284,12 @@ class VdsmTestCase(unittest.TestCase):
         if abs(elapsed - expected) > tolerance:
             raise AssertionError("Operation time: %s" % elapsed)
 
+    def assertEquals(self, *args, **kwargs):
+        raise RuntimeError(
+            "assertEquals is deprecated, please use assertEqual\n"
+            "See https://docs.python.org/2/library/unittest.html"
+            "#deprecated-aliases")
+
 
 class XMLTestCase(VdsmTestCase):
 
