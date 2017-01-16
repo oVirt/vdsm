@@ -3,6 +3,7 @@ export LIBGUESTFS_BACKEND=direct
 # ensure /dev/kvm exists, otherwise it will still use
 # direct backend, but without KVM(much slower).
 ! [[ -c "/dev/kvm" ]] && mknod /dev/kvm c 10 232
+DISTRO='el7'
 AUTOMATION="$PWD"/automation
 PREFIX="$AUTOMATION"/vdsm_functional
 EXPORTS="$PWD"/exported-artifacts
@@ -62,7 +63,7 @@ function run_functional_tests {
             cd /usr/share/vdsm/tests
             ./run_tests.sh \
                 --with-xunit \
-                --xunit-file=/tmp/nosetests-${distro}.xml \
+                --xunit-file=/tmp/nosetests-${DISTRO}.xml \
                 -s \
                 $FUNCTIONAL_TESTS_LIST
         " || res=$?
@@ -98,38 +99,37 @@ function prepare_and_copy_yum_conf {
 mkdir "$EXPORTS"/lago-logs
 VMS_PREFIX="vdsm_functional_tests_host-"
 failed=0
-for distro in el7; do
-    vm_name="${VMS_PREFIX}${distro}"
-    # starting vms one by one to avoid exhausting memory in the host, it will
-    lago start "$vm_name"
 
-    prepare_and_copy_yum_conf "$vm_name"
+vm_name="${VMS_PREFIX}${DISTRO}"
+# starting vms one by one to avoid exhausting memory in the host, it will
+lago start "$vm_name"
 
-    # the ovirt deploy is needed because it will not start the local repo
-    # otherwise
-    lago ovirt deploy
+prepare_and_copy_yum_conf "$vm_name"
 
-    lago ovirt serve &
-    PID=$!
+# the ovirt deploy is needed because it will not start the local repo
+# otherwise
+lago ovirt deploy
 
-    mount_tmpfs
+lago ovirt serve &
+PID=$!
 
-    run_functional_tests | tee "$EXPORTS/functional_tests_stdout.$distro.log"
-    failed="${PIPESTATUS[0]}"
+mount_tmpfs
 
-    run_network_tests | tee -a "$EXPORTS/functional_tests_stdout.$distro.log"
-    res="${PIPESTATUS[0]}"
-    [ "$res" -ne 0 ] && failed="$res"
+run_functional_tests | tee "$EXPORTS/functional_tests_stdout.$DISTRO.log"
+failed="${PIPESTATUS[0]}"
 
-    kill $PID
+run_network_tests | tee -a "$EXPORTS/functional_tests_stdout.$DISTRO.log"
+res="${PIPESTATUS[0]}"
+[ "$res" -ne 0 ] && failed="$res"
 
-    lago copy-from-vm \
-        "$vm_name" \
-        "/tmp/nosetests-${distro}.xml" \
-        "$EXPORTS/nosetests-${distro}.xml" || :
-    lago collect --output "$EXPORTS"/lago-logs
-    lago stop "$vm_name"
-done
+kill $PID
+
+lago copy-from-vm \
+"$vm_name" \
+"/tmp/nosetests-${DISTRO}.xml" \
+"$EXPORTS/nosetests-${DISTRO}.xml" || :
+lago collect --output "$EXPORTS"/lago-logs
+lago stop "$vm_name"
 
 lago cleanup
 
