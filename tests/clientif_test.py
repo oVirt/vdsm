@@ -19,11 +19,17 @@
 #
 
 import json
+import logging
 import os.path
+import threading
+
+from vdsm.common import response
+from virt.vm import VolumeError
+
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import temporaryPath
 from monkeypatch import MonkeyPatch
-from virt.vm import VolumeError
+
 import clientIF
 
 import vmfakelib as fake
@@ -35,6 +41,23 @@ FAKE_FLOPPY_PATH = '/fake/path/to/floppy'
 ISOFS_PATH = '/rhev/data-center/mnt/A.B.C.D:_ovirt_iso/XXX' \
              '/images/11111111-1111-1111-1111-111111111111/' \
              'Fedora-Live-Desktop-x86_64-19.iso'
+
+
+class FakeClientIF(clientIF.clientIF):
+    def __init__(self):
+        # the bare minimum initialization for our test needs.
+        self.irs = fake.IRS()  # just to make sure nothing ever happens
+        self.log = logging.getLogger('fake.ClientIF')
+        self.channelListener = None
+        self.vmContainerLock = threading.Lock()
+        self.vmContainer = {}
+        self.vmRequests = {}
+        self.bindings = {}
+        self._recovery = False
+
+    def createVm(self, vmParams, vmRecover=False):
+        self.vmRequests[vmParams['vmId']] = (vmParams, vmRecover)
+        return response.success(vmList={})
 
 
 class FakeSuperVdsm:
@@ -85,7 +108,7 @@ def fakePayloadDrive():
 class ClientIFTests(TestCaseBase):
 
     def setUp(self):
-        self.cif = fake.ClientIF()
+        self.cif = FakeClientIF()
 
     def assertCalled(self, funcName):
         sv = clientIF.supervdsm.getProxy()
@@ -202,11 +225,11 @@ class ClientIFTests(TestCaseBase):
 class getVMsTests(TestCaseBase):
 
     def test_empty(self):
-        cif = fake.ClientIF()
+        cif = FakeClientIF()
         self.assertFalse(cif.getVMs())
 
     def test_with_vms(self):
-        cif = fake.ClientIF()
+        cif = FakeClientIF()
         with fake.VM(params={'vmId': 'testvm1'}, cif=cif) as testvm1:
             with fake.VM(params={'vmId': 'testvm2'}, cif=cif) as testvm2:
                 vms = cif.getVMs()
@@ -220,7 +243,7 @@ class TestNotification(TestCaseBase):
     TEST_EVENT_NAME = 'test_event'
 
     def setUp(self):
-        self.cif = fake.ClientIF()
+        self.cif = FakeClientIF()
         self.serv = fake.JsonRpcServer()
         self.cif.bindings["jsonrpc"] = self.serv
 

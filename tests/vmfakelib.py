@@ -33,7 +33,6 @@ from vdsm import libvirtconnection
 from vdsm.common import response
 from vdsm.virt import sampling
 
-import clientIF
 from virt import vm
 
 from testlib import namedTemporaryDir
@@ -81,7 +80,7 @@ class JsonRpcServer(object):
         self.bridge = _Bridge()
 
 
-class ClientIF(clientIF.clientIF):
+class ClientIF(object):
     def __init__(self):
         # the bare minimum initialization for our test needs.
         self.irs = IRS()  # just to make sure nothing ever happens
@@ -96,6 +95,19 @@ class ClientIF(clientIF.clientIF):
     def createVm(self, vmParams, vmRecover=False):
         self.vmRequests[vmParams['vmId']] = (vmParams, vmRecover)
         return response.success(vmList={})
+
+    def getInstance(self):
+        return self
+
+    def prepareVolumePath(self, paramFilespec):
+        return paramFilespec
+
+    def teardownVolumePath(self, paramFilespec):
+        pass
+
+    def getVMs(self):
+        with self.vmContainerLock:
+            return self.vmContainer.copy()
 
 
 class Domain(object):
