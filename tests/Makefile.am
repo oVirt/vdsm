@@ -150,6 +150,7 @@ test_modules = \
 	storage_xlease_test.py \
 	taskset_test.py \
 	testlib_test.py \
+	tool_confmeta_test.py \
 	tool_test.py \
 	toolbonding_test.py \
 	transportwrapper_test.py \
