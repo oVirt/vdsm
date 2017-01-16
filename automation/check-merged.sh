@@ -7,20 +7,6 @@ DISTRO='el7'
 AUTOMATION="$PWD"/automation
 PREFIX="$AUTOMATION"/vdsm_functional
 EXPORTS="$PWD"/exported-artifacts
-TEST_PATH="functional"
-FUNCTIONAL_TESTS_LIST=" \
-    $TEST_PATH/supervdsmFuncTests.py \
-    $TEST_PATH/upgrade_vdsm_test.py"
-
-DISABLE_TESTS_LIST=" \
-    $TEST_PATH/sosPluginTests.py \
-    $TEST_PATH/vmRecoveryTests.py \
-    $TEST_PATH/momTests.py \
-    $TEST_PATH/networkTests.py \
-    $TEST_PATH/vmQoSTests.py \
-    $TEST_PATH/virtTests.py \
-    $TEST_PATH/storageTests.py \
-    $TEST_PATH/networkTestsOVS.py"
 
 # Creates RPMS
 "$AUTOMATION"/build-artifacts.sh
@@ -56,7 +42,7 @@ function mount_tmpfs {
     lago shell "$vm_name" -c "mount -t tmpfs tmpfs /sys/kernel/mm/ksm"
 }
 
-function run_functional_tests {
+function run_infra_tests {
     local res=0
     lago shell "$vm_name" -c \
         " \
@@ -65,7 +51,8 @@ function run_functional_tests {
                 --with-xunit \
                 --xunit-file=/tmp/nosetests-${DISTRO}.xml \
                 -s \
-                $FUNCTIONAL_TESTS_LIST
+                functional/supervdsmFuncTests.py \
+                functional/upgrade_vdsm_test.py \
         " || res=$?
     return $res
 }
@@ -115,7 +102,7 @@ PID=$!
 
 mount_tmpfs
 
-run_functional_tests | tee "$EXPORTS/functional_tests_stdout.$DISTRO.log"
+run_infra_tests | tee "$EXPORTS/functional_tests_stdout.$DISTRO.log"
 failed="${PIPESTATUS[0]}"
 
 run_network_tests | tee -a "$EXPORTS/functional_tests_stdout.$DISTRO.log"
