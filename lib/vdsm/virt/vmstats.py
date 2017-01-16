@@ -354,17 +354,7 @@ def disks(vm, stats, first_sample, last_sample, interval):
     for vm_drive in vm.getDiskDevices():
         drive_stats = {}
         try:
-            drive_stats = {
-                'truesize': str(vm_drive.truesize),
-                'apparentsize': str(vm_drive.apparentsize),
-                'readLatency': '0',
-                'writeLatency': '0',
-                'flushLatency': '0'
-            }
-            if isVdsmImage(vm_drive):
-                drive_stats['imageID'] = vm_drive.imageID
-            elif "GUID" in vm_drive:
-                drive_stats['lunGUID'] = vm_drive.GUID
+            drive_stats = disk_info(vm_drive)
 
             if (vm_drive.name in first_indexes and
                vm_drive.name in last_indexes):
@@ -399,6 +389,21 @@ def disks(vm, stats, first_sample, last_sample, interval):
         stats['disks'] = disk_stats
 
     return stats
+
+
+def disk_info(vm_drive):
+    drive_stats = {
+        'truesize': str(vm_drive.truesize),
+        'apparentsize': str(vm_drive.apparentsize),
+        'readLatency': '0',
+        'writeLatency': '0',
+        'flushLatency': '0'
+    }
+    if isVdsmImage(vm_drive):
+        drive_stats['imageID'] = vm_drive.imageID
+    elif "GUID" in vm_drive:
+        drive_stats['lunGUID'] = vm_drive.GUID
+    return drive_stats
 
 
 def _disk_rate(first_sample, first_index, last_sample, last_index, interval):
