@@ -12,6 +12,7 @@ RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     gcc \
     genisoimage \
     git \
+    iproute-tc \
     libselinux-python \
     libselinux-python3 \
     libvirt-python \

@@ -3,6 +3,7 @@ automake
 dbus-python
 gdb
 git
+iproute-tc
 libguestfs-tools-c
 libselinux-python3
 libvirt-python3
