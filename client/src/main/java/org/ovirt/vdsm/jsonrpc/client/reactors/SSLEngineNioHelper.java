@@ -6,7 +6,6 @@ import java.nio.channels.SocketChannel;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
-import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 
@@ -58,21 +57,15 @@ public class SSLEngineNioHelper {
             while (retry) {
                 SSLEngineResult result = this.engine.unwrap(this.packatPeerBuffer, this.appPeerBuffer);
                 switch (result.getStatus()) {
-                case BUFFER_OVERFLOW:
-                    putBuffer(buff);
-                case BUFFER_UNDERFLOW:
-                    read += result.bytesProduced();
-                    retry = false;
-                    break;
                 case CLOSED:
                     read = 0;
                     retry = false;
                     break;
+                case BUFFER_OVERFLOW:
+                    putBuffer(buff);
+                case BUFFER_UNDERFLOW:
                 default:
-                    if (HandshakeStatus.NEED_TASK.equals(result.getHandshakeStatus())
-                            || !this.appPeerBuffer.hasRemaining()) {
-                        retry = false;
-                    }
+                    retry = false;
                     read += result.bytesProduced();
                 }
             }
