@@ -35,7 +35,7 @@ VG = collections.namedtuple("VG", ['vg_mda_size', 'vg_mda_free'])
 TESTDIR = os.path.dirname(__file__)
 
 
-class MatadataValidityTests(TestCaseBase):
+class MetadataValidityTests(TestCaseBase):
 
     MIN_MD_SIZE = blockSD.VG_METADATASIZE * constants.MEGAB / 2
     MIN_MD_FREE = MIN_MD_SIZE * blockSD.VG_MDA_MIN_THRESHOLD
