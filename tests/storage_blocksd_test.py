@@ -23,7 +23,7 @@ import collections
 import os
 
 from monkeypatch import MonkeyPatch
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 
 from storage import blockSD
 from vdsm.storage import lvm
@@ -35,7 +35,7 @@ VG = collections.namedtuple("VG", ['vg_mda_size', 'vg_mda_free'])
 TESTDIR = os.path.dirname(__file__)
 
 
-class MetadataValidityTests(TestCaseBase):
+class MetadataValidityTests(VdsmTestCase):
 
     MIN_MD_SIZE = blockSD.VG_METADATASIZE * constants.MEGAB / 2
     MIN_MD_FREE = MIN_MD_SIZE * blockSD.VG_MDA_MIN_THRESHOLD
@@ -76,7 +76,7 @@ def fakeGetLV(vgName):
     return lvs
 
 
-class GetAllVolumesTests(TestCaseBase):
+class GetAllVolumesTests(VdsmTestCase):
     # TODO: add more tests, see fileSDTests.py
 
     @MonkeyPatch(lvm, 'getLV', fakeGetLV)
