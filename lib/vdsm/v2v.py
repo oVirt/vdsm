@@ -624,9 +624,9 @@ class KVMCommand(V2VCommand):
         if self._username is not None:
             cmd.extend([
                 '--username', self._username,
-                '--password-file', self._passwd_file,
-                '--source'])
+                '--password-file', self._passwd_file])
         src, fmt = self._source_images()
+        cmd.append('--source')
         cmd.extend(src)
         cmd.append('--dest')
         cmd.extend(self._dest_images())
