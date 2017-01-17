@@ -1,12 +1,17 @@
 #!/bin/bash -ex
+
 export LIBGUESTFS_BACKEND=direct
+
 # ensure /dev/kvm exists, otherwise it will still use
 # direct backend, but without KVM(much slower).
 ! [[ -c "/dev/kvm" ]] && mknod /dev/kvm c 10 232
+
+
 DISTRO='el7'
 AUTOMATION="$PWD"/automation
 PREFIX="$AUTOMATION"/vdsm_functional
 EXPORTS="$PWD"/exported-artifacts
+
 
 # Creates RPMS
 "$AUTOMATION"/build-artifacts.sh
@@ -23,17 +28,11 @@ fi
 [[ -e /usr/bin/qemu-kvm ]] \
 || ln -s /usr/libexec/qemu-kvm /usr/bin/qemu-kvm
 
-
 lago init \
     "$PREFIX" \
     "$AUTOMATION"/lago-env.yml
-# If testing locally in the rh office you can use the option
-# --template-repo-path=http://10.35.18.63/repo/repo.metadata
 
 cd "$PREFIX"
-
-# Make sure that there are no cached local repos, will not be needed once lago
-# can handle local rpms properly
 lago ovirt reposetup \
     --reposync-yum-config /dev/null \
     --custom-source "dir:$EXPORTS"
@@ -84,11 +83,9 @@ function prepare_and_copy_yum_conf {
 }
 
 mkdir "$EXPORTS"/lago-logs
-VMS_PREFIX="vdsm_functional_tests_host-"
 failed=0
 
-vm_name="${VMS_PREFIX}${DISTRO}"
-# starting vms one by one to avoid exhausting memory in the host, it will
+vm_name="vdsm_functional_tests_host-${DISTRO}"
 lago start "$vm_name"
 
 prepare_and_copy_yum_conf "$vm_name"
