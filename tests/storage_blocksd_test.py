@@ -105,7 +105,6 @@ class TestDecodeValidity(TestCaseBase):
         self.assertEqual(pvinfo["pecount"], '77')
         self.assertEqual(pvinfo["mapoffset"], '0')
 
-    @xfail('Colon in PV name is not supported yet')
     def test_decode_pv_colon(self):
         pvinfo = blockSD.decodePVInfo('pv:my:name')
         self.assertEqual(pvinfo["guid"], 'my:name')
