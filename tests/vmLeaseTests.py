@@ -39,7 +39,7 @@ class TestDevice(XMLTestCase):
 
     def setUp(self):
         # TODO: replace with @skipif when available
-        if six.PY3:
+        if not six.PY2:
             raise SkipTest("vmdevices not compatible with python 3")
 
     def test_getxml(self):
