@@ -1,0 +1,95 @@
+.\"Copyright 2017 Red Hat, Inc.
+.\"
+.\"Licensed to you under the GNU General Public License as published by
+.\"the Free Software Foundation; either version 2 of the License, or
+.\"(at your option) any later version.  See the files README and
+.\"COPYING which accompany this distribution.
+.\"
+.\" File Name macro definition plagiarized from bash.
+.\"
+.de FN
+\fI\|\\$1\|\fP
+..
+.TH man 1 "19 January, 2017" "1.0" "vdsm-client man page"
+.SH NAME
+vdsm-client \- VDSM's command line interface
+.SH SYNOPSIS
+.BR "vdsm-client [-a HOST] [-p PORT] [--unsecure] [--timeout TIMEOUT] [-f FILE] namespace method [args]"
+.SH DESCRIPTION
+The
+.B vdsm-client
+is a command-line client to vdsmd(8) API.
+It is intended to assist testing and debugging of the
+oVirt suite.
+
+.SS  Invoking commands with simple parameters
+simple command parameters should have pattern of name1=value name2=value
+
+.nf
+    vdsm-client VM getStats vmID=b3f6fa00-b315-4ad4-8108-f73da817b5c5
+.fi
+
+will print stats of a VM by its ID.
+
+.SS Invoking commands with complex parameters
+For invoking commands with complex or many arguments, you can read a JSON dictionary
+from a file:
+
+.nf
+    vdsm-client Lease info -f lease.json
+.fi
+
+where lease.json file content is:
+
+.nf
+    {
+        "lease": {
+            "sd_id": "75ab40e3-06b1-4a54-a825-2df7a40b93b2",
+            "lease_id": "b3f6fa00-b315-4ad4-8108-f73da817b5c5"
+        }
+    }
+.fi
+
+.SS Reading from standard input
+It is also possible to read parameters from standard input, creating complex
+parameters interactively
+
+.nf
+cat <<EOF | vdsm-client Lease info -f -
+{
+"lease": {
+        "sd_id": "75ab40e3-06b1-4a54-a825-2df7a40b93b2",
+        "lease_id": "b3f6fa00-b315-4ad4-8108-f73da817b5c5"
+}
+}
+EOF
+.fi
+
+.SH WARNING
+.BR vdsm-client
+is a debug tool, which is capable of harming the operation of a
+single oVirt node and even a complete oVirt cluster. Its use is not supported or
+endorsed.
+
+.SH OPTIONS
+.PD 0
+.TP
+.B -h
+Display vdsm-client's help
+.TP
+.B --unsecure
+Connect to server in unsecure manner.
+.TP
+.B --timeout TIMEOUT
+Change the method timeout. Default value is 60 seconds.
+.TP
+.B -f --file FILE
+Provide a file that contains method parameters in JSON format.
+.SH SEE ALSO
+.BR vdsmd(8)
+
+.SH BUGS
+Report bugs to <http://bugzilla.redhat.com>
+
+.SH COPYRIGHT
+Copyright 2017 Red Hat, Inc. License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.
