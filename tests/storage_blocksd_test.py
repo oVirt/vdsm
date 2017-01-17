@@ -23,6 +23,7 @@ import collections
 import os
 
 from monkeypatch import MonkeyPatch
+from testValidation import xfail
 from testlib import VdsmTestCase as TestCaseBase
 
 from storage import blockSD
@@ -90,3 +91,26 @@ class GetAllVolumesTests(TestCaseBase):
         sdName = "f9e55e18-67c4-4377-8e39-5833ca422bef"
         allVols = blockSD.getAllVolumes(sdName)
         self.assertEqual(len(allVols), 1)
+
+
+class TestDecodeValidity(TestCaseBase):
+
+    def test_all_keys(self):
+        value = ('pv:myname,uuid:Gk8q,pestart:0,'
+                 'pecount:77,mapoffset:0')
+        pvinfo = blockSD.decodePVInfo(value)
+        self.assertEqual(pvinfo["guid"], 'myname')
+        self.assertEqual(pvinfo["uuid"], 'Gk8q')
+        self.assertEqual(pvinfo["pestart"], '0')
+        self.assertEqual(pvinfo["pecount"], '77')
+        self.assertEqual(pvinfo["mapoffset"], '0')
+
+    @xfail('Colon in PV name is not supported yet')
+    def test_decode_pv_colon(self):
+        pvinfo = blockSD.decodePVInfo('pv:my:name')
+        self.assertEqual(pvinfo["guid"], 'my:name')
+
+    @xfail('Comma in PV name is not supported yet')
+    def test_decode_pv_comma(self):
+        pvinfo = blockSD.decodePVInfo('pv:my,name')
+        self.assertEqual(pvinfo["guid"], 'my,name')
