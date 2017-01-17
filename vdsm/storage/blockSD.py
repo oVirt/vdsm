@@ -118,7 +118,8 @@ def encodePVInfo(pvInfo):
 
 
 def decodePVInfo(value):
-    pvInfo = dict([item.split(":") for item in value.split(",")])
+    # TODO: need to support cases where a comma is part of the value
+    pvInfo = dict([item.split(":", 1) for item in value.split(",")])
     pvInfo["guid"] = pvInfo["pv"]
     del pvInfo["pv"]
     return pvInfo
