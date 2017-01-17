@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,9 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 man8_MANS = \
 	./usr/share/man/man8/vdsmd.8
+
+dist_man1_MANS = \
+	./usr/share/man/man1/vdsm-client.1
 
 dist_bin_SCRIPTS = \
 	./usr/bin/vdsm-client

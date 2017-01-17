@@ -1603,6 +1603,7 @@ exit 0
 %{python_sitelib}/vdsmclient/__init__.py*
 %{python_sitelib}/vdsmclient/client.py*
 %{python_sitelib}/yajsonrpc/__init__.py*
+%{_mandir}/man1/vdsm-client.1*
 
 %files jsonrpc
 %dir %{python_sitelib}/%{vdsm_name}
