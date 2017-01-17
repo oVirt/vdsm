@@ -37,7 +37,7 @@ lago ovirt reposetup \
     --reposync-yum-config /dev/null \
     --custom-source "dir:$EXPORTS"
 
-function mount_tmpfs {
+function fake_ksm_in_vm {
     lago shell "$vm_name" -c "mount -t tmpfs tmpfs /sys/kernel/mm/ksm"
 }
 
@@ -97,7 +97,7 @@ lago ovirt deploy
 lago ovirt serve &
 PID=$!
 
-mount_tmpfs
+fake_kvm_in_vm
 
 run_infra_tests | tee "$EXPORTS/functional_tests_stdout.$DISTRO.log"
 failed="${PIPESTATUS[0]}"
