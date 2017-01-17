@@ -17,14 +17,14 @@ Vdsm logging could be configured extensively[2]
 using the configuration files, but this requires a restart of the daemon.
 
 You can also configure the logging to some extent at runtime, without
-any restart, using vdsClient as explained below.
-Please note that any change you make using vdsClient is not permanent, and
+any restart, using vdsm-client as explained below.
+Please note that any change you make using vdsm-client is not permanent, and
 will be lost once Vdsm is restarted.
 
-Using vdsClient, you can tune the log level of any logger Vdsm uses.
+Using vdsm-client, you can tune the log level of any logger Vdsm uses.
 The basic syntax is:
 
-# vdsClient [-s] SERVER setLogLevel LEVEL [LOGGER]
+# vdsm-client [-a ADDRESS] Host setLogLevel level=LEVEL [name=LOGGER]
 
 `LEVEL` is one of DEBUG, INFO, WARN
 `LOGGER` is any logger Vdsm uses. Please check the configuration file
@@ -40,20 +40,19 @@ Examples of runtime tuning of logging
 -------------------------------------
 
 1. set everything to the DEBUG level:
-vdsClient -s 0 setLogLevel DEBUG
+vdsm-client Host setLogLevel level=DEBUG
 
 2. silence virt logs, show only warnings, errors or worse:
-vdsClient -s 0 setLogLevel WARN virt
+vdsm-client Host setLogLevel level=WARN name=virt
 
 3. same as #2, for storage
-vdsClient -s 0 setLogLevel WARN storage
+vdsm-client Host setLogLevel level=WARN name=storage
 
 4. silence JSONRPC logs:
-vdsClient -s 0 setLogLevel WARN jsonrpc
+vdsm-client Host setLogLevel level=WARN name=jsonrpc
 
 5. enable the 'devel' logs, which could be useful for developers
-vdsClient -s 0 setLogLevel devel WARN
-
+vdsm-client Host setLogLevel name=devel level=WARN
 
 Notes
 -----

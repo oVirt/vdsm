@@ -1,6 +1,6 @@
 #!/usr/bin/python2
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,16 @@
 #
 # Refer to the README and COPYING files for full details of the license
 
-# vdsClient -s 0 create /dev/null vmId=33aa53ea-c262-4e96-9e19-7555838d0fcf memSize=20 display=vnc vmName=bla
+# cat <<EOF | vdsm-client VM create -f -
+# {
+#     "vmID": "33aa53ea-c262-4e96-9e19-7555838d0fcf",
+#     "vmParams": {
+#                 "memSize": "20",
+#                 "display": "vnc",
+#                 "vmName": "bla"
+#     }
+# }
+# EOF
 
 from __future__ import print_function
 

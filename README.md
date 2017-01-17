@@ -51,8 +51,8 @@ the same host which runs Vdsm. At the moment, only docker is supported.
 
 To check if the Vdsm is properly configured to run containers, just do:
 
-    # vdsClient -s 0 getVdsCaps | grep containers
-            containers = True
+    # vdsm-client Host getCapabilities | grep containers
+            "containers": true,
 
 This means that this Vdsm could also run docker containers.
 
