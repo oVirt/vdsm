@@ -121,6 +121,9 @@ ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %changelog
+* Wed Jan 18 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.4.2
+- process messages one by one
+
 * Thu Jan 12 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.4.1
 - handle ssl closed status
 
