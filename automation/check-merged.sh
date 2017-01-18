@@ -12,30 +12,31 @@ AUTOMATION="$PWD"/automation
 PREFIX="$AUTOMATION"/vdsm_functional
 EXPORTS="$PWD"/exported-artifacts
 
+function prepare {
+    # Creates RPMS
+    "$AUTOMATION"/build-artifacts.sh
 
-# Creates RPMS
-"$AUTOMATION"/build-artifacts.sh
+    if [[ -d "$PREFIX" ]]; then
+        pushd "$PREFIX"
+        echo 'cleaning old lago env'
+        lago cleanup || :
+        popd
+        rm -rf "$PREFIX"
+    fi
 
-if [[ -d "$PREFIX" ]]; then
-    pushd "$PREFIX"
-    echo 'cleaning old lago env'
-    lago cleanup || :
-    popd
-    rm -rf "$PREFIX"
-fi
+    # Fix when running in an el* chroot in fc2* host
+    [[ -e /usr/bin/qemu-kvm ]] \
+    || ln -s /usr/libexec/qemu-kvm /usr/bin/qemu-kvm
 
-# Fix when running in an el* chroot in fc2* host
-[[ -e /usr/bin/qemu-kvm ]] \
-|| ln -s /usr/libexec/qemu-kvm /usr/bin/qemu-kvm
+    lago init \
+        "$PREFIX" \
+        "$AUTOMATION"/lago-env.yml
 
-lago init \
-    "$PREFIX" \
-    "$AUTOMATION"/lago-env.yml
-
-cd "$PREFIX"
-lago ovirt reposetup \
-    --reposync-yum-config /dev/null \
-    --custom-source "dir:$EXPORTS"
+    cd "$PREFIX"
+    lago ovirt reposetup \
+        --reposync-yum-config /dev/null \
+        --custom-source "dir:$EXPORTS"
+}
 
 function fake_ksm_in_vm {
     lago shell "$vm_name" -c "mount -t tmpfs tmpfs /sys/kernel/mm/ksm"
@@ -82,41 +83,45 @@ function prepare_and_copy_yum_conf {
     rm "$tempfile"
 }
 
-mkdir "$EXPORTS"/lago-logs
-failed=0
+function run {
+    mkdir "$EXPORTS"/lago-logs
+    failed=0
 
-vm_name="vdsm_functional_tests_host-${DISTRO}"
-lago start "$vm_name"
+    vm_name="vdsm_functional_tests_host-${DISTRO}"
+    lago start "$vm_name"
 
-prepare_and_copy_yum_conf "$vm_name"
+    prepare_and_copy_yum_conf "$vm_name"
 
-# the ovirt deploy is needed because it will not start the local repo
-# otherwise
-lago ovirt deploy
+    # the ovirt deploy is needed because it will not start the local repo
+    # otherwise
+    lago ovirt deploy
 
-lago ovirt serve &
-PID=$!
+    lago ovirt serve &
+    PID=$!
 
-fake_kvm_in_vm
+    fake_ksm_in_vm
 
-run_infra_tests | tee "$EXPORTS/functional_tests_stdout.$DISTRO.log"
-failed="${PIPESTATUS[0]}"
+    run_infra_tests | tee "$EXPORTS/functional_tests_stdout.$DISTRO.log"
+    failed="${PIPESTATUS[0]}"
 
-run_network_tests | tee -a "$EXPORTS/functional_tests_stdout.$DISTRO.log"
-res="${PIPESTATUS[0]}"
-[ "$res" -ne 0 ] && failed="$res"
+    run_network_tests | tee -a "$EXPORTS/functional_tests_stdout.$DISTRO.log"
+    res="${PIPESTATUS[0]}"
+    [ "$res" -ne 0 ] && failed="$res"
 
-kill $PID
+    kill $PID
 
-lago copy-from-vm \
-"$vm_name" \
-"/tmp/nosetests-${DISTRO}.xml" \
-"$EXPORTS/nosetests-${DISTRO}.xml" || :
-lago collect --output "$EXPORTS"/lago-logs
-lago stop "$vm_name"
+    lago copy-from-vm \
+    "$vm_name" \
+    "/tmp/nosetests-${DISTRO}.xml" \
+    "$EXPORTS/nosetests-${DISTRO}.xml" || :
+    lago collect --output "$EXPORTS"/lago-logs
 
-lago cleanup
+    lago stop "$vm_name"
+    lago cleanup
 
-cp "$PREFIX"/current/logs/*.log "$EXPORTS"/lago-logs
+    cp "$PREFIX"/current/logs/*.log "$EXPORTS"/lago-logs
+    return $failed
+}
 
-exit $failed
+prepare && run
+exit $?
