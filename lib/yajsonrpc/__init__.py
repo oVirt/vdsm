@@ -394,6 +394,28 @@ class JsonRpcClient(object):
     def unsubscribe(self, sub):
         self._transport.unsubscribe(sub)
 
+    def notify(self, event_id, dest, event_schema, params=None):
+        """
+        JsonRpcClient notify method, sends an event on a spesific queue
+
+        Args:
+            event_id (string): unique event name
+            dest (string): destination queue
+            event_schema (Schema): a schema for vdsm events
+            params (dict): event content
+
+        Returns:
+            None
+        """
+        if not params:
+            params = {}
+
+        def send_notification(message):
+            self._transport.send(message, dest)
+
+        notification = Notification(event_id, send_notification, event_schema)
+        notification.emit(params)
+
     def _finalizeCtx(self, ctx):
         if not ctx.isDone():
             return

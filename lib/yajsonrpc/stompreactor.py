@@ -545,14 +545,17 @@ class ClientRpcTransportAdapter(object):
     def set_message_handler(self, handler):
         self._message_handler = handler
 
-    def send(self, data):
+    def send(self, data, destination=None):
+        if not destination:
+            destination = self._destination
+
         headers = {
             "content-type": "application/json",
             "reply-to": self._sub.destination,
         }
         self._client.send(
             data,
-            self._destination,
+            destination,
             headers,
         )
 
