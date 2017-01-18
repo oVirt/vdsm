@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ class FakeClientIf(object):
         notification = Notification(
             event_id,
             self._send_notification,
-            self.json_binding.bridge
+            self.json_binding.bridge.event_schema
         )
         notification.emit(**kwargs)
 

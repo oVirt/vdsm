@@ -1,3 +1,4 @@
+# Copyright (C) 2014-2017 Red Hat Inc.
 # Copyright (C) 2014 Saggi Mizrahi, Red Hat Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -196,14 +197,14 @@ class Notification(object):
     """
     log = logging.getLogger("jsonrpc.Notification")
 
-    def __init__(self, event_id, cb, bridge):
+    def __init__(self, event_id, cb, event_schema):
         self._event_id = event_id
         self._cb = cb
-        self._bridge = bridge
+        self._event_schema = event_schema
 
     def emit(self, **kwargs):
         self._add_notify_time(kwargs)
-        self._bridge.event_schema.verify_event_params(self._event_id, kwargs)
+        self._event_schema.verify_event_params(self._event_id, kwargs)
         notification = json.dumps({'jsonrpc': '2.0',
                                    'method': self._event_id,
                                    'params': kwargs})

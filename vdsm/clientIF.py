@@ -165,7 +165,7 @@ class clientIF(object):
 
         try:
             notification = Notification(event_id, _send_notification,
-                                        json_binding.bridge)
+                                        json_binding.bridge.event_schema)
             notification.emit(**kwargs)
         except KeyError:
             self.log.warning("Attempt to send an event when jsonrpc binding"
