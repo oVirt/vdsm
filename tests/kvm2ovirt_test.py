@@ -21,11 +21,14 @@ from collections import namedtuple
 from contextlib import contextmanager
 from monkeypatch import MonkeyPatchScope
 from vdsm import libvirtconnection
+from vdsm import v2v
 
 from testlib import VdsmTestCase as TestCaseBase, namedTemporaryDir
+from testlib import permutations, expandPermutations
 from v2v_testlib import VM_SPECS, MockVirDomain, MockVirConnect, FakeVolume
 from vdsm import kvm2ovirt
 import os
+import uuid
 
 
 KVM2OvirtEnv = namedtuple('KVM2OvirtEnv', ['password', 'destination'])
@@ -51,6 +54,7 @@ def make_env():
         yield KVM2OvirtEnv(passpath, destpath)
 
 
+@expandPermutations
 class TestKvm2Ovirt(TestCaseBase):
     def setUp(self):
         self._vms = [MockVirDomain(*spec) for spec in VM_SPECS]
@@ -98,6 +102,33 @@ class TestKvm2Ovirt(TestCaseBase):
                     '--vm-name', self._vms[0].name()]
 
             kvm2ovirt.main(args)
+
+            with open(env.destination) as f:
+                actual = f.read()
+            self.assertEqual(actual, FakeVolume().data())
+
+    @permutations([
+                  [None, None],
+                  ['root', 'passwd'],
+                  ])
+    def test_common_download_file_username(self, username, passwd):
+        conn = MockVirConnect(vms=self._vms)
+
+        def connect(uri, username, password):
+            return conn
+
+        with MonkeyPatchScope([
+            (libvirtconnection, 'open_connection', connect),
+        ]), make_env() as env:
+            vmInfo = {'vmName': self._vms[0].name()}
+            kvm = v2v.KVMCommand('qemu+tcp://domain', username, passwd,
+                                 vmInfo, uuid.uuid4(), None)
+            if passwd:
+                kvm._passwd_file = env.password
+            kvm._source_images = lambda: (['/fake/source'], ['file'])
+            kvm._dest_images = lambda: [env.destination]
+
+            kvm2ovirt.main(kvm._command())
 
             with open(env.destination) as f:
                 actual = f.read()
