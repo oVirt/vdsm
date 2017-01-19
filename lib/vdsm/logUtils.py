@@ -227,23 +227,14 @@ class AllVmStatsValue(Suppressed):
         return repr({vm.get('vmId'): vm.get('status') for vm in self._value})
 
 
-_LEVELS = {
-    'DEBUG': logging.DEBUG,
-    'INFO': logging.INFO,
-    'WARNING': logging.WARNING,
-    'ERROR': logging.ERROR,
-    'CRITICAL': logging.CRITICAL
-}
+def set_level(level_name, name=''):
+    log_level = logging.getLevelName(level_name)
+    if not isinstance(log_level, type(logging.DEBUG)):
+        raise ValueError("unknown log level: %r" % level_name)
 
-
-def set_level(level, name=''):
-    if level not in _LEVELS:
-        raise ValueError("unknown log level: %r" % level)
-
-    log_level = _LEVELS[level]
     log_name = None if not name else name
     # getLogger() default argument is None, not ''
     logger = logging.getLogger(log_name)
     logging.warning('Setting loglevel on %r to %s (%d)',
-                    logger.name, level, log_level)
+                    logger.name, level_name, log_level)
     logger.setLevel(log_level)
