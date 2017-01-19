@@ -10,4 +10,5 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_vdsmexec_SCRIPTS = \
 	kvm2ovirt \
+	fallocate \
 	$(NULL)

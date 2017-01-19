@@ -33,6 +33,7 @@ dist_vdsmstorage_PYTHON = \
 	directio.py \
 	dispatcher.py \
 	exception.py \
+	fallocate.py \
 	fileUtils.py \
 	fuser.py \
 	guarded.py \

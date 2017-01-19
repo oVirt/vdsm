@@ -924,6 +924,7 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/vdsmd_init_common.sh
 %{_libexecdir}/%{vdsm_name}/vm_migrate_hook.py*
 %{_libexecdir}/%{vdsm_name}/kvm2ovirt
+%{_libexecdir}/%{vdsm_name}/fallocate
 %{_libexecdir}/%{vdsm_name}/wait_for_ipv4s
 %{_datadir}/%{vdsm_name}/storage/__init__.py*
 %{_datadir}/%{vdsm_name}/storage/blockSD.py*
@@ -1194,6 +1195,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/directio.py*
 %{python_sitelib}/%{vdsm_name}/storage/dispatcher.py*
 %{python_sitelib}/%{vdsm_name}/storage/exception.py*
+%{python_sitelib}/%{vdsm_name}/storage/fallocate.py*
 %{python_sitelib}/%{vdsm_name}/storage/fileUtils.py*
 %{python_sitelib}/%{vdsm_name}/storage/fuser.py*
 %{python_sitelib}/%{vdsm_name}/storage/guarded.py*

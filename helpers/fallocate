@@ -1,0 +1,56 @@
+#!/usr/bin/python2
+# Copyright 2017 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+from __future__ import absolute_import
+
+import argparse
+import os
+import sys
+
+from ctypes import CDLL, c_long
+
+
+def main():
+    options = parse_args()
+
+    libc = CDLL("libc.so.6")
+    fd = os.open(options.filename, os.O_RDWR | os.O_CREAT)
+    try:
+        err = libc.posix_fallocate(fd,
+                                   c_long(options.offset),
+                                   c_long(options.size))
+        if err != 0:
+            raise OSError(err, os.strerror(err), options.filename)
+    finally:
+        os.close(fd)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description=
+                                     'fallocate is used to preallocate blocks to a file.')
+    parser.add_argument('--offset', dest='offset', type=long, default=0,
+                        help='Offset in bytes to start allocation from')
+    parser.add_argument('size', type=long, help='Size in bytes to allocate')
+    parser.add_argument('filename', help='Name of file to allocate')
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    main()
