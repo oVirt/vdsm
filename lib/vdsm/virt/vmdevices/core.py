@@ -37,11 +37,10 @@ class SkipDevice(Exception):
 
 class Base(vmxml.Device):
     __slots__ = ('deviceType', 'device', 'alias', 'specParams', 'deviceId',
-                 'conf', 'log', '_deviceXML', 'type', 'custom',
+                 'log', '_deviceXML', 'type', 'custom',
                  'is_hostdevice')
 
-    def __init__(self, conf, log, **kwargs):
-        self.conf = conf
+    def __init__(self, log, **kwargs):
         self.log = log
         self.specParams = {}
         self.custom = kwargs.pop('custom', {})
@@ -585,8 +584,8 @@ class Watchdog(Base):
 class Memory(Base):
     __slots__ = ('address', 'size', 'node')
 
-    def __init__(self, conf, log, **kwargs):
-        super(Memory, self).__init__(conf, log, **kwargs)
+    def __init__(self, log, **kwargs):
+        super(Memory, self).__init__(log, **kwargs)
         # we get size in mb and send in kb
         self.size = int(kwargs.get('size')) * 1024
         self.node = kwargs.get('node')

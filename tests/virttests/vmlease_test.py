@@ -62,7 +62,7 @@ class TestDevice(XMLTestCase):
     def test_getxml(self):
         spec = dict(sd_id="sd_id", lease_id="lease_id", path="/path",
                     offset=1048576)
-        lease = vmdevices.lease.Device({}, self.log, **spec)
+        lease = vmdevices.lease.Device(self.log, **spec)
         lease_xml = vmxml.format_xml(lease.getXML())
         xml = """
         <lease>
@@ -81,14 +81,14 @@ class TestDevice(XMLTestCase):
                   "offset": 0}
         del kwargs[missing]
         with self.assertRaises(vmdevices.lease.MissingArgument):
-            vmdevices.lease.Device({}, self.log, **kwargs)
+            vmdevices.lease.Device(self.log, **kwargs)
 
     def test_repr(self):
         kwargs = {"sd_id": "sd_id",
                   "lease_id": "lease_id",
                   "path": "path",
                   "offset": 0}
-        lease = vmdevices.lease.Device({}, self.log, **kwargs)
+        lease = vmdevices.lease.Device(self.log, **kwargs)
         for key, value in kwargs.items():
             self.assertIn("%s=%s" % (key, value), repr(lease))
 
@@ -155,7 +155,7 @@ class TestFindDevice(VdsmTestCase):
             vmdevices.lease.find_device(self.devices(), query)
 
     def devices(self):
-        leases = [vmdevices.lease.Device({}, self.log, **kwargs)
+        leases = [vmdevices.lease.Device(self.log, **kwargs)
                   for kwargs in LEASE_DEVICES]
         return {vmdevices.hwclass.LEASE: leases}
 
@@ -178,7 +178,7 @@ class TestFindConf(VdsmTestCase):
                   "lease_id": lease_id,
                   "path": "/dev/%s/xleases" % sd_id,
                   "offset": offset}
-        lease = vmdevices.lease.Device({}, self.log, **kwargs)
+        lease = vmdevices.lease.Device(self.log, **kwargs)
         conf = vmdevices.lease.find_conf(self.conf(), lease)
         self.assertEqual(conf["sd_id"], sd_id)
         self.assertEqual(conf["lease_id"], lease_id)
@@ -193,7 +193,7 @@ class TestFindConf(VdsmTestCase):
                   "lease_id": lease_id,
                   "path": "/dev/%s/xleases" % sd_id,
                   "offset": offset}
-        lease = vmdevices.lease.Device({}, self.log, **kwargs)
+        lease = vmdevices.lease.Device(self.log, **kwargs)
         with self.assertRaises(LookupError):
             vmdevices.lease.find_conf(self.conf(), lease)
 
@@ -236,7 +236,7 @@ class TestIsAttahedTo(VdsmTestCase):
                   "lease_id": lease_id,
                   "path": "/dev/%s/xleases" % sd_id,
                   "offset": offset}
-        lease = vmdevices.lease.Device({}, self.log, **kwargs)
+        lease = vmdevices.lease.Device(self.log, **kwargs)
         self.assertTrue(lease.is_attached_to(self.XML),
                         "lease %r is not attached to %s" % (lease, self.XML))
 
@@ -250,7 +250,7 @@ class TestIsAttahedTo(VdsmTestCase):
                   "lease_id": lease_id,
                   "path": "/dev/%s/xleases" % sd_id,
                   "offset": offset}
-        lease = vmdevices.lease.Device({}, self.log, **kwargs)
+        lease = vmdevices.lease.Device(self.log, **kwargs)
         self.assertFalse(lease.is_attached_to(self.XML),
                          "lease %r is attached to %s" % (lease, self.XML))
 

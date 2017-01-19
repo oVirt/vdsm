@@ -53,7 +53,7 @@ class DriveXMLTests(XMLTestCase):
                 <serial>54-a672-23e5b495a9ea</serial>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=False)
+        self.check(conf, xml, is_block_device=False)
 
     def test_disk_virtio_cache(self):
         conf = drive_config(
@@ -85,7 +85,7 @@ class DriveXMLTests(XMLTestCase):
                 </iotune>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=False)
+        self.check(conf, xml, is_block_device=False)
 
     def test_disk_block(self):
         conf = drive_config(
@@ -100,7 +100,7 @@ class DriveXMLTests(XMLTestCase):
                         io="native" name="qemu" type="raw"/>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=True)
+        self.check(conf, xml, is_block_device=True)
 
     def test_disk_with_discard_on(self):
         conf = drive_config(
@@ -116,7 +116,7 @@ class DriveXMLTests(XMLTestCase):
                         io="native" name="qemu" type="raw"/>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=True)
+        self.check(conf, xml, is_block_device=True)
 
     def test_disk_with_discard_off(self):
         conf = drive_config(
@@ -132,7 +132,7 @@ class DriveXMLTests(XMLTestCase):
                         io="native" name="qemu" type="raw"/>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=True)
+        self.check(conf, xml, is_block_device=True)
 
     def test_disk_file(self):
         conf = drive_config(
@@ -147,7 +147,7 @@ class DriveXMLTests(XMLTestCase):
                         io="threads" name="qemu" type="raw"/>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=False)
+        self.check(conf, xml, is_block_device=False)
 
     def test_lun(self):
         conf = drive_config(
@@ -165,7 +165,7 @@ class DriveXMLTests(XMLTestCase):
                         io="native" name="qemu" type="raw"/>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=True)
+        self.check(conf, xml, is_block_device=True)
 
     def test_network(self):
         conf = drive_config(
@@ -190,7 +190,7 @@ class DriveXMLTests(XMLTestCase):
                         io="threads" name="qemu" type="raw"/>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=None)
+        self.check(conf, xml, is_block_device=None)
 
     def test_network_with_auth(self):
         conf = drive_config(
@@ -219,7 +219,7 @@ class DriveXMLTests(XMLTestCase):
                         io="threads" name="qemu" type="raw"/>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=None)
+        self.check(conf, xml, is_block_device=None)
 
     def test_cdrom_without_serial(self):
         conf = drive_config(
@@ -236,7 +236,7 @@ class DriveXMLTests(XMLTestCase):
                 <readonly/>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=False)
+        self.check(conf, xml, is_block_device=False)
 
     def test_disk_without_serial(self):
         conf = drive_config()
@@ -248,10 +248,10 @@ class DriveXMLTests(XMLTestCase):
                         io="threads" name="qemu" type="raw"/>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=False)
+        self.check(conf, xml, is_block_device=False)
 
-    def check(self, vm_conf, device_conf, xml, is_block_device=False):
-        drive = Drive(vm_conf, self.log, **device_conf)
+    def check(self, device_conf, xml, is_block_device=False):
+        drive = Drive(self.log, **device_conf)
         # Patch to skip the block device checking.
         if is_block_device is not None:
             drive._blockDev = is_block_device
@@ -279,7 +279,7 @@ class DriveReplicaXML(XMLTestCase):
                         io="native" name="qemu" type="qcow2"/>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=True)
+        self.check(conf, xml, is_block_device=True)
 
     def test_block_to_file(self):
         conf = drive_config(
@@ -295,7 +295,7 @@ class DriveReplicaXML(XMLTestCase):
                         io="threads" name="qemu" type="qcow2"/>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=True)
+        self.check(conf, xml, is_block_device=True)
 
     def test_file_to_file(self):
         conf = drive_config(
@@ -311,7 +311,7 @@ class DriveReplicaXML(XMLTestCase):
                         io="threads" name="qemu" type="qcow2"/>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=False)
+        self.check(conf, xml, is_block_device=False)
 
     def test_file_to_block(self):
         conf = drive_config(
@@ -327,10 +327,10 @@ class DriveReplicaXML(XMLTestCase):
                         io="native" name="qemu" type="qcow2"/>
             </disk>
             """
-        self.check({}, conf, xml, is_block_device=False)
+        self.check(conf, xml, is_block_device=False)
 
-    def check(self, vm_conf, device_conf, xml, is_block_device=False):
-        drive = Drive(vm_conf, self.log, **device_conf)
+    def check(self, device_conf, xml, is_block_device=False):
+        drive = Drive(self.log, **device_conf)
         # Patch to skip the block device checking.
         drive._blockDev = is_block_device
         self.assertXMLEqual(vmxml.format_xml(drive.getReplicaXML()), xml)
@@ -362,14 +362,14 @@ class DriveValidation(VdsmTestCase):
         conf = drive_config(
             serial='54-a672-23e5b495a9ea',
         )
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
 
         with self.assertRaises(Exception):
             drive.iotune = iotune
 
     def check(self, **kw):
         conf = drive_config(**kw)
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertRaises(ValueError, drive.getXML)
 
 
@@ -398,7 +398,7 @@ class DriveExSharedStatusTests(VdsmTestCase):
         conf = drive_config()
         if shared:
             conf['shared'] = shared
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertEqual(drive.extSharedState, expected)
 
 
@@ -406,40 +406,40 @@ class DriveDiskTypeTests(VdsmTestCase):
 
     def test_cdrom(self):
         conf = drive_config(device='cdrom')
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertFalse(drive.networkDev)
         self.assertFalse(drive.blockDev)
 
     def test_floppy(self):
         conf = drive_config(device='floppy')
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertFalse(drive.networkDev)
         self.assertFalse(drive.blockDev)
 
     def test_network_disk(self):
         conf = drive_config(diskType=DISK_TYPE.NETWORK)
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertTrue(drive.networkDev)
         self.assertFalse(drive.blockDev)
 
     @MonkeyPatch(utils, 'isBlockDevice', lambda path: True)
     def test_block_disk(self):
         conf = drive_config(device='disk')
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertFalse(drive.networkDev)
         self.assertTrue(drive.blockDev)
 
     @MonkeyPatch(utils, 'isBlockDevice', lambda path: False)
     def test_file_disk(self):
         conf = drive_config(device='disk')
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertFalse(drive.networkDev)
         self.assertFalse(drive.blockDev)
 
     @MonkeyPatch(utils, 'isBlockDevice', lambda path: False)
     def test_migrate_from_file_to_block(self):
         conf = drive_config(path='/filedomain/volume')
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertFalse(drive.blockDev)
         # Migrate drive to block domain...
         utils.isBlockDevice = lambda path: True
@@ -449,7 +449,7 @@ class DriveDiskTypeTests(VdsmTestCase):
     @MonkeyPatch(utils, 'isBlockDevice', lambda path: True)
     def test_migrate_from_block_to_file(self):
         conf = drive_config(path='/blockdomain/volume')
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertTrue(drive.blockDev)
         # Migrate drive to file domain...
         utils.isBlockDevice = lambda path: False
@@ -459,7 +459,7 @@ class DriveDiskTypeTests(VdsmTestCase):
     @MonkeyPatch(utils, 'isBlockDevice', lambda path: True)
     def test_migrate_from_block_to_network(self):
         conf = drive_config(path='/blockdomain/volume')
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertTrue(drive.blockDev)
         # Migrate drive to network disk...
         drive.path = "pool/volume"
@@ -469,7 +469,7 @@ class DriveDiskTypeTests(VdsmTestCase):
     @MonkeyPatch(utils, 'isBlockDevice', lambda path: True)
     def test_migrate_network_to_block(self):
         conf = drive_config(diskType=DISK_TYPE.NETWORK, path='pool/volume')
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertTrue(drive.networkDev)
         # Migrate drive to block domain...
         drive.path = '/blockdomain/volume'
@@ -492,7 +492,7 @@ class ChunkedTests(VdsmTestCase):
     ])
     def test_drive(self, device, blockDev, format, chunked):
         conf = drive_config(device=device, format=format)
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         drive._blockDev = blockDev
         self.assertEqual(drive.chunked, chunked)
 
@@ -503,7 +503,7 @@ class ChunkedTests(VdsmTestCase):
     ])
     def test_replica(self, diskType, format):
         conf = drive_config(diskReplicate=replica(diskType, format=format))
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         drive._blockDev = False
         self.assertEqual(drive.chunked, False)
 
@@ -520,12 +520,12 @@ class ReplicaChunkedTests(VdsmTestCase):
     ])
     def test_replica(self, diskType, format, chunked):
         conf = drive_config(diskReplicate=replica(diskType, format=format))
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertEqual(drive.replicaChunked, chunked)
 
     def test_no_replica(self):
         conf = drive_config()
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertEqual(drive.replicaChunked, False)
 
 
@@ -537,20 +537,20 @@ class DriveVolumeSizeTests(VdsmTestCase):
     @permutations([[1024 * constants.MEGAB], [2048 * constants.MEGAB]])
     def test_next_size(self, cursize):
         conf = drive_config(format='cow')
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertEqual(drive.getNextVolumeSize(cursize, self.CAPACITY),
                          cursize + drive.volExtensionChunk)
 
     @permutations([[CAPACITY - 1], [CAPACITY], [CAPACITY + 1]])
     def test_next_size_limit(self, cursize):
         conf = drive_config(format='cow')
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertEqual(drive.getNextVolumeSize(cursize, self.CAPACITY),
                          drive.getMaxVolumeSize(self.CAPACITY))
 
     def test_max_size(self):
         conf = drive_config(format='cow')
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         size = utils.round(self.CAPACITY * drive.VOLWM_COW_OVERHEAD,
                            constants.MEGAB)
         self.assertEqual(drive.getMaxVolumeSize(self.CAPACITY), size)
@@ -631,12 +631,12 @@ class TestDriveLeases(XMLTestCase):
     # Helpers
 
     def check_no_leases(self, conf):
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         leases = list(drive.getLeasesXML())
         self.assertEqual([], leases)
 
     def check_leases(self, conf):
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         leases = list(drive.getLeasesXML())
         self.assertEqual(1, len(leases))
         xml = """
@@ -700,7 +700,7 @@ class TestDriveNaming(VdsmTestCase):
             index=index,
         )
 
-        drive = Drive({}, self.log, **conf)
+        drive = Drive(self.log, **conf)
         self.assertEqual(drive.name, expected_name)
 
 
@@ -713,12 +713,12 @@ class TestVolumePath(VdsmTestCase):
         self.conf = drive_config(volumeChain=volume_chain)
 
     def test_correct_extraction(self):
-        drive = Drive({}, self.log, **self.conf)
+        drive = Drive(self.log, **self.conf)
         actual = drive.volume_path("11111111-1111-1111-1111-111111111111")
         self.assertEqual(actual, "/base")
 
     def test_base_not_found(self):
-        drive = Drive({}, self.log, **self.conf)
+        drive = Drive(self.log, **self.conf)
         with self.assertRaises(storage.VolumeNotFound):
             drive.volume_path("F1111111-1111-1111-1111-111111111111")
 
@@ -730,7 +730,7 @@ class TestVolumeChain(VdsmTestCase):
                         {'path': '/foo/zap',
                          'volumeID': '22222222-2222-2222-2222-222222222222'}]
         conf = drive_config(volumeChain=volume_chain)
-        self.drive = Drive({}, self.log, **conf)
+        self.drive = Drive(self.log, **conf)
         self.drive._blockDev = True
 
     def test_parse_volume_chain(self):

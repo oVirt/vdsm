@@ -176,10 +176,10 @@ class Drive(core.Base):
                 vm.log.warn('Found unknown drive: %s', diskDev)
                 vm.conf['devices'].append(diskDev)
 
-    def __init__(self, conf, log, **kwargs):
+    def __init__(self, log, **kwargs):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
-        super(Drive, self).__init__(conf, log, **kwargs)
+        super(Drive, self).__init__(log, **kwargs)
         if not hasattr(self, 'vm_custom'):
             self.vm_custom = {}
         self.device = getattr(self, 'device', 'disk')
@@ -387,8 +387,7 @@ class Drive(core.Base):
         # when libvirt will support shared leases this will loop over all the
         # volumes
         for volInfo in self.volumeChain[-1:]:
-            device = lease.Device(self.conf,
-                                  self.log,
+            device = lease.Device(self.log,
                                   lease_id=volInfo['volumeID'],
                                   sd_id=volInfo['domainID'],
                                   path=volInfo['leasePath'],

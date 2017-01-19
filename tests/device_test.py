@@ -158,7 +158,7 @@ class TestVmDevices(XMLTestCase):
         smartcardXML = '<smartcard mode="passthrough" type="spicevmc"/>'
         dev = {'device': 'smartcard',
                'specParams': {'mode': 'passthrough', 'type': 'spicevmc'}}
-        smartcard = vmdevices.core.Smartcard(self.conf, self.log, **dev)
+        smartcard = vmdevices.core.Smartcard(self.log, **dev)
         self.assert_dom_xml_equal(smartcard.getXML(), smartcardXML)
 
     def testTpmXML(self):
@@ -172,7 +172,7 @@ class TestVmDevices(XMLTestCase):
         dev = {'device': 'tpm',
                'specParams': {'mode': 'passthrough',
                               'path': '/dev/tpm0', 'model': 'tpm-tis'}}
-        tpm = vmdevices.core.Tpm(self.conf, self.log, **dev)
+        tpm = vmdevices.core.Tpm(self.log, **dev)
         self.assert_dom_xml_equal(tpm.getXML(), tpmXML)
 
     @permutations([[None], [{}], [{'enableSocket': False}]])
@@ -187,7 +187,7 @@ class TestVmDevices(XMLTestCase):
         }
         if specParams is not None:
             dev['specParams'] = specParams
-        console = vmdevices.core.Console(self.conf, self.log, **dev)
+        console = vmdevices.core.Console(self.log, **dev)
         self.assert_dom_xml_equal(console.getXML(), consoleXML)
 
     def testConsoleSocketXML(self):
@@ -202,14 +202,14 @@ class TestVmDevices(XMLTestCase):
             'specParams': {'enableSocket': True},
             'vmid': self.conf['vmId'],
         }
-        console = vmdevices.core.Console(self.conf, self.log, **dev)
+        console = vmdevices.core.Console(self.log, **dev)
         self.assert_dom_xml_equal(console.getXML(), consoleXML)
 
     def testBalloonXML(self):
         balloonXML = '<memballoon model="virtio"/>'
         dev = {'device': 'memballoon', 'type': 'balloon',
                'specParams': {'model': 'virtio'}}
-        balloon = vmdevices.core.Balloon(self.conf, self.log, **dev)
+        balloon = vmdevices.core.Balloon(self.log, **dev)
         self.assert_dom_xml_equal(balloon.getXML(), balloonXML)
 
     @permutations([
@@ -251,20 +251,20 @@ class TestVmDevices(XMLTestCase):
         dev = {'type': 'rng', 'model': 'virtio', 'specParams':
                {'period': '2000', 'bytes': '1234', 'source': 'random'}}
 
-        rng = vmdevices.core.Rng(self.conf, self.log, **dev)
+        rng = vmdevices.core.Rng(self.log, **dev)
         self.assert_dom_xml_equal(rng.getXML(), rngXML)
 
     def testWatchdogXML(self):
         watchdogXML = '<watchdog action="none" model="i6300esb"/>'
         dev = {'device': 'watchdog', 'type': 'watchdog',
                'specParams': {'model': 'i6300esb', 'action': 'none'}}
-        watchdog = vmdevices.core.Watchdog(self.conf, self.log, **dev)
+        watchdog = vmdevices.core.Watchdog(self.log, **dev)
         self.assert_dom_xml_equal(watchdog.getXML(), watchdogXML)
 
     def testSoundXML(self):
         soundXML = '<sound model="ac97"/>'
         dev = {'device': 'ac97'}
-        sound = vmdevices.core.Sound(self.conf, self.log, **dev)
+        sound = vmdevices.core.Sound(self.log, **dev)
         self.assert_dom_xml_equal(sound.getXML(), soundXML)
 
     @permutations([
@@ -286,7 +286,7 @@ class TestVmDevices(XMLTestCase):
          </video>"""]
     ])
     def testVideoXML(self, dev_spec, video_xml):
-        video = vmdevices.core.Video(self.conf, self.log, **dev_spec)
+        video = vmdevices.core.Video(self.log, **dev_spec)
         self.assert_dom_xml_equal(video.getXML(), video_xml)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
@@ -318,7 +318,7 @@ class TestVmDevices(XMLTestCase):
                               'outbound': {'average': 128, 'burst': 256}},
                'custom': {'queues': '7'},
                'vm_custom': {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}}
-        iface = vmdevices.network.Interface(self.conf, self.log, **dev)
+        iface = vmdevices.network.Interface(self.log, **dev)
         self.assert_dom_xml_equal(iface.getXML(), interfaceXML)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
@@ -350,8 +350,7 @@ class TestVmDevices(XMLTestCase):
                 {'name': 'IP', 'value': '10.0.0.2'},
             ],
             'vm_custom': {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}}
-
-        iface = vmdevices.network.Interface(self.conf, self.log, **dev)
+        iface = vmdevices.network.Interface(self.log, **dev)
         self.assert_dom_xml_equal(iface.getXML(), interfaceXML)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
@@ -382,7 +381,7 @@ class TestVmDevices(XMLTestCase):
                'bootOrder': '1', 'filter': 'no-mac-spoofing',
                'custom': {'queues': '7'},
                'vm_custom': {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}}
-        iface = vmdevices.network.Interface(self.conf, self.log, **dev)
+        iface = vmdevices.network.Interface(self.log, **dev)
         self.assert_dom_xml_equal(iface.getXML(), interfaceXML)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
@@ -411,7 +410,7 @@ class TestVmDevices(XMLTestCase):
                'custom': {'queues': '7'},
                'vm_custom': {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'},
                }
-        iface = vmdevices.network.Interface(self.conf, self.log, **dev)
+        iface = vmdevices.network.Interface(self.log, **dev)
         orig_bandwidth = iface.getXML().findall('bandwidth')[0]
         self.assert_dom_xml_equal(orig_bandwidth, originalBwidthXML)
         bandwith = iface.get_bandwidth_xml(NEW_OUT, orig_bandwidth)
@@ -473,7 +472,7 @@ class TestVmDevices(XMLTestCase):
                 'hostdev': 'pci_0000_05_00_1', 'macAddr': 'ff:ff:ff:ff:ff:ff',
                 'specParams': {'vlanid': 3}, 'bootOrder': '9'}
             interface_dev = vmdevices.network.Interface(
-                testvm.conf, testvm.log, **interface_conf)
+                testvm.log, **interface_conf)
 
             testvm.conf['devices'] = [interface_conf]
             device_conf = [interface_dev]
@@ -541,7 +540,7 @@ class TestVmDevices(XMLTestCase):
             </controller>"""]
 
         for devConf, xml in zip(devConfs, expectedXMLs):
-            device = vmdevices.core.Controller(self.conf, self.log, **devConf)
+            device = vmdevices.core.Controller(self.log, **devConf)
             self.assert_dom_xml_equal(device.getXML(), xml % self.PCI_ADDR)
 
     def testRedirXML(self):
@@ -552,7 +551,7 @@ class TestVmDevices(XMLTestCase):
 
         dev = {'device': 'spicevmc', 'address': self.PCI_ADDR_DICT}
 
-        redir = vmdevices.core.Redir(self.conf, self.log, **dev)
+        redir = vmdevices.core.Redir(self.log, **dev)
         self.assert_dom_xml_equal(redir.getXML(), redirXML)
 
     def testGetUnderlyingGraphicsDeviceInfo(self):
@@ -574,7 +573,7 @@ class TestVmDevices(XMLTestCase):
                 'type': hwclass.GRAPHICS, 'device': 'spice',
                 'port': '-1', 'tlsPort': '-1'}
             graphDev = vmdevices.graphics.Graphics(
-                testvm.conf, testvm.log,
+                testvm.log,
                 device='spice', port='-1', tlsPort='-1')
 
             testvm.conf['devices'] = [graphConf]
@@ -628,11 +627,12 @@ class TestVmDevices(XMLTestCase):
             </channel>"""
 
         vmConf.update(self.conf)
-        dev = vmConf['devices'][0]
+        with fake.VM() as testvm:
+            dev = testvm._dev_spec_update_with_vm_conf(vmConf['devices'][0])
         with MonkeyPatchScope([
             (vmdevices.graphics.net_api, 'libvirt_networks', lambda: {})
         ]):
-            graph = vmdevices.graphics.Graphics(vmConf, self.log, **dev)
+            graph = vmdevices.graphics.Graphics(self.log, **dev)
         self.assert_dom_xml_equal(graph.getXML(), xml)
 
         if graph.device == 'spice':
@@ -663,8 +663,7 @@ class TestVmDevices(XMLTestCase):
           </devices>
         </domain>""" % (device_xml,)
         with fake.VM() as testvm:
-            device = vmdevices.hostdevice.HostDevice(
-                testvm.conf, testvm.log, **conf)
+            device = vmdevices.hostdevice.HostDevice(testvm.log, **conf)
 
             testvm.conf['devices'] = [conf]
             device_conf = [device]
@@ -683,20 +682,19 @@ class TestVmDevices(XMLTestCase):
         """
         params = {'device': 'memory', 'type': 'memory',
                   'size': 1024, 'node': 0}
-        memory = vmdevices.core.Memory(self.conf, self.log, **params)
+        memory = vmdevices.core.Memory(self.log, **params)
         self.assert_dom_xml_equal(memory.getXML(), memoryXML)
 
     def testGraphicsNoDisplayNetwork(self):
         with fake.VM() as testvm:
-            graphDev = vmdevices.graphics.Graphics(
-                testvm.conf, testvm.log)
+            graphDev = vmdevices.graphics.Graphics(testvm.log)
 
-            self.assertIsNone(graphDev.specParams['displayNetwork'])
+            self.assertNotIn('displayNetwork', graphDev.specParams)
 
     def testGraphicsDisplayNetworkFromSpecParams(self):
         with fake.VM() as testvm:
             graphDev = vmdevices.graphics.Graphics(
-                testvm.conf, testvm.log,
+                testvm.log,
                 specParams={'displayNetwork': 'vmDisplaySpecParams'})
 
             self.assertEqual(graphDev.specParams['displayNetwork'],
@@ -706,9 +704,9 @@ class TestVmDevices(XMLTestCase):
         conf = {'displayNetwork': 'vmDisplayConf'}
         conf.update(self.conf)
         with fake.VM(conf) as testvm:
-            graphDev = vmdevices.graphics.Graphics(
-                testvm.conf, testvm.log)
-
+            dev = {'type': hwclass.GRAPHICS, 'specParams': {}}
+            testvm._dev_spec_update_with_vm_conf(dev)
+            graphDev = vmdevices.graphics.Graphics(testvm.log, **dev)
             self.assertEqual(graphDev.specParams['displayNetwork'],
                              'vmDisplayConf')
 
@@ -732,7 +730,7 @@ class ConsoleTests(TestCaseBase):
                 'device': 'console',
                 'vmid': self.cfg['vmId'],
             }
-            con = vmdevices.core.Console(self.cfg, self.log, **dev)
+            con = vmdevices.core.Console(self.log, **dev)
             con.prepare()
 
             self.assertEqual(supervdsm.prepared_path, None)
@@ -745,7 +743,7 @@ class ConsoleTests(TestCaseBase):
                 'specParams': {'enableSocket': True},
                 'vmid': self.cfg['vmId'],
             }
-            con = vmdevices.core.Console(self.cfg, self.log, **dev)
+            con = vmdevices.core.Console(self.log, **dev)
             con.prepare()
 
             self.assertEqual(supervdsm.prepared_path,
@@ -763,7 +761,7 @@ class ConsoleTests(TestCaseBase):
                 'device': 'console',
                 'vmId': self.cfg['vmId'],
             }
-            con = vmdevices.core.Console(self.cfg, self.log, **dev)
+            con = vmdevices.core.Console(self.log, **dev)
             con.cleanup()
 
             self.assertEqual(self._cleaned_path, None)
@@ -780,7 +778,7 @@ class ConsoleTests(TestCaseBase):
                 'specParams': {'enableSocket': True},
                 'vmid': self.cfg['vmId'],
             }
-            con = vmdevices.core.Console(self.cfg, self.log, **dev)
+            con = vmdevices.core.Console(self.log, **dev)
             con.cleanup()
 
             self.assertEqual(self._cleaned_path, self._expected_path)
@@ -829,7 +827,7 @@ class RngTests(TestCaseBase):
                 'source': config,
             },
         }
-        rng = vmdevices.core.Rng(self.conf, self.log, **dev_conf)
+        rng = vmdevices.core.Rng(self.log, **dev_conf)
         self.assertTrue(rng.uses_source(source))
 
 

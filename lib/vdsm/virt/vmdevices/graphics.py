@@ -51,12 +51,10 @@ class Graphics(Base):
 
     __slots__ = ('port', 'tlsPort', 'vmid')
 
-    def __init__(self, conf, log, **kwargs):
-        super(Graphics, self).__init__(conf, log, **kwargs)
+    def __init__(self, log, **kwargs):
+        super(Graphics, self).__init__(log, **kwargs)
         self.port = LIBVIRT_PORT_AUTOSELECT
         self.tlsPort = LIBVIRT_PORT_AUTOSELECT
-
-        self.specParams['displayNetwork'] = self._display_network(conf)
 
     def setup(self):
         display_network = self.specParams['displayNetwork']
@@ -76,15 +74,6 @@ class Graphics(Base):
         vmc.appendChildWithArgs('target', type='virtio',
                                 name='com.redhat.spice.0')
         return vmc
-
-    def _display_network(self, conf):
-        """
-        It's possible that the network is specified in vm's conf
-        and not in specParams. This is considered legacy.
-        """
-        return (self.specParams.get('displayNetwork') or
-                conf.get('displayNetwork') or
-                None)
 
     def _getSpiceChannels(self):
         for name in self.specParams['spiceSecureChannels'].split(','):

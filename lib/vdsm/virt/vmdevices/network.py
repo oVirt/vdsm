@@ -38,7 +38,7 @@ class Interface(Base):
                  'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev',
                  'numa_node', '_device_params', 'vm_custom')
 
-    def __init__(self, conf, log, **kwargs):
+    def __init__(self, log, **kwargs):
         # pyLint can't tell that the Device.__init__() will
         # set a nicModel attribute, so modify the kwarg list
         # prior to device init.
@@ -47,7 +47,7 @@ class Interface(Base):
                 kwargs[attr] = 'virtio'
             elif attr == 'network' and value == '':
                 kwargs[attr] = net_api.DUMMY_BRIDGE
-        super(Interface, self).__init__(conf, log, **kwargs)
+        super(Interface, self).__init__(log, **kwargs)
         if not hasattr(self, 'filterParameters'):
             self.filterParameters = []
         if not hasattr(self, 'vm_custom'):

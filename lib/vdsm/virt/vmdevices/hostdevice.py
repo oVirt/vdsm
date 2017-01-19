@@ -34,8 +34,8 @@ class PciDevice(core.Base):
     __slots__ = ('address', 'hostAddress', 'bootOrder', '_deviceParams',
                  'name', 'numa_node')
 
-    def __init__(self, conf, log, **kwargs):
-        super(PciDevice, self).__init__(conf, log, **kwargs)
+    def __init__(self, log, **kwargs):
+        super(PciDevice, self).__init__(log, **kwargs)
 
         self._deviceParams = get_device_params(self.device)
         self.hostAddress = self._deviceParams.get('address')
@@ -149,8 +149,8 @@ class UsbDevice(core.Base):
     __slots__ = ('address', 'hostAddress', 'bootOrder', '_deviceParams',
                  'name', 'numa_node')
 
-    def __init__(self, conf, log, **kwargs):
-        super(UsbDevice, self).__init__(conf, log, **kwargs)
+    def __init__(self, log, **kwargs):
+        super(UsbDevice, self).__init__(log, **kwargs)
 
         device_params = get_device_params(self.device)
         self.hostAddress = device_params.get('address')
@@ -221,7 +221,6 @@ class UsbDevice(core.Base):
                 # RHBZ#1215968
                 # dev.address = vmxml.device_address(device_xml, 1)
 
-        # and use that to identify the device in self.conf.
         for dev in vm.conf['devices']:
             if dev['device'] == device:
                 dev['alias'] = alias
@@ -237,8 +236,8 @@ class ScsiDevice(core.Base):
     __slots__ = ('address', 'hostAddress', 'bootOrder', '_deviceParams',
                  'name', 'bus_address', 'adapter', 'numa_node')
 
-    def __init__(self, conf, log, **kwargs):
-        super(ScsiDevice, self).__init__(conf, log, **kwargs)
+    def __init__(self, log, **kwargs):
+        super(ScsiDevice, self).__init__(log, **kwargs)
 
         device_params = get_device_params(self.device)
         self.hostAddress = device_params.get('address')
@@ -317,7 +316,6 @@ class ScsiDevice(core.Base):
                 device = dev.device
                 dev.address = vmxml.device_address(device_xml, 1)
 
-        # and use that to identify the device in self.conf.
         for dev in vm.conf['devices']:
             if dev['device'] == device:
                 dev['alias'] = alias
@@ -338,10 +336,10 @@ class HostDevice(core.Base):
         'scsi': ScsiDevice,
     }
 
-    def __new__(cls, conf, log, **kwargs):
+    def __new__(cls, log, **kwargs):
         device_params = get_device_params(kwargs['device'])
         device = cls._DEVICE_MAPPING[
-            device_params['capability']](conf, log, **kwargs)
+            device_params['capability']](log, **kwargs)
         return device
 
     @classmethod

@@ -144,7 +144,7 @@ class Device(core.Base):
         other code do not need to know that.
         """
 
-    def __init__(self, conf, log, **kwargs):
+    def __init__(self, log, **kwargs):
         """
         Initialize a lease element.
 
@@ -158,7 +158,7 @@ class Device(core.Base):
         for key in self.__slots__:
             if key not in kwargs:
                 raise MissingArgument(key, kwargs)
-        super(Device, self).__init__(conf, log, **kwargs)
+        super(Device, self).__init__(log, **kwargs)
 
     def getXML(self):
         """

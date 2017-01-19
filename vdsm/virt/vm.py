@@ -443,7 +443,7 @@ class Vm(object):
 
         for dev_type, dev_class in self.DeviceMapping:
             for dev in dev_spec_map[dev_type]:
-                dev_map[dev_type].append(dev_class(self.conf, self.log, **dev))
+                dev_map[dev_type].append(dev_class(self.log, **dev))
 
         return dev_map
 
@@ -2219,7 +2219,7 @@ class Vm(object):
     @api.guard(_not_migrating)
     def hotplugNic(self, params):
         nicParams = params['nic']
-        nic = vmdevices.network.Interface(self.conf, self.log, **nicParams)
+        nic = vmdevices.network.Interface(self.log, **nicParams)
         nicXml = vmxml.format_xml(nic.getXML(), pretty=True)
         nicXml = hooks.before_nic_hotplug(nicXml, self.conf,
                                           params=nic.custom)
@@ -2286,8 +2286,7 @@ class Vm(object):
     def hostdevHotplug(self, dev_specs):
         dev_objects = []
         for dev_spec in dev_specs:
-            dev_object = vmdevices.hostdevice.HostDevice(self.conf, self.log,
-                                                         **dev_spec)
+            dev_object = vmdevices.hostdevice.HostDevice(self.log, **dev_spec)
             dev_objects.append(dev_object)
             try:
                 dev_object.setup()
@@ -2615,7 +2614,7 @@ class Vm(object):
     @api.guard(_not_migrating)
     def hotplugMemory(self, params):
         memParams = params.get('memory', {})
-        device = vmdevices.core.Memory(self.conf, self.log, **memParams)
+        device = vmdevices.core.Memory(self.log, **memParams)
 
         deviceXml = vmxml.format_xml(device.getXML())
         deviceXml = hooks.before_memory_hotplug(deviceXml)
@@ -3024,7 +3023,7 @@ class Vm(object):
             self._createTransientDisk(diskParams)
 
         self.updateDriveIndex(diskParams)
-        drive = vmdevices.storage.Drive(self.conf, self.log, **diskParams)
+        drive = vmdevices.storage.Drive(self.log, **diskParams)
 
         if drive.hasVolumeLeases:
             return response.error('noimpl')

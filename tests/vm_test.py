@@ -334,7 +334,7 @@ class TestVm(XMLTestCase):
             'specParams': {'consoleType': 'virtio'},
             'vmid': self.conf['vmId'],
         }
-        console = vmdevices.core.Console(self.conf, self.log, **dev)
+        console = vmdevices.core.Console(self.log, **dev)
         self.assertXMLEqual(vmxml.format_xml(console.getXML()), consoleXML)
 
     def testConsoleXMLSerial(self):
@@ -347,7 +347,7 @@ class TestVm(XMLTestCase):
             'specParams': {'consoleType': 'serial'},
             'vmid': self.conf['vmId'],
         }
-        console = vmdevices.core.Console(self.conf, self.log, **dev)
+        console = vmdevices.core.Console(self.log, **dev)
         self.assertXMLEqual(vmxml.format_xml(console.getXML()), consoleXML)
 
     def testConsoleXMLDefault(self):
@@ -359,7 +359,7 @@ class TestVm(XMLTestCase):
             'device': 'console',
             'vmid': self.conf['vmId'],
         }
-        console = vmdevices.core.Console(self.conf, self.log, **dev)
+        console = vmdevices.core.Console(self.log, **dev)
         self.assertXMLEqual(vmxml.format_xml(console.getXML()), consoleXML)
 
     def testSerialDeviceXML(self):
@@ -371,7 +371,7 @@ class TestVm(XMLTestCase):
             'device': 'console',
             'vmid': self.conf['vmId'],
         }
-        console = vmdevices.core.Console(self.conf, self.log, **dev)
+        console = vmdevices.core.Console(self.log, **dev)
         self.assertXMLEqual(vmxml.format_xml(console.getSerialDeviceXML()),
                             serialXML)
 
@@ -387,7 +387,7 @@ class TestVm(XMLTestCase):
             'specParams': {'enableSocket': True},
             'vmid': self.conf['vmId'],
         }
-        console = vmdevices.core.Console(self.conf, self.log, **dev)
+        console = vmdevices.core.Console(self.log, **dev)
         self.assertXMLEqual(vmxml.format_xml(console.getSerialDeviceXML()),
                             serialXML)
 
@@ -509,10 +509,10 @@ class TestVm(XMLTestCase):
 
     def testIoTuneException(self):
         SERIAL = '54-a672-23e5b495a9ea'
-        basicConf = {'index': '0', 'propagateErrors': 'on', 'iface': 'virtio',
-                     'name': 'vda', 'format': 'cow', 'device': 'disk',
-                     'path': '/tmp/disk1.img', 'type': 'disk',
-                     'readonly': 'False', 'shared': 'True', 'serial': SERIAL}
+        devConf = {'index': '0', 'propagateErrors': 'on', 'iface': 'virtio',
+                   'name': 'vda', 'format': 'cow', 'device': 'disk',
+                   'path': '/tmp/disk1.img', 'type': 'disk',
+                   'readonly': 'False', 'shared': 'True', 'serial': SERIAL}
         tuneConfs = [
             {'read_iops_sec': 1000, 'total_iops_sec': 2000},
             {'read_bytes_sec': -5},
@@ -527,11 +527,9 @@ class TestVm(XMLTestCase):
             'parameter aaa name is invalid',
             'an integer is required for ioTune parameter read_iops_sec']
 
-        vmConf = {'custom': {'viodiskcache': 'writethrough'}}
-
         for (tuneConf, exceptionMsg) in \
                 zip(tuneConfs, expectedExceptMsgs):
-            drive = vmdevices.storage.Drive(vmConf, self.log, **basicConf)
+            drive = vmdevices.storage.Drive(self.log, **devConf)
             # Patch Drive.blockDev to skip the block device checking.
             drive._blockDev = False
 
@@ -938,7 +936,6 @@ class TestVm(XMLTestCase):
 
         drives = [
             vmdevices.storage.Drive(
-                {},
                 log=self.log,
                 index=0,
                 device="hdd",
@@ -1009,15 +1006,7 @@ class TestVm(XMLTestCase):
         domainID = uuid.uuid4()
         drives = [
             vmdevices.storage.Drive(
-                {
-                    "specParams": {
-                        "ioTune": {
-                            "total_bytes_sec": 9999,
-                            "total_iops_sec": 9999
-                        }
-                    }
-                },
-                log=self.log,
+                self.log,
                 index=0,
                 device="disk",
                 path="/dev/dummy",
@@ -1029,15 +1018,7 @@ class TestVm(XMLTestCase):
                 volumeID=uuid.uuid4()
             ),
             vmdevices.storage.Drive(
-                {
-                    "specParams": {
-                        "ioTune": {
-                            "total_bytes_sec": 9999,
-                            "total_iops_sec": 9999
-                        }
-                    }
-                },
-                log=self.log,
+                self.log,
                 index=0,
                 device="hdd2",
                 path="/dev/dummy2",
@@ -1321,13 +1302,13 @@ class TestWaitForRemoval(TestCaseBase):
     </interface>
     """
 
-    drive_file = Drive({}, log=logging.getLogger(''), index=0, iface="",
+    drive_file = Drive(log=logging.getLogger(''), index=0, iface="",
                        path='test_path', diskType=DISK_TYPE.FILE)
-    drive_network = Drive({}, log=logging.getLogger(''), index=0, iface="",
+    drive_network = Drive(log=logging.getLogger(''), index=0, iface="",
                           path='test_path', diskType=DISK_TYPE.NETWORK)
-    drive_block = Drive({}, log=logging.getLogger(''), index=0, iface="",
+    drive_block = Drive(log=logging.getLogger(''), index=0, iface="",
                         path="/block_path", diskType=DISK_TYPE.BLOCK)
-    interface = Interface({}, log=logging.getLogger(''), macAddr="macAddr",
+    interface = Interface(log=logging.getLogger(''), macAddr="macAddr",
                           device='bridge', name='')
 
     @MonkeyPatch(vm, "config", make_config([

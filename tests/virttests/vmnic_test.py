@@ -73,7 +73,7 @@ class TestNicDevice(XMLTestCase):
         </interface>
         """
         with MonkeyPatchScope([(network, 'supervdsm', FakeSuperVdsm())]):
-            dev = vmdevices.network.Interface({}, self.log, **conf)
+            dev = vmdevices.network.Interface(self.log, **conf)
             vnic_xml = dev.getXML()
             vmdevices.network.update_bandwidth_xml(dev, vnic_xml, specParams)
             self.assertXMLEqual(vmxml.format_xml(vnic_xml), XML)

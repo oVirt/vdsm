@@ -532,7 +532,7 @@ class HostdevCreationTests(XMLTestCase):
                    _USB_DEVICES + [_SCSI_DEVICES[2]]])
     def testCreateHostDevice(self, device_name):
         dev_spec = {'type': 'hostdev', 'device': device_name}
-        device = hostdevice.HostDevice(self.conf, self.log, **dev_spec)
+        device = hostdevice.HostDevice(self.log, **dev_spec)
         self.assertXMLEqual(vmxml.format_xml(device.getXML()),
                             _DEVICE_XML[device_name] % ('',))
 
@@ -540,7 +540,7 @@ class HostdevCreationTests(XMLTestCase):
     def testCreatePCIHostDeviceWithAddress(self, device_name):
         dev_spec = {'type': 'hostdev', 'device': device_name, 'address':
                     self._PCI_ADDRESS}
-        device = hostdevice.HostDevice(self.conf, self.log, **dev_spec)
+        device = hostdevice.HostDevice(self.log, **dev_spec)
         self.assertXMLEqual(
             vmxml.format_xml(device.getXML()),
             _DEVICE_XML[device_name] %
@@ -552,7 +552,7 @@ class HostdevCreationTests(XMLTestCase):
                     'hostdev': _SRIOV_VF, 'macAddr': 'ff:ff:ff:ff:ff:ff',
                     'specParams': {'vlanid': 3},
                     'bootOrder': '9'}
-        device = network.Interface(self.conf, self.log, **dev_spec)
+        device = network.Interface(self.log, **dev_spec)
         self.assertXMLEqual(vmxml.format_xml(device.getXML()),
                             _DEVICE_XML[_SRIOV_VF] % ('',))
 
@@ -563,7 +563,7 @@ class HostdevCreationTests(XMLTestCase):
                     'bootOrder': '9', 'address':
                     {'slot': '0x02', 'bus': '0x01', 'domain': '0x0000',
                      'function': '0x0', 'type': 'pci'}}
-        device = network.Interface(self.conf, self.log, **dev_spec)
+        device = network.Interface(self.log, **dev_spec)
         self.assertXMLEqual(
             vmxml.format_xml(device.getXML()),
             _DEVICE_XML[_SRIOV_VF] % (self._PCI_ADDRESS_XML))
@@ -577,7 +577,7 @@ class HostdevCreationTests(XMLTestCase):
 
         domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.X86_64)
         devices = [hostdevice.HostDevice(
-            self.conf, self.log, **{'type': 'hostdev', 'device': device}) for
+            self.log, **{'type': 'hostdev', 'device': device}) for
             device in devices]
         domxml.appendHostdevNumaTune(devices)
         xml = vmxml.format_xml(domxml.dom)
@@ -586,7 +586,7 @@ class HostdevCreationTests(XMLTestCase):
     def testNumaTuneXMLMultiNode(self):
         domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.X86_64)
         devices = [hostdevice.HostDevice(
-            self.conf, self.log, **{'type': 'hostdev', 'device': device}) for
+            self.log, **{'type': 'hostdev', 'device': device}) for
             device in [_SRIOV_PF, _SRIOV_VF, 'pci_0000_00_02_0']]
         domxml.appendHostdevNumaTune(devices)
         xml = vmxml.format_xml(domxml.dom)
