@@ -257,22 +257,27 @@ class TestVmMigrate(TestCaseBase):
         self.serv = fake.JsonRpcServer()
         self.cif.bindings["jsonrpc"] = self.serv
 
-    @permutations([
-        # vm_status, is_error, error_code (None == dont'care)
-        [vmstatus.WAIT_FOR_LAUNCH, True, 'noVM'],
-        [vmstatus.DOWN, True, 'noVM'],
-        [vmstatus.UP, False, None],
-    ])
-    def test_migrate_from_status(self, vm_status, is_error, error_code):
+    @permutations([[vmstatus.UP]])
+    def test_migrate_from_status(self, vm_status):
             with MonkeyPatchScope([
                 (migration, 'SourceThread', fake.MigrationSourceThread)
             ]):
                 with fake.VM(status=vm_status, cif=self.cif) as testvm:
                     res = testvm.migrate({})  # no params needed
-                    self.assertEqual(
-                        response.is_error(res, error_code),
-                        is_error,
-                    )
+                    self.assertFalse(response.is_error(res))
+
+    @permutations([
+        # vm_status, exception
+        [vmstatus.WAIT_FOR_LAUNCH, exception.NoSuchVM],
+        [vmstatus.DOWN, exception.NoSuchVM],
+    ])
+    def test_migrate_from_status_error(self, vm_status, exc):
+            with MonkeyPatchScope([
+                (migration, 'SourceThread', fake.MigrationSourceThread)
+            ]):
+                with fake.VM(status=vm_status, cif=self.cif) as testvm:
+                    with self.assertRaises(exc):
+                        testvm.migrate({})  # no params needed
 
 
 class TestPostCopy(TestCaseBase):

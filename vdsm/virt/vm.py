@@ -1186,7 +1186,7 @@ class Vm(object):
 
     def shutdown(self, delay, message, reboot, timeout, force):
         if self.lastStatus == vmstatus.DOWN:
-            return response.error('noVM')
+            raise exception.NoSuchVM()
 
         delay = int(delay)
 
@@ -1540,7 +1540,7 @@ class Vm(object):
             # after a VM just went down
             if self._lastStatus in (vmstatus.WAIT_FOR_LAUNCH,
                                     vmstatus.DOWN):
-                return response.error('noVM')
+                raise exception.NoSuchVM()
             if self.isMigrating():
                 self.log.warning('vm already migrating')
                 return response.error('exist')
@@ -2195,7 +2195,7 @@ class Vm(object):
             nicXml = hooks.after_nic_hotplug_fail(
                 nicXml, self.conf, params=nic.custom)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                return response.error('noVM')
+                raise exception.NoSuchVM()
             return response.error('hotplugNic', e.message)
         else:
             # FIXME!  We may have a problem here if vdsm dies right after
@@ -2564,7 +2564,7 @@ class Vm(object):
         except libvirt.libvirtError as e:
             self.log.exception("Hotunplug failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                return response.error('noVM')
+                raise exception.NoSuchVM()
             self._rollback_nic_hotunplug(nicDev, nic)
             hooks.after_nic_hotunplug_fail(nicXml, self.conf,
                                            params=nic.custom)
@@ -2602,7 +2602,7 @@ class Vm(object):
         except libvirt.libvirtError as e:
             self.log.exception("hotplugMemory failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                return errCode['noVM']
+                raise exception.NoSuchVM()
             return response.error('hotplugMem', e.message)
 
         self._devices[hwclass.MEMORY].append(device)
@@ -2657,7 +2657,7 @@ class Vm(object):
         except libvirt.libvirtError as e:
             self.log.exception("setNumberOfCpus failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                return response.error('noVM')
+                raise exception.NoSuchVM()
             return response.error('setNumberOfCpusErr', e.message)
 
         self.conf['smp'] = str(numberOfCpus)
@@ -2793,7 +2793,7 @@ class Vm(object):
             except libvirt.libvirtError as e:
                 self.log.exception("updateVmPolicy failed")
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                    return response.error('noVM')
+                    raise exception.NoSuchVM()
                 else:
                     return response.error('updateVmPolicyErr', e.message)
 
@@ -2889,8 +2889,7 @@ class Vm(object):
             except libvirt.libvirtError as e:
                 self.log.exception("getVmIoTune failed")
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                    self.log.error('noVM')
-                    return response.error('noVM')
+                    raise exception.NoSuchVM()
                 else:
                     self.log.error('updateIoTuneErr', e.message)
                     return response.error('updateIoTuneErr', e.message)
@@ -2930,7 +2929,7 @@ class Vm(object):
             except libvirt.libvirtError as e:
                 self.log.exception("setVmIoTune failed")
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                    return response.error('noVM')
+                    raise exception.NoSuchVM()
                 else:
                     return response.error('updateIoTuneErr', e.message)
 
@@ -3018,7 +3017,7 @@ class Vm(object):
             self.log.exception("Hotplug failed")
             self.cif.teardownVolumePath(diskParams)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                return response.error('noVM')
+                raise exception.NoSuchVM()
             return response.error('hotplugDisk', e.message)
         else:
             # FIXME!  We may have a problem here if vdsm dies right after
@@ -3071,7 +3070,7 @@ class Vm(object):
         except libvirt.libvirtError as e:
             self.log.exception("Hotunplug failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                return response.error('noVM')
+                raise exception.NoSuchVM()
             return response.error('hotunplugDisk', e.message)
         else:
             self._devices[hwclass.DISK].remove(drive)
@@ -4412,7 +4411,7 @@ class Vm(object):
                 key='balloonErr', msg='an integer is required for target')
         except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                return self._reportException(key='noVM')
+                raise exception.NoSuchVM()
             return self._reportException(key='balloonErr', msg=e.message)
         else:
             for dev in self.conf['devices']:
