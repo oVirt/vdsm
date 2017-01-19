@@ -2175,7 +2175,7 @@ class Vm(object):
     @api.logged(on='vdsm.api')
     def hotplugNic(self, params):
         if self.isMigrating():
-            return response.error('migInProgress')
+            raise exception.MigrationInProgress()
 
         nicParams = params['nic']
         nic = vmdevices.network.Interface(self.conf, self.log, **nicParams)
@@ -2243,7 +2243,7 @@ class Vm(object):
     @api.logged(on='vdsm.api')
     def hostdevHotplug(self, dev_specs):
         if self.isMigrating():
-            return response.error('migInProgress')
+            raise exception.MigrationInProgress()
 
         dev_objects = []
         for dev_spec in dev_specs:
@@ -2292,7 +2292,7 @@ class Vm(object):
     @api.logged(on='vdsm.api')
     def hostdevHotunplug(self, dev_names):
         if self.isMigrating():
-            return response.error('migInProgress')
+            raise exception.MigrationInProgress()
 
         device_objects = []
         unplugged_devices = []
@@ -2509,7 +2509,7 @@ class Vm(object):
     @api.logged(on='vdsm.api')
     def hotunplugNic(self, params):
         if self.isMigrating():
-            return response.error('migInProgress')
+            raise exception.MigrationInProgress()
 
         nicParams = params['nic']
 
@@ -2587,7 +2587,7 @@ class Vm(object):
     def hotplugMemory(self, params):
 
         if self.isMigrating():
-            return errCode['migInProgress']
+            raise exception.MigrationInProgress()
 
         memParams = params.get('memory', {})
         device = vmdevices.core.Memory(self.conf, self.log, **memParams)
@@ -2647,7 +2647,7 @@ class Vm(object):
     def setNumberOfCpus(self, numberOfCpus):
 
         if self.isMigrating():
-            return response.error('migInProgress')
+            raise exception.MigrationInProgress()
 
         self.log.debug("Setting number of cpus to : %s", numberOfCpus)
         hooks.before_set_num_of_cpus()
@@ -2702,7 +2702,7 @@ class Vm(object):
         """
 
         if self.isMigrating():
-            return response.error('migInProgress')
+            raise exception.MigrationInProgress()
 
         if not params:
             self.log.error("updateVmPolicy got an empty policy.")
@@ -2989,7 +2989,7 @@ class Vm(object):
     @api.logged(on='vdsm.api')
     def hotplugDisk(self, params):
         if self.isMigrating():
-            return response.error('migInProgress')
+            raise exception.MigrationInProgress()
 
         diskParams = params.get('drive', {})
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
@@ -3040,7 +3040,7 @@ class Vm(object):
     @api.logged(on='vdsm.api')
     def hotunplugDisk(self, params):
         if self.isMigrating():
-            return response.error('migInProgress')
+            raise exception.MigrationInProgress()
 
         diskParams = params.get('drive', {})
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
@@ -3564,7 +3564,7 @@ class Vm(object):
         vmDrives = {}
 
         if self.isMigrating():
-            return response.error('migInProgress')
+            raise exception.MigrationInProgress()
 
         for drive in snapDrives:
             baseDrv, tgetDrv = _normSnapDriveParams(drive)
