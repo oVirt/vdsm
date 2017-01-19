@@ -447,6 +447,23 @@ class Vm(object):
 
         return dev_map
 
+    def _dev_spec_update_with_vm_conf(self, dev):
+        if dev['type'] in (hwclass.CONSOLE, hwclass.GRAPHICS, hwclass.RNG):
+            dev['vmid'] = self.id
+        if dev['type'] == hwclass.GRAPHICS:
+            if 'specParams' not in dev:
+                dev['specParams'] = {}
+            if 'displayNetwork' not in dev['specParams']:
+                dev['specParams']['displayNetwork'] = self.conf.get(
+                    'displayNetwork'
+                )
+        if dev['type'] in (hwclass.DISK, hwclass.NIC):
+            vm_custom = self.conf.get('custom', {})
+            self.log.debug('device %s: adding VM custom properties %s',
+                           dev['type'], vm_custom)
+            dev['vm_custom'] = vm_custom
+        return dev
+
     def _devSpecMapFromConf(self):
         """
         Return the "devices" section of this Vm's conf.
@@ -460,6 +477,7 @@ class Vm(object):
             devConf = utils.picklecopy(self.conf['devices'])
 
         for dev in devConf:
+            dev = self._dev_spec_update_with_vm_conf(dev)
             try:
                 devices[dev['type']].append(dev)
             except KeyError:

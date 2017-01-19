@@ -329,7 +329,11 @@ class TestVm(XMLTestCase):
             <console type="pty">
                 <target port="0" type="virtio"/>
             </console>"""
-        dev = {'device': 'console', 'specParams': {'consoleType': 'virtio'}}
+        dev = {
+            'device': 'console',
+            'specParams': {'consoleType': 'virtio'},
+            'vmid': self.conf['vmId'],
+        }
         console = vmdevices.core.Console(self.conf, self.log, **dev)
         self.assertXMLEqual(vmxml.format_xml(console.getXML()), consoleXML)
 
@@ -338,7 +342,11 @@ class TestVm(XMLTestCase):
             <console type="pty">
                 <target port="0" type="serial"/>
             </console>"""
-        dev = {'device': 'console', 'specParams': {'consoleType': 'serial'}}
+        dev = {
+            'device': 'console',
+            'specParams': {'consoleType': 'serial'},
+            'vmid': self.conf['vmId'],
+        }
         console = vmdevices.core.Console(self.conf, self.log, **dev)
         self.assertXMLEqual(vmxml.format_xml(console.getXML()), consoleXML)
 
@@ -347,7 +355,10 @@ class TestVm(XMLTestCase):
             <console type="pty">
                 <target port="0" type="virtio"/>
             </console>"""
-        dev = {'device': 'console'}
+        dev = {
+            'device': 'console',
+            'vmid': self.conf['vmId'],
+        }
         console = vmdevices.core.Console(self.conf, self.log, **dev)
         self.assertXMLEqual(vmxml.format_xml(console.getXML()), consoleXML)
 
@@ -356,7 +367,10 @@ class TestVm(XMLTestCase):
             <serial type="pty">
                 <target port="0"/>
             </serial>"""
-        dev = {'device': 'console'}
+        dev = {
+            'device': 'console',
+            'vmid': self.conf['vmId'],
+        }
         console = vmdevices.core.Console(self.conf, self.log, **dev)
         self.assertXMLEqual(vmxml.format_xml(console.getSerialDeviceXML()),
                             serialXML)
@@ -368,7 +382,11 @@ class TestVm(XMLTestCase):
                 <source mode="bind" path="%s" />
                 <target port="0" />
             </serial>""" % path
-        dev = {'device': 'console', 'specParams': {'enableSocket': True}}
+        dev = {
+            'device': 'console',
+            'specParams': {'enableSocket': True},
+            'vmid': self.conf['vmId'],
+        }
         console = vmdevices.core.Console(self.conf, self.log, **dev)
         self.assertXMLEqual(vmxml.format_xml(console.getSerialDeviceXML()),
                             serialXML)

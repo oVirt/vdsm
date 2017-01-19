@@ -49,7 +49,7 @@ class Graphics(Base):
         'main', 'display', 'inputs', 'cursor', 'playback',
         'record', 'smartcard', 'usbredir')
 
-    __slots__ = ('port', 'tlsPort')
+    __slots__ = ('port', 'tlsPort', 'vmid')
 
     def __init__(self, conf, log, **kwargs):
         super(Graphics, self).__init__(conf, log, **kwargs)
@@ -61,7 +61,7 @@ class Graphics(Base):
     def setup(self):
         display_network = self.specParams['displayNetwork']
         if display_network:
-            net_api.create_libvirt_network(display_network, self.conf['vmId'])
+            net_api.create_libvirt_network(display_network, self.vmid)
             display_ip = _getNetworkIp(display_network)
         else:
             display_ip = '0'
@@ -69,7 +69,7 @@ class Graphics(Base):
 
     def teardown(self):
         net_api.delete_libvirt_network(self.specParams['displayNetwork'],
-                                       self.conf['vmId'])
+                                       self.vmid)
 
     def getSpiceVmcChannelsXML(self):
         vmc = vmxml.Element('channel', type='spicevmc')

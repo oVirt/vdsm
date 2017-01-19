@@ -81,7 +81,7 @@ class Drive(core.Base):
                  'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
                  '_blockDev', 'extSharedState', 'drv', 'sgio', 'GUID',
                  'diskReplicate', '_diskType', 'hosts', 'protocol', 'auth',
-                 'discard')
+                 'discard', 'vm_custom')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         constants.MEGAB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -180,6 +180,8 @@ class Drive(core.Base):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
         super(Drive, self).__init__(conf, log, **kwargs)
+        if not hasattr(self, 'vm_custom'):
+            self.vm_custom = {}
         self.device = getattr(self, 'device', 'disk')
         # Keep sizes as int
         self.reqsize = int(kwargs.get('reqsize', '0'))  # Backward compatible
@@ -366,7 +368,7 @@ class Drive(core.Base):
             self.cache = "writethrough"
         elif self.iface == 'virtio':
             try:
-                self.cache = self.conf['custom']['viodiskcache']
+                self.cache = self.vm_custom['viodiskcache']
             except KeyError:
                 pass  # Ignore if custom disk cache is missing
 

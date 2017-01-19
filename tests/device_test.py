@@ -181,7 +181,10 @@ class TestVmDevices(XMLTestCase):
             <console type="pty">
                 <target port="0" type="virtio"/>
             </console>"""
-        dev = {'device': 'console'}
+        dev = {
+            'device': 'console',
+            'vmid': self.conf['vmId'],
+        }
         if specParams is not None:
             dev['specParams'] = specParams
         console = vmdevices.core.Console(self.conf, self.log, **dev)
@@ -194,7 +197,11 @@ class TestVmDevices(XMLTestCase):
                 <target port="0" type="virtio"/>
             </console>""" % (constants.P_OVIRT_VMCONSOLES,
                              self.conf['vmId'])
-        dev = {'device': 'console', 'specParams': {'enableSocket': True}}
+        dev = {
+            'device': 'console',
+            'specParams': {'enableSocket': True},
+            'vmid': self.conf['vmId'],
+        }
         console = vmdevices.core.Console(self.conf, self.log, **dev)
         self.assert_dom_xml_equal(console.getXML(), consoleXML)
 
@@ -309,9 +316,8 @@ class TestVmDevices(XMLTestCase):
                'specParams': {'inbound': {'average': 1000, 'peak': 5000,
                                           'burst': 1024},
                               'outbound': {'average': 128, 'burst': 256}},
-               'custom': {'queues': '7'}}
-
-        self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
+               'custom': {'queues': '7'},
+               'vm_custom': {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}}
         iface = vmdevices.network.Interface(self.conf, self.log, **dev)
         self.assert_dom_xml_equal(iface.getXML(), interfaceXML)
 
@@ -342,9 +348,9 @@ class TestVmDevices(XMLTestCase):
             'filterParameters': [
                 {'name': 'IP', 'value': '10.0.0.1'},
                 {'name': 'IP', 'value': '10.0.0.2'},
-            ]}
+            ],
+            'vm_custom': {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}}
 
-        self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
         iface = vmdevices.network.Interface(self.conf, self.log, **dev)
         self.assert_dom_xml_equal(iface.getXML(), interfaceXML)
 
@@ -374,9 +380,8 @@ class TestVmDevices(XMLTestCase):
                'network': 'ovirtmgmt', 'address': self.PCI_ADDR_DICT,
                'device': 'bridge', 'type': 'interface',
                'bootOrder': '1', 'filter': 'no-mac-spoofing',
-               'custom': {'queues': '7'}}
-
-        self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
+               'custom': {'queues': '7'},
+               'vm_custom': {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}}
         iface = vmdevices.network.Interface(self.conf, self.log, **dev)
         self.assert_dom_xml_equal(iface.getXML(), interfaceXML)
 
@@ -403,8 +408,9 @@ class TestVmDevices(XMLTestCase):
                'specParams': {'inbound': {'average': 1000, 'peak': 5000,
                                           'burst': 1024},
                               'outbound': {'average': 128, 'burst': 256}},
-               'custom': {'queues': '7'}}
-        self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
+               'custom': {'queues': '7'},
+               'vm_custom': {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'},
+               }
         iface = vmdevices.network.Interface(self.conf, self.log, **dev)
         orig_bandwidth = iface.getXML().findall('bandwidth')[0]
         self.assert_dom_xml_equal(orig_bandwidth, originalBwidthXML)
@@ -722,7 +728,10 @@ class ConsoleTests(TestCaseBase):
     def test_console_pty_not_prepare_path(self):
         supervdsm = fake.SuperVdsm()
         with MonkeyPatchScope([(vmdevices.core, 'supervdsm', supervdsm)]):
-            dev = {'device': 'console'}
+            dev = {
+                'device': 'console',
+                'vmid': self.cfg['vmId'],
+            }
             con = vmdevices.core.Console(self.cfg, self.log, **dev)
             con.prepare()
 
@@ -731,7 +740,11 @@ class ConsoleTests(TestCaseBase):
     def test_console_usock_prepare_path(self):
         supervdsm = fake.SuperVdsm()
         with MonkeyPatchScope([(vmdevices.core, 'supervdsm', supervdsm)]):
-            dev = {'device': 'console', 'specParams': {'enableSocket': True}}
+            dev = {
+                'device': 'console',
+                'specParams': {'enableSocket': True},
+                'vmid': self.cfg['vmId'],
+            }
             con = vmdevices.core.Console(self.cfg, self.log, **dev)
             con.prepare()
 
@@ -746,7 +759,10 @@ class ConsoleTests(TestCaseBase):
 
         with MonkeyPatchScope([(vmdevices.core,
                                 'cleanup_guest_socket', _fake_cleanup)]):
-            dev = {'device': 'console'}
+            dev = {
+                'device': 'console',
+                'vmId': self.cfg['vmId'],
+            }
             con = vmdevices.core.Console(self.cfg, self.log, **dev)
             con.cleanup()
 
@@ -759,7 +775,11 @@ class ConsoleTests(TestCaseBase):
         with MonkeyPatchScope([(vmdevices.core,
                                 'cleanup_guest_socket', _fake_cleanup)]):
 
-            dev = {'device': 'console', 'specParams': {'enableSocket': True}}
+            dev = {
+                'device': 'console',
+                'specParams': {'enableSocket': True},
+                'vmid': self.cfg['vmId'],
+            }
             con = vmdevices.core.Console(self.cfg, self.log, **dev)
             con.cleanup()
 

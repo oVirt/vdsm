@@ -154,7 +154,7 @@ class Balloon(Base):
 
 
 class Console(Base):
-    __slots__ = ('_path',)
+    __slots__ = ('_path', 'vmid')
 
     CONSOLE_EXTENSION = '.sock'
 
@@ -166,7 +166,7 @@ class Console(Base):
         if utils.tobool(self.specParams.get('enableSocket', False)):
             self._path = os.path.join(
                 constants.P_OVIRT_VMCONSOLES,
-                self.conf['vmId'] + self.CONSOLE_EXTENSION
+                self.vmid + self.CONSOLE_EXTENSION
             )
         else:
             self._path = None
@@ -406,7 +406,7 @@ class Redir(Base):
 
 
 class Rng(Base):
-    __slots__ = ('address', 'model')
+    __slots__ = ('address', 'model', 'vmid')
 
     @staticmethod
     def matching_source(conf, source):
@@ -417,11 +417,11 @@ class Rng(Base):
 
     def setup(self):
         if self.uses_source('/dev/hwrng'):
-            supervdsm.getProxy().appropriateHwrngDevice(self.conf['vmId'])
+            supervdsm.getProxy().appropriateHwrngDevice(self.vmid)
 
     def teardown(self):
         if self.uses_source('/dev/hwrng'):
-            supervdsm.getProxy().rmAppropriateHwrngDevice(self.conf['vmId'])
+            supervdsm.getProxy().rmAppropriateHwrngDevice(self.vmid)
 
     def getXML(self):
         """

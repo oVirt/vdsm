@@ -67,6 +67,9 @@ class DriveXMLTests(XMLTestCase):
                     'total_iops_sec': 800,
                 }
             },
+            vm_custom={
+                'viodiskcache': 'writethrough'
+            },
         )
         xml = """
             <disk device="disk" snapshot="no" type="file">
@@ -82,8 +85,7 @@ class DriveXMLTests(XMLTestCase):
                 </iotune>
             </disk>
             """
-        vm_conf = {'custom': {'viodiskcache': 'writethrough'}}
-        self.check(vm_conf, conf, xml, is_block_device=False)
+        self.check({}, conf, xml, is_block_device=False)
 
     def test_disk_block(self):
         conf = drive_config(

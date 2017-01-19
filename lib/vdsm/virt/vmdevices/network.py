@@ -36,7 +36,7 @@ class Interface(Base):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
                  'linkActive', 'portMirroring', 'filter', 'filterParameters',
                  'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev',
-                 'numa_node', '_device_params')
+                 'numa_node', '_device_params', 'vm_custom')
 
     def __init__(self, conf, log, **kwargs):
         # pyLint can't tell that the Device.__init__() will
@@ -50,6 +50,8 @@ class Interface(Base):
         super(Interface, self).__init__(conf, log, **kwargs)
         if not hasattr(self, 'filterParameters'):
             self.filterParameters = []
+        if not hasattr(self, 'vm_custom'):
+            self.vm_custom = {}
         self.sndbufParam = False
         self.is_hostdevice = self.device == hwclass.HOSTDEV
         self.vlanId = self.specParams.get('vlanid')
@@ -75,14 +77,14 @@ class Interface(Base):
                 self.driver['name'] = 'vhost'
 
         try:
-            self.sndbufParam = self.conf['custom']['sndbuf']
+            self.sndbufParam = self.vm_custom['sndbuf']
         except KeyError:
             pass    # custom_sndbuf not specified
 
     def _getVHostSettings(self):
         VHOST_MAP = {'true': 'vhost', 'false': 'qemu'}
         vhosts = {}
-        vhostProp = self.conf.get('custom', {}).get('vhost', '')
+        vhostProp = self.vm_custom.get('vhost', '')
 
         if vhostProp != '':
             for vhost in vhostProp.split(','):
