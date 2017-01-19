@@ -2935,10 +2935,12 @@ types:
         type: enum
         values:
             CRITICAL: Log only critical messages
+            CRIT: An alias to CRITICAL
             DEBUG: Log everything (including debugging messages)
             ERROR: Log error messages and anything more severe
             INFO: Log informational messages and anything more severe
             WARNING: Log warning messages and anything more severe
+            WARN: An alias to WARNING
 
     MigrateMethod: &MigrateMethod
         added: '3.1'

@@ -18,9 +18,12 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from vdsm.logUtils import AllVmStatsValue
+import logging
+
+from vdsm import logUtils
 
 from testlib import VdsmTestCase as TestCaseBase
+from testlib import forked
 
 
 class TestAllVmStats(TestCaseBase):
@@ -35,6 +38,47 @@ class TestAllVmStats(TestCaseBase):
                     u'bd0d066b-971e-42f8-8bc6-d647ab7e0e70': 'Powering up'})
 
     def test_allvmstats(self):
-        data = AllVmStatsValue(self._STATS)
+        data = logUtils.AllVmStatsValue(self._STATS)
         result = str(data)
         self.assertEqual(eval(result), self._SIMPLIFIED)
+
+
+class TestSetLevel(TestCaseBase):
+
+    @forked
+    def test_root_logger(self):
+        logger = logging.getLogger()
+        logUtils.set_level("WARNING")
+        self.assertEqual(logger.getEffectiveLevel(), logging.WARNING)
+
+    @forked
+    def test_other_logger(self):
+        name = "test"
+        logger = logging.getLogger(name)
+        logUtils.set_level("WARNING", name=name)
+        self.assertEqual(logger.getEffectiveLevel(), logging.WARNING)
+
+    @forked
+    def test_sub_logger(self):
+        name = "test.sublogger"
+        logger = logging.getLogger(name)
+        logUtils.set_level("WARNING", name=name)
+        self.assertEqual(logger.getEffectiveLevel(), logging.WARNING)
+
+    @forked
+    def test_non_existing_level(self):
+        with self.assertRaises(ValueError):
+            logUtils.set_level("NO SUCH LEVEL")
+
+    @forked
+    def test_level_alias(self):
+        logging.addLevelName("OOPS", logging.ERROR)
+        logger = logging.getLogger()
+
+        # The new alias should work...
+        logUtils.set_level("OOPS")
+        self.assertEqual(logger.getEffectiveLevel(), logging.ERROR)
+
+        # The old name should work as well.
+        logUtils.set_level("ERROR")
+        self.assertEqual(logger.getEffectiveLevel(), logging.ERROR)
