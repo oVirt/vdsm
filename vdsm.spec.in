@@ -725,7 +725,7 @@ install -Dm 0644 vdsm/storage/vdsm-lvm.rules \
                  %{buildroot}%{_udevrulesdir}/12-vdsm-lvm.rules
 
 install -Dm 0755 init/systemd/systemd-vdsmd %{buildroot}%{_libdir}/systemd/systemd-vdsmd
-install -Dm 0644 init/systemd/85-vdsmd.preset %{buildroot}%{_libdir}/systemd/system-preset/85-vdsmd.preset
+install -Dm 0644 init/systemd/85-vdsmd.preset %{buildroot}%{_presetdir}/85-vdsmd.preset
 
 install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf \
                  %{buildroot}%{_tmpfilesdir}/%{vdsm_name}.conf
@@ -733,7 +733,7 @@ install -Dm 0644 init/systemd/unlimited-core.conf \
                  %{buildroot}%{_sysconfdir}/systemd/system/libvirtd.service.d/unlimited-core.conf
 
 %if 0%{?with_hooks}
-install -Dm 0644 vdsm_hooks/fcoe/85-vdsm-hook-fcoe.preset %{buildroot}%{_libdir}/systemd/system-preset/
+install -Dm 0644 vdsm_hooks/fcoe/85-vdsm-hook-fcoe.preset %{buildroot}%{_presetdir}
 %endif
 
 %if 0%{?rhel}
@@ -854,7 +854,7 @@ exit 0
 %doc README.logging
 %license COPYING
 %{_libdir}/systemd/systemd-vdsmd
-%{_libdir}/systemd/system-preset/85-vdsmd.preset
+%{_presetdir}/85-vdsmd.preset
 %{_unitdir}/vdsmd.service
 %{_unitdir}/vdsm-network.service
 %{_unitdir}/vdsm-network-init.service
@@ -1428,7 +1428,7 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/60_checkimages
 
 %files hook-fcoe
-%{_libdir}/systemd/system-preset/85-vdsm-hook-fcoe.preset
+%{_presetdir}/85-vdsm-hook-fcoe.preset
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_fcoe
 
 %files hook-checkips
