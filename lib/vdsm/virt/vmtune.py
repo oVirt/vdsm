@@ -220,3 +220,37 @@ def update_io_tune_dom(ioTune, tunables):
             ioTuneByPath[limit_object["path"]] = new_tune
 
     return count
+
+
+def _check_io_tune_categories(ioTuneParamsInfo):
+    categories = ("bytes", "iops")
+    for category in categories:
+        if ioTuneParamsInfo.get('total_' + category + '_sec', 0) and \
+                (ioTuneParamsInfo.get('read_' + category + '_sec', 0) or
+                 ioTuneParamsInfo.get('write_' + category + '_sec', 0)):
+            raise ValueError('A non-zero total value and non-zero'
+                             ' read/write value for %s_sec can not be'
+                             ' set at the same time' % category)
+
+
+def validate_io_tune_params(params):
+    ioTuneParams = ('total_bytes_sec', 'read_bytes_sec',
+                    'write_bytes_sec', 'total_iops_sec',
+                    'write_iops_sec', 'read_iops_sec')
+    for key, value in params.iteritems():
+        try:
+            if key in ioTuneParams:
+                params[key] = int(value)
+                if params[key] >= 0:
+                    continue
+            else:
+                raise Exception('parameter %s name is invalid' % key)
+        except ValueError as e:
+            e.args = ('an integer is required for ioTune'
+                      ' parameter %s' % key,) + e.args[1:]
+            raise
+        else:
+            raise ValueError('parameter %s value should be'
+                             ' equal or greater than zero' % key)
+
+    _check_io_tune_categories(params)

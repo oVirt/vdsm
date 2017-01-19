@@ -24,6 +24,7 @@ from vdsm.config import config
 from vdsm import constants
 from vdsm import cpuarch
 from vdsm import utils
+from vdsm.virt import vmtune
 from vdsm.virt import vmxml
 
 from . import core
@@ -352,38 +353,6 @@ class Drive(core.Base):
             except KeyError:
                 pass  # Ignore if custom disk cache is missing
 
-    def _checkIoTuneCategories(self, ioTuneParamsInfo):
-        categories = ("bytes", "iops")
-        for category in categories:
-            if ioTuneParamsInfo.get('total_' + category + '_sec', 0) and \
-                    (ioTuneParamsInfo.get('read_' + category + '_sec', 0) or
-                     ioTuneParamsInfo.get('write_' + category + '_sec', 0)):
-                raise ValueError('A non-zero total value and non-zero'
-                                 ' read/write value for %s_sec can not be'
-                                 ' set at the same time' % category)
-
-    def _validateIoTuneParams(self, params):
-        ioTuneParams = ('total_bytes_sec', 'read_bytes_sec',
-                        'write_bytes_sec', 'total_iops_sec',
-                        'write_iops_sec', 'read_iops_sec')
-        for key, value in params.iteritems():
-            try:
-                if key in ioTuneParams:
-                    params[key] = int(value)
-                    if params[key] >= 0:
-                        continue
-                else:
-                    raise Exception('parameter %s name is invalid' % key)
-            except ValueError as e:
-                e.args = ('an integer is required for ioTune'
-                          ' parameter %s' % key,) + e.args[1:]
-                raise
-            else:
-                raise ValueError('parameter %s value should be'
-                                 ' equal or greater than zero' % key)
-
-        self._checkIoTuneCategories(params)
-
     def getLeasesXML(self):
         """
         Get lease device elements for drive leases.
@@ -498,7 +467,7 @@ class Drive(core.Base):
             raise ValueError("cow format is not supported for LUN devices")
 
         if hasattr(self, 'specParams') and 'ioTune' in self.specParams:
-            self._validateIoTuneParams(self.specParams['ioTune'])
+            vmtune.validate_io_tune_params(self.specParams['ioTune'])
 
     @property
     def _xpath(self):

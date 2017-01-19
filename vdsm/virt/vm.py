@@ -66,6 +66,7 @@ from vdsm.virt import vmexitreason
 from vdsm.virt import virdomain
 from vdsm.virt import vmstats
 from vdsm.virt import vmstatus
+from vdsm.virt import vmtune
 from vdsm.virt import vmxml
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.domain_descriptor import MutableDomainDescriptor
@@ -2816,7 +2817,7 @@ class Vm(object):
 
             # Verify the ioTune params
             try:
-                found_device._validateIoTuneParams(io_tune)
+                vmtune.validate_io_tune_params(io_tune)
             except ValueError:
                 return self._reportException(key='updateIoTuneErr',
                                              msg='Invalid ioTune value')
