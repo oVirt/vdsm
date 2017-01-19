@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -xe
 
 export LIBGUESTFS_BACKEND=direct
 
@@ -6,17 +6,20 @@ export LIBGUESTFS_BACKEND=direct
 # direct backend, but without KVM(much slower).
 ! [[ -c "/dev/kvm" ]] && mknod /dev/kvm c 10 232
 
+# The following defines softlink for qemu-kvm which is required for jobs
+# running over fc2* hosts and chroot to el*
+[[ -e /usr/bin/qemu-kvm ]] \
+|| ln -s /usr/libexec/qemu-kvm /usr/bin/qemu-kvm
 
+# ENV vars
 DISTRO='el7'
 VM_NAME="vdsm_functional_tests_host-${DISTRO}"
 AUTOMATION="$PWD"/automation
 PREFIX="$AUTOMATION"/vdsm_functional
 EXPORTS="$PWD"/exported-artifacts
 
-function prepare {
-    # Creates RPMS
-    "$AUTOMATION"/build-artifacts.sh
-
+function setup_env {
+    # TODO: jenkins mock env should take care of that
     if [[ -d "$PREFIX" ]]; then
         pushd "$PREFIX"
         echo 'cleaning old lago env'
@@ -25,17 +28,23 @@ function prepare {
         rm -rf "$PREFIX"
     fi
 
-    # Fix when running in an el* chroot in fc2* host
-    [[ -e /usr/bin/qemu-kvm ]] \
-    || ln -s /usr/libexec/qemu-kvm /usr/bin/qemu-kvm
+    # Creates RPMS
+    "$AUTOMATION"/build-artifacts.sh
 
     lago init \
         "$PREFIX" \
         "$AUTOMATION"/lago-env.yml
 
     cd "$PREFIX"
+
     lago ovirt reposetup \
         --custom-source "dir:$EXPORTS"
+
+    lago start "$VM_NAME"
+    # the ovirt deploy is needed because it will not start the local repo
+    # otherwise
+    prepare_and_copy_yum_conf
+    lago ovirt deploy
 }
 
 function fake_ksm_in_vm {
@@ -83,39 +92,38 @@ function prepare_and_copy_yum_conf {
 }
 
 function run {
-    mkdir "$EXPORTS"/lago-logs
-    local failed=0
+    local res=0
 
-    lago start "$VM_NAME"
-
-    prepare_and_copy_yum_conf
-
-    # the ovirt deploy is needed because it will not start the local repo
-    # otherwise
-    lago ovirt deploy
-
+    # TODO: ask lago to have cooler way to keep the localrepo up
     lago ovirt serve &
     local lago_ovirt_http_pid=$!
-
     fake_ksm_in_vm
-
-    run_infra_tests | tee "$EXPORTS/functional_tests_stdout.$DISTRO.log"
-    failed="${PIPESTATUS[0]}"
-
-    run_network_tests | tee -a "$EXPORTS/functional_tests_stdout.$DISTRO.log"
-    res="${PIPESTATUS[0]}"
-    [ "$res" -ne 0 ] && failed="$res"
-
+    run_all_tests || res=$?
     kill "$lago_ovirt_http_pid"
 
-    lago copy-from-vm \
-    "$VM_NAME" \
-    "/tmp/nosetests-${DISTRO}.xml" \
-    "$EXPORTS/nosetests-${DISTRO}.xml" || :
-    lago collect --output "$EXPORTS"/lago-logs
+    return $res
+}
 
+function run_all_tests {
+    local res=0
+    run_infra_tests | tee "$EXPORTS/functional_tests_stdout.$DISTRO.log"
+    local infra_ret="${PIPESTATUS[0]}"
+    [ "$infra_ret" -ne 0 ] && res="$infra_ret"
+
+    run_network_tests | tee -a "$EXPORTS/functional_tests_stdout.$DISTRO.log"
+    local net_ret="${PIPESTATUS[0]}"
+    [ "$net_ret" -ne 0 ] && res="$net_ret"
+
+    return $res
+}
+
+function collect_logs {
+    mkdir "$EXPORTS"/lago-logs
+    lago copy-from-vm "$VM_NAME" \
+        "/tmp/nosetests-${DISTRO}.xml" \
+        "$EXPORTS/nosetests-${DISTRO}.xml" || :
+    lago collect --output "$EXPORTS"/lago-logs
     cp "$PREFIX"/current/logs/*.log "$EXPORTS"/lago-logs
-    return $failed
 }
 
 function cleanup {
@@ -123,5 +131,10 @@ function cleanup {
     lago cleanup
 }
 
-prepare && run && cleanup
-exit $?
+function collect_and_clean {
+    collect_logs
+    cleanup
+}
+
+trap collect_and_clean EXIT
+setup_env && run
