@@ -228,6 +228,7 @@ class VirtTest(VirtTestBase):
     def testSimpleVm(self):
         customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
                          'vmName': 'testSimpleVm',
+                         'devices': [],
                          'display': _GRAPHICS_FOR_ARCH[platform.machine()]}
 
         with RunningVm(self.vdsm, customization) as vm:
@@ -278,7 +279,8 @@ class VirtTest(VirtTestBase):
     @requireKVM
     def testHeadlessVm(self):
         customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
-                         'vmName': 'testHeadlessVm'}
+                         'vmName': 'testHeadlessVm',
+                         'devices': []}
 
         with RunningVm(self.vdsm, customization) as vm:
             self._waitForStartup(vm, VM_MINIMAL_UPTIME)
@@ -433,6 +435,7 @@ class VirtTest(VirtTestBase):
     def testVmWithSla(self):
         customization = {'vmId': '99999999-aaaa-ffff-bbbb-111111111111',
                          'vmName': 'testVmWithSla',
+                         'devices': [],
                          'display': _GRAPHICS_FOR_ARCH[platform.machine()]}
 
         with RunningVm(self.vdsm, customization) as vm:
