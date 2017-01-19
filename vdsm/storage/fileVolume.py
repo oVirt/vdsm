@@ -22,14 +22,16 @@ import errno
 import os
 import sanlock
 
-from vdsm.common import exception
 from vdsm import qemuimg
+from vdsm import utils
 from vdsm.commands import grepCmd
+from vdsm.common import exception
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import task
+from vdsm.storage import fallocate
 from vdsm.storage.misc import deprecated
 from vdsm.storage.threadlocal import vars
 from vdsm.storage.volumemetadata import VolumeMetadata
@@ -424,9 +426,11 @@ class FileVolume(volume.Volume):
 
         if preallocate == sc.PREALLOCATED_VOL:
             try:
-                # ddWatchCopy expects size to be in bytes
-                misc.ddWatchCopy("/dev/zero", volPath,
-                                 vars.task.aborting, sizeBytes)
+                operation = fallocate.allocate(volPath,
+                                               sizeBytes)
+                with vars.task.abort_callback(operation.abort):
+                    with utils.stopwatch("Preallocating volume %s" % volPath):
+                        operation.run()
             except exception.ActionStopped:
                 raise
             except Exception:
