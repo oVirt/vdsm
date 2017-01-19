@@ -8,6 +8,7 @@ export LIBGUESTFS_BACKEND=direct
 
 
 DISTRO='el7'
+VM_NAME="vdsm_functional_tests_host-${DISTRO}"
 AUTOMATION="$PWD"/automation
 PREFIX="$AUTOMATION"/vdsm_functional
 EXPORTS="$PWD"/exported-artifacts
@@ -39,12 +40,12 @@ function prepare {
 }
 
 function fake_ksm_in_vm {
-    lago shell "$vm_name" -c "mount -t tmpfs tmpfs /sys/kernel/mm/ksm"
+    lago shell "$VM_NAME" -c "mount -t tmpfs tmpfs /sys/kernel/mm/ksm"
 }
 
 function run_infra_tests {
     local res=0
-    lago shell "$vm_name" -c \
+    lago shell "$VM_NAME" -c \
         " \
             cd /usr/share/vdsm/tests
             ./run_tests.sh \
@@ -59,7 +60,7 @@ function run_infra_tests {
 
 function run_network_tests {
     local res=0
-    lago shell "$vm_name" -c \
+    lago shell "$VM_NAME" -c \
         " \
             systemctl stop NetworkManager
             systemctl mask NetworkManager
@@ -72,14 +73,13 @@ function run_network_tests {
 }
 
 function prepare_and_copy_yum_conf {
-    local vm_name="$1"
     local tempfile=$(mktemp XXXXXX)
 
     cat /etc/yum/yum.conf 2>/dev/null | \
     grep -v "reposdir" | \
     "$AUTOMATION"/exclude_from_conf 'vdsm*' > "$tempfile"
 
-    lago copy-to-vm "$vm_name" "$tempfile" /etc/yum/yum.conf
+    lago copy-to-vm "$VM_NAME" "$tempfile" /etc/yum/yum.conf
     rm "$tempfile"
 }
 
@@ -87,10 +87,9 @@ function run {
     mkdir "$EXPORTS"/lago-logs
     failed=0
 
-    vm_name="vdsm_functional_tests_host-${DISTRO}"
-    lago start "$vm_name"
+    lago start "$VM_NAME"
 
-    prepare_and_copy_yum_conf "$vm_name"
+    prepare_and_copy_yum_conf
 
     # the ovirt deploy is needed because it will not start the local repo
     # otherwise
@@ -111,17 +110,19 @@ function run {
     kill $PID
 
     lago copy-from-vm \
-    "$vm_name" \
+    "$VM_NAME" \
     "/tmp/nosetests-${DISTRO}.xml" \
     "$EXPORTS/nosetests-${DISTRO}.xml" || :
     lago collect --output "$EXPORTS"/lago-logs
-
-    lago stop "$vm_name"
-    lago cleanup
 
     cp "$PREFIX"/current/logs/*.log "$EXPORTS"/lago-logs
     return $failed
 }
 
-prepare && run
+function cleanup {
+    lago stop "$VM_NAME"
+    lago cleanup
+}
+
+prepare && run && cleanup
 exit $?
