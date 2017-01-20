@@ -111,6 +111,22 @@ class BondBasicTemplate(NetFuncTestCase):
                 self.setupNetworks({}, bond, NOCHK)
                 self.assertBond(BOND_NAME, bond[BOND_NAME])
 
+    def test_bond_arp_ip_target_change(self):
+        with dummy_devices(2) as nics:
+            create_options = ('mode=1 arp_interval=1000 '
+                              'arp_ip_target=192.168.122.1')
+            BONDCREATE = {BOND_NAME: {'nics': nics,
+                                      'switch': self.switch,
+                                      'options': create_options}}
+            edit_options = ('mode=1 arp_interval=1000 '
+                            'arp_ip_target=10.1.3.1,10.1.2.1')
+            BONDEDIT = {BOND_NAME: {'nics': nics,
+                                    'switch': self.switch,
+                                    'options': edit_options}}
+            with self.setupNetworks({}, BONDCREATE, NOCHK):
+                self.setupNetworks({}, BONDEDIT, NOCHK)
+                self.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
+
 
 @attr(type='functional', switch='legacy')
 class BondBasicLegacyTest(BondBasicTemplate):

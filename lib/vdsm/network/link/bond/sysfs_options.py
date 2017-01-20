@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ from vdsm.utils import memoized
 
 BONDING_DEFAULTS = constants.P_VDSM + 'bonding-defaults.json'
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'
+ARP_IP_TARGET = 'arp_ip_target'
 
 
 EXCLUDED_BONDING_ENTRIES = frozenset((
@@ -71,26 +72,49 @@ def set_options(bond, options):
 
 
 def _set_mode(bond, mode):
-    _set_option(bond, 'mode', mode)
+    _write_option(bond, 'mode', mode)
 
 
-def _set_options(bond, options, current_options):
-    for key, value in six.iteritems(options):
+def _set_options(bond, new_options, current_options):
+    for key, value in six.iteritems(new_options):
         if key not in ('mode', 'custom') and (
                 key not in current_options or value != current_options[key]):
-            _set_option(bond, key, value)
+            _set_option(bond, key, value, current_options.get(key))
 
 
 def _set_untouched_options_to_defaults(bond, mode, options, current_options):
     for key, value in six.iteritems(getDefaultBondingOptions(mode)):
         if (key != 'mode' and key not in options and key in current_options):
             v = value[-1] if value else ''
-            _set_option(bond, key, v)
+            _set_option(bond, key, v, current_options[key])
 
 
-def _set_option(bond, key, value):
+def _set_option(bond, key, new_value, current_value):
+    if key == ARP_IP_TARGET:
+        _set_arp_ip_target(bond, new_value, current_value)
+    else:
+        _write_option(bond, key, new_value)
+
+
+def _write_option(bond, key, value):
     with open(BONDING_OPT % (bond, key), 'w') as f:
         f.write(value)
+
+
+def _set_arp_ip_target(bond, new_value, current_value):
+    if current_value:
+        current_arp_ip_target = current_value.split(',')
+    else:
+        current_arp_ip_target = []
+
+    new_arp_ip_target = new_value.split(',') if new_value else []
+
+    addrs_to_add = set(new_arp_ip_target) - set(current_arp_ip_target)
+    addrs_to_del = set(current_arp_ip_target) - set(new_arp_ip_target)
+    for addr in addrs_to_del:
+        _write_option(bond, ARP_IP_TARGET, '-%s' % addr)
+    for addr in addrs_to_add:
+        _write_option(bond, ARP_IP_TARGET, '+%s' % addr)
 
 
 def get_options(bond):
@@ -109,12 +133,28 @@ def _bondOpts(bond_name, keys=None):
     for path in paths:
         opts[os.path.basename(path)] = _bond_opts_read_elements(path)
 
+    normalize_arp_ip_target(opts)
+
     return opts
 
 
 def _bond_opts_read_elements(file_path):
     with open(file_path) as f:
         return [el for el in f.read().rstrip().split(' ') if el]
+
+
+def normalize_arp_ip_target(opts):
+    """
+    Sysfs reports multiple ip addresses in arp_ip_target separated by space,
+    which are represented by multiple elements in opts[ARP_IP_TARGET].
+    The bonding driver accepts multiple ip addresses in the arp_ip_target
+    option separated by a comma.
+    To enable an unified handling for all options, the value of arp_ip_target
+    is converted in the expression, which would accepted as value for setting
+    this option. This is the separation of multiple ip addresses by comma.
+    """
+    if ARP_IP_TARGET in opts and len(opts[ARP_IP_TARGET]) > 1:
+        opts[ARP_IP_TARGET] = [','.join(opts[ARP_IP_TARGET])]
 
 
 def _getBondingOptions(bond_name):
