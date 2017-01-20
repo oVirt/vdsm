@@ -44,6 +44,7 @@ dist_vdsmstorage_PYTHON = \
 	misc.py \
 	mount.py \
 	multipath.py \
+	operation.py \
 	outOfProcess.py \
 	persistent.py \
 	resourceManager.py \

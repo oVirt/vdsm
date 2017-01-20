@@ -1187,6 +1187,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/misc.py*
 %{python_sitelib}/%{vdsm_name}/storage/mount.py*
 %{python_sitelib}/%{vdsm_name}/storage/multipath.py*
+%{python_sitelib}/%{vdsm_name}/storage/operation.py*
 %{python_sitelib}/%{vdsm_name}/storage/outOfProcess.py*
 %{python_sitelib}/%{vdsm_name}/storage/persistent.py*
 %{python_sitelib}/%{vdsm_name}/storage/resourceManager.py*
