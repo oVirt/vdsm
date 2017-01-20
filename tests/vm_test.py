@@ -886,7 +886,7 @@ class TestVm(XMLTestCase):
             tunables = machine.getIoTunePolicyResponse()
             self.assertEqual(tunables['ioTunePolicyList'], [])
 
-    @brokentest("broken if run on drives with existing ioTune setting")
+    @brokentest("the test expects overwrite, the code incrementally updates")
     @permutations([
         # old_iotune
         [{}],

@@ -75,8 +75,7 @@ from vdsm.virt import vmdevices
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices.storage import DISK_TYPE
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
-from vdsm.virt.vmtune import update_io_tune_dom, collect_inner_elements
-from vdsm.virt.vmtune import io_tune_values_to_dom, io_tune_dom_to_values
+from vdsm.virt.vmtune import update_io_tune_dom, io_tune_dom_to_values
 from vdsm.virt.vmxml import METADATA_VM_TUNE_URI, METADATA_VM_TUNE_ELEMENT
 from vdsm.virt.vmxml import METADATA_VM_TUNE_PREFIX
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
@@ -2930,13 +2929,9 @@ class Vm(object):
                     "Device {} not found".format(device_name))
 
             # Merge the update with current values
-            dom = found_device.getXML()
-            io_tune_element = vmxml.find_first(dom, "iotune", None)
-            old_io_tune = {}
-            if io_tune_element is not None:
-                collect_inner_elements(io_tune_element, old_io_tune)
-                old_io_tune.update(io_tune)
-                io_tune = old_io_tune
+            old_io_tune = found_device.iotune
+            old_io_tune.update(io_tune)
+            io_tune = old_io_tune
 
             # Verify the ioTune params
             try:
@@ -2955,15 +2950,8 @@ class Vm(object):
                 else:
                     return response.error('updateIoTuneErr', e.message)
 
-            # Update both the ioTune arguments and device xml DOM
-            # so we are still up-to-date
             # TODO: improve once libvirt gets support for iotune events
             #       see https://bugzilla.redhat.com/show_bug.cgi?id=1114492
-            if io_tune_element is not None:
-                vmxml.remove_child(dom, io_tune_element)
-            io_dom = vmxml.Element("iotune")
-            io_tune_values_to_dom(io_tune, io_dom)
-            dom.appendChild(io_dom)
             found_device.iotune = io_tune
 
             # Make sure the cached XML representation is valid as well
