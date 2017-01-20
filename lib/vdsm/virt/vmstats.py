@@ -89,11 +89,12 @@ def tune_io(vm, stats):
     io_tune_info = []
 
     for disk in vm.getDiskDevices():
-        if "ioTune" in disk.specParams:
+        iotune = disk.iotune
+        if iotune:
             io_tune_info.append({
                 "name": disk.name,
                 "path": disk.path,
-                "ioTune": disk.specParams["ioTune"]
+                "ioTune": iotune
             })
 
     stats['ioTune'] = io_tune_info

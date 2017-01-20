@@ -949,7 +949,7 @@ class TestVm(XMLTestCase):
             self.assertEqual(expected_io_tune, dom._io_tune)
 
             # Test that caches were properly updated
-            self.assertEqual(drives[0].specParams["ioTune"],
+            self.assertEqual(drives[0].iotune,
                              expected_io_tune[drives[0].name])
             self.assertXMLEqual(drives[0]._deviceXML, expected_xml)
 

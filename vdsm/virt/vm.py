@@ -2960,7 +2960,7 @@ class Vm(object):
             io_dom = vmxml.Element("iotune")
             io_tune_values_to_dom(io_tune, io_dom)
             dom.appendChild(io_dom)
-            found_device.specParams['ioTune'] = io_tune
+            found_device.iotune = io_tune
 
             # Make sure the cached XML representation is valid as well
             xml = vmxml.format_xml(found_device.getXML())

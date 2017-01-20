@@ -419,7 +419,7 @@ class Drive(core.Base):
         if self.device == 'disk' or self.device == 'lun':
             diskelem.appendChild(_getDriverXML(self))
 
-        if hasattr(self, 'specParams') and 'ioTune' in self.specParams:
+        if self.iotune:
             diskelem.appendChild(self._getIotuneXML())
 
         return diskelem
@@ -450,7 +450,7 @@ class Drive(core.Base):
 
     def _getIotuneXML(self):
         iotune = vmxml.Element('iotune')
-        for key, value in sorted(self.specParams['ioTune'].items()):
+        for key, value in sorted(self.iotune.items()):
             iotune.appendChildWithArgs(key, text=str(value))
         return iotune
 
@@ -467,8 +467,9 @@ class Drive(core.Base):
         if self.device == 'lun' and self.format == 'cow':
             raise ValueError("cow format is not supported for LUN devices")
 
-        if hasattr(self, 'specParams') and 'ioTune' in self.specParams:
-            vmtune.validate_io_tune_params(self.specParams['ioTune'])
+        iotune = self.iotune
+        if iotune:
+            vmtune.validate_io_tune_params(iotune)
 
     @property
     def _xpath(self):
@@ -492,6 +493,14 @@ class Drive(core.Base):
         return ("<Drive name={self.name}, type={self.diskType}, "
                 "path={self.path} "
                 "at {addr:#x}>").format(self=self, addr=id(self))
+
+    @property
+    def iotune(self):
+        return self.specParams.get('ioTune', {}).copy()
+
+    @iotune.setter
+    def iotune(self, value):
+        self.specParams['ioTune'] = value.copy()
 
 
 def _getSourceXML(drive):
