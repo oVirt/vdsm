@@ -135,6 +135,64 @@ class LinkBondTests(TestCaseBase):
                 _bond.refresh()
                 self.assertEqual(_bond.options, OPTIONS_C)
 
+    def test_bond_set_one_arp_ip_target(self):
+        OPTIONS = {
+            'mode': '1',
+            'arp_interval': '1000',
+            'arp_ip_target': '192.168.122.1'}
+
+        with bond_device() as bond:
+            bond.set_options(OPTIONS)
+            bond.refresh()
+            self.assertEqual(bond.options, OPTIONS)
+
+    def test_bond_set_two_arp_ip_targets(self):
+        OPTIONS = {
+            'mode': '1',
+            'arp_interval': '1000',
+            'arp_ip_target': '10.1.3.1,10.1.2.1'}
+
+        with bond_device() as bond:
+            bond.set_options(OPTIONS)
+            bond.refresh()
+            self.assertEqual(bond.options, OPTIONS)
+
+    def test_bond_clear_arp_ip_target(self):
+        OPTIONS_A = {
+            'mode': '1',
+            'arp_interval': '1000',
+            'arp_ip_target': '192.168.122.1'}
+        OPTIONS_B = {
+            'mode': '1',
+            'arp_interval': '1000'}
+
+        with bond_device() as bond:
+            bond.set_options(OPTIONS_A)
+            bond.set_options(OPTIONS_B)
+            bond.refresh()
+            self.assertEqual(bond.options, OPTIONS_B)
+
+    def test_bond_update_existing_arp_ip_targets(self):
+        preserved_addr = '10.1.4.1'
+        removed_addr = '10.1.3.1,10.1.2.1'
+        added_addr = '10.1.1.1'
+
+        OPTIONS_A = {
+            'mode': '1',
+            'arp_interval': '1000',
+            'arp_ip_target': ','.join([preserved_addr, removed_addr])}
+        OPTIONS_B = {
+            'mode': '1',
+            'arp_interval': '1000',
+            'arp_ip_target': ','.join([preserved_addr, added_addr])}
+
+        with dummy_devices(2) as (nic1, nic2):
+            with bond_device() as bond:
+                bond.set_options(OPTIONS_A)
+                bond.set_options(OPTIONS_B)
+                bond.refresh()
+                self.assertEqual(bond.options, OPTIONS_B)
+
 
 @attr(type='integration')
 @mock.patch.object(sysfs_options, 'BONDING_DEFAULTS', bonding_default_fpath())
