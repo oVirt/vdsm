@@ -406,6 +406,7 @@ class Redir(Base):
 
 
 class Rng(Base):
+    __slots__ = ('address', 'model')
 
     @staticmethod
     def matching_source(conf, source):
