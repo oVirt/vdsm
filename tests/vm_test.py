@@ -63,7 +63,7 @@ from vdsm import utils
 from vdsm import libvirtconnection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import namedTemporaryDir
-from testValidation import slowtest
+from testValidation import brokentest, slowtest
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
 import vmfakelib as fake
@@ -883,21 +883,28 @@ class TestVm(XMLTestCase):
             tunables = machine.getIoTunePolicyResponse()
             self.assertEqual(tunables['ioTunePolicyList'], [])
 
-    def testSetIoTune(self):
+    @brokentest("broken if run on drives with existing ioTune setting")
+    @permutations([
+        # old_iotune
+        [{}],
+        [{"ioTune": {}}],
+        [{"ioTune": {"total_bytes_sec": 9999}}],
+        [{"ioTune": {"total_iops_sec": 9999}}],
+        [{"ioTune": {"total_bytes_sec": 9999, "total_iops_sec": 9999}}],
+    ])
+    def testSetIoTune(self, old_iotune):
 
         drives = [
-            vmdevices.storage.Drive({
-                "specParams": {
-                    "ioTune": {
-                        "total_bytes_sec": 9999,
-                        "total_iops_sec": 9999}
-                }},
+            vmdevices.storage.Drive(
+                {},
                 log=self.log,
                 index=0,
                 device="hdd",
                 path="/dev/dummy",
                 type=hwclass.DISK,
-                iface="ide")
+                iface="ide",
+                specParams=old_iotune,
+            )
         ]
 
         # Make the drive look like a VDSM volume
