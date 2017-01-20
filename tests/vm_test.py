@@ -906,35 +906,30 @@ class TestVm(XMLTestCase):
             setattr(drives[0], p, "1")
         drives[0]._blockDev = True
 
+        new_iotune = {
+            "write_bytes_sec": 1,
+            "total_bytes_sec": 0,
+            "read_bytes_sec": 2
+        }
+
         tunables = [
             {
                 "name": drives[0].name,
-                "ioTune": {
-                    "write_bytes_sec": 1,
-                    "total_bytes_sec": 0,
-                    "read_bytes_sec": 2
-                }
+                "ioTune": new_iotune,
             }
         ]
 
         expected_io_tune = {
-            drives[0].name: {
-                "write_bytes_sec": 1,
-                "total_bytes_sec": 0,
-                "read_bytes_sec": 2
-            }
+            drives[0].name: new_iotune,
         }
 
         expected_xml = """
             <disk device="hdd" snapshot="no" type="block">
                 <source dev="/dev/dummy"/>
                 <target bus="ide" dev="hda"/>
-                <iotune>
-                    <read_bytes_sec>2</read_bytes_sec>
-                    <write_bytes_sec>1</write_bytes_sec>
-                    <total_bytes_sec>0</total_bytes_sec>
-                </iotune>
-            </disk>"""
+                <iotune>%s</iotune>
+            </disk>""" % ("\n".join(["<%s>%s</%s>" % (k, v, k)
+                                     for k, v in sorted(new_iotune.items())]))
 
         with fake.VM() as machine:
             dom = fake.Domain()

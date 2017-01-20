@@ -449,7 +449,7 @@ class Drive(core.Base):
 
     def _getIotuneXML(self):
         iotune = vmxml.Element('iotune')
-        for key, value in self.specParams['ioTune'].iteritems():
+        for key, value in sorted(self.specParams['ioTune'].items()):
             iotune.appendChildWithArgs(key, text=str(value))
         return iotune
 
