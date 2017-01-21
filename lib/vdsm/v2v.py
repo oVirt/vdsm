@@ -399,6 +399,7 @@ class V2VCommand(object):
         timestamp = time.strftime('%Y%m%dT%H%M%S')
         log = os.path.join(_LOG_DIR,
                            "import-%s-%s.log" % (self._vmid, timestamp))
+        logging.info("Storing import log at: %r", log)
         v2v = _simple_exec_cmd(self._command(),
                                nice=NICENESS.HIGH,
                                ioclass=IOCLASS.IDLE,
