@@ -312,12 +312,12 @@ class QemuPatternVerificationTest(VdsmTestCase):
             # format.
             base_raw = os.path.join(tmpdir, "base.raw")
             qemuimg.create(base_raw, "1m", qemuimg.FORMAT.RAW)
-            qemuimg.rebase(top,
-                           backing=base_raw,
-                           format=qemuimg.FORMAT.QCOW2,
-                           backingFormat=qemuimg.FORMAT.QCOW2,
-                           unsafe=True)
-
+            operation = qemuimg.rebase(top,
+                                       backing=base_raw,
+                                       format=qemuimg.FORMAT.QCOW2,
+                                       backingFormat=qemuimg.FORMAT.QCOW2,
+                                       unsafe=True)
+            operation.run()
             with self.assertRaises(cmdutils.Error):
                 qemu_pattern_verify(top, qemuimg.FORMAT.QCOW2)
 

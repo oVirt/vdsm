@@ -24,7 +24,9 @@ from contextlib import contextmanager
 
 import image
 
+from vdsm import cmdutils
 from vdsm import qemuimg
+
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -780,16 +782,18 @@ class Volume(object):
             volumePath = vol.getVolumePath()
             backingVolPath = getBackingVolumePath(srcImg, srcParent)
 
+            operation = qemuimg.rebase(volumePath,
+                                       backingVolPath,
+                                       sc.fmt2str(vol.getFormat()),
+                                       sc.fmt2str(int(dstFormat)),
+                                       misc.parseBool(unsafe))
             try:
-                qemuimg.rebase(volumePath, backingVolPath,
-                               sc.fmt2str(vol.getFormat()),
-                               sc.fmt2str(int(dstFormat)),
-                               misc.parseBool(unsafe), vars.task.aborting)
+                with vars.task.abort_callback(operation.abort):
+                    operation.run()
                 vol.setParent(srcParent)
                 vol.recheckIfLeaf()
-            except qemuimg.QImgError:
-                cls.log.exception('cannot rollback rebase for volume %s on '
-                                  '%s', volumePath, backingVolPath)
+            except cmdutils.Error as e:
+                cls.log.exception('Rollback rebase failed: %s', e)
                 raise se.MergeVolumeRollbackError(srcVol)
             finally:
                 vol.teardown(sdUUID, srcVol)
@@ -816,14 +820,16 @@ class Volume(object):
 
         volumePath = self.getVolumePath()
 
+        operation = qemuimg.rebase(volumePath,
+                                   backingVolPath,
+                                   sc.fmt2str(self.getFormat()),
+                                   sc.fmt2str(backingFormat),
+                                   unsafe)
         try:
-            qemuimg.rebase(volumePath, backingVolPath,
-                           sc.fmt2str(self.getFormat()),
-                           sc.fmt2str(backingFormat), unsafe,
-                           vars.task.aborting)
-        except qemuimg.QImgError:
-            self.log.exception('cannot rebase volume %s on %s', volumePath,
-                               backingVolPath)
+            with vars.task.abort_callback(operation.abort):
+                operation.run()
+        except cmdutils.Error as e:
+            self.log.exception('Rebase failed: %s', e)
             raise se.MergeSnapshotsError(self.volUUID)
 
         self.setParent(backingVol)

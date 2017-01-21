@@ -262,11 +262,12 @@ def _update_qemu_metadata(dom, subchain):
             backing = volume.getBackingVolumePath(subchain.img_id,
                                                   subchain.base_id)
             backing_format = sc.fmt2str(subchain.base_vol.getFormat())
-            qemuimg.rebase(image=child.volumePath,
-                           backing=backing,
-                           format=qemuimg.FORMAT.QCOW2,
-                           backingFormat=backing_format,
-                           unsafe=True)
+            operation = qemuimg.rebase(image=child.volumePath,
+                                       backing=backing,
+                                       format=qemuimg.FORMAT.QCOW2,
+                                       backingFormat=backing_format,
+                                       unsafe=True)
+            operation.run()
         finally:
             child.teardown(subchain.sd_id, child.volUUID, justme=True)
 

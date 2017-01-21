@@ -27,6 +27,8 @@ import signal
 import threading
 
 from vdsm.common import exception
+from vdsm.storage import operation
+
 from . import utils
 from . import cmdutils
 from . import commands
@@ -363,8 +365,7 @@ def resize(image, newSize, format=None):
     _run_cmd(cmd)
 
 
-def rebase(image, backing, format=None, backingFormat=None, unsafe=False,
-           stop=None):
+def rebase(image, backing, format=None, backingFormat=None, unsafe=False):
     cmd = [_qemuimg.cmd, "rebase", "-t", "none", "-T", "none"]
 
     if unsafe:
@@ -379,12 +380,8 @@ def rebase(image, backing, format=None, backingFormat=None, unsafe=False,
     cmd.extend(("-b", backing, image))
 
     cwdPath = None if os.path.isabs(backing) else os.path.dirname(image)
-    rc, out, err = commands.watchCmd(
-        cmd, cwd=cwdPath, stop=stop, nice=utils.NICENESS.HIGH,
-        ioclass=utils.IOCLASS.IDLE)
 
-    if rc != 0:
-        raise QImgError(cmd, rc, out, err)
+    return operation.Command(cmd, cwd=cwdPath)
 
 
 def default_qcow2_compat():
