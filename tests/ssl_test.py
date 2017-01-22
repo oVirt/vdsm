@@ -31,6 +31,7 @@ import threading
 
 from contextlib import contextmanager, closing
 from testlib import VdsmTestCase as TestCaseBase
+from testlib import mock
 from nose.plugins.skip import SkipTest
 try:
     from vdsm.m2cutils import VerifyingSafeTransport
@@ -44,6 +45,7 @@ except ImportError:
         get_server_socket, KEY_FILE, \
         CRT_FILE, OTHER_KEY_FILE, OTHER_CRT_FILE
     _m2cEnabled = False
+from vdsm.sslutils import SSLHandshakeDispatcher
 
 
 HOST = '127.0.0.1'
@@ -372,6 +374,24 @@ class SSLTests(TestCaseBase):
 
         # Compare the session ids:
         self.assertEqual(secondSessionId, firstSessionId)
+
+
+class CompareNameTest(TestCaseBase):
+    @mock.patch('vdsm.sslutils.socket.gethostbyaddr', return_value=(
+        'example.com', [], ['10.0.0.1']))
+    def test_same_string(self, mock_gethostbyaddr):
+        self.assertTrue(SSLHandshakeDispatcher.compare_names(
+            '10.0.0.1', 'example.com'))
+
+    @mock.patch('vdsm.sslutils.socket.gethostbyaddr', return_value=(
+        'evil.imposter.com', [], ['11.0.0.1']))
+    def test_imposter(self, mock_gethostbyaddr):
+        self.assertFalse(SSLHandshakeDispatcher.compare_names(
+            '10.0.0.1', 'example.com'))
+
+    def test_local_addresses(self):
+        self.assertTrue(SSLHandshakeDispatcher.compare_names(
+            '127.0.0.1', 'example.com'))
 
 
 # The address of the tests server:
