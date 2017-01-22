@@ -50,6 +50,7 @@ from vdsm.network import ipwrapper
 from vdsm.network import libvirt
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
+from vdsm.network.link.bond import Bond
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netinfo import (bonding as netinfo_bonding, mtus, nics,
                                   vlans, misc, NET_PATH)
@@ -770,7 +771,7 @@ class ConfigWriter(object):
 
     def setBondingMtu(self, bonding, newmtu):
         self.setIfaceMtu(bonding, newmtu)
-        slaves = netinfo_bonding.slaves(bonding)
+        slaves = Bond(bonding).slaves
         for slave in slaves:
             self.setIfaceMtu(slave, newmtu)
 

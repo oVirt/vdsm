@@ -34,6 +34,8 @@ from vdsm.utils import memoized
 from .misc import visible_devs
 from . import nics
 
+from vdsm.network.link.bond import Bond
+
 # In order to limit the scope of change, this module is now acting as a proxy
 # to the link.bond.sysfs_options module.
 from vdsm.network.link.bond.sysfs_options import _bond_opts_read_elements
@@ -66,11 +68,6 @@ BONDING_SLAVE_OPT = '/sys/class/net/%s/bonding_slave/%s'
 bondings = partial(visible_devs, Link.isBOND)
 
 
-def slaves(bond_name):
-    with open(BONDING_SLAVES % bond_name) as f:
-        return f.readline().split()
-
-
 def _file_value(path):
     if os.path.exists(path):
         with open(path, 'r') as f:
@@ -94,7 +91,7 @@ def get_bond_agg_info(bond_name):
 
 
 def info(link):
-    return {'hwaddr': link.address, 'slaves': slaves(link.name),
+    return {'hwaddr': link.address, 'slaves': list(Bond(link.name).slaves),
             'active_slave': _active_slave(link.name),
             'opts': _getBondingOptions(link.name)}
 

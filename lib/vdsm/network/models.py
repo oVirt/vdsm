@@ -21,6 +21,7 @@ import logging
 import six
 import re
 
+from vdsm.network.link import bond as link_bond
 from vdsm.network.netinfo import bonding, mtus, nics
 from vdsm.network.netinfo.cache import ifaceUsed, CachingNetInfo
 from vdsm.network.ip.address import IPv4, IPv6
@@ -237,7 +238,7 @@ class Bond(NetDevice):
             self.mtu <= mtus.getMtu(self.name) and
             self.areOptionsApplied() and
             frozenset(slave.name for slave in self.slaves) ==
-                frozenset(bonding.slaves(self.name))):
+                frozenset(link_bond.Bond(self.name).slaves)):
                 return
 
         self.configurator.configureBond(self, **opts)

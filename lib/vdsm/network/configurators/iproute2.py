@@ -27,6 +27,7 @@ from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (routeAdd, routeDel, ruleAdd, ruleDel,
                                     IPRoute2Error)
+from vdsm.network.link.bond import Bond
 from vdsm.network.netinfo import bonding, vlans, bridges, mtus
 from vdsm.network.netinfo.cache import ifaceUsed
 from vdsm.constants import EXT_BRCTL
@@ -98,7 +99,7 @@ class Iproute2(Configurator):
             self.configApplier.ifdown(bond)
             self.configApplier.addBondOptions(bond)
         for slave in bond.slaves:
-            if slave.name not in bonding.slaves(bond.name):
+            if slave.name not in Bond(bond.name).slaves:
                 self.configApplier.addBondSlave(bond, slave)
                 slave.configure(**opts)
         if bond.ipv4.bootproto == 'dhcp':
