@@ -4518,11 +4518,17 @@ class Vm(object):
         with self._jobsLock:
             for storedJob in self.conf['_blockJobs'].values():
                 jobID = storedJob['jobID']
+                self.log.debug("Checking job %s", jobID)
                 cleanThread = self._liveMergeCleanupThreads.get(jobID)
                 if cleanThread and cleanThread.isSuccessful():
                     # Handle successful jobs early because the job just needs
                     # to be untracked and the stored disk info might be stale
                     # anyway (ie. after active layer commit).
+                    self.log.info("Cleanup thread %s successfully completed, "
+                                  "untracking job %s (base=%s, top=%s)",
+                                  cleanThread, jobID,
+                                  storedJob["baseVolume"],
+                                  storedJob["topVolume"])
                     self.untrackBlockJob(jobID)
                     continue
 
@@ -4542,6 +4548,7 @@ class Vm(object):
                         continue
 
                 if liveInfo:
+                    self.log.debug("Job %s live info: %s", jobID, liveInfo)
                     entry['bandwidth'] = liveInfo['bandwidth']
                     entry['cur'] = str(liveInfo['cur'])
                     entry['end'] = str(liveInfo['end'])
@@ -4549,12 +4556,16 @@ class Vm(object):
                 else:
                     # Libvirt has stopped reporting this job so we know it will
                     # never report it again.
-                    doPivot = False
+                    if 'gone' not in storedJob:
+                        self.log.info("Libvirt job %s was terminated", jobID)
                     storedJob['gone'] = True
+                    doPivot = False
                 if not liveInfo or doPivot:
                     if not cleanThread:
                         # There is no cleanup thread so the job must have just
                         # ended.  Spawn an async cleanup.
+                        self.log.info("Starting cleanup thread for job: %s",
+                                      jobID)
                         startCleanup(storedJob, drive, doPivot)
                     elif cleanThread.isAlive():
                         # Let previously started cleanup thread continue
@@ -4563,6 +4574,8 @@ class Vm(object):
                     elif not cleanThread.isSuccessful():
                         # At this point we know the thread is not alive and the
                         # cleanup failed.  Retry it with a new thread.
+                        self.log.info("Previous job %s cleanup thread failed, "
+                                      "retrying", jobID)
                         startCleanup(storedJob, drive, doPivot)
                 jobsRet[jobID] = entry
         return jobsRet
