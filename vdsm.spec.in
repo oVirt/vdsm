@@ -134,7 +134,8 @@ Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-lock-sanlock
 
 %if 0%{?rhel}
-Requires: libvirt-daemon-kvm >= 2.0.0-10
+# For https://bugzilla.redhat.com/1317429
+Requires: libvirt-daemon-kvm >= 2.0.0-10.el7_3.4
 Requires: libvirt-python >= 2.0.0-2
 %else # fedora
 Requires: libvirt-daemon-kvm >= 2.2.0-1
