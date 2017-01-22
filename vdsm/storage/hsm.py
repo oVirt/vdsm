@@ -2906,6 +2906,11 @@ class HSM(object):
                  if no VG with the specified UUID is found
         """
         vars.task.setDefaultException(se.VolumeGroupActionError("%s" % vgUUID))
+        # As we have no synchronization between the host getting the
+        # information and the SPM/other hosts we invalidate the vg
+        # pvs in order to try and get the updated information.
+        vg = lvm.getVGbyUUID(vgUUID)
+        lvm.invalidateVG(vg.name, invalidateLVs=False, invalidatePVs=True)
         # getSharedLock(connectionsResource...)
         return dict(info=self.__getVGsInfo([vgUUID])[0])
 

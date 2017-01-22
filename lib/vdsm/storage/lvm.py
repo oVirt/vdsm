@@ -1086,9 +1086,13 @@ def deactivateVG(vgName):
     _setVgAvailability(vgName, available="n")
 
 
-def invalidateVG(vgName):
+def invalidateVG(vgName, invalidateLVs=True, invalidatePVs=False):
     _lvminfo._invalidatevgs(vgName)
-    _lvminfo._invalidatelvs(vgName)
+    if invalidateLVs:
+        _lvminfo._invalidatelvs(vgName)
+    if invalidatePVs:
+        vgPvs = listPVNames(vgName)
+        _lvminfo._invalidatepvs(pvNames=vgPvs)
 
 
 def _getpvblksize(pv):
