@@ -231,15 +231,17 @@ class SSLHandshakeDispatcher(object):
         for sub in peercert.get("subject", ()):
             for key, value in sub:
                 if key == "commonName":
-                    return self._compare_names(addr, value)
+                    return self.compare_names(addr, value)
 
         return False
 
-    def _compare_names(self, addr, name):
-        if addr == name or addr == '127.0.0.1':
+    @staticmethod
+    def compare_names(src_addr, cert_common_name):
+        if src_addr == cert_common_name or src_addr == '127.0.0.1':
             return True
         else:
-            return name.lower() == socket.gethostbyaddr(addr)[0].lower()
+            return (cert_common_name.lower() ==
+                    socket.gethostbyaddr(src_addr)[0].lower())
 
     def _handshake(self, dispatcher):
         try:
