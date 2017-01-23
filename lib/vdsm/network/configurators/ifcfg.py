@@ -51,6 +51,7 @@ from vdsm.network import libvirt
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.link.bond import Bond
+from vdsm.network.link.setup import parse_bond_options
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netinfo import (bonding as netinfo_bonding, mtus, nics,
                                   vlans, misc, NET_PATH)
@@ -956,43 +957,14 @@ def _ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP):
 def _restore_default_bond_options(bond_name, desired_options):
     """
     Restore the bond's options to defaults corresponding to the intended
-    bonding mode. First change the mode to the desired one (if needed) to avoid
-    'Operation not permitted' errors and then reset the non-default options.
+    bonding mode.
+    The logic of handling the defaults is embedded in the link.bond set options
+    therefore, we use set options as a whole.
 
     This works around an initscripts design limitation: ifup only touches
     declared options and leaves other (possibly non-default) options as-is.
     """
-
-    desired_options = dict(p.split('=', 1) for p in desired_options.split())
-    current_opts = netinfo_bonding.bondOpts(bond_name)
-    current_mode = current_opts['mode']
-    desired_mode = (_get_mode_from_desired_options(desired_options) or
-                    current_mode)
-
-    if desired_mode != current_mode:
-        try:
-            bond_mode_path = netinfo_bonding.BONDING_OPT % (bond_name, 'mode')
-            with open(bond_mode_path, 'w') as f:
-                f.write(' '.join(desired_mode))
-        except IOError as e:
-            if e.errno == errno.EPERM:
-                # give up here since this bond was probably not configured by
-                # VDSM and ifdown it leaves active slave interfaces
-                logging.warning('Failed resetting bond %s options to default. '
-                                'This happens probably because this is an '
-                                'external bond and still has slaves even after'
-                                'calling ifdown on it', bond_name)
-                return
-            raise
-
-    diff = {}
-    default_opts = netinfo_bonding.getDefaultBondingOptions(desired_mode[1])
-    for k, v in default_opts.iteritems():
-        if k != 'mode' and k in current_opts and v != current_opts[k]:
-            diff[k] = default_opts[k]
-    for k, v in diff.iteritems():
-        with open(netinfo_bonding.BONDING_OPT % (bond_name, k), 'w') as f:
-            f.write(' '.join(v))
+    Bond(bond_name).set_options(parse_bond_options(desired_options))
 
 
 def _get_mode_from_desired_options(desired_options):
