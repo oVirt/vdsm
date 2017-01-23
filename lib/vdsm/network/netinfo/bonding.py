@@ -39,8 +39,7 @@ from vdsm.network.link.bond import Bond
 # In order to limit the scope of change, this module is now acting as a proxy
 # to the link.bond.sysfs_options module.
 from vdsm.network.link.bond.sysfs_options import _bond_opts_read_elements
-from vdsm.network.link.bond.sysfs_options import _bondOpts, bondOpts
-from vdsm.network.link.bond.sysfs_options import _getBondingOptions
+from vdsm.network.link.bond.sysfs_options import properties
 from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
 from vdsm.network.link.bond.sysfs_options import getAllDefaultBondingOptions
 from vdsm.network.link.bond.sysfs_options import EXCLUDED_BONDING_ENTRIES
@@ -48,7 +47,6 @@ from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NAME_TO_NUMBER
 from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NUMBER_TO_NAME
 from vdsm.network.link.bond.sysfs_options import BONDING_DEFAULTS
 from vdsm.network.link.setup import parse_bond_options
-bondOpts
 getDefaultBondingOptions
 getAllDefaultBondingOptions
 parse_bond_options
@@ -91,9 +89,10 @@ def get_bond_agg_info(bond_name):
 
 
 def info(link):
-    return {'hwaddr': link.address, 'slaves': list(Bond(link.name).slaves),
+    bond = Bond(link.name)
+    return {'hwaddr': link.address, 'slaves': list(bond.slaves),
             'active_slave': _active_slave(link.name),
-            'opts': _getBondingOptions(link.name)}
+            'opts': bond.options}
 
 
 def _active_slave(bond_name):
@@ -107,7 +106,8 @@ def _active_slave(bond_name):
 
 def speed(bond_name):
     """Returns the bond speed if bondName refers to a bond, 0 otherwise."""
-    opts = _bondOpts(bond_name, keys=['slaves', 'active_slave', 'mode'])
+    opts = properties(bond_name,
+                      filter_properties=('slaves', 'active_slave', 'mode'))
     try:
         if opts['slaves']:
             if opts['mode'][1] in BONDING_FAILOVER_MODES:

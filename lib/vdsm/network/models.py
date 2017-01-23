@@ -22,6 +22,7 @@ import six
 import re
 
 from vdsm.network.link import bond as link_bond
+from vdsm.network.link.bond import sysfs_options as bond_options
 from vdsm.network.netinfo import bonding, mtus, nics
 from vdsm.network.netinfo.cache import ifaceUsed, CachingNetInfo
 from vdsm.network.ip.address import IPv4, IPv6
@@ -252,8 +253,9 @@ class Bond(NetDevice):
         if options == '':
             return True
         confOpts = [option.split('=', 1) for option in options.split(' ')]
-        activeOpts = bonding.bondOpts(self.name,
-                                      (name for name, value in confOpts))
+        activeOpts = bond_options.properties(
+            self.name, filter_properties=(name for name, _ in confOpts))
+
         return all(value in activeOpts[name] for name, value in confOpts)
 
     def remove(self):

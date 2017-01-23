@@ -193,6 +193,10 @@ class LinkBondTests(TestCaseBase):
                 bond.refresh()
                 self.assertEqual(bond.options, OPTIONS_B)
 
+    def test_bond_properties_includes_non_options_keys(self):
+        with bond_device() as bond:
+            self.assertTrue('active_slave' in bond.properties)
+
 
 @attr(type='integration')
 @mock.patch.object(sysfs_options, 'BONDING_DEFAULTS', bonding_default_fpath())
@@ -209,6 +213,20 @@ class LinkBondSysFSTests(TestCaseBase):
                 bond.set_options(OPTIONS)
 
                 mock_slaves.assert_not_called()
+
+    def test_bond_properties_with_filter(self):
+        with bond_device() as bond:
+            properties = sysfs_options.properties(
+                bond.master, filter_properties=('mode',))
+            self.assertTrue('mode' in properties)
+            self.assertEqual(1, len(properties))
+
+    def test_bond_properties_with_filter_out(self):
+        with bond_device() as bond:
+            properties = sysfs_options.properties(
+                bond.master, filter_out_properties=('mode',))
+            self.assertTrue('mode' not in properties)
+            self.assertGreater(len(properties), 1)
 
 
 @contextmanager

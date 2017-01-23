@@ -59,32 +59,35 @@ BONDING_MODES_NUMBER_TO_NAME = dict(
     (v, k) for k, v in six.iteritems(BONDING_MODES_NAME_TO_NUMBER))
 
 
-def set_options(bond, options):
-    current_mode = _bondOpts(bond, ('mode',))['mode'][-1]
-    desired_mode = options.get('mode') or current_mode
+def set_options(bond, requested_options):
+    current_mode = properties(bond, ('mode',))['mode'][-1]
+    desired_mode = requested_options.get('mode') or current_mode
 
     if desired_mode != current_mode:
         _set_mode(bond, desired_mode)
-    current_options = get_options(bond)
-    _set_options(bond, options, current_options)
+    current_options = get_options(properties(bond))
+    _set_options(bond, requested_options, current_options)
     _set_untouched_options_to_defaults(
-        bond, desired_mode, options, current_options)
+        bond, desired_mode, requested_options, current_options)
 
 
 def _set_mode(bond, mode):
     _write_option(bond, 'mode', mode)
 
 
-def _set_options(bond, new_options, current_options):
-    for key, value in six.iteritems(new_options):
+def _set_options(bond, requested_options, current_options):
+    for key, value in six.iteritems(requested_options):
         if key not in ('mode', 'custom') and (
                 key not in current_options or value != current_options[key]):
             _set_option(bond, key, value, current_options.get(key))
 
 
-def _set_untouched_options_to_defaults(bond, mode, options, current_options):
+def _set_untouched_options_to_defaults(
+        bond, mode, requested_options, current_options):
     for key, value in six.iteritems(getDefaultBondingOptions(mode)):
-        if (key != 'mode' and key not in options and key in current_options):
+        if (key != 'mode' and
+                key not in requested_options and
+                key in current_options):
             v = value[-1] if value else ''
             _set_option(bond, key, v, current_options[key])
 
@@ -117,25 +120,67 @@ def _set_arp_ip_target(bond, new_value, current_value):
         _write_option(bond, ARP_IP_TARGET, '+%s' % addr)
 
 
-def get_options(bond):
-    return _getBondingOptions(bond)
-
-
-def _bondOpts(bond_name, keys=None):
-    """ Returns a dictionary of bond option name and a values iterable. E.g.,
-    {'mode': ('balance-rr', '0'), 'xmit_hash_policy': ('layer2', '0')}
+def get_options(bond_properties, filter_out_defaults=True, filter_opts=None):
     """
-    if keys is None:
+    Filter bond options from given bond properties.
+
+    If filter_out_defaults is set, exclude defaults from the report.
+    Note: mode should always be reported, even if it's the default one.
+
+    If filter_options is provided, use it as the filter.
+
+    Options with no value are filtered out.
+
+    Bond options are a subset of bond properties and refer to properties that
+    can be set and affect bond operation.
+    """
+    opts_keys = (filter_opts or
+                 six.viewkeys(bond_properties) - EXCLUDED_BONDING_ENTRIES)
+
+    if filter_out_defaults:
+        opts_keys = _filter_out_default_opts(bond_properties, opts_keys)
+
+    return {k: bond_properties[k][-1] for k in opts_keys if bond_properties[k]}
+
+
+def _filter_out_default_opts(bond_properties, opts_keys):
+    mode = bond_properties['mode'][-1] if 'mode' in opts_keys else None
+    defaults = getDefaultBondingOptions(mode)
+    non_default_opts_keys = {
+        opt
+        for opt in opts_keys
+        if bond_properties[opt] and (
+            bond_properties[opt] != defaults.get(opt) or
+            opt == 'mode')}
+    return non_default_opts_keys
+
+
+def properties(bond_name, filter_properties=None, filter_out_properties=()):
+    """
+    Returns a dictionary of bond property name as key and a list as value.
+    E.g. {'mode': ['balance-rr', '0'], 'xmit_hash_policy': ['layer2', '0']}
+
+    If filter_properties is provided (as an iterable object), the returned
+    properties will include only those that are explicitly specified in it,
+    otherwise no restriction is applied.
+
+    If filter_out_properties is provided, the property names it includes are
+    excluded from the properties returned, otherwise no restriction is applied.
+    """
+    if filter_properties is None:
         paths = iglob(BONDING_OPT % (bond_name, '*'))
     else:
-        paths = (BONDING_OPT % (bond_name, key) for key in keys)
-    opts = {}
-    for path in paths:
-        opts[os.path.basename(path)] = _bond_opts_read_elements(path)
+        paths = (BONDING_OPT % (bond_name, key) for key in filter_properties)
 
-    normalize_arp_ip_target(opts)
+    properties_path = ((os.path.basename(path), path) for path in paths)
 
-    return opts
+    props = {name: _bond_opts_read_elements(path)
+             for name, path in properties_path
+             if name not in filter_out_properties}
+
+    normalize_arp_ip_target(props)
+
+    return props
 
 
 def _bond_opts_read_elements(file_path):
@@ -155,30 +200,6 @@ def normalize_arp_ip_target(opts):
     """
     if ARP_IP_TARGET in opts and len(opts[ARP_IP_TARGET]) > 1:
         opts[ARP_IP_TARGET] = [','.join(opts[ARP_IP_TARGET])]
-
-
-def _getBondingOptions(bond_name):
-    """
-    Return non-empty options differing from defaults, excluding not actual or
-    not applicable options, e.g. 'ad_num_ports' or 'slaves' and always return
-    bonding mode even if it's default, e.g. 'mode=0'
-    """
-    opts = bondOpts(bond_name)
-    mode = opts['mode'][-1] if 'mode' in opts else None
-    defaults = getDefaultBondingOptions(mode)
-
-    return dict(((opt, val[-1]) for (opt, val) in six.iteritems(opts)
-                 if val and (val != defaults.get(opt) or opt == "mode")))
-
-
-def bondOpts(bond_name, keys=None):
-    """
-    Return a dictionary in the same format as _bondOpts(). Exclude entries that
-    are not bonding options, e.g. 'ad_num_ports' or 'slaves'.
-    """
-    return dict(((opt, val) for
-                 (opt, val) in six.iteritems(_bondOpts(bond_name, keys))
-                 if opt not in EXCLUDED_BONDING_ENTRIES))
 
 
 @memoized

@@ -28,6 +28,7 @@ from nose.plugins.attrib import attr
 
 from vdsm.network import ipwrapper
 from vdsm.network.ip.address import prefix2netmask
+from vdsm.network.link.bond import Bond
 from vdsm.network.netinfo import addresses, bonding, dns, misc, nics, routes
 from vdsm.network.netinfo.cache import get
 from vdsm.network.netlink import waitfor
@@ -282,7 +283,7 @@ class TestNetinfo(TestCaseBase):
 
     @staticmethod
     def _bond_opts_without_mode(bond_name):
-        opts = bonding._getBondingOptions(bond_name)
+        opts = Bond(bond_name).options
         opts.pop('mode')
         return opts
 

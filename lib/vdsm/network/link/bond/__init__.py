@@ -36,6 +36,7 @@ class BondAPI(object):
         self._master = name
         self._slaves = set(slaves)
         self._options = options
+        self._properties = {}
         if self.exists():
             self._import_existing()
 
@@ -91,6 +92,10 @@ class BondAPI(object):
     @property
     def options(self):
         return self._options
+
+    @property
+    def properties(self):
+        return self._properties
 
     def up(self):
         self._setlinks(up=True)

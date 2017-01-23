@@ -23,9 +23,10 @@ import json
 from contextlib import contextmanager
 from functools import partial
 
+from vdsm.network.link.bond import sysfs_options as bond_options
 from vdsm.network.netinfo.bonding import (
     BONDING_MASTERS, BONDING_OPT, BONDING_DEFAULTS, BONDING_NAME2NUMERIC_PATH,
-    bond_opts_name2numeric_filtered, bondOpts)
+    bond_opts_name2numeric_filtered)
 from ..utils import random_iface_name
 from . import expose, ExtraArgsError
 
@@ -62,7 +63,7 @@ def _get_default_bonding_options():
     """
     bond_name = random_iface_name()
     with _bond_device(bond_name):
-        default_mode = bondOpts(bond_name, keys=['mode'])['mode']
+        default_mode = bond_options.properties(bond_name, ('mode',))['mode']
 
     # read default values for all modes
     opts = {}
@@ -72,7 +73,9 @@ def _get_default_bonding_options():
         # that appears randomly when changing bond mode and modifying its
         # attributes. (Seen only on CI runs)
         with _bond_device(bond_name, mode):
-            opts[mode] = bondOpts(bond_name)
+            opts[mode] = bond_options.properties(
+                bond_name,
+                filter_out_properties=bond_options.EXCLUDED_BONDING_ENTRIES)
             opts[mode]['mode'] = default_mode
 
     return opts

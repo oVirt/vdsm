@@ -58,6 +58,7 @@ class BondSysFS(BondAPI):
             self.set_options(self._options)
         if self._slaves:
             self.add_slaves(self._slaves)
+        self._properties = sysfs_options.properties(self._master)
 
     def destroy(self):
         with open(self.BONDING_MASTERS, 'w') as f:
@@ -85,7 +86,8 @@ class BondSysFS(BondAPI):
             self._slaves.remove(slave)
 
     def set_options(self, options):
-        current_options = sysfs_options.get_options(self._master)
+        self._properties = sysfs_options.properties(self.master)
+        current_options = sysfs_options.get_options(self._properties)
         if options != current_options:
             mode_will_be_changed = ('mode' in options and
                                     current_options['mode'] != options['mode'])
@@ -122,7 +124,8 @@ class BondSysFS(BondAPI):
 
     def _import_existing(self):
         self._slaves = self._get_slaves()
-        self._options = sysfs_options.get_options(self._master)
+        self._properties = sysfs_options.properties(self._master)
+        self._options = sysfs_options.get_options(self._properties)
 
     def _get_slaves(self):
         with open(self.BONDING_SLAVES % self._master) as f:
