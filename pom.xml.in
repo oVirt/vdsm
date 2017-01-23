@@ -47,7 +47,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<jackson.version>1.9.9</jackson.version>
-		<junit.version>4.8.1</junit.version>
+		<junit.version>4.12</junit.version>
 		<slf4j.version>1.7.0</slf4j.version>
 		<mockito.version>1.9.0</mockito.version>
 	</properties>
