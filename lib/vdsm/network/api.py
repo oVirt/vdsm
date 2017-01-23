@@ -36,6 +36,7 @@ from vdsm import udevadm
 from vdsm.network import ipwrapper
 from vdsm.network import libvirt
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
+from vdsm.network.link import iface as link_iface
 
 from . ip import address as ipaddress, validator as ipvalidator
 from . canonicalize import canonicalize_networks, canonicalize_bondings
@@ -81,6 +82,33 @@ def _update_numvfs(pci_path, numvfs):
         f.write('0')
         f.write(str(numvfs))
         _wait_for_udev_events()
+        _set_valid_macs_for_igb_vfs(pci_path, numvfs)
+
+
+def _set_valid_macs_for_igb_vfs(pci_path, numvfs):
+    """
+        igb driver forbids resetting VF MAC address back to 00:00:00:00:00:00,
+        which was its original value. By setting the MAC addresses to a valid
+        value (e.g. TARGET_MAC) upon restoration the valid address will
+        be accepted.
+       (BZ: https://bugzilla.redhat.com/1341248)
+    """
+    if _is_igb_driver(pci_path):
+        _modify_mac_addresses(pci_path, numvfs)
+
+
+def _is_igb_driver(pci_path):
+    igb_driver_path = '/sys/bus/pci/drivers/igb'
+    return (os.path.exists(igb_driver_path) and
+            pci_path in os.listdir(igb_driver_path))
+
+
+def _modify_mac_addresses(pci_path, numvfs):
+    TARGET_MAC = '02:00:00:00:00:01'
+
+    pf = os.listdir('/sys/bus/pci/devices/{}/net/'.format(pci_path))[0]
+    for vf_num in range(numvfs):
+        link_iface.set_mac_address(pf, TARGET_MAC, vf_num=vf_num)
 
 
 def _persist_numvfs(device_name, numvfs):
