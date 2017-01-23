@@ -91,17 +91,8 @@ def get_bond_agg_info(bond_name):
 def info(link):
     bond = Bond(link.name)
     return {'hwaddr': link.address, 'slaves': list(bond.slaves),
-            'active_slave': _active_slave(link.name),
+            'active_slave': bond.active_slave(),
             'opts': bond.options}
-
-
-def _active_slave(bond_name):
-    """
-    :param bond_name:
-    :return: active slave when one exists or '' otherwise
-    """
-    with open(BONDING_ACTIVE_SLAVE % bond_name) as f:
-        return f.readline().rstrip()
 
 
 def speed(bond_name):
