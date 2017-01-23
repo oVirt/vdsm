@@ -564,10 +564,6 @@ class Domain(object):
         Add <sysinfo> element to domain:
 
         <sysinfo type="smbios">
-          <bios>
-            <entry name="vendor">QEmu/KVM</entry>
-            <entry name="version">0.13</entry>
-          </bios>
           <system>
             <entry name="manufacturer">Fedora</entry>
             <entry name="product">Virt-Manager</entry>
