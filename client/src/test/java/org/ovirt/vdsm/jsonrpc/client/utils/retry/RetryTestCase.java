@@ -2,7 +2,6 @@ package org.ovirt.vdsm.jsonrpc.client.utils.retry;
 
 import static junit.framework.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,10 +37,10 @@ public class RetryTestCase {
         Callable<Object> callable = mock(Callable.class);
         ClientPolicy policy = new ClientPolicy(5, 3, 10, IOException.class);
         Retryable<Object> retryable = new Retryable<>(callable, policy);
-        stub(callable.call())
-                .toThrow(new IOException())
-                .toThrow(new IOException())
-                .toReturn(new Object());
+        when(callable.call())
+                .thenThrow(new IOException())
+                .thenThrow(new IOException())
+                .thenReturn(new Object());
 
         // When
         retryable.call();
@@ -57,10 +56,10 @@ public class RetryTestCase {
         Callable<Object> callable = mock(Callable.class);
         ClientPolicy policy = new ClientPolicy(5, 3, 10, IOException.class);
         Retryable<Object> retryable = new Retryable<>(callable, policy);
-        stub(callable.call())
-                .toThrow(new ConnectException())
-                .toThrow(new IOException())
-                .toThrow(new IOException());
+        when(callable.call())
+                .thenThrow(new ConnectException())
+                .thenThrow(new IOException())
+                .thenThrow(new IOException());
 
         // When
         retryable.call();
@@ -73,7 +72,7 @@ public class RetryTestCase {
         Callable<Object> callable = mock(Callable.class);
         ClientPolicy policy = new ClientPolicy(5, 3, 10, IllegalArgumentException.class);
         Retryable<Object> retryable = new Retryable<>(callable, policy);
-        stub(callable.call()).toThrow(new IOException());
+        when(callable.call()).thenThrow(new IOException());
 
         // When
         retryable.call();
@@ -104,8 +103,7 @@ public class RetryTestCase {
         Callable<Object> callable = mock(Callable.class);
         ClientPolicy policy = new ClientPolicy(5, 0, 10, IOException.class);
         Retryable<Object> retryable = new Retryable<>(callable, policy);
-        stub(callable.call())
-                .toThrow(new IOException());
+        when(callable.call()).thenThrow(new IOException());
 
         // When
         retryable.call();
