@@ -72,8 +72,5 @@ def _ibHackedSpeed(nic_name):
         return 0
 
 
-def info(link, paddr):
-    info = {'hwaddr': link.address, 'speed': speed(link.name)}
-    if paddr.get(link.name):
-        info['permhwaddr'] = paddr[link.name]
-    return info
+def info(link):
+    return {'hwaddr': link.address, 'speed': speed(link.name)}

@@ -57,11 +57,10 @@ def _get(vdsmnets=None):
     retrieving data from libvirt.
     :return: Dict of networking devices with all their details.
     """
-    paddr = bonding.permanent_address()
     ipaddrs = getIpAddrs()
     routes = get_routes()
 
-    devices_info = _devices_report(ipaddrs, routes, paddr)
+    devices_info = _devices_report(ipaddrs, routes)
     nets_info = _networks_report(vdsmnets, routes, ipaddrs, devices_info)
 
     networking_report = {'networks': nets_info}
@@ -91,7 +90,7 @@ def _networks_report(vdsmnets, routes, ipaddrs, devices_info):
     return nets_info
 
 
-def _devices_report(ipaddrs, routes, paddr):
+def _devices_report(ipaddrs, routes):
     devs_report = {'bondings': {}, 'bridges': {}, 'nics': {}, 'vlans': {}}
 
     devinfo_by_devname = {}
@@ -99,7 +98,7 @@ def _devices_report(ipaddrs, routes, paddr):
         if dev.isBRIDGE():
             devinfo = devs_report['bridges'][dev.name] = bridges.info(dev)
         elif dev.isNICLike():
-            devinfo = devs_report['nics'][dev.name] = nics.info(dev, paddr)
+            devinfo = devs_report['nics'][dev.name] = nics.info(dev)
             devinfo.update(bonding.get_bond_slave_agg_info(dev.name))
         elif dev.isBOND():
             devinfo = devs_report['bondings'][dev.name] = bonding.info(dev)
@@ -116,7 +115,17 @@ def _devices_report(ipaddrs, routes, paddr):
     for devname, devinfo in devinfo_by_devname.items():
         devinfo.update(dhcp_info[devname])
 
+    _permanent_hwaddr_info(devs_report)
+
     return devs_report
+
+
+def _permanent_hwaddr_info(devs_report):
+    paddr = bonding.permanent_address()
+    nics_info = devs_report.get('nics', {})
+    for nic, nicinfo in six.viewitems(nics_info):
+        if nic in paddr:
+            nicinfo['permhwaddr'] = paddr[nic]
 
 
 def get(vdsmnets=None, compatibility=None):
