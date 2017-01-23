@@ -119,12 +119,14 @@ class TestNetinfo(TestCaseBase):
 
     @mock.patch('vdsm.network.netinfo.cache.libvirt.networks',
                 lambda: {'fake': {'bridged': True}})
+    @mock.patch.object(bonding, 'permanent_address', lambda: {})
     def test_get_non_existant_bridge_info(self):
         # Getting info of non existing bridge should not raise an exception,
         # just log a traceback. If it raises an exception the test will fail as
         # it should.
         get()
 
+    @mock.patch.object(bonding, 'permanent_address', lambda: {})
     @mock.patch('vdsm.network.netinfo.cache.getLinks')
     @mock.patch('vdsm.network.netinfo.cache.libvirt.networks')
     def test_get_empty(self, mock_networks, mock_getLinks):

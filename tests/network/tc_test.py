@@ -35,6 +35,7 @@ from six.moves import zip_longest
 from vmfakecon import Connection
 from testlib import (VdsmTestCase as TestCaseBase, permutations,
                      expandPermutations)
+from testlib import mock
 from testValidation import ValidateRunningAsRoot, stresstest
 from monkeypatch import MonkeyClass
 from .nettestlib import (Bridge, Dummy, IperfClient, IperfServer, Tap,
@@ -426,6 +427,7 @@ class TestConfigureOutbound(TestCaseBase):
             self.assertEqual(len(tc_filters.tagged_filters), 0)
 
     @permutations([[1], [2]])
+    @mock.patch('vdsm.network.netinfo.bonding.permanent_address', lambda: {})
     def test_single_vlan(self, repeating_calls):
         with vlan_device(self.device_name) as vlan:
             for _ in range(repeating_calls):
@@ -445,6 +447,7 @@ class TestConfigureOutbound(TestCaseBase):
                 int(tc_filters.tagged_filters[0]['basic']['value']),
                 vlan.tag)
 
+    @mock.patch('vdsm.network.netinfo.bonding.permanent_address', lambda: {})
     def test_multiple_vlans(self):
         with vlan_device(self.device_name, tag=16) as vlan1:
             with vlan_device(self.device_name, tag=17) as vlan2:

@@ -124,13 +124,12 @@ def bondOptsForIfcfg(opts):
 
 def permanent_address():
     paddr = {}
-    for b in bondings():
-        slave = ''
+    for b in Bond.bonds():
         with open('/proc/net/bonding/' + b) as f:
             for line in f:
                 if line.startswith('Slave Interface: '):
                     slave = line[len('Slave Interface: '):-1]
-                if line.startswith('Permanent HW addr: '):
+                elif line.startswith('Permanent HW addr: ') and slave:
                     paddr[slave] = line[len('Permanent HW addr: '):-1]
     return paddr
 
