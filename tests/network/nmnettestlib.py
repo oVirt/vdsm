@@ -24,7 +24,7 @@ from vdsm.commands import execCmd
 from vdsm.network.link import iface as linkiface
 from vdsm.utils import CommandPath
 
-from .nettestlib import dummy_device, random_iface_name
+from .nettestlib import dummy_devices, random_iface_name
 
 TEST_LINK_TYPE = 'bond'
 
@@ -59,34 +59,52 @@ def iface_name():
 
 
 @contextmanager
-def nm_connections(iface_name, ipv4addr, connection_name=None, con_count=1,
-                   save=False):
+def nm_connections(bond_name, ipv4addr, connection_name=None, con_count=1,
+                   vlan=None, save=False, slave_count=1):
     """
     Setting up a connection with an IP address, removing it at exit.
     In case connection_name is not provided, it will use the name of the iface.
     """
     if connection_name is None:
-        connection_name = iface_name
+        connection_name = bond_name
 
-    with dummy_device() as slave:
+    with dummy_devices(slave_count) as slaves:
         for i in range(con_count):
             _create_connection(
-                connection_name + str(i), iface_name, ipv4addr, save)
+                connection_name + str(i), bond_name, save, TEST_LINK_TYPE,
+                ipv4addr=(ipv4addr if vlan is None else None))
 
         # For the bond to be operationally up (carrier-up), add a slave
-        _add_slave_to_bond(bond=iface_name, slave=slave)
+        _add_slaves_to_bond(bond=bond_name, slaves=slaves)
+
+        if vlan is not None:
+            vlan_iface = '.'.join([bond_name, vlan])
+            _create_connection(
+                vlan_iface, vlan_iface, save, 'vlan',
+                vlan_parent=bond_name, vlan_id=vlan, ipv4addr=ipv4addr)
 
         try:
             yield
         finally:
+            if vlan is not None:
+                _remove_connection(vlan_iface)
+                _remove_device(vlan_iface)
             for i in range(con_count):
                 _remove_connection(connection_name + str(i))
 
 
-def _create_connection(connection_name, iface_name, ipv4addr, save):
+def _create_connection(connection_name, iface_name, save, type,
+                       ipv4addr=None, vlan_parent=None, vlan_id=None):
     command = [NMCLI_BINARY.cmd, 'con', 'add', 'con-name', connection_name,
                'ifname', iface_name, 'save', 'yes' if save else 'no',
-               'type', TEST_LINK_TYPE, 'ip4', ipv4addr]
+               'type', type]
+    if type == 'vlan' and vlan_parent and vlan_id is not None:
+        command += ['vlan.id', vlan_id, 'dev', vlan_parent]
+    if ipv4addr:
+        command += ['ip4', ipv4addr]
+    else:
+        command += ['ipv4.method', 'disabled']
+
     _exec_cmd(command)
 
 
@@ -99,10 +117,21 @@ def _remove_connection(connection_name):
             raise
 
 
-def _add_slave_to_bond(bond, slave):
-    linkiface.down(slave)
-    command = [IP_BINARY.cmd, 'link', 'set', slave, 'master', bond]
-    _exec_cmd(command)
+def _remove_device(device_name):
+    command = [NMCLI_BINARY.cmd, 'device', 'del', device_name]
+    try:
+        _exec_cmd(command)
+    except NMCliError as ex:
+        dev_not_found_msg = "Error: Device '{}' not found".format(device_name)
+        if dev_not_found_msg not in ex.args[1]:
+            raise
+
+
+def _add_slaves_to_bond(bond, slaves):
+    for slave in slaves:
+        linkiface.down(slave)
+        command = [IP_BINARY.cmd, 'link', 'set', slave, 'master', bond]
+        _exec_cmd(command)
 
 
 def _exec_cmd(command):

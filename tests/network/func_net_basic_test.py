@@ -24,6 +24,8 @@ import os
 
 from nose.plugins.attrib import attr
 
+from vdsm.network.link import iface as link_iface
+
 from .netfunctestlib import NetFuncTestCase, NOCHK
 from .nettestlib import dummy_device
 from .nmnettestlib import iface_name, nm_connections, is_networkmanager_running
@@ -111,6 +113,30 @@ class NetworkBasicLegacyTest(NetworkBasicTemplate):
             # The bond was acquired, therefore VDSM needs to clean it.
             BONDREMOVE = {iface: {'remove': True}}
             self.setupNetworks({}, BONDREMOVE, NOCHK)
+
+    def test_add_net_based_on_existing_vlan_bond_nm_setup(self):
+        if not is_networkmanager_running():
+            self.skipTest('NetworkManager is not running.')
+
+        iface = iface_name()
+        vlan_id = '101'
+        NET = {NETWORK_NAME: {'bonding': iface, 'vlan': int(vlan_id),
+                              'switch': self.switch}}
+        with nm_connections(iface, ipv4addr=None, vlan=vlan_id, slave_count=2):
+            bond_hwaddress = link_iface.mac_address(iface)
+            vlan_hwaddress = link_iface.mac_address('.'.join([iface, vlan_id]))
+            self.assertEqual(vlan_hwaddress, bond_hwaddress)
+
+            with self.setupNetworks(NET, {}, NOCHK):
+                self.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
+
+                # Check if the mac has been preserved.
+                bridge_hwaddress = link_iface.mac_address(NETWORK_NAME)
+                self.assertEqual(vlan_hwaddress, bridge_hwaddress)
+
+        # The bond was acquired, therefore VDSM needs to clean it.
+        BONDREMOVE = {iface: {'remove': True}}
+        self.setupNetworks({}, BONDREMOVE, NOCHK)
 
 
 @attr(type='functional', switch='ovs')
