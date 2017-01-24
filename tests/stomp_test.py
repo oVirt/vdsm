@@ -57,7 +57,7 @@ class _SampleBridge(object):
         return text
 
     def event(self):
-        self.cif.notify('vdsm.event', content=True)
+        self.cif.notify('vdsm.event', {'content': True})
 
     def register_server_address(self, server_address):
         self.server_address = server_address

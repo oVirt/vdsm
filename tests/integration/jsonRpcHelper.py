@@ -76,13 +76,16 @@ class FakeClientIf(object):
     def ready(self):
         return True
 
-    def notify(self, event_id, **kwargs):
+    def notify(self, event_id, params=None):
+        if not params:
+            params = {}
+
         notification = Notification(
             event_id,
             self._send_notification,
             self.json_binding.bridge.event_schema
         )
-        notification.emit(**kwargs)
+        notification.emit(params)
 
     def _send_notification(self, message):
         server = self.json_binding.reactor.server

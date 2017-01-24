@@ -75,7 +75,7 @@ class _DummyBridge(object):
         time.sleep(CALL_TIMEOUT + 2)
 
     def double_response(self):
-        self.cif.notify('vdsm.double_response', content=True)
+        self.cif.notify('vdsm.double_response', {'content': True})
         return 'sent'
 
     def register_server_address(self, server_address):

@@ -147,15 +147,25 @@ class clientIF(object):
     def ready(self):
         return (self.irs is None or self.irs.ready) and not self._recovery
 
-    def notify(self, event_id, **kwargs):
+    def notify(self, event_id, params=None):
         """
         Send notification using provided subscription id as
         event_id and a dictionary as event body. Before sending
         there is notify_time added on top level to the dictionary.
+
+        Please consult event-schema.yml in order to build an appropriate event.
+        https://github.com/oVirt/vdsm/blob/master/lib/api/vdsm-events.yml
+
+        Args:
+            event_id (string): unique event name
+            params (dict): event content
         """
+        if not params:
+            params = {}
+
         if not self.ready:
             self.log.warning('Not ready yet, ignoring event %r args=%r',
-                             event_id, kwargs)
+                             event_id, params)
             return
 
         json_binding = self.bindings['jsonrpc']
@@ -167,7 +177,7 @@ class clientIF(object):
         try:
             notification = Notification(event_id, _send_notification,
                                         json_binding.bridge.event_schema)
-            notification.emit(**kwargs)
+            notification.emit(params)
         except KeyError:
             self.log.warning("Attempt to send an event when jsonrpc binding"
                              " not available")

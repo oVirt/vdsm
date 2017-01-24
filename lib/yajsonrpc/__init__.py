@@ -202,12 +202,20 @@ class Notification(object):
         self._cb = cb
         self._event_schema = event_schema
 
-    def emit(self, **kwargs):
-        self._add_notify_time(kwargs)
-        self._event_schema.verify_event_params(self._event_id, kwargs)
+    def emit(self, params):
+        """
+        emit method, builds notification message and sends it.
+
+        Args:
+            params(dict): event content
+
+        Returns: None
+        """
+        self._add_notify_time(params)
+        self._event_schema.verify_event_params(self._event_id, params)
         notification = json.dumps({'jsonrpc': '2.0',
                                    'method': self._event_id,
-                                   'params': kwargs})
+                                   'params': params})
 
         self.log.debug("Sending event %s", notification)
         self._cb(notification)
