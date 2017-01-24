@@ -3,7 +3,7 @@
 .\"Licensed to you under the GNU General Public License as published by
 .\"the Free Software Foundation; either version 2 of the License, or
 .\"(at your option) any later version.  See the files README and
-.\"LICENSE_GPL_v2 which accompany this distribution.
+.\"COPYING which accompany this distribution.
 .\"
 .\"
 .\" File Name macro definition plagiarized from bash.
@@ -306,7 +306,11 @@ FiberChannel devices which VDSM uses.
 .SH SEE ALSO
 .BR vdsm-client(1)
 .br
-.BR http://www.ovirt.org/wiki/Category:Vdsm
+.BR https://www.ovirt.org/develop/developer-guide/vdsm/vdsm/
+.br
+.BR https://github.com/oVirt/vdsm
+.br
+.BR https://travis-ci.org/oVirt/vdsm
 
 .SH AUTHOR
 VDSM was written by Ayal Baron, Barak Azulay, Cyril Plisko, Dan Kenigsberg,
@@ -317,4 +321,4 @@ probably others.
 Report bugs to <http://bugzilla.redhat.com>
 
 .SH COPYRIGHT
-Copyright 2010-2013 Red Hat, Inc. License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.
+Copyright 2010-2017 Red Hat, Inc. License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.
