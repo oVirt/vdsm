@@ -35,7 +35,6 @@ function prepare {
 
     cd "$PREFIX"
     lago ovirt reposetup \
-        --reposync-yum-config /dev/null \
         --custom-source "dir:$EXPORTS"
 }
 
