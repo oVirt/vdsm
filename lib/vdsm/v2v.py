@@ -1302,12 +1302,67 @@ def _get_max_disk_size(populated_size, size):
     return str(max(int(populated_size), int(size)))
 
 
+def _parse_allocation_units(units):
+    """
+    Parse allocation units of the form "bytes * x * y^z"
+    The format is defined in:
+    DSP0004: Common Information Model (CIM) Infrastructure,
+    ANNEX C.1 Programmatic Units
+
+    We conform only to the subset of the format specification and
+    base-units must be bytes.
+    """
+    # Format description
+    sp = '[ \t\n]?'
+    base_unit = 'byte'
+    operator = '[*]'  # we support only multiplication
+    number = '[+]?[0-9]+'  # we support only positive integers
+    exponent = '[+]?[0-9]+'  # we support only positive integers
+    modifier1 = '(?P<m1>{op}{sp}(?P<m1_num>{num}))'.format(
+        op=operator,
+        num=number,
+        sp=sp)
+    modifier2 = \
+        '(?P<m2>{op}{sp}' \
+        '(?P<m2_base>[0-9]+){sp}\^{sp}(?P<m2_exp>{exp}))'.format(
+            op=operator,
+            exp=exponent,
+            sp=sp)
+    r = '^{base_unit}({sp}{mod1})?({sp}{mod2})?$'.format(
+        base_unit=base_unit,
+        mod1=modifier1,
+        mod2=modifier2,
+        sp=sp)
+
+    m = re.match(r, units, re.MULTILINE)
+    if m is None:
+        raise V2VError('Failed to parse allocation units: %r' % units)
+    g = m.groupdict()
+
+    ret = 1
+    if g['m1'] is not None:
+        try:
+            ret *= int(g['m1_num'])
+        except ValueError:
+            raise V2VError("Failed to parse allocation units: %r" % units)
+    if g['m2'] is not None:
+        try:
+            ret *= pow(int(g['m2_base']), int(g['m2_exp']))
+        except ValueError:
+            raise V2VError("Failed to parse allocation units: %r" % units)
+
+    return ret
+
+
 def _add_disks_ovf_info(vm, node, ns):
     vm['disks'] = []
     for d in node.findall(".//ovf:DiskSection/ovf:Disk", ns):
         disk = {'type': 'disk'}
-        capacity = d.attrib.get('{%s}capacity' % _OVF_NS)
-        disk['capacity'] = str(int(capacity) * 1024 * 1024 * 1024)
+        capacity = int(d.attrib.get('{%s}capacity' % _OVF_NS))
+        if '{%s}capacityAllocationUnits' % _OVF_NS in d.attrib:
+            units = d.attrib.get('{%s}capacityAllocationUnits' % _OVF_NS)
+            capacity *= _parse_allocation_units(units)
+        disk['capacity'] = str(capacity)
         fileref = d.attrib.get('{%s}fileRef' % _OVF_NS)
         alias = node.find('.//ovf:References/ovf:File[@ovf:id="%s"]' %
                           fileref, ns)
