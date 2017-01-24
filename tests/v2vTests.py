@@ -93,8 +93,10 @@ sourceAllocationSettingData">
     <File ovf:href="First-disk2.vmdk" ovf:id="file2" ovf:size="349405696"/>
   </References>
   <DiskSection>
-    <Disk ovf:capacity="32" ovf:fileRef="file1"/>
-    <Disk ovf:capacity="32" ovf:populatedSize="698811392" ovf:fileRef="file2"/>
+    <Disk ovf:capacity="32" ovf:capacityAllocationUnits="byte * 2^30"
+        ovf:fileRef="file1"/>
+    <Disk ovf:capacity="32" ovf:capacityAllocationUnits="byte * 2^30"
+        ovf:populatedSize="698811392" ovf:fileRef="file2"/>
   </DiskSection>
   <VirtualSystem ovf:id="First">
     <Name>First</Name>
@@ -612,3 +614,18 @@ class TestGetOVAInfo(TestCaseBase):
         self.assertEquals(network['model'], 'E1000')
         self.assertEquals(network['type'], 'bridge')
         self.assertEquals(network['dev'], 'Ethernet 1')
+
+
+class UtilsTests(TestCaseBase):
+    def test_units_parser(self):
+        self.assertEqual(v2v._parse_allocation_units("byte"), 1)
+        self.assertEqual(v2v._parse_allocation_units("byte * 10"), 10)
+        self.assertEqual(v2v._parse_allocation_units("byte * +10"), 10)
+        self.assertEqual(v2v._parse_allocation_units("byte * 2 ^ 1"), 2)
+        self.assertEqual(v2v._parse_allocation_units("byte * 2 ^ 10"), 1024)
+        self.assertEqual(v2v._parse_allocation_units("byte * 2 ^ +10"), 1024)
+        self.assertEqual(v2v._parse_allocation_units("byte * 10 * 2^3"), 80)
+        self.assertEqual(v2v._parse_allocation_units("byte*10*2^3"), 80)
+
+        # We don't support other units!
+        self.assertRaises(v2v.V2VError, v2v._parse_allocation_units, "volt")
