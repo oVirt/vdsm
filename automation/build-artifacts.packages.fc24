@@ -13,6 +13,7 @@ PyYAML
 python-blivet
 python-coverage
 python2-decorator
+python-dateutil
 python-devel
 python-nose
 python-inotify
