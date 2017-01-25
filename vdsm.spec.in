@@ -1325,6 +1325,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/configurators/__init__*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/certificates.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/libvirt.py*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/lvm.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/passwd.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sanlock.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sebool.py*
