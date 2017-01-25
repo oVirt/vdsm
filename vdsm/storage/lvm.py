@@ -373,8 +373,6 @@ class LVMCache(object):
 
         with self._lock:
             if rc != 0:
-                log.warning("lvm vgs failed: %s %s %s", str(rc), str(out),
-                            str(err))
                 vgNames = vgNames if vgNames else self._vgs.keys()
                 for v in vgNames:
                     if isinstance(self._vgs.get(v), Stub):
