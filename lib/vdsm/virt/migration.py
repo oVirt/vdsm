@@ -148,6 +148,7 @@ class SourceThread(object):
             self._use_convergence_schedule = True
             self.log.debug('convergence schedule set to: %s',
                            str(self._convergence_schedule))
+        self._started = False
 
     def start(self):
         self._thread.start()
@@ -377,7 +378,7 @@ class SourceThread(object):
             self._setupRemoteMachineParams()
             self._prepareGuest()
 
-            while self._progress < 100:
+            while not self._started:
                 try:
                     with SourceThread.ongoingMigrations:
                         timeout = config.getint(
@@ -456,6 +457,9 @@ class SourceThread(object):
                     raise MigrationDestinationSetupError(
                         'migration destination error: ' +
                         result['status']['message'])
+
+            self._started = True
+
             if config.getboolean('vars', 'ssl'):
                 transport = 'tls'
             else:
