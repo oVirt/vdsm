@@ -24,6 +24,7 @@ dist_configurators_PYTHON = \
 	certificates.py \
 	libvirt.py \
 	multipath.py \
+	lvm.py \
 	passwd.py \
 	sanlock.py \
 	sebool.py \
