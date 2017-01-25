@@ -100,7 +100,7 @@ Requires: PyYAML
 Requires: python-dateutil
 Requires: python-netaddr
 Requires: python-inotify
-Requires: python-cpopen >= 1.4
+Requires: python-cpopen >= 1.5
 Requires: python-ioprocess >= 0.16.1-1
 Requires: python-pthreading >= 0.1.3-3
 Requires: python-six >= 1.9.0
@@ -285,7 +285,7 @@ A JSON RPC server and client implementation.
 Summary:        VDSM python libraries
 Requires:       %{name}-api = %{version}-%{release}
 BuildArch:      noarch
-Requires:       python-cpopen >= 1.4
+Requires:       python-cpopen >= 1.5
 Requires:       m2crypto
 Requires:       python-ioprocess >= 0.16.1-1
 
