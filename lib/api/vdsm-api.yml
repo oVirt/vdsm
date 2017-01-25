@@ -5715,6 +5715,7 @@ types:
             NFS: The Storage Domain uses Network File System based storage
             SHAREDFS: The Storage Domain uses storage from a Linux VFS file
                 system
+            GLUSTERFS: The Storage Domain uses GlusterFS based storage
             UNKNOWN: The type is not known
 
     StorageDomainInfo: &StorageDomainInfo
