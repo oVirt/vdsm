@@ -16,7 +16,7 @@
 from __future__ import absolute_import
 import logging
 from functools import partial
-from six.moves.queue import Queue
+from six.moves import queue
 from weakref import ref
 from threading import Lock, Event
 
@@ -482,7 +482,7 @@ class JsonRpcServer(object):
     def __init__(self, bridge, timeout, cif, threadFactory=None):
         self._bridge = bridge
         self._cif = cif
-        self._workQueue = Queue()
+        self._workQueue = queue.Queue()
         self._threadFactory = threadFactory
         self._timeout = timeout
         self._next_report = monotonic_time() + self._timeout
