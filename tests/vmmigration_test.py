@@ -186,9 +186,33 @@ class TestProgress(TestCaseBase):
         prog = migration.Progress.from_job_stats(self.job_stats)
         self.assertNotRaises(str, prog)
 
-    def test___str___without_optional_fields(self):
-        del self.job_stats["memory_dirty_rate"]
-        del self.job_stats["memory_iteration"]
+    @permutations([
+        # fields
+        [(libvirt.VIR_DOMAIN_JOB_DATA_TOTAL,)],
+        [(libvirt.VIR_DOMAIN_JOB_DATA_PROCESSED,)],
+        [(libvirt.VIR_DOMAIN_JOB_DATA_REMAINING,)],
+        [(libvirt.VIR_DOMAIN_JOB_MEMORY_TOTAL,)],
+        [(libvirt.VIR_DOMAIN_JOB_MEMORY_PROCESSED,)],
+        [(libvirt.VIR_DOMAIN_JOB_MEMORY_REMAINING,)],
+    ])
+    def test_job_stats_required_fields(self, fields):
+        for field in fields:
+            del self.job_stats[field]
+        self.assertRaises(KeyError,
+                          migration.Progress.from_job_stats,
+                          self.job_stats)
+
+    @permutations([
+        # fields
+        [(libvirt.VIR_DOMAIN_JOB_MEMORY_BPS,)],
+        [(libvirt.VIR_DOMAIN_JOB_MEMORY_CONSTANT,)],
+        [(libvirt.VIR_DOMAIN_JOB_COMPRESSION_BYTES,)],
+        [('memory_dirty_rate',)],
+        [('memory_iteration',)],
+    ])
+    def test___str___without_optional_fields(self, fields):
+        for field in fields:
+            del self.job_stats[field]
         prog = migration.Progress.from_job_stats(self.job_stats)
         self.assertNotRaises(str, prog)
 
