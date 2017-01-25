@@ -1040,6 +1040,7 @@ class StorageDomain(APIBase):
         LOCALFS = storage.sd.LOCALFS_DOMAIN
         CIFS = storage.sd.CIFS_DOMAIN
         POSIXFS = storage.sd.POSIXFS_DOMAIN
+        GLUSTERFS = storage.sd.GLUSTERFS_DOMAIN
 
     class Classes:
         DATA = storage.sd.DATA_DOMAIN
