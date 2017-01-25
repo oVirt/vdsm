@@ -120,6 +120,8 @@ class SourceThread(threading.Thread):
             'status': {
                 'code': 0,
                 'message': 'Migration in progress'}}
+        # we need to guard against concurrent updates only
+        self._lock = threading.Lock()
         self._progress = 0
         threading.Thread.__init__(self)
         self._preparingMigrationEvt = True
@@ -141,16 +143,31 @@ class SourceThread(threading.Thread):
     def hibernating(self):
         return self._mode == MODE_FILE
 
+    def _update_progress(self):
+        if self._monitorThread is None:
+            return
+
+        # fetch migration status from the monitor thread
+        if self._monitorThread.progress is not None:
+            progress = self._monitorThread.progress.percentage
+        else:
+            progress = 0
+
+        with self._lock:
+            old_progress = self._progress
+            if progress >= old_progress:
+                self._progress = progress
+
+        if progress < old_progress:
+            self.log.info(
+                'new computed progress %d < than old value %d, discarded',
+                progress, old_progress)
+
     def getStat(self):
         """
         Get the status of the migration.
         """
-        if self._monitorThread is not None:
-            # fetch migration status from the monitor thread
-            if self._monitorThread.progress is not None:
-                self._progress = self._monitorThread.progress.percentage
-            else:
-                self._progress = 0
+        self._update_progress()
         self.status['progress'] = self._progress
 
         stat = self._vm._dom.jobStats(libvirt.VIR_DOMAIN_JOB_STATS_COMPLETED)
@@ -269,7 +286,8 @@ class SourceThread(threading.Thread):
         self._vm.send_status_event()
 
     def _finishSuccessfully(self):
-        self._progress = 100
+        with self._lock:
+            self._progress = 100
         if not self.hibernating:
             self._vm.setDownStatus(NORMAL, vmexitreason.MIGRATION_SUCCEEDED)
             self.status['status']['message'] = 'Migration done'

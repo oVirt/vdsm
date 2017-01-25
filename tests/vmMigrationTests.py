@@ -20,6 +20,8 @@
 from __future__ import absolute_import
 
 from itertools import tee, izip, product
+import logging
+import uuid
 
 import libvirt
 
@@ -240,6 +242,74 @@ class TestProgress(TestCaseBase):
     def test_ongoing(self, job_type, ongoing):
         self.job_stats['type'] = job_type
         self.assertEquals(migration.ongoing(self.job_stats), ongoing)
+
+
+class FakeDomain(object):
+
+    def jobStats(self, flags):
+        return {}
+
+
+class FakeVM(object):
+
+    def __init__(self):
+        self.id = str(uuid.uuid4())
+        self.log = logging.getLogger('test.migration.FakeVM')
+        self._dom = FakeDomain()
+
+
+class FakeProgress(object):
+
+    def __init__(self):
+        self.percentage = 0
+
+
+class FakeMonitorThread(object):
+
+    def __init__(self, prog):
+        self.progress = prog
+
+
+@expandPermutations
+class SourceThreadTests(TestCaseBase):
+
+    def test_progress_start(self):
+        vm = FakeVM()
+        src = migration.SourceThread(vm)
+        self.assertEqual(src._progress, 0)
+
+    # random increasing numbers, no special meaning
+    @permutations([
+        # steps
+        [(42,)],
+        [(12, 33)],
+    ])
+    def test_progress_update_on_get_stat(self, steps):
+        vm = FakeVM()
+        src = migration.SourceThread(vm)
+        prog = FakeProgress()
+        src._monitorThread = FakeMonitorThread(prog)
+
+        for step in steps:
+            prog.percentage = step
+            self.assertEqual(src.getStat()['progress'], prog.percentage)
+
+        self.assertEqual(src.getStat()['progress'], steps[-1])
+
+    def test_progress_not_backwards(self):
+        steps = [8, 15, 23, 85, 81]
+
+        vm = FakeVM()
+        src = migration.SourceThread(vm)
+        prog = FakeProgress()
+        src._monitorThread = FakeMonitorThread(prog)
+
+        for step in steps:
+            prog.percentage = step
+            old_progress = src._progress
+            self.assertGreaterEqual(src.getStat()['progress'], old_progress)
+
+        self.assertEqual(src._progress, max(steps))
 
 
 # stolen^Wborrowed from itertools recipes
