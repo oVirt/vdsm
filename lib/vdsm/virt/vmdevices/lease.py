@@ -109,6 +109,8 @@ from vdsm.virt import vmxml
 from . import core
 from . import hwclass
 
+import re
+
 log = logging.getLogger("virt.lease")
 
 
@@ -281,3 +283,17 @@ def _prepare_device(storage, device):
 
 def _is_prepared(device):
     return "path" in device and "offset" in device
+
+
+def fixLeases(storage, xml_str):
+    leases = set(re.findall('(?<=LEASE-PATH:)[\w:-]+', xml_str))
+    for lease in leases:
+        lease_id, lease_sd_id = lease.split(':')
+        res = storage.lease_info(dict(sd_id=lease_sd_id,
+                                      lease_id=lease_id))
+        lease_info = res["result"]
+        xml_str = xml_str.replace('LEASE-PATH:' + lease,
+                                  lease_info["path"])
+        xml_str = xml_str.replace('LEASE-OFFSET:' + lease,
+                                  str(lease_info["offset"]))
+    return xml_str

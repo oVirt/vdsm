@@ -1799,6 +1799,24 @@ class Vm(object):
                 domxml.appendDeviceXML(deviceXML)
 
     def _buildDomainXML(self):
+        if 'xml' in self.conf:
+            xml_str = self.conf['xml']
+            xml_str = vmdevices.graphics.fixDisplayNetworks(xml_str)
+            xml_str = vmdevices.lease.fixLeases(self.cif.irs, xml_str)
+            xml_str = vmdevices.network.fixNetworks(xml_str)
+            if cpuarch.is_x86(self.arch):
+                osd = osinfo.version()
+                osVersion = osd.get('version', '') + '-' + \
+                    osd.get('release', '')
+                serialNumber = self.conf.get('serial', host.uuid())
+                xml_str = xml_str.replace('OS-NAME:',
+                                          constants.SMBIOS_OSNAME)
+                xml_str = xml_str.replace('OS-VERSION:',
+                                          osVersion)
+                xml_str = xml_str.replace('HOST-SERIAL:',
+                                          serialNumber)
+            return xml_str
+
         serial_console = self._getSerialConsole()
 
         domxml = libvirtxml.Domain(self.conf, self.log, self.arch)
