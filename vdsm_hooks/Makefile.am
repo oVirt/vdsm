@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2014 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ SUBDIRS = \
 	ethtool_options \
 	faqemu \
 	ipv6 \
+	localdisk \
 	macspoof \
 	openstacknet \
 	ovs \
