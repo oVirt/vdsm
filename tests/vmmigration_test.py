@@ -19,8 +19,10 @@
 #
 from __future__ import absolute_import
 
+from contextlib import contextmanager
 from itertools import tee, product
 import logging
+import threading
 import uuid
 
 import libvirt
@@ -28,6 +30,7 @@ import libvirt
 from six.moves import range
 from six.moves import zip
 
+from vdsm.common import exception
 from vdsm.common import response
 from vdsm.config import config
 from vdsm.virt import migration
@@ -282,11 +285,72 @@ class TestPostCopy(TestCaseBase):
         self.assertEqual(stats['status'], vmstatus.PAUSED)
 
 
-class FakeVM(object):
+class FakeServer(object):
+
+    def __init__(self, initial_failures=0, exc=None):
+        self._initial_failures = initial_failures
+        self._exc = exc
+        self.attempts = 0
+
+    def migrationCreate(self, params, limit):
+        self.attempts += 1
+        if self.attempts > self._initial_failures:
+            return response.success()
+        return self._exc.response()
+
+
+class FakeMigratingDomain(object):
 
     def __init__(self):
+        self.migrations = 0
+
+    def XMLDesc(self, flags):
+        return ''
+
+    def migrateSetMaxDowntime(self, value, flags):
+        pass
+
+    def migrateToURI3(self, duri, params, flags):
+        self.migrations += 1
+
+
+class FakeVM(object):
+
+    def __init__(self, dom=None):
+        self._dom = dom
         self.id = str(uuid.uuid4())
         self.log = logging.getLogger('test.migration.FakeVM')
+        self.conf = {'memSize': 128}
+        self.hasSpice = True
+        self.post_copy = migration.PostCopyPhase.NONE
+        self.stopped_migrated_event_processed = threading.Event()
+        self.stopped_migrated_event_processed.set()
+
+    @contextmanager
+    def migration_parameters(self, params):
+        self.conf['_migrationParams'] = params
+        try:
+            yield
+        finally:
+            del self.conf['_migrationParams']
+
+    def status(self):
+        return self.conf
+
+    def getStats(self):
+        return {}
+
+    def saveState(self):
+        pass
+
+    def _customDevices(self):
+        return []
+
+    def setDownStatus(self, status, reason):
+        pass
+
+    def destroy(self):
+        pass
 
 
 class FakeProgress(object):
@@ -299,6 +363,16 @@ class FakeMonitorThread(object):
 
     def __init__(self, prog):
         self.progress = prog
+
+
+def make_env():
+    dom = FakeMigratingDomain()
+    src = migration.SourceThread(FakeVM(dom))
+    src.remoteHost = '127.0.0.1'
+    src._monitorThread = FakeMonitorThread(FakeProgress())
+    src._setupVdsConnection = lambda: None
+    src._setupRemoteMachineParams = lambda: None
+    return dom, src
 
 
 @expandPermutations
@@ -341,6 +415,41 @@ class SourceThreadTests(TestCaseBase):
             self.assertGreaterEqual(src.getStat()['progress'], old_progress)
 
         self.assertEqual(src._progress, max(steps))
+
+    @permutations([
+        # failures
+        [0],
+        [1],
+        [2],
+        [10],
+    ])
+    def test_retry_on_limit_exceeded(self, failures):
+        serv = FakeServer(initial_failures=failures,
+                          exc=exception.MigrationLimitExceeded())
+        dom, src = make_env()
+        src._destServer = serv
+        cfg = make_config([('vars', 'migration_retry_timeout', '0')])
+        with MonkeyPatchScope([(migration, 'config', cfg)]):
+            src.run()
+
+        self.assertEqual(serv.attempts, failures + 1)  # +1 for success
+        self.assertEqual(dom.migrations, 1)
+
+    def test_do_not_retry_when_started(self):
+        # we do not retry regardless of the last reported progress
+        progress = 55
+        serv = FakeServer()
+
+        dom, src = make_env()
+        src._destServer = serv
+        src._finishSuccessfully = lambda: None
+        src._progress = progress
+
+        src.run()
+
+        self.assertEqual(dom.migrations, 1)
+        self.assertEqual(serv.attempts, 1)
+        self.assertEqual(src.getStat()['progress'], progress)
 
 
 # stolen^Wborrowed from itertools recipes
