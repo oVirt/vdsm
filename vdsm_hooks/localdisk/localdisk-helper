@@ -1,0 +1,111 @@
+#!/usr/bin/python2
+#
+# Copyright 2017 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+import argparse
+import sys
+
+from vdsm import cmdutils
+from vdsm import commands
+
+OVIRT_LOCAL_VG = "ovirt-local"
+
+
+def list(args):
+    out = lvm("lvs",
+              "-o", "name,attr,tags,size",
+              "--units", "b",
+              "--nosuffix",
+              "--reportformat", "json",
+              "--select",
+              "lv_name=\"" + args.lv_name + "\"",
+              OVIRT_LOCAL_VG)
+    sys.stdout.write(out)
+
+
+def create(args):
+    # TODO support thin provisioning LV
+    cmd = ["lvcreate", "-L", args.size, "-n", args.lv_name]
+    for tag in args.addtag:
+        cmd.extend(("--addtag", tag))
+    cmd.append(OVIRT_LOCAL_VG)
+    lvm(*cmd)
+
+
+def remove(args):
+    lvm("lvremove", "-f", OVIRT_LOCAL_VG + "/" + args.lv_name)
+
+
+def change(args):
+    cmd = ["lvchange"]
+    for tag in args.addtag:
+        cmd.extend(("--addtag", tag))
+    for tag in args.deltag:
+        cmd.extend(("--deltag", tag))
+    if args.activate is not None:
+        cmd.extend(("--activate", args.activate))
+    cmd.append(OVIRT_LOCAL_VG + "/" + args.lv_name)
+    lvm(*cmd)
+
+
+def lvm(*args):
+    cmd = ["/usr/sbin/lvm"]
+    cmd.extend(args)
+    rc, out, err = commands.execCmd(cmd, raw=True)
+    if rc != 0:
+        raise cmdutils.Error(cmd=cmd, rc=rc, out=out, err=err)
+    return out
+
+
+parser = argparse.ArgumentParser(description="oVirt local disk hook helper")
+subparsers = parser.add_subparsers(title="commands")
+
+list_parser = subparsers.add_parser("list",
+                                    help="return a json with the the lv "
+                                         "attributes, tags, and size")
+list_parser.set_defaults(command=list)
+list_parser.add_argument("lv_name", help="LV name to get attributes "
+                                         "tags and size")
+
+create_parser = subparsers.add_parser("create",
+                                      help="Create a LV. return nothing")
+create_parser.set_defaults(command=create)
+create_parser.add_argument("--addtag", action='append', help="Tags for the LV",
+                           default=[])
+create_parser.add_argument("size", help="The size needed for the LV")
+create_parser.add_argument("lv_name", help="LV name to be created")
+
+create_parser = subparsers.add_parser("remove",
+                                      help="Remove a LV. return nothing")
+create_parser.set_defaults(command=remove)
+create_parser.add_argument("lv_name", help="LV name to be deleted")
+
+change_parser = subparsers.add_parser("change",
+                                      help="Update a LV. return nothing")
+change_parser.set_defaults(command=change)
+change_parser.add_argument("--addtag", action='append',
+                           help="Tag to add on the LV", default=[])
+change_parser.add_argument("--deltag", action='append',
+                           help="Tag to delete from the LV", default=[])
+change_parser.add_argument("--activate", help="Activate/deactivate the LV")
+change_parser.add_argument("lv_name", help="LV name to be updated")
+
+args = parser.parse_args()
+args.command(args)

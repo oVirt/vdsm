@@ -404,6 +404,19 @@ running real guests.
 To enable this hook on your host, set vars.fake_kvm_support=True in your
 /etc/vdsm/vdsm.conf before adding the host to ovirt-Engine.
 
+%package hook-localdisk
+Summary:        Use a local image instead of a shared storage image
+BuildArch:      noarch
+Requires:       %{name} == %{version}
+
+%description hook-localdisk
+This hook add the ability to use fast local storage instead of shared
+storage, while using shared storage for managing VM templates.
+To enable this hook, the VM should have a custom property of 'localdisk=lvm'.
+The system administrator will be responsible for creating the host "ovirt-local"
+volume group and extending it with new devices if needed.
+The VM must be pinned to host.
+
 %package hook-macbind
 Summary:        Bind a vNIC to a Bridge
 BuildArch:      noarch
@@ -1429,6 +1442,12 @@ exit 0
 
 %files hook-ipv6
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_ipv6
+
+%files hook-localdisk
+%{_sysconfdir}/sudoers.d/50_vdsm_hook_localdisk
+%{_libexecdir}/%{vdsm_name}/hooks/after_disk_prepare/localdisk
+%{_libexecdir}/%{vdsm_name}/localdisk-helper
+%{_udevrulesdir}/12-vdsm-localdisk.rules
 
 %files hook-vmfex-dev
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_vmfex

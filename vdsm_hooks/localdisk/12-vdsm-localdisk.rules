@@ -1,0 +1,24 @@
+#
+# Copyright 2017 Red Hat, Inc. and/or its affiliates.
+#
+# Licensed to you under the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.  See the files README and
+# LICENSE_GPL_v2 which accompany this distribution.
+#
+
+# Vdsm udev rules for local lvs
+
+# "add" event is processed on coldplug only, so we need "change", too.
+ACTION!="add|change", GOTO="lvm_end"
+
+# Filter out vgs which do not look like an ovirt local vg
+ENV{DM_VG_NAME}!="ovirt-local", GOTO="lvm_end"
+
+# Volumes used as local disks lvs
+# WARNING: we cannot use OWNER, GROUP and MODE since using any of them will
+# change the selinux label to the default, causing vms to pause after refreshing the lv.
+# See https://bugzilla.redhat.com/1147910
+ENV{DM_LV_NAME}=="*", RUN+="/usr/bin/chown vdsm:qemu $env{DEVNAME}", GOTO="lvm_end"
+
+LABEL="lvm_end"

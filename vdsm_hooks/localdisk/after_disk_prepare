@@ -1,0 +1,171 @@
+#!/usr/bin/python2
+#
+# Copyright 2017 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+import json
+import os
+import time
+
+from vdsm import cmdutils
+from vdsm import qemuimg
+from vdsm import utils
+from vdsm.storage import constants as sc
+
+import hooking
+
+# Name of vg used for lvm based local disks
+OVIRT_LOCAL_VG = "ovirt-local"
+
+# Helper to execute LVM command as super user
+HELPER = "/usr/libexec/vdsm/localdisk-helper"
+
+# The LV/local disk is created with the UPDATING tag.
+# This tag will be cleared, once the copying of the data from the template
+# is finished.
+# When the hook is called, and the tag is present on an existing LV, it means
+# that the copy data process failed. In that case, the LV will be removed,
+# then recreated and the copy process will run again.
+TAG_UPDATING = "UPDATING"
+
+# The LV is created with a tag containing the VM id with 'VM_' prefix.
+# This tag can be helpful to locate LV of VMs that have deleted, so that
+# the operator will be able to delete the unused LVs/disks.
+TAG_PREFIX_VM = "VM_"
+
+# The LV/local disk are copied as RAW format for best performance.
+LOCAL_FORMAT = "raw"
+
+
+class NoSuchLV(Exception):
+    """ Raised when lv does not exists """
+
+
+class LVIsUpdating(Exception):
+    """ Raised when lv has an UPDATING """
+
+
+def main():
+    if os.environ.get('localdisk') != "lvm":
+        return
+    disk = hooking.read_json()
+    replace_disk(disk)
+    hooking.write_json(disk)
+
+
+def replace_disk(disk):
+    vm_id = os.environ['vmId']
+    orig_path = disk["path"]
+    img_id = disk["imageID"]
+    lv_name = disk["volumeID"]
+    src_format = "qcow2" if disk["format"] == "cow" else disk["format"]
+
+    try:
+        lv_info(lv_name)
+    except NoSuchLV:
+        hooking.log("localdisk-hook: local disk not found, "
+                    "creating logical volume (name=%s)" % lv_name)
+        create_local_disk(orig_path, lv_name, vm_id, img_id, src_format)
+    except LVIsUpdating:
+        hooking.log("localdisk-hook: found unfinished disk, "
+                    "recreating logical volume (name=%s)" % lv_name)
+        remove_local_disk(lv_name)
+        create_local_disk(orig_path, lv_name, vm_id, img_id, src_format)
+    else:
+        hooking.log("localdisk-hook: reusing local disk " + lv_name)
+        activate_lv(lv_name)
+
+    disk["path"] = lv_path(lv_name)
+    disk["format"] = LOCAL_FORMAT
+
+
+def create_local_disk(orig_path, lv_name, vm_id, img_id, src_format):
+    res = qemuimg.info(orig_path)
+    size = res["virtualsize"]
+    hooking.log("localdisk-hook: creating logical volume (name=%s, size=%d)"
+                % (lv_name, size))
+    create_lv(lv_name, size, vm_id, img_id)
+    copy_collapsed(orig_path, src_format, lv_name)
+    delete_lv_tag(lv_name, TAG_UPDATING)
+
+
+def copy_collapsed(src_path, src_format, lv_name):
+    hooking.log("localdisk-hook: copying image "
+                "%s to %s" % (src_path, lv_name,))
+    start = time.time()
+    dst_path = lv_path(lv_name)
+    operation = qemuimg.convert(src_path,
+                                dst_path,
+                                srcFormat=src_format,
+                                dstFormat=qemuimg.FORMAT.RAW)
+    with utils.closing(operation):
+        operation.wait_for_completion()
+    elapsed = time.time() - start
+    hooking.log("localdisk-hook: copy completed in %.3f seconds" % (elapsed,))
+
+
+def remove_local_disk(lv_name):
+    helper("remove", lv_name)
+
+
+# LVM helper operation
+
+def lv_info(lv_name):
+    out = helper("list", lv_name)
+    lvs = json.loads(out)["report"][0]["lv"]
+    if not lvs:
+        raise NoSuchLV
+    lv = lvs[0]
+    if TAG_UPDATING in lv["lv_tags"].split(","):
+        raise LVIsUpdating
+    return lv
+
+
+def delete_lv_tag(lv_name, tag):
+    helper("change", "--deltag", tag, lv_name)
+
+
+def activate_lv(lv_name):
+    helper("change", "--activate", "y", lv_name)
+
+
+def lv_path(name):
+    return os.path.join("/dev", OVIRT_LOCAL_VG, name)
+
+
+def create_lv(lv_name, size, vm_id, img_id):
+    helper("create",
+           "--addtag", TAG_UPDATING,
+           "--addtag", TAG_PREFIX_VM + vm_id,
+           "--addtag", sc.TAG_PREFIX_IMAGE + img_id,
+           "--addtag", sc.TAG_PREFIX_PARENT + sc.BLANK_UUID,
+           str(size) + "b",
+           lv_name)
+
+
+def helper(*args):
+    cmd = [HELPER]
+    cmd.extend(args)
+    rc, out, err = hooking.execCmd(cmd, sudo=True, raw=True)
+    if rc != 0:
+        raise cmdutils.Error(cmd=HELPER, rc=rc, out=out, err=err)
+    return out
+
+
+main()
