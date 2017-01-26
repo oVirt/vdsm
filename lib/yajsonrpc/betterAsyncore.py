@@ -110,7 +110,7 @@ class Dispatcher(asyncore.dispatcher):
             else:
                 raise
         except sslutils.SSLError as e:
-            self._log.error('SSL error receiving from %s: %s', self, e)
+            self._log.debug('SSL error receiving from %s: %s', self, e)
             self.handle_close()
             return ''
 
@@ -129,7 +129,7 @@ class Dispatcher(asyncore.dispatcher):
             else:
                 raise
         except sslutils.SSLError as e:
-            self._log.error('SSL error sending to %s: %s ', self, e)
+            self._log.debug('SSL error sending to %s: %s ', self, e)
             self.handle_close()
             return 0
 
