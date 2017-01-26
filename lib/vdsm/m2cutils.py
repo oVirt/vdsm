@@ -98,6 +98,9 @@ class SSLSocket(object):
     def __getattr__(self, name):
         return getattr(self.connection, name)
 
+    def getsockopt(self, *args):
+        return self.socket.getsockopt(*args)
+
 
 class SSLServerSocket(SSLSocket):
     def __init__(self, raw, certfile=None, keyfile=None, ca_certs=None,
