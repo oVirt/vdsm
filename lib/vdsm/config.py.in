@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2016 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -558,7 +558,7 @@ parameters = [
     # Section: [tests]
     ('tests', [
 
-        ('functional_jsonrpc_enable', 'false',
+        ('functional_jsonrpc_enable', 'true',
             'Enable jsonrpc when running functional tests.'),
     ]),
 
