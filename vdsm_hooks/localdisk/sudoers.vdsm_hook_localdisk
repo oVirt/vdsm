@@ -1,0 +1,3 @@
+vdsm  ALL=(ALL) NOPASSWD: /usr/libexec/vdsm/localdisk-helper
+Defaults:vdsm !requiretty
+Defaults:vdsm !syslog
