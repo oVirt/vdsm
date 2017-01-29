@@ -158,7 +158,7 @@ class _VdsProxy(object):
         options['_caller'] = '{}:{}'.format(test_method, code_line)
         if _JSONRPC_ENABLED:
             result = self.vdscli.setupNetworks(networks, bonds, options,
-                                               _transport_timeout=30)
+                                               _transport_timeout=90)
         else:
             result = self.vdscli.setupNetworks(networks, bonds, options)
         return _parse_result(result)
