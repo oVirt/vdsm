@@ -495,7 +495,7 @@ class v2vTests(TestCaseBase):
         cmd = v2v.V2VCommand(None, None, None, '1.1')
         self.assertIn('--vdsm-compat', cmd._base_command)
         i = cmd._base_command.index('--vdsm-compat')
-        self.assertEquals('1.1', cmd._base_command[i + 1])
+        self.assertEqual('1.1', cmd._base_command[i + 1])
 
 
 @expandPermutations
