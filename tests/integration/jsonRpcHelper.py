@@ -142,9 +142,9 @@ def constructAcceptor(log, ssl, jsonBridge,
 
 
 @contextmanager
-def constructClient(log, bridge, ssl, type):
+def constructClient(log, bridge, ssl, type, dest=SUBSCRIPTION_ID_RESPONSE):
     sslctx = DEAFAULT_SSL_CONTEXT if ssl else None
-    with constructAcceptor(log, ssl, bridge) as acceptor:
+    with constructAcceptor(log, ssl, bridge, dest) as acceptor:
         client = None
         if type == "xml":
             xml_handler = [h for h in acceptor._handlers if h.NAME == type]
