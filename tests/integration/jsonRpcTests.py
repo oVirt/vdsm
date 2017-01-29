@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,6 +58,10 @@ class _DummyBridge(object):
         self.log.info("ECHO: '%s'", text)
         return text
 
+    @property
+    def event_schema(self):
+        return FakeSchema()
+
     def ping(self):
         return None
 
@@ -73,6 +77,12 @@ class _DummyBridge(object):
 
     def unregister_server_address(self):
         self.server_address = None
+
+
+class FakeSchema(object):
+
+    def verify_event_params(self, event_id, kwargs):
+        pass
 
 
 def dispatch(callable, timeout=None):
