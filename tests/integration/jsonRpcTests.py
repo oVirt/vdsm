@@ -249,3 +249,25 @@ class JsonRpcServerTests(TestCaseBase):
 
                     self.assertEqual(cm.exception.code,
                                      JsonRpcInternalError().code)
+
+    @permutations(PERMUTATIONS)
+    def testClientSubscribe(self, ssl, type):
+        bridge = _DummyBridge()
+        clientFactory = constructClient(
+            self.log, bridge, ssl, type, "jms.topic.test")
+        with clientFactory:
+            with self._client(clientFactory) as client:
+                if type == "xml":
+                    # ignore notifications for xmlrpc
+                    pass
+                else:
+                    def callback(client, event, params):
+                        self.assertEqual(event, 'vdsm.double_response')
+                        self.assertEqual(params['content'], True)
+
+                    sub = client.subscribe("jms.topic.test")
+                    client.registerEventCallback(callback)
+                    res = self._callTimeout(client, "double_response", [],
+                                            CALL_ID)
+                    self.assertEqual(res, 'sent')
+                    client.unsubscribe(sub)
