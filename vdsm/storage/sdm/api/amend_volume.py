@@ -138,8 +138,10 @@ class VolumeInfo(properties.Owner):
 
     @contextmanager
     def prepare(self):
-        self.volume.prepare(rw=True, justme=True)
+        # qemu-img amend requires the entire chain
+        # see https://bugzilla.redhat.com/1417460
+        self.volume.prepare(rw=True, justme=False)
         try:
             yield
         finally:
-            self.volume.teardown(self.sd_id, self.vol_id, justme=True)
+            self.volume.teardown(self.sd_id, self.vol_id, justme=False)
