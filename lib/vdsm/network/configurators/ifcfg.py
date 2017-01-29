@@ -49,6 +49,7 @@ from vdsm.network import ipwrapper
 from vdsm.network import libvirt
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
+from vdsm.network.link import iface as link_iface
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netinfo import (bonding as netinfo_bonding, mtus, nics,
                                   vlans, misc, NET_PATH)
@@ -57,8 +58,8 @@ from vdsm.network.netlink import waitfor
 
 from . import Configurator, getEthtoolOpts
 from .ifcfg_acquire import IfcfgAcquire
-from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
-from ..models import Nic, Bridge
+from ..errors import ConfigNetworkError, ERR_BAD_BONDING, ERR_FAILED_IFUP
+from ..models import Nic, Bridge, Bond as bond_model
 from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
 from ..utils import remove_custom_bond_option
 
@@ -122,7 +123,10 @@ class Ifcfg(Configurator):
         self.configApplier.addVlan(vlan, **opts)
         vlan.device.configure(**opts)
         self._addSourceRoute(vlan)
-        _ifup(vlan)
+        if isinstance(vlan.device, bond_model):
+            Ifcfg._ifup_vlan_with_slave_bond_hwaddr_sync(vlan)
+        else:
+            _ifup(vlan)
 
     def configureBond(self, bond, **opts):
         if not self.owned_device(bond.name):
@@ -325,6 +329,40 @@ class Ifcfg(Configurator):
                 raise
         else:
             return content.startswith(CONFFILE_HEADER_SIGNATURE)
+
+    @staticmethod
+    def _ifup_vlan_with_slave_bond_hwaddr_sync(vlan):
+        """
+        When NM is active and the network includes a vlan on top of a bond, the
+        following scenario may occur:
+        - VLAN over a bond with slaves is already defined in the system and
+          VDSM is about to acquire it to define on it a network.
+        - The VLAN iface is re-created while the bond slaves are temporary
+          detached, causing the vlan to be created with the bond temporary
+          mac address, which is different from the original existing address.
+        Therefore, following the VLAN ifup command, its mac address is compared
+        with the first bond slave. In case they differ, the vlan device is
+        recreated.
+        """
+        bond = vlan.device
+        if not bond.slaves:
+            _ifup(vlan)
+            return
+
+        for attempt in range(5):
+            _ifup(vlan)
+            if (link_iface.mac_address(bond.slaves[0].name) ==
+                    link_iface.mac_address(vlan.name)):
+                return
+
+            logging.info('Config vlan@bond: hwaddr not in sync (%s)', attempt)
+            ifdown(vlan.name)
+
+        raise ConfigNetworkError(
+            ERR_BAD_BONDING,
+            'While adding vlan {} over bond {}, '
+            'the bond hwaddr was not in sync '
+            'whith its slaves.'.format(vlan.name, vlan.device.name))
 
 
 class ConfigWriter(object):
