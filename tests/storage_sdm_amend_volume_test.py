@@ -22,7 +22,7 @@ from __future__ import absolute_import
 from contextlib import contextmanager
 
 from fakelib import FakeScheduler
-from monkeypatch import MonkeyPatchScope
+from monkeypatch import MonkeyPatchScope, MonkeyPatch
 from storagetestlib import make_qemu_chain
 from storagefakelib import FakeResourceManager
 from storagefakelib import fake_guarded_context
@@ -32,12 +32,17 @@ from testlib import VdsmTestCase, expandPermutations, permutations
 from testlib import wait_for_job
 
 from vdsm import jobs
+from vdsm import qemuimg
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
 
 from storage import blockVolume
 from storage.sdm.api import amend_volume, copy_data
+
+
+def failure(*args, **kwargs):
+    raise qemuimg.QImgError("code", "out", "err", "Fail amend")
 
 
 @expandPermutations
@@ -89,6 +94,26 @@ class TestAmendVolume(VdsmTestCase):
 
     @permutations((('file',), ('block',)))
     def test_vol_type_not_qcow(self, env_type):
+        fmt = sc.name2type('raw')
+        job_id = make_uuid()
+        with self.make_env(env_type, fmt, sd_version=4) as env:
+            env_vol = env.chain[0]
+            generation = env_vol.getMetaParam(sc.GENERATION)
+            vol = dict(endpoint_type='div', sd_id=env_vol.sdUUID,
+                       img_id=env_vol.imgUUID, vol_id=env_vol.volUUID,
+                       generation=generation)
+            qcow2_attr = dict(compat='1.1')
+            job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
+            job.run()
+            wait_for_job(job)
+            self.assertEqual(jobs.STATUS.FAILED, job.status)
+            self.assertEqual(type(job.error), se.GeneralException)
+            self.assertEqual(sc.LEGAL_VOL, env_vol.getLegality())
+            self.assertEqual(generation, env_vol.getMetaParam(sc.GENERATION))
+
+    @MonkeyPatch(qemuimg, 'amend', failure)
+    @permutations((('file',), ('block',)))
+    def test_qemu_amend_failure(self, env_type):
         fmt = sc.name2type('raw')
         job_id = make_uuid()
         with self.make_env(env_type, fmt, sd_version=4) as env:
