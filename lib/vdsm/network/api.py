@@ -20,24 +20,20 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from contextlib import contextmanager
-import errno
-import os
-import sys
-import time
-import logging
 
+import sys
+import logging
 import six
 
 from vdsm.config import config
 from vdsm import commands
 from vdsm import constants
 from vdsm import hooks
-from vdsm import udevadm
-from vdsm.network import ipwrapper
 from vdsm.network import libvirt
 from vdsm.network import sourceroute
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 from vdsm.network.link import iface as link_iface
+from vdsm.network.link import sriov
 
 from . ip import address as ipaddress, validator as ipvalidator
 from . canonicalize import canonicalize_networks, canonicalize_bondings
@@ -45,7 +41,6 @@ from . errors import RollbackIncomplete
 from . import netconfpersistence
 from . import netswitch
 
-_SYSFS_SRIOV_NUMVFS = '/sys/bus/pci/devices/{}/sriov_numvfs'
 
 DUMMY_BRIDGE
 
@@ -60,70 +55,6 @@ def network_caps():
     return netswitch.netinfo(compatibility=30600)
 
 
-def _wait_for_udev_events():
-    # FIXME: This is an ugly hack that is meant to prevent VDSM to report VFs
-    # that are not yet named by udev or not report all of. This is a blocking
-    # call that should wait for all udev events to be handled. a proper fix
-    # should be registering and listening to the proper netlink and udev
-    # events. The sleep prior to observing udev is meant to decrease the
-    # chances that we wait for udev before it knows from the kernel about the
-    # new devices.
-    time.sleep(0.5)
-    udevadm.settle(timeout=10)
-
-
-def _update_numvfs(pci_path, numvfs):
-    """pci_path is a string looking similar to "0000:00:19.0"
-    """
-    with open(_SYSFS_SRIOV_NUMVFS.format(pci_path), 'w', 0) as f:
-        # Zero needs to be written first in order to remove previous VFs.
-        # Trying to just write the number (if n > 0 VF's existed before)
-        # results in 'write error: Device or resource busy'
-        # https://www.kernel.org/doc/Documentation/PCI/pci-iov-howto.txt
-        f.write('0')
-        f.write(str(numvfs))
-        _wait_for_udev_events()
-        _set_valid_macs_for_igb_vfs(pci_path, numvfs)
-
-
-def _set_valid_macs_for_igb_vfs(pci_path, numvfs):
-    """
-        igb driver forbids resetting VF MAC address back to 00:00:00:00:00:00,
-        which was its original value. By setting the MAC addresses to a valid
-        value (e.g. TARGET_MAC) upon restoration the valid address will
-        be accepted.
-       (BZ: https://bugzilla.redhat.com/1341248)
-    """
-    if _is_igb_driver(pci_path):
-        _modify_mac_addresses(pci_path, numvfs)
-
-
-def _is_igb_driver(pci_path):
-    igb_driver_path = '/sys/bus/pci/drivers/igb'
-    return (os.path.exists(igb_driver_path) and
-            pci_path in os.listdir(igb_driver_path))
-
-
-def _modify_mac_addresses(pci_path, numvfs):
-    TARGET_MAC = '02:00:00:00:00:01'
-
-    pf = os.listdir('/sys/bus/pci/devices/{}/net/'.format(pci_path))[0]
-    for vf_num in range(numvfs):
-        link_iface.set_mac_address(pf, TARGET_MAC, vf_num=vf_num)
-
-
-def _persist_numvfs(device_name, numvfs):
-    dir_path = os.path.join(netconfpersistence.CONF_RUN_DIR,
-                            'virtual_functions')
-    try:
-        os.makedirs(dir_path)
-    except OSError as ose:
-        if errno.EEXIST != ose.errno:
-            raise
-    with open(os.path.join(dir_path, device_name), 'w') as f:
-        f.write(str(numvfs))
-
-
 def change_numvfs(pci_path, numvfs, net_name):
     """Change number of virtual functions of a device.
 
@@ -135,13 +66,10 @@ def change_numvfs(pci_path, numvfs, net_name):
     # TODO: removed.
     logging.info('Changing number of vfs on device %s -> %s.',
                  pci_path, numvfs)
-    _update_numvfs(pci_path, numvfs)
+    sriov.update_numvfs(pci_path, numvfs)
+    sriov.persist_numvfs(pci_path, numvfs)
 
-    logging.info('Changing number of vfs on device %s -> %s. succeeded.',
-                 pci_path, numvfs)
-    _persist_numvfs(pci_path, numvfs)
-
-    ipwrapper.linkSet(net_name, ['up'])
+    link_iface.up(net_name)
 
 
 def ip_addrs_info(device):
