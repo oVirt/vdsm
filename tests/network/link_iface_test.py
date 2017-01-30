@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,3 +45,10 @@ class LinkIfaceTests(TestCaseBase):
         with dummy_device() as nic:
             iface.up(nic)
             self.assertFalse(iface.is_promisc(nic))
+
+    def test_iface_hwaddr(self):
+        MAC_ADDR = '02:00:00:00:00:01'
+
+        with dummy_device() as nic:
+            iface.set_mac_address(nic, MAC_ADDR)
+            self.assertEqual(MAC_ADDR, iface.mac_address(nic))
