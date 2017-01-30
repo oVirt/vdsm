@@ -1837,6 +1837,7 @@ class HSM(object):
         vars.task.getSharedLock(STORAGE, sdUUID)
         return pool.reconcileVolumeChain(sdUUID, imgUUID, leafVolUUID)
 
+    @deprecated
     @public
     def mergeSnapshots(self, sdUUID, spUUID, vmUUID, imgUUID, ancestor,
                        successor, postZero=False, discard=False):

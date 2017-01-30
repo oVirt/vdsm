@@ -8186,6 +8186,7 @@ Image.getVolumes:
 
 Image.mergeSnapshots:
     added: '3.1'
+    deprecated: '4.1'
     description: Merge snapshot successor into ancestor.
     params:
     -   description: The UUID of the Image
