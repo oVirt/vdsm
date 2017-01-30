@@ -153,14 +153,13 @@ class _Server(object):
                             (methodName, args, e))
 
         class_name, method_name = method.split('.')
+        timeout = kwargs.pop('_transport_timeout', self._default_timeout)
         params = self._prepare_args(class_name, method_name, args, kwargs)
 
         req = JsonRpcRequest(method, params, reqId=str(uuid4()))
 
         responses = self._client.call(
-            req, timeout=self._timeouts.get(
-                method_name,
-                kwargs.pop('_transport_timeout', self._default_timeout)))
+            req, timeout=self._timeouts.get(method_name, timeout))
         if responses:
             resp = responses[0]
         else:
