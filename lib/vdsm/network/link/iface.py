@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -68,6 +68,17 @@ def is_promisc(dev):
 
 def exists(dev):
     return os.path.exists(os.path.join(NET_PATH, dev))
+
+
+def set_mac_address(dev, mac_address, vf_num=None):
+    if vf_num is None:
+        ipwrapper.linkSet(dev, ['address', mac_address])
+    else:
+        ipwrapper.linkSet(dev, ['vf', str(vf_num), 'mac', mac_address])
+
+
+def mac_address(dev):
+    return get_link(dev)['address']
 
 
 def _up_blocking(dev, link_blocking):
