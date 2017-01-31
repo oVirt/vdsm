@@ -83,9 +83,9 @@ def _set_options(bond, options, current_options):
 
 def _set_untouched_options_to_defaults(bond, mode, options, current_options):
     for key, value in six.iteritems(getDefaultBondingOptions(mode)):
-        if (key != 'mode' and key not in options and key in current_options and
-                value):
-            _set_option(bond, key, value[-1])
+        if (key != 'mode' and key not in options and key in current_options):
+            v = value[-1] if value else ''
+            _set_option(bond, key, v)
 
 
 def _set_option(bond, key, value):
