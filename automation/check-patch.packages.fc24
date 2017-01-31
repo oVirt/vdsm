@@ -27,6 +27,7 @@ python-pthreading
 python-setuptools
 python-six
 python-requests
+python3-dateutil
 python3-dbus
 python3-decorator
 python3-netaddr
