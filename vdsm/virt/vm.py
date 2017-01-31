@@ -1577,18 +1577,18 @@ class Vm(object):
         """
         self.log.info('Switching to post-copy migration')
         self.guestAgent.stop()
-        result = self._dom.migrateStartPostCopy(0)
-        success = result >= 0
-        if success:
-            self._post_copy = migration.PostCopyPhase.REQUESTED
-        else:
+        try:
+            self._dom.migrateStartPostCopy(0)
+        except libvirt.libvirtError:
             try:
                 self.guestAgent.start()
             except Exception:
                 self.log.exception("Failed to start guest agent after "
                                    "unsuccessful switch to post-copy "
                                    "migration")
-        return success
+            return False
+        self._post_copy = migration.PostCopyPhase.REQUESTED
+        return True
 
     def _customDevices(self):
         """
