@@ -36,6 +36,7 @@ from vdsm.common.define import doneCode, errCode
 from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.momIF import MomClient
 from vdsm.sslcompat import sslutils
+from vdsm.virt import events
 from vdsm.virt import migration
 from vdsm.virt import recovery
 from vdsm.virt import secret
@@ -505,8 +506,8 @@ class clientIF(object):
             v = self.vmContainer.get(vmid)
 
             if not v:
-                self.log.debug('unknown vm %s eventid %s args %s',
-                               vmid, eventid, args)
+                self.log.debug('unknown vm %s event %s args %s',
+                               vmid, events.event_name(eventid), args)
                 return
 
             if eventid == libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE:
@@ -540,8 +541,8 @@ class clientIF(object):
                 device_alias, = args[:-1]
                 v.onDeviceRemoved(device_alias)
             else:
-                v.log.debug('unhandled libvirt event (event_id=%d, args=%s)',
-                            eventid, args)
+                v.log.debug('unhandled libvirt event (event_name=%s, args=%s)',
+                            events.event_name(eventid), args)
 
         except:
             self.log.error("Error running VM callback", exc_info=True)
