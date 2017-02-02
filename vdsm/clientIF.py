@@ -540,7 +540,8 @@ class clientIF(object):
                 device_alias, = args[:-1]
                 v.onDeviceRemoved(device_alias)
             else:
-                v.log.warning('unknown eventid %s args %s', eventid, args)
+                v.log.debug('unhandled libvirt event (event_id=%d, args=%s)',
+                            eventid, args)
 
         except:
             self.log.error("Error running VM callback", exc_info=True)
