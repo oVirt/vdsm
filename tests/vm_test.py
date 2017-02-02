@@ -39,6 +39,7 @@ from vdsm.virt import vmstatus
 from vdsm.virt.vmtune import (io_tune_merge, io_tune_dom_to_values,
                               io_tune_to_dom)
 from vdsm.virt import vmdevices
+from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices.storage import Drive
 from vdsm.virt.vmdevices.storage import DISK_TYPE
@@ -1494,6 +1495,7 @@ class TestVmStats(TestCaseBase):
             self.assertEqual(stats['monitorResponse'], '-1')
 
 
+@expandPermutations
 class TestLibVirtCallbacks(TestCaseBase):
     FAKE_ERROR = 'EFAKERROR'
 
@@ -1521,6 +1523,25 @@ class TestLibVirtCallbacks(TestCaseBase):
                              libvirt.VIR_DOMAIN_EVENT_IO_ERROR_NONE)
             self.assertTrue(testvm._guestCpuRunning)
             self.assertNotIn('pauseCode', testvm.conf)  # no error recorded
+
+    @permutations([
+        ['dimm0', set(('balloon',))],
+        ['balloon', set(('dimm0', 'balloon',))],
+        ['missing', set(('dimm0', 'balloon',))],
+    ])
+    def test_onDeviceRemoved(self, alias, kept_aliases):
+        devices = [{'alias': 'dimm0', 'type': hwclass.MEMORY, 'size': 1024},
+                   {'alias': 'balloon', 'type': hwclass.BALLOON}]
+        with fake.VM(_VM_PARAMS, devices=devices,
+                     create_device_objects=True) as testvm:
+            testvm._domain = DomainDescriptor('<devices/>')
+            testvm.onDeviceRemoved(alias)
+            self.assertEqual(set([d['alias'] for d in testvm.conf['devices']]),
+                             kept_aliases)
+            self.assertEqual(
+                set([d.alias for group in testvm._devices.values()
+                     for d in group]),
+                kept_aliases)
 
 
 @expandPermutations

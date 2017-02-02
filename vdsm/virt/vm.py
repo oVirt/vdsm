@@ -2348,24 +2348,6 @@ class Vm(object):
         self._devices[hwclass.HOSTDEV].append(dev_object)
         self.saveState()
 
-    def _lookupDeviceByAlias(self, devType, alias):
-        for dev in self._devices[devType][:]:
-            try:
-                if dev.alias == alias:
-                    return dev
-            except AttributeError:
-                continue
-        raise LookupError('Device instance for device identified by alias %s '
-                          'not found' % alias)
-
-    def _lookupConfByAlias(self, alias):
-        for devConf in self.conf['devices'][:]:
-            if devConf['type'] == hwclass.NIC and \
-                    devConf['alias'] == alias:
-                return devConf
-        raise LookupError('Configuration of device identified by alias %s not'
-                          'found' % alias)
-
     def _lookupDeviceByPath(self, path):
         for dev in self._devices[hwclass.DISK][:]:
             try:
@@ -2385,9 +2367,10 @@ class Vm(object):
 
     def _updateInterfaceDevice(self, params):
         try:
-            netDev = self._lookupDeviceByAlias(hwclass.NIC,
-                                               params['alias'])
-            netConf = self._lookupConfByAlias(params['alias'])
+            netDev = vmdevices.common.lookup_device_by_alias(
+                self._devices, hwclass.NIC, params['alias'])
+            netConf = vmdevices.common.lookup_conf_by_alias(
+                self.conf['devices'], hwclass.NIC, params['alias'])
 
             linkValue = 'up' if utils.tobool(params.get('linkActive',
                                              netDev.linkActive)) else 'down'
@@ -2646,14 +2629,8 @@ class Vm(object):
         if self.isMigrating():
             raise exception.MigrationInProgress()
 
-        alias = params['memory']['alias']
-        for dev in self._devices[hwclass.MEMORY][:]:
-            if dev.alias == alias:
-                device = dev
-                break
-        else:
-            raise LookupError("Memory device not found", params['memory'])
-
+        device = vmdevices.common.lookup_device_by_alias(
+            self._devices, hwclass.MEMORY, params['memory']['alias'])
         device_xml = vmxml.format_xml(device.getXML())
         self.log.info("Hotunplug memory xml: %s", device_xml)
 
@@ -4218,7 +4195,8 @@ class Vm(object):
     def _send_ioerror_status_event(self, reason, alias):
         io_error_info = {'alias': alias}
         try:
-            drive = self._lookupDeviceByAlias(hwclass.DISK, alias)
+            drive = vmdevices.common.lookup_device_by_alias(
+                self._devices, hwclass.DISK, alias)
         except LookupError:
             self.log.warning('unknown disk alias: %s', alias)
         else:
@@ -5123,22 +5101,20 @@ class Vm(object):
         # We currently hotunplug all devices synchronously, except for memory.
         device_hwclass = hwclass.MEMORY
 
-        for dev in self.conf['devices'][:]:
-            if dev.get('alias') == device_alias:
-                if dev['type'] != device_hwclass:
-                    return
-                with self._confLock:
-                    self.conf['devices'].remove(dev)
-                break
-        else:
+        try:
+            conf = vmdevices.common.lookup_conf_by_alias(
+                self.conf['devices'], device_hwclass, device_alias)
+        except LookupError:
             self.log.warning("Removed device not found in conf: %s",
                              device_alias)
-
-        for dev in self._devices[device_hwclass][:]:
-            if getattr(dev, 'alias', None) == device_alias:
-                device = dev
-                break
         else:
+            with self._confLock:
+                self.conf['devices'].remove(conf)
+
+        try:
+            device = vmdevices.common.lookup_device_by_alias(
+                self._devices, device_hwclass, device_alias)
+        except LookupError:
             self.log.warning("Removed device not found in devices: %s",
                              device_alias)
             return

@@ -91,3 +91,25 @@ def update_device_info(vm, devices):
     lease.Device.update_device_info(vm, devices[hwclass.LEASE])
     # Obtain info of all unknown devices. Must be last!
     _update_unknown_device_info(vm)
+
+
+def lookup_device_by_alias(devices, dev_type, alias):
+    for dev in devices[dev_type][:]:
+        try:
+            if dev.alias == alias:
+                return dev
+        except AttributeError:
+            continue
+    raise LookupError('Device instance for device identified by alias %s '
+                      'and type %s not found' % (alias, dev_type,))
+
+
+def lookup_conf_by_alias(conf, dev_type, alias):
+    for dev_conf in conf[:]:
+        try:
+            if dev_conf['alias'] == alias and dev_conf['type'] == dev_type:
+                return dev_conf
+        except KeyError:
+            continue
+    raise LookupError('Configuration of device identified by alias %s '
+                      'and type %s not found' % (alias, dev_type,))
