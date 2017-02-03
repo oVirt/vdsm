@@ -27,7 +27,7 @@ from . import exception
 from . import response
 
 
-_log = logging.getLogger("virt.api")
+_log = logging.getLogger("api")
 
 
 def logged(on=""):
