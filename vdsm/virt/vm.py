@@ -641,7 +641,12 @@ class Vm(object):
                     # A destroy request has been issued, exit early
                     break
                 drive['path'] = self.cif.prepareVolumePath(drive, self.id)
-
+                if isVdsmImage(drive):
+                    # This is the only place we support manipulation of a
+                    # prepared image, required for the localdisk hook. The hook
+                    # may change drive parameters like path and format.
+                    modified = hooks.after_disk_prepare(drive, self.conf)
+                    drive.update(modified)
         else:
             # Now we got all the resources we needed
             self.enableDriveMonitor()

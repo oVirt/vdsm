@@ -54,6 +54,7 @@ Currently-supported hooks have self-explanatory names:
     before_nic_hotplug, after_nic_hotplug, after_nic_hotplug_fail,
     before_nic_hotunplug, after_nic_hotunplug, after_nic_hotunplug_fail,
     before_update_device, after_update_device, after_update_device_fail,
+    after_disk_prepare,
     before_disk_hotplug, after_disk_hotplug,
     before_disk_hotunplug, after_disk_hotunplug,
     before_vdsm_start, after_vdsm_stop,
@@ -123,6 +124,36 @@ after_ifcfg_write has the following parameters: ifcfg_file and config.
  "config": "IPADDR=192.168.1.2\nNETMASK=255.255.255.0"
  }
 .fi
+
+The after_disk_prepare hook is invoked after a disk is prepared during VM
+create, resume, recovery and incoming migration flows.
+.B Warning:
+In incoming migration flow, the hook should finish quickly to avoid migration
+timeout.
+
+The after_disk_prepare hook includes only a
+.B _hook_json
+key with a filename where the disk info is stored in JSON format:
+
+.nf
+{
+    "disk": {
+        "device": "disk",
+        "domainID": "uuid",
+        "format": "cow",
+        "imageID": "uuid",
+        "path": "/path/to/disk",
+        "volumeID": "uuid"
+        ...
+    }
+}
+.fi
+
+See the VmDiskDevice type in vdsm schema for the complete contents of
+the disk info dict.
+
+If the after_disk_prepare hook modify the disk, vdsm will use the
+modified disk instead of the original disk.
 
 Hooks that handle NIC hotplug, hotunplug and update device
 have the _hook_domxml variable but it contains the representation of the NIC
