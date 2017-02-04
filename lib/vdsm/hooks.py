@@ -300,6 +300,11 @@ def after_nic_hotunplug_fail(nicxml, vmconf={}, params={}):
                         params=params, raiseError=False)
 
 
+def after_disk_prepare(disk_dict, vmconf={}):
+    return _runHooksDir(disk_dict, 'after_disk_prepare', vmconf=vmconf,
+                        raiseError=True, hookType=_JSON_HOOK)
+
+
 def before_disk_hotplug(domxml, vmconf={}, params={}):
     return _runHooksDir(domxml, 'before_disk_hotplug', vmconf=vmconf,
                         params=params)
