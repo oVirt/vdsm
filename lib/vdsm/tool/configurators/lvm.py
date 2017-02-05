@@ -141,9 +141,12 @@ def _lvmetad_configured():
         for name in names.split(","):
             units[name] = info
 
-    expected_state = {"LoadState": "masked", "ActiveState": "inactive"}
-    not_configured = {name: state for name, state in units.items()
-                      if state != expected_state}
+    not_configured = {}
+    for name, state in units.items():
+        # ActiveState may be "inactive" or "failed", both are good.
+        if state["LoadState"] != "masked" or state["ActiveState"] == "active":
+            not_configured[name] = state
+
     if not_configured:
         _log("Units need configuration: %s", not_configured)
         return False
