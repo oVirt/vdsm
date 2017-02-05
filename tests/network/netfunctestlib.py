@@ -467,12 +467,13 @@ def _normalize_caps(netinfo_from_caps):
 
 
 def _normalize_qos_config(qos):
-    for key, value in qos.items():
-        for curve, attrs in value.items():
+    for value in six.viewvalues(qos):
+        for attrs in six.viewvalues(value):
             if attrs.get('m1') == 0:
                 del attrs['m1']
             if attrs.get('d') == 0:
                 del attrs['d']
+    return qos
 
 
 def _normalize_bond_opts(opts):
