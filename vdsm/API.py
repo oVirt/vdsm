@@ -1431,15 +1431,12 @@ class Global(APIBase):
         """
         return v2v.get_ova_info(ova_path)
 
-    def convertExternalVm(self, uri, username, password, vminfo, jobid,
-                          qcow2_compat=None):
+    def convertExternalVm(self, uri, username, password, vminfo, jobid):
         return v2v.convert_external_vm(uri, username, password, vminfo, jobid,
-                                       self._irs, qcow2_compat)
+                                       self._irs)
 
-    def convertExternalVmFromOva(self, ova_path, vminfo, jobid,
-                                 qcow2_compat=None):
-        return v2v.convert_ova(ova_path, vminfo, jobid, self._cif.irs,
-                               qcow2_compat)
+    def convertExternalVmFromOva(self, ova_path, vminfo, jobid):
+        return v2v.convert_ova(ova_path, vminfo, jobid, self._cif.irs)
 
     def getJobs(self, job_type=None, job_ids=()):
         found = jobs.info(job_type=job_type, job_ids=job_ids)

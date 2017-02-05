@@ -1047,6 +1047,12 @@ types:
             description: disk allocation type (sparse, preallocated)
             name: allocation
             type: *VolumeAllocation
+
+            added: '4.2'
+            description: set version of QCOW2 images (0.10, 1.1);
+                ignored for KVM imports
+            name: qcow2_compat
+            type: string
         type: object
 
     ExternalVmInfo: &ExternalVmInfo
@@ -7970,12 +7976,6 @@ Host.convertExternalVmFromOva:
         name: jobid
         type: *UUID
 
-    -   defaultvalue: null
-        added: '4.2'
-        description: set version of QCOW2 images (0.10, 1.1)
-        name: qcow2_compat
-        type: string
-
 Host.convertExternalVm:
     added: '3.6'
     description: Convert VM from external source to data domain
@@ -8000,13 +8000,6 @@ Host.convertExternalVm:
             identify it in HostStats
         name: jobid
         type: *UUID
-
-    -   defaultvalue: null
-        added: '4.2'
-        description: set version of QCOW2 images (0.10, 1.1);
-            ignored for KVM imports
-        name: qcow2_compat
-        type: string
 
 
 Host.getConvertedVm:
