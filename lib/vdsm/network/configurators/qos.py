@@ -205,10 +205,11 @@ def _is_explicit_defined_default_class(dev):
     definitions.
     """
     netinfo = NetInfo(cache_get())
-    for attrs in six.itervalues(netinfo.networks):
-        if 'vlan' not in attrs and 'hostQos' in attrs and (
-           attrs['iface'] == dev):
-            return True
+    for attrs in six.viewvalues(netinfo.networks):
+        if 'vlan' not in attrs and 'hostQos' in attrs:
+            ports = attrs['ports'] if attrs['bridged'] else [attrs['iface']]
+            if dev in ports:
+                return True
 
     return False
 

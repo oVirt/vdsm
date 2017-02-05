@@ -45,6 +45,35 @@ class NetworkHostQosTemplate(NetFuncTestCase):
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 self.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
 
+    def test_add_two_networks_with_qos_on_shared_nic(self):
+        HOST_QOS_CONFIG1 = {'out': {'ls': {'m2': rate(rate_in_mbps=1)}}}
+        HOST_QOS_CONFIG2 = {'out': {'ls': {'m2': rate(rate_in_mbps=5)}}}
+        with dummy_device() as nic:
+            NETCREATE = {NETWORK1_NAME: {'nic': nic,
+                                         'hostQos': HOST_QOS_CONFIG1,
+                                         'switch': self.switch},
+                         NETWORK2_NAME: {'nic': nic, 'vlan': VLAN1,
+                                         'hostQos': HOST_QOS_CONFIG2,
+                                         'switch': self.switch}}
+            with self.setupNetworks(NETCREATE, {}, NOCHK):
+                self.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
+                self.assertHostQos(NETWORK2_NAME, NETCREATE[NETWORK2_NAME])
+
+    def test_add_two_networks_with_qos_on_shared_nic_in_two_steps(self):
+        HOST_QOS_CONFIG1 = {'out': {'ls': {'m2': rate(rate_in_mbps=1)}}}
+        HOST_QOS_CONFIG2 = {'out': {'ls': {'m2': rate(rate_in_mbps=5)}}}
+        with dummy_device() as nic:
+            NETBASE = {NETWORK1_NAME: {'nic': nic,
+                                       'hostQos': HOST_QOS_CONFIG1,
+                                       'switch': self.switch}}
+            NETVLAN = {NETWORK2_NAME: {'nic': nic, 'vlan': VLAN1,
+                                       'hostQos': HOST_QOS_CONFIG2,
+                                       'switch': self.switch}}
+            with self.setupNetworks(NETBASE, {}, NOCHK):
+                with self.setupNetworks(NETVLAN, {}, NOCHK):
+                    self.assertHostQos(NETWORK1_NAME, NETBASE[NETWORK1_NAME])
+                    self.assertHostQos(NETWORK2_NAME, NETVLAN[NETWORK2_NAME])
+
 
 @attr(type='functional', switch='legacy')
 class NetworkHostQosLegacyTest(NetworkHostQosTemplate):
