@@ -95,7 +95,7 @@ function run {
     lago ovirt deploy
 
     lago ovirt serve &
-    PID=$!
+    local lago_ovirt_http_pid=$!
 
     fake_ksm_in_vm
 
@@ -106,7 +106,7 @@ function run {
     res="${PIPESTATUS[0]}"
     [ "$res" -ne 0 ] && failed="$res"
 
-    kill $PID
+    kill "$lago_ovirt_http_pid"
 
     lago copy-from-vm \
     "$VM_NAME" \
