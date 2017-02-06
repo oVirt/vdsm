@@ -84,7 +84,7 @@ function prepare_and_copy_yum_conf {
 
 function run {
     mkdir "$EXPORTS"/lago-logs
-    failed=0
+    local failed=0
 
     lago start "$VM_NAME"
 
