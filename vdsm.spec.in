@@ -247,10 +247,10 @@ ovirt-engine and vdsClient.
 Summary:        VDSM client
 BuildArch:      noarch
 # A hack for unbreaking external packages that expect vdsm-cli.
-Provides: %{name}-cli
+Provides: %{name}-cli = %{version}-%{release}
 Requires: %{name}-api = %{version}-%{release}
 Requires: %{name}-yajsonrpc = %{version}-%{release}
-Obsoletes: %{name}-cli <= 4.18
+Obsoletes: %{name}-cli < %{version}-%{release}
 
 %description client
 Access vdsm API from the command line.
