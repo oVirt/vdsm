@@ -1,3 +1,4 @@
+epel-snap-2017-02-03-04-43,http://mirrors.phx.ovirt.org/repos/yum/epel-el7/2017-02-03-04-43
 tested,http://resources.ovirt.org/repos/ovirt/tested/master/rpm/$distro
 ovirt-snapshot-static,http://resources.ovirt.org/pub/ovirt-master-snapshot-static/rpm/$distro
 centos-glusterfs,http://mirror.centos.org/centos/7/storage/x86_64/gluster-3.8/
@@ -6,6 +7,5 @@ centos-ovirt40-release-ppc64le,https://cbs.centos.org/repos/virt7-ovirt-40-relea
 centos-ovirt-common-release-ppc64le,https://cbs.centos.org/repos/virt7-ovirt-common-release/ppc64le/os/
 ovirt-ci-tools,http://resources.ovirt.org/repos/ci-tools/$distro
 lago,http://resources.ovirt.org/repos/lago/stable/0.0/rpm/$distro
-epel,http://download.fedoraproject.org/pub/epel/7/$basearch/
 centos-debuginfo,http://debuginfo.centos.org/7/x86_64/
 centos-ovirt-common-candidate,http://cbs.centos.org/repos/virt7-ovirt-common-candidate/$basearch/os/

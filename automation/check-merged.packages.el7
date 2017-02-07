@@ -1,3 +1,4 @@
+--exclude=python2-crypto-2.6.1-13*
 autoconf
 automake
 git
