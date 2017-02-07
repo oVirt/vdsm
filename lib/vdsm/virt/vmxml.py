@@ -32,9 +32,6 @@ from vdsm import utils
 METADATA_VM_VDSM_URI = 'http://ovirt.org/vm/1.0'
 METADATA_VM_VDSM_ELEMENT = 'vm'
 METADATA_VM_VDSM_PREFIX = 'ovirt-vm'
-METADATA_VM_TUNE_URI = 'http://ovirt.org/vm/tune/1.0'
-METADATA_VM_TUNE_ELEMENT = 'qos'
-METADATA_VM_TUNE_PREFIX = 'ovirt-tune'
 
 _BOOT_MENU_TIMEOUT = 10000  # milliseconds
 
@@ -474,9 +471,11 @@ class Domain(object):
         self.dom.appendChild(metadata)
 
     def _appendMetadataQOS(self, metadata):
-        metadata.appendChild(Element(METADATA_VM_TUNE_ELEMENT,
-                                     namespace=METADATA_VM_TUNE_PREFIX,
-                                     namespace_uri=METADATA_VM_TUNE_URI))
+        metadata.appendChild(Element(
+            xmlconstants.METADATA_VM_TUNE_ELEMENT,
+            namespace=xmlconstants.METADATA_VM_TUNE_PREFIX,
+            namespace_uri=xmlconstants.METADATA_VM_TUNE_URI
+        ))
 
     def _appendMetadataVDSM(self, metadata):
         metadata.appendChild(Element(METADATA_VM_VDSM_ELEMENT,

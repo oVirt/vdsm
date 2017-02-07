@@ -69,6 +69,7 @@ from vdsm.virt import vmstats
 from vdsm.virt import vmstatus
 from vdsm.virt import vmtune
 from vdsm.virt import vmxml
+from vdsm.virt import xmlconstants
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.domain_descriptor import MutableDomainDescriptor
 from vdsm.virt import vmdevices
@@ -76,8 +77,6 @@ from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices.storage import DISK_TYPE
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.vmtune import update_io_tune_dom, io_tune_dom_to_values
-from vdsm.virt.vmxml import METADATA_VM_TUNE_URI, METADATA_VM_TUNE_ELEMENT
-from vdsm.virt.vmxml import METADATA_VM_TUNE_PREFIX
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
 
 # local imports. TODO: move to vdsm.storage
@@ -2810,8 +2809,10 @@ class Vm(object):
 
             try:
                 self._dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                                      metadata_xml, METADATA_VM_TUNE_PREFIX,
-                                      METADATA_VM_TUNE_URI, 0)
+                                      metadata_xml,
+                                      xmlconstants.METADATA_VM_TUNE_PREFIX,
+                                      xmlconstants.METADATA_VM_TUNE_URI,
+                                      0)
             except libvirt.libvirtError as e:
                 self.log.exception("updateVmPolicy failed")
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
@@ -2830,20 +2831,26 @@ class Vm(object):
         :return: XML DOM object representing the root qos element
         """
 
-        metadata_xml = "<%s></%s>" % (METADATA_VM_TUNE_ELEMENT,
-                                      METADATA_VM_TUNE_ELEMENT)
+        metadata_xml = "<%s></%s>" % (
+            xmlconstants.METADATA_VM_TUNE_ELEMENT,
+            xmlconstants.METADATA_VM_TUNE_ELEMENT
+        )
 
         try:
             metadata_xml = self._dom.metadata(
                 libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                METADATA_VM_TUNE_URI, 0)
+                xmlconstants.METADATA_VM_TUNE_URI,
+                0)
         except libvirt.libvirtError as e:
             if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN_METADATA:
                 self.log.exception("getVmPolicy failed")
                 return None
 
         metadata = vmxml.parse_xml(metadata_xml)
-        return vmxml.find_first(metadata, METADATA_VM_TUNE_ELEMENT, None)
+        return vmxml.find_first(
+            metadata,
+            xmlconstants.METADATA_VM_TUNE_ELEMENT,
+            None)
 
     def _findDeviceByNameOrPath(self, device_name, device_path):
         for device in self._devices[hwclass.DISK]:

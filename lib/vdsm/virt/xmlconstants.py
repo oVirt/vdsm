@@ -22,6 +22,10 @@ from __future__ import absolute_import
 
 _METADATA_PREFIX = 'ovirt'
 
+METADATA_VM_TUNE_URI = 'http://ovirt.org/vm/tune/1.0'
+METADATA_VM_TUNE_ELEMENT = 'qos'
+METADATA_VM_TUNE_PREFIX = _METADATA_PREFIX + '-tune'
+
 METADATA_CONTAINERS_URI = 'http://ovirt.org/vm/containers/1.0'
 METADATA_CONTAINERS_ELEMENT = 'container'
 METADATA_CONTAINERS_PREFIX = _METADATA_PREFIX + 'cnt'
