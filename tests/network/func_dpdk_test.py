@@ -20,7 +20,10 @@ from __future__ import absolute_import
 
 from nose.plugins.attrib import attr
 
-from .netfunctestlib import NetFuncTestCase
+from .netfunctestlib import NetFuncTestCase, NOCHK
+
+
+NETWORK_NAME = 'test-network'
 
 
 @attr(type='functional', switch='ovs-dpdk')
@@ -29,3 +32,8 @@ class OvsDpdkTest(NetFuncTestCase):
     def test_dpdk0_device_exists(self):
         self.update_netinfo()
         self.assertIn('dpdk0', self.netinfo.nics)
+
+    def test_setup_ovs_dpdk(self):
+        NETCREATE = {NETWORK_NAME: {'nic': 'dpdk0', 'switch': 'ovs'}}
+        with self.setupNetworks(NETCREATE, {}, NOCHK):
+            self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])

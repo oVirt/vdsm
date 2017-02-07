@@ -141,9 +141,10 @@ class NetsAdditionSetup(object):
         if sb in self._ovs_info.bridges_by_sb:
             bridge = self._ovs_info.bridges_by_sb[sb]
         else:
-            bridge = self._create_bridge()
+            dpdk_enabled = dpdk.is_dpdk(sb)
+            bridge = self._create_bridge(dpdk_enabled)
             self._ovs_info.bridges_by_sb[sb] = bridge
-            self._create_sb_nic(bridge, sb)
+            self._create_sb_nic(bridge, sb, dpdk_enabled)
         return bridge
 
     def _create_nb(self, bridge, port):
@@ -161,9 +162,11 @@ class NetsAdditionSetup(object):
         self._transaction.add(self._ovsdb.set_interface_attr(
             net, 'mac', nic_mac))
 
-    def _create_bridge(self):
+    def _create_bridge(self, dpdk_enabled=False):
         bridge = self._create_br_name()
         self._transaction.add(self._ovsdb.add_br(bridge))
+        if dpdk_enabled:
+            self._transaction.add(self._ovsdb.set_dpdk_bridge(bridge))
         self._transaction.add(self._ovsdb.set_bridge_attr(
             bridge, 'other-config:hwaddr', _random_unicast_local_mac()))
         return bridge
@@ -172,8 +175,10 @@ class NetsAdditionSetup(object):
     def _create_br_name():
         return random_iface_name(prefix=BRIDGE_PREFIX)
 
-    def _create_sb_nic(self, bridge, nic):
+    def _create_sb_nic(self, bridge, nic, dpdk_enabled=False):
         self._transaction.add(self._ovsdb.add_port(bridge, nic))
+        if dpdk_enabled:
+            self._transaction.add(self._ovsdb.set_dpdk_port(nic))
         self._transaction.add(self._ovsdb.set_port_attr(
             nic, 'other_config:vdsm_level', info.SOUTHBOUND))
 
