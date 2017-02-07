@@ -26,6 +26,7 @@ from functools import partial
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeResourceManager
 from storagefakelib import fake_guarded_context
+from storagetestlib import FakeVolume
 from storagetestlib import fake_env
 from storagetestlib import make_qemu_chain
 from storagetestlib import qemu_pattern_verify
@@ -326,6 +327,10 @@ class TestFinalizeMerge(VdsmTestCase):
             ]):
                 env.chain = make_qemu_chain(env, size, base_fmt, chain_len)
 
+                volumes = {(vol.imgUUID, vol.volUUID): FakeVolume()
+                           for vol in env.chain}
+                env.sdcache.domains[env.sd_manifest.sdUUID].volumes = volumes
+
                 def fake_chain(self, sdUUID, imgUUID, volUUID=None):
                     return env.chain
 
@@ -401,6 +406,80 @@ class TestFinalizeMerge(VdsmTestCase):
                               new_chain)
 
             self.assertEqual(base_vol.getLegality(), sc.LEGAL_VOL)
+
+    def test_reduce_chunked(self):
+        with self.make_env(sd_type='block', format='cow', chain_len=4) as env:
+            base_vol = env.chain[1]
+            # This volume *was* prepared
+            base_vol.setLegality(sc.ILLEGAL_VOL)
+
+            top_vol = env.chain[2]
+            subchain_info = dict(sd_id=base_vol.sdUUID,
+                                 img_id=base_vol.imgUUID,
+                                 base_id=base_vol.volUUID,
+                                 top_id=top_vol.volUUID,
+                                 base_generation=0)
+            subchain = merge.SubchainInfo(subchain_info, 0)
+
+            merge.finalize(subchain)
+
+            fake_sd = env.sdcache.domains[env.sd_manifest.sdUUID]
+            fake_base_vol = fake_sd.produceVolume(subchain.img_id,
+                                                  subchain.base_id)
+
+            self.assertEqual(len(fake_base_vol.__calls__), 1)
+            optimal_size = base_vol.optimal_size() // sc.BLOCK_SIZE
+            self.assertEqual(fake_base_vol.__calls__[0],
+                             ('reduce', (optimal_size,), {}))
+
+    def test_reduce_not_chunked(self):
+        with self.make_env(sd_type='file', format='cow', chain_len=4) as env:
+            base_vol = env.chain[1]
+            # This volume *was* prepared
+            base_vol.setLegality(sc.ILLEGAL_VOL)
+
+            top_vol = env.chain[2]
+            subchain_info = dict(sd_id=base_vol.sdUUID,
+                                 img_id=base_vol.imgUUID,
+                                 base_id=base_vol.volUUID,
+                                 top_id=top_vol.volUUID,
+                                 base_generation=0)
+            subchain = merge.SubchainInfo(subchain_info, 0)
+
+            merge.finalize(subchain)
+
+            fake_sd = env.sdcache.domains[env.sd_manifest.sdUUID]
+            fake_base_vol = fake_sd.produceVolume(subchain.img_id,
+                                                  subchain.base_id)
+
+            calls = getattr(fake_base_vol, "__calls__", {})
+            # Verify that 'calls' is empty which means that 'reduce' wasn't
+            # called
+            self.assertEqual(len(calls), 0)
+
+    def test_reduce_failure(self):
+        with self.make_env(sd_type='block', format='cow', chain_len=4) as env:
+            base_vol = env.chain[0]
+            # This volume *was* prepared
+            base_vol.setLegality(sc.ILLEGAL_VOL)
+
+            top_vol = env.chain[1]
+            subchain_info = dict(sd_id=base_vol.sdUUID,
+                                 img_id=base_vol.imgUUID,
+                                 base_id=base_vol.volUUID,
+                                 top_id=top_vol.volUUID,
+                                 base_generation=0)
+            subchain = merge.SubchainInfo(subchain_info, 0)
+
+            fake_sd = env.sdcache.domains[env.sd_manifest.sdUUID]
+            fake_base_vol = fake_sd.produceVolume(subchain.img_id,
+                                                  subchain.base_id)
+            fake_base_vol.errors["reduce"] = se.LogicalVolumeExtendError(
+                "vgname", "lvname", base_vol.optimal_size())
+
+            with self.assertRaises(se.LogicalVolumeExtendError):
+                merge.finalize(subchain)
+            self.assertEqual(base_vol.getLegality(), sc.ILLEGAL_VOL)
 
     @permutations([
         # base_fmt

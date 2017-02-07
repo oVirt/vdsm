@@ -246,7 +246,14 @@ def finalize(subchain):
             dom = sdCache.produce_manifest(subchain.sd_id)
             _update_qemu_metadata(dom, subchain)
             _update_vdsm_metadata(dom, subchain)
-            subchain.base_vol.setLegality(sc.LEGAL_VOL)
+            if subchain.base_vol.chunked():
+                # optimal_size must be called when the volume is prepared
+                optimal_size = subchain.base_vol.optimal_size()
+
+        if subchain.base_vol.chunked():
+            _shrink_base_volume(subchain, optimal_size)
+
+        subchain.base_vol.setLegality(sc.LEGAL_VOL)
 
 
 def _update_qemu_metadata(dom, subchain):
@@ -282,3 +289,11 @@ def _update_vdsm_metadata(dom, subchain):
     image_repo = image.Image(repoPath)
     image_repo.syncVolumeChain(subchain.sd_id, subchain.img_id, orig_top_id,
                                new_chain)
+
+
+def _shrink_base_volume(subchain, optimal_size):
+    # Must produce a volume because subchain.base_vol is a VolumeManifest,
+    # while reduce is implemented on the Volume.
+    sd = sdCache.produce(subchain.sd_id)
+    base_vol = sd.produceVolume(subchain.img_id, subchain.base_id)
+    base_vol.reduce(optimal_size // sc.BLOCK_SIZE)

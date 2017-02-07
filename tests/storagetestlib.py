@@ -20,6 +20,8 @@ import os
 from contextlib import contextmanager
 
 from testlib import make_file, make_uuid, namedTemporaryDir
+from testlib import maybefail
+from testlib import recorded
 from storagefakelib import FakeLVM
 from storagefakelib import FakeStorageDomainCache
 from monkeypatch import MonkeyPatchScope
@@ -128,6 +130,13 @@ class FakeMetadata(dict):
 class FakeVolume(object):
 
     def __init__(self):
+        # Test may set errors here to make method calls raise expected or
+        # unexpected errors.
+        self.errors = {}
+
+    @maybefail
+    @recorded
+    def reduce(self, size):
         pass
 
 
