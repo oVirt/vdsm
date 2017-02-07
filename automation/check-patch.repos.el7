@@ -1,4 +1,4 @@
-ovirt-snapshot,http://resources.ovirt.org/pub/ovirt-4.1-snapshot/rpm/$distro
+tested,http://resources.ovirt.org/repos/ovirt/tested/4.1/rpm/$distro
 ovirt-snapshot-static,http://resources.ovirt.org/pub/ovirt-4.1-snapshot-static/rpm/$distro
 centos-glusterfs,http://mirror.centos.org/centos/7/storage/x86_64/gluster-3.8/
 centos-ovirt40-release-x86_64,http://mirror.centos.org/centos/7/virt/x86_64/ovirt-4.0/
