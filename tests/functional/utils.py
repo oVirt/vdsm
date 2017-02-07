@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -25,7 +25,6 @@ import threading
 
 from vdsm.config import config
 from vdsm.utils import retry
-from vdsm import vdscli
 from vdsm import jsonrpcvdscli
 from vdsm.network import ipwrapper
 from vdsm.network.netinfo.cache import CachingNetInfo
@@ -34,9 +33,6 @@ from vdsm.network.netconfpersistence import RunningConfig
 
 
 SUCCESS = 0
-
-_JSONRPC_ENABLED = \
-    config.getboolean('tests', 'functional_jsonrpc_enable')
 
 
 def cleanupRules(func):
@@ -81,12 +77,9 @@ class _VdsProxy(object):
         retry(self.start, (socket.error, KeyError), tries=30)
 
     def start(self):
-        if _JSONRPC_ENABLED:
-            requestQueues = config.get('addresses', 'request_queues')
-            requestQueue = requestQueues.split(",")[0]
-            self.vdscli = jsonrpcvdscli.connect(requestQueue, xml_compat=False)
-        else:
-            self.vdscli = vdscli.connect()
+        requestQueues = config.get('addresses', 'request_queues')
+        requestQueue = requestQueues.split(",")[0]
+        self.vdscli = jsonrpcvdscli.connect(requestQueue, xml_compat=False)
         self.netinfo = self._get_netinfo()
         if config.get('vars', 'net_persistence') == 'unified':
             self.config = RunningConfig()
@@ -156,11 +149,8 @@ class _VdsProxy(object):
         # add calling method for logs
         test_method, code_line = stack[3][3], stack[3][2]
         options['_caller'] = '{}:{}'.format(test_method, code_line)
-        if _JSONRPC_ENABLED:
-            result = self.vdscli.setupNetworks(networks, bonds, options,
-                                               _transport_timeout=90)
-        else:
-            result = self.vdscli.setupNetworks(networks, bonds, options)
+        result = self.vdscli.setupNetworks(networks, bonds, options,
+                                           _transport_timeout=90)
         return _parse_result(result)
 
     def _vlanInRunningConfig(self, devName, vlanId):
@@ -216,10 +206,7 @@ class _VdsProxy(object):
             return _parse_result(result)
 
     def getVmList(self, vmId):
-        if _JSONRPC_ENABLED:
-            result = self.vdscli.fullList([vmId])
-        else:
-            result = self.vdscli.list('true', [vmId])
+        result = self.vdscli.fullList([vmId])
         code, msg, vm_list = _parse_result(result, 'vmList')
         return code, msg, vm_list[0]
 
@@ -253,9 +240,6 @@ def _parse_result(result, return_value=None):
     msg = status['message']
 
     if code == SUCCESS and return_value:
-        if _JSONRPC_ENABLED:
-            return code, msg, result['result']
-        else:
-            return code, msg, result[return_value]
+        return code, msg, result['result']
     else:
         return code, msg
