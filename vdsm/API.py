@@ -514,7 +514,7 @@ class VM(APIBase):
         try:
             curVm = self._cif.vmContainer[self._UUID]
         except KeyError:
-            raise exception.NoSuchVm(vmId=self._UUID)
+            raise exception.NoSuchVM(vmId=self._UUID)
 
         return curVm.hotunplugMemory(params)
 
