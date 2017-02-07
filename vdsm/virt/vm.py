@@ -2577,7 +2577,7 @@ class Vm(object):
             self._dom.detachDevice(device_xml)
         except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                raise exception.NoSuchVm(vmId=self.id)
+                raise exception.NoSuchVM(vmId=self.id)
             raise exception.HotunplugMemFailed(str(e), vmId=self.id)
 
         return response.success()
