@@ -924,6 +924,20 @@ types:
             type: *VmExitReason
         type: object
 
+    ExternalDiskParams: &ExternalDiskParams
+        added: '4.2'
+        description: Disk information for importing external source
+        name: ExternalDiskParams
+        properties:
+        -   description: The UUID of the image that contains the volume
+            name: imageID
+            type: *UUID
+
+        -   description: The UUID of the volume
+            name: volumeID
+            type: *UUID
+        type: object
+
     ExternalDiskInfo: &ExternalDiskInfo
         added: '3.6'
         description: Disk information from external source
@@ -994,6 +1008,46 @@ types:
             PREALLOCATED: All necessary storage is allocated at Volume
                 creation time
             SPARSE: Storage is allocated as needed
+
+    ExternalVmParams: &ExternalVmParams
+        added: '4.2'
+        description: map of VM properties to convert external source
+        name: ExternalVmParams
+        properties:
+        -   defaultvalue: '[]'
+            description: list of disk devices
+            name: disks
+            type:
+            - *ExternalDiskParams
+
+        -   description: The name of the VM
+            name: vmName
+            type: string
+
+        -   description: The UUID of the underlying Storage Pool object
+            name: poolID
+            type: *UUID
+
+        -   description: The UUID of the storage domain that
+                contains the volume
+            name: domainID
+            type: *UUID
+
+        -   defaultvalue: null
+            description: Path to virtio drivers iso file
+            name: virtio_iso_path
+            type: string
+
+        -   defaultvalue: null
+            description: converted disk format (raw, cow etc)
+            name: format
+            type: *VolumeFormat
+
+        -   defaultvalue: null
+            description: disk allocation type (sparse, preallocated)
+            name: allocation
+            type: *VolumeAllocation
+        type: object
 
     ExternalVmInfo: &ExternalVmInfo
         added: '3.6'
@@ -7909,7 +7963,7 @@ Host.convertExternalVmFromOva:
 
     -   description: information of the VM such as name, id etc
         name: vminfo
-        type: *ExternalVmInfo
+        type: *ExternalVmParams
 
     -   description: Assign a UUID to this operation which can be used to
             identify it in HostStats
@@ -7940,7 +7994,7 @@ Host.convertExternalVm:
 
     -   description: information of the VM such as name, id etc
         name: vminfo
-        type: *ExternalVmInfo
+        type: *ExternalVmParams
 
     -   description: Assign a UUID to this operation which can be used to
             identify it in HostStats
