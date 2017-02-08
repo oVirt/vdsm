@@ -1,30 +1,86 @@
-localdisk vdsm hook
-===================
+# localdisk vdsm hook
 
-This hook add the ability to use fast local storage instead of shared
-storage, while using shared storage for managing VM templates.
-In the current system, a user have to choose between fast local storage
-sharing nothing with other hosts, or shared storage, where everything is
-shared between the hosts and fast local storage cannot be used.
-This feature try to mix both local and shared storage.
+## Overview
 
-A user will create a VM normally on shared storage of any type.
-To use the VM with local storage, the user will have to pin the VM to a certain
+This hook adds the ability to use fast local storage instead of shared
+storage, while using shared storage for managing VM templates.  In the
+current system, a user have to choose between fast local storage sharing
+nothing with other hosts, or shared storage, where everything is shared
+between the hosts and fast local storage cannot be used.  This feature
+try to mix both local and shared storage.
+
+
+## Warning
+
+VM using local disk must be pinned to a specific host and cannot be
+migrated between hosts.
+
+No storage operations on a VM using local disks are allowed.  For
+example, creating/deleting snapshots, moving disks, create template from
+the VM and more.
+
+The VM disks on the shared storage should not be deleted, and the
+storage domain needs to be active and accessible.
+
+
+## How it works
+
+A user will create a VM normally on shared storage of any type.  To use
+the VM with local storage, the user will have to pin the VM to a certain
 host, and enable the localdisk hook.
 
-When starting the VM on the pinned host, the localdisk hook will copy the
-VM disks from shared storage into the host local storage, and modify the
-disk path to use the local copy of the disk.
+When starting the VM on the pinned host, the localdisk hook will copy
+the VM disks from shared storage into the host local storage, and modify
+the disk path to use the local copy of the disk.
 
-The original disk may be a single volume or a chain of volumes based
-on a template. The local copy is a raw preallocated volume using a LVM logical
-volume on the special "ovirt-local" volume group.
+The original disk may be a single volume or a chain of volumes based on
+a template. The local copy is a raw preallocated volume using a LVM
+logical volume on the special "ovirt-local" volume group.
 
-Most operations are not supported on a VM using the localdisk hook.
-For example, the VM cannot be migrated to another host, cannot create snapshots,
-copy the local disk to other storage, etc.
+Most operations are not supported on a VM using the localdisk hook.  For
+example, the VM cannot be migrated to another host, cannot create
+snapshots, copy the local disk to other storage, etc.
 
-To change storage on a VM using local storage, the localdisk hook must be disabled.
+To change storage on a VM using local storage, the localdisk hook must
+be disabled.
+
+
+## Backends
+
+The backends supported are "lvm" and "lvm-thin":
+
+- "lvm" backend uses regular logical volumes.
+- "lvm-thin" backend uses logical volumes on top of thin pool.
+
+The system administrator is responsible for creating the host
+"ovirt-local" volume group and extending it with new devices if needed.
+
+For "lvm-thin", the system administrator needs to create a thin pool
+named "pool0" in the "ovirt-local" volume group, and extending the pool
+if needed.
+
+
+## Engine configuration
+
+The system administrator need to configure the engine
+UserDefinedVMProperties to support the 'localdisk' hook:
+
+    engine-config -s UserDefinedVMProperties='localdisk=^(lvm|lvm-thin)$'
+
+Restart the engine.
+
+
+## VM configuration
+
+On the VM configuration UI:
+- Add custom VM property of "localdisk" with "lvm" or "lvm-thin".
+- On the "Host" tab, enable "Start Running On:" and select a host with a
+  "ovirt-local" volume group.
+- On the "Host" tab, in "Migration mode :" select  "Do not allow
+  migration".
+
+
+## Detailed Flow
 
 Here a description of the hook flow:
 - If a matching local LV exists without the "UPDATING" tag:
@@ -40,19 +96,3 @@ Here a description of the hook flow:
   - copy the data from the shared storage disk/template.
   - once the copy operation is done, remove the "UPDATING" tag.
   - update the disk path and format and return.
-
-
-Note:
-
-The system administrator will be responsible for creating the host "ovirt-local"
-volume group and extending it with new devices if needed.
-
-The VM must be pinned to host. Any migration will cause the VM to try to
-start with local disks that are not available on the new host.
-
-The operator need to configure the engine UserDefinedVMProperties to support
-'localdisk' with value 'lvm' :
-engine-config -s UserDefinedVMProperties='localdisk=^(lvm)?$'
-
-TODO:
-Support thin LVM
