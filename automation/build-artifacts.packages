@@ -2,5 +2,6 @@ autoconf
 automake
 git
 java-1.8.0-openjdk-devel
+maven
 yum-utils
 vim-minimal
