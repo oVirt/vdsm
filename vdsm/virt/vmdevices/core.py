@@ -624,6 +624,8 @@ class Memory(Base):
                 <size unit='KiB'>524287</size>
                 <node>1</node>
             </target>
+            <alias name='dimm0'/>
+            <address type='dimm' slot='0' base='0x100000000'/>
         </memory>
         """
 
@@ -638,5 +640,13 @@ class Memory(Base):
         node = self.createXmlElem('node', None)
         node.appendTextNode(str(self.node))
         target.appendChild(node)
+        if hasattr(self, 'alias'):
+            alias = self.createXmlElem('alias', None)
+            alias.setAttrs(name=self.alias)
+            mem.appendChild(alias)
+        if hasattr(self, 'address'):
+            address = self.createXmlElem('address', None)
+            address.setAttrs(**self.address)
+            mem.appendChild(address)
 
         return mem
