@@ -41,10 +41,15 @@ def list(args):
 
 
 def create(args):
-    # TODO support thin provisioning LV
-    cmd = ["lvcreate", "-L", args.size, "-n", args.lv_name]
+    cmd = ["lvcreate", "-n", args.lv_name]
     for tag in args.addtag:
         cmd.extend(("--addtag", tag))
+    if args.size:
+        cmd.extend(("--size", args.size))
+    if args.virtualsize:
+        cmd.extend(("--virtualsize", args.virtualsize))
+    if args.thinpool:
+        cmd.extend(("--thinpool", args.thinpool))
     cmd.append(OVIRT_LOCAL_VG)
     lvm(*cmd)
 
@@ -89,7 +94,11 @@ create_parser = subparsers.add_parser("create",
 create_parser.set_defaults(command=create)
 create_parser.add_argument("--addtag", action='append', help="Tags for the LV",
                            default=[])
-create_parser.add_argument("size", help="The size needed for the LV")
+create_parser.add_argument("--size", help="The size needed for the LV")
+create_parser.add_argument("--virtualsize",
+                           help="The virtual size needed for the LV")
+create_parser.add_argument("--thinpool",
+                           help="The thin pool the LV will be attached to")
 create_parser.add_argument("lv_name", help="LV name to be created")
 
 create_parser = subparsers.add_parser("remove",

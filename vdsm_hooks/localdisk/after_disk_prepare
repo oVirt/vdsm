@@ -33,6 +33,9 @@ import hooking
 # Name of vg used for lvm based local disks
 OVIRT_LOCAL_VG = "ovirt-local"
 
+# The thin pool name in case of thin LV
+LOCAL_POOL = "pool0"
+
 # Helper to execute LVM command as super user
 HELPER = "/usr/libexec/vdsm/localdisk-helper"
 
@@ -52,6 +55,10 @@ TAG_PREFIX_VM = "VM_"
 # The LV/local disk are copied as RAW format for best performance.
 LOCAL_FORMAT = "raw"
 
+# Supported backends
+BACKEND_LVM = "lvm"
+BACKEND_LVM_THIN = "lvm-thin"
+
 
 class NoSuchLV(Exception):
     """ Raised when lv does not exists """
@@ -62,14 +69,19 @@ class LVIsUpdating(Exception):
 
 
 def main():
-    if os.environ.get('localdisk') != "lvm":
+    backend = os.environ.get('localdisk')
+    if backend is None:
         return
+    if backend not in [BACKEND_LVM, BACKEND_LVM_THIN]:
+        hooking.log("localdisk-hook: unsupported backend: %r" % backend)
+        return
+    thin = backend == BACKEND_LVM_THIN
     disk = hooking.read_json()
-    replace_disk(disk)
+    replace_disk(disk, thin)
     hooking.write_json(disk)
 
 
-def replace_disk(disk):
+def replace_disk(disk, thin):
     vm_id = os.environ['vmId']
     orig_path = disk["path"]
     img_id = disk["imageID"]
@@ -81,12 +93,12 @@ def replace_disk(disk):
     except NoSuchLV:
         hooking.log("localdisk-hook: local disk not found, "
                     "creating logical volume (name=%s)" % lv_name)
-        create_local_disk(orig_path, lv_name, vm_id, img_id, src_format)
+        create_local_disk(orig_path, lv_name, vm_id, img_id, src_format, thin)
     except LVIsUpdating:
         hooking.log("localdisk-hook: found unfinished disk, "
                     "recreating logical volume (name=%s)" % lv_name)
         remove_local_disk(lv_name)
-        create_local_disk(orig_path, lv_name, vm_id, img_id, src_format)
+        create_local_disk(orig_path, lv_name, vm_id, img_id, src_format, thin)
     else:
         hooking.log("localdisk-hook: reusing local disk " + lv_name)
         activate_lv(lv_name)
@@ -95,21 +107,21 @@ def replace_disk(disk):
     disk["format"] = LOCAL_FORMAT
 
 
-def create_local_disk(orig_path, lv_name, vm_id, img_id, src_format):
+def create_local_disk(orig_path, lv_name, vm_id, img_id, src_format, thin):
     res = qemuimg.info(orig_path)
     size = res["virtualsize"]
     hooking.log("localdisk-hook: creating logical volume (name=%s, size=%d)"
                 % (lv_name, size))
-    create_lv(lv_name, size, vm_id, img_id)
+    create_lv(lv_name, size, vm_id, img_id, thin)
     copy_collapsed(orig_path, src_format, lv_name)
     delete_lv_tag(lv_name, TAG_UPDATING)
 
 
 def copy_collapsed(src_path, src_format, lv_name):
-    hooking.log("localdisk-hook: copying image "
-                "%s to %s" % (src_path, lv_name,))
-    start = time.time()
     dst_path = lv_path(lv_name)
+    hooking.log("localdisk-hook: copying image "
+                "%s to %s" % (src_path, dst_path))
+    start = time.time()
     operation = qemuimg.convert(src_path,
                                 dst_path,
                                 srcFormat=src_format,
@@ -149,14 +161,19 @@ def lv_path(name):
     return os.path.join("/dev", OVIRT_LOCAL_VG, name)
 
 
-def create_lv(lv_name, size, vm_id, img_id):
-    helper("create",
+def create_lv(lv_name, size, vm_id, img_id, thin):
+    cmd = ["create",
            "--addtag", TAG_UPDATING,
            "--addtag", TAG_PREFIX_VM + vm_id,
            "--addtag", sc.TAG_PREFIX_IMAGE + img_id,
-           "--addtag", sc.TAG_PREFIX_PARENT + sc.BLANK_UUID,
-           str(size) + "b",
-           lv_name)
+           "--addtag", sc.TAG_PREFIX_PARENT + sc.BLANK_UUID]
+    if thin:
+        cmd.extend(("--thinpool", LOCAL_POOL))
+        cmd.extend(("--virtualsize", str(size) + "b"))
+    else:
+        cmd.extend(("--size", str(size) + "b"))
+    cmd.append(lv_name)
+    helper(*cmd)
 
 
 def helper(*args):
