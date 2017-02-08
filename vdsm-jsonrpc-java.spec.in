@@ -55,6 +55,7 @@ BuildRequires:	maven-local
 BuildRequires:	maven-source-plugin
 BuildRequires:	maven-surefire-provider-junit
 BuildRequires:	mockito
+BuildRequires:	sonatype-oss-parent
 %endif
 
 Requires:	jackson >= 1.9
