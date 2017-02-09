@@ -20,6 +20,7 @@
 
 import vmfakelib as fake
 
+from vdsm.virt import libvirtxml
 from vdsm.virt import vmxml
 from vdsm.virt.vmdevices import hostdevice, network, hwclass
 
@@ -573,7 +574,7 @@ class HostdevCreationTests(XMLTestCase):
               <memory mode="preferred" nodeset="{}" />
           </numatune> """.format(numa_node)
 
-        domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
+        domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.X86_64)
         devices = [hostdevice.HostDevice(
             self.conf, self.log, **{'type': 'hostdev', 'device': device}) for
             device in devices]
@@ -582,7 +583,7 @@ class HostdevCreationTests(XMLTestCase):
         self.assertXMLEqual(find_xml_element(xml, './numatune'), numatuneXML)
 
     def testNumaTuneXMLMultiNode(self):
-        domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
+        domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.X86_64)
         devices = [hostdevice.HostDevice(
             self.conf, self.log, **{'type': 'hostdev', 'device': device}) for
             device in [_SRIOV_PF, _SRIOV_VF, 'pci_0000_00_02_0']]

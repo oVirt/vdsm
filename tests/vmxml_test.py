@@ -30,6 +30,8 @@ from vdsm import cpuarch
 from vdsm.virt import domain_descriptor
 from vdsm.virt import vmchannels
 from vdsm.virt import vmxml
+# TODO: split those tests as well
+from vdsm.virt import libvirtxml
 
 
 from testValidation import brokentest, slowtest
@@ -75,7 +77,7 @@ class TestVmXmlFunctions(VmXmlTestCase):
          {'data1': 'vda', 'data2': 'vdb'}],
     ])
     def test_parse_drive_mapping(self, custom, mapping):
-        result = vmxml.parse_drive_mapping(custom)
+        result = libvirtxml.parse_drive_mapping(custom)
         self.assertEqual(result, mapping)
 
     @permutations([
@@ -85,7 +87,7 @@ class TestVmXmlFunctions(VmXmlTestCase):
     ])
     def test_explode_parsing_drive_mapping(self, custom, exc):
         self.assertRaises(exc,
-                          vmxml.parse_drive_mapping,
+                          libvirtxml.parse_drive_mapping,
                           custom)
 
 
@@ -401,10 +403,11 @@ class TestVmXmlMetadata(XMLTestCase):
         self.assertXMLEqual(result, expected)
 
 
-class StrippedDomain(vmxml.Domain):
+class StrippedDomain(libvirtxml.Domain):
     """
-    Bare-bones vmxml.Domain, which doesn't add elements on its __init__
-    to sinmplify the testing. Will be dropped if vmxml.Domain is refactored.
+    Bare-bones libvirtxml.Domain, which doesn't add elements on its __init__
+    to sinmplify the testing. Will be dropped if libvirtxml.Domain
+    is refactored.
     """
     def __init__(self, conf, log, arch):
         self.conf = conf

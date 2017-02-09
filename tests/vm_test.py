@@ -52,6 +52,7 @@ from vdsm import constants
 from vdsm import cpuarch
 from vdsm.common import define
 from vdsm.common import response
+from vdsm.virt import libvirtxml
 from vdsm.virt import vmxml
 from vdsm import osinfo
 from vdsm import password
@@ -137,7 +138,7 @@ class TestVm(XMLTestCase):
               </metadata>
            </domain>"""
 
-        domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
+        domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.X86_64)
         self.assertXMLEqual(domxml.toxml(), expectedXML)
 
     def testOSXMLBootMenu(self):
@@ -189,7 +190,7 @@ class TestVm(XMLTestCase):
             </os>""")
         for conf, osXML in zip(vmConfs, expectedXMLs):
             conf.update(self.conf)
-            domxml = vmxml.Domain(conf, self.log, cpuarch.X86_64)
+            domxml = libvirtxml.Domain(conf, self.log, cpuarch.X86_64)
             domxml.appendOs()
             xml = find_xml_element(domxml.toxml(), './os')
             self.assertXMLEqual(xml, osXML)
@@ -220,7 +221,7 @@ class TestVm(XMLTestCase):
 
         for vmConf, osXML in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
-            domxml = vmxml.Domain(vmConf, self.log, cpuarch.X86_64)
+            domxml = libvirtxml.Domain(vmConf, self.log, cpuarch.X86_64)
             domxml.appendOs()
             xml = find_xml_element(domxml.toxml(), './os')
             self.assertXMLEqual(xml, osXML)
@@ -249,7 +250,7 @@ class TestVm(XMLTestCase):
 
         for vmConf, osXML in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
-            domxml = vmxml.Domain(vmConf, self.log, cpuarch.PPC64)
+            domxml = libvirtxml.Domain(vmConf, self.log, cpuarch.PPC64)
             domxml.appendOs()
             xml = find_xml_element(domxml.toxml(), './os')
             self.assertXMLEqual(xml, osXML)
@@ -259,7 +260,7 @@ class TestVm(XMLTestCase):
             <features>
                   <acpi/>
             </features>"""
-        domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
+        domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.X86_64)
         domxml.appendFeatures()
         xml = find_xml_element(domxml.toxml(), './features')
         self.assertXMLEqual(xml, featuresXML)
@@ -276,7 +277,7 @@ class TestVm(XMLTestCase):
             </features>"""
         conf = {'hypervEnable': 'true'}
         conf.update(self.conf)
-        domxml = vmxml.Domain(conf, self.log, cpuarch.X86_64)
+        domxml = libvirtxml.Domain(conf, self.log, cpuarch.X86_64)
         domxml.appendFeatures()
         xml = find_xml_element(domxml.toxml(), './features')
         self.assertXMLEqual(xml, featuresXML)
@@ -297,7 +298,7 @@ class TestVm(XMLTestCase):
         serial = 'A5955881-519B-11CB-8352-E78A528C28D8_00:21:cc:68:d7:38'
         sysinfoXML = sysinfoXML % (constants.SMBIOS_MANUFACTURER,
                                    product, version, serial, self.conf['vmId'])
-        domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
+        domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.X86_64)
         domxml.appendSysinfo(product, version, serial)
         xml = find_xml_element(domxml.toxml(), './sysinfo')
         self.assertXMLEqual(xml, sysinfoXML)
@@ -379,7 +380,7 @@ class TestVm(XMLTestCase):
                 <timer name="hpet" present="no"/>
             </clock>"""
         self.conf['timeOffset'] = '-3600'
-        domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
+        domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.X86_64)
         domxml.appendClock()
         xml = find_xml_element(domxml.toxml(), './clock')
         self.assertXMLEqual(xml, clockXML)
@@ -394,7 +395,7 @@ class TestVm(XMLTestCase):
             </clock>"""
         conf = {'timeOffset': '-3600', 'hypervEnable': 'true'}
         conf.update(self.conf)
-        domxml = vmxml.Domain(conf, self.log, cpuarch.X86_64)
+        domxml = libvirtxml.Domain(conf, self.log, cpuarch.X86_64)
         domxml.appendClock()
         xml = find_xml_element(domxml.toxml(), './clock')
         self.assertXMLEqual(xml, clockXML)
@@ -439,7 +440,7 @@ class TestVm(XMLTestCase):
                                      {'cpus': '2,3', 'memory': '5120',
                                       'nodeIndex': 1}]}
         vmConf.update(self.conf)
-        domxml = vmxml.Domain(vmConf, self.log, cpuarch.X86_64)
+        domxml = libvirtxml.Domain(vmConf, self.log, cpuarch.X86_64)
         domxml.appendCpu()
         domxml.appendNumaTune()
         xml = domxml.toxml()
@@ -456,7 +457,7 @@ class TestVm(XMLTestCase):
         path = '/tmp/channel-socket'
         name = 'org.linux-kvm.port.0'
         channelXML = channelXML % (name, path)
-        domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
+        domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.X86_64)
         domxml._appendAgentDevice(path, name)
         xml = find_xml_element(domxml.toxml(), './devices/channel')
         self.assertXMLEqual(xml, channelXML)
@@ -469,7 +470,7 @@ class TestVm(XMLTestCase):
         vmConfs = [{}, {'tabletEnable': 'true'}]
         for vmConf, inputXML in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
-            domxml = vmxml.Domain(vmConf, self.log, cpuarch.X86_64)
+            domxml = libvirtxml.Domain(vmConf, self.log, cpuarch.X86_64)
             domxml.appendInput()
             xml = find_xml_element(domxml.toxml(), './devices/input')
             self.assertXMLEqual(xml, inputXML)
@@ -482,7 +483,7 @@ class TestVm(XMLTestCase):
         vmConfs = [{}, {'tabletEnable': 'true'}]
         for vmConf, inputXML in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
-            domxml = vmxml.Domain(vmConf, self.log, cpuarch.PPC64)
+            domxml = libvirtxml.Domain(vmConf, self.log, cpuarch.PPC64)
             domxml.appendInput()
             xml = find_xml_element(domxml.toxml(), './devices/input')
             self.assertXMLEqual(xml, inputXML)

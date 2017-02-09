@@ -1272,6 +1272,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virt/domain_descriptor.py*
 %{python_sitelib}/%{vdsm_name}/virt/events.py*
 %{python_sitelib}/%{vdsm_name}/virt/guestagent.py*
+%{python_sitelib}/%{vdsm_name}/virt/libvirtxml.py*
 %{python_sitelib}/%{vdsm_name}/virt/migration.py*
 %{python_sitelib}/%{vdsm_name}/virt/periodic.py*
 %{python_sitelib}/%{vdsm_name}/virt/recovery.py*

@@ -59,6 +59,7 @@ from vdsm.network import api as net_api
 from vdsm.storage import fileUtils
 from vdsm.storage import outOfProcess as oop
 from vdsm.virt import guestagent
+from vdsm.virt import libvirtxml
 from vdsm.virt import migration
 from vdsm.virt import recovery
 from vdsm.virt import sampling
@@ -1728,7 +1729,7 @@ class Vm(object):
     def _buildDomainXML(self):
         serial_console = self._getSerialConsole()
 
-        domxml = vmxml.Domain(self.conf, self.log, self.arch)
+        domxml = libvirtxml.Domain(self.conf, self.log, self.arch)
         domxml.appendOs(use_serial_console=(serial_console is not None))
 
         if cpuarch.is_x86(self.arch):
