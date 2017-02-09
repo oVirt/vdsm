@@ -555,13 +555,6 @@ parameters = [
             'could be renamed or removed in the next releases.'),
     ]),
 
-    # Section: [tests]
-    ('tests', [
-
-        ('functional_jsonrpc_enable', 'true',
-            'Enable jsonrpc when running functional tests.'),
-    ]),
-
 ]
 
 
