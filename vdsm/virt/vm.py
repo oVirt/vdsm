@@ -665,6 +665,7 @@ class Vm(object):
             self._createTransientDisk(drive)
 
     def _getShutdownReason(self, stopped_shutdown):
+        exit_code = NORMAL
         with self._shutdownLock:
             reason = self._shutdownReason
         if stopped_shutdown:
@@ -681,9 +682,10 @@ class Vm(object):
                     reason = vmexitreason.USER_SHUTDOWN
                 else:
                     reason = vmexitreason.HOST_SHUTDOWN
-        return reason
+                    exit_code = ERROR
+        return exit_code, reason
 
-    def _onQemuDeath(self, reason):
+    def _onQemuDeath(self, exit_code, reason):
         self.log.info('underlying process disconnected')
         self._dom = virdomain.Disconnected(self.id)
         # Try release VM resources first, if failed stuck in 'Powering Down'
@@ -694,7 +696,7 @@ class Vm(object):
             if reason is None:
                 self.setDownStatus(ERROR, vmexitreason.LOST_QEMU_CONNECTION)
             else:
-                self.setDownStatus(NORMAL, reason)
+                self.setDownStatus(exit_code, reason)
         self._powerDownEvent.set()
 
     def _loadCorrectedTimeout(self, base, doubler=20, load=None):
@@ -4451,9 +4453,9 @@ class Vm(object):
                     self.lastStatus == vmstatus.SAVING_STATE):
                 hooks.after_vm_hibernate(self._domain.xml, self.conf)
             else:
-                reason = self._getShutdownReason(
+                exit_code, reason = self._getShutdownReason(
                     detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN)
-                self._onQemuDeath(reason)
+                self._onQemuDeath(exit_code, reason)
         elif event == libvirt.VIR_DOMAIN_EVENT_SUSPENDED:
             self._setGuestCpuRunning(False)
             self._logGuestCpuStatus('onSuspend')
