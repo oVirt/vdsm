@@ -45,7 +45,7 @@ class Base(vmxml.Device):
         self.log = log
         self.specParams = {}
         self.custom = kwargs.pop('custom', {})
-        for attr, value in kwargs.iteritems():
+        for attr, value in kwargs.items():
             try:
                 setattr(self, attr, value)
             except AttributeError:  # skip read-only properties

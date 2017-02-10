@@ -274,7 +274,7 @@ def device_address(device_xml, index=0):
     # PCI = {'type':'pci', 'domain':'0x0000', 'bus':'0x00',
     #        'slot':'0x0c', 'function':'0x0'}
     # IDE = {'type':'drive', 'controller':'0', 'bus':'0', 'unit':'0'}
-    for key, value in attributes(address_element).iteritems():
+    for key, value in attributes(address_element).items():
         address[key.strip()] = value.strip()
     return address
 
@@ -331,7 +331,7 @@ class Element(object):
         return iter(self._elem)
 
     def setAttrs(self, **attrs):
-        for attrName, attrValue in attrs.iteritems():
+        for attrName, attrValue in attrs.items():
             self._elem.set(attrName, attrValue)
 
     def setAttr(self, attrName, attrValue):

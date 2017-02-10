@@ -237,7 +237,7 @@ def validate_io_tune_params(params):
     ioTuneParams = ('total_bytes_sec', 'read_bytes_sec',
                     'write_bytes_sec', 'total_iops_sec',
                     'write_iops_sec', 'read_iops_sec')
-    for key, value in params.iteritems():
+    for key, value in params.items():
         try:
             if key in ioTuneParams:
                 params[key] = int(value)
