@@ -21,6 +21,7 @@
 
 import json
 import os
+import tempfile
 import time
 
 from vdsm import cmdutils
@@ -58,6 +59,10 @@ LOCAL_FORMAT = "raw"
 # Supported backends
 BACKEND_LVM = "lvm"
 BACKEND_LVM_THIN = "lvmthin"
+
+# Directory used for temporary files when converting images.
+# The file system mounted here must support directio I/O.
+TMP_DIR = "/var/tmp"
 
 
 class NoSuchLV(Exception):
@@ -110,30 +115,61 @@ def replace_disk(disk, thin):
 def create_local_disk(orig_path, lv_name, vm_id, img_id, src_format, thin):
     res = qemuimg.info(orig_path)
     size = res["virtualsize"]
-    hooking.log("localdisk-hook: creating logical volume (name=%s, size=%d)"
-                % (lv_name, size))
+    hooking.log("localdisk-hook: creating logical volume (name=%s, size=%d, "
+                "thin=%s)"
+                % (lv_name, size, thin))
     create_lv(lv_name, size, vm_id, img_id, thin)
-    copy_collapsed(orig_path, src_format, lv_name)
+    dst_path = lv_path(lv_name)
+    start = time.time()
+    hooking.log("localdisk-hook: copying image %s to %s"
+                % (orig_path, dst_path))
+    if thin:
+        convert_image_thin(orig_path, src_format, dst_path)
+    else:
+        convert_image(orig_path, src_format, dst_path)
+    elapsed = time.time() - start
+    hooking.log("localdisk-hook: copy completed in %.3f seconds" % (elapsed,))
     delete_lv_tag(lv_name, TAG_UPDATING)
 
 
-def copy_collapsed(src_path, src_format, lv_name):
-    dst_path = lv_path(lv_name)
-    hooking.log("localdisk-hook: copying image "
-                "%s to %s" % (src_path, dst_path))
-    start = time.time()
+def remove_local_disk(lv_name):
+    helper("remove", lv_name)
+
+
+# Copying images
+
+def convert_image_thin(src_path, src_format, dst_path):
+    # We copy in two steps:
+    # 1. Convert image to raw sparse file on local storage
+    # 2. Write sparse file to lv, keeping sparseness
+    # On files systems supporting sparsness (e.g. NFS 4.2), this is also the
+    # fastest way to copy from shared storage. On other file systems, copying
+    # raw imaged directly may be faster.
+    with tempfile.NamedTemporaryFile(dir=TMP_DIR, prefix="localdisk.") as tmp:
+        convert_image(src_path, src_format, tmp.name)
+        copy_sparse(tmp.name, dst_path)
+
+
+def convert_image(src_path, src_format, dst_path):
     operation = qemuimg.convert(src_path,
                                 dst_path,
                                 srcFormat=src_format,
                                 dstFormat=qemuimg.FORMAT.RAW)
     with utils.closing(operation):
         operation.wait_for_completion()
-    elapsed = time.time() - start
-    hooking.log("localdisk-hook: copy completed in %.3f seconds" % (elapsed,))
 
 
-def remove_local_disk(lv_name):
-    helper("remove", lv_name)
+def copy_sparse(src_path, dst_path):
+    cmd = ["/usr/bin/dd",
+           "if=" + src_path,
+           "of=" + dst_path,
+           "bs=1M",
+           "iflag=direct",
+           "oflag=direct",
+           "conv=sparse"]
+    rc, out, err = hooking.execCmd(cmd, raw=True)
+    if rc != 0:
+        raise cmdutils.Error(cmd=cmd, rc=rc, out=out, err=err)
 
 
 # LVM helper operation
