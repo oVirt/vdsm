@@ -497,9 +497,6 @@ class TestVm(XMLTestCase):
             {'aaa': 100},
             {'read_iops_sec': 'aaa'}]
 
-        devConfs = [dict(specParams=dict(ioTune=tuneConf), **basicConf)
-                    for tuneConf in tuneConfs]
-
         expectedExceptMsgs = [
             'A non-zero total value and non-zero read/write value for'
             ' iops_sec can not be set at the same time',
@@ -510,14 +507,14 @@ class TestVm(XMLTestCase):
 
         vmConf = {'custom': {'viodiskcache': 'writethrough'}}
 
-        for (devConf, exceptionMsg) in \
-                zip(devConfs, expectedExceptMsgs):
-            drive = vmdevices.storage.Drive(vmConf, self.log, **devConf)
+        for (tuneConf, exceptionMsg) in \
+                zip(tuneConfs, expectedExceptMsgs):
+            drive = vmdevices.storage.Drive(vmConf, self.log, **basicConf)
             # Patch Drive.blockDev to skip the block device checking.
             drive._blockDev = False
 
             with self.assertRaises(Exception) as cm:
-                drive.getXML()
+                drive.iotune = tuneConf
 
             self.assertEqual(cm.exception.args[0], exceptionMsg)
 

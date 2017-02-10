@@ -467,10 +467,6 @@ class Drive(core.Base):
         if self.device == 'lun' and self.format == 'cow':
             raise ValueError("cow format is not supported for LUN devices")
 
-        iotune = self.iotune
-        if iotune:
-            vmtune.validate_io_tune_params(iotune)
-
     @property
     def _xpath(self):
         """
@@ -500,7 +496,9 @@ class Drive(core.Base):
 
     @iotune.setter
     def iotune(self, value):
-        self.specParams['ioTune'] = value.copy()
+        iotune = value.copy()
+        vmtune.validate_io_tune_params(iotune)
+        self.specParams['ioTune'] = iotune
 
 
 def _getSourceXML(drive):

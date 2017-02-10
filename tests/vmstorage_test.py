@@ -348,6 +348,21 @@ class DriveValidation(VdsmTestCase):
     def test_network_disk_no_protocol(self):
         self.check(diskType=DISK_TYPE.NETWORK, hosts=[{}])
 
+    @permutations([
+        # iotune
+        [{'total_bytes_sec': -2}],
+        [{'write_bytes_sec': 'a'}],
+        [{'bogus_setting': 1}],
+    ])
+    def test_set_iotune(self, iotune):
+        conf = drive_config(
+            serial='54-a672-23e5b495a9ea',
+        )
+        drive = Drive({}, self.log, **conf)
+
+        with self.assertRaises(Exception):
+            drive.iotune = iotune
+
     def check(self, **kw):
         conf = drive_config(**kw)
         drive = Drive({}, self.log, **conf)
