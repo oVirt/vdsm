@@ -82,10 +82,11 @@ class ConfigError(Exception):
 
 class DomainParser(object):
 
-    def __init__(self, xml_tree, uuid, log):
+    def __init__(self, xml_tree, uuid, log, image=None):
         self._xml_tree = xml_tree
         self._uuid = uuid
         self._log = log
+        self._image = image
 
     @property
     def uuid(self):
@@ -156,15 +157,6 @@ class DomainParser(object):
             self._log.warning(
                 'found more than one image: %r, using the first one',
                 images)
-        image = self._override_image()
-        if image is None:
-            image = images[0]
-        return image
-
-    def _override_image(self):
-        cont = self._xml_tree.find(
-            './metadata/{%s}container' % xmlconstants.METADATA_CONTAINERS_URI
-        )
-        if cont is None:
-            return None
-        return cont.get('image')
+        if self._image is None:
+            return images[0]
+        return self._image
