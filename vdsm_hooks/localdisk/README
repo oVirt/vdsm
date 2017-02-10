@@ -55,6 +55,10 @@ The backends supported are "lvm" and "lvmthin":
 The system administrator is responsible for creating the host
 "ovirt-local" volume group and extending it with new devices if needed.
 
+The localdisk hook uses temporary files in /var/tmp when converting images from
+shared storage. The system administrator is responsible for having enough space
+in this directory.
+
 For "lvmthin", the system administrator needs to create a thin pool
 named "pool0" in the "ovirt-local" volume group, and extending the pool
 if needed.
