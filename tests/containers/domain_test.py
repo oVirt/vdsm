@@ -26,7 +26,6 @@ import libvirt
 from vdsm.virt.containers import docker
 from vdsm.virt.containers import domain
 from vdsm.virt.containers import doms
-from vdsm.virt.containers import xmlfile
 
 from monkeypatch import MonkeyPatchScope
 
@@ -82,24 +81,6 @@ class DomainXMLTests(conttestlib.RunnableTestCase):
         self.assertEqual(
             dom.XMLDesc(libvirt.VIR_DOMAIN_XML_UPDATE_CPU),
             _TEST_DOM_XML)
-
-    def test_missing_emulator_metadata(self):
-        xmldesc = """<?xml version="1.0" encoding="utf-8"?>
-        <domain type="kvm" xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
-            <name>testVm</name>
-            <uuid>%s</uuid>
-            <maxMemory>0</maxMemory>
-            <metadata>
-              <ovirt:qos/>
-            </metadata>
-            <devices>
-                <emulator>qemu-system-x86_64</emulator>
-            </devices>
-        </domain>
-        """ % str(uuid.uuid4())
-        self.assertRaises(xmlfile.ConfigError,
-                          domain.Domain,
-                          xmldesc)
 
 
 class DomainAPITests(conttestlib.RunnableTestCase):

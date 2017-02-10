@@ -29,8 +29,6 @@ import xml.etree.ElementTree as ET
 
 import libvirt
 
-from vdsm.virt import xmlconstants
-
 from . import errors
 from . import events
 from . import docker
@@ -61,9 +59,7 @@ class Domain(object):
         self._xmldesc = xmldesc
         self._root = ET.fromstring(xmldesc)
         self._vm_uuid = uuid.UUID(self._root.find('./uuid').text)
-        rt_name = _find_container_type(self._root)
-        self._log.debug('initializing %r container %r',
-                        rt_name, self.UUIDString())
+        self._log.debug('initializing docker container %r', self.UUIDString())
         self._rt = docker.Runtime(rt_uuid)
         self._xml_file = xmlfile.XMLFile(self._rt.uuid)
         self._log.debug('initializing container %r runtime %r',
@@ -161,12 +157,3 @@ class Domain(object):
 
     def _fake_method(self, *args):
         errors.throw()
-
-
-def _find_container_type(root):
-    cont = root.find(
-        './metadata/{%s}container' % xmlconstants.METADATA_CONTAINERS_URI
-    )
-    if cont is None:
-        raise xmlfile.ConfigError('missing container type')
-    return cont.text.strip()
