@@ -47,15 +47,15 @@ be disabled.
 
 ## Backends
 
-The backends supported are "lvm" and "lvm-thin":
+The backends supported are "lvm" and "lvmthin":
 
 - "lvm" backend uses regular logical volumes.
-- "lvm-thin" backend uses logical volumes on top of thin pool.
+- "lvmthin" backend uses logical volumes on top of thin pool.
 
 The system administrator is responsible for creating the host
 "ovirt-local" volume group and extending it with new devices if needed.
 
-For "lvm-thin", the system administrator needs to create a thin pool
+For "lvmthin", the system administrator needs to create a thin pool
 named "pool0" in the "ovirt-local" volume group, and extending the pool
 if needed.
 
@@ -65,7 +65,7 @@ if needed.
 The system administrator need to configure the engine
 UserDefinedVMProperties to support the 'localdisk' hook:
 
-    engine-config -s UserDefinedVMProperties='localdisk=^(lvm|lvm-thin)$'
+    engine-config -s UserDefinedVMProperties='localdisk=^(lvm|lvmthin)$'
 
 Restart the engine.
 
@@ -73,7 +73,8 @@ Restart the engine.
 ## VM configuration
 
 On the VM configuration UI:
-- Add custom VM property of "localdisk" with "lvm" or "lvm-thin".
+
+- Add custom VM property of "localdisk" with "lvm" or "lvmthin".
 - On the "Host" tab, enable "Start Running On:" and select a host with a
   "ovirt-local" volume group.
 - On the "Host" tab, in "Migration mode :" select  "Do not allow

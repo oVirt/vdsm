@@ -58,7 +58,7 @@ PROGRESS_INTERVAL = 30
 
 # Supported backends
 BACKEND_LVM = "lvm"
-BACKEND_LVM_THIN = "lvm-thin"
+BACKEND_LVM_THIN = "lvmthin"
 
 
 class NoSuchLV(Exception):
