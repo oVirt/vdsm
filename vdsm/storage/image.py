@@ -1273,19 +1273,20 @@ class Image:
                 break
         if len(subChain) == 0:
             return
-        self.log.debug("unlinking subchain: %s" % subChain)
+        self.log.info("Unlinking subchain: %s", subChain)
 
         sdDom = sdCache.produce(sdUUID=sdUUID)
         dstParent = sdDom.produceVolume(imgUUID, subChain[0]).getParent()
         subChainTailVol = sdDom.produceVolume(imgUUID, subChain[-1])
         if subChainTailVol.isLeaf():
-            self.log.debug("Leaf volume is being removed from the chain. "
-                           "Marking it ILLEGAL to prevent data corruption")
+            self.log.info("Leaf volume %s is being removed from the chain. "
+                          "Marking it ILLEGAL to prevent data corruption",
+                          subChainTailVol.volUUID)
             subChainTailVol.setLegality(sc.ILLEGAL_VOL)
         else:
             for childID in subChainTailVol.getChildren():
-                self.log.debug("Setting parent of volume %s to %s",
-                               childID, dstParent)
+                self.log.info("Setting parent of volume %s to %s",
+                              childID, dstParent)
                 sdDom.produceVolume(imgUUID, childID). \
                     setParentMeta(dstParent)
 
