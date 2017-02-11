@@ -1139,6 +1139,9 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
     # (p)etabytes, (e)xabytes.
     # Capitalise to use multiples of 1000 (S.I.) instead of 1024.
 
+    log.info("Creating LV (vg=%s, lv=%s, size=%sm, activate=%s, "
+             "contiguous=%s, initialTags=%s)",
+             vgName, lvName, size, activate, contiguous, initialTags)
     cont = {True: "y", False: "n"}[contiguous]
     cmd = ["lvcreate"]
     cmd.extend(LVM_NOBACKUP)
@@ -1173,6 +1176,7 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
 
 def removeLVs(vgName, lvNames):
     lvNames = _normalizeargs(lvNames)
+    log.info("Removing LVs (vg=%s, lvs=%s)", vgName, lvNames)
     # Assert that the LVs are inactive before remove.
     for lvName in lvNames:
         if _isLVActive(vgName, lvName):
@@ -1203,6 +1207,7 @@ def removeLVs(vgName, lvNames):
 
 
 def extendLV(vgName, lvName, size_mb):
+    log.info("Extending LV %s/%s to %s megabytes", vgName, lvName, size_mb)
     cmd = ("lvextend",) + LVM_NOBACKUP
     cmd += ("--size", "%sm" % (size_mb,), "%s/%s" % (vgName, lvName))
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName,)))
@@ -1238,6 +1243,7 @@ def extendLV(vgName, lvName, size_mb):
 
 
 def reduceLV(vgName, lvName, size_mb):
+    log.info("Reducing LV %s/%s to %s megabytes", vgName, lvName, size_mb)
     cmd = ("lvreduce",) + LVM_NOBACKUP
     cmd += ("--size", "%sm" % (size_mb,), "%s/%s" % (vgName, lvName))
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName,)))
@@ -1299,6 +1305,7 @@ def deactivateLVs(vgName, lvNames):
 
 
 def renameLV(vg, oldlv, newlv):
+    log.info("Renaming LV (vg=%s, oldlv=%s, newlv=%s)", vg, oldlv, newlv)
     cmd = ("lvrename",) + LVM_NOBACKUP + (vg, oldlv, newlv)
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vg, )))
     if rc != 0:
@@ -1309,6 +1316,7 @@ def renameLV(vg, oldlv, newlv):
 
 
 def refreshLVs(vgName, lvNames):
+    log.info("Refreshing LVs (vg=%s, lvs=%s)", vgName, lvNames)
     # If  the  logical  volumes  are active, reload their metadata.
     cmd = ['lvchange', '--refresh']
     cmd.extend("%s/%s" % (vgName, lv) for lv in lvNames)
@@ -1321,6 +1329,7 @@ def refreshLVs(vgName, lvNames):
 # Fix me: Function name should mention LV or unify with VG version.
 # may be for all the LVs in the whole VG?
 def addtag(vg, lv, tag):
+    log.info("Add LV tag (vg=%s, lv=%s, tag=%s)", vg, lv, tag)
     lvname = "%s/%s" % (vg, lv)
     cmd = ("lvchange",) + LVM_NOBACKUP + ("--addtag", tag) + (lvname,)
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vg, )))
@@ -1331,6 +1340,8 @@ def addtag(vg, lv, tag):
 
 
 def changeLVTags(vg, lv, delTags=(), addTags=()):
+    log.info("Change LV tags (vg=%s, lv=%s, delTags=%s, addTags=%s)",
+             vg, lv, delTags, addTags)
     lvname = '%s/%s' % (vg, lv)
     delTags = set(delTags)
     addTags = set(addTags)
@@ -1389,6 +1400,8 @@ def _isLVActive(vgName, lvName):
 
 
 def changeVGTags(vgName, delTags=(), addTags=()):
+    log.info("Changing VG tags (vg=%s, delTags=%s, addTags=%s)",
+             vgName, delTags, addTags)
     delTags = set(delTags)
     addTags = set(addTags)
     if delTags.intersection(addTags):
@@ -1450,6 +1463,7 @@ def listPVNames(vgName):
 
 
 def setrwLV(vg, lv, rw=True):
+    log.info("Changing LV permissions (vg=%s, lv=%s, rw=%s)", vg, lv, rw)
     permission = {False: 'r', True: 'rw'}[rw]
     try:
         changelv(vg, lv, ("--permission", permission))
@@ -1477,6 +1491,8 @@ def replaceLVTag(vg, lv, deltag, addtag):
     """
     Removes and add tags atomically.
     """
+    log.info("Replacing LV tag (vg=%s, lv=%s, deltag=%s, addtag=%s)",
+             vg, lv, deltag, addtag)
     lvname = "%s/%s" % (vg, lv)
     cmd = (("lvchange",) + LVM_NOBACKUP + ("--deltag", deltag) +
            ("--addtag", addtag) + (lvname,))
