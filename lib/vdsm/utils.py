@@ -513,18 +513,22 @@ def running(runnable):
         runnable.stop()
 
 
+def terminate(proc):
+    try:
+        if proc.poll() is None:
+            logging.debug('Terminating process pid=%d' % proc.pid)
+            proc.kill()
+            proc.wait()
+    except Exception as e:
+        raise TerminatingFailure(proc.pid, e)
+
+
 @contextmanager
 def terminating(proc):
     try:
         yield proc
     finally:
-        try:
-            if proc.poll() is None:
-                logging.debug('Terminating process pid=%d' % proc.pid)
-                proc.kill()
-                proc.wait()
-        except Exception as e:
-            raise TerminatingFailure(proc.pid, e)
+        terminate(proc)
 
 
 def get_selinux_enforce_mode():
