@@ -34,7 +34,6 @@ class Configurator(object):
     def __init__(self, configApplier, inRollback=False):
         self.configApplier = configApplier
         self._inRollback = inRollback
-        self._libvirtAdded = set()
         self.runningConfig = None
 
     def __enter__(self):
@@ -111,7 +110,6 @@ class Configurator(object):
         self.configApplier.createLibvirtNetwork(network,
                                                 isinstance(iface, Bridge),
                                                 iface.name)
-        self._libvirtAdded.add(network)
 
     def removeLibvirtNetwork(self, network):
         self.configApplier.removeLibvirtNetwork(network)
