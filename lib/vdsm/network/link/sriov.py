@@ -28,6 +28,7 @@ from vdsm.network import netconfpersistence
 from . import iface
 
 
+DRIVERS_PATH = '/sys/bus/pci/drivers/'
 _SYSFS_SRIOV_NUMVFS = '/sys/bus/pci/devices/{}/sriov_numvfs'
 
 
@@ -42,7 +43,7 @@ def update_numvfs(pci_path, numvfs):
         f.write('0')
         f.write(str(numvfs))
         _wait_for_udev_events()
-        _set_valid_macs_for_igb_vfs(pci_path, numvfs)
+        _set_valid_vf_macs(pci_path, numvfs)
 
 
 def persist_numvfs(device_name, numvfs):
@@ -57,22 +58,35 @@ def persist_numvfs(device_name, numvfs):
         f.write(str(numvfs))
 
 
-def _set_valid_macs_for_igb_vfs(pci_path, numvfs):
+def _set_valid_vf_macs(pci_path, numvfs):
     """
-        igb driver forbids resetting VF MAC address back to 00:00:00:00:00:00,
+        some drivers forbid resetting VF MAC address back to 00:00:00:00:00:00,
         which was its original value. By setting the MAC addresses to a valid
-        value (e.g. TARGET_MAC) upon restoration the valid address will
-        be accepted.
-       (BZ: https://bugzilla.redhat.com/1341248)
+        value, upon restoration the valid address will be accepted.
+
+        The drivers and their BZ's:
+        1) igb: https://bugzilla.redhat.com/1341248
+        2) ixgbe: https://bugzilla.redhat.com/1415609
+
+        Once resolved, this method and its accompanying methods should
+        be removed.
     """
-    if _is_igb_driver(pci_path):
+    if _is_zeromac_limited_driver(pci_path):
         _modify_mac_addresses(pci_path, numvfs)
 
 
-def _is_igb_driver(pci_path):
-    igb_driver_path = '/sys/bus/pci/drivers/igb'
-    return (os.path.exists(igb_driver_path) and
-            pci_path in os.listdir(igb_driver_path))
+def _is_zeromac_limited_driver(pci_path):
+    ZEROMAC_LIMITED_DRIVERS = ('igb',
+                               'ixgbe',)
+
+    for driver in ZEROMAC_LIMITED_DRIVERS:
+        driver_path = DRIVERS_PATH + driver
+
+        if (os.path.exists(driver_path) and
+                pci_path in os.listdir(driver_path)):
+                    return True
+
+    return False
 
 
 def _modify_mac_addresses(pci_path, numvfs):
