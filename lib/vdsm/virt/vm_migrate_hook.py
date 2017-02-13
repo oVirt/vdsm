@@ -27,7 +27,7 @@ import xml.etree.cElementTree as ET
 
 import six
 
-from vdsm import jsonrpcvdscli
+from vdsm import client
 from vdsm.common.conv import tobool
 from vdsm.config import config
 from vdsm.network import api as net_api
@@ -169,14 +169,12 @@ def _set_source_bridge(interface, bridge):
 
 
 def _vm_item(vdscli, vm_uuid):
-    result = vdscli.fullList(fullStatus=True, vmList=(vm_uuid,))
-    return result['items'][0] if len(result['items']) else None
+    result = vdscli.Host.getVMFullList(vmList=(vm_uuid,))
+    return result[0] if len(result) else None
 
 
 def _vdscli():
-    request_queues = config.get('addresses', 'request_queues')
-    request_queue = request_queues.split(',')[0]
-    return jsonrpcvdscli.connect(request_queue)
+    return client.connect('localhost')
 
 
 def _protected_customized_interface(target_conf):

@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,16 +28,15 @@ from testlib import XMLTestCase
 from vdsm.virt import vm_migrate_hook
 
 
-class MockVdscli(object):
-    @staticmethod
-    def fullList(*args, **kwargs):
-        return {'items': [VM_FULL_LIST]}
+class MockClient(object):
+    @classmethod
+    def connect(cls, host):
+        return cls()
 
-
-class MockJsonrpcvdscli(object):
-    @staticmethod
-    def connect(q):
-        return MockVdscli()
+    class Host():
+        @staticmethod
+        def getVMFullList(vmList=None):
+            return [VM_FULL_LIST]
 
 
 @attr(type='unit')
@@ -93,7 +92,7 @@ class TestOvsHookMigration(XMLTestCase):
 
     # mock migration_ovs_hook_enabled
     @mock.patch('vdsm.config.config.get', lambda *x: 'true')
-    @mock.patch.object(vm_migrate_hook, 'jsonrpcvdscli', MockJsonrpcvdscli)
+    @mock.patch.object(vm_migrate_hook, 'client', MockClient)
     @mock.patch.object(vm_migrate_hook.net_api, 'net2vlan')
     @mock.patch.object(vm_migrate_hook.net_api, 'ovs_bridge')
     def _assert_device_migration(self, mock_ovs_bridge, mock_net2vlan,
