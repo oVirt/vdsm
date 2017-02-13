@@ -36,12 +36,11 @@ import json
 import sys
 import uuid
 
-from vdsm import jsonrpcvdscli
+from vdsm import client
 
 
 _HOST = '127.0.0.1'
 _PORT = 54321
-_REQUEST_QUEUE = 'jms.topic.vdsm_requests'
 
 
 def _read_conf(args):
@@ -82,9 +81,6 @@ def main():
     parser.add_argument('--no-tls',
                         action='store_true',
                         help='do NOT use TLS to connect')
-    parser.add_argument('--request-queue', type=str,
-                        default=_REQUEST_QUEUE,
-                        help='Vdsm request queue name')
     parser.add_argument('--name', type=str,
                         default=default_uuid,
                         help='vm name')
@@ -100,20 +96,17 @@ def main():
                         help='vm configuration, JSON format')
     args = parser.parse_args()
 
-
     conf = _read_conf(args)
     conf = _update_conf(conf, args, default_uuid)
 
     use_tls = not args.no_tls
-    serv = jsonrpcvdscli.connect(
-        args.request_queue,
+    serv = client.connect(
         host=args.host,
         port=args.port,
-        useSSL=use_tls,
-        xml_compat=False,
+        use_tls=use_tls,
     )
 
-    serv.create(conf)
+    serv.VM.create(vmID=conf['vmId'], vmParams=conf)
 
     print(conf['vmId'])
 
