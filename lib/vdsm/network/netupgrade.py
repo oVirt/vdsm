@@ -25,12 +25,13 @@ import six
 from vdsm.config import config
 from vdsm.constants import LEGACY_MANAGEMENT_NETWORKS
 
+from vdsm.network import libvirt
 from vdsm.network.canonicalize import canonicalize_bondings
 from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network.configurators.ifcfg import Ifcfg
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netswitch import netinfo
-from vdsm.network.netinfo.cache import NetInfo
+from vdsm.network.netinfo.cache import NetInfo, libvirt_vdsm_nets
 from vdsm.network.kernelconfig import KernelConfig
 
 
@@ -44,7 +45,10 @@ def upgrade():
         _upgrade_unified_configuration(rconfig)
         _upgrade_unified_configuration(pconfig)
     else:
-        _create_unified_configuration(rconfig, NetInfo(netinfo()))
+        # In case unified config has not existed before, it is assumed that
+        # the networks existance have been persisted in libvirt db.
+        vdsmnets = libvirt_vdsm_nets(libvirt.networks())
+        _create_unified_configuration(rconfig, NetInfo(netinfo(vdsmnets)))
 
 
 def _upgrade_volatile_running_config(rconfig):

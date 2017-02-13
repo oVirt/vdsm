@@ -25,13 +25,11 @@ import six
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.kernelconfig import KernelConfig
-from vdsm.network.libvirt import networks as libvirt_nets
 from vdsm.network.link import iface
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.setup import SetupBonds
-from vdsm.network.netinfo.cache import (libvirtNets2vdsm, get as netinfo_get,
-                                        CachingNetInfo,
-                                        NetInfo)
+from vdsm.network.netinfo.cache import (networks_base_info, get as netinfo_get,
+                                        CachingNetInfo, NetInfo)
 from vdsm.tool.service import service_status
 from vdsm.utils import memoized
 
@@ -139,9 +137,8 @@ def setup(networks, bondings, options, in_rollback):
 
 
 def _setup_legacy(networks, bondings, options, in_rollback):
-
-    _libvirt_nets = libvirt_nets()
-    _netinfo = CachingNetInfo(netinfo_get(libvirtNets2vdsm(_libvirt_nets)))
+    running_nets = RunningConfig().networks
+    _netinfo = CachingNetInfo(netinfo_get(networks_base_info(running_nets)))
 
     with legacy_switch.ConfiguratorClass(_netinfo,
                                          in_rollback) as configurator:
@@ -149,7 +146,7 @@ def _setup_legacy(networks, bondings, options, in_rollback):
         # Configurator.__exit__.
 
         legacy_switch.remove_networks(networks, bondings, configurator,
-                                      _netinfo, _libvirt_nets)
+                                      _netinfo)
 
         legacy_switch.bonds_setup(bondings, configurator, _netinfo,
                                   in_rollback)
@@ -298,9 +295,9 @@ def _gather_ovs_ifaces(nets2add, bonds2add, bonds2edit):
         [nets_and_bonds, nets_nics, bonds_nics])
 
 
-def netinfo(compatibility=None):
+def netinfo(vdsmnets=None, compatibility=None):
     # TODO: Version requests by engine to ease handling of compatibility.
-    _netinfo = netinfo_get(compatibility=compatibility)
+    _netinfo = netinfo_get(vdsmnets, compatibility)
 
     if _is_ovs_service_running():
         try:

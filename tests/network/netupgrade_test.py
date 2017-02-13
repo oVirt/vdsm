@@ -89,8 +89,10 @@ class NetUpgradeUnifiedConfigTest(VdsmTestCase):
 @attr(type='unit')
 @mock.patch.object(
     netupgrade, 'LEGACY_MANAGEMENT_NETWORKS', ('ovirtmgmt', 'rhevm'))
-@mock.patch.object(netupgrade, 'netinfo', lambda: None)
+@mock.patch.object(netupgrade, 'netinfo', lambda x: None)
 @mock.patch.object(netupgrade, 'NetInfo', lambda x: None)
+@mock.patch.object(netupgrade, 'libvirt_vdsm_nets', lambda x: None)
+@mock.patch.object(netupgrade.libvirt, 'networks', lambda: None)
 @mock.patch.object(netupgrade.config, 'get', lambda a, b: 'ifcfg')
 @mock.patch.object(netupgrade.Ifcfg, 'owned_device', return_value=True)
 @mock.patch.object(netupgrade, 'KernelConfig')

@@ -24,11 +24,11 @@ import os
 import errno
 import six
 
-from vdsm.network import libvirt
 from vdsm.network import netinfo
 from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import getLinks
+from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netlink import link as nl_link
 
 from .addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
@@ -48,12 +48,15 @@ from .qos import report_network_qos
 LEGACY_SWITCH = {'switch': 'legacy'}
 
 
+class NetworkIsMissing(Exception):
+    pass
+
+
 def _get(vdsmnets=None):
     """
-    Generate a networking report for all devices, including data managed by
-    libvirt.
+    Generate a networking report for all devices.
     In case vdsmnets is provided, it is used in the report instead of
-    retrieving data from libvirt.
+    retrieving data from the running config.
     :return: Dict of networking devices with all their details.
     """
     ipaddrs = getIpAddrs()
@@ -73,7 +76,8 @@ def _get(vdsmnets=None):
 
 def _networks_report(vdsmnets, routes, ipaddrs, devices_info):
     if vdsmnets is None:
-        nets_info = libvirtNets2vdsm(libvirt.networks(), routes, ipaddrs)
+        running_nets = RunningConfig().networks
+        nets_info = networks_base_info(running_nets, routes, ipaddrs)
     else:
         nets_info = vdsmnets
 
@@ -144,18 +148,44 @@ def _stringify_mtus(netinfo_data):
     return netinfo_data
 
 
-def libvirtNets2vdsm(nets, routes=None, ipAddrs=None):
+def networks_base_info(running_nets, routes=None, ipaddrs=None):
     if routes is None:
         routes = get_routes()
-    if ipAddrs is None:
-        ipAddrs = getIpAddrs()
+    if ipaddrs is None:
+        ipaddrs = getIpAddrs()
+
+    info = {}
+    for net, attrs in six.viewitems(running_nets):
+        try:
+            info[net] = _getNetInfo(
+                _net_iface_name(net, attrs), attrs['bridged'], routes, ipaddrs)
+        except NetworkIsMissing:
+            # Missing networks are ignored, reporting only what exists.
+            logging.warning('Missing network detected [%s]: %s', net, attrs)
+
+    return info
+
+
+def _net_iface_name(net, netattrs):
+    if netattrs['bridged']:
+        return net
+    iface = netattrs.get('bonding') or netattrs.get('nic')
+    if 'vlan' in netattrs:
+        iface = '{}.{}'.format(iface, netattrs['vlan'])
+
+    return iface
+
+
+def libvirt_vdsm_nets(nets):
+    routes = get_routes()
+    ipaddrs = getIpAddrs()
 
     d = {}
     for net, netAttr in six.iteritems(nets):
         try:
             # Pass the iface if the net is _not_ bridged, the bridge otherwise
             devname = netAttr.get('iface', net)
-            d[net] = _getNetInfo(devname, netAttr['bridged'], routes, ipAddrs)
+            d[net] = _getNetInfo(devname, netAttr['bridged'], routes, ipaddrs)
         except KeyError:
             continue  # Do not report missing libvirt networks.
     return d
@@ -187,8 +217,8 @@ def ifaceUsed(iface):
             return True
         if linkDict.get('device') == iface and linkDict.get('type') == 'vlan':
             return True  # it backs a VLAN
-    for net_attr in six.itervalues(libvirt.networks()):
-        if net_attr.get('iface') == iface:
+    for net_name, net_attr in six.viewitems(RunningConfig().networks):
+        if _net_iface_name(net_name, net_attr) == iface:
             return True
     return False
 
@@ -223,7 +253,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs):
     except (IOError, OSError) as e:
         if e.errno == errno.ENOENT:
             logging.info('Obtaining info for net %s.', iface, exc_info=True)
-            raise KeyError('Network %s was not found' % iface)
+            raise NetworkIsMissing('Network %s was not found' % iface)
         else:
             raise
     return data

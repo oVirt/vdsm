@@ -325,11 +325,11 @@ def _disconnect_bridge_port(port):
     ipwrapper.linkSet(port, ['nomaster'])
 
 
-def remove_networks(networks, bondings, configurator, _netinfo,
-                    libvirt_nets):
+def remove_networks(networks, bondings, configurator, _netinfo):
     kernel_config = kernelconfig.KernelConfig(_netinfo)
     normalized_config = kernelconfig.normalize(
         netconfpersistence.BaseConfig(networks, bondings))
+    libvirt_nets = libvirt.networks()
 
     for network, attrs in networks.items():
         if network in _netinfo.networks:
@@ -460,6 +460,8 @@ def _emergency_network_cleanup(network, networkAttrs, configurator):
 
     if top_net_dev:
         top_net_dev.remove()
+
+    configurator.runningConfig.removeNetwork(network)
 
 
 def _check_bonding_availability(bond, bonds, _netinfo):

@@ -26,7 +26,6 @@ from six.moves import configparser
 from vdsm.config import config
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo import mtus
-from vdsm.network.netinfo.cache import CachingNetInfo
 
 from ..errors import RollbackIncomplete
 from . import qos
@@ -154,9 +153,8 @@ class Configurator(object):
         # Cleanup running config from networks that have been actually
         # removed but not yet removed from running config.
         running_config = RunningConfig()
-        net_info = CachingNetInfo()
         nets2remove = (six.viewkeys(running_config.networks) -
-                       six.viewkeys(net_info.networks))
+                       six.viewkeys(self.runningConfig.networks))
         for net in nets2remove:
             running_config.removeNetwork(net)
         running_config.save()

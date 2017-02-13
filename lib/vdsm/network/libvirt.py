@@ -34,14 +34,8 @@ LIBVIRT_NET_PREFIX = 'vdsm-'
 def getNetworkDef(network):
     netName = LIBVIRT_NET_PREFIX + network
     conn = libvirtconnection.get()
-    try:
-        net = conn.networkLookupByName(netName)
-        return net.XMLDesc(0)
-    except libvirtError as e:
-        if e.get_error_code() == VIR_ERR_NO_NETWORK:
-            return
-
-        raise
+    net = _netlookup_by_name(conn, netName)
+    return net.XMLDesc(0) if net else None
 
 
 def createNetworkDef(network, bridged=True, iface=None):
@@ -96,11 +90,12 @@ def removeNetwork(network):
     netName = LIBVIRT_NET_PREFIX + network
     conn = libvirtconnection.get()
 
-    net = conn.networkLookupByName(netName)
-    if net.isActive():
-        net.destroy()
-    if net.isPersistent():
-        net.undefine()
+    net = _netlookup_by_name(conn, netName)
+    if net:
+        if net.isActive():
+            net.destroy()
+        if net.isPersistent():
+            net.undefine()
 
 
 def networks():
@@ -165,3 +160,12 @@ def _is_device_configured_in_a_network(device):
             if bridged_name in xml_content or bridgeless_name in xml_content:
                 return True
     return False
+
+
+def _netlookup_by_name(conn, netname):
+    try:
+        return conn.networkLookupByName(netname)
+    except libvirtError as e:
+        if e.get_error_code() == VIR_ERR_NO_NETWORK:
+            return None
+        raise
