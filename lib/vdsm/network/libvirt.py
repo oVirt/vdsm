@@ -130,6 +130,13 @@ def networks():
     return nets
 
 
+def is_libvirt_network(netname):
+    conn = libvirtconnection.get()
+    libvirt_nets = conn.listAllNetworks()
+    netname = LIBVIRT_NET_PREFIX + netname
+    return any(n.name() == netname for n in libvirt_nets)
+
+
 def is_libvirt_device(device):
     try:
         libvirt_nets = networks()

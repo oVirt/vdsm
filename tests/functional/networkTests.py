@@ -30,6 +30,7 @@ from nose.plugins.skip import SkipTest
 import vdsm.config
 from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm.network import ipwrapper
+from vdsm.network import libvirt
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
     routeExists, ruleExists, addrFlush, LinkType, getLinks, routeShowTable,
@@ -287,6 +288,7 @@ class NetworkTest(TestCaseBase):
         self.assertNotIn(networkName, netinfo.bridges)
         if self.vdsm_net.config is not None:
             self.assertNotIn(networkName, self.vdsm_net.config.networks)
+        self.assertFalse(libvirt.is_libvirt_network(networkName))
 
     def assertBridgeExists(self, bridgeName):
         netinfo = self.vdsm_net.netinfo
@@ -1632,6 +1634,9 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
             self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
+
+            # Simulate reboot by removing running config.
+            RunningConfig().delete()
 
             self.vdsm_net.restoreNetConfig()
 
