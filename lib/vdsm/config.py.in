@@ -223,6 +223,13 @@ parameters = [
         ('ssl_protocol', 'sslv23',
             'SSL protocol used by encrypted connection'),
 
+        ('ssl_excludes', '',
+            'Comma separated protocol values as defined in '
+            'https://docs.python.org/2/library/ssl.html. '
+            'e.g. OP_NO_TLSv1, OP_NO_TLSv1_1 '
+            'By default tlv1, tlsv1.1 and tlsv1.2 are '
+            'enabled.'),
+
         ('verify_client_cert', 'false',
             'Enables whether to verify client fqdn or ip stored '
             'in a certificate.'),

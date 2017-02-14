@@ -8,7 +8,7 @@
 #
 import os
 import ssl
-from vdsm.sslutils import SSLContext
+from vdsm.sslutils import CLIENT_PROTOCOL, SSLContext
 
 CERT_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
 CRT_FILE = os.path.join(CERT_DIR, "server.crt")
@@ -17,7 +17,8 @@ OTHER_CRT_FILE = os.path.join(CERT_DIR, "other.crt")
 OTHER_KEY_FILE = os.path.join(CERT_DIR, "other.key")
 
 DEAFAULT_SSL_CONTEXT = SSLContext(cert_file=CRT_FILE, key_file=KEY_FILE,
-                                  ca_certs=CRT_FILE)
+                                  ca_certs=CRT_FILE,
+                                  protocol=CLIENT_PROTOCOL)
 
 
 def get_server_socket(key_file, cert_file, socket):
@@ -26,5 +27,5 @@ def get_server_socket(key_file, cert_file, socket):
                            certfile=cert_file,
                            server_side=False,
                            cert_reqs=ssl.CERT_REQUIRED,
-                           ssl_version=ssl.PROTOCOL_TLSv1,
+                           ssl_version=CLIENT_PROTOCOL,
                            ca_certs=cert_file)

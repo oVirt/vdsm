@@ -29,6 +29,9 @@ from vdsm import constants
 from vdsm.common.time import monotonic_time
 from .config import config
 
+# ssl.PROTOCOL_TLS is not available on all platform so we use:
+CLIENT_PROTOCOL = ssl.PROTOCOL_SSLv23
+
 
 class SSLSocket(object):
     def __init__(self, sock):
@@ -75,12 +78,13 @@ class SSLSocket(object):
 
 
 class SSLContext(object):
-    # pylint: disable=no-member
+
     def __init__(self, cert_file, key_file, ca_certs=None,
-                 protocol=ssl.PROTOCOL_TLSv1):
+                 excludes=0, protocol=CLIENT_PROTOCOL):
         self.cert_file = cert_file
         self.key_file = key_file
         self.ca_certs = ca_certs
+        self.excludes = excludes
         self.protocol = protocol
 
     def wrapSocket(self, sock):
@@ -127,15 +131,21 @@ class SSLHandshakeDispatcher(object):
 
     def _set_up_socket(self, dispatcher):
         client_socket = dispatcher.socket
+
+        context = ssl.SSLContext(self._sslctx.protocol)
+
+        excludes = self._sslctx.excludes
+        if excludes != 0:
+            context.options |= excludes
+
+        context.load_verify_locations(self._sslctx.ca_certs, None, None)
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.load_cert_chain(self._sslctx.cert_file, self._sslctx.key_file)
+
         client_socket = SSLSocket(
-            ssl.wrap_socket(client_socket,
-                            keyfile=self._sslctx.key_file,
-                            certfile=self._sslctx.cert_file,
-                            server_side=True,
-                            cert_reqs=ssl.CERT_REQUIRED,
-                            ssl_version=self._sslctx.protocol,
-                            ca_certs=self._sslctx.ca_certs,
-                            do_handshake_on_connect=False))
+            context.wrap_socket(client_socket,
+                                server_side=True,
+                                do_handshake_on_connect=False))
 
         dispatcher.socket = client_socket
         self._has_been_set_up = True
@@ -258,7 +268,21 @@ def create_ssl_context():
                 if config.get('vars', 'ssl_protocol') == 'sslv23'
                 else ssl.PROTOCOL_TLSv1_2
             )
+
+            excludes = protocol_name_to_int()
             sslctx = SSLContext(key_file=constants.KEY_FILE,
                                 cert_file=constants.CERT_FILE,
-                                ca_certs=constants.CA_FILE, protocol=protocol)
+                                ca_certs=constants.CA_FILE,
+                                protocol=protocol,
+                                excludes=excludes)
         return sslctx
+
+
+def protocol_name_to_int():
+    excludes = 0
+
+    for no_protocol in config.get('vars', 'ssl_excludes').split(','):
+        if no_protocol != '':
+            excludes |= getattr(ssl, no_protocol.strip())
+
+    return excludes
