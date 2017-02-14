@@ -136,9 +136,16 @@ def unified_restoration():
         _restore_disable_ipv6()
 
     classified_conf = _classify_nets_bonds_config(available_config)
-    setup_nets, setup_bonds, keep_nets, keep_bonds = classified_conf
+    setup_nets, setup_bonds = classified_conf[0], classified_conf[1]
+    remove_nets, remove_bonds = classified_conf[2], classified_conf[3]
+    keep_nets, keep_bonds = classified_conf[4], classified_conf[5]
 
     _update_running_config(keep_nets, keep_bonds)
+
+    logging.info(
+        'Remove networks (%s) and bonds (%s).', remove_nets, remove_bonds)
+    _greedy_setup_bonds(remove_bonds)
+    _greedy_setup_nets(remove_nets)
 
     _convert_to_blocking_dhcp(setup_nets)
     logging.info(
@@ -279,11 +286,13 @@ def _classify_nets_bonds_config(persistent_config):
     current_config = kernelconfig.KernelConfig(NetInfo(netswitch.netinfo()))
     desired_config = kernelconfig.normalize(persistent_config)
 
-    changed_nets_names, unchanged_nets_names = _classify_entities_difference(
-        desired_config.networks, current_config.networks)
+    changed_nets_names, extra_nets_names, unchanged_nets_names = (
+        _classify_entities_difference(
+            desired_config.networks, current_config.networks))
 
-    changed_bonds_names, unchanged_bonds_names = _classify_entities_difference(
-        desired_config.bonds, current_config.bonds)
+    changed_bonds_names, extra_bonds_names, unchanged_bonds_names = (
+        _classify_entities_difference(
+            desired_config.bonds, current_config.bonds))
 
     changed_nets = {net: persistent_config.networks[net]
                     for net in changed_nets_names}
@@ -293,25 +302,30 @@ def _classify_nets_bonds_config(persistent_config):
                       for net in unchanged_nets_names}
     unchanged_bonds = {bond: persistent_config.bonds[bond]
                        for bond in unchanged_bonds_names}
+    extra_nets = {net: {'remove': True} for net in extra_nets_names}
+    extra_bonds = {bond: {'remove': True} for bond in extra_bonds_names}
 
-    return changed_nets, changed_bonds, unchanged_nets, unchanged_bonds
+    return (changed_nets, changed_bonds, extra_nets, extra_bonds,
+            unchanged_nets, unchanged_bonds)
 
 
 def _classify_entities_difference(desired, current):
-    changed_or_missing = []
-    unchanged = []
+    changed_or_missing = set()
+    unchanged = set()
     for name, desired_attrs in desired.iteritems():
         current_attrs = current.get(name)
         if current_attrs != desired_attrs:
-            changed_or_missing.append(name)
+            changed_or_missing.add(name)
             logging.info('%s is different or missing from persistent '
                          'configuration. current: %s, persisted: %s',
                          name, current_attrs, desired_attrs)
         else:
-            unchanged.append(name)
+            unchanged.add(name)
             logging.info('%s was not changed since last time it was persisted,'
                          ' skipping restoration.', name)
-    return changed_or_missing, unchanged
+    extra = set(current) - unchanged - changed_or_missing
+
+    return changed_or_missing, extra, unchanged
 
 
 def _find_nets_with_available_devices(available_bonds, available_nics,
