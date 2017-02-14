@@ -95,6 +95,7 @@ Requires: ethtool
 Requires: which
 Requires: sudo >= 1.7.3
 Requires: logrotate
+Requires: lshw
 Requires: xz
 Requires: iproute >= 3.10.0
 Requires: PyYAML
