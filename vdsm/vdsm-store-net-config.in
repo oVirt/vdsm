@@ -10,7 +10,7 @@ NET_CONF_DIR='/etc/sysconfig/network-scripts/'
 NET_CONF_BACK_DIR='@VDSMLIBDIR@/netconfback'
 
 # Unified persistence directories
-RUN_CONF_DIR='@VDSMRUNDIR@/netconf'
+RUN_CONF_DIR='@VDSMLIBDIR@/staging/netconf'
 PERS_CONF_PATH='@VDSMLIBDIR@/persistence'
 PERS_NET_CONF_PATH="$PERS_CONF_PATH/netconf"
 

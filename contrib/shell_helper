@@ -165,8 +165,8 @@ del_net_persistency() {
 cat << EOF | sudo python -
 import os
 
-dirs = ('/var/run/vdsm/netconf/nets/',
-    '/var/run/vdsm/netconf/bonds/',
+dirs = ('/var/lib/vdsm/staging/netconf/nets/',
+    '/var/lib/vdsm/staging/netconf/bonds/',
     '/var/lib/vdsm/persistence/netconf/nets/',
     '/var/lib/vdsm/persistence/netconf/bonds/')
 

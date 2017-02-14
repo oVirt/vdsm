@@ -120,8 +120,6 @@ def unified_restoration():
     """
     networkmanager.init()
 
-    _remove_networks_in_running_config()
-
     persistent_config = PersistentConfig()
     available_config = _filter_available(persistent_config)
 
@@ -134,11 +132,7 @@ def unified_restoration():
         _restore_disable_ipv6()
 
     classified_conf = _classify_nets_bonds_config(available_config)
-    setup_nets, setup_bonds = classified_conf[0], classified_conf[1]
-    remove_nets, remove_bonds = classified_conf[2], classified_conf[3]
-    keep_nets, keep_bonds = classified_conf[4], classified_conf[5]
-
-    _update_running_config(keep_nets, keep_bonds)
+    setup_nets, setup_bonds, remove_nets, remove_bonds = classified_conf
 
     logging.info(
         'Remove networks (%s) and bonds (%s).', remove_nets, remove_bonds)
@@ -222,24 +216,6 @@ def _owned_ifcfg_files():
             yield fpath
 
 
-def _remove_networks_in_running_config():
-    runningConfig = RunningConfig()
-    if not runningConfig:
-        logging.debug("Not cleaning running configuration since it is empty.")
-        return
-
-    removeNetworks = {}
-    removeBonds = {}
-    for network in runningConfig.networks:
-        removeNetworks[network] = {'remove': True}
-    for bond in runningConfig.bonds:
-        removeBonds[bond] = {'remove': True}
-    logging.debug('Removing all networks (%s) and bonds (%s) in running '
-                  'config.', removeNetworks, removeBonds)
-    setupNetworks(removeNetworks, removeBonds, {'connectivityCheck': False,
-                                                '_inRollback': True})
-
-
 def _restore_non_vdsm_net_devices():
     # addresses (BZ#1188251)
     configWriter = ifcfg.ConfigWriter()
@@ -286,27 +262,20 @@ def _classify_nets_bonds_config(persistent_config):
     current_config = kernelconfig.KernelConfig(NetInfo(netswitch.netinfo()))
     desired_config = kernelconfig.normalize(persistent_config)
 
-    changed_nets_names, extra_nets_names, unchanged_nets_names = (
-        _classify_entities_difference(
-            desired_config.networks, current_config.networks))
+    changed_nets_names, extra_nets_names = _classify_entities_difference(
+        desired_config.networks, current_config.networks)
 
-    changed_bonds_names, extra_bonds_names, unchanged_bonds_names = (
-        _classify_entities_difference(
-            desired_config.bonds, current_config.bonds))
+    changed_bonds_names, extra_bonds_names = _classify_entities_difference(
+        desired_config.bonds, current_config.bonds)
 
     changed_nets = {net: persistent_config.networks[net]
                     for net in changed_nets_names}
     changed_bonds = {bond: persistent_config.bonds[bond]
                      for bond in changed_bonds_names}
-    unchanged_nets = {net: persistent_config.networks[net]
-                      for net in unchanged_nets_names}
-    unchanged_bonds = {bond: persistent_config.bonds[bond]
-                       for bond in unchanged_bonds_names}
     extra_nets = {net: {'remove': True} for net in extra_nets_names}
     extra_bonds = {bond: {'remove': True} for bond in extra_bonds_names}
 
-    return (changed_nets, changed_bonds, extra_nets, extra_bonds,
-            unchanged_nets, unchanged_bonds)
+    return changed_nets, changed_bonds, extra_nets, extra_bonds
 
 
 def _classify_entities_difference(desired, current):
@@ -324,8 +293,7 @@ def _classify_entities_difference(desired, current):
             logging.info('%s was not changed since last time it was persisted,'
                          ' skipping restoration.', name)
     extra = set(current) - unchanged - changed_or_missing
-
-    return changed_or_missing, extra, unchanged
+    return changed_or_missing, extra
 
 
 def _find_nets_with_available_devices(available_bonds, available_nics,

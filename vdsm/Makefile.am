@@ -94,6 +94,7 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/payload
 	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/netconfback
 	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/persistence
+	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/staging
 	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/upgrade
 	$(MKDIR_P) $(DESTDIR)$(vdsmbackupdir)
 	$(MKDIR_P) $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels

@@ -36,7 +36,6 @@ from vdsm.network.ipwrapper import (
     routeExists, ruleExists, addrFlush, LinkType, getLinks, routeShowTable,
     linkDel, linkSet, addrAdd)
 from vdsm.network import kernelconfig
-from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo.bonding import BONDING_SLAVES, BONDING_MASTERS
 from vdsm.network.netinfo.bridges import bridges
 from vdsm.network.netinfo.misc import NET_CONF_PREF
@@ -1349,12 +1348,8 @@ class NetworkTest(TestCaseBase):
 
             with dnsmasq_run(server, DHCP_RANGE_FROM, DHCP_RANGE_TO,
                              DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, IP_GATEWAY):
-                with namedTemporaryDir(dir='/var/lib/dhclient') as dhdir:
-                    dhclient_runner = dhcp.DhclientRunner(client, 4, dhdir,
-                                                          'default')
-                    with running(dhclient_runner):
-                        self.vdsm_net.restoreNetConfig()
-                        self.assertTrue(_get_blocking_dhcp(NETWORK_NAME))
+                self.vdsm_net.restoreNetConfig()
+                self.assertTrue(_get_blocking_dhcp(NETWORK_NAME))
 
             # cleanup
             status, msg = self.setupNetworks(
@@ -1444,7 +1439,6 @@ class NetworkTest(TestCaseBase):
                 self.assertNotIn(NET_MISSING, self.vdsm_net.netinfo.networks)
                 self.assertNotIn(BOND_MISSING, self.vdsm_net.netinfo.bondings)
 
-                RunningConfig().delete()
                 with nonChangingOperstate(NET_UNCHANGED):
                     self.vdsm_net.restoreNetConfig()
 
@@ -1453,7 +1447,6 @@ class NetworkTest(TestCaseBase):
                 # by vdsm
                 self.assertEqual([], os.listdir(NET_CONF_BACK_DIR))
                 # another 'boot' should restore nothing
-                RunningConfig().delete()
                 with nonChangingOperstate(NET_UNCHANGED):
                     with nonChangingOperstate(NET_CHANGED):
                         with nonChangingOperstate(NET_MISSING):
@@ -1534,8 +1527,6 @@ class NetworkTest(TestCaseBase):
                     content = re.sub('mode=4', 'mode=0', content)
                 with open(NET_CONF_PREF + dev, 'w') as f:
                     f.write(content)
-            # we don't have running config during boot
-            RunningConfig().delete()
 
         def _verify_running_config_intact():
             self.assertEqual({NET_MGMT, NET_CHANGED, NET_UNCHANGED,
@@ -1634,9 +1625,6 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
             self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
-
-            # Simulate reboot by removing running config.
-            RunningConfig().delete()
 
             self.vdsm_net.restoreNetConfig()
 

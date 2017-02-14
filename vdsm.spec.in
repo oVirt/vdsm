@@ -1044,6 +1044,7 @@ exit 0
 %dir %{_localstatedir}/lib/%{vdsm_name}
 %dir %{_localstatedir}/lib/%{vdsm_name}/netconfback
 %dir %{_localstatedir}/lib/%{vdsm_name}/persistence
+%dir %{_localstatedir}/lib/%{vdsm_name}/staging
 %dir %{_localstatedir}/lib/%{vdsm_name}/upgrade
 %dir %{_localstatedir}/log/%{vdsm_name}
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
