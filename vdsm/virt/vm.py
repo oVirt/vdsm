@@ -397,7 +397,7 @@ class Vm(object):
 
     def _notify(self, operation, params):
         sub_id = '|virt|%s|%s' % (operation, self.id)
-        self.cif.notify(sub_id, **{self.id: params})
+        self.cif.notify(sub_id, {self.id: params})
 
     def _onGuestStatusChange(self):
         self.send_status_event(**self._getGuestStats())
