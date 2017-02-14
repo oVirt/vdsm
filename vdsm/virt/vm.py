@@ -4278,7 +4278,7 @@ class Vm(object):
             # unsetting mirror network will clear both mirroring
             # (on the same network).
             for nic in self._devices[hwclass.NIC]:
-                if hasattr(nic, 'portMirroring'):
+                if hasattr(nic, 'portMirroring') and hasattr(nic, 'name'):
                     for network in nic.portMirroring[:]:
                         supervdsm.getProxy().unsetPortMirroring(network,
                                                                 nic.name)
