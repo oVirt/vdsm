@@ -139,15 +139,10 @@ def unified_restoration():
     setup_nets, setup_bonds, keep_nets, keep_bonds = classified_conf
 
     _update_running_config(keep_nets, keep_bonds)
-    if setup_nets or setup_bonds:
-        _convert_to_blocking_dhcp(setup_nets)
-        _greedy_setup_networking(setup_nets, setup_bonds)
 
-
-def _greedy_setup_networking(setup_nets, setup_bonds):
-    logging.debug('setupNetworks with networks (%s) and bonds (%s).',
-                  setup_nets, setup_bonds)
-
+    _convert_to_blocking_dhcp(setup_nets)
+    logging.info(
+        'Setup networks (%s) and bonds (%s).', setup_nets, setup_bonds)
     _greedy_setup_bonds(setup_bonds)
     _greedy_setup_nets(setup_nets)
 
