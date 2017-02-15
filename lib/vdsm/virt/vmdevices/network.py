@@ -326,3 +326,14 @@ class Interface(Base):
         return s.format(self=self,
                         name=getattr(self, 'name', None),
                         addr=id(self))
+
+
+def update_bandwidth_xml(iface, vnicXML, specParams=None):
+    if (specParams and
+            ('inbound' in specParams or 'outbound' in specParams)):
+        oldBandwidth = vmxml.find_first(vnicXML, 'bandwidth', None)
+        newBandwidth = iface.get_bandwidth_xml(specParams, oldBandwidth)
+        if oldBandwidth is None:
+            vnicXML.appendChild(newBandwidth)
+        else:
+            vnicXML.replaceChild(newBandwidth, oldBandwidth)

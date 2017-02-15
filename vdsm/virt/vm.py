@@ -2420,14 +2420,7 @@ class Vm(object):
         except vmxml.NotFound:
             link = vnicXML.appendChildWithArgs('link')
         vmxml.set_attr(link, 'state', linkValue)
-        if (specParams and
-                ('inbound' in specParams or 'outbound' in specParams)):
-            oldBandwidth = vmxml.find_first(vnicXML, 'bandwidth', None)
-            newBandwidth = dev.get_bandwidth_xml(specParams, oldBandwidth)
-            if oldBandwidth is None:
-                vnicXML.appendChild(newBandwidth)
-            else:
-                vnicXML.replaceChild(newBandwidth, oldBandwidth)
+        vmdevices.network.update_bandwidth_xml(dev, vnicXML, specParams)
         vnicStrXML = vmxml.format_xml(vnicXML, pretty=True)
         try:
             try:
