@@ -42,7 +42,7 @@ class Interface(Base):
         # pyLint can't tell that the Device.__init__() will
         # set a nicModel attribute, so modify the kwarg list
         # prior to device init.
-        for attr, value in kwargs.iteritems():
+        for attr, value in kwargs.items():
             if attr == 'nicModel' and value == 'pv':
                 kwargs[attr] = 'virtio'
             elif attr == 'network' and value == '':
@@ -279,7 +279,7 @@ class Interface(Base):
             # TODO: fix vmxml.device_address and its users to have this code.
             for child in vmxml.children(x, 'address'):
                 address = dict((k.strip(), v.strip())
-                               for k, v in vmxml.attributes(child).iteritems())
+                               for k, v in vmxml.attributes(child).items())
                 break
 
             for nic in device_conf:
