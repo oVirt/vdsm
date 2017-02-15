@@ -20,6 +20,7 @@
 
 import os.path
 
+from vdsm.common import response
 from vdsm import constants
 from vdsm.virt import vmdevices
 from vdsm.virt.domain_descriptor import DomainDescriptor
@@ -27,6 +28,7 @@ from vdsm.virt.vmdevices import graphics
 from vdsm.virt.vmdevices import hwclass
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
+from testValidation import brokentest
 from testlib import permutations, expandPermutations, make_config
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase
@@ -410,6 +412,7 @@ class TestVmDevices(XMLTestCase):
         bandwith = iface.paramsToBandwidthXML(NEW_OUT, orig_bandwidth)
         self.assert_dom_xml_equal(bandwith, updatedBwidthXML)
 
+    @brokentest('missing name in device params')
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: MockedProxy(lambda: None))
     def test_interface_update(self):
@@ -436,7 +439,8 @@ class TestVmDevices(XMLTestCase):
         '''
         with fake.VM(devices=devices, create_device_objects=True) as testvm:
             testvm._dom = fake.Domain()
-            testvm.updateDevice(params)
+            res = testvm.updateDevice(params)
+            self.assertFalse(response.is_error(res))
             self.assertXMLEqual(testvm._dom.devXml, updated_xml)
 
     def testUpdateDriverInSriovInterface(self):
