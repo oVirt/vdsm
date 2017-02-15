@@ -114,7 +114,7 @@ class NoConnectionToPeer(VdsmException):
     message = 'Could not connect to peer VDS'
 
 
-class MissingParameter(VdsmException):
+class MissingParameter(ContextException):
     code = 11
     message = 'Missing required parameter'
 

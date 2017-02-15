@@ -159,6 +159,7 @@ test_modules = \
 	throttledlog_test.py \
 	unicode_test.py \
 	utils_test.py \
+	validate_test.py \
 	vdsmapi_test.py \
 	vdsmdumpchains_test.py \
 	verify.py \

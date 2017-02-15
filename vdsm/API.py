@@ -38,6 +38,7 @@ from vdsm import v2v
 from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import response
+from vdsm.common import validate
 from vdsm.host import api as hostapi
 from vdsm.host import caps
 from vdsm.logUtils import AllVmStatsValue, Suppressed
@@ -225,12 +226,7 @@ class VM(APIBase):
             raise exception.UnexpectedError()
 
     def _validate_vm_params(self, vmParams):
-        requiredParams = ['vmId', 'memSize']
-        for param in requiredParams:
-            if param not in vmParams:
-                self.log.error('Missing required parameter %s' % (param))
-                raise exception.MissingParameter(
-                    'Missing required parameter %s' % (param))
+        validate.require_keys(vmParams, ('vmId', 'memSize'))
         try:
             misc.validateUUID(vmParams['vmId'])
         except:
@@ -363,29 +359,14 @@ class VM(APIBase):
 
     @api.method
     def updateDevice(self, params):
-        if 'deviceType' not in params:
-            self.log.error('Missing a required parameters: deviceType')
-            return {'status': {'code': errCode['MissParam']['status']['code'],
-                               'message': 'Missing one of required '
-                                          'parameters: deviceType'}}
+        validate.require_keys(params, ('deviceType',))
         if params['deviceType'] == hwclass.NIC:
-            if 'alias' not in params:
-                self.log.error('Missing the required alias parameters.')
-                return {'status':
-                        {'code': errCode['MissParam']['status']['code'],
-                         'message': 'Missing the required alias parameter'}}
-
+            validate.require_keys(params, ('alias',))
         return self.vm.updateDevice(params)
 
     @api.method
     def hotplugNic(self, params):
-        try:
-            utils.validateMinimalKeySet(params, ('vmId', 'nic'))
-        except ValueError:
-            self.log.error('Missing one of required parameters: vmId, nic')
-            return {'status': {'code': errCode['MissParam']['status']['code'],
-                               'message': 'Missing one of required '
-                                          'parameters: vmId, nic'}}
+        validate.require_keys(params, ('vmId', 'nic'))
         return self.vm.hotplugNic(params)
 
     @api.method
@@ -398,35 +379,17 @@ class VM(APIBase):
 
     @api.method
     def hotunplugNic(self, params):
-        try:
-            utils.validateMinimalKeySet(params, ('vmId', 'nic'))
-        except ValueError:
-            self.log.error('Missing one of required parameters: vmId, nic')
-            return {'status': {'code': errCode['MissParam']['status']['code'],
-                               'message': 'Missing one of required '
-                                          'parameters: vmId, nic'}}
+        validate.require_keys(params, ('vmId', 'nic'))
         return self.vm.hotunplugNic(params)
 
     @api.method
     def hotplugDisk(self, params):
-        try:
-            utils.validateMinimalKeySet(params, ('vmId', 'drive'))
-        except ValueError:
-            self.log.error('Missing one of required parameters: vmId, drive')
-            return {'status': {'code': errCode['MissParam']['status']['code'],
-                               'message': 'Missing one of required '
-                                          'parameters: vmId, drive'}}
+        validate.require_keys(params, ('vmId', 'drive'))
         return self.vm.hotplugDisk(params)
 
     @api.method
     def hotunplugDisk(self, params):
-        try:
-            utils.validateMinimalKeySet(params, ('vmId', 'drive'))
-        except ValueError:
-            self.log.error('Missing one of required parameters: vmId, drive')
-            return {'status': {'code': errCode['MissParam']['status']['code'],
-                               'message': 'Missing one of required '
-                                          'parameters: vmId, drive'}}
+        validate.require_keys(params, ('vmId', 'drive'))
         return self.vm.hotunplugDisk(params)
 
     @api.method
@@ -439,24 +402,12 @@ class VM(APIBase):
 
     @api.method
     def hotplugMemory(self, params):
-        try:
-            utils.validateMinimalKeySet(params, ('vmId', 'memory'))
-        except ValueError:
-            self.log.error('Missing one of required parameters: vmId, memory')
-            return {'status': {'code': errCode['MissParam']['status']['code'],
-                               'message': 'Missing one of required '
-                                          'parameters: vmId, memory'}}
-
+        validate.require_keys(params, ('vmId', 'memory'))
         return self.vm.hotplugMemory(params)
 
     @api.method
     def hotunplugMemory(self, params):
-        try:
-            utils.validateMinimalKeySet(params, ('vmId', 'memory'))
-        except ValueError:
-            raise exception.MissingParameter(
-                "Missing one of the required parameters: "
-                "vmId, memory")
+        validate.require_keys(params, ('vmId', 'memory'))
         return self.vm.hotunplugMemory(params)
 
     def setNumberOfCpus(self, numberOfCpus):

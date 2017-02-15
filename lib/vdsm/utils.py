@@ -490,11 +490,6 @@ class memoized(object):
         return wrapper
 
 
-def validateMinimalKeySet(dictionary, reqParams):
-    if not all(key in dictionary for key in reqParams):
-        raise ValueError
-
-
 class CommandPath(object):
     def __init__(self, name, *args, **kwargs):
         self.name = name
