@@ -157,6 +157,10 @@ class SourceThread(object):
         return self._thread.is_alive()
 
     @property
+    def started(self):
+        return self._started
+
+    @property
     def hibernating(self):
         return self._mode == MODE_FILE
 
@@ -300,6 +304,7 @@ class SourceThread(object):
             self._vm.guestAgent.events.after_migration_failure()
         # either way, migration has finished
         self._vm.lastStatus = vmstatus.UP
+        self._started = False
         self._vm.send_status_event()
 
     def _finishSuccessfully(self):
