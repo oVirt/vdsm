@@ -22,9 +22,6 @@ from __future__ import absolute_import
 
 import logging
 
-import six
-from nose.plugins.skip import SkipTest
-
 from vdsm.virt.vmdevices import network
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
@@ -46,8 +43,6 @@ class TestNicDevice(XMLTestCase):
         [{'inbound': {'average': 512}, 'outbound': {'average': 512}}],
     ])
     def test_update_bandwidth_xml(self, base_spec_params):
-        if not six.PY2:
-            raise SkipTest("replaceChild must be removed")
         specParams = {
             'inbound': {
                 'average': 1000,
