@@ -28,7 +28,6 @@ from vdsm.virt.vmdevices import graphics
 from vdsm.virt.vmdevices import hwclass
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
-from testValidation import brokentest
 from testlib import permutations, expandPermutations, make_config
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase
@@ -412,13 +411,13 @@ class TestVmDevices(XMLTestCase):
         bandwith = iface.paramsToBandwidthXML(NEW_OUT, orig_bandwidth)
         self.assert_dom_xml_equal(bandwith, updatedBwidthXML)
 
-    @brokentest('missing name in device params')
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: MockedProxy(lambda: None))
     def test_interface_update(self):
         devices = [{'nicModel': 'virtio', 'network': 'ovirtmgmt',
                     'macAddr': '52:54:00:59:F5:3F',
-                    'device': 'bridge', 'type': 'interface', 'alias': 'net1',
+                    'device': 'bridge', 'type': 'interface',
+                    'alias': 'net1', 'name': 'net1',
                     'linkActive': 'true',
                     'specParams': {'inbound': {'average': 1000, 'peak': 5000,
                                                'burst': 1024},
