@@ -122,8 +122,6 @@ def unified_restoration():
 
     _remove_networks_in_running_config()
 
-    _restore_non_vdsm_net_devices()
-
     persistent_config = PersistentConfig()
     available_config = _filter_available(persistent_config)
 
@@ -146,6 +144,8 @@ def unified_restoration():
         'Remove networks (%s) and bonds (%s).', remove_nets, remove_bonds)
     _greedy_setup_bonds(remove_bonds)
     _greedy_setup_nets(remove_nets)
+
+    _restore_non_vdsm_net_devices()
 
     _convert_to_blocking_dhcp(setup_nets)
     logging.info(

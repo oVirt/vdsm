@@ -1574,7 +1574,8 @@ class NetworkTest(TestCaseBase):
                                   'ifcfg-%s' % nic_d},
                                  set(os.listdir(NET_CONF_BACK_DIR)))
 
-                # another 'boot' should restore nothing
+                # another 'boot' should restore nothing,
+                # except remove NET_ADDITIONAL
                 _simulate_boot()
                 with nonChangingOperstate(NET_MGMT):
                     with nonChangingOperstate(NET_UNCHANGED):
@@ -1588,8 +1589,7 @@ class NetworkTest(TestCaseBase):
                 status, msg = self.setupNetworks(
                     {NET_MGMT: {'remove': True},
                      NET_UNCHANGED: {'remove': True},
-                     NET_CHANGED: {'remove': True},
-                     NET_ADDITIONAL: {'remove': True}},
+                     NET_CHANGED: {'remove': True}},
                     {BOND_CHANGED: {'remove': True},
                      BOND_UNCHANGED: {'remove': True}},
                     NOCHK)
