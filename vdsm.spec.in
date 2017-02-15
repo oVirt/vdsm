@@ -1523,6 +1523,7 @@ exit 0
 %files hook-localdisk
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_localdisk
 %{_libexecdir}/%{vdsm_name}/hooks/after_disk_prepare/localdisk
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/localdisk
 %{_libexecdir}/%{vdsm_name}/localdisk-helper
 %{_udevrulesdir}/12-vdsm-localdisk.rules
 
