@@ -1564,6 +1564,9 @@ class Vm(object):
         return status
 
     def onJobCompleted(self, args):
+        if not self._migrationSourceThread.started or \
+           self._migrationSourceThread.hibernating:
+            return
         stats = args[0]
         if self.post_copy == migration.PostCopyPhase.RUNNING:
             # downtime_net doesn't make sense and is not available after

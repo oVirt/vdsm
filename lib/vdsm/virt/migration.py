@@ -172,6 +172,10 @@ class SourceThread(object):
                  self._vm.lastStatus == vmstatus.MIGRATION_SOURCE))
 
     @property
+    def started(self):
+        return self._started
+
+    @property
     def hibernating(self):
         return self._mode == MODE_FILE
 
@@ -318,6 +322,7 @@ class SourceThread(object):
             self._vm.set_last_status(vmstatus.UP, vmstatus.MIGRATION_SOURCE)
         else:
             self._vm.lastStatus = vmstatus.UP
+        self._started = False
         self._vm.send_status_event()
 
     def _finishSuccessfully(self):
