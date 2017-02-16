@@ -36,6 +36,12 @@ from .config import config
 from . import sslutils
 
 
+#############################################################################
+#                                                                           #
+# !!! This module is deprecated, do not add any new command converters. !!! #
+#                                                                           #
+#############################################################################
+
 _COMMAND_CONVERTER = {
     'activateStorageDomain': 'StorageDomain.activate',
     'connectStoragePool': 'StoragePool.connect',
