@@ -2434,7 +2434,7 @@ class Vm(object):
             except Exception as e:
                 self.log.warn('Request failed: %s', vnicStrXML, exc_info=True)
                 hooks.after_update_device_fail(vnicStrXML, self.conf, custom)
-                raise SetLinkAndNetworkError(e.message)
+                raise SetLinkAndNetworkError(str(e))
             yield
         except Exception:
             # Rollback link and network.
@@ -2478,7 +2478,7 @@ class Vm(object):
                 supervdsm.getProxy().unsetPortMirroring(network, devName)
             for network in droppedNetworks:
                 supervdsm.getProxy().setPortMirroring(network, devName)
-            raise UpdatePortMirroringError(e.message)
+            raise UpdatePortMirroringError(str(e))
         else:
             # Update the conf with the new mirroring.
             conf['portMirroring'] = networks
