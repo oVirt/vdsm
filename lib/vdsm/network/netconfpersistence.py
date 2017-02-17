@@ -36,9 +36,6 @@ from . import errors as ne
 from .canonicalize import canonicalize_networks, canonicalize_bondings
 
 CONF_RUN_DIR = constants.P_VDSM_LIB + 'staging/netconf/'
-# The persistent path is inside of an extra "persistence" dir in order to get
-# oVirt Node to persist the symbolic links that are necessary for the
-# atomic storage of running config into persistent config.
 CONF_PERSIST_DIR = constants.P_VDSM_LIB + 'persistence/netconf/'
 
 
