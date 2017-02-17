@@ -22,13 +22,8 @@ import os.path
 import threading
 from collections import defaultdict
 
-import six.moves.http_client
-
 import API
-from six.moves.xmlrpc_client import Transport, dumps, Fault
 from contextlib import contextmanager
-from itertools import product
-from vdsm.rpc.bindingxmlrpc import BindingXMLRPC, XmlDetector
 from yajsonrpc.betterAsyncore import Reactor
 from yajsonrpc.stompreactor import StompDetector, StompRpcClient
 from yajsonrpc.stomp import (
@@ -51,7 +46,7 @@ if config.get('vars', 'ssl_implementation') == 'm2c':
 else:
     from integration.sslhelper import DEAFAULT_SSL_CONTEXT
 
-PERMUTATIONS = tuple(product((True, False), ("xml", "stomp")))
+PERMUTATIONS = [[True], [False]]
 
 TIMEOUT = 3
 
@@ -120,11 +115,6 @@ def constructAcceptor(log, ssl, jsonBridge,
         client_log = os.path.join(tmp_dir, 'client.log')
         with MonkeyPatchScope([(API.clientIF, 'getInstance', lambda _: cif),
                               (constants, 'P_VDSM_CLIENT_LOG', client_log)]):
-            xml_binding = BindingXMLRPC(cif, cif.log)
-            xml_binding.start()
-            xmlDetector = XmlDetector(xml_binding)
-            acceptor.add_detector(xmlDetector)
-
             jsonBridge.cif = cif
 
             stompDetector = StompDetector(json_binding)
@@ -140,32 +130,21 @@ def constructAcceptor(log, ssl, jsonBridge,
             finally:
                 acceptor.stop()
                 json_binding.stop()
-                xml_binding.stop()
                 scheduler.stop(wait=False)
 
 
 @contextmanager
-def constructClient(log, bridge, ssl, type, dest=SUBSCRIPTION_ID_RESPONSE):
+def constructClient(log, bridge, ssl, dest=SUBSCRIPTION_ID_RESPONSE):
     sslctx = DEAFAULT_SSL_CONTEXT if ssl else None
     with constructAcceptor(log, ssl, bridge, dest) as acceptor:
-        client = None
-        if type == "xml":
-            xml_handler = [h for h in acceptor._handlers if h.NAME == type]
-            for (method, name) in bridge.getBridgeMethods():
-                xml_handler[0].xml_binding.server.register_function(method,
-                                                                    name)
-            client = XMLClient
-        else:
-            for handler in acceptor._handlers:
-                if handler.NAME == type:
-                    reactor = handler._reactor
+        reactor = acceptor._handlers[0]._reactor
 
-            def client(client_socket):
-                return StompRpcClient(
-                    reactor.createClient(client_socket),
-                    SUBSCRIPTION_ID_REQUEST,
-                    SUBSCRIPTION_ID_RESPONSE,
-                )
+        def client(client_socket):
+            return StompRpcClient(
+                reactor.createClient(client_socket),
+                SUBSCRIPTION_ID_REQUEST,
+                SUBSCRIPTION_ID_RESPONSE,
+            )
 
         def clientFactory():
             return client(utils.create_connected_socket(
@@ -176,42 +155,3 @@ def constructClient(log, bridge, ssl, type, dest=SUBSCRIPTION_ID_RESPONSE):
             ))
 
         yield clientFactory
-
-
-class XMLClient(object):
-    def __init__(self, socket):
-        self.socket = socket
-        self.transport = CustomTransport(socket)
-
-    def send(self, method, params):
-        request = dumps(params, method)
-        try:
-            response = self.transport.request("localhost",
-                                              "/RPC2", request)
-        except Fault as e:
-            response = e.faultString
-
-        if isinstance(response, tuple):
-            response = response[0]
-        return response
-
-    def connect(self):
-        pass
-
-    def setTimeout(self, timeout):
-        self.socket.settimeout(timeout)
-
-    def close(self):
-        self.socket.close()
-
-
-class CustomTransport(Transport):
-
-    def __init__(self, socket):
-        Transport.__init__(self)
-
-        def connect(self):
-            self.sock = socket
-
-        connection = six.moves.http_client.HTTPConnection
-        connection.connect = connect

@@ -118,175 +118,128 @@ class JsonRpcServerTests(TestCaseBase):
                 client.close()
 
     @permutations(PERMUTATIONS)
-    def testMethodCallArgList(self, ssl, type):
+    def testMethodCallArgList(self, ssl):
         data = dummyTextGenerator(1024)
 
         bridge = _DummyBridge()
-        with constructClient(self.log, bridge, ssl, type) as clientFactory:
+        with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
                 self.log.info("Calling 'echo'")
-                if type == "xml":
-                    response = client.send("echo", (data,))
-                    self.assertEqual(response, data)
-                else:
-                    self.assertEqual(self._callTimeout(client, "echo",
-                                     (data,), CALL_ID), data)
+                self.assertEqual(self._callTimeout(client, "echo",
+                                                   (data,), CALL_ID), data)
 
     @permutations(PERMUTATIONS)
-    def testMethodCallArgDict(self, ssl, type):
+    def testMethodCallArgDict(self, ssl):
         data = dummyTextGenerator(1024)
 
         bridge = _DummyBridge()
-        with constructClient(self.log, bridge, ssl, type) as clientFactory:
+        with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                if type == "xml":
-                        response = client.send("echo", (data,))
-                        self.assertEqual(response, data)
-                else:
-                    self.assertEqual(self._callTimeout(client, "echo",
-                                     {'text': data}, CALL_ID), data)
+                self.assertEqual(self._callTimeout(client, "echo",
+                                 {'text': data}, CALL_ID), data)
 
     @permutations(PERMUTATIONS)
-    def testMethodMissingMethod(self, ssl, type):
+    def testMethodMissingMethod(self, ssl):
         missing_method = "I_DO_NOT_EXIST :("
 
         bridge = _DummyBridge()
-        with constructClient(self.log, bridge, ssl, type) as clientFactory:
+        with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                if type == "xml":
-                    response = client.send(missing_method, ())
-                    self.assertIn(missing_method, response)
-                else:
-                    with self.assertRaises(JsonRpcError) as cm:
-                        self._callTimeout(client, missing_method, [],
-                                          CALL_ID)
+                with self.assertRaises(JsonRpcError) as cm:
+                    self._callTimeout(client, missing_method, [],
+                                      CALL_ID)
 
-                    self.assertEqual(
-                        cm.exception.code,
-                        JsonRpcMethodNotFoundError(missing_method).code)
-                    self.assertIn(missing_method, cm.exception.message)
+                self.assertEqual(
+                    cm.exception.code,
+                    JsonRpcMethodNotFoundError(missing_method).code)
+                self.assertIn(missing_method, cm.exception.message)
 
     @permutations(PERMUTATIONS)
-    def testMethodBadParameters(self, ssl, type):
+    def testMethodBadParameters(self, ssl):
         # Without a schema the server returns an internal error
 
         bridge = _DummyBridge()
-        with constructClient(self.log, bridge, ssl, type) as clientFactory:
+        with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                if type == "xml":
-                    response = client.send("echo", ())
-                    self.assertTrue("echo() takes exactly 2 arguments"
-                                    in response)
-                else:
-                    with self.assertRaises(JsonRpcError) as cm:
-                        self._callTimeout(client, "echo", [],
-                                          CALL_ID)
+                with self.assertRaises(JsonRpcError) as cm:
+                    self._callTimeout(client, "echo", [],
+                                      CALL_ID)
 
-                    self.assertEqual(cm.exception.code,
-                                     JsonRpcInternalError().code)
+                self.assertEqual(cm.exception.code,
+                                 JsonRpcInternalError().code)
 
     @permutations(PERMUTATIONS)
-    def testMethodReturnsNullAndServerReturnsTrue(self, ssl, type):
+    def testMethodReturnsNullAndServerReturnsTrue(self, ssl):
         bridge = _DummyBridge()
-        with constructClient(self.log, bridge, ssl, type) as clientFactory:
+        with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                if type == "xml":
-                    response = client.send("ping", ())
-                    # for xml empty response is not allowed by design
-                    self.assertTrue("None unless allow_none is enabled"
-                                    in response)
-                else:
-                    res = self._callTimeout(client, "ping", [],
-                                            CALL_ID)
-                    self.assertEqual(res, True)
+                res = self._callTimeout(client, "ping", [],
+                                        CALL_ID)
+                self.assertEqual(res, True)
 
     @permutations(PERMUTATIONS)
-    def testDoubleResponse(self, ssl, type):
+    def testDoubleResponse(self, ssl):
         bridge = _DummyBridge()
-        with constructClient(self.log, bridge, ssl, type) as clientFactory:
+        with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                if type == "xml":
-                    # ignore notifications for xmlrpc
-                    pass
-                else:
-                    def callback(client, event, params):
-                        self.assertEqual(event, 'vdsm.double_response')
-                        self.assertEqual(params['content'], True)
+                def callback(client, event, params):
+                    self.assertEqual(event, 'vdsm.double_response')
+                    self.assertEqual(params['content'], True)
 
-                    client.registerEventCallback(callback)
-                    res = self._callTimeout(client, "double_response", [],
-                                            CALL_ID)
-                    self.assertEqual(res, 'sent')
+                client.registerEventCallback(callback)
+                res = self._callTimeout(client, "double_response", [],
+                                        CALL_ID)
+                self.assertEqual(res, 'sent')
 
     @slowtest
     @permutations(PERMUTATIONS)
-    def testSlowMethod(self, ssl, type):
+    def testSlowMethod(self, ssl):
         bridge = _DummyBridge()
-        with constructClient(self.log, bridge, ssl, type) as clientFactory:
+        with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                if type == "xml":
-                    # we do not provide timeout for xmlrpc
-                    pass
-                else:
-                    with self.assertRaises(JsonRpcError) as cm:
-                        self._callTimeout(client, "slow_response", [], CALL_ID)
+                with self.assertRaises(JsonRpcError) as cm:
+                    self._callTimeout(client, "slow_response", [], CALL_ID)
 
-                    self.assertEqual(cm.exception.code,
-                                     JsonRpcNoResponseError().code)
+                self.assertEqual(cm.exception.code,
+                                 JsonRpcNoResponseError().code)
 
     @MonkeyPatch(executor.Executor, 'dispatch', dispatch)
     @permutations(PERMUTATIONS)
-    def testFullExecutor(self, ssl, type):
+    def testFullExecutor(self, ssl):
         bridge = _DummyBridge()
-        with constructClient(self.log, bridge, ssl, type) as clientFactory:
+        with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                if type == "xml":
-                    # TODO start using executor for xmlrpc
-                    pass
-                else:
-                    with self.assertRaises(JsonRpcError) as cm:
-                        self._callTimeout(client, "no_method", [], CALL_ID)
+                with self.assertRaises(JsonRpcError) as cm:
+                    self._callTimeout(client, "no_method", [], CALL_ID)
 
-                    self.assertEqual(cm.exception.code,
-                                     JsonRpcInternalError().code)
+                self.assertEqual(cm.exception.code,
+                                 JsonRpcInternalError().code)
 
     @permutations(PERMUTATIONS)
-    def testClientSubscribe(self, ssl, type):
+    def testClientSubscribe(self, ssl):
         bridge = _DummyBridge()
-        clientFactory = constructClient(
-            self.log, bridge, ssl, type, "jms.topic.test")
-        with clientFactory:
+        with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                if type == "xml":
-                    # ignore notifications for xmlrpc
-                    pass
-                else:
-                    def callback(client, event, params):
-                        self.assertEqual(event, 'vdsm.double_response')
-                        self.assertEqual(params['content'], True)
+                def callback(client, event, params):
+                    self.assertEqual(event, 'vdsm.double_response')
+                    self.assertEqual(params['content'], True)
 
-                    sub = client.subscribe("jms.topic.test")
-                    client.registerEventCallback(callback)
-                    res = self._callTimeout(client, "double_response", [],
-                                            CALL_ID)
-                    self.assertEqual(res, 'sent')
-                    client.unsubscribe(sub)
+                sub = client.subscribe("jms.topic.test")
+                client.registerEventCallback(callback)
+                res = self._callTimeout(client, "double_response", [],
+                                        CALL_ID)
+                self.assertEqual(res, 'sent')
+                client.unsubscribe(sub)
 
     @permutations(PERMUTATIONS)
-    def testClientNotify(self, ssl, type):
+    def testClientNotify(self, ssl):
         bridge = _DummyBridge()
-        clientFactory = constructClient(
-            self.log, bridge, ssl, type, 'jms.topic.test')
-        with clientFactory:
+        with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                if type == "xml":
-                    # ignore notifications for xmlrpc
-                    pass
-                else:
-                    def callback(client, event, params):
-                        self.assertEqual(event, 'vdsm.event')
-                        self.assertEqual(params['content'], True)
+                def callback(client, event, params):
+                    self.assertEqual(event, 'vdsm.event')
+                    self.assertEqual(params['content'], True)
 
-                    client.registerEventCallback(callback)
-                    client.notify('vdsm.event', 'jms.topic.test',
-                                  bridge.event_schema, {'content': True})
+                client.registerEventCallback(callback)
+                client.notify('vdsm.event', 'jms.topic.test',
+                              bridge.event_schema, {'content': True})
