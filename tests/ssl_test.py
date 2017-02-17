@@ -22,28 +22,19 @@ from __future__ import print_function
 import errno
 import os
 import re
-from six.moves import xmlrpc_client as xmlrpclib
 import socket
-import ssl
 import subprocess
 import tempfile
 import threading
 
-from contextlib import contextmanager, closing
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import mock
 from nose.plugins.skip import SkipTest
 try:
-    from vdsm.m2cutils import VerifyingSafeTransport
-    from integration.m2chelper import TestServer, \
-        get_server_socket, KEY_FILE, \
-        CRT_FILE, OTHER_KEY_FILE, OTHER_CRT_FILE
+    from integration.m2chelper import get_server_socket
     _m2cEnabled = True
 except ImportError:
-    from vdsm.sslutils import VerifyingSafeTransport
-    from integration.sslhelper import TestServer, \
-        get_server_socket, KEY_FILE, \
-        CRT_FILE, OTHER_KEY_FILE, OTHER_CRT_FILE
+    from integration.sslhelper import get_server_socket
     _m2cEnabled = False
 from vdsm.sslutils import SSLHandshakeDispatcher
 
@@ -55,81 +46,6 @@ class MathService():
 
     def add(self, x, y):
         return x + y
-
-
-class VerifyingClient():
-
-    def __init__(self, port, key_file, cert_file):
-        self.transport = VerifyingSafeTransport(key_file=key_file,
-                                                cert_file=cert_file,
-                                                ca_certs=CRT_FILE,
-                                                cert_reqs=ssl.CERT_REQUIRED,
-                                                timeout=1)
-        self.proxy = xmlrpclib.ServerProxy('https://%s:%s' % (HOST, port),
-                                           transport=self.transport)
-
-    def add(self, numer1, number2):
-        return self.proxy.add(numer1, number2)
-
-    def close(self):
-        if hasattr(self.transport, 'close'):
-            self.transport.close()
-
-
-@contextmanager
-def verifyingclient(key_file, crt_file):
-    server = TestServer(HOST, MathService())
-    server.start()
-    try:
-        client = VerifyingClient(server.port, key_file, crt_file)
-        try:
-            yield client
-        finally:
-            client.close()
-    finally:
-        server.stop()
-
-
-class SocketTests(TestCaseBase):
-
-    def test_block_socket(self):
-        server = TestServer(HOST, MathService())
-        timeout = server.get_timeout()
-        server.start()
-        try:
-            with closing(socket.socket(socket.AF_INET,
-                                       socket.SOCK_STREAM)) as client_socket:
-                client_socket.settimeout(timeout)
-                client_socket.connect((HOST, server.port))
-                # Wait for data that will never arrive.
-                # This will return successfully if the other side closes the
-                # connection (as expected) or raise timeout (which means the
-                # test failed)
-                client_socket.recv(100)
-        finally:
-            server.stop()
-
-
-class VerifyingTransportTests(TestCaseBase):
-
-    def test_valid(self):
-        with verifyingclient(KEY_FILE, CRT_FILE) as client:
-            self.assertEqual(client.add(2, 3), 5)
-
-    def test_different_signature_chain(self):
-        with verifyingclient(OTHER_KEY_FILE, OTHER_CRT_FILE) as client:
-            with self.assertRaises(ssl.SSLError):
-                client.add(2, 3)
-
-    def test_cert_do_not_match_with_key(self):
-        with verifyingclient(KEY_FILE, OTHER_CRT_FILE) as client:
-            with self.assertRaises(ssl.SSLError):
-                client.add(2, 3)
-
-    def test_key_do_not_match_with_cert(self):
-        with verifyingclient(OTHER_KEY_FILE, CRT_FILE) as client:
-            with self.assertRaises(ssl.SSLError):
-                client.add(2, 3)
 
 
 class SSLServerThread(threading.Thread):

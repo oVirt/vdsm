@@ -19,9 +19,6 @@
 #
 
 import os
-import SimpleXMLRPCServer
-import threading
-from M2Crypto import SSL
 from vdsm.m2cutils import SSLContext, SSLServerSocket
 
 CERT_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
@@ -39,36 +36,3 @@ def get_server_socket(key_file, cert_file, socket):
                            keyfile=key_file,
                            certfile=cert_file,
                            ca_certs=cert_file)
-
-
-class TestServer():
-
-    def __init__(self, host, service):
-        self.server = SimpleXMLRPCServer.SimpleXMLRPCServer((host, 0),
-                                                            logRequests=False)
-        self.server.socket = SSLServerSocket(raw=self.server.socket,
-                                             keyfile=KEY_FILE,
-                                             certfile=CRT_FILE,
-                                             ca_certs=CRT_FILE)
-        _, self.port = self.server.socket.getsockname()
-        self.server.register_instance(service)
-
-    def start(self):
-        self.thread = threading.Thread(target=self.serve_forever)
-        self.thread.daemon = True
-        self.thread.start()
-
-    def serve_forever(self):
-        try:
-            self.server.serve_forever()
-        except SSL.SSLError:
-            # expected sslerror is thrown in server side during test_invalid
-            # method we do not want to pollute test console output
-            pass
-
-    def stop(self):
-        self.server.shutdown()
-
-    def get_timeout(self):
-        self.server.socket.accept_timeout = 1
-        return self.server.socket.accept_timeout + 1

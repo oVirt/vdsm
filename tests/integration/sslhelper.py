@@ -7,9 +7,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import os
-from six.moves import xmlrpc_server as SimpleXMLRPCServer
 import ssl
-import threading
 from vdsm.sslutils import SSLContext
 
 CERT_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
@@ -30,53 +28,3 @@ def get_server_socket(key_file, cert_file, socket):
                            cert_reqs=ssl.CERT_REQUIRED,
                            ssl_version=ssl.PROTOCOL_TLSv1,
                            ca_certs=cert_file)
-
-
-class TestServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
-
-    def __init__(self, host, service):
-        SimpleXMLRPCServer.SimpleXMLRPCServer.__init__(self, (host, 0),
-                                                       logRequests=False,
-                                                       bind_and_activate=False)
-
-        self.socket = ssl.wrap_socket(self.socket,
-                                      keyfile=KEY_FILE,
-                                      certfile=CRT_FILE,
-                                      server_side=True,
-                                      cert_reqs=ssl.CERT_REQUIRED,
-                                      ssl_version=ssl.PROTOCOL_TLSv1,
-                                      ca_certs=CRT_FILE,
-                                      do_handshake_on_connect=False)
-
-        self.server_bind()
-        self.server_activate()
-
-        _, self.port = self.socket.getsockname()
-        self.register_instance(service)
-
-    def finish_request(self, request, client_address):
-        if self.timeout is not None:
-            request.settimeout(self.timeout)
-
-        request.do_handshake()
-
-        return SimpleXMLRPCServer.SimpleXMLRPCServer.finish_request(
-            self,
-            request,
-            client_address)
-
-    def handle_error(self, request, client_address):
-        # ignored due to expected sslerrors when perorming plain connection
-        pass
-
-    def start(self):
-        self.thread = threading.Thread(target=self.serve_forever)
-        self.thread.daemon = True
-        self.thread.start()
-
-    def stop(self):
-        self.shutdown()
-
-    def get_timeout(self):
-        self.timeout = 1
-        return self.timeout + 1
