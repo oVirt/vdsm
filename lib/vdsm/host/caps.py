@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2016 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -215,12 +215,12 @@ def get():
 def _dropVersion(vstring, logMessage):
     logging.error(logMessage)
 
-    from distutils.version import StrictVersion
+    from distutils import version
     # Drop cluster supported version to be strictly less than given vstring.
     info = dsaversion.version_info.copy()
-    maxVer = StrictVersion(vstring)
+    maxVer = version.StrictVersion(vstring)
     info['clusterLevels'] = [ver for ver in info['clusterLevels']
-                             if StrictVersion(ver) < maxVer]
+                             if version.StrictVersion(ver) < maxVer]
     return info
 
 
