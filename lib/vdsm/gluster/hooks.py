@@ -207,7 +207,7 @@ def hookRead(glusterCmd, hookLevel, hookName):
                 'md5sum': _computeMd5Sum(hookFile)}
     except IOError as e:
         errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)
-        raise ge.GlusterHookReadException(err=[errMsg])
+        raise ge.GlusterHookReadFailedException(err=[errMsg])
 
 
 def _hookUpdateOrAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
