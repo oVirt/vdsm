@@ -51,7 +51,7 @@ class BaseConfig(object):
         # Clean netAttrs from fields that should not be serialized
         cleanAttrs = dict((key, value) for key, value in six.iteritems(attrs)
                           if value is not None and key not in
-                          ('configurator', '_netinfo', 'force',
+                          ('configurator', 'force',
                            'bondingOptions', 'implicitBonding'))
         self.networks[network] = cleanAttrs
         logging.info('Adding network %s(%s)', network, cleanAttrs)

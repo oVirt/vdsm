@@ -163,25 +163,23 @@ def _alter_running_config(func):
     """
 
     @wraps(func)
-    def wrapped(network, configurator, **kwargs):
+    def wrapped(network, configurator, net_info, **kwargs):
         if config.get('vars', 'net_persistence') == 'unified':
             if func.__name__ == '_del_network':
                 configurator.runningConfig.removeNetwork(network)
             else:
                 configurator.runningConfig.setNetwork(network, kwargs)
-        return func(network, configurator, **kwargs)
+        return func(network, configurator, net_info, **kwargs)
     return wrapped
 
 
 @_alter_running_config
-def _add_network(network, configurator, nameservers,
+def _add_network(network, configurator, _netinfo, nameservers,
                  vlan=None, bonding=None, nic=None, ipaddr=None,
                  netmask=None, mtu=None, gateway=None,
                  dhcpv6=None, ipv6addr=None, ipv6gateway=None,
-                 ipv6autoconf=None, bridged=True, _netinfo=None, hostQos=None,
+                 ipv6autoconf=None, bridged=True, hostQos=None,
                  defaultRoute=None, blockingdhcp=False, **options):
-    if _netinfo is None:
-        _netinfo = CachingNetInfo()
     if dhcpv6 is not None:
         dhcpv6 = utils.tobool(dhcpv6)
     if ipv6autoconf is not None:
@@ -276,12 +274,8 @@ def _assert_bridge_clean(bridge, vlan, bonding, nics):
 
 
 @_alter_running_config
-def _del_network(network, configurator, vlan=None, bonding=None,
-                 bypass_validation=False,
-                 _netinfo=None, keep_bridge=False, **options):
-    if _netinfo is None:
-        _netinfo = CachingNetInfo()
-
+def _del_network(network, configurator, _netinfo, bypass_validation=False,
+                 keep_bridge=False, **options):
     nics, vlan, vlan_id, bonding = _netinfo.getNicsVlanAndBondingForNetwork(
         network)
     bridged = _netinfo.networks[network]['bridged']
@@ -362,8 +356,7 @@ def remove_networks(networks, bondings, configurator, _netinfo,
                 net_kernel_config=kernel_config.networks[network]
             )
 
-            _del_network(network, configurator,
-                         _netinfo=_netinfo,
+            _del_network(network, configurator, _netinfo,
                          keep_bridge=keep_bridge)
             _netinfo.del_network(network)
             _netinfo.updateDevices()
@@ -404,8 +397,7 @@ def _del_broken_network(network, netAttr, configurator):
             configurator.runningConfig.removeNetwork(network)
         return
     canonicalize_networks({network: _netinfo.networks[network]})
-    _del_network(network, configurator, bypass_validation=True,
-                 _netinfo=_netinfo)
+    _del_network(network, configurator, _netinfo, bypass_validation=True)
 
 
 def _should_keep_bridge(network_attrs, currently_bridged, net_kernel_config):
@@ -450,8 +442,7 @@ def add_missing_networks(configurator, networks, bondings, _netinfo):
 
         logging.debug('Adding network %r', network)
         try:
-            _add_network(network, configurator,
-                         _netinfo=_netinfo, **attrs)
+            _add_network(network, configurator, _netinfo, **attrs)
         except ConfigNetworkError as cne:
             if cne.errCode == ne.ERR_FAILED_IFUP:
                 logging.debug('Adding network %r failed. Running '

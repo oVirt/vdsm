@@ -53,11 +53,12 @@ def _raiseInvalidOpException(*args, **kwargs):
 class TestConfigNetwork(TestCaseBase):
 
     def _addNetworkWithExc(self, netName, opts, errCode):
+        fakeInfo = netinfo.cache.CachingNetInfo(FAKE_NETINFO)
         configurator = legacy_switch.ConfiguratorClass()
 
         with self.assertRaises(errors.ConfigNetworkError) as cneContext:
             canonicalize_networks({netName: opts})
-            legacy_switch._add_network(netName, configurator, **opts)
+            legacy_switch._add_network(netName, configurator, fakeInfo, **opts)
         self.assertEqual(cneContext.exception.errCode, errCode)
 
     # Monkey patch the real network detection from the netinfo module.
@@ -71,79 +72,42 @@ class TestConfigNetwork(TestCaseBase):
     @MonkeyPatch(Nic, 'configure', lambda *x: _raiseInvalidOpException())
     @MonkeyPatch(Vlan, 'configure', lambda *x: _raiseInvalidOpException())
     def testAddNetworkValidation(self):
-        _netinfo = {
-            'networks': {
-                'fakent': {'iface': 'fakeint', 'bridged': False},
-                'fakebrnet': {'iface': 'fakebr', 'bridged': True,
-                              'ports': ['eth0', 'eth1']},
-                'fakebrnet1': {'iface': 'fakebr1', 'bridged': True,
-                               'ports': ['bond00']},
-                'fakebrnet2': {'iface': 'fakebr2', 'bridged': True,
-                               'ports': ['eth7.1']},
-                'fakebrnet3': {'iface': 'eth8', 'bridged': False}
-            },
-            'vlans': {
-                'eth3.2': {'iface': 'eth3',
-                           'addr': '10.10.10.10',
-                           'netmask': '255.255.0.0',
-                           'mtu': 1500
-                           },
-                'eth7.1': {'iface': 'eth7',
-                           'addr': '192.168.100.1',
-                           'netmask': '255.255.255.0',
-                           'mtu': 1500
-                           }
-            },
-            'nics': ['eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'eth6',
-                     'eth7', 'eth8', 'eth9', 'eth10'],
-            'bridges': {
-                'fakebr': {'ports': ['eth0', 'eth1']},
-                'fakebr1': {'ports': ['bond00']},
-                'fakebr2': {'ports': ['eth7.1']}
-            },
-            'bondings': {'bond00': {'slaves': ['eth5', 'eth6']}},
-            'nameservers': [],
-        }
-
-        fakeInfo = netinfo.cache.CachingNetInfo(_netinfo)
-        nic = 'eth2'
 
         # Test for already existing bridge.
-        self._addNetworkWithExc('fakebrnet', dict(nic=nic, mtu=DEFAULT_MTU,
-                                _netinfo=fakeInfo), errors.ERR_USED_BRIDGE)
+        self._addNetworkWithExc('fakebrnet', dict(nic='eth2', mtu=DEFAULT_MTU),
+                                errors.ERR_USED_BRIDGE)
 
         # Test for already existing network.
-        self._addNetworkWithExc('fakent', dict(nic=nic, _netinfo=fakeInfo,
-                                mtu=DEFAULT_MTU), errors.ERR_USED_BRIDGE)
+        self._addNetworkWithExc('fakent', dict(nic='eth2', mtu=DEFAULT_MTU),
+                                errors.ERR_USED_BRIDGE)
 
         # Test IP without netmask.
-        self._addNetworkWithExc('test', dict(nic=nic, ipaddr='10.10.10.10',
-                                mtu=DEFAULT_MTU, _netinfo=fakeInfo),
+        self._addNetworkWithExc('test', dict(nic='eth2', ipaddr='10.10.10.10',
+                                mtu=DEFAULT_MTU),
                                 errors.ERR_BAD_ADDR)
 
         # Test netmask without IP.
-        self._addNetworkWithExc('test', dict(nic=nic, mtu=DEFAULT_MTU,
-                                netmask='255.255.255.0', _netinfo=fakeInfo),
+        self._addNetworkWithExc('test', dict(nic='eth2', mtu=DEFAULT_MTU,
+                                netmask='255.255.255.0'),
                                 errors.ERR_BAD_ADDR)
 
         # Test gateway without IP.
-        self._addNetworkWithExc('test', dict(nic=nic, gateway='10.10.0.1',
-                                mtu=DEFAULT_MTU, _netinfo=fakeInfo),
+        self._addNetworkWithExc('test', dict(nic='eth2', gateway='10.10.0.1',
+                                mtu=DEFAULT_MTU),
                                 errors.ERR_BAD_ADDR)
 
         # Test for non existing nic.
-        self._addNetworkWithExc('test', dict(nic='eth11',
-                                mtu=DEFAULT_MTU, _netinfo=fakeInfo),
+        self._addNetworkWithExc('test', dict(nic='eth11', mtu=DEFAULT_MTU),
                                 errors.ERR_BAD_NIC)
 
         # Test for nic already in a bond.
-        self._addNetworkWithExc('test', dict(nic='eth6', _netinfo=fakeInfo,
-                                mtu=DEFAULT_MTU, ), errors.ERR_USED_NIC)
+        self._addNetworkWithExc('test', dict(nic='eth6', mtu=DEFAULT_MTU),
+                                errors.ERR_USED_NIC)
 
         # Test for adding a new non-VLANed bridgeless network when a non-VLANed
         # bridgeless network exists
         self._addNetworkWithExc('test', dict(nic='eth8', bridged=False,
-                                mtu=DEFAULT_MTU, _netinfo=fakeInfo),
+                                mtu=DEFAULT_MTU),
                                 errors.ERR_BAD_PARAMS)
 
     @MonkeyPatch(netinfo.cache, 'CachingNetInfo', lambda: None)
@@ -155,3 +119,38 @@ class TestConfigNetwork(TestCaseBase):
             legacy_switch.validate_network_setup(networks, {})
         self.assertEqual(cneContext.exception.errCode,
                          errors.ERR_BAD_PARAMS)
+
+
+FAKE_NETINFO = {
+    'networks': {
+        'fakent': {'iface': 'fakeint', 'bridged': False},
+        'fakebrnet': {'iface': 'fakebr', 'bridged': True,
+                      'ports': ['eth0', 'eth1']},
+        'fakebrnet1': {'iface': 'fakebr1', 'bridged': True,
+                       'ports': ['bond00']},
+        'fakebrnet2': {'iface': 'fakebr2', 'bridged': True,
+                       'ports': ['eth7.1']},
+        'fakebrnet3': {'iface': 'eth8', 'bridged': False}
+    },
+    'vlans': {
+        'eth3.2': {'iface': 'eth3',
+                   'addr': '10.10.10.10',
+                   'netmask': '255.255.0.0',
+                   'mtu': 1500
+                   },
+        'eth7.1': {'iface': 'eth7',
+                   'addr': '192.168.100.1',
+                   'netmask': '255.255.255.0',
+                   'mtu': 1500
+                   }
+    },
+    'nics': ['eth0', 'eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'eth6',
+             'eth7', 'eth8', 'eth9', 'eth10'],
+    'bridges': {
+        'fakebr': {'ports': ['eth0', 'eth1']},
+        'fakebr1': {'ports': ['bond00']},
+        'fakebr2': {'ports': ['eth7.1']}
+    },
+    'bondings': {'bond00': {'slaves': ['eth5', 'eth6']}},
+    'nameservers': [],
+}
