@@ -38,7 +38,6 @@ from itertools import chain
 from subprocess import list2cmdline
 
 from vdsm import constants
-from vdsm.common import exception
 from vdsm.storage import devicemapper
 from vdsm.storage import exception as se
 from vdsm.storage import misc
@@ -907,12 +906,6 @@ def movePV(vgName, src_device, dst_devices):
 
     Raises se.CouldNotMovePVData if pvmove fails
     """
-
-    # TODO: we are pending on a lvm bug that causes the pvmove execution to
-    # return before it was actually completed. Will be removed as soon as we'll
-    # depend on a version with a fix.
-    raise exception.UnsupportedOperation()
-
     pvName = _fqpvname(src_device)
 
     # we invalidate the pv as we can't rely on the cache for checking the
