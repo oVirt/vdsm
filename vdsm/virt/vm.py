@@ -270,8 +270,13 @@ class Vm(object):
             self._lastStatus = vmstatus.RESTORING_STATE
         else:
             self._lastStatus = vmstatus.WAIT_FOR_LAUNCH
-        self._migrationSourceThread = migration.SourceThread(self,
-                                                             recovery=recover)
+        if recover and params.get('status') == vmstatus.MIGRATION_SOURCE:
+            self.log.info("Recovering possibly last_migrating VM")
+            last_migrating = True
+        else:
+            last_migrating = False
+        self._migrationSourceThread = migration.SourceThread(
+            self, recovery=last_migrating)
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
         self._incomingMigrationFinished = threading.Event()
         self._incoming_migration_vm_running = threading.Event()
@@ -597,7 +602,8 @@ class Vm(object):
                     config.getint('vars', 'migration_destination_timeout'))
 
             if self.recovering and \
-               self._lastStatus == vmstatus.WAIT_FOR_LAUNCH:
+               self._lastStatus == vmstatus.WAIT_FOR_LAUNCH and \
+               self._migrationSourceThread.recovery:
                 self._recover_status()
             else:
                 self.lastStatus = vmstatus.UP
