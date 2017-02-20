@@ -38,6 +38,7 @@ from . import sslutils
 
 _COMMAND_CONVERTER = {
     'activateStorageDomain': 'StorageDomain.activate',
+    'attachStorageDomain': 'StorageDomain.attach',
     'connectStoragePool': 'StoragePool.connect',
     'connectStorageServer': 'StoragePool.connectStorageServer',
     'cont': 'VM.cont',
@@ -98,6 +99,7 @@ _COMMAND_CONVERTER = {
     'ping': 'Host.ping',
     'prepareImage': 'Image.prepare',
     'repoStats': 'Host.getStorageRepoStats',
+    'reconstructMaster': 'StoragePool.reconstructMaster',
     'setBalloonTarget': 'VM.setBalloonTarget',
     'setCpuTunePeriod': 'VM.setCpuTunePeriod',
     'setCpuTuneQuota': 'VM.setCpuTuneQuota',
