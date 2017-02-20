@@ -170,6 +170,11 @@ def get_external_vms(uri, username, password, vm_names=None):
             if vm_names is not None and vm.name() not in vm_names:
                 # Skip this VM.
                 continue
+            elif conn.getType() == "ESX" and _vm_has_snapshot(vm):
+                logging.error("vm %r has snapshots and therefore can not be "
+                              "imported since snapshot conversion is not "
+                              "supported for VMware", vm.name())
+                continue
             _add_vm(conn, vms, vm)
         return {'status': doneCode, 'vmList': vms}
 
@@ -1179,6 +1184,15 @@ def _add_snapshot_info(conn, vm, params):
         logging.exception('Error checking for existing snapshots.')
     else:
         params['has_snapshots'] = ret > 0
+
+
+def _vm_has_snapshot(vm):
+    try:
+        return vm.hasCurrentSnapshot() == 1
+    except libvirt.libvirtError:
+        logging.exception('Error checking if snapshot exist for vm: %s.',
+                          vm.name())
+        return False
 
 
 def _read_ovf_from_ova(ova_path):

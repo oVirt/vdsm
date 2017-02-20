@@ -27,8 +27,8 @@ import libvirt
 import os
 
 from testlib import namedTemporaryDir, permutations, expandPermutations
-from v2v_testlib import VM_SPECS, MockVirDomain, MockVirConnect
-from v2v_testlib import _mac_from_uuid, BLOCK_DEV_PATH
+from v2v_testlib import VM_SPECS, MockVirDomain
+from v2v_testlib import MockVirConnect, _mac_from_uuid, BLOCK_DEV_PATH
 from vdsm import v2v
 from vdsm import libvirtconnection
 from vdsm.password import ProtectedPassword
@@ -163,12 +163,16 @@ class v2vTests(TestCaseBase):
 
         self._vms = [MockVirDomain(*spec) for spec in VM_SPECS]
 
+        self._vms_with_snapshot = [MockVirDomain(*spec)for spec in
+                                   VM_SPECS]
+        self._vms_with_snapshot[4].setCurrentSnapshot(True)
+
     def tearDown(self):
         v2v._jobs.clear()
 
     def testGetExternalVMs(self):
         def _connect(uri, username, passwd):
-            return MockVirConnect(vms=self._vms)
+            return MockVirConnect(vms=self._vms_with_snapshot)
 
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
@@ -176,7 +180,9 @@ class v2vTests(TestCaseBase):
                                        ProtectedPassword('password'),
                                        None)['vmList']
 
-        self.assertEqual(len(vms), len(VM_SPECS))
+        self.assertEqual(len(vms), len(VM_SPECS) - 1)
+        self.assertNotIn(self._vms_with_snapshot[4].ID,
+                         [vm['vmId'] for vm in vms])
 
         for vm, spec in zip(vms, VM_SPECS):
             self._assertVmMatchesSpec(vm, spec)
@@ -184,9 +190,9 @@ class v2vTests(TestCaseBase):
 
     def testGetExternalVMsList(self):
         def _connect(uri, username, passwd):
-            return MockVirConnect(vms=self._vms)
+            return MockVirConnect(vms=self._vms_with_snapshot)
 
-        vmIDs = [1, 3]
+        vmIDs = [1, 3, 4]
         names = [vm.name for vm in VM_SPECS if vm.id in vmIDs]
         # Add a non-existent name to check that nothing bad happens.
         names.append('Some nonexistent name')
@@ -197,7 +203,9 @@ class v2vTests(TestCaseBase):
                                        ProtectedPassword('password'),
                                        names)['vmList']
 
-        self.assertEqual(len(vms), len(vmIDs))
+        self.assertEqual(len(vms), len(vmIDs) - 1)
+        self.assertNotIn(self._vms_with_snapshot[4].ID,
+                         [vm['vmId'] for vm in vms])
 
         for vm, vmID in zip(vms, vmIDs):
             spec = VM_SPECS[vmID]
