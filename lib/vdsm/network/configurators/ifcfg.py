@@ -80,10 +80,11 @@ def is_available():
 
 class Ifcfg(Configurator):
     # TODO: Do all the configApplier interaction from here.
-    def __init__(self, inRollback=False):
+    def __init__(self, net_info, inRollback=False):
         self.unifiedPersistence = \
             config.get('vars', 'net_persistence') == 'unified'
         super(Ifcfg, self).__init__(ConfigWriter(self.unifiedPersistence),
+                                    net_info,
                                     inRollback)
         if self.unifiedPersistence:
             self.runningConfig = RunningConfig()
@@ -134,7 +135,7 @@ class Ifcfg(Configurator):
     def configureBond(self, bond, **opts):
         if not self.owned_device(bond.name):
             IfcfgAcquire.acquire_device(bond.name)
-        self.configApplier.addBonding(bond, **opts)
+        self.configApplier.addBonding(bond, self.net_info, **opts)
         if not vlans.is_vlanned(bond.name):
             for slave in bond.slaves:
                 ifdown(slave.name)
@@ -171,7 +172,7 @@ class Ifcfg(Configurator):
             bridgeName = _netinfo.getBridgedNetworkForIface(bond.name)
             if isIfcfgControlled and bridgeName:
                 bond.master = Bridge(bridgeName, self, port=bond)
-            self.configApplier.addBonding(bond)
+            self.configApplier.addBonding(bond, _netinfo)
             bondIfcfgWritten = True
 
         for nic in currentNics - nicsToSet:
@@ -181,11 +182,11 @@ class Ifcfg(Configurator):
         for slave in bond.slaves:
             if slave.name in nicsToAdd:
                 ifdown(slave.name)  # nics must be down to join a bond
-                self.configApplier.addNic(slave)
+                self.configApplier.addNic(slave, _netinfo)
                 _exec_ifup(slave)
             else:
                 # Let NetworkManager know that we now own the slave.
-                self.configApplier.addNic(slave)
+                self.configApplier.addNic(slave, _netinfo)
 
         if bondIfcfgWritten:
             ifdown(bond.name)
@@ -200,7 +201,7 @@ class Ifcfg(Configurator):
     def configureNic(self, nic, **opts):
         if not self.owned_device(nic.name):
             IfcfgAcquire.acquire_device(nic.name)
-        self.configApplier.addNic(nic, **opts)
+        self.configApplier.addNic(nic, self.net_info, **opts)
         self._addSourceRoute(nic)
         if nic.bond is None:
             if not vlans.is_vlanned(nic.name):
@@ -688,7 +689,7 @@ class ConfigWriter(object):
         self._createConfFile(conf, vlan.name, vlan.ipv4, vlan.ipv6, vlan.mtu,
                              vlan.nameservers, **opts)
 
-    def addBonding(self, bond, **opts):
+    def addBonding(self, bond, net_info, **opts):
         """ Create ifcfg-* file with proper fields for bond """
         # 'custom' is not a real bond option, it just piggybacks custom values
         options = remove_custom_bond_option(bond.options)
@@ -698,7 +699,7 @@ class ConfigWriter(object):
             conf += 'BRIDGE=%s\n' % pipes.quote(bond.bridge.name)
         conf += 'ONBOOT=yes\n'
 
-        ipv4, ipv6, mtu, nameservers = self._getIfaceConfValues(bond)
+        ipv4, ipv6, mtu, nameservers = self._getIfaceConfValues(bond, net_info)
         self._createConfFile(conf, bond.name, ipv4, ipv6, mtu, nameservers,
                              **opts)
 
@@ -709,7 +710,7 @@ class ConfigWriter(object):
             with open(netinfo_bonding.BONDING_MASTERS, 'w') as bondingMasters:
                 bondingMasters.write('+%s\n' % bond.name)
 
-    def addNic(self, nic, **opts):
+    def addNic(self, nic, net_info, **opts):
         """ Create ifcfg-* file with proper fields for NIC """
         conf = ''
         if ipwrapper.Link._detectType(nic.name) == 'dummy':
@@ -725,12 +726,12 @@ class ConfigWriter(object):
         if ethtool_opts:
             conf += 'ETHTOOL_OPTS=%s\n' % pipes.quote(ethtool_opts)
 
-        ipv4, ipv6, mtu, nameservers = self._getIfaceConfValues(nic)
+        ipv4, ipv6, mtu, nameservers = self._getIfaceConfValues(nic, net_info)
         self._createConfFile(conf, nic.name, ipv4, ipv6, mtu, nameservers,
                              **opts)
 
     @staticmethod
-    def _getIfaceConfValues(iface):
+    def _getIfaceConfValues(iface, net_info):
         ipv4 = copy.deepcopy(iface.ipv4)
         ipv6 = copy.deepcopy(iface.ipv6)
         mtu = iface.mtu

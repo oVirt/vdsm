@@ -48,7 +48,7 @@ def configure_outbound(qosOutbound, device, vlan_tag):
                         qosOutbound)
 
 
-def remove_outbound(device, vlan_tag):
+def remove_outbound(device, vlan_tag, net_info):
     """Removes the qosOutbound configuration from the device and restores
     pfifo_fast if it was the last QoSed network on the device. vlan_tag
     can be None"""
@@ -72,7 +72,8 @@ def remove_outbound(device, vlan_tag):
         if tce.errCode not in MISSING_OBJ_ERR_CODES:  # No class exists
             raise
 
-    if not _uses_classes(device, root_qdisc_handle=root_qdisc_handle):
+    if not _uses_classes(device, net_info,
+                         root_qdisc_handle=root_qdisc_handle):
         try:
             tc._qdisc_del(device)
             tc._qdisc_del(device, kind='ingress')
@@ -81,7 +82,7 @@ def remove_outbound(device, vlan_tag):
                 raise
 
 
-def _uses_classes(device, root_qdisc_handle=None):
+def _uses_classes(device, net_info, root_qdisc_handle=None):
     """Returns true iff there's traffic classes in the device, ignoring the
     root class and a default unused class"""
     if root_qdisc_handle is None:

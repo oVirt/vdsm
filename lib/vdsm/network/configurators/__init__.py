@@ -34,8 +34,9 @@ from ..models import Bond, Bridge, hierarchy_vlan_tag, hierarchy_backing_device
 
 
 class Configurator(object):
-    def __init__(self, configApplier, inRollback=False):
+    def __init__(self, configApplier, net_info, inRollback=False):
         self.configApplier = configApplier
+        self.net_info = net_info
         self._inRollback = inRollback
         self.runningConfig = None
 
@@ -128,7 +129,7 @@ class Configurator(object):
     def removeQoS(self, top_device):
         dev_name = hierarchy_backing_device(top_device).name
         vlan_tag = hierarchy_vlan_tag(top_device)
-        qos.remove_outbound(dev_name, vlan_tag)
+        qos.remove_outbound(dev_name, vlan_tag, self.net_info)
 
     def _setNewMtu(self, iface, ifaceVlans):
         """

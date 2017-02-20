@@ -56,9 +56,9 @@ def is_available():
 
 
 class Iproute2(Configurator):
-    def __init__(self, inRollback=False):
+    def __init__(self, net_info, inRollback=False):
         self.unifiedPersistence = True
-        super(Iproute2, self).__init__(ConfigApplier(), inRollback)
+        super(Iproute2, self).__init__(ConfigApplier(), net_info, inRollback)
         self.runningConfig = RunningConfig()
 
     def begin(self):

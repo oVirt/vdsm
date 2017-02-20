@@ -139,7 +139,8 @@ def _setup_legacy(networks, bondings, options, in_rollback):
     _libvirt_nets = libvirt_nets()
     _netinfo = CachingNetInfo(netinfo_get(libvirtNets2vdsm(_libvirt_nets)))
 
-    with legacy_switch.ConfiguratorClass(in_rollback) as configurator:
+    with legacy_switch.ConfiguratorClass(_netinfo,
+                                         in_rollback) as configurator:
         # from this point forward, any exception thrown will be handled by
         # Configurator.__exit__.
 

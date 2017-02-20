@@ -54,7 +54,7 @@ class TestConfigNetwork(TestCaseBase):
 
     def _addNetworkWithExc(self, netName, opts, errCode):
         fakeInfo = netinfo.cache.CachingNetInfo(FAKE_NETINFO)
-        configurator = legacy_switch.ConfiguratorClass()
+        configurator = legacy_switch.ConfiguratorClass(fakeInfo)
 
         with self.assertRaises(errors.ConfigNetworkError) as cneContext:
             canonicalize_networks({netName: opts})
