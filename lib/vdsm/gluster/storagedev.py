@@ -281,8 +281,12 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
     #     --poolmetadata VOLGROUP/metadata_device_name
     pool = _createThinPool(poolName, vg, chunkSize, metaDataSizeKib,
                            poolDataSize)
-    thinlv = LVMThinLogicalVolumeDevice(brickName, parents=[pool],
-                                        size=vg.size, grow=True)
+    # Size of the thin LV should be same as the size of Thinpool to avoid
+    # over allocation. Refer bz#1412455 for more info.
+    thinlv = LVMThinLogicalVolumeDevice(
+        brickName, parents=[pool],
+        size=blivet.size.Size('%d KiB' % poolDataSize),
+        grow=True)
     blivetEnv.createDevice(thinlv)
     blivetEnv.doIt()
 
