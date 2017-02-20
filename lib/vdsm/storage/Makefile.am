@@ -45,6 +45,7 @@ dist_vdsmstorage_PYTHON = \
 	mount.py \
 	outOfProcess.py \
 	persistent.py \
+	qcow2.py \
 	rwlock.py \
 	securable.py \
 	threadPool.py \
