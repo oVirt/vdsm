@@ -52,6 +52,7 @@ dist_vdsmstorage_PYTHON = \
 	operation.py \
 	outOfProcess.py \
 	persistent.py \
+	qcow2.py \
 	resourceManager.py \
 	rwlock.py \
 	securable.py \

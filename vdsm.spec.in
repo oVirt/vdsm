@@ -1219,6 +1219,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/operation.py*
 %{python_sitelib}/%{vdsm_name}/storage/outOfProcess.py*
 %{python_sitelib}/%{vdsm_name}/storage/persistent.py*
+%{python_sitelib}/%{vdsm_name}/storage/qcow2.py*
 %{python_sitelib}/%{vdsm_name}/storage/resourceManager.py*
 %{python_sitelib}/%{vdsm_name}/storage/rwlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/securable.py*
