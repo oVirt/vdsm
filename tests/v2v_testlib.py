@@ -37,8 +37,9 @@ VM_SPECS = (
     VmSpec("RHEL_3", str(uuid.uuid4()), id=3, active=False,
            has_snapshots=False),
     VmSpec("RHEL_4", str(uuid.uuid4()), id=4, active=False,
-           has_snapshots=True),
+           has_snapshots=False),
 )
+
 
 BLOCK_DEV_PATH = '/dev/mapper/vdev'
 
@@ -161,6 +162,9 @@ class MockVirDomain(object):
 
     def hasCurrentSnapshot(self):
         return self._has_snapshots
+
+    def setCurrentSnapshot(self, has_snapshot=False):
+        self._has_snapshots = has_snapshot
 
     def blockInfo(self, source):
         # capacity, allocation, physical
