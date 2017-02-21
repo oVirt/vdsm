@@ -549,22 +549,22 @@ class Watchdog(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('watchdog'):
-
             # PCI watchdog has "address" different from ISA watchdog
-            if vmxml.find_first(x, 'address', None) is not None:
-                address = vmxml.device_address(x)
-                alias = vmxml.find_attr(x, 'alias', 'name')
+            if vmxml.find_first(x, 'address', None) is None:
+                continue
+            address = vmxml.device_address(x)
+            alias = vmxml.find_attr(x, 'alias', 'name')
 
-                for wd in device_conf:
-                    if not hasattr(wd, 'address') or not hasattr(wd, 'alias'):
-                        wd.address = address
-                        wd.alias = alias
+            for wd in device_conf:
+                if not hasattr(wd, 'address') or not hasattr(wd, 'alias'):
+                    wd.address = address
+                    wd.alias = alias
 
-                for dev in vm.conf['devices']:
-                    if ((dev['type'] == hwclass.WATCHDOG) and
-                            (not dev.get('address') or not dev.get('alias'))):
-                        dev['address'] = address
-                        dev['alias'] = alias
+            for dev in vm.conf['devices']:
+                if ((dev['type'] == hwclass.WATCHDOG) and
+                        (not dev.get('address') or not dev.get('alias'))):
+                    dev['address'] = address
+                    dev['alias'] = alias
 
     def getXML(self):
         """
