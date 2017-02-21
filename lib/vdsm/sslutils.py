@@ -19,8 +19,6 @@
 #
 from __future__ import absolute_import
 import logging
-from six.moves import xmlrpc_client as xmlrpclib
-from six.moves import http_client as httplib
 import socket
 import ssl
 from netaddr import IPAddress
@@ -99,48 +97,6 @@ class SSLContext(object):
                             ssl_version=self.protocol,
                             ca_certs=self.ca_certs)
         )
-
-
-class VerifyingHTTPSConnection(httplib.HTTPSConnection):
-    def __init__(self, host, port=None, key_file=None, cert_file=None,
-                 strict=None, timeout=SOCKET_DEFAULT_TIMEOUT,
-                 ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
-        httplib.HTTPSConnection.__init__(self, host, port, key_file, cert_file,
-                                         strict, timeout)
-        self.ca_certs = ca_certs
-        self.cert_reqs = cert_reqs
-
-    def connect(self):
-        "Connect to a host on a given (SSL) port."
-
-        sock = socket.create_connection((self.host, self.port), self.timeout)
-        if self._tunnel_host:
-            self.sock = sock
-            self._tunnel()
-        # DK added: pass ca_cert to sslsocket
-        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
-                                    ca_certs=self.ca_certs, server_side=False,
-                                    cert_reqs=self.cert_reqs)
-
-
-class VerifyingSafeTransport(xmlrpclib.SafeTransport):
-    def __init__(self, use_datetime=0, key_file=None, cert_file=None,
-                 ca_certs=None, cert_reqs=ssl.CERT_REQUIRED,
-                 timeout=SOCKET_DEFAULT_TIMEOUT):
-        xmlrpclib.SafeTransport.__init__(self, use_datetime)
-        self.key_file = key_file
-        self.cert_file = cert_file
-        self.ca_certs = ca_certs
-        self.cert_reqs = cert_reqs
-        self._timeout = timeout
-
-    def make_connection(self, host):
-        chost, self._extra_headers, x509 = self.get_host_info(host)
-        return VerifyingHTTPSConnection(
-            chost, None, key_file=self.key_file, strict=None,
-            cert_file=self.cert_file, timeout=self._timeout,
-            ca_certs=self.ca_certs,
-            cert_reqs=self.cert_reqs)
 
 
 class SSLHandshakeDispatcher(object):

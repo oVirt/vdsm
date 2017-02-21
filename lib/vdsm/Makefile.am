@@ -41,7 +41,6 @@ dist_vdsmpylib_PYTHON = \
 	hugepages.py \
 	jobs.py \
 	jsonrpcvdscli.py \
-	kaxmlrpclib.py \
 	kvm2ovirt.py \
 	libvirtconnection.py \
 	logUtils.py \
