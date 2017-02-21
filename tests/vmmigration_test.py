@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ from __future__ import absolute_import
 from contextlib import contextmanager
 from itertools import tee, product
 import logging
+import socket
 import threading
 import uuid
 
@@ -487,3 +488,114 @@ def _update_downtime_repeatedly(downtime, steps):
                 dt.join()
 
                 return dom.getDowntimes()
+
+
+class CannonizeHostPortTest(TestCaseBase):
+
+    def test_no_arguments(self):
+        self._assert_is_ip_address_with_port(migration._cannonize_host_port())
+
+    def test_none_argument(self):
+        self._assert_is_ip_address_with_port(
+            migration._cannonize_host_port(None))
+
+    def test_none_argument_and_port(self):
+        port = 65432
+        res = migration._cannonize_host_port(None, port)
+        self._assert_is_ip_address_with_port(res)
+        # address must include the given port
+        self.assertTrue(res.endswith(str(port)))
+
+    def test_address_no_port(self):
+        self._assert_is_ip_address_with_port(
+            migration._cannonize_host_port('127.0.0.1'))
+
+    def test_address_with_port(self):
+        address = "127.0.0.1:65432"
+        self.assertEqual(address, migration._cannonize_host_port(address))
+
+    def test_address_with_port_parameter(self):
+        addr = '127.0.0.1'
+        port = 65432
+        res = migration._cannonize_host_port(addr, port)
+        self._assert_is_ip_address_with_port(res)
+        # address must include the given port
+        self.assertTrue(res.endswith(str(port)))
+
+    def test_address_with_bad_port_parameter(self):
+        addr = '127.0.0.1'
+        port = '65432'
+        self.assertRaises(TypeError,
+                          migration._cannonize_host_port,
+                          addr, port)
+
+    def _assert_is_ip_address_with_port(self, addrWithPort):
+        try:
+            # to handle IPv6, we expect the \[ipv6\][:port] notation.
+            # this split also gracefully handle ipv4:port notation.
+            # details: http://tools.ietf.org/html/rfc5952#page-11
+            # the following will handle all IP families:
+            addr, port = addrWithPort.rsplit(':', 1)
+        except ValueError:
+            raise AssertionError('%s is not a valid IP address:' %
+                                 addrWithPort)
+        else:
+            self._assert_valid_address(addr)
+            self._assert_valid_port(port)
+
+    def _assert_valid_address(self, addr):
+        print(addr)
+        if addr != 'localhost':
+            if '.' in addr:
+                if not _is_ipv4_address(addr):
+                    raise AssertionError('invalid IPv4 address: %s',
+                                         addr)
+            elif ':' in addr:
+                if not addr.startswith('[') or not addr.endswith(']'):
+                    raise AssertionError('malformed IPv6 address: %s',
+                                         addr)
+                if not _is_ipv6_address(addr[1:-1]):
+                    raise AssertionError('invalid IPv6 address: %s',
+                                         addr)
+            else:
+                raise AssertionError('unrecognized IP address family: %s',
+                                     addr)
+
+    def _assert_valid_port(self, port_str):
+        try:
+            port = int(port_str)
+        except ValueError:
+            raise AssertionError('malformed port: %s' % port_str)
+        if port <= 0 or port >= 2**16:
+            raise AssertionError('malformed port: %s' % port_str)
+
+
+def _is_ipv4_address(address):
+    try:
+        socket.inet_pton(socket.AF_INET, address)
+    except socket.error:
+        return False
+    else:
+        return True
+
+
+def _is_ipv6_address(address):
+    addr = address.split('/', 1)
+    try:
+        socket.inet_pton(socket.AF_INET6, addr[0])
+    except socket.error:
+        return False
+    else:
+        if len(addr) == 2:
+            return _is_valid_prefix_len(addr[1])
+        return True
+
+
+def _is_valid_prefix_len(prefixlen):
+    try:
+        prefixlen = int(prefixlen)
+        if prefixlen < 0 or prefixlen > 127:
+            return False
+    except ValueError:
+        return False
+    return True

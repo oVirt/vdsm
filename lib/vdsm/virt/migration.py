@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2014 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,16 +20,15 @@
 from __future__ import absolute_import
 
 import collections
+import re
 import threading
 import time
 import libvirt
 
 from vdsm import concurrent
 from vdsm import hooks
-from vdsm import kaxmlrpclib
 from vdsm.common import response
 from vdsm import utils
-from vdsm import vdscli
 from vdsm import jsonrpcvdscli
 from vdsm.compat import pickle
 from vdsm.config import config
@@ -37,9 +36,6 @@ from vdsm.common.define import NORMAL, Mbytes
 from vdsm.common.network.address import normalize_literal_addr
 from vdsm.sslcompat import sslutils
 from vdsm.virt.utils import DynamicBoundedSemaphore
-from yajsonrpc import \
-    JsonRpcNoResponseError, \
-    JsonRpcBindingsError
 
 
 from vdsm.virt import vmexitreason
@@ -63,6 +59,10 @@ CONVERGENCE_SCHEDULE_SET_ABORT = "abort"
 
 
 _MiB_IN_GiB = 1024
+
+
+ADDRESS = '0'
+PORT = 54321
 
 
 class MigrationDestinationSetupError(RuntimeError):
@@ -222,27 +222,17 @@ class SourceThread(object):
         if self.hibernating:
             return
 
-        hostPort = vdscli.cannonizeHostPort(
+        hostPort = _cannonize_host_port(
             self._dst,
             config.getint('addresses', 'management_port'))
         self.remoteHost, port = hostPort.rsplit(':', 1)
 
-        try:
-            client = self._createClient(port)
-            requestQueues = config.get('addresses', 'request_queues')
-            requestQueue = requestQueues.split(",")[0]
-            self._destServer = jsonrpcvdscli.connect(requestQueue, client)
-            self.log.debug('Initiating connection with destination')
-            self._destServer.ping()
-
-        except (JsonRpcBindingsError, JsonRpcNoResponseError):
-            if config.getboolean('vars', 'ssl'):
-                self._destServer = vdscli.connect(
-                    hostPort,
-                    useSSL=True,
-                    TransportClass=kaxmlrpclib.TcpkeepSafeTransport)
-            else:
-                self._destServer = kaxmlrpclib.Server('http://' + hostPort)
+        client = self._createClient(port)
+        requestQueues = config.get('addresses', 'request_queues')
+        requestQueue = requestQueues.split(",")[0]
+        self._destServer = jsonrpcvdscli.connect(requestQueue, client)
+        self.log.debug('Initiating connection with destination')
+        self._destServer.ping()
 
         self.log.debug('Destination server is: ' + hostPort)
 
@@ -1013,3 +1003,33 @@ def ongoing(stats):
         return False
     else:
         return job_type != libvirt.VIR_DOMAIN_JOB_NONE
+
+
+def __guess_defaults():
+    global ADDRESS, PORT
+    try:
+        from vdsm.config import config
+        PORT = config.getint('addresses', 'management_port')
+        ADDRESS = config.get('addresses', 'management_ip')
+        if ADDRESS == '::':
+            ADDRESS = 'localhost'
+    except:
+        pass
+
+
+__guess_defaults()
+
+
+def _cannonize_host_port(hostPort=None, port=PORT):
+    if hostPort is None or hostPort == '0':
+        addr = ADDRESS
+        if ':' in addr:
+            # __guess_defaults() might set an IPv6 address, cannonize it
+            addr = '[%s]' % addr
+    else:
+        # hostPort is in rfc3986 'host [ ":" port ]' format
+        hostPort = re.match(r'(?P<Host>.+?)(:(?P<Port>\d+))?$', hostPort)
+        addr = hostPort.group('Host')
+        if hostPort.group('Port'):
+            port = int(hostPort.group('Port'))
+    return '%s:%i' % (addr, port)
