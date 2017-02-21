@@ -142,7 +142,11 @@ public abstract class StompCommonClient extends ReactorClient {
                 byte[] content = this.message.getContent();
                 this.message.withContent(Arrays.copyOfRange(content, 0, contentLength + 1));
                 emitOnMessageReceived(this.message);
-                headerBuffer.put(Arrays.copyOfRange(content, contentLength + 1, content.length));
+                int from = contentLength + 1;
+                if (from > content.length) {
+                    from = content.length;
+                }
+                headerBuffer.put(Arrays.copyOfRange(content, from, content.length));
                 return;
             }
         }
