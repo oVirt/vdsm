@@ -28,6 +28,7 @@ from vdsm import cmdutils
 from vdsm import commands
 from vdsm import qemuimg
 from vdsm.storage import constants as sc
+from vdsm.storage import exception as se
 from vdsm.storage import guarded
 from vdsm.storage import outOfProcess as oop
 
@@ -124,13 +125,26 @@ class FakeMetadata(dict):
         yield
 
 
+class FakeVolume(object):
+
+    def __init__(self):
+        pass
+
+
 class FakeSD(object):
     def __init__(self, sd_manifest):
         self._manifest = sd_manifest
+        self.volumes = {}
 
     @property
     def manifest(self):
         return self._manifest
+
+    def produceVolume(self, img_id, vol_id):
+        key = (img_id, vol_id)
+        if key not in self.volumes:
+            raise se.VolumeDoesNotExist(vol_id)
+        return self.volumes[key]
 
     def getVersion(self):
         return self._manifest.getVersion()

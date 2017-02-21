@@ -32,6 +32,7 @@ from storagefakelib import FakeLVM
 from storagefakelib import FakeResourceManager
 from storagefakelib import FakeStorageDomainCache
 from storagetestlib import FakeSD
+from storagetestlib import FakeVolume
 
 from storage import blockSD
 
@@ -474,3 +475,18 @@ class TestFakeStorageDomainCache(VdsmTestCase):
         sdc.domains["uuid"] = "fake domain"
         sdc.manuallyRemoveDomain("uuid")
         self.assertRaises(se.StorageDomainDoesNotExist, sdc.produce, "uuid")
+
+
+class FakeSDTests(VdsmTestCase):
+
+    def test_produce_existing_volume(self):
+        fake_vol = FakeVolume()
+        sd = FakeSD("fake manifest")
+        sd.volumes = {("img_uuid", "vol_uuid"): fake_vol}
+        vol = sd.produceVolume("img_uuid", "vol_uuid")
+        self.assertIs(vol, fake_vol)
+
+    def test_produce_non_existing_volume(self):
+        sd = FakeSD("fake manifest")
+        self.assertRaises(se.VolumeDoesNotExist, sd.produceVolume,
+                          "img_uuid", "vol_uuid")
