@@ -32,7 +32,6 @@ lib/vdsm/config.py
 lib/vdsm/constants.py
 lib/vdsm/dsaversion.py
 lib/vdsm/tool/validate_ovirt_certs.py
-lib/vdsm/vdscli.py
 lib/vdsm/vdsm.conf.sample
 results.log
 static/etc/rwtab.d/vdsm

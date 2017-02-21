@@ -154,11 +154,9 @@ test_modules = \
 	tool_confmeta_test.py \
 	tool_test.py \
 	toolbonding_test.py \
-	transportwrapper_test.py \
 	throttledlog_test.py \
 	unicode_test.py \
 	utils_test.py \
-	vdscli_test.py \
 	vdsmapi_test.py \
 	vdsmdumpchains_test.py \
 	verify.py \
@@ -251,7 +249,6 @@ blacklist_modules_python3 = \
 	unicode_test.py \
 	utils_test.py \
 	v2v_test.py \
-	vdscli_test.py \
 	vmapi_test.py \
 	vmmigration_test.py \
 	vmoperations_test.py \

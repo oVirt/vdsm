@@ -69,7 +69,6 @@ dist_vdsmpylib_PYTHON = \
 	udevadm.py \
 	utils.py \
 	v2v.py \
-	vdscli.py \
 	virtsparsify.py \
 	virtsysprep.py \
 	xmlrpc.py \
