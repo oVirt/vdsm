@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -121,16 +121,6 @@ class BindingXMLRPC(object):
                 threadLocal.client = self.client_address[0]
                 threadLocal.server = self.request.getsockname()[0]
                 return xmlrpc.IPXMLRPCRequestHandler.setup(self)
-
-            def do_POST(self):
-                self.log.warning("unsupported xmlrpc request")
-                body = "xmlrpc is not supported any more, please use jsonrpc\n"
-                self.send_response(httplib.BAD_REQUEST)
-                self.send_header(self.HEADER_CONTENT_TYPE, 'text/plain')
-                self.send_header(self.HEADER_CONTENT_LENGTH, str(len(body)))
-                self.end_headers()
-                self.wfile.write(body)
-                self.close_connection = 1
 
             def do_GET(self):
                 try:
@@ -1319,9 +1309,8 @@ class XmlDetector():
         self.xml_binding = xml_binding
 
     def detect(self, data):
-        return (data.startswith("PUT /") or data.startswith("GET /") or
-                data.startswith("POST /"))
+        return data.startswith("PUT /") or data.startswith("GET /")
 
     def handle_socket(self, client_socket, socket_address):
         self.xml_binding.add_socket(client_socket, socket_address)
-        self.log.debug("xml over http detected from %s", socket_address)
+        self.log.debug("http detected from %s", socket_address)
