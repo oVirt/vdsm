@@ -207,7 +207,7 @@ parameters = [
         ('fake_sriov_enable', 'false',
          'Enable reporting of fake SR-IOV devices.'),
 
-        ('xmlrpc_enable', 'true', 'Enable the xmlrpc server'),
+        ('http_enable', 'true', 'Enable the http server'),
 
         ('jsonrpc_enable', 'true', 'Enable the JSON RPC server'),
 

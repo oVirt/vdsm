@@ -36,7 +36,7 @@ def find_modules():
     """
     expected_to_fail = {
         "vdsm.rpc.Bridge",
-        "vdsm.rpc.bindingxmlrpc",
+        "vdsm.rpc.http",
     }
 
     def error(name):

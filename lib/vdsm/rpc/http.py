@@ -32,20 +32,20 @@ from vdsm.common.define import doneCode
 import API
 
 
-class BindingXMLRPC(object):
+class Server(object):
     def __init__(self, cif, log):
         self.cif = cif
         self.log = log
 
         self._enabled = False
-        self.server = self._createXMLRPCServer()
+        self.server = self._create_server()
 
     def start(self):
         """
         Serve clients until stopped
         """
         def threaded_start():
-            self.log.info("XMLRPC server running")
+            self.log.info("Server running")
             self.server.timeout = 1
             self._enabled = True
 
@@ -54,11 +54,11 @@ class BindingXMLRPC(object):
                     self.server.handle_request()
                 except Exception as e:
                     if e[0] != EINTR:
-                        self.log.error("xml-rpc handler exception",
+                        self.log.error("http handler exception",
                                        exc_info=True)
-            self.log.info("XMLRPC server stopped")
+            self.log.info("Server stopped")
 
-        self._thread = concurrent.thread(threaded_start, name='BindingXMLRPC',
+        self._thread = concurrent.thread(threaded_start, name='http',
                                          log=self.log)
         self._thread.start()
 
@@ -66,15 +66,15 @@ class BindingXMLRPC(object):
         self.server.add(connected_socket, socket_address)
 
     def stop(self):
-        self.log.info("Stopping XMLRPC server")
+        self.log.info("Stopping http server")
         self._enabled = False
         self.server.server_close()
         self._thread.join()
         return {'status': doneCode}
 
-    def _createXMLRPCServer(self):
+    def _create_server(self):
         """
-        Create xml-rpc server over http
+        Create http server
         """
 
         threadLocal = self.cif.threadLocal
@@ -83,7 +83,7 @@ class BindingXMLRPC(object):
 
             # Timeout for the request socket
             timeout = 60
-            log = logging.getLogger("BindingXMLRPC.RequestHandler")
+            log = logging.getLogger("rpc.http.RequestHandler")
 
             HEADER_POOL = 'Storage-Pool-Id'
             HEADER_DOMAIN = 'Storage-Domain-Id'
@@ -272,17 +272,17 @@ class BindingXMLRPC(object):
         return server
 
 
-class XmlDetector():
-    log = logging.getLogger("XmlDetector")
-    NAME = "xml"
-    REQUIRED_SIZE = 6
+class HttpDetector():
+    log = logging.getLogger("HttpDetector")
+    NAME = "http"
+    REQUIRED_SIZE = 5
 
-    def __init__(self, xml_binding):
-        self.xml_binding = xml_binding
+    def __init__(self, server):
+        self.server = server
 
     def detect(self, data):
         return data.startswith("PUT /") or data.startswith("GET /")
 
     def handle_socket(self, client_socket, socket_address):
-        self.xml_binding.add_socket(client_socket, socket_address)
+        self.server.add_socket(client_socket, socket_address)
         self.log.debug("http detected from %s", socket_address)

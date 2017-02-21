@@ -52,7 +52,7 @@ class FakeClientIF(clientIF.clientIF):
         self.vmContainerLock = threading.Lock()
         self.vmContainer = {}
         self.vmRequests = {}
-        self.bindings = {}
+        self.servers = {}
         self._recovery = False
 
     def createVm(self, vmParams, vmRecover=False):
@@ -245,7 +245,7 @@ class TestNotification(TestCaseBase):
     def setUp(self):
         self.cif = FakeClientIF()
         self.serv = fake.JsonRpcServer()
-        self.cif.bindings["jsonrpc"] = self.serv
+        self.cif.servers["jsonrpc"] = self.serv
 
     def test_notify(self):
         self.assertTrue(self.cif.ready)

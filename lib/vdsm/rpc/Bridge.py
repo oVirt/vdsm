@@ -243,7 +243,7 @@ def Host_fenceNode_Ret(ret):
 
 def Host_getCapabilities_Ret(server_address, ret):
     """
-    We need to add additional information to getCaps as it is done for xmlrpc.
+    We need to add additional information to getCaps as it was done for xmlrpc.
     """
     ret['info']['lastClientIface'] = getDeviceByIP(server_address)
 

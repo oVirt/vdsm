@@ -91,7 +91,7 @@ class clientIF(object):
         self._recovery = True
         self.channelListener = Listener(self.log)
         self.mom = None
-        self.bindings = {}
+        self.servers = {}
         self._broker_client = None
         self._subscriptions = defaultdict(list)
         self._scheduler = scheduler
@@ -126,8 +126,8 @@ class clientIF(object):
                 else:
                     raise
 
-            self._prepareXMLRPCBinding()
-            self._prepareJSONRPCBinding()
+            self._prepareHttpServer()
+            self._prepareJSONRPCServer()
             self._connectToBroker()
         except:
             self.log.error('failed to init clientIF, '
@@ -169,7 +169,7 @@ class clientIF(object):
                              event_id, params)
             return
 
-        json_binding = self.bindings['jsonrpc']
+        json_binding = self.servers['jsonrpc']
 
         def _send_notification(message):
             json_binding.reactor.server.send(
@@ -238,7 +238,7 @@ class clientIF(object):
             self._broker_client = StompClient(sock, self._reactor)
             for destination in request_queues.split(","):
                 self._subscriptions[destination] = StompRpcServer(
-                    self.bindings['jsonrpc'].server,
+                    self.servers['jsonrpc'].server,
                     self._broker_client,
                     destination,
                     broker_address,
@@ -246,21 +246,21 @@ class clientIF(object):
                     self
                 )
 
-    def _prepareXMLRPCBinding(self):
-        if config.getboolean('vars', 'xmlrpc_enable'):
+    def _prepareHttpServer(self):
+        if config.getboolean('vars', 'http_enable'):
             try:
-                from vdsm.rpc.bindingxmlrpc import BindingXMLRPC
-                from vdsm.rpc.bindingxmlrpc import XmlDetector
+                from vdsm.rpc.http import Server
+                from vdsm.rpc.http import HttpDetector
             except ImportError:
-                self.log.error('Unable to load the xmlrpc server module. '
+                self.log.error('Unable to load the http server module. '
                                'Please make sure it is installed.')
             else:
-                xml_binding = BindingXMLRPC(self, self.log)
-                self.bindings['xmlrpc'] = xml_binding
-                xml_detector = XmlDetector(xml_binding)
-                self._acceptor.add_detector(xml_detector)
+                http_server = Server(self, self.log)
+                self.servers['http'] = http_server
+                http_detector = HttpDetector(http_server)
+                self._acceptor.add_detector(http_detector)
 
-    def _prepareJSONRPCBinding(self):
+    def _prepareJSONRPCServer(self):
         if config.getboolean('vars', 'jsonrpc_enable'):
             try:
                 from vdsm.rpc import Bridge
@@ -275,7 +275,7 @@ class clientIF(object):
                     bridge, self._subscriptions,
                     config.getint('vars', 'connection_stats_timeout'),
                     self._scheduler, self)
-                self.bindings['jsonrpc'] = json_binding
+                self.servers['jsonrpc'] = json_binding
                 stomp_detector = StompDetector(json_binding)
                 self._acceptor.add_detector(stomp_detector)
 
@@ -299,7 +299,7 @@ class clientIF(object):
                 return errCode['unavail']
 
             self._acceptor.stop()
-            for binding in self.bindings.values():
+            for binding in self.servers.values():
                 binding.stop()
 
             self._enabled = False
@@ -313,7 +313,7 @@ class clientIF(object):
             self._shutdownSemaphore.release()
 
     def start(self):
-        for binding in self.bindings.values():
+        for binding in self.servers.values():
             binding.start()
         self.thread = concurrent.thread(self._reactor.process_requests,
                                         name='Reactor thread')
@@ -461,8 +461,8 @@ class clientIF(object):
         return vm_io_tune_policies
 
     def createStompClient(self, client_socket):
-        if 'jsonrpc' in self.bindings:
-            json_binding = self.bindings['jsonrpc']
+        if 'jsonrpc' in self.servers:
+            json_binding = self.servers['jsonrpc']
             reactor = json_binding.reactor
             return reactor.createClient(client_socket)
         else:

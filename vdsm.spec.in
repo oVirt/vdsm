@@ -115,7 +115,7 @@ Requires: abrt-addon-vmcore
 Requires: abrt-addon-ccpp
 Requires: abrt-addon-python
 Requires: curl
-Requires: %{name}-xmlrpc = %{version}-%{release}
+Requires: %{name}-http = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: safelease >= 1.0-7
 Requires: mom >= 0.5.8
@@ -238,15 +238,16 @@ Linux hosts. VDSM manages and monitors the host's storage, memory and
 networks as well as virtual machine creation, other host administration
 tasks, statistics gathering, and log collection.
 
-%package xmlrpc
-Summary:        VDSM xmlrpc API
+%package http
+Summary:        VDSM http API
 BuildArch:      noarch
+Provides: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-python = %{version}-%{release}
+Obsoletes: %{name}-xmlrpc < %{version}-%{release}
 
-
-%description xmlrpc
-An XMLRPC interface for interacting with vdsmd. Primary control interface for
-ovirt-engine and vdsClient.
+%description http
+A http interface for interacting with vdsmd when using OVF store image
+download or upload.
 
 %package client
 Summary:        VDSM client
@@ -1587,10 +1588,10 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vmfex
 %endif
 
-%files xmlrpc
+%files http
 %dir %{python_sitelib}/%{vdsm_name}
 %dir %{python_sitelib}/%{vdsm_name}/rpc
-%{python_sitelib}/%{vdsm_name}/rpc/bindingxmlrpc.py*
+%{python_sitelib}/%{vdsm_name}/rpc/http.py*
 
 %files client
 %{_bindir}/vdsm-client
