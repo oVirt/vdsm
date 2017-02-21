@@ -25,7 +25,7 @@ import six
 
 from vdsm.network import tc
 from vdsm.network.netinfo import qos as netinfo_qos
-from vdsm.network.netinfo.cache import ifaceUsed, NetInfo, get as cache_get
+from vdsm.network.netinfo.cache import NetInfo, get as cache_get
 
 _ROOT_QDISC_HANDLE = '%x:' % 5001  # Leave 0 free for leaf qdisc of vlan tag 0
 _FAIR_QDISC_KIND = 'fq_codel' if (StrictVersion(os.uname()[2].split('-')[0]) >
@@ -91,7 +91,7 @@ def _uses_classes(device, net_info, root_qdisc_handle=None):
     classes = [cls for cls in tc.classes(device, parent=root_qdisc_handle) if
                not cls.get('root')]
     return (classes and
-            not(len(classes) == 1 and not ifaceUsed(device) and
+            not(len(classes) == 1 and not net_info.ifaceUsers(device) and
                 classes[0]['handle'] == root_qdisc_handle + _DEFAULT_CLASSID))
 
 

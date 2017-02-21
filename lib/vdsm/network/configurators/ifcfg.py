@@ -56,7 +56,6 @@ from vdsm.network.link.setup import parse_bond_options
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netinfo import (bonding as netinfo_bonding, mtus, nics,
                                   vlans, misc, NET_PATH)
-from vdsm.network.netinfo.cache import ifaceUsed
 from vdsm.network.netlink import waitfor
 
 from . import Configurator, getEthtoolOpts
@@ -217,6 +216,7 @@ class Ifcfg(Configurator):
         self._removeSourceRoute(bridge)
         commands.execCmd([constants.EXT_BRCTL, 'delbr', bridge.name])
         self.configApplier.removeBridge(bridge.name)
+        self.net_info.del_bridge(bridge.name)
         if bridge.port:
             bridge.port.remove()
 
@@ -229,13 +229,15 @@ class Ifcfg(Configurator):
         ifdown(vlan.name)
         self._removeSourceRoute(vlan)
         self.configApplier.removeVlan(vlan.name)
+        self.net_info.del_vlan(vlan.name)
         vlan.device.remove()
 
     def _ifaceDownAndCleanup(self, iface, remove_even_if_used=False):
         """Returns True iff the iface is to be removed."""
         if iface.ipv4.bootproto == 'dhcp':
             ifacetracking.add(iface.name)
-        to_be_removed = remove_even_if_used or not ifaceUsed(iface.name)
+        to_be_removed = remove_even_if_used or not self.net_info.ifaceUsers(
+            iface.name)
         if to_be_removed:
             ifdown(iface.name)
         self._removeSourceRoute(iface)
@@ -736,7 +738,7 @@ class ConfigWriter(object):
         ipv6 = copy.deepcopy(iface.ipv6)
         mtu = iface.mtu
         nameservers = iface.nameservers
-        if ifaceUsed(iface.name):
+        if net_info.ifaceUsers(iface.name):
             confParams = misc.getIfaceCfg(iface.name)
             if not ipv4.address and ipv4.bootproto != 'dhcp':
                 ipv4.address = confParams.get('IPADDR')

@@ -245,6 +245,12 @@ class NetInfo(object):
     def del_bonding(self, bonding):
         del self.bondings[bonding]
 
+    def del_vlan(self, vlan):
+        del self.vlans[vlan]
+
+    def del_bridge(self, bridge):
+        self.bridges.pop(bridge, None)
+
     def getNetworksAndVlansForIface(self, iface):
         """ Returns tuples of (bridge/network, vlan) connected to  nic/bond """
         return chain(self._getBridgedNetworksAndVlansForIface(iface),

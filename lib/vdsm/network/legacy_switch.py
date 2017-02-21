@@ -315,6 +315,8 @@ def _del_network(network, configurator, _netinfo, bypass_validation=False,
     # network is still up, the network entity (In some flows) thinks that
     # it still has users and thus does not allow its removal
     configurator.removeLibvirtNetwork(network)
+    _netinfo.del_network(network)
+
     if net_ent_to_remove is not None:
         logging.info('Removing network entity %s', net_ent_to_remove)
         net_ent_to_remove.remove()
@@ -358,7 +360,6 @@ def remove_networks(networks, bondings, configurator, _netinfo,
 
             _del_network(network, configurator, _netinfo,
                          keep_bridge=keep_bridge)
-            _netinfo.del_network(network)
             _netinfo.updateDevices()
         elif network in libvirt_nets:
             # If the network was not in _netinfo but is in the networks
@@ -524,8 +525,8 @@ def _bonds_remove(bonds, configurator, _netinfo, in_rollback):
                 name, configurator, options=None, nics=None, mtu=None,
                 _netinfo=_netinfo)
             logging.debug('Removing bond %r', bond)
-            bond.remove()
             _netinfo.del_bonding(name)
+            bond.remove()
 
 
 def _is_bond_valid_for_removal(bond, _netinfo, in_rollback):

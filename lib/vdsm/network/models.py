@@ -1,4 +1,4 @@
-# Copyright 2011-2014 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ import re
 from vdsm.network.link import bond as link_bond
 from vdsm.network.link.bond import sysfs_options as bond_options
 from vdsm.network.netinfo import bonding, mtus, nics
-from vdsm.network.netinfo.cache import ifaceUsed, CachingNetInfo
+from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network.ip.address import IPv4, IPv6
 
 from .errors import ConfigNetworkError
@@ -95,7 +95,7 @@ class Nic(NetDevice):
         # in a limited condition, we should not touch the nic config
         if (self.vlan and
                 nics.operstate(self.name) == nics.OPERSTATE_UP and
-                ifaceUsed(self.name) and
+                self.configurator.net_info.ifaceUsers(self.name) and
                 self.mtu <= mtus.getMtu(self.name)):
             return
 
@@ -235,7 +235,7 @@ class Bond(NetDevice):
             (not self.configurator.unifiedPersistence or
              self.name in self.configurator.runningConfig.bonds) and
             nics.operstate(self.name) == nics.OPERSTATE_UP and
-            ifaceUsed(self.name) and
+            self.configurator.net_info.ifaceUsers(self.name) and
             self.mtu <= mtus.getMtu(self.name) and
             self.areOptionsApplied() and
             frozenset(slave.name for slave in self.slaves) ==
