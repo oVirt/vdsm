@@ -184,6 +184,17 @@ class Console(Base):
 
     CONSOLE_EXTENSION = '.sock'
 
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        has_sock = dev.attrib.get('type', 'pty') == 'unix'
+        params = parse_device_params(dev)
+        params['specParams'] = {
+            'consoleType': vmxml.find_attr(dev, 'target', 'type'),
+            'enableSocket': has_sock,
+        }
+        params['vmid'] = meta.get('vmid', None)  # avoid AttributeError
+        return cls(log, **params)
+
     def __init__(self, *args, **kwargs):
         super(Console, self).__init__(*args, **kwargs)
         if not hasattr(self, 'specParams'):

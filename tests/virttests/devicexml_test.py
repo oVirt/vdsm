@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 
 import logging
+import os.path
 
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
@@ -557,6 +558,39 @@ class DeviceXMLRoundTripTests(XMLTestCase):
            function='0x0'/>
         </memballoon>'''
         self._check_roundtrip(vmdevices.core.Balloon, balloon_xml)
+
+    @permutations([
+        # console_type, is_serial
+        ['virtio', False],
+        ['serial', True],
+    ])
+    def test_console_pty(self, console_type, is_serial):
+        console_xml = u'''<console type="pty">
+            <target port="0" type="%s" />
+        </console>''' % console_type
+        dev = self._check_roundtrip(vmdevices.core.Console, console_xml)
+        self.assertEqual(dev.isSerial, is_serial)
+
+    @permutations([
+        # console_type, is_serial
+        ['virtio', False],
+        ['serial', True],
+    ])
+    def test_console_unix_socket(self, console_type, is_serial):
+        vmid = 'VMID'
+        console_xml = u'''<console type='unix'>
+          <source mode='bind' path='{sockpath}.sock' />
+          <target type='{console_type}' port='0' />
+        </console>'''.format(
+            sockpath=os.path.join(constants.P_OVIRT_VMCONSOLES, vmid),
+            console_type=console_type
+        )
+        dev = self._check_roundtrip(
+            vmdevices.core.Console, console_xml, meta={'vmid': vmid}
+        )
+        self.assertEqual(dev.isSerial, is_serial)
+        self.assertEqual(dev.vmid, vmid)
+        self.assertTrue(dev.specParams['enableSocket'])
 
     def _check_roundtrip(self, klass, dev_xml, meta=None):
         dev = klass.from_xml_tree(
