@@ -503,6 +503,27 @@ class ParsingHelperTests(XMLTestCase):
         self.assertIs(found_addr, None)
         self.assertEqual(found_alias, '')
 
+    def test_attrs(self):
+        XML = u"<device type='fake' />"
+        attrs = vmdevices.core.parse_device_attrs(
+            vmxml.parse_xml(XML), ('type',)
+        )
+        self.assertEqual(attrs, {'type': 'fake'})
+
+    def test_attrs_missing(self):
+        XML = u"<device type='fake' />"
+        attrs = vmdevices.core.parse_device_attrs(
+            vmxml.parse_xml(XML), ('type', 'foo')
+        )
+        self.assertEqual(attrs, {'type': 'fake'})
+
+    def test_attrs_partial(self):
+        XML = u"<device foo='bar' ans='42' fizz='buzz' />"
+        attrs = vmdevices.core.parse_device_attrs(
+            vmxml.parse_xml(XML), ('foo', 'fizz')
+        )
+        self.assertEqual(attrs, {'foo': 'bar', 'fizz': 'buzz'})
+
 
 class FakeProxy(object):
 
@@ -511,3 +532,33 @@ class FakeProxy(object):
 
     def ovs_bridge(self, name):
         return self._ovs_bridge
+
+
+@expandPermutations
+class DeviceXMLRoundTripTests(XMLTestCase):
+
+    def test_generic(self):
+        # simplified version of channel XML, only for test purposes.
+        # this should never be seen in the wild
+        generic_xml = '<channel type="spicevmc" />'
+        self._check_roundtrip(vmdevices.core.Generic, generic_xml)
+
+    @permutations([
+        # sound_xml
+        [u'''<sound model="ac97"/>'''],
+        [u'''<sound model='es1370'/>'''],
+    ])
+    def test_sound(self, sound_xml):
+        self._check_roundtrip(vmdevices.core.Sound, sound_xml)
+
+    def _check_roundtrip(self, klass, dev_xml, meta=None):
+        dev = klass.from_xml_tree(
+            self.log,
+            vmxml.parse_xml(dev_xml),
+            {} if meta is None else meta
+        )
+        rebuilt_xml = vmxml.format_xml(dev.getXML(), pretty=True)
+        # make troubleshooting easier
+        print(rebuilt_xml)
+        self.assertXMLEqual(rebuilt_xml, dev_xml)
+        return dev

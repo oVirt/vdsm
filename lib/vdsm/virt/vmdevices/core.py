@@ -42,6 +42,21 @@ class Base(vmxml.Device):
                  'log', '_deviceXML', 'type', 'custom',
                  'is_hostdevice')
 
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        """
+        Create a device from its libvirt domain XML.
+
+        :param log: logger instance to bind to device.
+        :type log: logger, like you get from logging.getLogger()
+        :param dev: libvirt domain XML snippet for the device, already parsed
+        :type dev: DOM element
+        :param meta: device metadata
+        :type meta: dict, whose  keys must be python basestrings and whose
+         values must be one of: basestring, int, float
+        """
+        raise NotImplementedError
+
     def __init__(self, log, **kwargs):
         self.log = log
         self.specParams = {}
@@ -106,6 +121,14 @@ class Base(vmxml.Device):
 
 
 class Generic(Base):
+
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        params = parse_device_params(dev)
+        # TODO: this mapping is not ideal, but it seems the one that requires
+        # the less shuffling, so keeping it there.
+        params['device'], params['type'] = params['type'], params['device']
+        return cls(log, **params)
 
     def getXML(self):
         """
@@ -350,6 +373,12 @@ class Smartcard(Base):
 
 class Sound(Base):
     __slots__ = ('address',)
+
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        params = parse_device_params(dev)
+        params['device'] = dev.attrib.get('model')
+        return cls(log, **params)
 
     def getXML(self):
         """
@@ -647,3 +676,27 @@ def parse_device_ident(dev):
     except IndexError:
         address = None
     return address, vmxml.find_attr(dev, 'alias', 'name')
+
+
+def parse_device_attrs(dev, attrs):
+    return {
+        key: dev.attrib.get(key)
+        for key in attrs
+        if dev.attrib.get(key)
+    }
+
+
+def parse_device_params(dev, attrs=None):
+    dev_type = dev.attrib.get('type', None)
+    params = {
+        'type': dev_type or dev.tag,
+        'device': dev.tag,
+    }
+    address, alias = parse_device_ident(dev)
+    if alias:
+        params['alias'] = alias
+    if address:
+        params['address'] = address
+    if attrs is not None:
+        params.update(parse_device_attrs(dev, attrs))
+    return params
