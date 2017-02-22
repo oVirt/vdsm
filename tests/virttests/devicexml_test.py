@@ -551,6 +551,13 @@ class DeviceXMLRoundTripTests(XMLTestCase):
     def test_sound(self, sound_xml):
         self._check_roundtrip(vmdevices.core.Sound, sound_xml)
 
+    def test_balloon(self):
+        balloon_xml = u'''<memballoon model='virtio'>
+          <address type='pci' domain='0x0000' bus='0x00' slot='0x04'
+           function='0x0'/>
+        </memballoon>'''
+        self._check_roundtrip(vmdevices.core.Balloon, balloon_xml)
+
     def _check_roundtrip(self, klass, dev_xml, meta=None):
         dev = klass.from_xml_tree(
             self.log,
