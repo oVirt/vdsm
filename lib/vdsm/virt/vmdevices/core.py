@@ -132,11 +132,7 @@ class Balloon(Base):
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('memballoon'):
             # Ignore balloon devices without address.
-            if vmxml.find_first(x, 'address', None) is None:
-                address = None
-            else:
-                address = vmxml.device_address(x)
-            alias = vmxml.find_attr(x, 'alias', 'name')
+            address, alias = parse_device_ident(x)
 
             for dev in device_conf:
                 if address and not hasattr(dev, 'address'):
@@ -243,7 +239,7 @@ class Console(Base):
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('console'):
             # All we care about is the alias
-            alias = vmxml.find_attr(x, 'alias', 'name')
+            _, alias = parse_device_ident(x)
             for dev in device_conf:
                 if not hasattr(dev, 'alias'):
                     dev.alias = alias
@@ -276,16 +272,13 @@ class Controller(Base):
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('controller'):
             # Ignore controller devices without address
-            if vmxml.find_first(x, 'address', None) is None:
+            address, alias = parse_device_ident(x)
+            if address is None:
                 continue
-            alias = vmxml.find_attr(x, 'alias', 'name')
             device = vmxml.attr(x, 'type')
             # Get model and index. Relevant for USB controllers.
             model = vmxml.attr(x, 'model')
             index = vmxml.attr(x, 'index')
-
-            # Get controller address
-            address = vmxml.device_address(x)
 
             # In case the controller has index and/or model, they
             # are compared. Currently relevant for USB controllers.
@@ -337,11 +330,9 @@ class Smartcard(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('smartcard'):
-            if vmxml.find_first(x, 'address', None) is None:
+            address, alias = parse_device_ident(x)
+            if address is None:
                 continue
-
-            address = vmxml.device_address(x)
-            alias = vmxml.find_attr(x, 'alias', 'name')
 
             for dev in device_conf:
                 if not hasattr(dev, 'address'):
@@ -369,9 +360,7 @@ class Sound(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('sound'):
-            alias = vmxml.find_attr(x, 'alias', 'name')
-            # Get sound card address
-            address = vmxml.device_address(x)
+            address, alias = parse_device_ident(x)
 
             # FIXME. We have an identification problem here.
             # Sound device has not unique identifier, except the alias
@@ -456,8 +445,7 @@ class Rng(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for rng in vm.domain.get_device_elements('rng'):
-            address = vmxml.device_address(rng)
-            alias = vmxml.find_attr(rng, 'alias', 'name')
+            address, alias = parse_device_ident(rng)
             source = vmxml.text(vmxml.find_first(rng, 'backend'))
 
             for dev in device_conf:
@@ -515,9 +503,7 @@ class Video(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('video'):
-            alias = vmxml.find_attr(x, 'alias', 'name')
-            # Get video card address
-            address = vmxml.device_address(x)
+            address, alias = parse_device_ident(x)
 
             # FIXME. We have an identification problem here.
             # Video card device has not unique identifier, except the alias
@@ -549,11 +535,9 @@ class Watchdog(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('watchdog'):
-            # PCI watchdog has "address" different from ISA watchdog
-            if vmxml.find_first(x, 'address', None) is None:
+            address, alias = parse_device_ident(x)
+            if address is None:
                 continue
-            address = vmxml.device_address(x)
-            alias = vmxml.find_attr(x, 'alias', 'name')
 
             for wd in device_conf:
                 if not hasattr(wd, 'address') or not hasattr(wd, 'alias'):
@@ -599,8 +583,7 @@ class Memory(Base):
                                  for dev in vm.conf['devices']
                                  if 'alias' in dev])
         for element in vm.domain.get_device_elements('memory'):
-            alias = vmxml.find_attr(element, 'alias', 'name')
-            address = vmxml.device_address(element)
+            address, alias = parse_device_ident(element)
             node = int(vmxml.text(vmxml.find_first(element, 'node')))
             size = int(vmxml.text(vmxml.find_first(element, 'size')))
             if alias not in conf_aliases:
@@ -654,3 +637,11 @@ class Memory(Base):
             mem.appendChild(address)
 
         return mem
+
+
+def parse_device_ident(dev):
+    try:
+        address = vmxml.device_address(dev)
+    except IndexError:
+        address = None
+    return address, vmxml.find_attr(dev, 'alias', 'name')

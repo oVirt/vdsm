@@ -452,6 +452,58 @@ class DeviceToXMLTests(XMLTestCase):
             self.assertXMLEqual(vmxml.format_xml(vnic_xml), XML)
 
 
+class ParsingHelperTests(XMLTestCase):
+
+    ADDR = {
+        'domain': '0x0000',
+        'bus': '0x05',
+        'slot': '0x11',
+        'function': '0x3',
+    }
+
+    ALIAS = 'test0'
+
+    def test_address_alias(self):
+        params = {'alias': self.ALIAS}
+        params.update(self.ADDR)
+        XML = u"""<device type='fake'>
+          <address domain='{domain}' bus='{bus}'
+            slot='{slot}' function='{function}'/>
+          <alias name='{alias}'/>
+        </device>""".format(**params)
+        found_addr, found_alias = vmdevices.core.parse_device_ident(
+            vmxml.parse_xml(XML))
+        self.assertEqual(found_addr, self.ADDR)
+        self.assertEqual(found_alias, self.ALIAS)
+
+    def test_missing_address(self):
+        XML = u"""<device type='fake'>
+          <alias name='{alias}'/>
+        </device>""".format(alias=self.ALIAS)
+        found_addr, found_alias = vmdevices.core.parse_device_ident(
+            vmxml.parse_xml(XML))
+        self.assertIs(found_addr, None)
+        self.assertEqual(found_alias, self.ALIAS)
+
+    def test_missing_alias(self):
+        params = self.ADDR.copy()
+        XML = u"""<device type='fake'>
+          <address domain='{domain}' bus='{bus}'
+            slot='{slot}' function='{function}'/>
+        </device>""".format(**params)
+        found_addr, found_alias = vmdevices.core.parse_device_ident(
+            vmxml.parse_xml(XML))
+        self.assertEqual(found_addr, self.ADDR)
+        self.assertEqual(found_alias, '')
+
+    def test_missing_address_alias(self):
+        XML = u"<device type='fake' />"
+        found_addr, found_alias = vmdevices.core.parse_device_ident(
+            vmxml.parse_xml(XML))
+        self.assertIs(found_addr, None)
+        self.assertEqual(found_alias, '')
+
+
 class FakeProxy(object):
 
     def __init__(self, ovs_bridge=None):
