@@ -147,6 +147,11 @@ _EVENT_STRINGS = (
 )
 
 
+def _not_migrating(vm, *args, **kwargs):
+    if vm.isMigrating():
+        raise exception.MigrationInProgress(vmId=vm.id)
+
+
 def eventToString(event):
     try:
         return _EVENT_STRINGS[event]
@@ -1550,6 +1555,7 @@ class Vm(object):
         return False
 
     @api.logged(on='vdsm.api')
+    @api.guard(_not_migrating)
     def migrate(self, params):
         self._acquireCpuLockWithTimeout()
         try:
@@ -1559,9 +1565,6 @@ class Vm(object):
             if self._lastStatus in (vmstatus.WAIT_FOR_LAUNCH,
                                     vmstatus.DOWN):
                 raise exception.NoSuchVM()
-            if self.isMigrating():
-                self.log.warning('vm already migrating')
-                return response.error('exist')
             if self.hasTransientDisks():
                 return response.error('transientErr')
             self._migration_downtime = None
@@ -2194,10 +2197,8 @@ class Vm(object):
                 break
 
     @api.logged(on='vdsm.api')
+    @api.guard(_not_migrating)
     def hotplugNic(self, params):
-        if self.isMigrating():
-            raise exception.MigrationInProgress()
-
         nicParams = params['nic']
         nic = vmdevices.network.Interface(self.conf, self.log, **nicParams)
         nicXml = vmxml.format_xml(nic.getXML(), pretty=True)
@@ -2262,10 +2263,8 @@ class Vm(object):
                           'of type %s not found' % (devIdent, devType))
 
     @api.logged(on='vdsm.api')
+    @api.guard(_not_migrating)
     def hostdevHotplug(self, dev_specs):
-        if self.isMigrating():
-            raise exception.MigrationInProgress()
-
         dev_objects = []
         for dev_spec in dev_specs:
             dev_object = vmdevices.hostdevice.HostDevice(self.conf, self.log,
@@ -2311,10 +2310,8 @@ class Vm(object):
         return response.success(assignedDevices=assigned_devices)
 
     @api.logged(on='vdsm.api')
+    @api.guard(_not_migrating)
     def hostdevHotunplug(self, dev_names):
-        if self.isMigrating():
-            raise exception.MigrationInProgress()
-
         device_objects = []
         unplugged_devices = []
 
@@ -2521,10 +2518,8 @@ class Vm(object):
             return response.error('noimpl')
 
     @api.logged(on='vdsm.api')
+    @api.guard(_not_migrating)
     def hotunplugNic(self, params):
-        if self.isMigrating():
-            raise exception.MigrationInProgress()
-
         nicParams = params['nic']
 
         # Find NIC object in vm's NICs list
@@ -2598,11 +2593,8 @@ class Vm(object):
         self.saveState()
 
     @api.logged(on='vdsm.api')
+    @api.guard(_not_migrating)
     def hotplugMemory(self, params):
-
-        if self.isMigrating():
-            raise exception.MigrationInProgress()
-
         memParams = params.get('memory', {})
         device = vmdevices.core.Memory(self.conf, self.log, **memParams)
 
@@ -2639,10 +2631,8 @@ class Vm(object):
         self.log.debug("New memory size: %s MiB", self.conf['memSize'])
 
     @api.logged(on='vdsm.api')
+    @api.guard(_not_migrating)
     def hotunplugMemory(self, params):
-        if self.isMigrating():
-            raise exception.MigrationInProgress()
-
         device = vmdevices.common.lookup_device_by_alias(
             self._devices, hwclass.MEMORY, params['memory']['alias'])
         device_xml = vmxml.format_xml(device.getXML())
@@ -2658,11 +2648,8 @@ class Vm(object):
         return response.success()
 
     @api.logged(on='vdsm.api')
+    @api.guard(_not_migrating)
     def setNumberOfCpus(self, numberOfCpus):
-
-        if self.isMigrating():
-            raise exception.MigrationInProgress()
-
         self.log.debug("Setting number of cpus to : %s", numberOfCpus)
         hooks.before_set_num_of_cpus()
         try:
@@ -2690,6 +2677,7 @@ class Vm(object):
                 self._vcpuLimit = None
 
     @api.logged(on='vdsm.api')
+    @api.guard(_not_migrating)
     def updateVmPolicy(self, params):
         """
         Update the QoS policy settings for VMs.
@@ -2714,10 +2702,6 @@ class Vm(object):
 
         :return: standard vdsm result structure
         """
-
-        if self.isMigrating():
-            raise exception.MigrationInProgress()
-
         if not params:
             self.log.error("updateVmPolicy got an empty policy.")
             return response.error('MissParam',
@@ -3003,10 +2987,8 @@ class Vm(object):
             os.unlink(drive.path)
 
     @api.logged(on='vdsm.api')
+    @api.guard(_not_migrating)
     def hotplugDisk(self, params):
-        if self.isMigrating():
-            raise exception.MigrationInProgress()
-
         diskParams = params.get('drive', {})
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
 
@@ -3054,10 +3036,8 @@ class Vm(object):
         return {'status': doneCode, 'vmList': self.status()}
 
     @api.logged(on='vdsm.api')
+    @api.guard(_not_migrating)
     def hotunplugDisk(self, params):
-        if self.isMigrating():
-            raise exception.MigrationInProgress()
-
         diskParams = params.get('drive', {})
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
 
@@ -3107,10 +3087,8 @@ class Vm(object):
         return {'status': doneCode, 'vmList': self.status()}
 
     @api.logged(on='vdsm.api')
+    @api.guard(_not_migrating)
     def hotplugLease(self, params):
-        if self.isMigrating():
-            raise exception.MigrationInProgress(vmId=self.id)
-
         vmdevices.lease.prepare(self.cif.irs, [params])
         lease = vmdevices.lease.Device(self.conf, self.log, **params)
 
@@ -3134,10 +3112,8 @@ class Vm(object):
         return response.success(vmList=self.status())
 
     @api.logged(on='vdsm.api')
+    @api.guard(_not_migrating)
     def hotunplugLease(self, params):
-        if self.isMigrating():
-            raise exception.MigrationInProgress(vmId=self.id)
-
         try:
             lease = vmdevices.lease.find_device(self._devices, params)
         except LookupError:
@@ -3500,6 +3476,7 @@ class Vm(object):
         return response.success()
 
     @api.logged(on='vdsm.api')
+    @api.guard(_not_migrating)
     def snapshot(self, snapDrives, memoryParams, frozen=False):
         """Live snapshot command"""
 
@@ -3578,9 +3555,6 @@ class Vm(object):
         disks = vmxml.Element('disks')
         newDrives = {}
         vmDrives = {}
-
-        if self.isMigrating():
-            raise exception.MigrationInProgress()
 
         for drive in snapDrives:
             baseDrv, tgetDrv = _normSnapDriveParams(drive)

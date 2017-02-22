@@ -47,6 +47,25 @@ def logged(on=""):
     return method
 
 
+def guard(*guarding_functions):
+    """
+    Decorator for methods that can be called only under certain conditions.
+
+    Before the method is called, guarding_functions are invoked in their order
+    with the same arguments as the method.  They can check for validity of the
+    call and raise an exception if the call shouldn't be permitted.
+
+    :param guarding_functions: functions to call with the decorated method
+      arguments before the decorated method is actually called
+    """
+    @decorator
+    def method(func, *args, **kwargs):
+        for f in guarding_functions:
+            f(*args, **kwargs)
+        return func(*args, **kwargs)
+    return method
+
+
 @decorator
 def method(func, *args, **kwargs):
     """
