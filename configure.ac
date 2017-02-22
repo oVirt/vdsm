@@ -21,7 +21,7 @@ AC_PREREQ(2.60)
 
 define([VERSION_MAJOR], [1])
 define([VERSION_MINOR], [4])
-define([VERSION_FIX], [2])
+define([VERSION_FIX], [3])
 define([VERSION_NUMBER], VERSION_MAJOR[.]VERSION_MINOR[.]VERSION_FIX)
 define([VERSION_SUFFIX], [])
 

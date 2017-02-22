@@ -122,6 +122,9 @@ ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %changelog
+* Wed Feb 22 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.4.3
+- incomplete message BZ #1425725
+
 * Wed Jan 18 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.4.2
 - process messages one by one
 
