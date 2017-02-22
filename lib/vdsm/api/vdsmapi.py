@@ -171,6 +171,10 @@ class Schema(object):
     def get_methods(self):
         return utils.picklecopy(self._methods)
 
+    def get_method_description(self, rep):
+        method = self.get_method(rep)
+        return method.get('description', '')
+
     def get_type(self, type_name):
         try:
             return self._types[type_name]
