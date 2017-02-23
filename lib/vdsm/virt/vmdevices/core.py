@@ -682,6 +682,16 @@ class Watchdog(Base):
 class Memory(Base):
     __slots__ = ('address', 'size', 'node')
 
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        params = parse_device_params(dev)
+        target = vmxml.find_first(dev, 'target')
+        params['size'] = (
+            int(vmxml.text(vmxml.find_first(target, 'size'))) / 1024
+        )
+        params['node'] = vmxml.text(vmxml.find_first(target, 'node'))
+        return cls(log, **params)
+
     def __init__(self, log, **kwargs):
         super(Memory, self).__init__(log, **kwargs)
         # we get size in mb and send in kb

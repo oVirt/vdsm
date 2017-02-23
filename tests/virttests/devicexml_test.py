@@ -660,6 +660,17 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         </watchdog>'''
         self._check_roundtrip(vmdevices.core.Watchdog, watchdog_xml)
 
+    def test_memory(self):
+        memory_xml = u'''<memory model='dimm'>
+            <target>
+                <size unit='KiB'>524288</size>
+                <node>1</node>
+            </target>
+            <alias name='dimm0'/>
+            <address type='dimm' slot='0' base='0x100000000'/>
+        </memory>'''
+        self._check_roundtrip(vmdevices.core.Memory, memory_xml)
+
     def _check_roundtrip(self, klass, dev_xml, meta=None):
         dev = klass.from_xml_tree(
             self.log,
