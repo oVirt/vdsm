@@ -638,6 +638,13 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         </video>'''
         self._check_roundtrip(vmdevices.core.Video, video_xml)
 
+    def test_rng(self):
+        rng_xml = u'''<rng model='virtio'>
+            <rate period="2000" bytes="1234"/>
+            <backend model='random'>/dev/random</backend>
+        </rng>'''
+        self._check_roundtrip(vmdevices.core.Rng, rng_xml)
+
     def _check_roundtrip(self, klass, dev_xml, meta=None):
         dev = klass.from_xml_tree(
             self.log,

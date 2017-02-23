@@ -22,6 +22,8 @@ from __future__ import absolute_import
 
 import os.path
 
+from vdsm.utils import memoized
+
 
 _SOURCES = {
     'random': '/dev/random',
@@ -41,3 +43,11 @@ def list_available():
 
 def get_device(name):
     return _SOURCES[name]
+
+
+@memoized
+def get_source_name(dev):
+    for name, path in _SOURCES.items():
+        if dev == path:
+            return name
+    raise KeyError(dev)

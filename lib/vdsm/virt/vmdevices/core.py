@@ -465,6 +465,18 @@ class Redir(Base):
 class Rng(Base):
     __slots__ = ('address', 'model', 'vmid')
 
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        params = parse_device_params(dev, attrs=('model', ))
+        params['specParams'] = parse_device_attrs(
+            vmxml.find_first(dev, 'rate'),
+            ('period', 'bytes')
+        )
+        params['specParams']['source'] = rngsources.get_source_name(
+            vmxml.text(vmxml.find_first(dev, 'backend'))
+        )
+        return cls(log, **params)
+
     @staticmethod
     def matching_source(conf, source):
         return rngsources.get_device(conf['specParams']['source']) == source
