@@ -2590,6 +2590,9 @@ class NetworkTest(TestCaseBase):
             self.assertBondDoesntExist(BONDING_NAME, nics)
             self.vdsm_net.save_config()
 
+    @requiresUnifiedPersistence("with ifcfg persistence, "
+                                "vdsm-restore-net-config doesn't restore "
+                                "in-kernel state")
     @cleanupNet
     @ValidateRunningAsRoot
     def test_setupNetworks_on_external_vlaned_bond(self):
