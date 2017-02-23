@@ -731,6 +731,7 @@ class VM(APIBase):
         return self.vm.merge(
             drive, baseVolUUID, topVolUUID, bandwidth, jobUUID)
 
+    @api.method
     def seal(self, job_id, sp_id, images):
         """
         Run virt-sysprep on all disks of the VM, to erase all machine-specific
