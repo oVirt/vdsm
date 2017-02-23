@@ -2079,6 +2079,7 @@ class StoragePool(object):
             self.log.info("Lease already deleted: %s:%s",
                           lease.sd_id, lease.lease_id)
 
+    @unsecured
     def _master_volume_path(self, vol):
         return os.path.join(
             self.storage_repository, self.spUUID,
