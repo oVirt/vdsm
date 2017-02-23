@@ -630,6 +630,14 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         </redirdev>'''
         self._check_roundtrip(vmdevices.core.Redir, redir_xml)
 
+    def test_video(self):
+        video_xml = u'''<video>
+          <address type='pci' domain='0x0000'
+           bus='0x00' slot='0x02' function='0x0'/>
+          <model type='qxl' ram='65536' vram='32768' vgamem='16384' heads='1'/>
+        </video>'''
+        self._check_roundtrip(vmdevices.core.Video, video_xml)
+
     def _check_roundtrip(self, klass, dev_xml, meta=None):
         dev = klass.from_xml_tree(
             self.log,

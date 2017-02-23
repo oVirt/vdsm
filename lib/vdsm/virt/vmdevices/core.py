@@ -555,6 +555,20 @@ class Tpm(Base):
 
 
 class Video(Base):
+
+    __slots__ = ('address', 'vram', 'heads', 'vgamem', 'ram')
+
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        params = parse_device_params(dev)
+        # override
+        params['device'] = vmxml.find_attr(dev, 'model', 'type')
+        params['specParams'] = parse_device_attrs(
+            vmxml.find_first(dev, 'model'),
+            ('vram', 'heads', 'vgamem', 'ram')
+        )
+        return cls(log, **params)
+
     def getXML(self):
         """
         Create domxml for video device
