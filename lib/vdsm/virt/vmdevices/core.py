@@ -632,6 +632,14 @@ class Video(Base):
 class Watchdog(Base):
     __slots__ = ('address',)
 
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        params = parse_device_params(dev)
+        params['specParams'] = parse_device_attrs(dev, ('model', 'action'))
+        if params['type'] is None:
+            params['type'] = params['device']
+        return cls(log, **params)
+
     def __init__(self, *args, **kwargs):
         super(Watchdog, self).__init__(*args, **kwargs)
 

@@ -653,6 +653,13 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         </tpm>'''
         self._check_roundtrip(vmdevices.core.Tpm, tpm_xml)
 
+    def test_watchdog(self):
+        watchdog_xml = u'''<watchdog model='i6300esb' action='reset'>
+          <address type='pci' domain='0x0000' bus='0x00' slot='0x05'
+           function='0x0'/>
+        </watchdog>'''
+        self._check_roundtrip(vmdevices.core.Watchdog, watchdog_xml)
+
     def _check_roundtrip(self, klass, dev_xml, meta=None):
         dev = klass.from_xml_tree(
             self.log,
