@@ -446,6 +446,12 @@ class Sound(Base):
 class Redir(Base):
     __slots__ = ('bus', 'address',)
 
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        params = parse_device_params(dev, attrs=('bus', 'type'))
+        params['device'] = params['type']
+        return cls(log, **params)
+
     def getXML(self):
         """
         Create domxml for a redir device.

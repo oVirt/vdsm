@@ -624,6 +624,12 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         </smartcard>'''
         self._check_roundtrip(vmdevices.core.Smartcard, smartcard_xml)
 
+    def test_redir(self):
+        redir_xml = u'''<redirdev bus='usb' type='spicevmc'>
+          <address type='usb' bus='0' port='1'/>
+        </redirdev>'''
+        self._check_roundtrip(vmdevices.core.Redir, redir_xml)
+
     def _check_roundtrip(self, klass, dev_xml, meta=None):
         dev = klass.from_xml_tree(
             self.log,
