@@ -671,6 +671,15 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         </memory>'''
         self._check_roundtrip(vmdevices.core.Memory, memory_xml)
 
+    def test_lease(self):
+        lease_xml = u'''<lease>
+            <key>12523e3d-ad22-410c-8977-d2a7bf458a65</key>
+            <lockspace>c2a6d7c8-8d81-4e01-9ed4-7eb670713448</lockspace>
+            <target offset="1048576"
+                    path="/dev/c2a6d7c8-8d81-4e01-9ed4-7eb670713448/leases"/>
+        </lease>'''
+        self._check_roundtrip(vmdevices.lease.Device, lease_xml)
+
     def _check_roundtrip(self, klass, dev_xml, meta=None):
         dev = klass.from_xml_tree(
             self.log,

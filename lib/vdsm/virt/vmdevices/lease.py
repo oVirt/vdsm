@@ -139,6 +139,16 @@ class Device(core.Base):
     __slots__ = ("lease_id", "sd_id", "path", "offset")
 
     @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        params = {
+            'lease_id': vmxml.text(vmxml.find_first(dev, 'key')),
+            'sd_id': vmxml.text(vmxml.find_first(dev, 'lockspace')),
+            'path': vmxml.find_attr(dev, 'target', 'path'),
+            'offset': vmxml.find_attr(dev, 'target', 'offset'),
+        }
+        return cls(log, **params)
+
+    @classmethod
     def update_device_info(cls, vm, device_conf):
         """
         We don't have anything to update yet. Keeping this interface so
