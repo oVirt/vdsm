@@ -547,6 +547,17 @@ class Rng(Base):
 class Tpm(Base):
     __slots__ = ()
 
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        params = parse_device_params(dev)
+        specParams = parse_device_attrs(dev, ('model',))
+        backend = vmxml.find_first(dev, 'backend')
+        specParams['mode'] = vmxml.attr(backend, 'type')
+        specParams['path'] = vmxml.find_attr(
+            dev, 'device', 'path')
+        params['specParams'] = specParams
+        return cls(log, **params)
+
     def getXML(self):
         """
         Add tpm section to domain xml

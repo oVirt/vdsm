@@ -645,6 +645,14 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         </rng>'''
         self._check_roundtrip(vmdevices.core.Rng, rng_xml)
 
+    def test_tpm(self):
+        tpm_xml = u'''<tpm model='tpm-tis'>
+            <backend type='passthrough'>
+                <device path='/dev/tpm0' />
+            </backend>
+        </tpm>'''
+        self._check_roundtrip(vmdevices.core.Tpm, tpm_xml)
+
     def _check_roundtrip(self, klass, dev_xml, meta=None):
         dev = klass.from_xml_tree(
             self.log,
