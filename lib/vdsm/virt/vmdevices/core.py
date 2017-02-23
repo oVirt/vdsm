@@ -363,6 +363,12 @@ class Controller(Base):
 class Smartcard(Base):
     __slots__ = ('address',)
 
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        params = parse_device_params(dev)
+        params['specParams'] = parse_device_attrs(dev, ('mode', 'type'))
+        return cls(log, **params)
+
     def getXML(self):
         """
         Add smartcard section to domain xml

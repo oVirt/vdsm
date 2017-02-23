@@ -618,6 +618,12 @@ class DeviceXMLRoundTripTests(XMLTestCase):
     def test_controller(self, controller_xml):
         self._check_roundtrip(vmdevices.core.Controller, controller_xml)
 
+    def test_smartcard(self):
+        smartcard_xml = u'''<smartcard mode='passthrough' type='spicevmc'>
+            <address type='ccid' controller='0' slot='0'/>
+        </smartcard>'''
+        self._check_roundtrip(vmdevices.core.Smartcard, smartcard_xml)
+
     def _check_roundtrip(self, klass, dev_xml, meta=None):
         dev = klass.from_xml_tree(
             self.log,
