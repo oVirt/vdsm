@@ -103,16 +103,20 @@ NOCHK = {'connectivityCheck': False}
 @RequireDummyMod
 def setupModule():
     vds = getProxy()
-    running_config, kernel_config = _get_running_and_kernel_config(
-        vds.config)
-    if ((running_config['networks'] != kernel_config['networks']) or
-            (running_config['bonds'] != kernel_config['bonds'])):
-        raise SkipTest(
-            "Tested host is not clean (running vs kernel): "
-            "networks: %r != %r; "
-            "bonds: %r != %r" % (
-                running_config['networks'], kernel_config['networks'],
-                running_config['bonds'], kernel_config['bonds']))
+
+    unified = (
+        vdsm.config.config.get('vars', 'net_persistence') == 'unified')
+    if unified:
+        running_config, kernel_config = _get_running_and_kernel_config(
+            vds.config)
+        if ((running_config['networks'] != kernel_config['networks']) or
+                (running_config['bonds'] != kernel_config['bonds'])):
+            raise SkipTest(
+                "Tested host is not clean (running vs kernel): "
+                "networks: %r != %r; "
+                "bonds: %r != %r" % (
+                    running_config['networks'], kernel_config['networks'],
+                    running_config['bonds'], kernel_config['bonds']))
 
     vds.save_config()
     for _ in range(DUMMY_POOL_SIZE):
