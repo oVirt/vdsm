@@ -393,7 +393,7 @@ class Sound(Base):
 
 
 class Redir(Base):
-    __slots__ = ('address',)
+    __slots__ = ('bus', 'address',)
 
     def getXML(self):
         """
