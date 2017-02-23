@@ -295,6 +295,15 @@ class Console(Base):
 class Controller(Base):
     __slots__ = ('address', 'model', 'index', 'master')
 
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        params = parse_device_params(dev, attrs=('index', 'model', 'ports'))
+        params['device'] = params['type']
+        iothread = vmxml.find_attr(dev, 'driver', 'iothread')
+        if iothread:
+            params['specParams'] = {'ioThreadId': iothread}
+        return cls(log, **params)
+
     def getXML(self):
         """
         Create domxml for controller device

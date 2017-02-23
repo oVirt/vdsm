@@ -535,6 +535,28 @@ class FakeProxy(object):
         return self._ovs_bridge
 
 
+# the alias is not rendered by getXML, so having it would make
+# the test fail
+_CONTROLLERS_XML = [
+    [u"<controller type='virtio-serial' index='0' ports='16'>"
+     u"<address type='pci' domain='0x0000' bus='0x00'"
+     u" slot='0x07' function='0x0'/>"
+     u"</controller>"],
+    [u"<controller type='usb' index='0'>"
+     u"<address type='pci' domain='0x0000' bus='0x00'"
+     u" slot='0x01' function='0x2'/>"
+     u"</controller>"],
+    [u"<controller type='pci' index='0' model='pci-root' />"],
+    [u"<controller type='ccid' index='0' />"],
+    [u"<controller type='ide' index='0'/>"],
+    [u"<controller type='scsi' index='0' model='virtio-scsi'>"
+     u"<address type='pci' domain='0x0000' bus='0x00' slot='0x0b'"
+     u" function='0x0'/>"
+     u"<driver iothread='4'/>"
+     u"</controller>"],
+]
+
+
 @expandPermutations
 class DeviceXMLRoundTripTests(XMLTestCase):
 
@@ -591,6 +613,10 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         self.assertEqual(dev.isSerial, is_serial)
         self.assertEqual(dev.vmid, vmid)
         self.assertTrue(dev.specParams['enableSocket'])
+
+    @permutations(_CONTROLLERS_XML)
+    def test_controller(self, controller_xml):
+        self._check_roundtrip(vmdevices.core.Controller, controller_xml)
 
     def _check_roundtrip(self, klass, dev_xml, meta=None):
         dev = klass.from_xml_tree(
