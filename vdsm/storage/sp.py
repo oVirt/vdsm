@@ -1182,6 +1182,7 @@ class StoragePool(object):
 
         self._finalizePoolUpgradeIfNeeded()
 
+    @unsecured
     def _finalizePoolUpgradeIfNeeded(self):
         if len(self._domainsToUpgrade) == 0:
             self.log.debug("No domains left for upgrade, unregistering "
