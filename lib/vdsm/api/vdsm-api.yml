@@ -3658,10 +3658,11 @@ types:
             name: displayNetwork
             type: string
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: ''
             description: Secure space channels, comma separated
             name: spiceSecureChannels
             type: string
+            deprecated: '4.1'
 
         -   defaultvalue: true
             description: Specify if copy and paste is enabled.
@@ -6420,9 +6421,11 @@ types:
             name: smartcardEnable
             type: boolean
 
-        -   description: Secure space channels comma separated
+        -   defaultvalue: ''
+            description: Secure space channels comma separated
             name: spiceSecureChannels
             type: string
+            deprecated: '4.1'
 
         -   defaultvalue: no-default
             description: The IP address to use for accessing the VM display
