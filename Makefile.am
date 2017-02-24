@@ -29,7 +29,6 @@ SUBDIRS = \
 	lib \
 	static \
 	vdsm \
-	vdsm-tool \
 	vdsm_hooks \
 	$(NULL)
 

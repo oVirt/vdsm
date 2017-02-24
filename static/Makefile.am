@@ -24,10 +24,12 @@ man8_MANS = \
 	./usr/share/man/man8/vdsmd.8
 
 dist_man1_MANS = \
-	./usr/share/man/man1/vdsm-client.1
+	./usr/share/man/man1/vdsm-client.1 \
+	./usr/share/man/man1/vdsm-tool.1
 
 dist_bin_SCRIPTS = \
-	./usr/bin/vdsm-client
+	./usr/bin/vdsm-client \
+	./usr/bin/vdsm-tool
 
 vdsm_DATA = \
 	./usr/share/vdsm/bonding-defaults.json \
@@ -125,5 +127,6 @@ EXTRA_DIST = \
 	./usr/lib/systemd/system/vdsm-network.service.in \
 	./usr/lib/systemd/system/vdsm-network-init.service.in \
 	./usr/lib/systemd/system/vdsmd.service.in \
+	./usr/share/man/man1/vdsm-tool.1.in \
 	./usr/share/man/man8/vdsmd.8.in \
 	$(NULL)

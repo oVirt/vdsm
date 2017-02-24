@@ -68,8 +68,8 @@ vdsm/vdscli.py
 vdsm/vdsm-gencerts.sh
 vdsm/vdsm-sosplugin.py
 vdsm/vdsm-store-net-config
+static/usr/share/man/man1/vdsm-tool.1
 static/usr/share/man/man8/vdsmd.8
-vdsm-tool/vdsm-tool.1
 vdsm/rpc/vdsm-api.html
 vdsm_hooks/openstacknet/sudoers
 vdsm_hooks/persist-vdsm-hooks
