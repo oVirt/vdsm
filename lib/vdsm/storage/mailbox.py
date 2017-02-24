@@ -618,15 +618,18 @@ class SPM_MailMonitor:
         Return True if mailbox has a valid checksum, and is not an empty
         mailbox, False otherwise.
         """
-        chkStart = MAILBOX_SIZE - CHECKSUM_BYTES
-        chk = misc.checksum(mailbox[0:chkStart], CHECKSUM_BYTES)
-        pChk = struct.pack('<l', chk)  # Assumes CHECKSUM_BYTES equals 4!!!
-        if pChk != mailbox[chkStart:chkStart + CHECKSUM_BYTES]:
-            self.log.error("SPM_MailMonitor: mailbox %s checksum failed, not "
-                           "clearing mailbox, clearing newMail.",
-                           str(mailboxIndex))
+        assert len(mailbox) == MAILBOX_SIZE
+        data = mailbox[:-CHECKSUM_BYTES]
+        checksum = mailbox[-CHECKSUM_BYTES:]
+        n = misc.checksum(data, CHECKSUM_BYTES)
+        expected = struct.pack('<l', n)  # Assumes CHECKSUM_BYTES equals 4!!!
+        if checksum != expected:
+            self.log.error(
+                "mailbox %s checksum failed, not clearing mailbox, clearing "
+                "new mail (data=%r, checksum=%r, expected=%r)",
+                mailboxIndex, data, checksum, expected)
             return False
-        elif pChk == pZeroChecksum:
+        elif expected == pZeroChecksum:
             return False  # Ignore messages of empty mailbox
         return True
 
