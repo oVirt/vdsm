@@ -319,6 +319,9 @@ def nested_virtualization():
                 if f.readline().strip() in ("Y", "1"):
                     return NestedVirtualization(True, kvm_module)
         except IOError:
-            logging.debug('Could not determine status of nested '
-                          'virtualization', exc_info=True)
-            return NestedVirtualization(False, None)
+            logging.debug('%s nested virtualization '
+                          'not detected' % kvm_module, exc_info=True)
+
+    logging.debug('Could not determine status of nested '
+                  'virtualization')
+    return NestedVirtualization(False, None)
