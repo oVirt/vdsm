@@ -612,7 +612,12 @@ class SPM_MailMonitor:
                 self._numHosts = newMaxId
                 self._outMailLen = MAILBOX_SIZE * self._numHosts
 
-    def _validateMailbox(self, mailbox, mailboxIndex):
+    @classmethod
+    def validateMailbox(self, mailbox, mailboxIndex):
+        """
+        Return True if mailbox has a valid checksum, and is not an empty
+        mailbox, False otherwise.
+        """
         chkStart = MAILBOX_SIZE - CHECKSUM_BYTES
         chk = misc.checksum(mailbox[0:chkStart], CHECKSUM_BYTES)
         pChk = struct.pack('<l', chk)  # Assumes CHECKSUM_BYTES equals 4!!!
@@ -652,7 +657,7 @@ class SPM_MailMonitor:
                 # therefor this is done after we find a non empty message in
                 # mailbox
                 if not isMailboxValidated:
-                    if not self._validateMailbox(
+                    if not self.validateMailbox(
                             newMail[mailboxStart:mailboxStart + MAILBOX_SIZE],
                             host):
                         # Cleaning invalid mbx in newMail

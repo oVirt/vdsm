@@ -20,11 +20,13 @@
 
 import contextlib
 import threading
+import struct
 
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import temporaryPath
 
 import vdsm.storage.mailbox as sm
+from vdsm.storage import misc
 from vdsm.utils import retry
 
 MAX_HOSTS = 10
@@ -115,3 +117,26 @@ class TestMailbox(TestCaseBase):
             "1xtnd\xe1_\xfeeT\x8a\x18\xb3\xe0JT\xe5^\xc8\xdb\x8a_Z%"
             "\xd8\xfcs.\xa4\xc3C\xbb>\xc6\xf1r\xd700000000000000640"
             "0000000000"))])
+
+
+class TestValidation(TestCaseBase):
+
+    def test_empty_mailbox(self):
+        mailbox = sm.EMPTYMAILBOX
+        self.assertFalse(sm.SPM_MailMonitor.validateMailbox(mailbox, 7))
+
+    def test_good_checksum(self):
+        msg = "x" * sm.MESSAGE_SIZE
+        padding = sm.MAILBOX_SIZE - sm.MESSAGE_SIZE - sm.CHECKSUM_BYTES
+        data = msg + padding * "\0"
+        n = misc.checksum(data, sm.CHECKSUM_BYTES)
+        checksum = struct.pack('<l', n)
+        mailbox = data + checksum
+        self.assertTrue(sm.SPM_MailMonitor.validateMailbox(mailbox, 7))
+
+    def test_bad_checksum(self):
+        msg = "x" * sm.MESSAGE_SIZE
+        padding = sm.MAILBOX_SIZE - sm.MESSAGE_SIZE - sm.CHECKSUM_BYTES
+        data = msg + padding * "\0"
+        mailbox = data + "bad!"
+        self.assertFalse(sm.SPM_MailMonitor.validateMailbox(mailbox, 7))
