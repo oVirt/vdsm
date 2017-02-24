@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2016 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -21,11 +21,12 @@ from functools import wraps
 import json
 import re
 import os.path
-import six
+import time
 
 import netaddr
 from nose import with_setup
 from nose.plugins.skip import SkipTest
+import six
 
 import vdsm.config
 from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
@@ -37,6 +38,7 @@ from vdsm.network.ipwrapper import (
     linkDel, linkSet, addrAdd)
 from vdsm.network import kernelconfig
 from vdsm.network.netconfpersistence import PersistentConfig
+from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
 from vdsm.network.netinfo.bonding import BONDING_SLAVES, BONDING_MASTERS
 from vdsm.network.netinfo.bridges import bridges
 from vdsm.network.netinfo.misc import NET_CONF_PREF
@@ -66,6 +68,7 @@ from testValidation import brokentest, slowtest, ValidateRunningAsRoot
 from network.nettestlib import Dummy, Tap, veth_pair, dnsmasq_run
 from network import dhcp
 from utils import SUCCESS, getProxy
+
 
 NETWORK_NAME = 'test-network'
 VLAN_ID = '27'
@@ -2789,6 +2792,9 @@ class NetworkTest(TestCaseBase):
                     NOCHK)
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertBondExists(bond, pair)
+
+            _wait_bonds_lp_interval()
+
             status, msg, info = self.vdsm_net.getVdsCapabilities()
             bond_caps, nic_caps = info['bondings'], info['nics']
             try:
@@ -2903,3 +2909,16 @@ def _create_external_bond(name, slaves):
     finally:
         with open(BONDING_MASTERS, 'w') as bonds:
             bonds.write('-%s\n' % name)
+
+
+def _wait_bonds_lp_interval():
+        """ mode 4 (802.3ad) is a relevant bond mode where bonds will attempt
+            to synchronize with each other, sending learning packets to the
+            slaves in intervals set via lp_interval
+        """
+        GRACE_PERIOD = 1
+        LACP_BOND_MODE = '4'
+
+        default_lp_interval = int(
+            getDefaultBondingOptions(LACP_BOND_MODE)['lp_interval'][0])
+        time.sleep(default_lp_interval + GRACE_PERIOD)
