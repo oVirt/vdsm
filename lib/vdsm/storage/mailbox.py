@@ -55,7 +55,6 @@ EXTEND_CODE = "xtnd"
 BLOCK_SIZE = 512
 REPLY_OK = 1
 EMPTYMAILBOX = MAILBOX_SIZE * "\0"
-BLOCKS_PER_MAILBOX = int(MAILBOX_SIZE / BLOCK_SIZE)
 SLOTS_PER_MAILBOX = int(MAILBOX_SIZE / MESSAGE_SIZE)
 # Last message slot is reserved for metadata (checksum, extendable mailbox,
 # etc)
@@ -249,17 +248,18 @@ class HSM_MailMonitor(object):
         self._inCmd = [constants.EXT_DD,
                        'if=' + str(inbox),
                        'iflag=direct,fullblock',
-                       'bs=' + str(BLOCK_SIZE),
-                       'count=' + str(BLOCKS_PER_MAILBOX),
-                       'skip=' + str(self._hostID * BLOCKS_PER_MAILBOX)
+                       'bs=' + str(MAILBOX_SIZE),
+                       'count=1',
+                       'skip=' + str(self._hostID)
                        ]
         self._outCmd = [constants.EXT_DD,
                         'of=' + str(outbox),
                         'iflag=fullblock',
                         'oflag=direct',
                         'conv=notrunc',
-                        'bs=' + str(BLOCK_SIZE),
-                        'seek=' + str(self._hostID * BLOCKS_PER_MAILBOX)
+                        'bs=' + str(MAILBOX_SIZE),
+                        'count=1',
+                        'seek=' + str(self._hostID)
                         ]
         self._init = False
         self._initMailbox()  # Read initial mailbox state
