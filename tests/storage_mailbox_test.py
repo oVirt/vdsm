@@ -18,12 +18,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import collections
 import contextlib
+import io
+import os
 import threading
 import struct
 
 from testlib import VdsmTestCase as TestCaseBase
-from testlib import temporaryPath
+from testlib import namedTemporaryDir
 
 import vdsm.storage.mailbox as sm
 from vdsm.storage import misc
@@ -35,21 +38,29 @@ MONITOR_INTERVAL = 0.1
 SPUUID = '5d928855-b09b-47a7-b920-bd2d2eb5808c'
 
 
+Env = collections.namedtuple("Env", "inbox, outbox")
+
+
 @contextlib.contextmanager
-def mailbox_file():
-    with temporaryPath(
-            data=sm.EMPTYMAILBOX * MAX_HOSTS, dir='/var/tmp') as path:
-        yield path
+def make_env():
+    with namedTemporaryDir() as tmpdir:
+        inbox = os.path.join(tmpdir, "inbox")
+        outbox = os.path.join(tmpdir, "outbox")
+        data = sm.EMPTYMAILBOX * MAX_HOSTS
+        for path in (inbox, outbox):
+            with io.open(path, "wb") as f:
+                f.write(data)
+        yield Env(inbox, outbox)
 
 
 class SPM_MailMonitorTests(TestCaseBase):
 
     def testThreadLeak(self):
-        with mailbox_file() as inbox, mailbox_file() as outbox:
+        with make_env() as env:
             mailer = sm.SPM_MailMonitor(
                 SPUUID, 100,
-                inbox=inbox,
-                outbox=outbox,
+                inbox=env.inbox,
+                outbox=env.outbox,
                 monitorInterval=MONITOR_INTERVAL)
             try:
                 threadCount = len(threading.enumerate())
@@ -76,17 +87,17 @@ class TestMailbox(TestCaseBase):
             received_messages.append((msg_id, data))
             msg_processed.set()
 
-        with mailbox_file() as inbox, mailbox_file() as outbox:
+        with make_env() as env:
             hsm_mb = sm.HSM_Mailbox(
                 hostID=7, poolID=SPUUID,
-                inbox=outbox,
-                outbox=inbox,
+                inbox=env.outbox,
+                outbox=env.inbox,
                 monitorInterval=MONITOR_INTERVAL)
             try:
                 spm_mm = sm.SPM_MailMonitor(
                     SPUUID, MAX_HOSTS,
-                    inbox=inbox,
-                    outbox=outbox,
+                    inbox=env.inbox,
+                    outbox=env.outbox,
                     monitorInterval=MONITOR_INTERVAL)
                 try:
                     spm_mm.registerMessageType("xtnd", spm_callback)
