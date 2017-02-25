@@ -53,6 +53,38 @@ def make_env():
         yield Env(inbox, outbox)
 
 
+@contextlib.contextmanager
+def make_hsm_mailbox(env, host_id):
+    mailbox = sm.HSM_Mailbox(
+        hostID=host_id,
+        poolID=SPUUID,
+        inbox=env.outbox,
+        outbox=env.inbox,
+        monitorInterval=MONITOR_INTERVAL)
+    try:
+        yield mailbox
+    finally:
+        mailbox.stop()
+        if not mailbox.wait(timeout=MAILER_TIMEOUT):
+            raise RuntimeError('Timemout waiting for hsm mailbox')
+
+
+@contextlib.contextmanager
+def make_spm_mailbox(env):
+    mailbox = sm.SPM_MailMonitor(
+        SPUUID,
+        MAX_HOSTS,
+        inbox=env.inbox,
+        outbox=env.outbox,
+        monitorInterval=MONITOR_INTERVAL)
+    try:
+        yield mailbox
+    finally:
+        mailbox.stop()
+        if not mailbox.wait(timeout=MAILER_TIMEOUT):
+            raise RuntimeError('Timemout waiting for spm mailbox')
+
+
 class SPM_MailMonitorTests(TestCaseBase):
 
     def testThreadLeak(self):
@@ -82,20 +114,10 @@ class TestSPMMailbox(TestCaseBase):
         with make_env() as env:
             with io.open(env.outbox, "wb") as f:
                 f.write(b"x" * sm.MAILBOX_SIZE * MAX_HOSTS)
-            spm_mm = sm.SPM_MailMonitor(
-                SPUUID,
-                MAX_HOSTS,
-                inbox=env.inbox,
-                outbox=env.outbox,
-                monitorInterval=MONITOR_INTERVAL)
-            try:
+            with make_spm_mailbox(env):
                 with io.open(env.outbox, "rb") as f:
                     data = f.read()
                 self.assertEqual(data, sm.EMPTYMAILBOX * MAX_HOSTS)
-            finally:
-                spm_mm.stop()
-                self.assertTrue(spm_mm.wait(timeout=MAILER_TIMEOUT),
-                                msg='Timemout waiting for spm mailbox')
 
 
 class TestHSMMailbox(TestCaseBase):
@@ -106,13 +128,7 @@ class TestHSMMailbox(TestCaseBase):
             # Dirty the inbox
             with io.open(env.inbox, "wb") as f:
                 f.write(b"x" * sm.MAILBOX_SIZE * MAX_HOSTS)
-            hsm_mb = sm.HSM_Mailbox(
-                hostID=host_id,
-                poolID=SPUUID,
-                inbox=env.outbox,
-                outbox=env.inbox,
-                monitorInterval=MONITOR_INTERVAL)
-            try:
+            with make_hsm_mailbox(env, host_id):
                 with io.open(env.inbox, "rb") as f:
                     data = f.read()
                 start = host_id * sm.MAILBOX_SIZE
@@ -122,10 +138,6 @@ class TestHSMMailbox(TestCaseBase):
                 # Other mailboxes must not be modifed
                 self.assertEqual(data[:start], b"x" * start)
                 self.assertEqual(data[end:], b"x" * (len(data) - end))
-            finally:
-                hsm_mb.stop()
-                self.assertTrue(hsm_mb.wait(timeout=MAILER_TIMEOUT),
-                                msg='Timemout waiting for hsm mailbox')
 
     def test_keep_outbox(self):
         host_id = 7
@@ -134,20 +146,10 @@ class TestHSMMailbox(TestCaseBase):
             dirty_outbox = b"x" * sm.MAILBOX_SIZE * MAX_HOSTS
             with io.open(env.outbox, "wb") as f:
                 f.write(dirty_outbox)
-            hsm_mb = sm.HSM_Mailbox(
-                hostID=host_id,
-                poolID=SPUUID,
-                inbox=env.outbox,
-                outbox=env.inbox,
-                monitorInterval=MONITOR_INTERVAL)
-            try:
+            with make_hsm_mailbox(env, host_id):
                 with io.open(env.outbox, "rb") as f:
                     data = f.read()
                 self.assertEqual(data, dirty_outbox)
-            finally:
-                hsm_mb.stop()
-                self.assertTrue(hsm_mb.wait(timeout=MAILER_TIMEOUT),
-                                msg='Timemout waiting for hsm mailbox')
 
 
 class TestCommunicate(TestCaseBase):
@@ -162,18 +164,8 @@ class TestCommunicate(TestCaseBase):
             msg_processed.set()
 
         with make_env() as env:
-            hsm_mb = sm.HSM_Mailbox(
-                hostID=7, poolID=SPUUID,
-                inbox=env.outbox,
-                outbox=env.inbox,
-                monitorInterval=MONITOR_INTERVAL)
-            try:
-                spm_mm = sm.SPM_MailMonitor(
-                    SPUUID, MAX_HOSTS,
-                    inbox=env.inbox,
-                    outbox=env.outbox,
-                    monitorInterval=MONITOR_INTERVAL)
-                try:
+            with make_hsm_mailbox(env, 7) as hsm_mb:
+                with make_spm_mailbox(env) as spm_mm:
                     spm_mm.registerMessageType("xtnd", spm_callback)
 
                     VOL_DATA = dict(
@@ -186,16 +178,6 @@ class TestCommunicate(TestCaseBase):
 
                     if not msg_processed.wait(10 * MONITOR_INTERVAL):
                         expired = True
-                finally:
-                    spm_mm.stop()
-                    self.assertTrue(
-                        spm_mm.wait(timeout=MAILER_TIMEOUT),
-                        msg='spm_mm.wait: Timeout expired')
-            finally:
-                hsm_mb.stop()
-                self.assertTrue(
-                    hsm_mb.wait(timeout=MAILER_TIMEOUT),
-                    msg='hsm_mb.wait: Timeout expired')
 
         self.assertFalse(expired, 'message was not processed on time')
         self.assertEqual(received_messages, [(449, (
