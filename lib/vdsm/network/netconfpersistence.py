@@ -45,11 +45,7 @@ class BaseConfig(object):
         self.bonds = bonds
 
     def setNetwork(self, network, attrs):
-        # Clean netAttrs from fields that should not be serialized
-        cleanAttrs = dict((key, value) for key, value in six.iteritems(attrs)
-                          if value is not None and key not in
-                          ('configurator', 'force',
-                           'bondingOptions', 'implicitBonding'))
+        cleanAttrs = BaseConfig._filter_out_net_attrs(attrs)
         self.networks[network] = cleanAttrs
         logging.info('Adding network %s(%s)', network, cleanAttrs)
 
@@ -106,6 +102,13 @@ class BaseConfig(object):
     def as_unicode(self):
         return {'networks': json.loads(json.dumps(self.networks)),
                 'bonds': json.loads(json.dumps(self.bonds))}
+
+    @staticmethod
+    def _filter_out_net_attrs(netattrs):
+        attrs = {key: value for key, value in six.viewitems(netattrs)
+                 if value is not None}
+
+        return attrs
 
 
 class Config(BaseConfig):
