@@ -61,7 +61,6 @@ class KernelConfig(BaseConfig):
 def normalize(running_config):
     config_copy = copy.deepcopy(running_config)
 
-    _normalize_blockingdhcp(config_copy)
     _normalize_dhcp(config_copy)
     _normalize_bonding_opts(config_copy)
     _normalize_bonding_nics(config_copy)
@@ -183,12 +182,6 @@ def _remove_zero_values_in_net_qos(net_qos):
                                              in curve_config.iteritems()
                                              if v != 0)
     return stripped_qos
-
-
-def _normalize_blockingdhcp(config_copy):
-    for net_attr in config_copy.networks.itervalues():
-        if 'blockingdhcp' in net_attr:
-            net_attr.pop('blockingdhcp')
 
 
 def _normalize_dhcp(config_copy):

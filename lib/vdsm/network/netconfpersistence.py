@@ -38,6 +38,8 @@ from .canonicalize import canonicalize_networks, canonicalize_bondings
 CONF_RUN_DIR = constants.P_VDSM_LIB + 'staging/netconf/'
 CONF_PERSIST_DIR = constants.P_VDSM_LIB + 'persistence/netconf/'
 
+VOLATILE_NET_ATTRS = ('blockingdhcp',)
+
 
 class BaseConfig(object):
     def __init__(self, networks, bonds):
@@ -108,6 +110,7 @@ class BaseConfig(object):
         attrs = {key: value for key, value in six.viewitems(netattrs)
                  if value is not None}
 
+        _filter_out_volatile_net_attrs(attrs)
         return attrs
 
 
@@ -117,6 +120,8 @@ class Config(BaseConfig):
         self.bondingsPath = os.path.join(savePath, 'bonds', '')
         nets = self._getConfigs(self.networksPath)
         canonicalize_networks(nets)
+        for net_attrs in six.viewvalues(nets):
+            _filter_out_volatile_net_attrs(net_attrs)
         bonds = self._getConfigs(self.bondingsPath)
         canonicalize_bondings(bonds)
         super(Config, self).__init__(nets, bonds)
@@ -260,3 +265,8 @@ def configuredPorts(nets, bridge):
         return [nic + vlan]
     else:  # isolated bridged network
         return []
+
+
+def _filter_out_volatile_net_attrs(net_attrs):
+    for attr in VOLATILE_NET_ATTRS:
+        net_attrs.pop(attr, None)

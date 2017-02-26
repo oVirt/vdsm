@@ -36,6 +36,7 @@ from vdsm.network.ipwrapper import (
     routeExists, ruleExists, addrFlush, LinkType, getLinks, routeShowTable,
     linkDel, linkSet, addrAdd)
 from vdsm.network import kernelconfig
+from vdsm.network.netconfpersistence import PersistentConfig
 from vdsm.network.netinfo.bonding import BONDING_SLAVES, BONDING_MASTERS
 from vdsm.network.netinfo.bridges import bridges
 from vdsm.network.netinfo.misc import NET_CONF_PREF
@@ -1321,15 +1322,11 @@ class NetworkTest(TestCaseBase):
     @RequireVethMod
     @ValidateRunningAsRoot
     def testRestoreToBlockingDHCP(self):
-        """test that regardless of what is written in the unified persistence,
-        restoration of bootprot=dhcp networks is down synchronously. with
-        ifcfg persistence, this is what happens thanks to initscripts,
-        regardless of vdsm. Hence, this test is irrelevant there. """
-
-        def _get_blocking_dhcp(net_name):
-            self.vdsm_net.refreshNetinfo()
-            return self.vdsm_net.config.networks[net_name].get('blockingdhcp')
-
+        """
+        Test that restoration of dhcp based network is done synchronously.
+        With ifcfg persistence, this is what happens thanks to initscripts,
+        regardless of vdsm. Hence, this test is irrelevant there.
+        """
         with veth_pair() as (server, client):
             addrAdd(server, IP_ADDRESS, IP_CIDR)
             linkSet(server, ['up'])
@@ -1340,25 +1337,19 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
             self.assertNetworkExists(NETWORK_NAME)
-            self.assertFalse(_get_blocking_dhcp(NETWORK_NAME))
 
             self.vdsm_net.save_config()
 
-            # Terminate the dhclient spawned by the setup to avoid a race
-            # with the source route thread.
+            # Take dhcp down so restoration will take place.
             dhclient.kill(client)
-            # TODO: Fix sourceroute thread and make sure it fails supervdsm
-            # if it is crashes.
 
-            with dnsmasq_run(server, DHCP_RANGE_FROM, DHCP_RANGE_TO,
-                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, IP_GATEWAY):
-                self.vdsm_net.restoreNetConfig()
-                self.assertTrue(_get_blocking_dhcp(NETWORK_NAME))
+            # Attempt to restore network without dhcp server.
+            # As we expect blockingdhcp to be set, it should fail the setup.
+            self.vdsm_net.restoreNetConfig()
+            self.assertNetworkDoesntExist(NETWORK_NAME)
 
             # cleanup
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
+            PersistentConfig().delete()
 
     @cleanupNet
     def testRemovingBridgeDoesNotLeaveBridge(self):
