@@ -27,7 +27,7 @@ from functools import partial
 from contextlib import nested
 from uuid import uuid4
 
-from six.moves.queue import Queue
+from six.moves import queue
 
 from vdsm.logUtils import SimpleLogAdapter
 from vdsm import concurrent
@@ -456,7 +456,7 @@ class _ResourceManager(object):
             except ValueError:
                 raise TypeError("'timeout' must be number")
 
-        resource = Queue()
+        resource = queue.Queue()
 
         def callback(req, res):
             resource.put(res)

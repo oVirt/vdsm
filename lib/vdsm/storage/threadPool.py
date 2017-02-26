@@ -13,7 +13,7 @@ import itertools
 import logging
 import threading
 
-from six.moves.queue import Queue, Empty
+from six.moves import queue
 from time import sleep
 
 from vdsm import concurrent
@@ -40,7 +40,7 @@ class ThreadPool:
         self._taskThread = {}
         self.__resizeLock = threading.Condition(threading.Lock())
         self.__runningTasksLock = threading.Condition(threading.Lock())
-        self.__tasks = Queue(maxTasks)
+        self.__tasks = queue.Queue(maxTasks)
         self.__isJoining = False
         self.__runningTasks = 0
         self.__waitTimeout = waitTimeout
@@ -134,7 +134,7 @@ class ThreadPool:
         try:
             id, cmd, args, callback = self.__tasks.get(True,
                                                        self.__waitTimeout)
-        except Empty:
+        except queue.Empty:
             pass
 
         return id, cmd, args, callback
