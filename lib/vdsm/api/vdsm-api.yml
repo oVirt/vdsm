@@ -4716,6 +4716,7 @@ types:
         -   description: List of host numa nodes
             name: nodeset
             type: string
+        type: object
 
     NumaTune: &NumaTune
         added: '3.4'
