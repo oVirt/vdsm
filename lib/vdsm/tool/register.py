@@ -201,7 +201,7 @@ class Register(object):
 
         Returns: Content of http request
         """
-        if self.check_fqdn:
+        if self.check_fqdn and cert_validation:
             cert_validation = self.ca_engine
         else:
             cert_validation = False
