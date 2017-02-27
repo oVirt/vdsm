@@ -292,8 +292,7 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
 
     if fsType != DEFAULT_FS_TYPE:
         log.error("fstype %s is currently unsupported" % fsType)
-        raise ge.GlusterHostStorageDeviceMkfsFailedException(
-            thinlv.path, alignment, raidParams.get('stripeSize', 0), fsType)
+        raise ge.GlusterHostStorageDeviceMkfsFailedException(fsType)
 
     format = blivet.formats.getFormat(DEFAULT_FS_TYPE, device=thinlv.path,
                                       mountopts=DEFAULT_MOUNT_OPTIONS)

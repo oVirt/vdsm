@@ -501,6 +501,14 @@ class GlusterHostFailedToRunRestorecon(GlusterHostException):
                        % brickMountPoint
 
 
+class GlusterHostStorageDeviceMkfsFailedException(GlusterHostException):
+    code = 4422
+
+    def __init__(self, fsType=None):
+        GlusterHostException.__init__(self)
+        self.message = "fstype %s is currently unsupported" % fsType
+
+
 # Hook
 class GlusterHookException(GlusterException):
     code = 4500
