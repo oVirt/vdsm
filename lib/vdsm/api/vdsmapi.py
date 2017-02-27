@@ -19,6 +19,7 @@
 #
 from __future__ import absolute_import
 
+import json
 import logging
 import os
 import six
@@ -384,3 +385,97 @@ class Schema(object):
         except Exception:
             self._report_inconsistency('Unexpected issue with event type'
                                        ' verification for %s' % rep.id)
+
+    def _get_arg_dict(self, arg_type, name, params_dict):
+        '''
+        creates a dictionary representing an argument that can consist nested
+        argument types.
+
+        Args:
+            arg_type:    argument type, can be primitive or complex (extracted
+                         from the schema)
+            name:        arg name
+            params_dict: empty dictionary that will be filled with argument's
+                         nested types.
+        '''
+        if isinstance(arg_type.get('type'), list):
+            params_dict[name] = []
+            for member in arg_type.get('type'):
+                member_dict = {}
+                if hasattr(member, 'get'):
+                    self._get_arg_dict(
+                        member, member.get('name'), member_dict)
+                params_dict[name].append(member_dict)
+
+        elif arg_type.get('type') == 'object':
+            for prop in arg_type.get('properties'):
+                if isinstance(prop.get('type'), dict):
+                    self._get_arg_dict(
+                        prop.get('type'), prop.get('name'), params_dict)
+                else:
+                    self._get_arg_dict(
+                        prop, prop.get('name'), params_dict)
+
+        elif arg_type.get('type') == 'union':
+            params_dict[name] = []
+            for value in arg_type.get('values'):
+                if hasattr(value, 'get'):
+                    params_dict[name].append(
+                        (value.get('name'), value.get('type')))
+                else:
+                    params_dict[name].append(value)
+
+        elif arg_type.get('type') == 'enum':
+            params_dict[name] = 'enum {}'.format(
+                [value for value in arg_type.get('values')])
+
+        elif arg_type.get('type') == 'alias':
+            params_dict[name] = arg_type.get('name')
+
+        else:
+            params_dict[name] = arg_type.get('type')
+
+    def get_args_dict(self, namespace, method):
+        '''
+        This function creates a dictionary represenation of all
+        nested arguments, where key represents the argument name and
+        value is the argument type.
+
+        Args:
+            namespace(string): namespace containing the method
+            method(string):    method name
+
+        Returns:
+            a dictionary contatining all method arguments
+        '''
+        method_rep = MethodRep(namespace, method)
+        args = self.get_args(method_rep)
+        if not args:
+            return None
+        params_dict = {}
+        for arg in args:
+            if isinstance(arg.get('type'), dict):
+                arg_name = arg.get('type').get('name')
+                arg_type = self.get_type(arg_name)
+                param_dict = {}
+                self._get_arg_dict(arg_type, arg_name, param_dict)
+                params_dict[arg.get('name')] = param_dict
+            elif isinstance(arg.get('type'), list):
+                params_dict[arg.get('name')] = []
+                for param in arg.get('type'):
+                    param_dict = {}
+                    if not hasattr(param, 'get'):
+                        params_dict[arg.get('name')].append(param)
+                    elif isinstance(param.get('type'), dict):
+                        param_type = self.get_type(
+                            param.get('type').get('name'))
+                        self._get_arg_dict(
+                            param_type, param.get('type').get('name'),
+                            param_dict)
+                    else:
+                        self._get_arg_dict(
+                            param, param.get('name'), param_dict)
+                    params_dict[arg.get('name')].append(param_dict)
+            else:
+                params_dict[arg.get('name')] = arg.get('type')
+        return json.dumps(params_dict, indent=4)
