@@ -2,7 +2,7 @@
 # developer's daily tasks. This file can be imported to one's .bashrc or
 # .zshrc.
 
-VDSM_DIR=~/code/vdsm
+VDSM_SOURCE_DIR="${VDSM_SOURCE_DIR:-~/code/vdsm}"
 RPMDIR=`rpm --eval %_rpmdir`
 
 _latest_version() {
@@ -50,7 +50,7 @@ vdsm_functional() {
 }
 
 vdsm_check() {
-    pushd $VDSM_DIR
+    pushd $VDSM_SOURCE_DIR
     ./autogen.sh --system && make check
     popd
 }
@@ -61,7 +61,7 @@ vdsm_smoke() {
 
 vdsm_remove() {
     sudo yum erase -y vdsm\*
-    pushd $VDSM_DIR
+    pushd $VDSM_SOURCE_DIR
     make distclean
     popd
 }
@@ -85,13 +85,13 @@ vdsm_downgrade() {
 }
 
 vdsm_build() {
-    pushd $VDSM_DIR
+    pushd $VDSM_SOURCE_DIR
     ./autogen.sh --system && NOSE_EXCLUDE=.* make rpm
     popd
 }
 
 vdsm_build_with_hooks() {
-    pushd $VDSM_DIR
+    pushd $VDSM_SOURCE_DIR
     ./autogen.sh --system && ./configure --enable-hooks && make \
     && NOSE_EXCLUDE=.* make rpm
     popd
@@ -201,13 +201,13 @@ emergency_net_cleanup() {
 }
 
 vdsm_flake8() {
-    pushd $VDSM_DIR
+    pushd $VDSM_SOURCE_DIR
     ./autogen.sh --system && ./configure && make flake8
     popd
 }
 
 vdsm_unit () {
-    cd $VDSM_DIR && \
+    cd $VDSM_SOURCE_DIR && \
     ./autogen.sh --system && make && \
     cd tests && sudo ./run_tests_local.sh $1
 }
