@@ -462,7 +462,7 @@ class TestVmDevices(XMLTestCase):
         with fake.VM() as testvm:
             interface_conf = {
                 'type': hwclass.NIC, 'device': 'hostdev',
-                'hostdev': 'pci_0000_00_07_0', 'macAddr': 'ff:ff:ff:ff:ff:ff',
+                'hostdev': 'pci_0000_05_00_1', 'macAddr': 'ff:ff:ff:ff:ff:ff',
                 'specParams': {'vlanid': 3}, 'bootOrder': '9'}
             interface_dev = vmdevices.network.Interface(
                 testvm.conf, testvm.log, **interface_conf)
