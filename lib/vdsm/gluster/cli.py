@@ -1515,7 +1515,7 @@ def snapshotInfo(volumeName=None):
         else:
             return _parseAllVolumeSnapshotList(xmltree)
     except _etreeExceptions:
-        raise ge.GlusterXmlErrorInfoException(err=[etree.tostring(xmltree)])
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
 @gluster_mgmt_api
