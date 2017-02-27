@@ -19,6 +19,8 @@
 #
 from __future__ import absolute_import
 
+import json
+
 from vdsm.api import vdsmapi
 from yajsonrpc import JsonRpcError
 
@@ -461,3 +463,18 @@ class DataVerificationTests(TestCaseBase):
         sub_id = '|virt|VM_status|426aef82-ea1d-4442-91d3-fd876540e0f0'
 
         _events_schema.events_schema().verify_event_params(sub_id, params)
+
+    def test_create_complex_params(self):
+        complex_type = {'lease': {'sd_id': 'UUID', 'lease_id': 'UUID'}}
+        self.assertEqual(
+            _schema.schema().get_args_dict('Lease', 'create'),
+            json.dumps(complex_type, indent=4))
+
+    def test_no_params(self):
+        self.assertEqual(_schema.schema().get_args_dict(
+            'Host', 'getCapabilities'), None)
+
+    def test_single_param(self):
+        complex_type = {'vmID': {'UUID': 'UUID'}}
+        self.assertEqual(_schema.schema().get_args_dict(
+            'VM', 'getStats'), json.dumps(complex_type, indent=4))
