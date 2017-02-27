@@ -521,6 +521,8 @@ def reattach_detachable(device_name, pci_reattach=True):
     if capability == 'pci' and utils.tobool(device_params['is_assignable']):
         if pci_reattach:
             libvirt_device.reAttach()
+        supervdsm.getProxy().rmAppropriateIommuGroup(
+            device_params['iommu_group'])
     elif capability == 'usb':
         supervdsm.getProxy().rmAppropriateUSBDevice(
             device_params['address']['bus'],
