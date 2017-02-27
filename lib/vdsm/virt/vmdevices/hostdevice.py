@@ -22,7 +22,6 @@ from __future__ import absolute_import
 import xml.etree.ElementTree as ET
 
 from vdsm import utils
-from vdsm import supervdsm
 from vdsm.hostdev import get_device_params, detach_detachable, \
     pci_address_to_name, scsi_address_to_adapter, reattach_detachable
 from vdsm.virt import vmxml
@@ -49,8 +48,7 @@ class PciDevice(core.Base):
         detach_detachable(self.device)
 
     def teardown(self):
-        supervdsm.getProxy().rmAppropriateIommuGroup(
-            self._deviceParams['iommu_group'])
+        reattach_detachable(self.device, pci_reattach=False)
 
     @property
     def _xpath(self):
