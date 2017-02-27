@@ -61,7 +61,6 @@ class KernelConfig(BaseConfig):
 def normalize(running_config):
     config_copy = copy.deepcopy(running_config)
 
-    _normalize_dhcp(config_copy)
     _normalize_bonding_opts(config_copy)
     _normalize_bonding_nics(config_copy)
     _normalize_address(config_copy)
@@ -182,17 +181,6 @@ def _remove_zero_values_in_net_qos(net_qos):
                                              in curve_config.iteritems()
                                              if v != 0)
     return stripped_qos
-
-
-def _normalize_dhcp(config_copy):
-    for net_attr in config_copy.networks.itervalues():
-        dhcp = net_attr.get('bootproto')
-        if dhcp is None:
-            net_attr['bootproto'] = 'none'
-        else:
-            net_attr['bootproto'] = dhcp
-        net_attr['dhcpv6'] = net_attr.get('dhcpv6', False)
-    return config_copy
 
 
 def _normalize_bonding_opts(config_copy):

@@ -44,6 +44,7 @@ def canonicalize_networks(nets):
         _canonicalize_vlan(attrs)
         _canonicalize_bridged(attrs)
         _canonicalize_stp(attrs)
+        _canonicalize_dhcpv4(attrs)
         _canonicalize_ipv6(attrs)
         _canonicalize_switch_type_net(attrs)
         _canonicalize_ip_default_route(attrs)
@@ -103,6 +104,11 @@ def _canonicalize_stp(data):
         except ValueError:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS, '"%s" is not '
                                      'a valid bridge STP value.' % stp)
+
+
+def _canonicalize_dhcpv4(data):
+    if 'bootproto' not in data:
+        data['bootproto'] = 'none'
 
 
 def _canonicalize_ipv6(data):
