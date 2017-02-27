@@ -40,10 +40,6 @@ def _getTasksData(value):
     elif taskType == TaskType.REMOVE_BRICK:
         data = cli.volumeRemoveBrickStatus(volumeName,
                                            value['bricks'])
-    elif taskType == TaskType.REPLACE_BRICK:
-        data = cli.volumeReplaceBrickStatus(volumeName,
-                                            value['bricks'][0],
-                                            value['bricks'][1])
 
     summary = data['summary'] if 'summary' in data else {}
     return {"volume": volumeName,
