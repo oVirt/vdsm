@@ -63,6 +63,7 @@ def canonicalize_bondings(bonds):
         if _canonicalize_remove(attrs):
             continue
 
+        _canonicalize_bond_slaves(attrs)
         _canonicalize_switch_type_bond(attrs)
 
 
@@ -132,6 +133,11 @@ def _canonicalize_switch_type_bond(data):
         data['switch'] = 'ovs'
     elif 'switch' not in data:
         data['switch'] = 'legacy'
+
+
+def _canonicalize_bond_slaves(data):
+    if 'nics' in data:
+        data['nics'].sort()
 
 
 def _canonicalize_ip_default_route(data):

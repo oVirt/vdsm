@@ -62,7 +62,6 @@ def normalize(running_config):
     config_copy = copy.deepcopy(running_config)
 
     _normalize_bonding_opts(config_copy)
-    _normalize_bonding_nics(config_copy)
     _normalize_address(config_copy)
     _normalize_ifcfg_keys(config_copy)
 
@@ -198,12 +197,6 @@ def _normalize_bonding_opts(config_copy):
     # REQUIRED_FOR upgrade from vdsm<=4.16.20
     for net_attr in config_copy.networks.itervalues():
         net_attr.pop('bondingOptions', None)
-
-
-def _normalize_bonding_nics(config_copy):
-    for bond_attr in config_copy.bonds.itervalues():
-        if 'nics' in bond_attr:
-            bond_attr['nics'].sort()
 
 
 def _normalize_address(config_copy):
