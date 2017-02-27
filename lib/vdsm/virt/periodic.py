@@ -113,7 +113,9 @@ def start(cif, scheduler):
         Operation(
             sampling.HostMonitor(cif=cif),
             config.getint('vars', 'host_sample_stats_interval'),
-            scheduler),
+            scheduler,
+            timeout=None,
+            exclusive=True),
 
         Operation(
             containersconnection.monitor,
