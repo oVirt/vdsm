@@ -19,11 +19,14 @@
 
 from __future__ import absolute_import
 import logging
+
+import six
 from six.moves import configparser
 
 from vdsm.config import config
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo import mtus
+from vdsm.network.netinfo.cache import CachingNetInfo
 
 from ..errors import RollbackIncomplete
 from . import qos
@@ -48,6 +51,7 @@ class Configurator(object):
             # is in no good state and we fail hard
             logging.error('Failed rollback transaction last known good '
                           'network.', exc_info=(type, value, traceback))
+            self._clean_running_config_from_removed_nets()
         else:
             leftover = self.rollback()
             if leftover:
@@ -146,6 +150,18 @@ class Configurator(object):
             else:
                 self.configApplier.setIfaceMtu(iface.name, maxMtu)
         return maxMtu
+
+    def _clean_running_config_from_removed_nets(self):
+        # Cleanup running config from networks that have been actually
+        # removed but not yet removed from running config.
+        if self.unifiedPersistence:
+            running_config = RunningConfig()
+            net_info = CachingNetInfo()
+            nets2remove = (six.viewkeys(running_config.networks) -
+                           six.viewkeys(net_info.networks))
+            for net in nets2remove:
+                running_config.removeNetwork(net)
+            running_config.save()
 
 
 def getEthtoolOpts(name):
