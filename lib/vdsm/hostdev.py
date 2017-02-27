@@ -514,12 +514,13 @@ def detach_detachable(device_name):
     return device_params
 
 
-def reattach_detachable(device_name):
+def reattach_detachable(device_name, pci_reattach=True):
     libvirt_device, device_params = _get_device_ref_and_params(device_name)
     capability = CAPABILITY_TO_XML_ATTR[device_params['capability']]
 
     if capability == 'pci' and utils.tobool(device_params['is_assignable']):
-        libvirt_device.reAttach()
+        if pci_reattach:
+            libvirt_device.reAttach()
     elif capability == 'usb':
         supervdsm.getProxy().rmAppropriateUSBDevice(
             device_params['address']['bus'],
