@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import vmfakelib as fake
+import vmfakecon as fake
 
 from vdsm.virt import libvirtxml
 from vdsm.virt import vmxml
