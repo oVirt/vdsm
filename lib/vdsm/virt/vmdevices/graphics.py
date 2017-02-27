@@ -32,6 +32,7 @@ from vdsm.virt import vmxml
 
 from . import hwclass
 from .core import Base
+from .core import parse_device_params
 
 import re
 
@@ -89,6 +90,17 @@ class Graphics(Base):
                 yield name[1:]
             else:
                 self.log.error('unsupported spice channel name "%s"', name)
+
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        # we parse `port` and `tlsPort` but we don't honour them to be
+        # consistent with __init__ which will always set them to
+        # AUTOSELECT (-1)
+        params = parse_device_params(dev, attrs=('port', 'tlsPort'))
+        params['device'] = params['type']
+        params['specParams'] = _make_spec_params(dev, meta)
+        params['vmid'] = meta['vmid']
+        return cls(log, **params)
 
     def getXML(self):
         """
@@ -244,3 +256,39 @@ def fixDisplayNetworks(xml_str):
         xml_str = xml_str.replace('DISPLAY-NETWORK:' + network,
                                   libvirtnetwork.netname_o2l(network))
     return xml_str
+
+
+def _make_spec_params(dev, meta):
+    spec_params = {
+        'copyPasteEnable': _is_feature_flag_enabled(
+            dev, 'clipboard', 'copypaste'
+        ),
+        'fileTransferEnable': _is_feature_flag_enabled(
+            dev, 'filetransfer', 'enable'
+        ),
+    }
+    key_map = dev.attrib.get('keymap')
+    if key_map:
+        spec_params['keyMap'] = key_map
+    # we need some overrides to undo legacy defaults
+    display_network = meta.get('display_network')
+    if display_network:
+        spec_params['displayNetwork'] = display_network
+    listen = vmxml.find_first(dev, 'listen')
+    if listen.attrib.get('type') == 'network':
+        xml_display_network = listen.attrib.get('network')
+        if xml_display_network:
+            spec_params['displayNetwork'] = libvirtnetwork.netname_l2o(
+                xml_display_network
+            )
+    elif listen.attrib.get('type') == 'address':
+        spec_params['displayIp'] = listen.attrib.get('address', '0')
+    return spec_params
+
+
+def _is_feature_flag_enabled(dev, node, attr):
+    value = vmxml.find_attr(dev, node, attr)
+    if value is not None and value.lower() == 'no':
+        return False
+    else:
+        return True
