@@ -205,7 +205,9 @@ def get():
     caps['kdumpStatus'] = osinfo.kdump_status()
 
     caps['hostdevPassthrough'] = str(hostdev.is_supported()).lower()
-    caps['additionalFeatures'] = []
+    # TODO This needs to be removed after adding engine side support
+    # and adding gdeploy support to enable libgfapi on RHHI by default
+    caps['additionalFeatures'] = ['libgfapi_supported']
     if osinfo.glusterEnabled:
         from vdsm.gluster.api import glusterAdditionalFeatures
         caps['additionalFeatures'].extend(glusterAdditionalFeatures())
