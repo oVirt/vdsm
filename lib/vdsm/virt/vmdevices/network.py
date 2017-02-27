@@ -35,7 +35,8 @@ from . import hwclass
 class Interface(Base):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
                  'linkActive', 'portMirroring', 'filter', 'filterParameters',
-                 'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev')
+                 'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev',
+                 'numa_node', '_device_params')
 
     def __init__(self, conf, log, **kwargs):
         # pyLint can't tell that the Device.__init__() will
@@ -53,6 +54,9 @@ class Interface(Base):
         self.is_hostdevice = self.device == hwclass.HOSTDEV
         self.vlanId = self.specParams.get('vlanid')
         self._customize()
+        if self.is_hostdevice:
+            self._device_params = get_device_params(self.hostdev)
+            self.numa_node = self._device_params.get('numa_node', None)
 
     def _customize(self):
         # Customize network device
@@ -135,7 +139,7 @@ class Interface(Base):
         if self.is_hostdevice:
             # SR-IOV network interface
             iface.setAttrs(managed='no')
-            host_address = get_device_params(self.hostdev)['address']
+            host_address = self._device_params['address']
             source = iface.appendChildWithArgs('source')
             source.appendChildWithArgs('address', type='pci', **host_address)
 
@@ -225,9 +229,8 @@ class Interface(Base):
                                    'due to missing IOMMU support.',
                                    self.hostdev)
 
-            device_params = get_device_params(self.hostdev)
             supervdsm.getProxy().rmAppropriateIommuGroup(
-                device_params['iommu_group'])
+                self._device_params['iommu_group'])
 
     @property
     def _xpath(self):
