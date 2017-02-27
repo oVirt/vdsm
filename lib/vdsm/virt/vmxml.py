@@ -214,17 +214,26 @@ def children(element, tag=None):
         return element.iterfind('./' + tag)
 
 
-def append_child(element, child):
+def append_child(element, child=None, etree_child=None):
     """
     Add child element to `element`.
 
     :param element: element to add the child to
     :type element: DOM element
     :param child: child element to add to `element`
-    :type child: DOM element
+    :type child: vmxml.Element object
+    :param etree_child: child element to add to `element`
+    :type child: etree.Element object
 
     """
-    element.append(child)
+    if child is not None and etree_child is None:
+        element.append(child._elem)
+    elif child is None and etree_child is not None:
+        element.append(etree_child)
+    else:
+        raise RuntimeError(
+            'append_child invoked with child=%r etree_child=%r' % (
+                child, etree_child))
 
 
 def remove_child(element, child):
@@ -348,12 +357,12 @@ class Element(object):
     def appendTextNode(self, text):
         self._elem.text = text
 
-    def appendChild(self, element):
-        self._elem.append(element)
+    def appendChild(self, element=None, etree_element=None):
+        append_child(self._elem, element, etree_element)
 
     def appendChildWithArgs(self, childName, text=None, **attrs):
         child = Element(childName, text, **attrs)
-        self._elem.append(child)
+        append_child(self._elem, child)
         return child
 
     def replaceChild(self, new_element, old_element):

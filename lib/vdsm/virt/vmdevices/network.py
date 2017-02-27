@@ -206,7 +206,7 @@ class Interface(Base):
             elem = specParams.get(key)
             if elem is None:  # Use the old setting if present
                 if key in old:
-                    bandwidth.appendChild(old[key])
+                    bandwidth.appendChild(etree_element=old[key])
             elif elem:
                 # Convert the values to string for adding them to the XML def
                 attrs = dict((key, str(value)) for key, value in elem.items())

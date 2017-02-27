@@ -502,7 +502,7 @@ class Domain(object):
         self._devices.appendChild(emulator)
 
     def appendDeviceXML(self, deviceXML):
-        self._devices.appendChild(vmxml.parse_xml(deviceXML))
+        self._devices.appendChild(etree_element=vmxml.parse_xml(deviceXML))
 
     def toxml(self):
         return vmxml.format_xml(self.dom, pretty=True)

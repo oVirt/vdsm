@@ -223,6 +223,23 @@ def run():
         empty = vmxml.find_first(self._dom, 'empty')
         self.assertIsNotNone(vmxml.find_first(empty, 'new', None))
 
+    def test_append_child_etree(self):
+        empty = vmxml.find_first(self._dom, 'empty')
+        vmxml.append_child(empty, etree_child=vmxml.parse_xml('<new/>'))
+        self.assertIsNotNone(vmxml.find_first(self._dom, 'new', None))
+        empty = vmxml.find_first(self._dom, 'empty')
+        self.assertIsNotNone(vmxml.find_first(empty, 'new', None))
+
+    def test_append_child_noargs(self):
+        empty = vmxml.find_first(self._dom, 'empty')
+        self.assertRaises(RuntimeError, vmxml.append_child, empty)
+
+    def test_append_child_too_many_args(self):
+        empty = vmxml.find_first(self._dom, 'empty')
+        self.assertRaises(RuntimeError, vmxml.append_child, empty,
+                          vmxml.Element('new'),
+                          vmxml.parse_xml('<new/>'))
+
     def test_remove_child(self):
         top = vmxml.find_first(self._dom, 'topelement')
         hello = list(vmxml.find_all(top, 'hello'))
