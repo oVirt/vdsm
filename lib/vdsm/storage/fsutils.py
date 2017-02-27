@@ -1,4 +1,5 @@
-# Copyright 2016 Red Hat, Inc.
+#
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,49 +18,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
+from __future__ import absolute_import
+import io
+import os
 
-vdsmstoragedir = $(vdsmpylibdir)/storage
 
-dist_vdsmstorage_PYTHON = \
-	__init__.py \
-	asyncevent.py \
-	blkdiscard.py \
-	check.py \
-	clusterlock.py \
-	constants.py \
-	curlImgWrap.py \
-	devicemapper.py \
-	directio.py \
-	dispatcher.py \
-	exception.py \
-	fallocate.py \
-	fileUtils.py \
-	fuser.py \
-	fsutils.py \
-	guarded.py \
-	hba.py \
-	imageSharing.py \
-	imagetickets.py \
-	iscsi.py \
-	iscsiadm.py \
-	lvm.py \
-	mailbox.py \
-	misc.py \
-	mount.py \
-	multipath.py \
-	operation.py \
-	outOfProcess.py \
-	persistent.py \
-	resourceManager.py \
-	rwlock.py \
-	securable.py \
-	task.py \
-	taskManager.py \
-	threadPool.py \
-	threadlocal.py \
-	types.py \
-	volumemetadata.py \
-	workarounds.py \
-	xlease.py \
-	$(NULL)
+def size(filename):
+    """
+    Return actual file size, should work with both file and block device.
+    """
+    with io.open(filename, "rb") as f:
+        f.seek(0, os.SEEK_END)
+        return f.tell()

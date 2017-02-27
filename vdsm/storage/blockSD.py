@@ -46,6 +46,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import directio
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
+from vdsm.storage import fsutils
 from vdsm.storage import iscsi
 from vdsm.storage import lvm
 from vdsm.storage import misc
@@ -147,16 +148,6 @@ def lvmTagEncode(s):
 
 def lvmTagDecode(s):
     return LVM_ENC_ESCAPE.sub(lambda c: unichr(int(c.groups()[0])), s)
-
-
-def _tellEnd(devPath):
-    """Size in bytes of a block device.
-
-    stat.st_size of block devices is identically 0.
-    """
-    with open(devPath, "rb") as f:
-        f.seek(0, os.SEEK_END)
-        return f.tell()
 
 
 def _getVolsTree(sdUUID):
@@ -438,7 +429,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
     def getVSize(self, imgUUUID, volUUID):
         """ Return the block volume size in bytes. """
         try:
-            size = _tellEnd(lvm.lvPath(self.sdUUID, volUUID))
+            size = fsutils.size(lvm.lvPath(self.sdUUID, volUUID))
         except IOError as e:
             if e.errno == os.errno.ENOENT:
                 # Inactive volume has no /dev entry. Fallback to lvm way.

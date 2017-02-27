@@ -151,6 +151,7 @@ except ImportError:
 from vdsm import utils
 from vdsm.common import errors
 from vdsm.common.osutils import uninterruptible
+from vdsm.storage import fsutils
 
 # TODO: Support 4K block size.  This should be encapsulated in the Index class
 # instead of being a module constant.  We can can get the block size using
@@ -901,12 +902,7 @@ class DirectFile(object):
         return self._file.seek(offset, whence)
 
     def size(self):
-        """
-        Return actual file size, should work with both file and block device.
-        """
-        with io.open(self._path, "rb") as f:
-            f.seek(0, os.SEEK_END)
-            return f.tell()
+        return fsutils.size(self._path)
 
     def close(self):
         self._file.close()
