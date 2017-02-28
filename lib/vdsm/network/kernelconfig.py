@@ -103,7 +103,9 @@ def _translate_ipaddr(attributes, net_attr):
             attributes['gateway'] = net_attr['gateway']
     if not attributes['dhcpv6']:
         if net_attr['ipv6addrs']:
-            attributes['ipv6addr'] = net_attr['ipv6addrs']
+            # kernelconfig does not support multiple IPv6 addresses,
+            # therefore a random one is chosen.
+            attributes['ipv6addr'] = net_attr['ipv6addrs'][0]
         if net_attr['ipv6gateway'] != '::':
             attributes['ipv6gateway'] = net_attr['ipv6gateway']
 
@@ -200,8 +202,6 @@ def _normalize_bonding_opts(config_copy):
 
 def _normalize_address(config_copy):
     for net_name, net_attr in six.iteritems(config_copy.networks):
-        if 'ipv6addr' in net_attr:
-            net_attr['ipv6addr'] = [net_attr['ipv6addr']]
         if 'defaultRoute' not in net_attr:
             net_attr['defaultRoute'] = net_name in \
                 constants.LEGACY_MANAGEMENT_NETWORKS
