@@ -23,7 +23,6 @@ import six
 import string
 
 from vdsm import constants
-from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.netinfo import bonding
 from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo import dns
@@ -201,9 +200,6 @@ def _normalize_bonding_opts(config_copy):
 
 def _normalize_address(config_copy):
     for net_name, net_attr in six.iteritems(config_copy.networks):
-        prefix = net_attr.pop('prefix', None)
-        if prefix is not None:
-            net_attr['netmask'] = prefix2netmask(int(prefix))
         if 'ipv6addr' in net_attr:
             net_attr['ipv6addr'] = [net_attr['ipv6addr']]
         if 'defaultRoute' not in net_attr:

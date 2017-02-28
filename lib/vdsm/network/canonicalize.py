@@ -49,7 +49,7 @@ def canonicalize_networks(nets):
         _canonicalize_switch_type_net(attrs)
         _canonicalize_ip_default_route(attrs)
         _canonicalize_nameservers(attrs)
-        _canonicalize_prefix(attrs)
+        _canonicalize_ipv4_netmask(attrs)
 
 
 def canonicalize_bondings(bonds):
@@ -159,7 +159,7 @@ def _canonicalize_nameservers(data):
             data['nameservers'] = []
 
 
-def _canonicalize_prefix(data):
+def _canonicalize_ipv4_netmask(data):
     prefix = data.pop('prefix', None)
     if prefix:
         if 'netmask' in data:
