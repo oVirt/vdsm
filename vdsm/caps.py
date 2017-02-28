@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2014 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -567,16 +567,45 @@ def getos():
         return OSName.UNKNOWN
 
 
+def _parse_release_file(path):
+    data = {}
+    try:
+        with open(path) as f:
+            for line in f:
+                try:
+                    key, value = [kv.strip() for kv in line.split('=', 1)]
+                except ValueError:
+                    continue
+
+                data[key] = value
+    except IOError:
+        logging.exception('Fail to read release file')
+    return data
+
+
+def _parse_node_version(path):
+    data = _parse_release_file(path)
+    return data.get('VERSION', ''), data.get('RELEASE', '')
+
+
+def _get_pretty_name():
+    pretty_name = ''
+    if os.path.exists('/etc/os-release'):
+        data = _parse_release_file('/etc/os-release')
+        if data.get('PRETTY_NAME') is not None:
+            pretty_name = data.get('PRETTY_NAME').strip('"')
+    return pretty_name
+
+
 @utils.memoized
 def osversion():
     version = release = ''
 
     osname = getos()
+    pretty_name = _get_pretty_name()
     try:
         if osname == OSName.RHEVH or osname == OSName.OVIRT:
-            d = _parseKeyVal(file('/etc/default/version'))
-            version = d.get('VERSION', '')
-            release = d.get('RELEASE', '')
+            version, release = _parse_node_version('/etc/default/version')
         elif osname == OSName.DEBIAN:
             version = linecache.getline('/etc/debian_version', 1).strip("\n")
             release = ""  # Debian just has a version entry
@@ -593,7 +622,8 @@ def osversion():
     except:
         logging.error('failed to find version/release', exc_info=True)
 
-    return dict(release=release, version=version, name=osname)
+    return dict(release=release, version=version, name=osname,
+                pretty_name=pretty_name)
 
 
 def getTargetArch():
