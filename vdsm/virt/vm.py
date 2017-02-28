@@ -2428,7 +2428,7 @@ class Vm(object):
         if (specParams and
                 ('inbound' in specParams or 'outbound' in specParams)):
             oldBandwidth = vmxml.find_first(vnicXML, 'bandwidth', None)
-            newBandwidth = dev.paramsToBandwidthXML(specParams, oldBandwidth)
+            newBandwidth = dev.get_bandwidth_xml(specParams, oldBandwidth)
             if oldBandwidth is None:
                 vnicXML.appendChild(newBandwidth)
             else:

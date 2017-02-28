@@ -175,7 +175,7 @@ class Interface(Base):
             tune.appendChildWithArgs('sndbuf', text=self.sndbufParam)
 
         if 'inbound' in self.specParams or 'outbound' in self.specParams:
-            iface.appendChild(self.paramsToBandwidthXML(self.specParams))
+            iface.appendChild(self.get_bandwidth_xml(self.specParams))
 
         return iface
 
@@ -196,9 +196,10 @@ class Interface(Base):
             if 'name' in parameter and 'value' in parameter:
                 yield parameter['name'], parameter['value']
 
-    def paramsToBandwidthXML(self, specParams, oldBandwidth=None):
+    @staticmethod
+    def get_bandwidth_xml(specParams, oldBandwidth=None):
         """Returns a valid libvirt xml dom element object."""
-        bandwidth = self.createXmlElem('bandwidth', None)
+        bandwidth = vmxml.Element('bandwidth')
         old = {} if oldBandwidth is None else dict(
             (vmxml.tag(elem), elem)
             for elem in vmxml.children(oldBandwidth))

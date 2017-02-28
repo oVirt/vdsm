@@ -408,7 +408,7 @@ class TestVmDevices(XMLTestCase):
         iface = vmdevices.network.Interface(self.conf, self.log, **dev)
         orig_bandwidth = iface.getXML().findall('bandwidth')[0]
         self.assert_dom_xml_equal(orig_bandwidth, originalBwidthXML)
-        bandwith = iface.paramsToBandwidthXML(NEW_OUT, orig_bandwidth)
+        bandwith = iface.get_bandwidth_xml(NEW_OUT, orig_bandwidth)
         self.assert_dom_xml_equal(bandwith, updatedBwidthXML)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
