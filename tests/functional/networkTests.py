@@ -766,36 +766,6 @@ class NetworkTest(TestCaseBase):
 
         self.assertEqual(status, SUCCESS, msg)
 
-    @permutations([[True], [False]])
-    def testSetupNetworksAddManyVlans(self, bridged):
-        VLAN_COUNT = 5
-        NET_VLANS = [(NETWORK_NAME + str(index), str(index))
-                     for index in range(VLAN_COUNT)]
-
-        with dummyIf(1) as nics:
-            nic, = nics
-            networks = dict((vlan_net,
-                             {'vlan': str(tag), 'nic': nic,
-                              'bridged': bridged})
-                            for vlan_net, tag in NET_VLANS)
-
-            status, msg = self.setupNetworks(networks, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            for vlan_net, tag in NET_VLANS:
-                self.assertNetworkExists(vlan_net, bridged)
-                self.assertVlanExists(nic + '.' + tag)
-
-            networks = dict((vlan_net, {'remove': True})
-                            for vlan_net, _ in NET_VLANS)
-            status, msg = self.setupNetworks(networks, {}, NOCHK)
-
-            self.assertEqual(status, SUCCESS, msg)
-
-            for vlan_net, tag in NET_VLANS:
-                self.assertNetworkDoesntExist(vlan_net)
-                self.assertVlanDoesntExist(nic + '.' + tag)
-
     @cleanupNet
     @permutations([[True], [False]])
     def testSetupNetworksNetCompatibilityMultipleNetsSameNic(self, bridged):

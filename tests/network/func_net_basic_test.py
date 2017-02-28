@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@
 from __future__ import absolute_import
 
 import os
+
+import six
 
 from nose.plugins.attrib import attr
 
@@ -67,6 +69,28 @@ class NetworkBasicTemplate(NetFuncTestCase):
                 self.setupNetworks(NETREMOVE, {}, NOCHK)
                 self.assertNoNetwork(NETWORK_NAME)
                 self.assertNoVlan(nic, VLAN)
+
+    def test_add_bridged_net_with_multiple_vlans_over_a_nic(self):
+        self._test_add_net_with_multiple_vlans_over_a_nic(bridged=True)
+
+    def test_add_bridgeless_net_with_multiple_vlans_over_a_nic(self):
+        self._test_add_net_with_multiple_vlans_over_a_nic(bridged=False)
+
+    def _test_add_net_with_multiple_vlans_over_a_nic(self, bridged):
+        VLAN_COUNT = 3
+
+        with dummy_device() as nic:
+            netsetup = {}
+            for tag in range(VLAN_COUNT):
+                netname = '{}{}'.format(NETWORK_NAME, tag)
+                netsetup[netname] = {'vlan': tag,
+                                     'nic': nic,
+                                     'switch': self.switch,
+                                     'bridged': bridged}
+
+            with self.setupNetworks(netsetup, {}, NOCHK):
+                for netname, netattrs in six.viewitems(netsetup):
+                    self.assertNetwork(netname, netattrs)
 
 
 @attr(type='functional', switch='legacy')
