@@ -2673,7 +2673,7 @@ class Vm(object):
         if qos is not None:
             try:
                 vcpuLimit = vmxml.find_first(qos, "vcpuLimit")
-                self._vcpuLimit = vmxml.dom_text(vcpuLimit)
+                self._vcpuLimit = vmxml.text(vcpuLimit)
             except vmxml.NotFound:
                 # missing vcpuLimit node
                 self._vcpuLimit = None
