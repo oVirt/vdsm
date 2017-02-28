@@ -589,12 +589,47 @@ def _parse_node_version(path):
 
 
 def _get_pretty_name():
-    pretty_name = ''
-    if os.path.exists('/etc/os-release'):
-        data = _parse_release_file('/etc/os-release')
-        if data.get('PRETTY_NAME') is not None:
-            pretty_name = data.get('PRETTY_NAME').strip('"')
-    return pretty_name
+    return _get_os_release_data('PRETTY_NAME')
+
+
+def _next_gen_node():
+    """
+    Return:
+        True if it's oVirt Node Next or RHV Node
+    """
+    ts = rpm.TransactionSet()
+    for pkg in ts.dbMatch():
+        if (pkg['name'] == 'redhat-release-virtualization-host' or
+                pkg['name'] == 'ovirt-release-host-node'):
+            return True
+
+    return False
+
+
+@utils.memoized
+def _get_os_release_data(var_name):
+    """
+    The /etc/os-release file contain operating
+    system identification data.
+
+    Param:
+          var_name is the variable name of /etc/os-release
+
+    Return:
+          return the value found or ""
+    """
+    var_value = ''
+    _os_release_file = '/etc/os-release'
+
+    if os.path.exists(_os_release_file):
+        data = _parse_release_file(_os_release_file)
+        if data.get(var_name) is not None:
+            var_value = data.get(var_name).strip('"')
+    return var_value
+
+
+def _get_version_id():
+    return _get_os_release_data('VERSION_ID')
 
 
 @utils.memoized
@@ -617,8 +652,12 @@ def osversion():
 
             ts = rpm.TransactionSet()
             for er in ts.dbMatch('basenames', release_path):
-                version = er['version']
-                release = er['release']
+                if _next_gen_node():
+                    version = _get_version_id()
+                    release = er['release']
+                else:
+                    version = er['version']
+                    release = er['release']
     except:
         logging.error('failed to find version/release', exc_info=True)
 
