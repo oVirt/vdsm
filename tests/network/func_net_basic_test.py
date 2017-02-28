@@ -26,9 +26,10 @@ import six
 
 from nose.plugins.attrib import attr
 
+from vdsm.network import errors as ne
 from vdsm.network.link import iface as link_iface
 
-from .netfunctestlib import NetFuncTestCase, NOCHK
+from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
 from .nettestlib import dummy_device
 from .nmnettestlib import iface_name, nm_connections, is_networkmanager_running
 
@@ -91,6 +92,45 @@ class NetworkBasicTemplate(NetFuncTestCase):
             with self.setupNetworks(netsetup, {}, NOCHK):
                 for netname, netattrs in six.viewitems(netsetup):
                     self.assertNetwork(netname, netattrs)
+
+    def test_add_bridged_vlaned_and_non_vlaned_nets_same_nic(self):
+        self._test_add_vlaned_and_non_vlaned_nets_same_nic(bridged=True)
+
+    def test_add_bridgeless_vlaned_and_non_vlaned_nets_same_nic(self):
+        self._test_add_vlaned_and_non_vlaned_nets_same_nic(bridged=False)
+
+    def test_add_multiple_bridged_nets_on_the_same_nic_fails(self):
+        self._test_add_multiple_nets_fails(bridged=True)
+
+    def test_add_multiple_bridgeless_nets_on_the_same_nic_fails(self):
+        self._test_add_multiple_nets_fails(bridged=False)
+
+    def _test_add_vlaned_and_non_vlaned_nets_same_nic(self, bridged):
+        VLANED_NET = NETWORK_NAME + '1'
+        NON_VLANED_NET = NETWORK_NAME + '2'
+        VLAN = '100'
+
+        with dummy_device() as nic:
+            NET_ATTRS = {'nic': nic, 'switch': self.switch, 'bridged': bridged}
+            VLANED_NET_ATTRS = dict(NET_ATTRS, vlan=VLAN)
+
+            with self.setupNetworks({NON_VLANED_NET: NET_ATTRS}, {}, NOCHK):
+                with self.setupNetworks({VLANED_NET: VLANED_NET_ATTRS},
+                                        {}, NOCHK):
+                    self.assertNetwork(NON_VLANED_NET, NET_ATTRS)
+                    self.assertNetwork(VLANED_NET, VLANED_NET_ATTRS)
+
+    def _test_add_multiple_nets_fails(self, bridged):
+        NET_1 = NETWORK_NAME + '1'
+        NET_2 = NETWORK_NAME + '2'
+
+        with dummy_device() as nic:
+            NET_ATTRS = {'nic': nic, 'switch': self.switch, 'bridged': bridged}
+            with self.setupNetworks({NET_1: NET_ATTRS}, {}, NOCHK):
+                with self.assertRaises(SetupNetworksError) as cm:
+                    with self.setupNetworks({NET_2: NET_ATTRS}, {}, NOCHK):
+                        pass
+                self.assertEqual(cm.exception.status, ne.ERR_BAD_PARAMS)
 
 
 @attr(type='functional', switch='legacy')
