@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from vdsm import virtsparsify
 from vdsm.storage import guarded
 
-from .copy_data import CopyDataDivEndpoint
+from storage.sdm.volume_info import VolumeInfo
 
 from . import base
 
@@ -40,7 +40,7 @@ class Job(base.Job):
 
     def __init__(self, job_id, host_id, vol_info):
         super(Job, self).__init__(job_id, 'sparsify_volume', host_id)
-        self._vol_info = CopyDataDivEndpoint(vol_info, host_id, writable=True)
+        self._vol_info = VolumeInfo(vol_info, host_id)
 
     def _validate(self):
         if not self._vol_info.volume.isLeaf():
