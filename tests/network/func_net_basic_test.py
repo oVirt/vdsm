@@ -30,11 +30,13 @@ from vdsm.network import errors as ne
 from vdsm.network.link import iface as link_iface
 
 from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
-from .nettestlib import dummy_device
+from .nettestlib import dummy_device, dummy_devices
 from .nmnettestlib import iface_name, nm_connections, is_networkmanager_running
 
 NETWORK_NAME = 'test-network'
-VLAN = 10
+NET_1 = NETWORK_NAME + '1'
+NET_2 = NETWORK_NAME + '2'
+VLANID = 100
 
 
 class NetworkBasicTemplate(NetFuncTestCase):
@@ -56,26 +58,50 @@ class NetworkBasicTemplate(NetFuncTestCase):
 
     def test_add_net_based_on_vlan(self):
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLAN,
+            NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLANID,
                                         'switch': self.switch}}
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
     def test_remove_net_based_on_vlan(self):
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLAN,
+            NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLANID,
                                         'switch': self.switch}}
             NETREMOVE = {NETWORK_NAME: {'remove': True}}
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 self.setupNetworks(NETREMOVE, {}, NOCHK)
                 self.assertNoNetwork(NETWORK_NAME)
-                self.assertNoVlan(nic, VLAN)
+                self.assertNoVlan(nic, VLANID)
 
     def test_add_bridged_net_with_multiple_vlans_over_a_nic(self):
         self._test_add_net_with_multiple_vlans_over_a_nic(bridged=True)
 
     def test_add_bridgeless_net_with_multiple_vlans_over_a_nic(self):
         self._test_add_net_with_multiple_vlans_over_a_nic(bridged=False)
+
+    def test_add_bridged_vlaned_and_non_vlaned_nets_same_nic(self):
+        self._test_add_vlaned_and_non_vlaned_nets_same_nic(bridged=True)
+
+    def test_add_bridgeless_vlaned_and_non_vlaned_nets_same_nic(self):
+        self._test_add_vlaned_and_non_vlaned_nets_same_nic(bridged=False)
+
+    def test_add_multiple_bridged_nets_on_the_same_nic_fails(self):
+        self._test_add_multiple_nets_fails(bridged=True)
+
+    def test_add_multiple_bridgeless_nets_on_the_same_nic_fails(self):
+        self._test_add_multiple_nets_fails(bridged=False)
+
+    def test_add_identical_vlan_id_bridged_nets_same_nic_fails(self):
+        self._test_add_multiple_nets_fails(bridged=True, vlan_id=VLANID)
+
+    def test_add_identical_vlan_id_bridgeless_nets_same_nic_fails(self):
+        self._test_add_multiple_nets_fails(bridged=False, vlan_id=VLANID)
+
+    def test_add_identical_vlan_id_bridged_nets_with_two_nics(self):
+        self._test_add_identical_vlan_id_nets_with_two_nics(bridged=True)
+
+    def test_add_identical_vlan_id_bridgeless_nets_with_two_nics(self):
+        self._test_add_identical_vlan_id_nets_with_two_nics(bridged=False)
 
     def _test_add_net_with_multiple_vlans_over_a_nic(self, bridged):
         VLAN_COUNT = 3
@@ -93,44 +119,44 @@ class NetworkBasicTemplate(NetFuncTestCase):
                 for netname, netattrs in six.viewitems(netsetup):
                     self.assertNetwork(netname, netattrs)
 
-    def test_add_bridged_vlaned_and_non_vlaned_nets_same_nic(self):
-        self._test_add_vlaned_and_non_vlaned_nets_same_nic(bridged=True)
-
-    def test_add_bridgeless_vlaned_and_non_vlaned_nets_same_nic(self):
-        self._test_add_vlaned_and_non_vlaned_nets_same_nic(bridged=False)
-
-    def test_add_multiple_bridged_nets_on_the_same_nic_fails(self):
-        self._test_add_multiple_nets_fails(bridged=True)
-
-    def test_add_multiple_bridgeless_nets_on_the_same_nic_fails(self):
-        self._test_add_multiple_nets_fails(bridged=False)
-
     def _test_add_vlaned_and_non_vlaned_nets_same_nic(self, bridged):
-        VLANED_NET = NETWORK_NAME + '1'
-        NON_VLANED_NET = NETWORK_NAME + '2'
-        VLAN = '100'
-
         with dummy_device() as nic:
-            NET_ATTRS = {'nic': nic, 'switch': self.switch, 'bridged': bridged}
-            VLANED_NET_ATTRS = dict(NET_ATTRS, vlan=VLAN)
+            net_1_attrs = self._create_net_attrs(nic, bridged)
+            net_2_attrs = self._create_net_attrs(nic, bridged, VLANID)
 
-            with self.setupNetworks({NON_VLANED_NET: NET_ATTRS}, {}, NOCHK):
-                with self.setupNetworks({VLANED_NET: VLANED_NET_ATTRS},
-                                        {}, NOCHK):
-                    self.assertNetwork(NON_VLANED_NET, NET_ATTRS)
-                    self.assertNetwork(VLANED_NET, VLANED_NET_ATTRS)
+            self._assert_nets(net_1_attrs, net_2_attrs)
 
-    def _test_add_multiple_nets_fails(self, bridged):
-        NET_1 = NETWORK_NAME + '1'
-        NET_2 = NETWORK_NAME + '2'
-
+    def _test_add_multiple_nets_fails(self, bridged, vlan_id=None):
         with dummy_device() as nic:
-            NET_ATTRS = {'nic': nic, 'switch': self.switch, 'bridged': bridged}
-            with self.setupNetworks({NET_1: NET_ATTRS}, {}, NOCHK):
+            net_1_attrs = net_2_attrs = self._create_net_attrs(
+                nic, bridged, vlan_id)
+            with self.setupNetworks({NET_1: net_1_attrs}, {}, NOCHK):
                 with self.assertRaises(SetupNetworksError) as cm:
-                    with self.setupNetworks({NET_2: NET_ATTRS}, {}, NOCHK):
+                    with self.setupNetworks({NET_2: net_2_attrs}, {}, NOCHK):
                         pass
                 self.assertEqual(cm.exception.status, ne.ERR_BAD_PARAMS)
+
+    def _test_add_identical_vlan_id_nets_with_two_nics(self, bridged):
+        with dummy_devices(2) as (nic_1, nic_2):
+            net_1_attrs = self._create_net_attrs(nic_1, bridged, VLANID)
+            net_2_attrs = self._create_net_attrs(nic_2, bridged, VLANID)
+
+            self._assert_nets(net_1_attrs, net_2_attrs)
+
+    def _assert_nets(self, net_1_attrs, net_2_attrs):
+        with self.setupNetworks({NET_1: net_1_attrs}, {}, NOCHK):
+            with self.setupNetworks({NET_2: net_2_attrs}, {}, NOCHK):
+                self.assertNetwork(NET_1, net_1_attrs)
+                self.assertNetwork(NET_2, net_2_attrs)
+
+    def _create_net_attrs(self, nic, bridged, vlan_id=None):
+        attrs = {'nic': nic,
+                 'bridged': bridged,
+                 'switch': self.switch}
+        if vlan_id is not None:
+            attrs['vlan'] = vlan_id
+
+        return attrs
 
 
 @attr(type='functional', switch='legacy')

@@ -762,19 +762,7 @@ class NetworkTest(TestCaseBase):
     def testSetupNetworksNetCompatibilityMultipleNetsSameNic(self, bridged):
         with dummyIf(3) as (nic, another_nic, yet_another_nic):
 
-            net_tagged = NETWORK_NAME + '3'
-            networks = {net_tagged: dict(nic=nic, bridged=bridged, vlan='100')}
-            status, msg = self.setupNetworks(networks, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(net_tagged, bridged=bridged)
-
             other_net_same_tag = NETWORK_NAME + '4'
-            networks = {other_net_same_tag: dict(nic=nic, bridged=bridged,
-                                                 vlan='100')}
-            status, msg = self.setupNetworks(networks, {}, NOCHK)
-            self.assertNotEqual(status, SUCCESS, msg)
-            self.assertNetworkDoesntExist(other_net_same_tag)
-
             networks = {other_net_same_tag: dict(nic=another_nic,
                                                  bridged=bridged, vlan='100')}
             status, msg = self.setupNetworks(networks, {}, NOCHK)
@@ -788,8 +776,7 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(other_net_different_tag, bridged=bridged)
 
-            nets_to_clean = [net_tagged, other_net_same_tag,
-                             other_net_different_tag]
+            nets_to_clean = [other_net_same_tag, other_net_different_tag]
             # we can also define an untagged bridged and a tagged bridged
             # networks on the same interface at the same time
             if bridged:
