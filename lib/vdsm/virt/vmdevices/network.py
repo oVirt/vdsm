@@ -35,8 +35,7 @@ from . import hwclass
 class Interface(Base):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
                  'linkActive', 'portMirroring', 'filter', 'filterParameters',
-                 'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev',
-                 'is_hostdevice')
+                 'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev')
 
     def __init__(self, conf, log, **kwargs):
         # pyLint can't tell that the Device.__init__() will
