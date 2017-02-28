@@ -38,6 +38,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import guarded
 
 from storage import blockVolume
+from storage.sdm import volume_info
 from storage.sdm.api import amend_volume, copy_data
 
 
@@ -65,6 +66,7 @@ class TestAmendVolume(VdsmTestCase):
                 (guarded, 'context', fake_guarded_context()),
                 (amend_volume, 'sdCache', env.sdcache),
                 (copy_data, 'sdCache', env.sdcache),
+                (volume_info, 'sdCache', env.sdcache),
                 (blockVolume, 'rm', rm),
             ]):
                 env.chain = make_qemu_chain(env, size, fmt, chain_length,
