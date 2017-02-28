@@ -539,6 +539,25 @@ class TestVm(XMLTestCase):
     def testBuildCmdLinePPC64(self):
         self.assertBuildCmdLine(CONF_TO_DOMXML_PPC64)
 
+    def testVmPolicyOnStartup(self):
+        LIMIT = '50'
+        with fake.VM(_VM_PARAMS) as testvm:
+            dom = fake.Domain()
+            dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+                            '<qos><vcpuLimit>%s</vcpuLimit></qos>' % (
+                                LIMIT
+                            ),
+                            vmxml.METADATA_VM_TUNE_PREFIX,
+                            vmxml.METADATA_VM_TUNE_URI,
+                            0)
+            testvm._dom = dom
+            # it is bad practice to test private functions -and we know it.
+            # But enduring the full VM startup is too cumbersome, and we
+            # need to test this code.
+            testvm._updateVcpuLimit()
+            stats = testvm.getStats()
+            self.assertEqual(stats['vcpuUserLimit'], LIMIT)
+
     def testGetVmPolicySucceded(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain()
