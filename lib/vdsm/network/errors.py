@@ -38,7 +38,7 @@ class ConfigNetworkError(Exception):
     def __init__(self, errCode, message):
         self.errCode = errCode
         self.message = message
-        Exception.__init__(self, self.errCode, self.message)
+        super(ConfigNetworkError, self).__init__(errCode, message)
 
 
 class RollbackIncomplete(Exception):
