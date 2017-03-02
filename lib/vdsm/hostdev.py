@@ -126,7 +126,14 @@ def __device_tree_hash(list_of_nodedev):
     """
     current_hash = hashlib.sha256()
     for device in list_of_nodedev:
-        current_hash.update(device.XMLDesc(0))
+        try:
+            current_hash.update(device.XMLDesc(0))
+        except libvirt.libvirtError:
+            # The object still exists, but the underlying device is gone. We
+            # can't really break here because the hash could end up being same
+            # as previous one even when this happens.
+            continue
+
     return current_hash.hexdigest()
 
 
