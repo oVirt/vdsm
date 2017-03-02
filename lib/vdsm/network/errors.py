@@ -19,6 +19,9 @@
 #
 
 from __future__ import absolute_import
+
+import six
+
 ERR_OK = 0
 ERR_BAD_PARAMS = 21
 ERR_BAD_ADDR = 22
@@ -32,6 +35,7 @@ ERR_FAILED_IFUP = 29
 ERR_FAILED_IFDOWN = 30
 ERR_USED_BOND = 31
 ERR_LOST_CONNECTION = 10    # noConPeer
+ERR_OVS_CONNECTION = 32
 
 
 class ConfigNetworkError(Exception):
@@ -39,6 +43,17 @@ class ConfigNetworkError(Exception):
         self.errCode = errCode
         self.message = message
         super(ConfigNetworkError, self).__init__(errCode, message)
+
+
+class OvsDBConnectionError(ConfigNetworkError):
+    def __init__(self, *args):
+        message = _get_message(args)
+        super(OvsDBConnectionError, self).__init__(errCode=ERR_OVS_CONNECTION,
+                                                   message=message)
+
+    @staticmethod
+    def is_ovs_db_conn_error(err_msg):
+        return 'database connection failed' in err_msg[0]
 
 
 class RollbackIncomplete(Exception):
@@ -49,3 +64,17 @@ class RollbackIncomplete(Exception):
     Note that it is never raised by the default ifcfg configurator.
     """
     pass
+
+
+def _get_message(args):
+    """
+    Due to multiprocessing limitation in the way it processes an exception
+    serialization and deserialization, a derived exception needs to accept
+    all super classes arguments as input, even if it ignores them.
+
+    Given the list of arguments and assuming the message is a string type,
+    this helper function fetches the message argument.
+    """
+    for arg in args:
+        if isinstance(arg, six.string_types):
+            return arg
