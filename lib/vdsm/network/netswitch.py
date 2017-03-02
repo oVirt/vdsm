@@ -298,7 +298,11 @@ def netinfo(compatibility=None):
     _netinfo = netinfo_get(compatibility=compatibility)
 
     if _is_ovs_service_running():
-        ovs_netinfo = ovs_info.get_netinfo()
+        try:
+            ovs_netinfo = ovs_info.get_netinfo()
+        except ne.OvsDBConnectionError:
+            _is_ovs_service_running.invalidate()
+            raise
 
         running_networks = RunningConfig().networks
         bridgeless_ovs_nets = [

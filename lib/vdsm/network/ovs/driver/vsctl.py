@@ -26,7 +26,7 @@ import uuid
 
 from vdsm.commands import execCmd
 from vdsm.network import errors as ne
-from vdsm.network.errors import ConfigNetworkError
+from vdsm.network.errors import ConfigNetworkError, OvsDBConnectionError
 from vdsm.utils import CommandPath, memoized
 
 from . import (API as DriverAPI,
@@ -58,9 +58,12 @@ class Transaction(DriverTransaction):
 
         rc, out, err = execCmd(exec_line)
         if rc != 0:
-            raise ConfigNetworkError(
-                ne.ERR_BAD_PARAMS,
-                'Executing commands failed: %s' % '\n'.join(err))
+            if OvsDBConnectionError.is_ovs_db_conn_error(err):
+                raise OvsDBConnectionError('\n'.join(err))
+            else:
+                raise ConfigNetworkError(
+                    ne.ERR_BAD_PARAMS,
+                    'Executing commands failed: %s' % '\n'.join(err))
         if out is None:
             return
 
