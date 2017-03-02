@@ -320,6 +320,7 @@ class SourceThread(object):
         # either way, migration has finished
         if self._recovery:
             self._vm.set_last_status(vmstatus.UP, vmstatus.MIGRATION_SOURCE)
+            self._recovery = False
         else:
             self._vm.lastStatus = vmstatus.UP
         self._started = False

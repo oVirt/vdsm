@@ -1571,7 +1571,8 @@ class Vm(object):
         return status
 
     def onJobCompleted(self, args):
-        if not self._migrationSourceThread.started or \
+        if (not self._migrationSourceThread.started and
+            not self._migrationSourceThread.recovery) or \
            self._migrationSourceThread.hibernating:
             return
         stats = args[0]
