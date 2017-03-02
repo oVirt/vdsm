@@ -439,18 +439,18 @@ def main(*args):
 
     # Using [1:] to remove the 'register' option from arguments
     # and avoid vdsm-tool recognize it as an unknown option
-    args = parser.parse_args(args=args[1:])
+    parsed_args = parser.parse_args(args=args[1:])
 
-    reg = Register(engine_fqdn=args.engine_fqdn,
-                   engine_https_port=args.engine_https_port,
-                   vdsm_port=args.vdsm_port,
-                   node_address=args.node_address,
-                   node_name=args.node_name,
-                   ssh_user=args.ssh_user,
-                   ssh_port=args.ssh_port,
-                   fingerprint=args.fingerprint,
-                   check_fqdn=args.check_fqdn,
-                   vdsm_uuid=args.vdsm_uuid)
+    reg = Register(engine_fqdn=parsed_args.engine_fqdn,
+                   engine_https_port=parsed_args.engine_https_port,
+                   vdsm_port=parsed_args.vdsm_port,
+                   node_address=parsed_args.node_address,
+                   node_name=parsed_args.node_name,
+                   ssh_user=parsed_args.ssh_user,
+                   ssh_port=parsed_args.ssh_port,
+                   fingerprint=parsed_args.fingerprint,
+                   check_fqdn=parsed_args.check_fqdn,
+                   vdsm_uuid=parsed_args.vdsm_uuid)
 
     try:
         reg.handshake()
@@ -459,8 +459,9 @@ def main(*args):
         reg.download_ssh()
         reg.execute_registration()
     except:
-        reg.logger.exception("Cannot connect to engine. {f} matches "
-                             "the FQDN of Engine?".format(f=args.engine_fqdn))
+        reg.logger.exception(
+            "Cannot connect to engine. {f} matches "
+            "the FQDN of Engine?".format(f=parsed_args.engine_fqdn))
         return 1
 
     return 0
