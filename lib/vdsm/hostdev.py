@@ -442,6 +442,22 @@ def _get_device_ref_and_params(device_name):
     return libvirt_device, params
 
 
+def _process_all_devices(libvirt_devices):
+    devices = {}
+    for device in libvirt_devices:
+        try:
+            name = device.name()
+            params = _process_device_params(device.XMLDesc(0))
+        except libvirt.libvirtError:
+            # The object still exists, but the underlying device is gone. For
+            # us, the device is also gone - ignore it.
+            continue
+
+        devices[name] = params
+
+    return devices
+
+
 def _get_devices_from_libvirt(flags=0):
     """
     Returns all available host devices from libvirt processd to dict
@@ -454,8 +470,7 @@ def _get_devices_from_libvirt(flags=0):
             __device_tree_hash(libvirt_devices) == _last_alldevices_hash):
         return _device_tree_cache
 
-    devices = dict((device.name(), _process_device_params(device.XMLDesc(0)))
-                   for device in libvirt_devices)
+    devices = _process_all_devices(libvirt_devices)
 
     with _DeviceTreeCache(devices) as cache:
         for device_name, device_params in devices.items():
