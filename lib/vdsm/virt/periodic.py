@@ -145,7 +145,8 @@ class Operation(object):
 
     _log = logging.getLogger("virt.periodic.Operation")
 
-    def __init__(self, func, period, scheduler, timeout=0, executor=None):
+    def __init__(self, func, period, scheduler, timeout=0, executor=None,
+                 exclusive=False):
         """
         parameters:
 
@@ -162,6 +163,7 @@ class Operation(object):
         self._timeout = _timeout_from(period) if timeout == 0 else timeout
         self._scheduler = scheduler
         self._executor = _executor if executor is None else executor
+        self._exclusive = exclusive
         self._lock = threading.Lock()
         self._running = False
         self._call = None
@@ -190,6 +192,9 @@ class Operation(object):
             self._func()
         except Exception:
             self._log.exception("%s operation failed", self._func)
+        finally:
+            if self._exclusive:
+                self._step()
 
     def _step(self):
         """
@@ -217,7 +222,8 @@ class Operation(object):
             self._log.warning('could not run %s, executor queue full',
                               self._func)
         finally:
-            self._step()
+            if not self._exclusive:
+                self._step()
 
     def __repr__(self):
         return '<Operation action=%s at 0x%x>' % (
