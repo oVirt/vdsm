@@ -19,6 +19,7 @@
 #
 
 from collections import defaultdict
+import logging
 import threading
 import time
 
@@ -45,6 +46,7 @@ class TimeoutTests(TestCaseBase):
         self.assertTrue(periodic._timeout_from(interval) <= interval)
 
 
+@expandPermutations
 class PeriodicOperationTests(TestCaseBase):
 
     def setUp(self):
@@ -89,7 +91,12 @@ class PeriodicOperationTests(TestCaseBase):
         op.start()
         self.assertRaises(AssertionError, op.start)
 
-    def test_repeating(self):
+    @permutations([
+        # exclusive
+        [True],
+        [False],
+    ])
+    def test_repeating(self, exclusive):
         PERIOD = 0.1
         TIMES = 3
 
@@ -104,7 +111,8 @@ class PeriodicOperationTests(TestCaseBase):
 
         op = periodic.Operation(_work, period=PERIOD,
                                 scheduler=self.sched,
-                                executor=self.exc)
+                                executor=self.exc,
+                                exclusive=exclusive)
         op.start()
         invoked.wait(PERIOD * TIMES + PERIOD)
         # depending on timing, _work may be triggered one more time.
@@ -195,6 +203,50 @@ class PeriodicOperationTests(TestCaseBase):
         self.assertTrue(TIMES <= invocations[0] <= TIMES + 1)
         # one execution never completed
         self.assertEqual(executions[0], invocations[0] - 1)
+
+    @slowtest
+    def test_repeating_exclusive_operation(self):
+        PERIOD = 0.2
+
+        executions = [0]
+        ready = threading.Event()
+        done = threading.Event()
+
+        log = logging.getLogger('test')
+
+        def _work():
+            n = executions[0]
+            executions[0] += 1
+            log.info('BEGIN _work() n=%d', n)
+            if n == 0:
+                # block just the first time
+                # we intentionally don't set done
+                # to emulate lost worker
+                log.info('waiting for readiness...')
+                ready.wait()
+                log.info('ready!')
+            else:
+                done.set()
+                log.info('done!')
+            log.info('END')
+
+        op = periodic.Operation(_work,
+                                period=PERIOD,
+                                scheduler=self.sched,
+                                executor=self.exc,
+                                timeout=None,
+                                exclusive=True)
+        op.start()
+        self.assertFalse(done.wait(PERIOD * 4))
+        # we just wait "long enough" to make sure we cross at least one
+        # timeout threshold.
+        ready.set()
+        completed = done.wait(PERIOD * 2)  # guard against races
+        op.stop()
+        self.assertTrue(completed)
+        # op.stop() doesn't guarantee the immediate termination, so _work()
+        # can run one extra time
+        self.assertGreaterEqual(executions[0], 2)
 
 
 VM_NUM = 5  # just a number, no special meaning
