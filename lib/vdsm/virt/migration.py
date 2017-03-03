@@ -87,6 +87,8 @@ class SourceThread(object):
     """
     A thread that takes care of migration on the source vdsm.
     """
+    _RECOVERY_LOOP_PAUSE = 10
+
     ongoingMigrations = DynamicBoundedSemaphore(1)
 
     def __init__(self, vm, dst='', dstparams='',
@@ -421,6 +423,13 @@ class SourceThread(object):
         return self._recovery
 
     def run(self):
+        if self.recovery:
+            self._recovery_run()
+        else:
+            self._regular_run()
+
+    def _regular_run(self):
+        self.log.debug("Starting migration source thread")
         self._recovery = False
         self._update_outgoing_limit()
         try:
@@ -629,6 +638,19 @@ class SourceThread(object):
                 raise
         if self._recovery:
             self._recover("Migration stopped")
+
+    def _recovery_run(self):
+        self.log.debug("Starting migration recovery thread")
+        while True:
+            job_stats = self._vm._dom.jobStats()
+            if not ongoing(job_stats):
+                break
+            time.sleep(self._RECOVERY_LOOP_PAUSE)
+        self.log.debug("Recovered migration finished")
+        # Successful migration is handled in VM.onJobCompleted, here we need
+        # just to ensure that migration failures are detected and handled.
+        if self._vm._dom.state(0)[0] == libvirt.VIR_DOMAIN_RUNNING:
+            self.recovery_cleanup()
 
     def recovery_cleanup(self):
         """

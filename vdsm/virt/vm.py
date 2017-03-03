@@ -679,6 +679,7 @@ class Vm(object):
                 if migration.ongoing(job_stats):
                     self.set_last_status(vmstatus.MIGRATION_SOURCE,
                                          vmstatus.WAIT_FOR_LAUNCH)
+                    self._migrationSourceThread.start()
                 else:
                     self.set_last_status(vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
         else:
