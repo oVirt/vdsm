@@ -109,6 +109,7 @@ test_modules = \
 	stompasyncdispatcher_test.py \
 	stomp_test.py \
 	storage_asyncevent_test.py \
+	storage_asyncutils_test.py \
 	storage_blkdiscard_test.py \
 	storage_blocksd_test.py \
 	storage_blockvolume_test.py \
