@@ -23,8 +23,8 @@ import logging
 import sanlock
 
 from vdsm import cmdutils
-from vdsm import qemuimg
 from vdsm import constants
+from vdsm import qemuimg
 from vdsm.common import exception
 from vdsm.config import config
 from vdsm.storage import blkdiscard
@@ -77,6 +77,9 @@ class BlockVolumeManifest(volume.VolumeManifest):
     @classmethod
     def is_block(cls):
         return True
+
+    def chunked(self):
+        return self.getFormat() == sc.COW_FORMAT
 
     def getMetadataId(self):
         """
@@ -673,31 +676,6 @@ class BlockVolume(volume.Volume):
                       newSize)
         sizemb = (newSize + SECTORS_TO_MB - 1) / SECTORS_TO_MB
         lvm.reduceLV(self.sdUUID, self.volUUID, sizemb)
-
-    def shrinkToOptimalSize(self):
-        """
-        Reduce a logical volume to the actual
-        disk size, adding round up to next
-        closest volume utilization chunk
-        """
-        volParams = self.getVolumeParams()
-        if volParams['volFormat'] == sc.COW_FORMAT:
-            self.prepare()
-            try:
-                check = qemuimg.check(self.getVolumePath(),
-                                      qemuimg.FORMAT.QCOW2)
-            finally:
-                self.teardown(self.sdUUID, self.volUUID)
-            volActualSize = check['offset']
-            volExtendSizeMB = int(config.get(
-                                  "irs", "volume_utilization_chunk_mb"))
-            volExtendSize = volExtendSizeMB * constants.MEGAB
-            volUtil = int(config.get("irs", "volume_utilization_percent"))
-            finalSize = (volActualSize + volExtendSize * volUtil * 0.01)
-            finalSize += volExtendSize - (finalSize % volExtendSize)
-            self.log.debug('Shrink qcow volume: %s to : %s bytes',
-                           self.volUUID, finalSize)
-            self.reduce((finalSize + BLOCK_SIZE - 1) / BLOCK_SIZE)
 
     @classmethod
     def renameVolumeRollback(cls, taskObj, sdUUID, oldUUID, newUUID):
