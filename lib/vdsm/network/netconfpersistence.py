@@ -158,7 +158,8 @@ class Config(BaseConfig):
             else:
                 raise
 
-    def _getConfigs(self, path):
+    @staticmethod
+    def _getConfigs(path):
         if not os.path.exists(path):
             return {}
 
@@ -166,7 +167,7 @@ class Config(BaseConfig):
 
         for fileName in os.listdir(path):
             fullPath = path + fileName
-            networkEntities[fileName] = self._getConfigDict(fullPath)
+            networkEntities[fileName] = Config._getConfigDict(fullPath)
 
         return networkEntities
 
