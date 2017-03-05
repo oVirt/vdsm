@@ -104,12 +104,6 @@ class TestConfigNetwork(TestCaseBase):
         self._addNetworkWithExc('test', dict(nic='eth6', mtu=DEFAULT_MTU),
                                 errors.ERR_USED_NIC)
 
-        # Test for adding a new non-VLANed bridgeless network when a non-VLANed
-        # bridgeless network exists
-        self._addNetworkWithExc('test', dict(nic='eth8', bridged=False,
-                                mtu=DEFAULT_MTU),
-                                errors.ERR_BAD_PARAMS)
-
     @MonkeyPatch(netinfo.cache, 'CachingNetInfo', lambda: None)
     def testValidateNetSetupRemoveParamValidation(self):
         attrs = dict(nic='dummy', remove=True,

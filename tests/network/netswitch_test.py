@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,8 +18,13 @@
 #
 from __future__ import absolute_import
 
+from contextlib import contextmanager
+from functools import partial
+
+from vdsm.network import errors
 from vdsm.network import netswitch
 
+from testlib import mock
 from testlib import VdsmTestCase as TestCaseBase
 from nose.plugins.attrib import attr
 
@@ -52,3 +57,102 @@ class SplitSetupActionsTests(TestCaseBase):
         self.assertEqual(bonds2add, {'bond2add': {'nics': ['eth0', 'eth1']}})
         self.assertEqual(bonds2edit, {'bond2edit': {'nics': ['eth2', 'eth3']}})
         self.assertEqual(bonds2remove, {'bond2remove': {'remove': True}})
+
+
+@attr(type='unit')
+class SouthboundValidationTests(TestCaseBase):
+
+    def test_two_bridgless_ovs_nets_with_used_nic_fails(self):
+        self._assert_net_setup_fails_bad_params(
+            'fakebrnet2', 'ovs', {'nic': 'eth0'})
+
+    def test_two_bridgless_legacy_nets_with_used_nic_fails(self):
+        self._assert_net_setup_fails_bad_params(
+            'fakebrnet2', 'legacy', {'nic': 'eth0'})
+
+    def test_two_ovs_nets_with_used_bond_fails(self):
+        self._assert_net_setup_fails_bad_params(
+            'fakevlannet2', 'ovs', {'nic': 'eth1'}, vlan=1)
+
+    def test_two_legacy_nets_with_used_bond_fails(self):
+        self._assert_net_setup_fails_bad_params(
+            'fakevlannet2', 'legacy', {'nic': 'eth1'}, vlan=1)
+
+    def test_two_ovs_nets_with_same_vlans_fails(self):
+        self._assert_net_setup_fails_bad_params(
+            'fakebondnet2', 'ovs', {'bonding': 'bond0'})
+
+    def test_two_legacy_nets_with_same_vlans_fails(self):
+        self._assert_net_setup_fails_bad_params(
+            'fakebondnet2', 'legacy', {'bonding': 'bond0'})
+
+    def test_replacing_ovs_net_on_nic(self):
+        self._test_replacing_net_on_nic('ovs')
+
+    def test_replacing_legacy_net_on_nic(self):
+        self._test_replacing_net_on_nic('legacy')
+
+    @mock.patch.object(netswitch.ovs_switch, 'validate_network_setup',
+                       lambda *args: None)
+    @mock.patch.object(netswitch.legacy_switch, 'validate_network_setup',
+                       lambda *args: None)
+    def _test_replacing_net_on_nic(self, switch):
+        with _mock_netinfo(switch):
+            netswitch.validate(
+                {'fakebrnet2': {'nic': 'eth0', 'switch': switch},
+                 'fakebrnet1': {'remove': True}},
+                {})
+
+    def _assert_net_setup_fails_bad_params(self, net_name, switch, sb_device,
+                                           vlan=None):
+        bridged = False
+        bonds = {}
+
+        net = {net_name: {'switch': switch, 'bridged': bridged}}
+        net[net_name].update(sb_device)
+        if vlan is not None:
+            net[net_name]['vlan'] = vlan
+
+        with _mock_netinfo(switch):
+            with self.assertRaises(errors.ConfigNetworkError) as cne_context:
+                netswitch.validate(net, bonds)
+            self.assertEqual(cne_context.exception.errCode,
+                             errors.ERR_BAD_PARAMS)
+
+
+@contextmanager
+def _mock_netinfo(switch):
+    net_info = partial(_create_fake_netinfo, switch)
+    with mock.patch.object(netswitch, 'netinfo', net_info) as netinfo_mock:
+        yield netinfo_mock
+
+
+def _create_fake_netinfo(switch):
+    common_net_attrs = {'ipv6addrs': [], 'gateway': '', 'dhcpv4': False,
+                        'netmask': '', 'ipv4defaultroute': False,
+                        'stp': 'off', 'ipv4addrs': [], 'mtu': 1500,
+                        'ipv6gateway': '::', 'dhcpv6': False,
+                        'ipv6autoconf': False, 'addr': '', 'ports': [],
+                        'switch': switch}
+
+    common_bond_attrs = {'opts': {'mode': '0'}, 'switch': switch}
+
+    fake_netinfo = {
+        'networks':
+            {'fakebrnet1': dict(iface='eth0', bond='', bridged=False,
+                                nics=['eth0'], **common_net_attrs),
+             'fakevlannet1': dict(iface='eth1.1', bond='', bridged=False,
+                                  nics=['eth1'], vlanid=1, **common_net_attrs),
+             'fakebondnet1': dict(iface='bond0', bond='bond0', bridged=False,
+                                  nics=['eth2', 'eth3'], **common_net_attrs)},
+        'vlans':
+            {'eth1.1': {'iface': 'eth1', 'addr': '10.10.10.10',
+                        'netmask': '255.255.0.0', 'mtu': 1500,
+                        'vlanid': 1}},
+        'nics': ['eth0', 'eth1', 'eth2', 'eth3'],
+        'bridges': {},
+        'bondings':
+            {'bond0': dict(slaves=['eth2', 'eth3'], **common_bond_attrs)},
+        'nameservers': [],
+    }
+    return fake_netinfo

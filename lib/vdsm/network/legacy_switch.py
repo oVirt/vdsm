@@ -193,10 +193,6 @@ def _add_network(network, configurator, _netinfo, nameservers,
     if network in _netinfo.networks:
         raise ConfigNetworkError(
             ne.ERR_USED_BRIDGE, 'Network already exists (%s)' % (network,))
-    if bonding:
-        _validate_inter_network_compatibility(_netinfo, vlan, bonding)
-    elif nic:
-        _validate_inter_network_compatibility(_netinfo, vlan, nic)
 
     logging.info('Adding network %s with vlan=%s, bonding=%s, nic=%s, '
                  'mtu=%s, bridged=%s, defaultRoute=%s, options=%s', network,
@@ -232,19 +228,6 @@ def _add_network(network, configurator, _netinfo, nameservers,
     configurator.configureLibvirtNetwork(network, net_ent)
     if hostQos is not None:
         configurator.configureQoS(hostQos, net_ent)
-
-
-def _validate_inter_network_compatibility(ni, vlan, iface):
-    iface_nets_by_vlans = dict((vlan, net)  # None is also a valid key
-                               for (net, vlan)
-                               in ni.getNetworksAndVlansForIface(iface))
-
-    if vlan in iface_nets_by_vlans:
-        raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
-                                 'Interface %r cannot be defined with this '
-                                 'network since it is already defined with '
-                                 'network %s' % (iface,
-                                                 iface_nets_by_vlans[vlan]))
 
 
 def _update_mtu_for_an_existing_bridge(dev_name, configurator, mtu):

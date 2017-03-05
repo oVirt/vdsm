@@ -19,7 +19,6 @@
 #
 
 from __future__ import absolute_import
-from itertools import chain
 import logging
 import os
 import errno
@@ -250,30 +249,6 @@ class NetInfo(object):
 
     def del_bridge(self, bridge):
         self.bridges.pop(bridge, None)
-
-    def getNetworksAndVlansForIface(self, iface):
-        """ Returns tuples of (bridge/network, vlan) connected to  nic/bond """
-        return chain(self._getBridgedNetworksAndVlansForIface(iface),
-                     self._getBridgelessNetworksAndVlansForIface(iface))
-
-    def _getBridgedNetworksAndVlansForIface(self, iface):
-        """ Returns tuples of (bridge, vlan) connected to nic/bond """
-        for network, netdict in six.iteritems(self.networks):
-            if netdict['bridged']:
-                for interface in netdict['ports']:
-                    if iface == interface:
-                        yield (network, None)
-                    elif interface.startswith(iface + '.'):
-                        yield (network, self.vlans[interface]['vlanid'])
-
-    def _getBridgelessNetworksAndVlansForIface(self, iface):
-        """ Returns tuples of (network, vlan) connected to nic/bond """
-        for network, netdict in six.iteritems(self.networks):
-            if not netdict['bridged']:
-                if iface == netdict['iface']:
-                    yield (network, None)
-                elif netdict['iface'].startswith(iface + '.'):
-                    yield (network, self.vlans[netdict['iface']]['vlanid'])
 
     def getVlansForIface(self, iface):
         for vlandict in six.itervalues(self.vlans):
