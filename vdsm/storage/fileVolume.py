@@ -357,6 +357,23 @@ class FileVolumeManifest(volume.VolumeManifest):
             if not self.oop.os.access(volPath, os.R_OK):
                 raise se.VolumeAccessError(volPath)
 
+    def optimal_size(self):
+        """
+        Return the optimal size of the volume.
+
+        Returns:
+            virtual size if format is RAW and current (apparent) size if
+            format is COW.
+
+        Note:
+            the volume must be prepared must be prepared when calling this
+            helper.
+        """
+        if self.getFormat() == sc.RAW_FORMAT:
+            return self.getSize() * sc.BLOCK_SIZE
+        else:
+            return self.getVolumeSize() * sc.BLOCK_SIZE
+
 
 class FileVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
