@@ -222,14 +222,14 @@ class _VdsProxy(object):
 _instance = _VdsProxy()
 
 
-def getProxy():
+def getProxy(reconnect=False):
     """
     We used to connect when a proxy was created but now
     we want to connect only when the proxy is needed.
     It is used in functional test context so we do not
     care about concurrent calls of this function.
     """
-    if not _instance._is_connected():
+    if not _instance._is_connected() or reconnect:
         _instance._connect()
     return _instance
 

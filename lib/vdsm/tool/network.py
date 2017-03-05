@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 from vdsm.network import netrestore
+from vdsm.network import netupgrade
 
 from . import expose
 
@@ -31,3 +32,13 @@ def retore_nets_init(*args):
     Restore IP+link configuration on persisted OVS networks.
     """
     netrestore.init_nets()
+
+
+@expose('upgrade-networks')
+def upgrade_networks(*args):
+    """
+    upgrade-networks
+
+    Upgrade networks configuration to up-to-date format.
+    """
+    netupgrade.upgrade()

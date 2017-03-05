@@ -140,6 +140,10 @@ class Config(BaseConfig):
         logging.info('Saved new config %r to %s and %s' %
                      (self, self.networksPath, self.bondingsPath))
 
+    def config_exists(self):
+        return (os.path.exists(self.networksPath) and
+                os.path.exists(self.bondingsPath))
+
     def _networkPath(self, network):
         return self.networksPath + network
 

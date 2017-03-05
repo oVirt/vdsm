@@ -37,7 +37,7 @@ from vdsm.network.ipwrapper import (
     routeExists, ruleExists, addrFlush, LinkType, getLinks, routeShowTable,
     linkDel, linkSet, addrAdd)
 from vdsm.network import kernelconfig
-from vdsm.network.netconfpersistence import PersistentConfig
+from vdsm.network.netconfpersistence import PersistentConfig, RunningConfig
 from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
 from vdsm.network.netinfo.bonding import BONDING_SLAVES, BONDING_MASTERS
 from vdsm.network.netinfo.bridges import bridges
@@ -57,6 +57,7 @@ from vdsm.network import tc
 
 from vdsm import sysctl
 from vdsm.commands import execCmd
+from vdsm.tool import service
 from vdsm.utils import CommandPath, RollbackContext, pgrep, running
 
 from hookValidation import ValidatesHook
@@ -1565,16 +1566,32 @@ class NetworkTest(TestCaseBase):
                                 "vdsm-restore-net-config selective restoration"
                                 "is not supported")
     @cleanupNet
-    def testSelectiveRestoreIgnoresVdsmRegParams(self):
+    def testUpgradeUnsupportedIfcfgConfig(self):
         with dummyIf(1) as nics:
             nic, = nics
-            # let _assert_kernel_config_matches_running_config do the job
+            NET_ATTRS = {'nic': nic}
             status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'nic': nic, 'IPV6_AUTOCONF': 'no',
-                                'PEERNTP': 'yes', 'IPV6INIT': 'no'}},
-                {}, NOCHK)
+                {NETWORK_NAME: NET_ATTRS}, {}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(NETWORK_NAME)
+
+            # Inject the unsupported config, simulating "old" config.
+            unsupported_netattrs = {'IPV6_AUTOCONF': 'no',
+                                    'PEERNTP': 'yes',
+                                    'IPV6INIT': 'no'}
+            rconfig = RunningConfig()
+            rconfig.networks[NETWORK_NAME].update(unsupported_netattrs)
+            rconfig.save()
+
+            # Process the upgrade step.
+            service.service_restart('vdsm-network')
+
+            # Following the restart, the connection to supervdsm must be
+            # re-established.
+            self.vdsm_net = getProxy(reconnect=True)
+            self.vdsm_net.refreshNetinfo()
+            self._assert_kernel_config_matches_running_config()
+
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)

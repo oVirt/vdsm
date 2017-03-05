@@ -40,6 +40,7 @@ dist_vdsmnetwork_PYTHON = \
 	netconfpersistence.py \
 	netrestore.py \
 	netswitch.py \
+	netupgrade.py \
 	sourceroute.py \
 	utils.py \
 	$(NULL)

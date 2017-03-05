@@ -20,9 +20,7 @@
 from __future__ import absolute_import
 import copy
 import six
-import string
 
-from vdsm import constants
 from vdsm.network.netinfo import bonding
 from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo import dns
@@ -61,8 +59,6 @@ def normalize(running_config):
     config_copy = copy.deepcopy(running_config)
 
     _normalize_bonding_opts(config_copy)
-    _normalize_address(config_copy)
-    _normalize_ifcfg_keys(config_copy)
 
     return config_copy
 
@@ -198,31 +194,6 @@ def _normalize_bonding_opts(config_copy):
     # REQUIRED_FOR upgrade from vdsm<=4.16.20
     for net_attr in six.viewvalues(config_copy.networks):
         net_attr.pop('bondingOptions', None)
-
-
-def _normalize_address(config_copy):
-    for net_name, net_attr in six.viewitems(config_copy.networks):
-        if 'defaultRoute' not in net_attr:
-            net_attr['defaultRoute'] = net_name in \
-                constants.LEGACY_MANAGEMENT_NETWORKS
-
-
-def _normalize_ifcfg_keys(config_copy):
-    # ignore keys in persisted networks that might originate from vdsm-reg.
-    # these might be a result of calling setupNetworks with ifcfg values
-    # that come from the original interface that is serving the management
-    # network. for 3.5, VDSM still supports passing arbitrary values
-    # directly to the ifcfg files, e.g. 'IPV6_AUTOCONF=no'. we filter them
-    # out here since kernelConfig will never report them.
-    # TODO: remove when 3.5 is unsupported.
-    def unsupported(key):
-        return set(key) <= set(
-            string.ascii_uppercase + string.digits + '_')
-
-    for net_attr in six.viewvalues(config_copy.networks):
-        for k in net_attr.keys():
-            if unsupported(k):
-                net_attr.pop(k)
 
 
 def _parse_bond_options(opts):

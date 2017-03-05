@@ -1165,6 +1165,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/netconfpersistence.py*
 %{python_sitelib}/%{vdsm_name}/network/netrestore.py*
 %{python_sitelib}/%{vdsm_name}/network/netswitch.py*
+%{python_sitelib}/%{vdsm_name}/network/netupgrade.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroute.py*
 %{python_sitelib}/%{vdsm_name}/network/tc/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/tc/_parser.py*
