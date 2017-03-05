@@ -844,6 +844,9 @@ if [ "$1" -ge 1 ]; then
         %{_bindir}/vdsm-tool service-stop supervdsmd >/dev/null 2>&1 || :
         supervdsmd_start_required='yes'
     fi
+    if %{_bindir}/vdsm-tool service-status vdsm-network >/dev/null 2>&1; then
+        %{_bindir}/vdsm-tool service-stop vdsm-network >/dev/null 2>&1 || :
+    fi
 
     if ! %{_bindir}/vdsm-tool is-configured >/dev/null 2>&1; then
         %{_bindir}/vdsm-tool configure --force >/dev/null 2>&1
