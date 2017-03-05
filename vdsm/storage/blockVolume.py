@@ -408,6 +408,37 @@ class BlockVolumeManifest(volume.VolumeManifest):
             if pvolUUID != sc.BLANK_UUID:
                 cls.teardown(sdUUID=sdUUID, volUUID=pvolUUID, justme=False)
 
+    def optimal_size(self):
+        """
+        Return the optimal size of the volume.
+
+        Returns:
+            optimal size is the minimum of the volume maximum size and the
+            volume actual size plus a chunk. Size is returned in bytes.
+
+        Note:
+            the volume must be prepared when calling this helper.
+        """
+        if self.getFormat() == sc.RAW_FORMAT:
+            return self.getSize() * sc.BLOCK_SIZE
+
+        # Read actual size.
+        check = qemuimg.check(self.getVolumePath(), qemuimg.FORMAT.QCOW2)
+        actual_size = check['offset']
+
+        # Add extra room to actual size.
+        chnuk_size_mb = int(config.get("irs", "volume_utilization_chunk_mb"))
+        chunk_size = chnuk_size_mb * constants.MEGAB
+        potential_optimal_size = actual_size + chunk_size
+
+        # Limit optimal size by maximum size.
+        max_size = self.max_size(self.getSize() * sc.BLOCK_SIZE,
+                                 self.getFormat())
+        optimal_size = min(potential_optimal_size, max_size)
+        self.log.debug("actual_size: %s, max_size: %s, optimal_size: %s",
+                       actual_size, max_size, optimal_size)
+        return optimal_size
+
 
 class BlockVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).

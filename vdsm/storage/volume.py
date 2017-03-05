@@ -1232,6 +1232,9 @@ class Volume(object):
     def max_size(cls, virtual_size, format):
         return cls.manifestClass.max_size(virtual_size, format)
 
+    def optimal_size(self):
+        return self._manifest.optimal_size()
+
     def getVolumeSize(self, bs=sc.BLOCK_SIZE):
         return self._manifest.getVolumeSize(bs)
 

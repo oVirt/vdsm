@@ -439,6 +439,10 @@ class FakeVolumeManifest(object):
         pass
 
     @recorded
+    def optimal_size(self):
+        pass
+
+    @recorded
     def setSize(self, size):
         pass
 
@@ -869,7 +873,8 @@ class VolumeTestMixin(object):
         ['refreshVolume', 0],
         ['_share', 1],
         ['_shareLease', 1],
-        ['prepare', 5]
+        ['prepare', 5],
+        ['optimal_size', 0],
     ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
