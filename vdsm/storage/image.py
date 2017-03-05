@@ -663,8 +663,8 @@ class Image:
         finally:
             tmpVolume.teardown(sdUUID=tmpSdUUID, volUUID=tmpVolUUID)
 
-        tmpVolume.shrinkToOptimalSize()
-        dstVolume.shrinkToOptimalSize()
+        self._shrinkVolumeToOptimalSize(tmpVolume)
+        self._shrinkVolumeToOptimalSize(dstVolume)
 
     def cloneStructure(self, sdUUID, imgUUID, dstSdUUID):
         self._createTargetImage(sdCache.produce(dstSdUUID), sdUUID, imgUUID)
@@ -1403,12 +1403,24 @@ class Image:
         newVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'],
                                      volUUID=srcVolParams['volUUID'])
         try:
-            newVol.shrinkToOptimalSize()
+            self._shrinkVolumeToOptimalSize(newVol)
         except qemuimg.QImgError:
             self.log.warning("Auto shrink after merge failed", exc_info=True)
 
         self.log.info("Merge src=%s with dst=%s was successfully finished.",
                       srcVol.getVolumePath(), dstVol.getVolumePath())
+
+    def _shrinkVolumeToOptimalSize(self, vol):
+        if not vol.chunked():
+            return
+
+        vol.prepare()
+        try:
+            optimal_size = vol.optimal_size()
+        finally:
+            vol.teardown(vol.sdUUID, vol.UUID)
+
+        vol.reduce(optimal_size // sc.BLOCK_SIZE)
 
     def _activateVolumeForImportExport(self, domain, imgUUID, volUUID=None):
         chain = self.getChain(domain.sdUUID, imgUUID, volUUID)

@@ -102,6 +102,9 @@ class VolumeManifest(object):
     def volumePath(self, value):
         self._volumePath = value
 
+    def chunked(self):
+        return False
+
     def validate(self):
         """
         Validate that the volume can be accessed
@@ -1359,12 +1362,8 @@ class Volume(object):
     def getVolumeParams(self, bs=sc.BLOCK_SIZE):
         return self._manifest.getVolumeParams(bs)
 
-    def shrinkToOptimalSize(self):
-        """
-        Shrink only block volume of snapshot
-        by reducing the lv to minimal size required
-        """
-        pass
+    def chunked(self):
+        return self._manifest.chunked()
 
     @classmethod
     def createMetadata(cls, metaId, meta):
