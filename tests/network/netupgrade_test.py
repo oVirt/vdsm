@@ -45,8 +45,7 @@ class NetUpgradeUnifiedConfigTest(VdsmTestCase):
         RAW_CONFIG = {'net0': {'nic': 'eth0',
                                'defaultRoute': False,
                                'UNSUPPORTED_KEY0': 'n/a'}}
-        NORMALIZED_CONFIG = {'net0': {'nic': 'eth0',
-                                      'defaultRoute': False}}
+        NORMALIZED_CONFIG = {'net0': DEFAULT_NET_ATTRS}
 
         self._assert_upgrade_config(
             RAW_CONFIG, NORMALIZED_CONFIG,
@@ -55,18 +54,19 @@ class NetUpgradeUnifiedConfigTest(VdsmTestCase):
     def test_old_config_with_non_mgmt_net_and_missing_droute(
             self, mockRConfig, mockPConfig):
         RAW_CONFIG = {'net0': {'nic': 'eth0'}}
-        NORMALIZED_CONFIG = {'net0': {'nic': 'eth0',
-                                      'defaultRoute': False}}
+        NORMALIZED_CONFIG = {'net0': DEFAULT_NET_ATTRS}
 
         self._assert_upgrade_config(
             RAW_CONFIG, NORMALIZED_CONFIG,
             mockRConfig.return_value, mockPConfig.return_value)
 
+    @mock.patch('vdsm.network.canonicalize.dns.get_host_nameservers',
+                lambda: [])
     def test_old_config_with_mgmt_net_and_missing_droute(
             self, mockRConfig, mockPConfig):
         RAW_CONFIG = {'ovirtmgmt': {'nic': 'eth0'}}
-        NORMALIZED_CONFIG = {'ovirtmgmt': {'nic': 'eth0',
-                                           'defaultRoute': True}}
+        net_attrs = dict(DEFAULT_NET_ATTRS, defaultRoute=True)
+        NORMALIZED_CONFIG = {'ovirtmgmt': net_attrs}
 
         self._assert_upgrade_config(
             RAW_CONFIG, NORMALIZED_CONFIG,
@@ -104,3 +104,15 @@ class NetUpgradeVolatileRunConfig(VdsmTestCase):
                 pers_rconfig = netconf.RunningConfig()
                 self.assertFalse(vol_rconfig.config_exists())
                 self.assertTrue(pers_rconfig.config_exists())
+
+
+DEFAULT_NET_ATTRS = {'bootproto': 'none',
+                     'bridged': True,
+                     'defaultRoute': False,
+                     'dhcpv6': False,
+                     'ipv6autoconf': False,
+                     'mtu': 1500,
+                     'nameservers': [],
+                     'nic': 'eth0',
+                     'stp': False,
+                     'switch': 'legacy'}

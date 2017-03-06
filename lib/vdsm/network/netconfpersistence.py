@@ -33,7 +33,6 @@ from vdsm import commands
 from vdsm import constants
 from vdsm import utils
 from . import errors as ne
-from .canonicalize import canonicalize_networks, canonicalize_bondings
 
 CONF_VOLATILE_RUN_DIR = constants.P_VDSM_RUN + 'netconf/'
 CONF_RUN_DIR = constants.P_VDSM_LIB + 'staging/netconf/'
@@ -120,11 +119,9 @@ class Config(BaseConfig):
         self.networksPath = os.path.join(savePath, 'nets', '')
         self.bondingsPath = os.path.join(savePath, 'bonds', '')
         nets = self._getConfigs(self.networksPath)
-        canonicalize_networks(nets)
         for net_attrs in six.viewvalues(nets):
             _filter_out_volatile_net_attrs(net_attrs)
         bonds = self._getConfigs(self.bondingsPath)
-        canonicalize_bondings(bonds)
         super(Config, self).__init__(nets, bonds)
 
     def delete(self):

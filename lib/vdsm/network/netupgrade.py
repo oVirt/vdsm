@@ -24,6 +24,8 @@ import six
 
 from vdsm.constants import LEGACY_MANAGEMENT_NETWORKS
 
+from vdsm.network.canonicalize import canonicalize_bondings
+from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 
 
@@ -62,6 +64,10 @@ def _upgrade_unified_configuration(config):
     if config.networks:
         _normalize_net_address(config.networks)
         _normalize_net_ifcfg_keys(config.networks)
+
+        canonicalize_networks(config.networks)
+        canonicalize_bondings(config.bonds)
+
         config.save()
 
 

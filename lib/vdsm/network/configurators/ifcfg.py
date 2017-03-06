@@ -145,7 +145,7 @@ class Ifcfg(Configurator):
         if self.unifiedPersistence:
             self.runningConfig.setBonding(
                 bond.name, {'options': bond.options,
-                            'nics': [slave.name for slave in bond.slaves],
+                            'nics': sorted(s.name for s in bond.slaves),
                             'switch': 'legacy'})
 
     def editBonding(self, bond, _netinfo):
