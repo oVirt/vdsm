@@ -920,7 +920,6 @@ exit 0
 %{_sysconfdir}/libvirt/hooks/qemu
 %{_libexecdir}/%{vdsm_name}/curl-img-wrap
 %{_libexecdir}/%{vdsm_name}/fc-scan
-%{_libexecdir}/%{vdsm_name}/ovirt_functions.sh
 %{_libexecdir}/%{vdsm_name}/vdsm-gencerts.sh
 %{_libexecdir}/%{vdsm_name}/vdsmd_init_common.sh
 %{_libexecdir}/%{vdsm_name}/vm_migrate_hook.py*

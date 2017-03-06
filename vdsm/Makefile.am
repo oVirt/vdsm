@@ -30,9 +30,6 @@ dist_vdsm_PYTHON = \
 	vdsmd.py \
 	$(NULL)
 
-dist_vdsmexec_SCRIPTS = \
-	ovirt_functions.sh
-
 nodist_vdsmexec_SCRIPTS = \
 	vdsm-gencerts.sh \
 	$(NULL)

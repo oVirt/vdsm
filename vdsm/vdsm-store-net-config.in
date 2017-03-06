@@ -3,8 +3,6 @@
 # vdsm-store-net-config: store network configuration files persistently
 #
 
-. @LIBEXECDIR@/ovirt_functions.sh
-
 # ifcfg persistence directories
 NET_CONF_DIR='/etc/sysconfig/network-scripts/'
 NET_CONF_BACK_DIR='@VDSMLIBDIR@/netconfback'
@@ -16,38 +14,15 @@ PERS_NET_CONF_PATH="$PERS_CONF_PATH/netconf"
 
 PERSISTENCE=$1
 
-ifcfg_node_persist() {
-    for f in "$NET_CONF_BACK_DIR"/*;
-    do
-        [ ! -f "$f" ] && continue
-        bf=`basename "$f"`
-        if [ -f "$NET_CONF_DIR/$bf" ];
-        then
-            ovirt_store_config "$NET_CONF_DIR/$bf"
-        else
-            ovirt_safe_delete_config "$NET_CONF_DIR/$bf"
-        fi
-        rm "$NET_CONF_BACK_DIR/$bf"
-    done
-}
-
-ifcfg_nonnode_persist() {
+ifcfg_persist() {
     # Remove the backed up configuration files thus marking the ones under
     # /etc/sysconfig as "safe".
     rm -rf "$NET_CONF_BACK_DIR"/*
 }
 
-unified_node_persist() {
-    unified_nonnode_persist
-
-    # oVirt node ovirt_store_config puts the dir in persistent storage and
-    # bind mounts it in the original place. So that's all we really need to do.
-    ovirt_store_config "$PERS_CONF_PATH"
-}
-
-unified_nonnode_persist() {
+unified_persist() {
     # Remove stored non-VDSM network devices (BZ#1188251)
-    ifcfg_nonnode_persist
+    ifcfg_persist
 
     if [ -d "$RUN_CONF_DIR" ]; then
         # Atomic directory copy by using the atomicity of overwriting a link
@@ -67,21 +42,8 @@ unified_nonnode_persist() {
 }
 
 
-if isOvirtNode
-then
-    # for node, persist the changed configuration files
-
-    . /usr/libexec/ovirt-functions
-
-    if [ "$PERSISTENCE" == "unified" ]; then
-        unified_node_persist
-    else
-        ifcfg_node_persist
-    fi
+if [ "$PERSISTENCE" == "unified" ]; then
+    unified_persist
 else
-    if [ "$PERSISTENCE" == "unified" ]; then
-        unified_nonnode_persist
-    else
-        ifcfg_nonnode_persist
-    fi
+    ifcfg_persist
 fi
