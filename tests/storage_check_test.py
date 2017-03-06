@@ -20,12 +20,15 @@
 
 from __future__ import print_function
 
+import logging
 import os
 import pprint
+import re
 import threading
 import time
 from contextlib import contextmanager
 
+from fakelib import FakeLogger
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
 from testValidation import slowtest
@@ -104,8 +107,8 @@ class TestDirectioChecker(VdsmTestCase):
     @slowtest
     @permutations([
         # interval, delay, expected
-        (0.2, 0.1, 0.2),
-        (0.1, 0.1, 0.2),
+        (0.20, 0.10, 0.20),
+        (0.10, 0.12, 0.20),
     ])
     def test_interval(self, interval, delay, expected):
         self.checks = 5
@@ -120,8 +123,20 @@ class TestDirectioChecker(VdsmTestCase):
                 r1 = self.results[i]
                 r2 = self.results[i + 1]
                 actual = r2.time - r1.time
-                self.assertGreater(actual, expected - clock_res)
-                self.assertLess(actual, expected + clock_res)
+                self.assertAlmostEqual(actual, expected, delta=clock_res)
+
+    @MonkeyPatch(check, "_log", FakeLogger(logging.WARNING))
+    def test_block_warnings(self):
+        self.checks = 1
+        with fake_dd(0.15):
+            checker = check.DirectioChecker(self.loop, "/path", self.complete,
+                                            interval=0.1)
+            checker.start()
+            self.loop.run_forever()
+        msg = check._log.messages[0][1]
+        # Matching time value is too fragile
+        r = re.compile(r"Checker '/path' is blocked for .+ seconds")
+        self.assertRegexpMatches(msg, r)
 
     # In the idle state the checker is not running so there is nothing to
     # cleanup.

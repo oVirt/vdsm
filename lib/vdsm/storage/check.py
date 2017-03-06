@@ -42,6 +42,7 @@ from vdsm import concurrent
 from vdsm import constants
 from vdsm.compat import CPopen
 from vdsm.storage import asyncevent
+from vdsm.storage import asyncutils
 from vdsm.storage import exception
 
 EXEC_ERROR = 127
@@ -211,9 +212,8 @@ class DirectioChecker(object):
         self._path = path
         self._complete = complete
         self._interval = interval
-        self._next_check = None
+        self._looper = asyncutils.LoopingCall(loop, self._check)
         self._check_time = None
-        self._timer = None
         self._proc = None
         self._reader = None
         self._reaper = None
@@ -232,8 +232,7 @@ class DirectioChecker(object):
         self._state = RUNNING
         _log.debug("Checker %r started", self._path)
         self._stopped.clear()
-        self._next_check = self._loop.time()
-        self._check()
+        self._looper.start(self._interval)
 
     def stop(self):
         """
@@ -249,9 +248,7 @@ class DirectioChecker(object):
             return
         _log.debug("Checker %r stopping", self._path)
         self._state = STOPPING
-        if self._timer:
-            self._timer.cancel()
-            self._timer = None
+        self._looper.stop()
         if self._proc is None:
             self._stop_completed()
 
@@ -277,10 +274,13 @@ class DirectioChecker(object):
         the checker is stopped.
         """
         assert self._state is RUNNING
-        self._timer = None
+        if self._proc:
+            _log.warning("Checker %r is blocked for %.2f seconds",
+                         self._path, self._loop.time() - self._check_time)
+            return
         self._check_time = self._loop.time()
         _log.debug("START check %r (delay=%.2f)",
-                   self._path, self._check_time - self._next_check)
+                   self._path, self._check_time - self._looper.deadline)
         try:
             self._start_process()
         except Exception as e:
@@ -331,22 +331,16 @@ class DirectioChecker(object):
         if self._state is STOPPING:
             self._stop_completed()
             return
-        self._schedule_next_check(now)
         result = CheckResult(self._path, rc, self._err, self._check_time,
                              elapsed)
         self._complete(result)
-
-    def _schedule_next_check(self, now):
-        while self._next_check <= now:
-            self._next_check += self._interval
-        self._timer = self._loop.call_at(self._next_check, self._check)
 
     def __repr__(self):
         info = [self.__class__.__name__,
                 self._path,
                 self._state]
         if self._state is RUNNING:
-            info.append("next_check=%.2f" % self._next_check)
+            info.append("next_check=%.2f" % self._looper.deadline)
         return "<%s at 0x%x>" % (" ".join(info), id(self))
 
 
