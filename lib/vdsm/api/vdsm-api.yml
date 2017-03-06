@@ -5119,11 +5119,12 @@ types:
             name: clientIp
             type: string
 
-        -   defaultvalue: null
+        -   defaultvalue: {}
             description: Information about the vm numa node runtime pinning
                 to host numa node.
             name: vNodeRuntimeInfo
             added: '3.4'
+            deprecated: '4.1'
             type: *VmNumaNodeRuntimeInfoMap
 
         -   description: Indicates the reason a VM has been paused
