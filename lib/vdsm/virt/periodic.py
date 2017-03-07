@@ -180,7 +180,7 @@ class Operation(object):
                 raise AssertionError("Operation already running")
             self._log.debug("starting operation %s", self._func)
             self._running = True
-            # we do _dispatch instead of _step here to have some
+            # we do _dispatch instead of _reschedule here to have some
             # data as soon as possibile
             self._dispatch()
 
@@ -200,9 +200,9 @@ class Operation(object):
             self._log.exception("%s operation failed", self._func)
         finally:
             if self._exclusive:
-                self._step()
+                self._reschedule()
 
-    def _step(self):
+    def _reschedule(self):
         """
         Schedule a next call of `func'.
         """
@@ -229,7 +229,7 @@ class Operation(object):
                               self._func)
         finally:
             if not self._exclusive:
-                self._step()
+                self._reschedule()
 
     def __repr__(self):
         return '<Operation action=%s at 0x%x>' % (
