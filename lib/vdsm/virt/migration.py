@@ -557,23 +557,23 @@ class SourceThread(object):
         # side
         self._preparingMigrationEvt = False
         if not self._migrationCanceledEvt.is_set():
-            # TODO: use libvirt constants when bz#1222795 is fixed
-            params = {VIR_MIGRATE_PARAM_BANDWIDTH: self._maxBandwidth}
-            if not self._tunneled:
-                params[VIR_MIGRATE_PARAM_URI] = str(muri)
-            if self._consoleAddress:
-                if self._vm.hasSpice:
-                    graphics = 'spice'
-                else:
-                    graphics = 'vnc'
-                params[VIR_MIGRATE_PARAM_GRAPHICS_URI] = str('%s://%s' % (
-                    graphics, self._consoleAddress))
-
             self._vm._dom.migrateToURI3(duri,
-                                        params,
+                                        self._migration_params(muri),
                                         self._migration_flags)
         else:
             self._raiseAbortError()
+
+    def _migration_params(self, muri):
+        # TODO: use libvirt constants when bz#1222795 is fixed
+        params = {VIR_MIGRATE_PARAM_BANDWIDTH: self._maxBandwidth}
+        if not self._tunneled:
+            params[VIR_MIGRATE_PARAM_URI] = str(muri)
+        if self._consoleAddress:
+            graphics = 'spice' if self._vm.hasSpice else 'vnc'
+            params[VIR_MIGRATE_PARAM_GRAPHICS_URI] = str(
+                '%s://%s' % (graphics, self._consoleAddress)
+            )
+        return params
 
     @property
     def _migration_flags(self):
