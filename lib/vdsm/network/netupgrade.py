@@ -31,9 +31,27 @@ def upgrade():
     rconfig = RunningConfig()
     pconfig = PersistentConfig()
 
+    _upgrade_volatile_running_config(rconfig)
+
     if rconfig.config_exists() or pconfig.config_exists():
         _upgrade_unified_configuration(rconfig)
         _upgrade_unified_configuration(pconfig)
+
+
+def _upgrade_volatile_running_config(rconfig):
+    """
+    Relocate the volatile version of running config (if exists)
+    to the persisted version.
+    This procedure is required in order to support upgrades to the new
+    persisted version of running config.
+    """
+    if not rconfig.config_exists():
+        volatile_rconfig = RunningConfig(volatile=True)
+        if volatile_rconfig.config_exists():
+            rconfig.networks = volatile_rconfig.networks
+            rconfig.bonds = volatile_rconfig.bonds
+            rconfig.save()
+            volatile_rconfig.delete()
 
 
 def _upgrade_unified_configuration(config):

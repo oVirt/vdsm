@@ -20,8 +20,9 @@ from __future__ import absolute_import
 
 from nose.plugins.attrib import attr
 
-from testlib import VdsmTestCase, mock
+from testlib import VdsmTestCase, mock, namedTemporaryDir
 
+from vdsm.network import netconfpersistence as netconf
 from vdsm.network import netupgrade
 
 
@@ -83,3 +84,23 @@ class NetUpgradeUnifiedConfigTest(VdsmTestCase):
         if normalized_config:
             rconfig.save.assert_called_once_with()
             pconfig.save.assert_called_once_with()
+
+
+@attr(type='integration')
+@mock.patch.object(
+    netupgrade, 'LEGACY_MANAGEMENT_NETWORKS', ('ovirtmgmt', 'rhevm'))
+class NetUpgradeVolatileRunConfig(VdsmTestCase):
+
+    def test_upgrade_volatile_running_config(self):
+        with namedTemporaryDir() as pdir, namedTemporaryDir() as vdir:
+            with mock.patch.object(netconf, 'CONF_RUN_DIR', pdir),\
+                    mock.patch.object(netconf, 'CONF_VOLATILE_RUN_DIR', vdir):
+
+                vol_rconfig = netconf.RunningConfig(volatile=True)
+                vol_rconfig.save()
+
+                netupgrade.upgrade()
+
+                pers_rconfig = netconf.RunningConfig()
+                self.assertFalse(vol_rconfig.config_exists())
+                self.assertTrue(pers_rconfig.config_exists())

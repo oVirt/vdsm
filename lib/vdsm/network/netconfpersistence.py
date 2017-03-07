@@ -35,6 +35,7 @@ from vdsm import utils
 from . import errors as ne
 from .canonicalize import canonicalize_networks, canonicalize_bondings
 
+CONF_VOLATILE_RUN_DIR = constants.P_VDSM_RUN + 'netconf/'
 CONF_RUN_DIR = constants.P_VDSM_LIB + 'staging/netconf/'
 CONF_PERSIST_DIR = constants.P_VDSM_LIB + 'persistence/netconf/'
 
@@ -199,8 +200,9 @@ class Config(BaseConfig):
 
 
 class RunningConfig(Config):
-    def __init__(self):
-        super(RunningConfig, self).__init__(CONF_RUN_DIR)
+    def __init__(self, volatile=False):
+        conf_dir = CONF_VOLATILE_RUN_DIR if volatile else CONF_RUN_DIR
+        super(RunningConfig, self).__init__(conf_dir)
 
     def store(self):
         commands.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
