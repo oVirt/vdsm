@@ -86,6 +86,41 @@ class NetUpgradeUnifiedConfigTest(VdsmTestCase):
             pconfig.save.assert_called_once_with()
 
 
+@attr(type='unit')
+@mock.patch.object(
+    netupgrade, 'LEGACY_MANAGEMENT_NETWORKS', ('ovirtmgmt', 'rhevm'))
+@mock.patch.object(netupgrade, 'netinfo', lambda: None)
+@mock.patch.object(netupgrade, 'NetInfo', lambda x: None)
+@mock.patch.object(netupgrade, 'KernelConfig')
+@mock.patch.object(netupgrade, 'PersistentConfig')
+@mock.patch.object(netupgrade, 'RunningConfig')
+class NetCreateUnifiedConfigTest(VdsmTestCase):
+
+    def test_create_unified_config(
+            self, mockRConfig, mockPConfig, mockKConfig):
+        rconfig = mockRConfig.return_value
+        pconfig = mockPConfig.return_value
+        kconfig = mockKConfig.return_value
+        self._setup_missing_unified_config(kconfig, pconfig, rconfig)
+
+        netupgrade.upgrade()
+
+        self._assert_unified_config_created(kconfig, rconfig, mockRConfig)
+
+    def _setup_missing_unified_config(self, kconfig, pconfig, rconfig):
+        kconfig.networks = {'netname': {}}
+        kconfig.bonds = {'bondname': {}}
+        rconfig.config_exists.return_value = False
+        pconfig.config_exists.return_value = False
+
+    def _assert_unified_config_created(self, kconfig, rconfig, mockRConfig):
+        self.assertEqual(kconfig.networks, rconfig.networks)
+        self.assertEqual(kconfig.bonds, rconfig.bonds)
+
+        rconfig.save.assert_called_once_with()
+        mockRConfig.store.assert_called_once_with()
+
+
 @attr(type='integration')
 @mock.patch.object(
     netupgrade, 'LEGACY_MANAGEMENT_NETWORKS', ('ovirtmgmt', 'rhevm'))

@@ -27,6 +27,9 @@ from vdsm.constants import LEGACY_MANAGEMENT_NETWORKS
 from vdsm.network.canonicalize import canonicalize_bondings
 from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
+from vdsm.network.netswitch import netinfo
+from vdsm.network.netinfo.cache import NetInfo
+from vdsm.network.kernelconfig import KernelConfig
 
 
 def upgrade():
@@ -38,6 +41,8 @@ def upgrade():
     if rconfig.config_exists() or pconfig.config_exists():
         _upgrade_unified_configuration(rconfig)
         _upgrade_unified_configuration(pconfig)
+    else:
+        _create_unified_configuration(rconfig, NetInfo(netinfo()))
 
 
 def _upgrade_volatile_running_config(rconfig):
@@ -93,3 +98,23 @@ def _normalize_net_ifcfg_keys(networks):
 
 def _is_unsupported_ifcfg_key(key):
     return set(key) <= set(string.ascii_uppercase + string.digits + '_')
+
+
+def _create_unified_configuration(rconfig, net_info):
+    """
+    Given netinfo report, generate unified configuration and persist it.
+
+    Networks and Bonds detected by the network caps/netinfo are recorded.
+    In case there are external bonds (not owned), they are still counted for in
+    this regard.
+
+    Note: Unified persistence mode is not activated in this context, it is left
+    as a separate step/action.
+    """
+    kconfig = KernelConfig(net_info)
+
+    rconfig.networks = kconfig.networks
+    rconfig.bonds = kconfig.bonds
+
+    rconfig.save()
+    RunningConfig.store()
