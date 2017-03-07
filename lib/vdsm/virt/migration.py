@@ -503,8 +503,9 @@ class SourceThread(object):
         self._preparingMigrationEvt = False
         if not self._migrationCanceledEvt.is_set():
             # TODO: use libvirt constants when bz#1222795 is fixed
-            params = {VIR_MIGRATE_PARAM_URI: str(muri),
-                      VIR_MIGRATE_PARAM_BANDWIDTH: self._maxBandwidth}
+            params = {VIR_MIGRATE_PARAM_BANDWIDTH: self._maxBandwidth}
+            if not self._tunneled:
+                params[VIR_MIGRATE_PARAM_URI] = str(muri)
             if self._consoleAddress:
                 if self._vm.hasSpice:
                     graphics = 'spice'
