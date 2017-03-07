@@ -42,6 +42,7 @@ import re
 import signal
 import string
 import struct
+import time
 import threading
 import types
 import weakref
@@ -824,48 +825,45 @@ class OperationMutex(object):
                         ignoreSourceFiles=[__file__, contextlib.__file__])
 
     def __init__(self):
-        self._lock = threading.Lock()
-        self._cond = threading.Condition()
-        self._active = None
-        self._counter = 0
-        self._queueSize = 0
+        self._cond = threading.Condition(threading.Lock())
+        self._operation = None
+        self._holders = 0
 
     @contextmanager
     def acquireContext(self, operation):
-        self.acquire(operation)
+        self._acquire(operation)
         try:
+            # Give other threads chance to get in. This releases the GIL,
+            # allowing other threads needing this opearation to acquire the
+            # mutex, increasing concurency. Without this sleep, the operation
+            # mutex behave mostly like a mutex, serializing all calls. See
+            # https://bugzilla.redhat.com/1081962.
+            time.sleep(0.005)
             yield self
         finally:
-            self.release()
+            self._release()
 
-    def acquire(self, operation):
-        generation = 0
+    def _acquire(self, operation):
         with self._cond:
-            while not self._lock.acquire(False):
-                if self._active == operation:
-                    if self._queueSize == 0 or generation > 0:
-                        self._counter += 1
-                        self.log.debug("Got the operational mutex")
-                        return
-
-                self._queueSize += 1
-                self.log.debug("Operation '%s' is holding the operation mutex,"
-                               " waiting...", self._active)
+            while self._operation not in (operation, None):
+                self.log.debug("Operation %r is holding the operation "
+                               "mutex, waiting...", self._operation)
                 self._cond.wait()
-                generation += 1
-                self._queueSize -= 1
+            if self._operation == operation:
+                self.log.debug("Acquired the operation mutex")
+            else:
+                self.log.debug("Operation %r acquired the operation mutex",
+                               operation)
+                self._operation = operation
+            self._holders += 1
 
-            self.log.debug("Operation '%s' got the operation mutex", operation)
-            self._active = operation
-            self._counter = 1
-
-    def release(self):
+    def _release(self):
         with self._cond:
-            self._counter -= 1
-            if self._counter == 0:
-                self.log.debug("Operation '%s' released the operation mutex",
-                               self._active)
-                self._lock.release()
+            self._holders -= 1
+            if self._holders == 0:
+                self.log.debug("Operation %r released the operation mutex",
+                               self._operation)
+                self._operation = None
                 self._cond.notifyAll()
 
 

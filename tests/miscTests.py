@@ -34,6 +34,7 @@ from testlib import namedTemporaryDir
 from testlib import permutations, expandPermutations
 from testlib import TEMPDIR
 import inspect
+from vdsm import concurrent
 from vdsm import utils
 
 import storage.outOfProcess as oop
@@ -1198,3 +1199,49 @@ class SamplingThread(object):
 
     def _run(self):
         self.result = self._func()
+
+
+class TestOperationMutex(TestCaseBase):
+
+    def test_concurrency_same(self):
+        m = misc.OperationMutex()
+
+        def worker():
+            with m.acquireContext("long"):
+                time.sleep(1.0)
+
+        start = utils.monotonic_time()
+        threads = []
+        try:
+            for i in range(50):
+                t = concurrent.thread(worker, name="worker-%02d" % i)
+                t.start()
+                threads.append(t)
+        finally:
+            for t in threads:
+                t.join()
+        elapsed = utils.monotonic_time() - start
+        self.assertAlmostEqual(elapsed, 1.0, delta=0.5)
+
+    def test_concurrency_mix(self):
+        m = misc.OperationMutex()
+
+        def worker():
+            with m.acquireContext("short"):
+                self.log.debug("short in")
+            with m.acquireContext("long"):
+                self.log.debug("long in")
+                time.sleep(1.0)
+
+        start = utils.monotonic_time()
+        threads = []
+        try:
+            for i in range(50):
+                t = concurrent.thread(worker, name="worker-%02d" % i)
+                t.start()
+                threads.append(t)
+        finally:
+            for t in threads:
+                t.join()
+        elapsed = utils.monotonic_time() - start
+        self.assertAlmostEqual(elapsed, 2.0, delta=1.0)
