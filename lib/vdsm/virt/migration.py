@@ -569,23 +569,23 @@ class SourceThread(object):
                 params[VIR_MIGRATE_PARAM_GRAPHICS_URI] = str('%s://%s' % (
                     graphics, self._consoleAddress))
 
-            flags = (libvirt.VIR_MIGRATE_LIVE |
-                     libvirt.VIR_MIGRATE_PEER2PEER |
-                     (libvirt.VIR_MIGRATE_TUNNELLED if
-                         self._tunneled else 0) |
-                     (libvirt.VIR_MIGRATE_ABORT_ON_ERROR if
-                         self._abortOnError else 0) |
-                     (libvirt.VIR_MIGRATE_COMPRESSED if
-                         self._compressed else 0) |
-                     (libvirt.VIR_MIGRATE_AUTO_CONVERGE if
-                         self._autoConverge else 0) |
-                     self._post_copy_flag(self._convergence_schedule))
-
-            self._vm._dom.migrateToURI3(duri, params, flags)
+            self._vm._dom.migrateToURI3(duri,
+                                        params,
+                                        self._migration_flags)
         else:
             self._raiseAbortError()
 
-    def _post_copy_flag(self, convergence_schedule):
+    @property
+    def _migration_flags(self):
+        flags = libvirt.VIR_MIGRATE_LIVE | libvirt.VIR_MIGRATE_PEER2PEER
+        if self._tunneled:
+            flags |= libvirt.VIR_MIGRATE_TUNNELLED
+        if self._abortOnError:
+            flags |= libvirt.VIR_MIGRATE_ABORT_ON_ERROR
+        if self._compressed:
+            flags |= libvirt.VIR_MIGRATE_COMPRESSED
+        if self._autoConverge:
+            flags |= libvirt.VIR_MIGRATE_AUTO_CONVERGE
         # Migration may fail immediately when VIR_MIGRATE_POSTCOPY flag is
         # present in the following situations:
         # - The transport is not capable of full bidirectional
@@ -596,8 +596,9 @@ class SourceThread(object):
         for s in self._convergence_schedule.get('stalling', []):
             action = s.get('action', {}).get('name')
             if action == CONVERGENCE_SCHEDULE_POST_COPY:
-                return libvirt.VIR_MIGRATE_POSTCOPY
-        return 0
+                flags |= libvirt.VIR_MIGRATE_POSTCOPY
+                break
+        return flags
 
     def _perform_with_downtime_thread(self, duri, muri):
         self._vm.log.debug('performing migration with downtime thread')
