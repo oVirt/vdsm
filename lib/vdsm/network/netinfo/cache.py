@@ -264,7 +264,7 @@ class NetInfo(object):
                     if iface == interface:
                         yield (network, None)
                     elif interface.startswith(iface + '.'):
-                        yield (network, vlans.vlan_id(interface))
+                        yield (network, self.vlans[interface]['vlanid'])
 
     def _getBridgelessNetworksAndVlansForIface(self, iface):
         """ Returns tuples of (network, vlan) connected to nic/bond """
@@ -273,7 +273,7 @@ class NetInfo(object):
                 if iface == netdict['iface']:
                     yield (network, None)
                 elif netdict['iface'].startswith(iface + '.'):
-                    yield (network, vlans.vlan_id(netdict['iface']))
+                    yield (network, self.vlans[netdict['iface']]['vlanid'])
 
     def getVlansForIface(self, iface):
         for vlandict in six.itervalues(self.vlans):
