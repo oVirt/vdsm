@@ -84,6 +84,7 @@ AC_CHECK_PROGS([JAR], [jar])
 AC_ARG_VAR([JACKSON_CORE_ASL], [path to jackson-core-asl jar])
 AC_ARG_VAR([JACKSON_MAPPER_ASL], [path to jackson-mapper-asl jar])
 AC_ARG_VAR([SLF4J_JAR], [path to slf4j jar])
+AC_ARG_VAR([COMMONS_LANG_JAR], [path to commons-lang jar])
 
 if test ! "${with_dist_only}" = "yes"; then
 	if test "${with_maven}" = "yes"; then

@@ -40,6 +40,7 @@ Group:		Development/Libraries
 BuildArch:	noarch
 
 
+BuildRequires:	apache-commons-lang >= 2.6
 BuildRequires:	jackson >= 1.9
 BuildRequires:	java-1.8.0-openjdk-devel >= 1:1.8.0
 BuildRequires:	slf4j >= 1.7.0
@@ -57,6 +58,7 @@ BuildRequires:	maven-surefire-provider-junit
 BuildRequires:	mockito
 %endif
 
+Requires:	apache-commons-lang >= 2.6
 Requires:	jackson >= 1.9
 Requires:	java-openjdk >= 1.8.0
 Requires:	slf4j >= 1.7.0
@@ -84,6 +86,7 @@ This package contains the API documentation for %{name}.
 	JACKSON_CORE_ASL=$(build-classpath jackson/jackson-core-asl) \\\
 	JACKSON_MAPPER_ASL=$(build-classpath jackson/jackson-mapper-asl) \\\
 	SLF4J_JAR=$(build-classpath slf4j) \\\
+        COMMONS_LANG_JAR=$(build-classpath commons-lang) \\\
 	JAVAC=/usr/lib/jvm/java-1.8.0/bin/javac \\\
 	JAR=/usr/lib/jvm/java-1.8.0/bin/jar \\\
 	%{?null}
