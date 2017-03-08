@@ -42,6 +42,7 @@ _SCSI_DEVICES = ['scsi_host0', 'scsi_target0_0_0', 'scsi_0_0_0_0',
                  'scsi_host1', 'scsi_target1_0_0', 'scsi_1_0_0_0',
                  'scsi_generic_sg1',
                  'scsi_host2', 'scsi_target2_0_0', 'scsi_2_0_0_0']
+_INVALID_DEVICES = ['pci_that_doesnt_exist']
 _SRIOV_PF = 'pci_0000_05_00_1'
 _SRIOV_VF = 'pci_0000_05_10_7'
 _ADDITIONAL_DEVICE = 'pci_0000_00_09_0'
@@ -403,7 +404,7 @@ class Connection(fake.Connection):
     def __init__(self, *args):
         self._virNodeDevices = [
             self.nodeDeviceLookupByName(device) for device in
-            _PCI_DEVICES + _USB_DEVICES + _SCSI_DEVICES
+            _PCI_DEVICES + _USB_DEVICES + _SCSI_DEVICES + _INVALID_DEVICES
         ]
 
     def listAllDevices(self, flags=0):

@@ -144,7 +144,9 @@ class Connection(object):
                 device_xml = device_xml_file.read()
         except IOError as e:
             if e.errno == errno.ENOENT:
-                raise Error(libvirt.VIR_ERR_NO_NODE_DEVICE)
+                # The code in VirNodeDeviceStub will consider this device
+                # invalid (since device_xml == None).
+                pass
 
         return VirNodeDeviceStub(device_xml)
 
@@ -197,16 +199,25 @@ class Secret(object):
 
 class VirNodeDeviceStub(object):
 
-    def __init__(self, xml):
+    def __init__(self, xml=None):
         self.xml = xml
-        self._name = re.search('(?<=<name>).*?(?=</name>)', xml).group(0)
-        self.capability = re.search('(?<=capability type=[\'"]).*?(?=[\'"]>)',
-                                    xml).group(0)
+        if self.xml is None:
+            self.invalid = True
+            self._name = None
+            self.capability = None
+        else:
+            self._name = re.search('(?<=<name>).*?(?=</name>)', xml).group(0)
+            self.capability = re.search(
+                '(?<=capability type=[\'"]).*?(?=[\'"]>)', xml).group(0)
 
     def XMLDesc(self, flags=0):
+        if self.xml is None:
+            raise Error(libvirt.VIR_ERR_NO_NODE_DEVICE)
         return self.xml
 
     def name(self):
+        if self.xml is None:
+            raise Error(libvirt.VIR_ERR_NO_NODE_DEVICE)
         return self._name
 
     # unfortunately, in real environment these are the most problematic calls
@@ -215,10 +226,12 @@ class VirNodeDeviceStub(object):
 
     # the name dettach is defined like *this* in libvirt API, known mistake
     def dettach(self):
-        pass
+        if self.xml is None:
+            raise Error(libvirt.VIR_ERR_NO_NODE_DEVICE)
 
     def reAttach(self):
-        pass
+        if self.xml is None:
+            raise Error(libvirt.VIR_ERR_NO_NODE_DEVICE)
 
 
 def parse_secret(xml):
