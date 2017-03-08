@@ -210,7 +210,8 @@ public class Message {
             return null;
         }
         try {
-            Command parsedCommand = Command.valueOf(message[line]);
+            String command = message[line].replaceAll(END_OF_MESSAGE, "");
+            Command parsedCommand = Command.valueOf(command);
             result.setCommand(parsedCommand.toString());
         } catch (IllegalArgumentException e) {
             if (LOG.isDebugEnabled()) {
