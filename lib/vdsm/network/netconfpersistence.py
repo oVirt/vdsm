@@ -132,7 +132,7 @@ class Config(BaseConfig):
         self._clearDisk()
 
     def save(self):
-        self._clearDisk()
+        self._clearConfigs()
         for bond, attrs in six.iteritems(self.bonds):
             self._setConfig(attrs, self._bondingPath(bond))
         for network, attrs in six.iteritems(self.networks):
@@ -186,26 +186,16 @@ class Config(BaseConfig):
         with open(path, 'w') as configurationFile:
             json.dump(config, configurationFile, indent=4)
 
-    @staticmethod
-    def _removeConfig(path):
-        utils.rmFile(path)
+    def _clearConfigs(self):
+        self._clearDisk()
+        os.makedirs(self.networksPath)
+        os.makedirs(self.bondingsPath)
 
     def _clearDisk(self):
-        def _clear_dir(path_to_dir):
-            try:
-                for filePath in os.listdir(path_to_dir):
-                    self._removeConfig(path_to_dir + filePath)
-            except OSError as ose:
-                if ose.errno == errno.ENOENT:
-                    logging.debug('No existent config to clear on %s' %
-                                  path_to_dir)
-                else:
-                    raise
-
-        logging.info('Clearing %s and %s', self.networksPath,
-                     self.bondingsPath)
-        _clear_dir(self.networksPath)
-        _clear_dir(self.bondingsPath)
+        logging.info('Clearing %s and %s',
+                     self.networksPath, self.bondingsPath)
+        utils.rmTree(self.networksPath)
+        utils.rmTree(self.bondingsPath)
 
 
 class RunningConfig(Config):
