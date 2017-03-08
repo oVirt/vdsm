@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2016 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ from vdsm.network import netinfo
 from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import getLinks
+from vdsm.network.link import dpdk
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netlink import link as nl_link
 
@@ -101,7 +102,10 @@ def _devices_report(ipaddrs, routes):
         if dev.isBRIDGE():
             devinfo = devs_report['bridges'][dev.name] = bridges.info(dev)
         elif dev.isNICLike():
-            devinfo = devs_report['nics'][dev.name] = nics.info(dev)
+            if dev.isDPDK():
+                devinfo = devs_report['nics'][dev.name] = dpdk.info(dev)
+            else:
+                devinfo = devs_report['nics'][dev.name] = nics.info(dev)
             devinfo.update(bonding.get_bond_slave_agg_info(dev.name))
         elif dev.isBOND():
             devinfo = devs_report['bondings'][dev.name] = bonding.info(dev)

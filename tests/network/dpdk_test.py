@@ -128,3 +128,44 @@ class ReportDpdkPortsTests(VdsmTestCase):
 
     def test_is_dpdk_false(self):
         self.assertFalse(dpdk.is_dpdk(dev_name='not_dpdk_dev'))
+
+    def test_link_info_without_pci_addr(self):
+        link_info = {
+            'index': '',
+            'qdisc': '',
+            'name': 'dpdk0',
+            'mtu': '',
+            'state': 'up',
+            'flags': '',
+            'address': '02:00:00:00:00:00',
+            'type': 'dpdk',
+            'pci_addr': None
+        }
+
+        with mock.patch.object(dpdk, 'get_dpdk_devices',
+                               return_value={'dpdk0': {
+                                   'pci_addr': '0000:02:00.1',
+                                   'driver': 'vfio-pci'}}):
+
+            self.assertEqual(link_info, dpdk.link_info('dpdk0'))
+
+    def test_link_info_with_pci_addr(self):
+        link_info = {
+            'index': '',
+            'qdisc': '',
+            'name': 'dpdk0',
+            'mtu': '',
+            'state': 'up',
+            'flags': '',
+            'address': '02:00:00:00:00:00',
+            'type': 'dpdk',
+            'pci_addr': '0000:02:00.1'
+        }
+
+        with mock.patch.object(dpdk, 'get_dpdk_devices',
+                               return_value={'dpdk0': {
+                                   'pci_addr': '0000:02:00.1',
+                                   'driver': 'vfio-pci'}}):
+
+            self.assertEqual(link_info, dpdk.link_info('dpdk0',
+                                                       '0000:02:00.1'))

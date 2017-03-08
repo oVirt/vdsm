@@ -1,4 +1,4 @@
-# Copyright 2013-2014 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,9 +23,12 @@ from glob import iglob
 import array
 import errno
 import fcntl
+import itertools
 import os
 import socket
 import struct
+
+import six
 
 from netaddr.core import AddrFormatError
 from netaddr import IPAddress
@@ -33,6 +36,7 @@ from netaddr import IPNetwork
 
 from vdsm.commands import execCmd
 from vdsm.config import config
+from vdsm.network.link import dpdk
 from vdsm.network.netlink import link
 from vdsm.utils import anyFnmatch
 from vdsm.utils import CommandPath
@@ -82,6 +86,7 @@ class LinkType(object):
     BRIDGE = 'bridge'
     LOOPBACK = 'loopback'
     MACVLAN = 'macvlan'
+    DPDK = 'dpdk'
     DUMMY = 'dummy'
     TUN = 'tun'
     OVS = 'openvswitch'
@@ -166,6 +171,9 @@ class Link(object):
     def isDUMMY(self):
         return self.type == LinkType.DUMMY
 
+    def isDPDK(self):
+        return self.type == LinkType.DPDK
+
     def isNIC(self):
         return self.type == LinkType.NIC
 
@@ -191,7 +199,7 @@ class Link(object):
         return False
 
     def isNICLike(self):
-        return self.isNIC() or self.isVF() or self.isFakeNIC()
+        return self.isNIC() or self.isVF() or self.isFakeNIC() or self.isDPDK()
 
     def isHidden(self):
         """Returns True iff vdsm config hides the device."""
@@ -268,7 +276,10 @@ def _bondExists(bondName):
 
 def getLinks():
     """Return an iterator of Link objects, each per a link in the system."""
-    for data in link.iter_links():
+    dpdk_links = (dpdk.link_info(dev_name, dev_info['pci_addr'])
+                  for dev_name, dev_info
+                  in six.viewitems(dpdk.get_dpdk_devices()))
+    for data in itertools.chain(link.iter_links(), dpdk_links):
         try:
             yield Link.fromDict(data)
         except IOError:  # If a link goes missing we just don't report it

@@ -47,11 +47,24 @@ def get_dpdk_devices():
     return dpdk_devices
 
 
-def info(dev_name, dev_addr):
+def info(dev):
     return {
-        'hwaddr': _get_hw_addr(dev_name),
-        'pciaddr': dev_addr
+        'hwaddr': _get_hw_addr(dev.name),
+        'pciaddr': dev.pci_addr
     }
+
+
+def link_info(dev_name, pci_addr=None):
+    """Returns a dictionary with the information of the link object."""
+    return {'index': '',
+            'qdisc': '',
+            'name': dev_name,
+            'mtu': '',
+            'state': 'up',
+            'flags': '',
+            'address': _get_hw_addr(dev_name),
+            'type': 'dpdk',
+            'pci_addr': pci_addr}
 
 
 def is_dpdk(dev_name):
