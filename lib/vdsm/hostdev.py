@@ -71,6 +71,10 @@ class PCIHeaderType:
     UNKNOWN = 99
 
 
+class Vendor:
+    NVIDIA = '0x10de'
+
+
 class NoIOMMUSupportException(Exception):
     pass
 
@@ -277,6 +281,35 @@ def _process_scsi_address(device_xml):
 @_data_processor('usb_device')
 def _process_usb_address(device_xml):
     return _process_address(device_xml, ('bus', 'device'))
+
+
+@_data_processor('pci')
+def _process_mdev_params(device_xml):
+    # Let's initialize empty description for each mdev type, but be sure to
+    # filter empty descriptions later (if we can't parse one of the mdev types,
+    # we leave it out).
+    mdev = device_xml.find('./capability/capability[@type="mdev_types"]')
+    if mdev is None:
+        return {}
+
+    supported_types = collections.defaultdict(dict)
+
+    for mdev_type in mdev.findall('type'):
+        name = mdev_type.attrib['id']
+        supported_types[name]['name'] = mdev_type.find('name').text
+        try:
+            supported_types[name]['available_instances'] = \
+                mdev_type.find('availableInstances').text
+        except AttributeError:
+            supported_types[name] = {}
+            continue
+
+    # Remove mdev types that we can't handle.
+    supported_types = {k: v for k, v in supported_types.items() if v}
+    if supported_types:
+        return {'mdev': supported_types}
+    else:
+        return {}
 
 
 @_data_processor('pci')

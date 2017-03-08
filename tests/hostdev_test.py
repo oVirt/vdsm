@@ -50,6 +50,7 @@ _SRIOV_VF = 'pci_0000_05_10_7'
 _ADDITIONAL_DEVICE = 'pci_0000_00_09_0'
 _COMPUTER_DEVICE = 'computer'
 _NET_DEVICE = 'net_em1_28_d2_44_55_66_88'
+_MDEV_DEVICE = 'pci_0000_06_00_0'
 
 _DEVICE_XML = {
     'pci_0000_00_02_0':
@@ -313,6 +314,39 @@ ADDITIONAL_DEVICE_PROCESSED = {'product': '7500/5520/5500/X58 I/O Hub PCI '
                                            'domain': '0',
                                            'function': '0'}}
 
+_MDEV_DEVICE_PROCESSED = {
+    'product': 'GM204GL [Tesla M60]',
+    'vendor': 'NVIDIA Corporation',
+    'product_id': '0x13f2',
+    'parent': 'pci_0000_05_08_0',
+    'iommu_group': '33',
+    'numa_node': '0',
+    'vendor_id': '0x10de',
+    'driver': 'nvidia',
+    'capability': 'pci',
+    'is_assignable': 'true',
+    'mdev': {
+        'nvidia-11': {'available_instances': '16', 'name': 'GRID M60-0B'},
+        'nvidia-12': {'available_instances': '16', 'name': 'GRID M60-0Q'},
+        'nvidia-13': {'available_instances': '8', 'name': 'GRID M60-1A'},
+        'nvidia-14': {'available_instances': '8', 'name': 'GRID M60-1B'},
+        'nvidia-15': {'available_instances': '8', 'name': 'GRID M60-1Q'},
+        'nvidia-16': {'available_instances': '4', 'name': 'GRID M60-2A'},
+        'nvidia-18': {'available_instances': '4', 'name': 'GRID M60-2Q'},
+        'nvidia-19': {'available_instances': '2', 'name': 'GRID M60-4A'},
+        'nvidia-20': {'available_instances': '2', 'name': 'GRID M60-4Q'},
+        'nvidia-21': {'available_instances': '1', 'name': 'GRID M60-8A'},
+        'nvidia-22': {'available_instances': '1', 'name': 'GRID M60-8Q'}
+    },
+    'address': {
+        'slot': '0',
+        'bus': '6',
+        'domain': '0',
+        'function': '0'
+    }
+}
+
+
 _COMPUTER_DEVICE_PROCESSED = {'capability': 'system', 'is_assignable': 'true'}
 
 _NET_DEVICE_PROCESSED = {
@@ -486,6 +520,14 @@ class HostdevTests(TestCaseBase):
         )
 
         self.assertEqual(_NET_DEVICE_PROCESSED, deviceXML)
+
+    def testProcessMdevDeviceParams(self):
+        deviceXML = hostdev._process_device_params(
+            libvirtconnection.get().nodeDeviceLookupByName(
+                _MDEV_DEVICE).XMLDesc()
+        )
+
+        self.assertEqual(_MDEV_DEVICE_PROCESSED, deviceXML)
 
     def testGetDevicesFromLibvirt(self):
         libvirt_devices = hostdev._get_devices_from_libvirt()

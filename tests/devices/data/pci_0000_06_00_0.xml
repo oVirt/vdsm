@@ -1,0 +1,81 @@
+<device>
+  <name>pci_0000_06_00_0</name>
+  <path>/sys/devices/pci0000:00/0000:00:03.0/0000:04:00.0/0000:05:08.0/0000:06:00.0</path>
+  <parent>pci_0000_05_08_0</parent>
+  <driver>
+    <name>nvidia</name>
+  </driver>
+  <capability type='pci'>
+    <domain>0</domain>
+    <bus>6</bus>
+    <slot>0</slot>
+    <function>0</function>
+    <product id='0x13f2'>GM204GL [Tesla M60]</product>
+    <vendor id='0x10de'>NVIDIA Corporation</vendor>
+    <capability type='mdev_types'>
+      <type id='nvidia-11'>
+        <name>GRID M60-0B</name>
+        <deviceAPI>vfio-pci</deviceAPI>
+        <availableInstances>16</availableInstances>
+      </type>
+      <type id='nvidia-12'>
+        <name>GRID M60-0Q</name>
+        <deviceAPI>vfio-pci</deviceAPI>
+        <availableInstances>16</availableInstances>
+      </type>
+      <type id='nvidia-13'>
+        <name>GRID M60-1A</name>
+        <deviceAPI>vfio-pci</deviceAPI>
+        <availableInstances>8</availableInstances>
+      </type>
+      <type id='nvidia-14'>
+        <name>GRID M60-1B</name>
+        <deviceAPI>vfio-pci</deviceAPI>
+        <availableInstances>8</availableInstances>
+      </type>
+      <type id='nvidia-15'>
+        <name>GRID M60-1Q</name>
+        <deviceAPI>vfio-pci</deviceAPI>
+        <availableInstances>8</availableInstances>
+      </type>
+      <type id='nvidia-16'>
+        <name>GRID M60-2A</name>
+        <deviceAPI>vfio-pci</deviceAPI>
+        <availableInstances>4</availableInstances>
+      </type>
+      <type id='nvidia-18'>
+        <name>GRID M60-2Q</name>
+        <deviceAPI>vfio-pci</deviceAPI>
+        <availableInstances>4</availableInstances>
+      </type>
+      <type id='nvidia-19'>
+        <name>GRID M60-4A</name>
+        <deviceAPI>vfio-pci</deviceAPI>
+        <availableInstances>2</availableInstances>
+      </type>
+      <type id='nvidia-20'>
+        <name>GRID M60-4Q</name>
+        <deviceAPI>vfio-pci</deviceAPI>
+        <availableInstances>2</availableInstances>
+      </type>
+      <type id='nvidia-21'>
+        <name>GRID M60-8A</name>
+        <deviceAPI>vfio-pci</deviceAPI>
+        <availableInstances>1</availableInstances>
+      </type>
+      <type id='nvidia-22'>
+        <name>GRID M60-8Q</name>
+        <deviceAPI>vfio-pci</deviceAPI>
+        <availableInstances>1</availableInstances>
+      </type>
+    </capability>
+    <iommuGroup number='33'>
+      <address domain='0x0000' bus='0x06' slot='0x00' function='0x0'/>
+    </iommuGroup>
+    <numa node='0'/>
+    <pci-express>
+      <link validity='cap' port='8' speed='8' width='16'/>
+      <link validity='sta' speed='2.5' width='16'/>
+    </pci-express>
+  </capability>
+</device>

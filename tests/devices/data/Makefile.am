@@ -33,6 +33,7 @@ dist_vdsmdevdatatests_DATA = \
 	pci_0000_00_1f_2.xml \
 	pci_0000_05_00_1.xml \
 	pci_0000_05_10_7.xml \
+	pci_0000_06_00_0.xml \
 	scsi_0_0_0_0.xml \
 	scsi_1_0_0_0.xml \
 	scsi_2_0_0_0.xml \
