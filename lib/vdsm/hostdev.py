@@ -38,20 +38,24 @@ CAPABILITY_TO_XML_ATTR = {'pci': 'pci',
                           'scsi_generic': 'scsi_generic',
                           'usb_device': 'usb'}
 
-_LIBVIRT_DEVICE_FLAGS = {
-    'system': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SYSTEM,
-    'pci': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_PCI_DEV,
-    'usb_device': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_USB_DEV,
-    'usb': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_USB_INTERFACE,
-    'net': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_NET,
-    'scsi_host': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI_HOST,
-    'scsi_target': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI_TARGET,
-    'scsi': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI,
-    'storage': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_STORAGE,
-    'fc_host': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_FC_HOST,
-    'vports': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_VPORTS,
-    'scsi_generic': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI_GENERIC,
-}
+_LIBVIRT_DEVICE_FLAGS = collections.defaultdict(
+    # If the device is not found, let's just treat it like system device. Since
+    # those are barely touched, we should be safe.
+    lambda: libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SYSTEM,
+
+    system=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SYSTEM,
+    pci=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_PCI_DEV,
+    usb_device=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_USB_DEV,
+    usb=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_USB_INTERFACE,
+    net=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_NET,
+    scsi_host=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI_HOST,
+    scsi_target=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI_TARGET,
+    scsi=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI,
+    storage=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_STORAGE,
+    fc_host=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_FC_HOST,
+    vports=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_VPORTS,
+    scsi_generic=libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI_GENERIC,
+)
 
 _DATA_PROCESSORS = collections.defaultdict(list)
 _last_alldevices_hash = None
