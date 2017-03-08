@@ -112,7 +112,11 @@ class _DeviceTreeCache(object):
 
 @utils.memoized
 def _data_processors_map():
-    data_processors_map = {}
+    # Unknown devices will only be processed in generic way.
+    data_processors_map = collections.defaultdict(
+        lambda: _DATA_PROCESSORS['_ANY']
+    )
+
     for capability in _LIBVIRT_DEVICE_FLAGS:
         data_processors_map[capability] = (_DATA_PROCESSORS['_ANY'] +
                                            _DATA_PROCESSORS[capability])
