@@ -19,6 +19,7 @@
 #
 from __future__ import absolute_import
 
+import errno
 import os
 import re
 import xml.etree.ElementTree as etree
@@ -138,8 +139,12 @@ class Connection(object):
             dir_name, 'devices', 'data', name + '.xml')
 
         device_xml = None
-        with open(xml_path, 'r') as device_xml_file:
-            device_xml = device_xml_file.read()
+        try:
+            with open(xml_path, 'r') as device_xml_file:
+                device_xml = device_xml_file.read()
+        except IOError as e:
+            if e.errno == errno.ENOENT:
+                raise Error(libvirt.VIR_ERR_NO_NODE_DEVICE)
 
         return VirNodeDeviceStub(device_xml)
 
