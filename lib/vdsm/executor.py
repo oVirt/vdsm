@@ -138,7 +138,7 @@ class Executor(object):
         for worker in workers:
             worker.join()
 
-    def dispatch(self, callable, timeout=None):
+    def dispatch(self, callable, timeout=None, discard=True):
         """
         Dispatches a new task to the executor.
 
@@ -151,7 +151,7 @@ class Executor(object):
         """
         if not self._running:
             raise NotRunning()
-        self._tasks.put(Task(callable, timeout))
+        self._tasks.put(Task(callable, timeout, discard))
 
     # Serving workers
 
@@ -260,7 +260,7 @@ class _Worker(object):
         self._thread = concurrent.thread(self._run, name=name,
                                          logger=self._log.name)
         self._task = None
-        self._scheduled_discard = None
+        self._scheduled_check = None
 
     @property
     def name(self):
@@ -293,7 +293,7 @@ class _Worker(object):
     def _execute_task(self):
         task = self._executor._next_task()
         with self._lock:
-            self._scheduled_discard = self._discard_after(task.timeout)
+            self._scheduled_check = self._check_after(task.timeout)
         self._task = task
         try:
             task()
@@ -307,31 +307,39 @@ class _Worker(object):
             # However, we expect that most of times only blocked threads
             # will be discarded.
             with self._lock:
-                if self._scheduled_discard is not None:
-                    self._scheduled_discard.cancel()
-                    self._scheduled_discard = None
+                if self._scheduled_check is not None:
+                    self._scheduled_check.cancel()
+                    self._scheduled_check = None
                 self._task_counter += 1
             if self._discarded:
                 raise _WorkerDiscarded()
 
-    def _discard_after(self, timeout):
+    def _check_after(self, timeout):
         if timeout is not None:
-            discard = functools.partial(self._discard, self._task_counter)
-            return self._scheduler.schedule(timeout, discard)
+            check_task = functools.partial(
+                self._check_task, self._task_counter)
+            return self._scheduler.schedule(timeout, check_task)
         return None
 
-    def _discard(self, task_number):
+    def _check_task(self, task_number):
         with self._lock:
             if task_number != self._task_counter:
                 return
-            if self._discarded:
-                raise AssertionError("Attempt to discard worker twice")
-            self._discarded = True
-        # Please make sure the executor call is performed outside the lock --
-        # there is another lock involved in the executor and we don't want to
-        # fall into a deadlock incidentally.
-        self._executor._worker_discarded(self)
-        self._log.debug("Worker discarded: %s", self)
+            if self._task.discard:
+                if self._discarded:
+                    raise AssertionError("Attempt to discard worker twice")
+                self._discarded = True
+            else:
+                self._scheduled_check = self._check_after(self._task.timeout)
+        if self._discarded:
+            # Please make sure the executor call is performed outside the lock
+            # -- there is another lock involved in the executor and we don't
+            # want to fall into a deadlock incidentally.
+            self._executor._worker_discarded(self)
+            self._log.info("Worker discarded: %s", self)
+        else:
+            # we want to avoid to log with the lock held, so we do it here.
+            self._log.warning("Worker blocked: %s", self)
 
     def __repr__(self):
         return "<Worker name=%s %s%s task#=%s at 0x%x>" % (
@@ -345,9 +353,10 @@ class _Worker(object):
 
 class Task(object):
 
-    def __init__(self, callable, timeout):
+    def __init__(self, callable, timeout, discard=True):
         self._callable = callable
         self.timeout = timeout
+        self.discard = discard
         self._start = None
 
     @property
@@ -361,7 +370,8 @@ class Task(object):
         self._callable()
 
     def __repr__(self):
-        return "<Task %s timeout=%s, duration=%d at 0x%x>" % (
+        return "<Task %s%s timeout=%s, duration=%d at 0x%x>" % (
+            "discardable " if self.discard else "",
             self._callable,
             self.timeout,
             self.duration,

@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import logging
 import threading
 import time
 
@@ -220,6 +221,35 @@ class ExecutorTests(TestCaseBase):
             # Cleanup: Finish all the executor jobs
             blocked.set()
 
+    @slowtest
+    def test_report_blocked_workers(self):
+        REPORT_PERIOD = 1.0  # seconds
+        WAIT = 10.0  # seconds
+        WORKERS = 3
+        log = FakeLogger(level=logging.DEBUG)
+
+        self.executor = executor.Executor('test',
+                                          workers_count=10,
+                                          max_tasks=self.max_tasks,
+                                          scheduler=self.scheduler,
+                                          max_workers=self.max_workers,
+                                          log=log)
+        self.executor.start()
+        time.sleep(0.1)  # Give time to start all threads
+
+        # make sure we have plenty of slow tasks
+        slow_tasks = [Task(wait=WAIT) for n in range(WORKERS * 2)]
+        for task in slow_tasks:
+            # and also make sure to discard workers
+            self.executor.dispatch(task, 1.0, discard=False)
+        # we want to catch at least one report
+        time.sleep(REPORT_PERIOD * 2)
+
+        print(log.messages)  # troubleshooting aid when test fails
+        self.assertTrue(any(
+            text.startswith('Worker blocked')
+            for (level, text, _) in log.messages))
+
 
 class TestWorkerSystemNames(TestCaseBase):
 
@@ -279,9 +309,10 @@ class ExecutorTaskTests(TestCaseBase):
     def test_repr_timeout(self):
         # temporaries only for readability
         timeout = None
-        task = executor.Task(lambda: None, timeout)
+        discard = True
+        task = executor.Task(lambda: None, timeout, discard)
         msg = repr(task)
-        self.assertTrue(msg.startswith('<Task'))
+        self.assertTrue(msg.startswith('<Task discardable'))
 
 
 class Task(object):
@@ -310,3 +341,34 @@ class Task(object):
     def __repr__(self):
         return ('<Task; started=%s, executed=%s>' %
                 (self.started.is_set(), self.executed.is_set(),))
+
+
+class FakeLogger(object):
+
+    def __init__(self, level):
+        self.level = level
+        self.name = 'FakeLogger'
+        self.messages = []
+
+    def isEnabledFor(self, level):
+        return level >= self.level
+
+    def log(self, level, fmt, *args, **kwargs):
+        if self.isEnabledFor(level):
+            # Will fail if fmt does not match args
+            self.messages.append((level, fmt % args, kwargs))
+
+    def debug(self, fmt, *args):
+        self.log(logging.DEBUG, fmt, *args)
+
+    def info(self, fmt, *args):
+        self.log(logging.INFO, fmt, *args)
+
+    def warning(self, fmt, *args):
+        self.log(logging.WARNING, fmt, *args)
+
+    def error(self, fmt, *args):
+        self.log(logging.ERROR, fmt, *args)
+
+    def exception(self, fmt, *args):
+        self.log(logging.ERROR, fmt, *args, exc_info=True)
