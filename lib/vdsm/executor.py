@@ -29,6 +29,7 @@ import logging
 import threading
 
 from . import concurrent
+from . import utils
 
 
 class NotRunning(Exception):
@@ -283,7 +284,7 @@ class _Worker(object):
         discard = self._discard_after(task.timeout)
         self._task = task
         try:
-            task.callable()
+            task()
         except Exception:
             self._log.exception("Unhandled exception in %s", task)
         finally:
@@ -329,7 +330,30 @@ class _Worker(object):
         )
 
 
-Task = collections.namedtuple("Task", "callable, timeout")
+class Task(object):
+
+    def __init__(self, callable, timeout):
+        self._callable = callable
+        self.timeout = timeout
+        self._start = None
+
+    @property
+    def duration(self):
+        if self._start is None:
+            return 0
+        return utils.monotonic_time() - self._start
+
+    def __call__(self):
+        self._start = utils.monotonic_time()
+        self._callable()
+
+    def __repr__(self):
+        return "<Task %s timeout=%d, duration=%d at 0x%x>" % (
+            self._callable,
+            self.timeout,
+            self.duration,
+            id(self)
+        )
 
 
 class TaskQueue(object):

@@ -261,6 +261,22 @@ class TestWorkerSystemNames(TestCaseBase):
                          ["bar/0", "bar/1", "foo/0", "foo/1"])
 
 
+class ExecutorTaskTests(TestCaseBase):
+
+    def test_duration_none_if_not_called(self):
+        task = executor.Task(lambda: None, None)
+        self.assertIs(task.duration, 0)
+
+    def test_duration_increases(self):
+        STEP = 0.1
+        TIMES = 3
+        task = executor.Task(lambda: None, None)
+        task()
+        for i in range(TIMES):
+            time.sleep(STEP)
+            self.assertGreaterEqual(task.duration, i * STEP)
+
+
 class Task(object):
 
     def __init__(self, wait=None, error=None, event=None, start_barrier=None):
