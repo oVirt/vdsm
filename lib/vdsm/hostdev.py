@@ -127,13 +127,13 @@ def _data_processors_map():
     return data_processors_map
 
 
-def __device_tree_hash(list_of_nodedev):
+def __device_tree_hash(libvirt_devices):
     """
     The hash generation works iff the order of devices returned from libvirt is
     stable.
     """
     current_hash = hashlib.sha256()
-    for device in list_of_nodedev:
+    for device in libvirt_devices:
         try:
             current_hash.update(device.XMLDesc(0))
         except libvirt.libvirtError:
