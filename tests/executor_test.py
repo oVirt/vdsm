@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import logging
 import threading
 import time
 
@@ -27,6 +28,7 @@ from vdsm import pthread
 from vdsm import schedule
 from vdsm import utils
 
+from fakelib import FakeLogger
 from testValidation import slowtest
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -219,6 +221,35 @@ class ExecutorTests(TestCaseBase):
         finally:
             # Cleanup: Finish all the executor jobs
             blocked.set()
+
+    @slowtest
+    def test_report_blocked_workers(self):
+        REPORT_PERIOD = 1.0  # seconds
+        WAIT = 10.0  # seconds
+        WORKERS = 3
+        log = FakeLogger(level=logging.DEBUG)
+
+        self.executor = executor.Executor('test',
+                                          workers_count=10,
+                                          max_tasks=self.max_tasks,
+                                          scheduler=self.scheduler,
+                                          max_workers=self.max_workers,
+                                          log=log)
+        self.executor.start()
+        time.sleep(0.1)  # Give time to start all threads
+
+        # make sure we have plenty of slow tasks
+        slow_tasks = [Task(wait=WAIT) for n in range(WORKERS * 2)]
+        for task in slow_tasks:
+            # and also make sure to discard workers
+            self.executor.dispatch(task, 1.0, discard=False)
+        # we want to catch at least one report
+        time.sleep(REPORT_PERIOD * 2)
+
+        print(log.messages)  # troubleshooting aid when test fails
+        self.assertTrue(any(
+            text.startswith('Worker blocked')
+            for (level, text, _) in log.messages))
 
 
 class TestWorkerSystemNames(TestCaseBase):
