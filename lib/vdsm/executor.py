@@ -183,11 +183,11 @@ class Executor(object):
 
         # intentionally done outside the lock
         if not worker_added:
-            self._log.debug("Too many workers (limit=%s), not adding more",
-                            self._max_workers)
+            self._log.warning("Too many workers (limit=%s), not adding more",
+                              self._max_workers)
         # this is a debug helper, it is not that important to be precise
-        self._log.debug("executor state: count=%d workers=%s",
-                        self._total_workers, self._workers)
+        self._log.warning("executor state: count=%d workers=%s",
+                          self._total_workers, self._workers)
 
     def _worker_stopped(self, worker):
         """
@@ -209,8 +209,8 @@ class Executor(object):
                 worker_added = True
 
         if worker_added:
-            self._log.debug("New worker added (%s active, %s total workers)",
-                            self._active_workers, self._total_workers)
+            self._log.info("New worker added (%s active, %s total workers)",
+                           self._active_workers, self._total_workers)
 
     def _next_task(self):
         """
@@ -276,7 +276,7 @@ class _Worker(object):
         except NotRunning:
             self._log.debug('Worker stopped')
         except _WorkerDiscarded:
-            self._log.debug('Worker was discarded')
+            self._log.info('Worker was discarded')
         finally:
             self._executor._worker_stopped(self)
 
@@ -319,7 +319,7 @@ class _Worker(object):
         # there is another lock involved in the executor and we don't want to
         # fall into a deadlock incidentally.
         self._executor._worker_discarded(self)
-        self._log.debug("Worker discarded: %s", self)
+        self._log.info("Worker discarded: %s", self)
 
     def __repr__(self):
         return "<Worker name=%s %s%s task#=%s at 0x%x>" % (
