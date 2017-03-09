@@ -133,14 +133,8 @@ def __device_tree_hash(libvirt_devices):
     stable.
     """
     current_hash = hashlib.sha256()
-    for device in libvirt_devices:
-        try:
-            current_hash.update(device.XMLDesc(0))
-        except libvirt.libvirtError:
-            # The object still exists, but the underlying device is gone. We
-            # can't really break here because the hash could end up being same
-            # as previous one even when this happens.
-            continue
+    for _, xml in _each_device_xml(libvirt_devices):
+        current_hash.update(xml)
 
     return current_hash.hexdigest()
 
@@ -200,6 +194,16 @@ def _pci_header_type(device_name):
 
 def name_to_pci_path(device_name):
     return device_name[4:].replace('_', '.').replace('.', ':', 2)
+
+
+def _each_device_xml(libvirt_devices):
+    for device in libvirt_devices:
+        try:
+            yield device.name(), device.XMLDesc(0)
+        except libvirt.libvirtError:
+            # The object still exists, but the underlying device is gone. For
+            # us, the device is also gone - ignore it.
+            continue
 
 
 def scsi_address_to_adapter(scsi_address):
@@ -452,15 +456,8 @@ def _get_device_ref_and_params(device_name):
 
 def _process_all_devices(libvirt_devices):
     devices = {}
-    for device in libvirt_devices:
-        try:
-            name = device.name()
-            params = _process_device_params(device.XMLDesc(0))
-        except libvirt.libvirtError:
-            # The object still exists, but the underlying device is gone. For
-            # us, the device is also gone - ignore it.
-            continue
-
+    for name, xml in _each_device_xml(libvirt_devices):
+        params = _process_device_params(xml)
         devices[name] = params
 
     return devices
