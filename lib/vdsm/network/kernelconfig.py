@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,11 +49,11 @@ class KernelConfig(BaseConfig):
                 self.bonds == normalized_other.bonds)
 
     def _analyze_netinfo_nets(self, netinfo):
-        for net, net_attr in netinfo.networks.iteritems():
+        for net, net_attr in six.viewitems(netinfo.networks):
             yield net, _translate_netinfo_net(net, net_attr, netinfo)
 
     def _analyze_netinfo_bonds(self, netinfo):
-        for bond, bond_attr in netinfo.bondings.iteritems():
+        for bond, bond_attr in six.viewitems(netinfo.bondings):
             yield bond, _translate_netinfo_bond(bond_attr)
 
 
@@ -174,17 +174,17 @@ def _remove_zero_values_in_net_qos(net_qos):
             'ul': {'m2': 8000000},
             'ls': {'m1': 4000000, 'd': 100000, 'm2': 3000000}}}"""
     stripped_qos = {}
-    for part, part_config in net_qos.iteritems():
+    for part, part_config in six.viewitems(net_qos):
         stripped_qos[part] = dict(part_config)  # copy
-        for curve, curve_config in part_config.iteritems():
+        for curve, curve_config in six.viewitems(part_config):
             stripped_qos[part][curve] = dict((k, v) for k, v
-                                             in curve_config.iteritems()
+                                             in six.viewitems(curve_config)
                                              if v != 0)
     return stripped_qos
 
 
 def _normalize_bonding_opts(config_copy):
-    for bond, bond_attr in config_copy.bonds.iteritems():
+    for bond, bond_attr in six.viewitems(config_copy.bonds):
         # TODO: globalize default bond options from Bond in models.py
         normalized_opts = _parse_bond_options(
             bond_attr.get('options'))
@@ -196,12 +196,12 @@ def _normalize_bonding_opts(config_copy):
     # we are upgrading from an older version, they should be ignored if
     # they exist.
     # REQUIRED_FOR upgrade from vdsm<=4.16.20
-    for net_attr in config_copy.networks.itervalues():
+    for net_attr in six.viewvalues(config_copy.networks):
         net_attr.pop('bondingOptions', None)
 
 
 def _normalize_address(config_copy):
-    for net_name, net_attr in six.iteritems(config_copy.networks):
+    for net_name, net_attr in six.viewitems(config_copy.networks):
         if 'defaultRoute' not in net_attr:
             net_attr['defaultRoute'] = net_name in \
                 constants.LEGACY_MANAGEMENT_NETWORKS
@@ -219,7 +219,7 @@ def _normalize_ifcfg_keys(config_copy):
         return set(key) <= set(
             string.ascii_uppercase + string.digits + '_')
 
-    for net_attr in config_copy.networks.itervalues():
+    for net_attr in six.viewvalues(config_copy.networks):
         for k in net_attr.keys():
             if unsupported(k):
                 net_attr.pop(k)
@@ -249,4 +249,4 @@ def _parse_bond_options(opts):
 
     defaults = bonding.getDefaultBondingOptions(numeric_mode)
     return dict(
-        (k, v) for k, v in opts.iteritems() if v != defaults.get(k))
+        (k, v) for k, v in six.viewitems(opts) if v != defaults.get(k))
