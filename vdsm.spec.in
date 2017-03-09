@@ -88,13 +88,13 @@ Requires: dmidecode
 Requires: virt-v2v
 %endif
 
+Requires: chrony
 Requires: dbus-python
 Requires: ethtool
 Requires: which
 Requires: sudo >= 1.7.3
 Requires: logrotate
 Requires: xz
-Requires: ntp
 Requires: iproute >= 3.10.0
 Requires: PyYAML
 Requires: python-dateutil
