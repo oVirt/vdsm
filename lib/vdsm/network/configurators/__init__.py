@@ -34,11 +34,13 @@ from ..models import Bond, Bridge, hierarchy_vlan_tag, hierarchy_backing_device
 
 
 class Configurator(object):
-    def __init__(self, configApplier, net_info, inRollback=False):
+    def __init__(self, configApplier, net_info, is_unipersistence,
+                 inRollback=False):
         self.configApplier = configApplier
         self.net_info = net_info
         self._inRollback = inRollback
         self.runningConfig = None
+        self.unifiedPersistence = is_unipersistence
 
     def __enter__(self):
         self.begin()

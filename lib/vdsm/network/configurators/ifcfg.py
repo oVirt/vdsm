@@ -80,12 +80,12 @@ def is_available():
 class Ifcfg(Configurator):
     # TODO: Do all the configApplier interaction from here.
     def __init__(self, net_info, inRollback=False):
-        self.unifiedPersistence = \
-            config.get('vars', 'net_persistence') == 'unified'
-        super(Ifcfg, self).__init__(ConfigWriter(self.unifiedPersistence),
+        is_unipersistence = config.get('vars', 'net_persistence') == 'unified'
+        super(Ifcfg, self).__init__(ConfigWriter(is_unipersistence),
                                     net_info,
+                                    is_unipersistence,
                                     inRollback)
-        if self.unifiedPersistence:
+        if is_unipersistence:
             self.runningConfig = RunningConfig()
 
     def begin(self):
