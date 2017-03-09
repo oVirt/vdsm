@@ -254,6 +254,7 @@ class _Worker(object):
         self._log.debug('Starting worker %s' % name)
         self._thread.start()
         self._task = None
+        self._scheduled_discard = None
 
     @property
     def name(self):
@@ -281,7 +282,8 @@ class _Worker(object):
 
     def _execute_task(self):
         task = self._executor._next_task()
-        discard = self._discard_after(task.timeout)
+        with self._lock:
+            self._scheduled_discard = self._discard_after(task.timeout)
         self._task = task
         try:
             task()
@@ -294,9 +296,10 @@ class _Worker(object):
             # blocked on callable when we discard it or it just finished.
             # However, we expect that most of times only blocked threads
             # will be discarded.
-            if discard is not None:
-                discard.cancel()
             with self._lock:
+                if self._scheduled_discard is not None:
+                    self._scheduled_discard.cancel()
+                    self._scheduled_discard = None
                 self._task_counter += 1
             if self._discarded:
                 raise _WorkerDiscarded()
