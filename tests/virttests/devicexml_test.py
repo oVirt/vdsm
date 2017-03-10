@@ -851,6 +851,29 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 expected_xml=graphics_xml.format(**expected_ports)
             )
 
+    @MonkeyPatch(vmdevices.network.supervdsm,
+                 'getProxy', lambda: FakeProxy())
+    def test_interface(self):
+        interface_xml = u'''
+            <interface type="bridge">
+                <address bus="0x00" domain="0x0000"
+                    function="0x0" slot="0x03" type="pci"/>
+                <mac address="52:54:00:59:F5:3F"/>
+                <model type="virtio"/>
+                <source bridge="ovirtmgmt"/>
+                <filterref filter="no-mac-spoofing"/>
+                <boot order="1"/>
+                <driver name="vhost" queues="7"/>
+                <tune>
+                    <sndbuf>0</sndbuf>
+                </tune>
+                <bandwidth>
+                    <inbound average="1000" burst="1024" peak="5000"/>
+                    <outbound average="128" burst="256"/>
+                </bandwidth>
+            </interface>'''
+        self._check_roundtrip(vmdevices.network.Interface, interface_xml)
+
     def _check_roundtrip(self, klass, dev_xml, meta=None, expected_xml=None):
         dev = klass.from_xml_tree(
             self.log,

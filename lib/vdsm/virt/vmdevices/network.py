@@ -42,6 +42,46 @@ class Interface(core.Base):
                  'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev',
                  'numa_node', '_device_params', 'vm_custom')
 
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        params = {
+            'custom': {}, 'vm_custom': {}, 'specParams': {},
+        }
+        params.update(core.parse_device_params(dev))
+        params['device'] = params['type']
+        params.update(_get_xml_elem(dev, 'macAddr', 'mac', 'address'))
+        params.update(_get_xml_elem(dev, 'nicModel', 'model', 'type'))
+        params.update(_get_xml_elem(dev, 'bootOrder', 'boot', 'order'))
+        filterref = vmxml.find_first(dev, 'filterref', None)
+        if filterref is not None:
+            params['filter'] = vmxml.attr(filterref, 'filter')
+            params['filterParameters'] = {
+                param.attrib['name']: param.attrib['value']
+                for param in vmxml.find_all(filterref, 'parameter')
+            }
+        driver = vmxml.find_first(dev, 'driver', None)
+        if driver is not None:
+            params['custom'].update(
+                core.parse_device_attrs(driver, ('queues',))
+            )
+        sndbuf = dev.find('./tune/sndbuf')
+        if sndbuf is not None:
+            params['vm_custom']['sndbuf'] = vmxml.text(sndbuf)
+        bandwidth = vmxml.find_first(dev, 'bandwidth', None)
+        if bandwidth is not None:
+            for mode in ('inbound', 'outbound'):
+                elem = vmxml.find_first(bandwidth, mode, None)
+                if elem is not None:
+                    params['specParams'][mode] = elem.attrib.copy()
+        net = (
+            meta.get('network', None) or
+            vmxml.find_attr(dev, 'source', 'bridge')
+        )
+        if net is None:
+            raise RuntimeError('could not detect the network to join')
+        params['network'] = net
+        return cls(log, **params)
+
     def __init__(self, log, **kwargs):
         # pyLint can't tell that the Device.__init__() will
         # set a nicModel attribute, so modify the kwarg list
@@ -364,3 +404,10 @@ def fixNetworks(xml_str):
             xml_str = xml_str.replace('NIC-BRIDGE:' + network,
                                       network)
     return xml_str
+
+
+def _get_xml_elem(dev, key, elem, attr):
+    value = vmxml.find_attr(dev, elem, attr)
+    if value:
+        return {key: value}
+    return {}
