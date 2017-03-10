@@ -75,7 +75,7 @@ class Executor(object):
     _log = logging.getLogger('Executor')
 
     def __init__(self, name, workers_count, max_tasks, scheduler,
-                 max_workers=None):
+                 max_workers=None, log=None):
         """
         :param name: Name of the executor; no special purpose, just for
           logging and debugging.
@@ -97,6 +97,9 @@ class Executor(object):
           it is not None and it gets reached then no further workers are
           created.
         :type max_workers: int or None
+        :param log: logger instance to override the default logger. This is
+          useful for testing
+        :type log: logger as returned by logging.getLogger()
 
         """
         self._name = name
@@ -105,6 +108,8 @@ class Executor(object):
         self._worker_id = 0
         self._tasks = TaskQueue(max_tasks)
         self._scheduler = scheduler
+        if log is not None:
+            self._log = log
         self._workers = set()
         self._lock = threading.Lock()
         self._running = False
@@ -228,7 +233,7 @@ class Executor(object):
     def _add_worker(self):
         name = "%s/%d" % (self.name, self._worker_id)
         self._worker_id += 1
-        worker = _Worker(self, self._scheduler, name)
+        worker = _Worker(self, self._scheduler, name, self._log)
         worker.start()
         self._workers.add(worker)
 
@@ -244,12 +249,14 @@ class _Worker(object):
 
     _log = logging.getLogger('Executor')
 
-    def __init__(self, executor, scheduler, name):
+    def __init__(self, executor, scheduler, name, log=None):
         self._executor = executor
         self._scheduler = scheduler
         self._discarded = False
         self._task_counter = 0
         self._lock = threading.Lock()
+        if log is not None:
+            self._log = log
         self._thread = concurrent.thread(self._run, name=name, log=self._log)
         self._task = None
         self._scheduled_discard = None
