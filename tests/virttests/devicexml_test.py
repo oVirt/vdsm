@@ -29,6 +29,7 @@ from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
 from vdsm import constants
 from vdsm import hostdev
+from vdsm import utils
 
 from monkeypatch import MonkeyPatchScope, MonkeyPatch
 from testlib import make_config
@@ -714,6 +715,103 @@ _GRAPHICS_DATA = [
 
 ]
 
+_STORAGE_TEST_DATA = [
+    [u'''<disk device="disk" snapshot="no" type="block">
+            <source dev="/path/to/volume"/>
+            <target bus="virtio" dev="vda"/>
+            <serial>54-a672-23e5b495a9ea</serial>
+            <driver cache="none" discard="unmap" error_policy="stop"
+                    io="native" name="qemu" type="raw"/>
+        </disk>''',
+     True,
+     {'index': 0}],
+    [u'''<disk device="disk" snapshot="no" type="block">
+            <source dev="/path/to/volume"/>
+            <target bus="virtio" dev="vda"/>
+            <serial>54-a672-23e5b495a9ea</serial>
+            <driver cache="none" error_policy="stop"
+                    io="native" name="qemu" type="raw"/>
+        </disk>''',
+     True,
+     {'index': 0}],
+    [u'''<disk device="disk" snapshot="no" type="file">
+            <source file="/path/to/volume"/>
+            <target bus="virtio" dev="vda"/>
+            <serial>54-a672-23e5b495a9ea</serial>
+            <driver cache="none" error_policy="stop"
+                    io="threads" name="qemu" type="raw"/>
+        </disk>''',
+     False,
+     {'index': 0}],
+    [u'''<disk device="lun" sgio="unfiltered" snapshot="no" type="block">
+            <source dev="/dev/mapper/lun1"/>
+            <target bus="scsi" dev="sda"/>
+            <driver cache="none" error_policy="stop"
+                    io="native" name="qemu" type="raw"/>
+        </disk>''',
+     True,
+     {'index': 0}],
+    [u'''<disk device="disk" snapshot="no" type="network">
+            <source name="poolname/volumename" protocol="rbd">
+                <host name="1.2.3.41" port="6789" transport="tcp"/>
+                <host name="1.2.3.42" port="6789" transport="tcp"/>
+            </source>
+            <target bus="virtio" dev="vda"/>
+            <serial>54-a672-23e5b495a9ea</serial>
+            <driver cache="none" error_policy="stop"
+                    io="threads" name="qemu" type="raw"/>
+        </disk>''',
+     False,
+     {'index': 0}],
+    [u'''<disk device="disk" snapshot="no" type="network">
+            <source name="poolname/volumename" protocol="rbd">
+                <host name="1.2.3.41" port="6789" transport="tcp"/>
+                <host name="1.2.3.42" port="6789" transport="tcp"/>
+            </source>
+            <auth username="cinder">
+                <secret type="ceph" uuid="abcdef"/>
+            </auth>
+            <target bus="virtio" dev="vda"/>
+            <serial>54-a672-23e5b495a9ea</serial>
+            <driver cache="none" error_policy="stop"
+                    io="threads" name="qemu" type="raw"/>
+        </disk>''',
+     False,
+     {'index': 0}],
+    [u'''<disk device="lun" sgio="unfiltered" snapshot="no" type="block">
+            <address bus="0" controller="0" target="0" type="drive" unit="0" />
+            <source dev="/dev/mapper/36001405b3b7829f14c1400d925eefebb" />
+            <target bus="scsi" dev="sda" />
+            <driver cache="none" error_policy="stop" io="native"
+                    name="qemu" type="raw" />
+        </disk>''',
+     True,
+     {'index': 0}],
+    [u'''<disk device="cdrom" snapshot="no" type="file">
+            <source file="/var/run/vdsm/payload/{guid}.{hashsum}.img"
+                startupPolicy="optional" />
+            <target bus="ide" dev="hdd" />
+            <readonly />
+        </disk>'''.format(guid='8a1dc504-9d00-48f3-abdc-c70404e6f7e2',
+                          hashsum='4137dc5fb55e021fbfd2653621d9d194'),
+     True,
+     {'index': 3}],
+    [u'''<disk device="disk" snapshot="no" type="block">
+            <source dev="/path/to/volume"/>
+            <target bus="virtio" dev="vda"/>
+            <serial>54-a672-23e5b495a9ea</serial>
+            <driver cache="none" discard="unmap" error_policy="stop"
+                    io="native" name="qemu" type="raw"/>
+            <iotune>
+                <read_iops_sec>400000</read_iops_sec>
+                <total_bytes_sec>10000000</total_bytes_sec>
+                <write_iops_sec>100000</write_iops_sec>
+            </iotune>
+        </disk>''',
+     True,
+     {'index': 0}],
+]
+
 
 _HOSTDEV_XML = [
     [u'''<hostdev mode='subsystem' type='pci' managed='no'>
@@ -1101,6 +1199,17 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 lambda *args, **kwargs: None),
         ]):
             self._check_roundtrip(vmdevices.hostdevice.HostDevice, hostdev_xml)
+
+    @permutations(_STORAGE_TEST_DATA)
+    def test_storage(self, storage_xml, is_block, meta):
+        with MonkeyPatchScope([
+            (utils, 'isBlockDevice', lambda path: is_block)
+        ]):
+            self._check_roundtrip(
+                vmdevices.storage.Drive,
+                storage_xml,
+                meta
+            )
 
     def _check_roundtrip(self, klass, dev_xml, meta=None, expected_xml=None):
         dev = klass.from_xml_tree(

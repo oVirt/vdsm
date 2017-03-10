@@ -39,6 +39,8 @@ from . import core
 from . import drivename
 from . import hwclass
 from . import lease
+from . import storagexml
+
 
 DEFAULT_INTERFACE_FOR_ARCH = {
     cpuarch.X86_64: 'ide',
@@ -435,6 +437,14 @@ class Drive(core.Base):
                                   path=volInfo['leasePath'],
                                   offset=volInfo['leaseOffset'])
             yield device.getXML()
+
+    @classmethod
+    def get_identifying_attrs(cls, dev_elem):
+        return core.get_xml_elem(dev_elem, 'target_dev', 'target', 'dev')
+
+    @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        return cls(log, **storagexml.parse(dev, meta))
 
     def getXML(self):
         """

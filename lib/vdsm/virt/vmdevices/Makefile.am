@@ -30,4 +30,5 @@ dist_vmdevices_PYTHON = \
 	lease.py \
 	network.py \
 	storage.py \
+	storagexml.py \
 	$(NULL)

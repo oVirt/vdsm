@@ -1243,6 +1243,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/lease.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/network.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/storage.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmdevices/storagexml.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmchannels.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmexitreason.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmpowerdown.py*
