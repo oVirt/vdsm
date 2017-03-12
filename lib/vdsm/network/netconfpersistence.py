@@ -201,10 +201,10 @@ class RunningConfig(Config):
         conf_dir = CONF_VOLATILE_RUN_DIR if volatile else CONF_RUN_DIR
         super(RunningConfig, self).__init__(conf_dir)
 
-    def store(self):
+    @staticmethod
+    def store():
         commands.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
                          config.get('vars', 'net_persistence')])
-        return PersistentConfig()
 
 
 class PersistentConfig(Config):

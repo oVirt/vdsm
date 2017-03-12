@@ -25,9 +25,6 @@ import sys
 import logging
 import six
 
-from vdsm.config import config
-from vdsm import commands
-from vdsm import constants
 from vdsm import hooks
 from vdsm.network import libvirt
 from vdsm.network import sourceroute
@@ -277,8 +274,7 @@ def _remove_nets_and_bonds(nets, bonds, in_rollback):
 
 def setSafeNetworkConfig():
     """Declare current network configuration as 'safe'"""
-    commands.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
-                     config.get('vars', 'net_persistence')])
+    netconfpersistence.RunningConfig.store()
 
 
 def add_sourceroute(iface, ip, mask, route):
