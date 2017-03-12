@@ -325,11 +325,9 @@ class NetInfo(object):
 
             for port in ports:
                 if port in self.vlans:
-                    assert vlan is None
-                    nic = vlans.vlan_device(port)
-                    vlanid = vlans.vlan_id(port)
+                    nic = self.vlans[port]['iface']
+                    vlanid = self.vlans[port]['vlanid']
                     vlan = port  # vlan devices can have an arbitrary name
-                    assert self.vlans[port]['iface'] == nic
                     port = nic
                 if port in self.bondings:
                     assert bonding is None
