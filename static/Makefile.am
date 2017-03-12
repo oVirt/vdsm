@@ -37,6 +37,20 @@ vdsm_DATA = \
 	./usr/share/vdsm/lvmlocal.conf \
 	$(NULL)
 
+vdsm_autounattenddir = $(vdsmdir)/autounattend
+
+vdsm_autounattend_DATA = \
+	./usr/share/vdsm/autounattend/Win7.xml \
+	./usr/share/vdsm/autounattend/Win8.xml \
+	./usr/share/vdsm/autounattend/Win8.1.xml \
+	./usr/share/vdsm/autounattend/Win10.xml \
+	./usr/share/vdsm/autounattend/Win2008.xml \
+	./usr/share/vdsm/autounattend/Win2008R2.xml \
+	./usr/share/vdsm/autounattend/Win2012.xml \
+	./usr/share/vdsm/autounattend/Win2012R2.xml \
+	./usr/share/vdsm/autounattend/Win2016.xml \
+	$(NULL)
+
 dist_vdsm_SCRIPTS = \
 	./usr/sbin/supervdsmd \
 	$(NULL)
@@ -118,6 +132,7 @@ EXTRA_DIST = \
 	$(sysctl_DATA) \
 	$(vdsmconfrotate_DATA) \
 	$(vdsm_DATA) \
+	$(vdsm_autounattend_DATA) \
 	./etc/sudoers.d/50_vdsm.in \
 	./etc/vdsm/logger.conf.in \
 	./etc/vdsm/mom.conf.in \
@@ -130,3 +145,6 @@ EXTRA_DIST = \
 	./usr/share/man/man1/vdsm-tool.1.in \
 	./usr/share/man/man8/vdsmd.8.in \
 	$(NULL)
+
+usr/share/vdsm/autounattend/%.xml: usr/share/vdsm/autounattend/Autounattend.xml.in
+	sed -e 's/@DRIVER_DIR@/$*/' < $< > $@

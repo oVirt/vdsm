@@ -41,6 +41,16 @@ static/usr/lib/systemd/system/supervdsmd.service
 static/usr/lib/systemd/system/vdsm-network.service
 static/usr/lib/systemd/system/vdsm-network-init.service
 static/usr/lib/systemd/system/vdsmd.service
+static/usr/share/vdsm/autounattend/Autounattend.xml
+static/usr/share/vdsm/autounattend/Win7.xml
+static/usr/share/vdsm/autounattend/Win8.xml
+static/usr/share/vdsm/autounattend/Win8.1.xml
+static/usr/share/vdsm/autounattend/Win10.xml
+static/usr/share/vdsm/autounattend/Win2008.xml
+static/usr/share/vdsm/autounattend/Win2008R2.xml
+static/usr/share/vdsm/autounattend/Win2012.xml
+static/usr/share/vdsm/autounattend/Win2012R2.xml
+static/usr/share/vdsm/autounattend/Win2016.xml
 static/etc/vdsm/logger.conf
 static/etc/vdsm/mom.conf
 static/etc/vdsm/svdsm.logger.conf

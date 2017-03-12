@@ -1054,6 +1054,15 @@ exit 0
 %{_datadir}/%{vdsm_name}/bonding-defaults.json
 %{_datadir}/%{vdsm_name}/bonding-name2numeric.json
 %{_datadir}/%{vdsm_name}/lvmlocal.conf
+%{_datadir}/%{vdsm_name}/autounattend/Win7.xml
+%{_datadir}/%{vdsm_name}/autounattend/Win8.xml
+%{_datadir}/%{vdsm_name}/autounattend/Win8.1.xml
+%{_datadir}/%{vdsm_name}/autounattend/Win10.xml
+%{_datadir}/%{vdsm_name}/autounattend/Win2008.xml
+%{_datadir}/%{vdsm_name}/autounattend/Win2008R2.xml
+%{_datadir}/%{vdsm_name}/autounattend/Win2012.xml
+%{_datadir}/%{vdsm_name}/autounattend/Win2012R2.xml
+%{_datadir}/%{vdsm_name}/autounattend/Win2016.xml
 
 %files python
 %{_mandir}/man1/vdsm-tool.1*
