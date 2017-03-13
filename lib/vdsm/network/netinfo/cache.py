@@ -305,7 +305,6 @@ class NetInfo(object):
                     vlan = port  # vlan devices can have an arbitrary name
                     port = nic
                 if port in self.bondings:
-                    assert bonding is None
                     bonding = port
                     lnics += self.bondings[bonding]['slaves']
                 elif port in self.nics:
