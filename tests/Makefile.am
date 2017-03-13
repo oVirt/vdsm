@@ -205,7 +205,6 @@ blacklist_modules_python3 = \
 	network/ovs_driver_test.py \
 	network/ovs_info_test.py \
 	network/tc_test.py \
-	network/unified_persistence_test.py \
 	periodic_test.py \
 	protocoldetector_test.py \
 	qemuimg_test.py \

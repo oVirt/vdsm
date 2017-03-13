@@ -1270,7 +1270,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/restore_nets.py*
 %{python_sitelib}/%{vdsm_name}/tool/service.py*
 %{python_sitelib}/%{vdsm_name}/tool/transient.py*
-%{python_sitelib}/%{vdsm_name}/tool/unified_persistence.py*
 %{python_sitelib}/%{vdsm_name}/tool/upgrade.py*
 %{python_sitelib}/%{vdsm_name}/tool/vdsm-id.py*
 %{python_sitelib}/%{vdsm_name}/virt/__init__.py*

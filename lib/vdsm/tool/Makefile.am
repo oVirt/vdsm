@@ -35,7 +35,6 @@ dist_vdsmtool_PYTHON = \
 	restore_nets.py \
 	service.py \
 	transient.py \
-	unified_persistence.py \
 	upgrade.py \
 	vdsm-id.py \
 	$(NULL)
