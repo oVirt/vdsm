@@ -95,7 +95,7 @@ class FakeSchema(object):
 
 
 def dispatch(callable, timeout=None):
-    raise executor.TooManyTasks
+    raise executor.ResourceExhausted(resource="test", current_tasks=0)
 
 
 @expandPermutations

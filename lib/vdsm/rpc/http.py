@@ -281,7 +281,7 @@ class ThreadedServer(HTTPServer):
         self.requestHandler = RequestHandlerClass
 
         # TODO provide proper limit for this queue
-        self.queue = TaskQueue(sys.maxint)
+        self.queue = TaskQueue("http-server", sys.maxint)
 
     def add(self, connected_socket, socket_address):
         self.queue.put((connected_socket, socket_address))

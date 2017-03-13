@@ -25,6 +25,7 @@ import time
 
 from vdsm import executor
 from vdsm import schedule
+from vdsm.common import exception
 from vdsm.common.time import monotonic_time
 from vdsm.virt import migration
 from vdsm.virt import periodic
@@ -385,7 +386,7 @@ class _FakeExecutor(object):
         self.attempts += 1
 
         if self._fail:
-            raise executor.TooManyTasks()
+            raise exception.ResourceExhausted(resource="test", current_tasks=0)
         else:
             func()
 

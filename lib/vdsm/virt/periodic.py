@@ -32,6 +32,7 @@ from vdsm import containersconnection
 from vdsm import executor
 from vdsm import host
 from vdsm import libvirtconnection
+from vdsm.common import exception
 from vdsm.config import config
 from vdsm.virt import migration
 from vdsm.virt import recovery
@@ -234,7 +235,7 @@ class Operation(object):
         self._call = None
         try:
             self._executor.dispatch(self, self._timeout, discard=self._discard)
-        except executor.TooManyTasks:
+        except exception.ResourceExhausted:
             self._log.warning('could not run %s, executor queue full',
                               self._func)
         finally:
@@ -297,7 +298,7 @@ class VmDispatcher(object):
             else:
                 try:
                     self._executor.dispatch(op, self._timeout)
-                except executor.TooManyTasks:
+                except exception.ResourceExhausted:
                     skipped.append(vm_id)
 
         if skipped:

@@ -443,6 +443,11 @@ class ActionStopped(GeneralException):
     message = "Action was stopped"
 
 
+class ResourceExhausted(ContextException):
+    code = 1100
+    message = "Not enough resources"
+
+
 class HookError(GeneralException):
     code = 1500
     message = "Hook Error"

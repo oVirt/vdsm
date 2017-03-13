@@ -81,6 +81,7 @@ test_modules = \
 	hwinfo_test.py \
 	jobs_test.py \
 	jsonRpcClient_test.py \
+	jsonrpc_test.py \
 	libvirtconnection_test.py \
 	loopback_test.py \
 	mkimage_test.py \

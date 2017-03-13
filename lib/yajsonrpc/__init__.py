@@ -743,6 +743,8 @@ class JsonRpcServer(object):
                 self._threadFactory(
                     JsonRpcTask(self._serveRequest, ctx, request)
                 )
+            except exception.ContextException as e:
+                ctx.requestDone(JsonRpcResponse(None, e, request.id))
             except Exception as e:
                 self.log.exception("could not serve request %s", request)
                 ctx.requestDone(

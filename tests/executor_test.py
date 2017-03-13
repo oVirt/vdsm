@@ -26,6 +26,7 @@ from vdsm import executor
 from vdsm import schedule
 from vdsm import utils
 from vdsm.common import concurrent
+from vdsm.common import exception
 from vdsm.common import pthread
 
 from fakelib import FakeLogger
@@ -86,7 +87,7 @@ class ExecutorTests(TestCaseBase):
 
     def test_too_many_tasks(self):
         tasks = [Task(wait=0.1) for n in range(31)]
-        with self.assertRaises(executor.TooManyTasks):
+        with self.assertRaises(exception.ResourceExhausted):
             for task in tasks:
                 self.executor.dispatch(task)
 
@@ -196,8 +197,8 @@ class ExecutorTests(TestCaseBase):
 
     @slowtest
     def test_max_workers_many_tasks(self):
-        # Check we don't get TooManyTasks exception after reaching the limit on
-        # the total number of workers if TaskQueue is not full.
+        # Check we don't get ResourceExhausted exception after reaching
+        # the limit on the total number of workers if TaskQueue is not full.
 
         blocked = threading.Event()
         barrier = concurrent.Barrier(self.max_workers + 1)
@@ -215,7 +216,7 @@ class ExecutorTests(TestCaseBase):
 
             # Check we did what we intended -- the next task shouldn't be
             # accepted
-            self.assertRaises(executor.TooManyTasks,
+            self.assertRaises(executor.ResourceExhausted,
                               self.executor.dispatch, Task(), 0)
 
         finally:

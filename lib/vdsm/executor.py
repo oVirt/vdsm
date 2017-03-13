@@ -29,6 +29,7 @@ import logging
 import threading
 
 from vdsm.common import concurrent
+from vdsm.common import exception
 from vdsm.common import time
 
 
@@ -38,10 +39,6 @@ class NotRunning(Exception):
 
 class AlreadyStarted(Exception):
     """Executor started multiple times."""
-
-
-class TooManyTasks(Exception):
-    """Too many tasks for this Executor."""
 
 
 class Executor(object):
@@ -106,7 +103,7 @@ class Executor(object):
         self._workers_count = workers_count
         self._max_workers = max_workers
         self._worker_id = 0
-        self._tasks = TaskQueue(max_tasks)
+        self._tasks = TaskQueue(name, max_tasks)
         self._scheduler = scheduler
         if log is not None:
             self._log = log
@@ -393,13 +390,22 @@ class TaskQueue(object):
     """
     Replacement for Queue.Queue, with two important changes:
 
-    * Queue.Queue blocks when full. We want to raise TooManyTasks instead.
+    * Queue.Queue blocks when full. We want to raise ResourceExhausted instead.
     * Queue.Queue lacks the clear() operation, which is needed to implement
       the 'poison pill' pattern (described for example in
       http://pymotw.com/2/multiprocessing/communication.html )
     """
 
-    def __init__(self, max_tasks):
+    def __init__(self, name, max_tasks):
+        """
+        :param name: Name of the executor; no special purpose, just for
+          logging and debugging.
+        :type name: basestring
+        :param max_tasks: Maximum number of tasks waiting for execution in the
+          executor's task queue.
+        :type max_tasks: int
+        """
+        self._name = name
         self._max_tasks = max_tasks
         self._tasks = collections.deque()
         # Deque supports thread-safe append and pop from both ends. We need
@@ -411,11 +417,14 @@ class TaskQueue(object):
     def put(self, task):
         """
         Put a new task in the queue.
-        Do not block when full, raises TooManyTasks instead.
+        Do not block when full, raises ResourceExhausted instead.
         """
         with self._cond:
             if len(self._tasks) == self._max_tasks:
-                raise TooManyTasks()
+                raise exception.ResourceExhausted(
+                    "Too many tasks",
+                    resource=self._name,
+                    current_tasks=self._max_tasks)
             self._tasks.append(task)
             self._cond.notify()
 
