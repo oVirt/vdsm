@@ -450,6 +450,9 @@ def restore(args):
             unified_restoration()
         else:
             ifcfg_restoration()
+            _copy_persistent_over_running_config()
+
+
     except Exception:
         logging.exception('%s restoration failed.',
                           'unified' if unified else 'ifcfg')
@@ -458,6 +461,15 @@ def restore(args):
         logging.info('restoration completed successfully.')
 
     touch_file(NETS_RESTORED_MARK)
+
+
+def _copy_persistent_over_running_config():
+    pconfig = PersistentConfig()
+    rconfig = RunningConfig()
+    rconfig.delete()
+    rconfig.networks = pconfig.networks
+    rconfig.bonds = pconfig.bonds
+    rconfig.save()
 
 
 if __name__ == '__main__':

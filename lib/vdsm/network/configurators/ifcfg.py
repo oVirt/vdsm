@@ -81,12 +81,11 @@ class Ifcfg(Configurator):
     # TODO: Do all the configApplier interaction from here.
     def __init__(self, net_info, inRollback=False):
         is_unipersistence = config.get('vars', 'net_persistence') == 'unified'
-        super(Ifcfg, self).__init__(ConfigWriter(is_unipersistence),
+        super(Ifcfg, self).__init__(ConfigWriter(),
                                     net_info,
                                     is_unipersistence,
                                     inRollback)
-        if is_unipersistence:
-            self.runningConfig = RunningConfig()
+        self.runningConfig = RunningConfig()
 
     def rollback(self):
         """This reimplementation always returns None since Ifcfg can rollback
@@ -94,14 +93,12 @@ class Ifcfg(Configurator):
         API.Global._rollback redundant in this case."""
         self.configApplier.restoreBackups()
         self.configApplier = None
-        if self.unifiedPersistence:
-            self.runningConfig = None
+        self.runningConfig = None
 
     def commit(self):
         self.configApplier = None
-        if self.unifiedPersistence:
-            self.runningConfig.save()
-            self.runningConfig = None
+        self.runningConfig.save()
+        self.runningConfig = None
 
     def configureBridge(self, bridge, **opts):
         if not self.owned_device(bridge.name):
@@ -136,11 +133,10 @@ class Ifcfg(Configurator):
             slave.configure(**opts)
         self._addSourceRoute(bond)
         _ifup(bond)
-        if self.unifiedPersistence:
-            self.runningConfig.setBonding(
-                bond.name, {'options': bond.options,
-                            'nics': sorted(s.name for s in bond.slaves),
-                            'switch': 'legacy'})
+        self.runningConfig.setBonding(
+            bond.name, {'options': bond.options,
+                        'nics': sorted(s.name for s in bond.slaves),
+                        'switch': 'legacy'})
 
     def editBonding(self, bond, _netinfo):
         """
@@ -185,11 +181,10 @@ class Ifcfg(Configurator):
             ifdown(bond.name)
             _restore_default_bond_options(bond.name, bond.options)
             _exec_ifup(bond)
-        if self.unifiedPersistence:
-            self.runningConfig.setBonding(
-                bond.name, {'options': bond.options,
-                            'nics': [slave.name for slave in bond.slaves],
-                            'switch': 'legacy'})
+        self.runningConfig.setBonding(
+            bond.name, {'options': bond.options,
+                        'nics': [slave.name for slave in bond.slaves],
+                        'switch': 'legacy'})
 
     def configureNic(self, nic, **opts):
         if not self.owned_device(nic.name):
@@ -278,8 +273,7 @@ class Ifcfg(Configurator):
             else:
                 for slave in bonding.slaves:
                     slave.remove()
-                if self.unifiedPersistence:
-                    self.runningConfig.removeBonding(bonding.name)
+                self.runningConfig.removeBonding(bonding.name)
         else:
             set_mtu = self._setNewMtu(bonding,
                                       vlans.vlan_devs_for_iface(bonding.name))
@@ -394,10 +388,9 @@ class ConfigWriter(object):
                        dsaversion.raw_version_revision)
     DELETED_HEADER = '# original file did not exist'
 
-    def __init__(self, unifiedPersistence=False):
+    def __init__(self):
         self._backups = {}
         self._networksBackups = {}
-        self.unifiedPersistence = unifiedPersistence
 
     @staticmethod
     def _removeFile(filename):

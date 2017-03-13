@@ -164,11 +164,10 @@ def _alter_running_config(func):
 
     @wraps(func)
     def wrapped(network, configurator, net_info, **kwargs):
-        if config.get('vars', 'net_persistence') == 'unified':
-            if func.__name__ == '_del_network':
-                configurator.runningConfig.removeNetwork(network)
-            else:
-                configurator.runningConfig.setNetwork(network, kwargs)
+        if func.__name__ == '_del_network':
+            configurator.runningConfig.removeNetwork(network)
+        else:
+            configurator.runningConfig.setNetwork(network, kwargs)
         return func(network, configurator, net_info, **kwargs)
     return wrapped
 
@@ -377,8 +376,7 @@ def _del_broken_network(network, netAttr, configurator):
     elif not os.path.exists('/sys/class/net/' + netAttr['iface']):
         # Bridgeless broken network without underlying device
         libvirt.removeNetwork(network)
-        if config.get('vars', 'net_persistence') == 'unified':
-            configurator.runningConfig.removeNetwork(network)
+        configurator.runningConfig.removeNetwork(network)
         return
     canonicalize_networks({network: _netinfo.networks[network]})
     _del_network(network, configurator, _netinfo, bypass_validation=True)

@@ -153,14 +153,13 @@ class Configurator(object):
     def _clean_running_config_from_removed_nets(self):
         # Cleanup running config from networks that have been actually
         # removed but not yet removed from running config.
-        if self.unifiedPersistence:
-            running_config = RunningConfig()
-            net_info = CachingNetInfo()
-            nets2remove = (six.viewkeys(running_config.networks) -
-                           six.viewkeys(net_info.networks))
-            for net in nets2remove:
-                running_config.removeNetwork(net)
-            running_config.save()
+        running_config = RunningConfig()
+        net_info = CachingNetInfo()
+        nets2remove = (six.viewkeys(running_config.networks) -
+                       six.viewkeys(net_info.networks))
+        for net in nets2remove:
+            running_config.removeNetwork(net)
+        running_config.save()
 
 
 def getEthtoolOpts(name):

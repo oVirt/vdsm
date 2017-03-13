@@ -81,10 +81,7 @@ class _VdsProxy(object):
         requestQueue = requestQueues.split(",")[0]
         self.vdscli = jsonrpcvdscli.connect(requestQueue, xml_compat=False)
         self.netinfo = self._get_netinfo()
-        if config.get('vars', 'net_persistence') == 'unified':
-            self.config = RunningConfig()
-        else:
-            self.config = None
+        self.config = RunningConfig()
 
     def __getattr__(self, attr):
         """

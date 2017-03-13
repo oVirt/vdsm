@@ -49,8 +49,6 @@ except ImportError:
     ipaddress = None
 
 CAPS_INFO = 2
-USING_UNIFIED_PERSISTENCE = (
-    vdsm.config.config.get('vars', 'net_persistence') == 'unified')
 
 NOCHK = {'connectivityCheck': False}
 
@@ -88,9 +86,7 @@ class NetFuncTestCase(VdsmTestCase):
             # Refresh caps and running config data
             self.update_netinfo()
             self.update_running_config()
-
-            if USING_UNIFIED_PERSISTENCE:
-                self.assert_kernel_vs_running_config()
+            self.assert_kernel_vs_running_config()
         return assert_kernel_vs_running
 
     def assertNetwork(self, netname, netattrs):
@@ -176,8 +172,6 @@ class NetFuncTestCase(VdsmTestCase):
 
     # FIXME: Redundant because we have NetworkExists + kernel_vs_running_config
     def assertNetworkExistsInRunning(self, netname, netattrs):
-        if not USING_UNIFIED_PERSISTENCE:
-            return
         self.update_running_config()
         netsconf = self.running_config.networks
 
@@ -203,9 +197,6 @@ class NetFuncTestCase(VdsmTestCase):
         self.assertNotIn(vlan_name, self.netinfo.vlans)
 
     def assertNoNetworkExistsInRunning(self, net):
-        if not USING_UNIFIED_PERSISTENCE:
-            return
-
         self.update_running_config()
         self.assertNotIn(net, self.running_config.networks)
 
@@ -235,9 +226,6 @@ class NetFuncTestCase(VdsmTestCase):
         self.assertLessEqual(set(options.split()), set(normalized_active_opts))
 
     def assertBondExistsInRunninng(self, bond, nics):
-        if not USING_UNIFIED_PERSISTENCE:
-            return
-
         self.assertIn(bond, self.running_config.bonds)
         self.assertEqual(
             set(nics), set(self.running_config.bonds[bond]['nics']))
@@ -255,9 +243,6 @@ class NetFuncTestCase(VdsmTestCase):
         self.assertNotIn(bond, self.netinfo.bondings)
 
     def assertNoBondExistsInRunning(self, bond):
-        if not USING_UNIFIED_PERSISTENCE:
-            return
-
         self.update_running_config()
         self.assertNotIn(bond, self.running_config.bonds)
 

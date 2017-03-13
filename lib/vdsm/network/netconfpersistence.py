@@ -27,7 +27,7 @@ import os
 
 import six
 
-from vdsm.config import config
+
 from vdsm.tool.restore_nets import restore
 from vdsm import commands
 from vdsm import constants
@@ -203,8 +203,7 @@ class RunningConfig(Config):
 
     @staticmethod
     def store():
-        commands.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
-                         config.get('vars', 'net_persistence')])
+        commands.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG])
 
 
 class PersistentConfig(Config):

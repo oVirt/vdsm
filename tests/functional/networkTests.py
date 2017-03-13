@@ -109,19 +109,14 @@ NOCHK = {'connectivityCheck': False}
 def setupModule():
     vds = getProxy()
 
-    unified = (
-        vdsm.config.config.get('vars', 'net_persistence') == 'unified')
-    if unified:
-        running_config, kernel_config = _get_running_and_kernel_config(
-            vds.config)
-        if ((running_config['networks'] != kernel_config['networks']) or
-                (running_config['bonds'] != kernel_config['bonds'])):
-            raise SkipTest(
-                "Tested host is not clean (running vs kernel): "
-                "networks: %r != %r; "
-                "bonds: %r != %r" % (
-                    running_config['networks'], kernel_config['networks'],
-                    running_config['bonds'], kernel_config['bonds']))
+    running_config, kernel_config = _get_running_and_kernel_config(vds.config)
+    if ((running_config['networks'] != kernel_config['networks']) or
+            (running_config['bonds'] != kernel_config['bonds'])):
+        raise SkipTest('Tested host is not clean (running vs kernel): '
+                       'networks: %r != %r; '
+                       'bonds: %r != %r' %
+                       (running_config['networks'], kernel_config['networks'],
+                        running_config['bonds'], kernel_config['bonds']))
 
     vds.save_config()
     for _ in range(DUMMY_POOL_SIZE):
@@ -265,9 +260,6 @@ class NetworkTest(TestCaseBase):
             reported_qos = network_netinfo['hostQos']
             _cleanup_qos_definition(reported_qos)
             self.assertEqual(reported_qos, hostQos)
-
-        if not vdsm.config.config.get('vars', 'net_persistence') == 'unified':
-            return
 
         running_config = self.vdsm_net.config
         network_config = running_config.networks[networkName]
@@ -421,9 +413,7 @@ class NetworkTest(TestCaseBase):
 
     def setupNetworks(self, networks, bonds, options, test_kernel_config=True):
         status, msg = self.vdsm_net.setupNetworks(networks, bonds, options)
-        unified = (
-            vdsm.config.config.get('vars', 'net_persistence') == 'unified')
-        if unified and test_kernel_config:
+        if test_kernel_config:
             self._assert_kernel_config_matches_running_config()
         return status, msg
 
@@ -2608,13 +2598,12 @@ class NetworkTest(TestCaseBase):
                 NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertBondExists(BONDING_NAME, nics)
-            if vdsm.config.config.get('vars', 'net_persistence') == 'unified':
-                # custom property has to be persisted (if unified persistence
-                # is used), but not reported by netinfo.
-                self._assert_exact_bond_opts(BONDING_NAME, ['mode=4'])
-                bond = self.vdsm_net.config.bonds.get(BONDING_NAME)
-                self.assertSetEqual(set(['mode=4', 'custom=foo:bar']),
-                                    set(bond.get('options').split()))
+
+            # custom property has to be persisted, but not reported by netinfo.
+            self._assert_exact_bond_opts(BONDING_NAME, ['mode=4'])
+            bond = self.vdsm_net.config.bonds.get(BONDING_NAME)
+            self.assertSetEqual(set(['mode=4', 'custom=foo:bar']),
+                                set(bond.get('options').split()))
 
             status, msg = self.setupNetworks(
                 {}, {BONDING_NAME: {'remove': True}}, NOCHK)
