@@ -23,6 +23,7 @@ import random
 import string
 
 from vdsm.network import ipwrapper
+from vdsm.network.link import dpdk
 from vdsm.network.netlink import link
 from vdsm.network.netlink.link import get_link, is_link_up
 from vdsm.network.netlink.waitfor import waitfor_linkup
@@ -42,6 +43,9 @@ def up(dev, admin_blocking=True, oper_blocking=False):
     :param oper_blocking: Block until the link is operational.
     admin state is at kernel level, while link state is at driver level.
     """
+    if dpdk.is_dpdk(dev):
+        dpdk.up(dev)
+        return
     if admin_blocking:
         _up_blocking(dev, oper_blocking)
     else:
@@ -49,6 +53,9 @@ def up(dev, admin_blocking=True, oper_blocking=False):
 
 
 def down(dev):
+    if dpdk.is_dpdk(dev):
+        dpdk.down(dev)
+        return
     ipwrapper.linkSet(dev, ['down'])
 
 
@@ -61,6 +68,8 @@ def is_admin_up(dev):
 
 
 def is_oper_up(dev):
+    if dpdk.is_dpdk(dev):
+        return dpdk.is_oper_up(dev)
     return is_link_up(get_link(dev)['flags'], check_oper_status=True)
 
 
@@ -80,6 +89,8 @@ def set_mac_address(dev, mac_address, vf_num=None):
 
 
 def mac_address(dev):
+    if dpdk.is_dpdk(dev):
+        return dpdk.link_info(dev)['address']
     return get_link(dev)['address']
 
 

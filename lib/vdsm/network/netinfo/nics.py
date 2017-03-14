@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Hat, Inc.
+# Copyright 2015-2017 Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ import io
 from functools import partial
 import logging
 
+from vdsm.network.link import dpdk
 from vdsm.network.ipwrapper import drv_name, Link
 from .misc import visible_devs
 
@@ -34,6 +35,8 @@ nics = partial(visible_devs, Link.isNICLike)
 
 
 def operstate(nic_name):
+    if dpdk.is_dpdk(nic_name):
+        return dpdk.operstate(nic_name)
     with io.open('/sys/class/net/%s/operstate' % nic_name) as operstateFile:
         return operstateFile.read().strip()
 
@@ -42,6 +45,8 @@ def speed(nic_name):
     """Returns the nic speed if it is a legal value, nicName refers to a
     nic and nic is UP, 0 otherwise."""
     try:
+        if dpdk.is_dpdk(nic_name) and operstate(nic_name) == OPERSTATE_UP:
+            return dpdk.speed(nic_name)
         if operstate(nic_name) == OPERSTATE_UP:
             with io.open('/sys/class/net/%s/speed' % nic_name) as speedFile:
                 s = int(speedFile.read())

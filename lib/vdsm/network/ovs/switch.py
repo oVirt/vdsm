@@ -23,6 +23,7 @@ import random
 
 import six
 
+from vdsm.network.link import dpdk
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo.nics import nics
@@ -187,4 +188,6 @@ def _random_unicast_local_mac():
 
 
 def _get_mac(iface):
+    if dpdk.is_dpdk(iface):
+        return dpdk.link_info(iface)['address']
     return link.get_link(iface)['address']

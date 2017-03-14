@@ -31,6 +31,7 @@ from vdsm.common import cache
 
 NET_SYSFS = '/sys/class/net/'
 PORT_PREFIX = 'dpdk'
+OPERSTATE_UP = 'up'
 
 DPDK_DRIVERS = ('vfio-pci', 'igb_uio', 'uio_pci_generic')
 
@@ -75,6 +76,30 @@ def link_info(dev_name, pci_addr=None):
 def is_dpdk(dev_name):
     return (dev_name.startswith(PORT_PREFIX) and
             not os.path.exists(os.path.join(NET_SYSFS, dev_name)))
+
+
+def speed(dev_name):
+    # todo: return port actual speed
+    return 0
+
+
+def operstate(dev_name):
+    # todo: return actual operstate
+    return OPERSTATE_UP
+
+
+def is_oper_up(dev_name):
+    return operstate(dev_name) == OPERSTATE_UP
+
+
+def up(dev_name):
+    # todo: set link up
+    pass
+
+
+def down(dev_name):
+    # todo: set link down
+    pass
 
 
 @cache.memoized

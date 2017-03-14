@@ -231,6 +231,8 @@ class Link(object):
 
     @property
     def oper_up(self):
+        if dpdk.is_dpdk(self.name):
+            return dpdk.is_oper_up(self.name)
         return bool(link.get_link(self.name)['flags'] & link.IFF_RUNNING)
 
     def get_promisc(self):
@@ -288,6 +290,8 @@ def getLinks():
 
 def getLink(dev):
     """Returns the Link object for the specified dev."""
+    if dpdk.is_dpdk(dev):
+        return dpdk.link_info(dev)
     return Link.fromDict(link.get_link(dev))
 
 
