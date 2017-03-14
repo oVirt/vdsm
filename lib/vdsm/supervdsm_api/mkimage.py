@@ -20,9 +20,10 @@ from __future__ import absolute_import
 
 from . import expose
 
-from vdsm.mkimage import mkFloppyFs, mkIsoFs, removeFs
+from vdsm.mkimage import getFileName, mkFloppyFs, mkIsoFs, removeFs
 
 
+expose(getFileName)
 expose(mkFloppyFs)
 expose(mkIsoFs)
 expose(removeFs)

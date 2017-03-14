@@ -82,7 +82,7 @@ def _commonCleanFs(dirname, media):
         shutil.rmtree(dirname)
 
 
-def _getFileName(vmId, files):
+def getFileName(vmId, files):
     if not os.path.exists(_P_PAYLOAD_IMAGES):
         try:
             os.mkdir(_P_PAYLOAD_IMAGES)
@@ -115,7 +115,7 @@ def _injectFilesToFs(floppy, files):
 def mkFloppyFs(vmId, files, volumeName=None):
     floppy = None
     try:
-        floppy = _getFileName(vmId, files)
+        floppy = getFileName(vmId, files)
         command = [EXT_MKFS_MSDOS, '-C', floppy, '1440']
         if volumeName is not None:
             command.extend(['-n', volumeName])
@@ -135,7 +135,7 @@ def mkIsoFs(vmId, files, volumeName=None):
     try:
         dirname = tempfile.mkdtemp()
         _decodeFilesIntoDir(files, dirname)
-        isopath = _getFileName(vmId, files)
+        isopath = getFileName(vmId, files)
 
         command = [EXT_MKISOFS, '-R', '-J', '-o', isopath]
         if volumeName is not None:
