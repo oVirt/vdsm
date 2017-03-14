@@ -95,8 +95,22 @@ def _getFileName(vmId, files):
     return path
 
 
+def _injectFilesToFs(floppy, files):
+    dirname = None
+    try:
+        dirname = tempfile.mkdtemp()
+        m = mount.Mount(floppy, dirname)
+        m.mount(mntOpts='loop')
+        try:
+            _decodeFilesIntoDir(files, dirname)
+        finally:
+            m.umount()
+    finally:
+        _commonCleanFs(dirname, None)
+
+
 def mkFloppyFs(vmId, files, volumeName=None):
-    floppy = dirname = None
+    floppy = None
     try:
         floppy = _getFileName(vmId, files)
         command = [EXT_MKFS_MSDOS, '-C', floppy, '1440']
@@ -106,16 +120,9 @@ def mkFloppyFs(vmId, files, volumeName=None):
         if rc:
             raise OSError(errno.EIO, "could not create floppy file: "
                           "code %s, out %s\nerr %s" % (rc, out, err))
-
-        dirname = tempfile.mkdtemp()
-        m = mount.Mount(floppy, dirname)
-        m.mount(mntOpts='loop')
-        try:
-            _decodeFilesIntoDir(files, dirname)
-        finally:
-            m.umount()
+        _injectFilesToFs(floppy, files)
     finally:
-        _commonCleanFs(dirname, floppy)
+        _commonCleanFs(None, floppy)
 
     return floppy
 
