@@ -63,12 +63,6 @@ class Iproute2(Configurator):
                                        inRollback)
         self.runningConfig = RunningConfig()
 
-    def begin(self):
-        if self.configApplier is None:
-            self.configApplier = ConfigApplier()
-        if self.runningConfig is None:
-            self.runningConfig = RunningConfig()
-
     def commit(self):
         self.configApplier = None
         self.runningConfig.save()

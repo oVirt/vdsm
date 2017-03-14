@@ -43,7 +43,6 @@ class Configurator(object):
         self.unifiedPersistence = is_unipersistence
 
     def __enter__(self):
-        self.begin()
         return self
 
     def __exit__(self, type, value, traceback):
@@ -69,9 +68,6 @@ class Configurator(object):
         # self.runningConfig will have all the changes that were applied before
         # we needed to rollback.
         return RunningConfig().diffFrom(self.runningConfig)
-
-    def begin(self):
-        raise NotImplementedError
 
     def commit(self):
         raise NotImplementedError

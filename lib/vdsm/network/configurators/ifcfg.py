@@ -88,12 +88,6 @@ class Ifcfg(Configurator):
         if is_unipersistence:
             self.runningConfig = RunningConfig()
 
-    def begin(self):
-        if self.configApplier is None:
-            self.configApplier = ConfigWriter(self.unifiedPersistence)
-        if self.unifiedPersistence and self.runningConfig is None:
-            self.runningConfig = RunningConfig()
-
     def rollback(self):
         """This reimplementation always returns None since Ifcfg can rollback
         on its own via restoreBackups(). This makes the general mechanism of
