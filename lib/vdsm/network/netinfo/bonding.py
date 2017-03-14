@@ -119,7 +119,7 @@ def bondOptsForIfcfg(opts):
     Choose the numeric value from a list given by bondOpts().
     """
     return ' '.join((opt + '=' + val for (opt, val)
-                     in sorted(opts.iteritems())))
+                     in sorted(six.iteritems(opts))))
 
 
 def permanent_address():
