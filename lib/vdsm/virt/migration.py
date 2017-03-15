@@ -53,11 +53,6 @@ MODE_FILE = 'file'
 METHOD_ONLINE = 'online'
 
 
-VIR_MIGRATE_PARAM_URI = 'migrate_uri'
-VIR_MIGRATE_PARAM_BANDWIDTH = 'bandwidth'
-VIR_MIGRATE_PARAM_GRAPHICS_URI = 'graphics_uri'
-
-
 incomingMigrations = DynamicBoundedSemaphore(
     max(1, config.getint('vars', 'max_incoming_migrations')))
 
@@ -564,13 +559,12 @@ class SourceThread(object):
             self._raiseAbortError()
 
     def _migration_params(self, muri):
-        # TODO: use libvirt constants when bz#1222795 is fixed
-        params = {VIR_MIGRATE_PARAM_BANDWIDTH: self._maxBandwidth}
+        params = {libvirt.VIR_MIGRATE_PARAM_BANDWIDTH: self._maxBandwidth}
         if not self._tunneled:
-            params[VIR_MIGRATE_PARAM_URI] = str(muri)
+            params[libvirt.VIR_MIGRATE_PARAM_URI] = str(muri)
         if self._consoleAddress:
             graphics = 'spice' if self._vm.hasSpice else 'vnc'
-            params[VIR_MIGRATE_PARAM_GRAPHICS_URI] = str(
+            params[libvirt.VIR_MIGRATE_PARAM_GRAPHICS_URI] = str(
                 '%s://%s' % (graphics, self._consoleAddress)
             )
         return params
