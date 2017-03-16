@@ -21,6 +21,7 @@ from __future__ import absolute_import
 
 import xml.etree.ElementTree as ET
 
+from vdsm.common import errors
 from vdsm.config import config
 from vdsm import constants
 from vdsm import cpuarch
@@ -55,6 +56,15 @@ class DRIVE_SHARED_TYPE:
     def getAllValues(cls):
         # TODO: use introspection
         return (cls.NONE, cls.EXCLUSIVE, cls.SHARED, cls.TRANSIENT)
+
+
+class VolumeNotFound(errors.Base):
+    msg = ("Cannot find volume {self.vol_id} in drive {self.drive_name}'s "
+           "volume chain")
+
+    def __init__(self, drive_name, vol_id):
+        self.drive_name = drive_name
+        self.vol_id = vol_id
 
 
 class Drive(core.Base):
@@ -499,6 +509,15 @@ class Drive(core.Base):
         iotune = value.copy()
         vmtune.validate_io_tune_params(iotune)
         self.specParams['ioTune'] = iotune
+
+    def volume_path(self, vol_id):
+        """
+        Retrieves volume path from drive's volume chain using its's ID.
+        """
+        for v in self.volumeChain:
+            if v['volumeID'] == vol_id:
+                return v['path']
+        raise VolumeNotFound(drive_name=self.name, vol_id=vol_id)
 
 
 def _getSourceXML(drive):

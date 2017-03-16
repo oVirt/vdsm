@@ -74,7 +74,7 @@ from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.domain_descriptor import MutableDomainDescriptor
 from vdsm.virt import vmdevices
 from vdsm.virt.vmdevices import hwclass
-from vdsm.virt.vmdevices.storage import DISK_TYPE
+from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.vmtune import update_io_tune_dom, io_tune_dom_to_values
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
@@ -4792,17 +4792,11 @@ class Vm(object):
                            "monitoring.  Unable to perform live merge.")
             return response.error('mergeErr')
 
-        base = top = None
-        for v in drive.volumeChain:
-            if v['volumeID'] == baseVolUUID:
-                base = v['path']
-            if v['volumeID'] == topVolUUID:
-                top = v['path']
-        if base is None:
-            self.log.error("merge: base volume '%s' not found", baseVolUUID)
-            return response.error('mergeErr')
-        if top is None:
-            self.log.error("merge: top volume '%s' not found", topVolUUID)
+        try:
+            base = drive.volume_path(baseVolUUID)
+            top = drive.volume_path(topVolUUID)
+        except VolumeNotFound as e:
+            self.log.error("merge: %s", e)
             return response.error('mergeErr')
 
         try:

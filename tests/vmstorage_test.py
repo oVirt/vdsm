@@ -700,6 +700,25 @@ class TestDriveNaming(VdsmTestCase):
         self.assertEqual(drive.name, expected_name)
 
 
+class TestVolumePath(VdsmTestCase):
+    def setUp(self):
+        volume_chain = [{"path": "/top",
+                         "volumeID": "00000000-0000-0000-0000-000000000000"},
+                        {"path": "/base",
+                         "volumeID": "11111111-1111-1111-1111-111111111111"}]
+        self.conf = drive_config(volumeChain=volume_chain)
+
+    def test_correct_extraction(self):
+        drive = Drive({}, self.log, **self.conf)
+        actual = drive.volume_path("11111111-1111-1111-1111-111111111111")
+        self.assertEqual(actual, "/base")
+
+    def test_base_not_found(self):
+        drive = Drive({}, self.log, **self.conf)
+        with self.assertRaises(storage.VolumeNotFound):
+            drive.volume_path("F1111111-1111-1111-1111-111111111111")
+
+
 def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):
     return [{"leasePath": path,
              "leaseOffset": offset,
