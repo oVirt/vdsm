@@ -22,10 +22,12 @@ import string
 
 import six
 
+from vdsm.config import config
 from vdsm.constants import LEGACY_MANAGEMENT_NETWORKS
 
 from vdsm.network.canonicalize import canonicalize_bondings
 from vdsm.network.canonicalize import canonicalize_networks
+from vdsm.network.configurators.ifcfg import Ifcfg
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netswitch import netinfo
 from vdsm.network.netinfo.cache import NetInfo
@@ -114,7 +116,21 @@ def _create_unified_configuration(rconfig, net_info):
     kconfig = KernelConfig(net_info)
 
     rconfig.networks = kconfig.networks
-    rconfig.bonds = kconfig.bonds
+    rconfig.bonds = _filter_owned_bonds(kconfig.bonds)
 
     rconfig.save()
     RunningConfig.store()
+
+
+def _filter_owned_bonds(kconfig_bonds):
+    """
+    Bonds retrieved from the kernel include both the ones owned by us and the
+    ones that are not.
+    The filter returns only the owned bonds by examining the ifcfg files
+    in case ifcfg persistence is set.
+    """
+    if config.get('vars', 'net_persistence') == 'ifcfg':
+        return {bond_name: bond_attrs
+                for bond_name, bond_attrs in six.viewitems(kconfig_bonds)
+                if Ifcfg.owned_device(bond_name)}
+    return kconfig_bonds

@@ -91,13 +91,15 @@ class NetUpgradeUnifiedConfigTest(VdsmTestCase):
     netupgrade, 'LEGACY_MANAGEMENT_NETWORKS', ('ovirtmgmt', 'rhevm'))
 @mock.patch.object(netupgrade, 'netinfo', lambda: None)
 @mock.patch.object(netupgrade, 'NetInfo', lambda x: None)
+@mock.patch.object(netupgrade.config, 'get', lambda a, b: 'ifcfg')
+@mock.patch.object(netupgrade.Ifcfg, 'owned_device', return_value=True)
 @mock.patch.object(netupgrade, 'KernelConfig')
 @mock.patch.object(netupgrade, 'PersistentConfig')
 @mock.patch.object(netupgrade, 'RunningConfig')
 class NetCreateUnifiedConfigTest(VdsmTestCase):
 
     def test_create_unified_config(
-            self, mockRConfig, mockPConfig, mockKConfig):
+            self, mockRConfig, mockPConfig, mockKConfig, mock_owned_device):
         rconfig = mockRConfig.return_value
         pconfig = mockPConfig.return_value
         kconfig = mockKConfig.return_value
