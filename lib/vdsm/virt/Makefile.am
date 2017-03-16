@@ -31,6 +31,7 @@ dist_vdsmvirt_PYTHON = \
 	events.py \
 	guestagent.py \
 	libvirtxml.py \
+	metadata.py \
 	migration.py \
 	periodic.py \
 	recovery.py \
