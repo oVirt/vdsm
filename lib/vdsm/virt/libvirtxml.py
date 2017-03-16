@@ -21,6 +21,7 @@ from __future__ import absolute_import
 
 from operator import itemgetter
 
+from vdsm.virt import metadata
 from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
 from vdsm import constants
@@ -123,27 +124,27 @@ class Domain(object):
         </domain>
         """
 
-        metadata = vmxml.Element('metadata')
-        self._appendMetadataQOS(metadata)
-        self._appendMetadataVDSM(metadata)
-        self._appendMetadataContainer(metadata)
-        self.dom.appendChild(metadata)
+        metadata_elem = vmxml.Element('metadata')
+        vmxml.append_child(
+            metadata_elem,
+            etree_child=metadata.create(
+                xmlconstants.METADATA_VM_TUNE_ELEMENT,
+                namespace=xmlconstants.METADATA_VM_TUNE_PREFIX,
+                namespace_uri=xmlconstants.METADATA_VM_TUNE_URI
+            )
+        )
+        self._appendMetadataVDSM(metadata_elem)
+        self._appendMetadataContainer(metadata_elem)
+        self.dom.appendChild(metadata_elem)
 
-    def _appendMetadataQOS(self, metadata):
-        metadata.appendChild(vmxml.Element(
-            xmlconstants.METADATA_VM_TUNE_ELEMENT,
-            namespace=xmlconstants.METADATA_VM_TUNE_PREFIX,
-            namespace_uri=xmlconstants.METADATA_VM_TUNE_URI
-        ))
-
-    def _appendMetadataVDSM(self, metadata):
-        metadata.appendChild(vmxml.Element(
+    def _appendMetadataVDSM(self, metadata_elem):
+        metadata_elem.appendChild(vmxml.Element(
             xmlconstants.METADATA_VM_VDSM_ELEMENT,
             namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
             namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
         ))
 
-    def _appendMetadataContainer(self, metadata):
+    def _appendMetadataContainer(self, metadata_elem):
         custom = self.conf.get('custom', {})
         # container{Type,Image} are mandatory: if either
         # one is missing, no container-related extradata
@@ -161,7 +162,7 @@ class Domain(object):
             text=container_type
         )
 
-        metadata.appendChild(cont)
+        metadata_elem.appendChild(cont)
 
         # drive mapping is optional. It is totally fine for a container
         # not to use any drive, this just means it will not have any
@@ -182,7 +183,7 @@ class Domain(object):
                     name=name,
                     drive=drive)
                 dm.appendChild(vol)
-            metadata.appendChild(dm)
+            metadata_elem.appendChild(dm)
 
     def appendOs(self, use_serial_console=False):
         """
