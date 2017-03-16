@@ -78,7 +78,7 @@ from .domain_descriptor import DomainDescriptor, MutableDomainDescriptor
 from . import recovery
 from . import vmdevices
 from .vmdevices import hwclass
-from .vmdevices.storage import DISK_TYPE
+from .vmdevices.storage import DISK_TYPE, VolumeNotFound
 from . import vmtune
 from . import vmxml
 from .vmxml import METADATA_VM_TUNE_URI, METADATA_VM_TUNE_ELEMENT
@@ -4799,17 +4799,11 @@ class Vm(object):
                            "monitoring.  Unable to perform live merge.")
             return response.error('mergeErr')
 
-        base = top = None
-        for v in drive.volumeChain:
-            if v['volumeID'] == baseVolUUID:
-                base = v['path']
-            if v['volumeID'] == topVolUUID:
-                top = v['path']
-        if base is None:
-            self.log.error("merge: base volume '%s' not found", baseVolUUID)
-            return response.error('mergeErr')
-        if top is None:
-            self.log.error("merge: top volume '%s' not found", topVolUUID)
+        try:
+            base = drive.volume_path(baseVolUUID)
+            top = drive.volume_path(topVolUUID)
+        except VolumeNotFound as e:
+            self.log.error("merge: %s", e)
             return response.error('mergeErr')
 
         try:
