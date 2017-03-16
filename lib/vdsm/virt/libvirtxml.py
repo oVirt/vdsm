@@ -133,16 +133,17 @@ class Domain(object):
                 namespace_uri=xmlconstants.METADATA_VM_TUNE_URI
             )
         )
-        self._appendMetadataVDSM(metadata_elem)
+        vmxml.append_child(
+            metadata_elem,
+            etree_child=metadata.create(
+                xmlconstants.METADATA_VM_VDSM_ELEMENT,
+                namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
+                namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
+            )
+        )
+
         self._appendMetadataContainer(metadata_elem)
         self.dom.appendChild(metadata_elem)
-
-    def _appendMetadataVDSM(self, metadata_elem):
-        metadata_elem.appendChild(vmxml.Element(
-            xmlconstants.METADATA_VM_VDSM_ELEMENT,
-            namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
-            namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
-        ))
 
     def _appendMetadataContainer(self, metadata_elem):
         custom = self.conf.get('custom', {})
