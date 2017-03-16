@@ -86,6 +86,9 @@ def _getFileName(vmId, files):
     if not os.path.exists(_P_PAYLOAD_IMAGES):
         try:
             os.mkdir(_P_PAYLOAD_IMAGES)
+            os.chown(_P_PAYLOAD_IMAGES,
+                     resolveUid(DISKIMAGE_USER),
+                     resolveGid(DISKIMAGE_GROUP))
         except OSError as e:
             if e.errno != os.errno.EEXIST:
                 raise
