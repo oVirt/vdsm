@@ -4309,7 +4309,7 @@ class Vm(object):
         try:
             self._dom.destroyFlags(libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
         except libvirt.libvirtError as e:
-            # after succesfull migraions
+            # after successful migrations
             if (self.lastStatus == vmstatus.DOWN and
                     e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN):
                 self.log.info("VM '%s' already down and destroyed",
