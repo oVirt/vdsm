@@ -183,7 +183,7 @@ class Ifcfg(Configurator):
             _exec_ifup(bond)
         self.runningConfig.setBonding(
             bond.name, {'options': bond.options,
-                        'nics': [slave.name for slave in bond.slaves],
+                        'nics': sorted(slave.name for slave in bond.slaves),
                         'switch': 'legacy'})
 
     def configureNic(self, nic, **opts):

@@ -67,7 +67,7 @@ class SetupBonds(object):
             # Saving only a partial bond config, overwritten in the next step.
             self._config.setBonding(
                 bond.master,
-                {'nics': list(bond.slaves), 'options': bond.options,
+                {'nics': sorted(bond.slaves), 'options': bond.options,
                  'switch': attrs['switch']})
 
         for bond, attrs in init_bond_pool:
