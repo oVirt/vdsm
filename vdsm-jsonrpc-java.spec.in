@@ -59,7 +59,7 @@ BuildRequires:	sonatype-oss-parent
 %endif
 
 Requires:	jackson >= 1.9
-Requires:	java-openjdk >= 1.8.0
+Requires:	java-openjdk-headless >= 1.8.0
 Requires:	slf4j >= 1.7.0
 
 %description
