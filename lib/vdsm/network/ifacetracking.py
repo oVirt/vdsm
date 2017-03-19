@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ import logging
 import os
 
 from vdsm.constants import P_VDSM_RUN
-from vdsm.utils import rmFile
+from vdsm.utils import rmFile, touchFile
 
 
 TRACKED_INTERFACES_FOLDER = os.path.join(P_VDSM_RUN, 'trackedInterfaces')
@@ -30,7 +30,7 @@ TRACKED_INTERFACES_FOLDER = os.path.join(P_VDSM_RUN, 'trackedInterfaces')
 
 def add(device_name):
     logging.debug('Add iface tracking for device %s', device_name)
-    open(_filepath(device_name), 'a').close()
+    touchFile(_filepath(device_name))
 
 
 def remove(device_name):
