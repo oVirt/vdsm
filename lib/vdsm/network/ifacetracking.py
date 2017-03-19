@@ -39,7 +39,7 @@ def remove(device_name):
 
 
 def is_tracked(device_name):
-    return bool(os.path.exists(_filepath(device_name)))
+    return os.path.exists(_filepath(device_name))
 
 
 def _filepath(device_name):
