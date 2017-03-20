@@ -56,23 +56,29 @@ class Graphics(Base):
         self.port = LIBVIRT_PORT_AUTOSELECT
         self.tlsPort = LIBVIRT_PORT_AUTOSELECT
 
-        # It's possible that the network is specified vm's conf
-        # and not in specParams. This is considered legacy.
-        displayNetwork = (
-            self.specParams.get('displayNetwork') or
-            conf.get('displayNetwork')
-        )
-        if displayNetwork:
-            self.specParams['displayNetwork'] = displayNetwork
+        self.specParams['displayNetwork'] = self._display_network(conf)
 
-        self.specParams['displayIp'] = (
-            _getNetworkIp(self.specParams.get('displayNetwork')))
+    def setup(self):
+        display_network = self.specParams['displayNetwork']
+        self.specParams['displayIp'] = _getNetworkIp(display_network)
+
+    def teardown(self):
+        pass
 
     def getSpiceVmcChannelsXML(self):
         vmc = vmxml.Element('channel', type='spicevmc')
         vmc.appendChildWithArgs('target', type='virtio',
                                 name='com.redhat.spice.0')
         return vmc
+
+    def _display_network(self, conf):
+        """
+        It's possible that the network is specified in vm's conf
+        and not in specParams. This is considered legacy.
+        """
+        return (self.specParams.get('displayNetwork') or
+                conf.get('displayNetwork') or
+                None)
 
     def _getSpiceChannels(self):
         for name in self.specParams['spiceSecureChannels'].split(','):
@@ -143,7 +149,7 @@ class Graphics(Base):
         # We assume that the cluster in which the host operates is OVS enabled
         # and all other hosts in the cluster have the migration hook installed.
         # The migration hook is responsible to convert ip to net and vice versa
-        display_network = self.specParams.get('displayNetwork')
+        display_network = self.specParams['displayNetwork']
         display_ip = self.specParams.get('displayIp', '0')
         if (display_network and display_ip != '0' and
                 supervdsm.getProxy().ovs_bridge(display_network)):
@@ -152,8 +158,7 @@ class Graphics(Base):
         elif display_network:
             graphics.appendChildWithArgs(
                 'listen', type='network',
-                network=net_api.netname_o2l(
-                    self.specParams.get('displayNetwork')))
+                network=net_api.netname_o2l(self.specParams['displayNetwork']))
         else:
             graphics.setAttrs(listen='0')
 

@@ -685,7 +685,7 @@ class TestVmDevices(XMLTestCase):
             graphDev = vmdevices.graphics.Graphics(
                 testvm.conf, testvm.log)
 
-            self.assertNotIn('displayNetwork', graphDev.specParams)
+            self.assertIsNone(graphDev.specParams['displayNetwork'])
 
     def testGraphicsDisplayNetworkFromSpecParams(self):
         with fake.VM() as testvm:
