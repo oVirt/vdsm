@@ -60,10 +60,12 @@ class Graphics(Base):
 
     def setup(self):
         display_network = self.specParams['displayNetwork']
+        net_api.create_libvirt_network(display_network, self.conf['vmId'])
         self.specParams['displayIp'] = _getNetworkIp(display_network)
 
     def teardown(self):
-        pass
+        net_api.delete_libvirt_network(self.specParams['displayNetwork'],
+                                       self.conf['vmId'])
 
     def getSpiceVmcChannelsXML(self):
         vmc = vmxml.Element('channel', type='spicevmc')

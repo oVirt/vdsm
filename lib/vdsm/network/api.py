@@ -86,6 +86,14 @@ def libvirt_networks():
     return libvirt.networks()
 
 
+def create_libvirt_network(netname, user_reference):
+    libvirt.create_network(netname, user_reference)
+
+
+def delete_libvirt_network(netname, user_reference):
+    libvirt.delete_network(netname, user_reference)
+
+
 def net2vlan(network_name):
     """Return the vlan id of the network if exists, None otherwise."""
     return netswitch.net2vlan(network_name)

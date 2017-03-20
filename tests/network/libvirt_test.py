@@ -32,6 +32,9 @@ NETWORK = 'awesome_net'
 LIBVIRT_NETWORK = 'vdsm-' + NETWORK
 IFACE = 'dummy'
 
+NET1 = 'net1'
+NET2 = 'net2'
+
 
 class LibvirtTestCase(TestCaseBase):
     def assertEqualXml(self, a, b):
@@ -68,3 +71,50 @@ class LibvirtTests(LibvirtTestCase):
         actual_doc = libvirt.createNetworkDef(
             NETWORK, bridged=False, iface=IFACE)
         self.assertEqualXml(expected_doc, actual_doc)
+
+
+@attr(type='unit')
+class LibvirtNetworksUsersCacheTests(TestCaseBase):
+
+    def test_add_remove_new_net(self):
+        user_ref = self
+        self.assertFalse(libvirt.NetworksUsersCache.has_users(NET1))
+
+        libvirt.NetworksUsersCache.add(NET1, user_ref)
+        self.assertTrue(libvirt.NetworksUsersCache.has_users(NET1))
+
+        libvirt.NetworksUsersCache.remove(NET1, user_ref)
+        self.assertFalse(libvirt.NetworksUsersCache.has_users(NET1))
+
+    def test_add_remove_existing_net_with_same_user(self):
+        user_ref = self
+        libvirt.NetworksUsersCache.add(NET1, user_ref)
+
+        libvirt.NetworksUsersCache.add(NET1, user_ref)
+        self.assertTrue(libvirt.NetworksUsersCache.has_users(NET1))
+
+        libvirt.NetworksUsersCache.remove(NET1, user_ref)
+        self.assertFalse(libvirt.NetworksUsersCache.has_users(NET1))
+
+    def test_add_remove_existing_net_with_unique_users(self):
+        user_ref1 = self
+        user_ref2 = 12345
+        libvirt.NetworksUsersCache.add(NET1, user_ref1)
+
+        libvirt.NetworksUsersCache.add(NET1, user_ref2)
+        self.assertTrue(libvirt.NetworksUsersCache.has_users(NET1))
+
+        libvirt.NetworksUsersCache.remove(NET1, user_ref2)
+        self.assertTrue(libvirt.NetworksUsersCache.has_users(NET1))
+
+        # test teardown
+        libvirt.NetworksUsersCache.remove(NET1, user_ref1)
+        self.assertFalse(libvirt.NetworksUsersCache.has_users(NET1))
+
+    def test_remove_non_existing_net(self):
+        user_ref = self
+        self.assertFalse(libvirt.NetworksUsersCache.has_users(NET1))
+
+        libvirt.NetworksUsersCache.remove(NET1, user_ref)
+
+        self.assertFalse(libvirt.NetworksUsersCache.has_users(NET1))

@@ -18,8 +18,11 @@
 #
 from __future__ import absolute_import
 
+from collections import defaultdict
 from glob import iglob
 import logging
+import threading
+
 import six
 import xml.etree.cElementTree as etree
 from xml.sax.saxutils import escape
@@ -29,6 +32,8 @@ from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 from vdsm import libvirtconnection
 
 LIBVIRT_NET_PREFIX = 'vdsm-'
+
+_libvirt_net_lock = threading.Lock()
 
 
 def getNetworkDef(network):
@@ -77,6 +82,29 @@ def createNetworkDef(network, bridged=True, iface=None):
     else:
         forwardElem.append(EtreeElement('interface', dev=iface))
     return etree.tostring(root)
+
+
+def create_network(netname, user_reference=None):
+    """
+    Create a libvirt network if it does not yet exist.
+    The user_reference argument is a unique identifier of the caller,
+    used to track the network users.
+    """
+    with _libvirt_net_lock:
+        if not is_libvirt_network(netname):
+            createNetwork(createNetworkDef(netname))
+
+        NetworksUsersCache.add(netname, user_reference)
+
+
+def delete_network(netname, user_reference=None):
+    """
+    Remove a libvirt network when all its users have asked to remove it.
+    """
+    with _libvirt_net_lock:
+        NetworksUsersCache.remove(netname, user_reference)
+        if not NetworksUsersCache.has_users(netname):
+            removeNetwork(netname)
 
 
 def createNetwork(netXml):
@@ -169,3 +197,41 @@ def _netlookup_by_name(conn, netname):
         if e.get_error_code() == VIR_ERR_NO_NETWORK:
             return None
         raise
+
+
+class NetworksUsersCache(object):
+    """
+    Manages networks users reference.
+    Note: The implementation is NOT thread safe.
+    """
+    _nets_users = defaultdict(set)
+
+    @staticmethod
+    def add(net, user_ref):
+        if (net in NetworksUsersCache._nets_users and
+                user_ref in NetworksUsersCache._nets_users[net]):
+            logging.warning('Attempting to add an existing net user: %s/%s',
+                            net, user_ref)
+
+        NetworksUsersCache._nets_users[net].add(user_ref)
+
+    @staticmethod
+    def remove(net, user_ref):
+        if net not in NetworksUsersCache._nets_users:
+            logging.warning('Attempting to remove a non existing network: '
+                            '%s/%s', net, user_ref)
+
+        net_users = NetworksUsersCache._nets_users[net]
+        try:
+            net_users.remove(user_ref)
+        except KeyError:
+            logging.warning('Attempting to remove a non existing net user: '
+                            '%s/%s', net, user_ref)
+        if len(net_users) == 0:
+            del NetworksUsersCache._nets_users[net]
+
+    @staticmethod
+    def has_users(net):
+        if net not in NetworksUsersCache._nets_users:
+            return False
+        return len(NetworksUsersCache._nets_users[net]) > 0
