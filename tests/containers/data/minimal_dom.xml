@@ -6,6 +6,7 @@
   <metadata>
     <ovirtcnt:container xmlns:ovirtcnt="http://ovirt.org/vm/containers/1.0">
       <ovirtcnt:runtime>docker</ovirtcnt:runtime>
+      <ovirtcnt:image>redis</ovirtcnt:image>
     </ovirtcnt:container>
     <ovirtdm:drivemap xmlns:ovirtdm="http://ovirt.org/vm/containers/drivemap/1.0">
       <ovirtdm:data>vda</ovirtdm:data>

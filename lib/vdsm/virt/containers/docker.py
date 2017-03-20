@@ -49,7 +49,8 @@ class RunConfig(_RunConfig):
     @classmethod
     def from_domain(cls, dom):
         mem = dom.memory()
-        path, volumes = dom.drives()
+        path = dom.image()
+        volumes = dom.volumes()
         mapping = dom.drives_map()
         try:
             net = dom.network()

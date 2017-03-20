@@ -83,11 +83,10 @@ class ConfigError(Exception):
 
 class DomainParser(object):
 
-    def __init__(self, xml_tree, uuid, log, image=None):
+    def __init__(self, xml_tree, uuid, log):
         self._xml_tree = xml_tree
         self._uuid = uuid
         self._log = log
-        self._image = image
 
     @property
     def uuid(self):
@@ -102,17 +101,13 @@ class DomainParser(object):
             return mem
         raise ConfigError('memory')
 
-    def drives(self):
-        images, volumes = [], []
+    def volumes(self):
+        vols = []
         disks = self._xml_tree.findall('.//disk[@type="file"]')
         for disk in disks:
             # TODO: add in the findall() above?
             device = disk.get('device')
-            if device == 'cdrom':
-                target = images
-            elif device == 'disk':
-                target = volumes
-            else:
+            if device != 'disk':
                 continue
             source = disk.find('./source/[@file]')
             if source is None:
@@ -120,9 +115,25 @@ class DomainParser(object):
             image_path = source.get('file')
             self._log.debug('runtime %r found image path %r',
                             self.uuid, image_path)
-            target.append(image_path.strip('"'))
-        image = self._find_image(images)
-        return image, volumes
+            vols.append(image_path.strip('"'))
+        return vols
+
+    def image(self):
+        cont_elem = self._xml_tree.find(
+            './metadata/{%s}container' % (
+                xmlconstants.METADATA_CONTAINERS_URI
+            )
+        )
+        if cont_elem is None:
+            raise ConfigError('missing container configuration')
+        md = metadata.Metadata(
+            xmlconstants.METADATA_CONTAINERS_PREFIX,
+            xmlconstants.METADATA_CONTAINERS_URI
+        )
+        img = md.load(cont_elem).get('image')
+        if img is None:
+            raise ConfigError('missing image to run')
+        return img
 
     def drives_map(self):
         mapping_elem = self._xml_tree.find(
@@ -159,6 +170,4 @@ class DomainParser(object):
             self._log.warning(
                 'found more than one image: %r, using the first one',
                 images)
-        if self._image is None:
-            return images[0]
-        return self._image
+        return images[0]

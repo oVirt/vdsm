@@ -37,6 +37,13 @@ class RuntimeConfigurationTests(conttestlib.RunnableTestCase):
         super(RuntimeConfigurationTests, self).setUp()
         self.vm_uuid = str(uuid.uuid4())
         self.base = docker.Runtime(self.vm_uuid)
+        self.conf = {
+            'mem': 4 * 1024 * 1024,  # KiB
+            'path': '/random/path/to/disk/image',
+            'net': 'ovirtmgmt',
+            'runtime': 'docker',
+            'image': 'redis',
+        }
 
     def test_missing_content(self):
         root = ET.fromstring("<domain type='kvm' id='2'></domain>")
@@ -85,12 +92,16 @@ class RuntimeConfigurationTests(conttestlib.RunnableTestCase):
                           root)
 
     def test_config_present(self):
-        MEM = 4 * 1024 * 1024
-        PATH = '/random/path/to/disk/image'
-        NET = 'ovirtmgmt'
         root = ET.fromstring("""
         <domain type='kvm' id='2'>
           <maxMemory slots='16' unit='KiB'>{mem}</maxMemory>
+          <metadata>
+            <ovirtcnt:container
+              xmlns:ovirtcnt="http://ovirt.org/vm/containers/1.0">
+              <ovirtcnt:runtime>{runtime}</ovirtcnt:runtime>
+              <ovirtcnt:image>{image}</ovirtcnt:image>
+            </ovirtcnt:container>
+          </metadata>
           <devices>
             <disk type='file' device='cdrom' snapshot='no'>
               <source file='{path}'>
@@ -104,20 +115,13 @@ class RuntimeConfigurationTests(conttestlib.RunnableTestCase):
               <link state="up"/>
             </interface>
           </devices>
-        </domain>""".format(mem=MEM * 1024, path=PATH, net=NET))
+        </domain>""".format(**self.conf))
         self.assertNotRaises(self.base.configure, root)
         conf = self.base._run_conf
-        self.assertEqual(conf.image_path, PATH)
-        self.assertEqual(conf.memory_size_mib, MEM)
-        self.assertEqual(conf.network, NET)
-
-    def test_config_ovirt_vm(self):
-        root = ET.fromstring(conttestlib.full_dom_xml())
-        self.assertNotRaises(self.base.configure, root)
-        conf = self.base._run_conf
-        self.assertTrue(conf.image_path)
-        self.assertTrue(conf.memory_size_mib)
-        self.assertEqual(conf.network, "ovirtmgmt")
+        # libvirt uses KiB
+        self.assertEqual(conf.memory_size_mib, self.conf['mem'] / 1024.)
+        self.assertEqual(conf.network, self.conf['net'])
+        self.assertEqual(conf.image_path, self.conf['image'])
 
     # TODO: test error paths in configure()
 
