@@ -45,6 +45,24 @@ class FORMAT:
 _QCOW2_COMPAT_SUPPORTED = ("0.10", "1.1")
 
 
+class PREALLOCATION:
+    """
+    Possible preallocation modes for qemu
+    """
+
+    # No preallocation at all.
+    OFF = "off"
+
+    # Allocates just image metadata. Could be used only with qcow2 format.
+    METADATA = "metadata"
+
+    # Preallocates space by calling posix_fallocate().
+    FALLOC = "falloc"
+
+    # Preallocates space for image by writing zeros to underlying storage.
+    FULL = "full"
+
+
 def supports_compat(compat):
     return compat in _QCOW2_COMPAT_SUPPORTED
 
@@ -95,7 +113,7 @@ def info(image, format=None):
 
 
 def create(image, size=None, format=None, qcow2Compat=None,
-           backing=None, backingFormat=None):
+           backing=None, backingFormat=None, preallocation=None):
     cmd = [_qemuimg.cmd, "create"]
     cwdPath = None
 
@@ -112,6 +130,10 @@ def create(image, size=None, format=None, qcow2Compat=None,
 
     if backingFormat:
         cmd.extend(("-F", backingFormat))
+
+    if preallocation:
+        cmd.extend(("-o", "preallocation=" +
+                    _get_preallocation(preallocation, format)))
 
     cmd.append(image)
 
@@ -337,6 +359,19 @@ def _validate_qcow2_compat(value):
         return default_qcow2_compat()
     if value not in _QCOW2_COMPAT_SUPPORTED:
         raise ValueError("Invalid compat version %r" % value)
+    return value
+
+
+def _get_preallocation(value, format):
+    if value not in (PREALLOCATION.OFF,
+                     PREALLOCATION.FALLOC,
+                     PREALLOCATION.FULL,
+                     PREALLOCATION.METADATA):
+        raise ValueError("Invalid preallocation type %r" % value)
+    if (value == PREALLOCATION.METADATA and
+            format not in (FORMAT.QCOW2, FORMAT.QCOW)):
+        raise ValueError("Unsupported preallocation mode %r for format %r" %
+                         (value, format))
     return value
 
 

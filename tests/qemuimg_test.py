@@ -36,6 +36,7 @@ from testlib import make_config
 from testlib import namedTemporaryDir
 from vdsm.common import cmdutils
 from vdsm.common import commands
+from testlib import temporaryPath
 from vdsm.common import exception
 from vdsm.storage import qemuimg
 
@@ -151,7 +152,24 @@ class InfoTests(TestCaseBase):
             self.assertNotIn('compat', info)
 
 
+@expandPermutations
 class CreateTests(TestCaseBase):
+    @permutations((
+        (qemuimg.FORMAT.RAW, qemuimg.PREALLOCATION.OFF, 0),
+        (qemuimg.FORMAT.RAW, qemuimg.PREALLOCATION.FALLOC, 16 * 1024 * 1024),
+        (qemuimg.FORMAT.RAW, qemuimg.PREALLOCATION.FULL, 16 * 1024 * 1024)
+    ))
+    def test_allocate(self, image_format, allocation_mode, allocated_bytes):
+        size = 16 * 1024 * 1024
+        with temporaryPath() as image:
+            op = qemuimg.create(image,
+                                size=size,
+                                format=image_format,
+                                preallocation=allocation_mode)
+            op.run()
+            allocated = os.stat(image).st_blocks * 512
+            self.assertEqual(allocated, allocated_bytes)
+
     def test_no_format(self):
         size = 4096
         with namedTemporaryDir() as tmpdir:
