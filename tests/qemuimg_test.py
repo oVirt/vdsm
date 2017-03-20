@@ -86,8 +86,14 @@ class InfoTests(TestCaseBase):
             size = 1048576
             leaf_fmt = qemuimg.FORMAT.QCOW2
             with MonkeyPatchScope([(qemuimg, 'config', CONFIG)]):
-                qemuimg.create(base_path, size=size, format=qemuimg.FORMAT.RAW)
-                qemuimg.create(leaf_path, format=leaf_fmt, backing=base_path)
+                op = qemuimg.create(base_path,
+                                    size=size,
+                                    format=qemuimg.FORMAT.RAW)
+                op.run()
+                op = qemuimg.create(leaf_path,
+                                    format=leaf_fmt,
+                                    backing=base_path)
+                op.run()
 
             info = qemuimg.info(leaf_path)
             self.assertEqual(leaf_fmt, info['format'])
@@ -146,48 +152,51 @@ class InfoTests(TestCaseBase):
 
 
 class CreateTests(TestCaseBase):
-
     def test_no_format(self):
-        def create(cmd, **kw):
-            expected = [QEMU_IMG, 'create', 'image']
-            self.assertEqual(cmd, expected)
-            return 0, '', ''
+        size = 4096
+        with namedTemporaryDir() as tmpdir:
+            image = os.path.join(tmpdir, "image")
+            op = qemuimg.create(image, size=size)
+            op.run()
 
-        with MonkeyPatchScope([(commands, "execCmd", create)]):
-            qemuimg.create('image')
+            info = qemuimg.info(image)
+            self.assertEqual(info['format'], qemuimg.FORMAT.RAW)
+            self.assertEqual(info['virtualsize'], size)
 
     def test_zero_size(self):
-        def create(cmd, **kw):
-            expected = [QEMU_IMG, 'create', 'image', '0']
-            self.assertEqual(cmd, expected)
-            return 0, '', ''
+        with namedTemporaryDir() as tmpdir:
+            image = os.path.join(tmpdir, "image")
+            op = qemuimg.create(image, size=0)
+            op.run()
 
-        with MonkeyPatchScope([(commands, "execCmd", create)]):
-            qemuimg.create('image', size=0)
+            info = qemuimg.info(image)
+            self.assertEqual(info['format'], qemuimg.FORMAT.RAW)
+            self.assertEqual(info['virtualsize'], 0)
 
     def test_qcow2_compat(self):
+        with namedTemporaryDir() as tmpdir:
+            image = os.path.join(tmpdir, "image")
+            size = 1024 * 1024 * 1024 * 10  # 10 GB
+            op = qemuimg.create(image, format='qcow2', size=size)
+            op.run()
 
-        def create(cmd, **kw):
-            expected = [QEMU_IMG, 'create', '-f', 'qcow2', '-o', 'compat=0.10',
-                        'image']
-            self.assertEqual(cmd, expected)
-            return 0, '', ''
-
-        with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
-                               (commands, 'execCmd', create)]):
-            qemuimg.create('image', format='qcow2')
+            info = qemuimg.info(image)
+            self.assertEqual(info['format'], qemuimg.FORMAT.QCOW2)
+            self.assertEqual(info['compat'], "0.10")
+            self.assertEqual(info['virtualsize'], size)
 
     def test_qcow2_compat_version3(self):
+        with namedTemporaryDir() as tmpdir:
+            image = os.path.join(tmpdir, "image")
+            size = 1024 * 1024 * 1024 * 10  # 10 GB
+            op = qemuimg.create(image, format='qcow2',
+                                qcow2Compat='1.1', size=size)
+            op.run()
 
-        def create(cmd, **kw):
-            expected = [QEMU_IMG, 'create', '-f', 'qcow2', '-o', 'compat=1.1',
-                        'image']
-            self.assertEqual(cmd, expected)
-            return 0, '', ''
-
-        with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
-                               (commands, 'execCmd', create)]):
-            qemuimg.create('image', format='qcow2', qcow2Compat='1.1')
+            info = qemuimg.info(image)
+            self.assertEqual(info['format'], qemuimg.FORMAT.QCOW2)
+            self.assertEqual(info['compat'], "1.1")
+            self.assertEqual(info['virtualsize'], size)
 
     def test_qcow2_compat_invalid(self):
         with self.assertRaises(ValueError):
@@ -291,7 +300,10 @@ class CheckTests(TestCaseBase):
     def test_check(self):
         with namedTemporaryDir() as tmpdir:
             path = os.path.join(tmpdir, 'test.qcow2')
-            qemuimg.create(path, size=1048576, format=qemuimg.FORMAT.QCOW2)
+            op = qemuimg.create(path,
+                                size=1048576,
+                                format=qemuimg.FORMAT.QCOW2)
+            op.run()
             info = qemuimg.check(path)
             # The exact value depends on qcow2 internals
             self.assertEqual(int, type(info['offset']))
@@ -452,8 +464,9 @@ class TestMap(TestCaseBase):
         with namedTemporaryDir() as tmpdir:
             size = 1048576
             image = os.path.join(tmpdir, "base.img")
-            qemuimg.create(image, size=size, format=self.FORMAT,
-                           qcow2Compat=qcow2_compat)
+            op = qemuimg.create(image, size=size, format=self.FORMAT,
+                                qcow2Compat=qcow2_compat)
+            op.run()
 
             expected = [
                 # single run - empty
@@ -478,8 +491,9 @@ class TestMap(TestCaseBase):
         with namedTemporaryDir() as tmpdir:
             size = 1048576
             image = os.path.join(tmpdir, "base.img")
-            qemuimg.create(image, size=size, format=self.FORMAT,
-                           qcow2Compat=qcow2_compat)
+            op = qemuimg.create(image, size=size, format=self.FORMAT,
+                                qcow2Compat=qcow2_compat)
+            op.run()
             qemu_pattern_write(image, self.FORMAT, offset=offset, len=length,
                                pattern=0xf0)
 
@@ -537,17 +551,22 @@ class TestAmend(TestCaseBase):
             base_path = os.path.join(tmpdir, 'base.img')
             leaf_path = os.path.join(tmpdir, 'leaf.img')
             size = 1048576
-            qemuimg.create(base_path, size=size, format=qemuimg.FORMAT.RAW)
-            qemuimg.create(leaf_path, format=qemuimg.FORMAT.QCOW2,
-                           backing=base_path)
+            op_base = qemuimg.create(base_path, size=size,
+                                     format=qemuimg.FORMAT.RAW)
+            op_base.run()
+            op_leaf = qemuimg.create(leaf_path, format=qemuimg.FORMAT.QCOW2,
+                                     backing=base_path)
+            op_leaf.run()
             qemuimg.amend(leaf_path, desired_qcow2_compat)
             self.assertEqual(qemuimg.info(leaf_path)['compat'],
                              desired_qcow2_compat)
 
 
 def make_image(path, size, format, index, qcow2_compat, backing=None):
-    qemuimg.create(path, size=size, format=format, qcow2Compat=qcow2_compat,
-                   backing=backing)
+    op = qemuimg.create(path, size=size, format=format,
+                        qcow2Compat=qcow2_compat,
+                        backing=backing)
+    op.run()
     offset = index * 1024
     qemu_pattern_write(path, format, offset=offset, len=1024,
                        pattern=0xf0 + index)

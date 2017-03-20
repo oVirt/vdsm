@@ -268,7 +268,8 @@ class TestQemuPatternVerification(VdsmTestCase):
     def test_match(self, img_format):
         with namedTemporaryDir() as tmpdir:
             path = os.path.join(tmpdir, 'test')
-            qemuimg.create(path, '1m', img_format)
+            op = qemuimg.create(path, '1m', img_format)
+            op.run()
             qemu_pattern_write(path, img_format)
             qemu_pattern_verify(path, img_format)
 
@@ -279,7 +280,8 @@ class TestQemuPatternVerification(VdsmTestCase):
     def test_match_custom_offset_and_len(self, offset, len):
         with namedTemporaryDir() as tmpdir:
             path = os.path.join(tmpdir, 'test')
-            qemuimg.create(path, '1m', qemuimg.FORMAT.QCOW2)
+            op = qemuimg.create(path, '1m', qemuimg.FORMAT.QCOW2)
+            op.run()
             qemu_pattern_write(path, qemuimg.FORMAT.QCOW2,
                                offset=offset, len=len)
             qemu_pattern_verify(path, qemuimg.FORMAT.QCOW2, offset=offset,
@@ -289,7 +291,8 @@ class TestQemuPatternVerification(VdsmTestCase):
     def test_no_match(self, img_format):
         with namedTemporaryDir() as tmpdir:
             path = os.path.join(tmpdir, 'test')
-            qemuimg.create(path, '1m', img_format)
+            op = qemuimg.create(path, '1m', img_format)
+            op.run()
             qemu_pattern_write(path, img_format, pattern=2)
             self.assertRaises(ChainVerificationError,
                               qemu_pattern_verify, path, img_format, pattern=4)
@@ -353,15 +356,19 @@ class TestQemuPatternVerification(VdsmTestCase):
         with namedTemporaryDir() as tmpdir:
             # Create a good chain.
             base_qcow2 = os.path.join(tmpdir, "base.qcow2")
-            qemuimg.create(base_qcow2, "1m", qemuimg.FORMAT.QCOW2)
+            op = qemuimg.create(base_qcow2, "1m", qemuimg.FORMAT.QCOW2)
+            op.run()
             top = os.path.join(tmpdir, "top.qcow2")
-            qemuimg.create(top, "1m", qemuimg.FORMAT.QCOW2, backing=base_qcow2,
-                           backingFormat=qemuimg.FORMAT.QCOW2)
+            op = qemuimg.create(top, "1m", qemuimg.FORMAT.QCOW2,
+                                backing=base_qcow2,
+                                backingFormat=qemuimg.FORMAT.QCOW2)
+            op.run()
 
             # Create a broken chain using unsafe rebase with the wrong backing
             # format.
             base_raw = os.path.join(tmpdir, "base.raw")
-            qemuimg.create(base_raw, "1m", qemuimg.FORMAT.RAW)
+            op = qemuimg.create(base_raw, "1m", qemuimg.FORMAT.RAW)
+            op.run()
             operation = qemuimg.rebase(top,
                                        backing=base_raw,
                                        format=qemuimg.FORMAT.QCOW2,

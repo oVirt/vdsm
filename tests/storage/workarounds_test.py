@@ -38,7 +38,8 @@ def make_volume(env, size, md_fmt, real_fmt):
     vol_id = make_uuid()
     env.make_volume(size, img_id, vol_id, vol_format=md_formats[md_fmt])
     vol = env.sd_manifest.produceVolume(img_id, vol_id)
-    qemuimg.create(vol.getVolumePath(), size, qemu_formats[real_fmt])
+    op = qemuimg.create(vol.getVolumePath(), size, qemu_formats[real_fmt])
+    op.run()
     return vol
 
 

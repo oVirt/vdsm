@@ -460,10 +460,11 @@ class FileVolume(volume.Volume):
                          "sectors", sc.type2name(volFormat), volPath,
                          size)
             if volFormat == sc.COW_FORMAT:
-                qemuimg.create(volPath,
-                               size=sizeBytes,
-                               format=sc.fmt2str(volFormat),
-                               qcow2Compat=dom.qcow2_compat())
+                operation = qemuimg.create(volPath,
+                                           size=sizeBytes,
+                                           format=sc.fmt2str(volFormat),
+                                           qcow2Compat=dom.qcow2_compat())
+                operation.run()
         else:
             # Create hardlink to template and its meta file
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s",

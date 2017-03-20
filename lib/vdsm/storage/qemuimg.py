@@ -118,7 +118,7 @@ def create(image, size=None, format=None, qcow2Compat=None,
     if size is not None:
         cmd.append(str(size))
 
-    _run_cmd(cmd, cwd=cwdPath)
+    return operation.Command(cmd, cwd=cwdPath)
 
 
 def check(image, format=None):

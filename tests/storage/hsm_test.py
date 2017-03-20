@@ -51,7 +51,9 @@ class TestVerifyUntrustedVolume(VdsmTestCase):
     def test_ok(self, vol_fmt):
         with self.fake_volume(vol_fmt) as vol:
             qemu_fmt = sc.FMT2STR[vol_fmt]
-            qemuimg.create(vol.volumePath, size=self.SIZE, format=qemu_fmt)
+            op = qemuimg.create(vol.volumePath, size=self.SIZE,
+                                format=qemu_fmt)
+            op.run()
             h = FakeHSM()
             self.assertNotRaises(h.verify_untrusted_volume,
                                  'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
@@ -62,7 +64,9 @@ class TestVerifyUntrustedVolume(VdsmTestCase):
     ))
     def test_wrong_format_raises(self, vol_fmt, qemu_fmt):
         with self.fake_volume(vol_fmt) as vol:
-            qemuimg.create(vol.volumePath, size=self.SIZE, format=qemu_fmt)
+            op = qemuimg.create(vol.volumePath, size=self.SIZE,
+                                format=qemu_fmt)
+            op.run()
             h = FakeHSM()
             self.assertRaises(se.ImageVerificationError,
                               h.verify_untrusted_volume,
@@ -86,8 +90,10 @@ class TestVerifyUntrustedVolume(VdsmTestCase):
         with fake_file_env() as env:
             vol = make_qemu_chain(env, self.SIZE, sc.COW_FORMAT, 2)[1]
             # Simulate upload of wrong image
-            qemuimg.create(vol.volumePath, size=self.SIZE,
-                           format=qemuimg.FORMAT.QCOW2, backing='wrong-uuid')
+            op = qemuimg.create(vol.volumePath, size=self.SIZE,
+                                format=qemuimg.FORMAT.QCOW2,
+                                backing='wrong-uuid')
+            op.run()
             h = FakeHSM()
             self.assertRaises(se.ImageVerificationError,
                               h.verify_untrusted_volume,
@@ -96,8 +102,10 @@ class TestVerifyUntrustedVolume(VdsmTestCase):
     def test_unexpected_backing_file(self):
         with self.fake_volume(sc.COW_FORMAT) as vol:
             # Simulate upload of qcow2 with backing file to base image
-            qemuimg.create(vol.volumePath, size=self.SIZE,
-                           format=qemuimg.FORMAT.QCOW2, backing='unexpected')
+            op = qemuimg.create(vol.volumePath, size=self.SIZE,
+                                format=qemuimg.FORMAT.QCOW2,
+                                backing='unexpected')
+            op.run()
             h = FakeHSM()
             self.assertRaises(se.ImageVerificationError,
                               h.verify_untrusted_volume,
@@ -107,8 +115,9 @@ class TestVerifyUntrustedVolume(VdsmTestCase):
         with fake_file_env() as env:
             vol = make_qemu_chain(env, self.SIZE, sc.COW_FORMAT, 2)[1]
             # Simulate upload of image without backing file to a a snapshot
-            qemuimg.create(vol.volumePath, size=self.SIZE,
-                           format=qemuimg.FORMAT.QCOW2)
+            op = qemuimg.create(vol.volumePath, size=self.SIZE,
+                                format=qemuimg.FORMAT.QCOW2)
+            op.run()
             h = FakeHSM()
             self.assertRaises(se.ImageVerificationError,
                               h.verify_untrusted_volume,
@@ -138,8 +147,9 @@ class TestVerifyUntrustedVolume(VdsmTestCase):
             info = {"format": qemuimg.FORMAT.QCOW2, "compat": hsm_compat}
             with MonkeyPatchScope([(qemuimg, 'config', create_conf),
                                    (qemuimg, 'info', lambda unused: info)]):
-                qemuimg.create(vol.volumePath, size=self.SIZE,
-                               format=qemuimg.FORMAT.QCOW2)
+                op = qemuimg.create(vol.volumePath, size=self.SIZE,
+                                    format=qemuimg.FORMAT.QCOW2)
+                op.run()
                 h = FakeHSM()
                 self.assertNotRaises(h.verify_untrusted_volume, 'sp',
                                      vol.sdUUID, vol.imgUUID, vol.volUUID)
@@ -155,8 +165,9 @@ class TestVerifyUntrustedVolume(VdsmTestCase):
             info = {"format": qemuimg.FORMAT.QCOW2, "compat": hsm_compat}
             with MonkeyPatchScope([(qemuimg, 'config', create_conf),
                                    (qemuimg, 'info', lambda unused: info)]):
-                qemuimg.create(vol.volumePath, size=self.SIZE,
-                               format=qemuimg.FORMAT.QCOW2)
+                op = qemuimg.create(vol.volumePath, size=self.SIZE,
+                                    format=qemuimg.FORMAT.QCOW2)
+                op.run()
                 h = FakeHSM()
                 self.assertRaises(se.ImageVerificationError,
                                   h.verify_untrusted_volume, 'sp',
