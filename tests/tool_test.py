@@ -446,7 +446,7 @@ class ConfigFileTests(TestCase):
 
     def testAddExistingConf(self):
         self._writeConf("key1=val1\n"
-                        "    key2    =val2\n"
+                        "key2=val2"
                         "#key3=val4")
         with ConfigFile(self.tname,
                         version='3.4.4',
@@ -457,9 +457,50 @@ class ConfigFileTests(TestCase):
 
         with open(self.tname, 'r') as f:
             self.assertEqual(f.read(), "key1=val1\n"
-                                       "    key2    =val2\n"
+                                       "## commented out by vdsm\n"
+                                       "# key2=val2"
+                                       "#key3=val4\n"
+                                       "# start conf-3.4.4\n"
+                                       "key2=val3\n"
+                                       "key3=val3\n"
+                                       "# end conf-3.4.4\n")
+
+    def testAddCommentedoutConf(self):
+        self._writeConf("key1=val1\n"
+                        "#key3=val4")
+        with ConfigFile(self.tname,
+                        version='3.4.4',
+                        sectionStart="# start conf",
+                        sectionEnd="# end conf") as conf:
+            conf.addEntry("key3", "val3")
+            conf.addEntry("key2", "val3")
+
+        with open(self.tname, 'r') as f:
+            self.assertEqual(f.read(), "key1=val1\n"
                                        "#key3=val4"
                                        "# start conf-3.4.4\n"
+                                       "key2=val3\n"
+                                       "key3=val3\n"
+                                       "# end conf-3.4.4\n")
+
+    def testAddExistingConfWithWhitespaces(self):
+        self._writeConf("key1=val1\n"
+                        "    key2    =val2"
+                        "#key3=val4")
+        with ConfigFile(self.tname,
+                        version='3.4.4',
+                        sectionStart="# start conf",
+                        sectionEnd="# end conf") as conf:
+            conf.addEntry("key3", "val3")
+            conf.addEntry("key2", "val3")
+
+        with open(self.tname, 'r') as f:
+            self.assertEqual(f.read(), "key1=val1\n"
+                                       "## commented out by vdsm\n"
+                                       "#     key2    =val2"
+                                       "#key3=val4\n"
+                                       "# start conf-3.4.4\n"
+                                       "key2=val3\n"
                                        "key3=val3\n"
                                        "# end conf-3.4.4\n")
 

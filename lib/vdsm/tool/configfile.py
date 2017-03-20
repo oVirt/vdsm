@@ -21,7 +21,6 @@ from __future__ import absolute_import
 import functools
 import os
 import tempfile
-import re
 import selinux
 from six.moves import configparser
 import io
@@ -112,9 +111,7 @@ class ConfigFile(object):
         return self
 
     def _getOldContent(self):
-        confpat = re.compile(r'^\s*(?P<key>[^=\s#]*)\s*=')
         oldlines = []
-        oldentries = set()
         with io.open(self._filename, 'r', encoding='utf8') as f:
             for line in f:
                 if self._remove:
@@ -135,13 +132,10 @@ class ConfigFile(object):
                             line = line[len(self._prefix):]
                     if self._prefixAdd:
                         line = self._prefix + line
-                    m = confpat.match(line.rstrip())
-                    if m:
-                        oldentries.add(m.group('key'))
                     # remove this if at 4.0. see  'Backward compatibility'
                     if not self._remove or self._lineComment not in line:
                         oldlines.append(line)
-            return oldlines, oldentries
+            return oldlines
 
     def _start(self):
         return u"%s-%s\n" % (self._sectionStart, self._version)
@@ -154,26 +148,33 @@ class ConfigFile(object):
         f.write(self._section)
         f.write(self._end())
 
-    def _writeEntries(self, f, oldentries):
+    def _writeEntries(self, f):
         f.write(self._start())
         for key, val in sorted(self._entries.items()):
-            if key not in oldentries:
-                f.write(u"{k}={v}\n".format(k=key, v=val))
+            f.write(u"{k}={v}\n".format(k=key, v=val))
         f.write(self._end())
 
     def __exit__(self, exec_ty, exec_val, tb):
-
         self._context = False
         if exec_ty is None:
             fd, tname = tempfile.mkstemp(dir=os.path.dirname(self._filename))
             try:
-                oldlines, oldentries = self._getOldContent()
+                oldlines = self._getOldContent()
                 with io.open(fd, 'w', encoding='utf8') as f:
                     if self._section:
                         self._writeSection(f)
-                    f.writelines(oldlines)
+                    # if oldlines includes something that we have in
+                    #  self._entries we need to write only the new value!
+                    for fullline in oldlines:
+                        line = fullline.replace(' ', '')
+                        key = line.split("=")[0]
+                        if key not in self._entries:
+                            f.write(fullline)
+                        else:
+                            f.write(u'## commented out by vdsm\n')
+                            f.write(u'# %s\n' % (fullline))
                     if self._entries:
-                        self._writeEntries(f, oldentries)
+                        self._writeEntries(f)
 
                 os.rename(tname, self._filename)
 
