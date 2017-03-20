@@ -119,8 +119,10 @@ class CopyDataDivEndpoint(properties.Owner):
         ret = [rm.ResourceManagerLock(sc.STORAGE, self.sd_id, rm.SHARED),
                rm.ResourceManagerLock(img_ns, self.img_id, mode)]
         if self._writable:
-            ret.append(volume.VolumeLease(self._host_id, self.sd_id,
-                                          self.img_id, self.vol_id))
+            dom = sdCache.produce_manifest(self.sd_id)
+            if dom.hasVolumeLeases():
+                ret.append(volume.VolumeLease(self._host_id, self.sd_id,
+                                              self.img_id, self.vol_id))
         return ret
 
     @property
