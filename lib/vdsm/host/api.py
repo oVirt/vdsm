@@ -122,7 +122,7 @@ def send_metrics(hoststats):
         if 'network' in hoststats:
             for interface in hoststats['network']:
                 if_info = hoststats['network'][interface]
-                net_prefix = prefix + '.nic.' + interface
+                net_prefix = prefix + '.nic.' + interface.replace('.', '_')
                 data[net_prefix + '.speed'] = if_info['speed']
                 data[net_prefix + '.rx_errors'] = if_info['rxErrors']
                 data[net_prefix + '.tx_errors'] = if_info['txErrors']
