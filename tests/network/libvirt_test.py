@@ -33,9 +33,7 @@ LIBVIRT_NETWORK = 'vdsm-' + NETWORK
 IFACE = 'dummy'
 
 
-@attr(type='unit')
-class LibvirtTests(TestCaseBase):
-
+class LibvirtTestCase(TestCaseBase):
     def assertEqualXml(self, a, b):
         """Compare two xml strings for equality"""
 
@@ -46,6 +44,10 @@ class LibvirtTests(TestCaseBase):
         b_xml_normalized = re.sub(b'>\s*\n\s*<', b'><', b_xml).strip()
 
         self.assertEqual(a_xml_normalized, b_xml_normalized)
+
+
+@attr(type='unit')
+class LibvirtTests(LibvirtTestCase):
 
     def test_create_net_xml_with_bridge(self):
         expected_doc = """<network>
