@@ -591,6 +591,11 @@ class Vm(object):
                 # change status to UP.
                 self._incomingMigrationFinished.wait(
                     config.getint('vars', 'migration_destination_timeout'))
+                # Wait a bit to increase the chance that downtime is reported
+                # from the source before we report that the VM is UP on the
+                # destination.  This makes migration completion handling in
+                # Engine easier.
+                time.sleep(1)
 
             if self.recovering and \
                self._lastStatus == vmstatus.WAIT_FOR_LAUNCH and \
