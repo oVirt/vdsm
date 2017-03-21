@@ -28,7 +28,6 @@ from vdsm.commands import grepCmd
 from vdsm.common import exception
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
-from vdsm.storage import misc
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import task
 from vdsm.storage import fallocate
@@ -616,9 +615,17 @@ class FileVolume(volume.Volume):
             raise se.VolumeResizeValueError(newSize)
 
         if self.getType() == sc.PREALLOCATED_VOL:
-            # for pre-allocated we need to zero to the file size
-            misc.ddWatchCopy("/dev/zero", volPath, vars.task.aborting,
-                             newSizeBytes - curSizeBytes, curSizeBytes)
+            self.log.info("Preallocating volume %s to %s bytes",
+                          volPath, newSizeBytes)
+            operation = fallocate.allocate(volPath,
+                                           newSizeBytes - curSizeBytes,
+                                           curSizeBytes)
+            with vars.task.abort_callback(operation.abort):
+                with utils.stopwatch("Preallocating volume %s" % volPath):
+                    operation.run()
         else:
             # for sparse files we can just truncate to the correct size
+            # also good fallback for failed preallocation
+            self.log.info("Truncating volume %s to %s bytes",
+                          volPath, newSizeBytes)
             self.oop.truncateFile(volPath, newSizeBytes)
