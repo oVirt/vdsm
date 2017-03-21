@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -118,8 +118,9 @@ class OvsInfo(object):
         ports = [self._ports_uuids[uuid] for uuid in bridge_entry['ports']]
         ports_info = {port['name']: self._port_attr(port)
                       for port in ports}
+        dpdk_enabled = bridge_entry['datapath_type'] == 'netdev'
 
-        return {'ports': ports_info, 'stp': stp}
+        return {'ports': ports_info, 'stp': stp, 'dpdk_enabled': dpdk_enabled}
 
     def _port_attr(self, port_entry):
         tag = port_entry['tag']
@@ -144,9 +145,17 @@ def get_netinfo():
     return netinfo
 
 
-def northbound2bridge(northbound):
-    """Return the bridge to which northbound is connected."""
+def bridge_info(net_name):
     ovs_info = OvsInfo()
+    bridge_name = _northbound2bridge(net_name, ovs_info)
+    if not bridge_name:
+        return None
+    br_info = ovs_info.bridges[bridge_name]
+    return {'name': bridge_name, 'dpdk_enabled': br_info['dpdk_enabled']}
+
+
+def _northbound2bridge(northbound, ovs_info):
+    """Return the bridge to which northbound is connected."""
     bridges = ovs_info.bridges
 
     if northbound in bridges:

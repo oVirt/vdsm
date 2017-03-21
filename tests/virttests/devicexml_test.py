@@ -373,7 +373,8 @@ class DeviceToXMLTests(XMLTestCase):
         self.assertXMLEqual(vmxml.format_xml(iface.getXML()), interfaceXML)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: FakeProxy(ovs_bridge='ovirtmgmt'))
+                 'getProxy', lambda: FakeProxy(
+                     ovs_bridge={'name': 'ovirtmgmt', 'dpdk_enabled': False}))
     @MonkeyPatch(vmdevices.network.net_api, 'net2vlan', lambda x: 101)
     def test_interface_on_ovs_with_vlan(self):
         interfaceXML = """

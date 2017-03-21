@@ -96,6 +96,7 @@ class TestOvsInfo(VdsmTestCase):
                 expected_bridges = {
                     TEST_BRIDGE: {
                         'stp': False,
+                        'dpdk_enabled': False,
                         'ports': {
                             nic: {
                                 'level': info.SOUTHBOUND,
@@ -128,6 +129,7 @@ class TestOvsInfo(VdsmTestCase):
                     expected_bridges = {
                         TEST_BRIDGE: {
                             'stp': False,
+                            'dpdk_enabled': False,
                             'ports': {
                                 TEST_VLANED_NETWORK: {
                                     'level': info.NORTHBOUND,

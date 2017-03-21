@@ -89,7 +89,8 @@ def net2vlan(network_name):
 
 def ovs_bridge(network_name):
     """
-    If network_name is an OVS based network, return the OVS (real) bridge.
+    If network_name is an OVS based network, return a dict with OVS (real)
+    bridge name and a boolean indicating if it has dpdk port attached to it.
     Otherwise, return None.
 
     This API requires root access.

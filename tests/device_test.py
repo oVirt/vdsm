@@ -216,7 +216,8 @@ class TestVmDevices(XMLTestCase):
         self.assert_dom_xml_equal(bandwith, updatedBwidthXML)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: MockedProxy(ovs_bridge='ovirtmgmt'))
+                 'getProxy', lambda: MockedProxy(
+                     ovs_bridge={'name': 'ovirtmgmt', 'dpdk_enabled': False}))
     def test_interface_update(self):
         devices = [{'nicModel': 'virtio', 'network': 'ovirtmgmt',
                     'macAddr': '52:54:00:59:F5:3F',

@@ -155,7 +155,7 @@ class Interface(Base):
         else:
             ovs_bridge = supervdsm.getProxy().ovs_bridge(self.network)
             if ovs_bridge:
-                self._source_ovs_bridge(iface, ovs_bridge)
+                self._source_ovs_bridge(iface, ovs_bridge['name'])
             else:
                 iface.appendChildWithArgs('source', bridge=self.network)
 

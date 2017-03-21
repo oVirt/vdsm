@@ -377,7 +377,7 @@ def ovs_net2bridge(network_name):
     if not _is_ovs_service_running():
         return None
 
-    return ovs_info.northbound2bridge(network_name)
+    return ovs_info.bridge_info(network_name)
 
 
 def net2vlan(network_name):
