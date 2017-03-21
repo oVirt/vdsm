@@ -130,6 +130,7 @@ class vdsm(Plugin, RedHatPlugin):
         self.collectExtOutput("/sbin/iscsiadm -m node")
         self.collectExtOutput("/sbin/iscsiadm -m session")
         self.collectExtOutput("/usr/sbin/nodectl info")
+        self.collectExtOutput("/usr/bin/abrt-cli list")
 
         try:
             cli = client.connect('localhost')
