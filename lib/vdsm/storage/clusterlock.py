@@ -35,6 +35,7 @@ import sanlock
 from vdsm import constants
 from vdsm import utils
 
+from vdsm.common import errors
 from vdsm.common import osutils
 from vdsm.config import config
 from vdsm.storage import exception as se
@@ -71,9 +72,8 @@ HOST_STATUS_FAIL = "fail"
 HOST_STATUS_DEAD = "dead"
 
 
-class Error(Exception):
-    def __str__(self):
-        return self.msg.format(self=self)
+class Error(errors.Base):
+    """ Base class for clusterlock errors. """
 
 
 class InvalidLeaseName(Error):

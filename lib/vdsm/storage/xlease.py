@@ -149,6 +149,7 @@ except ImportError:
     sanlock = None
 
 from vdsm import utils
+from vdsm.common import errors
 from vdsm.common.osutils import uninterruptible
 
 # TODO: Support 4K block size.  This should be encapsulated in the Index class
@@ -214,14 +215,10 @@ log = logging.getLogger("storage.xlease")
 # TODO: Move errors to storage.exception?
 
 
-class Error(Exception):
-    msg = None
+class Error(errors.Base):
 
     def __init__(self, lease_id):
         self.lease_id = lease_id
-
-    def __str__(self):
-        return self.msg.format(self=self)
 
 
 class NoSuchLease(Error):

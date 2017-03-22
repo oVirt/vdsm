@@ -22,6 +22,7 @@
 from __future__ import absolute_import
 
 from vdsm import qemuimg
+from vdsm.common import errors
 from vdsm.storage import constants as sc
 from vdsm.storage import guarded
 
@@ -31,15 +32,12 @@ from storage.sdm.volume_info import VolumeInfo
 from . import base
 
 
-class Error(Exception):
+class Error(errors.Base):
     msg = "Cannot amend volume {self.vol_id}: {self.reason}"
 
     def __init__(self, vol_id, reason):
         self.vol_id = vol_id
         self.reason = reason
-
-    def __str__(self):
-        return self.msg.format(self=self)
 
 
 class Job(base.Job):

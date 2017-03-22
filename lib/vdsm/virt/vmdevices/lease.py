@@ -101,6 +101,7 @@ from __future__ import absolute_import
 import logging
 import xml.etree.ElementTree as ET
 
+from vdsm.common import errors
 from vdsm.common import response
 from vdsm.virt import vmxml
 
@@ -110,9 +111,8 @@ from . import hwclass
 log = logging.getLogger("virt.lease")
 
 
-class Error(Exception):
-    def __str__(self):
-        return self.msg.format(self=self)
+class Error(errors.Base):
+    """ Base class for lease errors """
 
 
 class CannotPrepare(Error):
