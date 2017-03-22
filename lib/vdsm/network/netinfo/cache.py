@@ -157,8 +157,8 @@ def networks_base_info(running_nets, routes=None, ipaddrs=None):
     info = {}
     for net, attrs in six.viewitems(running_nets):
         try:
-            info[net] = _getNetInfo(
-                _net_iface_name(net, attrs), attrs['bridged'], routes, ipaddrs)
+            iface = get_net_iface_from_config(net, attrs)
+            info[net] = _getNetInfo(iface, attrs['bridged'], routes, ipaddrs)
         except NetworkIsMissing:
             # Missing networks are ignored, reporting only what exists.
             logging.warning('Missing network detected [%s]: %s', net, attrs)
@@ -166,7 +166,7 @@ def networks_base_info(running_nets, routes=None, ipaddrs=None):
     return info
 
 
-def _net_iface_name(net, netattrs):
+def get_net_iface_from_config(net, netattrs):
     if netattrs['bridged']:
         return net
     iface = netattrs.get('bonding') or netattrs.get('nic')
@@ -218,7 +218,7 @@ def ifaceUsed(iface):
         if linkDict.get('device') == iface and linkDict.get('type') == 'vlan':
             return True  # it backs a VLAN
     for net_name, net_attr in six.viewitems(RunningConfig().networks):
-        if _net_iface_name(net_name, net_attr) == iface:
+        if get_net_iface_from_config(net_name, net_attr) == iface:
             return True
     return False
 
