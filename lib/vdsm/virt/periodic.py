@@ -142,7 +142,7 @@ class Operation(object):
     _log = logging.getLogger("virt.periodic.Operation")
 
     def __init__(self, func, period, scheduler, timeout=0, executor=None,
-                 exclusive=False):
+                 exclusive=False, discard=True):
         """
         parameters:
 
@@ -159,6 +159,8 @@ class Operation(object):
                    are scheduled again just after being dispatched to the
                    executor (optimistic approach).
                    The operations are non-exclusive by default.
+        discard: boolean flag to pass to the underlying executor.
+                 See the documentation of the 'Executor.dispatch' method.
         """
         self._func = func
         self._period = period
@@ -166,6 +168,7 @@ class Operation(object):
         self._scheduler = scheduler
         self._executor = _executor if executor is None else executor
         self._exclusive = exclusive
+        self._discard = discard
         self._lock = threading.Lock()
         self._running = False
         self._call = None
@@ -219,7 +222,7 @@ class Operation(object):
         """
         self._call = None
         try:
-            self._executor.dispatch(self, self._timeout)
+            self._executor.dispatch(self, self._timeout, discard=self._discard)
         except executor.TooManyTasks:
             self._log.warning('could not run %s, executor queue full',
                               self._func)
