@@ -1,4 +1,4 @@
-# Copyright 2013-2016 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@ import logging
 
 from vdsm.network import ifacetracking
 from vdsm.network import ipwrapper
-from vdsm.network import libvirt
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (routeAdd, routeDel, ruleAdd, ruleDel,
@@ -372,6 +371,3 @@ class ConfigApplier(object):
 
     def networkBackup(self, network):
         pass
-
-    def removeLibvirtNetwork(self, network):
-        libvirt.removeNetwork(network)

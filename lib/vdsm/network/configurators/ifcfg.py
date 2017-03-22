@@ -1,4 +1,4 @@
-# Copyright 2011-2016 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -394,11 +394,6 @@ class ConfigWriter(object):
     def _removeFile(filename):
         utils.rmFile(filename)
         logging.debug("Removed file %s", filename)
-
-    def removeLibvirtNetwork(self, network, skipBackup=False):
-        if not skipBackup:
-            self.networkBackup(network)
-        libvirt.removeNetwork(network)
 
     @classmethod
     def writeBackupFile(cls, dirName, fileName, content):

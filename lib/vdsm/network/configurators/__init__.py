@@ -1,4 +1,4 @@
-# Copyright 2013-2014 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -110,9 +110,6 @@ class Configurator(object):
 
     def network_backup(self, network):
         self.configApplier.networkBackup(network)
-
-    def removeLibvirtNetwork(self, network):
-        self.configApplier.removeLibvirtNetwork(network)
 
     def configureQoS(self, hostQos, top_device):
         out = hostQos.get('out')

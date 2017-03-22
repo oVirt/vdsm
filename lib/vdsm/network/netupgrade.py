@@ -39,6 +39,8 @@ def upgrade():
     rconfig = RunningConfig()
     pconfig = PersistentConfig()
 
+    libvirt_networks = libvirt.networks()
+
     _upgrade_volatile_running_config(rconfig)
 
     if rconfig.config_exists() or pconfig.config_exists():
@@ -47,8 +49,10 @@ def upgrade():
     else:
         # In case unified config has not existed before, it is assumed that
         # the networks existance have been persisted in libvirt db.
-        vdsmnets = libvirt_vdsm_nets(libvirt.networks())
+        vdsmnets = libvirt_vdsm_nets(libvirt_networks)
         _create_unified_configuration(rconfig, NetInfo(netinfo(vdsmnets)))
+
+    _cleanup_libvirt_networks(libvirt_networks)
 
 
 def _upgrade_volatile_running_config(rconfig):
@@ -138,3 +142,13 @@ def _filter_owned_bonds(kconfig_bonds):
                 for bond_name, bond_attrs in six.viewitems(kconfig_bonds)
                 if Ifcfg.owned_device(bond_name)}
     return kconfig_bonds
+
+
+def _cleanup_libvirt_networks(libvirt_networks):
+    """
+    Host networks are no longer persisted in libvirt db, therefore, they are
+    removed as part of the upgrade.
+    Note: The role of managing libvirt networks has passed to virt.
+    """
+    for net in libvirt_networks:
+        libvirt.removeNetwork(net)

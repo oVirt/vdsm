@@ -1,4 +1,4 @@
-# Copyright 2011-2016 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,12 +28,12 @@ import six
 from vdsm.config import config
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
-from vdsm.network import libvirt
 from vdsm.network.netinfo import NET_PATH
 from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo import mtus
 from vdsm.network.netinfo import nics as netinfo_nics
 from vdsm.network.netinfo.cache import CachingNetInfo
+from vdsm.network.netinfo.cache import get_net_iface_from_config
 from vdsm.network.ip.address import IPv4, IPv6
 from vdsm import utils
 
@@ -296,7 +296,7 @@ def _del_network(network, configurator, _netinfo, bypass_validation=False,
     # Otherwise if we first remove the network entity while the libvirt
     # network is still up, the network entity (In some flows) thinks that
     # it still has users and thus does not allow its removal
-    configurator.removeLibvirtNetwork(network)
+    configurator.network_backup(network)
     _netinfo.del_network(network)
 
     if net_ent_to_remove is not None:
@@ -329,7 +329,7 @@ def remove_networks(networks, bondings, configurator, _netinfo):
     kernel_config = kernelconfig.KernelConfig(_netinfo)
     normalized_config = kernelconfig.normalize(
         netconfpersistence.BaseConfig(networks, bondings))
-    libvirt_nets = libvirt.networks()
+    running_nets = configurator.runningConfig.networks
 
     for network, attrs in networks.items():
         if network in _netinfo.networks:
@@ -343,12 +343,11 @@ def remove_networks(networks, bondings, configurator, _netinfo):
             _del_network(network, configurator, _netinfo,
                          keep_bridge=keep_bridge)
             _netinfo.updateDevices()
-        elif network in libvirt_nets:
-            # If the network was not in _netinfo but is in the networks
-            # returned by libvirt, it means that we are dealing with
-            # a broken network.
+        elif network in running_nets:
+            # If the network was not in _netinfo but is in the persisted
+            # networks, it means that we are dealing with a broken network.
             logging.debug('Removing broken network %r', network)
-            _del_broken_network(network, libvirt_nets[network],
+            _del_broken_network(network, running_nets[network],
                                 configurator=configurator)
             _netinfo.updateDevices()
         elif 'remove' in attrs:
@@ -362,8 +361,12 @@ def _del_broken_network(network, netAttr, configurator):
     Adapts the network information of broken networks so that they can be
     deleted via _del_network.
     """
+    iface = get_net_iface_from_config(network, netAttr)
+
     _netinfo = CachingNetInfo()
-    _netinfo.networks[network] = netAttr
+    _netinfo.networks[network] = {}
+    _netinfo.networks[network]['iface'] = iface
+    _netinfo.networks[network]['bridged'] = netAttr['bridged']
     _netinfo.networks[network]['dhcpv4'] = False
 
     if _netinfo.networks[network]['bridged']:
@@ -373,9 +376,8 @@ def _del_broken_network(network, netAttr, configurator):
             nets = {}  # ifcfg does not need net definitions
         _netinfo.networks[network]['ports'] = _persistence.configuredPorts(
             nets, network)
-    elif not os.path.exists('/sys/class/net/' + netAttr['iface']):
+    elif not os.path.exists('/sys/class/net/' + iface):
         # Bridgeless broken network without underlying device
-        libvirt.removeNetwork(network)
         configurator.runningConfig.removeNetwork(network)
         return
     canonicalize_networks({network: _netinfo.networks[network]})
