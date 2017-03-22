@@ -92,7 +92,7 @@ def create_network(netname, user_reference=None):
     """
     with _libvirt_net_lock:
         if not is_libvirt_network(netname):
-            createNetwork(createNetworkDef(netname))
+            _createNetwork(createNetworkDef(netname))
 
         NetworksUsersCache.add(netname, user_reference)
 
@@ -107,7 +107,7 @@ def delete_network(netname, user_reference=None):
             removeNetwork(netname)
 
 
-def createNetwork(netXml):
+def _createNetwork(netXml):
     conn = libvirtconnection.get()
     net = conn.networkDefineXML(netXml)
     net.create()

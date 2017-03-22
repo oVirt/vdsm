@@ -33,8 +33,6 @@ import uuid
 
 import six
 
-from libvirt import libvirtError, VIR_ERR_NO_NETWORK
-
 from vdsm.config import config
 from vdsm import commands
 from vdsm import cmdutils
@@ -397,16 +395,9 @@ class ConfigWriter(object):
         utils.rmFile(filename)
         logging.debug("Removed file %s", filename)
 
-    def createLibvirtNetwork(self, network, bridged=True, iface=None,
-                             skipBackup=False):
-        netXml = libvirt.createNetworkDef(network, bridged, iface)
-        if not skipBackup:
-            self._networkBackup(network)
-        libvirt.createNetwork(netXml)
-
     def removeLibvirtNetwork(self, network, skipBackup=False):
         if not skipBackup:
-            self._networkBackup(network)
+            self.networkBackup(network)
         libvirt.removeNetwork(network)
 
     @classmethod
@@ -429,7 +420,7 @@ class ConfigWriter(object):
         logging.debug("Persistently backed up %s "
                       "(until next 'set safe config')", backup)
 
-    def _networkBackup(self, network):
+    def networkBackup(self, network):
         self._atomicNetworkBackup(network)
         if config.get('vars', 'net_persistence') != 'unified':
             self._persistentNetworkBackup(network)
@@ -450,25 +441,6 @@ class ConfigWriter(object):
         logging.debug("backing up network %s: %s", network, content)
 
         cls.writeBackupFile(NET_LOGICALNET_CONF_BACK_DIR, network, content)
-
-    def restoreAtomicNetworkBackup(self):
-        logging.info("Rolling back logical networks configuration "
-                     "(restoring atomic logical networks backup)")
-        for network, content in six.iteritems(self._networksBackups):
-            # Networks with content None should be removed.
-            # Networks with real content should be recreated.
-            # To avoid libvirt errors during recreation we need
-            # to remove the old network first
-            try:
-                libvirt.removeNetwork(network)
-            except libvirtError as e:
-                if e.get_error_code() == VIR_ERR_NO_NETWORK:
-                    pass
-
-            if content:
-                libvirt.createNetwork(content)
-
-            logging.info('Restored %s', network)
 
     def _backup(self, filename):
         self._atomicBackup(filename)
@@ -565,7 +537,6 @@ class ConfigWriter(object):
 
         stop_devices(self._backups)
 
-        self.restoreAtomicNetworkBackup()
         self.restoreAtomicBackup()
 
         start_devices(self._backups)

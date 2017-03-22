@@ -370,9 +370,8 @@ class ConfigApplier(object):
             with open(bonding.BONDING_OPT % (bond.name, key), 'w') as f:
                 f.write(value)
 
-    def createLibvirtNetwork(self, network, bridged=True, iface=None):
-        netXml = libvirt.createNetworkDef(network, bridged, iface)
-        libvirt.createNetwork(netXml)
+    def networkBackup(self, network):
+        pass
 
     def removeLibvirtNetwork(self, network):
         libvirt.removeNetwork(network)

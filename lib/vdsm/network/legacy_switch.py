@@ -224,7 +224,7 @@ def _add_network(network, configurator, _netinfo, nameservers,
     if net_ent_to_configure is not None:
         logging.info('Configuring device %s', net_ent_to_configure)
         net_ent_to_configure.configure(**options)
-    configurator.configureLibvirtNetwork(network, net_ent)
+    configurator.network_backup(network)
     if hostQos is not None:
         configurator.configureQoS(hostQos, net_ent)
 

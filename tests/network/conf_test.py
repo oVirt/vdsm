@@ -30,7 +30,6 @@ import tempfile
 
 from six import StringIO
 
-from vdsm.network import libvirt
 from vdsm.network.configurators import ifcfg
 from vdsm.network.configurators import ifcfg_acquire
 
@@ -104,8 +103,6 @@ class ifcfgConfigWriterTests(TestCaseBase):
              os.path.join(self._tempdir, 'ifcfg-')),
             (ifcfg, 'ifdown', lambda x: 0),
             (ifcfg, '_exec_ifup', lambda *x: 0),
-            (libvirt, 'createNetwork', lambda *x: None),
-            (libvirt, 'removeNetwork', lambda *x: None),
         ]):
             # after vdsm package is installed, the 'vdsm' account will be
             # created if no 'vdsm' account, we should skip this test

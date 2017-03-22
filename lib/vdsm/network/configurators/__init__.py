@@ -29,7 +29,7 @@ from vdsm.network.netinfo import mtus
 
 from ..errors import RollbackIncomplete
 from . import qos
-from ..models import Bond, Bridge, hierarchy_vlan_tag, hierarchy_backing_device
+from ..models import Bond, hierarchy_vlan_tag, hierarchy_backing_device
 
 
 class Configurator(object):
@@ -108,10 +108,8 @@ class Configurator(object):
     def owned_device(device):
         raise NotImplementedError
 
-    def configureLibvirtNetwork(self, network, iface):
-        self.configApplier.createLibvirtNetwork(network,
-                                                isinstance(iface, Bridge),
-                                                iface.name)
+    def network_backup(self, network):
+        self.configApplier.networkBackup(network)
 
     def removeLibvirtNetwork(self, network):
         self.configApplier.removeLibvirtNetwork(network)
