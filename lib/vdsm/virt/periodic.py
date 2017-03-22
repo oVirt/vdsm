@@ -114,8 +114,9 @@ def start(cif, scheduler):
             sampling.HostMonitor(cif=cif),
             config.getint('vars', 'host_sample_stats_interval'),
             scheduler,
-            timeout=None,
-            exclusive=True),
+            timeout=config.getint('vars', 'host_sample_stats_interval'),
+            exclusive=True,
+            discard=False),
 
         Operation(
             containersconnection.monitor,
