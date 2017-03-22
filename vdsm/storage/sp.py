@@ -203,33 +203,49 @@ class StoragePool(object):
 
         with rm.acquireResource(sc.STORAGE, "upgrade_" + self.spUUID,
                                 rm.SHARED):
-            with rm.acquireResource(sc.STORAGE, sdUUID, rm.EXCLUSIVE):
-                if sdUUID not in self._domainsToUpgrade:
-                    return
-
-                # This can never be the master
-                # Non data domain should not be upgraded
-                domClass = domain.getDomainClass()
-                if domClass != sd.DATA_DOMAIN:
-                    self.log.debug("Domain `%s` is not a data domain it is an "
-                                   "%s domain, not upgrading", sdUUID,
-                                   domClass)
-                else:
-                    domain.invalidateMetadata()
-                    domVersion = domain.getVersion()
-                    if domVersion > targetDomVersion:
-                        self.log.critical("Found a domain with a more advanced"
-                                          " version then the master domain")
-                    elif domVersion < targetDomVersion:
-                        try:
-                            self._convertDomain(domain, str(targetDomVersion))
-                        except:
-                            self.log.warn("Could not upgrade domain `%s`",
-                                          sdUUID, exc_info=True)
+            # This can never be the master
+            # Non data domain should not be upgraded
+            # The domain type can never be changed, therefore it can be
+            # checked without acquiring the domain lock.
+            domClass = domain.getDomainClass()
+            if domClass != sd.DATA_DOMAIN:
+                self.log.debug("Domain `%s` is not a data domain it is an "
+                               "%s domain, not upgrading", sdUUID, domClass)
+            else:
+                if self._shouldUpgradeDomain(domain, targetDomVersion):
+                    with rm.acquireResource(sc.STORAGE, sdUUID, rm.EXCLUSIVE):
+                        if sdUUID not in self._domainsToUpgrade:
                             return
 
+                        domain.invalidateMetadata()
+                        if self._shouldUpgradeDomain(domain, targetDomVersion):
+                            try:
+                                self._convertDomain(domain,
+                                                    str(targetDomVersion))
+                            except:
+                                self.log.warn("Could not upgrade domain `%s`",
+                                              sdUUID, exc_info=True)
+                                return
+            try:
                 self._domainsToUpgrade.remove(sdUUID)
-                self._finalizePoolUpgradeIfNeeded()
+            except ValueError:
+                pass
+
+            self._finalizePoolUpgradeIfNeeded()
+
+    @unsecured
+    def _shouldUpgradeDomain(self, domain, targetDomVersion):
+        domVersion = domain.getVersion()
+        if domVersion < targetDomVersion:
+            return True
+
+        if domVersion > targetDomVersion:
+            self.log.critical("Found a domain with a more advanced"
+                              " version then the master domain")
+            return False
+
+        # domVersion == targetDomVersion
+        return False
 
     def _updateDomainsRole(self):
         for sdUUID in self.getDomains(activeOnly=True):
