@@ -447,12 +447,24 @@ class StoragePool(object):
             with rm.acquireResource(sc.STORAGE, "upgrade_" + self.spUUID,
                                     rm.EXCLUSIVE, timeout=lockTimeout):
                 sd.validateDomainVersion(targetDomVersion)
-                self.log.info("Trying to upgrade master domain `%s`",
-                              self.masterDomain.sdUUID)
-                with rm.acquireResource(sc.STORAGE, self.masterDomain.sdUUID,
-                                        rm.EXCLUSIVE):
-                    self._convertDomain(self.masterDomain,
-                                        str(targetDomVersion))
+                # _upgradePool is executed during startSpm. Other operations
+                # (like storage jobs such as copy_data/amend_image) that use
+                # the same lock may be running. In case we'll try to upgrade
+                # the master version we'll wait for those jobs to end and
+                # release the lock.
+                # Usually no upgrade is actually being performed, this check
+                # verifies that a master domain upgrade is actually needed
+                # before attempting to execute it (The domain version can be
+                # only incremented) - note that the last phase of the upgrade
+                # should be the version update.
+                if self.masterDomain.getVersion() != targetDomVersion:
+                    self.log.info("Trying to upgrade master domain `%s`",
+                                  self.masterDomain.sdUUID)
+                    with rm.acquireResource(sc.STORAGE,
+                                            self.masterDomain.sdUUID,
+                                            rm.EXCLUSIVE):
+                        self._convertDomain(self.masterDomain,
+                                            str(targetDomVersion))
 
                 self.log.debug("Marking active domains for upgrade")
                 domains = self.getDomains(activeOnly=True)
