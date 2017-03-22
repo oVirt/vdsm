@@ -415,7 +415,7 @@ class _FakeExecutor(object):
         self.attempts = 0
         self.done = threading.Event()
 
-    def dispatch(self, func, timeout):
+    def dispatch(self, func, timeout, discard=True):
         if (self._max_attempts is not None and
            self.attempts == self._max_attempts):
             self.done.set()
