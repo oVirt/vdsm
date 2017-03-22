@@ -23,22 +23,21 @@ import os
 import re
 
 from . import constants
+from .common import errors
 from .config import config
 
 SUDO_NON_INTERACTIVE_FLAG = "-n"
 
 
-class Error(Exception):
+class Error(errors.Base):
+    msg = ("Command {self.cmd} failed with rc={self.rc} out={self.out!r} "
+           "err={sef.err!r}")
 
     def __init__(self, cmd, rc, out, err):
         self.cmd = cmd
         self.rc = rc
         self.out = out
         self.err = err
-
-    def __str__(self):
-        return "Command %s failed with rc=%d out=%r err=%r" % (
-            self.cmd, self.rc, self.out, self.err)
 
 
 def nice(cmd, nice):

@@ -126,6 +126,11 @@ def connect(
 class Error(Exception):
     """
     Base class for vdsm.client errors
+
+    This is a copy of vdsm.common.errors.Base. Kept here so we won't
+    have to depend on vdsm-python providing the errors module.
+
+    TODO: depend on vdsm-common package when we have one.
     """
     msg = ""
 
