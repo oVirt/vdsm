@@ -29,7 +29,7 @@ import pyinotify
 from vdsm.constants import P_VDSM_RUN
 from vdsm import utils
 from vdsm.network import ifacetracking
-from vdsm.network import libvirt
+from vdsm.network.kernelconfig import networks_northbound_ifaces
 
 
 MONITOR_FOLDER = os.path.join(P_VDSM_RUN, 'dhclientmon')
@@ -158,7 +158,7 @@ def _is_vdsm_interface(device_name):
     if ifacetracking.is_tracked(device_name):
         return True
     else:
-        return libvirt.is_libvirt_device(device_name)
+        return device_name in networks_northbound_ifaces()
 
 
 def _normalize_response(response):

@@ -25,7 +25,7 @@ from vdsm.network.netinfo import bonding
 from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo import dns
 from vdsm.network.netinfo import routes
-from vdsm.network.netconfpersistence import BaseConfig
+from vdsm.network.netconfpersistence import BaseConfig, RunningConfig
 
 
 class KernelConfig(BaseConfig):
@@ -61,6 +61,22 @@ def normalize(running_config):
     _normalize_bonding_opts(config_copy)
 
     return config_copy
+
+
+def networks_northbound_ifaces():
+    rconfig = RunningConfig()
+    ifaces = []
+    for netname, net_attrs in six.viewitems(rconfig.networks):
+        if net_attrs['bridged']:
+            ifaces.append(netname)
+        else:
+            iface = net_attrs.get('bonding') or net_attrs.get('nic')
+            vlan = net_attrs.get('vlan')
+            if vlan:
+                iface = '.'.join([iface, str(vlan)])
+            ifaces.append(iface)
+
+    return ifaces
 
 
 def _translate_netinfo_net(net, net_attr, netinfo_):

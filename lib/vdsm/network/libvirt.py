@@ -1,4 +1,4 @@
-# Copyright 2011-2016 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 from __future__ import absolute_import
 
 from collections import defaultdict
-from glob import iglob
 import logging
 import threading
 
@@ -151,36 +150,6 @@ def is_libvirt_network(netname):
     libvirt_nets = conn.listAllNetworks()
     netname = LIBVIRT_NET_PREFIX + netname
     return any(n.name() == netname for n in libvirt_nets)
-
-
-def is_libvirt_device(device):
-    try:
-        libvirt_nets = networks()
-    except libvirtError:
-        logging.error('Libvirt failed to answer. It might be the case that'
-                      ' this call is being run before libvirt startup. '
-                      ' Thus, check if vdsm owns %s an alternative way' %
-                      device)
-        return _is_device_configured_in_a_network(device)
-    libvirt_devices = [net.get('bridge') or net.get('iface')
-                       for net in six.itervalues(libvirt_nets)]
-    return device in libvirt_devices
-
-
-def _is_device_configured_in_a_network(device):
-    """
-    Checks whether the device belongs to libvirt when libvirt is not yet
-    running (network.service runs before libvirtd is started). To do so,
-    it must check if there is an autostart network that uses the device.
-    """
-    bridged_name = "bridge name='%s'" % device
-    bridgeless_name = "interface dev='%s'" % device
-    for filename in iglob('/etc/libvirt/qemu/networks/autostart/vdsm-*'):
-        with open(filename) as xml_file:
-            xml_content = xml_file.read()
-            if bridged_name in xml_content or bridgeless_name in xml_content:
-                return True
-    return False
 
 
 def _netlookup_by_name(conn, netname):
