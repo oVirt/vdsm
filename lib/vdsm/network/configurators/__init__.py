@@ -108,9 +108,6 @@ class Configurator(object):
     def owned_device(device):
         raise NotImplementedError
 
-    def network_backup(self, network):
-        self.configApplier.networkBackup(network)
-
     def configureQoS(self, hostQos, top_device):
         out = hostQos.get('out')
         if out is not None:

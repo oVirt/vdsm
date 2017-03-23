@@ -36,13 +36,6 @@ LIBVIRT_NET_PREFIX = 'vdsm-'
 _libvirt_net_lock = threading.Lock()
 
 
-def getNetworkDef(network):
-    netName = LIBVIRT_NET_PREFIX + network
-    conn = libvirtconnection.get()
-    net = _netlookup_by_name(conn, netName)
-    return net.XMLDesc(0) if net else None
-
-
 def createNetworkDef(network, bridged=True, iface=None):
     """
     Creates Network Xml e.g.:

@@ -224,7 +224,6 @@ def _add_network(network, configurator, _netinfo, nameservers,
     if net_ent_to_configure is not None:
         logging.info('Configuring device %s', net_ent_to_configure)
         net_ent_to_configure.configure(**options)
-    configurator.network_backup(network)
     if hostQos is not None:
         configurator.configureQoS(hostQos, net_ent)
 
@@ -296,7 +295,6 @@ def _del_network(network, configurator, _netinfo, bypass_validation=False,
     # Otherwise if we first remove the network entity while the libvirt
     # network is still up, the network entity (In some flows) thinks that
     # it still has users and thus does not allow its removal
-    configurator.network_backup(network)
     _netinfo.del_network(network)
 
     if net_ent_to_remove is not None:
