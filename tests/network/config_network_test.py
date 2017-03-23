@@ -24,7 +24,6 @@ from __future__ import absolute_import
 
 from nose.plugins.attrib import attr
 
-from vdsm.network import libvirt
 from vdsm.network import netinfo
 from vdsm.network.netinfo import mtus
 from vdsm.network.netinfo.mtus import DEFAULT_MTU
@@ -37,11 +36,6 @@ from vdsm.network.configurators import ifcfg
 from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network import legacy_switch
 from vdsm.network.models import Bond, Bridge, Nic, Vlan
-
-
-def _fakeNetworks():
-    return {'fakebridgenet': {'iface': 'fakebridge', 'bridged': True},
-            'fakenet': {'iface': 'fakeint', 'bridged': False}}
 
 
 def _raiseInvalidOpException(*args, **kwargs):
@@ -62,7 +56,6 @@ class TestConfigNetwork(TestCaseBase):
         self.assertEqual(cneContext.exception.errCode, errCode)
 
     # Monkey patch the real network detection from the netinfo module.
-    @MonkeyPatch(libvirt, 'networks', _fakeNetworks)
     @MonkeyPatch(mtus, 'getMaxMtu', lambda *x: 1500)
     @MonkeyPatch(mtus, 'getMtu', lambda *x: 1500)
     @MonkeyPatch(ifcfg, 'ifdown', lambda *x: _raiseInvalidOpException())
