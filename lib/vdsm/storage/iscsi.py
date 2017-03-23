@@ -587,7 +587,7 @@ def setRpFilterIfNeeded(netIfaceName, hostname, loose_mode):
         loose_mode: boolean
     """
     if netIfaceName is None:
-        log.info("iSCSI iface.net_ifacename not provided. Skipping.")
+        log.debug("iface.net_ifacename not provided, skipping rp filter setup")
         return
 
     sessions = _sessionsUsingNetiface(netIfaceName)
