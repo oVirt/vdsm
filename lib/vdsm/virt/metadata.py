@@ -56,6 +56,10 @@ import libvirt
 import six
 
 from vdsm.virt import vmxml
+from vdsm.virt import xmlconstants
+
+
+_DEVICE = 'device'
 
 
 class Error(Exception):
@@ -277,6 +281,88 @@ def _metadata_xml(dom, tag, namespace, namespace_uri):
                     namespace,
                     namespace_uri,
                     0)
+
+
+@contextmanager
+def device(dom, device_id):
+    """
+    Helper context manager to get the metadata of a given device
+    from a libvirt Domain object.
+    Please make sure to check the IMPORTANT WARNING below.
+
+    Example:
+
+    let's start with
+    dom.metadata() ->
+    <vm>
+      <device id="dev0">
+        <foo>bar</foo>
+      </device>
+      <device id="dev1">
+        <number type="int">42</number>
+      </device>
+    </vm>
+
+    let's run this code
+    with metadata.device(dom, 'dev0') as dev:
+        buzz = do_some_work(dev['foo'])
+        dev['fizz'] = buzz
+
+    now we will have
+    dom.metadata() ->
+    <vm>
+      <device id="dev0">
+        <foo>bar</foo>
+        <fizz>sometimes_buzz</fizz>
+      </device>
+      <device id="dev1">
+        <number type="int">42</number>
+      </device>
+    </vm>
+
+    *** IMPORTANT WARNING ***
+    This context manager will provide the client access only to the metadata
+    of one device. Once it is done, it will update only that device, leaving
+    metadata of the other devices, or the VM, unchanged. But under the hood,
+    this context manager will *rewrite all the VM metadata*.
+    You will need to make sure *every* usage of metadata (either per-vm or
+    per-device) on the same libvirt.Domain is protected by one exclusive lock.
+
+    Synchronization is intentionally not done in this module, it should be
+    done at the same layer who owns the libvirt.Domain object.
+
+    :param dom: domain to access
+    :type dom: libvirt.Domain
+    :param device_id: id of the device to access
+    :type name: text string
+    """
+    with _metadata_xml(
+        dom,
+        xmlconstants.METADATA_VM_VDSM_ELEMENT,
+        xmlconstants.METADATA_VM_VDSM_PREFIX,
+        xmlconstants.METADATA_VM_VDSM_URI
+    ) as md:
+        vm_elem = md[0]
+        dev_elem = vm_elem.find('./device[@id="{id}"]'.format(id=device_id))
+        if dev_elem is not None:
+            dev_found = True
+        else:
+            dev_found = False
+            dev_elem = ET.Element(_DEVICE, id=device_id)
+
+        metadata_obj = Metadata()
+        content = metadata_obj.load(dev_elem)
+
+        yield content
+
+        # we want to completely replace the device metadata - not update
+        # the existing one - to not leave garbage behind
+        if dev_found:
+            vmxml.remove_child(vm_elem, dev_elem)
+        dev_elem = metadata_obj.dump(_DEVICE, **content)
+        dev_elem.attrib['id'] = device_id
+        vmxml.append_child(vm_elem, etree_child=dev_elem)
+        md[0] = vm_elem
 
 
 def _elem_to_keyvalue(elem):

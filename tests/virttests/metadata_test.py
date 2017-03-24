@@ -161,7 +161,106 @@ class DomainTests(XMLTestCase):
         )
 
 
+@expandPermutations
+class DeviceTests(XMLTestCase):
+
+    @permutations([
+        # dom_xml, expected_dev
+        [None, {}],
+        ["<vm>"
+         "<device id='NOMATCH'>"
+         "<foobar type='int'>42</foobar>"
+         "</device>"
+         "</vm>",
+         {}],
+        ["<vm>"
+         "<device id='alias0'>"
+         "<foobar type='int'>42</foobar>"
+         "</device>"
+         "</vm>",
+         {'foobar': 42}],
+        ["<vm>"
+         "<device id='alias0'>"
+         "<foo type='int'>42</foo>"
+         "<beer>true</beer>"
+         "</device>"
+         "</vm>",
+         {'foo': 42, 'beer': 'true'}],
+    ])
+    def test_get(self, dom_xml, expected_dev):
+        dom = FakeDomain.with_metadata(dom_xml)
+        with metadata.device(dom, device_id='alias0') as dev:
+            self.assertEqual(dev, expected_dev)
+
+    @permutations([
+        # dom_xml
+        [None],
+        ["<vm>"
+         "<device id='alias0'>"
+         "<mode>12</mode>"
+         "<removeme>true</removeme>"
+         "</device>"
+         "</vm>"],
+    ])
+    def test_update(self, dom_xml):
+        expected_res = {
+            'flag': 'true',
+            'mode': 42,
+        }
+        dom = FakeDomain.with_metadata(dom_xml)
+        with metadata.device(dom, device_id='alias0') as dev:
+            dev['mode'] = 42
+            dev['flag'] = 'true'
+            dev.pop('removeme', None)
+
+        # troubleshooting helper should the test fail
+        print(dom.metadata(
+            libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+            xmlconstants.METADATA_VM_VDSM_URI,
+            0
+        ))
+        # our assertXMLEqual consider the order of XML attributes
+        # significant, while according to XML spec is not.
+        with metadata.device(dom, device_id='alias0') as dev:
+            self.assertEqual(dev, expected_res)
+
+    def test_clear(self):
+        dom_xml = u'''<vm>
+            <device id='alias0'>
+                <mode>12</mode>
+            </device>
+        </vm>'''
+        expected_xml = u'''<vm>
+            <device id='alias0' />
+        </vm>'''
+        dom = FakeDomain.with_metadata(dom_xml)
+        with metadata.device(dom, device_id='alias0') as dev:
+            dev.clear()
+
+        produced_xml = dom.metadata(
+            libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+            xmlconstants.METADATA_VM_VDSM_URI,
+            0
+        )
+        self.assertXMLEqual(produced_xml, expected_xml)
+
+
 class FakeDomain(object):
+
+    @classmethod
+    def with_metadata(
+        cls,
+        xml_string,
+        prefix=xmlconstants.METADATA_VM_VDSM_PREFIX,
+        uri=xmlconstants.METADATA_VM_VDSM_URI
+    ):
+        dom = cls()
+        if xml_string:
+            dom.setMetadata(
+                libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+                xml_string, prefix, uri, 0
+            )
+        return dom
 
     def __init__(self):
         self.xml = {}
