@@ -7,8 +7,10 @@
         <maxMemory slots="16">4294967296</maxMemory>
 	<vcpu current="2">16</vcpu>
   <metadata>
-    <ovirt:container xmlns:ovirt="http://ovirt.org/vm/containers/1.0">docker</ovirt:container>
-                <ovirt:qos/>
+    <ovirt:qos/>
+    <ovirtcnt:container xmlns:ovirtcnt="http://ovirt.org/vm/containers/1.0">
+      <ovirtcnt:runtime>docker</ovirtcnt:runtime>
+    </ovirtcnt:container>
   </metadata>
   <devices>
     <emulator>kvm</emulator>

@@ -372,7 +372,10 @@ class TestVmXmlMetadata(XMLTestCase):
             <metadata>
               <ns0:qos />
               <ns1:vm/>
-              <ns2:container image="foobar">foobar</ns2:container>
+              <ns2:container>
+                <ns2:image>foobar</ns2:image>
+                <ns2:runtime>foobar</ns2:runtime>
+              </ns2:container>
             </metadata>
           </domain>
         """
@@ -398,10 +401,13 @@ class TestVmXmlMetadata(XMLTestCase):
             <metadata>
               <ns0:qos />
               <ns1:vm/>
-              <ns2:container image="foobar">foobar</ns2:container>
+              <ns2:container>
+                <ns2:image>foobar</ns2:image>
+                <ns2:runtime>foobar</ns2:runtime>
+              </ns2:container>
               <ns3:drivemap>
-                <ns3:volume drive="vda" name="data1" />
-                <ns3:volume drive="vdb" name="data2" />
+                <ns3:data1>vda</ns3:data1>
+                <ns3:data2>vdb</ns3:data2>
               </ns3:drivemap>
             </metadata>
           </domain>

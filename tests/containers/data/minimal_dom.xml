@@ -4,7 +4,12 @@
   <uuid>{vm_uuid}</uuid>
   <maxMemory>16384</maxMemory>
   <metadata>
-    <ovirt:container xmlns:ovirt="http://ovirt.org/vm/containers/1.0">docker</ovirt:container>
+    <ovirtcnt:container xmlns:ovirtcnt="http://ovirt.org/vm/containers/1.0">
+      <ovirtcnt:runtime>docker</ovirtcnt:runtime>
+    </ovirtcnt:container>
+    <ovirtdm:drivemap xmlns:ovirtdm="http://ovirt.org/vm/containers/drivemap/1.0">
+      <ovirtdm:data>vda</ovirtdm:data>
+    </ovirtdm:drivemap>
   </metadata>
   <devices>
     <disk type='file' device='cdrom' snapshot='no'>

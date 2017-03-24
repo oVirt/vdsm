@@ -4,7 +4,9 @@
   <uuid>35ef4734-4ed5-4f95-abf8-928e23a76619</uuid>
   <maxMemory>16384</maxMemory>
   <metadata>
-    <ovirt:container xmlns:ovirt="http://ovirt.org/vm/containers/1.0">docker</ovirt:container>
+    <ovirtcnt:container xmlns:ovirtcnt="http://ovirt.org/vm/containers/1.0">
+      <ovirtcnt:runtime>docker</ovirtcnt:runtime>
+    </ovirtcnt:container>
   </metadata>
   <devices>
     <emulator>kvm</emulator>

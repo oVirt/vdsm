@@ -155,36 +155,31 @@ class Domain(object):
         if not container_type or not container_image:
             return
 
-        cont = vmxml.Element(
-            xmlconstants.METADATA_CONTAINERS_ELEMENT,
-            namespace=xmlconstants.METADATA_CONTAINERS_PREFIX,
-            namespace_uri=xmlconstants.METADATA_CONTAINERS_URI,
-            image=container_image,
-            text=container_type
+        vmxml.append_child(
+            metadata_elem,
+            etree_child=metadata.create(
+                xmlconstants.METADATA_CONTAINERS_ELEMENT,
+                namespace=xmlconstants.METADATA_CONTAINERS_PREFIX,
+                namespace_uri=xmlconstants.METADATA_CONTAINERS_URI,
+                runtime=container_type,
+                image=container_image
+            )
         )
-
-        metadata_elem.appendChild(cont)
 
         # drive mapping is optional. It is totally fine for a container
         # not to use any drive, this just means it will not have any
         # form of persistency.
         drive_map = parse_drive_mapping(self.conf.get('custom', {}))
         if drive_map:
-            dm = vmxml.Element(
-                xmlconstants.METADATA_VM_DRIVE_MAP_ELEMENT,
-                namespace=xmlconstants.METADATA_VM_DRIVE_MAP_PREFIX,
-                namespace_uri=xmlconstants.METADATA_VM_DRIVE_MAP_URI
-            )
-
-            for name, drive in drive_map.items():
-                vol = vmxml.Element(
-                    xmlconstants.METADATA_VM_DRIVE_VOLUME_ELEMENT,
+            vmxml.append_child(
+                metadata_elem,
+                etree_child=metadata.create(
+                    xmlconstants.METADATA_VM_DRIVE_MAP_ELEMENT,
                     namespace=xmlconstants.METADATA_VM_DRIVE_MAP_PREFIX,
                     namespace_uri=xmlconstants.METADATA_VM_DRIVE_MAP_URI,
-                    name=name,
-                    drive=drive)
-                dm.appendChild(vol)
-            metadata_elem.appendChild(dm)
+                    **drive_map
+                )
+            )
 
     def appendOs(self, use_serial_console=False):
         """

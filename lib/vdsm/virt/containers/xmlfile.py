@@ -29,6 +29,7 @@ import xml.etree.ElementTree as ET
 
 import six
 
+from vdsm.virt import metadata
 from vdsm.virt import xmlconstants
 from vdsm.utils import rmFile
 from vdsm import constants
@@ -124,17 +125,18 @@ class DomainParser(object):
         return image, volumes
 
     def drives_map(self):
-        mapping = {}
-        entries = self._xml_tree.findall(
-            './metadata/{%s}drivemap/volume' % (
+        mapping_elem = self._xml_tree.find(
+            './metadata/{%s}drivemap' % (
                 xmlconstants.METADATA_VM_DRIVE_MAP_URI
-            ),
+            )
         )
-        for entry in entries:
-            name = entry.get('name')
-            drive = entry.get('drive')
-            mapping[name] = drive
-        return mapping
+        if not mapping_elem:
+            return {}
+        md = metadata.Metadata(
+            xmlconstants.METADATA_VM_DRIVE_MAP_PREFIX,
+            xmlconstants.METADATA_VM_DRIVE_MAP_URI
+        )
+        return md.load(mapping_elem).copy()
 
     def network(self):
         interfaces = self._xml_tree.findall('.//interface[@type="bridge"]')

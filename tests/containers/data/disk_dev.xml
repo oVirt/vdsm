@@ -1,6 +1,8 @@
 <domain type='kvm' id='2'>
   <metadata>
-    <ovirt:container xmlns:ovirt="http://ovirt.org/vm/containers/1.0">docker</ovirt:container>
+    <ovirtcnt:container xmlns:ovirtcnt="http://ovirt.org/vm/containers/1.0">
+      <ovirtcnt:runtime>docker</ovirtcnt:runtime>
+    </ovirtcnt:container>
   </metadata>
   <devices>
     <emulator>kvm</emulator>
