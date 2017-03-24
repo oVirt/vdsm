@@ -19,6 +19,8 @@
 #
 from __future__ import absolute_import
 
+import collections
+import os
 import xml.etree.ElementTree as ET
 
 from vdsm.common import errors
@@ -65,6 +67,10 @@ class VolumeNotFound(errors.Base):
     def __init__(self, drive_name, vol_id):
         self.drive_name = drive_name
         self.vol_id = vol_id
+
+
+VolumeChainEntry = collections.namedtuple('VolumeChainEntry',
+                                          ['uuid', 'path', 'allocation'])
 
 
 class Drive(core.Base):
@@ -518,6 +524,33 @@ class Drive(core.Base):
             if v['volumeID'] == vol_id:
                 return v['path']
         raise VolumeNotFound(drive_name=self.name, vol_id=vol_id)
+
+    def parse_volume_chain(self, disk_xml):
+        def path_to_vol_id(path):
+            for vol in self.volumeChain:
+                if os.path.realpath(vol['path']) == os.path.realpath(path):
+                    return vol['volumeID']
+            raise LookupError("Unable to find VolumeID for path '%s'", path)
+
+        volChain = []
+        while True:
+            sourceAttr = ('file', 'dev')[self.blockDev]
+            path = vmxml.find_attr(disk_xml, 'source', sourceAttr)
+            if not path:
+                break
+
+            # TODO: Allocation information is not available in the XML.  Switch
+            # to the new interface once it becomes available in libvirt.
+            alloc = None
+            backingstore = next(vmxml.children(disk_xml, 'backingStore'), None)
+            if backingstore is None:
+                self.log.warning("<backingStore/> missing from backing "
+                                 "chain for drive %s", self.name)
+                break
+            disk_xml = backingstore
+            entry = VolumeChainEntry(path_to_vol_id(path), path, alloc)
+            volChain.insert(0, entry)
+        return volChain or None
 
 
 def _getSourceXML(drive):
