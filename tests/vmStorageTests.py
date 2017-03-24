@@ -19,6 +19,8 @@
 #
 from __future__ import absolute_import
 
+import xml.etree.cElementTree as etree
+
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase
 from testlib import XMLTestCase
@@ -703,6 +705,49 @@ class TestVolumePath(VdsmTestCase):
         drive = Drive({}, self.log, **self.conf)
         with self.assertRaises(storage.VolumeNotFound):
             drive.volume_path("F1111111-1111-1111-1111-111111111111")
+
+
+class TestVolumeChain(VdsmTestCase):
+    def setUp(self):
+        volume_chain = [{'path': '/foo/bar',
+                         'volumeID': '11111111-1111-1111-1111-111111111111'},
+                        {'path': '/foo/zap',
+                         'volumeID': '22222222-2222-2222-2222-222222222222'}]
+        conf = drive_config(volumeChain=volume_chain)
+        self.drive = Drive({}, self.log, **conf)
+        self.drive._blockDev = True
+
+    def test_parse_volume_chain(self):
+        disk_xml = etree.fromstring("""
+<disk type='block' device='disk' snapshot='no'>
+    <driver name='qemu' type='qcow2' cache='none'
+        error_policy='stop' io='native'/>
+    <source dev='/foo/bar'/>
+    <backingStore type='block' index='1'>
+        <format type='raw'/>
+        <source dev='/foo/zap'/>
+        <backingStore/>
+    </backingStore>
+    <target dev='vda' bus='virtio'/>
+    <serial>10ff6010-4b56-4d78-9814-b9559bccb5a0</serial>
+    <boot order='1'/>
+    <alias name='virtio-disk0'/>
+    <address type='pci' domain='0x0000'
+        bus='0x00' slot='0x05' function='0x0'/>
+</disk>""")
+
+        info = self.drive.parse_volume_chain(disk_xml)
+        expected = [
+            storage.VolumeChainEntry(
+                path='/foo/zap',
+                allocation=None,
+                uuid='22222222-2222-2222-2222-222222222222'),
+            storage.VolumeChainEntry(
+                path='/foo/bar',
+                allocation=None,
+                uuid='11111111-1111-1111-1111-111111111111')
+        ]
+        self.assertEqual(info, expected)
 
 
 def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):

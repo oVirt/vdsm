@@ -39,7 +39,7 @@ from vdsm.virt import vmstatus
 from vdsm.virt import virdomain
 
 from virt import vm
-from virt.vm import HotunplugTimeout, VolumeChainEntry
+from virt.vm import HotunplugTimeout
 from virt import vmdevices
 from virt.vmdevices import hwclass
 from virt.vmtune import io_tune_merge, io_tune_dom_to_values, io_tune_to_dom
@@ -1118,42 +1118,6 @@ class TestVm(XMLTestCase):
                 'graceful': attempts,
                 'forceful': 1,
             })
-
-    def test_get_volume_chain_info(self):
-        with fake.VM(self.conf) as testvm:
-            diskXML = etree.fromstring("""
-<disk type='block' device='disk' snapshot='no'>
-    <driver name='qemu' type='qcow2' cache='none'
-        error_policy='stop' io='native'/>
-    <source dev='/foo/bar'/>
-    <backingStore type='block' index='1'>
-        <format type='raw'/>
-        <source dev='/foo/zap'/>
-        <backingStore/>
-    </backingStore>
-    <target dev='vda' bus='virtio'/>
-    <serial>10ff6010-4b56-4d78-9814-b9559bccb5a0</serial>
-    <boot order='1'/>
-    <alias name='virtio-disk0'/>
-    <address type='pci' domain='0x0000'
-        bus='0x00' slot='0x05' function='0x0'/>
-</disk>""")
-            drive = FakeDrive(blockDev=True, volumeChain=[
-                {'path': '/foo/bar', 'volumeID': '1'},
-                {'path': '/foo/zap', 'volumeID': '2'},
-            ])
-            info = testvm._diskXMLGetVolumeChainInfo(diskXML, drive)
-            expected = [
-                VolumeChainEntry(uuid='2', path='/foo/zap', allocation=None),
-                VolumeChainEntry(uuid='1', path='/foo/bar', allocation=None),
-            ]
-            self.assertEquals(info, expected)
-
-
-class FakeDrive(object):
-    def __init__(self, blockDev=True, volumeChain=None):
-        self.blockDev = blockDev
-        self.volumeChain = [] if volumeChain is None else volumeChain
 
 
 class ExpectedError(Exception):

@@ -164,9 +164,6 @@ class UpdatePortMirroringError(Exception):
     pass
 
 
-VolumeChainEntry = namedtuple('VolumeChainEntry',
-                              ['uuid', 'path', 'allocation'])
-
 VolumeSize = namedtuple("VolumeSize",
                         ["apparentsize", "truesize"])
 
@@ -4919,33 +4916,6 @@ class Vm(object):
             return False
         return True
 
-    def _diskXMLGetVolumeChainInfo(self, diskXML, drive):
-        def pathToVolID(drive, path):
-            for vol in drive.volumeChain:
-                if os.path.realpath(vol['path']) == os.path.realpath(path):
-                    return vol['volumeID']
-            raise LookupError("Unable to find VolumeID for path '%s'", path)
-
-        volChain = []
-        while True:
-            sourceAttr = ('file', 'dev')[drive.blockDev]
-            path = vmxml.find_attr(diskXML, 'source', sourceAttr)
-            if not path:
-                break
-
-            # TODO: Allocation information is not available in the XML.  Switch
-            # to the new interface once it becomes available in libvirt.
-            alloc = None
-            backingstore = next(vmxml.children(diskXML, 'backingStore'), None)
-            if backingstore is None:
-                self.log.warning("<backingStore/> missing from backing "
-                                 "chain for drive %s", drive.name)
-                break
-            diskXML = backingstore
-            entry = VolumeChainEntry(pathToVolID(drive, path), path, alloc)
-            volChain.insert(0, entry)
-        return volChain or None
-
     def _driveGetActualVolumeChain(self, drives):
         def lookupDeviceXMLByAlias(domXML, targetAlias):
             for deviceXML in vmxml.children(DomainDescriptor(domXML).devices):
@@ -4960,7 +4930,7 @@ class Vm(object):
         for drive in drives:
             alias = drive['alias']
             diskXML = lookupDeviceXMLByAlias(self._domain.xml, alias)
-            volChain = self._diskXMLGetVolumeChainInfo(diskXML, drive)
+            volChain = drive.parse_volume_chain(diskXML)
             if volChain:
                 ret[alias] = volChain
         return ret
