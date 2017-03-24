@@ -70,31 +70,12 @@ class Command(object):
 
         Raises:
             `RuntimeError` if invoked more then once
-            `cmdutils.Error` if the command failed
             `exception.ActionStopped` if the command was aborted
+            `cmdutils.Error` if the command failed
         """
-        with self._lock:
-            if self._state == ABORTED:
-                raise exception.ActionStopped
-            if self._state != CREATED:
-                raise RuntimeError("Attempt to run an operation twice")
-            self._start_process()
-            self._state = RUNNING
-
-        rc, out, err = self._wait_for_process()
-
-        with self._lock:
-            self._proc = None
-            if self._state == ABORTING:
-                self._state = ABORTED
-                raise exception.ActionStopped
-            elif self._state == RUNNING:
-                self._state = TERMINATED
-                if rc != 0:
-                    raise cmdutils.Error(self._cmd, rc, out, err)
-            else:
-                raise RuntimeError("Invalid state: %s" % self)
-
+        self._start_process()
+        out, err = self._proc.communicate()
+        self._finalize(out, err)
         return out
 
     def abort(self):
@@ -130,22 +111,46 @@ class Command(object):
 
     def _start_process(self):
         """
-        Must be called when holding the command lock.
-        """
-        log.debug(cmdutils.command_log_line(self._cmd, cwd=self._cwd))
-        self._proc = compat.CPopen(self._cmd, cwd=self._cwd, stdin=None,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
+        Start the underlying process.
 
-    def _wait_for_process(self):
+        Raises:
+            `RuntimeError` if invoked more then once
         """
-        Wait until the underlying process terminates, reading from the process
-        stdout and stderr.
+        with self._lock:
+            if self._state == ABORTED:
+                raise exception.ActionStopped
+            if self._state != CREATED:
+                raise RuntimeError("Attempt to run an operation twice")
+            log.debug(cmdutils.command_log_line(self._cmd, cwd=self._cwd))
+            self._proc = compat.CPopen(self._cmd,
+                                       cwd=self._cwd,
+                                       stdin=None,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+            self._state = RUNNING
+
+    def _finalize(self, out, err):
         """
-        out, err = self._proc.communicate()
+        Update operation state after underlying process has terminated.
+
+        Raises:
+            `exception.ActionStopped` if the command was aborted
+            `cmdutils.Error` if the command failed
+            `RuntimeError` if operation state is invalid
+        """
         rc = self._proc.returncode
         log.debug(cmdutils.retcode_log_line(rc, err))
-        return rc, out, err
+        with self._lock:
+            self._proc = None
+            if self._state == ABORTING:
+                self._state = ABORTED
+                raise exception.ActionStopped
+            elif self._state == RUNNING:
+                self._state = TERMINATED
+                if rc != 0:
+                    raise cmdutils.Error(self._cmd, rc, out, err)
+            else:
+                raise RuntimeError("Invalid state: %s" % self)
 
     def _kill_process(self):
         """
