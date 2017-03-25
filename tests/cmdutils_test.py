@@ -110,3 +110,10 @@ class TasksetTests(VdsmTestCase):
         cmd = cmdutils.taskset(['a', 'b'], self.CPU_LIST)
         res = [constants.EXT_TASKSET, '--cpu-list', '1,2', 'a', 'b']
         self.assertEqual(cmd, res)
+
+
+class TestError(VdsmTestCase):
+
+    def test_format(self):
+        # Should not raise
+        str(cmdutils.Error(["cmd"], 1, "out\n", "err\n"))

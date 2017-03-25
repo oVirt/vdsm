@@ -31,7 +31,7 @@ SUDO_NON_INTERACTIVE_FLAG = "-n"
 
 class Error(errors.Base):
     msg = ("Command {self.cmd} failed with rc={self.rc} out={self.out!r} "
-           "err={sef.err!r}")
+           "err={self.err!r}")
 
     def __init__(self, cmd, rc, out, err):
         self.cmd = cmd
