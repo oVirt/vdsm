@@ -121,6 +121,7 @@ test_modules = \
 	storage_filevolume_test.py \
 	storage_guarded_test.py \
 	storage_hsm_test.py \
+	storage_image_test.py \
 	storage_imagetickets_test.py \
 	storage_iscsi_test.py \
 	storage_lvm_test.py \
@@ -221,6 +222,7 @@ blacklist_modules_python3 = \
 	storage_filevolume_test.py \
 	storage_guarded_test.py \
 	storage_hsm_test.py \
+	storage_image_test.py \
 	storage_imagetickets_test.py \
 	storage_iscsi_test.py \
 	storage_lvm_test.py \
