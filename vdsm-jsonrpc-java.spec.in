@@ -121,6 +121,9 @@ ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %changelog
+* Mon Mar 27 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.3.10
+- remove end of line before command
+
 * Fri Mar 3 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.3.9
 - incomplete message BZ #1425725
 
