@@ -787,32 +787,23 @@ class Image:
                 # find out src volume parameters
                 volParams = srcVol.getVolumeParams()
 
-                if volParams['parent'] and \
-                        volParams['parent'] != sc.BLANK_UUID:
-                    # Volume has parent and therefore is a part of a chain
-                    # in that case we can not know what is the exact size of
-                    # the space target file (chain ==> cow ==> sparse).
-                    # Therefore compute an estimate of the target volume size
-                    # using the sum of the actual size of the chain's volumes
-                    if volParams['volFormat'] != sc.COW_FORMAT or \
-                            volParams['prealloc'] != sc.SPARSE_VOL:
-                        raise se.IncorrectFormat(self)
-                    volParams['apparentsize'] = self.estimateChainSize(
-                        sdUUID, srcImgUUID, srcVolUUID, volParams['size'])
-
-                # Find out dest volume parameters
-                if preallocate in [sc.PREALLOCATED_VOL, sc.SPARSE_VOL]:
-                    volParams['prealloc'] = preallocate
                 if volFormat in [sc.COW_FORMAT, sc.RAW_FORMAT]:
                     dstVolFormat = volFormat
                 else:
                     dstVolFormat = volParams['volFormat']
 
-                self.log.info("copy source %s:%s:%s vol size %s destination "
-                              "%s:%s:%s apparentsize %s" %
+                dstVolAllocBlk = self.calculate_vol_alloc(
+                    sdUUID, volParams, dstVolFormat)
+
+                # Find out dest volume parameters
+                if preallocate in [sc.PREALLOCATED_VOL, sc.SPARSE_VOL]:
+                    volParams['prealloc'] = preallocate
+
+                self.log.info("copy source %s:%s:%s size %s blocks"
+                              "destination %s:%s:%s allocating %s blocks" %
                               (sdUUID, srcImgUUID, srcVolUUID,
                                volParams['size'], dstSdUUID, dstImgUUID,
-                               dstVolUUID, volParams['apparentsize']))
+                               dstVolUUID, dstVolAllocBlk))
 
                 # If image already exists check whether it illegal/fake,
                 # overwrite it
@@ -840,13 +831,8 @@ class Image:
 
                 dstVol = sdCache.produce(dstSdUUID).produceVolume(
                     imgUUID=dstImgUUID, volUUID=dstVolUUID)
-                # For convert to 'raw' we need use the virtual disk size
-                # instead of apparent size
-                if dstVolFormat == sc.RAW_FORMAT:
-                    newsize = volParams['size']
-                else:
-                    newsize = volParams['apparentsize']
-                dstVol.extend(newsize)
+
+                dstVol.extend(dstVolAllocBlk)
                 dstPath = dstVol.getVolumePath()
                 # Change destination volume metadata back to the original size.
                 dstVol.setSize(volParams['size'])
@@ -904,6 +890,48 @@ class Image:
             return dstVolUUID
         finally:
             self.__cleanupCopy(srcVol=srcVol, dstVol=dstVol)
+
+    def calculate_vol_alloc(self, src_sd_id, src_vol_params, dst_vol_format):
+        """
+        Calculate destination volume allocation size for copying source volume.
+
+        Arguments:
+            src_sd_id (str): Source volume storage domain id
+            src_vol_params (dict): Dictionary returned from
+                                   `storage.volume.Volume.getVolumeParams()`
+            dst_vol_format (int): One of sc.RAW_FORMAT, sc.COW_FORMAT
+
+        Returns:
+            Volume allocation in blocks
+        """
+        if dst_vol_format == sc.RAW_FORMAT:
+            # destination 'raw'.
+            # The actual volume size must be the src virtual size.
+            return src_vol_params['size']
+        else:
+            # destination 'cow'.
+            # The actual volume size can be more than virtual size
+            # due to qcow2 metadata.
+            if src_vol_params['volFormat'] == sc.COW_FORMAT:
+                # source 'cow'
+                if src_vol_params['parent'] != sc.BLANK_UUID:
+                    # source 'cow' with parent
+                    # Using estimated size of the chain.
+                    if src_vol_params['prealloc'] != sc.SPARSE_VOL:
+                        raise se.IncorrectFormat(self)
+                    return self.estimateChainSize(
+                        src_sd_id, src_vol_params['imgUUID'],
+                        src_vol_params['volUUID'], src_vol_params['size'])
+                else:
+                    # source 'cow' without parent.
+                    # The source volume should already contains the
+                    # qcow metadata.
+                    return src_vol_params['apparentsize']
+            else:
+                # source 'raw'.
+                # Add additional space for qcow2 metadata.
+                return int(src_vol_params['size'] *
+                           sc.COW_OVERHEAD)
 
     def markIllegalSubChain(self, sdDom, imgUUID, chain):
         """

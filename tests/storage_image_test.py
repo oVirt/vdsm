@@ -1,0 +1,83 @@
+#
+# Copyright 2017 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+from monkeypatch import MonkeyPatch
+from testlib import expandPermutations, permutations
+from testlib import VdsmTestCase as TestCaseBase
+
+from vdsm.storage import constants as sc
+from storage import image
+
+GB_IN_BLK = 1024**3 // 512
+
+
+def fakeEstimateChainSize(self, sdUUID, imgUUID, volUUID, size):
+    return GB_IN_BLK * 2.25
+
+
+@expandPermutations
+class TestCalculateVolAlloc(TestCaseBase):
+
+    @permutations([
+        # srcVolParams, destVolFormt, expectedAlloc
+        # copy raw to raw, using virtual size
+        (dict(size=GB_IN_BLK * 2,
+              volFormat=sc.RAW_FORMAT,
+              apparentsize=GB_IN_BLK),
+         sc.RAW_FORMAT,
+         GB_IN_BLK * 2),
+        # copy single cow volume to raw, using virtual size
+        (dict(size=GB_IN_BLK * 2,
+              volFormat=sc.COW_FORMAT,
+              apparentsize=GB_IN_BLK),
+         sc.RAW_FORMAT,
+         GB_IN_BLK * 2),
+        # copy cow chain to raw, using virtual size
+        (dict(size=GB_IN_BLK * 2,
+              volFormat=sc.COW_FORMAT,
+              apparentsize=GB_IN_BLK,
+              parent="parentUUID"),
+         sc.RAW_FORMAT,
+         GB_IN_BLK * 2),
+        # copy single cow to cow, using source volume apparent size
+        (dict(size=GB_IN_BLK * 2,
+              volFormat=sc.COW_FORMAT,
+              apparentsize=GB_IN_BLK,
+              parent=sc.BLANK_UUID),
+         sc.COW_FORMAT,
+         GB_IN_BLK),
+        # copy qcow chain to cow, using estimated chain size
+        (dict(size=GB_IN_BLK * 2,
+              volFormat=sc.COW_FORMAT,
+              apparentsize=GB_IN_BLK,
+              prealloc=sc.SPARSE_VOL,
+              parent="parentUUID",
+              imgUUID="imgUUID",
+              volUUID="volUUID"),
+         sc.COW_FORMAT,
+         GB_IN_BLK * 2.25),
+    ])
+    @MonkeyPatch(image.Image, 'estimateChainSize', fakeEstimateChainSize)
+    def test_calculate_vol_alloc(
+            self, src_params, dest_format, expected_blk):
+        img = image.Image("/path/to/repo")
+        alloc_blk = img.calculate_vol_alloc("src_sd_id", src_params,
+                                            dest_format)
+        self.assertEqual(alloc_blk, expected_blk)
