@@ -37,7 +37,6 @@ from testlib import make_uuid
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import slowtest
-from testValidation import xfail
 
 CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
 GIB_IN_SECTORS = GIB // sc.BLOCK_SIZE
@@ -68,20 +67,13 @@ class BlockVolumeSizeTests(TestCaseBase):
         # Sparse, capacity 8388608 sectors, initial size 1870.
         #      Expected 2 Mb allocated
         [(sc.SPARSE_VOL, 8388608, 1870), 2],
-    ])
-    def test_block_volume_size(self, args, result):
-        size = BlockVolume.calculate_volume_alloc_size(*args)
-        self.assertEqual(size, result)
-
-    @xfail('The initial size is bigger than the capacity')
-    @permutations([
         # Sparse, capacity 2097152 sectors, initial size 2359296.
         #      Expected 1268 Mb allocated
         [(sc.SPARSE_VOL, GIB_IN_SECTORS,
           BlockVolume.max_size(GIB, sc.COW_FORMAT) // sc.BLOCK_SIZE),
          1268],
     ])
-    def test_block_volume_size_bigger_initial(self, args, result):
+    def test_block_volume_size(self, args, result):
         size = BlockVolume.calculate_volume_alloc_size(*args)
         self.assertEqual(size, result)
 
@@ -92,7 +84,11 @@ class BlockVolumeSizeTests(TestCaseBase):
          ])
     def test_fail_invalid_block_volume_size(self, preallocate):
         with self.assertRaises(se.InvalidParameterException):
-            BlockVolume.calculate_volume_alloc_size(preallocate, 2048, 2049)
+            max_size = BlockVolume.max_size(GIB, sc.COW_FORMAT)
+            max_size_blk = max_size // sc.BLOCK_SIZE
+            BlockVolume.calculate_volume_alloc_size(preallocate,
+                                                    GIB_IN_SECTORS,
+                                                    max_size_blk + 1)
 
 
 class TestBlockVolumeManifest(TestCaseBase):
