@@ -423,6 +423,7 @@ parameters = [
 
     # Section: [sampling]
     ('sampling', [
+        ('enable', 'true', 'enable or disable the monitoring subsystem'),
 
         ('periodic_workers', '4',
             'Number of worker threads to serve the periodic tasks.'

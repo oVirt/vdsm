@@ -86,17 +86,6 @@ def start(cif, scheduler):
             BlockjobMonitor,
             config.getint('vars', 'vm_sample_jobs_interval')),
 
-        # libvirt sampling using bulk stats can block, but unresponsive
-        # domains are handled inside VMBulkstatsMonitor for performance
-        # reasons; thus, does not need dispatching.
-        Operation(
-            sampling.VMBulkstatsMonitor(
-                libvirtconnection.get(cif),
-                cif.getVMs,
-                sampling.stats_cache),
-            config.getint('vars', 'vm_sample_interval'),
-            scheduler),
-
         # We do this only until we get high water mark notifications
         # from QEMU. It accesses storage and/or QEMU monitor, so can block,
         # thus we need dispatching.
@@ -105,20 +94,33 @@ def start(cif, scheduler):
             config.getint('vars', 'vm_watermark_interval')),
 
         Operation(
-            sampling.HostMonitor(cif=cif),
-            config.getint('vars', 'host_sample_stats_interval'),
-            scheduler,
-            timeout=config.getint('vars', 'host_sample_stats_interval'),
-            exclusive=True,
-            discard=False),
-
-        Operation(
             containersconnection.monitor,
             config.getint('vars', 'vm_sample_interval'),
             scheduler),
     ]
 
-    host.stats.start()
+    if config.getboolean('sampling', 'enable'):
+        _operations.extend([
+            # libvirt sampling using bulk stats can block, but unresponsive
+            # domains are handled inside VMBulkstatsMonitor for performance
+            # reasons; thus, does not need dispatching.
+            Operation(
+                sampling.VMBulkstatsMonitor(
+                    libvirtconnection.get(cif),
+                    cif.getVMs,
+                    sampling.stats_cache),
+                config.getint('vars', 'vm_sample_interval'),
+                scheduler),
+
+            Operation(
+                sampling.HostMonitor(cif=cif),
+                config.getint('vars', 'host_sample_stats_interval'),
+                scheduler,
+                timeout=config.getint('vars', 'host_sample_stats_interval'),
+                exclusive=True,
+                discard=False),
+        ])
+        host.stats.start()
 
     for op in _operations:
         op.start()
