@@ -125,6 +125,10 @@ ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %changelog
+* Mon Mar 27 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.4.5
+- java exception visible in Events when upgrade check is done on recently fenced host
+- packaging: spec: move to headless java
+
 * Thu Mar 9 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.4.4
 - remove end of line before command
 
