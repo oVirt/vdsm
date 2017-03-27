@@ -344,17 +344,20 @@ class BlockVolumeManifest(volume.VolumeManifest):
         'initial_size' - optional, if provided the initial allocated
                          size in sectors for sparse volumes
          """
-        if initial_size and initial_size > capacity:
-            log.error("The volume size %s is smaller "
-                      "than the requested initial size %s",
-                      capacity, initial_size)
-            raise se.InvalidParameterException("initial size",
-                                               initial_size)
-
         if initial_size and preallocate == sc.PREALLOCATED_VOL:
             log.error("Initial size is not supported for preallocated volumes")
             raise se.InvalidParameterException("initial size",
                                                initial_size)
+
+        if initial_size:
+            capacity_bytes = capacity * sc.BLOCK_SIZE
+            initial_size_bytes = initial_size * sc.BLOCK_SIZE
+            max_size = cls.max_size(capacity_bytes, sc.COW_FORMAT)
+            if initial_size_bytes > max_size:
+                log.error("The requested initial %s is bigger "
+                          "than the max size %s", initial_size_bytes, max_size)
+                raise se.InvalidParameterException("initial size",
+                                                   initial_size)
 
         if preallocate == sc.SPARSE_VOL:
             if initial_size:
