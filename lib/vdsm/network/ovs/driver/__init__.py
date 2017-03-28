@@ -76,6 +76,9 @@ class API(object):
     def add_br(self, bridge, may_exist=False):
         pass
 
+    def set_dpdk_bridge(self, bridge):
+        return self.set_db_entry('bridge', bridge, 'datapath_type', 'netdev')
+
     @abc.abstractmethod
     def del_br(self, bridge, if_exists=False):
         pass
@@ -107,6 +110,9 @@ class API(object):
     @abc.abstractmethod
     def add_port(self, bridge, port, may_exist=False):
         pass
+
+    def set_dpdk_port(self, port):
+        return self.set_interface_attr(port, 'type', 'dpdk')
 
     @abc.abstractmethod
     def del_port(self, port, bridge=None, if_exists=False):
