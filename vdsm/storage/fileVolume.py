@@ -23,6 +23,7 @@ import os
 import sanlock
 
 from vdsm.common import exception
+from vdsm import constants
 from vdsm import qemuimg
 from vdsm.commands import grepCmd
 from vdsm.storage import constants as sc
@@ -55,6 +56,11 @@ def getDomUuidFromVolumePath(volPath):
 
 
 class FileVolumeManifest(volume.VolumeManifest):
+
+    # Raw volumes should be aligned to sector size, which is 512 or 4096
+    # (not supported yet). qcow2 images should be aligned to cluster size
+    # (64K default). To simplify, we use 1M alignment.
+    align_size = constants.MEGAB
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         volume.VolumeManifest.__init__(self, repoPath, sdUUID, imgUUID,

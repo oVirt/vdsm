@@ -25,6 +25,8 @@ from contextlib import contextmanager
 import image
 
 from vdsm import qemuimg
+from vdsm import utils
+
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -673,6 +675,24 @@ class VolumeManifest(object):
                       self.volUUID, current_gen, next_gen)
         self.setMetadata(metadata)
 
+    @classmethod
+    def max_size(cls, virtual_size, format):
+        """
+        Return the required allocation for the provided virtual size.
+
+        Arguments:
+            virtual_size (int) - volume virtual size in bytes
+            format (int) - sc.RAW_FORMAT or sc.COW_FORMAT
+
+        Returns:
+            maximum size of the volume in bytes
+        """
+        if format == sc.RAW_FORMAT:
+            return virtual_size
+
+        # TODO: use qemu-img measure instead of sc.COW_OVERHEAD.
+        return utils.round(virtual_size * sc.COW_OVERHEAD, cls.align_size)
+
 
 class Volume(object):
     log = logging.getLogger('storage.Volume')
@@ -1220,6 +1240,10 @@ class Volume(object):
 
     def getSize(self):
         return self._manifest.getSize()
+
+    @classmethod
+    def max_size(cls, virtual_size, format):
+        return cls.manifestClass.max_size(virtual_size, format)
 
     def getVolumeSize(self, bs=sc.BLOCK_SIZE):
         return self._manifest.getVolumeSize(bs)

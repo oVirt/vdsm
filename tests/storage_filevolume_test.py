@@ -22,6 +22,8 @@ import os
 
 from testlib import VdsmTestCase as TestCaseBase
 from vdsm.config import config
+from vdsm.constants import GIB
+from vdsm.storage import constants as sc
 import storage.fileVolume as fileVolume
 
 
@@ -31,3 +33,17 @@ class GetDomUuidFromVolumePathTests(TestCaseBase):
                                 "spUUID/sdUUID/images/imgUUID/volUUID")
         self.assertEqual(fileVolume.getDomUuidFromVolumePath(testPath),
                          "sdUUID")
+
+
+class TestFileVolumeManifest(TestCaseBase):
+
+    def test_max_size_raw(self):
+        max_size = fileVolume.FileVolume.max_size(1 * GIB, sc.RAW_FORMAT)
+        # verify that max size equals to virtual size.
+        self.assertEqual(max_size, 1 * GIB)
+
+    def test_max_size_cow(self):
+        max_size = fileVolume.FileVolume.max_size(10 * GIB, sc.COW_FORMAT)
+        # verify that max size equals to virtual size with estimated cow
+        # overhead, aligned to MiB.
+        self.assertEqual(max_size, 11811160064)
