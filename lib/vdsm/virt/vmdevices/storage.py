@@ -528,6 +528,13 @@ class Drive(core.Base):
 
     def parse_volume_chain(self, disk_xml):
         def path_to_vol_id(path):
+            """
+                libvirt path and Drive.path may be different symlinks
+                to the same file or block device:
+
+                - /run/vdsm/storage/sd_id/img_id/vol_id
+                - /rhev/data-center/pool_id/sd_id/images/img_id/vol_id
+            """
             for vol in self.volumeChain:
                 if os.path.realpath(vol['path']) == os.path.realpath(path):
                     return vol['volumeID']

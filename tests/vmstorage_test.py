@@ -19,19 +19,31 @@
 #
 from __future__ import absolute_import
 
+import os
 import xml.etree.cElementTree as etree
+
+from collections import namedtuple
+from contextlib import contextmanager
 
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase
 from testlib import XMLTestCase
 from testlib import make_config
+from testlib import make_file
+from testlib import namedTemporaryDir
 from testlib import permutations, expandPermutations
+from testValidation import xfail
 
 from vdsm import constants
 from vdsm import utils
 from vdsm.virt import vmxml
 from vdsm.virt.vmdevices import storage
 from vdsm.virt.vmdevices.storage import Drive, DISK_TYPE, DRIVE_SHARED_TYPE
+
+VolumeChainEnv = namedtuple(
+    'VolumeChainEnv',
+    ['drive', 'top', 'base']
+)
 
 
 class DriveXMLTests(XMLTestCase):
@@ -724,46 +736,153 @@ class TestVolumePath(VdsmTestCase):
 
 
 class TestVolumeChain(VdsmTestCase):
-    def setUp(self):
-        volume_chain = [{'path': '/foo/bar',
-                         'volumeID': '11111111-1111-1111-1111-111111111111'},
-                        {'path': '/foo/zap',
-                         'volumeID': '22222222-2222-2222-2222-222222222222'}]
-        conf = drive_config(volumeChain=volume_chain)
-        self.drive = Drive(self.log, **conf)
-        self.drive._blockDev = True
+    @contextmanager
+    def make_env(self):
+        with namedTemporaryDir() as tmpdir:
+            """
+            Below we imitate that behaviour by providing
+            two different directories under /rhv/data-center
+            root and one of those directories
+            is a symlink to another one.
 
-    def test_parse_volume_chain(self):
-        disk_xml = etree.fromstring("""
-<disk type='block' device='disk' snapshot='no'>
-    <driver name='qemu' type='qcow2' cache='none'
-        error_policy='stop' io='native'/>
-    <source dev='/foo/bar'/>
-    <backingStore type='block' index='1'>
-        <format type='raw'/>
-        <source dev='/foo/zap'/>
-        <backingStore/>
-    </backingStore>
-    <target dev='vda' bus='virtio'/>
-    <serial>10ff6010-4b56-4d78-9814-b9559bccb5a0</serial>
-    <boot order='1'/>
-    <alias name='virtio-disk0'/>
-    <address type='pci' domain='0x0000'
-        bus='0x00' slot='0x05' function='0x0'/>
-</disk>""")
+            We fill VolumeChain with real directory and
+            use symlinked directory in XML, emulating
+            libvirt reply.
+            """
+            dc_base = os.path.join(tmpdir, "dc")
+            run_base = os.path.join(tmpdir, "run")
+            images_path = os.path.join(dc_base, "images")
 
-        info = self.drive.parse_volume_chain(disk_xml)
-        expected = [
-            storage.VolumeChainEntry(
-                path='/foo/zap',
-                allocation=None,
-                uuid='22222222-2222-2222-2222-222222222222'),
-            storage.VolumeChainEntry(
-                path='/foo/bar',
-                allocation=None,
-                uuid='11111111-1111-1111-1111-111111111111')
-        ]
-        self.assertEqual(info, expected)
+            os.makedirs(images_path)
+            os.symlink(dc_base, run_base)
+
+            dc_top_vol = os.path.join(
+                images_path,
+                "11111111-1111-1111-1111-111111111111")
+            dc_base_vol = os.path.join(
+                images_path,
+                "22222222-2222-2222-2222-222222222222")
+
+            make_file(dc_top_vol)
+            make_file(dc_base_vol)
+
+            run_top_vol = os.path.join(
+                run_base,
+                "images",
+                "11111111-1111-1111-1111-111111111111")
+            run_base_vol = os.path.join(
+                run_base,
+                "images",
+                "22222222-2222-2222-2222-222222222222")
+
+            volume_chain = [
+                {'path': dc_top_vol,
+                 'volumeID': '11111111-1111-1111-1111-111111111111'},
+                {'path': dc_base_vol,
+                 'volumeID': '22222222-2222-2222-2222-222222222222'}
+            ]
+            conf = drive_config(volumeChain=volume_chain)
+            drive = Drive(self.log, **conf)
+            drive._blockDev = True
+
+            yield VolumeChainEnv(
+                drive, run_top_vol,
+                run_base_vol
+            )
+
+    def test_parse_volume_chain_block(self):
+        with self.make_env() as env:
+            disk_xml = etree.fromstring("""
+            <disk>
+                <source dev='%(top)s'/>
+                <backingStore type='block' index='1'>
+                    <source dev='%(base)s'/>
+                    <backingStore/>
+                </backingStore>
+            </disk>""" % {
+                "top": env.top,
+                "base": env.base
+            })
+
+            chain = env.drive.parse_volume_chain(disk_xml)
+            expected = [
+                storage.VolumeChainEntry(
+                    path=env.base,
+                    allocation=None,
+                    uuid='22222222-2222-2222-2222-222222222222'),
+                storage.VolumeChainEntry(
+                    path=env.top,
+                    allocation=None,
+                    uuid='11111111-1111-1111-1111-111111111111')
+            ]
+            self.assertEqual(chain, expected)
+
+    def test_parse_volume_chain_file(self):
+        with self.make_env() as env:
+            env.drive._blockDev = False
+            disk_xml = etree.fromstring("""
+            <disk>
+                <source file='%(top)s'/>
+                <backingStore type='file' index='1'>
+                    <source file='%(base)s'/>
+                    <backingStore/>
+                </backingStore>
+            </disk>""" % {
+                "top": env.top,
+                "base": env.base
+            })
+
+            chain = env.drive.parse_volume_chain(disk_xml)
+            expected = [
+                storage.VolumeChainEntry(
+                    path=env.base,
+                    allocation=None,
+                    uuid='22222222-2222-2222-2222-222222222222'),
+                storage.VolumeChainEntry(
+                    path=env.top,
+                    allocation=None,
+                    uuid='11111111-1111-1111-1111-111111111111')
+            ]
+            self.assertEqual(chain, expected)
+
+    def test_parse_volume_not_in_chain(self):
+        with self.make_env() as env:
+            disk_xml = etree.fromstring("""
+            <disk>
+                <source dev='/top'/>
+                <backingStore type='block' index='1'>
+                    <format type='raw'/>
+                    <source dev='/base'/>
+                    <backingStore/>
+                </backingStore>
+            </disk>""")
+
+            with self.assertRaises(LookupError):
+                env.drive.parse_volume_chain(disk_xml)
+
+    def test_parse_volume_no_source(self):
+        with self.make_env() as env:
+            disk_xml = etree.fromstring("""<disk/>""")
+
+            chain = env.drive.parse_volume_chain(disk_xml)
+            self.assertIsNone(chain)
+
+    @xfail("it returns None, instead of a one item chain - looks like a bug")
+    def test_parse_volume_no_backing(self):
+        with self.make_env() as env:
+            disk_xml = etree.fromstring("""
+            <disk>
+                <source dev='%s'/>
+            </disk>""" % env.top)
+
+            chain = env.drive.parse_volume_chain(disk_xml)
+            expected = [
+                storage.VolumeChainEntry(
+                    path=env.top,
+                    allocation=None,
+                    uuid='11111111-1111-1111-1111-111111111111')
+            ]
+            self.assertEqual(chain, expected)
 
 
 def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):
