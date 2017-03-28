@@ -53,7 +53,7 @@ from vdsm.compat import pickle
 from vdsm.config import config
 from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.host import caps
-from vdsm.logUtils import SimpleLogAdapter
+from vdsm.logUtils import SimpleLogAdapter, volume_chain_to_str
 from vdsm.network import api as net_api
 from vdsm.storage import fileUtils
 from vdsm.storage import outOfProcess as oop
@@ -4895,7 +4895,11 @@ class Vm(object):
             except BlockJobExistsError:
                 self.log.error("A block job is already active on this disk")
                 return response.error('mergeErr')
-            self.log.info("Starting merge with jobUUID='%s'", jobUUID)
+
+            orig_chain = [entry.uuid for entry in chains[drive['alias']]]
+            chain_str = volume_chain_to_str(orig_chain)
+            self.log.info("Starting merge with jobUUID='%s' "
+                          "original chain=%s", jobUUID, chain_str)
 
             try:
                 ret = self._dom.blockCommit(drive.path, base, top, bandwidth,
