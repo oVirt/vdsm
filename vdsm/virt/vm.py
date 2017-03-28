@@ -514,8 +514,12 @@ class Vm(object):
                                  "per type is supported")
 
     def updateDriveIndex(self, drv):
-        drv['index'] = self.__getNextIndex(self._usedIndices[drv['iface']])
-        self._usedIndices[drv['iface']].append(int(drv['index']))
+        drv['index'] = self.__getNextIndex(self._usedIndices[
+            self._indiceForIface(drv['iface'])
+        ])
+        self._usedIndices[self._indiceForIface(drv['iface'])].append(
+            int(drv['index'])
+        )
 
     def normalizeDrivesIndices(self, confDrives):
         drives = [(order, drv) for order, drv in enumerate(confDrives)]
@@ -523,7 +527,9 @@ class Vm(object):
         for order, drv in drives:
             idx = drv.get('index')
             if idx is not None:
-                self._usedIndices[drv['iface']].append(int(idx))
+                self._usedIndices[self._indiceForIface(drv['iface'])].append(
+                    int(idx)
+                )
                 indexed.append(order)
 
         for order, drv in drives:
@@ -531,6 +537,16 @@ class Vm(object):
                 self.updateDriveIndex(drv)
 
         return [drv for order, drv in drives]
+
+    def _indiceForIface(self, iface):
+        '''
+        Small helper to group certain interfaces under the same *bucket*.
+        This is done to avoid interfaces with same node name (sd*) from
+        colliding.
+        '''
+        if iface == 'sata' or iface == 'scsi':
+            return 'sd'
+        return iface
 
     def run(self):
         self._creationThread.start()
