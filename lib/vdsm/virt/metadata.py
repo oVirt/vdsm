@@ -247,47 +247,33 @@ def domain(dom, name, namespace, namespace_uri):
     :param namespace_uri: metadata namespace URI to use
     :type namespace_uri: text string
     """
-    with _domain_xml(dom, name, namespace, namespace_uri) as metadata_xml:
+    with _metadata_xml(dom, name, namespace, namespace_uri) as md:
         # we DO NOT want to handle namespaces ourselves; libvirt does
         # it automatically for us.
         metadata_obj = Metadata()
-        content = metadata_obj.load(metadata_xml.get())
+        content = metadata_obj.load(md[0])
         yield content
-        metadata_xml.set(metadata_obj.dump(name, **content))
-
-
-class _XMLWrapper(object):
-    def __init__(self, metadata_xml):
-        self._xml = metadata_xml
-
-    @property
-    def xml(self):
-        return self._xml
-
-    def get(self):
-        return vmxml.parse_xml(self._xml)
-
-    def set(self, elem):
-        self._xml = vmxml.format_xml(elem)
+        md[0] = metadata_obj.dump(name, **content)
 
 
 @contextmanager
-def _domain_xml(dom, tag, namespace, namespace_uri):
-    metadata_xml = "<{tag}/>".format(tag=tag)
+def _metadata_xml(dom, tag, namespace, namespace_uri):
+    md_xml = "<{tag}/>".format(tag=tag)
     try:
-        metadata_xml = dom.metadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                                    namespace_uri,
-                                    0)
+        md_xml = dom.metadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+                              namespace_uri,
+                              0)
 
     except libvirt.libvirtError as e:
         if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN_METADATA:
             raise
 
-    xml_wrap = _XMLWrapper(metadata_xml)
-    yield xml_wrap
+    md_elem = [vmxml.parse_xml(md_xml)]
+    # we do this because we need to receive back the updated element
+    yield md_elem
 
     dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                    xml_wrap.xml,
+                    vmxml.format_xml(md_elem[0]),
                     namespace,
                     namespace_uri,
                     0)
