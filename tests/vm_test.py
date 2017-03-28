@@ -1125,6 +1125,7 @@ class UnexpectedError(Exception):
     pass
 
 
+@expandPermutations
 class TestVmDeviceHandling(TestCaseBase):
     conf = {
         'devices': [],
@@ -1217,6 +1218,59 @@ class TestVmDeviceHandling(TestCaseBase):
             self.assertEqual(devices[0].state, fake.TEARDOWN)
             self.assertEqual(devices[1].state, fake.TEARDOWN)
             self.assertEqual(devices[2].state, fake.TEARDOWN)
+
+    @permutations([
+        [[], '0'],
+        [[0], '1'],
+        [[1, 2], '0'],
+        [[0, 2], '1'],
+        [[0, 1], '2'],
+    ])
+    def test_getNextIndex(self, used, expected):
+        with fake.VM(self.conf) as testvm:
+            # TODO: get rid of mangling
+            self.assertEqual(testvm._Vm__getNextIndex(used), expected)
+
+    @permutations([
+        ['', ''],
+        ['123', '123'],
+        ['ide', 'ide'],
+        ['sata', 'sd'],
+        ['scsi', 'sd'],
+    ])
+    def test_indiceForIface(self, iface, expected):
+        with fake.VM(self.conf) as testvm:
+            self.assertEqual(testvm._indiceForIface(iface), expected)
+
+    @permutations([
+        # We have to make sure that 'sd' key exists otherwise even defaultdict
+        # will KeyError on access.
+        [{'sd': []}, {'iface': 'sata'}, {'sd': [0]}],
+        [{'sd': [0]}, {'iface': 'sata'}, {'sd': [0, 1]}],
+        [{'sd': [1]}, {'iface': 'sata'}, {'sd': [1, 0]}],
+        [{'sd': [0, 2]}, {'iface': 'sata'}, {'sd': [0, 2, 1]}],
+        [{'sd': [], 'other': [0]}, {'iface': 'sata'},
+         {'other': [0], 'sd': [0]}],
+        [{'sd': [0]}, {'iface': 'scsi'}, {'sd': [0, 1]}],
+    ])
+    def test_updateDriveIndex(self, used, drv, expected):
+        with fake.VM(self.conf) as testvm:
+            testvm._usedIndices = used
+            testvm.updateDriveIndex(drv)
+            self.assertEqual(testvm._usedIndices, expected)
+
+    @permutations([
+        [[{'iface': 'scsi', 'index': '1'}, {'iface': 'sata'}],
+         [{'iface': 'scsi', 'index': '1'}, {'iface': 'sata', 'index': '0'}]],
+        [[{'iface': 'scsi'}, {'iface': 'ide'}],
+         [{'iface': 'scsi', 'index': '0'}, {'iface': 'ide', 'index': '0'}]],
+        [[{'iface': 'scsi'}, {'iface': 'sata'}, {'iface': 'ide'}],
+         [{'iface': 'scsi', 'index': '0'}, {'iface': 'sata', 'index': '1'},
+          {'iface': 'ide', 'index': '0'}]],
+    ])
+    def test_normalizeDrivesIndices(self, drives, expected):
+        with fake.VM(self.conf) as testvm:
+            self.assertEqual(testvm.normalizeDrivesIndices(drives), expected)
 
 
 @expandPermutations
