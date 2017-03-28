@@ -20,7 +20,7 @@
 
 
 # stdlib imports
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 import itertools
 import logging
@@ -286,7 +286,7 @@ class Vm(object):
         self._startTime = time.time() - \
             float(self.conf.pop('elapsedTimeOffset', 0))
 
-        self._usedIndices = {}  # {'ide': [], 'virtio' = []}
+        self._usedIndices = defaultdict(list)  # {'ide': [], 'virtio' = []}
         self.disableDriveMonitor()
         self._vmStartEvent = threading.Event()
         self._vmAsyncStartError = None
@@ -514,8 +514,6 @@ class Vm(object):
                                  "per type is supported")
 
     def updateDriveIndex(self, drv):
-        if not drv['iface'] in self._usedIndices:
-            self._usedIndices[drv['iface']] = []
         drv['index'] = self.__getNextIndex(self._usedIndices[drv['iface']])
         self._usedIndices[drv['iface']].append(int(drv['index']))
 
@@ -523,8 +521,6 @@ class Vm(object):
         drives = [(order, drv) for order, drv in enumerate(confDrives)]
         indexed = []
         for order, drv in drives:
-            if drv['iface'] not in self._usedIndices:
-                self._usedIndices[drv['iface']] = []
             idx = drv.get('index')
             if idx is not None:
                 self._usedIndices[drv['iface']].append(int(idx))
