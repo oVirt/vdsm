@@ -247,8 +247,33 @@ def domain(dom, name, namespace, namespace_uri):
     :param namespace_uri: metadata namespace URI to use
     :type namespace_uri: text string
     """
-    metadata_xml = "<{tag}/>".format(tag=name)
+    with _domain_xml(dom, name, namespace, namespace_uri) as metadata_xml:
+        # we DO NOT want to handle namespaces ourselves; libvirt does
+        # it automatically for us.
+        metadata_obj = Metadata()
+        content = metadata_obj.load(metadata_xml.get())
+        yield content
+        metadata_xml.set(metadata_obj.dump(name, **content))
 
+
+class _XMLWrapper(object):
+    def __init__(self, metadata_xml):
+        self._xml = metadata_xml
+
+    @property
+    def xml(self):
+        return self._xml
+
+    def get(self):
+        return vmxml.parse_xml(self._xml)
+
+    def set(self, elem):
+        self._xml = vmxml.format_xml(elem)
+
+
+@contextmanager
+def _domain_xml(dom, tag, namespace, namespace_uri):
+    metadata_xml = "<{tag}/>".format(tag=tag)
     try:
         metadata_xml = dom.metadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
                                     namespace_uri,
@@ -258,16 +283,11 @@ def domain(dom, name, namespace, namespace_uri):
         if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN_METADATA:
             raise
 
-    # we DO NOT want to handle namespaces ourselves; libvirt does
-    # it automatically for us.
-    metadata_obj = Metadata()
-    content = metadata_obj.load(vmxml.parse_xml(metadata_xml))
+    xml_wrap = _XMLWrapper(metadata_xml)
+    yield xml_wrap
 
-    yield content
-
-    metadata_xml = vmxml.format_xml(metadata_obj.dump(name, **content))
     dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                    metadata_xml,
+                    xml_wrap.xml,
                     namespace,
                     namespace_uri,
                     0)
