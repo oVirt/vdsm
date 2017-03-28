@@ -542,6 +542,11 @@ class FakeVolumeManifest(object):
     def teardown(cls, sdUUID, volUUID, justme=False):
         pass
 
+    @classmethod
+    @recorded
+    def max_size(cls, virtual_size, format):
+        pass
+
 
 class FakeBlockVolumeManifest(FakeVolumeManifest):
     def __init__(self):
@@ -912,6 +917,7 @@ class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
 
     @permutations([
         ['calculate_volume_alloc_size', 3],
+        ['max_size', 2],
     ])
     def test_block_classmethod(self, fn, nargs):
         self.checker.check_classmethod_call(fn, nargs)
@@ -944,4 +950,10 @@ class FileVolumeTests(VolumeTestMixin, VdsmTestCase):
         ['file_setrw', 2],
     ])
     def test_class_methods(self, fn, nargs):
+        self.checker.check_classmethod_call(fn, nargs)
+
+    @permutations([
+        ['max_size', 2],
+    ])
+    def test_file_classmethod(self, fn, nargs):
         self.checker.check_classmethod_call(fn, nargs)

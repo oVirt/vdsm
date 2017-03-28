@@ -64,6 +64,9 @@ log = logging.getLogger('storage.Volume')
 
 class BlockVolumeManifest(volume.VolumeManifest):
 
+    # On block storage volume are composed of lvm extents, 128m by default.
+    align_size = sc.VG_EXTENT_SIZE_MB * constants.MEGAB
+
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         volume.VolumeManifest.__init__(self, repoPath, sdUUID, imgUUID,
                                        volUUID)

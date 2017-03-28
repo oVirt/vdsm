@@ -20,6 +20,7 @@
 
 
 from vdsm.config import config
+from vdsm.constants import GIB
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 
@@ -53,3 +54,17 @@ class BlockVolumeSizeTests(TestCaseBase):
     def test_fail_invalid_block_volume_size(self, preallocate):
         with self.assertRaises(se.InvalidParameterException):
             BlockVolume.calculate_volume_alloc_size(preallocate, 2048, 2049)
+
+
+class TestBlockVolumeManifest(TestCaseBase):
+
+    def test_max_size_raw(self):
+        # # verify that max size equals to virtual size.
+        self.assertEqual(BlockVolume.max_size(1 * GIB, sc.RAW_FORMAT),
+                         1 * GIB)
+
+    def test_max_size_cow(self):
+        # verify that max size equals to virtual size with estimated cow
+        # overhead, aligned to vg extent size.
+        self.assertEqual(BlockVolume.max_size(10 * GIB, sc.COW_FORMAT),
+                         11811160064)
