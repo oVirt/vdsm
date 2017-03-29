@@ -86,7 +86,7 @@ This package contains the API documentation for %{name}.
 	JACKSON_CORE_ASL=$(build-classpath jackson/jackson-core-asl) \\\
 	JACKSON_MAPPER_ASL=$(build-classpath jackson/jackson-mapper-asl) \\\
 	SLF4J_JAR=$(build-classpath slf4j) \\\
-        COMMONS_LANG_JAR=$(build-classpath commons-lang) \\\
+	COMMONS_LANG_JAR=$(build-classpath apache-commons-lang) \\\
 	JAVAC=/usr/lib/jvm/java-1.8.0/bin/javac \\\
 	JAR=/usr/lib/jvm/java-1.8.0/bin/jar \\\
 	%{?null}
