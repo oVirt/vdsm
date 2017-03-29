@@ -189,7 +189,7 @@ class DeviceTests(XMLTestCase):
     ])
     def test_get(self, dom_xml, expected_dev):
         dom = FakeDomain.with_metadata(dom_xml)
-        with metadata.device(dom, device_id='alias0') as dev:
+        with metadata.device(dom, id='alias0') as dev:
             self.assertEqual(dev, expected_dev)
 
     @permutations([
@@ -208,7 +208,7 @@ class DeviceTests(XMLTestCase):
             'mode': 42,
         }
         dom = FakeDomain.with_metadata(dom_xml)
-        with metadata.device(dom, device_id='alias0') as dev:
+        with metadata.device(dom, id='alias0') as dev:
             dev['mode'] = 42
             dev['flag'] = 'true'
             dev.pop('removeme', None)
@@ -221,7 +221,7 @@ class DeviceTests(XMLTestCase):
         ))
         # our assertXMLEqual consider the order of XML attributes
         # significant, while according to XML spec is not.
-        with metadata.device(dom, device_id='alias0') as dev:
+        with metadata.device(dom, id='alias0') as dev:
             self.assertEqual(dev, expected_res)
 
     def test_clear(self):
@@ -234,7 +234,7 @@ class DeviceTests(XMLTestCase):
             <device id='alias0' />
         </vm>'''
         dom = FakeDomain.with_metadata(dom_xml)
-        with metadata.device(dom, device_id='alias0') as dev:
+        with metadata.device(dom, id='alias0') as dev:
             dev.clear()
 
         produced_xml = dom.metadata(
@@ -243,6 +243,59 @@ class DeviceTests(XMLTestCase):
             0
         )
         self.assertXMLEqual(produced_xml, expected_xml)
+
+    def test_lookup_partial_attributes(self):
+        dom_xml = u'''<vm>
+            <device id='alias0' type='fancydev'>
+                <mode type="int">42</mode>
+            </device>
+            <device id='alias1'>
+                <mode type="int">33</mode>
+            </device>
+        </vm>'''
+        dom = FakeDomain.with_metadata(dom_xml)
+        with metadata.device(dom, type='fancydev') as dev:
+            self.assertEqual(dev, {'mode': 42})
+
+    def test_lookup_fail(self):
+        dom_xml = u'''<vm>
+            <device id='alias0' type='fancydev'>
+                <mode type="int">42</mode>
+            </device>
+        </vm>'''
+        dom = FakeDomain.with_metadata(dom_xml)
+        with metadata.device(dom, id='alias999', type='fancydev') as dev:
+            self.assertEqual(dev, {})
+
+    def test_lookup_ambiguous_raises(self):
+        dom_xml = u'''<vm>
+            <device type='fancydev'>
+                <mode type="int">1</mode>
+            </device>
+            <device type='fancydev'>
+                <mode type="int">2</mode>
+            </device>
+        </vm>'''
+        dom = FakeDomain.with_metadata(dom_xml)
+        with self.assertRaises(metadata.MissingDevice):
+            with metadata.device(dom, type='fancydev'):
+                pass
+
+    def test_lookup_multiple_devices(self):
+        dom_xml = u'''<vm>
+            <device id='alias0' type='devA' addr='pci_0000_00_1a_0'>
+                <mode type="int">1200</mode>
+            </device>
+            <device id='alias1' type='devA' addr='pci_0000_00_02_0'>
+                <mode type="int">900</mode>
+            </device>
+            <device id='alias2' type='devC' addr='pci_0000_00_1f_2'>
+                <mode type="int">1440</mode>
+            </device>
+        </vm>'''
+        dom = FakeDomain.with_metadata(dom_xml)
+        with metadata.device(dom, addr='pci_0000_00_02_0') as dev:
+            self.assertEqual(dev, {'mode': 900})
 
 
 class FakeDomain(object):

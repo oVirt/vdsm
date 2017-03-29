@@ -77,6 +77,12 @@ class UnsupportedType(Error):
     """
 
 
+class MissingDevice(Error):
+    """
+    Failed to uniquely identify one device using the given attributes.
+    """
+
+
 class Metadata(object):
     """
     Use this class to load or dump a group (see the module docstring) from
@@ -283,8 +289,48 @@ def _metadata_xml(dom, tag, namespace, namespace_uri):
                     0)
 
 
+def _find_device(vm_elem, attrs):
+    """
+    Find one device in the vm metadata, matching all the given attributes.
+    This function expect to work with a XML structure like:
+
+    <vm>
+      <device id="dev0">
+        <foo>bar</foo>
+      </device>
+      <device addr="0xF00" class="pci">
+        <number type="int">42</number>
+      </device>
+    </vm>
+
+    All the attributes given in `attrs` must match.
+    If the device element has more attributes, they are ignored.
+    Return None if no match is found, but raise MissingDevice if no device
+    is uniquely identified using the given `attrs`.
+
+    :param vm_elem: root of the vm metadata including the device metadata
+    :type vm_elem: ElementTree.Element
+    :param attrs: attributes to match to identify the device
+    :type attrs: dict, each item is string both for key and value
+    :return: the device element
+    :rtype: ElementTree.Element
+    """
+    xpath_attrs = []
+    for key, value in attrs.items():
+        xpath_attrs.append(
+            '[@{key}="{value}"]'.format(key=key, value=value)
+        )
+
+    devices = vm_elem.findall('./device{}'.format(''.join(xpath_attrs)))
+    if len(devices) > 1:
+        raise MissingDevice()
+    if not devices:
+        return None
+    return devices[0]
+
+
 @contextmanager
-def device(dom, device_id):
+def device(dom, **kwargs):
     """
     Helper context manager to get the metadata of a given device
     from a libvirt Domain object.
@@ -333,8 +379,9 @@ def device(dom, device_id):
 
     :param dom: domain to access
     :type dom: libvirt.Domain
-    :param device_id: id of the device to access
-    :type name: text string
+
+    kwargs: attributes to match to identify the device; values are expected to
+    be string.
     """
     with _metadata_xml(
         dom,
@@ -343,12 +390,14 @@ def device(dom, device_id):
         xmlconstants.METADATA_VM_VDSM_URI
     ) as md:
         vm_elem = md[0]
-        dev_elem = vm_elem.find('./device[@id="{id}"]'.format(id=device_id))
+        attrs = kwargs
+        dev_elem = _find_device(vm_elem, attrs)
         if dev_elem is not None:
+            attrs = dev_elem.attrib.copy()
             dev_found = True
         else:
             dev_found = False
-            dev_elem = ET.Element(_DEVICE, id=device_id)
+            dev_elem = ET.Element(_DEVICE, **attrs)
 
         metadata_obj = Metadata()
         content = metadata_obj.load(dev_elem)
@@ -360,7 +409,7 @@ def device(dom, device_id):
         if dev_found:
             vmxml.remove_child(vm_elem, dev_elem)
         dev_elem = metadata_obj.dump(_DEVICE, **content)
-        dev_elem.attrib['id'] = device_id
+        dev_elem.attrib.update(attrs)
         vmxml.append_child(vm_elem, etree_child=dev_elem)
         md[0] = vm_elem
 
