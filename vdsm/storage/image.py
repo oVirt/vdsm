@@ -164,7 +164,7 @@ class Image:
         randomStr = misc.randomStr(RENAME_RANDOM_STRING_LEN)
         return "%s%s_%s" % (sd.REMOVED_IMAGE_PREFIX, randomStr, uuid)
 
-    def __chainSizeCalc(self, sdUUID, imgUUID, volUUID, size):
+    def estimateChainSize(self, sdUUID, imgUUID, volUUID, size):
         """
         Compute an estimate of the whole chain size
         using the sum of the actual size of the chain's volumes
@@ -797,7 +797,7 @@ class Image:
                     if volParams['volFormat'] != sc.COW_FORMAT or \
                             volParams['prealloc'] != sc.SPARSE_VOL:
                         raise se.IncorrectFormat(self)
-                    volParams['apparentsize'] = self.__chainSizeCalc(
+                    volParams['apparentsize'] = self.estimateChainSize(
                         sdUUID, srcImgUUID, srcVolUUID, volParams['size'])
 
                 # Find out dest volume parameters
