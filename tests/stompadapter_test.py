@@ -37,6 +37,9 @@ class TestClient(object):
     def pop_message(self):
         return self._queue.pop(0)
 
+    def empty(self):
+        return len(self._queue) == 0
+
     def queue_frame(self, msg):
         self._queue.append(msg)
 
@@ -391,6 +394,53 @@ class SendFrameTest(TestCaseBase):
         self.assertIsNot(resp_frame, None)
         self.assertEqual(resp_frame.command, Command.MESSAGE)
         self.assertEqual(resp_frame.body, data)
+
+    def test_send_broker_parent_topic(self):
+        frame = Frame(command=Command.SEND,
+                      headers={Headers.DESTINATION:
+                               'jms.topic.vdsm_requests.getAllVmStats',
+                               Headers.REPLY_TO:
+                               'jms.topic.vdsm_responses.getAllVmStats',
+                               Headers.CONTENT_LENGTH: '103'},
+                      body=('{"jsonrpc":"2.0","method":"Host.getAllVmStats",'
+                            '"params":{},"id":"e8a936a6-d886-4cfa-97b9-2d54209'
+                            '053ff"}'
+                            )
+                      )
+
+        ids = {}
+
+        subscription = TestSubscription('jms.topic.vdsm_requests',
+                                        'e8a936a6-d886-4cfa-97b9-2d54209053ff')
+        client = TestClient()
+        subscription.set_client(client)
+
+        destinations = defaultdict(list)
+        destinations['jms'].append(subscription)
+        destinations['jms.topic'].append(subscription)
+        destinations['jms.topic.vdsm_requests'].append(subscription)
+
+        # Topics that should not match
+        destinations['jms.other'].append(subscription)
+        destinations['jms.top'].append(subscription)
+
+        adapter = StompAdapterImpl(Reactor(), destinations, ids)
+        adapter.handle_frame(TestDispatcher(adapter), frame)
+
+        data = adapter.pop_message()
+        self.assertIsNot(data, None)
+        request = JsonRpcRequest.decode(data)
+        self.assertEqual(request.method, 'Host.getAllVmStats')
+        self.assertEqual(len(ids), 1)
+
+        for i in range(3):
+            resp_frame = client.pop_message()
+            self.assertIsNot(resp_frame, None)
+            self.assertEqual(resp_frame.command, Command.MESSAGE)
+            self.assertEqual(resp_frame.body, data)
+
+        # The last two subscriptions do not match
+        self.assertTrue(client.empty())
 
     def test_flow_header(self):
         frame = Frame(command=Command.SEND,

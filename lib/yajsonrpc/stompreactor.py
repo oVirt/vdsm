@@ -198,10 +198,7 @@ class StompAdapterImpl(object):
         destination = frame.headers.get(stomp.Headers.DESTINATION, None)
 
         # Get the list of all known subscribers.
-        try:
-            subs = self._sub_dests[destination]
-        except KeyError:
-            subs = []
+        subs = self.find_subscribers(destination)
 
         # Forward the message to all explicit subscribers.
         for subscription in subs:
@@ -214,7 +211,8 @@ class StompAdapterImpl(object):
             )
             subscription.client.send_raw(res)
 
-        if destination in self.request_queues:
+        if any(destination == queue or destination.startswith(queue + ".")
+               for queue in self.request_queues):
             # A command that is meant to be answered
             # by the internal implementation.
             self._handle_internal(dispatcher,
@@ -261,6 +259,19 @@ class StompAdapterImpl(object):
         except KeyError:
             self.log.warn("Unknown command %s", frame)
             dispatcher.handle_error()
+
+    def find_subscribers(self, destination):
+        """Return all subscribers that are interested in the destination
+           or its parents. Hierarchy is defined using dot as the separator.
+        """
+        destination_segments = destination.split(".")
+        subscriptions = []
+        for parts in range(len(destination_segments)):
+            candidate_dest = ".".join(destination_segments[:parts + 1])
+            if candidate_dest in self._sub_dests:
+                subscriptions.extend(self._sub_dests[candidate_dest])
+
+        return subscriptions
 
 
 class _StompConnection(object):
