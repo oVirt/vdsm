@@ -26,6 +26,7 @@ from contextlib import contextmanager
 
 import volume
 from vdsm import constants
+from vdsm import logUtils
 from vdsm import qemuimg
 from vdsm import utils
 from vdsm import virtsparsify
@@ -206,6 +207,9 @@ class Image:
         using the sum of the actual size of the chain's volumes
         """
         chain = self.getChain(sdUUID, imgUUID, volUUID)
+        log_str = logUtils.volume_chain_to_str(vol.volUUID for vol in chain)
+        self.log.info("chain=%s ", log_str)
+
         newsize = 0
         template = chain[0].getParentVolume()
         if template:
@@ -282,7 +286,6 @@ class Image:
 
             srcVol = srcVol.getParentVolume()
 
-        self.log.info("sdUUID=%s imgUUID=%s chain=%s ", sdUUID, imgUUID, chain)
         return chain
 
     def getTemplate(self, sdUUID, imgUUID):
@@ -380,6 +383,9 @@ class Image:
         try:
             # Find all volumes of source image
             srcChain = self.getChain(srcSdUUID, imgUUID)
+            log_str = logUtils.volume_chain_to_str(
+                vol.volUUID for vol in srcChain)
+            self.log.info("Source chain=%s ", log_str)
         except se.StorageException:
             self.log.error("Unexpected error", exc_info=True)
             raise
@@ -671,7 +677,12 @@ class Image:
 
     def syncData(self, sdUUID, imgUUID, dstSdUUID, syncType):
         srcChain = self.getChain(sdUUID, imgUUID)
+        log_str = logUtils.volume_chain_to_str(vol.volUUID for vol in srcChain)
+        self.log.info("Source chain=%s ", log_str)
+
         dstChain = self.getChain(dstSdUUID, imgUUID)
+        log_str = logUtils.volume_chain_to_str(vol.volUUID for vol in dstChain)
+        self.log.info("Dest chain=%s ", log_str)
 
         if syncType == SYNC_VOLUMES_INTERNAL:
             try:
@@ -778,6 +789,9 @@ class Image:
         if not self.isLegal(sdUUID, imgUUID):
             raise se.ImageIsNotLegalChain(imgUUID)
         chain = self.getChain(sdUUID, imgUUID)
+        log_str = logUtils.volume_chain_to_str(vol.volUUID for vol in chain)
+        self.log.info("Current chain=%s ", log_str)
+
         # check if the chain is build above a template, or it is a standalone
         pvol = chain[0].getParentVolume()
         if pvol:
@@ -1248,6 +1262,9 @@ class Image:
         is used to correct the volume chain linkage after a live merge.
         """
         curChain = self.getChain(sdUUID, imgUUID, volUUID)
+        log_str = logUtils.volume_chain_to_str(vol.volUUID for vol in curChain)
+        self.log.info("Current chain=%s ", log_str)
+
         subChain = []
         for vol in curChain:
             if vol.volUUID not in actualChain:
@@ -1425,8 +1442,10 @@ class Image:
 
     def _activateVolumeForImportExport(self, domain, imgUUID, volUUID=None):
         chain = self.getChain(domain.sdUUID, imgUUID, volUUID)
-        template = chain[0].getParentVolume()
+        log_str = logUtils.volume_chain_to_str(vol.volUUID for vol in chain)
+        self.log.info("chain=%s ", log_str)
 
+        template = chain[0].getParentVolume()
         if template or len(chain) > 1:
             self.log.error("Importing and exporting an image with more "
                            "than one volume is not supported")

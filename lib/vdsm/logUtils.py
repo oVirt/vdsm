@@ -258,3 +258,12 @@ def set_level(level_name, name=''):
     logging.warning('Setting loglevel on %r to %s (%d)',
                     logger.name, level_name, log_level)
     logger.setLevel(log_level)
+
+
+def volume_chain_to_str(base_first_chain):
+    """
+    Converts an iterable of volume UUIDs into a standard loggable
+    format.  The first UUID should be the base (or oldest ancestor) and
+    each subsequent entry a direct descendant of its predecessor.
+    """
+    return ' < '.join(base_first_chain) + " (top)"
