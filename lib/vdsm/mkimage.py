@@ -98,7 +98,7 @@ def getFileName(vmId, files):
     return path
 
 
-def _injectFilesToFs(floppy, files, fstype='auto'):
+def injectFilesToFs(floppy, files, fstype='auto'):
     if not os.path.abspath(floppy).startswith(
             os.path.join(_P_PAYLOAD_IMAGES, '')):
         raise ValueError('Image %s is not inside %s directory' %
@@ -127,7 +127,7 @@ def mkFloppyFs(vmId, files, volumeName=None):
         if rc:
             raise OSError(errno.EIO, "could not create floppy file: "
                           "code %s, out %s\nerr %s" % (rc, out, err))
-        _injectFilesToFs(floppy, files, 'vfat')
+        injectFilesToFs(floppy, files, 'vfat')
     finally:
         _commonCleanFs(None, floppy)
 
