@@ -762,12 +762,12 @@ class TestVm(XMLTestCase):
                 <ioTune>
                     <device name='test-device-by-name'>
                         <maximum>
-                            <totalBytes>9999</totalBytes>
+                            <total_bytes_sec>9999</total_bytes_sec>
                         </maximum>
                     </device>
                     <device name='other-device'>
                         <maximum>
-                            <totalBytes>9999</totalBytes>
+                            <total_bytes_sec>9999</total_bytes_sec>
                         </maximum>
                     </device>
                 </ioTune>
@@ -812,12 +812,8 @@ class TestVm(XMLTestCase):
 
             expected_xml = (u"""
             <qos>
+                <vcpuLimit>50</vcpuLimit>
                 <ioTune>
-                    <device name="other-device">
-                        <maximum>
-                            <totalBytes>9999</totalBytes>
-                        </maximum>
-                    </device>
                     <device name="test-device-by-name">
                         <maximum>
                             <total_bytes_sec>200</total_bytes_sec>
@@ -835,6 +831,11 @@ class TestVm(XMLTestCase):
                             <write_bytes_sec>104</write_bytes_sec>
                             <write_iops_sec>105</write_iops_sec>
                         </guaranteed>
+                    </device>
+                    <device name="other-device">
+                        <maximum>
+                            <total_bytes_sec>9999</total_bytes_sec>
+                        </maximum>
                     </device>
                     <device path="test-device-by-path">
                         <maximum>
@@ -855,7 +856,6 @@ class TestVm(XMLTestCase):
                         </guaranteed>
                     </device>
                 </ioTune>
-                <vcpuLimit>50</vcpuLimit>
             </qos>
             """)
 
@@ -870,28 +870,29 @@ class TestVm(XMLTestCase):
                 <ioTune>
                     <device name='test-device-by-name'>
                         <maximum>
-                            <totalBytes>9999</totalBytes>
+                            <total_bytes_sec>9999</total_bytes_sec>
                         </maximum>
                     </device>
                     <device name='other-device'>
                         <guaranteed>
-                            <totalBytes>9999</totalBytes>
+                            <total_bytes_sec>9999</total_bytes_sec>
                         </guaranteed>
                     </device>
                 </ioTune>
             </qos>
             """
             machine._dom = dom
+            machine._updateIoTuneInfo()
 
             tunables = machine.getIoTunePolicyResponse()
             expected = [
                 {'name': u'test-device-by-name',
                  'maximum': {
-                     u'totalBytes': 9999
+                     u'total_bytes_sec': 9999
                  }},
                 {'name': u'other-device',
                  'guaranteed': {
-                     u'totalBytes': 9999
+                     u'total_bytes_sec': 9999
                  }}
             ]
             self.assertEqual(tunables['ioTunePolicyList'], expected)
