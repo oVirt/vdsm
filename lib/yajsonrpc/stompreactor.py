@@ -196,37 +196,38 @@ class StompAdapterImpl(object):
 
     def _cmd_send(self, dispatcher, frame):
         destination = frame.headers.get(stomp.Headers.DESTINATION, None)
+
+        # Get the list of all known subscribers.
+        try:
+            subs = self._sub_dests[destination]
+        except KeyError:
+            subs = []
+
+        # Forward the message to all explicit subscribers.
+        for subscription in subs:
+            headers = {stomp.Headers.SUBSCRIPTION: subscription.id}
+            headers.update(frame.headers)
+            res = stomp.Frame(
+                stomp.Command.MESSAGE,
+                headers,
+                frame.body
+            )
+            subscription.client.send_raw(res)
+
         if destination in self.request_queues:
-            # default subscription
-            self._handle_internal(
-                dispatcher,
-                frame.headers.get(stomp.Headers.REPLY_TO),
-                frame.headers.get(stomp.Headers.FLOW_ID),
-                frame.body)
+            # A command that is meant to be answered
+            # by the internal implementation.
+            self._handle_internal(dispatcher,
+                                  frame.headers.get(stomp.Headers.REPLY_TO),
+                                  frame.headers.get(stomp.Headers.FLOW_ID),
+                                  frame.body)
             return
         else:
-            try:
-                subs = self._sub_dests[destination]
-            except KeyError:
-                self._send_error("Subscription not available",
-                                 dispatcher.connection)
-                return
-
+            # This was not a command nor there were any subscribers,
+            # return an error!
             if not subs:
                 self._send_error("Subscription not available",
                                  dispatcher.connection)
-                return
-
-            for subscription in subs:
-                headers = utils.picklecopy(frame.headers)
-                headers = {stomp.Headers.SUBSCRIPTION: subscription.id}
-                headers.update(frame.headers)
-                res = stomp.Frame(
-                    stomp.Command.MESSAGE,
-                    headers,
-                    frame.body
-                )
-                subscription.client.send_raw(res)
 
     def _handle_internal(self, dispatcher, req_dest, flow_id, request):
         """
