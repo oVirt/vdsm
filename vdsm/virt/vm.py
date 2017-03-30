@@ -79,8 +79,7 @@ from . import recovery
 from . import vmdevices
 from .vmdevices import hwclass
 from .vmdevices.storage import DISK_TYPE
-from .vmtune import update_io_tune_dom, collect_inner_elements
-from .vmtune import io_tune_values_to_dom, io_tune_dom_to_values
+from . import vmtune
 from . import vmxml
 from .vmxml import METADATA_VM_TUNE_URI, METADATA_VM_TUNE_ELEMENT
 from .vmxml import METADATA_VM_TUNE_PREFIX
@@ -320,6 +319,7 @@ class Vm(object):
         self._vcpuLimit = None
         self._vcpuTuneInfo = {}
         self._numaInfo = {}
+        self._ioTuneInfo = []
         self._vmJobs = None
         self._clientPort = ''
         self._monitorable = False
@@ -1879,6 +1879,7 @@ class Vm(object):
                 self.conf['pid'] = str(self._getPid())
 
         self._dom_vcpu_setup()
+        self._updateIoTuneInfo()
 
     def _containerDependentInit(self):
         self._guestEventTime = self._startTime
@@ -2623,6 +2624,19 @@ class Vm(object):
                 # missing vcpuLimit node
                 self._vcpuLimit = None
 
+    def _updateIoTuneInfo(self):
+        qos = self._getVmPolicy()
+        if qos is None:
+            self._ioTuneInfo = []
+            return
+
+        io_tune = vmxml.find_first(qos, "ioTune", None)
+        if io_tune is None:
+            self._ioTuneInfo = []
+            return
+
+        self._ioTuneInfo = vmtune.io_tune_dom_all_to_list(io_tune)
+
     @api.logged(on='vdsm.api')
     def updateVmPolicy(self, params):
         """
@@ -2707,15 +2721,21 @@ class Vm(object):
                 except LookupError as e:
                     return response.error('updateVmPolicyErr', e.message)
 
-            # Make sure the top level element exists
-            io_tune_element = vmxml.find_first(qos, "ioTune", None)
-            if io_tune_element is None:
-                io_tune_element = vmxml.Element("ioTune")
-                vmxml.append_child(qos, io_tune_element)
+            if ioTuneParams:
+                io_tunes = []
+
+                io_tune_element = vmxml.find_first(qos, "ioTune", None)
+                if io_tune_element is not None:
+                    io_tunes = vmtune.io_tune_dom_all_to_list(io_tune_element)
+                    vmxml.remove_child(qos, io_tune_element)
+
+                vmtune.io_tune_update_list(io_tunes, ioTuneParams)
+
+                vmxml.append_child(qos, vmtune.io_tune_list_to_dom(io_tunes))
+
                 metadata_modified = True
 
-            if update_io_tune_dom(io_tune_element, ioTuneParams) > 0:
-                metadata_modified = True
+                self._ioTuneInfo = io_tunes
 
             del params['ioTune']
 
@@ -2786,18 +2806,7 @@ class Vm(object):
         return response.success(ioTunePolicyList=tunables)
 
     def getIoTunePolicy(self):
-        tunables = []
-        qos = self._getVmPolicy()
-        if qos is None:
-            return tunables
-        io_tune = vmxml.find_first(qos, "ioTune", None)
-        if io_tune is None:
-            return tunables
-
-        for device in vmxml.find_all(io_tune, "device"):
-            tunables.append(io_tune_dom_to_values(device))
-
-        return tunables
+        return self._ioTuneInfo
 
     def getIoTune(self):
         result = self.getIoTuneResponse()
@@ -2860,7 +2869,7 @@ class Vm(object):
             io_tune_element = vmxml.find_first(dom, "iotune", None)
             old_io_tune = {}
             if io_tune_element is not None:
-                collect_inner_elements(io_tune_element, old_io_tune)
+                vmtune.collect_inner_elements(io_tune_element, old_io_tune)
                 old_io_tune.update(io_tune)
                 io_tune = old_io_tune
 
@@ -2888,7 +2897,7 @@ class Vm(object):
             if io_tune_element is not None:
                 vmxml.remove_child(dom, io_tune_element)
             io_dom = vmxml.Element("iotune")
-            io_tune_values_to_dom(io_tune, io_dom)
+            vmtune.io_tune_values_to_dom(io_tune, io_dom)
             dom.appendChild(io_dom)
             found_device.specParams['ioTune'] = io_tune
 

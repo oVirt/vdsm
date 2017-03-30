@@ -91,6 +91,21 @@ def io_tune_dom_to_values(dom):
     return values
 
 
+def io_tune_dom_all_to_list(dom):
+    """
+    This method converts all VmDiskDeviceTuneLimits structures
+    in the XML to a list of dictionaries
+
+    :param dom: XML DOM object to parse
+    :return: List of VmDiskDeviceTuneLimits dictionaries
+    """
+    tunables = []
+    for device in vmxml.find_all(dom, "device"):
+        tunables.append(io_tune_dom_to_values(device))
+
+    return tunables
+
+
 def io_tune_to_dom(tune):
     """
     This method converts the VmDiskDeviceTuneLimits structure from the
@@ -118,6 +133,23 @@ def io_tune_to_dom(tune):
         io_tune_values_to_dom(tune["guaranteed"], guaranteed)
 
     return device
+
+
+def io_tune_list_to_dom(tunables):
+    """
+    This method converts a list of VmDiskDeviceTuneLimits dictionaries
+    to XML representation.
+
+    :param tunables: List of VmDiskDeviceTuneLimits dictionaries
+    :return: DOM XML all device nodes
+    """
+    io_tune = vmxml.Element("ioTune")
+
+    for tune in tunables:
+        device = io_tune_to_dom(tune)
+        vmxml.append_child(io_tune, device)
+
+    return io_tune
 
 
 def io_tune_merge(old, new):
@@ -149,74 +181,37 @@ def io_tune_merge(old, new):
     return result
 
 
-def create_device_index(ioTune):
+def io_tune_update_list(tunables, changes):
     """
-    Create by name / by path dictionaries from the XML representation.
-    Returns a tuple (by_name, by_path) where the items are the respective
-    dictionaries.
+    This method updates elements in a list of VmDiskDeviceTuneLimits
 
-    :param dom: The root element (devices) to traverse
-    :return: (by_name, by_path)
+    :param tunables: List of VmDiskDeviceTuneLimits to be updated
+    :param changes:  List of VmDiskDeviceTuneLimits with changes
     """
 
-    ioTuneByPath = {}
-    ioTuneByName = {}
+    indexByPath = {}
+    indexByName = {}
 
-    for el in vmxml.find_all(ioTune, "device"):
-        # Only one of the path and name fields is mandatory
-        if vmxml.attr(el, "path"):
-            ioTuneByPath[vmxml.attr(el, "path")] = el
+    for id, tune in enumerate(tunables):
+        if "path" in tune:
+            indexByPath[tune["path"]] = id
 
-        if vmxml.attr(el, "name"):
-            ioTuneByName[vmxml.attr(el, "name")] = el
+        if "name" in tune:
+            indexByName[tune["name"]] = id
 
-    return ioTuneByName, ioTuneByPath
+    for change in changes:
+        old_id = None
+        if ("name" in change and
+                change["name"] in indexByName):
+            old_id = indexByName[change["name"]]
+        elif ("path" in change and
+                change["path"] in indexByPath):
+            old_id = indexByPath[change["path"]]
 
-
-def update_io_tune_dom(ioTune, tunables):
-    """
-    This method takes a list of VmDiskDeviceTuneLimits objects and applies
-    the changes to the XML element representing the current iotune settings,
-
-    The return value then specifies how many devices were updated.
-
-    :param ioTune: XML object representing the ioTune metadata node
-    :param tunables: list of VmDiskDeviceTuneLimits objects
-    :return: number of updated devices
-    """
-
-    count = 0
-
-    # Get all existing ioTune records and create name/path index
-    ioTuneByName, ioTuneByPath = create_device_index(ioTune)
-
-    for limit_object in tunables:
-        old_tune = None
-        if ("name" in limit_object and
-                limit_object["name"] in ioTuneByName):
-            old_tune = ioTuneByName[limit_object["name"]]
-            vmxml.remove_child(ioTune, old_tune)
-        elif ("path" in limit_object and
-                limit_object["path"] in ioTuneByPath):
-            old_tune = ioTuneByPath[limit_object["path"]]
-            vmxml.remove_child(ioTune, old_tune)
-
-        if old_tune is not None:
-            old_object = io_tune_dom_to_values(old_tune)
-            limit_object = io_tune_merge(old_object, limit_object)
-
-        new_tune = io_tune_to_dom(limit_object)
-        vmxml.append_child(ioTune, new_tune)
-        count += 1
-
-        # Make sure everything is OK when the same name is passed
-        # twice by updating the index
-        if ("name" in limit_object and
-                limit_object["name"] in ioTuneByName):
-            ioTuneByName[limit_object["name"]] = new_tune
-
-        if ("path" in limit_object and
-                limit_object["path"] in ioTuneByPath):
-            ioTuneByPath[limit_object["path"]] = new_tune
-
-    return count
+        if old_id is None:
+            new_tune = utils.picklecopy(change)
+            tunables.append(new_tune)
+        else:
+            old_tune = tunables[old_id]
+            new_tune = io_tune_merge(old_tune, change)
+            tunables[old_id] = new_tune
