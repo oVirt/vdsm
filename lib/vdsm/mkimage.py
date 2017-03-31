@@ -99,6 +99,10 @@ def getFileName(vmId, files):
 
 
 def _injectFilesToFs(floppy, files):
+    if not os.path.abspath(floppy).startswith(
+            os.path.join(_P_PAYLOAD_IMAGES, '')):
+        raise ValueError('Image %s is not inside %s directory' %
+                         (floppy, _P_PAYLOAD_IMAGES))
     dirname = None
     try:
         dirname = tempfile.mkdtemp()
