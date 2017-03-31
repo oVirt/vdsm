@@ -37,7 +37,10 @@ from testlib import VdsmTestCase, permutations, expandPermutations
 from testValidation import checkSudo, ValidateRunningAsRoot
 
 from vdsm.commands import execCmd
+from vdsm.constants import EXT_MKFS_MSDOS
 from vdsm.storage import mount
+from vdsm.storage.mount import MountError
+from vdsm.utils import rmFile
 from vdsm import mkimage
 
 
@@ -157,6 +160,46 @@ class MkimageTestCase(VdsmTestCase):
         # pylint: disable=W0212
         mkimage._decodeFilesIntoDir(self.files, self.workdir)
         self._check_content()
+
+    @ValidateRunningAsRoot
+    @permutations([['vfat'], ['auto']])
+    def test_injectFilesToFs(self, fstype):
+        """
+        Tests mkimage.injectFilesToFs creating an image and checking its
+        content. Requires root permissions for writing into the floppy image.
+        """
+        floppy = mkimage.getFileName("vmId_inject", self.files)
+        command = [EXT_MKFS_MSDOS, '-C', floppy, '1440']
+        try:
+            rc, out, err = execCmd(command, raw=True)
+
+            mkimage.injectFilesToFs(floppy, self.files, fstype)
+
+            self.assertTrue(os.path.exists(floppy))
+            m = mount.Mount(floppy, self.workdir)
+            m.mount(mntOpts='loop')
+            try:
+                self._check_content(checkPerms=False)
+            finally:
+                m.umount()
+        finally:
+            rmFile(floppy)
+
+    @ValidateRunningAsRoot
+    def test_injectFilesToFs_wrongfs(self):
+        """
+        Tests for failure mkimage.injectFilesToFs when wrong fstype is
+        specified. Requires root permissions for mounting the image.
+        """
+        floppy = mkimage.getFileName("vmId_inject", self.files)
+        command = [EXT_MKFS_MSDOS, '-C', floppy, '1440']
+        try:
+            rc, out, err = execCmd(command, raw=True)
+
+            with self.assertRaises(MountError):
+                mkimage.injectFilesToFs(floppy, self.files, 'ext3')
+        finally:
+            rmFile(floppy)
 
     @ValidateRunningAsRoot
     @permutations([[None], ['FSLABEL']])
