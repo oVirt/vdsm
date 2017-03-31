@@ -113,7 +113,7 @@ def _injectFilesToFs(floppy, files, fstype='auto'):
         finally:
             m.umount()
     finally:
-        _commonCleanFs(dirname, None)
+        _commonCleanFs(dirname, floppy)
 
 
 def mkFloppyFs(vmId, files, volumeName=None):
