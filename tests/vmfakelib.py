@@ -151,7 +151,7 @@ class Domain(object):
     def XMLDesc(self, unused):
         return self._xml
 
-    def updateDeviceFlags(self, devXml, unused):
+    def updateDeviceFlags(self, devXml, unused=0):
         self._failIfRequested()
         self.devXml = devXml
 

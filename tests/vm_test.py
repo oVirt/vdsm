@@ -1702,6 +1702,15 @@ class TestVmSanity(TestCaseBase):
 
 class ChangeBlockDevTests(TestCaseBase):
 
+    def test_change_cd_eject(self):
+        with fake.VM() as fakevm:
+            fakevm._dom = fake.Domain()
+            cdromspec = {'path': '',
+                         'iface': 'ide',
+                         'index': '2'}
+            res = fakevm.changeCD(cdromspec)
+            self.assertFalse(response.is_error(res))
+
     def test_change_cd_failure(self):
         with fake.VM() as fakevm:
             # no specific meaning, actually any error != None is good
