@@ -1658,10 +1658,19 @@ class TestVmSanity(TestCaseBase):
 
 class ChangeBlockDevTests(TestCaseBase):
 
+    def test_change_cd_eject(self):
+        with fake.VM() as fakevm:
+            fakevm._dom = fake.Domain()
+            cdromspec = {'path': '',
+                         'iface': 'ide',
+                         'index': '2'}
+            res = fakevm.changeCD(cdromspec)
+            self.assertFalse(response.is_error(res))
+
     def test_change_cd_failure(self):
         cif = fake.ClientIF()
         with MonkeyPatchScope([(cif, 'prepareVolumePath',
-                                lambda _: None),
+                                lambda drive: drive),
                                (cif, 'teardownVolumePath',
                                 lambda _: None)]):
             with fake.VM(cif=cif) as fakevm:

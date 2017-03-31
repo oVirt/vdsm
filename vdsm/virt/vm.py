@@ -4016,13 +4016,15 @@ class Vm(object):
                 cdromspec['iface'], cdromspec['index'])
             iface = cdromspec['iface']
 
-        return self._changeBlockDev('cdrom', blockdev, drivespec, iface)
+        return self._changeBlockDev('cdrom', blockdev, drivespec, iface,
+                                    force=bool(drivespec))
 
     @api.logged(on='vdsm.api')
     def changeFloppy(self, drivespec):
         return self._changeBlockDev('floppy', 'fda', drivespec)
 
-    def _changeBlockDev(self, vmDev, blockdev, drivespec, iface=None):
+    def _changeBlockDev(self, vmDev, blockdev, drivespec, iface=None,
+                        force=True):
         try:
             path = self.cif.prepareVolumePath(drivespec)
         except VolumeError:
@@ -4035,14 +4037,26 @@ class Vm(object):
             target['bus'] = iface
 
         diskelem.appendChildWithArgs('target', **target)
+        diskelem_xml = vmxml.format_xml(diskelem)
 
-        try:
-            self._dom.updateDeviceFlags(vmxml.format_xml(diskelem),
-                                        libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE)
-        except Exception:
-            self.log.exception("updateDeviceFlags failed")
-            self.cif.teardownVolumePath(drivespec)
-            return response.error('changeDisk')
+        changed = False
+        if not force:
+            try:
+                self._dom.updateDeviceFlags(diskelem_xml)
+            except libvirt.libvirtError:
+                self.log.info("regular updateDeviceFlags failed")
+            else:
+                changed = True
+
+        if not changed:
+            try:
+                self._dom.updateDeviceFlags(
+                    diskelem_xml, libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE
+                )
+            except Exception:
+                self.log.exception("forceful updateDeviceFlags failed")
+                self.cif.teardownVolumePath(drivespec)
+                return response.error('changeDisk')
         if vmDev in self.conf:
             self.cif.teardownVolumePath(self.conf[vmDev])
 
