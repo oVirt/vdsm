@@ -98,7 +98,7 @@ def getFileName(vmId, files):
     return path
 
 
-def _injectFilesToFs(floppy, files):
+def _injectFilesToFs(floppy, files, fstype='auto'):
     if not os.path.abspath(floppy).startswith(
             os.path.join(_P_PAYLOAD_IMAGES, '')):
         raise ValueError('Image %s is not inside %s directory' %
@@ -107,7 +107,7 @@ def _injectFilesToFs(floppy, files):
     try:
         dirname = tempfile.mkdtemp()
         m = mount.Mount(floppy, dirname)
-        m.mount(mntOpts='loop')
+        m.mount(mntOpts='loop', vfstype=fstype)
         try:
             _decodeFilesIntoDir(files, dirname)
         finally:
@@ -127,7 +127,7 @@ def mkFloppyFs(vmId, files, volumeName=None):
         if rc:
             raise OSError(errno.EIO, "could not create floppy file: "
                           "code %s, out %s\nerr %s" % (rc, out, err))
-        _injectFilesToFs(floppy, files)
+        _injectFilesToFs(floppy, files, 'vfat')
     finally:
         _commonCleanFs(None, floppy)
 
