@@ -25,9 +25,9 @@ import logging
 import subprocess
 import threading
 
-from vdsm.cmdutils import Error as CmdError, wrap_command
+from vdsm import cmdutils
 from vdsm import utils
-from vdsm.common import cmdutils
+from vdsm.common import cmdutils as common_cmdutils
 from vdsm.common import compat
 from vdsm.common import exception
 
@@ -58,7 +58,8 @@ class Command(object):
 
     def __init__(self, cmd, cwd=None, nice=utils.NICENESS.HIGH,
                  ioclass=utils.IOCLASS.IDLE):
-        self._cmd = wrap_command(cmd, with_nice=nice, with_ioclass=ioclass)
+        self._cmd = cmdutils.wrap_command(cmd, with_nice=nice,
+                                          with_ioclass=ioclass)
         self._cwd = cwd
         self._lock = threading.Lock()
         self._state = CREATED
@@ -66,7 +67,11 @@ class Command(object):
 
     def run(self):
         """
-        Run a command
+        Run a command, collecting data from the underlying process stdout and
+        stderr, and returning the collected otuput.
+
+        Data read from stderr is collected and will be included in the
+        cmdutils.Error raised if the underlying command failed.
 
         Raises:
             `RuntimeError` if invoked more then once
@@ -77,6 +82,28 @@ class Command(object):
         out, err = self._proc.communicate()
         self._finalize(out, err)
         return out
+
+    def watch(self):
+        """
+        Run a command, iterating on data received from underlying command
+        stdout.
+
+        Data read from stderr is collected and will be included in the
+        cmdutils.Error raised if the underlying command failed.
+
+        Raises:
+            `RuntimeError` if invoked more then once
+            `exception.ActionStopped` if the command was aborted
+            `cmdutils.Error` if the command failed
+        """
+        self._start_process()
+        err = bytearray()
+        for src, data in cmdutils.receive(self._proc):
+            if src == cmdutils.OUT:
+                yield data
+            else:
+                err += data
+        self._finalize(b"", err)
 
     def abort(self):
         """
@@ -121,7 +148,8 @@ class Command(object):
                 raise exception.ActionStopped
             if self._state != CREATED:
                 raise RuntimeError("Attempt to run an operation twice")
-            log.debug(cmdutils.command_log_line(self._cmd, cwd=self._cwd))
+            log.debug(
+                common_cmdutils.command_log_line(self._cmd, cwd=self._cwd))
             self._proc = compat.CPopen(self._cmd,
                                        cwd=self._cwd,
                                        stdin=None,
@@ -139,7 +167,7 @@ class Command(object):
             `RuntimeError` if operation state is invalid
         """
         rc = self._proc.returncode
-        log.debug(cmdutils.retcode_log_line(rc, err))
+        log.debug(common_cmdutils.retcode_log_line(rc, err))
         with self._lock:
             self._proc = None
             if self._state == ABORTING:
@@ -148,7 +176,7 @@ class Command(object):
             elif self._state == RUNNING:
                 self._state = TERMINATED
                 if rc != 0:
-                    raise CmdError(self._cmd, rc, out, err)
+                    raise cmdutils.Error(self._cmd, rc, out, err)
             else:
                 raise RuntimeError("Invalid state: %s" % self)
 

@@ -29,7 +29,7 @@ from vdsm.common import exception
 from vdsm.storage import operation
 
 
-class TestOperation(VdsmTestCase):
+class TestCommandRun(VdsmTestCase):
 
     def test_success(self):
         op = operation.Command(["true"])
@@ -89,4 +89,72 @@ class TestOperation(VdsmTestCase):
     def test_abort_terminated(self):
         op = operation.Command(["true"])
         op.run()
+        op.abort()
+
+
+class TestCommandWatch(VdsmTestCase):
+
+    def test_success(self):
+        op = operation.Command(["true"])
+        received = list(op.watch())
+        self.assertEqual(received, [])
+
+    def test_failure(self):
+        op = operation.Command(["false"])
+        with self.assertRaises(cmdutils.Error):
+            list(op.watch())
+
+    def test_error(self):
+        op = operation.Command(
+            ["sh", "-c", "echo -n out >&1; echo -n err >&2; exit 1"])
+        out = bytearray()
+        with self.assertRaises(cmdutils.Error) as e:
+            for data in op.watch():
+                out += data
+        self.assertEqual(e.exception.rc, 1)
+        self.assertEqual(e.exception.err, b"err")
+        self.assertEqual(out, b"out")
+
+    def test_run_once(self):
+        op = operation.Command(["true"])
+        op.run()
+        with self.assertRaises(RuntimeError):
+            list(op.watch())
+
+    def test_output(self):
+        op = operation.Command(["echo", "-n", "out"])
+        out = bytearray()
+        for data in op.watch():
+            out += data
+        self.assertEqual(out, b"out")
+
+    def test_abort_created(self):
+        op = operation.Command(["sleep", "5"])
+        op.abort()
+        with self.assertRaises(exception.ActionStopped):
+            list(op.watch())
+
+    def test_abort_running(self):
+        op = operation.Command(["sleep", "5"])
+        aborted = threading.Event()
+
+        def run():
+            try:
+                list(op.watch())
+            except exception.ActionStopped:
+                aborted.set()
+
+        t = concurrent.thread(run)
+        t.start()
+        try:
+            # TODO: add way to wait until operation is stated?
+            time.sleep(0.5)
+            op.abort()
+        finally:
+            t.join()
+        self.assertTrue(aborted.is_set())
+
+    def test_abort_terminated(self):
+        op = operation.Command(["true"])
+        list(op.watch())
         op.abort()
