@@ -182,65 +182,6 @@ def randomStr(strLen):
     return "".join(random.sample(string.letters, strLen))
 
 
-def ddWatchCopy(src, dst, stop, size, offset=0):
-    """
-    Copy src to dst using dd command with stop abilities
-    """
-    try:
-        size = int(size)
-    except ValueError:
-        raise se.InvalidParameterException("size", "size = %s" % (size,))
-    try:
-        offset = int(offset)
-    except ValueError:
-        raise se.InvalidParameterException("offset", "offset = %s" % (offset,))
-
-    left = size
-    baseoffset = offset
-
-    while left > 0:
-        (iounit, count, iooffset) = _alignData(left, offset)
-        oflag = None
-        conv = "notrunc"
-        if (iounit % 512) == 0:
-            oflag = DIRECTFLAG
-        else:
-            conv += ",%s" % DATASYNCFLAG
-
-        cmd = [constants.EXT_DD, "if=%s" % src, "of=%s" % dst,
-               "bs=%d" % iounit, "seek=%s" % iooffset, "skip=%s" % iooffset,
-               "conv=%s" % conv, 'count=%s' % count]
-
-        if oflag:
-            cmd.append("oflag=%s" % oflag)
-
-        if not stop:
-            (rc, out, err) = execCmd(cmd, nice=utils.NICENESS.HIGH,
-                                     ioclass=utils.IOCLASS.IDLE)
-        else:
-            (rc, out, err) = watchCmd(cmd, stop=stop,
-                                      nice=utils.NICENESS.HIGH,
-                                      ioclass=utils.IOCLASS.IDLE)
-
-        if rc:
-            raise se.MiscBlockWriteException(dst, offset, size)
-
-        if not validateDDBytes(err, iounit * count):
-            raise se.MiscBlockWriteIncomplete(dst, offset, size)
-
-        left = left % iounit
-        offset = baseoffset + size - left
-
-    return (rc, out, err)
-
-
-def ddCopy(src, dst, size):
-    """
-    Copy src to dst using dd command
-    """
-    return ddWatchCopy(src, dst, None, size=size)
-
-
 def parseBool(var):
     if isinstance(var, bool):
         return var
