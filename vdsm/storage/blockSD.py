@@ -1032,11 +1032,11 @@ class BlockStorageDomain(sd.StorageDomain):
 
         # Zero out the metadata and special volumes before use
         try:
-            misc.ddCopy("/dev/zero", path, RESERVED_METADATA_SIZE)
+            blockdev.zero(path, size=RESERVED_METADATA_SIZE)
             path = lvm.lvPath(vgName, sd.INBOX)
-            misc.ddCopy("/dev/zero", path, RESERVED_MAILBOX_SIZE)
+            blockdev.zero(path, size=RESERVED_MAILBOX_SIZE)
             path = lvm.lvPath(vgName, sd.OUTBOX)
-            misc.ddCopy("/dev/zero", path, RESERVED_MAILBOX_SIZE)
+            blockdev.zero(path, size=RESERVED_MAILBOX_SIZE)
         except exception.ActionStopped:
             raise
         except se.StorageException:
