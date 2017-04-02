@@ -20,8 +20,6 @@
 
 from __future__ import absolute_import
 
-from vdsm.common.osutils import uninterruptible_poll
-
 """
 A module containing miscellaneous functions and classes that are used
 plentifuly around vdsm.
@@ -34,12 +32,10 @@ from collections import namedtuple, deque, OrderedDict
 from contextlib import contextmanager
 import errno
 import functools
-import io
 import logging
 import six
 import sys
 import os
-import select
 import socket
 import stat
 import threading
@@ -148,62 +144,6 @@ def convertToStr(val):
         return '%d' % (val)
     else:
         return val
-
-
-class CommandStream(object):
-    def __init__(self, command, stdoutcb, stderrcb):
-        self._poll = select.epoll()
-        self._iocb = {}
-
-        # In case both stderr and stdout are using the same fd the
-        # output is squashed to the stdout (given the order of the
-        # entries in the dictionary)
-        self._iocb[command.stderr.fileno()] = stderrcb
-        self._iocb[command.stdout.fileno()] = stdoutcb
-
-        for fd in self._iocb:
-            self._poll.register(fd, select.EPOLLIN)
-
-    def _poll_input(self, fileno):
-        self._iocb[fileno](os.read(fileno, io.DEFAULT_BUFFER_SIZE))
-
-    def _poll_event(self, fileno):
-        self._poll.unregister(fileno)
-        del self._iocb[fileno]
-
-    def _poll_timeout(self, timeout):
-        fdevents = uninterruptible_poll(self._poll.poll, timeout)
-
-        for fileno, event in fdevents:
-            if event & select.EPOLLIN:
-                self._poll_input(fileno)
-            elif event & (select.EPOLLHUP | select.EPOLLERR):
-                self._poll_event(fileno)
-
-    @property
-    def closed(self):
-        return len(self._iocb) == 0
-
-    def receive(self, timeout=None):
-        """
-        Receiving data from the command can raise OSError
-        exceptions as described in read(2).
-        """
-        if timeout is None:
-            poll_remaining = -1
-        else:
-            endtime = vdsm_time.monotonic_time() + timeout
-
-        while not self.closed:
-            if timeout is not None:
-                poll_remaining = endtime - vdsm_time.monotonic_time()
-                if poll_remaining <= 0:
-                    break
-
-            self._poll_timeout(poll_remaining)
-
-    def close(self):
-        self._poll.close()
 
 
 def stripNewLines(lines):
