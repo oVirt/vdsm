@@ -193,6 +193,11 @@ class Vsctl(DriverAPI):
         command.extend(['add-port', bridge, port])
         return Command(command)
 
+    def set_vhostuser_iface(self, iface, socket_path):
+        command = ['set', 'Interface', iface, 'type=dpdkvhostuserclient',
+                   'options:vhost-server-path=%s' % socket_path]
+        return Command(command)
+
     def del_port(self, port, bridge=None, if_exists=False):
         command = []
         if if_exists:

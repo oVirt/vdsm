@@ -115,6 +115,10 @@ class API(object):
         return self.set_interface_attr(port, 'type', 'dpdk')
 
     @abc.abstractmethod
+    def set_vhostuser_iface(self, iface, socket_path):
+        pass
+
+    @abc.abstractmethod
     def del_port(self, port, bridge=None, if_exists=False):
         pass
 
