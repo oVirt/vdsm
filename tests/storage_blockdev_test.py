@@ -31,6 +31,7 @@ import loopback
 
 from vdsm.common import exception
 from vdsm.storage import blockdev
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 
 SIZE = blockdev.OPTIMAL_BLOCK_SIZE
@@ -67,6 +68,24 @@ class TestZero(VdsmTestCase):
                 # And the rest was not modified
                 data = f.read(SIZE)
                 self.assertEqual(data, b"x" * SIZE, "data was modified")
+
+    @permutations([
+        (sc.BLOCK_SIZE,),
+        (blockdev.OPTIMAL_BLOCK_SIZE - sc.BLOCK_SIZE,),
+        (blockdev.OPTIMAL_BLOCK_SIZE + sc.BLOCK_SIZE,),
+    ])
+    def test_special_volumes(self, size):
+        with namedTemporaryDir() as tmpdir:
+            # Prepare device posioned with "x"
+            path = os.path.join(tmpdir, "file")
+            with io.open(path, "wb") as f:
+                f.write(b"x" * size)
+            # Zero size bytes
+            blockdev.zero(path, size=size)
+            with io.open(path, "rb") as f:
+                # Verify that size bytes were zeroed
+                data = f.read(size)
+                self.assertEqual(data, b"\0" * size, "data was not zeroed")
 
     def test_abort(self):
         with namedTemporaryDir() as tmpdir:

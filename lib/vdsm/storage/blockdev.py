@@ -34,6 +34,7 @@ from vdsm.config import config
 from vdsm.storage import blkdiscard
 from vdsm.storage import fsutils
 from vdsm.storage import operation
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 
 log = logging.getLogger("storage.blockdev")
@@ -51,7 +52,7 @@ def zero(device_path, size=None, task=None):
     Arguments:
         device_path (str): Path to block device to wipe
         size (int): Number of bytes to write. If not specified, use the device
-            size. Size must be aligned to `blockdev.OPTIMAL_BLOCK_SIZE`
+            size. Size must be aligned to `vdsm.storage.constants.BLOCK_SIZE`.
         task (`storage.task.Task`): Task running this operation. If specified,
             the zero operation will be aborted if the task is aborted.
 
@@ -60,35 +61,51 @@ def zero(device_path, size=None, task=None):
         `vdsm.storage.exception.VolumesZeroingError` if writing to storage
             failed.
         `vdsm.storage.exception.InvalidParameterException` if size is not
-            aligned to `blockdev.OPTIMAL_BLOCK_SIZE`.
+            aligned to `vdsm.storage.constants.BLOCK_SIZE`.
     """
     if size is None:
         # Always aligned to LVM extent size (128MiB).
         size = fsutils.size(device_path)
-    elif size % OPTIMAL_BLOCK_SIZE:
+    elif size % sc.BLOCK_SIZE:
         raise se.InvalidParameterException("size", size)
 
     log.info("Zeroing device %s (size=%d)", device_path, size)
-    try:
-        op = operation.Command([
-            constants.EXT_DD,
-            "if=/dev/zero",
-            "of=%s" % device_path,
-            "bs=%d" % OPTIMAL_BLOCK_SIZE,
-            "count=%d" % (size // OPTIMAL_BLOCK_SIZE),
-            "oflag=direct",
-            "conv=notrunc",
-        ])
-        with utils.stopwatch("Zero device %s" % device_path,
-                             level=logging.INFO, log=log):
-            if task:
-                with task.abort_callback(op.abort):
-                    op.run()
-            else:
-                op.run()
-    except se.StorageException as e:
-        raise se.VolumesZeroingError("Zeroing device %s failed: %s"
-                                     % (device_path, e))
+    with utils.stopwatch("Zero device %s" % device_path,
+                         level=logging.INFO, log=log):
+        try:
+            # Write optimal size blocks. Images are always aligned to
+            # optimal size blocks, so we typically have only one call.
+            blocks = size // OPTIMAL_BLOCK_SIZE
+            if blocks > 0:
+                _zero(device_path, 0, OPTIMAL_BLOCK_SIZE, blocks, task=task)
+
+            # When zeroing special volumes size may not be aligned to
+            # optimal block size, so we need to write the last block.
+            rest = size % OPTIMAL_BLOCK_SIZE
+            if rest > 0:
+                offset = blocks * OPTIMAL_BLOCK_SIZE
+                _zero(device_path, offset, rest, 1, task=task)
+        except se.StorageException as e:
+            raise se.VolumesZeroingError("Zeroing device %s failed: %s"
+                                         % (device_path, e))
+
+
+def _zero(path, offset, block_size, count, task=None):
+    op = operation.Command([
+        constants.EXT_DD,
+        "if=/dev/zero",
+        "of=%s" % path,
+        "bs=%d" % block_size,
+        "count=%d" % count,
+        "seek=%d" % offset,
+        "oflag=direct,seek_bytes",
+        "conv=notrunc",
+    ])
+    if task:
+        with task.abort_callback(op.abort):
+            op.run()
+    else:
+        op.run()
 
 
 def discard(device_path):
