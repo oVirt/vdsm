@@ -202,7 +202,7 @@ class HostSample(TimedSample):
     """
     A sample of host-related statistics.
 
-    Contains the sate of the host in the time of initialization.
+    Contains the state of the host at the time of initialization.
     """
     MONITORED_PATHS = ['/tmp', '/var/log', '/var/log/core', P_VDSM_RUN]
 
