@@ -348,7 +348,7 @@ class Task(object):
         self._callable()
 
     def __repr__(self):
-        return "<Task %s timeout=%d, duration=%d at 0x%x>" % (
+        return "<Task %s timeout=%s, duration=%d at 0x%x>" % (
             self._callable,
             self.timeout,
             self.duration,
