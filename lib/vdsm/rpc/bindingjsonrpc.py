@@ -15,6 +15,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 from __future__ import absolute_import
+import functools
 import logging
 
 from yajsonrpc import JsonRpcServer
@@ -26,6 +27,7 @@ from vdsm.config import config
 
 
 # TODO test what should be the default values
+_TIMEOUT = config.getint('rpc', 'worker_timeout')
 _THREADS = config.getint('rpc', 'worker_threads')
 _TASK_PER_WORKER = config.getint('rpc', 'tasks_per_worker')
 _TASKS = _THREADS * _TASK_PER_WORKER
@@ -40,8 +42,10 @@ class BindingJsonRpc(object):
                                            max_tasks=_TASKS,
                                            scheduler=scheduler)
         self._bridge = bridge
-        self._server = JsonRpcServer(bridge, timeout, cif,
-                                     self._executor.dispatch)
+        self._server = JsonRpcServer(
+            bridge, timeout, cif,
+            functools.partial(self._executor.dispatch,
+                              timeout=_TIMEOUT, discard=False))
         self._reactor = StompReactor(subs)
         self.startReactor()
 

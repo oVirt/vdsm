@@ -271,6 +271,8 @@ parameters = [
         ('tasks_per_worker', '10',
             'Max number of tasks which can be queued per workers.'),
 
+        ('worker_timeout', '60',
+            'Timeout in seconds for the jsonrpc workers.'),
     ]),
 
     # Section: [mom]
