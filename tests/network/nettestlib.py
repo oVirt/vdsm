@@ -529,7 +529,7 @@ def preserve_default_route():
         if ipv4_gateway and not routes.is_default_route(ipv4_gateway):
             address.set_default_route(ipv4_gateway, family=4)
         if ipv6_gateway and not routes.is_ipv6_default_route(ipv6_gateway):
-            address.set_default_route(ipv4_gateway, family=6)
+            address.set_default_route(ipv6_gateway, family=6)
 
 
 @memoized
