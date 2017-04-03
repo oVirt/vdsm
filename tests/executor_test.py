@@ -307,6 +307,14 @@ class ExecutorTaskTests(TestCaseBase):
             time.sleep(STEP)
             self.assertGreaterEqual(task.duration, i * STEP)
 
+    def test_repr_timeout(self):
+        # temporaries only for readability
+        timeout = None
+        discard = True
+        task = executor.Task(lambda: None, timeout, discard)
+        msg = repr(task)
+        self.assertTrue(msg.startswith('<Task discardable'))
+
 
 class Task(object):
 

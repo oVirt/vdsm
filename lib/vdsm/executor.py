@@ -369,7 +369,7 @@ class Task(object):
         self._callable()
 
     def __repr__(self):
-        return "<Task %s%s timeout=%d, duration=%d at 0x%x>" % (
+        return "<Task %s%s timeout=%s, duration=%d at 0x%x>" % (
             "discardable " if self.discard else "",
             self._callable,
             self.timeout,
