@@ -143,6 +143,11 @@ class MockVirDomain(object):
             <target dev='sda' bus='scsi'/>
             <address type='drive' controller='0' bus='0' target='0' unit='0'/>
         </disk>
+        <disk type='{disk_type}' device='cdrom'>
+            <source file='[datastore1] RHEL/cdrom.iso' />
+            <target dev='hdb' bus='ide'/>
+            <readonly/>
+        </disk>
         <controller type='scsi' index='0' model='vmpvscsi'/>
         <interface type='bridge'>
             <mac address='{mac}'/>
