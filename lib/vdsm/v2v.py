@@ -1112,6 +1112,9 @@ def _add_disks(root, params):
         disktype = disk.get('type')
         device = disk.get('device')
         if device is not None:
+            if device == 'cdrom':
+                # Skip CD-ROM drives
+                continue
             d['type'] = device
         target = disk.find('./target/[@dev]')
         if target is not None:
