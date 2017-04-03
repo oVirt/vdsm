@@ -32,6 +32,7 @@ import re
 import threading
 import time
 
+from vdsm import hugepages
 from vdsm import numa
 from vdsm import utils
 from vdsm.config import config
@@ -247,6 +248,7 @@ class HostSample(TimedSample):
                 self.thpState = s[s.index('[') + 1:s.index(']')]
         except:
             self.thpState = 'never'
+        self.hugepages = hugepages.state()
         self.cpuCores = CpuCoreSample()
         self.numaNodeMem = NumaNodeMemorySample()
         ENGINE_DEFAULT_POLL_INTERVAL = 15

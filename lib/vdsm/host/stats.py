@@ -78,6 +78,7 @@ def produce(first_sample, last_sample):
     stats['cpuIdle'] = max(0.0,
                            100.0 - stats['cpuUser'] - stats['cpuSys'])
     stats['memUsed'] = last_sample.memUsed
+    stats['hugepages'] = last_sample.hugepages
     stats['anonHugePages'] = last_sample.anonHugePages
     stats['cpuLoad'] = last_sample.cpuLoad
 
