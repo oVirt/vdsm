@@ -32,6 +32,10 @@ def fakeEstimateChainSize(self, sdUUID, imgUUID, volUUID, size):
     return GB_IN_BLK * 2.25
 
 
+def fake_estimate_qcow2_size(self, src_vol_params, dst_sd_id):
+    return GB_IN_BLK * 1.25
+
+
 @expandPermutations
 class TestCalculateVolAlloc(TestCaseBase):
 
@@ -43,6 +47,16 @@ class TestCalculateVolAlloc(TestCaseBase):
               apparentsize=GB_IN_BLK),
          sc.RAW_FORMAT,
          GB_IN_BLK * 2),
+        # copy raw to qcow, using estimated chain size
+        (dict(size=GB_IN_BLK * 2,
+              volFormat=sc.RAW_FORMAT,
+              apparentsize=GB_IN_BLK,
+              prealloc=sc.SPARSE_VOL,
+              parent="parentUUID",
+              imgUUID="imgUUID",
+              volUUID="volUUID"),
+         sc.COW_FORMAT,
+         GB_IN_BLK * 1.25),
         # copy single cow volume to raw, using virtual size
         (dict(size=GB_IN_BLK * 2,
               volFormat=sc.COW_FORMAT,
@@ -75,9 +89,10 @@ class TestCalculateVolAlloc(TestCaseBase):
          GB_IN_BLK * 2.25),
     ])
     @MonkeyPatch(image.Image, 'estimateChainSize', fakeEstimateChainSize)
+    @MonkeyPatch(image.Image, 'estimate_qcow2_size', fake_estimate_qcow2_size)
     def test_calculate_vol_alloc(
             self, src_params, dest_format, expected_blk):
         img = image.Image("/path/to/repo")
         alloc_blk = img.calculate_vol_alloc("src_sd_id", src_params,
-                                            dest_format)
+                                            "dst_sd_id", dest_format)
         self.assertEqual(alloc_blk, expected_blk)
