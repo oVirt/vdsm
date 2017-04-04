@@ -233,7 +233,7 @@ def _getNetworkIp(network):
                   if network in nets else network)
         ip, _, _, _ = net_api.ip_addrs_info(device)
     except (libvirt.libvirtError, KeyError, IndexError):
-        ip = config.get('addresses', 'guests_gateway_ip')
+        ip = '0'
     finally:
         if ip == '':
             ip = '0'

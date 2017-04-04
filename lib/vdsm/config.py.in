@@ -414,8 +414,6 @@ parameters = [
             'Set to "0.0.0.0" to listen only on IPv4. '
             'Set to "::" to listen on both IPv4 & IPv6.'),
 
-        ('guests_gateway_ip', '', None),
-
         ('broker_address', '127.0.0.1',
             'Address where the broker is listening at. Use an empty string '
             'for none'),
