@@ -25,14 +25,17 @@ import uuid
 from contextlib import contextmanager
 
 import volume
+from vdsm import constants
 from vdsm import qemuimg
 from vdsm import utils
 from vdsm import virtsparsify
+from vdsm.config import config
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import imageSharing
 from vdsm.storage import misc
+from vdsm.storage import qcow2
 from vdsm.storage import workarounds
 from vdsm.storage.threadlocal import vars
 
@@ -163,6 +166,39 @@ class Image:
         """
         randomStr = misc.randomStr(RENAME_RANDOM_STRING_LEN)
         return "%s%s_%s" % (sd.REMOVED_IMAGE_PREFIX, randomStr, uuid)
+
+    def estimate_qcow2_size(self, src_vol_params, dst_sd_id):
+        """
+        Calculate volume allocation size for converting RAW
+        source volume to QCOW2 volume on destination storage domain.
+
+        Arguments:
+            src_vol_params(dict): Dictionary returned from
+                                  `storage.volume.Volume.getVolumeParams()`
+            dst_sd_id(str) : Destination volume storage domain id
+
+        Returns:
+            Volume allocation in blocks
+        """
+        # Estimate required size.
+        estimated_size = qcow2.estimate_size(src_vol_params['path'])
+
+        # Adds extra room so we don't have to extend this disk immediately
+        # when a vm is started.
+        chunk_size_mb = config.getint("irs", "volume_utilization_chunk_mb")
+        chunk_size = chunk_size_mb * constants.MEGAB
+        size_blk = (estimated_size + chunk_size) // sc.BLOCK_SIZE
+
+        # Limit estimates size by maximum size.
+        vol_class = sdCache.produce(dst_sd_id).getVolumeClass()
+        max_size = vol_class.max_size(src_vol_params['size'] * sc.BLOCK_SIZE,
+                                      src_vol_params['volFormat'])
+        size_blk = min(size_blk, max_size // sc.BLOCK_SIZE)
+
+        # Return estimated size of allocation blocks.
+        self.log.debug("Estimated allocation for qcow2 volume:"
+                       "%d blocks", size_blk)
+        return size_blk
 
     def estimateChainSize(self, sdUUID, imgUUID, volUUID, size):
         """
@@ -793,7 +829,7 @@ class Image:
                     dstVolFormat = volParams['volFormat']
 
                 dstVolAllocBlk = self.calculate_vol_alloc(
-                    sdUUID, volParams, dstVolFormat)
+                    sdUUID, volParams, dstSdUUID. dstVolFormat)
 
                 # Find out dest volume parameters
                 if preallocate in [sc.PREALLOCATED_VOL, sc.SPARSE_VOL]:
@@ -891,7 +927,8 @@ class Image:
         finally:
             self.__cleanupCopy(srcVol=srcVol, dstVol=dstVol)
 
-    def calculate_vol_alloc(self, src_sd_id, src_vol_params, dst_vol_format):
+    def calculate_vol_alloc(self, src_sd_id, src_vol_params,
+                            dst_sd_id, dst_vol_format):
         """
         Calculate destination volume allocation size for copying source volume.
 
@@ -899,6 +936,7 @@ class Image:
             src_sd_id (str): Source volume storage domain id
             src_vol_params (dict): Dictionary returned from
                                    `storage.volume.Volume.getVolumeParams()`
+            dst_sd_id (str): Destination volume storage domain id
             dst_vol_format (int): One of sc.RAW_FORMAT, sc.COW_FORMAT
 
         Returns:
@@ -930,8 +968,7 @@ class Image:
             else:
                 # source 'raw'.
                 # Add additional space for qcow2 metadata.
-                return int(src_vol_params['size'] *
-                           sc.COW_OVERHEAD)
+                return self.estimate_qcow2_size(src_vol_params, dst_sd_id)
 
     def markIllegalSubChain(self, sdDom, imgUUID, chain):
         """
