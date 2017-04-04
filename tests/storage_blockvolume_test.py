@@ -37,8 +37,10 @@ from testlib import make_uuid
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import slowtest
+from testValidation import xfail
 
 CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
+GIB_IN_SECTORS = GIB // sc.BLOCK_SIZE
 
 
 @expandPermutations
@@ -68,6 +70,18 @@ class BlockVolumeSizeTests(TestCaseBase):
         [(sc.SPARSE_VOL, 8388608, 1870), 2],
     ])
     def test_block_volume_size(self, args, result):
+        size = BlockVolume.calculate_volume_alloc_size(*args)
+        self.assertEqual(size, result)
+
+    @xfail('The initial size is bigger than the capacity')
+    @permutations([
+        # Sparse, capacity 2097152 sectors, initial size 2359296.
+        #      Expected 1268 Mb allocated
+        [(sc.SPARSE_VOL, GIB_IN_SECTORS,
+          BlockVolume.max_size(GIB, sc.COW_FORMAT) // sc.BLOCK_SIZE),
+         1268],
+    ])
+    def test_block_volume_size_bigger_initial(self, args, result):
         size = BlockVolume.calculate_volume_alloc_size(*args)
         self.assertEqual(size, result)
 
