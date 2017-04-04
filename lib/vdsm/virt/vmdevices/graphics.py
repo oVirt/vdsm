@@ -60,8 +60,12 @@ class Graphics(Base):
 
     def setup(self):
         display_network = self.specParams['displayNetwork']
-        net_api.create_libvirt_network(display_network, self.conf['vmId'])
-        self.specParams['displayIp'] = _getNetworkIp(display_network)
+        if display_network:
+            net_api.create_libvirt_network(display_network, self.conf['vmId'])
+            display_ip = _getNetworkIp(display_network)
+        else:
+            display_ip = '0'
+        self.specParams['displayIp'] = display_ip
 
     def teardown(self):
         net_api.delete_libvirt_network(self.specParams['displayNetwork'],
