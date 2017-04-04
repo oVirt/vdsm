@@ -4115,7 +4115,7 @@ class Vm(object):
                 self._dom.updateDeviceFlags(
                     diskelem_xml, libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE
                 )
-            except Exception:
+            except libvirt.libvirtError:
                 self.log.exception("forceful updateDeviceFlags failed")
                 self.cif.teardownVolumePath(drivespec)
                 return response.error('changeDisk')
