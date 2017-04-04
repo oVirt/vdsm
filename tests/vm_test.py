@@ -1703,20 +1703,15 @@ class TestVmSanity(TestCaseBase):
 class ChangeBlockDevTests(TestCaseBase):
 
     def test_change_cd_failure(self):
-        cif = fake.ClientIF()
-        with MonkeyPatchScope([(cif, 'prepareVolumePath',
-                                lambda _: None),
-                               (cif, 'teardownVolumePath',
-                                lambda _: None)]):
-            with fake.VM(cif=cif) as fakevm:
-                # no specific meaning, actually any error != None is good
-                fakevm._dom = fake.Domain(
-                    virtError=libvirt.VIR_ERR_GET_FAILED)
+        with fake.VM() as fakevm:
+            # no specific meaning, actually any error != None is good
+            fakevm._dom = fake.Domain(
+                virtError=libvirt.VIR_ERR_GET_FAILED)
 
-                res = fakevm.changeCD('/path/to/image')
+            res = fakevm.changeCD('/path/to/image')
 
-                expected_status = define.errCode['changeDisk']['status']
-                self.assertEqual(res['status'], expected_status)
+            expected_status = define.errCode['changeDisk']['status']
+            self.assertEqual(res['status'], expected_status)
 
 
 class TestingVm(vm.Vm):
