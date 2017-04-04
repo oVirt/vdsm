@@ -520,16 +520,19 @@ def bonding_default_fpath():
 def preserve_default_route():
     ipv4_dg_data = routes.getDefaultGateway()
     ipv4_gateway = ipv4_dg_data.via if ipv4_dg_data else None
+    ipv4_device = ipv4_dg_data.device if ipv4_dg_data else None
+
     ipv6_dg_data = routes.ipv6_default_gateway()
     ipv6_gateway = ipv6_dg_data.via if ipv6_dg_data else None
+    ipv6_device = ipv6_dg_data.device if ipv6_dg_data else None
 
     try:
         yield
     finally:
         if ipv4_gateway and not routes.is_default_route(ipv4_gateway):
-            address.set_default_route(ipv4_gateway, family=4)
+            address.set_default_route(ipv4_gateway, family=4, dev=ipv4_device)
         if ipv6_gateway and not routes.is_ipv6_default_route(ipv6_gateway):
-            address.set_default_route(ipv6_gateway, family=6)
+            address.set_default_route(ipv6_gateway, family=6, dev=ipv6_device)
 
 
 @memoized
