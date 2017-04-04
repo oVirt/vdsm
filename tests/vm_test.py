@@ -1717,7 +1717,11 @@ class ChangeBlockDevTests(TestCaseBase):
             fakevm._dom = fake.Domain(
                 virtError=libvirt.VIR_ERR_GET_FAILED)
 
-            res = fakevm.changeCD('/path/to/image')
+            cdromspec = {'path': '/path/to/image',
+                         'iface': 'ide',
+                         'index': '2',
+                         }
+            res = fakevm.changeCD(cdromspec)
 
             expected_status = define.errCode['changeDisk']['status']
             self.assertEqual(res['status'], expected_status)
