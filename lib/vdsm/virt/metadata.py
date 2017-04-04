@@ -55,6 +55,7 @@ import xml.etree.ElementTree as ET
 import libvirt
 import six
 
+from vdsm.common import errors
 from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
 
@@ -62,7 +63,7 @@ from vdsm.virt import xmlconstants
 _DEVICE = 'device'
 
 
-class Error(Exception):
+class Error(errors.Base):
     """
     Generic metadata error
     """
