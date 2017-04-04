@@ -377,12 +377,6 @@ parameters = [
             'can consume images created by newer versions. '
             'See https://bugzilla.redhat.com/1139707 '
             '(supported versions: 0.10, 1.1)'),
-
-        ('discard_enable', 'false',
-            'Discards the storage used for a volume before removing it. '
-            'This feature requires a discard support from the storage server. '
-            'Physical discard operations are supported if the value of '
-            '/sys/block/<device>/queue/discard_max_bytes is not zero.'),
     ]),
 
     # Section: [jobs]

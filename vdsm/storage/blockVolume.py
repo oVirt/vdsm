@@ -601,15 +601,14 @@ class BlockVolume(volume.Volume):
         # Mark volume as illegal before deleting
         self.setLegality(sc.ILLEGAL_VOL)
 
-        discard_needed = discard or blockdev.discard_enabled()
-        if postZero or discard_needed:
+        if postZero or discard:
             self.prepare(justme=True, rw=True, chainrw=force, setrw=True,
                          force=True)
             try:
                 if postZero:
                     blockdev.zero(vol_path, task=vars.task)
 
-                if discard_needed:
+                if discard:
                     blockdev.discard(vol_path)
             finally:
                 self.teardown(self.sdUUID, self.volUUID, justme=True)

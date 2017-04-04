@@ -29,7 +29,6 @@ import logging
 from vdsm import cmdutils
 from vdsm import constants
 from vdsm import utils
-from vdsm.config import config
 
 from vdsm.storage import blkdiscard
 from vdsm.storage import fsutils
@@ -124,16 +123,4 @@ def discard(device_path):
                              level=logging.INFO, log=log):
             blkdiscard.blkdiscard(device_path)
     except cmdutils.Error as e:
-        log.warning("Discarding device %s failed (discard_enable=%s): %s",
-                    device_path, discard_enabled(), e)
-
-
-def discard_enabled():
-    """
-    Tell if user configured automatic discard of block devices, regardless of
-    the devices capabilities.
-
-    Returns:
-        bool
-    """
-    return config.getboolean("irs", "discard_enable")
+        log.warning("Discarding device %s failed: %s", device_path, e)

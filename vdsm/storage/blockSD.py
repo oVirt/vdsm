@@ -228,7 +228,7 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs, discard):
 
         blockdev.zero(path, task=task)
 
-        if discard or blockdev.discard_enabled():
+        if discard:
             blockdev.discard(path)
 
         try:
@@ -705,7 +705,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                            volUUID, taskid)
             path = lvm.lvPath(sdUUID, volUUID)
 
-            if discard or blockdev.discard_enabled():
+            if discard:
                 blockdev.discard(path)
 
             self.log.debug('Removing volume %s task %s', volUUID, taskid)
