@@ -157,6 +157,12 @@ class Operation(object):
         timeout: same meaning of Executor.dispatch
         scheduler: Scheduler instance to use
         executor: Executor instance to use
+        exclusive: boolean flag to control the exclusiveness of the operation.
+                   Exclusive operations are scheduled again when and only when
+                   completed (conservative approach). Non-exclusive operations
+                   are scheduled again just after being dispatched to the
+                   executor (optimistic approach).
+                   The operations are non-exclusive by default.
         """
         self._func = func
         self._period = period
