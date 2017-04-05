@@ -146,8 +146,19 @@ class Executor(object):
         The task will be executed as soon as possible
         in one of the active workers of the executor.
 
-        The timeout is measured from the time the callable
-        is called.
+        :param callable: callable to be run in the executor,
+          as soon as possible but still under best-effort service level
+        :type callable: any callable python object. Will be called without
+          any argument like_this().
+        :param timeout: timeout in seconds for the callable to complete,
+          measured from the time the callable is called.
+        :type timeout: float
+        :param discard: if true the worker thread will be discarded once
+          the timeout expires and callable is not yet
+          completed. Otherwise, the executor just checks if the callable
+          completed, emits a warning in the log if it didn't complete,
+          and reschedules the check after `timeout` seconds.
+        :type discard: boolean
         """
         if not self._running:
             raise NotRunning()
