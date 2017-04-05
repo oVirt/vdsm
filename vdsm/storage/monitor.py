@@ -257,7 +257,7 @@ class MonitorThread(object):
         self.stopEvent = threading.Event()
         self.domain = None
         self.sdUUID = sdUUID
-        self.hostId = hostId
+        self.hostId = int(hostId)
         self.interval = interval
         self.changeEvent = changeEvent
         self.checker = checker
