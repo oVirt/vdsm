@@ -29,6 +29,8 @@ from testlib import namedTemporaryDir
 from testlib import permutations, expandPermutations
 
 from vdsm import hugepages
+from vdsm import supervdsm
+from vdsm.supervdsm_api import virt
 
 
 _STATE = {
@@ -43,6 +45,23 @@ _STATE = {
 
 @expandPermutations
 class TestHugepages(TestCaseBase):
+
+    @permutations([
+        ['1024', 1024, 1024],
+        ['1024', -1024, -1024],
+        ['1024', -512, -512],
+        ['1024', 0, 0],
+    ])
+    @MonkeyPatch(hugepages, '_size_from_dir', lambda x: x)
+    @MonkeyPatch(hugepages, 'state', lambda: {2048: _STATE})
+    @MonkeyPatch(supervdsm, 'getProxy', lambda: virt)
+    def test_alloc(self, default, count, expected):
+        with tempfile.NamedTemporaryFile() as f:
+            f.write(default)
+            f.flush()
+            ret = hugepages._alloc(count, size=2048, path=f.name)
+            f.seek(0)
+            self.assertEqual(ret, expected)
 
     @MonkeyPatch(hugepages, '_size_from_dir', lambda x: x)
     def test_supported(self):

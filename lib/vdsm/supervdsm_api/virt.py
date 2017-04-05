@@ -47,3 +47,35 @@ def getVmPid(vmName):
     pidFile = "/var/run/libvirt/qemu/%s.pid" % vmName
     with open(pidFile) as pid:
         return pid.read()
+
+
+@expose
+def hugepages_alloc(count, path):
+    """
+    Function to allocate hugepages. Thread-safety not guaranteed.
+    The default size depends on the architecture:
+        x86_64: 2 MiB
+        POWER8: 16 MiB
+
+    Args:
+        count (int): Number of huge pages to be allocated. Negative count
+        deallocates pages.
+
+    Returns:
+        int: The number of successfully allocated hugepages.
+    """
+    existing_pages = 0
+    allocated_pages = 0
+
+    with open(path, 'r') as f:
+        existing_pages = int(f.read())
+
+    count = max(-existing_pages, count)
+
+    with open(path, 'w') as f:
+        f.write(str(existing_pages + count))
+
+    with open(path, 'r') as f:
+        allocated_pages = min(int(f.read()), count)
+
+    return allocated_pages
