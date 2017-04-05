@@ -6,6 +6,8 @@ import traceback
 
 import hooking
 
+from vdsm import hugepages
+
 '''
 hugepages vdsm hook
 ===================
@@ -29,43 +31,6 @@ Syntax:
 hugepages=512
 '''
 
-HUGEPAGES_MOUNT_PATH = '/dev/hugepages'
-QEMU_HUGEPAGES_MOUNT_PATH = HUGEPAGES_MOUNT_PATH + '/libvirt/qemu'
-NUMBER_OF_HUGETPAGES = '/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages'
-
-
-def addSysHugepages(pages):
-    with open(NUMBER_OF_HUGETPAGES, 'r') as f:
-        currPages = int(f.read())
-
-    totalPages = pages + currPages
-    # command: sysctl vm.nr_hugepages=256
-    command = ['sysctl', 'vm.nr_hugepages=%d' % totalPages]
-    retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
-    if retcode != 0:
-        sys.stderr.write('hugepages: error in command: %s, err = %s\n' %
-                         (' '.join(command), err))
-        sys.exit(2)
-
-    with open(NUMBER_OF_HUGETPAGES, 'r') as f:
-        newCurrPages = int(f.read())
-
-    return (newCurrPages - currPages)
-
-
-def freeSysHugepages(pages):
-    with open(NUMBER_OF_HUGETPAGES, 'r') as f:
-        currPages = int(f.read())
-
-    if pages > 0:
-        # command: sysctl vm.nr_hugepages=0
-        command = ['sysctl', 'vm.nr_hugepages=%d' % (currPages - pages)]
-        retcode, out, err = hooking.execCmd(command, sudo=True, raw=True)
-        if retcode != 0:
-            sys.stderr.write('hugepages: error in command: %s, err = %s\n' %
-                             (' '.join(command), err))
-            sys.exit(2)
-
 
 if 'hugepages' in os.environ:
     try:
@@ -80,11 +45,7 @@ if 'hugepages' in os.environ:
             sys.exit(0)
 
         # Add system hugepages
-        allocatedPages = addSysHugepages(pages)
-        if allocatedPages != pages:
-            freeSysHugepages(allocatedPages)
-            sys.stderr.write('hugepages: cannot allocate enough pages\n')
-            sys.exit(2)
+        allocatedPages = hugepages.alloc(pages)
 
         # Add hugepages to libvirt xml
         memoryBacking = domxml.createElement('memoryBacking')
@@ -95,7 +56,7 @@ if 'hugepages' in os.environ:
         sys.stderr.write('hugepages: adding hugepages tag\n')
 
         hooking.write_domxml(domxml)
-    except:
+    except Exception:
         sys.stderr.write('hugepages: [unexpected error]: %s\n' %
                          traceback.format_exc())
         sys.exit(2)
