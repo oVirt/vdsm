@@ -2761,6 +2761,9 @@ class Vm(object):
             metadata_xml = self._dom.metadata(
                 libvirt.VIR_DOMAIN_METADATA_ELEMENT,
                 METADATA_VM_TUNE_URI, 0)
+        except virdomain.NotConnectedError:
+            self.log.warning("Failed to get metadata, domain not connected.")
+            return None
         except libvirt.libvirtError as e:
             if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN_METADATA:
                 self.log.exception("getVmPolicy failed")

@@ -36,6 +36,7 @@ from vdsm.virt import vmchannels
 from vdsm.virt import vmexitreason
 from vdsm.virt import vmstats
 from vdsm.virt import vmstatus
+from vdsm.virt import virdomain
 
 from virt import vm
 from virt.vm import HotunplugTimeout, VolumeChainEntry
@@ -968,6 +969,12 @@ class TestVm(XMLTestCase):
             self.assertEqual(drives[0].specParams["ioTune"],
                              expected_io_tune[drives[0].name])
             self.assertXMLEqual(drives[0]._deviceXML, expected_xml)
+
+    def testGetPolicyDisconnected(self):
+        with fake.VM() as machine:
+            machine._dom = virdomain.Disconnected(machine.id)
+            policy = machine._getVmPolicy()
+            self.assertEqual(policy, None)
 
     def testSdIds(self):
         """
