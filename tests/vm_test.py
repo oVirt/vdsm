@@ -54,6 +54,7 @@ from vdsm.common import define
 from vdsm.common import response
 from vdsm.virt import libvirtxml
 from vdsm.virt import vmxml
+from vdsm.virt import virdomain
 from vdsm import osinfo
 from vdsm import password
 from testlib import VdsmTestCase as TestCaseBase
@@ -974,6 +975,12 @@ class TestVm(XMLTestCase):
             self.assertEqual(drives[0].iotune,
                              expected_io_tune[drives[0].name])
             self.assertXMLEqual(drives[0]._deviceXML, expected_xml)
+
+    def testGetPolicyDisconnected(self):
+        with fake.VM() as machine:
+            machine._dom = virdomain.Disconnected(machine.id)
+            policy = machine._getVmPolicy()
+            self.assertEqual(policy, None)
 
     def testSdIds(self):
         """
