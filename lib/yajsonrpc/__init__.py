@@ -127,6 +127,9 @@ class JsonRpcRequest(object):
 
         return JsonRpcRequest(method, protect_passwords(params), reqId)
 
+    def __repr__(self):
+        return repr(self.toDict())
+
     def toDict(self):
         return {
             'jsonrpc': '2.0',
