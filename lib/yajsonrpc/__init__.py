@@ -14,7 +14,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 from __future__ import absolute_import
 import logging
-from functools import partial
 from six.moves.queue import Queue
 from weakref import ref
 from threading import Lock, Event
@@ -470,6 +469,22 @@ class JsonRpcClient(object):
             cb(self, event, params)
 
 
+class JsonRpcTask(object):
+
+    def __init__(self, handler, ctx, req):
+        self._handler = handler
+        self._ctx = ctx
+        self._req = req
+
+    def __call__(self):
+        self._handler(self._ctx, self._req)
+
+    def __repr__(self):
+        return '<JsonRpcTask %s at 0x%x>' % (
+            self._req, id(self)
+        )
+
+
 class JsonRpcServer(object):
     log = logging.getLogger("jsonrpc.JsonRpcServer")
 
@@ -621,7 +636,9 @@ class JsonRpcServer(object):
             self._serveRequest(ctx, request)
         else:
             try:
-                self._threadFactory(partial(self._serveRequest, ctx, request))
+                self._threadFactory(
+                    JsonRpcTask(self._serveRequest, ctx, request)
+                )
             except Exception as e:
                 self.log.exception("could not allocate request thread")
                 ctx.requestDone(
