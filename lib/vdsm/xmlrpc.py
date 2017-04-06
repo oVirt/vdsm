@@ -27,16 +27,12 @@ import socket
 import sys
 
 from . import concurrent
-from .config import config
 from .executor import TaskQueue
 
 
 class IPXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
 
-    if config.getboolean('vars', 'xmlrpc_http11'):
-        protocol_version = "HTTP/1.1"
-    else:
-        protocol_version = "HTTP/1.0"
+    protocol_version = "HTTP/1.1"
 
 
 class SimpleThreadedXMLRPCServer(SimpleXMLRPCDispatcher):

@@ -209,9 +209,6 @@ parameters = [
 
         ('xmlrpc_enable', 'true', 'Enable the xmlrpc server'),
 
-        ('xmlrpc_http11', 'true',
-            'Enable HTTP/1.1 keep-alive connections'),
-
         ('jsonrpc_enable', 'true', 'Enable the JSON RPC server'),
 
         ('broker_enable', 'false', 'Enable outgoing connection to broker'),
