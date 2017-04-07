@@ -127,9 +127,9 @@ class TestDirectioChecker(VdsmTestCase):
     @MonkeyPatch(check, "_log", FakeLogger(logging.WARNING))
     def test_block_warnings(self):
         self.checks = 1
-        with fake_dd(0.15):
+        with fake_dd(0.3):
             checker = check.DirectioChecker(self.loop, "/path", self.complete,
-                                            interval=0.1)
+                                            interval=0.2)
             checker.start()
             self.loop.run_forever()
         msg = check._log.messages[0][1]
