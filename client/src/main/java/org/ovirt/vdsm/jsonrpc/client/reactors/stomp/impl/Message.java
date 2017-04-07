@@ -8,11 +8,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcRequest;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 public class Message {
     public enum Command {
@@ -44,6 +46,7 @@ public class Message {
     public static final String HEADER_CONTENT_TYPE = "content-type";
     public static final String HEADER_HEART_BEAT = "heart-beat";
     public static final String HEADER_HOST = "host";
+    public static final String HEADER_CORRELATION_ID = "ovirtCorrelationId";
     public static final String END_OF_MESSAGE = "\000";
     public static final byte[] HEARTBEAT_FRAME = "\n".getBytes();
     private static final String CHARSET = ";charset=";
@@ -64,6 +67,14 @@ public class Message {
 
     public Message withContent(byte[] content) {
         this.content = content;
+        return this;
+    }
+
+    public Message withCorrelationId() {
+        String correlationId = MDC.get(HEADER_CORRELATION_ID);
+        if (StringUtils.isNotBlank(correlationId)) {
+            withHeader(HEADER_CORRELATION_ID, correlationId);
+        }
         return this;
     }
 

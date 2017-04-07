@@ -82,6 +82,7 @@ public class SSLStompClient extends SSLClient {
             send(new Message().send()
                     .withHeader(HEADER_DESTINATION, this.getRequestQueue())
                     .withHeader(HEADER_REPLY_TO, getResponseQueue())
+                    .withCorrelationId()
                     .withContent(message)
                     .build());
         }
