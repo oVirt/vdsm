@@ -1,5 +1,4 @@
-#!/bin/bash
-set -e
+#!/bin/bash -ex
 
 shopt -s extglob
 IFACES=(/proc/sys/net/ipv4/conf/!(all|default|lo))
