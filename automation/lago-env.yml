@@ -3,6 +3,7 @@ domains:
       nics:
         - net: vdsm_functional_tests_lago
       memory: 1024
+      vm-type: ovirt-host
       disks:
         - template_name: el7-base
           type: template
@@ -10,7 +11,6 @@ domains:
           dev: sda3
           format: qcow2
       metadata:
-        ovirt-role: host
         deploy-scripts:
           - $LAGO_INITFILE_PATH/deploy.sh
       artifacts:
