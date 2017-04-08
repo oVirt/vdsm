@@ -17,6 +17,7 @@ VM_NAME="vdsm_functional_tests_host-${DISTRO}"
 AUTOMATION="$PWD"/automation
 PREFIX="$AUTOMATION"/vdsm_functional
 EXPORTS="$PWD"/exported-artifacts
+readonly TESTS_OUT="/root/vdsm-tests"
 
 function setup_env {
     # TODO: jenkins mock env should take care of that
@@ -45,6 +46,7 @@ function setup_env {
     # otherwise
     prepare_and_copy_yum_conf
     lago ovirt deploy
+    lago shell "$VM_NAME" -c "mkdir -p /root/vdsm-tests"
 }
 
 function fake_ksm_in_vm {
@@ -58,7 +60,7 @@ function run_infra_tests {
             cd /usr/share/vdsm/tests
             ./run_tests.sh \
                 --with-xunit \
-                --xunit-file=/tmp/nosetests-${DISTRO}.xml \
+                --xunit-file=$TESTS_OUT/nosetests-${DISTRO}-infra.junit.xml \
                 -s \
                 functional/supervdsmFuncTests.py \
                 functional/upgrade_vdsm_test.py \
@@ -74,6 +76,8 @@ function run_network_tests {
             systemctl mask NetworkManager
             cd /usr/share/vdsm/tests
             ./run_tests.sh \
+                --with-xunit \
+                --xunit-file=$TESTS_OUT/nosetests-${DISTRO}-network.junit.xml \
                 -a type=functional,switch=legacy \
                 network/func_*_test.py
         " || res=$?
@@ -118,12 +122,9 @@ function run_all_tests {
 }
 
 function collect_logs {
-    mkdir "$EXPORTS"/lago-logs
-    lago copy-from-vm "$VM_NAME" \
-        "/tmp/nosetests-${DISTRO}.xml" \
-        "$EXPORTS/nosetests-${DISTRO}.xml" || :
-    lago collect --output "$EXPORTS"/lago-logs
-    cp "$PREFIX"/current/logs/*.log "$EXPORTS"/lago-logs
+    mkdir "$EXPORTS"/test_logs
+    lago collect --output "$EXPORTS"/test_logs
+    cp "$PREFIX"/current/logs/*.log "$EXPORTS"/test_logs/
 }
 
 function cleanup {

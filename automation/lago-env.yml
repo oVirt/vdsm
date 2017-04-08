@@ -15,6 +15,7 @@ domains:
           - $LAGO_INITFILE_PATH/deploy.sh
       artifacts:
           - /var/log
+          - /root/vdsm-tests
 
 nets:
   vdsm_functional_tests_lago:
