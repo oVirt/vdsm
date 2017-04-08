@@ -2,7 +2,7 @@ domains:
     vdsm_functional_tests_host-el7:
       nics:
         - net: vdsm_functional_tests_lago
-      memory: 512
+      memory: 1024
       disks:
         - template_name: el7-base
           type: template
