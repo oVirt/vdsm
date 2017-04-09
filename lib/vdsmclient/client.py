@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -103,7 +103,8 @@ def main(args=None):
             request_params = parse_params(args.method_args)
 
         cli = client.connect(args.host, port=args.port, use_tls=args.use_tls,
-                             timeout=args.timeout)
+                             timeout=args.timeout,
+                             gluster_enabled=args.gluster_enabled)
 
         with utils.closing(cli):
             command = getattr(getattr(cli, namespace), method)
@@ -150,6 +151,9 @@ def option_parser(namespaces):
     parser.set_defaults(use_tls=True)
     parser.add_argument('--timeout', dest="timeout", default=60, type=float,
                         help="timeout (default 60 seconds)")
+    parser.add_argument('--gluster-enabled', dest="gluster_enabled",
+                        action="store_true", help="gluster enabled")
+    parser.set_defaults(gluster_enabled=False)
     parser.add_argument('-f', '--file', dest="file",
                         help="read method parameters from json file. Set to"
                         " '-' to read from standard input")
