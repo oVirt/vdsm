@@ -52,7 +52,7 @@ vdsClient -s 0 setLogLevel WARN storage
 vdsClient -s 0 setLogLevel WARN jsonrpc
 
 5. enable the 'devel' logs, which could be useful for developers
-vdsClient -s 0 setLogLevel devel WARN
+vdsClient -s 0 setLogLevel WARN devel
 
 
 Notes
