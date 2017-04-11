@@ -125,6 +125,9 @@ ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %changelog
+* Tue Apr 11 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.4.6
+- send correlation id to the server
+
 * Mon Mar 27 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.4.5
 - java exception visible in Events when upgrade check is done on recently fenced host
 - packaging: spec: move to headless java
