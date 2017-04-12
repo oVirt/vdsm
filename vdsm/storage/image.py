@@ -799,7 +799,7 @@ class Image:
                 if preallocate in [sc.PREALLOCATED_VOL, sc.SPARSE_VOL]:
                     volParams['prealloc'] = preallocate
 
-                self.log.info("copy source %s:%s:%s size %s blocks"
+                self.log.info("copy source %s:%s:%s size %s blocks "
                               "destination %s:%s:%s allocating %s blocks" %
                               (sdUUID, srcImgUUID, srcVolUUID,
                                volParams['size'], dstSdUUID, dstImgUUID,
