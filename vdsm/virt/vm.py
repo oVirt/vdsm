@@ -383,6 +383,16 @@ class Vm(object):
         hugepages_enabled = int(custom.get('hugepages', 0))
         return hugepages_enabled > 0
 
+    @property
+    def hugepagesz(self):
+        custom = self.conf.get('custom', {})
+        hugepagesz = int(custom.get('hugepagesz', 0))
+        if hugepagesz == 0:
+            return hugepages.DEFAULT_HUGEPAGESIZE[cpuarch.real()]
+        if hugepagesz not in hugepages.supported():
+            raise RuntimeError("Unsupported hugepages size")
+        return hugepagesz
+
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
         # non-obvious recursive locking in the following flow:
@@ -1826,19 +1836,18 @@ class Vm(object):
 
     def _prepare_hugepages(self):
         vm_mem_size_kb = self.mem_size_mb() * 1024
-        vm_hugepagesz = hugepages.DEFAULT_HUGEPAGESIZE[cpuarch.real()]
 
         num_hugepages = int(math.ceil(
             vm_mem_size_kb /
-            vm_hugepagesz
+            self.hugepagesz
         ))
         self.log.info(
             'Allocating %s (%s) hugepages (memsize %s)',
             num_hugepages,
-            vm_hugepagesz,
+            self.hugepagesz,
             vm_mem_size_kb
         )
-        hugepages.alloc(num_hugepages)
+        hugepages.alloc(num_hugepages, self.hugepagesz)
 
     def _buildDomainXML(self):
         if 'xml' in self.conf:
@@ -1866,9 +1875,7 @@ class Vm(object):
 
         if self.hugepages:
             self._prepare_hugepages()
-            domxml.appendMemoryBacking(
-                hugepages.DEFAULT_HUGEPAGESIZE[cpuarch.real()]
-            )
+            domxml.appendMemoryBacking(self.hugepagesz)
 
         if cpuarch.is_x86(self.arch):
             osd = osinfo.version()
@@ -1938,20 +1945,19 @@ class Vm(object):
 
     def _cleanup_hugepages(self):
         vm_mem_size_kb = self.mem_size_mb() * 1024
-        vm_hugepagesz = hugepages.DEFAULT_HUGEPAGESIZE[cpuarch.real()]
 
         num_hugepages = int(math.ceil(
             vm_mem_size_kb /
-            vm_hugepagesz
+            self.hugepagesz
         ))
         self.log.info(
             'Deallocating %s (%s) hugepages (memsize %s)',
             num_hugepages,
-            vm_hugepagesz,
+            self.hugepagesz,
             vm_mem_size_kb
         )
         try:
-            hugepages.dealloc(num_hugepages)
+            hugepages.dealloc(num_hugepages, self.hugepagesz)
         except Exception:
             self.log.info('Deallocation of hugepages failed')
 
