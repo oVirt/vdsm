@@ -38,7 +38,6 @@ from testlib import namedTemporaryDir, temporaryPath
 from testlib import expandPermutations, permutations
 from testValidation import broken_on_ci
 from testValidation import skipif
-from testValidation import xfail
 import monkeypatch
 
 FLOPPY_SIZE = (2 ** 20) * 4
@@ -212,7 +211,6 @@ class TestMount(VdsmTestCase):
                 mnt = mount.Mount(link_to_file, mountpoint)
                 self.assertTrue(mnt.isMounted())
 
-    @xfail("Normalizing of gluster mounts is not yet implemented")
     def test_is_mounted_gluster_with_rdma(self):
         with fake_mounts(
                 [b"server:/volume.rdma /mnt/server:volume fuse.glusterfs "

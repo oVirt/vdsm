@@ -52,6 +52,24 @@ _DELETED_SUFFIX = ' (deleted)'
 _ESCAPED_SPACES = re.compile(r"\\[0-7]{3}")
 
 
+def _normalize_gluster_mountpoint(fs_spec, fs_vfstype):
+    """
+    Removes auto-added .rdma suffix from gluster mount points
+
+    :param fs_spec: filesystem specification to normalize
+    :param fs_vfstype: filesystem type, as we do not want to
+     normalize for all systems.
+    :return: fs_spec cleared of .rdma suffix
+             or untouched fs_spec in case of non gluster mount
+             or non-rdma gluster mount
+    """
+    suffix = ".rdma"
+    if (fs_vfstype == 'fuse.glusterfs' and
+            fs_spec.endswith(suffix)):
+        return fs_spec[:-len(suffix)]
+    return fs_spec
+
+
 def _parseFstabLine(line):
     (fs_spec, fs_file, fs_vfstype, fs_mntops,
      fs_freq, fs_passno) = line.split()[:6]
@@ -62,6 +80,8 @@ def _parseFstabLine(line):
     # Using NFS4 the kernel shows the mount path with double slashes,
     # regarless of the original (normalized) mount path.
     fs_spec = fileUtils.normalize_path(_unescape_spaces(fs_spec))
+
+    fs_spec = _normalize_gluster_mountpoint(fs_spec, fs_vfstype)
 
     # We expect normalized fs_file from the kernel.
     fs_file = _unescape_spaces(fs_file)
