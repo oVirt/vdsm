@@ -56,7 +56,7 @@ class APITests(conttestlib.RunnableTestCase):
 
         conn = connection.Connection()
         with conttestlib.tmp_run_dir():
-            dom = conn.createXML(conttestlib.minimal_dom_xml(), 0)
+            dom = conn.defineXML(conttestlib.minimal_dom_xml(), 0)
             conn.domainEventRegisterAny(dom, evt, _cb, None)
             containers.monitorAllDomains()
 

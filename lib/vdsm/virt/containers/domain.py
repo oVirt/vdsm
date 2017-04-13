@@ -68,6 +68,12 @@ class Domain(object):
             name='Domain(%s)' % self._vm_uuid,
             parent=events.root)
 
+    def createWithFlags(self, flags):
+        pass
+
+    def undefine(self):
+        pass
+
     def destroyFlags(self, flags):
         #  flags are unused
         vm_uuid = self.UUIDString()
