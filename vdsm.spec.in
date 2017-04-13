@@ -1249,7 +1249,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/rwlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/securable.py*
 %{python_sitelib}/%{vdsm_name}/storage/threadPool.py*
-%{python_sitelib}/%{vdsm_name}/storage/threadlocal.py*
 %{python_sitelib}/%{vdsm_name}/storage/types.py*
 %{python_sitelib}/%{vdsm_name}/storage/volumemetadata.py*
 %{python_sitelib}/%{vdsm_name}/storage/workarounds.py*

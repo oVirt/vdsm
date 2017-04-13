@@ -37,6 +37,7 @@ import six
 from vdsm import cmdutils
 from vdsm import concurrent
 from vdsm.common import exception
+from vdsm.common.threadlocal import vars
 from vdsm.config import config
 from vdsm import constants
 from vdsm import utils
@@ -50,7 +51,6 @@ from vdsm.storage import iscsi
 from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage.persistent import PersistentDict, DictValidator
-from vdsm.storage.threadlocal import vars
 import vdsm.supervdsm as svdsm
 
 import sd

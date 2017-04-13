@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2016 Red Hat, Inc.
+# Copyright 2009-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ from vdsm import qemuimg
 from vdsm import utils
 from vdsm import virtsparsify
 from vdsm.config import config
+from vdsm.common.threadlocal import vars
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
@@ -38,7 +39,6 @@ from vdsm.storage import imageSharing
 from vdsm.storage import misc
 from vdsm.storage import qcow2
 from vdsm.storage import workarounds
-from vdsm.storage.threadlocal import vars
 
 from sdc import sdCache
 import sd
