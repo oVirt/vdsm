@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import logging
 from decorator import decorator
 
 from vdsm import logUtils
+from vdsm.common.threadlocal import vars
 
 from . import exception
 from . import response
@@ -36,15 +37,28 @@ def logged(on=""):
     @decorator
     def method(func, *args, **kwargs):
         log = logging.getLogger(on)
-        log.info('START %s', logUtils.call2str(func, args, kwargs))
+        ctx = context_string()
+        log.info('START %s %s', logUtils.call2str(func, args, kwargs), ctx)
         try:
             ret = func(*args, **kwargs)
         except Exception as exc:
-            log.info("FINISH %s error=%s", func.__name__, exc)
+            log.info("FINISH %s error=%s %s", func.__name__, exc, ctx)
             raise
-        log.info('FINISH %s return=%s', func.__name__, ret)
+        log.info('FINISH %s return=%s %s', func.__name__, ret, ctx)
         return ret
     return method
+
+
+def context_string():
+    ctx = vars.context
+    if ctx is not None:
+        ret = 'from=%s,%s' % (ctx.client_host, ctx.client_port)
+        flow_id = ctx.flow_id
+        if flow_id is not None:
+            ret += ', flow_id=%s' % (flow_id,)
+        return ret
+    else:
+        return 'from=internal'
 
 
 def guard(*guarding_functions):
