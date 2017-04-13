@@ -2324,6 +2324,7 @@ class Vm(object):
 
                 dom = self._connection.defineXML(domxml)
                 self._dom = virdomain.Defined(self.id, dom)
+                self._update_metadata()
                 dom.createWithFlags(flags)
                 self._dom = virdomain.Notifying(dom, self._timeoutExperienced)
                 hooks.after_vm_start(self._dom.XMLDesc(0), self._custom)
@@ -4452,6 +4453,13 @@ class Vm(object):
     def _updateDomainDescriptor(self):
         domainXML = self._dom.XMLDesc(0)
         self._domain = DomainDescriptor(domainXML)
+
+    def _update_metadata(self):
+        with metadata.domain(self._dom, xmlconstants.METADATA_VM_VDSM_ELEMENT,
+                             namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
+                             namespace_uri=xmlconstants.METADATA_VM_VDSM_URI) \
+                as vm:
+            vm['startTime'] = self.start_time
 
     def _ejectFloppy(self):
         if 'volatileFloppy' in self.conf:
