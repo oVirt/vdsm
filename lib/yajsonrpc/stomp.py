@@ -62,6 +62,7 @@ class Command(object):
 class Headers(object):
     CONTENT_LENGTH = "content-length"
     CONTENT_TYPE = "content-type"
+    FLOW_ID = "ovirtCorrelationId"
     SUBSCRIPTION = "subscription"
     RECEIPT = "receipt"
     RECEIPT_ID = "receipt-id"

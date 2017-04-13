@@ -15,7 +15,7 @@
 
 from __future__ import absolute_import
 import logging
-from collections import deque
+from collections import deque, namedtuple
 from uuid import uuid4
 import functools
 
@@ -31,6 +31,9 @@ from .betterAsyncore import Dispatcher, Reactor
 
 _STATE_LEN = "Waiting for message length"
 _STATE_MSG = "Waiting for message"
+
+
+Context = namedtuple('Context', "flow_id, client_host, client_port")
 
 
 def parseHeartBeatHeader(v):
@@ -197,9 +200,11 @@ class StompAdapterImpl(object):
         destination = frame.headers.get(stomp.Headers.DESTINATION, None)
         if destination in self.request_queues:
             # default subscription
-            self._handle_internal(dispatcher,
-                                  frame.headers.get(stomp.Headers.REPLY_TO),
-                                  frame.body)
+            self._handle_internal(
+                dispatcher,
+                frame.headers.get(stomp.Headers.REPLY_TO),
+                frame.headers.get(stomp.Headers.FLOW_ID),
+                frame.body)
             return
         else:
             try:
@@ -225,7 +230,7 @@ class StompAdapterImpl(object):
                 )
                 subscription.client.send_raw(res)
 
-    def _handle_internal(self, dispatcher, req_dest, request):
+    def _handle_internal(self, dispatcher, req_dest, flow_id, request):
         """
         We need to build response dictionary which maps message id
         with destination. For legacy mode we use known 3.5 destination
@@ -236,7 +241,7 @@ class StompAdapterImpl(object):
         except Exception:
             # let json server process issue
             pass
-        dispatcher.connection.handleMessage(request)
+        dispatcher.connection.handleMessage(request, flow_id)
 
     def _handle_destination(self, dispatcher, req_dest, request):
         """
@@ -269,6 +274,8 @@ class _StompConnection(object):
         self._async_client = aclient
         self._dispatcher = reactor.create_dispatcher(
             sock, stomp.AsyncDispatcher(self, aclient))
+        self._client_host = self._dispatcher.addr[0]
+        self._client_port = self._dispatcher.addr[1]
 
     def send_raw(self, msg):
         self._async_client.queue_frame(msg)
@@ -292,10 +299,11 @@ class _StompConnection(object):
         self._messageHandler = msgHandler
         self._dispatcher.handle_read_event()
 
-    def handleMessage(self, data):
+    def handleMessage(self, data, flow_id):
         if self._messageHandler is not None:
+            context = Context(flow_id, self._client_host, self._client_port)
             self._messageHandler((self._server, self.get_local_address(),
-                                  data))
+                                  context, data))
 
     def is_closed(self):
         return not self._dispatcher.connected

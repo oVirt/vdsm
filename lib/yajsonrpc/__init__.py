@@ -21,6 +21,7 @@ from threading import Lock, Event
 from vdsm.compat import json
 
 from vdsm.common import exception
+from vdsm.common.threadlocal import vars
 from vdsm.logUtils import Suppressed
 from vdsm.password import protect_passwords, unprotect_passwords
 from vdsm.utils import monotonic_time, traceback
@@ -252,10 +253,11 @@ class _JsonRpcClientRequestContext(object):
 
 
 class _JsonRpcServeRequestContext(object):
-    def __init__(self, client, server_address):
+    def __init__(self, client, server_address, context):
         self._requests = []
         self._client = client
         self._server_address = server_address
+        self._context = context
         self._counter = 0
         self._requests = {}
         self._responses = []
@@ -275,6 +277,10 @@ class _JsonRpcServeRequestContext(object):
     @property
     def server_address(self):
         return self._server_address
+
+    @property
+    def context(self):
+        return self._context
 
     def sendReply(self):
         if len(self._requests) > 0:
@@ -523,7 +529,7 @@ class JsonRpcServer(object):
 
     def _serveRequest(self, ctx, req):
         start_time = monotonic_time()
-        response = self._handle_request(req, ctx.server_address)
+        response = self._handle_request(req, ctx)
         error = getattr(response, "error", None)
         if error is None:
             response_log = "succeeded"
@@ -534,7 +540,7 @@ class JsonRpcServer(object):
         if response is not None:
             ctx.requestDone(response)
 
-    def _handle_request(self, req, server_address):
+    def _handle_request(self, req, ctx):
         self._attempt_log_stats()
         logLevel = logging.DEBUG
 
@@ -556,9 +562,10 @@ class JsonRpcServer(object):
 
             return JsonRpcResponse(None, e, req.id)
 
+        vars.context = ctx.context
         try:
             params = req.params
-            self._bridge.register_server_address(server_address)
+            self._bridge.register_server_address(ctx.server_address)
             if isinstance(req.params, list):
                 res = method(*params)
             else:
@@ -576,6 +583,8 @@ class JsonRpcServer(object):
             if isinstance(res, Suppressed):
                 res = res.value
             return JsonRpcResponse(res, None, req.id)
+        finally:
+            vars.context = None
 
     @traceback(on=log.name)
     def serve_requests(self):
@@ -584,11 +593,11 @@ class JsonRpcServer(object):
             if obj is None:
                 break
 
-            client, server_address, msg = obj
-            self._parseMessage(client, server_address, msg)
+            self._parseMessage(obj)
 
-    def _parseMessage(self, client, server_address, msg):
-        ctx = _JsonRpcServeRequestContext(client, server_address)
+    def _parseMessage(self, obj):
+        client, server_address, context, msg = obj
+        ctx = _JsonRpcServeRequestContext(client, server_address, context)
 
         try:
             rawRequests = json.loads(msg)
