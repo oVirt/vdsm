@@ -53,8 +53,8 @@ import types
 from contextlib import contextmanager
 from functools import wraps
 
+from vdsm.common.threadlocal import vars
 from vdsm.storage import exception as se
-from vdsm.storage.threadlocal import vars
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import resourceManager
 

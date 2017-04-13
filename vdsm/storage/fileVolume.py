@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2016 Red Hat, Inc.
+# Copyright 2009-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ from vdsm import qemuimg
 from vdsm import utils
 from vdsm.commands import grepCmd
 from vdsm.common import exception
+from vdsm.common.threadlocal import vars
 from vdsm.compat import sanlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -33,7 +34,6 @@ from vdsm.storage import outOfProcess as oop
 from vdsm.storage import task
 from vdsm.storage import fallocate
 from vdsm.storage.misc import deprecated
-from vdsm.storage.threadlocal import vars
 from vdsm.storage.volumemetadata import VolumeMetadata
 
 from sdc import sdCache
