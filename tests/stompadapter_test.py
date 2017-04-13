@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,11 +34,17 @@ class TestConnection(object):
 
     def __init__(self, client):
         self._client = client
+        self._flow_id = None
 
     def send_raw(self, msg):
         self._client.queue_frame(msg)
 
-    def handleMessage(self, data):
+    @property
+    def flow_id(self):
+        return self._flow_id
+
+    def handleMessage(self, data, flow_id):
+        self._flow_id = flow_id
         self._client.queue_frame(data)
 
 
@@ -46,13 +52,14 @@ class TestDispatcher(object):
 
     def __init__(self, client):
         self._client = client
+        self._connection = TestConnection(self._client)
 
     def setHeartBeat(self, outgoing, incoming=0):
         pass
 
     @property
     def connection(self):
-        return TestConnection(self._client)
+        return self._connection
 
 
 class TestSubscription(object):
@@ -338,3 +345,38 @@ class SendFrameTest(TestCaseBase):
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.MESSAGE)
+
+    def test_flow_header(self):
+        frame = Frame(command=Command.SEND,
+                      headers={Headers.DESTINATION: SUBSCRIPTION_ID_REQUEST,
+                               Headers.FLOW_ID: 'e8a936a6',
+                               Headers.REPLY_TO: 'jms.topic.vdsm_responses',
+                               Headers.CONTENT_LENGTH: '103'},
+                      body=('{"jsonrpc":"2.0","method":"Host.getAllVmStats",'
+                            '"params":{},"id":"e8a936a6-d886-4cfa-97b9-2d54209'
+                            '053ff"}'
+                            )
+                      )
+
+        adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
+        dispatcher = TestDispatcher(adapter)
+        adapter.handle_frame(dispatcher, frame)
+
+        self.assertEqual(dispatcher.connection.flow_id, 'e8a936a6')
+
+    def test_no_flow_header(self):
+        frame = Frame(command=Command.SEND,
+                      headers={Headers.DESTINATION: SUBSCRIPTION_ID_REQUEST,
+                               Headers.REPLY_TO: 'jms.topic.vdsm_responses',
+                               Headers.CONTENT_LENGTH: '103'},
+                      body=('{"jsonrpc":"2.0","method":"Host.getAllVmStats",'
+                            '"params":{},"id":"e8a936a6-d886-4cfa-97b9-2d54209'
+                            '053ff"}'
+                            )
+                      )
+
+        adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
+        dispatcher = TestDispatcher(adapter)
+        adapter.handle_frame(dispatcher, frame)
+
+        self.assertIsNone(dispatcher.connection.flow_id)
