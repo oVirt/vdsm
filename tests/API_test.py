@@ -22,6 +22,7 @@ import copy
 import logging
 
 from vdsm.common import response
+from vdsm.common import threadlocal
 from vdsm.compat import pickle
 from vdsm import utils
 
@@ -29,6 +30,7 @@ import API
 
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
+from testlib import mock
 from testlib import temporaryPath
 from testlib import recorded
 
@@ -49,6 +51,10 @@ class TestVMCreate(TestCaseBase):
             self.vm = API.VM(self.uuid)
         # to make testing easier
         self.vm._getHibernationPaths = lambda handle: (True, handle)
+        threadlocal.vars.context = mock.Mock()
+
+    def tearDown(self):
+        threadlocal.vars.context = None
 
     def test_create_twice(self):
         vmParams = {

@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,9 @@
 from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import response
+from vdsm.common import threadlocal
 
+from testlib import mock
 from testlib import Sigargs
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -40,6 +42,10 @@ class TestResponse(TestCaseBase):
 
     def setUp(self):
         self.vm = FakeVM()
+        threadlocal.vars.context = mock.Mock()
+
+    def tearDown(self):
+        threadlocal.vars.context = None
 
     def test_success_without_return(self):
         res = self.vm.succeed()
