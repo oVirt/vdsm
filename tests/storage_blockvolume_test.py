@@ -59,7 +59,7 @@ class BlockVolumeSizeTests(TestCaseBase):
 class TestBlockVolumeManifest(TestCaseBase):
 
     def test_max_size_raw(self):
-        # # verify that max size equals to virtual size.
+        # verify that max size equals to virtual size.
         self.assertEqual(BlockVolume.max_size(1 * GIB, sc.RAW_FORMAT),
                          1 * GIB)
 
