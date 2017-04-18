@@ -758,52 +758,6 @@ class NetworkTest(TestCaseBase):
         self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    @permutations([[True], [False]])
-    def testSetupNetworksNetCompatibilityMultipleNetsSameNic(self, bridged):
-        with dummyIf(3) as (nic, another_nic, yet_another_nic):
-
-            other_net_same_tag = NETWORK_NAME + '4'
-            networks = {other_net_same_tag: dict(nic=another_nic,
-                                                 bridged=bridged, vlan='100')}
-            status, msg = self.setupNetworks(networks, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(other_net_same_tag)
-
-            other_net_different_tag = NETWORK_NAME + '5'
-            networks = {other_net_different_tag: dict(nic=nic, bridged=bridged,
-                                                      vlan='200')}
-            status, msg = self.setupNetworks(networks, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(other_net_different_tag, bridged=bridged)
-
-            nets_to_clean = [other_net_same_tag, other_net_different_tag]
-            # we can also define an untagged bridged and a tagged bridged
-            # networks on the same interface at the same time
-            if bridged:
-                yet_another_bridged = NETWORK_NAME + '6'
-                yet_another_tagged_bridged = NETWORK_NAME + '6'
-                networks = {yet_another_bridged: dict(nic=yet_another_nic,
-                                                      bridged=True),
-                            yet_another_tagged_bridged: dict(
-                                nic=yet_another_nic, bridged=True, vlan='300')}
-                status, msg = self.setupNetworks(networks, {}, NOCHK)
-                self.assertEqual(status, SUCCESS, msg)
-                self.assertNetworkExists(yet_another_bridged, bridged=True)
-                self.assertNetworkExists(yet_another_tagged_bridged,
-                                         bridged=True)
-
-                nets_to_clean += [yet_another_bridged,
-                                  yet_another_tagged_bridged]
-
-            # Clean all
-            networks = dict((net, dict(remove=True)) for net in nets_to_clean)
-            status, msg = self.setupNetworks(networks, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            for net in nets_to_clean:
-                self.assertNetworkDoesntExist(net)
-
-    @cleanupNet
     @RequireDummyMod
     @ValidateRunningAsRoot
     def testSetupNetworksDeletesTheBridgeOnlyWhenItIsReconfigured(self):
