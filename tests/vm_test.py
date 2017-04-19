@@ -1943,6 +1943,7 @@ class MetadataTests(TestCaseBase):
 
     _TEST_XML = u'''<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>TESTING</uuid>
   <metadata>
     <ovirt-vm:vm>
       <ovirt-vm:version type="float">4.2</ovirt-vm:version>

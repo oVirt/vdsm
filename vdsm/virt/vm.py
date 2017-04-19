@@ -283,7 +283,6 @@ class Vm(object):
         :param recover: Signal if the Vm is recovering;
         :type recover: bool
         """
-        self._dom = virdomain.Disconnected(params["vmId"])
         self.recovering = recover
         if 'migrationDest' in params:
             self._lastStatus = vmstatus.MIGRATION_DESTINATION
@@ -301,8 +300,21 @@ class Vm(object):
         # how the Vm is initialized, either through XML or from conf.
         self.conf = {'_blockJobs': {}, 'clientIp': '', 'devices': []}
         self.conf.update(params)
+        self.arch = cpuarch.effective()
+        self._src_domain_xml = params.get('_srcDomXML')
+        if self._src_domain_xml is not None:
+            self._domain = DomainDescriptor(self._src_domain_xml)
+        elif 'xml' in params:
+            self._domain = DomainDescriptor(params['xml'])
+        else:
+            # If no direct XML representation is available then use a minimal,
+            # but still correct, one.  More complete domain will be available
+            # and assigned once the VM is started.
+            dom = libvirtxml.Domain(self.conf, self.log, self.arch)
+            self._domain = DomainDescriptor(dom.toxml())
+        self.id = self._domain.id
+        self._dom = virdomain.Disconnected(self.id)
         self.cif = cif
-        self.id = params['vmId']
         self._custom = {'vmId': self.id}
         if 'xml' in params:
             md = metadata.from_xml(params['xml'])
@@ -361,18 +373,6 @@ class Vm(object):
             self._guestSocketFile, self.cif.channelListener, self.log,
             self._onGuestStatusChange,
             self.conf.pop('guestAgentAPIVersion', None))
-        self.arch = cpuarch.effective()
-        self._src_domain_xml = params.get('_srcDomXML')
-        if self._src_domain_xml is not None:
-            self._domain = DomainDescriptor(self._src_domain_xml)
-        elif 'xml' in params:
-            self._domain = DomainDescriptor(params['xml'])
-        else:
-            # If no direct XML representation is available then use a minimal,
-            # but still correct, one.  More complete domain will be available
-            # and assigned once the VM is started.
-            dom = libvirtxml.Domain(self.conf, self.log, self.arch)
-            self._domain = DomainDescriptor(dom.toxml())
         self._released = threading.Event()
         self._releaseLock = threading.Lock()
         self._watchdogEvent = {}

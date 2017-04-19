@@ -26,6 +26,7 @@ class MutableDomainDescriptor(object):
 
     def __init__(self, xmlStr):
         self._dom = vmxml.parse_xml(xmlStr)
+        self._id = self._dom.findtext('uuid')
 
     @classmethod
     def from_id(cls, uuid):
@@ -38,6 +39,10 @@ class MutableDomainDescriptor(object):
     @property
     def xml(self):
         return vmxml.format_xml(self._dom)
+
+    @property
+    def id(self):
+        return self._id
 
     @property
     def devices(self):
