@@ -60,4 +60,4 @@ def recoveryAllDomains():
             logging.exception('failed to recover container %r', rt_uuid)
         else:
             _log.debug('recovered container %r', rt_uuid)
-    return doms.get_all()
+    return [(d, d.XMLDesc(0)) for d in doms.get_all()]

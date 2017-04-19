@@ -181,7 +181,7 @@ class RecoveryFunctionsTests(TestCaseBase):
         with MonkeyPatchScope([(recovery, '_list_domains',
                                 lambda: self._buildAllDomains(arch)),
                                (cpuarch, 'effective', lambda: arch)]):
-            self.assertEqual([v.UUIDString()
+            self.assertEqual([v[0].UUIDString()
                              for v in recovery._get_vdsm_domains()],
                              self._getAllDomainIds(arch))
 
@@ -190,7 +190,7 @@ class RecoveryFunctionsTests(TestCaseBase):
         with MonkeyPatchScope([(recovery, '_list_domains',
                                 lambda: self._buildAllDomains(arch, 'chan')),
                                (cpuarch, 'effective', lambda: arch)]):
-            self.assertEqual([v.UUIDString()
+            self.assertEqual([v[0].UUIDString()
                              for v in recovery._get_vdsm_domains()],
                              self._getAllDomainIds(arch))
 

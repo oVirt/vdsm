@@ -44,9 +44,11 @@ from vdsm.virt.utils import isVdsmImage
 
 def _list_domains():
     conn = libvirtconnection.get()
-    for dom_uuid in conn.listDomainsID():
+    for dom_obj in conn.listAllDomains():
+        dom_uuid = 'unknown'
         try:
-            dom_obj = conn.lookupByID(dom_uuid)
+            dom_uuid = dom_obj.UUIDString()
+            logging.debug("Found domain %s", dom_uuid)
             dom_xml = dom_obj.XMLDesc(0)
         except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
@@ -61,9 +63,23 @@ def _get_vdsm_domains():
     """
     Return a list of Domains created by VDSM.
     """
-    return [dom_obj for dom_obj, dom_xml in _list_domains()
+    return [(dom_obj, dom_xml) for dom_obj, dom_xml in _list_domains()
             if vmxml.has_channel(dom_xml, vmchannels.LEGACY_DEVICE_NAME) or
             vmxml.has_vdsm_metadata(dom_xml)]
+
+
+def _recover_domain(cif, vm_id, dom_xml):
+    cif.log.debug("recovery: trying with VM %s", vm_id)
+    try:
+        res = cif.createVm(_recovery_params(dom_xml), vmRecover=True)
+    except Exception:
+        cif.log.exception("Error recovering VM: %s", vm_id)
+        return False
+    if response.is_error(res):
+        cif.log.info("Failed to recover VM: %s (%s)", vm_id, res)
+        return False
+    cif.log.info("VM recovered: %s", vm_id)
+    return True
 
 
 def _recovery_params(dom_xml):
@@ -187,11 +203,9 @@ def all_domains(cif):
 def _all_domains_running(cif):
     doms = _get_vdsm_domains() + containersconnection.recovery()
     num_doms = len(doms)
-    for idx, v in enumerate(doms):
-        vm_id = v.UUIDString()
-        vm_xml = _get_domain_xml(v)
-        vm_state = File(vm_id)
-        if vm_state.load(cif, vm_xml):
+    for idx, (dom_obj, dom_xml) in enumerate(doms):
+        vm_id = dom_obj.UUIDString()
+        if _recover_domain(cif, vm_id, dom_xml):
             cif.log.info(
                 'recovery [1:%d/%d]: recovered domain %s',
                 idx + 1, num_doms, vm_id)
@@ -200,18 +214,11 @@ def _all_domains_running(cif):
                 'recovery [1:%d/%d]: loose domain %s found, killing it.',
                 idx + 1, num_doms, vm_id)
             try:
-                v.destroy()
+                dom_obj.destroy()
             except libvirt.libvirtError:
                 cif.log.exception(
                     'recovery [1:%d/%d]: failed to kill loose domain %s',
                     idx + 1, num_doms, vm_id)
-
-
-def _get_domain_xml(libvirt_dom):
-    try:
-        return libvirt_dom.XMLDesc(0)
-    except libvirt.libvirtError:
-        return None
 
 
 def _all_domains_from_files(cif):
