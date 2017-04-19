@@ -1419,7 +1419,7 @@ class Image:
         try:
             optimal_size = vol.optimal_size()
         finally:
-            vol.teardown(vol.sdUUID, vol.UUID)
+            vol.teardown(vol.sdUUID, vol.volUUID)
 
         vol.reduce(optimal_size // sc.BLOCK_SIZE)
 
