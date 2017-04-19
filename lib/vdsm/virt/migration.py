@@ -238,8 +238,6 @@ class SourceThread(object):
 
     def _setupRemoteMachineParams(self):
         self._machineParams.update(self._vm.status())
-        # patch VM config for targets < 3.1
-        self._patchConfigForLegacy()
         self._machineParams['elapsedTimeOffset'] = \
             time.time() - self._vm._startTime
         vmStats = self._vm.getStats()
@@ -341,26 +339,6 @@ class SourceThread(object):
 
             self._vm.setDownStatus(NORMAL, vmexitreason.SAVE_STATE_SUCCEEDED)
             self.status['status']['message'] = 'SaveState done'
-
-    def _patchConfigForLegacy(self):
-        """
-        Remove from the VM config drives list "cdrom" and "floppy"
-        items and set them up as full paths
-        """
-        # care only about "drives" list, since
-        # "devices" doesn't cause errors
-        if 'drives' in self._machineParams:
-            for item in ("cdrom", "floppy"):
-                new_drives = []
-                for drive in self._machineParams['drives']:
-                    if drive['device'] == item:
-                        self._machineParams[item] = drive['path']
-                    else:
-                        new_drives.append(drive)
-                self._machineParams['drives'] = new_drives
-
-        # vdsm < 4.13 expect this to exist
-        self._machineParams['afterMigrationStatus'] = ''
 
     @staticmethod
     def _raiseAbortError():
