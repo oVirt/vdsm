@@ -44,16 +44,29 @@ CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
 @expandPermutations
 class BlockVolumeSizeTests(TestCaseBase):
 
-    @permutations(
-        # (preallocate, capacity, initial_size), result
-        [[(sc.PREALLOCATED_VOL, 2048, None), 1],
-         [(sc.PREALLOCATED_VOL, 2049, None), 2],
-         [(sc.PREALLOCATED_VOL, 2097152, None), 1024],
-         [(sc.SPARSE_VOL, 9999, None),
-          config.getint("irs", "volume_utilization_chunk_mb")],
-         [(sc.SPARSE_VOL, 8388608, 1860), 1],
-         [(sc.SPARSE_VOL, 8388608, 1870), 2],
-         ])
+    @permutations([
+        # (preallocate, capacity in sectors, initial size in sectors),
+        #   allocation size in MB
+        # Preallocate, capacity 2048 sectors, No initial size.
+        #      Expected 1 Mb allocated
+        [(sc.PREALLOCATED_VOL, 2048, None), 1],
+        # Preallocate, capacity 2049 sectors, No initial size.
+        #      Expected 2 Mb allocated
+        [(sc.PREALLOCATED_VOL, 2049, None), 2],
+        # Preallocate, capacity 2097152 sectors, No initial size.
+        #      Expected 1024 Mb allocated
+        [(sc.PREALLOCATED_VOL, 2097152, None), 1024],
+        # Sparse, capacity 9999 sectors, No initial size.
+        #      Expected 1024 Mb allocated
+        [(sc.SPARSE_VOL, 9999, None),
+         config.getint("irs", "volume_utilization_chunk_mb")],
+        # Sparse, capacity 8388608 sectors, initial size 1860.
+        #      Expected 1 Mb allocated
+        [(sc.SPARSE_VOL, 8388608, 1860), 1],
+        # Sparse, capacity 8388608 sectors, initial size 1870.
+        #      Expected 2 Mb allocated
+        [(sc.SPARSE_VOL, 8388608, 1870), 2],
+    ])
     def test_block_volume_size(self, args, result):
         size = BlockVolume.calculate_volume_alloc_size(*args)
         self.assertEqual(size, result)
