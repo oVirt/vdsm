@@ -500,8 +500,6 @@ class clientIF(object):
             # recover stage 3: waiting for domains to go up
             self._waitForDomainsUp()
 
-            recovery.clean_vm_files(self)
-
             self._recovery = False
 
             # Now if we have VMs to restore we should wait pool connection

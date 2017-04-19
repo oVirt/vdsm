@@ -357,9 +357,6 @@ class FakeVM(object):
     def getStats(self):
         return {}
 
-    def saveState(self):
-        pass
-
     def setDownStatus(self, status, reason):
         pass
 

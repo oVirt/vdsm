@@ -71,7 +71,6 @@ from vdsm.virt import guestagent
 from vdsm.virt import libvirtxml
 from vdsm.virt import metadata
 from vdsm.virt import migration
-from vdsm.virt import recovery
 from vdsm.virt import sampling
 from vdsm.virt import vmchannels
 from vdsm.virt import vmexitreason
@@ -354,7 +353,6 @@ class Vm(object):
             )
             self._launch_paused = self.conf.get('launchPaused', False)
         self._destroy_requested = threading.Event()
-        self._recovery_file = recovery.File(self.id)
         self._monitorResponse = 0
         self._post_copy = migration.PostCopyPhase.NONE
         self._consoleDisconnectAction = ConsoleDisconnectAction.LOCK_SCREEN
@@ -532,9 +530,8 @@ class Vm(object):
                 cluster_major == major and cluster_minor >= minor)
 
     def _get_lastStatus(self):
-        # note that we don't use _statusLock here. One of the reasons is the
-        # non-obvious recursive locking in the following flow:
-        # set_last_status() -> saveState() -> status() -> _get_lastStatus().
+        # Note that we don't use _statusLock here due to potential risk of
+        # recursive locking.
         status = self._lastStatus
         if not self._guestCpuRunning and status in vmstatus.PAUSED_STATES:
             return vmstatus.PAUSED
@@ -562,7 +559,6 @@ class Vm(object):
             if value not in VALID_STATES:
                 self.log.error('setting state to %s', value)
             if self._lastStatus != value:
-                self.saveState()
                 self._lastStatus = value
 
     def send_status_event(self, **kwargs):
@@ -806,7 +802,6 @@ class Vm(object):
                 self._vmStartEvent.set()
                 return
 
-        self.saveState()
         self._vmStartEvent.set()
         try:
             with self._ongoingCreations:
@@ -857,7 +852,7 @@ class Vm(object):
                 self._pause_code = None
 
             self.recovering = False
-            self.saveState()
+            self._updateDomainDescriptor()
 
             self.send_status_event(**self._getRunningVmStats())
 
@@ -1021,15 +1016,6 @@ class Vm(object):
             load = len(self.cif.vmContainer)
         return base * (doubler + load) / doubler
 
-    def saveState(self):
-        self._recovery_file.save(self)
-
-        try:
-            self._updateDomainDescriptor()
-        except Exception:
-            # we do not care if _dom suddenly died now
-            pass
-
     def onReboot(self):
         try:
             self.log.info('reboot event')
@@ -1037,7 +1023,7 @@ class Vm(object):
             self._guestEventTime = self._startTime
             self._guestEvent = vmstatus.REBOOT_IN_PROGRESS
             self._powerDownEvent.set()
-            self.saveState()
+            self._update_metadata()
             # this always triggers onStatusChange event, which
             # also sends back status event to Engine.
             self.guestAgent.onReboot()
@@ -1584,7 +1570,6 @@ class Vm(object):
                 self.guestAgent.stop()
             except Exception:
                 pass
-        self.saveState()
         if event_data:
             self.send_status_event(**event_data)
 
@@ -2197,9 +2182,6 @@ class Vm(object):
                 self.log.exception('Failed to tear down device %s, device in '
                                    'inconsistent state', device.device)
 
-    def _cleanupRecoveryFile(self):
-        self._recovery_file.cleanup()
-
     def _undefine_domain(self):
         if not _PERSISTENT_DOMAINS:
             return
@@ -2446,7 +2428,8 @@ class Vm(object):
             # saving we will fail in inconsistent state during recovery.
             # So, to get proper device objects during VM recovery flow
             # we must to have updated conf before VM run
-            self.saveState()
+            #
+            # TODO: Find a way to save the conf here.
 
         dev_objs_from_conf = vmdevices.common.dev_map_from_dev_spec_map(
             dev_spec_map, self.log
@@ -2685,7 +2668,7 @@ class Vm(object):
             device_conf.append(nic)
             with self._confLock:
                 self.conf['devices'].append(nicParams)
-            self.saveState()
+            self._updateDomainDescriptor()
             vmdevices.network.Interface.update_device_info(self, device_conf)
             hooks.after_nic_hotplug(nicXml, self._custom,
                                     params=nic.custom)
@@ -2760,7 +2743,7 @@ class Vm(object):
 
             with self._confLock:
                 self.conf['devices'].append(dev_spec)
-            self.saveState()
+            self._updateDomainDescriptor()
             vmdevices.hostdevice.HostDevice.update_device_info(
                 self, self._devices[hwclass.HOSTDEV])
 
@@ -2798,7 +2781,7 @@ class Vm(object):
                         self.conf['devices'].remove(dev)
                     break
 
-            self.saveState()
+            self._updateDomainDescriptor()
 
             try:
                 self._dom.detachDevice(device_xml)
@@ -2822,7 +2805,7 @@ class Vm(object):
         with self._confLock:
             self.conf['devices'].append(dev_spec)
         self._devices[hwclass.HOSTDEV].append(dev_object)
-        self.saveState()
+        self._updateDomainDescriptor()
 
     def _lookupDeviceByPath(self, path):
         for dev in self._devices[hwclass.DISK][:]:
@@ -3018,7 +3001,7 @@ class Vm(object):
                 nicDev = dev
                 break
 
-        self.saveState()
+        self._updateDomainDescriptor()
 
         try:
             self._dom.detachDevice(nicXml)
@@ -3051,7 +3034,7 @@ class Vm(object):
                 self.conf['devices'].append(nic_dev)
         if nic:
             self._devices[hwclass.NIC].append(nic)
-        self.saveState()
+        self._updateDomainDescriptor()
 
     @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
@@ -3077,10 +3060,6 @@ class Vm(object):
             self.conf['devices'].append(memParams)
         self._updateDomainDescriptor()
         device.update_device_info(self, self._devices[hwclass.MEMORY])
-        # TODO: this is raceful (as the similar code of hotplugDisk
-        # and hotplugNic, as a concurrent call of hotplug can change
-        # vm.conf before we return.
-        self.saveState()
 
         hooks.after_memory_hotplug(deviceXml)
 
@@ -3118,7 +3097,7 @@ class Vm(object):
             return response.error('setNumberOfCpusErr', e.message)
 
         self.conf['smp'] = str(numberOfCpus)
-        self.saveState()
+        self._updateDomainDescriptor()
         hooks.after_set_num_of_cpus()
         return {'status': doneCode, 'vmList': self.status()}
 
@@ -3495,18 +3474,14 @@ class Vm(object):
                 raise exception.NoSuchVM()
             return response.error('hotplugDisk', e.message)
         else:
-            # FIXME!  We may have a problem here if vdsm dies right after
-            # we sent command to libvirt and before save conf. In this case
-            # we will gather almost all needed info about this drive from
-            # the libvirt during recovery process.
             device_conf = self._devices[hwclass.DISK]
             device_conf.append(drive)
 
             with self._confLock:
                 self.conf['devices'].append(diskParams)
                 self._add_legacy_disk_conf_to_metadata(diskParams)
-            self.saveState()
             self._sync_metadata()
+            self._updateDomainDescriptor()
             vmdevices.storage.Drive.update_device_info(self, device_conf)
             hooks.after_disk_hotplug(driveXml, self._custom,
                                      params=drive.custom)
@@ -3558,8 +3533,8 @@ class Vm(object):
                         self._remove_legacy_disk_conf_from_metadata(dev)
                     break
 
-            self.saveState()
             self._sync_metadata()
+            self._updateDomainDescriptor()
             hooks.after_disk_hotunplug(driveXml, self._custom,
                                        params=drive.custom)
             self._cleanupDrives(drive)
@@ -3587,7 +3562,7 @@ class Vm(object):
 
         with self._confLock:
             self.conf['devices'].append(params)
-        self.saveState()
+        self._updateDomainDescriptor()
 
         return response.success(vmList=self.status())
 
@@ -3624,7 +3599,7 @@ class Vm(object):
         else:
             with self._confLock:
                 self.conf['devices'].remove(conf)
-            self.saveState()
+            self._updateDomainDescriptor()
 
         return response.success(vmList=self.status())
 
@@ -3752,8 +3727,8 @@ class Vm(object):
                 del self.conf['guestFQDN']
             if 'username' in self.conf:
                 del self.conf['username']
-        self.saveState()
         self._update_metadata()   # to store agent API version
+        self._updateDomainDescriptor()
         self.log.info("End of migration")
 
     def _needToWaitForMigrationToComplete(self):
@@ -3922,7 +3897,7 @@ class Vm(object):
             with self._confLock:
                 conf.update(driveParams)
                 self._add_legacy_disk_conf_to_metadata(driveParams)
-            self.saveState()
+            self._sync_metadata()
 
     @api.logged(on='vdsm.api')
     def freeze(self):
@@ -4380,7 +4355,7 @@ class Vm(object):
         with self._confLock:
             conf['diskReplicate'] = replica
             self._add_legacy_disk_conf_to_metadata(conf)
-        self.saveState()
+        self._sync_metadata()
 
         drive.diskReplicate = replica
 
@@ -4396,7 +4371,7 @@ class Vm(object):
         with self._confLock:
             conf['diskReplicate'] = drive.diskReplicate
             self._add_legacy_disk_conf_to_metadata(conf)
-        self.saveState()
+        self._sync_metadata()
 
     def _delDiskReplica(self, drive):
         """
@@ -4409,7 +4384,7 @@ class Vm(object):
         with self._confLock:
             del conf['diskReplicate']
             self._add_legacy_disk_conf_to_metadata(conf)
-        self.saveState()
+        self._sync_metadata()
 
     def _diskSizeExtendCow(self, drive, newSizeBytes):
         try:
@@ -4849,7 +4824,6 @@ class Vm(object):
         except KeyError:
             self.log.exception("Failed to delete VM %s", self.id)
         else:
-            self._cleanupRecoveryFile()
             self._undefine_domain()
             self.log.debug("Total desktops after destroy of %s is %d",
                            self.id, len(self.cif.vmContainer))
@@ -4959,8 +4933,6 @@ class Vm(object):
                 if dev['type'] == hwclass.BALLOON and \
                         dev['specParams']['model'] != 'none':
                     dev['target'] = target
-            # persist the target value to make it consistent after recovery
-            self.saveState()
 
             self._devices[hwclass.BALLOON][0].target = target
 
@@ -5226,11 +5198,11 @@ class Vm(object):
         return True
 
     def _save_block_job_info(self):
-        self.saveState()
         with self._md_desc.values() as vm:
             vm['block_jobs'] = json.dumps(self.conf['_blockJobs'])
         # _sync_metadata is included in the following call
         self._save_legacy_disk_conf_to_metadata()
+        self._updateDomainDescriptor()
 
     def _activeLayerCommitReady(self, jobInfo, drive):
         try:
@@ -5658,22 +5630,20 @@ class Vm(object):
             return
         self._devices[device_hwclass].remove(device)
 
-        self.saveState()
         device.teardown()
 
-        # TODO: Remove the following domain descriptor update once
-        # https://bugzilla.redhat.com/1414393 is fixed. Domain descriptor is
-        # already updated in saveState call above. But due to the bug the
-        # device may still be present in the domain XML and get removed only
-        # shortly afterwards. So let's try once again if needed. If the device
-        # is still present in the domain XML after the additional update (it's
-        # probably not that much likely) we don't care much. This callback
-        # currently handles only memory devices and the main purpose of the
-        # update is to get the current memory size. But Engine doesn't use
-        # that value, we just log it and expose it in the stats.
-        xpath = ".//alias[@name='%s']" % (device_alias,)
-        if self._domain.devices.find(xpath) is not None:
-            self._updateDomainDescriptor()
+        # Due to https://bugzilla.redhat.com/1414393 the device may not get
+        # removed from domain XML immediately but only after a very short
+        # while.  So we update the domain descriptor only at the end of the
+        # method.  If the device is still present in the domain XML after the
+        # this update (it's probably not that much likely) we don't care
+        # much. This callback currently handles only memory devices and the
+        # main purpose of the update is to get the current memory size. But
+        # Engine doesn't use that value, we just log it and expose it in the
+        # stats.  Once https://bugzilla.redhat.com/1414393 is fixed this
+        # comment may be removed and domain descriptor may be updated at any
+        # place here.
+        self._updateDomainDescriptor()
 
     # Accessing storage
 

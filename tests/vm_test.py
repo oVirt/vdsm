@@ -1641,7 +1641,8 @@ class TestLibVirtCallbacks(TestCaseBase):
     ])
     def test_onDeviceRemoved(self, alias, kept_aliases):
         devices = [{'alias': 'dimm0', 'type': hwclass.MEMORY, 'size': 1024},
-                   {'alias': 'balloon', 'type': hwclass.BALLOON}]
+                   {'alias': 'balloon', 'type': hwclass.BALLOON,
+                    'device': 'memballoon', 'specParams': {'model': 'none'}}]
         with fake.VM(_VM_PARAMS, devices=devices,
                      create_device_objects=True) as testvm:
             testvm._domain = DomainDescriptor('<devices/>')

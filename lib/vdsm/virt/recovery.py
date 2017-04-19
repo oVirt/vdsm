@@ -195,16 +195,6 @@ class File(object):
 
 
 def all_domains(cif):
-    # Recover stage 1: domains from libvirt, or from containers
-    _all_domains_running(cif)
-
-    # Recover stage 2: domains from recovery files
-    # we do this to safely handle VMs which disappeared
-    # from the host while VDSM was down/restarting
-    _all_domains_from_files(cif)
-
-
-def _all_domains_running(cif):
     doms = _list_domains() + containersconnection.recovery()
     num_doms = len(doms)
     for idx, (dom_obj, dom_xml, external) in enumerate(doms):
@@ -225,39 +215,3 @@ def _all_domains_running(cif):
                 cif.log.exception(
                     'recovery [1:%d/%d]: failed to kill loose domain %s',
                     idx + 1, num_doms, vm_id)
-
-
-def _all_domains_from_files(cif):
-    rec_vms = _find_vdsm_vms_from_files(cif)
-    num_rec_vms = len(rec_vms)
-    if rec_vms:
-        cif.log.warning(
-            'recovery: found %i VMs from recovery files not'
-            ' reported by libvirt. This should not happen!'
-            ' Will try to recover them.', num_rec_vms)
-
-    for idx, vm_state in enumerate(rec_vms):
-        if vm_state.load(cif):
-            cif.log.info(
-                'recovery [2:%d/%d]: recovered domain %s'
-                ' from data file', idx + 1, num_rec_vms, vm_state.vmid)
-        else:
-            cif.log.warning(
-                'recovery [2:%d/%d]: VM %s failed to recover from data'
-                ' file, reported as Down', idx + 1, num_rec_vms, vm_state.vmid)
-
-
-def _find_vdsm_vms_from_files(cif):
-    vms = []
-    for f in os.listdir(constants.P_VDSM_RUN):
-        vm_id, fileType = os.path.splitext(f)
-        if fileType == File.EXTENSION:
-            if vm_id not in cif.vmContainer:
-                vms.append(File(vm_id))
-    return vms
-
-
-def clean_vm_files(cif):
-    for vm in _find_vdsm_vms_from_files(cif):
-        cif.log.debug("cleaning old file for vm: %s", vm.vmid)
-        vm.cleanup()

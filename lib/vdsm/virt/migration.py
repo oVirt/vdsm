@@ -431,7 +431,6 @@ class SourceThread(object):
                             'dstqemu': self._dstqemu,
                         }
                         with self._vm.migration_parameters(params):
-                            self._vm.saveState()
                             self._startUnderlyingMigration(time.time())
                             self._finishSuccessfully()
                 except libvirt.libvirtError as e:
