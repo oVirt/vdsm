@@ -24,6 +24,7 @@ import logging
 import socket
 from vdsm.common.define import Mbytes
 from vdsm.config import config
+from vdsm import throttledlog
 
 from vdsm.cpuarch import PAGE_SIZE_BYTES
 
@@ -33,6 +34,9 @@ try:
     _momAvailable = True
 except ImportError:
     _momAvailable = False
+
+throttledlog.throttle('MomNotAvailable', 100)
+throttledlog.throttle('MomNotAvailableKSM', 100)
 
 
 class MomNotAvailableError(RuntimeError):
@@ -76,7 +80,9 @@ class MomClient(object):
             ret['memShared'] /= Mbytes
             ret['ksmCpu'] = stats['ksmd_cpu_usage']
         except (AttributeError, socket.error):
-            self.log.warning("MOM not available, KSM stats will be missing.")
+            throttledlog.warning('MomNotAvailableKSM',
+                                 "MOM not available, "
+                                 "KSM stats will be missing.")
 
         return ret
 
@@ -113,5 +119,5 @@ class MomClient(object):
             else:
                 return 'inactive'
         except (AttributeError, socket.error):
-            self.log.warning("MOM not available.")
+            throttledlog.warning('MomNotAvailable', "MOM not available.")
             return 'inactive'

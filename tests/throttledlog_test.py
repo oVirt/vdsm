@@ -83,3 +83,11 @@ class TestThrottledLogging(VdsmTestCase):
             throttledlog.monotonic_time.time += 1.0
         self.assertEqual(throttledlog._logger.messages,
                          ['Cycle: %s' % (i,) for i in (0, 7, 10,)])
+
+    @MonkeyPatch(throttledlog, "_logger", FakeLogger(logging.WARNING))
+    def test_logging_warning(self):
+        throttledlog.throttle('test', 4)
+        for i in range(7):
+            throttledlog.warning('test', "Cycle: %s", i)
+        self.assertEqual(throttledlog._logger.messages,
+                         ['Cycle: 0', 'Cycle: 4'])
