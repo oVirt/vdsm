@@ -829,7 +829,7 @@ class Image:
                     dstVolFormat = volParams['volFormat']
 
                 dstVolAllocBlk = self.calculate_vol_alloc(
-                    sdUUID, volParams, dstSdUUID. dstVolFormat)
+                    sdUUID, volParams, dstSdUUID, dstVolFormat)
 
                 # Find out dest volume parameters
                 if preallocate in [sc.PREALLOCATED_VOL, sc.SPARSE_VOL]:
