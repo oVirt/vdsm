@@ -124,6 +124,9 @@ ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %changelog
+* Thu Apr 20 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.3.11
+- java exception visible in Events when upgrade check is done on recently fenced host
+
 * Mon Mar 27 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.3.10
 - remove end of line before command
 
