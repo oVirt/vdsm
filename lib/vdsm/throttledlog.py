@@ -111,3 +111,7 @@ def debug(name, message, *args):
 
 def info(name, message, *args):
     log(name, logging.INFO, message, *args)
+
+
+def warning(name, message, *args):
+    log(name, logging.WARNING, message, *args)
