@@ -21,8 +21,7 @@
 from __future__ import absolute_import
 
 import logging
-from six.moves.xmlrpc_server import SimpleXMLRPCDispatcher
-from six.moves.xmlrpc_server import SimpleXMLRPCRequestHandler
+from six.moves import xmlrpc_server
 import socket
 import sys
 
@@ -30,12 +29,12 @@ from . import concurrent
 from .executor import TaskQueue
 
 
-class IPXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
+class IPXMLRPCRequestHandler(xmlrpc_server.SimpleXMLRPCRequestHandler):
 
     protocol_version = "HTTP/1.1"
 
 
-class SimpleThreadedXMLRPCServer(SimpleXMLRPCDispatcher):
+class SimpleThreadedXMLRPCServer(xmlrpc_server.SimpleXMLRPCDispatcher):
     """
     This server does not listen to to connections; the user is responsible for
     accepting connections and adding them to the server.
@@ -50,8 +49,9 @@ class SimpleThreadedXMLRPCServer(SimpleXMLRPCDispatcher):
 
     def __init__(self, requestHandler=IPXMLRPCRequestHandler,
                  logRequests=False, allow_none=False, encoding=None):
-        SimpleXMLRPCDispatcher.__init__(self, allow_none=allow_none,
-                                        encoding=encoding)
+        xmlrpc_server.SimpleXMLRPCDispatcher.__init__(
+            self, allow_none=allow_none,
+            encoding=encoding)
 
         self.requestHandler = requestHandler
         self.logRequests = logRequests
