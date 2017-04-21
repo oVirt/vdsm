@@ -320,6 +320,8 @@ class Vm(object):
         self._vcpuTuneInfo = {}
         self._numaInfo = {}
         self._ioTuneInfo = []
+        self._ioTuneLock = threading.Lock()
+        self._ioTuneValues = {}
         self._vmJobs = None
         self._clientPort = ''
         self._monitorable = False
@@ -2822,21 +2824,32 @@ class Vm(object):
                 continue
 
             try:
-                res = self._dom.blockIoTune(
-                    device.name,
-                    libvirt.VIR_DOMAIN_AFFECT_LIVE)
+                need_update = False
+                with self._ioTuneLock:
+                    ioTune = self._ioTuneValues.get(device.name)
 
-                # use only certain fields, otherwise
-                # Drive._validateIoTuneParams will not pass
-                ioTune = {k: res[k] for k in (
-                    'total_bytes_sec', 'read_bytes_sec',
-                    'write_bytes_sec', 'total_iops_sec',
-                    'write_iops_sec', 'read_iops_sec')}
+                if not ioTune:
+                    need_update = True
+                    res = self._dom.blockIoTune(
+                        device.name,
+                        libvirt.VIR_DOMAIN_AFFECT_LIVE)
+
+                    # use only certain fields, otherwise
+                    # Drive._validateIoTuneParams will not pass
+                    ioTune = {k: res[k] for k in (
+                        'total_bytes_sec', 'read_bytes_sec',
+                        'write_bytes_sec', 'total_iops_sec',
+                        'write_iops_sec', 'read_iops_sec')}
 
                 resultList.append({
                     'name': device.name,
                     'path': device.path,
                     'ioTune': ioTune})
+
+                if need_update:
+                    with self._ioTuneLock:
+                        if not self._ioTuneValues.get(device.name):
+                            self._ioTuneValues[device.name] = ioTune
 
             except libvirt.libvirtError as e:
                 self.log.exception("getVmIoTune failed")
@@ -2892,6 +2905,9 @@ class Vm(object):
 
             # Update both the ioTune arguments and device xml DOM
             # so we are still up-to-date
+            with self._ioTuneLock:
+                self._ioTuneValues[found_device.name] = io_tune
+
             # TODO: improve once libvirt gets support for iotune events
             #       see https://bugzilla.redhat.com/show_bug.cgi?id=1114492
             if io_tune_element is not None:
