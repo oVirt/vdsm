@@ -92,7 +92,7 @@ class Dispatcher(object):
                 try:
                     self.log.error(
                         "Unhandled exception in run and protect: %s, "
-                        "args: %s ", self.name, args, exc_info=True)
+                        "args: %s ", name, args, exc_info=True)
                 finally:
                     return self.STATUS_ERROR.copy()
 
