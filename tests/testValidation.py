@@ -71,8 +71,8 @@ class StressTestsPlugin(Plugin):
     build and may fail on overloaded machines or machines with unpreditable
     resources.
 
-    These tests are mark with @stresstest decorator and are diabled by default.
-    Use this plugin to enable these tests.
+    These tests are mark with @stresstest decorator and are disabled by
+    default. Use this plugin to enable these tests.
     """
     name = 'stresstests'
     enabled = False
