@@ -55,6 +55,7 @@ class SSLSocket(object):
                 else:
                     result = self.sock.read(size)
         except SSLError as e:
+            # pylint: disable=no-member
             if e.errno != ssl.SSL_ERROR_WANT_READ:
                 raise
 
@@ -78,6 +79,7 @@ class SSLSocket(object):
 
 
 class SSLContext(object):
+    # pylint: disable=no-member
     def __init__(self, cert_file, key_file, ca_certs=None,
                  protocol=ssl.PROTOCOL_TLSv1):
         self.cert_file = cert_file
@@ -246,6 +248,7 @@ class SSLHandshakeDispatcher(object):
             return (cert_common_name.lower() ==
                     socket.gethostbyaddr(src_addr)[0].lower())
 
+    # pylint: disable=no-member
     def _handshake(self, dispatcher):
         try:
             dispatcher.socket.do_handshake()
@@ -269,6 +272,7 @@ class SSLHandshakeDispatcher(object):
 def create_ssl_context():
         sslctx = None
         if config.getboolean('vars', 'ssl'):
+            # pylint: disable=no-member
             protocol = (
                 ssl.PROTOCOL_SSLv23
                 if config.get('vars', 'ssl_protocol') == 'sslv23'

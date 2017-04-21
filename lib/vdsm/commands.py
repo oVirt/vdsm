@@ -110,6 +110,7 @@ class AsyncProc(object):
     """
     class _streamWrapper(io.RawIOBase):
         def __init__(self, parent, streamToWrap, fd):
+            # pylint: disable=no-member
             io.IOBase.__init__(self)
             self._stream = streamToWrap
             self._parent = proxy(parent)

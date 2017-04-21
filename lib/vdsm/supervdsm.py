@@ -70,6 +70,7 @@ class SuperVdsmProxy(object):
         self._connect()
 
     def open(self, *args, **kwargs):
+        # pylint: disable=no-member
         return self._manager.open(*args, **kwargs)
 
     def _connect(self):
@@ -83,6 +84,7 @@ class SuperVdsmProxy(object):
             msg = "Connect to supervdsm service failed: %s" % ex
             panic(msg)
 
+        # pylint: disable=no-member
         self._svdsm = self._manager.instance()
 
     def __getattr__(self, name):

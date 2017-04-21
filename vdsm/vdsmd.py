@@ -71,6 +71,9 @@ def serve_clients(log):
     def sigusr1Handler(signum, frame):
         if irs:
             log.info("Received signal %s, stopping SPM" % signum)
+            # pylint: disable=no-member
+            # TODO remove when side effect removed from HSM.__init__ and
+            # initialize it in line #63
             irs.spmStop(
                 irs.getConnectedStoragePoolsList()['poollist'][0])
 
