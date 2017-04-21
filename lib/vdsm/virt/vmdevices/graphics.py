@@ -17,6 +17,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+# pylint: disable=no-member
+
 from __future__ import absolute_import
 
 import libvirt
