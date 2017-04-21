@@ -62,6 +62,12 @@ class NetworkBasicTemplate(NetFuncTestCase):
     def test_add_bridgeless_net_twice(self):
         self._test_add_net_twice(bridged=False)
 
+    def test_add_bridgeless_net_missing_nic_fails(self):
+        self._test_add_net_missing_nic_fails(bridged=False)
+
+    def test_add_bridged_net_missing_nic_fails(self):
+        self._test_add_net_missing_nic_fails(bridged=True)
+
     def test_add_net_based_on_vlan(self):
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLANID,
@@ -157,6 +163,15 @@ class NetworkBasicTemplate(NetFuncTestCase):
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 self.setupNetworks(NETCREATE, {}, NOCHK)
                 self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+
+    def _test_add_net_missing_nic_fails(self, bridged):
+        NETCREATE = {NETWORK_NAME: {'nic': 'missing_nic',
+                                    'bridged': bridged,
+                                    'switch': self.switch}}
+        with self.assertRaises(SetupNetworksError) as cm:
+            with self.setupNetworks(NETCREATE, {}, NOCHK):
+                pass
+        self.assertEqual(cm.exception.status, ne.ERR_BAD_NIC)
 
     def _assert_nets(self, net_1_attrs, net_2_attrs):
         with self.setupNetworks({NET_1: net_1_attrs}, {}, NOCHK):

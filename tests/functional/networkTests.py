@@ -615,14 +615,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    def testFailWithInvalidNic(self, bridged):
-        status, msg = self.setupNetworks(
-            {NETWORK_NAME: {'nic': 'nowaythisnicexists', 'bridged': bridged}},
-            {}, NOCHK)
-        self.assertEqual(status, errors.ERR_BAD_NIC, msg)
-
-    @cleanupNet
-    @permutations([[True], [False]])
     def testFailWithInvalidParams(self, bridged):
         status, msg = self.setupNetworks(
             {NETWORK_NAME: {'vlan': VLAN_ID, 'bridged': bridged}}, {}, NOCHK)
