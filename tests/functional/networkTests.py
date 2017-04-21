@@ -674,22 +674,6 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    @permutations([[True], [False]])
-    def testTwiceAdd(self, bridged):
-        with dummyIf(1) as nics:
-            nic, = nics
-            net = {NETWORK_NAME: {'nic': nic, 'bridged': bridged}}
-            status, msg = self.setupNetworks(net, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            status, msg = self.setupNetworks(net, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
     def testDelWithoutAdd(self):
         status, msg = self.setupNetworks(
             {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
