@@ -263,10 +263,10 @@ class Vm(object):
         if 'smp' not in self .conf:
             self.conf['smp'] = '1'
         self.cif = cif
-        self.log = SimpleLogAdapter(self.log, {"vmId": self.conf['vmId']})
-        self.id = self.conf['vmId']
+        self.id = params['vmId']
+        self.log = SimpleLogAdapter(self.log, {"vmId": self.id})
         self._destroy_requested = threading.Event()
-        self._recovery_file = recovery.File(self.conf['vmId'])
+        self._recovery_file = recovery.File(self.id)
         self._monitorResponse = 0
         self._post_copy = migration.PostCopyPhase.NONE
         self.memCommitted = 0
@@ -1378,7 +1378,7 @@ class Vm(object):
 
     def _getDownVmStats(self):
         stats = {
-            'vmId': self.conf['vmId'],
+            'vmId': self.id,
             'status': self.lastStatus
         }
         stats.update(self._getExitedVmStats())
@@ -1400,7 +1400,7 @@ class Vm(object):
         but can change as a result of interaction with libvirt
         """
         stats = {
-            'vmId': self.conf['vmId'],
+            'vmId': self.id,
             'vmName': self.name,
             'pid': self.conf['pid'],
             'vmType': self.conf['vmType'],
@@ -4355,8 +4355,7 @@ class Vm(object):
             # after successful migrations
             if (self.lastStatus == vmstatus.DOWN and
                     e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN):
-                self.log.info("VM '%s' already down and destroyed",
-                              self.conf['vmId'])
+                self.log.info("VM '%s' already down and destroyed", self.id)
             elif (self.lastStatus == vmstatus.DOWN and
                   e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID):
                 self.log.warning(
@@ -4392,7 +4391,7 @@ class Vm(object):
         else:
             self._cleanupRecoveryFile()
             self.log.debug("Total desktops after destroy of %s is %d",
-                           self.conf['vmId'], len(self.cif.vmContainer))
+                           self.id, len(self.cif.vmContainer))
 
     @api.logged(on='vdsm.api')
     def destroy(self, gracefulAttempts=1):
