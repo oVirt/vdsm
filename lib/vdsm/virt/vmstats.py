@@ -149,7 +149,7 @@ def cpu(stats, first_sample, last_sample, interval):
 
 
 def balloon(vm, stats, sample):
-    max_mem = int(vm.conf.get('memSize')) * 1024
+    max_mem = vm.mem_size_mb() * 1024
 
     for dev in vm.getBalloonDevicesConf():
         if dev['specParams']['model'] != 'none':

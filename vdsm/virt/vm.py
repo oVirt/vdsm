@@ -600,11 +600,18 @@ class Vm(object):
 
         return response.success(vmList=self.status())
 
+    def mem_size_mb(self):
+        mem_size_mb = self._domain.get_memory_size()
+        if mem_size_mb is None:
+            self._updateDomainDescriptor()
+            mem_size_mb = self._domain.get_memory_size()
+        return mem_size_mb
+
     def memCommit(self):
         """
         Reserve the required memory for this VM.
         """
-        memory = int(self.conf['memSize'])
+        memory = self.mem_size_mb()
         memory += config.getint('vars', 'guest_ram_overhead')
         self.memCommitted = 2 ** 20 * memory
 
@@ -1576,7 +1583,7 @@ class Vm(object):
         realMemUsage = int(stats['memUsage'])
         if realMemUsage != 0:
             memUsage = (100 - float(realMemUsage) /
-                        int(self.conf['memSize']) * 100)
+                        self.mem_size_mb() * 100)
         else:
             memUsage = 0
         stats['memUsage'] = utils.convertToStr(int(memUsage))
@@ -1963,7 +1970,6 @@ class Vm(object):
         self._fixLegacyRngConf()
 
         self._getUnderlyingVmDevicesInfo()
-        self._update_memory_info()
         self._updateAgentChannels()
 
         # Currently there is no protection agains mirroring a network twice,
@@ -2654,7 +2660,6 @@ class Vm(object):
             self.conf['devices'].append(memParams)
         self._updateDomainDescriptor()
         device.update_device_info(self, self._devices[hwclass.MEMORY])
-        self._update_memory_info()
         # TODO: this is raceful (as the similar code of hotplugDisk
         # and hotplugNic, as a concurrent call of hotplug can change
         # vm.conf before we return.
@@ -2663,10 +2668,6 @@ class Vm(object):
         hooks.after_memory_hotplug(deviceXml)
 
         return {'status': doneCode, 'vmList': self.status()}
-
-    def _update_memory_info(self):
-        self.conf['memSize'] = self.domain.get_memory_size()
-        self.log.debug("New memory size: %s MiB", self.conf['memSize'])
 
     @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
@@ -5157,9 +5158,6 @@ class Vm(object):
         xpath = ".//alias[@name='%s']" % (device_alias,)
         if self._domain.devices.find(xpath) is not None:
             self._updateDomainDescriptor()
-
-        if isinstance(device, vmdevices.core.Memory):
-            self._update_memory_info()
 
     # Accessing storage
 

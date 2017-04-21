@@ -32,6 +32,7 @@ from vdsm import cpuarch
 from vdsm import libvirtconnection
 from vdsm.common import response
 from vdsm.virt import sampling
+from vdsm.virt.domain_descriptor import DomainDescriptor
 
 from virt import vm
 
@@ -246,6 +247,10 @@ class ConfStub(object):
         self.conf = conf
 
 
+def _updateDomainDescriptor(vm):
+    vm._domain = DomainDescriptor(vm._buildDomainXML())
+
+
 @contextmanager
 def VM(params=None, devices=None, runCpu=False,
        arch=cpuarch.X86_64, status=None,
@@ -255,6 +260,8 @@ def VM(params=None, devices=None, runCpu=False,
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir),
                                (libvirtconnection, 'get', Connection),
                                (containersconnection, 'get', Connection),
+                               (vm.Vm, '_updateDomainDescriptor',
+                                   _updateDomainDescriptor),
                                (vm.Vm, 'send_status_event',
                                    lambda _, **kwargs: None)]):
             vmParams = {'vmId': 'TESTING'}

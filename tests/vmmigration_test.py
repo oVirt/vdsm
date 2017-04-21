@@ -326,7 +326,8 @@ class FakeVM(object):
         self._dom = dom
         self.id = str(uuid.uuid4())
         self.log = logging.getLogger('test.migration.FakeVM')
-        self.conf = {'memSize': 128}
+        self.conf = {}
+        self._mem_size_mb = 128
         self.hasSpice = True
         self.post_copy = migration.PostCopyPhase.NONE
         self.stopped_migrated_event_processed = threading.Event()
@@ -357,6 +358,9 @@ class FakeVM(object):
 
     def destroy(self):
         pass
+
+    def mem_size_mb(self):
+        return self._mem_size_mb
 
 
 class FakeProgress(object):

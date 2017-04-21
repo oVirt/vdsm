@@ -658,7 +658,7 @@ class DowntimeThread(object):
         self._stop = threading.Event()
 
         delay_per_gib = config.getint('vars', 'migration_downtime_delay')
-        memSize = int(vm.conf['memSize'])
+        memSize = vm.mem_size_mb()
         self._wait = min(
             delay_per_gib * memSize / (_MiB_IN_GiB * self._steps),
             self._WAIT_STEP_LIMIT)
@@ -771,7 +771,7 @@ class MonitorThread(object):
                               ' (monitoring interval set to 0)')
 
     def monitor_migration(self):
-        memSize = int(self._vm.conf['memSize'])
+        memSize = self._vm.mem_size_mb()
         maxTimePerGiB = config.getint('vars',
                                       'migration_max_time_per_gib_mem')
         migrationMaxTime = (maxTimePerGiB * memSize + 1023) / 1024
