@@ -351,9 +351,6 @@ class IscsiInterface(object):
     }
 
     def __getattr__(self, name):
-        if name in ("_conf", "_fields", "_loaded"):
-            return object.__getattr__(self, name)
-
         if name not in self._fields:
             raise AttributeError(name)
 
