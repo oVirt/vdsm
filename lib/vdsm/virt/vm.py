@@ -437,6 +437,7 @@ class Vm(object):
         self._clientPort = ''
         self._monitorable = False
         self._migration_downtime = None
+        self._pause_code = None
 
     @property
     def _hugepages_shared(self):
@@ -849,16 +850,11 @@ class Vm(object):
             else:
                 self.lastStatus = vmstatus.UP
             if self._initTimePauseCode:
-                with self._confLock:
-                    self.conf['pauseCode'] = self._initTimePauseCode
+                self._pause_code = self._initTimePauseCode
                 if self._initTimePauseCode == 'ENOSPC':
                     self.cont()
             else:
-                try:
-                    with self._confLock:
-                        del self.conf['pauseCode']
-                except KeyError:
-                    pass
+                self._pause_code = None
 
             self.recovering = False
             self.saveState()
@@ -1420,11 +1416,7 @@ class Vm(object):
                                      guestCpuLocked=True)
             self._logGuestCpuStatus('continue')
             self._lastStatus = afterState
-            try:
-                with self._confLock:
-                    del self.conf['pauseCode']
-            except KeyError:
-                pass
+            self._pause_code = None
         finally:
             if not guestCpuLocked:
                 self._guestCpuLock.release()
@@ -1436,9 +1428,8 @@ class Vm(object):
               pauseCode='NOERR'):
         if not guestCpuLocked:
             self._acquireCpuLockWithTimeout()
+        self._pause_code = pauseCode
         try:
-            with self._confLock:
-                self.conf['pauseCode'] = pauseCode
             self._underlyingPause()
             self._setGuestCpuRunning(self._isDomainRunning(),
                                      guestCpuLocked=True)
@@ -1749,9 +1740,8 @@ class Vm(object):
 
     def _getVmPauseCodeStats(self):
         stats = {}
-        with self._confLock:
-            if 'pauseCode' in self.conf:
-                stats['pauseCode'] = self.conf['pauseCode']
+        if self._pause_code is not None:
+            stats['pauseCode'] = self._pause_code
         return stats
 
     def _getVmStatus(self):
@@ -2355,8 +2345,7 @@ class Vm(object):
                                    vmstatus.RESTORING_STATE):
             self._initTimePauseCode = self._readPauseCode()
         if not self.recovering and self._initTimePauseCode:
-            with self._confLock:
-                self.conf['pauseCode'] = self._initTimePauseCode
+            self._pause_code = self._initTimePauseCode
             if self._initTimePauseCode == 'ENOSPC':
                 self.cont()
 
@@ -2551,7 +2540,7 @@ class Vm(object):
                 # make sure not to pass or use it on migration creation.
                 if self._launch_paused:
                     flags |= libvirt.VIR_DOMAIN_START_PAUSED
-                    self.conf['pauseCode'] = 'NOERR'
+                    self._pause_code = 'NOERR'
             hooks.dump_vm_launch_flags_to_file(self.id, flags)
             try:
                 domxml = hooks.before_vm_start(self._buildDomainXML(),
@@ -4682,8 +4671,7 @@ class Vm(object):
         if action == libvirt.VIR_DOMAIN_EVENT_IO_ERROR_PAUSE:
             self.log.info('abnormal vm stop device %s error %s',
                           blockDevAlias, err)
-            with self._confLock:
-                self.conf['pauseCode'] = reason
+            self._pause_code = reason
             self._setGuestCpuRunning(False)
             self._logGuestCpuStatus('onIOError')
             if reason == 'ENOSPC':
@@ -5092,8 +5080,7 @@ class Vm(object):
             elif detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_POSTCOPY:
                 self._post_copy = migration.PostCopyPhase.RUNNING
                 self.log.debug("Migration entered post-copy mode")
-                with self._confLock:
-                    self.conf['pauseCode'] = 'POSTCOPY'
+                self._pause_code = 'POSTCOPY'
                 self.send_status_event(pauseCode='POSTCOPY')
             elif detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_POSTCOPY_FAILED:
                 # This event may be received only on the destination.

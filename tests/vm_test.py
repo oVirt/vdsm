@@ -1615,7 +1615,7 @@ class TestLibVirtCallbacks(TestCaseBase):
             testvm.onIOError('fakedev', self.FAKE_ERROR,
                              libvirt.VIR_DOMAIN_EVENT_IO_ERROR_PAUSE)
             self.assertFalse(testvm._guestCpuRunning)
-            self.assertEqual(testvm.conf.get('pauseCode'), self.FAKE_ERROR)
+            self.assertEqual(testvm._pause_code, self.FAKE_ERROR)
 
     def test_onIOErrorReport(self):
         with fake.VM(_VM_PARAMS, runCpu=True) as testvm:
@@ -1623,7 +1623,7 @@ class TestLibVirtCallbacks(TestCaseBase):
             testvm.onIOError('fakedev', self.FAKE_ERROR,
                              libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT)
             self.assertTrue(testvm._guestCpuRunning)
-            self.assertNotEquals(testvm.conf.get('pauseCode'), self.FAKE_ERROR)
+            self.assertNotEquals(testvm._pause_code, self.FAKE_ERROR)
 
     def test_onIOErrorNotSupported(self):
         """action not explicitely handled, must be skipped"""
@@ -1632,7 +1632,7 @@ class TestLibVirtCallbacks(TestCaseBase):
             testvm.onIOError('fakedev', self.FAKE_ERROR,
                              libvirt.VIR_DOMAIN_EVENT_IO_ERROR_NONE)
             self.assertTrue(testvm._guestCpuRunning)
-            self.assertNotIn('pauseCode', testvm.conf)  # no error recorded
+            self.assertIsNone(testvm._pause_code)  # no error recorded
 
     @permutations([
         ['dimm0', set(('balloon',))],
