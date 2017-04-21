@@ -108,6 +108,10 @@ def _getDeviceDict(device, createBrick=False):
         if hasattr(udev, 'get_device'):
             dev = udev.get_device(device.sysfsPath) or {}
         elif hasattr(udev, 'udev_get_device'):
+            # The code is valid, calling udev_get_devices only if the attribute
+            # exists, but pylint is confused by this.
+            # TODO: rewrite so pylint does not complain.
+            # pylint: disable=no-member
             dev = udev.udev_get_device(device.sysfsPath) or {}
         else:
             dev = {}
