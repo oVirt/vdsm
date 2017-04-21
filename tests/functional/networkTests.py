@@ -666,12 +666,6 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    def testDelWithoutAdd(self):
-        status, msg = self.setupNetworks(
-            {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-        self.assertEqual(status, errors.ERR_BAD_BRIDGE, msg)
-
-    @cleanupNet
     @permutations([[True], [False]])
     def testSetupNetworksAddVlan(self, bridged):
         BRIDGE_OPTS = {'multicast_router': '0', 'multicast_snooping': '0'}

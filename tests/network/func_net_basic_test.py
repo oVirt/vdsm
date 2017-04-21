@@ -68,6 +68,13 @@ class NetworkBasicTemplate(NetFuncTestCase):
     def test_add_bridged_net_missing_nic_fails(self):
         self._test_add_net_missing_nic_fails(bridged=True)
 
+    def test_remove_missing_net_fails(self):
+        NETREMOVE = {NETWORK_NAME: {'remove': True}}
+        with self.assertRaises(SetupNetworksError) as cm:
+            with self.setupNetworks(NETREMOVE, {}, NOCHK):
+                pass
+        self.assertEqual(cm.exception.status, ne.ERR_BAD_BRIDGE)
+
     def test_add_net_based_on_vlan(self):
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLANID,
