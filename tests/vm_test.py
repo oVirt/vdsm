@@ -61,12 +61,14 @@ from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import find_xml_element
 from testlib import make_config
+from testlib import recorded
 from testlib import XMLTestCase
 from vdsm import host
 from vdsm import utils
 from vdsm import libvirtconnection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import namedTemporaryDir
+from testlib import start_thread
 from testValidation import brokentest, slowtest
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
@@ -1751,6 +1753,183 @@ class FreezingUnexpectedErrorTests(TestCaseBase):
         res = self.vm.thaw()
         self.assertEqual(res, response.error("thawErr",
                                              message="fake error"))
+
+
+class BlockIoTuneTests(TestCaseBase):
+
+    def setUp(self):
+        self.iotune_low = {
+            'total_bytes_sec': 0,
+            'read_bytes_sec': 1000,
+            'write_bytes_sec': 1000,
+            'total_iops_sec': 0,
+            'write_iops_sec': 0,
+            'read_iops_sec': 0
+        }
+        self.iotune_high = {
+            'total_bytes_sec': 0,
+            'read_bytes_sec': 2000,
+            'write_bytes_sec': 2000,
+            'total_iops_sec': 0,
+            'write_iops_sec': 0,
+            'read_iops_sec': 0
+        }
+        self.drive = FakeBlockIoTuneDrive('vda', path='/fake/path/vda')
+
+        self.dom = FakeBlockIoTuneDomain()
+        self.dom.iotunes = {self.drive.name: self.iotune_low.copy()}
+
+    @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
+    @MonkeyPatch(utils, 'isBlockDevice', lambda *args: False)
+    def test_get_fills_cache(self):
+        with fake.VM() as testvm:
+            self.dom.get_event.set()
+            testvm._dom = self.dom
+            testvm._devices[hwclass.DISK] = (self.drive,)
+
+            res = testvm.getIoTuneResponse()
+            self.assertFalse(response.is_error(res))
+            self.assertEqual(
+                self.dom.__calls__,
+                [('blockIoTune',
+                    (self.drive.name, libvirt.VIR_DOMAIN_AFFECT_LIVE),
+                    {})]
+            )
+
+            res = testvm.getIoTuneResponse()
+            self.assertFalse(response.is_error(res))
+            self.assertEqual(
+                self.dom.__calls__,
+                [('blockIoTune',
+                    (self.drive.name, libvirt.VIR_DOMAIN_AFFECT_LIVE),
+                    {})]
+            )
+
+    @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
+    @MonkeyPatch(utils, 'isBlockDevice', lambda *args: False)
+    def test_set_updates_cache(self):
+        with fake.VM() as testvm:
+            self.dom.get_event.set()
+            self.dom.set_event.set()
+            testvm._dom = self.dom
+            testvm._devices[hwclass.DISK] = (self.drive,)
+
+            tunables = [
+                {"name": self.drive.name, "ioTune": self.iotune_high}
+            ]
+
+            res = testvm.getIoTuneResponse()
+            self.assert_iotune_in_response(res, self.iotune_low)
+
+            testvm.setIoTune(tunables)
+
+            res = testvm.getIoTuneResponse()
+            self.assert_iotune_in_response(res, self.iotune_high)
+
+            self.assertEqual(len(self.dom.__calls__), 2)
+            self.assert_nth_call_to_dom_is(0, 'blockIoTune')
+            self.assert_nth_call_to_dom_is(1, 'setBlockIoTune')
+
+    @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
+    @MonkeyPatch(utils, 'isBlockDevice', lambda *args: False)
+    def test_set_fills_cache(self):
+        with fake.VM() as testvm:
+            self.dom.get_event.set()
+            self.dom.set_event.set()
+            testvm._dom = self.dom
+            testvm._devices[hwclass.DISK] = (self.drive,)
+
+            tunables = [
+                {"name": self.drive.name, "ioTune": self.iotune_high}
+            ]
+
+            testvm.setIoTune(tunables)
+
+            res = testvm.getIoTuneResponse()
+            self.assert_iotune_in_response(res, self.iotune_high)
+
+            self.assertEqual(len(self.dom.__calls__), 1)
+            self.assert_nth_call_to_dom_is(0, 'setBlockIoTune')
+
+    @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
+    @MonkeyPatch(utils, 'isBlockDevice', lambda *args: False)
+    def test_concurrent_get_and_set(self):
+        with fake.VM() as testvm:
+            self.dom.set_event.set()
+            testvm._dom = self.dom
+            testvm._devices[hwclass.DISK] = (self.drive,)
+            tunables = [
+                {"name": self.drive.name, "ioTune": self.iotune_low}
+            ]
+            # first warm up the cache
+            testvm.setIoTune(tunables)
+            self.assert_iotune_in_response(
+                testvm.getIoTuneResponse(),
+                self.iotune_low
+            )
+
+            get_done = threading.Event()
+            res = [None]
+
+            def _get():
+                res[0] = testvm.getIoTuneResponse()
+                get_done.set()
+
+            start_thread(_get)
+
+            # now we are stuck in the middle of getIoTuneResponse()
+            tunables = [
+                {"name": self.drive.name, "ioTune": self.iotune_high}
+            ]
+            # first warm up the cache
+            testvm.setIoTune(tunables)
+
+            self.dom.get_event.set()
+            self.assertTrue(get_done.wait(5.))
+
+            self.assert_iotune_in_response(res[0], self.iotune_high)
+            self.assert_iotune_in_response(
+                testvm.getIoTuneResponse(),
+                self.iotune_high
+            )
+
+    def assert_nth_call_to_dom_is(self, nth, call):
+        self.assertEqual(self.dom.__calls__[nth][0], call)
+
+    def assert_iotune_in_response(self, res, iotune):
+        self.assertEqual(
+            res['ioTuneList'][0]['ioTune'], iotune
+        )
+
+
+class FakeBlockIoTuneDrive(object):
+
+    def __init__(self, name, path=None):
+        self.name = name
+        self.path = path or os.path.join('fake', 'path', name)
+        self.iotune = {}
+        self._deviceXML = ''
+
+    def getXML(self):
+        return vmxml.parse_xml('<fake />')
+
+
+class FakeBlockIoTuneDomain(object):
+
+    def __init__(self):
+        self.iotunes = {}
+        self.get_event = threading.Event()
+        self.set_event = threading.Event()
+
+    @recorded
+    def blockIoTune(self, name, flags=0):
+        self.get_event.wait()
+        return self.iotunes.get(name, {})
+
+    @recorded
+    def setBlockIoTune(self, name, iotune, flags=0):
+        self.set_event.wait()
+        self.iotunes[name] = iotune
 
 
 @expandPermutations
