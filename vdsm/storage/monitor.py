@@ -276,7 +276,7 @@ class MonitorThread(object):
             config.getfloat("irs", "repo_stats_cache_refresh_timeout")
         self.wasShutdown = False
         # Used for synchronizing during the tests
-        self.cycleCallback = None
+        self.cycleCallback = _NULL_CALLBACK
 
     def start(self):
         self.thread.start()
@@ -330,8 +330,7 @@ class MonitorThread(object):
                 domain_status = DomainStatus(error=e)
                 status = Status(self.status._path_status, domain_status)
                 self._updateStatus(status)
-                if self.cycleCallback:
-                    self.cycleCallback()
+                self.cycleCallback()
                 if self.stopEvent.wait(self.interval):
                     raise utils.Canceled
 
@@ -386,8 +385,7 @@ class MonitorThread(object):
             except Exception:
                 log.exception("Domain monitor for %s failed", self.sdUUID)
             finally:
-                if self.cycleCallback:
-                    self.cycleCallback()
+                self.cycleCallback()
             if self.stopEvent.wait(self.interval):
                 raise utils.Canceled
 
@@ -566,3 +564,7 @@ class MonitorThread(object):
         except:
             log.exception("Error releasing host id %s for domain %s",
                           self.hostId, self.sdUUID)
+
+
+def _NULL_CALLBACK():
+    pass
