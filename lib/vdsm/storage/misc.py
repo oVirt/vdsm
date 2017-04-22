@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2016 Red Hat, Inc.
+# Copyright 2009-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -542,8 +542,13 @@ class Event(object):
         t.start()
 
 
+# Sentinel for checking if an error was caught. Using this instead of None
+# helps pylint to analyze the code.
+_NO_ERROR = Exception("No error")
+
+
 def killall(name, signum, group=False):
-    exception = None
+    exception = _NO_ERROR
     knownPgs = set()
     pidList = utils.pgrep(name)
     if len(pidList) == 0:
@@ -568,7 +573,7 @@ def killall(name, signum, group=False):
                 continue
             exception = e
 
-    if exception is not None:
+    if exception is not _NO_ERROR:
         raise exception
 
 
