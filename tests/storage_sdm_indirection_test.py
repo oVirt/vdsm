@@ -553,9 +553,6 @@ class FakeVolumeManifest(object):
 
 
 class FakeBlockVolumeManifest(FakeVolumeManifest):
-    def __init__(self):
-        super(FakeBlockVolumeManifest, self).__init__()
-        self.metaoff = None
 
     @recorded
     def getMetaOffset(self):
@@ -898,12 +895,6 @@ class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
     def setUp(self):
         self.volume = FakeBlockVolume()
         self.checker = RedirectionChecker(self.volume, '_manifest')
-
-    @permutations([
-        ['metaoff', None],
-    ])
-    def test_block_property(self, prop, val):
-        self.assertEqual(getattr(self.volume, prop), val)
 
     @permutations([
         ['getMetaOffset', 0],

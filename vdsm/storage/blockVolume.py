@@ -70,7 +70,6 @@ class BlockVolumeManifest(volume.VolumeManifest):
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         volume.VolumeManifest.__init__(self, repoPath, sdUUID, imgUUID,
                                        volUUID)
-        self.metaoff = None
         self.lvmActivationNamespace = sd.getNamespace(
             sc.LVM_ACTIVATION_NAMESPACE, self.sdUUID)
 
@@ -88,8 +87,6 @@ class BlockVolumeManifest(volume.VolumeManifest):
         return (self.sdUUID, self.getMetaOffset())
 
     def getMetaOffset(self):
-        if self.metaoff:
-            return self.metaoff
         try:
             md = getVolumeTag(self.sdUUID, self.volUUID, sc.TAG_PREFIX_MD)
         except se.MissingTagOnLogicalVolume:
@@ -450,10 +447,6 @@ class BlockVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
     """
     manifestClass = BlockVolumeManifest
-
-    @property
-    def metaoff(self):
-        return self._manifest.metaoff
 
     def refreshVolume(self):
         self._manifest.refreshVolume()
