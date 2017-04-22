@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2016 Red Hat, Inc.
+# Copyright 2009-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -335,6 +335,8 @@ class StoragePool(object):
                 self._maxHostID = maxHostID
 
                 # Upgrade the master domain now if needed
+                # __securityOverride is added by the @secured decorator
+                # pylint: disable=unexpected-keyword-arg
                 self._upgradePool(expectedDomVersion, __securityOverride=True)
 
                 self.masterDomain.mountMaster()
@@ -344,6 +346,8 @@ class StoragePool(object):
 
                 try:
                     # Make sure backup domain is active
+                    # __securityOverride is added by the @secured decorator
+                    # pylint: disable=unexpected-keyword-arg
                     self.checkBackupDomain(__securityOverride=True)
                 except Exception:
                     self.log.error("Backup domain validation failed",
@@ -385,6 +389,8 @@ class StoragePool(object):
             except Exception as e:
                 self.log.error("Unexpected error", exc_info=True)
                 self.log.error("failed: %s" % str(e))
+                # __securityOverride is added by the @secured decorator
+                # pylint: disable=unexpected-keyword-arg
                 self.stopSpm(force=True, __securityOverride=True)
                 raise
 
