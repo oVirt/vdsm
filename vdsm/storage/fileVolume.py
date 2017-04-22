@@ -258,7 +258,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         """
         self.setMetaParam(sc.IMAGE, imgUUID)
 
-    def removeMetadata(self):
+    def removeMetadata(self, metaId=None):
         """
         Remove the meta file
         """
@@ -476,7 +476,7 @@ class FileVolume(volume.Volume):
 
         return (volPath,)
 
-    def removeMetadata(self):
+    def removeMetadata(self, metaId=None):
         self._manifest.removeMetadata()
 
     def delete(self, postZero, force, discard):

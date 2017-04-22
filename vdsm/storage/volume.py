@@ -679,6 +679,9 @@ class VolumeManifest(object):
         # TODO: use qemu-img measure instead of sc.COW_OVERHEAD.
         return utils.round(virtual_size * sc.COW_OVERHEAD, cls.align_size)
 
+    def removeMetadata(self, metaId=None):
+        raise NotImplementedError
+
 
 class Volume(object):
     log = logging.getLogger('storage.Volume')

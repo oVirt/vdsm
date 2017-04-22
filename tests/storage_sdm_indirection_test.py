@@ -626,7 +626,7 @@ class FakeFileVolumeManifest(FakeVolumeManifest):
         pass
 
     @recorded
-    def removeMetadata(self):
+    def removeMetadata(self, metaId=None):
         pass
 
 
