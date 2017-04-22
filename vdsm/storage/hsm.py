@@ -2086,6 +2086,9 @@ class HSM(object):
         :returns: the UUID of the new VG.
         :rtype: UUID
         """
+        # TODO: remove support for string value
+        force = force in (True, "true", "True")
+
         MINIMALVGSIZE = 10 * 1024 * constants.MEGAB
 
         vars.task.setDefaultException(
@@ -2116,8 +2119,7 @@ class HSM(object):
 
         lvm.createVG(vgname, devices, blockSD.STORAGE_UNREADY_DOMAIN_TAG,
                      metadataSize=blockSD.VG_METADATASIZE,
-                     force=(force is True) or (isinstance(force, str) and
-                                               (force.capitalize() == "True")))
+                     force=force)
 
         return dict(uuid=lvm.getVG(vgname).uuid)
 
