@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2016 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -211,7 +211,7 @@ def pidStat(pid):
         # Only 44 feilds are documented in man page while /proc/pid/stat has 52
         # The rest of the fields contain the process memory layout and
         # exit_code, which are not relevant for our use.
-        return STAT._make(res[:len(STAT._fields)])
+        return STAT(*res[:len(STAT._fields)])
 
 
 def iteratePids():
