@@ -145,6 +145,7 @@ test_modules = \
 	storage_sdm_update_volume_test.py \
 	storage_securable_test.py \
 	storage_storageserver_test.py \
+	storage_sysfs_test.py \
 	storage_testlib_test.py \
 	storage_volume_artifacts_test.py \
 	storage_volume_metadata_test.py \

@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,6 +56,7 @@ dist_vdsmstorage_PYTHON = \
 	resourceManager.py \
 	rwlock.py \
 	securable.py \
+	sysfs.py \
 	task.py \
 	taskManager.py \
 	threadPool.py \

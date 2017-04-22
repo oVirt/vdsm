@@ -1225,6 +1225,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/resourceManager.py*
 %{python_sitelib}/%{vdsm_name}/storage/rwlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/securable.py*
+%{python_sitelib}/%{vdsm_name}/storage/sysfs.py*
 %{python_sitelib}/%{vdsm_name}/storage/task.py*
 %{python_sitelib}/%{vdsm_name}/storage/taskManager.py*
 %{python_sitelib}/%{vdsm_name}/storage/threadPool.py*
