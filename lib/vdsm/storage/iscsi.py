@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2016 Red Hat, Inc.
+# Copyright 2009-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,10 +38,10 @@ from vdsm import supervdsm
 from vdsm.config import config
 from vdsm.common.network.address import hosttail_join
 from vdsm.network.netinfo.routes import getRouteDeviceTo
-from vdsm.password import ProtectedPassword
 from vdsm.storage import devicemapper
 from vdsm.storage import iscsiadm
 from vdsm.storage import misc
+from vdsm.storage import sysfs
 
 
 class IscsiPortal(namedtuple("IscsiPortal", "hostname, port")):
@@ -158,33 +158,19 @@ def readSessionInfo(sessionID):
     if not os.path.isdir(iscsi_session) or not os.path.isdir(iscsi_connection):
         raise OSError(errno.ENOENT, "No such session")
 
-    targetname = os.path.join(iscsi_session, "targetname")
-    iface = os.path.join(iscsi_session, "ifacename")
-    tpgt = os.path.join(iscsi_session, "tpgt")
-
-    user = os.path.join(iscsi_session, "username")
-    passwd = os.path.join(iscsi_session, "password")
-
-    paddr = os.path.join(iscsi_connection, "persistent_address")
-    pport = os.path.join(iscsi_connection, "persistent_port")
+    iqn = sysfs.read(os.path.join(iscsi_session, "targetname"), default="")
+    iface = sysfs.read(os.path.join(iscsi_session, "ifacename"), default="")
+    tpgt = sysfs.read_int(os.path.join(iscsi_session, "tpgt"))
+    username = sysfs.read(os.path.join(iscsi_session, "username"), default="")
+    password = sysfs.read_password(os.path.join(iscsi_session, "password"),
+                                   default="")
+    ip = sysfs.read(os.path.join(iscsi_connection, "persistent_address"),
+                    default="")
+    port = sysfs.read_int(os.path.join(iscsi_connection, "persistent_port"))
 
     # iscsi_host is available only when the session exists.
     iscsi_host = getIscsiHostPath(sessionID)
-    netdev = os.path.join(iscsi_host, "netdev")
-
-    res = []
-    for fname in (targetname, iface, tpgt, user, passwd, paddr, pport, netdev):
-        try:
-            with open(fname, "r") as f:
-                res.append(f.read().strip())
-        except (OSError, IOError):
-            res.append("")
-
-    iqn, iface, tpgt, username, password, ip, port, netdev = res
-    password = ProtectedPassword(password)
-    port = int(port)
-    tpgt = int(tpgt)
-
+    netdev = sysfs.read(os.path.join(iscsi_host, "netdev"), default="")
     if netdev in ["<NULL>", "(null)"]:
         netdev = None
 
