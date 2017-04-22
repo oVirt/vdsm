@@ -451,10 +451,6 @@ class BlockVolume(volume.Volume):
     """
     manifestClass = BlockVolumeManifest
 
-    def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
-        manifest = self.manifestClass(repoPath, sdUUID, imgUUID, volUUID)
-        volume.Volume.__init__(self, manifest)
-
     @property
     def metaoff(self):
         return self._manifest.metaoff

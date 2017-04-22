@@ -381,10 +381,6 @@ class FileVolume(volume.Volume):
     """
     manifestClass = FileVolumeManifest
 
-    def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
-        manifest = self.manifestClass(repoPath, sdUUID, imgUUID, volUUID)
-        volume.Volume.__init__(self, manifest)
-
     @property
     def oop(self):
         return self._manifest.oop

@@ -684,8 +684,8 @@ class Volume(object):
     log = logging.getLogger('storage.Volume')
     manifestClass = VolumeManifest
 
-    def __init__(self, manifest):
-        self._manifest = manifest
+    def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
+        self._manifest = self.manifestClass(repoPath, sdUUID, imgUUID, volUUID)
 
     @property
     def sdUUID(self):
