@@ -71,6 +71,9 @@ class VmVolumeInfo(object):
 class VolumeManifest(object):
     log = logging.getLogger('storage.VolumeManifest')
 
+    # The miminal allocation unit; implemented in concrete classes
+    align_size = None
+
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         self.repoPath = repoPath
         self.sdUUID = sdUUID
@@ -680,6 +683,101 @@ class VolumeManifest(object):
         return utils.round(virtual_size * sc.COW_OVERHEAD, cls.align_size)
 
     def removeMetadata(self, metaId=None):
+        raise NotImplementedError
+
+    @classmethod
+    def _putMetadata(cls, metaId, meta):
+        raise NotImplementedError
+
+    @classmethod
+    def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
+        raise NotImplementedError
+
+    @classmethod
+    def newVolumeLease(cls, metaId, sdUUID, volUUID):
+        raise NotImplementedError
+
+    @classmethod
+    def leaseVolumePath(cls, vol_path):
+        raise NotImplementedError
+
+    @property
+    def oop(self):
+        raise NotImplementedError
+
+    def validateImagePath(self):
+        raise NotImplementedError
+
+    def validateVolumePath(self):
+        raise NotImplementedError
+
+    def getMetadataId(self):
+        raise NotImplementedError
+
+    def getMetadata(self, metaId=None):
+        raise NotImplementedError
+
+    def getParent(self):
+        raise NotImplementedError
+
+    def getChildren(self):
+        raise NotImplementedError
+
+    def getImage(self):
+        raise NotImplementedError
+
+    def getVolumeSize(self, bs=sc.BLOCK_SIZE):
+        raise NotImplementedError
+
+    def getVolumeTrueSize(self, bs=sc.BLOCK_SIZE):
+        raise NotImplementedError
+
+    def setMetadata(self, meta, metaId=None):
+        raise NotImplementedError
+
+    @deprecated  # valid only for domain version < 3, see volume.setrw
+    def _setrw(self, rw):
+        raise NotImplementedError
+
+    def llPrepare(self, rw=False, setrw=False):
+        raise NotImplementedError
+
+    def optimal_size(self):
+        raise NotImplementedError
+
+    def _share(self, dstImgPath):
+        raise NotImplementedError
+
+    def _getMetaVolumePath(self, vol_path=None):
+        raise NotImplementedError
+
+    def _getLeaseVolumePath(self, vol_path=None):
+        raise NotImplementedError
+
+    # Implemented only in block storage
+
+    def getDevPath(self):
+        raise NotImplementedError
+
+    def getVolumeTag(self, tagPrefix):
+        raise NotImplementedError
+
+    def changeVolumeTag(self, tagPrefix, uuid):
+        raise NotImplementedError
+
+    def getParentMeta(self):
+        raise NotImplementedError
+
+    def setParentMeta(self, puuid):
+        raise NotImplementedError
+
+    def getParentTag(self):
+        raise NotImplementedError
+
+    def setParentTag(self, puuid):
+        raise NotImplementedError
+
+    def getMetaOffset(self):
         raise NotImplementedError
 
 
