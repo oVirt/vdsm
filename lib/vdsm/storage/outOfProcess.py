@@ -232,20 +232,7 @@ class _IOProcessOs(object):
         self._iop.unlink(path)
 
     def rename(self, oldpath, newpath):
-        try:
-            return self._iop.rename(oldpath, newpath)
-        except OSError as e:
-            if e.errno != errno.ENOTEMPTY:
-                raise
-
-        _IOProcessFileUtils(self._iop).cleanupdir(newpath, False)
-        self.mkdir(newpath)
-        for fname in self.listdir(oldpath):
-            src = os.path.join(oldpath, fname)
-            dst = os.path.join(newpath, fname)
-            self.rename(src, dst)
-
-        self._iop.rmdir(oldpath)
+        self._iop.rename(oldpath, newpath)
 
     def rmdir(self, path):
         self._iop.rmdir(path)
