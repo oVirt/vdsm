@@ -785,6 +785,11 @@ class Volume(object):
     log = logging.getLogger('storage.Volume')
     manifestClass = VolumeManifest
 
+    @classmethod
+    def _create(cls, dom, imgUUID, volUUID, size, volFormat, preallocate,
+                volParent, srcImgUUID, srcVolUUID, volPath, initialSize=None):
+        raise NotImplementedError
+
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         self._manifest = self.manifestClass(repoPath, sdUUID, imgUUID, volUUID)
 
@@ -1477,6 +1482,17 @@ class Volume(object):
     @classmethod
     def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
         return cls.manifestClass.getImageVolumes(repoPath, sdUUID, imgUUID)
+
+    def _extendSizeRaw(self, newSize):
+        raise NotImplementedError
+
+    # Used only for block volume
+
+    def setParentMeta(self, puuid):
+        raise NotImplementedError
+
+    def setParentTag(self, puuid):
+        raise NotImplementedError
 
 
 class VolumeLease(guarded.AbstractLock):
