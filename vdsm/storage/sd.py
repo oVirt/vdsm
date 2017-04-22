@@ -1021,6 +1021,10 @@ class StorageDomain(object):
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
         pass
 
+    @staticmethod
+    def findDomainPath(sdUUID):
+        raise NotImplementedError
+
     def getMetadata(self):
         return self._manifest.getMetadata()
 
