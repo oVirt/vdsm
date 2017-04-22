@@ -1058,12 +1058,6 @@ class StoragePool(APIBase):
     def getInfo(self):
         return self._irs.getStoragePoolInfo(self._UUID)
 
-    def moveMultipleImages(self, srcSdUUID, dstSdUUID, imgDict,
-                           force=False):
-        vmUUID = None   # Unused parameter
-        return self._irs.moveMultipleImages(self._UUID, srcSdUUID, dstSdUUID,
-                                            imgDict, vmUUID, force)
-
     def reconstructMaster(self, hostId, name, masterSdUUID, masterVersion,
                           domainDict, lockRenewalIntervalSec, leaseTimeSec,
                           ioOpTimeoutSec, leaseRetries):

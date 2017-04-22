@@ -1702,51 +1702,6 @@ class HSM(object):
                           pool.downloadImageFromStream, methodArgs, callback,
                           sdUUID, imgUUID, volUUID)
 
-    @deprecated
-    @public
-    def moveMultipleImages(self, spUUID, srcDomUUID, dstDomUUID, imgDict,
-                           vmUUID, force=False):
-        """
-        Move multiple images between storage domains within same storage pool
-        """
-        argsStr = ("spUUID=%s, srcDomUUID=%s, dstDomUUID=%s, imgDict=%s, "
-                   "vmUUID=%s force=%s" %
-                   (spUUID, srcDomUUID, dstDomUUID, imgDict, vmUUID, force))
-        vars.task.setDefaultException(
-            se.MultipleMoveImageError("%s" % argsStr))
-        if srcDomUUID == dstDomUUID:
-            raise se.InvalidParameterException("dstDomUUID", dstDomUUID)
-
-        # Validates that the pool is connected. WHY?
-        pool = self.getPool(spUUID)
-
-        srcDom = sdCache.produce(sdUUID=srcDomUUID)
-        dstDom = sdCache.produce(sdUUID=dstDomUUID)
-        images = {}
-        for (imgUUID, pZero) in imgDict.iteritems():
-            images[imgUUID.strip()] = misc.parseBool(pZero)
-            try:
-                self.validateImageMove(srcDom, dstDom, imgUUID)
-            except se.ImageDoesNotExistInSD as e:
-                if not dstDom.isBackup():
-                    raise
-                else:
-                    # Create an ad-hoc fake template only on a backup SD
-                    tName = e.absentTemplateUUID
-                    tImgUUID = e.absentTemplateImageUUID
-                    tParams = srcDom.produceVolume(tImgUUID,
-                                                   tName).getVolumeParams()
-                    image.Image(os.path.join(self.storage_repository, spUUID)
-                                ).createFakeTemplate(dstDom.sdUUID, tParams)
-
-        domains = sorted([srcDomUUID, dstDomUUID])
-        for dom in domains:
-            vars.task.getSharedLock(STORAGE, dom)
-
-        self._spmSchedule(
-            spUUID, "moveMultipleImages", pool.moveMultipleImages,
-            srcDomUUID, dstDomUUID, images, vmUUID, misc.parseBool(force))
-
     @public
     def copyImage(
             self, sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,

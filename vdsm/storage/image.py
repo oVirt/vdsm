@@ -705,60 +705,6 @@ class Image:
                                        {'srcChain': srcChain,
                                         'dstChain': dstChain}, False)
 
-    def __cleanupMultimove(self, sdUUID, imgList, postZero=False):
-        """
-        Cleanup environments after multiple-move operation
-        """
-        for imgUUID in imgList:
-            try:
-                dom = sdCache.produce(sdUUID)
-                _deleteImage(dom, imgUUID, postZero)
-            except se.StorageException:
-                self.log.warning("Delete image failed for image: %s in SD: %s",
-                                 imgUUID, sdUUID, exc_info=True)
-
-    def multiMove(self, srcSdUUID, dstSdUUID, imgDict, vmUUID, force):
-        """
-        Move multiple images between storage domains within same storage pool
-        """
-        self.log.info("srcSdUUID=%s dstSdUUID=%s imgDict=%s vmUUID=%s "
-                      "force=%s", srcSdUUID, dstSdUUID, str(imgDict), vmUUID,
-                      str(force))
-
-        cleanup_candidates = []
-        # First, copy all images to the destination domain
-        for (imgUUID, postZero) in imgDict.iteritems():
-            self.log.info("srcSdUUID=%s dstSdUUID=%s imgUUID=%s postZero=%s",
-                          srcSdUUID, dstSdUUID, imgUUID, postZero)
-            try:
-                self.move(srcSdUUID, dstSdUUID, imgUUID, vmUUID, COPY_OP,
-                          postZero, force)
-            except se.StorageException:
-                self.__cleanupMultimove(sdUUID=dstSdUUID,
-                                        imgList=cleanup_candidates,
-                                        postZero=postZero)
-                raise
-            except Exception as e:
-                self.__cleanupMultimove(sdUUID=dstSdUUID,
-                                        imgList=cleanup_candidates,
-                                        postZero=postZero)
-                self.log.error(e, exc_info=True)
-                raise se.CopyImageError("image=%s, src domain=%s, dst "
-                                        "domain=%s: msg %s" %
-                                        (imgUUID, srcSdUUID, dstSdUUID,
-                                         str(e)))
-
-            cleanup_candidates.append(imgUUID)
-        # Remove images from source domain only after successfull copying of
-        # all images to the destination domain
-        for (imgUUID, postZero) in imgDict.iteritems():
-            try:
-                dom = sdCache.produce(srcSdUUID)
-                _deleteImage(dom, imgUUID, postZero)
-            except se.StorageException:
-                self.log.warning("Delete image failed for image %s in SD: %s",
-                                 imgUUID, dom.sdUUID, exc_info=True)
-
     def __cleanupCopy(self, srcVol, dstVol):
         """
         Cleanup environments after copy operation

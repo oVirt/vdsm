@@ -1795,42 +1795,6 @@ class StoragePool(object):
             finally:
                 callback()
 
-    def moveMultipleImages(self, srcDomUUID, dstDomUUID, imgDict, vmUUID,
-                           force):
-        """
-        Moves multiple images between storage domains within same storage pool.
-
-        :param spUUID: The storage pool where the operation will take place.
-        :type spUUID: UUID
-        :param srcDomUUID: The UUID of the storage domain you want to copy
-                           from.
-        :type srcDomUUID: UUID
-        :param dstDomUUID: The UUID of the storage domain you want to copy to.
-        :type dstDomUUID: UUID
-        :param imgDict: A dict of images in for form of ``{somthing:idunno}``
-        :type imgDict: dict
-        :param vmUUID: The UUID of the vm that owns the images.
-        :type vmUUID: UUID
-        :param force: Should the operation be forced.
-        :type force: bool
-        """
-        src_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, srcDomUUID)
-        dst_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, dstDomUUID)
-
-        imgList = imgDict.keys()
-        imgList.sort()
-
-        resourceList = []
-        for imgUUID in imgList:
-            resourceList.append(rm.acquireResource(
-                src_img_ns, imgUUID, rm.EXCLUSIVE))
-            resourceList.append(rm.acquireResource(
-                dst_img_ns, imgUUID, rm.EXCLUSIVE))
-
-        with nested(*resourceList):
-            img = image.Image(self.poolPath)
-            img.multiMove(srcDomUUID, dstDomUUID, imgDict, vmUUID, force)
-
     def reconcileVolumeChain(self, sdUUID, imgUUID, leafVolUUID):
         """
         Determines the actual volume chain for an offline image and returns it.

@@ -9305,33 +9305,6 @@ StoragePool.getInfo:
         description: Storage Pool and active Storage Domain information
         type: *StoragePoolFullInfo
 
-StoragePool.moveMultipleImages:
-    added: '3.1'
-    description: Move images from one Storage Domain to another within the same
-        Storage Pool.
-    params:
-    -   description: The UUID of the Storage Pool
-        name: storagepoolID
-        type: *UUID
-
-    -   description: The source Storage Domain
-        name: srcSdUUID
-        type: *UUID
-
-    -   description: The destination Storage Domain
-        name: dstSdUUID
-        type: *UUID
-
-    -   description: A mapping keyed by Image UUID where the values indicate if
-            the source Image should be zeroed after the data has been moved
-        name: imgDict
-        type: *ImagePostZeroMap
-
-    -   description: Move Images even if it would overwrite data on the
-            destination
-        name: force
-        type: boolean
-
 StoragePool.reconstructMaster:
     added: '3.1'
     description: Recover a Storage Pool by reconstructing its Storage Domains.
