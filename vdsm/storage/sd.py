@@ -427,6 +427,12 @@ class StorageDomainManifest(object):
                 pools.remove(BLANK_UUID)
         return pools
 
+    def getIdsFilePath(self):
+        raise NotImplementedError
+
+    def getLeasesFilePath(self):
+        raise NotImplementedError
+
     def produceVolume(self, imgUUID, volUUID):
         """
         Produce a type specific VolumeManifest object
@@ -585,6 +591,12 @@ class StorageDomainManifest(object):
         the image is torn down.
         This does nothing, subclass should override this if needed.
         """
+
+    def getVolumeClass(self):
+        """
+        Return a type specific volume generator object
+        """
+        raise NotImplementedError
 
     # External leases support
 
@@ -1008,6 +1020,9 @@ class StorageDomain(object):
         """
         pass
 
+    def validateMasterMount(self):
+        raise NotImplementedError
+
     def mountMaster(self):
         """
         Mount the master metadata file system. Should be called only by SPM.
@@ -1123,6 +1138,12 @@ class StorageDomain(object):
         (on NFS mostly) due to lazy file removal
         """
         pass
+
+    def getVolumeClass(self):
+        """
+        Return a type specific volume generator object
+        """
+        raise NotImplementedError
 
     # External leases support
 
