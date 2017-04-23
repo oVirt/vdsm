@@ -119,7 +119,9 @@ def _parse_u32(tokens):
         elif token == 'match':
             match_first = _parser.parse_str(tokens)
             if match_first.lower() == 'ip':
-                data['match'] = _parse_match_ip(tokens)  # To implement
+                # IP matching is not yet implemented.
+                _parser.parse_skip_line(tokens)
+                data['match'] = None
             else:
                 data['match'] = _parse_match_raw(match_first, tokens)
         elif token == 'action':
@@ -153,9 +155,6 @@ def _parse_ematch(tokens):
         else:
             logging.info('could not parse ematch filter. token=%s', token)
     return data
-
-
-_parse_match_ip = _parser.parse_skip_line  # Unimplemented, skip line
 
 
 def _parse_match_raw(val_mask, tokens):
