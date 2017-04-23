@@ -143,6 +143,15 @@ class ValidationTests(TestCaseBase):
                 'bond1', {'nics': ['eth0', 'eth1'], 'switch': 'ovs'},
                 nets, running_nets, fake_kernel_nics)
 
+    def test_add_bond_with_dpdk(self):
+        fake_kernel_nics = []
+        nets = {}
+        running_nets = {}
+        with self.assertRaises(ne.ConfigNetworkError):
+            ovs_validator.validate_bond_configuration(
+                'bond1', {'nics': ['eth0', 'dpdk0'], 'switch': 'ovs'},
+                nets, running_nets, fake_kernel_nics)
+
     def test_remove_bond_attached_to_a_network(self):
         fake_kernel_nics = ['eth0', 'eth1']
         nets = {}

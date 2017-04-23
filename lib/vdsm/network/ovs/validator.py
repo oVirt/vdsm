@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import six
 
 from vdsm.network import errors as ne
+from vdsm.network.link import dpdk
 
 
 def validate_net_configuration(net, attrs, bonds, running_bonds, kernel_nics):
@@ -91,6 +92,11 @@ def _validate_bond_addition(nics, kernel_nics):
         if nic not in kernel_nics:
             raise ne.ConfigNetworkError(
                 ne.ERR_BAD_NIC, 'Nic %s does not exist' % nic)
+        if dpdk.is_dpdk(nic):
+            raise ne.ConfigNetworkError(
+                ne.ERR_BAD_NIC,
+                '%s is a dpdk device and not supported as a slave of bond'
+                % nic)
 
 
 def _validate_bond_removal(bond, nets, running_nets):

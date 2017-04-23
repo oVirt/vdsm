@@ -30,6 +30,7 @@ from vdsm.config import config
 from vdsm.common.conv import tobool
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
+from vdsm.network.link import dpdk
 from vdsm.network.netinfo import NET_PATH
 from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo import mtus
@@ -577,6 +578,8 @@ def validate_network_setup(networks, bondings):
         elif 'vlan' in networkAttrs:
             Vlan.validateTag(networkAttrs['vlan'])
 
+        _validate_nic_not_dpdk(networkAttrs.get('nic', None))
+
     currentNicsSet = set(netinfo_nics.nics())
     for bonding, bondingAttrs in six.iteritems(bondings):
         Bond.validateName(bonding)
@@ -593,6 +596,18 @@ def validate_network_setup(networks, bondings):
         if not set(nics).issubset(currentNicsSet):
             raise ConfigNetworkError(ne.ERR_BAD_NIC,
                                      'Unknown nics in: %r' % list(nics))
+        for nic in nics:
+            if dpdk.is_dpdk(nic):
+                raise ConfigNetworkError(
+                    ne.ERR_BAD_NIC, '%s is a dpdk device and not supported as '
+                    'a slave of bond' % nic)
+
+
+def _validate_nic_not_dpdk(nic):
+    if nic and dpdk.is_dpdk(nic):
+        raise ConfigNetworkError(
+            ne.ERR_BAD_NIC,
+            '%s is a dpdk device and supported only with OVS' % nic)
 
 
 def _validate_network_remove(networkAttrs):
