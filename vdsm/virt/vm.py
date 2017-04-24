@@ -4743,13 +4743,32 @@ class Vm(object):
         self.saveState()
         return True
 
-    def _activeLayerCommitReady(self, jobInfo):
+    def _activeLayerCommitReady(self, jobInfo, drive):
         try:
             pivot = libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT
         except AttributeError:
             return False
         if (jobInfo['cur'] == jobInfo['end'] and jobInfo['type'] == pivot):
-            return True
+
+            # Check the job state in the xml to make sure the job is
+            # ready. We know about two interesting corner cases:
+            #
+            # - cur == 0 and end == 0 when a job starts. Trying to pivot
+            #   succeeds, but the xml never updates after that.
+            #   See https://bugzilla.redhat.com/1442266.
+            #
+            # - cur == end and cur != 0, but the job is not ready yet, and
+            #   blockJobAbort raises an error.
+            #   See https://bugzilla.redhat.com/1376580
+
+            self.log.debug("Checking xml for drive %r", drive.name)
+            root = ET.fromstring(self._dom.XMLDesc(0))
+            disk_xpath = "./devices/disk/target[@dev='%s'].." % drive.name
+            disk = root.find(disk_xpath)
+            if disk is None:
+                self.log.warning("Unable to find %r in vm xml", drive)
+                return False
+            return disk.find("./mirror[@ready='yes']") is not None
         return False
 
     @property
@@ -4813,7 +4832,7 @@ class Vm(object):
                     entry['bandwidth'] = liveInfo['bandwidth']
                     entry['cur'] = str(liveInfo['cur'])
                     entry['end'] = str(liveInfo['end'])
-                    doPivot = self._activeLayerCommitReady(liveInfo)
+                    doPivot = self._activeLayerCommitReady(liveInfo, drive)
                 else:
                     # Libvirt has stopped reporting this job so we know it will
                     # never report it again.
