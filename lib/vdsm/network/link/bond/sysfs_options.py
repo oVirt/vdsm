@@ -203,3 +203,8 @@ def getAllDefaultBondingOptions():
     """
     with open(BONDING_DEFAULTS) as defaults:
         return json.loads(defaults.read())
+
+
+def numerize_bond_mode(mode):
+    return (mode if mode in BONDING_MODES_NUMBER_TO_NAME else
+            BONDING_MODES_NAME_TO_NUMBER[mode])

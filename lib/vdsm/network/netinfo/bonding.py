@@ -33,6 +33,7 @@ from . import nics
 
 # In order to limit the scope of change, this module is now acting as a proxy
 # to the link.bond.sysfs_options module.
+from vdsm.network.link.bond import sysfs_options
 from vdsm.network.link.bond.sysfs_options import _bond_opts_read_elements
 from vdsm.network.link.bond.sysfs_options import _bondOpts, bondOpts
 from vdsm.network.link.bond.sysfs_options import _getBondingOptions
@@ -40,7 +41,6 @@ from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
 from vdsm.network.link.bond.sysfs_options import getAllDefaultBondingOptions
 from vdsm.network.link.bond.sysfs_options import EXCLUDED_BONDING_ENTRIES
 from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NAME_TO_NUMBER
-from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NUMBER_TO_NAME
 from vdsm.network.link.bond.sysfs_options import BONDING_DEFAULTS
 from vdsm.network.link.setup import parse_bond_options
 bondOpts
@@ -48,7 +48,6 @@ getDefaultBondingOptions
 getAllDefaultBondingOptions
 parse_bond_options
 BONDING_MODES_NAME_TO_NUMBER
-BONDING_MODES_NUMBER_TO_NAME
 BONDING_DEFAULTS
 
 BONDING_ACTIVE_SLAVE = '/sys/class/net/%s/bonding/active_slave'
@@ -162,8 +161,7 @@ def get_bonding_option_numeric_val(mode_num, option_name, val_name):
 
 
 def numerize_bond_mode(mode):
-    return (mode if mode in BONDING_MODES_NUMBER_TO_NAME else
-            BONDING_MODES_NAME_TO_NUMBER[mode])
+    return sysfs_options.numerize_bond_mode(mode)
 
 
 @memoized
