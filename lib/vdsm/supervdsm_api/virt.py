@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import os
 import re
 import stat
+import uuid
 
 from vdsm.constants import P_LIBVIRT_VMCHANNELS, P_OVIRT_VMCONSOLES
 from vdsm.storage.fileUtils import resolveGid
@@ -66,3 +67,35 @@ def getVcpuNumaMemoryMapping(vmName):
         except IOError:
             continue
     return vCpuIdxToNode
+
+
+@expose
+def mdev_create(device, mdev_type, mdev_uuid=None):
+    """Create the desired mdev type.
+
+    Args:
+        device: PCI address of the parent device in the format
+            (domain:bus:slot.function). Example:  0000:06:00.0.
+        mdev_type: Type to be spawned. Example: nvidia-11.
+        mdev_uuid: UUID for the spawned device. Keeping None generates a new
+            UUID.
+
+    Returns:
+        UUID (string) of the created device.
+
+    Raises:
+        Possibly anything related to sysfs write (IOError).
+    """
+    path = os.path.join(
+        '/sys/class/mdev_bus/{}/mdev_supported_types/{}/create'.format(
+            device, mdev_type
+        )
+    )
+
+    if mdev_uuid is None:
+        mdev_uuid = str(uuid.uuid4())
+
+    with open(path, 'w') as f:
+        f.write(mdev_uuid)
+
+    return mdev_uuid
