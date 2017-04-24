@@ -123,7 +123,7 @@ class LinkBondTests(TestCaseBase):
     def test_bond_edit_options(self):
         OPTIONS_A = {'mode': '1', 'miimon': '300'}
         OPTIONS_B = {'mode': '2'}
-        OPTIONS_C = {'mode': '2', 'miimon': '150'}
+        OPTIONS_C = {'mode': 'balance-rr', 'miimon': '150'}
 
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as bond:
@@ -138,6 +138,7 @@ class LinkBondTests(TestCaseBase):
 
                 bond.set_options(OPTIONS_C)
                 _bond.refresh()
+                OPTIONS_C['mode'] = '0'
                 self.assertEqual(_bond.options, OPTIONS_C)
 
     def test_bond_set_one_arp_ip_target(self):
