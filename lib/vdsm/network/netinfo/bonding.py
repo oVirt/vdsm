@@ -161,6 +161,11 @@ def get_bonding_option_numeric_val(mode_num, option_name, val_name):
     return opt.get(val_name, None) if opt else None
 
 
+def numerize_bond_mode(mode):
+    return (mode if mode in BONDING_MODES_NUMBER_TO_NAME else
+            BONDING_MODES_NAME_TO_NUMBER[mode])
+
+
 @memoized
 def _get_bonding_option_name2numeric():
     """

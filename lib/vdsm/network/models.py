@@ -325,8 +325,7 @@ class Bond(NetDevice):
             raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Error parsing '
                                      'bonding options: %r' % bondingOptions)
 
-        if mode in bonding.BONDING_MODES_NAME_TO_NUMBER:
-            mode = bonding.BONDING_MODES_NAME_TO_NUMBER[mode]
+        mode = bonding.numerize_bond_mode(mode)
         defaults = bonding.getDefaultBondingOptions(mode)
 
         for option in bondingOptions.split():
