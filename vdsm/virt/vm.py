@@ -2972,7 +2972,7 @@ class Vm(object):
                           found_device.name, xml)
             found_device._deviceXML = xml
 
-        return {'status': doneCode}
+        return response.success()
 
     def _createTransientDisk(self, diskParams):
         if (diskParams.get('shared', None) !=
