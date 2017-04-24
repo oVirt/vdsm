@@ -20,6 +20,7 @@
 
 from __future__ import absolute_import
 
+from vdsm import constants
 from vdsm import qemuimg
 
 
@@ -33,6 +34,10 @@ VOLUME_LEASE_NAMESPACE = "04_lease"
 SECTOR_SIZE = 512
 VG_EXTENT_SIZE_MB = 128
 COW_OVERHEAD = 1.1
+
+# The minimal size used to limit internal volume size. This is mainly used
+# when calculating volume optimal size.
+MIN_CHUNK = 8 * VG_EXTENT_SIZE_MB * constants.MEGAB  # 1 GB
 
 # At the moment this is static and it has been introduced to group all the
 # previous implicit references to the block size in FileVolume. In the future
