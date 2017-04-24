@@ -190,11 +190,13 @@ def _set_graphics(devices, target_vm_conf):
         graphics_listen.attrib.pop('network', None)
         graphics_listen.set('type', 'address')
         graphics_listen.set('address', target_display_ip)
+        graphics.attrib.pop('listen', None)
     else:
         libvirt_network = net_api.netname_o2l(target_display_network)
         graphics_listen.attrib.pop('address', None)
         graphics_listen.set('type', 'network')
         graphics_listen.set('network', libvirt_network)
+        graphics.attrib.pop('listen', None)
 
 
 def _vmconf_display(vm_conf):
