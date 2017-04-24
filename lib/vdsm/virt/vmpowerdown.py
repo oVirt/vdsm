@@ -19,7 +19,6 @@
 #
 from __future__ import absolute_import
 
-from vdsm.common.define import doneCode, errCode
 from vdsm.common import response
 from vdsm import utils
 
@@ -72,15 +71,13 @@ class VmPowerDown(object):
             self.event.clear()
 
             self.chain.start()
-            return {'status': {'code': doneCode['code'],
-                               'message': self.returnMsg}}
+            return response.success(message=self.returnMsg)
         else:
             # No tools, no ACPI
-            return {
-                'status': {
-                    'code': errCode['exist']['status']['code'],
-                    'message': 'VM without ACPI or active oVirt guest agent. '
-                               'Try Forced Shutdown.'}}
+            return response.error(
+                'exist',
+                message='VM without ACPI or active oVirt guest agent. '
+                        'Try Forced Shutdown.')
 
     # action callbacks, to be reimplemented
 
