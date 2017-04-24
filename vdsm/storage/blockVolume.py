@@ -59,6 +59,9 @@ QCOW_OVERHEAD_FACTOR = 1.1
 #  - 2..100  (Unassigned)
 RESERVED_LEASES = 100
 
+# Minimal padding to be added to internal volume optimal size.
+MIN_PADDING = constants.MEGAB
+
 log = logging.getLogger('storage.Volume')
 
 
@@ -420,28 +423,49 @@ class BlockVolumeManifest(volume.VolumeManifest):
 
         Returns:
             optimal size is the minimum of the volume maximum size and the
-            volume actual size plus a chunk. Size is returned in bytes.
+            volume actual size plus padding. For leaf volumes, the padding
+            is one chunk, and for internal volumes the padding is
+            `MIN_PADDING`.
+            Size is returned in bytes.
 
         Note:
             the volume must be prepared when calling this helper.
         """
         if self.getFormat() == sc.RAW_FORMAT:
-            return self.getSize() * sc.BLOCK_SIZE
+            virtual_size = self.getSize() * sc.BLOCK_SIZE
+            self.log.debug("RAW format, using virtual size: %s", virtual_size)
+            return virtual_size
 
         # Read actual size.
         check = qemuimg.check(self.getVolumePath(), qemuimg.FORMAT.QCOW2)
         actual_size = check['offset']
 
-        # Add extra room to actual size.
-        chnuk_size_mb = int(config.get("irs", "volume_utilization_chunk_mb"))
-        chunk_size = chnuk_size_mb * constants.MEGAB
-        potential_optimal_size = actual_size + chunk_size
+        # Add padding.
+        if self.isLeaf():
+            # For leaf volumes, the padding is one chunk.
+            chnuk_size_mb = int(config.get("irs",
+                                           "volume_utilization_chunk_mb"))
+            padding = chnuk_size_mb * constants.MEGAB
+            self.log.debug("Leaf volume, using padding: %s", padding)
+
+            potential_optimal_size = actual_size + padding
+
+        else:
+            # For internal volumes, using minimal padding.
+            padding = MIN_PADDING
+            self.log.debug("Internal volume, using padding: %s", padding)
+
+            potential_optimal_size = actual_size + padding
+
+            # Limit optimal size to the minimal volume size.
+            potential_optimal_size = max(sc.MIN_CHUNK, potential_optimal_size)
 
         # Limit optimal size by maximum size.
         max_size = self.max_size(self.getSize() * sc.BLOCK_SIZE,
                                  self.getFormat())
         optimal_size = min(potential_optimal_size, max_size)
-        self.log.debug("actual_size: %s, max_size: %s, optimal_size: %s",
+        self.log.debug("COW format, actual_size: %s, max_size: %s, "
+                       "optimal_size: %s",
                        actual_size, max_size, optimal_size)
         return optimal_size
 

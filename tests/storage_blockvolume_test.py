@@ -20,6 +20,7 @@
 
 from contextlib import contextmanager
 
+from vdsm import qemuimg
 from vdsm.config import config
 from vdsm.constants import MEGAB
 from vdsm.constants import GIB
@@ -27,6 +28,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 
 from monkeypatch import MonkeyPatch
+from monkeypatch import MonkeyPatchScope
 from storagetestlib import fake_env
 from storagetestlib import qemu_pattern_write
 from storagetestlib import make_qemu_chain
@@ -91,6 +93,7 @@ class BlockVolumeSizeTests(TestCaseBase):
                                                     max_size_blk + 1)
 
 
+@expandPermutations
 class TestBlockVolumeManifest(TestCaseBase):
 
     @contextmanager
@@ -124,14 +127,14 @@ class TestBlockVolumeManifest(TestCaseBase):
             self.assertEqual(vol.optimal_size(), 1073741824)
 
     @MonkeyPatch(blockVolume, 'config', CONFIG)
-    def test_optimal_size_cow_empty(self):
+    def test_optimal_size_cow_leaf_empty(self):
         # verify optimal size equals to actual size + one chunk.
         with self.make_volume(size=GIB, format=sc.COW_FORMAT) as vol:
             self.assertEqual(vol.optimal_size(), 1074003968)
 
     @slowtest
     @MonkeyPatch(blockVolume, 'config', CONFIG)
-    def test_optimal_size_cow_not_empty(self):
+    def test_optimal_size_cow_leaf_not_empty(self):
         # verify that optimal size is limited to max size.
         with self.make_volume(size=GIB, format=sc.COW_FORMAT) as vol:
             qemu_pattern_write(path=vol.volumePath,
@@ -139,3 +142,21 @@ class TestBlockVolumeManifest(TestCaseBase):
                                len=200 * MEGAB)
             max_size = vol.max_size(GIB, vol.getFormat())
             self.assertEqual(vol.optimal_size(), max_size)
+
+    @permutations([
+        # actual_size, optimal_size
+        (200 * MEGAB, 1024 * MEGAB),
+        (1023 * MEGAB, 1024 * MEGAB),
+        (1024 * MEGAB, 1024 * MEGAB + blockVolume.MIN_PADDING),
+    ])
+    def test_optimal_size_cow_internal(self, actual_size, optimal_size):
+        def fake_check(path, format):
+            return {'offset': actual_size}
+
+        with fake_env('block') as env:
+            # In order to test edge cases, mainly of volumes with big data, we
+            # fake qemuimg check to return big volumes size, instead of writing
+            # big data to volumes, an operation that takes long time.
+            with MonkeyPatchScope([(qemuimg, 'check', fake_check)]):
+                env.chain = make_qemu_chain(env, actual_size, sc.COW_FORMAT, 3)
+                self.assertEqual(env.chain[1].optimal_size(), optimal_size)
