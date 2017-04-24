@@ -417,6 +417,9 @@ class V2VCommand(object):
     def execute(self):
         raise NotImplementedError("Subclass must implement this")
 
+    def _command(self):
+        raise NotImplementedError("Subclass must implement this")
+
     def _start_helper(self):
         timestamp = time.strftime('%Y%m%dT%H%M%S')
         log = os.path.join(_LOG_DIR,
