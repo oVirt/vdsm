@@ -30,6 +30,8 @@ class VmPowerDown(object):
     Derived classes must provide the guestAgentCallback and acpiCallback
     methods and returnMsg property.
     """
+    returnMsg = 'Machine power down'
+
     def __init__(self, vm, delay, message, timeout, force, event):
         """
         :param vm:      Vm undergoing power-down action
@@ -79,6 +81,17 @@ class VmPowerDown(object):
                     'code': errCode['exist']['status']['code'],
                     'message': 'VM without ACPI or active oVirt guest agent. '
                                'Try Forced Shutdown.'}}
+
+    # action callbacks, to be reimplemented
+
+    def guestAgentCallback(self):
+        return False
+
+    def acpiCallback(self):
+        return False
+
+    def forceCallback(self):
+        return False
 
 
 class VmShutdown(VmPowerDown):
