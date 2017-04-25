@@ -99,3 +99,27 @@ def mdev_create(device, mdev_type, mdev_uuid=None):
         f.write(mdev_uuid)
 
     return mdev_uuid
+
+
+@expose
+def mdev_delete(device, mdev_uuid):
+    """
+
+    Args:
+        device: PCI address of the parent device in the format
+            (domain:bus:slot.function). Example:  0000:06:00.0.
+        mdev_type: Type to be spawned. Example: nvidia-11.
+        mdev_uuid: UUID for the spawned device. Keeping None generates a new
+            UUID.
+
+    Raises:
+        Possibly anything related to sysfs write (IOError).
+    """
+    path = os.path.join(
+        '/sys/class/mdev_bus/{}/{}/remove'.format(
+            device, mdev_uuid
+        )
+    )
+
+    with open(path, 'w') as f:
+        f.write('1')
