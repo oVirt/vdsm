@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,12 +22,11 @@ import logging
 import socket
 import struct
 
-from vdsm import sysctl
 from vdsm import utils
 from vdsm.network import errors as ne
 from vdsm.network import ipwrapper
+from vdsm.network import sysctl
 from vdsm.network.errors import ConfigNetworkError
-
 # TODO: vdsm.network.netinfo.addresses should move to this module.
 from vdsm.network.netinfo import addresses
 

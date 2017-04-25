@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ from netaddr import IPNetwork
 import socket
 
 from vdsm.network.netlink import addr as nl_addr
-from vdsm.sysctl import is_ipv6_local_auto as sysctl_is_ipv6_local_auto
+from vdsm.network.sysctl import is_ipv6_local_auto as sysctl_is_ipv6_local_auto
 
 
 def getIpInfo(dev, ipaddrs=None, ipv4_gateway=None):

@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ import time
 
 from .nettestlib import Dummy
 from vdsm.network.netlink import monitor
-from vdsm.sysctl import is_disabled_ipv6
+from vdsm.network.sysctl import is_disabled_ipv6
 from vdsm.utils import monotonic_time
 
 from testValidation import ValidateRunningAsRoot, broken_on_ci

@@ -1,6 +1,6 @@
 #! /usr/bin/python2
 #
-# Copyright 2011-2014 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ from vdsm import hostdev
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
 from vdsm.network import netswitch
+from vdsm.network import sysctl
 from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.netinfo import nics, misc
 from vdsm.network.netinfo.cache import NetInfo
@@ -42,7 +43,6 @@ from vdsm.network.netrestore import NETS_RESTORED_MARK
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig, \
     CONF_PERSIST_DIR, BaseConfig
 from vdsm.network.nm import networkmanager
-from vdsm import sysctl
 from vdsm.utils import monotonic_time
 
 # Ifcfg persistence restoration

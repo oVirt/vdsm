@@ -42,5 +42,6 @@ dist_vdsmnetwork_PYTHON = \
 	netswitch.py \
 	netupgrade.py \
 	sourceroute.py \
+	sysctl.py \
 	utils.py \
 	$(NULL)

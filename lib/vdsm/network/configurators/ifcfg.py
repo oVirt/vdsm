@@ -40,11 +40,11 @@ from vdsm import concurrent
 from vdsm import constants
 from vdsm import dsaversion
 from vdsm import hooks
-from vdsm import sysctl
 from vdsm import utils
 
 from vdsm.network import ifacetracking
 from vdsm.network import ipwrapper
+from vdsm.network import sysctl
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.link import iface as link_iface

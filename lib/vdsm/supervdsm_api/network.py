@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,11 +20,11 @@ from __future__ import absolute_import
 
 from . import expose
 
-from vdsm.sysctl import set_rp_filter_loose, set_rp_filter_strict
 from vdsm.network.api import (setSafeNetworkConfig, setupNetworks,
                               change_numvfs, network_caps, ovs_bridge,
                               add_sourceroute, remove_sourceroute,
                               restore_networks)
+from vdsm.network.sysctl import set_rp_filter_loose, set_rp_filter_strict
 from vdsm.network.tc import setPortMirroring, unsetPortMirroring
 
 
