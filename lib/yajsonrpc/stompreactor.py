@@ -321,6 +321,10 @@ class StompServer(object):
     """
     def send(self, message, destination=stomp.SUBSCRIPTION_ID_RESPONSE):
         resp = json.loads(message)
+        if not isinstance(resp, dict):
+            raise ValueError(
+                'Provided message %s failed parsing to dictionary' % message)
+        # pylint: disable=no-member
         response_id = resp.get("id")
 
         try:
