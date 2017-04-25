@@ -115,17 +115,17 @@ def configure(*args):
     Configure external services for vdsm
     Invoke with -h for complete usage.
     """
-    args = _parse_args(*args)
+    pargs = _parse_args(*args)
 
     sys.stdout.write("\nChecking configuration status...\n\n")
-    configurer_to_trigger = [c for c in args.modules
-                             if _should_configure(c, args.force)]
+    configurer_to_trigger = [c for c in pargs.modules
+                             if _should_configure(c, pargs.force)]
 
     services = []
     for c in configurer_to_trigger:
         for s in _getservices(c):
             if service.service_status(s, False) == 0:
-                if not args.force:
+                if not pargs.force:
                     raise configurators.InvalidRun(
                         "\n\nCannot configure while service '%s' is "
                         "running.\n Stop the service manually or use the "
@@ -155,9 +155,9 @@ def isconfigured(*args):
     Invoke with -h for complete usage.
     """
     ret = True
-    args = _parse_args(*args)
+    pargs = _parse_args(*args)
 
-    m = [c.name for c in args.modules if _isconfigured(c) == configurators.NO]
+    m = [c.name for c in pargs.modules if _isconfigured(c) == configurators.NO]
 
     if m:
         sys.stdout.write(
@@ -190,9 +190,9 @@ def validate_config(*args):
     Invoke with -h for complete usage.
     """
     ret = True
-    args = _parse_args(*args)
+    pargs = _parse_args(*args)
 
-    m = [c.name for c in args.modules if not _validate(c)]
+    m = [c.name for c in pargs.modules if not _validate(c)]
 
     if m:
         sys.stdout.write(
@@ -212,9 +212,9 @@ def remove_config(*args):
     """
     Remove vdsm configuration from conf files
     """
-    args = _parse_args(*args)
+    pargs = _parse_args(*args)
     failed = False
-    for c in args.modules:
+    for c in pargs.modules:
         try:
             _removeConf(c)
         except Exception:
@@ -297,15 +297,15 @@ def _parse_args(action, *args):
             help='Force configuration, trigger services restart',
         )
 
-    args = parser.parse_args(args)
-    if not args.modules:
-        args.modules = _CONFIGURATORS.keys()
+    pargs = parser.parse_args(args)
+    if not pargs.modules:
+        pargs.modules = _CONFIGURATORS.keys()
 
-    args.modules = _sort_modules(_add_dependencies(args.modules))
+    pargs.modules = _sort_modules(_add_dependencies(pargs.modules))
 
-    args.modules = [_CONFIGURATORS[cName] for cName in args.modules]
+    pargs.modules = [_CONFIGURATORS[cName] for cName in pargs.modules]
 
-    return args
+    return pargs
 
 
 def _should_configure(c, force):
