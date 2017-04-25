@@ -1562,10 +1562,11 @@ class VgMetadataCriticallyFull(StorageException):
         self.value = ("vgname=%s mdasize=%s "
                       "mdafree=%s" % (vgname, mdasize, mdafree))
     code = 613
-    message = """Error - The system has reached the high watermark on the VG
-                 metadata area size. This is due high number of Vdisks or
-                 large Vdisks size allocated on this specific VG. Please call
-                 Redhat Global Support to address the issue"""
+    message = (
+        "Error - The system has reached the high watermark on the VG "
+        "metadata area size. This is due high number of Vdisks or "
+        "large Vdisks size allocated on this specific VG. Please call "
+        "Support to address the issue")
 
 
 class SmallVgMetadata(StorageException):
@@ -1573,10 +1574,11 @@ class SmallVgMetadata(StorageException):
         self.value = ("vgname=%s mdasize=%s "
                       "mdafree=%s" % (vgname, mdasize, mdafree))
     code = 614
-    message = """Warning - The allocated VG metadata area size is too small,
-                 which might limit its capacity (the number of Vdisks and/or
-                 their size). Refer to GSS knowledge base to understand the
-                 issue and how to resolve it"""
+    message = (
+        "Warning - The allocated VG metadata area size is too small, "
+        "which might limit its capacity (the number of Vdisks and/or "
+        "their size). Refer to GSS knowledge base to understand the "
+        "issue and how to resolve it")
 
 
 class CouldNotResizePhysicalVolume(StorageException):
