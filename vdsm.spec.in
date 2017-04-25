@@ -865,6 +865,11 @@ if [ "$1" -ge 1 ]; then
     if [ "${vdsmd_start_required}" = 'yes' ]; then
         %{_bindir}/vdsm-tool service-start vdsmd >/dev/null 2>&1 || :
     fi
+
+    # re-create tmp files, as some of them where delivered by
+    # vdsm-4.18*.rpm but not in future version, and thus
+    # removed when it is uninstalled.
+    systemd-tmpfiles --create %{vdsm_name}.conf
 fi
 exit 0
 
