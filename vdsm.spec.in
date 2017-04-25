@@ -1279,7 +1279,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/dump_volume_chains.py*
 %{python_sitelib}/%{vdsm_name}/tool/network.py*
 %{python_sitelib}/%{vdsm_name}/tool/register.py*
-%{python_sitelib}/%{vdsm_name}/tool/restore_nets.py*
 %{python_sitelib}/%{vdsm_name}/tool/service.py*
 %{python_sitelib}/%{vdsm_name}/tool/transient.py*
 %{python_sitelib}/%{vdsm_name}/tool/upgrade.py*

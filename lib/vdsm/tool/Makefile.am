@@ -33,7 +33,6 @@ dist_vdsmtool_PYTHON = \
 	configfile.py \
 	configurator.py \
 	register.py \
-	restore_nets.py \
 	service.py \
 	transient.py \
 	upgrade.py \

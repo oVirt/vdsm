@@ -21,11 +21,15 @@ from __future__ import absolute_import
 from __future__ import print_function
 from contextlib import contextmanager
 
+import os
 import sys
 import logging
 import six
 
+from vdsm import commands
 from vdsm import hooks
+from vdsm.constants import P_VDSM
+
 from vdsm.network import libvirt
 from vdsm.network import sourceroute
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
@@ -291,3 +295,10 @@ def add_sourceroute(iface, ip, mask, route):
 
 def remove_sourceroute(iface):
     sourceroute.remove(iface)
+
+
+def restore_networks():
+    cmd = [os.path.join(P_VDSM, 'vdsm-restore-net-config'), '--force']
+    rc, out, err = commands.execCmd(cmd, raw=True)
+    if rc != 0:
+        raise EnvironmentError('Failed to restore the persisted networks')

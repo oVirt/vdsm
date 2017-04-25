@@ -17,11 +17,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+import os
+import sys
 
 from vdsm.network import netrestore
 from vdsm.network import netupgrade
 
-from . import expose
+from .. import commands
+from . import expose, ExtraArgsError
+from ..constants import P_VDSM
 
 
 @expose('restore-nets-init')
@@ -42,3 +46,26 @@ def upgrade_networks(*args):
     Upgrade networks configuration to up-to-date format.
     """
     netupgrade.upgrade()
+
+
+@expose('restore-nets')
+def restore_command(*args):
+    """
+    restore-nets
+    Restores the networks to what was previously persisted via vdsm.
+    """
+    if len(args) > 2:
+        raise ExtraArgsError()
+
+    cmd = [os.path.join(P_VDSM, 'vdsm-restore-net-config')]
+    if '--force' in args:
+        cmd.append('--force')
+    _exec_restore(cmd)
+
+
+def _exec_restore(cmd):
+    rc, out, err = commands.execCmd(cmd, raw=True)
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+    if rc != 0:
+        raise EnvironmentError('Failed to restore the persisted networks')
