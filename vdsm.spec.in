@@ -109,7 +109,6 @@ Requires: python-six >= 1.9.0
 Requires: python-requests
 Requires: rpm-python
 Requires: nfs-utils
-Requires: m2crypto
 Requires: libnl3
 Requires: abrt-addon-vmcore
 Requires: abrt-addon-ccpp
@@ -292,7 +291,6 @@ Summary:        VDSM python libraries
 Requires:       %{name}-api = %{version}-%{release}
 BuildArch:      noarch
 Requires:       python-cpopen >= 1.5
-Requires:       m2crypto
 Requires:       python-ioprocess >= 0.16.1-1
 
 %description python
@@ -730,8 +728,6 @@ sed -i -e 's/^software_version =.*/software_version = "'"${baseversion}"'"/' \
        -e 's/^raw_version_revision =.*/raw_version_revision = "'"${rawversion}"'"/' \
        -e 's/^software_revision =.*/software_revision = "'"${baserelease}"'"/' lib/vdsm/dsaversion.py
 
-sed -i -e 's/@SSL_IMPLEMENTATION@/ssl/g' lib/vdsm/config.py
-
 sed -i -e 's\@VDSMRPCPYLIBDIR@\%{python_sitelib}/%{vdsm_name}/rpc\g' lib/vdsm/constants.py
 
 %install
@@ -1135,7 +1131,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/kvm2ovirt.py*
 %{python_sitelib}/%{vdsm_name}/libvirtconnection.py*
 %{python_sitelib}/%{vdsm_name}/logUtils.py*
-%{python_sitelib}/%{vdsm_name}/m2cutils.py*
 %{python_sitelib}/%{vdsm_name}/machinetype.py*
 %{python_sitelib}/%{vdsm_name}/metrics/*.py*
 %{python_sitelib}/%{vdsm_name}/moduleloader.py*
@@ -1260,7 +1255,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/pthread.py*
 %{python_sitelib}/%{vdsm_name}/qemuimg.py*
 %{python_sitelib}/%{vdsm_name}/schedule.py*
-%{python_sitelib}/%{vdsm_name}/sslcompat.py*
 %{python_sitelib}/%{vdsm_name}/sslutils.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_server.py*

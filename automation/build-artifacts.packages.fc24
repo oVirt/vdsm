@@ -4,7 +4,6 @@ git
 libguestfs-tools-c
 libselinux-python3
 libvirt-python3
-m2crypto
 make
 mom
 openssl

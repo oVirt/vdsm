@@ -28,13 +28,13 @@ import libvirt
 from vdsm import concurrent
 from vdsm.common import conv
 from vdsm.common import response
+from vdsm import sslutils
 from vdsm import utils
 from vdsm import jsonrpcvdscli
 from vdsm.compat import pickle
 from vdsm.config import config
 from vdsm.common.define import NORMAL, Mbytes
 from vdsm.common.network.address import normalize_literal_addr
-from vdsm.sslcompat import sslutils
 from vdsm.virt.utils import DynamicBoundedSemaphore
 
 

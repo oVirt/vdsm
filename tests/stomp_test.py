@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,15 +28,11 @@ from testlib import VdsmTestCase as TestCaseBase, \
 import yajsonrpc
 from integration.jsonRpcHelper import constructAcceptor
 from yajsonrpc.stompreactor import StandAloneRpcClient
-from vdsm.config import config
 from vdsm import utils
 
 from testValidation import brokentest
 
-if config.get('vars', 'ssl_implementation') == 'm2c':
-    from integration.m2chelper import DEAFAULT_SSL_CONTEXT
-else:
-    from integration.sslhelper import DEAFAULT_SSL_CONTEXT
+from integration.sslhelper import DEAFAULT_SSL_CONTEXT
 
 
 CALL_TIMEOUT = 15

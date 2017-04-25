@@ -29,13 +29,8 @@ import threading
 
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import mock
-from nose.plugins.skip import SkipTest
-try:
-    from integration.m2chelper import get_server_socket
-    _m2cEnabled = True
-except ImportError:
-    from integration.sslhelper import get_server_socket
-    _m2cEnabled = False
+
+from integration.sslhelper import get_server_socket
 from vdsm.sslutils import SSLHandshakeDispatcher
 
 
@@ -245,51 +240,6 @@ class SSLTests(TestCaseBase):
             "-key", self.keyfile,
         ])
         self.assertEqual(rc, 0)
-
-    def testSessionIsCached(self):
-        """
-        Verify that SSL the session identifier is preserved when
-        connecting two times without stopping the server.
-        """
-        if not _m2cEnabled:
-            raise SkipTest(
-                'support for SSL sessions discontinued and may be reintroduced'
-                ' when we move to python 3'
-            )
-
-        # Create a temporary file to store the session details:
-        sessionDetailsFile = tempfile.NamedTemporaryFile(delete=False)
-
-        # Connect first time and save the session to a file:
-        rc, out = self.runSClient([
-            "-cert", self.certfile,
-            "-key", self.keyfile,
-            "-sess_out", sessionDetailsFile.name,
-        ])
-        self.assertEqual(rc, 0)
-
-        # Get the session id from the output of the command:
-        firstSessionId = self.extractField("Session-ID", out)
-        self.assertTrue(firstSessionId is not None)
-
-        # Connect second time using the saved session file:
-        rc, out = self.runSClient([
-            "-cert", self.certfile,
-            "-key", self.keyfile,
-            "-sess_in", sessionDetailsFile.name,
-        ])
-        self.assertEqual(rc, 0)
-
-        # Get the session id again:
-        secondSessionId = self.extractField("Session-ID", out)
-        self.assertTrue(secondSessionId is not None)
-
-        # Remove the temporary file used to store the session details,
-        # as we don't need it any longer:
-        os.remove(sessionDetailsFile.name)
-
-        # Compare the session ids:
-        self.assertEqual(secondSessionId, firstSessionId)
 
 
 class CompareNameTest(TestCaseBase):

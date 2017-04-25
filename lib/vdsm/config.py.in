@@ -247,12 +247,6 @@ parameters = [
             'online cores, use the empty value. '
             'Valid examples: "auto", "1", "0,1", ""'),
 
-        ('ssl_implementation', '@SSL_IMPLEMENTATION@',
-            'Specifies which ssl implementation should be used. '
-            'There are 2 options: '
-            '"m2c" to use the m2crypto module '
-            '"ssl" to use the standard python ssl module'),
-
         ('migration_create_timeout', '600',
             'Time in seconds defining how long we are going to wait for '
             'create migration response.'),

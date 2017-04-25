@@ -28,18 +28,12 @@ import six
 from nose.plugins.skip import SkipTest
 
 from vdsm.common import fileutils
-import vdsm.config
 from vdsm.network import kernelconfig
 from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported, prefix2netmask
 from vdsm.network.link.iface import is_oper_up
 
 from testlib import VdsmTestCase
-
-# PY3 does not support m2crypto, therefore force standard python ssl for tests
-import sys
-if sys.version_info >= (3, 0):
-    vdsm.config.config.set('vars', 'ssl_implementation', 'ssl')
 
 from functional.utils import getProxy, SUCCESS
 

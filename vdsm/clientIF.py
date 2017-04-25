@@ -31,12 +31,12 @@ from collections import defaultdict
 from yajsonrpc.betterAsyncore import Reactor
 from yajsonrpc.stompreactor import StompClient, StompRpcServer
 from yajsonrpc import Notification, JsonRpcBindingsError
+from vdsm import sslutils
 from vdsm.config import config
 from vdsm.common.define import doneCode, errCode
 import vdsm.common.time
 from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.momIF import MomClient
-from vdsm.sslcompat import sslutils
 from vdsm.virt import events
 from vdsm.virt import migration
 from vdsm.virt import recovery

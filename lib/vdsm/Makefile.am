@@ -45,7 +45,6 @@ dist_vdsmpylib_PYTHON = \
 	kvm2ovirt.py \
 	libvirtconnection.py \
 	logUtils.py \
-	m2cutils.py \
 	machinetype.py \
 	moduleloader.py \
 	momIF.py \
@@ -60,7 +59,6 @@ dist_vdsmpylib_PYTHON = \
 	pthread.py \
 	qemuimg.py \
 	schedule.py \
-	sslcompat.py \
 	sslutils.py \
 	supervdsm.py \
 	supervdsm_server.py \

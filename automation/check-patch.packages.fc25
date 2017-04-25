@@ -8,7 +8,6 @@ libguestfs-tools-c
 libselinux-python3
 libvirt-python3
 lshw
-m2crypto
 make
 mom
 openvswitch

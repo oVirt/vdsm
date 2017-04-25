@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,14 +26,10 @@ import time
 from contextlib import contextmanager
 
 from yajsonrpc.betterAsyncore import Reactor
-from vdsm.config import config
 from vdsm.protocoldetector import MultiProtocolAcceptor
 from testlib import VdsmTestCase, expandPermutations, permutations
 
-if config.get('vars', 'ssl_implementation') == 'm2c':
-    from integration.m2chelper import KEY_FILE, CRT_FILE, DEAFAULT_SSL_CONTEXT
-else:
-    from integration.sslhelper import KEY_FILE, CRT_FILE, DEAFAULT_SSL_CONTEXT
+from integration.sslhelper import KEY_FILE, CRT_FILE, DEAFAULT_SSL_CONTEXT
 
 
 class Detector(object):

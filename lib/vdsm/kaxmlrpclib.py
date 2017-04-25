@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2016 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -104,7 +104,7 @@ class TcpkeepHTTPConnection(six.moves.http_client.HTTPConnection):
 
 ###################
 # the same, for ssl
-from vdsm.sslcompat import sslutils
+from vdsm import sslutils
 import ssl
 
 

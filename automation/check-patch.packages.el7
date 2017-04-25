@@ -5,7 +5,6 @@ gdb
 git
 libguestfs-tools-c
 lshw
-m2crypto
 make
 mom
 openvswitch

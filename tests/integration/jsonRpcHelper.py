@@ -32,7 +32,6 @@ from yajsonrpc.stomp import (
     SUBSCRIPTION_ID_RESPONSE
 )
 from yajsonrpc import Notification
-from vdsm.config import config
 from vdsm.rpc.bindingjsonrpc import BindingJsonRpc
 from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm import constants
@@ -42,10 +41,7 @@ from vdsm import utils
 from testlib import namedTemporaryDir
 from monkeypatch import MonkeyPatchScope
 
-if config.get('vars', 'ssl_implementation') == 'm2c':
-    from integration.m2chelper import DEAFAULT_SSL_CONTEXT
-else:
-    from integration.sslhelper import DEAFAULT_SSL_CONTEXT
+from integration.sslhelper import DEAFAULT_SSL_CONTEXT
 
 PERMUTATIONS = [[True], [False]]
 
