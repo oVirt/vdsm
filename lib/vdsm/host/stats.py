@@ -26,12 +26,14 @@ import six
 from vdsm import numa
 from vdsm.common import cache
 from vdsm.common import time
+from vdsm.config import config
 
 from vdsm import v2v
 
 
 JIFFIES_BOUND = 2 ** 32
 NETSTATS_BOUND = 2 ** 32
+SMALLEST_INTERVAL = 1e-5
 
 
 _clock = time.monotonic_time
@@ -55,9 +57,16 @@ def produce(first_sample, last_sample):
     if first_sample is None:
         return stats
 
-    stats.update(_get_interfaces_stats(first_sample, last_sample))
-
     interval = last_sample.timestamp - first_sample.timestamp
+
+    # Prevents division by 0 and negative interval
+    if interval < SMALLEST_INTERVAL:
+        logging.warning('Sampling interval %f is too small (expected %f).',
+                        interval,
+                        config.getint('vars', 'host_sample_stats_interval'))
+        return stats
+
+    stats.update(_get_interfaces_stats(first_sample, last_sample))
 
     jiffies = (
         last_sample.pidcpu.user - first_sample.pidcpu.user
