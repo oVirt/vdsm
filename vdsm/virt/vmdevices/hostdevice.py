@@ -348,5 +348,9 @@ class HostDevice(core.Base):
     def update_device_info(cls, vm, device_conf):
         for device_xml in vm.domain.get_device_elements('hostdev'):
             device_type = vmxml.attr(device_xml, 'type')
-            cls._DEVICE_MAPPING[device_type].update_from_xml(
-                vm, device_conf, device_xml)
+            try:
+                cls._DEVICE_MAPPING[device_type].update_from_xml(
+                    vm, device_conf, device_xml)
+            except KeyError:
+                # Unknown device, be careful.
+                continue
