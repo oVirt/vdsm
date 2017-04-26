@@ -2968,8 +2968,7 @@ class Vm(object):
             found_device = self._findDeviceByNameOrPath(device_name,
                                                         device_path)
             if found_device is None:
-                return response.error(
-                    'updateIoTuneErr',
+                raise exception.UpdateIOTuneError(
                     "Device {} not found".format(device_name))
 
             # Merge the update with current values
@@ -2992,7 +2991,7 @@ class Vm(object):
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                     raise exception.NoSuchVM()
                 else:
-                    return response.error('updateIoTuneErr', e.message)
+                    raise exception.UpdateIOTuneError(e.message)
 
             with self._ioTuneLock:
                 self._ioTuneValues[found_device.name] = io_tune
