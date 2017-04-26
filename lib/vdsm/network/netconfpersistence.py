@@ -27,8 +27,6 @@ import os
 
 import six
 
-
-from vdsm.tool.restore_nets import restore
 from vdsm import commands
 from vdsm import constants
 from vdsm import utils
@@ -209,10 +207,6 @@ class RunningConfig(Config):
 class PersistentConfig(Config):
     def __init__(self):
         super(PersistentConfig, self).__init__(CONF_PERSIST_DIR)
-
-    def restore(self):
-        restore()
-        return RunningConfig()
 
 
 class Transaction(object):
