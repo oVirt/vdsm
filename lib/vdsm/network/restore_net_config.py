@@ -1,5 +1,3 @@
-#! /usr/bin/python2
-#
 # Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -18,13 +16,12 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import argparse
+from __future__ import absolute_import
+
 import glob
 import logging
-import logging.config
 import os
 import re
-import threading
 import time
 import errno
 
@@ -437,8 +434,8 @@ def touch_file(file_path):
         os.utime(file_path, None)
 
 
-def restore(args):
-    if not args.force and _nets_already_restored(NETS_RESTORED_MARK):
+def restore(force):
+    if not force and _nets_already_restored(NETS_RESTORED_MARK):
         logging.info('networks already restored. doing nothing.')
         return
 
@@ -451,8 +448,6 @@ def restore(args):
         else:
             ifcfg_restoration()
             _copy_persistent_over_running_config()
-
-
     except Exception:
         logging.exception('%s restoration failed.',
                           'unified' if unified else 'ifcfg')
@@ -470,30 +465,3 @@ def _copy_persistent_over_running_config():
     rconfig.networks = pconfig.networks
     rconfig.bonds = pconfig.bonds
     rconfig.save()
-
-
-if __name__ == '__main__':
-    threading.current_thread().setName('restore-net')
-    try:
-        logging.config.fileConfig('/etc/vdsm/svdsm.logger.conf',
-                                  disable_existing_loggers=False)
-    except:
-        logging.basicConfig(filename='/dev/stdout', filemode='w+',
-                            level=logging.DEBUG)
-        logging.error('Could not init proper logging', exc_info=True)
-
-    restore_help = ("Restores the network configuration from vdsm configured "
-                    "network system persistence.\n"
-                    "Restoration will delete any trace of network system "
-                    "persistence except the vdsm internal persistent network "
-                    "configuration. In order to avoid this use --no-flush.")
-    parser = argparse.ArgumentParser(description=restore_help)
-
-    force_option_help = ("Restore networks even if the " + NETS_RESTORED_MARK
-                         + " mark exists. The mark is created upon a previous "
-                           "successful restore")
-    parser.add_argument('--force', action='store_true', default=False,
-                        help=force_option_help)
-
-    args = parser.parse_args()
-    restore(args)

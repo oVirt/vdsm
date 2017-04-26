@@ -895,7 +895,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/sitecustomize.py*
 %{_datadir}/%{vdsm_name}/supervdsmd
 %{_datadir}/%{vdsm_name}/vdsmd
-%{_datadir}/%{vdsm_name}/vdsm-restore-net-config
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
 %{_datadir}/%{vdsm_name}/vdsmd.py*
 %{_datadir}/%{vdsm_name}/virt/__init__.py*
@@ -1172,6 +1171,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/netrestore.py*
 %{python_sitelib}/%{vdsm_name}/network/netswitch.py*
 %{python_sitelib}/%{vdsm_name}/network/netupgrade.py*
+%{python_sitelib}/%{vdsm_name}/network/restore_net_config.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroute.py*
 %{python_sitelib}/%{vdsm_name}/network/sysctl.py*
 %{python_sitelib}/%{vdsm_name}/network/tc/__init__.py*

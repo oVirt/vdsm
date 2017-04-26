@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2016 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,7 +42,6 @@ dist_vdsm_SCRIPTS = \
 	get-conf-item \
 	set-conf-item \
 	vdsmd \
-	vdsm-restore-net-config \
 	$(NULL)
 
 CLEANFILES = \

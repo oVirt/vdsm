@@ -22,15 +22,15 @@ from . import expose
 
 from vdsm.network.api import (setSafeNetworkConfig, setupNetworks,
                               change_numvfs, network_caps, ovs_bridge,
-                              add_sourceroute, remove_sourceroute,
-                              restore_networks)
+                              add_sourceroute, remove_sourceroute)
+from vdsm.network.restore_net_config import restore
 from vdsm.network.sysctl import set_rp_filter_loose, set_rp_filter_strict
 from vdsm.network.tc import setPortMirroring, unsetPortMirroring
 
 
 @expose
 def restoreNetworks(*args, **kwrags):
-    return restore_networks()
+    return restore(force=True)
 
 
 expose(setSafeNetworkConfig)

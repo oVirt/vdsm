@@ -1234,7 +1234,7 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
     @requiresUnifiedPersistence("with ifcfg persistence, "
-                                "vdsm-restore-net-config selective restoration"
+                                "restoreNetConfig selective restoration"
                                 "is not supported")
     @cleanupNet
     def testRestoreNetworksOnlyRestoreUnchangedDevices(self):
@@ -1325,7 +1325,7 @@ class NetworkTest(TestCaseBase):
                 self.assertBondDoesntExist(BOND_UNCHANGED, [nic_a])
 
     @requiresUnifiedPersistence("with ifcfg persistence, "
-                                "vdsm-restore-net-config selective restoration"
+                                "restoreNetConfig selective restoration"
                                 "is not supported")
     @cleanupNet
     def testSelectiveRestoreDuringUpgrade(self):
@@ -1452,7 +1452,7 @@ class NetworkTest(TestCaseBase):
                 self.assertBondDoesntExist(BOND_CHANGED, [nic_c])
 
     @requiresUnifiedPersistence("with ifcfg persistence, "
-                                "vdsm-restore-net-config selective restoration"
+                                "restoreNetConfig selective restoration"
                                 "is not supported")
     @cleanupNet
     def testUpgradeUnsupportedIfcfgConfig(self):
@@ -2428,7 +2428,7 @@ class NetworkTest(TestCaseBase):
         self.assertBondDoesntExist(BONDING_NAME, nics)
 
     @requiresUnifiedPersistence("with ifcfg persistence, "
-                                "vdsm-restore-net-config doesn't restore "
+                                "restoreNetConfig doesn't restore "
                                 "in-kernel state")
     @cleanupNet
     @ValidateRunningAsRoot
@@ -2458,7 +2458,7 @@ class NetworkTest(TestCaseBase):
             self.vdsm_net.save_config()
 
     @requiresUnifiedPersistence("with ifcfg persistence, "
-                                "vdsm-restore-net-config doesn't restore "
+                                "restoreNetConfig doesn't restore "
                                 "in-kernel state")
     @cleanupNet
     @ValidateRunningAsRoot

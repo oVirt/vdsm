@@ -41,6 +41,7 @@ dist_vdsmnetwork_PYTHON = \
 	netrestore.py \
 	netswitch.py \
 	netupgrade.py \
+	restore_net_config.py \
 	sourceroute.py \
 	sysctl.py \
 	utils.py \

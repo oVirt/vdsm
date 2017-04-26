@@ -17,15 +17,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
-import os
-import sys
+import logging
+import logging.config
+import threading
 
 from vdsm.network import netrestore
 from vdsm.network import netupgrade
+from vdsm.network.restore_net_config import restore
 
-from .. import commands
 from . import expose, ExtraArgsError
-from ..constants import P_VDSM
 
 
 @expose('restore-nets-init')
@@ -54,18 +54,17 @@ def restore_command(*args):
     restore-nets
     Restores the networks to what was previously persisted via vdsm.
     """
+    threading.current_thread().setName('restore-net')
+    try:
+        logging.config.fileConfig('/etc/vdsm/svdsm.logger.conf',
+                                  disable_existing_loggers=False)
+    except:
+        logging.basicConfig(filename='/dev/stdout', filemode='w+',
+                            level=logging.DEBUG)
+        logging.error('Could not init proper logging', exc_info=True)
+
     if len(args) > 2:
         raise ExtraArgsError()
 
-    cmd = [os.path.join(P_VDSM, 'vdsm-restore-net-config')]
-    if '--force' in args:
-        cmd.append('--force')
-    _exec_restore(cmd)
-
-
-def _exec_restore(cmd):
-    rc, out, err = commands.execCmd(cmd, raw=True)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-    if rc != 0:
-        raise EnvironmentError('Failed to restore the persisted networks')
+    force_restore = '--force' in args
+    restore(force_restore)
