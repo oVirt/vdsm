@@ -96,6 +96,8 @@ class Domain(object):
         return str(self._rt.uuid)
 
     def ID(self):
+        # pylint: disable=no-member
+        # due to https://github.com/PyCQA/pylint/issues/961
         return self._vm_uuid.int
 
     def UUIDString(self):
