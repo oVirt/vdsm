@@ -548,13 +548,22 @@ class Drive(core.Base):
                 return v['path']
         raise VolumeNotFound(drive_name=self.name, vol_id=vol_id)
 
-    def parse_volume_chain(self, disk_xml):
-        def path_to_vol_id(path):
-            for vol in self.volumeChain:
-                if os.path.realpath(vol['path']) == os.path.realpath(path):
-                    return vol['volumeID']
-            raise LookupError("Unable to find VolumeID for path '%s'", path)
+    def volume_id(self, vol_path):
+        """
+        Retrieves volume id from drive's volume chain using its path.
 
+        libvirt path and Drive.path may be different symlinks
+        to the same file or block device:
+
+        - /run/vdsm/storage/sd_id/img_id/vol_id
+        - /rhev/data-center/pool_id/sd_id/images/img_id/vol_id
+        """
+        for vol in self.volumeChain:
+            if os.path.realpath(vol['path']) == os.path.realpath(vol_path):
+                return vol['volumeID']
+        raise LookupError("Unable to find VolumeID for path '%s'", vol_path)
+
+    def parse_volume_chain(self, disk_xml):
         volChain = []
         while True:
             sourceAttr = ('file', 'dev')[self.blockDev]
@@ -571,7 +580,7 @@ class Drive(core.Base):
                                  "chain for drive %s", self.name)
                 break
             disk_xml = backingstore
-            entry = VolumeChainEntry(path_to_vol_id(path), path, alloc)
+            entry = VolumeChainEntry(self.volume_id(path), path, alloc)
             volChain.insert(0, entry)
         return volChain or None
 
