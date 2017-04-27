@@ -25,7 +25,8 @@ import six
 from vdsm.config import config
 from vdsm.constants import LEGACY_MANAGEMENT_NETWORKS
 
-from vdsm.network import libvirt
+from vdsm.virt import libvirtnetwork
+
 from vdsm.network.canonicalize import canonicalize_bondings
 from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network.configurators.ifcfg import ConfigWriter
@@ -40,7 +41,7 @@ def upgrade():
     rconfig = RunningConfig()
     pconfig = PersistentConfig()
 
-    libvirt_networks = libvirt.networks()
+    libvirt_networks = libvirtnetwork.networks()
 
     _upgrade_volatile_running_config(rconfig)
 
@@ -153,4 +154,4 @@ def _cleanup_libvirt_networks(libvirt_networks):
     Note: The role of managing libvirt networks has passed to virt.
     """
     for net in libvirt_networks:
-        libvirt.removeNetwork(net)
+        libvirtnetwork.removeNetwork(net)

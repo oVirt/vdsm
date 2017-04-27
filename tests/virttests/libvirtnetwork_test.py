@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ from __future__ import absolute_import
 import re
 import xml.etree.ElementTree as ET
 
-from vdsm.network import libvirt
+from vdsm.virt import libvirtnetwork
 
 from nose.plugins.attrib import attr
 from testlib import VdsmTestCase as TestCaseBase
@@ -58,7 +58,7 @@ class LibvirtTests(LibvirtTestCase):
                             <forward mode='bridge'/>
                             <bridge name='{}'/>
                          </network>""".format(LIBVIRT_NETWORK, NETWORK)
-        actual_doc = libvirt.createNetworkDef(NETWORK, bridged=True)
+        actual_doc = libvirtnetwork.createNetworkDef(NETWORK, bridged=True)
         self.assertEqualXml(expected_doc, actual_doc)
 
     def test_create_net_xml_with_iface(self):
@@ -68,7 +68,7 @@ class LibvirtTests(LibvirtTestCase):
                               <interface dev='{}'/>
                             </forward>
                           </network>""".format(LIBVIRT_NETWORK, IFACE)
-        actual_doc = libvirt.createNetworkDef(
+        actual_doc = libvirtnetwork.createNetworkDef(
             NETWORK, bridged=False, iface=IFACE)
         self.assertEqualXml(expected_doc, actual_doc)
 
@@ -78,43 +78,43 @@ class LibvirtNetworksUsersCacheTests(TestCaseBase):
 
     def test_add_remove_new_net(self):
         user_ref = self
-        self.assertFalse(libvirt.NetworksUsersCache.has_users(NET1))
+        self.assertFalse(libvirtnetwork.NetworksUsersCache.has_users(NET1))
 
-        libvirt.NetworksUsersCache.add(NET1, user_ref)
-        self.assertTrue(libvirt.NetworksUsersCache.has_users(NET1))
+        libvirtnetwork.NetworksUsersCache.add(NET1, user_ref)
+        self.assertTrue(libvirtnetwork.NetworksUsersCache.has_users(NET1))
 
-        libvirt.NetworksUsersCache.remove(NET1, user_ref)
-        self.assertFalse(libvirt.NetworksUsersCache.has_users(NET1))
+        libvirtnetwork.NetworksUsersCache.remove(NET1, user_ref)
+        self.assertFalse(libvirtnetwork.NetworksUsersCache.has_users(NET1))
 
     def test_add_remove_existing_net_with_same_user(self):
         user_ref = self
-        libvirt.NetworksUsersCache.add(NET1, user_ref)
+        libvirtnetwork.NetworksUsersCache.add(NET1, user_ref)
 
-        libvirt.NetworksUsersCache.add(NET1, user_ref)
-        self.assertTrue(libvirt.NetworksUsersCache.has_users(NET1))
+        libvirtnetwork.NetworksUsersCache.add(NET1, user_ref)
+        self.assertTrue(libvirtnetwork.NetworksUsersCache.has_users(NET1))
 
-        libvirt.NetworksUsersCache.remove(NET1, user_ref)
-        self.assertFalse(libvirt.NetworksUsersCache.has_users(NET1))
+        libvirtnetwork.NetworksUsersCache.remove(NET1, user_ref)
+        self.assertFalse(libvirtnetwork.NetworksUsersCache.has_users(NET1))
 
     def test_add_remove_existing_net_with_unique_users(self):
         user_ref1 = self
         user_ref2 = 12345
-        libvirt.NetworksUsersCache.add(NET1, user_ref1)
+        libvirtnetwork.NetworksUsersCache.add(NET1, user_ref1)
 
-        libvirt.NetworksUsersCache.add(NET1, user_ref2)
-        self.assertTrue(libvirt.NetworksUsersCache.has_users(NET1))
+        libvirtnetwork.NetworksUsersCache.add(NET1, user_ref2)
+        self.assertTrue(libvirtnetwork.NetworksUsersCache.has_users(NET1))
 
-        libvirt.NetworksUsersCache.remove(NET1, user_ref2)
-        self.assertTrue(libvirt.NetworksUsersCache.has_users(NET1))
+        libvirtnetwork.NetworksUsersCache.remove(NET1, user_ref2)
+        self.assertTrue(libvirtnetwork.NetworksUsersCache.has_users(NET1))
 
         # test teardown
-        libvirt.NetworksUsersCache.remove(NET1, user_ref1)
-        self.assertFalse(libvirt.NetworksUsersCache.has_users(NET1))
+        libvirtnetwork.NetworksUsersCache.remove(NET1, user_ref1)
+        self.assertFalse(libvirtnetwork.NetworksUsersCache.has_users(NET1))
 
     def test_remove_non_existing_net(self):
         user_ref = self
-        self.assertFalse(libvirt.NetworksUsersCache.has_users(NET1))
+        self.assertFalse(libvirtnetwork.NetworksUsersCache.has_users(NET1))
 
-        libvirt.NetworksUsersCache.remove(NET1, user_ref)
+        libvirtnetwork.NetworksUsersCache.remove(NET1, user_ref)
 
-        self.assertFalse(libvirt.NetworksUsersCache.has_users(NET1))
+        self.assertFalse(libvirtnetwork.NetworksUsersCache.has_users(NET1))

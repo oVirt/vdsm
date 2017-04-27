@@ -30,6 +30,7 @@ dist_vdsmvirt_PYTHON = \
 	domain_descriptor.py \
 	events.py \
 	guestagent.py \
+	libvirtnetwork.py \
 	libvirtxml.py \
 	metadata.py \
 	migration.py \

@@ -35,7 +35,6 @@ dist_vdsmnetwork_PYTHON = \
 	ipwrapper.py \
 	kernelconfig.py \
 	legacy_switch.py \
-	libvirt.py \
 	models.py \
 	netconfpersistence.py \
 	netrestore.py \

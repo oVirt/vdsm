@@ -29,8 +29,8 @@ import six
 from vdsm import jsonrpcvdscli
 from vdsm.config import config
 from vdsm.network import api as net_api
-from vdsm.network import libvirt as libvirtnetwork
 from vdsm.utils import tobool
+from vdsm.virt import libvirtnetwork
 
 
 _DEBUG_MODE = False

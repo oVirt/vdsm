@@ -25,7 +25,7 @@ import libvirt
 
 from vdsm import supervdsm
 from vdsm.network import api as net_api
-from vdsm.network import libvirt as libvirtnetwork
+from vdsm.virt import libvirtnetwork
 from vdsm import utils
 from vdsm.config import config
 from vdsm.virt import vmxml

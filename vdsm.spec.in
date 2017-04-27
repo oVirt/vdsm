@@ -1151,7 +1151,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/link/bond/*.py*
 %{python_sitelib}/%{vdsm_name}/network/kernelconfig.py*
 %{python_sitelib}/%{vdsm_name}/network/legacy_switch.py*
-%{python_sitelib}/%{vdsm_name}/network/libvirt.py*
 %{python_sitelib}/%{vdsm_name}/network/netinfo/*.py*
 %{python_sitelib}/%{vdsm_name}/network/netlink/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/netlink/addr.py*
@@ -1289,6 +1288,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virt/domain_descriptor.py*
 %{python_sitelib}/%{vdsm_name}/virt/events.py*
 %{python_sitelib}/%{vdsm_name}/virt/guestagent.py*
+%{python_sitelib}/%{vdsm_name}/virt/libvirtnetwork.py*
 %{python_sitelib}/%{vdsm_name}/virt/libvirtxml.py*
 %{python_sitelib}/%{vdsm_name}/virt/metadata.py*
 %{python_sitelib}/%{vdsm_name}/virt/migration.py*
