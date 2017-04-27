@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ def restore_command(*args):
         logging.config.fileConfig('/etc/vdsm/svdsm.logger.conf',
                                   disable_existing_loggers=False)
     except:
-        logging.basicConfig(filename='/dev/stdout', filemode='w+',
+        logging.basicConfig(filename='/dev/stderr', filemode='w+',
                             level=logging.DEBUG)
         logging.error('Could not init proper logging', exc_info=True)
 
