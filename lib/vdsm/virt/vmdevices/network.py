@@ -28,6 +28,7 @@ from vdsm import utils
 from vdsm.hostdev import get_device_params, detach_detachable, \
     reattach_detachable, NoIOMMUSupportException
 from vdsm.network import api as net_api
+from vdsm.network import libvirt as libvirtnetwork
 from vdsm.virt import vmxml
 
 from .core import Base
@@ -278,7 +279,7 @@ class Interface(Base):
             if source is not None:
                 network = vmxml.attr(source, 'bridge')
                 if not network:
-                    network = net_api.netname_l2o(
+                    network = libvirtnetwork.netname_l2o(
                         vmxml.attr(source, 'network'))
 
             # Get nic address

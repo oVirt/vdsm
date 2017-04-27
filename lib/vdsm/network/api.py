@@ -27,7 +27,6 @@ import six
 
 from vdsm import hooks
 
-from vdsm.network import libvirt
 from vdsm.network import sourceroute
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 from vdsm.network.link import iface as link_iface
@@ -82,32 +81,9 @@ def ip_addrs_info(device):
     return ipaddress.addrs_info(device)
 
 
-def libvirt_networks():
-    """Report libvirt known networks"""
-    return libvirt.networks()
-
-
-def create_libvirt_network(netname, user_reference):
-    libvirt.create_network(netname, user_reference)
-
-
-def delete_libvirt_network(netname, user_reference):
-    libvirt.delete_network(netname, user_reference)
-
-
 def net2vlan(network_name):
     """Return the vlan id of the network if exists, None otherwise."""
     return netswitch.net2vlan(network_name)
-
-
-def netname_o2l(ovirt_name):
-    """Translate ovirt network name to the name used by libvirt database"""
-    return libvirt.LIBVIRT_NET_PREFIX + ovirt_name
-
-
-def netname_l2o(libvirt_name):
-    """Translate the name used by libvirt database to the ovirt network name"""
-    return libvirt_name[len(libvirt.LIBVIRT_NET_PREFIX):]
 
 
 def ovs_bridge(network_name):

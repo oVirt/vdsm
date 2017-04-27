@@ -25,6 +25,7 @@ import libvirt
 
 from vdsm import supervdsm
 from vdsm.network import api as net_api
+from vdsm.network import libvirt as libvirtnetwork
 from vdsm import utils
 from vdsm.config import config
 from vdsm.virt import vmxml
@@ -61,15 +62,15 @@ class Graphics(Base):
     def setup(self):
         display_network = self.specParams['displayNetwork']
         if display_network:
-            net_api.create_libvirt_network(display_network, self.vmid)
+            libvirtnetwork.create_network(display_network, self.vmid)
             display_ip = _getNetworkIp(display_network)
         else:
             display_ip = '0'
         self.specParams['displayIp'] = display_ip
 
     def teardown(self):
-        net_api.delete_libvirt_network(self.specParams['displayNetwork'],
-                                       self.vmid)
+        libvirtnetwork.delete_network(self.specParams['displayNetwork'],
+                                      self.vmid)
 
     def getSpiceVmcChannelsXML(self):
         vmc = vmxml.Element('channel', type='spicevmc')
@@ -155,7 +156,8 @@ class Graphics(Base):
         elif display_network:
             graphics.appendChildWithArgs(
                 'listen', type='network',
-                network=net_api.netname_o2l(self.specParams['displayNetwork']))
+                network=libvirtnetwork.netname_o2l(
+                    self.specParams['displayNetwork']))
         else:
             graphics.setAttrs(listen='0')
 
@@ -219,7 +221,7 @@ def makeSpecParams(conf):
 
 def _getNetworkIp(network):
     try:
-        nets = net_api.libvirt_networks()
+        nets = libvirtnetwork.networks()
         # On a legacy based network, the device is the iface specified in the
         # network report (supporting real bridgeless networks).
         # In case the report or the iface key is missing,

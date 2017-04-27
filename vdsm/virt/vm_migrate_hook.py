@@ -29,6 +29,7 @@ import six
 from vdsm import jsonrpcvdscli
 from vdsm.config import config
 from vdsm.network import api as net_api
+from vdsm.network import libvirt as libvirtnetwork
 from vdsm.utils import tobool
 
 
@@ -192,7 +193,7 @@ def _set_graphics(devices, target_vm_conf):
         graphics_listen.set('address', target_display_ip)
         graphics.attrib.pop('listen', None)
     else:
-        libvirt_network = net_api.netname_o2l(target_display_network)
+        libvirt_network = libvirtnetwork.netname_o2l(target_display_network)
         graphics_listen.attrib.pop('address', None)
         graphics_listen.set('type', 'network')
         graphics_listen.set('network', libvirt_network)

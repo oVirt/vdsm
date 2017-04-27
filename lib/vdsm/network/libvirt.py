@@ -152,6 +152,16 @@ def is_libvirt_network(netname):
     return any(n.name() == netname for n in libvirt_nets)
 
 
+def netname_o2l(ovirt_name):
+    """Translate ovirt network name to the name used by libvirt database"""
+    return LIBVIRT_NET_PREFIX + ovirt_name
+
+
+def netname_l2o(libvirt_name):
+    """Translate the name used by libvirt database to the ovirt network name"""
+    return libvirt_name[len(LIBVIRT_NET_PREFIX):]
+
+
 def _netlookup_by_name(conn, netname):
     try:
         return conn.networkLookupByName(netname)

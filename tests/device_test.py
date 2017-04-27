@@ -359,7 +359,7 @@ class TestVmDevices(XMLTestCase):
         with fake.VM() as testvm:
             dev = testvm._dev_spec_update_with_vm_conf(vmConf['devices'][0])
         with MonkeyPatchScope([
-            (vmdevices.graphics.net_api, 'libvirt_networks', lambda: {})
+            (vmdevices.graphics.libvirtnetwork, 'networks', lambda: {})
         ]):
             graph = vmdevices.graphics.Graphics(self.log, **dev)
         self.assert_dom_xml_equal(graph.getXML(), xml)
