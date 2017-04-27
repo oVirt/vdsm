@@ -20,6 +20,8 @@
 
 import xml.etree.ElementTree as ET
 
+import libvirt
+
 from vdsm import utils
 from vdsm import supervdsm
 from vdsm.hostdev import get_device_params, detach_detachable, \
@@ -328,6 +330,14 @@ class ScsiDevice(core.Base):
         # way of reconstructing the udev name we use as unique id.
 
 
+class MdevDevice(core.Base):
+    def __init__(self, conf, log, **kwargs):
+        super(MdevDevice, self).__init__(conf, log, **kwargs)
+
+    def getXML(self):
+        raise core.SkipDevice
+
+
 class HostDevice(core.Base):
     __slots__ = ('_device',)
 
@@ -339,7 +349,14 @@ class HostDevice(core.Base):
     }
 
     def __new__(cls, conf, log, **kwargs):
-        device_params = get_device_params(kwargs['device'])
+        try:
+            device_params = get_device_params(kwargs['device'])
+        except libvirt.libvirtError:
+            # TODO: MdevDevice is somewhat generic "UnknownDevice" really, but
+            # at this point we don't expect any other device to fail.
+            # In future, we should be more careful whether device is mdev or
+            # some really unknown device.
+            return MdevDevice(conf, log, **kwargs)
         device = cls._DEVICE_MAPPING[
             device_params['capability']](conf, log, **kwargs)
         return device
