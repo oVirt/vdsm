@@ -218,7 +218,8 @@ class Image:
             newsize += vol.getVolumeSize()
         if newsize > size:
             newsize = size
-        newsize = int(newsize * 1.1)    # allocate %10 more for cow metadata
+        # allocate %10 more for cow metadata
+        newsize = int(newsize * sc.COW_OVERHEAD)
         return newsize
 
     def getChain(self, sdUUID, imgUUID, volUUID=None):
@@ -1313,7 +1314,7 @@ class Image:
         accSize, chain = self.subChainSizeCalc(ancestor, successor, vols)
         imageApparentSize = volParams['size']
         # allocate %10 more for cow metadata
-        reqSize = min(accSize, imageApparentSize) * 1.1
+        reqSize = min(accSize, imageApparentSize) * sc.COW_OVERHEAD
         try:
             # Start the actual merge image procedure
             # IMPORTANT NOTE: volumes in the same image chain might have
