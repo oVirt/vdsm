@@ -2255,6 +2255,7 @@ class Vm(object):
         if hasattr(nic, 'portMirroring'):
             mirroredNetworks = []
             try:
+                # pylint: disable=no-member
                 for network in nic.portMirroring:
                     supervdsm.getProxy().setPortMirroring(network, nic.name)
                     mirroredNetworks.append(network)
