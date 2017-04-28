@@ -189,6 +189,18 @@ class MissingLibvirtDomainError(Exception):
         self.reason = reason
 
 
+@contextmanager
+def domain_required():
+    try:
+        yield
+    except libvirt.libvirtError as e:
+        # always bubble up this exception.
+        if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+            raise MissingLibvirtDomainError()
+        else:
+            raise
+
+
 class DestroyedOnStartupError(Exception):
     """
     The VM was destroyed while it was starting up.
@@ -605,18 +617,16 @@ class Vm(object):
             with self._ongoingCreations:
                 self._vmCreationEvent.set()
                 try:
-                    self._run()
+                    with domain_required():
+                        self._run()
                 except MissingLibvirtDomainError:
+                    # always bubble up this exception.
                     # we cannot continue without a libvirt domain object,
                     # not even on recovery, to avoid state desync or worse
                     # split-brain scenarios.
                     raise
                 except Exception as e:
-                    # as above
-                    if isinstance(e, libvirt.libvirtError) and \
-                            e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                        raise MissingLibvirtDomainError()
-                    elif not self.recovering:
+                    if self.recovering:
                         raise
                     else:
                         self.log.info("Skipping errors on recovery",
