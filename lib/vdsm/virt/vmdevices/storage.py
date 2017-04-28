@@ -181,6 +181,7 @@ class Drive(core.Base):
     def __init__(self, log, **kwargs):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
+        self._path = None
         super(Drive, self).__init__(log, **kwargs)
         if not hasattr(self, 'vm_custom'):
             self.vm_custom = {}
@@ -333,7 +334,7 @@ class Drive(core.Base):
 
     @path.setter
     def path(self, path):
-        if hasattr(self, "_path") and self._path != path:
+        if self._path is not None and self._path != path:
             self.log.debug("Drive %s moved from %r to %r",
                            self.name, self._path, path)
             # After live storage migration domain type may have changed
