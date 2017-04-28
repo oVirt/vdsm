@@ -23,6 +23,8 @@ from six.moves import xmlrpc_client as xmlrpclib
 from six.moves import http_client as httplib
 import socket
 import ssl
+from netaddr import IPAddress
+from netaddr.core import AddrFormatError
 
 from ssl import SSLError
 from vdsm import constants
@@ -156,7 +158,7 @@ class SSLHandshakeDispatcher(object):
     """
     log = logging.getLogger("ProtocolDetector.SSLHandshakeDispatcher")
     SSL_HANDSHAKE_TIMEOUT = 10
-    LOCAL_ADDRESSES = ('127.0.0.1', '::1', '::ffff:127.0.0.1')
+    LOCAL_ADDRESSES = ('127.0.0.1', '::1')
 
     def __init__(
         self,
@@ -251,6 +253,15 @@ class SSLHandshakeDispatcher(object):
 
     @staticmethod
     def compare_names(src_addr, cert_common_name):
+        src_addr = SSLHandshakeDispatcher._normalize_ip_address(src_addr)
+        try:
+            cert_common_name = \
+                SSLHandshakeDispatcher._normalize_ip_address(
+                    cert_common_name)
+        except AddrFormatError:
+            # used name not address
+            pass
+
         if src_addr == cert_common_name:
             return True
         elif src_addr in SSLHandshakeDispatcher.LOCAL_ADDRESSES:
@@ -259,6 +270,20 @@ class SSLHandshakeDispatcher(object):
             return (cert_common_name.lower() ==
                     socket.gethostbyaddr(src_addr)[0].lower())
 
+    @staticmethod
+    def _normalize_ip_address(addr):
+        """
+        When we used mapped ipv4 (starting with ::FFFF/96) we need to
+        normalize it to ipv4 in order to compare it with value used
+        in commonName in the certificate.
+        """
+        ip = IPAddress(addr)
+        if ip.is_ipv4_mapped():
+            addr = str(ip.ipv4())
+
+        return addr
+
+    # pylint: disable=no-member
     def _handshake(self, dispatcher):
         try:
             dispatcher.socket.do_handshake()

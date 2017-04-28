@@ -393,6 +393,20 @@ class CompareNameTest(TestCaseBase):
         self.assertTrue(SSLHandshakeDispatcher.compare_names(
             '10.0.0.1', 'example.com'))
 
+    def test_src_mapped_address(self):
+        self.assertTrue(SSLHandshakeDispatcher.compare_names(
+            '::ffff:127.0.0.1', '127.0.0.1'))
+
+    def test_cert_mapped_address(self):
+        self.assertTrue(SSLHandshakeDispatcher.compare_names(
+            '127.0.0.1', '::ffff:127.0.0.1'))
+
+    @mock.patch('vdsm.sslutils.socket.gethostbyaddr', return_value=(
+        'example.com', [], ['10.0.0.1']))
+    def test_failed_mapped_address(self, mock_gethostbyaddr):
+        self.assertFalse(SSLHandshakeDispatcher.compare_names(
+            '10.0.0.1', '::ffff:127.0.0.1'))
+
     @mock.patch('vdsm.sslutils.socket.gethostbyaddr', return_value=(
         'evil.imposter.com', [], ['11.0.0.1']))
     def test_imposter(self, mock_gethostbyaddr):
