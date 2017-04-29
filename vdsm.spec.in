@@ -162,7 +162,7 @@ Requires: libvirt-python >= 2.2.0-1
 # iscsi-intiator versions
 Requires: iscsi-initiator-utils >= 6.2.0.873-21
 
-Requires: sanlock >= 3.4.0-1, sanlock-python
+Requires: sanlock >= 3.5.0-1, sanlock-python
 
 # device-mapper-multipath
 
