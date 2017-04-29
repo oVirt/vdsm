@@ -186,9 +186,12 @@ class SSLHandshakeDispatcher(object):
             self._handshake(dispatcher)
         else:
             if config.getboolean('vars', 'verify_client_cert'):
-                if not self._verify_host(dispatcher.socket.getpeercert(),
-                                         dispatcher.socket.getpeername()[0]):
-                    self.log.error("peer certificate does not match host name")
+                peercert = dispatcher.socket.getpeercert()
+                peername = dispatcher.socket.getpeername()[0]
+                if not self._verify_host(peercert, peername):
+                    self.log.error(
+                        "peer certificate '%s' does not match host name '%s'",
+                        peercert, peername)
                     dispatcher.socket.close()
                     return
 
