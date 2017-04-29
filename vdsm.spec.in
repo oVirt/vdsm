@@ -156,7 +156,12 @@ Requires: iscsi-initiator-utils
 Requires: iscsi-initiator-utils >= 6.2.0.873-21
 %endif
 
-Requires: sanlock >= 3.4.0-1, sanlock-python
+%if  0%{?rhel}
+Requires: sanlock >= 3.5.0-1
+%else
+Requires: sanlock >= 3.4.0-1
+%endif
+Requires: sanlock-python
 
 # device-mapper-multipath
 
