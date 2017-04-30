@@ -101,6 +101,20 @@ class FakeFileEnvTests(VdsmTestCase):
                 path = os.path.join(image_dir, f)
                 self.assertTrue(os.path.exists(path))
 
+    @permutations((
+        # vol_type
+        (sc.LEAF_VOL, ),
+        (sc.INTERNAL_VOL, ),
+    ))
+    def test_volume_type(self, vol_type):
+        with fake_file_env() as env:
+            img_id = make_uuid()
+            vol_id = make_uuid()
+            make_file_volume(env.sd_manifest, 0, img_id, vol_id,
+                             vol_type=vol_type)
+            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+            self.assertEqual(vol.getVolType(), sc.type2name(vol_type))
+
     def test_volume_metadata_io(self):
         with fake_file_env() as env:
             size = 1 * MB
@@ -153,6 +167,20 @@ class FakeBlockEnvTests(VdsmTestCase):
             sd_id = env.sd_manifest.sdUUID
             manifest = blockSD.BlockStorageDomainManifest(sd_id)
             self.assertEqual(desc, manifest.getMetaParam(sd.DMDK_DESCRIPTION))
+
+    @permutations((
+        # vol_type
+        (sc.LEAF_VOL, ),
+        (sc.INTERNAL_VOL, ),
+    ))
+    def test_volume_type(self, vol_type):
+        with fake_block_env() as env:
+            img_id = make_uuid()
+            vol_id = make_uuid()
+            make_block_volume(env.lvm, env.sd_manifest, 0,
+                              img_id, vol_id, vol_type=vol_type)
+            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+            self.assertEqual(vol.getVolType(), sc.type2name(vol_type))
 
     @permutations((
         (MB,),
@@ -258,6 +286,21 @@ class QemuPatternVerificationTest(VdsmTestCase):
             qemu_pattern_write(path, img_format, pattern=2)
             self.assertRaises(ChainVerificationError,
                               qemu_pattern_verify, path, img_format, pattern=4)
+
+    @permutations((
+        # storage_type
+        ('file', ),
+        ('block', )
+    ))
+    def test_make_qemu_chain(self, storage_type):
+        with fake_env(storage_type) as env:
+            vol_list = make_qemu_chain(env, 0, sc.RAW_FORMAT, 2)
+            self.assertTrue(vol_list[0].isInternal(),
+                            "Internal volume has wrong type: %s"
+                            % vol_list[0].getVolType())
+            self.assertTrue(vol_list[1].isLeaf(),
+                            "Leaf volume has wrong type: %s"
+                            % vol_list[1].getVolType())
 
     # Although these tests use file and block environments, due to the
     # underlying implementation, all reads and writes are to regular files.
