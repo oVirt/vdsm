@@ -21,12 +21,38 @@
 vdsm-client - simple Vdsm jsonrpc client
 
 This is a simple generic client that does not know anything about the available
-methods and parameters. The user should consult the schema to construct request
-that make sense:
+methods and parameters.
+Available commands and parameters are derived from the schema:
 
     https://github.com/oVirt/vdsm/blob/master/lib/api/vdsm-api.yml
 
-Future version should parse the schema and provide online help.
+Please consult vdsm-client help in order to get information regarding the
+available methods.
+
+Getting a list of the available namepsaces::
+
+    # vdsm-client -h
+
+Getting a list of the available methods per namepsace::
+
+    # vdsm-client Lease -h
+
+Getting information about method parameters::
+
+    # vdsm-client Lease create -h
+
+Please note that invoking a method with the -h/--help option also prints the
+parameters in a JSON format::
+
+    # vdsm-client Lease create -h
+
+    {
+        "lease": {
+            "sd_id": "UUID",
+            "lease_id": "UUID"
+            }
+    }
+
 
 Invoking simple methods::
 
@@ -38,7 +64,7 @@ Invoking methods with simple parameters::
     # vdsm-client VM getStats vmID=b3f6fa00-b315-4ad4-8108-f73da817b5c5
     ...
 
-For invokinng methods with many or complex parameters, you can read the
+For invoking methods with many or complex parameters, you can read the
 parameters from a file:
 
     # vdsm-client Lease info -f lease.json
@@ -64,6 +90,14 @@ parameters interactively::
         }
     }
     EOF
+
+Using -h you can create the json file you need for the actual request::
+
+    # vdsm-client Lease create -h > lease.json
+
+Edit lease.json, and run::
+
+    # vdsm-client Lease create -f lease.json
 
 """
 
