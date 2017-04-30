@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,5 @@
 
 
 from __future__ import absolute_import
-
-from vdsm.network.ipwrapper import DUMMY_BRIDGE
-
-DUMMY_BRIDGE  # Appease flake8 since dummy bridge should be exported from here
 
 NET_PATH = '/sys/class/net'

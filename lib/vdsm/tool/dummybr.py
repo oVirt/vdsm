@@ -21,7 +21,7 @@
 from __future__ import absolute_import
 import os
 
-from vdsm.network.netinfo import DUMMY_BRIDGE
+from vdsm.network.api import DUMMY_BRIDGE
 from .. import libvirtconnection, commands, constants
 from . import expose, ExtraArgsError
 

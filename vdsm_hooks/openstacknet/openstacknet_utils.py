@@ -5,7 +5,7 @@ import hooking
 import os
 import subprocess
 from vdsm import constants
-from vdsm.network.netinfo import DUMMY_BRIDGE
+from vdsm.network.api import DUMMY_BRIDGE
 from vdsm.utils import CommandPath
 
 # Constants for hook's API
