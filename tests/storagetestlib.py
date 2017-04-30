@@ -51,11 +51,12 @@ class FakeFileEnv(object):
         self.sdcache = sdcache
 
     def make_volume(self, size, imguuid, voluuid, parent_vol_id=sc.BLANK_UUID,
-                    vol_format=sc.RAW_FORMAT, prealloc=sc.SPARSE_VOL,
-                    disk_type=image.UNKNOWN_DISK_TYPE, desc='fake volume'):
+                    vol_format=sc.RAW_FORMAT, vol_type=sc.LEAF_VOL,
+                    prealloc=sc.SPARSE_VOL, disk_type=image.UNKNOWN_DISK_TYPE,
+                    desc='fake volume'):
         return make_file_volume(self.sd_manifest, size, imguuid, voluuid,
-                                parent_vol_id, vol_format, prealloc, disk_type,
-                                desc)
+                                parent_vol_id, vol_format, vol_type,
+                                prealloc, disk_type, desc)
 
 
 class FakeBlockEnv(object):
@@ -66,11 +67,12 @@ class FakeBlockEnv(object):
         self.lvm = lvm
 
     def make_volume(self, size, imguuid, voluuid, parent_vol_id=sc.BLANK_UUID,
-                    vol_format=sc.RAW_FORMAT, prealloc=sc.SPARSE_VOL,
-                    disk_type=image.UNKNOWN_DISK_TYPE, desc='fake volume'):
+                    vol_format=sc.RAW_FORMAT, vol_type=sc.LEAF_VOL,
+                    prealloc=sc.SPARSE_VOL, disk_type=image.UNKNOWN_DISK_TYPE,
+                    desc='fake volume'):
         return make_block_volume(self.lvm, self.sd_manifest, size, imguuid,
-                                 voluuid, parent_vol_id, vol_format, prealloc,
-                                 disk_type, desc)
+                                 voluuid, parent_vol_id, vol_format,
+                                 vol_type, prealloc, disk_type, desc)
 
 
 @contextmanager
@@ -235,6 +237,7 @@ def make_filesd_manifest(tmpdir, sd_version=3):
 def make_file_volume(sd_manifest, size, imguuid, voluuid,
                      parent_vol_id=sc.BLANK_UUID,
                      vol_format=sc.RAW_FORMAT,
+                     vol_type=sc.LEAF_VOL,
                      prealloc=sc.SPARSE_VOL,
                      disk_type=image.UNKNOWN_DISK_TYPE,
                      desc='fake volume'):
@@ -254,7 +257,7 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
         size_blk,
         sc.type2name(vol_format),
         sc.type2name(prealloc),
-        sc.type2name(sc.LEAF_VOL),
+        sc.type2name(vol_type),
         disk_type,
         desc,
         sc.LEGAL_VOL)
@@ -263,6 +266,7 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
 def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
                       parent_vol_id=sc.BLANK_UUID,
                       vol_format=sc.RAW_FORMAT,
+                      vol_type=sc.LEAF_VOL,
                       prealloc=sc.PREALLOCATED_VOL,
                       disk_type=image.UNKNOWN_DISK_TYPE,
                       desc='fake volume'):
@@ -297,7 +301,7 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
         size_blk,
         sc.type2name(vol_format),
         sc.type2name(prealloc),
-        sc.type2name(sc.LEAF_VOL),
+        sc.type2name(vol_type),
         disk_type,
         desc,
         sc.LEGAL_VOL)
@@ -381,8 +385,10 @@ def make_qemu_chain(env, size, base_vol_fmt, chain_len, qcow2_compat='0.10'):
         vol_id = make_uuid()
         if parent_vol_id != sc.BLANK_UUID:
             vol_fmt = sc.COW_FORMAT
+        vol_type = sc.LEAF_VOL if i == chain_len - 1 else sc.INTERNAL_VOL
         env.make_volume(size, img_id, vol_id,
-                        parent_vol_id=parent_vol_id, vol_format=vol_fmt)
+                        parent_vol_id=parent_vol_id, vol_format=vol_fmt,
+                        vol_type=vol_type)
         vol = env.sd_manifest.produceVolume(img_id, vol_id)
         if vol_fmt == sc.COW_FORMAT:
             backing = parent_vol_id if parent_vol_id != sc.BLANK_UUID else None
