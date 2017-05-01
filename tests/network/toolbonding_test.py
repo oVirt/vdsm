@@ -1,4 +1,4 @@
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,21 +16,21 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
+from __future__ import absolute_import
 
 import errno
 import os
 
 from nose.plugins.skip import SkipTest
 
-from vdsm.tool.dump_bonding_opts \
-    import _get_bonding_options_name2numeric
+from vdsm.network.link.bond import sysfs_options_mapper
+
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
 from modprobe import RequireBondingMod
 
 
-class TestToolBonding(TestCaseBase):
+class TestBondingSysfsOptionsMapper(TestCaseBase):
     @ValidateRunningAsRoot
     @RequireBondingMod
     def test_dump_bonding_name2numeric(self):
@@ -40,7 +40,7 @@ class TestToolBonding(TestCaseBase):
         VAL_NUMERIC = '0'
 
         try:
-            opt_map = _get_bonding_options_name2numeric()
+            opt_map = sysfs_options_mapper._get_bonding_options_name2numeric()
         except IOError as e:
             if e.errno == errno.EBUSY:
                 raise SkipTest('Bond option mapping failed on EBUSY, '

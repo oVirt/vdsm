@@ -156,7 +156,6 @@ test_modules = \
 	testlib_test.py \
 	tool_confmeta_test.py \
 	tool_test.py \
-	toolbonding_test.py \
 	throttledlog_test.py \
 	unicode_test.py \
 	utils_test.py \
