@@ -27,6 +27,7 @@ from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (routeAdd, routeDel, ruleAdd, ruleDel,
                                     IPRoute2Error)
 from vdsm.network.link.bond import Bond
+from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.setup import remove_custom_bond_option
 from vdsm.network.netinfo import bonding, vlans, bridges, mtus
 from vdsm.network.netinfo.cache import ifaceUsed
@@ -340,12 +341,12 @@ class ConfigApplier(object):
     def addBond(self, bond):
         if bond.name not in bonding.bondings():
             logging.debug('Add new bonding %s', bond)
-            with open(bonding.BONDING_MASTERS, 'w') as f:
+            with open(BONDING_MASTERS, 'w') as f:
                 f.write('+%s' % bond.name)
 
     def removeBond(self, bond):
         logging.debug('Remove bonding %s', bond)
-        with open(bonding.BONDING_MASTERS, 'w') as f:
+        with open(BONDING_MASTERS, 'w') as f:
             f.write('-%s' % bond.name)
 
     def addBondSlave(self, bond, slave):

@@ -38,8 +38,9 @@ from vdsm.network.ipwrapper import (
     linkDel, linkSet, addrAdd)
 from vdsm.network import kernelconfig
 from vdsm.network.netconfpersistence import PersistentConfig, RunningConfig
+from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
-from vdsm.network.netinfo.bonding import BONDING_SLAVES, BONDING_MASTERS
+from vdsm.network.netinfo.bonding import BONDING_SLAVES
 from vdsm.network.netinfo.bridges import bridges
 from vdsm.network.netinfo.misc import NET_CONF_PREF
 from vdsm.network.netinfo.mtus import DEFAULT_MTU

@@ -27,10 +27,11 @@ from vdsm.network.link import iface
 from . import BondAPI
 from . import sysfs_options
 
+BONDING_MASTERS = '/sys/class/net/bonding_masters'
+
 
 class BondSysFS(BondAPI):
 
-    BONDING_MASTERS = '/sys/class/net/bonding_masters'
     BONDING_PATH = '/sys/class/net/%s/bonding'
     BONDING_SLAVES = BONDING_PATH + '/slaves'
     BONDING_ACTIVE_SLAVE = BONDING_PATH + '/active_slave'
@@ -51,7 +52,7 @@ class BondSysFS(BondAPI):
             self._revert_transaction()
 
     def create(self):
-        with open(self.BONDING_MASTERS, 'w') as f:
+        with open(BONDING_MASTERS, 'w') as f:
             f.write('+%s' % self._master)
         logging.info('Bond {} has been created.'.format(self._master))
         if self._options:
@@ -61,7 +62,7 @@ class BondSysFS(BondAPI):
         self._properties = sysfs_options.properties(self._master)
 
     def destroy(self):
-        with open(self.BONDING_MASTERS, 'w') as f:
+        with open(BONDING_MASTERS, 'w') as f:
             f.write('-%s' % self._master)
         logging.info('Bond {} has been destroyed.'.format(self._master))
 
@@ -119,7 +120,7 @@ class BondSysFS(BondAPI):
 
     @staticmethod
     def bonds():
-        with open(BondSysFS.BONDING_MASTERS) as f:
+        with open(BONDING_MASTERS) as f:
             return f.read().rstrip().split()
 
     def _import_existing(self):

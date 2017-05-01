@@ -25,8 +25,8 @@ from functools import partial
 
 from vdsm.network.link.bond import sysfs_options as bond_options
 from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
+from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.iface import random_iface_name
-from vdsm.network.netinfo.bonding import BONDING_MASTERS
 from . import expose, ExtraArgsError
 
 _MAX_BONDING_MODES = 6

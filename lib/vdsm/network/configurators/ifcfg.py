@@ -50,12 +50,12 @@ from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.link import iface as link_iface
 from vdsm.network.link.bond import Bond
+from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NAME_TO_NUMBER
 from vdsm.network.link.setup import parse_bond_options
 from vdsm.network.link.setup import remove_custom_bond_option
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
-from vdsm.network.netinfo import (bonding as netinfo_bonding, mtus, nics,
-                                  vlans, misc, NET_PATH)
+from vdsm.network.netinfo import mtus, nics, vlans, misc, NET_PATH
 from vdsm.network.netlink import waitfor
 
 from . import Configurator, getEthtoolOpts
@@ -630,10 +630,10 @@ class ConfigWriter(object):
                              **opts)
 
         # create the bonding device to avoid initscripts noise
-        with open(netinfo_bonding.BONDING_MASTERS) as info:
+        with open(BONDING_MASTERS) as info:
             names = info.read().split()
         if bond.name not in names:
-            with open(netinfo_bonding.BONDING_MASTERS, 'w') as bondingMasters:
+            with open(BONDING_MASTERS, 'w') as bondingMasters:
                 bondingMasters.write('+%s\n' % bond.name)
 
     def addNic(self, nic, net_info, **opts):
@@ -701,7 +701,7 @@ class ConfigWriter(object):
     def removeBonding(self, bonding):
         self._backup(NET_CONF_PREF + bonding)
         self._removeFile(NET_CONF_PREF + bonding)
-        with open(netinfo_bonding.BONDING_MASTERS, 'w') as f:
+        with open(BONDING_MASTERS, 'w') as f:
             f.write("-%s\n" % bonding)
 
     def removeBridge(self, bridge):
@@ -767,7 +767,7 @@ def stop_devices(device_ifcfgs):
             commands.execCmd([constants.EXT_BRCTL, 'delbr', dev])
         if _is_bond_name(dev):
             if _is_running_bond(dev):
-                with open(netinfo_bonding.BONDING_MASTERS, 'w') as f:
+                with open(BONDING_MASTERS, 'w') as f:
                     f.write("-%s\n" % dev)
 
 
@@ -778,7 +778,7 @@ def start_devices(device_ifcfgs):
             # the ifcfg files is even worse.
             if _is_bond_name(dev):
                 if not _is_running_bond(dev):
-                    with open(netinfo_bonding.BONDING_MASTERS, 'w') as masters:
+                    with open(BONDING_MASTERS, 'w') as masters:
                         masters.write('+%s\n' % dev)
             _exec_ifup_by_name(dev)
         except ConfigNetworkError:
@@ -791,7 +791,7 @@ def _is_bond_name(dev):
 
 
 def _is_running_bond(bond):
-    with open(netinfo_bonding.BONDING_MASTERS) as info:
+    with open(BONDING_MASTERS) as info:
         names = info.read().split()
     return bond in names
 

@@ -31,6 +31,7 @@ from vdsm.network import sysctl
 from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.bond import sysfs_options
+from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo import addresses, bonding, dns, misc, nics, routes
 from vdsm.network.netinfo.cache import get
@@ -264,7 +265,7 @@ class TestNetinfo(TestCaseBase):
         INTERVAL = '12345'
         bondName = random_iface_name()
 
-        with open(bonding.BONDING_MASTERS, 'w') as bonds:
+        with open(BONDING_MASTERS, 'w') as bonds:
             bonds.write('+' + bondName)
             bonds.flush()
 
