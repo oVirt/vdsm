@@ -20,6 +20,7 @@
 
 from contextlib import contextmanager
 
+from vdsm import constants
 from vdsm import qemuimg
 from vdsm.config import config
 from vdsm.constants import MEGAB
@@ -124,13 +125,16 @@ class TestBlockVolumeManifest(TestCaseBase):
     def test_optimal_size_raw(self):
         # verify optimal size equals to virtual size.
         with self.make_volume(size=GIB) as vol:
-            self.assertEqual(vol.optimal_size(), 1073741824)
+            self.assertEqual(vol.optimal_size(), GIB)
 
     @MonkeyPatch(blockVolume, 'config', CONFIG)
     def test_optimal_size_cow_leaf_empty(self):
         # verify optimal size equals to actual size + one chunk.
         with self.make_volume(size=GIB, format=sc.COW_FORMAT) as vol:
-            self.assertEqual(vol.optimal_size(), 1074003968)
+            chunk_size = 1024 * constants.MEGAB
+            check = qemuimg.check(vol.getVolumePath(), qemuimg.FORMAT.QCOW2)
+            actual_size = check['offset'] + chunk_size
+            self.assertEqual(vol.optimal_size(), actual_size)
 
     @slowtest
     @MonkeyPatch(blockVolume, 'config', CONFIG)
