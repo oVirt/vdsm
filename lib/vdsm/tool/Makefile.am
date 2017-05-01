@@ -26,7 +26,6 @@ dist_vdsmtool_PYTHON = \
 	confmeta.py \
 	confutils.py \
 	dummybr.py \
-	dump_bonding_opts.py \
 	dump_volume_chains.py \
 	network.py \
 	nwfilter.py \

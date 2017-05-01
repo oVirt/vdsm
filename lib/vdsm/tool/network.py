@@ -23,6 +23,7 @@ import threading
 
 from vdsm.network import netrestore
 from vdsm.network import netupgrade
+from vdsm.network.link.bond import sysfs_options_mapper
 from vdsm.network.restore_net_config import restore
 
 from . import expose, ExtraArgsError
@@ -68,3 +69,20 @@ def restore_command(*args):
 
     force_restore = '--force' in args
     restore(force_restore)
+
+
+@expose('dump-bonding-options')
+def dump_bonding_options(*args):
+    """dump-bonding-options
+
+    Two actions are taken:
+    - Read bonding option defaults (per mode) and dump them to
+      BONDING_DEFAULTS in JSON format.
+    - Read bonding option possible values (per mode) and dump them to
+      BONDING_NAME2NUMERIC_PATH in JSON format.
+    """
+
+    if len(args) > 1:
+        raise ExtraArgsError()
+
+    sysfs_options_mapper.dump_bonding_options()
