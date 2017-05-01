@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 from contextlib import contextmanager
+import os
 
 from nose.plugins.attrib import attr
 
@@ -30,6 +31,7 @@ from .nettestlib import (bonding_default_fpath, dummy_devices,
 from vdsm.network.link import iface
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.bond import sysfs_options
+from vdsm.network.link.bond import sysfs_options_mapper
 from vdsm.network.link.iface import random_iface_name
 
 
@@ -228,6 +230,29 @@ class LinkBondSysFSTests(TestCaseBase):
                 bond.master, filter_out_properties=('mode',))
             self.assertTrue('mode' not in properties)
             self.assertGreater(len(properties), 1)
+
+
+class TestBondingSysfsOptionsMapper(TestCaseBase):
+
+    def test_get_bonding_option_numeric_val_exists(self):
+        opt_num_val = self._get_bonding_option_num_val('ad_select', 'stable')
+        self.assertNotEqual(opt_num_val, None)
+
+    def test_get_bonding_option_numeric_val_does_not_exists(self):
+        opt_num_val = self._get_bonding_option_num_val('no_such_opt', 'none')
+        self.assertEqual(opt_num_val, None)
+
+    @mock.patch.object(sysfs_options_mapper, 'BONDING_NAME2NUMERIC_PATH',
+                       sysfs_options_mapper.BONDING_NAME2NUMERIC_PATH
+                       if os.path.exists(
+                           sysfs_options_mapper.BONDING_NAME2NUMERIC_PATH)
+                       else
+                       '../static/usr/share/vdsm/bonding-name2numeric.json')
+    def _get_bonding_option_num_val(self, option_name, val_name):
+        mode_num = sysfs_options.BONDING_MODES_NAME_TO_NUMBER['balance-rr']
+        opt_num_val = sysfs_options_mapper.get_bonding_option_numeric_val(
+            mode_num, option_name, val_name)
+        return opt_num_val
 
 
 @contextmanager

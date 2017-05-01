@@ -30,6 +30,7 @@ from vdsm.network import ipwrapper
 from vdsm.network import sysctl
 from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.link.bond import Bond
+from vdsm.network.link.bond import sysfs_options
 from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo import addresses, bonding, dns, misc, nics, routes
 from vdsm.network.netinfo.cache import get
@@ -254,7 +255,8 @@ class TestNetinfo(TestCaseBase):
 
     @broken_on_ci('Bond options scanning is fragile on CI',
                   exception=AssertionError)
-    @mock.patch.object(bonding, 'BONDING_DEFAULTS', bonding_default_fpath())
+    @mock.patch.object(sysfs_options, 'BONDING_DEFAULTS',
+                       bonding_default_fpath())
     @attr(type='integration')
     @ValidateRunningAsRoot
     @RequireBondingMod
@@ -288,28 +290,6 @@ class TestNetinfo(TestCaseBase):
         opts = Bond(bond_name).options
         opts.pop('mode')
         return opts
-
-    @mock.patch.object(bonding, 'BONDING_NAME2NUMERIC_PATH',
-                       bonding.BONDING_NAME2NUMERIC_PATH
-                       if os.path.exists(bonding.BONDING_NAME2NUMERIC_PATH)
-                       else
-                       '../static/usr/share/vdsm/bonding-name2numeric.json')
-    def test_get_bonding_option_numeric_val_exists(self):
-        mode_num = bonding.BONDING_MODES_NAME_TO_NUMBER["balance-rr"]
-        self.assertNotEqual(bonding.get_bonding_option_numeric_val(
-                            mode_num, "ad_select", "stable"),
-                            None)
-
-    @mock.patch.object(bonding, 'BONDING_NAME2NUMERIC_PATH',
-                       bonding.BONDING_NAME2NUMERIC_PATH
-                       if os.path.exists(bonding.BONDING_NAME2NUMERIC_PATH)
-                       else
-                       '../static/usr/share/vdsm/bonding-name2numeric.json')
-    def test_get_bonding_option_numeric_val_does_not_exists(self):
-        mode_num = bonding.BONDING_MODES_NAME_TO_NUMBER["balance-rr"]
-        self.assertEqual(bonding.get_bonding_option_numeric_val(
-                         mode_num, "opt_does_not_exist", "none"),
-                         None)
 
     def test_get_gateway(self):
         TEST_IFACE = 'test_iface'

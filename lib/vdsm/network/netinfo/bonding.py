@@ -17,19 +17,13 @@
 #
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
-import errno
 from functools import partial
-from glob import iglob
-import io
-import json
 import logging
 import os
 
 import six
 
-from vdsm import constants
 from vdsm.network.ipwrapper import Link
-from vdsm.common.cache import memoized
 
 from .misc import visible_devs
 from . import nics
@@ -39,24 +33,17 @@ from vdsm.network.link.bond import Bond
 # In order to limit the scope of change, this module is now acting as a proxy
 # to the link.bond.sysfs_options module.
 from vdsm.network.link.bond import sysfs_options
-from vdsm.network.link.bond.sysfs_options import _bond_opts_read_elements
 from vdsm.network.link.bond.sysfs_options import properties
 from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
 from vdsm.network.link.bond.sysfs_options import getAllDefaultBondingOptions
-from vdsm.network.link.bond.sysfs_options import EXCLUDED_BONDING_ENTRIES
-from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NAME_TO_NUMBER
-from vdsm.network.link.bond.sysfs_options import BONDING_DEFAULTS
 from vdsm.network.link.setup import parse_bond_options
 getDefaultBondingOptions
 getAllDefaultBondingOptions
 parse_bond_options
-BONDING_MODES_NAME_TO_NUMBER
-BONDING_DEFAULTS
 
 BONDING_ACTIVE_SLAVE = '/sys/class/net/%s/bonding/active_slave'
 BONDING_FAILOVER_MODES = frozenset(('1', '3'))
 BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))
-BONDING_NAME2NUMERIC_PATH = constants.P_VDSM + 'bonding-name2numeric.json'
 BONDING_MASTERS = '/sys/class/net/bonding_masters'
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
@@ -133,78 +120,5 @@ def permanent_address():
     return paddr
 
 
-def bond_opts_name2numeric_filtered(bond):
-    """
-    Return a dictionary in the same format as _bond_opts_name2numeric().
-    Exclude entries that are not bonding options,
-    e.g. 'ad_num_ports' or 'slaves'.
-    """
-    return dict(((opt, val) for (opt, val)
-                 in six.iteritems(_bond_opts_name2numeric(bond))
-                 if opt not in EXCLUDED_BONDING_ENTRIES))
-
-
-def get_bonding_option_numeric_val(mode_num, option_name, val_name):
-    bond_opts_map = _get_bonding_option_name2numeric()
-    opt = bond_opts_map[mode_num].get(option_name, None)
-    return opt.get(val_name, None) if opt else None
-
-
 def numerize_bond_mode(mode):
     return sysfs_options.numerize_bond_mode(mode)
-
-
-@memoized
-def _get_bonding_option_name2numeric():
-    """
-    Return options per mode, in a dictionary of dictionaries.
-    For each mode, there are options with name values as keys
-    and their numeric equivalent.
-    """
-    with open(BONDING_NAME2NUMERIC_PATH) as f:
-        return json.loads(f.read())
-
-
-def _bond_opts_name2numeric(bond):
-    """
-    Returns a dictionary of bond option name and a values iterable. E.g.,
-    {'mode': ('balance-rr', '0'), 'xmit_hash_policy': ('layer2', '0')}
-    """
-    bond_mode_path = BONDING_OPT % (bond, 'mode')
-    paths = (p for p in iglob(BONDING_OPT % (bond, '*'))
-             if p != bond_mode_path)
-    opts = {}
-
-    for path in paths:
-        elements = _bond_opts_read_elements(path)
-        if len(elements) == 2:
-            opts[os.path.basename(path)] = \
-                _bond_opts_name2numeric_scan(path)
-    return opts
-
-
-def _bond_opts_name2numeric_scan(opt_path):
-    vals = {}
-    with io.open(opt_path, 'wb', buffering=0) as opt_file:
-        for numeric_val in range(32):
-            name, numeric = _bond_opts_name2numeric_getval(opt_path, opt_file,
-                                                           numeric_val)
-            if name is None:
-                break
-
-            vals[name] = numeric
-
-    return vals
-
-
-def _bond_opts_name2numeric_getval(opt_path, opt_write_file, numeric_val):
-    try:
-        opt_write_file.write(str(numeric_val).encode('utf8'))
-    except IOError as e:
-        if e.errno in (errno.EINVAL, errno.EPERM, errno.EACCES):
-            return None, None
-        else:
-            e.filename = "opt[%s], numeric_val[%s]" % (opt_path, numeric_val)
-            raise
-
-    return _bond_opts_read_elements(opt_path)

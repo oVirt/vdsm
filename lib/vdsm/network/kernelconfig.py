@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import copy
 import six
 
+from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
 from vdsm.network.netinfo import bonding
 from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo import dns
@@ -224,8 +225,8 @@ def _parse_bond_options(opts):
 
     # Force a numeric value for an option
     for opname, opval in opts.items():
-        numeric_val = bonding.get_bonding_option_numeric_val(numeric_mode,
-                                                             opname, opval)
+        numeric_val = bond_opts_mapper.get_bonding_option_numeric_val(
+            numeric_mode, opname, opval)
         if numeric_val is not None:
             opts[opname] = numeric_val
 

@@ -50,6 +50,7 @@ from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.link import iface as link_iface
 from vdsm.network.link.bond import Bond
+from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NAME_TO_NUMBER
 from vdsm.network.link.setup import parse_bond_options
 from vdsm.network.link.setup import remove_custom_bond_option
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
@@ -936,7 +937,7 @@ def _get_mode_from_desired_options(desired_options):
         return None
 
     desired_mode = desired_options['mode']
-    for k, v in netinfo_bonding.BONDING_MODES_NAME_TO_NUMBER.iteritems():
+    for k, v in BONDING_MODES_NAME_TO_NUMBER.iteritems():
         if desired_mode in (k, v):
             return [k, v]
     raise Exception('Error translating bond mode.')

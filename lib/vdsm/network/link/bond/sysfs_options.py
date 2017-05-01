@@ -175,7 +175,7 @@ def properties(bond_name, filter_properties=None, filter_out_properties=()):
 
     properties_path = ((os.path.basename(path), path) for path in paths)
 
-    props = {name: _bond_opts_read_elements(path)
+    props = {name: bond_opts_read_elements(path)
              for name, path in properties_path
              if name not in filter_out_properties}
 
@@ -184,7 +184,7 @@ def properties(bond_name, filter_properties=None, filter_out_properties=()):
     return props
 
 
-def _bond_opts_read_elements(file_path):
+def bond_opts_read_elements(file_path):
     with open(file_path) as f:
         return [el for el in f.read().rstrip().split(' ') if el]
 

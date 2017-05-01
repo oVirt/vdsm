@@ -24,10 +24,9 @@ from contextlib import contextmanager
 from functools import partial
 
 from vdsm.network.link.bond import sysfs_options as bond_options
+from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
 from vdsm.network.link.iface import random_iface_name
-from vdsm.network.netinfo.bonding import (
-    BONDING_MASTERS, BONDING_OPT, BONDING_DEFAULTS, BONDING_NAME2NUMERIC_PATH,
-    bond_opts_name2numeric_filtered)
+from vdsm.network.netinfo.bonding import BONDING_MASTERS
 from . import expose, ExtraArgsError
 
 _MAX_BONDING_MODES = 6
@@ -49,10 +48,10 @@ def main(*args):
 
     jdump = partial(json.dump,
                     sort_keys=True, indent=4, separators=(',', ': '))
-    with open(BONDING_DEFAULTS, 'w') as f:
+    with open(bond_options.BONDING_DEFAULTS, 'w') as f:
         jdump(_get_default_bonding_options(), f)
 
-    with open(BONDING_NAME2NUMERIC_PATH, 'w') as f:
+    with open(bond_opts_mapper.BONDING_NAME2NUMERIC_PATH, 'w') as f:
         jdump(_get_bonding_options_name2numeric(), f)
 
 
@@ -94,7 +93,8 @@ def _get_bonding_options_name2numeric():
         # that appears randomly when changing bond mode and modifying its
         # attributes. (Seen only on CI runs)
         with _bond_device(bond_name, mode):
-            opts[mode] = bond_opts_name2numeric_filtered(bond_name)
+            opts[mode] = bond_opts_mapper.bond_opts_name2numeric_filtered(
+                bond_name)
 
     return opts
 
@@ -114,5 +114,5 @@ def _bond_device(bond_name, mode=None):
 
 
 def _change_mode(bond_name, mode):
-    with open(BONDING_OPT % (bond_name, 'mode'), 'w') as opt:
+    with open(bond_options.BONDING_OPT % (bond_name, 'mode'), 'w') as opt:
         opt.write(mode)
