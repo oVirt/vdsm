@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,9 +19,11 @@
 from __future__ import absolute_import
 
 from contextlib import contextmanager
+import errno
 import os
 
 from nose.plugins.attrib import attr
+from nose.plugins.skip import SkipTest
 
 from testlib import VdsmTestCase as TestCaseBase, mock
 
@@ -233,6 +235,25 @@ class LinkBondSysFSTests(TestCaseBase):
 
 
 class TestBondingSysfsOptionsMapper(TestCaseBase):
+
+    def test_dump_bonding_name2numeric(self):
+        BOND_MODE = '0'
+        OPT_NAME = 'arp_validate'
+        VAL_NAME = 'none'
+        VAL_NUMERIC = '0'
+
+        try:
+            opt_map = sysfs_options_mapper._get_bonding_options_name2numeric()
+        except IOError as e:
+            if e.errno == errno.EBUSY:
+                raise SkipTest('Bond option mapping failed on EBUSY, '
+                               'Kernel version: %s' % os.uname()[2])
+            raise
+
+        self.assertIn(BOND_MODE, opt_map)
+        self.assertIn(OPT_NAME, opt_map[BOND_MODE])
+        self.assertIn(VAL_NAME, opt_map[BOND_MODE][OPT_NAME])
+        self.assertEqual(opt_map[BOND_MODE][OPT_NAME][VAL_NAME], VAL_NUMERIC)
 
     def test_get_bonding_option_numeric_val_exists(self):
         opt_num_val = self._get_bonding_option_num_val('ad_select', 'stable')
