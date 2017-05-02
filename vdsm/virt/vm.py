@@ -266,6 +266,10 @@ class Vm(object):
         self.cif = cif
         self.id = params['vmId']
         self.log = SimpleLogAdapter(self.log, {"vmId": self.id})
+        self._custom = {
+            'vmId': self.id,
+            'custom': utils.picklecopy(self.conf.get('custom', {})),
+        }
         self._destroy_requested = threading.Event()
         self._recovery_file = recovery.File(self.id)
         self._monitorResponse = 0
@@ -478,7 +482,7 @@ class Vm(object):
                     'displayNetwork'
                 )
         if dev['type'] in (hwclass.DISK, hwclass.NIC):
-            vm_custom = self.conf.get('custom', {})
+            vm_custom = self._custom['custom']
             self.log.debug('device %s: adding VM custom properties %s',
                            dev['type'], vm_custom)
             dev['vm_custom'] = vm_custom
@@ -625,7 +629,7 @@ class Vm(object):
         return mem_stats
 
     def hibernate(self, dst):
-        hooks.before_vm_hibernate(self._dom.XMLDesc(0), self.conf)
+        hooks.before_vm_hibernate(self._dom.XMLDesc(0), self._custom)
         fname = self.cif.prepareVolumePath(dst)
         try:
             self._dom.save(fname)
@@ -635,8 +639,8 @@ class Vm(object):
     def prepare_migration(self):
         for dev in self._customDevices():
             hooks.before_device_migrate_source(
-                dev._deviceXML, self.conf, dev.custom)
-        hooks.before_vm_migrate_source(self._dom.XMLDesc(0), self.conf)
+                dev._deviceXML, self._custom, dev.custom)
+        hooks.before_vm_migrate_source(self._dom.XMLDesc(0), self._custom)
 
     def _startUnderlyingVm(self):
         self.log.debug("Start")
@@ -798,7 +802,7 @@ class Vm(object):
                     # This is the only place we support manipulation of a
                     # prepared image, required for the localdisk hook. The hook
                     # may change drive parameters like path and format.
-                    modified = hooks.after_disk_prepare(drive, self.conf)
+                    modified = hooks.after_disk_prepare(drive, self._custom)
                     drive.update(modified)
         else:
             # Now we got all the resources we needed
@@ -1807,7 +1811,7 @@ class Vm(object):
 
                 if getattr(dev, "custom", {}):
                     deviceXML = hooks.before_device_create(
-                        deviceXML, self.conf, dev.custom)
+                        deviceXML, self._custom, dev.custom)
 
                 dev._deviceXML = deviceXML
                 domxml.appendDeviceXML(deviceXML)
@@ -2150,7 +2154,7 @@ class Vm(object):
             # - we will also call the more specific before_vm_dehibernate
             # - we feed the hook with wrong XML
             # - we ignore the output of the hook
-            hooks.before_vm_start(self._buildDomainXML(), self.conf)
+            hooks.before_vm_start(self._buildDomainXML(), self._custom)
 
             fromSnapshot = self.conf.get('restoreFromSnapshot', False)
             with self._confLock:
@@ -2158,7 +2162,7 @@ class Vm(object):
             if fromSnapshot:
                 srcDomXML = self._correctDiskVolumes(srcDomXML)
                 srcDomXML = self._correctGraphicsConfiguration(srcDomXML)
-            hooks.before_vm_dehibernate(srcDomXML, self.conf,
+            hooks.before_vm_dehibernate(srcDomXML, self._custom,
                                         {'FROM_SNAPSHOT': str(fromSnapshot)})
 
             # TODO: this is debug information. For 3.6.x we still need to
@@ -2188,7 +2192,7 @@ class Vm(object):
             hooks.dump_vm_launch_flags_to_file(self.id, flags)
             try:
                 domxml = hooks.before_vm_start(self._buildDomainXML(),
-                                               self.conf)
+                                               self._custom)
                 flags = hooks.load_vm_launch_flags_from_file(self.id)
 
                 # TODO: this is debug information. For 3.6.x we still need to
@@ -2198,9 +2202,9 @@ class Vm(object):
                 self._dom = virdomain.Notifying(
                     self._connection.createXML(domxml, flags),
                     self._timeoutExperienced)
-                hooks.after_vm_start(self._dom.XMLDesc(0), self.conf)
+                hooks.after_vm_start(self._dom.XMLDesc(0), self._custom)
                 for dev in self._customDevices():
-                    hooks.after_device_create(dev._deviceXML, self.conf,
+                    hooks.after_device_create(dev._deviceXML, self._custom,
                                               dev.custom)
             finally:
                 hooks.remove_vm_launch_flags_file(self.id)
@@ -2281,8 +2285,9 @@ class Vm(object):
         nicParams = params['nic']
         nic = vmdevices.network.Interface(self.log, **nicParams)
         nicXml = vmxml.format_xml(nic.getXML(), pretty=True)
-        nicXml = hooks.before_nic_hotplug(nicXml, self.conf,
-                                          params=nic.custom)
+        nicXml = hooks.before_nic_hotplug(
+            nicXml, self._custom, params=nic.custom
+        )
         nic._deviceXML = nicXml
         # TODO: this is debug information. For 3.6.x we still need to
         # see the XML even with 'info' as default level.
@@ -2294,7 +2299,7 @@ class Vm(object):
         except libvirt.libvirtError as e:
             self.log.exception("Hotplug failed")
             nicXml = hooks.after_nic_hotplug_fail(
-                nicXml, self.conf, params=nic.custom)
+                nicXml, self._custom, params=nic.custom)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 raise exception.NoSuchVM()
             return response.error('hotplugNic', e.message)
@@ -2309,7 +2314,7 @@ class Vm(object):
                 self.conf['devices'].append(nicParams)
             self.saveState()
             vmdevices.network.Interface.update_device_info(self, device_conf)
-            hooks.after_nic_hotplug(nicXml, self.conf,
+            hooks.after_nic_hotplug(nicXml, self._custom,
                                     params=nic.custom)
 
         if hasattr(nic, 'portMirroring'):
@@ -2515,16 +2520,18 @@ class Vm(object):
         vnicStrXML = vmxml.format_xml(vnicXML, pretty=True)
         try:
             try:
-                vnicStrXML = hooks.before_update_device(vnicStrXML, self.conf,
-                                                        custom)
+                vnicStrXML = hooks.before_update_device(
+                    vnicStrXML, self._custom, custom)
                 self._dom.updateDeviceFlags(vnicStrXML,
                                             libvirt.VIR_DOMAIN_AFFECT_LIVE)
                 dev._deviceXML = vnicStrXML
                 self.log.info("Nic has been updated:\n %s" % vnicStrXML)
-                hooks.after_update_device(vnicStrXML, self.conf, custom)
+                hooks.after_update_device(vnicStrXML, self._custom, custom)
             except Exception as e:
                 self.log.warn('Request failed: %s', vnicStrXML, exc_info=True)
-                hooks.after_update_device_fail(vnicStrXML, self.conf, custom)
+                hooks.after_update_device_fail(
+                    vnicStrXML, self._custom, custom
+                )
                 raise SetLinkAndNetworkError(str(e))
             yield
         except Exception:
@@ -2614,7 +2621,7 @@ class Vm(object):
                     supervdsm.getProxy().unsetPortMirroring(network, nic.name)
 
             nicXml = vmxml.format_xml(nic.getXML(), pretty=True)
-            hooks.before_nic_hotunplug(nicXml, self.conf,
+            hooks.before_nic_hotunplug(nicXml, self._custom,
                                        params=nic.custom)
             # TODO: this is debug information. For 3.6.x we still need to
             # see the XML even with 'info' as default level.
@@ -2646,7 +2653,7 @@ class Vm(object):
         except HotunplugTimeout as e:
             self.log.error("%s", e)
             self._rollback_nic_hotunplug(nicDev, nic)
-            hooks.after_nic_hotunplug_fail(nicXml, self.conf,
+            hooks.after_nic_hotunplug_fail(nicXml, self._custom,
                                            params=nic.custom)
             return response.error('hotunplugNic', "%s" % e)
         except libvirt.libvirtError as e:
@@ -2654,11 +2661,11 @@ class Vm(object):
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 raise exception.NoSuchVM()
             self._rollback_nic_hotunplug(nicDev, nic)
-            hooks.after_nic_hotunplug_fail(nicXml, self.conf,
+            hooks.after_nic_hotunplug_fail(nicXml, self._custom,
                                            params=nic.custom)
             return response.error('hotunplugNic', e.message)
 
-        hooks.after_nic_hotunplug(nicXml, self.conf,
+        hooks.after_nic_hotunplug(nicXml, self._custom,
                                   params=nic.custom)
         return {'status': doneCode, 'vmList': self.status()}
 
@@ -3101,7 +3108,7 @@ class Vm(object):
         # see the XML even with 'info' as default level.
         self.log.info("Hotplug disk xml: %s" % (driveXml))
 
-        driveXml = hooks.before_disk_hotplug(driveXml, self.conf,
+        driveXml = hooks.before_disk_hotplug(driveXml, self._custom,
                                              params=drive.custom)
         drive._deviceXML = driveXml
         try:
@@ -3124,7 +3131,7 @@ class Vm(object):
                 self.conf['devices'].append(diskParams)
             self.saveState()
             vmdevices.storage.Drive.update_device_info(self, device_conf)
-            hooks.after_disk_hotplug(driveXml, self.conf,
+            hooks.after_disk_hotplug(driveXml, self._custom,
                                      params=drive.custom)
 
         return {'status': doneCode, 'vmList': self.status()}
@@ -3150,7 +3157,7 @@ class Vm(object):
         # see the XML even with 'info' as default level.
         self.log.info("Hotunplug disk xml: %s", driveXml)
 
-        hooks.before_disk_hotunplug(driveXml, self.conf,
+        hooks.before_disk_hotunplug(driveXml, self._custom,
                                     params=drive.custom)
         try:
             self._dom.detachDevice(driveXml)
@@ -3174,7 +3181,7 @@ class Vm(object):
                     break
 
             self.saveState()
-            hooks.after_disk_hotunplug(driveXml, self.conf,
+            hooks.after_disk_hotunplug(driveXml, self._custom,
                                        params=drive.custom)
             self._cleanupDrives(drive)
 
@@ -3328,7 +3335,7 @@ class Vm(object):
             with self._confLock:
                 del self.conf['restoreState']
                 fromSnapshot = self.conf.pop('restoreFromSnapshot', False)
-            hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self.conf,
+            hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self._custom,
                                        {'FROM_SNAPSHOT': fromSnapshot})
             self._syncGuestTime()
         elif 'migrationDest' in self.conf:
@@ -3340,11 +3347,12 @@ class Vm(object):
             # else domain connection already established earlier
             self._domDependentInit()
             del self.conf['migrationDest']
-            hooks.after_vm_migrate_destination(self._dom.XMLDesc(0), self.conf)
+            hooks.after_vm_migrate_destination(
+                self._dom.XMLDesc(0), self._custom)
 
             for dev in self._customDevices():
                 hooks.after_device_migrate_destination(
-                    dev._deviceXML, self.conf, dev.custom)
+                    dev._deviceXML, self._custom, dev.custom)
 
             # We refrain from syncing time in this path.  There are two basic
             # reasons:
@@ -3423,11 +3431,11 @@ class Vm(object):
             raise
 
     def _underlyingCont(self):
-        hooks.before_vm_cont(self._dom.XMLDesc(0), self.conf)
+        hooks.before_vm_cont(self._dom.XMLDesc(0), self._custom)
         self._dom.resume()
 
     def _underlyingPause(self):
-        hooks.before_vm_pause(self._dom.XMLDesc(0), self.conf)
+        hooks.before_vm_pause(self._dom.XMLDesc(0), self._custom)
         self._dom.suspend()
 
     def _findDriveByName(self, name):
@@ -4205,7 +4213,7 @@ class Vm(object):
             vmxml.set_attr(graphics, 'passwdValidTo', validto)
         if connAct is not None and vmxml.attr(graphics, 'type') == 'spice':
             vmxml.set_attr(graphics, 'connected', connAct)
-        hooks.before_vm_set_ticket(self._domain.xml, self.conf, params)
+        hooks.before_vm_set_ticket(self._domain.xml, self._custom, params)
         try:
             self._dom.updateDeviceFlags(vmxml.format_xml(graphics), 0)
             self._consoleDisconnectAction = disconnectAction or \
@@ -4213,7 +4221,7 @@ class Vm(object):
         except virdomain.TimeoutError as tmo:
             res = response.error('ticketErr', unicode(tmo))
         else:
-            hooks.after_vm_set_ticket(self._domain.xml, self.conf, params)
+            hooks.after_vm_set_ticket(self._domain.xml, self._custom, params)
             res = {'status': doneCode}
         return res
 
@@ -4358,9 +4366,9 @@ class Vm(object):
 
             self.cif.irs.inappropriateDevices(self.id)
 
-            hooks.after_vm_destroy(self._domain.xml, self.conf)
+            hooks.after_vm_destroy(self._domain.xml, self._custom)
             for dev in self._customDevices():
-                hooks.after_device_destroy(dev._deviceXML, self.conf,
+                hooks.after_device_destroy(dev._deviceXML, self._custom,
                                            dev.custom)
 
             self._released.set()
@@ -4438,10 +4446,10 @@ class Vm(object):
 
     def doDestroy(self, gracefulAttempts):
         for dev in self._customDevices():
-            hooks.before_device_destroy(dev._deviceXML, self.conf,
+            hooks.before_device_destroy(dev._deviceXML, self._custom,
                                         dev.custom)
 
-        hooks.before_vm_destroy(self._domain.xml, self.conf)
+        hooks.before_vm_destroy(self._domain.xml, self._custom)
         with self._shutdownLock:
             self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
         self._destroy_requested.set()
@@ -4577,15 +4585,16 @@ class Vm(object):
             if (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_MIGRATED and
                     self.lastStatus == vmstatus.MIGRATION_SOURCE):
                 try:
-                    hooks.after_vm_migrate_source(self._domain.xml, self.conf)
+                    hooks.after_vm_migrate_source(
+                        self._domain.xml, self._custom)
                     for dev in self._customDevices():
                         hooks.after_device_migrate_source(
-                            dev._deviceXML, self.conf, dev.custom)
+                            dev._deviceXML, self._custom, dev.custom)
                 finally:
                     self.stopped_migrated_event_processed.set()
             elif (detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SAVED and
                     self.lastStatus == vmstatus.SAVING_STATE):
-                hooks.after_vm_hibernate(self._domain.xml, self.conf)
+                hooks.after_vm_hibernate(self._domain.xml, self._custom)
             else:
                 exit_code, reason = self._getShutdownReason(
                     detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN)
@@ -4604,7 +4613,7 @@ class Vm(object):
                 except virdomain.NotConnectedError:
                     pass
                 else:
-                    hooks.after_vm_pause(domxml, self.conf)
+                    hooks.after_vm_pause(domxml, self._custom)
             elif detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_POSTCOPY:
                 self._post_copy = migration.PostCopyPhase.RUNNING
                 self.log.debug("Migration entered post-copy mode")
@@ -4629,7 +4638,7 @@ class Vm(object):
                 except virdomain.NotConnectedError:
                     pass
                 else:
-                    hooks.after_vm_cont(domxml, self.conf)
+                    hooks.after_vm_cont(domxml, self._custom)
             elif detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_MIGRATED:
                 if self.lastStatus == vmstatus.MIGRATION_DESTINATION:
                     self._incoming_migration_vm_running.set()
@@ -4708,9 +4717,9 @@ class Vm(object):
 
         for dev in self._customDevices():
             hooks.before_device_migrate_destination(
-                dev._deviceXML, self.conf, dev.custom)
+                dev._deviceXML, self._custom, dev.custom)
 
-        hooks.before_vm_migrate_destination(srcDomXML, self.conf)
+        hooks.before_vm_migrate_destination(srcDomXML, self._custom)
         return True
 
     def getBlockJob(self, drive):
