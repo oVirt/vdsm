@@ -217,7 +217,7 @@ class FakeVM(object):
 
     def __init__(self, cif, params, recover=False):
         self.recovering = recover
-        self.conf = {'pid': '0', '_blockJobs': {}, 'clientIp': ''}
+        self.conf = {'_blockJobs': {}, 'clientIp': ''}
         self.conf.update(params)
         self.cif = cif
         self.log = logging.getLogger('tests.FakeVM')

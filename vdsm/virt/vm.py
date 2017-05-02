@@ -261,7 +261,7 @@ class Vm(object):
         """
         self._dom = virdomain.Disconnected(params["vmId"])
         self.recovering = recover
-        self.conf = {'pid': '0', '_blockJobs': {}, 'clientIp': ''}
+        self.conf = {'_blockJobs': {}, 'clientIp': ''}
         self.conf.update(params)
         self.cif = cif
         self.id = params['vmId']
@@ -1426,7 +1426,6 @@ class Vm(object):
         stats = {
             'vmId': self.id,
             'vmName': self.name,
-            'pid': self.conf['pid'],
             'vmType': self.conf['vmType'],
             'kvmEnable': self.conf.get('kvmEnable', 'true'),
             'acpiEnable': self.conf.get('acpiEnable', 'true')}
@@ -2023,10 +2022,6 @@ class Vm(object):
                 self.conf['pauseCode'] = self._initTimePauseCode
             if self._initTimePauseCode == 'ENOSPC':
                 self.cont()
-
-        if not self.recovering or 'pid' not in self.conf:
-            with self._confLock:
-                self.conf['pid'] = str(self._getPid())
 
         self._dom_vcpu_setup()
         self._updateIoTuneInfo()
@@ -4286,18 +4281,6 @@ class Vm(object):
     @property
     def name(self):
         return self.conf['vmName']
-
-    def _getPid(self):
-        try:
-            pid = supervdsm.getProxy().getVmPid(
-                self.name.encode('utf-8'))
-        except (IOError, ValueError):
-            self.log.error('cannot read pid')
-            raise
-        else:
-            if pid <= 0:
-                raise ValueError('read invalid pid: %i' % pid)
-            return pid
 
     def _updateDomainDescriptor(self):
         domainXML = self._dom.XMLDesc(0)

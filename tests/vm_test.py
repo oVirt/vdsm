@@ -1526,36 +1526,6 @@ class TestLibVirtCallbacks(TestCaseBase):
                 kept_aliases)
 
 
-@expandPermutations
-class TestVmFunctions(TestCaseBase):
-
-    def testGetPidNoFile(self):
-        with MonkeyPatchScope([(vm, 'supervdsm',
-                                fake.SuperVdsm(exception=IOError))]):
-            with fake.VM() as testvm:
-                self.assertRaises(IOError, testvm._getPid)
-
-    def testGetPidBadFile(self):
-        with MonkeyPatchScope([(vm, 'supervdsm',
-                                fake.SuperVdsm(exception=ValueError))]):
-            with fake.VM() as testvm:
-                self.assertRaises(ValueError, testvm._getPid)
-
-    @permutations([[-1], [0]])
-    def testGetPidBadFileContent(self, pid):
-        with MonkeyPatchScope([(vm, 'supervdsm',
-                                fake.SuperVdsm(pid=pid))]):
-            with fake.VM() as testvm:
-                self.assertRaises(ValueError, testvm._getPid)
-
-    def testGetPidSuccess(self):
-        pid = 42
-        with MonkeyPatchScope([(vm, 'supervdsm',
-                                fake.SuperVdsm(pid=pid))]):
-            with fake.VM() as testvm:
-                self.assertEqual(testvm._getPid(), pid)
-
-
 class TestVmStatusTransitions(TestCaseBase):
     @slowtest
     def testSavingState(self):

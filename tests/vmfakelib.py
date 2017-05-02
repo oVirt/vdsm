@@ -291,19 +291,13 @@ def VM(params=None, devices=None, runCpu=False,
 
 
 class SuperVdsm(object):
-    def __init__(self, exception=None, pid=42):
+    def __init__(self, exception=None):
         self._exception = exception
-        self._pid = pid
         self.prepared_path = None
         self.prepared_path_group = None
 
     def getProxy(self):
         return self
-
-    def getVmPid(self, vmname):
-        if self._exception:
-            raise self._exception()
-        return self._pid
 
     def prepareVmChannel(self, path, group=None):
         self.prepared_path = path
