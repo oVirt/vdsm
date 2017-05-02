@@ -21,6 +21,7 @@ from contextlib import contextmanager
 from io import StringIO
 import subprocess
 import tarfile
+import uuid
 import zipfile
 
 import libvirt
@@ -33,6 +34,7 @@ from vdsm import v2v
 from vdsm import libvirtconnection
 from vdsm.password import ProtectedPassword
 from vdsm.commands import execCmd
+from vdsm.common import response
 from vdsm.utils import CommandPath, terminating
 
 
@@ -345,6 +347,21 @@ class v2vTests(TestCaseBase):
                                        ProtectedPassword('password'),
                                        None)['vmList']
         self.assertEqual(len(vms), 0)
+
+    @permutations([
+        # exc
+        [v2v.V2VError],
+        [v2v.ClientError],
+    ])
+    def testGetConvertedVMErrorFlow(self, exc):
+        def _raise_error(*args, **kwargs):
+            raise exc()
+
+        # we monkeypatch the very first utility function called
+        with MonkeyPatchScope([(v2v, '_get_job', _raise_error)]):
+            # we use uuid to fill the API contract, but it is unused
+            res = v2v.get_converted_vm(str(uuid.uuid4()))
+        self.assertTrue(response.is_error(res))
 
     def _assertVmDisksMatchSpec(self, vm, spec):
         disk = vm['disks'][0]

@@ -103,10 +103,12 @@ class STATUS:
 
 class V2VError(Exception):
     ''' Base class for v2v errors '''
+    err_name = 'unexpected'  # TODO: use more specific error
 
 
 class ClientError(Exception):
     ''' Base class for client error '''
+    err_name = 'unexpected'
 
 
 class InvalidVMConfiguration(ValueError):
