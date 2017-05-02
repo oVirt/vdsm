@@ -49,6 +49,7 @@ from vdsm.common import zombiereaper
 from vdsm.compat import CPopen
 from vdsm.constants import P_VDSM_LOG, P_VDSM_RUN, EXT_KVM_2_OVIRT
 from vdsm import cmdutils, concurrent, libvirtconnection
+from vdsm import password
 from vdsm.utils import monotonic_time, terminating, traceback, CommandPath, \
     NICENESS, IOCLASS
 
@@ -399,6 +400,7 @@ class V2VCommand(object):
         self._irs = irs
         self._prepared_volumes = []
         self._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % vmid)
+        self._password = password.ProtectedPassword('')
         self._base_command = [_VIRT_V2V.cmd, '-v', '-x']
         self._query_v2v_caps()
         if 'qcow2_compat' in vminfo:
