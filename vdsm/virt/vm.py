@@ -314,7 +314,7 @@ class Vm(object):
         self._pathsPreparedEvent = threading.Event()
         self._devices = self._emptyDevMap()
 
-        if is_kvm(self.conf):
+        if is_kvm(self._custom):
             self._connection = libvirtconnection.get(cif)
         else:
             self._connection = containersconnection.get(cif)
@@ -1995,7 +1995,7 @@ class Vm(object):
         sampling.stats_cache.add(self.id)
         self._monitorable = True
 
-        if is_kvm(self.conf):
+        if is_kvm(self._custom):
             self._vmDependentInit()
         else:
             self._containerDependentInit()
@@ -5151,7 +5151,7 @@ class Vm(object):
         if stats['monitorResponse'] == '-1':
             return
         # TODO: remove once we have real monitoring for containers
-        if not is_kvm(self.conf):
+        if not is_kvm(self._custom):
             return
 
         self.log.warning('monitor became unresponsive'

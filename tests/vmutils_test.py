@@ -216,9 +216,6 @@ class TestIsKvm(TestCaseBase):
         # ensure backward compatibility
         self.assertTrue(utils.is_kvm({}))
 
-    def test_custom_no_container_type(self):
-        self.assertTrue(utils.is_kvm({'custom': {}}))
-
     @permutations([
         # container_type
         ['rkt'],
@@ -226,7 +223,5 @@ class TestIsKvm(TestCaseBase):
     ])
     def test_detects_container_type(self, container_type):
         self.assertFalse(utils.is_kvm({
-            'custom': {
-                'containerType': container_type,
-            },
+            'containerType': container_type,
         }))

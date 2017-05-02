@@ -211,8 +211,8 @@ class DynamicBoundedSemaphore(object):
                 self.release()
 
 
-def is_kvm(vm_conf):
-    return 'containerType' not in vm_conf.get('custom', {})
+def is_kvm(vm_custom):
+    return 'containerType' not in vm_custom
 
 
 class TeardownError(Exception):
