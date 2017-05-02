@@ -245,8 +245,11 @@ class SSLHandshakeDispatcher(object):
         elif src_addr in SSLHandshakeDispatcher.LOCAL_ADDRESSES:
             return True
         else:
-            return (cert_common_name.lower() ==
-                    socket.gethostbyaddr(src_addr)[0].lower())
+            name, aliaslist, addresslist = socket.gethostbyaddr(src_addr)
+            hostnames = [name] + aliaslist + addresslist
+
+            return any(cert_common_name.lower() == hostname.lower()
+                       for hostname in hostnames)
 
     # pylint: disable=no-member
     def _handshake(self, dispatcher):

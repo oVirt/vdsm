@@ -300,6 +300,12 @@ class CompareNameTest(TestCaseBase):
             '10.0.0.1', 'example.com'))
 
     @mock.patch('vdsm.sslutils.socket.gethostbyaddr', return_value=(
+        'example.com', [], ['10.0.0.1', '10.0.0.2']))
+    def test_multiple(self, mock_gethostbyaddr):
+        self.assertTrue(SSLHandshakeDispatcher.compare_names(
+            '10.0.0.2', 'example.com'))
+
+    @mock.patch('vdsm.sslutils.socket.gethostbyaddr', return_value=(
         'evil.imposter.com', [], ['11.0.0.1']))
     def test_imposter(self, mock_gethostbyaddr):
         self.assertFalse(SSLHandshakeDispatcher.compare_names(
