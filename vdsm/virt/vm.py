@@ -326,11 +326,20 @@ class Vm(object):
             self._guestSocketFile, self.cif.channelListener, self.log,
             self._onGuestStatusChange,
             self.conf.pop('guestAgentAPIVersion', None))
-        self._domain = DomainDescriptor.from_id(self.id)
+        self.arch = cpuarch.effective()
+        if '_srcDomXML' in params:
+            self._domain = DomainDescriptor(params['_srcDomXML'])
+        elif 'xml' in params:
+            self._domain = DomainDescriptor(params['xml'])
+        else:
+            # If no direct XML representation is available then use a minimal,
+            # but still correct, one.  More complete domain will be available
+            # and assigned once the VM is started.
+            dom = libvirtxml.Domain(self.conf, self.log, self.arch)
+            self._domain = DomainDescriptor(dom.toxml())
         self._released = threading.Event()
         self._releaseLock = threading.Lock()
         self._watchdogEvent = {}
-        self.arch = cpuarch.effective()
         self._powerDownEvent = threading.Event()
         self._liveMergeCleanupThreads = {}
         self._shutdownLock = threading.Lock()
