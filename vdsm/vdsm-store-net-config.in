@@ -3,20 +3,10 @@
 # vdsm-store-net-config: store network configuration files persistently
 #
 
-# ifcfg persistence directories
-NET_CONF_DIR='/etc/sysconfig/network-scripts/'
-NET_CONF_BACK_DIR='@VDSMLIBDIR@/netconfback'
-
 # Unified persistence directories
 RUN_CONF_DIR='@VDSMLIBDIR@/staging/netconf'
 PERS_CONF_PATH='@VDSMLIBDIR@/persistence'
 PERS_NET_CONF_PATH="$PERS_CONF_PATH/netconf"
-
-ifcfg_persist() {
-    # Remove the backed up configuration files thus marking the ones under
-    # /etc/sysconfig as "safe".
-    rm -rf "$NET_CONF_BACK_DIR"/*
-}
 
 unified_persist() {
     if [ -d "$RUN_CONF_DIR" ]; then
@@ -37,5 +27,4 @@ unified_persist() {
 }
 
 
-ifcfg_persist
 unified_persist

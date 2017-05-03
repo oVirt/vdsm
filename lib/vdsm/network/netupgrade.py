@@ -28,6 +28,7 @@ from vdsm.constants import LEGACY_MANAGEMENT_NETWORKS
 from vdsm.network import libvirt
 from vdsm.network.canonicalize import canonicalize_bondings
 from vdsm.network.canonicalize import canonicalize_networks
+from vdsm.network.configurators.ifcfg import ConfigWriter
 from vdsm.network.configurators.ifcfg import Ifcfg
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netswitch import netinfo
@@ -127,6 +128,7 @@ def _create_unified_configuration(rconfig, net_info):
     rconfig.bonds = _filter_owned_bonds(kconfig.bonds)
 
     rconfig.save()
+    ConfigWriter.clearBackups()
     RunningConfig.store()
 
 

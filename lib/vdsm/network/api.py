@@ -28,6 +28,7 @@ import six
 from vdsm import hooks
 
 from vdsm.network import sourceroute
+from vdsm.network.configurators.ifcfg import ConfigWriter
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 from vdsm.network.link import iface as link_iface
 from vdsm.network.link import sriov
@@ -259,6 +260,7 @@ def _remove_nets_and_bonds(nets, bonds, in_rollback):
 
 def setSafeNetworkConfig():
     """Declare current network configuration as 'safe'"""
+    ConfigWriter.clearBackups()
     netconfpersistence.RunningConfig.store()
 
 
