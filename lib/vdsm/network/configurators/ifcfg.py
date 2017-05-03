@@ -505,8 +505,8 @@ class ConfigWriter(object):
 
         start_devices(self._backups)
 
-    @classmethod
-    def clearBackups(cls):
+    @staticmethod
+    def clearBackups():
         """ Clear backup files """
         for fpath in glob.iglob(NET_CONF_BACK_DIR + "*"):
             if os.path.isdir(fpath):
