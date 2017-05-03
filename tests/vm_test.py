@@ -1621,12 +1621,12 @@ class TestVmBalloon(TestCaseBase):
 class TestVmSanity(TestCaseBase):
     def testSmpPresentIfNotSpecified(self):
         with fake.VM() as testvm:
-            self.assertEqual(int(testvm.conf['smp']), 1)
+            self.assertEqual(testvm.conf['smp'], '1')
 
-    @permutations([[1], [2], [4]])
+    @permutations([['1'], ['2'], ['4']])
     def testSmpByParameters(self, cpus):
         with fake.VM({'smp': cpus}) as testvm:
-            self.assertEqual(int(testvm.conf['smp']), cpus)
+            self.assertEqual(testvm.conf['smp'], cpus)
 
     def testVmNameDefault(self):
         with fake.VM(_VM_PARAMS) as testvm:
