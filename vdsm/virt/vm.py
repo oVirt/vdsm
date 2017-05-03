@@ -260,7 +260,7 @@ class Vm(object):
         self.recovering = recover
         self.conf = {'pid': '0', '_blockJobs': {}, 'clientIp': ''}
         self.conf.update(params)
-        if 'smp' not in self .conf:
+        if 'smp' not in self.conf:
             self.conf['smp'] = '1'
         self.cif = cif
         self.id = params['vmId']
