@@ -264,7 +264,7 @@ def VM(params=None, devices=None, runCpu=False,
                                    _updateDomainDescriptor),
                                (vm.Vm, 'send_status_event',
                                    lambda _, **kwargs: None)]):
-            vmParams = {'vmId': 'TESTING'}
+            vmParams = {'vmId': 'TESTING', 'vmName': 'nTESTING'}
             vmParams.update({} if params is None else params)
             cif = ClientIF() if cif is None else cif
             fake = vm.Vm(cif, vmParams)

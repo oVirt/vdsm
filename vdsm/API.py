@@ -253,6 +253,10 @@ class VM(APIBase):
                 vmParams['floppy'] = '%s%s.vfd' % (
                     constants.P_VDSM_RUN, vmParams['vmId'])
             vmParams['volatileFloppy'] = True
+        if 'smp' not in vmParams:
+            vmParams['smp'] = '1'
+        if 'vmName' not in vmParams:
+            vmParams['vmName'] = 'n%s' % vmParams['vmId']
         return vmParams
 
     @api.method

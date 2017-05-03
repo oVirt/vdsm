@@ -263,8 +263,6 @@ class Vm(object):
         self.recovering = recover
         self.conf = {'pid': '0', '_blockJobs': {}, 'clientIp': ''}
         self.conf.update(params)
-        if 'smp' not in self.conf:
-            self.conf['smp'] = '1'
         self.cif = cif
         self.id = params['vmId']
         self.log = SimpleLogAdapter(self.log, {"vmId": self.id})
@@ -317,8 +315,6 @@ class Vm(object):
             self._connection = libvirtconnection.get(cif)
         else:
             self._connection = containersconnection.get(cif)
-        if 'vmName' not in self.conf:
-            self.conf['vmName'] = 'n%s' % self.id
         self._agent_channel_name = self.conf.get('agentChannelName',
                                                  vmchannels.LEGACY_DEVICE_NAME)
         self._guestSocketFile = self._makeChannelPath(self._agent_channel_name)

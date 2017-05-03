@@ -40,10 +40,12 @@ class TestVMCreate(TestCaseBase):
         self.cif = FakeClientIF()
         self.vmParams = {
             'vmId': self.uuid,
+            'vmName': 'TESTING',
             'memSize': 8 * 1024,
             'vmType': 'kvm',
             'display': 'qxl',
             'kvmEnable': 'true',
+            'smp': '1',
         }
         with MonkeyPatchScope([(API, 'clientIF', self.cif)]):
             self.vm = API.VM(self.uuid)
@@ -99,6 +101,24 @@ class TestVMCreate(TestCaseBase):
         res = self.vm.create(vmParams)
         self.assertFalse(response.is_error(res))
         self.assertEqual(vmParams.get('vmType'), 'kvm')
+
+    def test_create_fix_param_smp(self):
+        vmParams = {
+            'vmId': self.uuid,
+            'memSize': 8 * 1024,
+        }
+        res = self.vm.create(vmParams)
+        self.assertFalse(response.is_error(res))
+        self.assertEqual(vmParams.get('smp'), '1')
+
+    def test_create_fix_param_vmName(self):
+        vmParams = {
+            'vmId': self.uuid,
+            'memSize': 8 * 1024,
+        }
+        res = self.vm.create(vmParams)
+        self.assertFalse(response.is_error(res))
+        self.assertEqual(vmParams.get('vmName'), 'n%s' % self.uuid)
 
     def test_create_fix_param_kvmEnable(self):
         vmParams = {

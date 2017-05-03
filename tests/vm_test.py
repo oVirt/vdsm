@@ -1620,29 +1620,6 @@ class TestVmBalloon(TestCaseBase):
             self.assertAPIFailed(testvm.setBalloonTarget(256), 'balloonErr')
 
 
-@expandPermutations
-class TestVmSanity(TestCaseBase):
-    def testSmpPresentIfNotSpecified(self):
-        with fake.VM() as testvm:
-            self.assertEqual(testvm.conf['smp'], '1')
-
-    @permutations([['1'], ['2'], ['4']])
-    def testSmpByParameters(self, cpus):
-        with fake.VM({'smp': cpus}) as testvm:
-            self.assertEqual(testvm.conf['smp'], cpus)
-
-    def testVmNameDefault(self):
-        with fake.VM(_VM_PARAMS) as testvm:
-            self.assertIn('vmName', testvm.getStats())
-
-    def testVmNameExplicit(self):
-        NAME = 'not the default VM name'
-        params = {'vmName': NAME}
-        params.update(_VM_PARAMS)
-        with fake.VM(params) as testvm:
-            self.assertEqual(NAME, testvm.getStats()['vmName'])
-
-
 class ChangeBlockDevTests(TestCaseBase):
 
     def test_change_cd_eject(self):
