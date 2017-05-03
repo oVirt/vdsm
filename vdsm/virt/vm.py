@@ -1868,6 +1868,10 @@ class Vm(object):
                 domxml.appendDeviceXML(deviceXML)
 
     def _prepare_hugepages(self):
+        if not config.getboolean('performance', 'use_dynamic_hugepages'):
+            self.log.info('Dynamic hugepage allocation disabled.')
+            return
+
         vm_mem_size_kb = self.mem_size_mb() * 1024
 
         with hugepages.lock:
@@ -1979,6 +1983,10 @@ class Vm(object):
             self._cleanup_hugepages()
 
     def _cleanup_hugepages(self):
+        if not config.getboolean('performance', 'use_dynamic_hugepages'):
+            self.log.info('Dynamic hugepage allocation disabled.')
+            return
+
         vm_mem_size_kb = self.mem_size_mb() * 1024
 
         with hugepages.lock:

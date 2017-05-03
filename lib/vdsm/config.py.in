@@ -553,6 +553,13 @@ parameters = [
     # Section: [performance]
     ('performance', [
 
+        ('use_dynamic_hugepages', 'true',
+            'Enable VDSM to automatically allocate and deallocate hugepages '
+            'as needed to accomodate it\'s VMs. This option does not conflict '
+            'with preallocated pages but rather extends it by making sure the '
+            'reserved pages aren\'t touched by VDSM and free preallocated '
+            'pages are used for VMs'),
+
         ('use_preallocated_hugepages', 'true',
             'Enable usage of hugepages that are allocated prior to VMs start. '
             'If enabled, the VM can use available preallocated hugepages up '
