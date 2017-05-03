@@ -25,14 +25,16 @@ import collections
 import threading
 
 from vdsm import cpuarch
+from vdsm import osinfo
 from vdsm import supervdsm
 from vdsm.common import cache
+from vdsm.config import config
 
 
 _PATH = '/sys/kernel/mm/hugepages'
 _VM = '/proc/sys/vm/'
 
-_LOCK = threading.Lock()
+lock = threading.Lock()
 
 DEFAULT_HUGEPAGESIZE = {
     cpuarch.X86_64: 2048,
@@ -62,11 +64,13 @@ def supported(path=_PATH):
 def alloc(count, size=None,
           path='/sys/kernel/mm/hugepages/hugepages-{}kB/nr_hugepages'
           ):
-    """Thread-safe function to allocate hugepages.
+    """Thread *unsafe* function to allocate hugepages.
 
     The default size depends on the architecture:
         x86_64: 2 MiB
         POWER8: 16 MiB
+
+    It is a responsibility of the caller to properly handle concurrency.
 
     Args:
         count (int): Number of huge pages to be allocated.
@@ -74,17 +78,20 @@ def alloc(count, size=None,
     Returns:
         int: The number of successfully allocated hugepages.
     """
+
     return _alloc(count, size, path)
 
 
 def dealloc(count, size=None,
             path='/sys/kernel/mm/hugepages/hugepages-{}kB/nr_hugepages'
             ):
-    """Thread-safe function to deallocate hugepages.
+    """Thread *unsafe* function to deallocate hugepages.
 
     The default size depends on the architecture:
         x86_64: 2 MiB
         POWER8: 16 MiB
+
+    It is a responsibility of the caller to properly handle concurrency.
 
     Args:
         count (int): Number of huge pages to be deallocated.
@@ -114,11 +121,10 @@ def _alloc(count, size, path):
 
     path = path.format(size)
 
-    with _LOCK:
-        ret = supervdsm.getProxy().hugepages_alloc(count, path)
-        if ret != count:
-            supervdsm.getProxy().hugepages_alloc(-ret, path)
-            raise NonContignuousMemory
+    ret = supervdsm.getProxy().hugepages_alloc(count, path)
+    if ret != count:
+        supervdsm.getProxy().hugepages_alloc(-ret, path)
+        raise NonContignuousMemory
 
     return ret
 
@@ -143,6 +149,125 @@ def state(path=_PATH):
                 sizes[_size_from_dir(size)][key] = f.read().strip()
 
     return sizes
+
+
+def calculate_required_allocation(cif, vm_hugepages, vm_hugepagesz):
+    """
+
+    Args:
+        cif: The ClientIF instance. Used as we need to iterate over VMs to
+            reason about hugepages consumed by them.
+        vm_hugepages: The number of hugepages VM requires.
+        vm_hugepagesz: VM's hugepage size.
+
+    It is a responsibility of the caller to properly handle concurrency.
+
+    Returns:
+        Number of hugepages to be allocated considering system resources at
+        our disposal.
+    """
+    if not config.getboolean('performance', 'use_preallocated_hugepages'):
+        return vm_hugepages
+
+    all_vm_hugepages = _all_vm_hugepages(cif, vm_hugepages, vm_hugepagesz)
+    system_hugepages = state()
+    free_hugepages = int(system_hugepages[vm_hugepagesz]['free_hugepages'])
+    nr_hugepages = int(system_hugepages[vm_hugepagesz]['nr_hugepages'])
+
+    # Number of free_hugepages that are really available (= out of reserved
+    # zone)
+    really_free_hugepages = min(
+        free_hugepages,
+        # In this case, some of the hugepages may not be deallocated later.
+        # That is not a problem because we're only adjusting to user's
+        # configuration.
+        nr_hugepages - all_vm_hugepages - _reserved_hugepages(vm_hugepagesz)
+    )
+
+    # >= 0
+    really_free_hugepages = max(really_free_hugepages, 0)
+
+    # Let's figure out how many hugepages we have to allocate for the VM to
+    # fit.
+    to_allocate = max(vm_hugepages - really_free_hugepages, 0)
+
+    return to_allocate
+
+
+def calculate_required_deallocation(vm_hugepages, vm_hugepagesz):
+    """
+
+    Args:
+        vm_hugepages: The number of hugepages VM requires.
+        vm_hugepagesz: VM's hugepage size.
+
+    It is a responsibility of the caller to properly handle concurrency.
+
+    Returns:
+        Number of hugepages to be deallocated while making sure not to break
+        any constraints (reserved and preallocated pages).
+    """
+    if not config.getboolean('performance', 'use_preallocated_hugepages'):
+        return vm_hugepages
+
+    nr_hugepages = int(state()[vm_hugepagesz]['nr_hugepages'])
+
+    to_deallocate = min(
+        # At most, deallocate VMs hugepages,
+        vm_hugepages,
+        # while making sure we don't touch reserved or preallocated ones. That
+        # is done since some of the pages initially allocated by VDSM could be
+        # moved to reserved pages.
+        nr_hugepages - max(_reserved_hugepages(vm_hugepagesz),
+                           _preallocated_hugepages(vm_hugepagesz))
+    )
+
+    return to_deallocate
+
+
+def _all_vm_hugepages(cif, vm_hugepages, vm_hugepagesz):
+    return sum(
+        [vm.nr_hugepages for vm in cif.vmContainer.values() if
+         vm.hugepagesz == vm_hugepagesz]
+    ) - vm_hugepages
+
+
+def _preallocated_hugepages(vm_hugepagesz):
+    kernel_args = osinfo.kernel_args_dict()
+    if 'hugepagesz' not in kernel_args:
+        hugepagesz = DEFAULT_HUGEPAGESIZE[cpuarch.real()]
+    else:
+        hugepagesz = _cmdline_hugepagesz_to_kb(
+            kernel_args['hugepagesz']
+        )
+
+    preallocated_hugepages = 0
+    if ('hugepages' in kernel_args and
+            hugepagesz == vm_hugepagesz):
+        preallocated_hugepages = int(kernel_args['hugepages'])
+
+    return preallocated_hugepages
+
+
+def _reserved_hugepages(hugepagesz):
+    reserved_hugepages = 0
+    if config.getboolean('performance', 'use_preallocated_hugepages'):
+        reserved_hugepages = (
+            config.getint('performance', 'reserved_hugepage_count') if
+            config.get('performance', 'reserved_hugepage_size') ==
+            str(hugepagesz) else 0
+        )
+
+    return reserved_hugepages
+
+
+def _cmdline_hugepagesz_to_kb(cmdline):
+    return {
+        '1GB': 1048576,
+        '1G': 1048576,
+        '2M': 2048,
+        '2MB': 2048,
+    }[cmdline]
 
 
 def _size_from_dir(path):

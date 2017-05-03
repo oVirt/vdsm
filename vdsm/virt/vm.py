@@ -396,6 +396,14 @@ class Vm(object):
             raise RuntimeError("Unsupported hugepages size")
         return hugepagesz
 
+    @property
+    def nr_hugepages(self):
+        # Let's do an explicit cast as math.ceil returns float.
+        return int(math.ceil(
+            self.mem_size_mb() * 1024 /
+            self.hugepagesz
+        ))
+
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
         # non-obvious recursive locking in the following flow:
@@ -1847,17 +1855,19 @@ class Vm(object):
     def _prepare_hugepages(self):
         vm_mem_size_kb = self.mem_size_mb() * 1024
 
-        num_hugepages = int(math.ceil(
-            vm_mem_size_kb /
-            self.hugepagesz
-        ))
-        self.log.info(
-            'Allocating %s (%s) hugepages (memsize %s)',
-            num_hugepages,
-            self.hugepagesz,
-            vm_mem_size_kb
-        )
-        hugepages.alloc(num_hugepages, self.hugepagesz)
+        with hugepages.lock:
+            to_allocate = hugepages.calculate_required_allocation(
+                self.cif, self.nr_hugepages, self.hugepagesz
+            )
+
+            self.log.info(
+                'Allocating %s (%s) hugepages (memsize %s)',
+                to_allocate,
+                self.hugepagesz,
+                vm_mem_size_kb
+            )
+
+            hugepages.alloc(to_allocate, self.hugepagesz)
 
     def _buildDomainXML(self):
         if 'xml' in self.conf:
@@ -1956,20 +1966,22 @@ class Vm(object):
     def _cleanup_hugepages(self):
         vm_mem_size_kb = self.mem_size_mb() * 1024
 
-        num_hugepages = int(math.ceil(
-            vm_mem_size_kb /
-            self.hugepagesz
-        ))
-        self.log.info(
-            'Deallocating %s (%s) hugepages (memsize %s)',
-            num_hugepages,
-            self.hugepagesz,
-            vm_mem_size_kb
-        )
-        try:
-            hugepages.dealloc(num_hugepages, self.hugepagesz)
-        except Exception:
-            self.log.info('Deallocation of hugepages failed')
+        with hugepages.lock:
+            to_deallocate = hugepages.calculate_required_deallocation(
+                self.nr_hugepages, self.hugepagesz
+            )
+
+            self.log.info(
+                'Deallocating %s (%s) hugepages (memsize %s)',
+                to_deallocate,
+                self.hugepagesz,
+                vm_mem_size_kb
+            )
+
+            try:
+                hugepages.dealloc(to_deallocate, self.hugepagesz)
+            except Exception:
+                self.log.info('Deallocation of hugepages failed')
 
     def _teardown_devices(self, devices=None):
         """

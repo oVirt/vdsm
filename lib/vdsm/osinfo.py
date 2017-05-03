@@ -186,6 +186,24 @@ def kernel_args(path='/proc/cmdline'):
 
 
 @cache.memoized
+def kernel_args_dict(path='/proc/cmdline'):
+    cmdline = kernel_args().split(' ')
+
+    # This is poor and limited, but sufficient for key=value portion of
+    # cmdline.
+    ret = {}
+    for option in cmdline:
+        try:
+            key, value = option.split('=')
+        except ValueError:
+            continue
+
+        ret[key] = value
+
+    return ret
+
+
+@cache.memoized
 def version():
     version = release_name = ''
 

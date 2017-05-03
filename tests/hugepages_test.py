@@ -24,11 +24,14 @@ import tempfile
 
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase as TestCaseBase
+from testlib import make_config
 from testlib import mock
 from testlib import namedTemporaryDir
 from testlib import permutations, expandPermutations
 
+from vdsm import cpuarch
 from vdsm import hugepages
+from vdsm import osinfo
 from vdsm import supervdsm
 from vdsm.supervdsm_api import virt
 
@@ -102,3 +105,239 @@ class TestHugepages(TestCaseBase):
     ])
     def test_size_from_dir(self, filename, expected):
         self.assertEqual(hugepages._size_from_dir(filename), expected)
+
+
+class TestIntelligentAllocation(TestCaseBase):
+
+    @MonkeyPatch(hugepages, 'config',
+                 make_config([
+                     ("performance", "use_preallocated_hugepages", "true"),
+                     ("performance", "reserved_hugepage_count", "9"),
+                     ("performance", "reserved_hugepage_size", "2048"),
+                 ]))
+    @MonkeyPatch(hugepages, 'state', lambda:
+                 {2048: {'nr_hugepages': 12,
+                         'free_hugepages': 12}
+                  })
+    @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.X86_64)
+    def test_allocation_1_page(self):
+        vm_hugepagesz = 2048
+        vm_hugepages = 4
+        vdsm_vms = vm_hugepages + 0
+
+        cif = FakeClientIF({0: FakeVM(vdsm_vms, vm_hugepagesz)})
+
+        # We should allocate 1 new hugepage:
+        # - 12 total (and also free) pages
+        # - 9 pages are reserved
+        # - vm requires 4 pages; we allocate 1 to avoid touching reserved pages
+        self.assertEqual(hugepages.calculate_required_allocation(
+            cif, vm_hugepages, vm_hugepagesz), 1
+        )
+
+    @MonkeyPatch(hugepages, 'config',
+                 make_config([
+                     ("performance", "use_preallocated_hugepages", "true"),
+                     ("performance", "reserved_hugepage_count", "4"),
+                     ("performance", "reserved_hugepage_size", "2048"),
+                 ]))
+    @MonkeyPatch(hugepages, 'state', lambda:
+                 {2048: {'nr_hugepages': 8,
+                         'free_hugepages': 4}
+                  })
+    @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.X86_64)
+    def test_allocation_4_pages(self):
+        vm_hugepagesz = 2048
+        vm_hugepages = 4
+        vdsm_vms = vm_hugepages + 4
+
+        cif = FakeClientIF({0: FakeVM(vdsm_vms, vm_hugepagesz)})
+
+        # We expect 4 new hugepages:
+        # - there are 8 hugepages
+        # - 4 are free, 4 used by vdsm, 4 reserved -> the free ones are
+        #   reserved
+        # - vm requires 4 new hugepages; we can't touch reserved pages
+        self.assertEqual(hugepages.calculate_required_allocation(
+            cif, vm_hugepages, vm_hugepagesz), 4
+        )
+
+    @MonkeyPatch(hugepages, 'config',
+                 make_config([
+                     ("performance", "use_preallocated_hugepages", "true"),
+                     ("performance", "reserved_hugepage_count", "12"),
+                     ("performance", "reserved_hugepage_size", "2048"),
+                 ]))
+    @MonkeyPatch(hugepages, 'state', lambda:
+                 {2048: {'nr_hugepages': 16,
+                         'free_hugepages': 4}
+                  })
+    @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.X86_64)
+    def test_allocation_0_pages(self):
+        vm_hugepagesz = 2048
+        vm_hugepages = 4
+        vdsm_vms = vm_hugepages + 0
+
+        cif = FakeClientIF({0: FakeVM(vdsm_vms, vm_hugepagesz)})
+
+        # We expect no new hugepages:
+        # - there are 4 free hugepages
+        # - vdsm doesn't use any pages (yet)
+        # - 12 are reserved and used
+        self.assertEqual(hugepages.calculate_required_allocation(
+            cif, vm_hugepages, vm_hugepagesz), 0
+        )
+
+    @MonkeyPatch(hugepages, 'config',
+                 make_config([
+                     ("performance", "use_preallocated_hugepages", "true"),
+                     ("performance", "reserved_hugepage_count", "4"),
+                     ("performance", "reserved_hugepage_size", "1048576"),
+                 ]))
+    @MonkeyPatch(hugepages, 'state', lambda:
+                 {2048: {'nr_hugepages': 4,
+                         'free_hugepages': 4}
+                  })
+    @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.X86_64)
+    def test_allocation_different_size_reserved(self):
+        vm_hugepagesz = 2048
+        vm_hugepages = 4
+
+        cif = FakeClientIF({0: FakeVM(12, 1048576)})
+
+        # We expect no new hugepages:
+        # - pages of different size are reserved
+        # - VMs that exist use different hugepage size
+        # - we have 4 free hugepages of correct size
+        self.assertEqual(hugepages.calculate_required_allocation(
+            cif, vm_hugepages, vm_hugepagesz), 0
+        )
+
+    @MonkeyPatch(hugepages, 'config',
+                 make_config([
+                     ("performance", "use_preallocated_hugepages", "false"),
+                 ]))
+    @MonkeyPatch(hugepages, 'state', lambda:
+                 {2048: {'nr_hugepages': 4,
+                         'free_hugepages': 4}
+                  })
+    @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.X86_64)
+    def test_pure_dynamic_hugepages(self):
+        vm_hugepagesz = 2048
+        vm_hugepages = 4
+
+        cif = FakeClientIF({0: FakeVM(0, 1048576)})
+
+        # Fully dynamic, allocate pages for whole VM.
+        self.assertEqual(hugepages.calculate_required_allocation(
+            cif, vm_hugepages, vm_hugepagesz), 4
+        )
+
+
+class TestIntelligentDeallocation(TestCaseBase):
+
+    @MonkeyPatch(hugepages, 'config',
+                 make_config([
+                     ("performance", "use_preallocated_hugepages", "true"),
+                     ("performance", "reserved_hugepage_count", "13"),
+                     ("performance", "reserved_hugepage_size", "1048576"),
+                 ]))
+    @MonkeyPatch(hugepages, 'state', lambda:
+                 {1048576: {'nr_hugepages': 17,
+                            'free_hugepages': 0}
+                  })
+    @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.X86_64)
+    @MonkeyPatch(osinfo, 'kernel_args_dict', lambda:
+                 {'hugepagesz': '1G', 'hugepages': '16'})
+    def test_deallocation_1_page(self):
+        vm_hugepagesz = 1048576
+        vm_hugepages = 4
+
+        self.assertEqual(hugepages.calculate_required_deallocation(
+            vm_hugepages, vm_hugepagesz), 1
+        )
+
+    # - 17 pages in the system, 16 allocated on boot time
+    # - VM uses 4 pages, 13 are reserved
+    # - since we don't touch boot-time allocated pages, we're only able to
+    #   deallocate a single page
+    @MonkeyPatch(hugepages, 'config',
+                 make_config([
+                     ("performance", "use_preallocated_hugepages", "true"),
+                     ("performance", "reserved_hugepage_count", "12"),
+                     ("performance", "reserved_hugepage_size", "1048576"),
+                 ]))
+    @MonkeyPatch(hugepages, 'state', lambda:
+                 {1048576: {'nr_hugepages': 17,
+                            'free_hugepages': 0}
+                  })
+    @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.X86_64)
+    @MonkeyPatch(osinfo, 'kernel_args_dict', lambda:
+                 {})
+    def test_deallocation_4_pages_no_cmdline(self):
+        vm_hugepagesz = 1048576
+        vm_hugepages = 4
+
+        # There are 17 pages in the system, none of which were allocated on
+        # boot.
+        # - the VM consumed 4 pages, no other consumption
+        # - there are 12 pages reserved
+        # - that means we could deallocate up to 5 pages, but we don't touch
+        #   pages out of VM's domain - therefore deallocating only 4 pages
+        self.assertEqual(hugepages.calculate_required_deallocation(
+            vm_hugepages, vm_hugepagesz), 4
+        )
+
+    @MonkeyPatch(hugepages, 'config',
+                 make_config([
+                     ("performance", "use_preallocated_hugepages", "true"),
+                     ("performance", "reserved_hugepage_count", "12"),
+                     ("performance", "reserved_hugepage_size", "1048576"),
+                 ]))
+    @MonkeyPatch(hugepages, 'state', lambda:
+                 {1048576: {'nr_hugepages': 20,
+                            'free_hugepages': 0}
+                  })
+    @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.X86_64)
+    @MonkeyPatch(osinfo, 'kernel_args_dict', lambda:
+                 {'hugepagesz': '1G', 'hugepages': '16'})
+    def test_deallocation_4_pages(self):
+        vm_hugepagesz = 1048576
+        vm_hugepages = 4
+
+        # The VM was solely in the dynamic allocation space (16 preallocated,
+        # 12 reserved but 20 total), we can fully deallocate it.
+        self.assertEqual(hugepages.calculate_required_deallocation(
+            vm_hugepages, vm_hugepagesz), 4
+        )
+
+    @MonkeyPatch(hugepages, 'config',
+                 make_config([
+                     ("performance", "use_preallocated_hugepages", "false"),
+                 ]))
+    @MonkeyPatch(hugepages, 'state', lambda:
+                 {1048576: {'nr_hugepages': 16,
+                            'free_hugepages': 16}
+                  })
+    @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.X86_64)
+    @MonkeyPatch(osinfo, 'kernel_args_dict', lambda:
+                 {'hugepagesz': '1G', 'hugepages': '16'})
+    def test_pure_dynamic_hugepages(self):
+        vm_hugepagesz = 1048576
+        vm_hugepages = 4
+
+        # Fully dynamic deallocation (= deallocate the size of the VM)
+        self.assertEqual(hugepages.calculate_required_deallocation(
+            vm_hugepages, vm_hugepagesz), 4
+        )
+
+
+class FakeClientIF(object):
+    def __init__(self, vmContainer):
+        self.vmContainer = vmContainer
+
+
+class FakeVM(object):
+    def __init__(self, hugepages, hugepagesz):
+        self.nr_hugepages = hugepages
+        self.hugepagesz = hugepagesz

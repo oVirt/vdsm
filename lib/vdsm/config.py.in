@@ -550,6 +550,24 @@ parameters = [
             'could be renamed or removed in the next releases.'),
     ]),
 
+    # Section: [performance]
+    ('performance', [
+
+        ('use_preallocated_hugepages', 'true',
+            'Enable usage of hugepages that are allocated prior to VMs start. '
+            'If enabled, the VM can use available preallocated hugepages up '
+            'to it\'s RAM size. See also reserved_hugepage_count and '
+            'reserved_hugepage_size. Only hugepages of the same size as VMs '
+            'hugepage size are considered.'),
+
+        ('reserved_hugepage_count', '0',
+            'Number of hugepages to reserve (when use_preallocated_hugepages '
+            'is enabled). Those pages will not be touched by VDSM.'),
+
+        ('reserved_hugepage_size', 'none',
+            'Size of the hugepages to reserve (when reserved_hugepage_count '
+            'is > 0). None means system\'s default size.'),
+    ]),
 ]
 
 
