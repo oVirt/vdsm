@@ -146,7 +146,6 @@ EXT_TUNE2FS = '@TUNE2FS_PATH@'
 EXT_UMOUNT = '@UMOUNT_PATH@'
 
 EXT_SAFELEASE = '@SAFELEASE_PATH@'
-EXT_VDSM_STORE_NET_CONFIG = '@VDSMDIR@/vdsm-store-net-config'  # NOQA: E501 (potentially long line)
 
 EXT_CURL_IMG_WRAP = '@LIBEXECDIR@/curl-img-wrap'  # NOQA: E501 (potentially long line)
 EXT_FC_SCAN = '@LIBEXECDIR@/fc-scan'  # NOQA: E501 (potentially long line)

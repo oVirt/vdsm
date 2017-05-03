@@ -35,8 +35,7 @@ nodist_vdsmexec_SCRIPTS = \
 	$(NULL)
 
 nodist_vdsm_SCRIPTS = \
-	mk_sysprep_floppy \
-	vdsm-store-net-config
+	mk_sysprep_floppy
 
 dist_vdsm_SCRIPTS = \
 	get-conf-item \
@@ -60,7 +59,6 @@ EXTRA_DIST = \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
 	vdsm-logrotate \
-	vdsm-store-net-config.in \
 	$(NULL)
 
 all-local: \

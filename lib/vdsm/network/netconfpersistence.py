@@ -24,10 +24,10 @@ import errno
 import json
 import logging
 import os
+import shutil
 
 import six
 
-from vdsm import commands
 from vdsm import constants
 from vdsm import utils
 from . import errors as ne
@@ -201,7 +201,7 @@ class RunningConfig(Config):
 
     @staticmethod
     def store():
-        commands.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG])
+        _store_net_config()
 
 
 class PersistentConfig(Config):
@@ -257,3 +257,25 @@ def configuredPorts(nets, bridge):
 def _filter_out_volatile_net_attrs(net_attrs):
     for attr in VOLATILE_NET_ATTRS:
         net_attrs.pop(attr, None)
+
+
+def _store_net_config():
+    """
+    Declare the current running config as 'safe' and persist this safe config.
+
+    It is implemented by copying the running config to the persistent (safe)
+    config in an atomic manner.
+    It applies atomic directory copy by using the atomicity of overwriting a
+    link (rename syscall).
+    """
+    safeconf_dir = CONF_PERSIST_DIR[:-1]
+    rand_suffix = utils.random_iface_name(max_length=8)
+    new_safeconf_dir = safeconf_dir + '.' + rand_suffix
+    new_safeconf_symlink = new_safeconf_dir + '.ln'
+
+    shutil.copytree(CONF_RUN_DIR[:-1], new_safeconf_dir)
+    os.symlink(new_safeconf_dir, new_safeconf_symlink)
+
+    real_old_safeconf_dir = os.path.realpath(safeconf_dir)
+    os.rename(new_safeconf_symlink, safeconf_dir)
+    os.remove(real_old_safeconf_dir)
