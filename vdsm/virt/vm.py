@@ -292,7 +292,6 @@ class Vm(object):
             last_migrating = False
         self._migrationSourceThread = migration.SourceThread(
             self, recovery=last_migrating)
-        self._kvmEnable = self.conf.get('kvmEnable', 'true')
         self._incomingMigrationFinished = threading.Event()
         self._incoming_migration_vm_running = threading.Event()
         self._volPrepareLock = threading.Lock()
@@ -1425,7 +1424,7 @@ class Vm(object):
             'vmName': self.name,
             'pid': self.conf['pid'],
             'vmType': self.conf['vmType'],
-            'kvmEnable': self._kvmEnable,
+            'kvmEnable': self.conf.get('kvmEnable', 'true'),
             'acpiEnable': self.conf.get('acpiEnable', 'true')}
         if 'cdrom' in self.conf:
             stats['cdrom'] = self.conf['cdrom']
