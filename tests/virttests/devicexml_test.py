@@ -454,6 +454,7 @@ class DeviceToXMLTests(XMLTestCase):
             self.assertXMLEqual(vmxml.format_xml(vnic_xml), XML)
 
 
+@expandPermutations
 class ParsingHelperTests(XMLTestCase):
 
     ADDR = {
@@ -525,6 +526,34 @@ class ParsingHelperTests(XMLTestCase):
             vmxml.parse_xml(XML), ('foo', 'fizz')
         )
         self.assertEqual(attrs, {'foo': 'bar', 'fizz': 'buzz'})
+
+    @permutations([
+        # xml_data, dev_type
+        [u'''<interface type='network' />''', 'network'],
+        [u'''<console type="pty" />''', 'pty'],
+        [u'''<controller type='usb' index='0' />''', 'usb'],
+        [u'''<sound model="ac97"/>''', 'sound'],
+        [u'''<tpm model='tpm-tis'/>''', 'tpm'],
+    ])
+    def test_parse_device_type(self, xml_data, dev_type):
+        self.assertEqual(
+            dev_type,
+            vmdevices.core.parse_device_type(vmxml.parse_xml(xml_data))
+        )
+
+    @permutations([
+        # xml_data, alias
+        # well formed XMLs
+        [u'''<interface><alias name="net0" /></interface>''', 'net0'],
+        [u'''<console type="pty" />''', ''],
+        # malformed XMLs
+        [u'''<controller><alias>foobar</alias></controller>''', ''],
+    ])
+    def test_find_device_alias(self, xml_data, alias):
+        self.assertEqual(
+            alias,
+            vmdevices.core.find_device_alias(vmxml.parse_xml(xml_data))
+        )
 
 
 class FakeProxy(object):

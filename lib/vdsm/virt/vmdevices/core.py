@@ -764,12 +764,16 @@ class Memory(Base):
         return mem
 
 
+def find_device_alias(dev):
+    return vmxml.find_attr(dev, 'alias', 'name')
+
+
 def parse_device_ident(dev):
     try:
         address = vmxml.device_address(dev)
     except IndexError:
         address = None
-    return address, vmxml.find_attr(dev, 'alias', 'name')
+    return address, find_device_alias(dev)
 
 
 def parse_device_attrs(dev, attrs):
@@ -780,10 +784,13 @@ def parse_device_attrs(dev, attrs):
     }
 
 
+def parse_device_type(dev):
+    return dev.attrib.get('type', None) or dev.tag
+
+
 def parse_device_params(dev, attrs=None):
-    dev_type = dev.attrib.get('type', None)
     params = {
-        'type': dev_type or dev.tag,
+        'type': parse_device_type(dev),
         'device': dev.tag,
     }
     address, alias = parse_device_ident(dev)
