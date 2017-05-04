@@ -64,6 +64,7 @@ from vdsm.storage import fileUtils
 from vdsm.storage import outOfProcess as oop
 from vdsm.virt import guestagent
 from vdsm.virt import libvirtxml
+from vdsm.virt import metadata
 from vdsm.virt import migration
 from vdsm.virt import recovery
 from vdsm.virt import sampling
@@ -292,15 +293,19 @@ class Vm(object):
         else:
             self._lastStatus = vmstatus.WAIT_FOR_LAUNCH
             self._altered_state = _AlteredState()
-        self.conf = {'_blockJobs': {}, 'clientIp': ''}
+        # we need to make sure the 'devices' key exists in vm.conf regardless
+        # how the Vm is initialized, either through XML or from conf.
+        self.conf = {'_blockJobs': {}, 'clientIp': '', 'devices': []}
         self.conf.update(params)
         self.cif = cif
         self.id = params['vmId']
+        self._custom = {'vmId': self.id}
+        if 'xml' in params:
+            md = metadata.from_xml(params['xml'])
+            self._custom['custom'] = md.get('custom', {})
+        else:
+            self._custom['custom'] = params.get('custom', {})
         self.log = SimpleLogAdapter(self.log, {"vmId": self.id})
-        self._custom = {
-            'vmId': self.id,
-            'custom': utils.picklecopy(self.conf.get('custom', {})),
-        }
         self._destroy_requested = threading.Event()
         self._recovery_file = recovery.File(self.id)
         self._monitorResponse = 0

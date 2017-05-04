@@ -20,6 +20,7 @@
 #
 from __future__ import absolute_import
 
+from contextlib import contextmanager
 from itertools import product
 import logging
 import os.path
@@ -1936,6 +1937,55 @@ class SyncGuestTimeTests(TestCaseBase):
         vm = self._make_vm(virt_error=virt_error)
         with self.assertNotRaises():
             vm._syncGuestTime()
+
+
+class MetadataTests(TestCaseBase):
+
+    _TEST_XML = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+      <ovirt-vm:custom>
+        <ovirt-vm:foo>bar</ovirt-vm:foo>
+        <ovirt-vm:fizz>buzz</ovirt-vm:fizz>
+      </ovirt-vm:custom>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+
+    @contextmanager
+    def test_vm(self, test_xml=None):
+        with namedTemporaryDir() as tmp_dir:
+            with MonkeyPatchScope([
+                (constants, 'P_VDSM_RUN', tmp_dir),
+                (libvirtconnection, 'get', fake.Connection),
+            ]):
+                params = {
+                    'vmId': 'TESTING',
+                    'vmName': 'nTESTING',
+                    'xml': self._TEST_XML if test_xml is None else test_xml,
+                }
+                cif = fake.ClientIF()
+                yield vm.Vm(cif, params)
+
+    def test_conf_devices_empty(self):
+        with self.test_vm() as testvm:
+            self.assertEqual(testvm.conf['devices'], [])
+
+    def test_custom_properties(self):
+        with self.test_vm() as testvm:
+            self.assertEqual(
+                testvm._custom,
+                {
+                    'vmId': 'TESTING',
+                    'custom':
+                    {
+                        'foo': 'bar',
+                        'fizz': 'buzz',
+                    },
+                }
+            )
 
 
 def _load_xml(name):
