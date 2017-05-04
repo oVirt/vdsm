@@ -19,7 +19,7 @@ make pylint-diff || true
 
 debuginfo-install -y python
 
-TIMEOUT=600 make check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
+TIMEOUT=600 make --jobs=2 check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 
 # Generate coverage report in HTML format
 pushd tests

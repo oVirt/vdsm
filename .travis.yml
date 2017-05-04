@@ -18,4 +18,4 @@ before_install:
   - docker pull $DOCKER_IMAGE
 
 script:
-  - docker run --env TRAVIS_CI=1 --privileged --rm -it -v `pwd`:/vdsm:Z $DOCKER_IMAGE bash -c "cd /vdsm && ./autogen.sh --system && make && make check"
+  - docker run --env TRAVIS_CI=1 --privileged --rm -it -v `pwd`:/vdsm:Z $DOCKER_IMAGE bash -c "cd /vdsm && ./autogen.sh --system && make && make --jobs=2 check"
