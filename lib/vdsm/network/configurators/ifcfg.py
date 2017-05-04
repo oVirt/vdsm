@@ -41,6 +41,7 @@ from vdsm import constants
 from vdsm import dsaversion
 from vdsm import hooks
 from vdsm import utils
+from vdsm.common.conv import tobool
 
 from vdsm.network import ifacetracking
 from vdsm.network import ipwrapper
@@ -1001,7 +1002,7 @@ def _get_unified_persistence_ifcfg():
             top_level_device = vlan_device
             ifcfgs.add(IFCFG_PATH % vlan_device)
 
-        if utils.tobool(network_attr.get('bridged', True)):
+        if tobool(network_attr.get('bridged', True)):
             ifcfgs.add(IFCFG_PATH % network)
             top_level_device = network
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2014 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 #
 from __future__ import absolute_import
 
+from vdsm.common import conv
 from vdsm.common import response
 from vdsm import utils
 
@@ -55,7 +56,7 @@ class VmPowerDown(object):
             self.chain.addCallback(self.guestAgentCallback)
 
         # then acpi if enabled
-        if utils.tobool(vm.conf.get('acpiEnable', 'true')):
+        if conv.tobool(vm.conf.get('acpiEnable', 'true')):
             self.chain.addCallback(self.acpiCallback)
 
         if force:

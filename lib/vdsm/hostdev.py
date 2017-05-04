@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,8 @@ import os
 import xml.etree.cElementTree as etree
 
 import libvirt
+
+from vdsm.common import conv
 
 from . import cpuarch
 from . import hooks
@@ -520,7 +522,8 @@ def detach_detachable(device_name):
     libvirt_device, device_params = _get_device_ref_and_params(device_name)
     capability = CAPABILITY_TO_XML_ATTR[device_params['capability']]
 
-    if capability == 'pci' and utils.tobool(device_params['is_assignable']):
+    if capability == 'pci' and conv.tobool(
+            device_params['is_assignable']):
         try:
             iommu_group = device_params['iommu_group']
         except KeyError:
@@ -545,7 +548,8 @@ def reattach_detachable(device_name, pci_reattach=True):
     libvirt_device, device_params = _get_device_ref_and_params(device_name)
     capability = CAPABILITY_TO_XML_ATTR[device_params['capability']]
 
-    if capability == 'pci' and utils.tobool(device_params['is_assignable']):
+    if capability == 'pci' and conv.tobool(
+            device_params['is_assignable']):
         if pci_reattach:
             libvirt_device.reAttach()
         supervdsm.getProxy().rmAppropriateIommuGroup(

@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ import six
 
 from .netinfo import bridges, mtus, bonding, dns
 from vdsm import utils
+from vdsm.common.conv import tobool
 from vdsm.network.ip.address import prefix2netmask
 
 from .errors import ConfigNetworkError
@@ -69,7 +70,7 @@ def canonicalize_bondings(bonds):
 
 def _canonicalize_remove(data):
     if 'remove' in data:
-        data['remove'] = utils.tobool(data['remove'])
+        data['remove'] = tobool(data['remove'])
         return data['remove']
     return False
 
@@ -88,7 +89,7 @@ def _canonicalize_vlan(data):
 
 def _canonicalize_bridged(data):
     if 'bridged' in data:
-        data['bridged'] = utils.tobool(data['bridged'])
+        data['bridged'] = tobool(data['bridged'])
     else:
         data['bridged'] = True
 
@@ -120,7 +121,7 @@ def _canonicalize_ipv6(data):
 
 
 def _canonicalize_switch_type_net(data):
-    if utils.tobool(utils.rget(data, ('custom', 'ovs'))):
+    if tobool(utils.rget(data, ('custom', 'ovs'))):
         data['switch'] = 'ovs'
     elif 'switch' not in data:
         data['switch'] = 'legacy'
@@ -129,7 +130,7 @@ def _canonicalize_switch_type_net(data):
 def _canonicalize_switch_type_bond(data):
     options = data.get('options', '')
     ovs = utils.rget(bonding.parse_bond_options(options), ('custom', 'ovs'))
-    if utils.tobool(ovs):
+    if tobool(ovs):
         data['switch'] = 'ovs'
     elif 'switch' not in data:
         data['switch'] = 'legacy'
@@ -146,7 +147,7 @@ def _canonicalize_ip_default_route(data):
 
     custom_default_route = utils.rget(data, ('custom', 'default_route'))
     if custom_default_route is not None:
-        data['defaultRoute'] = utils.tobool(custom_default_route)
+        data['defaultRoute'] = tobool(custom_default_route)
 
 
 def _canonicalize_nameservers(data):

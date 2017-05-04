@@ -51,6 +51,7 @@ from vdsm import supervdsm
 from vdsm import utils
 from vdsm.compat import pickle
 from vdsm.config import config
+from vdsm.common import conv
 from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.host import caps
 from vdsm.logUtils import SimpleLogAdapter, volume_chain_to_str
@@ -2436,8 +2437,8 @@ class Vm(object):
             netConf = vmdevices.common.lookup_conf_by_alias(
                 self.conf['devices'], hwclass.NIC, params['alias'])
 
-            linkValue = 'up' if utils.tobool(params.get('linkActive',
-                                             netDev.linkActive)) else 'down'
+            linkValue = 'up' if conv.tobool(
+                params.get('linkActive', netDev.linkActive)) else 'down'
             network = params.get('network', netDev.network)
             if network == '':
                 network = net_api.DUMMY_BRIDGE

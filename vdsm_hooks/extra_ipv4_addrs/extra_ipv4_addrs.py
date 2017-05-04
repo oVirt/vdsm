@@ -1,5 +1,5 @@
 #!/usr/bin/python2
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ import traceback
 from vdsm.network import ipwrapper
 from vdsm.network import netinfo
 from vdsm.network import netswitch
-from vdsm import utils
 
 
 def test():
@@ -66,7 +65,7 @@ def _generate_commands(options, top_level_device):
 
 
 def _top_dev(network, attrs):
-    if utils.tobool(attrs.get('bridged')):
+    if hooking.tobool(attrs.get('bridged')):
         return network
     # bridgeless
     nics, vlan, _, bonding = netinfo.cache.NetInfo(

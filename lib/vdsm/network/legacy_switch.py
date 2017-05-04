@@ -26,6 +26,8 @@ import os
 import six
 
 from vdsm.config import config
+
+from vdsm.common.conv import tobool
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
 from vdsm.network.netinfo import NET_PATH
@@ -35,7 +37,6 @@ from vdsm.network.netinfo import nics as netinfo_nics
 from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network.netinfo.cache import get_net_iface_from_config
 from vdsm.network.ip.address import IPv4, IPv6
-from vdsm import utils
 
 from .canonicalize import canonicalize_networks
 from .models import Bond, Bridge, Nic, Vlan
@@ -151,7 +152,7 @@ def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
     top_net_dev.ipv6 = IPv6(
         ipv6addr, ipv6gateway, defaultRoute, ipv6autoconf, dhcpv6)
     top_net_dev.blockingdhcp = (configurator._inRollback or
-                                utils.tobool(blockingdhcp))
+                                tobool(blockingdhcp))
     top_net_dev.nameservers = nameservers
     return top_net_dev
 
@@ -180,9 +181,9 @@ def _add_network(network, configurator, _netinfo, nameservers,
                  ipv6autoconf=None, bridged=True, hostQos=None,
                  defaultRoute=None, blockingdhcp=False, **options):
     if dhcpv6 is not None:
-        dhcpv6 = utils.tobool(dhcpv6)
+        dhcpv6 = tobool(dhcpv6)
     if ipv6autoconf is not None:
-        ipv6autoconf = utils.tobool(ipv6autoconf)
+        ipv6autoconf = tobool(ipv6autoconf)
 
     if network == '':
         raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,

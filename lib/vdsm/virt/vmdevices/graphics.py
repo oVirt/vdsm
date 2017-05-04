@@ -24,9 +24,9 @@ from __future__ import absolute_import
 import libvirt
 
 from vdsm import supervdsm
+from vdsm.common import conv
 from vdsm.network import api as net_api
 from vdsm.virt import libvirtnetwork
-from vdsm import utils
 from vdsm.config import config
 from vdsm.virt import vmxml
 
@@ -127,11 +127,12 @@ class Graphics(Base):
 
         graphics = vmxml.Element('graphics', **graphicsAttrs)
 
-        if not utils.tobool(self.specParams.get('copyPasteEnable', True)):
+        if not conv.tobool(self.specParams.get('copyPasteEnable', True)):
             clipboard = vmxml.Element('clipboard', copypaste='no')
             graphics.appendChild(clipboard)
 
-        if not utils.tobool(self.specParams.get('fileTransferEnable', True)):
+        if not conv.tobool(
+                self.specParams.get('fileTransferEnable', True)):
             filetransfer = vmxml.Element('filetransfer', enable='no')
             graphics.appendChild(filetransfer)
 

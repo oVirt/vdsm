@@ -39,6 +39,7 @@ from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import response
 from vdsm.common import validate
+from vdsm.common import conv
 from vdsm.host import api as hostapi
 from vdsm.host import caps
 from vdsm.logUtils import AllVmStatsValue, Suppressed
@@ -1215,7 +1216,7 @@ class Global(APIBase):
                'passwd=%s\n') % (agent, addr, username, action, password.value)
         if port != '':
             inp += 'port=%s\n' % (port,)
-        if utils.tobool(secure):
+        if conv.tobool(secure):
             inp += 'secure=yes\n'
         inp += options
 

@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ import time
 import logging
 
 from vdsm import constants
-from vdsm import utils
+from vdsm.common.conv import tobool
 
 from . import errors as ne
 from .errors import ConfigNetworkError
@@ -38,7 +38,7 @@ def _get_connectivity_timeout(options):
 
 
 def check(options):
-    if utils.tobool(options.get('connectivityCheck', True)):
+    if tobool(options.get('connectivityCheck', True)):
         logging.debug('Checking connectivity...')
         if not _client_seen(_get_connectivity_timeout(options)):
             logging.info('Connectivity check failed, rolling back')

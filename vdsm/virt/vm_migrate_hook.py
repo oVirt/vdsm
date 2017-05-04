@@ -1,5 +1,5 @@
 #!/usr/bin/python2
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,9 +27,9 @@ import xml.etree.cElementTree as ET
 import six
 
 from vdsm import jsonrpcvdscli
+from vdsm.common.conv import tobool
 from vdsm.config import config
 from vdsm.network import api as net_api
-from vdsm.utils import tobool
 from vdsm.virt import libvirtnetwork
 
 

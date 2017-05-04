@@ -23,7 +23,7 @@ from __future__ import absolute_import
 
 import xml.etree.ElementTree as ET
 
-from vdsm import utils
+from vdsm.common import conv
 from vdsm.hostdev import get_device_params, detach_detachable, \
     pci_address_to_name, scsi_address_to_adapter, reattach_detachable
 from vdsm.virt import vmxml
@@ -93,7 +93,7 @@ class PciDevice(core.Base):
         </devices>
         """
 
-        if utils.tobool(self.specParams.get('iommuPlaceholder', False)):
+        if conv.tobool(self.specParams.get('iommuPlaceholder', False)):
             raise core.SkipDevice
 
         hostdev = self.createXmlElem(hwclass.HOSTDEV, None)

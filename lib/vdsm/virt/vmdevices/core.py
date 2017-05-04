@@ -26,7 +26,7 @@ import os.path
 from vdsm.host import rngsources
 from vdsm import constants
 from vdsm import supervdsm
-from vdsm import utils
+from vdsm.common import conv
 from vdsm.virt import vmxml
 from vdsm.virt.utils import cleanup_guest_socket
 
@@ -200,7 +200,7 @@ class Console(Base):
         if not hasattr(self, 'specParams'):
             self.specParams = {}
 
-        if utils.tobool(self.specParams.get('enableSocket', False)):
+        if conv.tobool(self.specParams.get('enableSocket', False)):
             self._path = os.path.join(
                 constants.P_OVIRT_VMCONSOLES,
                 self.vmid + self.CONSOLE_EXTENSION

@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ from vdsm.config import config
 from vdsm.constants import P_VDSM_RUN
 from vdsm.network.link import setup
 from vdsm.network.link.bond import Bond
-from vdsm.utils import tobool
+from vdsm.common.conv import tobool
 
 from . import netswitch
 from .netconfpersistence import PersistentConfig

@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@ import copy
 import logging
 
 from vdsm.common import response
+from vdsm.common import conv
 from vdsm.compat import pickle
-from vdsm import utils
 
 import API
 
@@ -108,7 +108,7 @@ class TestVMCreate(TestCaseBase):
         }
         res = self.vm.create(vmParams)
         self.assertFalse(response.is_error(res))
-        self.assertTrue(utils.tobool(vmParams.get('kvmEnable')))
+        self.assertTrue(conv.tobool(vmParams.get('kvmEnable')))
 
     def test_create_unsupported_graphics(self):
         vmParams = {

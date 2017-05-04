@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2016 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,12 +21,12 @@ from __future__ import absolute_import
 
 from operator import itemgetter
 
+from vdsm.common import conv
 from vdsm.virt import metadata
 from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
 from vdsm import constants
 from vdsm import cpuarch
-from vdsm import utils
 
 
 _BOOT_MENU_TIMEOUT = 10000  # milliseconds
@@ -54,7 +54,7 @@ class Domain(object):
 
         self.arch = arch
 
-        if utils.tobool(self.conf.get('kvmEnable', 'true')):
+        if conv.tobool(self.conf.get('kvmEnable', 'true')):
             domainType = 'kvm'
         else:
             domainType = 'qemu'
@@ -101,7 +101,7 @@ class Domain(object):
 
         m = vmxml.Element('clock', offset='variable',
                           adjustment=str(self.conf.get('timeOffset', 0)))
-        if utils.tobool(self.conf.get('hypervEnable', 'false')):
+        if conv.tobool(self.conf.get('hypervEnable', 'false')):
             m.appendChildWithArgs('timer', name='hypervclock', present='yes')
         m.appendChildWithArgs('timer', name='rtc', tickpolicy='catchup')
         m.appendChildWithArgs('timer', name='pit', tickpolicy='delay')
@@ -231,7 +231,7 @@ class Domain(object):
         if cpuarch.is_x86(self.arch):
             oselem.appendChildWithArgs('smbios', mode='sysinfo')
 
-        if utils.tobool(self.conf.get('bootMenuEnable', False)):
+        if conv.tobool(self.conf.get('bootMenuEnable', False)):
             oselem.appendChildWithArgs('bootmenu', enable='yes',
                                        timeout=str(_BOOT_MENU_TIMEOUT))
 
@@ -286,14 +286,14 @@ class Domain(object):
         <features/>
         """
 
-        if (utils.tobool(self.conf.get('acpiEnable', 'true')) or
-           utils.tobool(self.conf.get('hypervEnable', 'false'))):
+        if (conv.tobool(self.conf.get('acpiEnable', 'true')) or
+                conv.tobool(self.conf.get('hypervEnable', 'false'))):
             features = self.dom.appendChildWithArgs('features')
 
-        if utils.tobool(self.conf.get('acpiEnable', 'true')):
+        if conv.tobool(self.conf.get('acpiEnable', 'true')):
             features.appendChildWithArgs('acpi')
 
-        if utils.tobool(self.conf.get('hypervEnable', 'false')):
+        if conv.tobool(self.conf.get('hypervEnable', 'false')):
             hyperv = vmxml.Element('hyperv')
             features.appendChild(hyperv)
 
@@ -482,7 +482,7 @@ class Domain(object):
 
         <input bus="ps2" type="mouse"/>
         """
-        if utils.tobool(self.conf.get('tabletEnable')):
+        if conv.tobool(self.conf.get('tabletEnable')):
             inputAttrs = {'type': 'tablet', 'bus': 'usb'}
         elif cpuarch.is_x86(self.arch):
             inputAttrs = {'type': 'mouse', 'bus': 'ps2'}

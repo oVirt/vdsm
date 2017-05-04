@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ import sys
 from xml.dom import minidom
 
 from vdsm.commands import execCmd
-from vdsm.utils import tobool
+from vdsm.common.conv import tobool
 
 # make pyflakes happy
 execCmd

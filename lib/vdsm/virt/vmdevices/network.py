@@ -24,7 +24,7 @@ from __future__ import absolute_import
 import xml.etree.ElementTree as ET
 
 from vdsm import supervdsm
-from vdsm import utils
+from vdsm.common import conv
 from vdsm.hostdev import get_device_params, detach_detachable, \
     reattach_detachable, NoIOMMUSupportException
 from vdsm.network import api as net_api
@@ -164,7 +164,7 @@ class Interface(Base):
 
         if hasattr(self, 'linkActive'):
             iface.appendChildWithArgs('link', state='up'
-                                      if utils.tobool(self.linkActive)
+                                      if conv.tobool(self.linkActive)
                                       else 'down')
 
         if hasattr(self, 'bootOrder'):

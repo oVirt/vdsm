@@ -25,6 +25,7 @@ import collections
 import os
 import xml.etree.ElementTree as ET
 
+from vdsm.common import conv
 from vdsm.common import errors
 from vdsm.config import config
 from vdsm import constants
@@ -423,7 +424,7 @@ class Drive(core.Base):
         if self.extSharedState == DRIVE_SHARED_TYPE.SHARED:
             diskelem.appendChildWithArgs('shareable')
 
-        if hasattr(self, 'readonly') and utils.tobool(self.readonly):
+        if hasattr(self, 'readonly') and conv.tobool(self.readonly):
             diskelem.appendChildWithArgs('readonly')
         elif self.device == 'floppy' and not hasattr(self, 'readonly'):
             # floppies are used only internally for sysprep, so
@@ -608,7 +609,7 @@ def _getDriverXML(drive):
     driverAttrs['cache'] = drive['cache']
 
     if (drive['propagateErrors'] == 'on' or
-            utils.tobool(drive['propagateErrors'])):
+            conv.tobool(drive['propagateErrors'])):
         driverAttrs['error_policy'] = 'enospace'
     else:
         driverAttrs['error_policy'] = 'stop'
