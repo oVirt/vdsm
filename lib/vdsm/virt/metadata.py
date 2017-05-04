@@ -488,6 +488,69 @@ def device(dom, **kwargs):
         md[0] = vm_elem
 
 
+def device_from_xml_tree(root, **kwargs):
+    """
+    Helper function to get the metadata of a given device
+    from one DOM subtree, obtained from the parsed XML of a libvirt Domain.
+    The DOM subtree is expected to have its root at the 'metadata' element
+    of the libvirt domain,
+
+    Example:
+
+    Let's start with this domain_xml:
+    <?xml version="1.0" encoding="utf-8"?>
+    <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+      <metadata>
+        <ovirt-vm:vm>
+          <ovirt-vm:device id="mydev">
+            <ovirt-vm:foo>bar</ovirt-vm:foo>
+          </ovirt-vm:device>
+        </ovirt-vm:vm>
+      </metadata>
+    </domain>
+
+    Let's run this code:
+    dom = vmxml.parse_xml(domain_xml)
+    md_elem = vmxml.find_first(dom, 'metadata')
+
+    Now we will have:
+    metadata.device_from_xml_tree(md_elem, id='mydev') ->
+    { 'foo': 'bar' }
+
+    :param root: DOM element, corresponding to the 'metadata' element of the
+                 Domain XML.
+    :type: DOM element.
+
+    :param kwargs: attributes to match to identify the device;
+                   the values are expected to be strings, much like the
+                   `device` context manager
+
+    :return: the parsed metadata.
+    :rtype: Python dict, whose keys are always strings.
+            No nested objects are allowed.
+    """
+    md_elem = root.find(
+        './{%s}%s' % (
+            xmlconstants.METADATA_VM_VDSM_URI,
+            xmlconstants.METADATA_VM_VDSM_ELEMENT
+        )
+    )
+    if md_elem is None:
+        return {}
+
+    dev_elem = _find_device(
+        md_elem, kwargs, xmlconstants.METADATA_VM_VDSM_URI
+    )
+    if dev_elem is None:
+        return {}
+
+    metadata_obj = Metadata(
+        xmlconstants.METADATA_VM_VDSM_PREFIX,
+        xmlconstants.METADATA_VM_VDSM_URI
+    )
+    return metadata_obj.load(dev_elem)
+
+
 def _elem_to_keyvalue(elem):
     key = elem.tag
     value = elem.text

@@ -328,6 +328,67 @@ class DeviceTests(XMLTestCase):
         with metadata.device(dom, addr='pci_0000_00_02_0') as dev:
             self.assertEqual(dev, {'mode': 900})
 
+    def test_device_from_xml_tree(self):
+        test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+      <ovirt-vm:device id="dev0">
+        <ovirt-vm:foo>bar</ovirt-vm:foo>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+        dom = vmxml.parse_xml(test_xml)
+        md_elem = vmxml.find_first(dom, 'metadata')
+        self.assertIsNot(md_elem, None)
+        self.assertEqual(
+            metadata.device_from_xml_tree(md_elem, id='dev0'),
+            {'foo': 'bar'}
+        )
+
+    def test_multiple_device_from_xml_tree(self):
+        test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+      <ovirt-vm:device id="dev0">
+        <ovirt-vm:foo>bar</ovirt-vm:foo>
+      </ovirt-vm:device>
+      <ovirt-vm:device id="dev1">
+        <ovirt-vm:number type="int">42</ovirt-vm:number>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+        dom = vmxml.parse_xml(test_xml)
+        md_elem = vmxml.find_first(dom, 'metadata')
+        self.assertIsNot(md_elem, None)
+        self.assertEqual(
+            [metadata.device_from_xml_tree(md_elem, id=dev_id)
+             for dev_id in ('dev0', 'dev1')],
+            [{'foo': 'bar'}, {'number': 42}]
+        )
+
+    def test_unknown_device_from_xml_tree(self):
+        test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+        dom = vmxml.parse_xml(test_xml)
+        md_elem = vmxml.find_first(dom, 'metadata')
+        self.assertIsNot(md_elem, None)
+        self.assertEqual(
+            metadata.device_from_xml_tree(md_elem, id='mydev'),
+            {}
+        )
+
 
 class FakeDomain(object):
 
