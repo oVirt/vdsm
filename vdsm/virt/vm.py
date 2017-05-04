@@ -330,8 +330,9 @@ class Vm(object):
             self._onGuestStatusChange,
             self.conf.pop('guestAgentAPIVersion', None))
         self.arch = cpuarch.effective()
-        if '_srcDomXML' in params:
-            self._domain = DomainDescriptor(params['_srcDomXML'])
+        self._src_domain_xml = params.get('_srcDomXML')
+        if self._src_domain_xml is not None:
+            self._domain = DomainDescriptor(self._src_domain_xml)
         elif 'xml' in params:
             self._domain = DomainDescriptor(params['xml'])
         else:
@@ -2216,8 +2217,7 @@ class Vm(object):
             hooks.before_vm_start(self._buildDomainXML(), self._custom)
 
             fromSnapshot = self.conf.get('restoreFromSnapshot', False)
-            with self._confLock:
-                srcDomXML = self.conf.pop('_srcDomXML')
+            srcDomXML = self._src_domain_xml
             if fromSnapshot:
                 srcDomXML = self._correctDiskVolumes(srcDomXML)
                 srcDomXML = self._correctGraphicsConfiguration(srcDomXML)
@@ -3425,6 +3425,7 @@ class Vm(object):
             #    there is no danger of excessive delays preventing NTP from
             #    operation.
 
+        self._src_domain_xml = None  # just to save memory
         with self._confLock:
             if 'guestIPs' in self.conf:
                 del self.conf['guestIPs']
@@ -4770,8 +4771,7 @@ class Vm(object):
         if not self._pathsPreparedEvent.isSet():
             self.log.debug('Timeout while waiting for path preparation')
             return False
-        with self._confLock:
-            srcDomXML = self.conf.pop('_srcDomXML').encode('utf-8')
+        srcDomXML = self._src_domain_xml
         self._updateDevicesDomxmlCache(srcDomXML)
 
         for dev in self._customDevices():
