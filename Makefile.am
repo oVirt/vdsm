@@ -138,7 +138,7 @@ python3: all
 	fi
 
 # Note: dependencies ordered by time needed to run them
-check: gitignore abs_imports imports python3 flake8 tests
+check: gitignore abs_imports imports python3 flake8 pylint tests
 
 check-recursive:
 	@true
