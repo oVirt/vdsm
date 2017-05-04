@@ -290,7 +290,7 @@ def _metadata_xml(dom, tag, namespace, namespace_uri):
                     0)
 
 
-def _find_device(vm_elem, attrs):
+def _find_device(vm_elem, attrs, namespace_uri=None):
     """
     Find one device in the vm metadata, matching all the given attributes.
     This function expect to work with a XML structure like:
@@ -313,6 +313,9 @@ def _find_device(vm_elem, attrs):
     :type vm_elem: ElementTree.Element
     :param attrs: attributes to match to identify the device
     :type attrs: dict, each item is string both for key and value
+    :param namespace_uri: optional URI of the namespace on which the `device`
+           element resides. Use 'None' to disable the namespace support.
+    :type namespace_uri: text string
     :return: the device element
     :rtype: ElementTree.Element
     """
@@ -322,7 +325,10 @@ def _find_device(vm_elem, attrs):
             '[@{key}="{value}"]'.format(key=key, value=value)
         )
 
-    devices = vm_elem.findall('./device{}'.format(''.join(xpath_attrs)))
+    prefix = '' if namespace_uri is None else '{%s}' % namespace_uri
+    devices = vm_elem.findall(
+        './{}device{}'.format(prefix, ''.join(xpath_attrs))
+    )
     if len(devices) > 1:
         raise MissingDevice()
     if not devices:
