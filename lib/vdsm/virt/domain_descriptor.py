@@ -32,6 +32,10 @@ class MutableDomainDescriptor(object):
         return cls('<domain><uuid>%s</uuid></domain>' % uuid)
 
     @property
+    def metadata(self):
+        return vmxml.find_first(self._dom, 'metadata', None)
+
+    @property
     def xml(self):
         return vmxml.format_xml(self._dom)
 

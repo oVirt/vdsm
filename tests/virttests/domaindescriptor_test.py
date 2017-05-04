@@ -68,6 +68,15 @@ MEMORY_SIZE = """
 </domain>
 """
 
+METADATA = """
+<domain>
+    <uuid>xyz</uuid>
+    <metadata>
+        <foo>bar</foo>
+    </metadata>
+</domain>
+"""
+
 
 class DevicesHashTests(VdsmTestCase):
 
@@ -114,3 +123,13 @@ class DomainDescriptorTests(XMLTestCase):
     def test_device_elements(self, descriptor, tag, result):
         desc = descriptor(SOME_DEVICES)
         self.assertEqual(len(list(desc.get_device_elements(tag))), result)
+
+    @permutations([
+        # xml_data, expected
+        [MEMORY_SIZE, False],
+        [METADATA, True],
+    ])
+    def test_metadata(self, xml_data, expected):
+        desc = DomainDescriptor(xml_data)
+        found = desc.metadata is not None
+        self.assertEqual(found, expected)
