@@ -51,6 +51,7 @@ from vdsm.network.ip import dhclient
 from vdsm.network.link import iface as link_iface
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.setup import parse_bond_options
+from vdsm.network.link.setup import remove_custom_bond_option
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netinfo import (bonding as netinfo_bonding, mtus, nics,
                                   vlans, misc, NET_PATH)
@@ -61,7 +62,6 @@ from .ifcfg_acquire import IfcfgAcquire
 from ..errors import ConfigNetworkError, ERR_BAD_BONDING, ERR_FAILED_IFUP
 from ..models import Nic, Bridge, Bond as bond_model
 from ..sourceroute import StaticSourceRoute
-from ..utils import remove_custom_bond_option
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
 NET_CONF_BACK_DIR = constants.P_VDSM_LIB + 'netconfback/'

@@ -145,3 +145,13 @@ def parse_bond_options(options, keep_custom=False):
         return d_options
     else:
         return {}
+
+
+def remove_custom_bond_option(options):
+    """ Removes 'custom' option from bond options string.
+
+    >>> remove_custom_bond_option('custom=foo=bar mode=1')
+    'mode=1'
+    """
+    return ' '.join((option for option in options.split()
+                     if not option.startswith('custom=')))

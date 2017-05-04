@@ -27,6 +27,7 @@ from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (routeAdd, routeDel, ruleAdd, ruleDel,
                                     IPRoute2Error)
 from vdsm.network.link.bond import Bond
+from vdsm.network.link.setup import remove_custom_bond_option
 from vdsm.network.netinfo import bonding, vlans, bridges, mtus
 from vdsm.network.netinfo.cache import ifaceUsed
 from vdsm.constants import EXT_BRCTL
@@ -38,7 +39,6 @@ from . import Configurator, getEthtoolOpts
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP, ERR_FAILED_IFDOWN
 from ..models import Nic
 from ..sourceroute import DynamicSourceRoute
-from ..utils import remove_custom_bond_option
 
 _ETHTOOL_BINARY = CommandPath(
     'ethtool',

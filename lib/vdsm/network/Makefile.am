@@ -43,5 +43,4 @@ dist_vdsmnetwork_PYTHON = \
 	restore_net_config.py \
 	sourceroute.py \
 	sysctl.py \
-	utils.py \
 	$(NULL)

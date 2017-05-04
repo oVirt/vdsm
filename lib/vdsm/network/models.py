@@ -23,13 +23,13 @@ import re
 
 from vdsm.network.link import bond as link_bond
 from vdsm.network.link.bond import sysfs_options as bond_options
+from vdsm.network.link.setup import remove_custom_bond_option
 from vdsm.network.netinfo import bonding, mtus, nics
 from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network.ip.address import IPv4, IPv6
 
 from .errors import ConfigNetworkError
 from . import errors as ne
-from .utils import remove_custom_bond_option
 
 
 class NetDevice(object):

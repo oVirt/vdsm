@@ -1179,7 +1179,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/tc/cls.py*
 %{python_sitelib}/%{vdsm_name}/network/tc/filter.py*
 %{python_sitelib}/%{vdsm_name}/network/tc/qdisc.py*
-%{python_sitelib}/%{vdsm_name}/network/utils.py*
 %{python_sitelib}/%{vdsm_name}/numa.py*
 %{python_sitelib}/%{vdsm_name}/osinfo.py*
 %{python_sitelib}/%{vdsm_name}/password.py*
