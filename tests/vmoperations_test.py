@@ -20,6 +20,8 @@
 #
 from __future__ import absolute_import
 
+import uuid
+
 import libvirt
 from six.moves import zip
 
@@ -31,12 +33,14 @@ from vdsm.virt.vmdevices import hwclass
 
 from vdsm.common import define
 from vdsm.common import response
+from vdsm.config import config
 from vdsm import hooks
 from vdsm import libvirtconnection
 from vdsm import password
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import XMLTestCase
+from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 import vmfakelib as fake
 
@@ -360,6 +364,43 @@ class TestVmOperations(XMLTestCase):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(vmId='testvm')
             self.assertFalse(response.is_error(testvm.acpiReboot()))
+
+
+class MemoryInfoTests(VdsmTestCase):
+
+    def test_memory_info_committed(self):
+        vm_uuid = str(uuid.uuid4())
+        memory_mb = 128
+        minimal_xml = u"""<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
+  <name>testVm</name>
+  <uuid>{vm_uuid}</uuid>
+  <memory unit='KiB'>{vm_memory}</memory>
+  <maxMemory unit='KiB'>{vm_memory}</maxMemory>
+</domain>""".format(vm_uuid=vm_uuid, vm_memory=memory_mb * define.Kbytes)
+        vm_params = {
+            'vmId': vm_uuid,
+            'memSize': memory_mb,
+            'xml': minimal_xml,
+        }
+
+        with fake.VM(params=vm_params) as testvm:
+            testvm._dom = fake.Domain(xml=minimal_xml, vmId=vm_uuid)
+
+            mem_info = testvm.memory_info()
+            self.assertEqual(
+                _mem_committed(memory_mb),
+                mem_info['commit'] * define.Kbytes
+            )
+
+
+def _mem_committed(mem_size_mb):
+    """
+    Legacy algorithm found in oVirt <= 4.1
+    """
+    memory = mem_size_mb
+    memory += config.getint('vars', 'guest_ram_overhead')
+    return 2 ** 20 * memory
 
 
 class ChangingSchedulerDomain(object):

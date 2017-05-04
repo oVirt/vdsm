@@ -218,6 +218,12 @@ class Domain(object):
     def reboot(self, flags):
         pass
 
+    def memoryStats(self):
+        self._failIfRequested()
+        return {
+            'rss': 4 * 1024 * 1024
+        }
+
 
 class GuestAgent(object):
     def __init__(self):

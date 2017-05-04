@@ -23,7 +23,6 @@ import errno
 import logging
 import time
 from . import stats
-from vdsm import cpuarch
 from vdsm import hooks
 from vdsm import utils
 from vdsm import metrics
@@ -57,8 +56,9 @@ def get_stats(cif, sample):
     for var in decStats:
         ret[var] = utils.convertToStr(decStats[var])
 
-    ret['memAvailable'] = _memAvailable(cif) / Mbytes
-    ret['memCommitted'] = _memCommitted(cif) / Mbytes
+    avail, commit = _memUsageInfo(cif)
+    ret['memAvailable'] = avail / Mbytes
+    ret['memCommitted'] = commit / Mbytes
     ret['memFree'] = _memFree() / Mbytes
     ret['swapTotal'], ret['swapFree'] = _readSwapTotalFree()
     (ret['vmCount'], ret['vmActive'], ret['vmMigrating'],
@@ -148,36 +148,24 @@ def _readSwapTotalFree():
 # Thus, we deduct the growth potential of qemu processes, which is
 # (memCommitted - resident)
 
-def _memCommitted(cif):
-    """
-    Return the amount of memory (Mb) committed for VMs
-    """
-    committed = 0
-    for v in cif.vmContainer.values():
-        committed += v.memCommitted
-    return committed
-
-
-def _memAvailable(cif):
+def _memUsageInfo(cif):
     """
     Return an approximation of available memory for new VMs.
     """
-    memCommitted = _memCommitted(cif)
+    committed = 0
     resident = 0
     for v in cif.vmContainer.values():
-        if v.conf['pid'] == '0':
-            continue
-        try:
-            with open('/proc/' + v.conf['pid'] + '/statm') as statmfile:
-                resident += int(statmfile.read().split()[1])
-        except:
-            pass
-    resident *= cpuarch.PAGE_SIZE_BYTES
+        mem_info = v.memory_info()
+        resident += mem_info.get('rss', 0) * Kbytes
+        committed += mem_info.get('commit', 0) * Kbytes
     meminfo = utils.readMemInfo()
     freeOrCached = (meminfo['MemFree'] +
                     meminfo['Cached'] + meminfo['Buffers']) * Kbytes
-    return freeOrCached + resident - memCommitted - \
+    available = (
+        freeOrCached + resident - committed -
         config.getint('vars', 'host_mem_reserve') * Mbytes
+    )
+    return available, committed
 
 
 def _memFree():

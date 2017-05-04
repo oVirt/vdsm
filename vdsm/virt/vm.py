@@ -270,7 +270,6 @@ class Vm(object):
         self._recovery_file = recovery.File(self.id)
         self._monitorResponse = 0
         self._post_copy = migration.PostCopyPhase.NONE
-        self.memCommitted = 0
         self._consoleDisconnectAction = ConsoleDisconnectAction.LOCK_SCREEN
         self._confLock = threading.Lock()
         self._jobsLock = threading.Lock()
@@ -607,13 +606,23 @@ class Vm(object):
             mem_size_mb = self._domain.get_memory_size()
         return mem_size_mb
 
-    def memCommit(self):
+    def memory_info(self):
         """
-        Reserve the required memory for this VM.
+        Return type is dict with keys:
+        - commit (int): committed memory for the VM (Kbytes)
+        - rss (int): resident memory used by the VM (kbytes)
         """
         memory = self.mem_size_mb()
         memory += config.getint('vars', 'guest_ram_overhead')
-        self.memCommitted = 2 ** 20 * memory
+        mem_stats = {'commit': 2 ** 10 * memory}
+        try:
+            dom_stats = self._dom.memoryStats()
+        except libvirt.libvirtError:
+            # just skip for this cycle, no real harm
+            pass
+        else:
+            mem_stats['rss'] = dom_stats['rss']
+        return mem_stats
 
     def _startUnderlyingVm(self):
         self.log.debug("Start")
@@ -629,7 +638,6 @@ class Vm(object):
         self.saveState()
         self._vmStartEvent.set()
         try:
-            self.memCommit()
             with self._ongoingCreations:
                 self._vmCreationEvent.set()
                 try:
