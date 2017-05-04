@@ -217,6 +217,73 @@ def create(name, namespace, namespace_uri, **kwargs):
     return metadata_obj.dump(name, **kwargs)
 
 
+def from_xml(xml_str):
+    """
+    Helper function to parse the libvirt domain metadata used by oVirt
+    form one domain XML. Useful in the VM creation flow, when the
+    libvirt Domain is not yet started.
+
+    Example:
+
+    given this XML:
+
+    test_xml ->
+    <?xml version="1.0" encoding="utf-8"?>
+    <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+      <metadata>
+        <ovirt-vm:vm>
+          <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+          <ovirt-vm:custom>
+            <ovirt-vm:foo>bar</ovirt-vm:foo>
+          </ovirt-vm:custom>
+        </ovirt-vm:vm>
+      </metadata.>
+    </domain>
+
+    metadata.from_xml(test_xml) ->
+    {
+      'version': 4.2,
+      'custom':
+      {
+        'foo': 'bar'
+      },
+    }
+
+    :param xml_str: domain XML to parse
+    :type name: text string
+    :return: the parsed metadata
+    :rtype: Python dict, whose keys are always strings.
+            No nested objects are allowed, with the only exception of
+            the special 'custom' key, whose value will be another
+            Python dictionary whose keys are strings, with no
+            further nesting allowed.
+    """
+    metadata_obj = Metadata(
+        xmlconstants.METADATA_VM_VDSM_PREFIX,
+        xmlconstants.METADATA_VM_VDSM_URI
+    )
+    root = vmxml.parse_xml(xml_str)
+    md_elem = root.find(
+        './metadata/{%s}%s' % (
+            xmlconstants.METADATA_VM_VDSM_URI,
+            xmlconstants.METADATA_VM_VDSM_ELEMENT
+        )
+    )
+    if md_elem is None:
+        return {}
+    md_data = metadata_obj.load(md_elem)
+    custom_elem = root.find(
+        './metadata/{%s}%s/{%s}custom' % (
+            xmlconstants.METADATA_VM_VDSM_URI,
+            xmlconstants.METADATA_VM_VDSM_ELEMENT,
+            xmlconstants.METADATA_VM_VDSM_URI,
+        )
+    )
+    if custom_elem is not None:
+        md_data['custom'] = metadata_obj.load(custom_elem)
+    return md_data
+
+
 @contextmanager
 def domain(dom, name, namespace, namespace_uri):
     """

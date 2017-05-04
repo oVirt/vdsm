@@ -105,6 +105,37 @@ class MetadataTests(XMLTestCase):
         metadata_obj = metadata.Metadata(namespace, namespace_uri)
         self.assertEqual(metadata_obj.load(elem), custom)
 
+    def test_from_xml(self):
+        test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+        self.assertEqual(
+            metadata.from_xml(test_xml),
+            {'version': 4.2}
+        )
+
+    def test_from_xml_with_custom(self):
+        test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+      <ovirt-vm:custom>
+        <ovirt-vm:foo>bar</ovirt-vm:foo>
+      </ovirt-vm:custom>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+        self.assertEqual(
+            metadata.from_xml(test_xml),
+            {'version': 4.2, 'custom': {'foo': 'bar'}}
+        )
+
 
 class DomainTests(XMLTestCase):
 
