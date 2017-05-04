@@ -22,7 +22,9 @@ from __future__ import absolute_import
 
 from nose.plugins.attrib import attr
 
-from .netfunctestlib import NetFuncTestCase, NOCHK
+from vdsm.network import errors as ne
+
+from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
 from .nettestlib import dummy_devices
 
 BOND_NAME = 'bond1'
@@ -98,6 +100,19 @@ class BondBasicTemplate(NetFuncTestCase):
                 bond[BOND_NAME]['nics'].remove(nic4)
                 self.setupNetworks({}, bond, NOCHK)
                 self.assertBond(BOND_NAME, bond[BOND_NAME])
+
+    def test_add_bond_with_bad_name_fails(self):
+        INVALID_BOND_NAMES = ('bond',
+                              'bonda',
+                              'bond0a',
+                              'jamesbond007')
+
+        for bond_name in INVALID_BOND_NAMES:
+            BONDCREATE = {bond_name: {'nics': [], 'switch': self.switch}}
+            with self.assertRaises(SetupNetworksError) as cm:
+                with self.setupNetworks({}, BONDCREATE, NOCHK):
+                    pass
+            self.assertEqual(cm.exception.status, ne.ERR_BAD_BONDING)
 
 
 @attr(type='functional', switch='legacy')

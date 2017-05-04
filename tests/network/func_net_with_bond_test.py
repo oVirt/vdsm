@@ -93,6 +93,20 @@ class NetworkWithBondTemplate(NetFuncTestCase):
     def test_add_bridgeless_network_with_multiple_vlans_over_a_bond(self):
         self._test_add_network_with_multiple_vlans_over_a_bond(bridged=False)
 
+    def test_add_net_with_invalid_bond_name_fails(self):
+        INVALID_BOND_NAMES = ('bond',
+                              'bonda',
+                              'bond0a',
+                              'jamesbond007')
+
+        for bond_name in INVALID_BOND_NAMES:
+            NETCREATE = {NETWORK1_NAME: {'bonding': bond_name,
+                                         'switch': self.switch}}
+            with self.assertRaises(SetupNetworksError) as cm:
+                with self.setupNetworks(NETCREATE, {}, NOCHK):
+                    pass
+            self.assertEqual(cm.exception.status, ne.ERR_BAD_BONDING)
+
     def _test_add_network_with_multiple_vlans_over_a_bond(self, bridged=True):
         with dummy_devices(2) as nics:
             netsetup = {}
