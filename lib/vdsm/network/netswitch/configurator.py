@@ -106,6 +106,7 @@ def _split_switch_type(nets, bonds):
 
 def validate(networks, bondings):
     validator.validate_southbound_devices_usages(networks, NetInfo(netinfo()))
+    validator.validate_bond_names(networks, bondings)
 
     legacy_nets, ovs_nets, legacy_bonds, ovs_bonds = _split_switch_type(
         networks, bondings)

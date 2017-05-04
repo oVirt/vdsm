@@ -205,7 +205,6 @@ class Bond(NetDevice):
     def __init__(self, name, configurator, ipv4=None, ipv6=None,
                  blockingdhcp=False, mtu=None, slaves=(), options=None,
                  on_removal_just_detach_from_network=False):
-        self.validateName(name)
         for slave in slaves:
             slave.master = self
         self.slaves = slaves
@@ -307,13 +306,6 @@ class Bond(NetDevice):
         detach = on_removal_just_detach_from_network  # argument is too long
         return cls(name, configurator, slaves=slaves, options=options, mtu=mtu,
                    on_removal_just_detach_from_network=detach)
-
-    @staticmethod
-    def validateName(name):
-        if not re.match('^bond[0-9]+$', name):
-            raise ConfigNetworkError(ne.ERR_BAD_BONDING,
-                                     '%r is not a valid bonding device name' %
-                                     name)
 
     @classmethod
     def validateOptions(cls, bondingOptions):

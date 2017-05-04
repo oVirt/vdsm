@@ -582,7 +582,6 @@ def validate_network_setup(networks, bondings):
 
     currentNicsSet = set(netinfo_nics.nics())
     for bonding, bondingAttrs in six.iteritems(bondings):
-        Bond.validateName(bonding)
         if 'options' in bondingAttrs:
             Bond.validateOptions(bondingAttrs['options'])
 

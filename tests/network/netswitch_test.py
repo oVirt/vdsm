@@ -29,6 +29,10 @@ from testlib import VdsmTestCase as TestCaseBase
 from nose.plugins.attrib import attr
 
 
+BOND_NAME = 'bond1'
+NETWORK1_NAME = 'test-network1'
+
+
 @attr(type='unit')
 class SplitSetupActionsTests(TestCaseBase):
 
@@ -130,6 +134,40 @@ def _mock_netinfo(switch):
     with mock.patch.object(
             netswitch.configurator, 'netinfo', net_info) as netinfo:
         yield netinfo
+
+
+@attr(type='unit')
+class BondValidationTests(TestCaseBase):
+
+    INVALID_BOND_NAMES = ('bond',
+                          'bonda'
+                          'bond0a',
+                          'bond0 1',
+                          'jamesbond007')
+
+    def test_name_validation_of_net_sb_bond(self):
+        NETSETUP = {NETWORK1_NAME: {'bonding': BOND_NAME}}
+        self.assertEqual(
+            netswitch.validator.validate_bond_names(NETSETUP, {}), None)
+
+    def test_name_validation_of_created_bond(self):
+        BONDSETUP = {BOND_NAME: {}}
+        self.assertEqual(
+            netswitch.validator.validate_bond_names({}, BONDSETUP), None)
+
+    def test_bad_name_validation_of_net_sb_bond_fails(self):
+        for bond_name in self.INVALID_BOND_NAMES:
+            self._test_bad_name_validation_fails(
+                {NETWORK1_NAME: {'bonding': bond_name}}, {})
+
+    def test_bad_name_validation_of_created_bond_fails(self):
+        for bond_name in self.INVALID_BOND_NAMES:
+            self._test_bad_name_validation_fails({}, {bond_name: {}})
+
+    def _test_bad_name_validation_fails(self, nets, bonds):
+        with self.assertRaises(errors.ConfigNetworkError) as cne:
+            netswitch.validator.validate_bond_names(nets, bonds)
+        self.assertEqual(cne.exception.errCode, errors.ERR_BAD_BONDING)
 
 
 def _create_fake_netinfo(switch):

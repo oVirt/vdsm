@@ -73,18 +73,6 @@ class TestNetmodels(TestCaseBase):
                 Nic(nic, None, _netinfo=FakeNetInfo())
             self.assertEqual(cneContext.exception.errCode, errors.ERR_BAD_NIC)
 
-    def testIsBondingNameValid(self):
-        bondNames = ('badValue', ' bond14', 'bond14 ', 'bond14a', 'bond0 0')
-
-        for bondName in bondNames:
-            with self.assertRaises(errors.ConfigNetworkError) as cneContext:
-                Bond.validateName(bondName)
-            self.assertEqual(cneContext.exception.errCode,
-                             errors.ERR_BAD_BONDING)
-
-        self.assertEqual(Bond.validateName('bond11'), None)
-        self.assertEqual(Bond.validateName('bond11128421982'), None)
-
     def testValidateBondingOptions(self):
         opts = 'mode=802.3ad miimon=150'
         badOpts = 'foo=bar badopt=one'
