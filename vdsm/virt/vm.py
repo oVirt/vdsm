@@ -5144,10 +5144,6 @@ class Vm(object):
                          stats_age)
         stats['monitorResponse'] = '-1'
 
-    @property
-    def hasGuestNumaNode(self):
-        return 'guestNumaNodes' in self.conf
-
     def onDeviceRemoved(self, device_alias):
         self.log.info("Device removal reported: %s", device_alias)
 
