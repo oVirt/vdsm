@@ -85,6 +85,10 @@ class IPRouteData(object):
     def table(self):
         return self._table
 
+    def __str__(self):
+        return 'to={} via={} src={} family={} device={} table={}'.format(
+            self.to, self.via, self.src, self.family, self.device, self.table)
+
 
 class IPRouteError(Exception):
     pass
