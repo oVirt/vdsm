@@ -1074,6 +1074,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/network
 %dir %{python_sitelib}/%{vdsm_name}/network/configurators
 %dir %{python_sitelib}/%{vdsm_name}/network/ip
+%dir %{python_sitelib}/%{vdsm_name}/network/ip/route
 %dir %{python_sitelib}/%{vdsm_name}/network/link
 %dir %{python_sitelib}/%{vdsm_name}/network/link/bond
 %dir %{python_sitelib}/%{vdsm_name}/network/netinfo
@@ -1142,6 +1143,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/connectivity.py*
 %{python_sitelib}/%{vdsm_name}/network/dhclient_monitor.py*
 %{python_sitelib}/%{vdsm_name}/network/ip/*.py*
+%{python_sitelib}/%{vdsm_name}/network/ip/route/*.py*
 %{python_sitelib}/%{vdsm_name}/network/ifacetracking.py*
 %{python_sitelib}/%{vdsm_name}/network/ifacquire.py*
 %{python_sitelib}/%{vdsm_name}/network/initializer.py*

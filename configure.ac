@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2016 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -384,6 +384,7 @@ AC_OUTPUT([
 	lib/vdsm/network/Makefile
 	lib/vdsm/network/configurators/Makefile
 	lib/vdsm/network/ip/Makefile
+	lib/vdsm/network/ip/route/Makefile
 	lib/vdsm/network/link/Makefile
 	lib/vdsm/network/link/bond/Makefile
 	lib/vdsm/network/netinfo/Makefile
