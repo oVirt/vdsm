@@ -26,9 +26,11 @@ from nose.plugins.attrib import attr
 from testlib import VdsmTestCase
 from testValidation import ValidateRunningAsRoot
 
-from vdsm.network.ip.rule import IPRule, IPRuleData
+from vdsm.network.ip import rule as ip_rule
+from vdsm.network.ip.rule import IPRuleData
 from vdsm.network.ip.rule import IPRuleAddError, IPRuleDeleteError
 
+IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)
 
 IPV4_ADDRESS1 = '192.168.99.1'
 

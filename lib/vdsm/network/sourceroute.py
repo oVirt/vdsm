@@ -24,9 +24,10 @@ import netaddr
 from vdsm.common.contextlib import suppress
 from vdsm.constants import P_VDSM_RUN
 from vdsm.network.ip import route as ip_route
+from vdsm.network.ip import rule as ip_rule
 from vdsm.network.ip.route import IPRouteData
 from vdsm.network.ip.route import IPRouteError, IPRouteDeleteError
-from vdsm.network.ip.rule import IPRule, IPRuleData
+from vdsm.network.ip.rule import IPRuleData
 from vdsm.network.ip.rule import IPRuleError
 
 from .ipwrapper import Route
@@ -36,6 +37,7 @@ from .ipwrapper import ruleList
 
 
 IPRoute = ip_route.driver(ip_route.Drivers.IPROUTE2)
+IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)
 
 TRACKED_INTERFACES_FOLDER = P_VDSM_RUN + 'trackedInterfaces'
 

@@ -23,9 +23,7 @@ import logging
 
 import six
 
-from vdsm.network.ip.rule import IPRule
-
-from . ip_rule_test import IPV4_ADDRESS1
+from . ip_rule_test import IPV4_ADDRESS1, IPRule
 
 
 def teardown_package():

@@ -15,21 +15,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
-#
+
 from __future__ import absolute_import
 
 import abc
-import contextlib
-import logging
-import sys
+from importlib import import_module
+from pkgutil import iter_modules
 
 import six
-
-from vdsm.network.ipwrapper import IPRoute2Error
-from vdsm.network.ipwrapper import Rule
-from vdsm.network.ipwrapper import ruleAdd
-from vdsm.network.ipwrapper import ruleDel
-from vdsm.network.ipwrapper import ruleList
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -92,39 +85,26 @@ class IPRuleDeleteError(IPRuleError):
     pass
 
 
-@contextlib.contextmanager
-def _translate_iproute2_exception(new_exception, rule_data):
+class Drivers(object):
+    IPROUTE2 = 'iproute2'
+
+
+class NoDriverError(Exception):
+    pass
+
+
+_DRIVERS = {}
+
+
+# Importing all available rule drivers.
+for _, module_name, _ in iter_modules([__path__[0]]):
+    module = import_module('{}.{}'.format(__name__, module_name))
+    if hasattr(module, 'IPRule'):
+        _DRIVERS[module_name] = module
+
+
+def driver(driver_name):
     try:
-        yield
-    except IPRoute2Error:
-        _, value, tb = sys.exc_info()
-        error_message = value[1][0]
-        six.reraise(new_exception, (str(rule_data), error_message), tb)
-
-
-class _Iproute2Rule(IPRuleApi):
-
-    @staticmethod
-    def add(rule_data):
-        r = rule_data
-        with _translate_iproute2_exception(IPRuleAddError, rule_data):
-            ruleAdd(Rule(r.table, r.src, r.to, r.iif))
-
-    @staticmethod
-    def delete(rule_data):
-        r = rule_data
-        with _translate_iproute2_exception(IPRuleDeleteError, rule_data):
-            ruleDel(Rule(r.table, r.src, r.to, r.iif))
-
-    @staticmethod
-    def rules():
-        rules_data = ruleList()
-        for rule_data in rules_data:
-            try:
-                r = Rule.fromText(rule_data)
-                yield IPRuleData(r.destination, r.source, r.srcDevice, r.table)
-            except ValueError:
-                logging.warning('Could not parse rule %s', rule_data)
-
-
-IPRule = _Iproute2Rule
+        return _DRIVERS[driver_name].IPRule
+    except KeyError:
+        raise NoDriverError(driver_name)
