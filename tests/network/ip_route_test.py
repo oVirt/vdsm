@@ -1,4 +1,3 @@
-#
 # Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -16,7 +15,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
-#
+
 from __future__ import absolute_import
 
 from contextlib import contextmanager
@@ -30,8 +29,6 @@ from vdsm.network.ip import route as ip_route
 from vdsm.network.ip.route import IPRouteData
 from vdsm.network.ip.route import IPRouteAddError, IPRouteDeleteError
 
-IPRoute = ip_route.driver(ip_route.Drivers.IPROUTE2)
-
 IPV4_ADDRESS = '192.168.99.1'
 
 
@@ -41,12 +38,13 @@ def setup_module():
 
 
 @attr(type='integration')
-class TestIpRoute(VdsmTestCase):
+class IPRouteTest(VdsmTestCase):
+    IPRoute = ip_route.driver(ip_route.Drivers.IPROUTE2)
 
     def test_add_delete_and_read_route(self):
         route = IPRouteData(to=IPV4_ADDRESS, via=None, family=4, device='lo')
-        with create_route(route):
-            routes = [r for r in IPRoute.routes(table='main')
+        with self.create_route(route):
+            routes = [r for r in IPRouteTest.IPRoute.routes(table='main')
                       if r.to == IPV4_ADDRESS]
             self.assertEqual(1, len(routes))
             self.assertEqual(routes[0].device, 'lo')
@@ -54,21 +52,20 @@ class TestIpRoute(VdsmTestCase):
     def test_delete_non_existing_route(self):
         route = IPRouteData(to=IPV4_ADDRESS, via=None, family=4, device='lo')
         with self.assertRaises(IPRouteDeleteError):
-            IPRoute.delete(route)
+            IPRouteTest.IPRoute.delete(route)
 
     def test_add_route_with_non_existing_device(self):
         route = IPRouteData(to=IPV4_ADDRESS, via=None, family=4, device='NoNe')
         with self.assertRaises(IPRouteAddError):
-            IPRoute.add(route)
+            IPRouteTest.IPRoute.add(route)
 
-
-@contextmanager
-def create_route(route_data):
-    IPRoute.add(route_data)
-    try:
-        yield
-    finally:
-        IPRoute.delete(route_data)
+    @contextmanager
+    def create_route(self, route_data):
+        IPRouteTest.IPRoute.add(route_data)
+        try:
+            yield
+        finally:
+            IPRouteTest.IPRoute.delete(route_data)
 
 
 @attr(type='unit')
