@@ -75,6 +75,10 @@ class IPRuleData(object):
     def table(self):
         return self._table
 
+    def __str__(self):
+        return 'to={} src={} iif={} table={}'.format(
+            self.to, self.src, self.iif, self.table)
+
 
 class IPRuleError(Exception):
     pass
