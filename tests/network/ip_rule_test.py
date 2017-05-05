@@ -30,8 +30,6 @@ from vdsm.network.ip import rule as ip_rule
 from vdsm.network.ip.rule import IPRuleData
 from vdsm.network.ip.rule import IPRuleAddError, IPRuleDeleteError
 
-IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)
-
 IPV4_ADDRESS1 = '192.168.99.1'
 
 
@@ -41,33 +39,34 @@ def setup_module():
 
 
 @attr(type='integration')
-class TestIpRule(VdsmTestCase):
+class IPRuleTest(VdsmTestCase):
+    IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)
 
     def test_add_delete_and_read_rule(self):
         rule = IPRuleData(to=IPV4_ADDRESS1, iif='lo', table='main')
-        with create_rule(rule):
-            rules = [r for r in IPRule.rules() if r.to == IPV4_ADDRESS1]
-            self.assertEqual(1, len(rules), rules)
+        with self.create_rule(rule):
+            rules = [r for r in IPRuleTest.IPRule.rules()
+                     if r.to == IPV4_ADDRESS1]
+            self.assertEqual(1, len(rules))
             self.assertEqual(rules[0].iif, 'lo')
             self.assertEqual(rules[0].table, 'main')
 
     def test_delete_non_existing_rule(self):
         rule = IPRuleData(to=IPV4_ADDRESS1, iif='lo', table='main')
         with self.assertRaises(IPRuleDeleteError):
-            IPRule.delete(rule)
+            IPRuleTest.IPRule.delete(rule)
 
     def test_add_rule_with_invalid_address(self):
         rule = IPRuleData(
             to=IPV4_ADDRESS1, iif='shrubbery_shruberry', table='main')
         with self.assertRaises(IPRuleAddError):
-            with create_rule(rule):
+            with self.create_rule(rule):
                 pass
 
-
-@contextmanager
-def create_rule(rule_data):
-    IPRule.add(rule_data)
-    try:
-        yield
-    finally:
-        IPRule.delete(rule_data)
+    @contextmanager
+    def create_rule(self, rule_data):
+        IPRuleTest.IPRule.add(rule_data)
+        try:
+            yield
+        finally:
+            IPRuleTest.IPRule.delete(rule_data)

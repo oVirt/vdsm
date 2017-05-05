@@ -23,7 +23,7 @@ import logging
 
 import six
 
-from . ip_rule_test import IPV4_ADDRESS1, IPRule
+from . ip_rule_test import IPV4_ADDRESS1, IPRuleTest
 
 
 def teardown_package():
@@ -44,11 +44,11 @@ def _cleanup_stale_iprules():
     In case any stale entries have been detected, attempt to clean everything
     and raise an error.
     """
-    rules = [r for r in IPRule.rules() if r.to == IPV4_ADDRESS1]
+    rules = [r for r in IPRuleTest.IPRule.rules() if r.to == IPV4_ADDRESS1]
     if rules:
         for rule in rules:
             try:
-                IPRule.delete(rule)
+                IPRuleTest.IPRule.delete(rule)
                 logging.warning('Rule (%s) has been removed', rule)
             except Exception as e:
                 logging.error('Error removing rule (%s): %s', rule, e)
