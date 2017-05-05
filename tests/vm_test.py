@@ -68,7 +68,6 @@ from vdsm import utils
 from vdsm import libvirtconnection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import namedTemporaryDir
-from testlib import start_thread
 from testValidation import brokentest, slowtest
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
@@ -1783,7 +1782,6 @@ class BlockIoTuneTests(TestCaseBase):
     @MonkeyPatch(utils, 'isBlockDevice', lambda *args: False)
     def test_get_fills_cache(self):
         with fake.VM() as testvm:
-            self.dom.get_event.set()
             testvm._dom = self.dom
             testvm._devices[hwclass.DISK] = (self.drive,)
 
@@ -1809,8 +1807,6 @@ class BlockIoTuneTests(TestCaseBase):
     @MonkeyPatch(utils, 'isBlockDevice', lambda *args: False)
     def test_set_updates_cache(self):
         with fake.VM() as testvm:
-            self.dom.get_event.set()
-            self.dom.set_event.set()
             testvm._dom = self.dom
             testvm._devices[hwclass.DISK] = (self.drive,)
 
@@ -1834,8 +1830,6 @@ class BlockIoTuneTests(TestCaseBase):
     @MonkeyPatch(utils, 'isBlockDevice', lambda *args: False)
     def test_set_fills_cache(self):
         with fake.VM() as testvm:
-            self.dom.get_event.set()
-            self.dom.set_event.set()
             testvm._dom = self.dom
             testvm._devices[hwclass.DISK] = (self.drive,)
 
@@ -1853,44 +1847,27 @@ class BlockIoTuneTests(TestCaseBase):
 
     @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
     @MonkeyPatch(utils, 'isBlockDevice', lambda *args: False)
-    def test_concurrent_get_and_set(self):
+    def test_cold_cache_set_preempts_get(self):
         with fake.VM() as testvm:
-            self.dom.set_event.set()
             testvm._dom = self.dom
             testvm._devices[hwclass.DISK] = (self.drive,)
-            tunables = [
-                {"name": self.drive.name, "ioTune": self.iotune_low}
-            ]
-            # first warm up the cache
-            testvm.setIoTune(tunables)
+
+            def _interleaved_update():
+                # this will run in the middle of getIoTuneResponse()
+                tunables = [
+                    {"name": self.drive.name, "ioTune": self.iotune_high}
+                ]
+                testvm.setIoTune(tunables)
+
+            self.dom.callback = _interleaved_update
             self.assert_iotune_in_response(
                 testvm.getIoTuneResponse(),
                 self.iotune_low
             )
 
-            get_done = threading.Event()
-            res = [None]
-
-            def _get():
-                res[0] = testvm.getIoTuneResponse()
-                get_done.set()
-
-            start_thread(_get)
-
-            # now we are stuck in the middle of getIoTuneResponse()
-            tunables = [
-                {"name": self.drive.name, "ioTune": self.iotune_high}
-            ]
-            # first warm up the cache
-            testvm.setIoTune(tunables)
-
-            self.dom.get_event.set()
-            self.assertTrue(get_done.wait(5.))
-
-            self.assert_iotune_in_response(res[0], self.iotune_high)
-            self.assert_iotune_in_response(
-                testvm.getIoTuneResponse(),
-                self.iotune_high
+            self.assertEqual(
+                self.dom.iotunes,
+                {self.drive.name: self.iotune_high}
             )
 
     def assert_nth_call_to_dom_is(self, nth, call):
@@ -1918,18 +1895,18 @@ class FakeBlockIoTuneDomain(object):
 
     def __init__(self):
         self.iotunes = {}
-        self.get_event = threading.Event()
-        self.set_event = threading.Event()
+        self.callback = None
 
     @recorded
     def blockIoTune(self, name, flags=0):
-        self.get_event.wait()
-        return self.iotunes.get(name, {})
+        ret = self.iotunes.get(name, {}).copy()
+        if self.callback is not None:
+            self.callback()
+        return ret
 
     @recorded
     def setBlockIoTune(self, name, iotune, flags=0):
-        self.set_event.wait()
-        self.iotunes[name] = iotune
+        self.iotunes[name] = iotune.copy()
 
 
 @expandPermutations
