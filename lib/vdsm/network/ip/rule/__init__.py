@@ -19,7 +19,7 @@
 from __future__ import absolute_import
 
 import abc
-from functools import wraps
+import contextlib
 import logging
 import sys
 
@@ -84,31 +84,37 @@ class IPRuleError(Exception):
     pass
 
 
-def _translate_iproute2_exceptions(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except IPRoute2Error:
-            tp, value, tb = sys.exc_info()
-            six.reraise(IPRuleError, value, tb)
+class IPRuleAddError(IPRuleError):
+    pass
 
-    return wrapper
+
+class IPRuleDeleteError(IPRuleError):
+    pass
+
+
+@contextlib.contextmanager
+def _translate_iproute2_exception(new_exception, rule_data):
+    try:
+        yield
+    except IPRoute2Error:
+        _, value, tb = sys.exc_info()
+        error_message = value[1][0]
+        six.reraise(new_exception, (str(rule_data), error_message), tb)
 
 
 class _Iproute2Rule(IPRuleApi):
 
     @staticmethod
-    @_translate_iproute2_exceptions
     def add(rule_data):
         r = rule_data
-        ruleAdd(Rule(r.table, r.src, r.to, r.iif))
+        with _translate_iproute2_exception(IPRuleAddError, rule_data):
+            ruleAdd(Rule(r.table, r.src, r.to, r.iif))
 
     @staticmethod
-    @_translate_iproute2_exceptions
     def delete(rule_data):
         r = rule_data
-        ruleDel(Rule(r.table, r.src, r.to, r.iif))
+        with _translate_iproute2_exception(IPRuleDeleteError, rule_data):
+            ruleDel(Rule(r.table, r.src, r.to, r.iif))
 
     @staticmethod
     def rules():

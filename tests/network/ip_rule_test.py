@@ -27,6 +27,7 @@ from testlib import VdsmTestCase
 from testValidation import ValidateRunningAsRoot
 
 from vdsm.network.ip.rule import IPRule, IPRuleData
+from vdsm.network.ip.rule import IPRuleAddError, IPRuleDeleteError
 
 
 IPV4_ADDRESS1 = '192.168.99.1'
@@ -47,6 +48,18 @@ class TestIpRule(VdsmTestCase):
             self.assertEqual(1, len(rules), rules)
             self.assertEqual(rules[0].iif, 'lo')
             self.assertEqual(rules[0].table, 'main')
+
+    def test_delete_non_existing_rule(self):
+        rule = IPRuleData(to=IPV4_ADDRESS1, iif='lo', table='main')
+        with self.assertRaises(IPRuleDeleteError):
+            IPRule.delete(rule)
+
+    def test_add_rule_with_invalid_address(self):
+        rule = IPRuleData(
+            to=IPV4_ADDRESS1, iif='shrubbery_shruberry', table='main')
+        with self.assertRaises(IPRuleAddError):
+            with create_rule(rule):
+                pass
 
 
 @contextmanager
