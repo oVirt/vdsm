@@ -27,7 +27,7 @@ from testlib import VdsmTestCase
 from testValidation import ValidateRunningAsRoot
 
 from vdsm.network.ip.route import IPRoute, IPRouteData
-from vdsm.network.ip.route import IPRouteError, IPRouteDeleteError
+from vdsm.network.ip.route import IPRouteAddError, IPRouteDeleteError
 
 
 IPV4_ADDRESS = '192.168.99.1'
@@ -56,7 +56,7 @@ class TestIpRoute(VdsmTestCase):
 
     def test_add_route_with_non_existing_device(self):
         route = IPRouteData(to=IPV4_ADDRESS, via=None, family=4, device='NoNe')
-        with self.assertRaises(IPRouteError):
+        with self.assertRaises(IPRouteAddError):
             IPRoute.add(route)
 
 

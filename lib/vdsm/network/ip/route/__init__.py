@@ -19,7 +19,7 @@
 from __future__ import absolute_import
 
 import abc
-from functools import wraps
+import contextlib
 import logging
 import sys
 
@@ -94,39 +94,37 @@ class IPRouteError(Exception):
     pass
 
 
+class IPRouteAddError(IPRouteError):
+    pass
+
+
 class IPRouteDeleteError(IPRouteError):
     pass
 
 
-def _translate_iproute2_exceptions(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except IPRoute2Error as e:
-            _, value, tb = sys.exc_info()
-            error_message = e.args[1][0]
-            if 'No such process' in error_message:
-                six.reraise(IPRouteDeleteError, value, tb)
-            else:
-                six.reraise(IPRouteError, value, tb)
-
-    return wrapper
+@contextlib.contextmanager
+def _translate_iproute2_exception(new_exception, route_data):
+    try:
+        yield
+    except IPRoute2Error:
+        _, value, tb = sys.exc_info()
+        error_message = value[1][0]
+        six.reraise(new_exception, (str(route_data), error_message), tb)
 
 
 class _Iproute2Route(IPRouteApi):
 
     @staticmethod
-    @_translate_iproute2_exceptions
     def add(route_data):
         r = route_data
-        routeAdd(Route(r.to, r.via, r.src, r.device, r.table), r.family)
+        with _translate_iproute2_exception(IPRouteAddError, route_data):
+            routeAdd(Route(r.to, r.via, r.src, r.device, r.table), r.family)
 
     @staticmethod
-    @_translate_iproute2_exceptions
     def delete(route_data):
         r = route_data
-        routeDel(Route(r.to, r.via, r.src, r.device, r.table), r.family)
+        with _translate_iproute2_exception(IPRouteDeleteError, route_data):
+            routeDel(Route(r.to, r.via, r.src, r.device, r.table), r.family)
 
     @staticmethod
     def routes(table='all'):
