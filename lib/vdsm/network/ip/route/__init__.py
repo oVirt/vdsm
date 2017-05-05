@@ -15,21 +15,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
-#
+
 from __future__ import absolute_import
 
 import abc
-import contextlib
-import logging
-import sys
+from importlib import import_module
+from pkgutil import iter_modules
 
 import six
-
-from vdsm.network.ipwrapper import IPRoute2Error
-from vdsm.network.ipwrapper import Route
-from vdsm.network.ipwrapper import routeAdd
-from vdsm.network.ipwrapper import routeDel
-from vdsm.network.ipwrapper import routeShowTable
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -102,45 +95,26 @@ class IPRouteDeleteError(IPRouteError):
     pass
 
 
-@contextlib.contextmanager
-def _translate_iproute2_exception(new_exception, route_data):
+class Drivers(object):
+    IPROUTE2 = 'iproute2'
+
+
+class NoDriverError(Exception):
+    pass
+
+
+_DRIVERS = {}
+
+
+# Importing all available route drivers.
+for _, module_name, _ in iter_modules([__path__[0]]):
+    module = import_module('{}.{}'.format(__name__, module_name))
+    if hasattr(module, 'IPRoute'):
+        _DRIVERS[module_name] = module
+
+
+def driver(driver_name):
     try:
-        yield
-    except IPRoute2Error:
-        _, value, tb = sys.exc_info()
-        error_message = value[1][0]
-        six.reraise(new_exception, (str(route_data), error_message), tb)
-
-
-class _Iproute2Route(IPRouteApi):
-
-    @staticmethod
-    def add(route_data):
-        r = route_data
-        with _translate_iproute2_exception(IPRouteAddError, route_data):
-            routeAdd(Route(r.to, r.via, r.src, r.device, r.table), r.family)
-
-    @staticmethod
-    def delete(route_data):
-        r = route_data
-        with _translate_iproute2_exception(IPRouteDeleteError, route_data):
-            routeDel(Route(r.to, r.via, r.src, r.device, r.table), r.family)
-
-    @staticmethod
-    def routes(table='all'):
-        routes_data = routeShowTable(table)
-        for route_data in routes_data:
-            try:
-                r = Route.fromText(route_data)
-                family = 6 if _is_ipv6_addr_soft_check(r.network) else 4
-                yield IPRouteData(
-                    r.network, r.via, family, r.src, r.device, r.table)
-            except ValueError:
-                logging.warning('Could not parse route %s', route_data)
-
-
-def _is_ipv6_addr_soft_check(addr):
-    return addr.count(':') > 1
-
-
-IPRoute = _Iproute2Route
+        return _DRIVERS[driver_name].IPRoute
+    except KeyError:
+        raise NoDriverError(driver_name)

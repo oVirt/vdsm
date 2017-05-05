@@ -1,4 +1,4 @@
-# Copyright 2013-2016 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,8 @@ import netaddr
 
 from vdsm.common.contextlib import suppress
 from vdsm.constants import P_VDSM_RUN
-from vdsm.network.ip.route import IPRoute, IPRouteData
+from vdsm.network.ip import route as ip_route
+from vdsm.network.ip.route import IPRouteData
 from vdsm.network.ip.route import IPRouteError, IPRouteDeleteError
 from vdsm.network.ip.rule import IPRule, IPRuleData
 from vdsm.network.ip.rule import IPRuleError
@@ -33,6 +34,8 @@ from .ipwrapper import routeShowTable
 from .ipwrapper import Rule
 from .ipwrapper import ruleList
 
+
+IPRoute = ip_route.driver(ip_route.Drivers.IPROUTE2)
 
 TRACKED_INTERFACES_FOLDER = P_VDSM_RUN + 'trackedInterfaces'
 

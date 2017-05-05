@@ -26,9 +26,11 @@ from nose.plugins.attrib import attr
 from testlib import VdsmTestCase
 from testValidation import ValidateRunningAsRoot
 
-from vdsm.network.ip.route import IPRoute, IPRouteData
+from vdsm.network.ip import route as ip_route
+from vdsm.network.ip.route import IPRouteData
 from vdsm.network.ip.route import IPRouteAddError, IPRouteDeleteError
 
+IPRoute = ip_route.driver(ip_route.Drivers.IPROUTE2)
 
 IPV4_ADDRESS = '192.168.99.1'
 
@@ -67,3 +69,11 @@ def create_route(route_data):
         yield
     finally:
         IPRoute.delete(route_data)
+
+
+@attr(type='unit')
+class DriverTest(VdsmTestCase):
+
+    def test_load_non_existing_driver(self):
+        with self.assertRaises(ip_route.NoDriverError):
+            ip_route.driver('foo bar')
