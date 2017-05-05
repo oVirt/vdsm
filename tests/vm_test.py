@@ -51,6 +51,7 @@ from virt.vm import HotunplugTimeout
 from vdsm import constants
 from vdsm import cpuarch
 from vdsm.common import define
+from vdsm.common import exception
 from vdsm.common import response
 from vdsm.virt import libvirtxml
 from vdsm.virt import vmxml
@@ -1773,6 +1774,15 @@ class BlockIoTuneTests(TestCaseBase):
             'write_iops_sec': 0,
             'read_iops_sec': 0
         }
+        self.iotune_wrong = {
+            'total_bytes_sec': 'XXX',
+            'read_bytes_sec': 1000,
+            'write_bytes_sec': 1000,
+            'total_iops_sec': 0,
+            'write_iops_sec': 0,
+            'read_iops_sec': 0
+        }
+
         self.drive = FakeBlockIoTuneDrive('vda', path='/fake/path/vda')
 
         self.dom = FakeBlockIoTuneDomain()
@@ -1868,6 +1878,23 @@ class BlockIoTuneTests(TestCaseBase):
             self.assertEqual(
                 self.dom.iotunes,
                 {self.drive.name: self.iotune_high}
+            )
+
+    @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
+    @MonkeyPatch(utils, 'isBlockDevice', lambda *args: False)
+    def test_set_iotune_invalid(self):
+        with fake.VM() as testvm:
+            testvm._dom = self.dom
+            testvm._devices[hwclass.DISK] = (self.drive,)
+
+            tunables = [
+                {"name": self.drive.name, "ioTune": self.iotune_wrong}
+            ]
+
+            self.assertRaises(
+                exception.UpdateIOTuneError,
+                testvm.setIoTune,
+                tunables
             )
 
     def assert_nth_call_to_dom_is(self, nth, call):

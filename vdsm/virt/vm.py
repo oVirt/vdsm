@@ -2980,8 +2980,7 @@ class Vm(object):
             try:
                 vmtune.validate_io_tune_params(io_tune)
             except ValueError:
-                return self._reportException(key='updateIoTuneErr',
-                                             msg='Invalid ioTune value')
+                raise exception.UpdateIOTuneError('Invalid ioTune value')
 
             try:
                 self._dom.setBlockIoTune(found_device.name, io_tune,
