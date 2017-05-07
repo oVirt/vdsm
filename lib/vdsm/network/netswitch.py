@@ -31,7 +31,7 @@ from vdsm.network.link.setup import SetupBonds
 from vdsm.network.netinfo.cache import (networks_base_info, get as netinfo_get,
                                         CachingNetInfo, NetInfo)
 from vdsm.tool.service import service_status
-from vdsm.utils import memoized
+from vdsm.common.cache import memoized
 
 from . import connectivity
 from . import ifacquire

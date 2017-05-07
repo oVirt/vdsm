@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,8 @@ from __future__ import absolute_import
 
 from collections import namedtuple
 
-from . import utils
+from vdsm.common import cache
+
 from . import cpuarch
 
 
@@ -31,7 +32,7 @@ CpuInfo = namedtuple('CpuInfo', 'flags, frequency, model, ppcmodel, platform,'
                      'machine')
 
 
-@utils.memoized
+@cache.memoized
 def _cpuinfo():
     '''
     Parse cpuinfo-like file, keeping the values in module's runtime variables.

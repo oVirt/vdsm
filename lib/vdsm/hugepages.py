@@ -26,7 +26,7 @@ import threading
 
 from vdsm import cpuarch
 from vdsm import supervdsm
-from vdsm import utils
+from vdsm.common import cache
 
 
 _PATH = '/sys/kernel/mm/hugepages'
@@ -44,7 +44,7 @@ class NonContignuousMemory(Exception):
     """Raised when the memory is too fragmented to allocate hugepages"""
 
 
-@utils.memoized
+@cache.memoized
 def supported(path=_PATH):
     """Small cached helper to get available hugepage sizes.
 

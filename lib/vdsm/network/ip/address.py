@@ -22,7 +22,7 @@ import logging
 import socket
 import struct
 
-from vdsm import utils
+from vdsm.common import cache
 from vdsm.network import errors as ne
 from vdsm.network import ipwrapper
 from vdsm.network import sysctl
@@ -221,7 +221,7 @@ def flush(iface, family='both'):
     ipwrapper.addrFlush(iface, family)
 
 
-@utils.memoized
+@cache.memoized
 def ipv6_supported():
     """
     Check if IPv6 is disabled by kernel arguments (or even compiled out).

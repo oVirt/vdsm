@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2016 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 import os
 import logging
-from vdsm.utils import memoized
+from vdsm.common.cache import memoized
 from vdsm.commands import execCmd
 from vdsm import constants
 from vdsm import cpuarch

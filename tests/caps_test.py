@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ from vdsm import cpuarch
 from vdsm import numa
 from vdsm import machinetype
 from vdsm import osinfo
-from vdsm import utils
+from vdsm.common import cache
 
 
 def _getTestData(testFileName):
@@ -55,7 +55,7 @@ class TestCaps(TestCaseBase):
     def tearDown(self):
         for name in dir(caps):
             obj = getattr(caps, name)
-            if isinstance(obj, utils.memoized):
+            if isinstance(obj, cache.memoized):
                 obj.invalidate()
 
     def _readCaps(self, fileName):

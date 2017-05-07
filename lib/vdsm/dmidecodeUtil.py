@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 from __future__ import absolute_import
 
-from vdsm import utils
+from vdsm.common import cache
 
 
 # This function gets dict and returns new dict that includes only string
@@ -37,7 +37,7 @@ def __leafDict(d):
     return ret
 
 
-@utils.memoized
+@cache.memoized
 def getAllDmidecodeInfo():
     import dmidecode
 
@@ -47,7 +47,7 @@ def getAllDmidecodeInfo():
     return myLeafDict
 
 
-@utils.memoized
+@cache.memoized
 def getHardwareInfoStructure():
     dmiInfo = getAllDmidecodeInfo()
     sysStruct = {}

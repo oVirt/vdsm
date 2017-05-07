@@ -28,12 +28,12 @@ import xml.etree.cElementTree as etree
 import libvirt
 
 from vdsm.common import conv
+from vdsm.common.cache import memoized
 
 from . import cpuarch
 from . import hooks
 from . import libvirtconnection
 from . import supervdsm
-from . import utils
 
 CAPABILITY_TO_XML_ATTR = {'pci': 'pci',
                           'scsi': 'scsi',
@@ -116,7 +116,7 @@ class _DeviceTreeCache(object):
         self._parent_to_device_params = {}
 
 
-@utils.memoized
+@memoized
 def _data_processors_map():
     # Unknown devices will only be processed in generic way.
     data_processors_map = collections.defaultdict(

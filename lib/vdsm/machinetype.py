@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,14 +26,15 @@ import xml.etree.ElementTree as ET
 
 import libvirt
 
+from vdsm.common import cache
+
 from . import cpuarch
 from . import libvirtconnection
-from . import utils
 
 CPU_MAP_FILE = '/usr/share/libvirt/cpu_map.xml'
 
 
-@utils.memoized
+@cache.memoized
 def emulated_machines(arch, capabilities=None):
     """
     Parse libvirt capabilties to obtain supported emulated machines on the
@@ -110,7 +111,7 @@ def cpu_models(capfile=CPU_MAP_FILE, arch=None):
     return all_models
 
 
-@utils.memoized
+@cache.memoized
 def compatible_cpu_models():
     """
     Compare qemu's CPU models to models the host is capable of emulating.

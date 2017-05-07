@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,8 +44,9 @@ from vdsm.network.link.bond.sysfs_options import BONDING_DEFAULTS
 from vdsm.network.netinfo import routes
 from vdsm.network.netlink import monitor
 from vdsm.commands import execCmd
+from vdsm.common.cache import memoized
 from vdsm.tool.dump_bonding_opts import main as dump_bonding_opts
-from vdsm.utils import CommandPath, memoized, random_iface_name
+from vdsm.utils import CommandPath, random_iface_name
 
 from . import dhcp
 from . import firewall

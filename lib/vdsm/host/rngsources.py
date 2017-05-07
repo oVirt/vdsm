@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,8 +22,7 @@ from __future__ import absolute_import
 
 import os.path
 
-from vdsm.utils import memoized
-
+from vdsm.common.cache import memoized
 
 _SOURCES = {
     'random': '/dev/random',

@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,9 +25,10 @@ import logging
 import uuid
 
 from vdsm.commands import execCmd
+from vdsm.common.cache import memoized
 from vdsm.network import errors as ne
 from vdsm.network.errors import ConfigNetworkError, OvsDBConnectionError
-from vdsm.utils import CommandPath, memoized
+from vdsm.utils import CommandPath
 
 from . import (API as DriverAPI,
                Transaction as DriverTransaction,

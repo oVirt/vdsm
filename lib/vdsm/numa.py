@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ from vdsm import cmdutils
 from vdsm import commands
 from vdsm import libvirtconnection
 from vdsm import utils
+from vdsm.common import cache
 
 
 NumaTopology = namedtuple('NumaTopology', 'topology, distances, cpu_topology')
@@ -82,7 +83,7 @@ def cpu_topology(capabilities=None):
     return _numa(capabilities).cpu_topology
 
 
-@utils.memoized
+@cache.memoized
 def autonuma_status():
     '''
     Query system for autonuma status. Returns one of following:
@@ -118,7 +119,7 @@ def memory_by_cell(index):
     return meminfo
 
 
-@utils.memoized
+@cache.memoized
 def _numa(capabilities=None):
     if capabilities is None:
         capabilities = _get_libvirt_caps()

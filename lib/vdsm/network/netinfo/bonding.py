@@ -29,7 +29,7 @@ import six
 
 from vdsm import constants
 from vdsm.network.ipwrapper import Link
-from vdsm.utils import memoized
+from vdsm.common.cache import memoized
 
 from .misc import visible_devs
 from . import nics

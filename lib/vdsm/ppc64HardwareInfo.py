@@ -20,7 +20,7 @@ from __future__ import absolute_import
 import os.path
 
 from vdsm import cpuinfo
-from vdsm import utils
+from vdsm.common import cache
 
 
 def _from_device_tree(tree_property, tree_path='/proc/device-tree'):
@@ -33,7 +33,7 @@ def _from_device_tree(tree_property, tree_path='/proc/device-tree'):
         return 'unavailable'
 
 
-@utils.memoized
+@cache.memoized
 def getHardwareInfoStructure():
     return {
         'systemSerialNumber': cpuinfo.ppcmodel(),

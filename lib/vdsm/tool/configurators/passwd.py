@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ from __future__ import absolute_import
 from vdsm import constants
 from vdsm import commands
 from vdsm import utils
+from vdsm.common import cache
 
 
 from . import YES, NO
@@ -67,7 +68,7 @@ def removeConf():
             raise RuntimeError("Remove password failed: %s" % (err,))
 
 
-@utils.memoized
+@cache.memoized
 def libvirt_password():
     with open(LIBVIRT_PASSWORD_PATH) as passwd_file:
         return passwd_file.readline().rstrip("\n")

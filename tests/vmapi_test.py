@@ -22,9 +22,9 @@ from __future__ import absolute_import
 from vdsm.virt import vmexitreason
 
 from virt import vm
+from vdsm.common import cache
 from vdsm.common import define
 from testlib import VdsmTestCase as TestCaseBase
-from vdsm import utils
 from vdsm.api import vdsmapi
 
 import API
@@ -36,7 +36,7 @@ import vmfakelib as fake
 
 
 class TestSchemaCompliancyBase(TestCaseBase):
-    @utils.memoized
+    @cache.memoized
     def _getAPI(self):
         paths = [vdsmapi.find_schema()]
         return vdsmapi.Schema(paths, True)

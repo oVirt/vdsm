@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ from collections import namedtuple
 
 from vdsm import cpuarch
 from vdsm import utils
+from vdsm.common import cache
 
 # For debian systems we can use python-apt if available
 try:
@@ -95,7 +96,7 @@ def kdump_status():
     return status
 
 
-@utils.memoized
+@cache.memoized
 def _release_name():
     if os.path.exists('/etc/rhev-hypervisor-release'):
         return OSName.RHEVH
@@ -148,7 +149,7 @@ def _next_gen_node():
     return False
 
 
-@utils.memoized
+@cache.memoized
 def _get_os_release_data(var_name):
     """
     The /etc/os-release file contain operating
@@ -178,13 +179,13 @@ def _get_version_id():
     return _get_os_release_data('VERSION_ID')
 
 
-@utils.memoized
+@cache.memoized
 def kernel_args(path='/proc/cmdline'):
     with open(path, 'r') as f:
         return f.readline().strip()
 
 
-@utils.memoized
+@cache.memoized
 def version():
     version = release_name = ''
 
@@ -292,7 +293,7 @@ def package_versions():
     return pkgs
 
 
-@utils.memoized
+@cache.memoized
 def runtime_kernel_flags():
     ret = os.uname()
     try:
@@ -306,7 +307,7 @@ def runtime_kernel_flags():
     return KernelFlags(dict(version=ver, release=rel), realtime)
 
 
-@utils.memoized
+@cache.memoized
 def nested_virtualization():
     if cpuarch.is_ppc(cpuarch.real()):
         return NestedVirtualization(False, None)

@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2016 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import six
 
 from vdsm import numa
 from vdsm import utils
+from vdsm.common import cache
 
 from vdsm import v2v
 
@@ -199,7 +200,7 @@ def get_boot_time():
     raise ValueError('Boot time not present')
 
 
-@utils.memoized
+@cache.memoized
 def _boot_time():
     # Try to get boot time only once, if N/A just log the error and never
     # include it in the response.

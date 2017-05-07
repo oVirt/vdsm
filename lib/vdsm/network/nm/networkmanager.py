@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,8 @@
 from __future__ import absolute_import
 
 from vdsm.commands import execCmd
-from vdsm.utils import CommandPath, memoized
+from vdsm.common.cache import memoized
+from vdsm.utils import CommandPath
 
 from .nmdbus import NMDbus, NMDbusIfcfgRH1
 from .nmdbus.active import NMDbusActiveConnections

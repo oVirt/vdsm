@@ -26,6 +26,7 @@ import xml.etree.ElementTree as ET
 
 import libvirt
 
+from vdsm.common import cache
 from vdsm.config import config
 from vdsm.host import rngsources
 from vdsm.storage import hba
@@ -54,7 +55,7 @@ def _getFreshCapsXMLStr():
     return libvirtconnection.get().getCapabilities()
 
 
-@utils.memoized
+@cache.memoized
 def _getCapsXMLStr():
     return _getFreshCapsXMLStr()
 
@@ -85,7 +86,7 @@ def _findLiveSnapshotSupport(guest):
     return None
 
 
-@utils.memoized
+@cache.memoized
 def _getLiveSnapshotSupport(arch, capabilities=None):
     if capabilities is None:
         capabilities = _getCapsXMLStr()
@@ -99,7 +100,7 @@ def _getLiveSnapshotSupport(arch, capabilities=None):
     return None
 
 
-@utils.memoized
+@cache.memoized
 def getLiveMergeSupport():
     """
     Determine if libvirt provides the necessary features to enable live merge.
@@ -226,7 +227,7 @@ def _dropVersion(vstring, logMessage):
     return info
 
 
-@utils.memoized
+@cache.memoized
 def _getVersionInfo():
     if not hasattr(libvirt, 'VIR_MIGRATE_ABORT_ON_ERROR'):
         return _dropVersion('3.4',
