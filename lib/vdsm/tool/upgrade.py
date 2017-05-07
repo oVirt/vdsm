@@ -1,4 +1,4 @@
-# Copyright 2013-2014 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,8 +23,9 @@ import logging
 import logging.config
 import os
 
+from vdsm.common import fileutils
+
 from ..constants import P_VDSM_LIB
-from .. import utils
 
 
 def _get_upgrade_log():
@@ -42,7 +43,7 @@ def _upgrade_needed(upgrade):
 def _upgrade_seal(upgrade):
     seal_file = _upgrade_seal_path(upgrade)
     try:
-        utils.touchFile(seal_file)
+        fileutils.touch_file(seal_file)
     except (OSError, IOError):
         _get_upgrade_log().exception("Failed to seal upgrade %s", upgrade.name)
     else:

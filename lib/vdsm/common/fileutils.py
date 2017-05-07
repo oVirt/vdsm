@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,30 +18,15 @@
 #
 from __future__ import absolute_import
 
-import logging
 import os
 
-from vdsm.common.fileutils import touch_file
-from vdsm.constants import P_VDSM_RUN
-from vdsm.utils import rmFile
 
-
-TRACKED_INTERFACES_FOLDER = os.path.join(P_VDSM_RUN, 'trackedInterfaces')
-
-
-def add(device_name):
-    logging.debug('Add iface tracking for device %s', device_name)
-    touch_file(_filepath(device_name))
-
-
-def remove(device_name):
-    logging.debug('Remove iface tracking for device %s', device_name)
-    rmFile(_filepath(device_name))
-
-
-def is_tracked(device_name):
-    return os.path.exists(_filepath(device_name))
-
-
-def _filepath(device_name):
-    return os.path.join(TRACKED_INTERFACES_FOLDER, device_name)
+def touch_file(file_path):
+    """
+    http://www.unix.com/man-page/POSIX/1posix/touch/
+    If a file at filePath already exists, its accessed and modified times are
+    updated to the current time. Otherwise, the file is created.
+    :param file_path: The file to touch
+    """
+    with open(file_path, 'a'):
+        os.utime(file_path, None)

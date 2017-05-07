@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ import importlib
 import os
 import sys
 from vdsm import moduleloader
-from vdsm import utils
+from vdsm.common import fileutils
 from testlib import permutations, expandPermutations, namedTemporaryDir
 from testlib import forked
 from testlib import VdsmTestCase as TestCaseBase
@@ -36,8 +36,8 @@ class ImportModulesTest(TestCaseBase):
     def _setup_test_modules(self, files):
         with namedTemporaryDir() as path:
             for f in files:
-                utils.touchFile(os.path.join(path, f))
-            utils.touchFile(os.path.join(path, '__init__.py'))
+                fileutils.touch_file(os.path.join(path, f))
+            fileutils.touch_file(os.path.join(path, '__init__.py'))
             sys.path.insert(0, os.path.dirname(path))
             yield importlib.import_module(os.path.basename(path))
 

@@ -37,6 +37,7 @@ from vdsm import jobs
 from vdsm import v2v
 from vdsm.common import api
 from vdsm.common import exception
+from vdsm.common import fileutils
 from vdsm.common import response
 from vdsm.common import validate
 from vdsm.common import conv
@@ -84,7 +85,7 @@ def updateTimestamp():
     # The setup API uses this log file to determine if this host is still
     # accessible.  We use a file (rather than an event) because setup is
     # performed by a separate, root process.
-    utils.touchFile(constants.P_VDSM_CLIENT_LOG)
+    fileutils.touch_file(constants.P_VDSM_CLIENT_LOG)
 
 
 class APIBase(object):
