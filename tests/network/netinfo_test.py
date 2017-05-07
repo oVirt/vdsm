@@ -30,10 +30,10 @@ from vdsm.network import ipwrapper
 from vdsm.network import sysctl
 from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.link.bond import Bond
+from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo import addresses, bonding, dns, misc, nics, routes
 from vdsm.network.netinfo.cache import get
 from vdsm.network.netlink import waitfor
-from vdsm.utils import random_iface_name
 
 from modprobe import RequireBondingMod
 from testlib import mock

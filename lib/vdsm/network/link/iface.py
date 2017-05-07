@@ -19,6 +19,8 @@
 from __future__ import absolute_import
 
 import os
+import random
+import string
 
 from vdsm.network import ipwrapper
 from vdsm.network.netlink import link
@@ -84,3 +86,17 @@ def mac_address(dev):
 def _up_blocking(dev, link_blocking):
     with waitfor_linkup(dev, link_blocking):
         ipwrapper.linkSet(dev, [STATE_UP])
+
+
+def random_iface_name(prefix='', max_length=15, digit_only=False):
+    """
+    Create a network device name with the supplied prefix and a pseudo-random
+    suffix, e.g. dummy_ilXaYiSn7. The name is bound to IFNAMSIZ of 16-1 chars.
+    """
+    suffix_len = max_length - len(prefix)
+    suffix_chars = string.digits
+    if not digit_only:
+        suffix_chars += string.ascii_letters
+    suffix = ''.join(random.choice(suffix_chars)
+                     for _ in range(suffix_len))
+    return prefix + suffix

@@ -30,6 +30,8 @@ import six
 
 from vdsm import constants
 from vdsm import utils
+
+from vdsm.network.link.iface import random_iface_name
 from . import errors as ne
 
 CONF_VOLATILE_RUN_DIR = constants.P_VDSM_RUN + 'netconf/'
@@ -269,7 +271,7 @@ def _store_net_config():
     link (rename syscall).
     """
     safeconf_dir = CONF_PERSIST_DIR[:-1]
-    rand_suffix = utils.random_iface_name(max_length=8)
+    rand_suffix = random_iface_name(max_length=8)
     new_safeconf_dir = safeconf_dir + '.' + rand_suffix
     new_safeconf_symlink = new_safeconf_dir + '.ln'
 

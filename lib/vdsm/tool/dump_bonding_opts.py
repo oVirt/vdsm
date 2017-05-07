@@ -1,4 +1,4 @@
-# Copyright 2014-2015 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,10 +24,10 @@ from contextlib import contextmanager
 from functools import partial
 
 from vdsm.network.link.bond import sysfs_options as bond_options
+from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo.bonding import (
     BONDING_MASTERS, BONDING_OPT, BONDING_DEFAULTS, BONDING_NAME2NUMERIC_PATH,
     bond_opts_name2numeric_filtered)
-from ..utils import random_iface_name
 from . import expose, ExtraArgsError
 
 _MAX_BONDING_MODES = 6

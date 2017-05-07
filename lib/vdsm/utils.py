@@ -40,13 +40,11 @@ import logging
 import six
 import sys
 import os
-import random
 import select
 import shutil
 import signal
 import socket
 import stat
-import string
 import tempfile
 import threading
 import time
@@ -784,20 +782,6 @@ def monotonic_time():
       adjustments.
     """
     return os.times()[4]
-
-
-def random_iface_name(prefix='', max_length=15, digit_only=False):
-    """
-    Create a network device name with the supplied prefix and a pseudo-random
-    suffix, e.g. dummy_ilXaYiSn7. The name is bound to IFNAMSIZ of 16-1 chars.
-    """
-    suffix_len = max_length - len(prefix)
-    suffix_chars = string.digits
-    if not digit_only:
-        suffix_chars += string.ascii_letters
-    suffix = ''.join(random.choice(suffix_chars)
-                     for _ in range(suffix_len))
-    return prefix + suffix
 
 
 def round(n, size):

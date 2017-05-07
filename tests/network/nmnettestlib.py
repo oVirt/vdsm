@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,9 +22,10 @@ from contextlib import contextmanager
 
 from vdsm.commands import execCmd
 from vdsm.network.link import iface as linkiface
+from vdsm.network.link.iface import random_iface_name
 from vdsm.utils import CommandPath
 
-from .nettestlib import dummy_devices, random_iface_name
+from .nettestlib import dummy_devices
 
 TEST_LINK_TYPE = 'bond'
 

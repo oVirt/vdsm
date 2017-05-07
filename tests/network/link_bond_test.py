@@ -30,7 +30,7 @@ from .nettestlib import (bonding_default_fpath, dummy_devices,
 from vdsm.network.link import iface
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.bond import sysfs_options
-from vdsm.utils import random_iface_name
+from vdsm.network.link.iface import random_iface_name
 
 
 def setup_module():

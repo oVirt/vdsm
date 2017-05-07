@@ -41,12 +41,13 @@ from vdsm.network.ipwrapper import (
     netns_exec)
 from vdsm.network.link import iface as linkiface, bond as linkbond
 from vdsm.network.link.bond.sysfs_options import BONDING_DEFAULTS
+from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo import routes
 from vdsm.network.netlink import monitor
 from vdsm.commands import execCmd
 from vdsm.common.cache import memoized
 from vdsm.tool.dump_bonding_opts import main as dump_bonding_opts
-from vdsm.utils import CommandPath, random_iface_name
+from vdsm.utils import CommandPath
 
 from . import dhcp
 from . import firewall
