@@ -24,7 +24,6 @@ import tempfile
 
 from functools import wraps
 from vdsm import constants
-from vdsm import utils
 from vdsm.common import fileutils
 
 
@@ -81,7 +80,7 @@ def ValidatesHook(hook_dir, hook_name, functional=True, hook_script=None):
                 if directory_existed:
                     fileutils.rm_file(hook_path + '/' + hook_name)
                 else:
-                    utils.rmTree(hook_path)
+                    fileutils.rm_tree(hook_path)
 
                 fileutils.rm_file(cookie_file)
 

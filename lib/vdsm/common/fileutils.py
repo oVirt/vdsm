@@ -81,3 +81,18 @@ def atomic_file_write(filename, flag):
         raise
     else:
         os.rename(tmp_filename, filename)
+
+
+def rm_tree(dir_to_remove):
+    """
+    Try to remove a directory and all it's contents.
+
+    If the directory doesn't exist it's assumed that it was already removed.
+    """
+    try:
+        shutil.rmtree(dir_to_remove)
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            logging.warning("Directory: %s already removed", dir_to_remove)
+        else:
+            raise

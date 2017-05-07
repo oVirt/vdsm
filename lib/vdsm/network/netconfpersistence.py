@@ -29,7 +29,7 @@ import shutil
 import six
 
 from vdsm import constants
-from vdsm import utils
+from vdsm.common import fileutils
 
 from vdsm.network.link.iface import random_iface_name
 from . import errors as ne
@@ -192,8 +192,8 @@ class Config(BaseConfig):
     def _clearDisk(self):
         logging.info('Clearing %s and %s',
                      self.networksPath, self.bondingsPath)
-        utils.rmTree(self.networksPath)
-        utils.rmTree(self.bondingsPath)
+        fileutils.rm_tree(self.networksPath)
+        fileutils.rm_tree(self.bondingsPath)
 
 
 class RunningConfig(Config):
@@ -282,4 +282,4 @@ def _store_net_config():
     os.rename(new_safeconf_symlink, safeconf_dir)
     real_old_safeconf_dir_existed = real_old_safeconf_dir != safeconf_dir
     if real_old_safeconf_dir_existed:
-        utils.rmTree(real_old_safeconf_dir)
+        fileutils.rm_tree(real_old_safeconf_dir)

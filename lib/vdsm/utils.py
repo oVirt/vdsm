@@ -41,7 +41,6 @@ import six
 import sys
 import os
 import select
-import shutil
 import signal
 import socket
 import stat
@@ -83,21 +82,6 @@ class NICENESS:
 def isBlockDevice(path):
     path = os.path.abspath(path)
     return stat.S_ISBLK(os.stat(path).st_mode)
-
-
-def rmTree(directoryToRemove):
-    """
-    Try to remove a directory and all it's contents.
-
-    If the directory doesn't exist it's assumed that it was already removed.
-    """
-    try:
-        shutil.rmtree(directoryToRemove)
-    except OSError as e:
-        if e.errno == errno.ENOENT:
-            logging.warning("Directory: %s already removed", directoryToRemove)
-        else:
-            raise
 
 
 def _parseMemInfo(lines):

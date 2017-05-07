@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from vdsm.common import fileutils
 from vdsm.tool import configurator
 from vdsm.tool.configurators import YES, NO, MAYBE, InvalidConfig, InvalidRun
 from vdsm.tool.configfile import ConfigFile, ParserWrapper
@@ -24,7 +25,6 @@ from vdsm.tool.configurators import abrt
 from vdsm.tool.configurators import libvirt
 from vdsm.tool import UsageError
 from vdsm.tool import upgrade
-from vdsm import utils
 import monkeypatch
 from testlib import expandPermutations, make_config, VdsmTestCase
 from testValidation import ValidateRunningAsRoot
@@ -334,7 +334,7 @@ class AbrtModuleConfigureTests(TestCase):
 
     def tearDown(self):
         self.patch.revert()
-        utils.rmTree(self._test_dir)
+        fileutils.rm_tree(self._test_dir)
 
     def testIsConfiguredNegative(self):
         _setConfig(self,
@@ -417,7 +417,7 @@ class LibvirtModuleConfigureTests(TestCase):
 
     def tearDown(self):
         self.patch.revert()
-        utils.rmTree(self._test_dir)
+        fileutils.rm_tree(self._test_dir)
 
     def testValidatePositive(self):
         self.vdsm_cfg.set('vars', 'ssl', 'true')
