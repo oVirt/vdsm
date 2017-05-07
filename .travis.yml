@@ -10,8 +10,8 @@ git:
 env:
   matrix:
     - DOCKER_IMAGE=ovirtorg/vdsm-test-centos
-    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-24
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-25
+    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-rawhide
 
 before_install:
   - docker --version
