@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ import re
 
 import six
 
-from vdsm import utils
+from vdsm.common import fileutils
 from .configurators import ifcfg
 from .ip import address
 from .ip import dhclient
@@ -102,7 +102,7 @@ def _get_ifcfg_config(iface):
 
 
 def _rollback_ifcfg_iface(iface, ifcfg_lines):
-    with utils.atomic_file_write(ifcfg.NET_CONF_PREF + iface, 'w') as f:
+    with fileutils.atomic_file_write(ifcfg.NET_CONF_PREF + iface, 'w') as f:
         f.writelines(ifcfg_lines)
     ifcfg.ifup(iface)
 
@@ -117,7 +117,7 @@ def _disable_onboot_ifcfg_iface(iface):
 
 
 def _set_ifcfg_param(iface, key, value):
-    with utils.atomic_file_write(ifcfg.NET_CONF_PREF + iface, 'r+') as f:
+    with fileutils.atomic_file_write(ifcfg.NET_CONF_PREF + iface, 'r+') as f:
         lines = f.readlines()
         lines = _mark_ifcfg_with_prefix(lines)
 

@@ -45,7 +45,6 @@ import shutil
 import signal
 import socket
 import stat
-import tempfile
 import threading
 import time
 import weakref
@@ -847,32 +846,3 @@ def rget(dict, keys, default=None):
     elif len(keys) == 0:
         return dict
     return rget(dict.get(keys[0]), keys[1:], default)
-
-
-@contextmanager
-def atomic_file_write(filename, flag):
-    """
-    Atomically write into a file.
-
-    Usage:
-
-        with atomic_write('foo.txt', 'w') as f:
-            f.write('shrubbery')
-            # there are no changes on foo.txt yet
-        # now it is changed
-    """
-    fd, tmp_filename = tempfile.mkstemp(
-        dir=os.path.dirname(os.path.abspath(filename)),
-        prefix=os.path.basename(filename) + '.',
-        suffix='.tmp')
-    os.close(fd)
-    try:
-        if os.path.exists(filename):
-            shutil.copyfile(filename, tmp_filename)
-        with open(tmp_filename, flag) as f:
-            yield f
-    except:
-        rm_file(tmp_filename)
-        raise
-    else:
-        os.rename(tmp_filename, filename)

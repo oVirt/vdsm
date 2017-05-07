@@ -45,17 +45,13 @@ from monkeypatch import MonkeyPatch
 from vmTestsData import VM_STATUS_DUMP
 from monkeypatch import Patch
 from fakelib import FakeLogger
-from testlib import forked, online_cpus, namedTemporaryDir
+from testlib import forked, online_cpus
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import brokentest
 from multiprocessing import Process
 
 EXT_SLEEP = "sleep"
-
-
-class TestException(Exception):
-    pass
 
 
 class FakeMonotonicTime(object):
@@ -1019,48 +1015,3 @@ class TestNoIntrPoll(TestCaseBase):
         proc.start()
         self._noIntrWatchFd(myPipe, isEpoll=False, mask=select.POLLIN)
         proc.join()
-
-
-class AtomicFileWriteTest(TestCaseBase):
-
-    def test_exception(self):
-        TEXT = 'foo'
-        with namedTemporaryDir() as tmp_dir:
-            test_file_path = os.path.join(tmp_dir, 'foo.txt')
-            with self.assertRaises(TestException):
-                with utils.atomic_file_write(test_file_path, 'w') as f:
-                    f.write(TEXT)
-                    raise TestException()
-            self.assertFalse(os.path.exists(test_file_path))
-            # temporary file was removed
-            self.assertEqual(len(os.listdir(tmp_dir)), 0)
-
-    def test_create_a_new_file(self):
-        TEXT = 'foo'
-        with namedTemporaryDir() as tmp_dir:
-            test_file_path = os.path.join(tmp_dir, 'foo.txt')
-            with utils.atomic_file_write(test_file_path, 'w') as f:
-                f.write(TEXT)
-                self.assertFalse(os.path.exists(test_file_path))
-            self._assert_file_contains(test_file_path, TEXT)
-            # temporary file was removed
-            self.assertEqual(len(os.listdir(tmp_dir)), 1)
-
-    def test_edit_file(self):
-        OLD_TEXT = 'foo'
-        NEW_TEXT = 'bar'
-        with namedTemporaryDir() as tmp_dir:
-            test_file_path = os.path.join(tmp_dir, 'foo.txt')
-            with open(test_file_path, 'w') as f:
-                f.write(OLD_TEXT)
-            with utils.atomic_file_write(test_file_path, 'w') as f:
-                f.write(NEW_TEXT)
-                self._assert_file_contains(test_file_path, OLD_TEXT)
-            self._assert_file_contains(test_file_path, NEW_TEXT)
-            # temporary file was removed
-            self.assertEqual(len(os.listdir(tmp_dir)), 1)
-
-    def _assert_file_contains(self, path, expected_content):
-        with open(path) as f:
-            content = f.read()
-            self.assertEqual(content, expected_content)

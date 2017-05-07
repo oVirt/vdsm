@@ -114,7 +114,7 @@ class AcquireNicTest(VdsmTestCase):
     @mock.patch.object(ifacquire, 'open', new_callable=mock.mock_open,
                        create=True)
     # atomic_file_write has similiar API to open
-    @mock.patch.object(ifacquire.utils, 'atomic_file_write',
+    @mock.patch.object(ifacquire.fileutils, 'atomic_file_write',
                        new_callable=mock.mock_open)
     def _test_acquire_ifcfg_nic(self, mock_atomic_write, mock_open,
                                 mock_ifdown,
@@ -143,7 +143,7 @@ class AcquireNicTest(VdsmTestCase):
     @mock.patch.object(ifacquire, 'open', new_callable=mock.mock_open,
                        create=True)
     # atomic_file_write has similiar API to open
-    @mock.patch.object(ifacquire.utils, 'atomic_file_write',
+    @mock.patch.object(ifacquire.fileutils, 'atomic_file_write',
                        new_callable=mock.mock_open)
     def test_rollback_acquired_ifcfg_nic(self, mock_atomic_write, mock_open,
                                          mock_ifup):
