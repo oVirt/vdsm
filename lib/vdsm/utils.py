@@ -51,6 +51,7 @@ import time
 import weakref
 
 from vdsm.common import zombiereaper
+from vdsm.common.fileutils import rm_file
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
@@ -83,23 +84,6 @@ class NICENESS:
 def isBlockDevice(path):
     path = os.path.abspath(path)
     return stat.S_ISBLK(os.stat(path).st_mode)
-
-
-def rmFile(fileToRemove):
-    """
-    Try to remove a file.
-
-    If the file doesn't exist it's assumed that it was already removed.
-    """
-    try:
-        os.unlink(fileToRemove)
-    except OSError as e:
-        if e.errno == errno.ENOENT:
-            logging.warning("File: %s already removed", fileToRemove)
-        else:
-            logging.error("Removing file: %s failed", fileToRemove,
-                          exc_info=True)
-            raise
 
 
 def rmTree(directoryToRemove):
@@ -163,7 +147,7 @@ def forceLink(src, dst):
         os.link(src, dst)
     except OSError as e:
         if e.errno == errno.EEXIST:
-            rmFile(dst)
+            rm_file(dst)
             os.link(src, dst)
         else:
             logging.error("Linking file: %s to %s failed", src, dst,
@@ -815,7 +799,7 @@ def kill_and_rm_pid(pid, pid_file):
         else:
             raise
     if pid_file is not None:
-        rmFile(pid_file)
+        rm_file(pid_file)
 
 
 def unique(iterable):
@@ -888,7 +872,7 @@ def atomic_file_write(filename, flag):
         with open(tmp_filename, flag) as f:
             yield f
     except:
-        rmFile(tmp_filename)
+        rm_file(tmp_filename)
         raise
     else:
         os.rename(tmp_filename, filename)

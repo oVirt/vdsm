@@ -14,7 +14,7 @@ import traceback
 import six
 
 import hooking
-from vdsm import utils
+from vdsm.common import fileutils
 from vdsm.network.netconfpersistence import RunningConfig
 
 
@@ -94,7 +94,7 @@ def _unconfigure(interface):
     """
     filename = _get_config_name(interface)
     if os.path.exists(filename):
-        utils.rmFile(filename)
+        fileutils.rm_file(filename)
 
 
 def _all_configured_fcoe_networks():

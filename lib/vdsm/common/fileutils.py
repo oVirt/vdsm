@@ -18,6 +18,9 @@
 #
 from __future__ import absolute_import
 
+import errno
+import logging
+
 import os
 
 
@@ -30,3 +33,20 @@ def touch_file(file_path):
     """
     with open(file_path, 'a'):
         os.utime(file_path, None)
+
+
+def rm_file(file_to_remove):
+    """
+    Try to remove a file.
+
+    If the file doesn't exist it's assumed that it was already removed.
+    """
+    try:
+        os.unlink(file_to_remove)
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            logging.warning("File: %s already removed", file_to_remove)
+        else:
+            logging.error("Removing file: %s failed", file_to_remove,
+                          exc_info=True)
+            raise

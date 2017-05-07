@@ -21,10 +21,9 @@ from __future__ import absolute_import
 import logging
 import os
 
+from vdsm.common.fileutils import rm_file
 from vdsm.common.fileutils import touch_file
 from vdsm.constants import P_VDSM_RUN
-from vdsm.utils import rmFile
-
 
 TRACKED_INTERFACES_FOLDER = os.path.join(P_VDSM_RUN, 'trackedInterfaces')
 
@@ -36,7 +35,7 @@ def add(device_name):
 
 def remove(device_name):
     logging.debug('Remove iface tracking for device %s', device_name)
-    rmFile(_filepath(device_name))
+    rm_file(_filepath(device_name))
 
 
 def is_tracked(device_name):

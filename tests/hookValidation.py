@@ -25,6 +25,7 @@ import tempfile
 from functools import wraps
 from vdsm import constants
 from vdsm import utils
+from vdsm.common import fileutils
 
 
 def _createHookScript(hook_path, hook_filename, script=None):
@@ -78,11 +79,11 @@ def ValidatesHook(hook_dir, hook_name, functional=True, hook_script=None):
                 output = test_function(*args, **kwargs)
             finally:
                 if directory_existed:
-                    utils.rmFile(hook_path + '/' + hook_name)
+                    fileutils.rm_file(hook_path + '/' + hook_name)
                 else:
                     utils.rmTree(hook_path)
 
-                utils.rmFile(cookie_file)
+                fileutils.rm_file(cookie_file)
 
                 if not functional:
                     constants.P_VDSM_HOOKS = old_vdsm_hooks

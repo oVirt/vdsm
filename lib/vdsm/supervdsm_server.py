@@ -33,6 +33,7 @@ import logging.config
 from contextlib import closing
 
 from vdsm import concurrent
+from vdsm.common import fileutils
 from vdsm.common import sigutils
 from vdsm.common import zombiereaper
 
@@ -305,7 +306,7 @@ def main(args):
             log.debug("Terminated normally")
         finally:
             if os.path.exists(address):
-                utils.rmFile(address)
+                fileutils.rm_file(address)
 
     except Exception:
         log.error("Could not start Super Vdsm", exc_info=True)

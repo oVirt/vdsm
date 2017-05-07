@@ -167,7 +167,7 @@ ONBOOT=yes
 
 @attr(type='unit')
 @mock.patch.object(ifcfg_acquire.networkmanager, 'is_running', lambda: False)
-@mock.patch.object(ifcfg_acquire.utils, 'rmFile')
+@mock.patch.object(ifcfg_acquire.fileutils, 'rm_file')
 @mock.patch.object(ifcfg_acquire.os, 'rename')
 @mock.patch.object(ifcfg_acquire.glob, 'iglob')
 @mock.patch.object(ifcfg_acquire.misc, 'open', create=True)

@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published
@@ -31,7 +31,7 @@ import six
 
 from vdsm.virt import metadata
 from vdsm.virt import xmlconstants
-from vdsm.utils import rmFile
+from vdsm.common.fileutils import rm_file
 from vdsm import constants
 
 
@@ -72,7 +72,7 @@ class XMLFile(object):
 
     def clear(self):
         self._log.debug('clearing XML for container %s', self._name)
-        rmFile(self.path)
+        rm_file(self.path)
 
 
 class ConfigError(Exception):

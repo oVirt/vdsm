@@ -29,7 +29,8 @@ shared utilities and common code for the virt package
 import os.path
 import threading
 
-from vdsm.utils import monotonic_time, rmFile
+from vdsm.common.fileutils import rm_file
+from vdsm.utils import monotonic_time
 
 log = logging.getLogger('virt.utils')
 
@@ -124,8 +125,8 @@ class ExpiringCache(object):
 
 def cleanup_guest_socket(sock):
     if os.path.islink(sock):
-        rmFile(os.path.realpath(sock))
-    rmFile(sock)
+        rm_file(os.path.realpath(sock))
+    rm_file(sock)
 
 
 class DynamicBoundedSemaphore(object):

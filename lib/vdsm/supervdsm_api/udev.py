@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import logging
 from vdsm import commands
 from vdsm import cmdutils
 from vdsm import udevadm
-from vdsm import utils
+from vdsm.common import fileutils
 
 from vdsm.constants import EXT_CHOWN, \
     DISKIMAGE_USER, DISKIMAGE_GROUP, \
@@ -78,7 +78,7 @@ def appropriateSCSIDevice(device_name, udev_path):
 def rmAppropriateSCSIDevice(device_name, udev_path):
     rule_file = _UDEV_RULE_FILE_NAME % ('scsi', device_name)
     _log.debug("Removing rule %s", rule_file)
-    utils.rmFile(rule_file)
+    fileutils.rm_file(rule_file)
 
     _log.debug('Changing ownership (to root:disk) of device %s', udev_path)
     cmd = [EXT_CHOWN, 'root:disk', udev_path]

@@ -40,7 +40,7 @@ from vdsm import concurrent
 from vdsm import constants
 from vdsm import dsaversion
 from vdsm import hooks
-from vdsm import utils
+from vdsm.common import fileutils
 from vdsm.common.conv import tobool
 
 from vdsm.network import ifacetracking
@@ -390,7 +390,7 @@ class ConfigWriter(object):
 
     @staticmethod
     def _removeFile(filename):
-        utils.rmFile(filename)
+        fileutils.rm_file(filename)
         logging.debug("Removed file %s", filename)
 
     @classmethod

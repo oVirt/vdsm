@@ -25,6 +25,7 @@ from vdsm import cmdutils
 from vdsm import constants
 from vdsm import qemuimg
 from vdsm.common import exception
+from vdsm.common import fileutils
 from vdsm.common.threadlocal import vars
 from vdsm.compat import sanlock
 from vdsm.config import config
@@ -38,7 +39,6 @@ from vdsm.storage import resourceManager as rm
 from vdsm.storage import task
 from vdsm.storage.misc import deprecated
 from vdsm.storage.volumemetadata import VolumeMetadata
-import vdsm.utils as utils
 
 import volume
 import image
@@ -492,7 +492,7 @@ class BlockVolume(volume.Volume):
         lvm.createLV(dom.sdUUID, volUUID, "%s" % lvSize, activate=True,
                      initialTags=(sc.TAG_VOL_UNINIT,))
 
-        utils.rmFile(volPath)
+        fileutils.rm_file(volPath)
         os.symlink(lvm.lvPath(dom.sdUUID, volUUID), volPath)
 
         if not volParent:
@@ -707,7 +707,7 @@ class BlockVolume(volume.Volume):
     @classmethod
     def shareVolumeRollback(cls, taskObj, volPath):
         cls.log.info("Volume rollback for volPath=%s", volPath)
-        utils.rmFile(volPath)
+        fileutils.rm_file(volPath)
 
     def getVolumeTag(self, tagPrefix):
         return self._manifest.getVolumeTag(tagPrefix)

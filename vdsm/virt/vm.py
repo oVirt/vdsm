@@ -37,6 +37,7 @@ import libvirt
 # vdsm imports
 from vdsm.common import api
 from vdsm.common import exception
+from vdsm.common import fileutils
 from vdsm.common import response
 from vdsm import concurrent
 from vdsm import constants
@@ -1306,7 +1307,7 @@ class Vm(object):
         if self.conf.get('volatileFloppy'):
             try:
                 self.log.debug("Floppy %s cleanup" % self.conf['floppy'])
-                utils.rmFile(self.conf['floppy'])
+                fileutils.rm_file(self.conf['floppy'])
             except Exception:
                 pass
 
@@ -4300,7 +4301,7 @@ class Vm(object):
 
     def _ejectFloppy(self):
         if 'volatileFloppy' in self.conf:
-            utils.rmFile(self.conf['floppy'])
+            fileutils.rm_file(self.conf['floppy'])
         self._changeBlockDev('floppy', 'fda', '')
 
     def releaseVm(self, gracefulAttempts=1):

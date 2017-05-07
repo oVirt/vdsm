@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ from vdsm.constants import EXT_MKFS_MSDOS, EXT_MKISOFS, \
     DISKIMAGE_USER, DISKIMAGE_GROUP
 from vdsm.constants import P_VDSM_RUN
 from vdsm.commands import execCmd
-from vdsm.utils import rmFile
+from vdsm.common.fileutils import rm_file
 from vdsm.storage import mount
 from vdsm.storage.fileUtils import resolveUid, resolveGid
 
@@ -153,7 +153,7 @@ def mkIsoFs(vmId, files, volumeName=None):
 
         if os.path.exists(isopath):
             logging.warning("iso file %r exists, removing", isopath)
-            rmFile(isopath)
+            rm_file(isopath)
 
         fd = os.open(isopath, os.O_CREAT | os.O_RDONLY | os.O_EXCL, mode)
         os.close(fd)

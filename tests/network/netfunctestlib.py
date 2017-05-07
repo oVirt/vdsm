@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import six
 
 from nose.plugins.skip import SkipTest
 
-from vdsm import utils
+from vdsm.common import fileutils
 import vdsm.config
 from vdsm.network import kernelconfig
 from vdsm.network.ip import dhclient
@@ -430,7 +430,7 @@ class SetupNetworks(object):
         for attr in six.itervalues(self.setup_bonds):
             nics_used += attr['nics']
         for nic in nics_used:
-            utils.rmFile(IFCFG_PREFIX + nic)
+            fileutils.rm_file(IFCFG_PREFIX + nic)
 
         return status, msg
 

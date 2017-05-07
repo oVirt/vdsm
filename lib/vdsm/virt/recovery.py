@@ -28,6 +28,7 @@ import time
 
 import libvirt
 
+from vdsm.common import fileutils
 from vdsm.common import response
 from vdsm.compat import pickle
 from vdsm import constants
@@ -89,7 +90,7 @@ class File(object):
 
     def cleanup(self):
         with self._lock:
-            utils.rmFile(self._path)
+            fileutils.rm_file(self._path)
             self._path = None
 
     def save(self, vm):

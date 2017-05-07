@@ -1,4 +1,4 @@
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ from __future__ import absolute_import
 import glob
 import os
 
-from vdsm import utils
+from vdsm.common import fileutils
 from vdsm.network.netinfo import misc
 from vdsm.network.nm import networkmanager
 from vdsm.network.nm.errors import NMDeviceNotFoundError
@@ -141,4 +141,4 @@ class IfcfgAcquireNMoffline(object):
         if device_files:
             os.rename(device_files[0], NET_CONF_PREF + device)
             for filepath in device_files[1:]:
-                utils.rmFile(filepath)
+                fileutils.rm_file(filepath)

@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2016 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,10 +26,10 @@ import tempfile
 
 from nose.plugins.attrib import attr
 
+from vdsm.common.fileutils import rm_file
 from vdsm.network import errors as ne
 from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network.netconfpersistence import Config, Transaction
-from vdsm.utils import rmFile
 
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -73,7 +73,7 @@ class NetConfPersistenceTests(TestCaseBase):
             persistence = Config(self.tempdir)
             self.assertEqual(persistence.networks[NETWORK], NETWORK_ATTRIBUTES)
         finally:
-            rmFile(filePath)
+            rm_file(filePath)
 
     def testSetAndRemoveNetwork(self):
         persistence = Config(self.tempdir)
