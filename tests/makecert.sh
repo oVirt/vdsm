@@ -10,7 +10,7 @@ OTHERCSRFILE="other.csr"
 OTHERCRTFILE="other.crt"
 
 P12FILE="server.p12"
-PASSWD="pass:x"
+PASSWD="pass:secretpassphrase"
 
 # hardcoded localhost is not working on all of the network configurations (m2c)
 HOST=`hostname -I | cut -d' ' -f1`
