@@ -10,7 +10,7 @@ OTHERCSRFILE="other.csr"
 OTHERCRTFILE="other.crt"
 
 P12FILE="server.p12"
-PASSWD="pass:x"
+PASSWD="pass:secretpassphrase"
 
 openssl genrsa -des3 -passout $PASSWD -out $PASSKEYFILE 2048
 openssl rsa -passin $PASSWD -in $PASSKEYFILE -out $KEYFILE
