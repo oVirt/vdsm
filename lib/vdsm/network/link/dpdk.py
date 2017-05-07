@@ -23,7 +23,10 @@ import itertools
 import json
 import os
 
+import six
+
 from vdsm.commands import execCmd
+from vdsm.common import cache
 
 
 NET_SYSFS = '/sys/class/net/'
@@ -37,14 +40,16 @@ class LshwError(Exception):
 
 
 def get_dpdk_devices():
-    devices = _lshw_command()
-
-    dpdk_devices = {PORT_PREFIX + str(i):
-                    {'pci_addr': devinfo['handle'][len('PCI:'):],
-                     'driver': devinfo['configuration']['driver']}
-                    for i, devinfo in enumerate(_dpdk_devices_info(devices))}
+    dpdk_devices = _get_dpdk_devices()
+    if not _dpdk_devs_current(dpdk_devices):
+        invalidate_dpdk_devices()
+        dpdk_devices = _get_dpdk_devices()
 
     return dpdk_devices
+
+
+def invalidate_dpdk_devices():
+    _get_dpdk_devices.invalidate()
 
 
 def info(dev):
@@ -72,6 +77,15 @@ def is_dpdk(dev_name):
             not os.path.exists(os.path.join(NET_SYSFS, dev_name)))
 
 
+@cache.memoized
+def _get_dpdk_devices():
+    devices = _lshw_command()
+    return {PORT_PREFIX + str(i): {'pci_addr': devinfo['handle'][len('PCI:'):],
+                                   'driver': devinfo['configuration']['driver']
+                                   }
+            for i, devinfo in enumerate(_dpdk_devices_info(devices))}
+
+
 def _lshw_command():
     filter_out_hw = ['usb', 'pcmcia', 'isapnp', 'ide', 'scsi', 'dmi', 'memory',
                      'cpuinfo']
@@ -96,6 +110,32 @@ def _dpdk_devices_info(data):
 
             for child in _dpdk_devices_info(entry):
                 yield child
+
+
+def _dpdk_devs_current(dpdk_devices):
+    devs_exist = all(_dev_exists(devinfo)
+                     for devinfo in six.viewvalues(dpdk_devices))
+    unlisted_devices = _unlisted_devices(
+        [devinfo['pci_addr'] for devinfo in six.viewvalues(dpdk_devices)])
+
+    return devs_exist and not unlisted_devices
+
+
+def _dev_exists(dev):
+    return os.path.exists(
+        os.path.join('/sys/bus/pci/drivers', dev['driver'], dev['pci_addr']))
+
+
+def _unlisted_devices(pci_addrs):
+    pci_addr_files = []
+    for driver in DPDK_DRIVERS:
+        driver_path = os.path.join('/sys/bus/pci/drivers', driver)
+        if os.path.exists(driver_path):
+            pci_addr_files += [pci_addr for pci_addr in os.listdir(driver_path)
+                               if pci_addr.startswith('00')]
+
+    new_devices = set(pci_addr_files) - set(pci_addrs)
+    return bool(new_devices)
 
 
 def _is_dpdk_dev(dev):
