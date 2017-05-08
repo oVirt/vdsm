@@ -47,6 +47,5 @@ def rm_file(file_to_remove):
         if e.errno == errno.ENOENT:
             logging.warning("File: %s already removed", file_to_remove)
         else:
-            logging.error("Removing file: %s failed", file_to_remove,
-                          exc_info=True)
+            logging.exception("Removing file: %s failed", file_to_remove)
             raise
