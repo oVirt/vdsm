@@ -241,6 +241,10 @@ parameters = [
             'By default tlv1, tlsv1.1 and tlsv1.2 are '
             'enabled.'),
 
+        ('verify_client_cert', 'false',
+            'Enables whether to verify client fqdn or ip stored '
+            'in a certificate.'),
+
         ('connection_stats_timeout', '3600',
             'Time in seconds defining how frequently we log transport stats'),
 
