@@ -278,4 +278,4 @@ def _store_net_config():
 
     real_old_safeconf_dir = os.path.realpath(safeconf_dir)
     os.rename(new_safeconf_symlink, safeconf_dir)
-    os.remove(real_old_safeconf_dir)
+    utils.rmTree(real_old_safeconf_dir)
