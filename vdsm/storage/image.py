@@ -828,6 +828,8 @@ class Image:
                 else:
                     dstVolFormat = volParams['volFormat']
 
+                # Prepare src volume to be readable when calculating dst size.
+                srcVol.prepare(rw=False)
                 dstVolAllocBlk = self.calculate_vol_alloc(
                     sdUUID, volParams, dstSdUUID, dstVolFormat)
 
@@ -882,7 +884,6 @@ class Image:
 
             try:
                 # Start the actual copy image procedure
-                srcVol.prepare(rw=False)
                 dstVol.prepare(rw=True, setrw=True)
 
                 try:
