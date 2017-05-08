@@ -1231,7 +1231,17 @@ class BlockStorageDomain(sd.StorageDomain):
         info['vguuid'] = vg.uuid
         info['state'] = vg.partial
         info['metadataDevice'] = self._manifest.getMetadataLVDevice()
-        info['vgMetadataDevice'] = self._manifest.getVgMetadataDevice()
+
+        # Some users may have storage domains with incorrect lvm metadata
+        # configuration, caused by faulty restore from lvm backup. Such storage
+        # domain is not supported, but this issue may be too common and we
+        # cannot fail here. See https://bugzilla.redhat.com/1446492.
+        try:
+            info['vgMetadataDevice'] = self._manifest.getVgMetadataDevice()
+        except se.UnexpectedVolumeGroupMetadata as e:
+            self.log.warning("Cannot get VG metadata device, this storage "
+                             "domain is unsupported: %s", e)
+
         return info
 
     def getStats(self):
