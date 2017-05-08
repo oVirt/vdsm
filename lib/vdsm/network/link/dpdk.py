@@ -19,6 +19,7 @@
 #
 from __future__ import absolute_import
 
+import itertools
 import json
 import os
 
@@ -57,7 +58,11 @@ def is_dpdk(dev_name):
 
 
 def _lshw_command():
-    rc, out, err = execCmd(['lshw', '-json'], raw=True)
+    filter_out_hw = ['usb', 'pcmcia', 'isapnp', 'ide', 'scsi', 'dmi', 'memory',
+                     'cpuinfo']
+    filterout_cmd = list(itertools.chain.from_iterable(('-disable', x)
+                                                       for x in filter_out_hw))
+    rc, out, err = execCmd(['lshw', '-json'] + filterout_cmd, raw=True)
     if rc != 0:
         raise LshwError(err)
 
