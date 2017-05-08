@@ -60,7 +60,6 @@ test_modules = \
 	cpu_profile_test.py \
 	cpuinfo_test.py \
 	device_test.py \
-	domaindescriptor_test.py \
 	encoding_test.py \
 	exception_test.py \
 	executor_test.py \
