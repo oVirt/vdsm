@@ -221,11 +221,12 @@ class SSLHandshakeDispatcher(object):
         if self._is_handshaking:
             self._handshake(dispatcher)
         else:
-            if not self._verify_host(dispatcher.socket.getpeercert(),
-                                     dispatcher.socket.getpeername()[0]):
-                self.log.error("peer certificate does not match host name")
-                dispatcher.socket.close()
-                return
+            if config.getboolean('vars', 'verify_client_cert'):
+                if not self._verify_host(dispatcher.socket.getpeercert(),
+                                         dispatcher.socket.getpeername()[0]):
+                    self.log.error("peer certificate does not match host name")
+                    dispatcher.socket.close()
+                    return
 
             self._handshake_finished_handler(dispatcher)
 
