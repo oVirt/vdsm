@@ -800,16 +800,3 @@ def weakmethod(meth):
         return func(inst, *args, **kwargs)
 
     return wrapper
-
-
-def rget(dict, keys, default=None):
-    """Recursive dictionary.get()
-
-    >>> rget({'a': {'b': 'hello'}}, ('a', 'b'))
-    'hello'
-    """
-    if dict is None:
-        return default
-    elif len(keys) == 0:
-        return dict
-    return rget(dict.get(keys[0]), keys[1:], default)

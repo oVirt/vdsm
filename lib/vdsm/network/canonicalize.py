@@ -22,7 +22,6 @@ from __future__ import absolute_import
 import six
 
 from .netinfo import bridges, mtus, bonding, dns
-from vdsm import utils
 from vdsm.common.conv import tobool
 from vdsm.network.ip.address import prefix2netmask
 
@@ -121,7 +120,7 @@ def _canonicalize_ipv6(data):
 
 
 def _canonicalize_switch_type_net(data):
-    if tobool(utils.rget(data, ('custom', 'ovs'))):
+    if tobool(_rget(data, ('custom', 'ovs'))):
         data['switch'] = 'ovs'
     elif 'switch' not in data:
         data['switch'] = 'legacy'
@@ -129,7 +128,7 @@ def _canonicalize_switch_type_net(data):
 
 def _canonicalize_switch_type_bond(data):
     options = data.get('options', '')
-    ovs = utils.rget(bonding.parse_bond_options(options), ('custom', 'ovs'))
+    ovs = _rget(bonding.parse_bond_options(options), ('custom', 'ovs'))
     if tobool(ovs):
         data['switch'] = 'ovs'
     elif 'switch' not in data:
@@ -145,7 +144,7 @@ def _canonicalize_ip_default_route(data):
     if 'defaultRoute' not in data:
         data['defaultRoute'] = False
 
-    custom_default_route = utils.rget(data, ('custom', 'default_route'))
+    custom_default_route = _rget(data, ('custom', 'default_route'))
     if custom_default_route is not None:
         data['defaultRoute'] = tobool(custom_default_route)
 
@@ -170,3 +169,16 @@ def _canonicalize_ipv4_netmask(data):
             data['netmask'] = prefix2netmask(int(prefix))
         except ValueError as ve:
             raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Bad prefix: %s' % ve)
+
+
+def _rget(dict, keys, default=None):
+    """Recursive dictionary.get()
+
+    >>> _rget({'a': {'b': 'hello'}}, ('a', 'b'))
+    'hello'
+    """
+    if dict is None:
+        return default
+    elif len(keys) == 0:
+        return dict
+    return _rget(dict.get(keys[0]), keys[1:], default)

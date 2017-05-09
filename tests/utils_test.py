@@ -386,16 +386,6 @@ class TestGeneralUtils(TestCaseBase):
     def test_unique(self, iterable, unique_items):
         self.assertEqual(utils.unique(iterable,), unique_items)
 
-    def test_rget_key_exists(self):
-        self.assertEqual(
-            utils.rget({'a': {'b': 'hello'}}, ('a', 'b')),
-            'hello')
-
-    def test_rget_key_missing(self):
-        self.assertEqual(
-            utils.rget({'a': {'b': 'hello'}}, ('a', 'c'), default='bye'),
-            'bye')
-
 
 class TestAsyncProcessOperation(TestCaseBase):
     def _echo(self, text):
