@@ -32,8 +32,8 @@ from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network.configurators.ifcfg import ConfigWriter
 from vdsm.network.configurators.ifcfg import Ifcfg
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
-from vdsm.network.netswitch import netinfo
 from vdsm.network.netinfo.cache import NetInfo, libvirt_vdsm_nets
+from vdsm.network.netswitch.configurator import netinfo
 from vdsm.network.kernelconfig import KernelConfig
 
 

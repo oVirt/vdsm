@@ -256,7 +256,8 @@ def _classify_nets_bonds_config(persistent_config):
     and the ones unchanged:
     changed_nets, changed_bonds, unchanged_nets, unchanged_bonds
     """
-    current_config = kernelconfig.KernelConfig(NetInfo(netswitch.netinfo()))
+    net_info = NetInfo(netswitch.configurator.netinfo())
+    current_config = kernelconfig.KernelConfig(net_info)
     desired_config = kernelconfig.normalize(persistent_config)
 
     changed_nets_names, extra_nets_names = _classify_entities_difference(

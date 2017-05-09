@@ -1080,6 +1080,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/network/link/bond
 %dir %{python_sitelib}/%{vdsm_name}/network/netinfo
 %dir %{python_sitelib}/%{vdsm_name}/network/netlink
+%dir %{python_sitelib}/%{vdsm_name}/network/netswitch
 %dir %{python_sitelib}/%{vdsm_name}/network/nm
 %dir %{python_sitelib}/%{vdsm_name}/network/nm/nmdbus
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs
@@ -1161,6 +1162,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/netlink/monitor.py*
 %{python_sitelib}/%{vdsm_name}/network/netlink/route.py*
 %{python_sitelib}/%{vdsm_name}/network/netlink/waitfor.py*
+%{python_sitelib}/%{vdsm_name}/network/netswitch/*.py*
 %{python_sitelib}/%{vdsm_name}/network/nm/*.py*
 %{python_sitelib}/%{vdsm_name}/network/nm/nmdbus/*.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/__init__.py*
@@ -1172,7 +1174,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/models.py*
 %{python_sitelib}/%{vdsm_name}/network/netconfpersistence.py*
 %{python_sitelib}/%{vdsm_name}/network/netrestore.py*
-%{python_sitelib}/%{vdsm_name}/network/netswitch.py*
 %{python_sitelib}/%{vdsm_name}/network/netupgrade.py*
 %{python_sitelib}/%{vdsm_name}/network/restore_net_config.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroute.py*

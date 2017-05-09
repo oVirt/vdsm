@@ -38,8 +38,9 @@ class SplitSetupActionsTests(TestCaseBase):
                      'net2remove': {'remove': True}}
         running_nets = {'net2edit': {'foo': 'bar'}}
 
-        nets2add, nets2edit, nets2remove = netswitch._split_setup_actions(
-            net_query, running_nets)
+        nets2add, nets2edit, nets2remove = \
+            netswitch.configurator._split_setup_actions(
+                net_query, running_nets)
 
         self.assertEqual(nets2add, {'net2add': {'nic': 'eth0'}})
         self.assertEqual(nets2edit, {'net2edit': {'nic': 'eth1'}})
@@ -51,8 +52,9 @@ class SplitSetupActionsTests(TestCaseBase):
                       'bond2remove': {'remove': True}}
         running_bonds = {'bond2edit': {'foo': 'bar'}}
 
-        bonds2add, bonds2edit, bonds2remove = netswitch._split_setup_actions(
-            bond_query, running_bonds)
+        bonds2add, bonds2edit, bonds2remove = \
+            netswitch.configurator._split_setup_actions(
+                bond_query, running_bonds)
 
         self.assertEqual(bonds2add, {'bond2add': {'nics': ['eth0', 'eth1']}})
         self.assertEqual(bonds2edit, {'bond2edit': {'nics': ['eth2', 'eth3']}})
@@ -92,13 +94,15 @@ class SouthboundValidationTests(TestCaseBase):
     def test_replacing_legacy_net_on_nic(self):
         self._test_replacing_net_on_nic('legacy')
 
-    @mock.patch.object(netswitch.ovs_switch, 'validate_network_setup',
+    @mock.patch.object(netswitch.configurator.ovs_switch,
+                       'validate_network_setup',
                        lambda *args: None)
-    @mock.patch.object(netswitch.legacy_switch, 'validate_network_setup',
+    @mock.patch.object(netswitch.configurator.legacy_switch,
+                       'validate_network_setup',
                        lambda *args: None)
     def _test_replacing_net_on_nic(self, switch):
         with _mock_netinfo(switch):
-            netswitch.validate(
+            netswitch.configurator.validate(
                 {'fakebrnet2': {'nic': 'eth0', 'switch': switch},
                  'fakebrnet1': {'remove': True}},
                 {})
@@ -115,7 +119,7 @@ class SouthboundValidationTests(TestCaseBase):
 
         with _mock_netinfo(switch):
             with self.assertRaises(errors.ConfigNetworkError) as cne_context:
-                netswitch.validate(net, bonds)
+                netswitch.configurator.validate(net, bonds)
             self.assertEqual(cne_context.exception.errCode,
                              errors.ERR_BAD_PARAMS)
 
@@ -123,8 +127,9 @@ class SouthboundValidationTests(TestCaseBase):
 @contextmanager
 def _mock_netinfo(switch):
     net_info = partial(_create_fake_netinfo, switch)
-    with mock.patch.object(netswitch, 'netinfo', net_info) as netinfo_mock:
-        yield netinfo_mock
+    with mock.patch.object(
+            netswitch.configurator, 'netinfo', net_info) as netinfo:
+        yield netinfo
 
 
 def _create_fake_netinfo(switch):

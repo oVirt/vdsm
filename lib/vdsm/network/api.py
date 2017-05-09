@@ -27,6 +27,7 @@ import six
 
 from vdsm import hooks
 
+from vdsm.network import netswitch
 from vdsm.network import sourceroute
 from vdsm.network.configurators.ifcfg import ConfigWriter
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
@@ -37,7 +38,6 @@ from . ip import address as ipaddress, validator as ipvalidator
 from . canonicalize import canonicalize_networks, canonicalize_bondings
 from . errors import RollbackIncomplete
 from . import netconfpersistence
-from . import netswitch
 
 
 DUMMY_BRIDGE
@@ -50,7 +50,7 @@ def network_caps():
           caps to reduce the amount of work in root context.
     """
     # TODO: Version requests by engine to ease handling of compatibility.
-    return netswitch.netinfo(compatibility=30600)
+    return netswitch.configurator.netinfo(compatibility=30600)
 
 
 def change_numvfs(pci_path, numvfs, net_name):
@@ -84,7 +84,7 @@ def ip_addrs_info(device):
 
 def net2vlan(network_name):
     """Return the vlan id of the network if exists, None otherwise."""
-    return netswitch.net2vlan(network_name)
+    return netswitch.configurator.net2vlan(network_name)
 
 
 def ovs_bridge(network_name):
@@ -94,7 +94,7 @@ def ovs_bridge(network_name):
 
     This API requires root access.
     """
-    return netswitch.ovs_net2bridge(network_name)
+    return netswitch.configurator.ovs_net2bridge(network_name)
 
 
 def _build_setup_hook_dict(req_networks, req_bondings, req_options):
@@ -191,10 +191,10 @@ def setupNetworks(networks, bondings, options):
 
         logging.debug('Validating configuration')
         ipvalidator.validate(networks)
-        netswitch.validate(networks, bondings)
+        netswitch.configurator.validate(networks, bondings)
 
         running_config = netconfpersistence.RunningConfig()
-        if netswitch.switch_type_change_needed(
+        if netswitch.configurator.switch_type_change_needed(
                 networks, bondings, running_config):
             _change_switch_type(networks, bondings, options, running_config)
         else:
@@ -219,13 +219,14 @@ def _setup_networks(networks, bondings, options):
     logging.debug('Applying...')
     in_rollback = options.get('_inRollback', False)
     with _rollback():
-        netswitch.setup(networks, bondings, options, in_rollback)
+        netswitch.configurator.setup(networks, bondings, options, in_rollback)
 
 
 def _change_switch_type(networks, bondings, options, running_config):
     logging.debug('Applying switch type change')
 
-    netswitch.validate_switch_type_change(networks, bondings, running_config)
+    netswitch.configurator.validate_switch_type_change(
+        networks, bondings, running_config)
 
     in_rollback = options.get('_inRollback', False)
 
@@ -236,13 +237,14 @@ def _change_switch_type(networks, bondings, options, running_config):
     logging.debug('Setting up requested switch configuration')
     try:
         with _rollback():
-            netswitch.setup(networks, bondings, options, in_rollback)
+            netswitch.configurator.setup(
+                networks, bondings, options, in_rollback)
     except:
         logging.exception('Requested switch setup failed, rolling back to '
                           'initial configuration')
         diff = running_config.diffFrom(netconfpersistence.RunningConfig())
         try:
-            netswitch.setup(
+            netswitch.configurator.setup(
                 diff.networks, diff.bonds, {'connectivityCheck': False},
                 in_rollback=True)
         except:
@@ -254,7 +256,7 @@ def _change_switch_type(networks, bondings, options, running_config):
 def _remove_nets_and_bonds(nets, bonds, in_rollback):
     nets_removal = {name: {'remove': True} for name in six.iterkeys(nets)}
     bonds_removal = {name: {'remove': True} for name in six.iterkeys(bonds)}
-    netswitch.setup(
+    netswitch.configurator.setup(
         nets_removal, bonds_removal, {'connectivityCheck': False}, in_rollback)
 
 

@@ -31,6 +31,7 @@ import six
 import vdsm.config
 from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm.network import ipwrapper
+from vdsm.network import netswitch
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
     routeExists, ruleExists, addrFlush, LinkType, getLinks, routeShowTable,
@@ -50,7 +51,6 @@ from vdsm.network.configurators.ifcfg import (Ifcfg, stop_devices,
                                               NET_CONF_BACK_DIR)
 from vdsm.network import errors
 from vdsm.network import legacy_switch
-from vdsm.network import netswitch
 from vdsm.network import sourceroute
 from vdsm.network import sysctl
 from vdsm.network import tc
@@ -211,7 +211,8 @@ def requiresUnifiedPersistence(reason):
 def _get_running_and_kernel_config(bare_running_config):
     """:param config: vdsm configuration, could be retrieved from getProxy()
     """
-    netinfo = vdsm.network.netinfo.cache.NetInfo(netswitch.netinfo())
+    netinfo = vdsm.network.netinfo.cache.NetInfo(
+        netswitch.configurator.netinfo())
     bare_kernel_config = kernelconfig.KernelConfig(netinfo)
     normalized_running_config = kernelconfig.normalize(bare_running_config)
     # Unify strings to unicode instances so differences are easier to

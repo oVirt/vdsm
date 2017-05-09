@@ -69,7 +69,8 @@ def _top_dev(network, attrs):
         return network
     # bridgeless
     nics, vlan, _, bonding = netinfo.cache.NetInfo(
-        netswitch.netinfo()).getNicsVlanAndBondingForNetwork(network)
+        netswitch.configurator.netinfo()).getNicsVlanAndBondingForNetwork(
+            network)
     return vlan or bonding or nics[0]
 
 

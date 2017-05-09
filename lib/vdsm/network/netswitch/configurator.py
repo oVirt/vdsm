@@ -22,24 +22,24 @@ import itertools
 
 import six
 
+from vdsm.common.cache import memoized
+from vdsm.network import connectivity
+from vdsm.network import ifacquire
+from vdsm.network import legacy_switch
+from vdsm.network import errors as ne
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
-from vdsm.network.kernelconfig import KernelConfig
 from vdsm.network.link import iface
+from vdsm.network.netconfpersistence import RunningConfig, Transaction
+from vdsm.network.ovs import info as ovs_info
+from vdsm.network.ovs import switch as ovs_switch
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.setup import SetupBonds
 from vdsm.network.netinfo.cache import (networks_base_info, get as netinfo_get,
                                         CachingNetInfo, NetInfo)
 from vdsm.tool.service import service_status
-from vdsm.common.cache import memoized
 
-from . import connectivity
-from . import ifacquire
-from . import legacy_switch
-from . import errors as ne
-from .ovs import info as ovs_info
-from .ovs import switch as ovs_switch
-from .netconfpersistence import RunningConfig, Transaction
+from . import validator
 
 
 def _split_switch_type_entries(entries, running_entries):
@@ -104,7 +104,7 @@ def _split_switch_type(nets, bonds):
 
 
 def validate(networks, bondings):
-    _validate_common(networks)
+    validator.validate_southbound_devices_usages(networks, NetInfo(netinfo()))
 
     legacy_nets, ovs_nets, legacy_bonds, ovs_bonds = _split_switch_type(
         networks, bondings)
@@ -423,37 +423,3 @@ def validate_switch_type_change(nets, bonds, running_config):
         raise ne.ConfigNetworkError(
             ne.ERR_BAD_PARAMS,
             'All bondings must be reconfigured on switch type change')
-
-
-def _validate_common(nets):
-    _validate_southbound_devices_usages(NetInfo(netinfo()), nets)
-
-
-def _validate_southbound_devices_usages(ni, nets):
-    kernel_config = KernelConfig(ni)
-
-    for requested_net, net_info in six.viewitems(nets):
-        if 'remove' in net_info:
-            kernel_config.removeNetwork(requested_net)
-
-    for requested_net, net_info in six.viewitems(nets):
-        if 'remove' in net_info:
-            continue
-        kernel_config.setNetwork(requested_net, net_info)
-
-    underlying_devices = []
-    for net_attrs in six.viewvalues(kernel_config.networks):
-        vlan = net_attrs.get('vlan')
-        if 'bonding' in net_attrs:
-            underlying_devices.append((net_attrs['bonding'], vlan))
-        elif 'nic' in net_attrs:
-            underlying_devices.append((net_attrs['nic'], vlan))
-
-    if len(set(underlying_devices)) < len(underlying_devices):
-        raise ne.ConfigNetworkError(
-            ne.ERR_BAD_PARAMS,
-            'multiple networks/similar vlans cannot be'
-            ' defined on a single underlying device. '
-            'kernel networks: {}\nrequested networks: {}'.format(
-                kernel_config.networks,
-                nets))
