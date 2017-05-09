@@ -626,7 +626,9 @@ def read_data(filename):
     The test data file any file path under the data/ subdirectory
     in the tests directory.
     """
-    test_path = os.path.realpath(__file__)
+    caller = inspect.stack()[1]
+    caller_mod = inspect.getmodule(caller[0])
+    test_path = os.path.realpath(caller_mod.__file__)
     dir_name = os.path.dirname(test_path)
     path = os.path.join(dir_name, 'data', filename)
     with open(path) as src:
