@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@ from __future__ import print_function
 import threading
 import time
 
+import vdsm.common.time
 from vdsm import schedule
-from vdsm import utils
 from testlib import VdsmTestCase
 from testValidation import broken_on_ci
 from testValidation import stresstest
@@ -38,7 +38,7 @@ class SchedulerTests(VdsmTestCase):
     GRACETIME = 0.1
 
     MAX_TASKS = 1000
-    PERMUTATIONS = ((time.time,), (utils.monotonic_time,))
+    PERMUTATIONS = ((time.time,), (vdsm.common.time.monotonic_time,))
 
     def setUp(self):
         self.scheduler = None
@@ -250,7 +250,7 @@ class TestScheduledCall(VdsmTestCase):
         self.assertEqual(1, self.count)
 
     def test_order(self):
-        now = utils.monotonic_time()
+        now = vdsm.common.time.monotonic_time()
         call_soon = schedule.ScheduledCall(now, self.callback)
         call_later = schedule.ScheduledCall(now + 1, self.callback)
         self.assertLess(call_soon, call_later)

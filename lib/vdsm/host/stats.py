@@ -24,8 +24,8 @@ import logging
 import six
 
 from vdsm import numa
-from vdsm import utils
 from vdsm.common import cache
+from vdsm.common import time
 
 from vdsm import v2v
 
@@ -34,7 +34,7 @@ JIFFIES_BOUND = 2 ** 32
 NETSTATS_BOUND = 2 ** 32
 
 
-_clock = utils.monotonic_time
+_clock = time.monotonic_time
 _start_time = 0
 
 
@@ -42,7 +42,7 @@ def _elapsed_time():
     return _clock() - _start_time
 
 
-def start(clock=utils.monotonic_time):
+def start(clock=time.monotonic_time):
     global _clock
     global _start_time
     _clock = clock

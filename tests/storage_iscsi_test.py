@@ -7,6 +7,7 @@ from testlib import make_config
 from testlib import expandPermutations, permutations
 from vdsm import commands
 from vdsm import utils
+from vdsm.common import time
 from vdsm.password import ProtectedPassword
 from vdsm.storage import iscsi
 from vdsm.storage import iscsiadm
@@ -23,11 +24,11 @@ class RescanTimeoutTests(TestCaseBase):
 
     @contextmanager
     def assertMaxDuration(self, maxtime):
-        start = utils.monotonic_time()
+        start = time.monotonic_time()
         try:
             yield
         finally:
-            elapsed = utils.monotonic_time() - start
+            elapsed = time.monotonic_time() - start
             if maxtime < elapsed:
                 self.fail("Operation was too slow %.2fs > %.2fs" %
                           (elapsed, maxtime))

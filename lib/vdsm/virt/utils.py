@@ -30,7 +30,7 @@ import os.path
 import threading
 
 from vdsm.common.fileutils import rm_file
-from vdsm.utils import monotonic_time
+from vdsm.common.time import monotonic_time
 
 log = logging.getLogger('virt.utils')
 

@@ -34,12 +34,12 @@ from vdsm import dsaversion
 from vdsm import health
 from vdsm import jobs
 from vdsm import schedule
-from vdsm import utils
 from vdsm import libvirtconnection
 from vdsm import containersconnection
 from vdsm import taskset
 from vdsm import metrics
 from vdsm.common import sigutils
+from vdsm.common import time
 from vdsm.common import zombiereaper
 from vdsm.config import config
 from vdsm.network.initializer import init_unprivileged_network_components
@@ -96,7 +96,7 @@ def serve_clients(log):
                 panic("Error initializing IRS")
 
         scheduler = schedule.Scheduler(name="vdsm.Scheduler",
-                                       clock=utils.monotonic_time)
+                                       clock=time.monotonic_time)
         scheduler.start()
         jobs.start(scheduler)
 

@@ -39,6 +39,7 @@ from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import fileutils
 from vdsm.common import response
+import vdsm.common.time
 from vdsm import concurrent
 from vdsm import constants
 from vdsm import containersconnection
@@ -438,7 +439,7 @@ class Vm(object):
         Value provided by this method is used to order messages
         containing changed status on the engine side.
         """
-        return str(int(utils.monotonic_time() * 1000))
+        return str(int(vdsm.common.time.monotonic_time() * 1000))
 
     lastStatus = property(_get_lastStatus, set_last_status)
 
@@ -3230,12 +3231,12 @@ class Vm(object):
         """
         self.log.debug("Waiting for hotunplug to finish")
         with utils.stopwatch("Hotunplug %r" % device):
-            deadline = (utils.monotonic_time() +
+            deadline = (vdsm.common.time.monotonic_time() +
                         config.getfloat('vars', 'hotunplug_timeout'))
             sleep_time = config.getfloat('vars', 'hotunplug_check_interval')
             while device.is_attached_to(self._dom.XMLDesc(0)):
                 time.sleep(sleep_time)
-                if utils.monotonic_time() > deadline:
+                if vdsm.common.time.monotonic_time() > deadline:
                     raise HotunplugTimeout("Timeout detaching %r" % device)
 
     def _readPauseCode(self):

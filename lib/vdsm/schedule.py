@@ -31,9 +31,9 @@ To use a scheduler, create an instance and start it:
 The scheduler default clock is time.time. This clock is not monotonic, which
 may cause scheduled calls to fire too early or too late if the system time is
 modified by the administrator or by ntp service. If you care about this and can
-live with utils.monotonic_time's lower resolution, you can use it as the clock.
+live with monotonic_time's lower resolution, you can use it as the clock.
 
-    scheduler = schedule.Scheduler(clock=utils.monotonic_time)
+    scheduler = schedule.Scheduler(clock=monotonic_time)
 
 When you want to schedule some callable:
 

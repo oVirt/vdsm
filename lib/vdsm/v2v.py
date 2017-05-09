@@ -1,4 +1,4 @@
-# Copyright 2014-2016 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,12 +46,12 @@ from vdsm.commands import execCmd, BUFFSIZE
 from vdsm.common.define import errCode, doneCode
 from vdsm.common import response
 from vdsm.common import zombiereaper
+from vdsm.common.time import monotonic_time
 from vdsm.compat import CPopen
 from vdsm.constants import P_VDSM_LOG, P_VDSM_RUN, EXT_KVM_2_OVIRT
 from vdsm import cmdutils, concurrent, libvirtconnection
 from vdsm import password
-from vdsm.utils import monotonic_time, terminating, traceback, CommandPath, \
-    NICENESS, IOCLASS
+from vdsm.utils import terminating, traceback, CommandPath, NICENESS, IOCLASS
 
 try:
     import ovirt_imageio_common

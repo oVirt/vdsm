@@ -40,6 +40,7 @@ from vdsm import utils
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import panic
+import vdsm.common.time
 
 from monkeypatch import MonkeyPatch
 from vmTestsData import VM_STATUS_DUMP
@@ -59,7 +60,7 @@ class FakeMonotonicTime(object):
     def __init__(self, now):
         self.now = now
         self.patch = Patch([
-            (utils, 'monotonic_time', self.monotonic_time),
+            (vdsm.common.time, 'monotonic_time', self.monotonic_time),
             (time, 'sleep', self.sleep),
         ])
 
@@ -159,12 +160,12 @@ class ExpectedFailure(Exception):
 
 def wait_for_zombie(proc, timeout, interval=0.1):
     interval = min(interval, timeout)
-    deadline = utils.monotonic_time() + timeout
+    deadline = vdsm.common.time.monotonic_time() + timeout
     while True:
         time.sleep(interval)
         if is_zombie(proc):
             return
-        if utils.monotonic_time() > deadline:
+        if vdsm.common.time.monotonic_time() > deadline:
             raise RuntimeError("Timeout waiting for process")
 
 
@@ -214,7 +215,7 @@ class TestRetry(TestCaseBase):
 
             self.assertRaises(RuntimeError, utils.retry, operation,
                               timeout=3, sleep=1)
-            self.assertEqual(utils.monotonic_time(), 3)
+            self.assertEqual(vdsm.common.time.monotonic_time(), 3)
 
     @brokentest("sleep is not considered in deadline calculation")
     def testTimeoutNoTimeForSleep(self):
@@ -229,7 +230,7 @@ class TestRetry(TestCaseBase):
 
             self.assertRaises(RuntimeError, utils.retry, operation,
                               timeout=2, sleep=1)
-            self.assertEqual(utils.monotonic_time(), 1)
+            self.assertEqual(vdsm.common.time.monotonic_time(), 1)
 
     def testTimeoutSleepOnce(self):
         # time  action
@@ -248,7 +249,7 @@ class TestRetry(TestCaseBase):
             self.assertRaises(RuntimeError, utils.retry, operation,
                               timeout=4, sleep=1)
             self.assertEqual(counter[0], 2)
-            self.assertEqual(utils.monotonic_time(), 5)
+            self.assertEqual(vdsm.common.time.monotonic_time(), 5)
 
     def testTimeoutZero(self):
         counter = [0]

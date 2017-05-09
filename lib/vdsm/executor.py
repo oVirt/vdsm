@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,8 +28,9 @@ import functools
 import logging
 import threading
 
+from vdsm.common import time
+
 from . import concurrent
-from . import utils
 
 
 class NotRunning(Exception):
@@ -373,10 +374,10 @@ class Task(object):
     def duration(self):
         if self._start is None:
             return 0
-        return utils.monotonic_time() - self._start
+        return time.monotonic_time() - self._start
 
     def __call__(self):
-        self._start = utils.monotonic_time()
+        self._start = time.monotonic_time()
         self._callable()
 
     def __repr__(self):

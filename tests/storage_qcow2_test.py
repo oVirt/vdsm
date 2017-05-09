@@ -29,6 +29,7 @@ from testlib import permutations, expandPermutations
 from testValidation import slowtest
 from vdsm import qemuimg
 from vdsm import utils
+from vdsm.common import time
 from vdsm.storage import qcow2
 
 MB = 1024 ** 2
@@ -245,12 +246,12 @@ class TestEstimate(VdsmTestCase):
             self.check_estimate(filename, compat)
 
     def check_estimate(self, filename, compat):
-        start = utils.monotonic_time()
+        start = time.monotonic_time()
         estimate = qcow2.estimate_size(filename)
-        estimate_time = utils.monotonic_time() - start
-        start = utils.monotonic_time()
+        estimate_time = time.monotonic_time() - start
+        start = time.monotonic_time()
         actual = converted_size(filename, compat)
-        convert_time = utils.monotonic_time() - start
+        convert_time = time.monotonic_time() - start
         original_size = os.stat(filename).st_size
         error_pct = 100 * float(estimate - actual) / original_size
         print('estimate=%d, '

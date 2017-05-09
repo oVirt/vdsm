@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,8 +23,9 @@ import logging
 import threading
 from collections import namedtuple
 
+from vdsm.common import time
+
 from . import pthread
-from . import utils
 
 
 class Timeout(Exception):
@@ -95,7 +96,7 @@ class Barrier(object):
         Raises Timeout if specified timeout has expired.
         """
         if timeout is not None:
-            deadline = utils.monotonic_time() + timeout
+            deadline = time.monotonic_time() + timeout
         else:
             deadline = None
 
@@ -115,7 +116,7 @@ class Barrier(object):
     def _wait_for_state(self, state, deadline):
         while self._state != state:
             if deadline is not None:
-                now = utils.monotonic_time()
+                now = time.monotonic_time()
                 if now >= deadline:
                     raise Timeout("Timeout waiting for barrier")
                 self._cond.wait(deadline - now)

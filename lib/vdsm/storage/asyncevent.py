@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
 # 2010, 2011, 2012, 2013, 2014, 2015 Python Software Foundation; All
@@ -67,9 +67,9 @@ import heapq
 import logging
 import os
 
-from vdsm import utils
 from vdsm.common import filecontrol
 from vdsm.common import osutils
+from vdsm.common import time
 
 log = logging.getLogger("storage.asyncevent")
 
@@ -143,7 +143,7 @@ class EventLoop(object):
         Changes from Python 3:
         - Process events using asyncore.
         - Use when > now when checking for ready timers, required for using
-          utils.monotonic_time using 10 millis resolution.
+          time.monotonic_time using 10 millis resolution.
         """
         # Remove delayed calls that were cancelled from head of queue.
         while self._scheduled and self._scheduled[0]._cancelled:
@@ -330,7 +330,7 @@ class EventLoop(object):
         Changes from Python 3:
         - Use Python 2 compatible monotonic time
         """
-        return utils.monotonic_time()
+        return time.monotonic_time()
 
     # Validation
 

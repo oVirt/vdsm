@@ -23,7 +23,7 @@ from collections import deque
 from threading import Event
 from . import CALL_TIMEOUT
 
-from vdsm import utils
+from vdsm.common import time
 import re
 
 SUBSCRIPTION_ID_REQUEST = "jms.topic.vdsm_requests"
@@ -339,7 +339,7 @@ class AsyncDispatcher(object):
     - AsyncClient - responsible for client side
     """
     def __init__(self, connection, frame_handler, bufferSize=4096,
-                 clock=utils.monotonic_time):
+                 clock=time.monotonic_time):
         self._frame_handler = frame_handler
         self.connection = connection
         self._bufferSize = bufferSize

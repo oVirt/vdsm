@@ -28,7 +28,7 @@ from netaddr.core import AddrFormatError
 
 from ssl import SSLError
 from vdsm import constants
-from vdsm.utils import monotonic_time
+from vdsm.common.time import monotonic_time
 from .config import config
 
 

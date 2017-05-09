@@ -35,6 +35,7 @@ from contextlib import closing
 from vdsm import concurrent
 from vdsm.common import fileutils
 from vdsm.common import sigutils
+from vdsm.common import time
 from vdsm.common import zombiereaper
 
 
@@ -55,7 +56,6 @@ try:
 except ImportError:
     _glusterEnabled = False
 
-from vdsm import utils
 from vdsm import supervdsm_api
 from vdsm.storage import fuser
 from vdsm.storage import hba
@@ -111,11 +111,11 @@ def safe_poll(mp_connection, timeout):
     Returns True if there is any data to read from the pipe or if the
     pipe was closed.  Returns False if the timeout expired.
     """
-    deadline = utils.monotonic_time() + timeout
+    deadline = time.monotonic_time() + timeout
     remaining = timeout
 
     while not mp_connection.poll(remaining):
-        remaining = deadline - utils.monotonic_time()
+        remaining = deadline - time.monotonic_time()
         if remaining <= 0:
             return False
 

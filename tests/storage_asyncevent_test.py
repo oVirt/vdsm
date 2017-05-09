@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,8 +33,8 @@ from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 
 from vdsm import concurrent
-from vdsm import utils
 from vdsm.common import osutils
+import vdsm.common.time
 from vdsm.storage import asyncevent
 
 
@@ -402,9 +402,9 @@ class TestEventLoopTiming(VdsmTestCase):
     # microsecond resolution.
     @slowtest
     @permutations([
-        (utils.monotonic_time, 1),
-        (utils.monotonic_time, 100),
-        (utils.monotonic_time, 1000),
+        (vdsm.common.time.monotonic_time, 1),
+        (vdsm.common.time.monotonic_time, 100),
+        (vdsm.common.time.monotonic_time, 1000),
         (time.time, 1),
         (time.time, 100),
         (time.time, 1000),

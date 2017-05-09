@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2016 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ import socket
 
 from vdsm import panic
 from vdsm.common import filecontrol
-from vdsm.utils import monotonic_time
+from vdsm.common.time import monotonic_time
 from vdsm.sslcompat import SSLHandshakeDispatcher
 
 

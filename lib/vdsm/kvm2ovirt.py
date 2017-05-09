@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ from ovirt_imageio_common import directio
 
 from vdsm import concurrent
 from vdsm import libvirtconnection
-from vdsm import utils
+from vdsm.common import time
 from vdsm.password import ProtectedPassword
 
 _start = None
@@ -85,7 +85,7 @@ def arguments(args):
 
 
 def write_output(msg):
-    sys.stdout.write('[%7.1f] %s\n' % (utils.monotonic_time() - _start, msg))
+    sys.stdout.write('[%7.1f] %s\n' % (time.monotonic_time() - _start, msg))
     sys.stdout.flush()
 
 
@@ -182,7 +182,7 @@ def validate_disks(options):
 
 def main(argv=None):
     global _start
-    _start = utils.monotonic_time()
+    _start = time.monotonic_time()
 
     options = arguments(argv or sys.argv)
     validate_disks(options)

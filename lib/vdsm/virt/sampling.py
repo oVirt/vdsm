@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2016 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ import time
 from vdsm import hugepages
 from vdsm import numa
 from vdsm import utils
+import vdsm.common.time
 from vdsm.config import config
 from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
 from vdsm.host import api as hostapi
@@ -353,7 +354,7 @@ class StatsCache(object):
 
     _log = logging.getLogger("virt.sampling.StatsCache")
 
-    def __init__(self, clock=utils.monotonic_time):
+    def __init__(self, clock=vdsm.common.time.monotonic_time):
         self._clock = clock
         self._lock = threading.Lock()
         self._samples = SampleWindow(size=2, timefn=self._clock)

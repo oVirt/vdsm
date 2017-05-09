@@ -33,6 +33,7 @@ from yajsonrpc.stompreactor import StompClient, StompRpcServer
 from yajsonrpc import Notification, JsonRpcBindingsError
 from vdsm.config import config
 from vdsm.common.define import doneCode, errCode
+import vdsm.common.time
 from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.momIF import MomClient
 from vdsm.sslcompat import sslutils
@@ -474,7 +475,7 @@ class clientIF(object):
         utils.retry(self._recoverExistingVms, sleep=5)
 
     def _recoverExistingVms(self):
-        start_time = utils.monotonic_time()
+        start_time = vdsm.common.time.monotonic_time()
         try:
             self.log.debug('recovery: started')
 
@@ -503,7 +504,7 @@ class clientIF(object):
             self._preparePathsForRecoveredVMs()
 
             self.log.info('recovery: completed in %is',
-                          utils.monotonic_time() - start_time)
+                          vdsm.common.time.monotonic_time() - start_time)
 
         except:
             self.log.exception("recovery: failed")

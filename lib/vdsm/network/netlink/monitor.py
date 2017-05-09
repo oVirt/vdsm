@@ -1,4 +1,4 @@
-# Copyright 2014-2015 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,9 +25,10 @@ import os
 import select
 import threading
 
-from vdsm.utils import NoIntrPoll, monotonic_time
+from vdsm.utils import NoIntrPoll
 from vdsm import concurrent
 from vdsm.common.osutils import uninterruptible
+from vdsm.common.time import monotonic_time
 
 from . import (LIBNL, _GROUPS, _NL_ROUTE_ADDR_NAME, _NL_ROUTE_LINK_NAME,
                _NL_ROUTE_NAME, _NL_STOP, _add_socket_memberships,

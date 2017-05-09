@@ -24,6 +24,7 @@ from collections import defaultdict
 
 import API
 from contextlib import contextmanager
+from vdsm.common import time
 from yajsonrpc.betterAsyncore import Reactor
 from yajsonrpc.stompreactor import StompDetector, StompRpcClient
 from yajsonrpc.stomp import (
@@ -100,7 +101,7 @@ def constructAcceptor(log, ssl, jsonBridge,
     )
 
     scheduler = schedule.Scheduler(name="test.Scheduler",
-                                   clock=utils.monotonic_time)
+                                   clock=time.monotonic_time)
     scheduler.start()
 
     cif = FakeClientIf(dest)

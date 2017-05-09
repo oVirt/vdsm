@@ -22,10 +22,11 @@ from __future__ import absolute_import
 from collections import deque
 import time
 
+from vdsm.common.time import monotonic_time
+
 from .nettestlib import Dummy
 from vdsm.network.netlink import monitor
 from vdsm.network.sysctl import is_disabled_ipv6
-from vdsm.utils import monotonic_time
 
 from testValidation import ValidateRunningAsRoot, broken_on_ci
 from testlib import start_thread, VdsmTestCase as TestCaseBase

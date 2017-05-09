@@ -32,6 +32,7 @@ import libvirt
 import six
 from six.moves import zip
 
+import vdsm.common.time
 from vdsm.virt import vmchannels
 from vdsm.virt import vmexitreason
 from vdsm.virt import vmstats
@@ -1384,7 +1385,7 @@ class TestVmStats(TestCaseBase):
     def testGetNicStats(self):
         GBPS = 10 ** 9 / 8
         MAC = '52:54:00:59:F5:3F'
-        pretime = utils.monotonic_time()
+        pretime = vdsm.common.time.monotonic_time()
         with fake.VM(_VM_PARAMS) as testvm:
             res = vmstats._nic_traffic(
                 testvm,
@@ -1408,7 +1409,7 @@ class TestVmStats(TestCaseBase):
                             'net.0.tx.drop': 12},
                 end_index=0,
                 interval=15.0)
-        posttime = utils.monotonic_time()
+        posttime = vdsm.common.time.monotonic_time()
         self.assertIn('sampleTime', res)
         self.assertTrue(pretime <= res['sampleTime'] <= posttime,
                         'sampleTime not in [%s..%s]' % (pretime, posttime))

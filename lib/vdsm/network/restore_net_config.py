@@ -40,7 +40,7 @@ from vdsm.network.netrestore import NETS_RESTORED_MARK
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig, \
     CONF_PERSIST_DIR, BaseConfig
 from vdsm.network.nm import networkmanager
-from vdsm.utils import monotonic_time
+from vdsm.common.time import monotonic_time
 
 # Ifcfg persistence restoration
 from vdsm.network.configurators import ifcfg

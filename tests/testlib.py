@@ -54,6 +54,7 @@ import vdsm
 
 from vdsm.common import osutils
 from vdsm.common import xmlutils
+import vdsm.common.time
 from vdsm.virt import vmxml
 
 from monkeypatch import Patch
@@ -275,11 +276,11 @@ class VdsmTestCase(unittest.TestCase):
 
     @contextmanager
     def assertElapsed(self, expected, tolerance=0.5):
-        start = vdsm.utils.monotonic_time()
+        start = vdsm.common.time.monotonic_time()
 
         yield
 
-        elapsed = vdsm.utils.monotonic_time() - start
+        elapsed = vdsm.common.time.monotonic_time() - start
 
         if abs(elapsed - expected) > tolerance:
             raise AssertionError("Operation time: %s" % elapsed)

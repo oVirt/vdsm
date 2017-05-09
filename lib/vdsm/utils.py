@@ -50,6 +50,7 @@ import weakref
 
 from vdsm.common import zombiereaper
 from vdsm.common.fileutils import rm_file
+from vdsm.common import time as vdsm_time
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
@@ -207,7 +208,7 @@ def NoIntrPoll(pollfun, timeout=-1):
     """
     # When the timeout < 0 we shouldn't compute a new timeout after an
     # interruption.
-    endtime = None if timeout < 0 else monotonic_time() + timeout
+    endtime = None if timeout < 0 else vdsm_time.monotonic_time() + timeout
 
     while True:
         try:
@@ -217,7 +218,7 @@ def NoIntrPoll(pollfun, timeout=-1):
                 raise
 
         if endtime is not None:
-            timeout = max(0, endtime - monotonic_time())
+            timeout = max(0, endtime - vdsm_time.monotonic_time())
 
 
 class CommandStream(object):
@@ -262,11 +263,11 @@ class CommandStream(object):
         if timeout is None:
             poll_remaining = -1
         else:
-            endtime = monotonic_time() + timeout
+            endtime = vdsm_time.monotonic_time() + timeout
 
         while not self.closed:
             if timeout is not None:
-                poll_remaining = endtime - monotonic_time()
+                poll_remaining = endtime - vdsm_time.monotonic_time()
                 if poll_remaining <= 0:
                     break
 
@@ -440,7 +441,7 @@ def retry(func, expectedException=Exception, tries=None,
     if timeout in [0, None]:
         timeout = -1
 
-    startTime = monotonic_time()
+    startTime = vdsm_time.monotonic_time()
 
     while True:
         tries -= 1
@@ -450,7 +451,8 @@ def retry(func, expectedException=Exception, tries=None,
             if tries == 0:
                 raise
 
-            if (timeout > 0) and ((monotonic_time() - startTime) > timeout):
+            if (timeout > 0) and ((vdsm_time.monotonic_time() - startTime) >
+                                  timeout):
                 raise
 
             if stopCallback is not None and stopCallback():
@@ -705,24 +707,6 @@ def picklecopy(obj):
     return pickle.loads(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
 
 
-def monotonic_time():
-    """
-    Return the amount of time, in secs, elapsed since a fixed
-    arbitrary point in time in the past.
-    This function is useful if the client just
-    needs to use the difference between two given time points.
-
-    With respect to time.time():
-    * The resolution of this function is lower. On Linux,
-      the resolution is 1/_SC_CLK_TCK, which in turn depends on
-      the value of HZ configured in the kernel. A commonly
-      found resolution is 10 (ten) ms.
-    * This function is resilient with respect to system clock
-      adjustments.
-    """
-    return os.times()[4]
-
-
 def round(n, size):
     """
     Round number n to the next multiple of size
@@ -748,9 +732,9 @@ def create_connected_socket(host, port, sslctx=None, timeout=None):
 @contextmanager
 def stopwatch(message, log=logging.getLogger('vds.stopwatch')):
     if log.isEnabledFor(logging.DEBUG):
-        start = monotonic_time()
+        start = vdsm_time.monotonic_time()
         yield
-        elapsed = monotonic_time() - start
+        elapsed = vdsm_time.monotonic_time() - start
         log.debug("%s: %.2f seconds", message, elapsed)
     else:
         yield

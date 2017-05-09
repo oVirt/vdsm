@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2016 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,9 +25,9 @@ import logging
 import six
 
 from vdsm import metrics
+from vdsm.common.time import monotonic_time
 from vdsm.utils import convertToStr
 
-from vdsm.utils import monotonic_time
 from vdsm.virt.utils import isVdsmImage
 
 

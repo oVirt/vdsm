@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,7 @@ from __future__ import absolute_import
 
 import logging
 
-from vdsm.utils import monotonic_time
-
+from vdsm.common.time import monotonic_time
 
 _DEFAULT_TIMEOUT_SEC = 3600
 _DEFAULT_LOGGING_LEVEL = logging.DEBUG

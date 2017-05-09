@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ import time
 
 from vdsm import executor
 from vdsm import schedule
-from vdsm.utils import monotonic_time
+from vdsm.common.time import monotonic_time
 from vdsm.virt import migration
 from vdsm.virt import periodic
 from vdsm.virt import vmstatus
