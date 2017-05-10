@@ -59,7 +59,9 @@ class ReportDpdkPortsTests(VdsmTestCase):
         with mock.patch.object(dpdk, 'execCmd',
                                return_value=(
                                    0, lshw_output.encode('utf-8'), None)):
-            expected_ports = {'dpdk0': '0000:02:00.1'}
+            expected_ports = {
+                'dpdk0': {'pci_addr': '0000:02:00.1', 'driver': driver}
+            }
             self.assertEqual(expected_ports, dpdk.get_dpdk_devices())
 
     def test_two_different_dpdk_devices(self):
@@ -90,7 +92,10 @@ class ReportDpdkPortsTests(VdsmTestCase):
         with mock.patch.object(dpdk, 'execCmd',
                                return_value=(
                                    0, lshw_output.encode('utf-8'), None)):
-            expected_ports = {'dpdk0': '0000:02:00.1', 'dpdk1': '0000:02:00.2'}
+            expected_ports = {
+                'dpdk0': {'pci_addr': '0000:02:00.1', 'driver': 'vfio-pci'},
+                'dpdk1': {'pci_addr': '0000:02:00.2', 'driver': 'igb_uio'}
+            }
             self.assertEqual(expected_ports, dpdk.get_dpdk_devices())
 
     def test_no_dpdk_devices(self):

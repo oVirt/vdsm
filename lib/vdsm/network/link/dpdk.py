@@ -39,7 +39,9 @@ class LshwError(Exception):
 def get_dpdk_devices():
     devices = _lshw_command()
 
-    dpdk_devices = {PORT_PREFIX + str(i): devinfo['handle'][len('PCI:'):]
+    dpdk_devices = {PORT_PREFIX + str(i):
+                    {'pci_addr': devinfo['handle'][len('PCI:'):],
+                     'driver': devinfo['configuration']['driver']}
                     for i, devinfo in enumerate(_dpdk_devices_info(devices))}
 
     return dpdk_devices
