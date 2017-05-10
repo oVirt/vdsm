@@ -27,7 +27,6 @@ from vdsm import qemuimg
 from vdsm.common import exception
 from vdsm.common import fileutils
 from vdsm.common.threadlocal import vars
-from vdsm.compat import sanlock
 from vdsm.config import config
 from vdsm.storage import blkdiscard
 from vdsm.storage import constants as sc
@@ -37,6 +36,7 @@ from vdsm.storage import lvm
 from vdsm.storage import misc
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import task
+from vdsm.storage.compat import sanlock
 from vdsm.storage.misc import deprecated
 from vdsm.storage.volumemetadata import VolumeMetadata
 

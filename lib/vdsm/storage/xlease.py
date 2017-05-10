@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -142,8 +142,8 @@ import six
 from vdsm import utils
 from vdsm.common import errors
 from vdsm.common.osutils import uninterruptible
-from vdsm.compat import sanlock
 from vdsm.storage import fsutils
+from vdsm.storage.compat import sanlock
 
 # TODO: Support 4K block size.  This should be encapsulated in the Index class
 # instead of being a module constant.  We can can get the block size using

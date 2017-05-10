@@ -1200,6 +1200,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/blkdiscard.py*
 %{python_sitelib}/%{vdsm_name}/storage/check.py*
 %{python_sitelib}/%{vdsm_name}/storage/clusterlock.py*
+%{python_sitelib}/%{vdsm_name}/storage/compat.py*
 %{python_sitelib}/%{vdsm_name}/storage/constants.py*
 %{python_sitelib}/%{vdsm_name}/storage/curlImgWrap.py*
 %{python_sitelib}/%{vdsm_name}/storage/devicemapper.py*

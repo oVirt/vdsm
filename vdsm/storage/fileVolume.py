@@ -27,12 +27,12 @@ from vdsm import utils
 from vdsm.commands import grepCmd
 from vdsm.common import exception
 from vdsm.common.threadlocal import vars
-from vdsm.compat import sanlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import task
 from vdsm.storage import fallocate
+from vdsm.storage.compat import sanlock
 from vdsm.storage.misc import deprecated
 from vdsm.storage.volumemetadata import VolumeMetadata
 

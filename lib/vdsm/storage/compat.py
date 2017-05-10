@@ -1,3 +1,4 @@
+#
 # Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,52 +18,17 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
+from __future__ import absolute_import
 
-vdsmstoragedir = $(vdsmpylibdir)/storage
+import six
+from vdsm import compat
 
-dist_vdsmstorage_PYTHON = \
-	__init__.py \
-	asyncevent.py \
-	asyncutils.py \
-	blkdiscard.py \
-	check.py \
-	clusterlock.py \
-	compat.py \
-	constants.py \
-	curlImgWrap.py \
-	devicemapper.py \
-	directio.py \
-	dispatcher.py \
-	exception.py \
-	fallocate.py \
-	fileUtils.py \
-	fuser.py \
-	fsutils.py \
-	guarded.py \
-	hba.py \
-	imageSharing.py \
-	imagetickets.py \
-	iscsi.py \
-	iscsiadm.py \
-	lvm.py \
-	mailbox.py \
-	misc.py \
-	mount.py \
-	multipath.py \
-	operation.py \
-	outOfProcess.py \
-	persistent.py \
-	qcow2.py \
-	resourceManager.py \
-	rwlock.py \
-	securable.py \
-	sysfs.py \
-	task.py \
-	taskManager.py \
-	threadPool.py \
-	types.py \
-	volumemetadata.py \
-	workarounds.py \
-	xlease.py \
-	$(NULL)
+try:
+    import sanlock
+except ImportError:
+    if six.PY2:
+        raise
+    # sanlock is not avilable yet on python3, but we can still test the modules
+    # using it with fakesanlock, avoiding python3 regressions.
+    # TODO: remove when sanlock is available on python 3.
+    sanlock = compat.MissingModule("sanlock is not available in python 3")

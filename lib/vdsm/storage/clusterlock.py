@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2016 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,10 +35,10 @@ from vdsm import utils
 
 from vdsm.common import errors
 from vdsm.common import osutils
-from vdsm.compat import sanlock
 from vdsm.config import config
 from vdsm.storage import exception as se
 from vdsm.storage import misc
+from vdsm.storage.compat import sanlock
 
 
 MAX_HOST_ID = 250
