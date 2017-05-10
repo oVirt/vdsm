@@ -48,4 +48,4 @@ vdsm-api.html: schema_to_html.py vdsm-api.yml
 	@echo "  Generate $@"
 	chmod u+w $(srcdir)
 	PYTHONPATH=$(srcdir)/../../:$(srcdir)/../../vdsm \
-		$(PYTHON) schema_to_html.py vdsm-api.yml $@
+		./schema_to_html.py vdsm-api.yml $@
