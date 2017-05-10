@@ -18,13 +18,10 @@
 #
 from __future__ import absolute_import
 
-from contextlib import contextmanager
-from functools import partial
-
 from vdsm.network import errors
 from vdsm.network import netswitch
+from vdsm.network.netinfo.cache import NetInfo
 
-from testlib import mock
 from testlib import VdsmTestCase as TestCaseBase
 from nose.plugins.attrib import attr
 
@@ -98,42 +95,26 @@ class SouthboundValidationTests(TestCaseBase):
     def test_replacing_legacy_net_on_nic(self):
         self._test_replacing_net_on_nic('legacy')
 
-    @mock.patch.object(netswitch.configurator.ovs_switch,
-                       'validate_network_setup',
-                       lambda *args: None)
-    @mock.patch.object(netswitch.configurator.legacy_switch,
-                       'validate_network_setup',
-                       lambda *args: None)
     def _test_replacing_net_on_nic(self, switch):
-        with _mock_netinfo(switch):
-            netswitch.configurator.validate(
-                {'fakebrnet2': {'nic': 'eth0', 'switch': switch},
-                 'fakebrnet1': {'remove': True}},
-                {})
+        NETSETUP = {'fakebrnet2': {'nic': 'eth0', 'switch': switch},
+                    'fakebrnet1': {'remove': True}}
+
+        netswitch.validator.validate_southbound_devices_usages(
+            NETSETUP, _create_fake_netinfo(switch))
 
     def _assert_net_setup_fails_bad_params(self, net_name, switch, sb_device,
                                            vlan=None):
         bridged = False
-        bonds = {}
-
-        net = {net_name: {'switch': switch, 'bridged': bridged}}
-        net[net_name].update(sb_device)
+        net_setup = {net_name: {'switch': switch, 'bridged': bridged}}
+        net_setup[net_name].update(sb_device)
         if vlan is not None:
-            net[net_name]['vlan'] = vlan
+            net_setup[net_name]['vlan'] = vlan
 
-        with _mock_netinfo(switch):
             with self.assertRaises(errors.ConfigNetworkError) as cne_context:
-                netswitch.configurator.validate(net, bonds)
+                netswitch.validator.validate_southbound_devices_usages(
+                    net_setup, _create_fake_netinfo(switch))
             self.assertEqual(cne_context.exception.errCode,
                              errors.ERR_BAD_PARAMS)
-
-
-@contextmanager
-def _mock_netinfo(switch):
-    net_info = partial(_create_fake_netinfo, switch)
-    with mock.patch.object(
-            netswitch.configurator, 'netinfo', net_info) as netinfo:
-        yield netinfo
 
 
 @attr(type='unit')
@@ -198,4 +179,4 @@ def _create_fake_netinfo(switch):
             {'bond0': dict(slaves=['eth2', 'eth3'], **common_bond_attrs)},
         'nameservers': [],
     }
-    return fake_netinfo
+    return NetInfo(fake_netinfo)
