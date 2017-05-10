@@ -50,7 +50,7 @@ def _validate_default_route(default_route_nets, no_default_route_nets):
     if len(default_route_nets) > 1:
         raise ne.ConfigNetworkError(
             ne.ERR_BAD_PARAMS,
-            'Only a singe default route network is allowed.')
+            'Only a single default route network is allowed.')
 
 
 def _validate_nameservers(net, attrs):
