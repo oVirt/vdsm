@@ -27,7 +27,6 @@ import os
 import pwd
 import sys
 from dateutil import tz
-from functools import wraps
 from inspect import ismethod
 
 
@@ -39,24 +38,6 @@ def funcName(func):
         return func.func.__name__
 
     return func.__name__
-
-
-def logcall(loggerName, pattern="%s", loglevel=logging.INFO, printers={},
-            resPrinter=repr, resPattern="%(name)s->%(result)s"):
-    def phase2(f):
-        @wraps(f)
-        def wrapper(*args, **kwargs):
-            logger = logging.getLogger(loggerName)
-            logger.log(loglevel, pattern %
-                       (call2str(f, args, kwargs, printers),))
-            res = f(*args, **kwargs)
-            logger.log(loglevel, resPattern %
-                       {"name": funcName(f), "result": resPrinter(res)})
-            return res
-
-        return wrapper
-
-    return phase2
 
 
 def call2str(func, args, kwargs, printers={}):
