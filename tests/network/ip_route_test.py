@@ -66,11 +66,3 @@ class IPRouteTest(VdsmTestCase):
             yield
         finally:
             IPRouteTest.IPRoute.delete(route_data)
-
-
-@attr(type='unit')
-class DriverTest(VdsmTestCase):
-
-    def test_load_non_existing_driver(self):
-        with self.assertRaises(ip_route.NoDriverError):
-            ip_route.driver('foo bar')

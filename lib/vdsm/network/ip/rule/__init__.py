@@ -19,10 +19,10 @@
 from __future__ import absolute_import
 
 import abc
-from importlib import import_module
-from pkgutil import iter_modules
 
 import six
+
+from vdsm.network import driverloader
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -89,22 +89,6 @@ class Drivers(object):
     IPROUTE2 = 'iproute2'
 
 
-class NoDriverError(Exception):
-    pass
-
-
-_DRIVERS = {}
-
-
-# Importing all available rule drivers.
-for _, module_name, _ in iter_modules([__path__[0]]):
-    module = import_module('{}.{}'.format(__name__, module_name))
-    if hasattr(module, 'IPRule'):
-        _DRIVERS[module_name] = module
-
-
 def driver(driver_name):
-    try:
-        return _DRIVERS[driver_name].IPRule
-    except KeyError:
-        raise NoDriverError(driver_name)
+    _drivers = driverloader.load_drivers('IPRule', __name__, __path__[0])
+    return driverloader.get_driver(driver_name, _drivers)
