@@ -18,9 +18,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import sys
+
+import six
+
+from vdsm import concurrent
 from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import response
+from vdsm.common.threadlocal import vars
 
 from testlib import Sigargs
 from testlib import VdsmTestCase as TestCaseBase
@@ -118,3 +124,58 @@ class FakeVM(object):
     @api.method
     def succeed_passthrough(self, foo):
         return response.success(foo=foo)
+
+
+class TestLoggedWithContext(TestCaseBase):
+
+    def test_success(self):
+        # TODO: test logged message
+        ctx = api.Context("flow_id", "1.2.3.4", 5678)
+        result = run_with_context(ctx, Logged().succeed, "a", b=1)
+        self.assertEqual(result, (("a",), {"b": 1}))
+
+    def test_fail(self):
+        # TODO: test logged message
+        ctx = api.Context("flow_id", "1.2.3.4", 5678)
+        error = RuntimeError("Expected failure")
+        with self.assertRaises(RuntimeError) as e:
+            run_with_context(ctx, Logged().fail, error)
+        self.assertIs(e.exception, error)
+
+
+def run_with_context(ctx, func, *args, **kwargs):
+    """
+    Run func in another thread with optional ctx set in vars.context.
+
+    Return the function result or raises the original exceptions raised by
+    func.
+    """
+    result = [None]
+
+    def run():
+        if ctx:
+            vars.context = ctx
+        try:
+            result[0] = (True, func(*args, **kwargs))
+        except:
+            result[0] = (False, sys.exc_info())
+
+    t = concurrent.thread(run)
+    t.start()
+    t.join()
+
+    ok, value = result[0]
+    if not ok:
+        six.reraise(*value)
+    return value
+
+
+class Logged(object):
+
+    @api.logged("test")
+    def succeed(self, *args, **kwargs):
+        return args, kwargs
+
+    @api.logged("test")
+    def fail(self, exc):
+        raise exc
