@@ -28,7 +28,7 @@ import glob
 from fnmatch import fnmatch
 from itertools import imap
 from collections import defaultdict
-from functools import partial, wraps
+from functools import partial
 import errno
 import time
 import signal
@@ -39,11 +39,11 @@ import stat
 from vdsm import concurrent
 from vdsm import constants
 from vdsm import jobs
-from vdsm import logUtils
 from vdsm import qemuimg
 from vdsm import supervdsm
 from vdsm import utils
 from vdsm.common.threadlocal import vars
+from vdsm.common import api
 from vdsm.config import config
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
@@ -99,10 +99,6 @@ INITIALIZED = "initialized"
 CAPACITY = "capacity"
 PATHLIST = "pathlist"
 
-logged = partial(
-    logUtils.logcall, "dispatcher", "Run and protect: %s",
-    resPattern="Run and protect: %(name)s, Return response: %(result)s")
-
 STORAGE_CONNECTION_DIR = os.path.join(constants.P_VDSM_LIB, "connections/")
 
 QEMU_READABLE_TIMEOUT = 30
@@ -120,13 +116,9 @@ HSM_DOM_MON_LOCK = "HsmDomainMonitorLock"
 DISCONNECTED_HOST_ID = 1
 
 
-def public(f=None, **kwargs):
-    if f is None:
-        return partial(public, **kwargs)
-
-    publicFunctionLogger = kwargs.get("logger", logged())
-
-    return dispatcher.exported(wraps(f)(publicFunctionLogger(f)))
+def public(f):
+    logged = api.logged("vdsm.api")
+    return dispatcher.exported(logged(f))
 
 
 # Connection Management API competability code
