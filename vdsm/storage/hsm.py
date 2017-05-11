@@ -3144,13 +3144,14 @@ class HSM(object):
         else:
             runImgPath = imgPath
 
+        leafInfo = dom.produceVolume(imgUUID, leafUUID).getVmVolumeInfo()
+
         leafPath = os.path.join(runImgPath, leafUUID)
         for volUUID in imgVolumes:
             path = os.path.join(dom.domaindir, sd.DOMAIN_IMAGES, imgUUID,
                                 volUUID)
             volInfo = {'domainID': sdUUID, 'imageID': imgUUID,
-                       'volumeID': volUUID, 'path': path,
-                       'volType': "path"}
+                       'volumeID': volUUID, 'path': path}
 
             lease = dom.getVolumeLease(imgUUID, volUUID)
 
@@ -3161,8 +3162,6 @@ class HSM(object):
                 })
 
             imgVolumesInfo.append(volInfo)
-            if volUUID == leafUUID:
-                leafInfo = volInfo
 
         return {'path': leafPath, 'info': leafInfo,
                 'imgVolumesInfo': imgVolumesInfo}
