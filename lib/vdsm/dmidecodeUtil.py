@@ -38,27 +38,20 @@ def __leafDict(d):
 
 
 @utils.memoized
-def getAllDmidecodeInfo():
+def getSystemInfo():
     import dmidecode
 
-    myLeafDict = {}
-    for k in ('system', 'bios', 'cache', 'processor', 'chassis', 'memory'):
-        myLeafDict[k] = __leafDict(getattr(dmidecode, k)())
-    return myLeafDict
+    return __leafDict(dmidecode.system())
 
 
 @utils.memoized
 def getHardwareInfoStructure():
-    dmiInfo = getAllDmidecodeInfo()
+    dmiInfo = getSystemInfo()
     sysStruct = {}
-    for k1, k2 in (('system', 'Manufacturer'),
-                   ('system', 'Product Name'),
-                   ('system', 'Version'),
-                   ('system', 'Serial Number'),
-                   ('system', 'UUID'),
-                   ('system', 'Family')):
-        val = dmiInfo.get(k1, {}).get(k2, None)
+    for k in ('Manufacturer', 'Product Name', 'Version', 'Serial Number',
+              'UUID', 'Family'):
+        val = dmiInfo.get(k, None)
         if val not in [None, 'Not Specified']:
-            sysStruct[(k1 + k2).replace(' ', '')] = val
+            sysStruct[('system' + k).replace(' ', '')] = val
 
     return sysStruct
