@@ -17,6 +17,7 @@ RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     libselinux-python3 \
     libvirt-python \
     libvirt-python3 \
+    lshw \
     make \
     mom \
     openvswitch \

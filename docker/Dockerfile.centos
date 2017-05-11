@@ -14,6 +14,7 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     git \
     libselinux-python \
     libvirt-python \
+    lshw \
     make \
     mom \
     openvswitch \
