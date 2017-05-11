@@ -888,6 +888,10 @@ class TestDiskSnapshotXml(XMLTestCase):
         actual = storage.get_snapshot_xml('vda', '/dev/dm-1', 'block')
         self.assertXMLEqual(vmxml.format_xml(actual), expected)
 
+    def test_incorrect_disk_type(self):
+        with self.assertRaises(RuntimeError):
+            storage.get_snapshot_xml('vda', '/dev/dm-1', 'fail')
+
 
 def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):
     return [{"leasePath": path,
