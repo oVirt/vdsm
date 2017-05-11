@@ -55,15 +55,18 @@ def logged(on=""):
 
 
 def context_string():
-    ctx = vars.context
-    if ctx is not None:
-        ret = 'from=%s,%s' % (ctx.client_host, ctx.client_port)
-        flow_id = ctx.flow_id
-        if flow_id is not None:
-            ret += ', flow_id=%s' % (flow_id,)
-        return ret
-    else:
+    # Internal threads never set vars.context, so we will not have a context
+    # attribute. RPC threads set context before calling the api, and set
+    # context to None after that.
+    ctx = getattr(vars, "context", None)
+    if ctx is None:
         return 'from=internal'
+
+    ret = 'from=%s,%s' % (ctx.client_host, ctx.client_port)
+    flow_id = ctx.flow_id
+    if flow_id is not None:
+        ret += ', flow_id=%s' % (flow_id,)
+    return ret
 
 
 @decorator
