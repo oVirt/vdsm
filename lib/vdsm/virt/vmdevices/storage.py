@@ -573,10 +573,12 @@ def get_snapshot_xml(drive_name, new_path, disk_type):
     disk = vmxml.Element('disk', name=drive_name, snapshot='external',
                          type=disk_type)
     args = {'type': disk_type}
-    if disk_type == 'file':
+    if disk_type == DISK_TYPE.FILE:
         args['file'] = new_path
-    elif disk_type == 'block':
+    elif disk_type == DISK_TYPE.BLOCK:
         args['dev'] = new_path
+    else:
+        raise RuntimeError("Unsupported diskType %r", disk_type)
     disk.appendChildWithArgs('source', **args)
     return disk
 
