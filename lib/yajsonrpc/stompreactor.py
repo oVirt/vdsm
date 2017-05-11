@@ -15,7 +15,7 @@
 
 from __future__ import absolute_import
 import logging
-from collections import deque, namedtuple
+from collections import deque
 from uuid import uuid4
 import functools
 
@@ -23,6 +23,7 @@ from vdsm import concurrent
 from vdsm import constants
 from vdsm import utils
 from vdsm.config import config
+from vdsm.common import api
 from vdsm.compat import json
 from vdsm.sslcompat import SSLSocket
 from . import JsonRpcClient, JsonRpcServer
@@ -31,9 +32,6 @@ from .betterAsyncore import Dispatcher, Reactor
 
 _STATE_LEN = "Waiting for message length"
 _STATE_MSG = "Waiting for message"
-
-
-Context = namedtuple('Context', "flow_id, client_host, client_port")
 
 
 def parseHeartBeatHeader(v):
@@ -301,7 +299,8 @@ class _StompConnection(object):
 
     def handleMessage(self, data, flow_id):
         if self._messageHandler is not None:
-            context = Context(flow_id, self._client_host, self._client_port)
+            context = api.Context(flow_id, self._client_host,
+                                  self._client_port)
             self._messageHandler((self._server, self.get_local_address(),
                                   context, data))
 

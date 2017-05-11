@@ -21,6 +21,8 @@ from __future__ import absolute_import
 
 import logging
 
+from collections import namedtuple
+
 from decorator import decorator
 
 from vdsm import logUtils
@@ -31,6 +33,9 @@ from . import response
 
 
 _log = logging.getLogger("api")
+
+
+Context = namedtuple('Context', "flow_id, client_host, client_port")
 
 
 def logged(on=""):
