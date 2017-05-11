@@ -28,7 +28,6 @@ from vdsm.common import exception
 from vdsm.common import response
 from vdsm.common.threadlocal import vars
 
-from testValidation import xfail
 from testlib import Sigargs
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -146,13 +145,11 @@ class TestLoggedWithContext(TestCaseBase):
 
 class TestLoggedWithoutContext(TestCaseBase):
 
-    @xfail("@logged fails if context not set")
     def test_success(self):
         # TODO: test logged message
         result = run_with_context(None, Logged().succeed, "a", b=1)
         self.assertEqual(result, (("a",), {"b": 1}))
 
-    @xfail("@logged fails if context not set")
     def test_fail(self):
         # TODO: test logged message
         error = RuntimeError("Expected failure")
