@@ -20,7 +20,6 @@
 from __future__ import absolute_import
 
 import ctypes
-from ctypes.util import find_library
 import os
 
 from vdsm.gluster import exception as ge
@@ -167,8 +166,7 @@ def checkVolumeEmpty(volumeId, host=GLUSTER_VOL_HOST,
 
 # C function prototypes for using the library gfapi
 
-_lib = ctypes.CDLL(find_library("gfapi"),
-                   use_errno=True)
+_lib = ctypes.CDLL("libgfapi.so.0", use_errno=True)
 
 _glfs_new = ctypes.CFUNCTYPE(
     ctypes.c_void_p, ctypes.c_char_p)(('glfs_new', _lib))
