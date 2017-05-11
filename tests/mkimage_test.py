@@ -38,9 +38,9 @@ from testValidation import checkSudo, ValidateRunningAsRoot
 
 from vdsm.commands import execCmd
 from vdsm.constants import EXT_MKFS_MSDOS
+from vdsm.common.fileutils import rm_file
 from vdsm.storage import mount
 from vdsm.storage.mount import MountError
-from vdsm.utils import rmFile
 from vdsm import mkimage
 
 
@@ -183,7 +183,7 @@ class MkimageTestCase(VdsmTestCase):
             finally:
                 m.umount()
         finally:
-            rmFile(floppy)
+            rm_file(floppy)
 
     @ValidateRunningAsRoot
     def test_injectFilesToFs_wrongfs(self):
@@ -199,7 +199,7 @@ class MkimageTestCase(VdsmTestCase):
             with self.assertRaises(MountError):
                 mkimage.injectFilesToFs(floppy, self.files, 'ext3')
         finally:
-            rmFile(floppy)
+            rm_file(floppy)
 
     @ValidateRunningAsRoot
     @permutations([[None], ['FSLABEL']])
