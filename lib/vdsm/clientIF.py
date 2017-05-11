@@ -44,6 +44,7 @@ from vdsm.virt import recovery
 from vdsm.virt import secret
 from vdsm.virt import vmstatus
 from vdsm.virt.vmchannels import Listener
+from vdsm.virt.vmdevices.storage import DISK_TYPE
 from vdsm.virt.utils import isVdsmImage
 import libvirt
 from vdsm import alignmentScan
@@ -334,11 +335,16 @@ class clientIF(object):
                 if res['status']['code']:
                     raise vm.VolumeError(drive)
 
-                volPath = res['path']
                 # The order of imgVolumesInfo is not guaranteed
                 drive['volumeChain'] = res['imgVolumesInfo']
                 drive['volumeInfo'] = res['info']
 
+                # Not applicable for Ceph network disk as
+                # Ceph disks are not vdsm images
+                if drive.get('diskType') == DISK_TYPE.NETWORK:
+                    volPath = self._prepare_network_drive(drive, res)
+                else:
+                    volPath = res['path']
             # GUID drive format
             elif "GUID" in drive:
                 res = self.irs.getDevicesVisibility([drive["GUID"]])
@@ -595,3 +601,36 @@ class clientIF(object):
                 self.log.exception(
                     "recovery [%d/%d]: failed for vm %s",
                     idx + 1, num_vm_objects, vm_obj.id)
+
+    def _prepare_network_drive(self, drive, res):
+        """
+        Fills drive object for network drives with network-specific data.
+
+        Network (gluster) drives have a very special ephemeral runtime
+        path specification, and it can't be resolved to a typical storage
+        path in runtime. Therefore, we have to replace storage path
+        with a VM path.
+
+        So
+            /rhev/data-center/mnt/glusterSD/host:vol/sd_id/images/img_id/vol_id
+        is replaced with
+            vol/sd_id/images/img_id/vol_id
+
+        Arguments:
+            drive (dict like): Drive description. Function modifies it
+                as a side-effect.
+            res (dict): drive description.
+
+        Returns:
+            Network friendly drive's path value.
+        """
+        volinfo = res['info']
+        img_dir, _ = os.path.split(volinfo["path"])
+        for entry in drive['volumeChain']:
+            entry["path"] = os.path.join(img_dir,
+                                         entry["volumeID"])
+        drive['protocol'] = volinfo['protocol']
+        # currently, single host is provided due to this bug:
+        # https://bugzilla.redhat.com/1465810
+        drive['hosts'] = [volinfo['hosts'][0]]
+        return volinfo['path']

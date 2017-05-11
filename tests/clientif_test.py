@@ -261,3 +261,41 @@ class TestNotification(TestCaseBase):
     def _assertEvent(self, event, method):
         ev = json.loads(event)
         self.assertEqual(ev["method"], method)
+
+
+class TestPrepareNetworkDrive(TestCaseBase):
+
+    def test_path_replacement(self):
+        volinfo = {
+            "path": "v/sd/images/img/vol_id",
+            "protocol": "gluster",
+            "hosts": ["host_one", "host_two"]
+        }
+        res = {"info": volinfo}
+
+        volume_chain = [
+            {"volumeID": "11111111-1111-1111-1111-111111111111"},
+            {"volumeID": "22222222-2222-2222-2222-222222222222"}
+        ]
+        drive = fakeDrive()
+        drive['volumeChain'] = volume_chain
+
+        clientIF = FakeClientIF()
+        actual = clientIF._prepare_network_drive(drive, res)
+
+        expected = volinfo['path']
+        expected_chain = [
+            {
+                "volumeID": "11111111-1111-1111-1111-111111111111",
+                "path": "v/sd/images/img/11111111-1111-1111-1111-111111111111"
+            },
+            {
+                "volumeID": "22222222-2222-2222-2222-222222222222",
+                "path": "v/sd/images/img/22222222-2222-2222-2222-222222222222"
+            }
+        ]
+
+        self.assertEqual(actual, expected)
+        self.assertEqual(drive['protocol'], 'gluster')
+        self.assertEqual(drive['hosts'], ['host_one'])
+        self.assertEqual(drive['volumeChain'], expected_chain)
