@@ -885,6 +885,26 @@ class TestVolumeChain(VdsmTestCase):
             self.assertEqual(chain, expected)
 
 
+class TestDiskSnapshotXml(XMLTestCase):
+    def test_file(self):
+        expected = """
+            <disk name='vda' snapshot='external' type='file'>
+                <source file='/image' type='file'/>
+            </disk>
+            """
+        actual = storage.get_snapshot_xml('vda', '/image', 'file')
+        self.assertXMLEqual(vmxml.format_xml(actual), expected)
+
+    def test_block(self):
+        expected = """
+            <disk name='vda' snapshot='external' type='block'>
+                <source dev='/dev/dm-1' type='block'/>
+            </disk>
+            """
+        actual = storage.get_snapshot_xml('vda', '/dev/dm-1', 'block')
+        self.assertXMLEqual(vmxml.format_xml(actual), expected)
+
+
 def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):
     return [{"leasePath": path,
              "leaseOffset": offset,
