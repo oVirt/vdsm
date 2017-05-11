@@ -21,9 +21,7 @@
 from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import response
-from vdsm.common import threadlocal
 
-from testlib import mock
 from testlib import Sigargs
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -42,10 +40,6 @@ class TestResponse(TestCaseBase):
 
     def setUp(self):
         self.vm = FakeVM()
-        threadlocal.vars.context = mock.Mock()
-
-    def tearDown(self):
-        threadlocal.vars.context = None
 
     def test_success_without_return(self):
         res = self.vm.succeed()
