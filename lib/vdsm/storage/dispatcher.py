@@ -75,10 +75,12 @@ class Dispatcher(object):
                         response.update(result)
                     return response
                 except se.GeneralException as e:
-                    self.log.error(e.response())
+                    # Match api.method format
+                    self.log.error("FINISH %s error=%s", name, e)
                     return e.response()
                 except BaseException as e:
-                    self.log.error(e, exc_info=True)
+                    # Match api.method format
+                    self.log.exception("FINISH %s error=%s", name, e)
                     defaultException = ctask.defaultException
                     if (defaultException and
                             hasattr(defaultException, "response")):
