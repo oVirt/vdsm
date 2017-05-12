@@ -28,6 +28,7 @@ import pkgutil
 import pytest
 
 from vdsm import compat
+from vdsm import osinfo
 
 
 def find_modules():
@@ -38,6 +39,11 @@ def find_modules():
         "vdsm.rpc.Bridge",
         "vdsm.rpc.http",
     }
+
+    # blivet fails on import, see https://bugzilla.redhat.com/1450607
+    info = osinfo.version()
+    if info["name"] == osinfo.OSName.FEDORA and info["version"] == "27":
+        expected_to_fail.add("vdsm.gluster.storagedev")
 
     def error(name):
         raise

@@ -21,6 +21,7 @@
 import six
 
 from testlib import VdsmTestCase as TestCaseBase
+from vdsm import osinfo
 from vdsm.gluster import cli as gcli
 import xml.etree.cElementTree as etree
 from nose.plugins.skip import SkipTest
@@ -1124,6 +1125,15 @@ class GlusterCliTests(TestCaseBase):
                 as parseStorageDevices
         except ImportError as e:
             raise SkipTest('%s' % e)
+        except ValueError as e:
+            # On Fedora rawhide importing blivet fail with:
+            # ValueError: Namespace BlockDev not available for version 1.0
+            # See https://bugzilla.redhat.com/1450607
+            info = osinfo.version()
+            if (info["name"] == osinfo.OSName.FEDORA and
+                    info["version"] == "27"):
+                raise SkipTest('%s' % e)
+            raise
 
         status = parseStorageDevices(glusterTestData.glusterStorageDevData())
         self.assertEqual(status, glusterTestData.GLUSTER_STORAGE_DEVICES)

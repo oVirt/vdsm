@@ -46,6 +46,7 @@ RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     python3-six \
     python3-yaml \
     redhat-rpm-config \
+    rpm-python \
     sanlock-python \
     sudo \
     systemd \
