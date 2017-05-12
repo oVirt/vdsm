@@ -92,9 +92,10 @@ class Dispatcher(object):
                     return se.generateResponse(e)
             except:
                 try:
-                    self.log.error(
-                        "Unhandled exception in run and protect: %s, "
-                        "args: %s ", name, args, exc_info=True)
+                    # We should never reach this
+                    self.log.exception(
+                        "Unhandled exception (name=%s, args=%s, kwargs=%s)",
+                        name, args, kwargs)
                 finally:
                     return self.STATUS_ERROR.copy()
 
