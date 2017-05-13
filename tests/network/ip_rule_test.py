@@ -44,7 +44,7 @@ class TestIpRule(VdsmTestCase):
         rule = IPRuleData(to=IPV4_ADDRESS1, iif='lo', table='main')
         with create_rule(rule):
             rules = [r for r in IPRule.rules() if r.to == IPV4_ADDRESS1]
-            self.assertEqual(1, len(rules))
+            self.assertEqual(1, len(rules), rules)
             self.assertEqual(rules[0].iif, 'lo')
             self.assertEqual(rules[0].table, 'main')
 
