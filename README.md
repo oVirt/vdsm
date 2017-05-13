@@ -1,7 +1,6 @@
 # Vdsm: Virtual Desktop Server Manager
 
-[![Build Status](https://travis-ci.org/oVirt/vdsm.svg?branch=master)]
-(https://travis-ci.org/oVirt/vdsm)
+[![Build Status](https://travis-ci.org/oVirt/vdsm.svg?branch=master)](https://travis-ci.org/oVirt/vdsm)
 
 The Vdsm service exposes an API for managing virtualization
 hosts running the KVM hypervisor technology. Vdsm manages and monitors
