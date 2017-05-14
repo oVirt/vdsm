@@ -1903,6 +1903,16 @@ class HSM(object):
         :rtype: dict
         """
         vars.task.setDefaultException(se.BlockDeviceActionError())
+
+        if checkStatus and not guids:
+            # Engine stopped using this since 3.6, but there are other callers
+            # in the field that use this.
+            # See https://bugzilla.redhat.com/1426429#c11
+            self.log.warning(
+                "Calling Host.getDeviceList with checkStatus=True without "
+                "specifying guids is very slow. It is recommended to use "
+                "checkStatus=False when getting all devices.")
+
         devices = self._getDeviceList(storageType=storageType, guids=guids,
                                       checkStatus=checkStatus)
         return dict(devList=devices)
