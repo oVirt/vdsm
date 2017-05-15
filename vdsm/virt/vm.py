@@ -650,7 +650,7 @@ class Vm(object):
                     # split-brain scenarios.
                     raise
                 except Exception as e:
-                    if self.recovering:
+                    if not self.recovering:
                         raise
                     else:
                         self.log.info("Skipping errors on recovery",

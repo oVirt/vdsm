@@ -40,7 +40,6 @@ from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
 from vmTestsData import CONF_TO_DOMXML_NO_VDSM
 import vmfakelib as fake
-from testValidation import xfail
 
 
 def _createVm_fails(*args, **kwargs):
@@ -241,7 +240,6 @@ class RecoveryAllVmsTests(TestCaseBase):
 
 class VmRecoveryTests(TestCaseBase):
 
-    @xfail('broken since 0cb80ab195e')
     def test_exception(self):
 
         done = threading.Event()
