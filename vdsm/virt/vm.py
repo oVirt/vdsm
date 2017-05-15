@@ -624,6 +624,14 @@ class Vm(object):
             mem_stats['rss'] = dom_stats['rss']
         return mem_stats
 
+    def hibernate(self, dst):
+        hooks.before_vm_hibernate(self._dom.XMLDesc(0), self.conf)
+        fname = self.cif.prepareVolumePath(dst)
+        try:
+            self._dom.save(fname)
+        finally:
+            self.cif.teardownVolumePath(dst)
+
     def _startUnderlyingVm(self):
         self.log.debug("Start")
         acquired = False
