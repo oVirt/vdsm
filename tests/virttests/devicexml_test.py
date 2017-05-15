@@ -597,7 +597,9 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         console_xml = u'''<console type="pty">
             <target port="0" type="%s" />
         </console>''' % console_type
-        self._check_roundtrip(vmdevices.core.Console, console_xml)
+        self._check_roundtrip(
+            vmdevices.core.Console, console_xml, meta={'vmid': 'VMID'}
+        )
 
     @permutations([
         # console_type, is_serial
@@ -611,7 +613,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         dev = vmdevices.core.Console.from_xml_tree(
             self.log,
             vmxml.parse_xml(console_xml),
-            {}
+            meta={'vmid': 'VMID'}
         )
         self.assertEqual(dev.isSerial, is_serial)
 
@@ -687,7 +689,9 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             <rate period="2000" bytes="1234"/>
             <backend model='random'>/dev/random</backend>
         </rng>'''
-        self._check_roundtrip(vmdevices.core.Rng, rng_xml)
+        self._check_roundtrip(
+            vmdevices.core.Rng, rng_xml, meta={'vmid': 'VMID'}
+        )
 
     def test_tpm(self):
         tpm_xml = u'''<tpm model='tpm-tis'>

@@ -192,7 +192,7 @@ class Console(Base):
             'consoleType': vmxml.find_attr(dev, 'target', 'type'),
             'enableSocket': has_sock,
         }
-        params['vmid'] = meta.get('vmid', None)  # avoid AttributeError
+        params['vmid'] = meta['vmid']
         return cls(log, **params)
 
     def __init__(self, *args, **kwargs):
@@ -475,6 +475,7 @@ class Rng(Base):
         params['specParams']['source'] = rngsources.get_source_name(
             vmxml.text(vmxml.find_first(dev, 'backend'))
         )
+        params['vmid'] = meta['vmid']
         return cls(log, **params)
 
     @staticmethod
