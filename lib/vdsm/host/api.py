@@ -57,9 +57,9 @@ def get_stats(cif, sample):
         ret[var] = utils.convertToStr(decStats[var])
 
     avail, commit = _memUsageInfo(cif)
-    ret['memAvailable'] = avail / Mbytes
-    ret['memCommitted'] = commit / Mbytes
-    ret['memFree'] = _memFree() / Mbytes
+    ret['memAvailable'] = avail // Mbytes
+    ret['memCommitted'] = commit // Mbytes
+    ret['memFree'] = _memFree() // Mbytes
     ret['swapTotal'], ret['swapFree'] = _readSwapTotalFree()
     (ret['vmCount'], ret['vmActive'], ret['vmMigrating'],
      ret['incomingVmMigrations'], ret['outgoingVmMigrations']) = \
