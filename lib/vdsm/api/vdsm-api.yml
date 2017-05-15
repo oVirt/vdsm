@@ -7049,6 +7049,12 @@ types:
             name: agentChannelName
             type: string
 
+        -   added: '4.2'
+            defaultvalue: null
+            description: Domain XML to passthrough to libvirt
+            name: xml
+            type: string
+
         type: object
 
     VmStats: &VmStats
