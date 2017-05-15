@@ -22,6 +22,7 @@ vdsmnetlinkdir = $(vdsmpylibdir)/network/netlink
 dist_vdsmnetlink_PYTHON = \
 	__init__.py \
 	addr.py \
+	libnl.py \
 	link.py \
 	monitor.py \
 	route.py \

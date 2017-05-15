@@ -30,11 +30,12 @@ from vdsm import concurrent
 from vdsm.common.osutils import uninterruptible
 from vdsm.common.time import monotonic_time
 
-from . import (LIBNL, _GROUPS, _NL_ROUTE_ADDR_NAME, _NL_ROUTE_LINK_NAME,
+from . import (_GROUPS, _NL_ROUTE_ADDR_NAME, _NL_ROUTE_LINK_NAME,
                _NL_ROUTE_NAME, _NL_STOP, _add_socket_memberships,
                _close_socket, _drop_socket_memberships, _int_proto,
                _nl_msg_parse, _nl_object_get_type, _nl_recvmsgs_default,
                _nl_socket_get_fd, _open_socket)
+from . import libnl
 from .addr import _addr_info
 from .link import _link_info
 from .route import _route_info
@@ -296,4 +297,4 @@ def _pipetrick(epoll):
         os.close(pipetrick[0])
         os.close(pipetrick[1])
 
-_nl_object_get_msgtype = _int_proto(('nl_object_get_msgtype', LIBNL))
+_nl_object_get_msgtype = _int_proto(('nl_object_get_msgtype', libnl.LIBNL))

@@ -1,4 +1,4 @@
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,8 +24,9 @@ import errno
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
 from . import _char_proto, _int_proto, _void_proto
-from . import LIBNL_ROUTE, _nl_geterror, _pool
+from . import LIBNL_ROUTE, _pool
 from . import _addr_to_str, _af_to_str, _scope_to_str
+from . import libnl
 from .link import _nl_link_cache, _link_index_to_name
 
 _RT_TABLE_UNSPEC = 0
@@ -79,7 +80,7 @@ def _rtnl_route_alloc_cache(sock):
     cache = c_void_p()
     err = _route_alloc_cache(sock, AF_UNSPEC, 0, byref(cache))
     if err:
-        raise IOError(-err, _nl_geterror())
+        raise IOError(-err, libnl.nl_geterror(err))
     return cache
 
 

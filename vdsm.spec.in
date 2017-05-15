@@ -1154,6 +1154,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/netinfo/*.py*
 %{python_sitelib}/%{vdsm_name}/network/netlink/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/netlink/addr.py*
+%{python_sitelib}/%{vdsm_name}/network/netlink/libnl.py*
 %{python_sitelib}/%{vdsm_name}/network/netlink/link.py*
 %{python_sitelib}/%{vdsm_name}/network/netlink/monitor.py*
 %{python_sitelib}/%{vdsm_name}/network/netlink/route.py*

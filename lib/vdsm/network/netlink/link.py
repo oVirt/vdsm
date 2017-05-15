@@ -1,4 +1,4 @@
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,8 +26,9 @@ import errno
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
 from . import _char_proto, _int_char_proto, _int_proto, _void_proto
-from . import LIBNL_ROUTE, _nl_geterror, _pool, _none_proto
+from . import LIBNL_ROUTE, _pool, _none_proto
 from . import _addr_to_str, CHARBUFFSIZE
+from . import libnl
 
 IFF_UP = 1 << 0             # Device administrative status.
 IFF_BROADCAST = 1 << 1
@@ -169,7 +170,7 @@ def _rtnl_link_alloc_cache(sock):
     cache = c_void_p()
     err = _link_alloc_cache(sock, AF_UNSPEC, byref(cache))
     if err:
-        raise IOError(-err, _nl_geterror())
+        raise IOError(-err, libnl.nl_geterror(err))
     return cache
 
 
@@ -201,7 +202,7 @@ def _get_link(name=None, index=0, sock=None):
             if -err == NLE_NODEV:
                 link = None
             else:
-                raise IOError(-err, _nl_geterror())
+                raise IOError(-err, libnl.nl_geterror(err))
         yield link
     finally:
         if link is not None:

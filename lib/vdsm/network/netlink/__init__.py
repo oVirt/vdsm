@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@ from functools import partial
 from threading import BoundedSemaphore
 
 from six.moves import queue
+
+from . import libnl
 
 _POOL_SIZE = 5
 _NETLINK_ROUTE = 0
@@ -87,7 +89,7 @@ def _open_socket(callback_function=None, callback_arg=None):
         err = _nl_socket_disable_seq_check(sock)
         if err:
             _nl_socket_free(sock)
-            raise IOError(-err, _nl_geterror())
+            raise IOError(-err, libnl.nl_geterror(err))
 
         # _nl_socket_modify_cb(socket, which type callback to set, kind of
         # callback, callback function, arguments to be passed to callback)
@@ -97,7 +99,7 @@ def _open_socket(callback_function=None, callback_arg=None):
     err = _nl_connect(sock, _NETLINK_ROUTE)
     if err:
         _nl_socket_free(sock)
-        raise IOError(-err, _nl_geterror())
+        raise IOError(-err, libnl.nl_geterror(err))
     return sock
 
 
@@ -161,7 +163,7 @@ def _socket_memberships(socket_membership_function, socket, groups):
     err = socket_membership_function(socket, *groups_codes)
     if err:
         _nl_socket_free(socket)
-        raise IOError(-err, _nl_geterror())
+        raise IOError(-err, libnl.nl_geterror(err))
 
 
 # C function prototypes
@@ -177,35 +179,34 @@ _none_proto = CFUNCTYPE(None, c_void_p)
 _socket_memberships_proto = CFUNCTYPE(c_int, c_void_p,
                                       *((c_int,) * (len(_GROUPS) + 1)))
 
-LIBNL = CDLL('libnl-3.so.200', use_errno=True)
 LIBNL_ROUTE = CDLL('libnl-route-3.so.200', use_errno=True)
 
-_nl_socket_alloc = CFUNCTYPE(c_void_p)(('nl_socket_alloc', LIBNL))
-_nl_socket_free = _none_proto(('nl_socket_free', LIBNL))
+_nl_socket_alloc = CFUNCTYPE(c_void_p)(('nl_socket_alloc', libnl.LIBNL))
+_nl_socket_free = _none_proto(('nl_socket_free', libnl.LIBNL))
 
 _nl_msg_parse = CFUNCTYPE(c_int, c_void_p, c_void_p, c_void_p)(
-    ('nl_msg_parse', LIBNL))
+    ('nl_msg_parse', libnl.LIBNL))
 _nl_socket_add_memberships = _socket_memberships_proto(
-    ('nl_socket_add_memberships', LIBNL))
+    ('nl_socket_add_memberships', libnl.LIBNL))
 _nl_socket_disable_seq_check = _void_proto(('nl_socket_disable_seq_check',
-                                            LIBNL))
+                                            libnl.LIBNL))
 _nl_socket_drop_memberships = _socket_memberships_proto(
-    ('nl_socket_drop_memberships', LIBNL))
-_nl_socket_get_fd = _int_proto(('nl_socket_get_fd', LIBNL))
-_nl_socket_modify_cb = CFUNCTYPE(c_int, c_void_p, c_int, c_int, c_void_p,
-                                 py_object)(('nl_socket_modify_cb', LIBNL))
-_nl_object_get_type = _char_proto(('nl_object_get_type', LIBNL))
-_nl_recvmsgs_default = _int_proto(('nl_recvmsgs_default', LIBNL))
+    ('nl_socket_drop_memberships', libnl.LIBNL))
+_nl_socket_get_fd = _int_proto(('nl_socket_get_fd', libnl.LIBNL))
+_nl_socket_modify_cb = CFUNCTYPE(
+    c_int, c_void_p, c_int, c_int, c_void_p, py_object)((
+        'nl_socket_modify_cb', libnl.LIBNL))
+_nl_object_get_type = _char_proto(('nl_object_get_type', libnl.LIBNL))
+_nl_recvmsgs_default = _int_proto(('nl_recvmsgs_default', libnl.LIBNL))
 
-_nl_connect = CFUNCTYPE(c_int, c_void_p, c_int)(('nl_connect', LIBNL))
-_nl_geterror = CFUNCTYPE(c_char_p)(('nl_geterror', LIBNL))
+_nl_connect = CFUNCTYPE(c_int, c_void_p, c_int)(('nl_connect', libnl.LIBNL))
 
-_nl_cache_free = _none_proto(('nl_cache_free', LIBNL))
-_nl_cache_get_first = _void_proto(('nl_cache_get_first', LIBNL))
-_nl_cache_get_next = _void_proto(('nl_cache_get_next', LIBNL))
+_nl_cache_free = _none_proto(('nl_cache_free', libnl.LIBNL))
+_nl_cache_get_first = _void_proto(('nl_cache_get_first', libnl.LIBNL))
+_nl_cache_get_next = _void_proto(('nl_cache_get_next', libnl.LIBNL))
 _nl_addr2str = CFUNCTYPE(c_char_p, c_void_p, c_char_p, c_size_t)((
-    'nl_addr2str', LIBNL))
-_nl_af2str = _int_char_proto(('nl_af2str', LIBNL))
+    'nl_addr2str', libnl.LIBNL))
+_nl_af2str = _int_char_proto(('nl_af2str', libnl.LIBNL))
 _rtnl_scope2str = _int_char_proto(('rtnl_scope2str', LIBNL_ROUTE))
 
 
