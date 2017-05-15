@@ -800,6 +800,7 @@ fi
 /bin/systemctl restart systemd-modules-load.service >/dev/null 2>&1 || :
 
 # The following triggers vdsmd.preset file and enables vdsm required services
+%systemd_post dev-hugepages1G.mount
 %systemd_post vdsmd.service
 %systemd_post supervdsmd.service
 %systemd_post vdsm-network.service
@@ -815,6 +816,7 @@ exit 0
 if [ "$1" -eq 0 ]; then
         %{_bindir}/vdsm-tool remove-config
 fi
+%systemd_preun dev-hugepages1G.mount
 %systemd_preun vdsmd.service
 %systemd_preun vdsm-network.service
 %systemd_preun vdsm-network-init.service
@@ -862,6 +864,7 @@ exit 0
 %license COPYING
 %{_libdir}/systemd/systemd-vdsmd
 %{_presetdir}/85-vdsmd.preset
+%{_unitdir}/dev-hugepages1G.mount
 %{_unitdir}/vdsmd.service
 %{_unitdir}/vdsm-network.service
 %{_unitdir}/vdsm-network-init.service
@@ -1378,16 +1381,19 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/virttests/*.py*
 %{_datadir}/%{vdsm_name}/tests/run_tests.sh
 %{_datadir}/%{vdsm_name}/tests/toolTests_abrt-action-save-package-data.conf
-%{_datadir}/%{vdsm_name}/tests/toolTests_abrt.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_CCPP.conf
-%{_datadir}/%{vdsm_name}/tests/toolTests_vmcore.conf
+%{_datadir}/%{vdsm_name}/tests/toolTests_abrt.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_empty.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_lconf_ssl.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_libvirtd.conf
+%{_datadir}/%{vdsm_name}/tests/toolTests_mtab_1g
+%{_datadir}/%{vdsm_name}/tests/toolTests_mtab_default
+%{_datadir}/%{vdsm_name}/tests/toolTests_mtab_nohugetlbfs
 %{_datadir}/%{vdsm_name}/tests/toolTests_qemu_sanlock.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_qemu_ssl.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_vdsm_no_ssl.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_vdsm_ssl.conf
+%{_datadir}/%{vdsm_name}/tests/toolTests_vmcore.conf
 %{_datadir}/%{vdsm_name}/tests/glusterGeoRepStatus.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeGeoRepConfigList.xml
 %{_datadir}/%{vdsm_name}/tests/glusterSnapshotList.xml

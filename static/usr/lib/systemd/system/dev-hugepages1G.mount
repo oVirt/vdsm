@@ -1,0 +1,9 @@
+[Unit]
+Description=Huge Pages 1G File System
+ConditionPathExists=/sys/kernel/mm/hugepages/hugepages-1048576kB
+
+[Mount]
+What=hugetlbfs
+Where=/dev/hugepages1G
+Options=pagesize=1G
+Type=hugetlbfs

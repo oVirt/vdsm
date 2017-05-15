@@ -118,6 +118,10 @@ systemdunit_DATA = \
 	./usr/lib/systemd/system/vdsmd.service \
 	$(NULL)
 
+dist_systemdunit_DATA = \
+	./usr/lib/systemd/system/dev-hugepages1G.mount \
+	$(NULL)
+
 CLEANFILES = \
 	$(sudoers_DATA) \
 	$(systemdunit_DATA) \

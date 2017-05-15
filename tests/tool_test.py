@@ -25,6 +25,7 @@ from vdsm.tool.configurators import abrt
 from vdsm.tool.configurators import libvirt
 from vdsm.tool import UsageError
 from vdsm.tool import upgrade
+from vdsm import cpuinfo, cpuarch
 import monkeypatch
 from testlib import expandPermutations, make_config, VdsmTestCase
 from testValidation import ValidateRunningAsRoot
@@ -410,7 +411,17 @@ class LibvirtModuleConfigureTests(TestCase):
                 libvirt,
                 'FILES',
                 FakeLibvirtFiles
-            )
+            ),
+            (
+                cpuarch,
+                'real',
+                lambda: cpuarch.X86_64
+            ),
+            (
+                cpuinfo,
+                'flags',
+                lambda: ['pdpe1gb']
+            ),
         ])
 
         self.patch.apply()
@@ -419,6 +430,7 @@ class LibvirtModuleConfigureTests(TestCase):
         self.patch.revert()
         fileutils.rm_tree(self._test_dir)
 
+    @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     def testValidatePositive(self):
         self.vdsm_cfg.set('vars', 'ssl', 'true')
         _setConfig(self,
@@ -428,6 +440,7 @@ class LibvirtModuleConfigureTests(TestCase):
 
         self.assertTrue(libvirt.validate())
 
+    @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     def testValidateNegative(self):
         self.vdsm_cfg.set('vars', 'ssl', 'false')
         _setConfig(self,
@@ -437,6 +450,7 @@ class LibvirtModuleConfigureTests(TestCase):
 
         self.assertFalse(libvirt.validate())
 
+    @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     def testIsConfiguredPositive(self):
         _setConfig(self,
                    ('LCONF', 'lconf_ssl'),
@@ -447,6 +461,7 @@ class LibvirtModuleConfigureTests(TestCase):
             MAYBE
         )
 
+    @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     def testIsConfiguredNegative(self):
         _setConfig(self,
                    ('LCONF', 'lconf_ssl'),
@@ -457,6 +472,7 @@ class LibvirtModuleConfigureTests(TestCase):
             NO
         )
 
+    @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     def testLibvirtConfigureToSSLTrue(self):
         self.vdsm_cfg.set('vars', 'ssl', 'true')
         _setConfig(self,
@@ -476,6 +492,7 @@ class LibvirtModuleConfigureTests(TestCase):
             MAYBE
         )
 
+    @monkeypatch.MonkeyPatch(libvirt, '_is_hugetlbfs_1g_mounted', lambda: True)
     def testLibvirtConfigureToSSLFalse(self):
         self.vdsm_cfg.set('vars', 'ssl', 'false')
         _setConfig(self,
@@ -493,6 +510,31 @@ class LibvirtModuleConfigureTests(TestCase):
             libvirt.isconfigured(),
             MAYBE
         )
+
+    def test_hugetlbfs_mount_false(self):
+        path_to_fake_mtab = os.path.join(self.srcPath, 'tests',
+                                         'toolTests_mtab_nohugetlbfs')
+
+        self.assertFalse(libvirt._is_hugetlbfs_1g_mounted(path_to_fake_mtab))
+
+    def test_hugetlbfs_mount_default(self):
+        path_to_fake_mtab = os.path.join(self.srcPath, 'tests',
+                                         'toolTests_mtab_default')
+
+        self.assertFalse(libvirt._is_hugetlbfs_1g_mounted(path_to_fake_mtab))
+
+    @monkeypatch.MonkeyPatch(cpuarch, 'real', lambda: cpuarch.PPC64LE)
+    def test_hugetlbfs_mount_default_ppc(self):
+        path_to_fake_mtab = os.path.join(self.srcPath, 'tests',
+                                         'toolTests_mtab_default')
+
+        self.assertTrue(libvirt._is_hugetlbfs_1g_mounted(path_to_fake_mtab))
+
+    def test_hugetlbfs_mount_1g(self):
+        path_to_fake_mtab = os.path.join(self.srcPath, 'tests',
+                                         'toolTests_mtab_1g')
+
+        self.assertTrue(libvirt._is_hugetlbfs_1g_mounted(path_to_fake_mtab))
 
 
 class ConfigFileTests(TestCase):

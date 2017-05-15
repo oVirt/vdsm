@@ -25,7 +25,10 @@ from vdsm.config import config
 
 from . import NO, MAYBE
 
+from vdsm import cpuarch
+from vdsm import cpuinfo
 from vdsm.tool import confutils
+from vdsm.tool import service
 from vdsm.tool.configfile import ParserWrapper
 from vdsm import constants
 
@@ -49,6 +52,15 @@ def configure():
     for cfile, content in FILES.items():
         content['configure'](content, CONF_VERSION, vdsmConfiguration)
 
+    # enable and acivate dev-hugepages1G mounth path
+    if not _is_hugetlbfs_1g_mounted():
+        try:
+            service.service_start('dev-hugepages1G.mount')
+        except service.ServiceOperationError:
+            status = service.service_status('dev-hugepages1G.mount', False)
+            if status == 0:
+                raise
+
 
 def validate():
     """
@@ -65,6 +77,9 @@ def isconfigured():
     for path in (confutils.get_persisted_files(FILES)):
         if not confutils.open_config(path, CONF_VERSION).hasConf():
             ret = NO
+
+    if not _is_hugetlbfs_1g_mounted():
+        ret = NO
 
     if ret == MAYBE:
         sys.stdout.write("libvirt is already configured for vdsm\n")
@@ -124,6 +139,18 @@ def _isSslConflict():
             )
             ret = False
     return ret
+
+
+def _is_hugetlbfs_1g_mounted(mtab_path='/etc/mtab'):
+    if cpuarch.is_ppc(cpuarch.real()) or 'pdpe1gb' not in cpuinfo.flags():
+        return True
+
+    with open(mtab_path, 'r') as f:
+        for line in f:
+            if '/dev/hugepages1G' in line:
+                return True
+
+    return False
 
 
 # version != PACKAGE_VERSION since we do not want to update configuration
