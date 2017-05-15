@@ -118,7 +118,9 @@ def option_parser():
     parser.add_argument('-p', '--port', dest="port", default=54321, type=int,
                         help="port (default 54321)")
     parser.add_argument('--unsecure', dest="use_tls", action="store_false",
-                        help="unsecured connection")
+                        help='deprecated alias to --insecure')
+    parser.add_argument('--insecure', dest="use_tls", action="store_false",
+                        help="insecure connection")
     parser.set_defaults(use_tls=True)
     parser.add_argument('--timeout', dest="timeout", default=60, type=float,
                         help="timeout (default 60 seconds)")
