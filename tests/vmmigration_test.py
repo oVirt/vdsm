@@ -350,9 +350,6 @@ class FakeVM(object):
     def saveState(self):
         pass
 
-    def _customDevices(self):
-        return []
-
     def setDownStatus(self, status, reason):
         pass
 
@@ -361,6 +358,9 @@ class FakeVM(object):
 
     def mem_size_mb(self):
         return self._mem_size_mb
+
+    def prepare_migration(self):
+        pass
 
 
 class FakeProgress(object):

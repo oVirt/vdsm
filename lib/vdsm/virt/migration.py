@@ -26,7 +26,6 @@ import time
 import libvirt
 
 from vdsm import concurrent
-from vdsm import hooks
 from vdsm.common import conv
 from vdsm.common import response
 from vdsm import utils
@@ -456,11 +455,7 @@ class SourceThread(object):
         if self.hibernating:
             self._vm.hibernate(self._dst)
         else:
-            for dev in self._vm._customDevices():
-                hooks.before_device_migrate_source(
-                    dev._deviceXML, self._vm.conf, dev.custom)
-            hooks.before_vm_migrate_source(self._vm._dom.XMLDesc(0),
-                                           self._vm.conf)
+            self._vm.prepare_migration()
 
             # Do not measure the time spent for creating the VM on the
             # destination. In some cases some expensive operations can cause

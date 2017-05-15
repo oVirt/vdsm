@@ -632,6 +632,12 @@ class Vm(object):
         finally:
             self.cif.teardownVolumePath(dst)
 
+    def prepare_migration(self):
+        for dev in self._customDevices():
+            hooks.before_device_migrate_source(
+                dev._deviceXML, self.conf, dev.custom)
+        hooks.before_vm_migrate_source(self._dom.XMLDesc(0), self.conf)
+
     def _startUnderlyingVm(self):
         self.log.debug("Start")
         acquired = False
