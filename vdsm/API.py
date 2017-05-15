@@ -227,6 +227,11 @@ class VM(APIBase):
             raise exception.UnexpectedError()
 
     def _validate_vm_params(self, vmParams):
+        if 'xml' in vmParams:
+            # we don't need any other parameter, the XML data
+            # contains everything we need.
+            return
+
         validate.require_keys(vmParams, ('vmId', 'memSize'))
         try:
             misc.validateUUID(vmParams['vmId'])
