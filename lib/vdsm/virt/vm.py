@@ -1604,11 +1604,11 @@ class Vm(object):
                     'statusTime': self._get_status_time()}
 
         with self._confLock:
-            self.conf['status'] = self.lastStatus
             # Filter out any internal keys
             status = dict((k, v) for k, v in self.conf.iteritems()
                           if not k.startswith("_"))
             status['vmId'] = self.id
+            status['status'] = self.lastStatus
             status['guestDiskMapping'] = self.guestAgent.guestDiskMapping
             status['statusTime'] = self._get_status_time()
             return utils.picklecopy(status)
