@@ -4858,11 +4858,8 @@ class Vm(object):
                           "original chain=%s", jobUUID, chain_str)
 
             try:
-                ret = self._dom.blockCommit(drive.path, base, top, bandwidth,
-                                            flags)
-                if ret != 0:
-                    raise RuntimeError("blockCommit failed rc:%i", ret)
-            except (RuntimeError, libvirt.libvirtError):
+                self._dom.blockCommit(drive.path, base, top, bandwidth, flags)
+            except libvirt.libvirtError:
                 self.log.exception("Live merge failed (job: %s)", jobUUID)
                 self.untrackBlockJob(jobUUID)
                 return response.error('mergeErr')
