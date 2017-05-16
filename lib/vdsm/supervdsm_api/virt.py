@@ -70,7 +70,7 @@ def hugepages_alloc(count, path):
         f.write(str(existing_pages + count))
 
     with open(path, 'r') as f:
-        allocated_pages = min(int(f.read()), count)
+        allocated_pages = int(f.read()) - existing_pages
 
     return allocated_pages
 
