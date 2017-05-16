@@ -192,7 +192,7 @@ class Image:
         # Limit estimates size by maximum size.
         vol_class = sdCache.produce(dst_sd_id).getVolumeClass()
         max_size = vol_class.max_size(src_vol_params['size'] * sc.BLOCK_SIZE,
-                                      src_vol_params['volFormat'])
+                                      sc.COW_FORMAT)
         size_blk = min(size_blk, max_size // sc.BLOCK_SIZE)
 
         # Return estimated size of allocation blocks.
