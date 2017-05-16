@@ -5262,7 +5262,7 @@ class LiveMergeCleanupThread(object):
                          "(job %s)", self.job['jobID'])
         try:
             flags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
-            ret = self.vm._dom.blockJobAbort(self.drive.name, flags)
+            self.vm._dom.blockJobAbort(self.drive.name, flags)
         except libvirt.libvirtError as e:
             self.vm.enableDriveMonitor()
             if e.get_error_code() != libvirt.VIR_ERR_BLOCK_COPY_ACTIVE:
@@ -5271,12 +5271,8 @@ class LiveMergeCleanupThread(object):
         except:
             self.vm.enableDriveMonitor()
             raise
-        else:
-            if ret != 0:
-                self.vm.log.error("Pivot failed for job %s (rc=%i)",
-                                  self.job['jobID'], ret)
-                raise RuntimeError("pivot failed")
-            self._waitForXMLUpdate()
+
+        self._waitForXMLUpdate()
         self.vm.log.info("Pivot completed (job %s)", self.job['jobID'])
 
     def update_base_size(self):
