@@ -35,6 +35,7 @@ from testlib import permutations, expandPermutations
 from testValidation import xfail
 
 from vdsm import constants
+from vdsm.common import exception
 from vdsm import utils
 
 from virt import vmxml
@@ -870,27 +871,37 @@ class TestVolumeChain(VdsmTestCase):
 
 
 class TestDiskSnapshotXml(XMLTestCase):
+    def setUp(self):
+        self.conf = drive_config(name="vda")
+
     def test_file(self):
+        drive = Drive({}, self.log, **self.conf)
+
         expected = """
             <disk name='vda' snapshot='external' type='file'>
                 <source file='/image' type='file'/>
             </disk>
             """
-        actual = storage.get_snapshot_xml('vda', '/image', 'file')
+        actual = drive.get_snapshot_xml({'path': '/image'})
         self.assertXMLEqual(vmxml.format_xml(actual), expected)
 
     def test_block(self):
+        drive = Drive({}, self.log, **self.conf)
+        drive._blockDev = True
+
         expected = """
             <disk name='vda' snapshot='external' type='block'>
                 <source dev='/dev/dm-1' type='block'/>
             </disk>
             """
-        actual = storage.get_snapshot_xml('vda', '/dev/dm-1', 'block')
+        actual = drive.get_snapshot_xml({'path': '/dev/dm-1'})
         self.assertXMLEqual(vmxml.format_xml(actual), expected)
 
     def test_incorrect_disk_type(self):
-        with self.assertRaises(RuntimeError):
-            storage.get_snapshot_xml('vda', '/dev/dm-1', 'fail')
+        drive = Drive({}, self.log, **self.conf)
+
+        with self.assertRaises(exception.UnsupportedOperation):
+            drive.get_snapshot_xml({"path": "/foo", "diskType": "wrong"})
 
 
 def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):

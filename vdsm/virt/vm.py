@@ -78,7 +78,6 @@ from .domain_descriptor import DomainDescriptor, MutableDomainDescriptor
 from . import recovery
 from . import vmdevices
 from .vmdevices import hwclass
-from .vmdevices import storage
 from .vmdevices.storage import DISK_TYPE, VolumeNotFound
 from . import vmtune
 from . import vmxml
@@ -3586,9 +3585,8 @@ class Vm(object):
                 _rollbackDrives(preparedDrives)
                 return response.error('snapshotErr')
 
-            snapType = 'block' if vmDrives[vmDevName].blockDev else 'file'
-            snapelem = storage.get_snapshot_xml(
-                vmDevName, newDrives[vmDevName]["path"], snapType)
+            drive = vmDrives[vmDevName]
+            snapelem = drive.get_snapshot_xml(vmDevice)
             disks.appendChild(snapelem)
 
         snap.appendChild(disks)
