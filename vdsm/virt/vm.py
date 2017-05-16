@@ -78,6 +78,7 @@ from .domain_descriptor import DomainDescriptor, MutableDomainDescriptor
 from . import recovery
 from . import vmdevices
 from .vmdevices import hwclass
+from .vmdevices import storage
 from .vmdevices.storage import DISK_TYPE, VolumeNotFound
 from . import vmtune
 from . import vmxml
@@ -3463,19 +3464,6 @@ class Vm(object):
     def snapshot(self, snapDrives, memoryParams, frozen=False):
         """Live snapshot command"""
 
-        def _diskSnapshot(vmDev, newPath, sourceType):
-            """Libvirt snapshot XML"""
-
-            disk = vmxml.Element('disk', name=vmDev, snapshot='external',
-                                 type=sourceType)
-            args = {'type': sourceType}
-            if sourceType == 'file':
-                args['file'] = newPath
-            elif sourceType == 'block':
-                args['dev'] = newPath
-            disk.appendChildWithArgs('source', **args)
-            return disk
-
         def _normSnapDriveParams(drive):
             """Normalize snapshot parameters"""
 
@@ -3599,8 +3587,8 @@ class Vm(object):
                 return response.error('snapshotErr')
 
             snapType = 'block' if vmDrives[vmDevName].blockDev else 'file'
-            snapelem = _diskSnapshot(vmDevName, newDrives[vmDevName]["path"],
-                                     snapType)
+            snapelem = storage.get_snapshot_xml(
+                vmDevName, newDrives[vmDevName]["path"], snapType)
             disks.appendChild(snapelem)
 
         snap.appendChild(disks)
