@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,11 +21,11 @@ from functools import wraps
 from nose.plugins.skip import SkipTest
 
 from vdsm import commands
-from vdsm import utils
+from vdsm.common import cmdutils
 
-modprobe = utils.CommandPath("modprobe",
-                             "/usr/sbin/modprobe",  # Fedora, EL7
-                             )
+modprobe = cmdutils.CommandPath("modprobe",
+                                "/usr/sbin/modprobe",  # Fedora, EL7
+                                )
 
 
 def RequireDummyMod(f):

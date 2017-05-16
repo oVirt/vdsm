@@ -20,7 +20,7 @@ from __future__ import absolute_import
 
 from vdsm.commands import execCmd
 from vdsm.common.cache import memoized
-from vdsm.utils import CommandPath
+from vdsm.common.cmdutils import CommandPath
 
 from .nmdbus import NMDbus, NMDbusIfcfgRH1
 from .nmdbus.active import NMDbusActiveConnections

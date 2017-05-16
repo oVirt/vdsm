@@ -39,7 +39,7 @@ from vdsm.config import config
 from vdsm.network.link import dpdk
 from vdsm.network.netlink import link
 from vdsm.utils import anyFnmatch
-from vdsm.utils import CommandPath
+from vdsm.common.cmdutils import CommandPath
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
 

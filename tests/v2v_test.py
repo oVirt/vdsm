@@ -1,4 +1,4 @@
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,9 +34,9 @@ from vdsm import v2v
 from vdsm import libvirtconnection
 from vdsm.password import ProtectedPassword
 from vdsm.commands import execCmd
+from vdsm.common.cmdutils import CommandPath
 from vdsm.common import response
-from vdsm.utils import CommandPath, terminating
-
+from vdsm.utils import terminating
 
 from testlib import VdsmTestCase as TestCaseBase, recorded
 from monkeypatch import MonkeyPatch, MonkeyPatchScope

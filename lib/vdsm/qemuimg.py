@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ import signal
 import threading
 
 from vdsm.common import exception
+import vdsm.common.cmdutils
 from vdsm.storage import operation
 
 from . import utils
@@ -35,8 +36,8 @@ from . import commands
 from .compat import CPopen
 from . config import config
 
-_qemuimg = utils.CommandPath("qemu-img",
-                             "/usr/bin/qemu-img",)  # Fedora
+_qemuimg = vdsm.common.cmdutils.CommandPath("qemu-img",
+                                            "/usr/bin/qemu-img",)  # Fedora
 
 _log = logging.getLogger("QemuImg")
 

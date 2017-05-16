@@ -24,13 +24,14 @@ import fcntl
 import os
 import selinux
 from functools import wraps
+
+from vdsm.common import cmdutils
 from vdsm.common.define import doneCode
 from vdsm.gluster import exception as ge
 from vdsm.gluster import fstab
 from vdsm.storage import mount
 from vdsm import constants
 from vdsm import commands
-from vdsm import utils
 from vdsm import supervdsm as svdsm
 from pwd import getpwnam
 
@@ -50,12 +51,12 @@ FS_TYPE = "glusterfs"
 SNAP_SCHEDULER_ALREADY_DISABLED_RC = 7
 
 
-_snapSchedulerPath = utils.CommandPath(
+_snapSchedulerPath = cmdutils.CommandPath(
     "snap_scheduler.py",
     "/usr/sbin/snap_scheduler.py",
 )
 
-_stopAllProcessesPath = utils.CommandPath(
+_stopAllProcessesPath = cmdutils.CommandPath(
     "stop-all-gluster-processes.sh",
     "/usr/share/glusterfs/scripts/stop-all-gluster-processes.sh",
 )

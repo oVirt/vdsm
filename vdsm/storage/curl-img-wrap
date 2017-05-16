@@ -1,6 +1,6 @@
 #!/usr/bin/python2
 #
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ import signal
 import argparse
 import ctypes
 
-from vdsm.utils import CommandPath
+from vdsm.common.cmdutils import CommandPath
 
 
 LIBC = ctypes.CDLL("libc.so.6", use_errno=True)

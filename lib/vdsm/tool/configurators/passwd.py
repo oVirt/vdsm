@@ -20,20 +20,20 @@
 from __future__ import absolute_import
 from vdsm import constants
 from vdsm import commands
-from vdsm import utils
 from vdsm.common import cache
+from vdsm.common import cmdutils
 
 
 from . import YES, NO
 
 
-_SASLDBLISTUSERS2 = utils.CommandPath("sasldblistusers2",
-                                      "/usr/sbin/sasldblistusers2",
-                                      )
+_SASLDBLISTUSERS2 = cmdutils.CommandPath("sasldblistusers2",
+                                         "/usr/sbin/sasldblistusers2",
+                                         )
 _LIBVIRT_SASLDB = "/etc/libvirt/passwd.db"
-_SASLPASSWD2 = utils.CommandPath("saslpasswd2",
-                                 "/usr/sbin/saslpasswd2",
-                                 )
+_SASLPASSWD2 = cmdutils.CommandPath("saslpasswd2",
+                                    "/usr/sbin/saslpasswd2",
+                                    )
 SASL_USERNAME = "vdsm@ovirt"
 LIBVIRT_PASSWORD_PATH = constants.P_VDSM_KEYS + 'libvirt_password'
 

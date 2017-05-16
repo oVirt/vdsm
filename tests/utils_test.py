@@ -325,27 +325,6 @@ class TestGetCmdArgs(TestCaseBase):
             sproc.wait()
 
 
-class TestCommandPath(TestCaseBase):
-    def testExisting(self):
-        cp = utils.CommandPath('sh', 'utter nonsense', '/bin/sh')
-        self.assertEqual(cp.cmd, '/bin/sh')
-
-    def testExistingNotInPaths(self):
-        """Tests if CommandPath can find the executable like the 'which' unix
-        tool"""
-        cp = utils.CommandPath('sh', 'utter nonsense')
-        _, stdout, _ = commands.execCmd(['which', 'sh'])
-        self.assertIn(cp.cmd, stdout)
-
-    def testMissing(self):
-        NAME = 'nonsense'
-        try:
-            utils.CommandPath(NAME, 'utter nonsense').cmd
-        except OSError as e:
-            self.assertEqual(e.errno, errno.ENOENT)
-            self.assertIn(NAME, e.strerror)
-
-
 @expandPermutations
 class TestGeneralUtils(TestCaseBase):
     def testPanic(self):

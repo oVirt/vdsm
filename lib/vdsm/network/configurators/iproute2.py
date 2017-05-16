@@ -33,7 +33,7 @@ from vdsm.network.netinfo import bonding, vlans, bridges, mtus
 from vdsm.network.netinfo.cache import ifaceUsed
 from vdsm.constants import EXT_BRCTL
 from vdsm.network.netconfpersistence import RunningConfig
-from vdsm.utils import CommandPath
+from vdsm.common.cmdutils import CommandPath
 from vdsm.commands import execCmd
 
 from . import Configurator, getEthtoolOpts

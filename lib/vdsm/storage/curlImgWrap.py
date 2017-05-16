@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2016 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,12 +20,12 @@
 
 from __future__ import absolute_import
 
+from vdsm.common import cmdutils
 from vdsm import commands
 from vdsm import constants
-from vdsm import utils
 
-_curl = utils.CommandPath("curl",
-                          "/usr/bin/curl",)  # Fedora, EL6
+_curl = cmdutils.CommandPath("curl",
+                             "/usr/bin/curl", )  # Fedora, EL6
 
 CURL_OPTIONS = ["-q", "--silent", "--fail", "--show-error"]
 

@@ -26,15 +26,15 @@ import xml.etree.cElementTree as ET
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import libvirtconnection
-from vdsm import utils
 from vdsm.common import cache
+from vdsm.common.cmdutils import CommandPath
 
 
 NumaTopology = namedtuple('NumaTopology', 'topology, distances, cpu_topology')
 CpuTopology = namedtuple('CpuTopology', 'sockets, cores, threads, online_cpus')
 
 
-_SYSCTL = utils.CommandPath("sysctl", "/sbin/sysctl", "/usr/sbin/sysctl")
+_SYSCTL = CommandPath("sysctl", "/sbin/sysctl", "/usr/sbin/sysctl")
 
 
 AUTONUMA_STATUS_DISABLE = 0

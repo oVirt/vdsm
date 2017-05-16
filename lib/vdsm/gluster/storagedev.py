@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2016 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,32 +32,32 @@ from blivet.devices import LVMLogicalVolumeDevice
 from blivet.devices import LVMThinLogicalVolumeDevice
 from blivet import udev
 
+from vdsm.common import cmdutils
 from vdsm import commands
-from vdsm import utils
 from vdsm.gluster import exception as ge
 from vdsm.gluster import fstab
 from . import gluster_mgmt_api
 
 
 log = logging.getLogger("Gluster")
-_pvCreateCommandPath = utils.CommandPath("pvcreate",
-                                         "/sbin/pvcreate",
-                                         "/usr/sbin/pvcreate",)
-_vgCreateCommandPath = utils.CommandPath("vgcreate",
-                                         "/sbin/vgcreate",
-                                         "/usr/sbin/vgcreate",)
-_lvconvertCommandPath = utils.CommandPath("lvconvert",
-                                          "/sbin/lvconvert",
-                                          "/usr/sbin/lvconvert",)
-_lvchangeCommandPath = utils.CommandPath("lvchange",
-                                         "/sbin/lvchange",
-                                         "/usr/sbin/lvchange",)
-_vgscanCommandPath = utils.CommandPath("vgscan",
-                                       "/sbin/vgscan",
-                                       "/usr/sbin/vgscan",)
-_semanageCommandPath = utils.CommandPath("semanage",
-                                         "/sbin/semanage",
-                                         "/usr/sbin/semanage",)
+_pvCreateCommandPath = cmdutils.CommandPath("pvcreate",
+                                            "/sbin/pvcreate",
+                                            "/usr/sbin/pvcreate",)
+_vgCreateCommandPath = cmdutils.CommandPath("vgcreate",
+                                            "/sbin/vgcreate",
+                                            "/usr/sbin/vgcreate",)
+_lvconvertCommandPath = cmdutils.CommandPath("lvconvert",
+                                             "/sbin/lvconvert",
+                                             "/usr/sbin/lvconvert",)
+_lvchangeCommandPath = cmdutils.CommandPath("lvchange",
+                                            "/sbin/lvchange",
+                                            "/usr/sbin/lvchange",)
+_vgscanCommandPath = cmdutils.CommandPath("vgscan",
+                                          "/sbin/vgscan",
+                                          "/usr/sbin/vgscan",)
+_semanageCommandPath = cmdutils.CommandPath("semanage",
+                                            "/sbin/semanage",
+                                            "/usr/sbin/semanage",)
 
 # All size are in MiB unless otherwise specified
 DEFAULT_CHUNK_SIZE_KB = 256

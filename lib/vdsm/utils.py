@@ -31,7 +31,6 @@ from collections import namedtuple, deque, OrderedDict
 from contextlib import contextmanager
 from fnmatch import fnmatch
 from .compat import pickle
-import distutils.spawn
 import errno
 import functools
 import glob
@@ -382,39 +381,6 @@ class closing(object):
                 raise
             log = logging.getLogger(self.log)
             log.exception("Error closing %s", self.obj)
-
-
-class CommandPath(object):
-    def __init__(self, name, *args, **kwargs):
-        self.name = name
-        self.paths = args
-        self._cmd = None
-        self._search_path = kwargs.get('search_path', True)
-
-    @property
-    def cmd(self):
-        if not self._cmd:
-            for path in self.paths:
-                if os.path.exists(path):
-                    self._cmd = path
-                    break
-            else:
-                if self._search_path:
-                    self._cmd = distutils.spawn.find_executable(self.name)
-                if self._cmd is None:
-                    raise OSError(os.errno.ENOENT,
-                                  os.strerror(os.errno.ENOENT) + ': ' +
-                                  self.name)
-        return self._cmd
-
-    def __repr__(self):
-        return str(self.cmd)
-
-    def __str__(self):
-        return str(self.cmd)
-
-    def __unicode__(self):
-        return unicode(self.cmd)
 
 
 def retry(func, expectedException=Exception, tries=None,

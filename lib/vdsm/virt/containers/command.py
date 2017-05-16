@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published
@@ -25,13 +25,12 @@ from __future__ import absolute_import
 
 from vdsm import commands
 from vdsm import supervdsm
-from vdsm import utils
+from vdsm.common import cmdutils
 
-
-_SYSTEMCTL = utils.CommandPath("systemctl",
-                               "/bin/systemctl",
-                               "/usr/bin/systemctl",
-                               )
+_SYSTEMCTL = cmdutils.CommandPath("systemctl",
+                                  "/bin/systemctl",
+                                  "/usr/bin/systemctl",
+                                  )
 
 
 class Failed(Exception):

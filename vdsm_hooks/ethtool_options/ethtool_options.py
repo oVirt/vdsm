@@ -1,5 +1,5 @@
 #!/usr/bin/python2
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,8 +23,8 @@ import sys
 import hooking
 import traceback
 
+from vdsm.common.cmdutils import CommandPath
 from vdsm.network.link.bond import Bond
-from vdsm.utils import CommandPath
 
 ETHTOOL_BINARY = CommandPath(
     'ethtool',

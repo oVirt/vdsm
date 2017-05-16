@@ -28,8 +28,8 @@ import re
 import sys
 from collections import defaultdict
 
+from vdsm.common.cmdutils import CommandPath
 from . import expose, UsageError, ExtraArgsError
-from ..utils import CommandPath
 from ..commands import execCmd as _execCmd
 
 

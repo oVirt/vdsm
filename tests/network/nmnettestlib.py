@@ -21,9 +21,9 @@ from __future__ import absolute_import
 from contextlib import contextmanager
 
 from vdsm.commands import execCmd
+from vdsm.common.cmdutils import CommandPath
 from vdsm.network.link import iface as linkiface
 from vdsm.network.link.iface import random_iface_name
-from vdsm.utils import CommandPath
 
 from .nettestlib import dummy_devices
 

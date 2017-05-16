@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2016 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published
@@ -31,7 +31,7 @@ import uuid
 import xml.etree.ElementTree as ET
 
 from vdsm import commands
-from vdsm import utils
+from vdsm.common import cmdutils
 
 import vdsm.virt.containers.cgroups
 import vdsm.virt.containers.command
@@ -107,12 +107,12 @@ def named_temp_dir(base=TEMPDIR):
 class FakeCommands(object):
 
     def __init__(self):
-        self._docker = utils.CommandPath('docker',
-                                         *self.paths('docker'))
-        self._systemctl = utils.CommandPath('systemctl',
-                                            *self.paths('systemctl'))
-        self._systemd_run = utils.CommandPath('systemd-run',
-                                              *self.paths('systemd-run'))
+        self._docker = cmdutils.CommandPath('docker',
+                                            *self.paths('docker'))
+        self._systemctl = cmdutils.CommandPath('systemctl',
+                                               *self.paths('systemctl'))
+        self._systemd_run = cmdutils.CommandPath('systemd-run',
+                                                 *self.paths('systemd-run'))
 
     def paths(self, exe):
         return [os.path.join(path, exe) for path in(

@@ -1,4 +1,4 @@
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,12 +23,11 @@ import glob
 import pwd
 import selinux
 
+from vdsm.common.cmdutils import CommandPath
 from .. import constants
 from ..config import config
 from . import expose, ExtraArgsError
 from ..commands import execCmd
-from ..utils import CommandPath
-
 
 SELINUX_VIRT_IMAGE_LABEL = "system_u:object_r:virt_image_t:s0"
 TRANSIENT_DISKS_REPO = config.get('vars', 'transient_disks_repository')

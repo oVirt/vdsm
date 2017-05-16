@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2016 Red Hat, Inc.
+# Copyright 2009-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ from vdsm import commands
 from vdsm import supervdsm
 from vdsm import udevadm
 from vdsm import utils
+from vdsm.common import cmdutils
 from vdsm.config import config
 from vdsm.storage import devicemapper
 from vdsm.storage import hba
@@ -50,13 +51,13 @@ TOXIC_CHARS = '()*+?|^$.\\'
 
 log = logging.getLogger("storage.Multipath")
 
-_SCSI_ID = utils.CommandPath("scsi_id",
-                             "/usr/lib/udev/scsi_id",    # Fedora, EL7
-                             "/lib/udev/scsi_id")        # Ubuntu
+_SCSI_ID = cmdutils.CommandPath("scsi_id",
+                                "/usr/lib/udev/scsi_id",    # Fedora, EL7
+                                "/lib/udev/scsi_id")        # Ubuntu
 
-_MULTIPATHD = utils.CommandPath("multipathd",
-                                "/usr/sbin/multipathd",  # Fedora, EL7
-                                "/sbin/multipathd")      # Ubuntu
+_MULTIPATHD = cmdutils.CommandPath("multipathd",
+                                   "/usr/sbin/multipathd",  # Fedora, EL7
+                                   "/sbin/multipathd")      # Ubuntu
 
 
 class Error(Exception):

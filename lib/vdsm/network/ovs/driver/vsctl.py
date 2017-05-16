@@ -28,7 +28,7 @@ from vdsm.commands import execCmd
 from vdsm.common.cache import memoized
 from vdsm.network import errors as ne
 from vdsm.network.errors import ConfigNetworkError, OvsDBConnectionError
-from vdsm.utils import CommandPath
+from vdsm.common.cmdutils import CommandPath
 
 from . import (API as DriverAPI,
                Transaction as DriverTransaction,

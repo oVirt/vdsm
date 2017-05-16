@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published
@@ -24,18 +24,18 @@ import json
 import logging
 import uuid
 
+from vdsm.common import cmdutils
 from vdsm.config import config
-from vdsm import utils
 
 from . import command
 from . import runner
 from . import xmlfile
 
 
-_DOCKER = utils.CommandPath("docker",
-                            "/bin/docker",
-                            "/usr/bin/docker",
-                            )
+_DOCKER = cmdutils.CommandPath("docker",
+                               "/bin/docker",
+                               "/usr/bin/docker",
+                               )
 
 
 # TODO: networking

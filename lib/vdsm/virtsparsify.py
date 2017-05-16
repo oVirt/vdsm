@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2016 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,13 +20,13 @@
 
 from __future__ import absolute_import
 
+from vdsm.common.cmdutils import CommandPath
 from . import cmdutils
 from . import commands
-from . import utils
 
 # Fedora, EL6
-_VIRTSPARSIFY = utils.CommandPath("virt-sparsify",
-                                  "/usr/bin/virt-sparsify",)
+_VIRTSPARSIFY = CommandPath("virt-sparsify",
+                            "/usr/bin/virt-sparsify",)
 
 
 def sparsify(src_vol, tmp_vol, dst_vol, src_format=None, dst_format=None):

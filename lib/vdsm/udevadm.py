@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,11 +20,12 @@
 
 from __future__ import absolute_import
 import logging
+
+from vdsm.common.cmdutils import CommandPath
 from . import cmdutils
 from . import commands
-from . import utils
 
-_UDEVADM = utils.CommandPath("udevadm", "/sbin/udevadm", "/usr/sbin/udevadm")
+_UDEVADM = CommandPath("udevadm", "/sbin/udevadm", "/usr/sbin/udevadm")
 
 
 def settle(timeout, exit_if_exists=None):

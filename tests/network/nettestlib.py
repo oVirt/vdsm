@@ -47,7 +47,7 @@ from vdsm.network.netinfo import routes
 from vdsm.network.netlink import monitor
 from vdsm.commands import execCmd
 from vdsm.common.cache import memoized
-from vdsm.utils import CommandPath
+from vdsm.common.cmdutils import CommandPath
 
 from . import dhcp
 from . import firewall

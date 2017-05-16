@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2014 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -24,7 +24,7 @@ import logging
 from nose.plugins.skip import SkipTest
 
 from vdsm.commands import execCmd
-from vdsm.utils import CommandPath
+from vdsm.common.cmdutils import CommandPath
 
 _FIREWALLD_BINARY = CommandPath('firewall-cmd', '/bin/firewall-cmd')
 _IPTABLES_BINARY = CommandPath('iptables', '/sbin/iptables')

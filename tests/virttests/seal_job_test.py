@@ -25,7 +25,7 @@ import os
 from vdsm import jobs
 from vdsm import virtsysprep
 from vdsm.common import response
-from vdsm.utils import CommandPath
+from vdsm.common.cmdutils import CommandPath
 from vdsm.virt.jobs import seal
 
 from testlib import make_uuid

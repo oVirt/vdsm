@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012-2016 Red Hat, Inc.
+# Copyright (c) 2012-2017 Red Hat, Inc.
 # Copyright (c) 2012 Sasha Tomic <tomic80@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 import os
 from collections import namedtuple
-from vdsm.utils import CommandPath
+from vdsm.common.cmdutils import CommandPath
 from vdsm.storage.misc import execCmd
 
 ScanOutput = namedtuple(

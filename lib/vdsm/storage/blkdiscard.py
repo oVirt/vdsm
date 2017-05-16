@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,9 +22,9 @@ from __future__ import absolute_import
 
 from vdsm import cmdutils
 from vdsm import commands
-from vdsm import utils
+from vdsm.common.cmdutils import CommandPath
 
-_blkdiscard = utils.CommandPath("blkdiscard", "/sbin/blkdiscard")
+_blkdiscard = CommandPath("blkdiscard", "/sbin/blkdiscard")
 
 
 def blkdiscard(device):

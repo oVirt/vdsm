@@ -29,7 +29,7 @@ import time
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm.tool import confmeta
-from vdsm.utils import CommandPath
+from vdsm.common.cmdutils import CommandPath
 
 from . import YES, NO
 
