@@ -567,6 +567,20 @@ class Drive(core.Base):
         return volChain or None
 
 
+def get_snapshot_xml(drive_name, new_path, disk_type):
+    """Libvirt snapshot XML"""
+
+    disk = vmxml.Element('disk', name=drive_name, snapshot='external',
+                         type=disk_type)
+    args = {'type': disk_type}
+    if disk_type == 'file':
+        args['file'] = new_path
+    elif disk_type == 'block':
+        args['dev'] = new_path
+    disk.appendChildWithArgs('source', **args)
+    return disk
+
+
 def _getSourceXML(drive):
     source = vmxml.Element('source')
     if drive["diskType"] == DISK_TYPE.BLOCK:
