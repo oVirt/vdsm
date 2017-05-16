@@ -77,7 +77,6 @@ from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.domain_descriptor import MutableDomainDescriptor
 from vdsm.virt import vmdevices
 from vdsm.virt.vmdevices import hwclass
-from vdsm.virt.vmdevices import storage
 from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
@@ -3694,9 +3693,8 @@ class Vm(object):
                 _rollbackDrives(preparedDrives)
                 return response.error('snapshotErr')
 
-            snapType = 'block' if vmDrives[vmDevName].blockDev else 'file'
-            snapelem = storage.get_snapshot_xml(
-                vmDevName, newDrives[vmDevName]["path"], snapType)
+            drive = vmDrives[vmDevName]
+            snapelem = drive.get_snapshot_xml(vmDevice)
             disks.appendChild(snapelem)
 
         snap.appendChild(disks)

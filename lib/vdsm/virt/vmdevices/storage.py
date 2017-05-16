@@ -27,6 +27,7 @@ import xml.etree.ElementTree as ET
 
 from vdsm.common import conv
 from vdsm.common import errors
+from vdsm.common import exception
 from vdsm.config import config
 from vdsm import constants
 from vdsm import cpuarch
@@ -566,21 +567,25 @@ class Drive(core.Base):
             volChain.insert(0, entry)
         return volChain or None
 
+    def get_snapshot_xml(self, snap_info):
+        """Libvirt snapshot XML"""
+        if 'diskType' in snap_info:
+            if self.diskType != snap_info['diskType']:
+                raise exception.UnsupportedOperation(
+                    "Unexpected diskType",
+                    drive_disk_type=self.diskType,
+                    snapshot_disk_type=snap_info["diskType"])
 
-def get_snapshot_xml(drive_name, new_path, disk_type):
-    """Libvirt snapshot XML"""
+        disk = vmxml.Element('disk', name=self.name, snapshot='external',
+                             type=self.diskType)
+        args = {'type': self.diskType}
+        if self.diskType == DISK_TYPE.FILE:
+            args['file'] = snap_info['path']
+        elif self.diskType == DISK_TYPE.BLOCK:
+            args['dev'] = snap_info['path']
 
-    disk = vmxml.Element('disk', name=drive_name, snapshot='external',
-                         type=disk_type)
-    args = {'type': disk_type}
-    if disk_type == DISK_TYPE.FILE:
-        args['file'] = new_path
-    elif disk_type == DISK_TYPE.BLOCK:
-        args['dev'] = new_path
-    else:
-        raise RuntimeError("Unsupported diskType %r", disk_type)
-    disk.appendChildWithArgs('source', **args)
-    return disk
+        disk.appendChildWithArgs('source', **args)
+        return disk
 
 
 def _getSourceXML(drive):
