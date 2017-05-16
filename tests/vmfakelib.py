@@ -261,7 +261,7 @@ def _updateDomainDescriptor(vm):
 def VM(params=None, devices=None, runCpu=False,
        arch=cpuarch.X86_64, status=None,
        cif=None, create_device_objects=False,
-       post_copy=None):
+       post_copy=None, recover=False):
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir),
                                (libvirtconnection, 'get', Connection),
@@ -273,7 +273,7 @@ def VM(params=None, devices=None, runCpu=False,
             vmParams = {'vmId': 'TESTING', 'vmName': 'nTESTING'}
             vmParams.update({} if params is None else params)
             cif = ClientIF() if cif is None else cif
-            fake = vm.Vm(cif, vmParams)
+            fake = vm.Vm(cif, vmParams, recover=recover)
             cif.vmContainer[fake.id] = fake
             fake.arch = arch
             fake.guestAgent = GuestAgent()

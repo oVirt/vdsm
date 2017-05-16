@@ -21,10 +21,12 @@ from __future__ import absolute_import
 
 import contextlib
 import os
+import threading
 
 from vdsm.common import response
 from vdsm.compat import pickle
 from vdsm.virt import recovery
+from vdsm.virt import vmstatus
 from vdsm import constants
 from vdsm import containersconnection
 from vdsm import cpuarch
@@ -38,6 +40,7 @@ from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
 from vmTestsData import CONF_TO_DOMXML_NO_VDSM
 import vmfakelib as fake
+from testValidation import xfail
 
 
 def _createVm_fails(*args, **kwargs):
@@ -234,3 +237,27 @@ class RecoveryAllVmsTests(TestCaseBase):
                 fakecif = fake.ClientIF()
                 recovery.all_domains(fakecif)
                 self.assertEqual(fakecif.vmContainer, {})
+
+
+class VmRecoveryTests(TestCaseBase):
+
+    @xfail('broken since 0cb80ab195e')
+    def test_exception(self):
+
+        done = threading.Event()
+
+        def fail():
+            raise RuntimeError('fake error')
+
+        with fake.VM(runCpu=True, recover=True) as testvm:
+
+            def _send_status_event(**kwargs):
+                vm_status = testvm.lastStatus
+                if vm_status == vmstatus.UP:
+                    done.set()
+
+            testvm.send_status_event = _send_status_event
+            testvm._run = fail
+            testvm.run()
+
+            self.assertTrue(done.wait(1))
