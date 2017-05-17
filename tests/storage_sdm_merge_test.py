@@ -94,7 +94,6 @@ class TestMergeSubchain(VdsmTestCase):
         with self.make_env(sd_type=sd_type, chain_len=chain_len) as env:
             write_qemu_chain(env.chain)
             base_vol = env.chain[base_index]
-            base_vol.setLegality(sc.ILLEGAL_VOL)
             top_vol = env.chain[top_index]
 
             subchain_info = dict(sd_id=base_vol.sdUUID,
@@ -123,8 +122,35 @@ class TestMergeSubchain(VdsmTestCase):
             self.assertEqual(sorted(self.expected_locks(base_vol)),
                              sorted(guarded.context.locks))
 
-            self.assertEqual(base_vol.getLegality(), sc.ILLEGAL_VOL)
+            self.assertEqual(base_vol.getLegality(), sc.LEGAL_VOL)
             self.assertEqual(base_vol.getMetaParam(sc.GENERATION), 1)
+
+    @permutations([
+        # volume
+        ('base',),
+        ('top',),
+    ])
+    def test_merge_illegal_volume(self, volume):
+        job_id = make_uuid()
+        with self.make_env(sd_type='block', chain_len=2) as env:
+            write_qemu_chain(env.chain)
+            base_vol = env.chain[0]
+            top_vol = env.chain[1]
+            if volume == 'base':
+                base_vol.setLegality(sc.ILLEGAL_VOL)
+            else:
+                top_vol.setLegality(sc.ILLEGAL_VOL)
+
+            subchain_info = dict(sd_id=base_vol.sdUUID,
+                                 img_id=base_vol.imgUUID,
+                                 base_id=base_vol.volUUID,
+                                 top_id=top_vol.volUUID,
+                                 base_generation=0)
+            subchain = merge.SubchainInfo(subchain_info, 0)
+            job = storage.sdm.api.merge.Job(job_id, subchain)
+            job.run()
+            self.assertEqual(job.status, jobs.STATUS.FAILED)
+            self.assertEqual(type(job.error), se.prepareIllegalVolumeError)
 
     def expected_locks(self, base_vol):
         img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, base_vol.sdUUID)
@@ -175,25 +201,4 @@ class TestMergeSubchain(VdsmTestCase):
             pattern = 0xf0 + base_index
             qemu_pattern_verify(base_vol.volumePath, qemuimg.FORMAT.RAW,
                                 offset=offset, len=1024, pattern=pattern)
-            self.assertEqual(base_vol.getMetaParam(sc.GENERATION), 0)
-
-    def test_merge_legal_base(self):
-        job_id = make_uuid()
-        with self.make_env(sd_type='file', chain_len=3) as env:
-            base_vol = env.chain[0]
-            base_vol.setLegality(sc.LEGAL_VOL)
-            top_vol = env.chain[1]
-
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
-
-            subchain = merge.SubchainInfo(subchain_info, 0)
-            job = storage.sdm.api.merge.Job(job_id, subchain)
-            job.run()
-            wait_for_job(job)
-            self.assertEquals(job.status, jobs.STATUS.FAILED)
-            self.assertEquals(type(job.error), se.UnexpectedVolumeState)
             self.assertEqual(base_vol.getMetaParam(sc.GENERATION), 0)

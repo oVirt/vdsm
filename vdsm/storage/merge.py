@@ -153,12 +153,11 @@ class SubchainInfo(properties.Owner):
         chain_to_prepare = self.chain[:top_index + 1]
         dom = sdCache.produce_manifest(self.sd_id)
         for vol_id in chain_to_prepare:
-            force = True if vol_id == self.base_id else False
             vol = dom.produceVolume(self.img_id, vol_id)
             rw = True if vol_id == self.base_id else False
             # TODO: to improve this late to use subchain.top_vol
             # subchain.base_vol.
-            vol.prepare(rw=rw, justme=True, force=force)
+            vol.prepare(rw=rw, justme=True)
         try:
             yield
         finally:
@@ -180,7 +179,6 @@ def prepare(subchain):
     log.info("Preparing subchain %s for merge", subchain)
     with guarded.context(subchain.locks):
         with subchain.prepare():
-            subchain.base_vol.setLegality(sc.ILLEGAL_VOL)
             _update_base_capacity(subchain.base_vol,
                                   subchain.top_vol)
             _extend_base_allocation(subchain.base_vol,
@@ -230,15 +228,30 @@ def _extend_base_allocation(base_vol, top_vol):
 def finalize(subchain):
     """
     During finalize we distunguish between leaf merge and internal merge.
-    In case of leaf merge, we only upate vdsm metadata, i.e. we call
-    syncVolumeChain that marks the top volume as ILLEGAL.
-    In case of internal merge, we need to update qcow metadata and vdsm
-    metadata. For qcow metadata we invoke rebase -u, and for vdsm metadata
-    we invoke syncVolumeChain that changes the child of the top to point to
-    the base as its parent.
 
-    In case of failure, as the base volume is still set as ILLEGAL, manual
-    recovery is required.
+    In case of leaf merge, we only upate vdsm metadata, i.e. we call
+    syncVolumeChain that marks the top volume as ILLEGAL. If the operation
+    succeeds, the top volume is marked as ILLEGAL and will be removed by the
+    engine. In case of failure, if the top volume is LEGAL, the user can
+    recover by retrying cold merge. If the top volume is ILLEGAL, and the
+    engine fails to delete the volume, a manual recovery is required.
+
+    In case of internal merge, we need to update qcow metadata and vdsm
+    metadata. For qcow metadata, we rebase top's child on base, and for vdsm
+    metadata, we invoke syncVolumeChain that changes the child of the top to
+    point to the base as its parent.  As we would like to minimize the window
+    where the top volume is ILLEGAL, we set it to ILLEGAL just before calling
+    qemuimg rebase.
+
+    After finalize internal merge, there are three possible states:
+    1. top volume illegal, qemu and vdsm chains updated. The operation will be
+       finished by the engine deleting the top volume.
+    2. top volume is ILLEGAL but not rebased, both qemu chain and vdsm chain
+       are synchronized. Manual recovery is possible by inspecting the chains
+       and setting the top volume to legal.
+    3. top volume is ILLEGAL, qemu chain rebased, but vdsm chain wasn't
+       modified or partly modified. Manual recovery is possible by updating
+       vdsm chain.
     """
     log.info("Finalizing subchain after merge: %s", subchain)
     with guarded.context(subchain.locks):
@@ -247,14 +260,6 @@ def finalize(subchain):
         # helper for each step.
         with subchain.prepare():
             subchain.validate()
-
-            # Base volume must be ILLEGAL. Otherwise, VM could be run while
-            # performing cold merge.
-            base_legality = subchain.base_vol.getLegality()
-            if base_legality == sc.LEGAL_VOL:
-                raise se.UnexpectedVolumeState(
-                    subchain.base_id, sc.ILLEGAL_VOL, base_legality)
-
             dom = sdCache.produce_manifest(subchain.sd_id)
             if subchain.top_vol.isLeaf():
                 _finalize_leaf_merge(dom, subchain)
@@ -268,8 +273,6 @@ def finalize(subchain):
         if subchain.base_vol.chunked():
             _shrink_base_volume(subchain, optimal_size)
 
-        subchain.base_vol.setLegality(sc.LEGAL_VOL)
-
 
 def _finalize_leaf_merge(dom, subchain):
     _update_vdsm_metadata(dom, subchain)
@@ -280,10 +283,25 @@ def _finalize_internal_merge(dom, subchain):
     child = dom.produceVolume(subchain.img_id, children[0])
     child.prepare(rw=True, justme=True)
     try:
-        _rebase(subchain.base_vol, child)
+        subchain.top_vol.setLegality(sc.ILLEGAL_VOL)
+        try:
+            _rebase(subchain.base_vol, child)
+        except:
+            # Set top volume to legal to enable recovery by retrying the merge.
+            _rollback_top_volume_legality(subchain.top_vol)
+            raise
         _update_vdsm_metadata(dom, subchain)
     finally:
         child.teardown(subchain.sd_id, child.volUUID, justme=True)
+
+
+def _rollback_top_volume_legality(top_vol):
+    # Wrapping the next call in a try-except block is neeed in order to raise
+    # the original exception raised in _finalize_internal_merge.
+    try:
+        top_vol.setLegality(sc.LEGAL_VOL)
+    except Exception:
+        log.exception("Failed to set top volume %s as legal", top_vol.volUUID)
 
 
 def _update_vdsm_metadata(dom, subchain):

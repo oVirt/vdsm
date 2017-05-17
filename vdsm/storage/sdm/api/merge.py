@@ -34,7 +34,6 @@ from vdsm import qemuimg
 from vdsm import utils
 
 from vdsm.storage import constants as sc
-from vdsm.storage import exception as se
 from vdsm.storage import guarded
 
 from . import base
@@ -57,14 +56,6 @@ class Job(base.Job):
         self.log.info("Merging subchain %s", self.subchain)
         with guarded.context(self.subchain.locks):
             self.subchain.validate()
-            # Base volume must be ILLEGAL. Otherwise, VM could be run while
-            # performing cold merge.
-            base_legality = self.subchain.base_vol.getLegality()
-            if base_legality == sc.LEGAL_VOL:
-                raise se.UnexpectedVolumeState(self.subchain.base_id,
-                                               sc.ILLEGAL_VOL,
-                                               base_legality)
-
             with self.subchain.prepare(), self.subchain.volume_operation():
                 self.operation = qemuimg.commit(
                     self.subchain.top_vol.getVolumePath(),
