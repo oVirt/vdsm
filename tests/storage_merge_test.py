@@ -36,6 +36,7 @@ from testlib import make_uuid
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase
 
+from vdsm import cmdutils
 from vdsm import qemuimg
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -237,7 +238,7 @@ class TestPrepareMerge(VdsmTestCase):
             self.assertEqual(sorted(self.expected_locks(env.subchain)),
                              sorted(guarded.context.locks))
             base_vol = env.subchain.base_vol
-            self.assertEqual(sc.ILLEGAL_VOL, base_vol.getLegality())
+            self.assertEqual(sc.LEGAL_VOL, base_vol.getLegality())
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
             new_base_alloc = env.sd_manifest.getVSize(base_vol.imgUUID,
                                                       base_vol.volUUID)
@@ -256,7 +257,7 @@ class TestPrepareMerge(VdsmTestCase):
             self.assertEqual(sorted(self.expected_locks(env.subchain)),
                              sorted(guarded.context.locks))
             base_vol = env.subchain.base_vol
-            self.assertEqual(sc.ILLEGAL_VOL, base_vol.getLegality())
+            self.assertEqual(sc.LEGAL_VOL, base_vol.getLegality())
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
             new_base_alloc = env.sd_manifest.getVSize(base_vol.imgUUID,
                                                       base_vol.volUUID)
@@ -271,7 +272,7 @@ class TestPrepareMerge(VdsmTestCase):
         with make_env('file', base, top) as env:
             merge.prepare(env.subchain)
             base_vol = env.subchain.base_vol
-            self.assertEqual(sc.ILLEGAL_VOL, base_vol.getLegality())
+            self.assertEqual(sc.LEGAL_VOL, base_vol.getLegality())
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
             self.assertEqual(expected.virtual * GB, new_base_size)
 
@@ -284,7 +285,7 @@ class TestPrepareMerge(VdsmTestCase):
         with make_env('file', base, top) as env:
             merge.prepare(env.subchain)
             base_vol = env.subchain.base_vol
-            self.assertEqual(sc.ILLEGAL_VOL, base_vol.getLegality())
+            self.assertEqual(sc.LEGAL_VOL, base_vol.getLegality())
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
             self.assertEqual(expected.virtual * GB, new_base_size)
 
@@ -345,23 +346,6 @@ class TestFinalizeMerge(VdsmTestCase):
 
                 yield env
 
-    def test_validate_illegal_base(self):
-        with self.make_env(sd_type='file', chain_len=3) as env:
-            base_vol = env.chain[0]
-            # This volume was *not* prepared
-            base_vol.setLegality(sc.LEGAL_VOL)
-            top_vol = env.chain[1]
-
-            subchain_info = dict(sd_id=base_vol.sdUUID,
-                                 img_id=base_vol.imgUUID,
-                                 base_id=base_vol.volUUID,
-                                 top_id=top_vol.volUUID,
-                                 base_generation=0)
-
-            subchain = merge.SubchainInfo(subchain_info, 0)
-            with self.assertRaises(se.UnexpectedVolumeState):
-                merge.finalize(subchain)
-
     # TODO: Once BZ 1411103 is fixed, add unit tests for preparing the chain
     # required for finalize step:
     # 1. Test a chain of 2 volumes
@@ -378,9 +362,6 @@ class TestFinalizeMerge(VdsmTestCase):
     def test_finalize(self, sd_type, chain_len, base_index, top_index):
         with self.make_env(sd_type=sd_type, chain_len=chain_len) as env:
             base_vol = env.chain[base_index]
-            # This volume *was* prepared
-            base_vol.setLegality(sc.ILLEGAL_VOL)
-
             top_vol = env.chain[top_index]
             subchain_info = dict(sd_id=base_vol.sdUUID,
                                  img_id=base_vol.imgUUID,
@@ -400,12 +381,7 @@ class TestFinalizeMerge(VdsmTestCase):
                                                              subchain.base_id))
 
             # verify syncVolumeChain arguments
-            self.assertEqual(image.Image.syncVolumeChain.sd_id,
-                             subchain.sd_id)
-            self.assertEqual(image.Image.syncVolumeChain.img_id,
-                             subchain.img_id)
-            self.assertEqual(image.Image.syncVolumeChain.vol_id,
-                             env.chain[-1].volUUID)
+            self.check_sync_volume_chain(subchain, env.chain[-1].volUUID)
             new_chain = [vol.volUUID for vol in env.chain]
             new_chain.remove(top_vol.volUUID)
             self.assertEqual(image.Image.syncVolumeChain.actual_chain,
@@ -413,12 +389,79 @@ class TestFinalizeMerge(VdsmTestCase):
 
             self.assertEqual(base_vol.getLegality(), sc.LEGAL_VOL)
 
+    @permutations([
+        # volume
+        ('base',),
+        ('top',),
+    ])
+    def test_finalize_illegal_volume(self, volume):
+        with self.make_env(sd_type='block', format='cow', chain_len=4) as env:
+            base_vol = env.chain[1]
+            top_vol = env.chain[2]
+            if volume == 'base':
+                base_vol.setLegality(sc.ILLEGAL_VOL)
+            else:
+                top_vol.setLegality(sc.ILLEGAL_VOL)
+
+            subchain_info = dict(sd_id=base_vol.sdUUID,
+                                 img_id=base_vol.imgUUID,
+                                 base_id=base_vol.volUUID,
+                                 top_id=top_vol.volUUID,
+                                 base_generation=0)
+            subchain = merge.SubchainInfo(subchain_info, 0)
+
+            with self.assertRaises(se.prepareIllegalVolumeError):
+                merge.finalize(subchain)
+
+    def test_qemuimg_rebase_failed(self):
+        with self.make_env(sd_type='file', chain_len=4) as env:
+            base_vol = env.chain[1]
+            top_vol = env.chain[2]
+            subchain_info = dict(sd_id=base_vol.sdUUID,
+                                 img_id=base_vol.imgUUID,
+                                 base_id=base_vol.volUUID,
+                                 top_id=top_vol.volUUID,
+                                 base_generation=0)
+            subchain = merge.SubchainInfo(subchain_info, 0)
+
+            with MonkeyPatchScope([
+                (qemuimg._qemuimg, '_cmd', '/usr/bin/false')
+            ]):
+
+                with self.assertRaises(cmdutils.Error):
+                    merge.finalize(subchain)
+
+            self.assertEqual(subchain.top_vol.getLegality(), sc.LEGAL_VOL)
+            self.assertEqual(subchain.top_vol.getParent(), base_vol.volUUID)
+
+    def test_rollback_volume_legallity_failed(self):
+        with self.make_env(sd_type='block', chain_len=4) as env:
+            base_vol = env.chain[1]
+            top_vol = env.chain[2]
+            subchain_info = dict(sd_id=base_vol.sdUUID,
+                                 img_id=base_vol.imgUUID,
+                                 base_id=base_vol.volUUID,
+                                 top_id=top_vol.volUUID,
+                                 base_generation=0)
+            subchain = merge.SubchainInfo(subchain_info, 0)
+
+            def setLegality(self, legality):
+                if legality == sc.LEGAL_VOL:
+                    raise RuntimeError("Rollback volume legality failed")
+                self.setMetaParam(sc.LEGALITY, legality)
+
+            with MonkeyPatchScope([
+                (qemuimg._qemuimg, '_cmd', '/usr/bin/false'),
+                (volume.VolumeManifest, 'setLegality', setLegality),
+            ]):
+                with self.assertRaises(cmdutils.Error):
+                    merge.finalize(subchain)
+
+            self.assertEqual(subchain.top_vol.getLegality(), sc.ILLEGAL_VOL)
+
     def test_reduce_chunked(self):
         with self.make_env(sd_type='block', format='cow', chain_len=4) as env:
             base_vol = env.chain[1]
-            # This volume *was* prepared
-            base_vol.setLegality(sc.ILLEGAL_VOL)
-
             top_vol = env.chain[2]
             subchain_info = dict(sd_id=base_vol.sdUUID,
                                  img_id=base_vol.imgUUID,
@@ -441,9 +484,6 @@ class TestFinalizeMerge(VdsmTestCase):
     def test_reduce_not_chunked(self):
         with self.make_env(sd_type='file', format='cow', chain_len=4) as env:
             base_vol = env.chain[1]
-            # This volume *was* prepared
-            base_vol.setLegality(sc.ILLEGAL_VOL)
-
             top_vol = env.chain[2]
             subchain_info = dict(sd_id=base_vol.sdUUID,
                                  img_id=base_vol.imgUUID,
@@ -466,9 +506,6 @@ class TestFinalizeMerge(VdsmTestCase):
     def test_reduce_failure(self):
         with self.make_env(sd_type='block', format='cow', chain_len=4) as env:
             base_vol = env.chain[0]
-            # This volume *was* prepared
-            base_vol.setLegality(sc.ILLEGAL_VOL)
-
             top_vol = env.chain[1]
             subchain_info = dict(sd_id=base_vol.sdUUID,
                                  img_id=base_vol.imgUUID,
@@ -485,7 +522,9 @@ class TestFinalizeMerge(VdsmTestCase):
 
             with self.assertRaises(se.LogicalVolumeExtendError):
                 merge.finalize(subchain)
-            self.assertEqual(base_vol.getLegality(), sc.ILLEGAL_VOL)
+
+            # verify syncVolumeChain arguments
+            self.check_sync_volume_chain(subchain, env.chain[-1].volUUID)
 
     @permutations([
         # base_fmt
@@ -495,7 +534,6 @@ class TestFinalizeMerge(VdsmTestCase):
     def test_chain_after_finalize(self, base_fmt):
         with self.make_env(format=base_fmt, chain_len=3) as env:
             base_vol = env.chain[0]
-            base_vol.setLegality(sc.ILLEGAL_VOL)
             # We write data to the base and will read it from the child volume
             # to verify that the chain is valid after qemu-rebase.
             offset = 0
@@ -522,3 +560,9 @@ class TestFinalizeMerge(VdsmTestCase):
                                 sc.fmt2str(child_vol.getFormat()),
                                 offset=offset,
                                 len=length, pattern=pattern)
+
+    def check_sync_volume_chain(self, subchain, removed_vol_id):
+        sync = image.Image.syncVolumeChain
+        self.assertEqual(sync.sd_id, subchain.sd_id)
+        self.assertEqual(sync.img_id, subchain.img_id)
+        self.assertEqual(sync.vol_id, removed_vol_id)
