@@ -334,7 +334,7 @@ class SecretUnregistrationFailed(VdsmException):
     message = 'Error unregistering Libvirt secret'
 
 
-class UnsupportedOperation(VdsmException):
+class UnsupportedOperation(ContextException):
     code = 75
     message = 'Operation not supported'
 
