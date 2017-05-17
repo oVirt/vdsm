@@ -671,6 +671,13 @@ class Drive(core.Base):
                     drive_disk_type=self.diskType,
                     snapshot_disk_type=snap_info["diskType"])
 
+        if self.diskType == DISK_TYPE.NETWORK:
+            if self.protocol != snap_info['protocol']:
+                raise exception.UnsupportedOperation(
+                    "Unexpected protocol",
+                    drive_protocol=self.protocol,
+                    snapshot_protocol=snap_info["protocol"])
+
         disk = vmxml.Element('disk', name=self.name, snapshot='external',
                              type=self.diskType)
 
