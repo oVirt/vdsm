@@ -641,6 +641,9 @@ class Vm(object):
         except libvirt.libvirtError:
             # just skip for this cycle, no real harm
             pass
+        except virdomain.NotConnectedError:
+            # race on startup/shutdown, no real harm
+            pass
         else:
             mem_stats['rss'] = dom_stats['rss']
         return mem_stats
