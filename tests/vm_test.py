@@ -460,6 +460,22 @@ class TestVm(XMLTestCase):
         xml = find_xml_element(domxml.toxml(), './memoryBacking')
         self.assertXMLEqual(xml, memorybacking_xml)
 
+    @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.PPC64LE)
+    def testMemoryBackingXMLDefaultPPC(self):
+        memorybacking_xml = """
+          <memoryBacking>
+            <hugepages>
+              <page size="16384" />
+            </hugepages>
+          </memoryBacking>"""
+
+        domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.PPC64LE)
+        domxml.appendMemoryBacking(
+            hugepages.DEFAULT_HUGEPAGESIZE[cpuarch.real()]
+        )
+        xml = find_xml_element(domxml.toxml(), './memoryBacking')
+        self.assertXMLEqual(xml, memorybacking_xml)
+
     def testMemoryBackingXML(self):
         memorybacking_xml = """
           <memoryBacking>
