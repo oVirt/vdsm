@@ -263,6 +263,7 @@ class Vm(object):
         """
         self._dom = virdomain.Disconnected(params["vmId"])
         self.recovering = recover
+        self._restore_state_path = params.pop('restoreState', None)
         self.conf = {'_blockJobs': {}, 'clientIp': ''}
         self.conf.update(params)
         self.cif = cif
@@ -284,7 +285,7 @@ class Vm(object):
                                                  name="vm/" + self.id[:8])
         if 'migrationDest' in self.conf:
             self._lastStatus = vmstatus.MIGRATION_DESTINATION
-        elif 'restoreState' in self.conf:
+        elif self._restore_state_path is not None:
             self._lastStatus = vmstatus.RESTORING_STATE
         else:
             self._lastStatus = vmstatus.WAIT_FOR_LAUNCH
@@ -361,7 +362,7 @@ class Vm(object):
     @property
     def monitorable(self):
         if 'migrationDest' in self.conf or \
-           'restoreState' in self.conf or \
+           self._restore_state_path is not None or \
            self.post_copy != migration.PostCopyPhase.NONE:
             return False
         return self._monitorable
@@ -695,7 +696,8 @@ class Vm(object):
                         self.log.info("Skipping errors on recovery",
                                       exc_info=True)
 
-            if ('migrationDest' in self.conf or 'restoreState' in self.conf) \
+            if ('migrationDest' in self.conf or
+                self._restore_state_path is not None) \
                     and self.lastStatus != vmstatus.DOWN:
                 self._completeIncomingMigration()
             if self.lastStatus == vmstatus.MIGRATION_DESTINATION:
@@ -1374,7 +1376,7 @@ class Vm(object):
             self.lastStatus = vmstatus.DOWN
             with self._confLock:
                 self.conf['exitCode'] = code
-                if 'restoreState' in self.conf:
+                if self._restore_state_path is not None:
                     self.conf['exitMessage'] = (
                         "Wake up from hibernation failed" +
                         ((":" + exitMessage) if exitMessage else ''))
@@ -1413,6 +1415,8 @@ class Vm(object):
                           if not k.startswith("_"))
             status['guestDiskMapping'] = self.guestAgent.guestDiskMapping
             status['statusTime'] = self._get_status_time()
+            if self._restore_state_path is not None:
+                status['restoreState'] = self._restore_state_path
             return utils.picklecopy(status)
 
     def getStats(self):
@@ -2208,7 +2212,7 @@ class Vm(object):
                 self._timeoutExperienced)
         elif 'migrationDest' in self.conf:
             pass  # self._dom will be disconnected until migration ends.
-        elif 'restoreState' in self.conf:
+        elif self._restore_state_path is not None:
             # TODO: for unknown historical reasons, we call this hook also
             # on this flow. Issues:
             # - we will also call the more specific before_vm_dehibernate
@@ -2228,14 +2232,14 @@ class Vm(object):
             # see the XML even with 'info' as default level.
             self.log.info(srcDomXML)
 
-            fname = self.cif.prepareVolumePath(self.conf['restoreState'])
+            fname = self.cif.prepareVolumePath(self._restore_state_path)
             try:
                 if fromSnapshot:
                     self._connection.restoreFlags(fname, srcDomXML, 0)
                 else:
                     self._connection.restore(fname)
             finally:
-                self.cif.teardownVolumePath(self.conf['restoreState'])
+                self.cif.teardownVolumePath(self._restore_state_path)
 
             self._dom = virdomain.Notifying(
                 self._connection.lookupByUUIDString(self.id),
@@ -3389,10 +3393,10 @@ class Vm(object):
             self._monitorResponse = 0
 
     def _completeIncomingMigration(self):
-        if 'restoreState' in self.conf:
+        if self._restore_state_path is not None:
             self.cont()
+            self._restore_state_path = None
             with self._confLock:
-                del self.conf['restoreState']
                 fromSnapshot = self.conf.pop('restoreFromSnapshot', False)
             hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self._custom,
                                        {'FROM_SNAPSHOT': fromSnapshot})
