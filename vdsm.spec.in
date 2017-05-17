@@ -168,6 +168,7 @@ Requires: policycoreutils-python
 Requires: fence-agents-all
 Requires: systemd >= 219-11
 Requires: initscripts >= 9.49.31
+Requires: cyrus-sasl-scram
 
 %if 0%{?rhel}
 Requires: e2fsprogs

@@ -24,13 +24,14 @@ from vdsm.common import cache
 from vdsm.common import cmdutils
 
 
-from . import YES, NO
+from . import YES, NO, MAYBE
 
 
 _SASLDBLISTUSERS2 = cmdutils.CommandPath("sasldblistusers2",
                                          "/usr/sbin/sasldblistusers2",
                                          )
 _LIBVIRT_SASLDB = "/etc/libvirt/passwd.db"
+_SASL2_CONF = "/etc/sasl2/libvirt.conf"
 _SASLPASSWD2 = cmdutils.CommandPath("saslpasswd2",
                                     "/usr/sbin/saslpasswd2",
                                     )
@@ -39,6 +40,22 @@ LIBVIRT_PASSWORD_PATH = constants.P_VDSM_KEYS + 'libvirt_password'
 
 
 def isconfigured():
+    ret = passwd_isconfigured()
+    if ret == NO:
+        return ret
+    return libvirt_sasl_isconfigured()
+
+
+def libvirt_sasl_isconfigured():
+    with open(_SASL2_CONF, 'r') as f:
+        lines = f.readlines()
+        # check for new default configuration - since libvirt 3.2
+        if 'mech_list: gssapi\n' in lines:
+            return NO
+    return MAYBE
+
+
+def passwd_isconfigured():
     script = (str(_SASLDBLISTUSERS2), '-f', _LIBVIRT_SASLDB)
     _, out, _ = commands.execCmd(script)
     for user in out:
@@ -48,14 +65,12 @@ def isconfigured():
 
 
 def configure():
-    script = (str(_SASLPASSWD2), '-p', '-a', 'libvirt', SASL_USERNAME)
-    rc, _, err = commands.execCmd(script, data=libvirt_password())
-    if rc != 0:
-        raise RuntimeError("Set password failed: %s" % (err,))
+    configure_libvirt_sasl()
+    configure_passwd()
 
 
 def removeConf():
-    if isconfigured() == YES:
+    if passwd_isconfigured() == YES:
         rc, out, err = commands.execCmd(
             (
                 str(_SASLPASSWD2),
@@ -66,6 +81,22 @@ def removeConf():
         )
         if rc != 0:
             raise RuntimeError("Remove password failed: %s" % (err,))
+
+
+def configure_libvirt_sasl():
+    with open(_SASL2_CONF, 'w') as f:
+        f.writelines(['## start vdsm-4.20.0 configuration\n',
+                      'mech_list: scram-sha-1\n',
+                      'sasldb_path: %s\n' % (_LIBVIRT_SASLDB),
+                      '## end vdsm configuration']
+                     )
+
+
+def configure_passwd():
+    script = (str(_SASLPASSWD2), '-p', '-a', 'libvirt', SASL_USERNAME)
+    rc, _, err = commands.execCmd(script, data=libvirt_password())
+    if rc != 0:
+        raise RuntimeError("Set password failed: %s" % (err,))
 
 
 @cache.memoized
