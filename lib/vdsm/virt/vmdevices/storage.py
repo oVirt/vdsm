@@ -578,13 +578,16 @@ class Drive(core.Base):
 
         disk = vmxml.Element('disk', name=self.name, snapshot='external',
                              type=self.diskType)
-        args = {'type': self.diskType}
-        if self.diskType == DISK_TYPE.FILE:
-            args['file'] = snap_info['path']
-        elif self.diskType == DISK_TYPE.BLOCK:
-            args['dev'] = snap_info['path']
 
-        disk.appendChildWithArgs('source', **args)
+        drive_info = snap_info.copy()
+        drive_info["diskType"] = self.diskType
+        snap_elem = _getSourceXML(drive_info)
+
+        # Type attribute is needed but not documented:
+        # https://bugzilla.redhat.com/1452103
+        snap_elem.setAttrs(type=self.diskType)
+
+        disk.appendChild(snap_elem)
         return disk
 
 

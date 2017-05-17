@@ -898,7 +898,8 @@ class TestDiskSnapshotXml(XMLTestCase):
                 <source file='/image' type='file'/>
             </disk>
             """
-        actual = drive.get_snapshot_xml({'path': '/image'})
+        snap_info = {'path': '/image', 'device': 'disk'}
+        actual = drive.get_snapshot_xml(snap_info)
         self.assertXMLEqual(vmxml.format_xml(actual), expected)
 
     def test_block(self):
@@ -910,7 +911,8 @@ class TestDiskSnapshotXml(XMLTestCase):
                 <source dev='/dev/dm-1' type='block'/>
             </disk>
             """
-        actual = drive.get_snapshot_xml({'path': '/dev/dm-1'})
+        snap_info = {'path': '/dev/dm-1', 'device': 'disk'}
+        actual = drive.get_snapshot_xml(snap_info)
         self.assertXMLEqual(vmxml.format_xml(actual), expected)
 
     def test_incorrect_disk_type(self):
