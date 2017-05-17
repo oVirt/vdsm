@@ -986,11 +986,55 @@ class TestDiskSnapshotXml(XMLTestCase):
         actual = drive.get_snapshot_xml(snap_info)
         self.assertXMLEqual(vmxml.format_xml(actual), expected)
 
+    def test_network(self):
+        drive = Drive(self.log, diskType=DISK_TYPE.NETWORK,
+                      protocol='gluster', **self.conf)
+
+        expected = """
+            <disk name='vda' snapshot='external' type='network'>
+                <source protocol='gluster'
+                        name='volume/11111111-1111-1111-1111-111111111111'
+                        type='network'>
+                    <host name="brick1.example.com" port="49152"
+                        transport="tcp"/>
+                    <host name="brick2.example.com" port="49153"
+                        transport="tcp"/>
+                </source>
+            </disk>
+            """
+        snap_info = {
+            'protocol': 'gluster',
+            'path': 'volume/11111111-1111-1111-1111-111111111111',
+            'diskType': 'network',
+            'device': 'disk',
+            'hosts': [
+                {
+                    'name': 'brick1.example.com',
+                    'port': '49152',
+                    'transport': 'tcp'
+                },
+                {
+                    'name': 'brick2.example.com',
+                    'port': '49153',
+                    'transport': 'tcp'
+                }
+            ]
+        }
+        actual = drive.get_snapshot_xml(snap_info)
+        self.assertXMLEqual(vmxml.format_xml(actual), expected)
+
     def test_incorrect_disk_type(self):
         drive = Drive(self.log, **self.conf)
 
         with self.assertRaises(exception.UnsupportedOperation):
-            drive.get_snapshot_xml({"path": "/foo", "diskType": "wrong"})
+            drive.get_snapshot_xml({"path": "/foo", "diskType": "bad"})
+
+    def test_incorrect_protocol(self):
+        drive = Drive(self.log, diskType=DISK_TYPE.NETWORK,
+                      protocol='gluster', **self.conf)
+
+        with self.assertRaises(exception.UnsupportedOperation):
+            drive.get_snapshot_xml({'protocol': 'bad', 'diskType': 'network'})
 
 
 def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):
