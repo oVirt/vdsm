@@ -264,6 +264,7 @@ class Vm(object):
         self._dom = virdomain.Disconnected(params["vmId"])
         self.recovering = recover
         self._restore_state_path = params.pop('restoreState', None)
+        self._migration_destination = params.pop('migrationDest', None)
         self.conf = {'_blockJobs': {}, 'clientIp': ''}
         self.conf.update(params)
         self.cif = cif
@@ -283,7 +284,7 @@ class Vm(object):
         self._statusLock = threading.Lock()
         self._creationThread = concurrent.thread(self._startUnderlyingVm,
                                                  name="vm/" + self.id[:8])
-        if 'migrationDest' in self.conf:
+        if self._migration_destination is not None:
             self._lastStatus = vmstatus.MIGRATION_DESTINATION
         elif self._restore_state_path is not None:
             self._lastStatus = vmstatus.RESTORING_STATE
@@ -361,7 +362,7 @@ class Vm(object):
 
     @property
     def monitorable(self):
-        if 'migrationDest' in self.conf or \
+        if self._migration_destination is not None or \
            self._restore_state_path is not None or \
            self.post_copy != migration.PostCopyPhase.NONE:
             return False
@@ -667,7 +668,7 @@ class Vm(object):
     def _startUnderlyingVm(self):
         self.log.debug("Start")
         acquired = False
-        if 'migrationDest' in self.conf:
+        if self._migration_destination is not None:
             self.log.debug('Acquiring incoming migration semaphore.')
             acquired = migration.incomingMigrations.acquire(blocking=False)
             if not acquired:
@@ -696,7 +697,7 @@ class Vm(object):
                         self.log.info("Skipping errors on recovery",
                                       exc_info=True)
 
-            if ('migrationDest' in self.conf or
+            if (self._migration_destination is not None or
                 self._restore_state_path is not None) \
                     and self.lastStatus != vmstatus.DOWN:
                 self._completeIncomingMigration()
@@ -1417,6 +1418,8 @@ class Vm(object):
             status['statusTime'] = self._get_status_time()
             if self._restore_state_path is not None:
                 status['restoreState'] = self._restore_state_path
+            if self._migration_destination is not None:
+                status['migrationDest'] = self._migration_destination
             return utils.picklecopy(status)
 
     def getStats(self):
@@ -2199,7 +2202,7 @@ class Vm(object):
         # We should set this event as a last part of drives initialization
         self._pathsPreparedEvent.set()
 
-        initDomain = 'migrationDest' not in self.conf
+        initDomain = self._migration_destination is None
         # we need to complete the initialization, including
         # domDependentInit, after the migration is completed.
 
@@ -2210,7 +2213,7 @@ class Vm(object):
             self._dom = virdomain.Notifying(
                 self._connection.lookupByUUIDString(self.id),
                 self._timeoutExperienced)
-        elif 'migrationDest' in self.conf:
+        elif self._migration_destination is not None:
             pass  # self._dom will be disconnected until migration ends.
         elif self._restore_state_path is not None:
             # TODO: for unknown historical reasons, we call this hook also
@@ -3401,7 +3404,7 @@ class Vm(object):
             hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self._custom,
                                        {'FROM_SNAPSHOT': fromSnapshot})
             self._syncGuestTime()
-        elif 'migrationDest' in self.conf:
+        elif self._migration_destination is not None:
             if self._needToWaitForMigrationToComplete():
                 finished, timeout = self._waitForUnderlyingMigration()
                 if self._destroy_requested.is_set():
@@ -3409,7 +3412,7 @@ class Vm(object):
                 self._attachLibvirtDomainAfterMigration(finished, timeout)
             # else domain connection already established earlier
             self._domDependentInit()
-            del self.conf['migrationDest']
+            self._migration_destination = None
             hooks.after_vm_migrate_destination(
                 self._dom.XMLDesc(0), self._custom)
 
