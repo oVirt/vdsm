@@ -19,8 +19,8 @@
 #
 from __future__ import absolute_import
 from contextlib import contextmanager
-from ctypes import (CDLL, CFUNCTYPE, c_char, c_char_p, c_int, c_void_p,
-                    c_size_t, get_errno, py_object, sizeof)
+from ctypes import (CFUNCTYPE, c_char_p, c_int, c_void_p,
+                    c_size_t, get_errno, py_object)
 from functools import partial
 from threading import BoundedSemaphore
 
@@ -30,8 +30,6 @@ from . import libnl
 
 _POOL_SIZE = 5
 _NETLINK_ROUTE = 0
-CHARBUFFSIZE = 40  # Increased to fit IPv6 expanded representations
-HWADDRSIZE = 60    # InfiniBand HW address needs 59+1 bytes
 
 _NLE_NODEV = 31  # libnl/incluede/netlink/errno.h
 
@@ -119,26 +117,6 @@ def _cache_manager(cache_allocator, sock):
         _nl_cache_free(cache)
 
 
-def _addr_to_str(addr):
-    """Returns the textual representation of a netlink address (be it hardware
-    or IP) or None if the address is None"""
-    if addr is not None:
-        address = (c_char * HWADDRSIZE)()
-        return _nl_addr2str(addr, address, sizeof(address))
-
-
-def _af_to_str(af_num):
-    """Returns the textual address family representation of the numerical id"""
-    family = (c_char * CHARBUFFSIZE)()
-    return _nl_af2str(af_num, family, sizeof(family))
-
-
-def _scope_to_str(scope_num):
-    """Returns the textual scope representation of the numerical id"""
-    scope = (c_char * CHARBUFFSIZE)()
-    return _rtnl_scope2str(scope_num, scope, sizeof(scope))
-
-
 # libnl/include/linux/rtnetlink.h
 _GROUPS = {
     'link': 1,             # RTNLGRP_LINK
@@ -179,8 +157,6 @@ _none_proto = CFUNCTYPE(None, c_void_p)
 _socket_memberships_proto = CFUNCTYPE(c_int, c_void_p,
                                       *((c_int,) * (len(_GROUPS) + 1)))
 
-LIBNL_ROUTE = CDLL('libnl-route-3.so.200', use_errno=True)
-
 _nl_socket_alloc = CFUNCTYPE(c_void_p)(('nl_socket_alloc', libnl.LIBNL))
 _nl_socket_free = _none_proto(('nl_socket_free', libnl.LIBNL))
 
@@ -204,11 +180,6 @@ _nl_connect = CFUNCTYPE(c_int, c_void_p, c_int)(('nl_connect', libnl.LIBNL))
 _nl_cache_free = _none_proto(('nl_cache_free', libnl.LIBNL))
 _nl_cache_get_first = _void_proto(('nl_cache_get_first', libnl.LIBNL))
 _nl_cache_get_next = _void_proto(('nl_cache_get_next', libnl.LIBNL))
-_nl_addr2str = CFUNCTYPE(c_char_p, c_void_p, c_char_p, c_size_t)((
-    'nl_addr2str', libnl.LIBNL))
-_nl_af2str = _int_char_proto(('nl_af2str', libnl.LIBNL))
-_rtnl_scope2str = _int_char_proto(('rtnl_scope2str', LIBNL_ROUTE))
-
 
 _add_socket_memberships = partial(_socket_memberships,
                                   _nl_socket_add_memberships)

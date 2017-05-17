@@ -26,8 +26,7 @@ import errno
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
 from . import _char_proto, _int_char_proto, _int_proto, _void_proto
-from . import LIBNL_ROUTE, _pool, _none_proto
-from . import _addr_to_str, CHARBUFFSIZE
+from . import _pool, _none_proto
 from . import libnl
 
 IFF_UP = 1 << 0             # Device administrative status.
@@ -90,7 +89,8 @@ def is_link_up(link_flags, check_oper_status):
 def _link_info(link, cache=None):
     """Returns a dictionary with the information of the link object."""
     info = {}
-    info['address'] = _addr_to_str(_rtnl_link_get_addr(link))
+    address = _rtnl_link_get_addr(link)
+    info['address'] = libnl.nl_addr2str(address) if address else None
     info['flags'] = _rtnl_link_get_flags(link)
     info['index'] = _rtnl_link_get_ifindex(link)
     info['mtu'] = _rtnl_link_get_mtu(link)
@@ -130,7 +130,7 @@ def _link_info(link, cache=None):
 
 def _link_index_to_name(link_index, cache=None):
     """Returns the textual name of the link with index equal to link_index."""
-    name = (c_char * CHARBUFFSIZE)()
+    name = (c_char * libnl.CHARBUFFSIZE)()
 
     if cache is None:
         with _get_link(index=link_index) as link:
@@ -146,7 +146,7 @@ def _link_index_to_name(link_index, cache=None):
 def _link_state(link):
     """Returns the textual representation of the link's operstate."""
     state = _rtnl_link_get_operstate(link)
-    operstate = (c_char * CHARBUFFSIZE)()
+    operstate = (c_char * libnl.CHARBUFFSIZE)()
     return _rtnl_link_operstate2str(state, operstate, sizeof(operstate))
 
 
@@ -156,13 +156,13 @@ def _link_state(link):
 # with the binary interface of libnl and which types it should allocate and
 # cast. Without it ctypes fails when not running on the main thread.
 _link_alloc_cache = CFUNCTYPE(c_int, c_void_p, c_int, c_void_p)(
-    ('rtnl_link_alloc_cache', LIBNL_ROUTE))
-_link_is_vlan = _int_proto(('rtnl_link_is_vlan', LIBNL_ROUTE))
-_vlan_get_id = _int_proto(('rtnl_link_vlan_get_id', LIBNL_ROUTE))
-_rtnl_link_get_type = _char_proto(('rtnl_link_get_type', LIBNL_ROUTE))
+    ('rtnl_link_alloc_cache', libnl.LIBNL_ROUTE))
+_link_is_vlan = _int_proto(('rtnl_link_is_vlan', libnl.LIBNL_ROUTE))
+_vlan_get_id = _int_proto(('rtnl_link_vlan_get_id', libnl.LIBNL_ROUTE))
+_rtnl_link_get_type = _char_proto(('rtnl_link_get_type', libnl.LIBNL_ROUTE))
 _rtnl_link_get_kernel = CFUNCTYPE(c_int, c_void_p, c_int, c_char_p,
                                   c_void_p)(('rtnl_link_get_kernel',
-                                             LIBNL_ROUTE))
+                                             libnl.LIBNL_ROUTE))
 
 
 def _rtnl_link_alloc_cache(sock):
@@ -210,19 +210,21 @@ def _get_link(name=None, index=0, sock=None):
 
 _nl_link_cache = partial(_cache_manager, _rtnl_link_alloc_cache)
 
-_rtnl_link_get_addr = _void_proto(('rtnl_link_get_addr', LIBNL_ROUTE))
-_rtnl_link_get_flags = _int_proto(('rtnl_link_get_flags', LIBNL_ROUTE))
-_rtnl_link_get_ifindex = _int_proto(('rtnl_link_get_ifindex', LIBNL_ROUTE))
-_rtnl_link_get_link = _int_proto(('rtnl_link_get_link', LIBNL_ROUTE))
-_rtnl_link_get_master = _int_proto(('rtnl_link_get_master', LIBNL_ROUTE))
-_rtnl_link_get_mtu = _int_proto(('rtnl_link_get_mtu', LIBNL_ROUTE))
-_rtnl_link_get_name = _char_proto(('rtnl_link_get_name', LIBNL_ROUTE))
-_rtnl_link_get_operstate = _int_proto(('rtnl_link_get_operstate', LIBNL_ROUTE))
-_rtnl_link_get_qdisc = _char_proto(('rtnl_link_get_qdisc', LIBNL_ROUTE))
+_rtnl_link_get_addr = _void_proto(('rtnl_link_get_addr', libnl.LIBNL_ROUTE))
+_rtnl_link_get_flags = _int_proto(('rtnl_link_get_flags', libnl.LIBNL_ROUTE))
+_rtnl_link_get_ifindex = _int_proto(
+    ('rtnl_link_get_ifindex', libnl.LIBNL_ROUTE))
+_rtnl_link_get_link = _int_proto(('rtnl_link_get_link', libnl.LIBNL_ROUTE))
+_rtnl_link_get_master = _int_proto(('rtnl_link_get_master', libnl.LIBNL_ROUTE))
+_rtnl_link_get_mtu = _int_proto(('rtnl_link_get_mtu', libnl.LIBNL_ROUTE))
+_rtnl_link_get_name = _char_proto(('rtnl_link_get_name', libnl.LIBNL_ROUTE))
+_rtnl_link_get_operstate = _int_proto(
+    ('rtnl_link_get_operstate', libnl.LIBNL_ROUTE))
+_rtnl_link_get_qdisc = _char_proto(('rtnl_link_get_qdisc', libnl.LIBNL_ROUTE))
 _rtnl_link_get_by_name = CFUNCTYPE(c_void_p, c_void_p, c_char_p)((
-    'rtnl_link_get_by_name', LIBNL_ROUTE))
+    'rtnl_link_get_by_name', libnl.LIBNL_ROUTE))
 _rtnl_link_i2name = CFUNCTYPE(c_char_p, c_void_p, c_int, c_char_p, c_size_t)((
-    'rtnl_link_i2name', LIBNL_ROUTE))
+    'rtnl_link_i2name', libnl.LIBNL_ROUTE))
 _rtnl_link_operstate2str = _int_char_proto(('rtnl_link_operstate2str',
-                                            LIBNL_ROUTE))
-_rtnl_link_put = _none_proto(('rtnl_link_put', LIBNL_ROUTE))
+                                            libnl.LIBNL_ROUTE))
+_rtnl_link_put = _none_proto(('rtnl_link_put', libnl.LIBNL_ROUTE))

@@ -24,8 +24,7 @@ import errno
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
 from . import _char_proto, _int_proto, _void_proto
-from . import LIBNL_ROUTE, _pool
-from . import _addr_to_str, _af_to_str, _scope_to_str
+from . import _pool
 from . import libnl
 from .link import _nl_link_cache, _link_index_to_name
 
@@ -47,13 +46,16 @@ def iter_routes():
 
 
 def _route_info(route, link_cache=None):
+    destination = _rtnl_route_get_dst(route)
+    source = _rtnl_route_get_src(route)
+    gateway = _rtnl_route_get_gateway(route)
     data = {
-        'destination': _addr_to_str(_rtnl_route_get_dst(route)),  # network
-        'source': _addr_to_str(_rtnl_route_get_src(route)),
-        'gateway': _addr_to_str(_rtnl_route_get_gateway(route)),  # via
-        'family': _af_to_str(_rtnl_route_get_family(route)),
+        'destination': libnl.nl_addr2str(destination),  # network
+        'source': libnl.nl_addr2str(source) if source else None,
+        'gateway': libnl.nl_addr2str(gateway) if gateway else None,  # via
+        'family': libnl.nl_af2str(_rtnl_route_get_family(route)),
         'table': _rtnl_route_get_table(route),
-        'scope': _scope_to_str(_rtnl_route_get_scope(route))}
+        'scope': libnl.rtnl_scope2str(_rtnl_route_get_scope(route))}
     oif_index = _rtnl_route_get_oif(route)
     if oif_index > 0:
         data['oif_index'] = oif_index
@@ -66,13 +68,14 @@ def _route_info(route, link_cache=None):
 
 
 _route_alloc_cache = CFUNCTYPE(c_int, c_void_p, c_int, c_int, c_void_p)(
-    ('rtnl_route_alloc_cache', LIBNL_ROUTE))
+    ('rtnl_route_alloc_cache', libnl.LIBNL_ROUTE))
 _route_get_nnexthops = _int_proto(('rtnl_route_get_nnexthops',
-                                   LIBNL_ROUTE))
+                                   libnl.LIBNL_ROUTE))
 _route_get_nexthop_n = CFUNCTYPE(c_void_p, c_void_p, c_int)(
-    ('rtnl_route_nexthop_n', LIBNL_ROUTE))
-_hop_get_ifindex = _int_proto(('rtnl_route_nh_get_ifindex', LIBNL_ROUTE))
-_hop_get_gateway = _void_proto(('rtnl_route_nh_get_gateway', LIBNL_ROUTE))
+    ('rtnl_route_nexthop_n', libnl.LIBNL_ROUTE))
+_hop_get_ifindex = _int_proto(('rtnl_route_nh_get_ifindex', libnl.LIBNL_ROUTE))
+_hop_get_gateway = _void_proto(
+    ('rtnl_route_nh_get_gateway', libnl.LIBNL_ROUTE))
 
 
 def _rtnl_route_alloc_cache(sock):
@@ -109,9 +112,10 @@ def _rtnl_route_get_gateway(route):
 
 _nl_route_cache = partial(_cache_manager, _rtnl_route_alloc_cache)
 
-_rtnl_route_get_dst = _void_proto(('rtnl_route_get_dst', LIBNL_ROUTE))
-_rtnl_route_get_src = _void_proto(('rtnl_route_get_src', LIBNL_ROUTE))
-_rtnl_route_get_iif = _char_proto(('rtnl_route_get_iif', LIBNL_ROUTE))
-_rtnl_route_get_table = _int_proto(('rtnl_route_get_table', LIBNL_ROUTE))
-_rtnl_route_get_scope = _int_proto(('rtnl_route_get_scope', LIBNL_ROUTE))
-_rtnl_route_get_family = _int_proto(('rtnl_route_get_family', LIBNL_ROUTE))
+_rtnl_route_get_dst = _void_proto(('rtnl_route_get_dst', libnl.LIBNL_ROUTE))
+_rtnl_route_get_src = _void_proto(('rtnl_route_get_src', libnl.LIBNL_ROUTE))
+_rtnl_route_get_iif = _char_proto(('rtnl_route_get_iif', libnl.LIBNL_ROUTE))
+_rtnl_route_get_table = _int_proto(('rtnl_route_get_table', libnl.LIBNL_ROUTE))
+_rtnl_route_get_scope = _int_proto(('rtnl_route_get_scope', libnl.LIBNL_ROUTE))
+_rtnl_route_get_family = _int_proto(
+    ('rtnl_route_get_family', libnl.LIBNL_ROUTE))
