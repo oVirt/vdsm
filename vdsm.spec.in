@@ -89,6 +89,7 @@ Requires: virt-v2v
 %endif
 
 Requires: chrony
+Requires: cyrus-sasl-scram
 Requires: dbus-python
 Requires: ethtool
 Requires: which
