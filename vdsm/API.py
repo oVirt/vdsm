@@ -28,7 +28,6 @@ from vdsm import commands
 from vdsm import utils
 from clientIF import clientIF
 from vdsm import constants
-from vdsm import logUtils
 from vdsm import hooks
 from vdsm import hostdev
 from vdsm import supervdsm
@@ -38,12 +37,12 @@ from vdsm import v2v
 from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import fileutils
+from vdsm.common import logutils
 from vdsm.common import response
 from vdsm.common import validate
 from vdsm.common import conv
 from vdsm.host import api as hostapi
 from vdsm.host import caps
-from vdsm.logUtils import AllVmStatsValue, Suppressed
 from vdsm.storage import clusterlock
 from vdsm.storage import misc
 from vdsm.storage import constants as sc
@@ -1290,8 +1289,9 @@ class Global(APIBase):
         statsList = self._cif.getAllVmStats()
         statsList = hooks.after_get_all_vm_stats(statsList)
         throttledlog.info('getAllVmStats', "Current getAllVmStats: %s",
-                          AllVmStatsValue(statsList))
-        return {'status': doneCode, 'statsList': Suppressed(statsList)}
+                          logutils.AllVmStatsValue(statsList))
+        return {'status': doneCode,
+                'statsList': logutils.Suppressed(statsList)}
 
     def getAllVmIoTunePolicies(self):
         """
@@ -1335,7 +1335,7 @@ class Global(APIBase):
                 Otherwise, tune the specific logger provided.
         :type name: string
         """
-        logUtils.set_level(level, name)
+        logutils.set_level(level, name)
         return dict(status=doneCode)
 
     # VM-related functions

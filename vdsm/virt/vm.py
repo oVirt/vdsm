@@ -55,8 +55,8 @@ from vdsm.compat import pickle
 from vdsm.config import config
 from vdsm.common import conv
 from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
+from vdsm.common.logutils import SimpleLogAdapter, volume_chain_to_str
 from vdsm.host import caps
-from vdsm.logUtils import SimpleLogAdapter, volume_chain_to_str
 from vdsm.network import api as net_api
 from vdsm.storage import fileUtils
 from vdsm.storage import outOfProcess as oop

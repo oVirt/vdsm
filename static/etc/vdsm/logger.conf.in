@@ -61,7 +61,7 @@ formatter=sysform
 args=('/dev/log', handlers.SysLogHandler.LOG_USER)
 
 [handler_logfile]
-class=vdsm.logUtils.UserGroupEnforcingHandler
+class=vdsm.common.logutils.UserGroupEnforcingHandler
 args=('@VDSMUSER@', '@VDSMGROUP@', '@VDSMLOGDIR@/vdsm.log',)
 filters=storage.misc.TracebackRepeatFilter
 level=DEBUG
@@ -80,7 +80,7 @@ format: %(message)s
 
 [formatter_long]
 format: %(asctime)s %(levelname)-5s (%(threadName)s) [%(name)s] %(message)s (%(module)s:%(lineno)d)
-class: vdsm.logUtils.TimezoneFormatter
+class: vdsm.common.logutils.TimezoneFormatter
 
 [formatter_sysform]
 format= vdsm %(name)s %(levelname)s %(message)s

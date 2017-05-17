@@ -91,7 +91,7 @@ def log(name, level, message, *args):
       and `args` may not be logged at all.  So don't perform expensive
       preprocessing of `args` before calling this function.  If you need to
       modify it before logging it, you may want to use something like
-      `vdsm.logUtils.Suppressed` or its subclasses.
+      `vdsm.common.logutils.Suppressed` or its subclasses.
     """
     try:
         periodic = _periodic[name]

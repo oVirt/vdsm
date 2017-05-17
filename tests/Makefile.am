@@ -80,7 +80,6 @@ test_modules = \
 	hwinfo_test.py \
 	jobs_test.py \
 	libvirtconnection_test.py \
-	logutils_test.py \
 	mkimage_test.py \
 	modprobe.py \
 	moduleloader_test.py \

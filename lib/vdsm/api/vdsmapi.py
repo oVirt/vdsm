@@ -26,7 +26,7 @@ import six
 import yaml
 
 from vdsm import utils
-from vdsm.logUtils import Suppressed
+from vdsm.common.logutils import Suppressed
 from yajsonrpc import JsonRpcInvalidParamsError
 
 

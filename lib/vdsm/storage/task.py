@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2016 Red Hat, Inc.
+# Copyright 2009-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -61,8 +61,8 @@ from vdsm.storage import resourceManager
 import uuid
 from weakref import proxy
 from vdsm import concurrent
+from vdsm.common.logutils import SimpleLogAdapter
 from vdsm.config import config
-from vdsm.logUtils import SimpleLogAdapter
 
 
 getProcPool = oop.getGlobalProcPool

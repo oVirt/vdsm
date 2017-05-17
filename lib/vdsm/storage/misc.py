@@ -49,8 +49,8 @@ from six.moves import queue
 from vdsm import commands
 from vdsm import concurrent
 from vdsm import constants
-from vdsm import logUtils
 from vdsm import utils
+from vdsm.common import logutils
 
 from vdsm.storage import exception as se
 from vdsm.storage.constants import SECTOR_SIZE
@@ -521,7 +521,7 @@ class Event(object):
                         continue
                 try:
                     self._log.debug("Calling registered method `%s`",
-                                    logUtils.funcName(func))
+                                    logutils.funcName(func))
                     if self._sync:
                         func(*args, **kwargs)
                     else:

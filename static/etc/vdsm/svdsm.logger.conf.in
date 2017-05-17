@@ -25,7 +25,7 @@ qualname=Gluster
 propagate=0
 
 [handler_logfile]
-class=vdsm.logUtils.UserGroupEnforcingHandler
+class=vdsm.common.logutils.UserGroupEnforcingHandler
 args=('root', 'root', '@VDSMLOGDIR@/supervdsm.log',)
 filters=storage.misc.TracebackRepeatFilter
 level=DEBUG

@@ -25,10 +25,10 @@ from collections import namedtuple
 
 from decorator import decorator
 
-from vdsm import logUtils
 from vdsm.common.threadlocal import vars
 
 from . import exception
+from . import logutils
 from . import response
 
 
@@ -43,7 +43,7 @@ def logged(on=""):
     def method(func, *args, **kwargs):
         log = logging.getLogger(on)
         ctx = context_string()
-        log.info('START %s %s', logUtils.call2str(func, args, kwargs), ctx)
+        log.info('START %s %s', logutils.call2str(func, args, kwargs), ctx)
         try:
             ret = func(*args, **kwargs)
         except Exception as exc:

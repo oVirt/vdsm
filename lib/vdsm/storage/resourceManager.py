@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2016 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,9 +29,9 @@ from uuid import uuid4
 
 from six.moves import queue
 
-from vdsm.logUtils import SimpleLogAdapter
 from vdsm import concurrent
 from vdsm import utils
+from vdsm.common.logutils import SimpleLogAdapter
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
 from vdsm.storage import rwlock
