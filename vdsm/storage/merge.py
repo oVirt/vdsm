@@ -228,6 +228,18 @@ def _extend_base_allocation(base_vol, top_vol):
 
 
 def finalize(subchain):
+    """
+    During finalize we distunguish between leaf merge and internal merge.
+    In case of leaf merge, we only upate vdsm metadata, i.e. we call
+    syncVolumeChain that marks the top volume as ILLEGAL.
+    In case of internal merge, we need to update qcow metadata and vdsm
+    metadata. For qcow metadata we invoke rebase -u, and for vdsm metadata
+    we invoke syncVolumeChain that changes the child of the top to point to
+    the base as its parent.
+
+    In case of failure, as the base volume is still set as ILLEGAL, manual
+    recovery is required.
+    """
     log.info("Finalizing subchain after merge: %s", subchain)
     with guarded.context(subchain.locks):
         # TODO: As each cold merge step - prepare, merge and finalize -
@@ -244,8 +256,11 @@ def finalize(subchain):
                     subchain.base_id, sc.ILLEGAL_VOL, base_legality)
 
             dom = sdCache.produce_manifest(subchain.sd_id)
-            _update_qemu_metadata(dom, subchain)
-            _update_vdsm_metadata(dom, subchain)
+            if subchain.top_vol.isLeaf():
+                _finalize_leaf_merge(dom, subchain)
+            else:
+                _finalize_internal_merge(dom, subchain)
+
             if subchain.base_vol.chunked():
                 # optimal_size must be called when the volume is prepared
                 optimal_size = subchain.base_vol.optimal_size()
@@ -256,27 +271,19 @@ def finalize(subchain):
         subchain.base_vol.setLegality(sc.LEGAL_VOL)
 
 
-def _update_qemu_metadata(dom, subchain):
+def _finalize_leaf_merge(dom, subchain):
+    _update_vdsm_metadata(dom, subchain)
+
+
+def _finalize_internal_merge(dom, subchain):
     children = subchain.top_vol.getChildren()
-    if children:
-        # Top has children, update qcow metadata by rebasing -u
-        child = dom.produceVolume(subchain.img_id,
-                                  children[0])
-        log.info("Updating qemu metadata, rebasing volume %s into "
-                 "volume %s",
-                 child.volUUID, subchain.base_vol.volUUID)
-        child.prepare(rw=True, justme=True)
-        try:
-            backing = volume.getBackingVolumePath(subchain.img_id,
-                                                  subchain.base_id)
-            backing_format = sc.fmt2str(subchain.base_vol.getFormat())
-            qemuimg.rebase(image=child.volumePath,
-                           backing=backing,
-                           format=qemuimg.FORMAT.QCOW2,
-                           backingFormat=backing_format,
-                           unsafe=True)
-        finally:
-            child.teardown(subchain.sd_id, child.volUUID, justme=True)
+    child = dom.produceVolume(subchain.img_id, children[0])
+    child.prepare(rw=True, justme=True)
+    try:
+        _rebase(subchain.base_vol, child)
+        _update_vdsm_metadata(dom, subchain)
+    finally:
+        child.teardown(subchain.sd_id, child.volUUID, justme=True)
 
 
 def _update_vdsm_metadata(dom, subchain):
@@ -289,6 +296,14 @@ def _update_vdsm_metadata(dom, subchain):
     image_repo = image.Image(repoPath)
     image_repo.syncVolumeChain(subchain.sd_id, subchain.img_id, orig_top_id,
                                new_chain)
+
+
+def _rebase(base, child):
+    backing = volume.getBackingVolumePath(base.imgUUID, base.volUUID)
+    backing_format = sc.fmt2str(base.getFormat())
+    qemuimg.rebase(image=child.volumePath, backing=backing,
+                   format=qemuimg.FORMAT.QCOW2, backingFormat=backing_format,
+                   unsafe=True)
 
 
 def _shrink_base_volume(subchain, optimal_size):
