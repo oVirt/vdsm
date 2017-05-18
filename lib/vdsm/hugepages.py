@@ -42,7 +42,7 @@ DEFAULT_HUGEPAGESIZE = {
 }
 
 
-class NonContignuousMemory(Exception):
+class NonContiguousMemory(Exception):
     """Raised when the memory is too fragmented to allocate hugepages"""
 
 
@@ -124,7 +124,7 @@ def _alloc(count, size, path):
     ret = supervdsm.getProxy().hugepages_alloc(count, path)
     if ret != count:
         supervdsm.getProxy().hugepages_alloc(-ret, path)
-        raise NonContignuousMemory
+        raise NonContiguousMemory
 
     return ret
 
