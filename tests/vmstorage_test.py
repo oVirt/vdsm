@@ -717,23 +717,57 @@ class TestDriveNaming(VdsmTestCase):
         self.assertEqual(drive.name, expected_name)
 
 
-class TestVolumePath(VdsmTestCase):
+class TestVolumeTarget(VdsmTestCase):
     def setUp(self):
         volume_chain = [{"path": "/top",
                          "volumeID": "00000000-0000-0000-0000-000000000000"},
                         {"path": "/base",
                          "volumeID": "11111111-1111-1111-1111-111111111111"}]
-        self.conf = drive_config(volumeChain=volume_chain)
+        self.conf = drive_config(volumeChain=volume_chain,
+                                 alias=0,
+                                 name="name")
 
-    def test_correct_extraction(self):
-        drive = Drive(self.log, **self.conf)
-        actual = drive.volume_path("11111111-1111-1111-1111-111111111111")
-        self.assertEqual(actual, "/base")
+        self.actual_chain = [
+            storage.VolumeChainEntry(
+                uuid="11111111-1111-1111-1111-111111111111",
+                index=1,
+                path=None,
+                allocation=None
+            ),
+            storage.VolumeChainEntry(
+                uuid="00000000-0000-0000-0000-000000000000",
+                index=None,
+                path=None,
+                allocation=None
+            )
+        ]
 
     def test_base_not_found(self):
         drive = Drive(self.log, **self.conf)
         with self.assertRaises(storage.VolumeNotFound):
-            drive.volume_path("F1111111-1111-1111-1111-111111111111")
+            drive.volume_target("FFFFFFFF-FFFF-FFFF-FFFF-111111111111",
+                                self.actual_chain)
+
+    def test_internal_volume(self):
+        drive = Drive(self.log, diskType=DISK_TYPE.NETWORK, **self.conf)
+        actual = drive.volume_target(
+            "11111111-1111-1111-1111-111111111111",
+            self.actual_chain)
+        self.assertEqual(actual, "vda[1]")
+
+    def test_top_volume(self):
+        drive = Drive(self.log, diskType=DISK_TYPE.NETWORK, **self.conf)
+        actual = drive.volume_target(
+            "00000000-0000-0000-0000-000000000000",
+            self.actual_chain)
+        self.assertEqual(actual, None)
+
+    def test_volume_missing(self):
+        drive = Drive(self.log, diskType=DISK_TYPE.NETWORK, **self.conf)
+        with self.assertRaises(storage.VolumeNotFound):
+            drive.volume_target(
+                "FFFFFFFF-FFFF-FFFF-FFFF-000000000000",
+                self.actual_chain)
 
 
 class TestVolumeChain(VdsmTestCase):
@@ -810,11 +844,13 @@ class TestVolumeChain(VdsmTestCase):
                 storage.VolumeChainEntry(
                     path=env.base,
                     allocation=None,
-                    uuid='22222222-2222-2222-2222-222222222222'),
+                    uuid='22222222-2222-2222-2222-222222222222',
+                    index=1),
                 storage.VolumeChainEntry(
                     path=env.top,
                     allocation=None,
-                    uuid='11111111-1111-1111-1111-111111111111')
+                    uuid='11111111-1111-1111-1111-111111111111',
+                    index=None)
             ]
             self.assertEqual(chain, expected)
 
@@ -838,11 +874,13 @@ class TestVolumeChain(VdsmTestCase):
                 storage.VolumeChainEntry(
                     path=env.base,
                     allocation=None,
-                    uuid='22222222-2222-2222-2222-222222222222'),
+                    uuid='22222222-2222-2222-2222-222222222222',
+                    index=1),
                 storage.VolumeChainEntry(
                     path=env.top,
                     allocation=None,
-                    uuid='11111111-1111-1111-1111-111111111111')
+                    uuid='11111111-1111-1111-1111-111111111111',
+                    index=None)
             ]
             self.assertEqual(chain, expected)
 
@@ -884,6 +922,39 @@ class TestVolumeChain(VdsmTestCase):
                     uuid='11111111-1111-1111-1111-111111111111')
             ]
             self.assertEqual(chain, expected)
+
+    def test_parse_volume_chain_no_index(self):
+        with self.make_env() as env:
+            disk_xml = etree.fromstring("""
+            <disk>
+                <source dev='%(top)s'/>
+                <backingStore type='block'>
+                    <source dev='%(base)s'/>
+                    <backingStore/>
+                </backingStore>
+            </disk>""" % {
+                "top": env.top,
+                "base": env.base
+            })
+
+            with self.assertRaises(storage.InvalidBackingStoreIndex):
+                env.drive.parse_volume_chain(disk_xml)
+
+    def test_parse_volume_chain_index_invalid(self):
+        with self.make_env() as env:
+            disk_xml = etree.fromstring("""
+            <disk>
+                <source dev='%(top)s'/>
+                <backingStore type='block' index='fail'>
+                    <source dev='%(base)s'/>
+                    <backingStore/>
+                </backingStore>
+            </disk>""" % {
+                "top": env.top,
+                "base": env.base
+            })
+            with self.assertRaises(storage.InvalidBackingStoreIndex):
+                env.drive.parse_volume_chain(disk_xml)
 
 
 class TestDiskSnapshotXml(XMLTestCase):
