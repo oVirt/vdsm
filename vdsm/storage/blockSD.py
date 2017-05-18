@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2016 Red Hat, Inc.
+# Copyright 2009-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ import six
 
 from vdsm import concurrent
 from vdsm.common import exception
+from vdsm.common import proc
 from vdsm.common.threadlocal import vars
 from vdsm.config import config
 from vdsm import constants
@@ -1395,7 +1396,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
         for umountPid in umountPids:
             try:
-                state = utils.pidStat(umountPid).state
+                state = proc.pidstat(umountPid).state
                 mountPoint = utils.getCmdArgs(umountPid)[-1]
             except:
                 # Process probably exited

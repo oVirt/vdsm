@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ from vdsm import cmdutils
 from vdsm import commands
 from vdsm import utils
 from vdsm.common import exception
+from vdsm.common.proc import pidstat
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
 from vdsm.storage import outOfProcess as oop
@@ -838,7 +839,7 @@ class ExecCmd(TestCaseBase):
         proc = commands.execCmd(cmd, nice=10, sync=False)
 
         def test():
-            nice = utils.pidStat(proc.pid).nice
+            nice = pidstat(proc.pid).nice
             self.assertEqual(nice, 10)
 
         utils.retry(AssertionError, test, tries=10, sleep=0.1)

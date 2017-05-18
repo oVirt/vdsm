@@ -50,6 +50,7 @@ import weakref
 from vdsm.common import zombiereaper
 from vdsm.common.fileutils import rm_file
 from vdsm.common import time as vdsm_time
+from vdsm.common.proc import pidstat
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
@@ -121,36 +122,6 @@ def readMemInfo():
             time.sleep(0.1)
 
 
-STAT = namedtuple('stat', ('pid', 'comm', 'state', 'ppid', 'pgrp', 'session',
-                           'tty_nr', 'tpgid', 'flags', 'minflt', 'cminflt',
-                           'majflt', 'cmajflt', 'utime', 'stime', 'cutime',
-                           'cstime', 'priority', 'nice', 'num_threads',
-                           'itrealvalue', 'starttime', 'vsize', 'rss',
-                           'rsslim', 'startcode', 'endcode', 'startstack',
-                           'kstkesp', 'kstkeip', 'signal', 'blocked',
-                           'sigignore', 'sigcatch', 'wchan', 'nswap',
-                           'cnswap', 'exit_signal', 'processor',
-                           'rt_priority', 'policy', 'delayacct_blkio_ticks',
-                           'guest_time', 'cguest_time'))
-
-
-def pidStat(pid):
-    res = []
-    with open("/proc/%d/stat" % pid, "r") as f:
-        statline = f.readline()
-        procNameStart = statline.find("(")
-        procNameEnd = statline.rfind(")")
-        res.append(int(statline[:procNameStart]))
-        res.append(statline[procNameStart + 1:procNameEnd])
-        args = statline[procNameEnd + 2:].split()
-        res.append(args[0])
-        res.extend([int(item) for item in args[1:]])
-        # Only 44 feilds are documented in man page while /proc/pid/stat has 52
-        # The rest of the fields contain the process memory layout and
-        # exit_code, which are not relevant for our use.
-        return STAT(*res[:len(STAT._fields)])
-
-
 def iteratePids():
     for path in glob.iglob("/proc/[0-9]*"):
         pid = os.path.basename(path)
@@ -161,7 +132,7 @@ def pgrep(name):
     res = []
     for pid in iteratePids():
         try:
-            procName = pidStat(pid).comm
+            procName = pidstat(pid).comm
             if procName == name:
                 res.append(pid)
         except (OSError, IOError):
@@ -180,7 +151,7 @@ def getCmdArgs(pid):
     # Retrying seems to solve it.
     while len(res) == 0:
         # cmdline is empty for zombie processes
-        if pidStat(pid).state in ("Z", "z"):
+        if pidstat(pid).state in ("Z", "z"):
             return tuple()
 
         res = _parseCmdLine(pid)

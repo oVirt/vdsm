@@ -264,22 +264,6 @@ class TestRetry(TestCaseBase):
         self.assertEqual(counter[0], tries)
 
 
-class TestPidStat(TestCaseBase):
-
-    @MonkeyPatch(cmdutils, "_USING_CPU_AFFINITY", False)
-    def test_without_affinity(self):
-        args = ["sleep", "3"]
-        sproc = commands.execCmd(args, sync=False)
-        stats = utils.pidStat(sproc.pid)
-        pid = int(stats.pid)
-        # procName comes in the format of (procname)
-        name = stats.comm
-        self.assertEqual(pid, sproc.pid)
-        self.assertEqual(name, args[0])
-        sproc.kill()
-        sproc.wait()
-
-
 class TestPgrep(TestCaseBase):
     def test(self):
         sleepProcs = []
