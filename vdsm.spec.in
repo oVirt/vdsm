@@ -656,13 +656,6 @@ network properties
 %systemd_post lldpad.service
 %systemd_post fcoe.service
 
-%package hook-vfio-mdev
-Summary:        Hook to enable mdev-capable devices.
-BuildArch:      noarch
-
-%description hook-vfio-mdev
-Hook to use mdev-capable devices through custom properties.
-
 %if 0%{?with_gluster_mgmt}
 %package gluster
 Summary:        Gluster Plugin for VDSM
@@ -1472,10 +1465,6 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_vmfex
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_migrate_destination/50_vmfex
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_vmfex
-
-%files hook-vfio-mdev
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vfio_mdev
-%{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_vfio_mdev
 
 %if 0%{?with_hooks}
 %files hook-allocate_net
