@@ -39,6 +39,7 @@ def __leafDict(d):
 
 @cache.memoized
 def getSystemInfo():
+    # pylint: disable=no-member
     import dmidecode
 
     return __leafDict(dmidecode.system())
