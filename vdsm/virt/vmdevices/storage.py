@@ -68,8 +68,18 @@ class VolumeNotFound(errors.Base):
         self.vol_id = vol_id
 
 
-VolumeChainEntry = collections.namedtuple('VolumeChainEntry',
-                                          ['uuid', 'path', 'allocation'])
+class InvalidBackingStoreIndex(errors.Base):
+    msg = ("Backing store for path {self.path} "
+           "contains invalid index {self.index!r}")
+
+    def __init__(self, path, index):
+        self.path = path
+        self.index = index
+
+
+VolumeChainEntry = collections.namedtuple(
+    'VolumeChainEntry',
+    ['uuid', 'path', 'allocation', 'index'])
 
 
 class Drive(core.Base):
@@ -540,13 +550,50 @@ class Drive(core.Base):
                 "path={self.path} "
                 "at {addr:#x}>").format(self=self, addr=id(self))
 
-    def volume_path(self, vol_id):
+    def volume_target(self, vol_id, actual_chain):
         """
-        Retrieves volume path from drive's volume chain using its's ID.
+        Retrieves volume's device target
+        from drive's volume chain using its ID.
+        That device target is used in block-commit api of libvirt.
+
+        Arguments:
+            vol_id (str): Volume's UUID
+            actual_chain (VolumeChainEntry[]): Current volume chain
+                as parsed from libvirt xml,
+                see parse_volume_chain. We expect it to be
+                ordered from base to top.
+
+        Returns:
+            str: Volume device target - None for top volume,
+                "vda[1]" for the next volume after top and so on.
+
+        Raises:
+            VolumeNotFound exception when volume is not in chain.
         """
         for v in self.volumeChain:
             if v['volumeID'] == vol_id:
-                return v['path']
+                index = chain_index(actual_chain, vol_id, self.name)
+
+                # libvirt device target format is name[index] where name is
+                # target device name inside a vm and index is a number,
+                # pointing to a snapshot layer.
+                # Unfortunately, top layer do not have index value and libvirt
+                # doesn't support referencing top layer as name[0] therefore,
+                # we have to check for index absence and return just name for
+                # the top layer. We have an RFE for that problem,
+                # https://bugzilla.redhat.com/1451398 and when it will be
+                # implemented, we need to remove special handling of
+                # the active layer.
+                if index is None:
+                    # As right now libvirt is not able to correctly parse
+                    # 'name' as a reference to the active layer we need to
+                    # return None, so libvirt will use active layer as a
+                    # default value for None. We have bug filed for that issue:
+                    # https://bugzilla.redhat.com/1451394 and we need to return
+                    # self.name instead of None when it is fixed.
+                    return None
+                else:
+                    return "%s[%d]" % (self.name, index)
         raise VolumeNotFound(drive_name=self.name, vol_id=vol_id)
 
     def volume_id(self, vol_path):
@@ -565,12 +612,40 @@ class Drive(core.Base):
         raise LookupError("Unable to find VolumeID for path '%s'", vol_path)
 
     def parse_volume_chain(self, disk_xml):
+        """
+        Parses libvirt xml and extracts volume chain from it.
+
+        Arguments:
+             disk_xml (ElementTree): libvirt xml to parse
+
+        Returns:
+            list: VolumeChainEntry[] - List of chain entries where
+            each entry contains volume UUID, volume path
+            and volume index. For the 'top' volume index
+            is None, as 'top' volume have no indices at
+            all.
+
+            VolumeChainEntry is reversed in relation to
+            libvirt xml: xml is ordered from top to base
+            volume, while volume chain is ordered from
+            base to the top.
+
+        Raises:
+            InvalidBackingStoreIndex exception when index value is not int.
+        """
         volChain = []
+        index = None
         while True:
             sourceAttr = ('file', 'dev')[self.blockDev]
             path = vmxml.find_attr(disk_xml, 'source', sourceAttr)
             if not path:
                 break
+
+            if index is not None:
+                try:
+                    index = int(index)
+                except ValueError:
+                    raise InvalidBackingStoreIndex(path, index)
 
             # TODO: Allocation information is not available in the XML.  Switch
             # to the new interface once it becomes available in libvirt.
@@ -580,9 +655,11 @@ class Drive(core.Base):
                 self.log.warning("<backingStore/> missing from backing "
                                  "chain for drive %s", self.name)
                 break
-            disk_xml = backingstore
-            entry = VolumeChainEntry(self.volume_id(path), path, alloc)
+            entry = VolumeChainEntry(self.volume_id(path), path, alloc, index)
             volChain.insert(0, entry)
+
+            disk_xml = backingstore
+            index = vmxml.attr(backingstore, 'index')
         return volChain or None
 
     def get_snapshot_xml(self, snap_info):
@@ -607,6 +684,27 @@ class Drive(core.Base):
 
         disk.appendChild(snap_elem)
         return disk
+
+
+def chain_index(actual_chain, vol_id, drive_name):
+    """
+    Retrieves volume index from the volume chain.
+
+    Arguments:
+        actual_chain (VolumeChainEntry[]): Current volume chain
+        vol_id (str): Volume's UUID
+        drive_name (str): Drive's name
+
+    Returns:
+        str: Volume index
+
+    Raises:
+        VolumeNotFound exception when volume is not in chain.
+    """
+    for entry in actual_chain:
+        if entry.uuid == vol_id:
+            return entry.index
+    raise VolumeNotFound(drive_name=drive_name, vol_id=vol_id)
 
 
 def _getSourceXML(drive):

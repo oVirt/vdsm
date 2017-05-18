@@ -4782,9 +4782,11 @@ class Vm(object):
                            "monitoring.  Unable to perform live merge.")
             return response.error('mergeErr')
 
+        actual_chain = chains[drive['alias']]
+
         try:
-            base = drive.volume_path(baseVolUUID)
-            top = drive.volume_path(topVolUUID)
+            base_target = drive.volume_target(baseVolUUID, actual_chain)
+            top_target = drive.volume_target(topVolUUID, actual_chain)
         except VolumeNotFound as e:
             self.log.error("merge: %s", e)
             return response.error('mergeErr')
@@ -4852,11 +4854,14 @@ class Vm(object):
 
             orig_chain = [entry.uuid for entry in chains[drive['alias']]]
             chain_str = volume_chain_to_str(orig_chain)
-            self.log.info("Starting merge with jobUUID='%s' "
-                          "original chain=%s", jobUUID, chain_str)
+            self.log.info("Starting merge with jobUUID=%r, original chain=%s, "
+                          "disk=%r, base=%r, top=%r, bandwidth=%d, flags=%d",
+                          jobUUID, chain_str, drive.name, base_target,
+                          top_target, bandwidth, flags)
 
             try:
-                self._dom.blockCommit(drive.path, base, top, bandwidth, flags)
+                self._dom.blockCommit(drive.path, base_target, top_target,
+                                      bandwidth, flags)
             except libvirt.libvirtError:
                 self.log.exception("Live merge failed (job: %s)", jobUUID)
                 self.untrackBlockJob(jobUUID)
