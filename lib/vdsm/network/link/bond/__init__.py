@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,11 +19,10 @@
 from __future__ import absolute_import
 
 import abc
-from importlib import import_module
-from pkgutil import iter_modules
 
 import six
 
+from vdsm.network import driverloader
 from vdsm.network.link import iface
 
 
@@ -118,20 +117,13 @@ class BondAPI(object):
             setstate(slave)
 
 
-DEFAULT_DRIVER = 'sysfs_driver'
-_DRIVERS = {}
+class Drivers(object):
+    SYSFS = 'sysfs_driver'
 
 
-# Importing all available bond drivers.
-for _, module_name, _ in iter_modules([__path__[0]]):
-    module = import_module('{}.{}'.format(__name__, module_name))
-    if hasattr(module, 'Bond'):
-        _DRIVERS[module_name] = module
+def driver(driver_name=Drivers.SYSFS):
+    _drivers = driverloader.load_drivers('Bond', __name__, __path__[0])
+    return driverloader.get_driver(driver_name, _drivers)
 
 
-def _bond_driver(driver=DEFAULT_DRIVER):
-    """Bond driver factory."""
-    return _DRIVERS[driver].Bond
-
-
-Bond = _bond_driver()
+Bond = driver()
