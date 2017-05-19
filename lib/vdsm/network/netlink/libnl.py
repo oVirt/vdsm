@@ -26,16 +26,14 @@ native Python manner.
 - Text arguments are provided as native Python string (bytes in Python 2,
   unicode in Python 3).
 - Returned text values are converted to native Python string.
-- Callback arguments are provided as native Python functions, binding function
-  is responsible for converting them into CFUNCTYPE and keeping a reference.
 - Values are returned only via 'return', never as a pointer argument.
 - Errors are raised as exceptions, never as a return code.
 """
 
 from __future__ import absolute_import
 
-from ctypes import CDLL, CFUNCTYPE, sizeof
-from ctypes import c_char, c_char_p, c_int, c_void_p, c_size_t
+from ctypes import CDLL, CFUNCTYPE, sizeof, get_errno
+from ctypes import c_char, c_char_p, c_int, c_void_p, c_size_t, py_object
 
 from vdsm.common.cache import memoized
 
@@ -44,6 +42,24 @@ LIBNL_ROUTE = CDLL('libnl-route-3.so.200', use_errno=True)
 
 CHARBUFFSIZE = 40  # Increased to fit IPv6 expanded representations
 HWADDRSIZE = 60    # InfiniBand HW address needs 59+1 bytes
+
+# libnl/include/linux/rtnetlink.h
+GROUPS = {
+    'link': 1,             # RTNLGRP_LINK
+    'notify': 2,           # RTNPGRP_NOTIFY
+    'neigh': 3,            # RTNLGRP_NEIGH
+    'tc': 4,               # RTNLGRP_TC
+    'ipv4-ifaddr': 5,      # RTNLGRP_IPV4_IFADDR
+    'ipv4-mroute': 6,      # RTNLGRP_IPV4_MROUTE
+    'ipv4-route': 7,       # RTNLGRP_IPV4_ROUTE
+    'ipv6-ifaddr': 9,      # RTNLGRP_IPV6_IFADDR
+    'ipv6-mroute': 10,     # RTNLGRP_IPV6_MROUTE
+    'ipv6-route': 11,      # RTNLGRP_IPV6_ROUTE
+    'ipv6-ifinfo': 12,     # RTNLGRP_IPV6_IFINFO
+    'decnet-ifaddr': 13,   # RTNLGRP_DECnet_IFADDR
+    'decnet-route': 14,    # RTNLGRP_DECnet_ROUTE
+    'ipv6-prefix': 16      # RTNLGRP_IPV6_PREFIX
+}
 
 
 def nl_geterror(error_code):
@@ -97,6 +113,141 @@ def rtnl_scope2str(scope):
     buf = (c_char * CHARBUFFSIZE)()
     address_scope = _rtnl_scope2str(scope, buf, sizeof(buf))
     return _to_str(address_scope)
+
+
+def nl_socket_alloc():
+    """Allocate new netlink socket.
+
+    @return Newly allocated netlink socket.
+    """
+    _nl_socket_alloc = _libnl('nl_socket_alloc', c_void_p)
+    allocated_socket = _nl_socket_alloc()
+    if allocated_socket is None:
+        raise IOError(get_errno(), 'Failed to allocate socket.')
+    return allocated_socket
+
+
+def nl_connect(socket, protocol):
+    """Create file descriptor and bind socket.
+
+    @arg socket          Netlink socket
+    @arg protocol        Netlink protocol to use
+    """
+    _nl_connect = _libnl('nl_connect', c_int, c_void_p, c_int)
+    err = _nl_connect(socket, protocol)
+    if err:
+        raise IOError(-err, nl_geterror(err))
+
+
+def nl_socket_free(socket):
+    """Free a netlink socket.
+
+    @arg socket          Netlink socket.
+    """
+    _nl_socket_free = _libnl('nl_socket_free', None, c_void_p)
+    _nl_socket_free(socket)
+
+
+def nl_socket_get_fd(socket):
+    """Return the file descriptor of the backing socket.
+
+    @arg socket          Netlink socket
+
+    Only valid after calling nl_connect() to create and bind the respective
+    socket.
+
+    @return File descriptor.
+    """
+    _nl_socket_get_fd = _libnl('nl_socket_get_fd', c_int, c_void_p)
+    file_descriptor = _nl_socket_get_fd(socket)
+    if file_descriptor == -1:
+        raise IOError(get_errno(), 'Failed to obtain socket file descriptor.')
+    return file_descriptor
+
+
+def nl_socket_add_memberships(socket, *groups):
+    """Join groups.
+
+    @arg socket          Netlink socket
+    @arg group           Group identifier
+    """
+    _nl_socket_add_memberships = _libnl(
+        'nl_socket_add_memberships',
+        c_int, c_void_p, *((c_int,) * (len(GROUPS) + 1)))
+    err = _nl_socket_add_memberships(socket, *groups)
+    if err:
+        raise IOError(-err, nl_geterror(err))
+
+
+def nl_socket_drop_memberships(socket, *groups):
+    """Leave groups.
+
+    @arg socket          Netlink socket
+    @arg group           Group identifier
+    """
+    _nl_socket_drop_memberships = _libnl(
+        'nl_socket_drop_memberships',
+        c_int, c_void_p, *((c_int,) * (len(GROUPS) + 1)))
+    err = _nl_socket_drop_memberships(socket, *groups)
+    if err:
+        raise IOError(-err, nl_geterror(err))
+
+
+def nl_socket_modify_cb(socket, cb_type, kind, function, argument):
+    """Modify the callback handler associated with the socket.
+
+    @arg socket          Netlink socket.
+    @arg cb_type         which type callback to set
+    @arg kind            kind of callback
+    @arg function        callback function (CFUNCTYPE)
+    @arg argument        argument to be passed to callback function
+    """
+    _nl_socket_modify_cb = _libnl(
+        'nl_socket_modify_cb',
+        c_int, c_void_p, c_int, c_int, c_void_p, py_object)
+    err = _nl_socket_modify_cb(socket, cb_type, kind, function, argument)
+    if err:
+        raise IOError(-err, nl_geterror(err))
+
+
+def prepare_cfunction_for_nl_socket_modify_cb(function):
+    """Prepare callback function for nl_socket_modify_cb.
+
+    @arg                  Python function accepting two objects (message and
+                          extra argument) as arguments and returns integer
+                          with libnl callback action.
+
+    @return C function prepared for nl_socket_modify_cb.
+    """
+    c_function = CFUNCTYPE(c_int, c_void_p, c_void_p)(function)
+    return c_function
+
+
+def nl_socket_disable_seq_check(socket):
+    """Disable sequence number checking.
+
+    @arg socket          Netlink socket.
+
+    Disables checking of sequence numbers on the netlink socket This is
+    required to allow messages to be processed which were not requested by
+    a preceding request message, e.g. netlink events.
+    """
+    _nl_socket_disable_seq_check = _libnl(
+        'nl_socket_disable_seq_check', c_void_p, c_void_p)
+    _nl_socket_disable_seq_check(socket)
+
+
+def c_object_argument(argument):
+    """Prepare prepare Python object to be used as an C argument.
+
+    @arg                  Python object.
+
+    Reference to the returned object must be kept by caller as long as it might
+    be used by any C binding function (beware of callback arguments).
+
+    @return C object (py_object) prepared to be used as an C argument.
+    """
+    return py_object(argument)
 
 
 @memoized

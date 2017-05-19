@@ -18,7 +18,7 @@
 #
 from __future__ import absolute_import
 from contextlib import closing, contextmanager
-from ctypes import CFUNCTYPE, c_int, c_void_p, py_object
+from ctypes import CFUNCTYPE, c_void_p, py_object
 from six.moves import queue
 import logging
 import os
@@ -30,11 +30,11 @@ from vdsm.common.osutils import uninterruptible_poll
 from vdsm.common.osutils import uninterruptible
 from vdsm.common.time import monotonic_time
 
-from . import (_GROUPS, _NL_ROUTE_ADDR_NAME, _NL_ROUTE_LINK_NAME,
+from . import (_NL_ROUTE_ADDR_NAME, _NL_ROUTE_LINK_NAME,
                _NL_ROUTE_NAME, _NL_STOP, _add_socket_memberships,
                _close_socket, _drop_socket_memberships, _int_proto,
                _nl_msg_parse, _nl_object_get_type, _nl_recvmsgs_default,
-               _nl_socket_get_fd, _open_socket)
+               _open_socket)
 from . import libnl
 from .addr import _addr_info
 from .link import _link_info
@@ -101,12 +101,13 @@ class Monitor(object):
         self._timeout = timeout
         self._silent_timeout = silent_timeout
         if groups:
-            unknown_groups = frozenset(groups).difference(frozenset(_GROUPS))
+            unknown_groups = frozenset(groups).difference(
+                frozenset(libnl.GROUPS))
             if unknown_groups:
                 raise AttributeError('Invalid groups: %s' % (unknown_groups,))
             self._groups = groups
         else:
-            self._groups = _GROUPS.keys()
+            self._groups = libnl.GROUPS.keys()
         self._queue = queue.Queue()
         self._scan_thread = concurrent.thread(self._scan,
                                               name="netlink/events")
@@ -254,26 +255,26 @@ def _object_input(obj, queue):
 _c_object_input = CFUNCTYPE(c_void_p, c_void_p, py_object)(_object_input)
 
 
-def _event_input(msg, queue):
+def _event_input(msg, c_queue):
     """This function serves as a callback for netlink socket. When socket
     recieves a message, it passes it to callback function with optional extra
     argument (monitor's queue in this case)
     """
-    nl_error = _nl_msg_parse(msg, _c_object_input, queue)
+    nl_error = _nl_msg_parse(msg, _c_object_input, c_queue)
     if nl_error < 0:
         logging.error('EventMonitor nl_msg_parse() failed with %d', nl_error)
     return _NL_STOP
-_c_event_input = CFUNCTYPE(c_int, c_void_p, c_void_p)(_event_input)
+_c_event_input = libnl.prepare_cfunction_for_nl_socket_modify_cb(_event_input)
 
 
 @contextmanager
 def _monitoring_socket(queue, groups, epoll):
-    c_queue = py_object(queue)
+    c_queue = libnl.c_object_argument(queue)
     sock = _open_socket(callback_function=_c_event_input, callback_arg=c_queue)
     try:
         _add_socket_memberships(sock, groups)
         try:
-            fd = _nl_socket_get_fd(sock)
+            fd = libnl.nl_socket_get_fd(sock)
             epoll.register(fd, select.EPOLLIN)
             try:
                 yield sock

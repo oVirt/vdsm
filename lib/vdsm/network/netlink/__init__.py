@@ -19,8 +19,7 @@
 #
 from __future__ import absolute_import
 from contextlib import contextmanager
-from ctypes import (CFUNCTYPE, c_char_p, c_int, c_void_p,
-                    c_size_t, get_errno, py_object)
+from ctypes import CFUNCTYPE, c_char_p, c_int, c_void_p, c_size_t
 from functools import partial
 from threading import BoundedSemaphore
 
@@ -76,34 +75,23 @@ def _open_socket(callback_function=None, callback_arg=None):
             args: optional argument defined by _nl_socket_modify_cb()
         callback_arg: optional argument passed to the callback function
     """
-    sock = _nl_socket_alloc()
-    if sock is None:
-        raise IOError(get_errno(), 'Failed to allocate netlink handle')
+    sock = libnl.nl_socket_alloc()
+    try:
+        if callback_function is not None:
+            libnl.nl_socket_disable_seq_check(sock)
+            libnl.nl_socket_modify_cb(sock, _NL_CB_DEFAULT, _NL_CB_CUSTOM,
+                                      callback_function, callback_arg)
 
-    if callback_function is not None:
-        # seq_check is by default enabled. We have to disable it in order to
-        # allow messages, which were not requested by a preceding request
-        # message, to be processed, e.g. netlink events.
-        err = _nl_socket_disable_seq_check(sock)
-        if err:
-            _nl_socket_free(sock)
-            raise IOError(-err, libnl.nl_geterror(err))
-
-        # _nl_socket_modify_cb(socket, which type callback to set, kind of
-        # callback, callback function, arguments to be passed to callback)
-        err = _nl_socket_modify_cb(sock, _NL_CB_DEFAULT, _NL_CB_CUSTOM,
-                                   callback_function, callback_arg)
-
-    err = _nl_connect(sock, _NETLINK_ROUTE)
-    if err:
-        _nl_socket_free(sock)
-        raise IOError(-err, libnl.nl_geterror(err))
+        libnl.nl_connect(sock, _NETLINK_ROUTE)
+    except:
+        libnl.nl_socket_free(sock)
+        raise
     return sock
 
 
 def _close_socket(sock):
     """Closes and frees the resources of the passed netlink socket."""
-    _nl_socket_free(sock)
+    libnl.nl_socket_free(sock)
 
 
 @contextmanager
@@ -117,31 +105,15 @@ def _cache_manager(cache_allocator, sock):
         _nl_cache_free(cache)
 
 
-# libnl/include/linux/rtnetlink.h
-_GROUPS = {
-    'link': 1,             # RTNLGRP_LINK
-    'notify': 2,           # RTNPGRP_NOTIFY
-    'neigh': 3,            # RTNLGRP_NEIGH
-    'tc': 4,               # RTNLGRP_TC
-    'ipv4-ifaddr': 5,      # RTNLGRP_IPV4_IFADDR
-    'ipv4-mroute': 6,      # RTNLGRP_IPV4_MROUTE
-    'ipv4-route': 7,       # RTNLGRP_IPV4_ROUTE
-    'ipv6-ifaddr': 9,      # RTNLGRP_IPV6_IFADDR
-    'ipv6-mroute': 10,     # RTNLGRP_IPV6_MROUTE
-    'ipv6-route': 11,      # RTNLGRP_IPV6_ROUTE
-    'ipv6-ifinfo': 12,     # RTNLGRP_IPV6_IFINFO
-    'decnet-ifaddr': 13,   # RTNLGRP_DECnet_IFADDR
-    'decnet-route': 14,    # RTNLGRP_DECnet_ROUTE
-    'ipv6-prefix': 16}     # RTNLGRP_IPV6_PREFIX
-
-
 def _socket_memberships(socket_membership_function, socket, groups):
-    groups_codes = [_GROUPS[g] for g in groups]
-    groups_codes = groups_codes + [0] * (len(_GROUPS) - len(groups_codes) + 1)
-    err = socket_membership_function(socket, *groups_codes)
-    if err:
-        _nl_socket_free(socket)
-        raise IOError(-err, libnl.nl_geterror(err))
+    groups_codes = [libnl.GROUPS[g] for g in groups]
+    groups_codes = groups_codes + [0] * (
+        len(libnl.GROUPS) - len(groups_codes) + 1)
+    try:
+        socket_membership_function(socket, *groups_codes)
+    except:
+        libnl.nl_socket_free(socket)
+        raise
 
 
 # C function prototypes
@@ -154,34 +126,17 @@ _int_char_proto = CFUNCTYPE(c_char_p, c_int, c_char_p, c_size_t)
 _char_proto = CFUNCTYPE(c_char_p, c_void_p)
 _void_proto = CFUNCTYPE(c_void_p, c_void_p)
 _none_proto = CFUNCTYPE(None, c_void_p)
-_socket_memberships_proto = CFUNCTYPE(c_int, c_void_p,
-                                      *((c_int,) * (len(_GROUPS) + 1)))
-
-_nl_socket_alloc = CFUNCTYPE(c_void_p)(('nl_socket_alloc', libnl.LIBNL))
-_nl_socket_free = _none_proto(('nl_socket_free', libnl.LIBNL))
 
 _nl_msg_parse = CFUNCTYPE(c_int, c_void_p, c_void_p, c_void_p)(
     ('nl_msg_parse', libnl.LIBNL))
-_nl_socket_add_memberships = _socket_memberships_proto(
-    ('nl_socket_add_memberships', libnl.LIBNL))
-_nl_socket_disable_seq_check = _void_proto(('nl_socket_disable_seq_check',
-                                            libnl.LIBNL))
-_nl_socket_drop_memberships = _socket_memberships_proto(
-    ('nl_socket_drop_memberships', libnl.LIBNL))
-_nl_socket_get_fd = _int_proto(('nl_socket_get_fd', libnl.LIBNL))
-_nl_socket_modify_cb = CFUNCTYPE(
-    c_int, c_void_p, c_int, c_int, c_void_p, py_object)((
-        'nl_socket_modify_cb', libnl.LIBNL))
 _nl_object_get_type = _char_proto(('nl_object_get_type', libnl.LIBNL))
 _nl_recvmsgs_default = _int_proto(('nl_recvmsgs_default', libnl.LIBNL))
-
-_nl_connect = CFUNCTYPE(c_int, c_void_p, c_int)(('nl_connect', libnl.LIBNL))
 
 _nl_cache_free = _none_proto(('nl_cache_free', libnl.LIBNL))
 _nl_cache_get_first = _void_proto(('nl_cache_get_first', libnl.LIBNL))
 _nl_cache_get_next = _void_proto(('nl_cache_get_next', libnl.LIBNL))
 
 _add_socket_memberships = partial(_socket_memberships,
-                                  _nl_socket_add_memberships)
+                                  libnl.nl_socket_add_memberships)
 _drop_socket_memberships = partial(_socket_memberships,
-                                   _nl_socket_drop_memberships)
+                                   libnl.nl_socket_drop_memberships)
