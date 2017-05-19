@@ -21,7 +21,7 @@ from ctypes import (CFUNCTYPE, byref, c_char, c_int, c_void_p, sizeof)
 from functools import partial
 import errno
 
-from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
+from . import _cache_manager
 from . import _int_char_proto, _int_proto, _void_proto
 from . import _pool
 from . import libnl
@@ -34,10 +34,10 @@ def iter_addrs():
     with _pool.socket() as sock:
         with _nl_addr_cache(sock) as addr_cache:
             with _nl_link_cache(sock) as link_cache:  # for index to label
-                addr = _nl_cache_get_first(addr_cache)
+                addr = libnl.nl_cache_get_first(addr_cache)
                 while addr:
                     yield _addr_info(addr, link_cache=link_cache)
-                    addr = _nl_cache_get_next(addr)
+                    addr = libnl.nl_cache_get_next(addr)
 
 
 def _addr_info(addr, link_cache=None):

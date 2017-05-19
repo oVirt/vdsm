@@ -24,7 +24,7 @@ from functools import partial
 from socket import AF_UNSPEC
 import errno
 
-from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
+from . import _cache_manager
 from . import _char_proto, _int_char_proto, _int_proto, _void_proto
 from . import _pool, _none_proto
 from . import libnl
@@ -66,10 +66,10 @@ def iter_links():
     system."""
     with _pool.socket() as sock:
         with _nl_link_cache(sock) as cache:
-            link = _nl_cache_get_first(cache)
+            link = libnl.nl_cache_get_first(cache)
             while link:
                 yield _link_info(link, cache=cache)
-                link = _nl_cache_get_next(link)
+                link = libnl.nl_cache_get_next(link)
 
 
 def is_link_up(link_flags, check_oper_status):

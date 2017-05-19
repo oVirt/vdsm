@@ -237,6 +237,40 @@ def nl_socket_disable_seq_check(socket):
     _nl_socket_disable_seq_check(socket)
 
 
+def nl_cache_get_first(cache):
+    """Return the first element in the cache.
+
+    @arg cache           cache handle
+
+    @return the first element in the cache or None if empty
+    """
+    _nl_cache_get_first = _libnl('nl_cache_get_first', c_void_p, c_void_p)
+    return _nl_cache_get_first(cache)
+
+
+def nl_cache_get_next(element):
+    """Return the next element in the cache
+
+    @arg element         current element
+
+    @return the next element in the cache or None if reached the end
+    """
+    _nl_cache_get_next = _libnl('nl_cache_get_next', c_void_p, c_void_p)
+    return _nl_cache_get_next(element)
+
+
+def nl_cache_free(cache):
+    """Free a cache.
+
+    @arg cache           Cache to free.
+
+    Calls nl_cache_clear() to remove all objects associated with the
+    cache and frees the cache afterwards.
+    """
+    _nl_cache_free = _libnl('nl_cache_free', None, c_void_p)
+    _nl_cache_free(cache)
+
+
 def c_object_argument(argument):
     """Prepare prepare Python object to be used as an C argument.
 

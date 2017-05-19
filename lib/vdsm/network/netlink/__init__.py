@@ -102,7 +102,7 @@ def _cache_manager(cache_allocator, sock):
     try:
         yield cache
     finally:
-        _nl_cache_free(cache)
+        libnl.nl_cache_free(cache)
 
 
 def _socket_memberships(socket_membership_function, socket, groups):
@@ -131,10 +131,6 @@ _nl_msg_parse = CFUNCTYPE(c_int, c_void_p, c_void_p, c_void_p)(
     ('nl_msg_parse', libnl.LIBNL))
 _nl_object_get_type = _char_proto(('nl_object_get_type', libnl.LIBNL))
 _nl_recvmsgs_default = _int_proto(('nl_recvmsgs_default', libnl.LIBNL))
-
-_nl_cache_free = _none_proto(('nl_cache_free', libnl.LIBNL))
-_nl_cache_get_first = _void_proto(('nl_cache_get_first', libnl.LIBNL))
-_nl_cache_get_next = _void_proto(('nl_cache_get_next', libnl.LIBNL))
 
 _add_socket_memberships = partial(_socket_memberships,
                                   libnl.nl_socket_add_memberships)

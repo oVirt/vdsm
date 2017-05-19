@@ -22,7 +22,7 @@ from functools import partial
 from socket import AF_UNSPEC
 import errno
 
-from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
+from . import _cache_manager
 from . import _char_proto, _int_proto, _void_proto
 from . import _pool
 from . import libnl
@@ -39,10 +39,10 @@ def iter_routes():
     with _pool.socket() as sock:
         with _nl_route_cache(sock) as route_cache:
             with _nl_link_cache(sock) as link_cache:  # for index to label
-                route = _nl_cache_get_first(route_cache)
+                route = libnl.nl_cache_get_first(route_cache)
                 while route:
                     yield _route_info(route, link_cache=link_cache)
-                    route = _nl_cache_get_next(route)
+                    route = libnl.nl_cache_get_next(route)
 
 
 def _route_info(route, link_cache=None):
