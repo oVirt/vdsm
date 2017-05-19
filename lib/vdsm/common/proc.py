@@ -19,6 +19,26 @@
 from __future__ import absolute_import
 
 from collections import namedtuple
+import glob
+import os
+
+
+def pgrep(name):
+    res = []
+    for pid in _iteratepids():
+        try:
+            procName = pidstat(pid).comm
+            if procName == name:
+                res.append(pid)
+        except (OSError, IOError):
+            continue
+    return res
+
+
+def _iteratepids():
+    for path in glob.iglob("/proc/[0-9]*"):
+        pid = os.path.basename(path)
+        yield int(pid)
 
 
 def pidstat(pid):

@@ -19,6 +19,8 @@
 #
 from __future__ import absolute_import
 
+import time
+
 from vdsm.compat import CPopen as Popen
 import vdsm.common
 
@@ -41,3 +43,23 @@ class TestPidStat(TestCaseBase):
         self.assertEqual(name, args[0])
         popen.kill()
         popen.wait()
+
+
+class TestPgrep(TestCaseBase):
+    def test(self):
+        sleepProcs = []
+        try:
+            for i in range(3):
+                popen = Popen([EXT_SLEEP, "3"])
+                sleepProcs.append(popen)
+            # There is no guarantee which process run first after forking a
+            # child process, make sure all the children are runing before we
+            # look for them.
+            time.sleep(0.5)
+            pids = vdsm.common.proc.pgrep(EXT_SLEEP)
+            for popen in sleepProcs:
+                self.assertIn(popen.pid, pids)
+        finally:
+            for popen in sleepProcs:
+                popen.kill()
+                popen.wait()

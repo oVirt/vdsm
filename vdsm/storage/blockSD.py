@@ -1385,7 +1385,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
     @classmethod
     def __handleStuckUmount(cls, masterDir):
-        umountPids = utils.pgrep("umount")
+        umountPids = proc.pgrep("umount")
         try:
             masterMount = mount.getMountFromTarget(masterDir)
         except OSError as ex:

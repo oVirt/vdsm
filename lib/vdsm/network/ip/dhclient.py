@@ -31,7 +31,8 @@ from vdsm.network import errors as ne
 from vdsm.network.link import iface as linkiface
 from vdsm.common.cache import memoized
 from vdsm.common.cmdutils import CommandPath
-from vdsm.utils import pgrep, kill_and_rm_pid
+from vdsm.common.proc import pgrep
+from vdsm.utils import kill_and_rm_pid
 
 from . import address
 

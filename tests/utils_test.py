@@ -264,26 +264,6 @@ class TestRetry(TestCaseBase):
         self.assertEqual(counter[0], tries)
 
 
-class TestPgrep(TestCaseBase):
-    def test(self):
-        sleepProcs = []
-        try:
-            for i in range(3):
-                proc = commands.execCmd([EXT_SLEEP, "3"], sync=False)
-                sleepProcs.append(proc)
-            # There is no guarantee which process run first after forking a
-            # child process, make sure all the children are runing before we
-            # look for them.
-            time.sleep(0.5)
-            pids = utils.pgrep(EXT_SLEEP)
-            for proc in sleepProcs:
-                self.assertIn(proc.pid, pids)
-        finally:
-            for proc in sleepProcs:
-                proc.kill()
-                proc.wait()
-
-
 class TestGetCmdArgs(TestCaseBase):
     def test(self):
         args = [EXT_SLEEP, "4"]

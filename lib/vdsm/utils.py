@@ -33,7 +33,6 @@ from fnmatch import fnmatch
 from .compat import pickle
 import errno
 import functools
-import glob
 import io
 import logging
 import six
@@ -120,24 +119,6 @@ def readMemInfo():
             if tries <= 0:
                 raise
             time.sleep(0.1)
-
-
-def iteratePids():
-    for path in glob.iglob("/proc/[0-9]*"):
-        pid = os.path.basename(path)
-        yield int(pid)
-
-
-def pgrep(name):
-    res = []
-    for pid in iteratePids():
-        try:
-            procName = pidstat(pid).comm
-            if procName == name:
-                res.append(pid)
-        except (OSError, IOError):
-            continue
-    return res
 
 
 def _parseCmdLine(pid):

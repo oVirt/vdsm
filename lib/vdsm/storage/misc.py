@@ -49,8 +49,8 @@ from six.moves import queue
 from vdsm import commands
 from vdsm import concurrent
 from vdsm import constants
-from vdsm import utils
 from vdsm.common import logutils
+from vdsm.common import proc
 
 from vdsm.storage import exception as se
 from vdsm.storage.constants import SECTOR_SIZE
@@ -479,7 +479,7 @@ _NO_ERROR = Exception("No error")
 def killall(name, signum, group=False):
     exception = _NO_ERROR
     knownPgs = set()
-    pidList = utils.pgrep(name)
+    pidList = proc.pgrep(name)
     if len(pidList) == 0:
         raise OSError(errno.ESRCH,
                       "Could not find processes named `%s`" % name)
