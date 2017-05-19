@@ -21,7 +21,9 @@ import os
 import uuid
 
 from vdsm.storage import constants as sc
+from vdsm.storage import clusterlock
 
+from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase, recorded
 from testlib import make_uuid
 from testlib import expandPermutations, permutations
@@ -41,51 +43,64 @@ MB = 1048576
 VOLSIZE = 256 * MB
 
 
-class FileManifestTests(VdsmTestCase):
+class ManifestTests(object):
+
+    def test_init_failure_raises(self):
+        def fail(*args):
+            raise RuntimeError("injected failure")
+
+        with self.env() as env:
+            with MonkeyPatchScope([(clusterlock, 'initSANLock', fail)]):
+                with self.assertRaises(RuntimeError):
+                    env.sd_manifest.initDomainLock()
+
+
+class FileManifestTests(ManifestTests, VdsmTestCase):
+    env = fake_file_env
 
     def setUp(self):
         self.img_id = str(uuid.uuid4())
         self.vol_id = str(uuid.uuid4())
 
     def test_get_monitoring_path(self):
-        with fake_file_env() as env:
+        with self.env() as env:
             self.assertEqual(env.sd_manifest.metafile,
                              env.sd_manifest.getMonitoringPath())
 
     def test_getvsize(self):
-        with fake_file_env() as env:
+        with self.env() as env:
             make_file_volume(env.sd_manifest, VOLSIZE,
                              self.img_id, self.vol_id)
             self.assertEqual(VOLSIZE, env.sd_manifest.getVSize(
                 self.img_id, self.vol_id))
 
     def test_getvallocsize(self):
-        with fake_file_env() as env:
+        with self.env() as env:
             make_file_volume(env.sd_manifest, VOLSIZE,
                              self.img_id, self.vol_id)
             self.assertEqual(0, env.sd_manifest.getVAllocSize(
                 self.img_id, self.vol_id))
 
     def test_getisodomainimagesdir(self):
-        with fake_file_env() as env:
+        with self.env() as env:
             isopath = os.path.join(env.sd_manifest.domaindir, sd.DOMAIN_IMAGES,
                                    sd.ISO_IMAGE_UUID)
             self.assertEquals(isopath, env.sd_manifest.getIsoDomainImagesDir())
 
     def test_getmdpath(self):
-        with fake_file_env() as env:
+        with self.env() as env:
             sd_manifest = env.sd_manifest
             mdpath = os.path.join(sd_manifest.domaindir, sd.DOMAIN_META_DATA)
             self.assertEquals(mdpath, env.sd_manifest.getMDPath())
 
     def test_getmetaparam(self):
-        with fake_file_env() as env:
+        with self.env() as env:
             sd_manifest = env.sd_manifest
             self.assertEquals(sd_manifest.sdUUID,
                               sd_manifest.getMetaParam(sd.DMDK_SDUUID))
 
     def test_getallimages(self):
-        with fake_file_env() as env:
+        with self.env() as env:
             self.assertEqual(set(), env.sd_manifest.getAllImages())
             img_id = str(uuid.uuid4())
             vol_id = str(uuid.uuid4())
@@ -93,16 +108,17 @@ class FileManifestTests(VdsmTestCase):
             self.assertIn(img_id, env.sd_manifest.getAllImages())
 
 
-class BlockManifestTests(VdsmTestCase):
+class BlockManifestTests(ManifestTests, VdsmTestCase):
+    env = fake_block_env
 
     def test_get_monitoring_path(self):
-        with fake_block_env() as env:
+        with self.env() as env:
             md_lv_path = env.lvm.lvPath(env.sd_manifest.sdUUID, sd.METADATA)
             self.assertEqual(md_lv_path, env.sd_manifest.getMonitoringPath())
 
     def test_getvsize_active_lv(self):
         # Tests the path when the device file is present
-        with fake_block_env() as env:
+        with self.env() as env:
             vg_name = env.sd_manifest.sdUUID
             lv_name = str(uuid.uuid4())
             env.lvm.createLV(vg_name, lv_name, VOLSIZE / MB)
@@ -112,19 +128,19 @@ class BlockManifestTests(VdsmTestCase):
 
     def test_getvsize_inactive_lv(self):
         # Tests the path when the device file is not present
-        with fake_block_env() as env:
+        with self.env() as env:
             lv_name = str(uuid.uuid4())
             env.lvm.createLV(env.sd_manifest.sdUUID, lv_name, VOLSIZE / MB)
             self.assertEqual(VOLSIZE,
                              env.sd_manifest.getVSize('<imgUUID>', lv_name))
 
     def test_getmetaparam(self):
-        with fake_block_env() as env:
+        with self.env() as env:
             self.assertEquals(env.sd_manifest.sdUUID,
                               env.sd_manifest.getMetaParam(sd.DMDK_SDUUID))
 
     def test_getblocksize_defaults(self):
-        with fake_block_env() as env:
+        with self.env() as env:
             self.assertEquals(512, env.sd_manifest.logBlkSize)
             self.assertEquals(512, env.sd_manifest.phyBlkSize)
 
@@ -132,7 +148,7 @@ class BlockManifestTests(VdsmTestCase):
         metadata = {sd.DMDK_VERSION: 3,
                     blockSD.DMDK_LOGBLKSIZE: 2048,
                     blockSD.DMDK_PHYBLKSIZE: 1024}
-        with fake_block_env() as env:
+        with self.env() as env:
             # Replacing the metadata will not overwrite these values since they
             # are set only in the manifest constructor.
             env.sd_manifest.replaceMetadata(metadata)

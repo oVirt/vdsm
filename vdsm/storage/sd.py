@@ -548,13 +548,8 @@ class StorageDomainManifest(object):
         """
         Initialize the SPM lease
         """
-        try:
-            self._domainLock.initLock(self.getDomainLease())
-            self.log.debug("lease initialized successfully")
-        except:
-            # Original code swallowed the errors
-            self.log.warn("lease did not initialize successfully",
-                          exc_info=True)
+        self._domainLock.initLock(self.getDomainLease())
+        self.log.debug("lease initialized successfully")
 
     def refreshDirTree(self):
         pass
