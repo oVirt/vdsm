@@ -30,7 +30,7 @@ from vdsm.network import errors as ne
 from vdsm.network.errors import ConfigNetworkError, OvsDBConnectionError
 from vdsm.common.cmdutils import CommandPath
 
-from . import (API as DriverAPI,
+from . import (OvsApi,
                Transaction as DriverTransaction,
                Command as DriverCommand)
 
@@ -120,11 +120,7 @@ class DBResultCommand(Command):
         self._result = results
 
 
-def create():
-    return Vsctl()
-
-
-class Vsctl(DriverAPI):
+class Ovs(OvsApi):
 
     def transaction(self):
         return Transaction()

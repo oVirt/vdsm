@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,19 +20,10 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import abc
-from importlib import import_module
-from pkgutil import iter_modules
 
 import six
 
-
-DEFAULT_DRIVER = 'vsctl'
-_DRIVERS = {}
-
-
-def create(driver=DEFAULT_DRIVER):
-    """OVS driver factory."""
-    return _DRIVERS[driver].create()
+from vdsm.network import driverloader
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -63,7 +54,7 @@ class Command(object):
 
 
 @six.add_metaclass(abc.ABCMeta)
-class API(object):
+class OvsApi(object):
     """
     Abstact class for driver implementations.
     Each method returns a Command instance.
@@ -157,6 +148,11 @@ class API(object):
         return self.set_db_entry('Interface', iface, key, value)
 
 
-# Importing all available drivers from the ovs.driver package.
-for _, module, _ in iter_modules([__path__[0]]):
-    _DRIVERS[module] = import_module('{}.{}'.format(__name__, module))
+class Drivers(object):
+    VSCTL = 'vsctl'
+
+
+def create(driver_name=Drivers.VSCTL):
+    _drivers = driverloader.load_drivers('Ovs', __name__, __path__[0])
+    ovs_driver = driverloader.get_driver(driver_name, _drivers)
+    return ovs_driver()

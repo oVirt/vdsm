@@ -48,7 +48,7 @@ class ListOVSAcquiredIfacesTests(VdsmTestCase):
     def _assert_acquired_ifaces_post_switch_setup(
             self, _ovs_info, nets2add, expected_ifaces):
 
-        ovsdb = driver.vsctl.create()
+        ovsdb = driver.create(driver.Drivers.VSCTL)
 
         with mock.patch('vdsm.network.ovs.driver.vsctl.Transaction.commit',
                         return_value=None), \

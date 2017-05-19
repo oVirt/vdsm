@@ -28,7 +28,7 @@ from .ovsnettestlib import OvsService, TEST_BRIDGE, TEST_BOND
 from testlib import VdsmTestCase
 from testValidation import ValidateRunningAsRoot
 
-from vdsm.network.ovs.driver import create
+from vdsm.network.ovs.driver import create, Drivers as OvsDrivers
 from vdsm.network.ovs.driver import vsctl
 
 
@@ -181,7 +181,7 @@ class TestOvsApiBase(VdsmTestCase):
         self.ovs_service.teardown()
 
     def test_instantiate_vsctl_implementation(self):
-        self.assertIsNotNone(create('vsctl'))
+        self.assertIsNotNone(create(OvsDrivers.VSCTL))
 
     def test_execute_a_single_command(self):
         ovsdb = create()
