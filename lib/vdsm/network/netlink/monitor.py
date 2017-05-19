@@ -18,7 +18,6 @@
 #
 from __future__ import absolute_import
 from contextlib import closing, contextmanager
-from ctypes import CFUNCTYPE, c_void_p, py_object
 from six.moves import queue
 import logging
 import os
@@ -32,9 +31,7 @@ from vdsm.common.time import monotonic_time
 
 from . import (_NL_ROUTE_ADDR_NAME, _NL_ROUTE_LINK_NAME,
                _NL_ROUTE_NAME, _NL_STOP, _add_socket_memberships,
-               _close_socket, _drop_socket_memberships, _int_proto,
-               _nl_msg_parse, _nl_object_get_type, _nl_recvmsgs_default,
-               _open_socket)
+               _close_socket, _drop_socket_memberships, _open_socket)
 from . import libnl
 from .addr import _addr_info
 from .link import _link_info
@@ -168,7 +165,7 @@ class Monitor(object):
                             self._queue.put(_STOP_FLAG)
                             break
 
-                        _nl_recvmsgs_default(sock)
+                        libnl.nl_recvmsgs_default(sock)
 
     def stop(self):
         if self.is_stopped():
@@ -235,7 +232,7 @@ def _object_input(obj, queue):
     as an object to defined callback with optional extra argument (monitor's
     queue in our case)
     """
-    obj_type = _nl_object_get_type(obj)
+    obj_type = libnl.nl_object_get_type(obj)
     obj_dict = None
     if obj_type == _NL_ROUTE_ADDR_NAME:
         obj_dict = _addr_info(obj)
@@ -245,14 +242,14 @@ def _object_input(obj, queue):
         obj_dict = _route_info(obj)
 
     if obj_dict is not None:
-        msg_type = _nl_object_get_msgtype(obj)
+        msg_type = libnl.nl_object_get_msgtype(obj)
         try:
             obj_dict['event'] = _EVENTS[msg_type]
         except KeyError:
             logging.error('unexpected msg_type %s', msg_type)
         else:
             queue.put(obj_dict)
-_c_object_input = CFUNCTYPE(c_void_p, c_void_p, py_object)(_object_input)
+_c_object_input = libnl.prepare_cfunction_for_nl_msg_parse(_object_input)
 
 
 def _event_input(msg, c_queue):
@@ -260,9 +257,7 @@ def _event_input(msg, c_queue):
     recieves a message, it passes it to callback function with optional extra
     argument (monitor's queue in this case)
     """
-    nl_error = _nl_msg_parse(msg, _c_object_input, c_queue)
-    if nl_error < 0:
-        logging.error('EventMonitor nl_msg_parse() failed with %d', nl_error)
+    libnl.nl_msg_parse(msg, _c_object_input, c_queue)
     return _NL_STOP
 _c_event_input = libnl.prepare_cfunction_for_nl_socket_modify_cb(_event_input)
 
@@ -298,5 +293,3 @@ def _pipetrick(epoll):
     finally:
         os.close(pipetrick[0])
         os.close(pipetrick[1])
-
-_nl_object_get_msgtype = _int_proto(('nl_object_get_msgtype', libnl.LIBNL))

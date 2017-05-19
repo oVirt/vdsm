@@ -271,6 +271,71 @@ def nl_cache_free(cache):
     _nl_cache_free(cache)
 
 
+def nl_object_get_type(obj):
+    """Return the object's type.
+
+    @arg obj             object
+
+    @return Name of the object type or None if not recognized
+    """
+    _nl_object_get_type = _libnl('nl_object_get_type', c_char_p, c_void_p)
+    object_type = _nl_object_get_type(obj)
+    return _to_str(object_type)
+
+
+def nl_object_get_msgtype(obj):
+    """Return the netlink message type the object was derived from.
+
+    @arg obj             object
+
+    @return Netlink message type code.
+    """
+    _nl_object_get_msgtype = _libnl('nl_object_get_msgtype', c_int, c_void_p)
+    message_type = _nl_object_get_msgtype(obj)
+    if message_type == 0:
+        raise IOError(get_errno(), 'Failed to obtain message name.')
+    return message_type
+
+
+def nl_msg_parse(message, function, argument):
+    """Parse message with given callback function.
+
+    @arg message         netlink message
+    @arg function        callback function (CFUNCTYPE)
+    @arg argument        extra arguments
+    """
+    _nl_msg_parse = _libnl('nl_msg_parse', c_int, c_void_p, c_void_p, c_void_p)
+    err = _nl_msg_parse(message, function, argument)
+    if err:
+        raise IOError(-err, nl_geterror(err))
+
+
+def prepare_cfunction_for_nl_msg_parse(function):
+    """Prepare callback function for nl_msg_parse.
+
+    @arg                  Python function accepting two objects (netlink object
+                          obtained from a message and extra argument) as
+                          arguments.
+
+    @return C function prepared for nl_msg_parse.
+    """
+    c_function = CFUNCTYPE(None, c_void_p, py_object)(function)
+    return c_function
+
+
+def nl_recvmsgs_default(socket):
+    """Receive a set of message from a netlink socket using set handlers.
+
+    @arg socket          Netlink socket.
+
+    Calls nl_recvmsgs() with the handlers configured in the netlink socket.
+    """
+    _nl_recvmsgs_default = _libnl('nl_recvmsgs_default', c_int, c_void_p)
+    err = _nl_recvmsgs_default(socket)
+    if err:
+        raise IOError(-err, nl_geterror(err))
+
+
 def c_object_argument(argument):
     """Prepare prepare Python object to be used as an C argument.
 
