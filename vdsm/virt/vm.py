@@ -219,9 +219,11 @@ _FILE_ORIGIN = '_FILE_ORIGIN'
 
 class _AlteredState(object):
 
-    def __init__(self, origin=None, path=None, destination=None):
+    def __init__(self, origin=None, path=None, destination=None,
+                 from_snapshot=False):
         self.origin = origin
         self.path = path
+        self.from_snapshot = from_snapshot
         self.destination = destination
 
     def __nonzero__(self):
@@ -285,7 +287,8 @@ class Vm(object):
         elif 'restoreState' in params:
             self._lastStatus = vmstatus.RESTORING_STATE
             self._altered_state = _AlteredState(
-                _FILE_ORIGIN, path=params.pop('restoreState'))
+                _FILE_ORIGIN, path=params.pop('restoreState'),
+                from_snapshot=params.pop('restoreFromSnapshot', False))
         else:
             self._lastStatus = vmstatus.WAIT_FOR_LAUNCH
             self._altered_state = _AlteredState()
@@ -1441,6 +1444,8 @@ class Vm(object):
             status['statusTime'] = self._get_status_time()
             if self._altered_state.origin == _FILE_ORIGIN:
                 status['restoreDest'] = self._altered_state.path
+                status['restoreFromSnapshot'] = \
+                    self._altered_state.from_snapshot
             elif self._altered_state.origin == _MIGRATION_ORIGIN:
                 status['migrationState'] = self._altered_state.destination
             return utils.picklecopy(status)
@@ -2258,7 +2263,7 @@ class Vm(object):
             # - we ignore the output of the hook
             hooks.before_vm_start(self._buildDomainXML(), self._custom)
 
-            fromSnapshot = self.conf.get('restoreFromSnapshot', False)
+            fromSnapshot = self._altered_state.from_snapshot
             srcDomXML = self._src_domain_xml
             if fromSnapshot:
                 srcDomXML = self._correctDiskVolumes(srcDomXML)
@@ -3434,9 +3439,8 @@ class Vm(object):
     def _completeIncomingMigration(self):
         if self._altered_state.origin == _FILE_ORIGIN:
             self.cont()
+            fromSnapshot = self._altered_state.from_snapshot
             self._altered_state = _AlteredState()
-            with self._confLock:
-                fromSnapshot = self.conf.pop('restoreFromSnapshot', False)
             hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self._custom,
                                        {'FROM_SNAPSHOT': fromSnapshot})
             self._syncGuestTime()
