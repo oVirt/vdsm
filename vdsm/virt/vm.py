@@ -213,6 +213,21 @@ class DestroyedOnStartupError(Exception):
     """
 
 
+_MIGRATION_ORIGIN = '_MIGRATION_ORIGIN'
+_FILE_ORIGIN = '_FILE_ORIGIN'
+
+
+class _AlteredState(object):
+
+    def __init__(self, origin=None, path=None, destination=None):
+        self.origin = origin
+        self.path = path
+        self.destination = destination
+
+    def __nonzero__(self):
+        return self.origin is not None
+
+
 class Vm(object):
     """
     Used for abstracting communication between various parts of the
@@ -263,8 +278,17 @@ class Vm(object):
         """
         self._dom = virdomain.Disconnected(params["vmId"])
         self.recovering = recover
-        self._restore_state_path = params.pop('restoreState', None)
-        self._migration_destination = params.pop('migrationDest', None)
+        if 'migrationDest' in params:
+            self._lastStatus = vmstatus.MIGRATION_DESTINATION
+            self._altered_state = _AlteredState(
+                _MIGRATION_ORIGIN, destination=params.pop('migrationDest'))
+        elif 'restoreState' in params:
+            self._lastStatus = vmstatus.RESTORING_STATE
+            self._altered_state = _AlteredState(
+                _FILE_ORIGIN, path=params.pop('restoreState'))
+        else:
+            self._lastStatus = vmstatus.WAIT_FOR_LAUNCH
+            self._altered_state = _AlteredState()
         self.conf = {'_blockJobs': {}, 'clientIp': ''}
         self.conf.update(params)
         self.cif = cif
@@ -284,12 +308,6 @@ class Vm(object):
         self._statusLock = threading.Lock()
         self._creationThread = concurrent.thread(self._startUnderlyingVm,
                                                  name="vm/" + self.id[:8])
-        if self._migration_destination is not None:
-            self._lastStatus = vmstatus.MIGRATION_DESTINATION
-        elif self._restore_state_path is not None:
-            self._lastStatus = vmstatus.RESTORING_STATE
-        else:
-            self._lastStatus = vmstatus.WAIT_FOR_LAUNCH
         if recover and params.get('status') == vmstatus.MIGRATION_SOURCE:
             self.log.info("Recovering possibly last_migrating VM")
             last_migrating = True
@@ -362,8 +380,7 @@ class Vm(object):
 
     @property
     def monitorable(self):
-        if self._migration_destination is not None or \
-           self._restore_state_path is not None or \
+        if self._altered_state or \
            self.post_copy != migration.PostCopyPhase.NONE:
             return False
         return self._monitorable
@@ -676,7 +693,7 @@ class Vm(object):
     def _startUnderlyingVm(self):
         self.log.debug("Start")
         acquired = False
-        if self._migration_destination is not None:
+        if self._altered_state.origin == _MIGRATION_ORIGIN:
             self.log.debug('Acquiring incoming migration semaphore.')
             acquired = migration.incomingMigrations.acquire(blocking=False)
             if not acquired:
@@ -705,9 +722,7 @@ class Vm(object):
                         self.log.info("Skipping errors on recovery",
                                       exc_info=True)
 
-            if (self._migration_destination is not None or
-                self._restore_state_path is not None) \
-                    and self.lastStatus != vmstatus.DOWN:
+            if self._altered_state and self.lastStatus != vmstatus.DOWN:
                 self._completeIncomingMigration()
             if self.lastStatus == vmstatus.MIGRATION_DESTINATION:
                 # Waiting for post-copy migration to finish before we can
@@ -1385,7 +1400,7 @@ class Vm(object):
             self.lastStatus = vmstatus.DOWN
             with self._confLock:
                 self.conf['exitCode'] = code
-                if self._restore_state_path is not None:
+                if self._altered_state.origin == _FILE_ORIGIN:
                     self.conf['exitMessage'] = (
                         "Wake up from hibernation failed" +
                         ((":" + exitMessage) if exitMessage else ''))
@@ -1424,10 +1439,10 @@ class Vm(object):
                           if not k.startswith("_"))
             status['guestDiskMapping'] = self.guestAgent.guestDiskMapping
             status['statusTime'] = self._get_status_time()
-            if self._restore_state_path is not None:
-                status['restoreState'] = self._restore_state_path
-            if self._migration_destination is not None:
-                status['migrationDest'] = self._migration_destination
+            if self._altered_state.origin == _FILE_ORIGIN:
+                status['restoreDest'] = self._altered_state.path
+            elif self._altered_state.origin == _MIGRATION_ORIGIN:
+                status['migrationState'] = self._altered_state.destination
             return utils.picklecopy(status)
 
     def getStats(self):
@@ -2214,7 +2229,7 @@ class Vm(object):
         # We should set this event as a last part of drives initialization
         self._pathsPreparedEvent.set()
 
-        initDomain = self._migration_destination is None
+        initDomain = self._altered_state.origin != _MIGRATION_ORIGIN
         # we need to complete the initialization, including
         # domDependentInit, after the migration is completed.
 
@@ -2225,9 +2240,9 @@ class Vm(object):
             self._dom = virdomain.Notifying(
                 self._connection.lookupByUUIDString(self.id),
                 self._timeoutExperienced)
-        elif self._migration_destination is not None:
+        elif self._altered_state.origin == _MIGRATION_ORIGIN:
             pass  # self._dom will be disconnected until migration ends.
-        elif self._restore_state_path is not None:
+        elif self._altered_state.origin == _FILE_ORIGIN:
             # TODO: for unknown historical reasons, we call this hook also
             # on this flow. Issues:
             # - we will also call the more specific before_vm_dehibernate
@@ -2247,14 +2262,15 @@ class Vm(object):
             # see the XML even with 'info' as default level.
             self.log.info(srcDomXML)
 
-            fname = self.cif.prepareVolumePath(self._restore_state_path)
+            restore_path = self._altered_state.path
+            fname = self.cif.prepareVolumePath(restore_path)
             try:
                 if fromSnapshot:
                     self._connection.restoreFlags(fname, srcDomXML, 0)
                 else:
                     self._connection.restore(fname)
             finally:
-                self.cif.teardownVolumePath(self._restore_state_path)
+                self.cif.teardownVolumePath(restore_path)
 
             self._dom = virdomain.Notifying(
                 self._connection.lookupByUUIDString(self.id),
@@ -3408,15 +3424,15 @@ class Vm(object):
             self._monitorResponse = 0
 
     def _completeIncomingMigration(self):
-        if self._restore_state_path is not None:
+        if self._altered_state.origin == _FILE_ORIGIN:
             self.cont()
-            self._restore_state_path = None
+            self._altered_state = _AlteredState()
             with self._confLock:
                 fromSnapshot = self.conf.pop('restoreFromSnapshot', False)
             hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self._custom,
                                        {'FROM_SNAPSHOT': fromSnapshot})
             self._syncGuestTime()
-        elif self._migration_destination is not None:
+        elif self._altered_state.origin == _MIGRATION_ORIGIN:
             if self._needToWaitForMigrationToComplete():
                 finished, timeout = self._waitForUnderlyingMigration()
                 if self._destroy_requested.is_set():
@@ -3424,7 +3440,7 @@ class Vm(object):
                 self._attachLibvirtDomainAfterMigration(finished, timeout)
             # else domain connection already established earlier
             self._domDependentInit()
-            self._migration_destination = None
+            self._altered_state = _AlteredState()
             hooks.after_vm_migrate_destination(
                 self._dom.XMLDesc(0), self._custom)
 
