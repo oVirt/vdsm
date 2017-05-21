@@ -27,6 +27,7 @@ dist_vdsmnetwork_PYTHON = \
 	api.py \
 	errors.py \
 	canonicalize.py \
+	cmd.py \
 	connectivity.py \
 	dhclient_monitor.py \
 	driverloader.py \
