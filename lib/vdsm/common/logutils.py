@@ -25,7 +25,6 @@ import logging
 import logging.handlers
 import os
 import pwd
-import sys
 from dateutil import tz
 from inspect import ismethod
 
@@ -95,26 +94,6 @@ class SimpleLogAdapter(logging.LoggerAdapter):
 
     def process(self, msg, kwargs):
         return self.prefix + msg, kwargs
-
-
-class TracebackRepeatFilter(logging.Filter):
-    """
-    Makes sure a traceback is logged only once for each exception.
-    """
-    def filter(self, record):
-        if not record.exc_info:
-            return 1
-
-        info = sys.exc_info()
-        ex = info[1]
-        if ex is None:
-            return 1
-
-        if hasattr(ex, "_logged") and ex._logged:
-            record.exc_info = False
-            ex._logged = True
-
-        return 1
 
 
 class QueueHandler(logging.Handler):

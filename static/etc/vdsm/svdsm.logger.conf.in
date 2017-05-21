@@ -27,7 +27,6 @@ propagate=0
 [handler_logfile]
 class=vdsm.common.logutils.UserGroupEnforcingHandler
 args=('root', 'root', '@VDSMLOGDIR@/supervdsm.log',)
-filters=storage.misc.TracebackRepeatFilter
 level=DEBUG
 formatter=long
 
