@@ -24,6 +24,7 @@ import six
 
 from vdsm.network import driverloader
 from vdsm.network.link import iface
+from vdsm.network.netlink import waitfor
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -97,7 +98,8 @@ class BondAPI(object):
         return self._properties
 
     def up(self):
-        self._setlinks(up=True)
+        with waitfor.waitfor_linkup(self._master, timeout=2):
+            self._setlinks(up=True)
 
     def down(self):
         self._setlinks(up=False)
