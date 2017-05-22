@@ -25,11 +25,10 @@ import logging
 import os
 import subprocess
 
-from vdsm import cmdutils
 from vdsm import concurrent
+from vdsm.network import cmd
 from vdsm.network import errors as ne
 from vdsm.network.link import iface as linkiface
-from vdsm.commands import execCmd
 from vdsm.common.cache import memoized
 from vdsm.common.cmdutils import CommandPath
 from vdsm.utils import pgrep, kill_and_rm_pid
@@ -67,16 +66,15 @@ class DhcpClient(object):
             kill(self.iface, self.family)
             address.flush(self.iface, family=self.family)
 
-        cmd = [DHCLIENT_BINARY.cmd, '-%s' % self.family, '-1', '-pf',
-               self.pidFile, '-lf', self.leaseFile]
+        cmds = [DHCLIENT_BINARY.cmd, '-%s' % self.family, '-1', '-pf',
+                self.pidFile, '-lf', self.leaseFile]
         if not self.default_route:
             # Instruct Fedora/EL's dhclient-script not to set gateway on iface
-            cmd += ['-e', 'DEFROUTE=no']
+            cmds += ['-e', 'DEFROUTE=no']
         if self.duid_source_file and supports_duid_file():
-            cmd += ['-df', self.duid_source_file]
-        cmd += [self.iface]
-        cmd = cmdutils.systemd_run(cmd, scope=True, slice=self._cgroup)
-        return execCmd(cmd)
+            cmds += ['-df', self.duid_source_file]
+        cmds += [self.iface]
+        return cmd.exec_systemd_new_unit(cmds, slice_name=self._cgroup)
 
     def start(self, blocking):
         if blocking:
