@@ -4448,7 +4448,7 @@ class Vm(object):
 
     @property
     def name(self):
-        return self.conf['vmName']
+        return self._domain.name
 
     def _updateDomainDescriptor(self):
         domainXML = self._dom.XMLDesc(0)
