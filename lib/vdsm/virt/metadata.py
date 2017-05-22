@@ -316,8 +316,8 @@ def _find_device(vm_elem, attrs, namespace_uri=None):
     :param namespace_uri: optional URI of the namespace on which the `device`
            element resides. Use 'None' to disable the namespace support.
     :type namespace_uri: text string
-    :return: the device element
-    :rtype: ElementTree.Element
+    :return: the device element, or None if no device data found
+    :rtype: ElementTree.Element, or None
     """
     xpath_attrs = []
     for key, value in attrs.items():
