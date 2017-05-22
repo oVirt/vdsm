@@ -17,12 +17,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
-from ctypes import (CFUNCTYPE, byref, c_char, c_int, c_void_p, sizeof)
 from functools import partial
 import errno
 
 from . import _cache_manager
-from . import _int_char_proto, _int_proto, _void_proto
 from . import _pool
 from . import libnl
 from .link import _nl_link_cache, _link_index_to_name
@@ -42,13 +40,13 @@ def iter_addrs():
 
 def _addr_info(addr, link_cache=None):
     """Returns a dictionary with the address information."""
-    index = _rtnl_addr_get_ifindex(addr)
-    local_address = _rtnl_addr_get_local(addr)
+    index = libnl.rtnl_addr_get_ifindex(addr)
+    local_address = libnl.rtnl_addr_get_local(addr)
     data = {
         'index': index,
-        'family': libnl.nl_af2str(_rtnl_addr_get_family(addr)),
-        'prefixlen': _rtnl_addr_get_prefixlen(addr),
-        'scope': libnl.rtnl_scope2str(_rtnl_addr_get_scope(addr)),
+        'family': libnl.nl_af2str(libnl.rtnl_addr_get_family(addr)),
+        'prefixlen': libnl.rtnl_addr_get_prefixlen(addr),
+        'scope': libnl.rtnl_scope2str(libnl.rtnl_addr_get_scope(addr)),
         'flags': _addr_flags(addr),
         'address': libnl.nl_addr2str(local_address) if local_address else None
     }
@@ -80,38 +78,8 @@ def is_permanent(addr):
 
 def _addr_flags(addr):
     """Returns the textual representation of the address flags"""
-    flags = (c_char * (libnl.CHARBUFFSIZE * 2))()
-    return frozenset(_rtnl_addr_flags2str(_rtnl_addr_get_flags(addr), flags,
-                     sizeof(flags)).split(b','))
+    return frozenset(
+        libnl.rtnl_addr_flags2str(libnl.rtnl_addr_get_flags(addr)).split(','))
 
 
-# C function prototypes
-# http://docs.python.org/2/library/ctypes.html#function-prototypes
-# This helps ctypes know the calling conventions it should use to communicate
-# with the binary interface of libnl and which types it should allocate and
-# cast. Without it ctypes fails when not running on the main thread.
-_addr_alloc_cache = CFUNCTYPE(c_int, c_void_p, c_void_p)(
-    ('rtnl_addr_alloc_cache', libnl.LIBNL_ROUTE))
-
-
-def _rtnl_addr_alloc_cache(sock):
-    """Wraps the new addr alloc cache to expose the libnl1 signature"""
-    cache = c_void_p()
-    err = _addr_alloc_cache(sock, byref(cache))
-    if err:
-        raise IOError(-err, libnl.nl_geterror(err))
-    return cache
-
-
-_nl_addr_cache = partial(_cache_manager, _rtnl_addr_alloc_cache)
-
-_rtnl_addr_get_ifindex = _int_proto(
-    ('rtnl_addr_get_ifindex', libnl.LIBNL_ROUTE))
-_rtnl_addr_get_family = _int_proto(('rtnl_addr_get_family', libnl.LIBNL_ROUTE))
-_rtnl_addr_get_prefixlen = _int_proto(
-    ('rtnl_addr_get_prefixlen', libnl.LIBNL_ROUTE))
-_rtnl_addr_get_scope = _int_proto(('rtnl_addr_get_scope', libnl.LIBNL_ROUTE))
-_rtnl_addr_get_flags = _int_proto(('rtnl_addr_get_flags', libnl.LIBNL_ROUTE))
-_rtnl_addr_get_local = _void_proto(('rtnl_addr_get_local', libnl.LIBNL_ROUTE))
-_rtnl_addr_flags2str = _int_char_proto(
-    ('rtnl_addr_flags2str', libnl.LIBNL_ROUTE))
+_nl_addr_cache = partial(_cache_manager, libnl.rtnl_addr_alloc_cache)

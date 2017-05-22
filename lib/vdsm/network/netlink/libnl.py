@@ -32,7 +32,7 @@ native Python manner.
 
 from __future__ import absolute_import
 
-from ctypes import CDLL, CFUNCTYPE, sizeof, get_errno
+from ctypes import CDLL, CFUNCTYPE, sizeof, get_errno, byref
 from ctypes import c_char, c_char_p, c_int, c_void_p, c_size_t, py_object
 
 from vdsm.common.cache import memoized
@@ -334,6 +334,107 @@ def nl_recvmsgs_default(socket):
     err = _nl_recvmsgs_default(socket)
     if err:
         raise IOError(-err, nl_geterror(err))
+
+
+def rtnl_addr_alloc_cache(socket):
+    """Allocate new cache and fill it with addresses.
+
+    @arg socket          Netlink socket
+
+    @return Newly allocated cache with addresses obtained from kernel.
+    """
+    _rtnl_addr_alloc_cache = _libnl_route(
+        'rtnl_addr_alloc_cache', c_int, c_void_p, c_void_p)
+    cache = c_void_p()
+    err = _rtnl_addr_alloc_cache(socket, byref(cache))
+    if err:
+        raise IOError(-err, nl_geterror(err))
+    return cache
+
+
+def rtnl_addr_get_ifindex(rtnl_address):
+    """Return interface index of rtnl address device.
+
+    @arg rtnl_address    Netlink rtnl address
+
+    @return Interface index.
+    """
+    _rtnl_addr_get_ifindex = _libnl_route(
+        'rtnl_addr_get_ifindex', c_int, c_void_p)
+    return _rtnl_addr_get_ifindex(rtnl_address)
+
+
+def rtnl_addr_get_family(rtnl_address):
+    """Return address family code of rtnl address.
+
+    @arg rtnl_address    Netlink rtnl address
+
+    @return Address family code, can be translated to string via nl_af2str.
+    """
+    _rtnl_addr_get_family = _libnl_route(
+        'rtnl_addr_get_family', c_int, c_void_p)
+    return _rtnl_addr_get_family(rtnl_address)
+
+
+def rtnl_addr_get_prefixlen(rtnl_address):
+    """Return prefixlen of rtnl address.
+
+    @arg rtnl_address    Netlink rtnl address
+
+    @return Address network prefix length.
+    """
+    _rtnl_addr_get_prefixlen = _libnl_route(
+        'rtnl_addr_get_prefixlen', c_int, c_void_p)
+    return _rtnl_addr_get_prefixlen(rtnl_address)
+
+
+def rtnl_addr_get_scope(rtnl_address):
+    """Return scope code of rtnl address.
+
+    @arg rtnl_address    Netlink rtnl address
+
+    @return Address scope code, can be translated to string via rtnl_scope2str.
+    """
+    _rtnl_addr_get_scope = _libnl_route('rtnl_addr_get_scope', c_int, c_void_p)
+    return _rtnl_addr_get_scope(rtnl_address)
+
+
+def rtnl_addr_get_flags(rtnl_address):
+    """Return flags bitfield of rtnl address.
+
+    @arg rtnl_address    Netlink rtnl address
+
+    @return Address flags, in bitfield format, can be translated to string
+            via rtnl_addr_flags2str.
+    """
+    _rtnl_addr_get_flags = _libnl_route('rtnl_addr_get_flags', c_int, c_void_p)
+    return _rtnl_addr_get_flags(rtnl_address)
+
+
+def rtnl_addr_get_local(rtnl_address):
+    """Return local nl address for rtnl address.
+
+    @arg rtnl_address    Netlink rtnl address
+
+    @return Local address (as nl address object).
+    """
+    _rtnl_addr_get_local = _libnl_route(
+        'rtnl_addr_get_local', c_void_p, c_void_p)
+    return _rtnl_addr_get_local(rtnl_address)
+
+
+def rtnl_addr_flags2str(flags_bitfield):
+    """Return string representation of address flags bitfield.
+
+    @arg flags_bitfield  Bitfield of address' flags
+
+    @return String represantion of given flags in format "flag1,flag2,flag3".
+    """
+    _rtnl_addr_flags2str = _libnl_route(
+        'rtnl_addr_flags2str', c_char_p, c_int, c_char_p, c_size_t)
+    buf = (c_char * (CHARBUFFSIZE * 2))()
+    flags_str = _rtnl_addr_flags2str(flags_bitfield, buf, sizeof(buf))
+    return _to_str(flags_str)
 
 
 def c_object_argument(argument):
