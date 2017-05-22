@@ -28,6 +28,7 @@ from dbus.exceptions import DBusException
 from testlib import VdsmTestCase
 from testValidation import broken_on_ci, ValidateRunningAsRoot
 
+from .nettestlib import dummy_devices
 from .nmnettestlib import iface_name, NMService, nm_connections
 
 from vdsm.network.nm import networkmanager
@@ -69,12 +70,13 @@ class TestNMConnectionCleanup(VdsmTestCase):
 
     def test_remove_all_non_active_connection_from_a_device(self):
         iface = iface_name()
-        with nm_connections(iface, IPV4ADDR, con_count=3):
+        with dummy_devices(1) as nics:
+            with nm_connections(iface, IPV4ADDR, slaves=nics, con_count=3):
 
-            device = networkmanager.Device(iface)
-            device.cleanup_inactive_connections()
+                device = networkmanager.Device(iface)
+                device.cleanup_inactive_connections()
 
-            self.assertEqual(1, sum(1 for _ in device.connections()))
+                self.assertEqual(1, sum(1 for _ in device.connections()))
 
 
 @attr(type='functional')
@@ -95,15 +97,17 @@ class TestNMIfcfg2Connection(VdsmTestCase):
         given the filename.
         """
         iface = iface_name()
-        with nm_connections(iface, IPV4ADDR, con_count=3, save=True):
-            device = networkmanager.Device(iface)
-            expected_uuids = {con.connection.uuid
-                              for con in device.connections()}
+        with dummy_devices(1) as nics:
+            with nm_connections(iface, IPV4ADDR, slaves=nics, con_count=3,
+                                save=True):
+                device = networkmanager.Device(iface)
+                expected_uuids = {con.connection.uuid
+                                  for con in device.connections()}
 
-            actual_uuids = {networkmanager.ifcfg2connection(file)[0]
-                            for file in TestNMIfcfg2Connection._ifcfg_files()}
+                actual_uuids = {networkmanager.ifcfg2connection(file)[0]
+                                for file in self._ifcfg_files()}
 
-            self.assertLessEqual(expected_uuids, actual_uuids)
+                self.assertLessEqual(expected_uuids, actual_uuids)
 
     @staticmethod
     def _ifcfg_files():

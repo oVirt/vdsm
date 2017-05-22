@@ -226,47 +226,52 @@ class NetworkBasicLegacyTest(NetworkBasicTemplate):
                     self.assertTrue(os.path.exists(nic_ifcfg_file))
                     self.assertFalse(os.path.exists(nic_ifcfg_badname_file))
 
-    def test_add_net_based_on_device_with_multiple_nm_connections(self):
-        if not is_networkmanager_running():
-            self.skipTest('NetworkManager is not running.')
-
-        IPv4_ADDRESS = '192.0.2.1'
-        iface = iface_name()
-        NET = {NETWORK_NAME: {'bonding': iface, 'switch': self.switch}}
-        with nm_connections(iface, IPv4_ADDRESS, con_count=3):
-            with self.setupNetworks(NET, {}, NOCHK):
-                self.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
-
-            # The bond was acquired, therefore VDSM needs to clean it.
-            BONDREMOVE = {iface: {'remove': True}}
-            self.setupNetworks({}, BONDREMOVE, NOCHK)
-
-    def test_add_net_based_on_existing_vlan_bond_nm_setup(self):
-        if not is_networkmanager_running():
-            self.skipTest('NetworkManager is not running.')
-
-        iface = iface_name()
-        vlan_id = '101'
-        NET = {NETWORK_NAME: {'bonding': iface, 'vlan': int(vlan_id),
-                              'switch': self.switch}}
-        with nm_connections(iface, ipv4addr=None, vlan=vlan_id, slave_count=2):
-            bond_hwaddress = link_iface.mac_address(iface)
-            vlan_hwaddress = link_iface.mac_address('.'.join([iface, vlan_id]))
-            self.assertEqual(vlan_hwaddress, bond_hwaddress)
-
-            with self.setupNetworks(NET, {}, NOCHK):
-                self.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
-
-                # Check if the mac has been preserved.
-                bridge_hwaddress = link_iface.mac_address(NETWORK_NAME)
-                self.assertEqual(vlan_hwaddress, bridge_hwaddress)
-
-        # The bond was acquired, therefore VDSM needs to clean it.
-        BONDREMOVE = {iface: {'remove': True}}
-        self.setupNetworks({}, BONDREMOVE, NOCHK)
-
 
 @attr(type='functional', switch='ovs')
 class NetworkBasicOvsTest(NetworkBasicTemplate):
     __test__ = True
     switch = 'ovs'
+
+
+@attr(type='functional', switch='legacy')
+class NetworkManagerLegacyTest(NetFuncTestCase):
+    switch = 'legacy'
+
+    def setUp(self):
+        if not is_networkmanager_running():
+            self.skipTest('NetworkManager is not running.')
+
+        self.iface = iface_name()
+
+    def tearDown(self):
+        # The bond was acquired, therefore VDSM needs to clean it.
+        BONDREMOVE = {self.iface: {'remove': True}}
+        self.setupNetworks({}, BONDREMOVE, NOCHK)
+
+    def test_add_net_based_on_device_with_multiple_nm_connections(self):
+        IPv4_ADDRESS = '192.0.2.1'
+        NET = {NETWORK_NAME: {'bonding': self.iface, 'switch': self.switch}}
+        with dummy_devices(1) as nics:
+            with nm_connections(
+                    self.iface, IPv4_ADDRESS, con_count=3, slaves=nics):
+                with self.setupNetworks(NET, {}, NOCHK):
+                    self.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
+
+    def test_add_net_based_on_existing_vlan_bond_nm_setup(self):
+        vlan_id = '101'
+        NET = {NETWORK_NAME: {'bonding': self.iface, 'vlan': int(vlan_id),
+                              'switch': self.switch}}
+        with dummy_devices(2) as nics:
+            with nm_connections(
+                    self.iface, ipv4addr=None, vlan=vlan_id, slaves=nics):
+                bond_hwaddress = link_iface.mac_address(self.iface)
+                vlan_iface = '.'.join([self.iface, vlan_id])
+                vlan_hwaddress = link_iface.mac_address(vlan_iface)
+                self.assertEqual(vlan_hwaddress, bond_hwaddress)
+
+                with self.setupNetworks(NET, {}, NOCHK):
+                    self.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
+
+                    # Check if the mac has been preserved.
+                    bridge_hwaddress = link_iface.mac_address(NETWORK_NAME)
+                    self.assertEqual(vlan_hwaddress, bridge_hwaddress)

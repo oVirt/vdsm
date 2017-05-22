@@ -25,8 +25,6 @@ from vdsm.common.cmdutils import CommandPath
 from vdsm.network.link import iface as linkiface
 from vdsm.network.link.iface import random_iface_name
 
-from .nettestlib import dummy_devices
-
 TEST_LINK_TYPE = 'bond'
 
 SYSTEMCTL = CommandPath('systemctl', '/bin/systemctl', '/usr/bin/systemctl')
@@ -60,8 +58,8 @@ def iface_name():
 
 
 @contextmanager
-def nm_connections(bond_name, ipv4addr, connection_name=None, con_count=1,
-                   vlan=None, save=False, slave_count=1):
+def nm_connections(bond_name, ipv4addr, slaves, connection_name=None,
+                   con_count=1, vlan=None, save=False):
     """
     Setting up a connection with an IP address, removing it at exit.
     In case connection_name is not provided, it will use the name of the iface.
@@ -69,29 +67,28 @@ def nm_connections(bond_name, ipv4addr, connection_name=None, con_count=1,
     if connection_name is None:
         connection_name = bond_name
 
-    with dummy_devices(slave_count) as slaves:
-        for i in range(con_count):
-            _create_connection(
-                connection_name + str(i), bond_name, save, TEST_LINK_TYPE,
-                ipv4addr=(ipv4addr if vlan is None else None))
+    con_names = [connection_name + str(i) for i in range(con_count)]
+    for con_name in con_names:
+        _create_connection(con_name, bond_name, save, TEST_LINK_TYPE,
+                           ipv4addr=(ipv4addr if vlan is None else None))
 
-        # For the bond to be operationally up (carrier-up), add a slave
-        _add_slaves_to_bond(bond=bond_name, slaves=slaves)
+    # For the bond to be operationally up (carrier-up), add a slave
+    _add_slaves_to_bond(bond=bond_name, slaves=slaves)
 
+    if vlan is not None:
+        vlan_iface = '.'.join([bond_name, vlan])
+        _create_connection(
+            vlan_iface, vlan_iface, save, 'vlan',
+            vlan_parent=bond_name, vlan_id=vlan, ipv4addr=ipv4addr)
+
+    try:
+        yield con_names
+    finally:
         if vlan is not None:
-            vlan_iface = '.'.join([bond_name, vlan])
-            _create_connection(
-                vlan_iface, vlan_iface, save, 'vlan',
-                vlan_parent=bond_name, vlan_id=vlan, ipv4addr=ipv4addr)
-
-        try:
-            yield
-        finally:
-            if vlan is not None:
-                _remove_connection(vlan_iface)
-                _remove_device(vlan_iface)
-            for i in range(con_count):
-                _remove_connection(connection_name + str(i))
+            _remove_connection(vlan_iface)
+            _remove_device(vlan_iface)
+        for con_name in con_names:
+            _remove_connection(con_name)
 
 
 def _create_connection(connection_name, iface_name, save, type,

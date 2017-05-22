@@ -25,6 +25,7 @@ from dbus.exceptions import DBusException
 from testlib import VdsmTestCase
 from testValidation import ValidateRunningAsRoot
 
+from .nettestlib import dummy_devices
 from .nmnettestlib import iface_name, TEST_LINK_TYPE, NMService, nm_connections
 
 from vdsm.network.nm.errors import NMDeviceNotFoundError
@@ -65,32 +66,37 @@ class TestNMConnectionSettings(VdsmTestCase):
         nm_settings = NMDbusSettings()
 
         iface = iface_name()
-        with nm_connections(iface, IPV4ADDR):
-            con_count = 0
-            for nm_con in nm_settings.connections():
-                if nm_con.connection.type in ('802-11-wireless', 'vpn'):
-                    continue
+        with dummy_devices(1) as nics:
+            with nm_connections(iface, IPV4ADDR, slaves=nics):
+                con_count = 0
+                for nm_con in nm_settings.connections():
+                    if nm_con.connection.type in ('802-11-wireless', 'vpn'):
+                        continue
 
-                assert nm_con.connection.id is not None
-                assert nm_con.connection.uuid is not None
-                assert nm_con.connection.type is not None
+                    assert nm_con.connection.id is not None
+                    assert nm_con.connection.uuid is not None
+                    assert nm_con.connection.type is not None
 
-                con_count += 1
+                    con_count += 1
 
-            self.assertGreaterEqual(con_count, 1)
+                self.assertGreaterEqual(con_count, 1)
 
     def test_delete_a_non_active_connection(self):
         nm_settings = NMDbusSettings()
 
         iface = iface_name()
-        with nm_connections(iface, IPV4ADDR, con_count=2):
-            con_count_pre_delete = sum(1 for _ in nm_settings.connections())
-            con = self._connection_to_delete(nm_settings, iface + '0')
+        with dummy_devices(1) as nics:
+            with nm_connections(iface, IPV4ADDR, slaves=nics, con_count=2):
+                con_count_pre_delete = sum(1
+                                           for _ in nm_settings.connections())
+                con = self._connection_to_delete(nm_settings, iface + '0')
 
-            con.delete()
+                con.delete()
 
-            con_count_post_delete = sum(1 for _ in nm_settings.connections())
-            self.assertEqual(con_count_pre_delete, con_count_post_delete + 1)
+                con_count_post_delete = sum(
+                    1 for _ in nm_settings.connections())
+                self.assertEqual(
+                    con_count_pre_delete, con_count_post_delete + 1)
 
     @staticmethod
     def _connection_to_delete(nm_settings, con_name):
@@ -106,30 +112,32 @@ class TestNMActiveConnections(VdsmTestCase):
         nm_active_cons = NMDbusActiveConnections()
 
         iface = iface_name()
-        with nm_connections(iface, IPV4ADDR):
-            con_count = 0
-            for connection in nm_active_cons.connections():
-                assert connection.id is not None
-                assert connection.uuid is not None
-                assert connection.type is not None
-                assert connection.master_con_path is not None
+        with dummy_devices(1) as nics:
+            with nm_connections(iface, IPV4ADDR, slaves=nics):
+                con_count = 0
+                for connection in nm_active_cons.connections():
+                    assert connection.id is not None
+                    assert connection.uuid is not None
+                    assert connection.type is not None
+                    assert connection.master_con_path is not None
 
-                con_count += 1
+                    con_count += 1
 
-            self.assertGreaterEqual(con_count, 1)
+                self.assertGreaterEqual(con_count, 1)
 
     def test_active_connections_properties_vs_connection_settings(self):
         nm_active_cons = NMDbusActiveConnections()
         nm_settings = NMDbusSettings()
 
         iface = iface_name()
-        with nm_connections(iface, IPV4ADDR):
-            for active_con in nm_active_cons.connections():
-                settings_con = nm_settings.connection(active_con.con_path)
+        with dummy_devices(1) as nics:
+            with nm_connections(iface, IPV4ADDR, slaves=nics):
+                for active_con in nm_active_cons.connections():
+                    settings_con = nm_settings.connection(active_con.con_path)
 
-                assert active_con.uuid == settings_con.connection.uuid
-                assert active_con.type == settings_con.connection.type
-                assert active_con.id == settings_con.connection.id
+                    assert active_con.uuid == settings_con.connection.uuid
+                    assert active_con.type == settings_con.connection.type
+                    assert active_con.id == settings_con.connection.id
 
 
 @attr(type='functional')
@@ -169,14 +177,16 @@ class TestNMDevice(VdsmTestCase):
         active_connections = set()
 
         iface = iface_name()
-        with nm_connections(iface, IPV4ADDR, con_count=con_count):
-            device = nm_device.device(iface)
-            for connection_path in device.connections_path:
-                settings_con = nm_settings.connection(connection_path)
-                configured_connections.add(settings_con.connection.id)
+        with dummy_devices(1) as nics:
+            with nm_connections(iface, IPV4ADDR, slaves=nics,
+                                con_count=con_count):
+                device = nm_device.device(iface)
+                for connection_path in device.connections_path:
+                    settings_con = nm_settings.connection(connection_path)
+                    configured_connections.add(settings_con.connection.id)
 
-            ac = nm_act_cons.connection(device.active_connection_path)
-            active_connections.add(ac.id)
+                ac = nm_act_cons.connection(device.active_connection_path)
+                active_connections.add(ac.id)
 
         self.assertEqual(con_count, len(configured_connections))
         self.assertEqual(set([iface + '0']), active_connections)
@@ -190,13 +200,15 @@ class TestNMConnectionCreation(VdsmTestCase):
         nm_device = NMDbusDevice()
 
         iface = iface_name()
-        with nm_connections(iface, IPV4ADDR):
-            active_con_path = nm_device.device(iface).active_connection_path
-            active_con = nm_act_cons.connection(active_con_path)
+        with dummy_devices(1) as nics:
+            with nm_connections(iface, IPV4ADDR, slaves=nics):
+                device = nm_device.device(iface)
+                active_con_path = device.active_connection_path
+                active_con = nm_act_cons.connection(active_con_path)
 
-            self.assertEqual(TEST_LINK_TYPE, str(active_con.type))
-            self.assertEqual(types.NMActiveConnectionState.ACTIVATED,
-                             active_con.state)
+                self.assertEqual(TEST_LINK_TYPE, str(active_con.type))
+                self.assertEqual(types.NMActiveConnectionState.ACTIVATED,
+                                 active_con.state)
 
         self._assert_no_device(iface)
 
