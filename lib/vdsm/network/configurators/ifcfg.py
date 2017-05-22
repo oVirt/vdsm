@@ -131,6 +131,13 @@ class Ifcfg(Configurator):
             slave.configure(**opts)
         self._addSourceRoute(bond)
         _ifup(bond)
+
+        # When acquiring the device from NM, it may take a few seconds until
+        # the bond is released by NM and loaded through initscripts.
+        # Giving it a chance to come up before continuing.
+        with waitfor.waitfor_linkup(bond.name):
+            pass
+
         self.runningConfig.setBonding(
             bond.name, {'options': bond.options,
                         'nics': sorted(s.name for s in bond.slaves),
