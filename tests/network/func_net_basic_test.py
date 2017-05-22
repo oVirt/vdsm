@@ -261,7 +261,7 @@ class NetworkManagerLegacyTest(NetFuncTestCase):
         vlan_id = '101'
         NET = {NETWORK_NAME: {'bonding': self.iface, 'vlan': int(vlan_id),
                               'switch': self.switch}}
-        with dummy_devices(2) as nics:
+        with dummy_devices(1) as nics:
             with nm_connections(
                     self.iface, ipv4addr=None, vlan=vlan_id, slaves=nics):
                 bond_hwaddress = link_iface.mac_address(self.iface)
