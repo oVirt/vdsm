@@ -25,8 +25,8 @@ import os
 
 import six
 
-from vdsm.commands import execCmd
 from vdsm.common import cache
+from vdsm.network import cmd
 
 
 NET_SYSFS = '/sys/class/net/'
@@ -116,7 +116,7 @@ def _lshw_command():
                      'cpuinfo']
     filterout_cmd = list(itertools.chain.from_iterable(('-disable', x)
                                                        for x in filter_out_hw))
-    rc, out, err = execCmd(['lshw', '-json'] + filterout_cmd, raw=True)
+    rc, out, err = cmd.exec_sync(['lshw', '-json'] + filterout_cmd)
     if rc != 0:
         raise LshwError(err)
 

@@ -56,7 +56,7 @@ class ReportDpdkPortsTests(VdsmTestCase):
                                             'configuration': {
                                                 'driver': driver}}]}]})
 
-        with mock.patch.object(dpdk, 'execCmd',
+        with mock.patch.object(dpdk.cmd, 'exec_sync',
                                return_value=(
                                    0, lshw_output.encode('utf-8'), None)):
 
@@ -91,7 +91,7 @@ class ReportDpdkPortsTests(VdsmTestCase):
                                             'configuration': {
                                                 'driver': 'igb_uio'}}]}]})
 
-        with mock.patch.object(dpdk, 'execCmd',
+        with mock.patch.object(dpdk.cmd, 'exec_sync',
                                return_value=(
                                    0, lshw_output.encode('utf-8'), None)):
 
@@ -121,7 +121,7 @@ class ReportDpdkPortsTests(VdsmTestCase):
                                             'configuration': {
                                                 'driver': 'igb'}}]}]})
 
-        with mock.patch.object(dpdk, 'execCmd',
+        with mock.patch.object(dpdk.cmd, 'exec_sync',
                                return_value=(
                                    0, lshw_output.encode('utf-8'), None)):
 
