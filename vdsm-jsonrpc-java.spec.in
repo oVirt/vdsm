@@ -124,6 +124,9 @@ ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %changelog
+* Tue May 23 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.3.12
+- send correlation id to the server
+
 * Thu Apr 20 2017 Piotr Kliczewski <pkliczew@redhat.com> 1.3.11
 - java exception visible in Events when upgrade check is done on recently fenced host
 
