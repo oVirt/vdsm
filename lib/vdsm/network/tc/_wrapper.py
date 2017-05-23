@@ -1,4 +1,4 @@
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ import errno
 import os
 
 from vdsm.constants import EXT_TC
-from vdsm.commands import execCmd
+from vdsm.network import cmd
 
 _TC_ERR_PREFIX = 'RTNETLINK answers: '
 _errno_trans = dict(((os.strerror(code), code) for code in errno.errorcode))
@@ -29,7 +29,7 @@ _errno_trans = dict(((os.strerror(code), code) for code in errno.errorcode))
 
 def process_request(command):
     command.insert(0, EXT_TC)
-    retcode, out, err = execCmd(command, raw=True)
+    retcode, out, err = cmd.exec_sync(command)
     if retcode != 0:
         if retcode == 2 and err:
             for err_line in err.splitlines():
