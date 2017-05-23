@@ -437,6 +437,280 @@ def rtnl_addr_flags2str(flags_bitfield):
     return _to_str(flags_str)
 
 
+def rtnl_link_alloc_cache(socket, family):
+    """Allocate link cache and fill in all configured links.
+
+    @arg socket          Netlink socket.
+    @arg family          Link address family or AF_UNSPEC
+
+    If family is set to an address family other than AF_UNSPEC the
+    contents of the cache can be limited to a specific address family.
+    Currently the following address families are supported:
+    - AF_BRIDGE
+    - AF_INET6
+
+    @return Newly allocated cache with links obtained from kernel.
+    """
+    _rtnl_link_alloc_cache = _libnl_route(
+        'rtnl_link_alloc_cache', c_int, c_void_p, c_int, c_void_p)
+    cache = c_void_p()
+    err = _rtnl_link_alloc_cache(socket, family, byref(cache))
+    if err:
+        raise IOError(-err, nl_geterror(err))
+    return cache
+
+
+def rtnl_link_is_vlan(link):
+    """Check if link is a VLAN link.
+
+    @arg link            Link object
+
+    @return True if link is a VLAN link, otherwise False is returned.
+    """
+    _rtnl_link_is_vlan = _libnl_route('rtnl_link_is_vlan', c_int, c_void_p)
+    is_vlan = _rtnl_link_is_vlan(link)
+    return bool(is_vlan)
+
+
+def rtnl_link_vlan_get_id(link):
+    """Get VLAN ID.
+
+    @arg link            Link object
+
+    @return VLAN ID.
+    """
+    _rtnl_link_vlan_get_id = _libnl_route(
+        'rtnl_link_vlan_get_id', c_int, c_void_p)
+    vlan_id = _rtnl_link_vlan_get_id(link)
+    if vlan_id < 0:
+        raise IOError(-vlan_id, nl_geterror(vlan_id))
+    return vlan_id
+
+
+def rtnl_link_get_type(link):
+    """Return type of link.
+
+    @arg link            Link object
+
+    @return Name of link type or None if not specified.
+    """
+    _rtnl_link_get_type = _libnl_route(
+        'rtnl_link_get_type', c_char_p, c_void_p)
+    link_type = _rtnl_link_get_type(link)
+    if link_type:
+        return _to_str(link_type)
+    else:
+        return None
+
+
+def rtnl_link_get_kernel(socket, ifindex, ifname):
+    """Get a link object directly from kernel.
+
+    @arg socket          Netlink socket
+    @arg ifindex         Interface index, use 0 if not to be used
+    @arg ifname          Name of link, use None if not to be used
+
+    Older kernels do not support lookup by name. In that case, libnl
+    will fail with NLE_OPNOTSUPP. In case no matching link was found,
+    fails with NLE_OBJ_NOTFOUND.
+
+    @return Link object.
+    """
+    _rtnl_link_get_kernel = _libnl_route(
+        'rtnl_link_get_kernel', c_int, c_void_p, c_int, c_char_p, c_void_p)
+    link = c_void_p()
+    b_ifname = _to_binary(ifname) if ifname else None
+    err = _rtnl_link_get_kernel(socket, ifindex, b_ifname, byref(link))
+    if err:
+        raise IOError(-err, nl_geterror(err))
+    return link
+
+
+def rtnl_link_get_addr(link):
+    """Return link layer address of link object.
+
+    @arg link            Link object
+
+    Use nl_addr2str to convert address object into a readable string.
+
+    @return Link layer address or None if not set.
+    """
+    _rtnl_link_get_addr = _libnl_route(
+        'rtnl_link_get_addr', c_void_p, c_void_p)
+    return _rtnl_link_get_addr(link)
+
+
+def rtnl_link_get_flags(link):
+    """Return flags of link object.
+
+    @arg link            Link object
+
+    @return Link flags or None if none have been set.
+    """
+    _rtnl_link_get_flags = _libnl_route('rtnl_link_get_flags', c_int, c_void_p)
+    return _rtnl_link_get_flags(link)
+
+
+def rtnl_link_get_ifindex(link):
+    """Return interface index of link object
+
+    @arg link            Link object
+
+    @return Interface index or None if not set.
+    """
+    _rtnl_link_get_ifindex = _libnl_route(
+        'rtnl_link_get_ifindex', c_int, c_void_p)
+    ifindex = _rtnl_link_get_ifindex(link)
+    if ifindex == 0:
+        return None
+    return ifindex
+
+
+def rtnl_link_get_link(link):
+    """Return interface index of the underlying interface.
+
+    @arg link            Master link object
+
+    @return Underlying interface index if there is any, None otherwise.
+    """
+    _rtnl_link_get_link = _libnl_route('rtnl_link_get_link', c_int, c_void_p)
+    underlying_ifindex = _rtnl_link_get_link(link)
+    if underlying_ifindex == 0:
+        return None
+    return underlying_ifindex
+
+
+def rtnl_link_get_master(link):
+    """Return interface index of the master interface.
+
+    @arg link            Underlying link object
+
+    @return Master interface index if there is any, None otherwise.
+    """
+    _rtnl_link_get_master = _libnl_route(
+        'rtnl_link_get_master', c_int, c_void_p)
+    master_ifindex = _rtnl_link_get_master(link)
+    if master_ifindex == 0:
+        return None
+    return master_ifindex
+
+
+def rtnl_link_get_mtu(link):
+    """Return maximum transmission unit of link object.
+
+    @arg link            Link object
+
+    @return MTU in bytes or None if not set
+    """
+    _rtnl_link_get_mtu = _libnl_route('rtnl_link_get_mtu', c_int, c_void_p)
+    mtu = _rtnl_link_get_mtu(link)
+    if mtu == 0:
+        return None
+    return mtu
+
+
+def rtnl_link_get_name(link):
+    """Return name of link object.
+
+    @arg link            Link object
+
+    @return Link name or None if name is not specified
+    """
+    _rtnl_link_get_name = _libnl_route(
+        'rtnl_link_get_name', c_char_p, c_void_p)
+    name = _rtnl_link_get_name(link)
+    return _to_str(name)
+
+
+def rtnl_link_get_operstate(link):
+    """Return operational status code of link object.
+
+    @arg link            Link object
+
+    Use rtnl_link_operstate2str to convert operstate code to readable string.
+
+    @return Opertional state code.
+    """
+    _rtnl_link_get_operstate = _libnl_route(
+        'rtnl_link_get_operstate', c_int, c_void_p)
+    return _rtnl_link_get_operstate(link)
+
+
+def rtnl_link_get_qdisc(link):
+    """Return name of queueing discipline of link object.
+
+    @arg link            Link object
+
+    @return Name of qdisc or None if not specified.
+    """
+    _rtnl_link_get_qdisc = _libnl_route(
+        'rtnl_link_get_qdisc', c_char_p, c_void_p)
+    qdisc = _rtnl_link_get_qdisc(link)
+    if qdisc:
+        return _to_str(qdisc)
+    else:
+        return None
+
+
+def rtnl_link_get_by_name(cache, name):
+    """Lookup link in cache by link name
+
+    @arg cache           Link cache
+    @arg name            Name of link
+
+    Searches through the provided cache looking for a link with matching
+    link name
+
+    @attention The reference counter of the returned link object will be
+            incremented. Use rtnl_link_put() to release the reference.
+
+    @return Link object or None if no match was found.
+    """
+    _rtnl_link_get_by_name = _libnl_route(
+        'rtnl_link_get_by_name', c_void_p, c_void_p, c_char_p)
+    return _rtnl_link_get_by_name(cache, name)
+
+
+def rtnl_link_i2name(cache, ifindex):
+    """Translate interface index to corresponding link name.
+
+    @arg cache           Link cache
+    @arg ifindex         Interface index
+
+    Translates the specified interface index to the corresponding link name.
+
+    @return Name of link or None if no match was found.
+    """
+    _rtnl_link_i2name = _libnl_route(
+        'rtnl_link_i2name', c_char_p, c_void_p, c_int, c_char_p, c_size_t)
+    buf = (c_char * CHARBUFFSIZE)()
+    name = _rtnl_link_i2name(cache, ifindex, buf, sizeof(buf))
+    return _to_str(name)
+
+
+def rtnl_link_operstate2str(operstate_code):
+    """Convert operstate code to string.
+
+    @arg operstate_code  Operstate code.
+
+    @return Operstate represented as string
+    """
+    _rtnl_link_operstate2str = _libnl_route(
+        'rtnl_link_operstate2str', c_char_p, c_int, c_char_p, c_size_t)
+    buf = (c_char * CHARBUFFSIZE)()
+    operstate = _rtnl_link_operstate2str(operstate_code, buf, sizeof(buf))
+    return _to_str(operstate)
+
+
+def rtnl_link_put(link):
+    """Destroy link object.
+
+    @arg link            Link object
+    """
+    _rtnl_link_put = _libnl_route('rtnl_link_put', None, c_void_p)
+    _rtnl_link_put(link)
+
+
 def c_object_argument(argument):
     """Prepare prepare Python object to be used as an C argument.
 
@@ -474,3 +748,11 @@ def _to_str(value):
         raise ValueError(
             'Expected a textual value, given {} of type {}.'.format(
                 value, type(value)))
+
+
+def _to_binary(value):
+    """Convert textual value to binary."""
+    if isinstance(value, bytes):
+        return value
+    else:
+        return value.encode('utf-8')

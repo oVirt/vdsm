@@ -19,7 +19,7 @@
 #
 from __future__ import absolute_import
 from contextlib import contextmanager
-from ctypes import CFUNCTYPE, c_char_p, c_int, c_void_p, c_size_t
+from ctypes import CFUNCTYPE, c_char_p, c_int, c_void_p
 from functools import partial
 from threading import BoundedSemaphore
 
@@ -122,10 +122,8 @@ def _socket_memberships(socket_membership_function, socket, groups):
 # with the binary interface of libnl and which types it should allocate and
 # cast. Without it ctypes fails when not running on the main thread.
 _int_proto = CFUNCTYPE(c_int, c_void_p)
-_int_char_proto = CFUNCTYPE(c_char_p, c_int, c_char_p, c_size_t)
 _char_proto = CFUNCTYPE(c_char_p, c_void_p)
 _void_proto = CFUNCTYPE(c_void_p, c_void_p)
-_none_proto = CFUNCTYPE(None, c_void_p)
 
 _add_socket_memberships = partial(_socket_memberships,
                                   libnl.nl_socket_add_memberships)
