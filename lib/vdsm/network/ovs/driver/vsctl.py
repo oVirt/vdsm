@@ -24,8 +24,8 @@ import json
 import logging
 import uuid
 
-from vdsm.commands import execCmd
 from vdsm.common.cache import memoized
+from vdsm.network import cmd as netcmd
 from vdsm.network import errors as ne
 from vdsm.network.errors import ConfigNetworkError, OvsDBConnectionError
 from vdsm.common.cmdutils import CommandPath
@@ -57,8 +57,9 @@ class Transaction(DriverTransaction):
         exec_line = [_ovs_vsctl_cmd()] + ['--oneline', '--format=json'] + args
         logging.debug('Executing commands: %s' % ' '.join(exec_line))
 
-        rc, out, err = execCmd(exec_line)
+        rc, out, err = netcmd.exec_sync(exec_line)
         if rc != 0:
+            err = err.splitlines()
             if OvsDBConnectionError.is_ovs_db_conn_error(err):
                 raise OvsDBConnectionError('\n'.join(err))
             else:
@@ -68,7 +69,7 @@ class Transaction(DriverTransaction):
         if out is None:
             return
 
-        for i, line in enumerate(out):
+        for i, line in enumerate(out.splitlines()):
             self.commands[i].set_raw_result(line)
         return [cmd.result for cmd in self.commands]
 
