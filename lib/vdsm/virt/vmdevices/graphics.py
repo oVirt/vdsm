@@ -158,8 +158,7 @@ class Graphics(Base):
         elif display_network:
             graphics.appendChildWithArgs(
                 'listen', type='network',
-                network=libvirtnetwork.netname_o2l(
-                    self.specParams['displayNetwork']))
+                network=libvirtnetwork.netname_o2l(display_network))
         else:
             graphics.setAttrs(listen='0')
 
