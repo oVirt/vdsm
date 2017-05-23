@@ -56,6 +56,7 @@ ALTERNATIVE_BONDING_DEFAULTS = '../static/usr/share/vdsm/bonding-defaults.json'
 
 EXT_IP = "/sbin/ip"
 _IPERF3_BINARY = CommandPath('iperf3', '/usr/bin/iperf3')
+_SYSTEMCTL = CommandPath('systemctl', '/bin/systemctl', '/usr/bin/systemctl')
 
 
 class ExecError(RuntimeError):
@@ -422,6 +423,18 @@ def requires_iperf3(f):
     def wrapper(*a, **kw):
         _check_iperf()
         return f(*a, **kw)
+    return wrapper
+
+
+def requires_systemctl(function):
+    @functools.wraps(function)
+    def wrapper(*args, **kwargs):
+        rc, _, err = execCmd([_SYSTEMCTL.cmd, 'status', 'foo'],
+                             raw=True)
+        run_chroot_err = 'Running in chroot, ignoring request'.encode()
+        if rc == 1 or run_chroot_err in err:
+            raise SkipTest('systemctl is not available')
+        return function(*args, **kwargs)
     return wrapper
 
 

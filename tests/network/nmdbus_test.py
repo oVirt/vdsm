@@ -26,6 +26,7 @@ from testlib import VdsmTestCase
 from testValidation import ValidateRunningAsRoot
 
 from .nettestlib import dummy_devices
+from .nettestlib import requires_systemctl
 from .nmnettestlib import iface_name, TEST_LINK_TYPE, NMService, nm_connections
 
 from vdsm.network.nm.errors import NMDeviceNotFoundError
@@ -42,6 +43,7 @@ _nm_service = None
 
 
 @ValidateRunningAsRoot
+@requires_systemctl
 def setup_module():
     global _nm_service
     _nm_service = NMService()
@@ -59,7 +61,7 @@ def teardown_module():
     _nm_service.teardown()
 
 
-@attr(type='functional')
+@attr(type='integration')
 class TestNMConnectionSettings(VdsmTestCase):
 
     def test_configured_connections_attributes_existence(self):
@@ -105,7 +107,7 @@ class TestNMConnectionSettings(VdsmTestCase):
                 return nm_con
 
 
-@attr(type='functional')
+@attr(type='integration')
 class TestNMActiveConnections(VdsmTestCase):
 
     def test_active_connections_properties_existence(self):
@@ -140,7 +142,7 @@ class TestNMActiveConnections(VdsmTestCase):
                     assert active_con.id == settings_con.connection.id
 
 
-@attr(type='functional')
+@attr(type='integration')
 class TestNMDevice(VdsmTestCase):
 
     def test_device_attributes_existence(self):
@@ -192,7 +194,7 @@ class TestNMDevice(VdsmTestCase):
         self.assertEqual(set([iface + '0']), active_connections)
 
 
-@attr(type='functional')
+@attr(type='integration')
 class TestNMConnectionCreation(VdsmTestCase):
 
     def test_nm_connection_lifetime(self):

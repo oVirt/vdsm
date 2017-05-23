@@ -26,9 +26,10 @@ from nose.plugins.attrib import attr
 from dbus.exceptions import DBusException
 
 from testlib import VdsmTestCase
-from testValidation import broken_on_ci, ValidateRunningAsRoot
+from testValidation import ValidateRunningAsRoot
 
 from .nettestlib import dummy_devices
+from .nettestlib import requires_systemctl
 from .nmnettestlib import iface_name, NMService, nm_connections
 
 from vdsm.network.nm import networkmanager
@@ -39,8 +40,8 @@ IPV4ADDR = '10.1.1.1/29'
 _nm_service = None
 
 
-@broken_on_ci('NetworkManager should not be started on CI nodes')
 @ValidateRunningAsRoot
+@requires_systemctl
 def setup_module():
     global _nm_service
     _nm_service = NMService()
@@ -58,14 +59,14 @@ def teardown_module():
     _nm_service.teardown()
 
 
-@attr(type='functional')
+@attr(type='integration')
 class TestNMService(VdsmTestCase):
 
     def test_network_manager_service_is_running(self):
         self.assertTrue(networkmanager.is_running())
 
 
-@attr(type='functional')
+@attr(type='integration')
 class TestNMConnectionCleanup(VdsmTestCase):
 
     def test_remove_all_non_active_connection_from_a_device(self):
@@ -79,7 +80,7 @@ class TestNMConnectionCleanup(VdsmTestCase):
                 self.assertEqual(1, sum(1 for _ in device.connections()))
 
 
-@attr(type='functional')
+@attr(type='integration')
 class TestNMIfcfg2Connection(VdsmTestCase):
 
     NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
