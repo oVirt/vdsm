@@ -27,6 +27,7 @@ import itertools
 import os
 import socket
 import struct
+from subprocess import Popen
 
 import six
 
@@ -34,8 +35,8 @@ from netaddr.core import AddrFormatError
 from netaddr import IPAddress
 from netaddr import IPNetwork
 
-from vdsm.commands import execCmd
 from vdsm.config import config
+from vdsm.network import cmd
 from vdsm.network.link import dpdk
 from vdsm.network.netlink import link
 from vdsm.utils import anyFnmatch
@@ -256,12 +257,12 @@ def drv_name(devName):
     DRVINFO_FORMAT = '= I 32s 32s 32s 32s 32s 12s 5I'
     IFREQ_FORMAT = '16sPi'  # device_name, buffer_pointer, buffer_len
     buff = array.array('c', b'\0' * struct.calcsize(DRVINFO_FORMAT))
-    cmd = struct.pack('= I', ETHTOOL_GDRVINFO)
-    buff[0:len(cmd)] = array.array('c', cmd)
+    cmds = struct.pack('= I', ETHTOOL_GDRVINFO)
+    buff[0:len(cmds)] = array.array('c', cmds)
     data = struct.pack(IFREQ_FORMAT, encoded_name, *buff.buffer_info())
     with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
         fcntl.ioctl(sock, SIOCETHTOOL, data)
-    (cmd, driver, version, fw_version, businfo, _, _, n_priv_flags, n_stats,
+    (cmds, driver, version, fw_version, businfo, _, _, n_priv_flags, n_stats,
      testinfo_len, eedump_len, regdump_len) = struct.unpack(DRVINFO_FORMAT,
                                                             buff)
     return driver.rstrip('\0')  # C string end with the leftmost null char
@@ -483,29 +484,29 @@ class IPRoute2Error(Exception):
     pass
 
 
-def _execCmd(command):
-    returnCode, output, error = execCmd(command)
+def _exec_cmd(command):
+    returnCode, output, error = cmd.exec_sync(command)
 
     if returnCode:
-        raise IPRoute2Error(returnCode, error)
-    return output
+        raise IPRoute2Error(returnCode, error.splitlines())
+    return output.splitlines()
 
 
 def routeShowGateways(table):
     command = [_IP_BINARY.cmd, 'route', 'show', 'to', '0.0.0.0/0', 'table',
                table]
-    return _execCmd(command)
+    return _exec_cmd(command)
 
 
 def route6_show_gateways(table):
     command = [_IP_BINARY.cmd, '-6', 'route', 'show', 'to', '::/0', 'table',
                table]
-    return _execCmd(command)
+    return _exec_cmd(command)
 
 
 def routeShowTable(table):
     command = [_IP_BINARY.cmd, '-oneline', 'route', 'show', 'table', table]
-    return _execCmd(command)
+    return _exec_cmd(command)
 
 
 def routeAdd(route, family=4, dev=None):
@@ -513,19 +514,19 @@ def routeAdd(route, family=4, dev=None):
     command += route
     if dev is not None:
         command += ['dev', dev]
-    _execCmd(command)
+    _exec_cmd(command)
 
 
 def routeDel(route, family):
     command = [_IP_BINARY.cmd, '-%s' % family, 'route', 'del']
     command += route
-    _execCmd(command)
+    _exec_cmd(command)
 
 
 def routeGet(ipAddress):
     command = [_IP_BINARY.cmd, 'route', 'get']
     command += ipAddress
-    return _execCmd(command)
+    return _exec_cmd(command)
 
 
 def _getValidEntries(constructor, iterable):
@@ -543,19 +544,19 @@ def routeExists(route):
 
 def ruleList():
     command = [_IP_BINARY.cmd, 'rule']
-    return _execCmd(command)
+    return _exec_cmd(command)
 
 
 def ruleAdd(rule):
     command = [_IP_BINARY.cmd, 'rule', 'add']
     command += rule
-    _execCmd(command)
+    _exec_cmd(command)
 
 
 def ruleDel(rule):
     command = [_IP_BINARY.cmd, 'rule', 'del']
     command += rule
-    _execCmd(command)
+    _exec_cmd(command)
 
 
 def ruleExists(rule):
@@ -566,7 +567,7 @@ def ruleExists(rule):
 def addrAdd(dev, ipaddr, netmask, family=4):
     command = [_IP_BINARY.cmd, '-%s' % family, 'addr', 'add', 'dev', dev,
                '%s/%s' % (ipaddr, netmask)]
-    _execCmd(command)
+    _exec_cmd(command)
 
 
 def addrFlush(dev, family='both'):
@@ -579,7 +580,7 @@ def addrFlush(dev, family='both'):
     family_param = ['-%s' % family] if family in (4, 6) else []
     command = [_IP_BINARY.cmd] + family_param + ['addr', 'flush', 'dev', dev,
                                                  'scope', 'global']
-    _execCmd(command)
+    _exec_cmd(command)
 
 
 def linkAdd(name, linkType, link=None, args=()):
@@ -591,34 +592,31 @@ def linkAdd(name, linkType, link=None, args=()):
 
     command.extend(args)
 
-    _execCmd(command)
+    _exec_cmd(command)
 
 
 def linkSet(dev, linkArgs):
     command = [_IP_BINARY.cmd, 'link', 'set', 'dev', dev]
     command += linkArgs
-    _execCmd(command)
+    _exec_cmd(command)
 
 
 def linkDel(dev):
     command = [_IP_BINARY.cmd, 'link', 'del', 'dev', dev]
-    _execCmd(command)
+    _exec_cmd(command)
 
 
 def netns_add(name):
-    _execCmd([_IP_BINARY.cmd, 'netns', 'add', name])
+    _exec_cmd([_IP_BINARY.cmd, 'netns', 'add', name])
 
 
 def netns_delete(name):
-    _execCmd([_IP_BINARY.cmd, 'netns', 'delete', name])
+    _exec_cmd([_IP_BINARY.cmd, 'netns', 'delete', name])
 
 
-def netns_exec(netns_name, command, sync=False):
-    netns_command = [_IP_BINARY.cmd, 'netns', 'exec', netns_name]
-    if sync:
-        _execCmd(netns_command + command)
-    else:
-        return execCmd(netns_command + command, sync=sync)
+def netns_exec(netns_name, command):
+    cmds = [_IP_BINARY.cmd, 'netns', 'exec', netns_name] + command
+    return Popen(cmds)
 
 
 def link_set_netns(device, netns_name):

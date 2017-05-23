@@ -258,24 +258,21 @@ class Dummy(Interface):
 class IperfServer(object):
     """Starts iperf as an async process"""
 
-    def __init__(self, host, network_ns=None):
+    def __init__(self, host, network_ns):
         """host: the IP address for the server to listen on.
         network_ns: an optional network namespace for the server to run in.
         """
         self._bind_to = host
         self._net_ns = network_ns
-        self._pid = None
+        self._popen = None
 
     def start(self):
         cmd = [_IPERF3_BINARY.cmd, '--server', '--bind', self._bind_to]
-        if self._net_ns is not None:
-            p = netns_exec(self._net_ns, cmd)
-        else:
-            p = execCmd(cmd, sync=False)
-        self._pid = p.pid
+        self._popen = netns_exec(self._net_ns, cmd)
 
     def stop(self):
-        os.kill(self._pid, signal.SIGTERM)
+        self._popen.terminate()
+        self._popen.wait()
 
 
 class IperfClient(object):
