@@ -25,6 +25,5 @@ dist_vdsmnetworkconfigurators_PYTHON = \
 	__init__.py \
 	ifcfg.py \
 	ifcfg_acquire.py \
-	iproute2.py \
 	qos.py \
 	$(NULL)

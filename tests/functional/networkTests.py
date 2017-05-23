@@ -48,10 +48,8 @@ from vdsm.network.netinfo.nics import (operstate, OPERSTATE_UNKNOWN,
                                        OPERSTATE_UP)
 from vdsm.network.netinfo.routes import getDefaultGateway, getRouteDeviceTo
 from vdsm.network.netlink import monitor
-from vdsm.network.configurators.ifcfg import (Ifcfg, stop_devices,
-                                              NET_CONF_BACK_DIR)
+from vdsm.network.configurators.ifcfg import stop_devices, NET_CONF_BACK_DIR
 from vdsm.network import errors
-from vdsm.network import legacy_switch
 from vdsm.network import sourceroute
 from vdsm.network import sysctl
 from vdsm.network import tc
@@ -757,15 +755,14 @@ class NetworkTest(TestCaseBase):
             # new minimum MTU of all of its connected interfaces
             self.assertMtu(BIG, NETWORK_NAME, second)
 
-            if legacy_switch.ConfiguratorClass == Ifcfg:
-                # verify that the ifcfg configuration files are also updated
-                # with the new MTU
-                rc, _, _ = execCmd([EXT_IFDOWN, NETWORK_NAME])
-                self.assertEqual(rc, 0, 'ifdown failed: rc=%s' % (rc,))
-                rc, _, _ = execCmd([EXT_IFUP, NETWORK_NAME])
-                self.assertEqual(rc, 0, 'ifup failed: rc=%s' % (rc,))
-                self.vdsm_net.refreshNetinfo()
-                self.assertMtu(BIG, NETWORK_NAME, second)
+            # verify that the ifcfg configuration files are also updated
+            # with the new MTU
+            rc, _, _ = execCmd([EXT_IFDOWN, NETWORK_NAME])
+            self.assertEqual(rc, 0, 'ifdown failed: rc=%s' % (rc,))
+            rc, _, _ = execCmd([EXT_IFUP, NETWORK_NAME])
+            self.assertEqual(rc, 0, 'ifup failed: rc=%s' % (rc,))
+            self.vdsm_net.refreshNetinfo()
+            self.assertMtu(BIG, NETWORK_NAME, second)
 
             third_net = {
                 NETWORK_NAME: dict(bridged=True, nic=second, mtu=BIG,

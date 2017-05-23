@@ -153,7 +153,7 @@ class DynamicSourceRoute(StaticSourceRoute):
         The configuration is aimed to be set/del by the ip.route/rule drivers
         through sourceroute.add() and sourceroute.remove() functions.
 
-        The configurators (ifcfg, iproute2) are using the previous structures,
+        The configurator (ifcfg) is using the previous structures,
         therefore, if there is a need to use them, please use current_config.
         """
         rules = self._sourceroute_rules()

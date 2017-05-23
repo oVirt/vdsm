@@ -90,7 +90,6 @@ class NetworkDNSLegacyTest(NetworkDNSTemplate):
 
 @attr(type='functional', switch='ovs')
 class NetworkDNSOvsTest(NetworkDNSTemplate):
-    # TODO: Implement 'nameservers' in the iproute2 configurator to make the
-    #       tests pass with the OVS switch.
+    # TODO: Implement 'nameservers' for OVS switch setups.
     __test__ = False
     switch = 'ovs'

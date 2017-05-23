@@ -31,6 +31,7 @@ from vdsm.common.conv import tobool
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
 from vdsm.network.link import dpdk
+from vdsm.network.configurators.ifcfg import Ifcfg
 from vdsm.network.netinfo import NET_PATH
 from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo import mtus
@@ -59,21 +60,7 @@ def _get_persistence_module():
         return ifcfg
 
 
-def _get_configurator_class():
-    configurator = config.get('vars', 'net_configurator')
-    if configurator == 'iproute2':
-        from .configurators.iproute2 import Iproute2
-        return Iproute2
-    else:
-        if configurator != 'ifcfg':
-            logging.warn('Invalid config for network configurator: %s. '
-                         'Use ifcfg instead.', configurator)
-        from .configurators.ifcfg import Ifcfg
-        return Ifcfg
-
-
 _persistence = _get_persistence_module()
-ConfiguratorClass = _get_configurator_class()
 
 
 def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
@@ -113,10 +100,10 @@ def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
 
     :returns: the top object of the hierarchy.
     """
-    if configurator is None:
-        configurator = ConfiguratorClass()
     if _netinfo is None:
         _netinfo = CachingNetInfo()
+    if configurator is None:
+        configurator = Ifcfg(_netinfo)
     if opts is None:
         opts = {}
     if bootproto == 'none':

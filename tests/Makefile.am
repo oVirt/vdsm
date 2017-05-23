@@ -197,7 +197,6 @@ blacklist_modules_python3 = \
 	network/ip_address_test.py \
 	network/ip_route_test.py \
 	network/ip_rule_test.py \
-	network/iproute2_test.py \
 	network/ipwrapper_test.py \
 	network/link_bond_test.py \
 	network/link_iface_test.py \

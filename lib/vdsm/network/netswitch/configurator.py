@@ -27,6 +27,7 @@ from vdsm.network import connectivity
 from vdsm.network import ifacquire
 from vdsm.network import legacy_switch
 from vdsm.network import errors as ne
+from vdsm.network.configurators.ifcfg import Ifcfg
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.link import dpdk
@@ -83,7 +84,7 @@ def _split_switch_type_entries(entries, running_entries):
             # but not successfully deployed (not saved in running config).
             if (switch_type == legacy_switch.SWITCH_TYPE and
                     Bond(name).exists() and
-                    not legacy_switch.ConfiguratorClass.owned_device(name)):
+                    not Ifcfg.owned_device(name)):
                 # If not owned by Legacy, assume OVS and let it be removed in
                 # the OVS way.
                 switch_type = ovs_switch.SWITCH_TYPE
@@ -142,8 +143,7 @@ def _setup_legacy(networks, bondings, options, in_rollback):
     running_nets = RunningConfig().networks
     _netinfo = CachingNetInfo(netinfo_get(networks_base_info(running_nets)))
 
-    with legacy_switch.ConfiguratorClass(_netinfo,
-                                         in_rollback) as configurator:
+    with Ifcfg(_netinfo, in_rollback) as configurator:
         # from this point forward, any exception thrown will be handled by
         # Configurator.__exit__.
 

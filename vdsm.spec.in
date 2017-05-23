@@ -1133,7 +1133,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/configurators/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/configurators/ifcfg.py*
 %{python_sitelib}/%{vdsm_name}/network/configurators/ifcfg_acquire.py*
-%{python_sitelib}/%{vdsm_name}/network/configurators/iproute2.py*
 %{python_sitelib}/%{vdsm_name}/network/configurators/qos.py*
 %{python_sitelib}/%{vdsm_name}/network/errors.py*
 %{python_sitelib}/%{vdsm_name}/network/canonicalize.py*
