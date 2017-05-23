@@ -29,13 +29,10 @@ import pwd
 import re
 import selinux
 import shutil
-import uuid
 
 import six
 
 from vdsm.config import config
-from vdsm import commands
-from vdsm import cmdutils
 from vdsm import concurrent
 from vdsm import constants
 from vdsm import dsaversion
@@ -43,6 +40,7 @@ from vdsm import hooks
 from vdsm.common import fileutils
 from vdsm.common.conv import tobool
 
+from vdsm.network import cmd
 from vdsm.network import ifacetracking
 from vdsm.network import ipwrapper
 from vdsm.network import sysctl
@@ -208,7 +206,7 @@ class Ifcfg(Configurator):
             ifacetracking.add(bridge.name)
         ifdown(bridge.name)
         self._removeSourceRoute(bridge)
-        commands.execCmd([constants.EXT_BRCTL, 'delbr', bridge.name])
+        cmd.exec_sync([constants.EXT_BRCTL, 'delbr', bridge.name])
         self.configApplier.removeBridge(bridge.name)
         self.net_info.del_bridge(bridge.name)
         if bridge.port:
@@ -459,8 +457,8 @@ class ConfigWriter(object):
     def _persistentBackup(cls, filename):
         """ Persistently backup ifcfg-* config files """
         if os.path.exists('/usr/libexec/ovirt-functions'):
-            commands.execCmd([constants.EXT_SH, '/usr/libexec/ovirt-functions',
-                             'unmount_config', filename])
+            cmd.exec_sync([constants.EXT_SH, '/usr/libexec/ovirt-functions',
+                           'unmount_config', filename])
             logging.debug("unmounted %s using ovirt", filename)
 
         (dummy, basename) = os.path.split(filename)
@@ -771,7 +769,7 @@ def stop_devices(device_ifcfgs):
         ifdown(dev)
         if os.path.exists('/sys/class/net/%s/bridge' % dev):
             # ifdown is not enough to remove nicless bridges
-            commands.execCmd([constants.EXT_BRCTL, 'delbr', dev])
+            cmd.exec_sync([constants.EXT_BRCTL, 'delbr', dev])
         if _is_bond_name(dev):
             if _is_running_bond(dev):
                 with open(BONDING_MASTERS, 'w') as f:
@@ -844,7 +842,7 @@ def ifup(iface):
 
 def ifdown(iface):
     "Bring down an interface"
-    rc, _, _ = commands.execCmd([constants.EXT_IFDOWN, iface], raw=True)
+    rc, _, _ = cmd.exec_sync([constants.EXT_IFDOWN, iface])
     return rc
 
 
@@ -852,16 +850,12 @@ def _exec_ifup_by_name(iface_name, cgroup=dhclient.DHCLIENT_CGROUP):
     """
     Actually bring up an interface (by name).
     """
-    cmd = [constants.EXT_IFUP, iface_name]
+    cmds = [constants.EXT_IFUP, iface_name]
 
-    if cgroup is not None:
-        # TODO: We set unique uuid for every run to not use the same unit twice
-        # and prevent systemd_run race (BZ#1259468). This uuid could be dropped
-        # when BZ#1272368 will be solved or when we use systemd >= v220.
-        cmd = cmdutils.systemd_run(cmd, scope=True, unit=uuid.uuid4(),
-                                   slice=cgroup)
-
-    rc, out, err = commands.execCmd(cmd, raw=False)
+    if cgroup:
+        rc, out, err = cmd.exec_systemd_new_unit(cmds, slice_name=cgroup)
+    else:
+        rc, out, err = cmd.exec_sync(cmds)
 
     if rc != 0:
         # In /etc/sysconfig/network-scripts/ifup* the last line usually
