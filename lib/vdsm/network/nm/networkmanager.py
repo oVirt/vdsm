@@ -18,9 +18,9 @@
 #
 from __future__ import absolute_import
 
-from vdsm.commands import execCmd
 from vdsm.common.cache import memoized
 from vdsm.common.cmdutils import CommandPath
+from vdsm.network import cmd
 
 from .nmdbus import NMDbus, NMDbusIfcfgRH1
 from .nmdbus.active import NMDbusActiveConnections
@@ -33,7 +33,7 @@ NM_SERVICE = 'NetworkManager'
 
 @memoized
 def is_running():
-    rc, out, err = execCmd([SYSTEMCTL.cmd, 'status', NM_SERVICE])
+    rc, out, err = cmd.exec_sync([SYSTEMCTL.cmd, 'status', NM_SERVICE])
     return rc == 0
 
 
