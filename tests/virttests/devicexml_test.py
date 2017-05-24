@@ -534,6 +534,12 @@ class FakeProxy(object):
     def ovs_bridge(self, name):
         return self._ovs_bridge
 
+    def appropriateHwrngDevice(self, vmid):
+        pass
+
+    def rmAppropriateHwrngDevice(self, vmid):
+        pass
+
 
 # the alias is not rendered by getXML, so having it would make
 # the test fail
@@ -673,6 +679,8 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         </video>'''
         self._check_roundtrip(vmdevices.core.Video, video_xml)
 
+    @MonkeyPatch(vmdevices.core.supervdsm,
+                 'getProxy', lambda: FakeProxy())
     def test_rng(self):
         rng_xml = u'''<rng model='virtio'>
             <rate period="2000" bytes="1234"/>
@@ -721,7 +729,11 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             vmxml.parse_xml(dev_xml),
             {} if meta is None else meta
         )
-        rebuilt_xml = vmxml.format_xml(dev.getXML(), pretty=True)
-        # make troubleshooting easier
-        print(rebuilt_xml)
-        self.assertXMLEqual(rebuilt_xml, dev_xml)
+        dev.setup()
+        try:
+            rebuilt_xml = vmxml.format_xml(dev.getXML(), pretty=True)
+            # make troubleshooting easier
+            print(rebuilt_xml)
+            self.assertXMLEqual(rebuilt_xml, dev_xml)
+        finally:
+            dev.teardown()
