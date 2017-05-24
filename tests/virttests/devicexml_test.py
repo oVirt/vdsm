@@ -590,7 +590,22 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         console_xml = u'''<console type="pty">
             <target port="0" type="%s" />
         </console>''' % console_type
-        dev = self._check_roundtrip(vmdevices.core.Console, console_xml)
+        self._check_roundtrip(vmdevices.core.Console, console_xml)
+
+    @permutations([
+        # console_type, is_serial
+        ['virtio', False],
+        ['serial', True],
+    ])
+    def test_console_pty_properties(self, console_type, is_serial):
+        console_xml = u'''<console type="pty">
+            <target port="0" type="%s" />
+        </console>''' % console_type
+        dev = vmdevices.core.Console.from_xml_tree(
+            self.log,
+            vmxml.parse_xml(console_xml),
+            {}
+        )
         self.assertEqual(dev.isSerial, is_serial)
 
     @permutations([
@@ -607,8 +622,28 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             sockpath=os.path.join(constants.P_OVIRT_VMCONSOLES, vmid),
             console_type=console_type
         )
-        dev = self._check_roundtrip(
+        self._check_roundtrip(
             vmdevices.core.Console, console_xml, meta={'vmid': vmid}
+        )
+
+    @permutations([
+        # console_type, is_serial
+        ['virtio', False],
+        ['serial', True],
+    ])
+    def test_console_unix_socket_properties(self, console_type, is_serial):
+        vmid = 'VMID'
+        console_xml = u'''<console type='unix'>
+          <source mode='bind' path='{sockpath}.sock' />
+          <target type='{console_type}' port='0' />
+        </console>'''.format(
+            sockpath=os.path.join(constants.P_OVIRT_VMCONSOLES, vmid),
+            console_type=console_type
+        )
+        dev = vmdevices.core.Console.from_xml_tree(
+            self.log,
+            vmxml.parse_xml(console_xml),
+            meta={'vmid': vmid}
         )
         self.assertEqual(dev.isSerial, is_serial)
         self.assertEqual(dev.vmid, vmid)
@@ -690,4 +725,3 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         # make troubleshooting easier
         print(rebuilt_xml)
         self.assertXMLEqual(rebuilt_xml, dev_xml)
-        return dev
