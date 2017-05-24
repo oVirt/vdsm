@@ -66,6 +66,12 @@ def add_vhostuser_port(bridge, port, socket_path):
         t.add(ovsdb.set_vhostuser_iface(port, socket_path))
 
 
+def remove_port(bridge, port):
+    ovsdb = driver.create()
+    with ovsdb.transaction() as t:
+        t.add(ovsdb.del_port(port, bridge))
+
+
 class NetsRemovalSetup(object):
     def __init__(self, ovsdb, ovs_info):
         self._ovsdb = ovsdb
