@@ -490,8 +490,7 @@ class Vm(object):
         return dev_map
 
     def _dev_spec_update_with_vm_conf(self, dev):
-        if dev['type'] in (hwclass.CONSOLE, hwclass.GRAPHICS, hwclass.RNG):
-            dev['vmid'] = self.id
+        dev['vmid'] = self.id
         if dev['type'] == hwclass.GRAPHICS:
             if 'specParams' not in dev:
                 dev['specParams'] = {}

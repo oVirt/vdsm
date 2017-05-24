@@ -40,7 +40,7 @@ class SkipDevice(Exception):
 class Base(vmxml.Device):
     __slots__ = ('deviceType', 'device', 'alias', 'specParams', 'deviceId',
                  'log', '_deviceXML', 'type', 'custom',
-                 'is_hostdevice')
+                 'is_hostdevice', 'vmid')
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
@@ -180,7 +180,7 @@ class Balloon(Base):
 
 
 class Console(Base):
-    __slots__ = ('_path', 'vmid')
+    __slots__ = ('_path',)
 
     CONSOLE_EXTENSION = '.sock'
 
@@ -463,7 +463,7 @@ class Redir(Base):
 
 
 class Rng(Base):
-    __slots__ = ('address', 'model', 'vmid')
+    __slots__ = ('address', 'model',)
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):

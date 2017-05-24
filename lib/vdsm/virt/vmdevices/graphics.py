@@ -53,7 +53,7 @@ class Graphics(Base):
         'main', 'display', 'inputs', 'cursor', 'playback',
         'record', 'smartcard', 'usbredir')
 
-    __slots__ = ('port', 'tlsPort', 'vmid')
+    __slots__ = ('port', 'tlsPort',)
 
     def __init__(self, log, **kwargs):
         super(Graphics, self).__init__(log, **kwargs)
