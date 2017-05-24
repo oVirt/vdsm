@@ -25,6 +25,8 @@ import os
 import signal
 import subprocess
 
+import six
+
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import constants
@@ -32,7 +34,7 @@ from vdsm import constants
 from vdsm.common.time import monotonic_time
 from vdsm.compat import CPopen
 
-from testValidation import slowtest
+from testValidation import skipif, slowtest
 from testlib import VdsmTestCase
 
 
@@ -321,6 +323,7 @@ class TestRecieveBench(VdsmTestCase):
               % (sent_gb, elapsed, sent_gb / elapsed), end=" ")
         self.assertEqual(p.returncode, 0)
 
+    @skipif(six.PY3, "needs porting to python 3")
     @slowtest
     def test_asyncproc_read(self):
         p = commands.execCmd(["dd", "if=/dev/zero", "bs=%d" % self.BUFSIZE,
@@ -342,6 +345,7 @@ class TestRecieveBench(VdsmTestCase):
         self.assertEqual(received, self.COUNT * self.BUFSIZE)
         self.assertEqual(p.returncode, 0)
 
+    @skipif(six.PY3, "needs porting to python 3")
     @slowtest
     def test_asyncproc_write(self):
         p = commands.execCmd(["dd", "of=/dev/null", "bs=%d" % self.COUNT],
