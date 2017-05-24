@@ -1463,8 +1463,8 @@ class Global(APIBase):
     def getConnectedStoragePools(self):
         return self._irs.getConnectedStoragePoolsList()
 
-    def getStorageRepoStats(self):
-        return self._irs.repoStats()
+    def getStorageRepoStats(self, domains=()):
+        return self._irs.repoStats(domains=domains)
 
     def startMonitoringDomain(self, sdUUID, hostID):
         return self._irs.startMonitoringDomain(sdUUID, hostID)

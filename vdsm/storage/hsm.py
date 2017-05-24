@@ -3388,11 +3388,14 @@ class HSM(object):
 
         return domInfo
 
-    def _getRepoStats(self, domainMonitor):
+    def _getRepoStats(self, domainMonitor, domains=()):
+        domains = frozenset(domains)
         repoStats = {}
         statsGenTime = time.time()
 
         for sdUUID, domStatus in domainMonitor.getDomainsStatus():
+            if domains and sdUUID not in domains:
+                continue
             if domStatus.error is None:
                 code = 0
             elif isinstance(domStatus.error, se.StorageException):
@@ -3437,7 +3440,7 @@ class HSM(object):
         return repoStats
 
     @public
-    def repoStats(self, options=None):
+    def repoStats(self, domains=()):
         """
         Collects a storage repository's information and stats.
 
@@ -3447,7 +3450,7 @@ class HSM(object):
         """
         result = {}
 
-        repo_stats = self._getRepoStats(self.domainMonitor)
+        repo_stats = self._getRepoStats(self.domainMonitor, domains=domains)
 
         for d in repo_stats:
             result[d] = repo_stats[d]['result']

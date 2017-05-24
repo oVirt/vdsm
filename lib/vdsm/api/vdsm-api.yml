@@ -7966,8 +7966,16 @@ Host.getStorageRepoStats:
     added: '3.1'
     description: Get statistics and liveness of currently monitored Storage
         Domains.
+    params:
+    -   defaultvalue: ()
+        description: Return statistics only for specified storage domain UUIDs.
+            If not specified, return info for all storage domains.
+        name: domains
+        type:
+        - *UUID
+        added: '4.2'
     return:
-        description: Statistics for all storage domains
+        description: Statistics for storage domains
         type: *StorageDomainVitalsMap
 
 Host.startMonitoringDomain:
