@@ -827,8 +827,7 @@ class MonitorThread(object):
             else:
                 self._vm.log.warn(
                     'Migration stalling: remaining (%sMiB)'
-                    ' > lowmark (%sMiB).'
-                    ' Refer to RHBZ#919201.',
+                    ' > lowmark (%sMiB).',
                     progress.data_remaining / Mbytes, lowmark / Mbytes)
 
             if not self._vm.post_copy and\
