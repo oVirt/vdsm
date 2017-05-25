@@ -25,10 +25,14 @@ import httplib
 import logging
 import threading
 import re
+import socket
+import sys
+
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 from vdsm import concurrent
-from vdsm import xmlrpc
 from vdsm.common.define import doneCode
+from vdsm.executor import TaskQueue
 import API
 
 
@@ -77,9 +81,7 @@ class Server(object):
         Create http server
         """
 
-        threadLocal = self.cif.threadLocal
-
-        class RequestHandler(xmlrpc.IPXMLRPCRequestHandler):
+        class RequestHandler(BaseHTTPRequestHandler):
 
             # Timeout for the request socket
             timeout = 60
@@ -95,15 +97,12 @@ class Server(object):
             HEADER_CONTENT_TYPE = 'content-type'
             HEADER_CONTENT_RANGE = 'content-range'
 
+            protocol_version = "HTTP/1.1"
+
             class RequestException(Exception):
                 def __init__(self, httpStatusCode, errorMessage):
                     self.httpStatusCode = httpStatusCode
                     self.errorMessage = errorMessage
-
-            def setup(self):
-                threadLocal.client = self.client_address[0]
-                threadLocal.server = self.request.getsockname()[0]
-                return xmlrpc.IPXMLRPCRequestHandler.setup(self)
 
             def do_GET(self):
                 try:
@@ -265,11 +264,64 @@ class Server(object):
                 self.end_headers()
                 self.wfile.write(json_response)
 
-        server = xmlrpc.SimpleThreadedXMLRPCServer(
-            requestHandler=RequestHandler,
-            logRequests=False)
+        return ThreadedServer(RequestHandler)
 
-        return server
+
+class ThreadedServer(HTTPServer):
+    """
+    This server does not listen to to connections; the user is responsible for
+    accepting connections and adding them to the server.
+
+    For each connection added, request_handler is invoked in a new thread,
+    handling all requests sent over this connection.
+    """
+
+    _STOP = object()
+
+    log = logging.getLogger("vds.http.Server")
+
+    def __init__(self, RequestHandlerClass):
+        HTTPServer.__init__(self, None, RequestHandlerClass, False)
+
+        self.requestHandler = RequestHandlerClass
+
+        # TODO provide proper limit for this queue
+        self.queue = TaskQueue(sys.maxint)
+
+    def add(self, connected_socket, socket_address):
+        self.queue.put((connected_socket, socket_address))
+
+    def handle_request(self):
+        sock, addr = self.queue.get()
+        if sock is self._STOP:
+            return
+        self.log.info("Starting request handler for %s:%d", addr[0], addr[1])
+        t = concurrent.thread(self._process_requests, args=(sock, addr),
+                              log=self.log)
+        t.start()
+
+    def server_close(self):
+        self.queue.clear()
+        self.queue.put((self._STOP, self._STOP))
+
+    def _process_requests(self, sock, addr):
+        self.log.info("Request handler for %s:%d started", addr[0], addr[1])
+        try:
+            self.requestHandler(sock, addr, self)
+        except Exception:
+            self.log.exception("Unhandled exception in request handler for "
+                               "%s:%d", addr[0], addr[1])
+        finally:
+            self._shutdown_connection(sock)
+        self.log.info("Request handler for %s:%d stopped", addr[0], addr[1])
+
+    def _shutdown_connection(self, sock):
+        try:
+            sock.shutdown(socket.SHUT_WR)
+        except socket.error:
+            pass  # Some platforms may raise ENOTCONN here
+        finally:
+            sock.close()
 
 
 class HttpDetector():
