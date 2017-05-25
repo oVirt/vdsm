@@ -23,7 +23,6 @@ import uuid
 from vdsm.common import exception, response
 from vdsm import jobs
 
-from fakelib import FakeNotifier
 from fakelib import FakeScheduler
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase, expandPermutations, permutations
@@ -99,8 +98,7 @@ class JobsTests(VdsmTestCase):
 
     def setUp(self):
         self.scheduler = FakeScheduler()
-        self.notifier = FakeNotifier()
-        jobs.start(self.scheduler, self.notifier)
+        jobs.start(self.scheduler)
 
     def tearDown(self):
         jobs._clear()
@@ -302,13 +300,11 @@ class JobsTests(VdsmTestCase):
         job = TestingJob()
         self.run_job(job)
         self.assertEqual(jobs.STATUS.DONE, job.status)
-        self.validate_event_sent(job)
 
     def test_run_aborted_job(self):
         job = TestingJob(jobs.STATUS.ABORTED, exception=AssertionError)
         job.run()
         self.assertEqual(jobs.STATUS.ABORTED, job.status)
-        self.validate_event_sent(job)
 
     @permutations([
         [jobs.STATUS.RUNNING],
@@ -318,7 +314,6 @@ class JobsTests(VdsmTestCase):
     def test_run_from_invalid_state(self, state):
         job = TestingJob(state)
         self.assertRaises(RuntimeError, job.run)
-        self.validate_event_not_sent()
 
     def test_default_exception(self):
         message = "testing failure"
@@ -327,14 +322,12 @@ class JobsTests(VdsmTestCase):
         self.assertEqual(jobs.STATUS.FAILED, job.status)
         self.assertIsInstance(job.error, exception.GeneralException)
         self.assertIn(message, str(job.error))
-        self.validate_event_sent(job)
 
     def test_vdsm_exception(self):
         job = TestingJob(exception=exception.VdsmException())
         self.run_job(job)
         self.assertEqual(jobs.STATUS.FAILED, job.status)
         self.assertIsInstance(job.error, exception.VdsmException)
-        self.validate_event_sent(job)
 
     def _verify_autodelete(self, job, expected_delay):
         self.assertEqual(1, len(self.scheduler.calls))
@@ -368,10 +361,3 @@ class JobsTests(VdsmTestCase):
         with MonkeyPatchScope([(jobs, 'config', cfg)]):
             self.run_job(job)
             self.assertEqual(0, len(self.scheduler.calls))
-
-    def validate_event_sent(self, job):
-        expected_calls = [('|jobs|status|%s' % job.id, job.info())]
-        self.assertEqual(self.notifier.calls, expected_calls)
-
-    def validate_event_not_sent(self):
-        self.assertEqual(self.notifier.calls, [])

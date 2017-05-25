@@ -195,43 +195,6 @@ types:
         -   description: Indicates whether the migration has entered post-copy
                 mode.
 
-    JobStatus: &JobStatus
-        name: JobStatus
-        description: Job status
-        type: enum
-        values:
-            PENDING: pending
-            RUNNING: running
-            DONE: done
-            ABORTING: aborting
-            ABORTED: aborted
-            FAILED: failed
-
-    JobInfo: &JobInfo
-        description: Job information.
-        name: JobInfo
-        properties:
-        -   name: id
-            description: The job id
-            type: *UUID
-
-        -   name: status
-            description: The job status
-            type: *JobStatus
-            default-value: no-default
-
-        -   name: job_type
-            description: The job type
-            type: string
-
-        -   name: error
-            description: The error of a failed job
-            type: string
-
-        -   name: description
-            description: The job description
-            type: string
-
 '|virt|VM_status|':
     description: Provides status information about virtual machines
     params:
@@ -267,15 +230,3 @@ types:
         type: uint
         description: auto generated based on monotonic time when an event was
             sent
-
-'|jobs|status|':
-    description: . The underlying state
-        is provided as well.
-    params:
-    -   name: id
-        type: UUID
-        description: The job id
-
-    -   name: job_info
-        type: *JobInfo
-        description: The job info (id, status, descrition, job_type)
