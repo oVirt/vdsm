@@ -47,6 +47,13 @@ class DISK_TYPE:
     FILE = "file"
 
 
+SOURCE_ATTR = {
+    DISK_TYPE.FILE: 'file',
+    DISK_TYPE.NETWORK: 'name',
+    DISK_TYPE.BLOCK: 'dev'
+}
+
+
 class DRIVE_SHARED_TYPE:
     NONE = "none"
     EXCLUSIVE = "exclusive"
@@ -607,8 +614,12 @@ class Drive(core.Base):
         - /rhev/data-center/pool_id/sd_id/images/img_id/vol_id
         """
         for vol in self.volumeChain:
-            if os.path.realpath(vol['path']) == os.path.realpath(vol_path):
-                return vol['volumeID']
+            if self.diskType == DISK_TYPE.NETWORK:
+                    if vol['path'] == vol_path:
+                        return vol['volumeID']
+            else:
+                if os.path.realpath(vol['path']) == os.path.realpath(vol_path):
+                    return vol['volumeID']
         raise LookupError("Unable to find VolumeID for path '%s'", vol_path)
 
     def parse_volume_chain(self, disk_xml):
@@ -635,9 +646,9 @@ class Drive(core.Base):
         """
         volChain = []
         index = None
+        source_attr = SOURCE_ATTR[self.diskType]
         while True:
-            sourceAttr = ('file', 'dev')[self.blockDev]
-            path = vmxml.find_attr(disk_xml, 'source', sourceAttr)
+            path = vmxml.find_attr(disk_xml, 'source', source_attr)
             if not path:
                 break
 

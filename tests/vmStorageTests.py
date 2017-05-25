@@ -868,6 +868,41 @@ class TestVolumeChain(VdsmTestCase):
             ]
             self.assertEqual(chain, expected)
 
+    def test_parse_volume_chain_network(self):
+        volume_chain = [
+            {'path': 'server:/vol/11111111-1111-1111-1111-111111111111',
+             'volumeID': '11111111-1111-1111-1111-111111111111'},
+            {'path': 'server:/vol/22222222-2222-2222-2222-222222222222',
+             'volumeID': '22222222-2222-2222-2222-222222222222'}
+        ]
+        conf = drive_config(volumeChain=volume_chain)
+        drive = Drive({}, self.log, diskType=DISK_TYPE.NETWORK, **conf)
+
+        disk_xml = etree.fromstring("""
+        <disk>
+            <source name='server:/vol/11111111-1111-1111-1111-111111111111'/>
+            <backingStore type='network' index='1'>
+                <source
+                    name='server:/vol/22222222-2222-2222-2222-222222222222'/>
+                <backingStore/>
+            </backingStore>
+        </disk>""")
+
+        chain = drive.parse_volume_chain(disk_xml)
+        expected = [
+            storage.VolumeChainEntry(
+                path='server:/vol/22222222-2222-2222-2222-222222222222',
+                allocation=None,
+                uuid='22222222-2222-2222-2222-222222222222',
+                index=1),
+            storage.VolumeChainEntry(
+                path='server:/vol/11111111-1111-1111-1111-111111111111',
+                allocation=None,
+                uuid='11111111-1111-1111-1111-111111111111',
+                index=None)
+        ]
+        self.assertEqual(chain, expected)
+
     def test_parse_volume_not_in_chain(self):
         with self.make_env() as env:
             disk_xml = etree.fromstring("""
