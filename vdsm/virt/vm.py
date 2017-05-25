@@ -1442,12 +1442,6 @@ class Vm(object):
                           if not k.startswith("_"))
             status['guestDiskMapping'] = self.guestAgent.guestDiskMapping
             status['statusTime'] = self._get_status_time()
-            if self._altered_state.origin == _FILE_ORIGIN:
-                status['restoreDest'] = self._altered_state.path
-                status['restoreFromSnapshot'] = \
-                    self._altered_state.from_snapshot
-            elif self._altered_state.origin == _MIGRATION_ORIGIN:
-                status['migrationState'] = self._altered_state.destination
             return utils.picklecopy(status)
 
     def getStats(self):
