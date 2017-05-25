@@ -48,6 +48,7 @@ class IPRouteTest(VdsmTestCase):
                       if r.to == IPV4_ADDRESS]
             self.assertEqual(1, len(routes))
             self.assertEqual(routes[0].device, 'lo')
+            self.assertEqual(routes[0].table, 'main')
 
     def test_delete_non_existing_route(self):
         route = IPRouteData(to=IPV4_ADDRESS, via=None, family=4, device='lo')

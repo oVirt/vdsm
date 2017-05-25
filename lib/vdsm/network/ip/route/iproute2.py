@@ -54,8 +54,9 @@ class IPRoute(IPRouteApi):
             try:
                 r = Route.fromText(route_data)
                 family = 6 if _is_ipv6_addr_soft_check(r.network) else 4
+                rtable = r.table if table == 'all' else table
                 yield IPRouteData(
-                    r.network, r.via, family, r.src, r.device, r.table)
+                    r.network, r.via, family, r.src, r.device, rtable)
             except ValueError:
                 logging.warning('Could not parse route %s', route_data)
 
