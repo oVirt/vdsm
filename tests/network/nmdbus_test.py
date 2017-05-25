@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,45 +64,33 @@ def teardown_module():
 @attr(type='integration')
 class TestNMConnectionSettings(VdsmTestCase):
 
+    def setUp(self):
+        self.nm_settings = NMDbusSettings()
+        self.iface = iface_name()
+
     def test_configured_connections_attributes_existence(self):
-        nm_settings = NMDbusSettings()
-
-        iface = iface_name()
         with dummy_devices(1) as nics:
-            with nm_connections(iface, IPV4ADDR, slaves=nics):
-                con_count = 0
-                for nm_con in nm_settings.connections():
-                    if nm_con.connection.type in ('802-11-wireless', 'vpn'):
-                        continue
+            with nm_connections(self.iface, IPV4ADDR, slaves=nics) as connames:
+                nm_con = self._get_connection(connames[0])
 
-                    assert nm_con.connection.id is not None
-                    assert nm_con.connection.uuid is not None
-                    assert nm_con.connection.type is not None
+                self.assertEqual(connames[0], nm_con.connection.id)
+                self.assertIsNotNone(nm_con.connection.uuid)
+                self.assertIsNotNone(nm_con.connection.type)
 
-                    con_count += 1
-
-                self.assertGreaterEqual(con_count, 1)
-
-    def test_delete_a_non_active_connection(self):
-        nm_settings = NMDbusSettings()
-
-        iface = iface_name()
+    def test_delete_one_of_two_connections(self):
         with dummy_devices(1) as nics:
-            with nm_connections(iface, IPV4ADDR, slaves=nics, con_count=2):
-                con_count_pre_delete = sum(1
-                                           for _ in nm_settings.connections())
-                con = self._connection_to_delete(nm_settings, iface + '0')
+            with nm_connections(self.iface, IPV4ADDR,
+                                slaves=nics, con_count=2) as connames:
 
-                con.delete()
+                con0 = self._get_connection(connames[0])
+                con0.delete()
+                self.assertIsNone(self._get_connection(connames[0]))
 
-                con_count_post_delete = sum(
-                    1 for _ in nm_settings.connections())
-                self.assertEqual(
-                    con_count_pre_delete, con_count_post_delete + 1)
+                con1 = self._get_connection(connames[1])
+                self.assertEqual(connames[1], con1.connection.id)
 
-    @staticmethod
-    def _connection_to_delete(nm_settings, con_name):
-        for nm_con in nm_settings.connections():
+    def _get_connection(self, con_name):
+        for nm_con in self.nm_settings.connections():
             if nm_con.connection.id == con_name:
                 return nm_con
 
