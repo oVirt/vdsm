@@ -4794,7 +4794,7 @@ class Vm(object):
                                    devType)
 
         for deviceXML in vmxml.children(DomainDescriptor(xml).devices):
-            alias = vmxml.find_attr(deviceXML, 'alias', 'name')
+            alias = vmdevices.core.find_device_alias(deviceXML)
             if alias in aliasToDevice:
                 aliasToDevice[alias]._deviceXML = vmxml.format_xml(deviceXML)
             elif vmxml.tag(deviceXML) == hwclass.GRAPHICS:
@@ -5131,7 +5131,7 @@ class Vm(object):
     def _driveGetActualVolumeChain(self, drives):
         def lookupDeviceXMLByAlias(domXML, targetAlias):
             for deviceXML in vmxml.children(DomainDescriptor(domXML).devices):
-                alias = vmxml.find_attr(deviceXML, 'alias', 'name')
+                alias = vmdevices.core.find_device_alias(deviceXML)
                 if alias and alias == targetAlias:
                     return deviceXML
             raise LookupError("Unable to find matching XML for device %s",

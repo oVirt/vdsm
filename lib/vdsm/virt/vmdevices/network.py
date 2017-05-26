@@ -32,11 +32,11 @@ from vdsm.network import api as net_api
 from vdsm.virt import libvirtnetwork
 from vdsm.virt import vmxml
 
-from .core import Base
+from . import core
 from . import hwclass
 
 
-class Interface(Base):
+class Interface(core.Base):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
                  'linkActive', 'portMirroring', 'filter', 'filterParameters',
                  'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev',
@@ -256,7 +256,7 @@ class Interface(Base):
         for x in vm.domain.get_device_elements('interface'):
             devType = vmxml.attr(x, 'type')
             mac = vmxml.find_attr(x, 'mac', 'address')
-            alias = vmxml.find_attr(x, 'alias', 'name')
+            alias = core.find_device_alias(x)
             xdrivers = vmxml.find_first(x, 'driver', None)
             driver = ({'name': vmxml.attr(xdrivers, 'name'),
                        'queues': vmxml.attr(xdrivers, 'queues')}

@@ -750,7 +750,7 @@ def _get_drive_identification(dom):
     else:
         devPath = ''
     name = vmxml.find_attr(dom, 'target', 'dev')
-    alias = vmxml.find_attr(dom, 'alias', 'name')
+    alias = core.find_device_alias(dom)
     return alias, devPath, name
 
 

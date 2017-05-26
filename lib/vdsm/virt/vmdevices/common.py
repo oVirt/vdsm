@@ -51,7 +51,7 @@ def _update_unknown_device_info(vm):
         if vmxml.find_first(x, 'address', None) is None:
             continue
 
-        alias = vmxml.find_attr(x, 'alias', 'name')
+        alias = core.find_device_alias(x)
         if not isKnownDevice(alias):
             address = vmxml.device_address(x)
             # In general case we assume that device has attribute 'type',

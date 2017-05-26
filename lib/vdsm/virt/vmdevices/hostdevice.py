@@ -114,7 +114,7 @@ class PciDevice(core.Base):
 
     @classmethod
     def update_from_xml(cls, vm, device_conf, device_xml):
-        alias = vmxml.find_attr(device_xml, 'alias', 'name')
+        alias = core.find_device_alias(device_xml)
         address = vmxml.device_address(device_xml)
         source = vmxml.find_first(device_xml, 'source')
         device = pci_address_to_name(**vmxml.device_address(source))
@@ -212,7 +212,7 @@ class UsbDevice(core.Base):
 
     @classmethod
     def update_from_xml(cls, vm, device_conf, device_xml):
-        alias = vmxml.find_attr(device_xml, 'alias', 'name')
+        alias = core.find_device_alias(device_xml)
         host_address = vmxml.device_address(device_xml)
 
         # The routine is quite unusual because we cannot directly
@@ -305,7 +305,7 @@ class ScsiDevice(core.Base):
 
     @classmethod
     def update_from_xml(cls, vm, device_conf, device_xml):
-        alias = vmxml.find_attr(device_xml, 'alias', 'name')
+        alias = core.find_device_alias(device_xml)
         bus_address = vmxml.device_address(device_xml)
         source = vmxml.find_first(device_xml, 'source')
         adapter = vmxml.find_attr(source, 'adapter', 'name')
