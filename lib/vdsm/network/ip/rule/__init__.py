@@ -69,7 +69,7 @@ class IPRuleData(object):
         return self._table
 
     def __repr__(self):
-        return 'to={} src={} iif={} table={}'.format(
+        return 'IPRuleData(to={!r} src={!r} iif={!r} table={!r})'.format(
             self.to, self.src, self.iif, self.table)
 
 
