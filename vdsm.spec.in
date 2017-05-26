@@ -1039,6 +1039,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/network
 %dir %{python_sitelib}/%{vdsm_name}/network/configurators
 %dir %{python_sitelib}/%{vdsm_name}/network/ip
+%dir %{python_sitelib}/%{vdsm_name}/network/ip/address
 %dir %{python_sitelib}/%{vdsm_name}/network/ip/route
 %dir %{python_sitelib}/%{vdsm_name}/network/ip/rule
 %dir %{python_sitelib}/%{vdsm_name}/network/link
@@ -1108,6 +1109,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/dhclient_monitor.py*
 %{python_sitelib}/%{vdsm_name}/network/driverloader.py*
 %{python_sitelib}/%{vdsm_name}/network/ip/*.py*
+%{python_sitelib}/%{vdsm_name}/network/ip/address/*.py*
 %{python_sitelib}/%{vdsm_name}/network/ip/route/*.py*
 %{python_sitelib}/%{vdsm_name}/network/ip/rule/*.py*
 %{python_sitelib}/%{vdsm_name}/network/ifacetracking.py*

@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,15 +15,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
-#
-
-SUBDIRS = \
-	address \
-	route \
-	rule \
-	$(NULL)
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmnetworkipdir = $(vdsmpylibdir)/network/ip
-dist_vdsmnetworkip_PYTHON = *.py
+vdsmnetworkipaddressdir = $(vdsmpylibdir)/network/ip/address
+dist_vdsmnetworkipaddress_PYTHON = *.py

@@ -383,6 +383,7 @@ AC_OUTPUT([
 	lib/vdsm/network/Makefile
 	lib/vdsm/network/configurators/Makefile
 	lib/vdsm/network/ip/Makefile
+	lib/vdsm/network/ip/address/Makefile
 	lib/vdsm/network/ip/route/Makefile
 	lib/vdsm/network/ip/rule/Makefile
 	lib/vdsm/network/link/Makefile
