@@ -36,6 +36,12 @@ from vdsm.executor import TaskQueue
 import API
 
 
+class RequestException(Exception):
+    def __init__(self, httpStatusCode, errorMessage):
+        self.httpStatusCode = httpStatusCode
+        self.errorMessage = errorMessage
+
+
 class Server(object):
     def __init__(self, cif, log):
         self.cif = cif
@@ -99,11 +105,6 @@ class Server(object):
 
             protocol_version = "HTTP/1.1"
 
-            class RequestException(Exception):
-                def __init__(self, httpStatusCode, errorMessage):
-                    self.httpStatusCode = httpStatusCode
-                    self.errorMessage = errorMessage
-
             def do_GET(self):
                 try:
                     length = self._getLength()
@@ -136,7 +137,7 @@ class Server(object):
                     else:
                         self._send_error_response(response)
 
-                except self.RequestException as e:
+                except RequestException as e:
                     # This is an expected exception, so traceback is unneeded
                     self.send_error(e.httpStatusCode, e.errorMessage)
                 except Exception:
@@ -174,7 +175,7 @@ class Server(object):
                     else:
                         self._send_error_response(response)
 
-                except self.RequestException as e:
+                except RequestException as e:
                     self.send_error(e.httpStatusCode, e.errorMessage)
                 except Exception:
                     self.send_error(httplib.INTERNAL_SERVER_ERROR,
@@ -187,7 +188,7 @@ class Server(object):
                 sdUUID = self.headers.getheader(self.HEADER_DOMAIN)
                 imgUUID = self.headers.getheader(self.HEADER_IMAGE)
                 if not all((spUUID, sdUUID, imgUUID)):
-                    raise self.RequestException(
+                    raise RequestException(
                         httplib.BAD_REQUEST,
                         "missing or empty required header(s):"
                         " spUUID=%s sdUUID=%s imgUUID=%s"
@@ -218,7 +219,7 @@ class Server(object):
                 value = self.headers.getheader(
                     headerName)
                 if not value:
-                    raise self.RequestException(
+                    raise RequestException(
                         missingError,
                         "missing header %s" % headerName)
                 return value
@@ -227,7 +228,7 @@ class Server(object):
                 try:
                     return int(value)
                 except ValueError:
-                    raise self.RequestException(
+                    raise RequestException(
                         httplib.BAD_REQUEST,
                         "not int value %r" % value)
 
@@ -237,7 +238,7 @@ class Server(object):
 
                 m = re.match(r'^bytes=0-(\d+)$', value)
                 if m is None:
-                    raise self.RequestException(
+                    raise RequestException(
                         httplib.BAD_REQUEST,
                         "Unsupported range: %r , expected: bytes=0-last_byte" %
                         value)
