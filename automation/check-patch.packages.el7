@@ -18,6 +18,7 @@ python-decorator
 python-devel
 python-inotify
 python-ioprocess
+python-ipaddress
 python-mock
 python-magic
 python-netaddr

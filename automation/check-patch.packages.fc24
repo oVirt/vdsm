@@ -19,6 +19,7 @@ python-dateutil
 python-devel
 python-inotify
 python-ioprocess
+python-ipaddress
 python-magic
 python-mock
 python-netaddr

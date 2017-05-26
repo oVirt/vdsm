@@ -18,17 +18,128 @@
 
 from __future__ import absolute_import
 
+import abc
 import logging
 import socket
 import struct
+import sys
+
+import ipaddress
+import six
 
 from vdsm.common import cache
+from vdsm.network import driverloader
 from vdsm.network import errors as ne
 from vdsm.network import ipwrapper
 from vdsm.network import sysctl
 from vdsm.network.errors import ConfigNetworkError
 # TODO: vdsm.network.netinfo.addresses should move to this module.
 from vdsm.network.netinfo import addresses
+
+
+@six.add_metaclass(abc.ABCMeta)
+class IPAddressApi(object):
+
+    @staticmethod
+    def add(addr_data):
+        raise NotImplementedError
+
+    @staticmethod
+    def delete(addr_data):
+        raise NotImplementedError
+
+    @staticmethod
+    def addresses(device=None, family=None):
+        raise NotImplementedError
+
+
+class Flags(object):
+    PERMANENT = 'permanent'
+    SECONDARY = 'secondary'
+
+
+class IPAddressData(object):
+
+    def __init__(self, address, device, scope=None, flags=None):
+        try:
+            self._address = ipaddress.ip_interface(six.text_type(address))
+        except ValueError:
+            _, val, tb = sys.exc_info()
+            six.reraise(IPAddressDataError, IPAddressDataError(val), tb)
+        self._device = device
+        self._flags = flags
+        self._scope = scope
+
+    @property
+    def device(self):
+        return self._device
+
+    @property
+    def family(self):
+        return self._address.version
+
+    @property
+    def address(self):
+        return str(self._address.ip)
+
+    @property
+    def netmask(self):
+        return str(self._address.netmask)
+
+    @property
+    def prefixlen(self):
+        return self._address.network.prefixlen
+
+    @property
+    def address_with_prefixlen(self):
+        return str(self._address)
+
+    @property
+    def scope(self):
+        return self._scope
+
+    @property
+    def flags(self):
+        return self._flags
+
+    def is_primary(self):
+        return Flags.SECONDARY not in self.flags
+
+    def is_permanent(self):
+        return Flags.PERMANENT in self.flags
+
+    def __repr__(self):
+        rep = 'device={!r} address={!r}'.format(self.device, self._address)
+        if hasattr(self, 'scope'):
+            rep += ' scope={!r}'.format(self.scope)
+        if hasattr(self, 'flags'):
+            rep += ' flags={!r}'.format(self.flags)
+        return 'IPAddressData({})'.format(rep)
+
+
+class IPAddressError(Exception):
+    pass
+
+
+class IPAddressDataError(IPAddressError):
+    pass
+
+
+class IPAddressAddError(IPAddressError):
+    pass
+
+
+class IPAddressDeleteError(IPAddressError):
+    pass
+
+
+class Drivers(object):
+    IPROUTE2 = 'iproute2'
+
+
+def driver(driver_name):
+    _drivers = driverloader.load_drivers('IPAddress', __name__, __path__[0])
+    return driverloader.get_driver(driver_name, _drivers)
 
 
 class IPv4(object):

@@ -577,6 +577,12 @@ def addrAdd(dev, ipaddr, netmask, family=4):
     _exec_cmd(command)
 
 
+def addrDel(dev, ipaddr, netmask, family):
+    command = [_IP_BINARY.cmd, '-%s' % family, 'addr', 'del', 'dev', dev,
+               '%s/%s' % (ipaddr, netmask)]
+    _exec_cmd(command)
+
+
 def addrFlush(dev, family='both'):
     """
     Remove globally-routable IP addresses from the interface, optionally by
