@@ -48,7 +48,7 @@ class Server(object):
         self.log = log
 
         self._enabled = False
-        self.server = self._create_server()
+        self.server = ThreadedServer(ImageRequestHandler)
 
     def start(self):
         """
@@ -82,190 +82,184 @@ class Server(object):
         self._thread.join()
         return {'status': doneCode}
 
-    def _create_server(self):
-        """
-        Create http server
-        """
 
-        class RequestHandler(BaseHTTPRequestHandler):
+class ImageRequestHandler(BaseHTTPRequestHandler):
 
-            # Timeout for the request socket
-            timeout = 60
-            log = logging.getLogger("rpc.http.RequestHandler")
+    # Timeout for the request socket
+    timeout = 60
+    log = logging.getLogger("rpc.http.ImageRequestHandler")
 
-            HEADER_POOL = 'Storage-Pool-Id'
-            HEADER_DOMAIN = 'Storage-Domain-Id'
-            HEADER_IMAGE = 'Image-Id'
-            HEADER_VOLUME = 'Volume-Id'
-            HEADER_TASK_ID = 'Task-Id'
-            HEADER_RANGE = 'Range'
-            HEADER_CONTENT_LENGTH = 'content-length'
-            HEADER_CONTENT_TYPE = 'content-type'
-            HEADER_CONTENT_RANGE = 'content-range'
+    HEADER_POOL = 'Storage-Pool-Id'
+    HEADER_DOMAIN = 'Storage-Domain-Id'
+    HEADER_IMAGE = 'Image-Id'
+    HEADER_VOLUME = 'Volume-Id'
+    HEADER_TASK_ID = 'Task-Id'
+    HEADER_RANGE = 'Range'
+    HEADER_CONTENT_LENGTH = 'content-length'
+    HEADER_CONTENT_TYPE = 'content-type'
+    HEADER_CONTENT_RANGE = 'content-range'
 
-            protocol_version = "HTTP/1.1"
+    protocol_version = "HTTP/1.1"
 
-            def do_GET(self):
-                try:
-                    length = self._getLength()
-                    img = self._createImage()
-                    startEvent = threading.Event()
-                    methodArgs = {'fileObj': self.wfile,
-                                  'length': length}
+    def do_GET(self):
+        try:
+            length = self._getLength()
+            img = self._createImage()
+            startEvent = threading.Event()
+            methodArgs = {'fileObj': self.wfile,
+                          'length': length}
 
-                    uploadFinishedEvent, operationEndCallback = \
-                        self._createEventWithCallback()
+            uploadFinishedEvent, operationEndCallback = \
+                self._createEventWithCallback()
 
-                    # Optional header
-                    volUUID = self.headers.getheader(self.HEADER_VOLUME)
+            # Optional header
+            volUUID = self.headers.getheader(self.HEADER_VOLUME)
 
-                    response = img.uploadToStream(methodArgs,
-                                                  operationEndCallback,
-                                                  startEvent, volUUID)
+            response = img.uploadToStream(methodArgs,
+                                          operationEndCallback,
+                                          startEvent, volUUID)
 
-                    if response['status']['code'] == 0:
-                        self.send_response(httplib.PARTIAL_CONTENT)
-                        self.send_header(self.HEADER_CONTENT_TYPE,
-                                         'application/octet-stream')
-                        self.send_header(self.HEADER_CONTENT_LENGTH, length)
-                        self.send_header(self.HEADER_CONTENT_RANGE,
-                                         "bytes 0-%d" % (length - 1))
-                        self.send_header(self.HEADER_TASK_ID, response['uuid'])
-                        self.end_headers()
-                        startEvent.set()
-                        self._waitForEvent(uploadFinishedEvent)
-                    else:
-                        self._send_error_response(response)
-
-                except RequestException as e:
-                    # This is an expected exception, so traceback is unneeded
-                    self.send_error(e.httpStatusCode, e.errorMessage)
-                except Exception:
-                    self.send_error(httplib.INTERNAL_SERVER_ERROR,
-                                    "error during execution",
-                                    exc_info=True)
-
-            def do_PUT(self):
-                try:
-                    contentLength = self._getIntHeader(
-                        self.HEADER_CONTENT_LENGTH,
-                        httplib.LENGTH_REQUIRED)
-
-                    img = self._createImage()
-
-                    methodArgs = {'fileObj': self.rfile,
-                                  'length': contentLength}
-
-                    uploadFinishedEvent, operationEndCallback = \
-                        self._createEventWithCallback()
-
-                    # Optional header
-                    volUUID = self.headers.getheader(self.HEADER_VOLUME)
-
-                    response = img.downloadFromStream(methodArgs,
-                                                      operationEndCallback,
-                                                      volUUID)
-
-                    if response['status']['code'] == 0:
-                        while not uploadFinishedEvent.is_set():
-                            uploadFinishedEvent.wait()
-                        self.send_response(httplib.OK)
-                        self.send_header(self.HEADER_TASK_ID, response['uuid'])
-                        self.end_headers()
-                    else:
-                        self._send_error_response(response)
-
-                except RequestException as e:
-                    self.send_error(e.httpStatusCode, e.errorMessage)
-                except Exception:
-                    self.send_error(httplib.INTERNAL_SERVER_ERROR,
-                                    "error during execution",
-                                    exc_info=True)
-
-            def _createImage(self):
-                # Required headers
-                spUUID = self.headers.getheader(self.HEADER_POOL)
-                sdUUID = self.headers.getheader(self.HEADER_DOMAIN)
-                imgUUID = self.headers.getheader(self.HEADER_IMAGE)
-                if not all((spUUID, sdUUID, imgUUID)):
-                    raise RequestException(
-                        httplib.BAD_REQUEST,
-                        "missing or empty required header(s):"
-                        " spUUID=%s sdUUID=%s imgUUID=%s"
-                        % (spUUID, sdUUID, imgUUID))
-
-                return API.Image(imgUUID, spUUID, sdUUID)
-
-            @staticmethod
-            def _createEventWithCallback():
-                operationFinishedEvent = threading.Event()
-
-                def setCallback():
-                    operationFinishedEvent.set()
-
-                return operationFinishedEvent, setCallback
-
-            @staticmethod
-            def _waitForEvent(event):
-                while not event.is_set():
-                    event.wait()
-
-            def _getIntHeader(self, headerName, missingError):
-                value = self._getRequiredHeader(headerName, missingError)
-
-                return self._getInt(value)
-
-            def _getRequiredHeader(self, headerName, missingError):
-                value = self.headers.getheader(
-                    headerName)
-                if not value:
-                    raise RequestException(
-                        missingError,
-                        "missing header %s" % headerName)
-                return value
-
-            def _getInt(self, value):
-                try:
-                    return int(value)
-                except ValueError:
-                    raise RequestException(
-                        httplib.BAD_REQUEST,
-                        "not int value %r" % value)
-
-            def _getLength(self):
-                value = self._getRequiredHeader(self.HEADER_RANGE,
-                                                httplib.BAD_REQUEST)
-
-                m = re.match(r'^bytes=0-(\d+)$', value)
-                if m is None:
-                    raise RequestException(
-                        httplib.BAD_REQUEST,
-                        "Unsupported range: %r , expected: bytes=0-last_byte" %
-                        value)
-
-                last_byte = m.group(1)
-                return self._getInt(last_byte) + 1
-
-            def send_error(self, error, message, exc_info=False):
-                try:
-                    self.log.error(message, exc_info=exc_info)
-                    self.send_response(error)
-                    self.end_headers()
-                except Exception:
-                    self.log.error("failed to return response",
-                                   exc_info=True)
-
-            def _send_error_response(self, response):
-                self.send_response(httplib.INTERNAL_SERVER_ERROR)
-                json_response = json.dumps(response)
+            if response['status']['code'] == 0:
+                self.send_response(httplib.PARTIAL_CONTENT)
                 self.send_header(self.HEADER_CONTENT_TYPE,
-                                 'application/json')
-                self.send_header(self.HEADER_CONTENT_LENGTH,
-                                 len(json_response))
+                                 'application/octet-stream')
+                self.send_header(self.HEADER_CONTENT_LENGTH, length)
+                self.send_header(self.HEADER_CONTENT_RANGE,
+                                 "bytes 0-%d" % (length - 1))
+                self.send_header(self.HEADER_TASK_ID, response['uuid'])
                 self.end_headers()
-                self.wfile.write(json_response)
+                startEvent.set()
+                self._waitForEvent(uploadFinishedEvent)
+            else:
+                self._send_error_response(response)
 
-        return ThreadedServer(RequestHandler)
+        except RequestException as e:
+            # This is an expected exception, so traceback is unneeded
+            self.send_error(e.httpStatusCode, e.errorMessage)
+        except Exception:
+            self.send_error(httplib.INTERNAL_SERVER_ERROR,
+                            "error during execution",
+                            exc_info=True)
+
+    def do_PUT(self):
+        try:
+            contentLength = self._getIntHeader(
+                self.HEADER_CONTENT_LENGTH,
+                httplib.LENGTH_REQUIRED)
+
+            img = self._createImage()
+
+            methodArgs = {'fileObj': self.rfile,
+                          'length': contentLength}
+
+            uploadFinishedEvent, operationEndCallback = \
+                self._createEventWithCallback()
+
+            # Optional header
+            volUUID = self.headers.getheader(self.HEADER_VOLUME)
+
+            response = img.downloadFromStream(methodArgs,
+                                              operationEndCallback,
+                                              volUUID)
+
+            if response['status']['code'] == 0:
+                while not uploadFinishedEvent.is_set():
+                    uploadFinishedEvent.wait()
+                self.send_response(httplib.OK)
+                self.send_header(self.HEADER_TASK_ID, response['uuid'])
+                self.end_headers()
+            else:
+                self._send_error_response(response)
+
+        except RequestException as e:
+            self.send_error(e.httpStatusCode, e.errorMessage)
+        except Exception:
+            self.send_error(httplib.INTERNAL_SERVER_ERROR,
+                            "error during execution",
+                            exc_info=True)
+
+    def _createImage(self):
+        # Required headers
+        spUUID = self.headers.getheader(self.HEADER_POOL)
+        sdUUID = self.headers.getheader(self.HEADER_DOMAIN)
+        imgUUID = self.headers.getheader(self.HEADER_IMAGE)
+        if not all((spUUID, sdUUID, imgUUID)):
+            raise RequestException(
+                httplib.BAD_REQUEST,
+                "missing or empty required header(s):"
+                " spUUID=%s sdUUID=%s imgUUID=%s"
+                % (spUUID, sdUUID, imgUUID))
+
+        return API.Image(imgUUID, spUUID, sdUUID)
+
+    @staticmethod
+    def _createEventWithCallback():
+        operationFinishedEvent = threading.Event()
+
+        def setCallback():
+            operationFinishedEvent.set()
+
+        return operationFinishedEvent, setCallback
+
+    @staticmethod
+    def _waitForEvent(event):
+        while not event.is_set():
+            event.wait()
+
+    def _getIntHeader(self, headerName, missingError):
+        value = self._getRequiredHeader(headerName, missingError)
+
+        return self._getInt(value)
+
+    def _getRequiredHeader(self, headerName, missingError):
+        value = self.headers.getheader(
+            headerName)
+        if not value:
+            raise RequestException(
+                missingError,
+                "missing header %s" % headerName)
+        return value
+
+    def _getInt(self, value):
+        try:
+            return int(value)
+        except ValueError:
+            raise RequestException(
+                httplib.BAD_REQUEST,
+                "not int value %r" % value)
+
+    def _getLength(self):
+        value = self._getRequiredHeader(self.HEADER_RANGE,
+                                        httplib.BAD_REQUEST)
+
+        m = re.match(r'^bytes=0-(\d+)$', value)
+        if m is None:
+            raise RequestException(
+                httplib.BAD_REQUEST,
+                "Unsupported range: %r , expected: bytes=0-last_byte" %
+                value)
+
+        last_byte = m.group(1)
+        return self._getInt(last_byte) + 1
+
+    def send_error(self, error, message, exc_info=False):
+        try:
+            self.log.error(message, exc_info=exc_info)
+            self.send_response(error)
+            self.end_headers()
+        except Exception:
+            self.log.error("failed to return response",
+                           exc_info=True)
+
+    def _send_error_response(self, response):
+        self.send_response(httplib.INTERNAL_SERVER_ERROR)
+        json_response = json.dumps(response)
+        self.send_header(self.HEADER_CONTENT_TYPE,
+                         'application/json')
+        self.send_header(self.HEADER_CONTENT_LENGTH,
+                         len(json_response))
+        self.end_headers()
+        self.wfile.write(json_response)
 
 
 class ThreadedServer(HTTPServer):
