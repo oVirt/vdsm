@@ -43,6 +43,9 @@ LIBNL_ROUTE = CDLL('libnl-route-3.so.200', use_errno=True)
 CHARBUFFSIZE = 40  # Increased to fit IPv6 expanded representations
 HWADDRSIZE = 60    # InfiniBand HW address needs 59+1 bytes
 
+# include/linux-private/linux/netlink.h
+NETLINK_ROUTE = 0  # Routing/device hook
+
 # libnl/include/linux/rtnetlink.h
 GROUPS = {
     'link': 1,             # RTNLGRP_LINK

@@ -27,7 +27,6 @@ from six.moves import queue
 from . import libnl
 
 _POOL_SIZE = 5
-_NETLINK_ROUTE = 0
 
 _NL_ROUTE_NAME = 'route'
 _NL_ROUTE_ADDR_NAME = _NL_ROUTE_NAME + '/addr'  # libnl/lib/route/addr.c
@@ -75,7 +74,7 @@ def _open_socket(callback_function=None, callback_arg=None):
                                       libnl.NlCbKind.NL_CB_CUSTOM,
                                       callback_function, callback_arg)
 
-        libnl.nl_connect(sock, _NETLINK_ROUTE)
+        libnl.nl_connect(sock, libnl.NETLINK_ROUTE)
     except:
         libnl.nl_socket_free(sock)
         raise
