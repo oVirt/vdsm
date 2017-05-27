@@ -182,50 +182,6 @@ class Monitor(object):
         self._scan_thread.join()
 
 
-# libnl/include/linux/rtnetlink.h
-_EVENTS = {
-    16: 'new_link',            # RTM_NEWLINK
-    17: 'del_link',            # RTM_DELLINK
-    18: 'get_link',            # RTM_GETLINK
-    19: 'set_link',            # RTM_SETLINK
-    20: 'new_addr',            # RTM_NEWADDR
-    21: 'del_addr',            # RTM_DELADDR
-    22: 'get_addr',            # RTM_GETADDR
-    24: 'new_route',           # RTM_NEWROUTE
-    25: 'del_route',           # RTM_DELROUTE
-    26: 'get_route',           # RTM_GETROUTE
-    28: 'new_neigh',           # RTM_NEWNEIGH
-    29: 'del_neigh',           # RTM_DELNEIGH
-    30: 'get_neigh',           # RTM_GETNEIGH
-    32: 'new_rule',            # RTM_NEWRULE
-    33: 'del_rule',            # RTM_DELRULE
-    34: 'get_rule',            # RTM_GETRULE
-    36: 'new_qdisc',           # RTM_NEWQDISC
-    37: 'del_qdisc',           # RTM_DELQDISC
-    38: 'get_qdisc',           # RTM_GETQDISC
-    40: 'new_tclass',          # RTM_NEWTCLASS
-    41: 'del_tclass',          # RTM_DELTCLASS
-    42: 'get_tclass',          # RTM_GETTCLASS
-    44: 'new_tfilter',         # RTM_NEWTFILTER
-    45: 'del_tfilter',         # RTM_DELTFILTER
-    46: 'get_tfilter',         # RTM_GETTFILTER
-    48: 'new_action',          # RTM_NEWACTION
-    49: 'del_action',          # RTM_DELACTION
-    50: 'get_action',          # RTM_GETACTION
-    52: 'new_prefix',          # RTM_NEWPREFIX
-    58: 'get_multicast',       # RTM_GETMULTICAST
-    62: 'get_anycast',         # RTM_GETANYCAST
-    64: 'new_neightbl',        # RTM_NEWNEIGHTBL
-    66: 'get_neightbl',        # RTM_GETNEIGHTBL
-    67: 'set_neightbl',        # RTM_SETNEIGHTBL
-    68: 'new_nduseropt',       # RTM_NEWNDUSEROPT
-    72: 'new_addrlabel',       # RTM_NEWADDRLABEL
-    73: 'del_addrlabel',       # RTM_DELADDRLABEL
-    74: 'get_addrlabel',       # RTM_GETADDRLABEL
-    78: 'get_dcb',             # RTM_GETDCB
-    79: 'set_dcb'}             # RTM_SETDCB
-
-
 def _object_input(obj, queue):
     """This function serves as a callback for nl_msg_parse(message, callback,
     extra_argument) function. When nl_msg_parse() is called, it passes message
@@ -244,7 +200,7 @@ def _object_input(obj, queue):
     if obj_dict is not None:
         msg_type = libnl.nl_object_get_msgtype(obj)
         try:
-            obj_dict['event'] = _EVENTS[msg_type]
+            obj_dict['event'] = libnl.EVENTS[msg_type]
         except KeyError:
             logging.error('unexpected msg_type %s', msg_type)
         else:
