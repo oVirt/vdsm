@@ -28,10 +28,6 @@ from . import libnl
 
 _POOL_SIZE = 5
 
-_NL_ROUTE_NAME = 'route'
-_NL_ROUTE_ADDR_NAME = _NL_ROUTE_NAME + '/addr'  # libnl/lib/route/addr.c
-_NL_ROUTE_LINK_NAME = _NL_ROUTE_NAME + '/link'  # libnl/lib/route/link.c
-
 
 class NLSocketPool(object):
     """Pool of netlink sockets."""

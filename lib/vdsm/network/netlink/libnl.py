@@ -157,6 +157,12 @@ class NlCbKind(object):
     NL_CB_CUSTOM = 3  # Customized handler specified by user
 
 
+class RtnlObjectType(object):
+    BASE = 'route'
+    ADDR = BASE + '/addr'  # libnl/lib/route/addr.c
+    LINK = BASE + '/link'  # libnl/lib/route/link.c
+
+
 def nl_geterror(error_code):
     """Return error message for an error code.
 

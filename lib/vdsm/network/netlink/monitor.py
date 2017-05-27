@@ -29,8 +29,7 @@ from vdsm.common.osutils import uninterruptible_poll
 from vdsm.common.osutils import uninterruptible
 from vdsm.common.time import monotonic_time
 
-from . import (_NL_ROUTE_ADDR_NAME, _NL_ROUTE_LINK_NAME,
-               _NL_ROUTE_NAME, _add_socket_memberships,
+from . import (_add_socket_memberships,
                _close_socket, _drop_socket_memberships, _open_socket)
 from . import libnl
 from .addr import _addr_info
@@ -190,11 +189,11 @@ def _object_input(obj, queue):
     """
     obj_type = libnl.nl_object_get_type(obj)
     obj_dict = None
-    if obj_type == _NL_ROUTE_ADDR_NAME:
+    if obj_type == libnl.RtnlObjectType.ADDR:
         obj_dict = _addr_info(obj)
-    elif obj_type == _NL_ROUTE_LINK_NAME:
+    elif obj_type == libnl.RtnlObjectType.LINK:
         obj_dict = _link_info(obj)
-    elif obj_type.split('/', 1)[0] == _NL_ROUTE_NAME:
+    elif obj_type.split('/', 1)[0] == libnl.RtnlObjectType.BASE:
         obj_dict = _route_info(obj)
 
     if obj_dict is not None:
