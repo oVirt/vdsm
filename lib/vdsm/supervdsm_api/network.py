@@ -21,7 +21,8 @@ from __future__ import absolute_import
 from . import expose
 
 from vdsm.network.api import (setSafeNetworkConfig, setupNetworks,
-                              change_numvfs, network_caps, ovs_bridge,
+                              change_numvfs, add_ovs_vhostuser_port,
+                              network_caps, ovs_bridge,
                               add_sourceroute, remove_sourceroute)
 from vdsm.network.restore_net_config import restore
 from vdsm.network.sysctl import set_rp_filter_loose, set_rp_filter_strict
@@ -37,6 +38,7 @@ expose(setSafeNetworkConfig)
 expose(setupNetworks)
 expose(network_caps)
 expose(change_numvfs)
+expose(add_ovs_vhostuser_port)
 expose(ovs_bridge)
 expose(setPortMirroring)
 expose(unsetPortMirroring)

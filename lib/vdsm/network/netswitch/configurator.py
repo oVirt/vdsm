@@ -281,6 +281,10 @@ def set_ovs_links_up(nets2add, bonds2add, bonds2edit):
         iface.up(dev)
 
 
+def ovs_add_vhostuser_port(bridge, port, socket_path):
+    ovs_switch.add_vhostuser_port(bridge, port, socket_path)
+
+
 def _gather_ovs_ifaces(nets2add, bonds2add, bonds2edit):
     nets_and_bonds = set(
         itertools.chain.from_iterable([nets2add, bonds2add, bonds2edit]))

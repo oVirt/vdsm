@@ -59,6 +59,13 @@ def create_network_addition_setup(ovs_info):
     return NetsAdditionSetup(ovsdb, ovs_info)
 
 
+def add_vhostuser_port(bridge, port, socket_path):
+    ovsdb = driver.create()
+    with ovsdb.transaction() as t:
+        t.add(ovsdb.add_port(bridge, port))
+        t.add(ovsdb.set_vhostuser_iface(port, socket_path))
+
+
 class NetsRemovalSetup(object):
     def __init__(self, ovsdb, ovs_info):
         self._ovsdb = ovsdb

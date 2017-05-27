@@ -273,3 +273,7 @@ def add_sourceroute(iface, ip, mask, route):
 
 def remove_sourceroute(iface):
     sourceroute.remove(iface)
+
+
+def add_ovs_vhostuser_port(bridge, port, socket_path):
+    netswitch.configurator.ovs_add_vhostuser_port(bridge, port, socket_path)
