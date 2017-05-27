@@ -21,9 +21,13 @@
 
 from __future__ import absolute_import
 
+import os
+import uuid
+
 import xml.etree.ElementTree as ET
 import re
 
+from vdsm import constants
 from vdsm import supervdsm
 from vdsm.common import conv
 from vdsm.hostdev import get_device_params, detach_detachable, \
@@ -35,12 +39,14 @@ from vdsm.virt import vmxml
 from . import core
 from . import hwclass
 
+VHOST_SOCK_DIR = os.path.join(constants.P_VDSM_RUN, 'vhostuser')
+
 
 class Interface(core.Base):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
                  'linkActive', 'portMirroring', 'filter', 'filterParameters',
                  'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev',
-                 'numa_node', '_device_params', 'vm_custom')
+                 'numa_node', '_device_params', 'vm_custom', '_is_vhostuser')
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
@@ -103,6 +109,7 @@ class Interface(core.Base):
         if self.is_hostdevice:
             self._device_params = get_device_params(self.hostdev)
             self.numa_node = self._device_params.get('numa_node', None)
+        self._is_vhostuser = False
 
     def _customize(self):
         # Customize network device
@@ -175,8 +182,20 @@ class Interface(core.Base):
           function='0x0'/>
           <boot order='1'/>
          </interface>
+
+         -- In case of an ovs dpdk bridge --
+
+        <interface type="vhostuser">
+          <address bus="0x00" domain="0x0000" slot="0x04" type="pci"/>
+          <mac address="00:1a:4a:16:01:54"/>
+          <model type="virtio"/>
+          <source mode="server" path='socket path' type="unix"/>
+        </interface>
+
+
         """
-        iface = self.createXmlElem('interface', self.device, ['address'])
+        devtype = 'vhostuser' if self._is_vhostuser else self.device
+        iface = self.createXmlElem('interface', devtype, ['address'])
         iface.appendChildWithArgs('mac', address=self.macAddr)
 
         if hasattr(self, 'nicModel'):
@@ -198,7 +217,10 @@ class Interface(core.Base):
         else:
             ovs_bridge = supervdsm.getProxy().ovs_bridge(self.network)
             if ovs_bridge:
-                self._source_ovs_bridge(iface, ovs_bridge['name'])
+                if ovs_bridge['dpdk_enabled']:
+                    self._source_ovsdpdk_bridge(iface, ovs_bridge['name'])
+                else:
+                    self._source_ovs_bridge(iface, ovs_bridge['name'])
             else:
                 iface.appendChildWithArgs('source', bridge=self.network)
 
@@ -236,6 +258,21 @@ class Interface(core.Base):
             vlan = iface.appendChildWithArgs('vlan')
             vlan.appendChildWithArgs('tag', id=str(vlan_tag))
 
+    def _source_ovsdpdk_bridge(self, iface, ovs_bridge):
+        socket_path = os.path.join(
+            VHOST_SOCK_DIR, self._get_vhostuser_port_name())
+        iface.appendChildWithArgs(
+            'source', type='unix', path=socket_path, mode='server')
+
+    def _create_vhost_port(self, ovs_bridge):
+        port = self._get_vhostuser_port_name()
+        socket_path = os.path.join(VHOST_SOCK_DIR, port)
+        supervdsm.getProxy().add_ovs_vhostuser_port(
+            ovs_bridge, port, socket_path)
+
+    def _get_vhostuser_port_name(self):
+        return str(uuid.uuid3(uuid.UUID(self.vmid), self.macAddr))
+
     def _set_parameters_filter(self, filter):
         for name, value in self._filter_parameter_map():
             filter.appendChildWithArgs('parameter', name=name, value=value)
@@ -267,6 +304,11 @@ class Interface(core.Base):
         if self.is_hostdevice:
             self.log.info('Detaching device %s from the host.' % self.hostdev)
             detach_detachable(self.hostdev)
+        else:
+            bridge_info = supervdsm.getProxy().ovs_bridge(self.network)
+            if bridge_info and bridge_info['dpdk_enabled']:
+                self._is_vhostuser = True
+                self._create_vhost_port(bridge_info['name'])
 
     def teardown(self):
         if self.is_hostdevice:
@@ -281,6 +323,18 @@ class Interface(core.Base):
 
             supervdsm.getProxy().rmAppropriateIommuGroup(
                 self._device_params['iommu_group'])
+
+        if self._is_vhostuser:
+            bridge_info = supervdsm.getProxy().ovs_bridge(self.network)
+            if bridge_info:
+                port = self._get_vhostuser_port_name()
+                supervdsm.getProxy().remove_ovs_port(bridge_info['name'], port)
+
+    def recover(self):
+        if self.network:
+            bridge_info = supervdsm.getProxy().ovs_bridge(self.network)
+            if bridge_info and bridge_info['dpdk_enabled']:
+                self._is_vhostuser = True
 
     @property
     def _xpath(self):

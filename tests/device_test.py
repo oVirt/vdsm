@@ -286,6 +286,62 @@ class TestVmDevices(XMLTestCase):
             self.assertEqual(interface_dev.driver,
                              {'queues': '10', 'name': 'vfio'})
 
+    @MonkeyPatch(vmdevices.network.supervdsm, 'getProxy',
+                 lambda: MockedProxy(ovs_bridge={'name': 'test',
+                                                 'dpdk_enabled': True}))
+    def test_vhostuser_interface(self):
+        interfaceXML = """
+            <interface type="vhostuser"> <address %s/>
+                <mac address="52:54:00:59:F5:3F"/>
+                <model type="virtio"/>
+                <source mode="server" path="/var/run/vdsm/vhostuser/%s"
+                type="unix" />
+                <filterref filter="no-mac-spoofing"/>
+                <boot order="1"/>
+            </interface>""" % (
+            self.PCI_ADDR, 'f773dff7-0e9c-3bc3-9e36-9713415446df')
+
+        dev = {'nicModel': 'virtio', 'macAddr': '52:54:00:59:F5:3F',
+               'network': 'test', 'address': self.PCI_ADDR_DICT,
+               'device': 'bridge', 'type': 'interface',
+               'bootOrder': '1', 'filter': 'no-mac-spoofing',
+               'vmid': self.conf['vmId']}
+
+        iface = vmdevices.network.Interface(self.log, **dev)
+        iface.setup()
+        try:
+            self.assert_dom_xml_equal(iface.getXML(), interfaceXML)
+        finally:
+            iface.teardown()
+
+    @MonkeyPatch(vmdevices.network.supervdsm, 'getProxy',
+                 lambda: MockedProxy(ovs_bridge={'name': 'test',
+                                                 'dpdk_enabled': True}))
+    def test_vhostuser_interface_recovery(self):
+        interfaceXML = """
+                <interface type="vhostuser"> <address %s/>
+                    <mac address="52:54:00:59:F5:3F"/>
+                    <model type="virtio"/>
+                    <source mode="server" path="/var/run/vdsm/vhostuser/%s"
+                    type="unix" />
+                    <filterref filter="no-mac-spoofing"/>
+                    <boot order="1"/>
+                </interface>""" % (
+            self.PCI_ADDR, 'f773dff7-0e9c-3bc3-9e36-9713415446df')
+
+        dev = {'nicModel': 'virtio', 'macAddr': '52:54:00:59:F5:3F',
+               'network': 'test', 'address': self.PCI_ADDR_DICT,
+               'device': 'bridge', 'type': 'interface',
+               'bootOrder': '1', 'filter': 'no-mac-spoofing',
+               'vmid': self.conf['vmId']}
+
+        iface = vmdevices.network.Interface(self.log, **dev)
+        iface.recover()
+        try:
+            self.assert_dom_xml_equal(iface.getXML(), interfaceXML)
+        finally:
+            iface.teardown()
+
     def testGetUnderlyingGraphicsDeviceInfo(self):
         port = '6000'
         tlsPort = '6001'
@@ -602,3 +658,9 @@ class MockedProxy(object):
 
     def ovs_bridge(self, name):
         return self._ovs_bridge
+
+    def add_ovs_vhostuser_port(self, bridge, port, socket):
+        pass
+
+    def remove_ovs_port(self, bridge, port):
+        pass

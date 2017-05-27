@@ -2251,6 +2251,8 @@ class Vm(object):
             self._dom = virdomain.Notifying(
                 self._connection.lookupByUUIDString(self.id),
                 self._timeoutExperienced)
+            for dev in self._devices[hwclass.NIC]:
+                dev.recover()
         elif self._altered_state.origin == _MIGRATION_ORIGIN:
             pass  # self._dom will be disconnected until migration ends.
         elif self._altered_state.origin == _FILE_ORIGIN:
