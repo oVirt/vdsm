@@ -711,6 +711,158 @@ def rtnl_link_put(link):
     _rtnl_link_put(link)
 
 
+def rtnl_route_alloc_cache(socket, family, flags):
+    """Allocate route cache and fill in all configured routes.
+
+    @arg socket          Netlink socket.
+    @arg family          Address family of routes to cover or AF_UNSPEC
+    @arg flags           Flags
+
+    Valid flags:
+      * ROUTE_CACHE_CONTENT - Cache will contain contents of routing cache
+                              instead of actual routes.
+
+    @note The caller is responsible for destroying and freeing the
+          cache after using it.
+
+    @return Newly allocated cache with routes obtained from kernel.
+    """
+    _rtnl_route_alloc_cache = _libnl_route(
+        'rtnl_route_alloc_cache', c_int, c_void_p, c_int, c_int, c_void_p)
+    cache = c_void_p()
+    err = _rtnl_route_alloc_cache(socket, family, flags, byref(cache))
+    if err:
+        raise IOError(-err, nl_geterror(err))
+    return cache
+
+
+def rtnl_route_get_nnexthops(route):
+    """Return number of next hops of given route.
+
+    @arg route           Route object
+
+    @return Number of next hops.
+    """
+    _rtnl_route_get_nnexthops = _libnl_route(
+        'rtnl_route_get_nnexthops', c_int, c_void_p)
+    return _rtnl_route_get_nnexthops(route)
+
+
+def rtnl_route_nexthop_n(route, index):
+    """Return next hop of given route.
+
+    @arg route           Route object
+    @arg index           Index of next hop, within rtnl_route_get_nnexthops
+
+    @return Next hop object or None if there is None on given index.
+    """
+    _rtnl_route_get_nexthop_n = _libnl_route(
+        'rtnl_route_nexthop_n', c_void_p, c_void_p, c_int)
+    return _rtnl_route_get_nexthop_n(route, index)
+
+
+def rtnl_route_get_dst(route):
+    """Return destination nl address object.
+
+    @arg route           Route object
+
+    @return Destination address (as nl address object, can be converted to a
+            readable string via nl_addr2str).
+    """
+    _rtnl_route_get_dst = _libnl_route(
+        'rtnl_route_get_dst', c_void_p, c_void_p)
+    return _rtnl_route_get_dst(route)
+
+
+def rtnl_route_get_src(route):
+    """Return source nl address object.
+
+    @arg route           Route object
+
+    @return Source address (as nl address object, can be converted to a
+            readable string via nl_addr2str).
+    """
+    _rtnl_route_get_src = _libnl_route(
+        'rtnl_route_get_src', c_void_p, c_void_p)
+    return _rtnl_route_get_src(route)
+
+
+def rtnl_route_get_iif(route):
+    """Return input interface index.
+
+    @arg route           Route object
+
+    @return Input interface index (can be converted to a readable string via
+            rtnl_link_get_name or rtnl_link_i2name).
+    """
+    _rtnl_route_get_iif = _libnl_route('rtnl_route_get_iif', c_int, c_void_p)
+    return _rtnl_route_get_iif(route)
+
+
+def rtnl_route_get_table(route):
+    """Return route table number.
+
+    @arg route           Route object
+
+    @return Routing table number.
+    """
+    _rtnl_route_get_table = _libnl_route(
+        'rtnl_route_get_table', c_int, c_void_p)
+    return _rtnl_route_get_table(route)
+
+
+def rtnl_route_get_scope(route):
+    """Return route scope code.
+
+    @arg route           Route object
+
+    @return Route scope code (can be converted to a readable string via
+            rtnl_scope2str).
+    """
+    _rtnl_route_get_scope = _libnl_route(
+        'rtnl_route_get_scope', c_int, c_void_p)
+    scope_code = _rtnl_route_get_scope(route)
+    return scope_code
+
+
+def rtnl_route_get_family(route):
+    """Return route address family code.
+
+    @arg route           Route object
+
+    @return Address family code, can be translated to string via nl_af2str.
+    """
+    _rtnl_route_get_family = _libnl_route(
+        'rtnl_route_get_family', c_int, c_void_p)
+    return _rtnl_route_get_family(route)
+
+
+def rtnl_route_nh_get_ifindex(next_hop):
+    """Return next hop interface index.
+
+    @arg next_hop        Next hop object
+
+    @return Next hop interface index (can be converted to a readable string via
+            rtnl_link_get_name or rtnl_link_i2name).
+    """
+    _rtnl_route_nh_get_ifindex = _libnl_route(
+        'rtnl_route_nh_get_ifindex', c_int, c_void_p)
+    return _rtnl_route_nh_get_ifindex(next_hop)
+
+
+def rtnl_route_nh_get_gateway(next_hop):
+    """Return next hop gateway as nl address object.
+
+    @arg next_hop        Next hop object
+
+    @return Gateway address (as nl address object, can be converted to a
+            readable string via nl_addr2str).
+    """
+    _rtnl_route_nh_get_gateway = _libnl_route(
+        'rtnl_route_nh_get_gateway', c_void_p, c_void_p)
+    return _rtnl_route_nh_get_gateway(next_hop)
+
+
 def c_object_argument(argument):
     """Prepare prepare Python object to be used as an C argument.
 

@@ -19,7 +19,6 @@
 #
 from __future__ import absolute_import
 from contextlib import contextmanager
-from ctypes import CFUNCTYPE, c_char_p, c_int, c_void_p
 from functools import partial
 from threading import BoundedSemaphore
 
@@ -114,16 +113,6 @@ def _socket_memberships(socket_membership_function, socket, groups):
     except:
         libnl.nl_socket_free(socket)
         raise
-
-
-# C function prototypes
-# http://docs.python.org/2/library/ctypes.html#function-prototypes
-# This helps ctypes know the calling conventions it should use to communicate
-# with the binary interface of libnl and which types it should allocate and
-# cast. Without it ctypes fails when not running on the main thread.
-_int_proto = CFUNCTYPE(c_int, c_void_p)
-_char_proto = CFUNCTYPE(c_char_p, c_void_p)
-_void_proto = CFUNCTYPE(c_void_p, c_void_p)
 
 _add_socket_memberships = partial(_socket_memberships,
                                   libnl.nl_socket_add_memberships)

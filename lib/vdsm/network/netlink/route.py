@@ -17,13 +17,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
-from ctypes import CFUNCTYPE, c_int, c_void_p, byref
 from functools import partial
 from socket import AF_UNSPEC
 import errno
 
 from . import _cache_manager
-from . import _char_proto, _int_proto, _void_proto
 from . import _pool
 from . import libnl
 from .link import _nl_link_cache, _link_index_to_name
@@ -46,16 +44,16 @@ def iter_routes():
 
 
 def _route_info(route, link_cache=None):
-    destination = _rtnl_route_get_dst(route)
-    source = _rtnl_route_get_src(route)
+    destination = libnl.rtnl_route_get_dst(route)
+    source = libnl.rtnl_route_get_src(route)
     gateway = _rtnl_route_get_gateway(route)
     data = {
         'destination': libnl.nl_addr2str(destination),  # network
         'source': libnl.nl_addr2str(source) if source else None,
         'gateway': libnl.nl_addr2str(gateway) if gateway else None,  # via
-        'family': libnl.nl_af2str(_rtnl_route_get_family(route)),
-        'table': _rtnl_route_get_table(route),
-        'scope': libnl.rtnl_scope2str(_rtnl_route_get_scope(route))}
+        'family': libnl.nl_af2str(libnl.rtnl_route_get_family(route)),
+        'table': libnl.rtnl_route_get_table(route),
+        'scope': libnl.rtnl_scope2str(libnl.rtnl_route_get_scope(route))}
     oif_index = _rtnl_route_get_oif(route)
     if oif_index > 0:
         data['oif_index'] = oif_index
@@ -67,30 +65,14 @@ def _route_info(route, link_cache=None):
     return data
 
 
-_route_alloc_cache = CFUNCTYPE(c_int, c_void_p, c_int, c_int, c_void_p)(
-    ('rtnl_route_alloc_cache', libnl.LIBNL_ROUTE))
-_route_get_nnexthops = _int_proto(('rtnl_route_get_nnexthops',
-                                   libnl.LIBNL_ROUTE))
-_route_get_nexthop_n = CFUNCTYPE(c_void_p, c_void_p, c_int)(
-    ('rtnl_route_nexthop_n', libnl.LIBNL_ROUTE))
-_hop_get_ifindex = _int_proto(('rtnl_route_nh_get_ifindex', libnl.LIBNL_ROUTE))
-_hop_get_gateway = _void_proto(
-    ('rtnl_route_nh_get_gateway', libnl.LIBNL_ROUTE))
-
-
 def _rtnl_route_alloc_cache(sock):
-    """Wraps the new addr alloc cache to expose the libnl1 signature"""
-    cache = c_void_p()
-    err = _route_alloc_cache(sock, AF_UNSPEC, 0, byref(cache))
-    if err:
-        raise IOError(-err, libnl.nl_geterror(err))
-    return cache
+    return libnl.rtnl_route_alloc_cache(sock, AF_UNSPEC, 0)
 
 
 def _route_get_next_hop(route):
-    if _route_get_nnexthops(route) != 1:
-        return
-    return _route_get_nexthop_n(route, 0)
+    if libnl.rtnl_route_get_nnexthops(route) != 1:
+        return None
+    return libnl.rtnl_route_nexthop_n(route, 0)
 
 
 def _rtnl_route_get_oif(route):
@@ -98,7 +80,7 @@ def _rtnl_route_get_oif(route):
     if hop is None:
         return -1
     else:
-        return _hop_get_ifindex(hop)
+        return libnl.rtnl_route_nh_get_ifindex(hop)
 
 
 def _rtnl_route_get_gateway(route):
@@ -106,16 +88,7 @@ def _rtnl_route_get_gateway(route):
     if hop is None:
         return None
     else:
-        gw = _hop_get_gateway(hop)
-        return gw
+        return libnl.rtnl_route_nh_get_gateway(hop)
 
 
 _nl_route_cache = partial(_cache_manager, _rtnl_route_alloc_cache)
-
-_rtnl_route_get_dst = _void_proto(('rtnl_route_get_dst', libnl.LIBNL_ROUTE))
-_rtnl_route_get_src = _void_proto(('rtnl_route_get_src', libnl.LIBNL_ROUTE))
-_rtnl_route_get_iif = _char_proto(('rtnl_route_get_iif', libnl.LIBNL_ROUTE))
-_rtnl_route_get_table = _int_proto(('rtnl_route_get_table', libnl.LIBNL_ROUTE))
-_rtnl_route_get_scope = _int_proto(('rtnl_route_get_scope', libnl.LIBNL_ROUTE))
-_rtnl_route_get_family = _int_proto(
-    ('rtnl_route_get_family', libnl.LIBNL_ROUTE))
