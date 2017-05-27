@@ -31,9 +31,6 @@ _NETLINK_ROUTE = 0
 
 _NLE_NODEV = 31  # libnl/incluede/netlink/errno.h
 
-_NL_CB_DEFAULT = 0  # libnl/include/netlink/handlers.h
-_NL_CB_CUSTOM = 3   # libnl/include/netlink/handlers.h
-
 _NL_ROUTE_NAME = 'route'
 _NL_ROUTE_ADDR_NAME = _NL_ROUTE_NAME + '/addr'  # libnl/lib/route/addr.c
 _NL_ROUTE_LINK_NAME = _NL_ROUTE_NAME + '/link'  # libnl/lib/route/link.c
@@ -76,7 +73,8 @@ def _open_socket(callback_function=None, callback_arg=None):
     try:
         if callback_function is not None:
             libnl.nl_socket_disable_seq_check(sock)
-            libnl.nl_socket_modify_cb(sock, _NL_CB_DEFAULT, _NL_CB_CUSTOM,
+            libnl.nl_socket_modify_cb(sock, libnl.NlCbKind.NL_CB_DEFAULT,
+                                      libnl.NlCbKind.NL_CB_CUSTOM,
                                       callback_function, callback_arg)
 
         libnl.nl_connect(sock, _NETLINK_ROUTE)

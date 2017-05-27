@@ -146,6 +146,14 @@ class NlCbAction(object):
     NL_STOP = 2  # Stop parsing altogether and discard remaining messages
 
 
+# include/netlink/handlers.h
+class NlCbKind(object):
+    NL_CB_DEFAULT = 0  # Default handlers (quiet)
+    NL_CB_VERBOSE = 1  # Verbose default handlers (error messages printed)
+    NL_CB_DEBUG = 2  # Debug handlers for debugging
+    NL_CB_CUSTOM = 3  # Customized handler specified by user
+
+
 def nl_geterror(error_code):
     """Return error message for an error code.
 
