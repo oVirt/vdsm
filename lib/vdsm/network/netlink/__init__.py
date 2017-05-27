@@ -34,8 +34,6 @@ _NLE_NODEV = 31  # libnl/incluede/netlink/errno.h
 _NL_CB_DEFAULT = 0  # libnl/include/netlink/handlers.h
 _NL_CB_CUSTOM = 3   # libnl/include/netlink/handlers.h
 
-_NL_STOP = 2  # libnl/python/netlink/capi.i
-
 _NL_ROUTE_NAME = 'route'
 _NL_ROUTE_ADDR_NAME = _NL_ROUTE_NAME + '/addr'  # libnl/lib/route/addr.c
 _NL_ROUTE_LINK_NAME = _NL_ROUTE_NAME + '/link'  # libnl/lib/route/link.c

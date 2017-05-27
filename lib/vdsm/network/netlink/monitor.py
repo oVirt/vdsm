@@ -30,7 +30,7 @@ from vdsm.common.osutils import uninterruptible
 from vdsm.common.time import monotonic_time
 
 from . import (_NL_ROUTE_ADDR_NAME, _NL_ROUTE_LINK_NAME,
-               _NL_ROUTE_NAME, _NL_STOP, _add_socket_memberships,
+               _NL_ROUTE_NAME, _add_socket_memberships,
                _close_socket, _drop_socket_memberships, _open_socket)
 from . import libnl
 from .addr import _addr_info
@@ -214,7 +214,7 @@ def _event_input(msg, c_queue):
     argument (monitor's queue in this case)
     """
     libnl.nl_msg_parse(msg, _c_object_input, c_queue)
-    return _NL_STOP
+    return libnl.NlCbAction.NL_STOP
 _c_event_input = libnl.prepare_cfunction_for_nl_socket_modify_cb(_event_input)
 
 

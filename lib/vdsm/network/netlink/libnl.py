@@ -139,6 +139,13 @@ class IfaceStatus(object):
     IFF_ECHO = 1 << 18
 
 
+# include/netlink/handlers.h
+class NlCbAction(object):
+    NL_OK = 0  # Proceed with whatever would come next
+    NL_SKIP = 1  # Skip this message
+    NL_STOP = 2  # Stop parsing altogether and discard remaining messages
+
+
 def nl_geterror(error_code):
     """Return error message for an error code.
 
