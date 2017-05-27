@@ -24,6 +24,7 @@ from vdsm.network.ipwrapper import IPRoute2Error
 from vdsm.network.ipwrapper import routeGet, Route, routeShowGateways
 from vdsm.network.ipwrapper import route6_show_gateways
 from vdsm.network.netlink import route as nl_route
+from vdsm.network.netlink.libnl import RtKnownTables
 
 
 def getRouteDeviceTo(destinationIP):
@@ -68,7 +69,8 @@ def is_ipv6_default_route(gateway):
     return (gateway == dg.via) if dg else False
 
 
-def get_gateway(routes_by_dev, dev, family=4, table=nl_route._RT_TABLE_UNSPEC):
+def get_gateway(
+        routes_by_dev, dev, family=4, table=RtKnownTables.RT_TABLE_UNSPEC):
     """
     Return the default gateway for a device and an address family
     :param routes_by_dev: dictionary from device names to a list of routes.
@@ -81,7 +83,7 @@ def get_gateway(routes_by_dev, dev, family=4, table=nl_route._RT_TABLE_UNSPEC):
     # the gateway in all tables (RT_TABLE_UNSPEC), not just the 'main' one.
     gateways = [r for r in routes if r['destination'] == 'none' and
                 (r.get('table') == table or
-                 table == nl_route._RT_TABLE_UNSPEC) and
+                 table == RtKnownTables.RT_TABLE_UNSPEC) and
                 r['scope'] == 'global' and
                 r['family'] == ('inet6' if family == 6 else 'inet')
                 ]

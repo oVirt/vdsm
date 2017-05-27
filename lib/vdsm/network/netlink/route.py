@@ -26,10 +26,6 @@ from . import _pool
 from . import libnl
 from .link import _nl_link_cache, _link_index_to_name
 
-_RT_TABLE_UNSPEC = 0
-_RT_TABLE_COMPAT = 252
-_RT_TABLE_MAIN = 254
-
 
 def iter_routes():
     """Generator that yields an information dictionary for each route in the

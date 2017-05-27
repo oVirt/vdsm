@@ -106,6 +106,16 @@ EVENTS = {
 }
 
 
+# libnl/include/linux-private/linux/rtnetlink.h
+class RtKnownTables(object):
+    RT_TABLE_UNSPEC = 0
+    RT_TABLE_COMPAT = 252
+    RT_TABLE_DEFAULT = 253
+    RT_TABLE_MAIN = 254
+    RT_TABLE_LOCAL = 255
+    RT_TABLE_MAX = 0xFFFFFFFF
+
+
 def nl_geterror(error_code):
     """Return error message for an error code.
 
