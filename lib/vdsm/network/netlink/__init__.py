@@ -29,8 +29,6 @@ from . import libnl
 _POOL_SIZE = 5
 _NETLINK_ROUTE = 0
 
-_NLE_NODEV = 31  # libnl/incluede/netlink/errno.h
-
 _NL_ROUTE_NAME = 'route'
 _NL_ROUTE_ADDR_NAME = _NL_ROUTE_NAME + '/addr'  # libnl/lib/route/addr.c
 _NL_ROUTE_LINK_NAME = _NL_ROUTE_NAME + '/link'  # libnl/lib/route/link.c
