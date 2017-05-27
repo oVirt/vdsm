@@ -39,6 +39,7 @@ from netaddr import IPNetwork
 from vdsm.config import config
 from vdsm.network import cmd
 from vdsm.network.link import dpdk
+from vdsm.network.netlink import libnl
 from vdsm.network.netlink import link
 from vdsm.common.cmdutils import CommandPath
 
@@ -234,10 +235,12 @@ class Link(object):
     def oper_up(self):
         if dpdk.is_dpdk(self.name):
             return dpdk.is_oper_up(self.name)
-        return bool(link.get_link(self.name)['flags'] & link.IFF_RUNNING)
+        return bool(
+            link.get_link(self.name)['flags'] & libnl.IfaceStatus.IFF_RUNNING)
 
     def get_promisc(self):
-        return bool(link.get_link(self.name)['flags'] & link.IFF_PROMISC)
+        return bool(
+            link.get_link(self.name)['flags'] & libnl.IfaceStatus.IFF_PROMISC)
 
     def set_promisc(self, value):
         """Takes a boolean to enable/disable Link promiscuity"""

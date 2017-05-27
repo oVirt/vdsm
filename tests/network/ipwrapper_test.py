@@ -28,7 +28,7 @@ from vdsm.network import ipwrapper
 from vdsm.network.ipwrapper import Route
 from vdsm.network.ipwrapper import Rule
 from vdsm.network.netlink import monitor
-from vdsm.network.netlink.link import IFF_PROMISC
+from vdsm.network.netlink.libnl import IfaceStatus
 
 from .nettestlib import Bridge, requires_brctl
 from testlib import VdsmTestCase as TestCaseBase
@@ -135,7 +135,7 @@ class TestDrvinfo(TestCaseBase):
             link.promisc = True
             for event in mon:
                 if (event['event'] == 'new_link' and
-                        event.get('flags', 0) & IFF_PROMISC):
+                        event.get('flags', 0) & IfaceStatus.IFF_PROMISC):
                     return
         self.fail("Could not enable promiscuous mode.")
 

@@ -24,7 +24,7 @@ import string
 
 from vdsm.network import ipwrapper
 from vdsm.network.link import dpdk
-from vdsm.network.netlink import link
+from vdsm.network.netlink import libnl
 from vdsm.network.netlink.link import get_link, is_link_up
 from vdsm.network.netlink.waitfor import waitfor_linkup
 
@@ -74,7 +74,7 @@ def is_oper_up(dev):
 
 
 def is_promisc(dev):
-    return bool(get_link(dev)['flags'] & link.IFF_PROMISC)
+    return bool(get_link(dev)['flags'] & libnl.IfaceStatus.IFF_PROMISC)
 
 
 def exists(dev):
