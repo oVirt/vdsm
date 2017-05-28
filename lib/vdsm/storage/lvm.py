@@ -85,7 +85,6 @@ class Unreadable(Stub):
 # VG states
 VG_OK = "OK"
 VG_PARTIAL = "PARTIAL"
-VG_UNKNOWN = "UNKNOWN"
 
 SEPARATOR = "|"
 LVM_NOBACKUP = ("--autobackup", "n")
