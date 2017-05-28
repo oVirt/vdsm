@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 from __future__ import absolute_import
 
-from vdsm.commands import execCmd
+from vdsm.network import cmd
 from vdsm.network.ovs.driver import create
 
 
@@ -31,12 +31,12 @@ OVS_CTL = '/usr/share/openvswitch/scripts/ovs-ctl'
 
 class OvsService(object):
     def __init__(self):
-        rc, out, err = execCmd([OVS_CTL, 'status'])
+        rc, out, err = cmd.exec_sync([OVS_CTL, 'status'])
         self.ovs_init_state_is_up = (rc == 0)
 
     def setup(self):
         if not self.ovs_init_state_is_up:
-            execCmd([OVS_CTL, 'start'])
+            cmd.exec_sync([OVS_CTL, 'start'])
 
     def teardown(self):
         ovsdb = create()
@@ -48,4 +48,4 @@ class OvsService(object):
                     t.add(ovsdb.del_br(bridge['name']))
 
         if not self.ovs_init_state_is_up:
-            execCmd([OVS_CTL, 'stop'])
+            cmd.exec_sync([OVS_CTL, 'stop'])

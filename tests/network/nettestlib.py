@@ -34,6 +34,7 @@ from nose.plugins.skip import SkipTest
 
 from vdsm.constants import EXT_BRCTL, EXT_TC
 from vdsm import cpuarch
+from vdsm.network import cmd as cmd
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
@@ -45,7 +46,6 @@ from vdsm.network.link.bond.sysfs_options import BONDING_DEFAULTS
 from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo import routes
 from vdsm.network.netlink import monitor
-from vdsm.commands import execCmd
 from vdsm.common.cache import memoized
 from vdsm.common.cmdutils import CommandPath
 
@@ -66,11 +66,11 @@ class ExecError(RuntimeError):
         self.err = err
 
 
-def check_call(cmd):
-    rc, out, err = execCmd(cmd, raw=True)
+def check_call(cmds):
+    rc, out, err = cmd.exec_sync(cmds)
     if rc != 0:
         raise ExecError(
-            'Command %s returned non-zero exit status %s.' % (cmd, rc),
+            'Command %s returned non-zero exit status %s.' % (cmds, rc),
             out, err)
 
 
@@ -290,28 +290,28 @@ class IperfClient(object):
         self._raw_output = None
 
     def start(self):
-        cmd = [_IPERF3_BINARY.cmd, '--client', self._server_ip,
-               '--version4',  # only IPv4
-               '--time', str(self._test_time), '--parallel',
-               str(self._threads), '--bind', self._bind_to,
-               '--zerocopy',  # use less cpu
-               '--json']
-        rc, self._raw_output, err = execCmd(cmd)
+        cmds = [_IPERF3_BINARY.cmd, '--client', self._server_ip,
+                '--version4',  # only IPv4
+                '--time', str(self._test_time), '--parallel',
+                str(self._threads), '--bind', self._bind_to,
+                '--zerocopy',  # use less cpu
+                '--json']
+        rc, self._raw_output, err = cmd.exec_sync(cmds)
         if rc == 1 and 'No route to host' in self.out['error']:
             # it seems that it takes some time for the routes to get updated
             # on the os so that we don't get this error, hence the horrific
             # sleep here.
             # TODO: Investigate, understand, and remove this sleep.
             time.sleep(3)
-            rc, self._raw_output, err = execCmd(cmd)
+            rc, self._raw_output, err = cmd.exec_sync(cmds)
         if rc:
             raise Exception('iperf3 client failed: cmd=%s, rc=%s, out=%s, '
-                            'err=%s' % (' '.join(cmd), rc, self._raw_output,
+                            'err=%s' % (' '.join(cmds), rc, self._raw_output,
                                         err))
 
     @property
     def out(self):
-        return json.loads(' '.join(self._raw_output))
+        return json.loads(self._raw_output)
 
 
 @contextmanager
@@ -373,11 +373,11 @@ def veth_pair(prefix='veth_', max_length=15):
 
 def check_brctl():
     try:
-        execCmd([EXT_BRCTL, "show"])
+        cmd.exec_sync([EXT_BRCTL, 'show'])
     except OSError as e:
         if e.errno == errno.ENOENT:
-            raise SkipTest("Cannot run %r: %s\nDo you have bridge-utils "
-                           "installed?" % (EXT_BRCTL, e))
+            raise SkipTest('Cannot run %r: %s\nDo you have bridge-utils '
+                           'installed?' % (EXT_BRCTL, e))
         raise
 
 
@@ -426,8 +426,7 @@ def requires_iperf3(f):
 def requires_systemctl(function):
     @functools.wraps(function)
     def wrapper(*args, **kwargs):
-        rc, _, err = execCmd([_SYSTEMCTL.cmd, 'status', 'foo'],
-                             raw=True)
+        rc, _, err = cmd.exec_sync([_SYSTEMCTL.cmd, 'status', 'foo'])
         run_chroot_err = 'Running in chroot, ignoring request'.encode()
         if rc == 1 or run_chroot_err in err:
             raise SkipTest('systemctl is not available')

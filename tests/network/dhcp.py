@@ -22,10 +22,11 @@ from errno import ENOENT, ESRCH
 import logging
 import os
 from signal import SIGKILL, SIGTERM
+from subprocess import PIPE, Popen
 from time import sleep, time
 
-from vdsm.commands import execCmd
 from vdsm.common.cmdutils import CommandPath
+from vdsm.network import cmd
 
 _DNSMASQ_BINARY = CommandPath('dnsmasq', '/usr/sbin/dnsmasq')
 _DHCLIENT_BINARY = CommandPath('dhclient', '/usr/sbin/dhclient',
@@ -43,7 +44,7 @@ class DhcpError(Exception):
 
 class Dnsmasq():
     def __init__(self):
-        self.proc = None
+        self._popen = None
 
     def start(self, interface, dhcp_range_from=None, dhcp_range_to=None,
               dhcpv6_range_from=None, dhcpv6_range_to=None, router=None,
@@ -72,16 +73,16 @@ class Dnsmasq():
             command += ['--enable-ra']
             command += ['--dhcp-range={0},slaac,2m'.format(ipv6_slaac_prefix)]
 
-        self.proc = execCmd(command, sync=False)
+        self._popen = Popen(command, close_fds=True, stderr=PIPE)
         sleep(_START_CHECK_TIMEOUT)
-        if self.proc.returncode:
+        if self._popen.poll():
             raise DhcpError('Failed to start dnsmasq DHCP server.\n%s\n%s' %
-                            (''.join(self.proc.stderr), ' '.join(command)))
+                            (self._popen.stderr, ' '.join(command)))
 
     def stop(self):
-        self.proc.kill()
-        self.proc.wait()
-        logging.debug(''.join(self.proc.stderr))
+        self._popen.kill()
+        self._popen.wait()
+        logging.debug(self._popen.stderr)
 
 
 class ProcessCannotBeKilled(Exception):
@@ -103,14 +104,13 @@ class DhclientRunner(object):
         self._pid_file = os.path.join(tmp_dir, 'test.pid')
         self.pid = None
         self.lease_file = os.path.join(tmp_dir, 'test.lease')
-        cmd = [_DHCLIENT_BINARY.cmd, '-' + str(family), '-1', '-v',
-               '-timeout', str(_DHCLIENT_TIMEOUT), '-cf', self._conf_file,
-               '-pf', self._pid_file, '-lf', self.lease_file
-               ]
+        cmds = [_DHCLIENT_BINARY.cmd, '-' + str(family), '-1', '-v',
+                '-timeout', str(_DHCLIENT_TIMEOUT), '-cf', self._conf_file,
+                '-pf', self._pid_file, '-lf', self.lease_file]
         if not default_route:
             # Instruct Fedora/EL's dhclient-script not to set gateway on iface
-            cmd += ['-e', 'DEFROUTE=no']
-        self._cmd = cmd + [self._interface]
+            cmds += ['-e', 'DEFROUTE=no']
+        self._cmd = cmds + [self._interface]
 
     def _create_conf(self):
         with open(self._conf_file, 'w') as f:
@@ -119,10 +119,10 @@ class DhclientRunner(object):
 
     def start(self):
         self._create_conf()
-        rc, out, err = execCmd(self._cmd)
+        rc, out, err = cmd.exec_sync(self._cmd)
 
         if rc:  # == 2
-            logging.debug(''.join(err))
+            logging.debug(err)
             raise DhcpError('dhclient failed to obtain a lease: %d', rc)
 
         with open(self._pid_file) as pid_file:

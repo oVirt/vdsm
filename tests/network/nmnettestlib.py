@@ -20,8 +20,8 @@ from __future__ import absolute_import
 
 from contextlib import contextmanager
 
-from vdsm.commands import execCmd
 from vdsm.common.cmdutils import CommandPath
+from vdsm.network import cmd
 from vdsm.network.link import iface as linkiface
 from vdsm.network.link.iface import random_iface_name
 
@@ -36,20 +36,20 @@ IP_BINARY = CommandPath('ip', '/sbin/ip')
 
 class NMService(object):
     def __init__(self):
-        rc, out, err = execCmd([SYSTEMCTL.cmd, 'status', NM_SERVICE])
+        rc, out, err = cmd.exec_sync([SYSTEMCTL.cmd, 'status', NM_SERVICE])
         self.nm_init_state_is_up = (rc == 0)
 
     def setup(self):
         if not self.nm_init_state_is_up:
-            execCmd([SYSTEMCTL.cmd, 'start', NM_SERVICE])
+            cmd.exec_sync([SYSTEMCTL.cmd, 'start', NM_SERVICE])
 
     def teardown(self):
         if not self.nm_init_state_is_up:
-            execCmd([SYSTEMCTL.cmd, 'stop', NM_SERVICE])
+            cmd.exec_sync([SYSTEMCTL.cmd, 'stop', NM_SERVICE])
 
 
 def is_networkmanager_running():
-    rc, _, _ = execCmd([SYSTEMCTL.cmd, 'status', NM_SERVICE])
+    rc, _, _ = cmd.exec_sync([SYSTEMCTL.cmd, 'status', NM_SERVICE])
     return rc == 0
 
 
@@ -133,10 +133,10 @@ def _add_slaves_to_bond(bond, slaves):
 
 
 def _exec_cmd(command):
-    rc, out, err = execCmd(command)
+    rc, out, err = cmd.exec_sync(command)
 
     if rc:
-        raise NMCliError(rc, ' '.join(err))
+        raise NMCliError(rc, err)
 
     return out
 
