@@ -130,16 +130,16 @@ class TestLoggedWithContext(TestCaseBase):
 
     def test_success(self):
         # TODO: test logged message
-        ctx = api.Context("flow_id", "1.2.3.4", 5678)
-        result = run_with_context(ctx, Logged().succeed, "a", b=1)
+        context = api.Context("flow_id", "1.2.3.4", 5678)
+        result = run_with_vars(context, None, Logged().succeed, "a", b=1)
         self.assertEqual(result, (("a",), {"b": 1}))
 
     def test_fail(self):
         # TODO: test logged message
-        ctx = api.Context("flow_id", "1.2.3.4", 5678)
+        context = api.Context("flow_id", "1.2.3.4", 5678)
         error = RuntimeError("Expected failure")
         with self.assertRaises(RuntimeError) as e:
-            run_with_context(ctx, Logged().fail, error)
+            run_with_vars(context, None, Logged().fail, error)
         self.assertIs(e.exception, error)
 
 
@@ -147,20 +147,40 @@ class TestLoggedWithoutContext(TestCaseBase):
 
     def test_success(self):
         # TODO: test logged message
-        result = run_with_context(None, Logged().succeed, "a", b=1)
+        result = run_with_vars(None, None, Logged().succeed, "a", b=1)
         self.assertEqual(result, (("a",), {"b": 1}))
 
     def test_fail(self):
         # TODO: test logged message
         error = RuntimeError("Expected failure")
         with self.assertRaises(RuntimeError) as e:
-            run_with_context(None, Logged().fail, error)
+            run_with_vars(None, None, Logged().fail, error)
         self.assertIs(e.exception, error)
 
 
-def run_with_context(ctx, func, *args, **kwargs):
+class TestLoggedWithTask(TestCaseBase):
+
+    def test_success(self):
+        # TODO: test logged message
+        context = api.Context("flow_id", "1.2.3.4", 5678)
+        task = Task("task_id")
+        result = run_with_vars(context, task, Logged().succeed, "a", b=1)
+        self.assertEqual(result, (("a",), {"b": 1}))
+
+    def test_fail(self):
+        # TODO: test logged message
+        context = api.Context("flow_id", "1.2.3.4", 5678)
+        task = Task("task_id")
+        error = RuntimeError("Expected failure")
+        with self.assertRaises(RuntimeError) as e:
+            run_with_vars(context, task, Logged().fail, error)
+        self.assertIs(e.exception, error)
+
+
+def run_with_vars(context, task, func, *args, **kwargs):
     """
-    Run func in another thread with optional ctx set in vars.context.
+    Run func in another thread with optional context and task set in the vars
+    thread local.
 
     Return the function result or raises the original exceptions raised by
     func.
@@ -168,8 +188,10 @@ def run_with_context(ctx, func, *args, **kwargs):
     result = [None]
 
     def run():
-        if ctx:
-            vars.context = ctx
+        if context:
+            vars.context = context
+        if task:
+            vars.task = task
         try:
             result[0] = (True, func(*args, **kwargs))
         except:
@@ -183,6 +205,12 @@ def run_with_context(ctx, func, *args, **kwargs):
     if not ok:
         six.reraise(*value)
     return value
+
+
+class Task(object):
+
+    def __init__(self, id):
+        self.id = id
 
 
 class Logged(object):

@@ -55,18 +55,25 @@ def logged(on=""):
 
 
 def context_string():
+    items = []
+
     # Internal threads never set vars.context, so we will not have a context
     # attribute. RPC threads set context before calling the api, and set
     # context to None after that.
     ctx = getattr(vars, "context", None)
-    if ctx is None:
-        return 'from=internal'
+    if not ctx:
+        items.append(("from", "internal"))
+    else:
+        items.append(("from", "%s,%s" % (ctx.client_host, ctx.client_port)))
+        if ctx.flow_id:
+            items.append(("flow_id", ctx.flow_id))
 
-    ret = 'from=%s,%s' % (ctx.client_host, ctx.client_port)
-    flow_id = ctx.flow_id
-    if flow_id is not None:
-        ret += ', flow_id=%s' % (flow_id,)
-    return ret
+    # Task exists only for storage verbs
+    task = getattr(vars, "task", None)
+    if task:
+        items.append(("task_id", task.id))
+
+    return ", ".join(k + "=" + v for k, v in items)
 
 
 @decorator
