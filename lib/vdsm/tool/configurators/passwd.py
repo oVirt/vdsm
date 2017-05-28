@@ -18,11 +18,13 @@
 #
 
 from __future__ import absolute_import
+
+import io
+
 from vdsm import constants
 from vdsm import commands
 from vdsm.common import cache
 from vdsm.common import cmdutils
-
 
 from . import YES, NO, MAYBE
 
@@ -47,7 +49,7 @@ def isconfigured():
 
 
 def libvirt_sasl_isconfigured():
-    with open(_SASL2_CONF, 'r') as f:
+    with io.open(_SASL2_CONF, 'r', encoding='utf8') as f:
         lines = f.readlines()
         # check for new default configuration - since libvirt 3.2
         if 'mech_list: gssapi\n' in lines:
@@ -84,11 +86,11 @@ def removeConf():
 
 
 def configure_libvirt_sasl():
-    with open(_SASL2_CONF, 'w') as f:
-        f.writelines(['## start vdsm-4.20.0 configuration\n',
-                      'mech_list: scram-sha-1\n',
-                      'sasldb_path: %s\n' % (_LIBVIRT_SASLDB),
-                      '## end vdsm configuration']
+    with io.open(_SASL2_CONF, 'w', encoding='utf8') as f:
+        f.writelines([u'## start vdsm-4.20.0 configuration\n',
+                      u'mech_list: scram-sha-1\n',
+                      u'sasldb_path: %s\n' % (_LIBVIRT_SASLDB),
+                      u'## end vdsm configuration']
                      )
 
 
@@ -101,5 +103,5 @@ def configure_passwd():
 
 @cache.memoized
 def libvirt_password():
-    with open(LIBVIRT_PASSWORD_PATH) as passwd_file:
+    with io.open(LIBVIRT_PASSWORD_PATH, encoding='utf8') as passwd_file:
         return passwd_file.readline().rstrip("\n")
