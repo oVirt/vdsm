@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2016 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ from vdsm.tool.configurators import YES, NO, MAYBE, InvalidConfig, InvalidRun
 from vdsm.tool.configfile import ConfigFile, ParserWrapper
 from vdsm.tool.configurators import abrt
 from vdsm.tool.configurators import libvirt
+from vdsm.tool.configurators import passwd
 from vdsm.tool import UsageError
 from vdsm.tool import upgrade
 from vdsm import cpuinfo, cpuarch
@@ -94,6 +95,25 @@ def patchConfigurators(mockConfigurers):
         configurator,
         '_CONFIGURATORS',
         dict((m.name, m) for m in mockConfigurers))
+
+
+class PasswdConfiguratorTest(VdsmTestCase):
+    def testCheckIsConfiguredNo(self):
+        tmpfile = tempfile.mktemp()
+        with open(tmpfile, 'w') as f:
+            f.write("\n")
+            f.write("\n")
+            f.write("mech_list: gssapi\n")
+
+        passwd._SASL2_CONF = tmpfile
+        self.assertEqual(passwd.libvirt_sasl_isconfigured(), NO)
+
+    def testCheckIsConfiguredMaybe(self):
+        tmpfile = tempfile.mktemp()
+        with open(tmpfile, 'w') as f:
+            f.write("\n")
+        passwd._SASL2_CONF = tmpfile
+        self.assertEqual(passwd.libvirt_sasl_isconfigured(), MAYBE)
 
 
 @expandPermutations
