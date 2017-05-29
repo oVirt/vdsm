@@ -546,6 +546,15 @@ def preserve_default_route():
             address.set_default_route(ipv6_gateway, family=6, dev=ipv6_device)
 
 
+@contextmanager
+def running(runnable):
+    runnable.start()
+    try:
+        yield runnable
+    finally:
+        runnable.stop()
+
+
 @memoized
 def _has_sysfs_bond_permission():
     BondSysFS = linkbond.sysfs_driver.BondSysFS

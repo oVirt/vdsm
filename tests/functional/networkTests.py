@@ -58,7 +58,7 @@ from vdsm.commands import execCmd
 from vdsm.common.cmdutils import CommandPath
 from vdsm.common.proc import pgrep
 from vdsm.tool import service
-from vdsm.utils import RollbackContext, running
+from vdsm.utils import RollbackContext
 
 from hookValidation import ValidatesHook
 
@@ -66,7 +66,7 @@ from modprobe import RequireDummyMod, RequireVethMod
 from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
 from testValidation import brokentest, slowtest, ValidateRunningAsRoot
-from network.nettestlib import Dummy, Tap, veth_pair, dnsmasq_run
+from network.nettestlib import Dummy, Tap, veth_pair, dnsmasq_run, running
 from network import dhcp
 from utils import SUCCESS, getProxy
 
