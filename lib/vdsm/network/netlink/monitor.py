@@ -25,8 +25,8 @@ import os
 import select
 import threading
 
-from vdsm.utils import NoIntrPoll
 from vdsm import concurrent
+from vdsm.common.osutils import uninterruptible_poll
 from vdsm.common.osutils import uninterruptible
 from vdsm.common.time import monotonic_time
 
@@ -154,7 +154,8 @@ class Monitor(object):
                         else:
                             timeout = -1
 
-                        events = NoIntrPoll(epoll.poll, timeout=timeout)
+                        events = uninterruptible_poll(epoll.poll,
+                                                      timeout=timeout)
                         # poll timeouted
                         if len(events) == 0:
                             self._scanning_stopped.set()

@@ -19,6 +19,9 @@
 #
 
 from __future__ import absolute_import
+
+from vdsm.common.osutils import uninterruptible_poll
+
 """
 A module containing miscellaneous functions and classes that are used
 plentifuly around vdsm.
@@ -150,28 +153,6 @@ def convertToStr(val):
         return val
 
 
-def NoIntrPoll(pollfun, timeout=-1):
-    """
-    This wrapper is used to handle the interrupt exceptions that might
-    occur during a poll system call. The wrapped function must be defined
-    as poll([timeout]) where the special timeout value 0 is used to return
-    immediately and -1 is used to wait indefinitely.
-    """
-    # When the timeout < 0 we shouldn't compute a new timeout after an
-    # interruption.
-    endtime = None if timeout < 0 else vdsm_time.monotonic_time() + timeout
-
-    while True:
-        try:
-            return pollfun(timeout)
-        except (IOError, select.error) as e:
-            if e.args[0] != errno.EINTR:
-                raise
-
-        if endtime is not None:
-            timeout = max(0, endtime - vdsm_time.monotonic_time())
-
-
 class CommandStream(object):
     def __init__(self, command, stdoutcb, stderrcb):
         self._poll = select.epoll()
@@ -194,7 +175,7 @@ class CommandStream(object):
         del self._iocb[fileno]
 
     def _poll_timeout(self, timeout):
-        fdevents = NoIntrPoll(self._poll.poll, timeout)
+        fdevents = uninterruptible_poll(self._poll.poll, timeout)
 
         for fileno, event in fdevents:
             if event & select.EPOLLIN:

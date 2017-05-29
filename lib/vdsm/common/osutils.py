@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,9 @@
 from __future__ import absolute_import
 import errno
 import os
+import select
+
+from vdsm.common import time
 
 
 def close_fd(fd):
@@ -57,3 +60,25 @@ def uninterruptible(func, *args, **kwargs):
         except EnvironmentError as e:
             if e.errno != errno.EINTR:
                 raise
+
+
+def uninterruptible_poll(pollfun, timeout=-1):
+    """
+    This wrapper is used to handle the interrupt exceptions that might
+    occur during a poll system call. The wrapped function must be defined
+    as poll([timeout]) where the special timeout value 0 is used to return
+    immediately and -1 is used to wait indefinitely.
+    """
+    # When the timeout < 0 we shouldn't compute a new timeout after an
+    # interruption.
+    endtime = None if timeout < 0 else time.monotonic_time() + timeout
+
+    while True:
+        try:
+            return pollfun(timeout)
+        except (IOError, select.error) as e:
+            if e.args[0] != errno.EINTR:
+                raise
+
+        if endtime is not None:
+            timeout = max(0, endtime - time.monotonic_time())

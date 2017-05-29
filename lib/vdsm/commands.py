@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2016 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,8 +31,9 @@ import threading
 import time
 from . import cmdutils
 from .compat import CPopen
-from .utils import NoIntrPoll, stripNewLines, terminating
+from .utils import stripNewLines, terminating
 from vdsm.common.exception import ActionStopped
+from vdsm.common.osutils import uninterruptible_poll
 from vdsm import constants
 
 # Buffsize is 1K because I tested it on some use cases and 1K was fastest. If
@@ -252,7 +253,7 @@ class AsyncProc(object):
                 # turn on only if data is waiting to be pushed
                 self._poller.modify(self._fdin, select.EPOLLOUT)
 
-            pollres = NoIntrPoll(self._poller.poll, 1)
+            pollres = uninterruptible_poll(self._poller.poll, 1)
 
             for fd, event in pollres:
                 stream = self._fdMap[fd]

@@ -24,8 +24,8 @@ import threading
 import time
 import select
 
-from vdsm.utils import NoIntrPoll
 from vdsm import concurrent
+from vdsm.common.osutils import uninterruptible_poll
 
 # How many times a reconnect should be performed before a cooldown will be
 # applied
@@ -188,7 +188,7 @@ class Listener(object):
 
     def _wait_for_events(self):
         """ Wait for an epoll event and handle channels' timeout. """
-        events = NoIntrPoll(self._epoll.poll, 1)
+        events = uninterruptible_poll(self._epoll.poll, 1)
         for (fileno, event) in events:
             self._handle_event(fileno, event)
         else:
