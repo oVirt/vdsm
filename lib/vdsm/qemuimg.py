@@ -29,11 +29,11 @@ import threading
 from vdsm.cmdutils import wrap_command
 from vdsm.common import cmdutils
 from vdsm.common import exception
+from vdsm.common.compat import CPopen
 from vdsm.storage import operation
 
 from . import utils
 from . import commands
-from .compat import CPopen
 from . config import config
 
 _qemuimg = cmdutils.CommandPath("qemu-img", "/usr/bin/qemu-img",)  # Fedora

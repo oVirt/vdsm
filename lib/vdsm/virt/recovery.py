@@ -30,7 +30,7 @@ import libvirt
 
 from vdsm.common import fileutils
 from vdsm.common import response
-from vdsm.compat import pickle
+from vdsm.common.compat import pickle
 from vdsm import constants
 from vdsm import containersconnection
 from vdsm import libvirtconnection

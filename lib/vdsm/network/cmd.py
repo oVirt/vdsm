@@ -24,7 +24,7 @@ import uuid
 
 from vdsm.common import cmdutils
 from vdsm.common.cmdutils import systemd_run
-from vdsm.compat import CPopen as Popen
+from vdsm.common.compat import CPopen as Popen
 
 
 def exec_sync(cmds):

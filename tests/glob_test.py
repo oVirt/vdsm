@@ -62,7 +62,7 @@ from __future__ import absolute_import
 
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase
-from vdsm.compat import glob_escape
+from vdsm.common.compat import glob_escape
 
 
 @expandPermutations

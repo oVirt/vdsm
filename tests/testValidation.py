@@ -23,14 +23,13 @@ import json
 import os
 import subprocess
 import threading
-
 from functools import wraps
 
 from nose.plugins.skip import SkipTest
 from nose.plugins import Plugin
 
 from vdsm import utils
-from vdsm.compat import CPopen
+from vdsm.common.compat import CPopen
 
 import six
 

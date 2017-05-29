@@ -48,9 +48,9 @@ from vdsm.common import cmdutils
 from vdsm.common.define import errCode, doneCode
 from vdsm.common import response
 from vdsm.common import zombiereaper
+from vdsm.common.compat import CPopen
 from vdsm.common.logutils import traceback
 from vdsm.common.time import monotonic_time
-from vdsm.compat import CPopen
 from vdsm.constants import P_VDSM_LOG, P_VDSM_RUN, EXT_KVM_2_OVIRT
 from vdsm import concurrent, libvirtconnection
 from vdsm import password

@@ -30,9 +30,8 @@ import six
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import constants
-
+from vdsm.common.compat import CPopen
 from vdsm.common.time import monotonic_time
-from vdsm.compat import CPopen
 
 from testValidation import skipif, slowtest
 from testlib import VdsmTestCase

@@ -51,7 +51,7 @@ from vdsm.virt import secret
 import storage.volume
 import storage.sd
 import storage.image
-from vdsm.compat import pickle
+from vdsm.common.compat import pickle
 from vdsm.common.define import doneCode, errCode
 from vdsm.config import config
 from vdsm.virt import sampling

@@ -24,7 +24,7 @@ from vdsm import constants
 from vdsm import utils
 from vdsm.config import config
 from vdsm.common import api
-from vdsm.compat import json
+from vdsm.common.compat import json
 from vdsm.sslutils import SSLSocket
 from . import JsonRpcClient, JsonRpcServer
 from . import stomp

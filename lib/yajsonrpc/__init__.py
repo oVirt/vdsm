@@ -19,7 +19,7 @@ from six.moves import queue
 from weakref import ref
 from threading import Lock, Event
 
-from vdsm.compat import json
+from vdsm.common.compat import json
 
 from vdsm.common import exception
 from vdsm.common.logutils import Suppressed, traceback

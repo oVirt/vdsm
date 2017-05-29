@@ -24,7 +24,7 @@ import os
 import threading
 
 from vdsm.common import response
-from vdsm.compat import pickle
+from vdsm.common.compat import pickle
 from vdsm.virt import recovery
 from vdsm.virt import vmstatus
 from vdsm import constants

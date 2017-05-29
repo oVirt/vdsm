@@ -30,9 +30,9 @@ import subprocess
 import threading
 import time
 from . import cmdutils
-from .compat import CPopen
 from .utils import stripNewLines, terminating
 from vdsm.common.cmdutils import command_log_line, retcode_log_line
+from vdsm.common.compat import CPopen
 from vdsm.common.exception import ActionStopped
 from vdsm.common.osutils import uninterruptible_poll
 from vdsm import constants

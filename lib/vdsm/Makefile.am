@@ -27,7 +27,6 @@ dist_vdsmpylib_PYTHON = \
 	alignmentScan.py \
 	client.py \
 	cmdutils.py \
-	compat.py \
 	commands.py \
 	concurrent.py \
 	containersconnection.py \

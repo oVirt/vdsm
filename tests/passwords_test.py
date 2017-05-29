@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 import marshal
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
-from vdsm.compat import pickle, json
+from vdsm.common.compat import pickle, json
 from vdsm.password import (ProtectedPassword,
                            protect_passwords,
                            unprotect_passwords)

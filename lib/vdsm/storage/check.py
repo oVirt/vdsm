@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ import threading
 from vdsm import cmdutils
 from vdsm import concurrent
 from vdsm import constants
-from vdsm.compat import CPopen
+from vdsm.common.compat import CPopen
 from vdsm.storage import asyncevent
 from vdsm.storage import asyncutils
 from vdsm.storage import exception

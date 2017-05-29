@@ -24,7 +24,7 @@ import logging
 from vdsm.common import conv
 from vdsm.common import response
 from vdsm.common import threadlocal
-from vdsm.compat import pickle
+from vdsm.common.compat import pickle
 
 import API
 

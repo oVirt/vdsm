@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2016 Red Hat, Inc.
+# Copyright 2009-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ import glob
 import fnmatch
 import re
 
-from vdsm.compat import glob_escape
+from vdsm.common.compat import glob_escape
 from vdsm.storage import clusterlock
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils

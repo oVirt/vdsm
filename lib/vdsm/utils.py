@@ -32,7 +32,6 @@ plentifuly around vdsm.
 """
 from collections import namedtuple, deque, OrderedDict
 from contextlib import contextmanager
-from .compat import pickle
 import errno
 import functools
 import io
@@ -49,6 +48,7 @@ import weakref
 
 from vdsm.common import zombiereaper
 from vdsm.common import time as vdsm_time
+from vdsm.common.compat import pickle
 from vdsm.common.proc import pidstat
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'

@@ -26,9 +26,9 @@ import subprocess
 import threading
 
 from vdsm.cmdutils import Error as CmdError, wrap_command
-from vdsm import compat
 from vdsm import utils
 from vdsm.common import cmdutils
+from vdsm.common import compat
 from vdsm.common import exception
 
 # Operation states

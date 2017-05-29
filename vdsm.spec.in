@@ -1098,7 +1098,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/alignmentScan.py*
 %{python_sitelib}/%{vdsm_name}/client.py*
 %{python_sitelib}/%{vdsm_name}/cmdutils.py*
-%{python_sitelib}/%{vdsm_name}/compat.py*
 %{python_sitelib}/%{vdsm_name}/commands.py*
 %{python_sitelib}/%{vdsm_name}/common/*.py*
 %{python_sitelib}/%{vdsm_name}/host/*.py*

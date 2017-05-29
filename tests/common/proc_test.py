@@ -21,8 +21,8 @@ from __future__ import absolute_import
 
 import time
 
-from vdsm.compat import CPopen as Popen
-import vdsm.common
+from vdsm.common import proc
+from vdsm.common.compat import CPopen as Popen
 
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -35,7 +35,7 @@ class TestPidStat(TestCaseBase):
     def test_without_affinity(self):
         args = [EXT_SLEEP, "3"]
         popen = Popen(args, close_fds=True)
-        stats = vdsm.common.proc.pidstat(popen.pid)
+        stats = proc.pidstat(popen.pid)
         pid = int(stats.pid)
         # procName comes in the format of (procname)
         name = stats.comm
@@ -56,7 +56,7 @@ class TestPgrep(TestCaseBase):
             # child process, make sure all the children are runing before we
             # look for them.
             time.sleep(0.5)
-            pids = vdsm.common.proc.pgrep(EXT_SLEEP)
+            pids = proc.pgrep(EXT_SLEEP)
             for popen in sleepProcs:
                 self.assertIn(popen.pid, pids)
         finally:
