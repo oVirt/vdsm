@@ -27,7 +27,7 @@ import threading
 import pyinotify
 
 from vdsm.constants import P_VDSM_RUN
-from vdsm import utils
+from vdsm.common import logutils
 from vdsm.network import ifacetracking
 from vdsm.network.kernelconfig import networks_northbound_ifaces
 
@@ -122,7 +122,7 @@ def _action_handlers(action_type):
     return (ah for ah in _action_handler_db if ah[0] == action_type)
 
 
-@utils.traceback()
+@logutils.traceback()
 def _monitor_dhcp_responses():
     logging.debug('Starting to monitor dhcp responses')
 

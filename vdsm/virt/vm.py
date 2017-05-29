@@ -39,6 +39,7 @@ import libvirt
 from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import fileutils
+from vdsm.common import logutils
 from vdsm.common import response
 import vdsm.common.time
 from vdsm import concurrent
@@ -951,7 +952,7 @@ class Vm(object):
                 self.conf['clientIp'] = clientIp
             self._clientPort = clientPort
 
-    @utils.traceback()
+    @logutils.traceback()
     def _timedDesktopLock(self):
         # This is not a definite fix, we're aware that there is still the
         # possibility of a race condition, however this covers more cases
@@ -5460,7 +5461,7 @@ class LiveMergeCleanupThread(object):
         sd_manifest.teardownVolume(self.drive.imageID,
                                    self.job['topVolume'])
 
-    @utils.traceback()
+    @logutils.traceback()
     def run(self):
         self.update_base_size()
         if self.doPivot:

@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 
 import datetime
+import functools
 import grp
 import logging
 import logging.handlers
@@ -175,3 +176,25 @@ def volume_chain_to_str(base_first_chain):
     each subsequent entry a direct descendant of its predecessor.
     """
     return ' < '.join(base_first_chain) + " (top)"
+
+
+def traceback(log=None, msg="Unhandled exception"):
+    """
+    Log a traceback for unhandled execptions.
+
+    :param log: Use specific logger instead of root logger
+    :type log: `logging.Logger`
+    :param msg: Use specified message for the exception
+    :type msg: str
+    """
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*a, **kw):
+            try:
+                return f(*a, **kw)
+            except Exception:
+                logger = log or logging.getLogger()
+                logger.exception(msg)
+                raise  # Do not swallow
+        return wrapper
+    return decorator

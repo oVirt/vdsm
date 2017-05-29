@@ -27,6 +27,7 @@ import libvirt
 
 from vdsm import concurrent
 from vdsm.common import conv
+from vdsm.common import logutils
 from vdsm.common import response
 from vdsm import sslutils
 from vdsm import utils
@@ -670,7 +671,7 @@ class DowntimeThread(object):
     def is_alive(self):
         return self._thread.is_alive()
 
-    @utils.traceback()
+    @logutils.traceback()
     def run(self):
         self._vm.log.debug('migration downtime thread started (%i steps)',
                            self._steps)
@@ -744,7 +745,7 @@ class MonitorThread(object):
     def enabled(self):
         return MonitorThread._MIGRATION_MONITOR_INTERVAL > 0
 
-    @utils.traceback()
+    @logutils.traceback()
     def run(self):
         if self.enabled:
             self._vm.log.debug('starting migration monitor thread')

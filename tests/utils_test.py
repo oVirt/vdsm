@@ -35,6 +35,7 @@ from vdsm import utils
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import panic
+from vdsm.common import logutils
 import vdsm.common.time
 
 from monkeypatch import MonkeyPatch
@@ -446,7 +447,7 @@ class TestTraceback(TestCaseBase):
     def test_failure(self):
         log = FakeLogger()
 
-        @utils.traceback(log=log, msg="message")
+        @logutils.traceback(log=log, msg="message")
         def fail():
             raise Exception
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@ import logging
 import threading
 
 from vdsm import concurrent
+from vdsm.common.logutils import traceback
 from vdsm.config import config
-from vdsm.utils import traceback
 
 from .errors import UsageError
 
