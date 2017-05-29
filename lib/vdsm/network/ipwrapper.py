@@ -19,6 +19,7 @@
 
 from __future__ import absolute_import
 from contextlib import closing
+from fnmatch import fnmatch
 from glob import iglob
 import array
 import errno
@@ -39,7 +40,6 @@ from vdsm.config import config
 from vdsm.network import cmd
 from vdsm.network.link import dpdk
 from vdsm.network.netlink import link
-from vdsm.utils import anyFnmatch
 from vdsm.common.cmdutils import CommandPath
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
@@ -196,7 +196,7 @@ class Link(object):
         as NIC.
         """
         if self.isDUMMY() or self.isVETH() or self.isMACVLAN():
-            return anyFnmatch(self.name, self._fakeNics)
+            return _any_fnmatch(self.name, self._fakeNics)
         return False
 
     def isNICLike(self):
@@ -205,14 +205,14 @@ class Link(object):
     def isHidden(self):
         """Returns True iff vdsm config hides the device."""
         if self.isVLAN():
-            return anyFnmatch(self.name, self._hiddenVlans)
+            return _any_fnmatch(self.name, self._hiddenVlans)
         elif self.isNICLike():
-            return (anyFnmatch(self.name, self._hiddenNics) or
+            return (_any_fnmatch(self.name, self._hiddenNics) or
                     (self.master and _bondExists(self.master) and
-                     anyFnmatch(self.master, self._hiddenBonds)) or
+                     _any_fnmatch(self.master, self._hiddenBonds)) or
                     (self.isVF() and self._isVFhidden()))
         elif self.isBOND():
-            return anyFnmatch(self.name, self._hiddenBonds)
+            return _any_fnmatch(self.name, self._hiddenBonds)
         elif self.isBRIDGE():
             return self.name == DUMMY_BRIDGE
         return False
@@ -621,3 +621,8 @@ def netns_exec(netns_name, command):
 
 def link_set_netns(device, netns_name):
     return linkSet(device, ['netns', netns_name])
+
+
+def _any_fnmatch(name, patterns):
+    """Returns True if any element in the patterns iterable fnmatches name."""
+    return any(fnmatch(name, pattern) for pattern in patterns)

@@ -32,7 +32,6 @@ plentifuly around vdsm.
 """
 from collections import namedtuple, deque, OrderedDict
 from contextlib import contextmanager
-from fnmatch import fnmatch
 from .compat import pickle
 import errno
 import functools
@@ -391,11 +390,6 @@ class AsyncProcessOperation(object):
     def __del__(self):
         if self._proc.returncode is None:
             zombiereaper.autoReapPID(self._proc.pid)
-
-
-def anyFnmatch(name, patterns):
-    """Returns True if any element in the patterns iterable fnmatches name."""
-    return any(fnmatch(name, pattern) for pattern in patterns)
 
 
 class Callback(namedtuple('Callback_', ('func', 'args', 'kwargs'))):

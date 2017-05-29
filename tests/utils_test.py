@@ -289,9 +289,6 @@ class TestGeneralUtils(TestCaseBase):
     def testPanic(self):
         self.assertRaises(AssertionError, panic.panic, "panic test")
 
-    def testAnyFnmatch(self):
-        self.assertTrue(utils.anyFnmatch('test1', ['test0', 'test1']))
-
     def testReadMemInfo(self):
         meminfo = utils.readMemInfo()
         # most common fields as per man 5 proc
