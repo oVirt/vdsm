@@ -34,6 +34,8 @@ def exec_sync(cmds):
 
     out, err = p.communicate()
 
+    logging.debug(cmdutils.retcode_log_line(p.returncode, err=err))
+
     return p.returncode, out, err
 
 
