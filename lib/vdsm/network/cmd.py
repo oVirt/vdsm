@@ -22,8 +22,8 @@ import logging
 import subprocess
 import uuid
 
-from vdsm.cmdutils import systemd_run
 from vdsm.common import cmdutils
+from vdsm.common.cmdutils import systemd_run
 from vdsm.compat import CPopen as Popen
 
 

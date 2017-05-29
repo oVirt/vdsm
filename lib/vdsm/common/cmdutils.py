@@ -23,6 +23,9 @@ import os
 import re
 
 
+SYSTEMD_RUN = "/usr/bin/systemd-run"
+
+
 class CommandPath(object):
     def __init__(self, name, *args, **kwargs):
         self.name = name
@@ -82,3 +85,24 @@ def _list2cmdline(args):
 # for including in a command passed to the shell. The safe characters were
 # stolen from pipes._safechars.
 _needs_quoting = re.compile(r'[^A-Za-z0-9_%+,\-./:=@]').search
+
+
+def systemd_run(cmd, scope=False, unit=None, slice=None, accounting=None):
+    command = [SYSTEMD_RUN]
+    if scope:
+        command.append('--scope')
+    if unit:
+        command.append('--unit=%s' % unit)
+    if slice:
+        command.append('--slice=%s' % slice)
+    if accounting is not None:
+        command.extend(['--property={}Accounting=1'.format(acct)
+                        for acct in accounting])
+    command.extend(cmd)
+    return command
+
+
+class Accounting(object):
+    CPU = 'CPU'
+    Memory = 'Memory'
+    BlockIO = 'BlockIO'

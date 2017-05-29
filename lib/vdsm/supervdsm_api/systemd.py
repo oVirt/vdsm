@@ -18,17 +18,16 @@
 #
 from __future__ import absolute_import
 
-from vdsm import cmdutils
 from vdsm import commands
-from vdsm.common.cmdutils import CommandPath
+from vdsm.common import cmdutils
 
 from . import expose
 
 
-_SYSTEMCTL = CommandPath("systemctl",
-                         "/bin/systemctl",
-                         "/usr/bin/systemctl",
-                         )
+_SYSTEMCTL = cmdutils.CommandPath("systemctl",
+                                  "/bin/systemctl",
+                                  "/usr/bin/systemctl",
+                                  )
 
 
 _ACCOUNTING = (

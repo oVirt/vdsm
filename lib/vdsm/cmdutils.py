@@ -34,8 +34,6 @@ from . config import config
 
 from . common.time import monotonic_time
 
-SYSTEMD_RUN = "/usr/bin/systemd-run"
-
 SUDO_NON_INTERACTIVE_FLAG = "-n"
 
 # receive() source names
@@ -87,27 +85,6 @@ def sudo(cmd):
     if os.geteuid() == 0:
         return cmd
     command = [constants.EXT_SUDO, SUDO_NON_INTERACTIVE_FLAG]
-    command.extend(cmd)
-    return command
-
-
-class Accounting(object):
-    CPU = 'CPU'
-    Memory = 'Memory'
-    BlockIO = 'BlockIO'
-
-
-def systemd_run(cmd, scope=False, unit=None, slice=None, accounting=None):
-    command = [SYSTEMD_RUN]
-    if scope:
-        command.append('--scope')
-    if unit:
-        command.append('--unit=%s' % unit)
-    if slice:
-        command.append('--slice=%s' % slice)
-    if accounting is not None:
-        command.extend(['--property={}Accounting=1'.format(acct)
-                        for acct in accounting])
     command.extend(cmd)
     return command
 

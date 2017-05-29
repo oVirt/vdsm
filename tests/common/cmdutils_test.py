@@ -84,3 +84,43 @@ class List2CmdlineeTests(TestCaseBase):
 
     def test_empty(self):
         self.assertEqual(cmdutils._list2cmdline([]), "")
+
+
+class SystemdRunTests(TestCaseBase):
+
+    def test_defaults(self):
+        cmd = cmdutils.systemd_run(['a', 'b'])
+        res = [cmdutils.SYSTEMD_RUN, 'a', 'b']
+        self.assertEqual(cmd, res)
+
+    def test_scope(self):
+        cmd = cmdutils.systemd_run(['a', 'b'], scope=True)
+        res = [cmdutils.SYSTEMD_RUN, '--scope', 'a', 'b']
+        self.assertEqual(cmd, res)
+
+    def test_unit(self):
+        cmd = cmdutils.systemd_run(['a', 'b'], unit='unit')
+        res = [cmdutils.SYSTEMD_RUN, '--unit=unit', 'a', 'b']
+        self.assertEqual(cmd, res)
+
+    def test_slice(self):
+        cmd = cmdutils.systemd_run(['a', 'b'], slice='slice')
+        res = [cmdutils.SYSTEMD_RUN, '--slice=slice', 'a', 'b']
+        self.assertEqual(cmd, res)
+
+    def test_accounting(self):
+        accounting = (
+            cmdutils.Accounting.CPU,
+            cmdutils.Accounting.Memory,
+            cmdutils.Accounting.BlockIO,
+        )
+        cmd = cmdutils.systemd_run(['a', 'b'], accounting=accounting)
+        res = [
+            cmdutils.SYSTEMD_RUN,
+            '--property=CPUAccounting=1',
+            '--property=MemoryAccounting=1',
+            '--property=BlockIOAccounting=1',
+            'a',
+            'b',
+        ]
+        self.assertEqual(cmd, res)

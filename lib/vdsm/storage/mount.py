@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2014 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,13 +28,13 @@ import stat
 
 from collections import namedtuple
 
-from vdsm import cmdutils
 from vdsm import commands
 from vdsm import constants
 from vdsm import supervdsm
 from vdsm import udevadm
 from vdsm import utils
 
+from vdsm.common import cmdutils
 from vdsm.config import config
 from vdsm.storage import fileUtils
 
