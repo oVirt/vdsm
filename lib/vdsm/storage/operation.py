@@ -25,9 +25,10 @@ import logging
 import subprocess
 import threading
 
-from vdsm import cmdutils
+from vdsm.cmdutils import Error as CmdError, wrap_command
 from vdsm import compat
 from vdsm import utils
+from vdsm.common import cmdutils
 from vdsm.common import exception
 
 # Operation states
@@ -57,8 +58,7 @@ class Command(object):
 
     def __init__(self, cmd, cwd=None, nice=utils.NICENESS.HIGH,
                  ioclass=utils.IOCLASS.IDLE):
-        self._cmd = cmdutils.wrap_command(
-            cmd, with_nice=nice, with_ioclass=ioclass)
+        self._cmd = wrap_command(cmd, with_nice=nice, with_ioclass=ioclass)
         self._cwd = cwd
         self._lock = threading.Lock()
         self._state = CREATED
@@ -148,7 +148,7 @@ class Command(object):
             elif self._state == RUNNING:
                 self._state = TERMINATED
                 if rc != 0:
-                    raise cmdutils.Error(self._cmd, rc, out, err)
+                    raise CmdError(self._cmd, rc, out, err)
             else:
                 raise RuntimeError("Invalid state: %s" % self)
 

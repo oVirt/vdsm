@@ -22,7 +22,8 @@ import logging
 import subprocess
 import uuid
 
-from vdsm import cmdutils
+from vdsm.cmdutils import systemd_run
+from vdsm.common import cmdutils
 from vdsm.compat import CPopen as Popen
 
 
@@ -44,6 +45,6 @@ def exec_systemd_new_unit(cmds, slice_name):
     # and prevent systemd_run race (BZ#1259468). This uuid could be dropped
     # when BZ#1272368 will be solved or when we use systemd >= v220.
     unit = uuid.uuid4()
-    cmds = cmdutils.systemd_run(cmds, scope=True, unit=unit, slice=slice_name)
+    cmds = systemd_run(cmds, scope=True, unit=unit, slice=slice_name)
 
     return exec_sync(cmds)

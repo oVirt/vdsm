@@ -32,6 +32,7 @@ import time
 from . import cmdutils
 from .compat import CPopen
 from .utils import stripNewLines, terminating
+from vdsm.common.cmdutils import command_log_line, retcode_log_line
 from vdsm.common.exception import ActionStopped
 from vdsm.common.osutils import uninterruptible_poll
 from vdsm import constants
@@ -67,7 +68,7 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
     if not printable:
         printable = command
 
-    execCmdLogger.debug(cmdutils.command_log_line(printable, cwd=cwd))
+    execCmdLogger.debug(command_log_line(printable, cwd=cwd))
 
     extra = {}
     extra['stderr'] = subprocess.PIPE
@@ -91,7 +92,7 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
         # Prevent splitlines() from barfing later on
         out = ""
 
-    execCmdLogger.debug(cmdutils.retcode_log_line(p.returncode, err=err))
+    execCmdLogger.debug(retcode_log_line(p.returncode, err=err))
 
     if not raw:
         out = out.splitlines(False)
@@ -366,6 +367,6 @@ def watchCmd(command, stop, cwd=None, data=None, nice=None, ioclass=None,
     out = stripNewLines(proc.stdout)
     err = stripNewLines(proc.stderr)
 
-    execCmdLogger.debug(cmdutils.retcode_log_line(proc.returncode, err=err))
+    execCmdLogger.debug(retcode_log_line(proc.returncode, err=err))
 
     return proc.returncode, out, err

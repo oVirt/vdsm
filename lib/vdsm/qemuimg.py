@@ -26,18 +26,17 @@ import re
 import signal
 import threading
 
+from vdsm.cmdutils import wrap_command
+from vdsm.common import cmdutils
 from vdsm.common import exception
-import vdsm.common.cmdutils
 from vdsm.storage import operation
 
 from . import utils
-from . import cmdutils
 from . import commands
 from .compat import CPopen
 from . config import config
 
-_qemuimg = vdsm.common.cmdutils.CommandPath("qemu-img",
-                                            "/usr/bin/qemu-img",)  # Fedora
+_qemuimg = cmdutils.CommandPath("qemu-img", "/usr/bin/qemu-img",)  # Fedora
 
 _log = logging.getLogger("QemuImg")
 
@@ -255,7 +254,7 @@ class QemuImgOperation(object):
         self._stdout = bytearray()
         self._stderr = bytearray()
 
-        self.cmd = cmdutils.wrap_command(
+        self.cmd = wrap_command(
             cmd,
             with_nice=utils.NICENESS.HIGH,
             with_ioclass=utils.IOCLASS.IDLE)

@@ -42,8 +42,9 @@ import zipfile
 
 import libvirt
 
+from vdsm.cmdutils import wrap_command
 from vdsm.commands import execCmd, BUFFSIZE
-from vdsm.common.cmdutils import CommandPath
+from vdsm.common import cmdutils
 from vdsm.common.define import errCode, doneCode
 from vdsm.common import response
 from vdsm.common import zombiereaper
@@ -51,7 +52,7 @@ from vdsm.common.logutils import traceback
 from vdsm.common.time import monotonic_time
 from vdsm.compat import CPopen
 from vdsm.constants import P_VDSM_LOG, P_VDSM_RUN, EXT_KVM_2_OVIRT
-from vdsm import cmdutils, concurrent, libvirtconnection
+from vdsm import concurrent, libvirtconnection
 from vdsm import password
 from vdsm.utils import terminating, NICENESS, IOCLASS
 
@@ -66,9 +67,9 @@ _jobs = {}
 
 _V2V_DIR = os.path.join(P_VDSM_RUN, 'v2v')
 _LOG_DIR = os.path.join(P_VDSM_LOG, 'import')
-_VIRT_V2V = CommandPath('virt-v2v', '/usr/bin/virt-v2v')
-_SSH_AGENT = CommandPath('ssh-agent', '/usr/bin/ssh-agent')
-_SSH_ADD = CommandPath('ssh-add', '/usr/bin/ssh-add')
+_VIRT_V2V = cmdutils.CommandPath('virt-v2v', '/usr/bin/virt-v2v')
+_SSH_AGENT = cmdutils.CommandPath('ssh-agent', '/usr/bin/ssh-agent')
+_SSH_ADD = cmdutils.CommandPath('ssh-add', '/usr/bin/ssh-add')
 _XEN_SSH_PROTOCOL = 'xen+ssh'
 _VMWARE_PROTOCOL = 'vpx'
 _KVM_PROTOCOL = 'qemu'
@@ -1435,10 +1436,10 @@ def _add_networks_ovf_info(vm, node, ns):
 def _simple_exec_cmd(command, env=None, nice=None, ioclass=None,
                      stdin=None, stdout=None, stderr=None):
 
-    command = cmdutils.wrap_command(command, with_ioclass=ioclass,
-                                    ioclassdata=None, with_nice=nice,
-                                    with_setsid=False, with_sudo=False,
-                                    reset_cpu_affinity=True)
+    command = wrap_command(command, with_ioclass=ioclass,
+                           ioclassdata=None, with_nice=nice,
+                           with_setsid=False, with_sudo=False,
+                           reset_cpu_affinity=True)
 
     logging.debug(cmdutils.command_log_line(command, cwd=None))
 
