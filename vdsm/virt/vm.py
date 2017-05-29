@@ -402,13 +402,13 @@ class Vm(object):
 
     @property
     def hugepages(self):
-        custom = self.conf.get('custom', {})
+        custom = self._custom['custom']
         hugepages_enabled = int(custom.get('hugepages', 0))
         return hugepages_enabled > 0
 
     @property
     def hugepagesz(self):
-        custom = self.conf.get('custom', {})
+        custom = self._custom['custom']
         hugepagesz = int(custom.get('hugepagesz', 0))
         if hugepagesz == 0:
             return hugepages.DEFAULT_HUGEPAGESIZE[cpuarch.real()]
