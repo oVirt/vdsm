@@ -23,6 +23,7 @@ from __future__ import absolute_import
 import errno
 import logging
 import os
+import signal
 import subprocess
 
 from vdsm import concurrent
@@ -31,8 +32,8 @@ from vdsm.network import errors as ne
 from vdsm.network.link import iface as linkiface
 from vdsm.common.cache import memoized
 from vdsm.common.cmdutils import CommandPath
+from vdsm.common.fileutils import rm_file
 from vdsm.common.proc import pgrep
-from vdsm.utils import kill_and_rm_pid
 
 from . import address
 
@@ -95,7 +96,7 @@ class DhcpClient(object):
                 raise
         else:
             logging.info('Stopping dhclient-%s on %s', self.family, self.iface)
-            kill_and_rm_pid(pid, self.pidFile)
+            _kill_and_rm_pid(pid, self.pidFile)
             if linkiface.exists(self.iface):
                 address.flush(self.iface)
 
@@ -105,7 +106,7 @@ def kill(device_name, family=4):
         return
     for pid, pid_file in _pid_lookup(device_name, family):
         logging.info('Stopping dhclient-%s on %s', family, device_name)
-        kill_and_rm_pid(pid, pid_file)
+        _kill_and_rm_pid(pid, pid_file)
 
 
 def is_active(device_name, family):
@@ -196,3 +197,15 @@ def run(iface, family=4, default_route=False, duid_source=None,
 def stop(iface):
     dhclient = DhcpClient(iface)
     dhclient.shutdown()
+
+
+def _kill_and_rm_pid(pid, pid_file):
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except OSError as e:
+        if e.errno == os.errno.ESRCH:  # Already exited
+            pass
+        else:
+            raise
+    if pid_file is not None:
+        rm_file(pid_file)

@@ -42,7 +42,6 @@ import six
 import sys
 import os
 import select
-import signal
 import socket
 import stat
 import threading
@@ -50,7 +49,6 @@ import time
 import weakref
 
 from vdsm.common import zombiereaper
-from vdsm.common.fileutils import rm_file
 from vdsm.common import time as vdsm_time
 from vdsm.common.proc import pidstat
 
@@ -616,18 +614,6 @@ def stopwatch(message, level=logging.DEBUG,
         log.log(level, "%s: %.2f seconds", message, elapsed)
     else:
         yield
-
-
-def kill_and_rm_pid(pid, pid_file):
-    try:
-        os.kill(pid, signal.SIGTERM)
-    except OSError as e:
-        if e.errno == os.errno.ESRCH:  # Already exited
-            pass
-        else:
-            raise
-    if pid_file is not None:
-        rm_file(pid_file)
 
 
 def unique(iterable):
