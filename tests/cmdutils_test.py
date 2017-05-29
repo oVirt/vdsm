@@ -42,22 +42,22 @@ class SystemdRunTests(VdsmTestCase):
 
     def test_defaults(self):
         cmd = cmdutils.systemd_run(['a', 'b'])
-        res = [constants.EXT_SYSTEMD_RUN, 'a', 'b']
+        res = [cmdutils.SYSTEMD_RUN, 'a', 'b']
         self.assertEqual(cmd, res)
 
     def test_scope(self):
         cmd = cmdutils.systemd_run(['a', 'b'], scope=True)
-        res = [constants.EXT_SYSTEMD_RUN, '--scope', 'a', 'b']
+        res = [cmdutils.SYSTEMD_RUN, '--scope', 'a', 'b']
         self.assertEqual(cmd, res)
 
     def test_unit(self):
         cmd = cmdutils.systemd_run(['a', 'b'], unit='unit')
-        res = [constants.EXT_SYSTEMD_RUN, '--unit=unit', 'a', 'b']
+        res = [cmdutils.SYSTEMD_RUN, '--unit=unit', 'a', 'b']
         self.assertEqual(cmd, res)
 
     def test_slice(self):
         cmd = cmdutils.systemd_run(['a', 'b'], slice='slice')
-        res = [constants.EXT_SYSTEMD_RUN, '--slice=slice', 'a', 'b']
+        res = [cmdutils.SYSTEMD_RUN, '--slice=slice', 'a', 'b']
         self.assertEqual(cmd, res)
 
     def test_accounting(self):
@@ -68,7 +68,7 @@ class SystemdRunTests(VdsmTestCase):
         )
         cmd = cmdutils.systemd_run(['a', 'b'], accounting=accounting)
         res = [
-            constants.EXT_SYSTEMD_RUN,
+            cmdutils.SYSTEMD_RUN,
             '--property=CPUAccounting=1',
             '--property=MemoryAccounting=1',
             '--property=BlockIOAccounting=1',

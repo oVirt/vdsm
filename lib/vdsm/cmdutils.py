@@ -34,6 +34,8 @@ from . config import config
 
 from . common.time import monotonic_time
 
+SYSTEMD_RUN = "/usr/bin/systemd-run"
+
 SUDO_NON_INTERACTIVE_FLAG = "-n"
 
 # receive() source names
@@ -96,7 +98,7 @@ class Accounting(object):
 
 
 def systemd_run(cmd, scope=False, unit=None, slice=None, accounting=None):
-    command = [constants.EXT_SYSTEMD_RUN]
+    command = [SYSTEMD_RUN]
     if scope:
         command.append('--scope')
     if unit:
