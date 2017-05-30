@@ -31,7 +31,7 @@ from vdsm import constants
 from vdsm import supervdsm
 from vdsm.common import conv
 from vdsm.hostdev import get_device_params, detach_detachable, \
-    reattach_detachable, NoIOMMUSupportException
+    pci_address_to_name, reattach_detachable, NoIOMMUSupportException
 from vdsm.network import api as net_api
 from vdsm.virt import libvirtnetwork
 from vdsm.virt import vmxml
@@ -40,6 +40,14 @@ from . import core
 from . import hwclass
 
 VHOST_SOCK_DIR = os.path.join(constants.P_VDSM_RUN, 'vhostuser')
+
+
+class UnsupportedAddress(Exception):
+    pass
+
+
+class MissingNetwork(Exception):
+    pass
 
 
 class Interface(core.Base):
@@ -61,6 +69,13 @@ class Interface(core.Base):
         params.update(_get_xml_elem(dev, 'macAddr', 'mac', 'address'))
         params.update(_get_xml_elem(dev, 'nicModel', 'model', 'type'))
         params.update(_get_xml_elem(dev, 'bootOrder', 'boot', 'order'))
+        if params['device'] == 'hostdev':
+            params.update(_get_hostdev_params(dev))
+        vlan = vmxml.find_first(dev, 'vlan', None)
+        if vlan is not None:
+            params['specParams']['vlanid'] = vmxml.find_attr(
+                vlan, 'tag', 'id'
+            )
         filterref = vmxml.find_first(dev, 'filterref', None)
         if filterref is not None:
             params['filter'] = vmxml.attr(filterref, 'filter')
@@ -87,7 +102,7 @@ class Interface(core.Base):
             vmxml.find_attr(dev, 'source', 'bridge')
         )
         if net is None:
-            raise RuntimeError('could not detect the network to join')
+            raise MissingNetwork("no network to join")
         params['network'] = net
         return cls(log, **params)
 
@@ -466,8 +481,19 @@ def fixNetworks(xml_str):
     return xml_str
 
 
+def _get_hostdev_params(dev):
+    src_dev = vmxml.find_first(dev, 'source')
+    src_addr = vmxml.device_address(src_dev)
+    src_addr_type = src_addr.pop('type', None)
+    if src_addr_type != 'pci':
+        raise UnsupportedAddress(src_addr_type)
+
+    addr = core.normalize_pci_address(**src_addr)
+    return {
+        'hostdev': pci_address_to_name(**addr)
+    }
+
+
 def _get_xml_elem(dev, key, elem, attr):
     value = vmxml.find_attr(dev, elem, attr)
-    if value:
-        return {key: value}
-    return {}
+    return {key: value} if value else {}

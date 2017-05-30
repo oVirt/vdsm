@@ -26,12 +26,15 @@ import os.path
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
 from vdsm import constants
+from vdsm import hostdev
 
 from monkeypatch import MonkeyPatchScope, MonkeyPatch
 from testlib import make_config
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
 from testlib import XMLTestCase
+
+import vmfakecon as fake
 
 
 @expandPermutations
@@ -655,6 +658,12 @@ class FakeProxy(object):
     def rmAppropriateHwrngDevice(self, vmid):
         pass
 
+    def appropriateIommuGroup(self, group):
+        pass
+
+    def rmAppropriateIommuGroup(self, group):
+        pass
+
 
 class FakeSupervdsm(object):
 
@@ -967,6 +976,60 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             </interface>'''
         self._check_roundtrip(vmdevices.network.Interface, interface_xml)
 
+    @MonkeyPatch(vmdevices.network.supervdsm,
+                 'getProxy', lambda: FakeProxy())
+    def test_interface_sriov_only_host_address(self):
+        """
+        This is what we expect on the very first run. The device has not
+        one guest address (managed and assigned by libvirt), just the
+        host address to identify the host device.
+        """
+        interface_xml = u'''
+            <interface managed="no" type="hostdev">
+                <mac address="ff:ff:ff:ff:ff:ff"/>
+                <source>
+                    <address bus="0x05" domain="0x0000"
+                        function="0x7" slot="0x10" type="pci"/>
+                </source>
+                <vlan>
+                    <tag id="3"/>
+                </vlan>
+                <boot order="9"/>
+                <driver name="vfio"/>
+            </interface>'''
+        with MonkeyPatchScope([
+            (hostdev, 'libvirtconnection', FakeLibvirtConnection())
+        ]):
+            self._check_roundtrip(vmdevices.network.Interface, interface_xml)
+
+    @MonkeyPatch(vmdevices.network.supervdsm,
+                 'getProxy', lambda: FakeProxy())
+    def test_interface_sriov_with_host_and_guest_address(self):
+        """
+        This is what we could get from the second run, and following.
+        Engine may or may not pass the guest address, both ways are legal.
+        Any way, we should never confuse them.
+        """
+        interface_xml = u'''
+            <interface managed="no" type="hostdev">
+                <address bus="0x01" domain="0x0000" function="0x0"
+                    slot="0x02" type="pci"/>
+                <mac address="ff:ff:ff:ff:ff:ff"/>
+                <source>
+                    <address bus="0x05" domain="0x0000"
+                        function="0x7" slot="0x10" type="pci"/>
+                </source>
+                <vlan>
+                    <tag id="3"/>
+                </vlan>
+                <boot order="9"/>
+                <driver name="vfio"/>
+            </interface>'''
+        with MonkeyPatchScope([
+            (hostdev, 'libvirtconnection', FakeLibvirtConnection())
+        ]):
+            self._check_roundtrip(vmdevices.network.Interface, interface_xml)
+
     def _check_roundtrip(self, klass, dev_xml, meta=None, expected_xml=None):
         dev = klass.from_xml_tree(
             self.log,
@@ -982,3 +1045,9 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             self.assertXMLEqual(rebuilt_xml, result_xml)
         finally:
             dev.teardown()
+
+
+class FakeLibvirtConnection(object):
+
+    def get(self, *args, **kwargs):
+        return fake.Connection()
