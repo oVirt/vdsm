@@ -399,8 +399,8 @@ class TestCommit(TestCaseBase):
                 format = (qemuimg.FORMAT.RAW if i == 0 else
                           qemuimg.FORMAT.QCOW2)
                 make_image(vol, size, format, i, qcow2_compat, parent)
-                blocks = os.stat(vol).st_blocks
-                chain.append((vol, blocks))
+                orig_offset = qemuimg.check(vol)["offset"] if i > 0 else None
+                chain.append((vol, orig_offset))
                 parent = vol
 
             base_vol = chain[base][0]
@@ -424,8 +424,9 @@ class TestCommit(TestCaseBase):
                     # internal and top volumes should keep the data, we
                     # may want to wipe this data when deleting the volumes
                     # later.
-                    vol, blocks = chain[i]
-                    self.assertEqual(os.stat(vol).st_blocks, blocks)
+                    vol, orig_offset = chain[i]
+                    actual_offset = qemuimg.check(vol)["offset"]
+                    self.assertEqual(actual_offset, orig_offset)
 
     def test_commit_progress(self):
         with namedTemporaryDir() as tmpdir:
