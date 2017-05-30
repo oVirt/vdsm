@@ -42,7 +42,8 @@ _STATE = {
     'nr_overcommit_hugepages': '1234',
     'surplus_hugepages': '1234',
     'nr_hugepages': '1234',
-    'nr_hugepages_mempolicy': '1234'
+    'nr_hugepages_mempolicy': '1234',
+    'vm.free_hugepages': 1234
 }
 
 
@@ -76,7 +77,7 @@ class TestHugepages(TestCaseBase):
                 ) for _ in range(3)
             ]]
             with mock.patch('{}.open'.format(hugepages.__name__),
-                            mock.mock_open(read_data=''),
+                            mock.mock_open(read_data='0'),
                             create=True):
 
                 self.assertEqual(set(hugepages.supported(src)), set(sizes))

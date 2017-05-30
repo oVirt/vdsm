@@ -145,8 +145,19 @@ def state(path=_PATH):
                 'free_hugepages', 'nr_hugepages',
                 'nr_hugepages_mempolicy', 'nr_overcommit_hugepages',
                 'resv_hugepages', 'surplus_hugepages'):
+            size_in_kb = _size_from_dir(size)
             with open(os.path.join(path, size, key)) as f:
-                sizes[_size_from_dir(size)][key] = f.read().strip()
+                sizes[size_in_kb][key] = f.read().strip()
+
+            # Let's calculate hugepages available for VMs as
+            # system.free_hugepages - vdsm.reserved_hugepages. This value
+            # could be negative (8 reserved hugepages are used; 0 free
+            # hugepages) therefore we floor it at 0 (making the interval [0,
+            # sys.nr_hugepages]).
+            sizes[size_in_kb]['vm.free_hugepages'] = max(
+                int(sizes[size_in_kb]['free_hugepages']) -
+                _reserved_hugepages(key), 0
+            )
 
     return sizes
 
