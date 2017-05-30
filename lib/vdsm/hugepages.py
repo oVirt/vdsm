@@ -147,7 +147,7 @@ def state(path=_PATH):
                 'resv_hugepages', 'surplus_hugepages'):
             size_in_kb = _size_from_dir(size)
             with open(os.path.join(path, size, key)) as f:
-                sizes[size_in_kb][key] = f.read().strip()
+                sizes[size_in_kb][key] = int(f.read())
 
             # Let's calculate hugepages available for VMs as
             # system.free_hugepages - vdsm.reserved_hugepages. This value

@@ -37,12 +37,12 @@ from vdsm.supervdsm_api import virt
 
 
 _STATE = {
-    'resv_hugepages': '1234',
-    'free_hugepages': '1234',
-    'nr_overcommit_hugepages': '1234',
-    'surplus_hugepages': '1234',
-    'nr_hugepages': '1234',
-    'nr_hugepages_mempolicy': '1234',
+    'resv_hugepages': 1234,
+    'free_hugepages': 1234,
+    'nr_overcommit_hugepages': 1234,
+    'surplus_hugepages': 1234,
+    'nr_hugepages': 1234,
+    'nr_hugepages_mempolicy': 1234,
     'vm.free_hugepages': 1234
 }
 
