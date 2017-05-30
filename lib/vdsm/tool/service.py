@@ -112,7 +112,10 @@ else:
             if rc != 0:
                 raise ServiceOperationError(
                     "Error listing unit files", '\n'.join(out), '\n'.join(err))
-            fullName = srvName + ".service"
+            fullName = srvName
+            # If unit file type was specified, don't override it.
+            if srvName.count('.') < 1:
+                fullName = srvName + ".service"
             for line in out:
                 if fullName == line.split(" ", 1)[0]:
                     return systemctlFun(fullName)
