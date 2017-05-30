@@ -284,16 +284,22 @@ def device_address(device_xml, index=0):
     """
     Obtain device's address from libvirt
     """
-    address = {}
     address_element = list(find_all(device_xml, 'address'))[index]
-    # Parse address to create proper dictionary.
-    # Libvirt device's address definition is:
-    # PCI = {'type':'pci', 'domain':'0x0000', 'bus':'0x00',
-    #        'slot':'0x0c', 'function':'0x0'}
-    # IDE = {'type':'drive', 'controller':'0', 'bus':'0', 'unit':'0'}
-    for key, value in attributes(address_element).items():
-        address[key.strip()] = value.strip()
-    return address
+    return parse_address_element(address_element)
+
+
+def parse_address_element(address_element):
+    """
+    Parse address to create proper dictionary.
+    Libvirt device's address definition is:
+    PCI = {'type':'pci', 'domain':'0x0000', 'bus':'0x00',
+           'slot':'0x0c', 'function':'0x0'}
+    IDE = {'type':'drive', 'controller':'0', 'bus':'0', 'unit':'0'}
+    """
+    return {
+        key.strip(): value.strip()
+        for key, value in attributes(address_element).items()
+    }
 
 
 class Device(object):
