@@ -768,12 +768,46 @@ def find_device_alias(dev):
     return vmxml.find_attr(dev, 'alias', 'name')
 
 
+def find_device_guest_address(dev):
+    """
+    Find the guest-visible address of a device.
+
+    With respect to vmxml.device_address(), this function will always and only
+    look for the guest address; on the other hand, vmxml.device_address() will
+    always report the first address it finds.
+
+    Consider this case:
+    <dev>
+      <source>
+        <address>SRC_ADDR</address>
+      </source>
+    </dev>
+
+    vmxml.device_address() returns SRC_ADDR
+    this function will return None
+
+    Consider this case:
+    <dev>
+      <address>GST_ADDR</address>
+      <source>
+        <address>SRC_ADDR</address>
+      </source>
+    </dev>
+
+    vmxml.device_address() returns GST_ADDR
+    this function will return GST_ADDR as well.
+    """
+    addr = dev.find('./address')
+    if addr is None:
+        return None
+    return vmxml.parse_address_element(addr)
+
+
 def parse_device_ident(dev):
-    try:
-        address = vmxml.device_address(dev)
-    except IndexError:
-        address = None
-    return address, find_device_alias(dev)
+    return (
+        find_device_guest_address(dev),
+        find_device_alias(dev)
+    )
 
 
 def parse_device_attrs(dev, attrs):

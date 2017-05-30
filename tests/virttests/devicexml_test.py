@@ -555,6 +555,40 @@ class ParsingHelperTests(XMLTestCase):
             vmdevices.core.find_device_alias(vmxml.parse_xml(xml_data))
         )
 
+    @permutations([
+        # xml_data, address
+        [u'''<interface>
+                <source>
+                  <address type='pci' domain='0x0000' bus='0x00'
+                   slot='0x04' function='0x0'/>
+                </source>
+              </interface>''',
+         None],
+        [u'''<interface>
+                <address type='pci' domain='0x0000' bus='0x00'
+                  slot='0x04' function='0x0'/>
+              </interface>''',
+         {'bus': '0x00', 'domain': '0x0000',
+          'function': '0x0', 'slot': '0x04', 'type': 'pci'}],
+        [u'''<interface>
+                <address type='pci' domain='0x0000' bus='0x00'
+                  slot='0x04' function='0x0'/>
+                <source>
+                  <address type='pci' domain='0x0000' bus='0x02'
+                    slot='0x02' function='0x5'/>
+                </source>
+              </interface>''',
+         {'bus': '0x00', 'domain': '0x0000',
+          'function': '0x0', 'slot': '0x04', 'type': 'pci'}],
+    ])
+    def test_find_device_guest_address(self, xml_data, address):
+        self.assertEqual(
+            address,
+            vmdevices.core.find_device_guest_address(
+                vmxml.parse_xml(xml_data)
+            )
+        )
+
 
 class FakeProxy(object):
 
