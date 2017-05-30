@@ -22,7 +22,6 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_vdsm_PYTHON = \
 	API.py \
-	clientIF.py \
 	hooking.py \
 	sitecustomize.py \
 	vdsmd.py \

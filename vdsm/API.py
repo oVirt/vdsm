@@ -20,13 +20,14 @@
 #
 # pylint: disable=R0904
 
+from __future__ import absolute_import
+
 import os
 
 from vdsm.network.errors import ConfigNetworkError
 
 from vdsm import commands
 from vdsm import utils
-from clientIF import clientIF
 from vdsm import constants
 from vdsm import hooks
 from vdsm import hostdev
@@ -34,6 +35,7 @@ from vdsm import supervdsm
 from vdsm import throttledlog
 from vdsm import jobs
 from vdsm import v2v
+from vdsm.clientIF import clientIF
 from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import fileutils

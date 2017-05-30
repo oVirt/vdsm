@@ -23,14 +23,13 @@ import logging
 import os.path
 import threading
 
+from vdsm import clientIF
 from vdsm.common import response
 from vdsm.virt.vm import VolumeError
 
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import temporaryPath
 from monkeypatch import MonkeyPatch
-
-import clientIF
 
 import vmfakelib as fake
 

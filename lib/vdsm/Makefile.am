@@ -26,6 +26,7 @@ dist_vdsmpylib_PYTHON = \
 	__init__.py \
 	alignmentScan.py \
 	client.py \
+	clientIF.py \
 	cmdutils.py \
 	commands.py \
 	containersconnection.py \

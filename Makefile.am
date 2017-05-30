@@ -89,7 +89,6 @@ abs_imports: all
 pylint: tox
 	tox -e pylint \
 		vdsm/API.py \
-		vdsm/clientIF.py \
 		vdsm/sitecustomize.py \
 		vdsm/hooking.py \
 		vdsm/vdsmd.py \

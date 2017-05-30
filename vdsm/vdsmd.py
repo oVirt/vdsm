@@ -98,7 +98,7 @@ def serve_clients(log):
                                        clock=time.monotonic_time)
         scheduler.start()
 
-        from clientIF import clientIF  # must import after config is read
+        from vdsm.clientIF import clientIF  # must import after config is read
         cif = clientIF.getInstance(irs, log, scheduler)
 
         jobs.start(scheduler, cif)

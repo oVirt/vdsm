@@ -263,7 +263,7 @@ class Vm(object):
         Initialize a new VM instance.
 
         :param cif: The client interface that creates this VM.
-        :type cif: :class:`clientIF.clientIF`
+        :type cif: :class:`vdsm.clientIF.clientIF`
         :param params: The VM parameters.
         :type params: dict
         :param recover: Signal if the Vm is recovering;
