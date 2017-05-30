@@ -173,7 +173,7 @@ Requires: cyrus-sasl-scram
 %if 0%{?rhel}
 Requires: e2fsprogs
 Requires: kernel >= 3.10.0-327.18.1.el7
-Requires: lvm2 >= 7:2.02.130-5.el7_2.5
+Requires: lvm2 >= 7:2.02.145
 Requires: python >= 2.7.5-18.el7_1.1
 Requires: selinux-policy-targeted >= 3.13.1-60.el7
 %else
@@ -184,7 +184,7 @@ Requires: e2fsprogs >= 1.41.14
 Requires: policycoreutils-python-utils
 Requires: sed >= 4.2.1-10
 Requires: ed
-Requires: lvm2 >= 2.02.132
+Requires: lvm2 >= 2.02.145
 Requires: selinux-policy-targeted >= 3.13-1
 # In order to avoid a policycoreutils bug (rhbz 889698) when selinux is
 # disabled we now require the version 2.1.13-55 (or newer) of Fedora.
