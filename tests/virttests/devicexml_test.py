@@ -521,8 +521,9 @@ class ParsingHelperTests(XMLTestCase):
             slot='{slot}' function='{function}'/>
           <alias name='{alias}'/>
         </device>""".format(**params)
-        found_addr, found_alias = vmdevices.core.parse_device_ident(
-            vmxml.parse_xml(XML))
+        dev = vmxml.parse_xml(XML)
+        found_addr = vmdevices.core.find_device_guest_address(dev)
+        found_alias = vmdevices.core.find_device_alias(dev)
         self.assertEqual(found_addr, self.ADDR)
         self.assertEqual(found_alias, self.ALIAS)
 
@@ -530,8 +531,9 @@ class ParsingHelperTests(XMLTestCase):
         XML = u"""<device type='fake'>
           <alias name='{alias}'/>
         </device>""".format(alias=self.ALIAS)
-        found_addr, found_alias = vmdevices.core.parse_device_ident(
-            vmxml.parse_xml(XML))
+        dev = vmxml.parse_xml(XML)
+        found_addr = vmdevices.core.find_device_guest_address(dev)
+        found_alias = vmdevices.core.find_device_alias(dev)
         self.assertIs(found_addr, None)
         self.assertEqual(found_alias, self.ALIAS)
 
@@ -541,15 +543,17 @@ class ParsingHelperTests(XMLTestCase):
           <address domain='{domain}' bus='{bus}'
             slot='{slot}' function='{function}'/>
         </device>""".format(**params)
-        found_addr, found_alias = vmdevices.core.parse_device_ident(
-            vmxml.parse_xml(XML))
+        dev = vmxml.parse_xml(XML)
+        found_addr = vmdevices.core.find_device_guest_address(dev)
+        found_alias = vmdevices.core.find_device_alias(dev)
         self.assertEqual(found_addr, self.ADDR)
         self.assertEqual(found_alias, '')
 
     def test_missing_address_alias(self):
         XML = u"<device type='fake' />"
-        found_addr, found_alias = vmdevices.core.parse_device_ident(
-            vmxml.parse_xml(XML))
+        dev = vmxml.parse_xml(XML)
+        found_addr = vmdevices.core.find_device_guest_address(dev)
+        found_alias = vmdevices.core.find_device_alias(dev)
         self.assertIs(found_addr, None)
         self.assertEqual(found_alias, '')
 

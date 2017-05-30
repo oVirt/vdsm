@@ -183,7 +183,8 @@ class Balloon(Base):
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('memballoon'):
             # Ignore balloon devices without address.
-            address, alias = parse_device_ident(x)
+            address = find_device_guest_address(x)
+            alias = find_device_alias(x)
 
             for dev in device_conf:
                 if address and not hasattr(dev, 'address'):
@@ -301,7 +302,7 @@ class Console(Base):
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('console'):
             # All we care about is the alias
-            _, alias = parse_device_ident(x)
+            alias = find_device_alias(x)
             for dev in device_conf:
                 if not hasattr(dev, 'alias'):
                     dev.alias = alias
@@ -347,7 +348,8 @@ class Controller(Base):
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('controller'):
             # Ignore controller devices without address
-            address, alias = parse_device_ident(x)
+            address = find_device_guest_address(x)
+            alias = find_device_alias(x)
             if address is None:
                 continue
             device = vmxml.attr(x, 'type')
@@ -411,7 +413,8 @@ class Smartcard(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('smartcard'):
-            address, alias = parse_device_ident(x)
+            address = find_device_guest_address(x)
+            alias = find_device_alias(x)
             if address is None:
                 continue
 
@@ -447,7 +450,8 @@ class Sound(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('sound'):
-            address, alias = parse_device_ident(x)
+            address = find_device_guest_address(x)
+            alias = find_device_alias(x)
 
             # FIXME. We have an identification problem here.
             # Sound device has not unique identifier, except the alias
@@ -551,7 +555,8 @@ class Rng(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for rng in vm.domain.get_device_elements('rng'):
-            address, alias = parse_device_ident(rng)
+            address = find_device_guest_address(rng)
+            alias = find_device_alias(rng)
             source = vmxml.text(vmxml.find_first(rng, 'backend'))
 
             for dev in device_conf:
@@ -634,7 +639,8 @@ class Video(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('video'):
-            address, alias = parse_device_ident(x)
+            address = find_device_guest_address(x)
+            alias = find_device_alias(x)
 
             # FIXME. We have an identification problem here.
             # Video card device has not unique identifier, except the alias
@@ -674,7 +680,8 @@ class Watchdog(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('watchdog'):
-            address, alias = parse_device_ident(x)
+            address = find_device_guest_address(x)
+            alias = find_device_alias(x)
             if address is None:
                 continue
 
@@ -732,7 +739,8 @@ class Memory(Base):
                                  for dev in vm.conf['devices']
                                  if 'alias' in dev])
         for element in vm.domain.get_device_elements('memory'):
-            address, alias = parse_device_ident(element)
+            address = find_device_guest_address(element)
+            alias = find_device_alias(element)
             node = int(vmxml.text(vmxml.find_first(element, 'node')))
             size = int(vmxml.text(vmxml.find_first(element, 'size')))
             if alias not in conf_aliases:
@@ -827,13 +835,6 @@ def find_device_guest_address(dev):
     return vmxml.parse_address_element(addr)
 
 
-def parse_device_ident(dev):
-    return (
-        find_device_guest_address(dev),
-        find_device_alias(dev)
-    )
-
-
 def parse_device_attrs(dev, attrs):
     return {
         key: dev.attrib.get(key)
@@ -851,9 +852,10 @@ def parse_device_params(dev, attrs=None):
         'type': parse_device_type(dev),
         'device': dev.tag,
     }
-    address, alias = parse_device_ident(dev)
+    alias = find_device_alias(dev)
     if alias:
         params['alias'] = alias
+    address = find_device_guest_address(dev)
     if address:
         params['address'] = address
     if attrs is not None:
