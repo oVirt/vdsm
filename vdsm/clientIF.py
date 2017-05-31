@@ -450,7 +450,7 @@ class clientIF(object):
             vm = Vm(self, vmParams, vmRecover)
             ret = vm.run()
             if not response.is_error(ret):
-                self.vmContainer[vmParams['vmId']] = vm
+                self.vmContainer[vm.id] = vm
             return ret
 
     def getAllVmStats(self):
