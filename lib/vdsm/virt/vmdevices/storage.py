@@ -716,6 +716,17 @@ def chain_index(actual_chain, vol_id, drive_name):
 
 
 def _getSourceXML(drive):
+    """
+    Makes a libvirt <source> element for specified drive.
+
+    Arguments:
+        drive (dict like): Drive description, A dict or an object
+        implementing __getitem__.
+
+    Returns:
+        Element: libvirt source element in a form of
+                 <source file='/image'/>
+    """
     source = vmxml.Element('source')
     if drive["diskType"] == DISK_TYPE.BLOCK:
         source.setAttrs(dev=drive["path"])
