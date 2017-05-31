@@ -25,6 +25,7 @@ SUBDIRS=api common tool profiling rpc network virt storage host metrics \
 dist_vdsmpylib_PYTHON = \
 	__init__.py \
 	alignmentScan.py \
+	API.py \
 	client.py \
 	clientIF.py \
 	cmdutils.py \

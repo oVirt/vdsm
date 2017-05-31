@@ -21,14 +21,13 @@ from __future__ import absolute_import
 
 from vdsm.virt import vmexitreason
 
+from vdsm import API
 from vdsm.clientIF import clientIF
 from vdsm.common import cache
 from vdsm.common import define
 from testlib import VdsmTestCase as TestCaseBase
 from vdsm.api import vdsmapi
 from vdsm.virt import vm
-
-import API
 
 from testValidation import brokentest
 from monkeypatch import MonkeyPatch, MonkeyPatchScope

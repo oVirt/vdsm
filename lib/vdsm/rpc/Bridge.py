@@ -21,9 +21,9 @@ import logging
 import threading
 import types
 
-import API
 import yajsonrpc
 
+from vdsm import API
 from vdsm.api import vdsmapi
 from vdsm.common.exception import VdsmException
 from vdsm.config import config

@@ -20,13 +20,13 @@
 import inspect
 import os
 
-import API
 try:
     import vdsm.gluster.apiwrapper as gapi
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False
 
+from vdsm import API
 from vdsm.api import vdsmapi
 from vdsm.rpc import Bridge
 from testlib import Sigargs

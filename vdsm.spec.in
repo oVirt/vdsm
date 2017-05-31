@@ -872,7 +872,6 @@ exit 0
 %dir %{_sysconfdir}/%{vdsm_name}/mom.d
 %dir %{_datadir}/%{vdsm_name}
 %{_datadir}/%{vdsm_name}/daemonAdapter
-%{_datadir}/%{vdsm_name}/API.py*
 %{_datadir}/%{vdsm_name}/hooking.py*
 %{_datadir}/%{vdsm_name}/sitecustomize.py*
 %{_datadir}/%{vdsm_name}/supervdsmd
@@ -1041,6 +1040,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/virt/vmdevices
 %{python_sitelib}/%{vdsm_name}/__init__.py*
 %{python_sitelib}/%{vdsm_name}/alignmentScan.py*
+%{python_sitelib}/%{vdsm_name}/API.py*
 %{python_sitelib}/%{vdsm_name}/client.py*
 %{python_sitelib}/%{vdsm_name}/clientIF.py*
 %{python_sitelib}/%{vdsm_name}/cmdutils.py*

@@ -21,12 +21,11 @@
 import copy
 import logging
 
+from vdsm import API
 from vdsm.common import conv
 from vdsm.common import response
 from vdsm.common import threadlocal
 from vdsm.common.compat import pickle
-
-import API
 
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase

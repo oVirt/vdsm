@@ -22,7 +22,6 @@ import os.path
 import threading
 from collections import defaultdict
 
-import API
 from contextlib import contextmanager
 from vdsm.common import time
 from yajsonrpc.betterAsyncore import Reactor
@@ -34,6 +33,7 @@ from yajsonrpc.stomp import (
 from yajsonrpc import Notification
 from vdsm.rpc.bindingjsonrpc import BindingJsonRpc
 from vdsm.protocoldetector import MultiProtocolAcceptor
+from vdsm import API
 from vdsm import constants
 from vdsm import schedule
 from vdsm import utils
@@ -59,7 +59,7 @@ class FakeClientIf(object):
         self.json_binding = None
 
         # API module is redefined for apiTests so we need to add BLANK_UUIDs
-        import API
+        from vdsm import API
         API.Image.BLANK_UUID = '00000000-0000-0000-0000-000000000000'
         API.StorageDomain.BLANK_UUID = '00000000-0000-0000-0000-000000000000'
         API.Volume.BLANK_UUID = "00000000-0000-0000-0000-000000000000"

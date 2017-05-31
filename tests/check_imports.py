@@ -35,10 +35,7 @@ def find_modules():
     """
     Yields fully qualified modules names in the vdsm package.
     """
-    expected_to_fail = {
-        "vdsm.rpc.Bridge",
-        "vdsm.rpc.http",
-    }
+    expected_to_fail = {}
 
     # blivet fails on import, see https://bugzilla.redhat.com/1450607
     info = osinfo.version()

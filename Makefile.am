@@ -88,7 +88,6 @@ abs_imports: all
 .PHONY: pylint
 pylint: tox
 	tox -e pylint \
-		vdsm/API.py \
 		vdsm/sitecustomize.py \
 		vdsm/hooking.py \
 		vdsm/vdsmd.py \

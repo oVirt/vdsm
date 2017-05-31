@@ -1083,7 +1083,7 @@ class Volume(object):
             'size' - in sectors
             'volFormat' - volume format COW / RAW
             'preallocate' - Preallocate / Sparse
-            'diskType' - enum (API.Image.DiskTypes)
+            'diskType' - enum (vdsm.API.Image.DiskTypes)
             'srcImgUUID' - source image UUID
             'srcVolUUID' - source volume UUID
             'initialSize' - initial volume size in sectors,

@@ -96,7 +96,8 @@ class StorageDomain():
 
 def getFakeAPI():
     _newAPI = imp.new_module('API')
-    _API = __import__('API', globals(), locals(), {}, -1)
+    _vdsm = __import__('vdsm', globals(), locals(), {}, -1)
+    _API = _vdsm.API
     setattr(_newAPI, 'Global', Host)
     setattr(_newAPI, 'StorageDomain', StorageDomain)
     setattr(_newAPI, 'VM', VM)

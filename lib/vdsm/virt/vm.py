@@ -1450,7 +1450,7 @@ class Vm(object):
             self.send_status_event(**event_data)
 
     def status(self, fullStatus=True):
-        # used by API.Global.getVMList
+        # used by vdsm.API.Global.getVMList
         if not fullStatus:
             return {'vmId': self.id, 'status': self.lastStatus,
                     'statusTime': self._get_status_time()}
@@ -1467,7 +1467,7 @@ class Vm(object):
 
     def getStats(self):
         """
-        Used by API.Vm.getStats.
+        Used by vdsm.API.Vm.getStats.
 
         WARNING: This method should only gather statistics by copying data.
         Especially avoid costly and dangerous direct calls to the _dom
