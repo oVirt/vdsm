@@ -138,8 +138,8 @@ _DEVICE_XML = {
             %s
             <mac address="ff:ff:ff:ff:ff:ff"/>
             <source>
-                    <address bus="5" domain="0" function="7" slot="16"
-                    type="pci"/>
+                    <address bus="0x05" domain="0x0000"
+                      function="0x7" slot="0x10" type="pci"/>
             </source>
             <vlan>
                     <tag id="3"/>

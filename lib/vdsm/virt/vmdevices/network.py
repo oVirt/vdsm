@@ -187,7 +187,10 @@ class Interface(core.Base):
             iface.setAttrs(managed='no')
             host_address = self._device_params['address']
             source = iface.appendChildWithArgs('source')
-            source.appendChildWithArgs('address', type='pci', **host_address)
+            source.appendChildWithArgs(
+                'address', type='pci',
+                **core.normalize_pci_address(**host_address)
+            )
 
             if self.vlanId is not None:
                 vlan = iface.appendChildWithArgs('vlan')
