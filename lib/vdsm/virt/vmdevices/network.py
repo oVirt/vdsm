@@ -398,13 +398,7 @@ class Interface(core.Base):
                     network = libvirtnetwork.netname_l2o(
                         vmxml.attr(source, 'network'))
 
-            # Get nic address
-            address = {}
-            # TODO: fix vmxml.device_address and its users to have this code.
-            for child in vmxml.children(x, 'address'):
-                address = dict((k.strip(), v.strip())
-                               for k, v in vmxml.attributes(child).items())
-                break
+            address = core.find_device_guest_address(x)
 
             for nic in device_conf:
                 if nic.macAddr.lower() == mac.lower():
