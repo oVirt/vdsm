@@ -29,9 +29,9 @@ vdsm_restart() {
 
 vdsm_caps_nonsecure() {
     if [ -t 1 ]; then
-        sudo vdsm-client --unsecure Host getCapabilities | less
+        sudo vdsm-client --insecure Host getCapabilities | less
     else
-        sudo vdsm-client --unsecure Host getCapabilities
+        sudo vdsm-client --insecure Host getCapabilities
     fi
 }
 
