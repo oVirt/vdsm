@@ -14,7 +14,7 @@
 .SH NAME
 vdsm-client \- VDSM's command line interface
 .SH SYNOPSIS
-.BR "vdsm-client [-a HOST] [-p PORT] [--unsecure] [--timeout TIMEOUT] [-f FILE] namespace method [args]"
+.BR "vdsm-client [-a HOST] [-p PORT] [--insecure] [--timeout TIMEOUT] [-f FILE] namespace method [args]"
 .SH DESCRIPTION
 The
 .B vdsm-client
@@ -77,8 +77,8 @@ endorsed.
 .B -h
 Display vdsm-client's help
 .TP
-.B --unsecure
-Connect to server in unsecure manner.
+.B --insecure
+Connect to server in an insecure manner.
 .TP
 .B --timeout TIMEOUT
 Change the method timeout. Default value is 60 seconds.
