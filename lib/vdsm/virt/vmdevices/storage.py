@@ -100,9 +100,9 @@ class Drive(core.Base):
                  'propagateErrors', 'address', 'apparentsize', 'volumeInfo',
                  'index', 'name', 'optional', 'shared', 'truesize',
                  'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
-                 '_blockDev', 'extSharedState', 'drv', 'sgio', 'GUID',
-                 'diskReplicate', '_diskType', 'hosts', 'protocol', 'auth',
-                 'discard', 'vm_custom')
+                 'extSharedState', 'drv', 'sgio', 'GUID', 'diskReplicate',
+                 '_diskType', 'hosts', 'protocol', 'auth', 'discard',
+                 'vm_custom')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         constants.MEGAB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -201,10 +201,13 @@ class Drive(core.Base):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
         self._path = None
+        # device needs to be initialized in prior
+        # cause diskType setter uses self.device
+        # in diskType validation
+        self.device = kwargs.get('device', 'disk')
         super(Drive, self).__init__(log, **kwargs)
         if not hasattr(self, 'vm_custom'):
             self.vm_custom = {}
-        self.device = getattr(self, 'device', 'disk')
         # Keep sizes as int
         self.reqsize = int(kwargs.get('reqsize', '0'))  # Backward compatible
         self.truesize = int(kwargs.get('truesize', '0'))
@@ -213,7 +216,12 @@ class Drive(core.Base):
         self.cache = config.get('vars', 'qemu_drive_cache')
         self.discard = kwargs.get('discard', False)
 
-        self._blockDev = None  # Lazy initialized
+        if not hasattr(self, '_diskType'):
+            if (self.device in ("cdrom", "floppy") or not
+                    utils.isBlockDevice(self.path)):
+                self.diskType = DISK_TYPE.FILE
+            else:
+                self.diskType = DISK_TYPE.BLOCK
 
         self._customize()
         self._setExtSharedState()
@@ -318,7 +326,7 @@ class Drive(core.Base):
         Drive.volExtensionChunk is used to detect if a drive should be
         extended, and getNextVolumeSize to find the new size.
         """
-        return self.blockDev and self.format == "cow"
+        return self._diskType == DISK_TYPE.BLOCK and self.format == "cow"
 
     @property
     def replicaChunked(self):
@@ -332,20 +340,11 @@ class Drive(core.Base):
 
     @property
     def networkDev(self):
-        return getattr(self, '_diskType', None) == DISK_TYPE.NETWORK
+        return self._diskType == DISK_TYPE.NETWORK
 
     @property
     def blockDev(self):
-        if self._blockDev is None:
-            if self.networkDev or self.device in ("cdrom", "floppy"):
-                self._blockDev = False
-            else:
-                try:
-                    self._blockDev = utils.isBlockDevice(self.path)
-                except Exception:
-                    self.log.debug("Unable to determine if the path '%s' is a "
-                                   "block device", self.path, exc_info=True)
-        return self._blockDev
+        return self._diskType == DISK_TYPE.BLOCK
 
     @property
     def path(self):
@@ -356,22 +355,20 @@ class Drive(core.Base):
         if self._path is not None and self._path != path:
             self.log.debug("Drive %s moved from %r to %r",
                            self.name, self._path, path)
-            # After live storage migration domain type may have changed
-            # invalidating cached blockDev.
-            self._blockDev = None
         self._path = path
 
     @property
     def diskType(self):
-        if self.blockDev:
-            return DISK_TYPE.BLOCK
-        elif self.networkDev:
-            return DISK_TYPE.NETWORK
-        else:
-            return DISK_TYPE.FILE
+        return self._diskType
 
     @diskType.setter
     def diskType(self, value):
+        if value not in SOURCE_ATTR:
+            raise exception.UnsupportedOperation(
+                "Unsupported diskType %r" % value)
+        if self.device in ['cdrom', 'floppy'] and value != DISK_TYPE.FILE:
+            raise exception.UnsupportedOperation(
+                "diskType of %r can only be 'file'" % self.device)
         self._diskType = value
 
     @property
