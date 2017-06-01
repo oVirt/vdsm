@@ -49,6 +49,9 @@ class MutableDomainDescriptor(object):
     def name(self):
         return self._name
 
+    def acpi_enabled(self):
+        return self._dom.find('features/acpi') is not None
+
     @property
     def devices(self):
         return vmxml.find_first(self._dom, 'devices', None)

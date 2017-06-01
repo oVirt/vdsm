@@ -81,6 +81,9 @@ class FakeVM(object):
     def acpiReboot(self):
         pass
 
+    def acpi_enabled(self):
+        return self.conf['acpiEnable'] == 'true'
+
 
 class FakeGuestAgent(object):
 

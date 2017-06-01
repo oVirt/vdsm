@@ -1478,7 +1478,7 @@ class Vm(object):
             'vmName': self.name,
             'vmType': self.conf['vmType'],
             'kvmEnable': self.conf.get('kvmEnable', 'true'),
-            'acpiEnable': self.conf.get('acpiEnable', 'true')}
+            'acpiEnable': 'true' if self.acpi_enabled() else 'false'}
         if 'cdrom' in self.conf:
             stats['cdrom'] = self.conf['cdrom']
         if 'boot' in self.conf:
@@ -4555,6 +4555,9 @@ class Vm(object):
         self._destroy_requested.set()
 
         return self.releaseVm(gracefulAttempts)
+
+    def acpi_enabled(self):
+        return self._domain.acpi_enabled()
 
     def acpiShutdown(self):
         with self._shutdownLock:
