@@ -2153,19 +2153,20 @@ class Vm(object):
         self._logGuestCpuStatus('domain initialization')
 
     def _dom_vcpu_setup(self):
-        nice = int(self.conf.get('nice', '0'))
-        nice = max(min(nice, 19), 0)
+        if 'xml' not in self.conf:
+            nice = int(self.conf.get('nice', '0'))
+            nice = max(min(nice, 19), 0)
 
-        # if cpuShares weren't configured we derive the value from the
-        # niceness, cpuShares has no unit, it is only meaningful when
-        # compared to other VMs (and can't be negative)
-        cpuShares = int(self.conf.get('cpuShares', str((20 - nice) * 51)))
-        cpuShares = max(cpuShares, 0)
+            # if cpuShares weren't configured we derive the value from the
+            # niceness, cpuShares has no unit, it is only meaningful when
+            # compared to other VMs (and can't be negative)
+            cpuShares = int(self.conf.get('cpuShares', str((20 - nice) * 51)))
+            cpuShares = max(cpuShares, 0)
 
-        try:
-            self._dom.setSchedulerParameters({'cpu_shares': cpuShares})
-        except Exception:
-            self.log.warning('failed to set Vm niceness', exc_info=True)
+            try:
+                self._dom.setSchedulerParameters({'cpu_shares': cpuShares})
+            except Exception:
+                self.log.warning('failed to set Vm niceness', exc_info=True)
 
         self._updateVcpuTuneInfo()
         self._updateVcpuLimit()
