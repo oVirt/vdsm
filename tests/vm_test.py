@@ -511,9 +511,8 @@ class TestVm(XMLTestCase):
 
         for (tuneConf, exceptionMsg) in \
                 zip(tuneConfs, expectedExceptMsgs):
-            drive = vmdevices.storage.Drive(self.log, **devConf)
-            # Patch Drive.blockDev to skip the block device checking.
-            drive._blockDev = False
+            drive = vmdevices.storage.Drive(self.log, diskType=DISK_TYPE.FILE,
+                                            **devConf)
 
             with self.assertRaises(Exception) as cm:
                 drive.iotune = tuneConf
@@ -925,6 +924,7 @@ class TestVm(XMLTestCase):
                 type=hwclass.DISK,
                 iface="ide",
                 specParams=old_iotune,
+                diskType=DISK_TYPE.BLOCK
             )
         ]
 
@@ -932,7 +932,6 @@ class TestVm(XMLTestCase):
         required = ('domainID', 'imageID', 'poolID', 'volumeID')
         for p in required:
             setattr(drives[0], p, "1")
-        drives[0]._blockDev = True
 
         new_iotune = {
             "write_bytes_sec": 1,
@@ -997,7 +996,8 @@ class TestVm(XMLTestCase):
                 domainID=domainID,
                 imageID=uuid.uuid4(),
                 poolID=uuid.uuid4(),
-                volumeID=uuid.uuid4()
+                volumeID=uuid.uuid4(),
+                diskType=DISK_TYPE.BLOCK,
             ),
             vmdevices.storage.Drive(
                 self.log,
@@ -1006,6 +1006,7 @@ class TestVm(XMLTestCase):
                 path="/dev/dummy2",
                 type=hwclass.DISK,
                 iface="ide",
+                diskType=DISK_TYPE.BLOCK,
             )
         ]
 
