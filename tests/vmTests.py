@@ -64,7 +64,7 @@ from vdsm import utils
 from vdsm import libvirtconnection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import namedTemporaryDir
-from testValidation import slowtest
+from testValidation import slowtest, xfail
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
 import vmfakelib as fake
@@ -510,9 +510,8 @@ class TestVm(XMLTestCase):
 
         for (devConf, exceptionMsg) in \
                 zip(devConfs, expectedExceptMsgs):
-            drive = vmdevices.storage.Drive(vmConf, self.log, **devConf)
-            # Patch Drive.blockDev to skip the block device checking.
-            drive._blockDev = False
+            drive = vmdevices.storage.Drive(vmConf, self.log,
+                                            diskType=DISK_TYPE.FILE, **devConf)
 
             with self.assertRaises(Exception) as cm:
                 drive.getXML()
@@ -904,6 +903,7 @@ class TestVm(XMLTestCase):
             tunables = machine.getIoTunePolicyResponse()
             self.assertEqual(tunables['ioTunePolicyList'], [])
 
+    @xfail("diskType is not refactored yet")
     def testSetIoTune(self):
 
         drives = [
@@ -918,14 +918,15 @@ class TestVm(XMLTestCase):
                 device="hdd",
                 path="/dev/dummy",
                 type=hwclass.DISK,
-                iface="ide")
+                iface="ide",
+                diskType=DISK_TYPE.BLOCK
+            )
         ]
 
         # Make the drive look like a VDSM volume
         required = ('domainID', 'imageID', 'poolID', 'volumeID')
         for p in required:
             setattr(drives[0], p, "1")
-        drives[0]._blockDev = True
 
         tunables = [
             {
@@ -1003,7 +1004,8 @@ class TestVm(XMLTestCase):
                 domainID=domainID,
                 imageID=uuid.uuid4(),
                 poolID=uuid.uuid4(),
-                volumeID=uuid.uuid4()
+                volumeID=uuid.uuid4(),
+                diskType=DISK_TYPE.BLOCK,
             ),
             vmdevices.storage.Drive(
                 {
@@ -1020,6 +1022,7 @@ class TestVm(XMLTestCase):
                 path="/dev/dummy2",
                 type=hwclass.DISK,
                 iface="ide",
+                diskType=DISK_TYPE.BLOCK,
             )
         ]
 
