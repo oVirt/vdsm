@@ -44,8 +44,6 @@ from vdsm.storage import outOfProcess as oop
 from monkeypatch import MonkeyPatch
 from testValidation import checkSudo
 
-EXT_CHMOD = "/bin/chmod"
-EXT_CHOWN = "/bin/chown"
 EXT_DD = "/bin/dd"
 
 EXT_CAT = "cat"

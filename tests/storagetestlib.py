@@ -40,7 +40,6 @@ from storage.sdm import volume_artifacts
 
 
 NR_PVS = 2       # The number of fake PVs we use to make a fake VG by default
-MDSIZE = 524288  # The size (in bytes) of fake metadata files
 MB = 1024 ** 2   # Used to convert bytes to MB
 
 
