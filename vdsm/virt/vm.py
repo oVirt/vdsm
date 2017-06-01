@@ -741,12 +741,9 @@ class Vm(object):
         except MissingLibvirtDomainError as e:
             # we cannot ever deal with this error, not even on recovery.
             self.setDownStatus(
-                self.conf.get(
-                    'exitCode', ERROR),
-                self.conf.get(
-                    'exitReason', e.reason),
-                self.conf.get(
-                    'exitMessage', ''))
+                self.conf.get('exitCode', ERROR),
+                self.conf.get('exitReason', e.reason),
+                self.conf.get('exitMessage', ''))
             self.recovering = False
         except DestroyedOnStartupError:
             # this could not happen on recovery
