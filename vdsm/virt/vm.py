@@ -296,6 +296,10 @@ class Vm(object):
             md = metadata.from_xml(params['xml'])
             self._custom['custom'] = md.get('custom', {})
             self._destroy_on_reboot = md.get('destroy_on_reboot', False)
+            for key in ('agentChannelName', 'guestAgentAPIVersion',):
+                value = md.get(key)
+                if value:
+                    self.conf[key] = value
         else:
             self._custom['custom'] = params.get('custom', {})
             self._destroy_on_reboot = False
