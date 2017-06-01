@@ -202,30 +202,37 @@ class StompAdapterImpl(object):
 
         # Forward the message to all explicit subscribers.
         for subscription in subs:
-            headers = {stomp.Headers.SUBSCRIPTION: subscription.id}
-            headers.update(frame.headers)
-            res = stomp.Frame(
-                stomp.Command.MESSAGE,
-                headers,
-                frame.body
-            )
-            subscription.client.send_raw(res)
+            self._forward_frame(subscription, frame)
 
+        # Is this a command that is meant to be answered
+        # by the internal implementation?
         if any(destination == queue or destination.startswith(queue + ".")
                for queue in self.request_queues):
-            # A command that is meant to be answered
-            # by the internal implementation.
             self._handle_internal(dispatcher,
                                   frame.headers.get(stomp.Headers.REPLY_TO),
                                   frame.headers.get(stomp.Headers.FLOW_ID),
                                   frame.body)
             return
-        else:
-            # This was not a command nor there were any subscribers,
-            # return an error!
-            if not subs:
-                self._send_error("Subscription not available",
-                                 dispatcher.connection)
+
+        # This was not a command nor there were any subscribers,
+        # return an error!
+        if not subs:
+            self._send_error("Subscription not available",
+                             dispatcher.connection)
+
+    def _forward_frame(self, subscription, frame):
+        """
+        This method creates a new frame with the right body
+        and updated headers and forwards it to the subscriber.
+        """
+        headers = {stomp.Headers.SUBSCRIPTION: subscription.id}
+        headers.update(frame.headers)
+        res = stomp.Frame(
+            stomp.Command.MESSAGE,
+            headers,
+            frame.body
+        )
+        subscription.client.send_raw(res)
 
     def _handle_internal(self, dispatcher, req_dest, flow_id, request):
         """
