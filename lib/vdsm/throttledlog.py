@@ -24,7 +24,6 @@ import logging
 from vdsm.common.time import monotonic_time
 
 _DEFAULT_TIMEOUT_SEC = 3600
-_DEFAULT_LOGGING_LEVEL = logging.DEBUG
 
 _logger = logging.getLogger('throttled')
 
