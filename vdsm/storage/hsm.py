@@ -96,9 +96,6 @@ UUID = "uuid"
 TYPE = "type"
 INITIALIZED = "initialized"
 CAPACITY = "capacity"
-PATHLIST = "pathlist"
-
-STORAGE_CONNECTION_DIR = os.path.join(constants.P_VDSM_LIB, "connections/")
 
 QEMU_READABLE_TIMEOUT = 30
 

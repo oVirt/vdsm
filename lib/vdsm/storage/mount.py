@@ -40,8 +40,6 @@ from vdsm.storage import fileUtils
 
 # Common vfs types
 
-VFS_NFS = "nfs"
-VFS_NFS4 = "nfs4"
 VFS_EXT3 = "ext3"
 
 MountRecord = namedtuple("MountRecord", "fs_spec fs_file fs_vfstype "

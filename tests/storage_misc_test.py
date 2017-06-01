@@ -53,7 +53,6 @@ EXT_SLEEP = "sleep"
 EXT_WHOAMI = "whoami"
 
 SUDO_USER = "root"
-SUDO_GROUP = "root"
 
 
 def watchCmd(cmd, stop, cwd=None, data=None):

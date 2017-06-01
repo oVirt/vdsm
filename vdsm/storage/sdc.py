@@ -32,10 +32,6 @@ from vdsm.storage import misc
 from vdsm.storage import multipath
 
 
-# Default cache age until forcibly refreshed
-DEFAULT_REFRESH_INTERVAL = 300
-
-
 class DomainProxy(object):
     """
     Keeps domain references valid even when underlying domain object changes

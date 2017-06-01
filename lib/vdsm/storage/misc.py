@@ -57,7 +57,6 @@ from vdsm.storage.constants import SECTOR_SIZE
 
 IOUSER = "vdsm"
 DIRECTFLAG = "direct"
-DATASYNCFLAG = "fdatasync"
 STR_UUID_SIZE = 36
 UUID_HYPHENS = [8, 13, 18, 23]
 MEGA = 1 << 20

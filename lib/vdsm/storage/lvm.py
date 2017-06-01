@@ -50,8 +50,6 @@ from vdsm.config import config
 
 log = logging.getLogger("storage.LVM")
 
-LVM_DEFAULT_TTL = 100
-
 PV_FIELDS = ("uuid,name,size,vg_name,vg_uuid,pe_start,pe_count,"
              "pe_alloc_count,mda_count,dev_size,mda_used_count")
 VG_FIELDS = ("uuid,name,attr,size,free,extent_size,extent_count,free_count,"

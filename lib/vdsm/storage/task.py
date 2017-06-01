@@ -78,7 +78,6 @@ BACKUP_EXT = ".backup"
 TEMP_EXT = ".temp"
 NUM_SEP = "."
 FIELD_SEP = ","
-RESOURCE_SEP = "!"
 TASK_METADATA_VERSION = 1
 
 ROLLBACK_SENTINEL = "rollback sentinel"
