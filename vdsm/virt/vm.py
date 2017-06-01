@@ -1481,8 +1481,6 @@ class Vm(object):
             'acpiEnable': 'true' if self.acpi_enabled() else 'false'}
         if 'cdrom' in self.conf:
             stats['cdrom'] = self.conf['cdrom']
-        if 'boot' in self.conf:
-            stats['boot'] = self.conf['boot']
         return stats
 
     def _getRunningVmStats(self):
