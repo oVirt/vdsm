@@ -42,8 +42,6 @@ try:
 except ImportError:
     ipaddress = None
 
-CAPS_INFO = 2
-
 NOCHK = {'connectivityCheck': False}
 
 IFCFG_DIR = '/etc/sysconfig/network-scripts/'

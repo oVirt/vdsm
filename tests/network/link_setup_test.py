@@ -25,7 +25,6 @@ from testlib import VdsmTestCase, mock
 from vdsm.network.link import setup as linksetup
 
 BOND1_NAME = 'bond1'
-BOND2_NAME = 'bond2'
 
 
 @attr(type='unit')
