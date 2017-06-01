@@ -346,10 +346,12 @@ class Vm(object):
         self._guestSocketFile = self._makeChannelPath(self._agent_channel_name)
         self._qemuguestSocketFile = self._makeChannelPath(
             vmchannels.QEMU_GA_DEVICE_NAME)
+        self._guest_agent_api_version = self.conf.pop('guestAgentAPIVersion',
+                                                      None)
         self.guestAgent = guestagent.GuestAgent(
             self._guestSocketFile, self.cif.channelListener, self.log,
             self._onGuestStatusChange,
-            self.conf.pop('guestAgentAPIVersion', None))
+            self._guest_agent_api_version)
         self._released = threading.Event()
         self._releaseLock = threading.Lock()
         self._watchdogEvent = {}
@@ -3452,6 +3454,7 @@ class Vm(object):
             if 'username' in self.conf:
                 del self.conf['username']
         self.saveState()
+        self._update_metadata()   # to store agent API version
         self.log.info("End of migration")
 
     def _needToWaitForMigrationToComplete(self):
@@ -4396,6 +4399,9 @@ class Vm(object):
                              namespace_uri=xmlconstants.METADATA_VM_VDSM_URI) \
                 as vm:
             vm['startTime'] = self.start_time
+            vm['agentChannelName'] = self._agent_channel_name
+            if self._guest_agent_api_version is not None:
+                vm['guestAgentAPIVersion'] = self._guest_agent_api_version
 
     def _ejectFloppy(self):
         if 'volatileFloppy' in self.conf:
