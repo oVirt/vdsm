@@ -30,10 +30,6 @@ from vdsm.common.time import monotonic_time
 from .config import config
 
 
-DEFAULT_ACCEPT_TIMEOUT = 5
-SOCKET_DEFAULT_TIMEOUT = socket._GLOBAL_DEFAULT_TIMEOUT
-
-
 class SSLSocket(object):
     def __init__(self, sock):
         self.sock = sock
