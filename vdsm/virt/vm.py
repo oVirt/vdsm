@@ -325,8 +325,11 @@ class Vm(object):
         self._guestEventTime = 0
         self._guestCpuRunning = False
         self._guestCpuLock = threading.Lock()
-        self._startTime = time.time() - \
-            float(self.conf.pop('elapsedTimeOffset', 0))
+        if recover and 'xml' in params and 'startTime' in md:
+            self._startTime = md['startTime']
+        else:
+            self._startTime = time.time() - \
+                float(self.conf.pop('elapsedTimeOffset', 0))
 
         self._usedIndices = defaultdict(list)  # {'ide': [], 'virtio' = []}
         self.disableDriveMonitor()
