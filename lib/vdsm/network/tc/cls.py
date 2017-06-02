@@ -133,7 +133,7 @@ def _adapt_qos_options_link_share(qos_opts):
     8, thus eliminating rounding errors."""
     adapted_qos_ops = deepcopy(qos_opts)
     link_share = adapted_qos_ops.get('ls', {})
-    for k in link_share.iterkeys():
+    for k in six.viewkeys(link_share):
         link_share[k] *= 8
     return adapted_qos_ops
 

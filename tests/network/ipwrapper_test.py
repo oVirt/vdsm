@@ -21,6 +21,8 @@
 
 from __future__ import absolute_import
 
+import six
+
 from nose.plugins.attrib import attr
 
 from testValidation import ValidateRunningAsRoot
@@ -56,7 +58,7 @@ class TestIpwrapper(TestCaseBase):
             ('ff02::2', None, 'veth_23', None),
         }
 
-        for text, attributes in good_routes.iteritems():
+        for text, attributes in six.viewitems(good_routes):
             route = Route.fromText(text)
             self.assertEqual(_getRouteAttrs(route), attributes)
 
@@ -83,7 +85,7 @@ class TestIpwrapper(TestCaseBase):
             ('500', None, '5.0.0.0/8', 'dummy0', True),
             '5:    from all to 5.0.0.0/8 dev dummy0 lookup 500':
             ('500', None, '5.0.0.0/8', 'dummy0', False)}
-        for text, attributes in good_rules.iteritems():
+        for text, attributes in six.viewitems(good_rules):
             rule = Rule.fromText(text)
             self.assertEqual(_getRuleAttrs(rule), attributes)
 

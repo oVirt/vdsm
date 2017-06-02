@@ -255,7 +255,7 @@ class NetworkTest(TestCaseBase):
                 self.assertNotIn(networkName, netinfo.bridges)
         if bridgeOpts is not None and network_netinfo['bridged']:
             appliedOpts = netinfo.bridges[networkName]['opts']
-            for opt, value in bridgeOpts.iteritems():
+            for opt, value in six.viewitems(bridgeOpts):
                 self.assertEqual(value, appliedOpts[opt])
         if hostQos is not None:
             reported_qos = network_netinfo['hostQos']
@@ -328,7 +328,7 @@ class NetworkTest(TestCaseBase):
     def _get_active_bond_opts(self, bondName):
         netinfo = self.vdsm_net.netinfo
         active_options = [opt + '=' + val for (opt, val)
-                          in netinfo.bondings[bondName]['opts'].iteritems()]
+                          in six.viewitems(netinfo.bondings[bondName]['opts'])]
         return active_options
 
     def assertBondDoesntExist(self, bondName, nics=None):
@@ -2163,7 +2163,7 @@ class NetworkTest(TestCaseBase):
 
             status, msg = self.setupNetworks(networks, bonds, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
-            for network, attributes in networks.iteritems():
+            for network, attributes in six.viewitems(networks):
                 self.assertNetworkExists(network)
                 self.assertMtu(attributes['mtu'], network)
 
@@ -2172,7 +2172,7 @@ class NetworkTest(TestCaseBase):
             self.assertMtu(MTU_MAX - MTU_STEP, BONDING_NAME)
 
             # cleanup
-            for network in networks.iterkeys():
+            for network in six.viewkeys(networks):
                 networks[network] = {'remove': True}
             bonds[BONDING_NAME] = {'remove': True}
             status, msg = self.setupNetworks(networks, bonds, NOCHK)

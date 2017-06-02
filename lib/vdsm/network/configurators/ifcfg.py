@@ -938,7 +938,7 @@ def _get_mode_from_desired_options(desired_options):
         return None
 
     desired_mode = desired_options['mode']
-    for k, v in BONDING_MODES_NAME_TO_NUMBER.iteritems():
+    for k, v in six.viewitems(BONDING_MODES_NAME_TO_NUMBER):
         if desired_mode in (k, v):
             return [k, v]
     raise Exception('Error translating bond mode.')
@@ -979,13 +979,13 @@ def _get_unified_persistence_ifcfg():
     ROUTE_PATH = os.path.join(NET_CONF_DIR, 'route-%s')
     ifcfgs = set()
 
-    for bonding, bonding_attr in persistent_config.bonds.iteritems():
+    for bonding, bonding_attr in six.viewitems(persistent_config.bonds):
         bond_nics = set(bonding_attr.get('nics', []))
         ifcfgs.add(IFCFG_PATH % bonding)
         for nic in bond_nics:
             ifcfgs.add(IFCFG_PATH % nic)
 
-    for network, network_attr in persistent_config.networks.iteritems():
+    for network, network_attr in six.viewitems(persistent_config.networks):
         top_level_device = None
 
         nic = network_attr.get('nic')

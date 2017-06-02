@@ -57,7 +57,7 @@ _VIRTUAL_FUNCTIONS_PATH = os.path.join(CONF_PERSIST_DIR, 'virtual_functions')
 def _get_sriov_devices():
     devices = hostdev.list_by_caps()
     return [device_name for device_name, device_info
-            in devices.iteritems()
+            in six.viewitems(devices)
             if 'totalvfs' in device_info['params']]
 
 
@@ -195,9 +195,9 @@ def _update_running_config(networks, bonds):
     will persist a valid configuration.
     """
     running_config = RunningConfig()
-    for net, net_attr in networks.iteritems():
+    for net, net_attr in six.viewitems(networks):
         running_config.setNetwork(net, net_attr)
-    for bonding, bonding_attr in bonds.iteritems():
+    for bonding, bonding_attr in six.viewitems(bonds):
         running_config.setBonding(bonding, bonding_attr)
     running_config.save()
 
@@ -229,7 +229,7 @@ def _convert_to_blocking_dhcp(networks):
     missing IP address on interfaces that had been restored right before it was
     started.
     """
-    for net, net_attr in networks.iteritems():
+    for net, net_attr in six.viewitems(networks):
         if net_attr.get('bootproto') == 'dhcp':
             net_attr['blockingdhcp'] = True
 
@@ -279,7 +279,7 @@ def _classify_nets_bonds_config(persistent_config):
 def _classify_entities_difference(desired, current):
     changed_or_missing = set()
     unchanged = set()
-    for name, desired_attrs in desired.iteritems():
+    for name, desired_attrs in six.viewitems(desired):
         current_attrs = current.get(name)
         if current_attrs != desired_attrs:
             changed_or_missing.add(name)
@@ -297,7 +297,7 @@ def _classify_entities_difference(desired, current):
 def _find_nets_with_available_devices(available_bonds, available_nics,
                                       persisted_bonds, persisted_nets):
     available_nets = {}
-    for net, attrs in persisted_nets.iteritems():
+    for net, attrs in six.viewitems(persisted_nets):
         bond = attrs.get('bonding')
         nic = attrs.get('nic')
         if bond is not None:
@@ -329,7 +329,7 @@ def _find_nets_with_available_devices(available_bonds, available_nics,
 
 def _find_bonds_with_available_nics(available_nics, persisted_bonds):
     available_bonds = {}
-    for bond, attrs in persisted_bonds.iteritems():
+    for bond, attrs in six.viewitems(persisted_bonds):
         available_bond_nics = [nic for nic in attrs['nics'] if
                                nic in available_nics]
         if available_bond_nics:
