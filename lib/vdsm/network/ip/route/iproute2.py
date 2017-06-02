@@ -67,8 +67,9 @@ def _translate_iproute2_exception(new_exception, route_data):
         yield
     except IPRoute2Error:
         _, value, tb = sys.exc_info()
-        error_message = value[1][0]
-        six.reraise(new_exception, (str(route_data), error_message), tb)
+        error_message = value.args[1][0]
+        six.reraise(
+            new_exception, new_exception(str(route_data), error_message), tb)
 
 
 def _is_ipv6_addr_soft_check(addr):
