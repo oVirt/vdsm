@@ -49,6 +49,9 @@ class MutableDomainDescriptor(object):
     def name(self):
         return self._name
 
+    def vm_type(self):
+        return self._dom.get('type', '')
+
     def acpi_enabled(self):
         return self._dom.find('features/acpi') is not None
 

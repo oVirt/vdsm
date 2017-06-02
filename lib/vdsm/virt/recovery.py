@@ -38,6 +38,7 @@ from vdsm import utils
 from vdsm.virt import vmchannels
 from vdsm.virt import vmstatus
 from vdsm.virt import vmxml
+from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.utils import isVdsmImage
 
 
@@ -67,6 +68,8 @@ def _get_vdsm_domains():
 
 def _recovery_params(dom_xml):
     params = {'xml': dom_xml}
+    dom = DomainDescriptor(dom_xml)
+    params['vmType'] = dom.vm_type()
     return params
 
 
