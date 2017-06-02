@@ -23,8 +23,9 @@ should be contained in this package, provided functions should be usable in
 native Python manner.
 
 - Functions have same names as their C counterparts.
-- Test arguments are provided as native Python string.
-- Returned text values are converted from binary to native Python string.
+- Text arguments are provided as native Python string (bytes in Python 2,
+  unicode in Python 3).
+- Returned text values are converted to native Python string.
 - Callback arguments are provided as native Python functions, binding function
   is responsible for converting them into CFUNCTYPE and keeping a reference.
 - Values are returned only via 'return', never as a pointer argument.
@@ -54,7 +55,7 @@ def nl_geterror(error_code):
     """
     _nl_geterror = _libnl('nl_geterror', c_char_p, c_int)
     error_message = _nl_geterror(error_code)
-    return error_message.decode()
+    return _to_str(error_message)
 
 
 def nl_addr2str(addr):
@@ -68,7 +69,7 @@ def nl_addr2str(addr):
         'nl_addr2str', c_char_p, c_void_p, c_char_p, c_size_t)
     buf = (c_char * HWADDRSIZE)()
     address = _nl_addr2str(addr, buf, sizeof(buf))
-    return address.decode()
+    return _to_str(address)
 
 
 def nl_af2str(family):
@@ -81,7 +82,7 @@ def nl_af2str(family):
     _nl_af2str = _libnl('nl_af2str', c_char_p, c_int, c_char_p, c_size_t)
     buf = (c_char * CHARBUFFSIZE)()
     address_family = _nl_af2str(family, buf, sizeof(buf))
-    return address_family.decode()
+    return _to_str(address_family)
 
 
 def rtnl_scope2str(scope):
@@ -95,7 +96,7 @@ def rtnl_scope2str(scope):
         'rtnl_scope2str', c_char_p, c_int, c_char_p, c_size_t)
     buf = (c_char * CHARBUFFSIZE)()
     address_scope = _rtnl_scope2str(scope, buf, sizeof(buf))
-    return address_scope.decode()
+    return _to_str(address_scope)
 
 
 @memoized
@@ -106,3 +107,19 @@ def _libnl(function_name, return_type, *arguments):
 @memoized
 def _libnl_route(function_name, return_type, *arguments):
     return CFUNCTYPE(return_type, *arguments)((function_name, LIBNL_ROUTE))
+
+
+def _to_str(value):
+    """Convert textual value to native string.
+
+    Passed value (bytes output of libnl CFUNCTYPE) will be returned as a native
+    str value (bytes in Python 2, unicode in Python 3).
+    """
+    if isinstance(value, str):
+        return value
+    elif isinstance(value, bytes):
+        return value.decode('utf-8')
+    else:
+        raise ValueError(
+            'Expected a textual value, given {} of type {}.'.format(
+                value, type(value)))
