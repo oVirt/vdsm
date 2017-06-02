@@ -359,7 +359,7 @@ class FakeQemuImgOperation(object):
     def abort(self):
         self.abort_event.set()
 
-    def wait_for_completion(self):
+    def run(self):
         self.ready_event.set()
         if self.error:
             raise self.error()
@@ -369,6 +369,3 @@ class FakeQemuImgOperation(object):
             # We must raise here like the real class so the calling code knows
             # the "command" was interrupted.
             raise exception.ActionStopped()
-
-    def close(self):
-        pass

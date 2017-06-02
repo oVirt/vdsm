@@ -26,7 +26,6 @@ import time
 
 from vdsm import cmdutils
 from vdsm import qemuimg
-from vdsm import utils
 from vdsm.storage import constants as sc
 
 import hooking
@@ -155,8 +154,7 @@ def convert_image(src_path, src_format, dst_path):
                                 dst_path,
                                 srcFormat=src_format,
                                 dstFormat=qemuimg.FORMAT.RAW)
-    with utils.closing(operation):
-        operation.wait_for_completion()
+    operation.run()
 
 
 def copy_sparse(src_path, dst_path):

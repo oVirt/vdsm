@@ -107,10 +107,10 @@ class Image:
     def repoPath(self):
         return self._repoPath
 
-    def _wait_for_qemuimg_operation(self, operation):
-        self.log.debug('waiting for qemu-img operation to complete')
+    def _run_qemuimg_operation(self, operation):
+        self.log.debug('running qemu-img operation')
         with vars.task.abort_callback(operation.abort):
-            operation.wait_for_completion()
+            operation.run()
         self.log.debug('qemu-img operation has completed')
 
     def deletedVolumeName(self, uuid):
@@ -473,10 +473,9 @@ class Image:
                         dstQcow2Compat=destDom.qcow2_compat(),
                         backing=backing,
                         backingFormat=backingFormat)
-                    with utils.closing(operation):
-                        with utils.stopwatch("Copy volume %s"
-                                             % srcVol.volUUID):
-                            self._wait_for_qemuimg_operation(operation)
+                    with utils.stopwatch("Copy volume %s"
+                                         % srcVol.volUUID):
+                        self._run_qemuimg_operation(operation)
                 except ActionStopped:
                     raise
                 except se.StorageException:
@@ -806,10 +805,9 @@ class Image:
                         srcFormat=sc.fmt2str(volParams['volFormat']),
                         dstFormat=sc.fmt2str(dstVolFormat),
                         dstQcow2Compat=destDom.qcow2_compat())
-                    with utils.closing(operation):
-                        with utils.stopwatch("Copy volume %s"
-                                             % srcVol.volUUID):
-                            self._wait_for_qemuimg_operation(operation)
+                    with utils.stopwatch("Copy volume %s"
+                                         % srcVol.volUUID):
+                        self._run_qemuimg_operation(operation)
                 except ActionStopped:
                     raise
                 except cmdutils.Error as e:
@@ -1096,10 +1094,9 @@ class Image:
                         srcFormat=sc.fmt2str(srcVolParams['volFormat']),
                         dstFormat=sc.fmt2str(volParams['volFormat']),
                         dstQcow2Compat=sdDom.qcow2_compat())
-                    with utils.closing(operation):
-                        with utils.stopwatch("Copy volume %s"
-                                             % srcVol.volUUID):
-                            self._wait_for_qemuimg_operation(operation)
+                    with utils.stopwatch("Copy volume %s"
+                                         % srcVol.volUUID):
+                        self._run_qemuimg_operation(operation)
                 except cmdutils.Error:
                     self.log.exception('conversion failure for volume %s',
                                        srcVol.volUUID)

@@ -23,16 +23,12 @@ import json
 import logging
 import os
 import re
-import signal
-import threading
 
 from vdsm.common import cmdutils as common_cmdutils
 from vdsm.common import exception
-from vdsm.common.compat import CPopen
 from vdsm.storage import operation
 
 from . import cmdutils
-from . import utils
 from . import commands
 from . config import config
 
@@ -177,7 +173,7 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
 
     cmd.append(dstImage)
 
-    return QemuImgOperation(cmd, cwd=cwdPath)
+    return ProgressCommand(cmd, cwd=cwdPath)
 
 
 def commit(top, topFormat, base=None):
@@ -198,7 +194,7 @@ def commit(top, topFormat, base=None):
 
     # For simplicity, we always run commit in the image directory.
     workdir = os.path.dirname(top)
-    return QemuImgOperation(cmd, cwd=workdir)
+    return ProgressCommand(cmd, cwd=workdir)
 
 
 def map(image):
@@ -222,93 +218,19 @@ def amend(image, compat):
     _run_cmd(cmd, cwd=workdir)
 
 
-class QemuImgOperation(object):
+class ProgressCommand(object):
+
     REGEXPR = re.compile(r'\s*\(([\d.]+)/100%\)\s*')
 
     def __init__(self, cmd, cwd=None):
-        self._lock = threading.Lock()
-        self._aborted = False
+        self._operation = operation.Command(cmd, cwd=cwd)
         self._progress = 0.0
 
-        self._stdout = bytearray()
-        self._stderr = bytearray()
-
-        self.cmd = cmdutils.wrap_command(
-            cmd,
-            with_nice=utils.NICENESS.HIGH,
-            with_ioclass=utils.IOCLASS.IDLE)
-        _log.debug(common_cmdutils.command_log_line(self.cmd, cwd=cwd))
-        self._command = CPopen(self.cmd, cwd=cwd,
-                               deathSignal=signal.SIGKILL)
-        self._stream = utils.CommandStream(
-            self._command, self._recvstdout, self._recvstderr)
-
-    def _recvstderr(self, buffer):
-        self._stderr += buffer
-
-    def _recvstdout(self, buffer):
-        self._stdout += buffer
-
-        # Checking the presence of '\r' before splitting will prevent
-        # generating the array when it's not needed.
-        try:
-            idx = self._stdout.rindex('\r')
-        except ValueError:
-            return
-
-        # qemu-img updates progress by printing \r (0.00/100%) to standard out.
-        # The output could end with a partial progress so we must discard
-        # everything after the last \r and then try to parse a progress record.
-        valid_progress = self._stdout[:idx]
-        last_progress = valid_progress.rsplit('\r', 1)[-1]
-
-        # No need to keep old progress information around
-        del self._stdout[:idx + 1]
-
-        m = self.REGEXPR.match(last_progress)
-        if m is None:
-            raise ValueError('Unable to parse: "%r"' % last_progress)
-
-        self._progress = float(m.group(1))
-
-    @property
-    def progress(self):
-        """
-        Returns operation progress as float between 0 and 100.
-
-        This method is threadsafe and may be called from any thread.
-        """
-        return self._progress
-
-    @property
-    def error(self):
-        return str(self._stderr)
-
-    @property
-    def finished(self):
-        return self._command.poll() is not None
-
-    def poll(self, timeout=None):
-        self._stream.receive(timeout=timeout)
-
-        if not self._stream.closed:
-            return
-
-        self._command.wait()
-
-        if self._aborted:
-            raise exception.ActionStopped()
-
-        common_cmdutils.retcode_log_line(self._command.returncode, self.error)
-        if self._command.returncode != 0:
-            raise cmdutils.Error(self.cmd, self._command.returncode, "",
-                                 self.error)
-
-    def wait_for_completion(self):
-        timeout = config.getint("irs", "progress_interval")
-        while not self.finished:
-            self.poll(timeout)
-            _log.debug('qemu-img operation progress: %s%%', self.progress)
+    def run(self):
+        out = bytearray()
+        for data in self._operation.watch():
+            out += data
+            self._update_progress(out)
 
     def abort(self):
         """
@@ -321,17 +243,39 @@ class QemuImgOperation(object):
 
         This method is threadsafe and may be called from any thread.
         """
-        with self._lock:
-            if self._command is None:
-                return
-            if self._command.poll() is None:
-                self._aborted = True
-                self._command.terminate()
+        self._operation.abort()
 
-    def close(self):
-        with self._lock:
-            self._stream.close()
-            self._command = None
+    @property
+    def progress(self):
+        """
+        Returns operation progress as float between 0 and 100.
+
+        This method is threadsafe and may be called from any thread.
+        """
+        return self._progress
+
+    def _update_progress(self, out):
+        # Checking the presence of '\r' before splitting will prevent
+        # generating the array when it's not needed.
+        try:
+            idx = out.rindex('\r')
+        except ValueError:
+            return
+
+        # qemu-img updates progress by printing \r (0.00/100%) to standard out.
+        # The output could end with a partial progress so we must discard
+        # everything after the last \r and then try to parse a progress record.
+        valid_progress = out[:idx]
+        last_progress = valid_progress.rsplit('\r', 1)[-1]
+
+        # No need to keep old progress information around
+        del out[:idx + 1]
+
+        m = self.REGEXPR.match(last_progress)
+        if m is None:
+            raise ValueError('Unable to parse: "%r"' % last_progress)
+
+        self._progress = float(m.group(1))
 
 
 def resize(image, newSize, format=None):

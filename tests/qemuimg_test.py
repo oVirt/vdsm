@@ -35,10 +35,9 @@ from testlib import permutations, expandPermutations
 from testlib import make_config
 from testlib import namedTemporaryDir
 from vdsm import cmdutils
-from vdsm.common import exception
-from vdsm import qemuimg
 from vdsm import commands
-from vdsm import utils
+from vdsm import qemuimg
+from vdsm.common import exception
 
 QEMU_IMG = qemuimg._qemuimg.cmd
 
@@ -209,7 +208,7 @@ class ConvertTests(TestCaseBase):
                         'src', 'dst']
             self.assertEqual(cmd, expected)
 
-        with MonkeyPatchScope([(qemuimg, 'QemuImgOperation', convert)]):
+        with MonkeyPatchScope([(qemuimg, 'ProgressCommand', convert)]):
             qemuimg.convert('src', 'dst')
 
     def test_qcow2_compat(self):
@@ -219,7 +218,7 @@ class ConvertTests(TestCaseBase):
             self.assertEqual(cmd, expected)
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
-                               (qemuimg, 'QemuImgOperation', convert)]):
+                               (qemuimg, 'ProgressCommand', convert)]):
             qemuimg.convert('src', 'dst', dstFormat='qcow2')
 
     def test_qcow2_compat_version3(self):
@@ -229,7 +228,7 @@ class ConvertTests(TestCaseBase):
             self.assertEqual(cmd, expected)
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
-                               (qemuimg, 'QemuImgOperation', convert)]):
+                               (qemuimg, 'ProgressCommand', convert)]):
             qemuimg.convert('src', 'dst', dstFormat='qcow2',
                             dstQcow2Compat='1.1')
 
@@ -240,7 +239,7 @@ class ConvertTests(TestCaseBase):
             self.assertEqual(cmd, expected)
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
-                               (qemuimg, 'QemuImgOperation', convert)]):
+                               (qemuimg, 'ProgressCommand', convert)]):
             qemuimg.convert('src', 'dst', dstFormat='qcow2')
 
     def test_qcow2_backing_file(self):
@@ -251,7 +250,7 @@ class ConvertTests(TestCaseBase):
             self.assertEqual(cmd, expected)
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
-                               (qemuimg, 'QemuImgOperation', convert)]):
+                               (qemuimg, 'ProgressCommand', convert)]):
             qemuimg.convert('src', 'dst', dstFormat='qcow2',
                             backing='bak')
 
@@ -262,7 +261,7 @@ class ConvertTests(TestCaseBase):
             self.assertEqual(cmd, expected)
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
-                               (qemuimg, 'QemuImgOperation', convert)]):
+                               (qemuimg, 'ProgressCommand', convert)]):
             qemuimg.convert('src', 'dst', dstFormat='qcow2',
                             backingFormat='qcow2')
 
@@ -275,7 +274,7 @@ class ConvertTests(TestCaseBase):
             self.assertEqual(cmd, expected)
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
-                               (qemuimg, 'QemuImgOperation', convert)]):
+                               (qemuimg, 'ProgressCommand', convert)]):
             qemuimg.convert('src', 'dst', dstFormat='qcow2',
                             backing='bak', backingFormat='qcow2')
 
@@ -311,67 +310,58 @@ class CheckTests(TestCaseBase):
             self.assertRaises(cmdutils.Error, qemuimg.check, 'unused')
 
 
-@expandPermutations
-class QemuImgProgressTests(TestCaseBase):
-    PROGRESS_FORMAT = "    (%.2f/100%%)\r"
-
-    @staticmethod
-    def _progress_iterator():
-        for value in xrange(0, 10000, 1):
-            yield value / 100.0
+class TestProgressCommand(TestCaseBase):
 
     def test_failure(self):
-        p = qemuimg.QemuImgOperation(['false'])
-        with utils.closing(p):
-            self.assertRaises(cmdutils.Error, p.poll)
+        p = qemuimg.ProgressCommand(['false'])
+        self.assertRaises(cmdutils.Error, p.run)
 
-    def test_progress_simple(self):
-        p = qemuimg.QemuImgOperation(['true'])
-        with utils.closing(p):
-            for progress in self._progress_iterator():
-                p._recvstdout(self.PROGRESS_FORMAT % progress)
-                self.assertEqual(p.progress, progress)
+    def test_no_progress(self):
+        p = qemuimg.ProgressCommand(['true'])
+        p.run()
+        self.assertEqual(p.progress, 0.0)
 
-            p.poll()
-            self.assertEqual(p.finished, True)
+    def test_progress(self):
+        p = qemuimg.ProgressCommand([
+            'echo', "-n",
+            "    (0.00/100%)\r    (50.00/100%)\r    (100.00/100%)\r"
+        ])
+        p.run()
+        self.assertEqual(p.progress, 100.0)
 
-    @permutations([
-        (("    (1/100%)\r", "    (2/100%)\r"), (1, 2)),
-        (("    (1/10", "0%)\r    (2/10"), (0, 1)),
-        (("    (1/10", "0%)\r    (2/100%)\r"), (0, 2)),
-    ])
-    def test_partial(self, output_list, progress_list):
-        p = qemuimg.QemuImgOperation(['true'])
-        with utils.closing(p):
-            for output, progress in zip(output_list, progress_list):
-                p._recvstdout(output)
-                self.assertEqual(p.progress, progress)
-            p.poll()
-            self.assertEqual(p.finished, True)
+    def test_partial_progress(self):
+        p = qemuimg.ProgressCommand([])
+        out = bytearray()
+        out += b"    (42.00/100%)\r"
+        p._update_progress(out)
+        self.assertEqual(p.progress, 42.0)
+        self.assertEqual(out, b"")
+        out += b"    (43.00/"
+        p._update_progress(out)
+        self.assertEqual(p.progress, 42.0)
+        self.assertEqual(out, b"    (43.00/")
+        out += b"100%)\r"
+        p._update_progress(out)
+        self.assertEqual(p.progress, 43.0)
+        self.assertEqual(out, b"")
 
-    def test_progress_batch(self):
-        p = qemuimg.QemuImgOperation(['true'])
-        with utils.closing(p):
-            p._recvstdout(
-                (self.PROGRESS_FORMAT % 10.00) +
-                (self.PROGRESS_FORMAT % 25.00) +
-                (self.PROGRESS_FORMAT % 33.33))
-
-            self.assertEqual(p.progress, 33.33)
-
-            p.poll()
-            self.assertEqual(p.finished, True)
+    def test_use_last_progress(self):
+        p = qemuimg.ProgressCommand([])
+        out = bytearray()
+        out += b"    (11.00/100%)\r    (12.00/100%)\r    (13.00/100%)\r"
+        p._update_progress(out)
+        self.assertEqual(p.progress, 13.0)
+        self.assertEqual(out, b"")
 
     def test_unexpected_output(self):
-        p = qemuimg.QemuImgOperation(['true'])
-        with utils.closing(p):
-            self.assertRaises(ValueError, p._recvstdout, 'Hello World\r')
-
-            p._recvstdout('Hello ')
-            self.assertRaises(ValueError, p._recvstdout, 'World\r')
-
-            p.poll()
-            self.assertEqual(p.finished, True)
+        p = qemuimg.ProgressCommand([])
+        out = bytearray()
+        out += b"    (42.00/100%)\r"
+        p._update_progress(out)
+        out += b"invalid progress\r"
+        with self.assertRaises(ValueError):
+            p._update_progress(out)
+        self.assertEqual(p.progress, 42.0)
 
 
 @expandPermutations
@@ -414,8 +404,7 @@ class TestCommit(TestCaseBase):
             op = qemuimg.commit(top_vol,
                                 topFormat=qemuimg.FORMAT.QCOW2,
                                 base=base_vol if use_base else None)
-            with utils.closing(op):
-                op.wait_for_completion()
+            op.run()
 
             base_fmt = (qemuimg.FORMAT.RAW if base == 0 else
                         qemuimg.FORMAT.QCOW2)
@@ -444,9 +433,8 @@ class TestCommit(TestCaseBase):
             make_image(top, size, qemuimg.FORMAT.QCOW2, 1, "1.1", base)
 
             op = qemuimg.commit(top, topFormat=qemuimg.FORMAT.QCOW2)
-            with utils.closing(op):
-                op.wait_for_completion()
-                self.assertEqual(100, op.progress)
+            op.run()
+            self.assertEqual(100, op.progress)
 
 
 @expandPermutations

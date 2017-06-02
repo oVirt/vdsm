@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ import logging
 from vdsm import jobs
 from vdsm import properties
 from vdsm import qemuimg
-from vdsm import utils
 from vdsm.storage import constants as sc
 from vdsm.storage import guarded
 from vdsm.storage import resourceManager as rm
@@ -81,8 +80,7 @@ class Job(base.Job):
                         dstQcow2Compat=self._dest.qcow2_compat,
                         backing=self._dest.backing_path,
                         backingFormat=self._dest.backing_qemu_format)
-                    with utils.closing(self._operation):
-                        self._operation.wait_for_completion()
+                    self._operation.run()
 
 
 def _create_endpoint(params, host_id, writable):

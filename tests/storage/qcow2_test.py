@@ -27,7 +27,6 @@ import pytest
 import six
 
 from vdsm import qemuimg
-from vdsm import utils
 from vdsm.common import time
 from vdsm.storage import qcow2
 
@@ -126,7 +125,8 @@ class TestAlign:
         assert qcow2._align_offset(int(size), n) == aligned_size
 
 
-@pytest.mark.skipif(six.PY3, reason="qemuimg.convert uses deathSignal")
+@pytest.mark.xfail(six.PY3,
+                   reason="qemuimg.ProgressCommand mixes strings and bytes")
 class TestEstimate:
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
@@ -243,6 +243,5 @@ def converted_size(filename, compat):
                                 srcFormat=qemuimg.FORMAT.RAW,
                                 dstFormat=qemuimg.FORMAT.QCOW2,
                                 dstQcow2Compat=compat)
-    with utils.closing(operation):
-        operation.wait_for_completion()
+    operation.run()
     return os.stat(converted).st_size
