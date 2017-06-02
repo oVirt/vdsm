@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import make_config
 from testlib import namedTemporaryDir
+from vdsm import cmdutils
 from vdsm.common import exception
 from vdsm import qemuimg
 from vdsm import commands
@@ -102,7 +103,7 @@ class InfoTests(TestCaseBase):
             return 0, out, ""
 
         with MonkeyPatchScope([(commands, "execCmd", call)]):
-            self.assertRaises(qemuimg.QImgError, qemuimg.info, 'leaf.img')
+            self.assertRaises(cmdutils.Error, qemuimg.info, 'leaf.img')
 
     @permutations((('format',), ('virtual-size',)))
     def test_missing_required_field_raises(self, field):
@@ -110,14 +111,14 @@ class InfoTests(TestCaseBase):
         del data[field]
         with MonkeyPatchScope([(commands, "execCmd",
                                 partial(fake_json_call, data))]):
-            self.assertRaises(qemuimg.QImgError, qemuimg.info, 'leaf.img')
+            self.assertRaises(cmdutils.Error, qemuimg.info, 'leaf.img')
 
     def test_missing_compat_for_qcow2_raises(self):
         data = self._fake_info()
         del data['format-specific']['data']['compat']
         with MonkeyPatchScope([(commands, "execCmd",
                                 partial(fake_json_call, data))]):
-            self.assertRaises(qemuimg.QImgError, qemuimg.info, 'leaf.img')
+            self.assertRaises(cmdutils.Error, qemuimg.info, 'leaf.img')
 
     @permutations((
         ('backing-filename', 'backingfile'),
@@ -299,7 +300,7 @@ class CheckTests(TestCaseBase):
     def test_offset_no_match(self):
         with MonkeyPatchScope([(commands, "execCmd",
                                 partial(fake_json_call, {}))]):
-            self.assertRaises(qemuimg.QImgError, qemuimg.check, 'unused')
+            self.assertRaises(cmdutils.Error, qemuimg.check, 'unused')
 
     def test_parse_error(self):
         def call(cmd, **kw):
@@ -307,7 +308,7 @@ class CheckTests(TestCaseBase):
             return 0, out, ""
 
         with MonkeyPatchScope([(commands, "execCmd", call)]):
-            self.assertRaises(qemuimg.QImgError, qemuimg.check, 'unused')
+            self.assertRaises(cmdutils.Error, qemuimg.check, 'unused')
 
 
 @expandPermutations
@@ -322,7 +323,7 @@ class QemuImgProgressTests(TestCaseBase):
     def test_failure(self):
         p = qemuimg.QemuImgOperation(['false'])
         with utils.closing(p):
-            self.assertRaises(qemuimg.QImgError, p.poll)
+            self.assertRaises(cmdutils.Error, p.poll)
 
     def test_progress_simple(self):
         p = qemuimg.QemuImgOperation(['true'])

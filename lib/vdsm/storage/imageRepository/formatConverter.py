@@ -34,6 +34,7 @@ from __future__ import absolute_import
 
 import logging
 
+from vdsm import cmdutils
 from vdsm import constants
 from vdsm import qemuimg
 from vdsm.storage import blockSD
@@ -286,7 +287,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                     try:
                         vol = domain.produceVolume(imgUUID, volUUID)
                         v3ResetMetaVolSize(vol)  # BZ#811880
-                    except qemuimg.QImgError:
+                    except cmdutils.Error:
                         log.error("It is not possible to read the volume %s "
                                   "using qemu-img, the content looks damaged",
                                   volUUID, exc_info=True)

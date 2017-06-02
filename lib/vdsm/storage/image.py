@@ -25,6 +25,7 @@ import threading
 import uuid
 from contextlib import contextmanager
 
+from vdsm import cmdutils
 from vdsm import constants
 from vdsm import qemuimg
 from vdsm import utils
@@ -811,7 +812,7 @@ class Image:
                             self._wait_for_qemuimg_operation(operation)
                 except ActionStopped:
                     raise
-                except qemuimg.QImgError as e:
+                except cmdutils.Error as e:
                     self.log.exception('conversion failure for volume %s',
                                        srcVol.volUUID)
                     raise se.CopyImageError(str(e))
@@ -1099,7 +1100,7 @@ class Image:
                         with utils.stopwatch("Copy volume %s"
                                              % srcVol.volUUID):
                             self._wait_for_qemuimg_operation(operation)
-                except qemuimg.QImgError:
+                except cmdutils.Error:
                     self.log.exception('conversion failure for volume %s',
                                        srcVol.volUUID)
                     raise se.MergeSnapshotsError(newUUID)
@@ -1321,7 +1322,7 @@ class Image:
                                      volUUID=srcVolParams['volUUID'])
         try:
             self._shrinkVolumeToOptimalSize(newVol)
-        except qemuimg.QImgError:
+        except cmdutils.Error:
             self.log.warning("Auto shrink after merge failed", exc_info=True)
 
         self.log.info("Merge src=%s with dst=%s was successfully finished.",

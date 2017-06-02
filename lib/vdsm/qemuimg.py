@@ -26,17 +26,17 @@ import re
 import signal
 import threading
 
-from vdsm.cmdutils import wrap_command
-from vdsm.common import cmdutils
+from vdsm.common import cmdutils as common_cmdutils
 from vdsm.common import exception
 from vdsm.common.compat import CPopen
 from vdsm.storage import operation
 
+from . import cmdutils
 from . import utils
 from . import commands
 from . config import config
 
-_qemuimg = cmdutils.CommandPath("qemu-img", "/usr/bin/qemu-img",)  # Fedora
+_qemuimg = common_cmdutils.CommandPath("qemu-img", "/usr/bin/qemu-img")
 
 _log = logging.getLogger("QemuImg")
 
@@ -55,35 +55,14 @@ def supports_compat(compat):
     return compat in _QCOW2_COMPAT_SUPPORTED
 
 
-class QImgError(Exception):
-    def __init__(self, cmd, ecode, stdout, stderr, message=None):
+class InvalidOutput(cmdutils.Error):
+    msg = ("Commmand {self.cmd} returned invalid output: {self.out}: "
+           "{self.reason}")
+
+    def __init__(self, cmd, out, reason):
         self.cmd = cmd
-        self.ecode = ecode
-        self.stdout = stdout
-        self.stderr = stderr
-        self.message = message
-
-    def __str__(self):
-        return "cmd=%s, ecode=%s, stdout=%s, stderr=%s, message=%s" % (
-            self.cmd, self.ecode, self.stdout, self.stderr, self.message)
-
-
-class InvalidOutput(QImgError):
-    """
-    Raised when the command output is not valid.
-    """
-
-    ecode = 0
-    stderr = ""
-
-    def __init__(self, cmd, stdout, message):
-        self.cmd = cmd
-        self.stdout = stdout
-        self.message = message
-
-    def __str__(self):
-        return "cmd=%s, stdout=%s, message=%s" % (
-            self.cmd, self.stdout, self.message)
+        self.out = out
+        self.reason = reason
 
 
 def info(image, format=None):
@@ -254,11 +233,11 @@ class QemuImgOperation(object):
         self._stdout = bytearray()
         self._stderr = bytearray()
 
-        self.cmd = wrap_command(
+        self.cmd = cmdutils.wrap_command(
             cmd,
             with_nice=utils.NICENESS.HIGH,
             with_ioclass=utils.IOCLASS.IDLE)
-        _log.debug(cmdutils.command_log_line(self.cmd, cwd=cwd))
+        _log.debug(common_cmdutils.command_log_line(self.cmd, cwd=cwd))
         self._command = CPopen(self.cmd, cwd=cwd,
                                deathSignal=signal.SIGKILL)
         self._stream = utils.CommandStream(
@@ -320,10 +299,10 @@ class QemuImgOperation(object):
         if self._aborted:
             raise exception.ActionStopped()
 
-        cmdutils.retcode_log_line(self._command.returncode, self.error)
+        common_cmdutils.retcode_log_line(self._command.returncode, self.error)
         if self._command.returncode != 0:
-            raise QImgError(self.cmd, self._command.returncode, "",
-                            self.error)
+            raise cmdutils.Error(self.cmd, self._command.returncode, "",
+                                 self.error)
 
     def wait_for_completion(self):
         timeout = config.getint("irs", "progress_interval")
@@ -410,5 +389,5 @@ def _validate_qcow2_compat(value):
 def _run_cmd(cmd, cwd=None):
     rc, out, err = commands.execCmd(cmd, raw=True, cwd=cwd)
     if rc != 0:
-        raise QImgError(cmd, rc, out, err)
+        raise cmdutils.Error(cmd, rc, out, err)
     return out

@@ -39,6 +39,7 @@ from testlib import make_uuid
 from testlib import VdsmTestCase, expandPermutations, permutations
 from testlib import wait_for_job
 
+from vdsm import cmdutils
 from vdsm import jobs
 from vdsm import qemuimg
 from vdsm.storage import blockVolume
@@ -50,7 +51,7 @@ from vdsm.storage.sdm.api import amend_volume, copy_data
 
 
 def failure(*args, **kwargs):
-    raise qemuimg.QImgError("code", "out", "err", "Fail amend")
+    raise cmdutils.Error("code", "out", "err", "Fail amend")
 
 
 @expandPermutations
