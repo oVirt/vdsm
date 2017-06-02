@@ -139,6 +139,7 @@ Requires: libvirt-client
 Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-lock-sanlock
 
+# TODO: Depend on libvirt >= 3.2.0-4.el7 once available.
 %if 0%{?rhel}
 # For https://bugzilla.redhat.com/1317429
 Requires: libvirt-daemon-kvm >= 2.0.0-10.el7_3.4
