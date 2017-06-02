@@ -116,6 +116,9 @@ class Connection(object):
             raise Error(libvirt.VIR_ERR_NO_SECRET)
         return self.secrets[uuid]
 
+    def lookupByUUIDString(self, uuid):
+        return FakeRunningVm()
+
     def listAllSecrets(self, flags=0):
         return list(self.secrets.values())
 
@@ -238,6 +241,15 @@ class VirNodeDeviceStub(object):
     def reAttach(self):
         if self.xml is None:
             raise Error(libvirt.VIR_ERR_NO_NODE_DEVICE)
+
+
+class FakeRunningVm(object):
+
+    def jobStats(self):
+        return {}
+
+    def state(self, flags):
+        return libvirt.VIR_DOMAIN_RUNNING, ''
 
 
 def parse_secret(xml):

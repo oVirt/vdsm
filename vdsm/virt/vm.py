@@ -313,13 +313,6 @@ class Vm(object):
         self._statusLock = threading.Lock()
         self._creationThread = concurrent.thread(self._startUnderlyingVm,
                                                  name="vm/" + self.id[:8])
-        if recover and params.get('status') == vmstatus.MIGRATION_SOURCE:
-            self.log.info("Recovering possibly last_migrating VM")
-            last_migrating = True
-        else:
-            last_migrating = False
-        self._migrationSourceThread = migration.SourceThread(
-            self, recovery=last_migrating)
         self._incomingMigrationFinished = threading.Event()
         self._incoming_migration_vm_running = threading.Event()
         self._volPrepareLock = threading.Lock()
@@ -348,6 +341,17 @@ class Vm(object):
             self._connection = libvirtconnection.get(cif)
         else:
             self._connection = containersconnection.get(cif)
+        if (recover and
+            # status retrieved from the recovery file (legacy style)
+            (params.get('status') == vmstatus.MIGRATION_SOURCE or
+             # no status from recovery file available (new style)
+             params.get('status') is None and self._recovering_migration())):
+            self.log.info("Recovering possibly last_migrating VM")
+            last_migrating = True
+        else:
+            last_migrating = False
+        self._migrationSourceThread = migration.SourceThread(
+            self, recovery=last_migrating)
         self._agent_channel_name = self.conf.get('agentChannelName',
                                                  vmchannels.LEGACY_DEVICE_NAME)
         self._guestSocketFile = self._makeChannelPath(self._agent_channel_name)
@@ -733,8 +737,7 @@ class Vm(object):
                 time.sleep(1)
 
             if self.recovering and \
-               self._lastStatus == vmstatus.WAIT_FOR_LAUNCH and \
-               self._migrationSourceThread.recovery:
+               self._lastStatus == vmstatus.WAIT_FOR_LAUNCH:
                 self._recover_status()
             else:
                 self.lastStatus = vmstatus.UP
@@ -782,8 +785,9 @@ class Vm(object):
     def _recover_status(self):
         try:
             state, reason = self._dom.state(0)
-        except libvirt.libvirtError:
+        except (libvirt.libvirtError, virdomain.NotConnectedError,):
             # We proceed with the best effort setting in case of error.
+            # (NotConnectedError can appear in case of error in _run.)
             self.set_last_status(vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
             return
         if state == libvirt.VIR_DOMAIN_PAUSED:
@@ -804,17 +808,12 @@ class Vm(object):
             else:
                 self.set_last_status(vmstatus.PAUSED, vmstatus.WAIT_FOR_LAUNCH)
         elif state == libvirt.VIR_DOMAIN_RUNNING:
-            try:
-                job_stats = self._dom.jobStats()
-            except libvirt.libvirtError:
-                self.set_last_status(vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
+            if self._recovering_migration(self._dom):
+                self.set_last_status(vmstatus.MIGRATION_SOURCE,
+                                     vmstatus.WAIT_FOR_LAUNCH)
+                self._migrationSourceThread.start()
             else:
-                if migration.ongoing(job_stats):
-                    self.set_last_status(vmstatus.MIGRATION_SOURCE,
-                                         vmstatus.WAIT_FOR_LAUNCH)
-                    self._migrationSourceThread.start()
-                else:
-                    self.set_last_status(vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
+                self.set_last_status(vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
         else:
             self.log.error("Unexpected VM state: %s (reason %s)",
                            state, reason)
@@ -1664,6 +1663,15 @@ class Vm(object):
 
     def isMigrating(self):
         return self._migrationSourceThread.migrating()
+
+    def _recovering_migration(self, dom=None):
+        try:
+            if dom is None:
+                dom = self._connection.lookupByUUIDString(self.id)
+            job_stats = dom.jobStats()
+        except libvirt.libvirtError:
+            return False
+        return migration.ongoing(job_stats)
 
     def hasTransientDisks(self):
         for drive in self._devices[hwclass.DISK]:
