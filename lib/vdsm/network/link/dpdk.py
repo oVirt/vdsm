@@ -174,7 +174,7 @@ def _normalize_lshw_result(result):
     `lshw -json` does not return a valid JSON in case of several results for
      the same device class, [] brackets are missing in the result.
     """
-    return json.loads((b'[' + result + b']').decode('utf-8'))
+    return json.loads('[' + result + ']')
 
 
 def _get_hw_addr(dev_name):

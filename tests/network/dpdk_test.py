@@ -57,8 +57,7 @@ class ReportDpdkPortsTests(VdsmTestCase):
                                                 'driver': driver}}]}]})
 
         with mock.patch.object(dpdk.cmd, 'exec_sync',
-                               return_value=(
-                                   0, lshw_output.encode('utf-8'), None)):
+                               return_value=(0, lshw_output, None)):
 
             dpdk.invalidate_dpdk_devices()
             expected_ports = {
@@ -92,8 +91,7 @@ class ReportDpdkPortsTests(VdsmTestCase):
                                                 'driver': 'igb_uio'}}]}]})
 
         with mock.patch.object(dpdk.cmd, 'exec_sync',
-                               return_value=(
-                                   0, lshw_output.encode('utf-8'), None)):
+                               return_value=(0, lshw_output, None)):
 
             dpdk.invalidate_dpdk_devices()
             expected_ports = {
@@ -122,8 +120,7 @@ class ReportDpdkPortsTests(VdsmTestCase):
                                                 'driver': 'igb'}}]}]})
 
         with mock.patch.object(dpdk.cmd, 'exec_sync',
-                               return_value=(
-                                   0, lshw_output.encode('utf-8'), None)):
+                               return_value=(0, lshw_output, None)):
 
             dpdk.invalidate_dpdk_devices()
             expected_ports = {}

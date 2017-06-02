@@ -32,24 +32,24 @@ class CmdTest(VdsmTestCase):
 
     def test_exec_sync_with_no_output(self):
         rc, out, err = cmd.exec_sync(('true',))
-        self.assertEqual(out.decode(), '')
-        self.assertEqual(err.decode(), '')
+        self.assertEqual(out, '')
+        self.assertEqual(err, '')
 
     def test_exec_sync_with_success_output(self):
         rc, out, err = cmd.exec_sync(('echo', 'hello world'))
         self.assertEqual(rc, 0, err)
-        self.assertEqual(out.decode(), 'hello world\n')
-        self.assertEqual(err.decode(), '')
+        self.assertEqual(out, 'hello world\n')
+        self.assertEqual(err, '')
 
     def test_exec_sync_with_error_output(self):
         rc, out, err = cmd.exec_sync(('ls', 'no such prog'))
         self.assertNotEqual(rc, 0)
-        self.assertIn('No such file or directory', err.decode())
-        self.assertEqual(out.decode(), '')
+        self.assertIn('No such file or directory', err)
+        self.assertEqual(out, '')
 
     @requires_systemdrun
     def test_exec_systemd_new_unit(self):
         rc, out, err = cmd.exec_systemd_new_unit(('echo', 'hello world'),
                                                  slice_name='test-group')
         self.assertEqual(rc, 0, err)
-        self.assertEqual(out.decode(), 'hello world\n')
+        self.assertEqual(out, 'hello world\n')

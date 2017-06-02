@@ -195,14 +195,8 @@ blacklist_modules_python3 = \
 	mompolicy_test.py \
 	mom_test.py \
 	monkeypatch_test.py \
-	network/ip_address_test.py \
-	network/ip_route_test.py \
-	network/ip_rule_test.py \
 	network/ipwrapper_test.py \
 	network/netinfo_test.py \
-	network/sourceroute_test.py \
-	network/ovs_driver_test.py \
-	network/ovs_info_test.py \
 	network/tc_test.py \
 	periodic_test.py \
 	protocoldetector_test.py \

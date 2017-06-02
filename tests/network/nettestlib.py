@@ -575,7 +575,7 @@ def _has_sysfs_bond_permission():
 
 def _requires_systemctl():
     rc, _, err = cmd.exec_sync([_SYSTEMCTL.cmd, 'status', 'foo'])
-    run_chroot_err = 'Running in chroot, ignoring request'.encode()
+    run_chroot_err = 'Running in chroot, ignoring request'
     if rc == 1 or run_chroot_err in err:
         raise SkipTest('systemctl is not available')
 

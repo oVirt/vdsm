@@ -28,6 +28,30 @@ from vdsm.common.compat import CPopen as Popen
 
 
 def exec_sync(cmds):
+    """Execute a command and convert returned values to native string.
+
+    Native string format is bytes for Python 2 and unicode for Python 3. It is
+    important to keep data in a native format for seamless usage of output data
+    in the rest of Python codebase.
+
+    Note that this function should not be used if output data could be
+    undecodable bytes.
+    """
+    retcode, out, err = exec_sync_bytes(cmds)
+    return retcode, _to_str(out), _to_str(err)
+
+
+def exec_systemd_new_unit(cmds, slice_name):
+    # TODO: We set unique uuid for every run to not use the same unit twice
+    # and prevent systemd_run race (BZ#1259468). This uuid could be dropped
+    # when BZ#1272368 will be solved or when we use systemd >= v220.
+    unit = uuid.uuid4()
+    cmds = systemd_run(cmds, scope=True, unit=unit, slice=slice_name)
+
+    return exec_sync(cmds)
+
+
+def exec_sync_bytes(cmds):
     logging.debug(cmdutils.command_log_line(cmds))
 
     p = Popen(
@@ -40,11 +64,17 @@ def exec_sync(cmds):
     return p.returncode, out, err
 
 
-def exec_systemd_new_unit(cmds, slice_name):
-    # TODO: We set unique uuid for every run to not use the same unit twice
-    # and prevent systemd_run race (BZ#1259468). This uuid could be dropped
-    # when BZ#1272368 will be solved or when we use systemd >= v220.
-    unit = uuid.uuid4()
-    cmds = systemd_run(cmds, scope=True, unit=unit, slice=slice_name)
+def _to_str(value):
+    """Convert textual value to native string.
 
-    return exec_sync(cmds)
+    Passed value (bytes output of Popen communicate) will be returned as
+    a native str value (bytes in Python 2, unicode in Python 3).
+    """
+    if isinstance(value, str):
+        return value
+    elif isinstance(value, bytes):
+        return value.decode('utf-8')
+    else:
+        raise ValueError(
+            'Expected a textual value, given {} of type {}.'.format(
+                value, type(value)))
