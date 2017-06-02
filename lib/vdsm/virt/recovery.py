@@ -65,6 +65,11 @@ def _get_vdsm_domains():
             vmxml.has_vdsm_metadata(dom_xml)]
 
 
+def _recovery_params(dom_xml):
+    params = {'xml': dom_xml}
+    return params
+
+
 class File(object):
     """
     "pickle" for vm state.
