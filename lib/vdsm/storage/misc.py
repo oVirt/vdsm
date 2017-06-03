@@ -92,17 +92,6 @@ def pidExists(pid):
     return True
 
 
-def getProcCtime(pid):
-    try:
-        stats = os.stat(os.path.join('/proc', str(pid)))
-        ctime = stats.st_ctime
-    except OSError:
-        raise OSError(os.errno.ESRCH,
-                      "Could not find process with pid %s" % pid)
-
-    return str(ctime)
-
-
 def readblock(name, offset, size):
     '''
     Read (direct IO) the content of device 'name' at offset, size bytes
