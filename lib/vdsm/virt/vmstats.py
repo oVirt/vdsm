@@ -31,9 +31,6 @@ from vdsm.utils import convertToStr
 from vdsm.virt.utils import isVdsmImage
 
 
-_MBPS_TO_BPS = 10 ** 6 / 8
-
-
 def produce(vm, first_sample, last_sample, interval):
     """
     Translates vm samples into stats.
