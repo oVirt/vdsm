@@ -76,8 +76,8 @@ class TestSourceRoute(TestCaseBase):
                 dsroute = DynamicSourceRoute(nic, None, None, None)
                 routes, rules = dsroute.current_srconfig()
 
-                self.assertEqual(2, len(routes))
-                self.assertEqual(2, len(rules))
+                self.assertEqual(2, len(routes), routes)
+                self.assertEqual(2, len(rules), rules)
 
                 self.assertEqual('0.0.0.0/0', routes[0].to)
                 self.assertEqual(nic, routes[0].device)
