@@ -30,6 +30,12 @@ class Timeout(Exception):
     """ Raised when operation timed out """
 
 
+class InvalidEvent(Exception):
+    """
+    Raised when waiting on invalided event.
+    """
+
+
 class Barrier(object):
     """
     A barrier is synchronizing number of threads specified when the barrier
@@ -182,3 +188,96 @@ def thread(func, args=(), kwargs=None, name=None, daemon=True, logger=None):
     thread = threading.Thread(target=run, name=name)
     thread.daemon = daemon
     return thread
+
+
+class ValidatingEvent(object):
+    """
+    Event that can be invalidated.
+
+    This Event behaves like threading.Event, but allows failing current and
+    future waiters by invalidating the event.
+
+    Waiters will raise immediately InvalidEvent exception if the event was
+    invalid when calling wait(), or it was invalidated during wait().
+
+    Based on Python 3 threading.Event.
+    """
+
+    def __init__(self):
+        self._cond = threading.Condition(threading.Lock())
+        self._flag = False
+        self._valid = True
+
+    def is_set(self):
+        with self._cond:
+            return self._flag
+
+    def set(self):
+        """
+        Set the internal flag to true.
+
+        All threads waiting for the flag to become true are awakened. Threads
+        that call wait() once the flag is true will not block at all.
+        """
+        with self._cond:
+            self._flag = True
+            self._cond.notify_all()
+
+    def clear(self):
+        """
+        Reset the internal flag to false.
+
+        Subsequently, threads calling wait() will block until set() is called
+        to set the internal flag to true again.
+        """
+        with self._cond:
+            self._flag = False
+
+    def wait(self, timeout=None):
+        """
+        Block until the internal flag is true.
+
+        If the internal flag is true on entry, return immediately. Otherwise,
+        block until another thread calls set() to set the flag to true, or
+        until the optional timeout occurs.
+
+        When the timeout argument is present and not None, it should be a
+        floating point number specifying a timeout for the operation in seconds
+        (or fractions thereof).
+
+        This method returns the internal flag on exit, so it will always return
+        True except if a timeout is given and the operation times out.
+
+        If the event is invalid when calling wait, or was invalidted during the
+        wait, raise InvalidEvent.
+        """
+        with self._cond:
+            if not self._valid:
+                raise InvalidEvent
+            if not self._flag:
+                self._cond.wait(timeout)
+                if not self._valid:
+                    raise InvalidEvent
+            return self._flag
+
+    @property
+    def valid(self):
+        """
+        Return event validity.
+        """
+        with self._cond:
+            return self._valid
+
+    @valid.setter
+    def valid(self, value):
+        """
+        Change event validity.
+
+        Invalidating and event will wake up and raise InvalidEvent in all
+        waiting threads.
+        """
+        with self._cond:
+            wake_up = self._valid and not value
+            self._valid = value
+            if wake_up:
+                self._cond.notify_all()

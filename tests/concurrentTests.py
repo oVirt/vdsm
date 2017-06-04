@@ -258,3 +258,103 @@ class ThreadTests(VdsmTestCase):
         t.join()
         self.assertEqual(args, self.args)
         self.assertEqual(kwargs, self.kwargs)
+
+
+class TestValidatingEvent(VdsmTestCase):
+
+    def test_create(self):
+        event = concurrent.ValidatingEvent()
+        self.assertFalse(event.is_set(), "Event is set")
+        self.assertTrue(event.valid, "Event is invalid")
+
+    def test_set(self):
+        event = concurrent.ValidatingEvent()
+        event.set()
+        self.assertTrue(event.is_set(), "Event is not set")
+        self.assertTrue(event.valid, "Event is invalid")
+
+    def test_clear(self):
+        event = concurrent.ValidatingEvent()
+        event.set()
+        event.clear()
+        self.assertFalse(event.is_set(), "Event is set")
+        self.assertTrue(event.valid, "Event is invalid")
+
+    def test_wait_timeout(self):
+        event = concurrent.ValidatingEvent()
+        self.assertFalse(event.wait(0), "Event did not timed out")
+        self.assertTrue(event.valid, "Event is invalid")
+
+    def test_wait_already_set(self):
+        event = concurrent.ValidatingEvent()
+        event.set()
+        self.assertTrue(event.wait(1), "Timeout on set event")
+        self.assertTrue(event.valid, "Event is invalid")
+
+    def test_set_wake_up_waiters(self):
+        count = 3
+        event = concurrent.ValidatingEvent()
+        ready = concurrent.Barrier(count + 1)
+        woke_up = [False] * count
+
+        def wait(n):
+            ready.wait(1)
+            woke_up[n] = event.wait(1)
+
+        threads = []
+        try:
+            for i in range(count):
+                t = concurrent.thread(wait, args=(i,))
+                t.start()
+                threads.append(t)
+            # Wait until all threads entered the barrier.
+            ready.wait(1)
+            # Give threads time to enter the event.
+            time.sleep(0.5)
+            event.set()
+        finally:
+            for t in threads:
+                t.join()
+
+        self.assertTrue(all(woke_up),
+                        "Some threads did not wake up: %s" % woke_up)
+        self.assertTrue(event.valid, "Event is invalid")
+
+    def test_wait_on_invalid_event(self):
+        event = concurrent.ValidatingEvent()
+        event.valid = False
+        with self.assertRaises(concurrent.InvalidEvent):
+            event.wait(1)
+        self.assertFalse(event.valid, "Event is valid")
+
+    def test_invalidate_wake_up_waiters(self):
+        count = 3
+        event = concurrent.ValidatingEvent()
+        ready = concurrent.Barrier(count + 1)
+        invalidated = [False] * count
+
+        def wait(n):
+            ready.wait(1)
+            try:
+                event.wait(1)
+            except concurrent.InvalidEvent:
+                invalidated[n] = True
+
+        threads = []
+        try:
+            for i in range(count):
+                t = concurrent.thread(wait, args=(i,))
+                t.start()
+                threads.append(t)
+            # Wait until all threads entered the barrier.
+            ready.wait(1)
+            # Give threads time to enter the event.
+            time.sleep(0.5)
+            event.valid = False
+        finally:
+            for t in threads:
+                t.join()
+
+        self.assertTrue(all(invalidated),
+                        "Some threads were no invalidated: %s" % invalidated)
+        self.assertFalse(event.valid, "Event is valid")
