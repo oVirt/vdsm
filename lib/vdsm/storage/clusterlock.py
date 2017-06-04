@@ -281,13 +281,14 @@ class SANLock(object):
         return MAX_HOST_ID
 
     def acquireHostId(self, hostId, async):
+        self.log.info("Acquiring host id for domain %s (id=%s, async=%s)",
+                      self._sdUUID, hostId, async)
+
         # Ensure that future calls to acquire() will wait until host id is
         # acquired.
         self._ready.valid = True
 
         with self._lock:
-            self.log.info("Acquiring host id for domain %s (id=%s, async=%s)",
-                          self._sdUUID, hostId, async)
             try:
                 with utils.stopwatch("sanlock.add_lockspace"):
                     sanlock.add_lockspace(self._sdUUID, hostId, self._idsPath,
@@ -321,13 +322,13 @@ class SANLock(object):
                     self._ready.set()
 
     def releaseHostId(self, hostId, async, unused):
+        self.log.info("Releasing host id for domain %s (id: %s)",
+                      self._sdUUID, hostId)
+
         # Ensure that future calls to acquire() will fail quickly.
         self._ready.valid = False
 
         with self._lock:
-            self.log.info("Releasing host id for domain %s (id: %s)",
-                          self._sdUUID, hostId)
-
             try:
                 sanlock.rem_lockspace(self._sdUUID, hostId, self._idsPath,
                                       async=async, unused=unused)
@@ -335,8 +336,8 @@ class SANLock(object):
                 if e.errno != errno.ENOENT:
                     raise se.ReleaseHostIdFailure(self._sdUUID, e)
 
-            self.log.debug("Host id for domain %s released successfully "
-                           "(id: %s)", self._sdUUID, hostId)
+        self.log.info("Host id for domain %s released successfully "
+                      "(id: %s)", self._sdUUID, hostId)
 
     def hasHostId(self, hostId):
         with self._lock:
@@ -374,6 +375,8 @@ class SANLock(object):
     # ClusterLock. We could consider to remove it in the future but keeping it
     # for logging purpose is desirable.
     def acquire(self, hostId, lease):
+        self.log.info("Acquiring %s for host id %s", lease, hostId)
+
         # If host id was acquired by this thread, this will return immediately.
         # If host is id being acquired asynchronically by the domain monitor,
         # wait until the domain monitor find that host id was acquired.
@@ -387,8 +390,6 @@ class SANLock(object):
                 % (lease, hostId))
 
         with self._lock, SANLock._sanlock_lock:
-            self.log.info("Acquiring %s for host id %s", lease, hostId)
-
             while True:
                 if SANLock._sanlock_fd is None:
                     try:
@@ -412,8 +413,7 @@ class SANLock(object):
 
                 break
 
-            self.log.debug("Successfully acquired %s for host id %s",
-                           lease, hostId)
+        self.log.info("Successfully acquired %s for host id %s", lease, hostId)
 
     def inquire(self, lease):
         resource = sanlock.read_resource(lease.path, lease.offset)
@@ -433,9 +433,8 @@ class SANLock(object):
         return None, None
 
     def release(self, lease):
+        self.log.info("Releasing %s", lease)
         with self._lock:
-            self.log.info("Releasing %s", lease)
-
             try:
                 sanlock.release(self._sdUUID, lease.name,
                                 [(lease.path, lease.offset)],
@@ -444,7 +443,7 @@ class SANLock(object):
                 raise se.ReleaseLockFailure(self._sdUUID, e)
 
             self._sanlockfd = None
-            self.log.debug("Successfully released %s", lease)
+        self.log.info("Successfully released %s", lease)
 
 
 class LocalLock(object):
