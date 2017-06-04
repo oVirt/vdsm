@@ -31,6 +31,7 @@ import threading
 from vdsm import constants
 from vdsm import utils
 
+from vdsm.common import concurrent
 from vdsm.common import errors
 from vdsm.common import osutils
 from vdsm.config import config
@@ -246,6 +247,11 @@ class SANLock(object):
         sanlock.HOST_DEAD: HOST_STATUS_DEAD,
     }
 
+    # Acquiring a host id takes about 20-30 seconds when all is good, but it
+    # may take 2-3 minutes if a host was not shutdown properly (.e.g sanlock
+    # was killed).
+    ACQUIRE_HOST_ID_TIMEOUT = 180
+
     log = logging.getLogger("storage.SANLock")
 
     _sanlock_fd = None
@@ -259,6 +265,7 @@ class SANLock(object):
         self._sdUUID = sdUUID
         self._idsPath = idsPath
         self._sanlockfd = None
+        self._ready = concurrent.ValidatingEvent()
 
     @property
     def supports_multiple_leases(self):
@@ -274,10 +281,13 @@ class SANLock(object):
         return MAX_HOST_ID
 
     def acquireHostId(self, hostId, async):
+        # Ensure that future calls to acquire() will wait until host id is
+        # acquired.
+        self._ready.valid = True
+
         with self._lock:
             self.log.info("Acquiring host id for domain %s (id=%s, async=%s)",
                           self._sdUUID, hostId, async)
-
             try:
                 with utils.stopwatch("sanlock.add_lockspace"):
                     sanlock.add_lockspace(self._sdUUID, hostId, self._idsPath,
@@ -295,10 +305,12 @@ class SANLock(object):
                         self.log.info("Host id for domain %s successfully "
                                       "acquired (id=%s, async=%s)",
                                       self._sdUUID, hostId, async)
+                        self._ready.set()
                 elif e.errno == errno.EEXIST:
                     self.log.info("Host id for domain %s already acquired "
                                   "(id=%s, async=%s)",
                                   self._sdUUID, hostId, async)
+                    self._ready.set()
                 else:
                     raise se.AcquireHostIdFailure(self._sdUUID, e)
             else:
@@ -306,8 +318,12 @@ class SANLock(object):
                     self.log.info("Host id for domain %s successfully "
                                   "acquired (id=%s, async=%s)",
                                   self._sdUUID, hostId, async)
+                    self._ready.set()
 
     def releaseHostId(self, hostId, async, unused):
+        # Ensure that future calls to acquire() will fail quickly.
+        self._ready.valid = False
+
         with self._lock:
             self.log.info("Releasing host id for domain %s (id: %s)",
                           self._sdUUID, hostId)
@@ -325,12 +341,23 @@ class SANLock(object):
     def hasHostId(self, hostId):
         with self._lock:
             try:
-                return sanlock.inq_lockspace(self._sdUUID,
-                                             hostId, self._idsPath)
+                has_host_id = sanlock.inq_lockspace(self._sdUUID, hostId,
+                                                    self._idsPath)
             except sanlock.SanlockException:
                 self.log.debug("Unable to inquire sanlock lockspace "
                                "status, returning False", exc_info=True)
                 return False
+
+            if has_host_id:
+                # Host id was acquired. Wake up threads waiting in acquire().
+                self._ready.set()
+            else:
+                # Host id was not acquired yet, or was lost, and will be
+                # acquired again by the domain monitor.  Future threads calling
+                # acquire() will wait until host id is acquired again.
+                self._ready.clear()
+
+        return has_host_id
 
     def getHostStatus(self, hostId):
         try:
@@ -347,6 +374,18 @@ class SANLock(object):
     # ClusterLock. We could consider to remove it in the future but keeping it
     # for logging purpose is desirable.
     def acquire(self, hostId, lease):
+        # If host id was acquired by this thread, this will return immediately.
+        # If host is id being acquired asynchronically by the domain monitor,
+        # wait until the domain monitor find that host id was acquired.
+        #
+        # IMPORTANT: This must be done *before* entering the lock. Once we
+        # enter the lock, the domain monitor cannot check if host id was
+        # acquired, since hasHostId() is using the same lock.
+        if not self._ready.wait(self.ACQUIRE_HOST_ID_TIMEOUT):
+            raise se.AcquireHostIdFailure(
+                "Timeout acquiring host id, cannot acquire %s (id=%s)"
+                % (lease, hostId))
+
         with self._lock, SANLock._sanlock_lock:
             self.log.info("Acquiring %s for host id %s", lease, hostId)
 
