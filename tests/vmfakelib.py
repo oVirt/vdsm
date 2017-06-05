@@ -33,6 +33,7 @@ from vdsm import libvirtconnection
 from vdsm.common import response
 from vdsm.virt import sampling
 from vdsm.virt.domain_descriptor import DomainDescriptor
+from vdsm.virt.vmdevices import common
 
 from virt import vm
 
@@ -279,8 +280,9 @@ def VM(params=None, devices=None, runCpu=False,
             fake.guestAgent = GuestAgent()
             fake.conf['devices'] = [] if devices is None else devices
             if create_device_objects:
-                fake._devices = fake._devMapFromDevSpecMap(
-                    fake._devSpecMapFromConf())
+                fake._devices = common.dev_map_from_dev_spec_map(
+                    fake._devSpecMapFromConf(), fake.log
+                )
             fake._guestCpuRunning = runCpu
             if status is not None:
                 fake._lastStatus = status

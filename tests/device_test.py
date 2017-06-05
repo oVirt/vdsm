@@ -171,7 +171,9 @@ class TestVmDevices(XMLTestCase):
             testvm._domain = DomainDescriptor(domainXML)
             devs = testvm._devSpecMapFromConf()
             testvm._updateDevices(devs)
-            testvm._devices = testvm._devMapFromDevSpecMap(devs)
+            testvm._devices = vmdevices.common.dev_map_from_dev_spec_map(
+                devs, testvm.log
+            )
             self.assertNotRaises(
                 vmdevices.core.Balloon.update_device_info,
                 testvm,

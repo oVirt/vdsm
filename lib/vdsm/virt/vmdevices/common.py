@@ -113,3 +113,62 @@ def lookup_conf_by_alias(conf, dev_type, alias):
             continue
     raise LookupError('Configuration of device identified by alias %s '
                       'and type %s not found' % (alias, dev_type,))
+
+
+_DEVICE_MAPPING = {
+    hwclass.DISK: storage.Drive,
+    hwclass.NIC: network.Interface,
+    hwclass.SOUND: core.Sound,
+    hwclass.VIDEO: core.Video,
+    hwclass.GRAPHICS: graphics.Graphics,
+    hwclass.CONTROLLER: core.Controller,
+    hwclass.GENERAL: core.Generic,
+    hwclass.BALLOON: core.Balloon,
+    hwclass.WATCHDOG: core.Watchdog,
+    hwclass.CONSOLE: core.Console,
+    hwclass.REDIR: core.Redir,
+    hwclass.RNG: core.Rng,
+    hwclass.SMARTCARD: core.Smartcard,
+    hwclass.TPM: core.Tpm,
+    hwclass.HOSTDEV: hostdevice.HostDevice,
+    hwclass.MEMORY: core.Memory,
+    hwclass.LEASE: lease.Device,
+}
+
+
+# those are the entries in the devices section of the libvirt domain XML
+# that have no counterpart in our object hierarchy. Thus we just skip them.
+_UNHANDLED_DEVICES = (
+    'emulator',  # this is not even a proper device!
+    'channel',
+    'input',
+)
+
+
+_LIBVIRT_TO_OVIRT_NAME = {
+    'memballoon': hwclass.BALLOON,
+}
+
+
+def identify_from_xml_elem(dev_elem):
+    dev_type = dev_elem.tag
+    if dev_type in _UNHANDLED_DEVICES:
+        raise core.SkipDevice
+    dev_name = _LIBVIRT_TO_OVIRT_NAME.get(dev_type, dev_type)
+    if dev_name not in _DEVICE_MAPPING:
+        raise core.SkipDevice
+    return dev_name, _DEVICE_MAPPING[dev_name]
+
+
+def empty_dev_map():
+    return {dev: [] for dev in _DEVICE_MAPPING}
+
+
+def dev_map_from_dev_spec_map(dev_spec_map, log):
+    dev_map = empty_dev_map()
+
+    for dev_type, dev_class in _DEVICE_MAPPING.items():
+        for dev in dev_spec_map[dev_type]:
+            dev_map[dev_type].append(dev_class(log, **dev))
+
+    return dev_map

@@ -248,26 +248,6 @@ class Vm(object):
     log = logging.getLogger("virt.vm")
     # limit threads number until the libvirt lock will be fixed
     _ongoingCreations = threading.BoundedSemaphore(4)
-    DeviceMapping = ((hwclass.DISK, vmdevices.storage.Drive),
-                     (hwclass.NIC, vmdevices.network.Interface),
-                     (hwclass.SOUND, vmdevices.core.Sound),
-                     (hwclass.VIDEO, vmdevices.core.Video),
-                     (hwclass.GRAPHICS, vmdevices.graphics.Graphics),
-                     (hwclass.CONTROLLER, vmdevices.core.Controller),
-                     (hwclass.GENERAL, vmdevices.core.Generic),
-                     (hwclass.BALLOON, vmdevices.core.Balloon),
-                     (hwclass.WATCHDOG, vmdevices.core.Watchdog),
-                     (hwclass.CONSOLE, vmdevices.core.Console),
-                     (hwclass.REDIR, vmdevices.core.Redir),
-                     (hwclass.RNG, vmdevices.core.Rng),
-                     (hwclass.SMARTCARD, vmdevices.core.Smartcard),
-                     (hwclass.TPM, vmdevices.core.Tpm),
-                     (hwclass.HOSTDEV, vmdevices.hostdevice.HostDevice),
-                     (hwclass.MEMORY, vmdevices.core.Memory),
-                     (hwclass.LEASE, vmdevices.lease.Device))
-
-    def _emptyDevMap(self):
-        return dict((dev, []) for dev, _ in self.DeviceMapping)
 
     def _makeChannelPath(self, deviceName):
         return constants.P_LIBVIRT_VMCHANNELS + self.id + '.' + deviceName
@@ -359,7 +339,7 @@ class Vm(object):
         self._vmCreationEvent = threading.Event()
         self.stopped_migrated_event_processed = threading.Event()
         self._pathsPreparedEvent = threading.Event()
-        self._devices = self._emptyDevMap()
+        self._devices = vmdevices.common.empty_dev_map()
 
         if is_kvm(self._custom):
             self._connection = libvirtconnection.get(cif)
@@ -521,15 +501,6 @@ class Vm(object):
             drv['truesize'] = 0
             drv['apparentsize'] = 0
 
-    def _devMapFromDevSpecMap(self, dev_spec_map):
-        dev_map = self._emptyDevMap()
-
-        for dev_type, dev_class in self.DeviceMapping:
-            for dev in dev_spec_map[dev_type]:
-                dev_map[dev_type].append(dev_class(self.log, **dev))
-
-        return dev_map
-
     def _dev_spec_update_with_vm_conf(self, dev):
         dev['vmid'] = self.id
         if dev['type'] == hwclass.GRAPHICS:
@@ -551,7 +522,7 @@ class Vm(object):
         Return the "devices" section of this Vm's conf.
         If missing, create it according to old API.
         """
-        devices = self._emptyDevMap()
+        devices = vmdevices.common.empty_dev_map()
 
         # while this code is running, Vm is queryable for status(),
         # thus we must fix devices in an atomic way, hence the deep copy
@@ -2251,7 +2222,9 @@ class Vm(object):
             # we must to have updated conf before VM run
             self.saveState()
 
-        self._devices = self._devMapFromDevSpecMap(dev_spec_map)
+        self._devices = vmdevices.common.dev_map_from_dev_spec_map(
+            dev_spec_map, self.log
+        )
 
         # We should set this event as a last part of drives initialization
         self._pathsPreparedEvent.set()

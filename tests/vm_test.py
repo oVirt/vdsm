@@ -1475,7 +1475,9 @@ class TestVmStats(TestCaseBase):
         with fake.VM(_VM_PARAMS, devices) as testvm:
             dev_spec_map = testvm._devSpecMapFromConf()
             testvm._updateDevices(dev_spec_map)
-            testvm._devices = testvm._devMapFromDevSpecMap(dev_spec_map)
+            testvm._devices = vmdevices.common.dev_map_from_dev_spec_map(
+                dev_spec_map, testvm.log
+            )
             res = testvm.getStats()
             self.assertIn('displayPort', res)
             self.assertEqual(res['displayType'],
