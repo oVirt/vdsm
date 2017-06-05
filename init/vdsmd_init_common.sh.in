@@ -195,24 +195,6 @@ task_validate_configuration(){
 }
 
 
-task_upgraded_version_check(){
-    local upgraded_ver_file="@VDSMLIBDIR@/upgraded_version"
-    if [ -f "${upgraded_ver_file}" ]; then
-        local ret=0
-        if grep -q '^vdsm-4\.10\.' "${upgraded_ver_file}"; then
-             # REQUIRED_FOR upgrade from vdsm-4.10.x
-             "$VDSM_TOOL" configure --force
-             ret=$?
-        elif grep -qE '^vdsm-4\.(13|14|16)\.' "${upgraded_ver_file}"; then
-             # REQUIRED_FOR upgrade from 4.13.x or 4.14.x or 4.16.x
-             # mutlipath and sasl password configuration logic moved to
-             # vdsm-tool in 4.17.
-             "$VDSM_TOOL" configure --module multipath --module passwd
-             ret=$?
-        fi
-        [ "${ret}" -eq 0 ] && rm -f "${upgraded_ver_file}"
-    fi
-}
 #### pre-start tasks end ####
 
 
@@ -250,7 +232,6 @@ case "$1" in
             configure_vdsm_logs \
             wait_for_network \
             run_init_hooks \
-            upgraded_version_check \
             check_is_configured \
             validate_configuration \
             prepare_transient_repository \
