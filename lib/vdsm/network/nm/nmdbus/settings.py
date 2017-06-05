@@ -19,8 +19,15 @@
 from __future__ import absolute_import
 
 import dbus
+from dbus.exceptions import DBusException
+
+from vdsm.network.nm.errors import NMConnectionNotFoundError
 
 from . import NMDbus
+
+NO_INTERFACE_ERR = ("No such interface "
+                    "'org.freedesktop.NetworkManager.Settings.Connection' "
+                    "on object at path ")
 
 
 class NMDbusSettings(object):
@@ -33,8 +40,14 @@ class NMDbusSettings(object):
         self._settings = dbus.Interface(set_proxy, self.NM_SETTINGS_IF_NAME)
 
     def connections(self):
-        return (_NMDbusConnectionSettings(con_path)
-                for con_path in self._settings.ListConnections())
+        conns = []
+        for con_path in self._settings.ListConnections():
+            try:
+                conns.append(_NMDbusConnectionSettings(con_path))
+            except NMConnectionNotFoundError:
+                # The connection may have been removed in the meantime, ignore.
+                pass
+        return conns
 
     def connection(self, connection_path):
         return _NMDbusConnectionSettings(connection_path)
@@ -48,7 +61,13 @@ class _NMDbusConnectionSettings(object):
         con_proxy = NMDbus.bus.get_object(NMDbus.NM_IF_NAME, connection_path)
         con_settings = dbus.Interface(con_proxy, self.NM_SETTINGS_CON_IF_NAME)
         self._con_settings = con_settings
-        self._config = con_settings.GetSettings()
+        try:
+            self._config = con_settings.GetSettings()
+        except DBusException as ex:
+            msg = ex.get_dbus_message()
+            if msg == NO_INTERFACE_ERR + connection_path:
+                raise NMConnectionNotFoundError(str(ex))
+            raise
 
     def delete(self):
         self._con_settings.Delete()

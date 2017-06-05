@@ -21,3 +21,7 @@ from __future__ import absolute_import
 
 class NMDeviceNotFoundError(Exception):
     pass
+
+
+class NMConnectionNotFoundError(Exception):
+    pass
