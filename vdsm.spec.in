@@ -823,8 +823,8 @@ fi
 %systemd_preun ksmtuned.service
 exit 0
 
-%postun
-if [ "$1" -ge 1 ]; then
+%posttrans
+if  [ -f "%{_localstatedir}/lib/%{vdsm_name}/upgraded_version" ]; then
     supervdsmd_start_required='no'
     vdsmd_start_required='no'
 
@@ -852,6 +852,7 @@ if [ "$1" -ge 1 ]; then
     if [ "${vdsmd_start_required}" = 'yes' ]; then
         /bin/systemctl start vdsmd >/dev/null 2>&1 || :
     fi
+    /bin/rm -f "%{_localstatedir}/lib/%{vdsm_name}/upgraded_version"
 fi
 exit 0
 
