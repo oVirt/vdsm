@@ -180,6 +180,26 @@ class NetworkBasicTemplate(NetFuncTestCase):
                 pass
         self.assertEqual(cm.exception.status, ne.ERR_BAD_NIC)
 
+    def test_remove_unbridged_network_with_a_nic_used_by_a_vlan_network(self):
+        with dummy_device() as nic:
+            netcreate = {
+                NET_1: {
+                    'bridged': False,
+                    'nic': nic,
+                },
+                NET_2: {
+                    'bridged': False,
+                    'nic': nic,
+                    'vlan': VLANID
+                }
+            }
+
+            with self.setupNetworks(netcreate, {}, NOCHK):
+                netremove = {NET_1: {'remove': True}}
+                self.setupNetworks(netremove, {}, NOCHK)
+                self.assertNoNetwork(NET_1)
+                self.assertNetwork(NET_2, netcreate[NET_2])
+
     def _assert_nets(self, net_1_attrs, net_2_attrs):
         with self.setupNetworks({NET_1: net_1_attrs}, {}, NOCHK):
             with self.setupNetworks({NET_2: net_2_attrs}, {}, NOCHK):
