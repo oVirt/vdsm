@@ -307,7 +307,7 @@ class Domain(object):
             hyperv.appendChildWithArgs(
                 'spinlocks', state='on', retries='8191')
 
-    def appendCpu(self):
+    def appendCpu(self, hugepages_shared=False):
         """
         Add guest CPU definition.
 
@@ -409,9 +409,10 @@ class Domain(object):
                 self.conf.get('guestNumaNodes'), key=itemgetter('nodeIndex'))
             for vmCell in guestNumaNodes:
                 nodeMem = int(vmCell['memory']) * 1024
-                numa.appendChildWithArgs('cell',
-                                         cpus=vmCell['cpus'],
-                                         memory=str(nodeMem))
+                numa_args = {'cpus': vmCell['cpus'], 'memory': str(nodeMem)}
+                if hugepages_shared:
+                    numa_args.update({'memAccess': 'shared'})
+                numa.appendChildWithArgs('cell', **numa_args)
             cpu.appendChild(numa)
 
         self.dom.appendChild(cpu)

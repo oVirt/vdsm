@@ -387,6 +387,11 @@ class Vm(object):
         self._migration_downtime = None
 
     @property
+    def _hugepages_shared(self):
+        custom = self._custom['custom']
+        return conv.tobool(custom.get('hugepages_shared', False))
+
+    @property
     def monitorable(self):
         if self._altered_state or \
            self.post_copy != migration.PostCopyPhase.NONE:
@@ -1943,7 +1948,7 @@ class Vm(object):
         if cpuarch.is_x86(self.arch):
             domxml.appendFeatures()
 
-        domxml.appendCpu()
+        domxml.appendCpu(self._hugepages_shared)
 
         if 'numaTune' in self.conf:
             domxml.appendNumaTune()

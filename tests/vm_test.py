@@ -405,6 +405,32 @@ class TestVm(XMLTestCase):
         self.assertXMLEqual(find_xml_element(xml, "./cputune"), cputuneXML)
         self.assertXMLEqual(find_xml_element(xml, './numatune'), numatuneXML)
 
+    def testSharedGuestNumaNodes(self):
+        numaXML = """
+              <numa>
+                  <cell cpus="0-1" memory="5242880" memAccess="shared"/>
+              </numa>
+              """
+
+        vmConf = {'cpuType': "Opteron_G4,+sse4_1,+sse4_2,-svm",
+                  'smpCoresPerSocket': 2, 'smpThreadsPerCore': 2,
+                  'cpuPinning': {'0': '0-1', '1': '2-3'},
+                  'numaTune': {'mode': 'strict',
+                               'nodeset': '0-1',
+                               'memnodes': [
+                                   {'vmNodeIndex': '0', 'nodeset': '1'},
+                                   {'vmNodeIndex': '1', 'nodeset': '0'}
+                               ]},
+                  'guestNumaNodes': [{'cpus': '0-1', 'memory': '5120',
+                                      'nodeIndex': 0},
+                                     ]}
+
+        vmConf.update(self.conf)
+        domxml = libvirtxml.Domain(vmConf, self.log, cpuarch.X86_64)
+        domxml.appendCpu(hugepages_shared=True)
+        xml = domxml.toxml()
+        self.assertXMLEqual(find_xml_element(xml, "./cpu/numa"), numaXML)
+
     def testChannelXML(self):
         channelXML = """
           <channel type="unix">
