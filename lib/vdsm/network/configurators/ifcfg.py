@@ -275,6 +275,11 @@ class Ifcfg(Configurator):
     def removeNic(self, nic, remove_even_if_used=False):
         if not self.owned_device(nic.name):
             IfcfgAcquire.acquire_device(nic.name)
+
+        # If the nic is top device we should ifdown it even if it is
+        # used by a VLAN. Otherwise we would keep its IP address.
+        remove_even_if_used |= nic.master is None
+
         to_be_removed = self._ifaceDownAndCleanup(nic, remove_even_if_used)
         if to_be_removed:
             self.configApplier.removeNic(nic.name)

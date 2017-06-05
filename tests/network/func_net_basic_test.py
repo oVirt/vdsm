@@ -28,7 +28,8 @@ from .netfunctestlib import NetFuncTestCase, NOCHK
 from .nettestlib import dummy_device
 from .nmnettestlib import iface_name, nm_connections, is_networkmanager_running
 
-NETWORK_NAME = 'test-network'
+NET1_NAME = 'test-network1'
+NET2_NAME = 'test-network2'
 VLAN = 10
 
 
@@ -37,34 +38,54 @@ class NetworkBasicTemplate(NetFuncTestCase):
 
     def test_add_net_based_on_nic(self):
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': self.switch}}
+            NETCREATE = {NET1_NAME: {'nic': nic, 'switch': self.switch}}
             with self.setupNetworks(NETCREATE, {}, NOCHK):
-                self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+                self.assertNetwork(NET1_NAME, NETCREATE[NET1_NAME])
 
     def test_remove_net_based_on_nic(self):
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': self.switch}}
-            NETREMOVE = {NETWORK_NAME: {'remove': True}}
+            NETCREATE = {NET1_NAME: {'nic': nic, 'switch': self.switch}}
+            NETREMOVE = {NET1_NAME: {'remove': True}}
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 self.setupNetworks(NETREMOVE, {}, NOCHK)
-                self.assertNoNetwork(NETWORK_NAME)
+                self.assertNoNetwork(NET1_NAME)
 
     def test_add_net_based_on_vlan(self):
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLAN,
-                                        'switch': self.switch}}
+            NETCREATE = {NET1_NAME: {'nic': nic, 'vlan': VLAN,
+                                     'switch': self.switch}}
             with self.setupNetworks(NETCREATE, {}, NOCHK):
-                self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+                self.assertNetwork(NET1_NAME, NETCREATE[NET1_NAME])
 
     def test_remove_net_based_on_vlan(self):
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLAN,
-                                        'switch': self.switch}}
-            NETREMOVE = {NETWORK_NAME: {'remove': True}}
+            NETCREATE = {NET1_NAME: {'nic': nic, 'vlan': VLAN,
+                                     'switch': self.switch}}
+            NETREMOVE = {NET1_NAME: {'remove': True}}
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 self.setupNetworks(NETREMOVE, {}, NOCHK)
-                self.assertNoNetwork(NETWORK_NAME)
+                self.assertNoNetwork(NET1_NAME)
                 self.assertNoVlan(nic, VLAN)
+
+    def test_remove_unbridged_network_with_a_nic_used_by_a_vlan_network(self):
+        with dummy_device() as nic:
+            netcreate = {
+                NET1_NAME: {
+                    'bridged': False,
+                    'nic': nic,
+                },
+                NET2_NAME: {
+                    'bridged': False,
+                    'nic': nic,
+                    'vlan': VLAN
+                }
+            }
+
+            with self.setupNetworks(netcreate, {}, NOCHK):
+                netremove = {NET1_NAME: {'remove': True}}
+                self.setupNetworks(netremove, {}, NOCHK)
+                self.assertNoNetwork(NET1_NAME)
+                self.assertNetwork(NET2_NAME, netcreate[NET2_NAME])
 
 
 @attr(type='functional', switch='legacy')
@@ -80,11 +101,11 @@ class NetworkBasicLegacyTest(NetworkBasicTemplate):
             self.skipTest('NetworkManager is running.')
 
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': self.switch}}
-            NETREMOVE = {NETWORK_NAME: {'remove': True}}
+            NETCREATE = {NET1_NAME: {'nic': nic, 'switch': self.switch}}
+            NETREMOVE = {NET1_NAME: {'remove': True}}
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 self.setupNetworks(NETREMOVE, {}, NOCHK)
-                self.assertNoNetwork(NETWORK_NAME)
+                self.assertNoNetwork(NET1_NAME)
 
                 nic_ifcfg_file = self.NET_CONF_PREF + nic
                 self.assertTrue(os.path.exists(nic_ifcfg_file))
@@ -93,7 +114,7 @@ class NetworkBasicLegacyTest(NetworkBasicTemplate):
 
                 # Up until now, we have set the test setup, now start the test.
                 with self.setupNetworks(NETCREATE, {}, NOCHK):
-                    self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+                    self.assertNetwork(NET1_NAME, NETCREATE[NET1_NAME])
                     self.assertTrue(os.path.exists(nic_ifcfg_file))
                     self.assertFalse(os.path.exists(nic_ifcfg_badname_file))
 
@@ -103,10 +124,10 @@ class NetworkBasicLegacyTest(NetworkBasicTemplate):
 
         IPv4_ADDRESS = '192.0.2.1'
         iface = iface_name()
-        NET = {NETWORK_NAME: {'bonding': iface, 'switch': self.switch}}
+        NET = {NET1_NAME: {'bonding': iface, 'switch': self.switch}}
         with nm_connections(iface, IPv4_ADDRESS, con_count=3):
             with self.setupNetworks(NET, {}, NOCHK):
-                self.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
+                self.assertNetwork(NET1_NAME, NET[NET1_NAME])
 
             # The bond was acquired, therefore VDSM needs to clean it.
             BONDREMOVE = {iface: {'remove': True}}

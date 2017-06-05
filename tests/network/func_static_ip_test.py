@@ -28,6 +28,7 @@ from .netfunctestlib import NetFuncTestCase, NOCHK
 from .nettestlib import dummy_device, dummy_devices
 
 NETWORK_NAME = 'test-network'
+NETWORK2_NAME = 'test-network2'
 BOND_NAME = 'bond1'
 VLAN = 10
 
@@ -204,5 +205,42 @@ class AcquireNicsWithStaticIPLegacyTest(AcquireNicsWithStaticIPTemplate):
 
 @attr(type='functional', switch='ovs')
 class AcquireNicsWithStaticIPOvsTest(AcquireNicsWithStaticIPTemplate):
+    __test__ = True
+    switch = 'ovs'
+
+
+class IfacesWithMultiplesUsersTemplate(NetFuncTestCase):
+    __test__ = False
+
+    def test_remove_network_from_a_nic_used_by_a_vlan_network(self):
+        with dummy_device() as nic:
+            netcreate = {
+                NETWORK_NAME: {
+                    'bridged': False,
+                    'nic': nic,
+                    'ipaddr': IPv4_ADDRESS,
+                    'netmask': IPv4_NETMASK
+                },
+                NETWORK2_NAME: {
+                    'bridged': False,
+                    'nic': nic,
+                    'vlan': VLAN
+                }
+            }
+
+            with self.setupNetworks(netcreate, {}, NOCHK):
+                netremove = {NETWORK_NAME: {'remove': True}}
+                self.setupNetworks(netremove, {}, NOCHK)
+                self.assertDisabledIPv4(self.netinfo.nics[nic])
+
+
+@attr(type='functional', switch='legacy')
+class IfacesWithMultiplesUsersLegacyTest(IfacesWithMultiplesUsersTemplate):
+    __test__ = True
+    switch = 'legacy'
+
+
+@attr(type='functional', switch='ovs')
+class IfacesWithMultiplesUsersOvsTest(IfacesWithMultiplesUsersTemplate):
     __test__ = True
     switch = 'ovs'
