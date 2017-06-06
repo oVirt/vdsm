@@ -22,7 +22,7 @@ from __future__ import absolute_import
 from nose.plugins.attrib import attr
 
 from testlib import VdsmTestCase
-from .nettestlib import requires_systemctl
+from .nettestlib import requires_systemdrun
 
 from vdsm.network import cmd
 
@@ -47,7 +47,7 @@ class CmdTest(VdsmTestCase):
         self.assertIn('No such file or directory', err.decode())
         self.assertEqual(out.decode(), '')
 
-    @requires_systemctl
+    @requires_systemdrun
     def test_exec_systemd_new_unit(self):
         rc, out, err = cmd.exec_systemd_new_unit(('echo', 'hello world'),
                                                  slice_name='test-group')

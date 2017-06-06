@@ -426,10 +426,16 @@ def requires_iperf3(f):
 def requires_systemctl(function):
     @functools.wraps(function)
     def wrapper(*args, **kwargs):
-        rc, _, err = cmd.exec_sync([_SYSTEMCTL.cmd, 'status', 'foo'])
-        run_chroot_err = 'Running in chroot, ignoring request'.encode()
-        if rc == 1 or run_chroot_err in err:
-            raise SkipTest('systemctl is not available')
+        _requires_systemctl()
+        return function(*args, **kwargs)
+    return wrapper
+
+
+def requires_systemdrun(function):
+    @functools.wraps(function)
+    def wrapper(*args, **kwargs):
+        _requires_root('systemd-run requires root')
+        _requires_systemctl()
         return function(*args, **kwargs)
     return wrapper
 
@@ -565,3 +571,15 @@ def _has_sysfs_bond_permission():
     except IOError:
         return False
     return True
+
+
+def _requires_systemctl():
+    rc, _, err = cmd.exec_sync([_SYSTEMCTL.cmd, 'status', 'foo'])
+    run_chroot_err = 'Running in chroot, ignoring request'.encode()
+    if rc == 1 or run_chroot_err in err:
+        raise SkipTest('systemctl is not available')
+
+
+def _requires_root(msg='This test must be run as root'):
+    if os.geteuid() != 0:
+        raise SkipTest(msg)
