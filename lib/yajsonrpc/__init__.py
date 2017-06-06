@@ -695,7 +695,7 @@ class JsonRpcServer(object):
                     JsonRpcTask(self._serveRequest, ctx, request)
                 )
             except Exception as e:
-                self.log.exception("could not allocate request thread")
+                self.log.exception("could not serve request %s", request)
                 ctx.requestDone(
                     JsonRpcResponse(
                         None,
