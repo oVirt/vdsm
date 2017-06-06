@@ -381,7 +381,7 @@ def nl_object_get_type(obj):
     """
     _nl_object_get_type = _libnl('nl_object_get_type', c_char_p, c_void_p)
     object_type = _nl_object_get_type(obj)
-    return _to_str(object_type)
+    return _to_str(object_type) if object_type else None
 
 
 def nl_object_get_msgtype(obj):
@@ -598,10 +598,7 @@ def rtnl_link_get_type(link):
     _rtnl_link_get_type = _libnl_route(
         'rtnl_link_get_type', c_char_p, c_void_p)
     link_type = _rtnl_link_get_type(link)
-    if link_type:
-        return _to_str(link_type)
-    else:
-        return None
+    return _to_str(link_type) if link_type else None
 
 
 def rtnl_link_get_kernel(socket, ifindex, ifname):
@@ -720,7 +717,7 @@ def rtnl_link_get_name(link):
     _rtnl_link_get_name = _libnl_route(
         'rtnl_link_get_name', c_char_p, c_void_p)
     name = _rtnl_link_get_name(link)
-    return _to_str(name)
+    return _to_str(name) if name else None
 
 
 def rtnl_link_get_operstate(link):
@@ -747,10 +744,7 @@ def rtnl_link_get_qdisc(link):
     _rtnl_link_get_qdisc = _libnl_route(
         'rtnl_link_get_qdisc', c_char_p, c_void_p)
     qdisc = _rtnl_link_get_qdisc(link)
-    if qdisc:
-        return _to_str(qdisc)
-    else:
-        return None
+    return _to_str(qdisc) if qdisc else None
 
 
 def rtnl_link_get_by_name(cache, name):
@@ -786,7 +780,7 @@ def rtnl_link_i2name(cache, ifindex):
         'rtnl_link_i2name', c_char_p, c_void_p, c_int, c_char_p, c_size_t)
     buf = (c_char * CHARBUFFSIZE)()
     name = _rtnl_link_i2name(cache, ifindex, buf, sizeof(buf))
-    return _to_str(name)
+    return _to_str(name) if name else None
 
 
 def rtnl_link_operstate2str(operstate_code):
