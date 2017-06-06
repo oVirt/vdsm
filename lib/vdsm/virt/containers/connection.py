@@ -81,11 +81,8 @@ class Connection(object):
     def domainListGetStats(self, doms, flags):
         raise NotImplementedError  # not yet!
 
-    def defineXML(self, domxml, flags):
+    def createXML(self, domxml, flags):
         return domain.Domain.create(domxml)
-
-    def undefine(self):
-        pass
 
     def getLibVersion(self):
         return 0x001002018  # TODO

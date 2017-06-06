@@ -130,10 +130,6 @@ VALID_STATES = (vmstatus.DOWN, vmstatus.MIGRATION_DESTINATION,
                 vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
 
 
-_LIBVIRT_DOWN_STATES = (libvirt.VIR_DOMAIN_SHUTOFF,
-                        libvirt.VIR_DOMAIN_CRASHED)
-
-
 class ConsoleDisconnectAction:
     NONE = 'NONE'
     LOCK_SCREEN = 'LOCK_SCREEN'
@@ -866,7 +862,7 @@ class Vm(object):
 
     def _onQemuDeath(self, exit_code, reason):
         self.log.info('underlying process disconnected')
-        self._dom = virdomain.Defined(self.id, self._dom)
+        self._dom = virdomain.Disconnected(self.id)
         # Try release VM resources first, if failed stuck in 'Powering Down'
         # state
         self._destroy_requested.set()
@@ -2003,13 +1999,6 @@ class Vm(object):
     def _cleanupRecoveryFile(self):
         self._recovery_file.cleanup()
 
-    def _cleanup_domain(self):
-        try:
-            self._dom.undefine()
-        except libvirt.libvirtError as e:
-            self.log.warning("Failed to undefine VM '%s' (error=%i)",
-                             self.id, e.get_error_code())
-
     def _cleanupStatsCache(self):
         try:
             sampling.stats_cache.remove(self.id)
@@ -2199,9 +2188,6 @@ class Vm(object):
 
     def _run(self):
         self.log.info("VM wrapper has started")
-        if not self.recovering and \
-           self._altered_state.origin != _MIGRATION_ORIGIN:
-            self._undefine_stale_domain()
         dev_spec_map = self._devSpecMapFromConf()
 
         # recovery flow note:
@@ -2237,12 +2223,9 @@ class Vm(object):
             self._setup_devices()
 
         if self.recovering:
-            dom = self._connection.lookupByUUIDString(self.id)
-            state, reason = dom.state(0)
-            if state in _LIBVIRT_DOWN_STATES:
-                self._cleanup_domain()
-                raise MissingLibvirtDomainError()
-            self._dom = virdomain.Notifying(dom, self._timeoutExperienced)
+            self._dom = virdomain.Notifying(
+                self._connection.lookupByUUIDString(self.id),
+                self._timeoutExperienced)
         elif self._altered_state.origin == _MIGRATION_ORIGIN:
             pass  # self._dom will be disconnected until migration ends.
         elif self._altered_state.origin == _FILE_ORIGIN:
@@ -2296,11 +2279,10 @@ class Vm(object):
                 # see the XML even with 'info' as default level.
                 self.log.info(domxml)
 
-                dom = self._connection.defineXML(domxml)
-                self._dom = virdomain.Defined(self.id, dom)
+                self._dom = virdomain.Notifying(
+                    self._connection.createXML(domxml, flags),
+                    self._timeoutExperienced)
                 self._update_metadata()
-                dom.createWithFlags(flags)
-                self._dom = virdomain.Notifying(dom, self._timeoutExperienced)
                 hooks.after_vm_start(self._dom.XMLDesc(0), self._custom)
                 for dev in self._customDevices():
                     hooks.after_device_create(dev._deviceXML, self._custom,
@@ -2310,23 +2292,6 @@ class Vm(object):
 
         if initDomain:
             self._domDependentInit()
-
-    def _undefine_stale_domain(self):
-        try:
-            dom = self._connection.lookupByUUIDString(self.id)
-        except libvirt.libvirtError as e:
-            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                pass
-            else:
-                raise
-        else:
-            state, reason = dom.state(0)
-            if state in _LIBVIRT_DOWN_STATES:
-                dom.undefine()
-                self.log.debug("Stale domain removed: %s", (self.id,))
-            else:
-                raise exception.VMExists("VM %s is already running: %s" %
-                                         (self.id, state,))
 
     def _updateDevices(self, devices):
         """
@@ -4552,7 +4517,6 @@ class Vm(object):
             self.log.exception("Failed to delete VM %s", self.id)
         else:
             self._cleanupRecoveryFile()
-            self._cleanup_domain()
             self.log.debug("Total desktops after destroy of %s is %d",
                            self.id, len(self.cif.vmContainer))
 

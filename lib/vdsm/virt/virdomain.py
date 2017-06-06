@@ -24,8 +24,8 @@ import libvirt
 
 class NotConnectedError(Exception):
     """
-    Raised when trying to talk with a vm that was not defined yet or was
-    undefined.
+    Raised when trying to talk with a vm that was not started yet or was shut
+    down.
     """
 
 
@@ -43,25 +43,8 @@ class Disconnected(object):
         return False
 
     def __getattr__(self, name):
-        raise NotConnectedError("VM %r was not defined yet or was undefined"
+        raise NotConnectedError("VM %r was not started yet or was shut down"
                                 % self.vmid)
-
-
-class Defined(Disconnected):
-    # Defined, but not running.
-
-    def __init__(self, vmid, dom):
-        super(Defined, self).__init__(vmid)
-        self._dom = dom
-
-    def metadata(self, *args, **kwargs):
-        return self._dom.metadata(*args, **kwargs)
-
-    def setMetadata(self, *args, **kwargs):
-        self._dom.setMetadata(*args, **kwargs)
-
-    def undefine(self):
-        self._dom.undefine()
 
 
 class Notifying(object):

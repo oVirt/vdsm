@@ -40,7 +40,7 @@ class MonitoringTests(conttestlib.RunnableTestCase):
 
         conn = connection.Connection()
         with conttestlib.tmp_run_dir():
-            dom = conn.defineXML(conttestlib.minimal_dom_xml(), 0)
+            dom = conn.createXML(conttestlib.minimal_dom_xml(), 0)
             conn.domainEventRegisterAny(dom, evt, _cb, None)
             monitoring.watchdog(lambda: [])
 
@@ -61,7 +61,7 @@ class MonitoringTests(conttestlib.RunnableTestCase):
 
         conn = connection.Connection()
         with conttestlib.tmp_run_dir():
-            dom = conn.defineXML(conttestlib.minimal_dom_xml(), 0)
+            dom = conn.createXML(conttestlib.minimal_dom_xml(), 0)
             conn.domainEventRegisterAny(dom, evt, _cb, None)
 
             def _fake_get_all():
