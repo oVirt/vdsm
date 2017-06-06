@@ -75,9 +75,6 @@ execCmdLogger = logging.getLogger('storage.Misc.excCmd')
 execCmd = partial(commands.execCmd, execCmdLogger=execCmdLogger)
 
 
-watchCmd = partial(commands.watchCmd, execCmdLogger=execCmdLogger)
-
-
 def pidExists(pid):
     try:
         os.stat(os.path.join('/proc', str(pid)))

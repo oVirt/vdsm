@@ -36,7 +36,6 @@ from testlib import TEMPDIR
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import utils
-from vdsm.common import exception
 from vdsm.common.proc import pidstat
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
@@ -54,10 +53,6 @@ EXT_SLEEP = "sleep"
 EXT_WHOAMI = "whoami"
 
 SUDO_USER = "root"
-
-
-def watchCmd(cmd, stop, cwd=None, data=None):
-    return commands.watchCmd(cmd, stop, cwd=cwd, data=data)
 
 
 class EventTests(TestCaseBase):
@@ -709,77 +704,6 @@ class PidExists(TestCaseBase):
         while result:
             pid += 1
             result = misc.pidExists(pid)
-
-
-class WatchCmd(TestCaseBase):
-
-    def testExec(self):
-        """
-        Tests that watchCmd execs and returns the correct ret code
-        """
-        data = """
-        Interrogator: You're a spy!
-        The Doctor: Am I? Who am I spying for?
-        Interrogator: I'm asking the questions. I repeat, you're a spy!
-        The Doctor: That wasn't a question. That was a statement.
-        Interrogator: Careful, our friends here don't get much fun.
-                      [Gestures to the thuggish Ogron security guards.]
-        The Doctor: Poor fellows. Sorry I can't oblige them at the moment,
-                    I'm not in the mood for games. """
-        # (C) BBC - Doctor Who
-        data = data.strip()
-        ret, out, err = watchCmd([EXT_ECHO, "-n", data], lambda: False)
-
-        self.assertEqual(ret, 0)
-        self.assertEqual(out, data.splitlines())
-
-    def testStop(self):
-        """
-        Test that stopping the process really works.
-        """
-        sleepTime = "10"
-        try:
-            watchCmd([EXT_SLEEP, sleepTime], lambda: True)
-        except exception.ActionStopped:
-            self.log.info("Looks like task stopped!")
-        else:
-            self.fail("watchCmd didn't stop!")
-
-    def testStdOut(self):
-        """
-        Tests that watchCmd correctly returns the standard output of the prog
-        it executes.
-        """
-        line = "Real stupidity beats artificial intelligence every time."
-        # (C) Terry Pratchet - Hogfather
-        ret, stdout, stderr = watchCmd([EXT_ECHO, line], lambda: False)
-        self.assertEqual(stdout[0], line)
-
-    def testStdErr(self):
-        """
-        Tests that watchCmd correctly returns the standard error of the prog it
-        executes.
-        """
-        line = "He says gods like to see an atheist around. " + \
-               "Gives them something to aim at."
-        # (C) Terry Pratchet - Small Gods
-        code = "import sys; sys.stderr.write('%s')" % line
-        ret, stdout, stderr = watchCmd([EXT_PYTHON, "-c", code],
-                                       lambda: False)
-        self.assertEqual(stderr[0], line)
-
-    def testLeakFd(self):
-        """
-        Make sure that nothing leaks
-        """
-        import gc
-        openFdNum = lambda: len(misc.getfds())
-        gc.collect()
-        openFds = openFdNum()
-        self.testStdOut()
-        gc.collect()
-        self.assertEqual(len(gc.garbage), 0)
-        self.assertEqual(openFdNum(), openFds)
 
 
 class ExecCmd(TestCaseBase):

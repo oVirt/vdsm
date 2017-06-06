@@ -30,10 +30,9 @@ import subprocess
 import threading
 import time
 from . import cmdutils
-from .utils import stripNewLines, terminating
+from .utils import terminating
 from vdsm.common.cmdutils import command_log_line, retcode_log_line
 from vdsm.common.compat import CPopen
-from vdsm.common.exception import ActionStopped
 from vdsm.common.osutils import uninterruptible_poll
 from vdsm import constants
 
@@ -349,24 +348,3 @@ def grepCmd(pattern, paths):
     else:
         raise ValueError("rc: %s, out: %s, err: %s" % (rc, out, err))
     return matches
-
-
-def watchCmd(command, stop, cwd=None, data=None, nice=None, ioclass=None,
-             execCmdLogger=logging.root, deathSignal=signal.SIGKILL):
-    """
-    Executes an external command, optionally via sudo with stop abilities.
-    """
-    proc = execCmd(command, cwd=cwd, data=data, sync=False,
-                   nice=nice, ioclass=ioclass, execCmdLogger=execCmdLogger,
-                   deathSignal=deathSignal)
-
-    if not proc.wait(cond=stop):
-        proc.kill()
-        raise ActionStopped()
-
-    out = stripNewLines(proc.stdout)
-    err = stripNewLines(proc.stderr)
-
-    execCmdLogger.debug(retcode_log_line(proc.returncode, err=err))
-
-    return proc.returncode, out, err
