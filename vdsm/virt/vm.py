@@ -3786,6 +3786,7 @@ class Vm(object):
             vmDevName = vmDrive.name
 
             newDrives[vmDevName] = tgetDrv.copy()
+            newDrives[vmDevName]["diskType"] = vmDrive.diskType
             newDrives[vmDevName]["poolID"] = vmDrive.poolID
             newDrives[vmDevName]["name"] = vmDevName
             newDrives[vmDevName]["format"] = "cow"
