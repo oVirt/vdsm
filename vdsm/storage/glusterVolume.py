@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from volume import VmVolumeInfo
+from vdsm import utils
 import fileVolume
 from sdc import sdCache
 import vdsm.supervdsm as svdsm
@@ -27,6 +27,12 @@ try:
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False
+
+# Volume transport to Libvirt transport mapping
+VOLUME_TRANS_MAP = {
+    'TCP': 'tcp',
+    'RDMA': 'rdma'
+}
 
 
 class GlusterVolume(fileVolume.FileVolume):
@@ -43,24 +49,34 @@ class GlusterVolume(fileVolume.FileVolume):
         volfileServer, volname = rpath.rsplit(":", 1)
         volname = volname.strip('/')
 
-        # Volume transport to Libvirt transport mapping
-        VOLUME_TRANS_MAP = {'TCP': 'tcp', 'RDMA': 'rdma'}
-
         # Extract the volume's transport using gluster cli
         svdsmProxy = svdsm.getProxy()
 
         try:
-            volInfo = svdsmProxy.glusterVolumeInfo(volname, volfileServer)
-            volTrans = VOLUME_TRANS_MAP[volInfo[volname]['transportType'][0]]
+            res = svdsmProxy.glusterVolumeInfo(volname, volfileServer)
         except GlusterException:
             # In case of issues with finding transport type, default to tcp
             self.log.warning("Unable to find transport type for GlusterFS"
                              " volume %s. GlusterFS server = %s."
                              "Defaulting to tcp",
-                             (volname, volfileServer), exc_info=True)
-            volTrans = VOLUME_TRANS_MAP['TCP']
+                             volname, volfileServer, exc_info=True)
+            transport = VOLUME_TRANS_MAP['TCP']
+            brickServers = []
+        else:
+            vol_info = res[volname]
+            transport = VOLUME_TRANS_MAP[vol_info['transportType'][0]]
+            brickServers = utils.unique(
+                brick.split(":", 1)[0]
+                for brick in vol_info['bricks']
+            )
+            # remove server passed as argument from backup servers to avoid
+            # duplicates
+            if volfileServer in brickServers:
+                brickServers.remove(volfileServer)
 
-        # Use default port
+        # gfapi does not use brick ports, it uses the glusterd port (24007)
+        # from the hosts passed to fetch the volume information.
+        # If 0 is passed, gfapi defaults to 24007.
         volPort = "0"
 
         imgFilePath = self.getVolumePath()
@@ -71,7 +87,12 @@ class GlusterVolume(fileVolume.FileVolume):
 
         glusterPath = volname + '/' + imgFileRelPath
 
-        return {'volType': VmVolumeInfo.TYPE_NETWORK, 'path': glusterPath,
-                'protocol': 'gluster', 'volPort': volPort,
-                'volTransport': volTrans,
-                'volfileServer': volfileServer}
+        hosts = [dict(name=volfileServer,
+                      port=volPort,
+                      transport=transport)]
+        hosts.extend(dict(name=brickServer, port=volPort, transport=transport)
+                     for brickServer in brickServers)
+
+        return {'path': glusterPath,
+                'protocol': 'gluster',
+                'hosts': hosts}
