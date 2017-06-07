@@ -880,6 +880,8 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/vdsm.conf.d
 %dir %{_sysconfdir}/modprobe.d/
+%dir %{_sysconfdir}/NetworkManager
+%dir %{_sysconfdir}/NetworkManager/conf.d
 %dir %{_sysconfdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/mom.d
 %dir %{_datadir}/%{vdsm_name}
@@ -909,6 +911,7 @@ exit 0
 %{_tmpfilesdir}/%{vdsm_name}.conf
 %{_sysconfdir}/dhcp/dhclient.d/dhclientmon.sh
 %{_sysconfdir}/modprobe.d/vdsm-bonding-modprobe.conf
+%{_sysconfdir}/NetworkManager/conf.d/vdsm.conf
 %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
 %{_sysconfdir}/libvirt/hooks/qemu

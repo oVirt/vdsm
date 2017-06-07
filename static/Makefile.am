@@ -108,6 +108,12 @@ modprobe_DATA = \
 	./etc/modprobe.d/vdsm-bonding-modprobe.conf \
 	$(NULL)
 
+networkmanagerdir = $(sysconfdir)/NetworkManager/conf.d
+
+networkmanager_DATA = \
+	./etc/NetworkManager/conf.d/vdsm.conf \
+	$(NULL)
+
 systemdunitdir = $(SYSTEMD_UNIT_DIR)
 
 systemdunit_DATA = \
@@ -133,6 +139,7 @@ EXTRA_DIST = \
 	$(limits_DATA) \
 	$(modprobe_DATA) \
 	$(modulesload_DATA) \
+	$(networkmanager_DATA) \
 	$(sysctl_DATA) \
 	$(vdsmconfrotate_DATA) \
 	$(vdsm_DATA) \
