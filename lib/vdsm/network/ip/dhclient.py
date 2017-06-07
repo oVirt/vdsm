@@ -24,7 +24,6 @@ import errno
 import logging
 import os
 import signal
-import subprocess
 
 from vdsm.network import cmd
 from vdsm.network import errors as ne
@@ -176,12 +175,9 @@ def supports_duid_file():
     dhclient manually. To support EL7, we should probably fall back to -lf and
     refer dhclient to a new lease file with a device name substituted.
     """
-    probe = subprocess.Popen(
+    _, _, err = cmd.exec_sync(
         [DHCLIENT_BINARY.cmd,  # dhclient doesn't have -h/--help
-         '-do-you-support-loading-duid-from-lease-files?'],
-        stderr=subprocess.PIPE)
-
-    _, err = probe.communicate()
+         '-do-you-support-loading-duid-from-lease-files?'])
     return '-df' in err
 
 

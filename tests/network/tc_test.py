@@ -25,7 +25,6 @@ import time
 import os
 import sys
 from binascii import unhexlify
-from subprocess import Popen, PIPE
 
 from nose.plugins.attrib import attr
 
@@ -45,6 +44,7 @@ from .nettestlib import running
 
 from vdsm import libvirtconnection
 from vdsm.constants import EXT_TC
+from vdsm.network import cmd
 from vdsm.network import tc
 from vdsm.network.configurators import qos
 from vdsm.network.ipwrapper import addrAdd, linkSet, netns_exec, link_set_netns
@@ -63,9 +63,9 @@ class TestQdisc(TestCaseBase):
         self._bridge.delDevice()
 
     def _showQdisc(self):
-        popen = Popen([EXT_TC, "qdisc", "show", "dev", self._bridge.devName],
-                      stdout=PIPE)
-        return popen.stdout.read()
+        _, out, _ = cmd.exec_sync(
+            [EXT_TC, "qdisc", "show", "dev", self._bridge.devName])
+        return out
 
     def _addIngress(self):
         tc._qdisc_replace_ingress(self._bridge.devName)
