@@ -27,6 +27,7 @@ from nose.plugins.attrib import attr
 
 from testValidation import ValidateRunningAsRoot
 from vdsm.network import ipwrapper
+from vdsm.network import py2to3
 from vdsm.network.ipwrapper import Route
 from vdsm.network.ipwrapper import Rule
 from vdsm.network.netlink import monitor
@@ -153,9 +154,10 @@ class TestUnicodeDrvinfo(TestCaseBase):
     @ValidateRunningAsRoot
     @requires_brctl
     def setUp(self):
-        # First 3 Hebrew letters
+        # First 3 Hebrew letters, in native string format
         # See http://unicode.org/charts/PDF/U0590.pdf
-        self._bridge = Bridge("\xd7\x90\xd7\x91\xd7\x92")
+        bridge_name = py2to3.to_str(b'\xd7\x90\xd7\x91\xd7\x92')
+        self._bridge = Bridge(bridge_name)
         self._bridge.addDevice()
 
     def tearDown(self):
@@ -163,5 +165,5 @@ class TestUnicodeDrvinfo(TestCaseBase):
 
     def testUtf8BridgeEthtoolDrvinfo(self):
         self.assertEqual(
-            ipwrapper.drv_name(self._bridge.devName.decode('utf8')),
+            ipwrapper.drv_name(self._bridge.devName),
             ipwrapper.LinkType.BRIDGE)
