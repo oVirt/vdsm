@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 import dbus
 
+from . import DBUS_STD_PROPERTIES_IFNAME
 from . import NMDbus, NMDbusManager
 
 
@@ -29,7 +30,7 @@ class NMDbusActiveConnections(object):
         self.manager = NMDbusManager()
 
     def connections(self):
-        active_connections = self.manager.properties.Get(NMDbus.NM_IF_NAME,
+        active_connections = self.manager.properties.Get(NMDbusManager.IF_NAME,
                                                          'ActiveConnections')
         for connection_path in active_connections:
             yield self.connection(connection_path)
@@ -39,12 +40,12 @@ class NMDbusActiveConnections(object):
         return _NMDbusActiveConnectionProperties(con_properties)
 
     def _properties(self, connection):
-        con_proxy = NMDbus.bus.get_object(NMDbus.NM_IF_NAME, connection)
-        return dbus.Interface(con_proxy, NMDbus.DBUS_PROPERTIES)
+        con_proxy = NMDbus.bus.get_object(NMDbus.BUS_NAME, connection)
+        return dbus.Interface(con_proxy, DBUS_STD_PROPERTIES_IFNAME)
 
 
 class _NMDbusActiveConnectionProperties(object):
-    NM_CON_ACTIVE_IF_NAME = 'org.freedesktop.NetworkManager.Connection.Active'
+    IF_NAME = 'org.freedesktop.NetworkManager.Connection.Active'
 
     def __init__(self, connection_properties):
         self._properties = connection_properties
@@ -102,4 +103,4 @@ class _NMDbusActiveConnectionProperties(object):
         return self._property('Master')
 
     def _property(self, property_name):
-        return self._properties.Get(self.NM_CON_ACTIVE_IF_NAME, property_name)
+        return self._properties.Get(self.IF_NAME, property_name)

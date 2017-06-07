@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,10 +22,11 @@ import dbus
 from dbus.exceptions import DBusException
 
 
+DBUS_STD_PROPERTIES_IFNAME = 'org.freedesktop.DBus.Properties'
+
+
 class NMDbus(object):
-    DBUS_PROPERTIES = 'org.freedesktop.DBus.Properties'
-    NM_IF_NAME = 'org.freedesktop.NetworkManager'
-    NM_PATH = '/org/freedesktop/NetworkManager'
+    BUS_NAME = 'org.freedesktop.NetworkManager'
 
     bus = None
 
@@ -35,24 +36,27 @@ class NMDbus(object):
 
 
 class NMDbusManager(object):
+    IF_NAME = 'org.freedesktop.NetworkManager'
+    OBJ_PATH = '/org/freedesktop/NetworkManager'
 
     def __init__(self):
-        mng_proxy = NMDbus.bus.get_object(NMDbus.NM_IF_NAME, NMDbus.NM_PATH)
-        self.properties = dbus.Interface(mng_proxy, NMDbus.DBUS_PROPERTIES)
-        self.interface = dbus.Interface(mng_proxy, NMDbus.NM_IF_NAME)
+        mng_proxy = NMDbus.bus.get_object(NMDbus.BUS_NAME,
+                                          NMDbusManager.OBJ_PATH)
+        self.properties = dbus.Interface(mng_proxy, DBUS_STD_PROPERTIES_IFNAME)
+        self.interface = dbus.Interface(mng_proxy, NMDbusManager.IF_NAME)
 
 
 class NMDbusIfcfgRH1(object):
-    NM_IFCFGRH_IF_NAME = 'com.redhat.ifcfgrh1'
-    NM_IFCFGRH_PATH = '/com/redhat/ifcfgrh1'
+    IF_NAME = 'com.redhat.ifcfgrh1'
+    OBJ_PATH = '/com/redhat/ifcfgrh1'
 
     ERROR_INV_CON = "ifcfg file '{}' unknown"
 
     def __init__(self):
-        ifcfg_proxy = NMDbus.bus.get_object(NMDbusIfcfgRH1.NM_IFCFGRH_IF_NAME,
-                                            NMDbusIfcfgRH1.NM_IFCFGRH_PATH)
+        ifcfg_proxy = NMDbus.bus.get_object(NMDbusIfcfgRH1.IF_NAME,
+                                            NMDbusIfcfgRH1.OBJ_PATH)
         self.ifcfg = dbus.Interface(ifcfg_proxy,
-                                    NMDbusIfcfgRH1.NM_IFCFGRH_IF_NAME)
+                                    NMDbusIfcfgRH1.IF_NAME)
 
     def ifcfg2connection(self, ifcfg_path):
         """

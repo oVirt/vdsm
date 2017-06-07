@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ from dbus.exceptions import DBusException
 
 from vdsm.network.nm.errors import NMDeviceNotFoundError
 
+from . import DBUS_STD_PROPERTIES_IFNAME
 from . import NMDbus, NMDbusManager
 
 
@@ -33,8 +34,8 @@ class NMDbusDevice(object):
 
     def devices(self):
         devices = self.manager.interface.GetDevices()
-        for device in devices:
-            yield _NMDbusDeviceProperties(self._properties(device))
+        for device_path in devices:
+            yield _NMDbusDeviceProperties(self._properties(device_path))
 
     def device(self, iface_name):
         try:
@@ -44,13 +45,13 @@ class NMDbusDevice(object):
                 raise NMDeviceNotFoundError()
         return _NMDbusDeviceProperties(self._properties(device))
 
-    def _properties(self, device):
-        device_proxy = NMDbus.bus.get_object(NMDbus.NM_IF_NAME, device)
-        return dbus.Interface(device_proxy, NMDbus.DBUS_PROPERTIES)
+    def _properties(self, device_path):
+        device_proxy = NMDbus.bus.get_object(NMDbus.BUS_NAME, device_path)
+        return dbus.Interface(device_proxy, DBUS_STD_PROPERTIES_IFNAME)
 
 
 class _NMDbusDeviceProperties(object):
-    NM_DEVICE_IF_NAME = 'org.freedesktop.NetworkManager.Device'
+    IF_NAME = 'org.freedesktop.NetworkManager.Device'
 
     def __init__(self, device_properties):
         self._properties = device_properties
@@ -72,4 +73,4 @@ class _NMDbusDeviceProperties(object):
         return self._property('AvailableConnections')
 
     def _property(self, property_name):
-        return self._properties.Get(self.NM_DEVICE_IF_NAME, property_name)
+        return self._properties.Get(self.IF_NAME, property_name)

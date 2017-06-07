@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,13 +31,13 @@ NO_INTERFACE_ERR = ("No such interface "
 
 
 class NMDbusSettings(object):
-    NM_SETTINGS_PATH = '/org/freedesktop/NetworkManager/Settings'
-    NM_SETTINGS_IF_NAME = 'org.freedesktop.NetworkManager.Settings'
+    OBJ_PATH = '/org/freedesktop/NetworkManager/Settings'
+    IF_NAME = 'org.freedesktop.NetworkManager.Settings'
 
     def __init__(self):
-        set_proxy = NMDbus.bus.get_object(NMDbus.NM_IF_NAME,
-                                          self.NM_SETTINGS_PATH)
-        self._settings = dbus.Interface(set_proxy, self.NM_SETTINGS_IF_NAME)
+        set_proxy = NMDbus.bus.get_object(NMDbus.BUS_NAME,
+                                          NMDbusSettings.OBJ_PATH)
+        self._settings = dbus.Interface(set_proxy, NMDbusSettings.IF_NAME)
 
     def connections(self):
         conns = []
@@ -54,12 +54,12 @@ class NMDbusSettings(object):
 
 
 class _NMDbusConnectionSettings(object):
-    NM_SETTINGS_CON_IF_NAME = (
-        'org.freedesktop.NetworkManager.Settings.Connection')
+    IF_NAME = 'org.freedesktop.NetworkManager.Settings.Connection'
 
     def __init__(self, connection_path):
-        con_proxy = NMDbus.bus.get_object(NMDbus.NM_IF_NAME, connection_path)
-        con_settings = dbus.Interface(con_proxy, self.NM_SETTINGS_CON_IF_NAME)
+        con_proxy = NMDbus.bus.get_object(NMDbus.BUS_NAME, connection_path)
+        con_settings = dbus.Interface(con_proxy,
+                                      _NMDbusConnectionSettings.IF_NAME)
         self._con_settings = con_settings
         try:
             self._config = con_settings.GetSettings()
