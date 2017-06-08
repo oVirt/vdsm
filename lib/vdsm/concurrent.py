@@ -23,9 +23,8 @@ import logging
 import threading
 from collections import namedtuple
 
+from vdsm.common import pthread
 from vdsm.common import time
-
-from . import pthread
 
 
 class Timeout(Exception):

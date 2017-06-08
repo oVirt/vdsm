@@ -94,7 +94,6 @@ test_modules = \
 	permutation_test.py \
 	properties_test.py \
 	protocoldetector_test.py \
-	pthread_test.py \
 	qemuimg_test.py \
 	response_test.py \
 	rngsources_test.py \

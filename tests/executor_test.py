@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,9 +24,9 @@ import time
 
 from vdsm import concurrent
 from vdsm import executor
-from vdsm import pthread
 from vdsm import schedule
 from vdsm import utils
+from vdsm.common import pthread
 
 from fakelib import FakeLogger
 from testValidation import slowtest
