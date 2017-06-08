@@ -1015,8 +1015,6 @@ exit 0
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
 %dir %{_localstatedir}/log/%{vdsm_name}/import
 %defattr(644, %{vdsm_user}, %{vdsm_group}, -)
-%{_datadir}/%{vdsm_name}/bonding-defaults.json
-%{_datadir}/%{vdsm_name}/bonding-name2numeric.json
 %{_datadir}/%{vdsm_name}/lvmlocal.conf
 %{_datadir}/%{vdsm_name}/autounattend/Win7.xml
 %{_datadir}/%{vdsm_name}/autounattend/Win8.xml
@@ -1278,6 +1276,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sanlock.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sebool.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/multipath.py*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/bond_defaults.py*
 %{python_sitelib}/%{vdsm_name}/tool/dump_volume_chains.py*
 %{python_sitelib}/%{vdsm_name}/tool/network.py*
 %{python_sitelib}/%{vdsm_name}/tool/register.py*
@@ -1337,6 +1336,7 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/tests/devices/parsing
 %dir %{_datadir}/%{vdsm_name}/tests/integration
 %dir %{_datadir}/%{vdsm_name}/tests/network
+%dir %{_datadir}/%{vdsm_name}/tests/network/static
 %dir %{_datadir}/%{vdsm_name}/tests/storage
 %{_datadir}/%{vdsm_name}/tests/*.py*
 %{_datadir}/%{vdsm_name}/tests/cpu_info.out
@@ -1374,6 +1374,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/network/ip_route_show_table_all.out
 %{_datadir}/%{vdsm_name}/tests/network/netmaskconversions
 %{_datadir}/%{vdsm_name}/tests/network/tc_filter_show.out
+%{_datadir}/%{vdsm_name}/tests/network/static/*.json
 %{_datadir}/%{vdsm_name}/tests/storage/*.py*
 %{_datadir}/%{vdsm_name}/tests/storage/*.out
 %{_datadir}/%{vdsm_name}/tests/virttests/*.py*

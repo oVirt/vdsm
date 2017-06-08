@@ -52,7 +52,10 @@ from vdsm.common.cmdutils import CommandPath
 from . import dhcp
 from . import firewall
 
-ALTERNATIVE_BONDING_DEFAULTS = '../static/usr/share/vdsm/bonding-defaults.json'
+
+ALTERNATIVE_BONDING_DEFAULTS = os.path.join(os.path.dirname(__file__),
+                                            'static',
+                                            'bonding-defaults.json')
 
 EXT_IP = "/sbin/ip"
 _IPERF3_BINARY = CommandPath('iperf3', '/usr/bin/iperf3')
