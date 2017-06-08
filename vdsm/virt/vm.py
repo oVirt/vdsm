@@ -5112,7 +5112,7 @@ class Vm(object):
                           top_target, bandwidth, flags)
 
             try:
-                self._dom.blockCommit(drive.path, base_target, top_target,
+                self._dom.blockCommit(drive.name, base_target, top_target,
                                       bandwidth, flags)
             except libvirt.libvirtError:
                 self.log.exception("Live merge failed (job: %s)", jobUUID)
