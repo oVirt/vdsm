@@ -572,6 +572,9 @@ class Vm(object):
         if not self.recovering:
             for dev in balloonDevices:
                 dev['target'] = int(self.conf.get('memSize')) * 1024
+                dev['minimum'] = int(
+                    self.conf.get('memGuaranteedSize', '0')
+                ) * 1024
 
         if not balloonDevices:
             balloonDevices.append(EMPTY_BALLOON)
@@ -4602,9 +4605,13 @@ class Vm(object):
 
             self._devices[hwclass.BALLOON][0].target = target
 
-    def get_balloon_target(self):
+    def get_balloon_info(self):
         # we will always have exactly one memballoon device
-        return self._devices[hwclass.BALLOON][0].target
+        dev = self._devices[hwclass.BALLOON][0]
+        return {
+            'target': dev.target,
+            'minimum': dev.minimum,
+        }
 
     @api.logged(on='vdsm.api')
     def setCpuTuneQuota(self, quota):

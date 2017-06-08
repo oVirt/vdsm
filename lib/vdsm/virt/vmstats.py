@@ -147,14 +147,14 @@ def cpu(stats, first_sample, last_sample, interval):
 
 def balloon(vm, stats, sample):
     max_mem = vm.mem_size_mb() * 1024
-    balloon_target = vm.get_balloon_target()
+    balloon_info = vm.get_balloon_info()
 
     stats['balloonInfo'] = {}
 
     # Do not return any balloon status info before we get all data
     # MOM will ignore VMs with missing balloon information instead
     # using incomplete data and computing wrong balloon targets
-    if balloon_target is not None and sample is not None:
+    if balloon_info['target'] is not None and sample is not None:
 
         balloon_cur = 0
         with _skip_if_missing_stats(vm):
@@ -162,10 +162,9 @@ def balloon(vm, stats, sample):
 
         stats['balloonInfo'].update({
             'balloon_max': str(max_mem),
-            'balloon_min': str(
-                int(vm.conf.get('memGuaranteedSize', '0')) * 1024),
+            'balloon_min': str(balloon_info['minimum']),
             'balloon_cur': str(balloon_cur),
-            'balloon_target': str(balloon_target)
+            'balloon_target': str(balloon_info['target'])
         })
 
 

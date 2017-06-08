@@ -138,7 +138,7 @@ class Generic(Base):
 
 
 class Balloon(Base):
-    __slots__ = ('address', 'target')
+    __slots__ = ('address', 'target', 'minimum',)
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
@@ -150,6 +150,8 @@ class Balloon(Base):
         super(Balloon, self).__init__(*args, **kwargs)
         if not hasattr(self, 'target'):
             self.target = None
+        if not hasattr(self, 'minimum'):
+            self.minimum = 0
 
     def getXML(self):
         """
