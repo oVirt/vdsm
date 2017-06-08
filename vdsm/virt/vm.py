@@ -565,6 +565,9 @@ class Vm(object):
                          'specParams': {
                              'model': 'none'}}
 
+        # TODO: in the engine XML path we will need to fetch this data
+        # from the device metadata
+
         # Avoid overriding the saved balloon target value on recovery.
         if not self.recovering:
             for dev in balloonDevices:
@@ -4588,12 +4591,20 @@ class Vm(object):
                 raise exception.NoSuchVM()
             raise exception.BalloonError(e.message)
         else:
+            # TODO: update metadata once we build devices with engine XML
+
             for dev in self.conf['devices']:
                 if dev['type'] == hwclass.BALLOON and \
                         dev['specParams']['model'] != 'none':
                     dev['target'] = target
             # persist the target value to make it consistent after recovery
             self.saveState()
+
+            self._devices[hwclass.BALLOON][0].target = target
+
+    def get_balloon_target(self):
+        # we will always have exactly one memballoon device
+        return self._devices[hwclass.BALLOON][0].target
 
     @api.logged(on='vdsm.api')
     def setCpuTuneQuota(self, quota):
@@ -5218,11 +5229,6 @@ class Vm(object):
 
     def getNicDevices(self):
         return self._devices[hwclass.NIC]
-
-    def getBalloonDevicesConf(self):
-        for dev in self.conf['devices']:
-            if dev['type'] == hwclass.BALLOON:
-                yield dev
 
     @property
     def sdIds(self):

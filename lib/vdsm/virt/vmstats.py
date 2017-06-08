@@ -147,13 +147,7 @@ def cpu(stats, first_sample, last_sample, interval):
 
 def balloon(vm, stats, sample):
     max_mem = vm.mem_size_mb() * 1024
-
-    for dev in vm.getBalloonDevicesConf():
-        if dev['specParams']['model'] != 'none':
-            balloon_target = dev.get('target', max_mem)
-            break
-    else:
-        balloon_target = None
+    balloon_target = vm.get_balloon_target()
 
     stats['balloonInfo'] = {}
 

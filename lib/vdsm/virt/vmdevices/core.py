@@ -138,13 +138,18 @@ class Generic(Base):
 
 
 class Balloon(Base):
-    __slots__ = ('address',)
+    __slots__ = ('address', 'target')
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
         params = parse_device_params(dev)
         params['specParams'] = parse_device_attrs(dev, ('model',))
         return cls(log, **params)
+
+    def __init__(self, *args, **kwargs):
+        super(Balloon, self).__init__(*args, **kwargs)
+        if not hasattr(self, 'target'):
+            self.target = None
 
     def getXML(self):
         """
