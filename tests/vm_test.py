@@ -1615,27 +1615,48 @@ class TestVmBalloon(TestCaseBase):
                              define.errCode[specificErr]['status']['code'])
 
     def testSucceed(self):
-        with fake.VM() as testvm:
+        devices = [{
+            'type': hwclass.BALLOON,
+            'device': 'memballoon',
+            'specParams': {'model': 'none'}
+        }]
+
+        with fake.VM(
+            params={'memSize': 128 * 1024},
+            devices=devices,
+            create_device_objects=True
+        ) as testvm:
             testvm._dom = fake.Domain()
-            target = 256
-            res = testvm.setBalloonTarget(target)  # just to fit in 80 cols
-            self.assertEqual(res['status']['code'], 0)
+            target = 256 * 1024
+            testvm.setBalloonTarget(target)
             self.assertEqual(testvm._dom.__calls__,
                              [('setMemory', (target,), {})])
 
     def testVmWithoutDom(self):
         with fake.VM() as testvm:
-            self.assertAPIFailed(testvm.setBalloonTarget(128))
+            self.assertRaises(
+                exception.BalloonError,
+                testvm.setBalloonTarget,
+                128
+            )
 
     def testTargetValueNotInteger(self):
         with fake.VM() as testvm:
-            self.assertAPIFailed(testvm.setBalloonTarget('foobar'))
+            self.assertRaises(
+                exception.BalloonError,
+                testvm.setBalloonTarget,
+                'foobar'
+            )
 
     def testLibvirtFailure(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(virtError=libvirt.VIR_ERR_INTERNAL_ERROR)
             # we don't care about the error code as long as is != NO_DOMAIN
-            self.assertAPIFailed(testvm.setBalloonTarget(256), 'balloonErr')
+            self.assertRaises(
+                exception.BalloonError,
+                testvm.setBalloonTarget,
+                256
+            )
 
 
 class ChangeBlockDevTests(TestCaseBase):

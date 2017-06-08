@@ -4577,17 +4577,16 @@ class Vm(object):
     def setBalloonTarget(self, target):
 
         if not self._dom.connected:
-            return response.error('balloonErr')
+            raise exception.BalloonError()
         try:
             target = int(target)
             self._dom.setMemory(target)
         except ValueError:
-            return self._reportException(
-                key='balloonErr', msg='an integer is required for target')
+            raise exception.BalloonError('an integer is required for target')
         except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 raise exception.NoSuchVM()
-            return self._reportException(key='balloonErr', msg=e.message)
+            raise exception.BalloonError(e.message)
         else:
             for dev in self.conf['devices']:
                 if dev['type'] == hwclass.BALLOON and \
@@ -4595,7 +4594,6 @@ class Vm(object):
                     dev['target'] = target
             # persist the target value to make it consistent after recovery
             self.saveState()
-            return {'status': doneCode}
 
     @api.logged(on='vdsm.api')
     def setCpuTuneQuota(self, quota):
