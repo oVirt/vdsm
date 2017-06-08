@@ -111,6 +111,7 @@ BuildRequires: python-pep8
 
 BuildRequires: systemd-units
 
+Requires: cyrus-sasl-scram
 Requires: ethtool
 Requires: which
 Requires: sudo >= 1.7.3
