@@ -489,10 +489,10 @@ def _skip_if_missing_stats(vm_obj):
     """
     try:
         yield
-    except KeyError:
+    except KeyError as exc:
         if not vm_obj.monitorable:
             # If a VM is migration destination,
             # libvirt doesn't give any disk stat.
             pass
         else:
-            raise
+            _log.warning('Missing stat: %s for vm %s', str(exc), vm_obj.id)

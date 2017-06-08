@@ -20,14 +20,17 @@
 from __future__ import absolute_import
 
 import copy
+import logging
 import uuid
 
 import six
 
 from vdsm.virt import vmstats
 
+from fakelib import FakeLogger
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
+from monkeypatch import MonkeyPatchScope
 
 
 _FAKE_BULK_STATS = {
@@ -292,6 +295,21 @@ class UtilsFunctionsTests(VmStatsTestCase):
             bulk_stats[0], 'net')
         self.assertTrue(indexes)
 
+    def test_log_inexistent_key(self):
+        KEY = 'this.key.cannot.exist'
+        sample = {}
+        vm = FakeVM()
+        log = FakeLogger()
+        with MonkeyPatchScope(
+            [(vmstats, '_log', log)]
+        ):
+            with vmstats._skip_if_missing_stats(vm):
+                foobar = sample[KEY]
+                print(foobar)  # just to silence pyflakes
+        self.assertEqual(len(log.messages), 1)
+        self.assertEqual(log.messages[0][0], logging.WARNING)
+        self.assertIn(KEY, log.messages[0][1])
+
 
 @expandPermutations
 class NetworkStatsTests(VmStatsTestCase):
@@ -536,6 +554,42 @@ class CpuStatsTests(VmStatsTestCase):
         self.assertNotEquals(res, None)
 
 
+class BalloonStatsTests(VmStatsTestCase):
+
+    def test_missing_data(self):
+        stats = {}
+        vm = FakeVM()
+        self.assertNotRaises(
+            vmstats.balloon,
+            vm, stats, {}
+        )
+        self.assertIn('balloonInfo', stats)
+        info = stats['balloonInfo']
+        self.assertStatsHaveKeys(
+            info,
+            ('balloon_max', 'balloon_min',
+             'balloon_cur', 'balloon_target')
+        )
+
+    def test_balloon_current_default_zero(self):
+        stats = {}
+        vm = FakeVM()
+        vmstats.balloon(vm, stats, {})
+        self.assertEqual(stats['balloonInfo']['balloon_cur'], '0')
+
+    def test_log_missing_key(self):
+        stats = {}
+        vm = FakeVM()
+        log = FakeLogger()
+        with MonkeyPatchScope(
+            [(vmstats, '_log', log)]
+        ):
+            vmstats.balloon(vm, stats, {})
+        self.assertEqual(len(log.messages), 1)
+        self.assertEqual(log.messages[0][0], logging.WARNING)
+        self.assertIn('balloon.current', log.messages[0][1])
+
+
 # helpers
 
 def _ensure_delta(stats_before, stats_after, key, delta):
@@ -589,3 +643,15 @@ class FakeVM(object):
 
     def getDiskDevices(self):
         return self.drives
+
+    def mem_size_mb(self):
+        # no specific meaning, just need to be realistic (e.g. not _1_)
+        return 256
+
+    def get_balloon_info(self):
+        # no specific meaning, just need to be realistic (e.g. not _1_)
+        # unit is KiB
+        return {
+            'target': 256 * 1024,
+            'minimum': 256 * 1024,
+        }
