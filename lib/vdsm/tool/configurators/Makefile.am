@@ -29,4 +29,5 @@ dist_configurators_PYTHON = \
 	passwd.py \
 	sanlock.py \
 	sebool.py \
+	bond_defaults.py \
 	$(NULL)

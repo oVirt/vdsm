@@ -420,6 +420,7 @@ AC_OUTPUT([
 	tests/functional/Makefile
 	tests/integration/Makefile
 	tests/network/Makefile
+	tests/network/static/Makefile
 	vdsm-tool/Makefile
 	vdsm/Makefile
 	vdsm/sos/Makefile

@@ -24,6 +24,7 @@ import os
 
 from nose.plugins.attrib import attr
 
+from .nettestlib import ALTERNATIVE_BONDING_DEFAULTS
 from vdsm.network.netinfo import bonding, mtus
 from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network import errors
@@ -39,7 +40,7 @@ from monkeypatch import MonkeyPatch
 @mock.patch('vdsm.network.link.bond.sysfs_options.BONDING_DEFAULTS',
             bonding.BONDING_DEFAULTS
             if os.path.exists(bonding.BONDING_DEFAULTS)
-            else '../static/usr/share/vdsm/bonding-defaults.json')
+            else ALTERNATIVE_BONDING_DEFAULTS)
 class TestNetmodels(TestCaseBase):
 
     def testIsVlanIdValid(self):

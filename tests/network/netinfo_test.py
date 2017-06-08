@@ -36,6 +36,8 @@ from vdsm import sysctl
 
 from modprobe import RequireBondingMod
 from .nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
+from .nettestlib import ALTERNATIVE_BONDING_DEFAULTS
+from .nettestlib import ALTERNATIVE_BONDING_NAME2NUMERIC
 from testlib import mock
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
@@ -251,7 +253,7 @@ class TestNetinfo(TestCaseBase):
     @mock.patch.object(bonding, 'BONDING_DEFAULTS',
                        bonding.BONDING_DEFAULTS
                        if os.path.exists(bonding.BONDING_DEFAULTS)
-                       else '../static/usr/share/vdsm/bonding-defaults.json')
+                       else ALTERNATIVE_BONDING_DEFAULTS)
     @attr(type='integration')
     @ValidateRunningAsRoot
     @RequireBondingMod
@@ -290,7 +292,7 @@ class TestNetinfo(TestCaseBase):
                        bonding.BONDING_NAME2NUMERIC_PATH
                        if os.path.exists(bonding.BONDING_NAME2NUMERIC_PATH)
                        else
-                       '../static/usr/share/vdsm/bonding-name2numeric.json')
+                       ALTERNATIVE_BONDING_NAME2NUMERIC)
     def test_get_bonding_option_numeric_val_exists(self):
         mode_num = bonding.BONDING_MODES_NAME_TO_NUMBER["balance-rr"]
         self.assertNotEqual(bonding.get_bonding_option_numeric_val(
@@ -301,7 +303,7 @@ class TestNetinfo(TestCaseBase):
                        bonding.BONDING_NAME2NUMERIC_PATH
                        if os.path.exists(bonding.BONDING_NAME2NUMERIC_PATH)
                        else
-                       '../static/usr/share/vdsm/bonding-name2numeric.json')
+                       ALTERNATIVE_BONDING_NAME2NUMERIC)
     def test_get_bonding_option_numeric_val_does_not_exists(self):
         mode_num = bonding.BONDING_MODES_NAME_TO_NUMBER["balance-rr"]
         self.assertEqual(bonding.get_bonding_option_numeric_val(

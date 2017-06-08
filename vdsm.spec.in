@@ -1102,8 +1102,6 @@ exit 0
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
 %dir %{_localstatedir}/log/%{vdsm_name}/import
 %defattr(644, %{vdsm_user}, %{vdsm_group}, -)
-%{_datadir}/%{vdsm_name}/bonding-defaults.json
-%{_datadir}/%{vdsm_name}/bonding-name2numeric.json
 %{_datadir}/%{vdsm_name}/lvmlocal.conf
 
 %files python
@@ -1302,6 +1300,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sanlock.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sebool.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/multipath.py*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/bond_defaults.py*
 %{python_sitelib}/%{vdsm_name}/tool/dump_volume_chains.py*
 %{python_sitelib}/%{vdsm_name}/tool/network.py*
 %{python_sitelib}/%{vdsm_name}/tool/register.py*
@@ -1346,6 +1345,7 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/tests/devices/parsing
 %dir %{_datadir}/%{vdsm_name}/tests/integration
 %dir %{_datadir}/%{vdsm_name}/tests/network
+%dir %{_datadir}/%{vdsm_name}/tests/network/static
 %{_datadir}/%{vdsm_name}/tests/*.py*
 %{_datadir}/%{vdsm_name}/tests/cpu_info.out
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_intel_E5649.out
@@ -1385,6 +1385,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/network/ip_route_show_table_all.out
 %{_datadir}/%{vdsm_name}/tests/network/netmaskconversions
 %{_datadir}/%{vdsm_name}/tests/network/tc_filter_show.out
+%{_datadir}/%{vdsm_name}/tests/network/static/*.json
 %{_datadir}/%{vdsm_name}/tests/run_tests.sh
 %{_datadir}/%{vdsm_name}/tests/toolTests_abrt-action-save-package-data.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_abrt.conf

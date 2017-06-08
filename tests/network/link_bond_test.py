@@ -26,6 +26,7 @@ from nose.plugins.attrib import attr
 from testlib import VdsmTestCase as TestCaseBase, mock
 
 from .nettestlib import dummy_devices, check_sysfs_bond_permission
+from .nettestlib import ALTERNATIVE_BONDING_DEFAULTS
 
 from vdsm.network.link import iface
 from vdsm.network.link.bond import Bond
@@ -43,7 +44,7 @@ def setup_module():
 @mock.patch.object(sysfs_options, 'BONDING_DEFAULTS',
                    sysfs_options.BONDING_DEFAULTS
                    if os.path.exists(sysfs_options.BONDING_DEFAULTS)
-                   else '../static/usr/share/vdsm/bonding-defaults.json')
+                   else ALTERNATIVE_BONDING_DEFAULTS)
 class LinkBondTests(TestCaseBase):
 
     def test_bond_without_slaves(self):
@@ -206,7 +207,7 @@ class LinkBondTests(TestCaseBase):
 @mock.patch.object(sysfs_options, 'BONDING_DEFAULTS',
                    sysfs_options.BONDING_DEFAULTS
                    if os.path.exists(sysfs_options.BONDING_DEFAULTS)
-                   else '../static/usr/share/vdsm/bonding-defaults.json')
+                   else ALTERNATIVE_BONDING_DEFAULTS)
 class LinkBondSysFSTests(TestCaseBase):
 
     def test_do_not_detach_slaves_while_changing_options(self):

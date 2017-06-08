@@ -46,6 +46,13 @@ from vdsm.utils import CommandPath, memoized, random_iface_name
 from . import dhcp
 from . import firewall
 
+
+ALTERNATIVE_BONDING_DEFAULTS = os.path.join(os.path.dirname(__file__),
+                                            'static',
+                                            'bonding-defaults.json')
+ALTERNATIVE_BONDING_NAME2NUMERIC = os.path.join(os.path.dirname(__file__),
+                                                'static',
+                                                'bonding-name2numeric.json')
 EXT_IP = "/sbin/ip"
 _IPERF3_BINARY = CommandPath('iperf3', '/usr/bin/iperf3')
 
