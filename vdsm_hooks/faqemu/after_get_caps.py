@@ -35,17 +35,18 @@ from vdsm.config import config
 _TESTS = []
 
 
-_PPC64LE_MACHINES = ['pseries', 'pseries-rhel7.2.0']
+_PPC64LE_MACHINES = ['pseries',
+                     'pseries-rhel7.2.0',
+                     'pseries-rhel7.3.0']
 _X86_64_MACHINES = ['pc-i440fx-rhel7.1.0',
                     'rhel6.3.0',
-                    'pc-q35-rhel7.2.0',
+                    'pc-q35-rhel7.3.0',
                     'pc-i440fx-rhel7.0.0',
                     'rhel6.1.0',
                     'rhel6.6.0',
                     'rhel6.2.0',
                     'pc',
-                    'pc-q35-rhel7.0.0',
-                    'pc-q35-rhel7.1.0',
+                    'pc-i440fx-rhel7.3.0',
                     'q35',
                     'pc-i440fx-rhel7.2.0',
                     'rhel6.4.0',
@@ -126,21 +127,7 @@ def x86_64_test():
                      'model_pentium3,model_pentiumpro,model_qemu32,'
                      'model_coreduo,model_core2duo,model_n270,model_Conroe,'
                      'model_Penryn,model_Nehalem,model_Opteron_G1',
-                     'emulatedMachines': ['pc-i440fx-rhel7.1.0',
-                                          'rhel6.3.0',
-                                          'pc-q35-rhel7.2.0',
-                                          'pc-i440fx-rhel7.0.0',
-                                          'rhel6.1.0',
-                                          'rhel6.6.0',
-                                          'rhel6.2.0',
-                                          'pc',
-                                          'pc-q35-rhel7.0.0',
-                                          'pc-q35-rhel7.1.0',
-                                          'q35',
-                                          'pc-i440fx-rhel7.2.0',
-                                          'rhel6.4.0',
-                                          'rhel6.0.0',
-                                          'rhel6.5.0'],
+                     'emulatedMachines': _X86_64_MACHINES,
                      'kvmEnabled': True}
 
     # This is duplicate of the real functionality and is required because we do
@@ -165,7 +152,7 @@ def ppc64le_test():
 
     expected_caps = {'cpuModel': 'POWER 8(fake)',
                      'cpuFlags': 'powernv,model_POWER8',
-                     'emulatedMachines': ['pseries', 'pseries-rhel7.2.0'],
+                     'emulatedMachines': _PPC64LE_MACHINES,
                      'kvmEnabled': True}
 
     _fake_caps_arch(caps, cpuarch.PPC64LE)
