@@ -31,6 +31,9 @@ from vdsm.utils import convertToStr
 from vdsm.virt.utils import isVdsmImage
 
 
+_log = logging.getLogger('virt.vmstats')
+
+
 def produce(vm, first_sample, last_sample, interval):
     """
     Translates vm samples into stats.
@@ -116,7 +119,7 @@ def cpu(stats, first_sample, last_sample, interval):
     if first_sample is None or last_sample is None:
         return None
     if interval <= 0:
-        logging.warning(
+        _log.warning(
             'invalid interval %i when computing CPU stats',
             interval)
         return None
@@ -178,7 +181,7 @@ def cpu_count(stats, sample):
         if vcpu_count != -1:
             stats['vcpuCount'] = vcpu_count
         else:
-            logging.error('Failed to get VM cpu count')
+            _log.error('Failed to get VM cpu count')
 
 
 def send_metrics(vms_stats):
@@ -252,7 +255,7 @@ def send_metrics(vms_stats):
 
         metrics.send(data)
     except KeyError:
-        logging.exception('VM metrics collection failed')
+        _log.exception('VM metrics collection failed')
 
 
 def _nic_traffic(vm_obj, name, model, mac,
@@ -313,7 +316,7 @@ def networks(vm, stats, first_sample, last_sample, interval):
     if first_sample is None or last_sample is None:
         return None
     if interval <= 0:
-        logging.warning(
+        _log.warning(
             'invalid interval %i when computing network stats for vm %s',
             interval, vm.id)
         return None
@@ -369,7 +372,7 @@ def disks(vm, stats, first_sample, last_sample, interval):
                vm_drive.name in last_indexes):
                 # will be None if sampled during recovery
                 if interval <= 0:
-                    logging.warning(
+                    _log.warning(
                         'invalid interval %i when calculating '
                         'stats for vm %s disk %s',
                         interval, vm.id, vm_drive.name)
@@ -389,8 +392,8 @@ def disks(vm, stats, first_sample, last_sample, interval):
                         last_sample, last_indexes[vm_drive.name]))
 
         except AttributeError:
-            logging.exception("Disk %s stats not available",
-                              vm_drive.name)
+            _log.exception("Disk %s stats not available",
+                           vm_drive.name)
 
         disk_stats[vm_drive.name] = drive_stats
 
