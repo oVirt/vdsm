@@ -31,8 +31,8 @@ from weakref import proxy
 
 from imageRepository.formatConverter import DefaultFormatConverter
 
-from vdsm import concurrent
 from vdsm import constants
+from vdsm.common import concurrent
 from vdsm.panic import panic
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se

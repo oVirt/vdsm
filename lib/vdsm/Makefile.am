@@ -28,7 +28,6 @@ dist_vdsmpylib_PYTHON = \
 	client.py \
 	cmdutils.py \
 	commands.py \
-	concurrent.py \
 	containersconnection.py \
 	cpuarch.py \
 	cpuinfo.py \

@@ -32,7 +32,7 @@ from testValidation import slowtest
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 
-from vdsm import concurrent
+from vdsm.common import concurrent
 from vdsm.common import osutils
 import vdsm.common.time
 from vdsm.storage import asyncevent

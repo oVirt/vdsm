@@ -25,7 +25,7 @@ import threading
 import time
 import libvirt
 
-from vdsm import concurrent
+from vdsm.common import concurrent
 from vdsm.common import conv
 from vdsm.common import logutils
 from vdsm.common import response

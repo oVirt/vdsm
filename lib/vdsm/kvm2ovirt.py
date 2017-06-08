@@ -27,8 +27,8 @@ import threading
 
 from ovirt_imageio_common import directio
 
-from vdsm import concurrent
 from vdsm import libvirtconnection
+from vdsm.common import concurrent
 from vdsm.common import time
 from vdsm.password import ProtectedPassword
 

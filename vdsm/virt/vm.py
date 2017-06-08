@@ -42,7 +42,6 @@ from vdsm.common import fileutils
 from vdsm.common import logutils
 from vdsm.common import response
 import vdsm.common.time
-from vdsm import concurrent
 from vdsm import constants
 from vdsm import containersconnection
 from vdsm import cpuarch
@@ -55,6 +54,7 @@ from vdsm import qemuimg
 from vdsm import supervdsm
 from vdsm import utils
 from vdsm.config import config
+from vdsm.common import concurrent
 from vdsm.common import conv
 from vdsm.common.compat import pickle
 from vdsm.common.define import ERROR, NORMAL, doneCode, errCode

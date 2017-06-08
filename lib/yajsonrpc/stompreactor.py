@@ -19,11 +19,11 @@ from collections import deque
 from uuid import uuid4
 import functools
 
-from vdsm import concurrent
 from vdsm import constants
 from vdsm import utils
 from vdsm.config import config
 from vdsm.common import api
+from vdsm.common import concurrent
 from vdsm.common.compat import json
 from vdsm.sslutils import SSLSocket
 from . import JsonRpcClient, JsonRpcServer

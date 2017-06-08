@@ -1101,7 +1101,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/common/*.py*
 %{python_sitelib}/%{vdsm_name}/host/*.py*
 %{python_sitelib}/%{vdsm_name}/common/network/*.py*
-%{python_sitelib}/%{vdsm_name}/concurrent.py*
 %{python_sitelib}/%{vdsm_name}/config.py*
 %{python_sitelib}/%{vdsm_name}/constants.py*
 %{python_sitelib}/%{vdsm_name}/containersconnection.py*

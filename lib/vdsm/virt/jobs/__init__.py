@@ -20,8 +20,8 @@
 
 from __future__ import absolute_import
 
-from vdsm import concurrent
 from vdsm import jobs
+from vdsm.common import concurrent
 
 
 class Job(jobs.Job):

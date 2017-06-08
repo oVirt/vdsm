@@ -38,8 +38,8 @@ import subprocess
 import threading
 
 from vdsm import cmdutils
-from vdsm import concurrent
 from vdsm import constants
+from vdsm.common import concurrent
 from vdsm.common.compat import CPopen
 from vdsm.storage import asyncevent
 from vdsm.storage import asyncutils

@@ -28,9 +28,8 @@ import functools
 import logging
 import threading
 
+from vdsm.common import concurrent
 from vdsm.common import time
-
-from . import concurrent
 
 
 class NotRunning(Exception):

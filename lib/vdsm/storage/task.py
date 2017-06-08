@@ -60,7 +60,7 @@ from vdsm.storage import resourceManager
 
 import uuid
 from weakref import proxy
-from vdsm import concurrent
+from vdsm.common import concurrent
 from vdsm.common.logutils import SimpleLogAdapter
 from vdsm.config import config
 

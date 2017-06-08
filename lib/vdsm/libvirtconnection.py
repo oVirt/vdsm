@@ -27,7 +27,9 @@ import os
 import signal
 
 import libvirt
-from . import concurrent
+
+from vdsm.common import concurrent
+
 from . import utils
 from .password import ProtectedPassword
 from .tool.configurators import passwd

@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,8 +37,8 @@ from testlib import expandPermutations, permutations
 from testlib import start_thread
 from testlib import temporaryPath
 
-from vdsm import concurrent
 from vdsm import constants
+from vdsm.common import concurrent
 from vdsm.storage import check
 from vdsm.storage import asyncevent
 from vdsm.storage import exception

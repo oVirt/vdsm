@@ -24,7 +24,7 @@ import os
 import select
 import threading
 
-from vdsm import concurrent
+from vdsm.common import concurrent
 from vdsm.common.osutils import uninterruptible_poll
 from vdsm.common.osutils import uninterruptible
 from vdsm.common.time import monotonic_time

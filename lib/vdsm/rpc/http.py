@@ -30,7 +30,7 @@ import sys
 
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
-from vdsm import concurrent
+from vdsm.common import concurrent
 from vdsm.common.define import doneCode
 from vdsm.executor import TaskQueue
 import API

@@ -47,10 +47,10 @@ from vdsm.virt.utils import isVdsmImage
 import libvirt
 from vdsm import alignmentScan
 from vdsm import libvirtconnection
-from vdsm import concurrent
 from vdsm import numa
 from vdsm import utils
 from vdsm import supervdsm
+from vdsm.common import concurrent
 from vdsm.common import response
 
 from virt import vm

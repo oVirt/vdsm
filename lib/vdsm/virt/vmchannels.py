@@ -24,7 +24,7 @@ import threading
 import time
 import select
 
-from vdsm import concurrent
+from vdsm.common import concurrent
 from vdsm.common.osutils import uninterruptible_poll
 
 # How many times a reconnect should be performed before a cooldown will be

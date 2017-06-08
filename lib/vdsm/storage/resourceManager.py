@@ -29,8 +29,8 @@ from uuid import uuid4
 
 from six.moves import queue
 
-from vdsm import concurrent
 from vdsm import utils
+from vdsm.common import concurrent
 from vdsm.common.logutils import SimpleLogAdapter
 from vdsm.storage import exception as se
 from vdsm.storage import guarded

@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ from fakelib import FakeLogger
 from testlib import VdsmTestCase, expandPermutations, permutations
 from testValidation import slowtest, stresstest
 
-from vdsm import concurrent
+from vdsm.common import concurrent
 
 
 @expandPermutations

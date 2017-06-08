@@ -26,7 +26,7 @@ This module provides memory profiling.
 import logging
 import threading
 
-from vdsm import concurrent
+from vdsm.common import concurrent
 from vdsm.common.logutils import traceback
 from vdsm.config import config
 

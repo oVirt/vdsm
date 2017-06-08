@@ -22,10 +22,10 @@ import logging
 import threading
 import time
 
-from vdsm import concurrent
 from vdsm import executor
 from vdsm import schedule
 from vdsm import utils
+from vdsm.common import concurrent
 from vdsm.common import pthread
 
 from fakelib import FakeLogger

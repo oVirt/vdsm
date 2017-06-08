@@ -16,7 +16,7 @@ import threading
 from six.moves import queue
 from time import sleep
 
-from vdsm import concurrent
+from vdsm.common import concurrent
 
 
 class ThreadPool:

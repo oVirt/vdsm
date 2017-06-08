@@ -32,7 +32,7 @@ import logging
 import logging.config
 from contextlib import closing
 
-from vdsm import concurrent
+from vdsm.common import concurrent
 from vdsm.common import fileutils
 from vdsm.common import sigutils
 from vdsm.common import time

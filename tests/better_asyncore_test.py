@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 import socket
 from contextlib import closing
 
-from vdsm import concurrent
+from vdsm.common import concurrent
 from yajsonrpc.betterAsyncore import AsyncoreEvent, Reactor
 
 from testlib import VdsmTestCase as TestCaseBase

@@ -36,12 +36,12 @@ import math
 import numbers
 import stat
 
-from vdsm import concurrent
 from vdsm import constants
 from vdsm import jobs
 from vdsm import qemuimg
 from vdsm import supervdsm
 from vdsm import utils
+from vdsm.common import concurrent
 from vdsm.common.threadlocal import vars
 from vdsm.common import api
 from vdsm.config import config

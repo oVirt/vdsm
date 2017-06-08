@@ -21,8 +21,8 @@ import logging
 from yajsonrpc import JsonRpcServer
 from yajsonrpc.stompreactor import StompReactor
 
-from vdsm import concurrent
 from vdsm import executor
+from vdsm.common import concurrent
 from vdsm.config import config
 
 

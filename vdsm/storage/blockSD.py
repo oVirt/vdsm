@@ -34,7 +34,7 @@ from operator import itemgetter
 
 import six
 
-from vdsm import concurrent
+from vdsm.common import concurrent
 from vdsm.common import exception
 from vdsm.common import proc
 from vdsm.common.threadlocal import vars

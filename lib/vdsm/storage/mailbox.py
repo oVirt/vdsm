@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2016 Red Hat, Inc.
+# Copyright 2009-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,8 +36,8 @@ from vdsm.storage import task
 from vdsm.storage.exception import InvalidParameterException
 from vdsm.storage.threadPool import ThreadPool
 
-from vdsm import concurrent
 from vdsm import constants
+from vdsm.common import concurrent
 
 __author__ = "ayalb"
 __date__ = "$Mar 9, 2009 5:25:07 PM$"

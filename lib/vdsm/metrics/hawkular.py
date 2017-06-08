@@ -26,8 +26,8 @@ import threading
 
 import six
 
-from vdsm import concurrent
 from vdsm.common import compat
+from vdsm.common import concurrent
 from vdsm.config import config
 
 try:

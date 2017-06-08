@@ -26,10 +26,10 @@ import os
 import signal
 import subprocess
 
-from vdsm import concurrent
 from vdsm.network import cmd
 from vdsm.network import errors as ne
 from vdsm.network.link import iface as linkiface
+from vdsm.common import concurrent
 from vdsm.common.cache import memoized
 from vdsm.common.cmdutils import CommandPath
 from vdsm.common.fileutils import rm_file
