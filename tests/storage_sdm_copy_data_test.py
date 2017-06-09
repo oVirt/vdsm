@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,15 +39,14 @@ from testlib import wait_for_job
 from vdsm import jobs
 from vdsm import qemuimg
 from vdsm.common import exception
+from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
 from vdsm.storage import resourceManager as rm
+from vdsm.storage import volume
 from vdsm.storage import workarounds
-
-from storage import blockVolume, volume
-
-import storage.sdm.api.copy_data
+from vdsm.storage.sdm.api import copy_data
 
 
 @expandPermutations
@@ -69,7 +68,7 @@ class TestCopyDataDIV(VdsmTestCase):
             rm = FakeResourceManager()
             with MonkeyPatchScope([
                 (guarded, 'context', fake_guarded_context()),
-                (storage.sdm.api.copy_data, 'sdCache', env.sdcache),
+                (copy_data, 'sdCache', env.sdcache),
                 (blockVolume, 'rm', rm),
             ]):
                 # Create existing volume - may use compat 0.10 or 1.1.
@@ -126,7 +125,7 @@ class TestCopyDataDIV(VdsmTestCase):
                           img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
             dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
                         img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
-            job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
+            job = copy_data.Job(job_id, 0, source, dest)
 
             job.run()
             wait_for_job(job)
@@ -161,7 +160,7 @@ class TestCopyDataDIV(VdsmTestCase):
                               img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
                 dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
                             img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
-                job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
+                job = copy_data.Job(job_id, 0, source, dest)
                 job.run()
                 wait_for_job(job)
                 self.assertEqual(sorted(self.expected_locks(src_vol, dst_vol)),
@@ -193,7 +192,7 @@ class TestCopyDataDIV(VdsmTestCase):
                           img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
             dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
                         img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
-            job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
+            job = copy_data.Job(job_id, 0, source, dest)
 
             job.run()
             wait_for_job(job)
@@ -230,7 +229,7 @@ class TestCopyDataDIV(VdsmTestCase):
                           img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
             dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
                         img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
-            job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
+            job = copy_data.Job(job_id, 0, source, dest)
             job.run()
             wait_for_job(job)
             self.assertEqual(jobs.STATUS.DONE, job.status)
@@ -265,7 +264,7 @@ class TestCopyDataDIV(VdsmTestCase):
             fake_convert = FakeQemuConvertChecker(src_vol, dst_vol,
                                                   error=error)
             with MonkeyPatchScope([(qemuimg, 'convert', fake_convert)]):
-                job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
+                job = copy_data.Job(job_id, 0, source, dest)
                 job.run()
 
             self.assertEqual(final_status, job.status)
@@ -290,7 +289,7 @@ class TestCopyDataDIV(VdsmTestCase):
                                                   wait_for_abort=True)
             with MonkeyPatchScope([(qemuimg, 'convert', fake_convert)]):
                 job_id = make_uuid()
-                job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
+                job = copy_data.Job(job_id, 0, source, dest)
                 t = start_thread(job.run)
                 if not fake_convert.ready_event.wait(1):
                     raise RuntimeError("Timeout waiting for thread")
@@ -315,7 +314,7 @@ class TestCopyDataDIV(VdsmTestCase):
                         img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID,
                         generation=generation + 1)
             job_id = make_uuid()
-            job = storage.sdm.api.copy_data.Job(job_id, 0, source, dest)
+            job = copy_data.Job(job_id, 0, source, dest)
             job.run()
             self.assertEqual(jobs.STATUS.FAILED, job.status)
             self.assertEqual(se.GenerationMismatch.code, job.error.code)

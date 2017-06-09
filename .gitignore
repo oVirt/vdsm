@@ -31,6 +31,10 @@ lib/vdsm/api/vdsm-api.html
 lib/vdsm/config.py
 lib/vdsm/constants.py
 lib/vdsm/dsaversion.py
+lib/vdsm/storage/lvm.env
+lib/vdsm/storage/protect/spmprotect.sh
+lib/vdsm/storage/vdsm-lvm.rules
+lib/vdsm/storage/vdsm_lvm_rules.template
 lib/vdsm/tool/validate_ovirt_certs.py
 lib/vdsm/vdsm.conf.sample
 results.log
@@ -69,10 +73,6 @@ vdsm-*.tar.gz
 vdsm.spec
 vdsm/mk_sysprep_floppy
 vdsm/sos/vdsm.py
-vdsm/storage/lvm.env
-vdsm/storage/vdsm-lvm.rules
-vdsm/storage/vdsm_lvm_rules.template
-vdsm/storage/protect/spmprotect.sh
 vdsm/vdscli.py
 vdsm/vdsm-gencerts.sh
 vdsm/vdsm-sosplugin.py

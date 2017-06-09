@@ -62,6 +62,8 @@ from vdsm.host import caps
 from vdsm.network import api as net_api
 from vdsm.storage import fileUtils
 from vdsm.storage import outOfProcess as oop
+from vdsm.storage import sd
+from vdsm.storage import sdc
 from vdsm.virt import guestagent
 from vdsm.virt import libvirtxml
 from vdsm.virt import metadata
@@ -84,9 +86,6 @@ from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound, SOURCE_ATTR
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
 
-# local imports. TODO: move to vdsm.storage
-from storage import sd
-from storage import sdc
 
 # A libvirt constant for undefined cpu quota
 _NO_CPU_QUOTA = 0

@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,13 +34,12 @@ from testlib import wait_for_job
 
 from vdsm import jobs
 from vdsm import qemuimg
+from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
-
-from storage import blockVolume
-from storage.sdm import volume_info
-from storage.sdm.api import amend_volume, copy_data
+from vdsm.storage.sdm import volume_info
+from vdsm.storage.sdm.api import amend_volume, copy_data
 
 
 def failure(*args, **kwargs):

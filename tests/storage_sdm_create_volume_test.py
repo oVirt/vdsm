@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,11 +31,9 @@ from vdsm.common import exception
 from vdsm import jobs
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import fileVolume
 from vdsm.storage import resourceManager as rm
-
-from storage import fileVolume
-
-import storage.sdm.api.create_volume
+from vdsm.storage.sdm.api import create_volume
 
 
 class FakeDomainManifest(object):
@@ -96,20 +94,19 @@ class CreateVolumeTests(VdsmTestCase):
         host_id = 1
         sd_manifest = FakeDomainManifest(make_uuid())
         vol_info = _get_vol_info()
-        vol_info_obj = storage.sdm.api.create_volume.CreateVolumeInfo(vol_info)
+        vol_info_obj = create_volume.CreateVolumeInfo(vol_info)
         return dict(job_id=job_id, host_id=host_id, sd_manifest=sd_manifest,
                     vol_info=vol_info_obj)
 
     @contextmanager
     def _fake_env(self):
         self.rm = FakeResourceManager()
-        with MonkeyPatchScope([(storage.sdm.api.create_volume, 'rm',
-                                self.rm)]):
+        with MonkeyPatchScope([(create_volume, 'rm', self.rm)]):
             yield
 
     def test_create_volume(self):
         args = self._get_args()
-        job = storage.sdm.api.create_volume.Job(**args)
+        job = create_volume.Job(**args)
 
         with self._fake_env():
             job.run()
@@ -136,7 +133,7 @@ class CreateVolumeTests(VdsmTestCase):
 
         args = self._get_args()
         args['sd_manifest'].acquireDomainLock = error
-        job = storage.sdm.api.create_volume.Job(**args)
+        job = create_volume.Job(**args)
         job.run()
         wait_for_job(job)
         self.assertEqual(jobs.STATUS.FAILED, job.status)
@@ -150,11 +147,11 @@ class CreateVolumeInfoTests(VdsmTestCase):
         info = _get_vol_info()
         del info['sd_id']
         self.assertRaises(exception.MissingParameter,
-                          storage.sdm.api.create_volume.CreateVolumeInfo, info)
+                          create_volume.CreateVolumeInfo, info)
 
     def test_default_parameter(self):
         info = _get_vol_info()
-        info_obj = storage.sdm.api.create_volume.CreateVolumeInfo(info)
+        info_obj = create_volume.CreateVolumeInfo(info)
         self.assertEqual('', info_obj.description)
         self.assertEqual(None, info_obj.initial_size)
         self.assertIsNone(info_obj.parent)
@@ -163,7 +160,7 @@ class CreateVolumeInfoTests(VdsmTestCase):
         info = _get_vol_info()
         info['vol_format'] = 'foo'
         self.assertRaises(se.InvalidParameterException,
-                          storage.sdm.api.create_volume.CreateVolumeInfo, info)
+                          create_volume.CreateVolumeInfo, info)
 
 
 @expandPermutations
@@ -175,10 +172,10 @@ class ParentVolumeInfoTests(VdsmTestCase):
     def test_incomplete_params_raises(self, params):
         self.assertRaises(
             exception.MissingParameter,
-            storage.sdm.api.create_volume.ParentVolumeInfo, params)
+            create_volume.ParentVolumeInfo, params)
 
     def test_complete_params(self):
         params = dict(vol_id='foo', img_id='bar')
-        obj = storage.sdm.api.create_volume.ParentVolumeInfo(params)
+        obj = create_volume.ParentVolumeInfo(params)
         self.assertEqual(params['vol_id'], obj.vol_id)
         self.assertEqual(params['img_id'], obj.img_id)

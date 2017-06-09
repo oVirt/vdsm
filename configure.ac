@@ -397,7 +397,12 @@ AC_OUTPUT([
 	lib/vdsm/network/tc/Makefile
 	lib/vdsm/profiling/Makefile
 	lib/vdsm/rpc/Makefile
+	lib/vdsm/storage/imageRepository/Makefile
 	lib/vdsm/storage/Makefile
+	lib/vdsm/storage/protect/Makefile
+	lib/vdsm/storage/sdm/Makefile
+	lib/vdsm/storage/sdm/api/Makefile
+	lib/vdsm/storage/vdsm_lvm_rules.template
 	lib/vdsm/supervdsm_api/Makefile
 	lib/vdsm/tool/Makefile
 	lib/vdsm/tool/configurators/Makefile
@@ -424,12 +429,6 @@ AC_OUTPUT([
 	tests/virttests/Makefile
 	vdsm/Makefile
 	vdsm/sos/Makefile
-	vdsm/storage/Makefile
-	vdsm/storage/imageRepository/Makefile
-	vdsm/storage/protect/Makefile
-	vdsm/storage/sdm/Makefile
-	vdsm/storage/sdm/api/Makefile
-	vdsm/storage/vdsm_lvm_rules.template
 	vdsm/virt/Makefile
 	vdsm_hooks/Makefile
 	vdsm_hooks/allocate_net/Makefile

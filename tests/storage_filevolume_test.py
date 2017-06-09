@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ from testlib import make_uuid
 from vdsm.config import config
 from vdsm.constants import GIB
 from vdsm.storage import constants as sc
-import storage.fileVolume as fileVolume
+from vdsm.storage import fileVolume
 
 
 class GetDomUuidFromVolumePathTests(TestCaseBase):

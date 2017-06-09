@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,16 +35,15 @@ from testlib import wait_for_job
 
 from vdsm import jobs
 from vdsm import qemuimg
+from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
+from vdsm.storage import image
+from vdsm.storage import merge
 from vdsm.storage import resourceManager as rm
-
-from storage import image
-from storage import merge
-from storage import blockVolume, volume
-
-import storage.sdm.api.merge
+from vdsm.storage import volume
+from vdsm.storage.sdm.api import merge as api_merge
 
 
 class FakeImage(object):
@@ -104,7 +103,7 @@ class TestMergeSubchain(VdsmTestCase):
                                  top_id=top_vol.volUUID,
                                  base_generation=0)
             subchain = merge.SubchainInfo(subchain_info, 0)
-            job = storage.sdm.api.merge.Job(job_id, subchain)
+            job = api_merge.Job(job_id, subchain)
             job.run()
             wait_for_job(job)
             self.assertEqual(job.status, jobs.STATUS.DONE)
@@ -149,7 +148,7 @@ class TestMergeSubchain(VdsmTestCase):
                                  top_id=top_vol.volUUID,
                                  base_generation=0)
             subchain = merge.SubchainInfo(subchain_info, 0)
-            job = storage.sdm.api.merge.Job(job_id, subchain)
+            job = api_merge.Job(job_id, subchain)
             job.run()
             self.assertEqual(job.status, jobs.STATUS.FAILED)
             self.assertEqual(type(job.error), se.prepareIllegalVolumeError)
@@ -189,7 +188,7 @@ class TestMergeSubchain(VdsmTestCase):
             # We already tested that subchain validate does the right thing,
             # here we test that this job care to call subchain validate.
             subchain.validate = fail
-            job = storage.sdm.api.merge.Job(job_id, subchain)
+            job = api_merge.Job(job_id, subchain)
             job.run()
             wait_for_job(job)
             self.assertEqual(job.status, jobs.STATUS.FAILED)

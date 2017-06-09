@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,10 @@
 import os
 import uuid
 
+from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
 from vdsm.storage import clusterlock
+from vdsm.storage import sd
 
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase, recorded
@@ -34,7 +36,6 @@ from storagetestlib import (
     fake_file_env
 )
 
-from storage import sd, blockSD
 
 MB = 1048576
 

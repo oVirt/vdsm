@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,16 +38,15 @@ from testlib import VdsmTestCase
 
 from vdsm import cmdutils
 from vdsm import qemuimg
+from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import fileVolume
 from vdsm.storage import guarded
+from vdsm.storage import image
+from vdsm.storage import merge
 from vdsm.storage import resourceManager as rm
-
-from storage import blockVolume
-from storage import fileVolume
-from storage import merge
-from storage import image
-from storage import volume
+from vdsm.storage import volume
 
 MB = 1024 ** 2
 GB = 1024 ** 3

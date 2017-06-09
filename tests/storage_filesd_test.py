@@ -31,11 +31,10 @@ from testlib import expandPermutations
 from testlib import namedTemporaryDir
 from testlib import permutations
 
+from vdsm.storage import fileSD
 from vdsm.storage import fileUtils
 from vdsm.storage import outOfProcess as oop
-
-from storage import fileSD
-from storage import sd
+from vdsm.storage import sd
 
 
 class TestingFileStorageDomainManifest(fileSD.FileStorageDomainManifest):

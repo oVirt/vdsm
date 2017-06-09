@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ from contextlib import contextmanager
 import os
 
 from vdsm import utils
+from vdsm.storage import blockSD
 from vdsm.storage import exception as se
 from vdsm.storage import constants as sc
 from vdsm.storage import lvm as real_lvm
@@ -33,8 +34,6 @@ from storagefakelib import FakeResourceManager
 from storagefakelib import FakeStorageDomainCache
 from storagetestlib import FakeSD
 from storagetestlib import FakeVolume
-
-from storage import blockSD
 
 
 MB = 1024 ** 2

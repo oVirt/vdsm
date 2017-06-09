@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ from contextlib import contextmanager
 from six.moves import queue
 
 from vdsm.storage import exception as se
+from vdsm.storage import monitor
 
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
@@ -36,7 +37,6 @@ from testlib import expandPermutations, permutations
 from testlib import make_config
 from testlib import maybefail
 
-from storage import monitor
 
 MONITOR_INTERVAL = 0.2
 CYCLE_TIMEOUT = 5.0

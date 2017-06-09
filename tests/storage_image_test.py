@@ -23,7 +23,7 @@ from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase as TestCaseBase
 
 from vdsm.storage import constants as sc
-from storage import image
+from vdsm.storage import image
 
 GB_IN_BLK = 1024**3 // 512
 

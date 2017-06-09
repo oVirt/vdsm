@@ -16,6 +16,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+SUBDIRS = imageRepository protect sdm
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
@@ -27,6 +28,8 @@ dist_vdsmstorage_PYTHON = \
 	asyncutils.py \
 	blkdiscard.py \
 	blockdev.py \
+	blockSD.py \
+	blockVolume.py \
 	check.py \
 	clusterlock.py \
 	compat.py \
@@ -37,33 +40,68 @@ dist_vdsmstorage_PYTHON = \
 	dispatcher.py \
 	exception.py \
 	fallocate.py \
+	fileSD.py \
 	fileUtils.py \
+	fileVolume.py \
 	fuser.py \
 	fsutils.py \
+	glusterSD.py \
+	glusterVolume.py \
 	guarded.py \
 	hba.py \
+	hsm.py \
+	image.py \
 	imageSharing.py \
 	imagetickets.py \
 	iscsi.py \
 	iscsiadm.py \
+	localFsSD.py \
 	lvm.py \
 	mailbox.py \
+	merge.py \
 	misc.py \
+	monitor.py \
 	mount.py \
 	multipath.py \
+	nfsSD.py \
 	operation.py \
 	outOfProcess.py \
 	persistent.py \
 	qcow2.py \
+	resourceFactories.py \
 	resourceManager.py \
 	rwlock.py \
+	sd.py \
+	sdc.py \
 	securable.py \
+	sp.py \
+	spbackends.py \
+	storageServer.py \
 	sysfs.py \
 	task.py \
 	taskManager.py \
 	threadPool.py \
 	types.py \
+	volume.py \
 	volumemetadata.py \
 	workarounds.py \
 	xlease.py \
 	$(NULL)
+
+dist_vdsmexec_SCRIPTS = \
+	curl-img-wrap \
+	fc-scan \
+	$(NULL)
+
+nodist_vdsmstorage_DATA = \
+	lvm.env \
+	$(NULL)
+
+EXTRA_DIST = \
+	lvm.env.in \
+	$(NULL)
+
+all: vdsm-lvm.rules
+
+vdsm-lvm.rules: vdsm_lvm_rules.template
+	python $< > $@

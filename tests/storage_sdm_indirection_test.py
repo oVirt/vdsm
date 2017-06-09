@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,11 +19,14 @@
 
 from contextlib import contextmanager
 
+from vdsm.storage import blockSD
+from vdsm.storage import blockVolume
+from vdsm.storage import fileSD
+from vdsm.storage import fileVolume
+
 from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 from testlib import recorded
-
-from storage import blockSD, fileSD, fileVolume, blockVolume
 
 
 class FakeDomainManifest(object):

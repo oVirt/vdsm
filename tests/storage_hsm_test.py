@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,8 +31,7 @@ from storagetestlib import make_file_volume
 from vdsm import qemuimg
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
-
-from storage import hsm
+from vdsm.storage import hsm
 
 
 class FakeHSM(hsm.HSM):

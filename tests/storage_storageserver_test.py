@@ -21,10 +21,10 @@
 from monkeypatch import MonkeyPatch
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
-from storage.storageServer import GlusterFSConnection
-from storage.storageServer import IscsiConnection
-from storage.storageServer import MountConnection
-from storage import storageServer
+from vdsm.storage import storageServer
+from vdsm.storage.storageServer import GlusterFSConnection
+from vdsm.storage.storageServer import IscsiConnection
+from vdsm.storage.storageServer import MountConnection
 
 from vdsm.gluster import cli as gluster_cli
 from vdsm.gluster import exception as ge

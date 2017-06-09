@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,13 +29,15 @@ from storagetestlib import fake_block_env, fake_file_env
 
 from vdsm import qemuimg
 from vdsm.config import config
+from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import fileVolume
+from vdsm.storage import image
 from vdsm.storage import misc
+from vdsm.storage import sd
 from vdsm.storage.volumemetadata import VolumeMetadata
-
-from storage import image, sd, blockVolume, fileVolume
-from storage.sdm.api import create_volume
+from vdsm.storage.sdm.api import create_volume
 
 
 class ExpectedFailure(Exception):

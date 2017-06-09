@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,8 @@ from monkeypatch import MonkeyPatchScope
 
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
-from storage import image, volume
+from vdsm.storage import image
+from vdsm.storage import volume
 
 
 MB = 1024 ** 2

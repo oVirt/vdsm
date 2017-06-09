@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2015 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ from monkeypatch import MonkeyPatch
 from testValidation import xfail
 from testlib import VdsmTestCase
 
-from storage import blockSD
+from vdsm.storage import blockSD
 from vdsm.storage import lvm
 from vdsm import constants
 

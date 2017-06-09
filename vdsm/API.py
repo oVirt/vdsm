@@ -43,14 +43,14 @@ from vdsm.common import validate
 from vdsm.common import conv
 from vdsm.host import api as hostapi
 from vdsm.host import caps
+# TODO fix name conflict and use from vdsm.storage import sd
+import vdsm.storage.sd
 from vdsm.storage import clusterlock
+from vdsm.storage import image
 from vdsm.storage import misc
 from vdsm.storage import constants as sc
 from vdsm.virt import migration
 from vdsm.virt import secret
-import storage.volume
-import storage.sd
-import storage.image
 from vdsm.common.compat import pickle
 from vdsm.common.define import doneCode, errCode
 from vdsm.config import config
@@ -805,12 +805,12 @@ class Image(APIBase):
     BLANK_UUID = sc.BLANK_UUID
 
     class DiskTypes:
-        UNKNOWN = storage.image.UNKNOWN_DISK_TYPE
-        SYSTEM = storage.image.SYSTEM_DISK_TYPE
-        DATA = storage.image.DATA_DISK_TYPE
-        SHARED = storage.image.SHARED_DISK_TYPE
-        SWAP = storage.image.SWAP_DISK_TYPE
-        TEMP = storage.image.TEMP_DISK_TYPE
+        UNKNOWN = image.UNKNOWN_DISK_TYPE
+        SYSTEM = image.SYSTEM_DISK_TYPE
+        DATA = image.DATA_DISK_TYPE
+        SHARED = image.SHARED_DISK_TYPE
+        SWAP = image.SWAP_DISK_TYPE
+        TEMP = image.TEMP_DISK_TYPE
 
     def __init__(self, UUID, spUUID, sdUUID):
         APIBase.__init__(self)
@@ -936,21 +936,21 @@ class StorageDomain(APIBase):
     ctorArgs = ['storagedomainID']
 
     class Types:
-        UNKNOWN = storage.sd.UNKNOWN_DOMAIN
-        NFS = storage.sd.NFS_DOMAIN
-        FCP = storage.sd.FCP_DOMAIN
-        ISCSI = storage.sd.ISCSI_DOMAIN
-        LOCALFS = storage.sd.LOCALFS_DOMAIN
-        CIFS = storage.sd.CIFS_DOMAIN
-        POSIXFS = storage.sd.POSIXFS_DOMAIN
-        GLUSTERFS = storage.sd.GLUSTERFS_DOMAIN
+        UNKNOWN = vdsm.storage.sd.UNKNOWN_DOMAIN
+        NFS = vdsm.storage.sd.NFS_DOMAIN
+        FCP = vdsm.storage.sd.FCP_DOMAIN
+        ISCSI = vdsm.storage.sd.ISCSI_DOMAIN
+        LOCALFS = vdsm.storage.sd.LOCALFS_DOMAIN
+        CIFS = vdsm.storage.sd.CIFS_DOMAIN
+        POSIXFS = vdsm.storage.sd.POSIXFS_DOMAIN
+        GLUSTERFS = vdsm.storage.sd.GLUSTERFS_DOMAIN
 
     class Classes:
-        DATA = storage.sd.DATA_DOMAIN
-        ISO = storage.sd.ISO_DOMAIN
-        BACKUP = storage.sd.BACKUP_DOMAIN
+        DATA = vdsm.storage.sd.DATA_DOMAIN
+        ISO = vdsm.storage.sd.ISO_DOMAIN
+        BACKUP = vdsm.storage.sd.BACKUP_DOMAIN
 
-    BLANK_UUID = storage.sd.BLANK_UUID
+    BLANK_UUID = vdsm.storage.sd.BLANK_UUID
 
     def __init__(self, UUID):
         APIBase.__init__(self)

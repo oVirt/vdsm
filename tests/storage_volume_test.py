@@ -33,8 +33,8 @@ from testlib import VdsmTestCase
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import resourceManager as rm
+from vdsm.storage import volume
 
-from storage import volume
 
 HOST_ID = 1
 MB = 1048576

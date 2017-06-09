@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2016 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,16 +25,16 @@ from vdsm import qemuimg
 from vdsm.config import config
 from vdsm.constants import MEGAB
 from vdsm.constants import GIB
+from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage.blockVolume import BlockVolume
 
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
 from storagetestlib import fake_env
 from storagetestlib import qemu_pattern_write
 from storagetestlib import make_qemu_chain
-from storage import blockVolume
-from storage.blockVolume import BlockVolume
 from testlib import make_config
 from testlib import make_uuid
 from testlib import permutations, expandPermutations

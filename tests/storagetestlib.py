@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,14 +29,19 @@ from monkeypatch import MonkeyPatchScope
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import qemuimg
+from vdsm.storage import blockSD
+from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import fileSD
+from vdsm.storage import fileVolume
 from vdsm.storage import guarded
+from vdsm.storage import hsm
+from vdsm.storage import image
 from vdsm.storage import outOfProcess as oop
-
-from storage import sd, blockSD, fileSD, image, blockVolume, fileVolume, volume
-from storage import hsm
-from storage.sdm import volume_artifacts
+from vdsm.storage import sd
+from vdsm.storage import volume
+from vdsm.storage.sdm import volume_artifacts
 
 
 NR_PVS = 2       # The number of fake PVs we use to make a fake VG by default

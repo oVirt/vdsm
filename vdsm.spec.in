@@ -731,7 +731,7 @@ install -dDm 0755 %{buildroot}@VDSMLOGDIR@
 touch %{buildroot}@VDSMLOGDIR@/{mom.log,supervdsm.log,vdsm.log}
 
 # Install the lvm rules
-install -Dm 0644 vdsm/storage/vdsm-lvm.rules \
+install -Dm 0644 lib/vdsm/storage/vdsm-lvm.rules \
                  %{buildroot}%{_udevrulesdir}/12-vdsm-lvm.rules
 
 install -Dm 0755 init/systemd/systemd-vdsmd %{buildroot}%{_libdir}/systemd/systemd-vdsmd
@@ -885,8 +885,6 @@ exit 0
 %dir %{_sysconfdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/mom.d
 %dir %{_datadir}/%{vdsm_name}
-%dir %{_datadir}/%{vdsm_name}/storage
-%dir %{_datadir}/%{vdsm_name}/storage/imageRepository
 %dir %{_datadir}/%{vdsm_name}/virt
 %{_datadir}/%{vdsm_name}/clientIF.py*
 %{_datadir}/%{vdsm_name}/daemonAdapter
@@ -923,42 +921,6 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/kvm2ovirt
 %{_libexecdir}/%{vdsm_name}/fallocate
 %{_libexecdir}/%{vdsm_name}/wait_for_ipv4s
-%{_datadir}/%{vdsm_name}/storage/__init__.py*
-%{_datadir}/%{vdsm_name}/storage/blockSD.py*
-%{_datadir}/%{vdsm_name}/storage/blockVolume.py*
-%{_datadir}/%{vdsm_name}/storage/monitor.py*
-%{_datadir}/%{vdsm_name}/storage/fileSD.py*
-%{_datadir}/%{vdsm_name}/storage/fileVolume.py*
-%{_datadir}/%{vdsm_name}/storage/glusterSD.py*
-%{_datadir}/%{vdsm_name}/storage/glusterVolume.py*
-%{_datadir}/%{vdsm_name}/storage/hsm.py*
-%{_datadir}/%{vdsm_name}/storage/image.py*
-%{_datadir}/%{vdsm_name}/storage/localFsSD.py*
-%{_datadir}/%{vdsm_name}/storage/lvm.env
-%{_datadir}/%{vdsm_name}/storage/merge.py*
-%{_datadir}/%{vdsm_name}/storage/nfsSD.py*
-%{_datadir}/%{vdsm_name}/storage/resourceFactories.py*
-%{_datadir}/%{vdsm_name}/storage/sdc.py*
-%{_datadir}/%{vdsm_name}/storage/sd.py*
-%{_datadir}/%{vdsm_name}/storage/sp.py*
-%{_datadir}/%{vdsm_name}/storage/spbackends.py*
-%{_datadir}/%{vdsm_name}/storage/storageServer.py*
-%{_datadir}/%{vdsm_name}/storage/volume.py*
-%{_datadir}/%{vdsm_name}/storage/imageRepository/__init__.py*
-%{_datadir}/%{vdsm_name}/storage/imageRepository/formatConverter.py*
-%{_datadir}/%{vdsm_name}/storage/sdm/__init__.py*
-%{_datadir}/%{vdsm_name}/storage/sdm/volume_artifacts.py*
-%{_datadir}/%{vdsm_name}/storage/sdm/volume_info.py*
-%{_datadir}/%{vdsm_name}/storage/sdm/api/__init__.py*
-%{_datadir}/%{vdsm_name}/storage/sdm/api/amend_volume.py*
-%{_datadir}/%{vdsm_name}/storage/sdm/api/base.py*
-%{_datadir}/%{vdsm_name}/storage/sdm/api/copy_data.py*
-%{_datadir}/%{vdsm_name}/storage/sdm/api/create_volume.py*
-%{_datadir}/%{vdsm_name}/storage/sdm/api/merge.py*
-%{_datadir}/%{vdsm_name}/storage/sdm/api/move_device.py*
-%{_datadir}/%{vdsm_name}/storage/sdm/api/reduce_domain.py*
-%{_datadir}/%{vdsm_name}/storage/sdm/api/sparsify_volume.py*
-%{_datadir}/%{vdsm_name}/storage/sdm/api/update_volume.py*
 %{_libexecdir}/%{vdsm_name}/spmprotect.sh
 %{_libexecdir}/%{vdsm_name}/spmstop.sh
 %dir %{_libexecdir}/%{vdsm_name}/hooks
@@ -1093,6 +1055,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/tool/configurators
 %dir %{python_sitelib}/%{vdsm_name}/profiling
 %dir %{python_sitelib}/%{vdsm_name}/storage
+%dir %{python_sitelib}/%{vdsm_name}/storage/imageRepository
 %dir %{python_sitelib}/%{vdsm_name}/supervdsm_api
 %dir %{python_sitelib}/%{vdsm_name}/virt
 %dir %{python_sitelib}/%{vdsm_name}/virt/vmdevices
@@ -1199,6 +1162,8 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/asyncutils.py*
 %{python_sitelib}/%{vdsm_name}/storage/blkdiscard.py*
 %{python_sitelib}/%{vdsm_name}/storage/blockdev.py*
+%{python_sitelib}/%{vdsm_name}/storage/blockSD.py*
+%{python_sitelib}/%{vdsm_name}/storage/blockVolume.py*
 %{python_sitelib}/%{vdsm_name}/storage/check.py*
 %{python_sitelib}/%{vdsm_name}/storage/clusterlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/compat.py*
@@ -1209,35 +1174,68 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/dispatcher.py*
 %{python_sitelib}/%{vdsm_name}/storage/exception.py*
 %{python_sitelib}/%{vdsm_name}/storage/fallocate.py*
+%{python_sitelib}/%{vdsm_name}/storage/fileSD.py*
 %{python_sitelib}/%{vdsm_name}/storage/fileUtils.py*
+%{python_sitelib}/%{vdsm_name}/storage/fileVolume.py*
 %{python_sitelib}/%{vdsm_name}/storage/fuser.py*
 %{python_sitelib}/%{vdsm_name}/storage/fsutils.py*
+%{python_sitelib}/%{vdsm_name}/storage/glusterSD.py*
+%{python_sitelib}/%{vdsm_name}/storage/glusterVolume.py*
 %{python_sitelib}/%{vdsm_name}/storage/guarded.py*
 %{python_sitelib}/%{vdsm_name}/storage/hba.py*
+%{python_sitelib}/%{vdsm_name}/storage/hsm.py*
+%{python_sitelib}/%{vdsm_name}/storage/image.py*
 %{python_sitelib}/%{vdsm_name}/storage/imageSharing.py*
 %{python_sitelib}/%{vdsm_name}/storage/imagetickets.py*
 %{python_sitelib}/%{vdsm_name}/storage/iscsi.py*
 %{python_sitelib}/%{vdsm_name}/storage/iscsiadm.py*
+%{python_sitelib}/%{vdsm_name}/storage/localFsSD.py*
+%{python_sitelib}/%{vdsm_name}/storage/lvm.env
 %{python_sitelib}/%{vdsm_name}/storage/lvm.py*
 %{python_sitelib}/%{vdsm_name}/storage/mailbox.py*
+%{python_sitelib}/%{vdsm_name}/storage/merge.py*
 %{python_sitelib}/%{vdsm_name}/storage/misc.py*
+%{python_sitelib}/%{vdsm_name}/storage/monitor.py*
 %{python_sitelib}/%{vdsm_name}/storage/mount.py*
 %{python_sitelib}/%{vdsm_name}/storage/multipath.py*
+%{python_sitelib}/%{vdsm_name}/storage/nfsSD.py*
 %{python_sitelib}/%{vdsm_name}/storage/operation.py*
 %{python_sitelib}/%{vdsm_name}/storage/outOfProcess.py*
 %{python_sitelib}/%{vdsm_name}/storage/persistent.py*
 %{python_sitelib}/%{vdsm_name}/storage/qcow2.py*
+%{python_sitelib}/%{vdsm_name}/storage/resourceFactories.py*
 %{python_sitelib}/%{vdsm_name}/storage/resourceManager.py*
 %{python_sitelib}/%{vdsm_name}/storage/rwlock.py*
+%{python_sitelib}/%{vdsm_name}/storage/sd.py*
+%{python_sitelib}/%{vdsm_name}/storage/sdc.py*
 %{python_sitelib}/%{vdsm_name}/storage/securable.py*
+%{python_sitelib}/%{vdsm_name}/storage/sp.py*
+%{python_sitelib}/%{vdsm_name}/storage/spbackends.py*
+%{python_sitelib}/%{vdsm_name}/storage/storageServer.py*
 %{python_sitelib}/%{vdsm_name}/storage/sysfs.py*
 %{python_sitelib}/%{vdsm_name}/storage/task.py*
 %{python_sitelib}/%{vdsm_name}/storage/taskManager.py*
 %{python_sitelib}/%{vdsm_name}/storage/threadPool.py*
 %{python_sitelib}/%{vdsm_name}/storage/types.py*
+%{python_sitelib}/%{vdsm_name}/storage/volume.py*
 %{python_sitelib}/%{vdsm_name}/storage/volumemetadata.py*
 %{python_sitelib}/%{vdsm_name}/storage/workarounds.py*
 %{python_sitelib}/%{vdsm_name}/storage/xlease.py*
+%{python_sitelib}/%{vdsm_name}/storage/imageRepository/__init__.py*
+%{python_sitelib}/%{vdsm_name}/storage/imageRepository/formatConverter.py*
+%{python_sitelib}/%{vdsm_name}/storage/sdm/__init__.py*
+%{python_sitelib}/%{vdsm_name}/storage/sdm/volume_artifacts.py*
+%{python_sitelib}/%{vdsm_name}/storage/sdm/volume_info.py*
+%{python_sitelib}/%{vdsm_name}/storage/sdm/api/__init__.py*
+%{python_sitelib}/%{vdsm_name}/storage/sdm/api/amend_volume.py*
+%{python_sitelib}/%{vdsm_name}/storage/sdm/api/base.py*
+%{python_sitelib}/%{vdsm_name}/storage/sdm/api/copy_data.py*
+%{python_sitelib}/%{vdsm_name}/storage/sdm/api/create_volume.py*
+%{python_sitelib}/%{vdsm_name}/storage/sdm/api/merge.py*
+%{python_sitelib}/%{vdsm_name}/storage/sdm/api/move_device.py*
+%{python_sitelib}/%{vdsm_name}/storage/sdm/api/reduce_domain.py*
+%{python_sitelib}/%{vdsm_name}/storage/sdm/api/sparsify_volume.py*
+%{python_sitelib}/%{vdsm_name}/storage/sdm/api/update_volume.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/__init__.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/hwinfo.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/mkimage.py*
