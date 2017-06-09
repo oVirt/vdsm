@@ -146,9 +146,11 @@ Requires: libvirt-lock-sanlock
 # TODO: Depend on libvirt >= 3.2.0-4.el7 once available.
 %if 0%{?rhel}
 # For https://bugzilla.redhat.com/1317429
+# TODO: Change to 3.2.0-9.el7 once it is available.
 Requires: libvirt-daemon-kvm >= 2.0.0-10.el7_3.4
 Requires: libvirt-python >= 2.0.0-2
 %else # fedora
+# TODO: Change to 3.3.0-1 once it is available.
 Requires: libvirt-daemon-kvm >= 2.2.0-1
 Requires: libvirt-python >= 2.2.0-1
 %endif

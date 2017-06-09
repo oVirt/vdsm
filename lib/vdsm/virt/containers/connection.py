@@ -81,8 +81,13 @@ class Connection(object):
     def domainListGetStats(self, doms, flags):
         raise NotImplementedError  # not yet!
 
-    def createXML(self, domxml, flags):
+    def defineXML(self, domxml, flags):
         return domain.Domain.create(domxml)
+
+    def undefine(self):
+        # For libvirt API compatibility, container domains are always transient
+        # so this is no-op here.
+        pass
 
     def getLibVersion(self):
         return 0x001002018  # TODO

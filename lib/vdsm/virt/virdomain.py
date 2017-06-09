@@ -43,8 +43,31 @@ class Disconnected(object):
         return False
 
     def __getattr__(self, name):
-        raise NotConnectedError("VM %r was not started yet or was shut down"
+        raise NotConnectedError("VM %r was not defined yet or was undefined"
                                 % self.vmid)
+
+
+class Defined(Disconnected):
+    # Defined, but not running.
+
+    def __init__(self, vmid, dom):
+        """
+        :param vmid: VM id
+        :type vmid: basestring
+        :param dom: libvirt domain accessor created by `VM` class
+        :type dom: libvirt.virDomain instance (or its wrapper)
+        """
+        super(Defined, self).__init__(vmid)
+        self._dom = dom
+
+    def metadata(self, *args, **kwargs):
+        return self._dom.metadata(*args, **kwargs)
+
+    def setMetadata(self, *args, **kwargs):
+        self._dom.setMetadata(*args, **kwargs)
+
+    def undefine(self):
+        self._dom.undefine()
 
 
 class Notifying(object):

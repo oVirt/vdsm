@@ -323,6 +323,9 @@ class FakeMigratingDomain(object):
     def migrateToURI3(self, duri, params, flags):
         self.migrations += 1
 
+    def isPersistent(self):
+        return True
+
 
 class FakeVM(object):
 
@@ -365,6 +368,9 @@ class FakeVM(object):
 
     def prepare_migration(self):
         pass
+
+    def isPersistent(self):
+        return True
 
 
 class FakeProgress(object):
