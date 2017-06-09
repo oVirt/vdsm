@@ -19,6 +19,7 @@
 #
 from __future__ import absolute_import
 
+from vdsm.virt import metadata
 from vdsm.virt import vmxml
 
 from . import core
@@ -136,15 +137,6 @@ _DEVICE_MAPPING = {
 }
 
 
-# those are the entries in the devices section of the libvirt domain XML
-# that have no counterpart in our object hierarchy. Thus we just skip them.
-_UNHANDLED_DEVICES = (
-    'emulator',  # this is not even a proper device!
-    'channel',
-    'input',
-)
-
-
 _LIBVIRT_TO_OVIRT_NAME = {
     'memballoon': hwclass.BALLOON,
 }
@@ -152,8 +144,6 @@ _LIBVIRT_TO_OVIRT_NAME = {
 
 def identify_from_xml_elem(dev_elem):
     dev_type = dev_elem.tag
-    if dev_type in _UNHANDLED_DEVICES:
-        raise core.SkipDevice
     dev_name = _LIBVIRT_TO_OVIRT_NAME.get(dev_type, dev_type)
     if dev_name not in _DEVICE_MAPPING:
         raise core.SkipDevice
@@ -171,4 +161,39 @@ def dev_map_from_dev_spec_map(dev_spec_map, log):
         for dev in dev_spec_map[dev_type]:
             dev_map[dev_type].append(dev_class(log, **dev))
 
+    return dev_map
+
+
+def dev_map_from_domain_xml(vmid, dom_desc, log):
+    """
+    Create a device map - same format as empty_dev_map from a domain XML
+    representation. The domain XML is accessed through a Domain Descriptor.
+
+    :param vmid: UUID of the vm whose devices need to be initialized.
+    :type vmid: basestring
+    :param dom_desc: domain descriptor to provide access to the domain XML
+    :type dom_desc: `class DomainDescriptor`
+    :param log: logger instance to use for messages, and to pass to device
+    objects.
+    :type log: logger instance, as returned by logging.getLogger()
+    :return: map of initialized devices, map of devices needing refresh.
+    :rtype: A device map, in the same format as empty_dev_map() would return.
+    """
+
+    dev_map = empty_dev_map()
+    for dev_elem in vmxml.children(dom_desc.devices):
+        dev_alias = core.find_device_alias(dev_elem)
+        try:
+            dev_type, dev_class = identify_from_xml_elem(dev_elem)
+        except core.SkipDevice:
+            log.debug(
+                'skipping unhandled device: %r %r', dev_elem.tag, dev_alias
+            )
+            continue
+        dev_meta = metadata.device_from_xml_tree(
+            dom_desc.metadata, alias=dev_alias
+        )
+        dev_meta['vmid'] = vmid
+        dev_obj = dev_class.from_xml_tree(log, dev_elem, dev_meta)
+        dev_map[dev_type].append(dev_obj)
     return dev_map
