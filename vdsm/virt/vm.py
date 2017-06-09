@@ -1825,7 +1825,7 @@ class Vm(object):
                 if dev.custom:
                     yield dev
 
-    def _appendDevices(self, domxml):
+    def _process_devices(self):
         """
         Create all devices and run before_device_create hook script for devices
         with custom properties
@@ -1833,20 +1833,26 @@ class Vm(object):
         The resulting device xml is cached in dev._deviceXML.
         """
 
-        for devType in self._devices:
-            for dev in self._devices[devType]:
+        devices_xml = vmdevices.common.empty_dev_map()
+        for dev_type, dev_objs in self._devices.items():
+            for dev in dev_objs:
                 try:
-                    deviceXML = vmxml.format_xml(dev.getXML())
+                    dev_xml = dev.getXML()
                 except vmdevices.core.SkipDevice:
                     self.log.info('Skipping device %s.', dev.device)
                     continue
 
+                deviceXML = vmxml.format_xml(dev_xml)
+
                 if getattr(dev, "custom", {}):
                     deviceXML = hooks.before_device_create(
                         deviceXML, self._custom, dev.custom)
+                    dev_xml = vmxml.parse_xml(deviceXML)
 
                 dev._deviceXML = deviceXML
-                domxml.appendDeviceXML(deviceXML)
+
+                devices_xml[dev_type].append(dev_xml)
+        return devices_xml
 
     def _prepare_hugepages(self):
         if not config.getboolean('performance', 'use_dynamic_hugepages'):
@@ -1932,7 +1938,10 @@ class Vm(object):
         if self.arch == cpuarch.PPC64:
             domxml.appendEmulator()
 
-        self._appendDevices(domxml)
+        devices_xml = self._process_devices()
+        for dev_type, dev_objs in devices_xml.items():
+            for dev in dev_objs:
+                domxml._devices.appendChild(etree_element=dev)
 
         for dev_objs in self._devices.values():
             for dev in dev_objs:
