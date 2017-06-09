@@ -463,6 +463,10 @@ class Drive(core.Base):
 
         return diskelem
 
+    def get_extra_xmls(self):
+        for elem in self.getLeasesXML():
+            yield elem
+
     def getReplicaXML(self):
         disk = vmxml.Element(
             "disk",

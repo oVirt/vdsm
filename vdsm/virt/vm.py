@@ -1934,17 +1934,10 @@ class Vm(object):
 
         self._appendDevices(domxml)
 
-        for graphDev in self._devices[hwclass.GRAPHICS]:
-            if graphDev.device == 'spice':
-                domxml._devices.appendChild(graphDev.getSpiceVmcChannelsXML())
-                break
-
-        if serial_console is not None:
-            domxml._devices.appendChild(serial_console.getSerialDeviceXML())
-
-        for drive in self._devices[hwclass.DISK][:]:
-            for leaseElement in drive.getLeasesXML():
-                domxml._devices.appendChild(leaseElement)
+        for dev_objs in self._devices.values():
+            for dev in dev_objs:
+                for elem in dev.get_extra_xmls():
+                    domxml._devices.appendChild(etree_element=elem)
 
         return domxml.toxml()
 

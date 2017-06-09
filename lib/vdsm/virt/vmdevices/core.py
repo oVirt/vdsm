@@ -119,6 +119,19 @@ class Base(vmxml.Device):
         """
         pass
 
+    def get_extra_xmls(self):
+        """
+        Get the auxiliary devices which could be needed by this device.
+        Depending on configuration, some devices may require auxiliary devices
+        to work properly. Examples are serial device for Console, or SPICE
+        channel for Graphics.
+        This method serves as a uniform way to provide them.
+
+        It returns an iterable with elements of the same type as the return
+        value of getXML.
+        """
+        return []
+
 
 class Generic(Base):
 
@@ -297,6 +310,10 @@ class Console(Base):
                 if dev['device'] == hwclass.CONSOLE and \
                         not dev.get('alias'):
                     dev['alias'] = alias
+
+    def get_extra_xmls(self):
+        if self.isSerial:
+            yield self.getSerialDeviceXML()
 
 
 class Controller(Base):

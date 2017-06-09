@@ -207,6 +207,10 @@ class Graphics(Base):
                         dev['tlsPort'] = tlsPort
                     break
 
+    def get_extra_xmls(self):
+        if self.device == 'spice':
+            yield self.getSpiceVmcChannelsXML()
+
 
 def isSupportedDisplayType(vmParams):
     display = vmParams.get('display')
