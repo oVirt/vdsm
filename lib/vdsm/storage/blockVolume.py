@@ -518,9 +518,10 @@ class BlockVolume(volume.Volume):
                 operation.run()
         else:
             # Create hardlink to template and its meta file
-            cls.log.info("Request to create snapshot %s/%s of volume %s/%s",
-                         imgUUID, volUUID, srcImgUUID, srcVolUUID)
-            volParent.clone(volPath, volFormat)
+            cls.log.info("Request to create snapshot %s/%s of volume %s/%s "
+                         "with size %s (blocks)",
+                         imgUUID, volUUID, srcImgUUID, srcVolUUID, size)
+            volParent.clone(volPath, volFormat, size)
 
         with dom.acquireVolumeMetadataSlot(
                 volUUID, sc.VOLUME_MDNUMBLKS) as slot:

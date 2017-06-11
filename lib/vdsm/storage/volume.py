@@ -960,7 +960,7 @@ class Volume(object):
         self.setParent(backingVol)
         self.recheckIfLeaf()
 
-    def clone(self, dstPath, volFormat):
+    def clone(self, dstPath, volFormat, size_blk):
         """
         Clone self volume to the specified dst_image_dir/dst_volUUID
         """
@@ -974,26 +974,38 @@ class Volume(object):
             wasleaf = True
             self.setInternal()
         try:
-            self.prepare(rw=False)
+            # TODO: remove the prepare logic completely when qemu-img 2.10 is
+            # released and require it in the spec.
+            # See: https://bugzilla.redhat.com/1535582
+            prepare_needed = not qemuimg.supports_unsafe_create()
+            if prepare_needed:
+                self.prepare(rw=False)
             self.log.debug('cloning volume %s to %s', self.volumePath,
                            dstPath)
             parent = getBackingVolumePath(self.imgUUID, self.volUUID)
             domain = sdCache.produce(self.sdUUID)
+            # Using unsafe=True in order to create volumes when the backing
+            # chain isn't available. In this case qemu-img cannot get the size,
+            # hence we have to provide it.
             operation = qemuimg.create(
                 dstPath,
+                size=size_blk * sc.BLOCK_SIZE,
                 backing=parent,
                 format=sc.fmt2str(volFormat),
                 qcow2Compat=domain.qcow2_compat(),
-                backingFormat=sc.fmt2str(self.getFormat()))
+                backingFormat=sc.fmt2str(self.getFormat()),
+                unsafe=True)
             operation.run()
-            self.teardown(self.sdUUID, self.volUUID)
+            if prepare_needed:
+                self.teardown(self.sdUUID, self.volUUID)
         except Exception as e:
             self.log.exception('cannot clone image %s volume %s to %s',
                                self.imgUUID, self.volUUID, dstPath)
             # FIXME: might race with other clones
             if wasleaf:
                 self.setLeaf()
-            self.teardown(self.sdUUID, self.volUUID)
+            if prepare_needed:
+                self.teardown(self.sdUUID, self.volUUID)
             raise se.CannotCloneVolume(self.volumePath, dstPath, str(e))
 
     def _shareLease(self, dstImgPath):

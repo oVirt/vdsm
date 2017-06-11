@@ -467,9 +467,10 @@ class FileVolume(volume.Volume):
                 operation.run()
         else:
             # Create hardlink to template and its meta file
-            cls.log.info("Request to create snapshot %s/%s of volume %s/%s",
-                         imgUUID, volUUID, srcImgUUID, srcVolUUID)
-            volParent.clone(volPath, volFormat)
+            cls.log.info("Request to create snapshot %s/%s of volume %s/%s "
+                         "with size %s (blocks)",
+                         imgUUID, volUUID, srcImgUUID, srcVolUUID, size)
+            volParent.clone(volPath, volFormat, size)
 
         # Forcing the volume permissions in case one of the tools we use
         # (dd, qemu-img, etc.) will mistakenly change the file permissiosn.
