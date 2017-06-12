@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 
 import errno
+import io
 import os
 import re
 import xml.etree.ElementTree as etree
@@ -140,7 +141,7 @@ class Connection(object):
 
         device_xml = None
         try:
-            with open(xml_path, 'r') as device_xml_file:
+            with io.open(xml_path, 'rb') as device_xml_file:
                 device_xml = device_xml_file.read()
         except IOError as e:
             if e.errno == errno.ENOENT:
@@ -155,14 +156,14 @@ class Connection(object):
         def string_to_stub(xml_template, index):
             filled_template = xml_template.format(index)
             final_xml = filled_template.replace('  ', '').replace('\n', '')
-            return VirNodeDeviceStub(final_xml)
+            return VirNodeDeviceStub(final_xml.encode('utf-8'))
 
         fakelib_path = os.path.realpath(__file__)
         dir_name = os.path.split(fakelib_path)[0]
         xml_path = os.path.join(dir_name, 'devices', 'data', 'devicetree.xml')
 
         ret = []
-        with open(xml_path, 'r') as device_xml_file:
+        with open(xml_path, 'rb') as device_xml_file:
             for device in device_xml_file:
                 ret.append(VirNodeDeviceStub(device))
 
@@ -206,9 +207,14 @@ class VirNodeDeviceStub(object):
             self._name = None
             self.capability = None
         else:
-            self._name = re.search('(?<=<name>).*?(?=</name>)', xml).group(0)
+            self._name = re.search(
+                b'(?<=<name>).*?(?=</name>)',
+                xml
+            ).group(0)
             self.capability = re.search(
-                '(?<=capability type=[\'"]).*?(?=[\'"]>)', xml).group(0)
+                b'(?<=capability type=[\'"]).*?(?=[\'"]>)',
+                xml
+            ).group(0).decode('utf-8')
 
     def XMLDesc(self, flags=0):
         if self.xml is None:
@@ -218,7 +224,7 @@ class VirNodeDeviceStub(object):
     def name(self):
         if self.xml is None:
             raise Error(libvirt.VIR_ERR_NO_NODE_DEVICE)
-        return self._name
+        return self._name.decode('utf-8')
 
     # unfortunately, in real environment these are the most problematic calls
     # but in order to test them, we would put host in danger of removing
