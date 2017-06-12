@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from contextlib import contextmanager
+
 import vmfakecon as fake
 
 from vdsm.virt import libvirtxml
@@ -392,6 +394,8 @@ DEVICES_BY_CAPS = {'': {u'pci_0000_00_1b_0':
 
 class Connection(fake.Connection):
 
+    USE_HOSTDEV_TREE = False
+
     inst = None
 
     @classmethod
@@ -408,19 +412,25 @@ class Connection(fake.Connection):
         ]
 
     def listAllDevices(self, flags=0):
+        node_devs = self._virNodeDevices
+        if self.USE_HOSTDEV_TREE:
+            node_devs = self.__hostdevtree()
+
         if not flags:
-            return self._virNodeDevices
+            return node_devs
         else:
-            return [device for device in self._virNodeDevices if
+            return [device for device in node_devs if
                     flags & hostdev._LIBVIRT_DEVICE_FLAGS[device.capability]]
 
-    def listAllDevices2(self, flags=0):
-        if not flags:
-            return self.__hostdevtree()
-        else:
-            devices = self.__hostdevtree()
-            return [device for device in devices if
-                    flags & hostdev._LIBVIRT_DEVICE_FLAGS[device.capability]]
+    @classmethod
+    @contextmanager
+    def use_hostdev_tree(cls):
+        old_value = cls.USE_HOSTDEV_TREE
+        cls.USE_HOSTDEV_TREE = True
+        try:
+            yield
+        finally:
+            cls.USE_HOSTDEV_TREE = old_value
 
 
 def _fake_totalvfs(device_name):
@@ -496,7 +506,6 @@ class HostdevTests(TestCaseBase):
                             issubset(devices.keys()))
 
 
-@MonkeyClass(Connection, 'listAllDevices', Connection.listAllDevices2)
 @MonkeyClass(libvirtconnection, 'get', Connection.get)
 @MonkeyClass(hostdev, '_sriov_totalvfs', _fake_totalvfs)
 @MonkeyClass(hostdev, '_pci_header_type', lambda _: 0)
@@ -504,9 +513,11 @@ class HostdevTests(TestCaseBase):
 class HostdevPerformanceTests(TestCaseBase):
 
     def test_3k_storage_devices(self):
-        devices = hostdev.list_by_caps()
-        self.assertEqual(len(devices),
-                         len(libvirtconnection.get().listAllDevices2()))
+        with Connection.use_hostdev_tree():
+            self.assertEqual(
+                len(hostdev.list_by_caps()),
+                len(libvirtconnection.get().listAllDevices())
+            )
 
 
 @expandPermutations
