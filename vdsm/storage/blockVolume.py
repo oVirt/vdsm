@@ -623,8 +623,10 @@ class BlockVolume(volume.Volume):
             try:
                 if postZero:
                     try:
+                        log.info('Zeroing device %s (size=%d)', vol_path, size)
                         misc.ddWatchCopy("/dev/zero", vol_path,
                                          vars.task.aborting, int(size))
+                        log.info('Zero device %s', vol_path)
                     except exception.ActionStopped:
                         raise
                     except Exception:

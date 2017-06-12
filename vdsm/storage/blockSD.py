@@ -236,8 +236,9 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs, discard):
         size = multipath.getDeviceSize(lvm.lvDmDev(sdUUID, volUUID))
 
         try:
+            log.info('Zeroing device %s (size=%d)', path, size)
             misc.ddWatchCopy("/dev/zero", path, aborting, size)
-            log.debug('Zero volume %s task %s completed', volUUID, taskid)
+            log.info('Zero device %s', path)
         except Exception:
             log.exception('Zero volume %s task %s failed', volUUID, taskid)
             # LV zeroing failed, so we must not remove it. The administrator
