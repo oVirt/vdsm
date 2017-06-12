@@ -44,6 +44,7 @@ from vdsm.network.link import iface as linkiface, bond as linkbond
 from vdsm.network.link.bond import sysfs_options_mapper
 from vdsm.network.link.bond.sysfs_options import BONDING_DEFAULTS
 from vdsm.network.link.iface import random_iface_name
+from vdsm.network.lldpad import lldptool
 from vdsm.network.netinfo import routes
 from vdsm.network.netlink import monitor
 from vdsm.common.cache import memoized
@@ -375,6 +376,19 @@ def veth_pair(prefix='veth_', max_length=15):
     finally:
         # the peer device is removed by the kernel
         linkDel(left_side)
+
+
+@contextmanager
+def enable_lldp_on_ifaces(ifaces, rx_only):
+    for interface in ifaces:
+        lldptool.enable_lldp_on_iface(interface, rx_only)
+    # We must give a chance for the LLDP messages to be received.
+    time.sleep(2)
+    try:
+        yield
+    finally:
+        for interface in ifaces:
+            lldptool.disable_lldp_on_iface(interface)
 
 
 def check_brctl():

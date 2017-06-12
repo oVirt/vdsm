@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,32 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = configurators ip link lldp lldpad netinfo netlink ovs tc nm netswitch
-
 include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmnetworkdir = $(vdsmpylibdir)/network
-dist_vdsmnetwork_PYTHON = \
-	__init__.py \
-	api.py \
-	errors.py \
-	canonicalize.py \
-	cmd.py \
-	connectivity.py \
-	dhclient_monitor.py \
-	driverloader.py \
-	ifacetracking.py \
-	ifacquire.py \
-	initializer.py \
-	ipwrapper.py \
-	kernelconfig.py \
-	legacy_switch.py \
-	models.py \
-	netconfpersistence.py \
-	netrestore.py \
-	netupgrade.py \
-	py2to3.py \
-	restore_net_config.py \
-	sourceroute.py \
-	sysctl.py \
-	$(NULL)
+vdsmnetworklldpdir = $(vdsmpylibdir)/network/lldp
+dist_vdsmnetworklldp_PYTHON = *.py
