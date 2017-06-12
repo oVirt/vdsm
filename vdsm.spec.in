@@ -221,6 +221,7 @@ Requires: libselinux-python
 Requires: %{name}-python = %{version}-%{release}
 Requires: %{name}-hook-vmfex-dev = %{version}-%{release}
 Requires: NetworkManager-config-server
+Requires: lldpad
 
 %if 0%{?rhel}
 Requires: python-decorator
@@ -1117,6 +1118,8 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/network/ip
 %dir %{python_sitelib}/%{vdsm_name}/network/link
 %dir %{python_sitelib}/%{vdsm_name}/network/link/bond
+%dir %{python_sitelib}/%{vdsm_name}/network/lldp
+%dir %{python_sitelib}/%{vdsm_name}/network/lldpad
 %dir %{python_sitelib}/%{vdsm_name}/network/netinfo
 %dir %{python_sitelib}/%{vdsm_name}/network/netlink
 %dir %{python_sitelib}/%{vdsm_name}/network/nm
@@ -1185,6 +1188,8 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/ipwrapper.py*
 %{python_sitelib}/%{vdsm_name}/network/link/*.py*
 %{python_sitelib}/%{vdsm_name}/network/link/bond/*.py*
+%{python_sitelib}/%{vdsm_name}/network/lldp/*.py*
+%{python_sitelib}/%{vdsm_name}/network/lldpad/*.py*
 %{python_sitelib}/%{vdsm_name}/network/kernelconfig.py*
 %{python_sitelib}/%{vdsm_name}/network/legacy_switch.py*
 %{python_sitelib}/%{vdsm_name}/network/libvirt.py*

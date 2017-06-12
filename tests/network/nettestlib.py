@@ -39,6 +39,7 @@ from vdsm.network.ipwrapper import (
     addrAdd, linkSet, linkAdd, linkDel, IPRoute2Error, netns_add, netns_delete,
     netns_exec)
 from vdsm.network.link import iface as linkiface, bond as linkbond
+from vdsm.network.lldpad import lldptool
 from vdsm.network.netlink import monitor
 from vdsm.commands import execCmd
 from vdsm.utils import CommandPath, memoized, random_iface_name
@@ -55,6 +56,7 @@ ALTERNATIVE_BONDING_NAME2NUMERIC = os.path.join(os.path.dirname(__file__),
                                                 'bonding-name2numeric.json')
 EXT_IP = "/sbin/ip"
 _IPERF3_BINARY = CommandPath('iperf3', '/usr/bin/iperf3')
+_SYSTEMCTL = CommandPath('systemctl', '/bin/systemctl', '/usr/bin/systemctl')
 
 
 class ExecError(RuntimeError):
@@ -372,6 +374,19 @@ def veth_pair(prefix='veth_', max_length=15):
         linkDel(left_side)
 
 
+@contextmanager
+def enable_lldp_on_ifaces(ifaces, rx_only):
+    for interface in ifaces:
+        lldptool.enable_lldp_on_iface(interface, rx_only)
+    # We must give a chance for the LLDP messages to be received.
+    time.sleep(2)
+    try:
+        yield
+    finally:
+        for interface in ifaces:
+            lldptool.disable_lldp_on_iface(interface)
+
+
 def check_brctl():
     try:
         execCmd([EXT_BRCTL, "show"])
@@ -421,6 +436,14 @@ def requires_iperf3(f):
     def wrapper(*a, **kw):
         _check_iperf()
         return f(*a, **kw)
+    return wrapper
+
+
+def requires_systemctl(function):
+    @functools.wraps(function)
+    def wrapper(*args, **kwargs):
+        _requires_systemctl()
+        return function(*args, **kwargs)
     return wrapper
 
 
@@ -514,3 +537,10 @@ def _has_sysfs_bond_permission():
     except IOError:
         return False
     return True
+
+
+def _requires_systemctl():
+    rc, _, err = execCmd([_SYSTEMCTL.cmd, 'status', 'foo'], raw=True)
+    run_chroot_err = b'Running in chroot, ignoring request'
+    if rc == 1 or run_chroot_err in err:
+        raise SkipTest('systemctl is not available')

@@ -388,6 +388,8 @@ AC_OUTPUT([
 	lib/vdsm/network/ip/Makefile
 	lib/vdsm/network/link/Makefile
 	lib/vdsm/network/link/bond/Makefile
+	lib/vdsm/network/lldp/Makefile
+	lib/vdsm/network/lldpad/Makefile
 	lib/vdsm/network/netinfo/Makefile
 	lib/vdsm/network/netlink/Makefile
 	lib/vdsm/network/nm/Makefile

@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,29 +16,31 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
-SUBDIRS = configurators ip link lldp lldpad netinfo netlink ovs tc nm
+from vdsm.network.lldpad import lldptool
 
-include $(top_srcdir)/build-aux/Makefile.subs
+from . import LldpAPI
 
-vdsmnetworkdir = $(vdsmpylibdir)/network
-dist_vdsmnetwork_PYTHON = \
-	__init__.py \
-	api.py \
-	errors.py \
-	canonicalize.py \
-	connectivity.py \
-	driverloader.py \
-	ifacquire.py \
-	ipwrapper.py \
-	kernelconfig.py \
-	legacy_switch.py \
-	libvirt.py \
-	models.py \
-	netconfpersistence.py \
-	netrestore.py \
-	netswitch.py \
-	sourceroute.py \
-	sourceroutethread.py \
-	utils.py \
-	$(NULL)
+
+class Lldp(LldpAPI):
+
+    @staticmethod
+    def enable_lldp_on_iface(iface, rx_only=True):
+        lldptool.enable_lldp_on_iface(iface, rx_only)
+
+    @staticmethod
+    def disable_lldp_on_iface(iface):
+        lldptool.disable_lldp_on_iface(iface)
+
+    @staticmethod
+    def is_lldp_enabled_on_iface(iface):
+        return lldptool.is_lldp_enabled_on_iface(iface)
+
+    @staticmethod
+    def get_tlvs(iface):
+        return lldptool.get_tlvs(iface)
+
+    @staticmethod
+    def is_active():
+        return lldptool.is_lldpad_service_running()
