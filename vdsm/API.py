@@ -610,6 +610,10 @@ class VM(APIBase):
 
         return self.vm.shutdown(delay, message, reboot, timeout, force)
 
+    @api.method
+    def setDestroyOnReboot(self):
+        return self.vm.set_destroy_on_reboot()
+
     def _createSysprepFloppyFromInf(self, infFileBinary, floppyImage):
         try:
             rc, out, err = commands.execCmd([constants.EXT_MK_SYSPREP_FLOPPY,

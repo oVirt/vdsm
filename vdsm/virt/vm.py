@@ -296,8 +296,10 @@ class Vm(object):
         if 'xml' in params:
             md = metadata.from_xml(params['xml'])
             self._custom['custom'] = md.get('custom', {})
+            self._destroy_on_reboot = md.get('destroy_on_reboot', False)
         else:
             self._custom['custom'] = params.get('custom', {})
+            self._destroy_on_reboot = False
         self.log = SimpleLogAdapter(self.log, {"vmId": self.id})
         self._destroy_requested = threading.Event()
         self._recovery_file = recovery.File(self.id)
@@ -918,6 +920,8 @@ class Vm(object):
             if self.conf.get('volatileFloppy'):
                 self._ejectFloppy()
                 self.log.debug('ejected volatileFloppy')
+            if self._destroy_on_reboot:
+                self.doDestroy(reason=vmexitreason.DESTROYED_ON_REBOOT)
         except Exception:
             self.log.exception("Reboot event failed")
 
@@ -926,6 +930,12 @@ class Vm(object):
             with self._confLock:
                 self.conf['clientIp'] = clientIp
             self._clientPort = clientPort
+
+    def set_destroy_on_reboot(self):
+        # TODO: when https://bugzilla.redhat.com/show_bug.cgi?id=1460677 is
+        # implemented, change to use native libvirt API
+        self._destroy_on_reboot = True
+        self._update_metadata()
 
     @logutils.traceback()
     def _timedDesktopLock(self):
@@ -4412,6 +4422,7 @@ class Vm(object):
             vm['agentChannelName'] = self._agent_channel_name
             if self._guest_agent_api_version is not None:
                 vm['guestAgentAPIVersion'] = self._guest_agent_api_version
+            vm['destroy_on_reboot'] = self._destroy_on_reboot
 
     def _ejectFloppy(self):
         if 'volatileFloppy' in self.conf:
@@ -4545,14 +4556,15 @@ class Vm(object):
 
         return response.success()
 
-    def doDestroy(self, gracefulAttempts=1):
+    def doDestroy(self, gracefulAttempts=1,
+                  reason=vmexitreason.ADMIN_SHUTDOWN):
         for dev in self._customDevices():
             hooks.before_device_destroy(dev._deviceXML, self._custom,
                                         dev.custom)
 
         hooks.before_vm_destroy(self._domain.xml, self._custom)
         with self._shutdownLock:
-            self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
+            self._shutdownReason = reason
         self._destroy_requested.set()
 
         return self.releaseVm(gracefulAttempts)

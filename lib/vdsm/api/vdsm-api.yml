@@ -10039,6 +10039,14 @@ VM.shutdown:
         type: boolean
         added: '3.4'
 
+VM.setDestroyOnReboot:
+    added: '4.2'
+    description: Set trap to shutdown VM on guest-initiated reboot.
+    params:
+    -   description: The UUID of the VM
+        name: vmID
+        type: *UUID
+
 VM.freeze:
     added: '3.6'
     description: Freeze mounted filesystems within the guest (hence guest agent
