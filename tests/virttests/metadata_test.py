@@ -58,7 +58,9 @@ class MetadataTests(XMLTestCase):
         [{'str': 'a'}],
         [{'int': 42}],
         [{'float': 0.333}],
-        [{'str': 'a', 'int': 42, 'float': 0.333}],
+        [{'bool': True}],
+        [{'bool2': False}],
+        [{'str': 'a', 'int': 42, 'float': 0.333, 'bool': True}],
     ])
     def test_roundtrip(self, custom):
         elem = self.md.dump('test', **custom)
@@ -111,12 +113,13 @@ class MetadataTests(XMLTestCase):
   <metadata>
     <ovirt-vm:vm>
       <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+      <ovirt-vm:awesome type="bool">true</ovirt-vm:awesome>
     </ovirt-vm:vm>
   </metadata>
 </domain>'''
         self.assertEqual(
             metadata.from_xml(test_xml),
-            {'version': 4.2}
+            {'version': 4.2, 'awesome': True}
         )
 
     def test_from_xml_with_custom(self):
@@ -213,10 +216,10 @@ class DeviceTests(XMLTestCase):
         ["<vm>"
          "<device id='alias0'>"
          "<foo type='int'>42</foo>"
-         "<beer>true</beer>"
+         "<beer type='bool'>true</beer>"
          "</device>"
          "</vm>",
-         {'foo': 42, 'beer': 'true'}],
+         {'foo': 42, 'beer': True}],
     ])
     def test_get(self, dom_xml, expected_dev):
         dom = FakeDomain.with_metadata(dom_xml)
@@ -235,13 +238,13 @@ class DeviceTests(XMLTestCase):
     ])
     def test_update(self, dom_xml):
         expected_res = {
-            'flag': 'true',
+            'flag': True,
             'mode': 42,
         }
         dom = FakeDomain.with_metadata(dom_xml)
         with metadata.device(dom, id='alias0') as dev:
             dev['mode'] = 42
-            dev['flag'] = 'true'
+            dev['flag'] = True
             dev.pop('removeme', None)
 
         # troubleshooting helper should the test fail

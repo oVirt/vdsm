@@ -55,6 +55,7 @@ import xml.etree.ElementTree as ET
 import libvirt
 import six
 
+from vdsm.common import conv
 from vdsm.common import errors
 from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
@@ -556,7 +557,9 @@ def _elem_to_keyvalue(elem):
     value = elem.text
     data_type = elem.attrib.get('type')
     if data_type is not None:
-        if data_type == 'int':
+        if data_type == 'bool':
+            value = conv.tobool(value)
+        elif data_type == 'int':
             value = int(value)
         elif data_type == 'float':
             value = float(value)
@@ -566,7 +569,9 @@ def _elem_to_keyvalue(elem):
 
 def _keyvalue_to_elem(key, value, elem):
     subelem = ET.SubElement(elem, key)
-    if isinstance(value, int):
+    if isinstance(value, bool):
+        subelem.attrib['type'] = 'bool'
+    elif isinstance(value, int):
         subelem.attrib['type'] = 'int'
     elif isinstance(value, float):
         subelem.attrib['type'] = 'float'
