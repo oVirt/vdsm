@@ -4545,7 +4545,7 @@ class Vm(object):
 
         return response.success()
 
-    def doDestroy(self, gracefulAttempts):
+    def doDestroy(self, gracefulAttempts=1):
         for dev in self._customDevices():
             hooks.before_device_destroy(dev._deviceXML, self._custom,
                                         dev.custom)
