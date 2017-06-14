@@ -66,23 +66,10 @@ class vdsm(Plugin, RedHatPlugin):
     # Make compatible com sos version >= 3
     if not hasattr(Plugin, 'addCopySpec'):
         addCopySpec = Plugin.add_copy_spec
-        addCopySpecLimit = Plugin.add_copy_spec_limit
         collectExtOutput = Plugin.add_cmd_output
         getOption = Plugin.get_option
         addForbiddenPath = Plugin.add_forbidden_path
         addStringAsFile = Plugin.add_string_as_file
-
-    def __addCopySpecLogLimit(self, path, logsize=None):
-        """
-        Glob the files in path and ensure that the sorted cumulative
-        list of globbed files isn't larger than logsize in MiB if
-        logsize is supplied.  Otherwise grab all files in path
-        irrespective of their size.
-        """
-        if logsize is not None:
-            self.addCopySpecLimit(path, logsize)
-        else:
-            self.addCopySpec(path)
 
     def collectVdsmCommand(self, name, call, **kwargs):
         try:
@@ -102,7 +89,7 @@ class vdsm(Plugin, RedHatPlugin):
         self.addCopySpec("/tmp/vds_bootstrap*")
         self.addCopySpec("/etc/vdsm/*")
         logsize = self.getOption('logsize')
-        self.__addCopySpecLogLimit("/var/log/vdsm/*", logsize)
+        self.addCopySpec("/var/log/vdsm/*", logsize)
         self._addVdsmRunDir()
         self.addCopySpec("@HOOKSDIR@")  # NOQA: E501 (potentially long line)
         self.addCopySpec("@VDSMLIBDIR@")  # NOQA: E501 (potentially long line)
