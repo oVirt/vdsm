@@ -402,11 +402,13 @@ class Vm(object):
     @property
     def hugepagesz(self):
         custom = self._custom['custom']
-        hugepagesz = int(custom.get('hugepagesz', 0))
-        if hugepagesz == 0:
-            return hugepages.DEFAULT_HUGEPAGESIZE[cpuarch.real()]
+        hugepagesz = int(custom.get('hugepages', 0))
         if hugepagesz not in hugepages.supported():
-            raise RuntimeError("Unsupported hugepages size")
+            default_size = hugepages.DEFAULT_HUGEPAGESIZE[cpuarch.real()]
+            self.log.warning('Invalid hugepage size configured, '
+                             'falling back to the default size %s',
+                             default_size)
+            return default_size
         return hugepagesz
 
     @property
