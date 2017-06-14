@@ -19,7 +19,6 @@
 #
 from __future__ import absolute_import
 
-from vdsm.virt import metadata
 from vdsm.virt import vmxml
 
 from . import core
@@ -164,7 +163,7 @@ def dev_map_from_dev_spec_map(dev_spec_map, log):
     return dev_map
 
 
-def dev_map_from_domain_xml(vmid, dom_desc, log):
+def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
     """
     Create a device map - same format as empty_dev_map from a domain XML
     representation. The domain XML is accessed through a Domain Descriptor.
@@ -173,6 +172,9 @@ def dev_map_from_domain_xml(vmid, dom_desc, log):
     :type vmid: basestring
     :param dom_desc: domain descriptor to provide access to the domain XML
     :type dom_desc: `class DomainDescriptor`
+    :param md_desc: metadata descriptor to provide access to the device
+                    metadata
+    :type md_desc: `class metadata.Descriptor`
     :param log: logger instance to use for messages, and to pass to device
     objects.
     :type log: logger instance, as returned by logging.getLogger()
@@ -190,10 +192,9 @@ def dev_map_from_domain_xml(vmid, dom_desc, log):
                 'skipping unhandled device: %r %r', dev_elem.tag, dev_alias
             )
             continue
-        dev_meta = metadata.device_from_xml_tree(
-            dom_desc.metadata, alias=dev_alias
-        )
-        dev_meta['vmid'] = vmid
+        dev_meta = {'vmid': vmid}
+        with md_desc.device(alias=dev_alias) as dev_data:
+            dev_meta.update(dev_data)
         dev_obj = dev_class.from_xml_tree(log, dev_elem, dev_meta)
         dev_map[dev_type].append(dev_obj)
     return dev_map

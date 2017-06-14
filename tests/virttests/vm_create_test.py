@@ -23,6 +23,7 @@ from __future__ import absolute_import
 import logging
 
 from vdsm.virt import domain_descriptor
+from vdsm.virt import metadata
 from vdsm.virt import vmdevices
 
 from testlib import VdsmTestCase
@@ -117,11 +118,12 @@ class DevicesFromXMLTests(VdsmTestCase):
                 self.assertEqual(dev_objs, [])
 
     def prepare_map(self, dom_xml):
-        dom_desc = domain_descriptor.DomainDescriptor(
-            dom_xml.format(self=self)
-        )
+        xml_str = dom_xml.format(self=self)
+        dom_desc = domain_descriptor.DomainDescriptor(xml_str)
+        md_desc = metadata.Descriptor.from_xml(xml_str)
         return vmdevices.common.dev_map_from_domain_xml(
-            self.vmid, dom_desc, self._log)
+            self.vmid, dom_desc, md_desc, self._log
+        )
 
     def _assert_empty_dev_map(self, dev_map):
         for dev_type, dev_objs in dev_map.items():

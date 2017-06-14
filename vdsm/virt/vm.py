@@ -291,15 +291,19 @@ class Vm(object):
         self.cif = cif
         self._custom = {'vmId': self.id}
         if 'xml' in params:
-            md = metadata.from_xml(params['xml'])
-            self._custom['custom'] = md.get('custom', {})
-            self._destroy_on_reboot = md.get('destroy_on_reboot', False) or \
-                self._domain.on_reboot_config() == 'destroy'
-            for key in ('agentChannelName', 'guestAgentAPIVersion',):
-                value = md.get(key)
-                if value:
-                    self.conf[key] = value
+            self._md_desc = metadata.Descriptor.from_xml(params['xml'])
+            self._custom['custom'] = self._md_desc.custom
+            with self._md_desc.values() as md:
+                self._destroy_on_reboot = (
+                    md.get('destroy_on_reboot', False) or
+                    self._domain.on_reboot_config() == 'destroy'
+                )
+                for key in ('agentChannelName', 'guestAgentAPIVersion',):
+                    value = md.get(key)
+                    if value:
+                        self.conf[key] = value
         else:
+            self._md_desc = metadata.Descriptor()
             self._custom['custom'] = params.get('custom', {})
             self._destroy_on_reboot = False
         self.log = SimpleLogAdapter(self.log, {"vmId": self.id})
@@ -322,8 +326,10 @@ class Vm(object):
         self._guestEventTime = 0
         self._guestCpuRunning = False
         self._guestCpuLock = threading.Lock()
-        if recover and 'xml' in params and 'startTime' in md:
-            self._startTime = md['startTime']
+        if recover and 'xml' in params:
+            with self._md_desc.values() as md:
+                if 'startTime' in md:
+                    self._startTime = md['startTime']
         else:
             self._startTime = time.time() - \
                 float(self.conf.pop('elapsedTimeOffset', 0))
@@ -2106,6 +2112,7 @@ class Vm(object):
         self._guestEventTime = self._startTime
 
         self._updateDomainDescriptor()
+        self._updateMetadataDescriptor()
 
         # REQUIRED_FOR migrate from vdsm-4.16
         #
@@ -4433,16 +4440,18 @@ class Vm(object):
         domainXML = self._dom.XMLDesc(0)
         self._domain = DomainDescriptor(domainXML)
 
+    def _updateMetadataDescriptor(self):
+        # load will overwrite any existing content, as per doc.
+        self._md_desc.load(self._dom)
+
     def _update_metadata(self):
-        with metadata.domain(self._dom, xmlconstants.METADATA_VM_VDSM_ELEMENT,
-                             namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
-                             namespace_uri=xmlconstants.METADATA_VM_VDSM_URI) \
-                as vm:
+        with self._md_desc.values() as vm:
             vm['startTime'] = self.start_time
             vm['agentChannelName'] = self._agent_channel_name
             if self._guest_agent_api_version is not None:
                 vm['guestAgentAPIVersion'] = self._guest_agent_api_version
             vm['destroy_on_reboot'] = self._destroy_on_reboot
+        self._md_desc.dump(self._dom)
 
     def releaseVm(self, gracefulAttempts=1):
         """
