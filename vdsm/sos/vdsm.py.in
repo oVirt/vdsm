@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2014 Red Hat, Inc.
+# Copyright 2008-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,22 +54,9 @@ class vdsm(Plugin, RedHatPlugin):
     # Make compatible com sos version >= 3
     if not hasattr(Plugin, 'addCopySpec'):
         addCopySpec = Plugin.add_copy_spec
-        addCopySpecLimit = Plugin.add_copy_spec_limit
         collectExtOutput = Plugin.add_cmd_output
         getOption = Plugin.get_option
         addForbiddenPath = Plugin.add_forbidden_path
-
-    def __addCopySpecLogLimit(self, path, logsize=None):
-        """
-        Glob the files in path and ensure that the sorted cumulative
-        list of globbed files isn't larger than logsize in MiB if
-        logsize is supplied.  Otherwise grab all files in path
-        irrespective of their size.
-        """
-        if logsize is not None:
-            self.addCopySpecLimit(path, logsize)
-        else:
-            self.addCopySpec(path)
 
     def setup(self):
         os.environ["LVM_SYSTEM_DIR"] = "@VDSMRUNDIR@/lvm"
@@ -83,8 +70,8 @@ class vdsm(Plugin, RedHatPlugin):
         self.addCopySpec("/etc/vdsm/*")
         self.addCopySpec("/etc/vdsm-reg/*")
         logsize = self.getOption('logsize')
-        self.__addCopySpecLogLimit("/var/log/vdsm/*", logsize)
-        self.__addCopySpecLogLimit("/var/log/vdsm-reg/*", logsize)
+        self.addCopySpec("/var/log/vdsm/*", logsize)
+        self.addCopySpec("/var/log/vdsm-reg/*", logsize)
         self._addVdsmRunDir()
         self.addCopySpec("@TRUSTSTORE@")
         self.addCopySpec("@HOOKSDIR@")
