@@ -1440,6 +1440,7 @@ class Vm(object):
             # Filter out any internal keys
             status = dict((k, v) for k, v in self.conf.iteritems()
                           if not k.startswith("_"))
+            status['vmId'] = self.id
             status['guestDiskMapping'] = self.guestAgent.guestDiskMapping
             status['statusTime'] = self._get_status_time()
             return utils.picklecopy(status)
