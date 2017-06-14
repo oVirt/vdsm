@@ -61,6 +61,7 @@ from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
 
 
+_CUSTOM = 'custom'
 _DEVICE = 'device'
 
 
@@ -171,6 +172,19 @@ class Metadata(object):
         for key, value in kwargs.items():
             _keyvalue_to_elem(self._add_ns(key), value, elem)
         return elem
+
+    def find(self, elem, tag):
+        """
+        Namespace-aware wrapper for elem.find()
+        """
+        return elem.find(self._add_ns(tag))
+
+    def findall(self, elem, tag):
+        """
+        Namespace-aware wrapper for elem.findall()
+        """
+        for elt in elem.findall(self._add_ns(tag)):
+            yield elt
 
     def _add_ns(self, tag):
         """
@@ -550,6 +564,267 @@ def device_from_xml_tree(root, **kwargs):
         xmlconstants.METADATA_VM_VDSM_URI
     )
     return metadata_obj.load(dev_elem)
+
+
+class Descriptor(object):
+
+    def __init__(self, name, namespace=None, namespace_uri=None):
+        """
+        Initializes one empty descriptor.
+
+        :param name: metadata group to access
+        :type name: text string
+        :param namespace: metadata namespace to use
+        :type namespace: text string
+        :param namespace_uri: metadata namespace URI to use
+        :type namespace_uri: text string
+
+        Example:
+
+        given this XML:
+
+        test_xml ->
+        <?xml version="1.0" encoding="utf-8"?>
+        <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+          <metadata>
+            <ovirt-vm:vm>
+              <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+              <ovirt-vm:custom>
+                <ovirt-vm:foo>bar</ovirt-vm:foo>
+              </ovirt-vm:custom>
+            </ovirt-vm:vm>
+          </metadata.>
+        </domain>
+
+        md_desc = Descriptor.from_xml(
+            test_xml, 'vm', 'ovirt-vm', 'http://ovirt.org/vm/1.0'
+        )
+        with md_desc.values() as vm:
+          print(vm)
+
+        will emit
+        {
+          'version': 4.2,
+        }
+
+        print(md_desc.custom())
+
+        will emit
+        {
+          'foo': 'bar'
+        }
+        """
+        self._name = name
+        self._namespace = namespace
+        self._namespace_uri = namespace_uri
+        self._values = {}
+        self._custom = {}
+        self._devices = []
+
+    @classmethod
+    def from_xml(cls, xml_str, name, namespace, namespace_uri):
+        """
+        Initializes one descriptor given the namespace-prefixed metadata
+        snippet. Useful in the VM creation flow, when the
+        libvirt Domain is not yet started.
+
+        :param xml_str: domain XML to parse
+        :type name: text string
+        :param name: metadata group to access
+        :type name: text string
+        :param namespace: metadata namespace to use
+        :type namespace: text string
+        :param namespace_uri: metadata namespace URI to use
+        :type namespace_uri: text string
+        """
+        obj = cls(name, namespace, namespace_uri)
+        obj._parse_xml(xml_str)
+        return obj
+
+    def load(self, dom):
+        """
+        Reads the content of the metadata section from the given libvirt
+        domain. This will fully overwrite any existing content stored in the
+        Descriptor. The data in the libvirt domain is not changed at all.
+
+        :param dom: domain to access
+        :type dom: libvirt.Domain
+        """
+        md_xml = "<{tag}/>".format(tag=self._name)
+        try:
+            md_xml = dom.metadata(
+                libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+                self._namespace_uri,
+                0
+            )
+        except libvirt.libvirtError as e:
+            if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN_METADATA:
+                raise
+            # else `md_xml` not reassigned, so we will parse empty section
+            # and that's exactly what we want.
+
+        self._load(vmxml.parse_xml(md_xml))
+
+    def dump(self, dom):
+        """
+        Serializes all the content stored in the descriptor, completely
+        overwriting the content of the libvirt domain.
+
+        :param dom: domain to access
+        :type dom: libvirt.Domain
+        """
+        dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+                        self._build_xml(),
+                        self._namespace,
+                        self._namespace_uri,
+                        0)
+
+    def to_xml(self):
+        """
+        Produces the namespace-prefixed XML representation of the full content
+        of this Descriptor.
+
+        :rtype: string
+        """
+        return self._build_xml(self._namespace, self._namespace_uri)
+
+    @contextmanager
+    def device(self, **kwargs):
+        """
+        Helper context manager to get and update the metadata of
+        a given device.
+        Any change performed to the device metadata is not committed
+        to the underlying libvirt.Domain until dump() is called.
+
+        :param dom: domain to access
+        :type dom: libvirt.Domain
+
+        kwargs: attributes to match to identify the device;
+        values are expected to be strings.
+
+        Example:
+
+        let's start with
+        dom.metadata() ->
+        <vm>
+          <device id="dev0">
+            <foo>bar</foo>
+          </device>
+          <device id="dev1">
+            <number type="int">42</number>
+          </device>
+        </vm>
+
+        let's run this code
+        md_desc = Descriptor('vm')
+        md_desc.load(dom)
+        with md_desc.device(id='dev0') as vm:
+           print(vm)
+
+        will emit
+
+        {
+          'foo': 'bar'
+        }
+        """
+        dev_data = self._find_device(kwargs)
+        if dev_data is None:
+            dev_data = self._add_device(kwargs)
+        data = dev_data.copy()
+        yield data
+        dev_data.clear()
+        dev_data.update(data)
+
+    @contextmanager
+    def values(self):
+        """
+        Helper context manager to get and update the metadata of the vm.
+        Any change performed to the device metadata is not committed
+        to the underlying libvirt.Domain until dump() is called.
+
+        :rtype: Python dict, whose keys are always strings.
+                No nested objects are allowed.
+        """
+        data = self._values.copy()
+        yield data
+        self._values.clear()
+        self._values.update(data)
+
+    @property
+    def custom(self):
+        """
+        Return the custom properties, as dict.
+        The custom properties are sent by Engine and read-only.
+
+        :rtype: Python dict, whose keys are always strings.
+                No nested objects are allowed.
+        """
+        return self._custom.copy()
+
+    def _parse_xml(self, xml_str):
+        root = vmxml.parse_xml(xml_str)
+        md_elem = root.find(
+            './metadata/{%s}%s' % (
+                self._namespace_uri,
+                self._name
+            )
+        )
+        if md_elem is not None:
+            self._load(md_elem, self._namespace, self._namespace_uri)
+
+    def _load(self, md_elem, namespace=None, namespace_uri=None):
+        metadata_obj = Metadata(namespace, namespace_uri)
+        md_data = metadata_obj.load(md_elem)
+        custom_elem = metadata_obj.find(md_elem, _CUSTOM)
+        if custom_elem is not None:
+            self._custom = metadata_obj.load(custom_elem)
+        else:
+            self._custom = {}
+        self._devices = [
+            (dev.attrib.copy(), metadata_obj.load(dev))
+            for dev in metadata_obj.findall(md_elem, _DEVICE)
+        ]
+        md_data.pop(_CUSTOM, None)
+        md_data.pop(_DEVICE, None)
+        self._values = md_data
+
+    def _build_xml(self, namespace=None, namespace_uri=None):
+        metadata_obj = Metadata(namespace, namespace_uri)
+        md_elem = metadata_obj.dump(self._name, **self._values)
+        for (attrs, data) in self._devices:
+            if data:
+                dev_elem = metadata_obj.dump(_DEVICE, **data)
+                dev_elem.attrib.update(attrs)
+                vmxml.append_child(md_elem, etree_child=dev_elem)
+        if self._custom:
+            custom_elem = metadata_obj.dump(_CUSTOM, **self._custom)
+            vmxml.append_child(md_elem, etree_child=custom_elem)
+        return vmxml.format_xml(md_elem, pretty=True)
+
+    def _find_device(self, kwargs):
+        devices = [
+            data
+            for (attrs, data) in self._devices
+            if _match_args(kwargs, attrs)
+        ]
+        if len(devices) > 1:
+            raise MissingDevice()
+        if not devices:
+            return None
+        return devices[0]
+
+    def _add_device(self, attrs):
+        data = {}
+        self._devices.append((attrs.copy(), data))
+        # yes, we want to return a mutable reference.
+        return data
+
+
+def _match_args(kwargs, attrs):
+    for key, value in kwargs.items():
+        if key not in attrs or attrs[key] != value:
+            return False
+    return True
 
 
 def _elem_to_keyvalue(elem):

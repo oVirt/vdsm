@@ -393,6 +393,310 @@ class DeviceTests(XMLTestCase):
         )
 
 
+@expandPermutations
+class DescriptorTests(XMLTestCase):
+
+    def setUp(self):
+        # empty descriptor
+        self.md_desc = metadata.Descriptor(
+            xmlconstants.METADATA_VM_VDSM_ELEMENT,
+            namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
+            namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
+        )
+
+    def test_from_xml(self):
+        test_xml = u"""<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+      <ovirt-vm:custom>
+        <ovirt-vm:foo>bar</ovirt-vm:foo>
+      </ovirt-vm:custom>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>"""
+        md_desc = metadata.Descriptor.from_xml(
+            test_xml,
+            xmlconstants.METADATA_VM_VDSM_ELEMENT,
+            namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
+            namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
+        )
+        with md_desc.values() as vals:
+            self.assertEqual(vals, {'version': 4.2})
+        self.assertEqual(md_desc.custom, {'foo': 'bar'})
+
+    def test_load_overwrites_content(self):
+        test_xml = u"""<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+      <ovirt-vm:custom>
+        <ovirt-vm:foo>bar</ovirt-vm:foo>
+      </ovirt-vm:custom>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>"""
+        md_desc = metadata.Descriptor.from_xml(
+            test_xml,
+            xmlconstants.METADATA_VM_VDSM_ELEMENT,
+            namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
+            namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
+        )
+        dom = FakeDomain()
+        md_desc.load(dom)
+        with md_desc.values() as vals:
+            self.assertEqual(vals, {})
+        self.assertEqual(md_desc.custom, {})
+
+    def test_empty_get(self):
+        dom = FakeDomain()
+        self.md_desc.load(dom)
+        with self.md_desc.values() as vals:
+            self.assertEqual(vals, {})
+
+    def test_context_creates_missing_element(self):
+        # libvirt takes care of namespace massaging
+        expected_xml = u'''<vm />'''
+        dom = FakeDomain()
+        self.md_desc.dump(dom)
+        self.assertXMLEqual(
+            dom.xml.get(xmlconstants.METADATA_VM_VDSM_URI),
+            expected_xml
+        )
+
+    def test_update_domain(self):
+        # libvirt takes care of namespace massaging
+        base_xml = u'''<vm>
+          <foobar type="int">21</foobar>
+        </vm>'''
+        expected_xml = u'''<vm>
+          <foobar type="int">42</foobar>
+          <beer>cold</beer>
+        </vm>'''
+        dom = FakeDomain()
+        dom.xml[xmlconstants.METADATA_VM_VDSM_URI] = base_xml
+        self.md_desc.load(dom)
+        with self.md_desc.values() as vals:
+            vals['foobar'] = 42
+            vals['beer'] = 'cold'
+        self.md_desc.dump(dom)
+        self.assertXMLEqual(
+            dom.xml.get(xmlconstants.METADATA_VM_VDSM_URI),
+            expected_xml
+        )
+
+    @permutations([
+        # dom_xml, expected_dev
+        [None, {}],
+        ["<vm>"
+         "<device id='NOMATCH'>"
+         "<foobar type='int'>42</foobar>"
+         "</device>"
+         "</vm>",
+         {}],
+        ["<vm>"
+         "<device id='alias0'>"
+         "<foobar type='int'>42</foobar>"
+         "</device>"
+         "</vm>",
+         {'foobar': 42}],
+        ["<vm>"
+         "<device id='alias0'>"
+         "<foo type='int'>42</foo>"
+         "<beer type='bool'>true</beer>"
+         "</device>"
+         "</vm>",
+         {'foo': 42, 'beer': True}],
+    ])
+    def test_get_device(self, dom_xml, expected_dev):
+        dom = FakeDomain.with_metadata(dom_xml)
+        self.md_desc.load(dom)
+        with self.md_desc.device(id='alias0') as dev:
+            self.assertEqual(dev, expected_dev)
+
+    @permutations([
+        # dom_xml
+        [None],
+        ["<vm>"
+         "<device id='alias0'>"
+         "<mode>12</mode>"
+         "<removeme>true</removeme>"
+         "</device>"
+         "</vm>"],
+    ])
+    def test_update_device(self, dom_xml):
+        expected_res = {
+            'flag': True,
+            'mode': 42,
+        }
+        dom = FakeDomain.with_metadata(dom_xml)
+        self.md_desc.load(dom)
+        with self.md_desc.device(id='alias0') as dev:
+            dev['mode'] = 42
+            dev['flag'] = True
+            dev.pop('removeme', None)
+        self.md_desc.dump(dom)
+
+        # troubleshooting helper should the test fail
+        print(dom.metadata(
+            libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+            xmlconstants.METADATA_VM_VDSM_URI,
+            0
+        ))
+        # our assertXMLEqual consider the order of XML attributes
+        # significant, while according to XML spec is not.
+        with self.md_desc.device(id='alias0') as dev:
+            self.assertEqual(dev, expected_res)
+
+    def test_clear(self):
+        dom_xml = u'''<vm>
+            <device id='alias0'>
+                <mode>12</mode>
+            </device>
+        </vm>'''
+        expected_xml = u'''<vm/>'''
+        dom = FakeDomain.with_metadata(dom_xml)
+        self.md_desc.load(dom)
+        with self.md_desc.device(id='alias0') as dev:
+            dev.clear()
+        self.md_desc.dump(dom)
+
+        produced_xml = dom.metadata(
+            libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+            xmlconstants.METADATA_VM_VDSM_URI,
+            0
+        )
+        self.assertXMLEqual(produced_xml, expected_xml)
+
+    def test_lookup_partial_attributes(self):
+        dom_xml = u'''<vm>
+            <device id='alias0' type='fancydev'>
+                <mode type="int">42</mode>
+            </device>
+            <device id='alias1'>
+                <mode type="int">33</mode>
+            </device>
+        </vm>'''
+        dom = FakeDomain.with_metadata(dom_xml)
+        self.md_desc.load(dom)
+        with self.md_desc.device(type='fancydev') as dev:
+            self.assertEqual(dev, {'mode': 42})
+
+    def test_lookup_fail(self):
+        dom_xml = u'''<vm>
+            <device id='alias0' type='fancydev'>
+                <mode type="int">42</mode>
+            </device>
+        </vm>'''
+        dom = FakeDomain.with_metadata(dom_xml)
+        self.md_desc.load(dom)
+        with self.md_desc.device(id='alias999', type='fancydev') as dev:
+            self.assertEqual(dev, {})
+
+    def test_lookup_ambiguous_raises(self):
+        dom_xml = u'''<vm>
+            <device type='fancydev'>
+                <mode type="int">1</mode>
+            </device>
+            <device type='fancydev'>
+                <mode type="int">2</mode>
+            </device>
+        </vm>'''
+        dom = FakeDomain.with_metadata(dom_xml)
+        self.md_desc.load(dom)
+        with self.assertRaises(metadata.MissingDevice):
+            with self.md_desc.device(type='fancydev'):
+                pass
+
+    def test_lookup_multiple_devices(self):
+        dom_xml = u'''<vm>
+            <device id='alias0' type='devA' addr='pci_0000_00_1a_0'>
+                <mode type="int">1200</mode>
+            </device>
+            <device id='alias1' type='devA' addr='pci_0000_00_02_0'>
+                <mode type="int">900</mode>
+            </device>
+            <device id='alias2' type='devC' addr='pci_0000_00_1f_2'>
+                <mode type="int">1440</mode>
+            </device>
+        </vm>'''
+        dom = FakeDomain.with_metadata(dom_xml)
+        self.md_desc.load(dom)
+        with self.md_desc.device(addr='pci_0000_00_02_0') as dev:
+            self.assertEqual(dev, {'mode': 900})
+
+    def test_device_from_xml_tree(self):
+        test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+      <ovirt-vm:device id="dev0">
+        <ovirt-vm:foo>bar</ovirt-vm:foo>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+        md_desc = metadata.Descriptor.from_xml(
+            test_xml,
+            xmlconstants.METADATA_VM_VDSM_ELEMENT,
+            namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
+            namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
+        )
+        with md_desc.device(id='dev0') as dev:
+            self.assertEqual(dev, {'foo': 'bar'})
+
+    def test_multiple_device_from_xml_tree(self):
+        test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+      <ovirt-vm:device id="dev0">
+        <ovirt-vm:foo>bar</ovirt-vm:foo>
+      </ovirt-vm:device>
+      <ovirt-vm:device id="dev1">
+        <ovirt-vm:number type="int">42</ovirt-vm:number>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+        md_desc = metadata.Descriptor.from_xml(
+            test_xml,
+            xmlconstants.METADATA_VM_VDSM_ELEMENT,
+            namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
+            namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
+        )
+        found = []
+        for dev_id in ('dev0', 'dev1'):
+            with md_desc.device(id=dev_id) as dev:
+                found.append(dev.copy())
+        self.assertEqual(
+            found,
+            [{'foo': 'bar'}, {'number': 42}]
+        )
+
+    def test_unknown_device_from_xml_tree(self):
+        test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+        md_desc = metadata.Descriptor.from_xml(
+            test_xml,
+            xmlconstants.METADATA_VM_VDSM_ELEMENT,
+            namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
+            namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
+        )
+        with md_desc.device(id='mydev') as dev:
+            self.assertEqual(dev, {})
+
+
 class FakeDomain(object):
 
     @classmethod
