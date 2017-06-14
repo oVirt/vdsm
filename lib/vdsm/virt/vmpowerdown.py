@@ -26,7 +26,7 @@ from vdsm import utils
 class VmPowerDown(object):
     """
     Base class for the VmShutdown and VmReboot commands.
-    Derived classes must provide the guestAgentCallback and acpiCallback
+    Derived classes must provide the ovirtGuestAgentCallback and acpiCallback
     methods and returnMsg property.
     """
     returnMsg = 'Machine power down'
@@ -37,7 +37,7 @@ class VmPowerDown(object):
         :param delay:   Graceful timeout for the user to close his applications
                         (in seconds). During this time no action is taken.
         :param message: Message to show the user.
-        :param timeout: Timeout for each power-down method (guestAgent, acpi)
+        :param timeout: Timeout for each power-down method (guest agents, acpi)
                         until it is considered unsuccessful and the callback
                         chain should try another alternative.
         :param force:   Use forceful power-down if all graceful methods fail?
@@ -52,7 +52,7 @@ class VmPowerDown(object):
 
         # first try agent
         if vm.guestAgent.isResponsive():
-            self.chain.addCallback(self.guestAgentCallback)
+            self.chain.addCallback(self.ovirtGuestAgentCallback)
 
         # then acpi if enabled
         if vm.acpi_enabled():
@@ -81,7 +81,7 @@ class VmPowerDown(object):
 
     # action callbacks, to be reimplemented
 
-    def guestAgentCallback(self):
+    def ovirtGuestAgentCallback(self):
         return False
 
     def acpiCallback(self):
@@ -94,7 +94,7 @@ class VmPowerDown(object):
 class VmShutdown(VmPowerDown):
     returnMsg = 'Machine shutting down'
 
-    def guestAgentCallback(self):
+    def ovirtGuestAgentCallback(self):
         self.vm.guestAgent.desktopShutdown(self.delay, self.message, False)
         return self.event.wait(self.delay + self.timeout)
 
@@ -111,7 +111,7 @@ class VmShutdown(VmPowerDown):
 class VmReboot(VmPowerDown):
     returnMsg = 'Machine rebooting'
 
-    def guestAgentCallback(self):
+    def ovirtGuestAgentCallback(self):
         self.vm.guestAgent.desktopShutdown(self.delay, self.message, True)
         return self.event.wait(self.delay + self.timeout)
 
