@@ -4586,6 +4586,36 @@ class Vm(object):
 
         return self.releaseVm(gracefulAttempts)
 
+    def qemuGuestAgentShutdown(self):
+        with self._shutdownLock:
+            self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
+        try:
+            self._dom.shutdownFlags(libvirt.VIR_DOMAIN_SHUTDOWN_GUEST_AGENT)
+        except virdomain.NotConnectedError:
+            # the VM was already shut off asynchronously,
+            # so ignore error and quickly exit
+            self.log.warning('failed to invoke qemuGuestAgentShutdown: '
+                             'domain not connected')
+            raise exception.VMIsDown()
+        except libvirt.libvirtError:
+            # it's likely QEMU GA is not installed or not responding
+            logging.exception("Shutdown by QEMU Guest Agent failed")
+            raise exception.NonResponsiveGuestAgent()
+
+    def qemuGuestAgentReboot(self):
+        try:
+            self._dom.reboot(libvirt.VIR_DOMAIN_REBOOT_GUEST_AGENT)
+        except virdomain.NotConnectedError:
+            # the VM was already shut off asynchronously,
+            # so ignore error and quickly exit
+            self.log.warning('failed to invoke qemuGuestAgentReboot: '
+                             'domain not connected')
+            raise exception.VMIsDown()
+        except libvirt.libvirtError:
+            # it's likely QEMU GA is not installed or not responding
+            logging.exception("Reboot by QEMU Guest Agent failed")
+            raise exception.NonResponsiveGuestAgent()
+
     def acpi_enabled(self):
         return self._domain.acpi_enabled()
 

@@ -50,7 +50,9 @@ class VmPowerDown(object):
         self.timeout = timeout
         self.event = event
 
-        # first try agent
+        # first try the agents
+        self.chain.addCallback(self.qemuGuestAgentCallback)
+
         if vm.guestAgent.isResponsive():
             self.chain.addCallback(self.ovirtGuestAgentCallback)
 
@@ -81,6 +83,9 @@ class VmPowerDown(object):
 
     # action callbacks, to be reimplemented
 
+    def qemuGuestAgentCallback(self):
+        return False
+
     def ovirtGuestAgentCallback(self):
         return False
 
@@ -93,6 +98,15 @@ class VmPowerDown(object):
 
 class VmShutdown(VmPowerDown):
     returnMsg = 'Machine shutting down'
+
+    def qemuGuestAgentCallback(self):
+        # TODO: QEMU GA does not support setting delay for shutdown right
+        #       now, but it may get this functionality in the future. When
+        #       the feature is implemented in the future it should be also
+        #       added here.
+        if response.is_error(self.vm.qemuGuestAgentShutdown()):
+            return False
+        return self.event.wait(self.timeout)
 
     def ovirtGuestAgentCallback(self):
         self.vm.guestAgent.desktopShutdown(self.delay, self.message, False)
@@ -110,6 +124,15 @@ class VmShutdown(VmPowerDown):
 
 class VmReboot(VmPowerDown):
     returnMsg = 'Machine rebooting'
+
+    def qemuGuestAgentCallback(self):
+        # TODO: QEMU GA does not support setting delay for reboot right
+        #       now, but it may get this functionality in the future. When
+        #       the feature is implemented in the future it should be also
+        #       added here.
+        if response.is_error(self.vm.qemuGuestAgentReboot()):
+            return False
+        return self.event.wait(self.timeout)
 
     def ovirtGuestAgentCallback(self):
         self.vm.guestAgent.desktopShutdown(self.delay, self.message, True)
