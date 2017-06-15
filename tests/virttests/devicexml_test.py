@@ -867,13 +867,19 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         </video>'''
         self._check_roundtrip(vmdevices.core.Video, video_xml)
 
+    @permutations([
+        # rate_present
+        [True],
+        [False]
+    ])
     @MonkeyPatch(vmdevices.core.supervdsm,
                  'getProxy', lambda: FakeProxy())
-    def test_rng(self):
+    def test_rng(self, rate_present):
+        rate = '<rate period="2000" bytes="1234"/>' if rate_present else ''
         rng_xml = u'''<rng model='virtio'>
-            <rate period="2000" bytes="1234"/>
+            %s
             <backend model='random'>/dev/random</backend>
-        </rng>'''
+        </rng>''' % (rate)
         self._check_roundtrip(
             vmdevices.core.Rng, rng_xml, meta={'vmid': 'VMID'}
         )

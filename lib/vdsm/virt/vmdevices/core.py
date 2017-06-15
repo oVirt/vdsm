@@ -496,10 +496,12 @@ class Rng(Base):
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
         params = parse_device_params(dev, attrs=('model', ))
-        params['specParams'] = parse_device_attrs(
-            vmxml.find_first(dev, 'rate'),
-            ('period', 'bytes')
-        )
+        params['specParams'] = {}
+        rate = vmxml.find_first(dev, 'rate', None)
+        if rate is not None:
+            params['specParams'].update(parse_device_attrs(
+                rate, ('period', 'bytes')
+            ))
         params['specParams']['source'] = rngsources.get_source_name(
             vmxml.text(vmxml.find_first(dev, 'backend'))
         )
