@@ -1032,6 +1032,9 @@ class StorageDomain(object):
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
         pass
 
+    def reduceVolume(self, volumeUUID, allowActive=False):
+        pass
+
     @staticmethod
     def findDomainPath(sdUUID):
         raise NotImplementedError

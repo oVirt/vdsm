@@ -1536,6 +1536,12 @@ class BlockStorageDomain(sd.StorageDomain):
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
         return self._manifest.extendVolume(volumeUUID, size, isShuttingDown)
 
+    def reduceVolume(self, imgUUID, volUUID, allowActive=False):
+        with self._manifest._extendlock:
+            vol = self.produceVolume(imgUUID, volUUID)
+            vol.reduce(vol.optimal_size() // sc.BLOCK_SIZE,
+                       allowActive=allowActive)
+
     @staticmethod
     def findDomainPath(sdUUID):
         try:

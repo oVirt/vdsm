@@ -664,7 +664,25 @@ class HSM(object):
     @public
     def reduceVolume(self, spUUID, sdUUID, imgUUID, volUUID,
                      allowActive=False):
-        raise NotImplementedError()
+        """
+        Reduce the volume size to optimal.
+
+        Arguments:
+            spUUID (UUID) - storage pool UUID
+            sdUUID (UUID) - storage domain UUID
+            imgUUID (UUID) - image UUID
+            volUUID (UUID) - volume UUID
+            allowActive (boolean) - indicates whether the volume is active
+        """
+        msg = "spUUID=%s, sdUUID=%s, imgUUID=%s, volUUID=%s, " \
+              "allowActive=%s" % \
+              (spUUID, sdUUID, imgUUID, volUUID, allowActive)
+        vars.task.setDefaultException(se.StorageException(msg))
+        pool = self.getPool(spUUID)
+        sdCache.produce(sdUUID)
+        vars.task.getSharedLock(STORAGE, sdUUID)
+        self._spmSchedule(spUUID, "reduceVolume", pool.reduceVolume,
+                          sdUUID, imgUUID, volUUID, allowActive)
 
     @public
     def extendVolumeSize(self, spUUID, sdUUID, imgUUID, volUUID, newSize):

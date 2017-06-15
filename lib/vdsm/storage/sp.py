@@ -1412,6 +1412,11 @@ class StoragePool(object):
         self.validatePoolSD(sdUUID)
         sdCache.produce(sdUUID).extendVolume(volumeUUID, size, isShuttingDown)
 
+    def reduceVolume(self, sdUUID, imgUUID, volUUID, allowActive=False):
+        self.validatePoolSD(sdUUID)
+        dom = sdCache.produce(sdUUID)
+        dom.reduceVolume(imgUUID, volUUID, allowActive=allowActive)
+
     def extendVolumeSize(self, sdUUID, imgUUID, volUUID, newSize):
         img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
