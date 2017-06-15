@@ -1245,9 +1245,12 @@ def extendLV(vgName, lvName, size_mb):
     _lvminfo._invalidatelvs(vgName, lvName)
 
 
-def reduceLV(vgName, lvName, size_mb):
-    log.info("Reducing LV %s/%s to %s megabytes", vgName, lvName, size_mb)
+def reduceLV(vgName, lvName, size_mb, force=False):
+    log.info("Reducing LV %s/%s to %s megabytes (force=%s)",
+             vgName, lvName, size_mb, force)
     cmd = ("lvreduce",) + LVM_NOBACKUP
+    if force:
+        cmd += ("--force",)
     cmd += ("--size", "%sm" % (size_mb,), "%s/%s" % (vgName, lvName))
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName,)))
     if rc != 0:

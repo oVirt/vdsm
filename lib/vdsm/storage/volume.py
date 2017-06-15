@@ -1218,7 +1218,7 @@ class Volume(object):
         """
         pass
 
-    def reduce(self, newsize):
+    def reduce(self, newsize, allowActive=False):
         """
         reduce a logical volume
         """

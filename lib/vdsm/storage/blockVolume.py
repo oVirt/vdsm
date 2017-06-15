@@ -653,15 +653,19 @@ class BlockVolume(volume.Volume):
         sizemb = (newSize + SECTORS_TO_MB - 1) / SECTORS_TO_MB
         lvm.extendLV(self.sdUUID, self.volUUID, sizemb)
 
-    def reduce(self, newSize):
-        """Reduce a logical volume
-            'newSize' - new size in blocks
+    def reduce(self, newSize, allowActive=False):
+        """
+        Reduce the size of the logical volume.
+
+        Arguments:
+            newSize (int) - new size in blocks
+            allowActive (boolean) - indicates whether the LV is active
         """
         self.log.info("Request to reduce LV %s of image %s in VG %s with "
-                      "size = %s", self.volUUID, self.imgUUID, self.sdUUID,
-                      newSize)
+                      "size = %s allowActive = %s", self.volUUID, self.imgUUID,
+                      self.sdUUID, newSize, allowActive)
         sizemb = (newSize + SECTORS_TO_MB - 1) / SECTORS_TO_MB
-        lvm.reduceLV(self.sdUUID, self.volUUID, sizemb)
+        lvm.reduceLV(self.sdUUID, self.volUUID, sizemb, force=allowActive)
 
     @classmethod
     def renameVolumeRollback(cls, taskObj, sdUUID, oldUUID, newUUID):
