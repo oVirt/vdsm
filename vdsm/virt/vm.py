@@ -24,7 +24,6 @@ from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 import itertools
 import logging
-import math
 import os
 import tempfile
 import threading
@@ -413,11 +412,11 @@ class Vm(object):
 
     @property
     def nr_hugepages(self):
-        # Let's do an explicit cast as math.ceil returns float.
-        return int(math.ceil(
-            self.mem_size_mb() * 1024 /
+        # Integer ceiling (m + n - 1) // n.
+        return (
+            (self.mem_size_mb() * 1024 + self.hugepagesz - 1) //
             self.hugepagesz
-        ))
+        )
 
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
