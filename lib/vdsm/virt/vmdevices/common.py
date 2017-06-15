@@ -165,6 +165,38 @@ def dev_map_from_dev_spec_map(dev_spec_map, log):
     return dev_map
 
 
+# metadata used by the devices. Unless otherwise specified, type and meaning
+# are the same as specified in vdsm-api.yml
+#
+# * graphics.Graphics:
+#    = match by: none, implicit matching. Only one SPICE device is allowed
+#                and the VNC device ignores the metadata
+#    = keys:
+#      - display_network
+#
+#    = example:
+#      <metadata xmlns:ovirt-vm='http://ovirt.org/vm/1.0'>
+#        <ovirt-vm:vm>
+#          <ovirt-vm:device type='graphics'>
+#            <ovirt-vm:display_network>ovirtmgmt</ovirt-vm:display_network>
+#          </ovirt-vm:device>
+#        </ovirt-vm:vm>
+#      </metadata>
+#
+# * network.Interface:
+#    = match by: 'mac_address'
+#
+#    = keys:
+#      - network
+#
+#    = example:
+#      <metadata xmlns:ovirt-vm='http://ovirt.org/vm/1.0'>
+#        <ovirt-vm:vm>
+#          <ovirt-vm:device type='interface' mac_address='...'>
+#            <ovirt-vm:network>ovirtmgmt</ovirt-vm:network>
+#          </ovirt-vm:device>
+#        </ovirt-vm:vm>
+#      </metadata>
 def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
     """
     Create a device map - same format as empty_dev_map from a domain XML
