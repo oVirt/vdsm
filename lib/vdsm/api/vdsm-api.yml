@@ -9622,6 +9622,35 @@ StoragePool.finalizeMerge:
         description: A task UUID
         type: *UUID
 
+StoragePool.reduceVolume:
+    added: '4.2'
+    description: Reduce volume size. Mainly used after merge operation.
+    params:
+    -   description: The Storage Pool associated with the Volume
+        name: storagepoolID
+        type: *UUID
+
+    -   description: The Storage Domain associated with the Volume
+        name: storagedomainID
+        type: *UUID
+
+    -   description: The Image associated with the Volume
+        name: imageID
+        type: *UUID
+
+    -   description: The UUID of the Volume
+        name: volumeID
+        type: *UUID
+
+    -   defaultvalue: false
+        description: A flag indicating whether to allow reducing the size
+           of active volumes.
+        name: allowActive
+        type: boolean
+    return:
+        description: A task UUID
+        type: *UUID
+
 Task.clear:
     added: '3.1'
     description: Discard information about a finished Task.

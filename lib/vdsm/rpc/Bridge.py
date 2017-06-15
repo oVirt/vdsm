@@ -386,6 +386,7 @@ command_info = {
     'StoragePool_upgrade': {'ret': 'upgradeStatus'},
     'StoragePool_prepareMerge': {'ret': 'uuid'},
     'StoragePool_finalizeMerge': {'ret': 'uuid'},
+    'StoragePool_reduceVolume': {'ret': 'uuid'},
     'Task_getInfo': {'ret': 'TaskInfo'},
     'Task_getStatus': {'ret': 'taskStatus'},
     'VM_changeCD': {'ret': 'vmList'},

@@ -1077,6 +1077,12 @@ class StoragePool(APIBase):
     def finalizeMerge(self, subchainInfo):
         return self._irs.finalizeMerge(self._UUID, subchainInfo)
 
+    def reduceVolume(self, storagedomainID, imageID, volumeID,
+                     allowActive=False):
+        return self._irs.reduceVolume(
+            self._UUID, storagedomainID, imageID, volumeID,
+            allowActive=allowActive)
+
 
 class Global(APIBase):
     ctorArgs = []

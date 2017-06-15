@@ -662,6 +662,11 @@ class HSM(object):
         pool.extendVolume(sdUUID, volumeUUID, size, isShuttingDown)
 
     @public
+    def reduceVolume(self, spUUID, sdUUID, imgUUID, volUUID,
+                     allowActive=False):
+        raise NotImplementedError()
+
+    @public
     def extendVolumeSize(self, spUUID, sdUUID, imgUUID, volUUID, newSize):
         pool = self.getPool(spUUID)
         newSizeBytes = misc.validateN(newSize, "newSize")
