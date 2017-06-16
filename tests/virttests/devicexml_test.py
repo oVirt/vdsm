@@ -28,6 +28,7 @@ from vdsm.virt import vmxml
 from vdsm import constants
 
 from monkeypatch import MonkeyPatchScope, MonkeyPatch
+from testlib import make_config
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
 from testlib import XMLTestCase
@@ -923,6 +924,8 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 'create_network', lambda net, vmid: None),
             (vmdevices.graphics.libvirtnetwork,
                 'delete_network', lambda net, vmid: None),
+            (vmdevices.graphics, 'config',
+                make_config([('vars', 'ssl', 'true')])),
         ]):
             self._check_roundtrip(
                 vmdevices.graphics.Graphics,
