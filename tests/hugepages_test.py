@@ -28,13 +28,14 @@ from testlib import make_config
 from testlib import mock
 from testlib import namedTemporaryDir
 from testlib import permutations, expandPermutations
+import vmfakelib as fake
 
 from vdsm import cpuarch
 from vdsm import hugepages
 from vdsm import osinfo
 from vdsm import supervdsm
 from vdsm.supervdsm_api import virt
-
+from virt import vm
 
 _STATE = {
     'resv_hugepages': 1234,
@@ -331,6 +332,45 @@ class TestIntelligentDeallocation(TestCaseBase):
         self.assertEqual(hugepages.calculate_required_deallocation(
             vm_hugepages, vm_hugepagesz), 4
         )
+
+
+@expandPermutations
+class TestVmHugepages(TestCaseBase):
+    @permutations([
+        [{'custom': {'hugepages': '-1'}}, False],
+        [{'custom': {'hugepages': '0'}}, False],
+        [{'custom': {'hugepages': '1'}}, True],
+        [{'custom': {'hugepages': '2048'}}, True],
+        [{'custom': {'hugepages': '1048576'}}, True],
+    ])
+    def test_hugepages_allowed(self, custom, expected):
+        with fake.VM(params=custom) as vm:
+            self.assertEqual(vm.hugepages, expected)
+
+    @permutations([
+        [{'custom': {'hugepages': '1'}}, 2048],
+        [{'custom': {'hugepages': '2048'}}, 2048],
+        [{'custom': {'hugepages': '1048576'}}, 1048576],
+        [{'custom': {'hugepages': '10485760'}}, 2048],
+    ])
+    @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.X86_64)
+    @MonkeyPatch(hugepages, 'supported', lambda: [2048, 1048576])
+    def test_hugepagesz(self, custom, expected):
+        with fake.VM(params=custom) as vm:
+            self.assertEqual(vm.hugepagesz, expected)
+
+    @permutations([
+        [{'custom': {'hugepages': '1'}}, 1, 1],
+        [{'custom': {'hugepages': '1'}}, 3, 2],
+        [{'custom': {'hugepages': '1048576'}}, 1023, 1],
+        [{'custom': {'hugepages': '1048576'}}, 1025, 2],
+    ])
+    @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.X86_64)
+    @MonkeyPatch(hugepages, 'supported', lambda: [2048, 1048576])
+    def test_nr_hugepages(self, custom, memory, expected):
+        with mock.patch.object(vm.Vm, 'mem_size_mb', lambda _: memory):
+            with fake.VM(params=custom) as fakevm:
+                self.assertEqual(fakevm.nr_hugepages, expected)
 
 
 class FakeClientIF(object):
