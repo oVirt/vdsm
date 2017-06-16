@@ -2095,7 +2095,7 @@ class Vm(object):
             raise MissingLibvirtDomainError(vmexitreason.LIBVIRT_START_FAILED)
 
         sampling.stats_cache.add(self.id)
-        self._monitorable = True
+        self._monitorable = config.getboolean('sampling', 'enable')
 
         if is_kvm(self._custom):
             self._vmDependentInit()
