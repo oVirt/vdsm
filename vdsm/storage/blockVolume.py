@@ -41,7 +41,6 @@ from vdsm.storage.volumemetadata import VolumeMetadata
 import volume
 import image
 import sd
-import blockSD
 from sdc import sdCache
 
 
@@ -304,7 +303,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
     def newVolumeLease(cls, metaId, sdUUID, volUUID):
         cls.log.debug("Initializing volume lease volUUID=%s sdUUID=%s, "
                       "metaId=%s", volUUID, sdUUID, metaId)
-        manifest = blockSD.BlockStorageDomainManifest(sdUUID)
+        manifest = sdCache.produce_manifest(sdUUID)
         metaSdUUID, mdSlot = metaId
 
         leasePath = manifest.getLeasesFilePath()

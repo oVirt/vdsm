@@ -99,6 +99,7 @@ def fake_block_env(obj=None, sd_version=3):
         with MonkeyPatchScope([
             (blockSD, 'lvm', lvm),
             (blockVolume, 'lvm', lvm),
+            (blockVolume, 'sdCache', fake_sdc),
             (volume_artifacts, 'lvm', lvm),
             (sd, 'storage_repository', tmpdir),
             (volume, 'sdCache', fake_sdc),
