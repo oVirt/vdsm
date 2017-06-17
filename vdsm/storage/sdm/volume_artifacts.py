@@ -58,8 +58,6 @@ from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage.volumemetadata import VolumeMetadata
 
-from storage import image
-
 
 class VolumeArtifacts(object):
     log = logging.getLogger('storage.VolumeArtifacts')
@@ -437,8 +435,7 @@ class BlockVolumeArtifacts(VolumeArtifacts):
                      activate=True, initialTags=tags)
 
     def _get_image_path(self):
-        im = image.ImageManifest(self.sd_manifest.getRepoPath())
-        return im.getImageDir(self.sd_manifest.sdUUID, self.img_id)
+        return self.sd_manifest.getImageDir(self.img_id)
 
     def _create_image_path(self):
         image_path = self._get_image_path()

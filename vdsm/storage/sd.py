@@ -37,7 +37,6 @@ from vdsm.storage import rwlock
 from vdsm.storage import xlease
 from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
 
-import image
 import resourceFactories
 from vdsm import constants
 from vdsm import qemuimg
@@ -379,6 +378,9 @@ class StorageDomainManifest(object):
         # Get the datacenter ID.  When using storage pools this will be the
         # spUUID.  Else, it's just a UUID to establish a storage namespace.
         return os.path.join(storage_repository, self.getPools()[0])
+
+    def getImageDir(self, imgUUID):
+        return os.path.join(self.domaindir, DOMAIN_IMAGES, imgUUID)
 
     def getIsoDomainImagesDir(self):
         """
@@ -972,9 +974,10 @@ class StorageDomain(object):
     def _getRepoPath(self):
         return self._manifest.getRepoPath()
 
-    def getLinkBCImagePath(self, imgUUID):
-        return image.Image(self._getRepoPath()) \
-                    .getImageDir(self.sdUUID, imgUUID)
+    def getImageDir(self, imgUUID):
+        return self._manifest.getImageDir(imgUUID)
+
+    getLinkBCImagePath = getImageDir
 
     def getImageRundir(self, imgUUID):
         return os.path.join(constants.P_VDSM_STORAGE, self.sdUUID, imgUUID)

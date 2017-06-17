@@ -34,7 +34,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import guarded
 from vdsm.storage import outOfProcess as oop
 
-from storage import sd, blockSD, fileSD, image, blockVolume, volume
+from storage import sd, blockSD, fileSD, image, blockVolume, fileVolume, volume
 from storage import hsm
 from storage.sdm import volume_artifacts
 
@@ -82,6 +82,7 @@ def fake_file_env(obj=None, sd_version=3):
         with MonkeyPatchScope([
             [sd, 'storage_repository', tmpdir],
             [volume, 'sdCache', fake_sdc],
+            [fileVolume, 'sdCache', fake_sdc],
             [hsm, 'sdCache', fake_sdc],
         ]):
             fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
@@ -271,8 +272,7 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
                       disk_type=image.UNKNOWN_DISK_TYPE,
                       desc='fake volume'):
     sduuid = sd_manifest.sdUUID
-    image_manifest = image.ImageManifest(sd_manifest.getRepoPath())
-    imagedir = image_manifest.getImageDir(sduuid, imguuid)
+    imagedir = sd_manifest.getImageDir(imguuid)
     if not os.path.exists(imagedir):
         os.makedirs(imagedir)
 

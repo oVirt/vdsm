@@ -39,7 +39,6 @@ from vdsm.storage.misc import deprecated
 from vdsm.storage.volumemetadata import VolumeMetadata
 
 import volume
-import image
 import sd
 from sdc import sdCache
 
@@ -122,8 +121,8 @@ class BlockVolumeManifest(volume.VolumeManifest):
         """
         Block SD supports lazy image dir creation
         """
-        imageDir = image.ImageManifest(self.repoPath).getImageDir(self.sdUUID,
-                                                                  self.imgUUID)
+        manifest = sdCache.produce_manifest(self.sdUUID)
+        imageDir = manifest.getImageDir(self.imgUUID)
 
         # Image directory may be a symlink to /run/vdsm/storage/sd/image
         # created when preparing an image before starting a vm.

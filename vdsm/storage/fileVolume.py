@@ -38,7 +38,6 @@ from vdsm.storage.volumemetadata import VolumeMetadata
 
 from sdc import sdCache
 import volume
-import image
 import sd
 import fileSD
 
@@ -81,8 +80,9 @@ class FileVolumeManifest(volume.VolumeManifest):
         In the file volume repositories,
         the image dir must exists after creation its first volume.
         """
-        imageDir = image.ImageManifest(self.repoPath).getImageDir(self.sdUUID,
-                                                                  self.imgUUID)
+        manifest = sdCache.produce_manifest(self.sdUUID)
+        imageDir = manifest.getImageDir(self.imgUUID)
+
         if not self.oop.os.path.isdir(imageDir):
             raise se.ImagePathError(imageDir)
         if not self.oop.os.access(imageDir, os.R_OK | os.W_OK | os.X_OK):
