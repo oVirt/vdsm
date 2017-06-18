@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ Invoking methods with simple parameters::
 For invokinng methods with many or complex parameters, you can read the
 parameters from a file:
 
-    # vdsm-client Lease info -f lease.json
+    # vdsm-client -f lease.json Lease info
     ...
 
 where lease.json file content is::
@@ -56,7 +56,7 @@ where lease.json file content is::
 It is also possible to read parameters from standard input, creating complex
 parameters interactively::
 
-    # cat <<EOF | vdsm-client Lease info -f -
+    # cat <<EOF | vdsm-client -f - Lease info
     {
         "lease": {
             "sd_id": "75ab40e3-06b1-4a54-a825-2df7a40b93b2",
