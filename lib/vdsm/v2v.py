@@ -74,7 +74,7 @@ _SSH_ADD = cmdutils.CommandPath('ssh-add', '/usr/bin/ssh-add')
 _XEN_SSH_PROTOCOL = 'xen+ssh'
 _VMWARE_PROTOCOL = 'vpx'
 _KVM_PROTOCOL = 'qemu'
-_SSH_AUTH_RE = '(SSH_AUTH_SOCK)=([^;]+).*;\nSSH_AGENT_PID=(\d+)'
+_SSH_AUTH_RE = b'(SSH_AUTH_SOCK)=([^;]+).*;\nSSH_AGENT_PID=(\d+)'
 _OVF_RESOURCE_CPU = 3
 _OVF_RESOURCE_MEMORY = 4
 _OVF_RESOURCE_NETWORK = 10
@@ -525,9 +525,9 @@ class V2VCommand(object):
         fd = os.open(self._passwd_file, os.O_WRONLY | os.O_CREAT, 0o600)
         try:
             if self._password.value is None:
-                os.write(fd, "")
+                os.write(fd, b"")
             else:
-                os.write(fd, self._password.value)
+                os.write(fd, self._password.value.encode())
         finally:
             os.close(fd)
         try:
@@ -556,7 +556,7 @@ class V2VCommand(object):
                 'virt-v2v exited with code: %d, stderr: %r' %
                 (p.returncode, err))
 
-        self._v2v_caps = frozenset(out.splitlines())
+        self._v2v_caps = frozenset(out.decode('utf8').splitlines())
         logging.debug("Detected virt-v2v capabilities: %r", self._v2v_caps)
 
 
@@ -899,7 +899,7 @@ class ImportVm(object):
 
     def _watch_process_output(self):
         out = io.BufferedReader(io.FileIO(self._proc.stdout.fileno(),
-                                mode='r', closefd=False), BUFFSIZE)
+                                mode='rb', closefd=False), BUFFSIZE)
         parser = OutputParser()
         for event in parser.parse(out):
             if isinstance(event, ImportProgress):
@@ -949,12 +949,12 @@ class ImportVm(object):
 
 
 class OutputParser(object):
-    COPY_DISK_RE = re.compile(r'.*(Copying disk (\d+)/(\d+)).*')
-    DISK_PROGRESS_RE = re.compile(r'\s+\((\d+).*')
+    COPY_DISK_RE = re.compile(br'.*(Copying disk (\d+)/(\d+)).*')
+    DISK_PROGRESS_RE = re.compile(br'\s+\((\d+).*')
 
     def parse(self, stream):
         for line in stream:
-            if 'Copying disk' in line:
+            if b'Copying disk' in line:
                 description, current_disk, disk_count = self._parse_line(line)
                 yield ImportProgress(int(current_disk), int(disk_count),
                                      description)
@@ -973,15 +973,15 @@ class OutputParser(object):
         return m.group(1), m.group(2), m.group(3)
 
     def _iter_progress(self, stream):
-        chunk = ''
+        chunk = b''
         while True:
             c = stream.read(1)
             if not c:
                 raise OutputParserError('copy-disk stream closed unexpectedly')
             chunk += c
-            if c == '\r':
+            if c == b'\r':
                 yield chunk
-                chunk = ''
+                chunk = b''
 
     def _parse_progress(self, chunk):
         m = self.DISK_PROGRESS_RE.match(chunk)

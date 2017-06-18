@@ -18,7 +18,7 @@
 #
 
 from contextlib import contextmanager
-from io import StringIO
+import io
 import subprocess
 import tarfile
 import uuid
@@ -41,7 +41,7 @@ from vdsm.utils import terminating
 from testlib import VdsmTestCase as TestCaseBase, recorded
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
-import vmfakelib as fake
+import vmfakecon as fake
 
 
 FAKE_VIRT_V2V = CommandPath('fake-virt-v2v',
@@ -85,7 +85,7 @@ class FakeIRS(object):
 
 
 def read_ovf(ovf_path):
-    return """<?xml version="1.0" encoding="UTF-8"?>
+    return u"""<?xml version="1.0" encoding="UTF-8"?>
 <Envelope xmlns="http://schemas.dmtf.org/ovf/envelope/1"
           xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1"
           xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_Re\
@@ -129,7 +129,7 @@ def temporary_ovf_dir():
         ovapath = os.path.join(base, 'testvm.ova')
         ovf = read_ovf('test')
 
-        with open(ovfpath, 'w') as ovffile:
+        with io.open(ovfpath, 'w') as ovffile:
             ovffile.write(ovf)
         yield ovapath
 
@@ -309,27 +309,27 @@ class v2vTests(TestCaseBase):
             )
 
     def testOutputParser(self):
-        output = (u'[   0.0] Opening the source -i libvirt ://roo...\n'
-                  u'[   1.0] Creating an overlay to protect the f...\n'
-                  u'[  88.0] Copying disk 1/2 to /tmp/v2v/0000000...\n'
-                  u'    (0/100%)\r'
-                  u'    (50/100%)\r'
-                  u'    (100/100%)\r'
-                  u'[ 180.0] Copying disk 2/2 to /tmp/v2v/100000-...\n'
-                  u'    (0/100%)\r'
-                  u'    (50/100%)\r'
-                  u'    (100/100%)\r'
-                  u'[ 256.0] Creating output metadata'
-                  u'[ 256.0] Finishing off')
+        output = (b'[   0.0] Opening the source -i libvirt ://roo...\n'
+                  b'[   1.0] Creating an overlay to protect the f...\n'
+                  b'[  88.0] Copying disk 1/2 to /tmp/v2v/0000000...\n'
+                  b'    (0/100%)\r'
+                  b'    (50/100%)\r'
+                  b'    (100/100%)\r'
+                  b'[ 180.0] Copying disk 2/2 to /tmp/v2v/100000-...\n'
+                  b'    (0/100%)\r'
+                  b'    (50/100%)\r'
+                  b'    (100/100%)\r'
+                  b'[ 256.0] Creating output metadata'
+                  b'[ 256.0] Finishing off')
 
         parser = v2v.OutputParser()
-        events = list(parser.parse(StringIO(output)))
+        events = list(parser.parse(io.BytesIO(output)))
         self.assertEqual(events, [
-            (v2v.ImportProgress(1, 2, 'Copying disk 1/2')),
+            (v2v.ImportProgress(1, 2, b'Copying disk 1/2')),
             (v2v.DiskProgress(0)),
             (v2v.DiskProgress(50)),
             (v2v.DiskProgress(100)),
-            (v2v.ImportProgress(2, 2, 'Copying disk 2/2')),
+            (v2v.ImportProgress(2, 2, b'Copying disk 2/2')),
             (v2v.DiskProgress(0)),
             (v2v.DiskProgress(50)),
             (v2v.DiskProgress(100))])
@@ -469,10 +469,10 @@ class v2vTests(TestCaseBase):
         rc, output, error = execCmd(cmd, raw=True)
         self.assertEqual(rc, 0)
 
-        with open('fake-virt-v2v.out', 'r') as f:
+        with io.open('fake-virt-v2v.out', 'rb') as f:
             self.assertEqual(output, f.read())
 
-        with open('fake-virt-v2v.err', 'r') as f:
+        with io.open('fake-virt-v2v.err', 'rb') as f:
             self.assertEqual(error, f.read())
 
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
@@ -497,18 +497,18 @@ class v2vTests(TestCaseBase):
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE)
         msg = "test\ntest"
-        p.stdin.write(msg)
+        p.stdin.write(msg.encode())
         p.stdin.close()
         p.wait()
         out = p.stdout.read()
-        self.assertEqual(out, msg)
+        self.assertEqual(out, msg.encode())
 
         p = v2v._simple_exec_cmd(['/bin/sh', '-c', 'echo -en "%s" >&2' % msg],
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.STDOUT)
         p.wait()
         out = p.stdout.read()
-        self.assertEqual(out, msg)
+        self.assertEqual(out, msg.encode())
 
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     def testV2VCapabilities(self):
@@ -558,7 +558,7 @@ class PipelineProcTests(TestCaseBase):
                 self.assertEqual(ret, True)
 
                 out = p.stdout.read()
-                self.assertEqual(out, msg)
+                self.assertEqual(out, msg.encode())
 
     @permutations([
         # (cmd1, cmd2, returncode)
@@ -662,7 +662,7 @@ class TestGetOVAInfo(TestCaseBase):
             ovapath = os.path.join(base, 'testvm.ova')
             ovf = read_ovf('test')
 
-            with open(ovfpath, 'w') as ovffile:
+            with io.open(ovfpath, 'w') as ovffile:
                 ovffile.write(ovf)
             yield base, ovfpath, ovapath
 

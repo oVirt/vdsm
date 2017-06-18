@@ -124,7 +124,6 @@ test_modules = \
 	vmfakelib_test.py \
 	vmTestsData.py \
 	vmxml_test.py \
-	v2v_test.py \
 	zombiereaper_test.py \
 	$(NULL)
 
@@ -143,7 +142,6 @@ blacklist_modules_python3 = \
 	stompasyncdispatcher_test.py \
 	unicode_test.py \
 	utils_test.py \
-	v2v_test.py \
 	vmxml_test.py \
 	$(NULL)
 

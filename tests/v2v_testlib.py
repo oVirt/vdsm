@@ -22,7 +22,7 @@ from io import BytesIO
 import libvirt
 import uuid
 
-import vmfakelib as fake
+import vmfakecon as fake
 
 VmSpec = namedtuple('VmSpec',
                     ['name', 'uuid', 'id', 'active', 'has_snapshots',
@@ -72,7 +72,7 @@ def _mac_from_uuid(vm_uuid):
 
 class FakeVolume(object):
     def __init__(self):
-        self._bytes = BytesIO('x' * 1024)
+        self._bytes = BytesIO(b'x' * 1024)
 
     def info(self):
         # type, capacity, allocation
