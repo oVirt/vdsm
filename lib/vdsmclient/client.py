@@ -67,7 +67,7 @@ Invoking methods with simple parameters::
 For invoking methods with many or complex parameters, you can read the
 parameters from a file:
 
-    # vdsm-client Lease info -f lease.json
+    # vdsm-client -f lease.json Lease info
     ...
 
 where lease.json file content is::
@@ -82,7 +82,7 @@ where lease.json file content is::
 It is also possible to read parameters from standard input, creating complex
 parameters interactively::
 
-    # cat <<EOF | vdsm-client Lease info -f -
+    # cat <<EOF | vdsm-client -f - Lease info
     {
         "lease": {
             "sd_id": "75ab40e3-06b1-4a54-a825-2df7a40b93b2",
@@ -97,7 +97,7 @@ Using -h you can create the json file you need for the actual request::
 
 Edit lease.json, and run::
 
-    # vdsm-client Lease create -f lease.json
+    # vdsm-client -f lease.json Lease create
 
 """
 
