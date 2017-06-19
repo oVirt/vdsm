@@ -70,7 +70,7 @@ class Headers(object):
     DESTINATION = "destination"
     ACCEPT_VERSION = "accept-version"
     REPLY_TO = "reply-to"
-    HEARTEBEAT = "heart-beat"
+    HEARTBEAT = "heart-beat"
 
 
 COMMANDS = tuple([command for command in dir(Command)
@@ -487,7 +487,7 @@ class AsyncClient(object):
             Command.CONNECT,
             {
                 Headers.ACCEPT_VERSION: "1.2",
-                Headers.HEARTEBEAT: "0,5000",
+                Headers.HEARTBEAT: "0,5000",
             }
         ))
 

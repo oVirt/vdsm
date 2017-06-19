@@ -103,7 +103,7 @@ class ConnectFrameTest(TestCaseBase):
     def test_connect(self):
         frame = Frame(Command.CONNECT,
                       {Headers.ACCEPT_VERSION: '1.2',
-                       Headers.HEARTEBEAT: '0,8000'})
+                       Headers.HEARTBEAT: '0,8000'})
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
         adapter.handle_frame(TestDispatcher(adapter), frame)
@@ -111,12 +111,12 @@ class ConnectFrameTest(TestCaseBase):
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.CONNECTED)
         self.assertEqual(resp_frame.headers['version'], '1.2')
-        self.assertEqual(resp_frame.headers[Headers.HEARTEBEAT], '8000,0')
+        self.assertEqual(resp_frame.headers[Headers.HEARTBEAT], '8000,0')
 
     def test_min_heartbeat(self):
         frame = Frame(Command.CONNECT,
                       {Headers.ACCEPT_VERSION: '1.2',
-                       Headers.HEARTEBEAT: '0,500'})
+                       Headers.HEARTBEAT: '0,500'})
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
         adapter.handle_frame(TestDispatcher(adapter), frame)
@@ -124,7 +124,7 @@ class ConnectFrameTest(TestCaseBase):
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.CONNECTED)
         self.assertEqual(resp_frame.headers['version'], '1.2')
-        self.assertEqual(resp_frame.headers[Headers.HEARTEBEAT], '1000,0')
+        self.assertEqual(resp_frame.headers[Headers.HEARTBEAT], '1000,0')
 
     def test_unsuported_version(self):
         frame = Frame(Command.CONNECT,
@@ -147,7 +147,7 @@ class ConnectFrameTest(TestCaseBase):
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.CONNECTED)
         self.assertEqual(resp_frame.headers['version'], '1.2')
-        self.assertEqual(resp_frame.headers[Headers.HEARTEBEAT], '0,0')
+        self.assertEqual(resp_frame.headers[Headers.HEARTBEAT], '0,0')
 
     def test_no_headers(self):
         frame = Frame(Command.CONNECT)
