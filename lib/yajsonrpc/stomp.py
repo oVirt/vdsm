@@ -463,8 +463,10 @@ class AsyncDispatcher(object):
 class AsyncClient(object):
     log = logging.getLogger("yajsonrpc.protocols.stomp.AsyncClient")
 
-    def __init__(self):
+    def __init__(self, incoming_heartbeat=30000, outgoing_heartbeat=0):
         self._connected = Event()
+        self._incoming_heartbeat = incoming_heartbeat
+        self._outgoing_heartbeat = outgoing_heartbeat
         self._outbox = deque()
         self._error = None
         self._subscriptions = {}
@@ -504,7 +506,8 @@ class AsyncClient(object):
             Command.CONNECT,
             {
                 Headers.ACCEPT_VERSION: "1.2",
-                Headers.HEARTBEAT: "0,5000",
+                Headers.HEARTBEAT: "%d,%d" % (self._outgoing_heartbeat,
+                                              self._incoming_heartbeat),
             }
         ))
 
