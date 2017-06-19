@@ -22,8 +22,6 @@ import os.path
 import logging
 from contextlib import contextmanager
 
-import image
-
 from vdsm import cmdutils
 from vdsm import qemuimg
 from vdsm import utils
@@ -1095,7 +1093,7 @@ class Volume(object):
         dom.validateCreateVolumeParams(volFormat, srcVolUUID,
                                        preallocate=preallocate)
 
-        imgPath = image.Image(repoPath).create(sdUUID, imgUUID)
+        imgPath = dom.create_image(imgUUID)
 
         volPath = os.path.join(imgPath, volUUID)
         volParent = None

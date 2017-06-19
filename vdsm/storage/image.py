@@ -34,12 +34,10 @@ from vdsm.common import logutils
 from vdsm.common.threadlocal import vars
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
-from vdsm.storage import fileUtils
 from vdsm.storage import imageSharing
 from vdsm.storage import misc
 from vdsm.storage import qcow2
 from vdsm.storage import resourceManager as rm
-from vdsm.storage import task
 from vdsm.storage import workarounds
 
 from sdc import sdCache
@@ -100,19 +98,6 @@ class Image:
     log = logging.getLogger('storage.Image')
     _fakeTemplateLock = threading.Lock()
 
-    @classmethod
-    def createImageRollback(cls, taskObj, imageDir):
-        """
-        Remove empty image folder
-        """
-        cls.log.info("createImageRollback: imageDir=%s" % (imageDir))
-        if os.path.exists(imageDir):
-            if not len(os.listdir(imageDir)):
-                fileUtils.cleanupdir(imageDir)
-            else:
-                cls.log.error("createImageRollback: Cannot remove dirty image "
-                              "folder %s" % (imageDir))
-
     def __init__(self, repoPath):
         self._repoPath = repoPath
 
@@ -125,23 +110,6 @@ class Image:
         with vars.task.abort_callback(operation.abort):
             operation.wait_for_completion()
         self.log.debug('qemu-img operation has completed')
-
-    def create(self, sdUUID, imgUUID):
-        """Create placeholder for image's volumes
-            'sdUUID' - storage domain UUID
-            'imgUUID' - image UUID
-        """
-        imageDir = os.path.join(self.repoPath, sdUUID, sd.DOMAIN_IMAGES,
-                                imgUUID)
-        if not os.path.isdir(imageDir):
-            self.log.info("Create placeholder %s for image's volumes",
-                          imageDir)
-            taskName = "create image rollback: " + imgUUID
-            vars.task.pushRecovery(task.Recovery(taskName, "image", "Image",
-                                                 "createImageRollback",
-                                                 [imageDir]))
-            os.mkdir(imageDir)
-        return imageDir
 
     def deletedVolumeName(self, uuid):
         """

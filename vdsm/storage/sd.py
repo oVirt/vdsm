@@ -27,13 +27,16 @@ import codecs
 from contextlib import contextmanager
 
 from vdsm.common import exception
+from vdsm.common.threadlocal import vars
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import fileUtils
 from vdsm.storage import misc
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import rwlock
+from vdsm.storage import task
 from vdsm.storage import xlease
 from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
 
@@ -1198,6 +1201,37 @@ class StorageDomain(object):
             path = self.external_leases_path()
             with _external_leases_volume(path) as vol:
                 vol.remove(lease_id)
+
+    # Images
+
+    def create_image(self, imgUUID):
+        """
+        Create placeholder for image's volumes
+        """
+        image_dir = self.getImageDir(imgUUID)
+        if not os.path.isdir(image_dir):
+            self.log.info("Create placeholder %s for image's volumes",
+                          image_dir)
+            task_name = "create image rollback: " + imgUUID
+            recovery = task.Recovery(task_name, "sd", "StorageDomain",
+                                     "create_image_rollback", [image_dir])
+            vars.task.pushRecovery(recovery)
+            os.mkdir(image_dir)
+        return image_dir
+
+    @classmethod
+    def create_image_rollback(cls, task, image_dir):
+        """
+        Remove empty image folder
+        """
+        cls.log.info("create image rollback (image_dir=%s)", image_dir)
+        if os.path.exists(image_dir):
+            if not len(os.listdir(image_dir)):
+                fileUtils.cleanupdir(image_dir)
+            else:
+                cls.log.error("create image rollback: Cannot remove dirty "
+                              "image (image_dir=%s)",
+                              image_dir)
 
 
 @contextmanager
