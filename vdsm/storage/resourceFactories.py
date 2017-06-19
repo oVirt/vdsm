@@ -28,7 +28,6 @@ from vdsm.storage import resourceManager as rm
 
 import logging
 from sdc import sdCache
-import image
 
 log = logging.getLogger('storage.ResourcesFactories')
 
@@ -108,6 +107,10 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
         """
         Return list of lock candidates (template and volumes)
         """
+        # Must be imported here due to import cycles.
+        # TODO: Move getChain to another module to we can use normal import.
+        import image
+
         volResourcesList = []
         template = None
         dom = sdCache.produce(sdUUID=self.sdUUID)
