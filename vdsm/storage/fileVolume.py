@@ -38,7 +38,6 @@ from vdsm.storage.volumemetadata import VolumeMetadata
 
 from sdc import sdCache
 import volume
-import fileSD
 
 META_FILEEXT = ".meta"
 LEASE_FILEOFFSET = 0
@@ -126,8 +125,8 @@ class FileVolumeManifest(volume.VolumeManifest):
             raise se.VolumeDoesNotExist(self.volUUID)
 
         self._volumePath = volPath
-        domainPath = os.path.join(self.repoPath, self.sdUUID)
-        if not fileSD.FileStorageDomainManifest(domainPath).isISO():
+        sd = sdCache.produce_manifest(self.sdUUID)
+        if not sd.isISO():
             self.validateMetaVolumePath()
 
     def getMetadataId(self):
