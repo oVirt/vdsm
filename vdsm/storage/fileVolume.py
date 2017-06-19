@@ -38,7 +38,6 @@ from vdsm.storage.volumemetadata import VolumeMetadata
 
 from sdc import sdCache
 import volume
-import sd
 import fileSD
 
 META_FILEEXT = ".meta"
@@ -325,16 +324,14 @@ class FileVolumeManifest(volume.VolumeManifest):
         Fetch the list of the Volumes UUIDs,
         not including the shared base (template)
         """
-        # Get Volumes of an image
-        pattern = os.path.join(repoPath, sdUUID, sd.DOMAIN_IMAGES,
-                               imgUUID, "*.meta")
+        sd = sdCache.produce_manifest(sdUUID)
+        img_dir = sd.getImageDir(imgUUID)
+        pattern = os.path.join(img_dir, "*.meta")
         files = oop.getProcessPool(sdUUID).glob.glob(pattern)
         volList = []
         for i in files:
             volid = os.path.splitext(os.path.basename(i))[0]
-            if (sdCache.produce(sdUUID).
-                    produceVolume(imgUUID, volid).
-                    getImage() == imgUUID):
+            if (sd.produceVolume(imgUUID, volid).getImage() == imgUUID):
                 volList.append(volid)
         return volList
 
