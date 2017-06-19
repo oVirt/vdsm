@@ -40,7 +40,6 @@ from vdsm.storage import exception as se
 
 from storage import sd
 from storage import blockSD
-from storage import blockVolume
 
 log = logging.getLogger("storage.format")
 
@@ -170,7 +169,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
             return
 
         leasesSize = domain.getLeasesFileSize() / constants.MEGAB
-        metaMaxSlot = leasesSize - blockVolume.RESERVED_LEASES - 1
+        metaMaxSlot = leasesSize - blockSD.RESERVED_LEASES - 1
 
         log.debug("Starting metadata reallocation check for domain %s with "
                   "metaMaxSlot %s (leases volume size %s)", domain.sdUUID,

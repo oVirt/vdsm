@@ -54,6 +54,7 @@ from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage import multipath
 from vdsm.storage import resourceManager as rm
+from vdsm.storage.compat import sanlock
 from vdsm.storage.mailbox import MAILBOX_SIZE
 from vdsm.storage.persistent import PersistentDict, DictValidator
 import vdsm.supervdsm as svdsm
@@ -107,6 +108,12 @@ DMDK_PHYBLKSIZE = "PHYBLKSIZE"
 
 VERS_METADATA_LV = (0,)
 VERS_METADATA_TAG = (2, 3, 4)
+
+# Reserved leases for special purposes:
+#  - 0       SPM (Backward comapatibility with V0 and V2)
+#  - 1       SDM (SANLock V3)
+#  - 2..100  (Unassigned)
+RESERVED_LEASES = 100
 
 
 def encodePVInfo(pvInfo):
@@ -881,8 +888,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             return clusterlock.Lease(None, None, None)
         # TODO: use the sanlock specific offset when present
         slot = self.produceVolume(imgUUID, volUUID).getMetaOffset()
-        offset = ((slot + blockVolume.RESERVED_LEASES) * self.logBlkSize *
-                  sd.LEASE_BLOCKS)
+        offset = self.volume_lease_offset(slot)
         return clusterlock.Lease(volUUID, self.getLeasesFilePath(), offset)
 
     def teardownVolume(self, imgUUID, volUUID):
@@ -910,6 +916,16 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         Return the path to the external leases volume.
         """
         return _external_leases_path(self.sdUUID)
+
+    # Volume leases support
+
+    def create_volume_lease(self, slot, vol_id):
+        path = self.getLeasesFilePath()
+        offset = self.volume_lease_offset(slot)
+        sanlock.init_resource(self.sdUUID, vol_id, [(path, offset)])
+
+    def volume_lease_offset(self, slot):
+        return (RESERVED_LEASES + slot) * self.logBlkSize * sd.LEASE_BLOCKS
 
 
 class BlockStorageDomain(sd.StorageDomain):

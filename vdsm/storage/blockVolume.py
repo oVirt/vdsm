@@ -34,7 +34,6 @@ from vdsm.storage import lvm
 from vdsm.storage import misc
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import task
-from vdsm.storage.compat import sanlock
 from vdsm.storage.misc import deprecated
 from vdsm.storage.volumemetadata import VolumeMetadata
 
@@ -48,12 +47,6 @@ BLOCK_SIZE = sc.BLOCK_SIZE
 SECTORS_TO_MB = 2048
 
 QCOW_OVERHEAD_FACTOR = 1.1
-
-# Reserved leases for special purposes:
-#  - 0       SPM (Backward comapatibility with V0 and V2)
-#  - 1       SDM (SANLock V3)
-#  - 2..100  (Unassigned)
-RESERVED_LEASES = 100
 
 # Minimal padding to be added to internal volume optimal size.
 MIN_PADDING = constants.MEGAB
@@ -302,14 +295,9 @@ class BlockVolumeManifest(volume.VolumeManifest):
     def newVolumeLease(cls, metaId, sdUUID, volUUID):
         cls.log.debug("Initializing volume lease volUUID=%s sdUUID=%s, "
                       "metaId=%s", volUUID, sdUUID, metaId)
-        manifest = sdCache.produce_manifest(sdUUID)
-        metaSdUUID, mdSlot = metaId
-
-        leasePath = manifest.getLeasesFilePath()
-        leaseOffset = ((mdSlot + RESERVED_LEASES) *
-                       manifest.logBlkSize * sd.LEASE_BLOCKS)
-
-        sanlock.init_resource(sdUUID, volUUID, [(leasePath, leaseOffset)])
+        _, slot = metaId
+        sd = sdCache.produce_manifest(sdUUID)
+        sd.create_volume_lease(slot, volUUID)
 
     def refreshVolume(self):
         lvm.refreshLVs(self.sdUUID, (self.volUUID,))
