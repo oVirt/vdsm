@@ -49,8 +49,6 @@ DOMAIN_META_DATA = 'dom_md'
 DOMAIN_IMAGES = 'images'
 # Domain's metadata volume name
 METADATA = "metadata"
-# (volume) meta data slot size
-METASIZE = 512
 # Domain metadata slot size (it always takes the first slot)
 MAX_DOMAIN_DESCRIPTION_SIZE = 50
 

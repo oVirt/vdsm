@@ -558,17 +558,17 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         # case of 512 bytes per volume metadata, 2K for domain metadata and
         # extent size of 128MB. In any case we compute the right size on line.
         vg = lvm.getVG(vgroup)
-        minmetasize = (SD_METADATA_SIZE / sd.METASIZE * int(vg.extent_size) +
-                       (1024 * 1024 - 1)) / (1024 * 1024)
-        metaratio = int(vg.extent_size) / sd.METASIZE
-        metasize = (int(vg.extent_count) * sd.METASIZE +
+        minmetasize = (SD_METADATA_SIZE / sc.METADATA_SIZE *
+                       int(vg.extent_size) + (1024 * 1024 - 1)) / (1024 * 1024)
+        metaratio = int(vg.extent_size) / sc.METADATA_SIZE
+        metasize = (int(vg.extent_count) * sc.METADATA_SIZE +
                     (1024 * 1024 - 1)) / (1024 * 1024)
         metasize = max(minmetasize, metasize)
         if metasize > int(vg.free) / (1024 * 1024):
             raise se.VolumeGroupSizeError(
                 "volume group has not enough extents %s (Minimum %s), VG may "
                 "be too small" % (vg.extent_count,
-                                  (1024 * 1024) / sd.METASIZE))
+                                  (1024 * 1024) / sc.METADATA_SIZE))
         cls.log.info("size %s MB (metaratio %s)" % (metasize, metaratio))
         return metasize
 
@@ -806,7 +806,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                     int(ext) in range(pestart, pestart + pecount)):
 
                 offs = int(ext) + int(pv["mapoffset"])
-                if offs < SD_METADATA_SIZE / sd.METASIZE:
+                if offs < SD_METADATA_SIZE / sc.METADATA_SIZE:
                     raise se.MetaDataMappingError(
                         "domain %s: vol %s MD offset %s is bad - will "
                         "overwrite SD's MD" % (self.sdUUID, vol_name, offs))
@@ -1005,11 +1005,11 @@ class BlockStorageDomain(sd.StorageDomain):
         # Create metadata service volume
         metasize = cls.metaSize(vgName)
         lvm.createLV(vgName, sd.METADATA, "%s" % (metasize))
-        # Create the mapping right now so the index 0 is guaranteed
-        # to belong to the metadata volume. Since the metadata is at
-        # least SDMETADATA/METASIZE units, we know we can use the first
-        # SDMETADATA bytes of the metadata volume for the SD metadata.
-        # pass metadata's dev to ensure it is the first mapping
+        # Create the mapping right now so the index 0 is guaranteed to belong
+        # to the metadata volume. Since the metadata is at least
+        # SD_METADATA_SIZE / sc.METADATA_SIZE units, we know we can use the
+        # first SD_METADATA_SIZE bytes of the metadata volume for the SD
+        # metadata.  pass metadata's dev to ensure it is the first mapping
         mapping = cls.getMetaDataMapping(vgName)
 
         # Create the rest of the BlockSD internal volumes

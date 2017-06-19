@@ -293,7 +293,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         Just wipe meta.
         """
         try:
-            self._putMetadata(metaId, {"NONE": "#" * (sd.METASIZE - 10)})
+            self._putMetadata(metaId, {"NONE": "#" * (sc.METADATA_SIZE - 10)})
         except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataWriteError("%s: %s" % (metaId, e))
@@ -496,7 +496,7 @@ class BlockVolume(volume.Volume):
     def createVolumeMetadataRollback(cls, taskObj, sdUUID, offs):
         cls.log.info("Metadata rollback for sdUUID=%s offs=%s", sdUUID, offs)
         cls._putMetadata((sdUUID, int(offs)),
-                         {"NONE": "#" * (sd.METASIZE - 10)})
+                         {"NONE": "#" * (sc.METADATA_SIZE - 10)})
 
     @classmethod
     def _create(cls, dom, imgUUID, volUUID, size, volFormat, preallocate,
