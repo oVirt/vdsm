@@ -203,13 +203,6 @@ class VM(APIBase):
 
             self._fix_vm_params(vmParams)
 
-            if 'sysprepInf' in vmParams:
-                if not self._createSysprepFloppyFromInf(vmParams['sysprepInf'],
-                                                        vmParams['floppy']):
-                    raise exception.CannotCreateVM(
-                        'Failed to create sysprep floppy image. '
-                        'No space on /tmp?')
-
             if not graphics.isSupportedDisplayType(vmParams):
                 raise exception.CannotCreateVM(
                     'Unknown display type %s' % vmParams.get('display'))
@@ -252,11 +245,6 @@ class VM(APIBase):
             if 'kvmEnable' not in vmParams:
                 vmParams['kvmEnable'] = 'true'
 
-        if 'sysprepInf' in vmParams:
-            if not vmParams.get('floppy'):
-                vmParams['floppy'] = '%s%s.vfd' % (
-                    constants.P_VDSM_RUN, vmParams['vmId'])
-            vmParams['volatileFloppy'] = True
         if 'smp' not in vmParams:
             vmParams['smp'] = '1'
         if 'vmName' not in vmParams:
@@ -613,20 +601,6 @@ class VM(APIBase):
     @api.method
     def setDestroyOnReboot(self):
         return self.vm.set_destroy_on_reboot()
-
-    def _createSysprepFloppyFromInf(self, infFileBinary, floppyImage):
-        try:
-            rc, out, err = commands.execCmd([constants.EXT_MK_SYSPREP_FLOPPY,
-                                             floppyImage],
-                                            sudo=True,
-                                            data=infFileBinary.data)
-            if rc:
-                return False
-            else:
-                return True
-        except:
-            self.log.error("Error creating sysprep floppy", exc_info=True)
-            return False
 
     def _getHibernationPaths(self, hiberVolHandle):
         """

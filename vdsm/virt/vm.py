@@ -37,7 +37,6 @@ import libvirt
 # vdsm imports
 from vdsm.common import api
 from vdsm.common import exception
-from vdsm.common import fileutils
 from vdsm.common import logutils
 from vdsm.common import response
 import vdsm.common.time
@@ -920,9 +919,6 @@ class Vm(object):
             # this always triggers onStatusChange event, which
             # also sends back status event to Engine.
             self.guestAgent.onReboot()
-            if self.conf.get('volatileFloppy'):
-                self._ejectFloppy()
-                self.log.debug('ejected volatileFloppy')
             if self._destroy_on_reboot:
                 self.doDestroy(reason=vmexitreason.DESTROYED_ON_REBOOT)
         except Exception:
@@ -1369,17 +1365,6 @@ class Vm(object):
                 except Exception:
                     self.log.exception("Drive teardown failure for %s",
                                        drive)
-
-    def _cleanupFloppy(self):
-        """
-        Clean up floppy drive
-        """
-        if self.conf.get('volatileFloppy'):
-            try:
-                self.log.debug("Floppy %s cleanup" % self.conf['floppy'])
-                fileutils.rm_file(self.conf['floppy'])
-            except Exception:
-                pass
 
     def _cleanupGuestAgent(self):
         """
@@ -1979,7 +1964,6 @@ class Vm(object):
         General clean up routine
         """
         self._cleanupDrives()
-        self._cleanupFloppy()
         self._cleanupGuestAgent()
         self._teardown_devices()
         cleanup_guest_socket(self._qemuguestSocketFile)
@@ -4448,11 +4432,6 @@ class Vm(object):
             if self._guest_agent_api_version is not None:
                 vm['guestAgentAPIVersion'] = self._guest_agent_api_version
             vm['destroy_on_reboot'] = self._destroy_on_reboot
-
-    def _ejectFloppy(self):
-        if 'volatileFloppy' in self.conf:
-            fileutils.rm_file(self.conf['floppy'])
-        self._changeBlockDev('floppy', 'fda', '')
 
     def releaseVm(self, gracefulAttempts=1):
         """
