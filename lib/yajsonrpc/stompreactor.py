@@ -111,7 +111,7 @@ class StompAdapterImpl(object):
         else:
             resp = stomp.Frame(stomp.Command.CONNECTED, {"version": "1.2"})
             cx, cy = parseHeartBeatHeader(
-                frame.headers.get(stomp.Headers.HEARTEBEAT, "0,0")
+                frame.headers.get(stomp.Headers.HEARTBEAT, "0,0")
             )
 
             # Make sure the heart-beat interval is sane
@@ -120,7 +120,7 @@ class StompAdapterImpl(object):
 
             # The server can send a heart-beat every cy ms and doesn't want
             # to receive any heart-beat from the client.
-            resp.headers[stomp.Headers.HEARTEBEAT] = "%d,0" % (cy,)
+            resp.headers[stomp.Headers.HEARTBEAT] = "%d,0" % (cy,)
             dispatcher.setHeartBeat(cy)
 
         self.queue_frame(resp)

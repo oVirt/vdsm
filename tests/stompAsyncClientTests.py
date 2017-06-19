@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ class AsyncClientTest(TestCaseBase):
 
         self.assertEquals(req_frame.command, Command.CONNECT)
         self.assertEquals(req_frame.headers[Headers.ACCEPT_VERSION], '1.2')
-        self.assertEquals(req_frame.headers[Headers.HEARTEBEAT], '0,5000')
+        self.assertEquals(req_frame.headers[Headers.HEARTBEAT], '0,5000')
 
     def test_subscribe(self):
         client = AsyncClient()
@@ -96,7 +96,7 @@ class AsyncClientTest(TestCaseBase):
     def test_receive_connected(self):
         client = AsyncClient()
         frame = Frame(Command.CONNECTED,
-                      {'version': '1.2', Headers.HEARTEBEAT: '8000,0'})
+                      {'version': '1.2', Headers.HEARTBEAT: '8000,0'})
 
         client.handle_frame(None, frame)
 
