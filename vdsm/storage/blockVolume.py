@@ -38,7 +38,6 @@ from vdsm.storage.misc import deprecated
 from vdsm.storage.volumemetadata import VolumeMetadata
 
 import volume
-import sd
 from sdc import sdCache
 
 
@@ -97,10 +96,10 @@ class BlockVolumeManifest(volume.VolumeManifest):
         if not metaId:
             metaId = self.getMetadataId()
 
-        vgname, offs = metaId
-
+        _, offs = metaId
+        sd = sdCache.produce_manifest(self.sdUUID)
         try:
-            lines = misc.readblock(lvm.lvPath(vgname, sd.METADATA),
+            lines = misc.readblock(sd.metadata_volume_path(),
                                    offs * sc.METADATA_SIZE,
                                    sc.METADATA_SIZE)
         except Exception as e:
@@ -234,7 +233,8 @@ class BlockVolumeManifest(volume.VolumeManifest):
         data = cls.formatMetadata(meta)
         data += "\0" * (sc.METADATA_SIZE - len(data))
 
-        metavol = lvm.lvPath(vgname, sd.METADATA)
+        sd = sdCache.produce_manifest(vgname)
+        metavol = sd.metadata_volume_path()
         with directio.DirectFile(metavol, "r+") as f:
             f.seek(offs * sc.METADATA_SIZE)
             f.write(data)

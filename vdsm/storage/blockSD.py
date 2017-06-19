@@ -927,6 +927,11 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
     def volume_lease_offset(self, slot):
         return (RESERVED_LEASES + slot) * self.logBlkSize * sd.LEASE_BLOCKS
 
+    # Metadata volume
+
+    def metadata_volume_path(self):
+        return lvm.lvPath(self.sdUUID, sd.METADATA)
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
