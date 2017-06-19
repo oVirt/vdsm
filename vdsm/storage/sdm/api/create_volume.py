@@ -25,7 +25,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import resourceManager as rm
 
-from storage import image, sd
+from storage import image
 
 from . import base
 
@@ -40,7 +40,7 @@ class Job(base.Job):
         vol_format = sc.name2type(self.vol_info.vol_format)
 
         with self.sd_manifest.domain_lock(self.host_id):
-            image_res_ns = sd.getNamespace(sc.IMAGE_NAMESPACE,
+            image_res_ns = rm.getNamespace(sc.IMAGE_NAMESPACE,
                                            self.sd_manifest.sdUUID)
             with rm.acquireResource(image_res_ns, self.vol_info.img_id,
                                     rm.EXCLUSIVE):

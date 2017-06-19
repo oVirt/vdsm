@@ -951,7 +951,7 @@ class BlockStorageDomain(sd.StorageDomain):
         # Register lvm activation resource namespace for the underlying VG
         lvmActivationFactory = resourceFactories.LvmActivationFactory(
             self.sdUUID)
-        lvmActivationNamespace = sd.getNamespace(sc.LVM_ACTIVATION_NAMESPACE,
+        lvmActivationNamespace = rm.getNamespace(sc.LVM_ACTIVATION_NAMESPACE,
                                                  self.sdUUID)
         try:
             rm.registerNamespace(lvmActivationNamespace, lvmActivationFactory)

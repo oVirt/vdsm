@@ -69,7 +69,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         volume.VolumeManifest.__init__(self, repoPath, sdUUID, imgUUID,
                                        volUUID)
-        self.lvmActivationNamespace = sd.getNamespace(
+        self.lvmActivationNamespace = rm.getNamespace(
             sc.LVM_ACTIVATION_NAMESPACE, self.sdUUID)
 
     @classmethod
@@ -393,7 +393,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         """
         cls.log.info("Tearing down volume %s/%s justme %s"
                      % (sdUUID, volUUID, justme))
-        lvmActivationNamespace = sd.getNamespace(sc.LVM_ACTIVATION_NAMESPACE,
+        lvmActivationNamespace = rm.getNamespace(sc.LVM_ACTIVATION_NAMESPACE,
                                                  sdUUID)
         rm.releaseResource(lvmActivationNamespace, volUUID)
         if not justme:

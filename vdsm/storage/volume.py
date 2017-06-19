@@ -40,7 +40,6 @@ from vdsm.storage import task
 from vdsm.storage.misc import deprecated
 from vdsm.storage.volumemetadata import VolumeMetadata
 
-import sd
 from sdc import sdCache
 
 DOMAIN_MNT_POINT = 'mnt'
@@ -901,7 +900,7 @@ class Volume(object):
                      'dstFormat=%s srcParent=%s)', sdUUID, srcImg, srcVol,
                      dstFormat, srcParent)
 
-        imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        imageResourcesNamespace = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
 
         with rm.acquireResource(imageResourcesNamespace, srcImg, rm.EXCLUSIVE):
             vol = sdCache.produce(sdUUID).produceVolume(srcImg, srcVol)
@@ -1507,7 +1506,7 @@ class VolumeLease(guarded.AbstractLock):
 
     @property
     def ns(self):
-        return sd.getNamespace(sc.VOLUME_LEASE_NAMESPACE, self._sd_id)
+        return rm.getNamespace(sc.VOLUME_LEASE_NAMESPACE, self._sd_id)
 
     @property
     def name(self):

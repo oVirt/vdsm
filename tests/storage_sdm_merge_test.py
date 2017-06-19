@@ -38,11 +38,11 @@ from vdsm import qemuimg
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
-from vdsm.storage import resourceManager
+from vdsm.storage import resourceManager as rm
 
 from storage import image
 from storage import merge
-from storage import blockVolume, sd, volume
+from storage import blockVolume, volume
 
 import storage.sdm.api.merge
 
@@ -155,14 +155,12 @@ class TestMergeSubchain(VdsmTestCase):
             self.assertEqual(type(job.error), se.prepareIllegalVolumeError)
 
     def expected_locks(self, base_vol):
-        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, base_vol.sdUUID)
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, base_vol.sdUUID)
         ret = [
             # Domain lock
-            resourceManager.ResourceManagerLock(
-                sc.STORAGE, base_vol.sdUUID, resourceManager.SHARED),
+            rm.ResourceManagerLock(sc.STORAGE, base_vol.sdUUID, rm.SHARED),
             # Image lock
-            resourceManager.ResourceManagerLock(
-                img_ns, base_vol.imgUUID, resourceManager.EXCLUSIVE),
+            rm.ResourceManagerLock(img_ns, base_vol.imgUUID, rm.EXCLUSIVE),
             # Volume lease
             volume.VolumeLease(
                 0, base_vol.sdUUID, base_vol.imgUUID, base_vol.volUUID)

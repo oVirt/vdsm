@@ -1032,6 +1032,13 @@ def releaseResource(namespace, name):
     _manager.releaseResource(namespace, name)
 
 
+def getNamespace(*args):
+    """
+    Format namespace stirng from sequence of names.
+    """
+    return '_'.join(args)
+
+
 # Private apis for the tests - clients should never use these!
 
 def _registerResource(namespace, name, lockType, callback):

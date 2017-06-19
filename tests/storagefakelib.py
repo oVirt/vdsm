@@ -334,6 +334,9 @@ class FakeResourceManager(object):
     def releaseResource(self, *args, **kwargs):
         pass
 
+    def getNamespace(self, *args):
+        return "_".join(args)
+
 
 class FakeStorageDomainCache(object):
 

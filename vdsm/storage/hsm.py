@@ -1759,7 +1759,7 @@ class HSM(object):
         sdDom = sdCache.produce(sdUUID=sdUUID)
         repoPath = os.path.join(self.storage_repository, sdDom.getPools()[0])
 
-        imageResourcesNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        imageResourcesNamespace = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(imageResourcesNamespace, imgUUID, rm.SHARED):
             image.Image(repoPath).syncVolumeChain(sdUUID, imgUUID, volUUID,
                                                   newChain)

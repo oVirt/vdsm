@@ -1414,7 +1414,7 @@ class StoragePool(object):
         sdCache.produce(sdUUID).extendVolume(volumeUUID, size, isShuttingDown)
 
     def extendVolumeSize(self, sdUUID, imgUUID, volUUID, newSize):
-        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
             return vol.extendSize(int(newSize))
@@ -1597,9 +1597,9 @@ class StoragePool(object):
         :returns: a dict containing the UUID of the newly created image.
         :rtype: dict
         """
-        src_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        src_img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         if dstSdUUID not in (sdUUID, sd.BLANK_UUID):
-            dst_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, dstSdUUID)
+            dst_img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, dstSdUUID)
         else:
             dst_img_ns = src_img_ns
 
@@ -1639,8 +1639,8 @@ class StoragePool(object):
         :param discard: Discard the image before deletion
         :type discard: bool
         """
-        src_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, srcDomUUID)
-        dst_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, dstDomUUID)
+        src_img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, srcDomUUID)
+        dst_img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, dstDomUUID)
         # For MOVE_OP acquire exclusive lock
         # For COPY_OP shared lock is enough
         if op == image.MOVE_OP:
@@ -1680,8 +1680,8 @@ class StoragePool(object):
                             sparsified volume.
         :type dstVolUUID: UUID
         """
-        srcNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, tmpSdUUID)
-        dstNamespace = sd.getNamespace(sc.IMAGE_NAMESPACE, dstSdUUID)
+        srcNamespace = rm.getNamespace(sc.IMAGE_NAMESPACE, tmpSdUUID)
+        dstNamespace = rm.getNamespace(sc.IMAGE_NAMESPACE, dstSdUUID)
 
         # virt-sparsify writes to temporary volume when using --tmp:prebuilt,
         # so we acquire exclusive lock for the temporary image.
@@ -1710,8 +1710,8 @@ class StoragePool(object):
         :param dstSdUUID: The UUID of the storage domain you want to copy to.
         :type dstSdUUID: UUID
         """
-        srcImgResNs = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
-        dstImgResNs = sd.getNamespace(sc.IMAGE_NAMESPACE, dstSdUUID)
+        srcImgResNs = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        dstImgResNs = rm.getNamespace(sc.IMAGE_NAMESPACE, dstSdUUID)
 
         # Preparing the ordered resource list to be acquired
         resList = (rm.acquireResource(*x) for x in sorted((
@@ -1738,8 +1738,8 @@ class StoragePool(object):
         :param syncType: The type of sync to perform (all volumes, etc.).
         :type syncType: syncType enum
         """
-        srcImgResNs = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
-        dstImgResNs = sd.getNamespace(sc.IMAGE_NAMESPACE, dstSdUUID)
+        srcImgResNs = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        dstImgResNs = rm.getNamespace(sc.IMAGE_NAMESPACE, dstSdUUID)
 
         # Preparing the ordered resource list to be acquired
         resList = (rm.acquireResource(*x) for x in sorted((
@@ -1756,7 +1756,7 @@ class StoragePool(object):
         Upload an image to a remote endpoint using the specified method and
         methodArgs.
         """
-        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.SHARED):
             img = image.Image(self.poolPath)
             return img.upload(methodArgs, sdUUID, imgUUID, volUUID)
@@ -1766,7 +1766,7 @@ class StoragePool(object):
         Download an image from a remote endpoint using the specified method
         and methodArgs.
         """
-        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             img = image.Image(self.poolPath)
             return img.download(methodArgs, sdUUID, imgUUID, volUUID)
@@ -1780,7 +1780,7 @@ class StoragePool(object):
         while not startEvent.is_set():
             startEvent.wait()
 
-        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.SHARED):
             try:
                 img = image.Image(self.poolPath)
@@ -1793,7 +1793,7 @@ class StoragePool(object):
         """
         Download an image from a stream.
         """
-        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             try:
                 img = image.Image(self.poolPath)
@@ -1816,7 +1816,7 @@ class StoragePool(object):
         :returns: A dict with a list of volume UUIDs in the corrected chain
         :rtype: dict
         """
-        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             img = image.Image(self.poolPath)
             chain = img.reconcileVolumeChain(sdUUID, imgUUID, leafVolUUID)
@@ -1843,7 +1843,7 @@ class StoragePool(object):
         :param discard: discard the successor before removal
         :type discard: bool
         """
-        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
 
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             img = image.Image(self.poolPath)
@@ -1910,7 +1910,7 @@ class StoragePool(object):
         :returns: a dict with the UUID of the new volume.
         :rtype: dict
         """
-        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
 
         if imgUUID != srcImgUUID and srcImgUUID != sc.BLANK_UUID:
             srcDom = sdCache.produce(sdUUID)
@@ -1952,7 +1952,7 @@ class StoragePool(object):
                         have.
         :type imgUUID: UUID
         """
-        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
 
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             dom = sdCache.produce(sdUUID)
@@ -2007,14 +2007,14 @@ class StoragePool(object):
 
     def setVolumeDescription(self, sdUUID, imgUUID, volUUID, description):
         self.validatePoolSD(sdUUID)
-        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
             vol.setDescription(description)
 
     def setVolumeLegality(self, sdUUID, imgUUID, volUUID, legality):
         self.validatePoolSD(sdUUID)
-        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(img_ns, imgUUID, rm.EXCLUSIVE):
             vol = sdCache.produce(sdUUID).produceVolume(imgUUID, volUUID)
             vol.setLegality(legality)

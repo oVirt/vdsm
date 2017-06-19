@@ -28,7 +28,6 @@ from vdsm.storage import resourceManager as rm
 
 import logging
 from sdc import sdCache
-import sd
 import image
 
 log = logging.getLogger('storage.ResourcesFactories')
@@ -102,7 +101,7 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
     def __init__(self, sdUUID):
         rm.SimpleResourceFactory.__init__(self)
         self.sdUUID = sdUUID
-        self.volumeResourcesNamespace = sd.getNamespace(sc.VOLUME_NAMESPACE,
+        self.volumeResourcesNamespace = rm.getNamespace(sc.VOLUME_NAMESPACE,
                                                         self.sdUUID)
 
     def __getResourceCandidatesList(self, resourceName, lockType):

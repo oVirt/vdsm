@@ -41,13 +41,12 @@ from vdsm import qemuimg
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
-from vdsm.storage import resourceManager
+from vdsm.storage import resourceManager as rm
 
 from storage import blockVolume
 from storage import fileVolume
 from storage import merge
 from storage import image
-from storage import sd
 from storage import volume
 
 MB = 1024 ** 2
@@ -290,12 +289,10 @@ class TestPrepareMerge(VdsmTestCase):
             self.assertEqual(expected.virtual * GB, new_base_size)
 
     def expected_locks(self, subchain):
-        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, subchain.sd_id)
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, subchain.sd_id)
         return [
-            resourceManager.ResourceManagerLock(sc.STORAGE, subchain.sd_id,
-                                                resourceManager.SHARED),
-            resourceManager.ResourceManagerLock(img_ns, subchain.img_id,
-                                                resourceManager.EXCLUSIVE),
+            rm.ResourceManagerLock(sc.STORAGE, subchain.sd_id, rm.SHARED),
+            rm.ResourceManagerLock(img_ns, subchain.img_id, rm.EXCLUSIVE),
             volume.VolumeLease(subchain.host_id, subchain.sd_id,
                                subchain.img_id, subchain.base_id)
         ]

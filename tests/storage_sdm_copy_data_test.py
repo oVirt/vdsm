@@ -42,10 +42,10 @@ from vdsm.common import exception
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
-from vdsm.storage import resourceManager
+from vdsm.storage import resourceManager as rm
 from vdsm.storage import workarounds
 
-from storage import blockVolume, sd, volume
+from storage import blockVolume, volume
 
 import storage.sdm.api.copy_data
 
@@ -85,19 +85,15 @@ class TestCopyDataDIV(VdsmTestCase):
                 yield env
 
     def expected_locks(self, src_vol, dst_vol):
-        src_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, src_vol.sdUUID)
-        dst_img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, dst_vol.sdUUID)
+        src_img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, src_vol.sdUUID)
+        dst_img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, dst_vol.sdUUID)
         ret = [
             # Domain lock for each volume
-            resourceManager.ResourceManagerLock(
-                sc.STORAGE, src_vol.sdUUID, resourceManager.SHARED),
-            resourceManager.ResourceManagerLock(
-                sc.STORAGE, dst_vol.sdUUID, resourceManager.SHARED),
+            rm.ResourceManagerLock(sc.STORAGE, src_vol.sdUUID, rm.SHARED),
+            rm.ResourceManagerLock(sc.STORAGE, dst_vol.sdUUID, rm.SHARED),
             # Image lock for each volume, exclusive for the destination
-            resourceManager.ResourceManagerLock(
-                src_img_ns, src_vol.imgUUID, resourceManager.SHARED),
-            resourceManager.ResourceManagerLock(
-                dst_img_ns, dst_vol.imgUUID, resourceManager.EXCLUSIVE),
+            rm.ResourceManagerLock(src_img_ns, src_vol.imgUUID, rm.SHARED),
+            rm.ResourceManagerLock(dst_img_ns, dst_vol.imgUUID, rm.EXCLUSIVE),
             # Volume lease for the destination volume
             volume.VolumeLease(
                 0, dst_vol.sdUUID, dst_vol.imgUUID, dst_vol.volUUID)

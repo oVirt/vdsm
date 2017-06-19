@@ -252,10 +252,6 @@ def name2class(name):
     raise KeyError(name)
 
 
-def getNamespace(*args):
-    return '_'.join(args)
-
-
 def sizeStr2Int(size_str):
     if size_str.endswith("M") or size_str.endswith("m"):
         size = int(size_str[:-1]) * (1 << 20)
@@ -735,15 +731,16 @@ class StorageDomain(object):
         # Register image resource namespace
         imageResourceFactory = \
             resourceFactories.ImageResourceFactory(self.sdUUID)
-        imageResourcesNamespace = getNamespace(sc.IMAGE_NAMESPACE, self.sdUUID)
+        imageResourcesNamespace = rm.getNamespace(sc.IMAGE_NAMESPACE,
+                                                  self.sdUUID)
         try:
             rm.registerNamespace(imageResourcesNamespace, imageResourceFactory)
         except rm.NamespaceRegistered:
             self.log.debug("Resource namespace %s already registered",
                            imageResourcesNamespace)
 
-        volumeResourcesNamespace = getNamespace(sc.VOLUME_NAMESPACE,
-                                                self.sdUUID)
+        volumeResourcesNamespace = rm.getNamespace(sc.VOLUME_NAMESPACE,
+                                                   self.sdUUID)
         try:
             rm.registerNamespace(volumeResourcesNamespace,
                                  rm.SimpleResourceFactory())

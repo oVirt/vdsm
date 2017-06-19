@@ -34,7 +34,6 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import resourceManager as rm
 
-from storage import sd
 from storage import volume
 
 HOST_ID = 1
@@ -56,7 +55,7 @@ class VolumeLeaseTest(VdsmTestCase):
 
     def test_properties(self):
         a = volume.VolumeLease(HOST_ID, 'dom', 'img', 'vol')
-        self.assertEqual(sd.getNamespace(sc.VOLUME_LEASE_NAMESPACE, 'dom'),
+        self.assertEqual(rm.getNamespace(sc.VOLUME_LEASE_NAMESPACE, 'dom'),
                          a.ns)
         self.assertEqual('vol', a.name)
         self.assertEqual(rm.EXCLUSIVE, a.mode)

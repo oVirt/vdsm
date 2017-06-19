@@ -26,7 +26,6 @@ from vdsm import properties
 from vdsm.storage import constants as sc
 from vdsm.storage import resourceManager as rm
 
-from storage import sd
 from storage import volume
 from storage.sdc import sdCache
 
@@ -54,7 +53,7 @@ class VolumeInfo(properties.Owner):
 
     @property
     def locks(self):
-        img_ns = sd.getNamespace(sc.IMAGE_NAMESPACE, self.sd_id)
+        img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, self.sd_id)
         ret = [rm.ResourceManagerLock(sc.STORAGE, self.sd_id, rm.SHARED),
                rm.ResourceManagerLock(img_ns, self.img_id, rm.EXCLUSIVE)]
         dom = sdCache.produce_manifest(self.sd_id)
