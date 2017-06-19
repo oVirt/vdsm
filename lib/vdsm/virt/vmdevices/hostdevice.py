@@ -102,13 +102,19 @@ class PciDevice(core.Base):
         hostdev.setAttrs(managed='no', mode='subsystem', type='pci')
         source = hostdev.appendChildWithArgs('source')
 
-        source.appendChildWithArgs('address', **self.hostAddress)
+        source.appendChildWithArgs(
+            'address',
+            **_fix_pci_address(**self.hostAddress)
+        )
 
         if hasattr(self, 'bootOrder'):
             hostdev.appendChildWithArgs('boot', order=self.bootOrder)
 
         if hasattr(self, 'address'):
-            hostdev.appendChildWithArgs('address', **self.address)
+            hostdev.appendChildWithArgs(
+                'address',
+                **_fix_pci_address(**self.address)
+            )
 
         return hostdev
 
@@ -371,3 +377,15 @@ class HostDevice(core.Base):
             except KeyError:
                 # Unknown device, be careful.
                 continue
+
+
+def _fix_pci_address(domain, bus, slot, function, **kwargs):
+    """
+    Wrapper around core.normalize_pci_address to handle transparently
+    the extra fields of the address (e.g. type) which don't need
+    normalization.
+    """
+    kwargs.update(
+        **core.normalize_pci_address(domain, bus, slot, function)
+    )
+    return kwargs

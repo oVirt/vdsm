@@ -56,46 +56,46 @@ _DEVICE_XML = {
     'pci_0000_00_02_0':
     '''
     <hostdev managed="no" mode="subsystem" type="pci">
-            <source>
-                    <address bus="0" domain="0" function="0" slot="2"/>
-            </source>
-            %s
+      <source>
+        <address bus="0x00" domain="0x0000" function="0x0" slot="0x02"/>
+      </source>
+      %s
     </hostdev>
     ''',
     'pci_0000_00_19_0':
     '''
     <hostdev managed="no" mode="subsystem" type="pci">
-            <source>
-                    <address bus="0" domain="0" function="0" slot="25"/>
-            </source>
-            %s
+      <source>
+        <address bus="0x00" domain="0x0000" function="0x0" slot="0x19"/>
+      </source>
+      %s
     </hostdev>
     ''',
     'pci_0000_00_1a_0':
     '''
     <hostdev managed="no" mode="subsystem" type="pci">
-            <source>
-                    <address bus="0" domain="0" function="0" slot="26"/>
-            </source>
-            %s
+      <source>
+        <address bus="0x00" domain="0x0000" function="0x0" slot="0x1a"/>
+      </source>
+      %s
     </hostdev>
     ''',
     'pci_0000_00_1b_0':
     '''
     <hostdev managed="no" mode="subsystem" type="pci">
-            <source>
-                    <address bus="0" domain="0" function="0" slot="27"/>
-            </source>
-            %s
+      <source>
+        <address bus="0x00" domain="0x0000" function="0x0" slot="0x1b"/>
+      </source>
+      %s
     </hostdev>
     ''',
     'pci_0000_00_1f_2':
     '''
     <hostdev managed="no" mode="subsystem" type="pci">
-            <source>
-                    <address bus="0" domain="0" function="2" slot="31"/>
-            </source>
-            %s
+      <source>
+        <address bus="0x00" domain="0x0000" function="0x2" slot="0x1f"/>
+      </source>
+      %s
     </hostdev>
     ''',
     'usb_1_1':
