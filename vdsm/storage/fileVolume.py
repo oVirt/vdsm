@@ -319,7 +319,7 @@ class FileVolumeManifest(volume.VolumeManifest):
             self._shareLease(dstImgPath)
 
     @classmethod
-    def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
+    def getImageVolumes(cls, sdUUID, imgUUID):
         """
         Fetch the list of the Volumes UUIDs,
         not including the shared base (template)

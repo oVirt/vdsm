@@ -517,7 +517,7 @@ class FakeVolumeManifest(object):
 
     @classmethod
     @recorded
-    def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
+    def getImageVolumes(cls, sdUUID, imgUUID):
         pass
 
     @recorded
@@ -850,7 +850,7 @@ class VolumeTestMixin(object):
         ['createMetadata', 2],
         ['newMetadata', 11],
         ['newVolumeLease', 3],
-        ['getImageVolumes', 3],
+        ['getImageVolumes', 2],
         ['teardown', 3],
     ])
     def test_class_methods(self, fn, nargs):

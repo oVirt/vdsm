@@ -225,7 +225,7 @@ class Image:
         # Find all the volumes when volUUID is not provided
         else:
             # Find all volumes of image
-            uuidlist = volclass.getImageVolumes(self.repoPath, sdUUID, imgUUID)
+            uuidlist = volclass.getImageVolumes(sdUUID, imgUUID)
 
             if not uuidlist:
                 raise se.ImageDoesNotExistInSD(imgUUID, sdUUID)
@@ -336,7 +336,7 @@ class Image:
         try:
             legal = True
             volclass = sdCache.produce(sdUUID).getVolumeClass()
-            vollist = volclass.getImageVolumes(self.repoPath, sdUUID, imgUUID)
+            vollist = volclass.getImageVolumes(sdUUID, imgUUID)
             self.log.info("image %s in domain %s has vollist %s", imgUUID,
                           sdUUID, str(vollist))
             for v in vollist:

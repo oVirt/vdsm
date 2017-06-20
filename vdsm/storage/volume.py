@@ -689,7 +689,7 @@ class VolumeManifest(object):
         raise NotImplementedError
 
     @classmethod
-    def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
+    def getImageVolumes(cls, sdUUID, imgUUID):
         raise NotImplementedError
 
     @classmethod
@@ -1067,7 +1067,7 @@ class Volume(object):
         pvol = vol.getParentVolume()
         # Remove volume
         vol.delete(postZero=False, force=True, discard=False)
-        if len(cls.getImageVolumes(repoPath, sdUUID, imgUUID)):
+        if len(cls.getImageVolumes(sdUUID, imgUUID)):
             # Don't remove the image folder itself
             return
 
@@ -1479,8 +1479,8 @@ class Volume(object):
         return cls.manifestClass.newVolumeLease(metaId, sdUUID, volUUID)
 
     @classmethod
-    def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
-        return cls.manifestClass.getImageVolumes(repoPath, sdUUID, imgUUID)
+    def getImageVolumes(cls, sdUUID, imgUUID):
+        return cls.manifestClass.getImageVolumes(sdUUID, imgUUID)
 
     def _extendSizeRaw(self, newSize):
         raise NotImplementedError

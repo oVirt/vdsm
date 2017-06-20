@@ -324,7 +324,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         os.symlink(self.getDevPath(), dstPath)
 
     @classmethod
-    def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
+    def getImageVolumes(cls, sdUUID, imgUUID):
         """
         Fetch the list of the Volumes UUIDs, not including the shared base
         (template)
