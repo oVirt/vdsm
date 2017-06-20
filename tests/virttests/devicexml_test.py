@@ -1033,6 +1033,29 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         ]):
             self._check_roundtrip(vmdevices.network.Interface, interface_xml)
 
+    @MonkeyPatch(vmdevices.network.supervdsm,
+                 'getProxy', lambda: FakeProxy())
+    def test_interface_hostdev(self):
+        interface_xml = u'''
+            <interface type='hostdev' managed='no'>
+              <address type='pci' domain='0x0000' bus='0x00'
+                slot='0x04' function='0x0'/>
+              <mac address='00:1a:4a:16:91:df'/>
+              <source>
+                <address type='pci' domain='0x0000' bus='0x05'
+                    slot='0x00' function='0x1'/>
+              </source>
+              <driver name='vfio'/>
+            </interface>'''
+        with MonkeyPatchScope([
+            (hostdev.libvirtconnection, 'get', hostdevlib.Connection),
+            (vmdevices.hostdevice, 'detach_detachable',
+                lambda *args, **kwargs: None),
+            (vmdevices.hostdevice, 'reattach_detachable',
+                lambda *args, **kwargs: None),
+        ]):
+            self._check_roundtrip(vmdevices.network.Interface, interface_xml)
+
     @permutations(_HOSTDEV_XML)
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: FakeProxy())
