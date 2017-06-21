@@ -25,6 +25,7 @@ import uuid
 from vdsm.common import cmdutils
 from vdsm.common.cmdutils import systemd_run
 from vdsm.common.compat import CPopen as Popen
+from vdsm.network import py2to3
 
 
 def exec_sync(cmds):
@@ -38,7 +39,7 @@ def exec_sync(cmds):
     undecodable bytes.
     """
     retcode, out, err = exec_sync_bytes(cmds)
-    return retcode, _to_str(out), _to_str(err)
+    return retcode, py2to3.to_str(out), py2to3.to_str(err)
 
 
 def exec_systemd_new_unit(cmds, slice_name):
@@ -62,19 +63,3 @@ def exec_sync_bytes(cmds):
     logging.debug(cmdutils.retcode_log_line(p.returncode, err=err))
 
     return p.returncode, out, err
-
-
-def _to_str(value):
-    """Convert textual value to native string.
-
-    Passed value (bytes output of Popen communicate) will be returned as
-    a native str value (bytes in Python 2, unicode in Python 3).
-    """
-    if isinstance(value, str):
-        return value
-    elif isinstance(value, bytes):
-        return value.decode('utf-8')
-    else:
-        raise ValueError(
-            'Expected a textual value, given {} of type {}.'.format(
-                value, type(value)))

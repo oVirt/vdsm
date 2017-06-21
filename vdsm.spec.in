@@ -1136,6 +1136,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/netconfpersistence.py*
 %{python_sitelib}/%{vdsm_name}/network/netrestore.py*
 %{python_sitelib}/%{vdsm_name}/network/netupgrade.py*
+%{python_sitelib}/%{vdsm_name}/network/py2to3.py*
 %{python_sitelib}/%{vdsm_name}/network/restore_net_config.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroute.py*
 %{python_sitelib}/%{vdsm_name}/network/sysctl.py*

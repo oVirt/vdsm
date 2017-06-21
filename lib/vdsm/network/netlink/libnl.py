@@ -36,6 +36,7 @@ from ctypes import CDLL, CFUNCTYPE, sizeof, get_errno, byref
 from ctypes import c_char, c_char_p, c_int, c_void_p, c_size_t, py_object
 
 from vdsm.common.cache import memoized
+from vdsm.network import py2to3
 
 LIBNL = CDLL('libnl-3.so.200', use_errno=True)
 LIBNL_ROUTE = CDLL('libnl-route-3.so.200', use_errno=True)
@@ -172,7 +173,7 @@ def nl_geterror(error_code):
     """
     _nl_geterror = _libnl('nl_geterror', c_char_p, c_int)
     error_message = _nl_geterror(error_code)
-    return _to_str(error_message)
+    return py2to3.to_str(error_message)
 
 
 def nl_addr2str(addr):
@@ -186,7 +187,7 @@ def nl_addr2str(addr):
         'nl_addr2str', c_char_p, c_void_p, c_char_p, c_size_t)
     buf = (c_char * HWADDRSIZE)()
     address = _nl_addr2str(addr, buf, sizeof(buf))
-    return _to_str(address)
+    return py2to3.to_str(address)
 
 
 def nl_af2str(family):
@@ -199,7 +200,7 @@ def nl_af2str(family):
     _nl_af2str = _libnl('nl_af2str', c_char_p, c_int, c_char_p, c_size_t)
     buf = (c_char * CHARBUFFSIZE)()
     address_family = _nl_af2str(family, buf, sizeof(buf))
-    return _to_str(address_family)
+    return py2to3.to_str(address_family)
 
 
 def rtnl_scope2str(scope):
@@ -213,7 +214,7 @@ def rtnl_scope2str(scope):
         'rtnl_scope2str', c_char_p, c_int, c_char_p, c_size_t)
     buf = (c_char * CHARBUFFSIZE)()
     address_scope = _rtnl_scope2str(scope, buf, sizeof(buf))
-    return _to_str(address_scope)
+    return py2to3.to_str(address_scope)
 
 
 def nl_socket_alloc():
@@ -381,7 +382,7 @@ def nl_object_get_type(obj):
     """
     _nl_object_get_type = _libnl('nl_object_get_type', c_char_p, c_void_p)
     object_type = _nl_object_get_type(obj)
-    return _to_str(object_type) if object_type else None
+    return py2to3.to_str(object_type) if object_type else None
 
 
 def nl_object_get_msgtype(obj):
@@ -535,7 +536,7 @@ def rtnl_addr_flags2str(flags_bitfield):
         'rtnl_addr_flags2str', c_char_p, c_int, c_char_p, c_size_t)
     buf = (c_char * (CHARBUFFSIZE * 2))()
     flags_str = _rtnl_addr_flags2str(flags_bitfield, buf, sizeof(buf))
-    return _to_str(flags_str)
+    return py2to3.to_str(flags_str)
 
 
 def rtnl_link_alloc_cache(socket, family):
@@ -598,7 +599,7 @@ def rtnl_link_get_type(link):
     _rtnl_link_get_type = _libnl_route(
         'rtnl_link_get_type', c_char_p, c_void_p)
     link_type = _rtnl_link_get_type(link)
-    return _to_str(link_type) if link_type else None
+    return py2to3.to_str(link_type) if link_type else None
 
 
 def rtnl_link_get_kernel(socket, ifindex, ifname):
@@ -617,7 +618,7 @@ def rtnl_link_get_kernel(socket, ifindex, ifname):
     _rtnl_link_get_kernel = _libnl_route(
         'rtnl_link_get_kernel', c_int, c_void_p, c_int, c_char_p, c_void_p)
     link = c_void_p()
-    b_ifname = _to_binary(ifname) if ifname else None
+    b_ifname = py2to3.to_binary(ifname) if ifname else None
     err = _rtnl_link_get_kernel(socket, ifindex, b_ifname, byref(link))
     if err:
         raise IOError(-err, nl_geterror(err))
@@ -717,7 +718,7 @@ def rtnl_link_get_name(link):
     _rtnl_link_get_name = _libnl_route(
         'rtnl_link_get_name', c_char_p, c_void_p)
     name = _rtnl_link_get_name(link)
-    return _to_str(name) if name else None
+    return py2to3.to_str(name) if name else None
 
 
 def rtnl_link_get_operstate(link):
@@ -744,7 +745,7 @@ def rtnl_link_get_qdisc(link):
     _rtnl_link_get_qdisc = _libnl_route(
         'rtnl_link_get_qdisc', c_char_p, c_void_p)
     qdisc = _rtnl_link_get_qdisc(link)
-    return _to_str(qdisc) if qdisc else None
+    return py2to3.to_str(qdisc) if qdisc else None
 
 
 def rtnl_link_get_by_name(cache, name):
@@ -780,7 +781,7 @@ def rtnl_link_i2name(cache, ifindex):
         'rtnl_link_i2name', c_char_p, c_void_p, c_int, c_char_p, c_size_t)
     buf = (c_char * CHARBUFFSIZE)()
     name = _rtnl_link_i2name(cache, ifindex, buf, sizeof(buf))
-    return _to_str(name) if name else None
+    return py2to3.to_str(name) if name else None
 
 
 def rtnl_link_operstate2str(operstate_code):
@@ -794,7 +795,7 @@ def rtnl_link_operstate2str(operstate_code):
         'rtnl_link_operstate2str', c_char_p, c_int, c_char_p, c_size_t)
     buf = (c_char * CHARBUFFSIZE)()
     operstate = _rtnl_link_operstate2str(operstate_code, buf, sizeof(buf))
-    return _to_str(operstate)
+    return py2to3.to_str(operstate)
 
 
 def rtnl_link_put(link):
@@ -979,27 +980,3 @@ def _libnl(function_name, return_type, *arguments):
 @memoized
 def _libnl_route(function_name, return_type, *arguments):
     return CFUNCTYPE(return_type, *arguments)((function_name, LIBNL_ROUTE))
-
-
-def _to_str(value):
-    """Convert textual value to native string.
-
-    Passed value (bytes output of libnl CFUNCTYPE) will be returned as a native
-    str value (bytes in Python 2, unicode in Python 3).
-    """
-    if isinstance(value, str):
-        return value
-    elif isinstance(value, bytes):
-        return value.decode('utf-8')
-    else:
-        raise ValueError(
-            'Expected a textual value, given {} of type {}.'.format(
-                value, type(value)))
-
-
-def _to_binary(value):
-    """Convert textual value to binary."""
-    if isinstance(value, bytes):
-        return value
-    else:
-        return value.encode('utf-8')

@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,34 +15,29 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
-#
 
-SUBDIRS = configurators ip link netinfo netlink ovs tc nm netswitch
+from __future__ import absolute_import
 
-include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmnetworkdir = $(vdsmpylibdir)/network
-dist_vdsmnetwork_PYTHON = \
-	__init__.py \
-	api.py \
-	errors.py \
-	canonicalize.py \
-	cmd.py \
-	connectivity.py \
-	dhclient_monitor.py \
-	driverloader.py \
-	ifacetracking.py \
-	ifacquire.py \
-	initializer.py \
-	ipwrapper.py \
-	kernelconfig.py \
-	legacy_switch.py \
-	models.py \
-	netconfpersistence.py \
-	netrestore.py \
-	netupgrade.py \
-	py2to3.py \
-	restore_net_config.py \
-	sourceroute.py \
-	sysctl.py \
-	$(NULL)
+def to_str(value):
+    """Convert textual value to native string.
+
+    Passed value will be returned as a native str value (bytes in Python 2,
+    unicode in Python 3).
+    """
+    if isinstance(value, str):
+        return value
+    elif isinstance(value, bytes):
+        return value.decode('utf-8')
+    else:
+        raise ValueError(
+            'Expected a textual value, given {} of type {}.'.format(
+                value, type(value)))
+
+
+def to_binary(value):
+    """Convert textual value to binary."""
+    if isinstance(value, bytes):
+        return value
+    else:
+        return value.encode('utf-8')
