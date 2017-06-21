@@ -121,7 +121,7 @@ Requires: safelease >= 1.0-7
 Requires: mom >= 0.5.8
 Requires(pre): shadow-utils
 
-Obsoletes: %{name}-infra <= 4.18
+Obsoletes: %{name}-infra < 4.19
 
 %if 0%{?with_openvswitch}
 Requires: openvswitch >= 2.0.0
