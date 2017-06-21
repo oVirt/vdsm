@@ -110,6 +110,7 @@ Requires: python-requests
 Requires: rpm-python
 Requires: nfs-utils
 Requires: libnl3
+Requires: abrt-cli
 Requires: abrt-addon-vmcore
 Requires: abrt-addon-ccpp
 Requires: abrt-addon-python
