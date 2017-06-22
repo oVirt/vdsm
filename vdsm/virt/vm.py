@@ -2270,7 +2270,8 @@ class Vm(object):
             fname = self.cif.prepareVolumePath(restore_path)
             try:
                 if fromSnapshot:
-                    self._connection.restoreFlags(fname, srcDomXML, 0)
+                    self._connection.restoreFlags(
+                        fname, srcDomXML, libvirt.VIR_DOMAIN_SAVE_PAUSED)
                 else:
                     self._connection.restore(fname)
             finally:
