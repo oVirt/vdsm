@@ -598,6 +598,13 @@ class AsyncClient(object):
         headers = {Headers.RECEIPT_ID: r_id}
         self.queue_frame(Frame(Command.RECEIPT, headers))
 
+    def restore_subscriptions(self):
+        subs = [sub for sub in six.viewvalues(self._subscriptions)]
+        self._subscriptions.clear()
+
+        for sub in subs:
+            self.subscribe(sub.destination)
+
 
 class _Subscription(object):
 

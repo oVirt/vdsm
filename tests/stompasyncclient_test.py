@@ -73,6 +73,18 @@ class AsyncClientTest(TestCaseBase):
         client.unsubscribe(subscription)
         self.assertEqual(len(client._subscriptions), 0)
 
+    def test_restore_subcsriptions(self):
+        client = AsyncClient()
+        client.subscribe(destination='jms.queue.events', ack='client',
+                         sub_id=str(uuid4()))
+        client.subscribe(destination='jms.queue.events', ack='client',
+                         sub_id=str(uuid4()))
+        client.subscribe(destination='jms.queue.events', ack='client',
+                         sub_id=str(uuid4()))
+
+        client.restore_subscriptions()
+        self.assertEqual(len(client._subscriptions), 3)
+
     def test_unsubscribe_with_different_id(self):
         client = AsyncClient()
 
