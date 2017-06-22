@@ -35,8 +35,6 @@ nodist_vdsmexec_SCRIPTS = \
 	$(NULL)
 
 dist_vdsm_SCRIPTS = \
-	get-conf-item \
-	set-conf-item \
 	vdsmd \
 	$(NULL)
 

@@ -118,6 +118,11 @@ dist_cronhourly_SCRIPTS = \
 	./etc/cron.hourly/vdsm-logrotate \
 	$(NULL)
 
+dist_vdsmexec_SCRIPTS = \
+	./libexec/vdsm/get-conf-item \
+	./libexec/vdsm/set-conf-item \
+	$(NULL)
+
 networkmanagerdir = $(sysconfdir)/NetworkManager/conf.d
 
 networkmanager_DATA = \

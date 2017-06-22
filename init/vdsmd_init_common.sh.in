@@ -109,7 +109,7 @@ task_tune_system(){
 
 
 _CONF_FILE="@CONFDIR@/vdsm.conf"
-_GETCONFITEM="@VDSMDIR@/get-conf-item"
+_GETCONFITEM="@LIBEXECDIR@/get-conf-item"
 _DOM_METADATA_BACKUP_DIR="@VDSMLOGDIR@/backup"
 
 _mk_data_center() {
