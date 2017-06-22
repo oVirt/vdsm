@@ -247,6 +247,14 @@ AC_ARG_WITH(
     [with_data_center="/rhev/data-center"])
 AC_SUBST([vdsmrepo], [${with_data_center}])
 
+AC_ARG_WITH(
+    [polkitdir],
+    [AS_HELP_STRING([--with-polkitdir=FILE],
+                    [where to place polkit rules, @<:@default=/usr/share/polkit-1/rules.d@:>@])],
+    [with_polkitdir="${withval}"],
+    [with_polkitdir="/usr/share/polkit-1/rules.d"])
+AC_SUBST([polkitdir], [${with_polkitdir}])
+
 # Users and groups
 AC_SUBST([VDSMUSER], [vdsm])
 AC_SUBST([VDSMGROUP], [kvm])

@@ -111,6 +111,10 @@ libvirtpassword_DATA = \
 	./etc/pki/vdsm/keys/libvirt_password \
 	$(NULL)
 
+dist_polkit_DATA = \
+	./usr/share/polkit-1/rules.d/10-vdsm-libvirt-access.rules \
+	$(NULL)
+
 cronhourlydir = $(sysconfdir)/cron.hourly
 dist_cronhourly_SCRIPTS = \
 	./etc/cron.hourly/vdsm-logrotate \

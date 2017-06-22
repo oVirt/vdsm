@@ -711,7 +711,8 @@ autoreconf -if
 %if 0%{?with_containers}
         --enable-containers \
 %endif
-        --with-data-center='@VDSMREPO@'
+        --with-data-center='@VDSMREPO@' \
+        --with-polkitdir=%{_polkitdir}
 
 make
 # Setting software_version and software_revision in dsaversion.py
@@ -753,10 +754,6 @@ install -Dm 0644 vdsm_hooks/fcoe/85-vdsm-hook-fcoe.preset %{buildroot}%{_presetd
 # dropbox for core dumps
 install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
 %endif
-
-# Install the polkit for libvirt
-install -Dm 0644 vdsm/vdsm-libvirt-access.rules \
-                 %{buildroot}%{_polkitdir}/10-vdsm-libvirt-access.rules
 
 # Install the libvirt hook for cleaning up the XML
 install -Dm 0755 vdsm/virt/libvirt-hook.sh \

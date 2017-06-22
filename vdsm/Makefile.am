@@ -42,7 +42,6 @@ CLEANFILES = \
 	$(nodist_man8_MANS)
 
 EXTRA_DIST = \
-	vdsm-libvirt-access.rules \
 	$(NULL)
 
 all-local: \
