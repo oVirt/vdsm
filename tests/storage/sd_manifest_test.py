@@ -30,12 +30,11 @@ from testlib import VdsmTestCase, recorded
 from testlib import make_uuid
 from testlib import expandPermutations, permutations
 
-from storagetestlib import (
-    make_file_volume,
+from storage.storagetestlib import (
     fake_block_env,
-    fake_file_env
+    fake_file_env,
+    make_file_volume,
 )
-
 
 MB = 1048576
 

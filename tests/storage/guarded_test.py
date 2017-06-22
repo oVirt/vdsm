@@ -20,7 +20,7 @@
 
 from __future__ import absolute_import
 
-from storagetestlib import FakeGuardedLock
+from storage.storagetestlib import FakeGuardedLock
 from testlib import VdsmTestCase
 
 from vdsm.storage import guarded

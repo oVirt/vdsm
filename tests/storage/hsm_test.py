@@ -25,8 +25,11 @@ from testlib import make_config
 from testlib import make_uuid
 from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
-from storagetestlib import fake_file_env
-from storagetestlib import make_file_volume
+
+from storage.storagetestlib import (
+    fake_file_env,
+    make_file_volume,
+)
 
 from vdsm import qemuimg
 from vdsm.storage import constants as sc

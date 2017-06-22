@@ -24,16 +24,22 @@ from testlib import make_uuid
 from testlib import namedTemporaryDir
 from testlib import VdsmTestCase
 from testlib import TEMPDIR
-from storagetestlib import Aborting
-from storagetestlib import FakeGuardedLock
-from storagetestlib import fake_env
-from storagetestlib import fake_block_env
-from storagetestlib import fake_file_env
-from storagetestlib import make_block_volume
-from storagetestlib import make_file_volume
-from storagetestlib import qemu_pattern_write, qemu_pattern_verify
-from storagetestlib import make_qemu_chain, write_qemu_chain, verify_qemu_chain
-from storagetestlib import ChainVerificationError
+
+from storage.storagetestlib import (
+    Aborting,
+    ChainVerificationError,
+    FakeGuardedLock,
+    fake_block_env,
+    fake_env,
+    fake_file_env,
+    make_block_volume,
+    make_file_volume,
+    make_qemu_chain,
+    qemu_pattern_verify,
+    qemu_pattern_write,
+    verify_qemu_chain,
+    write_qemu_chain,
+)
 
 from vdsm import cmdutils
 from vdsm import qemuimg

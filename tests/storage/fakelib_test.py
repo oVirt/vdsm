@@ -29,11 +29,16 @@ from vdsm.storage import lvm as real_lvm
 from testlib import VdsmTestCase, namedTemporaryDir
 from testlib import permutations, expandPermutations
 
-from storagefakelib import FakeLVM
-from storagefakelib import FakeResourceManager
-from storagefakelib import FakeStorageDomainCache
-from storagetestlib import FakeSD
-from storagetestlib import FakeVolume
+from storage.storagefakelib import (
+    FakeLVM,
+    FakeResourceManager,
+    FakeStorageDomainCache,
+)
+
+from storage.storagetestlib import (
+    FakeSD,
+    FakeVolume,
+)
 
 
 MB = 1024 ** 2

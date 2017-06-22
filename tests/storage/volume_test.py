@@ -22,9 +22,13 @@ from __future__ import absolute_import
 from contextlib import contextmanager
 
 from monkeypatch import MonkeyPatchScope
-from storagefakelib import FakeStorageDomainCache
-from storagetestlib import FakeSD
-from storagetestlib import fake_env
+from storage.storagefakelib import FakeStorageDomainCache
+
+from storage.storagetestlib import (
+    FakeSD,
+    fake_env,
+)
+
 from testlib import expandPermutations, permutations
 from testlib import make_uuid
 from testlib import recorded

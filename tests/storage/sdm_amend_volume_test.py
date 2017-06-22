@@ -24,10 +24,17 @@ from contextlib import contextmanager
 from fakelib import FakeNotifier
 from fakelib import FakeScheduler
 from monkeypatch import MonkeyPatchScope, MonkeyPatch
-from storagetestlib import make_qemu_chain
-from storagefakelib import FakeResourceManager
-from storagefakelib import fake_guarded_context
-from storagetestlib import fake_env
+
+from storage.storagefakelib import (
+    FakeResourceManager,
+    fake_guarded_context,
+)
+
+from storage.storagetestlib import (
+    fake_env,
+    make_qemu_chain,
+)
+
 from testlib import make_uuid
 from testlib import VdsmTestCase, expandPermutations, permutations
 from testlib import wait_for_job

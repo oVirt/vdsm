@@ -27,6 +27,7 @@ SUBDIRS = \
 	  devices \
 	  integration \
 	  network \
+	  storage \
 	  virttests \
 	  $(NULL)
 
@@ -43,6 +44,8 @@ device_modules = \
 	$(NULL)
 
 network_modules = network/*_test.py
+
+storage_modules = storage/*_test.py
 
 virt_modules = virttests/*_test.py
 
@@ -106,52 +109,6 @@ test_modules = \
 	stompasyncclient_test.py \
 	stompasyncdispatcher_test.py \
 	stomp_test.py \
-	storage_asyncevent_test.py \
-	storage_asyncutils_test.py \
-	storage_blkdiscard_test.py \
-	storage_blockdev_test.py \
-	storage_blocksd_test.py \
-	storage_blockvolume_test.py \
-	storage_check_test.py \
-	storage_directio_test.py \
-	storage_exception_test.py \
-	storage_fakelib_test.py \
-	storage_filesd_test.py \
-	storage_fileutil_test.py \
-	storage_filevolume_test.py \
-	storage_guarded_test.py \
-	storage_hsm_test.py \
-	storage_image_test.py \
-	storage_imagetickets_test.py \
-	storage_iscsi_test.py \
-	storage_lvm_test.py \
-	storage_mailbox_test.py \
-	storage_merge_test.py \
-	storage_misc_test.py \
-	storage_monitor_test.py \
-	storage_mount_test.py \
-	storage_operation_test.py \
-	storage_outofprocess_test.py \
-	storage_persistentdict_test.py \
-	storage_qcow2_test.py \
-	storage_resourcemanager_test.py \
-	storage_rwlock_test.py \
-	storage_sd_manifest_test.py \
-	storage_sdm_amend_volume_test.py \
-	storage_sdm_copy_data_test.py \
-	storage_sdm_create_volume_test.py \
-	storage_sdm_indirection_test.py \
-	storage_sdm_merge_test.py \
-	storage_sdm_update_volume_test.py \
-	storage_securable_test.py \
-	storage_storageserver_test.py \
-	storage_sysfs_test.py \
-	storage_testlib_test.py \
-	storage_volume_artifacts_test.py \
-	storage_volume_metadata_test.py \
-	storage_volume_test.py \
-	storage_workarounds_test.py \
-	storage_xlease_test.py \
 	taskset_test.py \
 	testlib_test.py \
 	tool_confmeta_test.py \
@@ -208,40 +165,40 @@ blacklist_modules_python3 = \
 	stompasyncclient_test.py \
 	stompasyncdispatcher_test.py \
 	stomp_test.py \
-	storage_blkdiscard_test.py \
-	storage_blocksd_test.py \
-	storage_blockvolume_test.py \
-	storage_fakelib_test.py \
-	storage_filesd_test.py \
-	storage_filevolume_test.py \
-	storage_guarded_test.py \
-	storage_hsm_test.py \
-	storage_image_test.py \
-	storage_imagetickets_test.py \
-	storage_iscsi_test.py \
-	storage_lvm_test.py \
-	storage_mailbox_test.py \
-	storage_merge_test.py \
-	storage_misc_test.py \
-	storage_monitor_test.py \
-	storage_outofprocess_test.py \
-	storage_persistentdict_test.py \
-	storage_qcow2_test.py \
-	storage_resourcemanager_test.py \
-	storage_rwlock_test.py \
-	storage_sd_manifest_test.py \
-	storage_sdm_amend_volume_test.py \
-	storage_sdm_copy_data_test.py \
-	storage_sdm_create_volume_test.py \
-	storage_sdm_indirection_test.py \
-	storage_sdm_merge_test.py \
-	storage_sdm_update_volume_test.py \
-	storage_storageserver_test.py \
-	storage_testlib_test.py \
-	storage_volume_artifacts_test.py \
-	storage_volume_metadata_test.py \
-	storage_volume_test.py \
-	storage_workarounds_test.py \
+	storage/blkdiscard_test.py \
+	storage/blocksd_test.py \
+	storage/blockvolume_test.py \
+	storage/fakelib_test.py \
+	storage/filesd_test.py \
+	storage/filevolume_test.py \
+	storage/guarded_test.py \
+	storage/hsm_test.py \
+	storage/image_test.py \
+	storage/imagetickets_test.py \
+	storage/iscsi_test.py \
+	storage/lvm_test.py \
+	storage/mailbox_test.py \
+	storage/merge_test.py \
+	storage/misc_test.py \
+	storage/monitor_test.py \
+	storage/outofprocess_test.py \
+	storage/persistentdict_test.py \
+	storage/qcow2_test.py \
+	storage/resourcemanager_test.py \
+	storage/rwlock_test.py \
+	storage/sd_manifest_test.py \
+	storage/sdm_amend_volume_test.py \
+	storage/sdm_copy_data_test.py \
+	storage/sdm_create_volume_test.py \
+	storage/sdm_indirection_test.py \
+	storage/sdm_merge_test.py \
+	storage/sdm_update_volume_test.py \
+	storage/storageserver_test.py \
+	storage/testlib_test.py \
+	storage/volume_artifacts_test.py \
+	storage/volume_metadata_test.py \
+	storage/volume_test.py \
+	storage/workarounds_test.py \
 	unicode_test.py \
 	utils_test.py \
 	v2v_test.py \
@@ -317,9 +274,6 @@ dist_vdsmtests_DATA = \
 	glusterVolumeRemoveBricksStatus.xml \
 	glusterVolumeTasks.xml \
         glusterVolumeHealInfo.xml \
-	iscsiadm_-m_iface.out \
-	lvs_3386c6f2-926f-42c4-839c-38287fac8998.out \
-	lvs_f9e55e18-67c4-4377-8e39-5833ca422bef.out \
 	mem_info.out \
 	toolTests_CCPP.conf \
 	toolTests_abrt-action-save-package-data.conf \
@@ -346,8 +300,6 @@ dist_vdsmtests_PYTHON = \
 	fakesanlock.py \
 	loopback.py \
 	monkeypatch.py \
-	storagefakelib.py \
-	storagetestlib.py \
 	testlib.py \
 	testrunner.py \
 	testValidation.py \
@@ -379,6 +331,7 @@ endif
 run_modules += $(network_modules)
 run_modules += $(device_modules)
 run_modules += $(common_modules)
+run_modules += $(storage_modules)
 run_modules += $(virt_modules)
 
 # Disable builtin (recursive) check target.

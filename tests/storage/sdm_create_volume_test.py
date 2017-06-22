@@ -22,7 +22,7 @@ from __future__ import absolute_import
 from contextlib import contextmanager
 
 from monkeypatch import MonkeyPatchScope
-from storagefakelib import FakeResourceManager
+from storage.storagefakelib import FakeResourceManager
 from testlib import make_uuid
 from testlib import VdsmTestCase, recorded, expandPermutations, permutations
 from testlib import wait_for_job

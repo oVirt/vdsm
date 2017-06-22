@@ -32,9 +32,13 @@ from vdsm.storage.blockVolume import BlockVolume
 
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
-from storagetestlib import fake_env
-from storagetestlib import qemu_pattern_write
-from storagetestlib import make_qemu_chain
+
+from storage.storagetestlib import (
+    fake_env,
+    make_qemu_chain,
+    qemu_pattern_write,
+)
+
 from testlib import make_config
 from testlib import make_uuid
 from testlib import permutations, expandPermutations

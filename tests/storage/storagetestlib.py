@@ -22,8 +22,12 @@ from contextlib import contextmanager
 from testlib import make_file, make_uuid, namedTemporaryDir
 from testlib import maybefail
 from testlib import recorded
-from storagefakelib import FakeLVM
-from storagefakelib import FakeStorageDomainCache
+
+from storage.storagefakelib import (
+    FakeLVM,
+    FakeStorageDomainCache,
+)
+
 from monkeypatch import MonkeyPatchScope
 
 from vdsm import cmdutils

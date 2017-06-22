@@ -24,13 +24,20 @@ from collections import namedtuple
 from functools import partial
 
 from monkeypatch import MonkeyPatchScope
-from storagefakelib import FakeResourceManager
-from storagefakelib import fake_guarded_context
-from storagetestlib import FakeVolume
-from storagetestlib import fake_env
-from storagetestlib import make_qemu_chain
-from storagetestlib import qemu_pattern_verify
-from storagetestlib import qemu_pattern_write
+
+from storage.storagefakelib import (
+    FakeResourceManager,
+    fake_guarded_context,
+)
+
+from storage.storagetestlib import (
+    FakeVolume,
+    fake_env,
+    make_qemu_chain,
+    qemu_pattern_verify,
+    qemu_pattern_write,
+)
+
 from testValidation import brokentest
 from testlib import make_uuid
 from testlib import expandPermutations, permutations

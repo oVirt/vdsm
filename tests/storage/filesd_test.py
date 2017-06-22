@@ -25,7 +25,7 @@ import os
 import time
 import uuid
 
-from storagefakelib import fake_repo
+from storage.storagefakelib import fake_repo
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import expandPermutations
 from testlib import namedTemporaryDir

@@ -24,7 +24,12 @@ import pprint
 from functools import partial
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
-from storagetestlib import qemu_pattern_write, qemu_pattern_verify
+
+from storage.storagetestlib import (
+    qemu_pattern_write,
+    qemu_pattern_verify,
+)
+
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import make_config

@@ -1335,6 +1335,7 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/tests/devices/parsing
 %dir %{_datadir}/%{vdsm_name}/tests/integration
 %dir %{_datadir}/%{vdsm_name}/tests/network
+%dir %{_datadir}/%{vdsm_name}/tests/storage
 %{_datadir}/%{vdsm_name}/tests/*.py*
 %{_datadir}/%{vdsm_name}/tests/cpu_info.out
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_intel_E5649.out
@@ -1366,14 +1367,13 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/devices/*.py*
 %{_datadir}/%{vdsm_name}/tests/devices/parsing/*.py*
 %{_datadir}/%{vdsm_name}/tests/devices/data/*.xml
-%{_datadir}/%{vdsm_name}/tests/iscsiadm_-m_iface.out
-%{_datadir}/%{vdsm_name}/tests/lvs_3386c6f2-926f-42c4-839c-38287fac8998.out
-%{_datadir}/%{vdsm_name}/tests/lvs_f9e55e18-67c4-4377-8e39-5833ca422bef.out
 %{_datadir}/%{vdsm_name}/tests/mem_info.out
 %{_datadir}/%{vdsm_name}/tests/network/*.py*
 %{_datadir}/%{vdsm_name}/tests/network/ip_route_show_table_all.out
 %{_datadir}/%{vdsm_name}/tests/network/netmaskconversions
 %{_datadir}/%{vdsm_name}/tests/network/tc_filter_show.out
+%{_datadir}/%{vdsm_name}/tests/storage/*.py*
+%{_datadir}/%{vdsm_name}/tests/storage/*.out
 %{_datadir}/%{vdsm_name}/tests/virttests/*.py*
 %{_datadir}/%{vdsm_name}/tests/run_tests.sh
 %{_datadir}/%{vdsm_name}/tests/toolTests_abrt-action-save-package-data.conf

@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from testlib import make_uuid
 from testlib import VdsmTestCase
-from storagetestlib import fake_file_env
+from storage.storagetestlib import fake_file_env
 
 from vdsm import qemuimg
 from vdsm.storage import constants as sc

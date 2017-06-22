@@ -21,7 +21,7 @@
 from contextlib import contextmanager
 import os
 
-from storagetestlib import fake_env
+from storage.storagetestlib import fake_env
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import make_uuid
 from vdsm.config import config

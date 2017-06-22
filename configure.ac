@@ -426,6 +426,7 @@ AC_OUTPUT([
 	tests/functional/Makefile
 	tests/integration/Makefile
 	tests/network/Makefile
+	tests/storage/Makefile
 	tests/virttests/Makefile
 	vdsm/Makefile
 	vdsm/sos/Makefile

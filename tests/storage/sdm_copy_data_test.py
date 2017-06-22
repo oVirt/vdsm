@@ -25,11 +25,20 @@ from contextlib import contextmanager
 from fakelib import FakeNotifier
 from fakelib import FakeScheduler
 from monkeypatch import MonkeyPatchScope
-from storagefakelib import FakeResourceManager
-from storagefakelib import fake_guarded_context
-from storagetestlib import fake_env
-from storagetestlib import make_qemu_chain, write_qemu_chain, verify_qemu_chain
-from storagetestlib import ChainVerificationError
+
+from storage.storagefakelib import (
+    FakeResourceManager,
+    fake_guarded_context,
+)
+
+from storage.storagetestlib import (
+    ChainVerificationError,
+    fake_env,
+    make_qemu_chain,
+    verify_qemu_chain,
+    write_qemu_chain,
+)
+
 from testValidation import broken_on_ci
 from testlib import make_uuid
 from testlib import VdsmTestCase, expandPermutations, permutations

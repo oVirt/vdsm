@@ -25,7 +25,11 @@ from testlib import make_uuid
 from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 from testValidation import brokentest
-from storagetestlib import fake_block_env, fake_file_env
+
+from storage.storagetestlib import (
+    fake_block_env,
+    fake_file_env,
+)
 
 from vdsm import qemuimg
 from vdsm.config import config

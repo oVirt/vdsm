@@ -29,7 +29,7 @@ from resource import getrlimit, RLIMIT_NPROC
 from vdsm.storage import resourceManager as rm
 
 from monkeypatch import MonkeyPatch
-from storagefakelib import FakeResourceManager
+from storage.storagefakelib import FakeResourceManager
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import slowtest, stresstest

@@ -31,7 +31,7 @@ from vdsm.storage import monitor
 
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
-from storagefakelib import FakeStorageDomainCache
+from storage.storagefakelib import FakeStorageDomainCache
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 from testlib import make_config
