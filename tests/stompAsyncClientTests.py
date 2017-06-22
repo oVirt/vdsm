@@ -21,7 +21,7 @@ from uuid import uuid4
 
 from testlib import VdsmTestCase as TestCaseBase
 from yajsonrpc.stomp import AsyncClient, Command, Frame, Headers, StompError
-from stompAdapterTests import TestSubscription
+from stompAdapterTests import FakeSubscription
 
 
 class AsyncClientTest(TestCaseBase):
@@ -68,7 +68,7 @@ class AsyncClientTest(TestCaseBase):
         # ignore subscribe frame
         client.pop_message()
 
-        client.unsubscribe(TestSubscription('jms.queue.events',
+        client.unsubscribe(FakeSubscription('jms.queue.events',
                                             'ad052acb-a934-4e10-8ec3'))
 
         self.assertTrue(len(client._subscriptions) == 1)
