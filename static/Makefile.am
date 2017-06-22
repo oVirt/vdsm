@@ -114,6 +114,11 @@ networkmanager_DATA = \
 	./etc/NetworkManager/conf.d/vdsm.conf \
 	$(NULL)
 
+dhclientmondir = $(sysconfdir)/dhcp/dhclient.d
+dist_dhclientmon_SCRIPTS = \
+	./etc/dhcp/dhclient.d/dhclientmon.sh \
+	$(NULL)
+
 systemdunitdir = $(SYSTEMD_UNIT_DIR)
 
 systemdunit_DATA = \

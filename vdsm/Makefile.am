@@ -52,7 +52,6 @@ CLEANFILES = \
 	$(nodist_man8_MANS)
 
 EXTRA_DIST = \
-	dhclientmon.sh \
 	libvirt_password \
 	mk_sysprep_floppy.in \
 	vdsm-gencerts.sh.in \
@@ -70,7 +69,6 @@ install-data-hook:
 	chmod 775 $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 install-data-local: \
-		install-data-dhclient-hooks \
 		install-data-libvirtpass \
 		install-data-logrotate \
 		install-data-vdsmconf
@@ -94,7 +92,6 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 uninstall-local: \
-		uninstall-data-dhclient-hooks \
 		uninstall-data-libvirtpass \
 		uninstall-data-logrotate \
 		uninstall-data-vdsmconf
@@ -121,12 +118,3 @@ install-data-vdsmconf:
 
 uninstall-data-vdsmconf:
 	$(RM) $(DESTDIR)$(vdsmconfdir)/vdsm.conf.d
-
-install-data-dhclient-hooks:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/dhcp/dhclient.d
-	$(INSTALL_DATA) dhclientmon.sh \
-		$(DESTDIR)$(sysconfdir)/dhcp/dhclient.d/dhclientmon.sh
-	chmod 755 $(DESTDIR)$(sysconfdir)/dhcp/dhclient.d/dhclientmon.sh
-
-uninstall-data-dhclient-hooks:
-	$(RM) $(DESTDIR)$(sysconfdir)/dhcp/dhclient.d/dhclientmon.sh
