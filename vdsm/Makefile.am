@@ -34,9 +34,6 @@ nodist_vdsmexec_SCRIPTS = \
 	vdsm-gencerts.sh \
 	$(NULL)
 
-nodist_vdsm_SCRIPTS = \
-	mk_sysprep_floppy
-
 dist_vdsm_SCRIPTS = \
 	get-conf-item \
 	set-conf-item \
@@ -52,7 +49,6 @@ CLEANFILES = \
 	$(nodist_man8_MANS)
 
 EXTRA_DIST = \
-	mk_sysprep_floppy.in \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.rules \
 	$(NULL)

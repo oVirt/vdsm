@@ -1,6 +1,5 @@
 Cmnd_Alias VDSM_LIFECYCLE = \
-    @DMIDECODE_PATH@ -s system-uuid, \
-    @VDSMDIR@/mk_sysprep_floppy
+    @DMIDECODE_PATH@ -s system-uuid
 Cmnd_Alias VDSM_STORAGE = \
     @FSCK_PATH@ -p *, \
     @TUNE2FS_PATH@ -j *, \

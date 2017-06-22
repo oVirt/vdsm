@@ -892,7 +892,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/daemonAdapter
 %{_datadir}/%{vdsm_name}/API.py*
 %{_datadir}/%{vdsm_name}/hooking.py*
-%{_datadir}/%{vdsm_name}/mk_sysprep_floppy
 %{_datadir}/%{vdsm_name}/sitecustomize.py*
 %{_datadir}/%{vdsm_name}/supervdsmd
 %{_datadir}/%{vdsm_name}/vdsmd

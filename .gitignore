@@ -71,7 +71,6 @@ tests/other.csr
 tests/other.key
 vdsm-*.tar.gz
 vdsm.spec
-vdsm/mk_sysprep_floppy
 vdsm/sos/vdsm.py
 vdsm/vdscli.py
 vdsm/vdsm-gencerts.sh
