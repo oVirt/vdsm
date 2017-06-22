@@ -52,7 +52,6 @@ CLEANFILES = \
 	$(nodist_man8_MANS)
 
 EXTRA_DIST = \
-	libvirt_password \
 	mk_sysprep_floppy.in \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
@@ -69,7 +68,6 @@ install-data-hook:
 	chmod 775 $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 install-data-local: \
-		install-data-libvirtpass \
 		install-data-logrotate \
 		install-data-vdsmconf
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)
@@ -92,17 +90,8 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 uninstall-local: \
-		uninstall-data-libvirtpass \
 		uninstall-data-logrotate \
 		uninstall-data-vdsmconf
-
-install-data-libvirtpass:
-	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/keys
-	$(INSTALL_DATA) -m 600 $(srcdir)/libvirt_password \
-		$(DESTDIR)$(vdsmtsdir)/keys/libvirt_password
-
-uninstall-data-libvirtpass:
-	$(RM) $(DESTDIR)$(vdsmtsdir)/keys/libvirt_password
 
 install-data-logrotate:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/cron.hourly

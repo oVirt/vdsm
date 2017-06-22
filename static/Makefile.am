@@ -108,6 +108,9 @@ modprobe_DATA = \
 	./etc/modprobe.d/vdsm-bonding-modprobe.conf \
 	$(NULL)
 
+libvirtpassworddir = $(vdsmtsdir)/keys
+libvirtpassword_DATA = ./$(libvirtpassworddir)/libvirt_password
+
 networkmanagerdir = $(sysconfdir)/NetworkManager/conf.d
 
 networkmanager_DATA = \
@@ -141,6 +144,7 @@ CLEANFILES = \
 	$(NULL)
 
 EXTRA_DIST = \
+        $(libvirtpassword_DATA) \
 	$(limits_DATA) \
 	$(modprobe_DATA) \
 	$(modulesload_DATA) \
@@ -164,3 +168,6 @@ EXTRA_DIST = \
 
 usr/share/vdsm/autounattend/%.xml: usr/share/vdsm/autounattend/Autounattend.xml.in
 	sed -e 's/@DRIVER_DIR@/$*/' < $< > $@
+
+install-data-local: install-libvirtpasswordDATA
+	chmod 600 "$(DESTDIR)$(libvirtpassworddir)"/*
