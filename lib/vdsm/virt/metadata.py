@@ -568,7 +568,12 @@ def device_from_xml_tree(root, **kwargs):
 
 class Descriptor(object):
 
-    def __init__(self, name, namespace=None, namespace_uri=None):
+    def __init__(
+        self,
+        name=xmlconstants.METADATA_VM_VDSM_ELEMENT,
+        namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
+        namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
+    ):
         """
         Initializes one empty descriptor.
 
@@ -622,7 +627,13 @@ class Descriptor(object):
         self._devices = []
 
     @classmethod
-    def from_xml(cls, xml_str, name, namespace, namespace_uri):
+    def from_xml(
+        cls,
+        xml_str,
+        name=xmlconstants.METADATA_VM_VDSM_ELEMENT,
+        namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
+        namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
+    ):
         """
         Initializes one descriptor given the namespace-prefixed metadata
         snippet. Useful in the VM creation flow, when the

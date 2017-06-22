@@ -398,11 +398,7 @@ class DescriptorTests(XMLTestCase):
 
     def setUp(self):
         # empty descriptor
-        self.md_desc = metadata.Descriptor(
-            xmlconstants.METADATA_VM_VDSM_ELEMENT,
-            namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
-            namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
-        )
+        self.md_desc = metadata.Descriptor()
 
     def test_from_xml(self):
         test_xml = u"""<?xml version="1.0" encoding="utf-8"?>
@@ -416,12 +412,7 @@ class DescriptorTests(XMLTestCase):
     </ovirt-vm:vm>
   </metadata>
 </domain>"""
-        md_desc = metadata.Descriptor.from_xml(
-            test_xml,
-            xmlconstants.METADATA_VM_VDSM_ELEMENT,
-            namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
-            namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
-        )
+        md_desc = metadata.Descriptor.from_xml(test_xml)
         with md_desc.values() as vals:
             self.assertEqual(vals, {'version': 4.2})
         self.assertEqual(md_desc.custom, {'foo': 'bar'})
@@ -438,12 +429,7 @@ class DescriptorTests(XMLTestCase):
     </ovirt-vm:vm>
   </metadata>
 </domain>"""
-        md_desc = metadata.Descriptor.from_xml(
-            test_xml,
-            xmlconstants.METADATA_VM_VDSM_ELEMENT,
-            namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
-            namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
-        )
+        md_desc = metadata.Descriptor.from_xml(test_xml)
         dom = FakeDomain()
         md_desc.load(dom)
         with md_desc.values() as vals:
@@ -639,12 +625,7 @@ class DescriptorTests(XMLTestCase):
     </ovirt-vm:vm>
   </metadata>
 </domain>'''
-        md_desc = metadata.Descriptor.from_xml(
-            test_xml,
-            xmlconstants.METADATA_VM_VDSM_ELEMENT,
-            namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
-            namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
-        )
+        md_desc = metadata.Descriptor.from_xml(test_xml)
         with md_desc.device(id='dev0') as dev:
             self.assertEqual(dev, {'foo': 'bar'})
 
@@ -663,12 +644,7 @@ class DescriptorTests(XMLTestCase):
     </ovirt-vm:vm>
   </metadata>
 </domain>'''
-        md_desc = metadata.Descriptor.from_xml(
-            test_xml,
-            xmlconstants.METADATA_VM_VDSM_ELEMENT,
-            namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
-            namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
-        )
+        md_desc = metadata.Descriptor.from_xml(test_xml)
         found = []
         for dev_id in ('dev0', 'dev1'):
             with md_desc.device(id=dev_id) as dev:
@@ -687,12 +663,7 @@ class DescriptorTests(XMLTestCase):
     </ovirt-vm:vm>
   </metadata>
 </domain>'''
-        md_desc = metadata.Descriptor.from_xml(
-            test_xml,
-            xmlconstants.METADATA_VM_VDSM_ELEMENT,
-            namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
-            namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
-        )
+        md_desc = metadata.Descriptor.from_xml(test_xml)
         with md_desc.device(id='mydev') as dev:
             self.assertEqual(dev, {})
 
