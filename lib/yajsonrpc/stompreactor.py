@@ -295,10 +295,9 @@ class _StompConnection(object):
         self._messageHandler = None
 
         self._async_client = aclient
-        self._dispatcher = reactor.create_dispatcher(
-            sock, stomp.AsyncDispatcher(self, aclient))
-        self._client_host = self._dispatcher.addr[0]
-        self._client_port = self._dispatcher.addr[1]
+        self._server_host, self._server_port = sock.getsockname()[:2]
+        self._sslctx = sock.context if isinstance(sock, SSLSocket) else None
+        self.initiate_connection(sock)
 
     def send_raw(self, msg):
         self._async_client.queue_frame(msg)
@@ -309,6 +308,34 @@ class _StompConnection(object):
 
     def connect(self):
         pass
+
+    def initiate_connection(self, sock):
+        self._dispatcher = self._reactor.create_dispatcher(
+            sock, stomp.AsyncDispatcher(self, self._async_client))
+        self._client_host = self._dispatcher.addr[0]
+        self._client_port = self._dispatcher.addr[1]
+
+    def reconnect(self, nr_retries):
+        self._dispatcher.close()
+        count = 0
+        while count < nr_retries:
+            sock = utils.create_connected_socket(
+                self._server_host, self._server_port, self._sslctx)
+            self.initiate_connection(sock)
+            self._reactor.wakeup()
+            if not self.is_closed():
+                break
+            count += 1
+
+        if self.is_closed():
+            self._server.close()
+            raise stomp.Disconnected("Connection timeout")
+
+        self._async_client.handle_connect()
+        self._async_client.restore_subscriptions()
+
+    def set_heartbeat(self, outgoing, incoming):
+        self._dispatcher.setHeartBeat(outgoing, incoming)
 
     def close(self):
         self._dispatcher.close()
@@ -398,20 +425,22 @@ class StompClient(object):
     life cycle (by default set to True).
     """
     def __init__(self, sock, reactor, owns_reactor=True,
-                 incoming_heartbeat=5000, outgoing_heartbeat=0):
+                 incoming_heartbeat=5000, outgoing_heartbeat=0,
+                 nr_retries=0):
         self._reactor = reactor
         self._owns_reactor = owns_reactor
         self._messageHandler = None
         self._socket = sock
 
         self._aclient = stomp.AsyncClient(
-            incoming_heartbeat, outgoing_heartbeat)
+            incoming_heartbeat, outgoing_heartbeat, nr_retries)
         self._stompConn = _StompConnection(
             self,
             self._aclient,
             sock,
             reactor
         )
+        self._stompConn.set_heartbeat(outgoing_heartbeat, incoming_heartbeat)
         self._aclient.handle_connect()
 
     def setTimeout(self, timeout):
@@ -626,7 +655,7 @@ def StompRpcClient(stomp_client, request_queue, response_queue):
 
 
 def SimpleClient(host, port=54321, ssl=True, incoming_heartbeat=5000,
-                 outgoing_heartbeat=0):
+                 outgoing_heartbeat=0, nr_retries=0):
     """
     Returns JsonRpcClient able to receive jsonrpc messages and notifications.
     It is required to provide a host where we want to connect, port and whether
@@ -642,12 +671,13 @@ def SimpleClient(host, port=54321, ssl=True, incoming_heartbeat=5000,
                             protocol=CLIENT_PROTOCOL)
     return StandAloneRpcClient(host, port, "jms.topic.vdsm_requests",
                                str(uuid4()), sslctx, False,
-                               incoming_heartbeat, outgoing_heartbeat)
+                               incoming_heartbeat, outgoing_heartbeat,
+                               nr_retries)
 
 
 def StandAloneRpcClient(host, port, request_queue, response_queue,
                         sslctx=None, lazy_start=True, incoming_heartbeat=5000,
-                        outgoing_heartbeat=0):
+                        outgoing_heartbeat=0, nr_retries=0):
     """
     Returns JsonRpcClient able to receive jsonrpc messages and notifications.
     It is required to provide host and port where we want to connect and
@@ -663,7 +693,8 @@ def StandAloneRpcClient(host, port, request_queue, response_queue,
 
     client = StompClient(utils.create_connected_socket(host, port, sslctx),
                          reactor, incoming_heartbeat=incoming_heartbeat,
-                         outgoing_heartbeat=outgoing_heartbeat)
+                         outgoing_heartbeat=outgoing_heartbeat,
+                         nr_retries=nr_retries)
 
     jsonclient = JsonRpcClient(
         ClientRpcTransportAdapter(

@@ -467,10 +467,12 @@ class AsyncDispatcher(object):
 class AsyncClient(object):
     log = logging.getLogger("yajsonrpc.protocols.stomp.AsyncClient")
 
-    def __init__(self, incoming_heartbeat=5000, outgoing_heartbeat=0):
+    def __init__(self, incoming_heartbeat=5000, outgoing_heartbeat=0,
+                 nr_retries=0):
         self._connected = Event()
         self._incoming_heartbeat = incoming_heartbeat
         self._outgoing_heartbeat = outgoing_heartbeat
+        self._nr_retries = nr_retries
         self._outbox = deque()
         self._error = None
         self._subscriptions = {}
@@ -517,6 +519,9 @@ class AsyncClient(object):
 
     def handle_frame(self, dispatcher, frame):
         self._commands[frame.command](frame, dispatcher)
+
+    def handle_timeout(self, dispatcher):
+        dispatcher.connection.reconnect(self._nr_retries)
 
     def _process_connected(self, frame, dispatcher):
         self._connected.set()

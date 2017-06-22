@@ -94,6 +94,10 @@ class Dispatcher(asyncore.dispatcher):
         default_func = lambda: None
         return getattr(self.__impl, "next_check_interval", default_func)()
 
+    def setHeartBeat(self, outgoing, incoming):
+        if self.__impl and hasattr(self.__impl, 'setHeartBeat'):
+            self.__impl.setHeartBeat(outgoing, incoming)
+
     def recv(self, buffer_size):
         try:
             data = self.socket.recv(buffer_size)
