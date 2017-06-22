@@ -24,6 +24,7 @@ from threading import Event
 from . import CALL_TIMEOUT
 
 from vdsm.common import time
+
 import re
 
 DEFAULT_INTERVAL = 30
@@ -31,6 +32,13 @@ RECONNECT_INTERVAL = 20
 
 SUBSCRIPTION_ID_REQUEST = "jms.topic.vdsm_requests"
 SUBSCRIPTION_ID_RESPONSE = "jms.topic.vdsm_responses"
+
+DEFAULT_INCOMING = 30000
+DEFAULT_OUTGOING = 0
+NR_RETRIES = 1
+
+# This is the value used by engine
+_GRACE_PERIOD_FACTOR = 0.2
 
 _RE_ESCAPE_SEQUENCE = re.compile(r"\\(.)")
 
@@ -342,7 +350,7 @@ class AsyncDispatcher(object):
     - AsyncClient - responsible for client side
     """
     def __init__(self, connection, frame_handler, bufferSize=4096,
-                 clock=time.monotonic_time, on_timeout=False):
+                 clock=time.monotonic_time, count=0, on_timeout=False):
         self._frame_handler = frame_handler
         self.connection = connection
         self._bufferSize = bufferSize
@@ -352,7 +360,7 @@ class AsyncDispatcher(object):
         self._outgoing_heartbeat_in_milis = 0
         self._reconnect_interval = 0
         self._nr_retries = 0
-        self._count = 0
+        self._count = count
         if hasattr(self._frame_handler, "nr_retries"):
             self._nr_retries = self._frame_handler.nr_retries
         if hasattr(self._frame_handler, "reconnect_interval"):
@@ -379,6 +387,7 @@ class AsyncDispatcher(object):
     def handle_connect(self, dispatcher):
         self.log.debug("managed to connect successfully.")
         self._outbuf = None
+        self._count = 0
         self._on_timeout = False
         self._update_reconnect_time()
         self._frame_handler.handle_connect()
@@ -523,10 +532,14 @@ class AsyncDispatcher(object):
 class AsyncClient(object):
     log = logging.getLogger("yajsonrpc.protocols.stomp.AsyncClient")
 
-    def __init__(self, incoming_heartbeat=5000, outgoing_heartbeat=0):
+    def __init__(self, incoming_heartbeat=DEFAULT_INCOMING,
+                 outgoing_heartbeat=DEFAULT_OUTGOING, nr_retries=NR_RETRIES,
+                 reconnect_interval=RECONNECT_INTERVAL):
         self._connected = Event()
         self._incoming_heartbeat = incoming_heartbeat
         self._outgoing_heartbeat = outgoing_heartbeat
+        self._nr_retries = nr_retries
+        self._reconnect_interval = reconnect_interval
         self._outbox = deque()
         self._error = None
         self._subscriptions = {}
@@ -549,6 +562,14 @@ class AsyncClient(object):
     def has_outgoing_messages(self):
         return (len(self._outbox) > 0)
 
+    @property
+    def nr_retries(self):
+        return self._nr_retries
+
+    @property
+    def reconnect_interval(self):
+        return self._reconnect_interval
+
     def peek_message(self):
         return self._outbox[0]
 
@@ -559,26 +580,41 @@ class AsyncClient(object):
         return self._error
 
     def handle_connect(self):
-        # TODO : reset subscriptions
-        # We use appendleft to make sure this is the first frame we send in
-        # case of a reconnect
+        self._outbox.clear()
+        outgoing_heartbeat = \
+            int(self._outgoing_heartbeat * (1 + _GRACE_PERIOD_FACTOR))
+        incoming_heartbeat = \
+            int(self._incoming_heartbeat * (1 - _GRACE_PERIOD_FACTOR))
+
         self._outbox.appendleft(Frame(
             Command.CONNECT,
             {
                 Headers.ACCEPT_VERSION: "1.2",
-                Headers.HEARTBEAT: "%d,%d" % (self._outgoing_heartbeat,
-                                              self._incoming_heartbeat),
+                Headers.HEARTBEAT: "%d,%d" % (outgoing_heartbeat,
+                                              incoming_heartbeat),
             }
         ))
+        self.restore_subscriptions()
 
     def handle_error(self, dispatcher):
+        dispatcher.handle_timeout()
+
+    def handle_close(self, dispatcher):
         dispatcher.handle_timeout()
 
     def handle_frame(self, dispatcher, frame):
         self._commands[frame.command](frame, dispatcher)
 
+    def handle_timeout(self, dispatcher):
+        self.log.debug("Timeout occurred, trying to reconnect")
+        dispatcher.connection.reconnect(dispatcher._count,
+                                        dispatcher._on_timeout)
+
     def _process_connected(self, frame, dispatcher):
         self._connected.set()
+        dispatcher.connection.set_heartbeat(
+            self._outgoing_heartbeat,
+            self._incoming_heartbeat)
 
         self.log.debug("Stomp connection established")
 
@@ -662,7 +698,8 @@ class AsyncClient(object):
         self._subscriptions.clear()
 
         for sub in subs:
-            self.subscribe(sub.destination)
+            self.subscribe(sub.destination,
+                           message_handler=sub.message_handler)
 
 
 class _Subscription(object):
@@ -698,6 +735,10 @@ class _Subscription(object):
     @property
     def client(self):
         return self._client
+
+    @property
+    def message_handler(self):
+        return self._message_handler
 
     def unsubscribe(self):
         self._client.unsubscribe(self)

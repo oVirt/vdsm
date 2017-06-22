@@ -38,6 +38,9 @@ class FakeConnection(object):
     def close(self):
         self.closed = True
 
+    def is_closed(self):
+        return self.closed
+
 
 class FakeFrameHandler(object):
 

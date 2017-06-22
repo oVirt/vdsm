@@ -94,6 +94,10 @@ class Dispatcher(asyncore.dispatcher):
         default_func = lambda: None
         return getattr(self.__impl, "next_check_interval", default_func)()
 
+    def set_heartbeat(self, outgoing, incoming):
+        if self.__impl and hasattr(self.__impl, 'setHeartBeat'):
+            self.__impl.setHeartBeat(outgoing, incoming)
+
     def create_socket(self, addr, sslctx=None, family=socket.AF_UNSPEC,
                       type=socket.SOCK_STREAM):
         addrinfo = socket.getaddrinfo(addr[0], addr[1], family, type)
@@ -257,3 +261,10 @@ class Reactor(object):
         except (IOError, OSError):
             # Client woke up and closed the event dispatcher without our help
             pass
+
+    def reconnect(self, address, sslctx, impl):
+        dispatcher = self.create_dispatcher(None, impl)
+        dispatcher.create_socket(address, sslctx)
+        dispatcher.connect(address)
+
+        return dispatcher

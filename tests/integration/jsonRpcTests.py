@@ -33,7 +33,8 @@ from testlib import VdsmTestCase as TestCaseBase, \
 
 from jsonRpcHelper import \
     PERMUTATIONS, \
-    constructClient
+    constructClient, \
+    constructAcceptor
 
 from yajsonrpc import \
     JsonRpcErrorBase, \
@@ -41,6 +42,9 @@ from yajsonrpc import \
     JsonRpcNoResponseError, \
     JsonRpcInternalError, \
     JsonRpcRequest
+
+from yajsonrpc.stomp import Disconnected
+from yajsonrpc.stompreactor import SimpleClient
 
 
 CALL_TIMEOUT = 3
@@ -264,3 +268,33 @@ class JsonRpcServerTests(TestCaseBase):
                 client.unsubscribe(sub)
                 events = self._collect_events(event_queue)
                 self.assertEqual(len(events), 0)
+
+    def test_client_timeout_no_retries(self):
+        bridge = _DummyBridge()
+        with constructAcceptor(self.log, False, bridge) as acceptor:
+            client = SimpleClient(acceptor._host, acceptor._port, False,
+                                  incoming_heartbeat=500,
+                                  outgoing_heartbeat=2000, nr_retries=0)
+
+            # make sure client received CONNECTED frame
+            time.sleep(2)
+            acceptor.stop()
+            time.sleep(2)
+            with self.assertRaises(Disconnected):
+                client.call(JsonRpcRequest("ping", [], CALL_ID),
+                            timeout=CALL_TIMEOUT)
+
+    def test_client_reconnect_failed(self):
+        bridge = _DummyBridge()
+        with constructAcceptor(self.log, False, bridge) as acceptor:
+            client = SimpleClient(acceptor._host, acceptor._port, False,
+                                  incoming_heartbeat=1000,
+                                  outgoing_heartbeat=5000, nr_retries=1)
+
+            # make sure client received CONNECTED frame
+            time.sleep(2)
+            acceptor.stop()
+            time.sleep(2)
+            with self.assertRaises(Disconnected):
+                client.call(JsonRpcRequest("ping", [], CALL_ID),
+                            timeout=CALL_TIMEOUT)
