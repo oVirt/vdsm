@@ -54,7 +54,6 @@ CLEANFILES = \
 EXTRA_DIST = \
 	mk_sysprep_floppy.in \
 	vdsm-gencerts.sh.in \
-	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
 	$(NULL)
 

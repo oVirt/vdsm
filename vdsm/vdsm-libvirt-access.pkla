@@ -1,6 +1,0 @@
-[VDSM libvirt access]
-Identity=unix-user:vdsm
-Action=org.libvirt.unix.manage
-ResultAny=yes
-ResultInactive=yes
-ResultActive=yes
