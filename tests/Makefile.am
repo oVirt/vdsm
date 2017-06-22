@@ -133,6 +133,7 @@ test_modules = \
 	storage_operation_test.py \
 	storage_outofprocess_test.py \
 	storage_persistentdict_test.py \
+	storage_qcow2_test.py \
 	storage_resourcemanager_test.py \
 	storage_rwlock_test.py \
 	storage_sd_manifest_test.py \
@@ -225,6 +226,7 @@ blacklist_modules_python3 = \
 	storage_monitor_test.py \
 	storage_outofprocess_test.py \
 	storage_persistentdict_test.py \
+	storage_qcow2_test.py \
 	storage_resourcemanager_test.py \
 	storage_rwlock_test.py \
 	storage_sd_manifest_test.py \
