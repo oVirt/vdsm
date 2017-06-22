@@ -56,7 +56,6 @@ EXTRA_DIST = \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
-	vdsm-logrotate \
 	$(NULL)
 
 all-local: \
@@ -68,7 +67,6 @@ install-data-hook:
 	chmod 775 $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 install-data-local: \
-		install-data-logrotate \
 		install-data-vdsmconf
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/hsm-tasks
@@ -90,17 +88,7 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 uninstall-local: \
-		uninstall-data-logrotate \
 		uninstall-data-vdsmconf
-
-install-data-logrotate:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/cron.hourly
-	$(INSTALL_SCRIPT) $(srcdir)/vdsm-logrotate \
-		$(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/cron.d
-
-uninstall-data-logrotate:
-	$(RM) $(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
 
 install-data-vdsmconf:
 	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)/vdsm.conf.d

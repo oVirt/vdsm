@@ -111,6 +111,11 @@ modprobe_DATA = \
 libvirtpassworddir = $(vdsmtsdir)/keys
 libvirtpassword_DATA = ./$(libvirtpassworddir)/libvirt_password
 
+cronhourlydir = $(sysconfdir)/cron.hourly
+dist_cronhourly_SCRIPTS = \
+	./etc/cron.hourly/vdsm-logrotate \
+	$(NULL)
+
 networkmanagerdir = $(sysconfdir)/NetworkManager/conf.d
 
 networkmanager_DATA = \
