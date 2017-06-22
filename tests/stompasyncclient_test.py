@@ -24,7 +24,7 @@ import yajsonrpc
 from testlib import VdsmTestCase as TestCaseBase
 from yajsonrpc.stomp import AsyncClient, Command, Frame, Headers, StompError
 # TODO: Fix this bad import, test modules are not libraries.
-from stompadapter_test import TestSubscription
+from stompadapter_test import FakeSubscription
 from monkeypatch import MonkeyPatchScope
 
 
@@ -72,7 +72,7 @@ class AsyncClientTest(TestCaseBase):
         # ignore subscribe frame
         client.pop_message()
 
-        client.unsubscribe(TestSubscription('jms.queue.events',
+        client.unsubscribe(FakeSubscription('jms.queue.events',
                                             'ad052acb-a934-4e10-8ec3'))
 
         self.assertEqual(len(client._subscriptions), 1)

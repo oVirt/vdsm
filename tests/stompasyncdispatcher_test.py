@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ from testlib import VdsmTestCase as TestCaseBase
 from yajsonrpc.stomp import AsyncDispatcher, Command, Frame, Headers
 
 
-class TestConnection(object):
+class FakeConnection(object):
 
     def __init__(self):
         self.closed = False
@@ -33,7 +33,7 @@ class TestConnection(object):
         self.closed = True
 
 
-class TestFrameHandler(object):
+class FakeFrameHandler(object):
 
     def __init__(self):
         self.handle_connect_called = False
@@ -59,7 +59,7 @@ class TestFrameHandler(object):
         self._outbox.append(frame)
 
 
-class TestDispatcher(object):
+class FakeAsyncDispatcher(object):
 
     socket = None
 
@@ -87,15 +87,15 @@ class FakeTimeGen(object):
 class AsyncDispatcherTest(TestCaseBase):
 
     def test_handle_connect(self):
-        frame_handler = TestFrameHandler()
-        dispatcher = AsyncDispatcher(TestConnection(), frame_handler)
+        frame_handler = FakeFrameHandler()
+        dispatcher = AsyncDispatcher(FakeConnection(), frame_handler)
 
         dispatcher.handle_connect(None)
 
         self.assertTrue(frame_handler.handle_connect_called)
 
     def test_handle_read(self):
-        frame_handler = TestFrameHandler()
+        frame_handler = FakeFrameHandler()
         headers = {Headers.CONTENT_LENGTH: '78',
                    Headers.DESTINATION: 'jms.topic.vdsm_responses',
                    Headers.CONTENT_TYPE: 'application/json',
@@ -103,9 +103,9 @@ class AsyncDispatcherTest(TestCaseBase):
         body = ('{"jsonrpc": "2.0", "id": "e8a936a6-d886-4cfa-97b9-2d54209053f'
                 'f", "result": []}')
         frame = Frame(command=Command.MESSAGE, headers=headers, body=body)
-        dispatcher = AsyncDispatcher(TestConnection(), frame_handler)
+        dispatcher = AsyncDispatcher(FakeConnection(), frame_handler)
 
-        dispatcher.handle_read(TestDispatcher(frame.encode()))
+        dispatcher.handle_read(FakeAsyncDispatcher(frame.encode()))
 
         self.assertTrue(frame_handler.has_outgoing_messages)
         recv_frame = frame_handler.pop_message()
@@ -114,7 +114,7 @@ class AsyncDispatcherTest(TestCaseBase):
 
     def test_heartbeat_calc(self):
         dispatcher = AsyncDispatcher(
-            TestConnection(), TestFrameHandler(),
+            FakeConnection(), FakeFrameHandler(),
             clock=FakeTimeGen([4000000.0, 4000002.0]).get_fake_time
         )
         dispatcher.setHeartBeat(8000, 0)
@@ -122,9 +122,9 @@ class AsyncDispatcherTest(TestCaseBase):
         self.assertEqual(6, dispatcher.next_check_interval())
 
     def test_heartbeat_exceeded(self):
-        frame_handler = TestFrameHandler()
+        frame_handler = FakeFrameHandler()
         dispatcher = AsyncDispatcher(
-            TestConnection(), frame_handler,
+            FakeConnection(), frame_handler,
             clock=FakeTimeGen([4000000.0, 4000012.0]).get_fake_time
         )
         dispatcher.setHeartBeat(8000, 0)
@@ -133,13 +133,13 @@ class AsyncDispatcherTest(TestCaseBase):
         self.assertTrue(frame_handler.has_outgoing_messages)
 
     def test_no_incoming_heartbeat(self):
-        dispatcher = AsyncDispatcher(TestConnection(), TestFrameHandler())
+        dispatcher = AsyncDispatcher(FakeConnection(), FakeFrameHandler())
 
         with self.assertRaises(ValueError):
             dispatcher.setHeartBeat(8000, 8000)
 
     def test_no_heartbeat(self):
-        dispatcher = AsyncDispatcher(TestConnection(), TestFrameHandler())
+        dispatcher = AsyncDispatcher(FakeConnection(), FakeFrameHandler())
         dispatcher.setHeartBeat(0, 0)
 
         self.assertIsNone(dispatcher.next_check_interval())
@@ -152,18 +152,18 @@ class AsyncDispatcherTest(TestCaseBase):
         body = ('{"jsonrpc": "2.0", "id": "e8a936a6-d886-4cfa-97b9-2d54209053f'
                 'f", "result": []}')
         frame = Frame(command=Command.MESSAGE, headers=headers, body=body)
-        frame_handler = TestFrameHandler()
+        frame_handler = FakeFrameHandler()
         frame_handler.handle_frame(None, frame)
 
-        dispatcher = AsyncDispatcher(TestConnection(), frame_handler)
+        dispatcher = AsyncDispatcher(FakeConnection(), frame_handler)
         self.assertTrue(dispatcher.writable(None))
 
-        dispatcher.handle_write(TestDispatcher(''))
+        dispatcher.handle_write(FakeAsyncDispatcher(''))
         self.assertFalse(frame_handler.has_outgoing_messages)
 
     def test_handle_close(self):
-        connection = TestConnection()
-        dispatcher = AsyncDispatcher(connection, TestFrameHandler())
+        connection = FakeConnection()
+        dispatcher = AsyncDispatcher(connection, FakeFrameHandler())
 
         dispatcher.handle_close(None)
 

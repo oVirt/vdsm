@@ -30,7 +30,7 @@ from yajsonrpc.stomp import \
 from yajsonrpc.stompreactor import StompAdapterImpl
 
 
-class TestClient(object):
+class FakeAsyncClient(object):
     def __init__(self):
         self._queue = []
 
@@ -44,7 +44,7 @@ class TestClient(object):
         self._queue.append(msg)
 
 
-class TestConnection(object):
+class FakeConnection(object):
 
     def __init__(self, client):
         self._client = client
@@ -62,11 +62,11 @@ class TestConnection(object):
         self._client.queue_frame(data)
 
 
-class TestDispatcher(object):
+class FakeAsyncDispatcher(object):
 
     def __init__(self, client):
         self._client = client
-        self._connection = TestConnection(self._client)
+        self._connection = FakeConnection(self._client)
 
     def setHeartBeat(self, outgoing, incoming=0):
         pass
@@ -76,14 +76,14 @@ class TestDispatcher(object):
         return self._connection
 
 
-class TestSubscription(object):
+class FakeSubscription(object):
 
     def __init__(self, destination, id):
         self._destination = destination
         self._id = id
 
     def set_client(self, client):
-        self._client = TestConnection(client)
+        self._client = FakeConnection(client)
 
     @property
     def destination(self):
@@ -106,7 +106,7 @@ class ConnectFrameTest(TestCaseBase):
                        Headers.HEARTBEAT: '0,8000'})
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.CONNECTED)
@@ -119,7 +119,7 @@ class ConnectFrameTest(TestCaseBase):
                        Headers.HEARTBEAT: '0,500'})
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.CONNECTED)
@@ -131,7 +131,7 @@ class ConnectFrameTest(TestCaseBase):
                       {Headers.ACCEPT_VERSION: '1.0'})
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.ERROR)
@@ -142,7 +142,7 @@ class ConnectFrameTest(TestCaseBase):
                       {Headers.ACCEPT_VERSION: '1.2'})
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.CONNECTED)
@@ -153,7 +153,7 @@ class ConnectFrameTest(TestCaseBase):
         frame = Frame(Command.CONNECT)
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.ERROR)
@@ -171,7 +171,7 @@ class SubscriptionFrameTest(TestCaseBase):
         destinations = defaultdict(list)
 
         adapter = StompAdapterImpl(Reactor(), destinations, {})
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         subscription = destinations['jms.queue.events'][0]
         self.assertEqual(subscription.id,
@@ -185,7 +185,7 @@ class SubscriptionFrameTest(TestCaseBase):
                        'id': 'ad052acb-a934-4e10-8ec3-00c7417ef8d1'})
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.ERROR)
@@ -198,7 +198,7 @@ class SubscriptionFrameTest(TestCaseBase):
                        Headers.DESTINATION: 'jms.queue.events'})
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.ERROR)
@@ -212,7 +212,7 @@ class UnsubscribeFrameTest(TestCaseBase):
         frame = Frame(Command.UNSUBSCRIBE,
                       {'id': 'ad052acb-a934-4e10-8ec3-00c7417ef8d1'})
 
-        subscription = TestSubscription('jms.queue.events',
+        subscription = FakeSubscription('jms.queue.events',
                                         'ad052acb-a934-4e10-8ec3-00c7417ef8d1')
 
         destinations = defaultdict(list)
@@ -220,7 +220,7 @@ class UnsubscribeFrameTest(TestCaseBase):
 
         adapter = StompAdapterImpl(Reactor(), destinations, {})
         adapter._sub_ids['ad052acb-a934-4e10-8ec3-00c7417ef8d1'] = subscription
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         self.assertEqual(len(adapter._sub_ids), 0)
         self.assertEqual(len(destinations), 0)
@@ -229,9 +229,9 @@ class UnsubscribeFrameTest(TestCaseBase):
         frame = Frame(Command.UNSUBSCRIBE,
                       {'id': 'ad052acb-a934-4e10-8ec3-00c7417ef8d1'})
 
-        subscription = TestSubscription('jms.queue.events',
+        subscription = FakeSubscription('jms.queue.events',
                                         'ad052acb-a934-4e10-8ec3-00c7417ef8d1')
-        subscription2 = TestSubscription('jms.queue.events',
+        subscription2 = FakeSubscription('jms.queue.events',
                                          'e8a93a6-d886-4cfa-97b9-2d54209053ff')
 
         destinations = defaultdict(list)
@@ -240,7 +240,7 @@ class UnsubscribeFrameTest(TestCaseBase):
 
         adapter = StompAdapterImpl(Reactor(), destinations, {})
         adapter._sub_ids['ad052acb-a934-4e10-8ec3-00c7417ef8d1'] = subscription
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         self.assertEqual(len(adapter._sub_ids), 0)
         self.assertEqual(len(destinations), 1)
@@ -250,7 +250,7 @@ class UnsubscribeFrameTest(TestCaseBase):
         frame = Frame(Command.UNSUBSCRIBE)
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.ERROR)
@@ -273,7 +273,7 @@ class SendFrameTest(TestCaseBase):
         ids = {}
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), ids)
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         data = adapter.pop_message()
         self.assertIsNot(data, None)
@@ -296,7 +296,7 @@ class SendFrameTest(TestCaseBase):
         ids = {}
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), ids)
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         data = adapter.pop_message()
         self.assertIsNot(data, None)
@@ -309,7 +309,7 @@ class SendFrameTest(TestCaseBase):
                       {Headers.DESTINATION: 'jms.topic.unknown'})
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.ERROR)
@@ -331,7 +331,7 @@ class SendFrameTest(TestCaseBase):
         ids = {}
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), ids)
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         data = adapter.pop_message()
         self.assertIsNot(data, None)
@@ -347,7 +347,7 @@ class SendFrameTest(TestCaseBase):
                             )
                       )
 
-        subscription = TestSubscription('jms.topic.destination',
+        subscription = FakeSubscription('jms.topic.destination',
                                         'e8a936a6-d886-4cfa-97b9-2d54209053ff')
 
         destinations = defaultdict(list)
@@ -355,7 +355,7 @@ class SendFrameTest(TestCaseBase):
 
         adapter = StompAdapterImpl(Reactor(), destinations, {})
         subscription.set_client(adapter)
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.MESSAGE)
@@ -373,16 +373,16 @@ class SendFrameTest(TestCaseBase):
 
         ids = {}
 
-        subscription = TestSubscription('jms.topic.vdsm_requests',
+        subscription = FakeSubscription('jms.topic.vdsm_requests',
                                         'e8a936a6-d886-4cfa-97b9-2d54209053ff')
-        client = TestClient()
+        client = FakeAsyncClient()
         subscription.set_client(client)
 
         destinations = defaultdict(list)
         destinations['jms.topic.vdsm_requests'].append(subscription)
 
         adapter = StompAdapterImpl(Reactor(), destinations, ids)
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         data = adapter.pop_message()
         self.assertIsNot(data, None)
@@ -410,9 +410,9 @@ class SendFrameTest(TestCaseBase):
 
         ids = {}
 
-        subscription = TestSubscription('jms.topic.vdsm_requests',
+        subscription = FakeSubscription('jms.topic.vdsm_requests',
                                         'e8a936a6-d886-4cfa-97b9-2d54209053ff')
-        client = TestClient()
+        client = FakeAsyncClient()
         subscription.set_client(client)
 
         destinations = defaultdict(list)
@@ -425,7 +425,7 @@ class SendFrameTest(TestCaseBase):
         destinations['jms.top'].append(subscription)
 
         adapter = StompAdapterImpl(Reactor(), destinations, ids)
-        adapter.handle_frame(TestDispatcher(adapter), frame)
+        adapter.handle_frame(FakeAsyncDispatcher(adapter), frame)
 
         data = adapter.pop_message()
         self.assertIsNot(data, None)
@@ -455,7 +455,7 @@ class SendFrameTest(TestCaseBase):
                       )
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
-        dispatcher = TestDispatcher(adapter)
+        dispatcher = FakeAsyncDispatcher(adapter)
         adapter.handle_frame(dispatcher, frame)
 
         self.assertEqual(dispatcher.connection.flow_id, 'e8a936a6')
@@ -472,7 +472,7 @@ class SendFrameTest(TestCaseBase):
                       )
 
         adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
-        dispatcher = TestDispatcher(adapter)
+        dispatcher = FakeAsyncDispatcher(adapter)
         adapter.handle_frame(dispatcher, frame)
 
         self.assertIsNone(dispatcher.connection.flow_id)
