@@ -137,10 +137,11 @@ class Generic(Base):
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
-        params = parse_device_params(dev)
-        # TODO: this mapping is not ideal, but it seems the one that requires
-        # the less shuffling, so keeping it there.
-        params['device'], params['type'] = params['type'], params['device']
+        params = {
+            'device': find_device_type(dev),
+            'type': dev.tag,
+        }
+        update_device_params(params, dev)
         return cls(log, **params)
 
     def getXML(self):
@@ -155,7 +156,11 @@ class Balloon(Base):
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
-        params = parse_device_params(dev)
+        params = {
+            'device': dev.tag,
+            'type': dev.tag,
+        }
+        update_device_params(params, dev)
         params['specParams'] = parse_device_attrs(dev, ('model',))
         return cls(log, **params)
 
@@ -208,7 +213,11 @@ class Console(Base):
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
         has_sock = dev.attrib.get('type', 'pty') == 'unix'
-        params = parse_device_params(dev)
+        params = {
+            'device': dev.tag,
+            'type': dev.tag,
+        }
+        update_device_params(params, dev)
         params['specParams'] = {
             'consoleType': vmxml.find_attr(dev, 'target', 'type'),
             'enableSocket': has_sock,
@@ -322,8 +331,13 @@ class Controller(Base):
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
-        params = parse_device_params(dev, attrs=('index', 'model', 'ports'))
-        params['device'] = params['type']
+        params = {
+            'device': find_device_type(dev),
+            'type': find_device_type(dev),
+        }
+        update_device_params(
+            params, dev, attrs=('index', 'model', 'ports')
+        )
         iothread = vmxml.find_attr(dev, 'driver', 'iothread')
         if iothread:
             params['specParams'] = {'ioThreadId': iothread}
@@ -391,7 +405,11 @@ class Smartcard(Base):
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
-        params = parse_device_params(dev)
+        params = {
+            'device': dev.tag,
+            'type': find_device_type(dev),
+        }
+        update_device_params(params, dev)
         params['specParams'] = parse_device_attrs(dev, ('mode', 'type'))
         return cls(log, **params)
 
@@ -435,8 +453,11 @@ class Sound(Base):
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
-        params = parse_device_params(dev)
-        params['device'] = dev.attrib.get('model')
+        params = {
+            'device': dev.attrib.get('model'),
+            'type': find_device_type(dev),
+        }
+        update_device_params(params, dev)
         return cls(log, **params)
 
     def getXML(self):
@@ -476,8 +497,11 @@ class Redir(Base):
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
-        params = parse_device_params(dev, attrs=('bus', 'type'))
-        params['device'] = params['type']
+        params = {
+            'device': find_device_type(dev),
+            'type': find_device_type(dev),
+        }
+        update_device_params(params, dev, attrs=('bus', 'type'))
         return cls(log, **params)
 
     def getXML(self):
@@ -495,13 +519,18 @@ class Rng(Base):
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
-        params = parse_device_params(dev, attrs=('model', ))
-        params['specParams'] = {}
+        params = {
+            'device': dev.tag,
+            'type': find_device_type(dev),
+        }
+        update_device_params(params, dev, attrs=('model', ))
         rate = vmxml.find_first(dev, 'rate', None)
         if rate is not None:
-            params['specParams'].update(parse_device_attrs(
+            params['specParams'] = parse_device_attrs(
                 rate, ('period', 'bytes')
-            ))
+            )
+        else:
+            params['specParams'] = {}
         params['specParams']['source'] = rngsources.get_source_name(
             vmxml.text(vmxml.find_first(dev, 'backend'))
         )
@@ -581,7 +610,11 @@ class Tpm(Base):
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
-        params = parse_device_params(dev)
+        params = {
+            'device': dev.tag,
+            'type': find_device_type(dev),
+        }
+        update_device_params(params, dev)
         specParams = parse_device_attrs(dev, ('model',))
         backend = vmxml.find_first(dev, 'backend')
         specParams['mode'] = vmxml.attr(backend, 'type')
@@ -615,9 +648,11 @@ class Video(Base):
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
-        params = parse_device_params(dev)
-        # override
-        params['device'] = vmxml.find_attr(dev, 'model', 'type')
+        params = {
+            'device': vmxml.find_attr(dev, 'model', 'type'),
+            'type': find_device_type(dev),
+        }
+        update_device_params(params, dev)
         params['specParams'] = parse_device_attrs(
             vmxml.find_first(dev, 'model'),
             ('vram', 'heads', 'vgamem', 'ram')
@@ -667,10 +702,12 @@ class Watchdog(Base):
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
-        params = parse_device_params(dev)
+        params = {
+            'device': dev.tag,
+            'type': find_device_type(dev),
+        }
+        update_device_params(params, dev)
         params['specParams'] = parse_device_attrs(dev, ('model', 'action'))
-        if params['type'] is None:
-            params['type'] = params['device']
         return cls(log, **params)
 
     def __init__(self, *args, **kwargs):
@@ -718,7 +755,11 @@ class Memory(Base):
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
-        params = parse_device_params(dev)
+        params = {
+            'device': dev.tag,
+            'type': find_device_type(dev),
+        }
+        update_device_params(params, dev)
         target = vmxml.find_first(dev, 'target')
         params['size'] = (
             int(vmxml.text(vmxml.find_first(target, 'size'))) / 1024
@@ -845,15 +886,11 @@ def parse_device_attrs(dev, attrs):
     }
 
 
-def parse_device_type(dev):
+def find_device_type(dev):
     return dev.attrib.get('type', None) or dev.tag
 
 
-def parse_device_params(dev, attrs=None):
-    params = {
-        'type': parse_device_type(dev),
-        'device': dev.tag,
-    }
+def update_device_params(params, dev, attrs=None):
     alias = find_device_alias(dev)
     if alias:
         params['alias'] = alias
@@ -862,7 +899,6 @@ def parse_device_params(dev, attrs=None):
         params['address'] = address
     if attrs is not None:
         params.update(parse_device_attrs(dev, attrs))
-    return params
 
 
 def normalize_pci_address(domain, bus, slot, function):

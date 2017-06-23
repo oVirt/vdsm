@@ -586,10 +586,10 @@ class ParsingHelperTests(XMLTestCase):
         [u'''<sound model="ac97"/>''', 'sound'],
         [u'''<tpm model='tpm-tis'/>''', 'tpm'],
     ])
-    def test_parse_device_type(self, xml_data, dev_type):
+    def test_find_device_type(self, xml_data, dev_type):
         self.assertEqual(
             dev_type,
-            vmdevices.core.parse_device_type(vmxml.parse_xml(xml_data))
+            vmdevices.core.find_device_type(vmxml.parse_xml(xml_data))
         )
 
     @permutations([

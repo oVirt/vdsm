@@ -51,10 +51,13 @@ class Interface(core.Base):
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
         params = {
-            'custom': {}, 'vm_custom': {}, 'specParams': {},
+            'device': core.find_device_type(dev),
+            'type': core.find_device_type(dev),
+            'custom': {},
+            'vm_custom': {},
+            'specParams': {},
         }
-        params.update(core.parse_device_params(dev))
-        params['device'] = params['type']
+        core.update_device_params(params, dev)
         params.update(_get_xml_elem(dev, 'macAddr', 'mac', 'address'))
         params.update(_get_xml_elem(dev, 'nicModel', 'model', 'type'))
         params.update(_get_xml_elem(dev, 'bootOrder', 'boot', 'order'))

@@ -32,7 +32,7 @@ from vdsm.virt import vmxml
 
 from . import hwclass
 from .core import Base
-from .core import parse_device_params
+from .core import update_device_params, find_device_type
 
 import re
 
@@ -96,8 +96,11 @@ class Graphics(Base):
         # we parse `port` and `tlsPort` but we don't honour them to be
         # consistent with __init__ which will always set them to
         # AUTOSELECT (-1)
-        params = parse_device_params(dev, attrs=('port', 'tlsPort'))
-        params['device'] = params['type']
+        params = {
+            'device': find_device_type(dev),
+            'type': find_device_type(dev),
+        }
+        update_device_params(params, dev, attrs=('port', 'tlsPort'))
         params['specParams'] = _make_spec_params(dev, meta)
         params['vmid'] = meta['vmid']
         return cls(log, **params)
