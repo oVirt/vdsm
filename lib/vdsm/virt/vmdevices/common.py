@@ -198,3 +198,20 @@ def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
         dev_obj = dev_class.from_xml_tree(log, dev_elem, dev_meta)
         dev_map[dev_type].append(dev_obj)
     return dev_map
+
+
+def replace_devices_xml(domxml, devices_xml):
+    devices = vmxml.find_first(domxml, 'devices', None)
+
+    old_devs = [
+        dev for dev in vmxml.children(devices)
+        if dev.tag in hwclass.TO_REFRESH
+    ]
+    for old_dev in old_devs:
+        vmxml.remove_child(devices, old_dev)
+
+    for dev_class in hwclass.TO_REFRESH:
+        for dev in devices_xml[dev_class]:
+            vmxml.append_child(devices, etree_child=dev)
+
+    return domxml

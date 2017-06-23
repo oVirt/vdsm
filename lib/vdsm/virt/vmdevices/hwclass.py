@@ -41,3 +41,8 @@ LEASE = 'lease'
 
 # libvirt is not giving back aliases
 WITHOUT_ALIAS = GRAPHICS
+
+# devices that needs updates per-host basis from Vdsm
+TO_REFRESH = (
+    DISK, NIC, GRAPHICS, LEASE
+)

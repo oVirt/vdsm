@@ -1934,8 +1934,16 @@ class Vm(object):
             if on_reboot is not None:
                 vmxml.remove_child(dom, on_reboot)
 
+            vmdevices.common.replace_devices_xml(
+                dom,
+                self._process_devices()
+            )
+
             return vmxml.format_xml(dom, pretty=True)
 
+        return self._make_domain_xml()
+
+    def _make_domain_xml(self):
         serial_console = self._getSerialConsole()
 
         domxml = libvirtxml.Domain(self.conf, self.log, self.arch)
@@ -2256,11 +2264,22 @@ class Vm(object):
             # we must to have updated conf before VM run
             self.saveState()
 
-        devices = vmdevices.common.dev_map_from_dev_spec_map(
+        dev_objs_from_conf = vmdevices.common.dev_map_from_dev_spec_map(
             dev_spec_map, self.log
         )
 
-        return devices
+        if 'xml' not in self.conf:
+            return dev_objs_from_conf
+
+        # Engine XML flow note:
+        # we expect only storage devices to be sent in vm.conf format,
+        # everything else should be taken from the XML.
+        # We don't expect any storage device to be sent in the XML.
+        dev_objs_from_xml = vmdevices.common.dev_map_from_domain_xml(
+            self.id, self.domain, self._md_desc, self.log
+        )
+        dev_objs_from_xml[hwclass.DISK] = dev_objs_from_conf[hwclass.DISK]
+        return dev_objs_from_xml
 
     def _run(self):
         self.log.info("VM wrapper has started")
