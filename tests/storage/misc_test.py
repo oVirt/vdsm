@@ -28,7 +28,7 @@ import weakref
 from functools import partial
 
 from testlib import AssertingLock
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 from testlib import namedTemporaryDir
 from testlib import permutations, expandPermutations
 from testlib import TEMPDIR
@@ -55,7 +55,7 @@ EXT_WHOAMI = "whoami"
 SUDO_USER = "root"
 
 
-class TestEvent(TestCaseBase):
+class TestEvent(VdsmTestCase):
 
     def testEmit(self):
         ev = threading.Event()
@@ -156,7 +156,7 @@ class Receiver(object):
         self.flag.set()
 
 
-class TestITMap(TestCaseBase):
+class TestITMap(VdsmTestCase):
 
     def testMoreArgsThanThreads(self):
         def dummy(arg):
@@ -200,7 +200,7 @@ class TestITMap(TestCaseBase):
         self.assertRaises(ValueError, lambda: next(misc.itmap(int, data, 0)))
 
 
-class TestParseHumanReadableSize(TestCaseBase):
+class TestParseHumanReadableSize(VdsmTestCase):
 
     def testValidInput(self):
         """
@@ -221,7 +221,7 @@ class TestParseHumanReadableSize(TestCaseBase):
         self.assertEqual(misc.parseHumanReadableSize("4.3T"), 0)
 
 
-class TestAsyncProc(TestCaseBase):
+class TestAsyncProc(VdsmTestCase):
 
     def test(self):
         data = """Striker: You are a Time Lord, a lord of time.
@@ -309,7 +309,7 @@ class TestAsyncProc(TestCaseBase):
         self.assertEqual(p.stdout.read(len(data)).strip(), data)
 
 
-class TestValidateN(TestCaseBase):
+class TestValidateN(VdsmTestCase):
 
     def testValidInput(self):
         """
@@ -341,7 +341,7 @@ class TestValidateN(TestCaseBase):
         self.assertRaises(expectedException, misc.validateN, "2-1", "a")
 
 
-class TestValidateInt(TestCaseBase):
+class TestValidateInt(VdsmTestCase):
 
     def testValidInput(self):
         """
@@ -374,7 +374,7 @@ class TestValidateInt(TestCaseBase):
 
 
 @expandPermutations
-class TestValidateSize(TestCaseBase):
+class TestValidateSize(VdsmTestCase):
 
     @permutations(
         # size, result
@@ -399,7 +399,7 @@ class TestValidateSize(TestCaseBase):
                           misc.validateSize, size, "size")
 
 
-class TestValidateUuid(TestCaseBase):
+class TestValidateUuid(VdsmTestCase):
 
     def testValidInput(self):
         """
@@ -448,7 +448,7 @@ class TestValidateUuid(TestCaseBase):
                           "Dc08ff668-4072-4191-9fbb-f1c8f2daa3313")
 
 
-class TestUuidPack(TestCaseBase):
+class TestUuidPack(VdsmTestCase):
 
     def test(self):
         """
@@ -461,7 +461,7 @@ class TestUuidPack(TestCaseBase):
             self.assertEqual(misc.unpackUuid(packedUuid), origUuid)
 
 
-class TestChecksum(TestCaseBase):
+class TestChecksum(VdsmTestCase):
 
     def testConsistency(self):
         """
@@ -473,7 +473,7 @@ class TestChecksum(TestCaseBase):
         self.assertEqual(misc.checksum(data, 16), misc.checksum(data, 16))
 
 
-class TestParseBool(TestCaseBase):
+class TestParseBool(VdsmTestCase):
 
     def testValidInput(self):
         """
@@ -495,7 +495,7 @@ class TestParseBool(TestCaseBase):
         self.assertRaises(AttributeError, misc.parseBool, None)
 
 
-class TestAlignData(TestCaseBase):
+class TestAlignData(VdsmTestCase):
 
     def test(self):
         """
@@ -508,7 +508,7 @@ class TestAlignData(TestCaseBase):
         self.assertEqual(misc._alignData(1, 1), (1, 1, 1))
 
 
-class TestValidateDDBytes(TestCaseBase):
+class TestValidateDDBytes(VdsmTestCase):
 
     def testValidInputTrue(self):
         """
@@ -546,7 +546,7 @@ class TestValidateDDBytes(TestCaseBase):
                           ["I AM", "PRETENDING TO", "BE DD"], 32)
 
 
-class TestReadBlock(TestCaseBase):
+class TestReadBlock(VdsmTestCase):
 
     def _createTempFile(self, neededFileSize, writeData):
         """
@@ -630,7 +630,7 @@ class TestReadBlock(TestCaseBase):
         os.unlink(path)
 
 
-class TestCleanUpDir(TestCaseBase):
+class TestCleanUpDir(VdsmTestCase):
 
     def testFullDir(self):
         """
@@ -681,7 +681,7 @@ class TestCleanUpDir(TestCaseBase):
         self.assertTrue(os.path.lexists(baseDir))
 
 
-class TestPidExists(TestCaseBase):
+class TestPidExists(VdsmTestCase):
 
     def testPidExists(self):
         """
@@ -706,7 +706,7 @@ class TestPidExists(TestCaseBase):
             result = misc.pidExists(pid)
 
 
-class TestExecCmd(TestCaseBase):
+class TestExecCmd(VdsmTestCase):
 
     def testExec(self):
         """
@@ -771,7 +771,7 @@ class TestExecCmd(TestCaseBase):
         proc.wait()
 
 
-class TestSamplingMethod(TestCaseBase):
+class TestSamplingMethod(VdsmTestCase):
 
     # Note: this should be long enough so even on very loaded machine, all
     # threads will start within this delay. If this tests fails randomly,
@@ -859,7 +859,7 @@ class SamplingThread(object):
         self.result = self._func()
 
 
-class TestDynamicBarrier(TestCaseBase):
+class TestDynamicBarrier(VdsmTestCase):
 
     def test_exit_without_enter(self):
         barrier = misc.DynamicBarrier()

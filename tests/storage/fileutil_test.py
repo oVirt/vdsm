@@ -22,13 +22,13 @@ import stat
 
 from vdsm.storage import fileUtils
 import testValidation
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 from testlib import namedTemporaryDir
 from testlib import temporaryPath
 
 
-class TestCreatedir(TestCaseBase):
+class TestCreatedir(VdsmTestCase):
 
     def test_create_dirs_no_mode(self):
         with namedTemporaryDir() as base:
@@ -76,7 +76,7 @@ class TestCreatedir(TestCaseBase):
                 self.assertRaises(OSError, fileUtils.createdir, path)
 
 
-class TestChown(TestCaseBase):
+class TestChown(VdsmTestCase):
     @testValidation.ValidateRunningAsRoot
     def test(self):
         targetId = 666
@@ -101,7 +101,7 @@ class TestChown(TestCaseBase):
             self.assertTrue(stat.st_uid == stat.st_gid == 0)
 
 
-class TestCopyUserModeToGroup(TestCaseBase):
+class TestCopyUserModeToGroup(VdsmTestCase):
     MODE_MASK = 0o777
 
     # format: initialMode, expectedMode
@@ -118,7 +118,7 @@ class TestCopyUserModeToGroup(TestCaseBase):
                                  expectedMode)
 
 
-class TestAtomicSymlink(TestCaseBase):
+class TestAtomicSymlink(VdsmTestCase):
 
     def test_create_new(self):
         with namedTemporaryDir() as tmpdir:
@@ -175,7 +175,7 @@ class TestAtomicSymlink(TestCaseBase):
 
 
 @expandPermutations
-class TestNormalizePath(TestCaseBase):
+class TestNormalizePath(VdsmTestCase):
 
     @permutations([
         # Remote paths without a port

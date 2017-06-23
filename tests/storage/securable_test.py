@@ -20,7 +20,7 @@
 
 from __future__ import absolute_import
 from vdsm.storage.securable import secured, SecureError, unsecured
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 
 
 @secured
@@ -66,7 +66,7 @@ class ClassIsSecureClassMethod(object):
         return True
 
 
-class TestSecurable(TestCaseBase):
+class TestSecurable(VdsmTestCase):
 
     def assertUnsecured(self, secureObject):
         self.assertRaises(SecureError, secureObject.securedMethod)

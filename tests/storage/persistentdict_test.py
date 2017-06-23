@@ -17,7 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 from vdsm.storage import persistent as persistentDict
 
 
@@ -54,7 +54,7 @@ class SpecialError (RuntimeError):
     pass
 
 
-class TestPersistentDict(TestCaseBase):
+class TestPersistentDict(VdsmTestCase):
     def testFailedWrite(self):
         data = "Scotty had a will of her own, which was always " + \
                "dangerous in a woman."

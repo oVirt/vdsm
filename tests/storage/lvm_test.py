@@ -19,12 +19,12 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 
 import vdsm.storage.lvm as lvm
 
 
-class TestLvm(TestCaseBase):
+class TestLvm(VdsmTestCase):
     def test_buildFilter(self):
         chars = [' ', '$', '|', '"', '(']
         dev = "/dev/mapper/a"

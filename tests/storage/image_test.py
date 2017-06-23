@@ -20,7 +20,7 @@
 
 from monkeypatch import MonkeyPatch
 from testlib import expandPermutations, permutations
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 
 from vdsm.storage import constants as sc
 from vdsm.storage import image
@@ -37,7 +37,7 @@ def fake_estimate_qcow2_size(self, src_vol_params, dst_sd_id):
 
 
 @expandPermutations
-class TestCalculateVolAlloc(TestCaseBase):
+class TestCalculateVolAlloc(VdsmTestCase):
 
     @permutations([
         # srcVolParams, destVolFormt, expectedAlloc

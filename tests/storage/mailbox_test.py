@@ -25,7 +25,7 @@ import os
 import threading
 import struct
 
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 from testlib import namedTemporaryDir
 
 import vdsm.storage.mailbox as sm
@@ -85,7 +85,7 @@ def make_spm_mailbox(env):
             raise RuntimeError('Timemout waiting for spm mailbox')
 
 
-class TestSPMMailMonitor(TestCaseBase):
+class TestSPMMailMonitor(VdsmTestCase):
 
     def testThreadLeak(self):
         with make_env() as env:
@@ -108,7 +108,7 @@ class TestSPMMailMonitor(TestCaseBase):
                     msg='mailer.wait: Timeout expired')
 
 
-class TestSPMMailbox(TestCaseBase):
+class TestSPMMailbox(VdsmTestCase):
 
     def test_clear_outbox(self):
         with make_env() as env:
@@ -120,7 +120,7 @@ class TestSPMMailbox(TestCaseBase):
                 self.assertEqual(data, sm.EMPTYMAILBOX * MAX_HOSTS)
 
 
-class TestHSMMailbox(TestCaseBase):
+class TestHSMMailbox(VdsmTestCase):
 
     def test_clear_host_outbox(self):
         host_id = 7
@@ -152,7 +152,7 @@ class TestHSMMailbox(TestCaseBase):
                 self.assertEqual(data, dirty_outbox)
 
 
-class TestCommunicate(TestCaseBase):
+class TestCommunicate(VdsmTestCase):
 
     def test_send_receive(self):
         msg_processed = threading.Event()
@@ -186,7 +186,7 @@ class TestCommunicate(TestCaseBase):
             "0000000000"))])
 
 
-class TestValidation(TestCaseBase):
+class TestValidation(VdsmTestCase):
 
     def test_empty_mailbox(self):
         mailbox = sm.EMPTYMAILBOX

@@ -2,7 +2,7 @@ import os
 from contextlib import contextmanager
 
 from monkeypatch import MonkeyPatch
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 from testlib import make_config
 from testlib import expandPermutations, permutations
 from vdsm import commands
@@ -20,7 +20,7 @@ def fake_rescan(timeout):
     return func
 
 
-class TestRescanTimeout(TestCaseBase):
+class TestRescanTimeout(VdsmTestCase):
 
     @contextmanager
     def assertMaxDuration(self, maxtime):
@@ -46,7 +46,7 @@ class TestRescanTimeout(TestCaseBase):
             iscsi.rescan()
 
 
-class TestIscsiAdm(TestCaseBase):
+class TestIscsiAdm(VdsmTestCase):
     def testIfaceList(self):
         dirName = os.path.dirname(os.path.realpath(__file__))
         path = os.path.join(dirName, "iscsiadm_-m_iface.out")
@@ -64,7 +64,7 @@ class TestIscsiAdm(TestCaseBase):
 
 
 @expandPermutations
-class TestChapCredentialsEquality(TestCaseBase):
+class TestChapCredentialsEquality(VdsmTestCase):
 
     @permutations([
         (None, None),
@@ -106,7 +106,7 @@ class TestChapCredentialsEquality(TestCaseBase):
 
 
 @expandPermutations
-class TestChapCredentialsHash(TestCaseBase):
+class TestChapCredentialsHash(VdsmTestCase):
 
     @permutations([
         (None, None),
@@ -143,7 +143,7 @@ def protected(password):
 
 
 @expandPermutations
-class TestIscsiPortal(TestCaseBase):
+class TestIscsiPortal(VdsmTestCase):
 
     @permutations([
         ("192.0.2.23", 5003, "192.0.2.23:5003"),
@@ -168,7 +168,7 @@ class TestIscsiPortal(TestCaseBase):
         self.assertEqual(target.is_ipv6(), expected)
 
 
-class TestIscsiTarget(TestCaseBase):
+class TestIscsiTarget(VdsmTestCase):
 
     def test_str(self):
         target = iscsi.IscsiTarget(

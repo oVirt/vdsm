@@ -22,7 +22,7 @@ from contextlib import contextmanager
 import os
 
 from storage.storagetestlib import fake_env
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 from testlib import make_uuid
 from vdsm.config import config
 from vdsm.constants import GIB
@@ -30,7 +30,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import fileVolume
 
 
-class TestGetDomUuidFromVolumePath(TestCaseBase):
+class TestGetDomUuidFromVolumePath(VdsmTestCase):
     def test(self):
         testPath = os.path.join(config.get('irs', 'repository'),
                                 "spUUID/sdUUID/images/imgUUID/volUUID")
@@ -38,7 +38,7 @@ class TestGetDomUuidFromVolumePath(TestCaseBase):
                          "sdUUID")
 
 
-class TestFileVolumeManifest(TestCaseBase):
+class TestFileVolumeManifest(VdsmTestCase):
 
     @contextmanager
     def make_volume(self, size, storage_type='file', format=sc.RAW_FORMAT):

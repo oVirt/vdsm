@@ -20,7 +20,7 @@
 
 import io
 
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 from testlib import temporaryPath
 
@@ -30,7 +30,7 @@ BLOCK_SIZE = 512
 
 
 @expandPermutations
-class TestDirectFile(TestCaseBase):
+class TestDirectFile(VdsmTestCase):
 
     DATA = b"".join(c.encode('ascii') * 127 + b"\n" for c in "abcdefgh")
 

@@ -20,7 +20,7 @@
 
 from vdsm.storage import outOfProcess as oop
 
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 from monkeypatch import MonkeyPatchScope
 
 import gc
@@ -32,7 +32,7 @@ import re
 from weakref import ref
 
 
-class TestOopWrapper(TestCaseBase):
+class TestOopWrapper(VdsmTestCase):
 
     def setUp(self):
         self.pool = oop.getGlobalProcPool()

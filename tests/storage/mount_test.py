@@ -32,7 +32,7 @@ from vdsm.storage.misc import execCmd
 
 from nose.plugins.skip import SkipTest
 
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 from testlib import namedTemporaryDir, temporaryPath
 from testlib import expandPermutations, permutations
 from testValidation import ValidateRunningAsRoot
@@ -70,7 +70,7 @@ def createFloppyImage(size):
 
 
 @expandPermutations
-class TestMountEquality(TestCaseBase):
+class TestMountEquality(VdsmTestCase):
 
     def test_eq_equal(self):
         m1 = mount.Mount("spec", "file")
@@ -100,7 +100,7 @@ class TestMountEquality(TestCaseBase):
 
 
 @expandPermutations
-class TestMountHash(TestCaseBase):
+class TestMountHash(VdsmTestCase):
 
     def test_equal_same_hash(self):
         m1 = mount.Mount("spec", "file")
@@ -125,7 +125,7 @@ class TestMountHash(TestCaseBase):
 
 
 @expandPermutations
-class TestMount(TestCaseBase):
+class TestMount(VdsmTestCase):
 
     @skipif(six.PY3, "needs porting to python 3")
     @ValidateRunningAsRoot
@@ -233,7 +233,7 @@ def fake_mounts(mount_lines):
             yield
 
 
-class TestRemoteSdIsMounted(TestCaseBase):
+class TestRemoteSdIsMounted(VdsmTestCase):
 
     @skipif(six.PY3, "needs porting to python 3")
     def test_is_mounted(self):
@@ -275,7 +275,7 @@ class TestRemoteSdIsMounted(TestCaseBase):
 
 
 @expandPermutations
-class TestIsMountedTiming(TestCaseBase):
+class TestIsMountedTiming(VdsmTestCase):
 
     @skipif(six.PY3, "needs porting to python 3")
     @stresstest

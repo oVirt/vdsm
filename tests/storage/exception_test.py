@@ -23,10 +23,10 @@ from __future__ import absolute_import
 from vdsm.common.exception import GeneralException
 from vdsm.storage import exception as storage_exception
 
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 
 
-class TestStorageExceptions(TestCaseBase):
+class TestStorageExceptions(VdsmTestCase):
     def test_collisions(self):
         codes = {}
 

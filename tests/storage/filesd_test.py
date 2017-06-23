@@ -26,7 +26,7 @@ import time
 import uuid
 
 from storage.storagefakelib import fake_repo
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 from testlib import expandPermutations
 from testlib import namedTemporaryDir
 from testlib import permutations
@@ -73,7 +73,7 @@ class FakeOOP(object):
         self.glob = glob
 
 
-class TestGetAllVolumes(TestCaseBase):
+class TestGetAllVolumes(VdsmTestCase):
 
     MOUNTPOINT = "/rhev/data-center/%s" % uuid.uuid4()
     SD_UUID = str(uuid.uuid4())
@@ -176,7 +176,7 @@ SDInfo = collections.namedtuple("SDInfo",
                                 "uuid, remote_path, mountpoint, dom_dir")
 
 
-class TestGetStorageDomainsList(TestCaseBase):
+class TestGetStorageDomainsList(VdsmTestCase):
 
     def test_no_sd(self):
         with fake_repo():
@@ -189,7 +189,7 @@ class TestGetStorageDomainsList(TestCaseBase):
 
 
 @expandPermutations
-class TestScanDomains(TestCaseBase):
+class TestScanDomains(VdsmTestCase):
 
     def tearDown(self):
         # scanDomains is implemented using oop, leaving stale ioprocess child

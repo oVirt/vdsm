@@ -31,7 +31,7 @@ from vdsm.storage import resourceManager as rm
 from monkeypatch import MonkeyPatch
 from storage.storagefakelib import FakeResourceManager
 from testlib import expandPermutations, permutations
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 from testValidation import slowtest, stresstest
 
 
@@ -128,7 +128,7 @@ def manager():
     return manager
 
 
-class TestResourceManager(TestCaseBase):
+class TestResourceManager(VdsmTestCase):
 
     @MonkeyPatch(rm, "_manager", manager())
     def testErrorInFactory(self):
@@ -654,7 +654,7 @@ class TestResourceManager(TestCaseBase):
 
 
 @expandPermutations
-class TestResourceManagerLock(TestCaseBase):
+class TestResourceManagerLock(VdsmTestCase):
 
     def test_properties(self):
         a = rm.ResourceManagerLock('ns', 'name', 'mode')

@@ -42,7 +42,7 @@ from storage.storagetestlib import (
 from testlib import make_config
 from testlib import make_uuid
 from testlib import permutations, expandPermutations
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 from testValidation import slowtest
 
 CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
@@ -50,7 +50,7 @@ GIB_IN_SECTORS = GIB // sc.BLOCK_SIZE
 
 
 @expandPermutations
-class TestBlockVolumeSize(TestCaseBase):
+class TestBlockVolumeSize(VdsmTestCase):
 
     @permutations([
         # (preallocate, capacity in sectors, initial size in sectors),
@@ -99,7 +99,7 @@ class TestBlockVolumeSize(TestCaseBase):
 
 
 @expandPermutations
-class TestBlockVolumeManifest(TestCaseBase):
+class TestBlockVolumeManifest(VdsmTestCase):
 
     @contextmanager
     def make_volume(self, size, storage_type='block', format=sc.RAW_FORMAT):

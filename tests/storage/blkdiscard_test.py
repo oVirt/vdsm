@@ -19,14 +19,14 @@
 #
 
 from monkeypatch import MonkeyPatch
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase
 from vdsm import cmdutils
 from vdsm.storage import blkdiscard
 
 BLKDISCARD = blkdiscard._blkdiscard.cmd
 
 
-class TestBlkdiscard(TestCaseBase):
+class TestBlkdiscard(VdsmTestCase):
 
     @MonkeyPatch(blkdiscard._blkdiscard, '_cmd', '/usr/bin/true')
     def test_success(self):
