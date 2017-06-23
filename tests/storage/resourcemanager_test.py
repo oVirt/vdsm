@@ -128,7 +128,7 @@ def manager():
     return manager
 
 
-class ResourceManagerTests(TestCaseBase):
+class TestResourceManager(TestCaseBase):
 
     @MonkeyPatch(rm, "_manager", manager())
     def testErrorInFactory(self):
@@ -654,7 +654,7 @@ class ResourceManagerTests(TestCaseBase):
 
 
 @expandPermutations
-class ResourceManagerLockTest(TestCaseBase):
+class TestResourceManagerLock(TestCaseBase):
 
     def test_properties(self):
         a = rm.ResourceManagerLock('ns', 'name', 'mode')

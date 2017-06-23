@@ -55,7 +55,7 @@ MB = 1024 ** 2
 
 
 @expandPermutations
-class FakeFileEnvTests(VdsmTestCase):
+class TestFakeFileEnv(VdsmTestCase):
 
     def test_no_fakelvm(self):
         with fake_file_env() as env:
@@ -139,7 +139,7 @@ class FakeFileEnvTests(VdsmTestCase):
 
 
 @expandPermutations
-class FakeBlockEnvTests(VdsmTestCase):
+class TestFakeBlockEnv(VdsmTestCase):
 
     def test_repopath_location(self):
         with fake_block_env() as env:
@@ -263,7 +263,7 @@ class FakeBlockEnvTests(VdsmTestCase):
 
 
 @expandPermutations
-class QemuPatternVerificationTest(VdsmTestCase):
+class TestQemuPatternVerification(VdsmTestCase):
 
     @permutations(((qemuimg.FORMAT.QCOW2,), (qemuimg.FORMAT.RAW,)))
     def test_match(self, img_format):
@@ -384,7 +384,7 @@ class OtherFakeLock(FakeGuardedLock):
 
 
 @expandPermutations
-class FakeGuardedLockTest(VdsmTestCase):
+class TestFakeGuardedLock(VdsmTestCase):
 
     def test_properties(self):
         a = FakeGuardedLock('ns', 'name', 'mode', [])
@@ -443,7 +443,7 @@ class FakeGuardedLockTest(VdsmTestCase):
         self.assertEqual(expected, log)
 
 
-class AbortingTests(VdsmTestCase):
+class TestAborting(VdsmTestCase):
 
     def test_aborting_flow(self):
         aborting = Aborting(5)

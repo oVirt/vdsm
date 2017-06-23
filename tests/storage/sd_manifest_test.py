@@ -43,7 +43,7 @@ MB = 1048576
 VOLSIZE = 256 * MB
 
 
-class ManifestTests(object):
+class ManifestMixin(object):
 
     def test_init_failure_raises(self):
         def fail(*args):
@@ -55,7 +55,7 @@ class ManifestTests(object):
                     env.sd_manifest.initDomainLock()
 
 
-class FileManifestTests(ManifestTests, VdsmTestCase):
+class TestFileManifest(ManifestMixin, VdsmTestCase):
     env = fake_file_env
 
     def setUp(self):
@@ -108,7 +108,7 @@ class FileManifestTests(ManifestTests, VdsmTestCase):
             self.assertIn(img_id, env.sd_manifest.getAllImages())
 
 
-class BlockManifestTests(ManifestTests, VdsmTestCase):
+class TestBlockManifest(ManifestMixin, VdsmTestCase):
     env = fake_block_env
 
     def test_get_monitoring_path(self):
@@ -164,7 +164,7 @@ class BlockManifestTests(ManifestTests, VdsmTestCase):
 
 
 @expandPermutations
-class BlockDomainMetadataSlotTests(VdsmTestCase):
+class TestBlockDomainMetadataSlot(VdsmTestCase):
 
     @permutations([
         # used_slots, free_slot
@@ -193,7 +193,7 @@ class BlockDomainMetadataSlotTests(VdsmTestCase):
                 self.assertFalse(acquired)
 
 
-class TestingStorageDomainManifest(sd.StorageDomainManifest):
+class StorageDomainManifest(sd.StorageDomainManifest):
     def __init__(self):
         pass
 
@@ -210,13 +210,13 @@ class TestingStorageDomainManifest(sd.StorageDomainManifest):
         pass
 
 
-class DomainLockTests(VdsmTestCase):
+class TestDomainLock(VdsmTestCase):
 
     def test_domainlock_contextmanager(self):
         expected_calls = [("acquireDomainLock", (1,), {}),
                           ("dummy", (), {}),
                           ("releaseDomainLock", (), {})]
-        manifest = TestingStorageDomainManifest()
+        manifest = StorageDomainManifest()
         with manifest.domain_lock(1):
             manifest.dummy()
         self.assertEqual(manifest.__calls__, expected_calls)
@@ -227,7 +227,7 @@ class DomainLockTests(VdsmTestCase):
 
         expected_calls = [("acquireDomainLock", (1,), {}),
                           ("releaseDomainLock", (), {})]
-        manifest = TestingStorageDomainManifest()
+        manifest = StorageDomainManifest()
         with self.assertRaises(InjectedFailure):
             with manifest.domain_lock(1):
                 raise InjectedFailure()

@@ -28,7 +28,7 @@ from testlib import namedTemporaryDir
 from testlib import temporaryPath
 
 
-class CreatedirTests(TestCaseBase):
+class TestCreatedir(TestCaseBase):
 
     def test_create_dirs_no_mode(self):
         with namedTemporaryDir() as base:
@@ -76,7 +76,7 @@ class CreatedirTests(TestCaseBase):
                 self.assertRaises(OSError, fileUtils.createdir, path)
 
 
-class ChownTests(TestCaseBase):
+class TestChown(TestCaseBase):
     @testValidation.ValidateRunningAsRoot
     def test(self):
         targetId = 666
@@ -101,7 +101,7 @@ class ChownTests(TestCaseBase):
             self.assertTrue(stat.st_uid == stat.st_gid == 0)
 
 
-class CopyUserModeToGroupTests(TestCaseBase):
+class TestCopyUserModeToGroup(TestCaseBase):
     MODE_MASK = 0o777
 
     # format: initialMode, expectedMode

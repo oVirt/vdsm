@@ -55,7 +55,7 @@ EXT_WHOAMI = "whoami"
 SUDO_USER = "root"
 
 
-class EventTests(TestCaseBase):
+class TestEvent(TestCaseBase):
 
     def testEmit(self):
         ev = threading.Event()
@@ -156,7 +156,7 @@ class Receiver(object):
         self.flag.set()
 
 
-class ITMap(TestCaseBase):
+class TestITMap(TestCaseBase):
 
     def testMoreArgsThanThreads(self):
         def dummy(arg):
@@ -200,7 +200,7 @@ class ITMap(TestCaseBase):
         self.assertRaises(ValueError, lambda: next(misc.itmap(int, data, 0)))
 
 
-class ParseHumanReadableSize(TestCaseBase):
+class TestParseHumanReadableSize(TestCaseBase):
 
     def testValidInput(self):
         """
@@ -221,7 +221,7 @@ class ParseHumanReadableSize(TestCaseBase):
         self.assertEqual(misc.parseHumanReadableSize("4.3T"), 0)
 
 
-class AsyncProcTests(TestCaseBase):
+class TestAsyncProc(TestCaseBase):
 
     def test(self):
         data = """Striker: You are a Time Lord, a lord of time.
@@ -309,7 +309,7 @@ class AsyncProcTests(TestCaseBase):
         self.assertEqual(p.stdout.read(len(data)).strip(), data)
 
 
-class ValidateN(TestCaseBase):
+class TestValidateN(TestCaseBase):
 
     def testValidInput(self):
         """
@@ -341,7 +341,7 @@ class ValidateN(TestCaseBase):
         self.assertRaises(expectedException, misc.validateN, "2-1", "a")
 
 
-class ValidateInt(TestCaseBase):
+class TestValidateInt(TestCaseBase):
 
     def testValidInput(self):
         """
@@ -374,7 +374,7 @@ class ValidateInt(TestCaseBase):
 
 
 @expandPermutations
-class ValidateSize(TestCaseBase):
+class TestValidateSize(TestCaseBase):
 
     @permutations(
         # size, result
@@ -399,7 +399,7 @@ class ValidateSize(TestCaseBase):
                           misc.validateSize, size, "size")
 
 
-class ValidateUuid(TestCaseBase):
+class TestValidateUuid(TestCaseBase):
 
     def testValidInput(self):
         """
@@ -448,7 +448,7 @@ class ValidateUuid(TestCaseBase):
                           "Dc08ff668-4072-4191-9fbb-f1c8f2daa3313")
 
 
-class UuidPack(TestCaseBase):
+class TestUuidPack(TestCaseBase):
 
     def test(self):
         """
@@ -461,7 +461,7 @@ class UuidPack(TestCaseBase):
             self.assertEqual(misc.unpackUuid(packedUuid), origUuid)
 
 
-class Checksum(TestCaseBase):
+class TestChecksum(TestCaseBase):
 
     def testConsistency(self):
         """
@@ -473,7 +473,7 @@ class Checksum(TestCaseBase):
         self.assertEqual(misc.checksum(data, 16), misc.checksum(data, 16))
 
 
-class ParseBool(TestCaseBase):
+class TestParseBool(TestCaseBase):
 
     def testValidInput(self):
         """
@@ -495,7 +495,7 @@ class ParseBool(TestCaseBase):
         self.assertRaises(AttributeError, misc.parseBool, None)
 
 
-class AlignData(TestCaseBase):
+class TestAlignData(TestCaseBase):
 
     def test(self):
         """
@@ -508,7 +508,7 @@ class AlignData(TestCaseBase):
         self.assertEqual(misc._alignData(1, 1), (1, 1, 1))
 
 
-class ValidateDDBytes(TestCaseBase):
+class TestValidateDDBytes(TestCaseBase):
 
     def testValidInputTrue(self):
         """
@@ -546,7 +546,7 @@ class ValidateDDBytes(TestCaseBase):
                           ["I AM", "PRETENDING TO", "BE DD"], 32)
 
 
-class ReadBlock(TestCaseBase):
+class TestReadBlock(TestCaseBase):
 
     def _createTempFile(self, neededFileSize, writeData):
         """
@@ -630,7 +630,7 @@ class ReadBlock(TestCaseBase):
         os.unlink(path)
 
 
-class CleanUpDir(TestCaseBase):
+class TestCleanUpDir(TestCaseBase):
 
     def testFullDir(self):
         """
@@ -681,7 +681,7 @@ class CleanUpDir(TestCaseBase):
         self.assertTrue(os.path.lexists(baseDir))
 
 
-class PidExists(TestCaseBase):
+class TestPidExists(TestCaseBase):
 
     def testPidExists(self):
         """
@@ -706,7 +706,7 @@ class PidExists(TestCaseBase):
             result = misc.pidExists(pid)
 
 
-class ExecCmd(TestCaseBase):
+class TestExecCmd(TestCaseBase):
 
     def testExec(self):
         """
@@ -771,7 +771,7 @@ class ExecCmd(TestCaseBase):
         proc.wait()
 
 
-class SamplingMethodTests(TestCaseBase):
+class TestSamplingMethod(TestCaseBase):
 
     # Note: this should be long enough so even on very loaded machine, all
     # threads will start within this delay. If this tests fails randomly,

@@ -740,7 +740,7 @@ class DomainTestMixin(object):
 
 
 @expandPermutations
-class BlockDomainTests(DomainTestMixin, VdsmTestCase):
+class TestBlockDomain(DomainTestMixin, VdsmTestCase):
 
     def setUp(self):
         self.domain = FakeBlockStorageDomain()
@@ -773,7 +773,7 @@ class BlockDomainTests(DomainTestMixin, VdsmTestCase):
         self.checker.check_classmethod_call(fn, nargs)
 
 
-class FileDomainTests(DomainTestMixin, VdsmTestCase):
+class TestFileDomain(DomainTestMixin, VdsmTestCase):
 
     def setUp(self):
         self.domain = FakeFileStorageDomain()
@@ -861,7 +861,7 @@ class VolumeTestMixin(object):
 
 
 @expandPermutations
-class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
+class TestBlockVolume(VolumeTestMixin, VdsmTestCase):
 
     def setUp(self):
         self.volume = FakeBlockVolume()
@@ -891,7 +891,7 @@ class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
 
 
 @expandPermutations
-class FileVolumeTests(VolumeTestMixin, VdsmTestCase):
+class TestFileVolume(VolumeTestMixin, VdsmTestCase):
 
     def setUp(self):
         self.volume = FakeFileVolume()

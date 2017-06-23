@@ -42,7 +42,7 @@ class FakeMount(object):
         self.fs_file = fs_file
 
 
-class IscsiConnectionMismatchTests(VdsmTestCase):
+class TestIscsiConnectionMismatch(VdsmTestCase):
 
     def test_no_args(self):
         s = str(IscsiConnection.Mismatch("error 1"))
@@ -60,7 +60,7 @@ class IscsiConnectionMismatchTests(VdsmTestCase):
 
 
 @expandPermutations
-class MountConnectionTests(VdsmTestCase):
+class TestMountConnection(VdsmTestCase):
 
     @permutations([
         # spec, fs_spec, fs_file
@@ -137,7 +137,7 @@ class TestMountConnectionHash(VdsmTestCase):
 
 
 @expandPermutations
-class GlusterFSConnectionTests(VdsmTestCase):
+class TestGlusterFSConnection(VdsmTestCase):
 
     def test_mountpoint(self):
         mount_con = GlusterFSConnection("server:/volume", mountClass=FakeMount)
@@ -264,7 +264,7 @@ class GlusterFSConnectionTests(VdsmTestCase):
 
 
 @expandPermutations
-class GlusterFSNotAccessibleConnectionTests(VdsmTestCase):
+class TestGlusterFSNotAccessibleConnection(VdsmTestCase):
 
     def glusterVolumeInfo(self, volumeName=None, remoteServer=None):
         raise ge.GlusterCmdExecFailedException()

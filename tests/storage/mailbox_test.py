@@ -85,7 +85,7 @@ def make_spm_mailbox(env):
             raise RuntimeError('Timemout waiting for spm mailbox')
 
 
-class SPM_MailMonitorTests(TestCaseBase):
+class TestSPMMailMonitor(TestCaseBase):
 
     def testThreadLeak(self):
         with make_env() as env:

@@ -87,7 +87,7 @@ def _get_vol_info():
                 vol_format='RAW', disk_type='SYSTEM')
 
 
-class CreateVolumeTests(VdsmTestCase):
+class TestCreateVolume(VdsmTestCase):
 
     def _get_args(self):
         job_id = make_uuid()
@@ -141,7 +141,7 @@ class CreateVolumeTests(VdsmTestCase):
                          job.info()['error']['code'])
 
 
-class CreateVolumeInfoTests(VdsmTestCase):
+class TestCreateVolumeInfo(VdsmTestCase):
 
     def test_missing_parameter(self):
         info = _get_vol_info()
@@ -164,7 +164,7 @@ class CreateVolumeInfoTests(VdsmTestCase):
 
 
 @expandPermutations
-class ParentVolumeInfoTests(VdsmTestCase):
+class TestParentVolumeInfo(VdsmTestCase):
 
     @permutations([
         [{}], [{'vol_id': 'foo'}], [{'img_id': 'bar'}],

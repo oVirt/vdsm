@@ -54,7 +54,7 @@ class SpecialError (RuntimeError):
     pass
 
 
-class PersistentDictTests(TestCaseBase):
+class TestPersistentDict(TestCaseBase):
     def testFailedWrite(self):
         data = "Scotty had a will of her own, which was always " + \
                "dangerous in a woman."

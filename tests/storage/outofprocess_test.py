@@ -32,7 +32,7 @@ import re
 from weakref import ref
 
 
-class OopWrapperTests(TestCaseBase):
+class TestOopWrapper(TestCaseBase):
 
     def setUp(self):
         self.pool = oop.getGlobalProcPool()

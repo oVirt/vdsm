@@ -55,7 +55,7 @@ class FakeSDManifest(object):
 
 
 @expandPermutations
-class VolumeLeaseTest(VdsmTestCase):
+class TestVolumeLease(VdsmTestCase):
 
     def test_properties(self):
         a = volume.VolumeLease(HOST_ID, 'dom', 'img', 'vol')
@@ -112,7 +112,7 @@ class VolumeLeaseTest(VdsmTestCase):
 
 
 @expandPermutations
-class VolumeManifestTest(VdsmTestCase):
+class TestVolumeManifest(VdsmTestCase):
 
     @contextmanager
     def volume(self):

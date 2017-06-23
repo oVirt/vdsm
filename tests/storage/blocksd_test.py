@@ -36,7 +36,7 @@ VG = collections.namedtuple("VG", ['vg_mda_size', 'vg_mda_free'])
 TESTDIR = os.path.dirname(__file__)
 
 
-class MetadataValidityTests(VdsmTestCase):
+class TestMetadataValidity(VdsmTestCase):
 
     MIN_MD_SIZE = blockSD.VG_METADATASIZE * constants.MEGAB / 2
     MIN_MD_FREE = MIN_MD_SIZE * blockSD.VG_MDA_MIN_THRESHOLD
@@ -77,7 +77,7 @@ def fakeGetLV(vgName):
     return lvs
 
 
-class GetAllVolumesTests(VdsmTestCase):
+class TestGetAllVolumes(VdsmTestCase):
     # TODO: add more tests, see fileSDTests.py
 
     @MonkeyPatch(lvm, 'getLV', fakeGetLV)

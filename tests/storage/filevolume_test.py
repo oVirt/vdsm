@@ -30,7 +30,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import fileVolume
 
 
-class GetDomUuidFromVolumePathTests(TestCaseBase):
+class TestGetDomUuidFromVolumePath(TestCaseBase):
     def test(self):
         testPath = os.path.join(config.get('irs', 'repository'),
                                 "spUUID/sdUUID/images/imgUUID/volUUID")

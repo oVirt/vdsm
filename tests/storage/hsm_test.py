@@ -43,7 +43,7 @@ class FakeHSM(hsm.HSM):
 
 
 @expandPermutations
-class VerifyUntrustedVolumeTest(VdsmTestCase):
+class TestVerifyUntrustedVolume(VdsmTestCase):
     SIZE = 1024 * 1024
 
     @permutations(((sc.RAW_FORMAT,), (sc.COW_FORMAT,)))

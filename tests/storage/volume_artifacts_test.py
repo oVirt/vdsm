@@ -208,7 +208,7 @@ class VolumeArtifactsTestsMixin(object):
 
 
 @expandPermutations
-class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
+class TestFileVolumeArtifacts(VolumeArtifactsTestsMixin, VdsmTestCase):
 
     def fake_env(self):
         return fake_file_env()
@@ -332,7 +332,7 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
         self.assertEqual(artifacts.img_id, md.image)
 
 
-class FileVolumeArtifactVisibilityTests(VdsmTestCase):
+class TestFileVolumeArtifactVisibility(VdsmTestCase):
 
     def setUp(self):
         self.img_id = make_uuid()
@@ -353,7 +353,7 @@ class FileVolumeArtifactVisibilityTests(VdsmTestCase):
 
 
 @expandPermutations
-class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
+class TestBlockVolumeArtifacts(VolumeArtifactsTestsMixin, VdsmTestCase):
 
     def fake_env(self):
         return fake_block_env()
@@ -566,7 +566,7 @@ class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
             return slot
 
 
-class BlockVolumeArtifactVisibilityTests(VdsmTestCase):
+class TestBlockVolumeArtifactVisibility(VdsmTestCase):
 
     def setUp(self):
         self.img_id = make_uuid()

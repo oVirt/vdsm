@@ -32,7 +32,7 @@ from vdsm.common.concurrent import Barrier
 from vdsm.storage.rwlock import RWLock
 
 
-class RWLockTests(VdsmTestCase):
+class TestRWLockT(VdsmTestCase):
 
     def test_concurrent_readers(self):
         lock = RWLock()
@@ -228,7 +228,7 @@ class RWLockTests(VdsmTestCase):
 
 
 @expandPermutations
-class RWLockStressTests(VdsmTestCase):
+class TestRWLockStress(VdsmTestCase):
 
     @stresstest
     @permutations([(1, 2), (2, 8), (3, 32), (4, 128)])

@@ -82,7 +82,7 @@ def make_lines(**kwargs):
 
 
 @expandPermutations
-class VolumeMetadataTests(VdsmTestCase):
+class TestVolumeMetadata(VdsmTestCase):
 
     def test_create_info(self):
         params = make_init_params()

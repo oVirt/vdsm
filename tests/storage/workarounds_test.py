@@ -43,7 +43,7 @@ def make_volume(env, size, md_fmt, real_fmt):
     return vol
 
 
-class DetectFormatTest(VdsmTestCase):
+class TestDetectFormat(VdsmTestCase):
 
     def test_bad_format_vm_conf_disk(self):
         """

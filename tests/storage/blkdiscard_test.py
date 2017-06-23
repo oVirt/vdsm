@@ -26,7 +26,7 @@ from vdsm.storage import blkdiscard
 BLKDISCARD = blkdiscard._blkdiscard.cmd
 
 
-class BlkDiscardTests(TestCaseBase):
+class TestBlkdiscard(TestCaseBase):
 
     @MonkeyPatch(blkdiscard._blkdiscard, '_cmd', '/usr/bin/true')
     def test_success(self):

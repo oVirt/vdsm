@@ -50,7 +50,7 @@ GIB_IN_SECTORS = GIB // sc.BLOCK_SIZE
 
 
 @expandPermutations
-class BlockVolumeSizeTests(TestCaseBase):
+class TestBlockVolumeSize(TestCaseBase):
 
     @permutations([
         # (preallocate, capacity in sectors, initial size in sectors),

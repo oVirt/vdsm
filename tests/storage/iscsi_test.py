@@ -20,7 +20,7 @@ def fake_rescan(timeout):
     return func
 
 
-class RescanTimeoutTests(TestCaseBase):
+class TestRescanTimeout(TestCaseBase):
 
     @contextmanager
     def assertMaxDuration(self, maxtime):
@@ -46,7 +46,7 @@ class RescanTimeoutTests(TestCaseBase):
             iscsi.rescan()
 
 
-class IscsiAdmTests(TestCaseBase):
+class TestIscsiAdm(TestCaseBase):
     def testIfaceList(self):
         dirName = os.path.dirname(os.path.realpath(__file__))
         path = os.path.join(dirName, "iscsiadm_-m_iface.out")

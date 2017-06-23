@@ -125,7 +125,7 @@ class TestMountHash(TestCaseBase):
 
 
 @expandPermutations
-class MountTests(TestCaseBase):
+class TestMount(TestCaseBase):
 
     @skipif(six.PY3, "needs porting to python 3")
     @ValidateRunningAsRoot

@@ -24,7 +24,7 @@ from testlib import VdsmTestCase as TestCaseBase
 import vdsm.storage.lvm as lvm
 
 
-class LvmTests(TestCaseBase):
+class TestLvm(TestCaseBase):
     def test_buildFilter(self):
         chars = [' ', '$', '|', '"', '(']
         dev = "/dev/mapper/a"

@@ -30,7 +30,7 @@ class InjectedFailure(Exception):
     pass
 
 
-class ContextTest(VdsmTestCase):
+class TestContext(VdsmTestCase):
 
     def test_empty(self):
         with guarded.context([]):

@@ -44,7 +44,7 @@ from storage.storagetestlib import (
 MB = 1024 ** 2
 
 
-class FakeLVMSimpleVGTests(VdsmTestCase):
+class TestFakeLVMSimpleVG(VdsmTestCase):
     VG_NAME = '1ffead52-7363-4968-a8c7-3bc34504d452'
     DEVICES = ['360014054d75cb132d474c0eae9825766']
     LV_NAME = '54e3378a-b2f6-46ff-b2da-a9c82522a55e'
@@ -407,7 +407,7 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
 
 
 @expandPermutations
-class FakeLVMGeneralTests(VdsmTestCase):
+class TestFakeLVMGeneral(VdsmTestCase):
 
     def test_lvpath(self):
         with namedTemporaryDir() as tmpdir:
@@ -445,7 +445,7 @@ class FakeLVMGeneralTests(VdsmTestCase):
             self.assertEqual(sc.VG_EXTENT_SIZE_MB * MB, int(lv.size))
 
 
-class FakeResourceManagerTests(VdsmTestCase):
+class TestFakeResourceManager(VdsmTestCase):
 
     def test_acquire_contextmanager(self):
         expected_calls = []
@@ -481,7 +481,7 @@ class TestFakeStorageDomainCache(VdsmTestCase):
         self.assertRaises(se.StorageDomainDoesNotExist, sdc.produce, "uuid")
 
 
-class FakeSDTests(VdsmTestCase):
+class TestFakeSD(VdsmTestCase):
 
     def test_produce_existing_volume(self):
         fake_vol = FakeVolume()

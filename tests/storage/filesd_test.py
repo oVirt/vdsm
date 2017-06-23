@@ -37,7 +37,7 @@ from vdsm.storage import outOfProcess as oop
 from vdsm.storage import sd
 
 
-class TestingFileStorageDomainManifest(fileSD.FileStorageDomainManifest):
+class FileStorageDomainManifest(fileSD.FileStorageDomainManifest):
 
     def __init__(self, domainpath, oop):
         self.mountpoint = os.path.dirname(domainpath)
@@ -49,13 +49,13 @@ class TestingFileStorageDomainManifest(fileSD.FileStorageDomainManifest):
         return self._oop
 
 
-class TestingFileStorageDomain(fileSD.FileStorageDomain):
+class FileStorageDomain(fileSD.FileStorageDomain):
 
     stat = None  # Accessed in __del__
 
     def __init__(self, uuid, mountpoint, oop):
         domainpath = os.path.join(mountpoint, uuid)
-        self._manifest = TestingFileStorageDomainManifest(domainpath, oop)
+        self._manifest = FileStorageDomainManifest(domainpath, oop)
 
 
 class FakeGlob(object):
@@ -73,7 +73,7 @@ class FakeOOP(object):
         self.glob = glob
 
 
-class GetAllVolumesTests(TestCaseBase):
+class TestGetAllVolumes(TestCaseBase):
 
     MOUNTPOINT = "/rhev/data-center/%s" % uuid.uuid4()
     SD_UUID = str(uuid.uuid4())
@@ -81,7 +81,7 @@ class GetAllVolumesTests(TestCaseBase):
 
     def test_no_volumes(self):
         oop = FakeOOP(FakeGlob([]))
-        dom = TestingFileStorageDomain(self.SD_UUID, self.MOUNTPOINT, oop)
+        dom = FileStorageDomain(self.SD_UUID, self.MOUNTPOINT, oop)
         res = dom.getAllVolumes()
         self.assertEqual(res, {})
 
@@ -94,7 +94,7 @@ class GetAllVolumesTests(TestCaseBase):
             os.path.join(self.IMAGES_DIR, "image-2", "volume-5.meta"),
             os.path.join(self.IMAGES_DIR, "image-3", "volume-6.meta"),
         ]))
-        dom = TestingFileStorageDomain(self.SD_UUID, self.MOUNTPOINT, oop)
+        dom = FileStorageDomain(self.SD_UUID, self.MOUNTPOINT, oop)
         res = dom.getAllVolumes()
 
         # These volumes should have parent uuid, but the implementation does
@@ -118,7 +118,7 @@ class GetAllVolumesTests(TestCaseBase):
             os.path.join(self.IMAGES_DIR, "image-2", "volume-4.meta"),
             os.path.join(self.IMAGES_DIR, "image-3", "volume-5.meta"),
         ]))
-        dom = TestingFileStorageDomain(self.SD_UUID, self.MOUNTPOINT, oop)
+        dom = FileStorageDomain(self.SD_UUID, self.MOUNTPOINT, oop)
         res = dom.getAllVolumes()
 
         self.assertEqual(len(res), 5)
@@ -160,7 +160,7 @@ class GetAllVolumesTests(TestCaseBase):
             files.append(new_volume)
 
         oop = FakeOOP(FakeGlob(files))
-        dom = TestingFileStorageDomain(self.SD_UUID, self.MOUNTPOINT, oop)
+        dom = FileStorageDomain(self.SD_UUID, self.MOUNTPOINT, oop)
 
         start = time.time()
         dom.getAllVolumes()
