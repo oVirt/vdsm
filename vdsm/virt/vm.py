@@ -2218,10 +2218,8 @@ class Vm(object):
                 else:
                     done.append(dev_object)
 
-    def _run(self):
-        self.log.info("VM wrapper has started")
+    def _make_devices(self):
         dev_spec_map = self._devSpecMapFromConf()
-
         # recovery flow note:
         # we do not start disk stats collection here since
         # in the recovery flow irs may not be ready yet.
@@ -2240,9 +2238,16 @@ class Vm(object):
             # we must to have updated conf before VM run
             self.saveState()
 
-        self._devices = vmdevices.common.dev_map_from_dev_spec_map(
+        devices = vmdevices.common.dev_map_from_dev_spec_map(
             dev_spec_map, self.log
         )
+
+        return devices
+
+    def _run(self):
+        self.log.info("VM wrapper has started")
+
+        self._devices = self._make_devices()
 
         # We should set this event as a last part of drives initialization
         self._pathsPreparedEvent.set()
