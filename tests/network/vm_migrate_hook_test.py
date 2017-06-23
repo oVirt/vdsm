@@ -25,7 +25,7 @@ from nose.plugins.attrib import attr
 from testlib import mock
 from testlib import XMLTestCase
 
-from virt import vm_migrate_hook
+from vdsm.virt import vm_migrate_hook
 
 
 class MockVdscli(object):

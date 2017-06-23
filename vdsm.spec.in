@@ -756,7 +756,7 @@ install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
 %endif
 
 # Install the libvirt hook for cleaning up the XML
-install -Dm 0755 vdsm/virt/libvirt-hook.sh \
+install -Dm 0755 lib/vdsm/virt/libvirt-hook.sh \
                  %{buildroot}%{_sysconfdir}/libvirt/hooks/qemu
 
 %pre

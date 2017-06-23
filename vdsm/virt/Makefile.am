@@ -26,11 +26,3 @@ dist_vdsm_virt_PYTHON = \
 	__init__.py \
 	vm.py \
 	$(NULL)
-
-dist_vdsmexec_SCRIPTS = \
-	vm_migrate_hook.py \
-	$(NULL)
-
-EXTRA_DIST = \
-	libvirt-hook.sh \
-	$(NULL)
