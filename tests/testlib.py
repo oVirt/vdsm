@@ -153,6 +153,8 @@ def expandPermutations(cls):
         perm = getattr(f, PERMUTATION_ATTR)
         for args in perm:
             argsString = ", ".join(repr(s) for s in args)
+            # pytest does not support "[" in permuted test name
+            argsString = argsString.replace("[", "(").replace("]", ")")
             permName = "%s(%s)" % (f.__name__, argsString)
             wrapper = _getPermutation(f, args)
             wrapper.__name__ = permName

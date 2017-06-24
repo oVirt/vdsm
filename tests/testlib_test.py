@@ -189,6 +189,10 @@ class Permutated(object):
     def fn(self, a, b):
         return a, b
 
+    @permutations([["[1]", "[2]"]])
+    def brackets(self, a, b):
+        return a, b
+
 
 @expandPermutations
 class SubPermuated(Permutated):
@@ -221,6 +225,14 @@ class TestPermutationExpansion(VdsmTestCase):
     def test_clear_permuations_attribute(self):
         fn = getattr(Permutated, 'fn(1, 2)')
         self.assertFalse(hasattr(fn, PERMUTATION_ATTR))
+
+    def test_brackets_convert_name(self):
+        name = "brackets('(1)', '(2)')"
+        self.assertIn(name, dir(self.instance))
+
+    def test_brackets_keep_value(self):
+        fn = getattr(self.instance, "brackets('(1)', '(2)')")
+        self.assertEqual(("[1]", "[2]"), fn())
 
 
 class TestSubPermuated(VdsmTestCase):
