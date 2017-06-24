@@ -30,7 +30,6 @@ from testlib import namedTemporaryDir
 
 import vdsm.storage.mailbox as sm
 from vdsm.storage import misc
-from vdsm.utils import retry
 
 MAX_HOSTS = 10
 MAILER_TIMEOUT = 6
@@ -88,6 +87,7 @@ def make_spm_mailbox(env):
 class TestSPMMailMonitor(VdsmTestCase):
 
     def testThreadLeak(self):
+        threadCount = len(threading.enumerate())
         with make_env() as env:
             mailer = sm.SPM_MailMonitor(
                 SPUUID, 100,
@@ -95,17 +95,12 @@ class TestSPMMailMonitor(VdsmTestCase):
                 outbox=env.outbox,
                 monitorInterval=MONITOR_INTERVAL)
             try:
-                threadCount = len(threading.enumerate())
                 mailer.stop()
-                mailer.run()
-
-                t = lambda: self.assertEqual(
-                    threadCount, len(threading.enumerate()))
-                retry(AssertionError, t, timeout=4, sleep=0.1)
             finally:
                 self.assertTrue(
                     mailer.wait(timeout=MAILER_TIMEOUT),
                     msg='mailer.wait: Timeout expired')
+        self.assertEqual(threadCount, len(threading.enumerate()))
 
 
 class TestSPMMailbox(VdsmTestCase):
