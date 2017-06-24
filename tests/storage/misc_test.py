@@ -35,7 +35,6 @@ from testlib import TEMPDIR
 
 from vdsm import cmdutils
 from vdsm import commands
-from vdsm import utils
 from vdsm.common.proc import pidstat
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
@@ -761,14 +760,13 @@ class TestExecCmd(VdsmTestCase):
     def testNice(self):
         cmd = ["sleep", "10"]
         proc = commands.execCmd(cmd, nice=10, sync=False)
-
-        def test():
+        try:
+            time.sleep(0.2)
             nice = pidstat(proc.pid).nice
             self.assertEqual(nice, 10)
-
-        utils.retry(AssertionError, test, tries=10, sleep=0.1)
-        proc.kill()
-        proc.wait()
+        finally:
+            proc.kill()
+            proc.wait()
 
 
 class TestSamplingMethod(VdsmTestCase):
