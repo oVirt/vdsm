@@ -204,11 +204,11 @@ class TestPermutationExpansion(VdsmTestCase):
         self.instance = Permutated()
 
     def test_expand_new_methods(self):
-        self.assertTrue(hasattr(self.instance, 'fn(1, 2)'))
-        self.assertTrue(hasattr(self.instance, 'fn(3, 4)'))
+        self.assertIn('fn(1, 2)', dir(self.instance))
+        self.assertIn('fn(3, 4)', dir(self.instance))
 
     def test_remove_expanded_method(self):
-        self.assertFalse(hasattr(self.instance, "fn"))
+        self.assertNotIn("fn", dir(self.instance))
 
     def test_invoke_expanded_1(self):
         expanded_method = getattr(self.instance, "fn(1, 2)")
