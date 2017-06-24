@@ -373,6 +373,7 @@ AC_OUTPUT([
 	init/Makefile
 	init/systemd/Makefile
 	lib/Makefile
+	lib/sos/Makefile
 	lib/vdsm/Makefile
 	lib/vdsm/api/Makefile
 	lib/vdsm/common/Makefile
@@ -431,7 +432,6 @@ AC_OUTPUT([
 	tests/storage/Makefile
 	tests/virttests/Makefile
 	vdsm/Makefile
-	vdsm/sos/Makefile
 	vdsm/virt/Makefile
 	vdsm_hooks/Makefile
 	vdsm_hooks/allocate_net/Makefile

@@ -31,6 +31,7 @@ lib/vdsm/api/vdsm-api.html
 lib/vdsm/config.py
 lib/vdsm/constants.py
 lib/vdsm/dsaversion.py
+lib/sos/vdsm.py
 lib/vdsm/storage/lvm.env
 lib/vdsm/storage/protect/spmprotect.sh
 lib/vdsm/storage/vdsm-lvm.rules
@@ -71,10 +72,8 @@ tests/other.csr
 tests/other.key
 vdsm-*.tar.gz
 vdsm.spec
-vdsm/sos/vdsm.py
 vdsm/vdscli.py
 vdsm/vdsm-gencerts.sh
-vdsm/vdsm-sosplugin.py
 static/usr/share/man/man1/vdsm-tool.1
 static/usr/share/man/man8/vdsmd.8
 vdsm/rpc/vdsm-api.html
