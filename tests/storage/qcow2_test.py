@@ -24,6 +24,7 @@ import io
 import os
 
 import pytest
+import six
 
 from testlib import namedTemporaryDir
 from testlib import VdsmTestCase
@@ -134,6 +135,7 @@ class TestAlign(VdsmTestCase):
         self.assertEqual(qcow2._align_offset(int(size), n), aligned_size)
 
 
+@pytest.mark.skipif(six.PY3, reason="qemuimg.convert uses deathSignal")
 @expandPermutations
 class TestEstimate(VdsmTestCase):
 
