@@ -45,6 +45,9 @@ class FakeFrameHandler(object):
     def handle_frame(self, dispatcher, frame):
         self.queue_frame(frame)
 
+    def handle_timeout(self, dispatcher):
+        dispatcher.connection.close()
+
     def peek_message(self):
         return self._outbox[0]
 
@@ -132,11 +135,18 @@ class AsyncDispatcherTest(TestCaseBase):
         self.assertTrue(dispatcher.writable(None))
         self.assertTrue(frame_handler.has_outgoing_messages)
 
-    def test_no_incoming_heartbeat(self):
-        dispatcher = AsyncDispatcher(FakeConnection(), FakeFrameHandler())
+    def test_incoming_heartbeat_exceeded(self):
+        frame_handler = FakeFrameHandler()
+        connection = FakeConnection()
+        dispatcher = AsyncDispatcher(
+            connection, frame_handler,
+            clock=FakeTimeGen(
+                [4000000.0, 4000003.0, 4000006.0, 4000009.0]).get_fake_time)
 
-        with self.assertRaises(ValueError):
-            dispatcher.setHeartBeat(8000, 8000)
+        dispatcher.setHeartBeat(12000, 4000)
+        self.assertFalse(dispatcher.writable(None))
+        self.assertFalse(frame_handler.has_outgoing_messages)
+        self.assertTrue(connection.closed)
 
     def test_no_heartbeat(self):
         dispatcher = AsyncDispatcher(FakeConnection(), FakeFrameHandler())

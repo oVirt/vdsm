@@ -345,12 +345,14 @@ class AsyncDispatcher(object):
         self._bufferSize = bufferSize
         self._parser = Parser()
         self._outbuf = None
+        self._incoming_heartbeat_in_milis = 0
         self._outgoing_heartbeat_in_milis = 0
         self._clock = clock
 
     def setHeartBeat(self, outgoing, incoming=0):
-        if incoming != 0:
-            raise ValueError("incoming heart-beat not supported")
+        if incoming:
+            self._update_incoming_heartbeat()
+            self._incoming_heartbeat_in_milis = incoming
 
         self._update_outgoing_heartbeat()
         self._outgoing_heartbeat_in_milis = outgoing
@@ -381,19 +383,38 @@ class AsyncDispatcher(object):
         while parser.pending > 0:
             self._frame_handler.handle_frame(self, parser.popFrame())
 
+        if self._incoming_heartbeat_in_milis:
+            self._update_incoming_heartbeat()
+
+    def handle_timeout(self):
+        self._frame_handler.handle_timeout(self)
+
     def popFrame(self):
         return self._parser.popFrame()
 
     def _update_outgoing_heartbeat(self):
         self._lastOutgoingTimeStamp = self._clock()
 
+    def _update_incoming_heartbeat(self):
+        self._lastIncomingTimeStamp = self._clock()
+
     def _outgoing_heartbeat_expiration_interval(self):
         since_last_update = (self._clock() - self._lastOutgoingTimeStamp)
         return (self._outgoing_heartbeat_in_milis / 1000.0) - since_last_update
 
+    def _incoming_heartbeat_expiration_interval(self):
+        if self._incoming_heartbeat_in_milis == 0:
+            return 0
+        since_last_update = (self._clock() - self._lastIncomingTimeStamp)
+        return (self._incoming_heartbeat_in_milis / 1000.0) - since_last_update
+
     def next_check_interval(self):
-        if self._outgoing_heartbeat_in_milis == 0:
+        if self._outgoing_heartbeat_in_milis == 0 and  \
+                self._incoming_heartbeat_in_milis == 0:
             return None
+
+        if self._incoming_heartbeat_expiration_interval() < 0:
+            self.handle_timeout()
 
         return max(self._outgoing_heartbeat_expiration_interval(), 0)
 
