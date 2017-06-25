@@ -189,7 +189,7 @@ class TestEstimate(VdsmTestCase):
             filename = os.path.join(tmpdir, 'test')
             with io.open(filename, "wb") as f:
                 f.truncate(size)
-                f.write("x" * MB)
+                f.write(b"x" * MB)
             self.check_estimate(filename, compat)
 
     @broken_on_ci("File system does not support sparseness", name="TRAVIS_CI")
@@ -217,9 +217,9 @@ class TestEstimate(VdsmTestCase):
             filename = os.path.join(tmpdir, 'test')
             with io.open(filename, "wb") as f:
                 f.truncate(size)
-                f.write("x" * MB)
+                f.write(b"x" * MB)
                 f.seek(512 * MB)
-                f.write("x" * MB)
+                f.write(b"x" * MB)
             self.check_estimate(filename, compat)
 
     @pytest.mark.slow
@@ -236,7 +236,7 @@ class TestEstimate(VdsmTestCase):
                                  1024 * MB,
                                  qcow2.CLUSTER_SIZE):
                     f.seek(off)
-                    f.write("x")
+                    f.write(b"x")
             self.check_estimate(filename, compat)
 
     @pytest.mark.slow
@@ -250,7 +250,7 @@ class TestEstimate(VdsmTestCase):
             with io.open(filename, "wb") as f:
                 f.truncate(size * GB)
                 for _ in range(1024):
-                    f.write("x" * MB)
+                    f.write(b"x" * MB)
             self.check_estimate(filename, compat)
 
     def check_estimate(self, filename, compat):
