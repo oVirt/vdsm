@@ -30,11 +30,10 @@ import weakref
 
 from functools import partial
 
-from ioprocess import IOProcess
-
 from vdsm import constants
 from vdsm.config import config
 from vdsm.storage import exception as se
+from vdsm.storage.compat import ioprocess
 
 GLOBAL = 'Global'
 
@@ -85,9 +84,9 @@ def getProcessPool(clientName):
         proc = _refProcPool.get(clientName, lambda: None)()
         if proc is None:
             log.debug("Creating ioprocess %s", clientName)
-            proc = IOProcess(max_threads=HELPERS_PER_DOMAIN,
-                             timeout=DEFAULT_TIMEOUT,
-                             max_queued_requests=MAX_QUEUED)
+            proc = ioprocess.IOProcess(max_threads=HELPERS_PER_DOMAIN,
+                                       timeout=DEFAULT_TIMEOUT,
+                                       max_queued_requests=MAX_QUEUED)
             proc = _IOProcWrapper("oop", proc)
             _refProcPool[clientName] = weakref.ref(proc)
 

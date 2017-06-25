@@ -43,3 +43,10 @@ except ImportError:
         HOST_DEAD = 5
 
     sanlock = SanlockModule("sanlock is not available in python 3")
+
+try:
+    import ioprocess
+except ImportError:
+    if six.PY2:
+        raise
+    ioprocess = compat.MissingModule("ioprocess is not available in python 3")
