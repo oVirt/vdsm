@@ -30,7 +30,6 @@ if sys.version_info[0] == 2:
 from vdsm.common import zombiereaper
 zombiereaper.registerSignalHandler()
 
-from vdsm import panic
 import testlib
 
 
@@ -43,11 +42,6 @@ def findRemove(listR, value):
         return False
 
 
-def panicMock(msg):
-    msg = "Panic: %s" % (msg)
-    raise AssertionError(msg)
-
-
 if __name__ == '__main__':
     if "--help" in sys.argv:
         print("testrunner options:\n"
@@ -56,8 +50,5 @@ if __name__ == '__main__':
     if findRemove(sys.argv, "--local-modules"):
         from vdsm import constants
         constants.P_VDSM = "../vdsm/"
-
-    # Mock panic() calls for tests
-    panic.panic = panicMock
 
     testlib.run()

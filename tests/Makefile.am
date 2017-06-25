@@ -186,6 +186,7 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	makecert.sh \
+	panic_helper.py \
 	py-watch \
 	tests_child.py \
 	$(NULL)

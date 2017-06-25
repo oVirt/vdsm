@@ -27,6 +27,7 @@ import operator
 import os
 import os.path
 import signal
+import sys
 import time
 import timeit
 
@@ -34,7 +35,6 @@ from vdsm import taskset
 from vdsm import utils
 from vdsm import cmdutils
 from vdsm import commands
-from vdsm import panic
 from vdsm.common import logutils
 import vdsm.common.time
 
@@ -286,8 +286,11 @@ class TestGetCmdArgs(TestCaseBase):
 
 @expandPermutations
 class TestGeneralUtils(TestCaseBase):
-    def testPanic(self):
-        self.assertRaises(AssertionError, panic.panic, "panic test")
+
+    def test_panic(self):
+        cmd = [sys.executable, "panic_helper.py"]
+        rc, out, err = commands.execCmd(cmd)
+        self.assertEqual(rc, -9)
 
     def testReadMemInfo(self):
         meminfo = utils.readMemInfo()
