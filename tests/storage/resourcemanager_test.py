@@ -26,13 +26,14 @@ from StringIO import StringIO
 import types
 from resource import getrlimit, RLIMIT_NPROC
 
+import pytest
+
 from vdsm.storage import resourceManager as rm
 
 from monkeypatch import MonkeyPatch
 from storage.storagefakelib import FakeResourceManager
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase
-from testValidation import slowtest, stresstest
 
 
 class NullResourceFactory(rm.SimpleResourceFactory):
@@ -566,8 +567,8 @@ class TestResourceManager(VdsmTestCase):
         resources.pop().release()  # exclusiveReq 3
 
     @MonkeyPatch(rm, "_manager", manager())
-    @slowtest
-    @stresstest
+    @pytest.mark.slow
+    @pytest.mark.stress
     def testStressTest(self):
         """
         This tests raises thousands of threads and tries to acquire the same

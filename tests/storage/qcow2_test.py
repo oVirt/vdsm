@@ -23,11 +23,12 @@ from __future__ import print_function
 import io
 import os
 
+import pytest
+
 from testlib import namedTemporaryDir
 from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 from testValidation import broken_on_ci
-from testValidation import slowtest
 from vdsm import qemuimg
 from vdsm import utils
 from vdsm.common import time
@@ -150,7 +151,7 @@ class TestEstimate(VdsmTestCase):
         ('0.10', 100),
         ('1.1', 100),
     ))
-    @slowtest
+    @pytest.mark.slow
     def test_empty_slow(self, compat, size):
         # TODO: tests are slow with qemu 2.6 on rhel,
         # the tests should be merged when we require qemu 2.8
@@ -177,7 +178,7 @@ class TestEstimate(VdsmTestCase):
         ('0.10', 100),
         ('1.1', 100),
     ))
-    @slowtest
+    @pytest.mark.slow
     def test_best_slow(self, compat, size):
         # TODO: tests are slow with qemu 2.6 on rhel,
         # the tests should be merged when we require qemu 2.8
@@ -205,7 +206,7 @@ class TestEstimate(VdsmTestCase):
         ('0.10', 100),
         ('1.1', 100),
     ))
-    @slowtest
+    @pytest.mark.slow
     def test_big_slow(self, compat, size):
         # TODO: tests are slow with qemu 2.6 on rhel,
         # the tests should be merged when we require qemu 2.8
@@ -221,7 +222,7 @@ class TestEstimate(VdsmTestCase):
                 f.write("x" * MB)
             self.check_estimate(filename, compat)
 
-    @slowtest
+    @pytest.mark.slow
     @permutations((
         ('0.10', 1),
         ('1.1', 1),
@@ -238,7 +239,7 @@ class TestEstimate(VdsmTestCase):
                     f.write("x")
             self.check_estimate(filename, compat)
 
-    @slowtest
+    @pytest.mark.slow
     @permutations((
         ('0.10', 1),
         ('1.1', 1),

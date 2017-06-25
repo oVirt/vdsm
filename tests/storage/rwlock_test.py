@@ -22,8 +22,9 @@ from __future__ import absolute_import, print_function
 import threading
 import time
 
+import pytest
+
 from testlib import VdsmTestCase
-from testValidation import slowtest, stresstest
 from testlib import expandPermutations, permutations
 from testlib import start_thread, LockingThread
 
@@ -48,7 +49,7 @@ class TestRWLockT(VdsmTestCase):
             for t in readers:
                 t.stop()
 
-    @slowtest
+    @pytest.mark.slow
     def test_wakeup_blocked_writer(self):
         lock = RWLock()
         reader = LockingThread(lock.shared)
@@ -63,7 +64,7 @@ class TestRWLockT(VdsmTestCase):
                 reader.done.set()
                 self.assertTrue(writer.acquired.wait(2))
 
-    @slowtest
+    @pytest.mark.slow
     def test_wakeup_blocked_reader(self):
         lock = RWLock()
         writer = LockingThread(lock.exclusive)
@@ -78,7 +79,7 @@ class TestRWLockT(VdsmTestCase):
                 writer.done.set()
                 self.assertTrue(reader.acquired.wait(2))
 
-    @slowtest
+    @pytest.mark.slow
     def test_wakeup_all_blocked_readers(self):
         lock = RWLock()
         readers = 10
@@ -126,7 +127,7 @@ class TestRWLockT(VdsmTestCase):
                 raise RuntimeError("Timeout waiting for reader thread")
             self.assertRaises(RuntimeError, lock.release)
 
-    @slowtest
+    @pytest.mark.slow
     def test_fifo(self):
         lock = RWLock()
         threads = []
@@ -154,7 +155,7 @@ class TestRWLockT(VdsmTestCase):
             for t in threads:
                 t.stop()
 
-    @slowtest
+    @pytest.mark.slow
     def test_shared_context_blocks_writer(self):
         lock = RWLock()
         writer = LockingThread(lock.exclusive)
@@ -175,7 +176,7 @@ class TestRWLockT(VdsmTestCase):
             with utils.running(reader):
                 self.assertTrue(reader.acquired.wait(1))
 
-    @slowtest
+    @pytest.mark.slow
     def test_exclusive_context_blocks_writer(self):
         lock = RWLock()
         writer = LockingThread(lock.exclusive)
@@ -189,7 +190,7 @@ class TestRWLockT(VdsmTestCase):
         finally:
             writer.stop()
 
-    @slowtest
+    @pytest.mark.slow
     def test_exclusive_context_blocks_reader(self):
         lock = RWLock()
         reader = LockingThread(lock.shared)
@@ -230,7 +231,7 @@ class TestRWLockT(VdsmTestCase):
 @expandPermutations
 class TestRWLockStress(VdsmTestCase):
 
-    @stresstest
+    @pytest.mark.stress
     @permutations([(1, 2), (2, 8), (3, 32), (4, 128)])
     def test_lock_contention(self, writers, readers):
         lock = RWLock()
@@ -277,7 +278,7 @@ class TestRWLockStress(VdsmTestCase):
         print("reads   avg=%.2f med=%d min=%d max=%d"
               % (avg_reads, med_reads, min_reads, max_reads))
 
-    @stresstest
+    @pytest.mark.stress
     @permutations([(1,), (2,), (4,), (8,), (16,), (32,), (64,), (128,)])
     def test_readers(self, readers):
         lock = RWLock()

@@ -28,10 +28,11 @@ import threading
 import time
 from contextlib import contextmanager
 
+import pytest
+
 from fakelib import FakeLogger
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
-from testValidation import slowtest
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 from testlib import start_thread
@@ -104,7 +105,7 @@ class TestDirectioChecker(VdsmTestCase):
             result = self.results[0]
             self.assertRaises(exception.MiscFileReadException, result.delay)
 
-    @slowtest
+    @pytest.mark.slow
     @permutations([
         # interval, delay, expected
         (0.20, 0.10, 0.20),
@@ -242,7 +243,7 @@ class TestDirectioCheckerWaiting(VdsmTestCase):
         self.assertTrue(checker.wait(1.0))
         self.assertFalse(checker.is_running())
 
-    @slowtest
+    @pytest.mark.slow
     def test_running_stop_during_check(self):
         with fake_dd(0.2):
             checker = check.DirectioChecker(self.loop, "/path", self.complete)
@@ -252,7 +253,7 @@ class TestDirectioCheckerWaiting(VdsmTestCase):
             self.assertFalse(self.completed.is_set())
             self.assertFalse(checker.is_running())
 
-    @slowtest
+    @pytest.mark.slow
     def test_stopping_timeout(self):
         with fake_dd(0.2):
             checker = check.DirectioChecker(self.loop, "/path", self.complete)
@@ -277,7 +278,7 @@ class TestDirectioCheckerTimings(VdsmTestCase):
         if len(self.results) == self.checkers:
             self.loop.stop()
 
-    @slowtest
+    @pytest.mark.slow
     @permutations([[1], [50], [100], [200]])
     def test_path_ok(self, checkers):
         self.checkers = checkers
@@ -294,7 +295,7 @@ class TestDirectioCheckerTimings(VdsmTestCase):
             for res in self.results:
                 res.delay()
 
-    @slowtest
+    @pytest.mark.slow
     @permutations([[1], [50], [100], [200]])
     def test_path_missing(self, checkers):
         self.checkers = checkers
@@ -409,7 +410,7 @@ class TestCheckService(VdsmTestCase):
             self.assertTrue(self.service.stop_checking("/path", timeout=1.0))
             self.assertFalse(self.service.is_checking("/path"))
 
-    @slowtest
+    @pytest.mark.slow
     def test_stop_checking_timeout(self):
         with fake_dd(0.2):
             self.service.start_checking("/path", self.complete)

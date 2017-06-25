@@ -20,6 +20,8 @@
 
 from contextlib import contextmanager
 
+import pytest
+
 from vdsm import constants
 from vdsm import qemuimg
 from vdsm.config import config
@@ -43,7 +45,6 @@ from testlib import make_config
 from testlib import make_uuid
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
-from testValidation import slowtest
 
 CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
 GIB_IN_SECTORS = GIB // sc.BLOCK_SIZE
@@ -140,7 +141,7 @@ class TestBlockVolumeManifest(VdsmTestCase):
             actual_size = check['offset'] + chunk_size
             self.assertEqual(vol.optimal_size(), actual_size)
 
-    @slowtest
+    @pytest.mark.slow
     @MonkeyPatch(blockVolume, 'config', CONFIG)
     def test_optimal_size_cow_leaf_not_empty(self):
         # verify that optimal size is limited to max size.

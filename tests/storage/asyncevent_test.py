@@ -28,7 +28,8 @@ import subprocess
 import time
 from contextlib import closing
 
-from testValidation import slowtest
+import pytest
+
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 
@@ -306,7 +307,7 @@ class TestEventLoopTiming(VdsmTestCase):
     def tearDown(self):
         self.loop.close()
 
-    @slowtest
+    @pytest.mark.slow
     @permutations([[1], [100], [1000]])
     def test_call_soon_loop(self, max_count):
         self.count = 0
@@ -325,7 +326,7 @@ class TestEventLoopTiming(VdsmTestCase):
         print("%7d loops: %f" % (max_count, elapsed))
         self.assertEqual(max_count, self.count)
 
-    @slowtest
+    @pytest.mark.slow
     @permutations([[1], [100], [1000]])
     def test_call_soon_counters(self, counters):
         max_count = 100
@@ -346,7 +347,7 @@ class TestEventLoopTiming(VdsmTestCase):
         print("%7d counters: %f" % (counters, elapsed))
         self.assertEqual([max_count] * counters, self.counts)
 
-    @slowtest
+    @pytest.mark.slow
     @permutations([[1], [100], [1000]])
     def test_call_later_loop(self, max_count):
         self.count = 0
@@ -365,7 +366,7 @@ class TestEventLoopTiming(VdsmTestCase):
         print("%7d loops: %f" % (max_count, elapsed))
         self.assertEqual(max_count, self.count)
 
-    @slowtest
+    @pytest.mark.slow
     @permutations([[1], [100], [1000]])
     def test_call_later_counters(self, counters):
         max_count = 100
@@ -386,7 +387,7 @@ class TestEventLoopTiming(VdsmTestCase):
         print("%7d counters: %f" % (counters, elapsed))
         self.assertEqual([max_count] * counters, self.counts)
 
-    @slowtest
+    @pytest.mark.slow
     @permutations([[1], [100], [1000], [10000], [100000]])
     def test_call_at(self, calls):
         start = time.time()
@@ -400,7 +401,7 @@ class TestEventLoopTiming(VdsmTestCase):
     # The event loop uses a monotonic clock with very low resolution (0.01
     # seconds). For this test it is useful to use a real time source with
     # microsecond resolution.
-    @slowtest
+    @pytest.mark.slow
     @permutations([
         (vdsm.common.time.monotonic_time, 1),
         (vdsm.common.time.monotonic_time, 100),
@@ -433,7 +434,7 @@ class TestEventLoopTiming(VdsmTestCase):
               (avg_lat, min_lat, med_lat, max_lat))
         self.assertTrue(avg_lat < 0.01)
 
-    @slowtest
+    @pytest.mark.slow
     @permutations([[1], [10], [1000], [10000]])
     def test_call_soon_threadsafe(self, calls):
         self.count = 0
@@ -454,7 +455,7 @@ class TestEventLoopTiming(VdsmTestCase):
         print("%7d calls: %f seconds" % (calls, elapsed))
         self.assertEqual(calls, self.count)
 
-    @slowtest
+    @pytest.mark.slow
     @permutations([[1], [100], [400]])
     def test_echo(self, concurrency):
         msg = b"ping"
@@ -569,7 +570,7 @@ class TestReaper(VdsmTestCase):
         self.reap(["false"])
         self.assertEqual(1, self.rc)
 
-    @slowtest
+    @pytest.mark.slow
     @permutations([[0.1], [0.2], [0.4], [0.8], [1.6]])
     def test_slow(self, delay):
         start = time.time()

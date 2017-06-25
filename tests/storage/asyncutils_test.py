@@ -23,7 +23,8 @@ from __future__ import print_function
 import time
 from contextlib import closing
 
-from testValidation import slowtest
+import pytest
+
 from testlib import VdsmTestCase
 
 from vdsm.storage import asyncevent
@@ -32,7 +33,7 @@ from vdsm.storage import asyncutils
 
 class TestLoopingCall(VdsmTestCase):
 
-    @slowtest
+    @pytest.mark.slow
     def test_loop(self):
         with closing(asyncevent.EventLoop()) as loop:
             log = []
@@ -98,7 +99,7 @@ class TestLoopingCall(VdsmTestCase):
         print("calls:", log, end=" ")
         self.assertEqual(log, [("a", "b")])
 
-    @slowtest
+    @pytest.mark.slow
     def test_slow_callback(self):
         with closing(asyncevent.EventLoop()) as loop:
             log = []

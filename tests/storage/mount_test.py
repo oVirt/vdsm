@@ -25,6 +25,7 @@ from tempfile import mkstemp
 import os
 import time
 
+import pytest
 import six
 
 from vdsm.storage import mount
@@ -38,7 +39,6 @@ from testlib import expandPermutations, permutations
 from testValidation import ValidateRunningAsRoot
 from testValidation import broken_on_ci
 from testValidation import skipif
-from testValidation import stresstest
 import monkeypatch
 
 FLOPPY_SIZE = (2 ** 20) * 4
@@ -278,7 +278,7 @@ class TestRemoteSdIsMounted(VdsmTestCase):
 class TestIsMountedTiming(VdsmTestCase):
 
     @skipif(six.PY3, "needs porting to python 3")
-    @stresstest
+    @pytest.mark.stress
     @permutations([[1], [50], [100], [1000]])
     def test_is_mounted(self, count):
         server = b"foobar.baz.qux.com:/var/lib/exports/%04d"

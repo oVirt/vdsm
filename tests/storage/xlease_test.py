@@ -28,9 +28,10 @@ import timeit
 
 from contextlib import contextmanager
 
+import pytest
+
 from fakesanlock import FakeSanlock
 from monkeypatch import MonkeyPatch
-from testValidation import slowtest
 from testlib import VdsmTestCase
 from testlib import make_uuid
 from testlib import namedTemporaryDir
@@ -296,7 +297,7 @@ class TestIndex(VdsmTestCase):
             self.assertEqual(leases[uuids[2]]["offset"],
                              xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 2)
 
-    @slowtest
+    @pytest.mark.slow
     def test_time_lookup(self):
         setup = """
 import os
@@ -325,7 +326,7 @@ def bench():
             print("%d lookups in %.6f seconds (%.6f seconds per lookup)"
                   % (count, elapsed, elapsed / count))
 
-    @slowtest
+    @pytest.mark.slow
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_time_add(self):
         setup = """
