@@ -1,13 +1,80 @@
-This test suite is built on the Nose framework.  For more information see:
+==========
+Vdsm tests
+==========
 
-    http://readthedocs.org/docs/nose/en/latest/
+This tests suite is built on tox, pytest and nose. For more info on
+these projects see:
 
-Running the test suite:
------------------------
+- tox: https://tox.readthedocs.io/
+- pytest: https://pytest.readthedocs.io/
+- nose: http://nose.readthedocs.io/
 
-Running these tests is easy.
+Tox and pytest based tests
+==========================
 
-From within the source directory you can execute all tests:
+Currently only storage tests are using tox and pytest.
+
+Running the tests
+-----------------
+
+Run storage tests with all installed python versions:
+
+    tox -e storage-py27,storage-py35,storage-py36
+
+Decreasing test verbosity:
+
+    tox -e storage-py27 -- -qq
+
+You can also use enviroment variables
+
+   export PYTEST_ADDOPTS=-qq
+   tox -e storage-py35
+
+Profiling tests, showing 10 slowest tests:
+
+   tox -e storage-py27 -- --durations=10
+
+Using pytest directly
+---------------------
+
+Running all the tests takes couple of minutes. For quicker feedback you can use
+pytest directly to run a module or some tests in a module.
+
+To use pytest directly, you must set the python path properly:
+
+    export PYTHONPATH=../lib
+
+Running entire module:
+
+    pytest storage/misc_test.py
+
+Running only one class:
+
+    pytest storage/misc_test.py::TestSamplingMethod
+
+Running only single test:
+
+    pytest storage/misc_test.py::TestSamplingMethod::test_single_thread
+
+Running all tests matching a pattern:
+
+    pytest -k test_thread storage/misc_test.py
+
+Running without slow and stress tests, using markers:
+
+    pytest -m "not (slow or stress)" storage
+
+Running only stress tests, using markers:
+
+    pytest -m "stress" storage
+
+Nose based tests
+================
+
+Running the tests
+-----------------
+
+From within the source directory you can execute some test modules:
     ./run_tests_local.sh *.py
 
 From within an installed directory:

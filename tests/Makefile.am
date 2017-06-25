@@ -45,8 +45,6 @@ device_modules = \
 
 network_modules = network/*_test.py
 
-storage_modules = storage/*_test.py
-
 virt_modules = virttests/*_test.py
 
 test_modules = \
@@ -165,40 +163,6 @@ blacklist_modules_python3 = \
 	stompasyncclient_test.py \
 	stompasyncdispatcher_test.py \
 	stomp_test.py \
-	storage/blkdiscard_test.py \
-	storage/blocksd_test.py \
-	storage/blockvolume_test.py \
-	storage/fakelib_test.py \
-	storage/filesd_test.py \
-	storage/filevolume_test.py \
-	storage/guarded_test.py \
-	storage/hsm_test.py \
-	storage/image_test.py \
-	storage/imagetickets_test.py \
-	storage/iscsi_test.py \
-	storage/lvm_test.py \
-	storage/mailbox_test.py \
-	storage/merge_test.py \
-	storage/misc_test.py \
-	storage/monitor_test.py \
-	storage/outofprocess_test.py \
-	storage/persistentdict_test.py \
-	storage/qcow2_test.py \
-	storage/resourcemanager_test.py \
-	storage/rwlock_test.py \
-	storage/sd_manifest_test.py \
-	storage/sdm_amend_volume_test.py \
-	storage/sdm_copy_data_test.py \
-	storage/sdm_create_volume_test.py \
-	storage/sdm_indirection_test.py \
-	storage/sdm_merge_test.py \
-	storage/sdm_update_volume_test.py \
-	storage/storageserver_test.py \
-	storage/testlib_test.py \
-	storage/volume_artifacts_test.py \
-	storage/volume_metadata_test.py \
-	storage/volume_test.py \
-	storage/workarounds_test.py \
 	unicode_test.py \
 	utils_test.py \
 	v2v_test.py \
@@ -332,7 +296,6 @@ endif
 run_modules += $(network_modules)
 run_modules += $(device_modules)
 run_modules += $(common_modules)
-run_modules += $(storage_modules)
 run_modules += $(virt_modules)
 
 # Disable builtin (recursive) check target.
