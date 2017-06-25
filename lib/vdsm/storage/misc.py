@@ -38,6 +38,7 @@ import re
 import string
 import struct
 import threading
+import uuid
 import weakref
 
 from array import array
@@ -186,28 +187,19 @@ def checksum(string, numBytes):
 
 
 def packUuid(s):
-    s = ''.join([c for c in s if c != '-'])
-    uuid = int(s, 16)
-    high = uuid / 2 ** 64
-    low = uuid % 2 ** 64
+    # pylint: disable=no-member
+    # https://github.com/PyCQA/pylint/issues/961
+    value = uuid.UUID(s).int
+    high = value // (2 ** 64)
+    low = value % (2 ** 64)
     # pack as 128bit little-endian <QQ
     return struct.pack('<QQ', low, high)
 
 
-def unpackUuid(uuid):
-    low, high = struct.unpack('<QQ', uuid)
-    # remove leading 0x and trailing L
-    uuid = hex(low + 2 ** 64 * high)[2:-1].rjust(STR_UUID_SIZE - 4, "0")
-    uuid = uuid.lower()
-    s = ""
-    prev = 0
-    i = 0
-    for hypInd in UUID_HYPHENS:
-        s += uuid[prev:hypInd - i] + '-'
-        prev = hypInd - i
-        i += 1
-    s += uuid[prev:]
-    return s
+def unpackUuid(s):
+    low, high = struct.unpack('<QQ', s)
+    value = low + high * (2 ** 64)
+    return str(uuid.UUID(int=value))
 
 
 UUID_REGEX = re.compile("^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$")
