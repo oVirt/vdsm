@@ -1,6 +1,9 @@
 import os
 from contextlib import contextmanager
 
+import six
+import pytest
+
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase
 from testlib import make_config
@@ -33,11 +36,13 @@ class TestRescanTimeout(VdsmTestCase):
                 self.fail("Operation was too slow %.2fs > %.2fs" %
                           (elapsed, maxtime))
 
+    @pytest.mark.skipif(six.PY3, reason="using AsyncProc")
     @MonkeyPatch(iscsiadm, 'session_rescan_async', fake_rescan(0.1))
     def testWait(self):
         with self.assertMaxDuration(0.3):
             iscsi.rescan()
 
+    @pytest.mark.skipif(six.PY3, reason="using AsyncProc")
     @MonkeyPatch(iscsiadm, 'session_rescan_async', fake_rescan(2))
     @MonkeyPatch(iscsi, 'config',
                  make_config([("irs", "scsi_rescan_maximal_timeout", "1")]))
