@@ -32,4 +32,14 @@ except ImportError:
     # sanlock is not avilable yet on python3, but we can still test the modules
     # using it with fakesanlock, avoiding python3 regressions.
     # TODO: remove when sanlock is available on python 3.
-    sanlock = compat.MissingModule("sanlock is not available in python 3")
+
+    class SanlockModule(compat.MissingModule):
+
+        # Used during import, implement to make import pass.
+        HOST_UNKNOWN = 1
+        HOST_FREE = 2
+        HOST_LIVE = 3
+        HOST_FAIL = 4
+        HOST_DEAD = 5
+
+    sanlock = SanlockModule("sanlock is not available in python 3")
