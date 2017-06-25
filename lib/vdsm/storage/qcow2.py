@@ -86,7 +86,7 @@ def _estimate_metadata_size(virtual_size):
     #   nl2e = align_offset(nl2e, cluster_size / sizeof(uint64_t));
     #   meta_size += nl2e * sizeof(uint64_t);
     nl2e = aligned_total_size // CLUSTER_SIZE
-    nl2e = _align_offset(nl2e, CLUSTER_SIZE // SIZEOF_INT_64)
+    nl2e = _align_offset(int(nl2e), CLUSTER_SIZE // SIZEOF_INT_64)
     meta_size += nl2e * SIZEOF_INT_64
 
     # Total size of L1 tables:
@@ -94,7 +94,7 @@ def _estimate_metadata_size(virtual_size):
     #   nl1e = align_offset(nl1e, cluster_size / sizeof(uint64_t));
     #   meta_size += nl1e * sizeof(uint64_t);
     nl1e = nl2e * SIZEOF_INT_64 / CLUSTER_SIZE
-    nl1e = _align_offset(nl1e, CLUSTER_SIZE // SIZEOF_INT_64)
+    nl1e = _align_offset(int(nl1e), CLUSTER_SIZE // SIZEOF_INT_64)
     meta_size += nl1e * SIZEOF_INT_64
 
     #  total size of refcount blocks
