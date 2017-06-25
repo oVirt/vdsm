@@ -27,6 +27,9 @@ import weakref
 
 from functools import partial
 
+import pytest
+import six
+
 from testlib import AssertingLock
 from testlib import VdsmTestCase
 from testlib import namedTemporaryDir
@@ -220,6 +223,7 @@ class TestParseHumanReadableSize(VdsmTestCase):
         self.assertEqual(misc.parseHumanReadableSize("4.3T"), 0)
 
 
+@pytest.mark.skipif(six.PY3, reason="not compatible with python 3")
 class TestAsyncProc(VdsmTestCase):
 
     def test(self):
@@ -372,6 +376,7 @@ class TestValidateInt(VdsmTestCase):
         self.assertRaises(expectedException, misc.validateInt, "2-1", "a")
 
 
+@pytest.mark.skipif(six.PY3, reason="name 'basestring' is not defined")
 @expandPermutations
 class TestValidateSize(VdsmTestCase):
 
@@ -449,6 +454,7 @@ class TestValidateUuid(VdsmTestCase):
 
 class TestUuidPack(VdsmTestCase):
 
+    @pytest.mark.xfail(six.PY3, reason="broken on python 3")
     def test(self):
         """
         Test that the uuid that was packed can be unpacked without being
@@ -545,6 +551,7 @@ class TestValidateDDBytes(VdsmTestCase):
                           ["I AM", "PRETENDING TO", "BE DD"], 32)
 
 
+@pytest.mark.skipif(six.PY3, reason="try to write text to binary file")
 class TestReadBlock(VdsmTestCase):
 
     def _createTempFile(self, neededFileSize, writeData):
@@ -733,7 +740,7 @@ class TestExecCmd(VdsmTestCase):
                "and not let your weirdness mess up my day"
         # (C) Nickolodeon - Invader Zim
         ret, stdout, stderr = commands.execCmd((EXT_ECHO, line))
-        self.assertEqual(stdout[0], line)
+        self.assertEqual(stdout[0].decode("ascii"), line)
 
     def testStdErr(self):
         """
@@ -745,7 +752,7 @@ class TestExecCmd(VdsmTestCase):
         # (C) Fox - The X Files
         code = "import sys; sys.stderr.write('%s')" % line
         ret, stdout, stderr = commands.execCmd([EXT_PYTHON, "-c", code])
-        self.assertEqual(stderr[0], line)
+        self.assertEqual(stderr[0].decode("ascii"), line)
 
     def testSudo(self):
         """
@@ -755,8 +762,9 @@ class TestExecCmd(VdsmTestCase):
         cmd = [EXT_WHOAMI]
         checkSudo(cmd)
         ret, stdout, stderr = commands.execCmd(cmd, sudo=True)
-        self.assertEqual(stdout[0], SUDO_USER)
+        self.assertEqual(stdout[0].decode("ascii"), SUDO_USER)
 
+    @pytest.mark.skipif(six.PY3, reason="uses AsyncProc")
     def testNice(self):
         cmd = ["sleep", "10"]
         proc = commands.execCmd(cmd, nice=10, sync=False)
