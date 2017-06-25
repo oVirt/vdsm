@@ -1603,9 +1603,8 @@ class StoragePool(object):
         else:
             dst_img_ns = src_img_ns
 
-        with nested(rm.acquireResource(src_img_ns, srcImgUUID, rm.SHARED),
-                    rm.acquireResource(dst_img_ns, dstImgUUID, rm.EXCLUSIVE)
-                    ):
+        with rm.acquireResource(src_img_ns, srcImgUUID, rm.SHARED), \
+                rm.acquireResource(dst_img_ns, dstImgUUID, rm.EXCLUSIVE):
             img = image.Image(self.poolPath)
             dstUUID = img.copyCollapsed(
                 sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
@@ -1650,8 +1649,8 @@ class StoragePool(object):
         else:
             raise se.MoveImageError(imgUUID)
 
-        with nested(rm.acquireResource(src_img_ns, imgUUID, srcLock),
-                    rm.acquireResource(dst_img_ns, imgUUID, rm.EXCLUSIVE)):
+        with rm.acquireResource(src_img_ns, imgUUID, srcLock), \
+                rm.acquireResource(dst_img_ns, imgUUID, rm.EXCLUSIVE):
             img = image.Image(self.poolPath)
             img.move(srcDomUUID, dstDomUUID, imgUUID, vmUUID, op, postZero,
                      force, discard)
@@ -1689,9 +1688,8 @@ class StoragePool(object):
         # we acquire exclusive lock for the destination image too.
         # Since source volume is only a parent of temporary volume, we don't
         # need to acquire any lock for it.
-        with nested(
-                rm.acquireResource(srcNamespace, tmpImgUUID, rm.EXCLUSIVE),
-                rm.acquireResource(dstNamespace, dstImgUUID, rm.EXCLUSIVE)):
+        with rm.acquireResource(srcNamespace, tmpImgUUID, rm.EXCLUSIVE), \
+                rm.acquireResource(dstNamespace, dstImgUUID, rm.EXCLUSIVE):
             img = image.Image(self.poolPath)
             img.sparsify(tmpSdUUID, tmpImgUUID, tmpVolUUID, dstSdUUID,
                          dstImgUUID, dstVolUUID)

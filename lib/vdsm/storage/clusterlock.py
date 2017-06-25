@@ -28,8 +28,6 @@ import os
 import subprocess
 import threading
 
-from contextlib import nested
-
 from vdsm import constants
 from vdsm import utils
 
@@ -338,7 +336,7 @@ class SANLock(object):
     # ClusterLock. We could consider to remove it in the future but keeping it
     # for logging purpose is desirable.
     def acquire(self, hostId, lease):
-        with nested(self._lock, SANLock._sanlock_lock):
+        with self._lock, SANLock._sanlock_lock:
             self.log.info("Acquiring %s for host id %s", lease, hostId)
 
             while True:

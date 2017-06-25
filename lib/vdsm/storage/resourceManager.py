@@ -24,7 +24,6 @@ import logging
 import re
 import weakref
 from functools import partial
-from contextlib import nested
 from uuid import uuid4
 
 from six.moves import queue
@@ -494,8 +493,7 @@ class _ResourceManager(object):
         request = Request(namespace, name, lockType, callback)
         self._log.debug("Trying to register resource '%s' for lock type '%s'",
                         fullName, lockType)
-        with nested(utils.RollbackContext(),
-                    self._syncRoot.shared) as (contextCleanup, lock):
+        with utils.RollbackContext() as contextCleanup, self._syncRoot.shared:
             try:
                 namespaceObj = self._namespaces[namespace]
             except KeyError:
@@ -567,8 +565,7 @@ class _ResourceManager(object):
         fullName = "%s.%s" % (namespace, name)
 
         self._log.debug("Trying to release resource '%s'", fullName)
-        with nested(utils.RollbackContext(),
-                    self._syncRoot.shared) as (contextCleanup, lock):
+        with utils.RollbackContext() as contextCleanup, self._syncRoot.shared:
             try:
                 namespaceObj = self._namespaces[namespace]
             except KeyError:
