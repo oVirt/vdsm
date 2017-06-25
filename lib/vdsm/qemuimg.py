@@ -228,7 +228,7 @@ def map(image):
     workdir = os.path.dirname(image)
     out = _run_cmd(cmd, cwd=workdir)
     try:
-        return json.loads(out)
+        return json.loads(out.decode("utf8"))
     except ValueError:
         raise InvalidOutput(cmd, out, "Failed to process qemuimg map output")
 
@@ -393,7 +393,7 @@ def default_qcow2_compat():
 
 
 def _parse_qemuimg_json(output):
-    obj = json.loads(output)
+    obj = json.loads(output.decode("utf8"))
     if not isinstance(obj, dict):
         raise ValueError("not a JSON object")
     return obj
