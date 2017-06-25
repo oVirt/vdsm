@@ -36,7 +36,6 @@ from nose.plugins.skip import SkipTest
 from testlib import VdsmTestCase
 from testlib import namedTemporaryDir, temporaryPath
 from testlib import expandPermutations, permutations
-from testValidation import ValidateRunningAsRoot
 from testValidation import broken_on_ci
 from testValidation import skipif
 import monkeypatch
@@ -128,7 +127,7 @@ class TestMountHash(VdsmTestCase):
 class TestMount(VdsmTestCase):
 
     @skipif(six.PY3, "needs porting to python 3")
-    @ValidateRunningAsRoot
+    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
     @broken_on_ci("mount check fails after successful mount", name="TRAVIS_CI")
     def testLoopMount(self):
         with namedTemporaryDir() as mpath:
@@ -142,7 +141,7 @@ class TestMount(VdsmTestCase):
                     m.umount()
 
     @skipif(six.PY3, "needs porting to python 3")
-    @ValidateRunningAsRoot
+    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
     @broken_on_ci("mount check fails after successful mount", name="TRAVIS_CI")
     def testSymlinkMount(self):
         with namedTemporaryDir() as root_dir:

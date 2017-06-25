@@ -20,8 +20,9 @@
 import os
 import stat
 
+import pytest
+
 from vdsm.storage import fileUtils
-import testValidation
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 from testlib import namedTemporaryDir
@@ -48,7 +49,7 @@ class TestCreatedir(VdsmTestCase):
                 self.assertEqual(pathmode, mode)
                 path = os.path.dirname(path)
 
-    @testValidation.ValidateNotRunningAsRoot
+    @pytest.mark.skipif(os.geteuid() == 0, reason="requires unprivileged user")
     def test_create_raise_errors(self):
         with namedTemporaryDir() as base:
             path = os.path.join(base, "a", "b")
@@ -77,7 +78,7 @@ class TestCreatedir(VdsmTestCase):
 
 
 class TestChown(VdsmTestCase):
-    @testValidation.ValidateRunningAsRoot
+    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
     def test(self):
         targetId = 666
         with temporaryPath() as srcPath:
@@ -85,7 +86,7 @@ class TestChown(VdsmTestCase):
             stat = os.stat(srcPath)
             self.assertTrue(stat.st_uid == stat.st_gid == targetId)
 
-    @testValidation.ValidateRunningAsRoot
+    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
     def testNames(self):
         # I convert to some id because I have no
         # idea what users are defined and what

@@ -23,10 +23,11 @@ import os
 
 from contextlib import contextmanager
 
+import pytest
+
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 from testlib import namedTemporaryDir
-from testValidation import ValidateRunningAsRoot
 import loopback
 
 from vdsm.common import exception
@@ -124,7 +125,7 @@ class TestDiscard(VdsmTestCase):
                 data = f.read(SIZE)
                 self.assertEqual(data, b"x" * SIZE, "data was modified")
 
-    @ValidateRunningAsRoot
+    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
     def test_supported(self):
         with namedTemporaryDir() as tmpdir:
             # Prepare backing file poisoned with "x"
