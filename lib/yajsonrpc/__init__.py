@@ -36,70 +36,64 @@ _STATE_OUTGOING = 2
 _STATE_ONESHOT = 4
 
 
-class JsonRpcError(exception.VdsmException):
-    def __str__(self):
-        return self.message.format(self=self)
+class JsonRpcErrorBase(exception.ContextException):
+    """ Base class for JSON RPC errors """
+
+
+class JsonRpcParseError(JsonRpcErrorBase):
+    code = -32700
+    message = ("Invalid JSON was received by the server. "
+               "An error occurred on the server while parsing "
+               "the JSON text.")
+
+
+class JsonRpcInvalidRequestError(JsonRpcErrorBase):
+    code = -32600
+    message = "Invalid request"
+
+
+class JsonRpcMethodNotFoundError(JsonRpcErrorBase):
+    code = -32601
+    message = ("The method does not exist or is not "
+               "available")
+
+
+class JsonRpcInvalidParamsError(JsonRpcErrorBase):
+    code = -32602
+    message = "Invalid method parameter(s)"
+
+
+class JsonRpcInternalError(JsonRpcErrorBase):
+    code = -32603
+    message = "Internal JSON-RPC error"
+
+
+class JsonRpcBindingsError(JsonRpcErrorBase):
+    code = -32604
+    message = "Missing bindings for JSON-RPC."
+
+
+class JsonRpcNoResponseError(JsonRpcErrorBase):
+    code = -32605
+    message = "No response for JSON-RPC request"
+
+
+class JsonRpcServerError(JsonRpcErrorBase):
+    """
+    Legacy API methods return an error code instead of raising an exception.
+    This class is used to wrap the returned code and message.
+
+    It is also used on the client side, when an error is returned
+    in JsonRpcResponse.
+    """
 
     def __init__(self, code, message):
         self.code = code
         self.message = message
 
-
-class JsonRpcParseError(JsonRpcError):
-        def __init__(self):
-            self.code = -32700
-            self.message = "Invalid JSON was received by the server. "
-            "An error occurred on the server while parsing "
-            "the JSON text."
-
-
-class JsonRpcInvalidRequestError(JsonRpcError):
-    code = -32600
-    message = "Invalid request {self.request}: {self.reason}"
-
-    def __init__(self, request, reason):
-        self.request = request
-        self.reason = reason
-
-
-class JsonRpcMethodNotFoundError(JsonRpcError):
-    code = -32601
-    message = ("The method {self.method_name} does not exist or is not"
-               "available.")
-
-    def __init__(self, method_name):
-        self.method_name = method_name
-
-
-class JsonRpcInvalidParamsError(JsonRpcError):
-    code = -32602
-    message = "Invalid method parameter(s): {self.params}"
-
-    def __init__(self, params=None):
-        self.params = params
-
-
-class JsonRpcInternalError(JsonRpcError):
-    code = -32603
-
-    def __init__(self, message=None):
-        if not message:
-            message = "Internal JSON-RPC error."
-        self.message = message
-
-
-class JsonRpcBindingsError(JsonRpcError):
-    def __init__(self):
-        self.code = -32604
-        self.message = "Missing bindings for JSON-RPC."
-
-
-class JsonRpcNoResponseError(JsonRpcError):
-    code = -32605
-    message = "No response for JSON-RPC {self.method} request."
-
-    def __init__(self, method=''):
-        self.method = method
+    @classmethod
+    def from_dict(cls, d):
+        return cls(d["code"], d["message"])
 
 
 class JsonRpcRequest(object):
@@ -120,19 +114,27 @@ class JsonRpcRequest(object):
     @staticmethod
     def fromRawObject(obj):
         if obj.get("jsonrpc") != "2.0":
-            raise JsonRpcInvalidRequestError(obj, "Wrong protocol version")
+            raise JsonRpcInvalidRequestError(
+                "Wrong protocol version",
+                request=obj
+            )
 
         method = obj.get("method")
         if method is None:
             raise JsonRpcInvalidRequestError(
-                obj, "missing method header in method")
+                "missing method header in method",
+                request=obj
+            )
 
         reqId = obj.get("id")
         # when sending notifications id is not provided
 
         params = obj.get('params', [])
         if not isinstance(params, (list, dict)):
-            raise JsonRpcInvalidRequestError(obj, "wrong params type")
+            raise JsonRpcInvalidRequestError(
+                "wrong params type",
+                request=obj
+            )
 
         return JsonRpcRequest(method, protect_passwords(params), reqId)
 
@@ -185,17 +187,22 @@ class JsonRpcResponse(object):
     @staticmethod
     def fromRawObject(obj):
         if obj.get("jsonrpc") != "2.0":
-            raise JsonRpcInvalidRequestError(obj, "wrong protocol version")
+            raise JsonRpcInvalidRequestError(
+                "wrong protocol version",
+                request=obj
+            )
 
         if "result" not in obj and "error" not in obj:
             raise JsonRpcInvalidRequestError(
-                obj, "missing result or error info")
+                "missing result or error info",
+                request=obj
+            )
 
         result = obj.get("result")
 
         error = None
         if "error" in obj:
-            error = JsonRpcError(obj["error"]["code"], obj["error"]["message"])
+            error = JsonRpcServerError.from_dict(obj["error"])
 
         reqId = obj.get("id")
 
@@ -368,7 +375,7 @@ class JsonRpcClient(object):
     def callMethod(self, methodName, params=[], rid=None):
         responses = self.call(JsonRpcRequest(methodName, params, rid))
         if responses is None:
-            raise JsonRpcNoResponseError(methodName)
+            raise JsonRpcNoResponseError(method=methodName)
 
         response = responses[0]
         if response.error:
@@ -658,7 +665,9 @@ class JsonRpcServer(object):
                 ctx.addResponse(
                     JsonRpcResponse(None,
                                     JsonRpcInvalidRequestError(
-                                        rawRequests, "request batch is empty"),
+                                        "request batch is empty",
+                                        request=rawRequests
+                                    ),
                                     None))
                 ctx.sendReply()
                 return

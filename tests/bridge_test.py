@@ -20,9 +20,8 @@
 #
 import imp
 
-from vdsm.common.exception import GeneralException
+from vdsm.common.exception import GeneralException, VdsmException
 from vdsm.rpc.Bridge import DynamicBridge
-from yajsonrpc import JsonRpcError
 
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase as TestCaseBase
@@ -164,7 +163,7 @@ class BridgeTests(TestCaseBase):
     def testHookError(self):
         bridge = DynamicBridge()
 
-        with self.assertRaises(JsonRpcError) as e:
+        with self.assertRaises(VdsmException) as e:
             bridge.dispatch('Host.ping')()
 
         self.assertEqual(e.exception.code, 100)

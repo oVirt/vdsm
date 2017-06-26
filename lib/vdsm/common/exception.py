@@ -43,6 +43,9 @@ class ContextException(VdsmException):
     this class into VdsmException.
     """
 
+    # Define context here, so it exists without calling the constructor
+    context = None
+
     def __init__(self, reason=None, **kwargs):
         """
         There are 3 ways to initialize an instance:

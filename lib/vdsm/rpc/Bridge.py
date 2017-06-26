@@ -25,7 +25,6 @@ import yajsonrpc
 
 from vdsm import API
 from vdsm.api import vdsmapi
-from vdsm.common.exception import VdsmException
 from vdsm.config import config
 from vdsm.network.netinfo.addresses import getDeviceByIP
 
@@ -111,7 +110,7 @@ class DynamicBridge(object):
             className, methodName = method.split('.', 1)
             self._schema.get_method(vdsmapi.MethodRep(className, methodName))
         except (vdsmapi.MethodNotFound, ValueError):
-            raise yajsonrpc.JsonRpcMethodNotFoundError(method)
+            raise yajsonrpc.JsonRpcMethodNotFoundError(method=method)
         return partial(self._dynamicMethod, className, methodName)
 
     def _convert_class_name(self, name):
@@ -203,13 +202,9 @@ class DynamicBridge(object):
             except TypeError as e:
                 self.log.exception("TypeError raised by dispatched function")
                 raise InvalidCall(fn, methodArgs, e)
-            except VdsmException as e:
-                raise yajsonrpc.JsonRpcError(e.code, str(e))
 
         if result['status']['code']:
-            code = result['status']['code']
-            msg = result['status']['message']
-            raise yajsonrpc.JsonRpcError(code, msg)
+            raise yajsonrpc.JsonRpcServerError.from_dict(result['status'])
 
         retfield = command_info.get(cmd, {}).get('ret')
         if isinstance(retfield, types.FunctionType):

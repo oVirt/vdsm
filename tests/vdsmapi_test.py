@@ -22,7 +22,7 @@ from __future__ import absolute_import
 import json
 
 from vdsm.api import vdsmapi
-from yajsonrpc import JsonRpcError
+from yajsonrpc import JsonRpcErrorBase
 
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -77,7 +77,7 @@ class DataVerificationTests(TestCaseBase):
             vdsmapi.MethodRep('Host', 'fenceNode'), ret)
 
     def test_unknown_response_type(self):
-        with self.assertRaises(JsonRpcError) as e:
+        with self.assertRaises(JsonRpcErrorBase) as e:
             ret = {u'My caps': u'My capabilites'}
 
             _schema.schema().verify_retval(
@@ -90,7 +90,7 @@ class DataVerificationTests(TestCaseBase):
                   u"onlyForce": True,
                   u"storagedomainID": u"773adfc7-10d4-4e60-b700-3272ee1871f9"}
 
-        with self.assertRaises(JsonRpcError) as e:
+        with self.assertRaises(JsonRpcErrorBase) as e:
             _schema.schema().verify_args(
                 vdsmapi.MethodRep('StorageDomain', 'detach'), params)
 
@@ -104,7 +104,7 @@ class DataVerificationTests(TestCaseBase):
                                          u"export": u"1.1.1.1:/export/ovirt",
                                          u"retrans": 1}]}
 
-        with self.assertRaises(JsonRpcError) as e:
+        with self.assertRaises(JsonRpcErrorBase) as e:
             _schema.schema().verify_args(
                 vdsmapi.MethodRep('StoragePool', 'disconnectStorageServer'),
                 params)

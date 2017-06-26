@@ -34,7 +34,7 @@ from jsonRpcHelper import \
     constructClient
 
 from yajsonrpc import \
-    JsonRpcError, \
+    JsonRpcErrorBase, \
     JsonRpcMethodNotFoundError, \
     JsonRpcNoResponseError, \
     JsonRpcInternalError, \
@@ -58,7 +58,7 @@ class _DummyBridge(object):
         try:
             return getattr(self, method)
         except AttributeError:
-            raise JsonRpcMethodNotFoundError(method)
+            raise JsonRpcMethodNotFoundError(method=method)
 
     def echo(self, text):
         self.log.info("ECHO: '%s'", text)
@@ -102,7 +102,7 @@ class JsonRpcServerTests(TestCaseBase):
         responses = client.call(JsonRpcRequest(methodName, params, rid),
                                 timeout=CALL_TIMEOUT)
         if not responses:
-            raise JsonRpcNoResponseError(methodName)
+            raise JsonRpcNoResponseError(method=methodName)
         resp = responses[0]
         if resp.error is not None:
             raise resp.error
@@ -145,13 +145,13 @@ class JsonRpcServerTests(TestCaseBase):
         bridge = _DummyBridge()
         with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                with self.assertRaises(JsonRpcError) as cm:
+                with self.assertRaises(JsonRpcErrorBase) as cm:
                     self._callTimeout(client, missing_method, [],
                                       CALL_ID)
 
                 self.assertEqual(
                     cm.exception.code,
-                    JsonRpcMethodNotFoundError(missing_method).code)
+                    JsonRpcMethodNotFoundError(method=missing_method).code)
                 self.assertIn(missing_method, cm.exception.message)
 
     @permutations(PERMUTATIONS)
@@ -161,7 +161,7 @@ class JsonRpcServerTests(TestCaseBase):
         bridge = _DummyBridge()
         with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                with self.assertRaises(JsonRpcError) as cm:
+                with self.assertRaises(JsonRpcErrorBase) as cm:
                     self._callTimeout(client, "echo", [],
                                       CALL_ID)
 
@@ -197,7 +197,7 @@ class JsonRpcServerTests(TestCaseBase):
         bridge = _DummyBridge()
         with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                with self.assertRaises(JsonRpcError) as cm:
+                with self.assertRaises(JsonRpcErrorBase) as cm:
                     self._callTimeout(client, "slow_response", [], CALL_ID)
 
                 self.assertEqual(cm.exception.code,
@@ -209,7 +209,7 @@ class JsonRpcServerTests(TestCaseBase):
         bridge = _DummyBridge()
         with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                with self.assertRaises(JsonRpcError) as cm:
+                with self.assertRaises(JsonRpcErrorBase) as cm:
                     self._callTimeout(client, "no_method", [], CALL_ID)
 
                 self.assertEqual(cm.exception.code,

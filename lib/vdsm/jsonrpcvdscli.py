@@ -171,7 +171,7 @@ class _Server(object):
         if responses:
             resp = responses[0]
         else:
-            raise JsonRpcNoResponseError(method)
+            raise JsonRpcNoResponseError(method=method)
 
         if resp.error is not None:
             return response.error_raw(resp.error.code, str(resp.error))

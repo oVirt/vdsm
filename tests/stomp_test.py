@@ -65,7 +65,7 @@ class _SampleBridge(object):
         try:
             return getattr(self, method)
         except AttributeError:
-            raise yajsonrpc.JsonRpcMethodNotFoundError(method)
+            raise yajsonrpc.JsonRpcMethodNotFoundError(method=method)
 
 
 @expandPermutations
