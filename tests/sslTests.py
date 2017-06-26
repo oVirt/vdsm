@@ -414,6 +414,10 @@ class TlsProtocolTest(TestCaseBase):
         with(self.listen()) as (host, port):
             self.assertEqual(self.run_client(host, port, '-ssl2'), 1)
 
+    def test_sslv3(self):
+        with(self.listen()) as (host, port):
+            self.assertEqual(self.run_client(host, port, '-ssl3'), 1)
+
     def test_tlsv1(self):
         with(self.listen()) as (host, port):
             self.assertEqual(self.run_client(host, port, '-tls1'), 0)

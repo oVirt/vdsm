@@ -177,6 +177,9 @@ class SSLHandshakeDispatcher(object):
 
         context = ssl.SSLContext(self._sslctx.protocol)
 
+        # pylint: disable=no-member
+        context.options |= ssl.OP_NO_SSLv3
+
         excludes = self._sslctx.excludes
         if excludes != 0:
             context.options |= excludes

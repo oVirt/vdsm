@@ -187,7 +187,8 @@ class SSLContext(object):
         context.set_session_id_ctx(self.session_id)
 
         if self.excludes != 0:
-            context.set_options(m2.SSL_OP_NO_SSLv2 | self.excludes)
+            context.set_options(
+                m2.SSL_OP_NO_SSLv2 | m2.SSL_OP_NO_SSLv3 | self.excludes)
 
         self._loadCertChain()
         self._loadCAs()
