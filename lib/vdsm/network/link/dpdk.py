@@ -166,7 +166,8 @@ def _unlisted_devices(pci_addrs):
 def _is_dpdk_dev(dev):
     return (dev.get('class') == 'network' and 'handle' in dev and
             'logicalname' not in dev and
-            dev['configuration']['driver'] in DPDK_DRIVERS)
+            dev['configuration']['driver'] in DPDK_DRIVERS and
+            'Virtual Function' not in dev.get('product', ''))
 
 
 def _normalize_lshw_result(result):

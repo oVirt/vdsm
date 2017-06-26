@@ -100,6 +100,33 @@ class ReportDpdkPortsTests(VdsmTestCase):
             }
             self.assertEqual(expected_ports, dpdk.get_dpdk_devices())
 
+    def test_vf(self):
+        lshw_output = json.dumps({'id': 'fake.redhat.com', 'class': 'system',
+                                  'vendor': 'HP', 'serial': 'GB803344A9',
+                                  'children': [
+                                      {'id': 'core', 'class': 'bus',
+                                       'description': 'Motherboard', },
+                                      {'id': 'pci:0', 'class': 'bridge',
+                                       'handle': 'PCIBUS:0000:00',
+                                       'description': 'Host bridge',
+                                       'product': '5500 I/O Hub to ESI Port',
+                                       'vendor': 'Intel Corporation',
+                                       'children': [
+                                           {'id': 'network:1',
+                                            'class': 'network',
+                                            'product': 'Virtual Function',
+                                            'handle': 'PCI:0000:02:00.1',
+                                            'vendor': 'Intel Corporation',
+                                            'configuration': {
+                                                'driver': 'vfio-pci'}}]}]})
+
+        with mock.patch.object(dpdk.cmd, 'exec_sync',
+                               return_value=(0, lshw_output, None)):
+
+            dpdk.invalidate_dpdk_devices()
+            expected_ports = {}
+            self.assertEqual(expected_ports, dpdk.get_dpdk_devices())
+
     def test_no_dpdk_devices(self):
         lshw_output = json.dumps({'id': 'fake.redhat.com', 'class': 'system',
                                   'vendor': 'HP', 'serial': 'GB803344A9',
