@@ -95,7 +95,10 @@ def _suitable_device_for_mdev_type(target_mdev_type):
                     target_device = None
                     break
                 continue
-            if _mdev_type_details(mdev_type, path).available_instances < 1:
+            # Make sure to cast to int as the value is read from sysfs.
+            if int(
+                _mdev_type_details(mdev_type, path).available_instances
+            ) < 1:
                 continue
 
             target_device = device
