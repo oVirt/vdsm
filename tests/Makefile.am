@@ -53,6 +53,7 @@ test_modules = \
 	api_response_test.py \
 	bridge_test.py \
 	caps_test.py \
+	client_test.py \
 	clientif_test.py \
 	cmdutils_test.py \
 	commands_test.py \

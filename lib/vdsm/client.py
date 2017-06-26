@@ -208,14 +208,22 @@ class _Client(object):
     def __init__(self, client, default_timeout, gluster_enabled=False):
         self._client = client
         self._default_timeout = default_timeout
+        self._init_schema(gluster_enabled)
+        self._create_namespaces()
+
+    # Will be overriden during unit testing
+    def _init_schema(self, gluster_enabled):
         try:
             schema_paths = [vdsmapi.find_schema()]
             if gluster_enabled:
                 schema_paths.append(vdsmapi.find_schema('vdsm-api-gluster'))
             self._schema = vdsmapi.Schema(schema_paths, False)
+            self._event_schema = vdsmapi.Schema(
+                [vdsmapi.find_schema('vdsm-events')],
+                False
+            )
         except vdsmapi.SchemaNotFound as e:
             raise MissingSchemaError(e)
-        self._create_namespaces()
 
     def _create_namespaces(self):
         for method in self._schema.get_methods:
@@ -267,3 +275,34 @@ class _Client(object):
 
     def close(self):
         self._client.close()
+
+    def subscribe(self, queue_name, event_queue=None):
+        """
+        Registers to listen to a given destination queue.
+
+        :param queue_name: Name of the queue
+        :param event_queue: Optional; Received events are pushed to this queue.
+                            If not set, incoming events will be ignored.
+        :type event_queue: queue.Queue
+
+        :return: Id of the created subscription
+        """
+        return self._client.subscribe(queue_name, event_queue)
+
+    def unsubscribe(self, sub_id):
+        """
+        Unregisters and stops listening to a destination queue.
+
+        :param sub_id: Id of the subscription
+        """
+        self._client.unsubscribe(sub_id)
+
+    def notify(self, event_id, dest, params=None):
+        """
+        Sends JSON event to a destination queue
+
+        :param event_id: Id of the event
+        :param dest: Name of the desitnation queue
+        :param params: Optional parameters
+        """
+        self._client.notify(event_id, dest, self._event_schema, params)
