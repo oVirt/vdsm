@@ -20,6 +20,7 @@
 import logging
 import time
 from contextlib import contextmanager
+from six.moves import queue
 from monkeypatch import MonkeyPatch
 from testValidation import slowtest
 from vdsm import executor
@@ -42,7 +43,9 @@ from yajsonrpc import \
 
 
 CALL_TIMEOUT = 3
+EVENT_TIMEOUT = 5
 CALL_ID = '2c8134fd-7dd4-4cfc-b7f8-6b7549399cb6'
+EVENT_TOPIC = "jms.topic.test"
 
 
 class _DummyBridge(object):
@@ -74,8 +77,8 @@ class _DummyBridge(object):
     def slow_response(self):
         time.sleep(CALL_TIMEOUT + 2)
 
-    def double_response(self):
-        self.cif.notify('vdsm.double_response', {'content': True})
+    def send_event(self):
+        self.cif.notify('|vdsm|test_event|', {'content': True}, EVENT_TOPIC)
         return 'sent'
 
     def register_server_address(self, server_address):
@@ -116,6 +119,24 @@ class JsonRpcServerTests(TestCaseBase):
                 yield client
             finally:
                 client.close()
+
+    def _get_with_timeout(self, event_queue):
+        try:
+            return event_queue.get(timeout=EVENT_TIMEOUT)
+        except queue.Empty:
+            self.fail("Event queue timed out.")
+
+    def _collect_events(self, event_queue):
+        res = []
+
+        while True:
+            ev = self._get_with_timeout(event_queue)
+            if ev is None:
+                break
+
+            res.append(ev)
+
+        return res
 
     @permutations(PERMUTATIONS)
     def testMethodCallArgList(self, ssl):
@@ -177,20 +198,6 @@ class JsonRpcServerTests(TestCaseBase):
                                         CALL_ID)
                 self.assertEqual(res, True)
 
-    @permutations(PERMUTATIONS)
-    def testDoubleResponse(self, ssl):
-        bridge = _DummyBridge()
-        with constructClient(self.log, bridge, ssl) as clientFactory:
-            with self._client(clientFactory) as client:
-                def callback(client, event, params):
-                    self.assertEqual(event, 'vdsm.double_response')
-                    self.assertEqual(params['content'], True)
-
-                client.registerEventCallback(callback)
-                res = self._callTimeout(client, "double_response", [],
-                                        CALL_ID)
-                self.assertEqual(res, 'sent')
-
     @slowtest
     @permutations(PERMUTATIONS)
     def testSlowMethod(self, ssl):
@@ -220,26 +227,39 @@ class JsonRpcServerTests(TestCaseBase):
         bridge = _DummyBridge()
         with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                def callback(client, event, params):
-                    self.assertEqual(event, 'vdsm.double_response')
-                    self.assertEqual(params['content'], True)
+                event_queue = queue.Queue()
+                sub = client.subscribe(EVENT_TOPIC, event_queue)
 
-                sub = client.subscribe("jms.topic.test")
-                client.registerEventCallback(callback)
-                res = self._callTimeout(client, "double_response", [],
+                res = self._callTimeout(client, "send_event", [],
                                         CALL_ID)
                 self.assertEqual(res, 'sent')
                 client.unsubscribe(sub)
+
+                events = self._collect_events(event_queue)
+                self.assertEqual(len(events), 1)
+
+                event, event_params = events[0]
+                self.assertEqual(event, '|vdsm|test_event|')
+                self.assertEqual(event_params['content'], True)
 
     @permutations(PERMUTATIONS)
     def testClientNotify(self, ssl):
         bridge = _DummyBridge()
         with constructClient(self.log, bridge, ssl) as clientFactory:
             with self._client(clientFactory) as client:
-                def callback(client, event, params):
-                    self.assertEqual(event, 'vdsm.event')
-                    self.assertEqual(params['content'], True)
+                event_queue = queue.Queue()
+                custom_topic = 'custom.topic'
+                sub = client.subscribe(custom_topic, event_queue)
 
-                client.registerEventCallback(callback)
-                client.notify('vdsm.event', 'jms.topic.test',
+                client.notify('vdsm.event', custom_topic,
                               bridge.event_schema, {'content': True})
+
+                # Waiting for event before unsubscribing, to make sure,
+                # it will be received
+                event, event_params = self._get_with_timeout(event_queue)
+                self.assertEqual(event, 'vdsm.event')
+                self.assertEqual(event_params['content'], True)
+
+                client.unsubscribe(sub)
+                events = self._collect_events(event_queue)
+                self.assertEqual(len(events), 0)

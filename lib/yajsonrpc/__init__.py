@@ -16,7 +16,6 @@
 from __future__ import absolute_import
 import logging
 from six.moves import queue
-from weakref import ref
 from threading import Lock, Event
 
 from vdsm.common.compat import json
@@ -370,7 +369,7 @@ class JsonRpcClient(object):
         self._transport = transport
         self._runningRequests = {}
         self._lock = Lock()
-        self._eventcbs = []
+        self._event_queues = {}
 
     def callMethod(self, methodName, params=[], rid=None):
         responses = self.call(JsonRpcRequest(methodName, params, rid))
@@ -412,11 +411,44 @@ class JsonRpcClient(object):
         if ctx.isDone():
             self._finalizeCtx(ctx)
 
-    def subscribe(self, queue_name):
-        return self._transport.subscribe(queue_name)
+    def subscribe(self, queue_name, event_queue=None):
+        """
+        Subscribe to a queue and listen for messages.
+
+        Received events are pushed to a queue passed as parameter.
+        The queue can contain tuples (event_id, params_dictionary)
+        or 'None', which signalizes that no more events will
+        be received and the client can stop getting from the queue.
+
+        :param queue_name: Name of the STOMP queue
+        :param event_queue: Optional; Received events are pushed to this queue.
+                            If not set, incoming events will be ignored.
+                            The queue instance must have a 'put' method and
+                            it must not block.
+
+        :return: Id of the created subscription
+        """
+
+        sub_id = self._transport.subscribe(
+            queue_name,
+            lambda msg: self._handleMessage(msg, event_queue)
+        )
+
+        self._event_queues[sub_id] = event_queue
+        return sub_id
 
     def unsubscribe(self, sub):
+        """
+        Unsubscribe and stop recieving messages.
+
+        :param sub: Id of the subscription returned from subscribe()
+        """
         self._transport.unsubscribe(sub)
+
+        # Put 'None' to the queue, to signalize to client that it can stop
+        # reading from the queue.
+        self._event_queues[sub].put(None)
+        del self._event_queues[sub]
 
     def notify(self, event_id, dest, event_schema, params=None):
         """
@@ -480,8 +512,7 @@ class JsonRpcClient(object):
             else:
                 return ("result" in obj or "error" in obj)
 
-    def _handleMessage(self, req):
-        transport, message = req
+    def _handleMessage(self, message, event_queue=None):
         try:
             mobj = json.loads(message)
         except ValueError:
@@ -502,11 +533,20 @@ class JsonRpcClient(object):
         if isResponse:
             self._processIncomingResponse(mobj)
         else:
-            self._processEvent(mobj)
+            self._processEvent(mobj, event_queue)
 
-    def _processEvent(self, obj):
+    def _processEvent(self, obj, event_queue):
+        if not event_queue:
+            self.log.debug(
+                "No event queue is registered for received event, "
+                "ignoring. Event: %s",
+                obj
+            )
+            return
+
         if isinstance(obj, list):
-            map(self._processEvent, obj)
+            for o in obj:
+                self._processEvent(o, event_queue)
             return
 
         req = JsonRpcRequest.fromRawObject(obj)
@@ -514,33 +554,19 @@ class JsonRpcClient(object):
             self.log.warning("Recieved non notification, ignoring")
             return
 
-        self.emit(req.method, req.params)
+        try:
+            event_queue.put((req.method, req.params))
+        except queue.Full:
+            self.log.warning("Event queue full, ignoring received event.")
 
     def close(self):
+        sub_ids = list(self._event_queues.keys())
+        for sub_id in sub_ids:
+            self.unsubscribe(sub_id)
+
         self._transport.close()
 
     stop = close
-
-    def registerEventCallback(self, eventcb):
-        self._eventcbs.append(ref(eventcb))
-
-    def unregisterEventCallback(self, eventcb):
-        for r in self._eventcbs[:]:
-            cb = r()
-            if cb is None or cb == eventcb:
-                try:
-                    self._eventcbs.remove(r)
-                except ValueError:
-                    # Double unregister, ignore.
-                    pass
-
-    def emit(self, event, params):
-        for r in self._eventcbs[:]:
-            cb = r()
-            if cb is None:
-                continue
-
-            cb(self, event, params)
 
 
 class JsonRpcTask(object):

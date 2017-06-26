@@ -571,29 +571,42 @@ class ServerRpcContextAdapter(object):
 
 
 class ClientRpcTransportAdapter(object):
-    def __init__(self, sub, destination, client):
-        self._sub = sub
-        sub.set_message_handler(self._handle_message)
-        self._destination = destination
+    def __init__(self, request_queue, response_queue, client):
         self._client = client
         self._message_handler = lambda arg: None
+        self._request_queue = request_queue
+        self._response_queue = response_queue
+        self._subs = {}
+
+        # Subscribe to main RPC queue
+        self.subscribe(
+            response_queue,
+            lambda msg: self._message_handler(msg)
+        )
 
     """
     In order to process message we need to set message
     handler which is responsible for processing jsonrpc
-    content of the message. Currently there are 2 handlers:
-    JsonRpcClient and JsonRpcServer.
+    content of the message. Currently this function is
+    called only from JsonRpcClient to set the callback.
     """
     def set_message_handler(self, handler):
+        """
+        Set a callback which handles messages received
+        from the main RPC queue.
+
+        :param handler: Callback to handle incoming messages
+        :type handler: function (string) -> ()
+        """
         self._message_handler = handler
 
     def send(self, data, destination=None):
         if not destination:
-            destination = self._destination
+            destination = self._request_queue
 
         headers = {
             "content-type": "application/json",
-            "reply-to": self._sub.destination,
+            "reply-to": self._response_queue,
         }
         self._client.send(
             data,
@@ -601,25 +614,48 @@ class ClientRpcTransportAdapter(object):
             headers,
         )
 
-    def subscribe(self, queue_name):
-        return self._client.subscribe(queue_name, sub_id=str(uuid4()))
+    def subscribe(self, queue_name, callback):
+        """
+        Subscribe to a queue and receive any messages sent to it.
+
+        :param queue_name: Name of the queue
+        :param callback: Function that is called on receiving a message
+        :type callback: function (string) -> ()
+
+        :return: Id of the subscription
+        """
+
+        sub_id = uuid4()
+        self._subs[sub_id] = self._client.subscribe(
+            queue_name,
+            sub_id=str(sub_id),
+            message_handler=lambda sub, frame: callback(frame.body)
+        )
+
+        return sub_id
 
     def unsubscribe(self, sub):
-        self._client.unsubscribe(sub)
+        """
+        Unsubscribes and stops receiving messages.
 
-    def _handle_message(self, sub, frame):
-        self._message_handler((self, frame.body))
+        :param sub: Id of the subscription, returned from subscribe()
+        """
+
+        self._client.unsubscribe(self._subs[sub])
+        del self._subs[sub]
 
     def close(self):
-        self._sub.unsubscribe()
+        for sub in self._subs.values():
+            self._client.unsubscribe(sub)
+
         self._client.close()
 
 
 def StompRpcClient(stomp_client, request_queue, response_queue):
     return JsonRpcClient(
         ClientRpcTransportAdapter(
-            stomp_client.subscribe(response_queue, sub_id=str(uuid4())),
             request_queue,
+            response_queue,
             stomp_client,
         )
     )
@@ -667,8 +703,8 @@ def StandAloneRpcClient(host, port, request_queue, response_queue,
 
     jsonclient = JsonRpcClient(
         ClientRpcTransportAdapter(
-            client.subscribe(response_queue, sub_id=str(uuid4())),
             request_queue,
+            response_queue,
             client)
     )
 

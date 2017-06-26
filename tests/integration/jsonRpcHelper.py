@@ -65,20 +65,21 @@ class FakeClientIf(object):
     def ready(self):
         return True
 
-    def notify(self, event_id, params=None):
+    def notify(self, event_id, params=None, destination=None):
         if not params:
             params = {}
 
+        if destination is None:
+            destination = self.dest
+
+        server = self.json_binding.reactor.server
+
         notification = Notification(
             event_id,
-            self._send_notification,
+            lambda message: server.send(message, destination),
             self.json_binding.bridge.event_schema
         )
         notification.emit(params)
-
-    def _send_notification(self, message):
-        server = self.json_binding.reactor.server
-        server.send(message, self.dest)
 
 
 @contextmanager
