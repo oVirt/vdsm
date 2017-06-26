@@ -3966,11 +3966,12 @@ class Vm(object):
             try:
                 # Add information required during replication, and persist it
                 # so migration can continue after vdsm crash.
-                if utils.isBlockDevice(replica['path']):
-                    replica['diskType'] = DISK_TYPE.BLOCK
-                else:
-                    replica['diskType'] = DISK_TYPE.FILE
-                self._updateDiskReplica(drive)
+                if "diskType" not in replica:
+                    if utils.isBlockDevice(replica['path']):
+                        replica['diskType'] = DISK_TYPE.BLOCK
+                    else:
+                        replica['diskType'] = DISK_TYPE.FILE
+                    self._updateDiskReplica(drive)
 
                 self._startDriveReplication(drive)
             except Exception:
