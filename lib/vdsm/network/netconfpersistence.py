@@ -139,7 +139,7 @@ class Config(BaseConfig):
                      (self, self.networksPath, self.bondingsPath))
 
     def config_exists(self):
-        return (os.path.exists(self.networksPath) and
+        return (os.path.exists(self.networksPath) or
                 os.path.exists(self.bondingsPath))
 
     def _networkPath(self, network):
