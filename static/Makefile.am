@@ -109,7 +109,9 @@ modprobe_DATA = \
 	$(NULL)
 
 libvirtpassworddir = $(vdsmtsdir)/keys
-libvirtpassword_DATA = ./$(libvirtpassworddir)/libvirt_password
+libvirtpassword_DATA = \
+	./etc/pki/vdsm/keys/libvirt_password \
+	$(NULL)
 
 cronhourlydir = $(sysconfdir)/cron.hourly
 dist_cronhourly_SCRIPTS = \
