@@ -10,7 +10,7 @@ import os
 from six.moves import xmlrpc_server as SimpleXMLRPCServer
 import ssl
 import threading
-from vdsm.sslutils import SSLContext
+from vdsm.sslutils import CLIENT_PROTOCOL, SSLContext
 
 CERT_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
 CRT_FILE = os.path.join(CERT_DIR, "server.crt")
@@ -19,7 +19,8 @@ OTHER_CRT_FILE = os.path.join(CERT_DIR, "other.crt")
 OTHER_KEY_FILE = os.path.join(CERT_DIR, "other.key")
 
 DEAFAULT_SSL_CONTEXT = SSLContext(cert_file=CRT_FILE, key_file=KEY_FILE,
-                                  ca_certs=CRT_FILE)
+                                  ca_certs=CRT_FILE,
+                                  protocol=CLIENT_PROTOCOL)
 
 
 def get_server_socket(key_file, cert_file, socket):
@@ -44,7 +45,7 @@ class TestServer(SimpleXMLRPCServer.SimpleXMLRPCServer):
                                       certfile=CRT_FILE,
                                       server_side=True,
                                       cert_reqs=ssl.CERT_REQUIRED,
-                                      ssl_version=ssl.PROTOCOL_TLSv1,
+                                      ssl_version=CLIENT_PROTOCOL,
                                       ca_certs=CRT_FILE,
                                       do_handshake_on_connect=False)
 

@@ -32,10 +32,12 @@ from vdsm.utils import (
 from .config import config
 
 try:
-    from M2Crypto import SSL, X509, threading
+    from M2Crypto import m2, SSL, X509, threading
     from M2Crypto.SSL import SSLError
 except ImportError as e:
     raise compat.Unsupported(str(e))
+
+CLIENT_PROTOCOL = "sslv23"
 
 DEFAULT_ACCEPT_TIMEOUT = 5
 SOCKET_DEFAULT_TIMEOUT = socket._GLOBAL_DEFAULT_TIMEOUT
@@ -149,12 +151,13 @@ class SSLServerSocket(SSLSocket):
 
 
 class SSLContext(object):
-    def __init__(self, cert_file, key_file, ca_cert=None, session_id="SSL",
-                 protocol="tlsv1"):
+    def __init__(self, cert_file, key_file, ca_certs=None, session_id="SSL",
+                 excludes=0, protocol=CLIENT_PROTOCOL):
         self.cert_file = cert_file
         self.key_file = key_file
-        self.ca_certs = ca_cert
+        self.ca_certs = ca_certs
         self.session_id = session_id
+        self.excludes = excludes
         self.protocol = protocol
         self._initContext()
 
@@ -182,6 +185,9 @@ class SSLContext(object):
         if config.getboolean('devel', 'm2c_debug_enable'):
             self.context.set_info_callback()
         context.set_session_id_ctx(self.session_id)
+
+        if self.excludes != 0:
+            context.set_options(m2.SSL_OP_NO_SSLv2 | self.excludes)
 
         self._loadCertChain()
         self._loadCAs()
@@ -311,8 +317,20 @@ class SSLHandshakeDispatcher(object):
 def create_ssl_context():
     if config.getboolean('vars', 'ssl'):
         protocol = config.get('vars', 'ssl_protocol')
+        excludes = protocol_name_to_int()
         sslctx = SSLContext(constants.CERT_FILE, constants.KEY_FILE,
-                            ca_cert=constants.CA_FILE, protocol=protocol)
+                            ca_certs=constants.CA_FILE, protocol=protocol,
+                            excludes=excludes)
         return sslctx
     else:
         return None
+
+
+def protocol_name_to_int():
+    excludes = 0
+
+    for no_protocol in config.get('vars', 'ssl_excludes').split(','):
+        if no_protocol != '':
+            excludes |= getattr(m2, no_protocol.strip())
+
+    return excludes

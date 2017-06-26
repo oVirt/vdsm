@@ -234,6 +234,13 @@ parameters = [
         ('ssl_protocol', 'tlsv1',
             'SSL protocol used by encrypted connection'),
 
+        ('ssl_excludes', '',
+            'Comma separated protocol values as defined in '
+            'https://docs.python.org/2/library/ssl.html. '
+            'e.g. OP_NO_TLSv1, OP_NO_TLSv1_1 '
+            'By default tlv1, tlsv1.1 and tlsv1.2 are '
+            'enabled.'),
+
         ('connection_stats_timeout', '3600',
             'Time in seconds defining how frequently we log transport stats'),
 

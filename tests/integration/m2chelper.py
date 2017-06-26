@@ -22,7 +22,7 @@ import os
 import SimpleXMLRPCServer
 import threading
 from M2Crypto import SSL
-from vdsm.m2cutils import SSLContext, SSLServerSocket
+from vdsm.m2cutils import CLIENT_PROTOCOL, SSLContext, SSLServerSocket
 
 CERT_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
 CRT_FILE = os.path.join(CERT_DIR, "server.crt")
@@ -31,7 +31,7 @@ OTHER_CRT_FILE = os.path.join(CERT_DIR, "other.crt")
 OTHER_KEY_FILE = os.path.join(CERT_DIR, "other.key")
 
 DEAFAULT_SSL_CONTEXT = SSLContext(
-    CRT_FILE, KEY_FILE, session_id="server-tests")
+    CRT_FILE, KEY_FILE, session_id="server-tests", protocol=CLIENT_PROTOCOL)
 
 
 def get_server_socket(key_file, cert_file, socket):

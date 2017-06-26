@@ -24,14 +24,17 @@ from .config import config
 
 if config.get('vars', 'ssl_implementation') == 'm2c':
     from . import m2cutils as sslutils
+    from .m2cutils import CLIENT_PROTOCOL
     from .m2cutils import SSLHandshakeDispatcher
     from .m2cutils import SSLSocket
 else:
     from . import sslutils
+    from .sslutils import CLIENT_PROTOCOL
     from .sslutils import SSLHandshakeDispatcher
     from ssl import SSLSocket
 
 # we need it to satisfy pyflakes
+CLIENT_PROTOCOL
 sslutils
 SSLHandshakeDispatcher
 SSLSocket
