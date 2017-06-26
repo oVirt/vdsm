@@ -293,7 +293,8 @@ class Vm(object):
         if 'xml' in params:
             md = metadata.from_xml(params['xml'])
             self._custom['custom'] = md.get('custom', {})
-            self._destroy_on_reboot = md.get('destroy_on_reboot', False)
+            self._destroy_on_reboot = md.get('destroy_on_reboot', False) or \
+                self._domain.on_reboot_config() == 'destroy'
             for key in ('agentChannelName', 'guestAgentAPIVersion',):
                 value = md.get(key)
                 if value:
@@ -1901,7 +1902,15 @@ class Vm(object):
                                           osVersion)
                 xml_str = xml_str.replace('HOST-SERIAL:',
                                           serialNumber)
-            return xml_str
+
+            # Do DOM-dependent xml transformations
+            dom = vmxml.parse_xml(xml_str)
+
+            on_reboot = vmxml.find_first(dom, 'on_reboot', None)
+            if on_reboot is not None:
+                vmxml.remove_child(dom, on_reboot)
+
+            return vmxml.format_xml(dom, pretty=True)
 
         serial_console = self._getSerialConsole()
 

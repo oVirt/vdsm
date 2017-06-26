@@ -77,6 +77,26 @@ METADATA = """
 </domain>
 """
 
+ON_REBOOT_DESTROY = """
+<domain>
+    <uuid>xyz</uuid>
+    <on_reboot>destroy</on_reboot>
+</domain>
+"""
+
+ON_REBOOT_RESTART = """
+<domain>
+    <uuid>xyz</uuid>
+    <on_reboot>restart</on_reboot>
+</domain>
+"""
+
+NO_REBOOT = """
+<domain>
+    <uuid>xyz</uuid>
+</domain>
+"""
+
 
 class DevicesHashTests(VdsmTestCase):
 
@@ -133,3 +153,13 @@ class DomainDescriptorTests(XMLTestCase):
         desc = DomainDescriptor(xml_data)
         found = desc.metadata is not None
         self.assertEqual(found, expected)
+
+    @permutations([
+        [ON_REBOOT_DESTROY, 'destroy'],
+        [ON_REBOOT_RESTART, 'restart'],
+        [NO_REBOOT, None]
+    ])
+    def test_on_reboot_config(self, xml_data, expected):
+        desc = DomainDescriptor(xml_data)
+        reboot_config = desc.on_reboot_config()
+        self.assertEqual(reboot_config, expected)

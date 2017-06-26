@@ -81,6 +81,13 @@ class MutableDomainDescriptor(object):
         memory = vmxml.find_first(self._dom, "memory", None)
         return int(vmxml.text(memory)) // 1024 if memory is not None else None
 
+    def on_reboot_config(self):
+        """
+        :return: The value of <on_reboot> element, if it exists.
+        """
+        elem = next((el for el in self._dom.findall('.//on_reboot')), None)
+        return elem is not None and elem.text or None
+
 
 class DomainDescriptor(MutableDomainDescriptor):
 
