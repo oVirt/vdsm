@@ -187,6 +187,10 @@ class TestProgress(TestCaseBase):
             # available since libvirt 1.3
             'memory_iteration': 0,
         }
+        # available since libvirt 3.2
+        if getattr(libvirt, 'VIR_DOMAIN_JOB_OPERATION_MIGRATION_OUT', None):
+            self.job_stats['operation'] = \
+                libvirt.VIR_DOMAIN_JOB_OPERATION_MIGRATION_OUT
 
     def test___str__(self):
         prog = migration.Progress.from_job_stats(self.job_stats)
