@@ -90,7 +90,6 @@ pylint: tox
 	tox -e pylint \
 		vdsm/sitecustomize.py \
 		vdsm/hooking.py \
-		vdsm/vdsmd.py \
 		lib/vdsm \
 		lib/vdsmclient \
 		lib/yajsonrpc \

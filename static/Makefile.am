@@ -51,6 +51,7 @@ vdsm_autounattend_DATA = \
 
 dist_vdsm_SCRIPTS = \
 	./usr/sbin/supervdsmd \
+	./usr/sbin/vdsmd \
 	$(NULL)
 
 vdsmconf_DATA = \

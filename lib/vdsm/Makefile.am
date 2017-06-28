@@ -65,6 +65,7 @@ dist_vdsmpylib_PYTHON = \
 	udevadm.py \
 	utils.py \
 	v2v.py \
+	vdsmd.py \
 	virtsparsify.py \
 	virtsysprep.py \
 	$(NULL)

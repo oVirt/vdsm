@@ -876,7 +876,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/sitecustomize.py*
 %{_datadir}/%{vdsm_name}/supervdsmd
 %{_datadir}/%{vdsm_name}/vdsmd
-%{_datadir}/%{vdsm_name}/vdsmd.py*
 
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
@@ -1240,6 +1239,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/udevadm.py*
 %{python_sitelib}/%{vdsm_name}/utils.py*
 %{python_sitelib}/%{vdsm_name}/v2v.py*
+%{python_sitelib}/%{vdsm_name}/vdsmd.py*
 %{python_sitelib}/%{vdsm_name}/virtsparsify.py*
 %{python_sitelib}/%{vdsm_name}/virtsysprep.py*
 %{python_sitelib}/%{vdsm_name}/tool/__init__.py*

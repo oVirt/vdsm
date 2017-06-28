@@ -23,12 +23,8 @@ include $(top_srcdir)/build-aux/Makefile.subs
 dist_vdsm_PYTHON = \
 	hooking.py \
 	sitecustomize.py \
-	vdsmd.py \
 	$(NULL)
 
-dist_vdsm_SCRIPTS = \
-	vdsmd \
-	$(NULL)
 
 CLEANFILES = \
 	config.log \
@@ -41,7 +37,6 @@ EXTRA_DIST = \
 	$(NULL)
 
 all-local: \
-	$(nodist_vdsm_SCRIPTS) \
 	$(nodist_noinst_DATA) \
 	$(nodist_man8_MANS)
 
