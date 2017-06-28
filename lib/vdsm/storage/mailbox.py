@@ -265,7 +265,7 @@ class HSM_MailMonitor(object):
         self._initMailbox()  # Read initial mailbox state
         self._msgCounter = 0
         self._sendMail()  # Clear outgoing mailbox
-        self._thread = concurrent.thread(self.run, name="mailbox-hsm",
+        self._thread = concurrent.thread(self._run, name="mailbox-hsm",
                                          log=self.log)
         self._thread.start()
 
@@ -427,7 +427,7 @@ class HSM_MailMonitor(object):
                         MESSAGES_PER_MAILBOX,
                         repr(self._outgoingMail[start:end])))
 
-    def run(self):
+    def _run(self):
         try:
             failures = 0
 
@@ -580,7 +580,7 @@ class SPM_MailMonitor:
                              "dd failed")
 
         self._thread = concurrent.thread(
-            self.run, name="mailbox-spm", log=self.log)
+            self._run, name="mailbox-spm", log=self.log)
         self._thread.start()
         self.log.debug('SPM_MailMonitor created for pool %s' % self._poolID)
 
@@ -791,7 +791,7 @@ class SPM_MailMonitor:
         finally:
             self._outLock.release()
 
-    def run(self):
+    def _run(self):
         try:
             while not self._stop:
                 try:
