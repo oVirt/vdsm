@@ -1,5 +1,4 @@
-#
-# Copyright 2014 Hat, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,15 +16,38 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-include $(top_srcdir)/build-aux/Makefile.subs
+from __future__ import absolute_import
 
-dist_configurators_PYTHON = \
-	__init__.py \
-	certificates.py \
-	libvirt.py \
-	multipath.py \
-	passwd.py \
-	sanlock.py \
-	sebool.py \
-	bond_defaults.py \
-	$(NULL)
+import errno
+import os
+import subprocess
+import time
+
+from vdsm import constants
+
+from . import YES, NO
+
+
+BONDING_DEFAULTS = constants.P_VDSM_LIB + 'bonding-defaults.json'
+
+
+def isconfigured():
+    try:
+        modified_time = os.path.getmtime(BONDING_DEFAULTS)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
+        return NO
+
+    boot_time = time.time() - _get_uptime()
+    return YES if modified_time >= boot_time else NO
+
+
+def configure():
+    subprocess.call(['/usr/bin/vdsm-tool', 'dump-bonding-options'])
+
+
+def _get_uptime():
+    with open('/proc/uptime', 'r') as f:
+        uptime_seconds = float(f.readline().split()[0])
+    return uptime_seconds

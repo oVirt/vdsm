@@ -150,6 +150,7 @@ dist_noinst_DATA = \
 
 dist_vdsmtests_DATA = \
 	README \
+        bonding-defaults.json \
 	cpu_info.out \
 	caps_libvirt_intel_E5649.out \
 	caps_libvirt_amd_6274.out \

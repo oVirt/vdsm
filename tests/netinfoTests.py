@@ -282,7 +282,7 @@ class TestNetinfo(TestCaseBase):
     @brokentest("Skipped becasue it breaks randomly on the CI")
     @MonkeyPatch(netinfo, 'BONDING_DEFAULTS', netinfo.BONDING_DEFAULTS
                  if os.path.exists(netinfo.BONDING_DEFAULTS)
-                 else '../vdsm/bonding-defaults.json')
+                 else 'bonding-defaults.json')
     @ValidateRunningAsRoot
     @RequireBondingMod
     def testGetBondingOptions(self):

@@ -1069,7 +1069,6 @@ exit 0
 %dir %{_localstatedir}/log/%{vdsm_name}
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
 %defattr(644, %{vdsm_user}, %{vdsm_group}, -)
-%{_localstatedir}/lib/%{vdsm_name}/bonding-defaults.json
 
 %files python
 %defattr(-, root, root, -)
@@ -1134,6 +1133,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sanlock.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sebool.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/multipath.py*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/bond_defaults.py*
 %{python_sitelib}/%{vdsm_name}/tool/dump_volume_chains.py*
 %{python_sitelib}/%{vdsm_name}/tool/register.py*
 %{python_sitelib}/%{vdsm_name}/tool/restore_nets.py*
@@ -1155,6 +1155,7 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/tests/devices/parsing
 %dir %{_datadir}/%{vdsm_name}/tests/integration
 %{_datadir}/%{vdsm_name}/tests/*.py*
+%{_datadir}/%{vdsm_name}/tests/bonding-defaults.json
 %{_datadir}/%{vdsm_name}/tests/cpu_info.out
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_intel_E5649.out
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_amd_6274.out

@@ -35,7 +35,7 @@ from monkeypatch import MonkeyPatch, MonkeyClass
 
 @MonkeyClass(netinfo, 'BONDING_DEFAULTS', netinfo.BONDING_DEFAULTS
              if os.path.exists(netinfo.BONDING_DEFAULTS)
-             else '../vdsm/bonding-defaults.json')
+             else 'bonding-defaults.json')
 class TestNetmodels(TestCaseBase):
 
     def testIsVlanIdValid(self):
