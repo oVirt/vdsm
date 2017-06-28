@@ -35,7 +35,7 @@ from vdsm import hugepages
 from vdsm import osinfo
 from vdsm import supervdsm
 from vdsm.supervdsm_api import virt
-from virt import vm
+from vdsm.virt import vm
 
 _STATE = {
     'resv_hugepages': 1234,

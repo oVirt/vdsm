@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ import os.path
 import threading
 
 from vdsm.common import response
-from virt.vm import VolumeError
+from vdsm.virt.vm import VolumeError
 
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import temporaryPath

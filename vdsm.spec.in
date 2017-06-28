@@ -881,7 +881,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsmd
 %{_datadir}/%{vdsm_name}/vdsmd.py*
 %{_datadir}/%{vdsm_name}/virt/__init__.py*
-%{_datadir}/%{vdsm_name}/virt/vm.py*
 
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
@@ -1283,6 +1282,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virt/secret.py*
 %{python_sitelib}/%{vdsm_name}/virt/utils.py*
 %{python_sitelib}/%{vdsm_name}/virt/virdomain.py*
+%{python_sitelib}/%{vdsm_name}/virt/vm.py*
 %{python_sitelib}/%{vdsm_name}/virt/jobs/__init__.py*
 %{python_sitelib}/%{vdsm_name}/virt/jobs/seal.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/__init__.py*

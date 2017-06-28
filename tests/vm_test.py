@@ -43,13 +43,13 @@ from vdsm.virt.vmtune import (io_tune_merge, io_tune_dom_to_values,
 from vdsm.virt import vmdevices
 from vdsm.virt import xmlconstants
 from vdsm.virt.domain_descriptor import DomainDescriptor
+from vdsm.virt import vm
+from vdsm.virt.vm import HotunplugTimeout
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices.storage import Drive
 from vdsm.virt.vmdevices.storage import DISK_TYPE
 from vdsm.virt.vmdevices.network import Interface
 
-from virt import vm
-from virt.vm import HotunplugTimeout
 from vdsm import constants
 from vdsm import cpuarch
 from vdsm.common import define

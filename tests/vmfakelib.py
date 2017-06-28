@@ -1,6 +1,6 @@
 #
 # Copyright IBM Corp. 2012
-# Copyright 2013-2016 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,10 +32,9 @@ from vdsm import cpuarch
 from vdsm import libvirtconnection
 from vdsm.common import response
 from vdsm.virt import sampling
+from vdsm.virt import vm
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.vmdevices import common
-
-from virt import vm
 
 from testlib import namedTemporaryDir
 from testlib import recorded

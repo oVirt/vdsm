@@ -52,9 +52,8 @@ from vdsm import utils
 from vdsm import supervdsm
 from vdsm.common import concurrent
 from vdsm.common import response
-
-from virt import vm
-from virt.vm import Vm
+from vdsm.virt import vm
+from vdsm.virt.vm import Vm
 
 try:
     import vdsm.gluster.api as gapi

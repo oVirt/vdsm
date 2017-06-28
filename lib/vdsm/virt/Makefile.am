@@ -40,6 +40,7 @@ dist_vdsmvirt_PYTHON = \
 	secret.py \
 	utils.py \
 	virdomain.py \
+	vm.py \
 	vmchannels.py \
 	vmexitreason.py \
 	vmpowerdown.py \

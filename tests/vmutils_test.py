@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,8 +23,7 @@ from six.moves import range
 
 from vdsm.virt import vmexitreason
 from vdsm.virt import utils
-
-from virt import vm
+from vdsm.virt import vm
 
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
