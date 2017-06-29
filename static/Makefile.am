@@ -119,6 +119,7 @@ dist_cronhourly_SCRIPTS = \
 dist_vdsmexec_SCRIPTS = \
 	./libexec/vdsm/get-conf-item \
 	./libexec/vdsm/set-conf-item \
+	./libexec/vdsm/vdsm-gencerts.sh \
 	$(NULL)
 
 networkmanagerdir = $(sysconfdir)/NetworkManager/conf.d
@@ -151,6 +152,7 @@ CLEANFILES = \
 	$(systemdunit_DATA) \
 	$(vdsmconf_DATA) \
 	$(man8_MANS) \
+	$(nodist_vdsmexec_SCRIPTS) \
 	$(NULL)
 
 EXTRA_DIST = \
@@ -167,6 +169,7 @@ EXTRA_DIST = \
 	./etc/vdsm/logger.conf.in \
 	./etc/vdsm/mom.conf.in \
 	./etc/vdsm/svdsm.logger.conf.in \
+	./libexec/vdsm/vdsm-gencerts.sh.in \
 	./usr/lib/systemd/system/mom-vdsm.service.in \
 	./usr/lib/systemd/system/supervdsmd.service.in \
 	./usr/lib/systemd/system/vdsm-network.service.in \

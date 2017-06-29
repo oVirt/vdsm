@@ -30,10 +30,6 @@ dist_vdsm_PYTHON = \
 	vdsmd.py \
 	$(NULL)
 
-nodist_vdsmexec_SCRIPTS = \
-	vdsm-gencerts.sh \
-	$(NULL)
-
 dist_vdsm_SCRIPTS = \
 	vdsmd \
 	$(NULL)
@@ -43,11 +39,9 @@ CLEANFILES = \
 	$(nodist_vdsm_SCRIPTS) \
 	$(nodist_vdsmlib_PYTHON) \
 	$(nodist_noinst_DATA) \
-	$(nodist_vdsmexec_SCRIPTS) \
 	$(nodist_man8_MANS)
 
 EXTRA_DIST = \
-	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.rules \
 	$(NULL)
 

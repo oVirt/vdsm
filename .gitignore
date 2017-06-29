@@ -41,6 +41,7 @@ lib/vdsm/vdsm.conf.sample
 results.log
 static/etc/rwtab.d/vdsm
 static/etc/sudoers.d/50_vdsm
+static/libexec/vdsm/vdsm-gencerts.sh
 static/usr/lib/systemd/system/mom-vdsm.service
 static/usr/lib/systemd/system/supervdsmd.service
 static/usr/lib/systemd/system/vdsm-network.service
@@ -73,7 +74,6 @@ tests/other.key
 vdsm-*.tar.gz
 vdsm.spec
 vdsm/vdscli.py
-vdsm/vdsm-gencerts.sh
 static/usr/share/man/man1/vdsm-tool.1
 static/usr/share/man/man8/vdsmd.8
 vdsm/rpc/vdsm-api.html
