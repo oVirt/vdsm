@@ -298,6 +298,7 @@ dist_vdsmtests_PYTHON = \
 	hookValidation.py \
 	fakelib.py \
 	fakesanlock.py \
+	hostdevlib.py \
 	loopback.py \
 	monkeypatch.py \
 	testlib.py \
