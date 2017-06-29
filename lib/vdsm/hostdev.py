@@ -22,12 +22,14 @@ from __future__ import absolute_import
 import collections
 import functools
 import hashlib
+import operator
 import os
 import xml.etree.cElementTree as etree
 
 import libvirt
 
 from vdsm.common import conv
+from vdsm.common import validate
 from vdsm.common.cache import memoized
 
 from . import cpuarch
@@ -35,10 +37,14 @@ from . import hooks
 from . import libvirtconnection
 from . import supervdsm
 
-CAPABILITY_TO_XML_ATTR = {'pci': 'pci',
-                          'scsi': 'scsi',
-                          'scsi_generic': 'scsi_generic',
-                          'usb_device': 'usb'}
+CAPABILITY_TO_XML_ATTR = collections.defaultdict(
+    lambda: 'unknown',
+
+    pci='pci',
+    scsi='scsi',
+    scsi_generic='scsi_generic',
+    usb_device='usb',
+)
 
 _LIBVIRT_DEVICE_FLAGS = collections.defaultdict(
     # If the device is not found, let's just treat it like system device. Since
@@ -62,6 +68,7 @@ _LIBVIRT_DEVICE_FLAGS = collections.defaultdict(
 _DATA_PROCESSORS = collections.defaultdict(list)
 _last_alldevices_hash = None
 _device_tree_cache = {}
+_device_address_to_name_cache = {}
 
 
 class PCIHeaderType:
@@ -482,7 +489,7 @@ def _get_device_ref_and_params(device_name):
     if params['capability'] != 'scsi':
         return libvirt_device, params
 
-    devices = _get_devices_from_libvirt()
+    devices, _ = _get_devices_from_libvirt()
     with _DeviceTreeCache(devices) as cache:
         params.update(_process_scsi_device_params(device_name, cache))
 
@@ -505,12 +512,14 @@ def _get_devices_from_libvirt(flags=0):
     libvirt_devices = libvirtconnection.get().listAllDevices(flags)
     global _last_alldevices_hash
     global _device_tree_cache
+    global _device_address_to_name_cache
 
     if (flags == 0 and
             __device_tree_hash(libvirt_devices) == _last_alldevices_hash):
-        return _device_tree_cache
+        return _device_tree_cache, _device_address_to_name_cache
 
     devices = _process_all_devices(libvirt_devices)
+    address_to_name = {}
 
     with _DeviceTreeCache(devices) as cache:
         for device_name, device_params in devices.items():
@@ -518,10 +527,31 @@ def _get_devices_from_libvirt(flags=0):
                 device_params.update(
                     _process_scsi_device_params(device_name, cache))
 
+            _update_address_to_name_map(
+                address_to_name, device_name, device_params
+            )
+
     if flags == 0:
         _device_tree_cache = devices
+        _device_address_to_name_cache = address_to_name
         _last_alldevices_hash = __device_tree_hash(libvirt_devices)
-    return devices
+    return devices, address_to_name
+
+
+def _update_address_to_name_map(address_to_name, device_name, device_params):
+    address_type = CAPABILITY_TO_XML_ATTR[device_params['capability']]
+    if 'address' in device_params:
+        device_address = _format_address(
+            address_type, device_params['address']
+        )
+        address_to_name[device_address] = device_name
+
+
+def device_name_from_address(address_type, device_address):
+    _, address_to_name = _get_devices_from_libvirt()
+    return address_to_name[
+        _format_address(address_type, device_address)
+    ]
 
 
 def list_by_caps(caps=None):
@@ -537,7 +567,7 @@ def list_by_caps(caps=None):
     """
     devices = {}
     flags = sum([_LIBVIRT_DEVICE_FLAGS[cap] for cap in caps or []])
-    libvirt_devices = _get_devices_from_libvirt(flags)
+    libvirt_devices, _ = _get_devices_from_libvirt(flags)
 
     for devName, params in libvirt_devices.items():
         devices[devName] = {'params': params}
@@ -603,3 +633,15 @@ def change_numvfs(device_name, numvfs):
     net_name = physical_function_net_name(device_name)
     supervdsm.getProxy().change_numvfs(name_to_pci_path(device_name), numvfs,
                                        net_name)
+
+
+def _format_address(dev_type, address):
+    if dev_type == 'pci':
+        address = validate.normalize_pci_address(**address)
+    ret = '_'.join(
+        '{}{}'.format(key, value) for key, value in sorted(
+            address.items(),
+            key=operator.itemgetter(0)
+        )
+    )
+    return '{}_{}'.format(dev_type, ret)

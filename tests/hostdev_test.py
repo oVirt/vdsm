@@ -100,7 +100,7 @@ class HostdevTests(TestCaseBase):
         self.assertEqual(hostdevlib.MDEV_DEVICE_PROCESSED, deviceXML)
 
     def testGetDevicesFromLibvirt(self):
-        libvirt_devices = hostdev._get_devices_from_libvirt()
+        libvirt_devices, _ = hostdev._get_devices_from_libvirt()
 
         self.assertEqual(hostdevlib.DEVICES_PROCESSED, libvirt_devices)
         self.assertEqual(len(libvirt_devices),
@@ -116,6 +116,23 @@ class HostdevTests(TestCaseBase):
         for cap in caps:
             self.assertTrue(set(hostdevlib.DEVICES_BY_CAPS[cap].keys()).
                             issubset(devices.keys()))
+
+    @permutations([
+        # addr_type, addr, name
+        ('usb', {'bus': '1', 'device': '2'}, 'usb_1_1'),
+        ('usb', {'bus': '1', 'device': '10'}, 'usb_1_1_4'),
+        ('pci', {'slot': '26', 'bus': '0', 'domain': '0', 'function': '0'},
+         'pci_0000_00_1a_0'),
+        ('scsi', {'bus': '0', 'host': '1', 'lun': '0', 'target': '0'},
+         'scsi_1_0_0_0'),
+    ])
+    def test_device_name_from_address(self, addr_type, addr, name):
+        # we need to make sure we scan all the devices (hence caps=None)
+        hostdev.list_by_caps()
+        self.assertEqual(
+            hostdev.device_name_from_address(addr_type, addr),
+            name
+        )
 
 
 @MonkeyClass(libvirtconnection, 'get', hostdevlib.Connection.get)
