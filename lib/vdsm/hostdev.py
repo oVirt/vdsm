@@ -86,7 +86,7 @@ class UnsuitableSCSIDevice(Exception):
 class _DeviceTreeCache(object):
 
     def __init__(self, devices):
-        self._parent_to_device_name = {}
+        self._parent_to_device_params = {}
         # Store a reference so we can look up the params
         self.devices = devices
         self._populate(devices)
