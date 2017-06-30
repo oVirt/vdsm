@@ -29,7 +29,6 @@ import six
 from testlib import namedTemporaryDir
 from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
-from testValidation import broken_on_ci
 from vdsm import qemuimg
 from vdsm import utils
 from vdsm.common import time
@@ -50,7 +49,8 @@ class TestCountClusters(VdsmTestCase):
             runs = qemuimg.map(filename)
             self.assertEqual(qcow2.count_clusters(runs), 0)
 
-    @broken_on_ci("File system does not support sparseness", name="TRAVIS_CI")
+    @pytest.mark.xfail("TRAVIS_CI" in os.environ,
+                       reason="File system does not support sparseness")
     def test_empty_sparse(self):
         with namedTemporaryDir() as tmpdir:
             filename = os.path.join(tmpdir, 'test')
@@ -79,7 +79,8 @@ class TestCountClusters(VdsmTestCase):
             runs = qemuimg.map(filename)
             self.assertEqual(qcow2.count_clusters(runs), 1)
 
-    @broken_on_ci("File system does not support sparseness", name="TRAVIS_CI")
+    @pytest.mark.xfail("TRAVIS_CI" in os.environ,
+                       reason="File system does not support sparseness")
     def test_partial(self):
         with namedTemporaryDir() as tmpdir:
             filename = os.path.join(tmpdir, 'test')
@@ -103,7 +104,8 @@ class TestCountClusters(VdsmTestCase):
             runs = qemuimg.map(filename)
             self.assertEqual(qcow2.count_clusters(runs), 3)
 
-    @broken_on_ci("File system does not support sparseness", name="TRAVIS_CI")
+    @pytest.mark.xfail("TRAVIS_CI" in os.environ,
+                       reason="File system does not support sparseness")
     def test_big_sparse(self):
         with namedTemporaryDir() as tmpdir:
             filename = os.path.join(tmpdir, 'test')
@@ -139,7 +141,8 @@ class TestAlign(VdsmTestCase):
 @expandPermutations
 class TestEstimate(VdsmTestCase):
 
-    @broken_on_ci("File system does not support sparseness", name="TRAVIS_CI")
+    @pytest.mark.xfail("TRAVIS_CI" in os.environ,
+                       reason="File system does not support sparseness")
     @permutations((
         ('0.10', 1),
         ('1.1', 1),
@@ -166,7 +169,8 @@ class TestEstimate(VdsmTestCase):
                 f.truncate(size)
             self.check_estimate(filename, compat)
 
-    @broken_on_ci("File system does not support sparseness", name="TRAVIS_CI")
+    @pytest.mark.xfail("TRAVIS_CI" in os.environ,
+                       reason="File system does not support sparseness")
     @permutations((
         ('0.10', 1),
         ('1.1', 1),
@@ -194,7 +198,8 @@ class TestEstimate(VdsmTestCase):
                 f.write(b"x" * MB)
             self.check_estimate(filename, compat)
 
-    @broken_on_ci("File system does not support sparseness", name="TRAVIS_CI")
+    @pytest.mark.xfail("TRAVIS_CI" in os.environ,
+                       reason="File system does not support sparseness")
     @permutations((
         ('0.10', 1),
         ('1.1', 1),
