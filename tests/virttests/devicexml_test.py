@@ -31,7 +31,6 @@ from vdsm import hostdev
 from monkeypatch import MonkeyPatchScope, MonkeyPatch
 from testlib import make_config
 from testlib import permutations, expandPermutations
-from testlib import VdsmTestCase
 from testlib import XMLTestCase
 
 import vmfakecon as fake
@@ -457,51 +456,6 @@ class DeviceToXMLTests(XMLTestCase):
             vnic_xml = dev.getXML()
             vmdevices.network.update_bandwidth_xml(dev, vnic_xml, specParams)
             self.assertXMLEqual(vmxml.format_xml(vnic_xml), XML)
-
-
-class NormalizePCIAddressTests(VdsmTestCase):
-
-    ADDR = {
-        'domain': '0x0000',
-        'bus': '0x05',
-        'slot': '0x10',
-        'function': '0x4',
-    }
-
-    def test_raise_mixed_format(self):
-        src = {
-            'domain': '0x0000', 'bus': '5', 'slot': '0x10', 'function': '4'
-        }
-
-        self.assertRaises(
-            ValueError,
-            vmdevices.core.normalize_pci_address,
-            **src
-        )
-
-    def test_input_hex(self):
-        self._verify_addr(self.ADDR.copy())
-
-    def test_input_hex_no_padding(self):
-        self._verify_addr({
-            'domain': '0x0', 'bus': '0x5', 'slot': '0x10', 'function': '0x4'
-        })
-
-    def test_input_hex_mixed_padding(self):
-        self._verify_addr({
-            'domain': '0x0000', 'bus': '0x5', 'slot': '0x10', 'function': '0x4'
-        })
-
-    def test_input_dec(self):
-        self._verify_addr({
-            'domain': '0', 'bus': '5', 'slot': '16', 'function': '4'
-        })
-
-    def _verify_addr(self, src):
-        self.assertEqual(
-            vmdevices.core.normalize_pci_address(**src),
-            self.ADDR
-        )
 
 
 @expandPermutations

@@ -30,6 +30,7 @@ import re
 from vdsm import constants
 from vdsm import supervdsm
 from vdsm.common import conv
+from vdsm.common import validate
 from vdsm.hostdev import get_device_params, detach_detachable, \
     pci_address_to_name, reattach_detachable, NoIOMMUSupportException
 from vdsm.network import api as net_api
@@ -226,7 +227,7 @@ class Interface(core.Base):
             source = iface.appendChildWithArgs('source')
             source.appendChildWithArgs(
                 'address', type='pci',
-                **core.normalize_pci_address(**host_address)
+                **validate.normalize_pci_address(**host_address)
             )
 
             if self.vlanId is not None:
@@ -482,7 +483,7 @@ def _get_hostdev_params(dev):
     if src_addr_type != 'pci':
         raise UnsupportedAddress(src_addr_type)
 
-    addr = core.normalize_pci_address(**src_addr)
+    addr = validate.normalize_pci_address(**src_addr)
     return {
         'hostdev': pci_address_to_name(**addr)
     }

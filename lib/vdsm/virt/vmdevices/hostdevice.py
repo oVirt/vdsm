@@ -26,6 +26,7 @@ import xml.etree.ElementTree as ET
 import libvirt
 
 from vdsm.common import conv
+from vdsm.common import validate
 from vdsm.hostdev import get_device_params, detach_detachable, \
     pci_address_to_name, scsi_address_to_adapter, reattach_detachable
 from vdsm.virt import vmxml
@@ -381,11 +382,11 @@ class HostDevice(core.Base):
 
 def _fix_pci_address(domain, bus, slot, function, **kwargs):
     """
-    Wrapper around core.normalize_pci_address to handle transparently
+    Wrapper around normalize_pci_address to handle transparently
     the extra fields of the address (e.g. type) which don't need
     normalization.
     """
     kwargs.update(
-        **core.normalize_pci_address(domain, bus, slot, function)
+        **validate.normalize_pci_address(domain, bus, slot, function)
     )
     return kwargs
