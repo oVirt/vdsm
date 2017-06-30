@@ -79,7 +79,7 @@ def IPv4toMapped(ip):
     mapped = None
 
     try:
-        ipv6bin = '\x00' * 10 + '\xff\xff' + socket.inet_aton(ip)
+        ipv6bin = b'\x00' * 10 + b'\xff\xff' + socket.inet_aton(ip)
         mapped = socket.inet_ntop(socket.AF_INET6, ipv6bin)
     except socket.error as e:
         logging.debug("getIfaceByIP: %s", e)
