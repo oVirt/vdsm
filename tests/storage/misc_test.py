@@ -19,6 +19,7 @@
 #
 from __future__ import print_function
 import os
+import random
 import tempfile
 import uuid
 import time
@@ -481,8 +482,10 @@ def test_pack_uuid(bytes, packed):
 
 
 def test_pack_uuid_random():
+    # Use pseudo random numbers for repeatable tests results.
+    r = random.Random(42)
     for i in range(1000):
-        u = str(uuid.uuid4())
+        u = str(uuid.UUID(int=r.randint(0, 2**128), version=4))
         packed = misc.packUuid(u)
         assert misc.unpackUuid(packed) == u
 
