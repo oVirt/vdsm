@@ -737,11 +737,6 @@ touch %{buildroot}@VDSMLOGDIR@/{mom.log,supervdsm.log,vdsm.log}
 
 install -Dm 0644 init/systemd/85-vdsmd.preset %{buildroot}%{_presetdir}/85-vdsmd.preset
 
-install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf \
-                 %{buildroot}%{_tmpfilesdir}/%{vdsm_name}.conf
-install -Dm 0644 init/systemd/unlimited-core.conf \
-                 %{buildroot}%{_sysconfdir}/systemd/system/libvirtd.service.d/unlimited-core.conf
-
 %if 0%{?with_hooks}
 install -Dm 0644 vdsm_hooks/fcoe/85-vdsm-hook-fcoe.preset %{buildroot}%{_presetdir}
 %endif

@@ -38,3 +38,15 @@ EXTRA_DIST = \
 all-local: \
 	$(nodist_noinst_DATA) \
 	$(NULL)
+
+install-data-local: vdsm-tmpfiles.d.conf
+	$(MKDIR_P) $(DESTDIR)/usr/lib/tmpfiles.d
+	$(INSTALL_DATA) ./vdsm-tmpfiles.d.conf \
+	    $(DESTDIR)/usr/lib/tmpfiles.d/vdsm.conf
+	$(MKDIR_P) $(DESTDIR)/etc/systemd/system/libvirtd.service.d
+	$(INSTALL_DATA) ./unlimited-core.conf \
+	    $(DESTDIR)/etc/systemd/system/libvirtd.service.d/unlimited-core.conf
+
+uninstall-local:
+	$(RM) $(DESTDIR)/usr/lib/tmpfiles.d/vdsm.conf
+	$(RM) $(DESTDIR)/etc/systemd/system/libvirtd.service.d/unlimited-core.conf
