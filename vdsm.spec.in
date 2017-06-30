@@ -731,10 +731,6 @@ make DESTDIR=%{buildroot} install
 install -dDm 0755 %{buildroot}@VDSMLOGDIR@
 touch %{buildroot}@VDSMLOGDIR@/{mom.log,supervdsm.log,vdsm.log}
 
-# Install the lvm rules
-install -Dm 0644 lib/vdsm/storage/vdsm-lvm.rules \
-                 %{buildroot}%{_udevrulesdir}/12-vdsm-lvm.rules
-
 install -Dm 0644 init/systemd/85-vdsmd.preset %{buildroot}%{_presetdir}/85-vdsmd.preset
 
 install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf \

@@ -105,3 +105,10 @@ all: vdsm-lvm.rules
 
 vdsm-lvm.rules: vdsm_lvm_rules.template
 	python $< > $@
+
+install-data-local: vdsm-lvm.rules
+	$(MKDIR_P) $(DESTDIR)/usr/lib/udev/rules.d
+	$(INSTALL_DATA) vdsm-lvm.rules $(DESTDIR)/usr/lib/udev/rules.d/12-vdsm-lvm.rules
+
+uninstall-local:
+	$(RM) $(DESTDIR)/usr/lib/udev/rules.d/12-vdsm-lvm.rules
