@@ -46,7 +46,11 @@ install-data-local: vdsm-tmpfiles.d.conf
 	$(MKDIR_P) $(DESTDIR)/etc/systemd/system/libvirtd.service.d
 	$(INSTALL_DATA) ./unlimited-core.conf \
 	    $(DESTDIR)/etc/systemd/system/libvirtd.service.d/unlimited-core.conf
+	$(MKDIR_P) $(DESTDIR)/usr/lib/systemd/system-preset
+	$(INSTALL_DATA) ./85-vdsmd.preset \
+	    $(DESTDIR)/usr/lib/systemd/system-preset/85-vdsmd.preset
 
 uninstall-local:
 	$(RM) $(DESTDIR)/usr/lib/tmpfiles.d/vdsm.conf
 	$(RM) $(DESTDIR)/etc/systemd/system/libvirtd.service.d/unlimited-core.conf
+	$(RM) $(DESTDIR)/usr/lib/systemd/system-preset/85-vdsmd.preset
