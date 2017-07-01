@@ -141,27 +141,18 @@ class TestEstimate:
     @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
-    ])
-    def test_empty(self, compat, size):
-        self.check_empty(compat, size * GB)
-
-    @pytest.mark.parametrize("compat,size", [
-        ('0.10', 10),
-        ('1.1', 10),
-        ('0.10', 100),
-        ('1.1', 100),
-    ])
-    @pytest.mark.slow
-    def test_empty_slow(self, compat, size):
         # TODO: tests are slow with qemu 2.6 on rhel,
         # the tests should be merged when we require qemu 2.8
-        self.check_empty(compat, size * GB)
-
-    def check_empty(self, compat, size):
+        pytest.param('0.10', 10, marks=pytest.mark.slow),
+        pytest.param('1.1', 10, marks=pytest.mark.slow),
+        pytest.param('0.10', 100, marks=pytest.mark.slow),
+        pytest.param('1.1', 100, marks=pytest.mark.slow),
+    ])
+    def test_empty(self, compat, size):
         with namedTemporaryDir() as tmpdir:
             filename = os.path.join(tmpdir, 'test')
             with io.open(filename, "wb") as f:
-                f.truncate(size)
+                f.truncate(size * GB)
             self.check_estimate(filename, compat)
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
@@ -169,27 +160,18 @@ class TestEstimate:
     @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
-    ])
-    def test_best(self, compat, size):
-        self.check_best_small(compat, size * GB)
-
-    @pytest.mark.parametrize("compat,size", [
-        ('0.10', 10),
-        ('1.1', 10),
-        ('0.10', 100),
-        ('1.1', 100),
-    ])
-    @pytest.mark.slow
-    def test_best_slow(self, compat, size):
         # TODO: tests are slow with qemu 2.6 on rhel,
         # the tests should be merged when we require qemu 2.8
-        self.check_best_small(compat, size * GB)
-
-    def check_best_small(self, compat, size):
+        pytest.param('0.10', 10, marks=pytest.mark.slow),
+        pytest.param('1.1', 10, marks=pytest.mark.slow),
+        pytest.param('0.10', 100, marks=pytest.mark.slow),
+        pytest.param('1.1', 100, marks=pytest.mark.slow),
+    ])
+    def test_best_small(self, compat, size):
         with namedTemporaryDir() as tmpdir:
             filename = os.path.join(tmpdir, 'test')
             with io.open(filename, "wb") as f:
-                f.truncate(size)
+                f.truncate(size * GB)
                 f.write(b"x" * MB)
             self.check_estimate(filename, compat)
 
@@ -198,27 +180,18 @@ class TestEstimate:
     @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
-    ])
-    def test_big(self, compat, size):
-        self.check_best_big(compat, size * GB)
-
-    @pytest.mark.parametrize("compat,size", [
-        ('0.10', 10),
-        ('1.1', 10),
-        ('0.10', 100),
-        ('1.1', 100),
-    ])
-    @pytest.mark.slow
-    def test_big_slow(self, compat, size):
         # TODO: tests are slow with qemu 2.6 on rhel,
         # the tests should be merged when we require qemu 2.8
-        self.check_best_big(compat, size * GB)
-
-    def check_best_big(self, compat, size):
+        pytest.param('0.10', 10, marks=pytest.mark.slow),
+        pytest.param('1.1', 10, marks=pytest.mark.slow),
+        pytest.param('0.10', 100, marks=pytest.mark.slow),
+        pytest.param('1.1', 100, marks=pytest.mark.slow),
+    ])
+    def test_big(self, compat, size):
         with namedTemporaryDir() as tmpdir:
             filename = os.path.join(tmpdir, 'test')
             with io.open(filename, "wb") as f:
-                f.truncate(size)
+                f.truncate(size * GB)
                 f.write(b"x" * MB)
                 f.seek(512 * MB)
                 f.write(b"x" * MB)
