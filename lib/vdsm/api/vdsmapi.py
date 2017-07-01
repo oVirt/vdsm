@@ -68,11 +68,9 @@ def find_schema(schema_name='vdsm-api'):
     Find the API schema file whether we are running from within the source
     dir or from an installed location
     """
-    # Don't depend on module VDSM if not looking for schema
-    from vdsm import constants
 
     localpath = os.path.dirname(__file__)
-    installedpath = constants.P_VDSM_RPC
+    installedpath = os.path.join(localpath, '..', 'rpc')
     for directory in (localpath, installedpath):
         path = os.path.join(directory, schema_name + '.yml')
         # we use source tree and deployment directory

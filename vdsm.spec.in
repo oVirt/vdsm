@@ -723,8 +723,6 @@ sed -i -e 's/^software_version =.*/software_version = "'"${baseversion}"'"/' \
        -e 's/^raw_version_revision =.*/raw_version_revision = "'"${rawversion}"'"/' \
        -e 's/^software_revision =.*/software_revision = "'"${baserelease}"'"/' lib/vdsm/dsaversion.py
 
-sed -i -e 's\@VDSMRPCPYLIBDIR@\%{python_sitelib}/%{vdsm_name}/rpc\g' lib/vdsm/constants.py
-
 %install
 make DESTDIR=%{buildroot} install
 
