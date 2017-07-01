@@ -27,8 +27,6 @@ import pytest
 import six
 
 from testlib import namedTemporaryDir
-from testlib import VdsmTestCase
-from testlib import permutations, expandPermutations
 from vdsm import qemuimg
 from vdsm import utils
 from vdsm.common import time
@@ -38,8 +36,7 @@ MB = 1024 ** 2
 GB = 1024 ** 3
 
 
-@expandPermutations
-class TestCountClusters(VdsmTestCase):
+class TestCountClusters:
 
     def test_empty(self):
         with namedTemporaryDir() as tmpdir:
@@ -47,7 +44,7 @@ class TestCountClusters(VdsmTestCase):
             with io.open(filename, "wb"):
                 pass
             runs = qemuimg.map(filename)
-            self.assertEqual(qcow2.count_clusters(runs), 0)
+            assert qcow2.count_clusters(runs) == 0
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
                        reason="File system does not support sparseness")
@@ -57,7 +54,7 @@ class TestCountClusters(VdsmTestCase):
             with io.open(filename, "wb") as f:
                 f.truncate(MB)
             runs = qemuimg.map(filename)
-            self.assertEqual(qcow2.count_clusters(runs), 0)
+            assert qcow2.count_clusters(runs) == 0
 
     def test_full(self):
         with namedTemporaryDir() as tmpdir:
@@ -65,7 +62,7 @@ class TestCountClusters(VdsmTestCase):
             with io.open(filename, "wb") as f:
                 f.write(b"x" * qcow2.CLUSTER_SIZE * 3)
             runs = qemuimg.map(filename)
-            self.assertEqual(qcow2.count_clusters(runs), 3)
+            assert qcow2.count_clusters(runs) == 3
 
     def test_multiple_blocks(self):
         with namedTemporaryDir() as tmpdir:
@@ -77,7 +74,7 @@ class TestCountClusters(VdsmTestCase):
                 f.seek(42 * 1024)
                 f.write(b"x")
             runs = qemuimg.map(filename)
-            self.assertEqual(qcow2.count_clusters(runs), 1)
+            assert qcow2.count_clusters(runs) == 1
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
                        reason="File system does not support sparseness")
@@ -102,7 +99,7 @@ class TestCountClusters(VdsmTestCase):
                 f.write(b"x")
 
             runs = qemuimg.map(filename)
-            self.assertEqual(qcow2.count_clusters(runs), 3)
+            assert qcow2.count_clusters(runs) == 3
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
                        reason="File system does not support sparseness")
@@ -120,42 +117,40 @@ class TestCountClusters(VdsmTestCase):
                 f.write(b"x")
 
             runs = qemuimg.map(filename)
-            self.assertEqual(qcow2.count_clusters(runs), 2)
+            assert qcow2.count_clusters(runs) == 2
 
 
-@expandPermutations
-class TestAlign(VdsmTestCase):
+class TestAlign:
 
-    @permutations((
+    @pytest.mark.parametrize("size,aligned_size", [
         (0.1, 0),
         (1.1, 8192),
         (1, 8192),
-    ))
+    ])
     def test_align_offset(self, size, aligned_size):
         # qcow2.CLUSTER_SIZE // qcow2.SIZEOF_INT_64 = 8192
         n = 8192
-        self.assertEqual(qcow2._align_offset(int(size), n), aligned_size)
+        assert qcow2._align_offset(int(size), n) == aligned_size
 
 
 @pytest.mark.skipif(six.PY3, reason="qemuimg.convert uses deathSignal")
-@expandPermutations
-class TestEstimate(VdsmTestCase):
+class TestEstimate:
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
                        reason="File system does not support sparseness")
-    @permutations((
+    @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
-    ))
+    ])
     def test_empty(self, compat, size):
         self.check_empty(compat, size * GB)
 
-    @permutations((
+    @pytest.mark.parametrize("compat,size", [
         ('0.10', 10),
         ('1.1', 10),
         ('0.10', 100),
         ('1.1', 100),
-    ))
+    ])
     @pytest.mark.slow
     def test_empty_slow(self, compat, size):
         # TODO: tests are slow with qemu 2.6 on rhel,
@@ -171,19 +166,19 @@ class TestEstimate(VdsmTestCase):
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
                        reason="File system does not support sparseness")
-    @permutations((
+    @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
-    ))
+    ])
     def test_best(self, compat, size):
         self.check_best_small(compat, size * GB)
 
-    @permutations((
+    @pytest.mark.parametrize("compat,size", [
         ('0.10', 10),
         ('1.1', 10),
         ('0.10', 100),
         ('1.1', 100),
-    ))
+    ])
     @pytest.mark.slow
     def test_best_slow(self, compat, size):
         # TODO: tests are slow with qemu 2.6 on rhel,
@@ -200,19 +195,19 @@ class TestEstimate(VdsmTestCase):
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
                        reason="File system does not support sparseness")
-    @permutations((
+    @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
-    ))
+    ])
     def test_big(self, compat, size):
         self.check_best_big(compat, size * GB)
 
-    @permutations((
+    @pytest.mark.parametrize("compat,size", [
         ('0.10', 10),
         ('1.1', 10),
         ('0.10', 100),
         ('1.1', 100),
-    ))
+    ])
     @pytest.mark.slow
     def test_big_slow(self, compat, size):
         # TODO: tests are slow with qemu 2.6 on rhel,
@@ -230,10 +225,10 @@ class TestEstimate(VdsmTestCase):
             self.check_estimate(filename, compat)
 
     @pytest.mark.slow
-    @permutations((
+    @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
-    ))
+    ])
     def test_worst(self, compat, size):
         with namedTemporaryDir() as tmpdir:
             filename = os.path.join(tmpdir, 'test')
@@ -247,10 +242,10 @@ class TestEstimate(VdsmTestCase):
             self.check_estimate(filename, compat)
 
     @pytest.mark.slow
-    @permutations((
+    @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
-    ))
+    ])
     def test_full(self, compat, size):
         with namedTemporaryDir() as tmpdir:
             filename = os.path.join(tmpdir, 'test')
@@ -276,8 +271,8 @@ class TestEstimate(VdsmTestCase):
               'convert_time=%.2f'
               % (estimate, actual, error_pct, estimate_time, convert_time),
               end=" ")
-        self.assertGreaterEqual(estimate, actual)
-        self.assertGreaterEqual(0.1, error_pct)
+        assert estimate >= actual
+        assert error_pct <= 0.1, error_pct
 
 
 def converted_size(filename, compat):
