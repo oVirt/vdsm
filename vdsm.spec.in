@@ -735,10 +735,6 @@ make DESTDIR=%{buildroot} install
 install -dDm 0755 %{buildroot}@VDSMLOGDIR@
 touch %{buildroot}@VDSMLOGDIR@/{mom.log,supervdsm.log,vdsm.log}
 
-%if 0%{?with_hooks}
-install -Dm 0644 vdsm_hooks/fcoe/85-vdsm-hook-fcoe.preset %{buildroot}%{_presetdir}
-%endif
-
 %if 0%{?rhel}
 # This is not commonplace, but we want /var/log/core to be a world-writable
 # dropbox for core dumps
