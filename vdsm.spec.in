@@ -735,7 +735,6 @@ touch %{buildroot}@VDSMLOGDIR@/{mom.log,supervdsm.log,vdsm.log}
 install -Dm 0644 lib/vdsm/storage/vdsm-lvm.rules \
                  %{buildroot}%{_udevrulesdir}/12-vdsm-lvm.rules
 
-install -Dm 0755 init/systemd/systemd-vdsmd %{buildroot}%{_libdir}/systemd/systemd-vdsmd
 install -Dm 0644 init/systemd/85-vdsmd.preset %{buildroot}%{_presetdir}/85-vdsmd.preset
 
 install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf \
@@ -858,7 +857,6 @@ exit 0
 %doc lib/vdsm/vdsm.conf.sample
 %doc README.logging
 %license COPYING
-%{_libdir}/systemd/systemd-vdsmd
 %{_presetdir}/85-vdsmd.preset
 %{_unitdir}/dev-hugepages1G.mount
 %{_unitdir}/vdsmd.service

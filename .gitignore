@@ -24,7 +24,6 @@ config.status
 configure
 cscope.out
 doc/build
-init/systemd/systemd-vdsmd
 init/systemd/vdsm-tmpfiles.d.conf
 init/vdsmd_init_common.sh
 lib/vdsm/api/vdsm-api.html

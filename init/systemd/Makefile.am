@@ -21,7 +21,6 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 nodist_noinst_DATA = \
-	systemd-vdsmd \
 	vdsm-tmpfiles.d.conf \
 	$(NULL)
 
@@ -32,7 +31,6 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	85-vdsmd.preset \
-	systemd-vdsmd.in \
 	vdsm-tmpfiles.d.conf.in \
 	unlimited-core.conf \
 	$(NULL)
