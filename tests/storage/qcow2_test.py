@@ -26,7 +26,6 @@ import os
 import pytest
 import six
 
-from testlib import namedTemporaryDir
 from vdsm import qemuimg
 from vdsm import utils
 from vdsm.common import time
@@ -38,86 +37,80 @@ GB = 1024 ** 3
 
 class TestCountClusters:
 
-    def test_empty(self):
-        with namedTemporaryDir() as tmpdir:
-            filename = os.path.join(tmpdir, 'test')
-            with io.open(filename, "wb"):
-                pass
-            runs = qemuimg.map(filename)
-            assert qcow2.count_clusters(runs) == 0
+    def test_empty(self, tmpdir):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb"):
+            pass
+        runs = qemuimg.map(filename)
+        assert qcow2.count_clusters(runs) == 0
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
                        reason="File system does not support sparseness")
-    def test_empty_sparse(self):
-        with namedTemporaryDir() as tmpdir:
-            filename = os.path.join(tmpdir, 'test')
-            with io.open(filename, "wb") as f:
-                f.truncate(MB)
-            runs = qemuimg.map(filename)
-            assert qcow2.count_clusters(runs) == 0
+    def test_empty_sparse(self, tmpdir):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.truncate(MB)
+        runs = qemuimg.map(filename)
+        assert qcow2.count_clusters(runs) == 0
 
-    def test_full(self):
-        with namedTemporaryDir() as tmpdir:
-            filename = os.path.join(tmpdir, 'test')
-            with io.open(filename, "wb") as f:
-                f.write(b"x" * qcow2.CLUSTER_SIZE * 3)
-            runs = qemuimg.map(filename)
-            assert qcow2.count_clusters(runs) == 3
+    def test_full(self, tmpdir):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.write(b"x" * qcow2.CLUSTER_SIZE * 3)
+        runs = qemuimg.map(filename)
+        assert qcow2.count_clusters(runs) == 3
 
-    def test_multiple_blocks(self):
-        with namedTemporaryDir() as tmpdir:
-            filename = os.path.join(tmpdir, 'test')
-            with io.open(filename, "wb") as f:
-                f.write(b"x")
-                f.seek(16 * 1024)
-                f.write(b"x")
-                f.seek(42 * 1024)
-                f.write(b"x")
-            runs = qemuimg.map(filename)
-            assert qcow2.count_clusters(runs) == 1
+    def test_multiple_blocks(self, tmpdir):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.write(b"x")
+            f.seek(16 * 1024)
+            f.write(b"x")
+            f.seek(42 * 1024)
+            f.write(b"x")
+        runs = qemuimg.map(filename)
+        assert qcow2.count_clusters(runs) == 1
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
                        reason="File system does not support sparseness")
-    def test_partial(self):
-        with namedTemporaryDir() as tmpdir:
-            filename = os.path.join(tmpdir, 'test')
-            with io.open(filename, "wb") as f:
-                f.truncate(MB)
+    def test_partial(self, tmpdir):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.truncate(MB)
 
-                # First cluster
-                f.seek(8192)
-                f.write(b"x")
+            # First cluster
+            f.seek(8192)
+            f.write(b"x")
 
-                # Second cluster
-                f.seek(qcow2.CLUSTER_SIZE)
-                f.write(b"x")
-                f.seek(qcow2.CLUSTER_SIZE * 2 - 1)
-                f.write(b"x")
+            # Second cluster
+            f.seek(qcow2.CLUSTER_SIZE)
+            f.write(b"x")
+            f.seek(qcow2.CLUSTER_SIZE * 2 - 1)
+            f.write(b"x")
 
-                # Third cluster
-                f.seek(qcow2.CLUSTER_SIZE * 2)
-                f.write(b"x")
+            # Third cluster
+            f.seek(qcow2.CLUSTER_SIZE * 2)
+            f.write(b"x")
 
-            runs = qemuimg.map(filename)
-            assert qcow2.count_clusters(runs) == 3
+        runs = qemuimg.map(filename)
+        assert qcow2.count_clusters(runs) == 3
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
                        reason="File system does not support sparseness")
-    def test_big_sparse(self):
-        with namedTemporaryDir() as tmpdir:
-            filename = os.path.join(tmpdir, 'test')
-            with io.open(filename, "wb") as f:
-                f.truncate(1024 * MB)
+    def test_big_sparse(self, tmpdir):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.truncate(1024 * MB)
 
-                # First cluster
-                f.write(b"x")
+            # First cluster
+            f.write(b"x")
 
-                # Second cluster
-                f.seek(512 * MB)
-                f.write(b"x")
+            # Second cluster
+            f.seek(512 * MB)
+            f.write(b"x")
 
-            runs = qemuimg.map(filename)
-            assert qcow2.count_clusters(runs) == 2
+        runs = qemuimg.map(filename)
+        assert qcow2.count_clusters(runs) == 2
 
 
 class TestAlign:
@@ -148,12 +141,11 @@ class TestEstimate:
         pytest.param('0.10', 100, marks=pytest.mark.slow),
         pytest.param('1.1', 100, marks=pytest.mark.slow),
     ])
-    def test_empty(self, compat, size):
-        with namedTemporaryDir() as tmpdir:
-            filename = os.path.join(tmpdir, 'test')
-            with io.open(filename, "wb") as f:
-                f.truncate(size * GB)
-            self.check_estimate(filename, compat)
+    def test_empty(self, tmpdir, compat, size):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.truncate(size * GB)
+        self.check_estimate(filename, compat)
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
                        reason="File system does not support sparseness")
@@ -167,13 +159,12 @@ class TestEstimate:
         pytest.param('0.10', 100, marks=pytest.mark.slow),
         pytest.param('1.1', 100, marks=pytest.mark.slow),
     ])
-    def test_best_small(self, compat, size):
-        with namedTemporaryDir() as tmpdir:
-            filename = os.path.join(tmpdir, 'test')
-            with io.open(filename, "wb") as f:
-                f.truncate(size * GB)
-                f.write(b"x" * MB)
-            self.check_estimate(filename, compat)
+    def test_best_small(self, tmpdir, compat, size):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.truncate(size * GB)
+            f.write(b"x" * MB)
+        self.check_estimate(filename, compat)
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
                        reason="File system does not support sparseness")
@@ -187,46 +178,43 @@ class TestEstimate:
         pytest.param('0.10', 100, marks=pytest.mark.slow),
         pytest.param('1.1', 100, marks=pytest.mark.slow),
     ])
-    def test_big(self, compat, size):
-        with namedTemporaryDir() as tmpdir:
-            filename = os.path.join(tmpdir, 'test')
-            with io.open(filename, "wb") as f:
-                f.truncate(size * GB)
-                f.write(b"x" * MB)
-                f.seek(512 * MB)
-                f.write(b"x" * MB)
-            self.check_estimate(filename, compat)
+    def test_big(self, tmpdir, compat, size):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.truncate(size * GB)
+            f.write(b"x" * MB)
+            f.seek(512 * MB)
+            f.write(b"x" * MB)
+        self.check_estimate(filename, compat)
 
     @pytest.mark.slow
     @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
     ])
-    def test_worst(self, compat, size):
-        with namedTemporaryDir() as tmpdir:
-            filename = os.path.join(tmpdir, 'test')
-            with io.open(filename, "wb") as f:
-                f.truncate(size * GB)
-                for off in range(qcow2.CLUSTER_SIZE - 1,
-                                 1024 * MB,
-                                 qcow2.CLUSTER_SIZE):
-                    f.seek(off)
-                    f.write(b"x")
-            self.check_estimate(filename, compat)
+    def test_worst(self, tmpdir, compat, size):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.truncate(size * GB)
+            for off in range(qcow2.CLUSTER_SIZE - 1,
+                             1024 * MB,
+                             qcow2.CLUSTER_SIZE):
+                f.seek(off)
+                f.write(b"x")
+        self.check_estimate(filename, compat)
 
     @pytest.mark.slow
     @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
     ])
-    def test_full(self, compat, size):
-        with namedTemporaryDir() as tmpdir:
-            filename = os.path.join(tmpdir, 'test')
-            with io.open(filename, "wb") as f:
-                f.truncate(size * GB)
-                for _ in range(1024):
-                    f.write(b"x" * MB)
-            self.check_estimate(filename, compat)
+    def test_full(self, tmpdir, compat, size):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.truncate(size * GB)
+            for _ in range(1024):
+                f.write(b"x" * MB)
+        self.check_estimate(filename, compat)
 
     def check_estimate(self, filename, compat):
         start = time.monotonic_time()
