@@ -774,7 +774,9 @@ class ConfigWriter(object):
                        if not line.startswith(entry + '=')]
 
         if value is not None:
-            entries.append('\n' + entry + '=' + value)
+            if entries[-1][-1] != '\n':
+                entries.append('\n')
+            entries.append(entry + '=' + value + '\n')
         self._backup(conffile)
         with open(conffile, 'w') as f:
             f.writelines(entries)
