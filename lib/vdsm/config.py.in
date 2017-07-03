@@ -437,6 +437,15 @@ parameters = [
         ('max_workers', '30',
             'Maximum number of worker threads to serve the periodic tasks '
             'at the same time.'),
+
+        ('collectd_enable', 'false',
+            'Collect the VM samples using collectd, not using libvirt '
+            'directly.'),
+
+        ('collectd_sock_path', '/var/run/collectd-unixsock',
+            'Unix domain socket to connect to collectd (enable the '
+            'collectd "unixsock" plugin!)'),
+
     ]),
 
     # Section: [metrics]

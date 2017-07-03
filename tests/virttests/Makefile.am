@@ -22,5 +22,6 @@ vdsmvirttestsdir = ${vdsmtestsdir}/virttests
 
 dist_vdsmvirttests_PYTHON = \
 	*_test.py \
+	collectdlib.py \
 	$(NULL)
 

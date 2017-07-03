@@ -27,6 +27,7 @@ endif
 vdsmvirtdir = $(vdsmpylibdir)/virt
 dist_vdsmvirt_PYTHON = \
 	__init__.py \
+	collectd.py \
 	domain_descriptor.py \
 	events.py \
 	guestagent.py \
