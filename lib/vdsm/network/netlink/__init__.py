@@ -28,6 +28,8 @@ from . import libnl
 
 _POOL_SIZE = 5
 
+_NL_SOCKET_BUFF_SIZE = 1024 * 512
+
 
 class NLSocketPool(object):
     """Pool of netlink sockets."""
@@ -71,6 +73,7 @@ def _open_socket(callback_function=None, callback_arg=None):
                                       callback_function, callback_arg)
 
         libnl.nl_connect(sock, libnl.NETLINK_ROUTE)
+        libnl.nl_socket_set_buffer_size(sock, _NL_SOCKET_BUFF_SIZE, 0)
     except:
         libnl.nl_socket_free(sock)
         raise

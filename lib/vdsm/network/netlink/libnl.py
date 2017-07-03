@@ -250,6 +250,22 @@ def nl_socket_free(socket):
     _nl_socket_free(socket)
 
 
+def nl_socket_set_buffer_size(socket, rx_buf_size, tx_buf_size):
+    """Send/Receive Buffer Size
+
+    The default is 32KiB.
+
+    @arg socket          Netlink socket
+    @arg rx_buf_size     RX buffer size or 0 for default
+    @arg tx_buf_size     TX buffer size or 0 for default
+    """
+    _nl_socket_set_buffer_size = _libnl('nl_socket_set_buffer_size',
+                                        c_int, c_void_p, c_int, c_int)
+    err = _nl_socket_set_buffer_size(socket, rx_buf_size, tx_buf_size)
+    if err:
+        raise IOError(-err, nl_geterror(err))
+
+
 def nl_socket_get_fd(socket):
     """Return the file descriptor of the backing socket.
 
