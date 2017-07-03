@@ -301,6 +301,7 @@ class Vm(object):
             )
             self._domain = DomainDescriptor(dom.toxml())
         self.id = self._domain.id
+        self.log = SimpleLogAdapter(self.log, {"vmId": self.id})
         self._dom = virdomain.Disconnected(self.id)
         self.cif = cif
         self._custom = {'vmId': self.id}
@@ -320,7 +321,6 @@ class Vm(object):
             self._md_desc = metadata.Descriptor()
             self._custom['custom'] = params.get('custom', {})
             self._destroy_on_reboot = False
-        self.log = SimpleLogAdapter(self.log, {"vmId": self.id})
         self._destroy_requested = threading.Event()
         self._recovery_file = recovery.File(self.id)
         self._monitorResponse = 0
