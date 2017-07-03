@@ -425,8 +425,9 @@ class StompClient(object):
     life cycle (by default set to True).
     """
     def __init__(self, sock, reactor, owns_reactor=True,
-                 incoming_heartbeat=5000, outgoing_heartbeat=0,
-                 nr_retries=0):
+                 incoming_heartbeat=stomp.DEFAULT_INCOMING,
+                 outgoing_heartbeat=stomp.DEFAULT_OUTGOING,
+                 nr_retries=stomp.NR_RETRIES):
         self._reactor = reactor
         self._owns_reactor = owns_reactor
         self._messageHandler = None
@@ -654,8 +655,10 @@ def StompRpcClient(stomp_client, request_queue, response_queue):
     )
 
 
-def SimpleClient(host, port=54321, ssl=True, incoming_heartbeat=5000,
-                 outgoing_heartbeat=0, nr_retries=0):
+def SimpleClient(host, port=54321, ssl=True,
+                 incoming_heartbeat=stomp.DEFAULT_INCOMING,
+                 outgoing_heartbeat=stomp.DEFAULT_OUTGOING,
+                 nr_retries=stomp.NR_RETRIES):
     """
     Returns JsonRpcClient able to receive jsonrpc messages and notifications.
     It is required to provide a host where we want to connect, port and whether
@@ -676,8 +679,10 @@ def SimpleClient(host, port=54321, ssl=True, incoming_heartbeat=5000,
 
 
 def StandAloneRpcClient(host, port, request_queue, response_queue,
-                        sslctx=None, lazy_start=True, incoming_heartbeat=5000,
-                        outgoing_heartbeat=0, nr_retries=0):
+                        sslctx=None, lazy_start=True,
+                        incoming_heartbeat=stomp.DEFAULT_INCOMING,
+                        outgoing_heartbeat=stomp.DEFAULT_OUTGOING,
+                        nr_retries=stomp.NR_RETRIES):
     """
     Returns JsonRpcClient able to receive jsonrpc messages and notifications.
     It is required to provide host and port where we want to connect and

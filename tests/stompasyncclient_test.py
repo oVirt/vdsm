@@ -38,7 +38,7 @@ class AsyncClientTest(TestCaseBase):
 
         self.assertEqual(req_frame.command, Command.CONNECT)
         self.assertEqual(req_frame.headers[Headers.ACCEPT_VERSION], '1.2')
-        self.assertEqual(req_frame.headers[Headers.HEARTBEAT], '0,5000')
+        self.assertEqual(req_frame.headers[Headers.HEARTBEAT], '0,24000')
 
     def test_set_heartbeat(self):
         client = AsyncClient(incoming_heartbeat=200, outgoing_heartbeat=100)
@@ -48,7 +48,7 @@ class AsyncClientTest(TestCaseBase):
 
         self.assertEqual(req_frame.command, Command.CONNECT)
         self.assertEqual(req_frame.headers[Headers.ACCEPT_VERSION], '1.2')
-        self.assertEqual(req_frame.headers[Headers.HEARTBEAT], '100,200')
+        self.assertEqual(req_frame.headers[Headers.HEARTBEAT], '120,160')
 
     def test_subscribe(self):
         client = AsyncClient()

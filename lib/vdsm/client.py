@@ -106,6 +106,8 @@ import uuid
 from vdsm.api import vdsmapi
 
 from yajsonrpc import stompreactor
+from yajsonrpc import stomp
+
 import yajsonrpc
 
 
@@ -114,9 +116,14 @@ DEFAULT_PORT = 54321
 
 def connect(
         host, port=DEFAULT_PORT, use_tls=True, timeout=60,
-        gluster_enabled=False):
+        gluster_enabled=False, incoming_heartbeat=stomp.DEFAULT_INCOMING,
+        outgoing_heartbeat=stomp.DEFAULT_OUTGOING,
+        nr_retries=stomp.NR_RETRIES):
     try:
-        client = stompreactor.SimpleClient(host, port, use_tls)
+        client = stompreactor.SimpleClient(
+            host, port, use_tls, incoming_heartbeat=incoming_heartbeat,
+            outgoing_heartbeat=outgoing_heartbeat, nr_retries=nr_retries)
+
     except Exception as e:
         raise ConnectionError(host, port, use_tls, timeout, e)
 
