@@ -19,6 +19,9 @@
 from __future__ import absolute_import
 
 import os
+import collections
+
+from contextlib import contextmanager
 
 
 def monotonic_time():
@@ -37,3 +40,65 @@ def monotonic_time():
       adjustments.
     """
     return os.times()[4]
+
+
+class Clock(object):
+    """
+    Measure time for complex flows.
+
+    This clock is useful for timing complex flows, when you want to record
+    multiple timings for a single flow. For example, the total time, and the
+    time of each step in the flow.
+
+    This is a simpler and more strict version of MoinMoin.util.clock.Clock.
+
+    Usage::
+
+        clock = time.Clock()
+        ...
+        clock.start("total")
+        clock.start("step1")
+        ...
+        clock.stop("step1")
+        clock.start("step2")
+        ...
+        clock.stop("step2")
+        clock.stop("total")
+        log.info("times=%s", clock)
+
+    """
+
+    def __init__(self):
+        self._timers = collections.OrderedDict()
+
+    def start(self, name):
+        if name in self._timers:
+            raise RuntimeError("Timer %r already started" % name)
+        self._timers[name] = (monotonic_time(), None)
+
+    def stop(self, name):
+        if name not in self._timers:
+            raise RuntimeError("Timer %r was not started" % name)
+        started, stopped = self._timers[name]
+        if stopped is not None:
+            raise RuntimeError("Timer %r already stopped" % name)
+        self._timers[name] = (started, monotonic_time())
+
+    @contextmanager
+    def run(self, name):
+        self.start(name)
+        try:
+            yield
+        finally:
+            self.stop(name)
+
+    def __repr__(self):
+        now = monotonic_time()
+        timers = []
+        for name, (started, stopped) in self._timers.items():
+            if stopped:
+                timers.append("%s=%.2f" % (name, stopped - started))
+            else:
+                # "*" indicates a running timer
+                timers.append("%s=%.2f*" % (name, now - started))
+        return "<Clock(%s)>" % ", ".join(timers)
