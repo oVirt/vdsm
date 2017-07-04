@@ -31,8 +31,7 @@ from testlib import VdsmTestCase as TestCaseBase, \
 
 from jsonRpcHelper import \
     PERMUTATIONS, \
-    constructClient, \
-    constructAcceptor
+    constructClient
 
 from yajsonrpc import \
     JsonRpcError, \
@@ -40,9 +39,6 @@ from yajsonrpc import \
     JsonRpcNoResponseError, \
     JsonRpcInternalError, \
     JsonRpcRequest
-
-from yajsonrpc.stomp import Disconnected
-from yajsonrpc.stompreactor import SimpleClient
 
 
 CALL_TIMEOUT = 3
@@ -247,36 +243,3 @@ class JsonRpcServerTests(TestCaseBase):
                 client.registerEventCallback(callback)
                 client.notify('vdsm.event', 'jms.topic.test',
                               bridge.event_schema, {'content': True})
-
-    def test_client_timeout_no_retries(self):
-        bridge = _DummyBridge()
-        with constructAcceptor(self.log, False, bridge) as acceptor:
-            client = SimpleClient(acceptor._host, acceptor._port, False,
-                                  incoming_heartbeat=500,
-                                  outgoing_heartbeat=2000, nr_retries=0)
-
-            # make sure client received CONNECTED frame
-            time.sleep(2)
-            acceptor.stop()
-            time.sleep(8)
-            with self.assertRaises(Disconnected):
-                client.call(JsonRpcRequest("ping", [], CALL_ID),
-                            timeout=CALL_TIMEOUT)
-
-    def test_client_reconnect(self):
-        bridge = _DummyBridge()
-        with constructAcceptor(self.log, False, bridge) as acceptor:
-            client = SimpleClient(acceptor._host, acceptor._port, False,
-                                  incoming_heartbeat=1000,
-                                  outgoing_heartbeat=5000, nr_retries=2)
-
-            # make sure client received CONNECTED frame
-            time.sleep(2)
-            acceptor.stop()
-            # make sure server socket is closed
-            time.sleep(8)
-            with constructAcceptor(self.log, False, bridge) as acceptor:
-                resp = client.call(JsonRpcRequest("ping", [], CALL_ID),
-                                   timeout=CALL_TIMEOUT)
-                self.assertIsNotNone(resp)
-                self.assertEqual(resp[0].result, True)
