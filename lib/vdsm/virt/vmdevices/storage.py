@@ -94,6 +94,13 @@ VolumeChainEntry = collections.namedtuple(
     ['uuid', 'path', 'allocation', 'index'])
 
 
+BlockInfo = collections.namedtuple("BlockInfo", [
+    "capacity",  # guest virtual size
+    "allocation",  # host allocated size (highest allocated offset)
+    "physical"  # host physical size (lv size, file size)
+])
+
+
 class Drive(core.Base):
     __slots__ = ('iface', '_path', 'readonly', 'bootOrder', 'domainID',
                  'poolID', 'imageID', 'UUID', 'volumeID', 'format',
@@ -102,7 +109,7 @@ class Drive(core.Base):
                  'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
                  'extSharedState', 'drv', 'sgio', 'GUID', 'diskReplicate',
                  '_diskType', 'hosts', 'protocol', 'auth', 'discard',
-                 'vm_custom')
+                 'vm_custom', 'blockinfo')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         constants.MEGAB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -216,6 +223,9 @@ class Drive(core.Base):
         self.name = makeName(self.iface, self.index)
         self.cache = config.get('vars', 'qemu_drive_cache')
         self.discard = kwargs.get('discard', False)
+
+        # Used for chunked drives or drives replicating to chunked replica.
+        self.blockinfo = None
 
         self._customize()
         self._setExtSharedState()
