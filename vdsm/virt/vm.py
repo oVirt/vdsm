@@ -1121,10 +1121,15 @@ class Vm(object):
         # If drive is replicated to a block device, we extend first the
         # replica, and handle drive later in __afterReplicaExtension.
 
+        # Used to measure the total extend time for the drive and the replica.
+        # Note that the volume is extended after the replica is extended, so
+        # the total extend time includes the time to extend the replica.
+        started = vdsm.common.time.monotonic_time()
+
         if vmDrive.replicaChunked:
-            self.__extendDriveReplica(vmDrive, newSize)
+            self.__extendDriveReplica(vmDrive, newSize, started)
         else:
-            self.__extendDriveVolume(vmDrive, volumeID, newSize)
+            self.__extendDriveVolume(vmDrive, volumeID, newSize, started)
 
     def __refreshDriveVolume(self, volInfo):
         self.cif.irs.refreshVolume(volInfo['domainID'], volInfo['poolID'],
@@ -1136,6 +1141,12 @@ class Vm(object):
                        volInfo['volumeID'])
 
         self.__refreshDriveVolume(volInfo)
+
+        # At this point, the VM can see the new size.
+        elapsed = vdsm.common.time.monotonic_time() - volInfo["started"]
+        self.log.info("Extend volume %s completed in %.2f seconds",
+                      volInfo["volumeID"], elapsed)
+
         volSize = self._getVolumeSize(volInfo['domainID'], volInfo['poolID'],
                                       volInfo['imageID'], volInfo['volumeID'])
 
@@ -1158,9 +1169,9 @@ class Vm(object):
                            "(domainID: %s, volumeID: %s)",
                            vmDrive.name, vmDrive.domainID, vmDrive.volumeID)
             self.__extendDriveVolume(vmDrive, vmDrive.volumeID,
-                                     volInfo['newSize'])
+                                     volInfo['newSize'], volInfo["started"])
 
-    def __extendDriveVolume(self, vmDrive, volumeID, newSize):
+    def __extendDriveVolume(self, vmDrive, volumeID, newSize, started):
         volInfo = {
             'domainID': vmDrive.domainID,
             'imageID': vmDrive.imageID,
@@ -1169,6 +1180,7 @@ class Vm(object):
             'newSize': newSize,
             'poolID': vmDrive.poolID,
             'volumeID': volumeID,
+            'started': started,
         }
         self.log.debug("Requesting an extension for the volume: %s", volInfo)
         self.cif.irs.sendExtendMsg(
@@ -1177,7 +1189,7 @@ class Vm(object):
             newSize,
             self.__afterVolumeExtension)
 
-    def __extendDriveReplica(self, drive, newSize):
+    def __extendDriveReplica(self, drive, newSize, started):
         volInfo = {
             'domainID': drive.diskReplicate['domainID'],
             'imageID': drive.diskReplicate['imageID'],
@@ -1185,6 +1197,7 @@ class Vm(object):
             'newSize': newSize,
             'poolID': drive.diskReplicate['poolID'],
             'volumeID': drive.diskReplicate['volumeID'],
+            'started': started,
         }
         self.log.debug("Requesting an extension for the volume "
                        "replication: %s", volInfo)
