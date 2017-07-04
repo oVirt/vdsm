@@ -846,7 +846,14 @@ class Vm(object):
                                           replica["volumeID"])
             physical = volsize.apparentsize
 
-        return capacity, alloc, physical
+        blockinfo = vmdevices.storage.BlockInfo(capacity, alloc, physical)
+
+        if blockinfo != drive.blockinfo:
+            drive.blockinfo = blockinfo
+            self.log.debug("Extension info for drive %s volume %s: %s",
+                           drive.name, drive.volumeID, blockinfo)
+
+        return blockinfo
 
     def _shouldExtendVolume(self, drive, volumeID, capacity, alloc, physical):
         nextPhysSize = drive.getNextVolumeSize(physical, capacity)
