@@ -20,13 +20,19 @@
 
 from __future__ import absolute_import
 
+import errno
+import threading
 from testlib import maybefail
 
 
 class FakeSanlock(object):
     """
-    With fake sanlock, you can write and read resources without running a
-    sanlock daemon.
+    With fake sanlock, you can use code depending on sanlock, without
+    running a sanlock daemon, and waiting for slow sanlock operations
+    such as adding a lockspace.
+
+    You can also simulate any error from sanlock by setting an error in
+    the errors dictionary before calling a method.
 
     To test code importing sanlock, monkeypatch sanlock module::
 
@@ -46,8 +52,97 @@ class FakeSanlock(object):
             return self.args[0]
 
     def __init__(self):
+        self.spaces = {}
         self.resources = {}
         self.errors = {}
+
+    @maybefail
+    def add_lockspace(self, lockspace, host_id, path, offset=0, iotimeout=0,
+                      async=False):
+        """
+        Add a lockspace, acquiring a host_id in it. If async is True the
+        function will return immediatly and the status can be checked
+        using inq_lockspace.  The iotimeout option configures the io
+        timeout for the specific lockspace, overriding the default value
+        (see the sanlock daemon parameter -o).
+        """
+        # Mark the locksapce as not ready, so callers of inq_lockspace will
+        # wait until it is added.
+        ls = {"host_id": host_id,
+              "path": path,
+              "offset": offset,
+              "iotimeout": iotimeout,
+              "ready": threading.Event()}
+        self.spaces[lockspace] = ls
+
+        def complete():
+            # Wake up threads waiting on inq_lockspace()
+            ls["ready"].set()
+
+        if async:
+            # The test must call complete_async().
+            ls["complete"] = complete
+        else:
+            complete()
+
+    @maybefail
+    def rem_lockspace(self, lockspace, host_id, path, offset=0, async=False,
+                      unused=False):
+        """
+        Remove a lockspace, releasing the acquired host_id. If async is
+        True the function will return immediately and the status can be
+        checked using inq_lockspace. If unused is True the command will
+        fail (EBUSY) if there is at least one acquired resource in the
+        lockspace (instead of automatically release it).
+        """
+        ls = self.spaces[lockspace]
+
+        # Mark the locksapce as not ready, so callers of inq_lockspace will
+        # wait until it is removed.
+        ls["ready"].clear()
+
+        def complete():
+            # Delete the lockspace and wake up threads waiting on
+            # inq_lockspace()
+            del self.spaces[lockspace]
+            ls["ready"].set()
+
+        if async:
+            # The test must call complete_async().
+            ls["complete"] = complete
+        else:
+            complete()
+
+    def complete_async(self, lockspace):
+        """
+        This is a special method for testing, simulating completion of an async
+        operation started by add_lockspace() or rem_lockspace().
+        """
+        ls = self.spaces[lockspace]
+        complete = ls.pop("complete")
+        complete()
+
+    @maybefail
+    def inq_lockspace(self, lockspace, host_id, path, offset=0, wait=False):
+        """
+        Return True if the sanlock daemon currently owns the host_id in
+        lockspace, False otherwise. The special value None is returned
+        when the daemon is still in the process of acquiring or
+        releasing the host_id.  If the wait flag is set to True the
+        function will block until the host_id is either acquired or
+        released.
+        """
+        try:
+            ls = self.spaces[lockspace]
+        except KeyError:
+            return False
+
+        if wait:
+            ls["ready"].wait()
+        elif not ls["ready"].is_set():
+            return None
+
+        return lockspace in self.spaces
 
     @maybefail
     def write_resource(self, lockspace, resource, disks, max_hosts=0,
@@ -59,7 +154,8 @@ class FakeSanlock(object):
         path, offset = disks[0]
         self.resources[(path, offset)] = {"lockspace": lockspace,
                                           "resource": resource,
-                                          "version": 0}
+                                          "version": 0,
+                                          "acquired": False}
 
     @maybefail
     def read_resource(self, path, offset=0):
@@ -69,3 +165,60 @@ class FakeSanlock(object):
                                         "Sanlock resource read failure",
                                         "Sanlock excpetion")
         return self.resources[key]
+
+    def register(self):
+        """
+        Register to sanlock daemon and return the connection fd.
+        """
+        return 42
+
+    def acquire(self, lockspace, resource, disks, slkfd=None, pid=None,
+                shared=False, version=None):
+        """
+        Acquire a resource lease for the current process (using the
+        slkfd argument to specify the sanlock file descriptor) or for an
+        other process (using the pid argument). If shared is True the
+        resource will be acquired in the shared mode. The version is the
+        version of the lease that must be acquired or fail.  The disks
+        must be in the format: [(path, offset), ... ].
+        """
+        # Do we have a lockspace?
+        try:
+            ls = self.spaces[lockspace]
+        except KeyError:
+            raise self.SanlockException(
+                errno.ENOSPC, "No such lockspace %r" % lockspace)
+
+        # Is it ready?
+        if not ls["ready"].is_set():
+            raise self.SanlockException(
+                errno.ENOSPC, "No such lockspace %r" % lockspace)
+
+        key = disks[0]
+        res = self.resources[key]
+        if res["acquired"]:
+            raise self.SanlockException(
+                errno.EEXIST, 'Sanlock resource not acquired', 'File exists')
+
+        res["acquired"] = True
+
+    def release(self, lockspace, resource, disks, slkfd=None, pid=None):
+        """
+        Release a resource lease for the current process.  The disks
+        must be in the format: [(path, offset), ... ].
+        """
+        # Do we have a lockspace?
+        try:
+            self.spaces[lockspace]
+        except KeyError:
+            raise self.SanlockException(
+                errno.ENOSPC, "No such lockspace %r" % lockspace)
+
+        key = disks[0]
+        res = self.resources[key]
+        if not res["acquired"]:
+            raise self.SanlockException(
+                errno.EPERM, 'Sanlock resource not released',
+                'Operation not permitted')
+
+        res["acquired"] = False
