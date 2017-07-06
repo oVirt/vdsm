@@ -53,7 +53,7 @@ from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NAME_TO_NUMBER
 from vdsm.network.link.setup import parse_bond_options
 from vdsm.network.link.setup import remove_custom_bond_option
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
-from vdsm.network.netinfo import mtus, nics, vlans, misc, NET_PATH
+from vdsm.network.netinfo import nics, vlans, misc, NET_PATH
 from vdsm.network.netlink import waitfor
 
 from . import Configurator, getEthtoolOpts
@@ -695,7 +695,7 @@ class ConfigWriter(object):
         cf = NET_CONF_PREF + nic
         self._backup(cf)
         l = [self.CONFFILE_HEADER + '\n', 'DEVICE=%s\n' % nic, 'ONBOOT=yes\n',
-             'MTU=%s\n' % mtus.DEFAULT_MTU, 'NM_CONTROLLED=no\n']
+             'MTU=%s\n' % link_iface.DEFAULT_MTU, 'NM_CONTROLLED=no\n']
         with open(cf, 'w') as nicFile:
             nicFile.writelines(l)
 
