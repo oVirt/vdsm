@@ -688,6 +688,15 @@ types:
         type: map
         value-type: string
 
+    StringListMap: &StringListMap
+        added: '4.1'
+        description: A mapping from string to a list of strings.
+        key-type: string
+        name: StringListMap
+        type: map
+        value-type:
+        -   string
+
     DriveVmPayload: &DriveVmPayload
         added: '3.1'
         description: Directly specified data to be inserted
@@ -2941,6 +2950,57 @@ types:
             INFO: Log informational messages and anything more severe
             WARNING: Log warning messages and anything more severe
             WARN: An alias to WARNING
+
+    Tlv: &Tlv
+        added: '4.1'
+        description: LLDP Information
+        name: Tlv
+        properties:
+        - description: Human readable string to describe what the value is
+              about.
+          name: name
+          type: string
+
+        - description: Structured information of the TLV
+          name: properties
+          type: *StringMap
+
+        - description: TLV type of IEEE 802.1AB.
+          name: type
+          type: string
+          datatype: uint
+
+        - description: organizationally unique identifier
+          name: oui
+          type: string
+          datatype: uint
+
+        - description: organizationally defined subtype
+          name: subtype
+          type: string
+          datatype: uint
+
+    Lldp: &Lldp
+        added: '4.1'
+        description: LLDP Information
+        name: Lldp
+        properties:
+        - description: Gathering LLDP information is enabled on the NIC
+          name: enabled
+          type: string
+          datatype: boolean
+        - description: List of structured information of the TLVs
+          name: tlvs
+          type:
+          - *Tlv
+
+    LldpMap: &LldpMap
+        added: '4.1'
+        description: A mapping from interface name to LLDP information
+        key-type: string
+        name: *LldpMap
+        type: map
+        value-type: *Lldp
 
     MigrateMethod: &MigrateMethod
         added: '3.1'
@@ -7696,6 +7756,18 @@ Host.getDevicesVisibility:
     return:
         description: Accessibility for each device
         type: *DeviceVisibilityMap
+
+Host.getLldp:
+    added: '4.1'
+    description: Get lldp information of a NIC
+    params:
+    -   description: Restrict the reported lldp information. Empty restriction
+            means to report all lldp information from all NICs.
+        name: filter
+        type: *StringListMap
+    return:
+        description: Lldp information of a NIC
+        type: *LldpMap
 
 Host.getLVMVolumeGroups:
     added: '3.1'

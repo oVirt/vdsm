@@ -345,6 +345,7 @@ command_info = {
     'Host_getExternalVMNames': {'ret': 'vmNames'},
     'Host_getExternalVmFromOva': {'ret': 'vmList'},
     'Host_getConvertedVm': {'ret': 'ovf'},
+    'Host_getLldp': {'ret': 'info'},
     'Host_getHardwareInfo': {'ret': 'info'},
     'Host_getLVMVolumeGroups': {'ret': 'vglist'},
     'Host_getStats': {'ret': 'info'},

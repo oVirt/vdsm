@@ -1596,6 +1596,10 @@ class Global(APIBase):
         finally:
             self._cif._networkSemaphore.release()
 
+    def getLldp(self, filter):
+        return response.success(
+            info=supervdsm.getProxy().get_lldp_info(filter))
+
     # Top-level storage functions
     def getStorageDomains(self, storagepoolID=None, domainClass=None,
                           storageType=None, remotePath=None):
