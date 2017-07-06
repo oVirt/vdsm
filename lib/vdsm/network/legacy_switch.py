@@ -31,6 +31,7 @@ from vdsm.common.conv import tobool
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
 from vdsm.network.link import dpdk
+from vdsm.network.link import iface as link_iface
 from vdsm.network.configurators.ifcfg import Ifcfg
 from vdsm.network.netinfo import NET_PATH
 from vdsm.network.netinfo import bridges
@@ -218,9 +219,15 @@ def _add_network(network, configurator, _netinfo, nameservers,
 
 
 def _update_mtu_for_an_existing_bridge(dev_name, configurator, mtu):
+    # When the MTU changes to the default MTU, reading the existing MTU on the
+    # bridge is misleading, as with the latest OS, when no ports are connected
+    # to it, it will fall down to the default.
+    # In such a scenario, the ifcfg file still needs to be updated.
     if mtu != mtus.getMtu(dev_name):
         configurator.configApplier.setIfaceMtu(dev_name, mtu)
         _update_bridge_ports_mtu(dev_name, mtu)
+    elif mtu == link_iface.DEFAULT_MTU:
+        configurator.configApplier.setIfaceMtu(dev_name, mtu)
 
 
 def _update_bridge_ports_mtu(bridge, mtu):
