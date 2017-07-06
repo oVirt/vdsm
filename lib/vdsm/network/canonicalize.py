@@ -21,9 +21,10 @@ from __future__ import absolute_import
 
 import six
 
-from .netinfo import bridges, mtus, bonding, dns
+from .netinfo import bridges, bonding, dns
 from vdsm import utils
 from vdsm.network.ip.address import prefix2netmask
+from vdsm.network.link import iface
 
 from .errors import ConfigNetworkError
 from . import errors as ne
@@ -73,7 +74,7 @@ def _canonicalize_remove(data):
 
 
 def _canonicalize_mtu(data):
-    data['mtu'] = int(data['mtu']) if 'mtu' in data else mtus.DEFAULT_MTU
+    data['mtu'] = int(data['mtu']) if 'mtu' in data else iface.DEFAULT_MTU
 
 
 def _canonicalize_vlan(data):

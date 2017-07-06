@@ -26,8 +26,8 @@ from nose.plugins.attrib import attr
 
 from vdsm.network import libvirt
 from vdsm.network import netinfo
+from vdsm.network.link.iface import DEFAULT_MTU
 from vdsm.network.netinfo import mtus
-from vdsm.network.netinfo.mtus import DEFAULT_MTU
 
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch

@@ -39,13 +39,13 @@ from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo.bonding import BONDING_SLAVES, BONDING_MASTERS
 from vdsm.network.netinfo.bridges import bridges
 from vdsm.network.netinfo.misc import NET_CONF_PREF
-from vdsm.network.netinfo.mtus import DEFAULT_MTU
 from vdsm.network.netinfo.nics import (operstate, OPERSTATE_UNKNOWN,
                                        OPERSTATE_UP)
 from vdsm.network.netinfo.routes import getDefaultGateway, getRouteDeviceTo
 from vdsm.network.netlink import monitor
 from vdsm.network.configurators.ifcfg import (Ifcfg, stop_devices,
                                               NET_CONF_BACK_DIR)
+from vdsm.network.link.iface import DEFAULT_MTU
 from vdsm.network import errors
 from vdsm.network import legacy_switch
 from vdsm.network import netswitch

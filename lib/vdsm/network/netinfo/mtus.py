@@ -20,8 +20,6 @@
 
 from __future__ import absolute_import
 
-DEFAULT_MTU = 1500
-
 
 def getMtu(iface):
     with open('/sys/class/net/%s/mtu' % iface) as f:

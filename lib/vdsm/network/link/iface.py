@@ -31,6 +31,8 @@ STATE_DOWN = 'down'
 
 NET_PATH = '/sys/class/net'
 
+DEFAULT_MTU = 1500
+
 
 def up(dev, admin_blocking=True, oper_blocking=False):
     """
