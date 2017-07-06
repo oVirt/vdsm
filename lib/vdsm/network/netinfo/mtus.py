@@ -25,19 +25,3 @@ def getMtu(iface):
     with open('/sys/class/net/%s/mtu' % iface) as f:
         mtu = f.readline().rstrip()
     return int(mtu)
-
-
-def getMaxMtu(devs, mtu):
-    """
-    Get the max MTU value from current state/parameter
-
-    :param devs: iterable of network devices
-    :type devs: iterable
-
-    :param mtu: mtu value
-    :type mtu: integer
-
-    getMaxMtu return the highest value in a connection tree,
-    it check if a vlan, bond that have a higher mtu value
-    """
-    return max([getMtu(dev) for dev in devs] + [mtu])

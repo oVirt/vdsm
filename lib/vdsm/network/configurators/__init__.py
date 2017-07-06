@@ -133,7 +133,8 @@ class Configurator(object):
         :return mtu value that was applied
         """
         ifaceMtu = mtus.getMtu(iface.name)
-        maxMtu = mtus.getMaxMtu(ifaceVlans, None)
+        ifaces = tuple(ifaceVlans)
+        maxMtu = max(mtus.getMtu(dev) for dev in ifaces) if ifaces else None
         if maxMtu and maxMtu < ifaceMtu:
             if isinstance(iface, Bond):
                 self.configApplier.setBondingMtu(iface.name, maxMtu)

@@ -56,7 +56,6 @@ class TestConfigNetwork(TestCaseBase):
         self.assertEqual(cneContext.exception.errCode, errCode)
 
     # Monkey patch the real network detection from the netinfo module.
-    @MonkeyPatch(mtus, 'getMaxMtu', lambda *x: 1500)
     @MonkeyPatch(mtus, 'getMtu', lambda *x: 1500)
     @MonkeyPatch(ifcfg, 'ifdown', lambda *x: _raiseInvalidOpException())
     @MonkeyPatch(ifcfg, '_exec_ifup', lambda *x: _raiseInvalidOpException())
