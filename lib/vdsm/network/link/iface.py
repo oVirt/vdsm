@@ -96,6 +96,12 @@ def mac_address(dev):
     return get_link(dev)['address']
 
 
+def get_mtu(iface):
+    with open('/sys/class/net/%s/mtu' % iface) as f:
+        mtu = f.readline().rstrip()
+    return int(mtu)
+
+
 def _up_blocking(dev, link_blocking):
     with waitfor_linkup(dev, link_blocking):
         ipwrapper.linkSet(dev, [STATE_UP])

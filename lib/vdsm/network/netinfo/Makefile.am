@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@ dist_vdsmnetinfo_PYTHON = \
 	dhcp.py \
 	dns.py \
 	misc.py \
-	mtus.py \
 	nics.py \
 	qos.py \
 	routes.py \

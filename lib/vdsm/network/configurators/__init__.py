@@ -25,7 +25,7 @@ from six.moves import configparser
 
 from vdsm.config import config
 from vdsm.network.netconfpersistence import RunningConfig
-from vdsm.network.netinfo import mtus
+from vdsm.network.link import iface as link_iface
 
 from ..errors import RollbackIncomplete
 from . import qos
@@ -132,9 +132,10 @@ class Configurator(object):
 
         :return mtu value that was applied
         """
-        ifaceMtu = mtus.getMtu(iface.name)
+        ifaceMtu = link_iface.get_mtu(iface.name)
         ifaces = tuple(ifaceVlans)
-        maxMtu = max(mtus.getMtu(dev) for dev in ifaces) if ifaces else None
+        maxMtu = (max(link_iface.get_mtu(dev) for dev in ifaces)
+                  if ifaces else None)
         if maxMtu and maxMtu < ifaceMtu:
             if isinstance(iface, Bond):
                 self.configApplier.setBondingMtu(iface.name, maxMtu)

@@ -22,9 +22,10 @@ import six
 import re
 
 from vdsm.network.link import bond as link_bond
+from vdsm.network.link import iface as link_iface
 from vdsm.network.link.bond import sysfs_options as bond_options
 from vdsm.network.link.setup import remove_custom_bond_option
-from vdsm.network.netinfo import bonding, mtus, nics
+from vdsm.network.netinfo import bonding, nics
 from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network.ip.address import IPv4, IPv6
 
@@ -86,7 +87,7 @@ class Nic(NetDevice):
             raise ConfigNetworkError(ne.ERR_BAD_NIC, 'unknown nic: %s' % name)
 
         if _netinfo.ifaceUsers(name):
-            mtu = max(mtu, mtus.getMtu(name))
+            mtu = max(mtu, link_iface.get_mtu(name))
 
         super(Nic, self).__init__(name, configurator, ipv4, ipv6, blockingdhcp,
                                   mtu)
@@ -96,7 +97,7 @@ class Nic(NetDevice):
         if (self.vlan and
                 nics.operstate(self.name) == nics.OPERSTATE_UP and
                 self.configurator.net_info.ifaceUsers(self.name) and
-                self.mtu <= mtus.getMtu(self.name)):
+                self.mtu <= link_iface.get_mtu(self.name)):
             return
 
         self.configurator.configureNic(self, **opts)
@@ -235,7 +236,7 @@ class Bond(NetDevice):
              self.name in self.configurator.runningConfig.bonds) and
             nics.operstate(self.name) == nics.OPERSTATE_UP and
             self.configurator.net_info.ifaceUsers(self.name) and
-            self.mtu <= mtus.getMtu(self.name) and
+            self.mtu <= link_iface.get_mtu(self.name) and
             self.areOptionsApplied() and
             frozenset(slave.name for slave in self.slaves) ==
                 frozenset(link_bond.Bond(self.name).slaves)):
@@ -285,14 +286,14 @@ class Bond(NetDevice):
                                             mtu, _netinfo)
             if name in _netinfo.bondings:
                 if _netinfo.ifaceUsers(name):
-                    mtu = max(mtu, mtus.getMtu(name))
+                    mtu = max(mtu, link_iface.get_mtu(name))
 
                 if not options:
                     options = _netinfo.bondings[name].get('opts')
                     options = Bond._dict2list(options)
         elif name in _netinfo.bondings:  # Implicit bonding.
             if _netinfo.ifaceUsers(name):
-                mtu = max(mtu, mtus.getMtu(name))
+                mtu = max(mtu, link_iface.get_mtu(name))
 
             slaves = [Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
                       for nic in _netinfo.getNicsForBonding(name)]

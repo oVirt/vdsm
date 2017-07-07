@@ -35,7 +35,6 @@ from vdsm.network.link import iface as link_iface
 from vdsm.network.configurators.ifcfg import Ifcfg
 from vdsm.network.netinfo import NET_PATH
 from vdsm.network.netinfo import bridges
-from vdsm.network.netinfo import mtus
 from vdsm.network.netinfo import nics as netinfo_nics
 from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network.netinfo.cache import get_net_iface_from_config
@@ -223,7 +222,7 @@ def _update_mtu_for_an_existing_bridge(dev_name, configurator, mtu):
     # bridge is misleading, as with the latest OS, when no ports are connected
     # to it, it will fall down to the default.
     # In such a scenario, the ifcfg file still needs to be updated.
-    if mtu != mtus.getMtu(dev_name):
+    if mtu != link_iface.get_mtu(dev_name):
         configurator.configApplier.setIfaceMtu(dev_name, mtu)
         _update_bridge_ports_mtu(dev_name, mtu)
     elif mtu == link_iface.DEFAULT_MTU:

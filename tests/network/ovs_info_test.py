@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -384,7 +384,7 @@ class TestOvsNetInfo(VdsmTestCase):
         }
     }
 
-    @MonkeyPatch(info, 'getMtu', lambda *args: 1500)
+    @MonkeyPatch(info, 'get_mtu', lambda *args: 1500)
     @MonkeyPatch(info, 'is_ipv6_local_auto', lambda *args: True)
     @MonkeyPatch(info, 'get_gateway',
                  lambda *args, **kwargs: ('' if kwargs.get('family') == 4

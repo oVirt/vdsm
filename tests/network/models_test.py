@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2013, IBM Corporation
-# Copyright (C) 2013-2016, Red Hat, Inc.
+# Copyright (C) 2013-2017, Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,15 +23,12 @@ from __future__ import absolute_import
 
 from nose.plugins.attrib import attr
 
-from vdsm.network.netinfo import mtus
 from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network import errors
 from vdsm.network.models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
 from vdsm.network.models import hierarchy_backing_device, hierarchy_vlan_tag
 from vdsm.network.models import _nicSort
 from testlib import VdsmTestCase as TestCaseBase, mock
-
-from monkeypatch import MonkeyPatch
 
 from .nettestlib import bonding_default_fpath
 
@@ -122,7 +119,6 @@ class TestNetmodels(TestCaseBase):
         for address in addresses:
             self.assertEqual(IPv6.validateAddress(address), None)
 
-    @MonkeyPatch(mtus, 'getMtu', lambda *x: 1500)
     def testTextualRepr(self):
         _netinfo = {'networks': {}, 'vlans': {},
                     'nics': ['testnic1', 'testnic2'],
@@ -158,7 +154,6 @@ class TestNetmodels(TestCaseBase):
         inverted = Bond._reorderOptions('miimon=250 mode=4')
         self.assertEqual(inverted, 'mode=4 miimon=250')
 
-    @MonkeyPatch(mtus, 'getMtu', lambda *x: 1500)
     def testIterNetworkHierarchy(self):
         _netinfo = {'networks': {}, 'vlans': {},
                     'nics': ['testnic1', 'testnic2'],

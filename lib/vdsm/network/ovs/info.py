@@ -24,9 +24,9 @@ from vdsm.network.ip import dhclient
 from vdsm.network.link.bond import Bond
 from vdsm.network.netinfo.addresses import (
     getIpAddrs, getIpInfo, is_ipv6_local_auto)
-from vdsm.network.netinfo.mtus import getMtu
 from vdsm.network.netinfo.routes import (get_routes, get_gateway,
                                          is_default_route)
+from vdsm.network.link.iface import get_mtu
 from . import driver
 
 
@@ -273,7 +273,7 @@ def _get_iface_info(iface, addresses, routes):
     is_dhcpv4 = dhclient.is_active(iface, family=4)
     is_dhcpv6 = dhclient.is_active(iface, family=6)
 
-    return {'mtu': getMtu(iface), 'addr': ipv4addr, 'ipv4addrs': ipv4addrs,
+    return {'mtu': get_mtu(iface), 'addr': ipv4addr, 'ipv4addrs': ipv4addrs,
             'gateway': ipv4gateway, 'netmask': ipv4netmask,
             'ipv4defaultroute': is_default_route(ipv4gateway),
             'dhcpv4': is_dhcpv4, 'ipv6addrs': ipv6addrs,

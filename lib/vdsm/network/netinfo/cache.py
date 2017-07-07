@@ -29,6 +29,7 @@ from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import getLinks
 from vdsm.network.link import dpdk
+from vdsm.network.link.iface import get_mtu
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netlink import link as nl_link
 
@@ -36,7 +37,6 @@ from .addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
 from . import bonding
 from . import bridges
 from .dns import get_host_nameservers
-from .mtus import getMtu
 from . import nics
 from . import vlans
 from .routes import get_routes, get_gateway, is_default_route
@@ -253,7 +253,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs):
                      'gateway': gateway,
                      'ipv6gateway': get_gateway(routes, iface, family=6),
                      'ipv4defaultroute': is_default_route(gateway),
-                     'mtu': getMtu(iface)})
+                     'mtu': get_mtu(iface)})
     except (IOError, OSError) as e:
         if e.errno == errno.ENOENT:
             logging.info('Obtaining info for net %s.', iface, exc_info=True)

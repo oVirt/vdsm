@@ -1,6 +1,6 @@
 #
 # Copyright 2012 IBM, Inc.
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ from nose.plugins.attrib import attr
 
 from vdsm.network import netinfo
 from vdsm.network.link.iface import DEFAULT_MTU
-from vdsm.network.netinfo import mtus
 
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
@@ -56,7 +55,6 @@ class TestConfigNetwork(TestCaseBase):
         self.assertEqual(cneContext.exception.errCode, errCode)
 
     # Monkey patch the real network detection from the netinfo module.
-    @MonkeyPatch(mtus, 'getMtu', lambda *x: 1500)
     @MonkeyPatch(ifcfg, 'ifdown', lambda *x: _raiseInvalidOpException())
     @MonkeyPatch(ifcfg, '_exec_ifup', lambda *x: _raiseInvalidOpException())
     @MonkeyPatch(Bond, 'configure', lambda *x: _raiseInvalidOpException())
