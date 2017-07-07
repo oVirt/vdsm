@@ -173,8 +173,8 @@ class DescriptorTests(XMLTestCase):
           <foobar type="int">21</foobar>
         </vm>'''
         expected_xml = u'''<vm>
-          <foobar type="int">42</foobar>
           <beer>cold</beer>
+          <foobar type="int">42</foobar>
         </vm>'''
         dom = FakeDomain()
         dom.xml[xmlconstants.METADATA_VM_VDSM_URI] = base_xml

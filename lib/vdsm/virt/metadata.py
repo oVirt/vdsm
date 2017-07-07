@@ -50,6 +50,7 @@ The flow is:
 """
 
 from contextlib import contextmanager
+import operator
 import xml.etree.ElementTree as ET
 
 import libvirt
@@ -169,7 +170,10 @@ class Metadata(object):
         kwargs: stored as subelements
         """
         elem = ET.Element(self._add_ns(name))
-        for key, value in kwargs.items():
+        for key, value in sorted(
+            kwargs.items(),
+            key=operator.itemgetter(0),
+        ):
             _keyvalue_to_elem(self._add_ns(key), value, elem)
         return elem
 
