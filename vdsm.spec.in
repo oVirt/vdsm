@@ -28,7 +28,11 @@
 %global with_openvswitch @OPENVSWITCH@
 %endif
 
-%global gluster_version  3.10
+%if 0%{?centos} || 0%{?fedora}
+%global gluster_version 3.10
+%else #rhel
+%global gluster_version 3.8
+%endif
 
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
