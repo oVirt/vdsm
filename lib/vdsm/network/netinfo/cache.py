@@ -255,7 +255,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs):
                      'ipv4defaultroute': is_default_route(gateway),
                      'mtu': get_mtu(iface)})
     except (IOError, OSError) as e:
-        if e.errno == errno.ENOENT:
+        if e.errno == errno.ENOENT or e.errno == errno.ENODEV:
             logging.info('Obtaining info for net %s.', iface, exc_info=True)
             raise NetworkIsMissing('Network %s was not found' % iface)
         else:
