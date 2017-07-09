@@ -264,7 +264,6 @@ class SANLock(object):
         self._lock = threading.Lock()
         self._sdUUID = sdUUID
         self._idsPath = idsPath
-        self._sanlockfd = None
         self._ready = concurrent.ValidatingEvent()
 
     @property
@@ -442,7 +441,6 @@ class SANLock(object):
             except sanlock.SanlockException as e:
                 raise se.ReleaseLockFailure(self._sdUUID, e)
 
-            self._sanlockfd = None
         self.log.info("Successfully released %s", lease)
 
 
