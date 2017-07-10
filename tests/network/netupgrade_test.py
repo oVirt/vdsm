@@ -27,8 +27,6 @@ from vdsm.network import netupgrade
 
 
 @attr(type='unit')
-@mock.patch.object(
-    netupgrade, 'LEGACY_MANAGEMENT_NETWORKS', ('ovirtmgmt', 'rhevm'))
 @mock.patch.object(netupgrade.libvirtnetwork, 'networks', lambda: ())
 @mock.patch.object(netupgrade, 'PersistentConfig')
 @mock.patch.object(netupgrade, 'RunningConfig')
@@ -88,8 +86,6 @@ class NetUpgradeUnifiedConfigTest(VdsmTestCase):
 
 
 @attr(type='unit')
-@mock.patch.object(
-    netupgrade, 'LEGACY_MANAGEMENT_NETWORKS', ('ovirtmgmt', 'rhevm'))
 @mock.patch.object(netupgrade, 'netinfo', lambda x: None)
 @mock.patch.object(netupgrade, 'NetInfo', lambda x: None)
 @mock.patch.object(netupgrade, 'libvirt_vdsm_nets', lambda x: None)
@@ -127,8 +123,6 @@ class NetCreateUnifiedConfigTest(VdsmTestCase):
 
 
 @attr(type='integration')
-@mock.patch.object(
-    netupgrade, 'LEGACY_MANAGEMENT_NETWORKS', ('ovirtmgmt', 'rhevm'))
 @mock.patch.object(netupgrade.libvirtnetwork, 'networks', lambda: ())
 class NetUpgradeVolatileRunConfig(VdsmTestCase):
 

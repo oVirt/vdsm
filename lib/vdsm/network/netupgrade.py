@@ -23,7 +23,6 @@ import string
 import six
 
 from vdsm.config import config
-from vdsm.constants import LEGACY_MANAGEMENT_NETWORKS
 
 from vdsm.virt import libvirtnetwork
 
@@ -91,7 +90,7 @@ def _upgrade_unified_configuration(config):
 def _normalize_net_address(networks):
     for net_name, net_attr in six.viewitems(networks):
         if 'defaultRoute' not in net_attr:
-            net_attr['defaultRoute'] = net_name in LEGACY_MANAGEMENT_NETWORKS
+            net_attr['defaultRoute'] = net_name in ('ovirtmgmt', 'rhevm')
 
 
 def _normalize_net_ifcfg_keys(networks):
