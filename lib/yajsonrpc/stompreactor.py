@@ -25,7 +25,7 @@ from vdsm import utils
 from vdsm.config import config
 from vdsm.common import api
 from vdsm.compat import json
-from vdsm.sslcompat import CLIENT_PROTOCOL, SSLSocket
+from vdsm.sslcompat import SSLSocket
 from . import JsonRpcClient, JsonRpcServer
 from . import stomp
 from .betterAsyncore import Dispatcher, Reactor
@@ -591,11 +591,11 @@ def SimpleClient(host, port=54321, ssl=True):
     """
     sslctx = None
     if ssl:
-        from vdsm.sslutils import SSLContext
-        sslctx = SSLContext(key_file=constants.KEY_FILE,
-                            cert_file=constants.CERT_FILE,
-                            ca_certs=constants.CA_FILE,
-                            protocol=CLIENT_PROTOCOL)
+        from vdsm import sslutils
+        sslctx = sslutils.SSLContext(key_file=constants.KEY_FILE,
+                                     cert_file=constants.CERT_FILE,
+                                     ca_certs=constants.CA_FILE,
+                                     protocol=sslutils.CLIENT_PROTOCOL)
     return StandAloneRpcClient(host, port, "jms.topic.vdsm_requests",
                                str(uuid4()), sslctx, lazy_start=False)
 
