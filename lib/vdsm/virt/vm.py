@@ -2301,7 +2301,8 @@ class Vm(object):
         dev_objs_from_xml = vmdevices.common.dev_map_from_domain_xml(
             self.id, self.domain, self._md_desc, self.log
         )
-        dev_objs_from_xml[hwclass.DISK] = dev_objs_from_conf[hwclass.DISK]
+        for dev_class in hwclass.LEGACY_INIT_ONLY:
+            dev_objs_from_xml[dev_class] = dev_objs_from_conf[dev_class]
         return dev_objs_from_xml
 
     def _run(self):
