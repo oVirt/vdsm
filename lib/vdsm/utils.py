@@ -366,10 +366,13 @@ def traceback(on="", msg="Unhandled exception"):
         def wrapper(*a, **kw):
             try:
                 return f(*a, **kw)
-            except Exception:
+            except (SystemExit, KeyboardInterrupt) as e:
+                log = logging.getLogger(on)
+                log.debug("Terminated (%s)", e)
+            except:
                 log = logging.getLogger(on)
                 log.exception(msg)
-                raise  # Do not swallow
+            raise  # Do not swallow
         return wrapper
     return decorator
 

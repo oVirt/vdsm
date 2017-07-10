@@ -529,6 +529,7 @@ def loghandler(handler, logger=""):
         log.removeHandler(handler)
 
 
+@expandPermutations
 class TestTraceback(TestCaseBase):
 
     def __init__(self, *a, **kw):
@@ -544,15 +545,45 @@ class TestTraceback(TestCaseBase):
         self.assertEquals(self.record.name, "root")
         self.assertTrue(self.record.exc_text is not None)
 
-    def testOn(self):
+    def testSuccess(self):
+        @utils.traceback()
+        def success():
+            return "it works!"
+        with loghandler(self):
+            self.assertEqual(success(), "it works!")
+
+    @permutations([
+        (RuntimeError,),
+        (GeneratorExit,),
+        (BaseException,),
+    ])
+    def testLogFailures(self, exc_class):
         logger = "test"
 
         @utils.traceback(on=logger)
         def fail():
-            raise Exception
+            raise exc_class
         with loghandler(self, logger=logger):
-            self.assertRaises(Exception, fail)
+            self.assertRaises(exc_class, fail)
         self.assertEquals(self.record.name, logger)
+        # Log a message with a traceback
+        self.assertIsNotNone(self.record.exc_info)
+
+    @permutations([
+        (SystemExit,),
+        (KeyboardInterrupt,),
+    ])
+    def testLogTermination(self, exc_class):
+        logger = "test"
+
+        @utils.traceback(on=logger)
+        def fail():
+            raise exc_class
+        with loghandler(self, logger=logger):
+            self.assertRaises(exc_class, fail)
+        self.assertEquals(self.record.name, logger)
+        # Log a message without a traceback
+        self.assertIsNone(self.record.exc_info)
 
     def testMsg(self):
         @utils.traceback(msg="WAT")
