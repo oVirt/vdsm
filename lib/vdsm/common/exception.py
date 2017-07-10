@@ -418,7 +418,7 @@ class GeneralException(VdsmException):
         return "%s: %s" % (self.message, repr(self.value))
 
 
-class InvalidConfiguration(GeneralException):
+class InvalidConfiguration(ContextException):
     code = 101
     message = "Invalid configuration value"
 

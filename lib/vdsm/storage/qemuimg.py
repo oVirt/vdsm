@@ -310,7 +310,9 @@ def default_qcow2_compat():
     value = config.get('irs', 'qcow2_compat')
     if value not in _QCOW2_COMPAT_SUPPORTED:
         raise exception.InvalidConfiguration(
-            "Unsupported value for irs:qcow2_compat: %r" % value)
+            reason="Unsupported value for irs:qcow2_compat",
+            qcow2_compat=value,
+            supported_values=_QCOW2_COMPAT_SUPPORTED)
     return value
 
 
