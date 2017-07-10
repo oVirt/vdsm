@@ -109,12 +109,13 @@ class File(object):
             else:
                 self._dump(data)
 
-    def load(self, cif):
+    def load(self, cif, dom_xml=None):
         self._log.debug("recovery: trying with VM %s", self._vmid)
         try:
             with open(self._path) as src:
                 params = pickle.load(src)
             self._set_elapsed_time(params)
+            self._update_domain_xml(params, dom_xml)
             res = cif.createVm(params, vmRecover=True)
         except Exception:
             self._log.exception("Error recovering VM: %s", self._vmid)
@@ -166,6 +167,12 @@ class File(object):
         params['elapsedTimeOffset'] = now - pt
         return params
 
+    def _update_domain_xml(self, params, dom_xml):
+        if dom_xml is not None and 'xml' in params:
+            params['xml'] = dom_xml
+            self._log.info("Recovered XML from libvirt: %s", dom_xml)
+        return params
+
 
 def all_domains(cif):
     # Recover stage 1: domains from libvirt, or from containers
@@ -182,8 +189,9 @@ def _all_domains_running(cif):
     num_doms = len(doms)
     for idx, v in enumerate(doms):
         vm_id = v.UUIDString()
+        vm_xml = _get_domain_xml(v)
         vm_state = File(vm_id)
-        if vm_state.load(cif):
+        if vm_state.load(cif, vm_xml):
             cif.log.info(
                 'recovery [1:%d/%d]: recovered domain %s',
                 idx + 1, num_doms, vm_id)
@@ -197,6 +205,13 @@ def _all_domains_running(cif):
                 cif.log.exception(
                     'recovery [1:%d/%d]: failed to kill loose domain %s',
                     idx + 1, num_doms, vm_id)
+
+
+def _get_domain_xml(libvirt_dom):
+    try:
+        return libvirt_dom.XMLDesc(0)
+    except libvirt.libvirtError:
+        return None
 
 
 def _all_domains_from_files(cif):
