@@ -339,7 +339,7 @@ class NetworkStatsTests(VmStatsTestCase):
             nic.name, nic.nicModel, nic.macAddr,
             self.bulk_stats, 0,
             self.bulk_stats, 0,
-            self.interval)
+        )
 
         self.assertStatsHaveKeys(stats, self._EXPECTED_KEYS)
 

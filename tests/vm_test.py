@@ -1480,8 +1480,7 @@ class TestVmStats(TestCaseBase):
                             'net.0.tx.pkts': 10,
                             'net.0.tx.errs': 11,
                             'net.0.tx.drop': 12},
-                end_index=0,
-                interval=15.0)
+                end_index=0)
         posttime = vdsm.common.time.monotonic_time()
         self.assertIn('sampleTime', res)
         self.assertTrue(pretime <= res['sampleTime'] <= posttime,

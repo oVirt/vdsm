@@ -260,7 +260,7 @@ def send_metrics(vms_stats):
 
 def _nic_traffic(vm_obj, name, model, mac,
                  start_sample, start_index,
-                 end_sample, end_index, interval):
+                 end_sample, end_index):
     """
     Return per-nic statistics packed into a dictionary
     - macAddr
@@ -278,7 +278,6 @@ def _nic_traffic(vm_obj, name, model, mac,
     Expects the indexes of the nic whose statistics needs to be produced,
     for each sampling:
     `start_index' for `start_sample', `end_index' for `end_sample'.
-    `interval' is the time between the two samplings, in seconds.
     `vm_obj' is the Vm instance to which the nic belongs.
     `name', `model' and `mac' are the attributes of the said nic.
     Those three value are reported in the output stats.
@@ -335,8 +334,7 @@ def networks(vm, stats, first_sample, last_sample, interval):
         stats['network'][nic.name] = _nic_traffic(
             vm, nic.name, nic.nicModel, nic.macAddr,
             first_sample, first_indexes[nic.name],
-            last_sample, last_indexes[nic.name],
-            interval)
+            last_sample, last_indexes[nic.name])
 
     return stats
 
