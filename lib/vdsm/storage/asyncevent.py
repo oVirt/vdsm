@@ -520,7 +520,11 @@ class BufferedReader(asyncore.file_dispatcher):
         self._data += chunk
 
     def handle_close(self):
-        self._complete(self._data)
+        # Call complete exactly once.
+        if self._complete:
+            complete = self._complete
+            self._complete = None
+            complete(self._data)
         self.close()
 
     def handle_error(self):
@@ -532,6 +536,7 @@ class BufferedReader(asyncore.file_dispatcher):
         if self.closing:
             return
         self.closing = True
+        # Never call complete if closed before completion.
         self._complete = None
         asyncore.file_dispatcher.close(self)
 
