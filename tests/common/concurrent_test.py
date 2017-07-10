@@ -189,6 +189,7 @@ class TMapTests(VdsmTestCase):
         self.assertEqual(results, expected)
 
 
+@expandPermutations
 class ThreadTests(VdsmTestCase):
 
     def test_run_callable_in_thread(self):
@@ -286,9 +287,14 @@ class ThreadTests(VdsmTestCase):
                         "Unxpected message: %s" % message)
         self.assertEqual(kwargs, {})
 
-    def test_log_failure(self):
+    @permutations([
+        (RuntimeError,),
+        (GeneratorExit,),
+        (BaseException,),
+    ])
+    def test_log_failure(self, exc_class):
         def run():
-            raise RuntimeError("Threads are evil")
+            raise exc_class("Threads are evil")
 
         log = FakeLogger()
         t = concurrent.thread(run, log=log)
@@ -305,6 +311,31 @@ class ThreadTests(VdsmTestCase):
         self.assertTrue(message.startswith("FINISH thread"),
                         "Unxpected message: %s" % message)
         self.assertEqual(kwargs, {"exc_info": True})
+
+    @permutations([
+        (SystemExit,),
+        (KeyboardInterrupt,),
+    ])
+    def test_log_expected_exceptions(self, exc_class):
+        def run():
+            raise exc_class("Don't panic")
+
+        log = FakeLogger()
+        t = concurrent.thread(run, log=log)
+        t.start()
+        t.join()
+
+        level, message, kwargs = log.messages[0]
+        self.assertEqual(level, logging.DEBUG)
+        self.assertTrue(message.startswith("START thread"),
+                        "Unxpected message: %s" % message)
+
+        level, message, kwargs = log.messages[1]
+        self.assertEqual(level, logging.DEBUG)
+        self.assertTrue(message.startswith("FINISH thread"),
+                        "Unxpected message: %s" % message)
+        self.assertIn("Don't panic", message)
+        self.assertEqual(kwargs, {})
 
 
 class TestValidatingEvent(VdsmTestCase):

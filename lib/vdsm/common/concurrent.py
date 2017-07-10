@@ -191,7 +191,10 @@ def thread(func, args=(), kwargs=None, name=None, daemon=True, log=None):
             ret = func(*args, **kwargs)
             log.debug("FINISH thread %s", thread)
             return ret
-        except Exception:
+        except (SystemExit, KeyboardInterrupt) as e:
+            # Unlikley, but not interesting.
+            log.debug("FINISH thread %s (%s)", thread, e)
+        except:
             log.exception("FINISH thread %s failed", thread)
 
     thread = threading.Thread(target=run, name=name)
