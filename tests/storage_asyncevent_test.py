@@ -527,6 +527,26 @@ class TestBufferedReader(VdsmTestCase):
             self.loop.run_forever()
             self.assertEqual(self.received, data)
 
+    def test_complete_failure(self):
+        complete_calls = [0]
+
+        def failing_complete(data):
+            complete_calls[0] += 1
+            self.loop.stop()
+            raise Exception("Complete failure!")
+
+        data = b"it works"
+        r, w = os.pipe()
+        reader = self.loop.create_dispatcher(
+            asyncevent.BufferedReader, r, failing_complete)
+        with closing(reader):
+            os.close(r)  # Dupped by BufferedReader
+            Sender(self.loop, w, data, 64)
+            self.loop.run_forever()
+
+        # Complete must be called exactly once.
+        self.assertEqual(complete_calls[0], 1)
+
 
 class Sender(object):
 
