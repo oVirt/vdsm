@@ -258,7 +258,7 @@ def send_metrics(vms_stats):
         _log.exception('VM metrics collection failed')
 
 
-def _nic_traffic(vm_obj, name, model, mac,
+def _nic_traffic(vm_obj, nic,
                  start_sample, start_index,
                  end_sample, end_index):
     """
@@ -285,14 +285,7 @@ def _nic_traffic(vm_obj, name, model, mac,
     Return the `stats' dictionary on success.
     """
 
-    if_speed = 1000 if model in ('e1000', 'virtio') else 100
-
-    if_stats = {
-        'macAddr': mac,
-        'name': name,
-        'speed': str(if_speed),
-        'state': 'unknown',
-    }
+    if_stats = nic_info(nic)
 
     with _skip_if_missing_stats(vm_obj):
         if_stats['rxErrors'] = str(end_sample['net.%d.rx.errs' % end_index])
@@ -332,11 +325,23 @@ def networks(vm, stats, first_sample, last_sample, interval):
             continue
 
         stats['network'][nic.name] = _nic_traffic(
-            vm, nic.name, nic.nicModel, nic.macAddr,
+            vm, nic,
             first_sample, first_indexes[nic.name],
             last_sample, last_indexes[nic.name])
 
     return stats
+
+
+def nic_info(nic):
+    info = {
+        'macAddr': nic.macAddr,
+        'name': nic.name,
+        'speed': str(
+            1000 if nic.nicModel in ('e1000', 'virtio') else 100
+        ),
+        'state': 'unknown',
+    }
+    return info
 
 
 def disks(vm, stats, first_sample, last_sample, interval):

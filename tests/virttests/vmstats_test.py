@@ -335,8 +335,7 @@ class NetworkStatsTests(VmStatsTestCase):
         testvm = FakeVM(nics=(nic,))
 
         stats = vmstats._nic_traffic(
-            testvm,
-            nic.name, nic.nicModel, nic.macAddr,
+            testvm, nic,
             self.bulk_stats, 0,
             self.bulk_stats, 0,
         )

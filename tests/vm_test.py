@@ -1461,8 +1461,9 @@ class TestVmStats(TestCaseBase):
         pretime = vdsm.common.time.monotonic_time()
         with fake.VM(_VM_PARAMS) as testvm:
             res = vmstats._nic_traffic(
-                testvm,
-                name='vnettest', model='virtio', mac=MAC,
+                testvm, fake.Nic(
+                    name='vnettest', model='virtio', mac_addr=MAC
+                ),
                 start_sample={'net.0.rx.bytes': 2 ** 64 - 15 * GBPS,
                               'net.0.rx.pkts': 1,
                               'net.0.rx.errs': 2,

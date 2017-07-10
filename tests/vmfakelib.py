@@ -390,3 +390,11 @@ class MigrationSourceThread(object):
         return self.is_alive()
 
     isAlive = is_alive
+
+
+class Nic(object):
+
+    def __init__(self, name, model, mac_addr):
+        self.name = name
+        self.nicModel = model
+        self.macAddr = mac_addr
