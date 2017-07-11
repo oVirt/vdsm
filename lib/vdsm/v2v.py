@@ -1135,14 +1135,17 @@ def _add_general_info(root, params):
 
 def _get_disk_info(conn, disk, vm):
     if 'alias' in disk.keys():
-        if disk['disktype'] not in ('file', 'block'):
+        if disk['disktype'] not in ('file', 'block', 'volume'):
             logging.error('Unsupported disk type: %r', disk['disktype'])
             return None
 
         out = {}
         try:
             vol = None
-            if disk['disktype'] == 'file':
+            if disk['disktype'] == 'volume':
+                pool = conn.storagePoolLookupByName(disk['pool'])
+                vol = pool.storageVolLookupByName(disk['volume'])
+            elif disk['disktype'] == 'file':
                 try:
                     vol = conn.storageVolLookupByPath(disk['alias'])
                 except libvirt.libvirtError:
@@ -1188,6 +1191,7 @@ def _add_disks(root, params):
     params['disks'] = []
     disks = root.findall('.//disk[@type="file"]')
     disks = disks + root.findall('.//disk[@type="block"]')
+    disks = disks + root.findall('.//disk[@type="volume"]')
     for disk in disks:
         d = {}
         disktype = disk.get('type')
@@ -1210,6 +1214,13 @@ def _add_disks(root, params):
             source = disk.find('./source/[@dev]')
             if source is not None:
                 d['alias'] = source.get('dev')
+        elif disktype == 'volume':
+            d['disktype'] = 'volume'
+            source = disk.find('./source/[@pool]')
+            if source is not None:
+                d['pool'] = source.get('pool')
+                d['volume'] = source.get('volume')
+                d['alias'] = '%s/%s' % (d['pool'], d['volume'])
         else:
             logging.error('Unsupported disk type: %r', type)
 
