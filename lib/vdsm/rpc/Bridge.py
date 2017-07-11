@@ -264,7 +264,6 @@ def Host_getVMList_Call(api, args):
     This call is only interested in returning the VM UUIDs so pass False for
     the first argument in order to suppress verbose results.
     """
-    API.updateTimestamp()  # required for setupNetworks flow
     vmList = args.get('vmList', [])
     onlyUUID = args.get('onlyUUID', True)
     return API.Global().getVMList(False, vmList, onlyUUID)
