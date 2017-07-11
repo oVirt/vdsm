@@ -28,7 +28,7 @@ import subprocess
 import time
 from contextlib import closing
 
-from testValidation import slowtest
+from testValidation import slowtest, xfail
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 
@@ -295,6 +295,40 @@ class TestEventLoop(VdsmTestCase):
         handle.cancel()
         self.loop.run_forever()
         self.assertFalse(self.was_called)
+
+    @xfail("I/O errors are not handled yet")
+    def test_handle_error_failures(self):
+
+        class EvilDispatcher(Echo):
+
+            def handle_read(self):
+                Echo.handle_read(self)
+                raise Exception("Expected error")
+
+            def handle_error(self):
+                # This is a very big anti-pattern for dispatchers,
+                # asyncore.poll2 will raise errors raised from handle_error.
+                raise Exception("Evil error")
+
+        def pinger(sock):
+            msg = b"ping"
+            osutils.uninterruptible(sock.send, msg)
+            osutils.uninterruptible(sock.recv, len(msg))
+            sock.close()
+            self.loop.call_soon_threadsafe(self.loop.stop)
+
+        sock1, sock2 = socket.socketpair()
+        # The dispatcher and pinger owns the sockets
+        self.loop.create_dispatcher(EvilDispatcher, sock2)
+        t = concurrent.thread(pinger, args=(sock1,))
+        t.start()
+        try:
+            # Correct error handling willl allow this test to complete without
+            # errors. This used to abort the event loop with the error raised
+            # in handle_error.
+            self.loop.run_forever()
+        finally:
+            t.join()
 
 
 @expandPermutations
