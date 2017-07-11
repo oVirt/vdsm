@@ -709,6 +709,10 @@ class KVMCommand(V2VCommand):
                 src = []
                 fmt = []
                 for disk in params['disks']:
+                    disk_info = _get_disk_info(con, disk, vm)
+                    if disk_info is None:
+                        break
+                    disk.update(disk_info)
                     if 'alias' in disk:
                         src.append(disk['alias'])
                         fmt.append(disk['disktype'])
@@ -1128,23 +1132,45 @@ def _add_general_info(root, params):
 
 def _get_disk_info(conn, disk, vm):
     if 'alias' in disk.keys():
+        if disk['disktype'] not in ('file', 'block'):
+            logging.error('Unsupported disk type: %r', disk['disktype'])
+            return None
+
+        out = {}
         try:
+            vol = None
             if disk['disktype'] == 'file':
-                vol = conn.storageVolLookupByPath(disk['alias'])
+                try:
+                    vol = conn.storageVolLookupByPath(disk['alias'])
+                except libvirt.libvirtError:
+                    # This is not fatal, we can still use blockInfo()
+                    logging.exception('Failed to get volume by path')
+                    # ... but not for Xen
+                    if conn.getType() == 'Xen':
+                        logging.error('Disk has to be in storage pool')
+                        return None
+                    # From here on the disktype is used only to notify
+                    # kvm2ovirt about the proper download method. Let's change
+                    # it so that kvm2ovirt handles the source properly.
+                    disk['disktype'] = 'block'
+
+            if vol:
                 _, capacity, alloc = vol.info()
-            elif disk['disktype'] == 'block':
+            else:
+                # This is primarily for block devices, but it can be also used
+                # on any local path
                 vol = vm.blockInfo(disk['alias'])
                 # We use the physical for allocation
                 # in blockInfo can report 0
                 capacity, _, alloc = vol
-            else:
-                logging.error('Unsupported disk type: %r', disk['disktype'])
 
         except libvirt.libvirtError:
             logging.exception("Error getting disk size")
             return None
-        else:
-            return {'capacity': str(capacity), 'allocation': str(alloc)}
+        out.update({
+            'capacity': str(capacity),
+            'allocation': str(alloc)})
+        return out
     return {}
 
 
