@@ -28,7 +28,7 @@ import subprocess
 import time
 from contextlib import closing
 
-from testValidation import slowtest, xfail
+from testValidation import slowtest
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 
@@ -296,7 +296,6 @@ class TestEventLoop(VdsmTestCase):
         self.loop.run_forever()
         self.assertFalse(self.was_called)
 
-    @xfail("I/O errors are not handled yet")
     def test_handle_error_failures(self):
 
         class EvilDispatcher(Echo):
