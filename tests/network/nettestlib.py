@@ -32,7 +32,6 @@ from multiprocessing import Process
 
 from nose.plugins.skip import SkipTest
 
-from vdsm.constants import EXT_TC
 from vdsm import cpuarch
 from vdsm.network import cmd as cmd
 from vdsm.network.configurators.ifcfg import EXT_BRCTL
@@ -59,6 +58,7 @@ ALTERNATIVE_BONDING_DEFAULTS = os.path.join(os.path.dirname(__file__),
                                             'bonding-defaults.json')
 
 EXT_IP = "/sbin/ip"
+EXT_TC = "/sbin/tc"
 _IPERF3_BINARY = CommandPath('iperf3', '/usr/bin/iperf3')
 _SYSTEMCTL = CommandPath('systemctl', '/bin/systemctl', '/usr/bin/systemctl')
 

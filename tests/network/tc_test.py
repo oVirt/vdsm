@@ -41,9 +41,9 @@ from .nettestlib import (Bridge, Dummy, IperfClient, IperfServer, Tap,
                          bridge_device, network_namespace, requires_iperf3,
                          requires_tc, requires_tun, veth_pair, vlan_device)
 from .nettestlib import running
+from .nettestlib import EXT_TC
 
 from vdsm import libvirtconnection
-from vdsm.constants import EXT_TC
 from vdsm.network import cmd
 from vdsm.network import tc
 from vdsm.network.configurators import qos
