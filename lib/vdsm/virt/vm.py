@@ -320,6 +320,7 @@ class Vm(object):
         # how the Vm is initialized, either through XML or from conf.
         self.conf = {'_blockJobs': {}, 'clientIp': '', 'devices': []}
         self.conf.update(params)
+        self._external = params.get('external', False)
         self.arch = cpuarch.effective()
         self._src_domain_xml = params.get('_srcDomXML')
         if self._src_domain_xml is not None:
@@ -4742,6 +4743,8 @@ class Vm(object):
         self._sync_metadata()
 
     def _sync_metadata(self):
+        if self._external:
+            return
         self._md_desc.dump(self._dom)
 
     def releaseVm(self, gracefulAttempts=1):

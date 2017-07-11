@@ -42,8 +42,14 @@ from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.utils import isVdsmImage
 
 
+def _is_external_vm(dom_xml):
+    return (not vmxml.has_channel(dom_xml, vmchannels.LEGACY_DEVICE_NAME) and
+            not vmxml.has_vdsm_metadata(dom_xml))
+
+
 def _list_domains():
     conn = libvirtconnection.get()
+    domains = []
     for dom_obj in conn.listAllDomains():
         dom_uuid = 'unknown'
         try:
@@ -56,34 +62,32 @@ def _list_domains():
             else:
                 raise
         else:
-            yield dom_obj, dom_xml
+            domains.append((dom_obj, dom_xml, _is_external_vm(dom_xml),))
+    return domains
 
 
-def _get_vdsm_domains():
-    """
-    Return a list of Domains created by VDSM.
-    """
-    return [(dom_obj, dom_xml) for dom_obj, dom_xml in _list_domains()
-            if vmxml.has_channel(dom_xml, vmchannels.LEGACY_DEVICE_NAME) or
-            vmxml.has_vdsm_metadata(dom_xml)]
-
-
-def _recover_domain(cif, vm_id, dom_xml):
-    cif.log.debug("recovery: trying with VM %s", vm_id)
+def _recover_domain(cif, vm_id, dom_xml, external):
+    external_str = " (external)" if external else ""
+    cif.log.debug("recovery: trying with VM%s %s", (external_str, vm_id,))
     try:
-        res = cif.createVm(_recovery_params(dom_xml), vmRecover=True)
+        res = cif.createVm(_recovery_params(vm_id, dom_xml, external),
+                           vmRecover=True)
     except Exception:
-        cif.log.exception("Error recovering VM: %s", vm_id)
+        cif.log.exception("Error recovering VM%s: %s", (external_str, vm_id,))
         return False
     if response.is_error(res):
-        cif.log.info("Failed to recover VM: %s (%s)", vm_id, res)
+        cif.log.info("Failed to recover VM%s: %s (%s)",
+                     (external_str, vm_id, res,))
         return False
     cif.log.info("VM recovered: %s", vm_id)
     return True
 
 
-def _recovery_params(dom_xml):
-    params = {'xml': dom_xml}
+def _recovery_params(vm_id, dom_xml, external):
+    params = {
+        'xml': dom_xml,
+        'external': external,
+    }
     dom = DomainDescriptor(dom_xml)
     params['vmType'] = dom.vm_type()
     return params
@@ -201,14 +205,16 @@ def all_domains(cif):
 
 
 def _all_domains_running(cif):
-    doms = _get_vdsm_domains() + containersconnection.recovery()
+    doms = _list_domains() + containersconnection.recovery()
     num_doms = len(doms)
-    for idx, (dom_obj, dom_xml) in enumerate(doms):
+    for idx, (dom_obj, dom_xml, external) in enumerate(doms):
         vm_id = dom_obj.UUIDString()
-        if _recover_domain(cif, vm_id, dom_xml):
+        if _recover_domain(cif, vm_id, dom_xml, external):
             cif.log.info(
                 'recovery [1:%d/%d]: recovered domain %s',
                 idx + 1, num_doms, vm_id)
+        elif external:
+            cif.log.info("Failed to recover external domain: %s" % (vm_id,))
         else:
             cif.log.info(
                 'recovery [1:%d/%d]: loose domain %s found, killing it.',

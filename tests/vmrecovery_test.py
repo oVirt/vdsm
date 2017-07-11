@@ -30,6 +30,7 @@ from vdsm.virt import vmstatus
 from vdsm import constants
 from vdsm import containersconnection
 from vdsm import cpuarch
+from vdsm import libvirtconnection
 
 
 from monkeypatch import MonkeyPatchScope
@@ -146,61 +147,54 @@ class RecoveryFileTests(TestCaseBase):
                 yield testvm, tmpdir
 
 
-@expandPermutations
-class RecoveryFunctionsTests(TestCaseBase):
+class FakeConnection(object):
 
-    _CONFS = {
+    CONFS = {
         cpuarch.X86_64: CONF_TO_DOMXML_X86_64,
         cpuarch.PPC64: CONF_TO_DOMXML_PPC64,
         'novdsm': CONF_TO_DOMXML_NO_VDSM,
     }
 
-    def _buildAllDomains(self, arch, channelName=None):
-        for conf, _ in self._CONFS[arch]:
-            if channelName is not None:
-                conf = conf.copy()
-                conf['agentChannelName'] = channelName
-            with fake.VM(conf, arch=arch) as v:
-                domXml = v._buildDomainXML()
-                yield fake.Domain(domXml, vmId=v.id), domXml
+    def __init__(self, arch, channel_name=None):
+        self.arch = arch
+        self.channel_name = channel_name
 
-    def _getAllDomains(self, arch, channelName=None):
-        for conf, rawXml in self._CONFS[arch]:
-            if channelName is not None:
+    def listAllDomains(self):
+        for conf, rawXml in self.CONFS[self.arch]:
+            if self.channel_name is not None:
                 conf = conf.copy()
-                conf['agentChannelName'] = channelName
+                conf['agentChannelName'] = self.channel_name
             domXml = rawXml % conf
-            yield fake.Domain(domXml, vmId=conf['vmId']), domXml
+            yield fake.Domain(domXml, vmId=conf['vmId'])
+
+
+@expandPermutations
+class RecoveryFunctionsTests(TestCaseBase):
 
     def _getAllDomainIds(self, arch):
-        return [conf['vmId'] for conf, _ in self._CONFS[arch]]
+        return [(conf['vmId'], arch == 'novdsm',)
+                for conf, _ in FakeConnection.CONFS[arch]]
 
     # TODO: rewrite once recovery.py refactoring is completed
-    @permutations([[cpuarch.X86_64], [cpuarch.PPC64]])
+    @permutations([[cpuarch.X86_64], [cpuarch.PPC64], ['novdsm']])
     def testGetVDSMDomains(self, arch):
-        with MonkeyPatchScope([(recovery, '_list_domains',
-                                lambda: self._buildAllDomains(arch)),
+        with MonkeyPatchScope([(libvirtconnection, 'get',
+                                lambda: FakeConnection(arch)),
                                (cpuarch, 'effective', lambda: arch)]):
-            self.assertEqual([v[0].UUIDString()
-                             for v in recovery._get_vdsm_domains()],
+            self.assertEqual([(v.UUIDString(), external,)
+                              for v, xml, external
+                              in recovery._list_domains()],
                              self._getAllDomainIds(arch))
 
     @permutations([[cpuarch.X86_64], [cpuarch.PPC64]])
     def testGetVDSMDomainsWithChannel(self, arch):
-        with MonkeyPatchScope([(recovery, '_list_domains',
-                                lambda: self._buildAllDomains(arch, 'chan')),
+        with MonkeyPatchScope([(libvirtconnection, 'get',
+                                lambda: FakeConnection(arch, 'chan')),
                                (cpuarch, 'effective', lambda: arch)]):
-            self.assertEqual([v[0].UUIDString()
-                             for v in recovery._get_vdsm_domains()],
+            self.assertEqual([(v.UUIDString(), external,)
+                              for v, xml, external
+                              in recovery._list_domains()],
                              self._getAllDomainIds(arch))
-
-    # TODO: rewrite once recovery.py refactoring is completed
-    # VDSM (of course) builds correct config, so we need static examples
-    # of incorrect/not-compliant data
-    def testSkipNotVDSMDomains(self):
-        with MonkeyPatchScope([(recovery, '_list_domains',
-                                lambda: self._getAllDomains('novdsm'))]):
-            self.assertFalse(recovery._get_vdsm_domains())
 
     def test_clean_vm_files(self):
 
