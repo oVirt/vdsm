@@ -342,6 +342,8 @@ class Vm(object):
             with self._md_desc.values() as md:
                 if 'startTime' in md:
                     self._startTime = md['startTime']
+                else:
+                    self._startTime = time.time()
         else:
             self._startTime = time.time() - \
                 float(self.conf.pop('elapsedTimeOffset', 0))
