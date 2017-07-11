@@ -34,7 +34,7 @@ from openstacknet_utils import PT_BRIDGE
 from openstacknet_utils import VNIC_ID_KEY
 from openstacknet_utils import devName
 from openstacknet_utils import executeOrExit
-from vdsm.constants import EXT_BRCTL
+from openstacknet_utils import EXT_BRCTL
 
 
 def disconnectVnic(portId):
