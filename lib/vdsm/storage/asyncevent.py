@@ -159,7 +159,13 @@ class EventLoop(object):
         # Note: unlike Python 3 version, this run I/O event handlers now. This
         # means that handlers scheduled from I/O event handlers will run in
         # this cycle instead of the next cycle in Python 3.
-        asyncore.poll2(timeout, self._channels)
+        try:
+            asyncore.poll2(timeout, self._channels)
+        except Exception:
+            # asyncore.poll2 delegate error handling to dispatcher's
+            # handle_error(), but it does *not* handle the case when
+            # handle_error() raises.
+            log.exception("Unhandled error in I/O handler")
 
         # Handle 'later' callbacks that are ready.
         now = self.time()

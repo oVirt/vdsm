@@ -297,7 +297,6 @@ class TestEventLoop(VdsmTestCase):
         self.loop.run_forever()
         self.assertFalse(self.was_called)
 
-    @pytest.mark.xfail(reason="I/O errors are not handled yet")
     def test_handle_error_failures(self):
 
         class EvilDispatcher(Echo):
