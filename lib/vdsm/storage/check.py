@@ -333,7 +333,10 @@ class DirectioChecker(object):
             return
         result = CheckResult(self._path, rc, self._err, self._check_time,
                              elapsed)
-        self._complete(result)
+        try:
+            self._complete(result)
+        except Exception:
+            _log.exception("Unhandled error in complete callback")
 
     def __repr__(self):
         info = [self.__class__.__name__,
