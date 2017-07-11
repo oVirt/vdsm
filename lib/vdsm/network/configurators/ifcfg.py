@@ -460,10 +460,6 @@ class ConfigWriter(object):
     @classmethod
     def _persistentBackup(cls, filename):
         """ Persistently backup ifcfg-* config files """
-        if os.path.exists('/usr/libexec/ovirt-functions'):
-            cmd.exec_sync([constants.EXT_SH, '/usr/libexec/ovirt-functions',
-                           'unmount_config', filename])
-            logging.debug("unmounted %s using ovirt", filename)
 
         (dummy, basename) = os.path.split(filename)
         try:
