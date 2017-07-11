@@ -28,7 +28,8 @@ import libvirt
 from vdsm.common import conv
 from vdsm.common import validate
 from vdsm.hostdev import get_device_params, detach_detachable, \
-    pci_address_to_name, scsi_address_to_adapter, reattach_detachable
+    pci_address_to_name, scsi_address_to_adapter, reattach_detachable, \
+    device_name_from_address
 from vdsm.virt import vmxml
 
 from . import core
@@ -37,7 +38,7 @@ from . import hwclass
 
 class PciDevice(core.Base):
     __slots__ = ('address', 'hostAddress', 'bootOrder', '_deviceParams',
-                 'name', 'numa_node')
+                 'name', 'numa_node', 'driver')
 
     def __init__(self, log, **kwargs):
         super(PciDevice, self).__init__(log, **kwargs)
@@ -105,7 +106,7 @@ class PciDevice(core.Base):
 
         source.appendChildWithArgs(
             'address',
-            **_fix_pci_address(**self.hostAddress)
+            **_normalize_pci_address(**self.hostAddress)
         )
 
         if hasattr(self, 'bootOrder'):
@@ -114,7 +115,7 @@ class PciDevice(core.Base):
         if hasattr(self, 'address'):
             hostdev.appendChildWithArgs(
                 'address',
-                **_fix_pci_address(**self.address)
+                **_normalize_pci_address(**self.address)
             )
 
         return hostdev
@@ -369,6 +370,21 @@ class HostDevice(core.Base):
         return device
 
     @classmethod
+    def from_xml_tree(cls, log, dev, meta):
+        params = {
+            'device': dev.tag,
+            'type': core.find_device_type(dev),
+        }
+        core.update_device_params(params, dev)
+        _update_hostdev_params(params, dev)
+        dev_type = params.get('type')
+        dev_name = _get_device_name(dev, dev_type)
+        params['device'] = dev_name
+        device_params = get_device_params(dev_name)
+        device_class = cls._DEVICE_MAPPING[device_params['capability']]
+        return device_class(log, **params)
+
+    @classmethod
     def update_device_info(cls, vm, device_conf):
         for device_xml in vm.domain.get_device_elements('hostdev'):
             device_type = vmxml.attr(device_xml, 'type')
@@ -380,7 +396,17 @@ class HostDevice(core.Base):
                 continue
 
 
-def _fix_pci_address(domain, bus, slot, function, **kwargs):
+def _get_device_name(dev, dev_type):
+    src_dev = vmxml.find_first(dev, 'source')
+    src_addr = vmxml.device_address(src_dev)
+    if dev_type == 'scsi':
+        src_addr = _normalize_scsi_address(dev, src_addr)
+    elif dev_type == 'pci':
+        src_addr = _normalize_pci_address(**src_addr)
+    return device_name_from_address(dev_type, src_addr)
+
+
+def _normalize_pci_address(domain, bus, slot, function, **kwargs):
     """
     Wrapper around normalize_pci_address to handle transparently
     the extra fields of the address (e.g. type) which don't need
@@ -390,3 +416,19 @@ def _fix_pci_address(domain, bus, slot, function, **kwargs):
         **validate.normalize_pci_address(domain, bus, slot, function)
     )
     return kwargs
+
+
+def _normalize_scsi_address(dev, addr):
+    adapter = vmxml.find_attr(dev, 'adapter', 'name')
+    addr['host'] = adapter.replace('scsi_host', '')
+    addr['lun'] = addr.pop('unit')
+    return addr
+
+
+def _update_hostdev_params(params, dev):
+    boot_order = vmxml.find_attr(dev, 'boot', 'order')
+    if boot_order:
+        params['bootOrder'] = boot_order
+    driver = vmxml.find_attr(dev, 'driver', 'name')
+    if driver:
+        params['driver'] = driver

@@ -34,6 +34,7 @@ from testlib import permutations, expandPermutations
 from testlib import XMLTestCase
 
 import vmfakecon as fake
+import hostdevlib
 
 
 @expandPermutations
@@ -712,6 +713,34 @@ _GRAPHICS_DATA = [
 ]
 
 
+_HOSTDEV_XML = [
+    [u'''<hostdev mode='subsystem' type='pci' managed='no'>
+      <source>
+        <address domain='0x0000' bus='0x00' slot='0x19' function='0x0'/>
+      </source>
+      <boot order='1'/>
+    </hostdev>'''],
+    [u'''<hostdev managed="no" mode="subsystem" type="usb">
+      <source>
+        <address bus="1" device="1"/>
+      </source>
+    </hostdev>'''],
+    [u'''<hostdev managed="no" mode="subsystem" rawio="yes" type="scsi">
+      <source>
+        <adapter name="scsi_host0"/>
+        <address bus="0" target="0" unit="0"/>
+      </source>
+    </hostdev>'''],
+    [u'''<hostdev mode='subsystem' type='pci' managed='no'>
+      <source>
+        <address domain='0x0000' bus='0x00' slot='0x19' function='0x0'/>
+      </source>
+      <address type='pci' domain='0x0000' bus='0x00'
+        slot='0x03' function='0x0'/>
+    </hostdev>'''],
+]
+
+
 @expandPermutations
 class DeviceXMLRoundTripTests(XMLTestCase):
 
@@ -983,6 +1012,19 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             (hostdev, 'libvirtconnection', FakeLibvirtConnection())
         ]):
             self._check_roundtrip(vmdevices.network.Interface, interface_xml)
+
+    @permutations(_HOSTDEV_XML)
+    @MonkeyPatch(vmdevices.network.supervdsm,
+                 'getProxy', lambda: FakeProxy())
+    def test_hostdev(self, hostdev_xml):
+        with MonkeyPatchScope([
+            (hostdev.libvirtconnection, 'get', hostdevlib.Connection),
+            (vmdevices.hostdevice, 'detach_detachable',
+                lambda *args, **kwargs: None),
+            (vmdevices.hostdevice, 'reattach_detachable',
+                lambda *args, **kwargs: None),
+        ]):
+            self._check_roundtrip(vmdevices.hostdevice.HostDevice, hostdev_xml)
 
     def _check_roundtrip(self, klass, dev_xml, meta=None, expected_xml=None):
         dev = klass.from_xml_tree(
