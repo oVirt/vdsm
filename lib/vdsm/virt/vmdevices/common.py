@@ -144,8 +144,10 @@ _LIBVIRT_TO_OVIRT_NAME = {
 def identify_from_xml_elem(dev_elem):
     dev_type = dev_elem.tag
     dev_name = _LIBVIRT_TO_OVIRT_NAME.get(dev_type, dev_type)
+    if dev_name in hwclass.LEGACY_INIT_ONLY:
+        raise core.SkipDevice()
     if dev_name not in _DEVICE_MAPPING:
-        raise core.SkipDevice
+        raise core.SkipDevice()
     return dev_name, _DEVICE_MAPPING[dev_name]
 
 
