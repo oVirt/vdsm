@@ -37,7 +37,7 @@ from vdsm import numa
 from vdsm import utils
 import vdsm.common.time
 from vdsm.config import config
-from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
+from vdsm.constants import P_VDSM_RUN
 from vdsm.host import api as hostapi
 from vdsm.network import ipwrapper
 from vdsm.network.netinfo import nics, bonding, vlans
@@ -252,16 +252,6 @@ class HostSample(TimedSample):
         self.hugepages = hugepages.state()
         self.cpuCores = CpuCoreSample()
         self.numaNodeMem = NumaNodeMemorySample()
-        ENGINE_DEFAULT_POLL_INTERVAL = 15
-        try:
-            self.recentClient = (
-                self.timestamp - os.stat(P_VDSM_CLIENT_LOG).st_mtime <
-                2 * ENGINE_DEFAULT_POLL_INTERVAL)
-        except OSError as e:
-            if e.errno == errno.ENOENT:
-                self.recentClient = False
-            else:
-                raise
 
 
 _MINIMUM_SAMPLES = 1
