@@ -55,7 +55,7 @@ class Base(vmxml.Device):
         :type meta: dict, whose  keys must be python basestrings and whose
          values must be one of: basestring, int, float
         """
-        raise NotImplementedError
+        raise NotImplementedError(cls.__name__)
 
     def __init__(self, log, **kwargs):
         self.log = log
@@ -92,7 +92,7 @@ class Base(vmxml.Device):
         :type device_conf: list of dictionaries
 
         """
-        raise NotImplementedError()
+        raise NotImplementedError(cls.__name__)
 
     def setup(self):
         """

@@ -744,6 +744,26 @@ _HOSTDEV_XML = [
 @expandPermutations
 class DeviceXMLRoundTripTests(XMLTestCase):
 
+    def test_base_not_implemented(self):
+        # simplified version of channel XML, only for test purposes.
+        # this should never be seen in the wild
+        generic_xml = '<channel type="spicevmc" />'
+        try:
+            vmdevices.core.Base.from_xml_tree(
+                self.log,
+                vmxml.parse_xml(generic_xml),
+                meta={'vmid': 'VMID'}
+            )
+        except NotImplementedError as exc:
+            self.assertEqual(
+                vmdevices.core.Base.__name__,
+                str(exc)
+            )
+        except Exception as ex:
+            raise AssertionError('from_xml_tree raise unexpected %s', ex)
+        else:
+            raise AssertionError('from_xml_tree implemented')
+
     def test_generic(self):
         # simplified version of channel XML, only for test purposes.
         # this should never be seen in the wild
