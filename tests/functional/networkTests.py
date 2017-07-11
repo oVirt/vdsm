@@ -29,8 +29,7 @@ from nose.plugins.skip import SkipTest
 import six
 
 import vdsm.config
-from vdsm.constants import EXT_BRCTL
-from vdsm.network.configurators.ifcfg import EXT_IFDOWN, EXT_IFUP
+from vdsm.network.configurators.ifcfg import EXT_BRCTL, EXT_IFDOWN, EXT_IFUP
 from vdsm.network import ipwrapper
 from vdsm.network import netswitch
 from vdsm.network.ip import dhclient

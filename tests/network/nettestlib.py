@@ -32,9 +32,10 @@ from multiprocessing import Process
 
 from nose.plugins.skip import SkipTest
 
-from vdsm.constants import EXT_BRCTL, EXT_TC
+from vdsm.constants import EXT_TC
 from vdsm import cpuarch
 from vdsm.network import cmd as cmd
+from vdsm.network.configurators.ifcfg import EXT_BRCTL
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
