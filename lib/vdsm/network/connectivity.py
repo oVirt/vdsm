@@ -25,11 +25,13 @@ import logging
 
 from vdsm import constants
 from vdsm.common.conv import tobool
+from vdsm.common import fileutils
 
 from . import errors as ne
 from .errors import ConfigNetworkError
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
+P_VDSM_CLIENT_LOG = constants.P_VDSM_RUN + 'client.log'
 
 
 def _get_connectivity_timeout(options):
@@ -46,11 +48,15 @@ def check(options):
                                      'connectivity check failed')
 
 
+def confirm():
+    fileutils.touch_file(P_VDSM_CLIENT_LOG)
+
+
 def _client_seen(timeout):
     start = time.time()
     while timeout >= 0:
         try:
-            if os.stat(constants.P_VDSM_CLIENT_LOG).st_mtime > start:
+            if os.stat(P_VDSM_CLIENT_LOG).st_mtime > start:
                 return True
         except OSError as e:
             if e.errno == errno.ENOENT:

@@ -24,6 +24,7 @@ from __future__ import absolute_import
 
 import os
 
+from vdsm.network.api import confirm_connectivity
 from vdsm.network.errors import ConfigNetworkError
 
 from vdsm import commands
@@ -38,7 +39,6 @@ from vdsm import v2v
 from vdsm.clientIF import clientIF
 from vdsm.common import api
 from vdsm.common import exception
-from vdsm.common import fileutils
 from vdsm.common import logutils
 from vdsm.common import response
 from vdsm.common import validate
@@ -80,13 +80,6 @@ USER_SHUTDOWN_MESSAGE = 'System going down'
 
 
 throttledlog.throttle('getAllVmStats', 100)
-
-
-def updateTimestamp():
-    # The setup API uses this log file to determine if this host is still
-    # accessible.  We use a file (rather than an event) because setup is
-    # performed by a separate, root process.
-    fileutils.touch_file(constants.P_VDSM_CLIENT_LOG)
 
 
 class APIBase(object):
@@ -1239,7 +1232,7 @@ class Global(APIBase):
 
     def ping(self):
         "Ping the server. Useful for tests"
-        updateTimestamp()
+        confirm_connectivity()
         return {'status': doneCode}
 
     def getCapabilities(self):

@@ -27,6 +27,7 @@ import six
 
 from vdsm import hooks
 
+from vdsm.network import connectivity
 from vdsm.network import netswitch
 from vdsm.network import sourceroute
 from vdsm.network.configurators.ifcfg import ConfigWriter
@@ -281,3 +282,7 @@ def add_ovs_vhostuser_port(bridge, port, socket_path):
 
 def remove_ovs_port(bridge, port):
     netswitch.configurator.ovs_remove_port(bridge, port)
+
+
+def confirm_connectivity():
+    connectivity.confirm()
