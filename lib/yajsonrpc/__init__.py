@@ -484,9 +484,20 @@ class JsonRpcClient(object):
         transport, message = req
         try:
             mobj = json.loads(message)
+        except ValueError:
+            self.log.warning(
+                "Received message is not a valid JSON: %r",
+                message
+            )
+            return
+
+        try:
             isResponse = self._isResponse(mobj)
-        except:
-            self.log.exception("Problem parsing message from client")
+        except TypeError:
+            self.log.warning(
+                "Received batch contains responses and events, ignoring."
+            )
+            return
 
         if isResponse:
             self._processIncomingResponse(mobj)
