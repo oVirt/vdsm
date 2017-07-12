@@ -2067,7 +2067,7 @@ class Vm(object):
     def _cleanupRecoveryFile(self):
         self._recovery_file.cleanup()
 
-    def _cleanup_domain(self):
+    def _undefine_domain(self):
         if not _PERSISTENT_DOMAINS:
             return
         try:
@@ -2326,7 +2326,7 @@ class Vm(object):
                 state, reason = dom.state(0)
                 if state in _LIBVIRT_DOWN_STATES:
                     self._dom = virdomain.Defined(self.id, dom)
-                    self._cleanup_domain()
+                    self._undefine_domain()
                     self._dom = virdomain.Disconnected(self.id)
                     raise MissingLibvirtDomainError()
             self._dom = virdomain.Notifying(dom, self._timeoutExperienced)
@@ -4667,7 +4667,7 @@ class Vm(object):
             self.log.exception("Failed to delete VM %s", self.id)
         else:
             self._cleanupRecoveryFile()
-            self._cleanup_domain()
+            self._undefine_domain()
             self.log.debug("Total desktops after destroy of %s is %d",
                            self.id, len(self.cif.vmContainer))
 
