@@ -1130,6 +1130,65 @@ class TestDiskSnapshotXml(XMLTestCase):
             drive.get_snapshot_xml({'protocol': 'bad', 'diskType': 'network'})
 
 
+@expandPermutations
+class DriveConfigurationTests(VdsmTestCase):
+
+    @permutations([
+        # flag, expected
+        ['true', True],
+        ['false', False],
+        [True, True],
+        [False, False],
+        [None, False]
+    ])
+    def test_cdrom_readonly(self, flag, expected):
+        conf = drive_config(
+            readonly=flag,
+            device='cdrom',
+            iface='ide',
+            serial='54-a672-23e5b495a9ea',
+            diskType=DISK_TYPE.FILE,
+        )
+        drive = Drive(self.log, **conf)
+        self.assertEqual(drive.device, 'cdrom')
+        self.assertIs(drive.readonly, expected)
+
+    @permutations([
+        # flag, expected
+        ['true', True],
+        ['false', False],
+        [True, True],
+        [False, False],
+        [None, False]
+    ])
+    def test_disk_readonly(self, flag, expected):
+        conf = drive_config(
+            readonly=flag,
+            serial='54-a672-23e5b495a9ea',
+            diskType=DISK_TYPE.FILE,
+        )
+        drive = Drive(self.log, **conf)
+        self.assertEqual(drive.device, 'disk')
+        self.assertIs(drive.readonly, expected)
+
+    @permutations([
+        # flag, expected
+        ['true', True],
+        ['false', False],
+        [True, True],
+        [False, False],
+        [None, True]
+    ])
+    def test_floppy_readonly(self, flag, expected):
+        conf = drive_config(
+            readonly=flag,
+            device='floppy'
+        )
+        drive = Drive(self.log, **conf)
+        self.assertEqual(drive.device, 'floppy')
+        self.assertIs(drive.readonly, expected)
+
+
 def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):
     return [{"leasePath": path,
              "leaseOffset": offset,
@@ -1137,7 +1196,7 @@ def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):
              "domainID": dom_id}]
 
 
-def drive_config(**kw):
+def drive_config(readonly=None, **kw):
     """ Return drive configuration updated from **kw """
     conf = {
         'device': 'disk',
@@ -1146,10 +1205,11 @@ def drive_config(**kw):
         'index': '0',
         'path': '/path/to/volume',
         'propagateErrors': 'off',
-        'readonly': 'False',
         'shared': 'none',
         'type': 'disk',
     }
+    if readonly is not None:
+        conf['readonly'] = readonly
     conf.update(kw)
     return conf
 

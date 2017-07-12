@@ -224,6 +224,12 @@ class Drive(core.Base):
         self.cache = config.get('vars', 'qemu_drive_cache')
         self.discard = kwargs.get('discard', False)
 
+        # Engine can send 'true' and 'false' as strings
+        # floppies are used only internally for sysprep, so
+        # they are readonly unless explicitely stated otherwise
+        self.readonly = conv.tobool(
+            kwargs.get('readonly', self.device == 'floppy'))
+
         # Used for chunked drives or drives replicating to chunked replica.
         self.blockinfo = None
 
@@ -455,11 +461,7 @@ class Drive(core.Base):
         if self.extSharedState == DRIVE_SHARED_TYPE.SHARED:
             diskelem.appendChildWithArgs('shareable')
 
-        if hasattr(self, 'readonly') and conv.tobool(self.readonly):
-            diskelem.appendChildWithArgs('readonly')
-        elif self.device == 'floppy' and not hasattr(self, 'readonly'):
-            # floppies are used only internally for sysprep, so
-            # they are readonly unless explicitely stated otherwise
+        if self.readonly:
             diskelem.appendChildWithArgs('readonly')
 
         if getattr(self, 'serial', False) and self.device != 'lun':
