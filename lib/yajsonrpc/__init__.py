@@ -512,6 +512,7 @@ class JsonRpcClient(object):
         req = JsonRpcRequest.fromRawObject(obj)
         if not req.isNotification():
             self.log.warning("Recieved non notification, ignoring")
+            return
 
         self.emit(req.method, req.params)
 
