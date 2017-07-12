@@ -871,7 +871,6 @@ exit 0
 %dir %{_sysconfdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/mom.d
 %dir %{_datadir}/%{vdsm_name}
-%dir %{_datadir}/%{vdsm_name}/virt
 %{_datadir}/%{vdsm_name}/clientIF.py*
 %{_datadir}/%{vdsm_name}/daemonAdapter
 %{_datadir}/%{vdsm_name}/API.py*
@@ -880,7 +879,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/supervdsmd
 %{_datadir}/%{vdsm_name}/vdsmd
 %{_datadir}/%{vdsm_name}/vdsmd.py*
-%{_datadir}/%{vdsm_name}/virt/__init__.py*
 
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf

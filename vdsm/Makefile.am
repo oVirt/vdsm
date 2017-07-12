@@ -18,8 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = virt
-
 include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_vdsm_PYTHON = \
