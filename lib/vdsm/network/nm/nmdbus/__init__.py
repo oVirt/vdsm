@@ -46,7 +46,8 @@ class NMDbusIfcfgRH1(object):
     NM_IFCFGRH_IF_NAME = 'com.redhat.ifcfgrh1'
     NM_IFCFGRH_PATH = '/com/redhat/ifcfgrh1'
 
-    ERROR_INV_CON = "ifcfg file '{}' unknown"
+    ERROR_INV_CON = ["ifcfg file '{}' unknown",
+                     "ifcfg path '{}' is not an ifcfg base file"]
 
     def __init__(self):
         ifcfg_proxy = NMDbus.bus.get_object(NMDbusIfcfgRH1.NM_IFCFGRH_IF_NAME,
@@ -64,7 +65,9 @@ class NMDbusIfcfgRH1(object):
         try:
             con_info = self.ifcfg.GetIfcfgDetails(ifcfg_path)
         except DBusException as ex:
-            if NMDbusIfcfgRH1.ERROR_INV_CON.format(ifcfg_path) != ex.args[0]:
-                raise
+            for err_base_message in NMDbusIfcfgRH1.ERROR_INV_CON:
+                if err_base_message.format(ifcfg_path) == ex.args[0]:
+                    return con_info
+            raise
 
         return con_info
