@@ -450,7 +450,6 @@ class MonitorThread(object):
         # Report status changes
         return self.status.valid != status.valid
 
-    @utils.cancelpoint
     def _notifyStatusChanges(self, status):
         log.info("Domain %s became %s", self.sdUUID,
                  "VALID" if status.valid else "INVALID")
