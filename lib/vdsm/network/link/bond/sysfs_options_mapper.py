@@ -35,7 +35,7 @@ from vdsm.network.link.bond import sysfs_options
 from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.iface import random_iface_name
 
-BONDING_NAME2NUMERIC_PATH = constants.P_VDSM + 'bonding-name2numeric.json'
+BONDING_NAME2NUMERIC_PATH = constants.P_VDSM_RUN + 'bonding-name2numeric.json'
 
 _MAX_BONDING_MODES = 6
 

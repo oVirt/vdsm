@@ -27,7 +27,7 @@ import six
 from vdsm.common import constants
 from vdsm.common.cache import memoized
 
-BONDING_DEFAULTS = constants.P_VDSM + 'bonding-defaults.json'
+BONDING_DEFAULTS = constants.P_VDSM_RUN + 'bonding-defaults.json'
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'
 ARP_IP_TARGET = 'arp_ip_target'
 
