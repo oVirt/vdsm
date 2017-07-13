@@ -1021,21 +1021,6 @@ class Vm(object):
         with self._confLock:
             self.conf['timeOffset'] = newTimeOffset
 
-    def _getExtendCandidates(self):
-        ret = []
-
-        for drive in self._chunkedDrives():
-            try:
-                capacity, alloc, physical = self._getExtendInfo(drive)
-            except libvirt.libvirtError as e:
-                self.log.error("Unable to get watermarks for drive %s: %s",
-                               drive.name, e)
-                continue
-
-            ret.append((drive, drive.volumeID, capacity, alloc, physical))
-
-        return ret
-
     def _chunkedDrives(self):
         """
         Return list of chunked drives, or non-chunked drives replicating to
@@ -1113,21 +1098,44 @@ class Vm(object):
         return self._driveMonitorEnabled and bool(self._chunkedDrives())
 
     def extendDrivesIfNeeded(self):
+        """
+        Return True if at least one drive is being extended, False otherwise.
+        """
+        extended = False
+
+        for drive in self.getDiskDevices():
+            if self.try_to_extend_drive(drive):
+                extended = True
+
+        return extended
+
+    def try_to_extend_drive(self, drive):
+        if not drive.chunked and not drive.replicaChunked:
+            return False
+
         try:
-            extend = [x for x in self._getExtendCandidates()
-                      if self._shouldExtendVolume(*x)]
+            capacity, alloc, physical = self._getExtendInfo(drive)
+        except libvirt.libvirtError as e:
+            self.log.error("Unable to get watermarks for drive %s: %s",
+                           drive.name, e)
+            return False
+
+        try:
+            if not self._shouldExtendVolume(
+                drive, drive.volumeID, capacity, alloc, physical
+            ):
+                return False
         except ImprobableResizeRequestError:
             return False
 
-        for drive, volumeID, capacity, alloc, physical in extend:
-            self.log.info(
-                "Requesting extension for volume %s on domain %s (apparent: "
-                "%s, capacity: %s, allocated: %s, physical: %s)",
-                volumeID, drive.domainID, drive.apparentsize, capacity,
-                alloc, physical)
-            self.extendDriveVolume(drive, volumeID, physical, capacity)
+        self.log.info(
+            "Requesting extension for volume %s on domain %s (apparent: "
+            "%s, capacity: %s, allocated: %s, physical: %s)",
+            drive.volumeID, drive.domainID, drive.apparentsize, capacity,
+            alloc, physical)
 
-        return len(extend) > 0
+        self.extendDriveVolume(drive, drive.volumeID, physical, capacity)
+        return True
 
     def extendDriveVolume(self, vmDrive, volumeID, curSize, capacity):
         """
