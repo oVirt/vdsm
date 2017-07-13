@@ -35,7 +35,7 @@ def find_modules():
     """
     Yields fully qualified modules names in the vdsm package.
     """
-    expected_to_fail = {}
+    expected_to_fail = set()
 
     # blivet fails on import, see https://bugzilla.redhat.com/1450607
     info = osinfo.version()
