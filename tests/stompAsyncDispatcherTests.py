@@ -21,7 +21,13 @@ import itertools
 from collections import deque
 
 from testlib import VdsmTestCase as TestCaseBase
-from yajsonrpc.stomp import AsyncDispatcher, Command, Frame, Headers
+from yajsonrpc.stomp import (
+    AsyncDispatcher,
+    Command,
+    Frame,
+    Headers,
+    DEFAULT_INTERVAL
+)
 
 
 class FakeConnection(object):
@@ -152,7 +158,17 @@ class AsyncDispatcherTest(TestCaseBase):
         dispatcher = AsyncDispatcher(FakeConnection(), FakeFrameHandler())
         dispatcher.setHeartBeat(0, 0)
 
-        self.assertIsNone(dispatcher.next_check_interval())
+        self.assertEqual(dispatcher.next_check_interval(), DEFAULT_INTERVAL)
+
+    def test_no_outgoing_heartbeat(self):
+        dispatcher = AsyncDispatcher(FakeConnection(), FakeFrameHandler())
+        dispatcher = AsyncDispatcher(
+            FakeConnection(), FakeFrameHandler(),
+            clock=FakeTimeGen([4000000.0, 4000002.0, 4000004.0,
+                               4000006.0]).get_fake_time
+        )
+        dispatcher.setHeartBeat(0, 8000)
+        self.assertEqual(dispatcher.next_check_interval(), DEFAULT_INTERVAL)
 
     def test_handle_write(self):
         headers = {Headers.CONTENT_LENGTH: '78',
