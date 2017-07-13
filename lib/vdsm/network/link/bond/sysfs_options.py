@@ -24,7 +24,7 @@ import os
 
 import six
 
-from vdsm import constants
+from vdsm.common import constants
 from vdsm.common.cache import memoized
 
 BONDING_DEFAULTS = constants.P_VDSM + 'bonding-defaults.json'

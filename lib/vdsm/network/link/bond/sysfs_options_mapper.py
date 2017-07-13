@@ -28,8 +28,8 @@ import os
 
 import six
 
-from vdsm import constants
 from vdsm.common.cache import memoized
+from vdsm.common import constants
 
 from vdsm.network.link.bond import sysfs_options
 from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS

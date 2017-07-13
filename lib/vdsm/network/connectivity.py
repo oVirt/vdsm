@@ -23,7 +23,7 @@ import os
 import time
 import logging
 
-from vdsm import constants
+from vdsm.common import constants
 from vdsm.common.conv import tobool
 from vdsm.common import fileutils
 

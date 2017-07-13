@@ -24,8 +24,8 @@ import os
 
 import six
 
+from vdsm.common.constants import P_VDSM_RUN
 from vdsm.config import config
-from vdsm.constants import P_VDSM_RUN
 from vdsm.network import netswitch
 from vdsm.network.link import setup
 from vdsm.network.link.bond import Bond

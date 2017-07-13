@@ -28,7 +28,7 @@ import shutil
 
 import six
 
-from vdsm import constants
+from vdsm.common import constants
 from vdsm.common import fileutils
 
 from vdsm.network.link.iface import random_iface_name

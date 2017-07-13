@@ -26,7 +26,7 @@ import threading
 
 import pyinotify
 
-from vdsm.constants import P_VDSM_RUN
+from vdsm.common.constants import P_VDSM_RUN
 from vdsm.common import logutils
 from vdsm.network import ifacetracking
 from vdsm.network.kernelconfig import networks_northbound_ifaces

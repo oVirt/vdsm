@@ -21,8 +21,8 @@ from __future__ import absolute_import
 import logging
 import netaddr
 
+from vdsm.common.constants import P_VDSM_RUN
 from vdsm.common.contextlib import suppress
-from vdsm.constants import P_VDSM_RUN
 from vdsm.network.ip import route as ip_route
 from vdsm.network.ip import rule as ip_rule
 from vdsm.network.ip.route import IPRouteData

@@ -21,9 +21,9 @@ from __future__ import absolute_import
 import logging
 import os
 
+from vdsm.common.constants import P_VDSM_RUN
 from vdsm.common.fileutils import rm_file
 from vdsm.common.fileutils import touch_file
-from vdsm.constants import P_VDSM_RUN
 
 TRACKED_INTERFACES_FOLDER = os.path.join(P_VDSM_RUN, 'trackedInterfaces')
 
