@@ -26,6 +26,8 @@ from . import CALL_TIMEOUT
 from vdsm.common import time
 import re
 
+DEFAULT_INTERVAL = 30
+
 SUBSCRIPTION_ID_REQUEST = "jms.topic.vdsm_requests"
 SUBSCRIPTION_ID_RESPONSE = "jms.topic.vdsm_responses"
 
@@ -399,20 +401,18 @@ class AsyncDispatcher(object):
         self._lastIncomingTimeStamp = self._clock()
 
     def _outgoing_heartbeat_expiration_interval(self):
+        if self._outgoing_heartbeat_in_milis == 0:
+            return DEFAULT_INTERVAL
         since_last_update = (self._clock() - self._lastOutgoingTimeStamp)
         return (self._outgoing_heartbeat_in_milis / 1000.0) - since_last_update
 
     def _incoming_heartbeat_expiration_interval(self):
         if self._incoming_heartbeat_in_milis == 0:
-            return 0
+            return DEFAULT_INTERVAL
         since_last_update = (self._clock() - self._lastIncomingTimeStamp)
         return (self._incoming_heartbeat_in_milis / 1000.0) - since_last_update
 
     def next_check_interval(self):
-        if self._outgoing_heartbeat_in_milis == 0 and  \
-                self._incoming_heartbeat_in_milis == 0:
-            return None
-
         if self._incoming_heartbeat_expiration_interval() < 0:
             self.handle_timeout()
 
