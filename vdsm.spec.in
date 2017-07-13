@@ -725,6 +725,14 @@ BuildArch:      noarch
 %description hook-cpuflags
 Hook that modifies guest's CPU flags using custom properties.
 
+%package hook-hostdev-scsi
+Summary:        Hook to optimize hostdev SCSI devices translating their config.
+BuildArch:      noarch
+
+%description hook-hostdev-scsi
+Hook to optimizet hostdev SCSI generic devices translating their configuration
+into more specific one.
+
 %if 0%{?with_gluster_mgmt}
 %package gluster
 Summary:        Gluster Plugin for VDSM
@@ -1160,6 +1168,9 @@ exit 0
 
 %files hook-cpuflags
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_cpuflags
+
+%files hook-hostdev-scsi
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_hostdev_scsi
 
 %if 0%{?with_hooks}
 %files hook-allocate_net
