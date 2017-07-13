@@ -41,6 +41,7 @@ SIZE = blockdev.OPTIMAL_BLOCK_SIZE
 @expandPermutations
 class TestZero(VdsmTestCase):
 
+    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
     def test_entire_device(self):
         with namedTemporaryDir() as tmpdir:
             # Prepare device poisoned with "x"
@@ -48,12 +49,14 @@ class TestZero(VdsmTestCase):
             with io.open(path, "wb") as f:
                 f.write(b"x" * SIZE)
             # Zero the entire device
-            blockdev.zero(path)
+            with loopback.Device(path) as loop_device:
+                blockdev.zero(loop_device.path)
             # Check that it contains zeros
             with io.open(path, "rb") as f:
                 data = f.read()
                 self.assertEqual(data, b"\0" * SIZE, "data was not zeroed")
 
+    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
     def test_size(self):
         with namedTemporaryDir() as tmpdir:
             # Prepare device poisoned with "x"
@@ -61,7 +64,8 @@ class TestZero(VdsmTestCase):
             with io.open(path, "wb") as f:
                 f.write(b"x" * SIZE * 2)
             # Zero the first 1Mib
-            blockdev.zero(path, size=SIZE)
+            with loopback.Device(path) as loop_device:
+                blockdev.zero(loop_device.path, size=SIZE)
             with io.open(path, "rb") as f:
                 # Verify that the first 1MiB is zeroed
                 data = f.read(SIZE)
@@ -70,6 +74,7 @@ class TestZero(VdsmTestCase):
                 data = f.read(SIZE)
                 self.assertEqual(data, b"x" * SIZE, "data was modified")
 
+    @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
     @permutations([
         (sc.BLOCK_SIZE,),
         (blockdev.OPTIMAL_BLOCK_SIZE - sc.BLOCK_SIZE,),
@@ -82,7 +87,8 @@ class TestZero(VdsmTestCase):
             with io.open(path, "wb") as f:
                 f.write(b"x" * size)
             # Zero size bytes
-            blockdev.zero(path, size=size)
+            with loopback.Device(path) as loop_device:
+                blockdev.zero(loop_device.path, size=size)
             with io.open(path, "rb") as f:
                 # Verify that size bytes were zeroed
                 data = f.read(size)
