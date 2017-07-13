@@ -33,6 +33,7 @@ from vdsm.network import libvirt
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 from vdsm.network.link import iface as link_iface
 from vdsm.network.link import sriov
+from vdsm.network.lldp import info as lldp_info
 
 from . ip import address as ipaddress, validator as ipvalidator
 from . canonicalize import canonicalize_networks, canonicalize_bondings
@@ -278,3 +279,15 @@ def setSafeNetworkConfig():
     """Declare current network configuration as 'safe'"""
     commands.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
                      config.get('vars', 'net_persistence')])
+
+
+def get_lldp_info(filter):
+    """
+    If filter is empty, all NICs are returned. If key 'devices' in filter
+    contains a list of devices, the list is restricted to this devices.
+    An empty list is interpreted as no restriction.
+    """
+    if not filter.get('devices', []):
+        # TODO handle dpdk and OVS nics
+        filter['devices'] = netswitch.netinfo()['nics'].keys()
+    return lldp_info.get_info(filter)
