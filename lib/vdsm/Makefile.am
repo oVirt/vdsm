@@ -30,6 +30,7 @@ dist_vdsmpylib_PYTHON = \
 	clientIF.py \
 	cmdutils.py \
 	commands.py \
+	constants.py \
 	containersconnection.py \
 	cpuarch.py \
 	cpuinfo.py \
@@ -69,7 +70,6 @@ dist_vdsmpylib_PYTHON = \
 
 nodist_vdsmpylib_PYTHON = \
 	config.py \
-	constants.py \
 	dsaversion.py \
 	$(NULL)
 
@@ -85,7 +85,6 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	config.py.in \
-	constants.py.in \
 	dsaversion.py.in \
 	vdsm.conf.sample \
 	$(NULL)

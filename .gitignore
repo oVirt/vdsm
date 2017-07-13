@@ -27,8 +27,8 @@ doc/build
 init/systemd/vdsm-tmpfiles.d.conf
 init/vdsmd_init_common.sh
 lib/vdsm/api/vdsm-api.html
+lib/vdsm/common/constants.py
 lib/vdsm/config.py
-lib/vdsm/constants.py
 lib/vdsm/dsaversion.py
 lib/sos/vdsm.py
 lib/vdsm/storage/lvm.env
