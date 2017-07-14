@@ -308,6 +308,7 @@ class Vm(object):
         self._dom = virdomain.Disconnected(self.id)
         self.cif = cif
         self._custom = {'vmId': self.id}
+        self._exit_info = {}
         if 'xml' in params:
             self._md_desc = metadata.Descriptor.from_xml(params['xml'])
             self._custom['custom'] = self._md_desc.custom
@@ -320,6 +321,12 @@ class Vm(object):
                     value = md.get(key)
                     if value:
                         self.conf[key] = value
+                exit_info = {}
+                for key in ('exitCode', 'exitMessage', 'exitReason',):
+                    value = md.get(key)
+                    if value is not None:
+                        exit_info[key] = value
+                self._exit_info.update(exit_info)
         else:
             self._md_desc = metadata.Descriptor()
             self._custom['custom'] = params.get('custom', {})
@@ -790,10 +797,11 @@ class Vm(object):
 
         except MissingLibvirtDomainError as e:
             # we cannot ever deal with this error, not even on recovery.
+            exit_info = self._exit_info.copy()
             self.setDownStatus(
-                self.conf.get('exitCode', ERROR),
-                self.conf.get('exitReason', e.reason),
-                self.conf.get('exitMessage', ''))
+                exit_info.get('exitCode', ERROR),
+                exit_info.get('exitReason', e.reason),
+                exit_info.get('exitMessage', ''))
             self.recovering = False
         except DestroyedOnStartupError:
             # this could not happen on recovery
@@ -1435,20 +1443,31 @@ class Vm(object):
         if not exitMessage:
             exitMessage = vmexitreason.exitReasons.get(exitReasonCode,
                                                        'VM terminated')
+        exit_info = {
+            'exitCode': code,
+            'exitMessage': exitMessage,
+            'exitReason': exitReasonCode,
+        }
         event_data = {}
         try:
             self.lastStatus = vmstatus.DOWN
-            with self._confLock:
-                self.conf['exitCode'] = code
-                if self._altered_state.origin == _FILE_ORIGIN:
-                    self.conf['exitMessage'] = (
-                        "Wake up from hibernation failed" +
-                        ((":" + exitMessage) if exitMessage else ''))
-                else:
-                    self.conf['exitMessage'] = exitMessage
-                self.conf['exitReason'] = exitReasonCode
+            if self._altered_state.origin == _FILE_ORIGIN:
+                exit_info['exitMessage'] = (
+                    "Wake up from hibernation failed" +
+                    ((":" + exitMessage) if exitMessage else ''))
+            self._exit_info = exit_info
             self.log.info("Changed state to Down: %s (code=%i)",
                           exitMessage, exitReasonCode)
+            try:
+                self._update_metadata()
+            except virdomain.NotConnectedError:
+                # The VM got down before proper self._dom initialization.
+                pass
+            except libvirt.libvirtError as e:
+                # The domain may no longer exist if it is transient
+                # (i.e. legacy).
+                if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN:
+                    raise
             # Engine doesn't like duplicated events (e.g. Down, Down).
             # but this cannot happen in this flow, because
             # if some flows tries to setDownStatus a VM already Down,
@@ -1515,10 +1534,7 @@ class Vm(object):
         return stats
 
     def _getExitedVmStats(self):
-        stats = {
-            'exitCode': self.conf['exitCode'],
-            'exitMessage': self.conf['exitMessage'],
-            'exitReason': self.conf['exitReason']}
+        stats = self._exit_info.copy()
         if 'timeOffset' in self.conf:
             stats['timeOffset'] = self.conf['timeOffset']
         return stats
@@ -4570,6 +4586,7 @@ class Vm(object):
             if self._guest_agent_api_version is not None:
                 vm['guestAgentAPIVersion'] = self._guest_agent_api_version
             vm['destroy_on_reboot'] = self._destroy_on_reboot
+            vm.update(self._exit_info)
         self._md_desc.dump(self._dom)
 
     def releaseVm(self, gracefulAttempts=1):
