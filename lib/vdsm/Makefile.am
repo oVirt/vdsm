@@ -31,6 +31,7 @@ dist_vdsmpylib_PYTHON = \
 	cmdutils.py \
 	commands.py \
 	constants.py \
+	config.py \
 	containersconnection.py \
 	cpuarch.py \
 	cpuinfo.py \
@@ -69,7 +70,6 @@ dist_vdsmpylib_PYTHON = \
 	$(NULL)
 
 nodist_vdsmpylib_PYTHON = \
-	config.py \
 	dsaversion.py \
 	$(NULL)
 
@@ -84,13 +84,12 @@ CLEANFILES = \
 
 
 EXTRA_DIST = \
-	config.py.in \
 	dsaversion.py.in \
 	vdsm.conf.sample \
 	$(NULL)
 
-vdsm.conf.sample: Makefile config.py
-	@echo "  CONFIG $@"; $(PYTHON) $(builddir)/config.py > $@
+vdsm.conf.sample: Makefile common/config.py
+	@echo "  CONFIG $@"; $(PYTHON) -m common.config > $@
 
 install-data-local: \
 	install-data-sample-vdsm-conf

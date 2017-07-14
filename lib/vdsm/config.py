@@ -1,4 +1,5 @@
-# Copyright 2016-2017 Red Hat, Inc.
+#
+# Copyright 2009-2012 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,30 +17,13 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS = network
+from __future__ import absolute_import
 
-vdsmcommondir = $(vdsmpylibdir)/common
+"""
+a proxy for vdsm.common.config.
 
-nodist_vdsmcommon_PYTHON = \
-	config.py \
-	constants.py \
-	$(NULL)
+remove when all modules import vdsm.common.config directly
+"""
 
-dist_vdsmcommon_PYTHON = \
-	$(filter-out $(nodist_vdsmcommon_PYTHON), $(wildcard *.py))
-	$(NULL)
-
-EXTRA_DIST = \
-	config.py.in \
-	constants.py.in \
-	$(NULL)
-
-CLEANFILES = \
-	$(nodist_vdsmcommon_PYTHON) \
-	$(NULL)
-
-all-local: \
-	$(nodist_vdsmcommon_PYTHON) \
-	$(NULL)
+from vdsm.common.config import *  # NOQA: F401, F403

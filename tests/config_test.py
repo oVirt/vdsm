@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ import os
 from monkeypatch import MonkeyPatchScope
 from testlib import namedTemporaryDir, VdsmTestCase
 from vdsm import config
+from vdsm.common import config as common_config
 
 parameters = [
     (
@@ -43,8 +44,9 @@ def fakedirs():
         runtime_dir = os.path.join(tmpdir, 'run')
         dirs = (admin_dir, vendor_dir, runtime_dir)
         with MonkeyPatchScope(
-            [(config, '_SYSCONFDIR', admin_dir),
-             (config, '_DROPPIN_BASES', dirs),
+            [(common_config, '_SYSCONFDIR', admin_dir),
+             (common_config, '_DROPPIN_BASES', dirs),
+             (common_config, 'parameters', parameters),
              (config, 'parameters', parameters)]):
             yield dirs
 
