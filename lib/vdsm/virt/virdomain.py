@@ -60,6 +60,9 @@ class Defined(Disconnected):
         super(Defined, self).__init__(vmid)
         self._dom = dom
 
+    def state(self, *args, **kwargs):
+        return self._dom.state(*args, **kwargs)
+
     def metadata(self, *args, **kwargs):
         return self._dom.metadata(*args, **kwargs)
 

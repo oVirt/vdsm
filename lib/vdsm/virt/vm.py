@@ -778,7 +778,11 @@ class Vm(object):
 
             if self.recovering and \
                self._lastStatus == vmstatus.WAIT_FOR_LAUNCH:
-                self._recover_status()
+                if self._exit_info:
+                    self.set_last_status(vmstatus.DOWN,
+                                         vmstatus.WAIT_FOR_LAUNCH)
+                else:
+                    self._recover_status()
             else:
                 self.lastStatus = vmstatus.UP
             if self._initTimePauseCode:
@@ -855,6 +859,19 @@ class Vm(object):
                 self._migrationSourceThread.start()
             else:
                 self.set_last_status(vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
+        elif state == libvirt.VIR_DOMAIN_SHUTOFF and not self._exit_info:
+            if reason == libvirt.VIR_DOMAIN_SHUTDOWN:
+                self.setDownStatus(NORMAL, vmexitreason.USER_SHUTDOWN)
+            elif reason == libvirt.VIR_DOMAIN_SHUTOFF_DESTROYED:
+                self.setDownStatus(NORMAL, vmexitreason.ADMIN_SHUTDOWN)
+            elif reason == libvirt.VIR_DOMAIN_SHUTOFF_MIGRATED:
+                self.setDownStatus(NORMAL, vmexitreason.MIGRATION_SUCCEEDED)
+            elif reason == libvirt.VIR_DOMAIN_SHUTOFF_SAVED:
+                self.setDownStatus(NORMAL, vmexitreason.SAVE_STATE_SUCCEEDED)
+            elif reason == libvirt.VIR_DOMAIN_SHUTOFF_FAILED:
+                self.setDownStatus(ERROR, vmexitreason.LIBVIRT_START_FAILED)
+            else:
+                self.setDownStatus(ERROR, vmexitreason.GENERIC_ERROR)
         else:
             self.log.error("Unexpected VM state: %s (reason %s)",
                            state, reason)
@@ -2361,9 +2378,7 @@ class Vm(object):
                 state, reason = dom.state(0)
                 if state in _LIBVIRT_DOWN_STATES:
                     self._dom = virdomain.Defined(self.id, dom)
-                    self._undefine_domain()
-                    self._dom = virdomain.Disconnected(self.id)
-                    raise MissingLibvirtDomainError()
+                    return
             self._dom = virdomain.Notifying(dom, self._timeoutExperienced)
             for dev in self._devices[hwclass.NIC]:
                 dev.recover()
