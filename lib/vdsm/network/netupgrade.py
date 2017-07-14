@@ -22,7 +22,7 @@ import string
 
 import six
 
-from vdsm.config import config
+from vdsm.common.config import config
 
 from vdsm.virt import libvirtnetwork
 

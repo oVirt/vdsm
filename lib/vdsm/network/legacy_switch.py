@@ -25,8 +25,7 @@ import os
 
 import six
 
-from vdsm.config import config
-
+from vdsm.common.config import config
 from vdsm.common.conv import tobool
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig

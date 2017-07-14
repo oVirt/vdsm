@@ -32,13 +32,13 @@ from netaddr.core import AddrFormatError
 from netaddr import IPAddress
 from netaddr import IPNetwork
 
-from vdsm.config import config
+from vdsm.common.cmdutils import CommandPath
+from vdsm.common.config import config
 from vdsm.network import cmd
 from vdsm.network import ethtool
 from vdsm.network.link import dpdk
 from vdsm.network.netlink import libnl
 from vdsm.network.netlink import link
-from vdsm.common.cmdutils import CommandPath
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
 

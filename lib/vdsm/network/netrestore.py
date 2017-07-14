@@ -25,11 +25,11 @@ import os
 import six
 
 from vdsm.common.constants import P_VDSM_RUN
-from vdsm.config import config
+from vdsm.common.config import config
+from vdsm.common.conv import tobool
 from vdsm.network import netswitch
 from vdsm.network.link import setup
 from vdsm.network.link.bond import Bond
-from vdsm.common.conv import tobool
 
 from .netconfpersistence import PersistentConfig
 

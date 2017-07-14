@@ -27,7 +27,8 @@ import errno
 
 import six
 
-from vdsm.config import config
+from vdsm.common.config import config
+from vdsm.common.time import monotonic_time
 from vdsm import hostdev
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
@@ -40,7 +41,6 @@ from vdsm.network.netrestore import NETS_RESTORED_MARK
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig, \
     CONF_PERSIST_DIR, BaseConfig
 from vdsm.network.nm import networkmanager
-from vdsm.common.time import monotonic_time
 
 # Ifcfg persistence restoration
 from vdsm.network.configurators import ifcfg

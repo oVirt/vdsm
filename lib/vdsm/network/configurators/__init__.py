@@ -23,7 +23,7 @@ import logging
 import six
 from six.moves import configparser
 
-from vdsm.config import config
+from vdsm.common.config import config
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.link import iface as link_iface
 
