@@ -588,22 +588,6 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, errors.ERR_BAD_BRIDGE, msg)
 
     @cleanupNet
-    def testFailWithInvalidIpConfig(self):
-        invalid_ip_configs = (dict(ipaddr='1.2.3.4'), dict(netmask='1.2.3.4'),
-                              dict(gateway='1.2.3.4'),
-                              dict(ipaddr='1.2.3', netmask='255.255.0.0'),
-                              dict(ipaddr='1.2.3.256', netmask='255.255.0.0'),
-                              dict(ipaddr='1.2.3.4', netmask='256.255.0.0'),
-                              dict(ipaddr='1.2.3.4.5', netmask='255.255.0.0'),
-                              dict(ipaddr='1.2.3.4', netmask='255.255.0.0',
-                                   gateway='1.2.3.256'),
-                              )
-        for ipconfig in invalid_ip_configs:
-            status, msg = self.setupNetworks({NETWORK_NAME: ipconfig},
-                                             {}, NOCHK)
-            self.assertEqual(status, errors.ERR_BAD_ADDR, msg)
-
-    @cleanupNet
     @permutations([[True], [False]])
     def testFailWithInvalidParams(self, bridged):
         status, msg = self.setupNetworks(
