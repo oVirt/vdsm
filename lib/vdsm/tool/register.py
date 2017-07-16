@@ -223,8 +223,7 @@ class Register(object):
         """
 
         try:
-            if selinux.is_selinux_enabled():
-                selinux.restorecon(path)
+            selinux.restorecon(path)
         except:
             self.logger.error("restorecon %s failed" % path, exc_info=True)
 

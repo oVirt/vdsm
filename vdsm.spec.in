@@ -216,7 +216,7 @@ Requires: sos
 Requires: tree
 Requires: dosfstools
 Requires: genisoimage
-Requires: libselinux-python
+Requires: libselinux-python >= 2.5-2
 Requires: %{name}-python = %{version}-%{release}
 Requires: %{name}-hook-vmfex-dev = %{version}-%{release}
 Requires: NetworkManager-config-server

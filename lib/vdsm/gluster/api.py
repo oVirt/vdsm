@@ -140,8 +140,7 @@ def updateGeoRepKeys(userName, geoRepPubKeys):
         try:
             os.makedirs(sshDir, 0o700)
             os.chown(sshDir, uid, gid)
-            if selinux.is_selinux_enabled():
-                selinux.restorecon(sshDir)
+            selinux.restorecon(sshDir)
         except OSError as e:
             raise ge.GlusterGeoRepPublicKeyWriteFailedException(err=[str(e)])
 
@@ -168,8 +167,7 @@ def updateGeoRepKeys(userName, geoRepPubKeys):
         safeWrite(authKeysFile, ''.join(outLines))
         os.chmod(authKeysFile, 0o600)
         os.chown(authKeysFile, uid, gid)
-        if selinux.is_selinux_enabled():
-            selinux.restorecon(authKeysFile)
+        selinux.restorecon(authKeysFile)
     except (IOError, OSError) as e:
         raise ge.GlusterGeoRepPublicKeyWriteFailedException(err=[str(e)])
 

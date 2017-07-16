@@ -254,11 +254,10 @@ def hookAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
     hookPath = os.path.join(_glusterHooksPath, glusterCmd, hookLevel.lower())
     try:
         os.makedirs(hookPath)
-        if selinux.is_selinux_enabled():
-            try:
-                selinux.restorecon(hookPath, recursive=True)
-            except OSError:
-                logging.error('restorecon %s failed', hookPath, exc_info=True)
+        try:
+            selinux.restorecon(hookPath, recursive=True)
+        except OSError:
+            logging.error('restorecon %s failed', hookPath, exc_info=True)
     except OSError as e:
         if e.errno != errno.EEXIST:
             errMsg = "[Errno %s] %s: '%s'" % (e.errno, e.strerror, e.filename)

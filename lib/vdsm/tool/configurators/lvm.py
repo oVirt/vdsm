@@ -158,10 +158,7 @@ def _install_file(src, dst):
     tmpfile = _LVMLOCAL_CUR + ".tmp"
     shutil.copyfile(_LVMLOCAL_VDSM, tmpfile)
     try:
-        # TODO: remove when we require selinux version that does not explode
-        # when selinux is disabled.
-        if selinux.is_selinux_enabled():
-            selinux.restorecon(tmpfile)
+        selinux.restorecon(tmpfile)
         os.chmod(tmpfile, 0o644)
         os.rename(tmpfile, _LVMLOCAL_CUR)
     except:

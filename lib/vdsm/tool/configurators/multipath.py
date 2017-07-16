@@ -120,8 +120,7 @@ def configure():
         try:
             f.write(_CONF_DATA)
             f.flush()
-            if selinux.is_selinux_enabled():
-                selinux.restorecon(f.name)
+            selinux.restorecon(f.name)
             os.chmod(f.name, 0o644)
             os.rename(f.name, _CONF_FILE)
         except:
