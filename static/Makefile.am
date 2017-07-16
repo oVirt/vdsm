@@ -138,6 +138,11 @@ dist_dhclientmon_SCRIPTS = \
 	./etc/dhcp/dhclient.d/dhclientmon.sh \
 	$(NULL)
 
+libvirthookdir = $(sysconfdir)/libvirt/hooks
+dist_libvirthook_SCRIPTS = \
+	./etc/libvirt/hooks/qemu \
+        $(NULL)
+
 systemdunitdir = $(SYSTEMD_UNIT_DIR)
 
 systemdunit_DATA = \

@@ -56,5 +56,4 @@ dist_vdsmexec_SCRIPTS = \
 	$(NULL)
 
 EXTRA_DIST = \
-	libvirt-hook.sh \
 	$(NULL)
