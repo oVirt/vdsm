@@ -166,7 +166,7 @@ CLEANFILES = \
 	$(NULL)
 
 EXTRA_DIST = \
-        $(libvirtpassword_DATA) \
+	$(libvirtpassword_DATA) \
 	$(limits_DATA) \
 	$(modprobe_DATA) \
 	$(modulesload_DATA) \
