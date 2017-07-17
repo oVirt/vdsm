@@ -54,6 +54,11 @@ class vdsm(Plugin, RedHatPlugin):
     # Make compatible com sos version >= 3
     if not hasattr(Plugin, 'addCopySpec'):
         addCopySpec = Plugin.add_copy_spec
+        # sosreport 3.4 replaced add_copy_spec_limit with add_copy_spec
+        if hasattr(Plugin, 'add_copy_spec_limit'):
+            addCopySpecLimit = Plugin.add_copy_spec_limit
+        else:
+            addCopySpecLimit = Plugin.add_copy_spec
         collectExtOutput = Plugin.add_cmd_output
         getOption = Plugin.get_option
         addForbiddenPath = Plugin.add_forbidden_path
@@ -70,8 +75,12 @@ class vdsm(Plugin, RedHatPlugin):
         self.addCopySpec("/etc/vdsm/*")
         self.addCopySpec("/etc/vdsm-reg/*")
         logsize = self.getOption('logsize')
-        self.addCopySpec("/var/log/vdsm/*", logsize)
-        self.addCopySpec("/var/log/vdsm-reg/*", logsize)
+        if logsize is not None:
+            self.addCopySpecLimit("/var/log/vdsm/*", logsize)
+            self.addCopySpecLimit("/var/log/vdsm-reg/*", logsize)
+        else:
+            self.addCopySpec("/var/log/vdsm/*")
+            self.addCopySpec("/var/log/vdsm-reg/*")
         self._addVdsmRunDir()
         self.addCopySpec("@TRUSTSTORE@")
         self.addCopySpec("@HOOKSDIR@")
