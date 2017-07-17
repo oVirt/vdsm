@@ -93,6 +93,17 @@ Options for the \fIrestore_nets_init\fP module:
 Restore IP+link configuration of persisted networks.
 .RE
 .TP
+Options for the \fInetwork\fP module:
+.RS
+.TP
+.B list-nets
+List networks configured by VDSM.
+.RE
+.TP
+.B clear-nets
+Remove networks configured by VDSM.
+.RE
+.TP
 Options for the \fIservice\fP module:
 .RS
 .TP
