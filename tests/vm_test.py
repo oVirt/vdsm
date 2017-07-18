@@ -73,6 +73,7 @@ from vdsm import libvirtconnection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import namedTemporaryDir
 from testValidation import brokentest, slowtest
+from testValidation import xfail
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
 import vmfakelib as fake
@@ -1131,6 +1132,22 @@ class TestVm(XMLTestCase):
                 'graceful': attempts,
                 'forceful': 1,
             })
+
+    @xfail("ACPI element not set yet")
+    def test_acpi_enabled(self):
+        params = {'acpiEnable': True}
+        with fake.VM(params=params, arch=cpuarch.X86_64) as testvm:
+            self.assertTrue(testvm.acpi_enabled())
+
+    def test_acpi_disabled(self):
+        params = {'acpiEnable': False}
+        with fake.VM(params=params, arch=cpuarch.X86_64) as testvm:
+            self.assertFalse(testvm.acpi_enabled())
+
+    @xfail("ACPI element not set yet")
+    def test_acpi_missing(self):
+        with fake.VM(params={}, arch=cpuarch.X86_64) as testvm:
+            self.assertTrue(testvm.acpi_enabled())
 
 
 class ExpectedError(Exception):
