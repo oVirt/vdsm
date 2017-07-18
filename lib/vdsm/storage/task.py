@@ -393,7 +393,7 @@ class Recovery:
         if self.callback:
             self.callback(self)
         # instantiate an object of class "self.object" (bad name)
-        module = __import__('storage.' + self.moduleName,
+        module = __import__('vdsm.storage.' + self.moduleName,
                             locals(), globals(),
                             [self.moduleName])
         classObj = getattr(module, self.object)
