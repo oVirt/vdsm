@@ -1961,6 +1961,7 @@ class Vm(object):
         serial_console = self._getSerialConsole()
 
         domxml = libvirtxml.Domain(self.conf, self.log, self.arch)
+        domxml.appendMetadata()
         domxml.appendOs(use_serial_console=(serial_console is not None))
 
         if self.hugepages:

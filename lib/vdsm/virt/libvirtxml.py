@@ -82,8 +82,6 @@ class Domain(object):
         self._devices = vmxml.Element('devices')
         self.dom.appendChild(self._devices)
 
-        self.appendMetadata()
-
     def appendClock(self):
         """
         Add <clock> element to domain:

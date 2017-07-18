@@ -146,6 +146,7 @@ class TestVm(XMLTestCase):
            </domain>"""
 
         domxml = libvirtxml.Domain(self.conf, self.log, cpuarch.X86_64)
+        domxml.appendMetadata()
         self.assertXMLEqual(domxml.toxml(), expectedXML)
 
     def testOSXMLBootMenu(self):
