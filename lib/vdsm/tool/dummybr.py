@@ -1,4 +1,4 @@
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,9 +17,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-
 from __future__ import absolute_import
+
 import os
+
+from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 
 from vdsm.network.api import DUMMY_BRIDGE
 from .. import libvirtconnection, commands
@@ -36,6 +38,14 @@ def createEphemeralBridge(bridgeName):
         )
 
 
+def removeEphemeralBridge(bridgeName):
+    rc, out, err = commands.execCmd([EXT_BRCTL, 'delbr', bridgeName])
+    if rc != 0:
+        raise EnvironmentError(
+            'Failed to remove ephemeral dummy bridge. Err: %s' % err
+        )
+
+
 def addBridgeToLibvirt(bridgeName):
     conn = libvirtconnection.get(None, False)
     if bridgeName not in conn.listNetworks():
@@ -44,10 +54,39 @@ def addBridgeToLibvirt(bridgeName):
             '''name='%s'/></network>''' % (bridgeName, bridgeName))
 
 
+def removeBridgeFromLibvirt(bridgeName):
+    dummy_network = _getLibvirtNetworkByName(bridgeName)
+    if dummy_network and dummy_network.isActive():
+        dummy_network.destroy()
+
+
+def _getLibvirtNetworkByName(networkName):
+    conn = libvirtconnection.get(killOnFailure=False)
+    try:
+        return conn.networkLookupByName(networkName)
+    except libvirtError as e:
+        if e.get_error_code() == VIR_ERR_NO_NETWORK:
+            return None
+        raise
+
+
 @expose('dummybr')
-def main(*args):
+def create_dummybr_deprecated(*args):
     """
     dummybr
+
+    Defines dummy bridge on libvirt network.
+
+    Deprecated in favor of dummybr-create.
+    """
+    create_dummybr(*args)
+
+
+@expose('dummybr-create')
+def create_dummybr(*args):
+    """
+    dummybr-create
+
     Defines dummy bridge on libvirt network.
     """
 
@@ -57,3 +96,19 @@ def main(*args):
     if not os.path.exists('/sys/class/net/%s' % DUMMY_BRIDGE):
         createEphemeralBridge(DUMMY_BRIDGE)
     addBridgeToLibvirt(DUMMY_BRIDGE)
+
+
+@expose('dummybr-remove')
+def remove_dummybr(*args):
+    """
+    dummybr-remove
+
+    Undefines dummy bridge on libvirt network.
+    """
+
+    if len(args) > 1:
+        raise ExtraArgsError()
+
+    if os.path.exists('/sys/class/net/%s' % DUMMY_BRIDGE):
+        removeEphemeralBridge(DUMMY_BRIDGE)
+    removeBridgeFromLibvirt(DUMMY_BRIDGE)
