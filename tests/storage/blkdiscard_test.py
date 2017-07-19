@@ -23,8 +23,6 @@ from testlib import VdsmTestCase
 from vdsm import cmdutils
 from vdsm.storage import blkdiscard
 
-BLKDISCARD = blkdiscard._blkdiscard.cmd
-
 
 class TestBlkdiscard(VdsmTestCase):
 
