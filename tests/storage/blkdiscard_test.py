@@ -20,6 +20,7 @@
 
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase
+
 from vdsm import cmdutils
 from vdsm.storage import blkdiscard
 
@@ -27,9 +28,9 @@ from vdsm.storage import blkdiscard
 class TestBlkdiscard(VdsmTestCase):
 
     @MonkeyPatch(blkdiscard._blkdiscard, '_cmd', '/usr/bin/true')
-    def test_success(self):
-        self.assertNotRaises(blkdiscard.blkdiscard, "/dev/vg/lv")
+    def test_discard_success(self):
+        self.assertNotRaises(blkdiscard.discard, "/dev/vg/lv")
 
     @MonkeyPatch(blkdiscard._blkdiscard, '_cmd', '/usr/bin/false')
-    def test_error(self):
-        self.assertRaises(cmdutils.Error, blkdiscard.blkdiscard, "/dev/vg/lv")
+    def test_discard_error(self):
+        self.assertRaises(cmdutils.Error, blkdiscard.discard, "/dev/vg/lv")

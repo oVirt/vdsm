@@ -121,6 +121,6 @@ def discard(device_path):
     try:
         with utils.stopwatch("Discarded device %s" % device_path,
                              level=logging.INFO, log=log):
-            blkdiscard.blkdiscard(device_path)
+            blkdiscard.discard(device_path)
     except cmdutils.Error as e:
         log.warning("Discarding device %s failed: %s", device_path, e)

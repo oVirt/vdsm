@@ -27,7 +27,16 @@ from vdsm.common.cmdutils import CommandPath
 _blkdiscard = CommandPath("blkdiscard", "/sbin/blkdiscard")
 
 
-def blkdiscard(device):
+def discard(device):
+    """
+    Discards a block device.
+
+    Arguments:
+        device (str): The path to the block device to discard.
+
+    Raises:
+        cmdutils.Error if an error has occurred in blkdiscard.
+    """
     cmd = [_blkdiscard.cmd]
     cmd.append(device)
 
