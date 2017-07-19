@@ -38,6 +38,7 @@ Return codes:
 from __future__ import absolute_import
 
 from vdsm import hooks
+import io
 import json
 import os
 import sys
@@ -52,12 +53,12 @@ tobool
 
 
 def read_domxml():
-    with open(os.environ['_hook_domxml']) as f:
-        return minidom.parseString(f.read())
+    with io.open(os.environ['_hook_domxml'], 'rb') as f:
+        return minidom.parseString(f.read().decode('utf-8'))
 
 
 def write_domxml(domxml):
-    with open(os.environ['_hook_domxml'], 'w') as f:
+    with io.open(os.environ['_hook_domxml'], 'wb') as f:
         f.write(domxml.toxml(encoding='utf-8'))
 
 
