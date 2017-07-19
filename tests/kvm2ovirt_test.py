@@ -59,7 +59,7 @@ class TestKvm2Ovirt(TestCaseBase):
     def setUp(self):
         self._vms = [MockVirDomain(*spec) for spec in VM_SPECS]
 
-    def test_download_file(self):
+    def test_download_volume(self):
         conn = MockVirConnect(vms=self._vms)
 
         def connect(uri, username, password):
@@ -74,7 +74,7 @@ class TestKvm2Ovirt(TestCaseBase):
                     '--password-file', env.password,
                     '--source', '/fake/source',
                     '--dest', env.destination,
-                    '--storage-type', 'file',
+                    '--storage-type', 'volume',
                     '--vm-name', self._vms[0].name()]
 
             kvm2ovirt.main(args)
@@ -83,7 +83,7 @@ class TestKvm2Ovirt(TestCaseBase):
                 actual = f.read()
             self.assertEqual(actual, FakeVolume().data())
 
-    def test_download_block(self):
+    def test_download_path(self):
         conn = MockVirConnect(vms=self._vms)
 
         def connect(uri, username, password):
@@ -98,7 +98,7 @@ class TestKvm2Ovirt(TestCaseBase):
                     '--password-file', env.password,
                     '--source', '/fake/source',
                     '--dest', env.destination,
-                    '--storage-type', 'block',
+                    '--storage-type', 'path',
                     '--vm-name', self._vms[0].name()]
 
             kvm2ovirt.main(args)

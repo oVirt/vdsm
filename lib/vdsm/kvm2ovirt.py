@@ -73,7 +73,7 @@ def arguments(args):
     parser.add_argument('--dest', dest='dest', nargs='+', required=True,
                         help='Destination local volumes path')
     parser.add_argument('--storage-type', dest='storagetype', nargs='+',
-                        required=True, help='Storage type (file or block)')
+                        required=True, help='Storage type (volume or path)')
     parser.add_argument('--vm-name', dest='vmname', required=True,
                         help='Libvirt source VM name')
     parser.add_argument('--bufsize', dest='bufsize', default=1048576,
@@ -136,7 +136,7 @@ def get_password(options):
         return ProtectedPassword(f.read())
 
 
-def handle_file(con, diskno, src, dst, options):
+def handle_volume(con, diskno, src, dst, options):
     write_output('Copying disk %d/%d to %s' % (diskno, len(options.source),
                                                dst))
     vol = con.storageVolLookupByPath(src)
@@ -154,7 +154,7 @@ def handle_file(con, diskno, src, dst, options):
     download_disk(sr, estimated_size, None, dst, options.bufsize)
 
 
-def handle_block(con, diskno, src, dst, options):
+def handle_path(con, diskno, src, dst, options):
     write_output('Copying disk %d/%d to %s' % (diskno, len(options.source),
                                                dst))
     vm = con.lookupByName(options.vmname)
@@ -175,8 +175,8 @@ def validate_disks(options):
         write_output('>>> source, dest, and storage-type have different'
                      ' lengths')
         sys.exit(1)
-    elif not all(st in ("file", "block") for st in options.storagetype):
-        write_output('>>> unsupported storage type. (supported: file, block)')
+    elif not all(st in ("volume", "path") for st in options.storagetype):
+        write_output('>>> unsupported storage type. (supported: volume, path)')
         sys.exit(1)
 
 
@@ -194,9 +194,9 @@ def main(argv=None):
     write_output('preparing for copy')
     disks = itertools.izip(options.source, options.dest, options.storagetype)
     for diskno, (src, dst, fmt) in enumerate(disks, start=1):
-        if fmt == 'file':
-            handle_file(con, diskno, src, dst, options)
-        elif fmt == 'block':
-            handle_block(con, diskno, src, dst, options)
+        if fmt == 'volume':
+            handle_volume(con, diskno, src, dst, options)
+        elif fmt == 'path':
+            handle_path(con, diskno, src, dst, options)
         diskno = diskno + 1
     write_output('Finishing off')

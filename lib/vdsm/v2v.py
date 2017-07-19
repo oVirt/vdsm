@@ -713,9 +713,12 @@ class KVMCommand(V2VCommand):
                     if disk_info is None:
                         break
                     disk.update(disk_info)
-                    if 'alias' in disk:
+                    if 'vol-key' in disk:
+                        src.append(disk['vol-key'])
+                        fmt.append('volume')
+                    elif 'alias' in disk:
                         src.append(disk['alias'])
-                        fmt.append(disk['disktype'])
+                        fmt.append('path')
                 return src, fmt
 
     def _dest_images(self):
@@ -1149,13 +1152,10 @@ def _get_disk_info(conn, disk, vm):
                     if conn.getType() == 'Xen':
                         logging.error('Disk has to be in storage pool')
                         return None
-                    # From here on the disktype is used only to notify
-                    # kvm2ovirt about the proper download method. Let's change
-                    # it so that kvm2ovirt handles the source properly.
-                    disk['disktype'] = 'block'
 
             if vol:
                 _, capacity, alloc = vol.info()
+                out['vol-key'] = vol.key()
             else:
                 # This is primarily for block devices, but it can be also used
                 # on any local path

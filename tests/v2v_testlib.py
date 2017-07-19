@@ -91,6 +91,9 @@ class FakeVolume(object):
     def seek(self, pos):
         self._bytes.seek(pos)
 
+    def key(self):
+        return "abcd12345"
+
 
 class FakeStream(object):
     def __init__(self):
