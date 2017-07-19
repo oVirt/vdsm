@@ -182,11 +182,15 @@ class v2vTests(TestCaseBase):
                                        ProtectedPassword('password'),
                                        None)['vmList']
 
+        # Make sure that VM nr. 4 is not in the returned list
+        # (the one with snapshot, see setUp())
         self.assertEqual(len(vms), len(VM_SPECS) - 1)
         self.assertNotIn(self._vms_with_snapshot[4].ID,
                          [vm['vmId'] for vm in vms])
 
-        for vm, spec in zip(vms, VM_SPECS):
+        specs = list(VM_SPECS)
+        del specs[4]
+        for vm, spec in zip(vms, specs):
             self._assertVmMatchesSpec(vm, spec)
             self._assertVmDisksMatchSpec(vm, spec)
 
@@ -365,9 +369,14 @@ class v2vTests(TestCaseBase):
 
     def _assertVmDisksMatchSpec(self, vm, spec):
         disk = vm['disks'][0]
-        self.assertEqual(disk['dev'], 'sda')
-        self.assertEqual(disk['alias'],
-                         '[datastore1] RHEL/RHEL_%s.vmdk' % spec.name)
+        if spec.has_disk_volume:
+            self.assertEqual(disk['dev'], 'sda')
+            self.assertEqual(disk['alias'],
+                             '[datastore1] RHEL/RHEL_%s.vmdk' % spec.name)
+        else:
+            self.assertEqual(disk['dev'], 'sdb')
+            self.assertEqual(disk['alias'],
+                             BLOCK_DEV_PATH)
         self.assertIn('capacity', disk)
         self.assertIn('allocation', disk)
 
@@ -375,7 +384,8 @@ class v2vTests(TestCaseBase):
         self.assertEqual(vm['vmId'], spec.uuid)
         self.assertEqual(vm['memSize'], 2048)
         self.assertEqual(vm['smp'], 1)
-        self.assertEqual(len(vm['disks']), 1)
+        self.assertEqual(len(vm['disks']),
+                         int(spec.has_disk_volume) + int(spec.has_disk_block))
         self.assertEqual(len(vm['networks']), 1)
         self.assertEqual(vm['has_snapshots'], spec.has_snapshots)
 
@@ -394,10 +404,7 @@ class v2vTests(TestCaseBase):
 
     def testBlockDevice(self):
         def _connect(uri, username, passwd):
-            for vm in self._vms:
-                vm.setDiskType('block')
-            conn = MockVirConnect(vms=self._vms)
-            return conn
+            return MockVirConnect(vms=self._vms)
 
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
@@ -406,11 +413,11 @@ class v2vTests(TestCaseBase):
                                        None)['vmList']
 
         self.assertEqual(len(vms), len(VM_SPECS))
-        self.assertEqual(BLOCK_DEV_PATH, vms[0]['disks'][0]['alias'])
+        self.assertEqual(BLOCK_DEV_PATH, vms[4]['disks'][0]['alias'])
+        self.assertEqual(BLOCK_DEV_PATH, vms[5]['disks'][1]['alias'])
 
     def testXenBlockDevice(self):
         def _connect(uri, username, passwd):
-            self._vms[0].setDiskType('block')
             conn = MockVirConnect(vms=self._vms)
             conn.setType('Xen')
             return conn
@@ -421,8 +428,12 @@ class v2vTests(TestCaseBase):
                                        ProtectedPassword('password'),
                                        None)['vmList']
 
-        self.assertEqual(len(vms), len(VM_SPECS) - 1)
-        self.assertTrue(self._vms[0] not in vms)
+        # Import of VMs with block devices is not supported for Xen source
+        # so the VMs RHEL_4 and RHEL_5 should not be in the list.
+        self.assertEqual(len(vms), len(VM_SPECS) - 2)
+        vm_names = [vm['vmName'] for vm in vms]
+        self.assertTrue('RHEL_4' not in vm_names)
+        self.assertTrue('RHEL_5' not in vm_names)
 
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     @MonkeyPatch(v2v, '_LOG_DIR', None)

@@ -25,23 +25,44 @@ import uuid
 import vmfakelib as fake
 
 VmSpec = namedtuple('VmSpec',
-                    ['name', 'uuid', 'id', 'active', 'has_snapshots'])
+                    ['name', 'uuid', 'id', 'active', 'has_snapshots',
+                     'has_disk_volume', 'has_disk_block'])
 
 VM_SPECS = (
     VmSpec("RHEL_0", str(uuid.uuid4()), id=0, active=True,
-           has_snapshots=False),
+           has_snapshots=False, has_disk_volume=True, has_disk_block=False),
     VmSpec("RHEL_1", str(uuid.uuid4()), id=1, active=True,
-           has_snapshots=False),
+           has_snapshots=False, has_disk_volume=True, has_disk_block=False),
     VmSpec("RHEL_2", str(uuid.uuid4()), id=2, active=False,
-           has_snapshots=False),
+           has_snapshots=False, has_disk_volume=True, has_disk_block=False),
     VmSpec("RHEL_3", str(uuid.uuid4()), id=3, active=False,
-           has_snapshots=False),
+           has_snapshots=False, has_disk_volume=True, has_disk_block=False),
     VmSpec("RHEL_4", str(uuid.uuid4()), id=4, active=False,
-           has_snapshots=False),
+           has_snapshots=False, has_disk_volume=False, has_disk_block=True),
+    VmSpec("RHEL_5", str(uuid.uuid4()), id=5, active=False,
+           has_snapshots=False, has_disk_volume=True, has_disk_block=True),
 )
 
 
 BLOCK_DEV_PATH = '/dev/mapper/vdev'
+
+XML_DISK_VOLUME = """
+        <disk type='file' device='disk'>
+            <source file='[datastore1] RHEL/RHEL_{name}.vmdk' />
+            <target dev='sda' bus='scsi'/>
+            <address type='drive' controller='0' bus='0' target='0'
+                     unit='0'/>
+        </disk>
+"""
+
+XML_DISK_BLOCK = """
+        <disk type='block' device='disk'>
+            <source dev='{block}'/>
+            <target dev='sdb' bus='scsi'/>
+            <address type='drive' controller='0' bus='0' target='0'
+                     unit='0'/>
+        </disk>
+"""
 
 
 def _mac_from_uuid(vm_uuid):
@@ -88,15 +109,19 @@ class MockVirDomain(object):
                  vm_uuid="564d7cb4-8e3d-06ec-ce82-7b2b13c6a611",
                  id=0,
                  active=False,
-                 has_snapshots=False):
+                 has_snapshots=False,
+                 has_disk_volume=False,
+                 has_disk_block=False
+                 ):
         self._name = name
         self._uuid = vm_uuid
         self._mac_address = _mac_from_uuid(vm_uuid)
         self._id = id
         self._active = active
         self._has_snapshots = has_snapshots
-        self._disk_type = 'file'
         self._block_disk = FakeVolume()
+        self._has_disk_block = has_disk_block
+        self._has_disk_volume = has_disk_volume
 
     def name(self):
         return self._name
@@ -119,10 +144,19 @@ class MockVirDomain(object):
     def isActive(self):
         return self._active
 
-    def setDiskType(self, disk_type):
-        self._disk_type = disk_type
-
     def XMLDesc(self, flags=0):
+        params = {
+            'name': self._name,
+            'uuid': self._uuid,
+            'block': BLOCK_DEV_PATH,
+            'mac': self._mac_address
+        }
+        params['volume_disk'] = "" if not self._has_disk_volume else \
+            XML_DISK_VOLUME.format(**params)
+
+        params['block_disk'] = "" if not self._has_disk_block else \
+            XML_DISK_BLOCK.format(**params)
+
         return """
 <domain type='vmware' id='15'>
     <name>{name}</name>
@@ -138,14 +172,16 @@ class MockVirDomain(object):
     <on_reboot>restart</on_reboot>
     <on_crash>destroy</on_crash>
     <devices>
-        <disk type='{disk_type}' device='disk'>
-            <source file='[datastore1] RHEL/RHEL_{name}.vmdk' dev='{block}'/>
-            <target dev='sda' bus='scsi'/>
-            <address type='drive' controller='0' bus='0' target='0' unit='0'/>
-        </disk>
-        <disk type='{disk_type}' device='cdrom'>
+        {volume_disk}
+        {block_disk}
+        <disk type='file' device='cdrom'>
             <source file='[datastore1] RHEL/cdrom.iso' />
             <target dev='hdb' bus='ide'/>
+            <readonly/>
+        </disk>
+        <disk type='block' device='cdrom'>
+            <source file='/dev/sr0' />
+            <target dev='hdc' bus='ide'/>
             <readonly/>
         </disk>
         <controller type='scsi' index='0' model='vmpvscsi'/>
@@ -158,12 +194,7 @@ class MockVirDomain(object):
             <model type='vmvga' vram='8192'/>
         </video>
     </devices>
-</domain>""".format(
-            name=self._name,
-            block=BLOCK_DEV_PATH,
-            uuid=self._uuid,
-            disk_type=self._disk_type,
-            mac=self._mac_address)
+</domain>""".format(**params)
 
     def hasCurrentSnapshot(self):
         return self._has_snapshots
@@ -172,11 +203,17 @@ class MockVirDomain(object):
         self._has_snapshots = has_snapshot
 
     def blockInfo(self, source):
+        if not self._has_disk_block:
+            raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR,
+                             "no such disk in this VM")
         # capacity, allocation, physical
         info = self._block_disk.info()
         return [info[1], info[2], info[1]]
 
     def blockPeek(self, disk, pos, size):
+        if not self._has_disk_block:
+            raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR,
+                             "no such disk in this VM")
         self._block_disk.seek(pos)
         return self._block_disk.read(size)
 
@@ -223,6 +260,9 @@ class MockVirConnect(object):
                          'virDomainLookupByID() failed')
 
     def storageVolLookupByPath(self, name):
+        if not any([vm._has_disk_volume for vm in self._vms]):
+            raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR,
+                             "no volume in storage")
         return FakeVolume()
 
     def newStream(self):
