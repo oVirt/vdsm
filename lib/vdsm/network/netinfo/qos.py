@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 
 from collections import defaultdict
+import logging
 
 import six
 
@@ -40,6 +41,11 @@ def report_network_qos(nets_info, devs_info):
             host_ports = [port for port in attrs['ports'] if
                           not port.startswith('vnet')]
             if not host_ports:  # Port-less bridge
+                continue
+            if len(host_ports) > 1:
+                logging.error('Multiple southbound ports per network detected,'
+                              ' ignoring this network for the QoS report '
+                              '(network: %s, ports: %s)', net, host_ports)
                 continue
             iface, = host_ports
         if iface in devs_info['vlans']:
