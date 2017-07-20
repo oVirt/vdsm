@@ -877,7 +877,6 @@ exit 0
 %dir %{_sysconfdir}/%{vdsm_name}/mom.d
 %dir %{_datadir}/%{vdsm_name}
 %{_datadir}/%{vdsm_name}/daemonAdapter
-%{_datadir}/%{vdsm_name}/hooking.py*
 %{_datadir}/%{vdsm_name}/sitecustomize.py*
 %{_datadir}/%{vdsm_name}/supervdsmd
 %{_datadir}/%{vdsm_name}/vdsmd
@@ -1051,6 +1050,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/cmdutils.py*
 %{python_sitelib}/%{vdsm_name}/commands.py*
 %{python_sitelib}/%{vdsm_name}/common/*.py*
+%{python_sitelib}/%{vdsm_name}/hook/*.py*
 %{python_sitelib}/%{vdsm_name}/host/*.py*
 %{python_sitelib}/%{vdsm_name}/common/network/*.py*
 %{python_sitelib}/%{vdsm_name}/config.py*

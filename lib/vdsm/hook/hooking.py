@@ -35,6 +35,7 @@ Return codes:
 2 - the hook failed, no further hooks should be processed.
 >2 - reserved
 """
+from __future__ import absolute_import
 
 from vdsm import hooks
 import json
