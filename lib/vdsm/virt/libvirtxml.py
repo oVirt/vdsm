@@ -520,6 +520,29 @@ class Domain(object):
         return self.conf.get('maxVCpus', self._getSmp())
 
 
+def make_minimal_domain(dom):
+    """
+    Enhance a Domain object, appending all the elements which
+    - are not devices - which require extra logic
+    - don't need additional logic or parameters, besides the trivial
+      check on the CPU architecture.
+
+    Args:
+        dom (libvirtxml.Domain): domain object to enhance. It is recommended
+            to use a freshly-built domain object, whose append* methods are
+            not yet being called.
+
+    Example:
+
+    dom = make_minimal_domain(Domain(conf, log, arch))
+    """
+    dom.appendMetadata()
+    dom.appendClock()
+    if cpuarch.is_x86(dom.arch):
+        dom.appendFeatures()
+    return dom
+
+
 def parse_drive_mapping(custom):
     mappings = custom.get('volumeMap', None)
     if mappings is None:

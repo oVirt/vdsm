@@ -57,6 +57,14 @@ CONF_TO_DOMXML_X86_64 = [({
                     <ovirt-tune:qos/>
                     <ovirt-vm:vm/>
                 </metadata>
+                <clock adjustment="0" offset="variable">
+                    <timer name="rtc" tickpolicy="catchup"/>
+                    <timer name="pit" tickpolicy="delay"/>
+                    <timer name="hpet" present="no"/>
+                </clock>
+                <features>
+                    <acpi/>
+                </features>
                 <os>
                     <type arch="x86_64" machine="pc">hvm</type>
                     <smbios mode="sysinfo"/>
@@ -70,14 +78,6 @@ CONF_TO_DOMXML_X86_64 = [({
                         <entry name="uuid">%(vmId)s</entry>
                     </system>
                 </sysinfo>
-                <clock adjustment="0" offset="variable">
-                    <timer name="rtc" tickpolicy="catchup"/>
-                    <timer name="pit" tickpolicy="delay"/>
-                    <timer name="hpet" present="no"/>
-                </clock>
-                <features>
-                    <acpi/>
-                </features>
                 <cputune/>
                 <cpu match="exact">
                     <model>qemu64</model>
@@ -128,13 +128,13 @@ CONF_TO_DOMXML_PPC64 = [({
                     <ovirt-tune:qos/>
                     <ovirt-vm:vm/>
                 </metadata>
-                <os>
-                    <type arch="ppc64" machine="pc">hvm</type>
-                </os>
                 <clock adjustment="0" offset="variable">
                     <timer name="rtc" tickpolicy="catchup"/>
                     <timer name="pit" tickpolicy="delay"/>
                 </clock>
+                <os>
+                    <type arch="ppc64" machine="pc">hvm</type>
+                </os>
                 <cputune/>
                 <cpu>
                     <model>POWER8</model>

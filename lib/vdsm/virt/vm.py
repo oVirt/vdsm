@@ -296,7 +296,9 @@ class Vm(object):
             # If no direct XML representation is available then use a minimal,
             # but still correct, one.  More complete domain will be available
             # and assigned once the VM is started.
-            dom = libvirtxml.Domain(self.conf, self.log, self.arch)
+            dom = libvirtxml.make_minimal_domain(
+                libvirtxml.Domain(self.conf, self.log, self.arch)
+            )
             self._domain = DomainDescriptor(dom.toxml())
         self.id = self._domain.id
         self._dom = virdomain.Disconnected(self.id)
@@ -1960,8 +1962,10 @@ class Vm(object):
     def _make_domain_xml(self):
         serial_console = self._getSerialConsole()
 
-        domxml = libvirtxml.Domain(self.conf, self.log, self.arch)
-        domxml.appendMetadata()
+        domxml = libvirtxml.make_minimal_domain(
+            libvirtxml.Domain(self.conf, self.log, self.arch)
+        )
+
         domxml.appendOs(use_serial_console=(serial_console is not None))
 
         if self.hugepages:
@@ -1978,11 +1982,6 @@ class Vm(object):
                 osname=constants.SMBIOS_OSNAME,
                 osversion=osVersion,
                 serialNumber=serialNumber)
-
-        domxml.appendClock()
-
-        if cpuarch.is_x86(self.arch):
-            domxml.appendFeatures()
 
         domxml.appendCpu(self._hugepages_shared)
 
