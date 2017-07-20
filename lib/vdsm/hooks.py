@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Red Hat, Inc.
+# Copyright 2010-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ import tempfile
 
 from vdsm.common import exception
 from . import commands
-from .constants import P_VDSM_HOOKS, P_VDSM, P_VDSM_RUN
+from .constants import P_VDSM_HOOKS, P_VDSM_RUN
 
 _LAUNCH_FLAGS_FILE = 'launchflags'
 _LAUNCH_FLAGS_PATH = os.path.join(
@@ -95,7 +95,8 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, params={},
         if vmconf.get('vmId'):
             scriptenv['vmId'] = vmconf.get('vmId')
         ppath = scriptenv.get('PYTHONPATH', '')
-        scriptenv['PYTHONPATH'] = ':'.join(ppath.split(':') + [P_VDSM])
+        hook = os.path.join(os.path.dirname(__file__), 'hook')
+        scriptenv['PYTHONPATH'] = ':'.join(ppath.split(':') + [hook])
         if hookType == _DOMXML_HOOK:
             scriptenv['_hook_domxml'] = data_filename
         elif hookType == _JSON_HOOK:

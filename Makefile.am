@@ -89,7 +89,6 @@ abs_imports: all
 pylint: tox
 	tox -e pylint \
 		vdsm/sitecustomize.py \
-		vdsm/hooking.py \
 		lib/vdsm \
 		lib/vdsmclient \
 		lib/yajsonrpc \

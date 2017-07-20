@@ -21,7 +21,6 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_vdsm_PYTHON = \
-	hooking.py \
 	sitecustomize.py \
 	$(NULL)
 
