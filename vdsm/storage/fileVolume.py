@@ -50,7 +50,7 @@ BLOCK_SIZE = sc.BLOCK_SIZE
 def getDomUuidFromVolumePath(volPath):
     # fileVolume path has pattern:
     # */sdUUID/images/imgUUID/volUUID
-    sdPath = os.path.normpath(volPath).split('/images')[0]
+    sdPath = os.path.normpath(volPath).rsplit('/images/', 1)[0]
     target, sdUUID = os.path.split(sdPath)
     return sdUUID
 
@@ -166,7 +166,7 @@ class FileVolumeManifest(volume.VolumeManifest):
 
         This API is not suitable for use with a template's base volume.
         """
-        domPath = self.imagePath.split('images')[0]
+        domPath = self.imagePath.rsplit('/images/', 1)[0]
         metaPattern = os.path.join(domPath, 'images', self.imgUUID, '*.meta')
         metaPaths = oop.getProcessPool(self.sdUUID).glob.glob(metaPattern)
         pattern = "%s.*%s" % (sc.PUUID, self.volUUID)
