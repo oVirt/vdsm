@@ -452,6 +452,42 @@ class Descriptor(object):
         """
         return self._custom.copy()
 
+    def all_devices(self, **kwargs):
+        """
+        Return all the devices which match the given attributes.
+
+        kwargs: each argument corresponds to a <device> attribute
+        name and the value (string) to the attribute value;
+        only devices having all the given values are returned.
+
+        :rtype: dict
+
+        Example:
+
+        let's start with
+        dom.metadata() ->
+        <vm>
+          <device kind="blah" id="dev0">
+            <foo>bar</foo>
+          </device>
+          <device kind="blah" id="dev1">
+            <number type="int">42</number>
+          </device>
+        </vm>
+
+        let's run this code
+        md_desc = Descriptor('vm')
+        md_desc.load(dom)
+        print [dev for dev in md_desc.all_devices(kind="blah")]
+
+        will emit
+
+        [{'foo': 'bar'}, {'number': 42}]
+        """
+        for (attrs, data) in self._devices:
+            if _match_args(kwargs, attrs):
+                yield data
+
     def _parse_xml(self, xml_str):
         root = vmxml.parse_xml(xml_str)
         md_elem = root.find(
@@ -493,11 +529,7 @@ class Descriptor(object):
         return vmxml.format_xml(md_elem, pretty=True)
 
     def _find_device(self, kwargs):
-        devices = [
-            data
-            for (attrs, data) in self._devices
-            if _match_args(kwargs, attrs)
-        ]
+        devices = list(self.all_devices(**kwargs))
         if len(devices) > 1:
             raise MissingDevice()
         if not devices:

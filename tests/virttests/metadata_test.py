@@ -408,6 +408,25 @@ class DescriptorTests(XMLTestCase):
         with self.md_desc.device(addr='pci_0000_00_02_0') as dev:
             self.assertEqual(dev, {'mode': 900})
 
+    def test_all_devices(self):
+        dom_xml = u'''<vm>
+            <device type='fancydev'>
+                <mode type="int">1</mode>
+            </device>
+            <device class='otherdev' foo='1'>
+                <mode type="float">0.333</mode>
+            </device>
+            <device type='fancydev' extra='ignored'>
+                <mode type="int">2</mode>
+            </device>
+        </vm>'''
+        dom = FakeDomain.with_metadata(dom_xml)
+        self.md_desc.load(dom)
+        self.assertEqual(
+            list(self.md_desc.all_devices(type='fancydev')),
+            [{'mode': 1}, {'mode': 2}]
+        )
+
     def test_device_from_xml_tree(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
