@@ -29,6 +29,10 @@ from vdsm.network.netinfo import routes
 from vdsm.network.netconfpersistence import BaseConfig, RunningConfig
 
 
+class MultipleSouthBoundNicsPerNetworkError(Exception):
+    pass
+
+
 class KernelConfig(BaseConfig):
     # TODO: after the netinfo API is refactored, we should decide if we need
     # TODO: the dependency of KernelConfig in a NetInfo object.
@@ -81,8 +85,7 @@ def networks_northbound_ifaces():
 
 
 def _translate_netinfo_net(net, net_attr, netinfo_):
-    nics, _, vlan_id, bond = \
-        netinfo_.getNicsVlanAndBondingForNetwork(net)
+    nics, _, vlan_id, bond = netinfo_.getNicsVlanAndBondingForNetwork(net)
     attributes = {}
     _translate_bridged(attributes, net_attr)
     _translate_mtu(attributes, net_attr)
@@ -90,6 +93,8 @@ def _translate_netinfo_net(net, net_attr, netinfo_):
     if bond:
         _translate_bonding(attributes, bond)
     elif nics:
+        if len(nics) > 1:
+            raise MultipleSouthBoundNicsPerNetworkError(net, nics)
         _translate_nics(attributes, nics)
     _translate_ipaddr(attributes, net_attr)
     _translate_hostqos(attributes, net_attr)
