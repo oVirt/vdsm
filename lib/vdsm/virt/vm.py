@@ -2270,6 +2270,8 @@ class Vm(object):
 
         self._updateDomainDescriptor()
         self._updateMetadataDescriptor()
+        if not self.recovering:
+            self._save_legacy_disk_conf_to_metadata()
 
         # REQUIRED_FOR migrate from vdsm-4.16
         #
@@ -2332,6 +2334,33 @@ class Vm(object):
         self._guestEventTime = self._startTime
         self._guestCpuRunning = self._isDomainRunning()
         self._logGuestCpuStatus('domain initialization')
+
+    def _save_legacy_disk_conf_to_metadata(self):
+        for dev_conf in self.conf['devices']:
+            if dev_conf['type'] == hwclass.DISK:
+                self._add_legacy_disk_conf_to_metadata(dev_conf)
+        self._sync_metadata()
+
+    def _add_legacy_disk_conf_to_metadata(self, dev_conf):
+        data = utils.picklecopy(dev_conf)
+        attrs = vmdevices.common.get_drive_conf_identifying_attrs(dev_conf)
+        with self._md_desc.device(**attrs) as dev:
+            dev.update(data)
+
+    def _remove_legacy_disk_conf_from_metadata(self, dev_conf):
+        attrs = vmdevices.common.get_drive_conf_identifying_attrs(dev_conf)
+        with self._md_desc.device(**attrs) as dev:
+            dev.clear()
+
+    def _restore_legacy_disk_conf_from_metadata(self):
+        if 'devices' not in self.conf:
+            self.conf['devices'] = []
+
+        for conf in self._md_desc.all_devices(type=hwclass.DISK):
+            try:
+                self._findDriveConfigByName(conf['name'])
+            except LookupError:
+                self.conf['devices'].append(utils.picklecopy(conf))
 
     def _dom_vcpu_setup(self):
         if 'xml' not in self.conf:
@@ -2418,6 +2447,9 @@ class Vm(object):
         if not self.recovering and \
            self._altered_state.origin != _MIGRATION_ORIGIN:
             self._remove_domain_artifacts()
+
+        if self.recovering and 'xml' in self.conf:
+            self._restore_legacy_disk_conf_from_metadata()
 
         self._devices = self._make_devices()
 
@@ -3449,6 +3481,8 @@ class Vm(object):
             with self._confLock:
                 self.conf['devices'].append(diskParams)
             self.saveState()
+            self._add_legacy_disk_conf_to_metadata(diskParams)
+            self._sync_metadata()
             vmdevices.storage.Drive.update_device_info(self, device_conf)
             hooks.after_disk_hotplug(driveXml, self._custom,
                                      params=drive.custom)
@@ -3497,9 +3531,11 @@ class Vm(object):
                 if dev['type'] == hwclass.DISK and dev['path'] == drive.path:
                     with self._confLock:
                         self.conf['devices'].remove(dev)
+                    self._remove_legacy_disk_conf_from_metadata(dev)
                     break
 
             self.saveState()
+            self._sync_metadata()
             hooks.after_disk_hotunplug(driveXml, self._custom,
                                        params=drive.custom)
             self._cleanupDrives(drive)
@@ -4652,6 +4688,9 @@ class Vm(object):
                 vm['guestAgentAPIVersion'] = self._guest_agent_api_version
             vm['destroy_on_reboot'] = self._destroy_on_reboot
             vm.update(self._exit_info)
+        self._sync_metadata()
+
+    def _sync_metadata(self):
         self._md_desc.dump(self._dom)
 
     def releaseVm(self, gracefulAttempts=1):
