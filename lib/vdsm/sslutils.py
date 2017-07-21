@@ -269,7 +269,8 @@ class SSLHandshakeDispatcher(object):
                 self.want_write = True
             else:
                 dispatcher.close()
-                raise
+        except socket.error:
+            dispatcher.close()
         else:
             self.want_read = self.want_write = True
             self._is_handshaking = False
