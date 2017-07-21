@@ -107,6 +107,73 @@ class MetadataTests(XMLTestCase):
         metadata_obj = metadata.Metadata(namespace, namespace_uri)
         self.assertEqual(metadata_obj.load(elem), custom)
 
+    @permutations([
+        # elem_type
+        ['str'],
+        [None],
+    ])
+    def test_load_empty(self, elem_type):
+        elem_spec = (
+            '' if elem_type is None else
+            'type="{elem_type}"'.format(elem_type=elem_type)
+        )
+        test_xml = u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+          <ovirt-vm:param {elem_spec}/>
+        </ovirt-vm:vm>'''.format(elem_spec=elem_spec)
+        metadata_obj = metadata.Metadata(
+            'ovirt-vm', 'http://ovirt.org/vm/1.0'
+        )
+        self.assertEqual(
+            metadata_obj.load(vmxml.parse_xml(test_xml)),
+            {'param': ''}
+        )
+
+    @permutations([
+        # elem_type
+        ['bool'],
+        ['int'],
+        ['float'],
+    ])
+    def test_load_empty_not_string(self, elem_type):
+        test_xml = u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+          <ovirt-vm:param type="{elem_type}" />
+        </ovirt-vm:vm>'''.format(elem_type=elem_type)
+        metadata_obj = metadata.Metadata(
+            'ovirt-vm', 'http://ovirt.org/vm/1.0'
+        )
+        self.assertRaises(
+            ValueError,
+            metadata_obj.load,
+            vmxml.parse_xml(test_xml)
+        )
+
+    @permutations([
+        # elem_type
+        ['str'],
+        [None],
+    ])
+    def test_roundtrip_empty(self, elem_type):
+        elem_spec = (
+            '' if elem_type is None else
+            'type="{elem_type}"'.format(elem_type=elem_type)
+        )
+        test_xml = u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+          <ovirt-vm:param {elem_spec}/>
+        </ovirt-vm:vm>'''.format(elem_spec=elem_spec)
+        expected_xml = u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+          <ovirt-vm:param />
+        </ovirt-vm:vm>'''
+
+        metadata_src = metadata.Metadata(
+            'ovirt-vm', 'http://ovirt.org/vm/1.0'
+        )
+        metadata_dst = metadata.Metadata(
+            'ovirt-vm', 'http://ovirt.org/vm/1.0'
+        )
+        data = metadata_src.load(vmxml.parse_xml(test_xml))
+        out_xml = vmxml.format_xml(metadata_dst.dump('vm', **data))
+        self.assertXMLEqual(out_xml, expected_xml)
+
 
 @expandPermutations
 class DescriptorTests(XMLTestCase):

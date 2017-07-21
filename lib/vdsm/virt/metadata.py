@@ -130,6 +130,11 @@ class Metadata(object):
         md = Metadata()
         md.load(elem) -> {'a': 'some value', 'b': 1}
 
+        Raises:
+        - UnsupportedType if the hinted type ('type' attribute) is unsupported
+        - ValueError if the value of the attribute can't be converted to the
+          hinted type.
+
         :param elem: root of the ElementTree to load
         :type elem: ElementTree.Element
         :returns: content of the group
@@ -512,14 +517,22 @@ def _elem_to_keyvalue(elem):
     key = elem.tag
     value = elem.text
     data_type = elem.attrib.get('type')
-    if data_type is not None:
+    if data_type is None:
+        # no data_type -> fallback to string
+        if value is None:
+            value = ''
+    else:
+        if value is None:
+            if data_type == 'str':
+                value = ''
+            else:
+                raise ValueError()
         if data_type == 'bool':
             value = conv.tobool(value)
         elif data_type == 'int':
             value = int(value)
         elif data_type == 'float':
             value = float(value)
-        # elif data_type == 'str': do nothing
     return key, value
 
 
