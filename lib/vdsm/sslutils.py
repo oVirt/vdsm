@@ -254,8 +254,13 @@ class SSLHandshakeDispatcher(object):
             elif err.args[0] == ssl.SSL_ERROR_WANT_WRITE:
                 self.want_write = True
             else:
+                self.log.error("ssl handshake: SSLError, address: {}".format(
+                    dispatcher.socket.getpeername()[0]))
                 dispatcher.close()
-                raise
+        except socket.error:
+            self.log.error("ssl handshake: socket error, address: {}".format(
+                dispatcher.socket.getpeername()[0]))
+            dispatcher.close()
         else:
             self.want_read = self.want_write = True
             self._is_handshaking = False
