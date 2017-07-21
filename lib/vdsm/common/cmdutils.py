@@ -19,8 +19,12 @@
 from __future__ import absolute_import
 
 import distutils.spawn
+import logging
 import os
 import re
+import subprocess
+
+from vdsm.common.compat import CPopen
 
 
 SYSTEMD_RUN = "/usr/bin/systemd-run"
@@ -106,3 +110,30 @@ class Accounting(object):
     CPU = 'CPU'
     Memory = 'Memory'
     BlockIO = 'BlockIO'
+
+
+def exec_cmd(cmd):
+    """
+    Execute cmd in an external process, collect its output and returncode
+
+    :param cmd: an iterator of strings to be passed as exec(2)'s argv
+    :returns: a 3-tuple of the process's
+              (returncode, stdout content, stderr content.)
+
+    This is a bare-bones version of `commands.execCmd`. Unlike the latter, this
+    function
+    * uses Vdsm cpu pinning, and must not be used for long CPU-bound processes.
+    * does not guarantee to kill underlying process if CPopen.communicate()
+      raises. Commands that access shared storage may not use this api.
+    * does not hide passwords in logs if they are passed in cmd
+    """
+    logging.debug(command_log_line(cmd))
+
+    p = CPopen(
+        cmd, close_fds=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    out, err = p.communicate()
+
+    logging.debug(retcode_log_line(p.returncode, err=err))
+
+    return p.returncode, out, err

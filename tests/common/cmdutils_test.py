@@ -124,3 +124,24 @@ class SystemdRunTests(TestCaseBase):
             'b',
         ]
         self.assertEqual(cmd, res)
+
+
+class ExecCmdTest(TestCaseBase):
+
+    def test_exec_cmd_with_no_output(self):
+        rc, out, err = cmdutils.exec_cmd(('true',))
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+    def test_exec_cmd_with_success_output(self):
+        rc, out, err = cmdutils.exec_cmd(('echo', 'hello world'))
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(out, b'hello world\n')
+        self.assertEqual(err, b'')
+
+    def test_exec_cmd_with_error_output(self):
+        rc, out, err = cmdutils.exec_cmd(('ls', 'no such prog'))
+        self.assertNotEqual(rc, 0)
+        self.assertIn(b'No such file or directory', err)
+        self.assertEqual(out, b'')

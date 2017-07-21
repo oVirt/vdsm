@@ -18,13 +18,10 @@
 #
 from __future__ import absolute_import
 
-import logging
-import subprocess
 import uuid
 
-from vdsm.common import cmdutils
 from vdsm.common.cmdutils import systemd_run
-from vdsm.common.compat import CPopen as Popen
+from vdsm.common.cmdutils import exec_cmd as exec_sync_bytes
 from vdsm.network import py2to3
 
 
@@ -50,16 +47,3 @@ def exec_systemd_new_unit(cmds, slice_name):
     cmds = systemd_run(cmds, scope=True, unit=unit, slice=slice_name)
 
     return exec_sync(cmds)
-
-
-def exec_sync_bytes(cmds):
-    logging.debug(cmdutils.command_log_line(cmds))
-
-    p = Popen(
-        cmds, close_fds=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    out, err = p.communicate()
-
-    logging.debug(cmdutils.retcode_log_line(p.returncode, err=err))
-
-    return p.returncode, out, err
