@@ -1,0 +1,93 @@
+#!/usr/bin/python2
+#
+# Copyright 2017 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+"""
+Analayze lvs info from sosreport.
+
+Usage:
+
+    cd sosreport-*/sos_commands/lvm2
+    lvs-stats < lvs_-a_-o_lv_tags_devices_--config_global_locking_type_0
+
+"""
+
+import collections
+import sys
+
+# skip heading
+sys.stdin.readline()
+
+vgs = collections.defaultdict(dict)
+
+for line in sys.stdin:
+    line = line.strip()
+    # lv vg attr size [tags] device
+    fields = line.split()
+    lv, vg, attr, size = fields[:4]
+    if len(fields) == 5:
+        tags, device = "", fields[4]
+    else:
+        tags, device = fields[4:6]
+    # If an lv exists on more then one device, we will get multiple entries,
+    # each with different device.
+    try:
+        lv_info = vgs[vg][lv]
+    except KeyError:
+        vgs[vg][lv] = dict(attr=attr, size=size, tags=tags, devices=[device])
+    else:
+        lv_info["devices"].append(device)
+
+stats = list(reversed(sorted((len(lvs), vg, lvs) for vg, lvs in vgs.items())))
+
+removed = []
+total = collections.defaultdict(int)
+print "%8s %-36s %-8s %-8s %-8s" % ("#lv", "vg name", "#active", "#open", "#removed")
+for n, vg, lvs in stats:
+    total["lv"] += n
+    removed_lvs = [(name, lv) for name, lv in lvs.items()
+                   if "remove_me" in lv["tags"]]
+    open_lvs = 0
+    active_lvs = 0
+    for name, lv in lvs.items():
+        attr = lv["attr"]
+        if "a" in attr:
+            active_lvs += 1
+            total["active"] += 1
+            if "o" in attr:
+                open_lvs += 1
+                total["open"] += 1
+    print "%8d %-36s %8d %8d %8d" % (n, vg, active_lvs, open_lvs, len(removed_lvs))
+    if removed_lvs:
+        removed.append((vg, removed_lvs))
+
+print
+print "totals"
+for key in ["lv", "active", "open"]:
+    print "%10s:  %d" % (key, total[key])
+print
+
+
+if removed:
+    print "removed lvs that should be wiped and deleted"
+    for vg, removed_lvs in removed.items():
+        print vg
+        for name, lv in removed_lvs:
+            print "  %s %s" % (name, lv)

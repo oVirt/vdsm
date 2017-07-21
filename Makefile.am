@@ -49,6 +49,7 @@ EXTRA_DIST = \
 	build-aux/vercmp \
 	contrib/logdb \
 	contrib/logstat \
+	contrib/lvs-stats \
 	contrib/profile-stats \
 	contrib/repoplot \
 	pylintrc \
