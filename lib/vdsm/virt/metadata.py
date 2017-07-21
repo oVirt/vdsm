@@ -66,6 +66,15 @@ from vdsm import utils
 _CUSTOM = 'custom'
 _DEVICE = 'device'
 
+_ADDRESS = 'address'
+_SPEC_PARAMS = 'specParams'
+_VM_CUSTOM = 'vm_custom'
+_VOLUME_CHAIN = 'volumeChain'
+_VOLUME_CHAIN_NODE = 'volumeChainNode'
+_VOLUME_INFO = 'volumeInfo'
+_DEVICE_SUBKEYS = (
+    _ADDRESS, _SPEC_PARAMS, _VM_CUSTOM, _VOLUME_CHAIN, _VOLUME_INFO)
+
 
 class Error(errors.Base):
     """
@@ -516,7 +525,7 @@ class Descriptor(object):
         else:
             self._custom = {}
         self._devices = [
-            (dev.attrib.copy(), metadata_obj.load(dev))
+            (dev.attrib.copy(), _load_device(metadata_obj, dev))
             for dev in metadata_obj.findall(md_elem, _DEVICE)
         ]
         md_data.pop(_CUSTOM, None)
@@ -528,7 +537,7 @@ class Descriptor(object):
         md_elem = metadata_obj.dump(self._name, **self._values)
         for (attrs, data) in self._devices:
             if data:
-                dev_elem = metadata_obj.dump(_DEVICE, **data)
+                dev_elem = _dump_device(metadata_obj, data)
                 dev_elem.attrib.update(attrs)
                 vmxml.append_child(md_elem, etree_child=dev_elem)
         if self._custom:
@@ -549,6 +558,44 @@ class Descriptor(object):
         self._devices.append((attrs.copy(), data))
         # yes, we want to return a mutable reference.
         return data
+
+
+def _load_device(md_obj, dev):
+    info = md_obj.load(dev)
+    for key in _DEVICE_SUBKEYS:
+        elem = md_obj.find(dev, key)
+        if elem is not None:
+            if key == _VOLUME_CHAIN:
+                value = [md_obj.load(node) for node in elem]
+            else:
+                value = md_obj.load(elem)
+            info[key] = value
+    return info
+
+
+def _dump_device(md_obj, data):
+    elems = []
+    data = data.copy()
+
+    for key in _DEVICE_SUBKEYS:
+        value = data.pop(key, {})
+        if not value and key in (_ADDRESS, _VOLUME_CHAIN, _VOLUME_INFO):
+            # empty elements make no sense
+            continue
+
+        if key == _VOLUME_CHAIN:
+            chain = ET.Element(_VOLUME_CHAIN)
+            for val in value:
+                node = md_obj.dump(_VOLUME_CHAIN_NODE, **val)
+                vmxml.append_child(chain, etree_child=node)
+            elems.append(chain)
+        else:
+            elems.append(md_obj.dump(key, **value))
+
+    dev_elem = md_obj.dump(_DEVICE, **data)
+    for elem in elems:
+        vmxml.append_child(dev_elem, etree_child=elem)
+    return dev_elem
 
 
 def _match_args(kwargs, attrs):
