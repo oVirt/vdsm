@@ -145,3 +145,9 @@ class ExecCmdTest(TestCaseBase):
         self.assertNotEqual(rc, 0)
         self.assertIn(b'No such file or directory', err)
         self.assertEqual(out, b'')
+
+    def test_exec_cmd_with_env(self):
+        rc, out, err = cmdutils.exec_cmd(
+            ('sh', '-c', 'echo $XXX'), env={'XXX': 'hello'})
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b'hello\n')

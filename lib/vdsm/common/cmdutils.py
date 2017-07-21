@@ -112,11 +112,14 @@ class Accounting(object):
     BlockIO = 'BlockIO'
 
 
-def exec_cmd(cmd):
+def exec_cmd(cmd, env=None):
     """
     Execute cmd in an external process, collect its output and returncode
 
     :param cmd: an iterator of strings to be passed as exec(2)'s argv
+    :param env: an optional dictionary to be placed as environment variables
+                of the external process. If None, the environment of the
+                calling process is used.
     :returns: a 3-tuple of the process's
               (returncode, stdout content, stderr content.)
 
@@ -130,7 +133,8 @@ def exec_cmd(cmd):
     logging.debug(command_log_line(cmd))
 
     p = CPopen(
-        cmd, close_fds=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        cmd, close_fds=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        env=env)
 
     out, err = p.communicate()
 
