@@ -38,6 +38,7 @@ except ImportError as e:
     raise compat.Unsupported(str(e))
 
 CLIENT_PROTOCOL = "sslv23"
+SSL_OP_NO_TLSv1_1 = 268435456
 
 DEFAULT_ACCEPT_TIMEOUT = 5
 SOCKET_DEFAULT_TIMEOUT = socket._GLOBAL_DEFAULT_TIMEOUT
@@ -332,6 +333,11 @@ def protocol_name_to_int():
 
     for no_protocol in config.get('vars', 'ssl_excludes').split(','):
         if no_protocol != '':
-            excludes |= getattr(m2, no_protocol.strip())
+            protocol = 'SSL_' + no_protocol.strip()
+            if protocol == 'SSL_OP_NO_TLSv1_1':
+                # missing from m2crypto
+                excludes |= SSL_OP_NO_TLSv1_1
+            else:
+                excludes |= getattr(m2, protocol)
 
     return excludes
