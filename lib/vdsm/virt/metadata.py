@@ -79,6 +79,11 @@ class UnsupportedType(Error):
     * floats
     * string
     """
+    msg = 'Unsupported {self.value} for {self.key}'
+
+    def __init__(self, key, value):
+        self.key = key
+        self.value = value
 
 
 class MissingDevice(Error):
@@ -547,6 +552,6 @@ def _keyvalue_to_elem(key, value, elem):
     elif isinstance(value, six.string_types):
         pass
     else:
-        raise UnsupportedType(value)
+        raise UnsupportedType(key, value)
     subelem.text = str(value)
     return subelem

@@ -52,6 +52,19 @@ class MetadataTests(XMLTestCase):
             **custom
         )
 
+    def test_unsupported_type_dump_key_in_exception(self):
+        KEY = "versions"
+        data = {KEY: set()}
+        metadata_obj = metadata.Metadata(
+            'ovirt-vm', 'http://ovirt.org/vm/1.0'
+        )
+        try:
+            metadata_obj.dump('test', **data)
+        except metadata.UnsupportedType as exc:
+            self.assertIn(KEY, str(exc))
+        else:
+            raise AssertionError('dump() did not raise!')
+
     @permutations([
         # custom
         [{}],
