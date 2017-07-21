@@ -174,8 +174,7 @@ class _Server(object):
             raise JsonRpcNoResponseError(method)
 
         if resp.error is not None:
-            return response.error_raw(resp.error["code"],
-                                      resp.error["message"])
+            return response.error_raw(resp.error.code, str(resp.error))
 
         if not self._xml_compat:
             return response.success_raw(resp.result)

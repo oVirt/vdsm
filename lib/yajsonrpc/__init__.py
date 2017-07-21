@@ -167,7 +167,7 @@ class JsonRpcResponse(object):
 
         if self.error is not None:
             res['error'] = {'code': self.error.code,
-                            'message': self.error.message}
+                            'message': str(self.error)}
         else:
             res['result'] = self.result
 
@@ -192,7 +192,10 @@ class JsonRpcResponse(object):
                 obj, "missing result or error info")
 
         result = obj.get("result")
-        error = obj.get("error")
+
+        error = None
+        if "error" in obj:
+            error = JsonRpcError(obj["error"]["code"], obj["error"]["message"])
 
         reqId = obj.get("id")
 
@@ -369,8 +372,7 @@ class JsonRpcClient(object):
 
         response = responses[0]
         if response.error:
-            raise JsonRpcError(response.error['code'],
-                               response.error['message'])
+            raise response.error
         else:
             return response.result
 

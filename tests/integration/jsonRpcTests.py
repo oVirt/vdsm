@@ -105,7 +105,7 @@ class JsonRpcServerTests(TestCaseBase):
             raise JsonRpcNoResponseError(methodName)
         resp = responses[0]
         if resp.error is not None:
-            raise JsonRpcError(resp.error['code'], resp.error['message'])
+            raise resp.error
 
         return resp.result
 

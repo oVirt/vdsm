@@ -261,7 +261,7 @@ class _Client(object):
         resp = responses[0]
         if resp.error:
             raise ServerError(
-                method, kwargs, resp.error['code'], resp.error['message'])
+                method, kwargs, resp.error.code, str(resp.error))
 
         return resp.result
 
