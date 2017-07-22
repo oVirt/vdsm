@@ -22,9 +22,12 @@ import marshal
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 from vdsm.common.compat import pickle, json
-from vdsm.password import (ProtectedPassword,
-                           protect_passwords,
-                           unprotect_passwords)
+
+from vdsm.common.password import (
+    ProtectedPassword,
+    protect_passwords,
+    unprotect_passwords,
+)
 
 
 class ProtectedPasswordTests(VdsmTestCase):

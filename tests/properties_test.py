@@ -20,8 +20,8 @@
 
 import base64
 from testlib import VdsmTestCase
-from vdsm.password import ProtectedPassword
 from vdsm import properties
+from vdsm.common.password import ProtectedPassword
 
 
 class PropertyTests(VdsmTestCase):

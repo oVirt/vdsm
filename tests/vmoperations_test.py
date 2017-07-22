@@ -27,16 +27,15 @@ from six.moves import zip
 
 from nose.plugins.skip import SkipTest
 
-from vdsm.virt import vmexitreason
-from vdsm.virt import virdomain
-from vdsm.virt.vmdevices import hwclass
-
-from vdsm.common import define
-from vdsm.common import response
-from vdsm.config import config
 from vdsm import hooks
 from vdsm import libvirtconnection
-from vdsm import password
+from vdsm.common import define
+from vdsm.common import password
+from vdsm.common import response
+from vdsm.config import config
+from vdsm.virt import virdomain
+from vdsm.virt import vmexitreason
+from vdsm.virt.vmdevices import hwclass
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import XMLTestCase

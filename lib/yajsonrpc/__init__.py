@@ -25,7 +25,7 @@ from vdsm.common import exception
 from vdsm.common.logutils import Suppressed, traceback
 from vdsm.common.threadlocal import vars
 from vdsm.common.time import monotonic_time
-from vdsm.password import protect_passwords, unprotect_passwords
+from vdsm.common.password import protect_passwords, unprotect_passwords
 
 __all__ = ["betterAsyncore", "stompreactor", "stomp"]
 

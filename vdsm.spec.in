@@ -1128,7 +1128,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/tc/qdisc.py*
 %{python_sitelib}/%{vdsm_name}/numa.py*
 %{python_sitelib}/%{vdsm_name}/osinfo.py*
-%{python_sitelib}/%{vdsm_name}/password.py*
 %{python_sitelib}/%{vdsm_name}/panic.py*
 %{python_sitelib}/%{vdsm_name}/ppc64HardwareInfo.py*
 %{python_sitelib}/%{vdsm_name}/profiling/__init__.py*

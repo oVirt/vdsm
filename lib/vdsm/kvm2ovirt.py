@@ -30,7 +30,7 @@ from ovirt_imageio_common import directio
 from vdsm import libvirtconnection
 from vdsm.common import concurrent
 from vdsm.common import time
-from vdsm.password import ProtectedPassword
+from vdsm.common.password import ProtectedPassword
 
 _start = None
 

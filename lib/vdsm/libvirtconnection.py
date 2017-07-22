@@ -29,9 +29,9 @@ import signal
 import libvirt
 
 from vdsm.common import concurrent
+from vdsm.common.password import ProtectedPassword
 
 from . import utils
-from .password import ProtectedPassword
 from .tool.configurators import passwd
 
 log = logging.getLogger()

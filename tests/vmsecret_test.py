@@ -28,9 +28,9 @@ from testlib import VdsmTestCase, XMLTestCase
 from testlib import expandPermutations, permutations
 import vmfakecon
 
-from vdsm.common import response
 from vdsm import libvirtconnection
-from vdsm.password import ProtectedPassword
+from vdsm.common import response
+from vdsm.common.password import ProtectedPassword
 from vdsm.virt import secret
 
 

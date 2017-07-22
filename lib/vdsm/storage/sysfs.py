@@ -26,7 +26,7 @@ from __future__ import absolute_import
 
 import errno
 import io
-from vdsm import password
+from vdsm.common import password
 
 
 def read_int(path, default=None):

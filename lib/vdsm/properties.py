@@ -88,7 +88,7 @@ import uuid
 
 import six
 
-from vdsm.password import ProtectedPassword
+from vdsm.common.password import ProtectedPassword
 
 
 class Property(object):

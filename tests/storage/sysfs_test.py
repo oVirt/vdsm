@@ -23,7 +23,7 @@ import os
 from testlib import VdsmTestCase
 from testlib import temporaryPath
 
-from vdsm import password
+from vdsm.common import password
 from vdsm.storage import sysfs
 
 

@@ -11,7 +11,7 @@ from testlib import expandPermutations, permutations
 from vdsm import commands
 from vdsm import utils
 from vdsm.common import time
-from vdsm.password import ProtectedPassword
+from vdsm.common.password import ProtectedPassword
 from vdsm.storage import iscsi
 from vdsm.storage import iscsiadm
 

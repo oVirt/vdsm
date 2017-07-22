@@ -20,8 +20,6 @@
 #
 from __future__ import absolute_import
 
-from contextlib import contextmanager
-from itertools import product
 import logging
 import os.path
 import threading
@@ -29,52 +27,62 @@ import time
 import uuid
 import xml.etree.cElementTree as etree
 
+from contextlib import contextmanager
+from itertools import product
+
 import libvirt
 import six
 from six.moves import zip
 
+from vdsm import constants
+from vdsm import cpuarch
+from vdsm import host
+from vdsm import hugepages
+from vdsm import libvirtconnection
+from vdsm import osinfo
+from vdsm import utils
+
+from vdsm.common import define
+from vdsm.common import exception
+from vdsm.common import password
+from vdsm.common import response
+
 import vdsm.common.time
+
+from vdsm.virt import libvirtxml
+from vdsm.virt import virdomain
+from vdsm.virt import vm
 from vdsm.virt import vmchannels
+from vdsm.virt import vmdevices
 from vdsm.virt import vmexitreason
 from vdsm.virt import vmstats
 from vdsm.virt import vmstatus
-from vdsm.virt.vmtune import (io_tune_merge, io_tune_dom_to_values,
-                              io_tune_to_dom)
-from vdsm.virt import vmdevices
+from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
 from vdsm.virt.domain_descriptor import DomainDescriptor
-from vdsm.virt import vm
 from vdsm.virt.vm import HotunplugTimeout
 from vdsm.virt.vmdevices import hwclass
-from vdsm.virt.vmdevices.storage import Drive
-from vdsm.virt.vmdevices.storage import DISK_TYPE
 from vdsm.virt.vmdevices.network import Interface
+from vdsm.virt.vmdevices.storage import DISK_TYPE
+from vdsm.virt.vmdevices.storage import Drive
+from vdsm.virt.vmtune import (
+    io_tune_merge,
+    io_tune_dom_to_values,
+    io_tune_to_dom,
+)
 
-from vdsm import constants
-from vdsm import cpuarch
-from vdsm.common import define
-from vdsm.common import exception
-from vdsm.common import response
-from vdsm.virt import libvirtxml
-from vdsm.virt import vmxml
-from vdsm.virt import virdomain
-from vdsm import osinfo
-from vdsm import password
+from monkeypatch import MonkeyPatch, MonkeyPatchScope
+from testValidation import brokentest, slowtest
 from testlib import VdsmTestCase as TestCaseBase
-from testlib import permutations, expandPermutations
+from testlib import XMLTestCase
 from testlib import find_xml_element
 from testlib import make_config
-from testlib import recorded
-from testlib import XMLTestCase
-from vdsm import host
-from vdsm import hugepages
-from vdsm import utils
-from vdsm import libvirtconnection
-from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import namedTemporaryDir
-from testValidation import brokentest, slowtest
-from vmTestsData import CONF_TO_DOMXML_X86_64
+from testlib import permutations, expandPermutations
+from testlib import recorded
+
 from vmTestsData import CONF_TO_DOMXML_PPC64
+from vmTestsData import CONF_TO_DOMXML_X86_64
 import vmfakelib as fake
 
 

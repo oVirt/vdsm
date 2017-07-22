@@ -42,19 +42,19 @@ import zipfile
 
 import libvirt
 
+from vdsm import libvirtconnection
 from vdsm.cmdutils import wrap_command
 from vdsm.commands import execCmd, BUFFSIZE
-from vdsm.common import concurrent
 from vdsm.common import cmdutils
-from vdsm.common.define import errCode, doneCode
+from vdsm.common import concurrent
+from vdsm.common import password
 from vdsm.common import response
 from vdsm.common import zombiereaper
 from vdsm.common.compat import CPopen
+from vdsm.common.define import errCode, doneCode
 from vdsm.common.logutils import traceback
 from vdsm.common.time import monotonic_time
 from vdsm.constants import P_VDSM_LOG, P_VDSM_RUN, EXT_KVM_2_OVIRT
-from vdsm import libvirtconnection
-from vdsm import password
 from vdsm.utils import terminating, NICENESS, IOCLASS
 
 try:
