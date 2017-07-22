@@ -403,7 +403,6 @@ AC_OUTPUT([
 	lib/vdsm/network/tc/Makefile
 	lib/vdsm/profiling/Makefile
 	lib/vdsm/rpc/Makefile
-	lib/vdsm/storage/imageRepository/Makefile
 	lib/vdsm/storage/Makefile
 	lib/vdsm/storage/protect/Makefile
 	lib/vdsm/storage/sdm/Makefile

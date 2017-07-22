@@ -16,7 +16,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-SUBDIRS = imageRepository protect sdm
+SUBDIRS = protect sdm
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
@@ -43,6 +43,7 @@ dist_vdsmstorage_PYTHON = \
 	fileSD.py \
 	fileUtils.py \
 	fileVolume.py \
+	formatconverter.py \
 	fsutils.py \
 	fuser.py \
 	glusterSD.py \

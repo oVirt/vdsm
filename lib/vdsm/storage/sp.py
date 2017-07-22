@@ -45,7 +45,7 @@ from vdsm.storage import mount
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import sd
 from vdsm.storage import xlease
-from vdsm.storage.imageRepository.formatConverter import DefaultFormatConverter
+from vdsm.storage.formatconverter import DefaultFormatConverter
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.securable import secured, unsecured
 

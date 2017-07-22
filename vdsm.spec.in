@@ -1030,7 +1030,6 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/tool/configurators
 %dir %{python_sitelib}/%{vdsm_name}/profiling
 %dir %{python_sitelib}/%{vdsm_name}/storage
-%dir %{python_sitelib}/%{vdsm_name}/storage/imageRepository
 %dir %{python_sitelib}/%{vdsm_name}/supervdsm_api
 %dir %{python_sitelib}/%{vdsm_name}/virt
 %dir %{python_sitelib}/%{vdsm_name}/virt/vmdevices
@@ -1155,6 +1154,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/fileSD.py*
 %{python_sitelib}/%{vdsm_name}/storage/fileUtils.py*
 %{python_sitelib}/%{vdsm_name}/storage/fileVolume.py*
+%{python_sitelib}/%{vdsm_name}/storage/formatconverter.py*
 %{python_sitelib}/%{vdsm_name}/storage/fuser.py*
 %{python_sitelib}/%{vdsm_name}/storage/fsutils.py*
 %{python_sitelib}/%{vdsm_name}/storage/glusterSD.py*
@@ -1200,8 +1200,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/volumemetadata.py*
 %{python_sitelib}/%{vdsm_name}/storage/workarounds.py*
 %{python_sitelib}/%{vdsm_name}/storage/xlease.py*
-%{python_sitelib}/%{vdsm_name}/storage/imageRepository/__init__.py*
-%{python_sitelib}/%{vdsm_name}/storage/imageRepository/formatConverter.py*
 %{python_sitelib}/%{vdsm_name}/storage/sdm/__init__.py*
 %{python_sitelib}/%{vdsm_name}/storage/sdm/volume_artifacts.py*
 %{python_sitelib}/%{vdsm_name}/storage/sdm/volume_info.py*
