@@ -41,11 +41,11 @@ from testlib import wait_for_job
 
 from vdsm import cmdutils
 from vdsm import jobs
-from vdsm import qemuimg
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
+from vdsm.storage import qemuimg
 from vdsm.storage.sdm import volume_info
 from vdsm.storage.sdm.api import amend_volume, copy_data
 

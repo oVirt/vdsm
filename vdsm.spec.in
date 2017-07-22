@@ -1181,6 +1181,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/outOfProcess.py*
 %{python_sitelib}/%{vdsm_name}/storage/persistent.py*
 %{python_sitelib}/%{vdsm_name}/storage/qcow2.py*
+%{python_sitelib}/%{vdsm_name}/storage/qemuimg.py*
 %{python_sitelib}/%{vdsm_name}/storage/resourceFactories.py*
 %{python_sitelib}/%{vdsm_name}/storage/resourceManager.py*
 %{python_sitelib}/%{vdsm_name}/storage/rwlock.py*
@@ -1224,7 +1225,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/udev.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/virt.py*
 %{python_sitelib}/%{vdsm_name}/protocoldetector.py*
-%{python_sitelib}/%{vdsm_name}/qemuimg.py*
 %{python_sitelib}/%{vdsm_name}/schedule.py*
 %{python_sitelib}/%{vdsm_name}/sslutils.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm.py*

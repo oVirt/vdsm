@@ -52,10 +52,10 @@ import errno
 import logging
 import os
 
-from vdsm import qemuimg
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
+from vdsm.storage import qemuimg
 from vdsm.storage.volumemetadata import VolumeMetadata
 
 

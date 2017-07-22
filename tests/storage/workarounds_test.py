@@ -24,10 +24,9 @@ from testlib import make_uuid
 from testlib import VdsmTestCase
 from storage.storagetestlib import fake_file_env
 
-from vdsm import qemuimg
 from vdsm.storage import constants as sc
+from vdsm.storage import qemuimg
 from vdsm.storage import workarounds
-
 
 md_formats = dict(raw=sc.RAW_FORMAT, cow=sc.COW_FORMAT)
 qemu_formats = dict(raw=qemuimg.FORMAT.RAW, cow=qemuimg.FORMAT.QCOW2)

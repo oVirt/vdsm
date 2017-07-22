@@ -26,9 +26,9 @@ import os
 import pytest
 import six
 
-from vdsm import qemuimg
 from vdsm.common import time
 from vdsm.storage import qcow2
+from vdsm.storage import qemuimg
 
 MB = 1024 ** 2
 GB = 1024 ** 3

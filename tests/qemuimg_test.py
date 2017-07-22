@@ -36,8 +36,8 @@ from testlib import make_config
 from testlib import namedTemporaryDir
 from vdsm import cmdutils
 from vdsm import commands
-from vdsm import qemuimg
 from vdsm.common import exception
+from vdsm.storage import qemuimg
 
 QEMU_IMG = qemuimg._qemuimg.cmd
 

@@ -27,25 +27,23 @@ from collections import namedtuple
 import codecs
 from contextlib import contextmanager
 
+from vdsm import utils
 from vdsm.common import exception
 from vdsm.common.threadlocal import vars
+from vdsm.config import config
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
 from vdsm.storage import outOfProcess as oop
+from vdsm.storage import qemuimg
 from vdsm.storage import resourceFactories
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import rwlock
 from vdsm.storage import task
 from vdsm.storage import xlease
 from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
-
-from vdsm import qemuimg
-from vdsm import utils
-
-from vdsm.config import config
 
 DOMAIN_MNT_POINT = 'mnt'
 DOMAIN_META_DATA = 'dom_md'

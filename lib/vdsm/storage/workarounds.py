@@ -22,8 +22,8 @@ from __future__ import absolute_import
 
 import logging
 
-from vdsm import qemuimg
 from vdsm.storage import constants as sc
+from vdsm.storage import qemuimg
 
 log = logging.getLogger('storage.workarounds')
 

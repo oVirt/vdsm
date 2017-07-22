@@ -19,7 +19,7 @@
 #
 
 from __future__ import absolute_import
-from vdsm import qemuimg
+from vdsm.storage import qemuimg
 
 CLUSTER_SIZE = 64 * 1024
 SIZEOF_INT_64 = 8

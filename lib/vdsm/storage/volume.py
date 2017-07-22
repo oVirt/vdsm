@@ -24,22 +24,21 @@ import logging
 from contextlib import contextmanager
 
 from vdsm import cmdutils
-from vdsm import qemuimg
 from vdsm import utils
-
 from vdsm.common.threadlocal import vars
+
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import guarded
 from vdsm.storage import misc
+from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import task
 from vdsm.storage.misc import deprecated
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.volumemetadata import VolumeMetadata
-
 
 DOMAIN_MNT_POINT = 'mnt'
 

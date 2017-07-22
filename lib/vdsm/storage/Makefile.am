@@ -27,9 +27,9 @@ dist_vdsmstorage_PYTHON = \
 	asyncevent.py \
 	asyncutils.py \
 	blkdiscard.py \
-	blockdev.py \
 	blockSD.py \
 	blockVolume.py \
+	blockdev.py \
 	check.py \
 	clusterlock.py \
 	compat.py \
@@ -43,8 +43,8 @@ dist_vdsmstorage_PYTHON = \
 	fileSD.py \
 	fileUtils.py \
 	fileVolume.py \
-	fuser.py \
 	fsutils.py \
+	fuser.py \
 	glusterSD.py \
 	glusterVolume.py \
 	guarded.py \
@@ -68,6 +68,7 @@ dist_vdsmstorage_PYTHON = \
 	outOfProcess.py \
 	persistent.py \
 	qcow2.py \
+	qemuimg.py \
 	resourceFactories.py \
 	resourceManager.py \
 	rwlock.py \

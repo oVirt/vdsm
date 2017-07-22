@@ -31,10 +31,10 @@ from storage.storagetestlib import (
     make_file_volume,
 )
 
-from vdsm import qemuimg
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import hsm
+from vdsm.storage import qemuimg
 
 
 class FakeHSM(hsm.HSM):

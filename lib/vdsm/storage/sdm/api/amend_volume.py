@@ -21,10 +21,10 @@
 
 from __future__ import absolute_import
 
-from vdsm import qemuimg
 from vdsm.common import errors
 from vdsm.storage import constants as sc
 from vdsm.storage import guarded
+from vdsm.storage import qemuimg
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.sdm.volume_info import VolumeInfo
 

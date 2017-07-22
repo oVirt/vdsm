@@ -23,7 +23,7 @@ from __future__ import absolute_import
 import os
 
 from vdsm import constants
-from vdsm import qemuimg
+from vdsm.storage import qemuimg
 
 
 # ResourceManager Lock Namespaces

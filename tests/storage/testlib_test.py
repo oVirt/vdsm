@@ -42,14 +42,13 @@ from storage.storagetestlib import (
 )
 
 from vdsm import cmdutils
-from vdsm import qemuimg
 from vdsm import utils
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
 from vdsm.storage import fileSD
 from vdsm.storage import fileVolume
+from vdsm.storage import qemuimg
 from vdsm.storage import sd
-
 
 MB = 1024 ** 2
 

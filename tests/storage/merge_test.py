@@ -44,7 +44,6 @@ from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase
 
 from vdsm import cmdutils
-from vdsm import qemuimg
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -52,6 +51,7 @@ from vdsm.storage import fileVolume
 from vdsm.storage import guarded
 from vdsm.storage import image
 from vdsm.storage import merge
+from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import volume
 

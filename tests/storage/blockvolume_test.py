@@ -23,13 +23,13 @@ from contextlib import contextmanager
 import pytest
 
 from vdsm import constants
-from vdsm import qemuimg
 from vdsm.config import config
-from vdsm.constants import MEGAB
 from vdsm.constants import GIB
+from vdsm.constants import MEGAB
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import qemuimg
 from vdsm.storage.blockVolume import BlockVolume
 
 from monkeypatch import MonkeyPatch

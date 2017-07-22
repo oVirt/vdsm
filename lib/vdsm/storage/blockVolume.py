@@ -23,7 +23,6 @@ import os
 import logging
 
 from vdsm import constants
-from vdsm import qemuimg
 from vdsm.common import fileutils
 from vdsm.common.threadlocal import vars
 from vdsm.config import config
@@ -33,6 +32,7 @@ from vdsm.storage import directio
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage import misc
+from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import task
 from vdsm.storage import volume

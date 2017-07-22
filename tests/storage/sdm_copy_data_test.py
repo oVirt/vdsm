@@ -46,12 +46,12 @@ from testlib import start_thread
 from testlib import wait_for_job
 
 from vdsm import jobs
-from vdsm import qemuimg
 from vdsm.common import exception
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import guarded
+from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import volume
 from vdsm.storage import workarounds

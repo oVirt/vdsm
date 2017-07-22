@@ -27,7 +27,6 @@ from contextlib import contextmanager
 
 from vdsm import cmdutils
 from vdsm import constants
-from vdsm import qemuimg
 from vdsm import utils
 from vdsm import virtsparsify
 from vdsm.config import config
@@ -38,10 +37,11 @@ from vdsm.storage import exception as se
 from vdsm.storage import imageSharing
 from vdsm.storage import misc
 from vdsm.storage import qcow2
+from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import sd
-from vdsm.storage import workarounds
 from vdsm.storage import volume
+from vdsm.storage import workarounds
 from vdsm.storage.sdc import sdCache
 
 from vdsm.common.exception import ActionStopped

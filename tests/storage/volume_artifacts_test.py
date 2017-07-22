@@ -31,7 +31,6 @@ from storage.storagetestlib import (
     fake_file_env,
 )
 
-from vdsm import qemuimg
 from vdsm.config import config
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
@@ -39,9 +38,10 @@ from vdsm.storage import exception as se
 from vdsm.storage import fileVolume
 from vdsm.storage import image
 from vdsm.storage import misc
+from vdsm.storage import qemuimg
 from vdsm.storage import sd
-from vdsm.storage.volumemetadata import VolumeMetadata
 from vdsm.storage.sdm.api import create_volume
+from vdsm.storage.volumemetadata import VolumeMetadata
 
 
 class ExpectedFailure(Exception):

@@ -32,7 +32,6 @@ from monkeypatch import MonkeyPatchScope
 
 from vdsm import cmdutils
 from vdsm import commands
-from vdsm import qemuimg
 from vdsm.storage import blockSD
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
@@ -43,6 +42,7 @@ from vdsm.storage import guarded
 from vdsm.storage import hsm
 from vdsm.storage import image
 from vdsm.storage import outOfProcess as oop
+from vdsm.storage import qemuimg
 from vdsm.storage import sd
 from vdsm.storage import volume
 from vdsm.storage.sdm import volume_artifacts

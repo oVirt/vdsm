@@ -48,7 +48,6 @@ from vdsm import host
 from vdsm import hugepages
 from vdsm import libvirtconnection
 from vdsm import osinfo
-from vdsm import qemuimg
 from vdsm import supervdsm
 from vdsm import utils
 from vdsm.config import config
@@ -59,10 +58,14 @@ from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.common.logutils import SimpleLogAdapter, volume_chain_to_str
 from vdsm.host import caps
 from vdsm.network import api as net_api
+
+# TODO: remove these imports, code using this should use storage apis.
 from vdsm.storage import fileUtils
 from vdsm.storage import outOfProcess as oop
+from vdsm.storage import qemuimg
 from vdsm.storage import sd
 from vdsm.storage import sdc
+
 from vdsm.virt import guestagent
 from vdsm.virt import libvirtxml
 from vdsm.virt import metadata

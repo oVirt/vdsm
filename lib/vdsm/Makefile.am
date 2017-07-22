@@ -53,7 +53,6 @@ dist_vdsmpylib_PYTHON = \
 	panic.py \
 	ppc64HardwareInfo.py \
 	protocoldetector.py \
-	qemuimg.py \
 	schedule.py \
 	sslutils.py \
 	supervdsm.py \

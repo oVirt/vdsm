@@ -39,7 +39,6 @@ import stat
 
 from vdsm import constants
 from vdsm import jobs
-from vdsm import qemuimg
 from vdsm import supervdsm
 from vdsm import utils
 from vdsm.common import concurrent
@@ -66,6 +65,7 @@ from vdsm.storage import mount
 from vdsm.storage import multipath
 from vdsm.storage import nfsSD
 from vdsm.storage import outOfProcess as oop
+from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import sd
 from vdsm.storage import sp
