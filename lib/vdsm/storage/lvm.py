@@ -44,7 +44,7 @@ from vdsm.storage import devicemapper
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage import multipath
-from vdsm.storage.constants import VG_EXTENT_SIZE_MB
+from vdsm.storage.constants import VG_EXTENT_SIZE_MB, SUPPORTED_BLOCKSIZE
 
 from vdsm.config import config
 
@@ -1095,7 +1095,7 @@ def _checkpvsblksize(pvs, vgBlkSize=None):
         pvBlkSize = _getpvblksize(pv)
         logPvBlkSize, phyPvBlkSize = pvBlkSize
 
-        if logPvBlkSize not in constants.SUPPORTED_BLOCKSIZE:
+        if logPvBlkSize not in SUPPORTED_BLOCKSIZE:
             raise se.DeviceBlockSizeError(pvBlkSize)
 
         if phyPvBlkSize < logPvBlkSize:
