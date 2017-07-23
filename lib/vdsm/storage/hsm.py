@@ -2489,7 +2489,7 @@ class HSM(object):
     @public
     def createStorageDomain(self, storageType, sdUUID, domainName,
                             typeSpecificArg, domClass,
-                            domVersion=constants.SUPPORTED_DOMAIN_VERSIONS[0],
+                            domVersion=sc.SUPPORTED_DOMAIN_VERSIONS[0],
                             options=None):
         """
         Creates a new storage domain.

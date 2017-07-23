@@ -187,3 +187,12 @@ VOLUME_TAGS = [TAG_PREFIX_PARENT,
                TAG_PREFIX_MDNUMBLKS]
 
 SUPPORTED_BLOCKSIZE = (512,)
+
+# This is the domain version translation list
+# DO NOT CHANGE OLD VALUES ONLY APPEND
+DOMAIN_VERSIONS = (0, 2, 3, 4)
+
+# This contains the domains versions that this VDSM
+# accepts currently its all of the version but in the
+# future we might slice it (eg. tuple(DOMAIN_VERSION[1:]))
+SUPPORTED_DOMAIN_VERSIONS = DOMAIN_VERSIONS

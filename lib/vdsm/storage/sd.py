@@ -206,7 +206,7 @@ def packLeaseParams(lockRenewalIntervalSec, leaseTimeSec,
 
 
 def validateDomainVersion(version):
-    if version not in constants.SUPPORTED_DOMAIN_VERSIONS:
+    if version not in sc.SUPPORTED_DOMAIN_VERSIONS:
         raise se.UnsupportedDomainVersion(version)
 
 
