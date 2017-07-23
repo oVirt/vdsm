@@ -217,7 +217,7 @@ def volumeStatvfs(volumeName, host=GLUSTER_VOL_HOST,
                   port=GLUSTER_VOL_PORT,
                   protocol=GLUSTER_VOL_PROTOCOL):
     module = "vdsm.gluster.gfapi"
-    command = [constants.EXT_PYTHON, '-m', module, '-v', volumeName,
+    command = [sys.executable, '-m', module, '-v', volumeName,
                '-p', str(port), '-H', host, '-t', protocol, '-c', 'statvfs']
 
     # to include /usr/share/vdsm in python path
@@ -248,7 +248,7 @@ def volumeEmptyCheck(volumeName, host=GLUSTER_VOL_HOST,
                      port=GLUSTER_VOL_PORT,
                      protocol=GLUSTER_VOL_PROTOCOL):
     module = "gluster.gfapi"
-    command = [constants.EXT_PYTHON, '-m', module, '-v', volumeName,
+    command = [sys.executable, '-m', module, '-v', volumeName,
                '-p', str(port), '-H', host, '-t', protocol, '-c', 'readdir']
 
     # to include /usr/share/vdsm in python path

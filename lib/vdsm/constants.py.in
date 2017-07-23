@@ -105,8 +105,6 @@ EXT_MULTIPATH = '@MULTIPATH_PATH@'
 
 EXT_NICE = '@NICE_PATH@'
 
-EXT_PYTHON = '@PYTHON@'
-
 EXT_SETSID = '@SETSID_PATH@'
 EXT_SH = '/bin/sh'  # The shell path is invariable
 EXT_SU = '@SU_PATH@'

@@ -58,8 +58,9 @@ class ExecCmdTest(TestCaseBase):
 
     @permutations(CMD_TYPES)
     def testSetSid(self, cmd):
-        cmd_args = (constants.EXT_PYTHON, '-c',
-                    'import os; print os.getsid(os.getpid())')
+        cmd_args = (sys.executable, '-c',
+                    'from __future__ import print_function;import os;'
+                    'print(os.getsid(os.getpid()))')
         rc, out, _ = commands.execCmd(cmd(cmd_args), setsid=True)
         self.assertNotEquals(int(out[0]), os.getsid(os.getpid()))
 
