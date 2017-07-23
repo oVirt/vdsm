@@ -10,7 +10,7 @@ import hooking
 BLKGETSIZE64 = 0x80081272  # Obtain device size in bytes
 FORMAT = 'L'
 TIMEPERGIB = 0.02  # Approximate qemu-img check time (in seconds) to check 1GiB
-GIB = 10 ** 9  # GiB
+GIB = 2 ** 30  # GiB
 
 '''
 checkimages vdsm hook
