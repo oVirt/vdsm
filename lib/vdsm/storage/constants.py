@@ -92,6 +92,8 @@ FMT2STR = {
 
 BLANK_UUID = "00000000-0000-0000-0000-000000000000"
 
+UUID_GLOB_PATTERN = '*-*-*-*-*'
+
 
 def fmt2str(format):
     return FMT2STR[format]

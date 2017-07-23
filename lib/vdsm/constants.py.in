@@ -62,8 +62,6 @@ SUPPORTED_BLOCKSIZE = (512,)
 # future we might slice it (eg. tuple(DOMAIN_VERSION[1:]))
 SUPPORTED_DOMAIN_VERSIONS = DOMAIN_VERSIONS
 
-UUID_GLOB_PATTERN = '*-*-*-*-*'
-
 MEGAB = 2 ** 20  # = 1024 ** 2 = 1 MiB
 GIB = 1024 * MEGAB
 

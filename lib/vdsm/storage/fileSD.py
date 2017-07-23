@@ -41,7 +41,7 @@ from vdsm.storage.sdm import volume_artifacts
 
 from vdsm import constants
 from vdsm.utils import stripNewLines
-from vdsm.storage.constants import LEASE_FILEEXT
+from vdsm.storage.constants import LEASE_FILEEXT, UUID_GLOB_PATTERN
 from vdsm import supervdsm
 
 REMOTE_PATH = "REMOTE_PATH"
@@ -329,7 +329,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         """
         # Get Volumes of an image
         pattern = os.path.join(self.mountpoint, self.sdUUID, sd.DOMAIN_IMAGES,
-                               constants.UUID_GLOB_PATTERN)
+                               UUID_GLOB_PATTERN)
         files = self.oop.glob.glob(pattern)
         images = set()
         for i in files:
@@ -792,7 +792,7 @@ def scanDomains(pattern="*"):
             # possibleDomain that we pass to glob.
             metaFiles = oop.getProcessPool(possibleDomain).glob.glob(
                 os.path.join(glob_escape(possibleDomain),
-                             constants.UUID_GLOB_PATTERN,
+                             UUID_GLOB_PATTERN,
                              sd.DOMAIN_META_DATA))
 
             for metaFile in metaFiles:

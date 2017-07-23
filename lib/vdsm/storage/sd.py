@@ -915,7 +915,7 @@ class StorageDomain(object):
     def getVMsList(self):
         vmsPath = self.getVMsDir()
         # find out VMs list
-        VM_PATTERN = os.path.join(vmsPath, constants.UUID_GLOB_PATTERN)
+        VM_PATTERN = os.path.join(vmsPath, sc.UUID_GLOB_PATTERN)
         vms = self.oop.glob.glob(VM_PATTERN)
         vmList = [os.path.basename(i) for i in vms]
         self.log.info("vmList=%s", str(vmList))

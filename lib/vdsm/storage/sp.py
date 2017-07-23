@@ -30,7 +30,6 @@ from contextlib import nested
 from functools import partial
 from weakref import proxy
 
-from vdsm import constants
 from vdsm.common import concurrent
 from vdsm.panic import panic
 from vdsm.storage import blockSD
@@ -1278,7 +1277,7 @@ class StoragePool(object):
         fileUtils.createdir(self.poolPath)
 
         # Find out all domains for future cleanup
-        domainpat = os.path.join(self.poolPath, constants.UUID_GLOB_PATTERN)
+        domainpat = os.path.join(self.poolPath, sc.UUID_GLOB_PATTERN)
         oldLinks = set(iglob(domainpat))
 
         # We should not rebuild non-active domains, because
