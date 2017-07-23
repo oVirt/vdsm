@@ -166,8 +166,8 @@ class FileVolumeManifest(volume.VolumeManifest):
 
         This API is not suitable for use with a template's base volume.
         """
-        domPath = self.imagePath.rsplit('/images/', 1)[0]
-        metaPattern = os.path.join(domPath, 'images', self.imgUUID, '*.meta')
+        imgDir, _ = os.path.split(self.volumePath)
+        metaPattern = os.path.join(imgDir, "*.meta")
         metaPaths = oop.getProcessPool(self.sdUUID).glob.glob(metaPattern)
         pattern = "%s.*%s" % (sc.PUUID, self.volUUID)
         matches = grepCmd(pattern, metaPaths)
