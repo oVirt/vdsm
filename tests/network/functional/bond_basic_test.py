@@ -25,7 +25,7 @@ from nose.plugins.attrib import attr
 from vdsm.network import errors as ne
 
 from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
-from .nettestlib import dummy_devices
+from network.nettestlib import dummy_devices
 
 BOND_NAME = 'bond1'
 
@@ -125,13 +125,13 @@ class BondBasicTemplate(NetFuncTestCase):
         self.assertEqual(err.exception.status, ne.ERR_BAD_PARAMS)
 
 
-@attr(type='functional', switch='legacy')
+@attr(switch='legacy')
 class BondBasicLegacyTest(BondBasicTemplate):
     __test__ = True
     switch = 'legacy'
 
 
-@attr(type='functional', switch='ovs')
+@attr(switch='ovs')
 class BondBasicOvsTest(BondBasicTemplate):
     __test__ = True
     switch = 'ovs'
@@ -179,13 +179,13 @@ class BondOptionsTestTemplate(NetFuncTestCase):
                 self.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
 
 
-@attr(type='functional', switch='legacy')
+@attr(switch='legacy')
 class BondOptionsLegacyTest(BondOptionsTestTemplate):
     __test__ = True
     switch = 'legacy'
 
 
-@attr(type='functional', switch='ovs')
+@attr(switch='ovs')
 class BondOptionsOvsTest(BondOptionsTestTemplate):
     __test__ = True
     switch = 'ovs'

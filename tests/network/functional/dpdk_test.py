@@ -26,7 +26,7 @@ from .netfunctestlib import NetFuncTestCase, NOCHK
 NETWORK_NAME = 'test-network'
 
 
-@attr(type='functional', switch='ovs-dpdk')
+@attr(switch='ovs-dpdk')
 class OvsDpdkTest(NetFuncTestCase):
 
     def test_dpdk0_device_exists(self):

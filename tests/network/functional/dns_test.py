@@ -25,7 +25,7 @@ from vdsm.network.errors import ERR_BAD_PARAMS
 from nose.plugins.attrib import attr
 
 from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
-from .nettestlib import dummy_device, restore_resolv_conf
+from network.nettestlib import dummy_device, restore_resolv_conf
 
 NETWORK_NAME = 'test-network'
 NAMESERVERS = ['1.2.3.4', '2.3.4.5']
@@ -82,13 +82,13 @@ class NetworkDNSTemplate(NetFuncTestCase):
             self.assertEqual(err.exception.status, ERR_BAD_PARAMS)
 
 
-@attr(type='functional', switch='legacy')
+@attr(switch='legacy')
 class NetworkDNSLegacyTest(NetworkDNSTemplate):
     __test__ = True
     switch = 'legacy'
 
 
-@attr(type='functional', switch='ovs')
+@attr(switch='ovs')
 class NetworkDNSOvsTest(NetworkDNSTemplate):
     # TODO: Implement 'nameservers' for OVS switch setups.
     __test__ = False

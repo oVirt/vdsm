@@ -21,7 +21,7 @@ from __future__ import absolute_import
 from nose.plugins.attrib import attr
 
 from .netfunctestlib import NetFuncTestCase, NOCHK
-from .nettestlib import dummy_device
+from network.nettestlib import dummy_device
 
 NETWORK1_NAME = 'test-network1'
 NETWORK2_NAME = 'test-network2'
@@ -75,13 +75,13 @@ class NetworkHostQosTemplate(NetFuncTestCase):
                     self.assertHostQos(NETWORK2_NAME, NETVLAN[NETWORK2_NAME])
 
 
-@attr(type='functional', switch='legacy')
+@attr(switch='legacy')
 class NetworkHostQosLegacyTest(NetworkHostQosTemplate):
     __test__ = True
     switch = 'legacy'
 
 
-@attr(type='functional', switch='ovs')
+@attr(switch='ovs')
 class NetworkHostQosOvsTest(NetworkHostQosTemplate):
     # TODO: When QoS will be available on OVS, enable the tests.
     __test__ = False

@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,23 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = functional static
+vdsmnetworkfunctestsdir = ${vdsmtestsdir}/network/functional
 
-vdsmnetworktestsdir = ${vdsmtestsdir}/network
-
-dist_vdsmnetworktests_PYTHON = \
+dist_vdsmnetworkfunctests_PYTHON = \
 	__init__.py \
 	*_test.py \
-	dhcp.py \
-	firewall.py \
-	nettestlib.py \
-	nmnettestlib.py \
-	ovsnettestlib.py \
+	netfunctestlib.py \
 	$(NULL)
-
-dist_vdsmnetworktests_DATA = \
-	ip_route_show_table_all.out \
-	netmaskconversions \
-	tc_filter_show.out \
-	$(NULL)
-

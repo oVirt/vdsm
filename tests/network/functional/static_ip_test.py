@@ -26,7 +26,7 @@ from vdsm.network import errors as ne
 from vdsm.network.ipwrapper import addrAdd
 
 from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
-from .nettestlib import dummy_device, dummy_devices
+from network.nettestlib import dummy_device, dummy_devices
 
 NETWORK_NAME = 'test-network'
 NETWORK2_NAME = 'test-network2'

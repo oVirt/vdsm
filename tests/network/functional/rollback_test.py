@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from nose.plugins.attrib import attr
 
 from .netfunctestlib import SetupNetworksError, NetFuncTestCase, NOCHK
-from .nettestlib import dummy_devices
+from network.nettestlib import dummy_devices
 
 NETWORK_NAME = 'test-network'
 BOND_NAME = 'bond10'
@@ -82,13 +82,13 @@ class NetworkRollbackTemplate(NetFuncTestCase):
                 self.assertNoBond(BOND_NAME)
 
 
-@attr(type='functional', switch='legacy')
+@attr(switch='legacy')
 class NetworkRollbackLegacyTest(NetworkRollbackTemplate):
     __test__ = True
     switch = 'legacy'
 
 
-@attr(type='functional', switch='ovs')
+@attr(switch='ovs')
 class NetworkRollbackOvsTest(NetworkRollbackTemplate):
     __test__ = True
     switch = 'ovs'

@@ -25,7 +25,7 @@ from nose.plugins.attrib import attr
 from vdsm.network.ipwrapper import linkSet, addrAdd
 
 from .netfunctestlib import NetFuncTestCase, NOCHK
-from .nettestlib import veth_pair, dnsmasq_run, dhclient_run
+from network.nettestlib import veth_pair, dnsmasq_run, dhclient_run
 
 NETWORK_NAME = 'test-network'
 VLAN = 10
@@ -62,13 +62,13 @@ class NetworkDhcpBasicTemplate(NetFuncTestCase):
                         NETWORK_NAME, netcreate[NETWORK_NAME])
 
 
-@attr(type='functional', switch='legacy')
+@attr(switch='legacy')
 class NetworkDhcpBasicLegacyTest(NetworkDhcpBasicTemplate):
     __test__ = True
     switch = 'legacy'
 
 
-@attr(type='functional', switch='ovs')
+@attr(switch='ovs')
 class NetworkDhcpBasicOvsTest(NetworkDhcpBasicTemplate):
     __test__ = True
     switch = 'ovs'
@@ -113,13 +113,13 @@ class StopDhclientOnUsedNicsTemplate(NetFuncTestCase):
                         self.assertDhclient(NETWORK_NAME, family=4)
 
 
-@attr(type='functional', switch='legacy')
+@attr(switch='legacy')
 class StopDhclientOnUsedNicsLegacyTest(StopDhclientOnUsedNicsTemplate):
     __test__ = True
     switch = 'legacy'
 
 
-@attr(type='functional', switch='ovs')
+@attr(switch='ovs')
 class StopDhclientOnUsedNicsOvsTest(StopDhclientOnUsedNicsTemplate):
     __test__ = True
     switch = 'ovs'

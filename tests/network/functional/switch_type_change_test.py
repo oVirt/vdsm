@@ -23,13 +23,14 @@ from __future__ import absolute_import
 from copy import deepcopy
 import six
 
-from nose.plugins.attrib import attr
-
 from vdsm.network import errors as ne
 from vdsm.network.ipwrapper import linkSet, addrAdd
 
+from network.nettestlib import (dummy_device, dummy_devices,
+                                veth_pair, dnsmasq_run)
+
 from .netfunctestlib import NetFuncTestCase, SetupNetworksError, NOCHK
-from .nettestlib import dummy_device, dummy_devices, veth_pair, dnsmasq_run
+
 
 NET1_NAME = 'test-network1'
 NET2_NAME = 'test-network2'
@@ -87,14 +88,12 @@ class BasicSwitchChangeTemplate(NetFuncTestCase):
                 self.assertBond(BOND_NAME, BONDSETUP_TARGET[BOND_NAME])
 
 
-@attr(type='functional')
 class BasicSwitchChangeLegacy2OvsTest(BasicSwitchChangeTemplate):
     __test__ = True
     switch_type_source = 'legacy'
     switch_type_target = 'ovs'
 
 
-@attr(type='functional')
 class BasicSwitchChangeOvs2LegacyTest(BasicSwitchChangeTemplate):
     __test__ = True
     switch_type_source = 'ovs'
@@ -152,14 +151,12 @@ class IpSwitchTemplate(NetFuncTestCase):
                         self.assertBond(BOND_NAME, BONDSETUP_TARGET[BOND_NAME])
 
 
-@attr(type='functional')
 class IpSwitchLegacy2OvsTest(IpSwitchTemplate):
     __test__ = True
     switch_type_source = 'legacy'
     switch_type_target = 'ovs'
 
 
-@attr(type='functional')
 class IpSwitchOvs2LegacyTest(IpSwitchTemplate):
     __test__ = True
     switch_type_source = 'ovs'
@@ -228,14 +225,12 @@ class SwitchRollbackTemplate(NetFuncTestCase):
                 self.assertNetwork(NET2_NAME, NETSETUP_SOURCE[NET2_NAME])
 
 
-@attr(type='functional')
 class SwitchRollbackLegacy2OvsTest(SwitchRollbackTemplate):
     __test__ = True
     switch_type_source = 'legacy'
     switch_type_target = 'ovs'
 
 
-@attr(type='functional')
 class SwitchRollbackOvs2LegacyTest(SwitchRollbackTemplate):
     __test__ = True
     switch_type_source = 'ovs'
@@ -279,14 +274,12 @@ class SwitchValidationTemplate(NetFuncTestCase):
                 self.assertNetwork(NET2_NAME, NETSETUP_SOURCE[NET2_NAME])
 
 
-@attr(type='functional')
 class SwitchValidationLegacy2OvsTest(SwitchValidationTemplate):
     __test__ = True
     switch_type_source = 'legacy'
     switch_type_target = 'ovs'
 
 
-@attr(type='functional')
 class SwitchValidationOvs2LegacyTest(SwitchValidationTemplate):
     __test__ = True
     switch_type_source = 'ovs'

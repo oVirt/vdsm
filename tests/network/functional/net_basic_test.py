@@ -30,8 +30,8 @@ from vdsm.network import errors as ne
 from vdsm.network.link import iface as link_iface
 
 from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
-from .nettestlib import dummy_device, dummy_devices
-from .nmnettestlib import iface_name, nm_connections, is_networkmanager_running
+from network import nmnettestlib
+from network.nettestlib import dummy_device, dummy_devices
 
 NETWORK_NAME = 'test-network'
 NET_1 = NETWORK_NAME + '1'
@@ -249,7 +249,7 @@ class NetworkBasicTemplate(NetFuncTestCase):
         return attrs
 
 
-@attr(type='functional', switch='legacy')
+@attr(switch='legacy')
 class NetworkBasicLegacyTest(NetworkBasicTemplate):
     __test__ = True
     switch = 'legacy'
@@ -258,7 +258,7 @@ class NetworkBasicLegacyTest(NetworkBasicTemplate):
     NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
 
     def test_add_net_based_on_device_with_non_standard_ifcfg_file(self):
-        if is_networkmanager_running():
+        if nmnettestlib.is_networkmanager_running():
             self.skipTest('NetworkManager is running.')
 
         with dummy_device() as nic:
@@ -280,21 +280,21 @@ class NetworkBasicLegacyTest(NetworkBasicTemplate):
                     self.assertFalse(os.path.exists(nic_ifcfg_badname_file))
 
 
-@attr(type='functional', switch='ovs')
+@attr(switch='ovs')
 class NetworkBasicOvsTest(NetworkBasicTemplate):
     __test__ = True
     switch = 'ovs'
 
 
-@attr(type='functional', switch='legacy')
+@attr(switch='legacy')
 class NetworkManagerLegacyTest(NetFuncTestCase):
     switch = 'legacy'
 
     def setUp(self):
-        if not is_networkmanager_running():
+        if not nmnettestlib.is_networkmanager_running():
             self.skipTest('NetworkManager is not running.')
 
-        self.iface = iface_name()
+        self.iface = nmnettestlib.iface_name()
 
     def tearDown(self):
         # The bond was acquired, therefore VDSM needs to clean it.
@@ -305,7 +305,7 @@ class NetworkManagerLegacyTest(NetFuncTestCase):
         IPv4_ADDRESS = '192.0.2.1'
         NET = {NETWORK_NAME: {'bonding': self.iface, 'switch': self.switch}}
         with dummy_devices(1) as nics:
-            with nm_connections(
+            with nmnettestlib.nm_connections(
                     self.iface, IPv4_ADDRESS, con_count=3, slaves=nics):
                 with self.setupNetworks(NET, {}, NOCHK):
                     self.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
@@ -315,7 +315,7 @@ class NetworkManagerLegacyTest(NetFuncTestCase):
         NET = {NETWORK_NAME: {'bonding': self.iface, 'vlan': int(vlan_id),
                               'switch': self.switch}}
         with dummy_devices(1) as nics:
-            with nm_connections(
+            with nmnettestlib.nm_connections(
                     self.iface, ipv4addr=None, vlan=vlan_id, slaves=nics):
                 bond_hwaddress = link_iface.mac_address(self.iface)
                 vlan_iface = '.'.join([self.iface, vlan_id])

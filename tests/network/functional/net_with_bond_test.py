@@ -28,7 +28,7 @@ from vdsm.network import errors as ne
 from vdsm.network.configurators.ifcfg import ifup, ifdown
 
 from .netfunctestlib import NetFuncTestCase, SetupNetworksError, NOCHK
-from .nettestlib import dummy_device, dummy_devices
+from network.nettestlib import dummy_device, dummy_devices
 
 NETWORK1_NAME = 'test-network1'
 NETWORK2_NAME = 'test-network2'
@@ -124,7 +124,7 @@ class NetworkWithBondTemplate(NetFuncTestCase):
                     self.assertNetwork(netname, netattrs)
 
 
-@attr(type='functional', switch='legacy')
+@attr(switch='legacy')
 class NetworkWithBondLegacyTest(NetworkWithBondTemplate):
     __test__ = True
     switch = 'legacy'
@@ -137,7 +137,7 @@ class NetworkWithBondLegacyTest(NetworkWithBondTemplate):
             self.update_netinfo()
 
 
-@attr(type='functional', switch='ovs')
+@attr(switch='ovs')
 class NetworkWithBondOvsTest(NetworkWithBondTemplate):
     __test__ = True
     switch = 'ovs'

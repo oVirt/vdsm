@@ -21,7 +21,7 @@ from __future__ import absolute_import
 from nose.plugins.attrib import attr
 
 from .netfunctestlib import NetFuncTestCase, NOCHK
-from .nettestlib import dummy_devices
+from network.nettestlib import dummy_devices
 from testlib import mock
 
 from vdsm.network import netrestore
@@ -30,7 +30,7 @@ from vdsm.network.link.bond import Bond
 BOND_NAME = 'bond1'
 
 
-@attr(type='functional', switch='ovs')
+@attr(switch='ovs')
 class RestoreOvsBondTest(NetFuncTestCase):
 
     @mock.patch.object(netrestore, 'NETS_RESTORED_MARK', 'does/not/exist')

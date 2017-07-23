@@ -78,8 +78,8 @@ function run_network_tests {
             ./run_tests.sh \
                 --with-xunit \
                 --xunit-file=$TESTS_OUT/nosetests-${DISTRO}-network.junit.xml \
-                -a type=functional,switch=legacy \
-                network/func_*_test.py
+                -a switch=legacy \
+                network/functional/*_test.py
         " || res=$?
     return $res
 }

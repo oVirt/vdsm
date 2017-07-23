@@ -12,12 +12,6 @@ function terminate_jobs {
 
 trap terminate_jobs EXIT
 
-if [ -z "$NOSE_EVAL_ATTR" ]; then
-    NOSE_EVAL_ATTR="type!='functional'"
-else
-    NOSE_EVAL_ATTR+=" and type!='functional'"
-fi
-
 export \
     LC_ALL=C \
     NOSE_EVAL_ATTR \
