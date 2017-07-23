@@ -79,7 +79,6 @@ P_VDSM_CONF = '@CONFDIR@/'  # NOQA: E501 (potentially long line)
 P_VDSM_KEYS = '/etc/pki/vdsm/keys/'
 
 P_VDSM_LOG = '@VDSMLOGDIR@'  # NOQA: E501 (potentially long line)
-P_VDSM_NODE_ID = '/etc/vdsm/vdsm.id'
 
 P_VDSM_EXEC = '@LIBEXECDIR@'  # NOQA: E501 (potentially long line)
 

@@ -27,14 +27,16 @@ from vdsm.commands import execCmd
 from vdsm import constants
 from vdsm import cpuarch
 
+P_VDSM_NODE_ID = '/etc/vdsm/vdsm.id'
+
 
 @memoized
 def uuid():
     host_UUID = None
 
     try:
-        if os.path.exists(constants.P_VDSM_NODE_ID):
-            with open(constants.P_VDSM_NODE_ID) as f:
+        if os.path.exists(P_VDSM_NODE_ID):
+            with open(P_VDSM_NODE_ID) as f:
                 host_UUID = f.readline().replace("\n", "")
         else:
             arch = cpuarch.real()
