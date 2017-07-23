@@ -66,6 +66,9 @@ import errno
 import heapq
 import logging
 import os
+import select
+
+import six
 
 from vdsm.common import filecontrol
 from vdsm.common import osutils
@@ -137,13 +140,14 @@ class EventLoop(object):
         schedules the resulting callbacks, and finally schedules
         'call_later' callbacks.
 
-        This method is too big, keeping it as is to make it easier to backport
-        fixes from Python 3.
+        This method is too big, keeping it as is to make it easier to
+        backport fixes from Python 3.
 
         Changes from Python 3:
-        - Process events using asyncore.
-        - Use when > now when checking for ready timers, required for using
-          time.monotonic_time using 10 millis resolution.
+        - Use when > now when checking for ready timers, required for
+          using time.monotonic_time using 10 millis resolution.
+        - Use poll() instead of the selectors module which is not
+          available in python 2.
         """
         # Remove delayed calls that were cancelled from head of queue.
         while self._scheduled and self._scheduled[0]._cancelled:
@@ -156,16 +160,8 @@ class EventLoop(object):
             when = self._scheduled[0]._when
             timeout = max(0, when - self.time())
 
-        # Note: unlike Python 3 version, this run I/O event handlers now. This
-        # means that handlers scheduled from I/O event handlers will run in
-        # this cycle instead of the next cycle in Python 3.
-        try:
-            asyncore.poll2(timeout, self._channels)
-        except Exception:
-            # asyncore.poll2 delegate error handling to dispatcher's
-            # handle_error(), but it does *not* handle the case when
-            # handle_error() raises.
-            log.exception("Unhandled error in I/O handler")
+        events = poll(timeout, map=self._channels)
+        self._process_events(events)
 
         # Handle 'later' callbacks that are ready.
         now = self.time()
@@ -190,6 +186,30 @@ class EventLoop(object):
             handle._run()
 
         handle = None  # Needed to break cycles when an exception occurs.
+
+    def _process_events(self, events):
+        """
+        Schedule ready I/O events for calling at the end of current event loop
+        iteration.
+
+        Changes compared to python 3.7:
+        - We don't remove canceled dispatcher here, they are removed in
+          asyncore.dispatcher.del_channel().
+        """
+        for fd, obj, flags in events:
+            handle = Handle(self._readwrite, (fd, obj, flags))
+            self._ready.append(handle)
+
+    def _readwrite(self, fd, obj, flags):
+        """
+        Perform I/O on a ready dispatcher, if the dispatcher is till tracked by
+        this event loop.
+        """
+        if self._channels.get(fd) is obj:
+            # TODO: readwrite() is calling handle_xxx_event() on closed
+            # dispatcher. This is fixed by this upstream patch:
+            # https://github.com/python/cpython/pull/2854
+            asyncore.readwrite(obj, flags)
 
     def stop(self):
         """
@@ -363,6 +383,69 @@ class _StopError(BaseException):
 
 def _raise_stop_error():
     raise _StopError
+
+
+def poll(timeout=0.0, map=None):
+    """
+    Wait for events on readable or writable dispatchers in map, returning list
+    of tuples (fd, dispatcher, flags) if any of the file descriptor is ready
+    for I/O.
+
+    The caller must verify that a dispatcher is registered in asyncore
+    socket_map for that fd before calling the I/O callbacks.
+
+    This is an improved version of asyncore.poll2 from python 3.7, modified for
+    integration with the event loop. Unlike the original version, this version
+    returns a list of events, instead of invoking the I/O callbacks, which is
+    racy. The caller should add a callback for each event to the event loop, to
+    be run when the event loop cycle is done.
+
+    Another difference here is not using any global state. This does not use
+    asyncore.socket_map, you have to give it the map you want to poll.
+
+    This fixes couple of bugs in the original implementation. These bugs may
+    never be fixed in 2.7 or even in 3.x, since asyncore was deprecated since
+    version 3.6.
+
+    This is implemented outside of the event loop so we can reuse this
+    implementation from other code using asyncore.
+    """
+
+    # Keeping compatibility with asyncore.poll2 when using with empty map. This
+    # is not relevant to the event loop since we always have a Waker channel,
+    # but may needed by other code that use its own possibly empty map.
+    if not map:
+        return []
+
+    if timeout is not None:
+        timeout = int(timeout * 1000)
+
+    pollster = select.poll()
+
+    # No need to copy the map during iteration, nobody can access the map
+    # during the iteration, fixes http://bugs.python.org/issue30994.
+    for fd, obj in six.iteritems(map):
+        flags = 0
+        if obj.readable():
+            flags |= select.POLLIN | select.POLLPRI
+        # accepting sockets should not be writable
+        if obj.writable() and not obj.accepting:
+            flags |= select.POLLOUT
+        if flags:
+            pollster.register(fd, flags)
+
+    # The try block is needed only for python 2. In python 3 the call is
+    # restarted after EINTR.
+    try:
+        r = pollster.poll(timeout)
+    except select.error as e:
+        if e[0] != errno.EINTR:
+            raise
+        return []
+
+    # Fetch the dispatchers from map before invoking any I/O callback fixes
+    # http://bugs.python.org/issue30931.
+    return [(fd, map[fd], flags) for fd, flags in r]  # NOQA: F812
 
 
 class Handle(object):
