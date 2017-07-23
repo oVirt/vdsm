@@ -68,6 +68,20 @@ Running only stress tests, using markers:
 
     pytest -m "stress" storage
 
+Running the tests as root
+-------------------------
+
+When using sudo, use env to pass PYTHONPATH to the underlying program:
+
+    sudo env PYTHONPATH=$PYTHONPATH  tox ...
+
+When running the tests as root, use another --basetemp directory for pytest:
+
+    sudo ... pytest --basetemp=/var/tmp/vdsm-root storage/blockdev_test.py
+
+This will avoid failures when you run the tests later as regular user, when
+pytest will try to remove old temporary directories created by root.
+
 Nose based tests
 ================
 
