@@ -22,12 +22,14 @@ from __future__ import absolute_import
 import os
 
 from vdsm.network.api import DUMMY_BRIDGE
-from .. import libvirtconnection, commands, constants
+from .. import libvirtconnection, commands
 from . import expose, ExtraArgsError
+
+EXT_BRCTL = '/usr/sbin/brctl'
 
 
 def createEphemeralBridge(bridgeName):
-    rc, out, err = commands.execCmd([constants.EXT_BRCTL, 'addbr', bridgeName])
+    rc, out, err = commands.execCmd([EXT_BRCTL, 'addbr', bridgeName])
     if rc != 0:
         raise EnvironmentError(
             'Failed to create ephemeral dummy bridge. Err: %s' % err

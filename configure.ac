@@ -323,7 +323,6 @@ fi
 AX_PYTHON_MODULE([six], [fatal], python2)
 
 # External programs (sorted, please keep in order)
-AC_PATH_PROG([BRCTL_PATH], [brctl], [/usr/sbin/brctl])
 AC_PATH_PROG([CAT_PATH], [cat], [/bin/cat])
 AC_PATH_PROG([CHCON_PATH], [chcon], [/bin/chcon])
 AC_PATH_PROG([CHMOD_PATH], [chmod], [/bin/chmod])

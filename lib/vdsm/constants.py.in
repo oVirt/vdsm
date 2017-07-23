@@ -90,8 +90,6 @@ SYSCONF_PATH = '@sysconfdir@'
 #
 # External programs (sorted, please keep in order).
 #
-EXT_BRCTL = '@BRCTL_PATH@'
-
 EXT_CHOWN = '@CHOWN_PATH@'
 
 EXT_DD = '@DD_PATH@'
