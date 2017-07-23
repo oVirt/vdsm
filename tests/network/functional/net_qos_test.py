@@ -18,7 +18,7 @@
 #
 from __future__ import absolute_import
 
-from nose.plugins.attrib import attr
+import pytest
 
 from .netfunctestlib import NetFuncTestCase, NOCHK
 from network.nettestlib import dummy_device
@@ -30,10 +30,11 @@ VLAN2 = 20
 _100USEC = 100 * 1000
 
 
-class NetworkHostQosTemplate(NetFuncTestCase):
-    __test__ = False
+# TODO: When QoS will be available on OVS, enable the tests.
+@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy')])
+class TestNetworkHostQos(NetFuncTestCase):
 
-    def test_add_vlan_network_with_qos(self):
+    def test_add_vlan_network_with_qos(self, switch):
         HOST_QOS_CONFIG = {'out': {'ls': {'m1': rate(rate_in_mbps=4),
                                           'd': _100USEC,
                                           'm2': rate(rate_in_mbps=3)},
@@ -41,51 +42,39 @@ class NetworkHostQosTemplate(NetFuncTestCase):
         with dummy_device() as nic:
             NETCREATE = {NETWORK1_NAME: {'nic': nic, 'vlan': VLAN1,
                                          'hostQos': HOST_QOS_CONFIG,
-                                         'switch': self.switch}}
+                                         'switch': switch}}
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 self.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
 
-    def test_add_two_networks_with_qos_on_shared_nic(self):
+    def test_add_two_networks_with_qos_on_shared_nic(self, switch):
         HOST_QOS_CONFIG1 = {'out': {'ls': {'m2': rate(rate_in_mbps=1)}}}
         HOST_QOS_CONFIG2 = {'out': {'ls': {'m2': rate(rate_in_mbps=5)}}}
         with dummy_device() as nic:
             NETCREATE = {NETWORK1_NAME: {'nic': nic,
                                          'hostQos': HOST_QOS_CONFIG1,
-                                         'switch': self.switch},
+                                         'switch': switch},
                          NETWORK2_NAME: {'nic': nic, 'vlan': VLAN1,
                                          'hostQos': HOST_QOS_CONFIG2,
-                                         'switch': self.switch}}
+                                         'switch': switch}}
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 self.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
                 self.assertHostQos(NETWORK2_NAME, NETCREATE[NETWORK2_NAME])
 
-    def test_add_two_networks_with_qos_on_shared_nic_in_two_steps(self):
+    def test_add_two_networks_with_qos_on_shared_nic_in_two_steps(self,
+                                                                  switch):
         HOST_QOS_CONFIG1 = {'out': {'ls': {'m2': rate(rate_in_mbps=1)}}}
         HOST_QOS_CONFIG2 = {'out': {'ls': {'m2': rate(rate_in_mbps=5)}}}
         with dummy_device() as nic:
             NETBASE = {NETWORK1_NAME: {'nic': nic,
                                        'hostQos': HOST_QOS_CONFIG1,
-                                       'switch': self.switch}}
+                                       'switch': switch}}
             NETVLAN = {NETWORK2_NAME: {'nic': nic, 'vlan': VLAN1,
                                        'hostQos': HOST_QOS_CONFIG2,
-                                       'switch': self.switch}}
+                                       'switch': switch}}
             with self.setupNetworks(NETBASE, {}, NOCHK):
                 with self.setupNetworks(NETVLAN, {}, NOCHK):
                     self.assertHostQos(NETWORK1_NAME, NETBASE[NETWORK1_NAME])
                     self.assertHostQos(NETWORK2_NAME, NETVLAN[NETWORK2_NAME])
-
-
-@attr(switch='legacy')
-class NetworkHostQosLegacyTest(NetworkHostQosTemplate):
-    __test__ = True
-    switch = 'legacy'
-
-
-@attr(switch='ovs')
-class NetworkHostQosOvsTest(NetworkHostQosTemplate):
-    # TODO: When QoS will be available on OVS, enable the tests.
-    __test__ = False
-    switch = 'ovs'
 
 
 def rate(rate_in_mbps):

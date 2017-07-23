@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ from contextlib import contextmanager
 
 import six
 
-from nose.plugins.attrib import attr
+import pytest
 
 from vdsm.network import errors as ne
 from vdsm.network.configurators.ifcfg import ifup, ifdown
@@ -37,63 +37,46 @@ VLAN1 = 10
 VLAN2 = 20
 
 
-class NetworkWithBondTemplate(NetFuncTestCase):
-    __test__ = False
+@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
+                                    pytest.mark.ovs_switch('ovs')])
+class TestNetworkWithBond(NetFuncTestCase):
 
-    @contextmanager
-    def _test_detach_used_bond_from_bridge(self):
+    def test_add_the_same_nic_to_net_and_bond_in_one_step(self, switch):
         with dummy_device() as nic:
-            NETCREATE = {
-                NETWORK1_NAME: {'bonding': BOND_NAME, 'switch': self.switch},
-                NETWORK2_NAME: {'bonding': BOND_NAME, 'vlan': VLAN2,
-                                'switch': self.switch}}
-            BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': self.switch}}
-            with self.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
-                NETEDIT = {
-                    NETWORK1_NAME: {'bonding': BOND_NAME, 'vlan': VLAN1,
-                                    'switch': self.switch}}
-                self.setupNetworks(NETEDIT, {}, NOCHK)
+            NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': switch}}
+            BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
 
-                yield
-
-                self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
-
-    def test_add_the_same_nic_to_net_and_bond_in_one_step(self):
-        with dummy_device() as nic:
-            NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': self.switch}}
-            BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': self.switch}}
-
-            with self.assertRaises(SetupNetworksError) as e:
+            with pytest.raises(SetupNetworksError) as e:
                 self.setupNetworks(NETCREATE, BONDCREATE, NOCHK)
-            self.assertEqual(e.exception.status, ne.ERR_USED_NIC)
+            assert e.value.status == ne.ERR_USED_NIC
 
-    def test_add_bond_with_nic_that_is_already_used_by_network(self):
+    def test_add_bond_with_nic_that_is_already_used_by_network(self, switch):
         with dummy_device() as nic:
-            NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': self.switch}}
-            BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': self.switch}}
+            NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': switch}}
+            BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
 
             with self.setupNetworks(NETCREATE, {}, NOCHK):
-                with self.assertRaises(SetupNetworksError) as e:
+                with pytest.raises(SetupNetworksError) as e:
                     self.setupNetworks({}, BONDCREATE, NOCHK)
-                self.assertEqual(e.exception.status, ne.ERR_USED_NIC)
+                assert e.value.status == ne.ERR_USED_NIC
 
-    def test_add_network_with_nic_that_is_already_used_by_bond(self):
+    def test_add_network_with_nic_that_is_already_used_by_bond(self, switch):
         with dummy_device() as nic:
-            NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': self.switch}}
-            BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': self.switch}}
+            NETCREATE = {NETWORK1_NAME: {'nic': nic, 'switch': switch}}
+            BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
 
             with self.setupNetworks({}, BONDCREATE, NOCHK):
-                with self.assertRaises(SetupNetworksError) as e:
+                with pytest.raises(SetupNetworksError) as e:
                     self.setupNetworks(NETCREATE, {}, NOCHK)
-                self.assertEqual(e.exception.status, ne.ERR_USED_NIC)
+                assert e.value.status == ne.ERR_USED_NIC
 
-    def test_add_bridged_network_with_multiple_vlans_over_a_bond(self):
-        self._test_add_network_with_multiple_vlans_over_a_bond()
+    def test_add_bridged_net_with_multiple_vlans_over_a_bond(self, switch):
+        self._test_add_net_with_multi_vlans_over_a_bond(switch)
 
-    def test_add_bridgeless_network_with_multiple_vlans_over_a_bond(self):
-        self._test_add_network_with_multiple_vlans_over_a_bond(bridged=False)
+    def test_add_bridgeless_net_with_multiple_vlans_over_a_bond(self, switch):
+        self._test_add_net_with_multi_vlans_over_a_bond(switch, bridged=False)
 
-    def test_add_net_with_invalid_bond_name_fails(self):
+    def test_add_net_with_invalid_bond_name_fails(self, switch):
         INVALID_BOND_NAMES = ('bond',
                               'bonda',
                               'bond0a',
@@ -101,13 +84,13 @@ class NetworkWithBondTemplate(NetFuncTestCase):
 
         for bond_name in INVALID_BOND_NAMES:
             NETCREATE = {NETWORK1_NAME: {'bonding': bond_name,
-                                         'switch': self.switch}}
-            with self.assertRaises(SetupNetworksError) as cm:
+                                         'switch': switch}}
+            with pytest.raises(SetupNetworksError) as cm:
                 with self.setupNetworks(NETCREATE, {}, NOCHK):
                     pass
-            self.assertEqual(cm.exception.status, ne.ERR_BAD_BONDING)
+            assert cm.value.status == ne.ERR_BAD_BONDING
 
-    def _test_add_network_with_multiple_vlans_over_a_bond(self, bridged=True):
+    def _test_add_net_with_multi_vlans_over_a_bond(self, switch, bridged=True):
         with dummy_devices(2) as nics:
             netsetup = {}
             VLAN_COUNT = 3
@@ -116,32 +99,46 @@ class NetworkWithBondTemplate(NetFuncTestCase):
                 netsetup[net_name] = {'vlan': tag,
                                       'bonding': BOND_NAME,
                                       'bridged': bridged,
-                                      'switch': self.switch}
-            BONDCREATE = {BOND_NAME: {'nics': nics, 'switch': self.switch}}
+                                      'switch': switch}
+            BONDCREATE = {BOND_NAME: {'nics': nics, 'switch': switch}}
 
             with self.setupNetworks(netsetup, BONDCREATE, NOCHK):
                 for netname, netattrs in six.iteritems(netsetup):
                     self.assertNetwork(netname, netattrs)
 
 
-@attr(switch='legacy')
-class NetworkWithBondLegacyTest(NetworkWithBondTemplate):
-    __test__ = True
-    switch = 'legacy'
+@pytest.mark.legacy_switch
+class TestNetworkWithBondLegacy(NetFuncTestCase):
 
     def test_detach_used_bond_from_bridge(self):
-        with self._test_detach_used_bond_from_bridge():
+        with _test_detach_used_bond_from_bridge(nettest=self, switch='legacy'):
             ifdown(BOND_NAME)
             ifup(BOND_NAME)
             # netinfo must be updated explicitly after non-API changes
             self.update_netinfo()
 
 
-@attr(switch='ovs')
-class NetworkWithBondOvsTest(NetworkWithBondTemplate):
-    __test__ = True
-    switch = 'ovs'
+@pytest.mark.ovs_switch
+class TestNetworkWithBondOvs(NetFuncTestCase):
 
     def test_detach_used_bond_from_bridge(self):
-        with self._test_detach_used_bond_from_bridge():
+        with _test_detach_used_bond_from_bridge(nettest=self, switch='ovs'):
             pass
+
+
+@contextmanager
+def _test_detach_used_bond_from_bridge(nettest, switch):
+    with dummy_device() as nic:
+        NETCREATE = {
+            NETWORK1_NAME: {'bonding': BOND_NAME, 'switch': switch},
+            NETWORK2_NAME: {'bonding': BOND_NAME, 'vlan': VLAN2,
+                            'switch': switch}}
+        BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
+
+        with nettest.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
+            NETEDIT = {
+                NETWORK1_NAME: {'bonding': BOND_NAME, 'vlan': VLAN1,
+                                'switch': switch}}
+            nettest.setupNetworks(NETEDIT, {}, NOCHK)
+            yield
+            nettest.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])

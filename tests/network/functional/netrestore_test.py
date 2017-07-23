@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 
 from __future__ import absolute_import
 
-from nose.plugins.attrib import attr
+import pytest
 
 from .netfunctestlib import NetFuncTestCase, NOCHK
 from network.nettestlib import dummy_devices
@@ -30,14 +30,14 @@ from vdsm.network.link.bond import Bond
 BOND_NAME = 'bond1'
 
 
-@attr(switch='ovs')
-class RestoreOvsBondTest(NetFuncTestCase):
+@pytest.mark.ovs_switch
+class TestRestoreOvsBond(NetFuncTestCase):
 
     @mock.patch.object(netrestore, 'NETS_RESTORED_MARK', 'does/not/exist')
     def test_restore_bond(self):
         with dummy_devices(2) as (nic1, nic2):
             BONDCREATE = {
-                BOND_NAME: {'nics': [nic1, nic2], 'switch': self.switch}}
+                BOND_NAME: {'nics': [nic1, nic2], 'switch': 'ovs'}}
 
             with self.reset_persistent_config():
                 with self.setupNetworks({}, BONDCREATE, NOCHK):

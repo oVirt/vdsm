@@ -18,7 +18,7 @@
 
 from __future__ import absolute_import
 
-from nose.plugins.attrib import attr
+import pytest
 
 from .netfunctestlib import NetFuncTestCase, NOCHK
 
@@ -26,8 +26,8 @@ from .netfunctestlib import NetFuncTestCase, NOCHK
 NETWORK_NAME = 'test-network'
 
 
-@attr(switch='ovs-dpdk')
-class OvsDpdkTest(NetFuncTestCase):
+@pytest.mark.ovsdpdk_switch
+class TestOvsDpdk(NetFuncTestCase):
 
     def test_dpdk0_device_exists(self):
         self.update_netinfo()

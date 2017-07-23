@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from vdsm.network.errors import ERR_BAD_PARAMS
 
-from nose.plugins.attrib import attr
+import pytest
 
 from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
 from network.nettestlib import dummy_device, restore_resolv_conf
@@ -34,16 +34,16 @@ IPv4_GATEWAY = '192.0.2.254'
 IPv4_NETMASK = '255.255.255.0'
 
 
-class NetworkDNSTemplate(NetFuncTestCase):
-    __test__ = False
+@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy')])
+class TestNetworkDNS(NetFuncTestCase):
 
-    def test_set_host_nameservers(self):
+    def test_set_host_nameservers(self, switch):
         self.update_netinfo()
         original_nameservers = self.netinfo.nameservers
-        self.assertNotEqual(original_nameservers, NAMESERVERS,
-                            'Current nameservers must differ from tested ones')
+        assert original_nameservers != NAMESERVERS, (
+            'Current nameservers must differ from tested ones')
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': self.switch,
+            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': switch,
                                         'nameservers': NAMESERVERS,
                                         'defaultRoute': True,
                                         'ipaddr': IPv4_ADDRESS,
@@ -54,11 +54,11 @@ class NetworkDNSTemplate(NetFuncTestCase):
                 with self.setupNetworks(NETCREATE, {}, NOCHK):
                     self.assertNameservers(NAMESERVERS)
 
-    def test_preserve_host_nameservers(self):
+    def test_preserve_host_nameservers(self, switch):
         self.update_netinfo()
         original_nameservers = self.netinfo.nameservers
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': self.switch,
+            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': switch,
                                         'defaultRoute': True,
                                         'ipaddr': IPv4_ADDRESS,
                                         'netmask': IPv4_NETMASK,
@@ -68,28 +68,15 @@ class NetworkDNSTemplate(NetFuncTestCase):
                 with self.setupNetworks(NETCREATE, {}, NOCHK):
                     self.assertNameservers(original_nameservers)
 
-    def test_set_nameservers_on_non_default_network(self):
+    def test_set_nameservers_on_non_default_network(self, switch):
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': self.switch,
+            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': switch,
                                         'nameservers': NAMESERVERS,
                                         'defaultRoute': False,
                                         'ipaddr': IPv4_ADDRESS,
                                         'netmask': IPv4_NETMASK,
                                         'gateway': IPv4_GATEWAY,
                                         }}
-            with self.assertRaises(SetupNetworksError) as err:
+            with pytest.raises(SetupNetworksError) as err:
                 self.setupNetworks(NETCREATE, {}, NOCHK)
-            self.assertEqual(err.exception.status, ERR_BAD_PARAMS)
-
-
-@attr(switch='legacy')
-class NetworkDNSLegacyTest(NetworkDNSTemplate):
-    __test__ = True
-    switch = 'legacy'
-
-
-@attr(switch='ovs')
-class NetworkDNSOvsTest(NetworkDNSTemplate):
-    # TODO: Implement 'nameservers' for OVS switch setups.
-    __test__ = False
-    switch = 'ovs'
+            assert err.value.status == ERR_BAD_PARAMS

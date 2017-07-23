@@ -25,15 +25,13 @@ from copy import deepcopy
 
 import six
 
-from nose.plugins.skip import SkipTest
+import pytest
 
 from vdsm.common import fileutils
 from vdsm.network import kernelconfig
 from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported, prefix2netmask
 from vdsm.network.link.iface import is_oper_up
-
-from testlib import VdsmTestCase
 
 from functional.utils import getProxy, SUCCESS
 
@@ -54,13 +52,12 @@ def requires_ipaddress():
     the backported implementation installed.
     """
     if ipaddress is None:
-        raise SkipTest('ipaddress package is not installed')
+        pytest.skip('ipaddress package is not installed')
 
 
-class NetFuncTestCase(VdsmTestCase):
+class NetFuncTestCase(object):
 
-    def __init__(self, *args, **kwargs):
-        VdsmTestCase.__init__(self, *args, **kwargs)
+    def setup_method(self, m):
         self.vdsm_proxy = getProxy()
 
     def update_netinfo(self):
@@ -107,20 +104,20 @@ class NetFuncTestCase(VdsmTestCase):
         network_caps = self.netinfo.networks[netname]
         if 'hostQos' in netattrs:
             qos_caps = _normalize_qos_config(network_caps['hostQos'])
-            self.assertEqual(netattrs['hostQos'], qos_caps)
+            assert netattrs['hostQos'] == qos_caps
 
     def assertNetworkExists(self, netname):
-        self.assertIn(netname, self.netinfo.networks)
+        assert netname in self.netinfo.networks
 
     def assertNetworkBridged(self, netname):
         network_caps = self.netinfo.networks[netname]
-        self.assertTrue(network_caps['bridged'])
-        self.assertIn(netname, self.netinfo.bridges)
+        assert network_caps['bridged']
+        assert netname in self.netinfo.bridges
 
     def assertNetworkBridgeless(self, netname):
         network_caps = self.netinfo.networks[netname]
-        self.assertFalse(network_caps['bridged'])
-        self.assertNotIn(netname, self.netinfo.bridges)
+        assert not network_caps['bridged']
+        assert netname not in self.netinfo.bridges
 
     def assertSouthboundIface(self, netname, netattrs):
         nic = netattrs.get('nic')
@@ -136,7 +133,7 @@ class NetFuncTestCase(VdsmTestCase):
             iface = nic or bond
 
         network_caps = self.netinfo.networks[netname]
-        self.assertEqual(iface, network_caps['iface'])
+        assert iface == network_caps['iface']
 
     def assertVlan(self, netattrs):
         vlan = netattrs.get('vlan')
@@ -147,10 +144,10 @@ class NetFuncTestCase(VdsmTestCase):
         bond = netattrs.get('bonding')
         iface = '{}.{}'.format(nic or bond, vlan)
 
-        self.assertIn(iface, self.netinfo.vlans)
+        assert iface in self.netinfo.vlans
         vlan_caps = self.netinfo.vlans[iface]
-        self.assertTrue(isinstance(vlan_caps['vlanid'], int))
-        self.assertEqual(int(vlan), vlan_caps['vlanid'])
+        assert isinstance(vlan_caps['vlanid'], int)
+        assert int(vlan) == vlan_caps['vlanid']
 
     def assertBridgeOpts(self, netname, netattrs):
         custom_attrs = netattrs.get('custom', {})
@@ -160,18 +157,18 @@ class NetFuncTestCase(VdsmTestCase):
                                custom_attrs['bridge_opts'].split(' '))
             bridge_opts_caps = bridge_caps['opts']
             for br_opt, br_val in six.iteritems(req_bridge_opts):
-                self.assertEqual(br_val, bridge_opts_caps[br_opt])
+                assert br_val == bridge_opts_caps[br_opt]
 
     # FIXME: Redundant because we have NetworkExists + kernel_vs_running_config
     def assertNetworkExistsInRunning(self, netname, netattrs):
         self.update_running_config()
         netsconf = self.running_config.networks
 
-        self.assertIn(netname, netsconf)
+        assert netname in netsconf
         netconf = netsconf[netname]
 
         bridged = netattrs.get('bridged')
-        self.assertEqual(bridged, netconf.get('bridged'))
+        assert bridged == netconf.get('bridged')
 
     def assertNoNetwork(self, netname):
         self.assertNoNetworkExists(netname)
@@ -179,23 +176,23 @@ class NetFuncTestCase(VdsmTestCase):
         self.assertNoNetworkExistsInRunning(netname)
 
     def assertNoNetworkExists(self, net):
-        self.assertNotIn(net, self.netinfo.networks)
+        assert net not in self.netinfo.networks
 
     def assertNoBridgeExists(self, bridge):
-        self.assertNotIn(bridge, self.netinfo.bridges)
+        assert bridge not in self.netinfo.bridges
 
     def assertNoVlan(self, southbound_port, tag):
         vlan_name = '{}.{}'.format(southbound_port, tag)
-        self.assertNotIn(vlan_name, self.netinfo.vlans)
+        assert vlan_name not in self.netinfo.vlans
 
     def assertNoNetworkExistsInRunning(self, net):
         self.update_running_config()
-        self.assertNotIn(net, self.running_config.networks)
+        assert net not in self.running_config.networks
 
     def assertNetworkSwitchType(self, netname, netattrs):
         requested_switch = netattrs.get('switch', 'legacy')
         running_switch = self.netinfo.networks[netname]['switch']
-        self.assertEqual(requested_switch, running_switch)
+        assert requested_switch == running_switch
 
     def assertBond(self, bond, attrs):
         self.assertBondExists(bond)
@@ -206,37 +203,35 @@ class NetFuncTestCase(VdsmTestCase):
         self.assertBondSwitchType(bond, attrs)
 
     def assertBondExists(self, bond):
-        self.assertIn(bond, self.netinfo.bondings)
+        assert bond in self.netinfo.bondings
 
     def assertBondSlaves(self, bond, nics):
-        self.assertEqual(
-            set(nics), set(self.netinfo.bondings[bond]['slaves']))
+        assert set(nics) == set(self.netinfo.bondings[bond]['slaves'])
 
     def assertBondOptions(self, bond, options):
         running_opts = self.netinfo.bondings[bond]['opts']
         normalized_active_opts = _normalize_bond_opts(running_opts)
-        self.assertLessEqual(set(options.split()), set(normalized_active_opts))
+        assert set(options.split()) <= set(normalized_active_opts)
 
     def assertBondExistsInRunninng(self, bond, nics):
-        self.assertIn(bond, self.running_config.bonds)
-        self.assertEqual(
-            set(nics), set(self.running_config.bonds[bond]['nics']))
+        assert bond in self.running_config.bonds
+        assert set(nics) == set(self.running_config.bonds[bond]['nics'])
 
     def assertBondSwitchType(self, bondname, bondattrs):
         requested_switch = bondattrs.get('switch', 'legacy')
         running_switch = self.netinfo.bondings[bondname]['switch']
-        self.assertEqual(requested_switch, running_switch)
+        assert requested_switch == running_switch
 
     def assertNoBond(self, bond):
         self.assertNoBondExists(bond)
         self.assertNoBondExistsInRunning(bond)
 
     def assertNoBondExists(self, bond):
-        self.assertNotIn(bond, self.netinfo.bondings)
+        assert bond not in self.netinfo.bondings
 
     def assertNoBondExistsInRunning(self, bond):
         self.update_running_config()
-        self.assertNotIn(bond, self.running_config.bonds)
+        assert bond not in self.running_config.bonds
 
     def assertNetworkIp(self, net, attrs):
         if _ipv4_is_unused(attrs) and _ipv6_is_unused(attrs):
@@ -281,39 +276,39 @@ class NetFuncTestCase(VdsmTestCase):
         address = netattrs['ipaddr']
         netmask = (netattrs.get('netmask') or
                    prefix2netmask(int(netattrs.get('prefix'))))
-        self.assertEqual(address, ipinfo['addr'])
-        self.assertEqual(netmask, ipinfo['netmask'])
+        assert address == ipinfo['addr']
+        assert netmask == ipinfo['netmask']
         ipv4 = ipaddress.IPv4Interface(
             u'{}/{}'.format(address, netmask))
-        self.assertIn(str(ipv4.with_prefixlen), ipinfo['ipv4addrs'])
+        assert str(ipv4.with_prefixlen) in ipinfo['ipv4addrs']
 
     def assertStaticIPv6(self, netattrs, ipinfo):
-        self.assertIn(netattrs['ipv6addr'], ipinfo['ipv6addrs'])
+        assert netattrs['ipv6addr'] in ipinfo['ipv6addrs']
 
     def assertDHCPv4(self, ipinfo):
-        self.assertTrue(ipinfo['dhcpv4'])
-        self.assertNotEqual(ipinfo['addr'], '')
-        self.assertGreater(len(ipinfo['ipv4addrs']), 0)
+        assert ipinfo['dhcpv4']
+        assert ipinfo['addr'] != ''
+        assert len(ipinfo['ipv4addrs']) > 0
 
     def assertDisabledIPv4(self, ipinfo):
-        self.assertFalse(ipinfo['dhcpv4'])
-        self.assertEqual(ipinfo['addr'], '')
-        self.assertEqual(ipinfo['ipv4addrs'], [])
+        assert not ipinfo['dhcpv4']
+        assert ipinfo['addr'] == ''
+        assert ipinfo['ipv4addrs'] == []
 
     def assertDisabledIPv6(self, ipinfo):
         # TODO: We need to report if IPv6 is enabled on iface/host and
         # differentiate that from not acquiring an address.
-        self.assertEqual([], ipinfo['ipv6addrs'])
+        assert [] == ipinfo['ipv6addrs']
 
     def assertDhclient(self, iface, family):
         return dhclient.is_active(iface, family)
 
     def assertNoDhclient(self, iface, family):
-        self.assertFalse(self.assertDhclient(iface, family))
+        assert not self.assertDhclient(iface, family)
 
     def assertDefaultRouteIPv4(self, netattrs, ipinfo):
         req_droute = netattrs.get('defaultRoute', False)
-        self.assertEqual(req_droute, ipinfo['ipv4defaultroute'])
+        assert req_droute == ipinfo['ipv4defaultroute']
 
     def assertLinksUp(self, net, attrs):
         switch = attrs.get('switch', 'legacy')
@@ -325,11 +320,10 @@ class NetFuncTestCase(VdsmTestCase):
                 net, attrs, self.netinfo)
         if expected_links:
             for dev in expected_links:
-                self.assertTrue(is_oper_up(dev), 'Dev {} is DOWN'.format(dev))
+                assert is_oper_up(dev), 'Dev {} is DOWN'.format(dev)
 
     def assertNameservers(self, nameservers):
-        self.assertEqual(nameservers,
-                         self.netinfo.nameservers[:len(nameservers)])
+        assert nameservers == self.netinfo.nameservers[:len(nameservers)]
 
     def assert_kernel_vs_running_config(self):
         """
@@ -349,8 +343,8 @@ class NetFuncTestCase(VdsmTestCase):
 
         # Do not use KernelConfig.__eq__ to get a better exception if something
         # breaks.
-        self.assertEqual(running_config['networks'], kernel_config['networks'])
-        self.assertEqual(running_config['bonds'], kernel_config['bonds'])
+        assert running_config['networks'] == kernel_config['networks']
+        assert running_config['bonds'] == kernel_config['bonds']
 
     @contextmanager
     def reset_persistent_config(self):

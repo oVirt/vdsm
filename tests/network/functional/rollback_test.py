@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 from __future__ import absolute_import
 
-from nose.plugins.attrib import attr
+import pytest
 
 from .netfunctestlib import SetupNetworksError, NetFuncTestCase, NOCHK
 from network.nettestlib import dummy_devices
@@ -33,62 +33,49 @@ IPv4_ADDRESS = '192.0.2.1'
 IPv4_NETMASK = '255.255.255.0'
 
 
-class NetworkRollbackTemplate(NetFuncTestCase):
-    __test__ = False
+@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
+                                    pytest.mark.ovs_switch('ovs')])
+class TestNetworkRollback(NetFuncTestCase):
 
-    def test_remove_broken_network(self):
+    def test_remove_broken_network(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             BROKEN_NETCREATE = {NETWORK_NAME: {
                 'bonding': BOND_NAME, 'bridged': True, 'vlan': VLAN,
                 'netmask': '300.300.300.300', 'ipaddr': '300.300.300.300',
-                'switch': self.switch}}
-            BONDCREATE = {BOND_NAME: {
-                'nics': [nic1, nic2], 'switch': self.switch}}
+                'switch': switch}}
+            BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
 
-            with self.assertRaises(SetupNetworksError):
+            with pytest.raises(SetupNetworksError):
                 self.setupNetworks(BROKEN_NETCREATE, BONDCREATE, NOCHK)
 
             self.update_netinfo()
             self.assertNoNetwork(NETWORK_NAME)
             self.assertNoBond(BOND_NAME)
 
-    def test_rollback_to_initial_basic_network(self):
-        self._test_rollback_to_initial_network()
+    def test_rollback_to_initial_basic_network(self, switch):
+        self._test_rollback_to_initial_network(switch)
 
-    def test_rollback_to_initial_network_with_static_ip(self):
+    def test_rollback_to_initial_network_with_static_ip(self, switch):
         self._test_rollback_to_initial_network(
-            ipaddr=IPv4_ADDRESS, netmask=IPv4_NETMASK)
+            switch, ipaddr=IPv4_ADDRESS, netmask=IPv4_NETMASK)
 
-    def _test_rollback_to_initial_network(self, **kwargs):
+    def _test_rollback_to_initial_network(self, switch, **kwargs):
         with dummy_devices(2) as (nic1, nic2):
             NETCREATE = {NETWORK_NAME: {
-                'nic': nic1, 'bridged': False, 'switch': self.switch}}
+                'nic': nic1, 'bridged': False, 'switch': switch}}
             NETCREATE[NETWORK_NAME].update(kwargs)
 
             BROKEN_NETCREATE = {NETWORK_NAME: {
                 'bonding': BOND_NAME, 'bridged': True, 'vlan': VLAN,
                 'netmask': '300.300.300.300', 'ipaddr': '300.300.300.300',
-                'switch': self.switch}}
-            BONDCREATE = {BOND_NAME: {
-                'nics': [nic1, nic2], 'switch': self.switch}}
+                'switch': switch}}
+            BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
 
             with self.setupNetworks(NETCREATE, {}, NOCHK):
 
-                with self.assertRaises(SetupNetworksError):
+                with pytest.raises(SetupNetworksError):
                     self.setupNetworks(BROKEN_NETCREATE, BONDCREATE, NOCHK)
 
                 self.update_netinfo()
                 self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
                 self.assertNoBond(BOND_NAME)
-
-
-@attr(switch='legacy')
-class NetworkRollbackLegacyTest(NetworkRollbackTemplate):
-    __test__ = True
-    switch = 'legacy'
-
-
-@attr(switch='ovs')
-class NetworkRollbackOvsTest(NetworkRollbackTemplate):
-    __test__ = True
-    switch = 'ovs'

@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 from __future__ import absolute_import
 
-from nose.plugins.attrib import attr
+import pytest
 
 from vdsm.network import errors as ne
 from vdsm.network.ipwrapper import addrAdd
@@ -44,62 +44,63 @@ IPv6 = [6]
 IPv4IPv6 = [4, 6]
 
 
-class NetworkStaticIpBasicTemplate(NetFuncTestCase):
-    __test__ = False
+@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
+                                    pytest.mark.ovs_switch('ovs')])
+class TestNetworkStaticIpBasic(NetFuncTestCase):
 
-    def test_add_net_with_ipv4_based_on_nic(self):
-        self._test_add_net_with_ip(IPv4)
+    def test_add_net_with_ipv4_based_on_nic(self, switch):
+        self._test_add_net_with_ip(IPv4, switch)
 
-    def test_add_net_with_ipv6_based_on_nic(self):
-        self._test_add_net_with_ip(IPv6)
+    def test_add_net_with_ipv6_based_on_nic(self, switch):
+        self._test_add_net_with_ip(IPv6, switch)
 
-    def test_add_net_with_ipv4_ipv6_based_on_nic(self):
-        self._test_add_net_with_ip(IPv4IPv6)
+    def test_add_net_with_ipv4_ipv6_based_on_nic(self, switch):
+        self._test_add_net_with_ip(IPv4IPv6, switch)
 
-    def test_add_net_with_ipv4_based_on_bond(self):
-        self._test_add_net_with_ip(IPv4, bonded=True)
+    def test_add_net_with_ipv4_based_on_bond(self, switch):
+        self._test_add_net_with_ip(IPv4, switch, bonded=True)
 
-    def test_add_net_with_ipv6_based_on_bond(self):
-        self._test_add_net_with_ip(IPv6, bonded=True)
+    def test_add_net_with_ipv6_based_on_bond(self, switch):
+        self._test_add_net_with_ip(IPv6, switch, bonded=True)
 
-    def test_add_net_with_ipv4_ipv6_based_on_bond(self):
-        self._test_add_net_with_ip(IPv4IPv6, bonded=True)
+    def test_add_net_with_ipv4_ipv6_based_on_bond(self, switch):
+        self._test_add_net_with_ip(IPv4IPv6, switch, bonded=True)
 
-    def test_add_net_with_ipv4_based_on_vlan(self):
-        self._test_add_net_with_ip(IPv4, vlaned=True)
+    def test_add_net_with_ipv4_based_on_vlan(self, switch):
+        self._test_add_net_with_ip(IPv4, switch, vlaned=True)
 
-    def test_add_net_with_ipv6_based_on_vlan(self):
-        self._test_add_net_with_ip(IPv6, vlaned=True)
+    def test_add_net_with_ipv6_based_on_vlan(self, switch):
+        self._test_add_net_with_ip(IPv6, switch, vlaned=True)
 
-    def test_add_net_with_ipv4_ipv6_based_on_vlan(self):
-        self._test_add_net_with_ip(IPv4IPv6, vlaned=True)
+    def test_add_net_with_ipv4_ipv6_based_on_vlan(self, switch):
+        self._test_add_net_with_ip(IPv4IPv6, switch, vlaned=True)
 
-    def test_add_net_with_ipv4_based_on_bridge(self):
-        self._test_add_net_with_ip(IPv4, bridged=True)
+    def test_add_net_with_ipv4_based_on_bridge(self, switch):
+        self._test_add_net_with_ip(IPv4, switch, bridged=True)
 
-    def test_add_net_with_ipv6_based_on_bridge(self):
-        self._test_add_net_with_ip(IPv6, bridged=True)
+    def test_add_net_with_ipv6_based_on_bridge(self, switch):
+        self._test_add_net_with_ip(IPv6, switch, bridged=True)
 
-    def test_add_net_with_ipv4_ipv6_based_on_bridge(self):
-        self._test_add_net_with_ip(IPv4IPv6, bridged=True)
+    def test_add_net_with_ipv4_ipv6_based_on_bridge(self, switch):
+        self._test_add_net_with_ip(IPv4IPv6, switch, bridged=True)
 
-    def test_add_net_with_ipv4_default_gateway(self):
+    def test_add_net_with_ipv4_default_gateway(self, switch):
         with dummy_device() as nic:
             network_attrs = {'nic': nic,
                              'ipaddr': IPv4_ADDRESS,
                              'netmask': IPv4_NETMASK,
                              'gateway': IPv4_GATEWAY,
                              'defaultRoute': True,
-                             'switch': self.switch}
+                             'switch': switch}
             netcreate = {NETWORK_NAME: network_attrs}
 
             with self.setupNetworks(netcreate, {}, NOCHK):
                 self.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
 
-    def _test_add_net_with_ip(self, families, bonded=False, vlaned=False,
-                              bridged=False):
+    def _test_add_net_with_ip(self, families, switch,
+                              bonded=False, vlaned=False, bridged=False):
         with dummy_devices(2) as (nic1, nic2):
-            network_attrs = {'bridged': bridged, 'switch': self.switch}
+            network_attrs = {'bridged': bridged, 'switch': switch}
 
             if 4 in families:
                 network_attrs['ipaddr'] = IPv4_ADDRESS
@@ -109,7 +110,7 @@ class NetworkStaticIpBasicTemplate(NetFuncTestCase):
 
             if bonded:
                 bondcreate = {
-                    BOND_NAME: {'nics': [nic1, nic2], 'switch': self.switch}}
+                    BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
                 network_attrs['bonding'] = BOND_NAME
             else:
                 bondcreate = {}
@@ -123,95 +124,72 @@ class NetworkStaticIpBasicTemplate(NetFuncTestCase):
             with self.setupNetworks(netcreate, bondcreate, NOCHK):
                 self.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
 
-    def test_add_net_with_prefix(self):
+    def test_add_net_with_prefix(self, switch):
         with dummy_device() as nic:
             network_attrs = {'nic': nic,
                              'ipaddr': IPv4_ADDRESS,
                              'prefix': IPv4_PREFIX_LEN,
-                             'switch': self.switch}
+                             'switch': switch}
             netcreate = {NETWORK_NAME: network_attrs}
 
             with self.setupNetworks(netcreate, {}, NOCHK):
                 self.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
 
 
-@attr(type='functional', switch='legacy')
-class NetworkStaticIpBasicLegacyTest(NetworkStaticIpBasicTemplate):
-    __test__ = True
-    switch = 'legacy'
+@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
+                                    pytest.mark.ovs_switch('ovs')])
+class TestAcquireNicsWithStaticIP(NetFuncTestCase):
 
-
-@attr(type='functional', switch='ovs')
-class NetworkStaticIpBasicOvsTest(NetworkStaticIpBasicTemplate):
-    __test__ = True
-    switch = 'ovs'
-
-
-class AcquireNicsWithStaticIPTemplate(NetFuncTestCase):
-    __test__ = False
-
-    def test_attach_nic_with_ip_to_ipless_network(self):
+    def test_attach_nic_with_ip_to_ipless_network(self, switch):
         with dummy_device() as nic:
             addrAdd(nic, IPv4_ADDRESS, IPv4_PREFIX_LEN)
 
-            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': self.switch}}
+            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': switch}}
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 nic_netinfo = self.netinfo.nics[nic]
                 self.assertDisabledIPv4(nic_netinfo)
 
-    def test_attach_nic_with_ip_to_ip_network(self):
+    def test_attach_nic_with_ip_to_ip_network(self, switch):
         with dummy_device() as nic:
             addrAdd(nic, IPv4_ADDRESS, IPv4_PREFIX_LEN)
 
             NETCREATE = {
                 NETWORK_NAME: {'nic': nic, 'ipaddr': IPv4_ADDRESS,
-                               'netmask': IPv4_NETMASK, 'switch': self.switch}}
+                               'netmask': IPv4_NETMASK, 'switch': switch}}
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 nic_netinfo = self.netinfo.nics[nic]
                 self.assertDisabledIPv4(nic_netinfo)
                 self.assertNetworkIp(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
-    def test_attach_nic_with_ip_as_a_slave_to_ipless_network(self):
+    def test_attach_nic_with_ip_as_a_slave_to_ipless_network(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             addrAdd(nic1, IPv4_ADDRESS, IPv4_PREFIX_LEN)
 
             NETCREATE = {
-                NETWORK_NAME: {'bonding': BOND_NAME, 'switch': self.switch}}
+                NETWORK_NAME: {'bonding': BOND_NAME, 'switch': switch}}
             BONDCREATE = {
-                BOND_NAME: {'nics': [nic1, nic2], 'switch': self.switch}}
+                BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
             with self.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
                 nic_netinfo = self.netinfo.nics[nic1]
                 self.assertDisabledIPv4(nic_netinfo)
 
-    def test_attach_nic_with_ip_as_a_slave_to_ip_network(self):
+    def test_attach_nic_with_ip_as_a_slave_to_ip_network(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             addrAdd(nic1, IPv4_ADDRESS, IPv4_PREFIX_LEN)
 
             NETCREATE = {
                 NETWORK_NAME: {'bonding': BOND_NAME, 'ipaddr': IPv4_ADDRESS,
-                               'netmask': IPv4_NETMASK, 'switch': self.switch}}
+                               'netmask': IPv4_NETMASK, 'switch': switch}}
             BONDCREATE = {
-                BOND_NAME: {'nics': [nic1, nic2], 'switch': self.switch}}
+                BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
             with self.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
                 nic_netinfo = self.netinfo.nics[nic1]
                 self.assertDisabledIPv4(nic_netinfo)
                 self.assertNetworkIp(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
 
-@attr(type='functional', switch='legacy')
-class AcquireNicsWithStaticIPLegacyTest(AcquireNicsWithStaticIPTemplate):
-    __test__ = True
-    switch = 'legacy'
-
-
-@attr(type='functional', switch='ovs')
-class AcquireNicsWithStaticIPOvsTest(AcquireNicsWithStaticIPTemplate):
-    __test__ = True
-    switch = 'ovs'
-
-
-class IfacesWithMultiplesUsersTemplate(NetFuncTestCase):
-    __test__ = False
+@pytest.mark.legacy_switch
+class TestIfacesWithMultiplesUsers(NetFuncTestCase):
 
     def test_remove_network_from_a_nic_used_by_a_vlan_network(self):
         with dummy_device() as nic:
@@ -235,63 +213,39 @@ class IfacesWithMultiplesUsersTemplate(NetFuncTestCase):
                 self.assertDisabledIPv4(self.netinfo.nics[nic])
 
 
-@attr(type='functional', switch='legacy')
-class IfacesWithMultiplesUsersLegacyTest(IfacesWithMultiplesUsersTemplate):
-    __test__ = True
-    switch = 'legacy'
+@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
+                                    pytest.mark.ovs_switch('ovs')])
+class TestIPValidation(NetFuncTestCase):
 
-
-@attr(type='functional', switch='ovs')
-class IfacesWithMultiplesUsersOvsTest(IfacesWithMultiplesUsersTemplate):
-    __test__ = True
-    switch = 'ovs'
-
-
-class TestIPValidationTemplate(NetFuncTestCase):
-
-    __test__ = False
-
-    def test_add_net_ip_missing_addresses_fails(self):
+    def test_add_net_ip_missing_addresses_fails(self, switch):
         with dummy_device() as nic:
-            self._test_invalid_ip_config_fails(nic, ipaddr='1.2.3.4')
-            self._test_invalid_ip_config_fails(nic, gateway='1.2.3.4')
-            self._test_invalid_ip_config_fails(nic, netmask='255.255.255.0')
+            self._test_invalid_ip_config_fails(switch, nic, ipaddr='1.2.3.4')
+            self._test_invalid_ip_config_fails(switch, nic, gateway='1.2.3.4')
+            self._test_invalid_ip_config_fails(switch, nic,
+                                               netmask='255.255.255.0')
 
-    def test_add_net_out_of_range_addresses_fails(self):
+    def test_add_net_out_of_range_addresses_fails(self, switch):
         with dummy_device() as nic:
             self._test_invalid_ip_config_fails(
-                nic, ipaddr='1.2.3.256', netmask='255.255.0.0')
+                switch, nic, ipaddr='1.2.3.256', netmask='255.255.0.0')
             self._test_invalid_ip_config_fails(
-                nic, ipaddr='1.2.3.4', netmask='256.255.0.0')
-            self._test_invalid_ip_config_fails(nic,
+                switch, nic, ipaddr='1.2.3.4', netmask='256.255.0.0')
+            self._test_invalid_ip_config_fails(switch,
+                                               nic,
                                                ipaddr='1.2.3.4',
                                                netmask='255.255.0.0',
                                                gateway='1.2.3.256')
 
-    def test_add_net_bad_format_addresses_fails(self):
+    def test_add_net_bad_format_addresses_fails(self, switch):
         with dummy_device() as nic:
             self._test_invalid_ip_config_fails(
-                nic, ipaddr='1.2.3.4.5', netmask='255.255.0.0')
+                switch, nic, ipaddr='1.2.3.4.5', netmask='255.255.0.0')
             self._test_invalid_ip_config_fails(
-                nic, ipaddr='1.2.3', netmask='255.255.0.0')
+                switch, nic, ipaddr='1.2.3', netmask='255.255.0.0')
 
-    def _test_invalid_ip_config_fails(self, nic, **ip_config):
-        ip_config.update(switch=self.switch, nic=nic)
-        with self.assertRaises(SetupNetworksError) as err:
+    def _test_invalid_ip_config_fails(self, switch, nic, **ip_config):
+        ip_config.update(switch=switch, nic=nic)
+        with pytest.raises(SetupNetworksError) as err:
             with self.setupNetworks({NETWORK_NAME: ip_config}, {}, NOCHK):
                 pass
-        self.assertEqual(err.exception.status, ne.ERR_BAD_ADDR)
-
-
-@attr(type='functional', switch='ovs')
-class TestIPValidationOVS(TestIPValidationTemplate):
-
-    __test__ = True
-    switch = 'ovs'
-
-
-@attr(type='functional', switch='legacy')
-class TestIPValidationLegacy(TestIPValidationTemplate):
-
-    __test__ = True
-    switch = 'legacy'
+        assert err.value.status == ne.ERR_BAD_ADDR

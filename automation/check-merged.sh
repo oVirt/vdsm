@@ -72,14 +72,14 @@ function run_network_tests {
     local res=0
     lago shell "$VM_NAME" -c \
         " \
+            pip install -U pytest==3.1.2
             systemctl stop NetworkManager
             systemctl mask NetworkManager
             cd /usr/share/vdsm/tests
-            ./run_tests.sh \
-                --with-xunit \
-                --xunit-file=$TESTS_OUT/nosetests-${DISTRO}-network.junit.xml \
-                -a switch=legacy \
-                network/functional/*_test.py
+            pytest \
+                --junitxml=$TESTS_OUT/nosetests-${DISTRO}-network.junit.xml \
+                -m legacy_switch \
+                network/functional
         " || res=$?
     return $res
 }
