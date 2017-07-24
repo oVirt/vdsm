@@ -901,7 +901,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         """
         Remove /run/vdsm/storage/sdUUID/imgUUID/volUUID
         """
-        vol_run_link = os.path.join(constants.P_VDSM_STORAGE,
+        vol_run_link = os.path.join(sc.P_VDSM_STORAGE,
                                     self.sdUUID, imgUUID, volUUID)
         self.log.info("Unlinking volme runtime link: %r", vol_run_link)
         try:
@@ -1312,7 +1312,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
         srcImgPath: Dir where the image volumes are.
         """
-        sdRunDir = os.path.join(constants.P_VDSM_STORAGE, self.sdUUID)
+        sdRunDir = os.path.join(sc.P_VDSM_STORAGE, self.sdUUID)
         imgRunDir = os.path.join(sdRunDir, imgUUID)
         fileUtils.createdir(imgRunDir)
         for volUUID in volUUIDs:

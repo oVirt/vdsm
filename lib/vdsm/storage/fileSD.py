@@ -29,6 +29,7 @@ import re
 
 from vdsm.common.compat import glob_escape
 from vdsm.storage import clusterlock
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import fileVolume
@@ -545,7 +546,7 @@ class FileStorageDomain(sd.StorageDomain):
 
         srcImgPath: Dir where the image volumes are.
         """
-        sdRunDir = os.path.join(constants.P_VDSM_STORAGE, self.sdUUID)
+        sdRunDir = os.path.join(sc.P_VDSM_STORAGE, self.sdUUID)
         fileUtils.createdir(sdRunDir)
         imgRunDir = os.path.join(sdRunDir, imgUUID)
         self.log.debug("Creating symlink from %s to %s", srcImgPath, imgRunDir)

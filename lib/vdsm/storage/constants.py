@@ -20,6 +20,8 @@
 
 from __future__ import absolute_import
 
+import os
+
 from vdsm import constants
 from vdsm import qemuimg
 
@@ -196,3 +198,5 @@ DOMAIN_VERSIONS = (0, 2, 3, 4)
 # accepts currently its all of the version but in the
 # future we might slice it (eg. tuple(DOMAIN_VERSION[1:]))
 SUPPORTED_DOMAIN_VERSIONS = DOMAIN_VERSIONS
+
+P_VDSM_STORAGE = os.path.join(constants.P_VDSM_RUN, 'storage/')

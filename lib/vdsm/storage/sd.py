@@ -42,7 +42,6 @@ from vdsm.storage import task
 from vdsm.storage import xlease
 from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
 
-from vdsm import constants
 from vdsm import qemuimg
 from vdsm import utils
 
@@ -979,7 +978,7 @@ class StorageDomain(object):
     getLinkBCImagePath = getImageDir
 
     def getImageRundir(self, imgUUID):
-        return os.path.join(constants.P_VDSM_STORAGE, self.sdUUID, imgUUID)
+        return os.path.join(sc.P_VDSM_STORAGE, self.sdUUID, imgUUID)
 
     def getIsoDomainImagesDir(self):
         return self._manifest.getIsoDomainImagesDir()
