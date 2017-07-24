@@ -34,9 +34,9 @@ from yajsonrpc import Notification
 from vdsm.rpc.bindingjsonrpc import BindingJsonRpc
 from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm import API
-from vdsm import constants
 from vdsm import schedule
 from vdsm import utils
+from vdsm.network import connectivity
 
 from testlib import namedTemporaryDir
 from monkeypatch import MonkeyPatchScope
@@ -110,8 +110,10 @@ def constructAcceptor(log, ssl, jsonBridge,
 
     with namedTemporaryDir() as tmp_dir:
         client_log = os.path.join(tmp_dir, 'client.log')
-        with MonkeyPatchScope([(API.clientIF, 'getInstance', lambda _: cif),
-                              (constants, 'P_VDSM_CLIENT_LOG', client_log)]):
+        with MonkeyPatchScope([
+            (API.clientIF, 'getInstance', lambda _: cif),
+            (connectivity, 'P_VDSM_CLIENT_LOG', client_log)
+        ]):
             jsonBridge.cif = cif
 
             stompDetector = StompDetector(json_binding)
