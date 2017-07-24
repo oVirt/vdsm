@@ -19,6 +19,7 @@
 #
 
 SUBDIRS = \
+	cpuflags \
 	ethtool_options \
 	faqemu \
 	ipv6 \

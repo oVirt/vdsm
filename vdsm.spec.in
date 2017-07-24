@@ -653,6 +653,13 @@ BuildArch:      noarch
 %description hook-vfio-mdev
 Hook to use mdev-capable devices through custom properties.
 
+%package hook-cpuflags
+Summary:        Hook that modifies guest's CPU flags
+BuildArch:      noarch
+
+%description hook-cpuflags
+Hook that modifies guest's CPU flags using custom properties.
+
 %if 0%{?with_gluster_mgmt}
 %package gluster
 Summary:        Gluster Plugin for VDSM
@@ -1455,6 +1462,9 @@ exit 0
 %files hook-vfio-mdev
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vfio_mdev
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_vfio_mdev
+
+%files hook-cpuflags
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_cpuflags
 
 %if 0%{?with_hooks}
 %files hook-allocate_net

@@ -440,6 +440,7 @@ AC_OUTPUT([
 	vdsm_hooks/allocate_net/Makefile
 	vdsm_hooks/checkimages/Makefile
 	vdsm_hooks/checkips/Makefile
+	vdsm_hooks/cpuflags/Makefile
 	vdsm_hooks/diskunmap/Makefile
 	vdsm_hooks/ethtool_options/Makefile
 	vdsm_hooks/extnet/Makefile
