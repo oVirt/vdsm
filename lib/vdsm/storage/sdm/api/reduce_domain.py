@@ -20,7 +20,7 @@
 
 from __future__ import absolute_import
 
-from vdsm import properties
+from vdsm.common import properties
 from vdsm.storage import exception as se
 from vdsm.storage.constants import STORAGE
 from vdsm.storage import resourceManager as rm

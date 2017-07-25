@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from contextlib import contextmanager
 
-from vdsm import properties
+from vdsm.common import properties
 from vdsm.storage import constants as sc
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import volume

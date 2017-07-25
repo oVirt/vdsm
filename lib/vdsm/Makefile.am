@@ -52,7 +52,6 @@ dist_vdsmpylib_PYTHON = \
 	osinfo.py \
 	panic.py \
 	ppc64HardwareInfo.py \
-	properties.py \
 	protocoldetector.py \
 	qemuimg.py \
 	schedule.py \

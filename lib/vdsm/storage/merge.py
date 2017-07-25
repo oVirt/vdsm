@@ -37,10 +37,9 @@ from contextlib import contextmanager
 import logging
 
 from vdsm import constants
-from vdsm import properties
 from vdsm import qemuimg
 from vdsm import utils
-
+from vdsm.common import properties
 from vdsm.config import config
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se

@@ -23,8 +23,8 @@ from contextlib import contextmanager
 import logging
 
 from vdsm import jobs
-from vdsm import properties
 from vdsm import qemuimg
+from vdsm.common import properties
 from vdsm.storage import constants as sc
 from vdsm.storage import guarded
 from vdsm.storage import resourceManager as rm

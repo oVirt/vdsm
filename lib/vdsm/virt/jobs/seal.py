@@ -44,10 +44,10 @@ parameter is passed to prepareImage().
 
 from __future__ import absolute_import
 
-from vdsm import properties
 from vdsm import virtsysprep
-import vdsm.virt.jobs
+from vdsm.common import properties
 from vdsm.virt.utils import prepared
+import vdsm.virt.jobs
 
 
 class ImagePreparingError(Exception):
