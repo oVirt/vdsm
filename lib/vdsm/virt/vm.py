@@ -311,22 +311,7 @@ class Vm(object):
         self._exit_info = {}
         if 'xml' in params:
             self._md_desc = metadata.Descriptor.from_xml(params['xml'])
-            self._custom['custom'] = self._md_desc.custom
-            with self._md_desc.values() as md:
-                self._destroy_on_reboot = (
-                    md.get('destroy_on_reboot', False) or
-                    self._domain.on_reboot_config() == 'destroy'
-                )
-                for key in ('agentChannelName', 'guestAgentAPIVersion',):
-                    value = md.get(key)
-                    if value:
-                        self.conf[key] = value
-                exit_info = {}
-                for key in ('exitCode', 'exitMessage', 'exitReason',):
-                    value = md.get(key)
-                    if value is not None:
-                        exit_info[key] = value
-                self._exit_info.update(exit_info)
+            self._init_from_metadata()
         else:
             self._md_desc = metadata.Descriptor()
             self._custom['custom'] = params.get('custom', {})
@@ -461,6 +446,24 @@ class Vm(object):
             (self.mem_size_mb() * 1024 + self.hugepagesz - 1) //
             self.hugepagesz
         )
+
+    def _init_from_metadata(self):
+        self._custom['custom'] = self._md_desc.custom
+        with self._md_desc.values() as md:
+            self._destroy_on_reboot = (
+                md.get('destroy_on_reboot', False) or
+                self._domain.on_reboot_config() == 'destroy'
+            )
+            for key in ('agentChannelName', 'guestAgentAPIVersion',):
+                value = md.get(key)
+                if value:
+                    self.conf[key] = value
+            exit_info = {}
+            for key in ('exitCode', 'exitMessage', 'exitReason',):
+                value = md.get(key)
+                if value is not None:
+                    exit_info[key] = value
+            self._exit_info.update(exit_info)
 
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
