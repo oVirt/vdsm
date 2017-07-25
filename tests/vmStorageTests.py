@@ -104,7 +104,6 @@ class DriveXMLTests(XMLTestCase):
         vm_conf = {'custom': {'viodiskcache': 'writethrough'}}
         self.check(vm_conf, conf, xml)
 
-    @xfail("diskType is not refactored yet")
     def test_disk_block(self):
         conf = drive_config(
             serial='54-a672-23e5b495a9ea',
@@ -121,7 +120,6 @@ class DriveXMLTests(XMLTestCase):
             """
         self.check({}, conf, xml)
 
-    @xfail("diskType is not refactored yet")
     def test_disk_with_discard_on(self):
         conf = drive_config(
             serial='54-a672-23e5b495a9ea',
@@ -139,7 +137,6 @@ class DriveXMLTests(XMLTestCase):
             """
         self.check({}, conf, xml)
 
-    @xfail("diskType is not refactored yet")
     def test_disk_with_discard_off(self):
         conf = drive_config(
             serial='54-a672-23e5b495a9ea',
@@ -173,7 +170,6 @@ class DriveXMLTests(XMLTestCase):
             """
         self.check({}, conf, xml)
 
-    @xfail("diskType is not refactored yet")
     def test_lun(self):
         conf = drive_config(
             device='lun',
@@ -420,7 +416,6 @@ class DriveDiskTypeTests(VdsmTestCase):
         self.assertFalse(drive.blockDev)
         self.assertEqual(DISK_TYPE.FILE, drive.diskType)
 
-    @xfail("diskType is not refactored yet")
     @permutations([(device, diskType)
                    for device in ["cdrom", "floppy"]
                    for diskType in [DISK_TYPE.BLOCK, DISK_TYPE.NETWORK]
@@ -430,7 +425,6 @@ class DriveDiskTypeTests(VdsmTestCase):
         with self.assertRaises(exception.UnsupportedOperation):
             Drive({}, self.log, **conf)
 
-    @xfail("diskType is not refactored yet")
     @permutations([(device, diskType)
                    for device in ["cdrom", "floppy"]
                    for diskType in [DISK_TYPE.BLOCK, DISK_TYPE.NETWORK]
@@ -448,7 +442,6 @@ class DriveDiskTypeTests(VdsmTestCase):
         self.assertFalse(drive.blockDev)
         self.assertEqual(DISK_TYPE.NETWORK, drive.diskType)
 
-    @xfail("diskType is not refactored yet")
     def test_block_disk(self):
         conf = drive_config(device='disk')
         drive = Drive({}, self.log, diskType=DISK_TYPE.BLOCK, **conf)
@@ -463,7 +456,6 @@ class DriveDiskTypeTests(VdsmTestCase):
         self.assertFalse(drive.blockDev)
         self.assertEqual(DISK_TYPE.FILE, drive.diskType)
 
-    @xfail("diskType is not refactored yet")
     def test_migrate_from_file_to_block(self):
         conf = drive_config(path='/filedomain/volume')
         drive = Drive({}, self.log, diskType=DISK_TYPE.FILE, **conf)
@@ -474,7 +466,6 @@ class DriveDiskTypeTests(VdsmTestCase):
         self.assertTrue(drive.blockDev)
         self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
 
-    @xfail("diskType is not refactored yet")
     def test_migrate_from_block_to_file(self):
         conf = drive_config(path='/blockdomain/volume')
         drive = Drive({}, self.log, diskType=DISK_TYPE.BLOCK, **conf)
@@ -485,7 +476,6 @@ class DriveDiskTypeTests(VdsmTestCase):
         self.assertFalse(drive.blockDev)
         self.assertEqual(DISK_TYPE.FILE, drive.diskType)
 
-    @xfail("diskType is not refactored yet")
     def test_migrate_from_block_to_network(self):
         conf = drive_config(path='/blockdomain/volume')
         drive = Drive({}, self.log, diskType=DISK_TYPE.BLOCK, **conf)
@@ -496,7 +486,6 @@ class DriveDiskTypeTests(VdsmTestCase):
         self.assertFalse(drive.blockDev)
         self.assertEqual(DISK_TYPE.NETWORK, drive.diskType)
 
-    @xfail("diskType is not refactored yet")
     def test_migrate_network_to_block(self):
         conf = drive_config(diskType=DISK_TYPE.NETWORK, path='pool/volume')
         drive = Drive({}, self.log, **conf)
@@ -507,21 +496,18 @@ class DriveDiskTypeTests(VdsmTestCase):
         self.assertTrue(drive.blockDev)
         self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
 
-    @xfail("diskType is not refactored yet")
     def test_set_invalid_type(self):
         conf = drive_config(diskType=DISK_TYPE.NETWORK, path='pool/volume')
         drive = Drive({}, self.log, **conf)
         with self.assertRaises(exception.UnsupportedOperation):
             drive.diskType = 'bad'
 
-    @xfail("diskType is not refactored yet")
     def test_set_none_type(self):
         conf = drive_config(diskType=DISK_TYPE.NETWORK, path='pool/volume')
         drive = Drive({}, self.log, **conf)
         with self.assertRaises(exception.UnsupportedOperation):
             drive.diskType = None
 
-    @xfail("diskType is not refactored yet")
     def test_create_invalid_type(self):
         conf = drive_config(diskType='bad', path='pool/volume')
         with self.assertRaises(exception.UnsupportedOperation):
@@ -547,25 +533,16 @@ class DriveDiskTypeTests(VdsmTestCase):
 @expandPermutations
 class ChunkedTests(VdsmTestCase):
 
-    @xfail("diskType is not refactored yet")
     @permutations([
         # device, blockDev, format, chunked
+        ('cdrom', DISK_TYPE.FILE, 'raw', False),
+        ('floppy', DISK_TYPE.FILE, 'raw', False),
         ('disk', DISK_TYPE.FILE, 'raw', False),
         ('disk', DISK_TYPE.BLOCK, 'raw', False),
         ('lun', DISK_TYPE.BLOCK, 'raw', False),
         ('disk', DISK_TYPE.BLOCK, 'cow', True),
     ])
-    def test_drive_disk(self, device, diskType, format, chunked):
-        conf = drive_config(device=device, format=format)
-        drive = Drive({}, self.log, diskType=diskType, **conf)
-        self.assertEqual(drive.chunked, chunked)
-
-    @permutations([
-        # device, blockDev, format, chunked
-        ('cdrom', DISK_TYPE.FILE, 'raw', False),
-        ('floppy', DISK_TYPE.FILE, 'raw', False),
-    ])
-    def test_drive_non_disk(self, device, diskType, format, chunked):
+    def test_drive(self, device, diskType, format, chunked):
         conf = drive_config(device=device, format=format)
         drive = Drive({}, self.log, diskType=diskType, **conf)
         self.assertEqual(drive.chunked, chunked)
@@ -575,7 +552,6 @@ class ChunkedTests(VdsmTestCase):
         (DISK_TYPE.BLOCK, 'raw'),
         (DISK_TYPE.BLOCK, 'cow'),
     ])
-    @xfail("diskType is not refactored yet")
     def test_replica(self, diskType, format):
         conf = drive_config(
             diskReplicate=replica(diskType, format=format),
@@ -892,7 +868,6 @@ class TestVolumeChain(VdsmTestCase):
                 run_base_vol
             )
 
-    @xfail("diskType is not refactored yet")
     def test_parse_volume_chain_block(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
             disk_xml = etree.fromstring("""
@@ -986,7 +961,6 @@ class TestVolumeChain(VdsmTestCase):
         ]
         self.assertEqual(chain, expected)
 
-    @xfail("diskType is not refactored yet")
     def test_parse_volume_not_in_chain(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
             disk_xml = etree.fromstring("""
@@ -1026,7 +1000,6 @@ class TestVolumeChain(VdsmTestCase):
             ]
             self.assertEqual(chain, expected)
 
-    @xfail("diskType is not refactored yet")
     def test_parse_volume_chain_no_index(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
             disk_xml = etree.fromstring("""
@@ -1044,7 +1017,6 @@ class TestVolumeChain(VdsmTestCase):
             with self.assertRaises(storage.InvalidBackingStoreIndex):
                 env.drive.parse_volume_chain(disk_xml)
 
-    @xfail("diskType is not refactored yet")
     def test_parse_volume_chain_index_invalid(self):
         with self.make_env(DISK_TYPE.BLOCK) as env:
             disk_xml = etree.fromstring("""
@@ -1078,7 +1050,6 @@ class TestDiskSnapshotXml(XMLTestCase):
         actual = drive.get_snapshot_xml(snap_info)
         self.assertXMLEqual(vmxml.format_xml(actual), expected)
 
-    @xfail("diskType is not refactored yet")
     def test_block(self):
         drive = Drive({}, self.log, diskType=DISK_TYPE.BLOCK, **self.conf)
 
