@@ -194,6 +194,7 @@ class Drive(core.Base):
     def __init__(self, conf, log, **kwargs):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
+        self._diskType = None
         # device needs to be initialized in prior
         # cause diskType setter uses self.device
         # in diskType validation
@@ -207,7 +208,7 @@ class Drive(core.Base):
         self.cache = config.get('vars', 'qemu_drive_cache')
         self.discard = kwargs.get('discard', False)
 
-        if not hasattr(self, '_diskType'):
+        if self._diskType is None:
             if (self.device in ("cdrom", "floppy") or not
                     utils.isBlockDevice(self.path)):
                 self.diskType = DISK_TYPE.FILE
@@ -360,6 +361,11 @@ class Drive(core.Base):
         if self.device in ['cdrom', 'floppy'] and value != DISK_TYPE.FILE:
             raise exception.UnsupportedOperation(
                 "diskType of %r can only be 'file'" % self.device)
+
+        if self._diskType is not None and self._diskType != value:
+            self.log.debug("Drive %s type changed from %r to %r",
+                           self.name, self._diskType, value)
+
         self._diskType = value
 
     @property
