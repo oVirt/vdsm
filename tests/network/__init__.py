@@ -23,10 +23,26 @@ import logging
 
 import six
 
+from testlib import mock
+
+from .nettestlib import bonding_default_fpath
 from . ip_rule_test import IPV4_ADDRESS1, IPRuleTest
 
 
+bonding_defaults_patcher = None
+
+
+def setup_package():
+    global bonding_defaults_patcher
+    bonding_defaults_patcher = mock.patch(
+        'vdsm.network.link.bond.sysfs_options.BONDING_DEFAULTS',
+        bonding_default_fpath())
+    bonding_defaults_patcher.start()
+
+
 def teardown_package():
+    bonding_defaults_patcher.stop()
+
     # TODO: Remove condition when ip.rule becomes PY3 compatible.
     if six.PY2:
         _cleanup_stale_iprules()

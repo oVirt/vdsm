@@ -28,14 +28,10 @@ from vdsm.network import errors
 from vdsm.network.models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
 from vdsm.network.models import hierarchy_backing_device, hierarchy_vlan_tag
 from vdsm.network.models import _nicSort
-from testlib import VdsmTestCase as TestCaseBase, mock
-
-from .nettestlib import bonding_default_fpath
+from testlib import VdsmTestCase as TestCaseBase
 
 
 @attr(type='unit')
-@mock.patch('vdsm.network.link.bond.sysfs_options.BONDING_DEFAULTS',
-            bonding_default_fpath())
 class TestNetmodels(TestCaseBase):
 
     def testIsVlanIdValid(self):

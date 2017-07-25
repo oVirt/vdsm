@@ -27,8 +27,7 @@ from nose.plugins.skip import SkipTest
 
 from testlib import VdsmTestCase as TestCaseBase, mock
 
-from .nettestlib import (bonding_default_fpath, dummy_devices,
-                         check_sysfs_bond_permission)
+from .nettestlib import dummy_devices, check_sysfs_bond_permission
 
 from vdsm.network.link import iface
 from vdsm.network.link.bond import Bond
@@ -42,7 +41,6 @@ def setup_module():
 
 
 @attr(type='integration')
-@mock.patch.object(sysfs_options, 'BONDING_DEFAULTS', bonding_default_fpath())
 class LinkBondTests(TestCaseBase):
 
     def test_bond_without_slaves(self):
@@ -204,7 +202,6 @@ class LinkBondTests(TestCaseBase):
 
 
 @attr(type='integration')
-@mock.patch.object(sysfs_options, 'BONDING_DEFAULTS', bonding_default_fpath())
 class LinkBondSysFSTests(TestCaseBase):
 
     def test_do_not_detach_slaves_while_changing_options(self):

@@ -30,7 +30,6 @@ from vdsm.network import ipwrapper
 from vdsm.network import sysctl
 from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.link.bond import Bond
-from vdsm.network.link.bond import sysfs_options
 from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo import addresses, bonding, dns, misc, nics, routes
@@ -43,7 +42,6 @@ from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
 from testValidation import broken_on_ci
 
-from .nettestlib import bonding_default_fpath
 from .nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
 
 
@@ -262,8 +260,6 @@ class TestNetinfo(TestCaseBase):
 
     @broken_on_ci('Bond options scanning is fragile on CI',
                   exception=AssertionError)
-    @mock.patch.object(sysfs_options, 'BONDING_DEFAULTS',
-                       bonding_default_fpath())
     @attr(type='integration')
     @ValidateRunningAsRoot
     @RequireBondingMod
