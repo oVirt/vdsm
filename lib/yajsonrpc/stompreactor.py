@@ -19,11 +19,11 @@ from collections import deque
 from uuid import uuid4
 import functools
 
-from vdsm import constants
 from vdsm import utils
 from vdsm.config import config
 from vdsm.common import api
 from vdsm.common import concurrent
+from vdsm.common import pki
 from vdsm.common.compat import json
 from vdsm.sslutils import CLIENT_PROTOCOL, SSLSocket
 from . import JsonRpcClient, JsonRpcServer
@@ -636,9 +636,9 @@ def SimpleClient(host, port=54321, ssl=True, incoming_heartbeat=5000,
     sslctx = None
     if ssl:
         from vdsm.sslutils import SSLContext
-        sslctx = SSLContext(key_file=constants.KEY_FILE,
-                            cert_file=constants.CERT_FILE,
-                            ca_certs=constants.CA_FILE,
+        sslctx = SSLContext(key_file=pki.KEY_FILE,
+                            cert_file=pki.CERT_FILE,
+                            ca_certs=pki.CA_FILE,
                             protocol=CLIENT_PROTOCOL)
     return StandAloneRpcClient(host, port, "jms.topic.vdsm_requests",
                                str(uuid4()), sslctx, False,

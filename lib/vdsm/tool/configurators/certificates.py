@@ -25,6 +25,7 @@ from vdsm.config import config
 from . import YES, NO
 from vdsm import constants
 from vdsm.commands import execCmd
+from vdsm.common import pki
 
 
 def validate():
@@ -38,9 +39,9 @@ def _exec_vdsm_gencerts():
                 constants.P_VDSM_EXEC,
                 'vdsm-gencerts.sh'
             ),
-            constants.CA_FILE,
-            constants.KEY_FILE,
-            constants.CERT_FILE,
+            pki.CA_FILE,
+            pki.KEY_FILE,
+            pki.CERT_FILE,
         ),
         raw=True,
     )
@@ -60,4 +61,4 @@ def isconfigured():
 
 def _certsExist():
     return not config.getboolean('vars', 'ssl') or\
-        os.path.isfile(constants.CERT_FILE)
+        os.path.isfile(pki.CERT_FILE)

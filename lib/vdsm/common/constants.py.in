@@ -118,9 +118,3 @@ EXT_SAFELEASE = '@SAFELEASE_PATH@'
 EXT_CURL_IMG_WRAP = '@LIBEXECDIR@/curl-img-wrap'  # NOQA: E501 (potentially long line)
 EXT_FC_SCAN = '@LIBEXECDIR@/fc-scan'  # NOQA: E501 (potentially long line)
 EXT_KVM_2_OVIRT = '@LIBEXECDIR@/kvm2ovirt'  # NOQA: E501 (potentially long line)
-
-# location of the certificates
-PKI_DIR = os.path.join(SYSCONF_PATH, 'pki', 'vdsm')
-KEY_FILE = os.path.join(PKI_DIR, 'keys', 'vdsmkey.pem')
-CERT_FILE = os.path.join(PKI_DIR, 'certs', 'vdsmcert.pem')
-CA_FILE = os.path.join(PKI_DIR, 'certs', 'cacert.pem')

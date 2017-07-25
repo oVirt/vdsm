@@ -22,10 +22,10 @@ from __future__ import absolute_import
 import io
 import os
 
-from vdsm import constants
 from vdsm import commands
 from vdsm.common import cache
 from vdsm.common import cmdutils
+from vdsm.common import pki
 
 from . import YES, NO, MAYBE
 
@@ -39,8 +39,7 @@ _SASLPASSWD2 = cmdutils.CommandPath("saslpasswd2",
                                     "/usr/sbin/saslpasswd2",
                                     )
 SASL_USERNAME = "vdsm@ovirt"
-LIBVIRT_PASSWORD_PATH = os.path.join(
-    constants.PKI_DIR, 'keys', 'libvirt_password')
+LIBVIRT_PASSWORD_PATH = os.path.join(pki.PKI_DIR, 'keys', 'libvirt_password')
 
 
 def isconfigured():

@@ -27,6 +27,7 @@ from . import NO, MAYBE
 
 from vdsm import cpuarch
 from vdsm import cpuinfo
+from vdsm.common import pki
 from vdsm.tool import confutils
 from vdsm.tool import service
 from vdsm.tool.configfile import ParserWrapper
@@ -158,7 +159,7 @@ def _is_hugetlbfs_1g_mounted(mtab_path='/etc/mtab'):
 # details.
 CONF_VERSION = '4.17.0'
 
-LS_CERT_DIR = os.path.join(constants.PKI_DIR, 'libvirt-spice')
+LS_CERT_DIR = os.path.join(pki.PKI_DIR, 'libvirt-spice')
 
 # be sure to update CONF_VERSION accordingly when updating FILES.
 FILES = {
@@ -199,9 +200,9 @@ FILES = {
                     "ssl_enabled": True,
                 },
                 'content': {
-                    'ca_file': '\"' + constants.CA_FILE + '\"',
-                    'cert_file': '\"' + constants.CERT_FILE + '\"',
-                    'key_file': '\"' + constants.KEY_FILE + '\"',
+                    'ca_file': '\"' + pki.CA_FILE + '\"',
+                    'cert_file': '\"' + pki.CERT_FILE + '\"',
+                    'key_file': '\"' + pki.KEY_FILE + '\"',
                 },
 
             },

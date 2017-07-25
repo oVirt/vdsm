@@ -25,7 +25,7 @@ from netaddr import IPAddress
 from netaddr.core import AddrFormatError
 
 from ssl import SSLError
-from vdsm import constants
+from vdsm.common import pki
 from vdsm.common.time import monotonic_time
 from .config import config
 
@@ -275,9 +275,9 @@ def create_ssl_context():
             )
 
             excludes = protocol_name_to_int()
-            sslctx = SSLContext(key_file=constants.KEY_FILE,
-                                cert_file=constants.CERT_FILE,
-                                ca_certs=constants.CA_FILE,
+            sslctx = SSLContext(key_file=pki.KEY_FILE,
+                                cert_file=pki.CERT_FILE,
+                                ca_certs=pki.CA_FILE,
                                 protocol=protocol,
                                 excludes=excludes)
         return sslctx
