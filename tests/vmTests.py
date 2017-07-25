@@ -64,7 +64,7 @@ from vdsm import utils
 from vdsm import libvirtconnection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import namedTemporaryDir
-from testValidation import slowtest
+from testValidation import slowtest, xfail
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
 import vmfakelib as fake
@@ -903,6 +903,7 @@ class TestVm(XMLTestCase):
             tunables = machine.getIoTunePolicyResponse()
             self.assertEqual(tunables['ioTunePolicyList'], [])
 
+    @xfail("diskType is not refactored yet")
     def testSetIoTune(self):
 
         drives = [

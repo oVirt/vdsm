@@ -3804,9 +3804,6 @@ class Vm(object):
         dstDiskCopy.update({'device': drive.device, 'name': drive.name})
         dstDiskCopy['path'] = self.cif.prepareVolumePath(dstDiskCopy)
 
-        if "diskType" not in dstDiskCopy:
-            dstDiskCopy["diskType"] = drive.diskReplicate["diskType"]
-
         if srcDisk != dstDisk:
             self.log.debug("Stopping the disk replication switching to the "
                            "destination drive: %s", dstDisk)
