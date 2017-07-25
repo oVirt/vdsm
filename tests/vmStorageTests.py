@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 
 import os
+import errno
 import xml.etree.cElementTree as etree
 
 from collections import namedtuple
@@ -528,6 +529,29 @@ class DriveDiskTypeTests(VdsmTestCase):
         self.assertFalse(drive.networkDev)
         self.assertFalse(drive.blockDev)
         self.assertEqual(DISK_TYPE.FILE, drive.diskType)
+
+    @xfail("inaccessible storage not handled yet")
+    def test_inaccessble_storage(self):
+        conf = drive_config(path='/no/such/path')
+        drive = Drive({}, self.log, **conf)
+        with self.assertRaises(OSError):
+            drive.diskType
+
+    @MonkeyPatch(utils, 'isBlockDevice', lambda path: True)
+    def test_inaccessble_storage_after_disk_type_initialized(self):
+        conf = drive_config(path='/no/such/path')
+        # When creating the drive, storage is accessible...
+        drive = Drive({}, self.log, **conf)
+        self.assertEqual(drive.diskType, DISK_TYPE.BLOCK)
+
+        # But later it become inaccessible.
+        def fail(path):
+            raise OSError(errno.EIO, "Bad storage!", path)
+
+        utils.isBlockDevice = fail
+
+        # Drive is not affected at this point
+        self.assertEqual(drive.diskType, DISK_TYPE.BLOCK)
 
 
 @expandPermutations
