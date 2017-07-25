@@ -544,7 +544,6 @@ class DriveDiskTypeTests(VdsmTestCase):
         self.assertFalse(drive.blockDev)
         self.assertEqual(DISK_TYPE.FILE, drive.diskType)
 
-    @xfail("inaccessible storage not handled yet")
     def test_inaccessble_storage(self):
         conf = drive_config(path='/no/such/path')
         drive = Drive(self.log, **conf)

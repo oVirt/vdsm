@@ -217,13 +217,6 @@ class Drive(core.Base):
         self.cache = config.get('vars', 'qemu_drive_cache')
         self.discard = kwargs.get('discard', False)
 
-        if self._diskType is None:
-            if (self.device in ("cdrom", "floppy") or not
-                    utils.isBlockDevice(self.path)):
-                self.diskType = DISK_TYPE.FILE
-            else:
-                self.diskType = DISK_TYPE.BLOCK
-
         self._customize()
         self._setExtSharedState()
 
@@ -327,7 +320,7 @@ class Drive(core.Base):
         Drive.volExtensionChunk is used to detect if a drive should be
         extended, and getNextVolumeSize to find the new size.
         """
-        return self._diskType == DISK_TYPE.BLOCK and self.format == "cow"
+        return self.diskType == DISK_TYPE.BLOCK and self.format == "cow"
 
     @property
     def replicaChunked(self):
@@ -341,11 +334,11 @@ class Drive(core.Base):
 
     @property
     def networkDev(self):
-        return self._diskType == DISK_TYPE.NETWORK
+        return self.diskType == DISK_TYPE.NETWORK
 
     @property
     def blockDev(self):
-        return self._diskType == DISK_TYPE.BLOCK
+        return self.diskType == DISK_TYPE.BLOCK
 
     @property
     def path(self):
@@ -360,6 +353,21 @@ class Drive(core.Base):
 
     @property
     def diskType(self):
+        """
+        Return diskType sent by engine, or try to check the disk type by
+        looking at storage.
+
+        If storage is not available at this point, this will fail with OSError,
+        and diskType will remain undefined. Drive cannot be functional at this
+        state until storage becomes available, and diskType initialized.
+        """
+        if self._diskType is None:
+            if (self.device in ("cdrom", "floppy") or not
+                    utils.isBlockDevice(self.path)):
+                self.diskType = DISK_TYPE.FILE
+            else:
+                self.diskType = DISK_TYPE.BLOCK
+
         return self._diskType
 
     @diskType.setter
