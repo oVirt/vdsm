@@ -427,8 +427,6 @@ class DriveDiskTypeTests(VdsmTestCase):
     def test_non_disk(self, device):
         conf = drive_config(device=device)
         drive = Drive(self.log, **conf)
-        self.assertFalse(drive.networkDev)
-        self.assertFalse(drive.blockDev)
         self.assertEqual(DISK_TYPE.FILE, drive.diskType)
 
     @permutations([(device, diskType)
@@ -453,62 +451,48 @@ class DriveDiskTypeTests(VdsmTestCase):
     def test_network_disk(self):
         conf = drive_config(diskType=DISK_TYPE.NETWORK)
         drive = Drive(self.log, **conf)
-        self.assertTrue(drive.networkDev)
-        self.assertFalse(drive.blockDev)
         self.assertEqual(DISK_TYPE.NETWORK, drive.diskType)
 
     def test_block_disk(self):
         conf = drive_config(device='disk')
         drive = Drive(self.log, diskType=DISK_TYPE.BLOCK, **conf)
-        self.assertFalse(drive.networkDev)
-        self.assertTrue(drive.blockDev)
         self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
 
     def test_file_disk(self):
         conf = drive_config(device='disk')
         drive = Drive(self.log, diskType=DISK_TYPE.FILE, **conf)
-        self.assertFalse(drive.networkDev)
-        self.assertFalse(drive.blockDev)
         self.assertEqual(DISK_TYPE.FILE, drive.diskType)
 
     def test_migrate_from_file_to_block(self):
         conf = drive_config(path='/filedomain/volume')
         drive = Drive(self.log, diskType=DISK_TYPE.FILE, **conf)
-        self.assertFalse(drive.blockDev)
         # Migrate drive to block domain...
         drive.diskType = DISK_TYPE.BLOCK
         drive.path = "/blockdomain/volume"
-        self.assertTrue(drive.blockDev)
         self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
 
     def test_migrate_from_block_to_file(self):
         conf = drive_config(path='/blockdomain/volume')
         drive = Drive(self.log, diskType=DISK_TYPE.BLOCK, **conf)
-        self.assertTrue(drive.blockDev)
         # Migrate drive to file domain...
         drive.diskType = DISK_TYPE.FILE
         drive.path = "/filedomain/volume"
-        self.assertFalse(drive.blockDev)
         self.assertEqual(DISK_TYPE.FILE, drive.diskType)
 
     def test_migrate_from_block_to_network(self):
         conf = drive_config(path='/blockdomain/volume')
         drive = Drive(self.log, diskType=DISK_TYPE.BLOCK, **conf)
-        self.assertTrue(drive.blockDev)
         # Migrate drive to network disk...
         drive.path = "pool/volume"
         drive.diskType = DISK_TYPE.NETWORK
-        self.assertFalse(drive.blockDev)
         self.assertEqual(DISK_TYPE.NETWORK, drive.diskType)
 
     def test_migrate_network_to_block(self):
         conf = drive_config(diskType=DISK_TYPE.NETWORK, path='pool/volume')
         drive = Drive(self.log, **conf)
-        self.assertTrue(drive.networkDev)
         # Migrate drive to block domain...
         drive.path = '/blockdomain/volume'
         drive.diskType = DISK_TYPE.BLOCK
-        self.assertTrue(drive.blockDev)
         self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
 
     def test_set_invalid_type(self):
@@ -532,16 +516,12 @@ class DriveDiskTypeTests(VdsmTestCase):
     def test_create_missing_type_block(self):
         conf = drive_config(path='/blockdomain/volume')
         drive = Drive(self.log, **conf)
-        self.assertFalse(drive.networkDev)
-        self.assertTrue(drive.blockDev)
         self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
 
     @MonkeyPatch(utils, 'isBlockDevice', lambda path: False)
     def test_create_missing_type_file(self):
         conf = drive_config(path='/filedomain/volume')
         drive = Drive(self.log, **conf)
-        self.assertFalse(drive.networkDev)
-        self.assertFalse(drive.blockDev)
         self.assertEqual(DISK_TYPE.FILE, drive.diskType)
 
     def test_inaccessble_storage(self):
@@ -571,7 +551,7 @@ class DriveDiskTypeTests(VdsmTestCase):
 class ChunkedTests(VdsmTestCase):
 
     @permutations([
-        # device, blockDev, format, chunked
+        # device, diskType, format, chunked
         ('cdrom', DISK_TYPE.FILE, 'raw', False),
         ('floppy', DISK_TYPE.FILE, 'raw', False),
         ('disk', DISK_TYPE.FILE, 'raw', False),

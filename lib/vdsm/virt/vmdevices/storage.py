@@ -333,14 +333,6 @@ class Drive(core.Base):
                 replica.get("format") == "cow")
 
     @property
-    def networkDev(self):
-        return self.diskType == DISK_TYPE.NETWORK
-
-    @property
-    def blockDev(self):
-        return self.diskType == DISK_TYPE.BLOCK
-
-    @property
     def path(self):
         return self._path
 
