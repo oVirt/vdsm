@@ -2489,7 +2489,7 @@ class Vm(object):
         # and have a special check for that in the snapshotting code,
         # so it should never happen.
         diskType = vmxml.attr(disk_element, 'type')
-        if diskType not in ['file', 'block', 'network']:
+        if diskType not in SOURCE_ATTR:
             return
         serial = vmxml.text(vmxml.find_first(disk_element, 'serial'))
         for vm_drive in self._devices[hwclass.DISK]:
@@ -3912,8 +3912,8 @@ class Vm(object):
             newDrives[vmDevName]["name"] = vmDevName
             newDrives[vmDevName]["format"] = "cow"
 
-            # We need to keep track of the drive object because we cannot
-            # safely access the blockDev property until after prepareVolumePath
+            # We need to keep track of the drive object because
+            # it keeps original data and used to generate snapshot element
             vmDrives[vmDevName] = vmDrive
 
         preparedDrives = {}
@@ -5300,7 +5300,7 @@ class Vm(object):
         # volumes and block qcow volumes (where extension happens dynamically).
         # Raw block volumes cannot be extended by libvirt so we require ovirt
         # engine to extend them before calling merge.  Check here.
-        if not drive.blockDev or base_info['format'] != 'RAW':
+        if drive.diskType != DISK_TYPE.BLOCK or base_info['format'] != 'RAW':
             return True
 
         if int(base_info['capacity']) < int(top_info['capacity']):
