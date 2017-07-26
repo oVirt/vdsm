@@ -53,9 +53,11 @@ from . import dhcp
 from . import firewall
 
 
-ALTERNATIVE_BONDING_DEFAULTS = os.path.join(os.path.dirname(__file__),
-                                            'static',
-                                            'bonding-defaults.json')
+ALTERNATIVE_BONDING_DEFAULTS = os.path.join(
+    os.path.dirname(__file__), 'static', 'bonding-defaults.json')
+
+ALTERNATIVE_BONDING_NAME2NUMERIC_PATH = os.path.join(
+    os.path.dirname(__file__), 'static', 'bonding-name2numeric.json')
 
 EXT_IP = "/sbin/ip"
 EXT_TC = "/sbin/tc"
@@ -526,15 +528,19 @@ def check_sysfs_bond_permission():
 
 @memoized
 def bonding_default_fpath():
+    bonding_defaults_fpath = ALTERNATIVE_BONDING_DEFAULTS
+    bonding_name2num_fpath = ALTERNATIVE_BONDING_NAME2NUMERIC_PATH
+
     if _has_sysfs_bond_permission():
         sysfs_options_mapper.dump_bonding_options()
 
     if os.path.exists(BONDING_DEFAULTS):
-        file_path = BONDING_DEFAULTS
-    else:
-        file_path = ALTERNATIVE_BONDING_DEFAULTS
+        bonding_defaults_fpath = BONDING_DEFAULTS
 
-    return file_path
+    if os.path.exists(sysfs_options_mapper.BONDING_NAME2NUMERIC_PATH):
+        bonding_name2num_fpath = sysfs_options_mapper.BONDING_NAME2NUMERIC_PATH
+
+    return bonding_defaults_fpath, bonding_name2num_fpath
 
 
 @contextmanager

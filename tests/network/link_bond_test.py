@@ -260,12 +260,6 @@ class TestBondingSysfsOptionsMapper(TestCaseBase):
         opt_num_val = self._get_bonding_option_num_val('no_such_opt', 'none')
         self.assertEqual(opt_num_val, None)
 
-    @mock.patch.object(sysfs_options_mapper, 'BONDING_NAME2NUMERIC_PATH',
-                       sysfs_options_mapper.BONDING_NAME2NUMERIC_PATH
-                       if os.path.exists(
-                           sysfs_options_mapper.BONDING_NAME2NUMERIC_PATH)
-                       else
-                       '../static/usr/share/vdsm/bonding-name2numeric.json')
     def _get_bonding_option_num_val(self, option_name, val_name):
         mode_num = sysfs_options.BONDING_MODES_NAME_TO_NUMBER['balance-rr']
         opt_num_val = sysfs_options_mapper.get_bonding_option_numeric_val(

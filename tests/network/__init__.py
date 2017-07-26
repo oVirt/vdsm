@@ -29,19 +29,26 @@ from .nettestlib import bonding_default_fpath
 from . ip_rule_test import IPV4_ADDRESS1, IPRuleTest
 
 
-bonding_defaults_patcher = None
+bonding_dump_patchers = []
 
 
 def setup_package():
-    global bonding_defaults_patcher
-    bonding_defaults_patcher = mock.patch(
-        'vdsm.network.link.bond.sysfs_options.BONDING_DEFAULTS',
-        bonding_default_fpath())
-    bonding_defaults_patcher.start()
+    bonding_defaults, bonding_name2numeric = bonding_default_fpath()
+    bonding_dump_patchers.append(
+        mock.patch('vdsm.network.link.bond.sysfs_options.BONDING_DEFAULTS',
+                   bonding_defaults))
+    bonding_dump_patchers.append(
+        mock.patch('vdsm.network.link.bond.sysfs_options_mapper.'
+                   'BONDING_NAME2NUMERIC_PATH',
+                   bonding_name2numeric))
+
+    for patcher in bonding_dump_patchers:
+        patcher.start()
 
 
 def teardown_package():
-    bonding_defaults_patcher.stop()
+    for patcher in bonding_dump_patchers:
+        patcher.stop()
 
     # TODO: Remove condition when ip.rule becomes PY3 compatible.
     if six.PY2:
