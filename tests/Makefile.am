@@ -79,6 +79,7 @@ test_modules = \
 	hugepages_test.py \
 	hwinfo_test.py \
 	jobs_test.py \
+	jsonRpcClient_test.py \
 	libvirtconnection_test.py \
 	loopback_test.py \
 	mkimage_test.py \
