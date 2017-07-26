@@ -257,6 +257,10 @@ parameters = [
             'Enable implicit scheduling of VMs to properly match numa '
             'topology. Explicit settings sent from engine override '
             'the option.'),
+
+        ('timeout_engine_clear_vms', '5',
+            'How many seconds should VDSM wait at the shutdown sequence '
+            'for engine to clear all VMs.'),
     ]),
 
     # Section: [rpc]

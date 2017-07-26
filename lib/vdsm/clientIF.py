@@ -304,6 +304,29 @@ class clientIF(object):
 
         self.mom = MomClient(momconf)
 
+    def _wait_for_shutting_down_vms(self):
+        """
+        Wait loop checking remaining VMs in vm container
+
+        This method is helper method that makes sure VDSM
+        does not terminate before engine knows that all
+        VMs are terminated by host shutdown.
+
+        The VMs are shutdown by external service: libvirt-guests
+        The service pauses system shutdown on systemd shutdown
+        and gracefully shutdowns the running VMs.
+        """
+        # how long to wait before release shutdown
+        # we are waiting in whole seconds
+        # if config is not present, do not wait
+        timeout = config.getint('vars', 'timeout_engine_clear_vms')
+
+        for _ in range(timeout * 10):
+            if not self.vmContainer:
+                # once all VMs are cleared exit
+                break
+            time.sleep(0.1)
+
     def prepareForShutdown(self):
         """
         Prepare server for shutdown.
@@ -317,6 +340,8 @@ class clientIF(object):
             if not self._enabled:
                 self.log.debug('cannot run prepareForShutdown twice')
                 return errCode['unavail']
+
+            self._wait_for_shutting_down_vms()
 
             self._acceptor.stop()
             for binding in self.servers.values():

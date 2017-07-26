@@ -4,10 +4,10 @@ Requires=multipathd.service libvirtd.service time-sync.target \
          iscsid.service rpcbind.service supervdsmd.service sanlock.service \
          vdsm-network.service
 After=multipathd.service libvirtd.service iscsid.service rpcbind.service \
-      supervdsmd.service sanlock.service vdsm-network.service
-Conflicts=libvirt-guests.service
+      supervdsmd.service sanlock.service vdsm-network.service \
+      libvirt-guests.service
 Wants=mom-vdsm.service ovirt-imageio-daemon.service abrtd.service \
-      dev-hugepages1G.mount
+      dev-hugepages1G.mount libvirt-guests.service
 
 [Service]
 Type=simple
