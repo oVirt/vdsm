@@ -67,9 +67,9 @@ class Interface(core.Base):
             'specParams': {},
         }
         core.update_device_params(params, dev)
-        params.update(_get_xml_elem(dev, 'macAddr', 'mac', 'address'))
-        params.update(_get_xml_elem(dev, 'nicModel', 'model', 'type'))
-        params.update(_get_xml_elem(dev, 'bootOrder', 'boot', 'order'))
+        params.update(core.get_xml_elem(dev, 'macAddr', 'mac', 'address'))
+        params.update(core.get_xml_elem(dev, 'nicModel', 'model', 'type'))
+        params.update(core.get_xml_elem(dev, 'bootOrder', 'boot', 'order'))
         if params['device'] == 'hostdev':
             params.update(_get_hostdev_params(dev))
         vlan = vmxml.find_first(dev, 'vlan', None)
@@ -487,8 +487,3 @@ def _get_hostdev_params(dev):
     return {
         'hostdev': pci_address_to_name(**addr)
     }
-
-
-def _get_xml_elem(dev, key, elem, attr):
-    value = vmxml.find_attr(dev, elem, attr)
-    return {key: value} if value else {}

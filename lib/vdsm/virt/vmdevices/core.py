@@ -899,3 +899,8 @@ def update_device_params(params, dev, attrs=None):
         params['address'] = address
     if attrs is not None:
         params.update(parse_device_attrs(dev, attrs))
+
+
+def get_xml_elem(dev, key, elem, attr):
+    value = vmxml.find_attr(dev, elem, attr)
+    return {key: value} if value else {}
