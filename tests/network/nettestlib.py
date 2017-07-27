@@ -532,7 +532,11 @@ def bonding_default_fpath():
     bonding_name2num_fpath = ALTERNATIVE_BONDING_NAME2NUMERIC_PATH
 
     if _has_sysfs_bond_permission():
-        sysfs_options_mapper.dump_bonding_options()
+        try:
+            sysfs_options_mapper.dump_bonding_options()
+        except EnvironmentError as e:
+            if e.errno != errno.ENOENT:
+                raise
 
     if os.path.exists(BONDING_DEFAULTS):
         bonding_defaults_fpath = BONDING_DEFAULTS
