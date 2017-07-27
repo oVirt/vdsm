@@ -30,7 +30,6 @@ from logging import config as lconfig
 
 from vdsm import commands
 from vdsm import constants
-from vdsm import dsaversion
 from vdsm import health
 from vdsm import jobs
 from vdsm import schedule
@@ -38,6 +37,7 @@ from vdsm import libvirtconnection
 from vdsm import containersconnection
 from vdsm import taskset
 from vdsm import metrics
+from vdsm.common import dsaversion
 from vdsm.common import sigutils
 from vdsm.common import time
 from vdsm.common import zombiereaper

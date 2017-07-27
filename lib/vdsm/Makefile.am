@@ -70,7 +70,6 @@ dist_vdsmpylib_PYTHON = \
 	$(NULL)
 
 nodist_vdsmpylib_PYTHON = \
-	dsaversion.py \
 	$(NULL)
 
 nodist_noinst_DATA= \
@@ -84,7 +83,6 @@ CLEANFILES = \
 
 
 EXTRA_DIST = \
-	dsaversion.py.in \
 	vdsm.conf.sample \
 	$(NULL)
 

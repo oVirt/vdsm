@@ -25,6 +25,7 @@ vdsmcommondir = $(vdsmpylibdir)/common
 nodist_vdsmcommon_PYTHON = \
 	config.py \
 	constants.py \
+	dsaversion.py \
 	$(NULL)
 
 dist_vdsmcommon_PYTHON = \
@@ -34,6 +35,7 @@ dist_vdsmcommon_PYTHON = \
 EXTRA_DIST = \
 	config.py.in \
 	constants.py.in \
+	dsaversion.py.in \
 	$(NULL)
 
 CLEANFILES = \
