@@ -49,6 +49,7 @@ if __name__ == '__main__':
               "instead of installed ones.\n")
     if findRemove(sys.argv, "--local-modules"):
         from vdsm import constants
-        constants.P_VDSM = "../vdsm/"
+        from vdsm.common import constants as common_constants
+        common_constants.P_VDSM = constants.P_VDSM = "../vdsm/"
 
     testlib.run()
