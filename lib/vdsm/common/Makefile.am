@@ -26,7 +26,9 @@ nodist_vdsmcommon_PYTHON = \
 	constants.py \
 	$(NULL)
 
-dist_vdsmcommon_PYTHON = *.py
+dist_vdsmcommon_PYTHON = \
+	$(filter-out $(nodist_vdsmcommon_PYTHON), $(wildcard *.py))
+	$(NULL)
 
 EXTRA_DIST = \
 	constants.py.in \
