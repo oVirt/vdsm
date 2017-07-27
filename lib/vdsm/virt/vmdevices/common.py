@@ -186,17 +186,17 @@ def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
 
     dev_map = empty_dev_map()
     for dev_elem in vmxml.children(dom_desc.devices):
-        dev_alias = core.find_device_alias(dev_elem)
         try:
             dev_type, dev_class = identify_from_xml_elem(dev_elem)
         except core.SkipDevice:
-            log.debug(
-                'skipping unhandled device: %r %r', dev_elem.tag, dev_alias
-            )
+            log.debug('skipping unhandled device: %r', dev_elem.tag)
             continue
+
         dev_meta = {'vmid': vmid}
-        with md_desc.device(alias=dev_alias) as dev_data:
-            dev_meta.update(dev_data)
+        attrs = dev_class.get_identifying_attrs(dev_elem)
+        if attrs:
+            with md_desc.device(**attrs) as dev_data:
+                dev_meta.update(dev_data)
         dev_obj = dev_class.from_xml_tree(log, dev_elem, dev_meta)
         dev_map[dev_type].append(dev_obj)
     return dev_map

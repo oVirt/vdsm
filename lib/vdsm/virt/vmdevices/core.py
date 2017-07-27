@@ -43,6 +43,10 @@ class Base(vmxml.Device):
                  'is_hostdevice', 'vmid')
 
     @classmethod
+    def get_identifying_attrs(cls, dev_elem):
+        return {}
+
+    @classmethod
     def from_xml_tree(cls, log, dev, meta):
         """
         Create a device from its libvirt domain XML.

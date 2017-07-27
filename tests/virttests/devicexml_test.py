@@ -23,6 +23,8 @@ from __future__ import absolute_import
 import logging
 import os.path
 
+from vdsm.virt.domain_descriptor import DomainDescriptor
+from vdsm.virt import metadata
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
 from vdsm import constants
@@ -1084,6 +1086,111 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             self.assertXMLEqual(rebuilt_xml, result_xml)
         finally:
             dev.teardown()
+
+
+# invalid domain with only the relevant sections added
+_DOMAIN_MD_MATCH_XML = u"""<domain type='kvm' id='2'>
+  <metadata
+        xmlns:ovirt-tune='http://ovirt.org/vm/tune/1.0'
+        xmlns:ovirt-vm='http://ovirt.org/vm/1.0'>
+    <ovirt-tune:qos/>
+    <ovirt-vm:vm>
+      <ovirt-vm:device alias='net0'>
+        <ovirt-vm:network>ovirtmgmt0</ovirt-vm:network>
+      </ovirt-vm:device>
+      <ovirt-vm:device alias='net1' mac_address='00:1a:3b:16:10:16'>
+        <ovirt-vm:network>ovirtmgmt1</ovirt-vm:network>
+      </ovirt-vm:device>
+      <ovirt-vm:device mac_address='00:1a:55:ff:20:26'>
+        <ovirt-vm:network>ovirtmgmt2</ovirt-vm:network>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+  <devices>
+    <emulator>/usr/libexec/qemu-kvm</emulator>
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source startupPolicy='optional'/>
+      <backingStore/>
+      <target dev='hdc' bus='ide'/>
+      <readonly/>
+    </disk>
+    <controller type='virtio-serial' index='0' ports='16'>
+      <alias name='virtio-serial0'/>
+    </controller>
+    <controller type='usb' index='0'>
+      <alias name='usb'/>
+    </controller>
+    <controller type='pci' index='0' model='pci-root' />
+    <interface type='bridge'>
+      <mac address='00:1a:4a:16:01:51'/>
+      <source bridge='INVALID0'/>
+      <target dev='vnet0'/>
+      <model type='virtio'/>
+      <filterref filter='vdsm-no-mac-spoofing'/>
+      <link state='up'/>
+      <boot order='2'/>
+      <alias name='net0'/>
+    </interface>
+    <interface type='bridge'>
+      <mac address='00:1a:3b:16:10:16'/>
+      <source bridge='INVALID1'/>
+      <target dev='vnet0'/>
+      <model type='virtio'/>
+      <filterref filter='vdsm-no-mac-spoofing'/>
+      <link state='up'/>
+      <boot order='2'/>
+      <alias name='net1'/>
+    </interface>
+    <interface type='bridge'>
+      <mac address='00:1a:55:ff:20:26'/>
+      <source bridge='INVALID1'/>
+      <target dev='vnet0'/>
+      <model type='virtio'/>
+      <filterref filter='vdsm-no-mac-spoofing'/>
+      <link state='up'/>
+      <boot order='2'/>
+    </interface>
+  </devices>
+</domain>"""
+
+
+class DeviceMetadataMatchTests(XMLTestCase):
+
+    def setUp(self):
+        self.dom_desc = DomainDescriptor(_DOMAIN_MD_MATCH_XML)
+        self.md_desc = metadata.Descriptor.from_xml(_DOMAIN_MD_MATCH_XML)
+
+    def test_match_interface_by_alias_only_fails(self):
+        # fails because we
+        # assert set(matching_attrs) in set(device_metadata_attrs)
+        # while the reverse can be false with no consequences.
+        dev_objs = vmdevices.common.dev_map_from_domain_xml(
+            'TESTING', self.dom_desc, self.md_desc, self.log
+        )
+        nic = self._find_nic_by_mac(dev_objs, '00:1a:4a:16:01:51')
+        self.assertEqual(nic.network, 'INVALID0')
+
+    def test_match_interface_by_mac_only_succeeds(self):
+        dev_objs = vmdevices.common.dev_map_from_domain_xml(
+            'TESTING', self.dom_desc, self.md_desc, self.log
+        )
+        nic = self._find_nic_by_mac(dev_objs, '00:1a:3b:16:10:16')
+        self.assertEqual(nic.network, 'ovirtmgmt1')
+
+    def test_match_interface_by_mac_and_alias_succeeds(self):
+        # mac is enough, but we match extra arguments if given
+        dev_objs = vmdevices.common.dev_map_from_domain_xml(
+            'TESTING', self.dom_desc, self.md_desc, self.log
+        )
+        nic = self._find_nic_by_mac(dev_objs, '00:1a:55:ff:20:26')
+        self.assertEqual(nic.network, 'ovirtmgmt2')
+
+    def _find_nic_by_mac(self, dev_objs, mac_addr):
+        for nic in dev_objs[vmdevices.hwclass.NIC]:
+            if nic.macAddr == mac_addr:
+                return nic
+        raise AssertionError('no nic with mac=%s found' % mac_addr)
 
 
 class FakeLibvirtConnection(object):

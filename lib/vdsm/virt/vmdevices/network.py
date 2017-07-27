@@ -58,6 +58,10 @@ class Interface(core.Base):
                  'numa_node', '_device_params', 'vm_custom', '_is_vhostuser')
 
     @classmethod
+    def get_identifying_attrs(cls, dev_elem):
+        return core.get_xml_elem(dev_elem, 'mac_address', 'mac', 'address')
+
+    @classmethod
     def from_xml_tree(cls, log, dev, meta):
         params = {
             'device': core.find_device_type(dev),
