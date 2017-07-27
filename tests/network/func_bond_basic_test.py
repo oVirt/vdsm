@@ -114,6 +114,14 @@ class BondBasicTemplate(NetFuncTestCase):
                     pass
             self.assertEqual(cm.exception.status, ne.ERR_BAD_BONDING)
 
+    def test_add_bond_with_no_nics_fails(self):
+        BONDCREATE = {BOND_NAME: {'nics': []}}
+
+        with self.assertRaises(SetupNetworksError) as err:
+            with self.setupNetworks({}, BONDCREATE, NOCHK):
+                pass
+        self.assertEqual(err.exception.status, ne.ERR_BAD_PARAMS)
+
 
 @attr(type='functional', switch='legacy')
 class BondBasicLegacyTest(BondBasicTemplate):

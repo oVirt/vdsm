@@ -587,18 +587,6 @@ class NetworkTest(TestCaseBase):
             status, msg = self.setupNetworks({bridge_name: {}}, {}, NOCHK)
             self.assertEqual(status, errors.ERR_BAD_BRIDGE, msg)
 
-    @cleanupNet
-    @permutations([[True], [False]])
-    def testFailWithInvalidParams(self, bridged):
-        status, msg = self.setupNetworks(
-            {NETWORK_NAME: {'vlan': VLAN_ID, 'bridged': bridged}}, {}, NOCHK)
-        self.assertEqual(status, errors.ERR_BAD_PARAMS, msg)
-
-        status, msg = self.setupNetworks(
-            {NETWORK_NAME: {'bonding': BONDING_NAME, 'bridged': bridged}},
-            {BONDING_NAME: {'nics': []}}, NOCHK)
-        self.assertEqual(status, errors.ERR_BAD_PARAMS, msg)
-
     def _setup_overExistingBridge():
         rc, _, err = execCmd([EXT_BRCTL, 'addbr', NETWORK_NAME])
         if rc != 0:
