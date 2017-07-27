@@ -97,6 +97,7 @@ class clientIF(object):
         self._broker_client = None
         self._subscriptions = defaultdict(list)
         self._scheduler = scheduler
+        self._unknown_vm_ids = set()
         if _glusterEnabled:
             self.gluster = gapi.GlusterApi()
         else:
@@ -145,6 +146,21 @@ class clientIF(object):
         """
         with self.vmContainerLock:
             return self.vmContainer.copy()
+
+    def get_unknown_vm_ids(self):
+        """
+        Return iterable of unknown VM ids that were spotted.
+
+        This is intended to serve for detection of external VMs.
+        """
+        unknown_vm_ids = []
+        with self.vmContainerLock:
+            for vm_id in self._unknown_vm_ids.copy():
+                if vm_id in self.vmContainer:
+                    self._unknown_vm_ids.remove(vm_id)
+                else:
+                    unknown_vm_ids.append(vm_id)
+        return unknown_vm_ids
 
     @property
     def ready(self):
@@ -526,6 +542,7 @@ class clientIF(object):
             if not v:
                 self.log.debug('unknown vm %s event %s args %s',
                                vmid, events.event_name(eventid), args)
+                self._unknown_vm_ids.add(vmid)
                 return
 
             if eventid == libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE:

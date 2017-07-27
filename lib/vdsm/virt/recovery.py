@@ -215,3 +215,22 @@ def all_domains(cif):
                 cif.log.exception(
                     'recovery [1:%d/%d]: failed to kill loose domain %s',
                     idx + 1, num_doms, vm_id)
+
+
+def lookup_external_vms(cif):
+    conn = libvirtconnection.get()
+    for vm_id in cif.get_unknown_vm_ids():
+        try:
+            dom_obj = conn.lookupByUUIDString(vm_id)
+            dom_xml = dom_obj.XMLDesc(0)
+        except libvirt.libvirtError as e:
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                logging.debug("External domain %s not found", vm_id)
+                continue
+            else:
+                raise
+        logging.debug("Recovering external domain: %s", vm_id)
+        if _recover_domain(cif, vm_id, dom_xml, True):
+            cif.log.info("Recovered new external domain: %s", vm_id)
+        else:
+            cif.log.info("Failed to recover new external domain: %s", vm_id)

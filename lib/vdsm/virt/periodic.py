@@ -34,6 +34,7 @@ from vdsm import host
 from vdsm import libvirtconnection
 from vdsm.config import config
 from vdsm.virt import migration
+from vdsm.virt import recovery
 from vdsm.virt import sampling
 from vdsm.virt import virdomain
 from vdsm.virt import vmstatus
@@ -92,6 +93,13 @@ def start(cif, scheduler):
         per_vm_operation(
             DriveWatermarkMonitor,
             config.getint('vars', 'vm_watermark_interval')),
+
+        Operation(
+            lambda: recovery.lookup_external_vms(cif),
+            config.getint('sampling', 'external_vm_lookup_interval'),
+            scheduler,
+            exclusive=True,
+            discard=False),
 
         Operation(
             containersconnection.monitor,

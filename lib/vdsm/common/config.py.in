@@ -454,6 +454,8 @@ parameters = [
             'Unix domain socket to connect to collectd (enable the '
             'collectd "unixsock" plugin!)'),
 
+        ('external_vm_lookup_interval', '60',
+            'Number of seconds between lookups for external VMs.'),
     ]),
 
     # Section: [metrics]
