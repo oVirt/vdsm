@@ -39,7 +39,8 @@ def find_modules():
 
     # blivet fails on import, see https://bugzilla.redhat.com/1450607
     info = osinfo.version()
-    if info["name"] == osinfo.OSName.FEDORA and info["version"] == "27":
+    if (info["name"] == osinfo.OSName.FEDORA and
+            info["version"] in ("26", "27")):
         expected_to_fail.add("vdsm.gluster.storagedev")
 
     def error(name):

@@ -1126,12 +1126,12 @@ class GlusterCliTests(TestCaseBase):
         except ImportError as e:
             raise SkipTest('%s' % e)
         except ValueError as e:
-            # On Fedora rawhide importing blivet fail with:
+            # On Fedora 26 and 27 importing blivet fail with:
             # ValueError: Namespace BlockDev not available for version 1.0
             # See https://bugzilla.redhat.com/1450607
             info = osinfo.version()
             if (info["name"] == osinfo.OSName.FEDORA and
-                    info["version"] == "27"):
+                    info["version"] in ("26", "27")):
                 raise SkipTest('%s' % e)
             raise
 
