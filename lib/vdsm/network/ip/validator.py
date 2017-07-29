@@ -24,7 +24,7 @@ import six
 from vdsm.network import errors as ne
 from vdsm.network.netconfpersistence import RunningConfig
 
-from .address import IPv4, IPv6
+from .address import IPAddressData, IPAddressDataError, IPv4, IPv6
 
 
 def validate(nets):
@@ -33,6 +33,8 @@ def validate(nets):
     for net, attrs in six.iteritems(nets):
         if 'remove' in attrs:
             continue
+
+        validate_static_ipv4_config(attrs)
         _validate_nameservers(net, attrs)
 
         if attrs['defaultRoute']:
@@ -73,6 +75,28 @@ def _validate_nameservers_address(nameservers_addr):
             IPv6.validateAddress(addr)
         else:
             IPv4.validateAddress(addr)
+
+
+def validate_static_ipv4_config(net_attrs):
+    if 'ipaddr' in net_attrs:
+        try:
+            address = '{}/{}'.format(net_attrs['ipaddr'],
+                                     net_attrs.get('netmask', ''))
+            IPAddressData(address, device=None)
+            if 'gateway' in net_attrs:
+                IPAddressData(net_attrs['gateway'], device=None)
+        except IPAddressDataError as e:
+            six.reraise(ne.ConfigNetworkError,
+                        ne.ConfigNetworkError(ne.ERR_BAD_ADDR, str(e)))
+        if net_attrs.get('bootproto') == 'dhcp':
+            raise ne.ConfigNetworkError(ne.ERR_BAD_ADDR,
+                                        'mixing static ip configuration with '
+                                        'dhcp is not allowed')
+    else:
+        if 'gateway' in net_attrs or 'netmask' in net_attrs:
+            raise ne.ConfigNetworkError(ne.ERR_BAD_ADDR,
+                                        'gateway or netmask were given '
+                                        'without ip address')
 
 
 def _normalize_address(addr):

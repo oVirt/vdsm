@@ -133,3 +133,50 @@ class TestIPDefaultRouteValidator(VdsmTestCase):
                                           'nameservers': []},
                                 'NET99': {'defaultRoute': True,
                                           'nameservers': ['8.8.8.8']}})
+
+
+@attr(type='unit')
+class TestStaticIpv4ConfigValidator(VdsmTestCase):
+
+    def test_ip_address_without_netmask_fails(self):
+        self._test_ip_config_fails(ipaddr='10.10.10.10')
+
+    def test_gateway_without_ip_address_fails(self):
+        self._test_ip_config_fails(gateway='10.10.10.1')
+
+    def test_netmask_without_ip_address_fails(self):
+        self._test_ip_config_fails(netmask='255.255.255.0')
+
+    def test_invalid_ip_address_fails(self):
+        self._test_ip_config_fails(ipaddr='10.10.10.10.10',
+                                   netmask='255.255.255.0')
+
+    def test_invalid_netmask_fails(self):
+        self._test_ip_config_fails(ipaddr='10.10.10.10',
+                                   netmask='355.255.255.0')
+
+    def test_invalid_gateway_fails(self):
+        self._test_ip_config_fails(ipaddr='10.10.10.10',
+                                   netmask='255.255.255.0',
+                                   gateway='abcdef')
+
+    def test_static_and_dhcp_mix_fails(self):
+        self._test_ip_config_fails(ipaddr='10.10.10.10',
+                                   netmask='255.255.255.0',
+                                   bootproto='dhcp')
+
+    def test_config_without_gateway(self):
+        STATIC_CONFIG = dict(ipaddr='10.10.10.10',
+                             netmask='255.255.255.0')
+        validator.validate_static_ipv4_config(STATIC_CONFIG)
+
+    def test_config_with_gateway(self):
+        STATIC_CONFIG = dict(ipaddr='10.10.10.10',
+                             netmask='255.255.255.0',
+                             gateway='10.10.10.1')
+        validator.validate_static_ipv4_config(STATIC_CONFIG)
+
+    def _test_ip_config_fails(self, **setup):
+        with self.assertRaises(ne.ConfigNetworkError) as cne:
+            validator.validate_static_ipv4_config(setup)
+        self.assertEqual(cne.exception.errCode, ne.ERR_BAD_ADDR)

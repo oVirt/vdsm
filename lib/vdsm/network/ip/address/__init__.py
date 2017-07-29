@@ -145,23 +145,6 @@ def driver(driver_name):
 class IPv4(object):
     def __init__(self, address=None, netmask=None, gateway=None,
                  defaultRoute=None, bootproto=None):
-        if address:
-            if not netmask:
-                raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Must specify '
-                                         'netmask to configure ip for '
-                                         'network.')
-            IPv4.validateAddress(address)
-            IPv4.validateNetmask(netmask)
-            if gateway:
-                IPv4.validateGateway(gateway)
-        else:
-            if netmask or gateway:
-                raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Specified netmask '
-                                         'or gateway but not ip address.')
-        if address and bootproto == 'dhcp':
-            raise ConfigNetworkError(
-                ne.ERR_BAD_ADDR, 'Mixing of static and dynamic IPv4 '
-                'configuration is currently not supported.')
         self.address = address
         self.netmask = netmask
         self.gateway = gateway

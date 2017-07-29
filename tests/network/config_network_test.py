@@ -71,21 +71,6 @@ class TestConfigNetwork(TestCaseBase):
         self._addNetworkWithExc('fakent', dict(nic='eth2', mtu=DEFAULT_MTU),
                                 errors.ERR_USED_BRIDGE)
 
-        # Test IP without netmask.
-        self._addNetworkWithExc('test', dict(nic='eth2', ipaddr='10.10.10.10',
-                                mtu=DEFAULT_MTU),
-                                errors.ERR_BAD_ADDR)
-
-        # Test netmask without IP.
-        self._addNetworkWithExc('test', dict(nic='eth2', mtu=DEFAULT_MTU,
-                                netmask='255.255.255.0'),
-                                errors.ERR_BAD_ADDR)
-
-        # Test gateway without IP.
-        self._addNetworkWithExc('test', dict(nic='eth2', gateway='10.10.0.1',
-                                mtu=DEFAULT_MTU),
-                                errors.ERR_BAD_ADDR)
-
         # Test for non existing nic.
         self._addNetworkWithExc('test', dict(nic='eth11', mtu=DEFAULT_MTU),
                                 errors.ERR_BAD_NIC)
