@@ -44,6 +44,7 @@ from vdsm import supervdsm
 from vdsm import utils
 from vdsm.common.threadlocal import vars
 from vdsm.common import api
+from vdsm.common import exception
 from vdsm.config import config
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
@@ -3041,9 +3042,12 @@ class HSM(object):
         :rtype: dict
         """
         vars.task.getSharedLock(STORAGE, sdUUID)
-        info = sdCache.produce(
-            sdUUID=sdUUID).produceVolume(imgUUID=imgUUID,
-                                         volUUID=volUUID).getInfo()
+        dom = sdCache.produce_manifest(sdUUID=sdUUID)
+        try:
+            vol = dom.produceVolume(imgUUID=imgUUID, volUUID=volUUID)
+        except se.VolumeDoesNotExist as e:
+            raise exception.expected(e)
+        info = vol.getInfo()
         return dict(info=info)
 
     @public
