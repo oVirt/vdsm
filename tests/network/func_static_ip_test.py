@@ -22,9 +22,10 @@ from __future__ import absolute_import
 
 from nose.plugins.attrib import attr
 
+from vdsm.network import errors as ne
 from vdsm.network.ipwrapper import addrAdd
 
-from .netfunctestlib import NetFuncTestCase, NOCHK
+from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
 from .nettestlib import dummy_device, dummy_devices
 
 NETWORK_NAME = 'test-network'
@@ -244,3 +245,53 @@ class IfacesWithMultiplesUsersLegacyTest(IfacesWithMultiplesUsersTemplate):
 class IfacesWithMultiplesUsersOvsTest(IfacesWithMultiplesUsersTemplate):
     __test__ = True
     switch = 'ovs'
+
+
+class TestIPValidationTemplate(NetFuncTestCase):
+
+    __test__ = False
+
+    def test_add_net_ip_missing_addresses_fails(self):
+        with dummy_device() as nic:
+            self._test_invalid_ip_config_fails(nic, ipaddr='1.2.3.4')
+            self._test_invalid_ip_config_fails(nic, gateway='1.2.3.4')
+            self._test_invalid_ip_config_fails(nic, netmask='255.255.255.0')
+
+    def test_add_net_out_of_range_addresses_fails(self):
+        with dummy_device() as nic:
+            self._test_invalid_ip_config_fails(
+                nic, ipaddr='1.2.3.256', netmask='255.255.0.0')
+            self._test_invalid_ip_config_fails(
+                nic, ipaddr='1.2.3.4', netmask='256.255.0.0')
+            self._test_invalid_ip_config_fails(nic,
+                                               ipaddr='1.2.3.4',
+                                               netmask='255.255.0.0',
+                                               gateway='1.2.3.256')
+
+    def test_add_net_bad_format_addresses_fails(self):
+        with dummy_device() as nic:
+            self._test_invalid_ip_config_fails(
+                nic, ipaddr='1.2.3.4.5', netmask='255.255.0.0')
+            self._test_invalid_ip_config_fails(
+                nic, ipaddr='1.2.3', netmask='255.255.0.0')
+
+    def _test_invalid_ip_config_fails(self, nic, **ip_config):
+        ip_config.update(switch=self.switch, nic=nic)
+        with self.assertRaises(SetupNetworksError) as err:
+            with self.setupNetworks({NETWORK_NAME: ip_config}, {}, NOCHK):
+                pass
+        self.assertEqual(err.exception.status, ne.ERR_BAD_ADDR)
+
+
+@attr(type='functional', switch='ovs')
+class TestIPValidationOVS(TestIPValidationTemplate):
+
+    __test__ = True
+    switch = 'ovs'
+
+
+@attr(type='functional', switch='legacy')
+class TestIPValidationLegacy(TestIPValidationTemplate):
+
+    __test__ = True
+    switch = 'legacy'
