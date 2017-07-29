@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import logging
-import os.path
 import threading
 from collections import defaultdict
 
@@ -36,9 +35,7 @@ from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm import API
 from vdsm import schedule
 from vdsm import utils
-from vdsm.network import connectivity
 
-from testlib import namedTemporaryDir
 from monkeypatch import MonkeyPatchScope
 
 from integration.sslhelper import DEAFAULT_SSL_CONTEXT
@@ -108,28 +105,26 @@ def constructAcceptor(log, ssl, jsonBridge,
 
     cif.json_binding = json_binding
 
-    with namedTemporaryDir() as tmp_dir:
-        client_log = os.path.join(tmp_dir, 'client.log')
-        with MonkeyPatchScope([
-            (API.clientIF, 'getInstance', lambda _: cif),
-            (connectivity, 'P_VDSM_CLIENT_LOG', client_log)
-        ]):
-            jsonBridge.cif = cif
+    with MonkeyPatchScope([
+        (API.clientIF, 'getInstance', lambda _: cif),
+        (API, 'confirm_connectivity', lambda: None)
+    ]):
+        jsonBridge.cif = cif
 
-            stompDetector = StompDetector(json_binding)
-            acceptor.add_detector(stompDetector)
+        stompDetector = StompDetector(json_binding)
+        acceptor.add_detector(stompDetector)
 
-            thread = threading.Thread(target=reactor.process_requests,
-                                      name='Detector thread')
-            thread.setDaemon(True)
-            thread.start()
+        thread = threading.Thread(target=reactor.process_requests,
+                                  name='Detector thread')
+        thread.setDaemon(True)
+        thread.start()
 
-            try:
-                yield acceptor
-            finally:
-                acceptor.stop()
-                json_binding.stop()
-                scheduler.stop(wait=False)
+        try:
+            yield acceptor
+        finally:
+            acceptor.stop()
+            json_binding.stop()
+            scheduler.stop(wait=False)
 
 
 @contextmanager
