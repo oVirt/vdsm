@@ -37,12 +37,18 @@ def validate_southbound_devices_usages(nets, ni):
         kernel_config.setNetwork(requested_net, net_info)
 
     underlying_devices = []
-    for net_attrs in six.viewvalues(kernel_config.networks):
+    for net_name, net_attrs in six.viewitems(kernel_config.networks):
         vlan = net_attrs.get('vlan')
         if 'bonding' in net_attrs:
             underlying_devices.append((net_attrs['bonding'], vlan))
         elif 'nic' in net_attrs:
             underlying_devices.append((net_attrs['nic'], vlan))
+        else:
+            if not net_attrs['bridged']:
+                raise ne.ConfigNetworkError(
+                    ne.ERR_BAD_PARAMS,
+                    'southbound device not specified for non-bridged '
+                    'network "{}"'.format(net_name))
 
     if len(set(underlying_devices)) < len(underlying_devices):
         raise ne.ConfigNetworkError(
