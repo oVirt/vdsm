@@ -4327,6 +4327,7 @@ class Vm(object):
 
         return {'status': doneCode, 'size': str(volSize.apparentsize)}
 
+    @api.logged(on='vdsm.api')
     def diskSizeExtend(self, driveSpecs, newSizeBytes):
         try:
             newSizeBytes = int(newSizeBytes)
