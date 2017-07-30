@@ -107,12 +107,14 @@ class BondBasicTemplate(NetFuncTestCase):
                               'bond0a',
                               'jamesbond007')
 
-        for bond_name in INVALID_BOND_NAMES:
-            BONDCREATE = {bond_name: {'nics': [], 'switch': self.switch}}
-            with self.assertRaises(SetupNetworksError) as cm:
-                with self.setupNetworks({}, BONDCREATE, NOCHK):
-                    pass
-            self.assertEqual(cm.exception.status, ne.ERR_BAD_BONDING)
+        with dummy_devices(2) as (nic1, nic2):
+            for bond_name in INVALID_BOND_NAMES:
+                BONDCREATE = {bond_name: {'nics': [nic1, nic2],
+                                          'switch': self.switch}}
+                with self.assertRaises(SetupNetworksError) as cm:
+                    with self.setupNetworks({}, BONDCREATE, NOCHK):
+                        pass
+                self.assertEqual(cm.exception.status, ne.ERR_BAD_BONDING)
 
     def test_add_bond_with_no_nics_fails(self):
         BONDCREATE = {BOND_NAME: {'nics': [], 'switch': self.switch}}
