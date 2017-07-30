@@ -62,3 +62,12 @@ class TestBondNameValidation(TestCaseBase):
         with self.assertRaises(ne.ConfigNetworkError) as cne:
             validator.validate_bond_names(nets, bonds)
         self.assertEqual(cne.exception.errCode, ne.ERR_BAD_BONDING)
+
+
+@attr(type='unit')
+class TestBondConfigValidation(TestCaseBase):
+
+    def test_bond_without_nics_fails(self):
+        with self.assertRaises(ne.ConfigNetworkError) as cne:
+            validator.validate_bond_configuration({BOND_NAME: {'nics': []}})
+        self.assertEqual(cne.exception.errCode, ne.ERR_BAD_PARAMS)

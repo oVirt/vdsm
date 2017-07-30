@@ -27,6 +27,7 @@ from vdsm.network import errors as ne
 
 def validate(nets, bonds):
     validate_bond_names(nets, bonds)
+    validate_bond_configuration(bonds)
 
 
 def validate_bond_names(nets, bonds):
@@ -40,3 +41,14 @@ def validate_bond_names(nets, bonds):
         raise ne.ConfigNetworkError(ne.ERR_BAD_BONDING,
                                     'bad bond name(s): {}'.format(
                                         ', '.join(bad_bond_names)))
+
+
+def validate_bond_configuration(bonds):
+    for bond_name, bond_attrs in six.viewitems(bonds):
+        if bond_attrs.get('remove', False):
+            continue
+
+        nics = bond_attrs.get('nics', [])
+        if not nics:
+            raise ne.ConfigNetworkError(ne.ERR_BAD_PARAMS, '{}: Must specify '
+                                        'nics for bonding'.format(bond_name))

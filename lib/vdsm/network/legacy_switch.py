@@ -581,10 +581,7 @@ def validate_network_setup(networks, bondings):
         if bondingAttrs.get('remove', False):
             continue
 
-        nics = bondingAttrs.get('nics', None)
-        if not nics:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
-                                     'Must specify nics for bonding')
+        nics = bondingAttrs['nics']
         if not set(nics).issubset(currentNicsSet):
             raise ConfigNetworkError(ne.ERR_BAD_NIC,
                                      'Unknown nics in: %r' % list(nics))
