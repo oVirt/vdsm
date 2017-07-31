@@ -22,27 +22,4 @@ SUBDIRS = configurators ip link netinfo netlink ovs tc nm netswitch
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmnetworkdir = $(vdsmpylibdir)/network
-dist_vdsmnetwork_PYTHON = \
-	__init__.py \
-	api.py \
-	errors.py \
-	canonicalize.py \
-	cmd.py \
-	connectivity.py \
-	dhclient_monitor.py \
-	driverloader.py \
-	ifacetracking.py \
-	ifacquire.py \
-	initializer.py \
-	ipwrapper.py \
-	kernelconfig.py \
-	legacy_switch.py \
-	models.py \
-	netconfpersistence.py \
-	netrestore.py \
-	netupgrade.py \
-	py2to3.py \
-	restore_net_config.py \
-	sourceroute.py \
-	sysctl.py \
-	$(NULL)
+dist_vdsmnetwork_PYTHON = *.py
