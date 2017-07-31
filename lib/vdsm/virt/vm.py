@@ -1127,8 +1127,7 @@ class Vm(object):
             return False
 
         if not self._shouldExtendVolume(
-            drive, drive.volumeID, capacity, alloc, physical
-        ):
+                drive, drive.volumeID, capacity, alloc, physical):
             return False
 
         self.log.info(
