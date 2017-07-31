@@ -18,8 +18,6 @@
 #
 from __future__ import absolute_import
 
-import re
-
 import six
 
 from vdsm.network import errors as ne
@@ -54,16 +52,3 @@ def validate_southbound_devices_usages(nets, ni):
             'kernel networks: {}\nrequested networks: {}'.format(
                 kernel_config.networks,
                 nets))
-
-
-def validate_bond_names(nets, bonds):
-    bad_bond_names = {bond for bond in bonds if
-                      not re.match('^bond[0-9]+$', bond)}
-    bad_bond_names |= {net_attrs['bonding'] for net_attrs in
-                       six.viewvalues(nets) if 'bonding' in net_attrs and
-                       not re.match('^bond[0-9]+$', net_attrs['bonding'])}
-
-    if bad_bond_names:
-        raise ne.ConfigNetworkError(ne.ERR_BAD_BONDING,
-                                    'bad bond name(s): {}'.format(
-                                        ', '.join(bad_bond_names)))

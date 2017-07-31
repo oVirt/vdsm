@@ -30,13 +30,14 @@ from vdsm import hooks
 from vdsm.network import connectivity
 from vdsm.network import netswitch
 from vdsm.network import sourceroute
+from vdsm.network import validator
 from vdsm.network.configurators.ifcfg import ConfigWriter
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 from vdsm.network.link import iface as link_iface
 from vdsm.network.link import sriov
 from vdsm.network.lldp import info as lldp_info
 
-from . ip import address as ipaddress, validator as ipvalidator
+from . ip import address as ipaddress
 from . canonicalize import canonicalize_networks, canonicalize_bondings
 from . errors import RollbackIncomplete
 from . import netconfpersistence
@@ -193,8 +194,7 @@ def setupNetworks(networks, bondings, options):
         canonicalize_bondings(bondings)
 
         logging.debug('Validating configuration')
-        ipvalidator.validate(networks)
-        netswitch.configurator.validate(networks, bondings)
+        validator.validate(networks, bondings)
 
         running_config = netconfpersistence.RunningConfig()
         if netswitch.configurator.switch_type_change_needed(
