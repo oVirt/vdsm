@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 import itertools
+import json
 import logging
 import os
 import tempfile
@@ -504,6 +505,7 @@ class Vm(object):
                     exit_info[key] = value
             self._exit_info.update(exit_info)
             self._mem_guaranteed_size_mb = md.get('minGuaranteedMemoryMb', 0)
+            self.conf['_blockJobs'] = json.loads(md.get('block_jobs', '{}'))
             cluster_version = md.get('clusterVersion')
             if cluster_version is not None:
                 self._cluster_version = [int(v)
@@ -5217,7 +5219,7 @@ class Vm(object):
                                "%s already exists for image %s", jobID,
                                job['jobID'], drive['imageID'])
                 raise BlockJobExistsError()
-        self.saveState()
+        self._save_block_job_info()
 
     def untrackBlockJob(self, jobID):
         with self._confLock:
@@ -5227,8 +5229,15 @@ class Vm(object):
                 # If there was contention on the confLock, this may have
                 # already been removed
                 return False
-        self.saveState()
+        self._save_block_job_info()
         return True
+
+    def _save_block_job_info(self):
+        self.saveState()
+        with self._md_desc.values() as vm:
+            vm['block_jobs'] = json.dumps(self.conf['_blockJobs'])
+        # _sync_metadata is included in the following call
+        self._save_legacy_disk_conf_to_metadata()
 
     def _activeLayerCommitReady(self, jobInfo, drive):
         try:
