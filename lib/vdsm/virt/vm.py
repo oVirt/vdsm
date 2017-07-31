@@ -1104,7 +1104,7 @@ class Vm(object):
         extended = False
 
         try:
-            for drive in self.getDiskDevices():
+            for drive in self._chunkedDrives():
                 if self.try_to_extend_drive(drive):
                     extended = True
         except ImprobableResizeRequestError:
@@ -1113,9 +1113,6 @@ class Vm(object):
         return extended
 
     def try_to_extend_drive(self, drive):
-        if not drive.chunked and not drive.replicaChunked:
-            return False
-
         try:
             capacity, alloc, physical = self._getExtendInfo(drive)
         except libvirt.libvirtError as e:
