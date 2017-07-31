@@ -388,4 +388,4 @@ class DriveWatermarkMonitor(_RunnableOnVm):
                 self._vm.needsDriveMonitoring())
 
     def _execute(self):
-        self._vm.extendDrivesIfNeeded()
+        self._vm.monitor_drives()

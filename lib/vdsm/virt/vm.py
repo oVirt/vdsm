@@ -1093,11 +1093,11 @@ class Vm(object):
 
         This is called every 2 seconds (configurable) by the periodic system.
         If this returns True, the periodic system will invoke
-        extendDrivesIfNeeded during this periodic cycle.
+        monitor_drives during this periodic cycle.
         """
         return self._driveMonitorEnabled and bool(self._chunkedDrives())
 
-    def extendDrivesIfNeeded(self):
+    def monitor_drives(self):
         """
         Return True if at least one drive is being extended, False otherwise.
         """
@@ -1105,14 +1105,20 @@ class Vm(object):
 
         try:
             for drive in self._chunkedDrives():
-                if self.try_to_extend_drive(drive):
+                if self.extend_drive_if_needed(drive):
                     extended = True
         except ImprobableResizeRequestError:
             return False
 
         return extended
 
-    def try_to_extend_drive(self, drive):
+    def extend_drive_if_needed(self, drive):
+        """
+        Check if a drive should be extended, and start extension flow if
+        needed.
+
+        Return True if started an extension flow, False otherwise.
+        """
         try:
             capacity, alloc, physical = self._getExtendInfo(drive)
         except libvirt.libvirtError as e:
@@ -4512,7 +4518,7 @@ class Vm(object):
             self._setGuestCpuRunning(False)
             self._logGuestCpuStatus('onIOError')
             if reason == 'ENOSPC':
-                if not self.extendDrivesIfNeeded():
+                if not self.monitor_drives():
                     self.log.info("No VM drives were extended")
 
             self._send_ioerror_status_event(reason, blockDevAlias)
