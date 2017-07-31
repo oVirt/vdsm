@@ -75,7 +75,10 @@ class Dispatcher(object):
                     return response
                 except se.GeneralException as e:
                     # Match api.method format
-                    self.log.error("FINISH %s error=%s", name, e)
+                    if e.expected:
+                        self.log.info("FINISH %s error=%s", name, e)
+                    else:
+                        self.log.error("FINISH %s error=%s", name, e)
                     return e.response()
                 except BaseException as e:
                     # Match api.method format
