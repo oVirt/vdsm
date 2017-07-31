@@ -877,7 +877,7 @@ class Task:
             return fn(*args, **kargs)
         except se.StorageException as e:
             code = e.code
-            message = e.message
+            message = str(e)
             self._setError(e)
         except Exception as e:
             message = unicode(e)
