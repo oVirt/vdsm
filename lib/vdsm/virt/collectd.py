@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 
 import logging
+import math
 import socket
 
 from vdsm.config import config
@@ -92,8 +93,13 @@ class Client(object):
     def list(self):
         return self._cmd('LISTVAL')
 
-    def get(self, key):
-        return self._cmd('GETVAL "{key}"'.format(key=key))
+    def get(self, key, raise_if_nan=True):
+        ret = self._cmd('GETVAL "{key}"'.format(key=key))
+        if raise_if_nan:
+            for r in ret:
+                if math.isnan(r):
+                    raise ValueError(key)
+        return ret
 
     def _cmd(self, req):
         if self._fobjw is None or self._fobjr is None:

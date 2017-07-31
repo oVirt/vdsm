@@ -20,6 +20,8 @@
 
 from __future__ import absolute_import
 
+import math
+
 from vdsm.virt import collectd
 
 from testlib import VdsmTestCase
@@ -60,6 +62,24 @@ class CollectdTests(VdsmTestCase):
             with collectd.Client(server.path) as client:
                 x = client.get('success/{key}'.format(key=key))
                 self.assertEqual(x, value)
+
+    def test_get_value_nan(self):
+        with collectdlib.run_server() as server:
+            with collectd.Client(server.path) as client:
+                x = client.get(
+                    'success/value=NaN',
+                    raise_if_nan=False
+                )
+                self.assertTrue(math.isnan(x[0]))
+
+    def test_raise_valueerror_if_nan(self):
+        with collectdlib.run_server() as server:
+            with collectd.Client(server.path) as client:
+                self.assertRaises(
+                    ValueError,
+                    client.get,
+                    'success/value=NaN',
+                )
 
     def test_get_error(self):
         with collectdlib.run_server() as server:
