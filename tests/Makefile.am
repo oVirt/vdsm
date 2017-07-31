@@ -117,6 +117,7 @@ test_modules = \
 	vdsmapi_test.py \
 	vdsmdumpchains_test.py \
 	verify.py \
+	virt_drivemonitor_test.py \
 	vmapi_test.py \
 	vmfakelib_test.py \
 	vmmigration_test.py \
@@ -165,6 +166,7 @@ blacklist_modules_python3 = \
 	unicode_test.py \
 	utils_test.py \
 	v2v_test.py \
+	virt_drivemonitor_test.py \
 	vmapi_test.py \
 	vmmigration_test.py \
 	vmoperations_test.py \
