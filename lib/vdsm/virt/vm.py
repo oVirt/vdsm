@@ -1103,9 +1103,12 @@ class Vm(object):
         """
         extended = False
 
-        for drive in self.getDiskDevices():
-            if self.try_to_extend_drive(drive):
-                extended = True
+        try:
+            for drive in self.getDiskDevices():
+                if self.try_to_extend_drive(drive):
+                    extended = True
+        except ImprobableResizeRequestError:
+            return False
 
         return extended
 
@@ -1120,12 +1123,9 @@ class Vm(object):
                            drive.name, e)
             return False
 
-        try:
-            if not self._shouldExtendVolume(
-                drive, drive.volumeID, capacity, alloc, physical
-            ):
-                return False
-        except ImprobableResizeRequestError:
+        if not self._shouldExtendVolume(
+            drive, drive.volumeID, capacity, alloc, physical
+        ):
             return False
 
         self.log.info(
