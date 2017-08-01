@@ -96,10 +96,17 @@ def method(func, *args, **kwargs):
     _log.debug("START %s args=%s kwargs=%s", func.__name__, args, kwargs)
     try:
         ret = func(*args, **kwargs)
+    except exception.VdsmException as e:
+        if e.expected:
+            # This is expected condition, typically a user error, not an error
+            # of vdsm.
+            _log.info("FINISH %s error=%s", func.__name__, e)
+        else:
+            _log.exception("FINISH %s error=%s", func.__name__, e)
+        return e.response()
     except Exception as e:
         _log.exception("FINISH %s error=%s", func.__name__, e)
-        if not isinstance(e, exception.VdsmException):
-            e = exception.GeneralException(str(e))
+        e = exception.GeneralException(str(e))
         return e.response()
     _log.debug("FINISH %s response=%s", func.__name__, ret)
 
