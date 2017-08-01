@@ -91,46 +91,6 @@ def send_metrics(hoststats):
             data[storage_prefix + '.delay'] = dom_info['delay']
             data[storage_prefix + '.last_check'] = dom_info['lastCheck']
 
-        data[prefix + '.memory.available'] = hoststats['memAvailable']
-        data[prefix + '.memory.committed'] = hoststats['memCommitted']
-        data[prefix + '.memory.free_mb'] = hoststats['memFree']
-        data[prefix + '.memory.usage_percent'] = hoststats['memUsed']
-        data[prefix + '.memory.anon_huge_pages'] = hoststats['anonHugePages']
-
-        data[prefix + '.swap.total_mb'] = hoststats['swapTotal']
-        data[prefix + '.swap.free_mb'] = hoststats['swapFree']
-
-        data[prefix + '.vms.active'] = hoststats['vmActive']
-        data[prefix + '.vms.total'] = hoststats['vmCount']
-
-        data[prefix + '.cpu.load'] = hoststats['cpuLoad']
-        data[prefix + '.cpu.user'] = hoststats['cpuUser']
-        data[prefix + '.cpu.sys'] = hoststats['cpuSys']
-        data[prefix + '.cpu.idle'] = hoststats['cpuIdle']
-        data[prefix + '.cpu.sys_vdsmd'] = hoststats['cpuSysVdsmd']
-        data[prefix + '.cpu.user_vdsmd'] = hoststats['cpuUserVdsmd']
-
-        if 'ksmPages' in hoststats:
-            data[prefix + '.cpu.ksm_pages'] = hoststats['ksmPages']
-            data[prefix + '.cpu.ksm_cpu_precent'] = hoststats['ksmCpu']
-
-        if hoststats['haStats']['configured']:
-            data[prefix + '.ha_score'] = hoststats['haScore']
-
-        data[prefix + '.elapsed_time'] = hoststats['elapsedTime']
-
-        if 'network' in hoststats:
-            for interface in hoststats['network']:
-                if_info = hoststats['network'][interface]
-                net_prefix = prefix + '.nic.' + interface.replace('.', '_')
-                data[net_prefix + '.speed'] = if_info['speed']
-                data[net_prefix + '.rx_errors'] = if_info['rxErrors']
-                data[net_prefix + '.tx_errors'] = if_info['txErrors']
-                data[net_prefix + '.rx_dropped'] = if_info['rxDropped']
-                data[net_prefix + '.tx_dropped'] = if_info['txDropped']
-                data[net_prefix + '.rx'] = if_info['rx']
-                data[net_prefix + '.tx'] = if_info['tx']
-
         metrics.send(data)
     except KeyError:
         logging.exception('Host metrics collection failed')
