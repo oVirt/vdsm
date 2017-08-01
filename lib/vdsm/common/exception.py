@@ -24,6 +24,13 @@ class VdsmException(Exception):
     code = 0
     message = "Vdsm Exception"
 
+    # A flag that is used to mark expected errors. Setting this to True will
+    # suppress error logs for the exception. Error subclasses that are always
+    # caller errors, should override this to True. Other errors, that may be
+    # real Vdsm error or client errors, may change this in the error instance
+    # depending on the context of the error.
+    expected = False
+
     def __str__(self):
         return self.message
 
@@ -32,6 +39,14 @@ class VdsmException(Exception):
 
     def response(self):
         return {'status': self.info()}
+
+
+def expected(error):
+    """
+    Mark an exception as expected.
+    """
+    error.expected = True
+    return error
 
 
 class ContextException(VdsmException):
