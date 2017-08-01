@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2013-2016 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import six
 from nose.plugins.attrib import attr
 
 from testValidation import ValidateRunningAsRoot
+from vdsm.network import ethtool
 from vdsm.network import ipwrapper
 from vdsm.network import py2to3
 from vdsm.network.ipwrapper import Route
@@ -129,7 +130,7 @@ class TestDrvinfo(TestCaseBase):
         self._bridge.delDevice()
 
     def testBridgeEthtoolDrvinfo(self):
-        self.assertEqual(ipwrapper.drv_name(self._bridge.devName),
+        self.assertEqual(ethtool.driver_name(self._bridge.devName),
                          ipwrapper.LinkType.BRIDGE)
 
     def testEnablePromisc(self):
@@ -165,5 +166,5 @@ class TestUnicodeDrvinfo(TestCaseBase):
 
     def testUtf8BridgeEthtoolDrvinfo(self):
         self.assertEqual(
-            ipwrapper.drv_name(self._bridge.devName),
+            ethtool.driver_name(self._bridge.devName),
             ipwrapper.LinkType.BRIDGE)

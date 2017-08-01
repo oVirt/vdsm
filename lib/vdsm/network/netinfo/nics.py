@@ -23,7 +23,8 @@ from functools import partial
 import logging
 
 from vdsm.network.link import dpdk
-from vdsm.network.ipwrapper import drv_name, Link
+from vdsm.network.ipwrapper import Link
+from vdsm.network.ethtool import driver_name
 from .misc import visible_devs
 
 OPERSTATE_UP = 'up'
@@ -72,7 +73,7 @@ def _ibHackedSpeed(nic_name):
     https://bugzilla.redhat.com/show_bug.cgi?id=1101314
     """
     try:
-        return 10000 if drv_name(nic_name) == 'ib_ipoib' else 0
+        return 10000 if driver_name(nic_name) == 'ib_ipoib' else 0
     except IOError:
         return 0
 
