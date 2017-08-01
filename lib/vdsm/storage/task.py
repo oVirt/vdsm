@@ -866,8 +866,10 @@ class Task:
         finally:
             self._decref()
 
-    def _setError(self, e=se.TaskAborted("Unknown error encountered")):
-        self.log.error("Unexpected error", exc_info=True)
+    def _setError(self, e=se.TaskAborted("Unknown error encountered"),
+                  expected=False):
+        if not expected:
+            self.log.exception("Unexpected error")
         self.error = e
 
     def _run(self, fn, *args, **kargs):
@@ -878,7 +880,7 @@ class Task:
         except se.StorageException as e:
             code = e.code
             message = str(e)
-            self._setError(e)
+            self._setError(e, e.expected)
         except Exception as e:
             message = unicode(e)
             self._setError(e)
