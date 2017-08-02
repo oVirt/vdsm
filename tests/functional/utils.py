@@ -174,6 +174,7 @@ class _VdsProxy(object):
         """Keeps pinging vdsm for operations that need it"""
         def ping():
             while not done:
+                # TODO: ping is deprecated, use confirmConnectivity instead
                 self.vdscli.ping()
                 time.sleep(1)
         try:

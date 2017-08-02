@@ -8370,7 +8370,16 @@ Host.hostdevReattach:
 
 Host.ping:
     added: '3.1'
+    deprecated: '4.2'
     description: Test connectivity to vdsm.
+
+Host.ping2:
+    added: '4.2'
+    description: Test connectivity to vdsm.
+
+Host.confirmConnectivity:
+    added: '4.2'
+    description: Confirm remaining external connectivity to vdsm host.
 
 Host.setLogLevel:
     added: '3.1'

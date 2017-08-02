@@ -22,6 +22,7 @@
 
 from __future__ import absolute_import
 
+import logging
 import os
 
 from vdsm.network.api import confirm_connectivity
@@ -1287,9 +1288,27 @@ class Global(APIBase):
                 'power': 'unknown', 'operationStatus': 'initiated'}
 
     def ping(self):
-        "Ping the server. Useful for tests"
+        """Ping the server and confirm network connectivity.
+
+        Deprecated, functionality was split into ping2 and confirmConnectivity.
+        """
+        logging.warning(
+            'ping was deprecated in favor of ping2 and confirmConnectivity')
         confirm_connectivity()
-        return {'status': doneCode}
+        return response.success()
+
+    def ping2(self):
+        """Ping the server."""
+        return response.success()
+
+    def confirmConnectivity(self):
+        """Confirm network connectivity.
+
+        This verb should be called by engine to confirm remaining connectivity
+        after successful setupNetworks call.
+        """
+        confirm_connectivity()
+        return response.success()
 
     @api.logged(on="api.host")
     def getCapabilities(self):
