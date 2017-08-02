@@ -875,6 +875,10 @@ class Vm(object):
         else:
             self.log.error("Unexpected VM state: %s (reason %s)",
                            state, reason)
+            # We must unset WAIT_FOR_LAUNCH status otherwise clientIF will wait
+            # for status change forever. Setting UP in such a case is
+            # consistent with the libvirtError fallback above.
+            self.set_last_status(vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
 
     def disableDriveMonitor(self):
         self._driveMonitorEnabled = False
