@@ -131,14 +131,6 @@ VALID_STATES = (vmstatus.DOWN, vmstatus.MIGRATION_DESTINATION,
                 vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
 
 
-# TODO: Remove these constants and their usages once
-# https://bugzilla.redhat.com/1459113 is done and the updated libvirt is
-# available.
-_PERSISTENT_DOMAINS = hasattr(libvirt, 'VIR_DOMAIN_BLOCK_COPY_TRANSIENT_JOB')
-VIR_DOMAIN_BLOCK_COPY_TRANSIENT_JOB = \
-    getattr(libvirt, 'VIR_DOMAIN_BLOCK_COPY_TRANSIENT_JOB', 0)
-
-
 class ConsoleDisconnectAction:
     NONE = 'NONE'
     LOCK_SCREEN = 'LOCK_SCREEN'
@@ -2188,8 +2180,6 @@ class Vm(object):
                                    'inconsistent state', device.device)
 
     def _undefine_domain(self):
-        if not _PERSISTENT_DOMAINS:
-            return
         try:
             self._dom.undefine()
         except libvirt.libvirtError as e:
@@ -2474,11 +2464,10 @@ class Vm(object):
 
         if self.recovering:
             dom = self._connection.lookupByUUIDString(self.id)
-            if _PERSISTENT_DOMAINS:
-                state, reason = dom.state(0)
-                if state in vmstatus.LIBVIRT_DOWN_STATES:
-                    self._dom = virdomain.Defined(self.id, dom)
-                    return
+            state, reason = dom.state(0)
+            if state in vmstatus.LIBVIRT_DOWN_STATES:
+                self._dom = virdomain.Defined(self.id, dom)
+                return
             self._dom = virdomain.Notifying(dom, self._timeoutExperienced)
             for dev in self._devices[hwclass.NIC]:
                 dev.recover()
@@ -2504,8 +2493,7 @@ class Vm(object):
             # see the XML even with 'info' as default level.
             self.log.info(srcDomXML)
 
-            if _PERSISTENT_DOMAINS:
-                self._connection.defineXML(srcDomXML)
+            self._connection.defineXML(srcDomXML)
             restore_path = self._altered_state.path
             fname = self.cif.prepareVolumePath(restore_path)
             try:
@@ -2539,16 +2527,11 @@ class Vm(object):
                 # see the XML even with 'info' as default level.
                 self.log.info(domxml)
 
-                if _PERSISTENT_DOMAINS:
-                    dom = self._connection.defineXML(domxml)
-                    self._dom = virdomain.Defined(self.id, dom)
-                    self._update_metadata()
-                    dom.createWithFlags(flags)
-                else:
-                    dom = self._connection.createXML(domxml, flags)
+                dom = self._connection.defineXML(domxml)
+                self._dom = virdomain.Defined(self.id, dom)
+                self._update_metadata()
+                dom.createWithFlags(flags)
                 self._dom = virdomain.Notifying(dom, self._timeoutExperienced)
-                if not _PERSISTENT_DOMAINS:
-                    self._update_metadata()
                 hooks.after_vm_start(self._dom.XMLDesc(0), self._custom)
                 for dev in self._customDevices():
                     hooks.after_device_create(dev._deviceXML, self._custom,
@@ -2560,8 +2543,6 @@ class Vm(object):
             self._domDependentInit()
 
     def _remove_domain_artifacts(self):
-        if not _PERSISTENT_DOMAINS:
-            return
         _undefine_stale_domain(self, self._connection)
 
     def _updateDevices(self, devices):
@@ -4335,7 +4316,7 @@ class Vm(object):
 
         flags = (libvirt.VIR_DOMAIN_BLOCK_COPY_SHALLOW |
                  libvirt.VIR_DOMAIN_BLOCK_COPY_REUSE_EXT |
-                 VIR_DOMAIN_BLOCK_COPY_TRANSIENT_JOB)
+                 libvirt.VIR_DOMAIN_BLOCK_COPY_TRANSIENT_JOB)
 
         self._dom.blockCopy(drive.name, destxml, flags=flags)
 
