@@ -244,6 +244,36 @@ class _AlteredState(object):
         return self.origin is not None
 
 
+def _undefine_stale_domain(vm, connection):
+    doms_to_remove = []
+    try:
+        dom = connection.lookupByUUIDString(vm.id)
+    except libvirt.libvirtError as e:
+        if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN:
+            raise
+    else:
+        doms_to_remove.append(dom)
+    try:
+        dom = connection.lookupByName(vm.name)
+    except libvirt.libvirtError as e:
+        if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN:
+            raise
+    else:
+        doms_to_remove.append(dom)
+    for dom in doms_to_remove:
+        try:
+            state, reason = dom.state(0)
+            if state in _LIBVIRT_DOWN_STATES:
+                dom.undefine()
+                vm.log.debug("Stale domain removed: %s", (vm.id,))
+            else:
+                raise exception.VMExists("VM %s is already running: %s" %
+                                         (vm.id, state,))
+        except libvirt.libvirtError as e:
+            if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN:
+                raise
+
+
 class Vm(object):
     """
     Used for abstracting communication between various parts of the
@@ -2362,7 +2392,7 @@ class Vm(object):
         self.log.info("VM wrapper has started")
         if not self.recovering and \
            self._altered_state.origin != _MIGRATION_ORIGIN:
-            self._undefine_stale_domain()
+            self._remove_domain_artifacts()
 
         self._devices = self._make_devices()
 
@@ -2462,22 +2492,10 @@ class Vm(object):
         if initDomain:
             self._domDependentInit()
 
-    def _undefine_stale_domain(self):
+    def _remove_domain_artifacts(self):
         if not _PERSISTENT_DOMAINS:
             return
-        try:
-            dom = self._connection.lookupByUUIDString(self.id)
-        except libvirt.libvirtError as e:
-            if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN:
-                raise
-        else:
-            state, reason = dom.state(0)
-            if state in _LIBVIRT_DOWN_STATES:
-                dom.undefine()
-                self.log.debug("Stale domain removed: %s", (self.id,))
-            else:
-                raise exception.VMExists("VM %s is already running: %s" %
-                                         (self.id, state,))
+        _undefine_stale_domain(self, self._connection)
 
     def _updateDevices(self, devices):
         """
