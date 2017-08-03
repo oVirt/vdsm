@@ -123,9 +123,6 @@ class Vlan(NetDevice):
     def __init__(self, device, tag, configurator, ipv4=None, ipv6=None,
                  blockingdhcp=False, mtu=None, name=None):
         self.validateTag(tag)
-        if device is None:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Missing required vlan'
-                                     ' underlying device definition.')
         device.master = self
         self.device = device
         self.tag = tag

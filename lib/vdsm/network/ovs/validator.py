@@ -45,15 +45,6 @@ def validate_net_configuration(net, attrs, bonds, running_bonds, kernel_nics):
         if bond and not running_bond and not bond2setup:
             raise ne.ConfigNetworkError(
                 ne.ERR_BAD_BONDING, 'Bond %s does not exist' % bond)
-    else:
-        # We do not support ifaceless VLANs in Vdsm, because of legacy VLAN
-        # device requires an iface to lie on. It wouldn't be a problem in OVS,
-        # where we use tagged fake bridges instead of VLANs. However, ifaceless
-        # VLANs are permited in order to keep feature parity.
-        # TODO: This limitation could be dropped in the future.
-        if not nic and not bond:
-            raise ne.ConfigNetworkError(
-                ne.ERR_BAD_VLAN, 'Vlan device requires a nic/bond')
 
 
 # TODO: Pass all nets and bonds to validator at once, not one by one.

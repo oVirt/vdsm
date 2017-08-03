@@ -28,6 +28,7 @@ from vdsm.network import errors as ne
 def validate(nets, bonds):
     validate_bond_names(nets, bonds)
     validate_bond_configuration(bonds)
+    validate_vlan_configuration(nets)
 
 
 def validate_bond_names(nets, bonds):
@@ -52,3 +53,15 @@ def validate_bond_configuration(bonds):
         if not nics:
             raise ne.ConfigNetworkError(ne.ERR_BAD_PARAMS, '{}: Must specify '
                                         'nics for bonding'.format(bond_name))
+
+
+def validate_vlan_configuration(nets):
+    for net_name, net_attrs in six.viewitems(nets):
+        if net_attrs.get('remove', False):
+            continue
+
+        if 'vlan' in net_attrs:
+            if 'nic' not in net_attrs and 'bonding' not in net_attrs:
+                raise ne.ConfigNetworkError(ne.ERR_BAD_VLAN,
+                                            '{}: vlan device requires south'
+                                            'bound device'.format(net_name))

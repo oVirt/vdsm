@@ -28,6 +28,7 @@ from nose.plugins.attrib import attr
 
 BOND_NAME = 'bond1'
 NETWORK1_NAME = 'test-network1'
+VLANID = 10
 
 
 @attr(type='unit')
@@ -71,3 +72,13 @@ class TestBondConfigValidation(TestCaseBase):
         with self.assertRaises(ne.ConfigNetworkError) as cne:
             validator.validate_bond_configuration({BOND_NAME: {'nics': []}})
         self.assertEqual(cne.exception.errCode, ne.ERR_BAD_PARAMS)
+
+
+@attr(type='unit')
+class TestVlanConfigValidation(TestCaseBase):
+
+    def test_vlan_without_sb_device_fails(self):
+        with self.assertRaises(ne.ConfigNetworkError) as cne:
+            validator.validate_vlan_configuration(
+                {NETWORK1_NAME: {'vlan': VLANID}})
+        self.assertEqual(cne.exception.errCode, ne.ERR_BAD_VLAN)

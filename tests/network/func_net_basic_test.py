@@ -120,7 +120,7 @@ class NetworkBasicTemplate(NetFuncTestCase):
         with self.assertRaises(SetupNetworksError) as err:
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 pass
-        self.assertEqual(err.exception.status, ne.ERR_BAD_PARAMS)
+        self.assertEqual(err.exception.status, ne.ERR_BAD_VLAN)
 
     def test_add_bridgeless_vlaned_net_missing_sb_device_fails(self):
         NETCREATE = {NETWORK_NAME: {'bridged': False,
@@ -129,7 +129,7 @@ class NetworkBasicTemplate(NetFuncTestCase):
         with self.assertRaises(SetupNetworksError) as err:
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 pass
-        self.assertEqual(err.exception.status, ne.ERR_BAD_PARAMS)
+        self.assertEqual(err.exception.status, ne.ERR_BAD_VLAN)
 
     def test_add_bridged_vlaned_and_non_vlaned_nets_same_nic(self):
         self._test_add_vlaned_and_non_vlaned_nets_same_nic(bridged=True)
