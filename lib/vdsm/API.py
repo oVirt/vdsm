@@ -114,6 +114,7 @@ class Task(APIBase):
         return self._irs.stopTask(self._UUID)
 
 
+# TODO: use a class decorator instead of decorating each method.
 class VM(APIBase):
     BLANK_UUID = '00000000-0000-0000-0000-000000000000'
     ctorArgs = ['vmID']
@@ -129,6 +130,7 @@ class VM(APIBase):
             raise exception.expected(exception.NoSuchVM(vmId=self._UUID))
         return vm
 
+    @api.logged(on="api.virt")
     @api.method
     def changeCD(self, driveSpec):
         """
@@ -141,6 +143,7 @@ class VM(APIBase):
         """
         return self.vm.changeCD(driveSpec)
 
+    @api.logged(on="api.virt")
     @api.method
     def changeFloppy(self, driveSpec):
         """
@@ -153,10 +156,12 @@ class VM(APIBase):
         """
         return self.vm.changeFloppy(driveSpec)
 
+    @api.logged(on="api.virt")
     @api.method
     def cont(self):
         return self.vm.cont()
 
+    @api.logged(on="api.virt")
     @api.method
     def create(self, vmParams):
         """
@@ -246,6 +251,7 @@ class VM(APIBase):
             vmParams['vmName'] = 'n%s' % vmParams['vmId']
         return vmParams
 
+    @api.logged(on="api.virt")
     @api.method
     def desktopLock(self):
         """
@@ -257,6 +263,7 @@ class VM(APIBase):
         else:
             return errCode['nonresp']
 
+    @api.logged(on="api.virt")
     @api.method
     def desktopLogin(self, domain, username, password):
         """
@@ -268,6 +275,7 @@ class VM(APIBase):
         else:
             return errCode['nonresp']
 
+    @api.logged(on="api.virt")
     @api.method
     def desktopLogoff(self, force):
         """
@@ -279,6 +287,7 @@ class VM(APIBase):
         else:
             return errCode['nonresp']
 
+    @api.logged(on="api.virt")
     @api.method
     def desktopSendHcCommand(self, message):
         """
@@ -290,6 +299,7 @@ class VM(APIBase):
         else:
             return errCode['nonresp']
 
+    @api.logged(on="api.virt")
     @api.method
     def destroy(self, gracefulAttempts=1):
         """
@@ -304,6 +314,7 @@ class VM(APIBase):
                 status['status']['message'] = "Machine destroyed"
             return status
 
+    @api.logged(on="api.virt")
     @api.method
     def getMigrationStatus(self):
         """
@@ -316,6 +327,7 @@ class VM(APIBase):
             return errCode['noVM']
         return {'status': doneCode, 'migrationStats': v.migrateStatus()}
 
+    @api.logged(on="api.virt")
     @api.method
     def getStats(self):
         """
@@ -335,6 +347,7 @@ class VM(APIBase):
         stats = hooks.after_get_vm_stats([stats])[0]
         return {'status': doneCode, 'statsList': [stats]}
 
+    @api.logged(on="api.virt")
     @api.method
     def hibernate(self, hibernationVolHandle):
         """
@@ -350,6 +363,7 @@ class VM(APIBase):
             response['status']['message'] = 'Hibernation process starting'
         return response
 
+    @api.logged(on="api.virt")
     @api.method
     def updateDevice(self, params):
         validate.require_keys(params, ('deviceType',))
@@ -357,52 +371,63 @@ class VM(APIBase):
             validate.require_keys(params, ('alias',))
         return self.vm.updateDevice(params)
 
+    @api.logged(on="api.virt")
     @api.method
     def hotplugNic(self, params):
         validate.require_keys(params, ('vmId', 'nic'))
         return self.vm.hotplugNic(params)
 
+    @api.logged(on="api.virt")
     @api.method
     def hostdevHotplug(self, devices):
         return self.vm.hostdevHotplug(devices)
 
+    @api.logged(on="api.virt")
     @api.method
     def hostdevHotunplug(self, devices):
         return self.vm.hostdevHotunplug(devices)
 
+    @api.logged(on="api.virt")
     @api.method
     def hotunplugNic(self, params):
         validate.require_keys(params, ('vmId', 'nic'))
         return self.vm.hotunplugNic(params)
 
+    @api.logged(on="api.virt")
     @api.method
     def hotplugDisk(self, params):
         validate.require_keys(params, ('vmId', 'drive'))
         return self.vm.hotplugDisk(params)
 
+    @api.logged(on="api.virt")
     @api.method
     def hotunplugDisk(self, params):
         validate.require_keys(params, ('vmId', 'drive'))
         return self.vm.hotunplugDisk(params)
 
+    @api.logged(on="api.virt")
     @api.method
     def hotplugLease(self, lease):
         return self.vm.hotplugLease(lease)
 
+    @api.logged(on="api.virt")
     @api.method
     def hotunplugLease(self, lease):
         return self.vm.hotunplugLease(lease)
 
+    @api.logged(on="api.virt")
     @api.method
     def hotplugMemory(self, params):
         validate.require_keys(params, ('vmId', 'memory'))
         return self.vm.hotplugMemory(params)
 
+    @api.logged(on="api.virt")
     @api.method
     def hotunplugMemory(self, params):
         validate.require_keys(params, ('vmId', 'memory'))
         return self.vm.hotunplugMemory(params)
 
+    @api.logged(on="api.virt")
     def setNumberOfCpus(self, numberOfCpus):
 
         if self._UUID is None or numberOfCpus is None:
@@ -413,12 +438,14 @@ class VM(APIBase):
                                           'parameters: vmId, numberOfCpus'}}
         return self.vm.setNumberOfCpus(int(numberOfCpus))
 
+    @api.logged(on="api.virt")
     @api.method
     def updateVmPolicy(self, params):
         # Remove the vmId parameter from params we do not need it anymore
         del params["vmId"]
         return self.vm.updateVmPolicy(params)
 
+    @api.logged(on="api.virt")
     @api.method
     def migrate(self, params):
         """
@@ -454,6 +481,7 @@ class VM(APIBase):
             params['mode'] = 'remote'
         return vm.migrate(params)
 
+    @api.logged(on="api.virt")
     @api.method
     def migrateChangeParams(self, params):
         """
@@ -464,6 +492,7 @@ class VM(APIBase):
         """
         return self.vm.migrateChangeParams(params)
 
+    @api.logged(on="api.virt")
     @api.method
     def migrateCancel(self):
         """
@@ -471,6 +500,7 @@ class VM(APIBase):
         """
         return self.vm.migrateCancel()
 
+    @api.logged(on="api.virt")
     @api.method
     def migrationCreate(self, params, incomingLimit=None):
         """
@@ -516,14 +546,17 @@ class VM(APIBase):
         return {'status': doneCode, 'migrationPort': 0,
                 'params': result['vmList']}
 
+    @api.logged(on="api.virt")
     @api.method
     def diskReplicateStart(self, srcDisk, dstDisk):
         return self.vm.diskReplicateStart(srcDisk, dstDisk)
 
+    @api.logged(on="api.virt")
     @api.method
     def diskReplicateFinish(self, srcDisk, dstDisk):
         return self.vm.diskReplicateFinish(srcDisk, dstDisk)
 
+    @api.logged(on="api.virt")
     @api.method
     def diskSizeExtend(self, driveSpecs, newSize):
         if self._UUID == VM.BLANK_UUID:
@@ -537,16 +570,19 @@ class VM(APIBase):
         else:
             return self.vm.diskSizeExtend(driveSpecs, newSize)
 
+    @api.logged(on="api.virt")
     @api.method
     def pause(self):
         return self.vm.pause()
 
+    @api.logged(on="api.virt")
     def reset(self):
         """
         Press the virtual reset button for the specified VM.
         """
         return errCode['noimpl']
 
+    @api.logged(on="api.virt")
     @api.method
     def setTicket(self, password, ttl, existingConnAction, params):
         """
@@ -568,6 +604,7 @@ class VM(APIBase):
         """
         return self.vm.setTicket(password, ttl, existingConnAction, params)
 
+    @api.logged(on="api.virt")
     @api.method
     def shutdown(self, delay=None, message=None, reboot=False, timeout=None,
                  force=False):
@@ -593,6 +630,7 @@ class VM(APIBase):
 
         return self.vm.shutdown(delay, message, reboot, timeout, force)
 
+    @api.logged(on="api.virt")
     @api.method
     def setDestroyOnReboot(self):
         return self.vm.set_destroy_on_reboot()
@@ -610,14 +648,17 @@ class VM(APIBase):
                  imageID=paramImageID, volumeID=paramVolumeID,
                  device='disk')
 
+    @api.logged(on="api.virt")
     @api.method
     def freeze(self):
         return self.vm.freeze()
 
+    @api.logged(on="api.virt")
     @api.method
     def thaw(self):
         return self.vm.thaw()
 
+    @api.logged(on="api.virt")
     @api.method
     def snapshot(self, snapDrives, snapMemory=None, frozen=False):
         # for backward compatibility reasons, we need to
@@ -631,40 +672,49 @@ class VM(APIBase):
 
         return vm.snapshot(snapDrives, memoryParams, frozen=frozen)
 
+    @api.logged(on="api.virt")
     @api.method
     def setBalloonTarget(self, target):
         return self.vm.setBalloonTarget(target)
 
+    @api.logged(on="api.virt")
     @api.method
     def setCpuTuneQuota(self, quota):
         return self.vm.setCpuTuneQuota(quota)
 
+    @api.logged(on="api.virt")
     @api.method
     def getIoTune(self):
         return self.vm.getIoTuneResponse()
 
+    @api.logged(on="api.virt")
     @api.method
     def setIoTune(self, tunables):
         return self.vm.setIoTune(tunables)
 
+    @api.logged(on="api.virt")
     @api.method
     def getIoTunePolicy(self):
         return self.vm.getIoTunePolicyResponse()
 
+    @api.logged(on="api.virt")
     @api.method
     def setCpuTunePeriod(self, period):
         return self.vm.setCpuTunePeriod(period)
 
+    @api.logged(on="api.virt")
     def getDiskAlignment(self, disk):
         if self._UUID != VM.BLANK_UUID:
             return errCode['noimpl']
         return self._cif.getDiskAlignment(disk)
 
+    @api.logged(on="api.virt")
     @api.method
     def merge(self, drive, baseVolUUID, topVolUUID, bandwidth=0, jobUUID=None):
         return self.vm.merge(
             drive, baseVolUUID, topVolUUID, bandwidth, jobUUID)
 
+    @api.logged(on="api.virt")
     @api.method
     def seal(self, job_id, sp_id, images):
         """
@@ -1241,6 +1291,7 @@ class Global(APIBase):
         confirm_connectivity()
         return {'status': doneCode}
 
+    @api.logged(on="api.host")
     def getCapabilities(self):
         """
         Report host capabilities.
@@ -1252,6 +1303,7 @@ class Global(APIBase):
 
         return {'status': doneCode, 'info': c}
 
+    @api.logged(on="api.host")
     def getHardwareInfo(self):
         """
         Report host hardware information
@@ -1263,6 +1315,7 @@ class Global(APIBase):
             self.log.error("failed to retrieve hardware info", exc_info=True)
             return errCode['hwInfoErr']
 
+    @api.logged(on="api.host")
     def getAllVmStats(self):
         """
         Get statistics of all running VMs.
@@ -1275,6 +1328,7 @@ class Global(APIBase):
         return {'status': doneCode,
                 'statsList': logutils.Suppressed(statsList)}
 
+    @api.logged(on="api.host")
     def getAllVmIoTunePolicies(self):
         """
         Get IO tuning policies of all running VMs.
@@ -1283,19 +1337,23 @@ class Global(APIBase):
         return {'status': doneCode,
                 'io_tune_policies_dict': io_tune_policies_dict}
 
+    @api.logged(on="api.host")
     def hostdevListByCaps(self, caps=None):
         devices = hostdev.list_by_caps(caps)
         return {'status': doneCode, 'deviceList': devices}
 
+    @api.logged(on="api.host")
     def hostdevChangeNumvfs(self, deviceName, numvfs):
         self._cif._netConfigDirty = True
         hostdev.change_numvfs(deviceName, numvfs)
         return {'status': doneCode}
 
+    @api.logged(on="api.host")
     def hostdevReattach(self, deviceName):
         hostdev.reattach_detachable(deviceName)
         return {'status': doneCode}
 
+    @api.logged(on="api.host")
     def getStats(self):
         """
         Report host statistics.
@@ -1304,6 +1362,7 @@ class Global(APIBase):
                 'info': hostapi.get_stats(self._cif,
                                           sampling.host_samples.stats())}
 
+    @api.logged(on="api.host")
     def setLogLevel(self, level, name=''):
         """
         Set verbosity level of vdsm's log.
@@ -1321,6 +1380,7 @@ class Global(APIBase):
         return dict(status=doneCode)
 
     # VM-related functions
+    @api.logged(on="api.host")
     def dumpxmls(self, vmList=()):
         """
         Return a map of VM UUID to libvirt's domain XML.
@@ -1333,6 +1393,7 @@ class Global(APIBase):
                    for vmId in vmList}
         return response.success(domxmls=domxmls)
 
+    @api.logged(on="api.host")
     def getVMList(self, fullStatus=False, vmList=(), onlyUUID=False):
         """ return a list of known VMs with full (or partial) config each """
         # To improve complexity, convert 'vms' to set(vms)
@@ -1346,6 +1407,7 @@ class Global(APIBase):
             vmlist = [v['vmId'] for v in vmlist]
         return {'status': doneCode, 'vmList': vmlist}
 
+    @api.logged(on="api.host")
     def getExternalVMs(self, uri, username, password, vm_names=None):
         """
         Return information about the not-KVM virtual machines:
@@ -1358,12 +1420,14 @@ class Global(APIBase):
         """
         return v2v.get_external_vms(uri, username, password, vm_names)
 
+    @api.logged(on="api.host")
     def getExternalVMNames(self, uri, username, password):
         """
         Return names of VMs running on external hypervisor.
         """
         return v2v.get_external_vm_names(uri, username, password)
 
+    @api.logged(on="api.host")
     def getExternalVmFromOva(self, ova_path):
         """
         Return information regarding a VM that is a part of the ova:
@@ -1376,29 +1440,37 @@ class Global(APIBase):
         """
         return v2v.get_ova_info(ova_path)
 
+    @api.logged(on="api.host")
     def convertExternalVm(self, uri, username, password, vminfo, jobid):
         return v2v.convert_external_vm(uri, username, password, vminfo, jobid,
                                        self._irs)
 
+    @api.logged(on="api.host")
     def convertExternalVmFromOva(self, ova_path, vminfo, jobid):
         return v2v.convert_ova(ova_path, vminfo, jobid, self._cif.irs)
 
+    @api.logged(on="api.host")
     def getJobs(self, job_type=None, job_ids=()):
         found = jobs.info(job_type=job_type, job_ids=job_ids)
         return response.success(jobs=found)
 
+    @api.logged(on="api.host")
     def getConvertedVm(self, jobid):
         return v2v.get_converted_vm(jobid)
 
+    @api.logged(on="api.host")
     def deleteV2VJob(self, jobid):
         return v2v.delete_job(jobid)
 
+    @api.logged(on="api.host")
     def abortV2VJob(self, jobid):
         return v2v.abort_job(jobid)
 
+    @api.logged(on="api.host")
     def registerSecrets(self, secrets, clear=False):
         return secret.register(secrets, clear=clear)
 
+    @api.logged(on="api.host")
     def unregisterSecrets(self, uuids):
         return secret.unregister(uuids)
 

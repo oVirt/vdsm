@@ -287,7 +287,6 @@ class Vm(object):
     def _makeChannelPath(self, deviceName):
         return constants.P_LIBVIRT_VMCHANNELS + self.id + '.' + deviceName
 
-    @api.logged(on='vdsm.api')
     def __init__(self, cif, params, recover=False):
         """
         Initialize a new VM instance.
@@ -1830,7 +1829,6 @@ class Vm(object):
                 return True
         return False
 
-    @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def migrate(self, params):
         self._acquireCpuLockWithTimeout()
@@ -1906,7 +1904,6 @@ class Vm(object):
             self.log.warning("Unhandled state after a recovered migration: "
                              "%s, %s", state, reason)
 
-    @api.logged(on='vdsm.api')
     def migrateCancel(self):
         self._acquireCpuLockWithTimeout()
         try:
@@ -1934,7 +1931,6 @@ class Vm(object):
                 return console
         return None
 
-    @api.logged(on='vdsm.api')
     def migrateChangeParams(self, params):
         self._acquireCpuLockWithTimeout()
 
@@ -2644,7 +2640,6 @@ class Vm(object):
                 vmxml.set_attr(driver, 'type', drive_format)
                 break
 
-    @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def hotplugNic(self, params):
         nicParams = params['nic']
@@ -2712,7 +2707,6 @@ class Vm(object):
         raise LookupError('Device object for device identified as %s '
                           'of type %s not found' % (devIdent, devType))
 
-    @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def hostdevHotplug(self, dev_specs):
         dev_objects = []
@@ -2758,7 +2752,6 @@ class Vm(object):
 
         return response.success(assignedDevices=assigned_devices)
 
-    @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def hostdevHotunplug(self, dev_names):
         device_objects = []
@@ -2960,7 +2953,6 @@ class Vm(object):
         else:
             return response.error('updateDevice')
 
-    @api.logged(on='vdsm.api')
     def updateDevice(self, params):
         if params.get('deviceType') == hwclass.NIC:
             return self._updateInterfaceDevice(params)
@@ -2969,7 +2961,6 @@ class Vm(object):
         else:
             return response.error('noimpl')
 
-    @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def hotunplugNic(self, params):
         nicParams = params['nic']
@@ -3052,7 +3043,6 @@ class Vm(object):
                 self._mem_guaranteed_size_mb * 1024
             self._update_metadata()
 
-    @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def hotplugMemory(self, params):
         memParams = params.get('memory', {})
@@ -3082,7 +3072,6 @@ class Vm(object):
 
         return {'status': doneCode, 'vmList': self.status()}
 
-    @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def hotunplugMemory(self, params):
         device = vmdevices.common.lookup_device_by_alias(
@@ -3099,7 +3088,6 @@ class Vm(object):
 
         return response.success()
 
-    @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def setNumberOfCpus(self, numberOfCpus):
         self.log.debug("Setting number of cpus to : %s", numberOfCpus)
@@ -3141,7 +3129,6 @@ class Vm(object):
 
         self._ioTuneInfo = vmtune.io_tune_dom_all_to_list(io_tune)
 
-    @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def updateVmPolicy(self, params):
         """
@@ -3368,7 +3355,6 @@ class Vm(object):
 
         return response.success(ioTuneList=resultList)
 
-    @api.logged(on='vdsm.api')
     def setIoTune(self, tunables):
         for io_tune_change in tunables:
             device_name = io_tune_change.get('name', None)
@@ -3458,7 +3444,6 @@ class Vm(object):
         if drive.transientDisk:
             os.unlink(drive.path)
 
-    @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def hotplugDisk(self, params):
         diskParams = params.get('drive', {})
@@ -3505,7 +3490,6 @@ class Vm(object):
 
         return {'status': doneCode, 'vmList': self.status()}
 
-    @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def hotunplugDisk(self, params):
         diskParams = params.get('drive', {})
@@ -3558,7 +3542,6 @@ class Vm(object):
 
         return {'status': doneCode, 'vmList': self.status()}
 
-    @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def hotplugLease(self, params):
         vmdevices.lease.prepare(self.cif.irs, [params])
@@ -3583,7 +3566,6 @@ class Vm(object):
 
         return response.success(vmList=self.status())
 
-    @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def hotunplugLease(self, params):
         try:
@@ -3921,7 +3903,6 @@ class Vm(object):
                 self._add_legacy_disk_conf_to_metadata(driveParams)
             self._sync_metadata()
 
-    @api.logged(on='vdsm.api')
     def freeze(self):
         """
         Freeze every mounted filesystems within the guest (hence guest agent
@@ -3945,7 +3926,6 @@ class Vm(object):
         self.log.info("%d guest filesystems frozen", frozen)
         return response.success()
 
-    @api.logged(on='vdsm.api')
     def thaw(self):
         """
         Thaw every mounted filesystems within the guest (hence guest agent may
@@ -3969,7 +3949,6 @@ class Vm(object):
         self.log.info("%d guest filesystems thawed", thawed)
         return response.success()
 
-    @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def snapshot(self, snapDrives, memoryParams, frozen=False):
         """Live snapshot command"""
@@ -4188,7 +4167,6 @@ class Vm(object):
         quiesce = should_freeze and freezed["status"]["code"] == 0
         return {'status': doneCode, 'quiesce': quiesce}
 
-    @api.logged(on='vdsm.api')
     def diskReplicateStart(self, srcDisk, dstDisk):
         try:
             drive = self._findDriveByUUIDs(srcDisk)
@@ -4251,7 +4229,6 @@ class Vm(object):
 
         return {'status': doneCode}
 
-    @api.logged(on='vdsm.api')
     def diskReplicateFinish(self, srcDisk, dstDisk):
         try:
             drive = self._findDriveByUUIDs(srcDisk)
@@ -4486,7 +4463,6 @@ class Vm(object):
 
         return {'status': doneCode, 'size': str(volSize.apparentsize)}
 
-    @api.logged(on='vdsm.api')
     def diskSizeExtend(self, driveSpecs, newSizeBytes):
         try:
             newSizeBytes = int(newSizeBytes)
@@ -4532,7 +4508,6 @@ class Vm(object):
                       "Action: %s", self.name,
                       actionToString(action))
 
-    @api.logged(on='vdsm.api')
     def changeCD(self, cdromspec):
         if isinstance(cdromspec, basestring):
             # < 4.0 - known cdrom interface/index
@@ -4552,7 +4527,6 @@ class Vm(object):
         return self._changeBlockDev('cdrom', blockdev, drivespec, iface,
                                     force=bool(drivespec))
 
-    @api.logged(on='vdsm.api')
     def changeFloppy(self, drivespec):
         return self._changeBlockDev('floppy', 'fda', drivespec)
 
@@ -4596,7 +4570,6 @@ class Vm(object):
         self.conf[vmDev] = path
         return {'status': doneCode, 'vmList': self.status()}
 
-    @api.logged(on='vdsm.api')
     def setTicket(self, otp, seconds, connAct, params):
         """
         setTicket defaults to the first graphic device.
@@ -4852,7 +4825,6 @@ class Vm(object):
             self.log.debug("Total desktops after destroy of %s is %d",
                            self.id, len(self.cif.vmContainer))
 
-    @api.logged(on='vdsm.api')
     def destroy(self, gracefulAttempts=1):
         self.log.debug('destroy Called')
 
@@ -4936,7 +4908,6 @@ class Vm(object):
         else:
             return response.success()
 
-    @api.logged(on='vdsm.api')
     def setBalloonTarget(self, target):
 
         if not self._dom.connected:
@@ -4968,7 +4939,6 @@ class Vm(object):
             'minimum': dev.minimum,
         }
 
-    @api.logged(on='vdsm.api')
     def setCpuTuneQuota(self, quota):
         try:
             self._dom.setSchedulerParameters({'vcpu_quota': int(quota)})
@@ -4981,7 +4951,6 @@ class Vm(object):
             # libvirt may change the value we set, so we must get fresh data
             return self._updateVcpuTuneInfo()
 
-    @api.logged(on='vdsm.api')
     def setCpuTunePeriod(self, period):
         try:
             self._dom.setSchedulerParameters({'vcpu_period': int(period)})
@@ -5345,7 +5314,6 @@ class Vm(object):
                 jobsRet[jobID] = entry
         return jobsRet
 
-    @api.logged(on='vdsm.api')
     def merge(self, driveSpec, baseVolUUID, topVolUUID, bandwidth, jobUUID):
         if not caps.getLiveMergeSupport():
             self.log.error("Live merge is not supported on this host")

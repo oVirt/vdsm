@@ -22,6 +22,7 @@ import copy
 import logging
 
 from vdsm import API
+from vdsm.common import api
 from vdsm.common import conv
 from vdsm.common import response
 from vdsm.common import threadlocal
@@ -29,7 +30,6 @@ from vdsm.common.compat import pickle
 
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
-from testlib import mock
 from testlib import temporaryPath
 from testlib import recorded
 
@@ -52,7 +52,7 @@ class TestVMCreate(TestCaseBase):
             self.vm = API.VM(self.uuid)
         # to make testing easier
         self.vm._getHibernationPaths = lambda handle: (True, handle)
-        threadlocal.vars.context = mock.Mock()
+        threadlocal.vars.context = api.Context("flow_id", "1.2.3.4", 5678)
 
     def tearDown(self):
         threadlocal.vars.context = None
