@@ -19,12 +19,15 @@
 from __future__ import absolute_import
 
 import abc
+import errno
+import itertools
 import os
 import random
 import string
 
 import six
 
+from vdsm.network import ethtool
 from vdsm.network import ipwrapper
 from vdsm.network.link import dpdk
 from vdsm.network.netlink import libnl
@@ -38,6 +41,22 @@ STATE_DOWN = 'down'
 NET_PATH = '/sys/class/net'
 
 DEFAULT_MTU = 1500
+
+
+class Type(object):
+    NIC = 'nic'
+    VLAN = 'vlan'
+    BOND = 'bond'
+    BRIDGE = 'bridge'
+    LOOPBACK = 'loopback'
+    MACVLAN = 'macvlan'
+    DPDK = 'dpdk'
+    DUMMY = 'dummy'
+    TUN = 'tun'
+    OVS = 'openvswitch'
+    TEAM = 'team'
+    VETH = 'veth'
+    VF = 'vf'
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -92,7 +111,11 @@ class IfaceAPI(object):
         pass
 
     @abc.abstractmethod
-    def mtu(self, properties=None):
+    def mtu(self):
+        pass
+
+    @abc.abstractmethod
+    def type(self):
         pass
 
 
@@ -103,7 +126,6 @@ class IfaceHybrid(IfaceAPI):
     def __init__(self):
         self._dev = None
         self._vfid = None
-        self._is_dpdk_type = None
 
     @property
     def device(self):
@@ -182,6 +204,9 @@ class IfaceHybrid(IfaceAPI):
     def mtu(self):
         return self.properties()['mtu']
 
+    def type(self):
+        return self.properties().get('type', get_alternative_type(self._dev))
+
     def _up_blocking(self, link_blocking):
         with waitfor_linkup(self._dev, link_blocking):
             ipwrapper.linkSet(self._dev, [STATE_UP])
@@ -194,6 +219,16 @@ def iface(device, vfid=None):
     interface._is_dpdk_type = dpdk.is_dpdk(device)
     interface.vfid = vfid
     return interface
+
+
+def list():
+    dpdk_links = (dpdk.link_info(dev_name, dev_info['pci_addr'])
+                  for dev_name, dev_info
+                  in six.viewitems(dpdk.get_dpdk_devices()))
+    for properties in itertools.chain(link.iter_links(), dpdk_links):
+        if 'type' not in properties:
+            properties['type'] = get_alternative_type(properties['name'])
+        yield properties
 
 
 def up(dev, admin_blocking=True, oper_blocking=False):
@@ -255,3 +290,20 @@ def random_iface_name(prefix='', max_length=15, digit_only=False):
     suffix = ''.join(random.choice(suffix_chars)
                      for _ in range(suffix_len))
     return prefix + suffix
+
+
+def get_alternative_type(device):
+    """
+    Attemt to detect the iface type through alternative means.
+    """
+    if os.path.exists(os.path.join(NET_PATH, device, 'device/physfn')):
+        return Type.VF
+    try:
+        driver_name = ethtool.driver_name(device)
+        iface_type = Type.NIC if driver_name else None
+    except IOError as ioe:
+        if ioe.errno == errno.EOPNOTSUPP:
+            iface_type = Type.LOOPBACK if device == 'lo' else Type.DUMMY
+        else:
+            raise
+    return iface_type
