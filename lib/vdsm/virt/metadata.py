@@ -60,6 +60,7 @@ from vdsm.common import conv
 from vdsm.common import errors
 from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
+from vdsm import utils
 
 
 _CUSTOM = 'custom'
@@ -484,9 +485,16 @@ class Descriptor(object):
 
         [{'foo': 'bar'}, {'number': 42}]
         """
-        for (attrs, data) in self._devices:
-            if _match_args(kwargs, attrs):
-                yield data
+        for data in self._matching_devices(kwargs):
+            # A shallow copy ({}.copy) would have been enough.
+            # We need to support complex storage devices, hence
+            # we use picklecopy.
+            yield utils.picklecopy(data)
+
+    def _matching_devices(self, attrs_to_match):
+        for (dev_attrs, dev_data) in self._devices:
+            if _match_args(attrs_to_match, dev_attrs):
+                yield dev_data
 
     def _parse_xml(self, xml_str):
         root = vmxml.parse_xml(xml_str)
@@ -529,7 +537,7 @@ class Descriptor(object):
         return vmxml.format_xml(md_elem, pretty=True)
 
     def _find_device(self, kwargs):
-        devices = list(self.all_devices(**kwargs))
+        devices = list(self._matching_devices(kwargs))
         if len(devices) > 1:
             raise MissingDevice()
         if not devices:

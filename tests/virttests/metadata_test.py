@@ -428,6 +428,26 @@ class DescriptorTests(XMLTestCase):
             [{'mode': 1}, {'mode': 2}]
         )
 
+    def test_all_devices_copy_data(self):
+        dom_xml = u'''<vm>
+            <device type='fancydev'>
+                <mode type="int">1</mode>
+            </device>
+            <device type='fancydev' extra='ignored'>
+                <mode type="int">2</mode>
+            </device>
+        </vm>'''
+        dom = FakeDomain.with_metadata(dom_xml)
+        self.md_desc.load(dom)
+
+        for dev in self.md_desc.all_devices(type='fancydev'):
+            dev['mode'] = 3
+
+        self.assertEqual(
+            list(self.md_desc.all_devices(type='fancydev')),
+            [{'mode': 1}, {'mode': 2}]
+        )
+
     def test_device_from_xml_tree(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
