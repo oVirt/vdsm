@@ -151,9 +151,9 @@ class Metadata(object):
             values[self._strip_ns(key)] = val
         return values
 
-    def dump(self, name, **kwargs):
+    def dump(self, element_name, **kwargs):
         """
-        Dump the given arguments into the `name` metadata element.
+        Dump the given arguments into the `element_name` metadata element.
         This function transparently adds the type hints as element attributes,
         so `load` can restore them.
 
@@ -168,8 +168,8 @@ class Metadata(object):
           <bar type="int">42</bar>
         </test>
 
-        :param name: group to put in the metadata
-        :type name: text string
+        :param element_name: group to put in the metadata
+        :type element_name: text string
         :param namespace: namespace to use
         :type namespace: text string
         :param namespace_uri: URI of the namespace to use
@@ -179,7 +179,7 @@ class Metadata(object):
 
         kwargs: stored as subelements
         """
-        elem = ET.Element(self._add_ns(name))
+        elem = ET.Element(self._add_ns(element_name))
         for key, value in sorted(
             kwargs.items(),
             key=operator.itemgetter(0),

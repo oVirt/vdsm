@@ -74,6 +74,7 @@ class MetadataTests(XMLTestCase):
         [{'bool': True}],
         [{'bool2': False}],
         [{'str': 'a', 'int': 42, 'float': 0.333, 'bool': True}],
+        [{'name': 'something'}],
     ])
     def test_roundtrip(self, custom):
         elem = self.md.dump('test', **custom)
