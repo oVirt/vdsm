@@ -29,7 +29,7 @@ from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import getLinks
 from vdsm.network.link import dpdk
-from vdsm.network.link.iface import get_mtu
+from vdsm.network.link import iface as link_iface
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netlink import link as nl_link
 
@@ -160,8 +160,10 @@ def networks_base_info(running_nets, routes=None, ipaddrs=None):
 
     info = {}
     for net, attrs in six.viewitems(running_nets):
+        iface = get_net_iface_from_config(net, attrs)
         try:
-            iface = get_net_iface_from_config(net, attrs)
+            if not link_iface.exists(iface):
+                raise NetworkIsMissing('Iface %s was not found' % iface)
             info[net] = _getNetInfo(iface, attrs['bridged'], routes, ipaddrs)
         except NetworkIsMissing:
             # Missing networks are ignored, reporting only what exists.
@@ -229,7 +231,7 @@ def ifaceUsed(iface):
 
 def _getNetInfo(iface, bridged, routes, ipaddrs):
     """Returns a dictionary of properties about the network's interface status.
-    Raises a KeyError if the iface does not exist."""
+    Raises a NetworkIsMissing if the iface does not exist."""
     data = {}
     try:
         if bridged:
@@ -253,7 +255,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs):
                      'gateway': gateway,
                      'ipv6gateway': get_gateway(routes, iface, family=6),
                      'ipv4defaultroute': is_default_route(gateway),
-                     'mtu': get_mtu(iface)})
+                     'mtu': link_iface.get_mtu(iface)})
     except (IOError, OSError) as e:
         if e.errno == errno.ENOENT or e.errno == errno.ENODEV:
             logging.info('Obtaining info for net %s.', iface, exc_info=True)
