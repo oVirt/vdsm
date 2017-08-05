@@ -110,7 +110,7 @@ class IPAddressData(object):
 
     def __repr__(self):
         rep = 'device={!r} address={!r} scope={!r} flags={!r}'.format(
-            self.device, self._address, self.scope, self.flags)
+            self._device, self._address, self._scope, self._flags)
         return 'IPAddressData({})'.format(rep)
 
 
