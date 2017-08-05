@@ -163,6 +163,28 @@ class TestNetworkBasic(NetFuncTestCase):
         self._test_add_identical_vlan_id_nets_with_two_nics(switch,
                                                             bridged=False)
 
+    def test_remove_bridgeless_net_with_a_nic_used_by_a_vlan_net(self, switch):
+        with dummy_device() as nic:
+            netcreate = {
+                NET_1: {
+                    'bridged': False,
+                    'nic': nic,
+                    'switch': switch
+                },
+                NET_2: {
+                    'bridged': False,
+                    'nic': nic,
+                    'vlan': VLANID,
+                    'switch': switch
+                }
+            }
+
+            with self.setupNetworks(netcreate, {}, NOCHK):
+                netremove = {NET_1: {'remove': True}}
+                self.setupNetworks(netremove, {}, NOCHK)
+                self.assertNoNetwork(NET_1)
+                self.assertNetwork(NET_2, netcreate[NET_2])
+
     def _test_add_net_with_multi_vlans_over_a_nic(self, switch, bridged):
         VLAN_COUNT = 3
 
@@ -220,26 +242,6 @@ class TestNetworkBasic(NetFuncTestCase):
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 pass
         assert cm.value.status == ne.ERR_BAD_NIC
-
-    def test_remove_unbridged_net_with_a_nic_used_by_a_vlan_net(self, switch):
-        with dummy_device() as nic:
-            netcreate = {
-                NET_1: {
-                    'bridged': False,
-                    'nic': nic,
-                },
-                NET_2: {
-                    'bridged': False,
-                    'nic': nic,
-                    'vlan': VLANID
-                }
-            }
-
-            with self.setupNetworks(netcreate, {}, NOCHK):
-                netremove = {NET_1: {'remove': True}}
-                self.setupNetworks(netremove, {}, NOCHK)
-                self.assertNoNetwork(NET_1)
-                self.assertNetwork(NET_2, netcreate[NET_2])
 
     def _assert_nets(self, net_1_attrs, net_2_attrs):
         with self.setupNetworks({NET_1: net_1_attrs}, {}, NOCHK):
