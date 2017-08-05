@@ -108,10 +108,10 @@ else:
         @functools.wraps(systemctlFun)
         def wrapper(srvName):
             cmd = [_SYSTEMCTL.cmd, "--no-pager", "list-unit-files"]
-            rc, out, err = execCmd(cmd, raw=False)
+            rc, out, err = execCmd(cmd)
             if rc != 0:
                 raise ServiceOperationError(
-                    "Error listing unit files", '\n'.join(out), '\n'.join(err))
+                    "Error listing unit files", out, err)
             fullName = srvName
             # If unit file type was specified, don't override it.
             if srvName.count('.') < 1:
@@ -179,7 +179,7 @@ else:
         @functools.wraps(initctlFun)
         def wrapper(srvName):
             cmd = [_INITCTL.cmd, "usage", srvName]
-            rc, out, err = execCmd(cmd, raw=False)
+            rc, out, err = execCmd(cmd)
             if rc != 0:
                 raise ServiceNotExistError("%s is not an Upstart service" %
                                            srvName)
