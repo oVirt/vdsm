@@ -4,7 +4,10 @@ import os
 import sys
 import traceback
 import fcntl
+import signal
+import subprocess
 import struct
+import threading
 import hooking
 
 BLKGETSIZE64 = 0x80081272  # Obtain device size in bytes
@@ -75,19 +78,21 @@ def checkImage(path, timeout):
 
     # Check the image using qemu-img. Enforce check termination
     # on timeout expiration
-    p = hooking.execCmd(cmd, raw=True, sync=False)
-
-    if not p.wait(timeout):
-        p.kill()
-        sys.stderr.write('checkimages: %s image check operation timed out.' %
-                         path)
-        sys.stderr.write('Increate timeout or check image availability.')
-        sys.exit(2)
+    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    t = threading.Timer(timeout, p.kill)
+    t.start()
 
     out, err = p.communicate()
     rc = p.returncode
 
-    if rc == 0:
+    t.cancel()
+
+    if rc == -signal.SIGKILL:
+        sys.stderr.write('checkimages: %s image check operation timed out.' %
+                         path)
+        sys.stderr.write('Increate timeout or check image availability.')
+        sys.exit(2)
+    elif rc == 0:
         sys.stderr.write('checkimages: %s image check returned: %s\n' %
                          (path, out))
     else:
