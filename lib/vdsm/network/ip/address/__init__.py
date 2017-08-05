@@ -109,11 +109,8 @@ class IPAddressData(object):
         return Flags.PERMANENT in self.flags
 
     def __repr__(self):
-        rep = 'device={!r} address={!r}'.format(self.device, self._address)
-        if hasattr(self, 'scope'):
-            rep += ' scope={!r}'.format(self.scope)
-        if hasattr(self, 'flags'):
-            rep += ' flags={!r}'.format(self.flags)
+        rep = 'device={!r} address={!r} scope={!r} flags={!r}'.format(
+            self.device, self._address, self.scope, self.flags)
         return 'IPAddressData({})'.format(rep)
 
 
