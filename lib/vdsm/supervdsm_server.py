@@ -28,6 +28,7 @@ import pkgutil
 from functools import wraps
 import resource
 import signal
+import syslog
 import logging
 import logging.config
 from contextlib import closing
@@ -37,17 +38,6 @@ from vdsm.common import fileutils
 from vdsm.common import sigutils
 from vdsm.common import time
 from vdsm.common import zombiereaper
-
-
-LOG_CONF_PATH = "/etc/vdsm/svdsm.logger.conf"
-
-try:
-    logging.config.fileConfig(LOG_CONF_PATH, disable_existing_loggers=False)
-except:
-    logging.basicConfig(filename='/dev/stdout', filemode='w+',
-                        level=logging.DEBUG)
-    log = logging.getLogger("SuperVdsm.Server")
-    log.warn("Could not init proper logging", exc_info=True)
 
 from multiprocessing import Pipe, Process
 try:
@@ -80,8 +70,15 @@ RUN_AS_TIMEOUT = config.getint("irs", "process_pool_timeout")
 _running = True
 
 
+class FatalError(Exception):
+    """ Raised when supervdsm fails to start """
+
+
 class Timeout(RuntimeError):
     pass
+
+
+LOG_CONF_PATH = "/etc/vdsm/svdsm.logger.conf"
 
 
 def logDecorator(func):
@@ -235,35 +232,42 @@ def terminate(signo, frame):
 
 
 def main(args):
-    log = logging.getLogger("SuperVdsm.Server")
-    parser = option_parser()
-    args = parser.parse_args(args=args)
-    sockfile = args.sockfile
-    pidfile = args.pidfile
-    if not config.getboolean('vars', 'core_dump_enable'):
-        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-    sigutils.register()
-    zombiereaper.registerSignalHandler()
-
-    def bind(func):
-        def wrapper(_SuperVdsm, *args, **kwargs):
-            return func(*args, **kwargs)
-        return wrapper
-
-    if _glusterEnabled:
-        for name, func in listPublicFunctions(GLUSTER_MGMT_ENABLED):
-            setattr(_SuperVdsm, name, bind(logDecorator(func)))
-
-    for _, module_name, _ in pkgutil.iter_modules([supervdsm_api.__path__[0]]):
-        module = importlib.import_module('%s.%s' %
-                                         (supervdsm_api.__name__,
-                                          module_name))
-        api_funcs = [f for _, f in module.__dict__.iteritems()
-                     if callable(f) and getattr(f, 'exposed_api', False)]
-        for func in api_funcs:
-            setattr(_SuperVdsm, func.__name__, bind(logDecorator(func)))
-
     try:
+        try:
+            logging.config.fileConfig(LOG_CONF_PATH,
+                                      disable_existing_loggers=False)
+        except Exception as e:
+            raise FatalError("Cannot configure logging: %s" % e)
+
+        log = logging.getLogger("SuperVdsm.Server")
+        parser = option_parser()
+        args = parser.parse_args(args=args)
+        sockfile = args.sockfile
+        pidfile = args.pidfile
+        if not config.getboolean('vars', 'core_dump_enable'):
+            resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        sigutils.register()
+        zombiereaper.registerSignalHandler()
+
+        def bind(func):
+            def wrapper(_SuperVdsm, *args, **kwargs):
+                return func(*args, **kwargs)
+            return wrapper
+
+        if _glusterEnabled:
+            for name, func in listPublicFunctions(GLUSTER_MGMT_ENABLED):
+                setattr(_SuperVdsm, name, bind(logDecorator(func)))
+
+        for _, module_name, _ in pkgutil.iter_modules([supervdsm_api.
+                                                       __path__[0]]):
+            module = importlib.import_module('%s.%s' %
+                                             (supervdsm_api.__name__,
+                                              module_name))
+            api_funcs = [f for _, f in module.__dict__.iteritems()
+                         if callable(f) and getattr(f, 'exposed_api', False)]
+            for func in api_funcs:
+                setattr(_SuperVdsm, func.__name__, bind(logDecorator(func)))
+
         log.debug("Making sure I'm root - SuperVdsm")
         if os.geteuid() != 0:
             sys.exit(errno.EPERM)
@@ -308,9 +312,10 @@ def main(args):
             if os.path.exists(address):
                 fileutils.rm_file(address)
 
-    except Exception:
-        log.error("Could not start Super Vdsm", exc_info=True)
-        sys.exit(1)
+    except Exception as e:
+        syslog.syslog("Supervdsm failed to start: %s" % e)
+        # Make it easy to debug via the shell
+        raise
 
 
 def option_parser():
