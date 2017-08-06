@@ -82,5 +82,4 @@ format: %(asctime)s %(levelname)-5s (%(threadName)s) [%(name)s] %(message)s (%(m
 class: vdsm.common.logutils.TimezoneFormatter
 
 [formatter_sysform]
-format= vdsm %(name)s %(levelname)s %(message)s
-datefmt=
+format: vdsm[%(process)d]: %(levelname)s %(message)s
