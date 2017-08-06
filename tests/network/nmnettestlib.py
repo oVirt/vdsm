@@ -127,7 +127,7 @@ def _remove_device(device_name):
 
 def _add_slaves_to_bond(bond, slaves):
     for slave in slaves:
-        linkiface.down(slave)
+        linkiface.iface(slave).down()
         command = [IP_BINARY.cmd, 'link', 'set', slave, 'master', bond]
         _exec_cmd(command)
 

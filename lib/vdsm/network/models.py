@@ -87,7 +87,7 @@ class Nic(NetDevice):
             raise ConfigNetworkError(ne.ERR_BAD_NIC, 'unknown nic: %s' % name)
 
         if _netinfo.ifaceUsers(name):
-            mtu = max(mtu, link_iface.get_mtu(name))
+            mtu = max(mtu, link_iface.iface(name).mtu())
 
         super(Nic, self).__init__(name, configurator, ipv4, ipv6, blockingdhcp,
                                   mtu)
@@ -97,7 +97,7 @@ class Nic(NetDevice):
         if (self.vlan and
                 nics.operstate(self.name) == nics.OPERSTATE_UP and
                 self.configurator.net_info.ifaceUsers(self.name) and
-                self.mtu <= link_iface.get_mtu(self.name)):
+                self.mtu <= link_iface.iface(self.name).mtu()):
             return
 
         self.configurator.configureNic(self, **opts)
@@ -233,7 +233,7 @@ class Bond(NetDevice):
              self.name in self.configurator.runningConfig.bonds) and
             nics.operstate(self.name) == nics.OPERSTATE_UP and
             self.configurator.net_info.ifaceUsers(self.name) and
-            self.mtu <= link_iface.get_mtu(self.name) and
+            self.mtu <= link_iface.iface(self.name).mtu() and
             self.areOptionsApplied() and
             frozenset(slave.name for slave in self.slaves) ==
                 frozenset(link_bond.Bond(self.name).slaves)):
@@ -283,14 +283,14 @@ class Bond(NetDevice):
                                             mtu, _netinfo)
             if name in _netinfo.bondings:
                 if _netinfo.ifaceUsers(name):
-                    mtu = max(mtu, link_iface.get_mtu(name))
+                    mtu = max(mtu, link_iface.iface(name).mtu())
 
                 if not options:
                     options = _netinfo.bondings[name].get('opts')
                     options = Bond._dict2list(options)
         elif name in _netinfo.bondings:  # Implicit bonding.
             if _netinfo.ifaceUsers(name):
-                mtu = max(mtu, link_iface.get_mtu(name))
+                mtu = max(mtu, link_iface.iface(name).mtu())
 
             slaves = [Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
                       for nic in _netinfo.getNicsForBonding(name)]

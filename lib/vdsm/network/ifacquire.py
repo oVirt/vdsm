@@ -150,7 +150,7 @@ def _ifcfg_key_lookup(lines, key):
 
 
 def _release_non_ifcfg_iface(iface):
-    if not linkiface.exists(iface):
+    if not linkiface.iface(iface).exists():
         return
     # TODO: Tell NetworkManager to unmanage this iface.
     dhclient.kill(iface, family=4)

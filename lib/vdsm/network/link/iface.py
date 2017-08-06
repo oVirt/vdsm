@@ -231,53 +231,6 @@ def list():
         yield properties
 
 
-def up(dev, admin_blocking=True, oper_blocking=False):
-    """
-    Set link state to UP, optionally blocking on the action.
-    :param dev: iface name.
-    :param admin_blocking: Block until the administrative state changes to UP.
-    :param oper_blocking: Block until the link is operational.
-    admin state is at kernel level, while link state is at driver level.
-    """
-    iface(dev).up(admin_blocking, oper_blocking)
-
-
-def down(dev):
-    iface(dev).down()
-
-
-def is_up(dev):
-    return iface(dev).is_up()
-
-
-def is_admin_up(dev):
-    return iface(dev).is_admin_up()
-
-
-def is_oper_up(dev):
-    return iface(dev).is_oper_up()
-
-
-def is_promisc(dev):
-    return iface(dev).is_promisc()
-
-
-def exists(dev):
-    return iface(dev).exists()
-
-
-def set_mac_address(dev, mac_address, vf_num=None):
-    iface(dev, vf_num).set_address(mac_address)
-
-
-def mac_address(dev):
-    return iface(dev).address()
-
-
-def get_mtu(dev):
-    return iface(dev).mtu()
-
-
 def random_iface_name(prefix='', max_length=15, digit_only=False):
     """
     Create a network device name with the supplied prefix and a pseudo-random

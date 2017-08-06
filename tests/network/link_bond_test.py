@@ -29,10 +29,10 @@ from testlib import VdsmTestCase as TestCaseBase, mock
 
 from .nettestlib import dummy_devices, check_sysfs_bond_permission
 
-from vdsm.network.link import iface
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.bond import sysfs_options
 from vdsm.network.link.bond import sysfs_options_mapper
+from vdsm.network.link.iface import iface
 from vdsm.network.link.iface import random_iface_name
 
 
@@ -45,22 +45,22 @@ class LinkBondTests(TestCaseBase):
 
     def test_bond_without_slaves(self):
         with bond_device() as bond:
-            self.assertFalse(iface.is_up(bond.master))
+            self.assertFalse(iface(bond.master).is_up())
 
     def test_bond_with_slaves(self):
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as bond:
                 bond.add_slaves((nic1, nic2))
-                self.assertFalse(iface.is_up(bond.master))
+                self.assertFalse(iface(bond.master).is_up())
 
     def test_bond_devices_are_up(self):
         with dummy_devices(2) as (nic1, nic2):
             with bond_device() as bond:
                 bond.add_slaves((nic1, nic2))
                 bond.up()
-                self.assertTrue(iface.is_up(nic1))
-                self.assertTrue(iface.is_up(nic2))
-                self.assertTrue(iface.is_up(bond.master))
+                self.assertTrue(iface(nic1).is_up())
+                self.assertTrue(iface(nic2).is_up())
+                self.assertTrue(iface(bond.master).is_up())
 
     def test_bond_exists(self):
         OPTIONS = {'mode': '1', 'miimon': '300'}

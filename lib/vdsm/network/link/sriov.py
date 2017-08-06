@@ -25,7 +25,7 @@ import time
 from vdsm import udevadm
 from vdsm.network import netconfpersistence
 
-from . import iface
+from .iface import iface
 
 
 DRIVERS_PATH = '/sys/bus/pci/drivers/'
@@ -94,7 +94,7 @@ def _modify_mac_addresses(pci_path, numvfs):
 
     pf = os.listdir('/sys/bus/pci/devices/{}/net/'.format(pci_path))[0]
     for vf_num in range(numvfs):
-        iface.set_mac_address(pf, TARGET_MAC, vf_num=vf_num)
+        iface(pf, vfid=vf_num).set_address(TARGET_MAC)
 
 
 def _wait_for_udev_events():

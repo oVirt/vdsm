@@ -132,9 +132,9 @@ class Configurator(object):
 
         :return mtu value that was applied
         """
-        ifaceMtu = link_iface.get_mtu(iface.name)
+        ifaceMtu = link_iface.iface(iface.name).mtu()
         ifaces = tuple(ifaceVlans)
-        maxMtu = (max(link_iface.get_mtu(dev) for dev in ifaces)
+        maxMtu = (max(link_iface.iface(dev).mtu() for dev in ifaces)
                   if ifaces else None)
         if maxMtu and maxMtu < ifaceMtu:
             if isinstance(iface, Bond):

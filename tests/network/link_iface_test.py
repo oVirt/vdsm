@@ -24,7 +24,7 @@ from testlib import VdsmTestCase as TestCaseBase
 
 from .nettestlib import dummy_device
 
-from vdsm.network.link import iface
+from vdsm.network.link.iface import iface
 
 
 @attr(type='integration')
@@ -32,23 +32,27 @@ class LinkIfaceTests(TestCaseBase):
 
     def test_iface_up(self):
         with dummy_device() as nic:
-            iface.up(nic)
-            self.assertTrue(iface.is_up(nic))
+            _iface = iface(nic)
+            _iface.up()
+            self.assertTrue(_iface.is_up())
 
     def test_iface_down(self):
         with dummy_device() as nic:
-            iface.up(nic)
-            iface.down(nic)
-            self.assertFalse(iface.is_up(nic))
+            _iface = iface(nic)
+            _iface.up()
+            _iface.down()
+            self.assertFalse(_iface.is_up())
 
     def test_iface_notpromisc(self):
         with dummy_device() as nic:
-            iface.up(nic)
-            self.assertFalse(iface.is_promisc(nic))
+            _iface = iface(nic)
+            _iface.up()
+            self.assertFalse(_iface.is_promisc())
 
     def test_iface_hwaddr(self):
         MAC_ADDR = '02:00:00:00:00:01'
 
         with dummy_device() as nic:
-            iface.set_mac_address(nic, MAC_ADDR)
-            self.assertEqual(MAC_ADDR, iface.mac_address(nic))
+            _iface = iface(nic)
+            _iface.set_address(MAC_ADDR)
+            self.assertEqual(MAC_ADDR, _iface.address())

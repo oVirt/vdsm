@@ -22,7 +22,7 @@ from contextlib import contextmanager
 import logging
 import os
 
-from vdsm.network.link import iface
+from vdsm.network.link.iface import iface
 
 from . import BondAPI
 from . import sysfs_options
@@ -68,8 +68,8 @@ class BondSysFS(BondAPI):
 
     def add_slaves(self, slaves):
         for slave in slaves:
-            with _preserve_iface_state(slave):
-                iface.down(slave)
+            with _preserve_iface_state(slave) as interface:
+                interface.down()
                 with open(self.BONDING_SLAVES % self._master, 'w') as f:
                     f.write('+%s' % slave)
             logging.info('Slave {} has been added to bond {}.'.format(
@@ -78,8 +78,8 @@ class BondSysFS(BondAPI):
 
     def del_slaves(self, slaves):
         for slave in slaves:
-            with _preserve_iface_state(slave):
-                iface.down(slave)
+            with _preserve_iface_state(slave) as interface:
+                interface.down()
                 with open(self.BONDING_SLAVES % self._master, 'w') as f:
                     f.write('-%s' % slave)
             logging.info('Slave {} has been removed from bond {}.'.format(
@@ -93,8 +93,8 @@ class BondSysFS(BondAPI):
             mode_will_be_changed = ('mode' in options and
                                     current_options['mode'] != options['mode'])
             if mode_will_be_changed:
-                with _preserve_iface_state(self._master):
-                    iface.down(self._master)
+                with _preserve_iface_state(self._master) as interface:
+                    interface.down()
                     with self._temporarily_detached_slaves():
                         sysfs_options.set_options(self._master, options)
             else:
@@ -150,12 +150,13 @@ class BondSysFS(BondAPI):
 
 @contextmanager
 def _preserve_iface_state(dev):
-    dev_was_up = iface.is_up(dev)
+    _iface = iface(dev)
+    dev_was_up = _iface.is_up()
     try:
-        yield
+        yield _iface
     finally:
-        if dev_was_up and not iface.is_up(dev):
-            iface.up(dev)
+        if dev_was_up and not _iface.is_up():
+            _iface.up()
 
 
 Bond = BondSysFS

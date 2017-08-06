@@ -326,7 +326,7 @@ def dummy_device(prefix='dummy_', max_length=11):
     dummy_interface = Dummy(prefix, max_length)
     dummy_name = dummy_interface.create()
     try:
-        linkiface.up(dummy_name)
+        linkiface.iface(dummy_name).up()
         yield dummy_name
     finally:
         dummy_interface.remove()

@@ -31,7 +31,7 @@ from vdsm.common import fileutils
 from vdsm.network import kernelconfig
 from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported, prefix2netmask
-from vdsm.network.link.iface import is_oper_up
+from vdsm.network.link.iface import iface
 
 from functional.utils import getProxy, SUCCESS
 
@@ -328,7 +328,7 @@ class NetFuncTestCase(object):
                 net, attrs, self.netinfo)
         if expected_links:
             for dev in expected_links:
-                assert is_oper_up(dev), 'Dev {} is DOWN'.format(dev)
+                assert iface(dev).is_oper_up(), 'Dev {} is DOWN'.format(dev)
 
     def assertNameservers(self, nameservers):
         assert nameservers == self.netinfo.nameservers[:len(nameservers)]

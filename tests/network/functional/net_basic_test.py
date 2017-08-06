@@ -330,14 +330,14 @@ class TestNetworkManagerLegacy(NetFuncTestCase):
         with dummy_devices(1) as nics:
             with nmnettestlib.nm_connections(
                     self.iface, ipv4addr=None, vlan=vlan_id, slaves=nics):
-                bond_hwaddress = link_iface.mac_address(self.iface)
+                bond_hwaddress = link_iface.iface(self.iface).address()
                 vlan_iface = '.'.join([self.iface, vlan_id])
-                vlan_hwaddress = link_iface.mac_address(vlan_iface)
+                vlan_hwaddress = link_iface.iface(vlan_iface).address()
                 assert vlan_hwaddress == bond_hwaddress
 
                 with self.setupNetworks(NET, {}, NOCHK):
                     self.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
 
                     # Check if the mac has been preserved.
-                    bridge_hwaddress = link_iface.mac_address(NETWORK_NAME)
+                    bridge_hwaddress = link_iface.iface(NETWORK_NAME).address()
                     assert vlan_hwaddress == bridge_hwaddress

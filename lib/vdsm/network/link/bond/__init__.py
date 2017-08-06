@@ -23,7 +23,7 @@ import abc
 import six
 
 from vdsm.network import driverloader
-from vdsm.network.link import iface
+from vdsm.network.link.iface import iface
 from vdsm.network.netlink import waitfor
 
 
@@ -113,10 +113,17 @@ class BondAPI(object):
         pass
 
     def _setlinks(self, up):
-        setstate = iface.up if up else iface.down
-        setstate(self._master)
-        for slave in self._slaves:
-            setstate(slave)
+        master = iface(self._master)
+        if up:
+            master.up()
+        else:
+            master.down()
+        for s in self._slaves:
+            slave = iface(s)
+            if up:
+                slave.up()
+            else:
+                slave.down()
 
 
 class Drivers(object):

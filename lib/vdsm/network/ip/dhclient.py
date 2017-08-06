@@ -63,7 +63,7 @@ class DhcpClient(object):
         self._cgroup = cgroup
 
     def _dhclient(self):
-        if linkiface.exists(self.iface):
+        if linkiface.iface(self.iface).exists():
             kill(self.iface, self.family)
             address.flush(self.iface, family=self.family)
 
@@ -96,12 +96,12 @@ class DhcpClient(object):
         else:
             logging.info('Stopping dhclient-%s on %s', self.family, self.iface)
             _kill_and_rm_pid(pid, self.pidFile)
-            if linkiface.exists(self.iface):
+            if linkiface.iface(self.iface).exists():
                 address.flush(self.iface)
 
 
 def kill(device_name, family=4):
-    if not linkiface.exists(device_name):
+    if not linkiface.iface(device_name).exists():
         return
     for pid, pid_file in _pid_lookup(device_name, family):
         logging.info('Stopping dhclient-%s on %s', family, device_name)

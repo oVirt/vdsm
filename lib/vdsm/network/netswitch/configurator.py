@@ -31,7 +31,7 @@ from vdsm.network.configurators.ifcfg import Ifcfg
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.link import dpdk
-from vdsm.network.link import iface
+from vdsm.network.link.iface import iface as iface_obj
 from vdsm.network.netconfpersistence import RunningConfig, Transaction
 from vdsm.network.ovs import info as ovs_info
 from vdsm.network.ovs import switch as ovs_switch
@@ -277,7 +277,7 @@ def _ipv6_conf_params(attrs):
 def set_ovs_links_up(nets2add, bonds2add, bonds2edit):
     # TODO: Make this universal for legacy and ovs.
     for dev in _gather_ovs_ifaces(nets2add, bonds2add, bonds2edit):
-        iface.up(dev)
+        iface_obj(dev).up()
 
 
 def ovs_add_vhostuser_port(bridge, port, socket_path):

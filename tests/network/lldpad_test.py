@@ -22,7 +22,7 @@ from __future__ import absolute_import
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 
-from vdsm.network.link import iface
+from vdsm.network.link.iface import iface
 from vdsm.network.lldpad import lldptool
 
 from testlib import VdsmTestCase, mock
@@ -135,8 +135,8 @@ class LldpadReportIntegTests(VdsmTestCase):
 
     def test_get_lldp_tlvs(self):
         with veth_pair() as (nic1, nic2):
-            iface.up(nic1)
-            iface.up(nic2)
+            iface(nic1).up()
+            iface(nic2).up()
             with enable_lldp_on_ifaces((nic1, nic2), rx_only=False):
                 self.assertTrue(lldptool.is_lldp_enabled_on_iface(nic1))
                 self.assertTrue(lldptool.is_lldp_enabled_on_iface(nic2))

@@ -159,7 +159,7 @@ def networks_base_info(running_nets, routes=None, ipaddrs=None):
     for net, attrs in six.viewitems(running_nets):
         iface = get_net_iface_from_config(net, attrs)
         try:
-            if not link_iface.exists(iface):
+            if not link_iface.iface(iface).exists():
                 raise NetworkIsMissing('Iface %s was not found' % iface)
             info[net] = _getNetInfo(iface, attrs['bridged'], routes, ipaddrs)
         except NetworkIsMissing:
@@ -236,7 +236,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs):
                      'gateway': gateway,
                      'ipv6gateway': get_gateway(routes, iface, family=6),
                      'ipv4defaultroute': is_default_route(gateway),
-                     'mtu': link_iface.get_mtu(iface)})
+                     'mtu': link_iface.iface(iface).mtu()})
     except (IOError, OSError) as e:
         if e.errno == errno.ENOENT or e.errno == errno.ENODEV:
             logging.info('Obtaining info for net %s.', iface, exc_info=True)

@@ -184,6 +184,14 @@ class MockedOvsInfo(info.OvsInfo):
         }
 
 
+class fake_iflink(object):
+    def __init__(self, dev):
+        pass
+
+    def mtu(self):
+        return 1500
+
+
 @attr(type='unit')
 class TestOvsNetInfo(VdsmTestCase):
 
@@ -384,7 +392,7 @@ class TestOvsNetInfo(VdsmTestCase):
         }
     }
 
-    @MonkeyPatch(info, 'get_mtu', lambda *args: 1500)
+    @MonkeyPatch(info, 'iflink', fake_iflink)
     @MonkeyPatch(info, 'is_ipv6_local_auto', lambda *args: True)
     @MonkeyPatch(info, 'get_gateway',
                  lambda *args, **kwargs: ('' if kwargs.get('family') == 4

@@ -79,12 +79,12 @@ class AcquireNicTest(VdsmTestCase):
         mock_kill.assert_not_called()
         mock_flush.assert_not_called()
 
-    @mock.patch.object(ifacquire.linkiface, 'exists', lambda x: True)
     @mock.patch.object(ifacquire.os.path, 'isfile', lambda x: False)
+    @mock.patch.object(ifacquire.linkiface, 'iface')
     @mock.patch.object(ifacquire.address, 'flush', return_value=None)
     @mock.patch.object(ifacquire.dhclient, 'kill', return_value=None)
-    def test_acquire_non_ifcfg_nic(self, mock_kill, mock_flush):
-
+    def test_acquire_non_ifcfg_nic(self, mock_kill, mock_flush, mock_iface):
+        mock_iface.return_value.exists.return_value = True
         with ifacquire.Transaction(netinfo_nets={}) as a:
             a.acquire(ifaces=[NIC_NAME])
             mock_kill.assert_any_call(NIC_NAME, family=4)

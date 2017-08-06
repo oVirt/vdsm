@@ -105,7 +105,7 @@ class Ifcfg(Configurator):
         if not self.owned_device(bridge.name):
             IfcfgAcquire.acquire_device(bridge.name)
         self.configApplier.addBridge(bridge, **opts)
-        if link_iface.exists(bridge.name):
+        if link_iface.iface(bridge.name).exists():
             ifdown(bridge.name)
         if bridge.port:
             bridge.port.configure(**opts)
@@ -389,8 +389,8 @@ class Ifcfg(Configurator):
                 with waitfor.waitfor_link_exists(vlan.name):
                     _ifup(vlan, blocking=blocking)
 
-            if (link_iface.mac_address(bond.slaves[0].name) ==
-                    link_iface.mac_address(vlan.name)):
+            if (link_iface.iface(bond.slaves[0].name).address() ==
+                    link_iface.iface(vlan.name).address()):
                 return
 
             logging.info('Config vlan@bond: hwaddr not in sync (%s)', attempt)

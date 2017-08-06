@@ -70,7 +70,7 @@ def change_numvfs(pci_path, numvfs, net_name):
     sriov.update_numvfs(pci_path, numvfs)
     sriov.persist_numvfs(pci_path, numvfs)
 
-    link_iface.up(net_name)
+    link_iface.iface(net_name).up()
 
 
 def ip_addrs_info(device):
