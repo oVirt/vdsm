@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 from vdsm.network import lldp
+from vdsm.network.link import iface
 
 Lldp = lldp.driver()
 
@@ -33,7 +34,7 @@ def get_info(filter):
 def _get_info(device):
     dev_info = {'enabled': False,
                 'tlvs': []}
-    if Lldp.is_lldp_enabled_on_iface(device):
+    if iface.is_oper_up(device) and Lldp.is_lldp_enabled_on_iface(device):
         dev_info['enabled'] = True
         dev_info['tlvs'] = Lldp.get_tlvs(device)
     return dev_info
