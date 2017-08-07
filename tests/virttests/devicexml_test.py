@@ -1089,7 +1089,9 @@ class DeviceXMLRoundTripTests(XMLTestCase):
 
 
 # invalid domain with only the relevant sections added
+# UUID has no meaning, randomly generated
 _DOMAIN_MD_MATCH_XML = u"""<domain type='kvm' id='2'>
+  <uuid>dd493ddc-1ef2-4445-a248-4a7bc266a671</uuid>
   <metadata
         xmlns:ovirt-tune='http://ovirt.org/vm/tune/1.0'
         xmlns:ovirt-vm='http://ovirt.org/vm/1.0'>

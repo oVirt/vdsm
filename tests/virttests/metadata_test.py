@@ -34,6 +34,11 @@ from testlib import permutations, expandPermutations
 from testlib import XMLTestCase
 
 
+# NOTE:
+# unless otherwise specified, UUIDs are randomly generated
+# and have no special meaning
+
+
 _TestData = namedtuple('_TestData', ('conf', 'metadata_xml',))
 
 
@@ -496,6 +501,7 @@ class DescriptorTests(XMLTestCase):
     def test_from_xml(self):
         test_xml = u"""<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>68c1f97c-9336-4e7a-a8a9-b4f052ababf1</uuid>
   <metadata>
     <ovirt-vm:vm>
       <ovirt-vm:version type="float">4.2</ovirt-vm:version>
@@ -513,6 +519,7 @@ class DescriptorTests(XMLTestCase):
     def test_load_overwrites_content(self):
         test_xml = u"""<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>68c1f97c-9336-4e7a-a8a9-b4f052ababf1</uuid>
   <metadata>
     <ovirt-vm:vm>
       <ovirt-vm:version type="float">4.2</ovirt-vm:version>
@@ -748,6 +755,7 @@ class DescriptorTests(XMLTestCase):
     def test_device_from_xml_tree(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>68c1f97c-9336-4e7a-a8a9-b4f052ababf1</uuid>
   <metadata>
     <ovirt-vm:vm>
       <ovirt-vm:version type="float">4.2</ovirt-vm:version>
@@ -764,6 +772,7 @@ class DescriptorTests(XMLTestCase):
     def test_multiple_device_from_xml_tree(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>68c1f97c-9336-4e7a-a8a9-b4f052ababf1</uuid>
   <metadata>
     <ovirt-vm:vm>
       <ovirt-vm:version type="float">4.2</ovirt-vm:version>
@@ -789,6 +798,7 @@ class DescriptorTests(XMLTestCase):
     def test_unknown_device_from_xml_tree(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>68c1f97c-9336-4e7a-a8a9-b4f052ababf1</uuid>
   <metadata>
     <ovirt-vm:vm>
       <ovirt-vm:version type="float">4.2</ovirt-vm:version>
@@ -802,6 +812,7 @@ class DescriptorTests(XMLTestCase):
     def test_nested_device_from_xml_tree(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>68c1f97c-9336-4e7a-a8a9-b4f052ababf1</uuid>
   <metadata>
     <ovirt-vm:vm>
       <ovirt-vm:version type="float">4.2</ovirt-vm:version>
@@ -870,6 +881,9 @@ class DescriptorStorageMetadataTests(XMLTestCase):
         )
 
 
+BLANK_UUID = '00000000-0000-0000-0000-000000000000'
+
+
 class FakeDomain(object):
 
     @classmethod
@@ -887,8 +901,12 @@ class FakeDomain(object):
             )
         return dom
 
-    def __init__(self):
+    def __init__(self, vmid=BLANK_UUID):
         self.xml = {}
+        self._uuid = vmid
+
+    def UUIDString(self):
+        return self._uuid
 
     def metadata(self, xml_type, uri, flags):
         # we only support METADATA_ELEMENT

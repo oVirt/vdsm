@@ -50,6 +50,7 @@ The flow is:
 """
 
 from contextlib import contextmanager
+import logging
 import operator
 import xml.etree.ElementTree as ET
 
@@ -258,6 +259,8 @@ def create(name, namespace, namespace_uri, **kwargs):
 
 class Descriptor(object):
 
+    _log = logging.getLogger('virt.metadata.Descriptor')
+
     def __init__(
         self,
         name=xmlconstants.METADATA_VM_VDSM_ELEMENT,
@@ -364,6 +367,8 @@ class Descriptor(object):
             # else `md_xml` not reassigned, so we will parse empty section
             # and that's exactly what we want.
 
+        self._log.debug(
+            'loading metadata for %s: %s', dom.UUIDString(), md_xml)
         self._load(vmxml.parse_xml(md_xml))
 
     def dump(self, dom):
@@ -374,11 +379,14 @@ class Descriptor(object):
         :param dom: domain to access
         :type dom: libvirt.Domain
         """
+        md_xml = self._build_xml()
         dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                        self._build_xml(),
+                        md_xml,
                         self._namespace,
                         self._namespace_uri,
                         0)
+        self._log.debug(
+            'dumped metadata for %s: %s', dom.UUIDString(), md_xml)
 
     def to_xml(self):
         """
@@ -514,6 +522,10 @@ class Descriptor(object):
             )
         )
         if md_elem is not None:
+            md_uuid = root.find('./uuid')
+            self._log.debug(
+                'parsing metadata for %s: %s',
+                md_uuid.text, vmxml.format_xml(md_elem, pretty=True))
             self._load(md_elem, self._namespace, self._namespace_uri)
 
     def _load(self, md_elem, namespace=None, namespace_uri=None):
