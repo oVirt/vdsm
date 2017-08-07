@@ -38,10 +38,14 @@ except ImportError as e:
     raise compat.Unsupported(str(e))
 
 CLIENT_PROTOCOL = "sslv23"
-SSL_OP_NO_TLSv1_1 = 268435456
 
 DEFAULT_ACCEPT_TIMEOUT = 5
 SOCKET_DEFAULT_TIMEOUT = socket._GLOBAL_DEFAULT_TIMEOUT
+
+missing_protocols = {
+    'SSL_OP_NO_TLSv1_1': 0x1000000,
+    'SSL_OP_NO_TLSv1_2': 0x8000000
+}
 
 # M2Crypto.threading needs initialization.
 # See https://bugzilla.redhat.com/482420
@@ -334,9 +338,9 @@ def protocol_name_to_int():
     for no_protocol in config.get('vars', 'ssl_excludes').split(','):
         if no_protocol != '':
             protocol = 'SSL_' + no_protocol.strip()
-            if protocol == 'SSL_OP_NO_TLSv1_1':
+            if protocol in missing_protocols:
                 # missing from m2crypto
-                excludes |= SSL_OP_NO_TLSv1_1
+                excludes |= missing_protocols[protocol]
             else:
                 excludes |= getattr(m2, protocol)
 
