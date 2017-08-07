@@ -210,7 +210,8 @@ class Link(object):
 
     def _isVFhidden(self):
         if self.address == '00:00:00:00:00:00':
-            return True
+            if self._is_vmfex():
+                return True
         # We hide a VF if there exists a macvtap device with the same address.
         # We assume that such VFs are used by a VM and should not be reported
         # as host nics
@@ -220,6 +221,9 @@ class Link(object):
                     self._detectType(dev) == LinkType.MACVLAN):
                 return True
         return False
+
+    def _is_vmfex(self):
+        return drv_name(self.name) == 'enic'
 
     @property
     def oper_up(self):
