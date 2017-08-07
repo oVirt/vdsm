@@ -84,7 +84,8 @@ def checkImage(path, timeout):
         sys.stderr.write('Increate timeout or check image availability.')
         sys.exit(2)
 
-    ((out, err), rc) = (p.communicate(), p.returncode)
+    out, err = p.communicate()
+    rc = p.returncode
 
     if rc == 0:
         sys.stderr.write('checkimages: %s image check returned: %s\n' %
