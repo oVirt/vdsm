@@ -1185,6 +1185,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/driverloader.py*
 %{python_sitelib}/%{vdsm_name}/network/ip/*.py*
 %{python_sitelib}/%{vdsm_name}/network/ifacquire.py*
+%{python_sitelib}/%{vdsm_name}/network/initializer.py*
 %{python_sitelib}/%{vdsm_name}/network/ipwrapper.py*
 %{python_sitelib}/%{vdsm_name}/network/link/*.py*
 %{python_sitelib}/%{vdsm_name}/network/link/bond/*.py*

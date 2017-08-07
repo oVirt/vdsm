@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,30 +16,10 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
-SUBDIRS = configurators ip link lldp lldpad netinfo netlink ovs tc nm
+from vdsm.network.nm import networkmanager
 
-include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmnetworkdir = $(vdsmpylibdir)/network
-dist_vdsmnetwork_PYTHON = \
-	__init__.py \
-	api.py \
-	errors.py \
-	canonicalize.py \
-	connectivity.py \
-	driverloader.py \
-	ifacquire.py \
-	initializer.py \
-	ipwrapper.py \
-	kernelconfig.py \
-	legacy_switch.py \
-	libvirt.py \
-	models.py \
-	netconfpersistence.py \
-	netrestore.py \
-	netswitch.py \
-	sourceroute.py \
-	sourceroutethread.py \
-	utils.py \
-	$(NULL)
+def init_privileged_network_components():
+    networkmanager.init()
