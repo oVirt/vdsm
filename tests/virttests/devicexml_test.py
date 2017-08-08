@@ -986,6 +986,34 @@ class DeviceXMLRoundTripTests(XMLTestCase):
 
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: FakeProxy())
+    def test_interface_vmfex(self):
+        interface_xml = u'''
+            <interface type='network'>
+                <mac address="52:54:00:59:F5:3F"/>
+                <model type="virtio"/>
+                <source network='direct-pool'/>
+                <virtualport type='802.1Qbh'>
+                    <parameters profileid='OvirtProfileID'/>
+                </virtualport>
+            </interface>'''
+        # the real work is done by the hook, so we check that
+        # we correctly initialized what we could
+        meta = {'vmid': 'VMID', 'network': 'ovirttest'}
+        expected_xml = u'''
+            <interface type="network">
+                <mac address="52:54:00:59:F5:3F" />
+                <model type="virtio" />
+                <source bridge="ovirttest" />
+            </interface>'''
+        self._check_roundtrip(
+            vmdevices.network.Interface,
+            interface_xml,
+            meta=meta,
+            expected_xml=expected_xml
+        )
+
+    @MonkeyPatch(vmdevices.network.supervdsm,
+                 'getProxy', lambda: FakeProxy())
     def test_interface_sriov_only_host_address(self):
         """
         This is what we expect on the very first run. The device has not
