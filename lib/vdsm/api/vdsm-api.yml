@@ -642,7 +642,7 @@ types:
         value-type: string
 
     StringListMap: &StringListMap
-        added: '4.2'
+        added: '4.1'
         description: A mapping from string to a list of strings.
         key-type: string
         name: StringListMap
@@ -3058,7 +3058,7 @@ types:
             WARN: An alias to WARNING
 
     Tlv: &Tlv
-        added: '4.2'
+        added: '4.1'
         description: LLDP Information
         name: Tlv
         properties:
@@ -3087,7 +3087,7 @@ types:
           datatype: uint
 
     Lldp: &Lldp
-        added: '4.2'
+        added: '4.1'
         description: LLDP Information
         name: Lldp
         properties:
@@ -3101,7 +3101,7 @@ types:
           - *Tlv
 
     LldpMap: &LldpMap
-        added: '4.2'
+        added: '4.1'
         description: A mapping from interface name to LLDP information
         key-type: string
         name: *LldpMap
@@ -7981,7 +7981,7 @@ Host.getDevicesVisibility:
         type: *DeviceVisibilityMap
 
 Host.getLldp:
-    added: '4.2'
+    added: '4.1'
     description: Get lldp information of a NIC
     params:
     -   description: Restrict the reported lldp information. Empty restriction
