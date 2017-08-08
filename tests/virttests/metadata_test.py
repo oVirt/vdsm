@@ -82,6 +82,52 @@ _CDROM_DATA = _TestData(
     </vm>""",
 )
 
+_CDROM_PAYLOAD_DATA = _TestData(
+    conf={
+        'index': '3',
+        'iface': 'ide',
+        'specParams': {
+            'vmPayload': {
+                'volId': 'config-2',
+                'file': {
+                    'openstack/content/0000': 'something',
+                    'openstack/latest/meta_data.json': 'something',
+                    'openstack/latest/user_data': 'something',
+                }
+            }
+        },
+        'readonly': 'true',
+        'deviceId': '423af2b3-5d02-44c5-9d2e-9e69de6eef44',
+        'path': '',
+        'device': 'cdrom',
+        'shared': 'false',
+        'type': 'disk',
+        'vm_custom': {},
+    },
+    metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
+    <vm>
+    <device index="3" type="disk">
+        <device>cdrom</device>
+        <deviceId>423af2b3-5d02-44c5-9d2e-9e69de6eef44</deviceId>
+        <iface>ide</iface>
+        <index>3</index>
+        <path />
+        <readonly>true</readonly>
+        <shared>false</shared>
+        <type>disk</type>
+        <specParams>
+            <vmPayload>
+                <volId>config-2</volId>
+                <file path='openstack/content/0000'>something</file>
+                <file path='openstack/latest/meta_data.json'>something</file>
+                <file path='openstack/latest/user_data'>something</file>
+            </vmPayload>
+        </specParams>
+        <vm_custom />
+    </device>
+    </vm>""",
+)
+
 
 _DISK_DATA = _TestData(
     conf={
@@ -737,6 +783,12 @@ class DescriptorStorageMetadataTests(XMLTestCase):
 
     def test_cdrom_to_metadata_xml(self):
         self._check_drive_to_metadata_xml(_CDROM_DATA)
+
+    def test_cdrom_payload_from_metadata_xml(self):
+        self._check_drive_from_metadata_xml(_CDROM_PAYLOAD_DATA)
+
+    def test_cdrom_payload_to_metadata_xml(self):
+        self._check_drive_to_metadata_xml(_CDROM_PAYLOAD_DATA)
 
     def _check_drive_from_metadata_xml(self, data):
         desc = metadata.Descriptor()

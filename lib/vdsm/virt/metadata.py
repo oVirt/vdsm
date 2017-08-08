@@ -567,6 +567,8 @@ def _load_device(md_obj, dev):
         if elem is not None:
             if key == _VOLUME_CHAIN:
                 value = [md_obj.load(node) for node in elem]
+            elif key == _SPEC_PARAMS:
+                value = _load_device_spec_params(md_obj, elem)
             else:
                 value = md_obj.load(elem)
             info[key] = value
@@ -589,6 +591,8 @@ def _dump_device(md_obj, data):
                 node = md_obj.dump(_VOLUME_CHAIN_NODE, **val)
                 vmxml.append_child(chain, etree_child=node)
             elems.append(chain)
+        elif key == _SPEC_PARAMS:
+            elems.append(_dump_device_spec_params(md_obj, value))
         else:
             elems.append(md_obj.dump(key, **value))
 
@@ -596,6 +600,48 @@ def _dump_device(md_obj, data):
     for elem in elems:
         vmxml.append_child(dev_elem, etree_child=elem)
     return dev_elem
+
+
+_VM_PAYLOAD = 'vmPayload'
+_FILE_SPEC = 'file'
+_PATH_SPEC = 'path'
+
+
+def _load_device_spec_params(md_obj, elem):
+    spec_params = md_obj.load(elem)
+    payload_elem = md_obj.find(elem, _VM_PAYLOAD)
+    if payload_elem is not None:
+        payload = md_obj.load(payload_elem)
+        payload[_FILE_SPEC] = {
+            entry.attrib[_PATH_SPEC]: entry.text
+            for entry in payload_elem
+            if entry.tag == _FILE_SPEC
+        }
+        spec_params[_VM_PAYLOAD] = payload
+    return spec_params
+
+
+def _dump_device_spec_params(md_obj, value):
+    payload = value.pop(_VM_PAYLOAD, None)
+    if payload is not None:
+        # mandatory for vmPayload
+        file_spec = payload.pop(_FILE_SPEC)
+        payload_elem = md_obj.dump(_VM_PAYLOAD, **payload)
+
+        for path, content in sorted(
+            file_spec.items(),
+            key=operator.itemgetter(0),
+        ):
+            entry = ET.SubElement(payload_elem, _FILE_SPEC)
+            entry.attrib[_PATH_SPEC] = path
+            entry.text = content
+    else:
+        payload_elem = None
+
+    spec_params_elem = md_obj.dump(_SPEC_PARAMS, **value)
+    if payload_elem is not None:
+        vmxml.append_child(spec_params_elem, etree_child=payload_elem)
+    return spec_params_elem
 
 
 def _match_args(kwargs, attrs):
