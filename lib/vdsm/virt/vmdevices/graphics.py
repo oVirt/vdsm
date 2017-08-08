@@ -71,8 +71,9 @@ class Graphics(Base):
         self.specParams['displayIp'] = display_ip
 
     def teardown(self):
-        libvirtnetwork.delete_network(self.specParams['displayNetwork'],
-                                      self.vmid)
+        display_network = self.specParams['displayNetwork']
+        if display_network:
+            libvirtnetwork.delete_network(display_network, self.vmid)
 
     def getSpiceVmcChannelsXML(self):
         vmc = vmxml.Element('channel', type='spicevmc')
