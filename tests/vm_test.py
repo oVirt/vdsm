@@ -1831,6 +1831,98 @@ class FreezingUnexpectedErrorTests(TestCaseBase):
                                              message="fake error"))
 
 
+def err_no_domain():
+    error = libvirt.libvirtError("No such domain")
+    error.err = [libvirt.VIR_ERR_NO_DOMAIN]
+    return error
+
+
+class FakePersistentDomain(object):
+
+    def __init__(self, undefined, uuid, name, state):
+        self.id = uuid
+        self.name = name
+        self._state = state
+        self.undefined = undefined
+
+    def state(self, flags):
+        return self._state, 0
+
+    def undefine(self):
+        if self.id in self.undefined:
+            raise err_no_domain()
+        self.undefined.append(self.id)
+
+
+class FakePersistentConnection(object):
+
+    def __init__(self, domains):
+        self.domains = domains
+
+    def _no_domain_error(self):
+        raise err_no_domain()
+
+    def lookupByUUIDString(self, uuid):
+        for d in self.domains:
+            if d.id == uuid:
+                return d
+        else:
+            raise self._no_domain_error()
+
+    def lookupByName(self, name):
+        for d in self.domains:
+            if d.name == name:
+                return d
+        else:
+            raise self._no_domain_error()
+
+
+class FakePersistentVm(object):
+
+    def __init__(self):
+        self.id = '123'
+        self.name = 'foo'
+        self.log = logging.getLogger()
+
+
+@expandPermutations
+class TestVmPersistency(TestCaseBase):
+
+    @permutations([
+        ((('123', 'bar', libvirt.VIR_DOMAIN_SHUTOFF),
+          ('456', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),),
+         ['123', '456'],),
+        ((('123', 'bar', libvirt.VIR_DOMAIN_CRASHED),
+          ('456', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),),
+         ['123', '456'],),
+        ((('123', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),
+          ('456', 'bar', libvirt.VIR_DOMAIN_SHUTOFF),),
+         ['123'],),
+        ((('123', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),
+          ('456', 'bar', libvirt.VIR_DOMAIN_RUNNING),),
+         ['123'],),
+        ((('123', 'bar', libvirt.VIR_DOMAIN_SHUTOFF),
+          ('456', 'foo', libvirt.VIR_DOMAIN_RUNNING),),
+         None,),
+        ((('123', 'bar', libvirt.VIR_DOMAIN_RUNNING),
+          ('456', 'foo', libvirt.VIR_DOMAIN_SHUTOFF),),
+         None,),
+        ((('456', 'bar', libvirt.VIR_DOMAIN_RUNNING),
+          ('789', 'baz', libvirt.VIR_DOMAIN_SHUTOFF),),
+         [],),
+    ])
+    def test_domain_cleanup(self, domain_specs, result):
+        undefined = []
+        domains = [FakePersistentDomain(undefined, *s) for s in domain_specs]
+        connection = FakePersistentConnection(domains)
+        if result is None:
+            self.assertRaises(exception.VMExists, vm._undefine_stale_domain,
+                              FakePersistentVm(), connection)
+        else:
+            vm._undefine_stale_domain(FakePersistentVm(), connection)
+            self.assertEqual(undefined, result)
+
+
 class BlockIoTuneTests(TestCaseBase):
 
     def setUp(self):
