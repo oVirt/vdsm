@@ -24,14 +24,14 @@ import pytest
 
 from vdsm.network import errors as ne
 
+from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
 from network.nettestlib import dummy_devices
 
 BOND_NAME = 'bond1'
 
 
-@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
-                                    pytest.mark.ovs_switch('ovs')])
+@nftestlib.parametrize_switch
 class TestBondBasic(NetFuncTestCase):
 
     def test_add_bond_with_two_nics(self, switch):
@@ -126,8 +126,7 @@ class TestBondBasic(NetFuncTestCase):
         assert err.value.status == ne.ERR_BAD_PARAMS
 
 
-@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
-                                    pytest.mark.ovs_switch('ovs')])
+@nftestlib.parametrize_switch
 class TestBondOptions(NetFuncTestCase):
 
     def test_bond_mode_1(self, switch):

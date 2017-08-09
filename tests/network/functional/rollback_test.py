@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 import pytest
 
+from . import netfunctestlib as nftestlib
 from .netfunctestlib import SetupNetworksError, NetFuncTestCase, NOCHK
 from network.nettestlib import dummy_devices
 
@@ -33,8 +34,7 @@ IPv4_ADDRESS = '192.0.2.1'
 IPv4_NETMASK = '255.255.255.0'
 
 
-@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
-                                    pytest.mark.ovs_switch('ovs')])
+@nftestlib.parametrize_switch
 class TestNetworkRollback(NetFuncTestCase):
 
     def test_remove_broken_network(self, switch):

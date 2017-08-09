@@ -45,6 +45,10 @@ NOCHK = {'connectivityCheck': False}
 IFCFG_DIR = '/etc/sysconfig/network-scripts/'
 IFCFG_PREFIX = IFCFG_DIR + 'ifcfg-'
 
+parametrize_switch = pytest.mark.parametrize(
+    'switch', [pytest.mark.legacy_switch('legacy'),
+               pytest.mark.ovs_switch('ovs')])
+
 
 def requires_ipaddress():
     """

@@ -20,10 +20,9 @@
 
 from __future__ import absolute_import
 
-import pytest
-
 from vdsm.network.ipwrapper import linkSet, addrAdd
 
+from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestCase, NOCHK
 from network.nettestlib import veth_pair, dnsmasq_run, dhclient_run
 
@@ -37,8 +36,7 @@ DHCPv4_RANGE_FROM = '192.0.3.2'
 DHCPv4_RANGE_TO = '192.0.3.253'
 
 
-@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
-                                    pytest.mark.ovs_switch('ovs')])
+@nftestlib.parametrize_switch
 class TestNetworkDhcpBasic(NetFuncTestCase):
 
     def test_add_net_with_dhcpv4_based_on_nic(self, switch):
@@ -63,8 +61,7 @@ class TestNetworkDhcpBasic(NetFuncTestCase):
                         NETWORK_NAME, netcreate[NETWORK_NAME])
 
 
-@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
-                                    pytest.mark.ovs_switch('ovs')])
+@nftestlib.parametrize_switch
 class TestStopDhclientOnUsedNics(NetFuncTestCase):
 
     def test_attach_dhcp_nic_to_ipless_network(self, switch):

@@ -27,6 +27,7 @@ import pytest
 from vdsm.network import errors as ne
 from vdsm.network.configurators.ifcfg import ifup, ifdown
 
+from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestCase, SetupNetworksError, NOCHK
 from network.nettestlib import dummy_device, dummy_devices
 
@@ -37,8 +38,7 @@ VLAN1 = 10
 VLAN2 = 20
 
 
-@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
-                                    pytest.mark.ovs_switch('ovs')])
+@nftestlib.parametrize_switch
 class TestNetworkWithBond(NetFuncTestCase):
 
     def test_add_the_same_nic_to_net_and_bond_in_one_step(self, switch):

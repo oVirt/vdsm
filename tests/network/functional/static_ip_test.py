@@ -25,6 +25,7 @@ import pytest
 from vdsm.network import errors as ne
 from vdsm.network.ipwrapper import addrAdd
 
+from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
 from network.nettestlib import dummy_device, dummy_devices
 
@@ -44,8 +45,7 @@ IPv6 = [6]
 IPv4IPv6 = [4, 6]
 
 
-@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
-                                    pytest.mark.ovs_switch('ovs')])
+@nftestlib.parametrize_switch
 class TestNetworkStaticIpBasic(NetFuncTestCase):
 
     def test_add_net_with_ipv4_based_on_nic(self, switch):
@@ -136,8 +136,7 @@ class TestNetworkStaticIpBasic(NetFuncTestCase):
                 self.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
 
 
-@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
-                                    pytest.mark.ovs_switch('ovs')])
+@nftestlib.parametrize_switch
 class TestAcquireNicsWithStaticIP(NetFuncTestCase):
 
     def test_attach_nic_with_ip_to_ipless_network(self, switch):
@@ -213,8 +212,7 @@ class TestIfacesWithMultiplesUsers(NetFuncTestCase):
                 self.assertDisabledIPv4(self.netinfo.nics[nic])
 
 
-@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
-                                    pytest.mark.ovs_switch('ovs')])
+@nftestlib.parametrize_switch
 class TestIPValidation(NetFuncTestCase):
 
     def test_add_net_ip_missing_addresses_fails(self, switch):

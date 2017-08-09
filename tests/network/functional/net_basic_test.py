@@ -29,6 +29,7 @@ import pytest
 from vdsm.network import errors as ne
 from vdsm.network.link import iface as link_iface
 
+from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
 from network import nmnettestlib
 from network.nettestlib import dummy_device, dummy_devices
@@ -39,8 +40,7 @@ NET_2 = NETWORK_NAME + '2'
 VLANID = 100
 
 
-@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy'),
-                                    pytest.mark.ovs_switch('ovs')])
+@nftestlib.parametrize_switch
 class TestNetworkBasic(NetFuncTestCase):
 
     def test_add_net_based_on_nic(self, switch):
