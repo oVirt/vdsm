@@ -333,14 +333,19 @@ class GuestAgent(object):
         self.log.debug("Guest's message %s: %s", message, args)
         if message == 'heartbeat':
             self.guestInfo['memUsage'] = int(args['free-ram'])
-            # ovirt-guest-agent reports the following fields in 'memory-stat':
-            # 'mem_total', 'mem_free', 'mem_unused', 'swap_in', 'swap_out',
-            # 'pageflt' and 'majflt'
             if 'memory-stat' in args:
-                for (k, v) in args['memory-stat'].iteritems():
+                for k in ('mem_total', 'mem_unused', 'mem_buffers',
+                          'mem_cached', 'swap_in', 'swap_out', 'pageflt',
+                          'majflt'):
+                    if k not in args['memory-stat']:
+                        continue
                     # Convert the value to string since 64-bit integer is not
                     # supported in XMLRPC
-                    self.guestInfo['memoryStats'][k] = str(v)
+                    self.guestInfo['memoryStats'][k] = str(
+                        args['memory-stat'][k])
+                    if k == 'mem_unused':
+                        self.guestInfo['memoryStats']['mem_free'] = str(
+                            args['memory-stat']['mem_unused'])
 
             if 'apiVersion' in args:
                 # The guest agent supports API Versioning

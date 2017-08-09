@@ -146,7 +146,7 @@ def randomizeRuntimeStats(stats):
 
     memoryStats = stats['memoryStats']
     memoryStats['mem_unused'] = str(memUnused)
-    memoryStats['mem_free'] = str(memUsed - memUnused)
+    memoryStats['mem_free'] = str(memUnused)
     memoryStats['swap_in'] = str(random.randint(0, 1024))
     memoryStats['swap_out'] = str(random.randint(0, 1024))
     memoryStats['pageflt'] = str(random.randint(0, 1024))

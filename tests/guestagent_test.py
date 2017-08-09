@@ -62,7 +62,7 @@ _INPUTS = [
 _OUTPUTS = [
     {'memUsage': 1024000, 'memoryStats':
         {'swap_out': '0', 'majflt': '0', 'mem_free':
-            '4466104', 'swap_in': '0', 'pageflt': '0',
+            '2733832', 'swap_in': '0', 'pageflt': '0',
             'mem_total': '8059320', 'mem_unused': '2733832'}},
 
     {'guestName': 'example.ovirt.org'},

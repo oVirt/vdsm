@@ -1251,10 +1251,6 @@ types:
         description: Memory statistics as reported by the guest agent.
         name: GuestMemoryStats
         properties:
-        -   defaultvalue: 0
-            description: The amount of swap space used by the OS (in KiB)
-            name: swap_usage
-            type: string
 
         -   description: The total amount of memory available to the
                 OS (in KiB)
@@ -1265,12 +1261,14 @@ types:
             description: The amount of pagecache used by the OS (in KiB)
             name: mem_cached
             type: string
+            deprecated: '4.2'
 
         -   defaultvalue: 0
             description: The amount of temporary raw disk block
                 storage used by the OS (in KiB)
             name: mem_buffers
             type: string
+            deprecated: '4.2'
 
         -   description: Average number of page faults per second
             name: pageflt
@@ -1280,6 +1278,7 @@ types:
                 in KiB (includes easily reclaimable memory)
             name: mem_free
             type: string
+            deprecated: '4.2'
 
         -   description: Average number of major page faults per second
             name: majflt
@@ -1300,11 +1299,6 @@ types:
             name: swap_in
             type: uint
 
-        -   defaultvalue: needs updating
-            description: The total amount of swap space available
-                to the OS (in KiB)
-            name: swap_total
-            type: string
         type: object
 
     GuestMountInfo: &GuestMountInfo
