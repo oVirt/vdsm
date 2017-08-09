@@ -142,11 +142,14 @@ _LIBVIRT_TO_OVIRT_NAME = {
 
 
 def get_drive_conf_identifying_attrs(dev_conf):
-    attrs = {'type': dev_conf['type'], 'iface': dev_conf['iface']}
+    attrs = {
+        'type': str(dev_conf['type']),
+        'iface': str(dev_conf['iface'])
+    }
     if 'GUID' in dev_conf:
-        attrs['guid'] = dev_conf['GUID']
+        attrs['guid'] = str(dev_conf['GUID'])
     elif 'index' in dev_conf:
-        attrs['index'] = dev_conf['index']
+        attrs['index'] = str(dev_conf['index'])
     else:
         raise LookupError('Do not know how to identify drive: %s' % dev_conf)
     return attrs
