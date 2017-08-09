@@ -383,7 +383,6 @@ AC_OUTPUT([
 	lib/vdsm/common/Makefile
 	lib/vdsm/common/network/Makefile
 	lib/vdsm/gluster/Makefile
-	lib/vdsm/hook/Makefile
 	lib/vdsm/host/Makefile
 	lib/vdsm/metrics/Makefile
 	lib/vdsm/network/Makefile
