@@ -348,6 +348,9 @@ class FakeVM(object):
         finally:
             del self.conf['_migrationParams']
 
+    def min_cluster_version(self, major, minor):
+        return False
+
     def status(self):
         return self.conf
 

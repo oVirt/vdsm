@@ -3814,6 +3814,20 @@ class Vm(object):
                 raise MigrationError(e.get_error_message())
             raise
 
+        if not self._dom.isPersistent():
+            # The domain may not be persistent if it was migrated from old
+            # Vdsm or if the migration couldn't be certain that persistent
+            # domains are universally available in the cluster.  Then we
+            # need to make the domain persistent.  If that fails (due to
+            # unexpected circumstances or when a block job is running), we
+            # don't want to block further operations and we can live with
+            # the transient domain.
+            self.log.debug("Switching transient VM to persistent")
+            try:
+                self._connection.defineXML(self._dom.XMLDesc(0))
+            except libvirt.libvirtError as e:
+                self.log.info("Failed to make VM persistent: %s'", e)
+
     def _underlyingCont(self):
         hooks.before_vm_cont(self._dom.XMLDesc(0), self._custom)
         self._dom.resume()

@@ -549,7 +549,7 @@ class SourceThread(object):
             flags |= libvirt.VIR_MIGRATE_COMPRESSED
         if self._autoConverge:
             flags |= libvirt.VIR_MIGRATE_AUTO_CONVERGE
-        if self._vm._dom.isPersistent():
+        if self._vm.min_cluster_version(4, 2):
             flags |= libvirt.VIR_MIGRATE_PERSIST_DEST
         # Migration may fail immediately when VIR_MIGRATE_POSTCOPY flag is
         # present in the following situations:
