@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 from collections import namedtuple
 
+from vdsm.virt.vmdevices import common
 from vdsm.virt import metadata
 from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
@@ -58,7 +59,7 @@ _CDROM_DATA = _TestData(
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
-    <device index="2" type="disk">
+    <device iface="ide" index="2" type="disk">
         <device>cdrom</device>
         <deviceId>e59c985c-46c2-4489-b355-a6f374125eb9</deviceId>
         <iface>ide</iface>
@@ -106,7 +107,7 @@ _CDROM_PAYLOAD_DATA = _TestData(
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
-    <device index="3" type="disk">
+    <device iface="ide" index="3" type="disk">
         <device>cdrom</device>
         <deviceId>423af2b3-5d02-44c5-9d2e-9e69de6eef44</deviceId>
         <iface>ide</iface>
@@ -170,7 +171,7 @@ _DISK_DATA = _TestData(
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
-    <device index="0" type="disk">
+    <device iface="virtio" index="0" type="disk">
         <bootOrder>1</bootOrder>
         <device>disk</device>
         <deviceId>66441539-f7ac-4946-8a25-75e422f939d4</deviceId>
@@ -243,7 +244,7 @@ _DISK_DATA_CUSTOM = _TestData(
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
-    <device index="1" type="disk">
+    <device iface="virtio" index="1" type="disk">
         <bootOrder>2</bootOrder>
         <device>disk</device>
         <deviceId>b4f8d9d7-2701-47ae-ab9a-d1e0194eb796</deviceId>
@@ -794,18 +795,14 @@ class DescriptorStorageMetadataTests(XMLTestCase):
         desc = metadata.Descriptor()
         dom = FakeDomain.with_metadata(data.metadata_xml)
         desc.load(dom)
-        with desc.device(
-            type=data.conf['type'],
-            index=data.conf['index']
-        ) as dev:
+        attrs = common.get_drive_conf_identifying_attrs(data.conf)
+        with desc.device(**attrs) as dev:
             self.assertEqual(dev, data.conf)
 
     def _check_drive_to_metadata_xml(self, data):
         desc = metadata.Descriptor()
-        with desc.device(
-            type=data.conf['type'],
-            index=data.conf['index']
-        ) as dev:
+        attrs = common.get_drive_conf_identifying_attrs(data.conf)
+        with desc.device(**attrs) as dev:
             dev.update(data.conf)
         dom = FakeDomain()
         desc.dump(dom)
