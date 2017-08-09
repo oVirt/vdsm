@@ -275,6 +275,58 @@ _DISK_DATA_CUSTOM = _TestData(
     </vm>""",
 )
 
+_DISK_DATA_SGIO = _TestData(
+    conf={
+        'propagateErrors': 'off',
+        'format': 'raw',
+        'shared': 'false',
+        'type': 'disk',
+        'readonly': 'false',
+        'specParams': {},
+        'sgio': 'unfiltered',
+        'iface': 'scsi',
+        'deviceId': '07749931-667c-4388-8ba5-4f63ad84a0d7',
+        'address': {
+            'bus': '0',
+            'controller': '0',
+            'type': 'drive',
+            'target': '0',
+            'unit': '0'
+        },
+        'device': 'lun',
+        'discard': False,
+        'GUID': '36001405e9bebaa680864c98a280e6544',
+        'optional': 'false',
+        'vm_custom': {},
+    },
+    metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
+    <vm>
+    <device iface="scsi" guid="36001405e9bebaa680864c98a280e6544" type="disk">
+        <GUID>36001405e9bebaa680864c98a280e6544</GUID>
+        <device>lun</device>
+        <deviceId>07749931-667c-4388-8ba5-4f63ad84a0d7</deviceId>
+        <discard type="bool">False</discard>
+        <format>raw</format>
+        <iface>scsi</iface>
+        <optional>false</optional>
+        <propagateErrors>off</propagateErrors>
+        <readonly>false</readonly>
+        <sgio>unfiltered</sgio>
+        <shared>false</shared>
+        <type>disk</type>
+        <address>
+            <bus>0</bus>
+            <controller>0</controller>
+            <target>0</target>
+            <type>drive</type>
+            <unit>0</unit>
+        </address>
+        <specParams />
+        <vm_custom />
+    </device>
+    </vm>""",
+)
+
 
 @expandPermutations
 class MetadataTests(XMLTestCase):
@@ -778,6 +830,12 @@ class DescriptorStorageMetadataTests(XMLTestCase):
 
     def test_disk_custom_to_metadata_xml(self):
         self._check_drive_to_metadata_xml(_DISK_DATA_CUSTOM)
+
+    def test_disk_sgio_from_metadata_xml(self):
+        self._check_drive_from_metadata_xml(_DISK_DATA_SGIO)
+
+    def test_disk_sgio_to_metadata_xml(self):
+        self._check_drive_to_metadata_xml(_DISK_DATA_SGIO)
 
     def test_cdrom_from_metadata_xml(self):
         self._check_drive_from_metadata_xml(_CDROM_DATA)
