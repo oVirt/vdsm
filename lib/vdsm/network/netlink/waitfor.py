@@ -54,7 +54,7 @@ def waitfor_ipv4_addr(iface, address=None, timeout=10):
     expected_event = {'label': iface, 'family': 'inet', 'scope': 'global'}
     if address:
         expected_event.update(address=address)
-    with _wait_for_event(iface, expected_event, timeout):
+    with _wait_for_ipaddr_event(iface, expected_event, timeout):
         yield
 
 
@@ -70,14 +70,39 @@ def waitfor_ipv6_addr(iface, address=None, timeout=10):
     expected_event = {'label': iface, 'family': 'inet6', 'scope': 'global'}
     if address:
         expected_event.update(address=address)
-    with _wait_for_event(iface, expected_event, timeout):
+    with _wait_for_ipaddr_event(iface, expected_event, timeout):
         yield
 
 
 @contextmanager
-def _wait_for_event(iface, expected_event, timeout):
-    with monitor.Monitor(groups=('ipv4-ifaddr', 'ipv6-ifaddr'),
-                         timeout=timeout) as mon:
+def waitfor_link_exists(iface, timeout=0.5):
+    """
+    Silently block until a link is created/detected.
+    :param iface: The device name.
+    :param timeout: The maximum time in seconds to wait for the message.
+    """
+    expected_event = {'name': iface, 'event': 'new_link'}
+    with _wait_for_link_event(iface, expected_event, timeout):
+        yield
+
+
+@contextmanager
+def _wait_for_link_event(iface, expected_event, timeout):
+    groups = ('link',)
+    with _wait_for_event(iface, expected_event, groups, timeout):
+        yield
+
+
+@contextmanager
+def _wait_for_ipaddr_event(iface, expected_event, timeout):
+    groups = ('ipv4-ifaddr', 'ipv6-ifaddr')
+    with _wait_for_event(iface, expected_event, groups, timeout):
+        yield
+
+
+@contextmanager
+def _wait_for_event(iface, expected_event, groups, timeout):
+    with monitor.Monitor(groups=groups, timeout=timeout) as mon:
         try:
             yield
         finally:

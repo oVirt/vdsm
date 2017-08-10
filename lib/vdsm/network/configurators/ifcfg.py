@@ -351,8 +351,14 @@ class Ifcfg(Configurator):
             _ifup(vlan)
             return
 
+        blocking = _blocking_action_required(vlan)
         for attempt in range(5):
-            _ifup(vlan)
+            if blocking:
+                _ifup(vlan, blocking=blocking)
+            else:
+                with waitfor.waitfor_link_exists(vlan.name):
+                    _ifup(vlan, blocking=blocking)
+
             if (link_iface.mac_address(bond.slaves[0].name) ==
                     link_iface.mac_address(vlan.name)):
                 return
@@ -947,15 +953,10 @@ def _ignore_missing_device(device_name, enable_ipv6):
             raise
 
 
-def _ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP):
-    if not iface.blockingdhcp and (iface.ipv4.bootproto == 'dhcp' or
-                                   iface.ipv6.dhcpv6):
-        # wait for dhcp in another thread, so vdsm won't get stuck (BZ#498940)
-        t = concurrent.thread(_exec_ifup,
-                              name='ifup/%s' % iface,
-                              args=(iface, cgroup))
-        t.start()
-    else:
+def _ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP, blocking=None):
+    if blocking is None:
+        blocking = _blocking_action_required(iface)
+    if blocking:
         if not iface.master and (iface.ipv4 or iface.ipv6):
             if iface.ipv4:
                 wait_for_ip = waitfor.waitfor_ipv4_addr
@@ -967,6 +968,20 @@ def _ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP):
         else:
             with waitfor.waitfor_linkup(iface.name):
                 _exec_ifup(iface, cgroup)
+    else:
+        # wait for dhcp in another thread, so vdsm won't get stuck (BZ#498940)
+        t = concurrent.thread(_exec_ifup,
+                              name='ifup/%s' % iface,
+                              args=(iface, cgroup))
+        t.start()
+
+
+def _blocking_action_required(iface):
+    return iface.blockingdhcp or not _dhcp_required(iface)
+
+
+def _dhcp_required(iface):
+    return iface.ipv4.bootproto == 'dhcp' or iface.ipv6.dhcpv6
 
 
 def _restore_default_bond_options(bond_name, desired_options):
