@@ -1272,8 +1272,7 @@ types:
             name: mem_buffers
             type: string
 
-        -   description: The number of page faults since the last
-                collection
+        -   description: Average number of page faults per second
             name: pageflt
             type: uint
 
@@ -1282,8 +1281,7 @@ types:
             name: mem_free
             type: string
 
-        -   description: The number of major page faults since the
-                last collection
+        -   description: Average number of major page faults per second
             name: majflt
             type: uint
 
@@ -1292,12 +1290,13 @@ types:
             name: mem_unused
             type: string
 
-        -   description: The number of memory pages swapped out since
-                the last collection
+        -   description: Average number of memory pages swapped out per
+                second
             name: swap_out
             type: uint
-        -   description: The number of memory pages swapped in since
-                the last collection
+
+        -   description: Average number of memory pages swapped in per
+                second
             name: swap_in
             type: uint
 
