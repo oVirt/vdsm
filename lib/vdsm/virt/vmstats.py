@@ -508,20 +508,15 @@ def memory(stats, first_sample, last_sample, interval):
             'swap_in': 'balloon.swap_in',
             'swap_out': 'balloon.swap_out',
             'majflt': 'balloon.major_fault',
+            'minflt': 'balloon.minor_fault',
         }
         for (k, v) in stats_map.iteritems():
             mem_stats[k] = int(round((
                 last_sample.get(v, 0) - first_sample.get(v, 0)
             ) / interval))
 
-        mem_stats['pageflt'] = int(round((
-            (
-                last_sample.get('balloon.major_fault', 0) +
-                last_sample.get('balloon.minor_fault', 0)
-            ) - (
-                first_sample.get('balloon.major_fault', 0) +
-                first_sample.get('balloon.minor_fault', 0)
-            )) / interval))
+        # This stat is deprecated
+        mem_stats['pageflt'] = mem_stats['majflt'] + mem_stats['minflt']
 
     stats['memoryStats'] = mem_stats
 

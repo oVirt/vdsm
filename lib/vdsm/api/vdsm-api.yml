@@ -1273,6 +1273,7 @@ types:
         -   description: Average number of page faults per second
             name: pageflt
             type: uint
+            deprecated: '4.2'
 
         -   description: The amount of memory available for allocation
                 in KiB (includes easily reclaimable memory)
@@ -1282,6 +1283,10 @@ types:
 
         -   description: Average number of major page faults per second
             name: majflt
+            type: uint
+
+        -   description: Average number of minor page faults per second
+            name: minflt
             type: uint
 
         -   description: The amount of memory that is completely unused
