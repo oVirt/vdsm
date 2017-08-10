@@ -63,6 +63,9 @@ class Defined(Disconnected):
     def state(self, *args, **kwargs):
         return self._dom.state(*args, **kwargs)
 
+    def UUIDString(self):
+        return self._dom.UUIDString()
+
     def metadata(self, *args, **kwargs):
         return self._dom.metadata(*args, **kwargs)
 
