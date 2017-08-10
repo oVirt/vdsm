@@ -47,6 +47,7 @@ def produce(vm, first_sample, last_sample, interval):
     balloon(vm, stats, last_sample)
     cpu_count(stats, last_sample)
     tune_io(vm, stats)
+    memory(stats, first_sample, last_sample, interval)
 
     return stats
 
@@ -67,7 +68,7 @@ def translate(vm_stats):
                 stats[var] = vm_stats[var]
         elif type(vm_stats[var]) is not dict:
             stats[var] = convertToStr(vm_stats[var])
-        elif var in ('disks', 'network', 'balloonInfo'):
+        elif var in ('disks', 'network', 'balloonInfo', 'memoryStats'):
             value = vm_stats[var]
             if value:
                 stats[var] = value
@@ -485,6 +486,44 @@ def _find_bulk_stats_reverse_map(stats, group):
         else:
             name_to_idx[name] = idx
     return name_to_idx
+
+
+def memory(stats, first_sample, last_sample, interval):
+    mem_stats = {}
+
+    if last_sample is not None:
+        mem_stats['mem_total'] = str(last_sample.get('balloon.available', 0))
+        mem_stats['mem_unused'] = str(last_sample.get('balloon.unused', 0))
+
+        # 'mem_free' used to report the free memory (aka 'mem_unused')
+        # plus memory allocated for buffers (aka 'mem_buffers') and
+        # caches (aka 'mem_cached'). This is deprecated now. Let's set
+        # 'mem_free' to the same value as 'mem_unused' before it can be
+        # safely removed.
+        mem_stats['mem_free'] = mem_stats['mem_unused']
+
+    if first_sample is not None and last_sample is not None \
+            and interval > 0:
+        stats_map = {
+            'swap_in': 'balloon.swap_in',
+            'swap_out': 'balloon.swap_out',
+            'majflt': 'balloon.major_fault',
+        }
+        for (k, v) in stats_map.iteritems():
+            mem_stats[k] = int(round((
+                last_sample.get(v, 0) - first_sample.get(v, 0)
+            ) / interval))
+
+        mem_stats['pageflt'] = int(round((
+            (
+                last_sample.get('balloon.major_fault', 0) +
+                last_sample.get('balloon.minor_fault', 0)
+            ) - (
+                first_sample.get('balloon.major_fault', 0) +
+                first_sample.get('balloon.minor_fault', 0)
+            )) / interval))
+
+    stats['memoryStats'] = mem_stats
 
 
 @contextlib.contextmanager

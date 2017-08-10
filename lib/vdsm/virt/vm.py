@@ -1614,7 +1614,11 @@ class Vm(object):
                 stats.update(self._getVmPauseCodeStats())
             else:
                 stats.update(self._getRunningVmStats())
-                stats.update(self._getGuestStats())
+                oga_stats = self._getGuestStats()
+                if 'memoryStats' in stats and 'memoryStats' in oga_stats:
+                    # prefer balloon stats over OGA stats
+                    oga_stats['memoryStats'].update(stats['memoryStats'])
+                stats.update(oga_stats)
             stats['status'] = self._getVmStatus()
         return stats
 
