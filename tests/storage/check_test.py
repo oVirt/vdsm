@@ -126,17 +126,55 @@ class TestDirectioChecker(VdsmTestCase):
                 actual = r2.time - r1.time
                 self.assertAlmostEqual(actual, expected, delta=clock_res)
 
+    # Handling timeout
+
+    def test_timeout(self):
+        # Expected events:
+        # +0.0 start checker
+        # +0.3 fail with timeout
+        # +0.4 dd commpletes, result ignored
+        # +0.5 loop stopped
+
+        def complete(result):
+            self.results.append(result)
+            self.loop.call_later(0.2, self.loop.stop)
+
+        with fake_dd(0.4):
+            checker = check.DirectioChecker(self.loop, "/path", complete,
+                                            interval=0.3)
+            checker.start()
+            self.loop.run_forever()
+
+        self.assertEqual(len(self.results), 1)
+        with self.assertRaises(exception.MiscFileReadException) as e:
+            self.results[0].delay()
+        self.assertIn("Read timeout", str(e.exception))
+
     @MonkeyPatch(check, "_log", FakeLogger(logging.WARNING))
     def test_block_warnings(self):
-        self.checks = 1
-        with fake_dd(0.3):
-            checker = check.DirectioChecker(self.loop, "/path", self.complete,
+        # Expected events:
+        # +0.0 start checker
+        # +0.2 fail with timeout
+        # +0.4 log warning
+        # +0.5 checker stopped
+        # +0.6 dd completes, result ignored
+        # +0.7 loop stopped
+
+        def complete(result):
+            self.results.append(result)
+            self.loop.call_later(0.3, checker.stop)
+            self.loop.call_later(0.4, self.loop.stop)
+
+        with fake_dd(0.6):
+            checker = check.DirectioChecker(self.loop, "/path", complete,
                                             interval=0.2)
             checker.start()
             self.loop.run_forever()
-        msg = check._log.messages[0][1]
+
+        self.assertEqual(len(check._log.messages), 1)
         # Matching time value is too fragile
         r = re.compile(r"Checker '/path' is blocked for .+ seconds")
+        msg = check._log.messages[0][1]
         self.assertRegexpMatches(msg, r)
 
     # In the idle state the checker is not running so there is nothing to

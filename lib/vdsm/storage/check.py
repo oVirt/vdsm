@@ -219,6 +219,9 @@ class DirectioChecker(object):
         self._err = None
         self._state = IDLE
         self._stopped = threading.Event()
+        # Set to True when the underlying dd process has terminated, or when
+        # the read has timed out.
+        self._completed = False
 
     def start(self):
         """
@@ -274,9 +277,13 @@ class DirectioChecker(object):
         """
         assert self._state is RUNNING
         if self._proc:
-            _log.warning("Checker %r is blocked for %.2f seconds",
-                         self._path, self._loop.time() - self._check_time)
+            if self._completed:
+                _log.warning("Checker %r is blocked for %.2f seconds",
+                             self._path, self._loop.time() - self._check_time)
+            else:
+                self._read_timeout()
             return
+        self._completed = False
         self._check_time = self._loop.time()
         _log.debug("START check %r (delay=%.2f)",
                    self._path, self._check_time - self._looper.deadline)
@@ -300,6 +307,23 @@ class DirectioChecker(object):
         self._reader = self._loop.create_dispatcher(
             asyncevent.BufferedReader, self._proc.stderr, self._read_completed)
 
+    def _read_timeout(self):
+        """
+        Called when the underlying dd process did not complete within the check
+        interval. The complete callback is invoked with an error.
+        """
+        assert self._state is not IDLE
+        self._completed = True
+        elapsed = self._loop.time() - self._check_time
+        _log.debug("FINISH check %r timeout (elapsed=%.02f)",
+                   self._path, elapsed)
+        result = CheckResult(self._path, 1, "Read timeout", self._check_time,
+                             elapsed)
+        try:
+            self._complete(result)
+        except Exception:
+            _log.exception("Unhandled error in complete callback")
+
     def _read_completed(self, data):
         """
         Called when dd process has closed stderr. At this point the process may
@@ -322,15 +346,17 @@ class DirectioChecker(object):
         Called when the dd process has exited with exit code rc.
         """
         assert self._state is not IDLE
-        now = self._loop.time()
-        elapsed = now - self._check_time
-        _log.debug("FINISH check %r (rc=%s, elapsed=%.02f)",
-                   self._path, rc, elapsed)
         self._reaper = None
         self._proc = None
         if self._state is STOPPING:
             self._stop_completed()
             return
+        if self._completed:
+            return
+        self._completed = True
+        elapsed = self._loop.time() - self._check_time
+        _log.debug("FINISH check %r (rc=%s, elapsed=%.02f)",
+                   self._path, rc, elapsed)
         result = CheckResult(self._path, rc, self._err, self._check_time,
                              elapsed)
         try:
