@@ -420,7 +420,16 @@ class TestCheckService(VdsmTestCase):
 
 @contextmanager
 def fake_dd(delay):
-    script = "#!/bin/sh\nsleep %.1f\n" % delay
+    """
+    Simulate slow dd read
+    """
+    rate = int(100 / delay) if delay else "Infinity"
+    script = """#!/bin/sh
+sleep {delay}
+echo 0+1 records in >&2
+echo 0+1 records out >&2
+echo 100 bytes copied, {delay} s, {rate} B/s >&2
+""".format(delay=delay, rate=rate)
     script = script.encode('ascii')
     with temporaryPath(data=script) as fake_dd:
         os.chmod(fake_dd, 0o700)
