@@ -580,13 +580,6 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkDoesntExist(NETWORK_NAME)
 
-    @cleanupNet
-    def testFailWithInvalidBridgeName(self):
-        invalid_bridge_names = ('a' * 16, 'a b', 'a\tb', 'a.b', 'a:b')
-        for bridge_name in invalid_bridge_names:
-            status, msg = self.setupNetworks({bridge_name: {}}, {}, NOCHK)
-            self.assertEqual(status, errors.ERR_BAD_BRIDGE, msg)
-
     def _setup_overExistingBridge():
         rc, _, err = execCmd([EXT_BRCTL, 'addbr', NETWORK_NAME])
         if rc != 0:

@@ -287,6 +287,17 @@ class TestNetworkBasicLegacy(NetFuncTestCase):
                     assert os.path.exists(nic_ifcfg_file)
                     assert not os.path.exists(nic_ifcfg_badname_file)
 
+    @pytest.mark.parametrize("net_name", [
+        'a' * 16, 'a b', 'a\tb', 'a.b', 'a:b'
+    ])
+    def test_add_bridged_net_with_invalid_name_fails(self, net_name):
+        with dummy_device() as nic:
+            NETCREATE = {net_name: {'nic': nic, 'switch': 'legacy'}}
+            with pytest.raises(SetupNetworksError) as err:
+                with self.setupNetworks(NETCREATE, {}, NOCHK):
+                    pass
+            assert err.value.status == ne.ERR_BAD_BRIDGE
+
 
 @pytest.mark.legacy_switch
 @pytest.mark.skipif(not nmnettestlib.is_networkmanager_running(),
