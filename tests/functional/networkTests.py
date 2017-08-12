@@ -642,20 +642,6 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    def testSetupNetworksNicless(self):
-        status, msg = self.setupNetworks(
-            {NETWORK_NAME: {'bridged': True, 'stp': True}}, {},
-            NOCHK)
-        self.assertEqual(status, SUCCESS, msg)
-        self.assertNetworkExists(NETWORK_NAME)
-        self.assertEqual(self.vdsm_net.netinfo.bridges[NETWORK_NAME]['stp'],
-                         'on')
-
-        status, msg = self.setupNetworks({NETWORK_NAME: dict(remove=True)}, {},
-                                         NOCHK)
-        self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
     def testSetupNetworksConvertVlanNetBridgeness(self):
         """Convert a bridged networks to a bridgeless one and viceversa"""
 
