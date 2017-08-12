@@ -346,6 +346,9 @@ class Vm(object):
             self._md_desc = metadata.Descriptor()
             self._custom['custom'] = params.get('custom', {})
             self._destroy_on_reboot = False
+            self._mem_guaranteed_size_mb = int(
+                params.get('memGuaranteedSize', '0')
+            )
         self._destroy_requested = threading.Event()
         self._recovery_file = recovery.File(self.id)
         self._monitorResponse = 0
@@ -498,6 +501,7 @@ class Vm(object):
                 if value is not None:
                     exit_info[key] = value
             self._exit_info.update(exit_info)
+            self._mem_guaranteed_size_mb = md.get('minGuaranteedMemoryMb', 0)
 
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
@@ -658,10 +662,8 @@ class Vm(object):
         # Avoid overriding the saved balloon target value on recovery.
         if not self.recovering:
             for dev in balloonDevices:
-                dev['target'] = int(self.conf.get('memSize')) * 1024
-                dev['minimum'] = int(
-                    self.conf.get('memGuaranteedSize', '0')
-                ) * 1024
+                dev['target'] = self.mem_size_mb() * 1024
+                dev['minimum'] = self._mem_guaranteed_size_mb * 1024
 
         if not balloonDevices:
             balloonDevices.append(EMPTY_BALLOON)
