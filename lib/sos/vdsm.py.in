@@ -30,6 +30,34 @@ import stat
 import subprocess
 
 
+# This configuration is based on vdsm.storage.lvm.LVM_CONF_TEMPLATE.
+#
+# locking_type is set to 0 in order to match lvm sos commands. With this
+# configuration we don't take any locks, so we will never block because
+# there is a stuck lvm command.
+# locking_type=0
+#
+# use_lvmetad is set to 0 in order not to show cached, old lvm metadata.
+# use_lvmetad=0
+#
+# preferred_names and filter config values are set to capture Vdsm devices.
+# preferred_names=[ '^/dev/mapper/' ]
+# filter=[ 'a|^/dev/mapper/.*|', 'r|.*|' ]
+LVM_CONFIG = """
+global {
+ locking_type=0
+ use_lvmetad=0
+ }
+devices {
+ preferred_names=[ '^/dev/mapper/' ]
+ ignore_suspended_devices=1
+ write_cache_state=0
+ disable_after_error_count=3
+ filter=[ 'a|^/dev/mapper/.*|', 'r|.*|' ]
+ }
+""".replace("\n", "").strip()
+
+
 # This is hack for import vdsm modules. because this plugin's name was
 # same with vdsm module, so it can not import vdsm modules directly. File name
 # should be named as the class and we keep the name for compatability.
@@ -93,6 +121,7 @@ class vdsm(Plugin, RedHatPlugin):
         """
         command = list(args)
         command.insert(0, '/sbin/lvm')
+        command.extend(('--config', LVM_CONFIG))
         self.soslog.info("collecting cmd output %s", command)
         try:
             out = self.runCommand(command)
