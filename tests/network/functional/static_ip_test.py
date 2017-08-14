@@ -40,49 +40,34 @@ IPv4_PREFIX_LEN = '24'
 IPv4_GATEWAY = '192.0.2.254'
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
 
-IPv4 = [4]
-IPv6 = [6]
-IPv4IPv6 = [4, 6]
+
+class IpFamily(object):
+    IPv4 = 4
+    IPv6 = 6
+
+
+parametrize_ip_families = pytest.mark.parametrize(
+    'families', [(IpFamily.IPv4,),
+                 (IpFamily.IPv6,),
+                 (IpFamily.IPv4, IpFamily.IPv6)],
+    ids=['IPv4', 'IPv6', 'IPv4&6'])
 
 
 @nftestlib.parametrize_switch
 class TestNetworkStaticIpBasic(NetFuncTestCase):
 
-    def test_add_net_with_ipv4_based_on_nic(self, switch):
-        self._test_add_net_with_ip(IPv4, switch)
+    @nftestlib.parametrize_bridged
+    @parametrize_ip_families
+    def test_add_net_with_ip_based_on_nic(self, switch, bridged, families):
+        self._test_add_net_with_ip(families, switch, bridged=bridged)
 
-    def test_add_net_with_ipv6_based_on_nic(self, switch):
-        self._test_add_net_with_ip(IPv6, switch)
+    @parametrize_ip_families
+    def test_add_net_with_ip_based_on_bond(self, switch, families):
+        self._test_add_net_with_ip(families, switch, bonded=True)
 
-    def test_add_net_with_ipv4_ipv6_based_on_nic(self, switch):
-        self._test_add_net_with_ip(IPv4IPv6, switch)
-
-    def test_add_net_with_ipv4_based_on_bond(self, switch):
-        self._test_add_net_with_ip(IPv4, switch, bonded=True)
-
-    def test_add_net_with_ipv6_based_on_bond(self, switch):
-        self._test_add_net_with_ip(IPv6, switch, bonded=True)
-
-    def test_add_net_with_ipv4_ipv6_based_on_bond(self, switch):
-        self._test_add_net_with_ip(IPv4IPv6, switch, bonded=True)
-
-    def test_add_net_with_ipv4_based_on_vlan(self, switch):
-        self._test_add_net_with_ip(IPv4, switch, vlaned=True)
-
-    def test_add_net_with_ipv6_based_on_vlan(self, switch):
-        self._test_add_net_with_ip(IPv6, switch, vlaned=True)
-
-    def test_add_net_with_ipv4_ipv6_based_on_vlan(self, switch):
-        self._test_add_net_with_ip(IPv4IPv6, switch, vlaned=True)
-
-    def test_add_net_with_ipv4_based_on_bridge(self, switch):
-        self._test_add_net_with_ip(IPv4, switch, bridged=True)
-
-    def test_add_net_with_ipv6_based_on_bridge(self, switch):
-        self._test_add_net_with_ip(IPv6, switch, bridged=True)
-
-    def test_add_net_with_ipv4_ipv6_based_on_bridge(self, switch):
-        self._test_add_net_with_ip(IPv4IPv6, switch, bridged=True)
+    @parametrize_ip_families
+    def test_add_net_with_ip_based_on_vlan(self, switch, families):
+        self._test_add_net_with_ip(families, switch, vlaned=True)
 
     def test_add_net_with_ipv4_default_gateway(self, switch):
         with dummy_device() as nic:
@@ -102,10 +87,10 @@ class TestNetworkStaticIpBasic(NetFuncTestCase):
         with dummy_devices(2) as (nic1, nic2):
             network_attrs = {'bridged': bridged, 'switch': switch}
 
-            if 4 in families:
+            if IpFamily.IPv4 in families:
                 network_attrs['ipaddr'] = IPv4_ADDRESS
                 network_attrs['netmask'] = IPv4_NETMASK
-            if 6 in families:
+            if IpFamily.IPv6 in families:
                 network_attrs['ipv6addr'] = IPv6_ADDRESS
 
             if bonded:
