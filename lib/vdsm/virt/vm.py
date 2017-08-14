@@ -2790,6 +2790,7 @@ class Vm(object):
                 self._hostdev_hotunplug_restore(dev_object, dev_spec)
                 continue
 
+            self._updateDomainDescriptor()
             dev_object.teardown()
             unplugged_devices.append(dev_name)
 
@@ -3016,6 +3017,7 @@ class Vm(object):
                                            params=nic.custom)
             return response.error('hotunplugNic', e.message)
 
+        self._updateDomainDescriptor()
         hooks.after_nic_hotunplug(nicXml, self._custom,
                                   params=nic.custom)
         return {'status': doneCode, 'vmList': self.status()}
