@@ -43,8 +43,8 @@ DEFAULT_ACCEPT_TIMEOUT = 5
 SOCKET_DEFAULT_TIMEOUT = socket._GLOBAL_DEFAULT_TIMEOUT
 
 missing_protocols = {
-    'SSL_OP_NO_TLSv1_1': 0x1000000,
-    'SSL_OP_NO_TLSv1_2': 0x8000000
+    'SSL_OP_NO_TLSv1_1': 0x10000000,
+    'SSL_OP_NO_TLSv1_2': 0x08000000
 }
 
 # M2Crypto.threading needs initialization.
