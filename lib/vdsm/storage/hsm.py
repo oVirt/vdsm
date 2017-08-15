@@ -773,8 +773,14 @@ class HSM(object):
         return dict(size=str(pv.size))
 
     def _detachStorageDomainFromOldPools(self, sdUUID):
-        host_id = self._pool.id
         dom = sdCache.produce(sdUUID=sdUUID)
+        try:
+            host_id = self._pool.id
+        except se.StoragePoolNotConnected:
+            host_id = dom.getReservedId()
+            self.log.warn(
+                "Host not connected to pool, using reserved host id: %d",
+                host_id)
         dom.acquireHostId(host_id)
         try:
             dom.acquireClusterLock(host_id)
