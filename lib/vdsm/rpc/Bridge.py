@@ -329,6 +329,7 @@ def Image_prepare_Ret(ret):
 ##
 command_info = {
     'Host_fenceNode': {'ret': Host_fenceNode_Ret},
+    'Host_get_image_ticket': {'ret': 'result'},
     'Host_getAllTasksInfo': {'ret': 'allTasksInfo'},
     'Host_getAllTasksStatuses': {'ret': 'allTasksStatus'},
     'Host_getCapabilities': {'ret': Host_getCapabilities_Ret},

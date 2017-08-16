@@ -3033,6 +3033,41 @@ types:
             type: string
         type: object
 
+    ImageTicketInfo: &ImageTicketInfo
+        added: '4.2'
+        description: Information about an existing image ticket.
+        name: TicketInfo
+        properties:
+        -   description: The ticket size.
+            name: size
+            type: uint
+
+        -   description: The image url, e.g. "file:///path/to/image".
+            name: url
+            type: string
+
+        -   description: The up to date time that is left for the ticket to
+                expire in seconds. A negative value means that the ticket has
+                already expired.
+            name: timeout
+            type: int
+
+        -   description: The ticket UUID.
+            name: uuid
+            type: *UUID
+
+        -   description: Allowed operations for this ticket.
+            name: ops
+            type:
+            - *ImageTicketOps
+
+        -   defaultvalue: null
+            description: The filename value that was set when creating the
+                ticket.
+            name: filename
+            type: string
+        type: object
+
     KsmTuneParams: &KsmTuneParams
         added: '3.6'
         description: Parameters for controling KSM.
@@ -7904,6 +7939,18 @@ Host.add_image_ticket:
     -   description: ImageTicket
         name: ticket
         type: *ImageTicket
+
+Host.get_image_ticket:
+    added: '4.2'
+    description: Get ticket from the imageio daemon via https api.
+    params:
+    -   description: The image ticket id.
+        name: uuid
+        type: *UUID
+    return:
+        description: Information about the image ticket.
+        name: ticket
+        type: *ImageTicketInfo
 
 Host.remove_image_ticket:
     added: '4.0'

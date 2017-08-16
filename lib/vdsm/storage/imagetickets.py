@@ -58,6 +58,11 @@ def add_ticket(ticket):
 
 
 @requires_image_daemon
+def get_ticket(ticket_id):
+    return request(uhttp.GET, ticket_id)
+
+
+@requires_image_daemon
 def extend_ticket(uuid, timeout):
     body = json.dumps({"timeout": timeout})
     request(uhttp.PATCH, uuid, body)

@@ -99,6 +99,20 @@ class TestImageTickets(VdsmTestCase):
         self.assertTrue(imagetickets.uhttp.closed)
 
     @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    def test_get_ticket(self):
+        filename = u"\u05d0.raw"  # hebrew aleph
+        ticket = create_ticket(uuid="uuid", filename=filename)
+        data = json.dumps(ticket).encode("utf8")
+        imagetickets.uhttp.response = FakeResponse(data=data)
+        expected = [
+            ("request", ("GET", "/tickets/uuid"), {"body": None}),
+        ]
+        result = imagetickets.get_ticket(ticket_id="uuid")
+        self.assertEqual(result, ticket)
+        self.assertEqual(imagetickets.uhttp.__calls__, expected)
+        self.assertTrue(imagetickets.uhttp.closed)
+
+    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
     def test_extend_ticket(self):
         timeout = 300
         imagetickets.extend_ticket("uuid", timeout)
@@ -187,11 +201,14 @@ class TestImageTickets(VdsmTestCase):
 
 
 def create_ticket(uuid, ops=("read", "write"), timeout=300,
-                  size=1024**3, path="/path/to/image"):
-    return {
+                  size=1024**3, path="/path/to/image", filename=None):
+    ticket = {
         "uuid": uuid,
         "timeout": timeout,
         "ops": list(ops),
         "size": size,
         "path": path,
     }
+    if filename is not None:
+        ticket["filename"] = filename
+    return ticket

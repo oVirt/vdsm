@@ -1616,6 +1616,9 @@ class Global(APIBase):
     def add_image_ticket(self, ticket):
         return self._irs.add_image_ticket(ticket)
 
+    def get_image_ticket(self, uuid):
+        return self._irs.get_image_ticket(uuid)
+
     def remove_image_ticket(self, uuid):
         return self._irs.remove_image_ticket(uuid)
 

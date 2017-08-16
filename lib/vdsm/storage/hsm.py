@@ -2980,6 +2980,10 @@ class HSM(object):
         imagetickets.add_ticket(ticket)
 
     @public
+    def get_image_ticket(self, uuid):
+        return dict(result=imagetickets.get_ticket(uuid))
+
+    @public
     def remove_image_ticket(self, uuid):
         imagetickets.remove_ticket(uuid)
 
