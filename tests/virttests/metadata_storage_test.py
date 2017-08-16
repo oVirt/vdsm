@@ -328,6 +328,78 @@ _DISK_DATA_SGIO = _TestData(
     </vm>""",
 )
 
+_DISK_DATA_NETWORK = _TestData(
+    conf={
+        'device': 'disk',
+        'format': 'raw',
+        'iface': 'virtio',
+        'index': '0',
+        'propagateErrors': 'off',
+        'readonly': 'False',
+        'shared': 'none',
+        'type': 'disk',
+        'auth': {
+            'type': 'ceph',
+            'uuid': 'abcdef',
+            'username': 'cinder',
+        },
+        'diskType': 'network',
+        'hosts': [
+            {
+                'name': '1.2.3.41',
+                'port': '6789',
+                'transport': 'tcp',
+            },
+            {
+                'name': '1.2.3.42',
+                'port': '6789',
+                'transport': 'tcp',
+            },
+        ],
+        'path': 'poolname/volumename',
+        'protocol': 'rbd',
+        'serial': '54-a672-23e5b495a9ea',
+        'specParams': {},
+        'vm_custom': {},
+    },
+    metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
+    <vm>
+    <device iface="virtio" index="0" type="disk">
+        <device>disk</device>
+        <diskType>network</diskType>
+        <format>raw</format>
+        <iface>virtio</iface>
+        <index>0</index>
+        <path>poolname/volumename</path>
+        <propagateErrors>off</propagateErrors>
+        <protocol>rbd</protocol>
+        <readonly>False</readonly>
+        <serial>54-a672-23e5b495a9ea</serial>
+        <shared>none</shared>
+        <type>disk</type>
+        <auth>
+            <type>ceph</type>
+            <username>cinder</username>
+            <uuid>abcdef</uuid>
+        </auth>
+        <hosts>
+            <hostInfo>
+                <name>1.2.3.41</name>
+                <port>6789</port>
+                <transport>tcp</transport>
+            </hostInfo>
+            <hostInfo>
+                <name>1.2.3.42</name>
+                <port>6789</port>
+                <transport>tcp</transport>
+            </hostInfo>
+        </hosts>
+        <specParams />
+        <vm_custom />
+    </device>
+    </vm>"""
+)
+
 
 class DescriptorStorageMetadataTests(XMLTestCase):
     # parameters are too long to use permutations
@@ -349,6 +421,12 @@ class DescriptorStorageMetadataTests(XMLTestCase):
 
     def test_disk_sgio_to_metadata_xml(self):
         self._check_drive_to_metadata_xml(_DISK_DATA_SGIO)
+
+    def test_disk_network_from_metadata_xml(self):
+        self._check_drive_from_metadata_xml(_DISK_DATA_NETWORK)
+
+    def test_disk_network_to_metadata_xml(self):
+        self._check_drive_to_metadata_xml(_DISK_DATA_NETWORK)
 
     def test_cdrom_from_metadata_xml(self):
         self._check_drive_from_metadata_xml(_CDROM_DATA)

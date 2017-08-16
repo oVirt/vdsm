@@ -68,19 +68,23 @@ _CUSTOM = 'custom'
 _DEVICE = 'device'
 
 _ADDRESS = 'address'
+_AUTH = 'auth'
+_HOSTS = 'hosts'
+_HOST_INFO = 'hostInfo'
 _SPEC_PARAMS = 'specParams'
 _VM_CUSTOM = 'vm_custom'
 _VOLUME_CHAIN = 'volumeChain'
 _VOLUME_CHAIN_NODE = 'volumeChainNode'
 _VOLUME_INFO = 'volumeInfo'
 _DEVICE_SUBKEYS = (
-    _ADDRESS, _SPEC_PARAMS,
+    _ADDRESS, _AUTH, _HOSTS, _SPEC_PARAMS,
     _VM_CUSTOM, _VOLUME_CHAIN, _VOLUME_INFO,
 )
 _NONEMPTY_KEYS = (
-    _ADDRESS, _VOLUME_CHAIN, _VOLUME_INFO
+    _ADDRESS, _AUTH, _HOSTS, _VOLUME_CHAIN, _VOLUME_INFO
 )
 _LAYERED_KEYS = {
+    _HOSTS: _HOST_INFO,
     _VOLUME_CHAIN: _VOLUME_CHAIN_NODE,
 }
 
