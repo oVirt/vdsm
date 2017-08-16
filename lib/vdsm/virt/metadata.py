@@ -74,7 +74,15 @@ _VOLUME_CHAIN = 'volumeChain'
 _VOLUME_CHAIN_NODE = 'volumeChainNode'
 _VOLUME_INFO = 'volumeInfo'
 _DEVICE_SUBKEYS = (
-    _ADDRESS, _SPEC_PARAMS, _VM_CUSTOM, _VOLUME_CHAIN, _VOLUME_INFO)
+    _ADDRESS, _SPEC_PARAMS,
+    _VM_CUSTOM, _VOLUME_CHAIN, _VOLUME_INFO,
+)
+_NONEMPTY_KEYS = (
+    _ADDRESS, _VOLUME_CHAIN, _VOLUME_INFO
+)
+_LAYERED_KEYS = {
+    _VOLUME_CHAIN: _VOLUME_CHAIN_NODE,
+}
 
 
 class Error(errors.Base):
@@ -577,7 +585,7 @@ def _load_device(md_obj, dev):
     for key in _DEVICE_SUBKEYS:
         elem = md_obj.find(dev, key)
         if elem is not None:
-            if key == _VOLUME_CHAIN:
+            if key in _LAYERED_KEYS:
                 value = [md_obj.load(node) for node in elem]
             elif key == _SPEC_PARAMS:
                 value = _load_device_spec_params(md_obj, elem)
@@ -593,14 +601,15 @@ def _dump_device(md_obj, data):
 
     for key in _DEVICE_SUBKEYS:
         value = data.pop(key, {})
-        if not value and key in (_ADDRESS, _VOLUME_CHAIN, _VOLUME_INFO):
+        if not value and key in _NONEMPTY_KEYS:
             # empty elements make no sense
             continue
 
-        if key == _VOLUME_CHAIN:
-            chain = ET.Element(_VOLUME_CHAIN)
+        if key in _LAYERED_KEYS:
+            subkey = _LAYERED_KEYS[key]
+            chain = ET.Element(key)
             for val in value:
-                node = md_obj.dump(_VOLUME_CHAIN_NODE, **val)
+                node = md_obj.dump(subkey, **val)
                 vmxml.append_child(chain, etree_child=node)
             elems.append(chain)
         elif key == _SPEC_PARAMS:
