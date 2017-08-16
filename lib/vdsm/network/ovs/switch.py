@@ -124,7 +124,8 @@ class NetsAdditionSetup(object):
                 nic = attrs.get('nic')
                 bond = attrs.get('bonding')
                 sb = nic or bond
-                self._acquired_ifaces.add(sb)
+                if not dpdk.is_dpdk(sb):
+                    self._acquired_ifaces.add(sb)
 
                 bridge = self._get_ovs_bridge(sb)
                 self._create_nb(bridge, net)
