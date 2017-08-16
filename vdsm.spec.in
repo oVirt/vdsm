@@ -131,7 +131,7 @@ Requires(pre): shadow-utils
 Obsoletes: %{name}-infra < 4.19
 
 %if 0%{?with_openvswitch}
-Requires: openvswitch >= 2.0.0
+Requires: openvswitch >= 2.7.0
 %endif
 
 %if 0%{?with_ovirt_imageio}

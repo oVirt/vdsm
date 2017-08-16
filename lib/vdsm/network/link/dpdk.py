@@ -73,6 +73,10 @@ def link_info(dev_name, pci_addr=None):
             'pci_addr': pci_addr}
 
 
+def pci_addr(dev_name):
+    return get_dpdk_devices()[dev_name]['pci_addr']
+
+
 def is_dpdk(dev_name):
     return (dev_name.startswith(PORT_PREFIX) and
             not os.path.exists(os.path.join(NET_SYSFS, dev_name)))

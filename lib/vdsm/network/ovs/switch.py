@@ -192,7 +192,8 @@ class NetsAdditionSetup(object):
     def _create_sb_nic(self, bridge, nic, dpdk_enabled=False):
         self._transaction.add(self._ovsdb.add_port(bridge, nic))
         if dpdk_enabled:
-            self._transaction.add(self._ovsdb.set_dpdk_port(nic))
+            pci_addr = dpdk.pci_addr(nic)
+            self._transaction.add(self._ovsdb.set_dpdk_port(nic, pci_addr))
         self._transaction.add(self._ovsdb.set_port_attr(
             nic, 'other_config:vdsm_level', info.SOUTHBOUND))
 

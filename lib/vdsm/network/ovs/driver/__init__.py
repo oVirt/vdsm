@@ -102,8 +102,9 @@ class OvsApi(object):
     def add_port(self, bridge, port, may_exist=False):
         pass
 
-    def set_dpdk_port(self, port):
-        return self.set_interface_attr(port, 'type', 'dpdk')
+    @abc.abstractmethod
+    def set_dpdk_port(self, port, pci_addr):
+        pass
 
     @abc.abstractmethod
     def set_vhostuser_iface(self, iface, socket_path):

@@ -190,6 +190,11 @@ class Ovs(OvsApi):
         command.extend(['add-port', bridge, port])
         return Command(command)
 
+    def set_dpdk_port(self, port, pci_addr):
+        command = ['set', 'Interface', port, 'type=dpdk',
+                   'options:dpdk-devargs=%s' % pci_addr]
+        return Command(command)
+
     def set_vhostuser_iface(self, iface, socket_path):
         command = ['set', 'Interface', iface, 'type=dpdkvhostuserclient',
                    'options:vhost-server-path=%s' % socket_path]
