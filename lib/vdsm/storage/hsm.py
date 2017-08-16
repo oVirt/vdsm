@@ -772,7 +772,7 @@ class HSM(object):
         pv = lvm.getPV(guid)
         return dict(size=str(pv.size))
 
-    def _deatchStorageDomainFromOldPools(self, sdUUID):
+    def _detachStorageDomainFromOldPools(self, sdUUID):
         host_id = self._pool.id
         dom = sdCache.produce(sdUUID=sdUUID)
         dom.acquireHostId(host_id)
@@ -799,7 +799,7 @@ class HSM(object):
                 "sdUUID=%s, spUUID=%s" % (sdUUID, spUUID)))
 
         if spUUID == sd.BLANK_UUID:
-            self._deatchStorageDomainFromOldPools(sdUUID)
+            self._detachStorageDomainFromOldPools(sdUUID)
         else:
             vars.task.getExclusiveLock(STORAGE, spUUID)
             pool = self.getPool(spUUID)
