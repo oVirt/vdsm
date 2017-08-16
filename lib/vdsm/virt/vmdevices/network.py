@@ -140,7 +140,9 @@ class Interface(core.Base):
 
         vhosts = self._getVHostSettings()
         if vhosts:
-            self.driver['name'] = vhosts.get(self.network, False)
+            driver_name = vhosts.get(self.network)
+            if driver_name:
+                self.driver['name'] = driver_name
 
         try:
             self.driver['queues'] = self.custom['queues']
