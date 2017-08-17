@@ -18,10 +18,8 @@
 #
 from __future__ import absolute_import
 
-import errno
 import os
 import subprocess
-import time
 
 from vdsm import constants
 
@@ -32,22 +30,8 @@ BONDING_DEFAULTS = constants.P_VDSM_RUN + 'bonding-defaults.json'
 
 
 def isconfigured():
-    try:
-        modified_time = os.path.getmtime(BONDING_DEFAULTS)
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
-        return NO
-
-    boot_time = time.time() - _get_uptime()
-    return YES if modified_time >= boot_time else NO
+    return YES if os.path.exists(BONDING_DEFAULTS) else NO
 
 
 def configure():
     subprocess.call(['/usr/bin/vdsm-tool', 'dump-bonding-options'])
-
-
-def _get_uptime():
-    with open('/proc/uptime', 'r') as f:
-        uptime_seconds = float(f.readline().split()[0])
-    return uptime_seconds
