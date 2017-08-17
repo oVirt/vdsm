@@ -968,7 +968,10 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 <mac address="52:54:00:59:F5:3F"/>
                 <model type="virtio"/>
                 <source bridge="ovirtmgmt"/>
-                <filterref filter="no-mac-spoofing"/>
+                <filterref filter="clean-traffic">
+                    <parameter name='IP' value='10.0.0.1'/>
+                    <parameter name='IP' value='10.0.0.2'/>
+                </filterref>
                 <boot order="1"/>
                 <driver name="vhost" queues="7"/>
                 <tune>

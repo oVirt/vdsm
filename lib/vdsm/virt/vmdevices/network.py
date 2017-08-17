@@ -84,10 +84,13 @@ class Interface(core.Base):
         filterref = vmxml.find_first(dev, 'filterref', None)
         if filterref is not None:
             params['filter'] = vmxml.attr(filterref, 'filter')
-            params['filterParameters'] = {
-                param.attrib['name']: param.attrib['value']
+            params['filterParameters'] = [
+                {
+                    'name': param.attrib['name'],
+                    'value': param.attrib['value'],
+                }
                 for param in vmxml.find_all(filterref, 'parameter')
-            }
+            ]
         driver = vmxml.find_first(dev, 'driver', None)
         if driver is not None:
             params['custom'].update(
