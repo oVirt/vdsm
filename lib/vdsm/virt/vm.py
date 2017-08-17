@@ -2270,8 +2270,6 @@ class Vm(object):
 
         self._updateDomainDescriptor()
         self._updateMetadataDescriptor()
-        if not self.recovering:
-            self._save_legacy_disk_conf_to_metadata()
 
         # REQUIRED_FOR migrate from vdsm-4.16
         #
@@ -2290,6 +2288,8 @@ class Vm(object):
                     for network in nic.portMirroring:
                         supervdsm.getProxy().setPortMirroring(network,
                                                               nic.name)
+
+            self._save_legacy_disk_conf_to_metadata()
 
         try:
             self.guestAgent.start()
