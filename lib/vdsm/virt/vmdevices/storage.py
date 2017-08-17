@@ -808,6 +808,6 @@ def makeName(interface, index):
     i = int(index)
     while i > 0:
         devindex = chr(ord('a') + (i % 26)) + devindex
-        i /= 26
+        i //= 26
 
     return devname.get(interface, 'hd') + (devindex or 'a')
