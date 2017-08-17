@@ -71,6 +71,7 @@ _ADDRESS = 'address'
 _AUTH = 'auth'
 _HOSTS = 'hosts'
 _HOST_INFO = 'hostInfo'
+_IO_TUNE = 'ioTune'
 _SPEC_PARAMS = 'specParams'
 _VM_CUSTOM = 'vm_custom'
 _VOLUME_CHAIN = 'volumeChain'
@@ -81,7 +82,7 @@ _DEVICE_SUBKEYS = (
     _VM_CUSTOM, _VOLUME_CHAIN, _VOLUME_INFO,
 )
 _NONEMPTY_KEYS = (
-    _ADDRESS, _AUTH, _HOSTS, _VOLUME_CHAIN, _VOLUME_INFO
+    _ADDRESS, _AUTH, _HOSTS, _IO_TUNE, _VOLUME_CHAIN, _VOLUME_INFO
 )
 _LAYERED_KEYS = {
     _HOSTS: _HOST_INFO,
@@ -643,6 +644,10 @@ def _load_device_spec_params(md_obj, elem):
             if entry.tag == _FILE_SPEC
         }
         spec_params[_VM_PAYLOAD] = payload
+    iotune_elem = md_obj.find(elem, _IO_TUNE)
+    if iotune_elem is not None:
+        iotune = md_obj.load(iotune_elem)
+        spec_params[_IO_TUNE] = iotune
     return spec_params
 
 
@@ -663,9 +668,18 @@ def _dump_device_spec_params(md_obj, value):
     else:
         payload_elem = None
 
+    iotune = value.pop(_IO_TUNE, None)
+    if iotune is not None:
+        iotune_elem = md_obj.dump(_IO_TUNE, **iotune)
+    else:
+        iotune_elem = None
+
     spec_params_elem = md_obj.dump(_SPEC_PARAMS, **value)
     if payload_elem is not None:
         vmxml.append_child(spec_params_elem, etree_child=payload_elem)
+    if iotune_elem is not None:
+        vmxml.append_child(spec_params_elem, etree_child=iotune_elem)
+
     return spec_params_elem
 
 
