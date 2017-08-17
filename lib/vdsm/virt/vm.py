@@ -376,6 +376,10 @@ class Vm(object):
                 float(self.conf.pop('elapsedTimeOffset', 0))
 
         self._usedIndices = defaultdict(list)  # {'ide': [], 'virtio' = []}
+
+        if recover and 'xml' in params:
+            self._restore_legacy_disk_conf_from_metadata()
+
         self.disableDriveMonitor()
         self._vmStartEvent = threading.Event()
         self._vmAsyncStartError = None
@@ -2447,9 +2451,6 @@ class Vm(object):
         if not self.recovering and \
            self._altered_state.origin != _MIGRATION_ORIGIN:
             self._remove_domain_artifacts()
-
-        if self.recovering and 'xml' in self.conf:
-            self._restore_legacy_disk_conf_from_metadata()
 
         self._devices = self._make_devices()
 
