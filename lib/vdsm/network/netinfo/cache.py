@@ -20,18 +20,15 @@
 
 from __future__ import absolute_import
 import logging
-import os
 import errno
 import six
 
-from vdsm.network import netinfo
 from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import getLinks
 from vdsm.network.link import dpdk
 from vdsm.network.link import iface as link_iface
 from vdsm.network.netconfpersistence import RunningConfig
-from vdsm.network.netlink import link as nl_link
 
 from .addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
 from . import bonding
@@ -211,22 +208,6 @@ def _devinfo(link, routes, ipaddrs):
             'mtu': link.mtu,
             'netmask': ipv4netmask,
             'ipv4defaultroute': is_default_route(gateway)}
-
-
-def ifaceUsed(iface):
-    """Lightweight implementation of bool(Netinfo.ifaceUsers()) that does not
-    require a NetInfo object."""
-    if os.path.exists(os.path.join(netinfo.NET_PATH, iface, 'brport')):
-        return True  # Is it a port
-    for linkDict in nl_link.iter_links():
-        if linkDict['name'] == iface and 'master' in linkDict:  # Is it a slave
-            return True
-        if linkDict.get('device') == iface and linkDict.get('type') == 'vlan':
-            return True  # it backs a VLAN
-    for net_name, net_attr in six.viewitems(RunningConfig().networks):
-        if get_net_iface_from_config(net_name, net_attr) == iface:
-            return True
-    return False
 
 
 def _getNetInfo(iface, bridged, routes, ipaddrs):
