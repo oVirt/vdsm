@@ -69,7 +69,20 @@ class FakeIRS(object):
         return response.success()
 
 
+class FakeNotifier(object):
+    def notify(self, *args, **kwargs):
+        pass
+
+
 class SealJobTest(VdsmTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        jobs.start(None, FakeNotifier())
+
+    @classmethod
+    def tearDownClass(cls):
+        jobs.stop()
 
     @MonkeyPatch(virtsysprep, '_VIRTSYSPREP', FAKE_VIRTSYSPREP)
     def test_job(self):
