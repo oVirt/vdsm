@@ -311,8 +311,12 @@ class NetFuncTestCase(object):
         assert not self.assertDhclient(iface, family)
 
     def assertDefaultRouteIPv4(self, netattrs, ipinfo):
-        req_droute = netattrs.get('defaultRoute', False)
-        assert req_droute == ipinfo['ipv4defaultroute']
+        # When DHCP is used, route is assumed to be included in the response.
+        is_gateway_requested = (bool(netattrs.get('gateway')) or
+                                netattrs.get('bootproto') == 'dhcp')
+        is_default_route_requested = (netattrs.get('defaultRoute', False) and
+                                      is_gateway_requested)
+        assert is_default_route_requested == ipinfo['ipv4defaultroute']
 
     def assertLinksUp(self, net, attrs):
         switch = attrs.get('switch', 'legacy')
