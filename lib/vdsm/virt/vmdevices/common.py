@@ -19,6 +19,7 @@
 #
 from __future__ import absolute_import
 
+from vdsm.config import config
 from vdsm.virt import vmxml
 
 from . import core
@@ -155,7 +156,8 @@ def get_drive_conf_identifying_attrs(dev_conf):
 def identify_from_xml_elem(dev_elem):
     dev_type = dev_elem.tag
     dev_name = _LIBVIRT_TO_OVIRT_NAME.get(dev_type, dev_type)
-    if dev_name in hwclass.LEGACY_INIT_ONLY:
+    if (dev_name in hwclass.LEGACY_INIT_ONLY and
+       config.getboolean('devel', 'device_xml_legacy_configuration_enable')):
         raise core.SkipDevice()
     if dev_name not in _DEVICE_MAPPING:
         raise core.SkipDevice()

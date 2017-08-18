@@ -520,6 +520,12 @@ parameters = [
 
         ('api_strict_mode', 'false',
             'Enable exception throwing when rpc data is not correct.'),
+
+        ('device_xml_legacy_configuration_enable', 'true',
+            'Enable the legacy initialization for the complex device classes. '
+            'If it is true, some complex device classes (storage devices) '
+            'will use the vm.conf dictionary to be initialized, ignoring the '
+            'received Domain XML (if any). If unsure, leave it as default.'),
     ]),
 
     # Section: [gluster]
