@@ -28,7 +28,7 @@ from vdsm import constants
 from . import YES, NO
 
 
-BONDING_DEFAULTS = constants.P_VDSM + 'bonding-defaults.json'
+BONDING_DEFAULTS = constants.P_VDSM_RUN + 'bonding-defaults.json'
 
 
 def isconfigured():

@@ -53,7 +53,7 @@ BONDING_DEFAULTS
 BONDING_ACTIVE_SLAVE = '/sys/class/net/%s/bonding/active_slave'
 BONDING_FAILOVER_MODES = frozenset(('1', '3'))
 BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))
-BONDING_NAME2NUMERIC_PATH = constants.P_VDSM + 'bonding-name2numeric.json'
+BONDING_NAME2NUMERIC_PATH = constants.P_VDSM_RUN + 'bonding-name2numeric.json'
 BONDING_MASTERS = '/sys/class/net/bonding_masters'
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
