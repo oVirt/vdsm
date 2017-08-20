@@ -101,6 +101,9 @@ Requires: logrotate
 Requires: lshw
 Requires: xz
 Requires: iproute >= 3.10.0
+%if 0%{?fedora} >= 25
+Requires: iproute-tc
+%endif
 Requires: PyYAML
 Requires: python-dateutil
 Requires: python-netaddr
@@ -672,7 +675,6 @@ Requires: glusterfs-geo-replication >= %{gluster_version}
 Requires: glusterfs-events >= %{gluster_version}
 Requires: python-magic
 %if 0%{?fedora} >= 25
-Requires: iproute-tc
 Requires: python-blivet1
 %else
 Requires: python-blivet
