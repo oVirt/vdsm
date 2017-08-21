@@ -468,6 +468,72 @@ _DISK_DATA_NETWORK = _TestData(
     </vm>"""
 )
 
+_DISK_DATA_REPLICA = _TestData(
+    conf={
+        'device': 'disk',
+        'format': 'cow',
+        'iface': 'virtio',
+        'index': '0',
+        'path': '/path/to/volume',
+        'propagateErrors': 'off',
+        'readonly': 'False',
+        'shared': 'none',
+        'type': 'disk',
+        'specParams': {},
+        'vm_custom': {'viodiskcache': 'writethrough'},
+        'diskReplicate': {
+            'cache': 'none',
+            'device': 'disk',
+            'diskType': 'block',
+            'format': 'cow',
+            'path': '/path/to/replica',
+            'propagateErrors': 'off',
+            'specParams': {
+                'ioTune': {
+                    'read_bytes_sec': 2,
+                    'total_bytes_sec': 0,
+                    'write_bytes_sec': 1,
+                },
+            },
+            'vm_custom': {},
+        }
+    },
+    metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
+    <vm>
+    <device iface="virtio" index="0" type="disk">
+        <device>disk</device>
+        <format>cow</format>
+        <iface>virtio</iface>
+        <index>0</index>
+        <path>/path/to/volume</path>
+        <propagateErrors>off</propagateErrors>
+        <readonly>False</readonly>
+        <shared>none</shared>
+        <type>disk</type>
+        <diskReplicate>
+            <cache>none</cache>
+            <device>disk</device>
+            <diskType>block</diskType>
+            <format>cow</format>
+            <path>/path/to/replica</path>
+            <propagateErrors>off</propagateErrors>
+            <specParams>
+                <ioTune>
+                    <read_bytes_sec type="int">2</read_bytes_sec>
+                    <total_bytes_sec type="int">0</total_bytes_sec>
+                    <write_bytes_sec type="int">1</write_bytes_sec>
+                </ioTune>
+            </specParams>
+            <vm_custom />
+        </diskReplicate>
+        <specParams />
+        <vm_custom>
+            <viodiskcache>writethrough</viodiskcache>
+        </vm_custom>
+    </device>
+    </vm>"""
+)
+
 
 class DescriptorStorageMetadataTests(XMLTestCase):
     # parameters are too long to use permutations
@@ -501,6 +567,12 @@ class DescriptorStorageMetadataTests(XMLTestCase):
 
     def test_disk_network_to_metadata_xml(self):
         self._check_drive_to_metadata_xml(_DISK_DATA_NETWORK)
+
+    def test_disk_replica_from_metadata_xml(self):
+        self._check_drive_from_metadata_xml(_DISK_DATA_REPLICA)
+
+    def test_disk_replica_to_metadata_xml(self):
+        self._check_drive_to_metadata_xml(_DISK_DATA_REPLICA)
 
     def test_disk_ignore_volumeinfo_from_metadata_xml(self):
         xml_snippet = u'''<volumeInfo>

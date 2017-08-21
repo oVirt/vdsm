@@ -73,6 +73,7 @@ _AUTH = 'auth'
 _HOSTS = 'hosts'
 _HOST_INFO = 'hostInfo'
 _IO_TUNE = 'ioTune'
+_REPLICA = 'diskReplicate'
 _SPEC_PARAMS = 'specParams'
 _VM_CUSTOM = 'vm_custom'
 _VOLUME_CHAIN = 'volumeChain'
@@ -82,11 +83,12 @@ _IGNORED_KEYS = (
     _VOLUME_INFO,
 )
 _DEVICE_SUBKEYS = (
-    _ADDRESS, _AUTH, _HOSTS, _SPEC_PARAMS,
+    _ADDRESS, _AUTH, _HOSTS, _REPLICA, _SPEC_PARAMS,
     _VM_CUSTOM, _VOLUME_CHAIN,
 )
 _NONEMPTY_KEYS = (
-    _ADDRESS, _AUTH, _HOSTS, _IO_TUNE, _VOLUME_CHAIN,
+    _ADDRESS, _AUTH, _HOSTS, _IO_TUNE, _REPLICA,
+    _VOLUME_CHAIN,
 )
 _LAYERED_KEYS = {
     _HOSTS: _HOST_INFO,
@@ -611,7 +613,9 @@ def _load_device(md_obj, dev):
     for key in _DEVICE_SUBKEYS:
         elem = md_obj.find(dev, key)
         if elem is not None:
-            if key in _LAYERED_KEYS:
+            if key == _REPLICA:
+                value = _load_device(md_obj, elem)
+            elif key in _LAYERED_KEYS:
                 value = _load_layered(md_obj, elem)
             elif key == _SPEC_PARAMS:
                 value = _load_device_spec_params(md_obj, elem)
@@ -635,7 +639,7 @@ def _dump_layered(md_obj, key, subkey, value):
     return chain
 
 
-def _dump_device(md_obj, data):
+def _dump_device(md_obj, data, node_name=_DEVICE):
     elems = []
     data = data.copy()
 
@@ -648,7 +652,9 @@ def _dump_device(md_obj, data):
             # empty elements make no sense
             continue
 
-        if key in _LAYERED_KEYS:
+        if key == _REPLICA:
+            elems.append(_dump_device(md_obj, value, _REPLICA))
+        elif key in _LAYERED_KEYS:
             elems.append(
                 _dump_layered(md_obj, key, _LAYERED_KEYS[key], value)
             )
@@ -657,7 +663,7 @@ def _dump_device(md_obj, data):
         else:
             elems.append(md_obj.dump(key, **value))
 
-    dev_elem = md_obj.dump(_DEVICE, **data)
+    dev_elem = md_obj.dump(node_name, **data)
     for elem in elems:
         vmxml.append_child(dev_elem, etree_child=elem)
     return dev_elem
