@@ -11,14 +11,21 @@ log collection.
 
 ## Installation
 
-The Vdsm service can be used by following the standard autotools
-installation process, documented in the INSTALL file. As a quick
-start you can do
+VDSM uses autoconf and automake as its build system.
 
-    ./configure --prefix=/usr --sysconfdir=/etc \
-        --localstatedir=/var --libdir=/usr/lib
-    make
-    sudo make install
+To configure the build environment:
+
+    ./autogen.sh --system
+
+To see available options:
+
+    ./configure --help
+
+To create an RPM:
+
+    make rpm
+
+Install the desired Rpms from ~/rpmbuild/RPMS/noarch.
 
 In order to start vdsm at first try, please perform:
 
