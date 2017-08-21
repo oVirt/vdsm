@@ -211,6 +211,9 @@ parameters = [
         ('report_host_threads_as_cores', 'false',
             'Count each cpu hyperthread as an individual core'),
 
+        ('libvirt_env_variable_debug', '',
+            'Control libvirt logging behavior'),
+
         ('libvirt_env_variable_log_filters', '',
             'Specify the log filters to track libvirt calls'),
 

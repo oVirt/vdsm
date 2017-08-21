@@ -77,6 +77,8 @@ class DaemonAdapter(object):
                 pythonpath += ':' + env['PYTHONPATH']
 
             env.update({
+                'LIBVIRT_DEBUG': config.get(
+                    'vars', 'libvirt_env_variable_debug'),
                 'LIBVIRT_LOG_FILTERS': config.get(
                     'vars', 'libvirt_env_variable_log_filters'),
                 'LIBVIRT_LOG_OUTPUTS': config.get(
