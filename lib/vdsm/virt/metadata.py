@@ -591,13 +591,27 @@ def _load_device(md_obj, dev):
         elem = md_obj.find(dev, key)
         if elem is not None:
             if key in _LAYERED_KEYS:
-                value = [md_obj.load(node) for node in elem]
+                value = _load_layered(md_obj, elem)
             elif key == _SPEC_PARAMS:
                 value = _load_device_spec_params(md_obj, elem)
             else:
                 value = md_obj.load(elem)
             info[key] = value
     return info
+
+
+def _load_layered(md_obj, elem):
+    return [md_obj.load(node) for node in elem]
+
+
+def _dump_layered(md_obj, key, subkey, value):
+    chain = ET.Element(key)
+    for val in value:
+        vmxml.append_child(
+            chain,
+            etree_child=md_obj.dump(subkey, **val)
+        )
+    return chain
 
 
 def _dump_device(md_obj, data):
@@ -611,12 +625,9 @@ def _dump_device(md_obj, data):
             continue
 
         if key in _LAYERED_KEYS:
-            subkey = _LAYERED_KEYS[key]
-            chain = ET.Element(key)
-            for val in value:
-                node = md_obj.dump(subkey, **val)
-                vmxml.append_child(chain, etree_child=node)
-            elems.append(chain)
+            elems.append(
+                _dump_layered(md_obj, key, _LAYERED_KEYS[key], value)
+            )
         elif key == _SPEC_PARAMS:
             elems.append(_dump_device_spec_params(md_obj, value))
         else:
