@@ -73,7 +73,6 @@ from vdsm.virt.vmtune import (
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testValidation import brokentest, slowtest
-from testValidation import xfail
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase
 from testlib import find_xml_element
@@ -1165,7 +1164,6 @@ class TestVm(XMLTestCase):
         with fake.VM(params={}, arch=cpuarch.X86_64) as testvm:
             self.assertTrue(testvm.acpi_enabled())
 
-    @xfail("lease.Device __init__ was mistakenly not updated")
     def test_hotplug_lease(self):
         params = {
             'sd_id': 'sd_id',

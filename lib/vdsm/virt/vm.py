@@ -3549,7 +3549,7 @@ class Vm(object):
     @api.guard(_not_migrating)
     def hotplugLease(self, params):
         vmdevices.lease.prepare(self.cif.irs, [params])
-        lease = vmdevices.lease.Device(self.conf, self.log, **params)
+        lease = vmdevices.lease.Device(self.log, **params)
 
         leaseXml = vmxml.format_xml(lease.getXML(), pretty=True)
         self.log.info("Hotplug lease xml: %s", leaseXml)
