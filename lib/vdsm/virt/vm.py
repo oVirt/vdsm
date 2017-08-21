@@ -4343,6 +4343,7 @@ class Vm(object):
         conf = self._findDriveConfigByName(drive.name)
         with self._confLock:
             conf['diskReplicate'] = replica
+            self._add_legacy_disk_conf_to_metadata(conf)
         self.saveState()
 
         drive.diskReplicate = replica
@@ -4358,6 +4359,7 @@ class Vm(object):
         conf = self._findDriveConfigByName(drive.name)
         with self._confLock:
             conf['diskReplicate'] = drive.diskReplicate
+            self._add_legacy_disk_conf_to_metadata(conf)
         self.saveState()
 
     def _delDiskReplica(self, drive):
@@ -4370,6 +4372,7 @@ class Vm(object):
         conf = self._findDriveConfigByName(drive.name)
         with self._confLock:
             del conf['diskReplicate']
+            self._add_legacy_disk_conf_to_metadata(conf)
         self.saveState()
 
     def _diskSizeExtendCow(self, drive, newSizeBytes):
