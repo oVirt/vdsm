@@ -189,7 +189,7 @@ class TestGuestIF(TestCaseBase):
 
     def test_handleMessage(self):
         fakeGuestAgent = guestagent.GuestAgent(None, None, self.log,
-                                               lambda: None)
+                                               lambda: None, lambda: None)
         testCase = namedtuple('testCase', 'msgType, message, assertDict')
 
         for t in zip(_MSG_TYPES, _INPUTS, _OUTPUTS):
@@ -200,7 +200,7 @@ class TestGuestIF(TestCaseBase):
 
     def test_guestinfo_encapsulation(self):
         fake_guest_agent = guestagent.GuestAgent(None, None, self.log,
-                                                 lambda: None)
+                                                 lambda: None, lambda: None)
         fake_guest_agent._handleMessage(_MSG_TYPES[0], _INPUTS[0])
         with MonkeyPatchScope([
                 (fake_guest_agent, 'isResponsive', lambda: True)
@@ -229,6 +229,7 @@ class TestGuestIFHandleData(TestCaseBase):
     # perform general setup tasks
     def setUp(self):
         self.fakeGuestAgent = guestagent.GuestAgent(None, None, self.log,
+                                                    lambda: None,
                                                     lambda: None)
         self.fakeGuestAgent.MAX_MESSAGE_SIZE = 100
         self.maxMessageSize = self.fakeGuestAgent.MAX_MESSAGE_SIZE
@@ -299,7 +300,8 @@ class TestGuestIFHandleData(TestCaseBase):
 class DiskMappingTests(TestCaseBase):
 
     def setUp(self):
-        self.agent = guestagent.GuestAgent(None, None, None, lambda: None)
+        self.agent = guestagent.GuestAgent(None, None, None, lambda: None,
+                                           lambda: None)
 
     def test_init(self):
         self.assertEqual(self.agent.guestDiskMapping, {})

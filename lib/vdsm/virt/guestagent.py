@@ -153,7 +153,7 @@ class GuestAgent(object):
     SEEN_SHUTDOWN_TIMEOUT = config.getint('vars', 'sys_shutdown_timeout') * 2
 
     def __init__(self, socketName, channelListener, log, onStatusChange,
-                 api_version=None, user='Unknown', ips=''):
+                 qgaGuestInfo, api_version=None, user='Unknown', ips=''):
         self.effectiveApiVersion = min(
             api_version or _IMPLICIT_API_VERSION_ZERO,
             _MAX_SUPPORTED_API_VERSION)
@@ -183,6 +183,7 @@ class GuestAgent(object):
         self._completion_events = {}
         self._first_connect = threading.Event()
         self._seen_shutdown = None
+        self._qgaGuestInfo = qgaGuestInfo
 
     def has_seen_shutdown(self):
         if self._seen_shutdown is None:
@@ -451,17 +452,29 @@ class GuestAgent(object):
         return self.guestStatus
 
     def getGuestInfo(self):
+        # This is rather hacky, but for now we want to prefer information from
+        # oVirt GA over QEMU-GA
+        info = {
+            'username': 'Unknown',
+            'session': 'Unknown',
+            'memUsage': 0,
+            'guestCPUCount': -1,
+            'appsList': (),
+            'guestIPs': '',
+            'guestFQDN': ''}
+        qga = self._qgaGuestInfo()
+        if qga is not None:
+            info.update(qga)
         if self.isResponsive():
-            return utils.picklecopy(self.guestInfo)
+            info.update(self.guestInfo)
         else:
-            return {
-                'username': 'Unknown',
-                'session': 'Unknown',
-                'memUsage': 0,
-                'guestCPUCount': -1,
-                'appsList': self.guestInfo['appsList'],
-                'guestIPs': self.guestInfo['guestIPs'],
-                'guestFQDN': self.guestInfo['guestFQDN']}
+            if len(self.guestInfo['appsList']) > 0:
+                info['appsList'] = self.guestInfo['appsList'],
+            if len(self.guestInfo['guestIPs']) > 0:
+                info['guestIPs'] = self.guestInfo['guestIPs'],
+            if len(self.guestInfo['guestFQDN']) > 0:
+                info['guestFQDN'] = self.guestInfo['guestFQDN']
+        return utils.picklecopy(info)
 
     def onReboot(self):
         self.guestStatus = vmstatus.REBOOT_IN_PROGRESS

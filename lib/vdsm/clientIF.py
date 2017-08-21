@@ -56,6 +56,7 @@ from vdsm import supervdsm
 from vdsm.common import concurrent
 from vdsm.common import response
 from vdsm.virt import vm
+from vdsm.virt.qemuguestagent import QemuGuestAgentPoller
 from vdsm.virt.vm import DestroyedOnResumeError, Vm
 
 try:
@@ -92,7 +93,14 @@ class clientIF(object):
             self.irs.registerDomainStateChangeCallback(self._contEIOVmsCB)
         self.log = log
         self._recovery = True
+        # TODO: The guest agent related code spreads around too much. There is
+        # QemuGuestAgentPoller and ChannelListner here and then many instances
+        # of GuestAgent per VM in vm.py. This should be refactored and
+        # operated by single object. Idealy the distinction between what is
+        # served by QEMU-GA and what is server by oVirt GA should not be
+        # visible to the rest of the code.
         self.channelListener = Listener(self.log)
+        self.qga_poller = QemuGuestAgentPoller(self, log, scheduler)
         self.mom = None
         self.servers = {}
         self._broker_client = None
@@ -114,6 +122,7 @@ class clientIF(object):
             self.channelListener.settimeout(
                 config.getint('vars', 'guest_agent_timeout'))
             self.channelListener.start()
+            self.qga_poller.start()
             self.threadLocal = threading.local()
             self.threadLocal.client = ''
 
@@ -354,6 +363,7 @@ class clientIF(object):
             self._enabled = False
             secret.clear()
             self.channelListener.stop()
+            self.qga_poller.stop()
             if self.irs:
                 return self.irs.prepareForShutdown()
             else:

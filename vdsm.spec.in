@@ -1213,6 +1213,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virt/metadata.py*
 %{python_sitelib}/%{vdsm_name}/virt/migration.py*
 %{python_sitelib}/%{vdsm_name}/virt/periodic.py*
+%{python_sitelib}/%{vdsm_name}/virt/qemuguestagent.py*
 %{python_sitelib}/%{vdsm_name}/virt/recovery.py*
 %{python_sitelib}/%{vdsm_name}/virt/sampling.py*
 %{python_sitelib}/%{vdsm_name}/virt/secret.py*

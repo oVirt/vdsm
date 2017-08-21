@@ -37,6 +37,7 @@ dist_vdsmvirt_PYTHON = \
 	metadata.py \
 	migration.py \
 	periodic.py \
+	qemuguestagent.py \
 	recovery.py \
 	sampling.py \
 	secret.py \
