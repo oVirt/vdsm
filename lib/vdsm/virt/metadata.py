@@ -52,6 +52,7 @@ The flow is:
 from contextlib import contextmanager
 import logging
 import operator
+import threading
 import xml.etree.ElementTree as ET
 
 import libvirt
@@ -124,6 +125,16 @@ class Metadata(object):
     handling when building XML for the VM startup; when updating the
     metadata, libvirt will take care of that.
     See also the docstring of the `create` function.
+
+    Thread safety note:
+    Those methods are guaranteed to be thread safe:
+    - load()
+    - dump()
+    - to_xml()
+
+    In a nutshell, the class guarantees that serialization/deserialization
+    is thread safe. The calling code is in charge of the atomicity of
+    the updates (see methods values(), device(), custom())
     """
 
     def __init__(self, namespace=None, namespace_uri=None):
@@ -325,6 +336,7 @@ class Descriptor(object):
           'foo': 'bar'
         }
         """
+        self._lock = threading.Lock()
         self._name = name
         self._namespace = namespace
         self._namespace_uri = namespace_uri
@@ -545,29 +557,31 @@ class Descriptor(object):
         metadata_obj = Metadata(namespace, namespace_uri)
         md_data = metadata_obj.load(md_elem)
         custom_elem = metadata_obj.find(md_elem, _CUSTOM)
-        if custom_elem is not None:
-            self._custom = metadata_obj.load(custom_elem)
-        else:
-            self._custom = {}
-        self._devices = [
-            (dev.attrib.copy(), _load_device(metadata_obj, dev))
-            for dev in metadata_obj.findall(md_elem, _DEVICE)
-        ]
-        md_data.pop(_CUSTOM, None)
-        md_data.pop(_DEVICE, None)
-        self._values = md_data
+        with self._lock:
+            if custom_elem is not None:
+                self._custom = metadata_obj.load(custom_elem)
+            else:
+                self._custom = {}
+            self._devices = [
+                (dev.attrib.copy(), _load_device(metadata_obj, dev))
+                for dev in metadata_obj.findall(md_elem, _DEVICE)
+            ]
+            md_data.pop(_CUSTOM, None)
+            md_data.pop(_DEVICE, None)
+            self._values = md_data
 
     def _build_xml(self, namespace=None, namespace_uri=None):
         metadata_obj = Metadata(namespace, namespace_uri)
-        md_elem = metadata_obj.dump(self._name, **self._values)
-        for (attrs, data) in self._devices:
-            if data:
-                dev_elem = _dump_device(metadata_obj, data)
-                dev_elem.attrib.update(attrs)
-                vmxml.append_child(md_elem, etree_child=dev_elem)
-        if self._custom:
-            custom_elem = metadata_obj.dump(_CUSTOM, **self._custom)
-            vmxml.append_child(md_elem, etree_child=custom_elem)
+        with self._lock:
+            md_elem = metadata_obj.dump(self._name, **self._values)
+            for (attrs, data) in self._devices:
+                if data:
+                    dev_elem = _dump_device(metadata_obj, data)
+                    dev_elem.attrib.update(attrs)
+                    vmxml.append_child(md_elem, etree_child=dev_elem)
+            if self._custom:
+                custom_elem = metadata_obj.dump(_CUSTOM, **self._custom)
+                vmxml.append_child(md_elem, etree_child=custom_elem)
         return vmxml.format_xml(md_elem, pretty=True)
 
     def _find_device(self, kwargs):
