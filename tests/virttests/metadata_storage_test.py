@@ -21,9 +21,11 @@
 from __future__ import absolute_import
 
 from collections import namedtuple
+import copy
 
 from vdsm.virt.vmdevices import common
 from vdsm.virt import metadata
+from vdsm.virt import vmxml
 
 from testlib import XMLTestCase
 # ugly, temporary hack until we need to keep around those tests
@@ -165,10 +167,6 @@ _DISK_DATA = _TestData(
             'path': '/rhev/data-center/omitted/for/brevity',
             'volumeID': '5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc',
         }],
-        'volumeInfo': {
-            'path': '/rhev/data-center/omitted/for/brevity',
-            'volType': 'path',
-        }
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
@@ -207,10 +205,6 @@ _DISK_DATA = _TestData(
                 <volumeID>5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc</volumeID>
             </volumeChainNode>
         </volumeChain>
-        <volumeInfo>
-            <path>/rhev/data-center/omitted/for/brevity</path>
-            <volType>path</volType>
-        </volumeInfo>
     </device>
     </vm>""",
 )
@@ -248,10 +242,6 @@ _DISK_DATA_IOTUNE = _TestData(
             'path': '/rhev/data-center/omitted/for/brevity',
             'volumeID': '5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc',
         }],
-        'volumeInfo': {
-            'path': '/rhev/data-center/omitted/for/brevity',
-            'volType': 'path',
-        }
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
@@ -289,10 +279,6 @@ _DISK_DATA_IOTUNE = _TestData(
                 <volumeID>5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc</volumeID>
             </volumeChainNode>
         </volumeChain>
-        <volumeInfo>
-            <path>/rhev/data-center/omitted/for/brevity</path>
-            <volType>path</volType>
-        </volumeInfo>
     </device>
     </vm>""",
 )
@@ -515,6 +501,28 @@ class DescriptorStorageMetadataTests(XMLTestCase):
 
     def test_disk_network_to_metadata_xml(self):
         self._check_drive_to_metadata_xml(_DISK_DATA_NETWORK)
+
+    def test_disk_ignore_volumeinfo_from_metadata_xml(self):
+        xml_snippet = u'''<volumeInfo>
+            <path>/rhev/data-center/omitted/for/brevity</path>
+            <volType>path</volType>
+        </volumeInfo>'''
+
+        root = vmxml.parse_xml(_DISK_DATA.metadata_xml)
+        dev = vmxml.find_first(root, 'device')
+        vmxml.append_child(dev, etree_child=vmxml.parse_xml(xml_snippet))
+        data = _TestData(
+            copy.deepcopy(_DISK_DATA.conf), vmxml.format_xml(root))
+        self._check_drive_from_metadata_xml(data)
+
+    def test_disk_ignore_volumeinfo_to_metadata_xml(self):
+        conf = copy.deepcopy(_DISK_DATA.conf)
+        conf['volumeInfo'] = {
+            'path': '/rhev/data-center/omitted/for/brevity',
+            'volType': 'path',
+        }
+        data = _TestData(conf, _DISK_DATA.metadata_xml)
+        self._check_drive_to_metadata_xml(data)
 
     def test_cdrom_from_metadata_xml(self):
         self._check_drive_from_metadata_xml(_CDROM_DATA)

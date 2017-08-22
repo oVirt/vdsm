@@ -78,12 +78,15 @@ _VM_CUSTOM = 'vm_custom'
 _VOLUME_CHAIN = 'volumeChain'
 _VOLUME_CHAIN_NODE = 'volumeChainNode'
 _VOLUME_INFO = 'volumeInfo'
+_IGNORED_KEYS = (
+    _VOLUME_INFO,
+)
 _DEVICE_SUBKEYS = (
     _ADDRESS, _AUTH, _HOSTS, _SPEC_PARAMS,
-    _VM_CUSTOM, _VOLUME_CHAIN, _VOLUME_INFO,
+    _VM_CUSTOM, _VOLUME_CHAIN,
 )
 _NONEMPTY_KEYS = (
-    _ADDRESS, _AUTH, _HOSTS, _IO_TUNE, _VOLUME_CHAIN, _VOLUME_INFO
+    _ADDRESS, _AUTH, _HOSTS, _IO_TUNE, _VOLUME_CHAIN,
 )
 _LAYERED_KEYS = {
     _HOSTS: _HOST_INFO,
@@ -601,6 +604,10 @@ class Descriptor(object):
 
 def _load_device(md_obj, dev):
     info = md_obj.load(dev)
+
+    for key in _IGNORED_KEYS:
+        info.pop(key, None)
+
     for key in _DEVICE_SUBKEYS:
         elem = md_obj.find(dev, key)
         if elem is not None:
@@ -631,6 +638,9 @@ def _dump_layered(md_obj, key, subkey, value):
 def _dump_device(md_obj, data):
     elems = []
     data = data.copy()
+
+    for key in _IGNORED_KEYS:
+        data.pop(key, None)
 
     for key in _DEVICE_SUBKEYS:
         value = data.pop(key, {})
