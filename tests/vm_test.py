@@ -73,6 +73,7 @@ from vdsm.virt.vmtune import (
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testValidation import brokentest, slowtest
+from testValidation import xfail
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase
 from testlib import find_xml_element
@@ -1164,6 +1165,27 @@ class TestVm(XMLTestCase):
         with fake.VM(params={}, arch=cpuarch.X86_64) as testvm:
             self.assertTrue(testvm.acpi_enabled())
 
+    @xfail("lease.Device __init__ was mistakenly not updated")
+    def test_hotplug_lease(self):
+        params = {
+            'sd_id': 'sd_id',
+            'lease_id': 'lease_id',
+        }
+        expected_conf = {
+            'path': '/path',
+            'offset': 1048576,
+        }
+        expected_conf.update(params)
+
+        with fake.VM(params={}, arch=cpuarch.X86_64) as testvm:
+            testvm._dom = FakeLeaseDomain()
+            testvm.cif = FakeLeaseClientIF(expected_conf)
+            res = testvm.hotplugLease(params)
+
+            vmspec = res.pop('vmList')
+            self.assertEqual(res, response.success())
+            self.assertEqual(vmspec['devices'][0], expected_conf)
+
 
 class ExpectedError(Exception):
     pass
@@ -2177,6 +2199,25 @@ class MetadataTests(TestCaseBase):
                     },
                 }
             )
+
+
+class FakeLeaseDomain(object):
+
+    def attachDevice(self, device_xml):
+        pass
+
+
+class FakeLeaseIRS(object):
+    def __init__(self, conf):
+        self._conf = conf
+
+    def lease_info(self, lease):
+        return response.success(result=self._conf)
+
+
+class FakeLeaseClientIF(object):
+    def __init__(self, conf):
+        self.irs = FakeLeaseIRS(conf)
 
 
 def _load_xml(name):
