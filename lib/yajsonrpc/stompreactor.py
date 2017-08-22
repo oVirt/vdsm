@@ -115,13 +115,15 @@ class StompAdapterImpl(object):
             )
 
             # Make sure the heart-beat interval is sane
+            if cx != 0:
+                cx = max(cx, 1000)
             if cy != 0:
                 cy = max(cy, 1000)
 
-            # The server can send a heart-beat every cy ms and doesn't want
-            # to receive any heart-beat from the client.
-            resp.headers[stomp.Headers.HEARTBEAT] = "%d,0" % (cy,)
-            dispatcher.setHeartBeat(cy)
+            # The server can send a heartbeat every cy ms and get a heartbeat
+            # every cx ms.
+            resp.headers[stomp.Headers.HEARTBEAT] = "%d,%d" % (cy, cx)
+            dispatcher.setHeartBeat(cy, cx)
 
         self.queue_frame(resp)
         self._reactor.wakeup()
@@ -240,6 +242,10 @@ class StompAdapterImpl(object):
             # let json server process issue
             pass
         dispatcher.connection.handleMessage(request, flow_id)
+
+    def handle_timeout(self, dispatcher):
+        dispatcher.connection.close()
+        self.remove_subscriptions()
 
     def _handle_destination(self, dispatcher, req_dest, request):
         """

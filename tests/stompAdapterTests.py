@@ -27,6 +27,7 @@ from yajsonrpc.stomp import \
     Frame, \
     Headers, \
     SUBSCRIPTION_ID_REQUEST
+from yajsonrpc.stomp import AsyncDispatcher
 from yajsonrpc.stompreactor import StompAdapterImpl
 
 
@@ -38,6 +39,9 @@ class FakeConnection(object):
 
     def send_raw(self, msg):
         self._client.queue_frame(msg)
+
+    def close(self):
+        pass
 
     @property
     def flow_id(self):
@@ -111,6 +115,22 @@ class ConnectFrameTest(TestCaseBase):
         self.assertEquals(resp_frame.command, Command.CONNECTED)
         self.assertEquals(resp_frame.headers['version'], '1.2')
         self.assertEquals(resp_frame.headers[Headers.HEARTBEAT], '1000,0')
+
+    def test_incoming_heartbeat(self):
+        frame = Frame(Command.CONNECT,
+                      {Headers.ACCEPT_VERSION: '1.2',
+                       Headers.HEARTBEAT: '6000,5000'})
+
+        adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
+        dispatcher = AsyncDispatcher(FakeConnection(adapter), adapter)
+        adapter.handle_frame(dispatcher, frame)
+
+        resp_frame = adapter.pop_message()
+        self.assertEqual(resp_frame.command, Command.CONNECTED)
+        self.assertEqual(resp_frame.headers['version'], '1.2')
+        self.assertEqual(resp_frame.headers[Headers.HEARTBEAT], '5000,6000')
+        self.assertEqual(dispatcher._incoming_heartbeat_in_milis, 6000)
+        self.assertEqual(dispatcher._outgoing_heartbeat_in_milis, 5000)
 
     def test_unsuported_version(self):
         frame = Frame(Command.CONNECT,
@@ -380,3 +400,30 @@ class SendFrameTest(TestCaseBase):
         adapter.handle_frame(dispatcher, frame)
 
         self.assertIsNone(dispatcher.connection.flow_id)
+
+
+class ServerTimeoutTests(TestCaseBase):
+    def test_no_subscriptions(self):
+        adapter = StompAdapterImpl(Reactor(), defaultdict(list), {})
+        dispatcher = AsyncDispatcher(FakeConnection(adapter), adapter)
+
+        frame1 = Frame(Command.SUBSCRIBE,
+                       {Headers.DESTINATION: 'jms.queue.events',
+                        'ack': 'auto',
+                        'id': 'ad052acb-a934-4e10-8ec3-00c7417ef8d1'})
+
+        frame2 = Frame(Command.SUBSCRIBE,
+                       {Headers.DESTINATION: 'jms.queue.events',
+                        'ack': 'auto',
+                        'id': 'ad052acb-a934-4e10-8ec3-00c7417ef8d2'})
+
+        destinations = defaultdict(list)
+
+        adapter = StompAdapterImpl(Reactor(), destinations, {})
+        adapter.handle_frame(dispatcher, frame1)
+        adapter.handle_frame(dispatcher, frame2)
+
+        adapter.handle_timeout(dispatcher)
+
+        self.assertEqual(len(adapter._sub_ids), 0)
+        self.assertEqual(len(destinations), 0)
