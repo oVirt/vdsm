@@ -116,7 +116,7 @@ else:
             # If unit file type was specified, don't override it.
             if srvName.count('.') < 1:
                 fullName = srvName + ".service"
-            for line in out:
+            for line in out.splitlines():
                 if fullName == line.split(" ", 1)[0]:
                     return systemctlFun(fullName)
             raise ServiceNotExistError("%s is not native systemctl service" %
