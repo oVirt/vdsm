@@ -489,15 +489,6 @@ BuildArch:      noarch
 %description hook-floppy
 Allow adding floppy to VM
 
-%package hook-hostusb
-Summary:        Allow attaching USB device from host
-BuildArch:      noarch
-Requires:       usbutils
-
-%description hook-hostusb
-Hook is getting vendor and product id of USB device
-disconnect it from host and attach it to VM
-
 %package hook-httpsisoboot
 Summary:        Allow directly booting from an https available ISO
 BuildArch:      noarch
@@ -1489,12 +1480,6 @@ exit 0
 %files hook-floppy
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_floppy
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_floppy
-
-%files hook-hostusb
-%{_sysconfdir}/sudoers.d/50_vdsm_hook_hostusb
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_hostusb
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_hostusb
-%{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_hostusb
 
 %files hook-httpsisoboot
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_httpsisoboot

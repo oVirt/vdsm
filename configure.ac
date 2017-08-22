@@ -454,7 +454,6 @@ AC_OUTPUT([
 	vdsm_hooks/fcoe/Makefile
 	vdsm_hooks/fileinject/Makefile
 	vdsm_hooks/floppy/Makefile
-	vdsm_hooks/hostusb/Makefile
 	vdsm_hooks/httpsisoboot/Makefile
 	vdsm_hooks/ipv6/Makefile
 	vdsm_hooks/isolatedprivatevlan/Makefile
