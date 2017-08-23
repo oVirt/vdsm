@@ -2214,6 +2214,16 @@ class MetadataTests(TestCaseBase):
   </metadata>
 </domain>'''
 
+    _TEST_XML_LAUNCH_PAUSED = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>TESTING</uuid>
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:launchPaused>true</ovirt-vm:launchPaused>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+
     @contextmanager
     def test_vm(self, test_xml=None):
         with namedTemporaryDir() as tmp_dir:
@@ -2300,6 +2310,14 @@ class MetadataTests(TestCaseBase):
     def test_void_cluster_version(self, major, minor, result):
         with self.test_vm(test_xml=self._TEST_XML) as testvm:
             self.assertEqual(testvm.min_cluster_version(major, minor), result)
+
+    def test_launch_paused_default_false(self):
+        with self.test_vm(test_xml=self._TEST_XML) as testvm:
+            self.assertFalse(testvm._launch_paused)
+
+    def test_launch_paused(self):
+        with self.test_vm(test_xml=self._TEST_XML_LAUNCH_PAUSED) as testvm:
+            self.assertTrue(testvm._launch_paused)
 
 
 class FakeLeaseDomain(object):

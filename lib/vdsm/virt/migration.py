@@ -250,7 +250,7 @@ class SourceThread(object):
             self._machineParams['guestFQDN'] = vmStats['guestFQDN']
         self._machineParams['guestAgentAPIVersion'] = \
             self._vm.guestAgent.effectiveApiVersion
-        for k in ('_migrationParams', 'pid'):
+        for k in ('_migrationParams', 'pid', 'launchPaused'):
             if k in self._machineParams:
                 del self._machineParams[k]
         if not self.hibernating:

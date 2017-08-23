@@ -350,6 +350,7 @@ class Vm(object):
             self._mem_guaranteed_size_mb = int(
                 params.get('memGuaranteedSize', '0')
             )
+            self._launch_paused = self.conf.get('launchPaused', False)
         self._destroy_requested = threading.Event()
         self._recovery_file = recovery.File(self.id)
         self._monitorResponse = 0
@@ -507,6 +508,7 @@ class Vm(object):
             if cluster_version is not None:
                 self._cluster_version = [int(v)
                                          for v in cluster_version.split('.')]
+            self._launch_paused = conv.tobool(md.get('launchPaused', False))
 
     def min_cluster_version(self, major, minor):
         """
@@ -2542,10 +2544,11 @@ class Vm(object):
 
             flags = libvirt.VIR_DOMAIN_NONE
             with self._confLock:
-                if 'launchPaused' in self.conf:
+                # We use this flag only when starting VM, and we need to
+                # make sure not to pass or use it on migration creation.
+                if self._launch_paused:
                     flags |= libvirt.VIR_DOMAIN_START_PAUSED
                     self.conf['pauseCode'] = 'NOERR'
-                    del self.conf['launchPaused']
             hooks.dump_vm_launch_flags_to_file(self.id, flags)
             try:
                 domxml = hooks.before_vm_start(self._buildDomainXML(),
