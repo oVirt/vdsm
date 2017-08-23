@@ -20,6 +20,7 @@
 #
 from __future__ import absolute_import
 
+import copy
 import logging
 import os.path
 import threading
@@ -2149,6 +2150,38 @@ class SyncGuestTimeTests(TestCaseBase):
             vm._syncGuestTime()
 
 
+_DISK_CONF = {
+    'device': 'disk',
+    'format': 'cow',
+    'iface': 'virtio',
+    'index': '0',
+    'name': 'vda',
+    'path': '/path/to/volume',
+    'propagateErrors': 'off',
+    'readonly': 'False',
+    'shared': 'none',
+    'type': 'disk',
+    'specParams': {},
+    'vm_custom': {'viodiskcache': 'writethrough'},
+    'diskReplicate': {
+        'cache': 'none',
+        'device': 'disk',
+        'diskType': 'block',
+        'format': 'cow',
+        'path': '/path/to/replica',
+        'propagateErrors': 'off',
+        'specParams': {
+            'ioTune': {
+                'read_bytes_sec': 2,
+                'total_bytes_sec': 0,
+                'write_bytes_sec': 1,
+            },
+        },
+        'vm_custom': {},
+    }
+}
+
+
 class MetadataTests(TestCaseBase):
 
     _TEST_XML = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -2197,6 +2230,38 @@ class MetadataTests(TestCaseBase):
                     },
                 }
             )
+
+    def test__add_legacy_disk_conf(self):
+        dom = fake.Domain()
+
+        with self.test_vm() as testvm:
+            testvm._dom = dom
+            testvm._add_legacy_disk_conf_to_metadata(_DISK_CONF)
+            testvm._sync_metadata()
+
+        self._check_conf_from_metadata_matches(dom, _DISK_CONF)
+
+    def test_update_legacy_disk_conf(self):
+        dom = fake.Domain()
+        conf = copy.deepcopy(_DISK_CONF)
+
+        with self.test_vm() as testvm:
+            testvm._dom = dom
+            testvm._add_legacy_disk_conf_to_metadata(_DISK_CONF)
+            del conf['diskReplicate']
+            testvm._add_legacy_disk_conf_to_metadata(conf)
+            testvm._sync_metadata()
+
+        self._check_conf_from_metadata_matches(dom, conf)
+
+    def _check_conf_from_metadata_matches(self, dom, conf):
+        with self.test_vm() as testvm:
+            testvm._dom = dom
+            # triggers metadata parsing
+            testvm._updateMetadataDescriptor()
+            testvm._restore_legacy_disk_conf_from_metadata()
+
+        self.assertEqual(testvm._findDriveConfigByName(conf['name']), conf)
 
 
 class FakeLeaseDomain(object):

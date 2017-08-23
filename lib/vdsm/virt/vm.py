@@ -2351,6 +2351,7 @@ class Vm(object):
         data = utils.picklecopy(dev_conf)
         attrs = vmdevices.common.get_drive_conf_identifying_attrs(dev_conf)
         with self._md_desc.device(**attrs) as dev:
+            dev.clear()
             dev.update(data)
 
     def _remove_legacy_disk_conf_from_metadata(self, dev_conf):
