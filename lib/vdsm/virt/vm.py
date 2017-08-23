@@ -2364,9 +2364,10 @@ class Vm(object):
         self._logGuestCpuStatus('domain initialization')
 
     def _save_legacy_disk_conf_to_metadata(self):
-        for dev_conf in self.conf['devices']:
-            if dev_conf['type'] == hwclass.DISK:
-                self._add_legacy_disk_conf_to_metadata(dev_conf)
+        with self._confLock:
+            for dev_conf in self.conf['devices']:
+                if dev_conf['type'] == hwclass.DISK:
+                    self._add_legacy_disk_conf_to_metadata(dev_conf)
         self._sync_metadata()
 
     def _add_legacy_disk_conf_to_metadata(self, dev_conf):
@@ -3508,8 +3509,8 @@ class Vm(object):
 
             with self._confLock:
                 self.conf['devices'].append(diskParams)
+                self._add_legacy_disk_conf_to_metadata(diskParams)
             self.saveState()
-            self._add_legacy_disk_conf_to_metadata(diskParams)
             self._sync_metadata()
             vmdevices.storage.Drive.update_device_info(self, device_conf)
             hooks.after_disk_hotplug(driveXml, self._custom,
@@ -3559,7 +3560,7 @@ class Vm(object):
                 if dev['type'] == hwclass.DISK and dev['path'] == drive.path:
                     with self._confLock:
                         self.conf['devices'].remove(dev)
-                    self._remove_legacy_disk_conf_from_metadata(dev)
+                        self._remove_legacy_disk_conf_from_metadata(dev)
                     break
 
             self.saveState()
