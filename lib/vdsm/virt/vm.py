@@ -339,6 +339,7 @@ class Vm(object):
         self.cif = cif
         self._custom = {'vmId': self.id}
         self._exit_info = {}
+        self._cluster_version = None
         if 'xml' in params:
             self._md_desc = metadata.Descriptor.from_xml(params['xml'])
             self._init_from_metadata()
@@ -502,6 +503,27 @@ class Vm(object):
                     exit_info[key] = value
             self._exit_info.update(exit_info)
             self._mem_guaranteed_size_mb = md.get('minGuaranteedMemoryMb', 0)
+            cluster_version = md.get('clusterVersion')
+            if cluster_version is not None:
+                self._cluster_version = [int(v)
+                                         for v in cluster_version.split('.')]
+
+    def min_cluster_version(self, major, minor):
+        """
+        Check that cluster version is at least major.minor.
+
+        :param int major: Required major version.
+        :param int minor: Required minor version.
+
+        :returns: True iff VM cluster version is known and is at least
+          `major`.`minor`.
+        :rtype: bool
+        """
+        if self._cluster_version is None:
+            return False
+        cluster_major, cluster_minor = self._cluster_version
+        return (cluster_major > major or
+                cluster_major == major and cluster_minor >= minor)
 
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the

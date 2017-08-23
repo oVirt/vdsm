@@ -2182,6 +2182,7 @@ _DISK_CONF = {
 }
 
 
+@expandPermutations
 class MetadataTests(TestCaseBase):
 
     _TEST_XML = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -2190,6 +2191,21 @@ class MetadataTests(TestCaseBase):
   <metadata>
     <ovirt-vm:vm>
       <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+      <ovirt-vm:custom>
+        <ovirt-vm:foo>bar</ovirt-vm:foo>
+        <ovirt-vm:fizz>buzz</ovirt-vm:fizz>
+      </ovirt-vm:custom>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+
+    _TEST_XML_CLUSTER_VERSION = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>TESTING</uuid>
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:version type="float">4.2</ovirt-vm:version>
+      <ovirt-vm:clusterVersion>4.2</ovirt-vm:clusterVersion>
       <ovirt-vm:custom>
         <ovirt-vm:foo>bar</ovirt-vm:foo>
         <ovirt-vm:fizz>buzz</ovirt-vm:fizz>
@@ -2262,6 +2278,28 @@ class MetadataTests(TestCaseBase):
             testvm._restore_legacy_disk_conf_from_metadata()
 
         self.assertEqual(testvm._findDriveConfigByName(conf['name']), conf)
+
+    @permutations([
+        (3, 6, True,),
+        (4, 1, True,),
+        (4, 2, True,),
+        (4, 3, False,),
+        (5, 1, False,),
+    ])
+    def test_min_cluster_version(self, major, minor, result):
+        with self.test_vm(test_xml=self._TEST_XML_CLUSTER_VERSION) as testvm:
+            self.assertEqual(testvm.min_cluster_version(major, minor), result)
+
+    @permutations([
+        (3, 6, False,),
+        (4, 1, False,),
+        (4, 2, False,),
+        (4, 3, False,),
+        (5, 1, False,),
+    ])
+    def test_void_cluster_version(self, major, minor, result):
+        with self.test_vm(test_xml=self._TEST_XML) as testvm:
+            self.assertEqual(testvm.min_cluster_version(major, minor), result)
 
 
 class FakeLeaseDomain(object):
