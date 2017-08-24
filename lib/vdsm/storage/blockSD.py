@@ -449,13 +449,6 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         lvm.activateLVs(self.sdUUID, [sd.IDS])
         return lvm.lvPath(self.sdUUID, sd.IDS)
 
-    def extendVolume(self, volumeUUID, size, isShuttingDown=None):
-        with self._extendlock:
-            self.log.debug("Extending thinly-provisioned LV for volume %s to "
-                           "%d MB", volumeUUID, size)
-            # FIXME: following line.
-            lvm.extendLV(self.sdUUID, volumeUUID, size)  # , isShuttingDown)
-
     def getMetadataLVDevice(self):
         """
         Returns the first device of the domain metadata lv.
@@ -1534,7 +1527,11 @@ class BlockStorageDomain(sd.StorageDomain):
         lvm.deactivateLVs(self.sdUUID, [MASTERLV])
 
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
-        return self._manifest.extendVolume(volumeUUID, size, isShuttingDown)
+        with self.manifest._extendlock:
+            self.log.debug("Extending thinly-provisioned LV for volume %s to "
+                           "%d MB", volumeUUID, size)
+            # FIXME: following line.
+            lvm.extendLV(self.sdUUID, volumeUUID, size)  # , isShuttingDown)
 
     def reduceVolume(self, imgUUID, volUUID, allowActive=False):
         with self._manifest._extendlock:

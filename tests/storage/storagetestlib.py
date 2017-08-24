@@ -171,6 +171,10 @@ class FakeSD(object):
     def getVersion(self):
         return self._manifest.getVersion()
 
+    def extendVolume(self, volumeUUID, size, isShuttingDown=None):
+        if self.lvm:
+            self.lvm.extendLV(self._manifest.sdUUID, volumeUUID, size)
+
 
 def make_sd_metadata(sduuid, version=3, dom_class=sd.DATA_DOMAIN, pools=None):
     md = FakeMetadata()

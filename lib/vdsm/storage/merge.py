@@ -219,7 +219,7 @@ def _extend_base_allocation(base_vol, top_vol):
     max_alloc = utils.round(capacity * sc.COW_OVERHEAD, constants.MEGAB)
     actual_alloc = min(potential_alloc, max_alloc)
     actual_alloc_mb = (actual_alloc + constants.MEGAB - 1) / constants.MEGAB
-    dom = sdCache.produce_manifest(base_vol.sdUUID)
+    dom = sdCache.produce(base_vol.sdUUID)
     dom.extendVolume(base_vol.volUUID, actual_alloc_mb)
 
 

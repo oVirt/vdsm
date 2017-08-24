@@ -228,10 +228,6 @@ class FakeBlockDomainManifest(FakeDomainManifest):
         pass
 
     @recorded
-    def extendVolume(self, volumeUUID, size, isShuttingDown=None):
-        pass
-
-    @recorded
     def rmDCImgDir(self, imgUUID, volsImgs):
         pass
 
@@ -759,7 +755,6 @@ class TestBlockDomain(DomainTestMixin, VdsmTestCase):
         ['extend', 2],
         ['resizePV', 1],
         ['readMetadataMapping', 0],
-        ['extendVolume', 3],
         ['rmDCImgDir', 2],
     ])
     def test_block_functions(self, fn, nargs=0):
