@@ -212,14 +212,10 @@ class Metadata(object):
 
         :param element_name: group to put in the metadata
         :type element_name: text string
-        :param namespace: namespace to use
-        :type namespace: text string
-        :param namespace_uri: URI of the namespace to use
-        :type namespace_uri: text string
         :return: the corresponding element
         :rtype: ElementTree.Element
 
-        kwargs: stored as subelements
+        kwargs: stored as subelements, see example above
         """
         elem = ET.Element(self._add_ns(element_name))
         for key, value in sorted(
