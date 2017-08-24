@@ -73,6 +73,8 @@ _AUTH = 'auth'
 _HOSTS = 'hosts'
 _HOST_INFO = 'hostInfo'
 _IO_TUNE = 'ioTune'
+_NETWORK = 'network'
+_PORT_MIRRORING = 'portMirroring'
 _REPLICA = 'diskReplicate'
 _SPEC_PARAMS = 'specParams'
 _VM_CUSTOM = 'vm_custom'
@@ -83,11 +85,11 @@ _IGNORED_KEYS = (
     _VOLUME_INFO,
 )
 _DEVICE_SUBKEYS = (
-    _ADDRESS, _AUTH, _HOSTS, _REPLICA, _SPEC_PARAMS,
+    _ADDRESS, _AUTH, _HOSTS, _PORT_MIRRORING, _REPLICA, _SPEC_PARAMS,
     _VM_CUSTOM, _VOLUME_CHAIN,
 )
 _NONEMPTY_KEYS = (
-    _ADDRESS, _AUTH, _HOSTS, _IO_TUNE, _REPLICA,
+    _ADDRESS, _AUTH, _HOSTS, _IO_TUNE, _PORT_MIRRORING, _REPLICA,
     _VOLUME_CHAIN,
 )
 _LAYERED_KEYS = {
@@ -649,7 +651,9 @@ def _load_device(md_obj, dev):
     for key in _DEVICE_SUBKEYS:
         elem = md_obj.find(dev, key)
         if elem is not None:
-            if key == _REPLICA:
+            if key == _PORT_MIRRORING:
+                value = _load_port_mirroring(md_obj, elem)
+            elif key == _REPLICA:
                 value = _load_device(md_obj, elem)
             elif key in _LAYERED_KEYS:
                 value = _load_layered(md_obj, elem)
@@ -688,7 +692,9 @@ def _dump_device(md_obj, data, node_name=_DEVICE):
             # empty elements make no sense
             continue
 
-        if key == _REPLICA:
+        if key == _PORT_MIRRORING:
+            elems.extend(_dump_port_mirroring(md_obj, value))
+        elif key == _REPLICA:
             elems.append(_dump_device(md_obj, value, _REPLICA))
         elif key in _LAYERED_KEYS:
             elems.append(
@@ -703,6 +709,14 @@ def _dump_device(md_obj, data, node_name=_DEVICE):
     for elem in elems:
         vmxml.append_child(dev_elem, etree_child=elem)
     return dev_elem
+
+
+def _load_port_mirroring(md_obj, elem):
+    return [net.text for net in md_obj.findall(elem, _NETWORK)]
+
+
+def _dump_port_mirroring(md_obj, value):
+    return md_obj.dump_sequence(_PORT_MIRRORING, _NETWORK, value)
 
 
 _VM_PAYLOAD = 'vmPayload'

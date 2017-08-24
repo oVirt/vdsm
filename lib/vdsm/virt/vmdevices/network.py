@@ -112,6 +112,7 @@ class Interface(core.Base):
         if net is None:
             raise MissingNetwork("no network to join")
         params['network'] = net
+        _update_port_mirroring(params, meta)
         return cls(log, **params)
 
     def __init__(self, log, **kwargs):
@@ -483,6 +484,12 @@ def fixNetworks(xml_str):
             xml_str = xml_str.replace('NIC-BRIDGE:' + network,
                                       network)
     return xml_str
+
+
+def _update_port_mirroring(params, meta):
+    port_mirroring = meta.get('portMirroring', None)
+    if port_mirroring is not None:
+        params['portMirroring'] = port_mirroring[:]
 
 
 def _get_hostdev_params(dev):

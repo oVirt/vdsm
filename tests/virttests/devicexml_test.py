@@ -1100,6 +1100,12 @@ _DOMAIN_MD_MATCH_XML = u"""<domain type='kvm' id='2'>
         xmlns:ovirt-vm='http://ovirt.org/vm/1.0'>
     <ovirt-tune:qos/>
     <ovirt-vm:vm>
+      <ovirt-vm:device mac_address="00:1a:4a:16:01:00">
+        <ovirt-vm:portMirroring>
+          <ovirt-vm:network>network1</ovirt-vm:network>
+          <ovirt-vm:network>network2</ovirt-vm:network>
+        </ovirt-vm:portMirroring>
+      </ovirt-vm:device>
       <ovirt-vm:device alias='net0'>
         <ovirt-vm:network>ovirtmgmt0</ovirt-vm:network>
       </ovirt-vm:device>
@@ -1156,6 +1162,14 @@ _DOMAIN_MD_MATCH_XML = u"""<domain type='kvm' id='2'>
       <link state='up'/>
       <boot order='2'/>
     </interface>
+    <interface type='bridge'>
+      <mac address='00:1a:4a:16:01:00'/>
+      <source bridge='network1'/>
+      <target dev='vnet1'/>
+      <model type='virtio'/>
+      <filterref filter='vdsm-no-mac-spoofing'/>
+      <link state='up'/>
+    </interface>
   </devices>
 </domain>"""
 
@@ -1190,6 +1204,17 @@ class DeviceMetadataMatchTests(XMLTestCase):
         )
         nic = self._find_nic_by_mac(dev_objs, '00:1a:55:ff:20:26')
         self.assertEqual(nic.network, 'ovirtmgmt2')
+
+    def test_port_mirroring(self):
+        dev_objs = vmdevices.common.dev_map_from_domain_xml(
+            'TESTING', self.dom_desc, self.md_desc, self.log
+        )
+        # random MAC, any nic with portMirroring configured is fine
+        nic1 = self._find_nic_by_mac(dev_objs, '00:1a:55:ff:20:26')
+        self.assertFalse(hasattr(nic1, 'portMirroring'))
+
+        nic2 = self._find_nic_by_mac(dev_objs, '00:1a:4a:16:01:00')
+        self.assertEqual(nic2.portMirroring, ['network1', 'network2'])
 
     def _find_nic_by_mac(self, dev_objs, mac_addr):
         for nic in dev_objs[vmdevices.hwclass.NIC]:
