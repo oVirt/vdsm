@@ -240,6 +240,42 @@ class Metadata(object):
         for elt in elem.findall(self._add_ns(tag)):
             yield elt
 
+    def dump_sequence(self, element_name, subelement_name, sequence):
+        """
+        Dump the given sequence into the `element_name` metadata element.
+        In contrast with the `dump` method, which builds a map-like structure,
+        this method creates a sequence-like structure.
+        This function does not transparently add the type hints as element
+        attributes.
+
+        Example:
+
+        md = Metadata()
+        md.dump_sequence('test', 'item', (bar, baz, 42)) -> elem
+
+        vmxml.format_xml(elem) ->
+
+        <test>
+          <item>bar</item>
+          <item>baz</item>
+          <item>42</item>
+        </test>
+
+        :param element_name: group to put in the metadata
+        :type element_name: text string
+        :param subelement_name: tag of every element forming the sequence
+        :type subelement_name: text string
+        :param sequence: sequence to encode (dump) as xml elements
+        :type sequence: any iterable
+        :return: the corresponding element
+        :rtype: ElementTree.Element
+        """
+        elem = ET.Element(self._add_ns(element_name))
+        for item in sequence:
+            subelem = ET.SubElement(elem, self._add_ns(subelement_name))
+            subelem.text = str(item)
+        return elem
+
     def _add_ns(self, tag):
         """
         Decorate the given tag with the namespace, if used

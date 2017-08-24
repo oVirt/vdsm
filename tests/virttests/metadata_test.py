@@ -193,6 +193,26 @@ class MetadataTests(XMLTestCase):
         out_xml = vmxml.format_xml(metadata_dst.dump('vm', **data))
         self.assertXMLEqual(out_xml, expected_xml)
 
+    def test_dump_all(self):
+        expected_xml = u'''<ovirt-vm:sequence xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+          <ovirt-vm:item>foo</ovirt-vm:item>
+          <ovirt-vm:item>bar</ovirt-vm:item>
+          <ovirt-vm:item>True</ovirt-vm:item>
+          <ovirt-vm:item>42</ovirt-vm:item>
+          <ovirt-vm:item>0.25</ovirt-vm:item>
+        </ovirt-vm:sequence>'''
+        metadata_obj = metadata.Metadata(
+            'ovirt-vm', 'http://ovirt.org/vm/1.0'
+        )
+        self.assertXMLEqual(
+            vmxml.format_xml(
+                metadata_obj.dump_sequence(
+                    'sequence', 'item', ('foo', 'bar', True, 42, 0.25,)
+                )
+            ),
+            expected_xml
+        )
+
 
 @expandPermutations
 class DescriptorTests(XMLTestCase):
