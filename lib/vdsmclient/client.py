@@ -119,10 +119,18 @@ class UsageError(Exception):
 
 
 def main(args=None):
-    schema = find_schema()
+    preliminary_parser = argparse.ArgumentParser(add_help=False)
+    preliminary_parser.add_argument('--gluster-enabled',
+                                    dest="gluster_enabled",
+                                    action="store_true",
+                                    help="gluster enabled")
+    preliminary_parser.set_defaults(gluster_enabled=False)
+    known_args, extra = preliminary_parser.parse_known_args()
+    schema = find_schema(known_args.gluster_enabled)
     namespaces = create_namespaces(schema)
+
     parser = option_parser(namespaces)
-    args = parser.parse_args(args)
+    args = parser.parse_args(extra)
     try:
         if args.method_args and args.file is not None:
             raise UsageError("Conflicting command line parameters: %r and "
@@ -138,7 +146,7 @@ def main(args=None):
 
         cli = client.connect(args.host, port=args.port, use_tls=args.use_tls,
                              timeout=args.timeout,
-                             gluster_enabled=args.gluster_enabled)
+                             gluster_enabled=known_args.gluster_enabled)
 
         with utils.closing(cli):
             command = getattr(getattr(cli, namespace), method)
@@ -187,9 +195,6 @@ def option_parser(namespaces):
     parser.set_defaults(use_tls=True)
     parser.add_argument('--timeout', dest="timeout", default=60, type=float,
                         help="timeout (default 60 seconds)")
-    parser.add_argument('--gluster-enabled', dest="gluster_enabled",
-                        action="store_true", help="gluster enabled")
-    parser.set_defaults(gluster_enabled=False)
     parser.add_argument('-f', '--file', dest="file",
                         help="read method parameters from json file. Set to"
                         " '-' to read from standard input")
@@ -230,9 +235,11 @@ def parse_file(filename):
         raise UsageError(str(e))
 
 
-def find_schema():
+def find_schema(gluster_enabled=False):
     try:
         schema_paths = [vdsmapi.find_schema()]
+        if gluster_enabled:
+            schema_paths.append(vdsmapi.find_schema('vdsm-api-gluster'))
         schema = vdsmapi.Schema(schema_paths, False)
     except vdsmapi.SchemaNotFound as e:
         raise client.MissingSchemaError(e)
