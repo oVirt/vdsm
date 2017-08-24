@@ -385,9 +385,11 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             metadata = selectMetadata(sdUUID)
         sd.StorageDomainManifest.__init__(self, sdUUID, domaindir, metadata)
 
-        # _extendlock is used to prevent race between
-        # VG extend and LV extend.
-        self._extendlock = threading.Lock()
+        # metadata_lock is used to protect medadata mapping on v1 storage
+        # doamins. The mapping may change when creating, removing or
+        # modifying lvs and pvs. The lock is public since it is used in
+        # BlockStorageDomain. The lock should not be used elsewhere.
+        self.metadata_lock = threading.Lock()
 
         try:
             self.logBlkSize = self.getMetaParam(DMDK_LOGBLKSIZE)
@@ -575,7 +577,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         return metasize
 
     def extend(self, devlist, force):
-        with self._extendlock:
+        with self.metadata_lock:
             if self.getVersion() in VERS_METADATA_LV:
                 mapping = self.readMetadataMapping().values()
                 if len(mapping) + len(devlist) > MAX_PVS:
@@ -592,7 +594,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
 
     def resizePV(self, guid):
-        with self._extendlock:
+        with self.metadata_lock:
             lvm.resizePV(self.sdUUID, guid)
             self.updateMapping()
             newsize = self.metaSize(self.sdUUID)
@@ -602,15 +604,15 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         self._validatePVsPartOfVG(src_device, dst_devices)
         self._validateNotFirstMetadataLVDevice(src_device)
         self._validateNotVgMetadataDevice(src_device)
-        # TODO: check if we can avoid using _extendlock here
-        with self._extendlock:
+        # TODO: check if we can avoid using metadata_lock here
+        with self.metadata_lock:
             lvm.movePV(self.sdUUID, src_device, dst_devices)
 
     def reduceVG(self, guid):
         self._validatePVsPartOfVG(guid)
         self._validateNotFirstMetadataLVDevice(guid)
         self._validateNotVgMetadataDevice(guid)
-        with self._extendlock:
+        with self.metadata_lock:
             try:
                 lvm.reduceVG(self.sdUUID, guid)
             except Exception:
@@ -1527,7 +1529,7 @@ class BlockStorageDomain(sd.StorageDomain):
         lvm.deactivateLVs(self.sdUUID, [MASTERLV])
 
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
-        with self.manifest._extendlock:
+        with self.manifest.metadata_lock:
             self.log.debug("Extending thinly-provisioned LV for volume %s to "
                            "%d MB", volumeUUID, size)
             # FIXME: following line.
