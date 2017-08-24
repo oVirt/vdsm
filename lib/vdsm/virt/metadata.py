@@ -225,6 +225,15 @@ class Metadata(object):
             _keyvalue_to_elem(self._add_ns(key), value, elem)
         return elem
 
+    def make_element(self, tag, parent=None):
+        """
+        Namespace-aware wrapper to create ET.*Element-s
+        """
+        if parent is None:
+            return ET.Element(self._add_ns(tag))
+        else:
+            return ET.SubElement(parent, self._add_ns(tag))
+
     def find(self, elem, tag):
         """
         Namespace-aware wrapper for elem.find()
@@ -666,7 +675,7 @@ def _load_layered(md_obj, elem):
 
 
 def _dump_layered(md_obj, key, subkey, value):
-    chain = ET.Element(key)
+    chain = md_obj.make_element(key)
     for val in value:
         vmxml.append_child(
             chain,
@@ -749,7 +758,7 @@ def _dump_device_spec_params(md_obj, value):
             file_spec.items(),
             key=operator.itemgetter(0),
         ):
-            entry = ET.SubElement(payload_elem, _FILE_SPEC)
+            entry = md_obj.make_element(_FILE_SPEC, parent=payload_elem)
             entry.attrib[_PATH_SPEC] = path
             entry.text = content
     else:
