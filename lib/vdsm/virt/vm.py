@@ -1346,11 +1346,22 @@ class Vm(object):
             vmDrive.apparentsize = volSize.apparentsize
             vmDrive.truesize = volSize.truesize
 
+        self._resume_if_needed()
+        self._setWriteWatermarks()
+
+    def _resume_if_needed(self):
         try:
             self.cont()
-        except libvirt.libvirtError:
-            self.log.warn("VM %s can't be resumed", self.id, exc_info=True)
-        self._setWriteWatermarks()
+        except libvirt.libvirtError as e:
+            current_status = self.lastStatus
+            if (current_status == vmstatus.UP and
+                    e.get_error_domain() == libvirt.VIR_FROM_QEMU and
+                    e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID):
+                # Safe to skip: the VM is already running when the
+                # operation was attempted.
+                self.log.debug("Cannot resume VM in state %s", current_status)
+            else:
+                self.log.exception("Cannot resume VM")
 
     def _acquireCpuLockWithTimeout(self):
         timeout = self._loadCorrectedTimeout(
