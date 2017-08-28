@@ -969,14 +969,8 @@ def ongoing(stats):
         return False
     else:
         return (job_type != libvirt.VIR_DOMAIN_JOB_NONE and
-                # TODO: Can be changed to
-                # stats['operation'] ==
-                # libvirt.VIR_DOMAIN_JOB_OPERATION_MIGRATION_OUT
-                # once we depend on libvirt >= 3.2.0-4.el7 (and the
-                # corresponding libvirt-python).
-                stats.get('operation') ==
-                getattr(libvirt, 'VIR_DOMAIN_JOB_OPERATION_MIGRATION_OUT',
-                        None))
+                stats['operation'] ==
+                libvirt.VIR_DOMAIN_JOB_OPERATION_MIGRATION_OUT)
 
 
 def __guess_defaults():
