@@ -3921,6 +3921,7 @@ class Vm(object):
         else:
             with self._confLock:
                 conf.update(driveParams)
+                self._add_legacy_disk_conf_to_metadata(driveParams)
             self.saveState()
 
     @api.logged(on='vdsm.api')
@@ -4072,6 +4073,7 @@ class Vm(object):
             vmDevName = vmDrive.name
 
             newDrives[vmDevName] = tgetDrv.copy()
+            newDrives[vmDevName]["type"] = "disk"
             newDrives[vmDevName]["diskType"] = vmDrive.diskType
             newDrives[vmDevName]["poolID"] = vmDrive.poolID
             newDrives[vmDevName]["name"] = vmDevName
@@ -4302,7 +4304,8 @@ class Vm(object):
         # Updating the destination disk device and name, the device is used by
         # prepareVolumePath (required to fill the new information as the path)
         # and the name is used by updateDriveParameters.
-        dstDiskCopy.update({'device': drive.device, 'name': drive.name})
+        dstDiskCopy.update({'device': drive.device, 'name': drive.name,
+                            'type': drive.type})
         dstDiskCopy['path'] = self.cif.prepareVolumePath(dstDiskCopy)
 
         if "diskType" not in dstDiskCopy:
