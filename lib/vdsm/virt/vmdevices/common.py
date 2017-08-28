@@ -247,17 +247,34 @@ def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
     return dev_map
 
 
+def get_refreshable_device_classes():
+    config_value = config.get('devel', 'device_xml_refresh_enable').strip()
+    if config_value == 'ALL':
+        return set(hwclass.TO_REFRESH)
+
+    refresh_whitelist = set(
+        dev_class.strip().lower()
+        for dev_class in config_value.split(',')
+    )
+    return set(
+        dev_class for dev_class in hwclass.TO_REFRESH
+        if dev_class in refresh_whitelist
+    )
+
+
 def replace_devices_xml(domxml, devices_xml):
     devices = vmxml.find_first(domxml, 'devices', None)
 
+    refreshable = get_refreshable_device_classes()
+
     old_devs = [
         dev for dev in vmxml.children(devices)
-        if dev.tag in hwclass.TO_REFRESH
+        if dev.tag in refreshable
     ]
     for old_dev in old_devs:
         vmxml.remove_child(devices, old_dev)
 
-    for dev_class in hwclass.TO_REFRESH:
+    for dev_class in refreshable:
         for dev in devices_xml[dev_class]:
             vmxml.append_child(devices, etree_child=dev)
 

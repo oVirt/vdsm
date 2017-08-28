@@ -526,6 +526,13 @@ parameters = [
             'If it is true, some complex device classes (storage devices) '
             'will use the vm.conf dictionary to be initialized, ignoring the '
             'received Domain XML (if any). If unsure, leave it as default.'),
+
+        ('device_xml_refresh_enable', 'ALL',
+            'Comma-separated list of device classes. '
+            'When a VM configured with Engine XML is started, Vdsm will '
+            'update the `devices` XML section for all the classes matching '
+            'the provided list. Use empty list to avoid any update. '
+            'Use the special value "ALL" to use Vdsm current defaults. '),
     ]),
 
     # Section: [gluster]

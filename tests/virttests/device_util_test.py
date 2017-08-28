@@ -21,9 +21,12 @@
 from __future__ import absolute_import
 
 from vdsm.virt.vmdevices import common
+from vdsm.virt.vmdevices import hwclass
 
+from testlib import make_config
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
+from monkeypatch import MonkeyPatchScope
 
 
 @expandPermutations
@@ -52,3 +55,25 @@ class VMDevicesCommonDriveIdentAttrTests(VdsmTestCase):
     def test_drive_identified_by_name(self, dev_conf, name):
         attrs = common.get_drive_conf_identifying_attrs(dev_conf)
         self.assertEqual({'type': 'disk', 'name': name}, attrs)
+
+    @permutations([
+        # whitelist, expected
+        ['', set()],
+        ['controller', set()],
+        ['RNG,console', set()],
+        ['ALL', set(hwclass.TO_REFRESH)],
+        [','.join(hwclass.TO_REFRESH), set(hwclass.TO_REFRESH)],
+        ['graphics', set(('graphics',))],
+        [' lease,  graphics', set(('graphics', 'lease'))],
+        ['LEASE', set(('lease',))],
+        ['controller,lease,graphics', set(('graphics', 'lease'))],
+    ])
+    def test_get_refreshable_device_classes(self, whitelist, expected):
+        with MonkeyPatchScope([
+            (common, 'config',
+             make_config([('devel', 'device_xml_refresh_enable', whitelist)]))
+        ]):
+            self.assertEqual(
+                common.get_refreshable_device_classes(),
+                expected
+            )
