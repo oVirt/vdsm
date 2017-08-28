@@ -126,7 +126,7 @@ class VM(APIBase):
     def vm(self):
         vm = self._cif.vmContainer.get(self._UUID)
         if vm is None:
-            raise exception.NoSuchVM(vmId=self._UUID)
+            raise exception.expected(exception.NoSuchVM(vmId=self._UUID))
         return vm
 
     @api.method
