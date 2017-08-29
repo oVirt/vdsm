@@ -357,6 +357,10 @@ class _StompConnection(object):
     def is_closed(self):
         return not self._dispatcher.connected
 
+    @property
+    def connected(self):
+        return self._async_client._connected
+
 
 class StompServer(object):
     log = logging.getLogger("yajsonrpc.StompServer")
@@ -472,7 +476,7 @@ class StompClient(object):
              headers=None):
         self.log.debug("Sending response")
 
-        if self._stompConn.is_closed():
+        if not self._stompConn.connected.wait(timeout=stomp.CALL_TIMEOUT):
             raise stomp.Disconnected()
 
         self._aclient.send(
