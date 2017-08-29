@@ -211,7 +211,7 @@ class Ifcfg(Configurator):
             ifacetracking.add(bridge.name)
         ifdown(bridge.name)
         self._removeSourceRoute(bridge)
-        cmd.exec_sync([EXT_BRCTL, 'delbr', bridge.name])
+        _remove_device(bridge.name)
         self.configApplier.removeBridge(bridge.name)
         self.net_info.del_bridge(bridge.name)
         if bridge.port:
@@ -783,7 +783,7 @@ def stop_devices(device_ifcfgs):
         ifdown(dev)
         if os.path.exists('/sys/class/net/%s/bridge' % dev):
             # ifdown is not enough to remove nicless bridges
-            cmd.exec_sync([EXT_BRCTL, 'delbr', dev])
+            _remove_device(dev)
         if _is_bond_name(dev):
             if _is_running_bond(dev):
                 with open(BONDING_MASTERS, 'w') as f:
@@ -803,6 +803,14 @@ def start_devices(device_ifcfgs):
         except ConfigNetworkError:
             logging.error('Failed to ifup device %s during rollback.', dev,
                           exc_info=True)
+
+
+def _remove_device(device_name):
+    try:
+        ipwrapper.linkDel(device_name)
+    except ipwrapper.IPRoute2NoDeviceError:
+        logging.debug('Failed to remove device %s, '
+                      'it does not exist' % (device_name,))
 
 
 def _is_bond_name(dev):
