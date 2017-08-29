@@ -800,9 +800,16 @@ def _get_drive_identification(dom):
     return alias, devPath, name
 
 
+_DEVNAMES = {
+    'ide': 'hd',
+    'scsi': 'sd',
+    'virtio': 'vd',
+    'fdc': 'fd',
+    'sata': 'sd',
+}
+
+
 def makeName(interface, index):
-    devname = {'ide': 'hd', 'scsi': 'sd', 'virtio': 'vd', 'fdc': 'fd',
-               'sata': 'sd'}
     devindex = ''
 
     i = int(index)
@@ -810,4 +817,4 @@ def makeName(interface, index):
         devindex = chr(ord('a') + (i % 26)) + devindex
         i //= 26
 
-    return devname.get(interface, 'hd') + (devindex or 'a')
+    return _DEVNAMES.get(interface, 'hd') + (devindex or 'a')
