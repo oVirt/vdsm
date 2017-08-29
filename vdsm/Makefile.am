@@ -20,15 +20,9 @@
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-dist_vdsm_PYTHON = \
-	sitecustomize.py \
-	$(NULL)
-
-
 CLEANFILES = \
 	config.log \
 	$(nodist_vdsm_SCRIPTS) \
-	$(nodist_vdsmlib_PYTHON) \
 	$(nodist_noinst_DATA) \
 	$(nodist_man8_MANS)
 

@@ -31,6 +31,10 @@ dist_bin_SCRIPTS = \
 	./usr/bin/vdsm-client \
 	./usr/bin/vdsm-tool
 
+dist_vdsm_PYTHON = \
+	./usr/share/vdsm/sitecustomize.py \
+	$(NULL)
+
 vdsm_DATA = \
 	./usr/share/vdsm/lvmlocal.conf \
 	$(NULL)

@@ -88,7 +88,7 @@ abs_imports: all
 .PHONY: pylint
 pylint: tox
 	tox -e pylint \
-		vdsm/sitecustomize.py \
+		static/usr/share/vdsm/sitecustomize.py \
 		lib/vdsm \
 		lib/vdsmclient \
 		lib/yajsonrpc \
