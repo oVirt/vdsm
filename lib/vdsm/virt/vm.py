@@ -3695,6 +3695,11 @@ class Vm(object):
             if self._needToWaitForMigrationToComplete():
                 finished, timeout = self._waitForUnderlyingMigration()
                 if self._destroy_requested.is_set():
+                    try:
+                        dom = self._connection.lookupByUUIDString(self.id)
+                        dom.destroyFlags()
+                    except libvirt.libvirtError as e:
+                        self.log.warn("Couldn't destroy incoming VM: %s", e)
                     raise DestroyedOnStartupError()
                 self._attachLibvirtDomainAfterMigration(finished, timeout)
             # else domain connection already established earlier
