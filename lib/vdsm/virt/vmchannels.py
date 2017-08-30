@@ -32,6 +32,7 @@ from vdsm.common.osutils import uninterruptible_poll
 COOLDOWN_RECONNECT_THRESHOLD = 5
 
 LEGACY_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
+GUESTFS_DEVICE_NAME = 'org.libguestfs.channel.0'
 # This device name is used as default both in the qemu-guest-agent
 # service/daemon and in libvirtd (to be used with the quiesce flag).
 QEMU_GA_DEVICE_NAME = 'org.qemu.guest_agent.0'

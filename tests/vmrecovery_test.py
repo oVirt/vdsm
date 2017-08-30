@@ -196,6 +196,13 @@ class RecoveryFunctionsTests(TestCaseBase):
                               in recovery._list_domains()],
                              self._getAllDomainIds(arch))
 
+    @permutations([[cpuarch.X86_64], [cpuarch.PPC64]])
+    def testGetVDSMDomainsWithoutGuestfs(self, arch):
+        connect = lambda: FakeConnection(arch, 'org.libguestfs.channel.0')
+        with MonkeyPatchScope([(libvirtconnection, 'get', connect),
+                               (cpuarch, 'effective', lambda: arch)]):
+            self.assertEqual(recovery._list_domains(), [])
+
 
 class RecoveryAllVmsTests(TestCaseBase):
     # more tests handling all the edge cases will come
