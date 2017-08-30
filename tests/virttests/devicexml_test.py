@@ -380,17 +380,20 @@ class DeviceToXMLTests(XMLTestCase):
         iface = vmdevices.network.Interface(self.log, **dev)
         self.assertXMLEqual(vmxml.format_xml(iface.getXML()), interfaceXML)
 
-    @MonkeyPatch(vmdevices.network.supervdsm,
-                 'getProxy', lambda: FakeProxy(
-                     ovs_bridge={'name': 'ovirtmgmt', 'dpdk_enabled': False}))
     @MonkeyPatch(vmdevices.network.net_api, 'net2vlan', lambda x: 101)
     def test_interface_on_ovs_with_vlan(self):
+        proxy = FakeProxy(ovs_bridge={
+            'ovn_net_1': {
+                'name': 'vdsmbr_fffffff',
+                'dpdk_enabled': False
+            }
+        })
         interfaceXML = """
             <interface type="bridge">
                 <address %s/>
                 <mac address="52:54:00:59:F5:3F"/>
                 <model type="virtio"/>
-                <source bridge="ovirtmgmt"/>
+                <source bridge="vdsmbr_fffffff"/>
                 <virtualport type="openvswitch" />
                 <vlan>
                     <tag id="101" />
@@ -406,7 +409,7 @@ class DeviceToXMLTests(XMLTestCase):
         dev = {
             'nicModel': 'virtio',
             'macAddr': '52:54:00:59:F5:3F',
-            'network': 'ovirtmgmt',
+            'network': 'ovn_net_1',
             'address': self.PCI_ADDR_DICT,
             'device': 'bridge',
             'type': 'interface',
@@ -415,8 +418,11 @@ class DeviceToXMLTests(XMLTestCase):
             'custom': {'queues': '7'},
             'vm_custom': {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'},
         }
-        iface = vmdevices.network.Interface(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(iface.getXML()), interfaceXML)
+        with MonkeyPatchScope([
+            (vmdevices.network.supervdsm, 'getProxy', lambda: proxy)
+        ]):
+            iface = vmdevices.network.Interface(self.log, **dev)
+            self.assertXMLEqual(vmxml.format_xml(iface.getXML()), interfaceXML)
 
     @permutations([
         # base_spec_params:
@@ -605,10 +611,10 @@ class ParsingHelperTests(XMLTestCase):
 class FakeProxy(object):
 
     def __init__(self, ovs_bridge=None):
-        self._ovs_bridge = ovs_bridge
+        self._ovs_bridge = {} if ovs_bridge is None else ovs_bridge
 
     def ovs_bridge(self, name):
-        return self._ovs_bridge
+        return self._ovs_bridge.get(name, None)
 
     def appropriateHwrngDevice(self, vmid):
         pass
@@ -1186,6 +1192,58 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 lambda *args, **kwargs: None),
         ]):
             self._check_roundtrip(vmdevices.network.Interface, interface_xml)
+
+    @MonkeyPatch(vmdevices.network.net_api, 'net2vlan', lambda x: 101)
+    def test_interface_ovs(self):
+        proxy = FakeProxy(ovs_bridge={
+            'ovn_net_1': {
+                'name': 'vdsmbr_fffffff',
+                'dpdk_enabled': False
+            }
+        })
+
+        interface_xml = u'''
+            <interface type="bridge">
+                <address bus="0x00" domain="0x0000"
+                    function="0x0" slot="0x03" type="pci"/>
+                <mac address="52:54:00:59:F5:3F"/>
+                <model type="virtio"/>
+                <source bridge="ovn_net_1"/>
+                <boot order="1"/>
+                <driver name="vhost" queues="4"/>
+                <tune>
+                    <sndbuf>128</sndbuf>
+                </tune>
+            </interface>'''
+
+        expected_xml = u'''
+            <interface type="bridge">
+                <address bus="0x00" domain="0x0000"
+                    function="0x0" slot="0x03" type="pci"/>
+                <mac address="52:54:00:59:F5:3F"/>
+                <model type="virtio"/>
+                <source bridge="vdsmbr_fffffff"/>
+                <virtualport type="openvswitch" />
+                <vlan>
+                    <tag id="101" />
+                </vlan>
+                <boot order="1"/>
+                <driver name="vhost" queues="4"/>
+                <tune>
+                    <sndbuf>128</sndbuf>
+                </tune>
+            </interface>'''
+
+        with MonkeyPatchScope([
+            (vmdevices.network.supervdsm, 'getProxy', lambda: proxy)
+        ]):
+            self._check_roundtrip(
+                vmdevices.network.Interface,
+                interface_xml,
+                expected_xml=expected_xml
+            )
+
+    # TODO: add test with OVS and DPDK enabled
 
     @permutations(_HOSTDEV_XML)
     @MonkeyPatch(vmdevices.network.supervdsm,
