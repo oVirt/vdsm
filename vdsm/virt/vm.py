@@ -3990,6 +3990,7 @@ class Vm(object):
         self.__refreshDriveVolume({
             'domainID': drive.domainID, 'poolID': drive.poolID,
             'imageID': drive.imageID, 'volumeID': drive.volumeID,
+            'name': drive.name,
         })
 
         volSize = self._getVolumeSize(
@@ -4893,6 +4894,7 @@ class Vm(object):
             self.__refreshDriveVolume({
                 'domainID': drive.domainID, 'poolID': drive.poolID,
                 'imageID': drive.imageID, 'volumeID': baseVolUUID,
+                'name': drive.name,
             })
 
         # Take the jobs lock here to protect the new job we are tracking from
