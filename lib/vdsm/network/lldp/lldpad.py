@@ -43,4 +43,5 @@ class Lldp(LldpAPI):
 
     @staticmethod
     def is_active():
-        return lldptool.is_lldpad_service_running()
+        return (lldptool.is_lldpad_service_running() and
+                lldptool.is_lldptool_functional())
