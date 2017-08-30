@@ -235,7 +235,11 @@ class VmRecoveryTests(TestCaseBase):
                 if vm_status == vmstatus.UP:
                     done.set()
 
+            def _updateDomainDescriptor(*args):
+                pass
+
             testvm.send_status_event = _send_status_event
+            testvm._updateDomainDescriptor = _updateDomainDescriptor
             testvm._run = fail
             testvm.run()
 
