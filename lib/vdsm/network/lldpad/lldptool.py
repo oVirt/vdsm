@@ -38,6 +38,11 @@ def is_lldpad_service_running():
     return rc == 0
 
 
+def is_lldptool_functional():
+    rc, _, _ = commands.execCmd([LLDPTOOL, '-ping'])
+    return rc == 0
+
+
 def enable_lldp_on_iface(iface, rx_only=True):
     rc, out, err = commands.execCmd(
         [LLDPTOOL, 'set-lldp', '-i', iface,
