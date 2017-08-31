@@ -21,7 +21,7 @@ from __future__ import absolute_import
 import logging
 
 from vdsm.network import lldp
-from vdsm.network import netswitch
+from vdsm.network.ipwrapper import getLinks
 from vdsm.network.nm import networkmanager
 
 Lldp = lldp.driver()
@@ -37,9 +37,10 @@ def _lldp_init():
     Enables receiving of LLDP frames for all nics. If sending or receiving
     LLDP frames is already enabled on a nic, it is not modified.
     """
-    for device in netswitch.netinfo()['nics']:
-        if not Lldp.is_lldp_enabled_on_iface(device):
+    for device in (link for link in getLinks() if link.isNIC()):
+        if not Lldp.is_lldp_enabled_on_iface(device.name):
             try:
-                Lldp.enable_lldp_on_iface(device)
+                Lldp.enable_lldp_on_iface(device.name)
             except lldp.EnableLldpError:
-                logging.exception('Failed to enable LLDP on %s', device)
+                logging.warning('Ignoring failure to enable LLDP on %s',
+                                device.name, exc_info=True)
