@@ -28,7 +28,6 @@ SUBDIRS = \
 	init \
 	lib \
 	static \
-	vdsm \
 	vdsm_hooks \
 	$(NULL)
 

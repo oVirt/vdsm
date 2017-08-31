@@ -197,4 +197,24 @@ usr/share/vdsm/autounattend/%.xml: usr/share/vdsm/autounattend/Autounattend.xml.
 	sed -e 's/@DRIVER_DIR@/$*/' < $< > $@
 
 install-data-local: install-libvirtpasswordDATA
+	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)/vdsm.conf.d
+	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)
+	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/hsm-tasks
+	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/mnt
+	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/keys
+	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/certs
+	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/libvirt-spice
+	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)
+	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)/import
+	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)
+	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/dhclientmon
+	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/trackedInterfaces
+	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/payload
+	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/netconfback
+	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/persistence
+	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/staging
+	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/upgrade
+	$(MKDIR_P) $(DESTDIR)$(vdsmbackupdir)
+	$(MKDIR_P) $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 	chmod 600 "$(DESTDIR)$(libvirtpassworddir)"/*
+	chmod 775 $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
