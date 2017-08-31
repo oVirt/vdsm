@@ -106,7 +106,7 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, params={},
         for s in scripts:
             rc, out, err = commands.execCmd([s], raw=True,
                                             env=scriptenv)
-            logging.info(err)
+            logging.info('%s: rc=%s err=%s', s, rc, err)
             if rc != 0:
                 errorSeen = True
 
