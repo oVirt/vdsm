@@ -2416,18 +2416,21 @@ class Vm(object):
         # Disk stats collection is started from clientIF at the end
         # of the recovery process.
         if not self.recovering:
-            vmdevices.lease.prepare(self.cif.irs, dev_spec_map[hwclass.LEASE])
-            self._preparePathsForDrives(dev_spec_map[hwclass.DISK])
-            self._prepareTransientDisks(dev_spec_map[hwclass.DISK])
-            self._updateDevices(dev_spec_map)
             # We need to save conf here before we actually run VM.
             # It's not enough to save conf only on status changes as we did
             # before, because if vdsm will restarted between VM run and conf
             # saving we will fail in inconsistent state during recovery.
             # So, to get proper device objects during VM recovery flow
             # we must to have updated conf before VM run
-            #
-            # TODO: Find a way to save the conf here.
+            vmdevices.lease.prepare(self.cif.irs, dev_spec_map[hwclass.LEASE])
+            self._preparePathsForDrives(dev_spec_map[hwclass.DISK])
+            self._prepareTransientDisks(dev_spec_map[hwclass.DISK])
+            self._updateDevices(dev_spec_map)
+            try:
+                self._sync_metadata()
+            except virdomain.NotConnectedError:
+                self.log.debug("Not storing device metadata now, "
+                               "domain not yet available")
 
         dev_objs_from_conf = vmdevices.common.dev_map_from_dev_spec_map(
             dev_spec_map, self.log
@@ -2468,6 +2471,14 @@ class Vm(object):
         if not self.recovering and \
            self._altered_state.origin != _MIGRATION_ORIGIN:
             self._remove_domain_artifacts()
+
+        if not self.recovering and not self._altered_state.origin:
+            # We need to define the domain in order to save device metadata in
+            # _make_devices().  It'll get redefined with the final version
+            # later.
+            domxml = libvirtxml.make_placeholder_domain_xml(self)
+            dom = self._connection.defineXML(domxml)
+            self._dom = virdomain.Defined(self.id, dom)
 
         self._devices = self._make_devices()
 
@@ -3772,6 +3783,7 @@ class Vm(object):
             self._dom = virdomain.Notifying(
                 self._connection.lookupByUUIDString(self.id),
                 self._timeoutExperienced)
+            self._sync_metadata()
 
             if not migrationFinished:
                 state = self._dom.state(0)

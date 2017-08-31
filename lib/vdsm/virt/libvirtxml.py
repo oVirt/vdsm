@@ -31,6 +31,12 @@ from vdsm import cpuarch
 
 _BOOT_MENU_TIMEOUT = 10000  # milliseconds
 
+_DEFAULT_MACHINES = {
+    cpuarch.X86_64: 'pc',
+    cpuarch.PPC64: 'pseries',
+    cpuarch.PPC64LE: 'pseries',
+}
+
 
 class Domain(object):
 
@@ -204,11 +210,8 @@ class Domain(object):
         oselem = vmxml.Element('os')
         self.dom.appendChild(oselem)
 
-        DEFAULT_MACHINES = {cpuarch.X86_64: 'pc',
-                            cpuarch.PPC64: 'pseries',
-                            cpuarch.PPC64LE: 'pseries'}
-
-        machine = self.conf.get('emulatedMachine', DEFAULT_MACHINES[self.arch])
+        machine = self.conf.get('emulatedMachine',
+                                _DEFAULT_MACHINES[self.arch])
 
         oselem.appendChildWithArgs('type', text='hvm', arch=self.arch,
                                    machine=machine)
@@ -541,6 +544,18 @@ def make_minimal_domain(dom):
     if cpuarch.is_x86(dom.arch):
         dom.appendFeatures()
     return dom
+
+
+def make_placeholder_domain_xml(vm):
+    return '''<domain type='kvm'>
+  <name>{name}</name>
+  <uuid>{id}</uuid>
+  <memory unit='KiB'>{memory}</memory>
+  <os>
+    <type arch="{arch}" machine="{machine}">hvm</type>
+  </os>
+</domain>'''.format(name=vm.name, id=vm.id, memory=vm.mem_size_mb(),
+                    arch=vm.arch, machine=_DEFAULT_MACHINES[vm.arch])
 
 
 def parse_drive_mapping(custom):
