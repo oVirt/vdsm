@@ -6,8 +6,7 @@ Requires=multipathd.service libvirtd.service time-sync.target \
 After=multipathd.service libvirtd.service iscsid.service rpcbind.service \
       supervdsmd.service sanlock.service vdsm-network.service
 Conflicts=libvirt-guests.service
-Wants=mom-vdsm.service ovirt-imageio-daemon.service abrtd.service \
-      lldpad.service
+Wants=mom-vdsm.service ovirt-imageio-daemon.service abrtd.service
 
 [Service]
 Type=simple

@@ -1,6 +1,8 @@
 [Unit]
 Description=Auxiliary vdsm service for running helper functions as root
 Requires=libvirtd.service
+Wants=lldpad.service
+After=lldpad.service
 
 [Service]
 Type=simple
