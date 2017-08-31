@@ -484,13 +484,19 @@ class DescriptorTests(XMLTestCase):
       <ovirt-vm:version type="float">4.2</ovirt-vm:version>
       <ovirt-vm:device id="dev0">
         <ovirt-vm:foo>bar</ovirt-vm:foo>
+        <ovirt-vm:custom>
+          <ovirt-vm:baz type='int'>42</ovirt-vm:baz>
+        </ovirt-vm:custom>
       </ovirt-vm:device>
     </ovirt-vm:vm>
   </metadata>
 </domain>'''
         md_desc = metadata.Descriptor.from_xml(test_xml)
         with md_desc.device(id='dev0') as dev:
-            self.assertEqual(dev, {'foo': 'bar'})
+            self.assertEqual(
+                dev,
+                {'foo': 'bar', 'custom': {'baz': 42}}
+            )
 
     def test_multiple_device_from_xml_tree(self):
         test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
@@ -548,6 +554,33 @@ class DescriptorTests(XMLTestCase):
         md_desc = metadata.Descriptor.from_xml(test_xml)
         with md_desc.device(id='dev0') as dev:
             self.assertEqual(dev, {'foo': 'bar'})
+
+    def test_network_device_custom(self):
+        test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>68c1f97c-9336-4e7a-a8a9-b4f052ababf1</uuid>
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:device mac_address='00:1a:4a:16:20:30'>
+        <ovirt-vm:custom>
+  <ovirt-vm:vnic_id>da688238-8b79-4a5f-9f0e-0b207463ff1f</ovirt-vm:vnic_id>
+  <ovirt-vm:provider_type>EXTERNAL_NETWORK</ovirt-vm:provider_type>
+        </ovirt-vm:custom>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+        md_desc = metadata.Descriptor.from_xml(test_xml)
+        with md_desc.device(mac_address='00:1a:4a:16:20:30') as dev:
+            self.assertEqual(
+                dev,
+                {
+                    'custom': {
+                        'vnic_id': 'da688238-8b79-4a5f-9f0e-0b207463ff1f',
+                        'provider_type': 'EXTERNAL_NETWORK',
+                    },
+                }
+            )
 
 
 BLANK_UUID = '00000000-0000-0000-0000-000000000000'
