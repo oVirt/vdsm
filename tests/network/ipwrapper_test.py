@@ -34,7 +34,7 @@ from vdsm.network.ipwrapper import Rule
 from vdsm.network.netlink import monitor
 from vdsm.network.netlink.libnl import IfaceStatus
 
-from .nettestlib import Bridge, requires_brctl
+from .nettestlib import Bridge, bridge_device, requires_brctl
 from testlib import VdsmTestCase as TestCaseBase
 
 
@@ -103,19 +103,18 @@ class TestLinks(TestCaseBase):
 
     @ValidateRunningAsRoot
     @requires_brctl
-    def setUp(self):
-        self._bridge = Bridge()
-        self._bridge.addDevice()
-
-    def tearDown(self):
-        self._bridge.delDevice()
-
     def testGetLink(self):
-        link = ipwrapper.getLink(self._bridge.devName)
-        self.assertTrue(link.isBRIDGE)
-        self.assertTrue(link.oper_up)
-        self.assertEqual(link.master, None)
-        self.assertEqual(link.name, self._bridge.devName)
+        with bridge_device() as bridge:
+            link = ipwrapper.getLink(bridge.devName)
+            self.assertTrue(link.isBRIDGE)
+            self.assertTrue(link.oper_up)
+            self.assertEqual(link.master, None)
+            self.assertEqual(link.name, bridge.devName)
+
+    @ValidateRunningAsRoot
+    def test_missing_bridge_removal_fails(self):
+        with self.assertRaises(ipwrapper.IPRoute2NoDeviceError):
+            ipwrapper.linkDel('missing_bridge')
 
 
 class TestDrvinfo(TestCaseBase):

@@ -467,11 +467,19 @@ class IPRoute2Error(Exception):
     pass
 
 
+class IPRoute2NoDeviceError(IPRoute2Error):
+    pass
+
+
 def _exec_cmd(command):
     returnCode, output, error = cmd.exec_sync(command)
 
     if returnCode:
-        raise IPRoute2Error(returnCode, error.splitlines())
+        if 'Cannot find device' in error:
+            exc = IPRoute2NoDeviceError
+        else:
+            exc = IPRoute2Error
+        raise exc(returnCode, error.splitlines())
     return output.splitlines()
 
 
