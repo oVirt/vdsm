@@ -66,7 +66,7 @@ class Interface(core.Base):
         params = {
             'device': core.find_device_type(dev),
             'type': core.find_device_type(dev),
-            'custom': {},
+            'custom': meta.get('custom', {}),
             'vm_custom': {},
             'specParams': {},
         }
