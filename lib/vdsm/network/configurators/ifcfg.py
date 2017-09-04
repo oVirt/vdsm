@@ -105,7 +105,8 @@ class Ifcfg(Configurator):
         if not self.owned_device(bridge.name):
             IfcfgAcquire.acquire_device(bridge.name)
         self.configApplier.addBridge(bridge, **opts)
-        ifdown(bridge.name)
+        if link_iface.exists(bridge.name):
+            ifdown(bridge.name)
         if bridge.port:
             bridge.port.configure(**opts)
         self._addSourceRoute(bridge)
