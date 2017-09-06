@@ -147,7 +147,8 @@ class AsyncDispatcherTest(TestCaseBase):
         dispatcher = AsyncDispatcher(
             connection, frame_handler,
             clock=FakeTimeGen(
-                [4000000.0, 4000003.0, 4000006.0, 4000009.0]).get_fake_time)
+                [4000000.0, 4000003.0, 4000006.0,
+                 4000009.0, 4000012.0]).get_fake_time)
 
         dispatcher.setHeartBeat(12000, 4000)
         self.assertFalse(dispatcher.writable(None))
