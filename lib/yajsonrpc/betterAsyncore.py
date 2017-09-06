@@ -94,6 +94,17 @@ class Dispatcher(asyncore.dispatcher):
         default_func = lambda: None
         return getattr(self.__impl, "next_check_interval", default_func)()
 
+    def create_socket(self, addr, sslctx=None, family=socket.AF_UNSPEC,
+                      type=socket.SOCK_STREAM):
+        addrinfo = socket.getaddrinfo(addr[0], addr[1], family, type)
+        self.family_and_type = family, type
+        family, socktype, proto, _, sockaddr = addrinfo[0]
+        sock = socket.socket(family, socktype, proto)
+        if sslctx:
+            sock = sslctx.wrapSocket(sock)
+        sock.setblocking(0)
+        self.set_socket(sock)
+
     def recv(self, buffer_size):
         try:
             data = self.socket.recv(buffer_size)
