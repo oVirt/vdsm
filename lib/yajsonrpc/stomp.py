@@ -27,6 +27,7 @@ from vdsm.common import time
 import re
 
 DEFAULT_INTERVAL = 30
+RECONNECT_INTERVAL = 20
 
 SUBSCRIPTION_ID_REQUEST = "jms.topic.vdsm_requests"
 SUBSCRIPTION_ID_RESPONSE = "jms.topic.vdsm_responses"
@@ -341,7 +342,7 @@ class AsyncDispatcher(object):
     - AsyncClient - responsible for client side
     """
     def __init__(self, connection, frame_handler, bufferSize=4096,
-                 clock=time.monotonic_time):
+                 clock=time.monotonic_time, on_timeout=False):
         self._frame_handler = frame_handler
         self.connection = connection
         self._bufferSize = bufferSize
@@ -349,7 +350,19 @@ class AsyncDispatcher(object):
         self._outbuf = None
         self._incoming_heartbeat_in_milis = 0
         self._outgoing_heartbeat_in_milis = 0
+        self._reconnect_interval = 0
+        self._nr_retries = 0
+        self._count = 0
+        if hasattr(self._frame_handler, "nr_retries"):
+            self._nr_retries = self._frame_handler.nr_retries
+        if hasattr(self._frame_handler, "reconnect_interval"):
+            self._reconnect_interval = self._frame_handler.reconnect_interval
+        self._on_timeout = on_timeout
         self._clock = clock
+        self._on_wait = False
+
+        if hasattr(self._frame_handler, "reconnect_interval"):
+            self.set_reconnect_interval(self._frame_handler.reconnect_interval)
 
     def setHeartBeat(self, outgoing, incoming=0):
         if incoming:
@@ -359,9 +372,16 @@ class AsyncDispatcher(object):
         self._update_outgoing_heartbeat()
         self._outgoing_heartbeat_in_milis = outgoing
 
+    def set_reconnect_interval(self, reconnect_interval):
+        self._reconnect_interval = reconnect_interval
+        self._update_reconnect_time()
+
     def handle_connect(self, dispatcher):
+        self.log.debug("managed to connect successfully.")
         self._outbuf = None
-        self._frame_handler.handle_connect(self)
+        self._on_timeout = False
+        self._update_reconnect_time()
+        self._frame_handler.handle_connect()
 
     def handle_read(self, dispatcher):
         parser = self._parser
@@ -389,6 +409,22 @@ class AsyncDispatcher(object):
             self._update_incoming_heartbeat()
 
     def handle_timeout(self):
+        self._on_timeout = True
+
+        if not self._on_wait:
+            self._start = self._clock() + self._reconnect_interval
+            self._on_wait = True
+            return
+
+        if self._count >= self._nr_retries:
+            self._on_timeout = False
+            self.connection.close()
+            return
+
+        self._update_reconnect_time()
+        self._count += 1
+        self._on_wait = False
+        self.connection.close()
         self._frame_handler.handle_timeout(self)
 
     def popFrame(self):
@@ -399,6 +435,9 @@ class AsyncDispatcher(object):
 
     def _update_incoming_heartbeat(self):
         self._lastIncomingTimeStamp = self._clock()
+
+    def _update_reconnect_time(self):
+        self._lastReconnectTimeStamp = self._clock()
 
     def _outgoing_heartbeat_expiration_interval(self):
         if self._outgoing_heartbeat_in_milis == 0:
@@ -412,8 +451,20 @@ class AsyncDispatcher(object):
         since_last_update = (self._clock() - self._lastIncomingTimeStamp)
         return (self._incoming_heartbeat_in_milis / 1000.0) - since_last_update
 
+    def _reconnect_expiration_interval(self):
+        if not self._on_timeout or self._reconnect_interval == 0:
+            return DEFAULT_INTERVAL
+        since_last_update = (self._clock() - self._lastReconnectTimeStamp)
+        return self._reconnect_interval - since_last_update
+
     def next_check_interval(self):
-        if self._incoming_heartbeat_expiration_interval() < 0:
+        if self._on_wait:
+            if self._clock() > self._start:
+                self.handle_timeout()
+            return self._reconnect_interval
+
+        if self._reconnect_expiration_interval() <= 0 or \
+                self._incoming_heartbeat_expiration_interval() <= 0:
             self.handle_timeout()
 
         return max(self._outgoing_heartbeat_expiration_interval(), 0)
@@ -461,7 +512,8 @@ class AsyncDispatcher(object):
         return int(round(self._clock() * 1000))
 
     def handle_close(self, dispatcher):
-        self.connection.close()
+        if not self._on_timeout:
+            self._frame_handler.handle_close(self)
 
 
 class AsyncClient(object):

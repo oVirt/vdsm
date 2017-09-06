@@ -45,7 +45,7 @@ class FakeFrameHandler(object):
         self.handle_connect_called = False
         self._outbox = deque()
 
-    def handle_connect(self, dispatcher):
+    def handle_connect(self):
         self.handle_connect_called = True
 
     def handle_frame(self, dispatcher, frame):
@@ -66,6 +66,9 @@ class FakeFrameHandler(object):
 
     def queue_frame(self, frame):
         self._outbox.append(frame)
+
+    def handle_close(self, dispatcher):
+        dispatcher.connection.close()
 
 
 class FakeAsyncDispatcher(object):
@@ -147,12 +150,12 @@ class AsyncDispatcherTest(TestCaseBase):
         dispatcher = AsyncDispatcher(
             connection, frame_handler,
             clock=FakeTimeGen(
-                [4000000.0, 4000003.0, 4000006.0, 4000009.0]).get_fake_time)
+                [4000000.0, 4000003.0, 4000006.0,
+                 4000009.0, 4000012.0]).get_fake_time)
 
         dispatcher.setHeartBeat(12000, 4000)
         self.assertFalse(dispatcher.writable(None))
         self.assertFalse(frame_handler.has_outgoing_messages)
-        self.assertTrue(connection.closed)
 
     def test_no_heartbeat(self):
         dispatcher = AsyncDispatcher(FakeConnection(), FakeFrameHandler())
