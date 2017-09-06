@@ -79,16 +79,16 @@ def _list_domains():
 
 def _recover_domain(cif, vm_id, dom_xml, external):
     external_str = " (external)" if external else ""
-    cif.log.debug("recovery: trying with VM%s %s", (external_str, vm_id,))
+    cif.log.debug("recovery: trying with VM%s %s", external_str, vm_id)
     try:
         res = cif.createVm(_recovery_params(vm_id, dom_xml, external),
                            vmRecover=True)
     except Exception:
-        cif.log.exception("Error recovering VM%s: %s", (external_str, vm_id,))
+        cif.log.exception("Error recovering VM%s: %s", external_str, vm_id)
         return False
     if response.is_error(res):
         cif.log.info("Failed to recover VM%s: %s (%s)",
-                     (external_str, vm_id, res,))
+                     external_str, vm_id, res)
         return False
     cif.log.info("VM recovered: %s", vm_id)
     return True
