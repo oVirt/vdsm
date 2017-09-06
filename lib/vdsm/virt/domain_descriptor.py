@@ -74,6 +74,12 @@ class MutableDomainDescriptor(object):
             if name and path:
                 yield name, path
 
+    def get_number_of_cpus(self):
+        """
+        Return the number of VM's CPUs as a string.
+        """
+        return self._dom.findtext('vcpu')
+
     def get_memory_size(self):
         """
         Return the vm memory from xml in MiB
