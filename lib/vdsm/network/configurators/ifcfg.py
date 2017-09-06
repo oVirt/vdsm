@@ -224,7 +224,10 @@ class Ifcfg(Configurator):
             IfcfgAcquire.acquire_vlan_device(vlan.name)
         if vlan.ipv4.bootproto == 'dhcp':
             ifacetracking.add(vlan.name)
-        ifdown(vlan.name)
+        if vlan.master:
+            _remove_device(vlan.name)
+        else:
+            ifdown(vlan.name)
         self._removeSourceRoute(vlan)
         self.configApplier.removeVlan(vlan.name)
         self.net_info.del_vlan(vlan.name)
