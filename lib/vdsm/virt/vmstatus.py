@@ -19,6 +19,8 @@
 #
 from __future__ import absolute_import
 
+import libvirt
+
 UP = 'Up'
 DOWN = 'Down'
 MIGRATION_SOURCE = 'Migration Source'
@@ -32,3 +34,8 @@ SAVING_STATE = 'Saving State'
 WAIT_FOR_LAUNCH = 'WaitForLaunch'
 
 PAUSED_STATES = (POWERING_DOWN, REBOOT_IN_PROGRESS, UP)
+
+LIBVIRT_DOWN_STATES = (
+    libvirt.VIR_DOMAIN_SHUTOFF,
+    libvirt.VIR_DOMAIN_CRASHED,
+)

@@ -130,10 +130,6 @@ VALID_STATES = (vmstatus.DOWN, vmstatus.MIGRATION_DESTINATION,
                 vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
 
 
-_LIBVIRT_DOWN_STATES = (libvirt.VIR_DOMAIN_SHUTOFF,
-                        libvirt.VIR_DOMAIN_CRASHED)
-
-
 # TODO: Remove these constants and their usages once
 # https://bugzilla.redhat.com/1459113 is done and the updated libvirt is
 # available.
@@ -263,7 +259,7 @@ def _undefine_stale_domain(vm, connection):
     for dom in doms_to_remove:
         try:
             state, reason = dom.state(0)
-            if state in _LIBVIRT_DOWN_STATES:
+            if state in vmstatus.LIBVIRT_DOWN_STATES:
                 dom.undefine()
                 vm.log.debug("Stale domain removed: %s", (vm.id,))
             else:
@@ -2472,7 +2468,7 @@ class Vm(object):
             dom = self._connection.lookupByUUIDString(self.id)
             if _PERSISTENT_DOMAINS:
                 state, reason = dom.state(0)
-                if state in _LIBVIRT_DOWN_STATES:
+                if state in vmstatus.LIBVIRT_DOWN_STATES:
                     self._dom = virdomain.Defined(self.id, dom)
                     return
             self._dom = virdomain.Notifying(dom, self._timeoutExperienced)

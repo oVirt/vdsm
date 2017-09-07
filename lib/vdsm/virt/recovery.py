@@ -47,13 +47,26 @@ def _is_external_vm(dom_xml):
             not vmxml.has_vdsm_metadata(dom_xml))
 
 
-def _is_ignored_vm(dom_xml):
+def _is_ignored_vm(dom_uuid, dom_obj, dom_xml):
     """
     Return true iff the given VM should never be displayed to users.
 
-    Currently guestfs VMs are ignored and not displayed even as external VMs.
+    Currently all guestfs VMs and external VMs in DOWN status are ignored.
     """
-    return vmxml.has_channel(dom_xml, vmchannels.GUESTFS_DEVICE_NAME)
+    if vmxml.has_channel(dom_xml, vmchannels.GUESTFS_DEVICE_NAME):
+        return True
+    if _is_external_vm(dom_xml):
+        try:
+            state, reason = dom_obj.state(0)
+        except libvirt.libvirtError as e:
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                return True
+            else:
+                logging.warning("Can't get status of external VM %s: %s",
+                                dom_uuid, e)
+        if state in vmstatus.LIBVIRT_DOWN_STATES:
+            return True
+    return False
 
 
 def _list_domains():
@@ -71,7 +84,7 @@ def _list_domains():
             else:
                 raise
         else:
-            if _is_ignored_vm(dom_xml):
+            if _is_ignored_vm(dom_uuid, dom_obj, dom_xml):
                 continue
             domains.append((dom_obj, dom_xml, _is_external_vm(dom_xml),))
     return domains
@@ -243,7 +256,7 @@ def lookup_external_vms(cif):
                 continue
             else:
                 raise
-        if _is_ignored_vm(dom_xml):
+        if _is_ignored_vm(vm_id, dom_obj, dom_xml):
             continue
         logging.debug("Recovering external domain: %s", vm_id)
         if _recover_domain(cif, vm_id, dom_xml, True):
