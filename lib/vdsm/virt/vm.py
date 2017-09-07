@@ -852,7 +852,8 @@ class Vm(object):
                 self._pause_code = None
 
             self.recovering = False
-            self._updateDomainDescriptor()
+            if self._dom.connected:
+                self._updateDomainDescriptor()
 
             self.send_status_event(**self._getRunningVmStats())
 
