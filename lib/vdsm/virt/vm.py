@@ -5606,17 +5606,6 @@ class Vm(object):
 
         device.teardown()
 
-        # Due to https://bugzilla.redhat.com/1414393 the device may not get
-        # removed from domain XML immediately but only after a very short
-        # while.  So we update the domain descriptor only at the end of the
-        # method.  If the device is still present in the domain XML after the
-        # this update (it's probably not that much likely) we don't care
-        # much. This callback currently handles only memory devices and the
-        # main purpose of the update is to get the current memory size. But
-        # Engine doesn't use that value, we just log it and expose it in the
-        # stats.  Once https://bugzilla.redhat.com/1414393 is fixed this
-        # comment may be removed and domain descriptor may be updated at any
-        # place here.
         self._updateDomainDescriptor()
 
     # Accessing storage
