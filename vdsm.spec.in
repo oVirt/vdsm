@@ -182,7 +182,7 @@ Requires: lvm2 >= 2.02.145
 
 %if 0%{?rhel}
 Requires: e2fsprogs
-Requires: kernel >= 3.10.0-327.18.1.el7
+Requires: kernel >= 3.10.0-693.2.1.el7.x86_64
 Requires: python >= 2.7.5-18.el7_1.1
 
 %if 0%{?centos}
