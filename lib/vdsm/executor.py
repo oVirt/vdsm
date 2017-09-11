@@ -111,6 +111,15 @@ class Executor(object):
         self._lock = threading.Lock()
         self._running = False
 
+    def __repr__(self):
+        return "<Executor %s workers=%i max_workers=%i %s at 0x%x>" % (
+            self._name,
+            self._workers_count,
+            self._max_workers,
+            repr(self._tasks),
+            id(self)
+        )
+
     @property
     def name(self):
         return self._name
@@ -413,6 +422,15 @@ class TaskQueue(object):
         # protecting other methods which are not documented as thread-safe.
         # https://docs.python.org/2/library/collections.html#deque-objects
         self._cond = threading.Condition(threading.Lock())
+
+    def __repr__(self):
+        return "<TaskQueue %s max_tasks=%i tasks(%i)=%s at 0x%x>" % (
+            self._name,
+            self._max_tasks,
+            len(self._tasks),
+            repr(self._tasks),
+            id(self)
+        )
 
     def put(self, task):
         """
