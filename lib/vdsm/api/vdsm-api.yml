@@ -3024,6 +3024,14 @@ types:
             name: ops
             type:
             - *ImageTicketOps
+
+        -   defaultvalue: null
+            description: If set, it will be used as the filename attribute
+                of the content-disposition header when downloading an image.
+                When downloading using a browser, this is typically the
+                download filename.
+            name: filename
+            type: string
         type: object
 
     KsmTuneParams: &KsmTuneParams
