@@ -97,6 +97,9 @@ def _read_content(response):
                       "detail": str(e)}
         raise se.ImageDaemonError(response.status, response.reason, error_info)
 
+    if content_length == 0:
+        return {}
+
     try:
         res_data = response.read(content_length)
     except EnvironmentError as e:

@@ -146,7 +146,8 @@ class TestImageTickets(VdsmTestCase):
 
     @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
     def test_res_read_error(self):
-        imagetickets.uhttp.response.status = 300
+        imagetickets.uhttp.response = FakeResponse(
+            status=300, data=b'{"image_daemon_message":"ignored"}')
         err_msg = "Environment error message"
 
         def read(amt=None):
