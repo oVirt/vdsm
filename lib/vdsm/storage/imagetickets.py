@@ -82,23 +82,28 @@ def request(method, uuid, body=None):
                                        "{error}".format(error=e))
 
         if res.status >= 300:
-            try:
-                content_length = int(res.getheader("content-length",
-                                                   default=""))
-            except ValueError as e:
-                error_info = {"explanation": "Invalid content-length",
-                              "detail": str(e)}
-                raise se.ImageDaemonError(res.status, res.reason, error_info)
+            content = _read_content(res)
+            raise se.ImageDaemonError(res.status, res.reason, content)
 
-            try:
-                res_data = res.read(content_length)
-            except EnvironmentError as e:
-                error_info = {"explanation": "Error reading response",
-                              "detail": str(e)}
-                raise se.ImageDaemonError(res.status, res.reason, error_info)
 
-            try:
-                error_info = json.loads(res_data)
-            except ValueError as e:
-                error_info = {"explanation": "Invalid JSON", "detail": str(e)}
-            raise se.ImageDaemonError(res.status, res.reason, error_info)
+def _read_content(response):
+    try:
+        content_length = int(response.getheader("content-length",
+                                                default=""))
+    except ValueError as e:
+        error_info = {"explanation": "Invalid content-length",
+                      "detail": str(e)}
+        raise se.ImageDaemonError(response.status, response.reason, error_info)
+
+    try:
+        res_data = response.read(content_length)
+    except EnvironmentError as e:
+        error_info = {"explanation": "Error reading response",
+                      "detail": str(e)}
+        raise se.ImageDaemonError(response.status, response.reason, error_info)
+
+    try:
+        return json.loads(res_data)
+    except ValueError as e:
+        error_info = {"explanation": "Invalid JSON", "detail": str(e)}
+        raise se.ImageDaemonError(response.status, response.reason, error_info)
