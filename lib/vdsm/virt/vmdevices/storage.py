@@ -812,6 +812,21 @@ _DEVNAMES = {
 }
 
 
+_DEVIFACES = {
+    'hd': 'ide',
+    'sd': 'scsi',  # SATA will be alias for SCSI
+    'vd': 'virtio',
+    'fd': 'fdc',
+}
+
+
 def makeName(interface, index):
     devindex = base26.encode(index)
     return _DEVNAMES.get(interface, 'hd') + (devindex or 'a')
+
+
+def splitName(devname):
+    prefix = devname[:2]
+    if prefix not in _DEVIFACES:
+        raise ValueError('Unrecognized device name: %s', devname)
+    return _DEVIFACES[prefix], base26.decode(devname[2:])
