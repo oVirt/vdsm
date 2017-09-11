@@ -25,6 +25,7 @@ import collections
 import os
 import xml.etree.ElementTree as ET
 
+from vdsm.common import base26
 from vdsm.common import conv
 from vdsm.common import errors
 from vdsm.common import exception
@@ -812,11 +813,5 @@ _DEVNAMES = {
 
 
 def makeName(interface, index):
-    devindex = ''
-
-    i = int(index)
-    while i > 0:
-        devindex = chr(ord('a') + (i % 26)) + devindex
-        i //= 26
-
+    devindex = base26.encode(index)
     return _DEVNAMES.get(interface, 'hd') + (devindex or 'a')
