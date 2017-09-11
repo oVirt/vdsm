@@ -104,7 +104,7 @@ class JsonRpcRequest(object):
     @classmethod
     def decode(cls, msg):
         try:
-            obj = json.loads(msg, 'utf-8')
+            obj = json.loads(msg, encoding='utf-8')
         except:
             raise JsonRpcParseError()
 
@@ -180,7 +180,7 @@ class JsonRpcResponse(object):
 
     @staticmethod
     def decode(msg):
-        obj = json.loads(msg, 'utf-8')
+        obj = json.loads(msg, encoding='utf-8')
         return JsonRpcResponse.fromRawObject(obj)
 
     @staticmethod
