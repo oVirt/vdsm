@@ -27,16 +27,19 @@ import libvirt
 
 from vdsm import executor
 from vdsm import schedule
+from vdsm import throttledlog
 from vdsm.utils import monotonic_time
 from vdsm.virt import migration
 from vdsm.virt import periodic
 from vdsm.virt import vmstatus
 
 
+from monkeypatch import MonkeyPatchScope
 from testValidation import slowtest
 from testValidation import broken_on_ci
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase as TestCaseBase
+import fakelib
 import vmfakelib as fake
 
 
@@ -249,6 +252,39 @@ class PeriodicOperationTests(TestCaseBase):
         # op.stop() doesn't guarantee the immediate termination, so _work()
         # can run one extra time
         self.assertGreaterEqual(executions[0], 2)
+
+    def test_dump_executor_state_on_resource_exhausted(self):
+        PERIOD = 0.1
+        MAX_TASKS = 20  # random value
+
+        log = fakelib.FakeLogger()
+
+        exc = executor.Executor(name="test.Executor",
+                                # intentional we  just want to clog the queue
+                                workers_count=0,
+                                max_tasks=MAX_TASKS,
+                                scheduler=self.sched,  # unused
+                                max_workers=0,
+                                log=log)
+        exc.start()
+
+        op = periodic.Operation(lambda: None,
+                                period=PERIOD,
+                                scheduler=self.sched,
+                                executor=exc,
+                                timeout=None,
+                                exclusive=False)
+        with MonkeyPatchScope([
+            (throttledlog, '_logger', log),
+        ]):
+            # the first dispatch is done here
+            op.start()
+            for _ in range(MAX_TASKS - 1):
+                op._dispatch()
+            # this will trigger the exception, and the dump
+            op._dispatch()
+        level, message, args = log.messages[-1]
+        self.assertTrue(message.startswith('executor state:'))
 
 
 VM_NUM = 5  # just a number, no special meaning

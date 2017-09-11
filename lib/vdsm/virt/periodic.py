@@ -32,6 +32,7 @@ from vdsm import containersconnection
 from vdsm import executor
 from vdsm import host
 from vdsm import libvirtconnection
+from vdsm import throttledlog
 from vdsm.config import config
 from vdsm.virt import migration
 from vdsm.virt import sampling
@@ -45,7 +46,7 @@ _WORKERS = config.getint('sampling', 'periodic_workers')
 _TASK_PER_WORKER = config.getint('sampling', 'periodic_task_per_worker')
 _TASKS = _WORKERS * _TASK_PER_WORKER
 _MAX_WORKERS = config.getint('sampling', 'max_workers')
-
+_THROTTLING_INTERVAL = 10  # seconds
 
 _operations = []
 _executor = None
@@ -179,8 +180,10 @@ class Operation(object):
         self._lock = threading.Lock()
         self._running = False
         self._call = None
+        self._name = str(self._func)
 
     def start(self):
+        throttledlog.throttle(self._name, _THROTTLING_INTERVAL)
         with self._lock:
             if self._running:
                 raise AssertionError("Operation already running")
@@ -227,15 +230,19 @@ class Operation(object):
         """
         Send `func' to Executor to be run as soon as possible.
         """
+        state = None
         self._call = None
         try:
             self._executor.dispatch(self, self._timeout, discard=self._discard)
         except executor.TooManyTasks:
             self._log.warning('could not run %s, executor queue full',
                               self._func)
+            state = repr(self._executor)
         finally:
             if not self._exclusive:
                 self._reschedule()
+        if state:
+            throttledlog.warning(self._name, 'executor state: %s', state)
 
     def __repr__(self):
         return '<Operation action=%s at 0x%x>' % (
