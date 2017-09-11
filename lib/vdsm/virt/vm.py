@@ -2086,7 +2086,6 @@ class Vm(object):
         domxml.appendOs(use_serial_console=(serial_console is not None))
 
         if self.hugepages:
-            self._prepare_hugepages()
             domxml.appendMemoryBacking(self.hugepagesz)
 
         if cpuarch.is_x86(self.arch):
@@ -2494,6 +2493,9 @@ class Vm(object):
         elif self._altered_state.origin == _MIGRATION_ORIGIN:
             pass  # self._dom will be disconnected until migration ends.
         elif self._altered_state.origin == _FILE_ORIGIN:
+            if self.hugepages:
+                self._prepare_hugepages()
+
             # TODO: for unknown historical reasons, we call this hook also
             # on this flow. Issues:
             # - we will also call the more specific before_vm_dehibernate
@@ -2538,6 +2540,10 @@ class Vm(object):
                     flags |= libvirt.VIR_DOMAIN_START_PAUSED
                     self._pause_code = 'NOERR'
             hooks.dump_vm_launch_flags_to_file(self.id, flags)
+
+            if self.hugepages:
+                self._prepare_hugepages()
+
             try:
                 domxml = hooks.before_vm_start(self._buildDomainXML(),
                                                self._custom)
