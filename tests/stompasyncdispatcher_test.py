@@ -54,6 +54,9 @@ class FakeFrameHandler(object):
     def handle_timeout(self, dispatcher):
         dispatcher.connection.close()
 
+    def handle_error(self, dispatcher):
+        self.handle_timeout(dispatcher)
+
     def peek_message(self):
         return self._outbox[0]
 
@@ -123,6 +126,13 @@ class AsyncDispatcherTest(TestCaseBase):
         recv_frame = frame_handler.pop_message()
         self.assertEqual(Command.MESSAGE, recv_frame.command)
         self.assertEqual(body, recv_frame.body)
+
+    def test_handle_error(self):
+        frame_handler = FakeFrameHandler()
+        connection = FakeConnection()
+        dispatcher = AsyncDispatcher(connection, frame_handler)
+        dispatcher.handle_error(dispatcher)
+        self.assertTrue(connection.closed)
 
     def test_heartbeat_calc(self):
         dispatcher = AsyncDispatcher(
