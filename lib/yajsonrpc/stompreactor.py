@@ -253,6 +253,9 @@ class StompAdapterImpl(object):
         dispatcher.connection.close()
         self.remove_subscriptions()
 
+    def handle_error(self, dispatcher):
+        self.handle_timeout(dispatcher)
+
     def _handle_destination(self, dispatcher, req_dest, request):
         """
         We could receive single message or batch of messages. We need

@@ -400,6 +400,10 @@ class AsyncDispatcher(object):
         if self._incoming_heartbeat_in_milis:
             self._update_incoming_heartbeat()
 
+    def handle_error(self, dispatcher):
+        self.log.debug("Communication error occurred.")
+        self._frame_handler.handle_error(self)
+
     def handle_timeout(self):
         self._on_timeout = True
 
@@ -555,6 +559,9 @@ class AsyncClient(object):
                                               self._incoming_heartbeat),
             }
         ))
+
+    def handle_error(self, dispatcher):
+        dispatcher.handle_timeout()
 
     def handle_frame(self, dispatcher, frame):
         self._commands[frame.command](frame, dispatcher)
