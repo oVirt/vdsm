@@ -172,6 +172,19 @@ class TestImageTickets(VdsmTestCase):
         with self.assertRaises(se.ImageTicketsError):
             imagetickets.add_ticket(ticket)
 
+    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    def test_request_with_response(self):
+        ticket = create_ticket(uuid="uuid")
+        data = json.dumps(ticket).encode("utf8")
+        imagetickets.uhttp.response = FakeResponse(data=data)
+        response = imagetickets.request(imagetickets.uhttp.GET, "uuid")
+        self.assertEqual(response, ticket)
+
+    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    def test_request_with_empty_dict_response(self):
+        response = imagetickets.request(imagetickets.uhttp.DELETE, "uuid")
+        self.assertEqual(response, {})
+
 
 def create_ticket(uuid, ops=("read", "write"), timeout=300,
                   size=1024**3, path="/path/to/image"):

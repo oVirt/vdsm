@@ -83,9 +83,10 @@ def request(method, uuid, body=None):
                                        "ovirt-imageio-daemon: "
                                        "{error}".format(error=e))
 
+        content = _read_content(res)
         if res.status >= 300:
-            content = _read_content(res)
             raise se.ImageDaemonError(res.status, res.reason, content)
+        return content
 
 
 def _read_content(response):
