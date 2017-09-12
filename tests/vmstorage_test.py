@@ -726,7 +726,6 @@ class TestDriveLeases(XMLTestCase):
 class TestDriveNaming(VdsmTestCase):
 
     @permutations([
-        ['ide', -1, 'hda'],
         ['ide', 0, 'hda'],
         ['ide', 1, 'hdb'],
         ['ide', 2, 'hdc'],
@@ -734,7 +733,6 @@ class TestDriveNaming(VdsmTestCase):
         ['ide', 26, 'hdba'],
         ['ide', 27, 'hdbb'],
 
-        ['scsi', -1, 'sda'],
         ['scsi', 0, 'sda'],
         ['scsi', 1, 'sdb'],
         ['scsi', 2, 'sdc'],
@@ -742,7 +740,6 @@ class TestDriveNaming(VdsmTestCase):
         ['scsi', 26, 'sdba'],
         ['scsi', 27, 'sdbb'],
 
-        ['virtio', -1, 'vda'],
         ['virtio', 0, 'vda'],
         ['virtio', 1, 'vdb'],
         ['virtio', 2, 'vdc'],
@@ -750,7 +747,6 @@ class TestDriveNaming(VdsmTestCase):
         ['virtio', 26, 'vdba'],
         ['virtio', 27, 'vdbb'],
 
-        ['fdc', -1, 'fda'],
         ['fdc', 0, 'fda'],
         ['fdc', 1, 'fdb'],
         ['fdc', 2, 'fdc'],
@@ -758,7 +754,6 @@ class TestDriveNaming(VdsmTestCase):
         ['fdc', 26, 'fdba'],
         ['fdc', 27, 'fdbb'],
 
-        ['sata', -1, 'sda'],
         ['sata', 0, 'sda'],
         ['sata', 1, 'sdb'],
         ['sata', 2, 'sdc'],
@@ -776,6 +771,23 @@ class TestDriveNaming(VdsmTestCase):
 
         drive = Drive(self.log, **conf)
         self.assertEqual(drive.name, expected_name)
+
+    @permutations([
+        ['ide', -1],
+        ['scsi', -1],
+        ['virtio', -1],
+        ['fdc', -1],
+        ['sata', -1],
+    ])
+    def test_invalid_name(self, interface, index):
+        conf = drive_config(
+            device='disk',
+            iface=interface,
+            index=index,
+            diskType=DISK_TYPE.FILE
+        )
+
+        self.assertRaises(ValueError, Drive, self.log, **conf)
 
 
 class TestVolumeTarget(VdsmTestCase):

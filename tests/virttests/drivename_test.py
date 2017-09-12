@@ -52,6 +52,12 @@ class TestDriveNameFunctions(VdsmTestCase):
                     prefix + value, computed, expected))
 
     @permutations([
+        (iface, -1) for iface in drivename._DEVIFACES
+    ])
+    def test_make_name_invalid_parameters(self, iface, index):
+        self.assertRaises(ValueError, drivename.make, iface, index)
+
+    @permutations([
         # device_name
         ['foobar_a'],
         ['qda'],

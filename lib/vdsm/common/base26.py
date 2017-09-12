@@ -50,6 +50,9 @@ def encode(index):
     value = ''
 
     i = int(index)
+    if i < 0:
+        raise ValueError('invalid index: %i' % i)
+
     while i > 0:
         value = chr(ord('a') + (i % 26)) + value
         i //= 26
