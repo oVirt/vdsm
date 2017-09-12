@@ -52,6 +52,7 @@ from nose import result
 
 import vdsm
 
+from vdsm.common import cache
 from vdsm.common import osutils
 from vdsm.common import xmlutils
 import vdsm.common.time
@@ -648,3 +649,19 @@ def make_uuid():
     Return a new UUID version 4 string for use with vdsm APIs
     """
     return str(uuid.uuid4())
+
+
+@cache.memoized
+def ipv6_enabled():
+    # Based on vdsm.network.sysctl
+    path = "/proc/sys/net/ipv6/conf/default/disable_ipv6"
+    try:
+        with io.open(path, "rb") as f:
+            value = f.read()
+    except EnvironmentError as e:
+        if e.errno != errno.ENOENT:
+            raise
+        # Kernel does not support ipv6
+        return False
+    # Kernel supports ipv6, but it may be disabled.
+    return int(value) == 0
