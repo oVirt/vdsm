@@ -324,6 +324,7 @@ class TestNetinfo(TestCaseBase):
         gateway = routes.get_gateway(DUPLICATED_GATEWAY, TEST_IFACE)
         self.assertEqual(gateway, '12.34.56.1')
 
+    @broken_on_ci('IPv6 not supported on travis', name='TRAVIS_CI')
     @attr(type='integration')
     @ValidateRunningAsRoot
     def test_ip_info(self):
@@ -405,11 +406,13 @@ class TestIPv6Addresses(TestCaseBase):
             sysctl.disable_ipv6(dev)
             self.assertFalse(addresses.is_ipv6_local_auto(dev))
 
+    @broken_on_ci('IPv6 not supported on travis', name='TRAVIS_CI')
     @ValidateRunningAsRoot
     def test_local_auto_without_router_advertisement_server(self):
         with dummy_device() as dev:
             self.assertTrue(addresses.is_ipv6_local_auto(dev))
 
+    @broken_on_ci('IPv6 not supported on travis', name='TRAVIS_CI')
     @ValidateRunningAsRoot
     def test_local_auto_with_static_address_without_ra_server(self):
         with dummy_device() as dev:
@@ -420,7 +423,9 @@ class TestIPv6Addresses(TestCaseBase):
             self.assertTrue(addresses.is_ipv6(ip_addrs[0]))
             self.assertTrue(not addresses.is_dynamic(ip_addrs[0]))
 
-    @broken_on_ci('Using dnsmasq for ipv6 RA is unstable on CI')
+    @broken_on_ci('Using dnsmasq for ipv6 RA is unstable on CI',
+                  name='OVIRT_CI')
+    @broken_on_ci('IPv6 not supported on travis', name='TRAVIS_CI')
     @ValidateRunningAsRoot
     def test_local_auto_with_dynamic_address_from_ra(self):
         IPV6_NETADDRESS = '2001:1:1:1'

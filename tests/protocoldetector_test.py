@@ -27,6 +27,7 @@ from contextlib import contextmanager
 
 from yajsonrpc.betterAsyncore import Reactor
 from vdsm.protocoldetector import MultiProtocolAcceptor
+from testValidation import broken_on_ci
 from testlib import VdsmTestCase, expandPermutations, permutations
 
 from integration.sslhelper import KEY_FILE, CRT_FILE, DEAFAULT_SSL_CONTEXT
@@ -133,6 +134,7 @@ class AcceptorTests(VdsmTestCase):
         data = "echo testing is fun\n"
         self.check_detect(use_ssl, data, data)
 
+    @broken_on_ci("IPv6 not supported on travis", name="TRAVIS_CI")
     @permutations(PERMUTATIONS)
     def test_detect_echo6(self, use_ssl):
         self.start_acceptor(use_ssl, address='::1')

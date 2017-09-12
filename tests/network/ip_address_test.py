@@ -22,6 +22,7 @@ import itertools
 
 from nose.plugins.attrib import attr
 
+from testValidation import broken_on_ci
 from testlib import VdsmTestCase
 
 from .nettestlib import dummy_device, dummy_devices, preserve_default_route
@@ -212,9 +213,11 @@ class IPAddressTest(VdsmTestCase):
     def test_add_delete_ipv4(self):
         self._test_add_delete(IPV4_A_WITH_PREFIXLEN, IPV4_B_WITH_PREFIXLEN)
 
+    @broken_on_ci("IPv6 not supported on travis", name="TRAVIS_CI")
     def test_add_delete_ipv6(self):
         self._test_add_delete(IPV6_A_WITH_PREFIXLEN, IPV6_B_WITH_PREFIXLEN)
 
+    @broken_on_ci("IPv6 not supported on travis", name="TRAVIS_CI")
     def test_add_delete_ipv4_ipv6(self):
         self._test_add_delete(IPV4_A_WITH_PREFIXLEN, IPV6_B_WITH_PREFIXLEN)
 
@@ -267,12 +270,14 @@ class IPAddressTest(VdsmTestCase):
             ipv6_addresses=[]
         )
 
+    @broken_on_ci("IPv6 not supported on travis", name="TRAVIS_CI")
     def test_list_ipv6(self):
         self._test_list(
             ipv4_addresses=[],
             ipv6_addresses=[IPV6_A_WITH_PREFIXLEN, IPV6_B_WITH_PREFIXLEN]
         )
 
+    @broken_on_ci("IPv6 not supported on travis", name="TRAVIS_CI")
     def test_list_ipv4_ipv6(self):
         self._test_list(
             ipv4_addresses=[IPV4_A_WITH_PREFIXLEN],
