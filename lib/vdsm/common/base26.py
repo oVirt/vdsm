@@ -29,11 +29,29 @@ http://elixir.free-electrons.com/linux/latest/source/drivers/scsi/sd.c#L3155
 
 
 def encode(index):
-    devindex = ''
+    """
+    Converts the given base 10 integer index to
+    the corresponding base 26 string value.
+
+    WARNING: This is the legacy Vdsm algorithm,
+    which is different from the Linux kernel one.
+
+    Example of different results:
+
+    | Index | Vdsm  | Linux |
+    +-------+-------+-------+
+    |    <0 |     a | ERROR |
+    |     0 |    '' |     a |
+    |    26 |    ba |    aa |
+    |    27 |    bb |    ab |
+    +-------+-------+-------+
+    """
+
+    value = ''
 
     i = int(index)
     while i > 0:
-        devindex = chr(ord('a') + (i % 26)) + devindex
+        value = chr(ord('a') + (i % 26)) + value
         i //= 26
 
-    return devindex
+    return value
