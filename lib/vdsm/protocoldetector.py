@@ -30,19 +30,6 @@ from vdsm.common.time import monotonic_time
 from vdsm.sslutils import SSLHandshakeDispatcher
 
 
-def _create_socket(host, port):
-    addrinfo = socket.getaddrinfo(host, port,
-                                  socket.AF_UNSPEC, socket.SOCK_STREAM)
-
-    family, socktype, proto, _, sockaddr = addrinfo[0]
-    server_socket = socket.socket(family, socktype, proto)
-    filecontrol.set_close_on_exec(server_socket.fileno())
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind(sockaddr)
-
-    return server_socket
-
-
 def _is_handshaking(sock):
     if not hasattr(sock, "is_handshaking"):
         return False
@@ -190,7 +177,7 @@ class MultiProtocolAcceptor:
     ):
         self._sslctx = sslctx
         self._reactor = reactor
-        sock = _create_socket(host, port)
+        sock = self._create_socket(host, port)
         # TODO: Clean _host & _port, use sockaddr instead.
         self._host, self._port = sock.getsockname()[0:2]
         self.log.info("Listening at %s:%d", self._host, self._port)
@@ -227,6 +214,21 @@ class MultiProtocolAcceptor:
         self.log.debug("Stopping Acceptor")
         self._acceptor.close()
         self._reactor.stop()
+
+    def _create_socket(self, host, port):
+        addrinfo = socket.getaddrinfo(host, port,
+                                      socket.AF_UNSPEC, socket.SOCK_STREAM)
+
+        family, socktype, proto, _, sockaddr = addrinfo[0]
+        self.log.debug("Creating socket (host=%r, port=%d, family=%d, "
+                       "socketype=%d, proto=%d)",
+                       host, port, family, socktype, proto)
+        server_socket = socket.socket(family, socktype, proto)
+        filecontrol.set_close_on_exec(server_socket.fileno())
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_socket.bind(sockaddr)
+
+        return server_socket
 
 
 class _CannotDetectProtocol(Exception):
