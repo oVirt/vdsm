@@ -51,6 +51,8 @@ if config.get('vars', 'ssl_implementation') == 'm2c':
 else:
     from integration.sslhelper import DEAFAULT_SSL_CONTEXT
 
+from testlib import ipv6_enabled
+
 PERMUTATIONS = tuple(product((True, False), ("xml", "stomp")))
 
 TIMEOUT = 3
@@ -96,7 +98,7 @@ def constructAcceptor(log, ssl, jsonBridge,
     reactor = Reactor()
     acceptor = MultiProtocolAcceptor(
         reactor,
-        "::1",
+        "::1" if ipv6_enabled() else "127.0.0.1",
         0,
         sslctx,
     )
