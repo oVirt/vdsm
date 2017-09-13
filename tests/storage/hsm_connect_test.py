@@ -86,19 +86,14 @@ def fake_hsm(monkeypatch):
 
 
 @pytest.mark.parametrize("conn_type,expected_calls", [
-    # Expected success
     (sd.NFS_DOMAIN, [('invalidateStorage', (), {})]),
     (sd.POSIXFS_DOMAIN, [('invalidateStorage', (), {})]),
     (sd.GLUSTERFS_DOMAIN, [('invalidateStorage', (), {})]),
     (sd.LOCALFS_DOMAIN, [('invalidateStorage', (), {})]),
-
-    # Expected failures
-    pytest.param(sd.ISCSI_DOMAIN, [('refreshStorage', (), {}),
-                                   ('invalidateStorage', (), {})],
-                 marks=pytest.mark.xfail(reason="BZ#1488892 optimization")),
-    pytest.param(sd.FCP_DOMAIN, [('refreshStorage', (), {}),
-                                 ('invalidateStorage', (), {})],
-                 marks=pytest.mark.xfail(reason="BZ#1488892 optimization")),
+    (sd.ISCSI_DOMAIN, [('refreshStorage', (), {}),
+                       ('invalidateStorage', (), {})]),
+    (sd.FCP_DOMAIN, [('refreshStorage', (), {}),
+                     ('invalidateStorage', (), {})]),
 ])
 def test_refresh_storage_once(fake_hsm, conn_type, expected_calls):
     connections = [{'id': '1', 'connection': 'test', 'port': '3660'},

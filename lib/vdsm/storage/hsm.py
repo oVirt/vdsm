@@ -2391,6 +2391,7 @@ class HSM(object):
                 (domType, spUUID, conList)))
 
         res = []
+        connections = []
         for conDef in conList:
             conInfo = _connectionDict2ConnectionInfo(domType, conDef)
             conObj = storageServer.ConnectionFactory.createConnection(conInfo)
@@ -2403,29 +2404,33 @@ class HSM(object):
                 status, _ = self._translateConnectionError(err)
             else:
                 status = 0
-                # In case there were changes in devices size
-                # while the VDSM was not connected, we need to
-                # call refreshStorage.
-                if domType in (sd.FCP_DOMAIN, sd.ISCSI_DOMAIN):
-                    sdCache.refreshStorage()
-                try:
-                    doms = self._prefetchDomains(domType, conObj)
-                except:
-                    self.log.debug("prefetch failed: %s",
-                                   sdCache.knownSDs, exc_info=True)
-                else:
-                    # Any pre-existing domains in sdCache stand the chance of
-                    # being invalid, since there is no way to know what happens
-                    # to them while the storage is disconnected.
-                    for sdUUID in doms.iterkeys():
-                        sdCache.manuallyRemoveDomain(sdUUID)
-                    sdCache.knownSDs.update(doms)
-
-            self.log.debug("knownSDs: {%s}", ", ".join("%s: %s.%s" %
-                           (k, v.__module__, v.__name__)
-                           for k, v in sdCache.knownSDs.iteritems()))
+                connections.append(conObj)
 
             res.append({'id': conDef["id"], 'status': status})
+
+        # In case there were changes in devices size
+        # while the VDSM was not connected, we need to
+        # call refreshStorage.
+        if domType in (sd.FCP_DOMAIN, sd.ISCSI_DOMAIN):
+            sdCache.refreshStorage()
+
+        for conObj in connections:
+            try:
+                doms = self._prefetchDomains(domType, conObj)
+            except:
+                self.log.debug("prefetch failed: %s",
+                               sdCache.knownSDs, exc_info=True)
+            else:
+                # Any pre-existing domains in sdCache stand the chance of
+                # being invalid, since there is no way to know what happens
+                # to them while the storage is disconnected.
+                for sdUUID in doms.iterkeys():
+                    sdCache.manuallyRemoveDomain(sdUUID)
+                sdCache.knownSDs.update(doms)
+
+        self.log.debug("knownSDs: {%s}", ", ".join("%s: %s.%s" %
+                       (k, v.__module__, v.__name__)
+                       for k, v in sdCache.knownSDs.iteritems()))
 
         # Connecting new device may change the visible storage domain list
         # so invalidate caches
