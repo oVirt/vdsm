@@ -22,7 +22,6 @@ from __future__ import absolute_import
 from testlib import VdsmTestCase
 from testlib import expandPermutations
 from testlib import permutations
-from testValidation import xfail
 
 from vdsm.virt.vmdevices import drivename
 
@@ -30,7 +29,6 @@ from vdsm.virt.vmdevices import drivename
 @expandPermutations
 class TestDriveNameFunctions(VdsmTestCase):
 
-    @xfail('drivename.make needs to be fixed')
     @permutations(drivename._DEVIFACES.items())
     def test_make_name(self, prefix, iface):
         for index, value in _CONVERTED_VALUES:

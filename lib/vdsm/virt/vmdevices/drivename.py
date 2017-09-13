@@ -42,7 +42,7 @@ _DEVIFACES = {
 
 def make(interface, index):
     devindex = base26.encode(index)
-    return _DEVNAMES.get(interface, 'hd') + (devindex or 'a')
+    return _DEVNAMES.get(interface, 'hd') + devindex
 
 
 def split(devname):

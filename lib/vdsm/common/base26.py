@@ -32,19 +32,6 @@ def encode(index):
     """
     Converts the given base 10 integer index to
     the corresponding base 26 string value.
-
-    WARNING: This is the legacy Vdsm algorithm,
-    which is different from the Linux kernel one.
-
-    Example of different results:
-
-    | Index | Vdsm  | Linux |
-    +-------+-------+-------+
-    |    <0 |     a | ERROR |
-    |     0 |    '' |     a |
-    |    26 |    ba |    aa |
-    |    27 |    bb |    ab |
-    +-------+-------+-------+
     """
 
     value = ''
@@ -53,9 +40,9 @@ def encode(index):
     if i < 0:
         raise ValueError('invalid index: %i' % i)
 
-    while i > 0:
+    while i >= 0:
         value = chr(ord('a') + (i % 26)) + value
-        i //= 26
+        i = (i // 26) - 1
 
     return value
 
