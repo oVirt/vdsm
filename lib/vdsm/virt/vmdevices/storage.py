@@ -25,7 +25,6 @@ import collections
 import os
 import xml.etree.ElementTree as ET
 
-from vdsm.common import base26
 from vdsm.common import conv
 from vdsm.common import errors
 from vdsm.common import exception
@@ -37,6 +36,7 @@ from vdsm.virt import vmtune
 from vdsm.virt import vmxml
 
 from . import core
+from . import drivename
 from . import hwclass
 from . import lease
 
@@ -221,7 +221,7 @@ class Drive(core.Base):
         self.reqsize = int(kwargs.get('reqsize', '0'))  # Backward compatible
         self.truesize = int(kwargs.get('truesize', '0'))
         self.apparentsize = int(kwargs.get('apparentsize', '0'))
-        self.name = makeName(self.iface, self.index)
+        self.name = drivename.make(self.iface, self.index)
         self.cache = config.get('vars', 'qemu_drive_cache')
         self.discard = kwargs.get('discard', False)
 
@@ -801,32 +801,3 @@ def _get_drive_identification(dom):
     name = vmxml.find_attr(dom, 'target', 'dev')
     alias = core.find_device_alias(dom)
     return alias, devPath, name
-
-
-_DEVNAMES = {
-    'ide': 'hd',
-    'scsi': 'sd',
-    'virtio': 'vd',
-    'fdc': 'fd',
-    'sata': 'sd',
-}
-
-
-_DEVIFACES = {
-    'hd': 'ide',
-    'sd': 'scsi',  # SATA will be alias for SCSI
-    'vd': 'virtio',
-    'fd': 'fdc',
-}
-
-
-def makeName(interface, index):
-    devindex = base26.encode(index)
-    return _DEVNAMES.get(interface, 'hd') + (devindex or 'a')
-
-
-def splitName(devname):
-    prefix = devname[:2]
-    if prefix not in _DEVIFACES:
-        raise ValueError('Unrecognized device name: %s', devname)
-    return _DEVIFACES[prefix], base26.decode(devname[2:])

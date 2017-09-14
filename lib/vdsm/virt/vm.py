@@ -83,6 +83,7 @@ from vdsm.virt import xmlconstants
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.domain_descriptor import MutableDomainDescriptor
 from vdsm.virt import vmdevices
+from vdsm.virt.vmdevices import drivename
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound, SOURCE_ATTR
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
@@ -4525,7 +4526,7 @@ class Vm(object):
         else:
             # > 4.0 - variable cdrom interface/index
             drivespec = cdromspec['path']
-            blockdev = vmdevices.storage.makeName(
+            blockdev = drivename.make(
                 cdromspec['iface'], cdromspec['index'])
             iface = cdromspec['iface']
 

@@ -1269,6 +1269,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/__init__.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/common.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/core.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmdevices/drivename.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/graphics.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/hostdevice.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/hwclass.py*

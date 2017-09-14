@@ -24,27 +24,27 @@ from testlib import expandPermutations
 from testlib import permutations
 from testValidation import xfail
 
-from vdsm.virt.vmdevices import storage
+from vdsm.virt.vmdevices import drivename
 
 
 @expandPermutations
 class TestDriveNameFunctions(VdsmTestCase):
 
-    @xfail('storage.makeName needs to be fixed')
-    @permutations(storage._DEVIFACES.items())
+    @xfail('drivename.make needs to be fixed')
+    @permutations(drivename._DEVIFACES.items())
     def test_make_name(self, prefix, iface):
         for index, value in _CONVERTED_VALUES:
-            computed = storage.makeName(iface, index)
+            computed = drivename.make(iface, index)
             expected = prefix + value
             self.assertEqual(
                 computed, expected,
                 "mismatch for %s: computed=%s expected=%s" % (
                     (iface, index), computed, expected))
 
-    @permutations(storage._DEVIFACES.items())
+    @permutations(drivename._DEVIFACES.items())
     def test_split_name(self, prefix, iface):
         for index, value in _CONVERTED_VALUES:
-            computed = storage.splitName(prefix + value)
+            computed = drivename.split(prefix + value)
             expected = (iface, index)
             self.assertEqual(
                 computed, expected,
@@ -60,7 +60,7 @@ class TestDriveNameFunctions(VdsmTestCase):
         ['fd0'],
     ])
     def test_split_name_invalid_device(self, device_name):
-        self.assertRaises(ValueError, storage.splitName, device_name)
+        self.assertRaises(ValueError, drivename.split, device_name)
 
 
 _CONVERTED_VALUES = (

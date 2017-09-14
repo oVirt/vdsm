@@ -23,6 +23,7 @@ from vdsm.config import config
 from vdsm.virt import vmxml
 
 from . import core
+from . import drivename
 from . import graphics
 from . import hostdevice
 from . import hwclass
@@ -147,7 +148,7 @@ def get_drive_conf_identifying_attrs(dev_conf):
     if 'name' in dev_conf:
         attrs['name'] = dev_conf['name']
     elif 'iface' in dev_conf and 'index' in dev_conf:
-        attrs['name'] = storage.makeName(dev_conf['iface'], dev_conf['index'])
+        attrs['name'] = drivename.make(dev_conf['iface'], dev_conf['index'])
     else:
         raise LookupError('Do not know how to identify drive: %s' % dev_conf)
     return attrs
