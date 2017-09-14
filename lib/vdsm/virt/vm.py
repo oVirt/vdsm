@@ -3034,6 +3034,13 @@ class Vm(object):
             self._devices[hwclass.NIC].append(nic)
         self._updateDomainDescriptor()
 
+    def _update_mem_guaranteed_size(self, params):
+        if 'memGuaranteedSize' in params:
+            self._mem_guaranteed_size_mb = params["memGuaranteedSize"]
+            self._devices[hwclass.BALLOON][0].minimum = \
+                self._mem_guaranteed_size_mb * 1024
+            self._update_metadata()
+
     @api.logged(on='vdsm.api')
     @api.guard(_not_migrating)
     def hotplugMemory(self, params):
@@ -3058,6 +3065,7 @@ class Vm(object):
             self.conf['devices'].append(memParams)
         self._updateDomainDescriptor()
         device.update_device_info(self, self._devices[hwclass.MEMORY])
+        self._update_mem_guaranteed_size(params)
 
         hooks.after_memory_hotplug(deviceXml)
 
@@ -4709,6 +4717,7 @@ class Vm(object):
             if self._guest_agent_api_version is not None:
                 vm['guestAgentAPIVersion'] = self._guest_agent_api_version
             vm['destroy_on_reboot'] = self._destroy_on_reboot
+            vm['memGuaranteedSize'] = self._mem_guaranteed_size_mb
             vm.update(self._exit_info)
         self._sync_metadata()
 

@@ -2754,6 +2754,12 @@ types:
             name: vmId
             type: *UUID
 
+        -   description: The amount of memory guaranteed to the VM in MB
+            name: memGuaranteedSize
+            defaultvalue: null
+            type: uint
+            added: '4.2'
+
         -   description: The memory device specification
             name: memory
             type: *VmMemoryDevice
