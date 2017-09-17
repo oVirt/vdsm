@@ -114,35 +114,6 @@ class vdsm(Plugin, RedHatPlugin):
         except Exception as e:
             self.addStringAsFile(str(e), name)
 
-    def collectLVMCommand(self, name, *args):
-        """
-        Originally, we'd want to use collectExtOutput (Plugin.add_cmd_output);
-        however, collectExtOutput accepts commands as string. This is not
-        maintainable and error prone especially when the arguments are complex,
-        like --config, thus we introduce our own helper.
-        """
-        command = list(args)
-        command.insert(0, '/sbin/lvm')
-        self.soslog.info("collecting cmd output %s", command)
-        try:
-            out = self.runCommand(command)
-        except RuntimeError as e:
-            self.addStringAsFile(str(e), name)
-        else:
-            self.addStringAsFile(out, name)
-
-    def runCommand(self, command):
-        try:
-            p = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            out, err = p.communicate()
-            if p.returncode != 0:
-                raise RuntimeError("Command %s failed, rc=%s, out=%r, err=%r",
-                                   command, p.returncode, out, err)
-            return out
-        except OSError as e:
-            raise RuntimeError(str(e))
-
     def setup(self):
         os.environ["LVM_SYSTEM_DIR"] = "@VDSMRUNDIR@/lvm"  # NOQA: E501 (potentially long line)
         self.addForbiddenPath('/etc/pki/vdsm/keys/*')
