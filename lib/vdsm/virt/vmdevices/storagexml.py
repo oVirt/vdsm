@@ -76,7 +76,7 @@ def add_vdsm_parameters(params):
 
 
 def _update_meta_params(params, meta):
-    for key in ('GUID', 'index', 'domainID', 'imageID', 'poolID', 'volumeID'):
+    for key in ('GUID', 'domainID', 'imageID', 'poolID', 'volumeID'):
         if key in meta:
             params[key] = meta[key]
 
