@@ -51,6 +51,7 @@ from vdsm.common import password
 from vdsm.common import response
 from vdsm.common import zombiereaper
 from vdsm.common.compat import CPopen
+from vdsm.common.config import config
 from vdsm.common.define import errCode, doneCode
 from vdsm.common.logutils import traceback
 from vdsm.common.time import monotonic_time
@@ -674,7 +675,9 @@ class KVMCommand(V2VCommand):
 
     def _command(self):
         cmd = [EXT_KVM_2_OVIRT,
-               '--uri', self._uri]
+               '--uri', self._uri,
+               '--bufsize',
+               str(config.getint('v2v', 'kvm2ovirt_buffer_size'))]
         if self._username is not None:
             cmd.extend([
                 '--username', self._username,

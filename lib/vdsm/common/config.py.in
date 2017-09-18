@@ -608,6 +608,17 @@ parameters = [
             'Size of the hugepages to reserve (when reserved_hugepage_count '
             'is > 0). None means system\'s default size.'),
     ]),
+
+
+    # Section: [v2v]
+    ('v2v', [
+
+        ('kvm2ovirt_buffer_size', '1048576',
+                'Size of the buffer (in bytes) used by kvm2ovirt when '
+                'transferring data from source libvirt. It may be necessary '
+                'to tweak the size when communicating with old libvirt or '
+                'for performance tuning.'),
+    ]),
 ]
 
 
