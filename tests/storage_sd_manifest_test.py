@@ -107,6 +107,21 @@ class FileManifestTests(ManifestTests, VdsmTestCase):
             make_file_volume(env.sd_manifest, VOLSIZE, img_id, vol_id)
             self.assertIn(img_id, env.sd_manifest.getAllImages())
 
+    def test_purgeimage_race(self):
+        with self.env() as env:
+            sd_id = env.sd_manifest.sdUUID
+            img_id = str(uuid.uuid4())
+            vol_id = str(uuid.uuid4())
+            make_file_volume(env.sd_manifest, VOLSIZE, img_id, vol_id)
+
+            env.sd_manifest.deleteImage(sd_id, img_id, None)
+            # Simulate StorageDomain.imageGarbageCollector by removing the
+            # deleted image directory.
+            deleted_dir = env.sd_manifest.getDeletedImagePath(img_id)
+            env.sd_manifest.oop.fileUtils.cleanupdir(deleted_dir)
+            # purgeImage should not raise if the image was already removed
+            env.sd_manifest.purgeImage(sd_id, img_id, [vol_id], False)
+
 
 class BlockManifestTests(ManifestTests, VdsmTestCase):
     env = fake_block_env
