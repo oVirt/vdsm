@@ -933,7 +933,11 @@ class Vm(object):
         return self._driveMonitorEnabled
 
     def preparePaths(self):
-        drives = self._devSpecMapFromConf()[hwclass.DISK]
+        if 'xml' in self.conf:
+            drives = vmdevices.common.storage_device_params_from_domain_xml(
+                self.id, self.domain, self._md_desc, self.log)
+        else:
+            drives = self._devSpecMapFromConf()[hwclass.DISK]
         self._preparePathsForDrives(drives)
 
     def _preparePathsForDrives(self, drives):
@@ -2440,6 +2444,20 @@ class Vm(object):
         dev_objs_from_xml = vmdevices.common.dev_map_from_domain_xml(
             self.id, self.domain, self._md_desc, self.log
         )
+
+        disk_params = vmdevices.common.storage_device_params_from_domain_xml(
+            self.id, self.domain, self._md_desc, self.log)
+        if disk_params:
+            if not self.recovering:
+                self._preparePathsForDrives(disk_params)
+                self._prepareTransientDisks(disk_params)
+                # TODO: save the conf here?
+
+            dev_objs_from_xml[hwclass.DISK] = [
+                vmdevices.storage.Drive(self.log, **params)
+                for params in disk_params
+            ]
+
         if config.getboolean(
                 'devel', 'device_xml_legacy_configuration_enable'):
             for dev_class in hwclass.LEGACY_INIT_ONLY:
