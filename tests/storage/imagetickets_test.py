@@ -35,12 +35,11 @@ from vdsm.storage import imagetickets
 
 class FakeResponse(object):
 
-    def __init__(self, status=200, reason="OK", headers=None, data=u""):
+    def __init__(self, status=200, reason="OK", headers=None, data=b""):
         self.status = status
         self.reason = reason
         self.headers = headers or {"content-length": len(data)}
-        # TODO: fix to return the same type in python3
-        self.file = io.StringIO(data)
+        self.file = io.BytesIO(data)
 
     def getheader(self, name, default=None):
         return self.headers.get(name, default)
@@ -131,14 +130,14 @@ class TestImageTickets(VdsmTestCase):
     @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
     def test_res_invalid_json_ret(self):
         imagetickets.uhttp.response = FakeResponse(
-            status=300, data=u"not a json string")
+            status=300, data=b"not a json string")
         with self.assertRaises(se.ImageDaemonError):
             imagetickets.remove_ticket("uuid")
 
     @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
     def test_image_daemon_error_ret(self):
         imagetickets.uhttp.response = FakeResponse(
-            status=300, data=u'{"image_daemon_message":"content"}')
+            status=300, data=b'{"image_daemon_message":"content"}')
         try:
             imagetickets.remove_ticket("uuid")
         except se.ImageDaemonError as e:

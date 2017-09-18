@@ -103,7 +103,7 @@ def _read_content(response):
         raise se.ImageDaemonError(response.status, response.reason, error_info)
 
     try:
-        return json.loads(res_data)
+        return json.loads(res_data.decode("utf8"))
     except ValueError as e:
         error_info = {"explanation": "Invalid JSON", "detail": str(e)}
         raise se.ImageDaemonError(response.status, response.reason, error_info)
