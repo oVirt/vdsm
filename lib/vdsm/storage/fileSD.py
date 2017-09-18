@@ -248,8 +248,13 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         try:
             self.oop.os.rmdir(toDelDir)
         except OSError as e:
-            self.log.error("removed image dir: %s can't be removed", toDelDir)
-            raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
+            if e.errno == errno.ENOENT:
+                self.log.warning("removed image dir: %s no longer exists",
+                                 toDelDir)
+            else:
+                self.log.error("removed image dir: %s can't be removed",
+                               toDelDir)
+                raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
 
     def _deleteVolumeFile(self, path):
         self.log.debug("Removing file: %s", path)
