@@ -231,18 +231,9 @@ def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
     """
 
     dev_map = empty_dev_map()
-    for dev_elem in vmxml.children(dom_desc.devices):
-        try:
-            dev_type, dev_class = identify_from_xml_elem(dev_elem)
-        except core.SkipDevice:
-            log.debug('skipping unhandled device: %r', dev_elem.tag)
-            continue
-
-        dev_meta = {'vmid': vmid}
-        attrs = dev_class.get_identifying_attrs(dev_elem)
-        if attrs:
-            with md_desc.device(**attrs) as dev_data:
-                dev_meta.update(dev_data)
+    for dev_type, dev_class, dev_elem in _device_elements(dom_desc, log):
+        dev_meta = _get_metadata_from_elem_xml(vmid, md_desc,
+                                               dev_class, dev_elem)
         dev_obj = dev_class.from_xml_tree(log, dev_elem, dev_meta)
         dev_map[dev_type].append(dev_obj)
     return dev_map
@@ -280,3 +271,22 @@ def replace_devices_xml(domxml, devices_xml):
             vmxml.append_child(devices, etree_child=dev)
 
     return domxml
+
+
+def _device_elements(dom_desc, log):
+    for dev_elem in vmxml.children(dom_desc.devices):
+        try:
+            dev_type, dev_class = identify_from_xml_elem(dev_elem)
+        except core.SkipDevice:
+            log.debug('skipping unhandled device: %r', dev_elem.tag)
+        else:
+            yield dev_type, dev_class, dev_elem
+
+
+def _get_metadata_from_elem_xml(vmid, md_desc, dev_class, dev_elem):
+    dev_meta = {'vmid': vmid}
+    attrs = dev_class.get_identifying_attrs(dev_elem)
+    if attrs:
+        with md_desc.device(**attrs) as dev_data:
+            dev_meta.update(dev_data)
+    return dev_meta
