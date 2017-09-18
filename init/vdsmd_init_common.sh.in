@@ -118,14 +118,6 @@ _mk_data_center() {
     "@CHOWN_PATH@" @VDSMUSER@:@VDSMGROUP@ "${dc}"
 }
 
-_mk_core_path() {
-    local core_path=/var/log/core
-    if ! [ -d "${core_path}" ]; then
-        @MKDIR_P@ "${core_path}" > /dev/null 2>&1
-    fi
-    "@CHMOD_PATH@" a+tw "${core_path}" > /dev/null 2>&1
-}
-
 _mk_run_path() {
     local run_path
 
@@ -149,7 +141,6 @@ _mk_console_path() {
 
 task_mkdirs(){
     _mk_data_center
-    _mk_core_path
     _mk_run_path
     _mk_console_path
 }

@@ -215,7 +215,7 @@ class HostSample(TimedSample):
 
     Contains the state of the host at the time of initialization.
     """
-    MONITORED_PATHS = ['/tmp', '/var/log', '/var/log/core', P_VDSM_RUN]
+    MONITORED_PATHS = ['/tmp', '/var/log', P_VDSM_RUN]
 
     def _getDiskStats(self):
         d = {}

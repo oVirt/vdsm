@@ -7,13 +7,3 @@
     uncompresscmd /usr/bin/unxz
     compressext .xz
 }
-/var/log/core/*.dump {
-    rotate 1
-    missingok
-    size 0
-    compress
-    compresscmd /usr/bin/xz
-    uncompresscmd /usr/bin/unxz
-    compressext .xz
-    su root root
-}

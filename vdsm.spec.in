@@ -743,12 +743,6 @@ make DESTDIR=%{buildroot} install
 install -dDm 0755 %{buildroot}@VDSMLOGDIR@
 touch %{buildroot}@VDSMLOGDIR@/{mom.log,supervdsm.log,vdsm.log}
 
-%if 0%{?rhel}
-# This is not commonplace, but we want /var/log/core to be a world-writable
-# dropbox for core dumps
-install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
-%endif
-
 %pre
 # Force standard locale behavior (English)
 export LC_ALL=C
@@ -971,9 +965,6 @@ exit 0
 %{_udevrulesdir}/12-vdsm-lvm.rules
 /etc/security/limits.d/99-vdsm.conf
 %{_mandir}/man8/vdsmd.8*
-%if 0%{?rhel}
-%dir %{_localstatedir}/log/core
-%endif
 %{_polkitdir}/10-vdsm-libvirt-access.rules
 
 %defattr(-, %{vdsm_user}, %{qemu_group}, -)

@@ -225,7 +225,6 @@ class DataVerificationTests(TestCaseBase):
                u"cpuLoad": u"0.42",
                u"cpuSys": u"0.43",
                u"diskStats": {u"/var/log": {u"free": u"10810"},
-                              u"/var/log/core": {u"free": u"10810"},
                               u"/var/run/vdsm/": {u"free": u"7966"},
                               u"/tmp": {u"free": u"7967"}},
                u"cpuUserVdsmd": u"1.07",
