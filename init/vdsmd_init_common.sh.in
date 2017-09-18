@@ -160,7 +160,6 @@ task_mkdirs(){
     _mk_dom_backup
     _mk_run_path
     _mk_console_path
-    "@CHMOD_PATH@" 1777 /dev/shm
 }
 
 
