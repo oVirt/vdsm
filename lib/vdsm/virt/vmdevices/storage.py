@@ -39,7 +39,6 @@ from . import core
 from . import drivename
 from . import hwclass
 from . import lease
-from . import storagexml
 
 
 DEFAULT_INTERFACE_FOR_ARCH = {
@@ -442,10 +441,6 @@ class Drive(core.Base):
     def get_identifying_attrs(cls, dev_elem):
         return dict(type=hwclass.DISK,
                     **core.get_xml_elem(dev_elem, 'name', 'target', 'dev'))
-
-    @classmethod
-    def from_xml_tree(cls, log, dev, meta):
-        return cls(log, **storagexml.parse(dev, meta))
 
     def getXML(self):
         """

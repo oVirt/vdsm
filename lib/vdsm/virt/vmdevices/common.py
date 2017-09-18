@@ -158,9 +158,6 @@ def get_drive_conf_identifying_attrs(dev_conf):
 def identify_from_xml_elem(dev_elem):
     dev_type = dev_elem.tag
     dev_name = _LIBVIRT_TO_OVIRT_NAME.get(dev_type, dev_type)
-    if (dev_name in hwclass.LEGACY_INIT_ONLY and
-       config.getboolean('devel', 'device_xml_legacy_configuration_enable')):
-        raise core.SkipDevice()
     if dev_name not in _DEVICE_MAPPING:
         raise core.SkipDevice()
     return dev_name, _DEVICE_MAPPING[dev_name]
@@ -235,8 +232,13 @@ def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
     for dev_type, dev_class, dev_elem in _device_elements(dom_desc, log):
         dev_meta = _get_metadata_from_elem_xml(vmid, md_desc,
                                                dev_class, dev_elem)
-        dev_obj = dev_class.from_xml_tree(log, dev_elem, dev_meta)
-        dev_map[dev_type].append(dev_obj)
+        try:
+            dev_obj = dev_class.from_xml_tree(log, dev_elem, dev_meta)
+        except NotImplementedError:
+            log.debug('Cannot initialize %s device: not implemented',
+                      dev_type)
+        else:
+            dev_map[dev_type].append(dev_obj)
     return dev_map
 
 

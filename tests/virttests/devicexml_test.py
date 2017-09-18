@@ -1258,16 +1258,27 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         ]):
             self._check_roundtrip(vmdevices.hostdevice.HostDevice, hostdev_xml)
 
+    def test_storage(self):
+        self.assertRaises(
+            NotImplementedError,
+            vmdevices.storage.Drive.from_xml_tree,
+            self.log,
+            None,
+            {}
+        )
+
     @permutations(_STORAGE_TEST_DATA)
-    def test_storage(self, storage_xml, is_block, meta):
+    def test_storage_from_xml(self, storage_xml, is_block, meta):
         with MonkeyPatchScope([
             (utils, 'isBlockDevice', lambda path: is_block)
         ]):
-            self._check_roundtrip(
-                vmdevices.storage.Drive,
-                storage_xml,
-                meta
+            dev = vmdevices.storage.Drive(
+                self.log, **vmdevices.storagexml.parse(
+                    vmxml.parse_xml(storage_xml),
+                    {} if meta is None else meta
+                )
             )
+            self._check_device_xml(dev, storage_xml)
 
     def _check_roundtrip(self, klass, dev_xml, meta=None, expected_xml=None):
         dev = klass.from_xml_tree(
@@ -1275,6 +1286,9 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             vmxml.parse_xml(dev_xml),
             {} if meta is None else meta
         )
+        self._check_device_xml(dev, dev_xml, expected_xml)
+
+    def _check_device_xml(self, dev, dev_xml, expected_xml=None):
         dev.setup()
         try:
             rebuilt_xml = vmxml.format_xml(dev.getXML(), pretty=True)
