@@ -30,6 +30,7 @@ from . import hwclass
 from . import lease
 from . import network
 from . import storage
+from . import storagexml
 
 
 def _update_unknown_device_info(vm):
@@ -237,6 +238,19 @@ def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
         dev_obj = dev_class.from_xml_tree(log, dev_elem, dev_meta)
         dev_map[dev_type].append(dev_obj)
     return dev_map
+
+
+def storage_device_params_from_domain_xml(vmid, dom_desc, md_desc, log):
+    params = []
+    for dev_type, dev_class, dev_elem in _device_elements(dom_desc, log):
+        if dev_type != hwclass.DISK:
+            log.debug('skipping non-storage device: %r', dev_elem.tag)
+            continue
+
+        dev_meta = _get_metadata_from_elem_xml(vmid, md_desc,
+                                               dev_class, dev_elem)
+        params.append(storagexml.parse(dev_elem, dev_meta))
+    return params
 
 
 def get_refreshable_device_classes():
