@@ -2113,7 +2113,8 @@ class Vm(object):
                                   self._agent_channel_name)
         domxml._appendAgentDevice(self._qemuguestSocketFile.decode('utf-8'),
                                   vmchannels.QEMU_GA_DEVICE_NAME)
-        domxml.appendInput()
+        if not cpuarch.is_s390(self.arch):
+            domxml.appendInput()
 
         if self.arch == cpuarch.PPC64:
             domxml.appendEmulator()
@@ -4537,7 +4538,7 @@ class Vm(object):
         if isinstance(cdromspec, basestring):
             # < 4.0 - known cdrom interface/index
             drivespec = cdromspec
-            if cpuarch.is_ppc(self.arch):
+            if cpuarch.is_ppc(self.arch) or cpuarch.is_s390(self.arch):
                 blockdev = 'sda'
             else:
                 blockdev = 'hdc'

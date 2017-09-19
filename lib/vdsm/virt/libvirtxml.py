@@ -35,6 +35,7 @@ _DEFAULT_MACHINES = {
     cpuarch.X86_64: 'pc',
     cpuarch.PPC64: 'pseries',
     cpuarch.PPC64LE: 'pseries',
+    cpuarch.S390X: 's390-virtio-ccw',
 }
 
 
