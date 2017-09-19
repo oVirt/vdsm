@@ -30,8 +30,9 @@ X86_64 = 'x86_64'
 PPC64 = 'ppc64'
 PPC64LE = 'ppc64le'
 AARCH64 = 'aarch64'
+S390X = 's390x'
 
-SUPPORTED_ARCHITECTURES = (X86_64, PPC64, PPC64LE, AARCH64)
+SUPPORTED_ARCHITECTURES = (X86_64, PPC64, PPC64LE, AARCH64, S390X)
 
 PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 
@@ -92,6 +93,10 @@ def is_x86(arch):
 
 def is_arm(arch):
     return arch == AARCH64
+
+
+def is_s390(arch):
+    return arch == S390X
 
 
 def _supported(target_arch):
