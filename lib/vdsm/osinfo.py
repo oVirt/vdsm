@@ -330,7 +330,12 @@ def nested_virtualization():
     if cpuarch.is_ppc(cpuarch.real()):
         return NestedVirtualization(False, None)
 
-    for kvm_module in ("kvm_intel", "kvm_amd"):
+    if cpuarch.is_s390(cpuarch.real()):
+        kvm_modules = ("kvm",)
+    else:
+        kvm_modules = ("kvm_intel", "kvm_amd")
+
+    for kvm_module in kvm_modules:
         kvm_module_path = "/sys/module/%s/parameters/nested" % kvm_module
         try:
             with open(kvm_module_path) as f:
