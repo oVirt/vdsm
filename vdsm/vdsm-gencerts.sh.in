@@ -56,6 +56,7 @@ if [ ! -f "$VDSM_CRT" ]; then
 organization    = "VDSM Certificate"
 cn              = "$VDSM_FQDN"
 email           = "root@$VDSM_FQDN"
+activation_date = $(date -d "yesterday" +"%Y-%m-%d %H:%M:%S")
 signing_key
 encryption_key
 tls_www_server
