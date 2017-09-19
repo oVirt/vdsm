@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 import itertools
 import logging
+import six
 import xml.etree.ElementTree as ET
 
 import libvirt
@@ -111,6 +112,45 @@ def cpu_models(capfile=CPU_MAP_FILE, arch=None):
     return all_models
 
 
+def domain_cpu_models(conn, arch):
+    """
+    Parse libvirt domain capabilities to get cpu models known by the
+    hypervisor along with usability status.
+
+    Arguments:
+        conn(libvirtconnection) - libvirt connection object for the
+                                  hypervisor to be queried for CPU models.
+
+    Returns:
+        {str: str} - mapping where key is CPU model and value is one
+                     of 'yes', 'no' or 'unknown', showing whether
+                     the particular model can be used on this hypervisor.
+
+    Example:
+        {'z13' : 'unknown', 'zEC12': 'no', 'z196': 'yes'}
+   """
+    domcaps = conn.getDomainCapabilities(None, arch, None, None, 0)
+    if not domcaps:
+        logging.error('Error while getting CPU models: '
+                      'no domain capabilities found')
+        return {}
+
+    xmldomcaps = ET.fromstring(domcaps)
+    cpucaps = xmldomcaps.find('cpu')
+    if cpucaps is None:
+        logging.error('Error while getting CPU models: '
+                      'no domain CPU capabilities found')
+        return {}
+
+    dom_models = dict()
+    for mode in cpucaps.findall('mode'):
+        if mode.get('name') == 'custom' and mode.get('supported') == 'yes':
+            for models in mode.findall('model'):
+                dom_models[models.text] = models.get('usable')
+
+    return dom_models
+
+
 @cache.memoized
 def compatible_cpu_models():
     """
@@ -126,9 +166,6 @@ def compatible_cpu_models():
         'model_coreduo', 'model_core2duo', 'model_Penryn',
         'model_IvyBridge', 'model_Westmere', 'model_n270', 'model_SandyBridge']
     """
-    c = libvirtconnection.get()
-    all_models = cpu_models()
-
     def compatible(model, vendor):
         if not vendor:
             return False
@@ -143,8 +180,22 @@ def compatible_cpu_models():
                 return False
             raise
 
-    return ['model_' + model for (model, vendor)
-            in all_models.iteritems() if compatible(model, vendor)]
+    compatible_models = []
+    c = libvirtconnection.get()
+    arch = cpuarch.real()
+    if arch == cpuarch.S390X:
+        # s390x uses libvirt domain caps for CPU model reporting
+        all_models = domain_cpu_models(c, arch)
+        compatible_models = [model for (model, usable)
+                             in six.iteritems(all_models)
+                             if usable == 'yes']
+    else:
+        all_models = cpu_models()
+        compatible_models = [model for (model, vendor)
+                             in six.iteritems(all_models)
+                             if compatible(model, vendor)]
+
+    return ["model_" + model for model in compatible_models]
 
 
 def _caps_arch_element(capfile, arch):
