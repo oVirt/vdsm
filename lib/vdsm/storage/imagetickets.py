@@ -71,6 +71,8 @@ def remove_ticket(uuid):
 def request(method, uuid, body=None):
     log.debug("Sending request method=%r, ticket=%r, body=%r",
               method, uuid, body)
+    if body is not None:
+        body = body.encode("utf8")
     con = uhttp.UnixHTTPConnection(DAEMON_SOCK)
     with closing(con):
         try:

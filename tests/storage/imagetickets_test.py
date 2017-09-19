@@ -90,7 +90,7 @@ class TestImageTickets(VdsmTestCase):
     @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
     def test_add_ticket(self):
         ticket = create_ticket(uuid="uuid")
-        body = json.dumps(ticket)
+        body = json.dumps(ticket).encode("utf8")
         expected = [
             ("request", ("PUT", "/tickets/uuid"), {"body": body}),
         ]
@@ -102,9 +102,10 @@ class TestImageTickets(VdsmTestCase):
     def test_extend_ticket(self):
         timeout = 300
         imagetickets.extend_ticket("uuid", timeout)
+        body = '{"timeout": ' + str(timeout) + '}'
         expected = [
             ("request", ("PATCH", "/tickets/uuid"),
-             {"body": '{"timeout": ' + str(timeout) + '}'}),
+             {"body": body.encode("utf8")}),
         ]
 
         self.assertEqual(imagetickets.uhttp.__calls__, expected)
