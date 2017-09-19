@@ -154,9 +154,16 @@ class NetFuncTestCase(object):
         assert int(vlan) == vlan_caps['vlanid']
 
     def assertBridgeOpts(self, netname, netattrs):
+        bridge_caps = self.netinfo.bridges[netname]
+
+        stp_request = 'on' if netattrs.get('stp', False) else 'off'
+        assert bridge_caps['stp'] == stp_request
+
+        self._assertCustomBridgeOpts(netattrs, bridge_caps)
+
+    def _assertCustomBridgeOpts(self, netattrs, bridge_caps):
         custom_attrs = netattrs.get('custom', {})
         if 'bridge_opts' in custom_attrs:
-            bridge_caps = self.netinfo.bridges[netname]
             req_bridge_opts = (opt.split('=', 1) for opt in
                                custom_attrs['bridge_opts'].split(' '))
             bridge_opts_caps = bridge_caps['opts']
