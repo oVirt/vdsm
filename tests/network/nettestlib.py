@@ -180,7 +180,7 @@ class Tap(Interface):
     _IFF_TAP = 0x0002
     _IFF_NO_PI = 0x1000
     arch = cpuarch.real()
-    if arch == cpuarch.X86_64:
+    if arch in (cpuarch.X86_64, cpuarch.S390X):
         _TUNSETIFF = 0x400454ca
     elif cpuarch.is_ppc(arch):
         _TUNSETIFF = 0x800454ca
