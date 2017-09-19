@@ -29,6 +29,7 @@ from testlib import permutations, expandPermutations
 from storage.storagetestlib import (
     fake_file_env,
     make_file_volume,
+    make_qemu_chain,
 )
 
 from vdsm.storage import constants as sc
@@ -67,11 +68,47 @@ class TestVerifyUntrustedVolume(VdsmTestCase):
                               h.verify_untrusted_volume,
                               'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
-    def test_backingfile_raises(self):
+    def test_valid_with_backingfile(self):
+        with fake_file_env() as env:
+            vol = make_qemu_chain(env, self.SIZE, sc.COW_FORMAT, 2)[1]
+            h = FakeHSM()
+            self.assertNotRaises(h.verify_untrusted_volume,
+                                 'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
+
+    def test_valid_without_backingfile(self):
+        with fake_file_env() as env:
+            vol = make_qemu_chain(env, self.SIZE, sc.COW_FORMAT, 2)[0]
+            h = FakeHSM()
+            self.assertNotRaises(h.verify_untrusted_volume,
+                                 'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
+
+    def test_wrong_backingfile(self):
+        with fake_file_env() as env:
+            vol = make_qemu_chain(env, self.SIZE, sc.COW_FORMAT, 2)[1]
+            # Simulate upload of wrong image
+            qemuimg.create(vol.volumePath, size=self.SIZE,
+                           format=qemuimg.FORMAT.QCOW2, backing='wrong-uuid')
+            h = FakeHSM()
+            self.assertRaises(se.ImageVerificationError,
+                              h.verify_untrusted_volume,
+                              'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
+
+    def test_unexpected_backing_file(self):
         with self.fake_volume(sc.COW_FORMAT) as vol:
-            qemu_fmt = qemuimg.FORMAT.QCOW2
-            qemuimg.create(vol.volumePath, size=self.SIZE, format=qemu_fmt,
-                           backing='foo')
+            # Simulate upload of qcow2 with backing file to base image
+            qemuimg.create(vol.volumePath, size=self.SIZE,
+                           format=qemuimg.FORMAT.QCOW2, backing='unexpected')
+            h = FakeHSM()
+            self.assertRaises(se.ImageVerificationError,
+                              h.verify_untrusted_volume,
+                              'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
+
+    def test_missing_backing_file(self):
+        with fake_file_env() as env:
+            vol = make_qemu_chain(env, self.SIZE, sc.COW_FORMAT, 2)[1]
+            # Simulate upload of image without backing file to a a snapshot
+            qemuimg.create(vol.volumePath, size=self.SIZE,
+                           format=qemuimg.FORMAT.QCOW2)
             h = FakeHSM()
             self.assertRaises(se.ImageVerificationError,
                               h.verify_untrusted_volume,

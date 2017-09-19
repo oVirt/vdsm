@@ -1521,11 +1521,13 @@ class HSM(object):
                 "Volume's format specified by QEMU is %s, while the format "
                 "specified in VDSM metadata is %s" %
                 (qemu_format, meta_format))
-        if "backingfile" in qemu_info:
+
+        meta_parent = vol.getParent()
+        qemu_parent = qemu_info.get("backingfile", sc.BLANK_UUID)
+        if meta_parent != qemu_parent:
             raise se.ImageVerificationError(
-                "'%s' is defined as a backingfile, while backingfile is not "
-                "allowed for an untrusted volume." %
-                qemu_info["backingfile"])
+                "Image backing file %r does not match volume parent uuid %r"
+                % (qemu_parent, meta_parent))
 
         if qemu_format == qemuimg.FORMAT.QCOW2:
             # Vdsm depends on qemu-img 2.3.0 or later which always reports
