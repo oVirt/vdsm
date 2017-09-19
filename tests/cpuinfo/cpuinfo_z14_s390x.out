@@ -1,0 +1,46 @@
+vendor_id       : IBM/S390
+# processors    : 7
+bogomips per cpu: 21881.00
+max thread id   : 0
+features        : esan3 zarch stfle msa ldisp eimm dfp edat etf3eh highgprs te vx vxd vxe sie
+cache0          : level=1 type=Data scope=Private size=128K line_size=256 associativity=8
+cache1          : level=1 type=Instruction scope=Private size=128K line_size=256 associativity=8
+cache2          : level=2 type=Data scope=Private size=4096K line_size=256 associativity=8
+cache3          : level=2 type=Instruction scope=Private size=2048K line_size=256 associativity=8
+cache4          : level=3 type=Unified scope=Shared size=131072K line_size=256 associativity=32
+cache5          : level=4 type=Unified scope=Shared size=688128K line_size=256 associativity=42
+processor 0: version = FF,  identification = 3F29E7,  machine = 3906
+processor 1: version = FF,  identification = 3F29E7,  machine = 3906
+processor 2: version = FF,  identification = 3F29E7,  machine = 3906
+processor 3: version = FF,  identification = 3F29E7,  machine = 3906
+processor 4: version = FF,  identification = 3F29E7,  machine = 3906
+processor 5: version = FF,  identification = 3F29E7,  machine = 3906
+processor 6: version = FF,  identification = 3F29E7,  machine = 3906
+
+cpu number      : 0
+cpu MHz dynamic : 5208
+cpu MHz static  : 5208
+
+cpu number      : 1
+cpu MHz dynamic : 5208
+cpu MHz static  : 5208
+
+cpu number      : 2
+cpu MHz dynamic : 5208
+cpu MHz static  : 5208
+
+cpu number      : 3
+cpu MHz dynamic : 5208
+cpu MHz static  : 5208
+
+cpu number      : 4
+cpu MHz dynamic : 5208
+cpu MHz static  : 5208
+
+cpu number      : 5
+cpu MHz dynamic : 5208
+cpu MHz static  : 5208
+
+cpu number      : 6
+cpu MHz dynamic : 5208
+cpu MHz static  : 5208

@@ -22,6 +22,8 @@ from __future__ import absolute_import
 
 from collections import namedtuple
 
+from re import match, search
+
 from vdsm.common import cache
 
 from . import cpuarch
@@ -54,6 +56,10 @@ def _cpuinfo():
         fields['platform'] = 'unavailable'
         fields['machine'] = 'unavailable'
         fields['ppcmodel'] = 'unavailable'
+    if cpuarch.is_s390(cpuarch.real()):
+        fields['platform'] = 'unavailable'
+        fields['machine'] = 'unavailable'
+        fields['ppcmodel'] = 'unavailable'
 
     with open(_PATH) as info:
         for line in info:
@@ -66,16 +72,27 @@ def _cpuinfo():
                 fields['flags'] = value.split()
             elif key == 'Features':  # aarch64
                 fields['flags'] = value.split()
+            elif key == 'features':  # s390
+                fields['flags'] = value.split()
             elif key == 'cpu MHz':  # x86_64
                 fields['frequency'] = value
             elif key == 'BogoMIPS':  # aarch64
                 fields['frequency'] = value
             elif key == 'clock':  # ppc64, ppc64le
                 fields['frequency'] = value[:-3]
+            # s390 reports both static and dynamic freqs with
+            # dynamic <= stat (nominal), so dynamic matches the
+            # x86_64 frequency semantics
+            elif key == 'cpu MHz dynamic':
+                fields['frequency'] = value
             elif key == 'model name':  # x86_64
                 fields['model'] = value
             elif key == 'CPU part':  # aarch64
                 fields['model'] = value
+            elif match(r'processor \d+', key):  # s390
+                s390mach = search(r'\bmachine\s*=\s*(\w+)', value)
+                if s390mach:
+                    fields['model'] = s390mach.group(1)
             elif key == 'model':  # ppc64le
                 fields['ppcmodel'] = value
             elif key == 'cpu':  # ppc64, ppc64le
@@ -87,6 +104,10 @@ def _cpuinfo():
 
             if len(fields) == 6:
                 break
+
+        # older s390 machine versions don't report frequency
+        if 'frequency' not in fields:
+            fields['frequency'] = 'unavailable'
 
         return CpuInfo(**fields)
 

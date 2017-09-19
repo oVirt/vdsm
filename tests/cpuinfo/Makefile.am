@@ -24,4 +24,6 @@ dist_vdsmcpudatatests_DATA = \
 	cpuinfo_E5649_x86_64.out \
 	cpuinfo_POWER8E_ppc64le.out \
 	cpuinfo_aarch64.out \
+	cpuinfo_z14_s390x.out \
+	cpuinfo_z196_s390x.out \
 	$(NULL)

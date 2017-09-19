@@ -78,6 +78,27 @@ class TestCpuInfo(TestCaseBase):
         self.assertEqual(cpuinfo.model(),
                          '0x000')
 
+    @MonkeyPatch(cpuinfo, '_PATH', _outfile('cpuinfo_z14_s390x.out'))
+    @MonkeyPatch(platform, 'machine', lambda: cpuarch.S390X)
+    def test_cpuinfo_s390x_z14(self):
+        self.assertEqual(cpuinfo.flags(),
+                         ['esan3', 'zarch', 'stfle', 'msa', 'ldisp', 'eimm',
+                          'dfp', 'edat', 'etf3eh', 'highgprs', 'te', 'vx',
+                          'vxd', 'vxe', 'sie'])
+        self.assertEqual(cpuinfo.frequency(), '5208')
+        self.assertEqual(cpuinfo.model(),
+                         '3906')
+
+    @MonkeyPatch(cpuinfo, '_PATH', _outfile('cpuinfo_z196_s390x.out'))
+    @MonkeyPatch(platform, 'machine', lambda: cpuarch.S390X)
+    def test_cpuinfo_s390x_z196(self):
+        self.assertEqual(cpuinfo.flags(),
+                         ['esan3', 'zarch', 'stfle', 'msa', 'ldisp', 'eimm',
+                          'dfp', 'etf3eh', 'highgprs'])
+        self.assertEqual(cpuinfo.frequency(), 'unavailable')
+        self.assertEqual(cpuinfo.model(),
+                         '2817')
+
     @MonkeyPatch(cpuinfo, '_PATH', _outfile('cpuinfo_E5649_x86_64.out'))
     @MonkeyPatch(platform, 'machine', lambda: 'noarch')
     def test_cpuinfo_unsupported_arch(self):
