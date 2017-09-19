@@ -621,14 +621,18 @@ class Vm(object):
     def _devSpecMapFromConf(self):
         """
         Return the "devices" section of this Vm's conf.
-        If missing, create it according to old API.
         """
         devices = vmdevices.common.empty_dev_map()
 
         # while this code is running, Vm is queryable for status(),
         # thus we must fix devices in an atomic way, hence the deep copy
         with self._confLock:
-            devConf = utils.picklecopy(self.conf['devices'])
+            devConf = utils.picklecopy(self.conf.get('devices', []))
+
+        if not devConf:
+            # avoid normalization of the balloon device.
+            # Everything else is safe to do with empty devConf
+            return devices
 
         for dev in devConf:
             dev = self._dev_spec_update_with_vm_conf(dev)
