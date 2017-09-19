@@ -26,7 +26,9 @@ from . import graphics
 from . import lease
 from . import network
 from . import storage
+from . import storagexml
 from . import common
 
 # Silence pyflakes
 common, core, graphics, hostdevice, hwclass, lease, network, storage
+storagexml
