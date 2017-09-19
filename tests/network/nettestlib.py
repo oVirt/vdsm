@@ -574,7 +574,8 @@ def preserve_default_route():
     try:
         yield
     finally:
-        if ipv4_gateway and not routes.is_default_route(ipv4_gateway):
+        if ipv4_gateway and not routes.is_default_route(
+                ipv4_gateway, routes.get_routes()):
             address.set_default_route(ipv4_gateway, family=4, dev=ipv4_device)
         if ipv6_gateway and not routes.is_ipv6_default_route(ipv6_gateway):
             address.set_default_route(ipv6_gateway, family=6, dev=ipv6_device)

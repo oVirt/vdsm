@@ -110,7 +110,8 @@ class TestAddressSetup(VdsmTestCase):
         with dummy_device() as nic:
             with preserve_default_route():
                 address.add(nic, ipv4=ip, ipv6=None)
-                self.assertTrue(routes.is_default_route(IPV4_GATEWAY))
+                self.assertTrue(routes.is_default_route(
+                    IPV4_GATEWAY, routes.get_routes()))
 
     def test_add_ipv6_address_with_gateway(self):
         ip = address.IPv6(address=IPV6_A_WITH_PREFIXLEN, gateway=IPV6_GATEWAY,
@@ -129,7 +130,8 @@ class TestAddressSetup(VdsmTestCase):
             with preserve_default_route():
                 address.add(nic, ipv4=ipv4, ipv6=ipv6)
                 addr, netmask, _, ipv6addresses = address.addrs_info(nic)
-                self.assertTrue(routes.is_default_route(IPV4_GATEWAY))
+                self.assertTrue(routes.is_default_route(
+                    IPV4_GATEWAY, routes.get_routes()))
                 self.assertTrue(routes.is_ipv6_default_route(IPV6_GATEWAY))
 
     def test_add_ipv6_gateway_given_existing_ipv4_and_ipv6_gateways(self):
@@ -143,7 +145,8 @@ class TestAddressSetup(VdsmTestCase):
                 address.add(nic, ipv4=None, ipv6=ipv6)
 
                 address.add(nic, ipv4=None, ipv6=ipv6)
-                self.assertTrue(routes.is_default_route(IPV4_GATEWAY))
+                self.assertTrue(routes.is_default_route(
+                    IPV4_GATEWAY, routes.get_routes()))
                 self.assertTrue(routes.is_ipv6_default_route(IPV6_GATEWAY))
 
 

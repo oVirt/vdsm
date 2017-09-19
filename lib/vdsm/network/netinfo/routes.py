@@ -17,8 +17,12 @@
 #
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
+
 from collections import defaultdict
+import itertools
 import logging
+
+import six
 
 from vdsm.network.ipwrapper import IPRoute2Error
 from vdsm.network.ipwrapper import routeGet, Route, routeShowGateways
@@ -53,12 +57,18 @@ def ipv6_default_gateway():
     return Route.fromText(output[0]) if output else None
 
 
-def is_default_route(gateway):
+def is_default_route(gateway, routes):
     if not gateway:
         return False
 
-    dg = getDefaultGateway()
-    return (gateway == dg.via) if dg else False
+    for route in itertools.chain.from_iterable(six.viewvalues(routes)):
+        if (route.get('table') == RtKnownTables.RT_TABLE_MAIN and
+                route['family'] == 'inet' and
+                route['scope'] == 'global' and
+                route['gateway'] == gateway and
+                route['destination'] == 'none'):
+            return True
+    return False
 
 
 def is_ipv6_default_route(gateway):

@@ -52,8 +52,10 @@ class KernelConfig(BaseConfig):
                 self.bonds == normalized_other.bonds)
 
     def _analyze_netinfo_nets(self, netinfo):
+        _routes = routes.get_routes()
         for net, net_attr in six.viewitems(netinfo.networks):
-            yield net, _translate_netinfo_net(net, net_attr, netinfo)
+            attrs = _translate_netinfo_net(net, net_attr, netinfo, _routes)
+            yield net, attrs
 
     def _analyze_netinfo_bonds(self, netinfo):
         for bond, bond_attr in six.viewitems(netinfo.bondings):
@@ -84,7 +86,7 @@ def networks_northbound_ifaces():
     return ifaces
 
 
-def _translate_netinfo_net(net, net_attr, netinfo_):
+def _translate_netinfo_net(net, net_attr, netinfo_, _routes):
     nics, _, vlan_id, bond = netinfo_.getNicsVlanAndBondingForNetwork(net)
     attributes = {}
     _translate_bridged(attributes, net_attr)
@@ -96,6 +98,7 @@ def _translate_netinfo_net(net, net_attr, netinfo_):
         if len(nics) > 1:
             raise MultipleSouthBoundNicsPerNetworkError(net, nics)
         _translate_nics(attributes, nics)
+    attributes['defaultRoute'] = _translate_default_route(net_attr, _routes)
     _translate_ipaddr(attributes, net_attr)
     _translate_hostqos(attributes, net_attr)
     _translate_switch_type(attributes, net_attr)
@@ -108,8 +111,6 @@ def _translate_ipaddr(attributes, net_attr):
     attributes['bootproto'] = 'dhcp' if net_attr['dhcpv4'] else 'none'
     attributes['dhcpv6'] = net_attr['dhcpv6']
     attributes['ipv6autoconf'] = net_attr['ipv6autoconf']
-
-    attributes['defaultRoute'] = _translate_default_route(net_attr)
 
     # only static addresses are part of {Persistent,Running}Config.
     if attributes['bootproto'] == 'none':
@@ -128,10 +129,10 @@ def _translate_ipaddr(attributes, net_attr):
             attributes['ipv6gateway'] = net_attr['ipv6gateway']
 
 
-def _translate_default_route(net_attr):
+def _translate_default_route(net_attr, _routes):
     is_default_route = net_attr.get('ipv4defaultroute')
     if is_default_route is None:
-        return routes.is_default_route(net_attr['gateway'])
+        return routes.is_default_route(net_attr['gateway'], _routes)
     else:
         return is_default_route
 

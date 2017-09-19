@@ -207,7 +207,7 @@ def _devinfo(link, routes, ipaddrs):
             'ipv6gateway': get_gateway(routes, link.name, family=6),
             'mtu': link.mtu,
             'netmask': ipv4netmask,
-            'ipv4defaultroute': is_default_route(gateway)}
+            'ipv4defaultroute': is_default_route(gateway, routes)}
 
 
 def _getNetInfo(iface, bridged, routes, ipaddrs):
@@ -235,7 +235,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs):
                      'ipv6autoconf': is_ipv6_local_auto(iface),
                      'gateway': gateway,
                      'ipv6gateway': get_gateway(routes, iface, family=6),
-                     'ipv4defaultroute': is_default_route(gateway),
+                     'ipv4defaultroute': is_default_route(gateway, routes),
                      'mtu': link_iface.iface(iface).mtu()})
     except (IOError, OSError) as e:
         if e.errno == errno.ENOENT or e.errno == errno.ENODEV:

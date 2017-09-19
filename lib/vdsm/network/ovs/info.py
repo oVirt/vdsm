@@ -275,7 +275,7 @@ def _get_iface_info(iface, addresses, routes):
     mtu = iflink(iface).mtu()
     return {'mtu': mtu, 'addr': ipv4addr, 'ipv4addrs': ipv4addrs,
             'gateway': ipv4gateway, 'netmask': ipv4netmask,
-            'ipv4defaultroute': is_default_route(ipv4gateway),
+            'ipv4defaultroute': is_default_route(ipv4gateway, routes),
             'dhcpv4': is_dhcpv4, 'ipv6addrs': ipv6addrs,
             'ipv6gateway': get_gateway(routes, iface, family=6),
             'ipv6autoconf': is_ipv6_local_auto(iface), 'dhcpv6': is_dhcpv6}
