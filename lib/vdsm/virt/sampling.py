@@ -158,7 +158,12 @@ class NumaNodeMemorySample(object):
         numaTopology = numa.topology()
         for nodeIndex in numaTopology:
             nodeMemSample = {}
-            memInfo = numa.memory_by_cell(int(nodeIndex))
+            # work around libvirt bug (if not built with numactl)
+            if len(numaTopology) == 1:
+                idx = -1
+            else:
+                idx = int(nodeIndex)
+            memInfo = numa.memory_by_cell(idx)
             nodeMemSample['memFree'] = memInfo['free']
             # in case the numa node has zero memory assigned, report the whole
             # memory as used

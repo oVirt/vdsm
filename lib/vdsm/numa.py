@@ -26,6 +26,7 @@ import xml.etree.cElementTree as ET
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import libvirtconnection
+from vdsm import taskset
 from vdsm.common import cache
 from vdsm.common.cmdutils import CommandPath
 
@@ -135,7 +136,12 @@ def _numa(capabilities=None):
 
     for cell in cells:
         cell_id = cell.get('id')
-        meminfo = memory_by_cell(int(cell_id))
+        # work around libvirt bug (if not built with numactl)
+        if len(cells) == 1:
+            idx = -1
+        else:
+            idx = int(cell_id)
+        meminfo = memory_by_cell(idx)
         topology[cell_id]['totalMemory'] = meminfo['total']
         topology[cell_id]['cpus'] = []
         distances[cell_id] = []
@@ -153,6 +159,19 @@ def _numa(capabilities=None):
 
     cpu_topology = CpuTopology(len(sockets), len(siblings),
                                len(online_cpus), online_cpus)
+
+    if not cells:
+        hostcputop = caps.find('.host/cpu/topology')
+
+        if hostcputop is not None:
+            socketnum = int(hostcputop.get('sockets'))
+            corenum = int(hostcputop.get('cores')) * socketnum
+            threadnum = int(hostcputop.get('threads')) * corenum
+
+            online_cpus = taskset.online_cpus()
+
+            cpu_topology = CpuTopology(socketnum, corenum,
+                                       threadnum, online_cpus)
 
     return NumaTopology(topology, distances, cpu_topology)
 
