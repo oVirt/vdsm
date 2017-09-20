@@ -1592,6 +1592,7 @@ class Vm(object):
             status['status'] = self.lastStatus
             status['guestDiskMapping'] = self.guestAgent.guestDiskMapping
             status['statusTime'] = self._get_status_time()
+            status['arch'] = self.arch
             return utils.picklecopy(status)
 
     def getStats(self):

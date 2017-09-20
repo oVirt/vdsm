@@ -6703,7 +6703,12 @@ types:
         -   description: The type of VM
             name: vmType
             type: *VmType
-        type: object
+            type: object
+
+        -   description: VM's CPU architecture
+            name: arch
+            type: string
+            added: '4.2'
 
     VdsmCapabilities: &VdsmCapabilities
         added: '3.6'
