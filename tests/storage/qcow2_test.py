@@ -33,6 +33,10 @@ from vdsm.storage import qemuimg
 MB = 1024 ** 2
 GB = 1024 ** 3
 
+xfail_on_travis = pytest.mark.xfail(
+    "TRAVIS_CI" in os.environ,
+    reason="File system does not support sparseness")
+
 
 class TestCountClusters:
 
@@ -43,8 +47,7 @@ class TestCountClusters:
         runs = qemuimg.map(filename)
         assert qcow2.count_clusters(runs) == 0
 
-    @pytest.mark.xfail("TRAVIS_CI" in os.environ,
-                       reason="File system does not support sparseness")
+    @xfail_on_travis
     def test_empty_sparse(self, tmpdir):
         filename = str(tmpdir.join("test"))
         with io.open(filename, "wb") as f:
@@ -70,8 +73,7 @@ class TestCountClusters:
         runs = qemuimg.map(filename)
         assert qcow2.count_clusters(runs) == 1
 
-    @pytest.mark.xfail("TRAVIS_CI" in os.environ,
-                       reason="File system does not support sparseness")
+    @xfail_on_travis
     def test_partial(self, tmpdir):
         filename = str(tmpdir.join("test"))
         with io.open(filename, "wb") as f:
@@ -94,8 +96,7 @@ class TestCountClusters:
         runs = qemuimg.map(filename)
         assert qcow2.count_clusters(runs) == 3
 
-    @pytest.mark.xfail("TRAVIS_CI" in os.environ,
-                       reason="File system does not support sparseness")
+    @xfail_on_travis
     def test_big_sparse(self, tmpdir):
         filename = str(tmpdir.join("test"))
         with io.open(filename, "wb") as f:
@@ -127,10 +128,8 @@ class TestAlign:
 
 class TestEstimate:
 
-    @pytest.mark.xfail("TRAVIS_CI" in os.environ,
-                       reason="File system does not support sparseness")
     @pytest.mark.parametrize("format,compressed", [
-        ('raw', False),
+        pytest.param('raw', False, marks=xfail_on_travis),
         ("qcow2", False),
         ("qcow2", True),
     ])
@@ -150,10 +149,8 @@ class TestEstimate:
             f.truncate(size * GB)
         self.check_estimate(filename, compat, format, compressed)
 
-    @pytest.mark.xfail("TRAVIS_CI" in os.environ,
-                       reason="File system does not support sparseness")
     @pytest.mark.parametrize("format,compressed", [
-        ('raw', False),
+        pytest.param('raw', False, marks=xfail_on_travis),
         ("qcow2", False),
         ("qcow2", True),
     ])
@@ -174,10 +171,8 @@ class TestEstimate:
             f.write(b"x" * MB)
         self.check_estimate(filename, compat, format, compressed)
 
-    @pytest.mark.xfail("TRAVIS_CI" in os.environ,
-                       reason="File system does not support sparseness")
     @pytest.mark.parametrize("format,compressed", [
-        ('raw', False),
+        pytest.param('raw', False, marks=xfail_on_travis),
         ("qcow2", False),
         ("qcow2", True),
     ])
@@ -202,7 +197,7 @@ class TestEstimate:
 
     @pytest.mark.slow
     @pytest.mark.parametrize("format,compressed", [
-        ('raw', False),
+        pytest.param('raw', False, marks=xfail_on_travis),
         ("qcow2", False),
         ("qcow2", True),
     ])
@@ -223,7 +218,7 @@ class TestEstimate:
 
     @pytest.mark.slow
     @pytest.mark.parametrize("format,compressed", [
-        ('raw', False),
+        pytest.param('raw', False, marks=xfail_on_travis),
         ("qcow2", False),
         ("qcow2", True),
     ])
