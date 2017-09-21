@@ -70,13 +70,13 @@ class TestCalculateVolAlloc(VdsmTestCase):
               parent="parentUUID"),
          sc.RAW_FORMAT,
          GB_IN_BLK * 2),
-        # copy single cow to cow, using source volume apparent size
+        # copy single cow to cow, using estimated size.
         (dict(size=GB_IN_BLK * 2,
               volFormat=sc.COW_FORMAT,
               apparentsize=GB_IN_BLK,
               parent=sc.BLANK_UUID),
          sc.COW_FORMAT,
-         GB_IN_BLK),
+         GB_IN_BLK * 1.25),
         # copy qcow chain to cow, using estimated chain size
         (dict(size=GB_IN_BLK * 2,
               volFormat=sc.COW_FORMAT,

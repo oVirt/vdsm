@@ -874,9 +874,9 @@ class Image:
                         src_vol_params['volUUID'], src_vol_params['size'])
                 else:
                     # source 'cow' without parent.
-                    # The source volume should already contains the
-                    # qcow metadata.
-                    return src_vol_params['apparentsize']
+                    # Use estimate for supporting compressed source images, for
+                    # example, uploaded compressed qcow2 appliance.
+                    return self.estimate_qcow2_size(src_vol_params, dst_sd_id)
             else:
                 # source 'raw'.
                 # Add additional space for qcow2 metadata.

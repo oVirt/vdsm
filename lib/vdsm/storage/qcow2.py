@@ -146,14 +146,14 @@ def _estimate_metadata_size(virtual_size):
 
 def estimate_size(filename):
     """
-    Estimating qcow2 file size once converted from raw to qcow2.
-    The filename is a path (sparse or preallocated),
-    or a path to preallocated block device.
+    Estimate the required size of a new qcow2 file converted from source image
+    filename. Source image can be raw, qcow2, or compressed qcow2, on any
+    storage type.
     """
     info = qemuimg.info(filename)
-    if (info['format'] != qemuimg.FORMAT.RAW):
-        raise ValueError("Estimate size is only supported for raw format. file"
-                         " %s is with format %s" % (filename, info['format']))
+    if "backingfile" in info:
+        raise ValueError("Estimate size not supported for images with "
+                         "a backing file")
 
     # Get used clusters and virtual size of destination volume.
     virtual_size = info['virtualsize']

@@ -22,9 +22,9 @@ from __future__ import print_function
 
 import io
 import os
+import subprocess
 
 import pytest
-import six
 
 from vdsm.common import time
 from vdsm.storage import qcow2
@@ -125,12 +125,15 @@ class TestAlign:
         assert qcow2._align_offset(int(size), n) == aligned_size
 
 
-@pytest.mark.xfail(six.PY3,
-                   reason="qemuimg.ProgressCommand mixes strings and bytes")
 class TestEstimate:
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
                        reason="File system does not support sparseness")
+    @pytest.mark.parametrize("format,compressed", [
+        ('raw', False),
+        ("qcow2", False),
+        ("qcow2", True),
+    ])
     @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
@@ -141,14 +144,19 @@ class TestEstimate:
         pytest.param('0.10', 100, marks=pytest.mark.slow),
         pytest.param('1.1', 100, marks=pytest.mark.slow),
     ])
-    def test_empty(self, tmpdir, compat, size):
+    def test_empty(self, tmpdir, compat, size, format, compressed):
         filename = str(tmpdir.join("test"))
         with io.open(filename, "wb") as f:
             f.truncate(size * GB)
-        self.check_estimate(filename, compat)
+        self.check_estimate(filename, compat, format, compressed)
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
                        reason="File system does not support sparseness")
+    @pytest.mark.parametrize("format,compressed", [
+        ('raw', False),
+        ("qcow2", False),
+        ("qcow2", True),
+    ])
     @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
@@ -159,15 +167,20 @@ class TestEstimate:
         pytest.param('0.10', 100, marks=pytest.mark.slow),
         pytest.param('1.1', 100, marks=pytest.mark.slow),
     ])
-    def test_best_small(self, tmpdir, compat, size):
+    def test_best_small(self, tmpdir, compat, size, format, compressed):
         filename = str(tmpdir.join("test"))
         with io.open(filename, "wb") as f:
             f.truncate(size * GB)
             f.write(b"x" * MB)
-        self.check_estimate(filename, compat)
+        self.check_estimate(filename, compat, format, compressed)
 
     @pytest.mark.xfail("TRAVIS_CI" in os.environ,
                        reason="File system does not support sparseness")
+    @pytest.mark.parametrize("format,compressed", [
+        ('raw', False),
+        ("qcow2", False),
+        ("qcow2", True),
+    ])
     @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
@@ -178,21 +191,26 @@ class TestEstimate:
         pytest.param('0.10', 100, marks=pytest.mark.slow),
         pytest.param('1.1', 100, marks=pytest.mark.slow),
     ])
-    def test_big(self, tmpdir, compat, size):
+    def test_big(self, tmpdir, compat, size, format, compressed):
         filename = str(tmpdir.join("test"))
         with io.open(filename, "wb") as f:
             f.truncate(size * GB)
             f.write(b"x" * MB)
             f.seek(512 * MB)
             f.write(b"x" * MB)
-        self.check_estimate(filename, compat)
+        self.check_estimate(filename, compat, format, compressed)
 
     @pytest.mark.slow
+    @pytest.mark.parametrize("format,compressed", [
+        ('raw', False),
+        ("qcow2", False),
+        ("qcow2", True),
+    ])
     @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
     ])
-    def test_worst(self, tmpdir, compat, size):
+    def test_worst(self, tmpdir, compat, size, format, compressed):
         filename = str(tmpdir.join("test"))
         with io.open(filename, "wb") as f:
             f.truncate(size * GB)
@@ -201,30 +219,38 @@ class TestEstimate:
                              qcow2.CLUSTER_SIZE):
                 f.seek(off)
                 f.write(b"x")
-        self.check_estimate(filename, compat)
+        self.check_estimate(filename, compat, format, compressed)
 
     @pytest.mark.slow
+    @pytest.mark.parametrize("format,compressed", [
+        ('raw', False),
+        ("qcow2", False),
+        ("qcow2", True),
+    ])
     @pytest.mark.parametrize("compat,size", [
         ('0.10', 1),
         ('1.1', 1),
     ])
-    def test_full(self, tmpdir, compat, size):
+    def test_full(self, tmpdir, compat, size, format, compressed):
         filename = str(tmpdir.join("test"))
         with io.open(filename, "wb") as f:
             f.truncate(size * GB)
             for _ in range(1024):
                 f.write(b"x" * MB)
-        self.check_estimate(filename, compat)
+        self.check_estimate(filename, compat, format, compressed)
 
-    def check_estimate(self, filename, compat):
+    def check_estimate(self, filename, compat, format, compressed):
+        if format != "raw":
+            filename = convert_to_qcow2(filename, compressed=compressed,
+                                        compat=compat)
+        virtual_size = qemuimg.info(filename)["virtualsize"]
         start = time.monotonic_time()
         estimate = qcow2.estimate_size(filename)
         estimate_time = time.monotonic_time() - start
         start = time.monotonic_time()
         actual = converted_size(filename, compat)
         convert_time = time.monotonic_time() - start
-        original_size = os.stat(filename).st_size
-        error_pct = 100 * float(estimate - actual) / original_size
+        error_pct = 100 * float(estimate - actual) / virtual_size
         print('estimate=%d, '
               'actual=%s, '
               'error_pct=%.2f%%, '
@@ -237,11 +263,22 @@ class TestEstimate:
 
 
 def converted_size(filename, compat):
-    converted = filename + ".qcow2"
-    operation = qemuimg.convert(filename,
-                                converted,
-                                srcFormat=qemuimg.FORMAT.RAW,
-                                dstFormat=qemuimg.FORMAT.QCOW2,
-                                dstQcow2Compat=compat)
-    operation.run()
+    converted = convert_to_qcow2(filename, compat=compat)
     return os.stat(converted).st_size
+
+
+def convert_to_qcow2(src, compressed=False, compat="1.1"):
+    dst = src + ".qcow2"
+    cmd = [
+        "qemu-img",
+        "convert",
+        src,
+        "-O", "qcow2",
+        "-o", "compat=" + compat,
+    ]
+    if compressed:
+        cmd.append("-c")
+    cmd.append(dst)
+    subprocess.check_call(cmd)
+    os.remove(src)
+    return dst
