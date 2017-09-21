@@ -1131,7 +1131,7 @@ class GlusterCliTests(TestCaseBase):
             # See https://bugzilla.redhat.com/1450607
             info = osinfo.version()
             if (info["name"] == osinfo.OSName.FEDORA and
-                    info["version"] in ("26", "27")):
+                    info["version"] in ("26", "27", "28")):
                 raise SkipTest('%s' % e)
             raise
 
