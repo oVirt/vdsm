@@ -259,8 +259,9 @@ parameters = [
             'the option.'),
 
         ('timeout_engine_clear_vms', '5',
-            'How many seconds should VDSM wait at the shutdown sequence '
-            'for engine to clear all VMs.'),
+            'How many seconds should VDSM arbitrarily hold the '
+            'shutdown sequence and wait for Engine confirming '
+            'that VMs are down.'),
     ]),
 
     # Section: [rpc]

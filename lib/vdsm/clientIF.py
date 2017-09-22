@@ -308,9 +308,9 @@ class clientIF(object):
         """
         Wait loop checking remaining VMs in vm container
 
-        This method is helper method that makes sure VDSM
-        does not terminate before engine knows that all
-        VMs are terminated by host shutdown.
+        This method is helper method that highers the
+        probability of engine to properly acknowledge
+        that all VMs are terminated by host shutdown.
 
         The VMs are shutdown by external service: libvirt-guests
         The service pauses system shutdown on systemd shutdown
