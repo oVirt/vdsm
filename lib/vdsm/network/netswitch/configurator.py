@@ -23,6 +23,7 @@ import itertools
 import six
 
 from vdsm.common.cache import memoized
+from vdsm.common.time import monotonic_time
 from vdsm.network import connectivity
 from vdsm.network import ifacquire
 from vdsm.network import legacy_switch
@@ -34,6 +35,7 @@ from vdsm.network.link import dpdk
 from vdsm.network.link import nic
 from vdsm.network.link.iface import iface as iface_obj
 from vdsm.network.netconfpersistence import RunningConfig, Transaction
+from vdsm.network.netlink import waitfor
 from vdsm.network.ovs import info as ovs_info
 from vdsm.network.ovs import switch as ovs_switch
 from vdsm.network.link import bond
@@ -340,11 +342,27 @@ def netinfo(vdsmnets=None, compatibility=None):
 
 def _add_speed_device_info(net_caps):
     """Collect and include device speed information in the report."""
+    timeout = 2
     for devname, devattr in six.viewitems(net_caps['nics']):
+        timeout -= _wait_for_link_up(devname, timeout)
         devattr['speed'] = nic.speed(devname)
 
     for devname, devattr in six.viewitems(net_caps['bondings']):
+        timeout -= _wait_for_link_up(devname, timeout)
         devattr['speed'] = bond.speed(devname)
+
+
+def _wait_for_link_up(devname, timeout):
+    """
+    Waiting for link-up, no longer than the specified timeout period.
+    The time waited (in seconds) is returned.
+    """
+    if timeout > 0 and not iface_obj(devname).is_oper_up():
+        time_start = monotonic_time()
+        with waitfor.waitfor_linkup(devname, timeout=timeout):
+            pass
+        return monotonic_time() - time_start
+    return 0
 
 
 def _set_bond_type_by_usage(_netinfo):
