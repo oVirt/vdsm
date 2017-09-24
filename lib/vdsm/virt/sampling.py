@@ -40,7 +40,8 @@ from vdsm.config import config
 from vdsm.constants import P_VDSM_RUN
 from vdsm.host import api as hostapi
 from vdsm.network import ipwrapper
-from vdsm.network.netinfo import nics, bonding, vlans
+from vdsm.network.link import nic
+from vdsm.network.netinfo import bonding, vlans
 from vdsm.virt import vmstats
 from vdsm.virt.utils import ExpiringCache
 
@@ -567,7 +568,7 @@ class HostMonitor(object):
 
 def _getLinkSpeed(dev):
     if dev.isNIC():
-        speed = nics.speed(dev.name)
+        speed = nic.speed(dev.name)
     elif dev.isBOND():
         speed = bonding.speed(dev.name)
     elif dev.isVLAN():

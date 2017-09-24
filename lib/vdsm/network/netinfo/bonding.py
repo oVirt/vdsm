@@ -24,9 +24,9 @@ import os
 import six
 
 from vdsm.network.ipwrapper import Link
+from vdsm.network.link import nic
 
 from .misc import visible_devs
-from . import nics
 
 from vdsm.network.link.bond import Bond
 
@@ -88,9 +88,9 @@ def speed(bond_name):
         if opts['slaves']:
             if opts['mode'][1] in BONDING_FAILOVER_MODES:
                 active_slave = opts['active_slave']
-                s = nics.speed(active_slave[0]) if active_slave else 0
+                s = nic.speed(active_slave[0]) if active_slave else 0
             elif opts['mode'][1] in BONDING_LOADBALANCE_MODES:
-                s = sum(nics.speed(slave) for slave in opts['slaves'])
+                s = sum(nic.speed(slave) for slave in opts['slaves'])
             return s
     except Exception:
         logging.exception('cannot read %s speed', bond_name)

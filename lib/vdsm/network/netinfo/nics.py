@@ -17,14 +17,13 @@
 #
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
-import errno
+
 import io
 from functools import partial
-import logging
 
-from vdsm.network.link import dpdk
 from vdsm.network.ipwrapper import Link
-from vdsm.network.ethtool import driver_name
+from vdsm.network.link import dpdk
+from vdsm.network.link import nic
 from .misc import visible_devs
 
 OPERSTATE_UP = 'up'
@@ -42,41 +41,5 @@ def operstate(nic_name):
         return operstateFile.read().strip()
 
 
-def speed(nic_name):
-    """Returns the nic speed if it is a legal value, nicName refers to a
-    nic and nic is UP, 0 otherwise."""
-    try:
-        if dpdk.is_dpdk(nic_name) and operstate(nic_name) == OPERSTATE_UP:
-            return dpdk.speed(nic_name)
-        if operstate(nic_name) == OPERSTATE_UP:
-            with io.open('/sys/class/net/%s/speed' % nic_name) as speedFile:
-                s = int(speedFile.read())
-            # the device may have been disabled/downed after checking
-            # so we validate the return value as sysfs may return
-            # special values to indicate the device is down/disabled
-            if s not in (2 ** 16 - 1, 2 ** 32 - 1) and s > 0:
-                return s
-    except IOError as ose:
-        if ose.errno == errno.EINVAL:
-            return _ibHackedSpeed(nic_name)
-        else:
-            logging.exception('cannot read %s nic speed', nic_name)
-    except Exception:
-        logging.exception('cannot read %s speed', nic_name)
-    return 0
-
-
-def _ibHackedSpeed(nic_name):
-    """If the nic is an InfiniBand device, return a speed of 10000 Mbps.
-
-    This is only needed until the kernel reports ib*/speed, see
-    https://bugzilla.redhat.com/show_bug.cgi?id=1101314
-    """
-    try:
-        return 10000 if driver_name(nic_name) == 'ib_ipoib' else 0
-    except IOError:
-        return 0
-
-
 def info(link):
-    return {'hwaddr': link.address, 'speed': speed(link.name)}
+    return {'hwaddr': link.address, 'speed': nic.speed(link.name)}

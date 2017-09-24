@@ -29,6 +29,7 @@ from nose.plugins.attrib import attr
 from vdsm.network import ipwrapper
 from vdsm.network import sysctl
 from vdsm.network.ip.address import prefix2netmask
+from vdsm.network.link import nic
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.iface import random_iface_name
@@ -89,36 +90,36 @@ class TestNetinfo(TestCaseBase):
         self.assertRaises(ValueError, prefix2netmask, -1)
         self.assertRaises(ValueError, prefix2netmask, 33)
 
-    def test_speed_invalid_nic(self):
-        nicName = '0' * 20  # devices can't have so long names
-        self.assertEqual(nics.speed(nicName), 0)
+    def test_speed_on_an_iface_that_does_not_support_speed(self):
+        self.assertEqual(nic.speed('lo'), 0)
 
     def test_speed_in_range(self):
         for d in nics.nics():
-            s = nics.speed(d)
+            s = nic.speed(d)
             self.assertFalse(s < 0)
             self.assertTrue(s in ETHTOOL_SPEEDS or s == 0)
 
-    @mock.patch.object(nics, 'operstate')
+    @mock.patch.object(nic, 'iface')
     @mock.patch.object(nics.io, 'open')
-    def test_valid_nic_speed(self, mock_io_open, mock_operstate):
-        values = ((b'0', nics.OPERSTATE_UP, 0),
-                  (b'-10', nics.OPERSTATE_UP, 0),
-                  (six.b(str(2 ** 16 - 1)), nics.OPERSTATE_UP, 0),
-                  (six.b(str(2 ** 32 - 1)), nics.OPERSTATE_UP, 0),
-                  (b'123', nics.OPERSTATE_UP, 123),
-                  (b'', nics.OPERSTATE_UP, 0),
-                  (b'', 'unknown', 0),
-                  (b'123', 'unknown', 0))
+    def test_valid_nic_speed(self, mock_io_open, mock_iface):
+        IS_UP = True
+        values = ((b'0', IS_UP, 0),
+                  (b'-10', IS_UP, 0),
+                  (six.b(str(2 ** 16 - 1)), IS_UP, 0),
+                  (six.b(str(2 ** 32 - 1)), IS_UP, 0),
+                  (b'123', IS_UP, 123),
+                  (b'', IS_UP, 0),
+                  (b'', not IS_UP, 0),
+                  (b'123', not IS_UP, 0))
 
-        for passed, operstate, expected in values:
+        for passed, is_nic_up, expected in values:
             mock_io_open.return_value = io.BytesIO(passed)
-            mock_operstate.return_value = operstate
+            mock_iface.return_value.is_oper_up.return_value = is_nic_up
 
-            self.assertEqual(nics.speed('fake_nic'), expected)
+            self.assertEqual(nic.speed('fake_nic'), expected)
 
     def test_dpdk_device_speed(self):
-        self.assertEqual(nics.speed('dpdk0'), 0)
+        self.assertEqual(nic.speed('dpdk0'), 0)
 
     def test_dpdk_operstate_always_up(self):
         self.assertEqual(nics.operstate('dpdk0'), nics.OPERSTATE_UP)
