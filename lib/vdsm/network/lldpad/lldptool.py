@@ -188,8 +188,9 @@ class ManagmentAddressParser(PropertyParser):
                                                'management address')
         properties.update(self._parse_subtype_value(
             property_lines[1], 'interface numbering'))
-        properties['object identifier'] = property_lines[2].split(
-            ':', 1)[-1].strip()
+        if len(property_lines) > 2:
+            properties['object identifier'] = property_lines[2].split(
+                ':', 1)[-1].strip()
         return properties
 
 
