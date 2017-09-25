@@ -34,6 +34,12 @@ from .nettestlib import requires_systemctl
 
 LLDP_CHASSIS_ID_TLV = 'Chassis ID TLV\n\tMAC: 01:23:45:67:89:ab'
 
+LLDP_MANAGEMENT_ADDRESS_TLV = """
+Management Address TLV
+\tIPv4: 10.35.23.241
+\tIfindex: 83886080
+"""
+
 LLDP_MULTIPLE_TLVS = """
 Chassis ID TLV
 \tMAC: 01:23:45:67:89:ab
@@ -117,6 +123,17 @@ class LldpadReportTests(VdsmTestCase):
                        lambda x: (0, LLDP_CHASSIS_ID_TLV, ''))
     def test_get_single_lldp_tlv(self):
         expected = [self.TLVS_REPORT[0]]
+        self.assertEqual(expected, lldptool.get_tlvs('iface0'))
+
+    @mock.patch.object(lldptool.cmd, 'exec_sync',
+                       lambda x: (0, LLDP_MANAGEMENT_ADDRESS_TLV, ''))
+    def test_get_management_address_tlv_without_oid(self):
+        expected = [
+            {'type': 8, 'name': 'Management Address',
+             'properties': {'interface numbering subtype': 'Ifindex',
+                            'interface numbering': '83886080',
+                            'management address subtype': 'IPv4',
+                            'management address': '10.35.23.241'}}]
         self.assertEqual(expected, lldptool.get_tlvs('iface0'))
 
     @mock.patch.object(lldptool.cmd, 'exec_sync',
