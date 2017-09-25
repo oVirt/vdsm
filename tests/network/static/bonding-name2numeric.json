@@ -5,7 +5,17 @@
             "count": "2",
             "stable": "0"
         },
+        "arp_all_targets": {
+            "all": "1",
+            "any": "0"
+        },
         "arp_validate": {
+            "active": "1",
+            "all": "3",
+            "backup": "2",
+            "filter": "4",
+            "filter_active": "5",
+            "filter_backup": "6",
             "none": "0"
         },
         "fail_over_mac": {
@@ -20,6 +30,8 @@
             "failure": "2"
         },
         "xmit_hash_policy": {
+            "encap2+3": "3",
+            "encap3+4": "4",
             "layer2": "0",
             "layer2+3": "2",
             "layer3+4": "1"
@@ -31,10 +43,17 @@
             "count": "2",
             "stable": "0"
         },
+        "arp_all_targets": {
+            "all": "1",
+            "any": "0"
+        },
         "arp_validate": {
             "active": "1",
             "all": "3",
             "backup": "2",
+            "filter": "4",
+            "filter_active": "5",
+            "filter_backup": "6",
             "none": "0"
         },
         "fail_over_mac": {
@@ -49,6 +68,8 @@
             "failure": "2"
         },
         "xmit_hash_policy": {
+            "encap2+3": "3",
+            "encap3+4": "4",
             "layer2": "0",
             "layer2+3": "2",
             "layer3+4": "1"
@@ -60,7 +81,17 @@
             "count": "2",
             "stable": "0"
         },
+        "arp_all_targets": {
+            "all": "1",
+            "any": "0"
+        },
         "arp_validate": {
+            "active": "1",
+            "all": "3",
+            "backup": "2",
+            "filter": "4",
+            "filter_active": "5",
+            "filter_backup": "6",
             "none": "0"
         },
         "fail_over_mac": {
@@ -75,6 +106,8 @@
             "failure": "2"
         },
         "xmit_hash_policy": {
+            "encap2+3": "3",
+            "encap3+4": "4",
             "layer2": "0",
             "layer2+3": "2",
             "layer3+4": "1"
@@ -86,7 +119,17 @@
             "count": "2",
             "stable": "0"
         },
+        "arp_all_targets": {
+            "all": "1",
+            "any": "0"
+        },
         "arp_validate": {
+            "active": "1",
+            "all": "3",
+            "backup": "2",
+            "filter": "4",
+            "filter_active": "5",
+            "filter_backup": "6",
             "none": "0"
         },
         "fail_over_mac": {
@@ -101,6 +144,8 @@
             "failure": "2"
         },
         "xmit_hash_policy": {
+            "encap2+3": "3",
+            "encap3+4": "4",
             "layer2": "0",
             "layer2+3": "2",
             "layer3+4": "1"
@@ -112,9 +157,11 @@
             "count": "2",
             "stable": "0"
         },
-        "arp_validate": {
-            "none": "0"
+        "arp_all_targets": {
+            "all": "1",
+            "any": "0"
         },
+        "arp_validate": {},
         "fail_over_mac": {
             "active": "1",
             "follow": "2",
@@ -130,6 +177,8 @@
             "failure": "2"
         },
         "xmit_hash_policy": {
+            "encap2+3": "3",
+            "encap3+4": "4",
             "layer2": "0",
             "layer2+3": "2",
             "layer3+4": "1"
@@ -141,9 +190,11 @@
             "count": "2",
             "stable": "0"
         },
-        "arp_validate": {
-            "none": "0"
+        "arp_all_targets": {
+            "all": "1",
+            "any": "0"
         },
+        "arp_validate": {},
         "fail_over_mac": {
             "active": "1",
             "follow": "2",
@@ -156,6 +207,8 @@
             "failure": "2"
         },
         "xmit_hash_policy": {
+            "encap2+3": "3",
+            "encap3+4": "4",
             "layer2": "0",
             "layer2+3": "2",
             "layer3+4": "1"
@@ -167,9 +220,11 @@
             "count": "2",
             "stable": "0"
         },
-        "arp_validate": {
-            "none": "0"
+        "arp_all_targets": {
+            "all": "1",
+            "any": "0"
         },
+        "arp_validate": {},
         "fail_over_mac": {
             "active": "1",
             "follow": "2",
@@ -182,6 +237,8 @@
             "failure": "2"
         },
         "xmit_hash_policy": {
+            "encap2+3": "3",
+            "encap3+4": "4",
             "layer2": "0",
             "layer2+3": "2",
             "layer3+4": "1"

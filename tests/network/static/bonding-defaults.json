@@ -1,7 +1,6 @@
 {
     "0": {
         "ad_actor_sys_prio": [],
-        "ad_actor_system": [],
         "ad_select": [
             "stable",
             "0"
@@ -64,7 +63,7 @@
             "1"
         ],
         "tlb_dynamic_lb": [
-            "1"
+            "0"
         ],
         "updelay": [
             "0"
@@ -79,7 +78,6 @@
     },
     "1": {
         "ad_actor_sys_prio": [],
-        "ad_actor_system": [],
         "ad_select": [
             "stable",
             "0"
@@ -142,7 +140,7 @@
             "1"
         ],
         "tlb_dynamic_lb": [
-            "1"
+            "0"
         ],
         "updelay": [
             "0"
@@ -157,7 +155,6 @@
     },
     "2": {
         "ad_actor_sys_prio": [],
-        "ad_actor_system": [],
         "ad_select": [
             "stable",
             "0"
@@ -220,7 +217,7 @@
             "1"
         ],
         "tlb_dynamic_lb": [
-            "1"
+            "0"
         ],
         "updelay": [
             "0"
@@ -235,7 +232,6 @@
     },
     "3": {
         "ad_actor_sys_prio": [],
-        "ad_actor_system": [],
         "ad_select": [
             "stable",
             "0"
@@ -298,7 +294,7 @@
             "1"
         ],
         "tlb_dynamic_lb": [
-            "1"
+            "0"
         ],
         "updelay": [
             "0"
@@ -314,9 +310,6 @@
     "4": {
         "ad_actor_sys_prio": [
             "65535"
-        ],
-        "ad_actor_system": [
-            "00:00:00:00:00:00"
         ],
         "ad_select": [
             "stable",
@@ -382,7 +375,7 @@
             "1"
         ],
         "tlb_dynamic_lb": [
-            "1"
+            "0"
         ],
         "updelay": [
             "0"
@@ -397,7 +390,6 @@
     },
     "5": {
         "ad_actor_sys_prio": [],
-        "ad_actor_system": [],
         "ad_select": [
             "stable",
             "0"
@@ -460,7 +452,7 @@
             "1"
         ],
         "tlb_dynamic_lb": [
-            "1"
+            "0"
         ],
         "updelay": [
             "0"
@@ -475,7 +467,6 @@
     },
     "6": {
         "ad_actor_sys_prio": [],
-        "ad_actor_system": [],
         "ad_select": [
             "stable",
             "0"
@@ -538,7 +529,7 @@
             "1"
         ],
         "tlb_dynamic_lb": [
-            "1"
+            "0"
         ],
         "updelay": [
             "0"
