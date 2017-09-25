@@ -177,6 +177,12 @@ def calculate_required_allocation(cif, vm_hugepages, vm_hugepagesz):
         Number of hugepages to be allocated considering system resources at
         our disposal.
     """
+    # Special case: hugepages of size 0 do not exist, but 0 (False) may be
+    # used as indicator of disabled hugepages. In that case, we avoid any
+    # allocation.
+    if vm_hugepagesz == 0:
+        return 0
+
     if not config.getboolean('performance', 'use_preallocated_hugepages'):
         return vm_hugepages
 
@@ -218,6 +224,10 @@ def calculate_required_deallocation(vm_hugepages, vm_hugepagesz):
         Number of hugepages to be deallocated while making sure not to break
         any constraints (reserved and preallocated pages).
     """
+    # Similar to allocation: hugepagesz == 0 indicates disabled hugepages.
+    if vm_hugepagesz == 0:
+        return 0
+
     if not config.getboolean('performance', 'use_preallocated_hugepages'):
         return vm_hugepages
 

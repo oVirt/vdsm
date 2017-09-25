@@ -471,6 +471,9 @@ class Vm(object):
 
     @property
     def hugepagesz(self):
+        if not self.hugepages:
+            return 0
+
         custom = self._custom['custom']
         hugepagesz = int(custom.get('hugepages', 0))
         if hugepagesz not in hugepages.supported():
@@ -483,6 +486,9 @@ class Vm(object):
 
     @property
     def nr_hugepages(self):
+        if not self.hugepages:
+            return 0
+
         # Integer ceiling (m + n - 1) // n.
         return (
             (self.mem_size_mb() * 1024 + self.hugepagesz - 1) //

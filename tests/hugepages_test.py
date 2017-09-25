@@ -193,6 +193,34 @@ class TestIntelligentAllocation(TestCaseBase):
     @MonkeyPatch(hugepages, 'config',
                  make_config([
                      ("performance", "use_preallocated_hugepages", "true"),
+                     ("performance", "reserved_hugepage_count", "12"),
+                     ("performance", "reserved_hugepage_size", "2048"),
+                 ]))
+    @MonkeyPatch(hugepages, 'state', lambda:
+                 {2048: {'nr_hugepages': 16,
+                         'free_hugepages': 4}
+                  })
+    @MonkeyPatch(cpuarch, 'real', lambda: cpuarch.X86_64)
+    def test_allocation_0_pages_mixedenv(self):
+        # Simulate the code, 0 means that the VM doesn't have hugepages...
+        vm_hugepagesz = 0
+        # but let's introduce something that would normally throw us off.
+        vm_hugepages = 4
+        vdsm_vms = vm_hugepages + 0
+
+        cif = FakeClientIF({0: FakeVM(vdsm_vms, vm_hugepagesz)})
+
+        # We expect no new hugepages:
+        # - there are 4 free hugepages
+        # - vdsm doesn't use any pages (yet)
+        # - 12 are reserved and used
+        self.assertEqual(hugepages.calculate_required_allocation(
+            cif, vm_hugepages, vm_hugepagesz), 0
+        )
+
+    @MonkeyPatch(hugepages, 'config',
+                 make_config([
+                     ("performance", "use_preallocated_hugepages", "true"),
                      ("performance", "reserved_hugepage_count", "4"),
                      ("performance", "reserved_hugepage_size", "1048576"),
                  ]))
