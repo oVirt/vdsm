@@ -629,18 +629,6 @@ class FakeProxy(object):
         pass
 
 
-class FakeSupervdsm(object):
-
-    def __init__(self, ovs_bridge=None):
-        self._ovs_bridge = ovs_bridge
-
-    def getProxy(self):
-        return self
-
-    def ovs_bridge(self, name):
-        return self._ovs_bridge
-
-
 # the alias is not rendered by getXML, so having it would make
 # the test fail
 _CONTROLLERS_XML = [
@@ -664,7 +652,7 @@ _CONTROLLERS_XML = [
 
 _GRAPHICS_DATA = [
     # graphics_xml, display_ip, meta, src_ports, expected_ports
-    # listen on address, both port requested, some features disabled
+    # both port requested, some features disabled
     [
         u'''<graphics type='spice' port='{port}' tlsPort='{tls_port}'
                   autoport='yes' keymap='en-us'
@@ -672,27 +660,14 @@ _GRAPHICS_DATA = [
                   passwdValidTo='1970-01-01T00:00:01'>
           <clipboard copypaste='no'/>
           <filetransfer enable='no'/>
-          <listen type='address' address='127.0.0.1'/>
+          <listen type='network' network='vdsm-ovirtmgmt'/>
         </graphics>''',
         '127.0.0.1',
-        {'display_network': 'ovirt-test'},
+        {},
         {'port': '5900', 'tls_port': '5901'},
         {'port': '-1', 'tls_port': '-1'},
     ],
-    # listen on address, only insecure port requested
-    [
-        u'''<graphics type='vnc' port='{port}' autoport='yes'
-                  keymap="en-us"
-                  defaultMode="secure" passwd="*****"
-                  passwdValidTo='1970-01-01T00:00:01'>
-          <listen type='address' address='127.0.0.1'/>
-        </graphics>''',
-        '127.0.0.1',
-        {'display_network': 'ovirt-test'},
-        {'port': '5900', 'tls_port': '5901'},
-        {'port': '-1', 'tls_port': '-1'},
-    ],
-    # listening on network
+    # only insecure port requested
     [
         u'''<graphics type='vnc' port='{port}' autoport='yes'
                    keymap='en-us'
@@ -1041,12 +1016,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
     def test_graphics(self, graphics_xml, display_ip, meta,
                       src_ports, expected_ports):
         meta['vmid'] = 'VMID'
-        ovs_bridge = None
-        bridge_name = meta.get('display_network')
-        if bridge_name is not None:
-            ovs_bridge = {'name': bridge_name, 'dpdk_enabled': False}
         with MonkeyPatchScope([
-            (vmdevices.graphics, 'supervdsm', FakeSupervdsm(ovs_bridge)),
             (vmdevices.graphics, '_getNetworkIp', lambda net: display_ip),
             (vmdevices.graphics.libvirtnetwork,
                 'create_network', lambda net, vmid: None),

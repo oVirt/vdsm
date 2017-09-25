@@ -31,7 +31,6 @@ from vdsm import jsonrpcvdscli
 from vdsm.common.conv import tobool
 from vdsm.config import config
 from vdsm.network import api as net_api
-from vdsm.virt import libvirtnetwork
 
 
 _DEBUG_MODE = False
@@ -95,15 +94,6 @@ def _process_domxml(tree):
         raise VmMigrationHookError('VM lookup failed')
     if 'devices' not in target_vm_conf:
         raise VmMigrationHookError('No devices entity in VM conf')
-
-    try:
-        _set_graphics(devices, target_vm_conf)
-    except VmMigrationMissingDisplayConf:
-        # Due to a bug (https://bugzilla.redhat.com/show_bug.cgi?id=1379122)
-        # in Engine, there can be a scenario where the domxml
-        # includes a graphics section, however, the VM config on target does
-        # not. In such cases, ignore and do not touch this section.
-        pass
 
     _set_bridge_interfaces(devices, target_vm_conf)
 
@@ -176,40 +166,6 @@ def _bind_iface_to_linux_bridge(interface, target_linux_bridge):
 def _set_source_bridge(interface, bridge):
     elem_source = interface.find('source')
     elem_source.set('bridge', bridge)
-
-
-def _set_graphics(devices, target_vm_conf):
-    # TODO: Support VMs with multiple <graphics> sections.
-    graphics = devices.find('graphics')
-    if graphics is None:
-        return
-
-    graphics_listen = graphics.find('listen')
-
-    target_display_network, target_display_ip = _vmconf_display(target_vm_conf)
-
-    if net_api.ovs_bridge(target_display_network):
-        graphics_listen.attrib.pop('network', None)
-        graphics_listen.set('type', 'address')
-        graphics_listen.set('address', target_display_ip)
-        graphics.attrib.pop('listen', None)
-    else:
-        libvirt_network = libvirtnetwork.netname_o2l(target_display_network)
-        graphics_listen.attrib.pop('address', None)
-        graphics_listen.set('type', 'network')
-        graphics_listen.set('network', libvirt_network)
-        graphics.attrib.pop('listen', None)
-
-
-def _vmconf_display(vm_conf):
-    graphic_devs = [device for device in vm_conf['devices']
-                    if device.get('type') == 'graphics']
-    for graphic_dev in graphic_devs:
-        params = graphic_dev.get('specParams')
-        if params and 'displayNetwork' in params and 'displayIp' in params:
-            return params['displayNetwork'], params['displayIp']
-
-    raise VmMigrationMissingDisplayConf('VM conf graphics not detected')
 
 
 def _vm_item(vdscli, vm_uuid):

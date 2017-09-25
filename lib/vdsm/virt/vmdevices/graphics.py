@@ -23,7 +23,6 @@ from __future__ import absolute_import
 
 import libvirt
 
-from vdsm import supervdsm
 from vdsm.common import conv
 from vdsm.network import api as net_api
 from vdsm.virt import libvirtnetwork
@@ -161,17 +160,8 @@ class Graphics(Base):
                 graphics.appendChildWithArgs('channel', name=chan,
                                              mode='secure')
 
-        # For the listen type IP to be used, the display network must be OVS.
-        # We assume that the cluster in which the host operates is OVS enabled
-        # and all other hosts in the cluster have the migration hook installed.
-        # The migration hook is responsible to convert ip to net and vice versa
         display_network = self.specParams['displayNetwork']
-        display_ip = self.specParams.get('displayIp', '0')
-        if (display_network and display_ip != '0' and
-                supervdsm.getProxy().ovs_bridge(display_network)):
-            graphics.appendChildWithArgs(
-                'listen', type='address', address=display_ip)
-        elif display_network:
+        if display_network:
             graphics.appendChildWithArgs(
                 'listen', type='network',
                 network=libvirtnetwork.netname_o2l(display_network))

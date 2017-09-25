@@ -147,7 +147,7 @@ LIBVIRT_XML_DESCR_OVS = b"""<domain type="kvm">
       <virtualport type="openvswitch" />
     </interface>
     <graphics autoport="yes" type="spice">
-      <listen address="10.35.160.53" type="address" />
+      <listen network="vdsm-ovirtmgmt" type="network" />
     </graphics>
   </devices>
 </domain>"""
