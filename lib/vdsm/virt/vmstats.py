@@ -492,6 +492,13 @@ def memory(stats, first_sample, last_sample, interval):
     mem_stats = {}
 
     if last_sample is not None:
+
+        # If the balloon stats are not available (for some reason) we want to
+        # give chance to oVirt GA. This check should be removed once we drop
+        # support for OGA completely.
+        if 'balloon.available' not in last_sample:
+            return
+
         mem_stats['mem_total'] = str(last_sample.get('balloon.available', 0))
         mem_stats['mem_unused'] = str(last_sample.get('balloon.unused', 0))
 
