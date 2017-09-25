@@ -1268,7 +1268,7 @@ class Vm(object):
             self.__refreshDriveVolume(volInfo)
 
         self.__verifyVolumeExtension(volInfo)
-        vmDrive = self._findDriveByName(volInfo['name'])
+        vmDrive = self.findDriveByName(volInfo['name'])
         if not vmDrive.chunked:
             # This was a replica only extension, we are done.
             clock.stop("total")
@@ -1337,7 +1337,7 @@ class Vm(object):
 
         # Only update apparentsize and truesize if we've resized the leaf
         if not volInfo['internal']:
-            vmDrive = self._findDriveByName(volInfo['name'])
+            vmDrive = self.findDriveByName(volInfo['name'])
             vmDrive.apparentsize = volSize.apparentsize
             vmDrive.truesize = volSize.truesize
 
@@ -3836,7 +3836,7 @@ class Vm(object):
         hooks.before_vm_pause(self._dom.XMLDesc(0), self._custom)
         self._dom.suspend()
 
-    def _findDriveByName(self, name):
+    def findDriveByName(self, name):
         for device in self._devices[hwclass.DISK][:]:
             if device.name == name:
                 return device
