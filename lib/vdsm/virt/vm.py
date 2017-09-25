@@ -2269,6 +2269,12 @@ class Vm(object):
             self._containerDependentInit()
 
     def _vmDependentInit(self):
+        """
+        Perform the final initialization of the VM object once the
+        libvirt.Domain object is available - e.g. after the VM was actually
+        started by libvirt.
+        This method is called on all the four initialization flows.
+        """
         self._guestEventTime = self._startTime
 
         self._updateDomainDescriptor()
