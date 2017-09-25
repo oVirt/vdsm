@@ -1091,7 +1091,7 @@ class Vm(object):
         with self._confLock:
             self.conf['timeOffset'] = newTimeOffset
 
-    def _chunkedDrives(self):
+    def getChunkedDrives(self):
         """
         Return list of chunked drives, or non-chunked drives replicating to
         chunked replica drive.
@@ -1172,7 +1172,7 @@ class Vm(object):
         If this returns True, the periodic system will invoke
         monitor_drives during this periodic cycle.
         """
-        return self._driveMonitorEnabled and bool(self._chunkedDrives())
+        return self._driveMonitorEnabled and bool(self.getChunkedDrives())
 
     def monitor_drives(self):
         """
@@ -1181,7 +1181,7 @@ class Vm(object):
         extended = False
 
         try:
-            for drive in self._chunkedDrives():
+            for drive in self.getChunkedDrives():
                 if self.extend_drive_if_needed(drive):
                     extended = True
         except ImprobableResizeRequestError:
