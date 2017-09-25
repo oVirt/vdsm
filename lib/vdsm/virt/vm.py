@@ -1093,11 +1093,12 @@ class Vm(object):
 
     def getChunkedDrives(self):
         """
-        Return list of chunked drives, or non-chunked drives replicating to
-        chunked replica drive.
+        Return list of writable chunked drives, or writable non-chunked
+        drives replicating to chunked replica drive.
         """
         return [drive for drive in self._devices[hwclass.DISK]
-                if drive.chunked or drive.replicaChunked]
+                if (drive.chunked or drive.replicaChunked) and not
+                drive.readonly]
 
     def _getExtendInfo(self, drive):
         """
