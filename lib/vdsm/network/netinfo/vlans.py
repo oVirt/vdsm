@@ -19,9 +19,9 @@
 from __future__ import absolute_import
 from functools import partial
 
-from . import bonding
 from .misc import visible_devs
 from vdsm.network.ipwrapper import getLink, Link
+from vdsm.network.link import bond
 from vdsm.network.link import nic
 from vdsm.network.netlink import link as nl_link
 
@@ -62,6 +62,6 @@ def speed(vlan_device_name):
     if vlanDev.isNIC():
         return nic.speed(vlanDevName)
     elif vlanDev.isBOND():
-        return bonding.speed(vlanDevName)
+        return bond.speed(vlanDevName)
     else:
         return 0

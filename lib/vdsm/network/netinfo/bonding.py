@@ -18,13 +18,11 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 from functools import partial
-import logging
 import os
 
 import six
 
 from vdsm.network.ipwrapper import Link
-from vdsm.network.link import nic
 
 from .misc import visible_devs
 
@@ -33,7 +31,6 @@ from vdsm.network.link.bond import Bond
 # In order to limit the scope of change, this module is now acting as a proxy
 # to the link.bond.sysfs_options module.
 from vdsm.network.link.bond import sysfs_options
-from vdsm.network.link.bond.sysfs_options import properties
 from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
 from vdsm.network.link.bond.sysfs_options import getAllDefaultBondingOptions
 from vdsm.network.link.setup import parse_bond_options
@@ -42,8 +39,6 @@ getAllDefaultBondingOptions
 parse_bond_options
 
 BONDING_ACTIVE_SLAVE = '/sys/class/net/%s/bonding/active_slave'
-BONDING_FAILOVER_MODES = frozenset(('1', '3'))
-BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
 BONDING_SLAVE_OPT = '/sys/class/net/%s/bonding_slave/%s'
@@ -78,23 +73,6 @@ def info(link):
     return {'hwaddr': link.address, 'slaves': list(bond.slaves),
             'active_slave': bond.active_slave(),
             'opts': bond.options}
-
-
-def speed(bond_name):
-    """Returns the bond speed if bondName refers to a bond, 0 otherwise."""
-    opts = properties(bond_name,
-                      filter_properties=('slaves', 'active_slave', 'mode'))
-    try:
-        if opts['slaves']:
-            if opts['mode'][1] in BONDING_FAILOVER_MODES:
-                active_slave = opts['active_slave']
-                s = nic.speed(active_slave[0]) if active_slave else 0
-            elif opts['mode'][1] in BONDING_LOADBALANCE_MODES:
-                s = sum(nic.speed(slave) for slave in opts['slaves'])
-            return s
-    except Exception:
-        logging.exception('cannot read %s speed', bond_name)
-    return 0
 
 
 def bondOptsForIfcfg(opts):

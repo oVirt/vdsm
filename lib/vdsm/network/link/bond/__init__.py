@@ -26,6 +26,9 @@ from vdsm.network import driverloader
 from vdsm.network.link.iface import iface
 from vdsm.network.netlink import waitfor
 
+from .speed import speed
+speed
+
 
 @six.add_metaclass(abc.ABCMeta)
 class BondAPI(object):
