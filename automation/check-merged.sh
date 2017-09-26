@@ -109,9 +109,6 @@ for distro in el7; do
     # otherwise
     lago ovirt deploy
 
-    lago ovirt serve &
-    PID=$!
-
     mount_tmpfs
 
     run_functional_tests | tee "$EXPORTS/functional_tests_stdout.$distro.log"
@@ -120,8 +117,6 @@ for distro in el7; do
     run_network_tests | tee -a "$EXPORTS/functional_tests_stdout.$distro.log"
     res="${PIPESTATUS[0]}"
     [ "$res" -ne 0 ] && failed="$res"
-
-    kill $PID
 
     lago copy-from-vm \
         "$vm_name" \
