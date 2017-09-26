@@ -97,14 +97,8 @@ function prepare_and_copy_yum_conf {
 
 function run {
     local res=0
-
-    # TODO: ask lago to have cooler way to keep the localrepo up
-    lago ovirt serve &
-    local lago_ovirt_http_pid=$!
     fake_ksm_in_vm
     run_all_tests || res=$?
-    kill "$lago_ovirt_http_pid"
-
     return $res
 }
 
