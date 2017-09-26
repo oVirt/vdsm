@@ -53,7 +53,7 @@ def network_caps():
           caps to reduce the amount of work in root context.
     """
     # TODO: Version requests by engine to ease handling of compatibility.
-    return netswitch.configurator.netinfo(compatibility=30600)
+    return netswitch.configurator.netcaps(compatibility=30600)
 
 
 def change_numvfs(pci_path, numvfs, net_name):

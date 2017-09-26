@@ -31,6 +31,7 @@ from vdsm.network.configurators.ifcfg import Ifcfg
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.link import dpdk
+from vdsm.network.link import nic
 from vdsm.network.link.iface import iface as iface_obj
 from vdsm.network.netconfpersistence import RunningConfig, Transaction
 from vdsm.network.ovs import info as ovs_info
@@ -305,6 +306,12 @@ def _gather_ovs_ifaces(nets2add, bonds2add, bonds2edit):
         [nets_and_bonds, nets_nics, bonds_nics])
 
 
+def netcaps(compatibility):
+    net_caps = netinfo(compatibility=compatibility)
+    _add_speed_device_info(net_caps)
+    return net_caps
+
+
 def netinfo(vdsmnets=None, compatibility=None):
     # TODO: Version requests by engine to ease handling of compatibility.
     _netinfo = netinfo_get(vdsmnets, compatibility)
@@ -329,6 +336,12 @@ def netinfo(vdsmnets=None, compatibility=None):
         _set_bond_type_by_usage(_netinfo)
 
     return _netinfo
+
+
+def _add_speed_device_info(net_caps):
+    """Collect and include device speed information in the report."""
+    for devname, devattr in six.viewitems(net_caps['nics']):
+        devattr['speed'] = nic.speed(devname)
 
 
 def _set_bond_type_by_usage(_netinfo):

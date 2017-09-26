@@ -23,7 +23,6 @@ from functools import partial
 
 from vdsm.network.ipwrapper import Link
 from vdsm.network.link import dpdk
-from vdsm.network.link import nic
 from .misc import visible_devs
 
 OPERSTATE_UP = 'up'
@@ -42,4 +41,4 @@ def operstate(nic_name):
 
 
 def info(link):
-    return {'hwaddr': link.address, 'speed': nic.speed(link.name)}
+    return {'hwaddr': link.address}
