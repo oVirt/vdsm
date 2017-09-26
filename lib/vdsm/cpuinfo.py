@@ -20,9 +20,9 @@
 
 from __future__ import absolute_import
 
-from collections import namedtuple
+import re
 
-from re import match, search
+from collections import namedtuple
 
 from vdsm.common import cache
 
@@ -80,19 +80,19 @@ def _cpuinfo():
                 fields['frequency'] = value
             elif key == 'clock':  # ppc64, ppc64le
                 fields['frequency'] = value[:-3]
-            # s390 reports both static and dynamic freqs with
-            # dynamic <= stat (nominal), so dynamic matches the
-            # x86_64 frequency semantics
-            elif key == 'cpu MHz dynamic':
+            elif key == 'cpu MHz dynamic':  # s390
+                # s390 reports both static and dynamic frequencies with
+                # dynamic <= stat (nominal), so dynamic matches the
+                # x86_64 frequency semantics.
                 fields['frequency'] = value
             elif key == 'model name':  # x86_64
                 fields['model'] = value
             elif key == 'CPU part':  # aarch64
                 fields['model'] = value
-            elif match(r'processor \d+', key):  # s390
-                s390mach = search(r'\bmachine\s*=\s*(\w+)', value)
-                if s390mach:
-                    fields['model'] = s390mach.group(1)
+            elif re.match(r'processor \d+', key):  # s390
+                match = re.search(r'\bmachine\s*=\s*(\w+)', value)
+                if match:
+                    fields['model'] = match.group(1)
             elif key == 'model':  # ppc64le
                 fields['ppcmodel'] = value
             elif key == 'cpu':  # ppc64, ppc64le
@@ -105,7 +105,7 @@ def _cpuinfo():
             if len(fields) == 6:
                 break
 
-        # older s390 machine versions don't report frequency
+        # Older s390 machine versions don't report frequency.
         if 'frequency' not in fields:
             fields['frequency'] = 'unavailable'
 
