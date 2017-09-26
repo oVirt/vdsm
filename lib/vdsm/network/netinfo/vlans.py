@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Hat, Inc.
+# Copyright 2015-2017 Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,6 @@ from functools import partial
 
 from .misc import visible_devs
 from vdsm.network.ipwrapper import getLink, Link
-from vdsm.network.link import bond
-from vdsm.network.link import nic
 from vdsm.network.netlink import link as nl_link
 
 
@@ -53,15 +51,3 @@ def vlan_id(vlan_device_name):
 
 def info(link):
     return {'iface': link.device, 'vlanid': link.vlanid}
-
-
-def speed(vlan_device_name):
-    """Returns the vlan's underlying device speed."""
-    vlanDevName = vlan_device(vlan_device_name)
-    vlanDev = getLink(vlanDevName)
-    if vlanDev.isNIC():
-        return nic.speed(vlanDevName)
-    elif vlanDev.isBOND():
-        return bond.speed(vlanDevName)
-    else:
-        return 0

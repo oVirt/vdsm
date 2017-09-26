@@ -38,7 +38,7 @@ def speed(nic_name):
         if dpdk.is_dpdk(nic_name):
             return dpdk.speed(nic_name)
         try:
-            return _read_speed_using_sysfs(nic_name)
+            return read_speed_using_sysfs(nic_name)
         except IOError as ose:
             if ose.errno == errno.EINVAL:
                 return _ib_hacked_speed(nic_name)
@@ -49,7 +49,7 @@ def speed(nic_name):
     return 0
 
 
-def _read_speed_using_sysfs(nic_name):
+def read_speed_using_sysfs(nic_name):
     with io.open('/sys/class/net/%s/speed' % nic_name) as f:
         s = int(f.read())
     # the device may have been disabled/downed after checking
