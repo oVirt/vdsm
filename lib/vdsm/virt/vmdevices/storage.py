@@ -73,6 +73,16 @@ class DRIVE_SHARED_TYPE:
         return (cls.NONE, cls.EXCLUSIVE, cls.SHARED, cls.TRANSIENT)
 
 
+class BLOCK_THRESHOLD:
+    # no block threshold registered. This is the only value that Drives
+    # will have if the libvirt event support is disabled
+    UNSET = "unset"
+    # block threshold registered, event not yet delivered
+    SET = "set"
+    # event delivered, Drive waiting to be picked up for check and extension
+    EXCEEDED = "exceeded"
+
+
 class VolumeNotFound(errors.Base):
     msg = ("Cannot find volume {self.vol_id} in drive {self.drive_name}'s "
            "volume chain")
@@ -111,7 +121,7 @@ class Drive(core.Base):
                  'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
                  'extSharedState', 'drv', 'sgio', 'GUID', 'diskReplicate',
                  '_diskType', 'hosts', 'protocol', 'auth', 'discard',
-                 'vm_custom', 'blockinfo')
+                 'vm_custom', 'blockinfo', 'threshold_state')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         constants.MEGAB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -218,6 +228,7 @@ class Drive(core.Base):
         super(Drive, self).__init__(log, **kwargs)
         if not hasattr(self, 'vm_custom'):
             self.vm_custom = {}
+        self.threshold_state = BLOCK_THRESHOLD.UNSET
         # Keep sizes as int
         self.reqsize = int(kwargs.get('reqsize', '0'))  # Backward compatible
         self.truesize = int(kwargs.get('truesize', '0'))

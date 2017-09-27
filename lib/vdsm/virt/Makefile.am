@@ -29,6 +29,7 @@ dist_vdsmvirt_PYTHON = \
 	__init__.py \
 	collectd.py \
 	domain_descriptor.py \
+	drivemonitor.py \
 	events.py \
 	guestagent.py \
 	libvirtnetwork.py \

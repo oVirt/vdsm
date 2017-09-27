@@ -124,6 +124,10 @@ These configuration options control thin provisioning:
   space limit. Use higher values to extend in bigger chunks (default
   1024 MiB).
 
+- ```irs:enable_block_threshold_event``` - Use events, instead of
+  polling, to check the write threshold on thin-provisioned block-based
+  drives.
+
 
 ## Implementation in Vdsm 4.20.3 and onwards (oVirt >= 4.2)
 
@@ -132,11 +136,18 @@ provided by libvirt >= 3.2. Instead of checking periodically if a drive
 should be extended, we will mark a drive for extension when receiving a
 libvirt block threshold event.
 
+Libvirt cannot yet deliver events for all the flows and the storage
+configurations oVirt supports. Please check the documentation of
+the DriveMonitor.monitored_drives method in the drivemonitor.py module
+to learn when Vdsm can use events, and when Vdsm must keep polling the
+drives.
+
 
 ### Configuration
 
 For 4.2 we will keep a new configuration option to enable libvirt block
-threshold events. If disabled, the system will keep the old behavior.
+threshold events: ```irs:enable_block_threshold_event```.
+If disabled, the system will keep the old behavior.
 
 
 ### Setting block threshold event
