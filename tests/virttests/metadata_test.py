@@ -36,6 +36,21 @@ from testlib import XMLTestCase
 # and have no special meaning
 
 
+_NESTED_XML = (
+    # spacing *IS* significant: here root.text is like '\n       '
+    (u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+      <ovirt-vm:root type="unknown">
+        <ovirt-vm:leaf type="int">42</ovirt-vm:leaf>
+      </ovirt-vm:root>
+    </ovirt-vm:vm>''',),
+    # spacing *IS* significant: here root.text is None
+    (u'''<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+<ovirt-vm:root type="unknown"><ovirt-vm:leaf type="int">42</ovirt-vm:leaf>
+      </ovirt-vm:root>
+    </ovirt-vm:vm>''',),
+)
+
+
 @expandPermutations
 class MetadataTests(XMLTestCase):
 
@@ -211,6 +226,16 @@ class MetadataTests(XMLTestCase):
                 )
             ),
             expected_xml
+        )
+
+    @permutations(_NESTED_XML)
+    def test_skip_nested(self, test_xml):
+        metadata_obj = metadata.Metadata(
+            'ovirt-vm', 'http://ovirt.org/vm/1.0'
+        )
+        self.assertEqual(
+            metadata_obj.load(vmxml.parse_xml(test_xml)),
+            {}
         )
 
 

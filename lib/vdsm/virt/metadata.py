@@ -189,6 +189,9 @@ class Metadata(object):
         """
         values = {}
         for child in elem:
+            if len(child) > 0:
+                # skip not-leaf children: we can't decode them anyway.
+                continue
             key, val = _elem_to_keyvalue(child)
             values[self._strip_ns(key)] = val
         return values
