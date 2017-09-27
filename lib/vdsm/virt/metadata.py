@@ -799,7 +799,9 @@ def _elem_to_keyvalue(elem):
             if data_type == 'str':
                 value = ''
             else:
-                raise ValueError()
+                raise ValueError(
+                    'unknown type hint for %r (%s): %r' % (
+                        key, elem.attrib, value))
         if data_type == 'bool':
             value = conv.tobool(value)
         elif data_type == 'int':
