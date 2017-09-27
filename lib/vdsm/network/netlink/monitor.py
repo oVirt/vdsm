@@ -18,11 +18,14 @@
 #
 from __future__ import absolute_import
 from contextlib import closing, contextmanager
-from six.moves import queue
 import logging
 import os
 import select
+import sys
 import threading
+
+import six
+from six.moves import queue
 
 from vdsm.common import concurrent
 from vdsm.common.osutils import uninterruptible_poll
@@ -43,6 +46,7 @@ E_TIMEOUT = 2
 
 class EventType(object):
     DATA = 0
+    EXCEPTION = 30
     STOP = 31
     TIMEOUT = 32
 
@@ -126,6 +130,10 @@ class Monitor(object):
                 raise MonitorError(E_TIMEOUT)
             elif event.type == EventType.STOP:
                 break
+            elif event.type == EventType.EXCEPTION:
+                _, val, tb = event.data
+                six.reraise(MonitorError, MonitorError(val), tb)
+
             yield event.data
 
     def __enter__(self):
@@ -144,35 +152,41 @@ class Monitor(object):
         self._scanning_started.wait()
 
     def _scan(self):
-        with closing(select.epoll()) as epoll:
-            with _monitoring_socket(self._queue, self._groups, epoll) as sock:
-                with _pipetrick(epoll) as self._pipetrick:
-                    self._scanning_started.set()
-                    while True:
-                        if self._timeout:
-                            timeout = self._end_time - monotonic_time()
-                            # timeout expired
-                            if timeout <= 0:
+        try:
+            with closing(select.epoll()) as epoll:
+                with _monitoring_socket(
+                        self._queue, self._groups, epoll) as sock:
+                    with _pipetrick(epoll) as self._pipetrick:
+                        self._scanning_started.set()
+                        while True:
+                            if self._timeout:
+                                timeout = self._end_time - monotonic_time()
+                                # timeout expired
+                                if timeout <= 0:
+                                    self._scanning_stopped.set()
+                                    self._queue.put(Event(EventType.TIMEOUT))
+                                    break
+                            else:
+                                timeout = -1
+
+                            events = uninterruptible_poll(epoll.poll,
+                                                          timeout=timeout)
+                            # poll timeouted
+                            if len(events) == 0:
                                 self._scanning_stopped.set()
                                 self._queue.put(Event(EventType.TIMEOUT))
                                 break
-                        else:
-                            timeout = -1
+                            # stopped by pipetrick
+                            elif (self._pipetrick[0], select.POLLIN) in events:
+                                uninterruptible(os.read, self._pipetrick[0], 1)
+                                self._queue.put(Event(EventType.STOP))
+                                break
 
-                        events = uninterruptible_poll(epoll.poll,
-                                                      timeout=timeout)
-                        # poll timeouted
-                        if len(events) == 0:
-                            self._scanning_stopped.set()
-                            self._queue.put(Event(EventType.TIMEOUT))
-                            break
-                        # stopped by pipetrick
-                        elif (self._pipetrick[0], select.POLLIN) in events:
-                            uninterruptible(os.read, self._pipetrick[0], 1)
-                            self._queue.put(Event(EventType.STOP))
-                            break
-
-                        libnl.nl_recvmsgs_default(sock)
+                            libnl.nl_recvmsgs_default(sock)
+        except:
+            event = Event(EventType.EXCEPTION, sys.exc_info())
+            self._queue.put(event)
+            raise
 
     def stop(self):
         if self.is_stopped():
