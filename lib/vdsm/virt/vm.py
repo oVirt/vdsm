@@ -2372,7 +2372,7 @@ class Vm(object):
         if 'devices' not in self.conf:
             self.conf['devices'] = []
 
-        for conf in self._md_desc.all_devices(type=hwclass.DISK):
+        for conf in self._md_desc.all_devices(devtype=hwclass.DISK):
             try:
                 self._findDriveConfigByName(conf['name'])
             except LookupError:

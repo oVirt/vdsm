@@ -145,7 +145,7 @@ _LIBVIRT_TO_OVIRT_NAME = {
 
 
 def get_drive_conf_identifying_attrs(dev_conf):
-    attrs = {'type': str(dev_conf.get('type', 'disk'))}
+    attrs = {'devtype': str(dev_conf.get('type', 'disk'))}
     if 'name' in dev_conf:
         attrs['name'] = dev_conf['name']
     elif 'iface' in dev_conf and 'index' in dev_conf:

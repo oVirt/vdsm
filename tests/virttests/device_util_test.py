@@ -35,10 +35,10 @@ class VMDevicesCommonDriveIdentAttrTests(VdsmTestCase):
     @permutations([
         # dev_conf
         [{}],
-        [{'device': 'disk'}],  # should use 'type'
-        [{'type': 'disk', 'GUID': 'some_guid'}],
-        [{'type': 'disk', 'iface': 'scsi'}],  # missing index
-        [{'type': 'disk', 'index': '0'}],  # missing interface
+        [{'device': hwclass.DISK}],  # should use 'type'
+        [{'devtype': hwclass.DISK, 'GUID': 'some_guid'}],
+        [{'devtype': hwclass.DISK, 'iface': 'scsi'}],  # missing index
+        [{'devtype': hwclass.DISK, 'index': '0'}],  # missing interface
     ])
     def test_drive_not_identifiable(self, dev_conf):
         self.assertRaises(
@@ -54,7 +54,7 @@ class VMDevicesCommonDriveIdentAttrTests(VdsmTestCase):
     ])
     def test_drive_identified_by_name(self, dev_conf, name):
         attrs = common.get_drive_conf_identifying_attrs(dev_conf)
-        self.assertEqual({'type': 'disk', 'name': name}, attrs)
+        self.assertEqual({'devtype': hwclass.DISK, 'name': name}, attrs)
 
     @permutations([
         # whitelist, expected
