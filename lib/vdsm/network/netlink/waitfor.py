@@ -53,7 +53,8 @@ def waitfor_ip_addr(iface, address=None, timeout=10):
     expected_event = {'label': iface, 'scope': 'global'}
     if address:
         expected_event.update(address=address)
-    with _wait_for_ipaddr_event(iface, expected_event, timeout):
+    groups = ('ipv4-ifaddr', 'ipv6-ifaddr')
+    with _wait_for_event(iface, expected_event, groups, timeout):
         yield
 
 
@@ -70,7 +71,8 @@ def waitfor_ipv4_addr(iface, address=None, timeout=10):
     expected_event = {'label': iface, 'family': 'inet', 'scope': 'global'}
     if address:
         expected_event.update(address=address)
-    with _wait_for_ipaddr_event(iface, expected_event, timeout):
+    groups = ('ipv4-ifaddr',)
+    with _wait_for_event(iface, expected_event, groups, timeout):
         yield
 
 
@@ -86,7 +88,8 @@ def waitfor_ipv6_addr(iface, address=None, timeout=10):
     expected_event = {'label': iface, 'family': 'inet6', 'scope': 'global'}
     if address:
         expected_event.update(address=address)
-    with _wait_for_ipaddr_event(iface, expected_event, timeout):
+    groups = ('ipv6-ifaddr',)
+    with _wait_for_event(iface, expected_event, groups, timeout):
         yield
 
 
@@ -105,13 +108,6 @@ def waitfor_link_exists(iface, timeout=0.5):
 @contextmanager
 def _wait_for_link_event(iface, expected_event, timeout):
     groups = ('link',)
-    with _wait_for_event(iface, expected_event, groups, timeout):
-        yield
-
-
-@contextmanager
-def _wait_for_ipaddr_event(iface, expected_event, timeout):
-    groups = ('ipv4-ifaddr', 'ipv6-ifaddr')
     with _wait_for_event(iface, expected_event, groups, timeout):
         yield
 
