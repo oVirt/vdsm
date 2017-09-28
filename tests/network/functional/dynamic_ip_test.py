@@ -34,6 +34,7 @@ IPv4_PREFIX_LEN = '24'
 
 DHCPv4_RANGE_FROM = '192.0.3.2'
 DHCPv4_RANGE_TO = '192.0.3.253'
+DHCPv4_GATEWAY = IPv4_ADDRESS
 
 
 @nftestlib.parametrize_switch
@@ -50,7 +51,8 @@ class TestNetworkDhcpBasic(NetFuncTestCase):
         with veth_pair() as (server, client):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
             linkSet(server, ['up'])
-            with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO):
+            with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
+                             router=DHCPv4_GATEWAY):
 
                 netcreate = {NETWORK_NAME: {
                     'bridged': bridged, 'nic': client, 'blockingdhcp': True,
@@ -68,7 +70,8 @@ class TestStopDhclientOnUsedNics(NetFuncTestCase):
         with veth_pair() as (server, client):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
             linkSet(server, ['up'])
-            with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO):
+            with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
+                             router=DHCPv4_GATEWAY):
                 with dhclient_run(client):
                     self.assertDhclient(client, family=4)
 
@@ -84,7 +87,8 @@ class TestStopDhclientOnUsedNics(NetFuncTestCase):
         with veth_pair() as (server, client):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
             linkSet(server, ['up'])
-            with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO):
+            with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
+                             router=DHCPv4_GATEWAY):
                 with dhclient_run(client):
                     self.assertDhclient(client, family=4)
 

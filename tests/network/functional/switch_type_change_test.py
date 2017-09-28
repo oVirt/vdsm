@@ -131,7 +131,8 @@ class TestIpSwitch(NetFuncTestCase):
                 addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
                 linkSet(server, ['up'])
 
-                with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO):
+                with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
+                                 router=IPv4_ADDRESS):
                     with self.setupNetworks(
                             NETSETUP_SOURCE, BONDSETUP_SOURCE, NOCHK):
                         self.setupNetworks(
