@@ -347,5 +347,6 @@ class IPAddressTest(VdsmTestCase):
         """ Blocking version of IP address delete """
         with waitfor.waitfor_ip_addr(address_data.device,
                                      address_data.address_with_prefixlen,
+                                     action='del_addr',
                                      timeout=0.5):
             IPAddressTest.IPAddress.delete(address_data)
