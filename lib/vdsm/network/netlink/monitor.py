@@ -36,13 +36,21 @@ from .addr import _addr_info
 from .link import _link_info
 from .route import _route_info
 
-# If monitoring thread is running, queue waiting for new value and we call
-# stop(), we have to stop queue by passing special code.
-_STOP_FLAG = 31
-_TIMEOUT_FLAG = 32
 
 E_NOT_RUNNING = 1
 E_TIMEOUT = 2
+
+
+class EventType(object):
+    DATA = 0
+    STOP = 31
+    TIMEOUT = 32
+
+
+class Event(object):
+    def __init__(self, type, data=None):
+        self.type = type
+        self.data = data or {}
 
 
 class MonitorError(Exception):
@@ -112,13 +120,13 @@ class Monitor(object):
 
     def __iter__(self):
         for event in iter(self._queue.get, None):
-            if event == _TIMEOUT_FLAG:
+            if event.type == EventType.TIMEOUT:
                 if self._silent_timeout:
                     break
                 raise MonitorError(E_TIMEOUT)
-            elif event == _STOP_FLAG:
+            elif event.type == EventType.STOP:
                 break
-            yield event
+            yield event.data
 
     def __enter__(self):
         self.start()
@@ -146,7 +154,7 @@ class Monitor(object):
                             # timeout expired
                             if timeout <= 0:
                                 self._scanning_stopped.set()
-                                self._queue.put(_TIMEOUT_FLAG)
+                                self._queue.put(Event(EventType.TIMEOUT))
                                 break
                         else:
                             timeout = -1
@@ -156,12 +164,12 @@ class Monitor(object):
                         # poll timeouted
                         if len(events) == 0:
                             self._scanning_stopped.set()
-                            self._queue.put(_TIMEOUT_FLAG)
+                            self._queue.put(Event(EventType.TIMEOUT))
                             break
                         # stopped by pipetrick
                         elif (self._pipetrick[0], select.POLLIN) in events:
                             uninterruptible(os.read, self._pipetrick[0], 1)
-                            self._queue.put(_STOP_FLAG)
+                            self._queue.put(Event(EventType.STOP))
                             break
 
                         libnl.nl_recvmsgs_default(sock)
@@ -203,7 +211,7 @@ def _object_input(obj, queue):
         except KeyError:
             logging.error('unexpected msg_type %s', msg_type)
         else:
-            queue.put(obj_dict)
+            queue.put(Event(EventType.DATA, obj_dict))
 _c_object_input = libnl.prepare_cfunction_for_nl_msg_parse(_object_input)
 
 
