@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+
+import libvirt
 import six
 
 """
@@ -460,9 +462,19 @@ stats_cache = StatsCache()
 _TTL = 40.0
 
 
+BULK_STATS_TYPES = (
+    libvirt.VIR_DOMAIN_STATS_STATE |
+    libvirt.VIR_DOMAIN_STATS_CPU_TOTAL |
+    libvirt.VIR_DOMAIN_STATS_BALLOON |
+    libvirt.VIR_DOMAIN_STATS_VCPU |
+    libvirt.VIR_DOMAIN_STATS_INTERFACE |
+    libvirt.VIR_DOMAIN_STATS_BLOCK
+)
+
+
 class VMBulkstatsMonitor(object):
     def __init__(self, conn, get_vms, stats_cache,
-                 stats_types=0, ttl=_TTL):
+                 stats_types=BULK_STATS_TYPES, ttl=_TTL):
         self._conn = conn
         self._get_vms = get_vms
         self._stats_cache = stats_cache
