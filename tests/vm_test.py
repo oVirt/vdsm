@@ -130,7 +130,7 @@ class TestVm(XMLTestCase):
 
                     expectedXML = expectedXML % conf
 
-                    testVm = vm.Vm(self, conf)
+                    testVm = vm.Vm(fake.ClientIF(), conf)
 
                     output = testVm._buildDomainXML()
 
