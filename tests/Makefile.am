@@ -61,6 +61,7 @@ test_modules = \
 	cpu_profile_test.py \
 	cpuinfo_test.py \
 	device_test.py \
+	domcaps_test.py \
 	encoding_test.py \
 	exception_test.py \
 	executor_test.py \
@@ -225,8 +226,10 @@ dist_vdsmtests_DATA = \
 	caps_libvirt_intel_i73770.out \
 	caps_libvirt_intel_i73770_nosnap.out \
 	caps_libvirt_multiqemu.out \
+	caps_libvirt_s390x.out \
 	cpu_map.xml \
 	caps_numactl_4_nodes.out \
+	domcaps_libvirt_s390x.out \
 	fake-virt-v2v.err \
 	fake-virt-v2v.out \
 	glusterGeoRepStatus.xml \

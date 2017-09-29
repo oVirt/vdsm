@@ -1285,7 +1285,9 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_intel_i73770.out
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_intel_i73770_nosnap.out
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_multiqemu.out
+%{_datadir}/%{vdsm_name}/tests/caps_libvirt_s390x.out
 %{_datadir}/%{vdsm_name}/tests/caps_numactl_4_nodes.out
+%{_datadir}/%{vdsm_name}/tests/domcaps_libvirt_s390x.out
 %{_datadir}/%{vdsm_name}/tests/common/*.py*
 %if 0%{?with_containers}
 %{_datadir}/%{vdsm_name}/tests/containers/*.py*

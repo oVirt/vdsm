@@ -1,0 +1,89 @@
+<capabilities>
+
+  <host>
+    <uuid>50903af2-08f4-4635-b172-8871f863acac</uuid>
+    <cpu>
+      <arch>s390x</arch>
+      <topology sockets='1' cores='4' threads='1'/>
+      <pages unit='KiB' size='4'/>
+      <pages unit='KiB' size='1024'/>
+    </cpu>
+    <power_management/>
+    <migration_features>
+      <live/>
+      <uri_transports>
+        <uri_transport>tcp</uri_transport>
+        <uri_transport>rdma</uri_transport>
+      </uri_transports>
+    </migration_features>
+    <topology>
+      <cells num='1'>
+        <cell id='0'>
+          <memory unit='KiB'>3887724</memory>
+          <cpus num='4'>
+            <cpu id='0' socket_id='0' core_id='0' siblings='0'/>
+            <cpu id='1' socket_id='0' core_id='1' siblings='1'/>
+            <cpu id='2' socket_id='0' core_id='2' siblings='2'/>
+            <cpu id='3' socket_id='0' core_id='3' siblings='3'/>
+          </cpus>
+        </cell>
+      </cells>
+    </topology>
+    <secmodel>
+      <model>none</model>
+      <doi>0</doi>
+    </secmodel>
+    <secmodel>
+      <model>dac</model>
+      <doi>0</doi>
+      <baselabel type='kvm'>+107:+107</baselabel>
+      <baselabel type='qemu'>+107:+107</baselabel>
+    </secmodel>
+  </host>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='s390x'>
+      <wordsize>64</wordsize>
+      <emulator>/usr/bin/qemu-system-s390x</emulator>
+      <machine maxCpus='248'>s390-ccw-virtio-2.11</machine>
+      <machine canonical='s390-ccw-virtio-2.11' maxCpus='248'>s390-ccw-virtio</machine>
+      <machine maxCpus='64'>s390-ccw-kvmibm-1.1.1</machine>
+      <machine maxCpus='64'>s390-ccw-kvmibm-1.1.0</machine>
+      <machine maxCpus='248'>s390-ccw-virtio-2.7</machine>
+      <machine maxCpus='248'>s390-ccw-virtio-2.6</machine>
+      <machine maxCpus='248'>s390-ccw-kvmibm-1.1.3</machine>
+      <machine maxCpus='248'>s390-ccw-virtio-2.10</machine>
+      <machine maxCpus='248'>s390-ccw-virtio-2.5</machine>
+      <machine maxCpus='248'>s390-ccw-virtio-2.4</machine>
+      <machine maxCpus='248'>s390-ccw-kvmibm-1.1.2</machine>
+      <machine maxCpus='248'>s390-ccw-virtio-2.9</machine>
+      <machine maxCpus='248'>s390-ccw-virtio-2.8</machine>
+      <domain type='qemu'/>
+      <domain type='kvm'>
+        <emulator>/usr/bin/qemu-kvm</emulator>
+        <machine maxCpus='248'>s390-ccw-virtio-2.11</machine>
+        <machine canonical='s390-ccw-virtio-2.11' maxCpus='248'>s390-ccw-virtio</machine>
+        <machine maxCpus='64'>s390-ccw-kvmibm-1.1.1</machine>
+        <machine maxCpus='64'>s390-ccw-kvmibm-1.1.0</machine>
+        <machine maxCpus='248'>s390-ccw-virtio-2.7</machine>
+        <machine maxCpus='248'>s390-ccw-virtio-2.6</machine>
+        <machine maxCpus='248'>s390-ccw-kvmibm-1.1.3</machine>
+        <machine maxCpus='248'>s390-ccw-virtio-2.10</machine>
+        <machine maxCpus='248'>s390-ccw-virtio-2.5</machine>
+        <machine maxCpus='248'>s390-ccw-virtio-2.4</machine>
+        <machine maxCpus='248'>s390-ccw-kvmibm-1.1.2</machine>
+        <machine maxCpus='248'>s390-ccw-virtio-2.9</machine>
+        <machine maxCpus='248'>s390-ccw-virtio-2.8</machine>
+      </domain>
+    </arch>
+    <features>
+      <cpuselection/>
+      <deviceboot/>
+      <disksnapshot default='on' toggle='no'/>
+    </features>
+  </guest>
+
+</capabilities>
+
+

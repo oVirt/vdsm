@@ -80,6 +80,19 @@ class TestCaps(TestCaseBase):
 
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
+    @MonkeyPatch(platform, 'machine', lambda: cpuarch.S390X)
+    def testCpuTopologyS390X(self):
+        testPath = os.path.realpath(__file__)
+        dirName = os.path.split(testPath)[0]
+        # S390 1 socket, 4 cores, 1 threads per core
+        path = os.path.join(dirName, "caps_libvirt_s390x.out")
+        t = numa.cpu_topology(open(path).read())
+        self.assertEqual(t.threads, 4)
+        self.assertEqual(t.cores, 4)
+        self.assertEqual(t.sockets, 1)
+
+    @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
+        'total': '1', 'free': '1'})
     @MonkeyPatch(platform, 'machine', lambda: cpuarch.X86_64)
     def testCpuTopologyX86_64(self):
         testPath = os.path.realpath(__file__)
