@@ -20,6 +20,8 @@
 
 from __future__ import absolute_import
 
+import pytest
+
 from vdsm.network.ipwrapper import linkSet, addrAdd
 
 from . import netfunctestlib as nftestlib
@@ -31,32 +33,57 @@ VLAN = 10
 
 IPv4_ADDRESS = '192.0.3.1'
 IPv4_PREFIX_LEN = '24'
+IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1'
+IPv6_CIDR = '64'
 
 DHCPv4_RANGE_FROM = '192.0.3.2'
 DHCPv4_RANGE_TO = '192.0.3.253'
 DHCPv4_GATEWAY = IPv4_ADDRESS
+DHCPv6_RANGE_FROM = 'fdb3:84e5:4ff4:55e3::a'
+DHCPv6_RANGE_TO = 'fdb3:84e5:4ff4:55e3::64'
+
+
+class IpFamily(object):
+    IPv4 = 4
+    IPv6 = 6
+
+
+parametrize_ip_families = pytest.mark.parametrize(
+    'families', [(IpFamily.IPv4,),
+                 (IpFamily.IPv6,),
+                 (IpFamily.IPv4, IpFamily.IPv6)],
+    ids=['IPv4', 'IPv6', 'IPv4&6'])
 
 
 @nftestlib.parametrize_switch
+@parametrize_ip_families
+@nftestlib.parametrize_bridged
 class TestNetworkDhcpBasic(NetFuncTestCase):
 
-    def test_add_net_with_dhcpv4_based_on_nic(self, switch):
-        self._test_add_net_with_dhcpv4(switch)
+    def test_add_net_with_dhcp(self, switch, families, bridged):
 
-    def test_add_net_with_dhcpv4_based_on_bridge(self, switch):
-        self._test_add_net_with_dhcpv4(switch, bridged=True)
-
-    def _test_add_net_with_dhcpv4(self, switch, bridged=False):
+        if switch == 'ovs' and IpFamily.IPv6 in families:
+            pytest.xfail('DHCPv6 is not supported with OVS yet.')
 
         with veth_pair() as (server, client):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
+            addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, IpFamily.IPv6)
             linkSet(server, ['up'])
             with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
+                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO,
                              router=DHCPv4_GATEWAY):
 
-                netcreate = {NETWORK_NAME: {
-                    'bridged': bridged, 'nic': client, 'blockingdhcp': True,
-                    'bootproto': 'dhcp', 'switch': switch}}
+                network_attrs = {'bridged': bridged,
+                                 'nic': client,
+                                 'blockingdhcp': True,
+                                 'switch': switch}
+
+                if IpFamily.IPv4 in families:
+                    network_attrs['bootproto'] = 'dhcp'
+                if IpFamily.IPv6 in families:
+                    network_attrs['dhcpv6'] = True
+
+                netcreate = {NETWORK_NAME: network_attrs}
 
                 with self.setupNetworks(netcreate, {}, NOCHK):
                     self.assertNetworkIp(
