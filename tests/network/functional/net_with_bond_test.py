@@ -18,8 +18,6 @@
 #
 from __future__ import absolute_import
 
-from contextlib import contextmanager
-
 import six
 
 import pytest
@@ -107,38 +105,28 @@ class TestNetworkWithBond(NetFuncTestCase):
                     self.assertNetwork(netname, netattrs)
 
 
-@pytest.mark.legacy_switch
-class TestNetworkWithBondLegacy(NetFuncTestCase):
+@nftestlib.parametrize_switch
+class TestReuseBond(NetFuncTestCase):
 
-    def test_detach_used_bond_from_bridge(self):
-        with _test_detach_used_bond_from_bridge(nettest=self, switch='legacy'):
-            ifdown(BOND_NAME)
-            ifup(BOND_NAME)
-            # netinfo must be updated explicitly after non-API changes
-            self.update_netinfo()
-
-
-@pytest.mark.ovs_switch
-class TestNetworkWithBondOvs(NetFuncTestCase):
-
-    def test_detach_used_bond_from_bridge(self):
-        with _test_detach_used_bond_from_bridge(nettest=self, switch='ovs'):
-            pass
-
-
-@contextmanager
-def _test_detach_used_bond_from_bridge(nettest, switch):
-    with dummy_device() as nic:
-        NETCREATE = {
-            NETWORK1_NAME: {'bonding': BOND_NAME, 'switch': switch},
-            NETWORK2_NAME: {'bonding': BOND_NAME, 'vlan': VLAN2,
-                            'switch': switch}}
-        BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
-
-        with nettest.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
-            NETEDIT = {
-                NETWORK1_NAME: {'bonding': BOND_NAME, 'vlan': VLAN1,
+    def test_detach_used_bond_from_bridge(self, switch):
+        with dummy_device() as nic:
+            NETCREATE = {
+                NETWORK1_NAME: {'bonding': BOND_NAME, 'switch': switch},
+                NETWORK2_NAME: {'bonding': BOND_NAME, 'vlan': VLAN2,
                                 'switch': switch}}
-            nettest.setupNetworks(NETEDIT, {}, NOCHK)
-            yield
-            nettest.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+            BONDCREATE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
+
+            with self.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
+                NETEDIT = {
+                    NETWORK1_NAME: {'bonding': BOND_NAME, 'vlan': VLAN1,
+                                    'switch': switch}}
+                self.setupNetworks(NETEDIT, {}, NOCHK)
+
+                # For the legacy bridge, add an explicit ifdown/up step.
+                if switch == 'legacy':
+                    ifdown(BOND_NAME)
+                    ifup(BOND_NAME)
+                    # netinfo must be updated explicitly after non-API changes
+                    self.update_netinfo()
+
+                self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
