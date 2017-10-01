@@ -490,40 +490,6 @@ class NetworkTest(TestCaseBase):
             self.retryAssert(assertStatsInRange, timeout=3)
 
     @cleanupNet
-    @permutations([[True], [False]])
-    def testSetupNetworksAddOverExistingBond(self, bridged=True):
-        with dummyIf(2) as nics:
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME + '0': {'bonding': BONDING_NAME,
-                                      'bridged': False}},
-                {BONDING_NAME: {'nics': nics}},
-                NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertBondExists(BONDING_NAME, nics)
-
-            _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
-            with nonChangingOperstate(BONDING_NAME):
-                status, msg = self.setupNetworks(
-                    {NETWORK_NAME:
-                        {'bonding': BONDING_NAME, 'bridged': bridged,
-                         'vlan': VLAN_ID}},
-                    {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETWORK_NAME, bridged)
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'remove': True},
-                 NETWORK_NAME + '0': {'remove': True}},
-                {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertBondExists(BONDING_NAME, nics)
-
-            status, msg = self.setupNetworks(
-                {},
-                {BONDING_NAME: {'remove': True}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
     def testSetupNetworksDelOneOfBondNets(self):
         NETA_NAME = NETWORK_NAME + 'A'
         NETB_NAME = NETWORK_NAME + 'B'

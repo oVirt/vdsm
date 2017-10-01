@@ -24,6 +24,7 @@ import pytest
 
 from vdsm.network import errors as ne
 from vdsm.network.configurators.ifcfg import ifup, ifdown
+from vdsm.network.netlink import waitfor
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestCase, SetupNetworksError, NOCHK
@@ -130,3 +131,27 @@ class TestReuseBond(NetFuncTestCase):
                     self.update_netinfo()
 
                 self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+
+    @nftestlib.parametrize_bridged
+    def test_add_vlaned_network_on_existing_bond(self, switch, bridged):
+        if switch == 'ovs':
+            pytest.xfail('Link is not stable when using OVS switch.')
+        with dummy_device() as nic:
+            NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
+                                       'bridged': False,
+                                       'switch': switch}}
+            BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
+
+            with self.setupNetworks(NETBASE, BONDBASE, NOCHK):
+                with waitfor.waitfor_linkup(BOND_NAME):
+                    pass
+                with nftestlib.monitor_stable_link_state(BOND_NAME):
+                    NETVLAN = {NETWORK2_NAME: {'bonding': BOND_NAME,
+                                               'bridged': bridged,
+                                               'vlan': VLAN1,
+                                               'switch': switch}}
+                    with self.setupNetworks(NETVLAN, {}, NOCHK):
+                        self.assertNetwork(NETWORK1_NAME,
+                                           NETBASE[NETWORK1_NAME])
+                        self.assertNetwork(NETWORK2_NAME,
+                                           NETVLAN[NETWORK2_NAME])

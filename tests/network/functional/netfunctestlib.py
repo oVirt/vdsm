@@ -32,6 +32,7 @@ from vdsm.network import kernelconfig
 from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported, prefix2netmask
 from vdsm.network.link.iface import iface
+from vdsm.network.netlink import monitor
 
 from functional.utils import getProxy, SUCCESS
 
@@ -481,6 +482,23 @@ class SetupNetworks(object):
             fileutils.rm_file(IFCFG_PREFIX + nic)
 
         return status, msg
+
+
+@contextmanager
+def monitor_stable_link_state(device):
+    """Raises an exception if it detects that the device link state changes."""
+    iface_properties = iface(device).properties()
+    original_state = iface_properties['state']
+    try:
+        with monitor.Monitor(groups=('link',)) as mon:
+            yield
+    finally:
+        state_changes = (e['state'] for e in mon if e['name'] == device)
+        for state in state_changes:
+            if state != original_state:
+                raise pytest.fail(
+                    '{} link state changed: {} -> {}'.format(
+                        device, original_state, state))
 
 
 def _normalize_caps(netinfo_from_caps):
