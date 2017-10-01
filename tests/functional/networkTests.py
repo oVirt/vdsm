@@ -489,27 +489,6 @@ class NetworkTest(TestCaseBase):
             # wait for Vdsm to update statistics
             self.retryAssert(assertStatsInRange, timeout=3)
 
-    @cleanupNet
-    @permutations([[True], [False]])
-    def testReorderBondingOptions(self, bridged):
-        with dummyIf(2) as nics:
-            nets = {NETWORK_NAME: {
-                'bridged': bridged, 'bonding': BONDING_NAME}}
-            bonds = {BONDING_NAME: {'nics': nics,
-                                    'options': 'lacp_rate=fast mode=802.3ad'}}
-
-            status, msg = self.setupNetworks(nets, bonds, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.assertNetworkExists(NETWORK_NAME, bridged)
-            self.assertBondExists(BONDING_NAME, nics)
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'remove': True}},
-                {BONDING_NAME: {'remove': True}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkDoesntExist(NETWORK_NAME)
-
     def _setup_overExistingBridge():
         rc, _, err = execCmd([EXT_BRCTL, 'addbr', NETWORK_NAME])
         if rc != 0:

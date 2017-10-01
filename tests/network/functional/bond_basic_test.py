@@ -151,6 +151,16 @@ class TestBondOptions(NetFuncTestCase):
                 self.setupNetworks({}, BONDEDIT, NOCHK)
                 self.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
 
+    def test_bond_options_with_the_mode_specified_last(self, switch):
+        with dummy_devices(2) as (nic1, nic2):
+            BONDCREATE = {BOND_NAME: {
+                'nics': [nic1, nic2],
+                'options': 'lacp_rate=fast mode=802.3ad',
+                'switch': switch}}
+
+            with self.setupNetworks({}, BONDCREATE, NOCHK):
+                self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+
     def test_bond_arp_ip_target_change(self, switch):
         with dummy_devices(2) as nics:
             create_options = ('mode=1 arp_interval=1000 '

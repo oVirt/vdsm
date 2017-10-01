@@ -32,6 +32,8 @@ from vdsm.network import kernelconfig
 from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported, prefix2netmask
 from vdsm.network.link.iface import iface
+from vdsm.network.link.bond import sysfs_options as bond_options
+from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
 from vdsm.network.netlink import monitor
 
 from functional.utils import getProxy, SUCCESS
@@ -232,9 +234,10 @@ class NetFuncTestCase(object):
         assert set(nics) == set(self.netinfo.bondings[bond]['slaves'])
 
     def assertBondOptions(self, bond, options):
+        requested_opts = _split_bond_options(options)
         running_opts = self.netinfo.bondings[bond]['opts']
         normalized_active_opts = _normalize_bond_opts(running_opts)
-        assert set(options.split()) <= set(normalized_active_opts)
+        assert set(requested_opts) <= set(normalized_active_opts)
 
     def assertBondExistsInRunninng(self, bond, nics):
         assert bond in self.running_config.bonds
@@ -536,6 +539,27 @@ def _normalize_qos_config(qos):
 
 def _normalize_bond_opts(opts):
     return [opt + '=' + val for (opt, val) in six.iteritems(opts)]
+
+
+def _split_bond_options(opts):
+    return _numerize_bond_options(opts) if opts else opts
+
+
+def _numerize_bond_options(opts):
+    optmap = dict((pair.split('=', 1) for pair in opts.split()))
+
+    mode = optmap.get('mode')
+    if not mode:
+        return opts
+
+    optmap['mode'] = numeric_mode = bond_options.numerize_bond_mode(mode)
+    for opname, opval in six.viewitems(optmap):
+        numeric_val = bond_opts_mapper.get_bonding_option_numeric_val(
+            numeric_mode, opname, opval)
+        if numeric_val is not None:
+            optmap[opname] = numeric_val
+
+    return _normalize_bond_opts(optmap)
 
 
 def _gather_expected_legacy_links(net, attrs, netinfo):
