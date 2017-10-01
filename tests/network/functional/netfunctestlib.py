@@ -108,6 +108,7 @@ class NetFuncTestCase(object):
         self.assertNetworkIp(netname, netattrs)
         self.assertLinksUp(netname, netattrs)
         self.assertNetworkSwitchType(netname, netattrs)
+        self.assertNetworkMtu(netname, netattrs)
 
     def assertHostQos(self, netname, netattrs):
         network_caps = self.netinfo.networks[netname]
@@ -209,6 +210,12 @@ class NetFuncTestCase(object):
         requested_switch = netattrs.get('switch', 'legacy')
         running_switch = self.netinfo.networks[netname]['switch']
         assert requested_switch == running_switch
+
+    def assertNetworkMtu(self, netname, netattrs):
+        requested_mtu = netattrs.get('mtu', 1500)
+        netinfo = _normalize_caps(self.netinfo)
+        running_mtu = netinfo.networks[netname]['mtu']
+        assert requested_mtu == running_mtu
 
     def assertBond(self, bond, attrs):
         self.assertBondExists(bond)

@@ -490,42 +490,6 @@ class NetworkTest(TestCaseBase):
             self.retryAssert(assertStatsInRange, timeout=3)
 
     @cleanupNet
-    def testSetupNetworksDelOneOfBondNets(self):
-        NETA_NAME = NETWORK_NAME + 'A'
-        NETB_NAME = NETWORK_NAME + 'B'
-        NETA_DICT = {'bonding': BONDING_NAME, 'bridged': False, 'mtu': '1600',
-                     'vlan': '4090'}
-        NETB_DICT = {'bonding': BONDING_NAME, 'bridged': False, 'mtu': '2000',
-                     'vlan': '4091'}
-        with dummyIf(2) as nics:
-            status, msg = self.setupNetworks(
-                {NETA_NAME: NETA_DICT,
-                 NETB_NAME: NETB_DICT},
-                {BONDING_NAME: {'nics': nics}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETA_NAME)
-            self.assertNetworkExists(NETB_NAME)
-            self.assertBondExists(BONDING_NAME, nics)
-            self.assertMtu(NETB_DICT['mtu'], BONDING_NAME)
-
-            _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
-            with nonChangingOperstate(BONDING_NAME):
-                status, msg = self.setupNetworks(
-                    {NETB_NAME: {'remove': True}}, {}, NOCHK)
-
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETA_NAME)
-            self.assertNetworkDoesntExist(NETB_NAME)
-            # Check that the mtu of the bond has been adjusted to the smaller
-            # NETA value
-            self.assertMtu(NETA_DICT['mtu'], BONDING_NAME)
-
-            status, msg = self.setupNetworks(
-                {NETA_NAME: {'remove': True}},
-                {BONDING_NAME: {'remove': True}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
     @permutations([[True], [False]])
     def testReorderBondingOptions(self, bridged):
         with dummyIf(2) as nics:
