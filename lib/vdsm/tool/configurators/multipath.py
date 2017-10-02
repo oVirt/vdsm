@@ -78,8 +78,6 @@ devices {
         # These settings overrides built-in devices settings. It does not apply
         # to devices without built-in settings (these use the settings in the
         # "defaults" section), or to devices defined in the "devices" section.
-        # Note: This is not available yet on Fedora 21. For more info see
-        # https://bugzilla.redhat.com/1253799
         all_devs                yes
         no_path_retry           fail
     }
