@@ -490,24 +490,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    def testDelNetworkWithMTU(self, bridged):
-        MTU = 1280  # required for sysctl.disable_ipv6() on the bridge
-        with dummyIf(2) as nics:
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'vlan': VLAN_ID, 'bonding': BONDING_NAME,
-                                'mtu': MTU, 'bridged': bridged}},
-                {BONDING_NAME: {'nics': nics}}, NOCHK)
-            vlan_name = '%s.%s' % (BONDING_NAME, VLAN_ID)
-
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertMtu(MTU, NETWORK_NAME, vlan_name, BONDING_NAME, nics[0])
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
-    @permutations([[True], [False]])
     def testSetupNetworksAddVlan(self, bridged):
         BRIDGE_OPTS = {'multicast_router': '0', 'multicast_snooping': '0'}
         formattedOpts = ' '.join(

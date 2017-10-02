@@ -197,6 +197,18 @@ class TestNetworkBasic(NetFuncTestCase):
                 self.assertNoNetwork(NET_1)
                 self.assertNetwork(NET_2, netcreate[NET_2])
 
+    @nftestlib.parametrize_bridged
+    def test_add_net_with_mtu(self, switch, bridged):
+        if switch == 'ovs':
+            pytest.xfail('MTU editation is not supported on OVS switches.')
+        with dummy_device() as nic:
+            NETCREATE = {NETWORK_NAME: {'nic': nic,
+                                        'bridged': bridged,
+                                        'mtu': 2000,
+                                        'switch': switch}}
+            with self.setupNetworks(NETCREATE, {}, NOCHK):
+                self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+
     def _test_add_multiple_nets_fails(self, switch, bridged, vlan_id=None):
         with dummy_device() as nic:
             net_1_attrs = net_2_attrs = self._create_net_attrs(
