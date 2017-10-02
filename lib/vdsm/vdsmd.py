@@ -130,7 +130,7 @@ def serve_clients(log):
 def run():
     try:
         lconfig.fileConfig(loggerConfFile, disable_existing_loggers=False)
-    except RuntimeError as e:
+    except Exception as e:
         raise FatalError("Cannot configure logging: %s" % e)
 
     # Shorten WARNING and CRITICAL to make the log align nicer.
