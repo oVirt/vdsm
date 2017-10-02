@@ -37,9 +37,10 @@ _CONF_FILE = "/etc/multipath.conf"
 # "VDSM REVISION X.Y" tag.  Note that older version used "RHEV REVISION X.Y"
 # format.
 
-_CURRENT_TAG = "# VDSM REVISION 1.3"
+_CURRENT_TAG = "# VDSM REVISION 1.4"
 
 _OLD_TAGS = (
+    "# VDSM REVISION 1.3",
     "# VDSM REVISION 1.2",
     "# RHEV REVISION 1.1",
     "# RHEV REVISION 1.0",
@@ -62,22 +63,112 @@ _OLD_PRIVATE_TAG = "# RHEV PRIVATE"
 _CONF_DATA = """\
 %(current_tag)s
 
+# This file is managed by vdsm.
+#
+# The recommended way to add configuration for your storage is to add a
+# drop-in configuration in /etc/conf.d/<mydevice>.conf. Settings in
+# drop-in configuration files overrides settings in main multipath.conf.
+#
+# If you want to modify this file, you must make it private so vdsm will
+# never modify it. To make the file private, set the second line of this
+# file to "# VDSM PRIVATE".
+
 defaults {
+
+    # Ensures fast detection of path failures.
+    #
+    # Interval between two path checks in seconds. If polling interval
+    # is longer, it will take more time to discover that a path failed
+    # or was reinstated.
+
     polling_interval            5
+
+    # Ensures fast fail when no path is available.
+    #
+    # The number of retries until disable queueing, or fail for
+    # immediate failure (no queueing).
+    #
+    # oVirt is not designed to handle unlimited queuing used by many
+    # devices (no_path_retry queue) or big number of retries
+    # (no_path_retry 60).  These settings cause commands run by vdsm
+    # (e.g. lvm) to get stuck for a long time, causing timeouts in
+    # various flows, and may cause a host to become non-responsive.
+    #
+    # A small number of retries (e.g. no_path_retry 4) may be better,
+    # protecting from short outage, but we cannot use it because of
+    # https://bugzilla.redhat.com/1459370.
+
     no_path_retry               fail
+
+    # Required for having same device names on all hosts.
+    # DO NOT CHANGE!
+
     user_friendly_names         no
+
+    # Helps propagating I/O errors to processes when the last path
+    # failed.  Not necessary when using "no_path_retry fail".
+
     flush_on_last_del           yes
+
+    # Ensures fast failover between paths.
+    #
+    # the  number  of seconds the scsi layer will wait after a problem
+    # has been detected before failing IO to devices.
+    #
+    # With iSCSI, multipath uses this value to change the iSCSI session
+    # timeout, which is 120 seconds by default.
+    #
+    # With FC, multipath sets the sysfs fast_io_fail_tmo value for the
+    # remote ports associated with the path devices.  Multipath sets
+    # this value whenever a device is reloaded (e.g. when a new path is
+    # added or removed). This will override any change made in
+    # /sys/class/fc_remote_ports/rport-*/fast_io_fail_tmo.
+    #
+    # This setting is not applicable to SAS devices.
+
     fast_io_fail_tmo            5
+
+    # The number of seconds the scsi layer will wait after a problem has
+    # been detected before removing a device from the system.
+    #
+    # For FC this is setting the sysfs dev_loss_tmo value for
+    # the remote ports associated with the path devices.
+    #
+    # For SAS devices it is setting the I_T_nexus_loss_timeout value.
+    #
+    # There is no equivalent settable parameter for iSCSI devices so
+    # this parameter is only applicable to FC and SAS devices.
+    #
+    # Usage:
+    #
+    # - Set this if you want failed devices to be removed from the system.
+    # - Do not set this is you want failed devices to stay around, since
+    #   after they are removed, they need to be rediscovered to get them
+    #   back.
+    # - Do not set this if the root file system is multipathed. In this
+    #   case you want to set dev_loss_tmo to "infinity".  If you don't,
+    #   then if all the path devices for your root file system disappear,
+    #   udev will not be able to run to send the event to multipath to
+    #   bring the device back.
+
     dev_loss_tmo                30
+
+    # Supports large number of paths.
+    #
+    # The maximum number of file descriptors that can be opened by
+    # multipath and multipathd. Should be set to the maximum number of
+    # paths plus 32.
+
     max_fds                     4096
 }
 
 # Remove devices entries when overrides section is available.
 devices {
     device {
-        # These settings overrides built-in devices settings. It does not apply
-        # to devices without built-in settings (these use the settings in the
-        # "defaults" section), or to devices defined in the "devices" section.
+        # These settings overrides built-in devices settings. It does
+        # not apply to devices without built-in settings (these use the
+        # settings in the "defaults" section), or to devices defined in
+        # the "devices" section.
         all_devs                yes
         no_path_retry           fail
     }
