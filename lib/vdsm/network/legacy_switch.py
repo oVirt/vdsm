@@ -196,7 +196,8 @@ def _add_network(network, configurator, _netinfo, nameservers,
         nameservers=nameservers,
         _netinfo=_netinfo, configurator=configurator, opts=options)
 
-    if bridged and network in _netinfo.bridges:
+    if bridged and network in _netinfo.bridges and configurator.owned_device(
+            network):
         # The bridge already exists, update the configured entity to one level
         # below and update the mtu of the bridge.
         # The mtu is updated in the bridge configuration and on all the tap

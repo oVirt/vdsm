@@ -24,7 +24,6 @@ import os.path
 import time
 
 import netaddr
-from nose import with_setup
 from nose.plugins.skip import SkipTest
 import six
 
@@ -488,28 +487,6 @@ class NetworkTest(TestCaseBase):
 
             # wait for Vdsm to update statistics
             self.retryAssert(assertStatsInRange, timeout=3)
-
-    def _setup_overExistingBridge():
-        rc, _, err = execCmd([EXT_BRCTL, 'addbr', NETWORK_NAME])
-        if rc != 0:
-            raise errors.ConfigNetworkError(errors.ERR_FAILED_IFUP, err)
-
-    def _teardown_overExistingBridge():
-        if os.path.exists('/sys/class/net/%s/bridge' % NETWORK_NAME):
-            rc, _, err = execCmd([EXT_BRCTL, 'delbr', NETWORK_NAME])
-            if rc != 0:
-                raise errors.ConfigNetworkError(errors.ERR_FAILED_IFDOWN, err)
-
-    @cleanupNet
-    @with_setup(_setup_overExistingBridge, _teardown_overExistingBridge)
-    def testSetupNetworksOverExistingBridge(self):
-        status, msg = self.setupNetworks(
-            {NETWORK_NAME: {'bridged': True}}, {}, NOCHK)
-        self.assertEqual(status, SUCCESS, msg)
-        self.assertNetworkExists(NETWORK_NAME, True)
-        status, msg = self.setupNetworks(
-            {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
-        self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
     @permutations([[True], [False]])
