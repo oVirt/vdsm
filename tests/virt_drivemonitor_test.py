@@ -245,6 +245,7 @@ class FakeVM(vm.Vm):
         self._confLock = threading.Lock()
         self.conf = {}
         self._guestCpuLock = threading.Lock()
+        self._resume_behavior = 'auto_resume'
 
     # to reduce the amount of faking needed, we fake those methods
     # which are not relevant to the monitor_drives() flow

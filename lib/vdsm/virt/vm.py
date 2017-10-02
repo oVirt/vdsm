@@ -139,6 +139,12 @@ class ConsoleDisconnectAction:
     REBOOT = 'REBOOT'
 
 
+class ResumeBehavior:
+    AUTO_RESUME = 'auto_resume'
+    LEAVE_PAUSED = 'leave_paused'
+    KILL = 'kill'
+
+
 # These strings are representing libvirt virDomainEventType values
 # http://libvirt.org/html/libvirt-libvirt-domain.html#virDomainEventType
 _EVENT_STRINGS = (
@@ -340,6 +346,7 @@ class Vm(object):
                 params.get('memGuaranteedSize', '0')
             )
             self._launch_paused = self.conf.get('launchPaused', False)
+            self._resume_behavior = ResumeBehavior.AUTO_RESUME
         self._destroy_requested = threading.Event()
         self._monitorResponse = 0
         self._post_copy = migration.PostCopyPhase.NONE
@@ -499,6 +506,8 @@ class Vm(object):
                 self._cluster_version = [int(v)
                                          for v in cluster_version.split('.')]
             self._launch_paused = conv.tobool(md.get('launchPaused', False))
+            self._resume_behavior = md.get('resumeBehavior',
+                                           ResumeBehavior.AUTO_RESUME)
 
     def min_cluster_version(self, major, minor):
         """
@@ -839,7 +848,7 @@ class Vm(object):
             if self._initTimePauseCode:
                 self._pause_code = self._initTimePauseCode
                 if self._initTimePauseCode == 'ENOSPC':
-                    self.cont()
+                    self.maybe_resume()
             else:
                 self._pause_code = None
 
@@ -1351,7 +1360,7 @@ class Vm(object):
 
     def _resume_if_needed(self):
         try:
-            self.cont()
+            self.maybe_resume()
         except libvirt.libvirtError as e:
             current_status = self.lastStatus
             if (current_status == vmstatus.UP and
@@ -1362,6 +1371,22 @@ class Vm(object):
                 self.log.debug("Cannot resume VM in state %s", current_status)
             else:
                 self.log.exception("Cannot resume VM")
+
+    def maybe_resume(self):
+        """
+        Handle resume request according to auto-resume value of the VM.
+
+        The VM may be resumed or left paused, according to its auto-resume
+        setting.
+        """
+        if self._resume_behavior == ResumeBehavior.AUTO_RESUME:
+            self.cont()
+            self.log.info("VM resumed")
+        elif self._resume_behavior == ResumeBehavior.LEAVE_PAUSED:
+            self.log.info("Auto-resume disabled for the VM")
+        else:
+            raise Exception("Unsupported resume behavior value: %s",
+                            (self._resume_behavior,))
 
     def _acquireCpuLockWithTimeout(self):
         timeout = self._loadCorrectedTimeout(
@@ -2344,7 +2369,7 @@ class Vm(object):
         if not self.recovering and self._initTimePauseCode:
             self._pause_code = self._initTimePauseCode
             if self._initTimePauseCode == 'ENOSPC':
-                self.cont()
+                self.maybe_resume()
 
         self._dom_vcpu_setup()
         self._updateIoTuneInfo()

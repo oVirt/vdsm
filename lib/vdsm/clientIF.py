@@ -222,8 +222,8 @@ class clientIF(object):
                     vmId = libvirtVm.UUIDString()
                     vmObj = self.vmContainer[vmId]
                     if sdUUID in vmObj.sdIds:
-                        self.log.info("Cont vm %s in EIO", vmId)
-                        vmObj.cont()
+                        self.log.info("Trying to resume VM %s after EIO", vmId)
+                        vmObj.maybe_resume()
 
     @classmethod
     def getInstance(cls, irs=None, log=None, scheduler=None):
