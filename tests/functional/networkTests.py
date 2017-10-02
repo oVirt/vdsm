@@ -510,27 +510,6 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    def testSetupNetworksConvertVlanNetBridgeness(self):
-        """Convert a bridged networks to a bridgeless one and viceversa"""
-
-        def setupNetworkBridged(nic, bridged):
-            networks = {NETWORK_NAME: dict(vlan=VLAN_ID,
-                                           nic=nic, bridged=bridged)}
-            status, msg = self.setupNetworks(networks, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETWORK_NAME, bridged)
-
-        with dummyIf(1) as (nic, ):
-            setupNetworkBridged(nic, True)
-            setupNetworkBridged(nic, False)
-            setupNetworkBridged(nic, True)
-
-            status, msg = self.setupNetworks({NETWORK_NAME: dict(remove=True)},
-                                             {}, NOCHK)
-
-        self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
     @RequireDummyMod
     @ValidateRunningAsRoot
     def testSetupNetworksDeletesTheBridgeOnlyWhenItIsReconfigured(self):

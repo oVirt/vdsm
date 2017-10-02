@@ -209,6 +209,21 @@ class TestNetworkBasic(NetFuncTestCase):
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
+    def test_switch_between_bridgeless_and_bridged_vlaned_net(self, switch):
+        with dummy_device() as nic:
+            netattrs = {'nic': nic,
+                        'vlan': VLANID,
+                        'bridged': False,
+                        'switch': switch}
+            netsetup = {NETWORK_NAME: netattrs}
+            with self.setupNetworks(netsetup, {}, NOCHK):
+                netattrs['bridged'] = True
+                self.setupNetworks(netsetup, {}, NOCHK)
+                self.assertNetwork(NETWORK_NAME, netattrs)
+                netattrs['bridged'] = False
+                self.setupNetworks(netsetup, {}, NOCHK)
+                self.assertNetwork(NETWORK_NAME, netattrs)
+
     def _test_add_multiple_nets_fails(self, switch, bridged, vlan_id=None):
         with dummy_device() as nic:
             net_1_attrs = net_2_attrs = self._create_net_attrs(
