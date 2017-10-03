@@ -1158,7 +1158,7 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
         _lvminfo._invalidatevgs(vgName)
         _lvminfo._invalidatelvs(vgName, lvName)
     else:
-        raise se.CannotCreateLogicalVolume(vgName, lvName)
+        raise se.CannotCreateLogicalVolume(vgName, lvName, err)
 
     # TBD: Need to explore the option of running lvcreate w/o devmapper
     # so that if activation is not needed it would be skipped in the

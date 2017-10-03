@@ -1366,6 +1366,9 @@ class CannotCreateLogicalVolume(StorageException):
     code = 550
     message = "Cannot create Logical Volume"
 
+    def __init__(self, vgname, lvname, err):
+        self.value = "vgname=%s lvname=%s err=%s" % (vgname, lvname, err)
+
 
 class CannotRemoveLogicalVolume(StorageException):
     code = 551
