@@ -730,7 +730,7 @@ _STORAGE_TEST_DATA = [
                     io="native" name="qemu" type="raw"/>
         </disk>''',
      True,
-     {'index': 0}],
+     {}],
     [u'''<disk device="disk" snapshot="no" type="block">
             <source dev="/path/to/volume"/>
             <target bus="virtio" dev="vda"/>
@@ -739,7 +739,7 @@ _STORAGE_TEST_DATA = [
                     io="native" name="qemu" type="raw"/>
         </disk>''',
      True,
-     {'index': 0}],
+     {}],
     [u'''<disk device="disk" snapshot="no" type="file">
             <source file="/path/to/volume"/>
             <target bus="virtio" dev="vda"/>
@@ -748,7 +748,7 @@ _STORAGE_TEST_DATA = [
                     io="threads" name="qemu" type="raw"/>
         </disk>''',
      False,
-     {'index': 0}],
+     {}],
     [u'''<disk device="lun" sgio="unfiltered" snapshot="no" type="block">
             <source dev="/dev/mapper/lun1"/>
             <target bus="scsi" dev="sda"/>
@@ -756,7 +756,7 @@ _STORAGE_TEST_DATA = [
                     io="native" name="qemu" type="raw"/>
         </disk>''',
      True,
-     {'index': 0}],
+     {}],
     [u'''<disk device="disk" snapshot="no" type="network">
             <source name="poolname/volumename" protocol="rbd">
                 <host name="1.2.3.41" port="6789" transport="tcp"/>
@@ -768,7 +768,7 @@ _STORAGE_TEST_DATA = [
                     io="threads" name="qemu" type="raw"/>
         </disk>''',
      False,
-     {'index': 0}],
+     {}],
     [u'''<disk device="disk" snapshot="no" type="network">
             <source name="poolname/volumename" protocol="rbd">
                 <host name="1.2.3.41" port="6789" transport="tcp"/>
@@ -783,7 +783,7 @@ _STORAGE_TEST_DATA = [
                     io="threads" name="qemu" type="raw"/>
         </disk>''',
      False,
-     {'index': 0}],
+     {}],
     [u'''<disk device="lun" sgio="unfiltered" snapshot="no" type="block">
             <address bus="0" controller="0" target="0" type="drive" unit="0" />
             <source dev="/dev/mapper/36001405b3b7829f14c1400d925eefebb" />
@@ -792,7 +792,7 @@ _STORAGE_TEST_DATA = [
                     name="qemu" type="raw" />
         </disk>''',
      True,
-     {'index': 0}],
+     {}],
     [u'''<disk device="cdrom" snapshot="no" type="file">
             <source file="/var/run/vdsm/payload/{guid}.{hashsum}.img"
                 startupPolicy="optional" />
@@ -801,7 +801,7 @@ _STORAGE_TEST_DATA = [
         </disk>'''.format(guid='8a1dc504-9d00-48f3-abdc-c70404e6f7e2',
                           hashsum='4137dc5fb55e021fbfd2653621d9d194'),
      True,
-     {'index': 3}],
+     {}],
     [u'''<disk device="disk" snapshot="no" type="block">
             <source dev="/path/to/volume"/>
             <target bus="virtio" dev="vda"/>
@@ -815,7 +815,7 @@ _STORAGE_TEST_DATA = [
             </iotune>
         </disk>''',
      True,
-     {'index': 0}],
+     {}],
 ]
 
 
