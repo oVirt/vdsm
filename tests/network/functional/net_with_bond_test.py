@@ -69,12 +69,6 @@ class TestNetworkWithBond(NetFuncTestCase):
                     self.setupNetworks(NETCREATE, {}, NOCHK)
                 assert e.value.status == ne.ERR_USED_NIC
 
-    def test_add_bridged_net_with_multiple_vlans_over_a_bond(self, switch):
-        self._test_add_net_with_multi_vlans_over_a_bond(switch)
-
-    def test_add_bridgeless_net_with_multiple_vlans_over_a_bond(self, switch):
-        self._test_add_net_with_multi_vlans_over_a_bond(switch, bridged=False)
-
     def test_add_net_with_invalid_bond_name_fails(self, switch):
         INVALID_BOND_NAMES = ('bond',
                               'bonda',
@@ -89,7 +83,8 @@ class TestNetworkWithBond(NetFuncTestCase):
                     pass
             assert cm.value.status == ne.ERR_BAD_BONDING
 
-    def _test_add_net_with_multi_vlans_over_a_bond(self, switch, bridged=True):
+    @nftestlib.parametrize_bridged
+    def test_add_net_with_multi_vlans_over_a_bond(self, switch, bridged):
         with dummy_devices(2) as nics:
             netsetup = {}
             VLAN_COUNT = 3
