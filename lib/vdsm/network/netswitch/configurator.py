@@ -36,7 +36,7 @@ from vdsm.network.link.iface import iface as iface_obj
 from vdsm.network.netconfpersistence import RunningConfig, Transaction
 from vdsm.network.ovs import info as ovs_info
 from vdsm.network.ovs import switch as ovs_switch
-from vdsm.network.link.bond import Bond
+from vdsm.network.link import bond
 from vdsm.network.link.setup import SetupBonds
 from vdsm.network.netinfo.cache import (networks_base_info, get as netinfo_get,
                                         CachingNetInfo, NetInfo)
@@ -84,7 +84,7 @@ def _split_switch_type_entries(entries, running_entries):
             # This is not always possible, specifically with bonds owned by ovs
             # but not successfully deployed (not saved in running config).
             if (switch_type == legacy_switch.SWITCH_TYPE and
-                    Bond(name).exists() and
+                    bond.Bond(name).exists() and
                     not Ifcfg.owned_device(name)):
                 # If not owned by Legacy, assume OVS and let it be removed in
                 # the OVS way.
@@ -208,8 +208,8 @@ def _get_kernel_nets_nics(ovs_networks):
 
 def _get_kernel_bonds_slaves():
     kernel_bonds_slaves = set()
-    for bond_name in Bond.bonds():
-        kernel_bonds_slaves |= Bond(bond_name).slaves
+    for bond_name in bond.Bond.bonds():
+        kernel_bonds_slaves |= bond.Bond(bond_name).slaves
     return kernel_bonds_slaves
 
 
@@ -343,6 +343,9 @@ def _add_speed_device_info(net_caps):
     for devname, devattr in six.viewitems(net_caps['nics']):
         devattr['speed'] = nic.speed(devname)
 
+    for devname, devattr in six.viewitems(net_caps['bondings']):
+        devattr['speed'] = bond.speed(devname)
+
 
 def _set_bond_type_by_usage(_netinfo):
     """
@@ -353,10 +356,10 @@ def _set_bond_type_by_usage(_netinfo):
     examined against the running config for the switch that uses it and updates
     its switch type accordingly.
     """
-    for bond, bond_attrs in six.iteritems(RunningConfig().bonds):
+    for bond_name, bond_attrs in six.iteritems(RunningConfig().bonds):
         if (bond_attrs['switch'] == ovs_switch.SWITCH_TYPE and
-                bond in _netinfo['bondings']):
-            _netinfo['bondings'][bond]['switch'] = ovs_switch.SWITCH_TYPE
+                bond_name in _netinfo['bondings']):
+            _netinfo['bondings'][bond_name]['switch'] = ovs_switch.SWITCH_TYPE
 
 
 @memoized
