@@ -55,7 +55,7 @@ from vdsm import supervdsm
 from vdsm.common import concurrent
 from vdsm.common import response
 from vdsm.virt import vm
-from vdsm.virt.vm import Vm
+from vdsm.virt.vm import DestroyedOnResumeError, Vm
 
 try:
     import vdsm.gluster.api as gapi
@@ -223,7 +223,10 @@ class clientIF(object):
                     vmObj = self.vmContainer[vmId]
                     if sdUUID in vmObj.sdIds:
                         self.log.info("Trying to resume VM %s after EIO", vmId)
-                        vmObj.maybe_resume()
+                        try:
+                            vmObj.maybe_resume()
+                        except DestroyedOnResumeError:
+                            pass
 
     @classmethod
     def getInstance(cls, irs=None, log=None, scheduler=None):

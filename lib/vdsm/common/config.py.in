@@ -265,6 +265,14 @@ parameters = [
             'How many seconds should VDSM arbitrarily hold the '
             'shutdown sequence and wait for Engine confirming '
             'that VMs are down.'),
+
+        ('vm_kill_paused_time', '80',
+            'How many seconds to wait before killing VMs paused due to an I/O '
+            'error. Only VMs explicitly marked as killable by Engine will be '
+            'killed, the value does not have any effect on other VMs. '
+            'The value should be close to sanlock kill interval and in any '
+            'case greater than 0 (to tolerate short disturbances) and '
+            'less than 300 (Engine monitoring interval).'),
     ]),
 
     # Section: [rpc]

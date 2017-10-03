@@ -222,6 +222,14 @@ class DestroyedOnStartupError(Exception):
     """
 
 
+class DestroyedOnResumeError(DestroyedOnStartupError):
+    """
+    The VM was destroyed while it was resumed.
+    This happens when the VM is in paused state for too long and it is
+    instructed to destroy itself in such a case.
+    """
+
+
 _MIGRATION_ORIGIN = '_MIGRATION_ORIGIN'
 _FILE_ORIGIN = '_FILE_ORIGIN'
 
@@ -1377,19 +1385,35 @@ class Vm(object):
                 self.log.debug("Cannot resume VM in state %s", current_status)
             else:
                 self.log.exception("Cannot resume VM")
+        except DestroyedOnResumeError:
+            self.log.debug("Cannot resume VM: paused for too long, destroyed")
 
     def maybe_resume(self):
         """
         Handle resume request according to auto-resume value of the VM.
 
-        The VM may be resumed or left paused, according to its auto-resume
-        setting.
+        The VM may be resumed, left paused, or destroyed, according to its
+        auto-resume setting.
+
+        :raises: `DestroyedOnResumeError` if the VM is destroyed.
         """
         if self._resume_behavior == ResumeBehavior.AUTO_RESUME:
             self.cont()
             self.log.info("VM resumed")
         elif self._resume_behavior == ResumeBehavior.LEAVE_PAUSED:
             self.log.info("Auto-resume disabled for the VM")
+        elif self._resume_behavior == ResumeBehavior.KILL:
+            pause_time = self._pause_time
+            now = vdsm.common.time.monotonic_time()
+            if pause_time is not None and \
+               now - pause_time > \
+               config.getint('vars', 'vm_kill_paused_time'):
+                self.log.info("VM paused for too long, will be destroyed")
+                self.destroy(gracefulAttempts=0)
+                raise DestroyedOnResumeError()
+            else:
+                self.cont()
+                self.log.info("VM resumed")
         else:
             raise Exception("Unsupported resume behavior value: %s",
                             (self._resume_behavior,))
