@@ -20,6 +20,7 @@
 
 from __future__ import absolute_import
 
+from vdsm.virt.vmdevices import common
 from vdsm.virt import metadata
 from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
@@ -606,6 +607,58 @@ class DescriptorTests(XMLTestCase):
                     },
                 }
             )
+
+    def test_deeply_nested_metadata_preserved(self):
+        conf = {
+            'device': 'cdrom',
+            'iface': 'ide',
+            'index': '3',
+            'path': '',
+            'readonly': 'true',
+            'specParams': {
+                'vmPayload': {
+                    'file': {
+                        'openstack/content/0000': 'something',
+                        'openstack/latest/meta_data.json': 'something',
+                        'openstack/latest/user_data': 'something',
+                    },
+                    'volId': 'config-2',
+                }
+            },
+            'type': 'disk',
+        }
+
+        expected_xml = """<?xml version='1.0' encoding='UTF-8'?>
+<vm>
+<device name="hdd" devtype="disk">
+  <device>cdrom</device>
+    <iface>ide</iface>
+    <index>3</index>
+    <path />
+    <readonly>true</readonly>
+    <type>disk</type>
+    <specParams>
+      <vmPayload>
+        <volId>config-2</volId>
+        <file path='openstack/content/0000'>something</file>
+        <file path='openstack/latest/meta_data.json'>something</file>
+        <file path='openstack/latest/user_data'>something</file>
+      </vmPayload>
+    </specParams>
+    <vm_custom />
+  </device>
+</vm>"""
+
+        desc = metadata.Descriptor()
+        attrs = common.get_drive_conf_identifying_attrs(conf)
+        with desc.device(**attrs) as dev:
+            dev.update(conf)
+        dom = FakeDomain()
+        desc.dump(dom)
+        # the first dump() used to -wrongly- modify the supplied data
+        desc.dump(dom)
+        for produced_xml in dom.xml.values():
+            self.assertXMLEqual(produced_xml, expected_xml)
 
 
 BLANK_UUID = '00000000-0000-0000-0000-000000000000'

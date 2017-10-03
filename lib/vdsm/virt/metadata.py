@@ -515,10 +515,10 @@ class Descriptor(object):
         dev_data = self._find_device(kwargs)
         if dev_data is None:
             dev_data = self._add_device(kwargs)
-        data = dev_data.copy()
+        data = utils.picklecopy(dev_data)
         yield data
         dev_data.clear()
-        dev_data.update(data)
+        dev_data.update(utils.picklecopy(data))
 
     @contextmanager
     def values(self):
@@ -689,7 +689,7 @@ def _dump_layered(md_obj, key, subkey, value):
 
 def _dump_device(md_obj, data, node_name=_DEVICE):
     elems = []
-    data = data.copy()
+    data = utils.picklecopy(data)
 
     for key in _IGNORED_KEYS:
         data.pop(key, None)
