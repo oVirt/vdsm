@@ -246,6 +246,7 @@ class FakeVM(vm.Vm):
         self.conf = {}
         self._guestCpuLock = threading.Lock()
         self._resume_behavior = 'auto_resume'
+        self._pause_time = None
 
     # to reduce the amount of faking needed, we fake those methods
     # which are not relevant to the monitor_drives() flow
@@ -255,6 +256,9 @@ class FakeVM(vm.Vm):
 
     def isMigrating(self):
         return False
+
+    def _update_metadata(self):
+        pass
 
 
 class FakeDomain(object):

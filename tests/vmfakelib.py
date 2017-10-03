@@ -269,7 +269,10 @@ def VM(params=None, devices=None, runCpu=False,
                                (vm.Vm, '_updateDomainDescriptor',
                                    _updateDomainDescriptor),
                                (vm.Vm, 'send_status_event',
-                                   lambda _, **kwargs: None)]):
+                                   lambda _, **kwargs: None),
+                               (vm.Vm, '_update_metadata',
+                                   lambda _: None),
+                               ]):
             vmParams = {'vmId': 'TESTING', 'vmName': 'nTESTING'}
             vmParams.update({} if params is None else params)
             cif = ClientIF() if cif is None else cif

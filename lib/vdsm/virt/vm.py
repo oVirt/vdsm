@@ -335,6 +335,7 @@ class Vm(object):
         self._custom = {'vmId': self.id}
         self._exit_info = {}
         self._cluster_version = None
+        self._pause_time = None
         if 'xml' in params:
             self._md_desc = metadata.Descriptor.from_xml(params['xml'])
             self._init_from_metadata()
@@ -508,6 +509,7 @@ class Vm(object):
             self._launch_paused = conv.tobool(md.get('launchPaused', False))
             self._resume_behavior = md.get('resumeBehavior',
                                            ResumeBehavior.AUTO_RESUME)
+            self._pause_time = md.get('pauseTime')
 
     def min_cluster_version(self, major, minor):
         """
@@ -847,10 +849,14 @@ class Vm(object):
                 self.lastStatus = vmstatus.UP
             if self._initTimePauseCode:
                 self._pause_code = self._initTimePauseCode
+                if self._pause_code != 'NOERR' and \
+                   self._pause_time is None:
+                    self._pause_time = vdsm.common.time.monotonic_time()
                 if self._initTimePauseCode == 'ENOSPC':
                     self.maybe_resume()
             else:
                 self._pause_code = None
+                self._pause_time = None
 
             self.recovering = False
             if self._dom.connected:
@@ -1437,11 +1443,13 @@ class Vm(object):
             self._logGuestCpuStatus('continue')
             self._lastStatus = afterState
             self._pause_code = None
+            self._pause_time = None
         finally:
             if not guestCpuLocked:
                 self._guestCpuLock.release()
 
         self.send_status_event()
+        self._update_metadata()
         return response.success()
 
     def pause(self, afterState=vmstatus.PAUSED, guestCpuLocked=False,
@@ -1460,6 +1468,9 @@ class Vm(object):
                 self._guestCpuLock.release()
 
         self.send_status_event()
+        if pauseCode != 'NOERR' and self._pause_time is None:
+            self._pause_time = vdsm.common.time.monotonic_time()
+            self._update_metadata()
         return response.success()
 
     def _setGuestCpuRunning(self, isRunning, guestCpuLocked=False):
@@ -2368,6 +2379,8 @@ class Vm(object):
             self._initTimePauseCode = self._readPauseCode()
         if not self.recovering and self._initTimePauseCode:
             self._pause_code = self._initTimePauseCode
+            if self._pause_code != 'NOERR' and self._pause_time is None:
+                self._pause_time = vdsm.common.time.monotonic_time()
             if self._initTimePauseCode == 'ENOSPC':
                 self.maybe_resume()
 
@@ -4707,6 +4720,7 @@ class Vm(object):
             self.log.info('abnormal vm stop device %s error %s',
                           blockDevAlias, err)
             self._pause_code = reason
+            self._pause_time = vdsm.common.time.monotonic_time()
             self._setGuestCpuRunning(False)
             self._logGuestCpuStatus('onIOError')
             if reason == 'ENOSPC':
@@ -4714,6 +4728,7 @@ class Vm(object):
                     self.log.info("No VM drives were extended")
 
             self._send_ioerror_status_event(reason, blockDevAlias)
+            self._update_metadata()
 
         elif action == libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT:
             self.log.info('I/O error %s device %s reported to guest OS',
@@ -4763,6 +4778,13 @@ class Vm(object):
                 vm['guestAgentAPIVersion'] = self._guest_agent_api_version
             vm['destroy_on_reboot'] = self._destroy_on_reboot
             vm['memGuaranteedSize'] = self._mem_guaranteed_size_mb
+            if self._pause_time is None:
+                try:
+                    del vm['pauseTime']
+                except KeyError:
+                    pass
+            else:
+                vm['pauseTime'] = self._pause_time
             vm.update(self._exit_info)
         self._sync_metadata()
 
