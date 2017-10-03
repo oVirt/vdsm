@@ -515,10 +515,12 @@ class Descriptor(object):
         dev_data = self._find_device(kwargs)
         if dev_data is None:
             dev_data = self._add_device(kwargs)
+        self._log.debug('device metadata: %s', dev_data)
         data = utils.picklecopy(dev_data)
         yield data
         dev_data.clear()
         dev_data.update(utils.picklecopy(data))
+        self._log.debug('device metadata updated: %s', dev_data)
 
     @contextmanager
     def values(self):
@@ -530,10 +532,12 @@ class Descriptor(object):
         :rtype: Python dict, whose keys are always strings.
                 No nested objects are allowed.
         """
+        self._log.debug('values: %s', self._values)
         data = self._values.copy()
         yield data
         self._values.clear()
         self._values.update(data)
+        self._log.debug('values updated: %s', self._values)
 
     @property
     def custom(self):
