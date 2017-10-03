@@ -100,7 +100,12 @@ def _update_source_params(params, disk_type, source):
 def _update_payload_params(params, meta):
     payload = {}
     if 'payload' in meta:
+        # new-style configuration, Engine >= 4.2
         payload = meta['payload']
+    else:
+        # old-style legacy configuration, Engine < 4.2
+        spec_params = meta.get('specParams', {})
+        payload = spec_params.get('vmPayload', {})
 
     if payload:
         params['specParams']['vmPayload'] = payload

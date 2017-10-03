@@ -2507,7 +2507,7 @@ class Vm(object):
             self._prepareTransientDisks(dev_spec_map[hwclass.DISK])
             self._updateDevices(dev_spec_map)
             try:
-                self._sync_metadata()
+                self._save_legacy_disk_conf_to_metadata()
             except virdomain.NotConnectedError:
                 self.log.debug("Not storing device metadata now, "
                                "domain not yet available")
