@@ -24,10 +24,13 @@ from contextlib import contextmanager
 
 import pytest
 
+from network import nmnettestlib
 from vdsm.network.cmd import exec_sync
+from vdsm.network.link.iface import iface
+from vdsm.network.netlink import waitfor
 
 from . import netfunctestlib as nftestlib
-from network.nettestlib import dummy_device
+from network.nettestlib import dummy_devices
 
 
 NETWORK_NAME = 'test-network'
@@ -39,7 +42,7 @@ class TestBridge(nftestlib.NetFuncTestCase):
         if switch == 'ovs':
             pytest.xfail('stp is currently not implemented for ovs')
 
-        with dummy_device() as nic:
+        with dummy_devices(1) as (nic,):
             NETCREATE = {NETWORK_NAME: {'nic': nic,
                                         'switch': switch,
                                         'stp': True}}
@@ -55,6 +58,30 @@ class TestBridge(nftestlib.NetFuncTestCase):
             with self.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                 self.assertNetwork(brname, NETCREATE[brname])
 
+    @pytest.mark.skipif(nmnettestlib.is_networkmanager_running(),
+                        reason='Unstable while NM is running (BZ#1498022)')
+    @pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy')])
+    def test_create_network_and_reuse_existing_owned_bridge(self, switch):
+        with dummy_devices(2) as (nic1, nic2):
+            NETSETUP1 = {NETWORK_NAME: {'nic': nic1, 'switch': switch}}
+            NETSETUP2 = {NETWORK_NAME: {'nic': nic2, 'switch': switch}}
+            with self.setupNetworks(NETSETUP1, {}, nftestlib.NOCHK):
+                with _create_tap() as tapdev:
+                    _attach_dev_to_bridge(tapdev, NETWORK_NAME)
+                    with waitfor.waitfor_linkup(NETWORK_NAME):
+                        pass
+                    with nftestlib.monitor_stable_link_state(NETWORK_NAME):
+                        self.setupNetworks(NETSETUP2, {}, nftestlib.NOCHK)
+                        self.assertNetwork(NETWORK_NAME,
+                                           NETSETUP2[NETWORK_NAME])
+
+
+def _attach_dev_to_bridge(tapdev, bridge):
+    rc, _, err = exec_sync(['ip', 'link', 'set', tapdev, 'master', bridge])
+    if rc != 0:
+        pytest.fail(
+            'Filed to add {} to {}. err: {}'.format(tapdev, bridge, err))
+
 
 @contextmanager
 def _create_linux_bridge(brname):
@@ -65,3 +92,16 @@ def _create_linux_bridge(brname):
         yield brname
     finally:
         exec_sync(['ip', 'link', 'del', brname])
+
+
+@contextmanager
+def _create_tap():
+    devname = '_tap99'
+    rc, _, err = exec_sync(['ip', 'tuntap', 'add', devname, 'mode', 'tap'])
+    if rc != 0:
+        pytest.fail('Unable to create tap device. err: {}'.format(err))
+    try:
+        iface(devname).up()
+        yield devname
+    finally:
+        exec_sync(['ip', 'tuntap', 'del', devname, 'mode', 'tap'])

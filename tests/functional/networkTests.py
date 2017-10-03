@@ -65,7 +65,7 @@ from modprobe import RequireDummyMod, RequireVethMod
 from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
 from testValidation import brokentest, slowtest, ValidateRunningAsRoot
-from network.nettestlib import Dummy, Tap, veth_pair, dnsmasq_run, running
+from network.nettestlib import Dummy, veth_pair, dnsmasq_run, running
 from network import dhcp
 from utils import SUCCESS, getProxy
 
@@ -506,65 +506,6 @@ class NetworkTest(TestCaseBase):
             self.assertVlanExists('%s.%s' % (nic, VLAN_ID))
 
             status, msg = self.setupNetworks({NETWORK_NAME: dict(remove=True)},
-                                             {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
-    @RequireDummyMod
-    @ValidateRunningAsRoot
-    def testSetupNetworksDeletesTheBridgeOnlyWhenItIsReconfigured(self):
-        def get_bridge_index():
-            link = ipwrapper.getLink(NETWORK_NAME)
-            return link.index
-
-        def add_tap_to_bridge():
-            tap = Tap(prefix='vnet')
-            tap.addDevice()
-            rc, _, _ = execCmd([EXT_BRCTL, 'addif', NETWORK_NAME, tap.devName])
-            self.assertEqual(rc, 0, 'brctl addif failed: rc=%s' % (rc,))
-            return tap
-
-        STANDARD, BIG = 1500, 2000
-        with dummyIf(2) as nics:
-            first, second = nics
-            first_net = {NETWORK_NAME: dict(bridged=True, nic=first,
-                                            mtu=STANDARD)}
-            status, msg = self.setupNetworks(first_net, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertMtu(STANDARD, NETWORK_NAME, first)
-            bridge_index = get_bridge_index()
-            # simulate a vm connected to the bridge
-            tap = add_tap_to_bridge()
-            try:
-                second_net = {NETWORK_NAME: dict(bridged=True, nic=second,
-                                                 mtu=BIG, vlan=VLAN_ID)}
-                status, msg = self.setupNetworks(second_net, {}, NOCHK)
-                self.assertEqual(status, SUCCESS, msg)
-                second_bridge_index = get_bridge_index()
-                self.assertEqual(bridge_index, second_bridge_index)
-            finally:
-                tap.delDevice()
-            # the kernel bridge driver automatically updates the bridge to the
-            # new minimum MTU of all of its connected interfaces
-            self.assertMtu(BIG, NETWORK_NAME, second)
-
-            # verify that the ifcfg configuration files are also updated
-            # with the new MTU
-            rc, _, _ = execCmd([EXT_IFDOWN, NETWORK_NAME])
-            self.assertEqual(rc, 0, 'ifdown failed: rc=%s' % (rc,))
-            rc, _, _ = execCmd([EXT_IFUP, NETWORK_NAME])
-            self.assertEqual(rc, 0, 'ifup failed: rc=%s' % (rc,))
-            self.vdsm_net.refreshNetinfo()
-            self.assertMtu(BIG, NETWORK_NAME, second)
-
-            third_net = {
-                NETWORK_NAME: dict(bridged=True, nic=second, mtu=BIG,
-                                   ipaddr=IP_ADDRESS, netmask=IP_MASK)}
-            status, msg = self.setupNetworks(third_net, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNotEqual(second_bridge_index, get_bridge_index())
-
-            status, msg = self.setupNetworks({NETWORK_NAME: {'remove': True}},
                                              {}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 
