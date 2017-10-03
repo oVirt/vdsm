@@ -45,7 +45,7 @@ def parse(dev, meta):
     params = {
         'device': dev.attrib.get('device', None) or dev.tag,
         'type': disk_type,
-        '_diskType': disk_type,
+        'diskType': disk_type,
         'specParams': {},
     }
     core.update_device_params(params, dev, ('sgio',))
