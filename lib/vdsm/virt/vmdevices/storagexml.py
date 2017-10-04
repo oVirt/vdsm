@@ -25,6 +25,9 @@ from . import core
 from . import drivename
 
 
+_PAYLOAD_PATH = 'PAYLOAD:'
+
+
 def parse(dev, meta):
     """Parse the XML configuration of a storage device and returns
     the corresponding params, such as
@@ -53,6 +56,7 @@ def parse(dev, meta):
     _update_source_params(
         params, disk_type, vmxml.find_first(dev, 'source', None)
     )
+    _update_payload_params(params, meta)
     _update_auth_params(params, vmxml.find_first(dev, 'auth', None))
     _update_driver_params(params, dev)
     _update_interface_params(params, dev)
@@ -91,6 +95,22 @@ def _update_source_params(params, disk_type, source):
             for host in vmxml.find_all(source, 'host')
         ]
     params['path'] = path
+
+
+def _update_payload_params(params, meta):
+    payload = {}
+    if 'payload' in meta:
+        payload = meta['payload']
+
+    if payload:
+        params['specParams']['vmPayload'] = payload
+
+    path = params.get('path')
+    if path == _PAYLOAD_PATH:
+        if 'path' in meta:
+            params['path'] = meta['path']
+        else:
+            params.pop('path')
 
 
 def _update_auth_params(params, auth):

@@ -74,6 +74,7 @@ _HOSTS = 'hosts'
 _HOST_INFO = 'hostInfo'
 _IO_TUNE = 'ioTune'
 _NETWORK = 'network'
+_PAYLOAD = 'payload'
 _PORT_MIRRORING = 'portMirroring'
 _REPLICA = 'diskReplicate'
 _SPEC_PARAMS = 'specParams'
@@ -85,11 +86,11 @@ _IGNORED_KEYS = (
     _VOLUME_INFO,
 )
 _DEVICE_SUBKEYS = (
-    _ADDRESS, _AUTH, _CUSTOM, _HOSTS, _PORT_MIRRORING, _REPLICA,
-    _SPEC_PARAMS, _VM_CUSTOM, _VOLUME_CHAIN,
+    _ADDRESS, _AUTH, _CUSTOM, _HOSTS, _PAYLOAD, _PORT_MIRRORING,
+    _REPLICA, _SPEC_PARAMS, _VM_CUSTOM, _VOLUME_CHAIN,
 )
 _NONEMPTY_KEYS = (
-    _ADDRESS, _AUTH, _CUSTOM, _HOSTS, _IO_TUNE, _PORT_MIRRORING,
+    _ADDRESS, _AUTH, _CUSTOM, _HOSTS, _IO_TUNE, _PAYLOAD, _PORT_MIRRORING,
     _REPLICA, _VOLUME_CHAIN,
 )
 _LAYERED_KEYS = {
@@ -242,6 +243,12 @@ class Metadata(object):
         Namespace-aware wrapper for elem.find()
         """
         return elem.find(self._add_ns(tag))
+
+    def match(self, elem, tag):
+        """
+        Namespace-aware tag matching helper
+        """
+        return elem.tag == self._add_ns(tag)
 
     def findall(self, elem, tag):
         """
@@ -671,6 +678,8 @@ def _load_device(md_obj, dev):
                 value = _load_layered(md_obj, elem)
             elif key == _SPEC_PARAMS:
                 value = _load_device_spec_params(md_obj, elem)
+            elif key == _PAYLOAD:
+                value = _load_payload(md_obj, elem)
             else:
                 value = md_obj.load(elem)
             info[key] = value
@@ -736,17 +745,21 @@ _FILE_SPEC = 'file'
 _PATH_SPEC = 'path'
 
 
+def _load_payload(md_obj, payload_elem):
+    payload = md_obj.load(payload_elem)
+    payload[_FILE_SPEC] = {
+        entry.attrib[_PATH_SPEC]: entry.text
+        for entry in payload_elem
+        if md_obj.match(entry, _FILE_SPEC)
+    }
+    return payload
+
+
 def _load_device_spec_params(md_obj, elem):
     spec_params = md_obj.load(elem)
     payload_elem = md_obj.find(elem, _VM_PAYLOAD)
     if payload_elem is not None:
-        payload = md_obj.load(payload_elem)
-        payload[_FILE_SPEC] = {
-            entry.attrib[_PATH_SPEC]: entry.text
-            for entry in payload_elem
-            if entry.tag == _FILE_SPEC
-        }
-        spec_params[_VM_PAYLOAD] = payload
+        spec_params[_VM_PAYLOAD] = _load_payload(md_obj, payload_elem)
     iotune_elem = md_obj.find(elem, _IO_TUNE)
     if iotune_elem is not None:
         iotune = md_obj.load(iotune_elem)

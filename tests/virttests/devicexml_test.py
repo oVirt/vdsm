@@ -1270,6 +1270,60 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             dev.teardown()
 
 
+_DRIVE_PAYLOAD_XML = u"""<domain type='kvm' id='2'>
+  <uuid>dd493ddc-1ef2-4445-a248-4a7bc266a671</uuid>
+  <metadata
+        xmlns:ovirt-tune='http://ovirt.org/vm/tune/1.0'
+        xmlns:ovirt-vm='http://ovirt.org/vm/1.0'>
+    <ovirt-tune:qos/>
+    <ovirt-vm:vm>
+      <ovirt-vm:device devtype="disk" name="hdd">
+        <ovirt-vm:readonly type='bool'>true</ovirt-vm:readonly>
+        <ovirt-vm:payload>
+        <ovirt-vm:volId>config-1</ovirt-vm:volId>
+  <ovirt-vm:file path='openstack/content/0000'>AAA</ovirt-vm:file>
+  <ovirt-vm:file path='openstack/latest/meta_data.json'>BBB</ovirt-vm:file>
+  <ovirt-vm:file path='openstack/latest/user_data'>CCC</ovirt-vm:file>
+        </ovirt-vm:payload>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+  <devices>
+    <emulator>/usr/libexec/qemu-kvm</emulator>
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source startupPolicy='optional'/>
+      <target dev='hdd' bus='ide'/>
+      <readonly/>
+    </disk>
+  </devices>
+</domain>"""
+
+
+class DeviceFromXMLTests(XMLTestCase):
+
+    def test_payload_from_metadata(self):
+        vmPayload = {
+            'volId': 'config-1',
+            'file': {
+                'openstack/content/0000': 'AAA',
+                'openstack/latest/meta_data.json': 'BBB',
+                'openstack/latest/user_data': 'CCC',
+            }
+        }
+
+        md_desc = metadata.Descriptor.from_xml(_DRIVE_PAYLOAD_XML)
+        root = vmxml.parse_xml(_DRIVE_PAYLOAD_XML)
+
+        dev_xml = root.find('./devices/disk')
+
+        with md_desc.device(devtype='disk', name='hdd') as meta:
+            dev_obj = vmdevices.storage.Drive(
+                self.log, **vmdevices.storagexml.parse(dev_xml, meta)
+            )
+            self.assertEqual(dev_obj.specParams['vmPayload'], vmPayload)
+
+
 # invalid domain with only the relevant sections added
 # UUID has no meaning, randomly generated
 _DOMAIN_MD_MATCH_XML = u"""<domain type='kvm' id='2'>
