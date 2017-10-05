@@ -267,5 +267,4 @@ class Reactor(object):
         dispatcher.create_socket(address, sslctx)
         dispatcher.connect(address)
 
-        if dispatcher.connected:
-            logging.debug("retry succeeded")
+        return dispatcher

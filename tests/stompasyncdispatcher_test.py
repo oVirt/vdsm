@@ -70,6 +70,9 @@ class FakeFrameHandler(object):
     def queue_frame(self, frame):
         self._outbox.append(frame)
 
+    def handle_close(self, dispatcher):
+        dispatcher.connection.close()
+
 
 class FakeAsyncDispatcher(object):
 
@@ -156,7 +159,7 @@ class AsyncDispatcherTest(TestCaseBase):
         dispatcher.setHeartBeat(12000, 4000)
         self.assertFalse(dispatcher.writable(None))
         self.assertFalse(frame_handler.has_outgoing_messages)
-        self.assertTrue(connection.closed)
+        # now we defer dispatcher closure
 
     def test_no_heartbeat(self):
         dispatcher = AsyncDispatcher(FakeConnection(), FakeFrameHandler())
