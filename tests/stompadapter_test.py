@@ -65,9 +65,6 @@ class FakeConnection(object):
         self._flow_id = flow_id
         self._client.queue_frame(data)
 
-    def set_heartbeat(self, out_interval, in_interval):
-        pass
-
 
 class FakeAsyncDispatcher(object):
 

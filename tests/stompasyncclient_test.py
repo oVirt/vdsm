@@ -24,7 +24,7 @@ import yajsonrpc
 from testlib import VdsmTestCase as TestCaseBase
 from yajsonrpc.stomp import AsyncClient, Command, Frame, Headers, StompError
 # TODO: Fix this bad import, test modules are not libraries.
-from stompadapter_test import FakeSubscription, FakeAsyncDispatcher
+from stompadapter_test import FakeSubscription
 from monkeypatch import MonkeyPatchScope
 
 
@@ -32,23 +32,23 @@ class AsyncClientTest(TestCaseBase):
 
     def test_connect(self):
         client = AsyncClient()
-        client.handle_connect(None)
+        client.handle_connect()
 
         req_frame = client.pop_message()
 
         self.assertEqual(req_frame.command, Command.CONNECT)
         self.assertEqual(req_frame.headers[Headers.ACCEPT_VERSION], '1.2')
-        self.assertEqual(req_frame.headers[Headers.HEARTBEAT], '0,24000')
+        self.assertEqual(req_frame.headers[Headers.HEARTBEAT], '0,5000')
 
     def test_set_heartbeat(self):
         client = AsyncClient(incoming_heartbeat=200, outgoing_heartbeat=100)
-        client.handle_connect(None)
+        client.handle_connect()
 
         req_frame = client.pop_message()
 
         self.assertEqual(req_frame.command, Command.CONNECT)
         self.assertEqual(req_frame.headers[Headers.ACCEPT_VERSION], '1.2')
-        self.assertEqual(req_frame.headers[Headers.HEARTBEAT], '120,160')
+        self.assertEqual(req_frame.headers[Headers.HEARTBEAT], '100,200')
 
     def test_subscribe(self):
         client = AsyncClient()
@@ -137,7 +137,7 @@ class AsyncClientTest(TestCaseBase):
         frame = Frame(Command.CONNECTED,
                       {'version': '1.2', Headers.HEARTBEAT: '8000,0'})
 
-        client.handle_frame(FakeAsyncDispatcher(''), frame)
+        client.handle_frame(None, frame)
 
         self.assertTrue(client.connected)
 
