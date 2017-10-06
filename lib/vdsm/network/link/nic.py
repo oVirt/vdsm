@@ -38,7 +38,7 @@ def speed(nic_name):
         try:
             return read_speed_using_sysfs(nic_name)
         except Exception:
-            logging.exception('cannot read %s speed', nic_name)
+            logging.warning('cannot read %s speed', nic_name)
     return 0
 
 
