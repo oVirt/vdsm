@@ -216,7 +216,7 @@ class ExecutorTests(TestCaseBase):
 
             # Check we did what we intended -- the next task shouldn't be
             # accepted
-            self.assertRaises(executor.ResourceExhausted,
+            self.assertRaises(exception.ResourceExhausted,
                               self.executor.dispatch, Task(), 0)
 
         finally:

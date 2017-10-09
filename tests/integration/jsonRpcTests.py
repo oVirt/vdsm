@@ -24,6 +24,7 @@ from six.moves import queue
 from monkeypatch import MonkeyPatch
 from testValidation import slowtest
 from vdsm import executor
+from vdsm.common import exception
 
 from testlib import VdsmTestCase as TestCaseBase, \
     expandPermutations, \
@@ -95,7 +96,7 @@ class FakeSchema(object):
 
 
 def dispatch(callable, timeout=None):
-    raise executor.ResourceExhausted(resource="test", current_tasks=0)
+    raise exception.ResourceExhausted(resource="test", current_tasks=0)
 
 
 @expandPermutations
