@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import logging
+import os
 import sys
 
 # When using Python 2, we must monkey patch threading module before importing
@@ -33,6 +35,9 @@ zombiereaper.registerSignalHandler()
 import testlib
 
 
+TEST_LOG = '/var/log/vdsm_tests.log'
+
+
 def findRemove(listR, value):
     """used to test if a value exist, if it is, return true and remove it."""
     try:
@@ -40,6 +45,16 @@ def findRemove(listR, value):
         return True
     except ValueError:
         return False
+
+
+def configureLogging():
+    if os.getuid() == 0:  # only root can create a logfile
+        logging.basicConfig(
+            filename=TEST_LOG,
+            filemode='a',
+            format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+            datefmt='%H:%M:%S',
+            level=logging.DEBUG)
 
 
 if __name__ == '__main__':
@@ -52,4 +67,5 @@ if __name__ == '__main__':
         from vdsm.common import constants as common_constants
         common_constants.P_VDSM = constants.P_VDSM = "../vdsm/"
 
+    configureLogging()
     testlib.run()

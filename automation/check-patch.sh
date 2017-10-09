@@ -40,6 +40,10 @@ check-distpkg() {
 
 EXPORT_DIR="$PWD/exported-artifacts"
 
+collect-logs() {
+    cp /var/log/vdsm_tests.log "$EXPORT_DIR"/
+}
+
 set -xe
 
 # For skipping known failures on jenkins using @broken_on_ci
@@ -53,6 +57,7 @@ make
 
 debuginfo-install -y python
 
+trap collect-logs EXIT
 TIMEOUT=600 make --jobs=2 check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 
 # Generate coverage report in HTML format
