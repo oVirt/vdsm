@@ -462,11 +462,11 @@ _TTL = 40.0
 
 class VMBulkstatsMonitor(object):
     def __init__(self, conn, get_vms, stats_cache,
-                 stats_flags=0, ttl=_TTL):
+                 stats_types=0, ttl=_TTL):
         self._conn = conn
         self._get_vms = get_vms
         self._stats_cache = stats_cache
-        self._stats_flags = stats_flags
+        self._stats_types = stats_types
         self._skip_doms = ExpiringCache(ttl)
         self._sampling = threading.Semaphore()  # used as glorified counter
         self._log = logging.getLogger("virt.sampling.VMBulkstatsMonitor")
@@ -483,14 +483,14 @@ class VMBulkstatsMonitor(object):
             if fast_path:
                 # This is expected to be the common case.
                 # If everything's ok, we can skip all the costly checks.
-                bulk_stats = self._conn.getAllDomainStats(self._stats_flags)
+                bulk_stats = self._conn.getAllDomainStats(self._stats_types)
             else:
                 # A previous call got stuck, or not every domain
                 # has properly recovered. Thus we must whitelist domains.
                 doms = self._get_responsive_doms()
                 if doms:
                     bulk_stats = self._conn.domainListGetStats(
-                        doms, self._stats_flags)
+                        doms, self._stats_types)
                 else:
                     bulk_stats = []
         except Exception:
