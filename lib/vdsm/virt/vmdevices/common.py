@@ -260,7 +260,7 @@ def storage_device_params_from_domain_xml(vmid, dom_desc, md_desc, log):
     return params
 
 
-def _get_metadata(dev_class, dev_obj):
+def get_metadata(dev_class, dev_obj):
     # storage devices are special, and they need separate treatment
     if dev_class != hwclass.DISK:
         return dev_obj.get_metadata()
@@ -272,7 +272,7 @@ def save_device_metadata(md_desc, dev_map, log):
     count = 0
     for dev_class, dev_objs in dev_map.items():
         for dev_obj in dev_objs:
-            attrs, data = _get_metadata(dev_class, dev_obj)
+            attrs, data = get_metadata(dev_class, dev_obj)
             if not data:
                 # the device doesn't want to save anything.
                 # let's go ahead.

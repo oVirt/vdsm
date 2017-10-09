@@ -88,6 +88,7 @@ from vdsm.virt.domain_descriptor import find_first_domain_device_by_type
 from vdsm.virt import vmdevices
 from vdsm.virt.vmdevices import drivename
 from vdsm.virt.vmdevices import hwclass
+from vdsm.virt.vmdevices.common import get_metadata
 from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound, SOURCE_ATTR
 from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
@@ -2432,6 +2433,44 @@ class Vm(object):
         self._guestCpuRunning = self._isDomainRunning()
         self._logGuestCpuStatus('domain initialization')
 
+    def _hotplug_device_metadata(self, dev_class, dev_obj):
+        attrs, data = get_metadata(dev_class, dev_obj)
+        if not attrs:
+            self.log.error(
+                "No attrs trying to save metadata for "
+                "hotplugged device %s", dev_obj)
+        else:
+            self._set_device_metadata(attrs, data)
+            self._sync_metadata()
+
+    def _hotunplug_device_metadata(self, dev_class, dev_obj):
+        attrs, _ = get_metadata(dev_class, dev_obj)
+        if not attrs:
+            self.log.error(
+                "No attrs trying to save metadata for "
+                "hotunplugged device %s", dev_obj)
+        else:
+            self._clear_device_metadata(attrs)
+            self._sync_metadata()
+
+    def _set_device_metadata(self, attrs, dev_conf):
+        """
+        Set the metadata (dev_conf) for device identified by `attrs'.
+        `dev_conf' is a python dict whose keys are strings.
+        Overwrites any existing metadata.
+        """
+        data = utils.picklecopy(dev_conf)
+        with self._md_desc.device(**attrs) as dev:
+            dev.clear()
+            dev.update(data)
+
+    def _clear_device_metadata(self, attrs):
+        """
+        Clear the metadata for device identified by `attrs'.
+        """
+        with self._md_desc.device(**attrs) as dev:
+            dev.clear()
+
     def _dom_vcpu_setup(self):
         if 'xml' not in self.conf:
             nice = int(self.conf.get('nice', '0'))
@@ -2782,6 +2821,7 @@ class Vm(object):
             device_conf.append(nic)
             with self._confLock:
                 self.conf['devices'].append(nicParams)
+            self._hotplug_device_metadata(hwclass.NIC, nic)
             self._updateDomainDescriptor()
             vmdevices.network.Interface.update_device_info(self, device_conf)
             hooks.after_nic_hotplug(nicXml, self._custom,
@@ -3110,6 +3150,8 @@ class Vm(object):
                     self.conf['devices'].remove(dev)
                 nicDev = dev
                 break
+
+        self._hotunplug_device_metadata(hwclass.NIC, nic)
 
         self._updateDomainDescriptor()
 
@@ -3594,8 +3636,9 @@ class Vm(object):
             if update_conf:
                 with self._confLock:
                     self.conf['devices'].append(diskParams)
-            # TODO: update metadata
-            self._sync_metadata()
+
+            self._hotplug_device_metadata(hwclass.DISK, drive)
+
             self._updateDomainDescriptor()
             vmdevices.storage.Drive.update_device_info(self, device_conf)
             hooks.after_disk_hotplug(driveXml, self._custom,
@@ -3646,8 +3689,8 @@ class Vm(object):
                         self.conf['devices'].remove(dev)
                     break
 
-            # TODO: update metadata
-            self._sync_metadata()
+            self._hotunplug_device_metadata(hwclass.DISK, drive)
+
             self._updateDomainDescriptor()
             hooks.after_disk_hotunplug(driveXml, self._custom,
                                        params=drive.custom)
