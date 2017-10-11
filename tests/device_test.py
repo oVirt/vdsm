@@ -28,7 +28,6 @@ from vdsm.virt.vmdevices import graphics
 from vdsm.virt.vmdevices import hwclass
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
-from testValidation import xfail
 from testlib import permutations, expandPermutations, make_config, read_data
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase
@@ -140,7 +139,6 @@ class TestVmDevices(XMLTestCase):
             with fake.VM(self.conf, dev) as testvm:
                 self.assertFalse(testvm.hasSpice)
 
-    @xfail('hasSpice does not consider the Engine XML')
     def testHasSpiceEngineXML(self):
         conf = {}
         conf.update(self.conf)

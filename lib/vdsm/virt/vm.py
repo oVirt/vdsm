@@ -82,6 +82,7 @@ from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.domain_descriptor import MutableDomainDescriptor
+from vdsm.virt.domain_descriptor import find_first_domain_device_by_type
 from vdsm.virt import vmdevices
 from vdsm.virt.vmdevices import drivename
 from vdsm.virt.vmdevices import hwclass
@@ -4721,11 +4722,8 @@ class Vm(object):
         libvirt (as in 1.2.3) supports only one graphic device per type
         """
         desc = self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_SECURE)
-        for graphics in DomainDescriptor(desc).get_device_elements('graphics'):
-            if vmxml.attr(graphics, 'type') == deviceType:
-                return graphics
-        # no graphics device configured
-        return None
+        return find_first_domain_device_by_type(
+            DomainDescriptor(desc), hwclass.GRAPHICS, deviceType)
 
     def onIOError(self, blockDevAlias, err, action):
         """
@@ -4777,10 +4775,13 @@ class Vm(object):
 
     @property
     def hasSpice(self):
-        return (self.conf.get('display') == 'qxl' or
-                any(dev['device'] == 'spice'
-                    for dev in self.conf.get('devices', [])
-                    if dev['type'] == hwclass.GRAPHICS))
+        if (self.conf.get('display') == 'qxl' or
+            any(dev['device'] == 'spice'
+                for dev in self.conf.get('devices', [])
+                if dev['type'] == hwclass.GRAPHICS)):
+            return True
+        return find_first_domain_device_by_type(
+            self._domain, hwclass.GRAPHICS, 'spice') is not None
 
     @property
     def name(self):

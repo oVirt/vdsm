@@ -114,3 +114,10 @@ class DomainDescriptor(MutableDomainDescriptor):
     @property
     def devices_hash(self):
         return self._devices_hash
+
+
+def find_first_domain_device_by_type(domain, device_class, device_type):
+    for dev in domain.get_device_elements(device_class):
+        if vmxml.attr(dev, 'type') == device_type:
+            return dev
+    return None
