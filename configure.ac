@@ -428,6 +428,7 @@ AC_OUTPUT([
 	tests/containers/fake/Makefile
 	tests/containers/fake/bin/Makefile
 	tests/cpuinfo/Makefile
+	tests/data/Makefile
 	tests/devices/Makefile
 	tests/devices/data/Makefile
 	tests/devices/parsing/Makefile

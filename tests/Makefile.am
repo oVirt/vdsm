@@ -24,6 +24,7 @@ SUBDIRS = \
 	  common \
 	  cpuinfo \
 	  functional \
+	  data \
 	  devices \
 	  integration \
 	  network \

@@ -28,7 +28,8 @@ from vdsm.virt.vmdevices import graphics
 from vdsm.virt.vmdevices import hwclass
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
-from testlib import permutations, expandPermutations, make_config
+from testValidation import xfail
+from testlib import permutations, expandPermutations, make_config, read_data
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase
 import vmfakelib as fake
@@ -138,6 +139,14 @@ class TestVmDevices(XMLTestCase):
         for dev in self.confDeviceGraphicsVnc:
             with fake.VM(self.conf, dev) as testvm:
                 self.assertFalse(testvm.hasSpice)
+
+    @xfail('hasSpice does not consider the Engine XML')
+    def testHasSpiceEngineXML(self):
+        conf = {}
+        conf.update(self.conf)
+        conf['xml'] = read_data('domain.xml')
+        with fake.VM(conf) as testvm:
+            self.assertTrue(testvm.hasSpice)
 
     @permutations([['vnc', 'spice'], ['spice', 'vnc']])
     def testGraphicsDeviceMultiple(self, primary, secondary):

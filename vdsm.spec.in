@@ -1265,6 +1265,7 @@ exit 0
 %endif
 %dir %{_datadir}/%{vdsm_name}/tests/cpuinfo
 %dir %{_datadir}/%{vdsm_name}/tests/functional
+%dir %{_datadir}/%{vdsm_name}/tests/data
 %dir %{_datadir}/%{vdsm_name}/tests/devices
 %dir %{_datadir}/%{vdsm_name}/tests/devices/data
 %dir %{_datadir}/%{vdsm_name}/tests/devices/parsing
@@ -1303,6 +1304,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/fake-virt-v2v.out
 %{_datadir}/%{vdsm_name}/tests/fake-virt-v2v.err
 %{_datadir}/%{vdsm_name}/tests/cpu_map.xml
+%{_datadir}/%{vdsm_name}/tests/data/*.xml
 %{_datadir}/%{vdsm_name}/tests/devices/*.py*
 %{_datadir}/%{vdsm_name}/tests/devices/parsing/*.py*
 %{_datadir}/%{vdsm_name}/tests/devices/data/*.xml

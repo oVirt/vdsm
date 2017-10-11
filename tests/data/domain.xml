@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
+        <name>a_c7_2</name>
+	<uuid>{vm_uuid}</uuid>
+        <memory>4194304</memory>
+        <currentMemory>4194304</currentMemory>
+        <maxMemory slots="16">4294967296</maxMemory>
+	<vcpu current="2">16</vcpu>
+  <metadata>
+    <ovirt:qos/>
+    <ovirtcnt:container xmlns:ovirtcnt="http://ovirt.org/vm/containers/1.0">
+      <ovirtcnt:runtime>docker</ovirtcnt:runtime>
+      <ovirtcnt:image>redis</ovirtcnt:image>
+    </ovirtcnt:container>
+  </metadata>
+  <devices>
+    <emulator>kvm</emulator>
+                <channel type="unix">
+                        <target name="com.redhat.rhevm.vdsm" type="virtio"/>
+                        <source mode="bind" path="/var/lib/libvirt/qemu/channels/338175a6-44e7-45d0-8321-2c6f2d5b3d6b.com.redhat.rhevm.vdsm"/>
+                </channel>
+                <channel type="unix">
+                        <target name="org.qemu.guest_agent.0" type="virtio"/>
+                        <source mode="bind" path="/var/lib/libvirt/qemu/channels/338175a6-44e7-45d0-8321-2c6f2d5b3d6b.org.qemu.guest_agent.0"/>
+                </channel>
+                <input bus="ps2" type="mouse"/>
+                <memballoon model="none"/>
+                <video>
+                        <model heads="1" ram="65536" type="qxl" vgamem="16384" vram="32768"/>
+                </video>
+                <graphics autoport="yes" passwd="*****" passwdValidTo="1970-01-01T00:00:01" port="-1" tlsPort="-1" type="spice">
+                        <listen network="vdsm-ovirtmgmt" type="network"/>
+                </graphics>
+                <interface type="bridge">
+                        <mac address="00:1a:4a:16:01:57"/>
+                        <model type="virtio"/>
+                        <source bridge="ovirtmgmt"/>
+                        <filterref filter="vdsm-no-mac-spoofing"/>
+                        <link state="up"/>
+                        <bandwidth/>
+                </interface>
+                <disk device="cdrom" snapshot="no" type="file">
+			<source file="/rhev/data-center/00000001-0001-0001-0001-00000000027f/43db3789-bb16-40bd-a9fc-3cced1b23ea6/images/27101aac-10ec-468a-aaf5-694c663b2c33/373d166e-d21a-4ad0-8166-571f49c22d64" startupPolicy="optional"/>
+                        <target bus="ide" dev="hdc"/>
+                        <readonly/>
+                        <serial>522169df-603d-4229-8451-69a4e860554a</serial>
+                        <boot order="1"/>
+                </disk>
+                <disk device="disk" snapshot="no" type="file">
+                        <source file="/rhev/data-center/00000001-0001-0001-0001-00000000027f/43db3789-bb16-40bd-a9fc-3cced1b23ea6/images/27101aac-10ec-468a-aaf5-694c663b2c33/19bb423f-7db0-4cd1-9fe9-5aa3d4d8c1af"/>
+                        <target bus="virtio" dev="vda"/>
+                        <serial>27101aac-10ec-468a-aaf5-694c663b2c33</serial>
+                        <boot order="2"/>
+                        <driver cache="none" error_policy="stop" io="threads" name="qemu" type="raw"/>
+                </disk>
+                <channel type="spicevmc">
+                        <target name="com.redhat.spice.0" type="virtio"/>
+                </channel>
+        </devices>
+        <os>
+                <type arch="x86_64" machine="pc-i440fx-rhel7.2.0">hvm</type>
+                <smbios mode="sysinfo"/>
+        </os>
+        <sysinfo type="smbios">
+                <system>
+                        <entry name="manufacturer">oVirt</entry>
+                        <entry name="product">oVirt Node</entry>
+                        <entry name="version">7-2.1511.el7.centos.2.10</entry>
+                        <entry name="serial">0A9C980E-6B95-3D34-C5AC-40167EB07D87</entry>
+                        <entry name="uuid">338175a6-44e7-45d0-8321-2c6f2d5b3d6b</entry>
+                </system>
+        </sysinfo>
+        <clock adjustment="0" offset="variable">
+                <timer name="rtc" tickpolicy="catchup"/>
+                <timer name="pit" tickpolicy="delay"/>
+                <timer name="hpet" present="no"/>
+        </clock>
+        <features>
+                <acpi/>
+        </features>
+        <cpu match="exact">
+                <model>Opteron_G2</model>
+                <topology cores="1" sockets="16" threads="1"/>
+                <numa>
+                        <cell cpus="0,1" memory="4194304"/>
+                </numa>
+        </cpu>
+        <numatune>
+                <memory mode="interleave" nodeset="0"/>
+        </numatune>
+</domain>
