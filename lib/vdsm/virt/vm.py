@@ -4852,6 +4852,7 @@ class Vm(object):
         return response.success()
 
     def _destroyVm(self, gracefulAttempts=1):
+        safe_to_force = True
         for idx in range(gracefulAttempts):
             self.log.info("_destroyVmGraceful attempt #%i", idx)
             res, safe_to_force = self._destroyVmGraceful()
