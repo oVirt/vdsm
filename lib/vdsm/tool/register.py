@@ -369,7 +369,7 @@ def main(*args):
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description='Tool to register node to Engine',
-        epilog='Example of use:\n%(prog)s '
+        epilog='Example of use:\n%(prog)s register '
                     '--engine-fqdn engine.mydomain'
     )
 
