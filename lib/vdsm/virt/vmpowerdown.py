@@ -19,6 +19,7 @@
 #
 from __future__ import absolute_import
 
+from vdsm.common import exception
 from vdsm.common import response
 from vdsm import utils
 
@@ -104,7 +105,9 @@ class VmShutdown(VmPowerDown):
         #       now, but it may get this functionality in the future. When
         #       the feature is implemented in the future it should be also
         #       added here.
-        if response.is_error(self.vm.qemuGuestAgentShutdown()):
+        try:
+            self.vm.qemuGuestAgentShutdown()
+        except exception.VdsmException:
             return False
         return self.event.wait(self.timeout)
 
@@ -130,7 +133,9 @@ class VmReboot(VmPowerDown):
         #       now, but it may get this functionality in the future. When
         #       the feature is implemented in the future it should be also
         #       added here.
-        if response.is_error(self.vm.qemuGuestAgentReboot()):
+        try:
+            self.vm.qemuGuestAgentReboot()
+        except exception.VdsmException:
             return False
         return self.event.wait(self.timeout)
 

@@ -21,6 +21,7 @@
 
 import threading
 
+from vdsm.common import exception
 from vdsm.common import response
 from vdsm.virt import vmpowerdown
 
@@ -44,7 +45,7 @@ class PowerDownTests(TestCaseBase):
             FakeGuestAgent(responsive=False),
             acpiEnable='false'
         )
-        obj = make_powerdown(vm, self.event)
+        obj = make_object('VmPowerDown', vm, self.event)
         res = obj.start()
         self.assertTrue(response.is_error(res, 'exist'))
 
@@ -54,20 +55,51 @@ class PowerDownTests(TestCaseBase):
             FakeGuestAgent(responsive=True),
             acpiEnable='true'
         )
-        obj = make_powerdown(vm, self.event)
+        obj = make_object('VmPowerDown', vm, self.event)
         # no actual callback will be called now!
         res = obj.start()
         self.assertFalse(response.is_error(res))
 
 
-def make_powerdown(vm, event):
+class ShutdownTests(TestCaseBase):
+
+    def setUp(self):
+        self.dom = FakeDomain()
+        self.event = threading.Event()
+
+    def test_qemu_guest_agent_callback_unresponsive(self):
+        vm = FakeVM(
+            self.dom,
+            FakeGuestAgent(responsive=False),
+            acpiEnable='true'
+        )
+        obj = make_object('VmShutdown', vm, self.event)
+        self.assertFalse(obj.qemuGuestAgentCallback())
+
+
+class RebootTests(TestCaseBase):
+
+    def setUp(self):
+        self.dom = FakeDomain()
+        self.event = threading.Event()
+
+    def test_qemu_guest_agent_callback_unresponsive(self):
+        vm = FakeVM(
+            self.dom,
+            FakeGuestAgent(responsive=False),
+            acpiEnable='true'
+        )
+        obj = make_object('VmReboot', vm, self.event)
+        self.assertFalse(obj.qemuGuestAgentCallback())
+
+
+def make_object(name, vm, event):
     message = 'testing'
     delay = 1.0
     timeout = 1.0
     force = False
-    return vmpowerdown.VmPowerDown(
-        vm, delay, message, timeout, force, event
-    )
+    klass = getattr(vmpowerdown, name)
+    return klass(vm, delay, message, timeout, force, event)
 
 
 class FakeVM(object):
@@ -84,6 +116,14 @@ class FakeVM(object):
     @recorded
     def acpiReboot(self):
         pass
+
+    def qemuGuestAgentShutdown(self):
+        if not self.guestAgent.isResponsive():
+            raise exception.NonResponsiveGuestAgent()
+
+    def qemuGuestAgentReboot(self):
+        if not self.guestAgent.isResponsive():
+            raise exception.NonResponsiveGuestAgent()
 
     def acpi_enabled(self):
         return self.conf['acpiEnable'] == 'true'
