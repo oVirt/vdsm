@@ -1739,6 +1739,11 @@ class TestVmBalloon(TestCaseBase):
                 256
             )
 
+    def testGetBalloonInfo(self):
+        with fake.VM() as testvm:
+            self.assertEqual(testvm._devices[hwclass.BALLOON], [])
+            self.assertEqual(testvm.get_balloon_info(), {})
+
 
 class ChangeBlockDevTests(TestCaseBase):
 

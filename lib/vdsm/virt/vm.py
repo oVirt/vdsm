@@ -5040,12 +5040,19 @@ class Vm(object):
             self._devices[hwclass.BALLOON][0].target = target
 
     def get_balloon_info(self):
-        # we will always have exactly one memballoon device
-        dev = self._devices[hwclass.BALLOON][0]
-        return {
-            'target': dev.target,
-            'minimum': dev.minimum,
-        }
+        try:
+            # we will always have exactly one memballoon device
+            dev = self._devices[hwclass.BALLOON][0]
+        except IndexError:
+            # except if getStats() is called concurrently when the
+            # VM is being created, in this case no balloon device is
+            # available
+            return {}
+        else:
+            return {
+                'target': dev.target,
+                'minimum': dev.minimum,
+            }
 
     def setCpuTuneQuota(self, quota):
         try:
