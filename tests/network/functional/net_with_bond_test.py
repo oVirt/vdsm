@@ -69,6 +69,23 @@ class TestNetworkWithBond(NetFuncTestCase):
                     self.setupNetworks(NETCREATE, {}, NOCHK)
                 assert e.value.status == ne.ERR_USED_NIC
 
+    def test_given_bonded_net_transfer_one_slave_to_new_net(self, switch):
+        with dummy_devices(3) as (nic1, nic2, nic3):
+            NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
+                                       'switch': switch}}
+            BONDBASE = {BOND_NAME: {'nics': [nic1, nic2, nic3],
+                                    'switch': switch}}
+
+            with self.setupNetworks(NETBASE, BONDBASE, NOCHK):
+                NETNEW = {NETWORK2_NAME: {'nic': nic3, 'switch': switch}}
+                BONDEDIT = {BOND_NAME: {'nics': [nic1, nic2],
+                                        'switch': switch}}
+                self.setupNetworks({}, BONDEDIT, NOCHK)
+                with self.setupNetworks(NETNEW, {}, NOCHK):
+                    self.assertNetwork(NETWORK1_NAME, NETBASE[NETWORK1_NAME])
+                    self.assertNetwork(NETWORK2_NAME, NETNEW[NETWORK2_NAME])
+                    self.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
+
     def test_add_net_with_invalid_bond_name_fails(self, switch):
         INVALID_BOND_NAMES = ('bond',
                               'bonda',

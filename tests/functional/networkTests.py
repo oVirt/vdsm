@@ -511,42 +511,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    def testSetupNetworksAddNetworkToNicAfterBondResizing(self, bridged):
-        with dummyIf(3) as nics:
-            networks = {NETWORK_NAME: dict(bonding=BONDING_NAME,
-                                           bridged=bridged)}
-            status, msg = self.setupNetworks(
-                networks, {BONDING_NAME: dict(nics=nics)}, NOCHK)
-
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
-            self.assertBondExists(BONDING_NAME, nics)
-
-            # Reduce bond size and create Network on detached NIC
-            _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
-            with nonChangingOperstate(BONDING_NAME):
-                netName = NETWORK_NAME + '-2'
-                networks = {netName: dict(nic=nics[0],
-                                          bridged=bridged)}
-                bondings = {BONDING_NAME: dict(nics=nics[1:3])}
-                status, msg = self.setupNetworks(networks, bondings, NOCHK)
-
-                self.assertEqual(status, SUCCESS, msg)
-
-                self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
-                self.assertNetworkExists(netName, bridged=bridged)
-                self.assertBondExists(BONDING_NAME, nics[1:3])
-
-            # Clean up
-            networks = {NETWORK_NAME: dict(remove=True),
-                        netName: dict(remove=True)}
-            bondings = {BONDING_NAME: dict(remove=True)}
-            status, msg = self.setupNetworks(networks, bondings, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
-    @permutations([[True], [False]])
     def testSetupNetworksMtus(self, bridged):
         JUMBO = 9000
         MIDI = 4000

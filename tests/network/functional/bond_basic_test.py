@@ -69,7 +69,8 @@ class TestBondBasic(NetFuncTestCase):
                 BOND_NAME: {'nics': [nic1, nic3], 'switch': switch}}
 
             with self.setupNetworks({}, BONDCREATE, NOCHK):
-                self.setupNetworks({}, BONDEDIT, NOCHK)
+                with nftestlib.monitor_stable_link_state(BOND_NAME):
+                    self.setupNetworks({}, BONDEDIT, NOCHK)
                 self.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
 
     def test_swap_slaves_between_bonds(self, switch):
