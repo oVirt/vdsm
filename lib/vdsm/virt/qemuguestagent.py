@@ -51,17 +51,14 @@ from vdsm.virt import periodic
 
 _QEMU_GUEST_INFO_COMMAND = 'guest-info'
 
-# TODO: add custom config instead of abusing sampling
-_WORKERS = config.getint('sampling', 'periodic_workers')
-_TASK_PER_WORKER = config.getint('sampling', 'periodic_task_per_worker')
+_WORKERS = config.getint('guest_agent', 'periodic_workers')
+_TASK_PER_WORKER = config.getint('guest_agent', 'periodic_task_per_worker')
 _TASKS = _WORKERS * _TASK_PER_WORKER
-_MAX_WORKERS = config.getint('sampling', 'max_workers')
+_MAX_WORKERS = config.getint('guest_agent', 'max_workers')
 
-_COMMAND_TIMEOUT = 1
-_TASK_TIMEOUT = 10
+_COMMAND_TIMEOUT = config.getint('guest_agent', 'qga_command_timeout')
+_TASK_TIMEOUT = config.getint('guest_agent', 'qga_task_timeout')
 _THROTTLING_INTERVAL = 60
-_CAPS_PERIOD = 300
-_CLEANUP_PERIOD = 3600
 
 
 class QemuGuestAgentPoller(object):
@@ -82,6 +79,11 @@ class QemuGuestAgentPoller(object):
         self._last_failure = {}
 
     def start(self):
+        if not config.getboolean('guest_agent', 'enable_qga_poller'):
+            self.log.info('Not starting QEMU-GA poller. It is disabled in'
+                          ' configuration')
+            return
+
         def per_vm_operation(job, period):
             disp = periodic.VmDispatcher(
                 self._cif.getVMs, self._executor,
@@ -95,13 +97,13 @@ class QemuGuestAgentPoller(object):
 
             periodic.Operation(
                 self._cleanup,
-                _CLEANUP_PERIOD,
+                config.getint('guest_agent', 'cleanup_period'),
                 self._scheduler, executor=self._executor),
 
             # Monitor what QEMU-GA offers
             per_vm_operation(
                 CapabilityCheck,
-                _CAPS_PERIOD),
+                config.getint('guest_agent', 'qga_info_period')),
         ]
 
         self.log.info("Starting QEMU-GA poller")

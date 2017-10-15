@@ -152,7 +152,7 @@ parameters = [
             'applications before shutdown.'),
 
         ('guest_agent_timeout', '30',
-            'Time (in sec) to wait for guest agent.'),
+            'Time (in sec) to wait for oVirt guest agent.'),
 
         ('guest_lifecycle_event_reply_timeout', '10',
             'Time (in sec) to wait for the guest agent to reply on lifecycle'
@@ -625,7 +625,6 @@ parameters = [
             'is > 0). None means system\'s default size.'),
     ]),
 
-
     # Section: [v2v]
     ('v2v', [
 
@@ -634,6 +633,46 @@ parameters = [
                 'transferring data from source libvirt. It may be necessary '
                 'to tweak the size when communicating with old libvirt or '
                 'for performance tuning.'),
+    ]),
+
+    # Section [guest_agent]
+    ('guest_agent', [
+        ('enable_qga_poller', 'true',
+            'Enable or disable the QEMU-GA poller'),
+
+        ('periodic_workers', '4',
+            'Number of worker threads to serve the periodic tasks.'
+            ' This is for internal usage and may change without warning'),
+
+        ('periodic_task_per_worker', '100',
+            'Max number of tasks which can be queued on workers.'
+            ' This is for internal usage and may change without warning'),
+
+        ('max_workers', '30',
+            'Maximum number of worker threads to serve the periodic tasks '
+            'at the same time.'),
+
+        ('cleanup_period', '3600',
+            'How often do the household cleaning and free data about VMs'
+            ' that are no longer running.'),
+
+        # WARNING: This should be as small as possible, we cannot wait for
+        # unresponsive agent. When the call is blocked the libvirt domain is
+        # locked and thus lots of other libvirt calls on the domain are blocked
+        # or unavailble!
+        ('qga_command_timeout', '1',
+            'Time (in sec) to wait for completion of single call to QEMU'
+            ' Guest Agent.'
+            ' This is for internal usage and may change without warning'),
+
+        ('qga_task_timeout', '10',
+            'Time (in sec) to wait for completion of periodic task.'
+            ' After this time the task is stopped and worker is discarded.'
+            ),
+
+        ('qga_info_period', '300',
+            'Period (in sec) with which to query the information about'
+            '  installed QEMU Guest Agent.'),
     ]),
 ]
 
