@@ -27,6 +27,7 @@ from functools import wraps
 import getopt
 import resource
 import signal
+import syslog
 import logging
 import logging.config
 from contextlib import closing
@@ -34,17 +35,6 @@ from contextlib import closing
 from vdsm import concurrent
 from vdsm.common import sigutils
 from vdsm.common import zombiereaper
-
-
-LOG_CONF_PATH = "/etc/vdsm/svdsm.logger.conf"
-
-try:
-    logging.config.fileConfig(LOG_CONF_PATH, disable_existing_loggers=False)
-except:
-    logging.basicConfig(filename='/dev/stdout', filemode='w+',
-                        level=logging.DEBUG)
-    log = logging.getLogger("SuperVdsm.Server")
-    log.warn("Could not init proper logging", exc_info=True)
 
 from multiprocessing import Pipe, Process
 try:
@@ -80,8 +70,15 @@ RUN_AS_TIMEOUT = config.getint("irs", "process_pool_timeout")
 _running = True
 
 
+class FatalError(Exception):
+    """ Raised when supervdsm fails to start """
+
+
 class Timeout(RuntimeError):
     pass
+
+
+LOG_CONF_PATH = "/etc/vdsm/svdsm.logger.conf"
 
 
 def logDecorator(func):
@@ -243,31 +240,38 @@ def terminate(signo, frame):
 
 
 def main(sockfile, pidfile=None):
-    log = logging.getLogger("SuperVdsm.Server")
-    if not config.getboolean('vars', 'core_dump_enable'):
-        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-    sigutils.register()
-    zombiereaper.registerSignalHandler()
-
-    def bind(func):
-        def wrapper(_SuperVdsm, *args, **kwargs):
-            return func(*args, **kwargs)
-        return wrapper
-
-    if _glusterEnabled:
-        for name, func in listPublicFunctions(GLUSTER_MGMT_ENABLED):
-            setattr(_SuperVdsm, name, bind(logDecorator(func)))
-
-    for _, module_name, _ in pkgutil.iter_modules([supervdsm_api.__path__[0]]):
-        module = importlib.import_module('%s.%s' %
-                                         (supervdsm_api.__name__,
-                                          module_name))
-        api_funcs = [f for _, f in module.__dict__.iteritems()
-                     if callable(f) and getattr(f, 'exposed_api', False)]
-        for func in api_funcs:
-            setattr(_SuperVdsm, func.__name__, bind(logDecorator(func)))
-
     try:
+        try:
+            logging.config.fileConfig(LOG_CONF_PATH,
+                                      disable_existing_loggers=False)
+        except Exception as e:
+            raise FatalError("Cannot configure logging: %s" % e)
+
+        log = logging.getLogger("SuperVdsm.Server")
+        if not config.getboolean('vars', 'core_dump_enable'):
+            resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        sigutils.register()
+        zombiereaper.registerSignalHandler()
+
+        def bind(func):
+            def wrapper(_SuperVdsm, *args, **kwargs):
+                return func(*args, **kwargs)
+            return wrapper
+
+        if _glusterEnabled:
+            for name, func in listPublicFunctions(GLUSTER_MGMT_ENABLED):
+                setattr(_SuperVdsm, name, bind(logDecorator(func)))
+
+        for _, module_name, _ in \
+                pkgutil.iter_modules([supervdsm_api.__path__[0]]):
+            module = importlib.import_module('%s.%s' %
+                                             (supervdsm_api.__name__,
+                                              module_name))
+            api_funcs = [f for _, f in module.__dict__.iteritems()
+                         if callable(f) and getattr(f, 'exposed_api', False)]
+            for func in api_funcs:
+                setattr(_SuperVdsm, func.__name__, bind(logDecorator(func)))
+
         log.debug("Making sure I'm root - SuperVdsm")
         if os.geteuid() != 0:
             sys.exit(errno.EPERM)
@@ -314,8 +318,9 @@ def main(sockfile, pidfile=None):
                 utils.rmFile(address)
 
     except Exception:
-        log.error("Could not start Super Vdsm", exc_info=True)
-        sys.exit(1)
+        syslog.syslog("Supervdsm failed to start: %s" % e)
+        # Make it easy to debug via the shell
+        raise
 
 
 def _usage():
