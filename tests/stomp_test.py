@@ -87,7 +87,7 @@ class StompTests(TestCaseBase):
         with constructAcceptor(self.log, use_ssl, _SampleBridge()) as acceptor:
             sslctx = DEAFAULT_SSL_CONTEXT if use_ssl else None
 
-            with utils.running(StandAloneRpcClient(acceptor._host,
+            with utils.closing(StandAloneRpcClient(acceptor._host,
                                                    acceptor._port,
                                                    'jms.topic.vdsm_requests',
                                                    str(uuid4()),
@@ -104,16 +104,18 @@ class StompTests(TestCaseBase):
         with constructAcceptor(self.log, use_ssl, _SampleBridge(),
                                'jms.queue.events') as acceptor:
             sslctx = DEAFAULT_SSL_CONTEXT if use_ssl else None
-            client = StandAloneRpcClient(acceptor._host, acceptor._port,
-                                         'jms.topic.vdsm_requests',
-                                         'jms.queue.events', sslctx, False)
+            with utils.closing(StandAloneRpcClient(acceptor._host,
+                                                   acceptor._port,
+                                                   'jms.topic.vdsm_requests',
+                                                   'jms.queue.events',
+                                                   sslctx, False)) as client:
 
-            def callback(client, event, params):
-                self.assertEqual(event, 'vdsm.event')
-                self.assertEqual(params['content'], True)
-                done.set()
+                def callback(client, event, params):
+                    self.assertEqual(event, 'vdsm.event')
+                    self.assertEqual(params['content'], True)
+                    done.set()
 
-            client.registerEventCallback(callback)
-            client.callMethod("event", [], str(uuid4()))
-            done.wait(timeout=CALL_TIMEOUT)
-            self.assertTrue(done.is_set())
+                client.registerEventCallback(callback)
+                client.callMethod("event", [], str(uuid4()))
+                done.wait(timeout=CALL_TIMEOUT)
+                self.assertTrue(done.is_set())
