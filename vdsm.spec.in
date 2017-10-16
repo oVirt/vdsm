@@ -140,10 +140,10 @@ Requires: libvirt-client
 Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-lock-sanlock
 
+# Require the latest on RHEL 7.4
 %if 0%{?rhel}
-# For https://bugzilla.redhat.com/1317429
-Requires: libvirt-daemon-kvm >= 2.0.0-10.el7_3.4
-Requires: libvirt-python >= 2.0.0-2
+Requires: libvirt-daemon-kvm >= 3.2.0-14.el7_4.3
+Requires: libvirt-python >= 3.2.0-3
 %else # fedora
 Requires: libvirt-daemon-kvm >= 2.2.0-1
 Requires: libvirt-python >= 2.2.0-1
