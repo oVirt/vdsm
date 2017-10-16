@@ -51,6 +51,7 @@ from vdsm.config import config
 from vdsm.virt import periodic
 from vdsm.virt import guestagenthelpers
 
+_QEMU_ACTIVE_USERS_COMMAND = 'guest-get-users'
 _QEMU_GUEST_INFO_COMMAND = 'guest-info'
 _QEMU_HOST_NAME_COMMAND = 'guest-get-host-name'
 _QEMU_OSINFO_COMMAND = 'guest-get-osinfo'
@@ -124,6 +125,11 @@ class QemuGuestAgentPoller(object):
             per_vm_operation(
                 SystemInfoCheck,
                 config.getint('guest_agent', 'qga_sysinfo_period')),
+
+            # List of active users
+            per_vm_operation(
+                ActiveUsersCheck,
+                config.getint('guest_agent', 'qga_active_users_period')),
         ]
 
         self.log.info("Starting QEMU-GA poller")
@@ -255,6 +261,32 @@ class _RunnableOnVmGuestAgent(periodic._RunnableOnVm):
                 (monotonic_time() - last_failure) < _THROTTLING_INTERVAL:
             return False
         return True
+
+
+class ActiveUsersCheck(_RunnableOnVmGuestAgent):
+    """
+    Get list of active users from the guest OS
+    """
+    def _execute(self):
+        guest_info = {}
+        ret = self._qga_poller.call_qga_command(
+            self._vm, _QEMU_ACTIVE_USERS_COMMAND)
+        if ret is None:
+            return
+        try:
+            users = [self.format_user(u) for u in ret]
+            guest_info['username'] = ', '.join(users)
+        except:
+            self._qga_poller.log.warning(
+                'Invalid message returned to call \'%s\': %r',
+                _QEMU_ACTIVE_USERS_COMMAND, ret)
+        self._qga_poller.update_guest_info(self._vm.id, guest_info)
+
+    def format_user(self, user):
+        if user.get('domain', '') != '':
+            return user['user'] + '@' + user.get('domain', '')
+        else:
+            return user['user']
 
 
 class CapabilityCheck(_RunnableOnVmGuestAgent):
