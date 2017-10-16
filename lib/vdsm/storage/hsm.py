@@ -196,12 +196,16 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
                                 conDict.get('connection', '(unknown)'),
                                 conf_options)
                 return storageServer.PosixFsConnectionParameters(
-                    conDict.get('connection', None), 'nfs', conf_options)
+                    conDict["id"],
+                    conDict.get('connection', None),
+                    'nfs',
+                    conf_options)
         return None
 
     typeName = CON_TYPE_ID_2_CON_TYPE[conTypeId]
     if typeName == 'localfs':
         params = storageServer.LocaFsConnectionParameters(
+            conDict["id"],
             conDict.get('connection', None))
     elif typeName == 'nfs':
         params = tryDeprecatedNfsParams(conDict)
@@ -215,6 +219,7 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
                 version = None
 
             params = storageServer.NfsConnectionParameters(
+                conDict["id"],
                 conDict.get('connection', None),
                 getIntParam(conDict, 'retrans', None),
                 getIntParam(conDict, 'timeout', None),
@@ -222,11 +227,13 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
                 conDict.get('mnt_options', None))
     elif typeName == 'posixfs':
         params = storageServer.PosixFsConnectionParameters(
+            conDict["id"],
             conDict.get('connection', None),
             conDict.get('vfs_type', None),
             conDict.get('mnt_options', None))
     elif typeName == 'glusterfs':
         params = storageServer.GlusterFsConnectionParameters(
+            conDict["id"],
             conDict.get('connection', None),
             conDict.get('vfs_type', None),
             conDict.get('mnt_options', None))
@@ -256,9 +263,13 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
         if username or password:
             cred = iscsi.ChapCredentials(username, password)
 
-        params = storageServer.IscsiConnectionParameters(target, iface, cred)
+        params = storageServer.IscsiConnectionParameters(
+            conDict["id"],
+            target,
+            iface,
+            cred)
     elif typeName == 'fcp':
-        params = storageServer.FcpConnectionParameters()
+        params = storageServer.FcpConnectionParameters(conDict["id"])
     else:
         raise se.StorageServerActionError()
 

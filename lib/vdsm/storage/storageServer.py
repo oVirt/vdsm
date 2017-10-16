@@ -44,20 +44,21 @@ from vdsm.storage.mount import MountError
 
 
 IscsiConnectionParameters = namedtuple("IscsiConnectionParameters",
-                                       "target, iface, credentials")
+                                       "id, target, iface, credentials")
 
 PosixFsConnectionParameters = namedtuple("PosixFsConnectionParameters",
-                                         "spec, vfsType, options")
+                                         "id, spec, vfsType, options")
 
 GlusterFsConnectionParameters = namedtuple("GlusterFsConnectionParameters",
-                                           "spec, vfsType, options")
+                                           "id, spec, vfsType, options")
 
-LocaFsConnectionParameters = namedtuple("LocaFsConnectionParameters", "path")
+LocaFsConnectionParameters = namedtuple("LocaFsConnectionParameters",
+                                        "id, path")
 NfsConnectionParameters = namedtuple("NfsConnectionParameters",
-                                     "export, retrans, timeout, version, "
+                                     "id, export, retrans, timeout, version, "
                                      "extraOptions")
 
-FcpConnectionParameters = namedtuple("FcpConnectionParameters", "")
+FcpConnectionParameters = namedtuple("FcpConnectionParameters", "id")
 
 ConnectionInfo = namedtuple("ConnectionInfo", "type, params")
 
@@ -69,6 +70,11 @@ class ExampleConnection(object):
     def __init__(self, arg1, arg2=None):
         """The connection should get all the information in the ctor.
         connection properties should not be modified after initialization"""
+        pass
+
+    @property
+    def id(self):
+        """The ID of the connection"""
         pass
 
     def connect(self):
@@ -112,6 +118,10 @@ class MountConnection(object):
     localPathBase = "/tmp"
 
     @property
+    def id(self):
+        return self._id
+
+    @property
     def remotePath(self):
         return self._remotePath
 
@@ -131,7 +141,13 @@ class MountConnection(object):
     def getLocalPathBase(cls):
         return cls.localPathBase
 
-    def __init__(self, spec, vfsType=None, options="", mountClass=mount.Mount):
+    def __init__(self,
+                 id,
+                 spec,
+                 vfsType=None,
+                 options="",
+                 mountClass=mount.Mount):
+        self._id = id
         self._vfsType = vfsType
         # Note: must be normalized before we escape "/" in _getLocalPath.
         # See https://bugzilla.redhat.com/1300749
@@ -194,6 +210,7 @@ class MountConnection(object):
 
     def __eq__(self, other):
         return (self.__class__ == other.__class__ and
+                self._id == other._id and
                 self._vfsType == other._vfsType and
                 self._remotePath == other._remotePath and
                 self._options == other._options)
@@ -203,13 +220,15 @@ class MountConnection(object):
 
     def __hash__(self):
         return hash((self.__class__,
+                     self._id,
                      self._vfsType,
                      self._remotePath,
                      self._options))
 
     def __repr__(self):
-        return "<{0} spec={1!r} vfstype={2!r} options={3!r}>".format(
+        return "<{0} id= {1!r} spec={2!r} vfstype={3!r} options={4!r}>".format(
             self.__class__.__name__,
+            self._id,
             self._remotePath,
             self._vfsType,
             self._options)
@@ -233,11 +252,13 @@ class GlusterFSConnection(MountConnection):
         config.get("gluster", "allowed_replica_counts").split(","))
 
     def __init__(self,
+                 id,
                  spec,
                  vfsType=None,
                  options="",
                  mountClass=mount.Mount):
-        super(GlusterFSConnection, self).__init__(spec,
+        super(GlusterFSConnection, self).__init__(id,
+                                                  spec,
                                                   vfsType=vfsType,
                                                   options=options,
                                                   mountClass=mountClass)
@@ -315,6 +336,10 @@ class NFSConnection(object):
     DEFAULT_OPTIONS = ["soft", "nosharecache"]
 
     @property
+    def id(self):
+        return self._mountCon._id
+
+    @property
     def remotePath(self):
         return self._remotePath
 
@@ -351,7 +376,7 @@ class NFSConnection(object):
         # Return -1 to signify the version has not been negotiated yet
         return -1
 
-    def __init__(self, export, timeout=600, retrans=6, version=None,
+    def __init__(self, id, export, timeout=600, retrans=6, version=None,
                  extraOptions=""):
         self._remotePath = normpath(export)
         options = self.DEFAULT_OPTIONS[:]
@@ -375,7 +400,7 @@ class NFSConnection(object):
             if len(vers) > 1:
                 options.append("minorversion=%d" % vers[1])
         optionsString = ",".join(filter(None, options + [extraOptions]))
-        self._mountCon = MountConnection(export, "nfs", optionsString)
+        self._mountCon = MountConnection(id, export, "nfs", optionsString)
 
     def connect(self):
         return self._mountCon.connect()
@@ -413,6 +438,10 @@ class IscsiConnection(object):
             return repr(self.__str__())
 
     @property
+    def id(self):
+        return self._id
+
+    @property
     def target(self):
         return self._target
 
@@ -420,7 +449,8 @@ class IscsiConnection(object):
     def iface(self):
         return self._iface
 
-    def __init__(self, target, iface=None, credentials=None):
+    def __init__(self, id, target, iface=None, credentials=None):
+        self._id = id
         self._target = target
 
         if iface is None:
@@ -509,6 +539,9 @@ class IscsiConnection(object):
         if not isinstance(other, IscsiConnection):
             return False
 
+        if self._id != other._id:
+            return False
+
         try:
             myInfo = self.getSessionInfo()
             hisInfo = other.getSessionInfo()
@@ -520,13 +553,20 @@ class IscsiConnection(object):
 
     def __hash__(self):
         hsh = hash(type(self))
-        for attr in (self._target, self._cred, self._iface.name):
+        for attr in (self._id, self._target, self._cred, self._iface.name):
             hsh ^= hash(attr)
 
         return hsh
 
 
 class FcpConnection(object):
+
+    @property
+    def id(self):
+        return self._id
+
+    def __init__(self, id):
+        self._id = id
 
     def connect(self):
         pass
@@ -538,21 +578,28 @@ class FcpConnection(object):
         return True
 
     def __eq__(self, other):
-        return self.__class__ == other.__class
+        return (self.__class__ == other.__class and
+                self._id == other._id)
 
     def __ne__(self, other):
         return not self == other
 
     def __hash__(self):
-        return hash(self.__class__)
+        return hash((self.__class__, self._id))
 
 
 class LocalDirectoryConnection(object):
+
+    @property
+    def id(self):
+        return self._id
+
     @property
     def path(self):
         return self._path
 
-    def __init__(self, path):
+    def __init__(self, id, path):
+        self._id = id
         self._path = path
 
     @classmethod
@@ -603,10 +650,12 @@ class LocalDirectoryConnection(object):
         if not isinstance(other, LocalDirectoryConnection):
             return False
 
-        return self._path == other._path
+        return self._id == other._id and self._path == other._path
 
     def __hash__(self):
-        return hash(type(self)) ^ hash(self._path)
+        return hash((self.__class__,
+                     self._id,
+                     self._path))
 
 
 class UnknownConnectionTypeError(RuntimeError):

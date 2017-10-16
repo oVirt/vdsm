@@ -74,7 +74,7 @@ class TestMountConnection(VdsmTestCase):
         ("server:6789:/", "server:6789:/", "/tmp/server:6789:_"),
     ])
     def test_normalize_local_path(self, spec, fs_spec, fs_file):
-        con = MountConnection(spec, mountClass=FakeMount)
+        con = MountConnection("id", spec, mountClass=FakeMount)
         self.assertEqual(con._mount.fs_spec, fs_spec)
         self.assertEqual(con._mount.fs_file, fs_file)
 
@@ -83,30 +83,31 @@ class TestMountConnection(VdsmTestCase):
 class TestMountConnectionEquality(VdsmTestCase):
 
     def test_eq_equal(self):
-        c1 = MountConnection("server:/path", "vfstype", "options")
-        c2 = MountConnection("server:/path", "vfstype", "options")
+        c1 = MountConnection("id", "server:/path", "vfstype", "options")
+        c2 = MountConnection("id", "server:/path", "vfstype", "options")
         self.assertTrue(c1 == c2, "%s should equal %s" % (c1, c2))
 
     def test_eq_subclass(self):
         class Subclass(MountConnection):
             pass
-        c1 = MountConnection("server:/path", "vfstype", "options")
-        c2 = Subclass("server:/path", "vfstype", "options")
+        c1 = MountConnection("id", "server:/path", "vfstype", "options")
+        c2 = Subclass("id", "server:/path", "vfstype", "options")
         self.assertFalse(c1 == c2, "%s should not equal %s" % (c1, c2))
 
     @permutations([
-        ("server:/path1", "server:/path2", "t", "t", "o", "o"),
-        ("server:/path", "server:/path", "t1", "t2", "o", "o"),
-        ("server:/path", "server:/path", "t", "t", "o1", "o2"),
+        ("id", "id", "server:/path1", "server:/path2", "t", "t", "o", "o"),
+        ("id", "id", "server:/path", "server:/path", "t1", "t2", "o", "o"),
+        ("id", "id", "server:/path", "server:/path", "t", "t", "o1", "o2"),
+        ("id1", "id2", "server:/path", "server:/path", "t", "t", "o", "o"),
     ])
-    def test_eq_different(self, s1, s2, t1, t2, o1, o2):
-        c1 = MountConnection(s1, t1, o1)
-        c2 = MountConnection(s2, t2, o2)
+    def test_eq_different(self, i1, i2, s1, s2, t1, t2, o1, o2):
+        c1 = MountConnection(i1, s1, t1, o1)
+        c2 = MountConnection(i2, s2, t2, o2)
         self.assertFalse(c1 == c2, "%s should not equal %s" % (c1, c2))
 
     def test_ne_equal(self):
-        c1 = MountConnection("server:/path", "vfstype", "options")
-        c2 = MountConnection("server:/path", "vfstype", "options")
+        c1 = MountConnection("id", "server:/path", "vfstype", "options")
+        c2 = MountConnection("id", "server:/path", "vfstype", "options")
         self.assertFalse(c1 != c2, "%s should equal %s" % (c1, c2))
 
 
@@ -114,25 +115,26 @@ class TestMountConnectionEquality(VdsmTestCase):
 class TestMountConnectionHash(VdsmTestCase):
 
     def test_equal_same_hash(self):
-        c1 = MountConnection("server:/path", "vfstype", "options")
-        c2 = MountConnection("server:/path", "vfstype", "options")
+        c1 = MountConnection("id", "server:/path", "vfstype", "options")
+        c2 = MountConnection("id", "server:/path", "vfstype", "options")
         self.assertEqual(hash(c1), hash(c2))
 
     def test_subclass_different_hash(self):
         class Subclass(MountConnection):
             pass
-        c1 = MountConnection("server:/path", "vfstype", "options")
-        c2 = Subclass("server:/path", "vfstype", "options")
+        c1 = MountConnection("id", "server:/path", "vfstype", "options")
+        c2 = Subclass("id", "server:/path", "vfstype", "options")
         self.assertNotEqual(hash(c1), hash(c2))
 
     @permutations([
-        ("server:/path1", "server:/path2", "t", "t", "o", "o"),
-        ("server:/path", "server:/path", "t1", "t2", "o", "o"),
-        ("server:/path", "server:/path", "t", "t", "o1", "o2"),
+        ("id", "id", "server:/path1", "server:/path2", "t", "t", "o", "o"),
+        ("id", "id", "server:/path", "server:/path", "t1", "t2", "o", "o"),
+        ("id1", "id", "server:/path", "server:/path", "t", "t", "o1", "o2"),
+        ("id2", "id", "server:/path", "server:/path", "t", "t", "o", "o"),
     ])
-    def test_not_equal_different_hash(self, s1, s2, t1, t2, o1, o2):
-        c1 = MountConnection(s1, t1, o1)
-        c2 = MountConnection(s2, t2, o2)
+    def test_not_equal_different_hash(self, i1, i2, s1, s2, t1, t2, o1, o2):
+        c1 = MountConnection(i1, s1, t1, o1)
+        c2 = MountConnection(i2, s2, t2, o2)
         self.assertNotEqual(hash(c1), hash(c2))
 
 
@@ -140,7 +142,9 @@ class TestMountConnectionHash(VdsmTestCase):
 class TestGlusterFSConnection(VdsmTestCase):
 
     def test_mountpoint(self):
-        mount_con = GlusterFSConnection("server:/volume", mountClass=FakeMount)
+        mount_con = GlusterFSConnection("id",
+                                        "server:/volume",
+                                        mountClass=FakeMount)
         self.assertEqual(mount_con._mount.fs_spec,
                          "server:/volume")
         self.assertEqual(mount_con._mount.fs_file,
@@ -159,7 +163,7 @@ class TestGlusterFSConnection(VdsmTestCase):
 
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
-        gluster = GlusterFSConnection(spec="192.168.122.1:/music")
+        gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music")
         self.assertEqual(gluster.options,
                          "backup-volfile-servers=192.168.122.2:192.168.122.3")
 
@@ -178,7 +182,7 @@ class TestGlusterFSConnection(VdsmTestCase):
 
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
-        gluster = GlusterFSConnection(spec="gluster-server:/music")
+        gluster = GlusterFSConnection(id="id", spec="gluster-server:/music")
         expected_backup_servers = \
             "backup-volfile-servers=192.168.122.5:192.168.122.2:192.168.122.3"
         self.assertEqual(gluster.options, expected_backup_servers)
@@ -199,7 +203,7 @@ class TestGlusterFSConnection(VdsmTestCase):
 
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
-        gluster = GlusterFSConnection(spec="gluster-server:/music")
+        gluster = GlusterFSConnection(id="id", spec="gluster-server:/music")
         expected_backup_servers = \
             "backup-volfile-servers=192.168.122.5:192.168.122.2:192.168.122.3"
         self.assertEqual(gluster.options, expected_backup_servers)
@@ -215,7 +219,7 @@ class TestGlusterFSConnection(VdsmTestCase):
 
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
-        gluster = GlusterFSConnection(spec="192.168.122.1:/music",
+        gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music",
                                       options="option1=val1")
         expected_options = \
             "option1=val1,backup-volfile-servers=192.168.122.2:192.168.122.3"
@@ -231,7 +235,7 @@ class TestGlusterFSConnection(VdsmTestCase):
 
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
-        gluster = GlusterFSConnection(spec="192.168.122.1:/music")
+        gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music")
         self.assertEqual(gluster.options, "")
 
     def test_user_provided_gluster_mount_options(self):
@@ -240,7 +244,7 @@ class TestGlusterFSConnection(VdsmTestCase):
             return None
 
         user_options = "backup-volfile-servers=server1:server2"
-        gluster = GlusterFSConnection(spec="192.168.122.1:/music",
+        gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music",
                                       options=user_options)
         self.assertEqual(gluster.options, user_options)
 
@@ -254,12 +258,12 @@ class TestGlusterFSConnection(VdsmTestCase):
 
         storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
 
-        gluster = GlusterFSConnection(spec="192.168.122.1:/music")
+        gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music")
         gluster.validate()
 
     @MonkeyPatch(gluster_cli, 'exists', lambda: False)
     def test_glusterfs_cli_missing(self):
-        gluster = GlusterFSConnection(spec="192.168.122.1:/music")
+        gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music")
         self.assertEqual(gluster.options, "")
 
 
@@ -274,7 +278,7 @@ class TestGlusterFSNotAccessibleConnection(VdsmTestCase):
     def test_validate(self):
         storageServer.supervdsm.glusterVolumeInfo = self.glusterVolumeInfo
 
-        gluster = GlusterFSConnection(spec="192.168.122.1:/music")
+        gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music")
         gluster.validate()
 
     @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
@@ -283,6 +287,6 @@ class TestGlusterFSNotAccessibleConnection(VdsmTestCase):
     def test_mount_options(self, userMountOptions):
         storageServer.supervdsm.glusterVolumeInfo = self.glusterVolumeInfo
 
-        gluster = GlusterFSConnection(spec="192.168.122.1:/music",
+        gluster = GlusterFSConnection(id="id", spec="192.168.122.1:/music",
                                       options=userMountOptions)
         self.assertEqual(gluster.options, userMountOptions)
