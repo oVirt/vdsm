@@ -190,30 +190,3 @@ class TestReuseBond(NetFuncTestCase):
                                      'hwaddr': HWADDRESS,
                                      'switch': switch})
             self.setupNetworks({}, {BOND_NAME: {'remove': True}}, NOCHK)
-
-    def test_del_one_of_two_nets_with_same_bond_different_mtus(self, switch):
-        if switch == 'ovs':
-            pytest.xfail('MTU editation is not supported on OVS switches.')
-        with dummy_device() as nic:
-            NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
-                                       'bridged': False,
-                                       'vlan': VLAN1,
-                                       'mtu': 1600,
-                                       'switch': switch},
-                       NETWORK2_NAME: {'bonding': BOND_NAME,
-                                       'bridged': False,
-                                       'vlan': VLAN2,
-                                       'mtu': 2000,
-                                       'switch': switch}}
-            BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
-
-            with self.setupNetworks(NETBASE, BONDBASE, NOCHK):
-                with waitfor.waitfor_linkup(BOND_NAME):
-                    pass
-                with nftestlib.monitor_stable_link_state(BOND_NAME):
-                    self.assertNetwork(NETWORK2_NAME, NETBASE[NETWORK2_NAME])
-                    self.setupNetworks({NETWORK2_NAME: {'remove': True}},
-                                       {},
-                                       NOCHK)
-                    self.assertNetwork(NETWORK1_NAME, NETBASE[NETWORK1_NAME])
-                    self.assertBond(BOND_NAME, BONDBASE[BOND_NAME])
