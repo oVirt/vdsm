@@ -112,41 +112,42 @@ class DriveMonitor(object):
     def monitored_drives(self):
         """
         Return the drives that need to be checked for extension
-        as soon as possible.
+        on the next monitoring cycle.
+
         If events are disabled, the reported drives are all the
         writable chunked drives plus all the drives being replicated
         to a chunked drive.
+
         If events are enabled, the reported drives are the subset
-        of the above which are either without a threshold (first
-        time we see the drive since Vdsm started, or failed
-        to set the threshold in the previous cycle) or the with
-        the threshold crossed.
+        of the above. We can can have two states:
 
-        We use the libvirt BLOCK_THRESHOLD event to flag the drives
-        which have their watermark threshold crossed. We can depend
-        on the libvirt event:
-        - for writable chunked drives
-        - for drive replicated to a chunked drive,
-          according to the following table:
+        - threshold_state == UNSET
+          Possible use cases are the first time we monitor a drive, or
+          after set_threshold failure, or when a drive path has changed.
+          We should set the threshold on these drives.
 
-        drive    format replica  format  events  comments
-        -------------------------------------------------
-        block    cow    block    cow     yes
-        block    cow    file     cow     yes
-        file     cow    block    cow     [1]
-        network  cow    block    cow     [1]     gluster
+        - threshold_state == EXCEEDED
+          We got a libvirt BLOCK_THRESHOLD event for this drive, and
+          they should be extended.
 
-        These are not supported:
+        We use the libvirt BLOCK_THRESHOLD event to detect if a drive
+        needs extension for writeable chunked drives, or non-chunked
+        drives being replicated to a chunked drive.
+
+        drive    format  replica  format  events  comments
+        --------------------------------------------------
+        block    cow     block    cow     yes
+        block    cow     file     cow     yes
+        file     cow     block    cow     yes
+        network  cow     block    cow     yes   libgfapi
+
+        These replication types are not supported:
         - network raw to any (ceph)
         - any to network (libvirt/qemu limit)
 
-        Notes:
-        [1] We need to check if libvirt can deliver events.
-        Until we are sure, we assume not and we use polling.
-
         Returns:
             iterable of storage.Drives that needs to be checked
-            for extension
+            for extension.
         """
         drives = [drive for drive in self._vm.getDiskDevices()
                   if (drive.chunked or drive.replicaChunked) and not
