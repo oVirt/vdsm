@@ -341,6 +341,7 @@ class FakeStorageDomainCache(object):
 
     def __init__(self):
         self.domains = {}
+        self.knownSDs = {}
 
     def produce(self, sdUUID):
         try:
@@ -353,6 +354,14 @@ class FakeStorageDomainCache(object):
 
     def manuallyRemoveDomain(self, sdUUID):
         self.domains.pop(sdUUID, None)
+
+    @recorded
+    def refreshStorage(self):
+        pass
+
+    @recorded
+    def invalidateStorage(self):
+        pass
 
 
 class fake_guarded_context(object):
