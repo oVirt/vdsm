@@ -674,6 +674,9 @@ parameters = [
             'Period (in sec) for gathering information about system version,'
             ' installed applications, and some configuration that does not'
             ' change too often.'),
+
+        ('qga_active_users_period', '10',
+            'Period (in sec) for gathering information about active users.'),
     ]),
 ]
 

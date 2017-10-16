@@ -74,6 +74,16 @@ def _fake_qemuAgentCommand(domain, command, timeout, flags):
                 "zone": "CET",
                 "offset": 3600
             }})
+    if command == '{"execute": "guest-get-users"}':
+        return json.dumps(
+            {"return": [{
+                "login-time": 1515975891.567572,
+                "domain": "DESKTOP-NG2EVRF",
+                "user": "Calvin"
+            }, {
+                "login-time": 1515975891.567572,
+                "user": "Hobbes"
+            }]})
     # Unknow command
     logging.error("Fake QEMU-GA cannot handle: %r", command)
     return '{"error": {"class": "CommandNotFound", "desc": "..."}}'
@@ -108,6 +118,7 @@ class QemuGuestAgentTests(TestCaseBase):
             {
                 'version': '0.0-test',
                 'commands': [
+                    qemuguestagent._QEMU_ACTIVE_USERS_COMMAND,
                     qemuguestagent._QEMU_GUEST_INFO_COMMAND,
                     qemuguestagent._QEMU_HOST_NAME_COMMAND,
                     qemuguestagent._QEMU_OSINFO_COMMAND,
@@ -169,6 +180,13 @@ class QemuGuestAgentTests(TestCaseBase):
         self.assertEqual(c['version'], '1.2.3')
         self.assertTrue('guest-info' in c['commands'])
         self.assertFalse('guest-exec' in c['commands'])
+
+    def test_active_users(self):
+        c = qemuguestagent.ActiveUsersCheck(self.vm, self.qga_poller)
+        c._execute()
+        self.assertEqual(
+            self.qga_poller.get_guest_info(self.vm.id),
+            {'username': 'Calvin@DESKTOP-NG2EVRF, Hobbes'})
 
     def test_system_info(self):
         c = qemuguestagent.SystemInfoCheck(self.vm, self.qga_poller)
