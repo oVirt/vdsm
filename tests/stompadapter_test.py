@@ -82,6 +82,9 @@ class FakeAsyncDispatcher(object):
     def connection(self):
         return self._connection
 
+    def handle_timeout(self):
+        pass
+
 
 class FakeSubscription(object):
 

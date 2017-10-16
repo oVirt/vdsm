@@ -169,3 +169,31 @@ class AsyncClientTest(TestCaseBase):
 
         with self.assertRaises(StompError):
             client.handle_frame(None, frame)
+
+    def test_request_saved(self):
+        client = AsyncClient()
+        data = ('{"jsonrpc":"2.0","method":"Host.getAllVmStats","params":{},'
+                '"id":"e8a936a6-d886-4cfa-97b9-2d54209053ff"}')
+        headers = {Headers.REPLY_TO: 'jms.topic.vdsm_responses',
+                   Headers.CONTENT_LENGTH: '103'}
+        # make sure that client can send messages
+        client._connected.set()
+
+        client.send('jms.topic.vdsm_requests', data, headers)
+
+        client.handle_error(FakeAsyncDispatcher(''))
+        client.handle_connect()
+
+        frame = Frame(Command.CONNECTED,
+                      {'version': '1.2', Headers.HEARTBEAT: '8000,0'})
+        client.handle_frame(FakeAsyncDispatcher(''), frame)
+
+        # ignore connect frame
+        client.pop_message()
+        req_frame = client.pop_message()
+        self.assertEqual(req_frame.command, Command.SEND)
+        self.assertEqual(req_frame.headers['destination'],
+                         'jms.topic.vdsm_requests')
+        self.assertEqual(req_frame.headers[Headers.REPLY_TO],
+                         'jms.topic.vdsm_responses')
+        self.assertEqual(req_frame.body, data)

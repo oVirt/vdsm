@@ -541,6 +541,7 @@ class AsyncClient(object):
         self._nr_retries = nr_retries
         self._reconnect_interval = reconnect_interval
         self._outbox = deque()
+        self._requests = deque()
         self._error = None
         self._subscriptions = {}
         self._commands = {
@@ -597,6 +598,8 @@ class AsyncClient(object):
         self.restore_subscriptions()
 
     def handle_error(self, dispatcher):
+        # save all 'SEND' requests before reconnecting
+        self._requests.extend([r for r in self._outbox if r.command == 'SEND'])
         dispatcher.handle_timeout()
 
     def handle_close(self, dispatcher):
@@ -617,6 +620,11 @@ class AsyncClient(object):
             self._incoming_heartbeat)
 
         self.log.debug("Stomp connection established")
+
+        i = 0
+        while i < len(self._requests):
+            self._outbox.append(self._requests.popleft())
+            i += 1
 
     def _process_message(self, frame, dispatcher):
         sub_id = frame.headers.get(Headers.SUBSCRIPTION)
