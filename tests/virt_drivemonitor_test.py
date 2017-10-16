@@ -41,7 +41,7 @@ MB = 1024 ** 2
 GB = 1024 ** 3
 
 
-CHUNK_SIZE_GB = 1 * GB
+CHUNK_SIZE = 1 * GB
 CHUNK_PCT = 50
 
 
@@ -51,7 +51,7 @@ def make_env():
 
     # the Drive class use those two tunables as class constants.
     with MonkeyPatchScope([
-        (Drive, 'VOLWM_CHUNK_SIZE', CHUNK_SIZE_GB),
+        (Drive, 'VOLWM_CHUNK_SIZE', CHUNK_SIZE),
         (Drive, 'VOLWM_FREE_PCT', CHUNK_PCT),
     ]):
         # storage does not validate the UUIDs, so we use phony names
