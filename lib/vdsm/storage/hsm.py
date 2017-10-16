@@ -2312,7 +2312,7 @@ class HSM(object):
                             sd.GLUSTERFS_DOMAIN: glusterSD.findDomain}
         return SDTypeFindMethod.get(domType)
 
-    def __prefetchDomains(self, domType, conObj):
+    def _prefetchDomains(self, domType, conObj):
         uuidPatern = "????????-????-????-????-????????????"
 
         if domType in (sd.FCP_DOMAIN, sd.ISCSI_DOMAIN):
@@ -2389,7 +2389,7 @@ class HSM(object):
                 if domType in (sd.FCP_DOMAIN, sd.ISCSI_DOMAIN):
                     sdCache.refreshStorage()
                 try:
-                    doms = self.__prefetchDomains(domType, conObj)
+                    doms = self._prefetchDomains(domType, conObj)
                 except:
                     self.log.debug("prefetch failed: %s",
                                    sdCache.knownSDs, exc_info=True)
