@@ -3190,6 +3190,7 @@ class Vm(object):
                 raise exception.NoSuchVM(vmId=self.id)
             raise exception.HotunplugMemFailed(str(e), vmId=self.id)
 
+        self._update_mem_guaranteed_size(params)
         return response.success()
 
     @api.guard(_not_migrating)
