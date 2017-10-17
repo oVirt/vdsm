@@ -355,7 +355,12 @@ class _Worker(object):
             self._log.info("Worker discarded: %s", self)
         else:
             # we want to avoid to log with the lock held, so we do it here.
-            self._log.warning("Worker blocked: %s", self)
+            try:
+                trace = concurrent.format_traceback(self._thread.ident)
+            except KeyError:
+                trace = "(traceback not available)"
+            self._log.warning("Worker blocked: %s, traceback:\n%s", self,
+                              trace)
 
     def __repr__(self):
         return "<Worker name=%s %s%s task#=%s at 0x%x>" % (

@@ -30,6 +30,30 @@ from testValidation import slowtest, stresstest
 from vdsm.common import concurrent
 
 
+class TestFormatTraceback(VdsmTestCase):
+
+    @slowtest
+    def test_get_running_trace(self):
+        def worker():
+            time.sleep(2)
+
+        t = concurrent.thread(worker, name="Test")
+        t.start()
+
+        # yield control to let the Test thread to start
+        time.sleep(1)
+        try:
+            formatted_traceback = concurrent.format_traceback(t.ident)
+
+            self.assertIn("time.sleep(2)", formatted_traceback)
+        finally:
+            t.join()
+
+    def test_get_wrong_id_trace(self):
+        self.assertRaises(KeyError, concurrent.format_traceback, None)
+        self.assertRaises(KeyError, concurrent.format_traceback, -1)
+
+
 @expandPermutations
 class BarrierTests(VdsmTestCase):
 

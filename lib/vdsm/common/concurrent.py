@@ -19,8 +19,11 @@
 #
 
 from __future__ import absolute_import
+
 import logging
+import sys
 import threading
+import traceback
 from collections import namedtuple
 
 from vdsm.common import pthread
@@ -293,3 +296,18 @@ class ValidatingEvent(object):
             self._valid = value
             if wake_up:
                 self._cond.notify_all()
+
+
+def format_traceback(ident):
+    """
+    Return thread traceback by ident (thread identifier).
+    """
+    stack = sys._current_frames()[ident]
+
+    lines = []
+    for filename, lineno, name, line in traceback.extract_stack(stack):
+        lines.append('File: "%s", line %d, in %s' %
+                     (filename, lineno, name))
+        if line:
+            lines.append("  %s" % (line.strip()))
+    return '\n'.join(lines)
