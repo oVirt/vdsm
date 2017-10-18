@@ -29,11 +29,14 @@ import pytest
 
 from vdsm.common import fileutils
 from vdsm.network import kernelconfig
+from vdsm.network.canonicalize import bridge_opts_dict_to_sorted_str
+from vdsm.network.canonicalize import bridge_opts_str_to_dict
 from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import ipv6_supported, prefix2netmask
 from vdsm.network.link.iface import iface
 from vdsm.network.link.bond import sysfs_options as bond_options
 from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
+from vdsm.network.netinfo import bridges
 from vdsm.network.netlink import monitor
 
 from functional.utils import getProxy, SUCCESS
@@ -172,8 +175,8 @@ class NetFuncTestCase(object):
     def _assertCustomBridgeOpts(self, netattrs, bridge_caps):
         custom_attrs = netattrs.get('custom', {})
         if 'bridge_opts' in custom_attrs:
-            req_bridge_opts = (opt.split('=', 1) for opt in
-                               custom_attrs['bridge_opts'].split(' '))
+            req_bridge_opts = dict([opt.split('=', 1) for opt in
+                                    custom_attrs['bridge_opts'].split(' ')])
             bridge_opts_caps = bridge_caps['opts']
             for br_opt, br_val in six.iteritems(req_bridge_opts):
                 assert br_val == bridge_opts_caps[br_opt]
@@ -412,6 +415,7 @@ class NetFuncTestCase(object):
 
         netinfo = _normalize_caps(self.netinfo)
         kernel_config = kernelconfig.KernelConfig(netinfo)
+        _extend_with_bridge_opts(kernel_config, running_config)
         kernel_config = kernel_config.as_unicode()
 
         # Do not use KernelConfig.__eq__ to get a better exception if something
@@ -425,6 +429,24 @@ class NetFuncTestCase(object):
             yield
         finally:
             self.vdsm_proxy.setSafeNetworkConfig()
+
+
+def _extend_with_bridge_opts(kernel_config, running_config):
+    for net, attrs in six.viewitems(running_config['networks']):
+        if not attrs['bridged']:
+            continue
+        if net not in kernel_config.networks:
+            continue
+        running_opts_str = attrs.get('custom', {}).get('bridge_opts')
+        if not running_opts_str:
+            continue
+        running_opts_dict = bridge_opts_str_to_dict(running_opts_str)
+        kernel_opts_dict = {
+            key: val for key, val in six.viewitems(bridges.bridge_options(net))
+            if key in running_opts_dict}
+        kernel_opts_str = bridge_opts_dict_to_sorted_str(kernel_opts_dict)
+        kernel_config.networks[net].setdefault(
+            'custom', {})['bridge_opts'] = kernel_opts_str
 
 
 def _ipv4_is_unused(attrs):

@@ -44,7 +44,7 @@ def ports(bridge):
     return bridge_ports
 
 
-def _bridge_options(bridge):
+def bridge_options(bridge):
     """Returns a dictionary of bridge option name and value. E.g.,
     {'max_age': '2000', 'gc_timer': '332'}"""
     BR_KEY_BLACKLIST = ('flush',)
@@ -84,4 +84,4 @@ def stp_booleanize(value):
 def info(link):
     return {'ports': ports(link.name),
             'stp': stp_state(link.name),
-            'opts': _bridge_options(link.name)}
+            'opts': bridge_options(link.name)}

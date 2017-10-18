@@ -52,6 +52,17 @@ class TestBridge(nftestlib.NetFuncTestCase):
                 self.assertBridgeOpts(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
     @pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy')])
+    def test_add_bridge_with_custom_opts(self, switch):
+        with dummy_devices(1) as (nic,):
+            NETCREATE = {NETWORK_NAME: {
+                'nic': nic,
+                'switch': switch,
+                'custom': {
+                    'bridge_opts': 'multicast_snooping=0 multicast_router=0'}}}
+            with self.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
+                self.assertBridgeOpts(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+
+    @pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy')])
     def test_create_network_over_an_existing_unowned_bridge(self, switch):
         with _create_linux_bridge(NETWORK_NAME) as brname:
             NETCREATE = {brname: {'bridged': True, 'switch': switch}}

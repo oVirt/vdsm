@@ -45,6 +45,7 @@ def canonicalize_networks(nets):
         _canonicalize_mtu(attrs)
         _canonicalize_vlan(attrs)
         _canonicalize_bridged(attrs)
+        _canonicalize_bridge_opts(attrs)
         _canonicalize_stp(attrs)
         _canonicalize_dhcpv4(attrs)
         _canonicalize_ipv6(attrs)
@@ -108,6 +109,25 @@ def _canonicalize_bridged(data):
         data['bridged'] = tobool(data['bridged'])
     else:
         data['bridged'] = True
+
+
+def _canonicalize_bridge_opts(data):
+    opts_str = data.get('custom', {}).get('bridge_opts')
+    if not opts_str:
+        return
+    opts_dict = bridge_opts_str_to_dict(opts_str)
+    data['custom']['bridge_opts'] = bridge_opts_dict_to_sorted_str(opts_dict)
+
+
+def bridge_opts_str_to_dict(opts_str):
+    return dict([pair.split('=', 1) for pair in opts_str.split()])
+
+
+def bridge_opts_dict_to_sorted_str(opts_dict):
+    opts_pairs = ['{}={}'.format(key, val)
+                  for key, val in six.viewitems(opts_dict)]
+    opts_pairs.sort()
+    return ' '.join(opts_pairs)
 
 
 def _canonicalize_stp(data):
