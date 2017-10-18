@@ -44,14 +44,11 @@ def ports(bridge):
     return bridge_ports
 
 
-def _bridge_options(bridge, keys=None):
+def _bridge_options(bridge):
     """Returns a dictionary of bridge option name and value. E.g.,
     {'max_age': '2000', 'gc_timer': '332'}"""
     BR_KEY_BLACKLIST = ('flush',)
-    if keys is None:
-        paths = iglob(BRIDGING_OPT % (bridge, '*'))
-    else:
-        paths = (BRIDGING_OPT % (bridge, key) for key in keys)
+    paths = iglob(BRIDGING_OPT % (bridge, '*'))
     opts = {}
     for path in paths:
         key = os.path.basename(path)
