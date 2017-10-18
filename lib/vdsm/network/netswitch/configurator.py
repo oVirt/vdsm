@@ -40,6 +40,7 @@ from vdsm.network.ovs import info as ovs_info
 from vdsm.network.ovs import switch as ovs_switch
 from vdsm.network.link import bond
 from vdsm.network.link.setup import SetupBonds
+from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo.cache import (networks_base_info, get as netinfo_get,
                                         CachingNetInfo, NetInfo)
 from vdsm.tool.service import service_status
@@ -311,6 +312,7 @@ def _gather_ovs_ifaces(nets2add, bonds2add, bonds2edit):
 def netcaps(compatibility):
     net_caps = netinfo(compatibility=compatibility)
     _add_speed_device_info(net_caps)
+    _add_bridge_opts(net_caps)
     return net_caps
 
 
@@ -363,6 +365,11 @@ def _wait_for_link_up(devname, timeout):
             pass
         return monotonic_time() - time_start
     return 0
+
+
+def _add_bridge_opts(net_caps):
+    for bridgename, bridgeattr in six.viewitems(net_caps['bridges']):
+        bridgeattr['opts'] = bridges.bridge_options(bridgename)
 
 
 def _set_bond_type_by_usage(_netinfo):
