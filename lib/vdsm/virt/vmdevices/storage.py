@@ -23,6 +23,7 @@ from __future__ import absolute_import
 
 import collections
 import os
+import threading
 import xml.etree.ElementTree as ET
 
 from vdsm.common import conv
@@ -121,7 +122,7 @@ class Drive(core.Base):
                  'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
                  'extSharedState', 'drv', 'sgio', 'GUID', 'diskReplicate',
                  '_diskType', 'hosts', 'protocol', 'auth', 'discard',
-                 'vm_custom', 'blockinfo', 'threshold_state')
+                 'vm_custom', 'blockinfo', '_threshold_state', '_lock')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         constants.MEGAB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -219,6 +220,7 @@ class Drive(core.Base):
     def __init__(self, log, **kwargs):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
+        self._lock = threading.Lock()
         self._path = None
         self._diskType = None
         # device needs to be initialized in prior
@@ -228,7 +230,7 @@ class Drive(core.Base):
         super(Drive, self).__init__(log, **kwargs)
         if not hasattr(self, 'vm_custom'):
             self.vm_custom = {}
-        self.threshold_state = BLOCK_THRESHOLD.UNSET
+        self._threshold_state = BLOCK_THRESHOLD.UNSET
         # Keep sizes as int
         self.reqsize = int(kwargs.get('reqsize', '0'))  # Backward compatible
         self.truesize = int(kwargs.get('truesize', '0'))
@@ -363,14 +365,33 @@ class Drive(core.Base):
 
     @property
     def path(self):
-        return self._path
+        with self._lock:
+            return self._path
 
     @path.setter
     def path(self, path):
-        if self._path is not None and self._path != path:
-            self.log.debug("Drive %s moved from %r to %r",
-                           self.name, self._path, path)
-        self._path = path
+        with self._lock:
+            # if device path changes (e.g. after a snapshot), the block
+            # threshold is no longer relevant. Thus, we must reset the
+            # Drive.threshold_state so the periodic task can pick up the
+            # drive on the next monitoring cycle and set a new threshold.
+            if self._path is not None and self._path != path:
+                self._threshold_state = BLOCK_THRESHOLD.UNSET
+                self.log.debug(
+                    "Drive %s move from %r to %r, unsetting threshold",
+                    self.name, self._path, path)
+
+            self._path = path
+
+    @property
+    def threshold_state(self):
+        with self._lock:
+            return self._threshold_state
+
+    @threshold_state.setter
+    def threshold_state(self, state):
+        with self._lock:
+            self._threshold_state = state
 
     @property
     def diskType(self):
@@ -722,6 +743,24 @@ class Drive(core.Base):
 
         disk.appendChild(snap_elem)
         return disk
+
+    def on_block_threshold(self, reported_path):
+        """
+        Callback to be executed when we receive a BLOCK_THRESHOLD
+        event from libvirt. We mark this drive accordingly,
+        so the periodic check will pick up this drive for
+        extension.
+        """
+        with self._lock:
+            if reported_path != self._path:
+                self.log.debug(
+                    "block threshold event mismatch drive %r path=%r "
+                    "reported path=%r - ignored",
+                    self.name, self._path, reported_path)
+                return
+
+            self._threshold_state = BLOCK_THRESHOLD.EXCEEDED
+            self.log.info("drive %r threshold exceeded", self.name)
 
 
 def chain_index(actual_chain, vol_id, drive_name):

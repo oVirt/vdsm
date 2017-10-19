@@ -41,6 +41,7 @@ from vdsm import utils
 from vdsm.virt import vmxml
 from vdsm.virt.vmdevices import storage
 from vdsm.virt.vmdevices.storage import Drive, DISK_TYPE, DRIVE_SHARED_TYPE
+from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD
 
 VolumeChainEnv = namedtuple(
     'VolumeChainEnv',
@@ -545,6 +546,32 @@ class DriveDiskTypeTests(VdsmTestCase):
 
         # Drive is not affected at this point
         self.assertEqual(drive.diskType, DISK_TYPE.BLOCK)
+
+    def test_path_change_reset_threshold_state(self):
+        conf = drive_config(diskType=DISK_TYPE.BLOCK, path='/old/path')
+        drive = Drive(self.log, **conf)
+        # Simulating drive in SET state
+        drive.threshold_state = BLOCK_THRESHOLD.SET
+
+        drive.path = '/new/path'
+        self.assertEqual(drive.threshold_state, BLOCK_THRESHOLD.UNSET)
+
+    def test_block_threshold_set_state(self):
+        path = '/old/path'
+        conf = drive_config(diskType=DISK_TYPE.BLOCK, path=path)
+        drive = Drive(self.log, **conf)
+        drive.threshold_state = BLOCK_THRESHOLD.SET
+
+        drive.on_block_threshold(path)
+        self.assertEqual(drive.threshold_state, BLOCK_THRESHOLD.EXCEEDED)
+
+    def test_block_threshold_stale_path(self):
+        conf = drive_config(diskType=DISK_TYPE.BLOCK, path='/new/path')
+        drive = Drive(self.log, **conf)
+        drive.threshold_state = BLOCK_THRESHOLD.SET
+
+        drive.on_block_threshold('/old/path')
+        self.assertEqual(drive.threshold_state, BLOCK_THRESHOLD.SET)
 
 
 @expandPermutations
