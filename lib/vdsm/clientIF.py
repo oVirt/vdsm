@@ -603,6 +603,10 @@ class clientIF(object):
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_DEVICE_REMOVED:
                 device_alias, = args[:-1]
                 v.onDeviceRemoved(device_alias)
+            elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_THRESHOLD:
+                dev, path, threshold, excess = args[:-1]
+                v.drive_monitor.on_block_threshold(
+                    dev, path, threshold, excess)
             else:
                 v.log.debug('unhandled libvirt event (event_name=%s, args=%s)',
                             events.event_name(eventid), args)

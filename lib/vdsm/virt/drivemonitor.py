@@ -19,6 +19,8 @@
 #
 from __future__ import absolute_import
 
+import libvirt
+
 from vdsm.config import config
 from vdsm.virt.vmdevices import storage
 
@@ -40,6 +42,11 @@ class DriveMonitor(object):
         Set the libvirt block threshold on the given drive, enabling
         libvirt to deliver the event when the threshold is crossed.
         Does nothing if the `_events_enabled` attribute is Falsey.
+
+        Call this method when you need to set one initial block threshold
+        (e.g. first time Vdsm monitors one drive), or after one volume
+        extension, or when the top layer changes (after snapshot, after
+        live storage migration completes).
 
         Args:
             drive: A storage.Drive object
@@ -66,9 +73,19 @@ class DriveMonitor(object):
             '(apparentsize %d)',
             threshold, drive.name, apparentsize
         )
-        # TODO: find a good way to expose Vm._dom as public property.
-        # we are running out of names in Vm class.
-        self._vm._dom.setBlockThreshold(drive.name, threshold)
+        try:
+            # TODO: find a good way to expose Vm._dom as public property.
+            # we are running out of names in Vm class.
+            self._vm._dom.setBlockThreshold(drive.name, threshold)
+        except libvirt.libvirtError as exc:
+            # The drive threshold_state can be UNSET or EXCEEDED, and
+            # this ensures that we will attempt to set the threshold later.
+            drive.threshold_state = storage.BLOCK_THRESHOLD.UNSET
+            self._log.error(
+                'Failed to set block threshold on %r (%s): %s',
+                drive.name, drive.path, exc)
+        else:
+            drive.threshold_state = storage.BLOCK_THRESHOLD.SET
 
     def clear_threshold(self, drive, index=None):
         """
@@ -107,7 +124,14 @@ class DriveMonitor(object):
         """
         self._log.info('block threshold %d exceeded on %r (%s)',
                        threshold, dev, path)
-        # for now we log only
+        try:
+            drive = self._vm.findDriveByName(dev)
+        except LookupError:
+            self._log.warning(
+                'Unknown drive %r for vm %s - ignored block threshold event',
+                dev, self._vm.id)
+        else:
+            drive.on_block_threshold(path)
 
     def monitored_drives(self):
         """

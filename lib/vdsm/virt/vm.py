@@ -88,6 +88,7 @@ from vdsm.virt import vmdevices
 from vdsm.virt.vmdevices import drivename
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound, SOURCE_ATTR
+from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
 
@@ -1203,7 +1204,8 @@ class Vm(object):
         If this returns True, the periodic system will invoke
         monitor_drives during this periodic cycle.
         """
-        return self._driveMonitorEnabled and bool(self.getChunkedDrives())
+        return (self._driveMonitorEnabled and
+                bool(self.drive_monitor.monitored_drives()))
 
     def monitor_drives(self):
         """
@@ -1212,7 +1214,7 @@ class Vm(object):
         extended = False
 
         try:
-            for drive in self.getChunkedDrives():
+            for drive in self.drive_monitor.monitored_drives():
                 if self.extend_drive_if_needed(drive):
                     extended = True
         except ImprobableResizeRequestError:
@@ -1225,8 +1227,25 @@ class Vm(object):
         Check if a drive should be extended, and start extension flow if
         needed.
 
+        When libvirt BLOCK_THRESHOLD event handling is enabled (
+        irs.enable_block_threshold_event == True), this method acts according
+        the drive.threshold_state:
+
+        - UNSET: the drive needs to register for a new block threshold,
+                 so try to set it.
+        - EXCEEDED: the drive needs extension, try to extend it.
+        - SET: this method should never receive a drive in this state,
+               emit warning and exit.
+
         Return True if started an extension flow, False otherwise.
         """
+
+        if drive.threshold_state == BLOCK_THRESHOLD.SET:
+            self.log.warning(
+                "Unexpected state for drive %s: threshold_state SET",
+                drive.name)
+            return
+
         try:
             capacity, alloc, physical = self._getExtendInfo(drive)
         except libvirt.libvirtError as e:
@@ -1234,15 +1253,27 @@ class Vm(object):
                            drive.name, e)
             return False
 
+        if (drive.chunked and
+                drive.threshold_state == BLOCK_THRESHOLD.UNSET):
+            self.drive_monitor.set_threshold(drive, physical)
+
         if not self._shouldExtendVolume(
                 drive, drive.volumeID, capacity, alloc, physical):
             return False
 
+        # TODO: if the threshold is wrongly set below the current allocation,
+        # for example because of delays in handling the event, or if the VM
+        # writes too fast, we will never receive an event.
+        # We need to set the drive threshold to EXCEEDED both if we receive
+        # one event or if we found that the threshold was exceeded during
+        # the _shouldExtendVolume check.
+
         self.log.info(
             "Requesting extension for volume %s on domain %s (apparent: "
-            "%s, capacity: %s, allocated: %s, physical: %s)",
+            "%s, capacity: %s, allocated: %s, physical: %s "
+            "threshold_state: %s)",
             drive.volumeID, drive.domainID, drive.apparentsize, capacity,
-            alloc, physical)
+            alloc, physical, drive.threshold_state)
 
         self.extendDriveVolume(drive, drive.volumeID, physical, capacity)
         return True
@@ -1371,9 +1402,9 @@ class Vm(object):
             vmDrive = self.findDriveByName(volInfo['name'])
             vmDrive.apparentsize = volSize.apparentsize
             vmDrive.truesize = volSize.truesize
+            self.drive_monitor.set_threshold(vmDrive, volSize.apparentsize)
 
         self._resume_if_needed()
-        self._setWriteWatermarks()
 
     def _resume_if_needed(self):
         try:
@@ -5102,13 +5133,6 @@ class Vm(object):
         """
         self.log.exception("Operation failed")
         return response.error(key, msg)
-
-    def _setWriteWatermarks(self):
-        """
-        Define when to receive an event about high write to guest image
-        Currently unavailable by libvirt.
-        """
-        pass
 
     def handle_failed_post_copy(self, clean_vm=False):
         # After a failed post-copy migration, the VM remains in a paused state

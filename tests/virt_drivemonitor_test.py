@@ -32,7 +32,6 @@ from vdsm.virt import drivemonitor
 from vdsm.virt import vm
 from vdsm.virt import vmstatus
 
-from testValidation import xfail
 from testlib import expandPermutations, permutations
 from testlib import make_config
 from testlib import maybefail
@@ -249,7 +248,6 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
     #   -> extend
     # FIXME: already covered by existing cases?
 
-    @xfail('Event support in DriveMonitor not yet implemented')
     def test_extend_using_events(self):
         with make_env(events_enabled=True) as (testvm, dom, drives):
 
@@ -285,7 +283,6 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             drv = drives[1]
             self.assertEqual(drv.threshold_state, BLOCK_THRESHOLD.SET)
 
-    @xfail('Event support in DriveMonitor not yet implemented')
     @permutations([
         # replicating, threshold
         (False, 1536 * MB),
@@ -341,7 +338,6 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
             self.assertFalse(extended)
 
-    @xfail('Event support in DriveMonitor not yet implemented')
     def test_event_received_before_write_completes(self):
         # QEMU submits an event when write is attempted, so it
         # is possible that at the time we receive the event the
