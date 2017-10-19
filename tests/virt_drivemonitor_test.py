@@ -186,17 +186,7 @@ class DiskExtensionTests(VdsmTestCase):
 
             # Simulate completed extend operation, invoking callback
 
-            poolID, volInfo, newSize, func = testvm.cif.irs.extensions[0]
-            key = (volInfo['domainID'], volInfo['poolID'],
-                   volInfo['imageID'], volInfo['volumeID'])
-            # Simulate refresh, updating local volume size
-            testvm.cif.irs.volume_sizes[key] = newSize
-
-            func(volInfo)
-
-            # Calling refreshVolume is critical in this flow.
-            # Check this indeed happened.
-            self.assertEqual(key, testvm.cif.irs.refreshes[0])
+            simulate_extend_callback(testvm.cif.irs, extension_id=0)
 
         self.assertEqual(testvm.lastStatus, vmstatus.UP)
         self.assertEqual(dom.info()[0], libvirt.VIR_DOMAIN_RUNNING)
@@ -355,3 +345,18 @@ def drive_config(**kw):
         iface=conf['iface'], index=conf['index']
     )
     return conf
+
+
+def simulate_extend_callback(irs, extension_id):
+    poolID, volInfo, newSize, func = irs.extensions[extension_id]
+    key = (volInfo['domainID'], volInfo['poolID'],
+           volInfo['imageID'], volInfo['volumeID'])
+    # Simulate refresh, updating local volume size
+    irs.volume_sizes[key] = newSize
+
+    func(volInfo)
+
+    # Calling refreshVolume is critical in this flow.
+    # Check this indeed happened.
+    if key != irs.refreshes[0]:
+        raise AssertionError('Volume %s not refreshed' % key)
