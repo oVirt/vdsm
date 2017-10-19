@@ -28,9 +28,11 @@ import libvirt
 from vdsm.common import response
 from vdsm.virt.vmdevices.storage import Drive, DISK_TYPE
 from vdsm.virt.vmdevices import hwclass
+from vdsm.virt import drivemonitor
 from vdsm.virt import vm
 from vdsm.virt import vmstatus
 
+from testlib import make_config
 from testlib import VdsmTestCase
 import vmfakelib as fake
 
@@ -46,13 +48,18 @@ CHUNK_PCT = 50
 
 
 @contextmanager
-def make_env():
+def make_env(events_enabled):
     log = logging.getLogger('test')
+
+    cfg = make_config([
+        ('irs', 'enable_block_threshold_event',
+            'true' if events_enabled else 'false')])
 
     # the Drive class use those two tunables as class constants.
     with MonkeyPatchScope([
         (Drive, 'VOLWM_CHUNK_SIZE', CHUNK_SIZE),
         (Drive, 'VOLWM_FREE_PCT', CHUNK_PCT),
+        (drivemonitor, 'config', cfg),
     ]):
         # storage does not validate the UUIDs, so we use phony names
         # for brevity
@@ -94,7 +101,7 @@ class DiskExtensionTests(VdsmTestCase):
 
     def test_no_extension_allocation_below_watermark(self):
 
-        with make_env() as (testvm, dom, drives):
+        with make_env(events_enabled=False) as (testvm, dom, drives):
             vda = dom.block_info['/virtio/0']
             vda['allocation'] = 0 * MB
             vdb = dom.block_info['/virtio/1']
@@ -107,7 +114,7 @@ class DiskExtensionTests(VdsmTestCase):
 
     def test_no_extension_maximum_size_reached(self):
 
-        with make_env() as (testvm, dom, drives):
+        with make_env(events_enabled=False) as (testvm, dom, drives):
             vda = dom.block_info['/virtio/0']
             vda['allocation'] = 0 * MB
             vdb = dom.block_info['/virtio/1']
@@ -120,7 +127,7 @@ class DiskExtensionTests(VdsmTestCase):
 
     def test_extend_drive_allocation_crosses_watermark_limit(self):
 
-        with make_env() as (testvm, dom, drives):
+        with make_env(events_enabled=False) as (testvm, dom, drives):
             vda = dom.block_info['/virtio/0']
             vda['allocation'] = 0 * MB
             vdb = dom.block_info['/virtio/1']
@@ -135,7 +142,7 @@ class DiskExtensionTests(VdsmTestCase):
 
     def test_extend_drive_allocation_equals_next_size(self):
 
-        with make_env() as (testvm, dom, drives):
+        with make_env(events_enabled=False) as (testvm, dom, drives):
             vda = dom.block_info['/virtio/0']
             vda['allocation'] = drives[0].getNextVolumeSize(
                 vda['physical'], vda['capacity'])
@@ -149,7 +156,7 @@ class DiskExtensionTests(VdsmTestCase):
 
     def test_stop_extension_loop_on_improbable_request(self):
 
-        with make_env() as (testvm, dom, drives):
+        with make_env(events_enabled=False) as (testvm, dom, drives):
             vda = dom.block_info['/virtio/0']
             vda['allocation'] = (
                 drives[0].getNextVolumeSize(
@@ -164,7 +171,7 @@ class DiskExtensionTests(VdsmTestCase):
     # TODO: add the same test for disk replicas.
     def test_vm_resumed_after_drive_extended(self):
 
-        with make_env() as (testvm, dom, drives):
+        with make_env(events_enabled=False) as (testvm, dom, drives):
             testvm.pause()
 
             vda = dom.block_info['/virtio/0']
