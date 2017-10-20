@@ -228,6 +228,7 @@ def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
     :rtype: A device map, in the same format as empty_dev_map() would return.
     """
 
+    log.debug('Initializing device classes from domain XML')
     dev_map = empty_dev_map()
     for dev_type, dev_class, dev_elem in _device_elements(dom_desc, log):
         dev_meta = _get_metadata_from_elem_xml(vmid, md_desc,
@@ -239,10 +240,12 @@ def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
                       dev_type)
         else:
             dev_map[dev_type].append(dev_obj)
+    log.debug('Initialized %d device classes from domain XML', len(dev_map))
     return dev_map
 
 
 def storage_device_params_from_domain_xml(vmid, dom_desc, md_desc, log):
+    log.debug('Extracting storage devices params from domain XML')
     params = []
     for dev_type, dev_class, dev_elem in _device_elements(dom_desc, log):
         if dev_type != hwclass.DISK:
@@ -252,6 +255,8 @@ def storage_device_params_from_domain_xml(vmid, dom_desc, md_desc, log):
         dev_meta = _get_metadata_from_elem_xml(vmid, md_desc,
                                                dev_class, dev_elem)
         params.append(storagexml.parse(dev_elem, dev_meta))
+    log.debug('Extracted %d storage devices params from domain XML',
+              len(params))
     return params
 
 

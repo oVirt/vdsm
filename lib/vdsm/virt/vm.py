@@ -2544,6 +2544,9 @@ class Vm(object):
                 'devel', 'device_xml_legacy_configuration_enable'):
             for dev_class in hwclass.LEGACY_INIT_ONLY:
                 dev_objs_from_xml[dev_class] = dev_objs_from_conf[dev_class]
+                self.log.debug("Overridden %d legacy %s devices",
+                               len(dev_objs_from_xml[dev_class]), dev_class)
+        self.log.debug('Built %d devices', len(dev_objs_from_xml))
         return dev_objs_from_xml
 
     def _run(self):
