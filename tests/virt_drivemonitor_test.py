@@ -26,13 +26,16 @@ import threading
 import libvirt
 
 from vdsm.common import response
-from vdsm.virt.vmdevices.storage import Drive, DISK_TYPE
+from vdsm.virt.vmdevices.storage import Drive, DISK_TYPE, BLOCK_THRESHOLD
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt import drivemonitor
 from vdsm.virt import vm
 from vdsm.virt import vmstatus
 
+from testValidation import xfail
+from testlib import expandPermutations, permutations
 from testlib import make_config
+from testlib import maybefail
 from testlib import VdsmTestCase
 import vmfakelib as fake
 
@@ -87,9 +90,18 @@ def make_env(events_enabled):
         # TODO: add raw/block drive and qcow2/file drive.
         # check we don't try to monitor or extend those drives.
 
-        cif = FakeClientIF()
-        cif.irs = FakeIRS()
         dom = FakeDomain()
+        irs = FakeIRS()
+
+        for drive in drives:
+            capacity, allocation, physical = dom.blockInfo(drive.path, 0)
+            key = (drive.domainID, drive.poolID,
+                   drive.imageID, drive.volumeID)
+            irs.volume_sizes[key] = capacity
+            drive.apparentsize = capacity
+
+        cif = FakeClientIF()
+        cif.irs = irs
         yield FakeVM(cif, dom, drives), dom, drives
 
 
@@ -97,7 +109,42 @@ def allocation_threshold_for_resize_mb(block_info, drive):
     return block_info['physical'] - drive.watermarkLimit
 
 
-class DiskExtensionTests(VdsmTestCase):
+class DiskExtensionTestBase(VdsmTestCase):
+    # helpers
+
+    def check_extension(self, drive_info, drive_obj, extension_req):
+        poolID, volInfo, newSize, func = extension_req
+
+        # we do the minimal validation. Specific test(s) should
+        # check that the callable actually finishes the extension process.
+        self.assertTrue(callable(func))
+
+        self.assertEqual(drive_obj.poolID, poolID)
+
+        expected_size = drive_obj.getNextVolumeSize(
+            drive_info['physical'], drive_info['capacity'])
+        self.assertEqual(expected_size, newSize)
+
+        self.assertEqual(expected_size, volInfo['newSize'])
+        self.assertEqual(drive_obj.name, volInfo['name'])
+
+        if drive_obj.isDiskReplicationInProgress():
+            self.assertEqual(drive_obj.diskReplicate['domainID'],
+                             volInfo['domainID'])
+            self.assertEqual(drive_obj.diskReplicate['imageID'],
+                             volInfo['imageID'])
+            self.assertEqual(drive_obj.diskReplicate['poolID'],
+                             volInfo['poolID'])
+            self.assertEqual(drive_obj.diskReplicate['volumeID'],
+                             volInfo['volumeID'])
+        else:
+            self.assertEqual(drive_obj.domainID, volInfo['domainID'])
+            self.assertEqual(drive_obj.imageID, volInfo['imageID']),
+            self.assertEqual(drive_obj.poolID, volInfo['poolID']),
+            self.assertEqual(drive_obj.volumeID, volInfo['volumeID'])
+
+
+class TestDiskExtensionWithPolling(DiskExtensionTestBase):
 
     def test_no_extension_allocation_below_watermark(self):
 
@@ -193,44 +240,183 @@ class DiskExtensionTests(VdsmTestCase):
 
     # TODO: add test with storage failures in the extension flow
 
-    # helpers
 
-    def check_extension(self, drive_info, drive_obj, extension_req):
-        poolID, volInfo, newSize, func = extension_req
+@expandPermutations
+class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
-        # we do the minimal validation. Specific test(s) should
-        # check that the callable actually finishes the extension process.
-        self.assertTrue(callable(func))
+    # TODO: missing tests:
+    # - call extend_if_needed when drive.threshold_state is EXCEEDED
+    #   -> extend
+    # FIXME: already covered by existing cases?
 
-        self.assertEqual(drive_obj.poolID, poolID)
+    @xfail('Event support in DriveMonitor not yet implemented')
+    def test_extend_using_events(self):
+        with make_env(events_enabled=True) as (testvm, dom, drives):
 
-        expected_size = drive_obj.getNextVolumeSize(
-            drive_info['physical'], drive_info['capacity'])
-        self.assertEqual(expected_size, newSize)
+            # first run: does nothing but set the block thresholds
+            testvm.monitor_drives()
 
-        self.assertEqual(expected_size, volInfo['newSize'])
-        self.assertEqual(drive_obj.name, volInfo['name'])
+            # Simulate writing to drive vdb
+            vdb = dom.block_info['/virtio/1']
 
-        if drive_obj.isDiskReplicationInProgress():
-            self.assertEqual(drive_obj.diskReplicate['domainID'],
-                             volInfo['domainID'])
-            self.assertEqual(drive_obj.diskReplicate['imageID'],
-                             volInfo['imageID'])
-            self.assertEqual(drive_obj.diskReplicate['poolID'],
-                             volInfo['poolID'])
-            self.assertEqual(drive_obj.diskReplicate['volumeID'],
-                             volInfo['volumeID'])
-        else:
-            self.assertEqual(drive_obj.domainID, volInfo['domainID'])
-            self.assertEqual(drive_obj.imageID, volInfo['imageID']),
-            self.assertEqual(drive_obj.poolID, volInfo['poolID']),
-            self.assertEqual(drive_obj.volumeID, volInfo['volumeID'])
+            alloc = allocation_threshold_for_resize_mb(
+                vdb, drives[1]) + 1 * MB
+
+            vdb['allocation'] = alloc
+
+            # Simulating block threshold event
+            testvm.drive_monitor.on_block_threshold(
+                'vdb', '/virtio/1', alloc, 1 * MB)
+
+            drv = drives[1]
+            self.assertEqual(drv.threshold_state, BLOCK_THRESHOLD.EXCEEDED)
+
+            # Simulating periodic check
+            extended = testvm.monitor_drives()
+            self.assertEqual(extended, True)
+            self.assertEqual(len(testvm.cif.irs.extensions), 1)
+            self.check_extension(vdb, drives[1], testvm.cif.irs.extensions[0])
+            self.assertEqual(drv.threshold_state, BLOCK_THRESHOLD.EXCEEDED)
+
+            # Simulate completed extend operation, invoking callback
+
+            simulate_extend_callback(testvm.cif.irs, extension_id=0)
+
+            drv = drives[1]
+            self.assertEqual(drv.threshold_state, BLOCK_THRESHOLD.SET)
+
+    @xfail('Event support in DriveMonitor not yet implemented')
+    @permutations([
+        # replicating, threshold
+        (False, 1536 * MB),
+        (True, 1024 * MB),
+    ])
+    def test_set_new_threshold_when_state_unset(self, replicating, threshold):
+        with make_env(events_enabled=True) as (testvm, dom, drives):
+
+            dom.block_info['/virtio/0'] = {
+                'capacity': 4 * GB,
+                'allocation': 0 * GB,
+                'physical': 2 * GB,
+            }
+
+            vda = drives[0]
+            if replicating:
+                vda.diskReplicate = {
+                    'diskType': DISK_TYPE.BLOCK,
+                    'format': 'cow',
+                }
+
+            self.assertEqual(vda.threshold_state, BLOCK_THRESHOLD.UNSET)
+            # first run: does nothing but set the block thresholds
+            testvm.monitor_drives()
+
+            self.assertEqual(vda.threshold_state, BLOCK_THRESHOLD.SET)
+            self.assertEqual(dom.thresholds[vda.name], threshold)
+
+    def test_set_new_threshold_when_state_unset_but_fails(self):
+
+        with make_env(events_enabled=True) as (testvm, dom, drives):
+            for drive in drives:
+                self.assertEqual(drive.threshold_state, BLOCK_THRESHOLD.UNSET)
+
+            # Simulate setBlockThreshold failure
+            testvm._dom.errors["setBlockThreshold"] = fake.Error(
+                libvirt.VIR_ERR_OPERATION_FAILED, "fake error")
+
+            # first run: does nothing but set the block thresholds
+            testvm.monitor_drives()
+
+            for drive in drives:
+                self.assertEqual(drive.threshold_state, BLOCK_THRESHOLD.UNSET)
+
+    def test_set_new_threshold_when_state_set(self):
+        # Vm.monitor_drives must not pick up drives with
+        # threshold_state == SET, so we call
+        # Vm.extend_drive_if_needed explictely
+        with make_env(events_enabled=True) as (testvm, dom, drives):
+            drives[0].threshold_state = BLOCK_THRESHOLD.SET
+
+            extended = testvm.extend_drive_if_needed(drives[0])
+
+            self.assertFalse(extended)
+
+    @xfail('Event support in DriveMonitor not yet implemented')
+    def test_event_received_before_write_completes(self):
+        # QEMU submits an event when write is attempted, so it
+        # is possible that at the time we receive the event the
+        # the write was not completed yet, or failed, and the
+        # volume size is still bellow the threshold.
+        # We will not extend the drive, but keep it marked for
+        # extension.
+        with make_env(events_enabled=True) as (testvm, dom, drives):
+
+            # NOTE: write not yet completed, so the allocation value
+            # for the drive must me below than the value reported in
+            # the event.
+            vda = dom.block_info['/virtio/0']
+
+            alloc = allocation_threshold_for_resize_mb(
+                vda, drives[0]) + 1 * MB
+
+            # Simulating block threshold event
+            testvm.drive_monitor.on_block_threshold(
+                'vda', '/virtio/0', alloc, 1 * MB)
+
+            testvm.monitor_drives()
+
+            # The threshold state is correctly kept as exceeded, so extension
+            # will be tried again next cycle.
+            self.assertEqual(drives[0].threshold_state,
+                             BLOCK_THRESHOLD.EXCEEDED)
+
+    def test_block_threshold_set_failure_after_drive_extended(self):
+
+        with make_env(events_enabled=True) as (testvm, dom, drives):
+
+            # first run: does nothing but set the block thresholds
+            testvm.monitor_drives()
+
+            # Simulate write on drive vdb
+            vdb = dom.block_info['/virtio/1']
+
+            # The BLOCK_THRESHOLD event contains the highest allocated
+            # block...
+            alloc = allocation_threshold_for_resize_mb(
+                vdb, drives[1]) + 1 * MB
+
+            # ... but we repeat the check in monitor_drives(),
+            # so we need to set both locations to the correct value.
+            vdb['allocation'] = alloc
+
+            # Simulating block threshold event
+            testvm.drive_monitor.on_block_threshold(
+                'vdb', '/virtio/1', alloc, 1 * MB)
+
+            # Simulating periodic check
+            testvm.monitor_drives()
+            self.assertEqual(len(testvm.cif.irs.extensions), 1)
+
+            # Simulate completed extend operation, invoking callback
+
+            # Simulate setBlockThreshold failure
+            testvm._dom.errors["setBlockThreshold"] = fake.Error(
+                libvirt.VIR_ERR_OPERATION_FAILED, "fake error")
+
+            simulate_extend_callback(testvm.cif.irs, extension_id=0)
+
+            drv = drives[1]
+            self.assertEqual(drv.threshold_state, BLOCK_THRESHOLD.UNSET)
 
 
 class FakeVM(vm.Vm):
+
+    log = logging.getLogger('test')
+
     def __init__(self, cif, dom, disks):
         self.id = 'drive_monitor_vm'
         self.cif = cif
+        self.drive_monitor = drivemonitor.DriveMonitor(self, self.log)
         self._dom = dom
         self._devices = {hwclass.DISK: disks}
 
@@ -276,6 +462,8 @@ class FakeDomain(object):
                 'physical': 1 * GB,
             },
         }
+        self.errors = {}
+        self.thresholds = {}
 
     def blockInfo(self, path, flags):
         # TODO: support access by name
@@ -297,6 +485,10 @@ class FakeDomain(object):
 
     def info(self):
         return self._state
+
+    @maybefail
+    def setBlockThreshold(self, dev, threshold):
+        self.thresholds[dev] = threshold
 
 
 class FakeClientIF(fake.ClientIF):

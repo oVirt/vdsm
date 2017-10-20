@@ -67,6 +67,7 @@ from vdsm.storage import qemuimg
 from vdsm.storage import sd
 from vdsm.storage import sdc
 
+from vdsm.virt import drivemonitor
 from vdsm.virt import guestagent
 from vdsm.virt import libvirtxml
 from vdsm.virt import metadata
@@ -398,6 +399,7 @@ class Vm(object):
         self._pathsPreparedEvent = threading.Event()
         self._devices = vmdevices.common.empty_dev_map()
 
+        self.drive_monitor = drivemonitor.DriveMonitor(self, self.log)
         if is_kvm(self._custom):
             self._connection = libvirtconnection.get(cif)
         else:
