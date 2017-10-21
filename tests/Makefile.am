@@ -157,7 +157,6 @@ blacklist_modules_python3 = \
 	mom_test.py \
 	monkeypatch_test.py \
 	network/ipwrapper_test.py \
-	network/netinfo_test.py \
 	network/tc_test.py \
 	periodic_test.py \
 	protocoldetector_test.py \
