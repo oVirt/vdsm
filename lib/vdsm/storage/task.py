@@ -46,23 +46,24 @@
 '''
 
 from __future__ import absolute_import
-import os
+
 import logging
+import os
 import threading
 import types
+import uuid
+
 from contextlib import contextmanager
 from functools import wraps
+from weakref import proxy
 
+from vdsm.common import concurrent
+from vdsm.common.logutils import SimpleLogAdapter
 from vdsm.common.threadlocal import vars
+from vdsm.config import config
 from vdsm.storage import exception as se
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import resourceManager
-
-import uuid
-from weakref import proxy
-from vdsm.common import concurrent
-from vdsm.common.logutils import SimpleLogAdapter
-from vdsm.config import config
 
 
 getProcPool = oop.getGlobalProcPool
