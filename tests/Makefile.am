@@ -159,7 +159,6 @@ blacklist_modules_python3 = \
 	network/tc_test.py \
 	protocoldetector_test.py \
 	qemuimg_test.py \
-	sampling_test.py \
 	schemavalidation_test.py \
 	stompadapter_test.py \
 	stompasyncclient_test.py \

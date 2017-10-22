@@ -21,6 +21,8 @@
 from contextlib import contextmanager
 import random
 
+import six
+
 from vdsm.network import ipwrapper
 from vdsm.virt import sampling
 
@@ -36,12 +38,12 @@ class InterfaceSampleTests(TestCaseBase):
 
     @ValidateRunningAsRoot
     def testHostSampleReportsNewInterface(self):
-        interfaces_before = set(
-            sampling._get_interfaces_and_samples().iterkeys())
+        interfaces_before = set(six.viewkeys(
+            sampling._get_interfaces_and_samples()))
 
         with dummy_device() as dummy_name:
-            interfaces_after = set(
-                sampling._get_interfaces_and_samples().iterkeys())
+            interfaces_after = set(six.viewkeys(
+                sampling._get_interfaces_and_samples()))
             interfaces_diff = interfaces_after - interfaces_before
             self.assertEqual(interfaces_diff, {dummy_name})
 
