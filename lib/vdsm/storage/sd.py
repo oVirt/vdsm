@@ -1032,7 +1032,7 @@ class StorageDomain(object):
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
         pass
 
-    def reduceVolume(self, volumeUUID, allowActive=False):
+    def reduceVolume(self, imgUUID, volumeUUID, allowActive=False):
         pass
 
     @staticmethod

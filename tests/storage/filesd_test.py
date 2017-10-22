@@ -30,7 +30,6 @@ from testlib import VdsmTestCase
 from testlib import expandPermutations
 from testlib import namedTemporaryDir
 from testlib import permutations
-from testValidation import xfail
 
 from vdsm.storage import fileSD
 from vdsm.storage import fileUtils
@@ -235,7 +234,6 @@ class TestVolumeOperations(VdsmTestCase):
         (True,),
         (False,),
     ])
-    @xfail('reduceVolume helper is missing imgUUID argument')
     def test_reduce_volume(self, allow_active):
         oop = FakeOOP(FakeGlob([]))
         dom = FileStorageDomain("dummy_sd_uuid", "dummy_mountpoint", oop)
