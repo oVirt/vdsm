@@ -3065,6 +3065,16 @@ types:
                 ticket.
             name: filename
             type: string
+
+        -   description: States whether the ticket has at least
+                one active upload/download session.
+            name: active
+            type: boolean
+
+        -   description: The amount of bytes that were
+                transferred using this ticket so far.
+            name: transferred
+            type: uint
         type: object
 
     KsmTuneParams: &KsmTuneParams
