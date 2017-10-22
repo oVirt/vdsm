@@ -150,7 +150,6 @@ blacklist_modules_python3 = \
 	hooks_test.py \
 	hostdev_test.py \
 	hoststats_test.py \
-	hugepages_test.py \
 	loopback_test.py \
 	mkimage_test.py \
 	mompolicy_test.py \

@@ -52,10 +52,10 @@ _STATE = {
 class TestHugepages(TestCaseBase):
 
     @permutations([
-        ['1024', 1024, 1024],
-        ['1024', -1024, -1024],
-        ['1024', -512, -512],
-        ['1024', 0, 0],
+        [b'1024', 1024, 1024],
+        [b'1024', -1024, -1024],
+        [b'1024', -512, -512],
+        [b'1024', 0, 0],
     ])
     @MonkeyPatch(hugepages, '_size_from_dir', lambda x: x)
     @MonkeyPatch(hugepages, 'state', lambda: {2048: _STATE})

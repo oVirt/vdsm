@@ -29,6 +29,8 @@ import pwd
 from dateutil import tz
 from inspect import ismethod
 
+import six
+
 
 def funcName(func):
     if ismethod(func):
@@ -90,7 +92,8 @@ class SimpleLogAdapter(logging.LoggerAdapter):
             "(task='xxxyyy', res='foo.bar.baz') Message"
         """
         self.logger = logger
-        items = ", ".join("%s='%s'" % (k, v) for k, v in context.iteritems())
+        items = ", ".join(
+            "%s='%s'" % (k, v) for k, v in six.viewitems(context))
         self.prefix = "(%s) " % items
 
     def process(self, msg, kwargs):
