@@ -65,7 +65,7 @@ class SecretTests(VdsmTestCase):
     def test_encoded_password(self):
         params = make_secret(password="12345678")
         s = secret.Secret(params)
-        self.assertEqual(s.password.value, "12345678")
+        self.assertEqual(s.password.value, b"12345678")
 
     def test_register(self):
         params = make_secret(password="12345678")
@@ -73,7 +73,7 @@ class SecretTests(VdsmTestCase):
         con = vmfakecon.Connection()
         sec.register(con)
         virsec = con.secrets[sec.uuid]
-        self.assertEqual(virsec.value, "12345678")
+        self.assertEqual(virsec.value, b"12345678")
 
 
 class SecretXMLTests(XMLTestCase):
@@ -197,9 +197,9 @@ class APITests(VdsmTestCase):
         res = secret.register([sec1, sec2])
         self.assertEqual(res, response.success())
         virsec1 = self.connection.secrets[sec1["uuid"]]
-        self.assertEqual("sec1 password", virsec1.value)
+        self.assertEqual(b"sec1 password", virsec1.value)
         virsec2 = self.connection.secrets[sec2["uuid"]]
-        self.assertEqual("sec2 password", virsec2.value)
+        self.assertEqual(b"sec2 password", virsec2.value)
 
     def test_register_replace(self):
         # Register 2 secrets
@@ -211,9 +211,9 @@ class APITests(VdsmTestCase):
         res = secret.register([sec2])
         self.assertEqual(res, response.success())
         virsec1 = self.connection.secrets[sec1["uuid"]]
-        self.assertEqual("sec1 password", virsec1.value)
+        self.assertEqual(b"sec1 password", virsec1.value)
         virsec2 = self.connection.secrets[sec2["uuid"]]
-        self.assertEqual("sec2 new password", virsec2.value)
+        self.assertEqual(b"sec2 new password", virsec2.value)
 
     def test_register_change_usage_id(self):
         sec = make_secret(usage_id="ovirt/provider_uuid/secert_uuid")
@@ -314,4 +314,4 @@ def make_secret(sid=None, usage_type="ceph", usage_id=None,
 
 
 def make_password(value):
-    return ProtectedPassword(base64.b64encode(value))
+    return ProtectedPassword(base64.b64encode(value.encode('utf8')))

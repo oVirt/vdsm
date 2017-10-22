@@ -172,7 +172,6 @@ blacklist_modules_python3 = \
 	vmmigration_test.py \
 	vmoperations_test.py \
 	vmrecovery_test.py \
-	vmsecret_test.py \
 	vmstorage_test.py \
 	vm_test.py \
 	vmutils_test.py \
