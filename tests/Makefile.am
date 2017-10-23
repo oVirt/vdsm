@@ -140,17 +140,11 @@ test_modules = \
 
 blacklist_modules_python3 = \
 	API_test.py \
-	alignmentscan_test.py \
 	bridge_test.py \
-	clientif_test.py \
 	device_test.py \
-	devices/parsing/complex_vm_test.py \
 	encoding_test.py \
 	guestagent_test.py \
 	hooks_test.py \
-	hostdev_test.py \
-	hoststats_test.py \
-	loopback_test.py \
 	mkimage_test.py \
 	mompolicy_test.py \
 	mom_test.py \
@@ -159,24 +153,18 @@ blacklist_modules_python3 = \
 	network/tc_test.py \
 	protocoldetector_test.py \
 	qemuimg_test.py \
-	schemavalidation_test.py \
 	stompadapter_test.py \
 	stompasyncclient_test.py \
 	stompasyncdispatcher_test.py \
-	stomp_test.py \
 	unicode_test.py \
 	utils_test.py \
 	v2v_test.py \
-	virt_drivemonitor_test.py \
 	vmapi_test.py \
 	vmmigration_test.py \
 	vmoperations_test.py \
 	vmrecovery_test.py \
-	vmstorage_test.py \
 	vm_test.py \
-	vmutils_test.py \
 	vmxml_test.py \
-	vmfakelib_test.py \
 	$(NULL)
 
 CLEANFILES = \
