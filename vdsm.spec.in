@@ -143,7 +143,7 @@ Requires: libvirt-lock-sanlock
 # Require the latest on RHEL 7.4
 %if 0%{?rhel}
 Requires: libvirt-daemon-kvm >= 3.2.0-14.el7_4.3
-Requires: libvirt-python >= 3.2.0-3
+Requires: libvirt-python >= 3.2.0-3.el7_4.1
 %else # fedora
 Requires: libvirt-daemon-kvm >= 2.2.0-1
 Requires: libvirt-python >= 2.2.0-1
