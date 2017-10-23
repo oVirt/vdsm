@@ -158,7 +158,6 @@ blacklist_modules_python3 = \
 	monkeypatch_test.py \
 	network/ipwrapper_test.py \
 	network/tc_test.py \
-	periodic_test.py \
 	protocoldetector_test.py \
 	qemuimg_test.py \
 	sampling_test.py \

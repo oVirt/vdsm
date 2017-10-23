@@ -27,6 +27,7 @@ import logging
 import threading
 
 import libvirt
+import six
 
 from vdsm import containersconnection
 from vdsm import executor
@@ -282,7 +283,7 @@ class VmDispatcher(object):
         vms = self._get_vms()
         skipped = []
 
-        for vm_id, vm_obj in vms.iteritems():
+        for vm_id, vm_obj in six.viewitems(vms):
             try:
                 op = self._create(vm_obj)
 

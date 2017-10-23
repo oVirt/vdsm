@@ -57,6 +57,8 @@ from contextlib import contextmanager
 from functools import wraps
 from weakref import proxy
 
+import six
+
 from vdsm.common import concurrent
 from vdsm.common.logutils import SimpleLogAdapter
 from vdsm.common.threadlocal import vars
@@ -293,7 +295,7 @@ class ParamList:
     def __str__(self):
         s = ""
         for i in self.params:
-            s += unicode(i) + self.sep
+            s += six.text_type(i) + self.sep
         # remove last sep
         if s:
             s = s[:-1]
@@ -302,8 +304,8 @@ class ParamList:
 
 class Job:
     fields = {
-        "name": unicode,
-        "runcmd": unicode,
+        "name": six.text_type,
+        "runcmd": six.text_type,
     }
 
     def __init__(self, name, cmd, *argslist, **argsdict):
@@ -350,10 +352,10 @@ class Recovery:
     All other parameters if any must be strings.
     '''
     fields = {
-        "name": unicode,
-        "moduleName": unicode,
-        "object": unicode,
-        "function": unicode,
+        "name": six.text_type,
+        "moduleName": six.text_type,
+        "object": six.text_type,
+        "function": six.text_type,
         "params": ParamList,
     }
 
@@ -412,8 +414,8 @@ class Recovery:
 class TaskResult(object):
     fields = {
         "code": int,
-        "message": unicode,
-        "result": unicode,
+        "message": six.text_type,
+        "result": six.text_type,
     }
 
     def __init__(self, code=0, message="", result=""):
@@ -443,9 +445,9 @@ class Task:
     fields = {
         # field_name: type
         "id": str,
-        "name": unicode,
-        "tag": unicode,
-        "store": unicode,
+        "name": six.text_type,
+        "tag": six.text_type,
+        "store": six.text_type,
         "recoveryPolicy": TaskRecoveryType,
         "persistPolicy": TaskPersistType,
         "cleanPolicy": TaskCleanType,
@@ -655,7 +657,7 @@ class Task:
         lines = []
         for field in fields:
             try:
-                value = unicode(getattr(obj, field))
+                value = six.text_type(getattr(obj, field))
             except AttributeError:
                 cls.log.warning("object %s field %s not found" %
                                 (obj, field), exc_info=True)
@@ -883,7 +885,7 @@ class Task:
             message = str(e)
             self._setError(e, e.expected)
         except Exception as e:
-            message = unicode(e)
+            message = six.text_type(e)
             self._setError(e)
         except:
             self._setError()
@@ -969,7 +971,7 @@ class Task:
         # Am I really the last?
         if self.ref != 0:
             self.lock.release()
-            raise se.TaskHasRefs(unicode(self))
+            raise se.TaskHasRefs(six.text_type(self))
         self.ref += 1
         self.lock.release()
         try:
@@ -983,7 +985,7 @@ class Task:
         self.lock.acquire()
         try:
             if self.aborting() and (self._forceAbort or not force):
-                raise se.TaskAborted(unicode(self))
+                raise se.TaskAborted(six.text_type(self))
 
             self.ref += 1
             ref = self.ref
@@ -1009,13 +1011,14 @@ class Task:
     def setDefaultException(self, exceptionObj):
         # defaultException must have response method
         if exceptionObj and not hasattr(exceptionObj, "response"):
-            raise se.InvalidDefaultExceptionException(unicode(exceptionObj))
+            raise se.InvalidDefaultExceptionException(
+                six.text_type(exceptionObj))
         self.defaultException = exceptionObj
 
     def setTag(self, tag):
         if KEY_SEPARATOR in tag:
             raise ValueError("tag cannot include %s character" % KEY_SEPARATOR)
-        self.tag = unicode(tag)
+        self.tag = six.text_type(tag)
 
     def isDone(self):
         return self.state.isDone()
@@ -1026,7 +1029,7 @@ class Task:
         or registered.
         """
         if not self.mng:
-            raise se.UnmanagedTask(unicode(self))
+            raise se.UnmanagedTask(six.text_type(self))
         if not isinstance(job, Job):
             raise TypeError("Job param %s(%s) must be Job object" %
                             (repr(job), type(job)))
@@ -1093,7 +1096,7 @@ class Task:
     def setManager(self, manager):
         # If need be, refactor out to "validateManager" method
         if not hasattr(manager, "queue"):
-            raise se.InvalidTaskMng(unicode(manager))
+            raise se.InvalidTaskMng(six.text_type(manager))
         self.mng = manager
 
     def setCleanPolicy(self, clean):
