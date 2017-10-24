@@ -28,7 +28,7 @@ from vdsm.common import time
 import re
 
 DEFAULT_INTERVAL = 30
-RECONNECT_INTERVAL = 20
+RECONNECT_INTERVAL = 2
 
 SUBSCRIPTION_ID_REQUEST = "jms.topic.vdsm_requests"
 SUBSCRIPTION_ID_RESPONSE = "jms.topic.vdsm_responses"
@@ -350,7 +350,7 @@ class AsyncDispatcher(object):
     - AsyncClient - responsible for client side
     """
     def __init__(self, connection, frame_handler, bufferSize=4096,
-                 clock=time.monotonic_time, count=0, on_timeout=False):
+                 clock=time.monotonic_time, count=0):
         self._frame_handler = frame_handler
         self.connection = connection
         self._bufferSize = bufferSize
@@ -365,7 +365,7 @@ class AsyncDispatcher(object):
             self._nr_retries = self._frame_handler.nr_retries
         if hasattr(self._frame_handler, "reconnect_interval"):
             self._reconnect_interval = self._frame_handler.reconnect_interval
-        self._on_timeout = on_timeout
+        self._on_timeout = False
         self._clock = clock
         self._on_wait = False
 
@@ -495,6 +495,10 @@ class AsyncDispatcher(object):
             data = self._outbuf
             numSent = dispatcher.send(data)
             if numSent == 0:
+                # want to resend
+                resend = self._frame_handler.peek_message()
+                if resend.command == Command.SEND:
+                    self._frame_handler.queue_resend(resend)
                 return
 
             self._update_outgoing_heartbeat()
@@ -559,6 +563,9 @@ class AsyncClient(object):
     def queue_frame(self, frame):
         self._outbox.append(frame)
 
+    def queue_resend(self, frame):
+        self._requests.append(frame)
+
     @property
     def has_outgoing_messages(self):
         return (len(self._outbox) > 0)
@@ -598,8 +605,6 @@ class AsyncClient(object):
         self.restore_subscriptions()
 
     def handle_error(self, dispatcher):
-        # save all 'SEND' requests before reconnecting
-        self._requests.extend([r for r in self._outbox if r.command == 'SEND'])
         dispatcher.handle_timeout()
 
     def handle_close(self, dispatcher):
@@ -647,15 +652,21 @@ class AsyncClient(object):
     def _process_error(self, frame, dispatcher):
         raise StompError(frame, frame.body)
 
+    def resend(self, destination, data="", headers=None):
+        self.queue_resend(self._build_frame(destination, data, headers))
+
     def send(self, destination, data="", headers=None):
+        frame = self._build_frame(destination, data, headers)
+        if not self._connected.wait(timeout=CALL_TIMEOUT):
+            self.queue_resend(frame)
+
+        self.queue_frame(frame)
+
+    def _build_frame(self, destination, data="", headers=None):
         final_headers = {"destination": destination}
         if headers is not None:
             final_headers.update(headers)
-        frame = Frame(Command.SEND, final_headers, data)
-        if not self._connected.wait(timeout=CALL_TIMEOUT):
-            raise StompError(frame, "Timeout occured during connecting")
-
-        self.queue_frame(frame)
+        return Frame(Command.SEND, final_headers, data)
 
     def subscribe(self, destination, ack=None, sub_id=None,
                   message_handler=None):

@@ -335,8 +335,7 @@ class _StompConnection(object):
     def reconnect(self, count, on_timeout):
         self._dispatcher = self._reactor.reconnect(
             (self._client_host, self._client_port), self._sslctx,
-            stomp.AsyncDispatcher(self, self._async_client, count=count,
-                                  on_timeout=on_timeout))
+            stomp.AsyncDispatcher(self, self._async_client, count=count))
 
     def set_heartbeat(self, outgoing, incoming):
         self._dispatcher.set_heartbeat(outgoing, incoming)
@@ -481,7 +480,7 @@ class StompClient(object):
         self.log.debug("Sending response")
 
         if self._stompConn.is_closed():
-            raise stomp.Disconnected()
+            self._aclient.resend(destination, message, headers)
 
         self._aclient.send(
             destination,
