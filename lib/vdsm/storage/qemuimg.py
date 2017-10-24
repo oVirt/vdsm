@@ -129,12 +129,22 @@ def check(image, format=None):
         cmd.extend(("-f", format))
 
     cmd.append(image)
-    out = _run_cmd(cmd)
-
+    try:
+        out = _run_cmd(cmd)
+    except cmdutils.Error as e:
+        # Return code 3 means that leaked clusters were found on the image.
+        # This means waste of disk space, but no harm to data. Despite this
+        # return code, we still get the check info in the stdout.
+        if e.rc != 3:
+            raise
+        out = e.out
     try:
         qemu_check = _parse_qemuimg_json(out)
     except ValueError:
         raise InvalidOutput(cmd, out, "Failed to process qemu-img output")
+    if "leaks" in qemu_check:
+        _log.warning("%d leaked clusters found on the image",
+                     qemu_check["leaks"])
     try:
         return {"offset": qemu_check["image-end-offset"]}
     except KeyError:
