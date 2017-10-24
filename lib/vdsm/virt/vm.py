@@ -5893,7 +5893,9 @@ class LiveMergeCleanupThread(object):
         self.vm._syncVolumeChain(self.drive)
         if self.doPivot:
             self.vm.enableDriveMonitor()
-        self.teardown_top_volume()
+        chain_after_merge = [vol['volumeID'] for vol in self.drive.volumeChain]
+        if self.job['topVolume'] not in chain_after_merge:
+            self.teardown_top_volume()
         self.success = True
         self.vm.log.info("Synchronization completed (job %s)",
                          self.job['jobID'])
