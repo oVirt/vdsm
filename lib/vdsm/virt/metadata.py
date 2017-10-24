@@ -723,6 +723,8 @@ def _dump_device(md_obj, data, node_name=_DEVICE):
             )
         elif key == _SPEC_PARAMS:
             elems.append(_dump_device_spec_params(md_obj, value))
+        elif key == _PAYLOAD:
+            elems.append(_dump_payload(md_obj, _PAYLOAD, value))
         else:
             elems.append(md_obj.dump(key, **value))
 
@@ -767,20 +769,26 @@ def _load_device_spec_params(md_obj, elem):
     return spec_params
 
 
+def _dump_payload(md_obj, tag, value):
+    file_spec = value.pop(_FILE_SPEC)
+    payload_elem = md_obj.dump(tag, **value)
+
+    for path, content in sorted(
+        file_spec.items(),
+        key=operator.itemgetter(0),
+    ):
+        entry = md_obj.make_element(_FILE_SPEC, parent=payload_elem)
+        entry.attrib[_PATH_SPEC] = path
+        entry.text = content
+
+    return payload_elem
+
+
 def _dump_device_spec_params(md_obj, value):
     payload = value.pop(_VM_PAYLOAD, None)
     if payload is not None:
         # mandatory for vmPayload
-        file_spec = payload.pop(_FILE_SPEC)
-        payload_elem = md_obj.dump(_VM_PAYLOAD, **payload)
-
-        for path, content in sorted(
-            file_spec.items(),
-            key=operator.itemgetter(0),
-        ):
-            entry = md_obj.make_element(_FILE_SPEC, parent=payload_elem)
-            entry.attrib[_PATH_SPEC] = path
-            entry.text = content
+        payload_elem = _dump_payload(md_obj, _VM_PAYLOAD, payload)
     else:
         payload_elem = None
 

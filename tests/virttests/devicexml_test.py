@@ -1323,6 +1323,24 @@ class DeviceFromXMLTests(XMLTestCase):
             )
             self.assertEqual(dev_obj.specParams['vmPayload'], vmPayload)
 
+    def test_payload_from_metadata_dump(self):
+        expected_xml = u'''<ovirt-vm:vm xmlns:ovirt-vm='http://ovirt.org/vm/1.0'>
+  <ovirt-vm:device devtype="disk" name="hdd">
+    <ovirt-vm:readonly type='bool'>True</ovirt-vm:readonly>
+    <ovirt-vm:payload>
+      <ovirt-vm:volId>config-1</ovirt-vm:volId>
+      <ovirt-vm:file path='openstack/content/0000'>AAA</ovirt-vm:file>
+      <ovirt-vm:file path='openstack/latest/meta_data.json'>BBB</ovirt-vm:file>
+      <ovirt-vm:file path='openstack/latest/user_data'>CCC</ovirt-vm:file>
+    </ovirt-vm:payload>
+    <ovirt-vm:specParams />
+    <ovirt-vm:vm_custom />
+  </ovirt-vm:device>
+</ovirt-vm:vm>'''
+
+        md_desc = metadata.Descriptor.from_xml(_DRIVE_PAYLOAD_XML)
+        self.assertXMLEqual(md_desc.to_xml(), expected_xml)
+
 
 # invalid domain with only the relevant sections added
 # UUID has no meaning, randomly generated
