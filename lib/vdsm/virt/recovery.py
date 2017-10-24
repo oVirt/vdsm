@@ -159,7 +159,7 @@ class File(object):
     def load(self, cif, dom_xml=None):
         self._log.debug("recovery: trying with VM %s", self._vmid)
         try:
-            with open(self._path) as src:
+            with open(self._path, 'rb') as src:
                 params = pickle.load(src)
             self._set_elapsed_time(params)
             self._update_domain_xml(params, dom_xml)

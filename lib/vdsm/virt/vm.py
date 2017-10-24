@@ -34,6 +34,7 @@ import xml.etree.ElementTree as ET
 
 # 3rd party libs imports
 import libvirt
+import six
 
 # vdsm imports
 from vdsm.common import api
@@ -1687,7 +1688,7 @@ class Vm(object):
 
         with self._confLock:
             # Filter out any internal keys
-            status = dict((k, v) for k, v in self.conf.iteritems()
+            status = dict((k, v) for k, v in six.viewitems(self.conf)
                           if not k.startswith("_"))
             status['vmId'] = self.id
             status['status'] = self.lastStatus

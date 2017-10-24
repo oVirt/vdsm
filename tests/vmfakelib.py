@@ -268,16 +268,14 @@ def VM(params=None, devices=None, runCpu=False,
                                (containersconnection, 'get', Connection),
                                (vm.Vm, '_updateDomainDescriptor',
                                    _updateDomainDescriptor),
-                               (vm.Vm, 'send_status_event',
-                                   lambda _, **kwargs: None),
-                               (vm.Vm, '_update_metadata',
-                                   lambda _: None),
                                ]):
             vmParams = {'vmId': 'TESTING', 'vmName': 'nTESTING'}
             vmParams.update({} if params is None else params)
             cif = ClientIF() if cif is None else cif
             fake = vm.Vm(cif, vmParams, recover=recover)
             cif.vmContainer[fake.id] = fake
+            fake._update_metadata = lambda: None
+            fake.send_status_event = lambda **kwargs: None
             fake.arch = arch
             fake.guestAgent = GuestAgent()
             fake.conf['devices'] = [] if devices is None else devices

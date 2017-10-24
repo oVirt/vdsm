@@ -123,9 +123,7 @@ test_modules = \
 	virt_drivemonitor_test.py \
 	vmapi_test.py \
 	vmfakelib_test.py \
-	vmmigration_test.py \
 	vmoperations_test.py \
-	vmrecovery_test.py \
 	vm_test.py \
 	vmTestsData.py \
 	vmxml_test.py \
@@ -155,9 +153,7 @@ blacklist_modules_python3 = \
 	utils_test.py \
 	v2v_test.py \
 	vmapi_test.py \
-	vmmigration_test.py \
 	vmoperations_test.py \
-	vmrecovery_test.py \
 	vm_test.py \
 	vmxml_test.py \
 	$(NULL)
