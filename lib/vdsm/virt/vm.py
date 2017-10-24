@@ -1389,7 +1389,7 @@ class Vm(object):
         except DestroyedOnResumeError:
             self.log.debug("Cannot resume VM: paused for too long, destroyed")
 
-    def maybe_resume(self):
+    def maybe_resume(self, resume_behavior=None):
         """
         Handle resume request according to auto-resume value of the VM.
 
@@ -1398,12 +1398,15 @@ class Vm(object):
 
         :raises: `DestroyedOnResumeError` if the VM is destroyed.
         """
-        if self._resume_behavior == ResumeBehavior.AUTO_RESUME:
+        if resume_behavior is None:
+            resume_behavior = self._resume_behavior
+
+        if resume_behavior == ResumeBehavior.AUTO_RESUME:
             self.cont()
             self.log.info("VM resumed")
-        elif self._resume_behavior == ResumeBehavior.LEAVE_PAUSED:
+        elif resume_behavior == ResumeBehavior.LEAVE_PAUSED:
             self.log.info("Auto-resume disabled for the VM")
-        elif self._resume_behavior == ResumeBehavior.KILL:
+        elif resume_behavior == ResumeBehavior.KILL:
             pause_time = self._pause_time
             now = vdsm.common.time.monotonic_time()
             if pause_time is not None and \
@@ -1417,7 +1420,7 @@ class Vm(object):
                 self.log.info("VM resumed")
         else:
             raise Exception("Unsupported resume behavior value: %s",
-                            (self._resume_behavior,))
+                            (resume_behavior,))
 
     def _acquireCpuLockWithTimeout(self):
         timeout = self._loadCorrectedTimeout(
