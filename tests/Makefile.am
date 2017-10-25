@@ -100,7 +100,6 @@ test_modules = \
 	qemuimg_test.py \
 	response_test.py \
 	rngsources_test.py \
-	sampling_test.py \
 	schedule_test.py \
 	schemavalidation_test.py \
 	sigutils_test.py \

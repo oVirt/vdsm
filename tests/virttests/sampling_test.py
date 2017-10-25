@@ -18,16 +18,23 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from contextlib import contextmanager
 import itertools
+import random
 import threading
 
-from vdsm import numa
+import six
+
+from vdsm.network import ipwrapper
 from vdsm.virt import sampling
+from vdsm import numa
 
 from monkeypatch import MonkeyPatchScope
 
+from testValidation import ValidateRunningAsRoot
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
+from network.nettestlib import dummy_device
 
 
 @expandPermutations
@@ -304,6 +311,51 @@ class HostStatsMonitorTests(TestCaseBase):
                              sampling.HOST_STATS_AVERAGING_WINDOW)
             self.assertEqual(last.id,
                              FakeHostSample.counter - 1)
+
+
+class InterfaceSampleTests(TestCaseBase):
+    def setUp(self):
+        self.NEW_VLAN = 'vlan_%s' % (random.randint(0, 1000))
+
+    @ValidateRunningAsRoot
+    def testHostSampleReportsNewInterface(self):
+        interfaces_before = set(six.viewkeys(
+            sampling._get_interfaces_and_samples()))
+
+        with dummy_device() as dummy_name:
+            interfaces_after = set(six.viewkeys(
+                sampling._get_interfaces_and_samples()))
+            interfaces_diff = interfaces_after - interfaces_before
+            self.assertEqual(interfaces_diff, {dummy_name})
+
+    @ValidateRunningAsRoot
+    def testHostSampleHandlesDisappearingVlanInterfaces(self):
+        original_getLinks = ipwrapper.getLinks
+
+        def faultyGetLinks():
+            all_links = list(original_getLinks())
+            ipwrapper.linkDel(self.NEW_VLAN)
+            return iter(all_links)
+
+        with MonkeyPatchScope([(ipwrapper, 'getLinks', faultyGetLinks)]):
+            with dummy_device() as dummy_name, vlan(
+                    self.NEW_VLAN, dummy_name, 999):
+                interfaces_and_samples = sampling._get_interfaces_and_samples()
+                self.assertNotIn(self.NEW_VLAN, interfaces_and_samples)
+
+
+@contextmanager
+def vlan(name, link, vlan_id):
+    ipwrapper.linkAdd(name, 'vlan', link=link, args=['id', str(vlan_id)])
+    try:
+        yield
+    finally:
+        try:
+            ipwrapper.linkDel(name)
+        except ipwrapper.IPRoute2Error:
+            # faultyGetLinks is expected to have already removed the vlan
+            # device.
+            pass
 
 
 class FakeClock(object):
