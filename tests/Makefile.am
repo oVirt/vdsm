@@ -95,7 +95,6 @@ test_modules = \
 	osinfo_test.py \
 	osutils_test.py \
 	passwords_test.py \
-	periodic_test.py \
 	permutation_test.py \
 	protocoldetector_test.py \
 	qemuimg_test.py \
@@ -128,11 +127,8 @@ test_modules = \
 	vmmigration_test.py \
 	vmoperations_test.py \
 	vmrecovery_test.py \
-	vmsecret_test.py \
-	vmstorage_test.py \
 	vm_test.py \
 	vmTestsData.py \
-	vmutils_test.py \
 	vmxml_test.py \
 	v2v_test.py \
 	zombiereaper_test.py \
