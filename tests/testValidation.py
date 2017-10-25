@@ -21,7 +21,6 @@
 import errno
 import json
 import os
-import subprocess
 import threading
 from functools import wraps
 
@@ -29,7 +28,7 @@ from nose.plugins.skip import SkipTest
 from nose.plugins import Plugin
 
 from vdsm import utils
-from vdsm.common.compat import CPopen
+from vdsm.common.compat import subprocess
 
 import six
 
@@ -142,8 +141,9 @@ class ProcessLeakPlugin(Plugin):
                                  json.dumps(info, indent=4))
 
     def _child_processes(self):
-        proc = CPopen(self.PGREP_CMD, stdin=None, stdout=subprocess.PIPE,
-                      stderr=subprocess.PIPE)
+        proc = subprocess.Popen(
+            self.PGREP_CMD, stdin=None, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
         out, err = proc.communicate()
         # EXIT STATUS
         # 0      One or more processes matched the criteria.

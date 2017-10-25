@@ -22,7 +22,7 @@ from __future__ import absolute_import
 import time
 
 from vdsm.common import proc
-from vdsm.common.compat import CPopen as Popen
+from vdsm.common.compat import subprocess
 
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -34,7 +34,7 @@ class TestPidStat(TestCaseBase):
 
     def test_without_affinity(self):
         args = [EXT_SLEEP, "3"]
-        popen = Popen(args, close_fds=True)
+        popen = subprocess.Popen(args, close_fds=True)
         stats = proc.pidstat(popen.pid)
         pid = int(stats.pid)
         # procName comes in the format of (procname)
@@ -50,7 +50,7 @@ class TestPgrep(TestCaseBase):
         sleepProcs = []
         try:
             for i in range(3):
-                popen = Popen([EXT_SLEEP, "3"])
+                popen = subprocess.Popen([EXT_SLEEP, "3"])
                 sleepProcs.append(popen)
             # There is no guarantee which process run first after forking a
             # child process, make sure all the children are runing before we
