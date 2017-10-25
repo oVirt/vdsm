@@ -2800,7 +2800,7 @@ class Vm(object):
                 nicXml, self._custom, params=nic.custom)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 raise exception.NoSuchVM()
-            return response.error('hotplugNic', e.message)
+            return response.error('hotplugNic', str(e))
         else:
             # FIXME!  We may have a problem here if vdsm dies right after
             # we sent command to libvirt and before save conf. In this case
@@ -2831,7 +2831,7 @@ class Vm(object):
                                    network)
                 nicParams['portMirroring'] = mirroredNetworks
                 self.hotunplugNic({'nic': nicParams})
-                return response.error('hotplugNic', e.message)
+                return response.error('hotplugNic', str(e))
 
         return {'status': doneCode, 'vmList': self.status()}
 
@@ -2990,7 +2990,7 @@ class Vm(object):
         except (LookupError,
                 SetLinkAndNetworkError,
                 UpdatePortMirroringError) as e:
-            return response.error('updateDevice', e.message)
+            return response.error('updateDevice', str(e))
 
     @contextmanager
     def migration_parameters(self, params):
@@ -3158,7 +3158,7 @@ class Vm(object):
             self._rollback_nic_hotunplug(nicDev, nic)
             hooks.after_nic_hotunplug_fail(nicXml, self._custom,
                                            params=nic.custom)
-            return response.error('hotunplugNic', e.message)
+            return response.error('hotunplugNic', str(e))
 
         self._updateDomainDescriptor()
         hooks.after_nic_hotunplug(nicXml, self._custom,
@@ -3197,7 +3197,7 @@ class Vm(object):
             self.log.exception("hotplugMemory failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 raise exception.NoSuchVM()
-            return response.error('hotplugMem', e.message)
+            return response.error('hotplugMem', str(e))
 
         self._devices[hwclass.MEMORY].append(device)
         with self._confLock:
@@ -3237,7 +3237,7 @@ class Vm(object):
             self.log.exception("setNumberOfCpus failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 raise exception.NoSuchVM()
-            return response.error('setNumberOfCpusErr', e.message)
+            return response.error('setNumberOfCpusErr', str(e))
 
         self.conf['smp'] = str(numberOfCpus)
         self._updateDomainDescriptor()
@@ -3345,7 +3345,7 @@ class Vm(object):
                     ioTune["path"] = disk.path
 
                 except LookupError as e:
-                    return response.error('updateVmPolicyErr', e.message)
+                    return response.error('updateVmPolicyErr', str(e))
 
             if ioTuneParams:
                 io_tunes = []
@@ -3389,7 +3389,7 @@ class Vm(object):
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                     raise exception.NoSuchVM()
                 else:
-                    return response.error('updateVmPolicyErr', e.message)
+                    return response.error('updateVmPolicyErr', str(e))
 
         return {'status': doneCode}
 
@@ -3488,8 +3488,8 @@ class Vm(object):
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                     raise exception.NoSuchVM()
                 else:
-                    self.log.error('updateIoTuneErr', e.message)
-                    return response.error('updateIoTuneErr', e.message)
+                    self.log.error('updateIoTuneErr', str(e))
+                    return response.error('updateIoTuneErr', str(e))
 
         return response.success(ioTuneList=resultList)
 
@@ -3525,7 +3525,7 @@ class Vm(object):
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                     raise exception.NoSuchVM()
                 else:
-                    raise exception.UpdateIOTuneError(e.message)
+                    raise exception.UpdateIOTuneError(str(e))
 
             with self._ioTuneLock:
                 self._ioTuneValues[found_device.name] = io_tune
@@ -3612,7 +3612,7 @@ class Vm(object):
             self.cif.teardownVolumePath(diskParams)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 raise exception.NoSuchVM()
-            return response.error('hotplugDisk', e.message)
+            return response.error('hotplugDisk', str(e))
         else:
             device_conf = self._devices[hwclass.DISK]
             device_conf.append(drive)
@@ -3660,7 +3660,7 @@ class Vm(object):
             self.log.exception("Hotunplug failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 raise exception.NoSuchVM()
-            return response.error('hotunplugDisk', e.message)
+            return response.error('hotunplugDisk', str(e))
         else:
             self._devices[hwclass.DISK].remove(drive)
 
@@ -5069,7 +5069,7 @@ class Vm(object):
         except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 raise exception.NoSuchVM()
-            raise exception.BalloonError(e.message)
+            raise exception.BalloonError(str(e))
         else:
             # TODO: update metadata once we build devices with engine XML
 
@@ -5102,7 +5102,7 @@ class Vm(object):
             return response.error('cpuTuneErr',
                                   'an integer is required for period')
         except libvirt.libvirtError as e:
-            return self._reportException(key='cpuTuneErr', msg=e.message)
+            return self._reportException(key='cpuTuneErr', msg=str(e))
         else:
             # libvirt may change the value we set, so we must get fresh data
             return self._updateVcpuTuneInfo()
@@ -5114,7 +5114,7 @@ class Vm(object):
             return response.error('cpuTuneErr',
                                   'an integer is required for period')
         except libvirt.libvirtError as e:
-            return self._reportException(key='cpuTuneErr', msg=e.message)
+            return self._reportException(key='cpuTuneErr', msg=str(e))
         else:
             # libvirt may change the value we set, so we must get fresh data
             return self._updateVcpuTuneInfo()
@@ -5123,7 +5123,7 @@ class Vm(object):
         try:
             self._vcpuTuneInfo = self._dom.schedulerParameters()
         except libvirt.libvirtError as e:
-            return self._reportException(key='cpuTuneErr', msg=e.message)
+            return self._reportException(key='cpuTuneErr', msg=str(e))
         else:
             return {'status': doneCode}
 
