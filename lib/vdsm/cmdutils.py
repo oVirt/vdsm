@@ -156,7 +156,7 @@ def receive(p, timeout=None, bufsize=io.DEFAULT_BUFFER_SIZE):
 
     Arguments:
         p (`subprocess.Popen`): A subprocess created with
-            subprocess.Popen or cpopen.CPopen.
+            subprocess.Popen or subprocess32.Popen or cpopen.CPopen.
         timeout (float): Number of seconds to wait for process. Timeout
             resolution is limited by the resolution of
             `common.time.monotonic_time`, typically 10 milliseconds.

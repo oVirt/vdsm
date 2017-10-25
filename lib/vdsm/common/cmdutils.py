@@ -22,9 +22,8 @@ import distutils.spawn
 import logging
 import os
 import re
-import subprocess
 
-from vdsm.common.compat import CPopen
+from vdsm.common.compat import subprocess
 
 
 SYSTEMD_RUN = "/usr/bin/systemd-run"
@@ -126,13 +125,13 @@ def exec_cmd(cmd, env=None):
     This is a bare-bones version of `commands.execCmd`. Unlike the latter, this
     function
     * uses Vdsm cpu pinning, and must not be used for long CPU-bound processes.
-    * does not guarantee to kill underlying process if CPopen.communicate()
+    * does not guarantee to kill underlying process if Popen.communicate()
       raises. Commands that access shared storage may not use this api.
     * does not hide passwords in logs if they are passed in cmd
     """
     logging.debug(command_log_line(cmd))
 
-    p = CPopen(
+    p = subprocess.Popen(
         cmd, close_fds=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         env=env)
 

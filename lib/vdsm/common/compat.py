@@ -82,6 +82,11 @@ if six.PY2:
 else:
     from subprocess import Popen as CPopen  # NOQA: F401 (unused import)
 
+if six.PY2:
+    import subprocess32 as subprocess
+else:
+    import subprocess  # NOQA: F401 (unused import)
+
 try:
     from contextlib import suppress
 except ImportError:

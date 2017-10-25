@@ -25,6 +25,7 @@ python-netaddr
 python-pthreading
 python-requests
 python-setuptools
+python-subprocess32
 python-six
 python2-dateutil
 python2-decorator

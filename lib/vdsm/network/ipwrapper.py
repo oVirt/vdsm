@@ -24,7 +24,6 @@ from glob import iglob
 import errno
 import itertools
 import os
-from subprocess import Popen
 
 import six
 
@@ -33,6 +32,7 @@ from netaddr import IPAddress
 from netaddr import IPNetwork
 
 from vdsm.common.cmdutils import CommandPath
+from vdsm.common.compat import subprocess
 from vdsm.common.config import config
 from vdsm.network import cmd
 from vdsm.network import ethtool
@@ -613,7 +613,7 @@ def netns_delete(name):
 
 def netns_exec(netns_name, command):
     cmds = [_IP_BINARY.cmd, 'netns', 'exec', netns_name] + command
-    return Popen(cmds)
+    return subprocess.Popen(cmds)
 
 
 def link_set_netns(device, netns_name):

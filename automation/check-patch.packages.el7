@@ -25,6 +25,7 @@ python-netaddr
 python-pthreading
 python-setuptools
 python-six
+python-subprocess32
 python-requests
 rpm-build
 rpmlint
