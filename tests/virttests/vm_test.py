@@ -1509,7 +1509,7 @@ class TestVmStats(TestCaseBase):
     DEV_BALLOON = [{'type': 'balloon', 'specParams': {'model': 'virtio'}}]
 
     def testGetNicStats(self):
-        GBPS = 10 ** 9 / 8
+        GBPS = 10 ** 9 // 8
         MAC = '52:54:00:59:F5:3F'
         pretime = vdsm.common.time.monotonic_time()
         with fake.VM(_VM_PARAMS) as testvm:
@@ -2347,7 +2347,8 @@ class FakeLeaseClientIF(object):
 
 def _load_xml(name):
     test_path = os.path.realpath(__file__)
-    data_path = os.path.join(os.path.split(test_path)[0], 'devices', 'data')
+    data_path = os.path.join(
+        os.path.split(test_path)[0], '..', 'devices', 'data')
 
     with open(os.path.join(data_path, name), 'r') as f:
         return f.read()

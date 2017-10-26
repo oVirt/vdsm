@@ -3767,7 +3767,7 @@ class Vm(object):
            reason == libvirt.VIR_DOMAIN_PAUSED_IOERROR):
 
             diskErrors = self._dom.diskErrors()
-            for device, error in diskErrors.iteritems():
+            for device, error in six.viewitems(diskErrors):
                 if error == libvirt.VIR_DOMAIN_DISK_ERROR_NO_SPACE:
                     self.log.warning('device %s out of space', device)
                     return 'ENOSPC'
@@ -4730,7 +4730,7 @@ class Vm(object):
             self._consoleDisconnectAction = disconnectAction or \
                 ConsoleDisconnectAction.LOCK_SCREEN
         except virdomain.TimeoutError as tmo:
-            res = response.error('ticketErr', unicode(tmo))
+            res = response.error('ticketErr', six.text_type(tmo))
         else:
             hooks.after_vm_set_ticket(self._domain.xml, self._custom, params)
             res = {'status': doneCode}
