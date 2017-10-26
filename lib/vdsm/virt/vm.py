@@ -2217,9 +2217,9 @@ class Vm(object):
                 domxml.appendHostdevNumaTune(
                     list(itertools.chain(*self._devices.values())))
 
-        domxml._appendAgentDevice(self._guestSocketFile.decode('utf-8'),
+        domxml._appendAgentDevice(self._guestSocketFile,
                                   self._agent_channel_name)
-        domxml._appendAgentDevice(self._qemuguestSocketFile.decode('utf-8'),
+        domxml._appendAgentDevice(self._qemuguestSocketFile,
                                   vmchannels.QEMU_GA_DEVICE_NAME)
         if not cpuarch.is_s390(self.arch):
             domxml.appendInput()
