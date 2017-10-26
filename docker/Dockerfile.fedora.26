@@ -37,6 +37,7 @@ RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     python-pthreading \
     python-requests \
     python-six \
+    python-subprocess32 \
     python2-dateutil \
     python2-mock \
     python3 \
