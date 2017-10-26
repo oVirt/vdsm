@@ -120,7 +120,6 @@ test_modules = \
 	vdsmapi_test.py \
 	vdsmdumpchains_test.py \
 	verify.py \
-	virt_drivemonitor_test.py \
 	vmapi_test.py \
 	vmfakelib_test.py \
 	vmoperations_test.py \
