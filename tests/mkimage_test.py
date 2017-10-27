@@ -219,6 +219,28 @@ class MkimageTestCase(VdsmTestCase):
             m.umount()
 
     @ValidateRunningAsRoot
+    @permutations([[None], ['FSLABEL']])
+    def test_mkFloppyFs_overwrite(self, label):
+        """
+        Test that mkimage.mkFloppyFs handle situation when the floppy image
+        already exists.
+
+        Requires root permissions for writing into the floppy image.
+        """
+        floppy = mkimage.mkFloppyFs("vmId_floppy", self.files, label)
+        self.assertTrue(os.path.exists(floppy))
+        # Now try again with the floppy image already in place
+        floppy = mkimage.mkFloppyFs("vmId_floppy", self.files, label)
+        self.assertTrue(os.path.exists(floppy))
+        m = mount.Mount(floppy, self.workdir)
+        m.mount(mntOpts='loop')
+        try:
+            self._check_content(checkPerms=False)
+            self._check_label(floppy, label)
+        finally:
+            m.umount()
+
+    @ValidateRunningAsRoot
     @permutations([[None], ['fslabel']])
     def test_mkIsoFs(self, label):
         """

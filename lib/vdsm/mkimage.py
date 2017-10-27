@@ -120,6 +120,10 @@ def mkFloppyFs(vmId, files, volumeName=None):
     floppy = None
     try:
         floppy = getFileName(vmId, files)
+        if os.path.exists(floppy):
+            # mkfs.msdos refuses to overwrite existing images
+            logging.warning('Removing stale floppy image: %s', floppy)
+            rm_file(floppy)
         command = [EXT_MKFS_MSDOS, '-C', floppy, '1440']
         if volumeName is not None:
             command.extend(['-n', volumeName])
