@@ -384,6 +384,10 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
             self.assertEqual(vda.threshold_state, BLOCK_THRESHOLD.UNSET)
             # first run: does nothing but set the block thresholds
+
+            testvm.drive_monitor.update_threshold_state_exceeded = \
+                lambda *args: None
+
             testvm.monitor_drives()
 
             self.assertEqual(vda.threshold_state, expected_state)
@@ -416,6 +420,32 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             extended = testvm.extend_drive_if_needed(drives[0])
 
             self.assertFalse(extended)
+
+    @permutations([
+        # events_enabled, expected_state
+        (True, BLOCK_THRESHOLD.EXCEEDED),
+        (False, BLOCK_THRESHOLD.UNSET),
+    ])
+    def test_force_drive_threshold_state_exceeded(self, events_enabled,
+                                                  expected_state):
+        with make_env(events_enabled=events_enabled) as (testvm, dom, drives):
+
+            # Simulate event not received. Possible cases:
+            # - the handling of the event in Vdsm was delayed because some
+            #   blocking code was called from the libvirt event loop
+            #   (unavoidable race)
+            # - block threshold set by below the current allocation
+            #   (also unavoidable race)
+
+            vda = dom.block_info['/virtio/0']
+            vda['allocation'] = allocation_threshold_for_resize_mb(
+                vda, drives[0]) + 1 * MB
+
+            testvm.monitor_drives()
+
+            # forced to exceeded by monitor_drives() even if no
+            # event received.
+            self.assertEqual(drives[0].threshold_state, expected_state)
 
     def test_event_received_before_write_completes(self):
         # QEMU submits an event when write is attempted, so it

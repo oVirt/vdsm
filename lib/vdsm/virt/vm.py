@@ -1209,6 +1209,7 @@ class Vm(object):
         # We need to set the drive threshold to EXCEEDED both if we receive
         # one event or if we found that the threshold was exceeded during
         # the drivemonitor.should_extend_volume check.
+        self.drive_monitor.update_threshold_state_exceeded(drive)
 
         self.log.info(
             "Requesting extension for volume %s on domain %s (apparent: "
