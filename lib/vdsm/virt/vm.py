@@ -866,7 +866,7 @@ class Vm(object):
                    self._pause_time is None:
                     self._pause_time = vdsm.common.time.monotonic_time()
                 if self._initTimePauseCode == 'ENOSPC':
-                    self.maybe_resume()
+                    self.cont()
             else:
                 self._pause_code = None
                 self._pause_time = None
@@ -1409,7 +1409,7 @@ class Vm(object):
 
     def _resume_if_needed(self):
         try:
-            self.maybe_resume()
+            self.cont()
         except libvirt.libvirtError as e:
             current_status = self.lastStatus
             if (current_status == vmstatus.UP and
@@ -2444,7 +2444,7 @@ class Vm(object):
             if self._pause_code != 'NOERR' and self._pause_time is None:
                 self._pause_time = vdsm.common.time.monotonic_time()
             if self._initTimePauseCode == 'ENOSPC':
-                self.maybe_resume()
+                self.cont()
 
         self._dom_vcpu_setup()
         self._updateIoTuneInfo()
