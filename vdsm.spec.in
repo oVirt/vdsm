@@ -228,6 +228,7 @@ Requires: %{name}-python = %{version}-%{release}
 Requires: %{name}-hook-vmfex-dev = %{version}-%{release}
 Requires: NetworkManager-config-server
 Requires: lldpad
+Requires: python-subprocess32
 
 %if 0%{?rhel}
 Requires: python-decorator
