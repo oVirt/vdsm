@@ -393,7 +393,6 @@ class Vm(object):
         if recover and 'xml' in params:
             self._restore_legacy_disk_conf_from_metadata()
 
-        self.disableDriveMonitor()
         self._vmStartEvent = threading.Event()
         self._vmAsyncStartError = None
         self._vmCreationEvent = threading.Event()
@@ -401,7 +400,8 @@ class Vm(object):
         self._pathsPreparedEvent = threading.Event()
         self._devices = vmdevices.common.empty_dev_map()
 
-        self.drive_monitor = drivemonitor.DriveMonitor(self, self.log)
+        self.drive_monitor = drivemonitor.DriveMonitor(
+            self, self.log, enabled=False)
         if is_kvm(self._custom):
             self._connection = libvirtconnection.get(cif)
         else:
@@ -958,15 +958,6 @@ class Vm(object):
             # consistent with the libvirtError fallback above.
             self.set_last_status(vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
 
-    def disableDriveMonitor(self):
-        self._driveMonitorEnabled = False
-
-    def enableDriveMonitor(self):
-        self._driveMonitorEnabled = True
-
-    def driveMonitorEnabled(self):
-        return self._driveMonitorEnabled
-
     def preparePaths(self):
         if 'xml' in self.conf:
             drives = vmdevices.common.storage_device_params_from_domain_xml(
@@ -990,7 +981,7 @@ class Vm(object):
                     drive.update(modified)
         else:
             # Now we got all the resources we needed
-            self.enableDriveMonitor()
+            self.drive_monitor.enable()
 
     def _prepareTransientDisks(self, drives):
         for drive in drives:
@@ -1199,17 +1190,6 @@ class Vm(object):
         if physical - alloc < drive.watermarkLimit:
             return True
         return False
-
-    def needsDriveMonitoring(self):
-        """
-        Return True if a vm needs drive monitoring in this cycle.
-
-        This is called every 2 seconds (configurable) by the periodic system.
-        If this returns True, the periodic system will invoke
-        monitor_drives during this periodic cycle.
-        """
-        return (self._driveMonitorEnabled and
-                bool(self.drive_monitor.monitored_drives()))
 
     def monitor_drives(self):
         """
@@ -4264,7 +4244,7 @@ class Vm(object):
         # we're changing them), and also to prevent to trigger a drive
         # extension for the new volume with the apparent size of the old one
         # (the apparentsize is updated as last step in updateDriveParameters)
-        self.disableDriveMonitor()
+        self.drive_monitor.disable()
 
         try:
             if should_freeze:
@@ -4304,7 +4284,7 @@ class Vm(object):
                     self.log.exception("Failed to update drive information"
                                        " for '%s'", drive)
         finally:
-            self.enableDriveMonitor()
+            self.drive_monitor.enable()
             if memoryParams:
                 self.cif.teardownVolumePath(memoryVol)
 
@@ -4441,7 +4421,7 @@ class Vm(object):
             # errors from the stats threads during the switch from the old
             # drive to the new one. This applies only to the case where we
             # actually switch to the destination.
-            self.disableDriveMonitor()
+            self.drive_monitor.disable()
         else:
             self.log.debug("Stopping the disk replication remaining on the "
                            "source drive: %s", dstDisk)
@@ -4471,7 +4451,7 @@ class Vm(object):
             self.updateDriveParameters(dstDiskCopy)
         finally:
             self._delDiskReplica(drive)
-            self.enableDriveMonitor()
+            self.drive_monitor.enable()
 
         return {'status': doneCode}
 
@@ -5845,7 +5825,7 @@ class LiveMergeCleanupThread(object):
         # we can correct our metadata following the pivot we should not
         # attempt to monitor drives.
         # TODO: Stop monitoring only for the live merge disk
-        self.vm.disableDriveMonitor()
+        self.vm.drive_monitor.disable()
 
         self.vm.log.info("Requesting pivot to complete active layer commit "
                          "(job %s)", self.job['jobID'])
@@ -5853,12 +5833,12 @@ class LiveMergeCleanupThread(object):
             flags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
             self.vm._dom.blockJobAbort(self.drive.name, flags)
         except libvirt.libvirtError as e:
-            self.vm.enableDriveMonitor()
+            self.vm.drive_monitor.enable()
             if e.get_error_code() != libvirt.VIR_ERR_BLOCK_COPY_ACTIVE:
                 raise
             raise BlockCopyActiveError(self.job['jobID'])
         except:
-            self.vm.enableDriveMonitor()
+            self.vm.drive_monitor.enable()
             raise
 
         self._waitForXMLUpdate()
@@ -5899,7 +5879,7 @@ class LiveMergeCleanupThread(object):
                          "(job %s)", self.job['jobID'])
         self.vm._syncVolumeChain(self.drive)
         if self.doPivot:
-            self.vm.enableDriveMonitor()
+            self.vm.drive_monitor.enable()
         chain_after_merge = [vol['volumeID'] for vol in self.drive.volumeChain]
         if self.job['topVolume'] not in chain_after_merge:
             self.teardown_top_volume()

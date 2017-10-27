@@ -372,7 +372,7 @@ class UpdateVolumes(_RunnableOnVm):
     def required(self):
         return (super(UpdateVolumes, self).required and
                 # Avoid queries from storage during recovery process
-                self._vm.driveMonitorEnabled())
+                self._vm.drive_monitor.enabled())
 
     def _execute(self):
         for drive in self._vm.getDiskDevices():
@@ -402,7 +402,7 @@ class DriveWatermarkMonitor(_RunnableOnVm):
     @property
     def required(self):
         return (super(DriveWatermarkMonitor, self).required and
-                self._vm.needsDriveMonitoring())
+                self._vm.drive_monitor.monitoring_needed())
 
     def _execute(self):
         self._vm.monitor_drives()

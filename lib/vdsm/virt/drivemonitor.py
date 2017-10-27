@@ -31,11 +31,33 @@ class DriveMonitor(object):
     of a Vm, triggering the extension flow when needed.
     """
 
-    def __init__(self, vm, log):
+    def __init__(self, vm, log, enabled=True):
         self._vm = vm
         self._log = log
+        self._enabled = enabled
         self._events_enabled = config.getboolean(
             'irs', 'enable_block_threshold_event')
+
+    def enabled(self):
+        return self._enabled
+
+    def enable(self):
+        self._enable = True
+        self._log.info('Enabling drive monitoring')
+
+    def disable(self):
+        self._enable = False
+        self._log.info('Disabling drive monitoring')
+
+    def monitoring_needed(self):
+        """
+        Return True if a vm needs drive monitoring in this cycle.
+
+        This is called every 2 seconds (configurable) by the periodic system.
+        If this returns True, the periodic system will invoke
+        monitor_drives during this periodic cycle.
+        """
+        return self._enabled and bool(self.monitored_drives())
 
     def set_threshold(self, drive, apparentsize):
         """
