@@ -1236,7 +1236,9 @@ class Vm(object):
         the drive.threshold_state:
 
         - UNSET: the drive needs to register for a new block threshold,
-                 so try to set it.
+                 so try to set it. We set the threshold both for chunked
+                 drives and non-chunked drives replicating to chunked
+                 drives.
         - EXCEEDED: the drive needs extension, try to extend it.
         - SET: this method should never receive a drive in this state,
                emit warning and exit.
@@ -1257,8 +1259,7 @@ class Vm(object):
                            drive.name, e)
             return False
 
-        if (drive.chunked and
-                drive.threshold_state == BLOCK_THRESHOLD.UNSET):
+        if drive.threshold_state == BLOCK_THRESHOLD.UNSET:
             self.drive_monitor.set_threshold(drive, physical)
 
         if not self._shouldExtendVolume(

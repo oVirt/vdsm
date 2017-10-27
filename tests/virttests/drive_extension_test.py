@@ -297,32 +297,98 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             self.assertEqual(drv.threshold_state, BLOCK_THRESHOLD.SET)
 
     @permutations([
-        # replicating, threshold
-        (False, 1536 * MB),
-        (True, 1024 * MB),
+        # drive_conf, expected_state, threshold
+        # the threshold values depend on the physical size defined in the test,
+        # and on the mock config.
+        #
+        # non-chunked drive
+        ((drive_config(
+            format='cow',
+            diskType=DISK_TYPE.FILE),
+         {'capacity': 4 * GB, 'allocation': 2 * GB, 'physical': 2 * GB}),
+         BLOCK_THRESHOLD.UNSET, None),
+        # ditto
+        ((drive_config(
+            format='raw',
+            diskType=DISK_TYPE.BLOCK),
+         {'capacity': 2 * GB, 'allocation': 0 * GB, 'physical': 2 * GB}),
+         BLOCK_THRESHOLD.UNSET, None),
+        # ditto
+        ((drive_config(
+            format='raw',
+            diskType=DISK_TYPE.FILE),
+         {'capacity': 2 * GB, 'allocation': 0 * GB, 'physical': 2 * GB}),
+         BLOCK_THRESHOLD.UNSET, None),
+        # ditto
+        ((drive_config(
+            format='raw',
+            diskType=DISK_TYPE.NETWORK),
+         {'capacity': 2 * GB, 'allocation': 0 * GB, 'physical': 2 * GB}),
+         BLOCK_THRESHOLD.UNSET, None),
+        # non-chunked drive replicating to non-chunked drive
+        ((drive_config(
+            format='cow',
+            diskType=DISK_TYPE.FILE,
+            diskReplicate={
+                'format': 'cow',
+                'diskType': DISK_TYPE.FILE}),
+         {'capacity': 4 * GB, 'allocation': 2 * GB, 'physical': 2 * GB}),
+         BLOCK_THRESHOLD.UNSET, None),
+        # non-chunked drive replicating to chunked-drive
+        #
+        # TODO:
+        # Here the replica size should be bigger than the source drive size.
+        # Possible setup:
+        # source: allocation=1, physical=1
+        # replica: allocation=1, physical=3
+        # Currently we assume that drive size is same as replica size.
+        ((drive_config(
+            format='cow',
+            diskType=DISK_TYPE.FILE,
+            diskReplicate={
+                'format': 'cow',
+                'diskType': DISK_TYPE.BLOCK}),
+         {'capacity': 4 * GB, 'allocation': 2 * GB, 'physical': 2 * GB}),
+         BLOCK_THRESHOLD.SET, 1 * GB),
+        # chunked drive
+        ((drive_config(
+            format='cow',
+            diskType=DISK_TYPE.BLOCK),
+         {'capacity': 4 * GB, 'allocation': 1 * GB, 'physical': 2 * GB}),
+         BLOCK_THRESHOLD.SET, 1536 * MB),
+        # chunked drive replicating to chunked drive
+        ((drive_config(
+            format='cow',
+            diskType=DISK_TYPE.BLOCK,
+            diskReplicate={
+                'format': 'cow',
+                'diskType': DISK_TYPE.BLOCK}),
+         {'capacity': 4 * GB, 'allocation': 1 * GB, 'physical': 3 * GB}),
+         BLOCK_THRESHOLD.SET, 2 * GB),
+        # chunked drive replicating to non-chunked drive
+        ((drive_config(
+            format='cow',
+            diskType=DISK_TYPE.BLOCK,
+            diskReplicate={
+                'format': 'cow',
+                'diskType': DISK_TYPE.FILE}),
+         {'capacity': 4 * GB, 'allocation': 1 * GB, 'physical': 3 * GB}),
+         BLOCK_THRESHOLD.SET, 2 * GB),
     ])
-    def test_set_new_threshold_when_state_unset(self, replicating, threshold):
-        with make_env(events_enabled=True) as (testvm, dom, drives):
+    def test_set_new_threshold_when_state_unset(self, drive_info,
+                                                expected_state, threshold):
+        with make_env(events_enabled=True,
+                      drive_infos=[drive_info]) as (testvm, dom, drives):
 
-            dom.block_info['/virtio/0'] = {
-                'capacity': 4 * GB,
-                'allocation': 1 * GB,
-                'physical': 2 * GB,
-            }
-
-            vda = drives[0]
-            if replicating:
-                vda.diskReplicate = {
-                    'diskType': DISK_TYPE.BLOCK,
-                    'format': 'cow',
-                }
+            vda = drives[0]  # shortcut
 
             self.assertEqual(vda.threshold_state, BLOCK_THRESHOLD.UNSET)
             # first run: does nothing but set the block thresholds
             testvm.monitor_drives()
 
-            self.assertEqual(vda.threshold_state, BLOCK_THRESHOLD.SET)
-            self.assertEqual(dom.thresholds[vda.name], threshold)
+            self.assertEqual(vda.threshold_state, expected_state)
+            if threshold is not None:
+                self.assertEqual(dom.thresholds[vda.name], threshold)
 
     def test_set_new_threshold_when_state_unset_but_fails(self):
 
