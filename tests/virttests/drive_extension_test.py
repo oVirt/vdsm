@@ -31,6 +31,7 @@ from vdsm.virt.vmdevices import hwclass
 from vdsm.virt import drivemonitor
 from vdsm.virt import vm
 from vdsm.virt import vmstatus
+from vdsm import utils
 
 from testlib import expandPermutations, permutations
 from testlib import make_config
@@ -48,14 +49,54 @@ GB = 1024 ** 3
 CHUNK_SIZE = 1 * GB
 CHUNK_PCT = 50
 
+REPLICA_BASE_INDEX = 1000
+
+
+# TODO: factor out this function and its counterpart in vmstorage_test.py
+def drive_config(**kw):
+    ''' Return drive configuration updated from **kw '''
+    conf = {
+        'device': 'disk',
+        'format': 'raw',
+        'iface': 'virtio',
+        'index': '0',
+        'propagateErrors': 'off',
+        'readonly': 'False',
+        'shared': 'none',
+        'type': 'disk',
+    }
+    conf.update(kw)
+    return conf
+
 
 @contextmanager
-def make_env(events_enabled):
+def make_env(events_enabled, drive_infos=None):
     log = logging.getLogger('test')
 
     cfg = make_config([
         ('irs', 'enable_block_threshold_event',
             'true' if events_enabled else 'false')])
+
+    # Simulating state after one extension
+    block_info = {
+        'capacity': 4 * GB,
+        'allocation': 1 * GB,
+        'physical': 2 * GB
+    }
+
+    if drive_infos is None:
+        drive_infos = [
+            (drive_config(
+                format='cow',
+                diskType=DISK_TYPE.BLOCK),
+             block_info),
+            (drive_config(
+                format='cow',
+                diskType=DISK_TYPE.BLOCK),
+             block_info),
+        ]
+        # TODO: add raw/block drive and qcow2/file drive.
+        # check we don't try to monitor or extend those drives.
 
     # the Drive class use those two tunables as class constants.
     with MonkeyPatchScope([
@@ -63,41 +104,13 @@ def make_env(events_enabled):
         (Drive, 'VOLWM_FREE_PCT', CHUNK_PCT),
         (drivemonitor, 'config', cfg),
     ]):
-        # storage does not validate the UUIDs, so we use phony names
-        # for brevity
-        drives = [
-            Drive(log, **drive_config(
-                format='cow',
-                diskType=DISK_TYPE.BLOCK,
-                index=0,
-                volumeID='volume_0',
-                poolID='pool_0',
-                imageID='image_0',
-                domainID='domain_0',
-
-            )),
-            Drive(log, **drive_config(
-                format='cow',
-                diskType=DISK_TYPE.BLOCK,
-                index=1,
-                volumeID='volume_1',
-                poolID='pool_0',
-                imageID='image_1',
-                domainID='domain_0',
-            )),
-        ]
-        # TODO: add raw/block drive and qcow2/file drive.
-        # check we don't try to monitor or extend those drives.
-
         dom = FakeDomain()
         irs = FakeIRS()
 
-        for drive in drives:
-            capacity, allocation, physical = dom.blockInfo(drive.path, 0)
-            key = (drive.domainID, drive.poolID,
-                   drive.imageID, drive.volumeID)
-            irs.volume_sizes[key] = capacity
-            drive.apparentsize = capacity
+        drives = [
+            make_drive(log, dom, irs, index, drive_conf, info)
+            for index, (drive_conf, info) in enumerate(drive_infos)
+        ]
 
         cif = FakeClientIF()
         cif.irs = irs
@@ -293,7 +306,7 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
 
             dom.block_info['/virtio/0'] = {
                 'capacity': 4 * GB,
-                'allocation': 0 * GB,
+                'allocation': 1 * GB,
                 'physical': 2 * GB,
             }
 
@@ -444,20 +457,7 @@ class FakeDomain(object):
 
     def __init__(self):
         self._state = (libvirt.VIR_DOMAIN_RUNNING, )
-        self.block_info = {
-            # capacity is random value > 0
-            # physical is random value > 0, <= capacity
-            '/virtio/0': {
-                'capacity': 4 * GB,
-                'allocation': 0 * GB,
-                'physical': 2 * GB,
-            },
-            '/virtio/1': {
-                'capacity': 2 * GB,
-                'allocation': 0 * GB,
-                'physical': 1 * GB,
-            },
-        }
+        self.block_info = {}
         self.errors = {}
         self.thresholds = {}
 
@@ -514,25 +514,55 @@ class FakeIRS(object):
         size = self.volume_sizes[key]
         return response.success(apparentsize=size, truesize=size)
 
+    # testing helper
+    def set_drive_size(self, drive, capacity):
+        key = (drive.domainID, drive.poolID,
+               drive.imageID, drive.volumeID)
+        self.volume_sizes[key] = capacity
 
-# TODO: factor out this function and its counterpart in vmstorage_test.py
-def drive_config(**kw):
-    ''' Return drive configuration updated from **kw '''
-    conf = {
-        'device': 'disk',
-        'format': 'raw',
-        'iface': 'virtio',
-        'index': '0',
-        'propagateErrors': 'off',
-        'readonly': 'False',
-        'shared': 'none',
-        'type': 'disk',
-    }
-    conf.update(kw)
-    conf['path'] = '/{iface}/{index}'.format(
-        iface=conf['iface'], index=conf['index']
+        if drive.isDiskReplicationInProgress():
+            replica = drive.diskReplicate
+            key = (replica['domainID'], replica['poolID'],
+                   replica['imageID'], replica['volumeID'])
+            self.volume_sizes[key] = capacity
+
+
+def make_drive(log, dom, irs, index, conf, block_info):
+    cfg = utils.picklecopy(conf)
+
+    cfg['index'] = index
+    cfg['path'] = '/{iface}/{index}'.format(
+        iface=cfg['iface'], index=cfg['index']
     )
-    return conf
+
+    add_uuids(index, cfg)
+    if 'diskReplicate' in cfg:
+        add_uuids(index + REPLICA_BASE_INDEX, cfg['diskReplicate'])
+
+    drive = Drive(log, **cfg)
+
+    dom.block_info[drive.path] = utils.picklecopy(block_info)
+
+    if drive.diskType == DISK_TYPE.BLOCK and drive.format == 'raw':
+        irs.set_drive_size(drive, block_info['capacity'])
+    elif drive.diskType == DISK_TYPE.BLOCK and drive.format == 'cow':
+        irs.set_drive_size(drive, block_info['physical'])
+    elif drive.diskType == DISK_TYPE.FILE and drive.format == 'raw':
+        irs.set_drive_size(drive, block_info['capacity'])
+    elif drive.diskType == DISK_TYPE.FILE and drive.format == 'cow':
+        irs.set_drive_size(drive, block_info['physical'])
+
+    return drive
+
+
+def add_uuids(index, conf):
+    # storage does not validate the UUIDs, so we use phony names
+    # for brevity
+    conf['volumeID'] = 'volume_%d' % index
+    conf['imageID'] = 'image_%d' % index
+    # intentionally constant
+    conf['poolID'] = 'pool_0'
+    conf['domainID'] = 'domain_0'
 
 
 def simulate_extend_callback(irs, extension_id):
