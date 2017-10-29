@@ -5613,7 +5613,7 @@ class Vm(object):
                 alias = vmdevices.core.find_device_alias(deviceXML)
                 if alias and alias == targetAlias:
                     return deviceXML
-            raise LookupError("Unable to find matching XML for device %s",
+            raise LookupError("Unable to find matching XML for device %r" %
                               targetAlias)
 
         ret = {}
