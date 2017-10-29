@@ -22,12 +22,12 @@ include $(top_srcdir)/build-aux/Makefile.subs
 dist_configurators_PYTHON = \
 	__init__.py \
 	abrt.py \
+	bond_defaults.py \
 	certificates.py \
 	libvirt.py \
-	multipath.py \
 	lvm.py \
+	multipath.py \
 	passwd.py \
 	sanlock.py \
 	sebool.py \
-	bond_defaults.py \
 	$(NULL)
