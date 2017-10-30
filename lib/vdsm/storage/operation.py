@@ -22,13 +22,12 @@ from __future__ import absolute_import
 
 import errno
 import logging
-import subprocess
 import threading
 
 from vdsm import cmdutils
 from vdsm import utils
 from vdsm.common import cmdutils as common_cmdutils
-from vdsm.common import compat
+from vdsm.common.compat import subprocess
 from vdsm.common import exception
 
 # Operation states
@@ -150,11 +149,12 @@ class Command(object):
                 raise RuntimeError("Attempt to run an operation twice")
             log.debug(
                 common_cmdutils.command_log_line(self._cmd, cwd=self._cwd))
-            self._proc = compat.CPopen(self._cmd,
-                                       cwd=self._cwd,
-                                       stdin=None,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
+            self._proc = subprocess.Popen(
+                self._cmd,
+                cwd=self._cwd,
+                stdin=None,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
             self._state = RUNNING
 
     def _finalize(self, out, err):
