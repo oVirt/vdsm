@@ -37,8 +37,8 @@ from vdsm.network.link import iface as link_iface
 from vdsm.network.link import sriov
 from vdsm.network.lldp import info as lldp_info
 
+from . import canonicalize
 from . ip import address as ipaddress
-from . canonicalize import canonicalize_networks, canonicalize_bondings
 from . errors import RollbackIncomplete
 from . import netconfpersistence
 
@@ -190,8 +190,10 @@ def setupNetworks(networks, bondings, options):
                   'networks:%r, bondings:%r, options:%r' % (networks,
                                                             bondings, options))
     try:
-        canonicalize_networks(networks)
-        canonicalize_bondings(bondings)
+        canonicalize.canonicalize_networks(networks)
+        canonicalize.canonicalize_external_bonds_used_by_nets(networks,
+                                                              bondings)
+        canonicalize.canonicalize_bondings(bondings)
 
         logging.debug('Validating configuration')
         validator.validate(networks, bondings)

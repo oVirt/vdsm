@@ -21,9 +21,10 @@ from __future__ import absolute_import
 
 import six
 
-from .netinfo import bridges, dns
+from .netinfo import bonding, bridges, dns
 from vdsm.common.conv import tobool
 from vdsm.network.ip.address import prefix2netmask
+from vdsm.network.link import bond
 from vdsm.network.link import iface
 
 from .errors import ConfigNetworkError
@@ -66,6 +67,21 @@ def canonicalize_bondings(bonds):
 
         _canonicalize_bond_slaves(attrs)
         _canonicalize_switch_type_bond(attrs)
+
+
+def canonicalize_external_bonds_used_by_nets(nets, bonds):
+    for netattrs in six.viewvalues(nets):
+        if 'remove' in netattrs:
+            continue
+        bondname = netattrs.get('bonding')
+        if bondname and bondname not in bonds:
+            bond_dev = bond.Bond(bondname)
+            if bond_dev.exists():
+                bonds[bondname] = {
+                    'nics': list(bond_dev.slaves),
+                    'options': bonding.bondOptsForIfcfg(bond_dev.options),
+                    'switch': netattrs['switch']
+                }
 
 
 def _canonicalize_remove(data):
