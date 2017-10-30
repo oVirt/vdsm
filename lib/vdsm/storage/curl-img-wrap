@@ -28,7 +28,7 @@
 # Other future possible improvements are: image streaming to raw (collapse a
 # qcow chain to raw using e.g. qemu-img), image compressing (gzip), etc.
 # This utility is not using any particular advanced multi-process tool (e.g.
-# CPopen) because its only scope is to pipe and launch the processes and at
+# Popen) because its only scope is to pipe and launch the processes and at
 # the end collect the statuses. The reliability is demanded to the calling
 # process (e.g. execCmd in curlImgWrap.py).
 
