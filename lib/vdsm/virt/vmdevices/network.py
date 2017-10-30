@@ -67,6 +67,7 @@ class Interface(core.Base):
             'device': core.find_device_type(dev),
             'type': core.find_device_type(dev),
             'custom': meta.get('custom', {}),
+            'vmid': meta['vmid'],
             'vm_custom': {},
             'specParams': {},
         }

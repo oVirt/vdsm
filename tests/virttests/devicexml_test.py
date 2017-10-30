@@ -1056,7 +1056,9 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                     <outbound average="128" burst="256"/>
                 </bandwidth>
             </interface>'''
-        self._check_roundtrip(vmdevices.network.Interface, interface_xml)
+        meta = {'vmid': 'VMID'}
+        self._check_roundtrip(
+            vmdevices.network.Interface, interface_xml, meta=meta)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: FakeProxy())
@@ -1107,10 +1109,12 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 <boot order="9"/>
                 <driver name="vfio"/>
             </interface>'''
+        meta = {'vmid': 'VMID'}
         with MonkeyPatchScope([
             (hostdev, 'libvirtconnection', FakeLibvirtConnection())
         ]):
-            self._check_roundtrip(vmdevices.network.Interface, interface_xml)
+            self._check_roundtrip(
+                vmdevices.network.Interface, interface_xml, meta=meta)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: FakeProxy())
@@ -1135,10 +1139,12 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 <boot order="9"/>
                 <driver name="vfio"/>
             </interface>'''
+        meta = {'vmid': 'VMID'}
         with MonkeyPatchScope([
             (hostdev, 'libvirtconnection', FakeLibvirtConnection())
         ]):
-            self._check_roundtrip(vmdevices.network.Interface, interface_xml)
+            self._check_roundtrip(
+                vmdevices.network.Interface, interface_xml, meta=meta)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: FakeProxy())
@@ -1154,6 +1160,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
               </source>
               <driver name='vfio'/>
             </interface>'''
+        meta = {'vmid': 'VMID'}
         with MonkeyPatchScope([
             (hostdev.libvirtconnection, 'get', hostdevlib.Connection),
             (vmdevices.hostdevice, 'detach_detachable',
@@ -1161,7 +1168,8 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             (vmdevices.hostdevice, 'reattach_detachable',
                 lambda *args, **kwargs: None),
         ]):
-            self._check_roundtrip(vmdevices.network.Interface, interface_xml)
+            self._check_roundtrip(
+                vmdevices.network.Interface, interface_xml, meta=meta)
 
     @MonkeyPatch(vmdevices.network.net_api, 'net2vlan', lambda x: 101)
     def test_interface_ovs(self):
@@ -1203,6 +1211,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                     <sndbuf>128</sndbuf>
                 </tune>
             </interface>'''
+        meta = {'vmid': 'VMID'}
 
         with MonkeyPatchScope([
             (vmdevices.network.supervdsm, 'getProxy', lambda: proxy)
@@ -1210,7 +1219,8 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             self._check_roundtrip(
                 vmdevices.network.Interface,
                 interface_xml,
-                expected_xml=expected_xml
+                expected_xml=expected_xml,
+                meta=meta
             )
 
     # TODO: add test with OVS and DPDK enabled
