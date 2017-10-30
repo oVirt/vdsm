@@ -33,7 +33,6 @@ import io
 import logging
 import os
 import re
-import subprocess
 import tarfile
 import time
 import threading
@@ -50,7 +49,7 @@ from vdsm.common import concurrent
 from vdsm.common import password
 from vdsm.common import response
 from vdsm.common import zombiereaper
-from vdsm.common.compat import CPopen
+from vdsm.common.compat import subprocess
 from vdsm.common.config import config
 from vdsm.common.define import errCode, doneCode
 from vdsm.common.logutils import traceback
@@ -790,7 +789,7 @@ class PipelineProc(object):
 
         for p in self._procs:
             if deadline is not None:
-                # NOTE: CPopen doesn't support timeout argument.
+                # NOTE: we do not want to use Popen's auto-killing timeout
                 while monotonic_time() < deadline:
                     p.poll()
                     if p.returncode is not None:
@@ -1484,6 +1483,7 @@ def _simple_exec_cmd(command, env=None, nice=None, ioclass=None,
 
     logging.debug(cmdutils.command_log_line(command, cwd=None))
 
-    p = CPopen(command, close_fds=True, cwd=None, env=env,
-               stdin=stdin, stdout=stdout, stderr=stderr)
+    p = subprocess.Popen(
+        command, close_fds=True, cwd=None, env=env,
+        stdin=stdin, stdout=stdout, stderr=stderr)
     return p
