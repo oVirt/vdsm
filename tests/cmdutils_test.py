@@ -23,15 +23,16 @@ from __future__ import print_function
 import io
 import os
 import signal
-import subprocess
 
 import six
 
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import constants
-from vdsm.common.compat import CPopen
+from vdsm.common.compat import subprocess
 from vdsm.common.time import monotonic_time
+
+from subprocess import Popen
 
 from testValidation import skipif, slowtest
 from testlib import VdsmTestCase
@@ -57,46 +58,46 @@ class TestError(VdsmTestCase):
 class TestReceive(VdsmTestCase):
 
     def test_no_output_success(self):
-        p = CPopen(["true"],
-                   stdin=None,
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
+        p = Popen(["true"],
+                  stdin=None,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE)
         received = list(cmdutils.receive(p))
         self.assertEqual(received, [])
         self.assertEqual(p.returncode, 0)
 
     def test_no_output_error(self):
-        p = CPopen(["false"],
-                   stdin=None,
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
+        p = Popen(["false"],
+                  stdin=None,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE)
         received = list(cmdutils.receive(p))
         self.assertEqual(received, [])
         self.assertEqual(p.returncode, 1)
 
     def test_stdout(self):
-        p = CPopen(["echo", "output"],
-                   stdin=None,
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
+        p = Popen(["echo", "output"],
+                  stdin=None,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE)
         received = list(cmdutils.receive(p))
         self.assertEqual(received, [(cmdutils.OUT, b"output\n")])
         self.assertEqual(p.returncode, 0)
 
     def test_stderr(self):
-        p = CPopen(["sh", "-c", "echo error >/dev/stderr"],
-                   stdin=None,
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
+        p = Popen(["sh", "-c", "echo error >/dev/stderr"],
+                  stdin=None,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE)
         received = list(cmdutils.receive(p))
         self.assertEqual(received, [(cmdutils.ERR, b"error\n")])
         self.assertEqual(p.returncode, 0)
 
     def test_both_stdout_stderr(self):
-        p = CPopen(["sh", "-c", "echo output; echo error >/dev/stderr;"],
-                   stdin=None,
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
+        p = Popen(["sh", "-c", "echo output; echo error >/dev/stderr;"],
+                  stdin=None,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE)
         received = list(cmdutils.receive(p))
         self.assertEqual(sorted(received), sorted([
             (cmdutils.OUT, b"output\n"), (cmdutils.ERR, b"error\n")
@@ -104,10 +105,10 @@ class TestReceive(VdsmTestCase):
         self.assertEqual(p.returncode, 0)
 
     def test_timeout(self):
-        p = CPopen(["sleep", "1"],
-                   stdin=None,
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
+        p = Popen(["sleep", "1"],
+                  stdin=None,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE)
         try:
             with self.assertRaises(cmdutils.TimeoutExpired):
                 for _ in cmdutils.receive(p, 0.5):
@@ -117,10 +118,10 @@ class TestReceive(VdsmTestCase):
             p.wait()
 
     def test_timeout_with_data(self):
-        p = CPopen(["yes"],
-                   stdin=None,
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
+        p = Popen(["yes"],
+                  stdin=None,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE)
         try:
             with self.assertRaises(cmdutils.TimeoutExpired):
                 for _ in cmdutils.receive(p, 0.5):
@@ -130,10 +131,10 @@ class TestReceive(VdsmTestCase):
             p.wait()
 
     def test_no_fds(self):
-        p = CPopen(["sleep", "1"],
-                   stdin=None,
-                   stdout=None,
-                   stderr=None)
+        p = Popen(["sleep", "1"],
+                  stdin=None,
+                  stdout=None,
+                  stderr=None)
         try:
             with self.assertRaises(cmdutils.TimeoutExpired):
                 for _ in cmdutils.receive(p, 0.5):
@@ -145,8 +146,8 @@ class TestReceive(VdsmTestCase):
     def test_fds_closed(self):
         cmd = ["python", "-c",
                "import os, time; os.close(1); os.close(2); time.sleep(1)"]
-        p = CPopen(cmd, stdin=None, stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
+        p = Popen(cmd, stdin=None, stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE)
         try:
             with self.assertRaises(cmdutils.TimeoutExpired):
                 for _ in cmdutils.receive(p, 0.5):
@@ -156,19 +157,19 @@ class TestReceive(VdsmTestCase):
             p.wait()
 
     def test_terminate(self):
-        p = CPopen(["sleep", "1"],
-                   stdin=None,
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
+        p = Popen(["sleep", "1"],
+                  stdin=None,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE)
         p.terminate()
         list(cmdutils.receive(p))
         self.assertEqual(p.returncode, -signal.SIGTERM)
 
     def test_kill(self):
-        p = CPopen(["sleep", "1"],
-                   stdin=None,
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
+        p = Popen(["sleep", "1"],
+                  stdin=None,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE)
         p.kill()
         list(cmdutils.receive(p))
         self.assertEqual(p.returncode, -signal.SIGKILL)
@@ -180,11 +181,11 @@ class TestRecieveBench(VdsmTestCase):
     BUFSIZE = 1024**2
 
     def test_plain_read(self):
-        p = CPopen(["dd", "if=/dev/zero", "bs=%d" % self.BUFSIZE,
-                    "count=%d" % self.COUNT],
-                   stdin=None,
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
+        p = Popen(["dd", "if=/dev/zero", "bs=%d" % self.BUFSIZE,
+                   "count=%d" % self.COUNT],
+                  stdin=None,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE)
         start = monotonic_time()
         received = 0
         while True:
@@ -201,11 +202,11 @@ class TestRecieveBench(VdsmTestCase):
         self.assertEqual(p.returncode, 0)
 
     def test_read(self):
-        p = CPopen(["dd", "if=/dev/zero", "bs=%d" % self.BUFSIZE,
-                    "count=%d" % self.COUNT],
-                   stdin=None,
-                   stdout=subprocess.PIPE,
-                   stderr=subprocess.PIPE)
+        p = Popen(["dd", "if=/dev/zero", "bs=%d" % self.BUFSIZE,
+                   "count=%d" % self.COUNT],
+                  stdin=None,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE)
         start = monotonic_time()
         received = 0
         for src, data in cmdutils.receive(p, bufsize=self.BUFSIZE):
@@ -219,10 +220,10 @@ class TestRecieveBench(VdsmTestCase):
         self.assertEqual(p.returncode, 0)
 
     def test_write(self):
-        p = CPopen(["dd", "of=/dev/null", "bs=%d" % self.BUFSIZE],
-                   stdin=subprocess.PIPE,
-                   stdout=None,
-                   stderr=subprocess.PIPE)
+        p = Popen(["dd", "of=/dev/null", "bs=%d" % self.BUFSIZE],
+                  stdin=subprocess.PIPE,
+                  stdout=None,
+                  stderr=subprocess.PIPE)
         start = monotonic_time()
         total = self.COUNT * self.BUFSIZE
         sent = 0
