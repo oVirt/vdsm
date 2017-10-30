@@ -34,13 +34,12 @@ from __future__ import absolute_import
 
 import logging
 import re
-import subprocess
 import threading
 
 from vdsm import cmdutils
 from vdsm import constants
 from vdsm.common import concurrent
-from vdsm.common.compat import CPopen
+from vdsm.common.compat import subprocess
 from vdsm.storage import asyncevent
 from vdsm.storage import asyncutils
 from vdsm.storage import exception
@@ -295,8 +294,9 @@ class DirectioChecker(object):
         cmd = [constants.EXT_DD, "if=%s" % self._path, "of=/dev/null",
                "bs=4096", "count=1", "iflag=direct"]
         cmd = cmdutils.wrap_command(cmd)
-        self._proc = CPopen(cmd, stdin=None, stdout=None,
-                            stderr=subprocess.PIPE)
+        self._proc = subprocess.Popen(
+            cmd, stdin=None, stdout=None,
+            stderr=subprocess.PIPE)
         self._reader = self._loop.create_dispatcher(
             asyncevent.BufferedReader, self._proc.stderr, self._read_completed)
 
