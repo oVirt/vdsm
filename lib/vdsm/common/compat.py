@@ -78,11 +78,6 @@ except ImportError:
     import json  # NOQA: F401 (unused import)
 
 if six.PY2:
-    from cpopen import CPopen
-else:
-    from subprocess import Popen as CPopen  # NOQA: F401 (unused import)
-
-if six.PY2:
     import subprocess32 as subprocess
 else:
     import subprocess  # NOQA: F401 (unused import)

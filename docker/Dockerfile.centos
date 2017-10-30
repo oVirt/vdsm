@@ -22,7 +22,6 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     ovirt-imageio-common \
     psmisc \
     python-blivet \
-    python-cpopen \
     python-dateutil \
     python-decorator \
     python-devel \

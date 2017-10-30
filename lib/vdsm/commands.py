@@ -26,13 +26,13 @@ import logging
 import os
 import select
 import signal
-import subprocess
 import threading
 import time
+
 from . import cmdutils
 from .utils import terminating
 from vdsm.common.cmdutils import command_log_line, retcode_log_line
-from vdsm.common.compat import CPopen
+from vdsm.common.compat import subprocess
 from vdsm.common.osutils import uninterruptible_poll
 from vdsm import constants
 
@@ -67,7 +67,9 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
     extra = {}
     extra['stderr'] = subprocess.PIPE
     extra['stdout'] = subprocess.PIPE
-    p = CPopen(command, close_fds=True, cwd=cwd, env=env, **extra)
+    extra['stdin'] = subprocess.PIPE
+
+    p = subprocess.Popen(command, close_fds=True, cwd=cwd, env=env, **extra)
 
     if not sync:
         p = AsyncProc(p)
