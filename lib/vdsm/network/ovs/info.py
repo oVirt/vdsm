@@ -80,6 +80,7 @@ class OvsInfo(object):
                          for bridge in ovs_db.bridges}
         self._bridges_by_sb = self._get_bridges_by_sb()
         self._northbounds_by_sb = self._get_northbounds_by_sb()
+        self._northbounds_by_bridges = self._get_northbounds_by_bridges()
 
     @property
     def bridges(self):
@@ -127,6 +128,14 @@ class OvsInfo(object):
         level = port_entry['other_config'].get('vdsm_level')
 
         return {'tag': tag, 'level': level}
+
+    @property
+    def northbounds_by_bridges(self):
+        return self._northbounds_by_bridges
+
+    def _get_northbounds_by_bridges(self):
+        return {self.bridges_by_sb[sb]: nbs
+                for sb, nbs in six.iteritems(self.northbounds_by_sb)}
 
     @staticmethod
     def southbound_port(ports):

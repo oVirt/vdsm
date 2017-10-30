@@ -198,6 +198,18 @@ class NetsAdditionSetup(object):
             nic, 'other_config:vdsm_level', info.SOUTHBOUND))
 
 
+def update_network_to_bridge_mappings(ovs_info):
+    net2bridge_mappings_pairs = []
+    for bridge, networks in six.viewitems(ovs_info.northbounds_by_bridges):
+        for network in networks:
+            net2bridge_mappings_pairs.append('{}:{}'.format(network, bridge))
+    net2bridge_mappings = ','.join(net2bridge_mappings_pairs) or '""'
+    ovsdb = driver.create()
+    ovsdb.set_db_entry(
+        'open', '.', 'external-ids:ovn-bridge-mappings', net2bridge_mappings
+    ).execute()
+
+
 def _random_unicast_local_mac():
     macaddr = random.randint(0x000000000000, 0xffffffffffff)
     macaddr |= 0x020000000000  # locally administered
