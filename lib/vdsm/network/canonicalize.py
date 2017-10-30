@@ -21,7 +21,7 @@ from __future__ import absolute_import
 
 import six
 
-from .netinfo import bridges, bonding, dns
+from .netinfo import bridges, dns
 from vdsm.common.conv import tobool
 from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.link import iface
@@ -128,11 +128,7 @@ def _canonicalize_switch_type_net(data):
 
 
 def _canonicalize_switch_type_bond(data):
-    options = data.get('options', '')
-    ovs = _rget(bonding.parse_bond_options(options), ('custom', 'ovs'))
-    if tobool(ovs):
-        data['switch'] = 'ovs'
-    elif 'switch' not in data:
+    if 'switch' not in data:
         data['switch'] = 'legacy'
 
 
