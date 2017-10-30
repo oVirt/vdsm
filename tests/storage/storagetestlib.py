@@ -117,7 +117,7 @@ def fake_block_env(obj=None, sd_version=3):
         ]):
             sd_manifest = make_blocksd_manifest(tmpdir, lvm,
                                                 sd_version=sd_version)
-            fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
+            fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest, lvm)
             try:
                 yield FakeBlockEnv(tmpdir, sd_manifest, fake_sdc, lvm)
             finally:
@@ -153,8 +153,9 @@ class FakeVolume(object):
 
 
 class FakeSD(object):
-    def __init__(self, sd_manifest):
+    def __init__(self, sd_manifest, lvm=None):
         self._manifest = sd_manifest
+        self.lvm = lvm
         self.volumes = {}
 
     @property
