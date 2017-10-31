@@ -115,11 +115,11 @@ class TestUninterruptiblePoll(TestCaseBase):
     def testPipeWriteEAGAIN(self):
         def _raiseEAGAIN(pipe):
             PIPE_BUF_BYTES = 65536
-            longStr = '0' * (1 + PIPE_BUF_BYTES)
+            many_bytes = b'0' * (1 + PIPE_BUF_BYTES)
             for i in range(self.RETRIES):
                 time.sleep(self.SLEEP_INTERVAL)
                 try:
-                    os.write(pipe, longStr)
+                    os.write(pipe, many_bytes)
                 except OSError as e:
                     if e.errno not in (errno.EINTR, errno.EAGAIN):
                         raise
