@@ -253,10 +253,6 @@ class ConfStub(object):
         self.conf = conf
 
 
-def _updateDomainDescriptor(vm):
-    vm._domain = DomainDescriptor(vm._buildDomainXML())
-
-
 @contextmanager
 def VM(params=None, devices=None, runCpu=False,
        arch=cpuarch.X86_64, status=None,
@@ -266,8 +262,6 @@ def VM(params=None, devices=None, runCpu=False,
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir),
                                (libvirtconnection, 'get', Connection),
                                (containersconnection, 'get', Connection),
-                               (vm.Vm, '_updateDomainDescriptor',
-                                   _updateDomainDescriptor),
                                ]):
             vmParams = {'vmId': 'TESTING', 'vmName': 'nTESTING'}
             vmParams.update({} if params is None else params)
@@ -289,6 +283,12 @@ def VM(params=None, devices=None, runCpu=False,
             if post_copy is not None:
                 fake._post_copy = post_copy
             sampling.stats_cache.add(fake.id)
+
+            def _updateDomainDescriptor():
+                fake._domain = DomainDescriptor(fake._buildDomainXML())
+
+            fake._updateDomainDescriptor = _updateDomainDescriptor
+
             yield fake
 
 
