@@ -606,7 +606,7 @@ class Vm(object):
     lastStatus = property(_get_lastStatus, set_last_status)
 
     def __getNextIndex(self, used):
-        for n in xrange(max(used or [0]) + 2):
+        for n in range(max(used or [0]) + 2):
             if n not in used:
                 idx = n
                 break
