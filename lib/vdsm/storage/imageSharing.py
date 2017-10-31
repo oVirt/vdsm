@@ -20,10 +20,10 @@
 from __future__ import absolute_import
 
 import logging
-import signal
 
 from vdsm import commands
 from vdsm import constants
+from vdsm import utils
 from vdsm.storage import curlImgWrap
 from vdsm.storage import exception as se
 
@@ -79,8 +79,8 @@ def copyToImage(dstImgPath, methodArgs):
     totalSize = getLengthFromArgs(methodArgs)
     fileObj = methodArgs['fileObj']
     cmd = [constants.EXT_DD, "of=%s" % dstImgPath, "bs=%s" % constants.MEGAB]
-    p = commands.execCmd(cmd, sync=False, deathSignal=signal.SIGKILL)
-    try:
+    p = commands.execCmd(cmd, sync=False)
+    with utils.terminating(p):
         _copyData(fileObj, p.stdin, totalSize)
         p.stdin.close()
         if not p.wait(WAIT_TIMEOUT):
@@ -92,11 +92,6 @@ def copyToImage(dstImgPath, methodArgs):
                       p.returncode, p.stderr.read(1000))
             raise se.MiscFileWriteException()
 
-    except Exception:
-        if p.returncode is None:
-            p.kill()
-        raise
-
 
 def copyFromImage(dstImgPath, methodArgs):
     fileObj = methodArgs['fileObj']
@@ -104,14 +99,10 @@ def copyFromImage(dstImgPath, methodArgs):
     cmd = [constants.EXT_DD, "if=%s" % dstImgPath, "bs=%s" % constants.MEGAB,
            "count=%s" % (total_size / constants.MEGAB + 1)]
 
-    p = commands.execCmd(cmd, sync=False,
-                         deathSignal=signal.SIGKILL)
+    p = commands.execCmd(cmd, sync=False)
     p.blocking = True
-    try:
+    with utils.terminating(p):
         _copyData(p.stdout, fileObj, bytes_left)
-    finally:
-        if p.returncode is None:
-            p.kill()
 
 
 def _copyData(inFile, outFile, totalSize):
