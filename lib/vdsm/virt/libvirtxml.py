@@ -390,7 +390,7 @@ class Domain(object):
             cores = int(self.conf.get('smpCoresPerSocket', '1'))
             threads = int(self.conf.get('smpThreadsPerCore', '1'))
             cpu.appendChildWithArgs('topology',
-                                    sockets=str(maxVCpus / cores / threads),
+                                    sockets=str(maxVCpus // cores // threads),
                                     cores=str(cores), threads=str(threads))
 
         # CPU-pinning support
