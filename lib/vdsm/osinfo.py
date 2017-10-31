@@ -226,10 +226,10 @@ def version():
 
                 if _next_gen_node():
                     version = _get_version_id()
-                    release_name = er['release']
+                    release_name = er['release'].decode()
                 else:
-                    version = er['version']
-                    release_name = er['release']
+                    version = er['version'].decode()
+                    release_name = er['release'].decode()
     except:
         logging.error('failed to find version/release', exc_info=True)
 
