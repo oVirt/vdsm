@@ -70,33 +70,12 @@ def drive_config(**kw):
 
 
 @contextmanager
-def make_env(events_enabled, drive_infos=None):
+def make_env(events_enabled, drive_infos):
     log = logging.getLogger('test')
 
     cfg = make_config([
         ('irs', 'enable_block_threshold_event',
             'true' if events_enabled else 'false')])
-
-    # Simulating state after one extension
-    block_info = {
-        'capacity': 4 * GB,
-        'allocation': 1 * GB,
-        'physical': 2 * GB
-    }
-
-    if drive_infos is None:
-        drive_infos = [
-            (drive_config(
-                format='cow',
-                diskType=DISK_TYPE.BLOCK),
-             block_info),
-            (drive_config(
-                format='cow',
-                diskType=DISK_TYPE.BLOCK),
-             block_info),
-        ]
-        # TODO: add raw/block drive and qcow2/file drive.
-        # check we don't try to monitor or extend those drives.
 
     # the Drive class use those two tunables as class constants.
     with MonkeyPatchScope([
@@ -123,6 +102,17 @@ def allocation_threshold_for_resize_mb(block_info, drive):
 
 class DiskExtensionTestBase(VdsmTestCase):
     # helpers
+
+    BLOCK_INFOS = {
+        'capacity': 4 * GB, 'allocation': 1 * GB, 'physical': 2 * GB
+    }
+
+    DRIVE_INFOS = (
+        (drive_config(format='cow', diskType=DISK_TYPE.BLOCK),
+            BLOCK_INFOS),
+        (drive_config(format='cow', diskType=DISK_TYPE.BLOCK),
+            BLOCK_INFOS)
+    )
 
     def check_extension(self, drive_info, drive_obj, extension_req):
         poolID, volInfo, newSize, func = extension_req
@@ -159,8 +149,9 @@ class DiskExtensionTestBase(VdsmTestCase):
 class TestDiskExtensionWithPolling(DiskExtensionTestBase):
 
     def test_no_extension_allocation_below_watermark(self):
-
-        with make_env(events_enabled=False) as (testvm, dom, drives):
+        with make_env(
+                events_enabled=False,
+                drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
             vda = dom.block_info['/virtio/0']
             vda['allocation'] = 0 * MB
             vdb = dom.block_info['/virtio/1']
@@ -172,8 +163,9 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
         self.assertEqual(extended, False)
 
     def test_no_extension_maximum_size_reached(self):
-
-        with make_env(events_enabled=False) as (testvm, dom, drives):
+        with make_env(
+                events_enabled=False,
+                drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
             vda = dom.block_info['/virtio/0']
             vda['allocation'] = 0 * MB
             vdb = dom.block_info['/virtio/1']
@@ -185,8 +177,9 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
         self.assertEqual(extended, False)
 
     def test_extend_drive_allocation_crosses_watermark_limit(self):
-
-        with make_env(events_enabled=False) as (testvm, dom, drives):
+        with make_env(
+                events_enabled=False,
+                drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
             vda = dom.block_info['/virtio/0']
             vda['allocation'] = 0 * MB
             vdb = dom.block_info['/virtio/1']
@@ -200,8 +193,9 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
         self.check_extension(vdb, drives[1], testvm.cif.irs.extensions[0])
 
     def test_extend_drive_allocation_equals_next_size(self):
-
-        with make_env(events_enabled=False) as (testvm, dom, drives):
+        with make_env(
+                events_enabled=False,
+                drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
             vda = dom.block_info['/virtio/0']
             vda['allocation'] = drives[0].getNextVolumeSize(
                 vda['physical'], vda['capacity'])
@@ -214,8 +208,9 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
         self.check_extension(vda, drives[0], testvm.cif.irs.extensions[0])
 
     def test_stop_extension_loop_on_improbable_request(self):
-
-        with make_env(events_enabled=False) as (testvm, dom, drives):
+        with make_env(
+                events_enabled=False,
+                drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
             vda = dom.block_info['/virtio/0']
             vda['allocation'] = (
                 drives[0].getNextVolumeSize(
@@ -229,8 +224,9 @@ class TestDiskExtensionWithPolling(DiskExtensionTestBase):
 
     # TODO: add the same test for disk replicas.
     def test_vm_resumed_after_drive_extended(self):
-
-        with make_env(events_enabled=False) as (testvm, dom, drives):
+        with make_env(
+                events_enabled=False,
+                drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
             testvm.pause()
 
             vda = dom.block_info['/virtio/0']
@@ -262,7 +258,9 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
     # FIXME: already covered by existing cases?
 
     def test_extend_using_events(self):
-        with make_env(events_enabled=True) as (testvm, dom, drives):
+        with make_env(
+                events_enabled=True,
+                drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
 
             # first run: does nothing but set the block thresholds
             testvm.monitor_drives()
@@ -395,8 +393,10 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
                 self.assertEqual(dom.thresholds[vda.name], threshold)
 
     def test_set_new_threshold_when_state_unset_but_fails(self):
+        with make_env(
+                events_enabled=True,
+                drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
 
-        with make_env(events_enabled=True) as (testvm, dom, drives):
             for drive in drives:
                 self.assertEqual(drive.threshold_state, BLOCK_THRESHOLD.UNSET)
 
@@ -414,7 +414,10 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
         # Vm.monitor_drives must not pick up drives with
         # threshold_state == SET, so we call
         # Vm.extend_drive_if_needed explictely
-        with make_env(events_enabled=True) as (testvm, dom, drives):
+        with make_env(
+                events_enabled=True,
+                drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
+
             drives[0].threshold_state = BLOCK_THRESHOLD.SET
 
             extended = testvm.extend_drive_if_needed(drives[0])
@@ -428,8 +431,9 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
     ])
     def test_force_drive_threshold_state_exceeded(self, events_enabled,
                                                   expected_state):
-        with make_env(events_enabled=events_enabled) as (testvm, dom, drives):
-
+        with make_env(
+                events_enabled=events_enabled,
+                drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
             # Simulate event not received. Possible cases:
             # - the handling of the event in Vdsm was delayed because some
             #   blocking code was called from the libvirt event loop
@@ -454,8 +458,9 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
         # volume size is still bellow the threshold.
         # We will not extend the drive, but keep it marked for
         # extension.
-        with make_env(events_enabled=True) as (testvm, dom, drives):
-
+        with make_env(
+                events_enabled=True,
+                drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
             # NOTE: write not yet completed, so the allocation value
             # for the drive must me below than the value reported in
             # the event.
@@ -476,8 +481,9 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
                              BLOCK_THRESHOLD.EXCEEDED)
 
     def test_block_threshold_set_failure_after_drive_extended(self):
-
-        with make_env(events_enabled=True) as (testvm, dom, drives):
+        with make_env(
+                events_enabled=True,
+                drive_infos=self.DRIVE_INFOS) as (testvm, dom, drives):
 
             # first run: does nothing but set the block thresholds
             testvm.monitor_drives()
