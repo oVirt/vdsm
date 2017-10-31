@@ -391,8 +391,8 @@ class TestVm(XMLTestCase):
           </cpu> """
         cputuneXML = """
           <cputune>
-              <vcpupin cpuset="2-3" vcpu="1"/>
               <vcpupin cpuset="0-1" vcpu="0"/>
+              <vcpupin cpuset="2-3" vcpu="1"/>
           </cputune> """
 
         numatuneXML = """

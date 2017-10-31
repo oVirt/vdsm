@@ -398,7 +398,7 @@ class Domain(object):
         if 'cpuPinning' in self.conf:
             cputune = vmxml.Element('cputune')
             cpuPinning = self.conf.get('cpuPinning')
-            for cpuPin in cpuPinning.keys():
+            for cpuPin in sorted(cpuPinning.keys()):
                 cputune.appendChildWithArgs('vcpupin', vcpu=cpuPin,
                                             cpuset=cpuPinning[cpuPin])
             self.dom.appendChild(cputune)
