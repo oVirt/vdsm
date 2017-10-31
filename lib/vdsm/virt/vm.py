@@ -2220,12 +2220,12 @@ class Vm(object):
         devices_xml = self._process_devices()
         for dev_type, dev_objs in devices_xml.items():
             for dev in dev_objs:
-                domxml._devices.appendChild(etree_element=dev)
+                domxml._devices.appendChild(element=dev)
 
         for dev_objs in self._devices.values():
             for dev in dev_objs:
                 for elem in dev.get_extra_xmls():
-                    domxml._devices.appendChild(etree_element=elem)
+                    domxml._devices.appendChild(element=elem)
 
         return domxml.toxml()
 
