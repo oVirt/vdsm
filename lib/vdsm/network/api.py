@@ -171,6 +171,7 @@ def setupNetworks(networks, bondings, options):
             where 'attributes' is a dict with the following optional items:
                         nics=["<nic1>" , "<nic2>", ...]
                         options="<bonding-options>"
+                        hwaddr="<mac address>"
                         switch="legacy|..."
                         -- OR --
                         remove=True (other attributes can't be specified)

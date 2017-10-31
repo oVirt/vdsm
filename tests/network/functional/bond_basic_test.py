@@ -126,6 +126,20 @@ class TestBondBasic(NetFuncTestCase):
                 pass
         assert err.value.status == ne.ERR_BAD_PARAMS
 
+    def test_add_bond_with_enforced_mac_address(self, switch):
+        if switch == 'ovs':
+            pytest.xfail(
+                'Bond mac enforcement is currently not implemented for ovs')
+        HWADDRESS = 'ce:0c:46:59:c9:d1'
+        with dummy_devices(2) as (nic1, nic2):
+            BONDCREATE = {
+                BOND_NAME: {'nics': [nic1, nic2],
+                            'hwaddr': HWADDRESS,
+                            'switch': switch}}
+
+            with self.setupNetworks({}, BONDCREATE, NOCHK):
+                self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+
 
 @nftestlib.parametrize_switch
 class TestBondOptions(NetFuncTestCase):

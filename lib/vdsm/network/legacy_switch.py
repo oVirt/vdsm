@@ -78,6 +78,7 @@ def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
     :param vlan: vlan device name.
     :param vlan_id: vlan tag id.
     :param bonding: name of the bond.
+    :param bondattr: bond attributes if defined.
     :param nic: name of the nic.
     :param mtu: the desired network maximum transmission unit.
     :param ipaddr: IPv4 address in dotted decimal format.
@@ -117,6 +118,7 @@ def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
             configurator,
             options=bondattr.get('options'),
             nics=bondattr.get('nics'),
+            hwaddr=bondattr.get('hwaddr'),
             mtu=mtu,
             _netinfo=_netinfo,
             on_removal_just_detach_from_network=True)
@@ -449,7 +451,7 @@ def _emergency_network_cleanup(network, networkAttrs, configurator):
         if networkAttrs['bonding'] in _netinfo.bondings:
             top_net_dev = Bond.objectivize(
                 networkAttrs['bonding'], configurator, options=None, nics=None,
-                mtu=None, _netinfo=_netinfo)
+                mtu=None, _netinfo=_netinfo, hwaddr=None)
     elif 'nic' in networkAttrs:
         if networkAttrs['nic'] in _netinfo.nics:
             top_net_dev = Nic(
@@ -510,7 +512,7 @@ def _bonds_remove(bonds, configurator, _netinfo, in_rollback):
         if _is_bond_valid_for_removal(name, _netinfo, in_rollback):
             bond = Bond.objectivize(
                 name, configurator, options=None, nics=None, mtu=None,
-                _netinfo=_netinfo)
+                _netinfo=_netinfo, hwaddr=None)
             logging.debug('Removing bond %r', bond)
             _netinfo.del_bonding(name)
             bond.remove()
@@ -553,7 +555,7 @@ def _bonds_edit(bonds, configurator, _netinfo):
     for name, attrs in six.iteritems(bonds):
         bond = Bond.objectivize(
             name, configurator, attrs.get('options'), attrs.get('nics'),
-            mtu=None, _netinfo=_netinfo)
+            mtu=None, _netinfo=_netinfo, hwaddr=attrs.get('hwaddr'))
         logging.debug('Editing %r with options %r', bond, bond.options)
         configurator.editBonding(bond, _netinfo)
 
@@ -568,7 +570,7 @@ def _bonds_add(bonds, configurator, _netinfo):
     for name, attrs in six.iteritems(bonds):
         bond = Bond.objectivize(
             name, configurator, attrs.get('options'), attrs.get('nics'),
-            mtu=None, _netinfo=_netinfo)
+            mtu=None, _netinfo=_netinfo, hwaddr=attrs.get('hwaddr'))
         logging.debug('Creating %r with options %r', bond, bond.options)
         configurator.configureBond(bond)
 

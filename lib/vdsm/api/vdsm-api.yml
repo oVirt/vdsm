@@ -5525,6 +5525,11 @@ types:
             type: string
 
         -   defaultvalue: no-default
+            description: Define the Media Access Control address of the bond
+            name: hwaddr
+            type: string
+
+        -   defaultvalue: no-default
             description: Specify Switch. Legacy is used if not passed
             name: switch
             type: string

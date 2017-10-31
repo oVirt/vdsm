@@ -229,6 +229,7 @@ class NetFuncTestCase(object):
             self.assertBondOptions(bond, attrs['options'])
         self.assertBondExistsInRunninng(bond, attrs['nics'])
         self.assertBondSwitchType(bond, attrs)
+        self.assertBondHwAddress(bond, attrs)
 
     def assertBondExists(self, bond):
         assert bond in self.netinfo.bondings
@@ -250,6 +251,12 @@ class NetFuncTestCase(object):
         requested_switch = bondattrs.get('switch', 'legacy')
         running_switch = self.netinfo.bondings[bondname]['switch']
         assert requested_switch == running_switch
+
+    def assertBondHwAddress(self, bondname, bondattrs):
+        requested_hwaddress = bondattrs.get('hwaddr')
+        if requested_hwaddress:
+            actual_hwaddress = self.netinfo.bondings[bondname]['hwaddr']
+            assert requested_hwaddress == actual_hwaddress
 
     def assertNoBond(self, bond):
         self.assertNoBondExists(bond)

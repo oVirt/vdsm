@@ -202,13 +202,14 @@ class Bridge(NetDevice):
 class Bond(NetDevice):
     def __init__(self, name, configurator, ipv4=None, ipv6=None,
                  blockingdhcp=False, mtu=None, slaves=(), options=None,
-                 on_removal_just_detach_from_network=False):
+                 hwaddr=None, on_removal_just_detach_from_network=False):
         for slave in slaves:
             slave.master = self
         self.slaves = slaves
         options = options or ''
         self.validateOptions(options)
         self.options = self._reorderOptions(options)
+        self.hwaddr = hwaddr
         self.on_removal_just_detach_from_network = \
             on_removal_just_detach_from_network
         super(Bond, self).__init__(name, configurator, ipv4, ipv6,
@@ -234,12 +235,17 @@ class Bond(NetDevice):
             nics.operstate(self.name) == nics.OPERSTATE_UP and
             self.configurator.net_info.ifaceUsers(self.name) and
             self.mtu <= link_iface.iface(self.name).mtu() and
+            not self._bond_hwaddr_changed() and
             self.areOptionsApplied() and
             frozenset(slave.name for slave in self.slaves) ==
                 frozenset(link_bond.Bond(self.name).slaves)):
                 return
 
         self.configurator.configureBond(self, **opts)
+
+    def _bond_hwaddr_changed(self):
+        return (self.hwaddr and
+                self.hwaddr != link_iface.iface(self.name).address())
 
     def areOptionsApplied(self):
         # TODO: this method returns True iff self.options are a subset of the
@@ -276,7 +282,7 @@ class Bond(NetDevice):
 
     @classmethod
     def objectivize(cls, name, configurator, options, nics, mtu, _netinfo,
-                    on_removal_just_detach_from_network=False):
+                    hwaddr, on_removal_just_detach_from_network=False):
 
         if nics:  # New bonding or edit bonding.
             slaves = cls._objectivizeSlaves(name, configurator, _nicSort(nics),
@@ -303,7 +309,7 @@ class Bond(NetDevice):
 
         detach = on_removal_just_detach_from_network  # argument is too long
         return cls(name, configurator, slaves=slaves, options=options, mtu=mtu,
-                   on_removal_just_detach_from_network=detach)
+                   hwaddr=hwaddr, on_removal_just_detach_from_network=detach)
 
     @classmethod
     def validateOptions(cls, bondingOptions):

@@ -644,6 +644,8 @@ class ConfigWriter(object):
         opts['hotplug'] = 'no'  # So that udev doesn't trigger an ifup
         if bond.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(bond.bridge.name)
+        if bond.hwaddr:
+            conf += 'MACADDR=%s\n' % pipes.quote(bond.hwaddr)
         conf += 'ONBOOT=yes\n'
 
         ipv4, ipv6, mtu, nameservers = self._getIfaceConfValues(bond, net_info)
