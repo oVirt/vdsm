@@ -4641,7 +4641,7 @@ class Vm(object):
                       actionToString(action))
 
     def changeCD(self, cdromspec):
-        if isinstance(cdromspec, basestring):
+        if isinstance(cdromspec, six.string_types):
             # < 4.0 - known cdrom interface/index
             drivespec = cdromspec
             if cpuarch.is_ppc(self.arch) or cpuarch.is_s390(self.arch):
