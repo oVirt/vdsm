@@ -543,14 +543,13 @@ def make_drive(log, dom, irs, index, conf, block_info):
 
     dom.block_info[drive.path] = utils.picklecopy(block_info)
 
-    if drive.diskType == DISK_TYPE.BLOCK and drive.format == 'raw':
-        irs.set_drive_size(drive, block_info['capacity'])
-    elif drive.diskType == DISK_TYPE.BLOCK and drive.format == 'cow':
-        irs.set_drive_size(drive, block_info['physical'])
-    elif drive.diskType == DISK_TYPE.FILE and drive.format == 'raw':
-        irs.set_drive_size(drive, block_info['capacity'])
-    elif drive.diskType == DISK_TYPE.FILE and drive.format == 'cow':
-        irs.set_drive_size(drive, block_info['physical'])
+    if (drive.format == "raw" and
+            block_info["physical"] != block_info["capacity"]):
+        raise RuntimeError(
+            "Invalid test data - "
+            "raw disk capacity != physical: %s" % block_info)
+
+    irs.set_drive_size(drive, block_info['physical'])
 
     return drive
 
