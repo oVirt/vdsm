@@ -670,8 +670,17 @@ class Vm(object):
 
         self._checkDeviceLimits(devices)
 
+        self._normalize_storage_params(devices[hwclass.DISK])
+
+        # Preserve old behavior. Since libvirt add a memory balloon device
+        # to all guests, we need to specifically request not to add it.
+        self._normalizeBalloonDevice(devices[hwclass.BALLOON])
+
+        return devices
+
+    def _normalize_storage_params(self, disk_params):
         # Normalize vdsm images
-        for drv in devices[hwclass.DISK]:
+        for drv in disk_params:
             if isVdsmImage(drv):
                 try:
                     self._normalizeVdsmImg(drv)
@@ -682,13 +691,7 @@ class Vm(object):
                     if not self.recovering:
                         raise
 
-        self.normalizeDrivesIndices(devices[hwclass.DISK])
-
-        # Preserve old behavior. Since libvirt add a memory balloon device
-        # to all guests, we need to specifically request not to add it.
-        self._normalizeBalloonDevice(devices[hwclass.BALLOON])
-
-        return devices
+        self.normalizeDrivesIndices(disk_params)
 
     def _normalizeBalloonDevice(self, balloonDevices):
         EMPTY_BALLOON = {'type': hwclass.BALLOON,
@@ -2566,7 +2569,10 @@ class Vm(object):
 
         disk_params = vmdevices.common.storage_device_params_from_domain_xml(
             self.id, self.domain, self._md_desc, self.log)
+
         if disk_params:
+            self._normalize_storage_params(disk_params)
+
             if not self.recovering:
                 self._preparePathsForDrives(disk_params)
                 self._prepareTransientDisks(disk_params)
