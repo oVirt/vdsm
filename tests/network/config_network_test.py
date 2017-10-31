@@ -51,7 +51,8 @@ class TestConfigNetwork(TestCaseBase):
 
         with self.assertRaises(errors.ConfigNetworkError) as cneContext:
             canonicalize_networks({netName: opts})
-            legacy_switch._add_network(netName, configurator, fakeInfo, **opts)
+            legacy_switch._add_network(netName, configurator, fakeInfo, None,
+                                       **opts)
         self.assertEqual(cneContext.exception.errCode, errCode)
 
     # Monkey patch the real network detection from the netinfo module.

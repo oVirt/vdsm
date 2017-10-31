@@ -63,7 +63,7 @@ _persistence = _get_persistence_module()
 
 
 def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
-                         nic=None, mtu=None, ipaddr=None,
+                         bondattr=None, nic=None, mtu=None, ipaddr=None,
                          netmask=None, gateway=None, bootproto=None,
                          ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
                          dhcpv6=None, defaultRoute=None, nameservers=None,
@@ -110,9 +110,16 @@ def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
 
     top_net_dev = None
     if bonding:
+        if bondattr is None:
+            bondattr = {}
         top_net_dev = Bond.objectivize(
-            bonding, configurator, options=None, nics=None, mtu=mtu,
-            _netinfo=_netinfo, on_removal_just_detach_from_network=True)
+            bonding,
+            configurator,
+            options=bondattr.get('options'),
+            nics=bondattr.get('nics'),
+            mtu=mtu,
+            _netinfo=_netinfo,
+            on_removal_just_detach_from_network=True)
     elif nic:
         bond = _netinfo.getBondingForNic(nic)
         if bond:
@@ -151,17 +158,17 @@ def _alter_running_config(func):
     """
 
     @wraps(func)
-    def wrapped(network, configurator, net_info, **kwargs):
+    def wrapped(network, configurator, net_info, bondattr, **kwargs):
         if func.__name__ == '_del_network':
             configurator.runningConfig.removeNetwork(network)
         else:
             configurator.runningConfig.setNetwork(network, kwargs)
-        return func(network, configurator, net_info, **kwargs)
+        return func(network, configurator, net_info, bondattr, **kwargs)
     return wrapped
 
 
 @_alter_running_config
-def _add_network(network, configurator, _netinfo, nameservers,
+def _add_network(network, configurator, _netinfo, bondattr, nameservers,
                  vlan=None, bonding=None, nic=None, ipaddr=None,
                  netmask=None, mtu=None, gateway=None,
                  dhcpv6=None, ipv6addr=None, ipv6gateway=None,
@@ -189,7 +196,7 @@ def _add_network(network, configurator, _netinfo, nameservers,
 
     net_ent = _objectivize_network(
         bridge=network if bridged else None, vlan_id=vlan, bonding=bonding,
-        nic=nic, mtu=mtu, ipaddr=ipaddr,
+        bondattr=bondattr, nic=nic, mtu=mtu, ipaddr=ipaddr,
         netmask=netmask, gateway=gateway, bootproto=bootproto, dhcpv6=dhcpv6,
         blockingdhcp=blockingdhcp, ipv6addr=ipv6addr, ipv6gateway=ipv6gateway,
         ipv6autoconf=ipv6autoconf, defaultRoute=defaultRoute,
@@ -250,8 +257,8 @@ def _assert_bridge_clean(bridge, vlan, bonding, nics):
 
 
 @_alter_running_config
-def _del_network(network, configurator, _netinfo, bypass_validation=False,
-                 keep_bridge=False, **options):
+def _del_network(network, configurator, _netinfo, bondattr,
+                 bypass_validation=False, keep_bridge=False, **options):
     nics, vlan, vlan_id, bonding = _netinfo.getNicsVlanAndBondingForNetwork(
         network)
     bridged = _netinfo.networks[network]['bridged']
@@ -333,7 +340,7 @@ def remove_networks(networks, bondings, configurator, _netinfo):
                 net_kernel_config=kernel_config.networks[network]
             )
 
-            _del_network(network, configurator, _netinfo,
+            _del_network(network, configurator, _netinfo, None,
                          keep_bridge=keep_bridge)
             _netinfo.updateDevices()
         elif network in running_nets:
@@ -374,7 +381,7 @@ def _del_broken_network(network, netAttr, configurator):
         configurator.runningConfig.removeNetwork(network)
         return
     canonicalize_networks({network: _netinfo.networks[network]})
-    _del_network(network, configurator, _netinfo, bypass_validation=True)
+    _del_network(network, configurator, _netinfo, None, bypass_validation=True)
 
 
 def _should_keep_bridge(network_attrs, currently_bridged, net_kernel_config):
@@ -413,13 +420,15 @@ def add_missing_networks(configurator, networks, bondings, _netinfo):
         if 'remove' in attrs:
             continue
 
+        bondattr = None
         bond = attrs.get('bonding')
         if bond:
             _check_bonding_availability(bond, bondings, _netinfo)
+            bondattr = bondings.get(bond)
 
         logging.debug('Adding network %r', network)
         try:
-            _add_network(network, configurator, _netinfo, **attrs)
+            _add_network(network, configurator, _netinfo, bondattr, **attrs)
         except ConfigNetworkError as cne:
             if cne.errCode == ne.ERR_FAILED_IFUP:
                 logging.debug('Adding network %r failed. Running '
