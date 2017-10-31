@@ -39,6 +39,7 @@ check-distpkg() {
 }
 
 EXPORT_DIR="$PWD/exported-artifacts"
+mkdir -p $EXPORT_DIR
 
 collect-logs() {
     cp /var/log/vdsm_tests.log "$EXPORT_DIR"/
