@@ -26,6 +26,7 @@ from vdsm.common.conv import tobool
 from vdsm.network.ip.address import prefix2netmask
 from vdsm.network.link import bond
 from vdsm.network.link import iface
+from vdsm.network.netconfpersistence import RunningConfig
 
 from .errors import ConfigNetworkError
 from . import errors as ne
@@ -60,7 +61,7 @@ def canonicalize_bondings(bonds):
     Given bondings configuration, explicitly add missing defaults.
     :param bonds: The bonding configuration
     """
-    for attrs in six.itervalues(bonds):
+    for bondname, attrs in six.viewitems(bonds):
         # If bond is marked for removal, normalize the mark to boolean and
         # ignore all other attributes canonization.
         if _canonicalize_remove(attrs):
@@ -68,6 +69,7 @@ def canonicalize_bondings(bonds):
 
         _canonicalize_bond_slaves(attrs)
         _canonicalize_switch_type_bond(attrs)
+        _canonicalize_bond_hwaddress(bondname, attrs)
 
 
 def canonicalize_external_bonds_used_by_nets(nets, bonds):
@@ -215,3 +217,25 @@ def _rget(dict, keys, default=None):
     elif len(keys) == 0:
         return dict
     return _rget(dict.get(keys[0]), keys[1:], default)
+
+
+def _canonicalize_bond_hwaddress(bondname, bondattrs):
+    if 'hwaddr' not in bondattrs:
+        if _bond_hwaddr_should_be_enforced(bondname):
+            bondattrs['hwaddr'] = iface.iface(bondname).address()
+
+
+def _bond_hwaddr_should_be_enforced(bondname):
+    """
+    Bond MAC address is to be enforced under these conditions:
+        - Bond device exists already.
+        - One of these conditions exists (OR):
+            - Unowned by VDSM (not in running config).
+            - Owned by VDSM and HWADDR is specified in the config.
+    """
+    bond_dev = bond.Bond(bondname)
+    if bond_dev.exists():
+        running_bonds = RunningConfig().bonds
+        bondattr = running_bonds.get(bondname)
+        return not bondattr or bondattr.get('hwaddr')
+    return False

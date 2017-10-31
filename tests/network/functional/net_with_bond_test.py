@@ -24,6 +24,8 @@ import pytest
 
 from vdsm.network import errors as ne
 from vdsm.network.configurators.ifcfg import ifup, ifdown
+from vdsm.network.link.bond import Bond
+from vdsm.network.link.iface import iface
 from vdsm.network.netlink import waitfor
 
 from . import netfunctestlib as nftestlib
@@ -167,6 +169,27 @@ class TestReuseBond(NetFuncTestCase):
                                            NETBASE[NETWORK1_NAME])
                         self.assertNetwork(NETWORK2_NAME,
                                            NETVLAN[NETWORK2_NAME])
+
+    def test_add_net_on_existing_external_bond_preserving_mac(self, switch):
+        if switch == 'ovs':
+            pytest.xfail('Preserving bond mac is not supported on OVS switch.')
+        HWADDRESS = 'ce:0c:46:59:c9:d1'
+        with dummy_devices(2) as (nic1, nic2):
+            with Bond(BOND_NAME, slaves=(nic1, nic2)) as bond:
+                bond.create()
+                iface(BOND_NAME).set_address(HWADDRESS)
+
+                NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
+                                           'bridged': False,
+                                           'switch': switch}}
+                with self.setupNetworks(NETBASE, {}, NOCHK):
+                    self.assertNetwork(NETWORK1_NAME,
+                                       NETBASE[NETWORK1_NAME])
+                    self.assertBond(BOND_NAME,
+                                    {'nics': [nic1, nic2],
+                                     'hwaddr': HWADDRESS,
+                                     'switch': switch})
+            self.setupNetworks({}, {BOND_NAME: {'remove': True}}, NOCHK)
 
     def test_del_one_of_two_nets_with_same_bond_different_mtus(self, switch):
         if switch == 'ovs':
