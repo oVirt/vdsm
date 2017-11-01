@@ -5465,7 +5465,27 @@ class Vm(object):
                     self.untrackBlockJob(jobID)
                     continue
 
-                drive = self._findDriveByUUIDs(storedJob['disk'])
+                try:
+                    drive = self._findDriveByUUIDs(storedJob['disk'])
+                except LookupError:
+                    # Drive loopkup may fail only in case of active layer
+                    # merge, and pivot completed.
+                    disk = storedJob['disk']
+                    if disk["volumeID"] != storedJob["topVolume"]:
+                        self.log.error("Cannot find drive for job %s "
+                                       "(disk=%s)",
+                                       jobID, storedJob['disk'])
+                        continue
+                    # Active layer merge, check if pivot completed.
+                    pivoted_drive = dict(disk)
+                    pivoted_drive["volumeID"] = storedJob["baseVolume"]
+                    try:
+                        drive = self._findDriveByUUIDs(pivoted_drive)
+                    except LookupError:
+                        self.log.error("Pivot completed but cannot find drive "
+                                       "for job %s (disk=%s)",
+                                       jobID, pivoted_drive)
+                        continue
                 entry = {'id': jobID, 'jobType': 'block',
                          'blockJobType': storedJob['blockJobType'],
                          'bandwidth': 0, 'cur': '0', 'end': '0',
