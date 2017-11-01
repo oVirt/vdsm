@@ -691,18 +691,19 @@ class Vm(object):
                          'device': 'memballoon',
                          'specParams': {
                              'model': 'none'}}
-
-        # TODO: in the engine XML path we will need to fetch this data
-        # from the device metadata
-
-        # Avoid overriding the saved balloon target value on recovery.
-        if not self.recovering:
-            for dev in balloonDevices:
-                dev['target'] = self.mem_size_mb() * 1024
-                dev['minimum'] = self._mem_guaranteed_size_mb * 1024
-
         if not balloonDevices:
             balloonDevices.append(EMPTY_BALLOON)
+
+    def _initialize_balloon(self, balloon_devs):
+        if len(balloon_devs) < 1:
+            self.log.warning("No balloon device present")
+            return
+        elif len(balloon_devs) > 1:
+            self.log.warning("Multiple balloon devices present")
+            return
+        dev = balloon_devs[0]
+        dev.target = self.mem_size_mb(current=self.recovering) * 1024
+        dev.minimum = self._mem_guaranteed_size_mb * 1024
 
     def _checkDeviceLimits(self, devices):
         # libvirt only support one watchdog and one console device
@@ -761,11 +762,11 @@ class Vm(object):
 
         return response.success(vmList=self.status())
 
-    def mem_size_mb(self):
-        mem_size_mb = self._domain.get_memory_size()
+    def mem_size_mb(self, current=False):
+        mem_size_mb = self._domain.get_memory_size(current=current)
         if mem_size_mb is None:
             self._updateDomainDescriptor()
-            mem_size_mb = self._domain.get_memory_size()
+            mem_size_mb = self._domain.get_memory_size(current=current)
         return mem_size_mb
 
     def memory_info(self):
@@ -2541,6 +2542,8 @@ class Vm(object):
             self._dom = virdomain.Defined(self.id, dom)
 
         self._devices = self._make_devices()
+        # We (re)initialize the balloon values in all the flows.
+        self._initialize_balloon(self._devices[hwclass.BALLOON])
 
         # We should set this event as a last part of drives initialization
         self._pathsPreparedEvent.set()

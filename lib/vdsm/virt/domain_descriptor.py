@@ -80,11 +80,16 @@ class MutableDomainDescriptor(object):
         """
         return self._dom.findtext('vcpu')
 
-    def get_memory_size(self):
+    def get_memory_size(self, current=False):
         """
-        Return the vm memory from xml in MiB
+        Return the vm memory from xml in MiB.
+
+        :param current: If true, return current memory size (which may be
+          reduced by balloon); if false, return boot time memory size.
+        :type current: bool
         """
-        memory = vmxml.find_first(self._dom, "memory", None)
+        tag = 'currentMemory' if current else 'memory'
+        memory = vmxml.find_first(self._dom, tag, None)
         return int(vmxml.text(memory)) // 1024 if memory is not None else None
 
     def on_reboot_config(self):
