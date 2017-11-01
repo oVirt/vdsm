@@ -2096,21 +2096,27 @@ class Vm(object):
         for dev_type, dev_objs in self._devices.items():
             for dev in dev_objs:
                 try:
-                    dev_xml = dev.getXML()
-                except vmdevices.core.SkipDevice:
-                    self.log.info('Skipping device %s.', dev.device)
-                    continue
+                    try:
+                        dev_xml = dev.getXML()
+                    except vmdevices.core.SkipDevice:
+                        self.log.info('Skipping device %s.', dev.device)
+                        continue
 
-                deviceXML = vmxml.format_xml(dev_xml)
+                    deviceXML = vmxml.format_xml(dev_xml)
 
-                if getattr(dev, "custom", {}):
-                    deviceXML = hooks.before_device_create(
-                        deviceXML, self._custom, dev.custom)
-                    dev_xml = vmxml.parse_xml(deviceXML)
+                    if getattr(dev, "custom", {}):
+                        deviceXML = hooks.before_device_create(
+                            deviceXML, self._custom, dev.custom)
+                        dev_xml = vmxml.parse_xml(deviceXML)
 
-                dev._deviceXML = deviceXML
+                    dev._deviceXML = deviceXML
 
-                devices_xml[dev_type].append(dev_xml)
+                    devices_xml[dev_type].append(dev_xml)
+                except:
+                    device_id = getattr(dev, 'device', 'unidentified')
+                    self.log.error('Processing device %s failed.', device_id)
+                    self.log.info('Device content: %s', dev)
+                    raise
         return devices_xml
 
     def _prepare_hugepages(self):
