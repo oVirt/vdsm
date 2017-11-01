@@ -1536,7 +1536,7 @@ class BlockStorageDomain(sd.StorageDomain):
             lvm.extendLV(self.sdUUID, volumeUUID, size)  # , isShuttingDown)
 
     def reduceVolume(self, imgUUID, volUUID, allowActive=False):
-        with self._manifest._extendlock:
+        with self.manifest.metadata_lock:
             vol = self.produceVolume(imgUUID, volUUID)
             vol.reduce(vol.optimal_size() // sc.BLOCK_SIZE,
                        allowActive=allowActive)
