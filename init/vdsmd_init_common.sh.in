@@ -110,19 +110,12 @@ task_tune_system(){
 
 _CONF_FILE="@CONFDIR@/vdsm.conf"
 _GETCONFITEM="@LIBEXECDIR@/get-conf-item"
-_DOM_METADATA_BACKUP_DIR="@VDSMLOGDIR@/backup"
 
 _mk_data_center() {
     local dc
     dc="$("${_GETCONFITEM}" "${_CONF_FILE}" irs repository /rhev/)"
     @MKDIR_P@ "${dc}"
     "@CHOWN_PATH@" @VDSMUSER@:@VDSMGROUP@ "${dc}"
-}
-
-_mk_dom_backup() {
-    @MKDIR_P@ "${_DOM_METADATA_BACKUP_DIR}" > /dev/null 2>&1
-    "@CHOWN_PATH@" @METADATAUSER@:@METADATAGROUP@ "$(dirname "${_DOM_METADATA_BACKUP_DIR}")" > /dev/null 2>&1
-    "@CHOWN_PATH@" @METADATAUSER@:@METADATAGROUP@ "${_DOM_METADATA_BACKUP_DIR}" > /dev/null 2>&1
 }
 
 _mk_core_path() {
@@ -157,7 +150,6 @@ _mk_console_path() {
 task_mkdirs(){
     _mk_data_center
     _mk_core_path
-    _mk_dom_backup
     _mk_run_path
     _mk_console_path
 }
