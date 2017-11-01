@@ -5272,7 +5272,7 @@ class Vm(object):
             if all([bool(drive[x] == job['disk'][x])
                     for x in ('imageID', 'domainID', 'volumeID')]):
                 return job
-        raise LookupError("No block job found for drive '%s'", drive.name)
+        raise LookupError("No block job found for drive %r" % drive.name)
 
     def trackBlockJob(self, jobID, drive, base, top, strategy):
         driveSpec = dict((k, drive[k]) for k in
