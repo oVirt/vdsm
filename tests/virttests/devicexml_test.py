@@ -1260,6 +1260,32 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             )
             self._check_device_xml(dev, storage_xml)
 
+    def test_storage_from_incomplete_xml(self):
+        storage_xml = '''<disk device="disk" snapshot="no" type="file">
+            <source/>
+            <target bus="virtio" dev="vda"/>
+            <serial>54-a672-23e5b495a9ea</serial>
+            <driver cache="none" error_policy="stop"
+                    io="threads" name="qemu" type="raw"/>
+        </disk>'''
+        expected_xml = '''<disk device="disk" snapshot="no" type="file">
+            <source file=""/>
+            <target bus="virtio" dev="vda"/>
+            <serial>54-a672-23e5b495a9ea</serial>
+            <driver cache="none" error_policy="stop"
+                    io="threads" name="qemu" type="raw"/>
+        </disk>'''
+        with MonkeyPatchScope([
+            (utils, 'isBlockDevice', lambda path: False)
+        ]):
+            dev = vmdevices.storage.Drive(
+                self.log, **vmdevices.storagexml.parse(
+                    vmxml.parse_xml(storage_xml),
+                    {}
+                )
+            )
+            self._check_device_xml(dev, expected_xml)
+
     def _check_roundtrip(self, klass, dev_xml, meta=None, expected_xml=None):
         dev = klass.from_xml_tree(
             self.log,

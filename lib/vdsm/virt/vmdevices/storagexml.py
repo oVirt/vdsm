@@ -86,7 +86,7 @@ def _update_source_params(params, disk_type, source):
     if disk_type == 'block':
         path = source.attrib.get('dev')
     elif disk_type == 'file':
-        path = source.attrib.get('file')
+        path = source.attrib.get('file', '')
     elif 'protocol' in source.attrib:
         path = source.attrib.get('name')
         params['protocol'] = source.attrib.get('protocol')
