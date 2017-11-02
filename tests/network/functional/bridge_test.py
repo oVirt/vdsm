@@ -24,7 +24,6 @@ from contextlib import contextmanager
 
 import pytest
 
-from network import nmnettestlib
 from vdsm.network.cmd import exec_sync
 from vdsm.network.link.iface import iface
 from vdsm.network.netlink import waitfor
@@ -69,8 +68,8 @@ class TestBridge(nftestlib.NetFuncTestCase):
             with self.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                 self.assertNetwork(brname, NETCREATE[brname])
 
-    @pytest.mark.skipif(nmnettestlib.is_networkmanager_running(),
-                        reason='Unstable while NM is running (BZ#1498022)')
+    @pytest.mark.skip(reason='Unstable link while NM is running (BZ#1498022) '
+                             'and on CI even with NM down')
     @pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy')])
     def test_create_network_and_reuse_existing_owned_bridge(self, switch):
         with dummy_devices(2) as (nic1, nic2):
