@@ -122,7 +122,7 @@ def dhcp_info(devices):
         if not args:
             continue
 
-        dev = args[-1]
+        dev = _detect_device(args)
         if dev not in info:
             continue
 
@@ -130,6 +130,14 @@ def dhcp_info(devices):
         info[dev][dhcp_version_key] = True
 
     return info
+
+
+def _detect_device(args):
+    for argnum in range(len(args) - 1, 0, -1):
+        if args[argnum].startswith('-') or args[argnum - 1].startswith('-'):
+            continue
+        return args[argnum]
+    return None
 
 
 def _pid_lookup(device_name, family):
