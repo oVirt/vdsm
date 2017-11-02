@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 #
 from __future__ import absolute_import
 
+import glob
 import json
 import logging
 import os
@@ -26,8 +27,12 @@ import six
 import yaml
 
 from vdsm import utils
+from vdsm.common.compat import pickle
 from vdsm.common.logutils import Suppressed
 from yajsonrpc.exception import JsonRpcInvalidParamsError
+
+
+VDSM_CACHE_DIR = '/var/cache/vdsm/schema'
 
 
 PRIMITIVE_TYPES = {'boolean': lambda value: isinstance(value, bool),
@@ -73,6 +78,33 @@ def _load_yaml_file(file_name):
     return yaml_file
 
 
+def _get_pickle_schema_path(yaml_schema_path):
+    basename = os.path.basename(yaml_schema_path)
+    file_name = os.path.splitext(basename)[0]
+    return os.path.join(VDSM_CACHE_DIR, file_name + '.pickle')
+
+
+def caches_up_to_date():
+    for path in find_all_schemas():
+        pickle_path = _get_pickle_schema_path(path)
+        if (not os.path.exists(pickle_path) or
+            round(os.stat(path).st_mtime, 2) !=
+                round(os.stat(pickle_path).st_mtime, 2)):
+            return False
+    return True
+
+
+def find_all_schemas():
+    schema_paths = []
+    localpath = os.path.dirname(__file__)
+    installedpath = os.path.join(localpath, '..', 'rpc')
+    for path in (localpath, installedpath):
+        for f in glob.glob(path + '/*.yml'):
+            schema_paths.append(os.path.join(path, f))
+
+    return schema_paths
+
+
 def find_schema(schema_name='vdsm-api'):
     """
     Find the API schema file whether we are running from within the source
@@ -90,6 +122,39 @@ def find_schema(schema_name='vdsm-api'):
 
     raise SchemaNotFound("Unable to find API schema file in %s or %s" %
                          (localpath, installedpath))
+
+
+def create_cache():
+    if not os.path.exists(VDSM_CACHE_DIR):
+        os.makedirs(VDSM_CACHE_DIR)
+    for path in find_all_schemas():
+        with open(path) as f:
+            loaded_schema = _load_yaml_file(f)
+            pickle_schema_path = os.path.join(
+                VDSM_CACHE_DIR, _get_pickle_schema_path(path))
+            if (os.path.exists(pickle_schema_path) and
+                    round(os.stat(path).st_mtime, 2) ==
+                    round(os.stat(pickle_schema_path).st_mtime, 2)):
+                logging.info(
+                    'Pickled schema {} already exists and up to date'.format(
+                        os.path.basename(pickle_schema_path)))
+                continue
+
+            logging.info('Writing new schema {}'.format(
+                os.path.basename(pickle_schema_path)))
+            with open(pickle_schema_path, 'wb') as pickled_schema:
+                pickle.dump(loaded_schema,
+                            pickled_schema,
+                            protocol=pickle.HIGHEST_PROTOCOL)
+
+            mod_time = os.stat(path).st_mtime
+            os.utime(pickle_schema_path, (mod_time, mod_time))
+
+
+def remove_cache():
+    for f in glob.glob(VDSM_CACHE_DIR + '/*.pickle'):
+        logging.info("Removing schema file {}".format(f))
+        os.remove(os.path.join(VDSM_CACHE_DIR, f))
 
 
 class MethodRep(object):

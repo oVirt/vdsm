@@ -1,5 +1,4 @@
-#
-# Copyright 2014-2018 Red Hat, Inc.
+# Copyright 2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,18 +16,26 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-include $(top_srcdir)/build-aux/Makefile.subs
+from __future__ import absolute_import
 
-dist_configurators_PYTHON = \
-	__init__.py \
-	abrt.py \
-	bond_defaults.py \
-	certificates.py \
-	libvirt.py \
-	lvm.py \
-	multipath.py \
-	passwd.py \
-	sanlock.py \
-	schema.py \
-	sebool.py \
-	$(NULL)
+import sys
+
+from vdsm.api import vdsmapi
+
+from . import YES, NO
+
+
+def configure():
+    vdsmapi.create_cache()
+
+
+def isconfigured():
+    if vdsmapi.caches_up_to_date():
+        sys.stdout.write("schema is already configured")
+        return YES
+    sys.stdout.write("schema should be configured")
+    return NO
+
+
+def removeConf():
+    vdsmapi.remove_cache()

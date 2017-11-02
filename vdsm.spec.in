@@ -1229,6 +1229,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/configurators/multipath.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/passwd.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sanlock.py*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/schema.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sebool.py*
 %{python_sitelib}/%{vdsm_name}/tool/dump_volume_chains.py*
 %{python_sitelib}/%{vdsm_name}/tool/network.py*
