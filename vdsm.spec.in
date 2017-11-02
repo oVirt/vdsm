@@ -1113,6 +1113,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/localFsSD.py*
 %{python_sitelib}/%{vdsm_name}/storage/lvm.env
 %{python_sitelib}/%{vdsm_name}/storage/lvm.py*
+%{python_sitelib}/%{vdsm_name}/storage/lvmfilter.py*
 %{python_sitelib}/%{vdsm_name}/storage/mailbox.py*
 %{python_sitelib}/%{vdsm_name}/storage/merge.py*
 %{python_sitelib}/%{vdsm_name}/storage/misc.py*

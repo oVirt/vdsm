@@ -1,0 +1,5 @@
+lvm /dev/mapper/fedora-swap [SWAP]
+dm /dev/mapper/docker-253:3-1204232-pool 
+lvm /dev/mapper/fedora-home /home
+lvm /dev/mapper/fedora-docker--poolmeta 
+lvm /dev/mapper/fedora-root /
