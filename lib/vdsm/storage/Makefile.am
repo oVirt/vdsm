@@ -41,6 +41,7 @@ dist_vdsmstorage_PYTHON = \
 	imagetickets.py \
 	iscsi.py \
 	iscsiadm.py \
+	lvmfilter.py \
 	misc.py \
 	mount.py \
 	outOfProcess.py \
