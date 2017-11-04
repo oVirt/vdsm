@@ -22,6 +22,8 @@ import errno
 import logging
 import socket
 
+import six
+
 from vdsm import sslutils
 from vdsm.common.eventfd import EventFD
 
@@ -237,14 +239,14 @@ class Reactor(object):
                 count=1,
             )
 
-        for dispatcher in self._map.values():
+        for dispatcher in list(six.viewvalues(self._map)):
             dispatcher.close()
 
         self._map.clear()
 
     def _get_timeout(self, map):
         timeout = 30.0
-        for disp in self._map.values():
+        for disp in list(six.viewvalues(self._map)):
             if hasattr(disp, "next_check_interval"):
                 interval = disp.next_check_interval()
                 if interval is not None and interval >= 0:
