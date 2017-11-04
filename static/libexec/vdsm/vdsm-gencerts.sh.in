@@ -32,6 +32,8 @@ VDSM_PERMS="@VDSMUSER@:@VDSMGROUP@"
 
 umask 077
 
+ACTIVATION_DATE=$(date -d yesterday -u +"%Y-%m-%d %H:%M:%S-0000")
+
 if [ ! -f "$VDSM_KEY" ]; then
     /usr/bin/certtool --generate-privkey --outfile "$VDSM_KEY" 2> /dev/null
     /bin/chown "$VDSM_PERMS" "$VDSM_KEY"
@@ -42,7 +44,7 @@ if [ ! -f "$VDSM_CA" ]; then
     /bin/cat > "$VDSM_TEMPLATE" <<EOF
 cn = "VDSM Certificate Authority"
 ca
-activation_date = $(date -d "yesterday" +"%Y-%m-%d %H:%M:%S")
+activation_date = "$ACTIVATION_DATE"
 cert_signing_key
 EOF
     /usr/bin/certtool --generate-self-signed --load-privkey  "$VDSM_KEY" \
@@ -57,7 +59,7 @@ if [ ! -f "$VDSM_CRT" ]; then
 organization    = "VDSM Certificate"
 cn              = "$VDSM_FQDN"
 email           = "root@$VDSM_FQDN"
-activation_date = $(date -d "yesterday" +"%Y-%m-%d %H:%M:%S")
+activation_date = "$ACTIVATION_DATE"
 signing_key
 encryption_key
 tls_www_server
