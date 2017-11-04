@@ -24,6 +24,7 @@ from __future__ import absolute_import
 import six
 
 from nose.plugins.attrib import attr
+from nose.plugins.skip import SkipTest
 
 from testValidation import ValidateRunningAsRoot
 from vdsm.network import ethtool
@@ -154,6 +155,10 @@ class TestUnicodeDrvinfo(TestCaseBase):
     @ValidateRunningAsRoot
     @requires_brctl
     def setUp(self):
+        if six.PY3:
+            raise SkipTest(
+                'Passing non-ascii chars to cmdline is broken in Python 3')
+
         # First 3 Hebrew letters, in native string format
         # See http://unicode.org/charts/PDF/U0590.pdf
         bridge_name = py2to3.to_str(b'\xd7\x90\xd7\x91\xd7\x92')
