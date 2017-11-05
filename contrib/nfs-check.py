@@ -295,8 +295,8 @@ if __name__ == "__main__":
         if ret != 0:
             print("Status of tests [Failed]")
             print("For more troubleshooting tips, visit "
-                  "http://www.ovirt.org/wiki/"
-                  "Troubleshooting_NFS_Storage_Issues")
+                  "https://www.ovirt.org/documentation/how-to/"
+                  "troubleshooting/troubleshooting-nfs-storage-issues")
         else:
             print("Status of tests [OK]")
 
