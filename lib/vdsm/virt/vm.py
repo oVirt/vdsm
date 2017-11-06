@@ -5665,12 +5665,18 @@ class Vm(object):
             # If the active layer changed:
             #  Update the disk path, volumeID, volumeInfo, and format members
             volInfo = getVolumeInfo(device, volumeID)
+            volInfo['path'] = activePath
 
             # Path must be set with the value being used by libvirt
-            device['path'] = drive.path = volInfo['path'] = activePath
-            device['format'] = drive.format = driveFormat
-            device['volumeID'] = drive.volumeID = volumeID
-            device['volumeInfo'] = drive.volumeInfo = volInfo
+            drive.path = activePath
+            drive.format = driveFormat
+            drive.volumeID = volumeID
+            drive.volumeInfo = volInfo
+
+            device['path'] = activePath
+            device['format'] = driveFormat
+            device['volumeID'] = volumeID
+            device['volumeInfo'] = volInfo
             for v in device['volumeChain']:
                 if v['volumeID'] == volumeID:
                     v['path'] = activePath
@@ -5678,7 +5684,8 @@ class Vm(object):
         # Remove any components of the volumeChain which are no longer present
         newChain = [x for x in device['volumeChain']
                     if x['volumeID'] in volumes]
-        device['volumeChain'] = drive.volumeChain = newChain
+        device['volumeChain'] = newChain
+        drive.volumeChain = newChain
 
     def _fixLegacyRngConf(self):
         def _is_legacy_rng_device_conf(dev):
