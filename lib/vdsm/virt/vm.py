@@ -4500,12 +4500,7 @@ class Vm(object):
             raise RuntimeError("Disk '%s' already has an ongoing "
                                "replication" % drive.name)
 
-        conf = self._findDriveConfigByName(drive.name)
-        with self._confLock:
-            conf['diskReplicate'] = replica
-            self._add_legacy_disk_conf_to_metadata(conf)
-        self._sync_metadata()
-
+        self._persist_drive_replica(drive, replica)
         drive.diskReplicate = replica
 
     def _updateDiskReplica(self, drive):
@@ -4516,11 +4511,7 @@ class Vm(object):
             raise RuntimeError("Disk '%s' does not have an ongoing "
                                "replication" % drive.name)
 
-        conf = self._findDriveConfigByName(drive.name)
-        with self._confLock:
-            conf['diskReplicate'] = drive.diskReplicate
-            self._add_legacy_disk_conf_to_metadata(conf)
-        self._sync_metadata()
+        self._persist_drive_replica(drive, drive.diskReplicate)
 
     def _delDiskReplica(self, drive):
         """
@@ -4529,10 +4520,32 @@ class Vm(object):
         """
         del drive.diskReplicate
 
-        conf = self._findDriveConfigByName(drive.name)
-        with self._confLock:
-            del conf['diskReplicate']
-            self._add_legacy_disk_conf_to_metadata(conf)
+        if 'xml' in self.conf:
+            with self._confLock:
+                with self._md_desc.device(
+                        devtype=drive.type, name=drive.name
+                ) as dev:
+                    del dev['diskReplicate']
+        else:
+            conf = self._findDriveConfigByName(drive.name)
+            with self._confLock:
+                del conf['diskReplicate']
+                self._add_legacy_disk_conf_to_metadata(conf)
+        self._sync_metadata()
+
+    def _persist_drive_replica(self, drive, replica):
+        if 'xml' in self.conf:
+            with self._confLock:
+                with self._md_desc.device(
+                        devtype=drive.type, name=drive.name
+                ) as dev:
+                    dev['diskReplicate'] = replica
+        else:
+            conf = self._findDriveConfigByName(drive.name)
+            with self._confLock:
+                conf['diskReplicate'] = replica
+                self._add_legacy_disk_conf_to_metadata(conf)
+
         self._sync_metadata()
 
     def _diskSizeExtendCow(self, drive, newSizeBytes):

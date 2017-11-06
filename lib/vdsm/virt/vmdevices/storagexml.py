@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 
 from vdsm.virt import vmxml
+from vdsm import utils
 
 from . import core
 from . import drivename
@@ -79,6 +80,9 @@ def _update_meta_params(params, meta):
     for key in ('GUID', 'domainID', 'imageID', 'poolID', 'volumeID'):
         if key in meta:
             params[key] = meta[key]
+
+    if 'diskReplicate' in meta:
+        params['diskReplicate'] = utils.picklecopy(meta['diskReplicate'])
 
 
 def _update_source_params(params, disk_type, source):
