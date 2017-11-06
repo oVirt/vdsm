@@ -5287,7 +5287,9 @@ class Vm(object):
                                "%s already exists for image %s", jobID,
                                job['jobID'], drive['imageID'])
                 raise BlockJobExistsError()
-        self._save_block_job_info()
+        self._sync_block_job_info()
+        self._sync_metadata()
+        self._updateDomainDescriptor()
 
     def untrackBlockJob(self, jobID):
         with self._confLock:
@@ -5297,14 +5299,14 @@ class Vm(object):
                 # If there was contention on the confLock, this may have
                 # already been removed
                 return False
-        self._save_block_job_info()
-        return True
-
-    def _save_block_job_info(self):
-        with self._md_desc.values() as vm:
-            vm['block_jobs'] = json.dumps(self.conf['_blockJobs'])
+        self._sync_block_job_info()
         self._sync_metadata()
         self._updateDomainDescriptor()
+        return True
+
+    def _sync_block_job_info(self):
+        with self._md_desc.values() as vm:
+            vm['block_jobs'] = json.dumps(self.conf['_blockJobs'])
 
     def _activeLayerCommitReady(self, jobInfo, drive):
         try:
