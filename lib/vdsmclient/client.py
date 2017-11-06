@@ -99,6 +99,20 @@ Edit lease.json, and run::
 
     # vdsm-client -f lease.json Lease create
 
+In order to run vdsm-client on a host where engine is located please create
+/etc/pki/vdsm/ directory with the required certificates.
+vdsm-client can be run from an engine host using these steps:
+
+    # mkdir -p /etc/pki/vdsm/{certs,keys} && \
+      ln -s /etc/pki/ovirt-engine/ca.pem /etc/pki/vdsm/certs/cacert.pem && \
+      ln -s /etc/pki/ovirt-engine/certs/engine.cer \
+          /etc/pki/vdsm/certs/vdsmcert.pem && \
+      ln -s /etc/pki/ovirt-engine/keys/engine_id_rsa \
+          /etc/pki/vdsm/keys/vdsmkey.pem
+
+Use the --host/-a option to connect to the target host:
+    # vdsm-client --host example.com Host getCapabilities
+
 """
 
 from __future__ import absolute_import
