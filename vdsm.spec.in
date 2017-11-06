@@ -229,7 +229,6 @@ Requires: %{name}-python = %{version}-%{release}
 Requires: %{name}-hook-vmfex-dev = %{version}-%{release}
 Requires: NetworkManager-config-server
 Requires: lldpad
-Requires: python-subprocess32
 
 %if 0%{?rhel}
 Requires: python-decorator
@@ -273,6 +272,7 @@ BuildArch:      noarch
 Provides: %{name}-cli = %{version}-%{release}
 Requires: %{name}-api = %{version}-%{release}
 Requires: %{name}-yajsonrpc = %{version}-%{release}
+Requires: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-cli < %{version}-%{release}
 
 %description client
@@ -310,6 +310,7 @@ Requires:       %{name}-api = %{version}-%{release}
 BuildArch:      noarch
 Requires:       python-cpopen >= 1.5
 Requires:       python-ioprocess >= 0.16.1-1
+Requires:       python-subprocess32
 
 %description python
 Shared libraries between the various VDSM packages.
