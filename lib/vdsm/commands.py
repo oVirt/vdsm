@@ -45,14 +45,9 @@ BUFFSIZE = 1024
 def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
             printable=None, env=None, sync=True, nice=None, ioclass=None,
             ioclassdata=None, setsid=False, execCmdLogger=logging.root,
-            deathSignal=None, resetCpuAffinity=True):
+            resetCpuAffinity=True):
     """
     Executes an external command, optionally via sudo.
-
-    IMPORTANT NOTE: the new process would receive `deathSignal` when the
-    controlling thread dies, which may not be what you intended: if you create
-    a temporary thread, spawn a sync=False sub-process, and have the thread
-    finish, the new subprocess would die immediately.
     """
 
     command = cmdutils.wrap_command(command, with_ioclass=ioclass,
@@ -72,8 +67,6 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
     extra = {}
     extra['stderr'] = subprocess.PIPE
     extra['stdout'] = subprocess.PIPE
-    if deathSignal is not None:
-        extra['deathSignal'] = deathSignal
     p = CPopen(command, close_fds=True, cwd=cwd, env=env, **extra)
 
     if not sync:
