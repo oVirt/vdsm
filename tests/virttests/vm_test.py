@@ -20,7 +20,6 @@
 #
 from __future__ import absolute_import
 
-import copy
 import logging
 import os.path
 import threading
@@ -2262,38 +2261,6 @@ class MetadataTests(TestCaseBase):
                     },
                 }
             )
-
-    def test__add_legacy_disk_conf(self):
-        dom = fake.Domain()
-
-        with self.test_vm() as testvm:
-            testvm._dom = dom
-            testvm._add_legacy_disk_conf_to_metadata(_DISK_CONF)
-            testvm._sync_metadata()
-
-        self._check_conf_from_metadata_matches(dom, _DISK_CONF)
-
-    def test_update_legacy_disk_conf(self):
-        dom = fake.Domain()
-        conf = copy.deepcopy(_DISK_CONF)
-
-        with self.test_vm() as testvm:
-            testvm._dom = dom
-            testvm._add_legacy_disk_conf_to_metadata(_DISK_CONF)
-            del conf['diskReplicate']
-            testvm._add_legacy_disk_conf_to_metadata(conf)
-            testvm._sync_metadata()
-
-        self._check_conf_from_metadata_matches(dom, conf)
-
-    def _check_conf_from_metadata_matches(self, dom, conf):
-        with self.test_vm() as testvm:
-            testvm._dom = dom
-            # triggers metadata parsing
-            testvm._updateMetadataDescriptor()
-            testvm._restore_legacy_disk_conf_from_metadata()
-
-        self.assertEqual(testvm._findDriveConfigByName(conf['name']), conf)
 
     @permutations([
         (3, 6, True,),

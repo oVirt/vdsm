@@ -390,9 +390,6 @@ class Vm(object):
 
         self._usedIndices = defaultdict(list)  # {'ide': [], 'virtio' = []}
 
-        if recover and 'xml' in params:
-            self._restore_legacy_disk_conf_from_metadata()
-
         self._vmStartEvent = threading.Event()
         self._vmAsyncStartError = None
         self._vmCreationEvent = threading.Event()
@@ -2397,7 +2394,7 @@ class Vm(object):
                         supervdsm.getProxy().setPortMirroring(network,
                                                               nic.name)
 
-            self._save_legacy_disk_conf_to_metadata()
+            self._sync_metadata()
 
         try:
             self.guestAgent.start()
@@ -2443,35 +2440,6 @@ class Vm(object):
         self._guestEventTime = self._startTime
         self._guestCpuRunning = self._isDomainRunning()
         self._logGuestCpuStatus('domain initialization')
-
-    def _save_legacy_disk_conf_to_metadata(self):
-        with self._confLock:
-            for dev_conf in self.conf['devices']:
-                if dev_conf['type'] == hwclass.DISK:
-                    self._add_legacy_disk_conf_to_metadata(dev_conf)
-        self._sync_metadata()
-
-    def _add_legacy_disk_conf_to_metadata(self, dev_conf):
-        data = utils.picklecopy(dev_conf)
-        attrs = vmdevices.common.get_drive_conf_identifying_attrs(dev_conf)
-        with self._md_desc.device(**attrs) as dev:
-            dev.clear()
-            dev.update(data)
-
-    def _remove_legacy_disk_conf_from_metadata(self, dev_conf):
-        attrs = vmdevices.common.get_drive_conf_identifying_attrs(dev_conf)
-        with self._md_desc.device(**attrs) as dev:
-            dev.clear()
-
-    def _restore_legacy_disk_conf_from_metadata(self):
-        if 'devices' not in self.conf:
-            self.conf['devices'] = []
-
-        for conf in self._md_desc.all_devices(devtype=hwclass.DISK):
-            try:
-                self._findDriveConfigByName(conf['name'])
-            except LookupError:
-                self.conf['devices'].append(utils.picklecopy(conf))
 
     def _dom_vcpu_setup(self):
         if 'xml' not in self.conf:
@@ -2534,7 +2502,7 @@ class Vm(object):
             self._prepareTransientDisks(dev_spec_map[hwclass.DISK])
             self._updateDevices(dev_spec_map)
             try:
-                self._save_legacy_disk_conf_to_metadata()
+                self._sync_metadata()
             except virdomain.NotConnectedError:
                 self.log.debug("Not storing device metadata now, "
                                "domain not yet available")
@@ -3628,9 +3596,10 @@ class Vm(object):
             device_conf = self._devices[hwclass.DISK]
             device_conf.append(drive)
 
-            with self._confLock:
-                self.conf['devices'].append(diskParams)
-                self._add_legacy_disk_conf_to_metadata(diskParams)
+            update_conf = 'xml' not in self.conf
+            if update_conf:
+                with self._confLock:
+                    self.conf['devices'].append(diskParams)
             self._sync_metadata()
             self._updateDomainDescriptor()
             vmdevices.storage.Drive.update_device_info(self, device_conf)
@@ -3680,7 +3649,6 @@ class Vm(object):
                 if dev['type'] == hwclass.DISK and dev['path'] == drive.path:
                     with self._confLock:
                         self.conf['devices'].remove(dev)
-                        self._remove_legacy_disk_conf_from_metadata(dev)
                     break
 
             self._sync_metadata()
@@ -4050,7 +4018,6 @@ class Vm(object):
         else:
             with self._confLock:
                 conf.update(driveParams)
-                self._add_legacy_disk_conf_to_metadata(driveParams)
             self._sync_metadata()
 
     def freeze(self):
@@ -4526,12 +4493,12 @@ class Vm(object):
                         devtype=drive.type, name=drive.name
                 ) as dev:
                     del dev['diskReplicate']
+
+            self._sync_metadata()
         else:
             conf = self._findDriveConfigByName(drive.name)
             with self._confLock:
                 del conf['diskReplicate']
-                self._add_legacy_disk_conf_to_metadata(conf)
-        self._sync_metadata()
 
     def _persist_drive_replica(self, drive, replica):
         if 'xml' in self.conf:
@@ -4540,13 +4507,12 @@ class Vm(object):
                         devtype=drive.type, name=drive.name
                 ) as dev:
                     dev['diskReplicate'] = replica
+
+            self._sync_metadata()
         else:
             conf = self._findDriveConfigByName(drive.name)
             with self._confLock:
                 conf['diskReplicate'] = replica
-                self._add_legacy_disk_conf_to_metadata(conf)
-
-        self._sync_metadata()
 
     def _diskSizeExtendCow(self, drive, newSizeBytes):
         try:
@@ -5366,8 +5332,7 @@ class Vm(object):
     def _save_block_job_info(self):
         with self._md_desc.values() as vm:
             vm['block_jobs'] = json.dumps(self.conf['_blockJobs'])
-        # _sync_metadata is included in the following call
-        self._save_legacy_disk_conf_to_metadata()
+        self._sync_metadata()
         self._updateDomainDescriptor()
 
     def _activeLayerCommitReady(self, jobInfo, drive):
