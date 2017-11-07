@@ -292,6 +292,10 @@ class SourceThread(object):
                 # And the destination takes care of the situation itself.
                 self._vm.handle_failed_post_copy(clean_vm=True)
                 return
+            try:
+                self._destServer.destroy(self._vm.id)
+            except Exception:
+                self.log.exception("Failed to destroy remote VM")
         # if the guest was stopped before migration, we need to cont it
         if self.hibernating:
             self._vm.cont(ignoreStatus=True)
