@@ -143,7 +143,7 @@ def _filter_owned_bonds(kconfig_bonds):
         return {bond_name: bond_attrs
                 for bond_name, bond_attrs in six.viewitems(kconfig_bonds)
                 if Ifcfg.owned_device(bond_name)}
-    return kconfig_bonds
+    return {}
 
 
 def _cleanup_libvirt_networks(libvirt_networks):

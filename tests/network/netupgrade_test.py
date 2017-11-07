@@ -90,27 +90,47 @@ class NetUpgradeUnifiedConfigTest(VdsmTestCase):
 @mock.patch.object(netupgrade, 'NetInfo', lambda x: None)
 @mock.patch.object(netupgrade, 'libvirt_vdsm_nets', lambda x: None)
 @mock.patch.object(netupgrade.libvirtnetwork, 'networks', lambda: ())
-@mock.patch.object(netupgrade.config, 'get', lambda a, b: 'ifcfg')
 @mock.patch.object(netupgrade.Ifcfg, 'owned_device', return_value=True)
 @mock.patch.object(netupgrade, 'KernelConfig')
 @mock.patch.object(netupgrade, 'PersistentConfig')
 @mock.patch.object(netupgrade, 'RunningConfig')
 class NetCreateUnifiedConfigTest(VdsmTestCase):
 
-    def test_create_unified_config(
+    @mock.patch.object(netupgrade.config, 'get', lambda a, b: 'ifcfg')
+    def test_create_unified_config_in_ifcfg_persistence_mode(
             self, mockRConfig, mockPConfig, mockKConfig, mock_owned_device):
         rconfig = mockRConfig.return_value
         pconfig = mockPConfig.return_value
         kconfig = mockKConfig.return_value
-        self._setup_missing_unified_config(kconfig, pconfig, rconfig)
+
+        self._setup_missing_unified_config(pconfig, rconfig)
+        kconfig.networks = {'netname': {}}
+        kconfig.bonds = {'bondname': {}}
 
         netupgrade.upgrade()
 
         self._assert_unified_config_created(kconfig, rconfig, mockRConfig)
 
-    def _setup_missing_unified_config(self, kconfig, pconfig, rconfig):
-        kconfig.networks = {'netname': {}}
-        kconfig.bonds = {'bondname': {}}
+    @mock.patch.object(netupgrade.config, 'get', lambda a, b: 'unified')
+    def test_create_unified_config_in_unified_persistence_mode(
+            self, mockRConfig, mockPConfig, mockKConfig, mock_owned_device):
+        rconfig = mockRConfig.return_value
+        pconfig = mockPConfig.return_value
+        kconfig = mockKConfig.return_value
+
+        self._setup_missing_unified_config(pconfig, rconfig)
+        # If the unified config files are missing and VDSM is in unified mode
+        # then there are no networks, but there may be some external bonds.
+        kconfig.networks = {}
+        kconfig.bonds = {'extbond': {}}
+
+        netupgrade.upgrade()
+
+        # External bonds should not appear in the unified config (rconfig).
+        kconfig.bonds = {}
+        self._assert_unified_config_created(kconfig, rconfig, mockRConfig)
+
+    def _setup_missing_unified_config(self, pconfig, rconfig):
         rconfig.config_exists.return_value = False
         pconfig.config_exists.return_value = False
 
