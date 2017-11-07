@@ -39,7 +39,6 @@ from vdsm.network import kernelconfig
 from vdsm.network.netconfpersistence import PersistentConfig, RunningConfig
 from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
-from vdsm.network.link.iface import DEFAULT_MTU
 from vdsm.network.netinfo.bonding import BONDING_SLAVES
 from vdsm.network.netinfo.bridges import bridges
 from vdsm.network.netinfo.misc import NET_CONF_PREF
@@ -507,98 +506,6 @@ class NetworkTest(TestCaseBase):
 
             status, msg = self.setupNetworks({NETWORK_NAME: dict(remove=True)},
                                              {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
-    @permutations([[True], [False]])
-    def testSetupNetworksMtus(self, bridged):
-        JUMBO = 9000
-        MIDI = 4000
-
-        with dummyIf(3) as nics:
-            # Add two networks, one with default MTU and the other with MIDI.
-            # Expect to see nics MTU to be MIDI. (MIDI > DEFAULT MTU)
-            networks = {NETWORK_NAME + '1':
-                        dict(bonding=BONDING_NAME, bridged=bridged,
-                             vlan='100'),
-                        NETWORK_NAME + '2':
-                        dict(bonding=BONDING_NAME, bridged=bridged,
-                             vlan='200', mtu=MIDI)
-                        }
-            bondings = {BONDING_NAME: dict(nics=nics[:2])}
-            status, msg = self.setupNetworks(networks, bondings, NOCHK)
-
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.assertMtu(MIDI, NETWORK_NAME + '2', BONDING_NAME, nics[0],
-                           nics[1])
-
-            # Add a 3rd network, with JUMBO MTU.
-            # Expect to see nics MTU to be JUMBO. (JUMBO > MIDI)
-            network = {NETWORK_NAME + '3':
-                       dict(bonding=BONDING_NAME, vlan='300', mtu=JUMBO,
-                            bridged=bridged)}
-            status, msg = self.setupNetworks(network, {}, NOCHK)
-
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.assertNetworkExists(NETWORK_NAME + '3', bridged=bridged)
-            self.assertMtu(JUMBO, NETWORK_NAME + '3', BONDING_NAME, nics[0],
-                           nics[1])
-
-            # Remove the 3rd network (with JUMBO MTU)
-            # Expect to see nics MTU to be MIDI.
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME + '3': dict(remove=True)}, {}, NOCHK)
-
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.assertMtu(MIDI, NETWORK_NAME + '2', BONDING_NAME, nics[0],
-                           nics[1])
-
-            # Remove the 2nd network (with MIDI MTU)
-            # Expect to see nics MTU to be DEFAULT.
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME + '2': dict(remove=True)}, {}, NOCHK)
-
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.assertMtu(DEFAULT_MTU, BONDING_NAME, nics[0], nics[1])
-
-            # Add additional nic to the bond
-            # Expect to see nics MTU to be DEFAULT.
-            status, msg = self.setupNetworks(
-                {}, {BONDING_NAME: dict(nics=nics)}, NOCHK)
-
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.assertMtu(DEFAULT_MTU, BONDING_NAME,
-                           nics[0], nics[1], nics[2])
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME + '1': dict(remove=True)},
-                {BONDING_NAME: dict(remove=True)}, NOCHK)
-
-            self.assertEqual(status, SUCCESS, msg)
-
-            # Add additional nic to a bond on a non default mtu network
-            # Expect to see nics MTU to be non default.
-            network = {NETWORK_NAME:
-                       dict(bonding=BONDING_NAME, vlan='10', mtu=JUMBO,
-                            bridged=bridged)}
-            bondings = {BONDING_NAME: dict(nics=nics[:2])}
-            status, msg = self.setupNetworks(network, bondings, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            status, msg = self.setupNetworks(
-                {}, {BONDING_NAME: dict(nics=nics)}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.assertMtu(JUMBO, BONDING_NAME, nics[0], nics[1], nics[2])
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: dict(remove=True)},
-                {BONDING_NAME: dict(remove=True)}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet

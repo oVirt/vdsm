@@ -50,6 +50,7 @@ class TestNetworkMtu(nftestlib.NetFuncTestCase):
                                         'switch': switch}}
             with self.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                 self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+                self.assertLinkMtu(nic, NETCREATE[NETWORK_NAME])
 
     @nftestlib.parametrize_bridged
     def test_removing_a_bonded_net_updates_the_mtu(self, switch, bridged):
@@ -78,3 +79,20 @@ class TestNetworkMtu(nftestlib.NetFuncTestCase):
                                        nftestlib.NOCHK)
                     self.assertNetwork(NETWORK1_NAME, NETBASE[NETWORK1_NAME])
                     self.assertBond(BOND_NAME, BONDBASE[BOND_NAME])
+                    self.assertLinkMtu(BOND_NAME, NETBASE[NETWORK1_NAME])
+                    self.assertLinkMtu(nic, NETBASE[NETWORK1_NAME])
+
+    def test_add_slave_to_a_bonded_network_with_non_default_mtu(self, switch):
+        if switch == 'ovs':
+            pytest.xfail('MTU editation is not supported on OVS switches.')
+        with dummy_devices(2) as (nic1, nic2):
+            NETBASE = {NETWORK_NAME: {'bonding': BOND_NAME,
+                                      'bridged': False,
+                                      'mtu': 2000,
+                                      'switch': switch}}
+            BONDBASE = {BOND_NAME: {'nics': [nic1], 'switch': switch}}
+
+            with self.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
+                BONDBASE[BOND_NAME]['nics'].append(nic2)
+                self.setupNetworks({}, BONDBASE, nftestlib.NOCHK)
+                self.assertLinkMtu(nic2, NETBASE[NETWORK_NAME])

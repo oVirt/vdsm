@@ -222,6 +222,23 @@ class NetFuncTestCase(object):
         running_mtu = netinfo.networks[netname]['mtu']
         assert requested_mtu == running_mtu
 
+    def assertLinkMtu(self, devname, netattrs):
+        requested_mtu = netattrs.get('mtu', 1500)
+        netinfo = _normalize_caps(self.netinfo)
+        if devname in netinfo.nics:
+            running_mtu = netinfo.nics[devname]['mtu']
+        elif devname in netinfo.bondings:
+            running_mtu = netinfo.bondings[devname]['mtu']
+        elif devname in netinfo.vlans:
+            running_mtu = netinfo.vlans[devname]['mtu']
+        elif devname in netinfo.bridges:
+            running_mtu = netinfo.bridges[devname]['mtu']
+        elif devname in netinfo.networks:
+            running_mtu = netinfo.networks[devname]['mtu']
+        else:
+            raise DeviceNotInCapsError(devname)
+        assert requested_mtu == int(running_mtu)
+
     def assertBond(self, bond, attrs):
         self.assertBondExists(bond)
         self.assertBondSlaves(bond, attrs['nics'])
@@ -626,3 +643,7 @@ def _gather_expected_ovs_links(net, attrs, netinfo):
         devs.add(nic)
 
     return devs
+
+
+class DeviceNotInCapsError(Exception):
+    pass
