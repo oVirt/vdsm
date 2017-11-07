@@ -2576,8 +2576,26 @@ class Vm(object):
                 dev_objs_from_xml[dev_class] = dev_objs_from_conf[dev_class]
                 self.log.debug("Overridden %d legacy %s devices",
                                len(dev_objs_from_xml[dev_class]), dev_class)
+        else:
+            self._override_disk_device_config(disk_params)
+
         self.log.debug('Built %d devices', len(dev_objs_from_xml))
         return dev_objs_from_xml
+
+    def _override_disk_device_config(self, disk_params):
+        disk_devs = []
+        for params in disk_params:
+            dev = {}
+            dev.update(params)
+            dev['type'] = hwclass.DISK
+            dev = self._dev_spec_update_with_vm_conf(dev)
+
+            self.log.debug("Overridden legacy device configuration: %s", dev)
+            disk_devs.append(dev)
+        self.conf['devices'] = disk_devs
+
+        self.log.debug("Overridden %d legacy device configurations",
+                       len(disk_params))
 
     def _run(self):
         self.log.info("VM wrapper has started")
