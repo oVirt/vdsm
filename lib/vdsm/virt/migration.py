@@ -148,6 +148,7 @@ class SourceThread(object):
             self.log.debug('convergence schedule set to: %s',
                            str(self._convergence_schedule))
         self._started = False
+        self._failed = False
         self._recovery = recovery
 
     def start(self):
@@ -165,7 +166,7 @@ class SourceThread(object):
         managed migration (detected on Vdsm recovery) without the threads
         actually running.
         """
-        return (self.is_alive() or
+        return ((self.is_alive() and not self._failed) or
                 (self._recovery and
                  self._vm.lastStatus == vmstatus.MIGRATION_SOURCE))
 
@@ -304,6 +305,7 @@ class SourceThread(object):
         elif self._enableGuestEvents:
             self._vm.guestAgent.events.after_migration_failure()
         # either way, migration has finished
+        self._failed = True
         if self._recovery:
             self._vm.set_last_status(vmstatus.UP, vmstatus.MIGRATION_SOURCE)
             self._recovery = False
