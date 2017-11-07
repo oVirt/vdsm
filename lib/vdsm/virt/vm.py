@@ -110,10 +110,6 @@ class DoubleDownError(RuntimeError):
     pass
 
 
-class ImprobableResizeRequestError(RuntimeError):
-    pass
-
-
 class BlockJobExistsError(Exception):
     pass
 
@@ -1176,7 +1172,7 @@ class Vm(object):
                     nextPhysSize))
             self.log.error(msg)
             self.pause(pauseCode='EOTHER')
-            raise ImprobableResizeRequestError(msg)
+            raise drivemonitor.ImprobableResizeRequestError(msg)
 
         if physical >= drive.getMaxVolumeSize(capacity):
             # The volume was extended to the maximum size. physical may be
@@ -1198,7 +1194,7 @@ class Vm(object):
             for drive in self.drive_monitor.monitored_drives():
                 if self.extend_drive_if_needed(drive):
                     extended = True
-        except ImprobableResizeRequestError:
+        except drivemonitor.ImprobableResizeRequestError:
             return False
 
         return extended

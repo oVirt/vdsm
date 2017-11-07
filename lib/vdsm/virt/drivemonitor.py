@@ -25,6 +25,10 @@ from vdsm.config import config
 from vdsm.virt.vmdevices import storage
 
 
+class ImprobableResizeRequestError(RuntimeError):
+    pass
+
+
 class DriveMonitor(object):
     """
     Track the highest allocation of thin-provisioned drives
