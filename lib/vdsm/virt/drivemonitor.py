@@ -208,3 +208,39 @@ class DriveMonitor(object):
         return [drive for drive in drives
                 if drive.threshold_state == storage.BLOCK_THRESHOLD.UNSET or
                 drive.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED]
+
+    def should_extend_volume(self, drive, volumeID, capacity, alloc, physical):
+        nextPhysSize = drive.getNextVolumeSize(physical, capacity)
+
+        # NOTE: the intent of this check is to prevent faulty images to
+        # trick qemu in requesting extremely large extensions (BZ#998443).
+        # Probably the definitive check would be comparing the allocated
+        # space with capacity + format_overhead. Anyway given that:
+        #
+        # - format_overhead is tricky to be computed (it depends on few
+        #   assumptions that may change in the future e.g. cluster size)
+        # - currently we allow only to extend by one chunk at time
+        #
+        # the current check compares alloc with the next volume size.
+        # It should be noted that alloc cannot be directly compared with
+        # the volume physical size as it includes also the clusters not
+        # written yet (pending).
+        if alloc > nextPhysSize:
+            msg = ("Improbable extension request for volume %s on domain "
+                   "%s, pausing the VM to avoid corruptions (capacity: %s, "
+                   "allocated: %s, physical: %s, next physical size: %s)" %
+                   (volumeID, drive.domainID, capacity, alloc, physical,
+                    nextPhysSize))
+            self._log.error(msg)
+            self._vm.pause(pauseCode='EOTHER')
+            raise ImprobableResizeRequestError(msg)
+
+        if physical >= drive.getMaxVolumeSize(capacity):
+            # The volume was extended to the maximum size. physical may be
+            # larger than maximum volume size since it is rounded up to the
+            # next lvm extent.
+            return False
+
+        if physical - alloc < drive.watermarkLimit:
+            return True
+        return False

@@ -1148,42 +1148,6 @@ class Vm(object):
 
         return blockinfo
 
-    def _shouldExtendVolume(self, drive, volumeID, capacity, alloc, physical):
-        nextPhysSize = drive.getNextVolumeSize(physical, capacity)
-
-        # NOTE: the intent of this check is to prevent faulty images to
-        # trick qemu in requesting extremely large extensions (BZ#998443).
-        # Probably the definitive check would be comparing the allocated
-        # space with capacity + format_overhead. Anyway given that:
-        #
-        # - format_overhead is tricky to be computed (it depends on few
-        #   assumptions that may change in the future e.g. cluster size)
-        # - currently we allow only to extend by one chunk at time
-        #
-        # the current check compares alloc with the next volume size.
-        # It should be noted that alloc cannot be directly compared with
-        # the volume physical size as it includes also the clusters not
-        # written yet (pending).
-        if alloc > nextPhysSize:
-            msg = ("Improbable extension request for volume %s on domain "
-                   "%s, pausing the VM to avoid corruptions (capacity: %s, "
-                   "allocated: %s, physical: %s, next physical size: %s)" %
-                   (volumeID, drive.domainID, capacity, alloc, physical,
-                    nextPhysSize))
-            self.log.error(msg)
-            self.pause(pauseCode='EOTHER')
-            raise drivemonitor.ImprobableResizeRequestError(msg)
-
-        if physical >= drive.getMaxVolumeSize(capacity):
-            # The volume was extended to the maximum size. physical may be
-            # larger than maximum volume size since it is rounded up to the
-            # next lvm extent.
-            return False
-
-        if physical - alloc < drive.watermarkLimit:
-            return True
-        return False
-
     def monitor_drives(self):
         """
         Return True if at least one drive is being extended, False otherwise.
@@ -1235,7 +1199,7 @@ class Vm(object):
         if drive.threshold_state == BLOCK_THRESHOLD.UNSET:
             self.drive_monitor.set_threshold(drive, physical)
 
-        if not self._shouldExtendVolume(
+        if not self.drive_monitor.should_extend_volume(
                 drive, drive.volumeID, capacity, alloc, physical):
             return False
 
@@ -1244,7 +1208,7 @@ class Vm(object):
         # writes too fast, we will never receive an event.
         # We need to set the drive threshold to EXCEEDED both if we receive
         # one event or if we found that the threshold was exceeded during
-        # the _shouldExtendVolume check.
+        # the drivemonitor.should_extend_volume check.
 
         self.log.info(
             "Requesting extension for volume %s on domain %s (apparent: "
