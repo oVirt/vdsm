@@ -128,16 +128,14 @@ class _SuperVdsm(object):
         return _getScsiSerial(*args, **kwargs)
 
     @logDecorator
-    def mount(self, fs_spec, fs_file, mntOpts=None, vfstype=None, timeout=None,
+    def mount(self, fs_spec, fs_file, mntOpts=None, vfstype=None,
               cgroup=None):
         mount._mount(fs_spec, fs_file, mntOpts=mntOpts, vfstype=vfstype,
-                     timeout=timeout, cgroup=cgroup)
+                     cgroup=cgroup)
 
     @logDecorator
-    def umount(self, fs_file, force=False, lazy=False, freeloop=False,
-               timeout=None):
-        mount._umount(fs_file, force=force, lazy=lazy, freeloop=freeloop,
-                      timeout=timeout)
+    def umount(self, fs_file, force=False, lazy=False, freeloop=False):
+        mount._umount(fs_file, force=force, lazy=lazy, freeloop=freeloop)
 
     @logDecorator
     def resizeMap(self, devName):

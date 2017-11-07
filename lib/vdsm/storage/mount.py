@@ -200,20 +200,19 @@ class Mount(object):
     def __hash__(self):
         return hash((self.__class__, self.fs_spec, self.fs_file))
 
-    def mount(self, mntOpts=None, vfstype=None, timeout=None, cgroup=None):
+    def mount(self, mntOpts=None, vfstype=None, cgroup=None):
         mount = supervdsm.getProxy().mount if os.geteuid() != 0 else _mount
         self.log.info("mounting %s at %s", self.fs_spec, self.fs_file)
         with utils.stopwatch("%s mounted" % self.fs_file, log=self.log):
             mount(self.fs_spec, self.fs_file, mntOpts=mntOpts, vfstype=vfstype,
-                  timeout=timeout, cgroup=cgroup)
+                  cgroup=cgroup)
         self._wait_for_events()
 
-    def umount(self, force=False, lazy=False, freeloop=False, timeout=None):
+    def umount(self, force=False, lazy=False, freeloop=False):
         umount = supervdsm.getProxy().umount if os.geteuid() != 0 else _umount
         self.log.info("unmounting %s", self.fs_file)
         with utils.stopwatch("%s unmounted" % self.fs_file, log=self.log):
-            umount(self.fs_file, force=force, lazy=lazy, freeloop=freeloop,
-                   timeout=timeout)
+            umount(self.fs_file, force=force, lazy=lazy, freeloop=freeloop)
         self._wait_for_events()
 
     def _wait_for_events(self):
@@ -259,8 +258,7 @@ class Mount(object):
                 (self.__class__.__name__, self.fs_spec, self.fs_file))
 
 
-def _mount(fs_spec, fs_file, mntOpts=None, vfstype=None, timeout=None,
-           cgroup=None):
+def _mount(fs_spec, fs_file, mntOpts=None, vfstype=None, cgroup=None):
     """
     Called from supervdsm for running the mount command as root.
     """
@@ -277,10 +275,10 @@ def _mount(fs_spec, fs_file, mntOpts=None, vfstype=None, timeout=None,
     if cgroup:
         cmd = cmdutils.systemd_run(cmd, scope=True, slice=cgroup)
 
-    _runcmd(cmd, timeout)
+    _runcmd(cmd)
 
 
-def _umount(fs_file, force=False, lazy=False, freeloop=False, timeout=None):
+def _umount(fs_file, force=False, lazy=False, freeloop=False):
     """
     Called from supervdsm for running the umount command as root.
     """
@@ -296,15 +294,11 @@ def _umount(fs_file, force=False, lazy=False, freeloop=False, timeout=None):
 
     cmd.append(fs_file)
 
-    _runcmd(cmd, timeout)
+    _runcmd(cmd)
 
 
-def _runcmd(cmd, timeout):
+def _runcmd(cmd):
     p = commands.execCmd(cmd, sync=False)
-    if not p.wait(timeout):
-        p.kill()
-        raise OSError(errno.ETIMEDOUT,
-                      "%s operation timed out" % os.path.basename(cmd[0]))
 
     out, err = p.communicate()
     rc = p.returncode
