@@ -298,10 +298,7 @@ def _umount(fs_file, force=False, lazy=False, freeloop=False):
 
 
 def _runcmd(cmd):
-    p = commands.execCmd(cmd, sync=False)
-
-    out, err = p.communicate()
-    rc = p.returncode
+    rc, out, err = commands.execCmd(cmd, raw=True)
 
     if rc == 0:
         return
