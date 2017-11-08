@@ -5669,11 +5669,12 @@ class Vm(object):
             drive.volumeID = volumeID
             drive.volumeInfo = volInfo
 
-            confVolInfo = find_chain_node(device['volumeChain'], volumeID)
-            confVolInfo['path'] = activePath
-            device['path'] = activePath
-            device['format'] = driveFormat
-            device['volumeID'] = volumeID
+            confVolInfo = find_chain_node(
+                device['volumeChain'], drive.volumeID)
+            confVolInfo['path'] = drive.path
+            device['path'] = drive.path
+            device['format'] = drive.format
+            device['volumeID'] = drive.volumeID
             device['volumeInfo'] = confVolInfo
 
             if confVolInfo != drive.volumeInfo:
