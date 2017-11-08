@@ -125,6 +125,7 @@ def _is_property_line(lines, line_number):
 class OUI(object):
     """ Organizationally Unique Identifier """
     IEEE8021 = 0x0080c2
+    IEEE8023 = 0x00120F
 
 
 class Tlv(object):
@@ -205,6 +206,22 @@ class VlanNameParser(PropertyParser):
                 'VLAN ID': tokens[1].strip()}
 
 
+class LinkAggregationPropertyParser(PropertyParser):
+    def parse(self, tlv_name, property_lines):
+        port_id_tokens = property_lines[2].split(':', 1)
+        return {'Aggregation capable':
+                LinkAggregationPropertyParser._bool_from_line(
+                    property_lines[0]),
+                'Currently aggregated':
+                LinkAggregationPropertyParser._bool_from_line(
+                    property_lines[1]),
+                'Aggregated Port ID': port_id_tokens[-1].strip()}
+
+    @staticmethod
+    def _bool_from_line(line):
+        return 'False' if 'not ' in line else 'True'
+
+
 TLVS = frozenset([
     Tlv(1, 0, 0, 'Chassis ID', 'Chassis ID TLV', ChassisIdParser()),
     Tlv(2, 0, 0, 'Port ID', 'Port ID TLV', PortIdParser()),
@@ -223,7 +240,17 @@ TLVS = frozenset([
     Tlv(0x7f, OUI.IEEE8021, 1, 'Port VLAN ID', 'Port VLAN ID TLV',
         PortVlanIdParser()),
     Tlv(0x7f, OUI.IEEE8021, 3, 'VLAN Name', 'VLAN Name TLV',
-        VlanNameParser())
+        VlanNameParser()),
+    # Because lldptool shows both Link Aggregation TLV in the same way,
+    # it is not possible to conclude from lldptool's output to the OUI and
+    # subtype. Here the Link Aggregation TLV is mapped to the IEEE8021
+    # Organizationally Specific TLV.
+    Tlv(0x7f, OUI.IEEE8021, 7, 'Link Aggregation', 'Link Aggregation TLV',
+        LinkAggregationPropertyParser()),
+    # Tlv(0x7f, OUI.IEEE8023, 3, 'Link Aggregation', 'Link Aggregation TLV',
+    #    LinkAggregationPropertyParser()),
+    Tlv(0x7f, OUI.IEEE8023, 4, 'MTU', 'Maximum Frame Size TLV',
+        SingleStringPropertyParser()),
 ])
 
 TLVS_BY_DESCRIPTION = {tlv.description: tlv for tlv in TLVS}
