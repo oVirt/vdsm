@@ -5668,6 +5668,7 @@ class Vm(object):
             drive.format = driveFormat
             drive.volumeID = volumeID
             drive.volumeInfo = volInfo
+            update_active_path(drive.volumeChain, volumeID, activePath)
 
             confVolInfo = find_chain_node(
                 device['volumeChain'], drive.volumeID)
@@ -5676,16 +5677,13 @@ class Vm(object):
             device['format'] = drive.format
             device['volumeID'] = drive.volumeID
             device['volumeInfo'] = confVolInfo
+            update_active_path(device['volumeChain'], volumeID, activePath)
 
             if confVolInfo != drive.volumeInfo:
                 self.log.warning(
                     'VolumeInfo mismatch: conf %s drive %s - using conf',
                     confVolInfo, drive.volumeInfo)
                 drive.volumeInfo = confVolInfo
-
-            for v in device['volumeChain']:
-                if v['volumeID'] == volumeID:
-                    v['path'] = activePath
 
         # Remove any components of the volumeChain which are no longer present
         newChain = [x for x in device['volumeChain']
@@ -5951,6 +5949,12 @@ class LiveMergeCleanupThread(object):
                                   "Actual chain: %s", alias, origVols,
                                   expectedVols, curVols)
                 raise RuntimeError("Bad volume chain found")
+
+
+def update_active_path(volume_chain, volumeID, activePath):
+    for v in volume_chain:
+        if v['volumeID'] == volumeID:
+            v['path'] = activePath
 
 
 def find_chain_node(volume_chain, volumeID):
