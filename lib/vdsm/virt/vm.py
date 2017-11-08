@@ -5661,19 +5661,27 @@ class Vm(object):
         if drive.volumeID != volumeID:
             # If the active layer changed:
             #  Update the disk path, volumeID, volumeInfo, and format members
-            volInfo = find_chain_node(device['volumeChain'], volumeID)
-            volInfo['path'] = activePath
-
             # Path must be set with the value being used by libvirt
+            volInfo = find_chain_node(drive.volumeChain, volumeID)
+            volInfo['path'] = activePath
             drive.path = activePath
             drive.format = driveFormat
             drive.volumeID = volumeID
             drive.volumeInfo = volInfo
 
+            confVolInfo = find_chain_node(device['volumeChain'], volumeID)
+            confVolInfo['path'] = activePath
             device['path'] = activePath
             device['format'] = driveFormat
             device['volumeID'] = volumeID
-            device['volumeInfo'] = volInfo
+            device['volumeInfo'] = confVolInfo
+
+            if confVolInfo != drive.volumeInfo:
+                self.log.warning(
+                    'VolumeInfo mismatch: conf %s drive %s - using conf',
+                    confVolInfo, drive.volumeInfo)
+                drive.volumeInfo = confVolInfo
+
             for v in device['volumeChain']:
                 if v['volumeID'] == volumeID:
                     v['path'] = activePath
