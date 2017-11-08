@@ -5677,7 +5677,8 @@ class Vm(object):
             device['format'] = drive.format
             device['volumeID'] = drive.volumeID
             device['volumeInfo'] = confVolInfo
-            update_active_path(device['volumeChain'], volumeID, activePath)
+            update_active_path(
+                device['volumeChain'], drive.volumeID, drive.path)
 
             if confVolInfo != drive.volumeInfo:
                 self.log.warning(
@@ -5686,10 +5687,14 @@ class Vm(object):
                 drive.volumeInfo = confVolInfo
 
         # Remove any components of the volumeChain which are no longer present
-        newChain = [x for x in device['volumeChain']
-                    if x['volumeID'] in volumes]
-        device['volumeChain'] = newChain
-        drive.volumeChain = newChain
+        drive.volumeChain = clean_volume_chain(drive.volumeChain, volumes)
+        device['volumeChain'] = clean_volume_chain(
+            device['volumeChain'], volumes)
+        if drive.volumeChain != device['volumeChain']:
+            self.log.warning(
+                'VolumeChain mismatch: conf %s drive %s - using conf',
+                device['volumeChain'], drive.volumeChain)
+            drive.volumeChain = device['volumeChain']
 
     def _fixLegacyRngConf(self):
         def _is_legacy_rng_device_conf(dev):
@@ -5955,6 +5960,11 @@ def update_active_path(volume_chain, volumeID, activePath):
     for v in volume_chain:
         if v['volumeID'] == volumeID:
             v['path'] = activePath
+
+
+def clean_volume_chain(volume_chain, volumes):
+    # Remove any components of the volumeChain which are no longer present
+    return [x for x in volume_chain if x['volumeID'] in volumes]
 
 
 def find_chain_node(volume_chain, volumeID):
