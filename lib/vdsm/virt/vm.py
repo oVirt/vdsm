@@ -5618,11 +5618,6 @@ class Vm(object):
         return ret
 
     def _syncVolumeChain(self, drive):
-        def getVolumeInfo(device, volumeID):
-            for info in device['volumeChain']:
-                if info['volumeID'] == volumeID:
-                    return utils.picklecopy(info)
-
         if not isVdsmImage(drive):
             self.log.debug("Skipping drive '%s' which is not a vdsm image",
                            drive.name)
@@ -5666,7 +5661,7 @@ class Vm(object):
         if drive.volumeID != volumeID:
             # If the active layer changed:
             #  Update the disk path, volumeID, volumeInfo, and format members
-            volInfo = getVolumeInfo(device, volumeID)
+            volInfo = find_chain_node(device['volumeChain'], volumeID)
             volInfo['path'] = activePath
 
             # Path must be set with the value being used by libvirt
@@ -5947,3 +5942,10 @@ class LiveMergeCleanupThread(object):
                                   "Actual chain: %s", alias, origVols,
                                   expectedVols, curVols)
                 raise RuntimeError("Bad volume chain found")
+
+
+def find_chain_node(volume_chain, volumeID):
+    for info in volume_chain:
+        if info['volumeID'] == volumeID:
+            return utils.picklecopy(info)
+    return None
