@@ -3561,6 +3561,7 @@ class Vm(object):
             if update_conf:
                 with self._confLock:
                     self.conf['devices'].append(diskParams)
+            # TODO: update metadata
             self._sync_metadata()
             self._updateDomainDescriptor()
             vmdevices.storage.Drive.update_device_info(self, device_conf)
@@ -3612,6 +3613,7 @@ class Vm(object):
                         self.conf['devices'].remove(dev)
                     break
 
+            # TODO: update metadata
             self._sync_metadata()
             self._updateDomainDescriptor()
             hooks.after_disk_hotunplug(driveXml, self._custom,
@@ -3962,9 +3964,18 @@ class Vm(object):
         # Updating the vmDrive object
         for vmDrive in self._devices[hwclass.DISK][:]:
             if vmDrive.name == driveParams["name"]:
-                for k, v in driveParams.iteritems():
-                    setattr(vmDrive, k, v)
+                with self._md_desc.device(
+                        devtype=vmDrive.type, name=vmDrive.name
+                ) as dev:
+                    for k, v in driveParams.iteritems():
+                        setattr(vmDrive, k, v)
+                        # only a subset of driveParams is relevant to
+                        # metadata (e.g. drive IDs). Skip fields that
+                        # don't belong to metadata.
+                        if k in dev:
+                            dev[k] = v
                 self.updateDriveVolume(vmDrive)
+                self._sync_metadata()
                 break
         else:
             self.log.error("Unable to update the drive object for: %s",
@@ -3979,7 +3990,6 @@ class Vm(object):
         else:
             with self._confLock:
                 conf.update(driveParams)
-            self._sync_metadata()
 
     def freeze(self):
         """
