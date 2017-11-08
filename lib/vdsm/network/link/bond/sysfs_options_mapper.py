@@ -55,7 +55,7 @@ def _get_default_bonding_options():
     Return default options per mode, in a dictionary of dictionaries. All keys
     are strings.
     """
-    bond_name = random_iface_name()
+    bond_name = random_iface_name('bondscan-')
     with _bond_device(bond_name):
         default_mode = sysfs_options.properties(bond_name, ('mode',))['mode']
 
@@ -80,7 +80,7 @@ def _get_bonding_options_name2numeric():
     Return a map of options values per mode, in a dictionary of dictionaries.
     All keys are strings.
     """
-    bond_name = random_iface_name()
+    bond_name = random_iface_name('bondscan-')
     opts = {}
     for mode in range(_MAX_BONDING_MODES + 1):
         mode = str(mode)
