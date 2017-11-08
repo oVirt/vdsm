@@ -81,8 +81,9 @@ def _update_meta_params(params, meta):
         if key in meta:
             params[key] = meta[key]
 
-    if 'diskReplicate' in meta:
-        params['diskReplicate'] = utils.picklecopy(meta['diskReplicate'])
+    for key in ('diskReplicate', 'volumeChain', 'volumeInfo'):
+        if key in meta:
+            params[key] = utils.picklecopy(meta[key])
 
 
 def _update_source_params(params, disk_type, source):

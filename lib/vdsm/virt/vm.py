@@ -5302,6 +5302,8 @@ class Vm(object):
                 # If there was contention on the confLock, this may have
                 # already been removed
                 return False
+
+        self._sync_disk_metadata()
         self._sync_block_job_info()
         self._sync_metadata()
         self._updateDomainDescriptor()
@@ -5310,6 +5312,23 @@ class Vm(object):
     def _sync_block_job_info(self):
         with self._md_desc.values() as vm:
             vm['block_jobs'] = json.dumps(self.conf['_blockJobs'])
+
+    def _sync_disk_metadata(self):
+        for drive in self._devices[hwclass.DISK]:
+            info = {}
+            for key in ('volumeID', 'volumeChain', 'volumeInfo'):
+                value = getattr(drive, key, None)
+                if value is not None:
+                    info[key] = utils.picklecopy(value)
+
+            if not info:
+                continue
+
+            with self._confLock:
+                with self._md_desc.device(
+                    devtype=drive.type, name=drive.name
+                ) as dev:
+                    dev.update(info)
 
     def _activeLayerCommitReady(self, jobInfo, drive):
         try:
