@@ -5670,21 +5670,7 @@ class Vm(object):
             drive.volumeInfo = volInfo
             update_active_path(drive.volumeChain, volumeID, activePath)
 
-            confVolInfo = find_chain_node(
-                device['volumeChain'], drive.volumeID)
-            confVolInfo['path'] = drive.path
-            device['path'] = drive.path
-            device['format'] = drive.format
-            device['volumeID'] = drive.volumeID
-            device['volumeInfo'] = confVolInfo
-            update_active_path(
-                device['volumeChain'], drive.volumeID, drive.path)
-
-            if confVolInfo != drive.volumeInfo:
-                self.log.warning(
-                    'VolumeInfo mismatch: conf %s drive %s - using conf',
-                    confVolInfo, drive.volumeInfo)
-                drive.volumeInfo = confVolInfo
+            self._sync_drive_conf(device, drive)
 
         # Remove any components of the volumeChain which are no longer present
         drive.volumeChain = clean_volume_chain(drive.volumeChain, volumes)
@@ -5695,6 +5681,23 @@ class Vm(object):
                 'VolumeChain mismatch: conf %s drive %s - using conf',
                 device['volumeChain'], drive.volumeChain)
             drive.volumeChain = device['volumeChain']
+
+    def _sync_drive_conf(self, device, drive):
+        confVolInfo = find_chain_node(
+            device['volumeChain'], drive.volumeID)
+        confVolInfo['path'] = drive.path
+        device['path'] = drive.path
+        device['format'] = drive.format
+        device['volumeID'] = drive.volumeID
+        device['volumeInfo'] = confVolInfo
+        update_active_path(
+            device['volumeChain'], drive.volumeID, drive.path)
+
+        if confVolInfo != drive.volumeInfo:
+            self.log.warning(
+                'VolumeInfo mismatch: conf %s drive %s - using conf',
+                confVolInfo, drive.volumeInfo)
+            drive.volumeInfo = confVolInfo
 
     def _fixLegacyRngConf(self):
         def _is_legacy_rng_device_conf(dev):
