@@ -27,6 +27,7 @@ from vdsm.virt import drivemonitor
 
 from monkeypatch import MonkeyPatchScope
 
+from testValidation import xfail
 from testlib import make_config
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
@@ -274,6 +275,30 @@ _DISK_DATA = [
 
 @expandPermutations
 class TestDrivemonitor(VdsmTestCase):
+    @permutations([
+        # enabled
+        (True,),
+        (False,),
+    ])
+    def test_enable_on_create(self, enabled):
+        vm = FakeVM()
+        mon = drivemonitor.DriveMonitor(vm, vm.log, enabled=enabled)
+        self.assertEqual(mon.enabled(), enabled)
+
+    @xfail('typo in DriveMonitor')
+    def test_enable_runtime(self):
+        vm = FakeVM()
+        mon = drivemonitor.DriveMonitor(vm, vm.log, enabled=False)
+        mon.enable()
+        self.assertEqual(mon.enabled(), True)
+
+    @xfail('typo in DriveMonitor')
+    def test_disable_runtime(self):
+        vm = FakeVM()
+        mon = drivemonitor.DriveMonitor(vm, vm.log, enabled=True)
+        mon.disable()
+        self.assertEqual(mon.enabled(), False)
+
     def test_set_threshold(self):
         mon, vm = make_env(events_enabled=True)
         vda = make_drive(self.log, index=0, iface='virtio')
