@@ -323,7 +323,7 @@ parameters = [
             'volume_utilization_percent, set the free space limit. Use higher '
             'values to extend in bigger chunks.'),
 
-        ('enable_block_threshold_event', 'false',
+        ('enable_block_threshold_event', 'true',
             'Use events, instead of polling, to check the write threshold '
             'on thin-provisioned block-based drives.'),
 
