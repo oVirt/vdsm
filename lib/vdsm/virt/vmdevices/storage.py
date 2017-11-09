@@ -387,10 +387,29 @@ class Drive(core.Base):
     @path.setter
     def path(self, path):
         with self._lock:
-            # if device path changes (e.g. after a snapshot), the block
-            # threshold is no longer relevant. Thus, we must reset the
-            # Drive.threshold_state so the periodic task can pick up the
-            # drive on the next monitoring cycle and set a new threshold.
+            # The device path changes when the active layer changes.
+            # In this case, the threshold is no longer relevant.
+            # Thus, we must reset the Drive.threshold_state so the periodic
+            # task can pick up the drive on the next monitoring cycle, do
+            # any needed check, and set a new threshold.
+            #
+            # Noteworthy case: replicating a drive.
+            # If we are replicating to a chunked replica,
+            # the threshold is expected to be SET in this case - since we
+            # must monitor the chunked replica using the source drive.
+            # It may be UNSET if we failed to set the threshold just before
+            # the pivot. Then, we just need to wait the next monitoring
+            # cycle.
+            # if threshold is SET, we didn't receive an event yet.
+            # If threshold is EXCEEDED, we received an event, and the replica
+            # may be already in exceeded state.
+            #
+            # Otherwise we are replicating to a non-chunked drive:
+            # if threshold is UNSET, both drive and replica are non-chunked
+            # if threshold is SET, we didn't receive an event yet.
+            # If threshold is EXCEEDED, being the replica non-chunked, the
+            # threshold is not relevant anymore.
+            #
             if self._path is not None and self._path != path:
                 self._threshold_state = BLOCK_THRESHOLD.UNSET
                 self.log.debug(
