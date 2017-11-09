@@ -135,7 +135,8 @@ Requires: openvswitch >= 2.7.0
 
 %if 0%{?with_ovirt_imageio}
 Requires: ovirt-imageio-common
-Requires: ovirt-imageio-daemon
+# For GET /tickets/*
+Requires: ovirt-imageio-daemon >= 1.2.0
 %endif
 
 %if 0%{?with_ovirt_vmconsole}
