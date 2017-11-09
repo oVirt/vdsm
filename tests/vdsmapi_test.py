@@ -20,6 +20,11 @@
 from __future__ import absolute_import
 
 import json
+import pickle
+import os
+import shutil
+import tempfile
+import yaml
 
 from vdsm.api import vdsmapi
 from yajsonrpc.exception import JsonRpcErrorBase
@@ -32,6 +37,20 @@ try:
     gapi
 except ImportError:
     _glusterEnabled = False
+
+
+def _create_pickle_schema(base_dir):
+    paths = [vdsmapi.find_schema()]
+    if _glusterEnabled:
+        paths.append(vdsmapi.find_schema('vdsm-api-gluster'))
+    paths.append(vdsmapi.find_schema('vdsm-events'))
+
+    for path in paths:
+        file_path = os.path.join(
+            base_dir, os.path.splitext(os.path.basename(path))[0])
+        with open(path) as f:
+            loaded_schema = yaml.load(f)
+            pickle.dump(loaded_schema, open(file_path, 'wb'))
 
 
 class SchemaWrapper(object):
@@ -54,7 +73,8 @@ class SchemaWrapper(object):
             self._events_schema = vdsmapi.Schema(path, True)
         return self._events_schema
 
-
+basedir = tempfile.mkdtemp(dir='/var/tmp')
+_create_pickle_schema(basedir)
 _events_schema = SchemaWrapper()
 _schema = SchemaWrapper()
 
@@ -635,3 +655,6 @@ class DataVerificationTests(TestCaseBase):
         complex_type = {'vmID': {'UUID': 'UUID'}}
         self.assertEqual(_schema.schema().get_args_dict(
             'VM', 'getStats'), json.dumps(complex_type, indent=4))
+
+
+shutil.rmtree(basedir)

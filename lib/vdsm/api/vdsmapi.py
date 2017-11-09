@@ -201,8 +201,14 @@ class Schema(object):
         self._types = {}
         try:
             for path in paths:
-                with open(path) as f:
-                    loaded_schema = _load_yaml_file(f)
+                pickle_path = _get_pickle_schema_path(path)
+
+                if not os.path.exists(pickle_path):
+                    with open(path) as f:
+                        loaded_schema = _load_yaml_file(f)
+                else:
+                    with open(pickle_path) as f:
+                        loaded_schema = pickle.load(f)
 
                 types = loaded_schema.pop('types')
                 self._types.update(types)
