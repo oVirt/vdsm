@@ -202,8 +202,8 @@ class PortVlanIdParser(PropertyParser):
 class VlanNameParser(PropertyParser):
     def parse(self, tlv_name, property_lines):
         tokens = property_lines[0].split(':', 1)
-        return {'VLAN Name': tokens[0].split(' ', 1)[-1].strip(),
-                'VLAN ID': tokens[1].strip()}
+        return {'VLAN ID': tokens[0].split(' ', 1)[-1].strip(),
+                'VLAN Name': tokens[1].strip()}
 
 
 class LinkAggregationPropertyParser(PropertyParser):

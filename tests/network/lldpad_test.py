@@ -121,9 +121,9 @@ class LldpadReportTests(VdsmTestCase):
         {'subtype': 1, 'oui': 32962, 'type': 127, 'name': 'Port VLAN ID',
          'properties': {'Port VLAN ID': '2000'}},
         {'subtype': 3, 'oui': 32962, 'type': 127, 'name': 'VLAN Name',
-         'properties': {'VLAN ID': 'Name foo', 'VLAN Name': '2000'}},
+         'properties': {'VLAN ID': '2000', 'VLAN Name': 'Name foo'}},
         {'subtype': 3, 'oui': 32962, 'type': 127, 'name': 'VLAN Name',
-         'properties': {'VLAN ID': 'Name bar', 'VLAN Name': '2001'}}]
+         'properties': {'VLAN ID': '2001', 'VLAN Name': 'Name bar'}}]
 
     @mock.patch.object(lldptool.cmd, 'exec_sync',
                        lambda x: (0, LLDP_CHASSIS_ID_TLV, ''))
