@@ -597,6 +597,30 @@ class Drive(core.Base):
         vmtune.validate_io_tune_params(iotune)
         self.specParams['ioTune'] = iotune
 
+    def volume_target_index(self, vol_id, actual_chain):
+        """
+        Retrieves volume's device target index
+        from drive's volume chain using its ID.
+
+        Arguments:
+            vol_id (str): Volume's UUID
+            actual_chain (VolumeChainEntry[]): Current volume chain
+                as parsed from libvirt xml,
+                see parse_volume_chain. We expect it to be
+                ordered from base to top.
+
+        Returns:
+            int: Volume device target index - None for top volume,
+                1 for the next volume after top and so on.
+
+        Raises:
+            VolumeNotFound exception when volume is not in chain.
+        """
+        for v in self.volumeChain:
+            if v['volumeID'] == vol_id:
+                return chain_index(actual_chain, vol_id, self.name)
+        raise VolumeNotFound(drive_name=self.name, vol_id=vol_id)
+
     def volume_target(self, vol_id, actual_chain):
         """
         Retrieves volume's device target
@@ -617,31 +641,27 @@ class Drive(core.Base):
         Raises:
             VolumeNotFound exception when volume is not in chain.
         """
-        for v in self.volumeChain:
-            if v['volumeID'] == vol_id:
-                index = chain_index(actual_chain, vol_id, self.name)
-
-                # libvirt device target format is name[index] where name is
-                # target device name inside a vm and index is a number,
-                # pointing to a snapshot layer.
-                # Unfortunately, top layer do not have index value and libvirt
-                # doesn't support referencing top layer as name[0] therefore,
-                # we have to check for index absence and return just name for
-                # the top layer. We have an RFE for that problem,
-                # https://bugzilla.redhat.com/1451398 and when it will be
-                # implemented, we need to remove special handling of
-                # the active layer.
-                if index is None:
-                    # As right now libvirt is not able to correctly parse
-                    # 'name' as a reference to the active layer we need to
-                    # return None, so libvirt will use active layer as a
-                    # default value for None. We have bug filed for that issue:
-                    # https://bugzilla.redhat.com/1451394 and we need to return
-                    # self.name instead of None when it is fixed.
-                    return None
-                else:
-                    return "%s[%d]" % (self.name, index)
-        raise VolumeNotFound(drive_name=self.name, vol_id=vol_id)
+        index = self.volume_target_index(vol_id, actual_chain)
+        # libvirt device target format is name[index] where name is
+        # target device name inside a vm and index is a number,
+        # pointing to a snapshot layer.
+        # Unfortunately, top layer do not have index value and libvirt
+        # doesn't support referencing top layer as name[0] therefore,
+        # we have to check for index absence and return just name for
+        # the top layer. We have an RFE for that problem,
+        # https://bugzilla.redhat.com/1451398 and when it will be
+        # implemented, we need to remove special handling of
+        # the active layer.
+        if index is None:
+            # As right now libvirt is not able to correctly parse
+            # 'name' as a reference to the active layer we need to
+            # return None, so libvirt will use active layer as a
+            # default value for None. We have bug filed for that issue:
+            # https://bugzilla.redhat.com/1451394 and we need to return
+            # self.name instead of None when it is fixed.
+            return None
+        else:
+            return "%s[%d]" % (self.name, index)
 
     def volume_id(self, vol_path):
         """
