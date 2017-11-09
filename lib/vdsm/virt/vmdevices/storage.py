@@ -584,7 +584,7 @@ class Drive(core.Base):
 
     def __repr__(self):
         return ("<Drive name={self.name}, type={self.diskType}, "
-                "path={self.path} "
+                "path={self.path} threshold={self.threshold_state} "
                 "at {addr:#x}>").format(self=self, addr=id(self))
 
     @property
