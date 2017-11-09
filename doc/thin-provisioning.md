@@ -265,10 +265,22 @@ this drive.
   this because the drive is diabled for monitoring.
 - Perform a pivot
 - If pivot succeeded:
-  - Clear the drive needs extension flag, if it was set during the
-    pivot, since the event was received for a different path.
-  - Unregister the block threshold for the old drive path
-  - Register a new block threshold event for the new drive path
+  - The old drive is not part of the libvirt chain after we pivot to
+    the new drive. So it is not necessary to clear the block threshold
+    event for the old drive.
+  - If the base volume had zero free space (unlikely but possible),
+    and enough new data -depends on IRS configuration, 512 MiB by default-
+    was written during the merge, base needs now extension.
+    Once we pivot, we may need to be in EXCEEDED mode.
+  - We cannot just copy EXCEEDED blindly from the old top layer to the
+    bottom layer, since base is likely to have some free space before
+    we start the merge. We will end up with a drive in EXCEEDED state
+    that fails the extend check, and we will continue to check this
+    drive periodically for no reason.
+  - So we just consider the drive like a new one. We set the threshold
+    state to UNSET. If the drive is not chunked (maybe this was merge
+    into raw base volume), it's done. If the drive is chunked,
+    it will be picked by the monitor on the next cycle.
   - Enable monitoring for the drive
 - If pivot failed, enable monitoring for the drive. If the drive was
   marked for extension during the piovt, it will be extended on the next
