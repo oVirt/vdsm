@@ -27,7 +27,6 @@ from vdsm.virt import drivemonitor
 
 from monkeypatch import MonkeyPatchScope
 
-from testValidation import xfail
 from testlib import make_config
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
@@ -285,14 +284,12 @@ class TestDrivemonitor(VdsmTestCase):
         mon = drivemonitor.DriveMonitor(vm, vm.log, enabled=enabled)
         self.assertEqual(mon.enabled(), enabled)
 
-    @xfail('typo in DriveMonitor')
     def test_enable_runtime(self):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log, enabled=False)
         mon.enable()
         self.assertEqual(mon.enabled(), True)
 
-    @xfail('typo in DriveMonitor')
     def test_disable_runtime(self):
         vm = FakeVM()
         mon = drivemonitor.DriveMonitor(vm, vm.log, enabled=True)

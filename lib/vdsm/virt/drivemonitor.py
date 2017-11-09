@@ -49,11 +49,11 @@ class DriveMonitor(object):
         return self._enabled
 
     def enable(self):
-        self._enable = True
+        self._enabled = True
         self._log.info('Enabling drive monitoring')
 
     def disable(self):
-        self._enable = False
+        self._enabled = False
         self._log.info('Disabling drive monitoring')
 
     def monitoring_needed(self):
