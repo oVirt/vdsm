@@ -84,6 +84,7 @@ dist_vdsmstorage_PYTHON = \
 	taskManager.py \
 	threadPool.py \
 	types.py \
+	udev.py \
 	volume.py \
 	volumemetadata.py \
 	workarounds.py \

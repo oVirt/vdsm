@@ -29,11 +29,13 @@ python-subprocess32
 python-six
 python2-dateutil
 python2-decorator
+python2-pyudev
 python3-dateutil
 python3-dbus
 python3-decorator
 python3-netaddr
 python3-nose
+python3-pyudev
 python3-six
 python3-yaml
 PyYAML

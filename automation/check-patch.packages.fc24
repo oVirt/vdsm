@@ -15,6 +15,7 @@ PyYAML
 python-blivet
 python-coverage
 python2-decorator
+python2-pyudev
 python-dateutil
 python-devel
 python-inotify
@@ -32,6 +33,7 @@ python3-dbus
 python3-decorator
 python3-netaddr
 python3-nose
+python3-pyudev
 python3-six
 python3-yaml
 rpm-build

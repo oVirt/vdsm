@@ -32,8 +32,10 @@ python-six
 python-requests
 python3-dbus
 python3-decorator
+python2-pyudev
 python3-netaddr
 python3-nose
+python3-pyudev
 python3-six
 python3-yaml
 rpm-build

@@ -23,6 +23,7 @@ python-mock
 python-magic
 python-netaddr
 python-pthreading
+python-pyudev
 python-setuptools
 python-six
 python-subprocess32

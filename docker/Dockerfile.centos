@@ -31,6 +31,7 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     python-magic \
     python-netaddr \
     python-pthreading \
+    python-pyudev \
     python-requests \
     python-setuptools \
     python-six \

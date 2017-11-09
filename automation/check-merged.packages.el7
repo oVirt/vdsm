@@ -19,6 +19,7 @@ python-inotify
 python-ioprocess
 python-ipaddress
 python-mock
+python-pyudev
 python-netaddr
 python-pthreading
 python-six

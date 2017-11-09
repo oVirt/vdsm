@@ -1141,6 +1141,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/taskManager.py*
 %{python_sitelib}/%{vdsm_name}/storage/threadPool.py*
 %{python_sitelib}/%{vdsm_name}/storage/types.py*
+%{python_sitelib}/%{vdsm_name}/storage/udev.py*
 %{python_sitelib}/%{vdsm_name}/storage/volume.py*
 %{python_sitelib}/%{vdsm_name}/storage/volumemetadata.py*
 %{python_sitelib}/%{vdsm_name}/storage/workarounds.py*
