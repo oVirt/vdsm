@@ -791,6 +791,18 @@ class GlusterApi(object):
     def webhookDelete(self, url, options=None):
         self.svdsmProxy.glusterWebhookDelete(url)
 
+    @exportAsVerb
+    def volumeResetBrickStart(self, volumeName,
+                              existingBrick, options=None):
+        self.svdsmProxy.glusterVolumeResetBrickStart(volumeName,
+                                                     existingBrick)
+
+    @exportAsVerb
+    def volumeResetBrickCommitForce(self, volumeName,
+                                    existingBrick, options=None):
+        self.svdsmProxy.glusterVolumeResetBrickCommitForce(volumeName,
+                                                           existingBrick)
+
 
 def getGlusterMethods(gluster):
     methods = []

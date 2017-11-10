@@ -327,6 +327,14 @@ class GlusterVolume(GlusterApiBase):
     def snapshotScheduleReset(self):
         return self._gluster.snapshotScheduleReset()
 
+    def resetBrickStart(self, volumeName, existingBrick):
+        return self._gluster.volumeResetBrickStart(volumeName,
+                                                   existingBrick)
+
+    def resetBrickCommitForce(self, volumeName, existingBrick):
+        return self._gluster.volumeResetBrickCommitForce(volumeName,
+                                                         existingBrick)
+
 
 class GlusterSnapshot(GlusterApiBase):
     def __init__(self):

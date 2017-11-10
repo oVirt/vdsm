@@ -2156,3 +2156,27 @@ GlusterEvent.webhookDelete:
     return:
         description: Success or failure
         type: boolean
+
+GlusterVolume.resetBrickStart:
+    added: '4.2'
+    description: Reset Gluster volume brick start
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: Existing brick path
+        name: existingBrick
+        type: string
+
+GlusterVolume.resetBrickCommitForce:
+    added: '4.2'
+    description: Reset Gluster volume brick
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: Existing brick path
+        name: existingBrick
+        type: string

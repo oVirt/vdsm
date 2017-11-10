@@ -814,3 +814,15 @@ class GlusterWebhookSyncException(GlusterEventException):
 class GlusterWebhookDeleteException(GlusterEventException):
     code = 4754
     message = "Failed to delete webhook"
+
+
+class GlusterVolumeResetBrickStartFailedException(
+        GlusterVolumeException):
+    code = 4148
+    message = "Volume reset brick start failed"
+
+
+class GlusterVolumeResetBrickCommitForceFailedException(
+        GlusterVolumeException):
+    code = 4148
+    message = "Volume reset brick commit force failed"
