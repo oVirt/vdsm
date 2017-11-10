@@ -26,7 +26,7 @@ dist_yajsonrpc_PYTHON = \
 	exception.py \
 	jsonrpcclient.py \
 	stompclient.py \
-	stompreactor.py \
+	stompserver.py \
 	stomp.py \
 	$(NULL)
 

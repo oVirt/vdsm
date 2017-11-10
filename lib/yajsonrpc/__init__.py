@@ -27,7 +27,7 @@ from vdsm.common.password import protect_passwords, unprotect_passwords
 
 from yajsonrpc import exception
 
-__all__ = ["betterAsyncore", "stompreactor", "stomp"]
+__all__ = ["betterAsyncore", "stompserver", "stomp"]
 
 CALL_TIMEOUT = 15
 

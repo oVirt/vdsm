@@ -1583,7 +1583,7 @@ exit 0
 %{python_sitelib}/yajsonrpc/exception.py*
 %{python_sitelib}/yajsonrpc/stomp.py*
 %{python_sitelib}/yajsonrpc/stompclient.py*
-%{python_sitelib}/yajsonrpc/stompreactor.py*
+%{python_sitelib}/yajsonrpc/stompserver.py*
 
 %files hook-faqemu
 %license COPYING

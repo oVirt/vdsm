@@ -19,7 +19,7 @@ import functools
 import logging
 
 from yajsonrpc import JsonRpcServer
-from yajsonrpc.stompreactor import StompReactor
+from yajsonrpc.stompserver import StompReactor
 
 from vdsm import executor
 from vdsm.common import concurrent

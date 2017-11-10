@@ -28,7 +28,7 @@ from yajsonrpc.stomp import \
     Headers, \
     SUBSCRIPTION_ID_REQUEST
 from yajsonrpc.stomp import AsyncDispatcher
-from yajsonrpc.stompreactor import StompAdapterImpl
+from yajsonrpc.stompserver import StompAdapterImpl
 from stomp_test_utils import (
     FakeAsyncClient,
     FakeAsyncDispatcher,

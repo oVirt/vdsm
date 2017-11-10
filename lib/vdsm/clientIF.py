@@ -32,7 +32,7 @@ from collections import defaultdict
 from yajsonrpc.betterAsyncore import Reactor
 from yajsonrpc.exception import JsonRpcBindingsError
 from yajsonrpc.stompclient import StompClient
-from yajsonrpc.stompreactor import StompRpcServer
+from yajsonrpc.stompserver import StompRpcServer
 from yajsonrpc import Notification
 from vdsm import sslutils
 from vdsm.config import config
@@ -300,7 +300,7 @@ class clientIF(object):
             try:
                 from vdsm.rpc import Bridge
                 from vdsm.rpc.bindingjsonrpc import BindingJsonRpc
-                from yajsonrpc.stompreactor import StompDetector
+                from yajsonrpc.stompserver import StompDetector
             except ImportError:
                 self.log.warn('Unable to load the json rpc server module. '
                               'Please make sure it is installed.')
