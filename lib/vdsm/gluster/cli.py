@@ -1622,6 +1622,31 @@ def _parseVolumeHealInfo(tree):
     return healInfo
 
 
+@gluster_mgmt_api
+def volumeResetBrickStart(volumeName, existingBrick):
+    command = _getGlusterVolCmd() + ["reset-brick", volumeName,
+                                     existingBrick, "start"]
+    try:
+        _execGlusterXml(command)
+        return True
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterVolumeResetBrickStartFailedException(rc=e.rc,
+                                                             err=e.err)
+
+
+@gluster_mgmt_api
+def volumeResetBrickCommitForce(volumeName, existingBrick):
+    command = _getGlusterVolCmd() + ["reset-brick", volumeName,
+                                     existingBrick, existingBrick, "commit",
+                                     "force"]
+    try:
+        _execGlusterXml(command)
+        return True
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterVolumeResetBrickCommitForceFailedException(rc=e.rc,
+                                                                   err=e.err)
+
+
 def exists():
     try:
         return os.path.exists(_glusterCommandPath.cmd)
