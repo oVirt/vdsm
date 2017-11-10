@@ -211,7 +211,10 @@ this drive.
 ### Snapshot
 
 - When a snapshot operation was completed, switching a drive to a new
-  path, set a new block threshold on the drive.
+  path, clear the block threshold on the drive (done implicitely by
+  the Drive object when its path changes).
+- The periodic monitoring will pick up the drive on the next cycle,
+  do all the checks and set a new threshold if needed.
 - If a block threshold event is received for the old drive path, ignore
   the event.
 

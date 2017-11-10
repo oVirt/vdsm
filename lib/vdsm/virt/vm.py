@@ -3999,6 +3999,32 @@ class Vm(object):
             with self._confLock:
                 conf.update(driveParams)
 
+    def clear_drive_threshold(self, drive, old_volume_id):
+        # Check that libvirt exposes full volume chain information
+        chains = self._driveGetActualVolumeChain([drive])
+        if drive['alias'] not in chains:
+            self.log.error(
+                "libvirt does not support volume chain "
+                "monitoring.  Unable to update threshold for %s.",
+                drive.name)
+            return
+
+        actual_chain = chains[drive['alias']]
+
+        try:
+            target_index = drive.volume_target_index(
+                old_volume_id, actual_chain)
+        except VolumeNotFound as e:
+            self.log.error(
+                "Unable to find the target index for %s: %s", old_volume_id, e)
+            return
+
+        try:
+            self.drive_monitor.clear_threshold(drive, index=target_index)
+        except libvirt.libvirtError as e:
+            self.log.error(
+                "Unable to clear the drive threshold: %s", e)
+
     def freeze(self):
         """
         Freeze every mounted filesystems within the guest (hence guest agent
@@ -4152,8 +4178,9 @@ class Vm(object):
             newDrives[vmDevName]["format"] = "cow"
 
             # We need to keep track of the drive object because
-            # it keeps original data and used to generate snapshot element
-            vmDrives[vmDevName] = vmDrive
+            # it keeps original data and used to generate snapshot element.
+            # We keep the old volume ID so we can clear the block threshold.
+            vmDrives[vmDevName] = (vmDrive, baseDrv["volumeID"])
 
         preparedDrives = {}
 
@@ -4171,7 +4198,7 @@ class Vm(object):
                 _rollbackDrives(preparedDrives)
                 return response.error('snapshotErr')
 
-            drive = vmDrives[vmDevName]
+            drive, _ = vmDrives[vmDevName]
             snapelem = drive.get_snapshot_xml(vmDevice)
             disks.appendChild(snapelem)
 
@@ -4245,21 +4272,26 @@ class Vm(object):
                 _padMemoryVolume(memoryVolPath, memoryVol['domainID'])
 
             for drive in newDrives.values():  # Update the drive information
+                _, old_volume_id = vmDrives[drive["name"]]
                 try:
                     self.updateDriveParameters(drive)
-                    drive_obj = self.findDriveByName(drive['name'])
-                    self.updateDriveVolume(drive_obj)
-                except StorageUnavailableError as e:
-                    # Will be recovered on the next monitoring cycle
-                    self.log.error(
-                        "Unable to update drive %r volume size: %s",
-                        drive.name, e)
                 except Exception:
                     # Here it's too late to fail, the switch already happened
                     # and there's nothing we can do, we must to proceed anyway
                     # to report the live snapshot success.
                     self.log.exception("Failed to update drive information"
                                        " for '%s'", drive)
+
+                drive_obj = self.findDriveByName(drive["name"])
+                self.clear_drive_threshold(drive_obj, old_volume_id)
+
+                try:
+                    self.updateDriveVolume(drive_obj)
+                except StorageUnavailableError as e:
+                    # Will be recovered on the next monitoring cycle
+                    self.log.error("Unable to update drive %r volume size: %s",
+                                   drive["name"], e)
+
         finally:
             self.drive_monitor.enable()
             if memoryParams:
