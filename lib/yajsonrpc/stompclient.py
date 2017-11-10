@@ -38,7 +38,7 @@ from yajsonrpc.stomp import \
     NR_RETRIES, \
     RECONNECT_INTERVAL, \
     SUBSCRIPTION_ID_RESPONSE
-from yajsonrpc import JsonRpcClient
+from yajsonrpc.jsonrpcclient import JsonRpcClient
 from yajsonrpc import CALL_TIMEOUT
 from .betterAsyncore import Reactor
 

@@ -64,7 +64,7 @@ class JsonRpcClientTests(VdsmTestCase):
 
     @contextmanager
     def _createClient(self):
-        client = yajsonrpc.JsonRpcClient(self.transport)
+        client = yajsonrpc.jsonrpcclient.JsonRpcClient(self.transport)
         try:
             yield client
         finally:

@@ -1563,6 +1563,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/rpc/bindingjsonrpc.py*
 %{python_sitelib}/%{vdsm_name}/rpc/Bridge.py*
 %{python_sitelib}/yajsonrpc/__init__.py*
+%{python_sitelib}/yajsonrpc/jsonrpcclient.py*
 
 %files api
 %doc lib/vdsm/api/vdsm-api.html
