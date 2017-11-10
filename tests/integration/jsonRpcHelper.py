@@ -24,7 +24,8 @@ from collections import defaultdict
 from contextlib import contextmanager
 from vdsm.common import time
 from yajsonrpc.betterAsyncore import Reactor
-from yajsonrpc.stompreactor import StompDetector, StompRpcClient
+from yajsonrpc.stompclient import StompRpcClient
+from yajsonrpc.stompreactor import StompDetector
 from yajsonrpc.stomp import (
     SUBSCRIPTION_ID_REQUEST,
     SUBSCRIPTION_ID_RESPONSE

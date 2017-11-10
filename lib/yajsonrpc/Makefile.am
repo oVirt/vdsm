@@ -24,6 +24,7 @@ dist_yajsonrpc_PYTHON = \
 	__init__.py \
 	betterAsyncore.py \
 	exception.py \
+	stompclient.py \
 	stompreactor.py \
 	stomp.py \
 	$(NULL)

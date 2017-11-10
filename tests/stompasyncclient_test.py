@@ -22,7 +22,12 @@ from uuid import uuid4
 import yajsonrpc
 
 from testlib import VdsmTestCase as TestCaseBase
-from yajsonrpc.stomp import AsyncClient, Command, Frame, Headers, StompError
+from yajsonrpc.stompclient import \
+    AsyncClient, \
+    Command, \
+    Frame, \
+    Headers, \
+    StompError
 # TODO: Fix this bad import, test modules are not libraries.
 from stompadapter_test import FakeSubscription, FakeAsyncDispatcher
 from monkeypatch import MonkeyPatchScope

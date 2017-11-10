@@ -18,13 +18,12 @@ from __future__ import absolute_import
 import logging
 import six
 import socket
-from uuid import uuid4
 from collections import deque
-from threading import Event
-from . import CALL_TIMEOUT
 
+from vdsm.common import api
+from vdsm.common import pki
 from vdsm.common import time
-
+from vdsm.sslutils import CLIENT_PROTOCOL, SSLSocket, SSLContext
 import re
 
 DEFAULT_INTERVAL = 30
@@ -38,7 +37,7 @@ DEFAULT_OUTGOING = 0
 NR_RETRIES = 1
 
 # This is the value used by engine
-_GRACE_PERIOD_FACTOR = 0.2
+GRACE_PERIOD_FACTOR = 0.2
 
 _RE_ESCAPE_SEQUENCE = re.compile(br"\\(.)")
 
@@ -533,195 +532,7 @@ class AsyncDispatcher(object):
             self._frame_handler.handle_close(self)
 
 
-class AsyncClient(object):
-    log = logging.getLogger("yajsonrpc.protocols.stomp.AsyncClient")
-
-    def __init__(self, incoming_heartbeat=DEFAULT_INCOMING,
-                 outgoing_heartbeat=DEFAULT_OUTGOING, nr_retries=NR_RETRIES,
-                 reconnect_interval=RECONNECT_INTERVAL):
-        self._connected = Event()
-        self._incoming_heartbeat = incoming_heartbeat
-        self._outgoing_heartbeat = outgoing_heartbeat
-        self._nr_retries = nr_retries
-        self._reconnect_interval = reconnect_interval
-        self._outbox = deque()
-        self._requests = deque()
-        self._error = None
-        self._subscriptions = {}
-        self._commands = {
-            Command.CONNECTED: self._process_connected,
-            Command.MESSAGE: self._process_message,
-            Command.RECEIPT: self._process_receipt,
-            Command.ERROR: self._process_error,
-            Command.DISCONNECT: self._process_disconnect
-        }
-
-    @property
-    def connected(self):
-        return self._connected.is_set()
-
-    def queue_frame(self, frame):
-        self._outbox.append(frame)
-
-    def queue_resend(self, frame):
-        self._requests.append(frame)
-
-    @property
-    def has_outgoing_messages(self):
-        return (len(self._outbox) > 0)
-
-    @property
-    def nr_retries(self):
-        return self._nr_retries
-
-    @property
-    def reconnect_interval(self):
-        return self._reconnect_interval
-
-    def peek_message(self):
-        return self._outbox[0]
-
-    def pop_message(self):
-        return self._outbox.popleft()
-
-    def getLastError(self):
-        return self._error
-
-    def handle_connect(self):
-        self._outbox.clear()
-        outgoing_heartbeat = \
-            int(self._outgoing_heartbeat * (1 + _GRACE_PERIOD_FACTOR))
-        incoming_heartbeat = \
-            int(self._incoming_heartbeat * (1 - _GRACE_PERIOD_FACTOR))
-
-        self._outbox.appendleft(Frame(
-            Command.CONNECT,
-            {
-                Headers.ACCEPT_VERSION: "1.2",
-                Headers.HEARTBEAT: "%d,%d" % (outgoing_heartbeat,
-                                              incoming_heartbeat),
-            }
-        ))
-        self.restore_subscriptions()
-
-    def handle_error(self, dispatcher):
-        dispatcher.handle_timeout()
-
-    def handle_close(self, dispatcher):
-        dispatcher.handle_timeout()
-
-    def handle_frame(self, dispatcher, frame):
-        self._commands[frame.command](frame, dispatcher)
-
-    def handle_timeout(self, dispatcher):
-        self.log.debug("Timeout occurred, trying to reconnect")
-        dispatcher.connection.reconnect(dispatcher._count,
-                                        dispatcher._on_timeout)
-
-    def _process_connected(self, frame, dispatcher):
-        self._connected.set()
-        dispatcher.connection.set_heartbeat(
-            self._outgoing_heartbeat,
-            self._incoming_heartbeat)
-
-        self.log.debug("Stomp connection established")
-
-        i = 0
-        while i < len(self._requests):
-            self._outbox.append(self._requests.popleft())
-            i += 1
-
-    def _process_message(self, frame, dispatcher):
-        sub_id = frame.headers.get(Headers.SUBSCRIPTION)
-        if sub_id is None:
-            self.log.warning("Got message without subscription id")
-            return
-        sub = self._subscriptions.get(sub_id)
-        if sub is None:
-            self.log.warning(
-                "Got message without an unknown subscription id '%s'",
-                sub_id
-            )
-            return
-
-        sub.handle_message(frame)
-
-    def _process_receipt(self, frame, dispatcher):
-        self.log.debug("Receipt frame received")
-
-    def _process_error(self, frame, dispatcher):
-        raise StompError(frame, frame.body)
-
-    def resend(self, destination, data="", headers=None):
-        self.queue_resend(self._build_frame(destination, data, headers))
-
-    def send(self, destination, data="", headers=None):
-        frame = self._build_frame(destination, data, headers)
-        if not self._connected.wait(timeout=CALL_TIMEOUT):
-            self.queue_resend(frame)
-
-        self.queue_frame(frame)
-
-    def _build_frame(self, destination, data="", headers=None):
-        final_headers = {"destination": destination}
-        if headers is not None:
-            final_headers.update(headers)
-        return Frame(Command.SEND, final_headers, data)
-
-    def subscribe(self, destination, ack=None, sub_id=None,
-                  message_handler=None):
-        if ack is None:
-            ack = AckMode.AUTO
-
-        if message_handler is None:
-            message_handler = lambda sub, frame: None
-
-        if sub_id is None:
-            sub_id = str(uuid4())
-
-        self.queue_frame(Frame(
-            Command.SUBSCRIBE,
-            {
-                "destination": destination,
-                "ack": ack,
-                "id": sub_id
-            }
-        ))
-
-        sub = _Subscription(self, destination, sub_id, ack, message_handler)
-        self._subscriptions[sub_id] = sub
-
-        return sub
-
-    def unsubscribe(self, sub):
-        try:
-            del self._subscriptions[sub.id]
-        except KeyError:
-            self.log.warning('No subscription with %s id', sub.id)
-        else:
-            self.queue_frame(Frame(Command.UNSUBSCRIBE,
-                                   {"id": sub.id}))
-
-    def _process_disconnect(self, frame, dispatcher):
-        r_id = frame.headers[Headers.RECEIPT]
-        if not r_id:
-            self.log.debug("No receipt id for disconnect frame")
-            # it is not mandatory to send receipt frame
-            return
-
-        headers = {Headers.RECEIPT_ID: r_id}
-        self.queue_frame(Frame(Command.RECEIPT, headers))
-
-    def restore_subscriptions(self):
-        subs = [sub for sub in six.viewvalues(self._subscriptions)]
-        self._subscriptions.clear()
-
-        for sub in subs:
-            self.subscribe(sub.destination,
-                           message_handler=sub.message_handler)
-
-
-class _Subscription(object):
+class Subscription(object):
 
     def __init__(self, client, destination, subid, ack, message_handler):
         self._ack = ack
@@ -762,3 +573,72 @@ class _Subscription(object):
     def unsubscribe(self):
         self._client.unsubscribe(self)
         self._valid = False
+
+
+class StompConnection(object):
+
+    def __init__(self, server, aclient, sock, reactor):
+        self._reactor = reactor
+        self._server = server
+        self._messageHandler = None
+
+        self._async_client = aclient
+        self._server_host, self._server_port = sock.getsockname()[:2]
+        self._sslctx = None
+        if isinstance(sock, SSLSocket):
+            self._sslctx = self._create_ssl_context()
+        self.initiate_connection(sock)
+
+    def initiate_connection(self, sock):
+        self._dispatcher = self._reactor.create_dispatcher(
+            sock, AsyncDispatcher(self, self._async_client))
+        self._client_host = self._dispatcher.addr[0]
+        self._client_port = self._dispatcher.addr[1]
+
+    def _create_ssl_context(self):
+        return SSLContext(key_file=pki.KEY_FILE, cert_file=pki.CERT_FILE,
+                          ca_certs=pki.CA_FILE, protocol=CLIENT_PROTOCOL)
+
+    def send_raw(self, msg):
+        self._async_client.queue_frame(msg)
+        self._reactor.wakeup()
+
+    def setTimeout(self, timeout):
+        self._dispatcher.socket.settimeout(timeout)
+
+    @property
+    def dispatcher(self):
+        return self._dispatcher
+
+    def connect(self):
+        pass
+
+    def reconnect(self, count, on_timeout):
+        self._dispatcher = self._reactor.reconnect(
+            (self._client_host, self._client_port), self._sslctx,
+            AsyncDispatcher(self, self._async_client, count=count))
+
+    def set_heartbeat(self, outgoing, incoming):
+        self._dispatcher.set_heartbeat(outgoing, incoming)
+
+    def close(self):
+        self._dispatcher.close()
+        if hasattr(self._async_client, 'remove_subscriptions'):
+            self._async_client.remove_subscriptions()
+
+    def get_local_address(self):
+        return self._dispatcher.socket.getsockname()[0]
+
+    def set_message_handler(self, msgHandler):
+        self._messageHandler = msgHandler
+        self._dispatcher.handle_read_event()
+
+    def handleMessage(self, data, flow_id):
+        if self._messageHandler is not None:
+            context = api.Context(flow_id, self._client_host,
+                                  self._client_port)
+            self._messageHandler((self._server, self.get_local_address(),
+                                  context, data))
+
+    def is_closed(self):
+        return not self._dispatcher.connected

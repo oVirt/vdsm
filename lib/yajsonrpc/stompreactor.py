@@ -16,22 +16,13 @@
 from __future__ import absolute_import
 import logging
 from collections import deque
-from uuid import uuid4
 import functools
 
-from vdsm import utils
 from vdsm.config import config
-from vdsm.common import api
-from vdsm.common import concurrent
-from vdsm.common import pki
 from vdsm.common.compat import json
-from vdsm.sslutils import CLIENT_PROTOCOL, SSLSocket, SSLContext
-from . import JsonRpcClient, JsonRpcServer
-from . import stomp
+from . import JsonRpcServer
+from . import stomp, stompclient
 from .betterAsyncore import Dispatcher, Reactor
-
-_STATE_LEN = "Waiting for message length"
-_STATE_MSG = "Waiting for message"
 
 
 def parseHeartBeatHeader(v):
@@ -144,8 +135,8 @@ class StompAdapterImpl(object):
             return
 
         ack = frame.headers.get("ack", stomp.AckMode.AUTO)
-        subscription = stomp._Subscription(dispatcher.connection, destination,
-                                           sub_id, ack, None)
+        subscription = stomp.Subscription(dispatcher.connection, destination,
+                                          sub_id, ack, None)
 
         self._sub_dests[destination].append(subscription)
         self._sub_ids[sub_id] = subscription
@@ -293,75 +284,6 @@ class StompAdapterImpl(object):
         return subscriptions
 
 
-class _StompConnection(object):
-
-    def __init__(self, server, aclient, sock, reactor):
-        self._reactor = reactor
-        self._server = server
-        self._messageHandler = None
-
-        self._async_client = aclient
-        self._server_host, self._server_port = sock.getsockname()[:2]
-        self._sslctx = None
-        if isinstance(sock, SSLSocket):
-            self._sslctx = self._create_ssl_context()
-        self.initiate_connection(sock)
-
-    def initiate_connection(self, sock):
-        self._dispatcher = self._reactor.create_dispatcher(
-            sock, stomp.AsyncDispatcher(self, self._async_client))
-        self._client_host = self._dispatcher.addr[0]
-        self._client_port = self._dispatcher.addr[1]
-
-    def _create_ssl_context(self):
-        return SSLContext(key_file=pki.KEY_FILE, cert_file=pki.CERT_FILE,
-                          ca_certs=pki.CA_FILE, protocol=CLIENT_PROTOCOL)
-
-    def send_raw(self, msg):
-        self._async_client.queue_frame(msg)
-        self._reactor.wakeup()
-
-    def setTimeout(self, timeout):
-        self._dispatcher.socket.settimeout(timeout)
-
-    @property
-    def dispatcher(self):
-        return self._dispatcher
-
-    def connect(self):
-        pass
-
-    def reconnect(self, count, on_timeout):
-        self._dispatcher = self._reactor.reconnect(
-            (self._client_host, self._client_port), self._sslctx,
-            stomp.AsyncDispatcher(self, self._async_client, count=count))
-
-    def set_heartbeat(self, outgoing, incoming):
-        self._dispatcher.set_heartbeat(outgoing, incoming)
-
-    def close(self):
-        self._dispatcher.close()
-        if hasattr(self._async_client, 'remove_subscriptions'):
-            self._async_client.remove_subscriptions()
-
-    def get_local_address(self):
-        return self._dispatcher.socket.getsockname()[0]
-
-    def set_message_handler(self, msgHandler):
-        self._messageHandler = msgHandler
-        self._dispatcher.handle_read_event()
-
-    def handleMessage(self, data, flow_id):
-        if self._messageHandler is not None:
-            context = api.Context(flow_id, self._client_host,
-                                  self._client_port)
-            self._messageHandler((self._server, self.get_local_address(),
-                                  context, data))
-
-    def is_closed(self):
-        return not self._dispatcher.connected
-
-
 class StompServer(object):
     log = logging.getLogger("yajsonrpc.StompServer")
 
@@ -374,8 +296,8 @@ class StompServer(object):
     def add_client(self, sock):
         adapter = StompAdapterImpl(self._reactor, self._sub_map,
                                    self._req_dest)
-        return _StompConnection(self, adapter, sock,
-                                self._reactor)
+        return stomp.StompConnection(self, adapter, sock,
+                                     self._reactor)
 
     """
     Sends message to all subscribes that subscribed to destination.
@@ -415,83 +337,6 @@ class StompServer(object):
             # we need to check whether the channel is not closed
             if not connection.client.is_closed():
                 connection.client.send_raw(res)
-
-
-class StompClient(object):
-    log = logging.getLogger("jsonrpc.AsyncoreClient")
-
-    """
-    We create a client by providing socket used for communication.
-    Reactor object responsible for processing I/O and flag
-    which tells client whether it should manage reactor's
-    life cycle (by default set to True).
-    """
-    def __init__(self, sock, reactor, owns_reactor=True,
-                 incoming_heartbeat=stomp.DEFAULT_INCOMING,
-                 outgoing_heartbeat=stomp.DEFAULT_OUTGOING,
-                 nr_retries=stomp.NR_RETRIES,
-                 reconnect_interval=stomp.RECONNECT_INTERVAL):
-        self._reactor = reactor
-        self._owns_reactor = owns_reactor
-        self._messageHandler = None
-        self._socket = sock
-
-        self._aclient = stomp.AsyncClient(
-            incoming_heartbeat, outgoing_heartbeat, nr_retries,
-            reconnect_interval)
-        self._stompConn = _StompConnection(
-            self,
-            self._aclient,
-            sock,
-            reactor
-        )
-        self._stompConn.set_heartbeat(outgoing_heartbeat, incoming_heartbeat)
-        self._aclient.handle_connect()
-
-    def setTimeout(self, timeout):
-        self._stompConn.setTimeout(timeout)
-
-    def connect(self):
-        self._stompConn.connect()
-
-    def handle_message(self, sub, frame):
-        if self._messageHandler is not None:
-            self._messageHandler((self, frame.body))
-
-    def set_message_handler(self, msgHandler):
-        self._messageHandler = msgHandler
-        self.check_read()
-
-    def check_read(self):
-        if isinstance(self._socket, SSLSocket) and self._socket.pending() > 0:
-            self._stompConn._dispatcher.handle_read()
-
-    def subscribe(self, *args, **kwargs):
-        sub = self._aclient.subscribe(*args, **kwargs)
-        self._reactor.wakeup()
-        return sub
-
-    def unsubscribe(self, sub):
-        self._aclient.unsubscribe(sub)
-
-    def send(self, message, destination=stomp.SUBSCRIPTION_ID_RESPONSE,
-             headers=None):
-        self.log.debug("Sending response")
-
-        if self._stompConn.is_closed():
-            self._aclient.resend(destination, message, headers)
-
-        self._aclient.send(
-            destination,
-            message,
-            headers
-        )
-        self._reactor.wakeup()
-
-    def close(self):
-        self._stompConn.close()
-        if self._owns_reactor:
-            self._reactor.stop()
 
 
 def StompListener(reactor, server, acceptHandler, connected_socket):
@@ -540,8 +385,8 @@ class StompReactor(object):
         return self._server
 
     def createClient(self, connected_socket, owns_reactor=False):
-        return StompClient(connected_socket, self._reactor,
-                           owns_reactor=owns_reactor)
+        return stompclient.StompClient(connected_socket, self._reactor,
+                                       owns_reactor=owns_reactor)
 
     def process_requests(self):
         self._reactor.process_requests()
@@ -602,161 +447,6 @@ class ServerRpcContextAdapter(object):
                     "content-type": "application/json",
                 }
             )
-
-
-class ClientRpcTransportAdapter(object):
-    def __init__(self, request_queue, response_queue, client):
-        self._client = client
-        self._message_handler = lambda arg: None
-        self._request_queue = request_queue
-        self._response_queue = response_queue
-        self._subs = {}
-
-        # Subscribe to main RPC queue
-        self.subscribe(
-            response_queue,
-            lambda msg: self._message_handler(msg)
-        )
-
-    """
-    In order to process message we need to set message
-    handler which is responsible for processing jsonrpc
-    content of the message. Currently this function is
-    called only from JsonRpcClient to set the callback.
-    """
-    def set_message_handler(self, handler):
-        """
-        Set a callback which handles messages received
-        from the main RPC queue.
-
-        :param handler: Callback to handle incoming messages
-        :type handler: function (string) -> ()
-        """
-        self._message_handler = handler
-
-    def send(self, data, destination=None):
-        if not destination:
-            destination = self._request_queue
-
-        headers = {
-            "content-type": "application/json",
-            "reply-to": self._response_queue,
-        }
-        self._client.send(
-            data,
-            destination,
-            headers,
-        )
-
-    def subscribe(self, queue_name, callback):
-        """
-        Subscribe to a queue and receive any messages sent to it.
-
-        :param queue_name: Name of the queue
-        :param callback: Function that is called on receiving a message
-        :type callback: function (string) -> ()
-
-        :return: Id of the subscription
-        """
-
-        sub_id = uuid4()
-        self._subs[sub_id] = self._client.subscribe(
-            queue_name,
-            sub_id=str(sub_id),
-            message_handler=lambda sub, frame: callback(frame.body)
-        )
-
-        return sub_id
-
-    def unsubscribe(self, sub):
-        """
-        Unsubscribes and stops receiving messages.
-
-        :param sub: Id of the subscription, returned from subscribe()
-        """
-
-        self._client.unsubscribe(self._subs[sub])
-        del self._subs[sub]
-
-    def close(self):
-        for sub in self._subs.values():
-            self._client.unsubscribe(sub)
-
-        self._client.close()
-
-
-def StompRpcClient(stomp_client, request_queue, response_queue):
-    return JsonRpcClient(
-        ClientRpcTransportAdapter(
-            request_queue,
-            response_queue,
-            stomp_client,
-        )
-    )
-
-
-def SimpleClient(host, port=54321, ssl=True,
-                 incoming_heartbeat=stomp.DEFAULT_INCOMING,
-                 outgoing_heartbeat=stomp.DEFAULT_OUTGOING,
-                 nr_retries=stomp.NR_RETRIES,
-                 reconnect_interval=stomp.RECONNECT_INTERVAL):
-    """
-    Returns JsonRpcClient able to receive jsonrpc messages and notifications.
-    It is required to provide a host where we want to connect, port and whether
-    we want to use ssl (True by default). Other settings use defaults and if
-    there is a need to customize please use StandAloneRpcClient().
-    """
-    sslctx = None
-    if ssl:
-        from vdsm.sslutils import SSLContext
-        sslctx = SSLContext(key_file=pki.KEY_FILE,
-                            cert_file=pki.CERT_FILE,
-                            ca_certs=pki.CA_FILE,
-                            protocol=CLIENT_PROTOCOL)
-    return StandAloneRpcClient(host, port, "jms.topic.vdsm_requests",
-                               str(uuid4()), sslctx, False,
-                               incoming_heartbeat, outgoing_heartbeat,
-                               nr_retries, reconnect_interval)
-
-
-def StandAloneRpcClient(host, port, request_queue, response_queue,
-                        sslctx=None, lazy_start=True,
-                        incoming_heartbeat=stomp.DEFAULT_INCOMING,
-                        outgoing_heartbeat=stomp.DEFAULT_OUTGOING,
-                        nr_retries=stomp.NR_RETRIES,
-                        reconnect_interval=stomp.RECONNECT_INTERVAL):
-    """
-    Returns JsonRpcClient able to receive jsonrpc messages and notifications.
-    It is required to provide host and port where we want to connect and
-    request and response queues that we want to use during communication.
-    We can provide ssl context if we want to secure connection.
-    """
-    reactor = Reactor()
-
-    def start():
-        thread = concurrent.thread(reactor.process_requests,
-                                   name='Client %s:%s' % (host, port))
-        thread.start()
-
-    client = StompClient(utils.create_connected_socket(host, port, sslctx),
-                         reactor, incoming_heartbeat=incoming_heartbeat,
-                         outgoing_heartbeat=outgoing_heartbeat,
-                         nr_retries=nr_retries,
-                         reconnect_interval=reconnect_interval)
-
-    jsonclient = JsonRpcClient(
-        ClientRpcTransportAdapter(
-            request_queue,
-            response_queue,
-            client)
-    )
-
-    if lazy_start:
-        setattr(jsonclient, 'start', start)
-    else:
-        start()
-
-    return jsonclient
 
 
 def StompRpcServer(bridge, stomp_client, request_queue, address, timeout, cif):

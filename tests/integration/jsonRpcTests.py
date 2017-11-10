@@ -44,7 +44,7 @@ from yajsonrpc.exception import \
     JsonRpcInternalError
 
 from yajsonrpc.stomp import Disconnected
-from yajsonrpc.stompreactor import SimpleClient
+from yajsonrpc.stompclient import SimpleClient
 
 
 CALL_TIMEOUT = 3

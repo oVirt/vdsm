@@ -27,7 +27,7 @@ from testlib import VdsmTestCase as TestCaseBase, \
 
 import yajsonrpc
 from integration.jsonRpcHelper import constructAcceptor
-from yajsonrpc.stompreactor import StandAloneRpcClient
+from yajsonrpc.stompclient import StandAloneRpcClient
 from vdsm import utils
 
 from integration.sslhelper import DEAFAULT_SSL_CONTEXT

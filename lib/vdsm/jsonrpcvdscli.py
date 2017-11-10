@@ -24,7 +24,7 @@ from functools import partial
 from uuid import uuid4
 
 import six
-from yajsonrpc import stompreactor
+from yajsonrpc import stompclient
 from yajsonrpc import \
     JsonRpcRequest, \
     CALL_TIMEOUT
@@ -233,7 +233,7 @@ def _create(requestQueue,
     if responseQueue is None:
         responseQueue = str(uuid4())
 
-    return stompreactor.StandAloneRpcClient(
+    return stompclient.StandAloneRpcClient(
         host, port, requestQueue, responseQueue, sslctx,
         lazy_start=False)
 
@@ -251,7 +251,7 @@ def connect(requestQueue=None, stompClient=None,
                          host, port, useSSL,
                          responseQueue)
     else:
-        client = stompreactor.StompRpcClient(
+        client = stompclient.StompRpcClient(
             stompClient,
             requestQueue,
             str(uuid4())

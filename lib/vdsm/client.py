@@ -116,7 +116,7 @@ import uuid
 
 from vdsm.api import vdsmapi
 
-from yajsonrpc import stompreactor
+from yajsonrpc import stompclient
 from yajsonrpc import stomp
 
 import yajsonrpc
@@ -131,7 +131,7 @@ def connect(
         outgoing_heartbeat=stomp.DEFAULT_OUTGOING,
         nr_retries=stomp.NR_RETRIES):
     try:
-        client = stompreactor.SimpleClient(
+        client = stompclient.SimpleClient(
             host, port, use_tls, incoming_heartbeat=incoming_heartbeat,
             outgoing_heartbeat=outgoing_heartbeat, nr_retries=nr_retries)
 
