@@ -64,12 +64,9 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
 
     execCmdLogger.debug(command_log_line(printable, cwd=cwd))
 
-    extra = {}
-    extra['stderr'] = subprocess.PIPE
-    extra['stdout'] = subprocess.PIPE
-    extra['stdin'] = subprocess.PIPE
-
-    p = subprocess.Popen(command, close_fds=True, cwd=cwd, env=env, **extra)
+    p = subprocess.Popen(
+        command, close_fds=True, cwd=cwd, env=env,
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     if not sync:
         p = AsyncProc(p)
