@@ -20,15 +20,20 @@
 
 from __future__ import absolute_import
 
+import logging
 import re
 
 from collections import namedtuple
 from threading import Lock
 
-from vdsm import constants
+from vdsm.common import cmdutils
+from vdsm.common import commands
+from vdsm.common import constants
+from vdsm.common import zombiereaper
+from vdsm.common.compat import subprocess
 from vdsm.common.network.address import hosttail_split
-from vdsm.storage import misc
-from vdsm.utils import AsyncProcessOperation
+
+log = logging.getLogger("storage.iscsiadm")
 
 # iscsiadm exit statuses
 ISCSI_ERR_SESS_EXISTS = 15
@@ -94,6 +99,19 @@ class IscsiSessionNotFound(IscsiError):
 class IscsiSessionError(IscsiError):
     pass
 
+
+class IscsiSessionRescanTimeout(IscsiSessionError):
+    msg = ("Timeout scanning iSCSI sesions (pid={self.pid}, "
+           "timeout={self.timeout})")
+
+    def __init__(self, pid, timeout):
+        self.pid = pid
+        self.timeout = timeout
+
+    def __str__(self):
+        return self.msg.format(self=self)
+
+
 _RESERVED_INTERFACES = ("default", "tcp", "iser")
 
 # Running multiple iscsiadm commands in parallel causes random problems.
@@ -102,24 +120,13 @@ _RESERVED_INTERFACES = ("default", "tcp", "iser")
 _iscsiadmLock = Lock()
 
 
-def _runCmd(args, hideValue=False, sync=True):
+def _runCmd(args):
     # FIXME: I don't use supervdsm because this entire module has to just be
     # run as root and there is no such feature yet in supervdsm. When such
     # feature exists please change this.
     with _iscsiadmLock:
         cmd = [constants.EXT_ISCSIADM] + args
-
-        printCmd = None
-        if hideValue:
-            printCmd = cmd[:]
-            for i, arg in enumerate(printCmd):
-                if arg != "-v":
-                    continue
-
-                if i < (len(printCmd) - 1):
-                    printCmd[i + 1] = "****"
-
-        return misc.execCmd(cmd, printable=printCmd, sudo=True, sync=sync)
+        return commands.run(cmd, sudo=True)
 
 
 def iface_exists(interfaceName):
@@ -135,37 +142,34 @@ def iface_new(name):
     if name in _RESERVED_INTERFACES:
         raise ReservedInterfaceNameError(name)
 
-    rc, out, err = _runCmd(["-m", "iface", "-I", name, "--op=new"])
-    if rc == 0:
-        return
+    try:
+        _runCmd(["-m", "iface", "-I", name, "--op=new"])
+    except cmdutils.Error as e:
+        if iface_exists(name):
+            raise IsciInterfaceAlreadyExistsError(name)
 
-    if iface_exists(name):
-        raise IsciInterfaceAlreadyExistsError(name)
-
-    raise IsciInterfaceCreationError(name, rc, out, err)
+        raise IsciInterfaceCreationError(name, e.rc, e.out, e.err)
 
 
 def iface_update(name, key, value):
-    rc, out, err = _runCmd(["-m", "iface", "-I", name, "-n", key, "-v", value,
-                            "--op=update"])
-    if rc == 0:
-        return
+    try:
+        _runCmd(["-m", "iface", "-I", name, "-n", key, "-v", value,
+                 "--op=update"])
+    except cmdutils.Error as e:
+        if not iface_exists(name):
+            raise IscsiInterfaceDoesNotExistError(name)
 
-    if not iface_exists(name):
-        raise IscsiInterfaceDoesNotExistError(name)
-
-    raise IscsiInterfaceUpdateError(name, rc, out, err)
+        raise IscsiInterfaceUpdateError(name, e.rc, e.out, e.err)
 
 
 def iface_delete(name):
-    rc, out, err = _runCmd(["-m", "iface", "-I", name, "--op=delete"])
-    if rc == 0:
-        return
+    try:
+        _runCmd(["-m", "iface", "-I", name, "--op=delete"])
+    except cmdutils.Error:
+        if not iface_exists(name):
+            raise IscsiInterfaceDoesNotExistError(name)
 
-    if not iface_exists(name):
-        raise IscsiInterfaceDoesNotExistError(name)
-
-    raise IscsiInterfaceDeletionError(name)
+        raise IscsiInterfaceDeletionError(name)
 
 
 def iface_list(out=None):
@@ -175,11 +179,12 @@ def iface_list(out=None):
     #   <iscsi_ifacename> <transport_name>,<hwaddress>,<ipaddress>,\
     #   <net_ifacename>,<initiatorname>
     if out is None:
-        rc, out, err = _runCmd(["-m", "iface"])
-        if rc != 0:
-            raise IscsiInterfaceListingError(rc, out, err)
+        try:
+            out = _runCmd(["-m", "iface"])
+        except cmdutils.Error as e:
+            raise IscsiInterfaceListingError(e.rc, e.out, e.err)
 
-    for line in out:
+    for line in out.splitlines():
         yield Iface._make(None if value == '<empty>' else value
                           for value in re.split('[\s,]', line))
 
@@ -187,176 +192,181 @@ def iface_list(out=None):
 def iface_info(name):
     # FIXME: This can be done more effciently by reading
     # /var/lib/iscsi/ifaces/<iface name>. Fix if ever a performance bottleneck.
-    rc, out, err = _runCmd(["-m", "iface", "-I", name])
-    if rc == 0:
-        res = {}
-        for line in out:
-            if line.startswith("#"):
-                continue
+    try:
+        out = _runCmd(["-m", "iface", "-I", name])
+    except cmdutils.Error as e:
+        if not iface_exists(name):
+            raise IscsiInterfaceDoesNotExistError(name)
 
-            key, value = line.split("=", 1)
+        raise IscsiInterfaceListingError(e.rc, e.out, e.err)
 
-            if value.strip() == '<empty>':
-                continue
+    res = {}
+    for line in out.splitlines():
+        if line.startswith("#"):
+            continue
 
-            res[key.strip()] = value.strip()
+        key, value = line.split("=", 1)
 
-        return res
+        if value.strip() == '<empty>':
+            continue
 
-    if not iface_exists(name):
-        raise IscsiInterfaceDoesNotExistError(name)
+        res[key.strip()] = value.strip()
 
-    raise IscsiInterfaceListingError(rc, out, err)
+    return res
 
 
 def discoverydb_new(discoveryType, iface, portal):
-    rc, out, err = _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I",
-                            iface, "-p", portal, "--op=new"])
-    if rc == 0:
-        return
+    try:
+        _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I", iface,
+                 "-p", portal, "--op=new"])
+    except cmdutils.Error as e:
+        if not iface_exists(iface):
+            raise IscsiInterfaceDoesNotExistError(iface)
 
-    if not iface_exists(iface):
-        raise IscsiInterfaceDoesNotExistError(iface)
-
-    raise IscsiDiscoverdbError(rc, out, err)
+        raise IscsiDiscoverdbError(e.rc, e.out, e.err)
 
 
-def discoverydb_update(discoveryType, iface, portal, key, value,
-                       hideValue=False):
-    rc, out, err = _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I",
-                            iface, "-p", portal, "-n", key, "-v", value,
-                            "--op=update"],
-                           hideValue)
-    if rc == 0:
-        return
+def discoverydb_update(discoveryType, iface, portal, key, value):
+    try:
+        _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I", iface,
+                 "-p", portal, "-n", key, "-v", value, "--op=update"])
+    except cmdutils.Error as e:
+        if not iface_exists(iface):
+            raise IscsiInterfaceDoesNotExistError(iface)
 
-    if not iface_exists(iface):
-        raise IscsiInterfaceDoesNotExistError(iface)
-
-    raise IscsiDiscoverdbError(rc, out, err)
+        raise IscsiDiscoverdbError(e.rc, e.out, e.err)
 
 
 def discoverydb_discover(discoveryType, iface, portal):
-    rc, out, err = _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I",
-                            iface, "-p", portal, "--discover"])
-    if rc == 0:
-        res = []
-        for line in out:
-            rest, iqn = line.split()
-            rest, tpgt = rest.split(",")
-            ip, port = hosttail_split(rest)
-            res.append((ip, int(port), int(tpgt), iqn))
+    try:
+        out = _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I", iface,
+                       "-p", portal, "--discover"])
+    except cmdutils.Error as e:
+        if not iface_exists(iface):
+            raise IscsiInterfaceDoesNotExistError(iface)
 
-        return res
+        if e.rc == ISCSI_ERR_LOGIN_AUTH_FAILED:
+            raise IscsiAuthenticationError(e.rc, e.out, e.err)
 
-    if not iface_exists(iface):
-        raise IscsiInterfaceDoesNotExistError(iface)
+        raise IscsiDiscoverdbError(e.rc, e.out, e.err)
 
-    if rc == ISCSI_ERR_LOGIN_AUTH_FAILED:
-        raise IscsiAuthenticationError(rc, out, err)
+    res = []
+    for line in out.splitlines():
+        rest, iqn = line.split()
+        rest, tpgt = rest.split(",")
+        ip, port = hosttail_split(rest)
+        res.append((ip, int(port), int(tpgt), iqn))
 
-    raise IscsiDiscoverdbError(rc, out, err)
+    return res
 
 
 def discoverydb_delete(discoveryType, iface, portal):
-    rc, out, err = _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I",
-                            iface, "-p", portal, "--op=delete"])
-    if rc == 0:
-        return
+    try:
+        _runCmd(["-m", "discoverydb", "-t", discoveryType, "-I", iface,
+                 "-p", portal, "--op=delete"])
+    except cmdutils.Error as e:
+        if not iface_exists(iface):
+            raise IscsiInterfaceDoesNotExistError(iface)
 
-    if not iface_exists(iface):
-        raise IscsiInterfaceDoesNotExistError(iface)
-
-    raise IscsiDiscoverdbError(rc, out, err)
+        raise IscsiDiscoverdbError(e.rc, e.out, e.err)
 
 
 def node_new(iface, portal, targetName):
-    rc, out, err = _runCmd(["-m", "node", "-T", targetName, "-I", iface, "-p",
-                            portal, "--op=new"])
-    if rc == 0:
-        return
+    try:
+        _runCmd(["-m", "node", "-T", targetName, "-I", iface,
+                 "-p", portal, "--op=new"])
+    except cmdutils.Error as e:
+        if not iface_exists(iface):
+            raise IscsiInterfaceDoesNotExistError(iface)
 
-    if not iface_exists(iface):
-        raise IscsiInterfaceDoesNotExistError(iface)
-
-    raise IscsiNodeError(rc, out, err)
+        raise IscsiNodeError(e.rc, e.out, e.err)
 
 
-def node_update(iface, portal, targetName, key, value, hideValue=False):
-    rc, out, err = _runCmd(["-m", "node", "-T", targetName, "-I", iface, "-p",
-                            portal, "-n", key, "-v", value, "--op=update"],
-                           hideValue)
-    if rc == 0:
-        return
+def node_update(iface, portal, targetName, key, value):
+    try:
+        _runCmd(["-m", "node", "-T", targetName, "-I", iface,
+                 "-p", portal, "-n", key, "-v", value, "--op=update"])
+    except cmdutils.Error as e:
+        if not iface_exists(iface):
+            raise IscsiInterfaceDoesNotExistError(iface)
 
-    if not iface_exists(iface):
-        raise IscsiInterfaceDoesNotExistError(iface)
-
-    raise IscsiNodeError(rc, out, err)
+        raise IscsiNodeError(e.rc, e.out, e.err)
 
 
 def node_delete(iface, portal, targetName):
-    rc, out, err = _runCmd(["-m", "node", "-T", targetName, "-I", iface, "-p",
-                            portal, "--op=delete"])
-    if rc == 0:
-        return
+    try:
+        _runCmd(["-m", "node", "-T", targetName, "-I", iface,
+                 "-p", portal, "--op=delete"])
+    except cmdutils.Error as e:
+        if not iface_exists(iface):
+            raise IscsiInterfaceDoesNotExistError(iface)
 
-    if not iface_exists(iface):
-        raise IscsiInterfaceDoesNotExistError(iface)
-
-    raise IscsiNodeError(rc, out, err)
+        raise IscsiNodeError(e.rc, e.out, e.err)
 
 
 def node_disconnect(iface, portal, targetName):
-    rc, out, err = _runCmd(["-m", "node", "-T", targetName, "-I", iface, "-p",
-                            portal, "-u"])
-    if rc == 0:
-        return
+    try:
+        _runCmd(["-m", "node", "-T", targetName, "-I", iface,
+                 "-p", portal, "-u"])
+    except cmdutils.Error as e:
+        if not iface_exists(iface):
+            raise IscsiInterfaceDoesNotExistError(iface)
 
-    if not iface_exists(iface):
-        raise IscsiInterfaceDoesNotExistError(iface)
+        if e.rc == ISCSI_ERR_OBJECT_NOT_FOUND:
+            raise IscsiSessionNotFound(iface, portal, targetName)
 
-    if rc == ISCSI_ERR_OBJECT_NOT_FOUND:
-        raise IscsiSessionNotFound(iface, portal, targetName)
-
-    raise IscsiNodeError(rc, out, err)
+        raise IscsiNodeError(e.rc, e.out, e.err)
 
 
 def node_login(iface, portal, targetName):
-    rc, out, err = _runCmd(["-m", "node", "-T", targetName, "-I", iface, "-p",
-                            portal, "-l"])
-    if rc == 0:
+    try:
+        _runCmd(["-m", "node", "-T", targetName, "-I", iface,
+                 "-p", portal, "-l"])
+    except cmdutils.Error as e:
+        if not iface_exists(iface):
+            raise IscsiInterfaceDoesNotExistError(iface)
+
+        if e.rc == ISCSI_ERR_LOGIN_AUTH_FAILED:
+            raise IscsiAuthenticationError(e.rc, e.out, e.err)
+
+        raise IscsiNodeError(e.rc, e.out, e.err)
+
+
+def session_rescan(timeout=None):
+    # Note: keeping old behaviour of taking the module lock while starting the
+    # command, and releasing the lock while the scan command is running. This
+    # looks like a bug since the purpose of the lock is preventing concurrent
+    # iscsiadm commands, but taking a lock for the entire operation may cause
+    # bigger issues.
+
+    args = [constants.EXT_ISCSIADM, "-m", "session", "-R"]
+
+    with _iscsiadmLock:
+        p = commands.start(
+            args,
+            sudo=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+
+    try:
+        out, err = p.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        zombiereaper.autoReapPID(p.pid)
+        raise IscsiSessionRescanTimeout(p.pid, timeout)
+
+    # This is an expected condition before connecting to iSCSI storage
+    # server during startup, or after disconnecting.
+    if p.returncode == ISCSI_ERR_OBJECT_NOT_FOUND:
+        log.debug("No iSCSI sessions found")
         return
 
-    if not iface_exists(iface):
-        raise IscsiInterfaceDoesNotExistError(iface)
-
-    if rc == ISCSI_ERR_LOGIN_AUTH_FAILED:
-        raise IscsiAuthenticationError(rc, out, err)
-
-    raise IscsiNodeError(rc, out, err)
-
-
-def session_rescan_async():
-    proc = _runCmd(["-m", "session", "-R"], sync=False)
-
-    def parse_result(rc, out, err):
-        if rc == 0:
-            return
-
-        raise IscsiSessionError(rc, out, err)
-
-    return AsyncProcessOperation(proc, parse_result)
-
-
-def session_rescan():
-    aop = session_rescan_async()
-    return aop.result()
+    # Any other error is reported to the caller.
+    if p.returncode != 0:
+        raise IscsiSessionError(p.returncode, out, err)
 
 
 def session_logout(sessionId):
-    rc, out, err = _runCmd(["-m", "session", "-r", str(sessionId), "-u"])
-    if rc == 0:
-        return
-
-    raise IscsiSessionError(rc, out, err)
+    try:
+        _runCmd(["-m", "session", "-r", str(sessionId), "-u"])
+    except cmdutils.Error as e:
+        raise IscsiSessionError(e.rc, e.out, e.err)

@@ -22,27 +22,27 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
-from contextlib import contextmanager
 
-import six
-import pytest
+from contextlib import contextmanager
+from time import sleep
 
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase
 from testlib import make_config
 from testlib import expandPermutations, permutations
-from vdsm import utils
-from vdsm.common import commands
 from vdsm.common import time
 from vdsm.common.password import ProtectedPassword
 from vdsm.storage import iscsi
 from vdsm.storage import iscsiadm
 
 
-def fake_rescan(timeout):
-    def func():
-        proc = commands.execCmd(["sleep", str(timeout)], sync=False)
-        return utils.AsyncProcessOperation(proc)
+def fake_rescan(actual):
+    def func(timeout):
+        if actual <= timeout:
+            sleep(actual)
+        else:
+            sleep(timeout)
+            raise iscsiadm.IscsiSessionRescanTimeout(-1, timeout)
     return func
 
 
@@ -59,14 +59,14 @@ class TestRescanTimeout(VdsmTestCase):
                 self.fail("Operation was too slow %.2fs > %.2fs" %
                           (elapsed, maxtime))
 
-    @pytest.mark.skipif(six.PY3, reason="using AsyncProc")
-    @MonkeyPatch(iscsiadm, 'session_rescan_async', fake_rescan(0.1))
+    @MonkeyPatch(iscsiadm, 'session_rescan', fake_rescan(0.1))
+    @MonkeyPatch(iscsi, 'config',
+                 make_config([("irs", "scsi_rescan_maximal_timeout", "1")]))
     def testWait(self):
         with self.assertMaxDuration(0.3):
             iscsi.rescan()
 
-    @pytest.mark.skipif(six.PY3, reason="using AsyncProc")
-    @MonkeyPatch(iscsiadm, 'session_rescan_async', fake_rescan(2))
+    @MonkeyPatch(iscsiadm, 'session_rescan', fake_rescan(2))
     @MonkeyPatch(iscsi, 'config',
                  make_config([("irs", "scsi_rescan_maximal_timeout", "1")]))
     def testTimeout(self):
@@ -79,7 +79,7 @@ class TestIscsiAdm(VdsmTestCase):
         dirName = os.path.dirname(os.path.realpath(__file__))
         path = os.path.join(dirName, "iscsiadm_-m_iface.out")
         with open(path) as f:
-            out = f.read().splitlines()
+            out = f.read()
 
         Iface = iscsi.iscsiadm.Iface
 

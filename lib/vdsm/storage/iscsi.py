@@ -210,8 +210,7 @@ def addIscsiNode(iface, target, credentials=None):
                 for key, value in credentials.getIscsiadmOptions():
                     key = "node.session." + key
                     iscsiadm.node_update(iface.name, target.address,
-                                         target.iqn, key, value,
-                                         hideValue=True)
+                                         target.iqn, key, value)
 
             setRpFilterIfNeeded(iface.netIfaceName, target.portal.hostname,
                                 True)
@@ -251,8 +250,7 @@ def addIscsiPortal(iface, portal, credentials=None):
                 for key, value in credentials.getIscsiadmOptions():
                     key = "discovery.sendtargets." + key
                     iscsiadm.discoverydb_update(discoverType, iface.name,
-                                                str(portal), key, value,
-                                                hideValue=True)
+                                                str(portal), key, value)
 
         except:
             deleteIscsiPortal(iface, portal)
@@ -307,8 +305,10 @@ class ChapCredentials(object):
         res = [("auth.authmethod", "CHAP")]
         if self.username is not None:
             res.append(("auth.username", self.username))
+        # Note: password will be unprotected by the underlying command just
+        # before running the command.
         if self.password is not None:
-            res.append(("auth.password", self.password.value))
+            res.append(("auth.password", self.password))
 
         return res
 
@@ -439,8 +439,12 @@ def iterateIscsiInterfaces():
 def rescan():
     timeout = config.getint('irs', 'scsi_rescan_maximal_timeout')
     log.debug("Performing SCSI scan, this will take up to %s seconds", timeout)
-    rescanOp = iscsiadm.session_rescan_async()
-    rescanOp.wait(timeout=timeout)
+    try:
+        iscsiadm.session_rescan(timeout=timeout)
+    except iscsiadm.IscsiSessionError as e:
+        log.error("Scan failed: %s", e)
+    else:
+        log.debug("Scan finished")
 
 
 def devIsiSCSI(dev):
