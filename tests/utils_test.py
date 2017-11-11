@@ -329,68 +329,6 @@ class TestGeneralUtils(TestCaseBase):
         self.assertEqual(utils.unique(iterable,), unique_items)
 
 
-class TestAsyncProcessOperation(TestCaseBase):
-    def _echo(self, text):
-        proc = commands.execCmd(["echo", "-n", "test"], sync=False)
-
-        def parse(rc, out, err):
-            return out
-
-        return utils.AsyncProcessOperation(proc, parse)
-
-    def _sleep(self, t):
-        proc = commands.execCmd(["sleep", str(t)], sync=False)
-        return utils.AsyncProcessOperation(proc)
-
-    def _fail(self, t):
-        proc = commands.execCmd(["sleep", str(t)], sync=False)
-
-        def parse(rc, out, err):
-            raise Exception("TEST!!!")
-
-        return utils.AsyncProcessOperation(proc, parse)
-
-    def test(self):
-        aop = self._sleep(1)
-        self.assertEqual(aop.result(), ((0, "", ""), None))
-
-    def testAlreadyExitedSuccess(self):
-        aop = self._sleep(0)
-        time.sleep(1)
-        self.assertEqual(aop.result(), ((0, "", ""), None))
-
-    def testAlreadyExitedFail(self):
-        aop = self._sleep("hello")
-        time.sleep(1)
-        ((rc, out, err), err) = aop.result()
-        self.assertEqual(err, None)
-        self.assertEqual(rc, 1)
-
-    def testWait(self):
-        aop = self._sleep(1)
-        aop.wait(timeout=2)
-
-    def testParser(self):
-        aop = self._echo("test")
-        self.assertEqual(aop.result(), ("test", None))
-
-    def testStop(self):
-        aop = self._sleep(10)
-        aop.stop()
-
-        start = time.time()
-        aop.result()
-        end = time.time()
-        duration = end - start
-        self.assertTrue(duration < 2)
-
-    def testException(self):
-        aop = self._fail(1)
-        res, err = aop.result()
-        self.assertEqual(res, None)
-        self.assertNotEquals(err, None)
-
-
 class TestCallbackChain(TestCaseBase):
     def testCanPassIterableOfCallbacks(self):
         f = lambda: False
