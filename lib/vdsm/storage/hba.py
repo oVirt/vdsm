@@ -29,10 +29,11 @@ import logging
 import os
 
 from vdsm import constants
-from vdsm.config import config
 from vdsm.common import commands
 from vdsm.common import supervdsm
 from vdsm.common import zombiereaper
+from vdsm.common.compat import subprocess
+from vdsm.config import config
 from vdsm.storage import misc
 
 log = logging.getLogger("storage.HBA")
@@ -70,17 +71,19 @@ def _rescan():
     """
     timeout = config.getint('irs', 'scsi_rescan_maximal_timeout')
 
-    proc = commands.execCmd([constants.EXT_FC_SCAN], sync=False,
-                            execCmdLogger=log)
+    p = commands.start(
+        [constants.EXT_FC_SCAN],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE)
     try:
-        proc.wait(timeout)
-    finally:
-        if proc.returncode is None:
-            zombiereaper.autoReapPID(proc.pid)
-            raise Error("Timeout scanning (pid=%s)" % proc.pid)
-        elif proc.returncode != 0:
-            stderr = proc.stderr.read(512)
-            raise Error("Scan failed: %r" % stderr)
+        out, err = p.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        zombiereaper.autoReapPID(p.pid)
+        raise Error("Timeout scanning (pid=%s)" % p.pid)
+
+    if p.returncode != 0:
+        raise Error("Scan failed with rc=%s out=%r err=%r"
+                    % (p.returncode, out, err))
 
 
 def getiSCSIInitiators():
