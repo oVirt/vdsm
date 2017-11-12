@@ -533,7 +533,7 @@ class SetupNetworks(object):
                      for attr in six.itervalues(self.setup_networks)
                      if 'nic' in attr]
         for attr in six.itervalues(self.setup_bonds):
-            nics_used += attr['nics']
+            nics_used += attr.get('nics', [])
         for nic in nics_used:
             fileutils.rm_file(IFCFG_PREFIX + nic)
 
