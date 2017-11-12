@@ -487,35 +487,6 @@ class NetworkTest(TestCaseBase):
             # wait for Vdsm to update statistics
             self.retryAssert(assertStatsInRange, timeout=3)
 
-    @cleanupNet
-    @permutations([[True], [False]])
-    def testSetupNetworksKeepNetworkOnBondAfterBondResizing(self, bridged):
-        with dummyIf(3) as nics:
-            networks = {NETWORK_NAME: dict(bonding=BONDING_NAME,
-                                           bridged=bridged)}
-            bondings = {BONDING_NAME: dict(nics=nics[:2])}
-            status, msg = self.setupNetworks(networks, bondings, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
-            self.assertBondExists(BONDING_NAME, nics[:2])
-
-            # Increase bond size
-            _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
-            with nonChangingOperstate(BONDING_NAME):
-                status, msg = self.setupNetworks(
-                    {}, {BONDING_NAME: dict(nics=nics)}, NOCHK)
-
-                self.assertEqual(status, SUCCESS, msg)
-
-                self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
-                self.assertBondExists(BONDING_NAME, nics)
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: dict(remove=True)},
-                {BONDING_NAME: dict(remove=True)}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
     def _createBondedNetAndCheck(self, netNum, bondDict, bridged,
                                  **networkOpts):
         netName = NETWORK_NAME + str(netNum)
