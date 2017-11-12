@@ -21,8 +21,6 @@ from __future__ import absolute_import
 
 import pytest
 
-from vdsm.network.netlink import waitfor
-
 from network.nettestlib import dummy_devices
 
 from . import netfunctestlib as nftestlib
@@ -70,8 +68,6 @@ class TestNetworkMtu(nftestlib.NetFuncTestCase):
             BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
 
             with self.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
-                with waitfor.waitfor_linkup(BOND_NAME):
-                    pass
                 with nftestlib.monitor_stable_link_state(BOND_NAME):
                     self.assertNetwork(NETWORK2_NAME, NETBASE[NETWORK2_NAME])
                     self.setupNetworks({NETWORK2_NAME: {'remove': True}},

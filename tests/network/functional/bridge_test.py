@@ -26,7 +26,6 @@ import pytest
 
 from vdsm.network.cmd import exec_sync
 from vdsm.network.link.iface import iface
-from vdsm.network.netlink import waitfor
 
 from . import netfunctestlib as nftestlib
 from network.nettestlib import dummy_devices
@@ -78,8 +77,6 @@ class TestBridge(nftestlib.NetFuncTestCase):
             with self.setupNetworks(NETSETUP1, {}, nftestlib.NOCHK):
                 with _create_tap() as tapdev:
                     _attach_dev_to_bridge(tapdev, NETWORK_NAME)
-                    with waitfor.waitfor_linkup(NETWORK_NAME):
-                        pass
                     with nftestlib.monitor_stable_link_state(NETWORK_NAME):
                         self.setupNetworks(NETSETUP2, {}, nftestlib.NOCHK)
                         self.assertNetwork(NETWORK_NAME,

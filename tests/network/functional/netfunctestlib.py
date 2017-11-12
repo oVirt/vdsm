@@ -38,6 +38,7 @@ from vdsm.network.link.bond import sysfs_options as bond_options
 from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
 from vdsm.network.netinfo import bridges
 from vdsm.network.netlink import monitor
+from vdsm.network.netlink import waitfor
 
 from functional.utils import getProxy, SUCCESS
 
@@ -541,8 +542,11 @@ class SetupNetworks(object):
 
 
 @contextmanager
-def monitor_stable_link_state(device):
+def monitor_stable_link_state(device, wait_for_linkup=True):
     """Raises an exception if it detects that the device link state changes."""
+    if wait_for_linkup:
+        with waitfor.waitfor_linkup(device):
+            pass
     iface_properties = iface(device).properties()
     original_state = iface_properties['state']
     try:
