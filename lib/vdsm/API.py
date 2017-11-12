@@ -22,6 +22,7 @@
 
 from __future__ import absolute_import
 
+import io
 import logging
 import os
 
@@ -186,7 +187,7 @@ class VM(APIBase):
                     # parmas were stored.
                     fname = self._cif.prepareVolumePath(paramFilespec)
                     try:
-                        with open(fname) as f:
+                        with io.open(fname, 'rb') as f:
                             pickledMachineParams = pickle.load(f)
 
                         if type(pickledMachineParams) == dict:

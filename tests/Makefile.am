@@ -129,7 +129,6 @@ test_modules = \
 	$(NULL)
 
 blacklist_modules_python3 = \
-	API_test.py \
 	bridge_test.py \
 	device_test.py \
 	encoding_test.py \

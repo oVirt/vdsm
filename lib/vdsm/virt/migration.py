@@ -19,6 +19,7 @@
 #
 from __future__ import absolute_import
 
+import io
 import collections
 import re
 import threading
@@ -335,7 +336,7 @@ class SourceThread(object):
             fname = self._vm.cif.prepareVolumePath(self._dstparams)
             try:
                 # Use r+ to avoid truncating the file, see BZ#1282239
-                with open(fname, "r+") as f:
+                with io.open(fname, "r+b") as f:
                     pickle.dump(self._machineParams, f)
             finally:
                 self._vm.cif.teardownVolumePath(self._dstparams)
