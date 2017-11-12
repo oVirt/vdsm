@@ -179,6 +179,8 @@ class vdsm(Plugin, RedHatPlugin):
             self.collectVdsmCommand(
                 "Host.getDeviceList", cli.Host.getDeviceList)
             self.collectVdsmCommand(
+                "Host.hostdevListByCaps", cli.Host.hostdevListByCaps)
+            self.collectVdsmCommand(
                 "Host.getAllTasksInfo", cli.Host.getAllTasksInfo)
             self.collectVdsmCommand(
                 "Host.getAllTasksStatuses", cli.Host.getAllTasksStatuses)
