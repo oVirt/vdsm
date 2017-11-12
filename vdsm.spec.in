@@ -571,6 +571,13 @@ BuildArch:      noarch
 %description hook-qos
 Hook adds QoS in/out traffic to VMs interfaces
 
+%package hook-satabus
+Summary:        Set SATA bus for disk drive
+BuildArch:      noarch
+
+%description hook-satabus
+VDSM hook allow to set SATA bus for disk devices.
+
 %package hook-scratchpad
 Summary:        One time disk creation for VDSM
 BuildArch:      noarch
@@ -1494,6 +1501,9 @@ exit 0
 
 %files hook-qos
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_qos
+
+%files hook-satabus
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_satabus
 
 %files hook-scratchpad
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_scratchpad
