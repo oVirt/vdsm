@@ -130,7 +130,6 @@ test_modules = \
 
 blacklist_modules_python3 = \
 	bridge_test.py \
-	device_test.py \
 	encoding_test.py \
 	guestagent_test.py \
 	hooks_test.py \
