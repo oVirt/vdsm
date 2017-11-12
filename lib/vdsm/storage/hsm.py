@@ -27,7 +27,6 @@ import os
 import logging
 import glob
 from fnmatch import fnmatch
-from itertools import imap
 from collections import defaultdict
 from functools import partial
 import errno
@@ -36,6 +35,8 @@ import signal
 import math
 import numbers
 import stat
+
+from six.moves import map
 
 from vdsm import constants
 from vdsm import jobs
@@ -2844,7 +2845,7 @@ class HSM(object):
 
         for i, vg in enumerate(vgList):
             # Should be fresh from the cache
-            devNames.extend(imap(getGuid, lvm.listPVNames(vg.name)))
+            devNames.extend(map(getGuid, lvm.listPVNames(vg.name)))
             # dict(vg.attr._asdict()) because nametuples and OrderedDict are
             # not properly marshalled
             vgInfo = {'name': vg.name, 'vgUUID': vg.uuid,
