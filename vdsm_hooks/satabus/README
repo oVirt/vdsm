@@ -1,0 +1,28 @@
+satabus vdsm hook:
+====================
+Hook set sata bus to disk drive, this may be useful for very old kernels,
+where kernel upgrade is impossible. For example: some special versions of
+"Cisco Virtual Wireless Controller" is unusable with iscsi bus.
+
+Syntax:
+  satabus=(off|on)
+
+Where:
+  'on' is sata bus enabled and off (default) is disabled.
+
+Example:
+   satabus=on
+
+Installation:
+===============
+
+  - Use the engine-config to append the proper custom property:
+      $ sudo engine-config -s UserDefinedVMProperties='satabus=^(off|on)$'
+  - Verify that the satabus custom property was properly added:
+      $ sudo engine-config -g UserDefinedVMProperties
+
+Usage:
+=======
+
+  In the VM configuration window, open the custom properites tab, select
+  satabus and select 'on'.
