@@ -489,27 +489,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    def testSetupNetworksAddVlan(self, bridged):
-        BRIDGE_OPTS = {'multicast_router': '0', 'multicast_snooping': '0'}
-        formattedOpts = ' '.join(
-            ['='.join(elem) for elem in BRIDGE_OPTS.items()])
-        with dummyIf(1) as nics:
-            nic, = nics
-            attrs = {'vlan': VLAN_ID, 'nic': nic, 'bridged': bridged,
-                     'custom': {'bridge_opts': formattedOpts}}
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: attrs}, {}, NOCHK, test_kernel_config=False)
-
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETWORK_NAME, bridgeOpts=BRIDGE_OPTS)
-            self.assertVlanExists('%s.%s' % (nic, VLAN_ID))
-
-            status, msg = self.setupNetworks({NETWORK_NAME: dict(remove=True)},
-                                             {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
-    @permutations([[True], [False]])
     def testSetupNetworksAddNetworkToNicAfterBondBreaking(self, bridged):
         with dummyIf(2) as nics:
             networks = {NETWORK_NAME: dict(bonding=BONDING_NAME,
