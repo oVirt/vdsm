@@ -88,6 +88,24 @@ class TestNetworkWithBond(NetFuncTestCase):
                     self.assertNetwork(NETWORK2_NAME, NETNEW[NETWORK2_NAME])
                     self.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
 
+    @nftestlib.parametrize_bridged
+    def test_given_bonded_net_replace_bond_with_a_slave(self, switch, bridged):
+        with dummy_devices(2) as (nic1, nic2):
+            NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
+                                       'bridged': bridged,
+                                       'switch': switch}}
+            BONDBASE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
+
+            with self.setupNetworks(NETBASE, BONDBASE, NOCHK):
+                NETBASE[NETWORK1_NAME] = {'nic': nic1,
+                                          'bridged': bridged,
+                                          'switch': switch}
+                BONDBASE[BOND_NAME] = {'remove': True}
+                self.setupNetworks(NETBASE, BONDBASE, NOCHK)
+
+                self.assertNetwork(NETWORK1_NAME, NETBASE[NETWORK1_NAME])
+                self.assertNoBond(BOND_NAME)
+
     def test_add_net_with_invalid_bond_name_fails(self, switch):
         INVALID_BOND_NAMES = ('bond',
                               'bonda',

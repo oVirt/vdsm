@@ -489,32 +489,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    def testSetupNetworksAddNetworkToNicAfterBondBreaking(self, bridged):
-        with dummyIf(2) as nics:
-            networks = {NETWORK_NAME: dict(bonding=BONDING_NAME,
-                                           bridged=bridged)}
-            status, msg = self.setupNetworks(
-                networks, {BONDING_NAME: dict(nics=nics)}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
-            self.assertBondExists(BONDING_NAME, nics)
-
-            # Break the bond and create Network on detached NIC
-            networks = {NETWORK_NAME: dict(nic=nics[0], bridged=bridged)}
-            status, msg = self.setupNetworks(
-                networks, {BONDING_NAME: dict(remove=True)}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-            self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
-            self.assertBondDoesntExist(BONDING_NAME, nics)
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: dict(remove=True)}, {}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
-    @permutations([[True], [False]])
     def testSetupNetworksKeepNetworkOnBondAfterBondResizing(self, bridged):
         with dummyIf(3) as nics:
             networks = {NETWORK_NAME: dict(bonding=BONDING_NAME,
