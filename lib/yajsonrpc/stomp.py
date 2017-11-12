@@ -134,7 +134,7 @@ class Frame(object):
             self.headers["content-length"] = len(body)
 
         data = [self.command, '\n']
-        for key, value in self.headers.iteritems():
+        for key, value in six.viewitems(self.headers):
             data.append(encodeValue(key))
             data.append(":")
             data.append(encodeValue(value))

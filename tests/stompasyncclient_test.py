@@ -102,8 +102,8 @@ class AsyncClientTest(TestCaseBase):
 
     def test_send(self):
         client = AsyncClient()
-        data = ('{"jsonrpc":"2.0","method":"Host.getAllVmStats","params":{},'
-                '"id":"e8a936a6-d886-4cfa-97b9-2d54209053ff"}')
+        data = (b'{"jsonrpc":"2.0","method":"Host.getAllVmStats","params":{},'
+                b'"id":"e8a936a6-d886-4cfa-97b9-2d54209053ff"}')
         headers = {Headers.REPLY_TO: 'jms.topic.vdsm_responses',
                    Headers.CONTENT_LENGTH: '103'}
         # make sure that client can send messages
@@ -122,8 +122,8 @@ class AsyncClientTest(TestCaseBase):
     def test_resend(self):
         client = AsyncClient()
 
-        data = ('{"jsonrpc":"2.0","method":"Host.getAllVmStats","params":{},'
-                '"id":"e8a936a6-d886-4cfa-97b9-2d54209053ff"}')
+        data = (b'{"jsonrpc":"2.0","method":"Host.getAllVmStats","params":{},'
+                b'"id":"e8a936a6-d886-4cfa-97b9-2d54209053ff"}')
         headers = {Headers.REPLY_TO: 'jms.topic.vdsm_responses',
                    Headers.CONTENT_LENGTH: '103'}
 
