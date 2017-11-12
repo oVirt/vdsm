@@ -122,7 +122,7 @@ class Frame(object):
             headers = {}
 
         self.headers = headers
-        if six.PY3 or (six.PY2 and isinstance(body, unicode)):
+        if isinstance(body, six.text_type):
             body = body.encode('utf-8')
 
         self.body = body

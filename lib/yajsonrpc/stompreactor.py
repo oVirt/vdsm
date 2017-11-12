@@ -266,9 +266,8 @@ class StompAdapterImpl(object):
         to build response map for each message.
         """
         if isinstance(request, list):
-            map(functools.partial(self._handle_destination, dispatcher,
-                                  req_dest),
-                request)
+            list(map(functools.partial(self._handle_destination, dispatcher,
+                                       req_dest), request))
             return
 
         self._req_dest[request.get("id")] = req_dest

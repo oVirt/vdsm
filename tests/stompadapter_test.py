@@ -161,7 +161,7 @@ class ConnectFrameTest(TestCaseBase):
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.ERROR)
-        self.assertEqual(resp_frame.body, 'Version unsupported')
+        self.assertEqual(resp_frame.body, b'Version unsupported')
 
     def test_no_heartbeat(self):
         frame = Frame(Command.CONNECT,
@@ -183,7 +183,7 @@ class ConnectFrameTest(TestCaseBase):
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.ERROR)
-        self.assertEqual(resp_frame.body, 'Version unsupported')
+        self.assertEqual(resp_frame.body, b'Version unsupported')
 
 
 class SubscriptionFrameTest(TestCaseBase):
@@ -216,7 +216,7 @@ class SubscriptionFrameTest(TestCaseBase):
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.ERROR)
         self.assertEqual(resp_frame.body,
-                         'Missing destination or subscription id header')
+                         b'Missing destination or subscription id header')
 
     def test_no_id(self):
         frame = Frame(Command.SUBSCRIBE,
@@ -229,7 +229,7 @@ class SubscriptionFrameTest(TestCaseBase):
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.ERROR)
         self.assertEqual(resp_frame.body,
-                         'Missing destination or subscription id header')
+                         b'Missing destination or subscription id header')
 
 
 class UnsubscribeFrameTest(TestCaseBase):
@@ -280,7 +280,7 @@ class UnsubscribeFrameTest(TestCaseBase):
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.ERROR)
-        self.assertEqual(resp_frame.body, 'Missing id header')
+        self.assertEqual(resp_frame.body, b'Missing id header')
 
 
 class SendFrameTest(TestCaseBase):
@@ -339,7 +339,7 @@ class SendFrameTest(TestCaseBase):
 
         resp_frame = adapter.pop_message()
         self.assertEqual(resp_frame.command, Command.ERROR)
-        self.assertEqual(resp_frame.body, 'Subscription not available')
+        self.assertEqual(resp_frame.body, b'Subscription not available')
 
     def test_send_batch(self):
         body = ('[{"jsonrpc":"2.0","method":"Host.getAllVmStats","params":{},'
