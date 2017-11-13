@@ -486,13 +486,6 @@ class NetworkTest(TestCaseBase):
             # wait for Vdsm to update statistics
             self.retryAssert(assertStatsInRange, timeout=3)
 
-    @permutations([[True], [False]])
-    def testSetupNetworksAddBadParams(self, bridged):
-        attrs = dict(vlan=VLAN_ID, bridged=bridged)
-        status, msg = self.setupNetworks({NETWORK_NAME: attrs}, {}, {})
-
-        self.assertNotEqual(status, SUCCESS, msg)
-
     @cleanupNet
     def testDelNetworkBondAccumulation(self):
         with dummyIf(2) as nics:
