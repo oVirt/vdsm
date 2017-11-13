@@ -216,11 +216,20 @@ this drive.
   the event.
 
 
-### Extending a drive
+### Extending a drive automatically
 
 - When extension request finish, set a new block threshold
 - If setting new block threshold fails, mark the drive so the next drive
   monitor cycle will retry the operation.
+
+
+### Extending drive virtual size (no changes required)
+
+- The user edits the properties of a disk from the oVirt Engine UI.
+- Vdsm performs the extension.
+- The guest sees the new size.
+- We changed the drive virtual size: no change is needed with respect to
+  the block threshold, which is about the drive physical size.
 
 
 ### Live Storage Migration (LSM)
