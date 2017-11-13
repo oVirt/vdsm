@@ -49,6 +49,7 @@ from vdsm.network.netinfo import routes
 from vdsm.network.netlink import monitor
 from vdsm.common.cache import memoized
 from vdsm.common.cmdutils import CommandPath
+from vdsm.common.proc import pgrep
 
 from . import dhcp
 from . import firewall
@@ -389,6 +390,21 @@ def enable_lldp_on_ifaces(ifaces, rx_only):
     finally:
         for interface in ifaces:
             lldptool.disable_lldp_on_iface(interface)
+
+
+def requires_nm_stopped(message):
+    def decorator(function):
+        @functools.wraps(function)
+        def wrapper(*args, **kwargs):
+            if _nm_is_running():
+                raise SkipTest(message)
+            return function(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def _nm_is_running():
+    return len(pgrep('NetworkManager')) > 0
 
 
 def check_brctl():

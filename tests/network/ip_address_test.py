@@ -26,6 +26,7 @@ from testValidation import broken_on_ci
 from testlib import VdsmTestCase
 
 from .nettestlib import dummy_device, dummy_devices, preserve_default_route
+from .nettestlib import requires_nm_stopped
 
 from vdsm.network.ip import address
 from vdsm.network.netinfo import routes
@@ -221,6 +222,7 @@ class IPAddressTest(VdsmTestCase):
         self._test_add_delete(IPV6_A_WITH_PREFIXLEN, IPV6_B_WITH_PREFIXLEN)
 
     @broken_on_ci("IPv6 not supported on travis", name="TRAVIS_CI")
+    @requires_nm_stopped('Fails randomly when NM is running. See BZ#1512316')
     def test_add_delete_ipv4_ipv6(self):
         self._test_add_delete(IPV4_A_WITH_PREFIXLEN, IPV6_B_WITH_PREFIXLEN)
 
