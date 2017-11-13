@@ -78,6 +78,31 @@ class TestNetworkMtu(nftestlib.NetFuncTestCase):
                     self.assertLinkMtu(BOND_NAME, NETBASE[NETWORK1_NAME])
                     self.assertLinkMtu(nic, NETBASE[NETWORK1_NAME])
 
+    @nftestlib.parametrize_bridged
+    def test_adding_a_bonded_net_updates_the_mtu(self, switch, bridged):
+        if switch == 'ovs':
+            pytest.xfail('MTU editation is not supported on OVS switches.')
+        with dummy_devices(1) as (nic,):
+            NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
+                                       'bridged': bridged,
+                                       'vlan': VLAN1,
+                                       'mtu': 1600,
+                                       'switch': switch}}
+            NETNEW = {NETWORK2_NAME: {'bonding': BOND_NAME,
+                                      'bridged': bridged,
+                                      'vlan': VLAN2,
+                                      'mtu': 2000,
+                                      'switch': switch}}
+            BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
+
+            with self.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
+                with nftestlib.monitor_stable_link_state(BOND_NAME):
+                    with self.setupNetworks(NETNEW, {}, nftestlib.NOCHK):
+                        self.assertNetwork(NETWORK2_NAME,
+                                           NETNEW[NETWORK2_NAME])
+                        self.assertLinkMtu(BOND_NAME, NETNEW[NETWORK2_NAME])
+                        self.assertLinkMtu(nic, NETNEW[NETWORK2_NAME])
+
     def test_add_slave_to_a_bonded_network_with_non_default_mtu(self, switch):
         if switch == 'ovs':
             pytest.xfail('MTU editation is not supported on OVS switches.')

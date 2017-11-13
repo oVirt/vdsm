@@ -42,8 +42,7 @@ from vdsm.network.link.bond.sysfs_options import getDefaultBondingOptions
 from vdsm.network.netinfo.bonding import BONDING_SLAVES
 from vdsm.network.netinfo.bridges import bridges
 from vdsm.network.netinfo.misc import NET_CONF_PREF
-from vdsm.network.netinfo.nics import (operstate, OPERSTATE_UNKNOWN,
-                                       OPERSTATE_UP)
+from vdsm.network.netinfo.nics import operstate, OPERSTATE_UNKNOWN
 from vdsm.network.netinfo.routes import getDefaultGateway, getRouteDeviceTo
 from vdsm.network.netlink import monitor
 from vdsm.network.configurators.ifcfg import stop_devices, NET_CONF_BACK_DIR
@@ -486,50 +485,6 @@ class NetworkTest(TestCaseBase):
 
             # wait for Vdsm to update statistics
             self.retryAssert(assertStatsInRange, timeout=3)
-
-    def _createBondedNetAndCheck(self, netNum, bondDict, bridged,
-                                 **networkOpts):
-        netName = NETWORK_NAME + str(netNum)
-        networks = {netName: dict(bonding=BONDING_NAME, bridged=bridged,
-                                  vlan=str(int(VLAN_ID) + netNum),
-                                  **networkOpts)}
-        status, msg = self.setupNetworks(
-            networks, {BONDING_NAME: bondDict}, {})
-        self.assertEqual(status, SUCCESS, msg)
-        self.assertNetworkExists(netName, bridged=bridged)
-        self.assertBondExists(BONDING_NAME, bondDict['nics'],
-                              bondDict.get('options'))
-        if 'mtu' in networkOpts:
-            self.assertMtu(networkOpts['mtu'], netName)
-
-    @cleanupNet
-    @permutations([[True], [False]])
-    def testSetupNetworksMultiMTUsOverBond(self, bridged):
-        with dummyIf(2) as nics:
-            with self.vdsm_net.pinger():
-                # Add initial vlanned net over bond
-                self._createBondedNetAndCheck(0, {'nics': nics}, bridged,
-                                              mtu=1500)
-                self.assertMtu(1500, BONDING_NAME)
-
-                _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
-                with nonChangingOperstate(BONDING_NAME):
-                    # Add a network with MTU smaller than existing network
-                    self._createBondedNetAndCheck(1, {'nics': nics},
-                                                  bridged, mtu=1400)
-                    self.assertMtu(1500, BONDING_NAME)
-
-                    # Add a network with MTU bigger than existing network
-                    self._createBondedNetAndCheck(2, {'nics': nics},
-                                                  bridged, mtu=1600)
-                    self.assertMtu(1600, BONDING_NAME)
-
-                # cleanup
-                networks = dict((NETWORK_NAME + str(num), {'remove': True}) for
-                                num in range(3))
-                status, msg = self.setupNetworks(
-                    networks, {BONDING_NAME: dict(remove=True)}, {})
-                self.assertEqual(status, SUCCESS, msg)
 
     def _createVlanedNetOverNicAndCheck(self, netNum, bridged, **networkOpts):
         netName = NETWORK_NAME + str(netNum)
