@@ -29,7 +29,6 @@ from .nettestlib import dummy_device, dummy_devices, preserve_default_route
 
 from vdsm.network.ip import address
 from vdsm.network.netinfo import routes
-from vdsm.network.netlink import waitfor
 
 
 DEVICE_NAME = 'foo'
@@ -237,11 +236,11 @@ class IPAddressTest(VdsmTestCase):
             self._assert_has_address(nic, ip_a)
             self._assert_has_address(nic, ip_b)
 
-            self._ipaddress_delete(ip_b_data)
+            IPAddressTest.IPAddress.delete(ip_b_data)
             self._assert_has_address(nic, ip_a)
             self._assert_has_no_address(nic, ip_b)
 
-            self._ipaddress_delete(ip_a_data)
+            IPAddressTest.IPAddress.delete(ip_a_data)
             self._assert_has_no_address(nic, ip_a)
             self._assert_has_no_address(nic, ip_b)
 
@@ -345,11 +344,3 @@ class IPAddressTest(VdsmTestCase):
     def _assert_address_not_in(self, address_with_prefixlen, addresses):
         addresses_list = [addr.address_with_prefixlen for addr in addresses]
         self.assertNotIn(address_with_prefixlen, addresses_list)
-
-    def _ipaddress_delete(self, address_data):
-        """ Blocking version of IP address delete """
-        with waitfor.waitfor_ip_addr(address_data.device,
-                                     address_data.address_with_prefixlen,
-                                     action='del_addr',
-                                     timeout=0.5):
-            IPAddressTest.IPAddress.delete(address_data)
