@@ -3987,7 +3987,6 @@ class Vm(object):
                         # don't belong to metadata.
                         if k in dev:
                             dev[k] = v
-                self.updateDriveVolume(vmDrive)
                 self._sync_metadata()
                 break
         else:
@@ -4252,6 +4251,8 @@ class Vm(object):
             for drive in newDrives.values():  # Update the drive information
                 try:
                     self.updateDriveParameters(drive)
+                    drive_obj = self.findDriveByName(drive['name'])
+                    self.updateDriveVolume(drive_obj)
                 except Exception:
                     # Here it's too late to fail, the switch already happened
                     # and there's nothing we can do, we must to proceed anyway
@@ -4424,6 +4425,7 @@ class Vm(object):
                 self.log.exception("Unable to teardown the previous chain: %s",
                                    diskToTeardown)
             self.updateDriveParameters(dstDiskCopy)
+            self.updateDriveVolume(drive)
         finally:
             self._delDiskReplica(drive)
             self.drive_monitor.enable()
