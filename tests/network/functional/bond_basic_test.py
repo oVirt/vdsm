@@ -140,6 +140,18 @@ class TestBondBasic(NetFuncTestCase):
             with self.setupNetworks({}, BONDCREATE, NOCHK):
                 self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
+    def test_bond_slaves_order_does_not_affect_the_mac_address(self, switch):
+        with dummy_devices(2) as (nic1, nic2):
+            bond1 = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
+            bond2 = {BOND_NAME: {'nics': [nic2, nic1], 'switch': switch}}
+
+            with self.setupNetworks({}, bond1, NOCHK):
+                bond1_hwaddr = self.netinfo.bondings[BOND_NAME]['hwaddr']
+            with self.setupNetworks({}, bond2, NOCHK):
+                bond2_hwaddr = self.netinfo.bondings[BOND_NAME]['hwaddr']
+
+            assert bond1_hwaddr == bond2_hwaddr
+
 
 @nftestlib.parametrize_switch
 class TestBondOptions(NetFuncTestCase):

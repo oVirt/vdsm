@@ -488,32 +488,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    def testBondHwAddress(self, bridged=True):
-        """
-        Test that bond mac address is independent of the ordering of nics arg
-        """
-        with dummyIf(2) as nics:
-            def _getBondHwAddress(*nics):
-                nets = {NETWORK_NAME: {'bridged': bridged,
-                                       'bonding': BONDING_NAME}}
-                bonds = {BONDING_NAME: {'nics': nics}}
-                status, msg = self.setupNetworks(nets, bonds, NOCHK)
-                self.assertEqual(status, SUCCESS, msg)
-                hwaddr = self.vdsm_net.netinfo.bondings[BONDING_NAME]['hwaddr']
-
-                status, msg = self.setupNetworks(
-                    {NETWORK_NAME: {'remove': True}},
-                    {BONDING_NAME: {'remove': True}}, NOCHK)
-                self.assertEqual(status, SUCCESS, msg)
-
-                return hwaddr
-
-            macAddress1 = _getBondHwAddress(nics[0], nics[1])
-            macAddress2 = _getBondHwAddress(nics[1], nics[0])
-            self.assertEqual(macAddress1, macAddress2)
-
-    @cleanupNet
-    @permutations([[True], [False]])
     def testSafeNetworkConfig(self, bridged):
         """
         Checks that setSafeNetworkConfig saves
