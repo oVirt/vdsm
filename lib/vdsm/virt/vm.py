@@ -3959,14 +3959,9 @@ class Vm(object):
         if not vmDrive.device == 'disk' or not isVdsmImage(vmDrive):
             return
 
-        try:
-            volSize = self._getVolumeSize(
-                vmDrive.domainID, vmDrive.poolID, vmDrive.imageID,
-                vmDrive.volumeID)
-        except StorageUnavailableError as e:
-            self.log.error("Unable to update drive %s volume size: %s",
-                           vmDrive.name, e)
-            return
+        volSize = self._getVolumeSize(
+            vmDrive.domainID, vmDrive.poolID, vmDrive.imageID,
+            vmDrive.volumeID)
 
         vmDrive.truesize = volSize.truesize
         vmDrive.apparentsize = volSize.apparentsize
@@ -4253,6 +4248,11 @@ class Vm(object):
                     self.updateDriveParameters(drive)
                     drive_obj = self.findDriveByName(drive['name'])
                     self.updateDriveVolume(drive_obj)
+                except StorageUnavailableError as e:
+                    # Will be recovered on the next monitoring cycle
+                    self.log.error(
+                        "Unable to update drive %r volume size: %s",
+                        drive.name, e)
                 except Exception:
                     # Here it's too late to fail, the switch already happened
                     # and there's nothing we can do, we must to proceed anyway
@@ -4425,7 +4425,13 @@ class Vm(object):
                 self.log.exception("Unable to teardown the previous chain: %s",
                                    diskToTeardown)
             self.updateDriveParameters(dstDiskCopy)
-            self.updateDriveVolume(drive)
+            try:
+                self.updateDriveVolume(drive)
+            except StorageUnavailableError as e:
+                # Will be recovered on the next monitoring cycle
+                self.log.error("Unable to update drive %r volume size: %s",
+                               drive.name, e)
+
         finally:
             self._delDiskReplica(drive)
             self.drive_monitor.enable()
