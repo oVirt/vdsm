@@ -68,11 +68,12 @@ class MutableDomainDescriptor(object):
         return hash(vmxml.format_xml(devices) if devices is not None else '')
 
     def all_channels(self):
-        for channel in vmxml.find_all(self.devices, 'channel'):
-            name = vmxml.find_attr(channel, 'target', 'name')
-            path = vmxml.find_attr(channel, 'source', 'path')
-            if name and path:
-                yield name, path
+        if self.devices:
+            for channel in vmxml.find_all(self.devices, 'channel'):
+                name = vmxml.find_attr(channel, 'target', 'name')
+                path = vmxml.find_attr(channel, 'source', 'path')
+                if name and path:
+                    yield name, path
 
     def get_number_of_cpus(self):
         """

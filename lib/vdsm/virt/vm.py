@@ -410,8 +410,6 @@ class Vm(object):
             last_migrating = False
         self._migrationSourceThread = migration.SourceThread(
             self, recovery=last_migrating)
-        self._agent_channel_name = self.conf.get('agentChannelName',
-                                                 vmchannels.LEGACY_DEVICE_NAME)
         self._guestSocketFile = self._makeChannelPath(self._agent_channel_name)
         self._qemuguestSocketFile = self._makeChannelPath(
             vmchannels.QEMU_GA_DEVICE_NAME)
@@ -488,6 +486,17 @@ class Vm(object):
             (self.mem_size_mb() * 1024 + self.hugepagesz - 1) //
             self.hugepagesz
         )
+
+    @property
+    def _agent_channel_name(self):
+        name = vmchannels.LEGACY_DEVICE_NAME
+        if 'agentChannelName' in self.conf:
+            name = self.conf['agentChannelName']
+        else:
+            for channel_name, _path in self._domain.all_channels():
+                if channel_name == 'ovirt-guest-agent.0':
+                    name = channel_name
+        return name
 
     def _init_from_metadata(self):
         self._custom['custom'] = self._md_desc.custom
