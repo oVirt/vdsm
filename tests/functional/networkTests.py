@@ -487,25 +487,6 @@ class NetworkTest(TestCaseBase):
             self.retryAssert(assertStatsInRange, timeout=3)
 
     @cleanupNet
-    def testDelNetworkBondAccumulation(self):
-        with dummyIf(2) as nics:
-            for bigBond in ('bond555', 'bond666', 'bond777'):
-                status, msg = self.setupNetworks(
-                    {NETWORK_NAME: {'vlan': VLAN_ID, 'bonding': bigBond}},
-                    {bigBond: {'nics': nics}}, NOCHK)
-                self.assertEqual(status, SUCCESS, msg)
-
-                self.assertBondExists(bigBond, nics)
-
-                status, msg = self.setupNetworks(
-                    {NETWORK_NAME: {'remove': True}},
-                    {bigBond: {'remove': True}}, NOCHK)
-
-                self.assertEqual(status, SUCCESS, msg)
-
-                self.assertBondDoesntExist(bigBond, nics)
-
-    @cleanupNet
     @permutations([[True], [False]])
     def testBondHwAddress(self, bridged=True):
         """
