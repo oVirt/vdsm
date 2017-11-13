@@ -60,6 +60,9 @@ parametrize_switch = pytest.mark.parametrize(
 parametrize_bridged = pytest.mark.parametrize('bridged', [False, True],
                                               ids=['bridgeless', 'bridged'])
 
+parametrize_bonded = pytest.mark.parametrize('bonded', [False, True],
+                                             ids=['unbonded', 'bonded'])
+
 
 def requires_ipaddress():
     """

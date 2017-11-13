@@ -486,44 +486,6 @@ class NetworkTest(TestCaseBase):
             # wait for Vdsm to update statistics
             self.retryAssert(assertStatsInRange, timeout=3)
 
-    def _createVlanedNetOverNicAndCheck(self, netNum, bridged, **networkOpts):
-        netName = NETWORK_NAME + str(netNum)
-        networks = {netName: dict(bridged=bridged,
-                                  vlan=str(int(VLAN_ID) + netNum),
-                                  **networkOpts)}
-        status, msg = self.setupNetworks(networks, {}, {})
-        self.assertEqual(status, SUCCESS, msg)
-        self.assertNetworkExists(netName, bridged=bridged)
-        if 'mtu' in networkOpts:
-            self.assertMtu(networkOpts['mtu'], netName)
-
-    @cleanupNet
-    @permutations([[True], [False]])
-    def testSetupNetworksMultiMTUsOverNic(self, bridged):
-        with dummyIf(1) as nics:
-            nic, = nics
-            with self.vdsm_net.pinger():
-                # Add initial vlanned net over bond
-                self._createVlanedNetOverNicAndCheck(0, bridged, nic=nic,
-                                                     mtu=1500)
-                self.assertMtu(1500, nic)
-
-                # Add a network with MTU smaller than existing network
-                self._createVlanedNetOverNicAndCheck(1, bridged, nic=nic,
-                                                     mtu=1400)
-                self.assertMtu(1500, nic)
-
-                # Add a network with MTU bigger than existing network
-                self._createVlanedNetOverNicAndCheck(2, bridged, nic=nic,
-                                                     mtu=1600)
-                self.assertMtu(1600, nic)
-
-                # cleanup
-                networks = dict((NETWORK_NAME + str(num), {'remove': True}) for
-                                num in range(3))
-                status, msg = self.setupNetworks(networks, {}, {})
-                self.assertEqual(status, SUCCESS, msg)
-
     @permutations([[True], [False]])
     def testSetupNetworksAddBadParams(self, bridged):
         attrs = dict(vlan=VLAN_ID, bridged=bridged)

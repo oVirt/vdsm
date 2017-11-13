@@ -51,57 +51,77 @@ class TestNetworkMtu(nftestlib.NetFuncTestCase):
                 self.assertLinkMtu(nic, NETCREATE[NETWORK_NAME])
 
     @nftestlib.parametrize_bridged
-    def test_removing_a_bonded_net_updates_the_mtu(self, switch, bridged):
+    @nftestlib.parametrize_bonded
+    def test_removing_a_net_updates_the_mtu(self, switch, bridged, bonded):
         if switch == 'ovs':
             pytest.xfail('MTU editation is not supported on OVS switches.')
         with dummy_devices(1) as (nic,):
-            NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
-                                       'bridged': bridged,
-                                       'vlan': VLAN1,
-                                       'mtu': 1600,
-                                       'switch': switch},
-                       NETWORK2_NAME: {'bonding': BOND_NAME,
-                                       'bridged': bridged,
-                                       'vlan': VLAN2,
-                                       'mtu': 2000,
-                                       'switch': switch}}
-            BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
+            NETWORK1_ATTRS = {'bridged': bridged,
+                              'vlan': VLAN1,
+                              'mtu': 1600,
+                              'switch': switch}
+            NETWORK2_ATTRS = {'bridged': bridged,
+                              'vlan': VLAN2,
+                              'mtu': 2000,
+                              'switch': switch}
+            NETBASE = {NETWORK1_NAME: NETWORK1_ATTRS,
+                       NETWORK2_NAME: NETWORK2_ATTRS}
+            if bonded:
+                NETWORK1_ATTRS['bonding'] = BOND_NAME
+                NETWORK2_ATTRS['bonding'] = BOND_NAME
+                BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
+                link2monitor = BOND_NAME
+            else:
+                NETWORK1_ATTRS['nic'] = nic
+                NETWORK2_ATTRS['nic'] = nic
+                BONDBASE = {}
+                link2monitor = nic
 
             with self.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
-                with nftestlib.monitor_stable_link_state(BOND_NAME):
-                    self.assertNetwork(NETWORK2_NAME, NETBASE[NETWORK2_NAME])
+                with nftestlib.monitor_stable_link_state(link2monitor):
                     self.setupNetworks({NETWORK2_NAME: {'remove': True}},
                                        {},
                                        nftestlib.NOCHK)
-                    self.assertNetwork(NETWORK1_NAME, NETBASE[NETWORK1_NAME])
-                    self.assertBond(BOND_NAME, BONDBASE[BOND_NAME])
-                    self.assertLinkMtu(BOND_NAME, NETBASE[NETWORK1_NAME])
-                    self.assertLinkMtu(nic, NETBASE[NETWORK1_NAME])
+                    self.assertNetwork(NETWORK1_NAME, NETWORK1_ATTRS)
+                    self.assertLinkMtu(nic, NETWORK1_ATTRS)
+                    if bonded:
+                        self.assertLinkMtu(BOND_NAME, NETWORK1_ATTRS)
 
     @nftestlib.parametrize_bridged
-    def test_adding_a_bonded_net_updates_the_mtu(self, switch, bridged):
+    @nftestlib.parametrize_bonded
+    def test_adding_a_net_updates_the_mtu(self, switch, bridged, bonded):
         if switch == 'ovs':
             pytest.xfail('MTU editation is not supported on OVS switches.')
         with dummy_devices(1) as (nic,):
-            NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
-                                       'bridged': bridged,
-                                       'vlan': VLAN1,
-                                       'mtu': 1600,
-                                       'switch': switch}}
-            NETNEW = {NETWORK2_NAME: {'bonding': BOND_NAME,
-                                      'bridged': bridged,
-                                      'vlan': VLAN2,
-                                      'mtu': 2000,
-                                      'switch': switch}}
-            BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
+            NETWORK1_ATTRS = {'bridged': bridged,
+                              'vlan': VLAN1,
+                              'mtu': 1600,
+                              'switch': switch}
+            NETWORK2_ATTRS = {'bridged': bridged,
+                              'vlan': VLAN2,
+                              'mtu': 2000,
+                              'switch': switch}
+            NETBASE = {NETWORK1_NAME: NETWORK1_ATTRS}
+            NETNEW = {NETWORK2_NAME: NETWORK2_ATTRS}
+
+            if bonded:
+                NETWORK1_ATTRS['bonding'] = BOND_NAME
+                NETWORK2_ATTRS['bonding'] = BOND_NAME
+                BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
+                link2monitor = BOND_NAME
+            else:
+                NETWORK1_ATTRS['nic'] = nic
+                NETWORK2_ATTRS['nic'] = nic
+                BONDBASE = {}
+                link2monitor = nic
 
             with self.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
-                with nftestlib.monitor_stable_link_state(BOND_NAME):
+                with nftestlib.monitor_stable_link_state(link2monitor):
                     with self.setupNetworks(NETNEW, {}, nftestlib.NOCHK):
-                        self.assertNetwork(NETWORK2_NAME,
-                                           NETNEW[NETWORK2_NAME])
-                        self.assertLinkMtu(BOND_NAME, NETNEW[NETWORK2_NAME])
-                        self.assertLinkMtu(nic, NETNEW[NETWORK2_NAME])
+                        self.assertNetwork(NETWORK2_NAME, NETWORK2_ATTRS)
+                        self.assertLinkMtu(nic, NETWORK2_ATTRS)
+                        if bonded:
+                            self.assertLinkMtu(BOND_NAME, NETWORK2_ATTRS)
 
     def test_add_slave_to_a_bonded_network_with_non_default_mtu(self, switch):
         if switch == 'ovs':
