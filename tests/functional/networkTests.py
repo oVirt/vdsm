@@ -504,54 +504,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    def testSetupNetworksStableBond(self, bridged):
-        with dummyIf(3) as nics:
-            with self.vdsm_net.pinger():
-                # Add initial vlanned net over bond
-                self._createBondedNetAndCheck(0, {'nics': nics[:2],
-                                              'options': 'mode=3 miimon=250'},
-                                              bridged)
-
-                _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
-                with nonChangingOperstate(BONDING_NAME):
-                    # Add additional vlanned net over the bond
-                    self._createBondedNetAndCheck(1,
-                                                  {'nics': nics[:2],
-                                                   'options':
-                                                   'mode=3 miimon=250'},
-                                                  bridged)
-                    # Add additional vlanned net over the increasing bond
-                    self._createBondedNetAndCheck(2,
-                                                  {'nics': nics,
-                                                   'options':
-                                                   'mode=3 miimon=250'},
-                                                  bridged)
-                    # Add additional vlanned net over the changing bond
-                    self._createBondedNetAndCheck(3,
-                                                  {'nics': nics[1:],
-                                                   'options':
-                                                   'mode=3 miimon=250'},
-                                                  bridged)
-
-                # Add a network changing bond options
-                with self.assertRaises(OperStateChangedError):
-                    _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
-                    with nonChangingOperstate(BONDING_NAME):
-                        self._createBondedNetAndCheck(4,
-                                                      {'nics': nics[1:],
-                                                       'options':
-                                                       'mode=4 miimon=9'},
-                                                      bridged)
-
-                # cleanup
-                networks = dict((NETWORK_NAME + str(num), {'remove': True}) for
-                                num in range(5))
-                status, msg = self.setupNetworks(
-                    networks, {BONDING_NAME: dict(remove=True)}, {})
-                self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
-    @permutations([[True], [False]])
     def testSetupNetworksMultiMTUsOverBond(self, bridged):
         with dummyIf(2) as nics:
             with self.vdsm_net.pinger():
