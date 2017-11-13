@@ -28,8 +28,7 @@ from yajsonrpc.stompclient import \
     Frame, \
     Headers, \
     StompError
-# TODO: Fix this bad import, test modules are not libraries.
-from stompadapter_test import FakeSubscription, FakeAsyncDispatcher
+from stomp_test_utils import FakeSubscription, FakeAsyncDispatcher
 from monkeypatch import MonkeyPatchScope
 
 

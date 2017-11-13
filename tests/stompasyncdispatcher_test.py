@@ -17,10 +17,14 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import itertools
-from collections import deque
 
 from testlib import VdsmTestCase as TestCaseBase
+from stomp_test_utils import (
+    FakeAsyncDispatcher,
+    FakeConnection,
+    FakeFrameHandler,
+    FakeTimeGen
+)
 from yajsonrpc.stomp import (
     AsyncDispatcher,
     Command,
@@ -28,78 +32,6 @@ from yajsonrpc.stomp import (
     Headers,
     DEFAULT_INTERVAL
 )
-
-
-class FakeConnection(object):
-
-    def __init__(self):
-        self.closed = False
-
-    def close(self):
-        self.closed = True
-
-    def is_closed(self):
-        return self.closed
-
-
-class FakeFrameHandler(object):
-
-    def __init__(self):
-        self.handle_connect_called = False
-        self._outbox = deque()
-
-    def handle_connect(self):
-        self.handle_connect_called = True
-
-    def handle_frame(self, dispatcher, frame):
-        self.queue_frame(frame)
-
-    def handle_timeout(self, dispatcher):
-        dispatcher.connection.close()
-
-    def handle_error(self, dispatcher):
-        self.handle_timeout(dispatcher)
-
-    def peek_message(self):
-        return self._outbox[0]
-
-    def pop_message(self):
-        return self._outbox.popleft()
-
-    @property
-    def has_outgoing_messages(self):
-        return (len(self._outbox) > 0)
-
-    def queue_frame(self, frame):
-        self._outbox.append(frame)
-
-    def handle_close(self, dispatcher):
-        dispatcher.connection.close()
-
-
-class FakeAsyncDispatcher(object):
-
-    socket = None
-
-    def __init__(self, data):
-        self._data = data
-
-    def recv(self, buffer_size):
-        return self._data
-
-    def send(self, data):
-        return len(data)
-
-
-class FakeTimeGen(object):
-
-    def __init__(self, list):
-        self._chain = itertools.chain(list)
-
-    def get_fake_time(self):
-        next_time = next(self._chain)
-        print(next_time)
-        return next_time
 
 
 class AsyncDispatcherTest(TestCaseBase):
@@ -122,8 +54,7 @@ class AsyncDispatcherTest(TestCaseBase):
                 'f", "result": []}')
         frame = Frame(command=Command.MESSAGE, headers=headers, body=body)
         dispatcher = AsyncDispatcher(FakeConnection(), frame_handler)
-
-        dispatcher.handle_read(FakeAsyncDispatcher(frame.encode()))
+        dispatcher.handle_read(FakeAsyncDispatcher(None, data=frame.encode()))
 
         self.assertTrue(frame_handler.has_outgoing_messages)
         recv_frame = frame_handler.pop_message()

@@ -29,83 +29,12 @@ from yajsonrpc.stomp import \
     SUBSCRIPTION_ID_REQUEST
 from yajsonrpc.stomp import AsyncDispatcher
 from yajsonrpc.stompreactor import StompAdapterImpl
-
-
-class FakeAsyncClient(object):
-    def __init__(self):
-        self._queue = []
-
-    def pop_message(self):
-        return self._queue.pop(0)
-
-    def empty(self):
-        return len(self._queue) == 0
-
-    def queue_frame(self, msg):
-        self._queue.append(msg)
-
-
-class FakeConnection(object):
-
-    def __init__(self, client):
-        self._client = client
-        self._flow_id = None
-
-    def send_raw(self, msg):
-        self._client.queue_frame(msg)
-
-    def close(self):
-        pass
-
-    @property
-    def flow_id(self):
-        return self._flow_id
-
-    def handleMessage(self, data, flow_id):
-        self._flow_id = flow_id
-        self._client.queue_frame(data)
-
-    def set_heartbeat(self, out_interval, in_interval):
-        pass
-
-
-class FakeAsyncDispatcher(object):
-
-    def __init__(self, client):
-        self._client = client
-        self._connection = FakeConnection(self._client)
-
-    def setHeartBeat(self, outgoing, incoming=0):
-        pass
-
-    @property
-    def connection(self):
-        return self._connection
-
-    def handle_timeout(self):
-        pass
-
-
-class FakeSubscription(object):
-
-    def __init__(self, destination, id):
-        self._destination = destination
-        self._id = id
-
-    def set_client(self, client):
-        self._client = FakeConnection(client)
-
-    @property
-    def destination(self):
-        return self._destination
-
-    @property
-    def id(self):
-        return self._id
-
-    @property
-    def client(self):
-        return self._client
+from stomp_test_utils import (
+    FakeAsyncClient,
+    FakeAsyncDispatcher,
+    FakeConnection,
+    FakeSubscription
+)
 
 
 class ConnectFrameTest(TestCaseBase):
