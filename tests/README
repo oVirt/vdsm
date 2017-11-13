@@ -34,6 +34,11 @@ Profiling tests, showing 10 slowest tests:
 
    tox -e storage-py27 -- --durations=10
 
+Running specific storage tests modules with both multiple python versions:
+
+   tox -e storage-py27,storage-py35,storage-py36 -- storage/qcow2_test.py
+
+
 Using tox virtual environment
 -----------------------------
 
