@@ -34,11 +34,62 @@ Profiling tests, showing 10 slowest tests:
 
    tox -e storage-py27 -- --durations=10
 
+Using tox virtual environment
+-----------------------------
+
+Tox creates a virtual environment for each testenv. You don't have to
+know anything about this if you run the tests with tox, but if you like
+to use pytest directly, you want to use the pytest version installed in
+the virtual environemnt. This allows tests both python 2 and python 3.
+
+To use tox virtual environment, activate it:
+
+    [user@fedora vdsm (storage-tests)]$ source .tox/storage-py27/bin/activate
+
+Note that your shell prompt has changed, showing the virtual environment
+name:
+
+    (storage-py27) [user@fedora vdsm (storage-tests)]$
+
+Now ``pytest`` will run .tox/storage-py27/bin/pytest. Lets run one test
+module for example:
+
+    (storage-py27) [user@fedora vdsm (storage-tests)]$ cd tests
+
+    (storage-py27) [user@fedora vdsm (storage-tests)]$ pytest storage/qcow2_test.py -qq
+    ========================== test session starts ==========================
+    platform linux2 -- Python 2.7.13, pytest-3.1.2, py-1.4.34, pluggy-0.4.0
+    rootdir: /home/user/src/vdsm, inifile: tox.ini
+    plugins: timeout-1.2.0, threadleak-0.2.0, cov-2.4.0
+    collected 15 items
+
+    storage/blockdev_test.py ssssssssss....s
+    ======================== short test summary info ========================
+    SKIP [6] tests/storage/blockdev_test.py:79: requires root
+    SKIP [1] tests/storage/blockdev_test.py:132: requires root
+    SKIP [2] tests/storage/blockdev_test.py:67: requires root
+    SKIP [2] tests/storage/blockdev_test.py:58: requires root
+
+    ================= 4 passed, 11 skipped in 0.10 seconds ==================
+
+When you finished with testing with python 2.7, you can deactivate the virtual
+environment:
+
+    (storage-py27) [user@fedora tests (storage-tests)]$ deactivate
+
+Note that your prompt has changed again:
+
+    [user@fedora tests (storage-tests)]$
+
+
 Using pytest directly
 ---------------------
 
 Running all the tests takes couple of minutes. For quicker feedback you can use
 pytest directly to run a module or some tests in a module.
+
+You should use the pytest version from tox virual environmnet, please see
+"Using tox virtual environment".
 
 To use pytest directly, you must set the python path properly:
 
