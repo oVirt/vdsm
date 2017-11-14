@@ -2386,43 +2386,6 @@ class Vm(object):
         """
         vmdevices.common.update_device_info(self, self._devices)
 
-    def _updateAgentChannels(self):
-        """
-        We moved the naming of guest agent channel sockets. To keep backwards
-        compatability we need to make symlinks from the old channel sockets, to
-        the new naming scheme.
-        This is necessary to prevent incoming migrations, restoring of VMs and
-        the upgrade of VDSM with running VMs to fail on this.
-        """
-        known_channel_names = (vmchannels.QEMU_GA_DEVICE_NAME,
-                               self._agent_channel_name)
-        for name, path in self._domain.all_channels():
-            if name not in known_channel_names:
-                continue
-
-            uuidPath = self._makeChannelPath(name)
-            if path != uuidPath:
-                # When this path is executed, we're having VM created on
-                # VDSM > 4.13
-
-                # The to be created symlink might not have been cleaned up due
-                # to an unexpected stop of VDSM therefore We're going to clean
-                # it up now
-                if os.path.islink(uuidPath):
-                    self.log.info("Unlinking %r", uuidPath)
-                    os.unlink(uuidPath)
-
-                # We don't want an exception to be thrown when the path already
-                # exists
-                if not os.path.exists(uuidPath):
-                    self.log.info("Creating symlink from %r to %r",
-                                  path, uuidPath)
-                    os.symlink(path, uuidPath)
-                else:
-                    self.log.error("Failed to make a agent channel symlink "
-                                   "from %s -> %s for channel %s", path,
-                                   uuidPath, name)
-
     def _domDependentInit(self):
         if self._destroy_requested.is_set():
             # reaching here means that Vm.destroy() was called before we could
@@ -2464,7 +2427,6 @@ class Vm(object):
         self._fixLegacyRngConf()
 
         self._getUnderlyingVmDevicesInfo()
-        self._updateAgentChannels()
 
         # Currently there is no protection agains mirroring a network twice,
         if not self.recovering:
