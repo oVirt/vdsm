@@ -188,7 +188,7 @@ def _canonicalize_nameservers(data):
     if 'nameservers' not in data:
         # Nameservers are relevant only for the default route network (usually
         # the management network)
-        if data['defaultRoute']:
+        if data['defaultRoute'] and data['bootproto'] != 'dhcp':
             data['nameservers'] = dns.get_host_nameservers()
         else:
             data['nameservers'] = []
