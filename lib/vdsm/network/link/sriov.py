@@ -22,7 +22,7 @@ import errno
 import os
 import time
 
-from vdsm import udevadm
+from vdsm.common import udevadm
 from vdsm.network import netconfpersistence
 
 from .iface import iface

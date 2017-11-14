@@ -59,7 +59,6 @@ dist_vdsmpylib_PYTHON = \
 	supervdsm_server.py \
 	taskset.py \
 	throttledlog.py \
-	udevadm.py \
 	utils.py \
 	v2v.py \
 	vdsmd.py \

@@ -24,10 +24,10 @@ import glob
 import re
 import logging
 
-from vdsm import udevadm
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import fileutils
+from vdsm.common import udevadm
 
 from vdsm.constants import EXT_CHOWN, \
     DISKIMAGE_USER, DISKIMAGE_GROUP, \

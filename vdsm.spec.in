@@ -1173,7 +1173,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/supervdsm_server.py*
 %{python_sitelib}/%{vdsm_name}/taskset.py*
 %{python_sitelib}/%{vdsm_name}/throttledlog.py*
-%{python_sitelib}/%{vdsm_name}/udevadm.py*
 %{python_sitelib}/%{vdsm_name}/utils.py*
 %{python_sitelib}/%{vdsm_name}/v2v.py*
 %{python_sitelib}/%{vdsm_name}/vdsmd.py*
