@@ -271,6 +271,69 @@ _DISK_DATA = [
      [], []),
 ]
 
+_MONITORABLE_DISK_DATA = [
+    ([{
+      'diskType': storage.DISK_TYPE.BLOCK,
+      'format': 'cow',
+      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+      'index': 0,
+      'monitorable': True,
+      },
+      {
+      'diskType': storage.DISK_TYPE.BLOCK,
+      'format': 'cow',
+      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+      'index': 1,
+      'monitorable': True,
+      }],
+     ['vda', 'vdb']),
+    ([{
+      'diskType': storage.DISK_TYPE.BLOCK,
+      'format': 'cow',
+      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+      'index': 0,
+      'monitorable': False,
+      },
+      {
+      'diskType': storage.DISK_TYPE.BLOCK,
+      'format': 'cow',
+      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+      'index': 1,
+      'monitorable': True,
+      }],
+     ['vdb']),
+    ([{
+      'diskType': storage.DISK_TYPE.BLOCK,
+      'format': 'cow',
+      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+      'index': 0,
+      'monitorable': True,
+      },
+      {
+      'diskType': storage.DISK_TYPE.BLOCK,
+      'format': 'cow',
+      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+      'index': 1,
+      'monitorable': False,
+      }],
+     ['vda']),
+    ([{
+      'diskType': storage.DISK_TYPE.BLOCK,
+      'format': 'cow',
+      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+      'index': 0,
+      'monitorable': False,
+      },
+      {
+      'diskType': storage.DISK_TYPE.BLOCK,
+      'format': 'cow',
+      'threshold_state': storage.BLOCK_THRESHOLD.UNSET,
+      'index': 1,
+      'monitorable': False,
+      }],
+     []),
+]
+
 
 @expandPermutations
 class TestDrivemonitor(VdsmTestCase):
@@ -334,11 +397,24 @@ class TestDrivemonitor(VdsmTestCase):
         mon, vm = make_env(events_enabled=False)
         self._check_monitored_drives(mon, vm, disk_confs, expected)
 
+    @permutations(_MONITORABLE_DISK_DATA)
+    def test_monitored_drives_flag_disabled_with_events(
+            self, disk_confs, expected):
+        mon, vm = make_env(events_enabled=True)
+        self._check_monitored_drives(mon, vm, disk_confs, expected)
+
+    @permutations(_MONITORABLE_DISK_DATA)
+    def test_monitored_drives_flag_disabled_without_events(
+            self, disk_confs, expected):
+        mon, vm = make_env(events_enabled=False)
+        self._check_monitored_drives(mon, vm, disk_confs, expected)
+
     def _check_monitored_drives(self, mon, vm, disk_confs, expected):
         for conf in disk_confs:
             drive = make_drive(self.log, **conf)
             drive.threshold_state = conf.get('threshold_state',
                                              storage.BLOCK_THRESHOLD.UNSET)
+            drive.monitorable = conf.get('monitorable', True)
             vm.drives.append(drive)
         found = [drv.name for drv in mon.monitored_drives()]
         self.assertEqual(found, expected)

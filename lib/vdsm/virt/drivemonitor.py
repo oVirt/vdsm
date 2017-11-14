@@ -203,7 +203,8 @@ class DriveMonitor(object):
             for extension.
         """
         drives = [drive for drive in self._vm.getDiskDevices()
-                  if (drive.chunked or drive.replicaChunked) and not
+                  if drive.monitorable and
+                  (drive.chunked or drive.replicaChunked) and not
                   drive.readonly]
         if not self._events_enabled:
             # we need to check everything every poll cycle.

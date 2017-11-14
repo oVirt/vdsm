@@ -122,7 +122,8 @@ class Drive(core.Base):
                  'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
                  'extSharedState', 'drv', 'sgio', 'GUID', 'diskReplicate',
                  '_diskType', 'hosts', 'protocol', 'auth', 'discard',
-                 'vm_custom', 'blockinfo', '_threshold_state', '_lock')
+                 'vm_custom', 'blockinfo', '_threshold_state', '_lock',
+                 '_monitorable')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         constants.MEGAB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -230,6 +231,7 @@ class Drive(core.Base):
         super(Drive, self).__init__(log, **kwargs)
         if not hasattr(self, 'vm_custom'):
             self.vm_custom = {}
+        self._monitorable = True
         self._threshold_state = BLOCK_THRESHOLD.UNSET
         # Keep sizes as int
         self.reqsize = int(kwargs.get('reqsize', '0'))  # Backward compatible
@@ -362,6 +364,20 @@ class Drive(core.Base):
         replica = getattr(self, "diskReplicate", {})
         return (replica.get("diskType") == DISK_TYPE.BLOCK and
                 replica.get("format") == "cow")
+
+    @property
+    def monitorable(self):
+        with self._lock:
+            return self._monitorable
+
+    @monitorable.setter
+    def monitorable(self, value):
+        # Set this flag to False to disable the monitoring only for this
+        # drive. Usually, you want to do this only during a phase of a complex
+        # storage management operation, (e.g. pivoting a drive during LSM or
+        # live merge).
+        with self._lock:
+            self._monitorable = value
 
     @property
     def path(self):
