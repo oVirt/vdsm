@@ -24,8 +24,6 @@ import six
 
 from vdsm.common.config import config
 
-from vdsm.virt import libvirtnetwork
-
 from vdsm.network.canonicalize import canonicalize_bondings
 from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network.configurators.ifcfg import ConfigWriter
@@ -34,6 +32,22 @@ from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netinfo.cache import NetInfo, libvirt_vdsm_nets
 from vdsm.network.netswitch.configurator import netinfo
 from vdsm.network.kernelconfig import KernelConfig
+
+
+try:
+    from vdsm.virt import libvirtnetwork
+except ImportError:
+    # Virt package is not available, therefore, libvirt networks are not
+    # relevant for the upgrade path.
+    # Mocking libvirtnetwork.
+    class LibvirtNetworkMock(object):
+        def networks(self):
+            return {}
+
+        def removeNetwork(self, net):
+            pass
+
+    libvirtnetwork = LibvirtNetworkMock()
 
 
 def upgrade():
