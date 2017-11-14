@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 import six
 
+from vdsm.network import cmd
 from vdsm.network.ip import dhclient
 from vdsm.network.link.bond import Bond
 from vdsm.network.netinfo.addresses import (
@@ -28,6 +29,9 @@ from vdsm.network.netinfo.routes import (get_routes, get_gateway,
                                          is_default_route)
 from vdsm.network.link.iface import iface as iflink
 from . import driver
+
+
+OVS_CTL = '/usr/share/openvswitch/scripts/ovs-ctl'
 
 
 NORTHBOUND = 'northbound'
@@ -50,6 +54,11 @@ EMPTY_PORT_INFO = {
 SHARED_NETWORK_ATTRIBUTES = [
     'mtu', 'addr', 'ipv4addrs', 'gateway', 'ipv4defaultroute', 'netmask',
     'dhcpv4', 'ipv6addrs', 'ipv6autoconf', 'ipv6gateway', 'dhcpv6']
+
+
+def is_ovs_service_running():
+    rc, _, _ = cmd.exec_sync([OVS_CTL, 'status'])
+    return rc == 0
 
 
 class OvsDB(object):

@@ -43,7 +43,6 @@ from vdsm.network.link.setup import SetupBonds
 from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo.cache import (networks_base_info, get as netinfo_get,
                                         CachingNetInfo, NetInfo)
-from vdsm.tool.service import service_status
 
 from . import validator
 
@@ -391,7 +390,7 @@ def _set_bond_type_by_usage(_netinfo):
 
 @memoized
 def _is_ovs_service_running():
-    return service_status('openvswitch', verbose=False) == 0
+    return ovs_info.is_ovs_service_running()
 
 
 def setup_ipv6autoconf(networks):

@@ -20,13 +20,12 @@ from __future__ import absolute_import
 
 from vdsm.network import cmd
 from vdsm.network.ovs.driver import create
+from vdsm.network.ovs.info import OVS_CTL
 
 
 TEST_BRIDGE = 'vdsmbr_test'
 TEST_BRIDGES = (TEST_BRIDGE, 'ovs-test-br1')
 TEST_BOND = 'bond.ovs.test'
-
-OVS_CTL = '/usr/share/openvswitch/scripts/ovs-ctl'
 
 
 class OvsService(object):
