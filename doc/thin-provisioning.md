@@ -180,9 +180,9 @@ register a new block threshold for this drive.
 
 ### Monitoring drives during live storage migration
 
-Drives which are being replicated will use explicit polling since
-libvirt does not report events for the replica drive yet. This issue is
-tracked in http://bugzilla.redhat.com/XXX.
+Libvirt does not report events for the replica drive.
+To overcome this we monitor the replica drive via the source
+drive, even if the source drive is non-chunked.
 
 
 ### Stopping monitoring temporarily
@@ -238,12 +238,19 @@ this drive.
   during LSM.
 - Keep the current flow with no changes.
 - Events received during LSM will mark a drive for extension, but the
-  drive montior ignored this state during LSM, since it must check the
-  drive and/or the replica explicitily.
+  drive monitor ignores this state during LSM, since it must check the
+  drive and/or the replica explicitly.
 - When LSM is completed:
-  - Clear the needs extension on the drive
-  - Unregister the block threshold event for the old drive
-  - If the new drive is chunked, register a new threshold event
+  - If the new drive is chunked and the source drive was marked for
+    extension, the destination must be extended, since it is an
+    exact mirror of the source drive at the time we did the pivot,
+    and it may contain new data after pivot.
+    The drive will be picked for extension on the next monitoring cycle.
+  - The old drive is not part of the libvirt chain after we pivot to
+    the new drive. So it is not necessary to clear the block threshold
+    event for the old drive
+  - If the new drive is not chunked, and the drive was marked for
+    extension, clear the threshold, as it is not relevant any more.
 - If LSM failed, and a drive was marked for extension during LSM, it
   will extended on the next drive monitor cycle.
 
