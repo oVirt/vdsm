@@ -294,8 +294,11 @@ class Vm(object):
     # limit threads number until the libvirt lock will be fixed
     _ongoingCreations = threading.BoundedSemaphore(4)
 
-    def _makeChannelPath(self, deviceName):
-        return constants.P_LIBVIRT_VMCHANNELS + self.id + '.' + deviceName
+    def _makeChannelPath(self, device_name):
+        for name, path in self._domain.all_channels():
+            if name == device_name:
+                return path
+        return constants.P_LIBVIRT_VMCHANNELS + self.id + '.' + device_name
 
     def __init__(self, cif, params, recover=False):
         """
