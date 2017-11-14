@@ -25,7 +25,7 @@ Decreasing test verbosity:
 
     tox -e storage-py27 -- -qq
 
-You can also use enviroment variables
+You can also use environment variables
 
    export PYTEST_ADDOPTS=-qq
    tox -e storage-py35
@@ -45,7 +45,7 @@ Using tox virtual environment
 Tox creates a virtual environment for each testenv. You don't have to
 know anything about this if you run the tests with tox, but if you like
 to use pytest directly, you want to use the pytest version installed in
-the virtual environemnt. This allows tests both python 2 and python 3.
+the virtual environment. This allows tests both python 2 and python 3.
 
 To use tox virtual environment, activate it:
 
@@ -162,7 +162,7 @@ Some tests are too slow to run on each build. these are marked in the source
 with the @slowtest decorator and are disabled by default.
 
 To enable slow tests:
-     ./run_tests_local.sh --enable-slow-tests filenme [...]
+     ./run_tests_local.sh --enable-slow-tests filename [...]
 
 Slow tests are also enabled if NOSE_SLOW_TESTS environment variable is set.
 
@@ -171,7 +171,7 @@ Enabling stress tests:
 
 Some tests stress the resources of the system running the tests. These tests
 are too slow to run on each build, and may fail on overloaded system or when
-running tests in parrallel. These tests are marked in the source with the
+running tests in parallel. These tests are marked in the source with the
 @stresstest decorator and are disabled by default.
 
 To enable stress tests:
@@ -190,7 +190,7 @@ To run the entire test suit with thread leak detection:
 
     make check NOSE_WITH_THREAD_LEAK_CHECK=1
 
-Enabling processs leak check
+Enabling process leak check
 ----------------------------
 
 To find tests leaking child processes, you can enable the process leak checker
