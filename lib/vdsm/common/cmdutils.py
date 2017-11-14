@@ -23,6 +23,7 @@ import logging
 import os
 import re
 
+from vdsm.common import errors
 from vdsm.common.compat import subprocess
 
 
@@ -140,3 +141,14 @@ def exec_cmd(cmd, env=None):
     logging.debug(retcode_log_line(p.returncode, err=err))
 
     return p.returncode, out, err
+
+
+class Error(errors.Base):
+    msg = ("Command {self.cmd} failed with rc={self.rc} out={self.out!r} "
+           "err={self.err!r}")
+
+    def __init__(self, cmd, rc, out, err):
+        self.cmd = cmd
+        self.rc = rc
+        self.out = out
+        self.err = err

@@ -32,6 +32,7 @@ from . common import errors
 from . common import osutils
 from . config import config
 
+from . common.cmdutils import Error     # NOQA: F401 (unused import)
 from . common.time import monotonic_time
 
 SUDO_NON_INTERACTIVE_FLAG = "-n"
@@ -41,17 +42,6 @@ OUT = "out"
 ERR = "err"
 
 log = logging.getLogger("procutils")
-
-
-class Error(errors.Base):
-    msg = ("Command {self.cmd} failed with rc={self.rc} out={self.out!r} "
-           "err={self.err!r}")
-
-    def __init__(self, cmd, rc, out, err):
-        self.cmd = cmd
-        self.rc = rc
-        self.out = out
-        self.err = err
 
 
 class TimeoutExpired(errors.Base):

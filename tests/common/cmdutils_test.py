@@ -151,3 +151,10 @@ class ExecCmdTest(TestCaseBase):
             ('sh', '-c', 'echo $XXX'), env={'XXX': 'hello'})
         self.assertEqual(rc, 0)
         self.assertEqual(out, b'hello\n')
+
+
+class TestError(TestCaseBase):
+
+    def test_format(self):
+        # Should not raise
+        str(cmdutils.Error(["cmd"], 1, "out\n", "err\n"))

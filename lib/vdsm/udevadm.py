@@ -21,11 +21,11 @@
 from __future__ import absolute_import
 import logging
 
-from vdsm.common.cmdutils import CommandPath
-from . import cmdutils
+from vdsm.common import cmdutils
 from . import commands
 
-_UDEVADM = CommandPath("udevadm", "/sbin/udevadm", "/usr/sbin/udevadm")
+_UDEVADM = cmdutils.CommandPath(
+    "udevadm", "/sbin/udevadm", "/usr/sbin/udevadm")
 
 
 def settle(timeout, exit_if_exists=None):
