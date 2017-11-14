@@ -505,10 +505,9 @@ class Vm(object):
                 md.get('destroy_on_reboot', False) or
                 self._domain.on_reboot_config() == 'destroy'
             )
-            for key in ('agentChannelName', 'guestAgentAPIVersion',):
-                value = md.get(key)
-                if value:
-                    self.conf[key] = value
+            value = md.get('guestAgentAPIVersion')
+            if value:
+                self.conf['guestAgentAPIVersion'] = value
             exit_info = {}
             for key in ('exitCode', 'exitMessage', 'exitReason',):
                 value = md.get(key)
@@ -4811,7 +4810,6 @@ class Vm(object):
     def _update_metadata(self):
         with self._md_desc.values() as vm:
             vm['startTime'] = self.start_time
-            vm['agentChannelName'] = self._agent_channel_name
             if self._guest_agent_api_version is not None:
                 vm['guestAgentAPIVersion'] = self._guest_agent_api_version
             vm['destroy_on_reboot'] = self._destroy_on_reboot
