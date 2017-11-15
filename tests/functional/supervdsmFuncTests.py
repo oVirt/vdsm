@@ -1,4 +1,4 @@
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 from testlib import forked
 from testlib import VdsmTestCase as TestCaseBase
 import testValidation
-from vdsm import supervdsm
+from vdsm.common import supervdsm
 from vdsm.constants import VDSM_USER
 from pwd import getpwnam
 import os

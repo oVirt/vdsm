@@ -26,7 +26,7 @@ from multiprocessing.managers import BaseManager, RemoteError
 import logging
 import threading
 
-from vdsm import constants
+from vdsm.common import constants
 from vdsm.common import function
 from vdsm.common.panic import panic
 

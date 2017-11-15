@@ -33,7 +33,7 @@ import vmfakelib as fake
 from vdsm import cpuarch
 from vdsm import hugepages
 from vdsm import osinfo
-from vdsm import supervdsm
+from vdsm.common import supervdsm
 from vdsm.supervdsm_api import virt
 from vdsm.virt import vm
 

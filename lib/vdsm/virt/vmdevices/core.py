@@ -25,9 +25,9 @@ import os.path
 
 from vdsm.host import rngsources
 from vdsm import constants
-from vdsm import supervdsm
 from vdsm import utils
 from vdsm.common import conv
+from vdsm.common import supervdsm
 from vdsm.virt import vmxml
 from vdsm.virt.utils import cleanup_guest_socket
 

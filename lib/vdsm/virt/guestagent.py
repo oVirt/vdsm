@@ -29,9 +29,9 @@ import threading
 import uuid
 import weakref
 
-from vdsm import supervdsm
 from vdsm import utils
 from vdsm.common import filecontrol
+from vdsm.common import supervdsm
 from vdsm.config import config
 from vdsm.virt import vmstatus
 

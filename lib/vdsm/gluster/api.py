@@ -27,12 +27,12 @@ from functools import wraps
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
+from vdsm.common import supervdsm as svdsm
 from vdsm.common.define import doneCode
 from vdsm.gluster import exception as ge
 from vdsm.gluster import fstab
 from vdsm.storage import mount
 from vdsm import constants
-from vdsm import supervdsm as svdsm
 from pwd import getpwnam
 
 from . import gluster_mgmt_api

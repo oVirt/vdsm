@@ -30,10 +30,10 @@ import logging
 import re
 from collections import namedtuple
 
-from vdsm import supervdsm
 from vdsm import utils
 from vdsm.common import cmdutils
 from vdsm.common import commands
+from vdsm.common import supervdsm
 from vdsm.common import udevadm
 from vdsm.config import config
 from vdsm.storage import devicemapper

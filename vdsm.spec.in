@@ -1169,7 +1169,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/protocoldetector.py*
 %{python_sitelib}/%{vdsm_name}/schedule.py*
 %{python_sitelib}/%{vdsm_name}/sslutils.py*
-%{python_sitelib}/%{vdsm_name}/supervdsm.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_server.py*
 %{python_sitelib}/%{vdsm_name}/taskset.py*
 %{python_sitelib}/%{vdsm_name}/throttledlog.py*

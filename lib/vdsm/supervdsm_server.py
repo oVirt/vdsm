@@ -55,7 +55,7 @@ from vdsm.storage.fileUtils import chown, resolveGid, resolveUid
 from vdsm.storage.fileUtils import validateAccess as _validateAccess
 from vdsm.storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from vdsm.storage.iscsi import readSessionInfo as _readSessionInfo
-from vdsm.supervdsm import _SuperVdsmManager
+from vdsm.common.supervdsm import _SuperVdsmManager
 
 from vdsm.network.initializer import init_privileged_network_components
 

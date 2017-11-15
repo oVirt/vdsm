@@ -20,7 +20,7 @@
 from __future__ import absolute_import
 
 from vdsm import utils
-import vdsm.supervdsm as svdsm
+import vdsm.common.supervdsm as svdsm
 from vdsm.storage import fileVolume
 from vdsm.storage.sdc import sdCache
 

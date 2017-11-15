@@ -40,12 +40,12 @@ from six.moves import map
 
 from vdsm import constants
 from vdsm import jobs
-from vdsm import supervdsm
 from vdsm.common import concurrent
 from vdsm.common import function
 from vdsm.common.threadlocal import vars
 from vdsm.common import api
 from vdsm.common import exception
+from vdsm.common import supervdsm
 from vdsm.config import config
 from vdsm.storage import blockSD
 from vdsm.storage import clusterlock

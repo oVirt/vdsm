@@ -20,7 +20,7 @@ from __future__ import absolute_import
 
 import logging
 
-from vdsm import supervdsm
+from vdsm.common import supervdsm
 from vdsm.network import dhclient_monitor
 from vdsm.network import lldp
 from vdsm.network.ipwrapper import getLinks

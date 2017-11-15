@@ -27,6 +27,7 @@ import glob
 import fnmatch
 import re
 
+from vdsm.common import supervdsm
 from vdsm.common.compat import glob_escape
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
@@ -43,7 +44,6 @@ from vdsm.storage.sdm import volume_artifacts
 from vdsm import constants
 from vdsm.utils import stripNewLines
 from vdsm.storage.constants import LEASE_FILEEXT, UUID_GLOB_PATTERN
-from vdsm import supervdsm
 
 REMOTE_PATH = "REMOTE_PATH"
 

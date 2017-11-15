@@ -33,7 +33,6 @@ from vdsm import utils
 from vdsm import constants
 from vdsm import hooks
 from vdsm import hostdev
-from vdsm import supervdsm
 from vdsm import throttledlog
 from vdsm import jobs
 from vdsm import v2v
@@ -43,6 +42,7 @@ from vdsm.common import commands
 from vdsm.common import exception
 from vdsm.common import logutils
 from vdsm.common import response
+from vdsm.common import supervdsm
 from vdsm.common import validate
 from vdsm.common import conv
 from vdsm.host import api as hostapi

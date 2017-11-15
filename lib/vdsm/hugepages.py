@@ -26,8 +26,8 @@ import threading
 
 from vdsm import cpuarch
 from vdsm import osinfo
-from vdsm import supervdsm
 from vdsm.common import cache
+from vdsm.common import supervdsm
 from vdsm.config import config
 
 

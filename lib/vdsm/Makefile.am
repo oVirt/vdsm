@@ -54,7 +54,6 @@ dist_vdsmpylib_PYTHON = \
 	protocoldetector.py \
 	schedule.py \
 	sslutils.py \
-	supervdsm.py \
 	supervdsm_server.py \
 	taskset.py \
 	throttledlog.py \

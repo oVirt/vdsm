@@ -28,6 +28,7 @@ import libvirt
 
 from vdsm.common import cache
 from vdsm.common import dsaversion
+from vdsm.common import supervdsm
 from vdsm.config import config
 from vdsm.host import rngsources
 from vdsm.storage import hba
@@ -42,7 +43,6 @@ from vdsm import libvirtconnection
 from vdsm import machinetype
 from vdsm import numa
 from vdsm import osinfo
-from vdsm import supervdsm
 from vdsm import utils
 
 try:

@@ -29,9 +29,9 @@ import logging
 import os
 
 from vdsm import constants
-from vdsm import supervdsm
 from vdsm.config import config
 from vdsm.common import commands
+from vdsm.common import supervdsm
 from vdsm.common import zombiereaper
 from vdsm.storage import misc
 

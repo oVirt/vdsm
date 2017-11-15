@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2016 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,9 +26,9 @@ import re
 
 from glob import glob
 
+from vdsm.common.supervdsm import getProxy
 from vdsm.constants import EXT_DMSETUP
 from vdsm.storage import misc
-from vdsm.supervdsm import getProxy
 
 DMPATH_PREFIX = "/dev/mapper/"
 

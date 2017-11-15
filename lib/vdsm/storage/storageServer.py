@@ -29,8 +29,8 @@ import six
 import sys
 
 from vdsm.config import config
-from vdsm import supervdsm
 from vdsm import utils
+from vdsm.common import supervdsm
 from vdsm.common import udevadm
 from vdsm.gluster import cli as gluster_cli
 from vdsm.gluster import exception as ge

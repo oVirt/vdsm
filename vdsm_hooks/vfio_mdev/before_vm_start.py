@@ -45,7 +45,7 @@ import sys
 import uuid
 
 import hooking
-from vdsm import supervdsm
+from vdsm.common import supervdsm
 
 _MDEV_PATH = '/sys/class/mdev_bus'
 _MDEV_FIELDS = ('name', 'description', 'available_instances', 'device_api')

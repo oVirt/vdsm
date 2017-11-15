@@ -51,10 +51,10 @@ import libvirt
 from vdsm import alignmentScan
 from vdsm import libvirtconnection
 from vdsm import numa
-from vdsm import supervdsm
 from vdsm.common import concurrent
 from vdsm.common import function
 from vdsm.common import response
+from vdsm.common import supervdsm
 from vdsm.virt import vm
 from vdsm.virt.qemuguestagent import QemuGuestAgentPoller
 from vdsm.virt.vm import DestroyedOnResumeError, Vm

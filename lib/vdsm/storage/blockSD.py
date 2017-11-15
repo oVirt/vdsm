@@ -63,7 +63,7 @@ from vdsm.storage.mailbox import MAILBOX_SIZE
 from vdsm.storage.persistent import PersistentDict, DictValidator
 from vdsm.storage.sdm import volume_artifacts
 
-import vdsm.supervdsm as svdsm
+import vdsm.common.supervdsm as svdsm
 
 
 STORAGE_DOMAIN_TAG = "RHAT_storage_domain"

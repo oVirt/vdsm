@@ -24,11 +24,11 @@ import time
 import threading
 
 from vdsm.config import config
+from vdsm.common import supervdsm
 from vdsm.common.function import retry
 from vdsm import jsonrpcvdscli
 from vdsm.network import ipwrapper
 from vdsm.network.netinfo.cache import CachingNetInfo
-from vdsm import supervdsm
 from vdsm.network.netconfpersistence import RunningConfig
 
 

@@ -50,11 +50,11 @@ from vdsm import host
 from vdsm import hugepages
 from vdsm import libvirtconnection
 from vdsm import osinfo
-from vdsm import supervdsm
 from vdsm import utils
 from vdsm.config import config
 from vdsm.common import concurrent
 from vdsm.common import conv
+from vdsm.common import supervdsm
 from vdsm.common.compat import pickle
 from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.common.logutils import SimpleLogAdapter, volume_chain_to_str
