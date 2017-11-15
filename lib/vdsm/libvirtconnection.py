@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2016 Red Hat, Inc.
+# Copyright 2009-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ import signal
 import libvirt
 
 from vdsm.common import concurrent
+from vdsm.common import function
 from vdsm.common.password import ProtectedPassword
 
 from . import utils
@@ -98,7 +99,7 @@ def open_connection(uri=None, username=None, passwd=None):
 
     libvirtOpen = functools.partial(
         libvirt.openAuth, uri, auth, 0)
-    return utils.retry(libvirtOpen, timeout=10, sleep=0.2)
+    return function.retry(libvirtOpen, timeout=10, sleep=0.2)
 
 
 def _clear():

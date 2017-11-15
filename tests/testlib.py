@@ -265,7 +265,7 @@ class VdsmTestCase(unittest.TestCase):
         # the utils module only can be imported correctly after
         # hackVdsmModule() is called. Do not import it at the
         # module level.
-        from vdsm.utils import retry
+        from vdsm.common.function import retry
         return retry(expectedException=AssertionError, *args, **kwargs)
 
     def assertNotRaises(self, callableObj=None, *args, **kwargs):

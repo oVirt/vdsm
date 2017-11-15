@@ -25,7 +25,9 @@ import os
 from multiprocessing.managers import BaseManager, RemoteError
 import logging
 import threading
-from vdsm import constants, utils
+
+from vdsm import constants
+from vdsm.common import function
 from vdsm.common.panic import panic
 
 _g_singletonSupervdsmInstance = None
@@ -79,7 +81,8 @@ class SuperVdsmProxy(object):
         self._manager.register('open')
         self._log.debug("Trying to connect to Super Vdsm")
         try:
-            utils.retry(self._manager.connect, Exception, timeout=60, tries=3)
+            function.retry(
+                self._manager.connect, Exception, timeout=60, tries=3)
         except Exception as ex:
             msg = "Connect to supervdsm service failed: %s" % ex
             panic(msg)

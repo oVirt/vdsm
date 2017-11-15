@@ -51,9 +51,9 @@ import libvirt
 from vdsm import alignmentScan
 from vdsm import libvirtconnection
 from vdsm import numa
-from vdsm import utils
 from vdsm import supervdsm
 from vdsm.common import concurrent
+from vdsm.common import function
 from vdsm.common import response
 from vdsm.virt import vm
 from vdsm.virt.qemuguestagent import QemuGuestAgentPoller
@@ -536,7 +536,7 @@ class clientIF(object):
         # Trying to run recover process until it works. During that time vdsm
         # stays in recovery mode (_recover=True), means all api requests
         # returns with "vdsm is in initializing process" message.
-        utils.retry(self._recoverExistingVms, sleep=5)
+        function.retry(self._recoverExistingVms, sleep=5)
 
     def _recoverExistingVms(self):
         start_time = vdsm.common.time.monotonic_time()

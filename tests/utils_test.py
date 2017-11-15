@@ -33,6 +33,7 @@ from vdsm import taskset
 from vdsm import utils
 from vdsm.common import cmdutils
 from vdsm.common import commands
+from vdsm.common import function
 from vdsm.common import logutils
 import vdsm.common.time
 
@@ -54,6 +55,7 @@ class FakeMonotonicTime(object):
         self.now = now
         self.patch = Patch([
             (vdsm.common.time, 'monotonic_time', self.monotonic_time),
+            (vdsm.common.function, 'monotonic_time', self.monotonic_time),
             (time, 'sleep', self.sleep),
         ])
 
@@ -188,8 +190,9 @@ class TestRetry(TestCaseBase):
                                "fool about it.")
             # W. C. Fields
 
-        self.assertRaises(RuntimeError, utils.retry, foo, tries=(limit + 10),
-                          sleep=0, stopCallback=stopCallback)
+        self.assertRaises(
+            RuntimeError, function.retry, foo, tries=(limit + 10), sleep=0,
+            stopCallback=stopCallback)
         # Make sure we had the proper amount of iterations before failing
         self.assertEqual(counter[0], limit)
 
@@ -206,7 +209,7 @@ class TestRetry(TestCaseBase):
                 time.sleep(1)
                 raise RuntimeError
 
-            self.assertRaises(RuntimeError, utils.retry, operation,
+            self.assertRaises(RuntimeError, function.retry, operation,
                               timeout=3, sleep=1)
             self.assertEqual(vdsm.common.time.monotonic_time(), 3)
 
@@ -221,7 +224,7 @@ class TestRetry(TestCaseBase):
                 time.sleep(1)
                 raise RuntimeError
 
-            self.assertRaises(RuntimeError, utils.retry, operation,
+            self.assertRaises(RuntimeError, function.retry, operation,
                               timeout=2, sleep=1)
             self.assertEqual(vdsm.common.time.monotonic_time(), 1)
 
@@ -239,7 +242,7 @@ class TestRetry(TestCaseBase):
                 counter[0] += 1
                 raise RuntimeError
 
-            self.assertRaises(RuntimeError, utils.retry, operation,
+            self.assertRaises(RuntimeError, function.retry, operation,
                               timeout=4, sleep=1)
             self.assertEqual(counter[0], 2)
             self.assertEqual(vdsm.common.time.monotonic_time(), 5)
@@ -252,7 +255,7 @@ class TestRetry(TestCaseBase):
             raise RuntimeError
 
         tries = 10
-        self.assertRaises(RuntimeError, utils.retry, operation,
+        self.assertRaises(RuntimeError, function.retry, operation,
                           tries=tries, timeout=0.0, sleep=0.0)
         self.assertEqual(counter[0], tries)
 
@@ -277,7 +280,7 @@ class TestGetCmdArgs(TestCaseBase):
         try:
             test = lambda: self.assertEqual(utils.getCmdArgs(sproc.pid),
                                             tuple())
-            utils.retry(AssertionError, test, tries=10, sleep=0.1)
+            function.retry(AssertionError, test, tries=10, sleep=0.1)
         finally:
             sproc.wait()
 

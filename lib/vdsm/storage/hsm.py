@@ -41,8 +41,8 @@ from six.moves import map
 from vdsm import constants
 from vdsm import jobs
 from vdsm import supervdsm
-from vdsm import utils
 from vdsm.common import concurrent
+from vdsm.common import function
 from vdsm.common.threadlocal import vars
 from vdsm.common import api
 from vdsm.common import exception
@@ -3106,9 +3106,9 @@ class HSM(object):
         supervdsm.getProxy().appropriateMultipathDevice(guid, thiefId)
         supervdsm.getProxy().udevTriggerMultipath(guid)
         devPath = os.path.join(devicemapper.DMPATH_PREFIX, guid)
-        utils.retry(partial(fileUtils.validateQemuReadable, devPath),
-                    expectedException=OSError,
-                    timeout=QEMU_READABLE_TIMEOUT)
+        function.retry(partial(fileUtils.validateQemuReadable, devPath),
+                       expectedException=OSError,
+                       timeout=QEMU_READABLE_TIMEOUT)
 
         # Get the size of the logical unit volume.
         # Casting to string for keeping consistency with public methods
