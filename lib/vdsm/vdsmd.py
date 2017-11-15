@@ -41,9 +41,9 @@ from vdsm.common import dsaversion
 from vdsm.common import sigutils
 from vdsm.common import time
 from vdsm.common import zombiereaper
+from vdsm.common.panic import panic
 from vdsm.config import config
 from vdsm.network.initializer import init_unprivileged_network_components
-from vdsm.panic import panic
 from vdsm.profiling import profile
 from vdsm.storage.hsm import HSM
 from vdsm.storage.dispatcher import Dispatcher

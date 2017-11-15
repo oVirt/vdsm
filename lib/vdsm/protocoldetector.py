@@ -24,8 +24,8 @@ import errno
 import logging
 import socket
 
-from vdsm import panic
 from vdsm.common import filecontrol
+from vdsm.common import panic
 from vdsm.common.time import monotonic_time
 from vdsm.sslutils import SSLHandshakeDispatcher
 

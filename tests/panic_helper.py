@@ -1,5 +1,6 @@
 import os
-from vdsm import panic
+
+from vdsm.common import panic
 
 # Create new process group so panic will not kill the test runner.
 os.setpgid(0, 0)

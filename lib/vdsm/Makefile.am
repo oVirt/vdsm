@@ -50,7 +50,6 @@ dist_vdsmpylib_PYTHON = \
 	mkimage.py \
 	numa.py \
 	osinfo.py \
-	panic.py \
 	ppc64HardwareInfo.py \
 	protocoldetector.py \
 	schedule.py \

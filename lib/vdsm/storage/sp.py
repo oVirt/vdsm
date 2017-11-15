@@ -31,7 +31,7 @@ from functools import partial
 from weakref import proxy
 
 from vdsm.common import concurrent
-from vdsm.panic import panic
+from vdsm.common.panic import panic
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
