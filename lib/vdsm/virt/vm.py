@@ -2254,6 +2254,8 @@ class Vm(object):
         except libvirt.libvirtError as e:
             self.log.warning("Failed to undefine VM '%s' (error=%i)",
                              self.id, e.get_error_code())
+        except virdomain.NotConnectedError:
+            self.log.info("Can't undefine disconnected VM '%s'", self.id)
 
     def _cleanupStatsCache(self):
         try:
