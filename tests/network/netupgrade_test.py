@@ -28,6 +28,8 @@ from vdsm.network import netupgrade
 
 @attr(type='unit')
 @mock.patch.object(netupgrade.libvirtnetwork, 'networks', lambda: ())
+@mock.patch.object(netupgrade.ovs_info, 'is_ovs_service_running',
+                   lambda: False)
 @mock.patch.object(netupgrade, 'PersistentConfig')
 @mock.patch.object(netupgrade, 'RunningConfig')
 class NetUpgradeUnifiedConfigTest(VdsmTestCase):
@@ -90,6 +92,8 @@ class NetUpgradeUnifiedConfigTest(VdsmTestCase):
 @mock.patch.object(netupgrade, 'NetInfo', lambda x: None)
 @mock.patch.object(netupgrade, 'libvirt_vdsm_nets', lambda x: None)
 @mock.patch.object(netupgrade.libvirtnetwork, 'networks', lambda: ())
+@mock.patch.object(netupgrade.ovs_info, 'is_ovs_service_running',
+                   lambda: False)
 @mock.patch.object(netupgrade.Ifcfg, 'owned_device', return_value=True)
 @mock.patch.object(netupgrade, 'KernelConfig')
 @mock.patch.object(netupgrade, 'PersistentConfig')
@@ -144,6 +148,8 @@ class NetCreateUnifiedConfigTest(VdsmTestCase):
 
 @attr(type='integration')
 @mock.patch.object(netupgrade.libvirtnetwork, 'networks', lambda: ())
+@mock.patch.object(netupgrade.ovs_info, 'is_ovs_service_running',
+                   lambda: False)
 class NetUpgradeVolatileRunConfig(VdsmTestCase):
 
     def test_upgrade_volatile_running_config(self):

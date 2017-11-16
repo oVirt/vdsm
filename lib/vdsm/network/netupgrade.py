@@ -28,10 +28,12 @@ from vdsm.network.canonicalize import canonicalize_bondings
 from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network.configurators.ifcfg import ConfigWriter
 from vdsm.network.configurators.ifcfg import Ifcfg
+from vdsm.network.kernelconfig import KernelConfig
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netinfo.cache import NetInfo, libvirt_vdsm_nets
 from vdsm.network.netswitch.configurator import netinfo
-from vdsm.network.kernelconfig import KernelConfig
+from vdsm.network.ovs import info as ovs_info
+from vdsm.network.ovs import switch as ovs_switch
 
 
 try:
@@ -68,6 +70,9 @@ def upgrade():
         _create_unified_configuration(rconfig, NetInfo(netinfo(vdsmnets)))
 
     _cleanup_libvirt_networks(libvirt_networks)
+
+    if ovs_info.is_ovs_service_running():
+        ovs_switch.update_network_to_bridge_mappings(ovs_info.OvsInfo())
 
 
 def _upgrade_volatile_running_config(rconfig):
