@@ -409,6 +409,60 @@ class Drive(core.Base):
         with self._lock:
             self._threshold_state = state
 
+    def needs_monitoring(self, events_enabled):
+        """
+        Return True if the drive needs to be picked by
+        a Drivemonitor periodic check, False otherwise.
+
+        If events_enabled is False, the drive needs monitoring
+        if it is writable and chunked drives; Drives being replicated
+        to a chunked drive needs monitoring too.
+
+        If events_enabled is True, the drive needs monitoring in
+        a subset of the above cases.
+        We can can have two states:
+
+        - threshold_state == UNSET
+          Possible use cases are the first time we monitor a drive, or
+          after set_threshold failure, or when a drive path has changed.
+          We should set the threshold on these drives.
+
+        - threshold_state == EXCEEDED
+          We got a libvirt BLOCK_THRESHOLD event for this drive, and
+          they should be extended.
+
+        We use the libvirt BLOCK_THRESHOLD event to detect if a drive
+        needs extension for writeable chunked drives, or non-chunked
+        drives being replicated to a chunked drive.
+
+        drive    format  replica  format  events  comments
+        --------------------------------------------------
+        block    cow     block    cow     yes
+        block    cow     file     cow     yes
+        file     cow     block    cow     yes
+        network  cow     block    cow     yes   libgfapi
+
+        These replication types are not supported:
+        - network raw to any (ceph)
+        - any to network (libvirt/qemu limit)
+        """
+        with self._lock:
+            if self.readonly:
+                return False
+
+            if not self._monitorable:
+                return False
+
+            if not (self.chunked or self.replicaChunked):
+                return False
+
+            if events_enabled:
+                return self._threshold_state in (
+                    BLOCK_THRESHOLD.UNSET,
+                    BLOCK_THRESHOLD.EXCEEDED)
+
+            return True
+
     @property
     def diskType(self):
         """

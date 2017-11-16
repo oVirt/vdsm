@@ -167,51 +167,12 @@ class DriveMonitor(object):
         Return the drives that need to be checked for extension
         on the next monitoring cycle.
 
-        If events are disabled, the reported drives are all the
-        writable chunked drives plus all the drives being replicated
-        to a chunked drive.
-
-        If events are enabled, the reported drives are the subset
-        of the above. We can can have two states:
-
-        - threshold_state == UNSET
-          Possible use cases are the first time we monitor a drive, or
-          after set_threshold failure, or when a drive path has changed.
-          We should set the threshold on these drives.
-
-        - threshold_state == EXCEEDED
-          We got a libvirt BLOCK_THRESHOLD event for this drive, and
-          they should be extended.
-
-        We use the libvirt BLOCK_THRESHOLD event to detect if a drive
-        needs extension for writeable chunked drives, or non-chunked
-        drives being replicated to a chunked drive.
-
-        drive    format  replica  format  events  comments
-        --------------------------------------------------
-        block    cow     block    cow     yes
-        block    cow     file     cow     yes
-        file     cow     block    cow     yes
-        network  cow     block    cow     yes   libgfapi
-
-        These replication types are not supported:
-        - network raw to any (ceph)
-        - any to network (libvirt/qemu limit)
-
         Returns:
             iterable of storage.Drives that needs to be checked
             for extension.
         """
-        drives = [drive for drive in self._vm.getDiskDevices()
-                  if drive.monitorable and
-                  (drive.chunked or drive.replicaChunked) and not
-                  drive.readonly]
-        if not self._events_enabled:
-            # we need to check everything every poll cycle.
-            return drives
-        return [drive for drive in drives
-                if drive.threshold_state == storage.BLOCK_THRESHOLD.UNSET or
-                drive.threshold_state == storage.BLOCK_THRESHOLD.EXCEEDED]
+        return [drive for drive in self._vm.getDiskDevices()
+                if drive.needs_monitoring(self._events_enabled)]
 
     def should_extend_volume(self, drive, volumeID, capacity, alloc, physical):
         nextPhysSize = drive.getNextVolumeSize(physical, capacity)
