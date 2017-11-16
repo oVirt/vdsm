@@ -32,12 +32,11 @@ import shutil
 
 import six
 
-from vdsm import hooks
-
 from vdsm.common import concurrent
 from vdsm.common import constants
 from vdsm.common import dsaversion
 from vdsm.common import fileutils
+from vdsm.common import hooks
 from vdsm.common.config import config
 from vdsm.common.conv import tobool
 

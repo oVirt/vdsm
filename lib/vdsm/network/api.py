@@ -1,4 +1,4 @@
-# Copyright 2011-2016 Red Hat, Inc.
+# Copyright 2011-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ import sys
 import logging
 import six
 
-from vdsm import hooks
+from vdsm.common import hooks
 
 from vdsm.network import connectivity
 from vdsm.network import netswitch

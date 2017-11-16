@@ -1,6 +1,6 @@
 # encoding: utf-8
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import namedTemporaryDir
 
-from vdsm import hooks
+from vdsm.common import hooks
 
 
 class TestHooks(TestCaseBase):

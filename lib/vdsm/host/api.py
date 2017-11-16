@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,9 +23,9 @@ import errno
 import logging
 import time
 from . import stats
-from vdsm import hooks
 from vdsm import utils
 from vdsm import metrics
+from vdsm.common import hooks
 from vdsm.common.define import Kbytes, Mbytes
 from vdsm.config import config
 from vdsm.virt import vmstatus

@@ -45,7 +45,6 @@ import vdsm.common.time
 from vdsm import constants
 from vdsm import containersconnection
 from vdsm import cpuarch
-from vdsm import hooks
 from vdsm import host
 from vdsm import hugepages
 from vdsm import libvirtconnection
@@ -54,6 +53,7 @@ from vdsm import utils
 from vdsm.config import config
 from vdsm.common import concurrent
 from vdsm.common import conv
+from vdsm.common import hooks
 from vdsm.common import supervdsm
 from vdsm.common.compat import pickle
 from vdsm.common.define import ERROR, NORMAL, doneCode, errCode

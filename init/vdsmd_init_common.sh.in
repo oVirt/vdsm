@@ -55,7 +55,7 @@ task_configure_vdsm_logs() {
 }
 
 task_run_init_hooks(){
-    "@PYTHON@" -m "vdsm.hooks" before_vdsm_start
+    "@PYTHON@" -m "vdsm.common.hooks" before_vdsm_start
 }
 
 
@@ -182,7 +182,7 @@ task_validate_configuration(){
 
 #### post-stop tasks ####
 task_run_final_hooks(){
-    "@PYTHON@" -m "vdsm.hooks" after_vdsm_stop
+    "@PYTHON@" -m "vdsm.common.hooks" after_vdsm_stop
 }
 #### post-stop tasks end ####
 

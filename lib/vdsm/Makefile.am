@@ -36,7 +36,6 @@ dist_vdsmpylib_PYTHON = \
 	dmidecodeUtil.py \
 	executor.py \
 	health.py \
-	hooks.py \
 	hostdev.py \
 	hugepages.py \
 	jobs.py \

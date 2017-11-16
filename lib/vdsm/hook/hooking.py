@@ -37,13 +37,13 @@ Return codes:
 """
 from __future__ import absolute_import
 
-from vdsm import hooks
 import io
 import json
 import os
 import sys
 from xml.dom import minidom
 
+from vdsm.common import hooks
 from vdsm.common.commands import execCmd
 from vdsm.common.conv import tobool
 

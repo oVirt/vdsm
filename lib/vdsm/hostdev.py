@@ -29,12 +29,12 @@ import xml.etree.cElementTree as etree
 import libvirt
 
 from vdsm.common import conv
+from vdsm.common import hooks
 from vdsm.common import supervdsm
 from vdsm.common import validate
 from vdsm.common.cache import memoized
 
 from . import cpuarch
-from . import hooks
 from . import libvirtconnection
 
 CAPABILITY_TO_XML_ATTR = collections.defaultdict(

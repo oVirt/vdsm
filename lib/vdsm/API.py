@@ -31,7 +31,6 @@ from vdsm.network.errors import ConfigNetworkError
 
 from vdsm import utils
 from vdsm import constants
-from vdsm import hooks
 from vdsm import hostdev
 from vdsm import throttledlog
 from vdsm import jobs
@@ -40,6 +39,7 @@ from vdsm.clientIF import clientIF
 from vdsm.common import api
 from vdsm.common import commands
 from vdsm.common import exception
+from vdsm.common import hooks
 from vdsm.common import logutils
 from vdsm.common import response
 from vdsm.common import supervdsm

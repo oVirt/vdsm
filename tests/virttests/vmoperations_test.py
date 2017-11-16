@@ -27,9 +27,9 @@ from six.moves import zip
 
 from nose.plugins.skip import SkipTest
 
-from vdsm import hooks
 from vdsm import libvirtconnection
 from vdsm.common import define
+from vdsm.common import hooks
 from vdsm.common import password
 from vdsm.common import response
 from vdsm.config import config

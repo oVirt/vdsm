@@ -28,9 +28,9 @@ from testlib import find_xml_element
 from monkeypatch import MonkeyClass
 
 from vdsm import cpuarch
-from vdsm import hooks
 from vdsm import hostdev
 from vdsm import libvirtconnection
+from vdsm.common import hooks
 
 import hostdevlib
 
