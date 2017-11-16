@@ -145,7 +145,6 @@ blacklist_modules_python3 = \
 	unicode_test.py \
 	utils_test.py \
 	v2v_test.py \
-	vmapi_test.py \
 	vmxml_test.py \
 	$(NULL)
 
