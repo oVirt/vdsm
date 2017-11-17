@@ -520,6 +520,43 @@ class TestDiskExtensionWithEvents(DiskExtensionTestBase):
             self.assertEqual(drv.threshold_state, BLOCK_THRESHOLD.UNSET)
 
 
+class TestReplication(DiskExtensionTestBase):
+    """
+    Test extension during replication.
+
+    We have several cases:
+    - replicating from chunked to chunked: extend the replica, then the volume.
+    - replicating from non-chunked to chunked: extend the replica.
+    - replicating from chunked to non-chunked: extend the volume.
+
+    When extending the replica completed, we have these cases:
+    - replication finished during the extend:
+      - abort the extend
+      - drive was UNSET by the pivot.
+    - replication failed during the extend:
+      - extend the volume
+      - drive remains EXCCEEDED.
+
+    When extending the replica failed, we have these cases:
+    - replication finished during the extend
+      - abort the extend
+      - drive was unset by the pivot
+    - replication failed during the extend
+      - abort the extend
+      - drive remains EXCEEDED.
+
+    When extending the volume completed, we have these cases:
+    - replication finished during the extend:
+      - abort the extend
+      - drive was UNSET by the pivot
+    - replication failed during the extend:
+      - update drive size and set a new threshold.
+
+    When extending the volume failed:
+    - regardless of replication state, drive must remain EXCCEEDED
+    """
+
+
 class FakeVM(vm.Vm):
 
     log = logging.getLogger('test')
