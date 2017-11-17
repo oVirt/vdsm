@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@
 from contextlib import contextmanager
 from functools import wraps
 import inspect
+
+import six
 
 
 #
@@ -69,7 +71,7 @@ class Patch(object):
                 if inspect.isfunction(old):
                     that = staticmethod(that)
                 elif (inspect.ismethod(old) and
-                      getattr(old, 'im_self', None) is not None):
+                      getattr(old, '__self__', None) is not None):
                     that = classmethod(that)
             setattr(module, name, that)
 
@@ -77,10 +79,9 @@ class Patch(object):
         assert self.old != []
         while self.old:
             module, name, that = self.old.pop()
-            # The following block is only necessary for Python2 as it wrongly
-            # sets the function as instancemethod instead of keeping it as
-            # staticmethod.
-            if inspect.isclass(module):
+            # Python 2 wrongly sets the function `that' as an instancemethod
+            # instead of keeping it as staticmethod.
+            if six.PY2 and inspect.isclass(module):
                 if inspect.isfunction(that):
                     that = staticmethod(that)
 

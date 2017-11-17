@@ -186,12 +186,12 @@ class TestMonkeyPatchClass(VdsmTestCase):
         patch.apply()
         try:
             self.assertEqual(Class.static_method(), 'patched')
-            self.assertFalse(hasattr(Class.static_method, 'im_self'))
+            self.assertFalse(hasattr(Class.static_method, '__self__'))
         finally:
             patch.revert()
         self.assertEqual(Class.static_method(), 'clean')
         self.assertEqual(old, Class.static_method)
-        self.assertFalse(hasattr(Class.static_method, 'im_self'))
+        self.assertFalse(hasattr(Class.static_method, '__self__'))
 
     def testClassMethodReplacement(self):
         patch = monkeypatch.Patch([(Class, 'class_method', patched)])
@@ -200,9 +200,9 @@ class TestMonkeyPatchClass(VdsmTestCase):
         patch.apply()
         try:
             self.assertEqual(Class.class_method(), 'patched')
-            self.assertEqual(getattr(Class.class_method, 'im_self'), Class)
+            self.assertEqual(getattr(Class.class_method, '__self__'), Class)
         finally:
             patch.revert()
         self.assertEqual(Class.class_method(), 'clean')
         self.assertEqual(old, Class.class_method)
-        self.assertEqual(getattr(Class.class_method, 'im_self'), Class)
+        self.assertEqual(getattr(Class.class_method, '__self__'), Class)

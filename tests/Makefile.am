@@ -136,7 +136,6 @@ blacklist_modules_python3 = \
 	mkimage_test.py \
 	mompolicy_test.py \
 	mom_test.py \
-	monkeypatch_test.py \
 	network/tc_test.py \
 	protocoldetector_test.py \
 	qemuimg_test.py \
