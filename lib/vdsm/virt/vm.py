@@ -1351,12 +1351,24 @@ class Vm(object):
 
         # Only update apparentsize and truesize if we've resized the leaf
         if not volInfo['internal']:
-            vmDrive = self.findDriveByName(volInfo['name'])
-            vmDrive.apparentsize = volSize.apparentsize
-            vmDrive.truesize = volSize.truesize
-            self.drive_monitor.set_threshold(vmDrive, volSize.apparentsize)
+            drive = self.findDriveByName(volInfo['name'])
+            self._update_drive_volume_size(drive, volSize)
 
         self._resume_if_needed()
+
+    def _update_drive_volume_size(self, drive, volsize):
+        """
+        Updates drive's apparentsize and truesize, and set a new block
+        threshold based on the new size.
+
+        Arguments:
+            drive (virt.vmdevices.storage.Drive): The drive object using the
+                resized volume.
+            volsize (virt.vm.VolumeSize): new volume size tuple
+        """
+        drive.apparentsize = volsize.apparentsize
+        drive.truesize = volsize.truesize
+        self.drive_monitor.set_threshold(drive, volsize.apparentsize)
 
     def _resume_if_needed(self):
         try:
