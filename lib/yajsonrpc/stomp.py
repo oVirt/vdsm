@@ -40,22 +40,22 @@ NR_RETRIES = 1
 # This is the value used by engine
 _GRACE_PERIOD_FACTOR = 0.2
 
-_RE_ESCAPE_SEQUENCE = re.compile(r"\\(.)")
+_RE_ESCAPE_SEQUENCE = re.compile(br"\\(.)")
 
-_RE_ENCODE_CHARS = re.compile(r"[\r\n\\:]")
+_RE_ENCODE_CHARS = re.compile(br"[\r\n\\:]")
 
 _EC_DECODE_MAP = {
-    r"\\": "\\",
-    r"\r": "\r",
-    r"\n": "\n",
-    r"\c": ":",
+    br"\\": b"\\",
+    br"\r": b"\r",
+    br"\n": b"\n",
+    br"\c": b":",
 }
 
 _EC_ENCODE_MAP = {
-    ":": "\c",
-    "\\": "\\\\",
-    "\r": "\\r",
-    "\n": "\\n",
+    b":": b"\c",
+    b"\\": b"\\\\",
+    b"\r": b"\\r",
+    b"\n": b"\\n",
 }
 
 
@@ -157,7 +157,7 @@ class Frame(object):
 def decodeValue(s):
     # Make sure to leave this check before decoding as ':' can appear in the
     # value after decoding using \c
-    if ":" in s:
+    if b":" in s:
         raise ValueError("Contains illigal charachter `:`")
 
     try:
