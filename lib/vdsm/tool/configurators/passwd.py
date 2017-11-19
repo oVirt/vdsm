@@ -20,12 +20,10 @@
 from __future__ import absolute_import
 
 import io
-import os
 
-from vdsm.common import cache
 from vdsm.common import cmdutils
 from vdsm.common import commands
-from vdsm.common import pki
+from vdsm.libvirtconnection import libvirt_password, SASL_USERNAME
 
 from . import YES, NO, MAYBE
 
@@ -38,8 +36,6 @@ _SASL2_CONF = "/etc/sasl2/libvirt.conf"
 _SASLPASSWD2 = cmdutils.CommandPath("saslpasswd2",
                                     "/usr/sbin/saslpasswd2",
                                     )
-SASL_USERNAME = "vdsm@ovirt"
-LIBVIRT_PASSWORD_PATH = os.path.join(pki.PKI_DIR, 'keys', 'libvirt_password')
 
 
 def isconfigured():
@@ -100,9 +96,3 @@ def configure_passwd():
     rc, _, err = commands.execCmd(script, data=libvirt_password())
     if rc != 0:
         raise RuntimeError("Set password failed: %s" % (err,))
-
-
-@cache.memoized
-def libvirt_password():
-    with io.open(LIBVIRT_PASSWORD_PATH, encoding='utf8') as passwd_file:
-        return passwd_file.readline().rstrip("\n")

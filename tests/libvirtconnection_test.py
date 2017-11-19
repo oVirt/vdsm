@@ -23,7 +23,6 @@ import contextlib
 import os
 
 from vdsm import libvirtconnection
-from vdsm.tool.configurators import passwd
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 
@@ -109,7 +108,7 @@ class testLibvirtconnection(TestCaseBase):
         libvirtconnection._clear()
 
     @MonkeyPatch(libvirtconnection, 'libvirt', LibvirtMock())
-    @MonkeyPatch(passwd, 'libvirt_password', lambda: '/dev/null')
+    @MonkeyPatch(libvirtconnection, 'libvirt_password', lambda: '/dev/null')
     def testCallSucceeded(self):
         """Positive test - libvirtMock does not raise any errors"""
         with run_libvirt_event_loop():
@@ -120,7 +119,7 @@ class testLibvirtconnection(TestCaseBase):
 
     @MonkeyPatch(libvirtconnection, 'libvirt', LibvirtMock())
     @MonkeyPatch(os, 'kill', _kill)
-    @MonkeyPatch(passwd, 'libvirt_password', lambda: '/dev/null')
+    @MonkeyPatch(libvirtconnection, 'libvirt_password', lambda: '/dev/null')
     def testCallFailedConnectionUp(self):
         """
         libvirtMock will raise an error when nodeDeviceLookupByName is called.
@@ -138,7 +137,7 @@ class testLibvirtconnection(TestCaseBase):
 
     @MonkeyPatch(libvirtconnection, 'libvirt', LibvirtMock())
     @MonkeyPatch(os, 'kill', _kill)
-    @MonkeyPatch(passwd, 'libvirt_password', lambda: '/dev/null')
+    @MonkeyPatch(libvirtconnection, 'libvirt_password', lambda: '/dev/null')
     def testCallFailedConnectionDown(self):
         """
         libvirtMock will raise an error when nodeDeviceLookupByName is called.

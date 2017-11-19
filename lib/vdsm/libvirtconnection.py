@@ -22,18 +22,24 @@ from __future__ import absolute_import
 import atexit
 import threading
 import functools
+import io
 import logging
 import os
 import signal
 
 import libvirt
 
+from vdsm.common import cache
 from vdsm.common import concurrent
 from vdsm.common import function
+from vdsm.common import pki
 from vdsm.common.password import ProtectedPassword
 
-from .tool.configurators import passwd
 log = logging.getLogger()
+
+
+SASL_USERNAME = "vdsm@ovirt"
+LIBVIRT_PASSWORD_PATH = os.path.join(pki.PKI_DIR, 'keys', 'libvirt_password')
 
 
 class _EventLoop:
@@ -159,9 +165,8 @@ def get(target=None, killOnFailure=True):
         conn = __connections.get(id(target))
         if not conn:
             log.debug('trying to connect libvirt')
-            password = ProtectedPassword(passwd.libvirt_password())
-            conn = open_connection('qemu:///system', passwd.SASL_USERNAME,
-                                   password)
+            password = ProtectedPassword(libvirt_password())
+            conn = open_connection('qemu:///system', SASL_USERNAME, password)
             __connections[id(target)] = conn
 
             setattr(conn, 'pingLibvirt', getattr(conn, 'getLibVersion'))
@@ -192,6 +197,12 @@ def get(target=None, killOnFailure=True):
             # hosts which are hosting a lot of virtual machines
 
         return conn
+
+
+@cache.memoized
+def libvirt_password():
+    with io.open(LIBVIRT_PASSWORD_PATH, encoding='utf8') as passwd_file:
+        return passwd_file.readline().rstrip("\n")
 
 
 def __close_connections():
