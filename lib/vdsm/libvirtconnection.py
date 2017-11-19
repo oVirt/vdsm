@@ -32,9 +32,7 @@ from vdsm.common import concurrent
 from vdsm.common import function
 from vdsm.common.password import ProtectedPassword
 
-from . import utils
 from .tool.configurators import passwd
-
 log = logging.getLogger()
 
 
@@ -129,7 +127,7 @@ def get(target=None, killOnFailure=True):
                         method = getattr(ret, name)
                         if callable(method) and name[0] != '_':
                             setattr(ret, name,
-                                    wrapMethod(utils.weakmethod(method)))
+                                    wrapMethod(function.weakmethod(method)))
                 return ret
             except libvirt.libvirtError as e:
                 edom = e.get_error_domain()
@@ -171,7 +169,7 @@ def get(target=None, killOnFailure=True):
                 method = getattr(conn, name)
                 if callable(method) and name[0] != '_':
                     setattr(conn, name,
-                            wrapMethod(utils.weakmethod(method)))
+                            wrapMethod(function.weakmethod(method)))
             if target is not None:
                 for ev in (libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE,
                            libvirt.VIR_DOMAIN_EVENT_ID_REBOOT,
