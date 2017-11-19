@@ -534,6 +534,9 @@ class v2vTests(TestCaseBase):
         self.assertEqual('1.1', cmd._base_command[i + 1])
 
 
+SHORT_SLEEP = 1
+
+
 @expandPermutations
 class PipelineProcTests(TestCaseBase):
 
@@ -577,10 +580,11 @@ class PipelineProcTests(TestCaseBase):
 
     @permutations([
         # (cmd1, cmd2, waitRet)
-        [['sleep', '1'], ['sleep', '1'], True],
-        [['sleep', '1'], ['sleep', '3'], False],
-        [['sleep', '3'], ['sleep', '1'], False],
-        [['sleep', '3'], ['sleep', '3'], False],
+        [['sleep', str(SHORT_SLEEP)], ['sleep', str(SHORT_SLEEP)], True],
+        [['sleep', str(3 * SHORT_SLEEP)], ['sleep', str(SHORT_SLEEP)], False],
+        [['sleep', str(SHORT_SLEEP)], ['sleep', str(3 * SHORT_SLEEP)], False],
+        [['sleep', str(3 * SHORT_SLEEP)],
+         ['sleep', str(3 * SHORT_SLEEP)], False],
     ])
     def testWait(self, cmd1, cmd2, waitRet):
         p1 = v2v._simple_exec_cmd(cmd1,
@@ -591,7 +595,7 @@ class PipelineProcTests(TestCaseBase):
                                       stdout=subprocess.PIPE)
             with terminating(p2):
                 p = v2v.PipelineProc(p1, p2)
-                ret = p.wait(2)
+                ret = p.wait(2 * SHORT_SLEEP)
                 p.kill()
                 self.assertEqual(ret, waitRet)
 
