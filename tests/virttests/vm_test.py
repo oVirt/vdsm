@@ -35,12 +35,12 @@ import six
 from six.moves import zip
 
 from vdsm import constants
-from vdsm import cpuarch
 from vdsm import host
 from vdsm import hugepages
 from vdsm import osinfo
 from vdsm import utils
 
+from vdsm.common import cpuarch
 from vdsm.common import define
 from vdsm.common import exception
 from vdsm.common import libvirtconnection

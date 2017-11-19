@@ -26,7 +26,7 @@ from vdsm.common.define import Mbytes
 from vdsm.config import config
 from vdsm import throttledlog
 
-from vdsm.cpuarch import PAGE_SIZE_BYTES
+from vdsm.common.cpuarch import PAGE_SIZE_BYTES
 
 try:
     import mom

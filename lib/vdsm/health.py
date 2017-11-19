@@ -25,9 +25,9 @@ import os
 import threading
 
 from vdsm.common import concurrent
+from vdsm.common import cpuarch
 
 from . config import config
-from . import cpuarch
 from . import metrics
 
 _monitor = None

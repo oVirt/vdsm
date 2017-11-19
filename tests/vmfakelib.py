@@ -28,7 +28,7 @@ import libvirt
 
 from vdsm import constants
 from vdsm import containersconnection
-from vdsm import cpuarch
+from vdsm.common import cpuarch
 from vdsm.common import libvirtconnection
 from vdsm.common import response
 from vdsm.virt import sampling

@@ -27,9 +27,9 @@ from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase, namedTemporaryDir
 from testlib import permutations, expandPermutations
 
-from vdsm import cpuarch
 from vdsm import cpuinfo
 from vdsm import ppc64HardwareInfo
+from vdsm.common import cpuarch
 
 
 def _outfile(name):

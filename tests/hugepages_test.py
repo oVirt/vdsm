@@ -30,9 +30,9 @@ from testlib import namedTemporaryDir
 from testlib import permutations, expandPermutations
 import vmfakelib as fake
 
-from vdsm import cpuarch
 from vdsm import hugepages
 from vdsm import osinfo
+from vdsm.common import cpuarch
 from vdsm.common import supervdsm
 from vdsm.supervdsm_api import virt
 from vdsm.virt import vm

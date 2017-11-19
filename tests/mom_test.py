@@ -29,7 +29,7 @@ from six.moves import configparser
 import os.path
 import monkeypatch
 
-from vdsm import cpuarch
+from vdsm.common import cpuarch
 
 MOM_CONF = "/dev/null"
 MOM_SOCK = "test_mom_vdsm.sock"

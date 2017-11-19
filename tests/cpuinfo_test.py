@@ -25,8 +25,8 @@ import platform
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 
-from vdsm import cpuarch
 from vdsm import cpuinfo
+from vdsm.common import cpuarch
 
 
 def _outfile(name):

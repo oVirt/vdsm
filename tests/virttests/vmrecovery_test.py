@@ -23,6 +23,7 @@ import contextlib
 import os
 import threading
 
+from vdsm.common import cpuarch
 from vdsm.common import libvirtconnection
 from vdsm.common import response
 from vdsm.common.compat import pickle
@@ -30,7 +31,6 @@ from vdsm.virt import recovery
 from vdsm.virt import vmstatus
 from vdsm import constants
 from vdsm import containersconnection
-from vdsm import cpuarch
 
 
 from monkeypatch import MonkeyPatchScope

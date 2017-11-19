@@ -27,8 +27,8 @@ from functools import wraps
 import getopt
 import sys
 
-from vdsm import cpuarch
 from vdsm import cpuinfo
+from vdsm.common import cpuarch
 from vdsm.config import config
 
 

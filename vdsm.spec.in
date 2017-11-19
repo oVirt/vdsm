@@ -1052,7 +1052,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/config.py*
 %{python_sitelib}/%{vdsm_name}/constants.py*
 %{python_sitelib}/%{vdsm_name}/containersconnection.py*
-%{python_sitelib}/%{vdsm_name}/cpuarch.py*
 %{python_sitelib}/%{vdsm_name}/cpuinfo.py*
 %{python_sitelib}/%{vdsm_name}/dmidecodeUtil.py*
 %{python_sitelib}/%{vdsm_name}/executor.py*

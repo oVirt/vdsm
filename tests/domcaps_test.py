@@ -23,8 +23,8 @@
 import os
 from testlib import VdsmTestCase as TestCaseBase
 
-from vdsm import cpuarch
 from vdsm import machinetype
+from vdsm.common import cpuarch
 
 
 class FakeConnection(object):

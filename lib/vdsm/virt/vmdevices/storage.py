@@ -27,11 +27,11 @@ import threading
 import xml.etree.ElementTree as ET
 
 from vdsm.common import conv
+from vdsm.common import cpuarch
 from vdsm.common import errors
 from vdsm.common import exception
 from vdsm.config import config
 from vdsm import constants
-from vdsm import cpuarch
 from vdsm import utils
 from vdsm.virt import vmtune
 from vdsm.virt import vmxml

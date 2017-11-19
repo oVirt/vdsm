@@ -25,8 +25,7 @@ import re
 from collections import namedtuple
 
 from vdsm.common import cache
-
-from . import cpuarch
+from vdsm.common import cpuarch
 
 
 _PATH = '/proc/cpuinfo'

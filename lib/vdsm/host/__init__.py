@@ -22,10 +22,10 @@ from __future__ import absolute_import
 
 import os
 import logging
+from vdsm.common import cpuarch
 from vdsm.common.cache import memoized
 from vdsm.common.commands import execCmd
 from vdsm import constants
-from vdsm import cpuarch
 
 P_VDSM_NODE_ID = '/etc/vdsm/vdsm.id'
 

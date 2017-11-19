@@ -26,7 +26,7 @@ import re
 import timeit
 import xml.etree.ElementTree as etree
 
-from vdsm import cpuarch
+from vdsm.common import cpuarch
 from vdsm.virt import domain_descriptor
 from vdsm.virt import vmchannels
 from vdsm.virt import vmxml

@@ -27,9 +27,9 @@ import os
 
 from collections import namedtuple
 
-from vdsm import cpuarch
 from vdsm import utils
 from vdsm.common import cache
+from vdsm.common import cpuarch
 
 # For debian systems we can use python-apt if available
 try:

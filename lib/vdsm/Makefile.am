@@ -31,7 +31,6 @@ dist_vdsmpylib_PYTHON = \
 	constants.py \
 	config.py \
 	containersconnection.py \
-	cpuarch.py \
 	cpuinfo.py \
 	dmidecodeUtil.py \
 	executor.py \

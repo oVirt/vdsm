@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from vdsm.common import cpuarch
 from vdsm.common import fileutils
 from vdsm.tool import configurator
 from vdsm.tool.configurators import YES, NO, MAYBE, InvalidConfig, InvalidRun
@@ -26,7 +27,7 @@ from vdsm.tool.configurators import libvirt
 from vdsm.tool.configurators import passwd
 from vdsm.tool import UsageError
 from vdsm.tool import upgrade
-from vdsm import cpuinfo, cpuarch
+from vdsm import cpuinfo
 import monkeypatch
 from testlib import expandPermutations, make_config, VdsmTestCase
 from testValidation import ValidateRunningAsRoot

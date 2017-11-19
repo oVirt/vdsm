@@ -38,6 +38,7 @@ import six
 
 # vdsm imports
 from vdsm.common import api
+from vdsm.common import cpuarch
 from vdsm.common import exception
 from vdsm.common import libvirtconnection
 from vdsm.common import logutils
@@ -45,7 +46,6 @@ from vdsm.common import response
 import vdsm.common.time
 from vdsm import constants
 from vdsm import containersconnection
-from vdsm import cpuarch
 from vdsm import host
 from vdsm import hugepages
 from vdsm import osinfo

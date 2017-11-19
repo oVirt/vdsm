@@ -28,7 +28,7 @@ import getopt
 import sys
 from xml.dom import minidom, NotFoundErr
 
-from vdsm import cpuarch
+from vdsm.common import cpuarch
 from vdsm.config import config
 
 

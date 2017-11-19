@@ -27,8 +27,8 @@ from testlib import permutations, expandPermutations
 from testlib import find_xml_element
 from monkeypatch import MonkeyClass
 
-from vdsm import cpuarch
 from vdsm import hostdev
+from vdsm.common import cpuarch
 from vdsm.common import hooks
 from vdsm.common import libvirtconnection
 

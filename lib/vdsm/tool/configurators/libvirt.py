@@ -25,8 +25,8 @@ from vdsm.config import config
 
 from . import NO, MAYBE
 
-from vdsm import cpuarch
 from vdsm import cpuinfo
+from vdsm.common import cpuarch
 from vdsm.common import pki
 from vdsm.tool import confutils
 from vdsm.tool import service

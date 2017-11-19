@@ -27,12 +27,12 @@ from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 
 from vdsm.host import caps
-from vdsm import cpuarch
 from vdsm import numa
 from vdsm import machinetype
 from vdsm import osinfo
 from vdsm.common import cache
 from vdsm.common import commands
+from vdsm.common import cpuarch
 
 
 def _getTestData(testFileName):

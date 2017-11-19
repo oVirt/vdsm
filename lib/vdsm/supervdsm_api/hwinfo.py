@@ -17,7 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
-from vdsm import cpuarch
+from vdsm.common import cpuarch
 from . import expose
 
 

@@ -34,7 +34,7 @@ from testlib import temporaryPath
 
 import verify
 
-from vdsm import cpuarch
+from vdsm.common import cpuarch
 from vdsm.common.cmdutils import CommandPath
 from vdsm.virt import vmstatus
 from vdsm.storage.misc import execCmd

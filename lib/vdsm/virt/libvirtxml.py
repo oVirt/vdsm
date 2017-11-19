@@ -22,11 +22,11 @@ from __future__ import absolute_import
 from operator import itemgetter
 
 from vdsm.common import conv
+from vdsm.common import cpuarch
 from vdsm.virt import metadata
 from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
 from vdsm import constants
-from vdsm import cpuarch
 
 
 _BOOT_MENU_TIMEOUT = 10000  # milliseconds
