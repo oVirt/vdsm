@@ -27,7 +27,6 @@ from vdsm.virt import drivemonitor
 
 from monkeypatch import MonkeyPatchScope
 
-from testValidation import xfail
 from testlib import make_config
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
@@ -388,7 +387,6 @@ class TestDrivemonitor(VdsmTestCase):
         mon.clear_threshold(vda, index=1)
         self.assertEqual(vm._dom.thresholds, [('vda[1]', 0)])
 
-    @xfail('clear_thresholds ignore events_enabled flag')
     def test_clear_with_events_disabled(self):
         mon, vm = make_env(events_enabled=False)
         vda = make_drive(self.log, index=0, iface='virtio')

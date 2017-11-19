@@ -126,6 +126,9 @@ class DriveMonitor(object):
             index: Optional index (int) of the element of the backing chain
                    to clear. If None (default), use the top layer.
         """
+        if not self._events_enabled:
+            return
+
         if index is None:
             target = drive.name
         else:
