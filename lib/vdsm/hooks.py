@@ -29,6 +29,7 @@ import libvirt
 import logging
 import os
 import os.path
+import pkgutil
 import sys
 import tempfile
 
@@ -95,7 +96,7 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, params={},
         if vmconf.get('vmId'):
             scriptenv['vmId'] = vmconf.get('vmId')
         ppath = scriptenv.get('PYTHONPATH', '')
-        hook = os.path.join(os.path.dirname(__file__), 'hook')
+        hook = pkgutil.get_loader('vdsm.hook').filename
         scriptenv['PYTHONPATH'] = ':'.join(ppath.split(':') + [hook])
         if hookType == _DOMXML_HOOK:
             scriptenv['_hook_domxml'] = data_filename
