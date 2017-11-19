@@ -1642,6 +1642,7 @@ class Vm(object):
             status = dict((k, v) for k, v in six.viewitems(self.conf)
                           if not k.startswith("_"))
             status['vmId'] = self.id
+            status['vmName'] = self.name
             status['status'] = self.lastStatus
             status['guestDiskMapping'] = self.guestAgent.guestDiskMapping
             status['statusTime'] = self._get_status_time()

@@ -201,9 +201,11 @@ class VM(APIBase):
                     self.log.error("Error restoring VM parameters",
                                    exc_info=True)
 
-            self._validate_vm_params(vmParams)
-
-            self._fix_vm_params(vmParams)
+            if 'xml' not in vmParams:
+                self._validate_vm_params(vmParams)
+                self._fix_vm_params(vmParams)
+            # else we don't need any other parameter, the XML data
+            # contains everything we need.
 
             if not graphics.isSupportedDisplayType(vmParams):
                 raise exception.CannotCreateVM(
@@ -222,11 +224,6 @@ class VM(APIBase):
             raise exception.UnexpectedError()
 
     def _validate_vm_params(self, vmParams):
-        if 'xml' in vmParams:
-            # we don't need any other parameter, the XML data
-            # contains everything we need.
-            return
-
         validate.require_keys(vmParams, ('vmId', 'memSize'))
         try:
             misc.validateUUID(vmParams['vmId'])
