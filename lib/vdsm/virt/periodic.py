@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,9 +32,9 @@ import six
 from vdsm import containersconnection
 from vdsm import executor
 from vdsm import host
-from vdsm import libvirtconnection
 from vdsm import throttledlog
 from vdsm.common import exception
+from vdsm.common import libvirtconnection
 from vdsm.config import config
 from vdsm.virt import migration
 from vdsm.virt import recovery

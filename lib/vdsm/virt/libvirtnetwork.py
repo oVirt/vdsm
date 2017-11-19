@@ -28,7 +28,7 @@ from xml.sax.saxutils import escape
 
 from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 
-from vdsm import libvirtconnection
+from vdsm.common import libvirtconnection
 
 LIBVIRT_NET_PREFIX = 'vdsm-'
 

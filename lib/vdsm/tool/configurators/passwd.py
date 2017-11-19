@@ -23,7 +23,7 @@ import io
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
-from vdsm.libvirtconnection import libvirt_password, SASL_USERNAME
+from vdsm.common.libvirtconnection import libvirt_password, SASL_USERNAME
 
 from . import YES, NO, MAYBE
 

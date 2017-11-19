@@ -38,12 +38,12 @@ from vdsm import constants
 from vdsm import cpuarch
 from vdsm import host
 from vdsm import hugepages
-from vdsm import libvirtconnection
 from vdsm import osinfo
 from vdsm import utils
 
 from vdsm.common import define
 from vdsm.common import exception
+from vdsm.common import libvirtconnection
 from vdsm.common import password
 from vdsm.common import response
 

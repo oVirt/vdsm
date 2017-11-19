@@ -22,7 +22,7 @@
 import contextlib
 import os
 
-from vdsm import libvirtconnection
+from vdsm.common import libvirtconnection
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 

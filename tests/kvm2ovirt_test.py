@@ -20,7 +20,7 @@
 from collections import namedtuple
 from contextlib import contextmanager
 from monkeypatch import MonkeyPatchScope
-from vdsm import libvirtconnection
+from vdsm.common import libvirtconnection
 from vdsm import v2v
 
 from testlib import VdsmTestCase as TestCaseBase, namedTemporaryDir

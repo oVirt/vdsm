@@ -28,9 +28,9 @@ import xml.etree.ElementTree as ET
 import libvirt
 
 from vdsm.common import cache
+from vdsm.common import libvirtconnection
 
 from . import cpuarch
-from . import libvirtconnection
 
 CPU_MAP_FILE = '/usr/share/libvirt/cpu_map.xml'
 

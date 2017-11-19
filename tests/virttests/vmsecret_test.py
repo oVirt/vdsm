@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ from testlib import VdsmTestCase, XMLTestCase
 from testlib import expandPermutations, permutations
 import vmfakecon
 
-from vdsm import libvirtconnection
+from vdsm.common import libvirtconnection
 from vdsm.common import response
 from vdsm.common.password import ProtectedPassword
 from vdsm.virt import secret

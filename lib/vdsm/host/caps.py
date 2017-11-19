@@ -28,6 +28,7 @@ import libvirt
 
 from vdsm.common import cache
 from vdsm.common import dsaversion
+from vdsm.common import libvirtconnection
 from vdsm.common import hooks
 from vdsm.common import supervdsm
 from vdsm.config import config
@@ -39,7 +40,6 @@ from vdsm import cpuinfo
 from vdsm import host
 from vdsm import hostdev
 from vdsm import hugepages
-from vdsm import libvirtconnection
 from vdsm import machinetype
 from vdsm import numa
 from vdsm import osinfo

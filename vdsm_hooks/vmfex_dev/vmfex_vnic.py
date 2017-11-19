@@ -32,7 +32,7 @@ import os
 import sys
 import traceback
 
-from vdsm import libvirtconnection
+from vdsm.common import libvirtconnection
 import hooking
 
 VMFEX_NET_POOL = 'direct-pool'

@@ -1,4 +1,4 @@
-# Copyright 2012-2013 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ import logging
 
 import libvirt
 
-from .. import libvirtconnection
+from vdsm.common import libvirtconnection
 from . import expose, ExtraArgsError
 
 

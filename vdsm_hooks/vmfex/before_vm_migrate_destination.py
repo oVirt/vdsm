@@ -11,7 +11,7 @@ try:
     libvirtconnection
 except ImportError:
     # 3.1 compat
-    from vdsm import libvirtconnection
+    from vdsm.common import libvirtconnection
 
 '''
 Placed in before_vm_migrate_destination

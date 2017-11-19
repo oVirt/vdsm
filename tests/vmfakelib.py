@@ -29,7 +29,7 @@ import libvirt
 from vdsm import constants
 from vdsm import containersconnection
 from vdsm import cpuarch
-from vdsm import libvirtconnection
+from vdsm.common import libvirtconnection
 from vdsm.common import response
 from vdsm.virt import sampling
 from vdsm.virt import vm

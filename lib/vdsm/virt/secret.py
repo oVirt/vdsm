@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@ import libvirt
 import logging
 import uuid
 
+from vdsm.common import libvirtconnection
 from vdsm.common import response
-from vdsm import libvirtconnection
 
 
 def register(secrets, clear=False):

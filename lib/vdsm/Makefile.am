@@ -41,7 +41,6 @@ dist_vdsmpylib_PYTHON = \
 	jobs.py \
 	jsonrpcvdscli.py \
 	kvm2ovirt.py \
-	libvirtconnection.py \
 	logUtils.py \
 	machinetype.py \
 	moduleloader.py \

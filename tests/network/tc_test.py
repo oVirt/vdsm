@@ -43,7 +43,7 @@ from .nettestlib import (Bridge, Dummy, IperfClient, IperfServer, Tap,
 from .nettestlib import running
 from .nettestlib import EXT_TC
 
-from vdsm import libvirtconnection
+from vdsm.common import libvirtconnection
 from vdsm.network import cmd
 from vdsm.network import tc
 from vdsm.network.configurators import qos

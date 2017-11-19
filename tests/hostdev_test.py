@@ -29,8 +29,8 @@ from monkeypatch import MonkeyClass
 
 from vdsm import cpuarch
 from vdsm import hostdev
-from vdsm import libvirtconnection
 from vdsm.common import hooks
+from vdsm.common import libvirtconnection
 
 import hostdevlib
 

@@ -49,10 +49,10 @@ from vdsm.virt.vmdevices.storage import DISK_TYPE
 from vdsm.virt.utils import isVdsmImage
 import libvirt
 from vdsm import alignmentScan
-from vdsm import libvirtconnection
 from vdsm import numa
 from vdsm.common import concurrent
 from vdsm.common import function
+from vdsm.common import libvirtconnection
 from vdsm.common import response
 from vdsm.common import supervdsm
 from vdsm.virt import vm

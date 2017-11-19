@@ -41,9 +41,9 @@ import zipfile
 
 import libvirt
 
-from vdsm import libvirtconnection
 from vdsm.common import cmdutils
 from vdsm.common import concurrent
+from vdsm.common import libvirtconnection
 from vdsm.common import password
 from vdsm.common import response
 from vdsm.common import zombiereaper
