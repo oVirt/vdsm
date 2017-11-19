@@ -28,8 +28,8 @@ from vdsm.virt import metadata
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
 from vdsm import constants
-from vdsm import hostdev
 from vdsm import utils
+from vdsm.common import hostdev
 
 from monkeypatch import MonkeyPatchScope, MonkeyPatch
 from testlib import make_config

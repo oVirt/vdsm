@@ -31,6 +31,7 @@ from vdsm.common import cpuarch
 from vdsm.common import dsaversion
 from vdsm.common import libvirtconnection
 from vdsm.common import hooks
+from vdsm.common import hostdev
 from vdsm.common import supervdsm
 from vdsm.config import config
 from vdsm.host import rngsources
@@ -38,7 +39,6 @@ from vdsm.storage import hba
 from vdsm import containersconnection
 from vdsm import cpuinfo
 from vdsm import host
-from vdsm import hostdev
 from vdsm import hugepages
 from vdsm import machinetype
 from vdsm import numa

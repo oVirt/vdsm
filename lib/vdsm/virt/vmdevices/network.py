@@ -31,7 +31,7 @@ from vdsm import constants
 from vdsm.common import conv
 from vdsm.common import supervdsm
 from vdsm.common import validate
-from vdsm.hostdev import get_device_params, detach_detachable, \
+from vdsm.common.hostdev import get_device_params, detach_detachable, \
     pci_address_to_name, reattach_detachable, NoIOMMUSupportException
 from vdsm.network import api as net_api
 from vdsm.virt import libvirtnetwork

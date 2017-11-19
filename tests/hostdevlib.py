@@ -20,7 +20,7 @@
 
 from contextlib import contextmanager
 
-from vdsm import hostdev
+from vdsm.common import hostdev
 
 import vmfakecon as fake
 

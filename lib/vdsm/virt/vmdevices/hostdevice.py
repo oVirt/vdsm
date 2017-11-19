@@ -27,7 +27,7 @@ import libvirt
 
 from vdsm.common import conv
 from vdsm.common import validate
-from vdsm.hostdev import get_device_params, detach_detachable, \
+from vdsm.common.hostdev import get_device_params, detach_detachable, \
     pci_address_to_name, scsi_address_to_adapter, reattach_detachable, \
     device_name_from_address
 from vdsm.virt import vmxml

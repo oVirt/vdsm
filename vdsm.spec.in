@@ -1061,8 +1061,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/gluster/cli.py*
 %{python_sitelib}/%{vdsm_name}/gluster/exception.py*
 %{python_sitelib}/%{vdsm_name}/health.py*
-
-%{python_sitelib}/%{vdsm_name}/hostdev.py*
 %{python_sitelib}/%{vdsm_name}/hugepages.py*
 %{python_sitelib}/%{vdsm_name}/jobs.py*
 %{python_sitelib}/%{vdsm_name}/jsonrpcvdscli.py*

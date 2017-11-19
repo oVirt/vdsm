@@ -27,9 +27,9 @@ import errno
 
 import six
 
+from vdsm.common import hostdev
 from vdsm.common.config import config
 from vdsm.common.time import monotonic_time
-from vdsm import hostdev
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
 from vdsm.network import netswitch
