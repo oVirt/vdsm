@@ -1180,6 +1180,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virtsparsify.py*
 %{python_sitelib}/%{vdsm_name}/virtsysprep.py*
 %{python_sitelib}/%{vdsm_name}/tool/__init__.py*
+%{python_sitelib}/%{vdsm_name}/tool/config_lvm_filter.py*
 %{python_sitelib}/%{vdsm_name}/tool/configfile.py*
 %{python_sitelib}/%{vdsm_name}/tool/confmeta.py*
 %{python_sitelib}/%{vdsm_name}/tool/confutils.py*
