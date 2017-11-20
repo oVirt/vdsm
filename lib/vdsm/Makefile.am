@@ -28,7 +28,6 @@ dist_vdsmpylib_PYTHON = \
 	API.py \
 	client.py \
 	clientIF.py \
-	cmdutils.py \
 	commands.py \
 	constants.py \
 	config.py \

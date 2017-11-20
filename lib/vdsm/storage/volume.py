@@ -23,8 +23,8 @@ import os.path
 import logging
 from contextlib import contextmanager
 
-from vdsm import cmdutils
 from vdsm import utils
+from vdsm.common import cmdutils
 from vdsm.common.threadlocal import vars
 
 from vdsm.storage import clusterlock

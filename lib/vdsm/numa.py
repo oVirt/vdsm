@@ -23,11 +23,11 @@ from __future__ import absolute_import
 from collections import defaultdict, namedtuple
 import xml.etree.cElementTree as ET
 
-from vdsm import cmdutils
 from vdsm import commands
 from vdsm import libvirtconnection
 from vdsm import taskset
 from vdsm.common import cache
+from vdsm.common import cmdutils
 from vdsm.common.cmdutils import CommandPath
 
 

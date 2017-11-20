@@ -28,9 +28,9 @@ import logging
 
 from contextlib import contextmanager
 
-from vdsm import cmdutils
 from vdsm import constants
 from vdsm import utils
+from vdsm.common import cmdutils
 from vdsm.common import exception
 from vdsm.config import config
 

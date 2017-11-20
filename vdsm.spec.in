@@ -1035,7 +1035,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/API.py*
 %{python_sitelib}/%{vdsm_name}/client.py*
 %{python_sitelib}/%{vdsm_name}/clientIF.py*
-%{python_sitelib}/%{vdsm_name}/cmdutils.py*
 %{python_sitelib}/%{vdsm_name}/commands.py*
 %{python_sitelib}/%{vdsm_name}/common/*.py*
 %{python_sitelib}/%{vdsm_name}/hook/*.py*

@@ -22,8 +22,8 @@
 import argparse
 import sys
 
-from vdsm import cmdutils
 from vdsm import commands
+from vdsm.common import cmdutils
 
 OVIRT_LOCAL_VG = "ovirt-local"
 

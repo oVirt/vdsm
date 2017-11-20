@@ -24,8 +24,8 @@ import tempfile
 
 from nose.plugins.skip import SkipTest
 
-from vdsm import cmdutils
 from vdsm import taskset
+from vdsm.common import cmdutils
 
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase

@@ -23,7 +23,7 @@ import threading
 
 from testlib import VdsmTestCase
 
-from vdsm import cmdutils
+from vdsm.common import cmdutils
 from vdsm.common import concurrent
 from vdsm.common import exception
 from vdsm.storage import operation

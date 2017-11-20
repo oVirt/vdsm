@@ -20,8 +20,8 @@
 
 from __future__ import absolute_import
 
+from vdsm.common import cmdutils
 from vdsm.common.cmdutils import CommandPath
-from . import cmdutils
 from . import commands
 
 _VIRTSYSPREP = CommandPath("virt-sysprep", "/usr/bin/virt-sysprep")

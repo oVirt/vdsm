@@ -39,8 +39,8 @@ from testlib import make_uuid
 from testlib import VdsmTestCase, expandPermutations, permutations
 from testlib import wait_for_job
 
-from vdsm import cmdutils
 from vdsm import jobs
+from vdsm.common import cmdutils
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se

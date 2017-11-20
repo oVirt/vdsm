@@ -38,8 +38,8 @@ from testlib import expandPermutations, permutations
 from testlib import start_thread
 from testlib import temporaryPath
 
-from vdsm import constants
 from vdsm.common import concurrent
+from vdsm.common import constants
 from vdsm.storage import check
 from vdsm.storage import asyncevent
 from vdsm.storage import exception

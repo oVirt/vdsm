@@ -27,8 +27,8 @@ import logging
 import os
 
 from vdsm import commands
-from vdsm import cmdutils
 from vdsm import udevadm
+from vdsm.common import cmdutils
 
 log = logging.getLogger("loopback")
 

@@ -24,9 +24,8 @@ import errno
 import logging
 import threading
 
-from vdsm import cmdutils
 from vdsm import utils
-from vdsm.common import cmdutils as common_cmdutils
+from vdsm.common import cmdutils
 from vdsm.common.compat import subprocess
 from vdsm.common import exception
 
@@ -97,7 +96,7 @@ class Command(object):
         """
         self._start_process()
         err = bytearray()
-        for src, data in common_cmdutils.receive(self._proc):
+        for src, data in cmdutils.receive(self._proc):
             if src == cmdutils.OUT:
                 yield data
             else:
@@ -148,7 +147,7 @@ class Command(object):
             if self._state != CREATED:
                 raise RuntimeError("Attempt to run an operation twice")
             log.debug(
-                common_cmdutils.command_log_line(self._cmd, cwd=self._cwd))
+                cmdutils.command_log_line(self._cmd, cwd=self._cwd))
             self._proc = subprocess.Popen(
                 self._cmd,
                 cwd=self._cwd,
@@ -167,7 +166,7 @@ class Command(object):
             `RuntimeError` if operation state is invalid
         """
         rc = self._proc.returncode
-        log.debug(common_cmdutils.retcode_log_line(rc, err))
+        log.debug(cmdutils.retcode_log_line(rc, err))
         with self._lock:
             self._proc = None
             if self._state == ABORTING:

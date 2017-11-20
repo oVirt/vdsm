@@ -31,8 +31,8 @@ import timeit
 
 from vdsm import taskset
 from vdsm import utils
-from vdsm import cmdutils
 from vdsm import commands
+from vdsm.common import cmdutils
 from vdsm.common import logutils
 import vdsm.common.time
 

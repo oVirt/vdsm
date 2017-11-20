@@ -34,8 +34,8 @@ from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import make_config
 from testlib import namedTemporaryDir
-from vdsm import cmdutils
 from vdsm import commands
+from vdsm.common import cmdutils
 from vdsm.common import exception
 from vdsm.storage import qemuimg
 

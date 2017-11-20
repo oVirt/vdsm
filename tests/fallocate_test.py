@@ -25,7 +25,7 @@ from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase
 from testlib import temporaryPath
 from testlib import namedTemporaryDir
-from vdsm import cmdutils
+from vdsm.common import cmdutils
 from vdsm.storage import fallocate
 
 

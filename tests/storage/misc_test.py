@@ -37,8 +37,8 @@ from testlib import namedTemporaryDir
 from testlib import permutations, expandPermutations
 from testlib import TEMPDIR
 
-from vdsm import cmdutils
 from vdsm import commands
+from vdsm.common import cmdutils
 from vdsm.common.proc import pidstat
 from vdsm.storage import fileUtils
 from vdsm.storage import misc

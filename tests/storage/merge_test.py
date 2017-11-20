@@ -43,7 +43,7 @@ from testlib import make_uuid
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase
 
-from vdsm import cmdutils
+from vdsm.common import cmdutils
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se

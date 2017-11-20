@@ -26,10 +26,9 @@ from subprocess import Popen
 
 import six
 
-from vdsm import cmdutils
 from vdsm import commands
 from vdsm import constants
-from vdsm.common import cmdutils as common_cmdutils
+from vdsm.common import cmdutils
 from vdsm.common.compat import subprocess
 from vdsm.common.time import monotonic_time
 
@@ -81,7 +80,7 @@ class TestRecieveBench(VdsmTestCase):
                   stderr=subprocess.PIPE)
         start = monotonic_time()
         received = 0
-        for src, data in common_cmdutils.receive(p, bufsize=self.BUFSIZE):
+        for src, data in cmdutils.receive(p, bufsize=self.BUFSIZE):
             if src == cmdutils.OUT:
                 received += len(data)
         elapsed = monotonic_time() - start
@@ -109,7 +108,7 @@ class TestRecieveBench(VdsmTestCase):
                 sent += len(data)
         p.stdin.flush()
         p.stdin.close()
-        for _, data in common_cmdutils.receive(p, 10):
+        for _, data in cmdutils.receive(p, 10):
             pass
         elapsed = monotonic_time() - start
         sent_gb = sent / float(1024**3)

@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 from __future__ import absolute_import
 
-from . import cmdutils
+from vdsm.common import cmdutils
 from . import constants
 from . import commands
 

@@ -24,7 +24,7 @@ import os
 import tempfile
 import time
 
-from vdsm import cmdutils
+from vdsm.common import cmdutils
 from vdsm.storage import constants as sc
 from vdsm.storage import qemuimg
 

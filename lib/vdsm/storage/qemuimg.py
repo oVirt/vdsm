@@ -24,14 +24,13 @@ import logging
 import os
 import re
 
-from vdsm import cmdutils
 from vdsm import commands
-from vdsm.common import cmdutils as common_cmdutils
+from vdsm.common import cmdutils
 from vdsm.common import exception
 from vdsm.config import config
 from vdsm.storage import operation
 
-_qemuimg = common_cmdutils.CommandPath("qemu-img", "/usr/bin/qemu-img")
+_qemuimg = cmdutils.CommandPath("qemu-img", "/usr/bin/qemu-img")
 
 _log = logging.getLogger("QemuImg")
 

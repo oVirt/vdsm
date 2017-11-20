@@ -29,8 +29,8 @@ import signal
 import threading
 import time
 
-from . import cmdutils
 from .utils import terminating
+from vdsm.common import cmdutils
 from vdsm.common.cmdutils import command_log_line, retcode_log_line
 from vdsm.common.compat import subprocess
 from vdsm.common.osutils import uninterruptible_poll

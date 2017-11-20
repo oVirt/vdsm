@@ -36,8 +36,8 @@ import logging
 import re
 import threading
 
-from vdsm import cmdutils
-from vdsm import constants
+from vdsm.common import constants
+from vdsm.common import cmdutils
 from vdsm.common import concurrent
 from vdsm.common.compat import subprocess
 from vdsm.storage import asyncevent

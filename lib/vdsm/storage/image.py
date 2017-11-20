@@ -25,11 +25,11 @@ import threading
 import uuid
 from contextlib import contextmanager
 
-from vdsm import cmdutils
 from vdsm import constants
 from vdsm import utils
 from vdsm import virtsparsify
 from vdsm.config import config
+from vdsm.common import cmdutils
 from vdsm.common import logutils
 from vdsm.common.threadlocal import vars
 from vdsm.storage import constants as sc
