@@ -97,7 +97,7 @@ class Command(object):
         """
         self._start_process()
         err = bytearray()
-        for src, data in cmdutils.receive(self._proc):
+        for src, data in common_cmdutils.receive(self._proc):
             if src == cmdutils.OUT:
                 yield data
             else:

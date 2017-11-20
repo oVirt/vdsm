@@ -22,17 +22,16 @@ from __future__ import print_function
 
 import io
 import os
-import signal
+from subprocess import Popen
 
 import six
 
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import constants
+from vdsm.common import cmdutils as common_cmdutils
 from vdsm.common.compat import subprocess
 from vdsm.common.time import monotonic_time
-
-from subprocess import Popen
 
 from testValidation import skipif, slowtest
 from testlib import VdsmTestCase
@@ -46,133 +45,6 @@ class TasksetTests(VdsmTestCase):
         cmd = cmdutils.taskset(['a', 'b'], self.CPU_LIST)
         res = [constants.EXT_TASKSET, '--cpu-list', '1,2', 'a', 'b']
         self.assertEqual(cmd, res)
-
-
-class TestError(VdsmTestCase):
-
-    def test_format(self):
-        # Should not raise
-        str(cmdutils.Error(["cmd"], 1, "out\n", "err\n"))
-
-
-class TestReceive(VdsmTestCase):
-
-    def test_no_output_success(self):
-        p = Popen(["true"],
-                  stdin=None,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE)
-        received = list(cmdutils.receive(p))
-        self.assertEqual(received, [])
-        self.assertEqual(p.returncode, 0)
-
-    def test_no_output_error(self):
-        p = Popen(["false"],
-                  stdin=None,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE)
-        received = list(cmdutils.receive(p))
-        self.assertEqual(received, [])
-        self.assertEqual(p.returncode, 1)
-
-    def test_stdout(self):
-        p = Popen(["echo", "output"],
-                  stdin=None,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE)
-        received = list(cmdutils.receive(p))
-        self.assertEqual(received, [(cmdutils.OUT, b"output\n")])
-        self.assertEqual(p.returncode, 0)
-
-    def test_stderr(self):
-        p = Popen(["sh", "-c", "echo error >/dev/stderr"],
-                  stdin=None,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE)
-        received = list(cmdutils.receive(p))
-        self.assertEqual(received, [(cmdutils.ERR, b"error\n")])
-        self.assertEqual(p.returncode, 0)
-
-    def test_both_stdout_stderr(self):
-        p = Popen(["sh", "-c", "echo output; echo error >/dev/stderr;"],
-                  stdin=None,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE)
-        received = list(cmdutils.receive(p))
-        self.assertEqual(sorted(received), sorted([
-            (cmdutils.OUT, b"output\n"), (cmdutils.ERR, b"error\n")
-        ]))
-        self.assertEqual(p.returncode, 0)
-
-    def test_timeout(self):
-        p = Popen(["sleep", "1"],
-                  stdin=None,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE)
-        try:
-            with self.assertRaises(cmdutils.TimeoutExpired):
-                for _ in cmdutils.receive(p, 0.5):
-                    pass
-        finally:
-            p.kill()
-            p.wait()
-
-    def test_timeout_with_data(self):
-        p = Popen(["yes"],
-                  stdin=None,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE)
-        try:
-            with self.assertRaises(cmdutils.TimeoutExpired):
-                for _ in cmdutils.receive(p, 0.5):
-                    pass
-        finally:
-            p.kill()
-            p.wait()
-
-    def test_no_fds(self):
-        p = Popen(["sleep", "1"],
-                  stdin=None,
-                  stdout=None,
-                  stderr=None)
-        try:
-            with self.assertRaises(cmdutils.TimeoutExpired):
-                for _ in cmdutils.receive(p, 0.5):
-                    pass
-        finally:
-            p.kill()
-            p.wait()
-
-    def test_fds_closed(self):
-        cmd = ["python", "-c",
-               "import os, time; os.close(1); os.close(2); time.sleep(1)"]
-        p = Popen(cmd, stdin=None, stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE)
-        try:
-            with self.assertRaises(cmdutils.TimeoutExpired):
-                for _ in cmdutils.receive(p, 0.5):
-                    pass
-        finally:
-            p.kill()
-            p.wait()
-
-    def test_terminate(self):
-        p = Popen(["sleep", "1"],
-                  stdin=None,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE)
-        p.terminate()
-        list(cmdutils.receive(p))
-        self.assertEqual(p.returncode, -signal.SIGTERM)
-
-    def test_kill(self):
-        p = Popen(["sleep", "1"],
-                  stdin=None,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE)
-        p.kill()
-        list(cmdutils.receive(p))
-        self.assertEqual(p.returncode, -signal.SIGKILL)
 
 
 class TestRecieveBench(VdsmTestCase):
@@ -209,7 +81,7 @@ class TestRecieveBench(VdsmTestCase):
                   stderr=subprocess.PIPE)
         start = monotonic_time()
         received = 0
-        for src, data in cmdutils.receive(p, bufsize=self.BUFSIZE):
+        for src, data in common_cmdutils.receive(p, bufsize=self.BUFSIZE):
             if src == cmdutils.OUT:
                 received += len(data)
         elapsed = monotonic_time() - start
@@ -237,7 +109,7 @@ class TestRecieveBench(VdsmTestCase):
                 sent += len(data)
         p.stdin.flush()
         p.stdin.close()
-        for _, data in cmdutils.receive(p, 10):
+        for _, data in common_cmdutils.receive(p, 10):
             pass
         elapsed = monotonic_time() - start
         sent_gb = sent / float(1024**3)
