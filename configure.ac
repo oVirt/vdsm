@@ -441,6 +441,7 @@ AC_OUTPUT([
 	tests/virttests/Makefile
 	vdsm_hooks/Makefile
 	vdsm_hooks/allocate_net/Makefile
+	vdsm_hooks/boot_hostdev/Makefile
 	vdsm_hooks/checkimages/Makefile
 	vdsm_hooks/checkips/Makefile
 	vdsm_hooks/cpuflags/Makefile

@@ -1,0 +1,19 @@
+boot_hostdev vdsm hook
+=================================
+This hook allows to boot VMs from passthrough devices such as SCSI, PCI cards
+and USB devices.
+
+Installation:
+* Use engine-config to set the appropriate custom properties as such:
+
+Custom property for all interfaces in a VM:
+    sudo engine-config -s "UserDefinedVMProperties=boot_hostdev=^.*$"
+
+Usage:
+1. Pass a device to a VM using the Host Devices tab.
+2. Copy the device name
+3. Edit the VM, in custom properties set boot_hostdev and paste the device name
+4. Start the VM
+
+The hook will set the hostdev from step 2 with bootindex=1 in qemu command line,
+all other devices will have their boot indexes bumped by 1.

@@ -353,6 +353,14 @@ Requires:       %{name}
 %description hook-allocate_net
 VDSM hook used to allocate networks for vms in a random fashion
 
+%package hook-boot_hostdev
+Summary:        allows setting boot order for hostdev
+BuildArch:      noarch
+Requires:       %{name}
+
+%description hook-boot_hostdev
+VDSM hook used to boot vms from passthrough devices via custom property
+
 %package hook-checkimages
 Summary:        Qcow2 disk image format check hook for VDSM
 BuildArch:      noarch
@@ -1424,6 +1432,9 @@ exit 0
 %if 0%{?with_hooks}
 %files hook-allocate_net
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/10_allocate_net
+
+%files hook-boot_hostdev
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_boot_hostdev
 
 %files hook-checkimages
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/60_checkimages

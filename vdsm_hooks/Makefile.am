@@ -37,6 +37,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 if HOOKS
 SUBDIRS += \
 	allocate_net \
+	boot_hostdev \
 	checkimages \
 	checkips \
 	diskunmap \
