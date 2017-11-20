@@ -23,6 +23,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_vdsmtool_PYTHON = \
 	__init__.py \
+	config_lvm_filter.py \
 	confmeta.py \
 	confutils.py \
 	dummybr.py \
