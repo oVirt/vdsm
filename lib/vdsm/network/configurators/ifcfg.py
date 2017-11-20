@@ -406,11 +406,17 @@ class Ifcfg(Configurator):
                 with waitfor.waitfor_link_exists(vlan.name):
                     _ifup(vlan, blocking=blocking)
 
-            if (link_iface.iface(bond.slaves[0].name).address() ==
-                    link_iface.iface(vlan.name).address()):
+            vlan_hwaddr = link_iface.iface(vlan.name).address()
+            slaves_hwaddr = [link_iface.iface(slave.name).address()
+                             for slave in bond.slaves]
+            if slaves_hwaddr[0] == vlan_hwaddr:
                 return
 
-            logging.info('Config vlan@bond: hwaddr not in sync (%s)', attempt)
+            bond_hwaddr = link_iface.iface(bond.name).address()
+            logging.info(
+                '%s. vlan@bond hwaddr is not in sync (v/b/[s]): %s/%s/%s',
+                attempt, vlan_hwaddr, bond_hwaddr, slaves_hwaddr)
+
             ifdown(vlan.name)
 
         raise ConfigNetworkError(
