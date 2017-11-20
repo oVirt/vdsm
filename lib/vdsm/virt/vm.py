@@ -1700,7 +1700,7 @@ class Vm(object):
         stats = {
             'vmId': self.id,
             'vmName': self.name,
-            'vmType': self.conf['vmType'],
+            'vmType': self._domain.vm_type(),
             'kvmEnable': self.conf.get('kvmEnable', 'true'),
             'acpiEnable': 'true' if self.acpi_enabled() else 'false'}
         if 'cdrom' in self.conf:
