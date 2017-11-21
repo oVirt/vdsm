@@ -20,6 +20,7 @@
 #
 from __future__ import absolute_import
 
+from contextlib import contextmanager
 import logging
 
 from vdsm.virt.vmdevices import storage
@@ -36,6 +37,7 @@ MB = 1024 ** 2
 GB = 1024 ** 3
 
 
+@contextmanager
 def make_env(events_enabled):
     vm = FakeVM()
     vm._dom = FakeDomain()
@@ -45,7 +47,7 @@ def make_env(events_enabled):
             'true' if events_enabled else 'false')])
     with MonkeyPatchScope([(drivemonitor, 'config', cfg)]):
         mon = drivemonitor.DriveMonitor(vm, vm.log)
-    return mon, vm
+        yield mon, vm
 
 
 # always use the VirtIO interface (iface='virtio'),
@@ -360,61 +362,61 @@ class TestDrivemonitor(VdsmTestCase):
         self.assertEqual(mon.enabled(), False)
 
     def test_set_threshold(self):
-        mon, vm = make_env(events_enabled=True)
-        vda = make_drive(self.log, index=0, iface='virtio')
-        vm.drives.append(vda)
+        with make_env(events_enabled=True) as (mon, vm):
+            vda = make_drive(self.log, index=0, iface='virtio')
+            vm.drives.append(vda)
 
-        apparentsize = 4 * GB
-        threshold = 512 * MB
+            apparentsize = 4 * GB
+            threshold = 512 * MB
 
-        mon.set_threshold(vda, apparentsize)
-        expected = apparentsize - threshold
-        self.assertEqual(vm._dom.thresholds, [('vda', expected)])
+            mon.set_threshold(vda, apparentsize)
+            expected = apparentsize - threshold
+            self.assertEqual(vm._dom.thresholds, [('vda', expected)])
 
     def test_clear_with_index_equal_none(self):
-        mon, vm = make_env(events_enabled=True)
-        vda = make_drive(self.log, index=0, iface='virtio')
+        with make_env(events_enabled=True) as (mon, vm):
+            vda = make_drive(self.log, index=0, iface='virtio')
 
-        mon.clear_threshold(vda)
-        self.assertEqual(vm._dom.thresholds, [('vda', 0)])
+            mon.clear_threshold(vda)
+            self.assertEqual(vm._dom.thresholds, [('vda', 0)])
 
     def test_clear_with_index(self):
-        mon, vm = make_env(events_enabled=True)
-        # one drive (virtio, 0)
-        vda = make_drive(self.log, index=0, iface='virtio')
+        with make_env(events_enabled=True) as (mon, vm):
+            # one drive (virtio, 0)
+            vda = make_drive(self.log, index=0, iface='virtio')
 
-        # clear the 1st element in the backing chain of the drive
-        mon.clear_threshold(vda, index=1)
-        self.assertEqual(vm._dom.thresholds, [('vda[1]', 0)])
+            # clear the 1st element in the backing chain of the drive
+            mon.clear_threshold(vda, index=1)
+            self.assertEqual(vm._dom.thresholds, [('vda[1]', 0)])
 
     def test_clear_with_events_disabled(self):
-        mon, vm = make_env(events_enabled=False)
-        vda = make_drive(self.log, index=0, iface='virtio')
+        with make_env(events_enabled=False) as (mon, vm):
+            vda = make_drive(self.log, index=0, iface='virtio')
 
-        mon.clear_threshold(vda)
-        self.assertEqual(vm._dom.thresholds, [])
+            mon.clear_threshold(vda)
+            self.assertEqual(vm._dom.thresholds, [])
 
     @permutations(_DISK_DATA)
     def test_monitored_drives_with_events(self, disk_confs, expected, _):
-        mon, vm = make_env(events_enabled=True)
-        self._check_monitored_drives(mon, vm, disk_confs, expected)
+        with make_env(events_enabled=True) as (mon, vm):
+            self._check_monitored_drives(mon, vm, disk_confs, expected)
 
     @permutations(_DISK_DATA)
     def test_monitored_drives_without_events(self, disk_confs, _, expected):
-        mon, vm = make_env(events_enabled=False)
-        self._check_monitored_drives(mon, vm, disk_confs, expected)
+        with make_env(events_enabled=False) as (mon, vm):
+            self._check_monitored_drives(mon, vm, disk_confs, expected)
 
     @permutations(_MONITORABLE_DISK_DATA)
     def test_monitored_drives_flag_disabled_with_events(
             self, disk_confs, expected):
-        mon, vm = make_env(events_enabled=True)
-        self._check_monitored_drives(mon, vm, disk_confs, expected)
+        with make_env(events_enabled=True) as (mon, vm):
+            self._check_monitored_drives(mon, vm, disk_confs, expected)
 
     @permutations(_MONITORABLE_DISK_DATA)
     def test_monitored_drives_flag_disabled_without_events(
             self, disk_confs, expected):
-        mon, vm = make_env(events_enabled=False)
-        self._check_monitored_drives(mon, vm, disk_confs, expected)
+        with make_env(events_enabled=True) as (mon, vm):
+            self._check_monitored_drives(mon, vm, disk_confs, expected)
 
     def _check_monitored_drives(self, mon, vm, disk_confs, expected):
         for conf in disk_confs:
