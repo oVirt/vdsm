@@ -677,5 +677,5 @@ def simulate_extend_callback(irs, extension_id):
 
     # Calling refreshVolume is critical in this flow.
     # Check this indeed happened.
-    if key != irs.refreshes[0]:
+    if key != irs.refreshes[extension_id]:
         raise AssertionError('Volume %s not refreshed' % key)
