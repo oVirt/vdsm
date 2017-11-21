@@ -33,7 +33,7 @@ import six
 from vdsm.constants import EXT_MKFS_MSDOS, EXT_MKISOFS, \
     DISKIMAGE_USER, DISKIMAGE_GROUP
 from vdsm.constants import P_VDSM_RUN
-from vdsm.commands import execCmd
+from vdsm.common.commands import execCmd
 from vdsm.common.fileutils import rm_file
 from vdsm.storage import mount
 from vdsm.storage.fileUtils import resolveUid, resolveGid

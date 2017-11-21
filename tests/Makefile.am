@@ -57,7 +57,6 @@ test_modules = \
 	client_test.py \
 	clientif_test.py \
 	cmdutils_test.py \
-	commands_test.py \
 	config_test.py \
 	cpu_profile_test.py \
 	cpuinfo_test.py \

@@ -28,13 +28,13 @@ import stat
 
 from collections import namedtuple
 
-from vdsm import commands
 from vdsm import constants
 from vdsm import supervdsm
 from vdsm import udevadm
 from vdsm import utils
 
 from vdsm.common import cmdutils
+from vdsm.common import commands
 from vdsm.config import config
 from vdsm.storage import fileUtils
 

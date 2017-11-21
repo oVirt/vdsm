@@ -20,8 +20,8 @@ import os
 from functools import wraps
 from nose.plugins.skip import SkipTest
 
-from vdsm import commands
 from vdsm.common import cmdutils
+from vdsm.common import commands
 
 modprobe = cmdutils.CommandPath("modprobe",
                                 "/usr/sbin/modprobe",  # Fedora, EL7

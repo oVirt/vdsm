@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright 2012 Sandro Bonazzola <sandro.bonazzola@gmail.com>
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,9 +38,9 @@ from testlib import VdsmTestCase, permutations, expandPermutations
 from testValidation import checkSudo, ValidateRunningAsRoot
 from testValidation import broken_on_ci
 
-from vdsm.commands import execCmd
-from vdsm.constants import EXT_MKFS_MSDOS
+from vdsm.common.commands import execCmd
 from vdsm.common.fileutils import rm_file
+from vdsm.constants import EXT_MKFS_MSDOS
 from vdsm.storage import mount
 from vdsm.storage.mount import MountError
 from vdsm import mkimage

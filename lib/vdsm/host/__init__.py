@@ -23,7 +23,7 @@ from __future__ import absolute_import
 import os
 import logging
 from vdsm.common.cache import memoized
-from vdsm.commands import execCmd
+from vdsm.common.commands import execCmd
 from vdsm import constants
 from vdsm import cpuarch
 

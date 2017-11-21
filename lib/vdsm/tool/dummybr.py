@@ -23,8 +23,9 @@ import os
 
 from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 
+from vdsm.common import commands
 from vdsm.network.api import DUMMY_BRIDGE
-from .. import libvirtconnection, commands
+from .. import libvirtconnection
 from . import expose, ExtraArgsError
 
 EXT_BRCTL = '/usr/sbin/brctl'

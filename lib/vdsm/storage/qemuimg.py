@@ -24,8 +24,8 @@ import logging
 import os
 import re
 
-from vdsm import commands
 from vdsm.common import cmdutils
+from vdsm.common import commands
 from vdsm.common import exception
 from vdsm.config import config
 from vdsm.storage import operation

@@ -22,9 +22,9 @@ from __future__ import absolute_import
 import io
 import os
 
-from vdsm import commands
 from vdsm.common import cache
 from vdsm.common import cmdutils
+from vdsm.common import commands
 from vdsm.common import pki
 
 from . import YES, NO, MAYBE

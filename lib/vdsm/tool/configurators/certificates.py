@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,8 +24,8 @@ from vdsm.config import config
 
 from . import YES, NO
 from vdsm import constants
-from vdsm.commands import execCmd
 from vdsm.common import pki
+from vdsm.common.commands import execCmd
 
 
 def validate():

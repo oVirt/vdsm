@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2016 Red Hat, Inc.
+# Copyright 2010-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,10 +28,10 @@ import glob
 import logging
 import os
 
-from vdsm import commands
 from vdsm import constants
 from vdsm import supervdsm
 from vdsm.config import config
+from vdsm.common import commands
 from vdsm.common import zombiereaper
 from vdsm.storage import misc
 

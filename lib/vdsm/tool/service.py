@@ -1,4 +1,5 @@
 # Copyright 2013 IBM, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,8 +30,8 @@ import sys
 from collections import defaultdict
 
 from vdsm.common.cmdutils import CommandPath
+from vdsm.common.commands import execCmd as _execCmd
 from . import expose, UsageError, ExtraArgsError
-from ..commands import execCmd as _execCmd
 
 
 def execCmd(argv, raw=True, *args, **kwargs):

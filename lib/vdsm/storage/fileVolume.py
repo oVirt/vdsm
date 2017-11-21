@@ -24,8 +24,8 @@ import os
 
 from vdsm import constants
 from vdsm import utils
-from vdsm.commands import grepCmd
 from vdsm.common import exception
+from vdsm.common.commands import grepCmd
 from vdsm.common.threadlocal import vars
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se

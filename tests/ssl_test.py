@@ -38,7 +38,7 @@ from integration.sslhelper import get_server_socket, \
 
 from vdsm import utils
 from vdsm.common import concurrent
-from vdsm.commands import execCmd
+from vdsm.common.commands import execCmd
 from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.sslutils import CLIENT_PROTOCOL, SSLContext, SSLHandshakeDispatcher
 from yajsonrpc.betterAsyncore import Reactor

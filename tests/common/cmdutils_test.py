@@ -22,8 +22,8 @@ from __future__ import absolute_import
 import errno
 import signal
 
-from vdsm import commands
 from vdsm.common import cmdutils
+from vdsm.common import commands
 from vdsm.common.compat import subprocess
 
 from testlib import VdsmTestCase as TestCaseBase

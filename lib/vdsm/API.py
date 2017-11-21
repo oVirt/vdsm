@@ -29,7 +29,6 @@ import os
 from vdsm.network.api import confirm_connectivity
 from vdsm.network.errors import ConfigNetworkError
 
-from vdsm import commands
 from vdsm import utils
 from vdsm import constants
 from vdsm import hooks
@@ -40,6 +39,7 @@ from vdsm import jobs
 from vdsm import v2v
 from vdsm.clientIF import clientIF
 from vdsm.common import api
+from vdsm.common import commands
 from vdsm.common import exception
 from vdsm.common import logutils
 from vdsm.common import response

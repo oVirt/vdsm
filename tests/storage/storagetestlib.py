@@ -30,8 +30,8 @@ from storage.storagefakelib import (
 
 from monkeypatch import MonkeyPatchScope
 
-from vdsm import commands
 from vdsm.common import cmdutils
+from vdsm.common import commands
 from vdsm.storage import blockSD
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc

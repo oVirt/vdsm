@@ -24,10 +24,10 @@ import pwd
 import selinux
 
 from vdsm.common.cmdutils import CommandPath
+from vdsm.common.commands import execCmd
 from .. import constants
 from ..config import config
 from . import expose, ExtraArgsError
-from ..commands import execCmd
 
 SELINUX_VIRT_IMAGE_LABEL = "system_u:object_r:virt_image_t:s0"
 TRANSIENT_DISKS_REPO = config.get('vars', 'transient_disks_repository')

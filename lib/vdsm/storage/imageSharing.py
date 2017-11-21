@@ -21,8 +21,8 @@ from __future__ import absolute_import
 
 import logging
 
-from vdsm import commands
 from vdsm import constants
+from vdsm.common import commands
 from vdsm.storage import curlImgWrap
 from vdsm.storage import exception as se
 

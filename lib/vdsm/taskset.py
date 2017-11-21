@@ -21,8 +21,8 @@
 from __future__ import absolute_import
 
 from vdsm.common import cmdutils
+from vdsm.common import commands
 from . import constants
-from . import commands
 
 
 AUTOMATIC = "auto"

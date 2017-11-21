@@ -24,9 +24,9 @@ import glob
 import re
 import logging
 
-from vdsm import commands
 from vdsm import udevadm
 from vdsm.common import cmdutils
+from vdsm.common import commands
 from vdsm.common import fileutils
 
 from vdsm.constants import EXT_CHOWN, \

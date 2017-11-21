@@ -33,7 +33,7 @@ from blivet.devices import LVMThinLogicalVolumeDevice
 from blivet import udev
 
 from vdsm.common import cmdutils
-from vdsm import commands
+from vdsm.common import commands
 from vdsm.gluster import exception as ge
 from vdsm.gluster import fstab
 from . import gluster_mgmt_api

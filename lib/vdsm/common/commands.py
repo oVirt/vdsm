@@ -31,10 +31,10 @@ import threading
 import time
 
 from vdsm.common import cmdutils
+from vdsm.common import constants
 from vdsm.common.cmdutils import command_log_line, retcode_log_line
 from vdsm.common.compat import subprocess
 from vdsm.common.osutils import uninterruptible_poll
-from vdsm import constants
 
 # Buffsize is 1K because I tested it on some use cases and 1K was fastest. If
 # you find this number to be a bottleneck in any way you are welcome to change

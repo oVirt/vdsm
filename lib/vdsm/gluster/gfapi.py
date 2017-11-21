@@ -209,7 +209,7 @@ import json
 import argparse
 
 from vdsm import constants
-from vdsm import commands
+from vdsm.common import commands
 
 
 @gluster_mgmt_api

@@ -42,13 +42,13 @@ import zipfile
 import libvirt
 
 from vdsm import libvirtconnection
-from vdsm.commands import execCmd, BUFFSIZE, terminating
 from vdsm.common import cmdutils
 from vdsm.common import concurrent
 from vdsm.common import password
 from vdsm.common import response
 from vdsm.common import zombiereaper
 from vdsm.common.cmdutils import wrap_command
+from vdsm.common.commands import execCmd, BUFFSIZE, terminating
 from vdsm.common.compat import subprocess
 from vdsm.common.config import config
 from vdsm.common.define import errCode, doneCode

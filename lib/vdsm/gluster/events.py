@@ -19,8 +19,8 @@
 #
 from __future__ import absolute_import
 
-from vdsm import commands
 from vdsm.common import cmdutils
+from vdsm.common import commands
 from vdsm.gluster import exception as ge
 
 from . import gluster_mgmt_api

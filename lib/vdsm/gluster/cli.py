@@ -27,7 +27,7 @@ import time
 import xml.etree.cElementTree as etree
 
 from vdsm.common import cmdutils
-from vdsm import commands
+from vdsm.common import commands
 from vdsm.gluster import exception as ge
 from vdsm.network.netinfo import addresses
 

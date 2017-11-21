@@ -26,9 +26,9 @@ from subprocess import Popen
 
 import six
 
-from vdsm import commands
 from vdsm import constants
 from vdsm.common import cmdutils
+from vdsm.common import commands
 from vdsm.common.compat import subprocess
 from vdsm.common.time import monotonic_time
 

@@ -51,8 +51,8 @@ from vdsm.network import sourceroute
 from vdsm.network import sysctl
 from vdsm.network import tc
 
-from vdsm.commands import execCmd
 from vdsm.common.cmdutils import CommandPath
+from vdsm.common.commands import execCmd
 from vdsm.common.proc import pgrep
 from vdsm.tool import service
 from vdsm.utils import RollbackContext

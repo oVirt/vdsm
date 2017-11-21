@@ -26,9 +26,9 @@ import shutil
 import sys
 import time
 
-from vdsm import commands
 from vdsm.tool import confmeta
 from vdsm.common import cmdutils
+from vdsm.common import commands
 from vdsm.common.cmdutils import CommandPath
 
 from . import YES, NO

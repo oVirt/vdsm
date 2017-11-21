@@ -33,9 +33,9 @@ from v2v_testlib import VM_SPECS, MockVirDomain
 from v2v_testlib import MockVirConnect, _mac_from_uuid, BLOCK_DEV_PATH
 from vdsm import v2v
 from vdsm import libvirtconnection
-from vdsm.commands import execCmd, terminating
 from vdsm.common import response
 from vdsm.common.cmdutils import CommandPath
+from vdsm.common.commands import execCmd, terminating
 from vdsm.common.password import ProtectedPassword
 
 from testlib import VdsmTestCase as TestCaseBase, recorded

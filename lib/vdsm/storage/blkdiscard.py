@@ -20,8 +20,8 @@
 
 from __future__ import absolute_import
 
-from vdsm import commands
 from vdsm.common import cmdutils
+from vdsm.common import commands
 from vdsm.common.cmdutils import CommandPath
 
 from vdsm.storage import operation

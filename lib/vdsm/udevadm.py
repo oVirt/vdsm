@@ -22,7 +22,7 @@ from __future__ import absolute_import
 import logging
 
 from vdsm.common import cmdutils
-from . import commands
+from vdsm.common import commands
 
 _UDEVADM = cmdutils.CommandPath(
     "udevadm", "/sbin/udevadm", "/usr/sbin/udevadm")

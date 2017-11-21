@@ -47,8 +47,8 @@ from functools import wraps, partial
 from six.moves import map
 from six.moves import queue
 
-from vdsm import commands
 from vdsm import constants
+from vdsm.common import commands
 from vdsm.common import concurrent
 from vdsm.common import logutils
 from vdsm.common import proc

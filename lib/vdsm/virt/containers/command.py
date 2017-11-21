@@ -23,9 +23,9 @@ System commands facade
 
 from __future__ import absolute_import
 
-from vdsm import commands
 from vdsm import supervdsm
 from vdsm.common import cmdutils
+from vdsm.common import commands
 
 _SYSTEMCTL = cmdutils.CommandPath("systemctl",
                                   "/bin/systemctl",

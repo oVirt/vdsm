@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,8 +24,8 @@ import sys
 import threading
 import time
 
-from vdsm import constants
-from vdsm import commands
+from vdsm.common import constants
+from vdsm.common import commands
 
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase

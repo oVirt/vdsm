@@ -30,8 +30,8 @@ import tempfile
 import uuid
 import xml.etree.ElementTree as ET
 
-from vdsm import commands
 from vdsm.common import cmdutils
+from vdsm.common import commands
 
 import vdsm.virt.containers.cgroups
 import vdsm.virt.containers.command

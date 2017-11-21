@@ -26,9 +26,9 @@ loop - Create temporary loop devices
 import logging
 import os
 
-from vdsm import commands
 from vdsm import udevadm
 from vdsm.common import cmdutils
+from vdsm.common import commands
 
 log = logging.getLogger("loopback")
 
