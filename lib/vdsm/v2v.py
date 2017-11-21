@@ -782,28 +782,30 @@ class PipelineProc(object):
         return self._stdout
 
     def wait(self, timeout=None):
+        """
+        Wait for all processes to terminate.
+
+        If timeout is provided, it is set as the upper limit for the wait
+        period.
+        Note that the timeout granularity is 1 sec, therefore, the actual
+        applied timeout may drift by 1 sec.
+        """
         if timeout is not None:
             deadline = monotonic_time() + timeout
+            # NOTE: we do not want to use Popen's auto-killing timeout
+            if self.returncode is not None:
+                return True
+            while monotonic_time() < deadline:
+                time.sleep(1)
+                if self.returncode is not None:
+                    return True
+
         else:
-            deadline = None
-
-        for p in self._procs:
-            if deadline is not None:
-                # NOTE: we do not want to use Popen's auto-killing timeout
-                while monotonic_time() < deadline:
-                    p.poll()
-                    if p.returncode is not None:
-                        break
-                    time.sleep(1)
-            else:
+            for p in self._procs:
                 p.wait()
+            return True
 
-        if deadline is not None:
-            if deadline < monotonic_time() or self.returncode is None:
-                # Timed out
-                return False
-
-        return True
+        return False
 
 
 class ImportVm(object):

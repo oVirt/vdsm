@@ -21,13 +21,12 @@ from contextlib import contextmanager
 import io
 import subprocess
 import tarfile
+import time
 import uuid
 import zipfile
 
 import libvirt
 import os
-import six
-from nose.plugins.skip import SkipTest
 
 from testlib import namedTemporaryDir, permutations, expandPermutations
 from v2v_testlib import VM_SPECS, MockVirDomain
@@ -581,17 +580,12 @@ class PipelineProcTests(TestCaseBase):
                 self.assertEqual(p.returncode, returncode)
 
     @permutations([
-        # (cmd1, cmd2, waitRet)
-        [['sleep', str(SHORT_SLEEP)], ['sleep', str(SHORT_SLEEP)], True],
-        [['sleep', str(3 * SHORT_SLEEP)], ['sleep', str(SHORT_SLEEP)], False],
-        [['sleep', str(SHORT_SLEEP)], ['sleep', str(3 * SHORT_SLEEP)], False],
-        [['sleep', str(3 * SHORT_SLEEP)],
-         ['sleep', str(3 * SHORT_SLEEP)], False],
+        # (cmd1, cmd2)
+        [['sleep', str(3 * SHORT_SLEEP)], ['sleep', str(SHORT_SLEEP)]],
+        [['sleep', str(SHORT_SLEEP)], ['sleep', str(3 * SHORT_SLEEP)]],
+        [['sleep', str(3 * SHORT_SLEEP)], ['sleep', str(3 * SHORT_SLEEP)]],
     ])
-    def testWait(self, cmd1, cmd2, waitRet):
-        if six.PY3 and waitRet:
-            raise SkipTest('broken on Python 3')
-
+    def testWait(self, cmd1, cmd2):
         p1 = v2v._simple_exec_cmd(cmd1,
                                   stdout=subprocess.PIPE)
         with terminating(p1):
@@ -602,7 +596,35 @@ class PipelineProcTests(TestCaseBase):
                 p = v2v.PipelineProc(p1, p2)
                 ret = p.wait(2 * SHORT_SLEEP)
                 p.kill()
-                self.assertEqual(ret, waitRet)
+                self.assertEqual(ret, False)
+
+    def test_wait_on_two_processes_that_finished(self):
+        cmd = ['sleep', str(SHORT_SLEEP)]
+        p1 = v2v._simple_exec_cmd(cmd, stdout=subprocess.PIPE)
+        with terminating(p1):
+            p2 = v2v._simple_exec_cmd(
+                cmd, stdin=p1.stdout, stdout=subprocess.PIPE)
+            with terminating(p2):
+                # Wait for the processes to finish.
+                time.sleep(2 * SHORT_SLEEP)
+                p = v2v.PipelineProc(p1, p2)
+                ret = p.wait(2 * SHORT_SLEEP)
+                p.kill()
+                self.assertEqual(ret, True)
+
+    def test_wait_on_two_processes_that_finish_before_timeout(self):
+        cmd1 = ['sleep', str(SHORT_SLEEP)]
+        cmd2 = ['sleep', str(1.5 * SHORT_SLEEP)]
+        p1 = v2v._simple_exec_cmd(cmd1, stdout=subprocess.PIPE)
+        with terminating(p1):
+            p2 = v2v._simple_exec_cmd(
+                cmd2, stdin=p1.stdout, stdout=subprocess.PIPE)
+            with terminating(p2):
+                p = v2v.PipelineProc(p1, p2)
+                # Processes finish at different times but before the timeout.
+                ret = p.wait(3 * SHORT_SLEEP)
+                p.kill()
+                self.assertEqual(ret, True)
 
 
 class MockVirConnectTests(TestCaseBase):
