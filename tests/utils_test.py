@@ -85,7 +85,7 @@ class TestTerminating(TestCaseBase):
             self.proc_wait()
 
     def test_process_running(self):
-        with utils.terminating(self.proc):
+        with commands.terminating(self.proc):
             self.assertIsNone(self.proc_poll())
         self.assertEqual(self.proc.returncode, -signal.SIGKILL)
 
@@ -97,7 +97,7 @@ class TestTerminating(TestCaseBase):
             raise RuntimeError("Attempt to kill a zombie process")
 
         self.proc.kill = fail
-        with utils.terminating(self.proc):
+        with commands.terminating(self.proc):
             pass
         self.assertEqual(self.proc.returncode, -signal.SIGTERM)
 
@@ -109,7 +109,7 @@ class TestTerminating(TestCaseBase):
             raise RuntimeError("Attempt to kill a terminated process")
 
         self.proc.kill = fail
-        with utils.terminating(self.proc):
+        with commands.terminating(self.proc):
             pass
         self.assertEqual(self.proc.returncode, -signal.SIGTERM)
 
@@ -135,8 +135,8 @@ class TestTerminating(TestCaseBase):
         self.check_failure()
 
     def check_failure(self):
-        with self.assertRaises(utils.TerminatingFailure) as e:
-            with utils.terminating(self.proc):
+        with self.assertRaises(commands.TerminatingFailure) as e:
+            with commands.terminating(self.proc):
                 self.assertIsNone(self.proc_poll())
 
         self.assertEqual(e.exception.pid, self.proc.pid)

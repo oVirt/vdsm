@@ -42,7 +42,7 @@ import zipfile
 import libvirt
 
 from vdsm import libvirtconnection
-from vdsm.commands import execCmd, BUFFSIZE
+from vdsm.commands import execCmd, BUFFSIZE, terminating
 from vdsm.common import cmdutils
 from vdsm.common import concurrent
 from vdsm.common import password
@@ -55,7 +55,7 @@ from vdsm.common.define import errCode, doneCode
 from vdsm.common.logutils import traceback
 from vdsm.common.time import monotonic_time
 from vdsm.constants import P_VDSM_LOG, P_VDSM_RUN, EXT_KVM_2_OVIRT
-from vdsm.utils import terminating, NICENESS, IOCLASS
+from vdsm.utils import NICENESS, IOCLASS
 
 try:
     import ovirt_imageio_common

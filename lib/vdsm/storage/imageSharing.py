@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@ import logging
 
 from vdsm import commands
 from vdsm import constants
-from vdsm import utils
 from vdsm.storage import curlImgWrap
 from vdsm.storage import exception as se
 
@@ -80,7 +79,7 @@ def copyToImage(dstImgPath, methodArgs):
     fileObj = methodArgs['fileObj']
     cmd = [constants.EXT_DD, "of=%s" % dstImgPath, "bs=%s" % constants.MEGAB]
     p = commands.execCmd(cmd, sync=False)
-    with utils.terminating(p):
+    with commands.terminating(p):
         _copyData(fileObj, p.stdin, totalSize)
         p.stdin.close()
         if not p.wait(WAIT_TIMEOUT):
@@ -101,7 +100,7 @@ def copyFromImage(dstImgPath, methodArgs):
 
     p = commands.execCmd(cmd, sync=False)
     p.blocking = True
-    with utils.terminating(p):
+    with commands.terminating(p):
         _copyData(p.stdout, fileObj, bytes_left)
 
 

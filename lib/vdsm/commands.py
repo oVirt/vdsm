@@ -19,6 +19,7 @@
 #
 from __future__ import absolute_import
 
+from contextlib import contextmanager
 from weakref import proxy
 import errno
 import io
@@ -29,7 +30,6 @@ import signal
 import threading
 import time
 
-from .utils import terminating
 from vdsm.common import cmdutils
 from vdsm.common.cmdutils import command_log_line, retcode_log_line
 from vdsm.common.compat import subprocess
@@ -340,3 +340,33 @@ def grepCmd(pattern, paths):
     else:
         raise ValueError("rc: %s, out: %s, err: %s" % (rc, out, err))
     return matches
+
+
+class TerminatingFailure(Exception):
+
+    msg = "Failed to terminate process {self.pid}: {self.error}"
+
+    def __init__(self, pid, error):
+        self.pid = pid
+        self.error = error
+
+    def __str__(self):
+        return self.msg.format(self=self)
+
+
+def terminate(proc):
+    try:
+        if proc.poll() is None:
+            logging.debug('Terminating process pid=%d' % proc.pid)
+            proc.kill()
+            proc.wait()
+    except Exception as e:
+        raise TerminatingFailure(proc.pid, e)
+
+
+@contextmanager
+def terminating(proc):
+    try:
+        yield proc
+    finally:
+        terminate(proc)

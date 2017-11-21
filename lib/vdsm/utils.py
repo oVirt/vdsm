@@ -52,18 +52,6 @@ if not os.path.exists(_THP_STATE_PATH):
     _THP_STATE_PATH = '/sys/kernel/mm/redhat_transparent_hugepage/enabled'
 
 
-class TerminatingFailure(Exception):
-
-    msg = "Failed to terminate process {self.pid}: {self.error}"
-
-    def __init__(self, pid, error):
-        self.pid = pid
-        self.error = error
-
-    def __str__(self):
-        return self.msg.format(self=self)
-
-
 class IOCLASS:
     REALTIME = 1
     BEST_EFFORT = 2
@@ -451,24 +439,6 @@ def running(runnable):
         yield runnable
     finally:
         runnable.stop()
-
-
-def terminate(proc):
-    try:
-        if proc.poll() is None:
-            logging.debug('Terminating process pid=%d' % proc.pid)
-            proc.kill()
-            proc.wait()
-    except Exception as e:
-        raise TerminatingFailure(proc.pid, e)
-
-
-@contextmanager
-def terminating(proc):
-    try:
-        yield proc
-    finally:
-        terminate(proc)
 
 
 def get_selinux_enforce_mode():
