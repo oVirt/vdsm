@@ -4742,7 +4742,10 @@ class Vm(object):
             return self._vmJobs is None or bool(self.conf['_blockJobs'])
 
     def updateVmJobs(self):
-        self._vmJobs = self.queryBlockJobs()
+        try:
+            self._vmJobs = self.queryBlockJobs()
+        except Exception:
+            self.log.exception("Error updating VM jobs")
 
     def queryBlockJobs(self):
         def startCleanup(job, drive, needPivot):
