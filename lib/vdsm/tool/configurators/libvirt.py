@@ -129,7 +129,7 @@ def _isSslConflict():
 # version != PACKAGE_VERSION since we do not want to update configuration
 # on every update. see 'configuration versioning:' at Configfile.py for
 # details.
-CONF_VERSION = '4.17.0'
+CONF_VERSION = '4.20.0'
 
 LS_CERT_DIR = os.path.join(constants.PKI_DIR, 'libvirt-spice')
 
