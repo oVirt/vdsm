@@ -2091,6 +2091,31 @@ class BlockIoTuneTests(TestCaseBase):
                 tunables
             )
 
+    @MonkeyPatch(vm, 'config',
+                 make_config([('vars', 'vm_kill_paused_time', '1')]))
+    def test_exit_with_error_on_resume(self):
+        with fake.VM() as testvm:
+            pretime = vdsm.common.time.monotonic_time() - 30.0
+            testvm._pause_time = pretime
+
+            testvm._dom = fake.Domain()
+
+            self.assertRaises(
+                vm.DestroyedOnResumeError,
+                testvm.maybe_resume,
+                resume_behavior=vm.ResumeBehavior.KILL)
+
+            testvm.onLibvirtLifecycleEvent(
+                libvirt.VIR_DOMAIN_EVENT_STOPPED,
+                libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN,
+                None)
+
+            stats = testvm.getStats()
+            self.assertEqual(stats['status'], vmstatus.DOWN)
+            self.assertEqual(stats['exitCode'], define.ERROR)
+            self.assertEqual(stats['exitReason'],
+                             vmexitreason.DESTROYED_ON_RESUME)
+
     def assert_nth_call_to_dom_is(self, nth, call):
         self.assertEqual(self.dom.__calls__[nth][0], call)
 

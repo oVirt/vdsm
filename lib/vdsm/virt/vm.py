@@ -1008,6 +1008,8 @@ class Vm(object):
                 else:
                     reason = vmexitreason.HOST_SHUTDOWN
                     exit_code = ERROR
+        if reason == vmexitreason.DESTROYED_ON_RESUME:
+            exit_code = ERROR
         return exit_code, reason
 
     def _onQemuDeath(self, exit_code, reason):
@@ -1410,7 +1412,8 @@ class Vm(object):
                now - pause_time > \
                config.getint('vars', 'vm_kill_paused_time'):
                 self.log.info("VM paused for too long, will be destroyed")
-                self.destroy(gracefulAttempts=0)
+                self.destroy(gracefulAttempts=0,
+                             reason=vmexitreason.DESTROYED_ON_RESUME)
                 raise DestroyedOnResumeError()
             else:
                 self.cont()
@@ -5003,10 +5006,11 @@ class Vm(object):
             self.log.debug("Total desktops after destroy of %s is %d",
                            self.id, len(self.cif.vmContainer))
 
-    def destroy(self, gracefulAttempts=1):
+    def destroy(self, gracefulAttempts=1,
+                reason=vmexitreason.ADMIN_SHUTDOWN):
         self.log.debug('destroy Called')
 
-        result = self.doDestroy(gracefulAttempts)
+        result = self.doDestroy(gracefulAttempts, reason)
         if response.is_error(result):
             return result
         # Clean VM from the system

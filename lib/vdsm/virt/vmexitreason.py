@@ -33,6 +33,7 @@ DESTROYED_ON_STARTUP = 10
 HOST_SHUTDOWN = 11
 POSTCOPY_MIGRATION_FAILED = 12
 DESTROYED_ON_REBOOT = 13
+DESTROYED_ON_RESUME = 14
 
 
 exitReasons = {
@@ -49,5 +50,6 @@ exitReasons = {
     DESTROYED_ON_STARTUP: 'VM destroyed during the startup',
     HOST_SHUTDOWN: 'VM has been terminated on the host',
     POSTCOPY_MIGRATION_FAILED: 'Migration failed in post-copy',
-    DESTROYED_ON_REBOOT: 'Down as a part of the reboot process'
+    DESTROYED_ON_REBOOT: 'Down as a part of the reboot process',
+    DESTROYED_ON_RESUME: 'Down because paused for too long',
 }

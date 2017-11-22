@@ -224,6 +224,12 @@ class Domain(object):
             'rss': 4 * 1024 * 1024
         }
 
+    def destroy(self):
+        pass
+
+    def undefine(self):
+        pass
+
 
 class GuestAgent(object):
     def __init__(self):
