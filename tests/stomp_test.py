@@ -17,7 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import threading
+from six.moves import queue
 from uuid import uuid4
 
 from testlib import VdsmTestCase as TestCaseBase, \
@@ -29,8 +29,6 @@ import yajsonrpc
 from integration.jsonRpcHelper import constructAcceptor
 from yajsonrpc.stompreactor import StandAloneRpcClient
 from vdsm import utils
-
-from testValidation import brokentest
 
 from integration.sslhelper import DEAFAULT_SSL_CONTEXT
 
@@ -71,7 +69,6 @@ class _SampleBridge(object):
 @expandPermutations
 class StompTests(TestCaseBase):
 
-    @brokentest('This test randomly fails on CI with JsonRpcNoResponseError')
     @permutations([
         # size, use_ssl
         (1024, True),
@@ -91,16 +88,13 @@ class StompTests(TestCaseBase):
                                                    acceptor._port,
                                                    'jms.topic.vdsm_requests',
                                                    str(uuid4()),
-                                                   sslctx)) as client:
+                                                   sslctx, False)) as client:
                 self.assertEqual(client.callMethod('echo', (data,),
                                                    str(uuid4())),
                                  data)
 
-    @brokentest('This test randomly fails on CI with JsonRpcNoResponseError')
     @permutations(_USE_SSL)
     def test_event(self, use_ssl):
-        done = threading.Event()
-
         with constructAcceptor(self.log, use_ssl, _SampleBridge(),
                                'jms.queue.events') as acceptor:
             sslctx = DEAFAULT_SSL_CONTEXT if use_ssl else None
@@ -110,12 +104,15 @@ class StompTests(TestCaseBase):
                                                    'jms.queue.events',
                                                    sslctx, False)) as client:
 
-                def callback(client, event, params):
-                    self.assertEqual(event, 'vdsm.event')
-                    self.assertEqual(params['content'], True)
-                    done.set()
+                event_queue = queue.Queue()
+                custom_topic = 'jms.queue.events'
+                client.subscribe(custom_topic, event_queue)
 
-                client.registerEventCallback(callback)
                 client.callMethod("event", [], str(uuid4()))
-                done.wait(timeout=CALL_TIMEOUT)
-                self.assertTrue(done.is_set())
+
+                try:
+                    event, event_params = event_queue.get(timeout=CALL_TIMEOUT)
+                except queue.Empty:
+                    self.fail("Event queue timed out.")
+                self.assertEqual(event, 'vdsm.event')
+                self.assertEqual(event_params['content'], True)

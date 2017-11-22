@@ -139,6 +139,7 @@ blacklist_modules_python3 = \
 	qemuimg_test.py \
 	stompasyncclient_test.py \
 	stompasyncdispatcher_test.py \
+	stomp_test.py \
 	unicode_test.py \
 	utils_test.py \
 	vmxml_test.py \
