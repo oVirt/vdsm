@@ -29,6 +29,12 @@ from . import drivename
 _PAYLOAD_PATH = 'PAYLOAD:'
 
 
+METADATA_KEYS = ('GUID', 'domainID', 'imageID', 'poolID', 'volumeID')
+
+
+METADATA_NESTED_KEYS = ('diskReplicate', 'volumeChain', 'volumeInfo')
+
+
 def parse(dev, meta):
     """Parse the XML configuration of a storage device and returns
     the corresponding params, such as
@@ -77,11 +83,11 @@ def add_vdsm_parameters(params):
 
 
 def _update_meta_params(params, meta):
-    for key in ('GUID', 'domainID', 'imageID', 'poolID', 'volumeID'):
+    for key in METADATA_KEYS:
         if key in meta:
             params[key] = meta[key]
 
-    for key in ('diskReplicate', 'volumeChain', 'volumeInfo'):
+    for key in METADATA_NESTED_KEYS:
         if key in meta:
             params[key] = utils.picklecopy(meta[key])
 
