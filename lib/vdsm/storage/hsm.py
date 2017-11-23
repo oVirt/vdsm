@@ -74,6 +74,7 @@ from vdsm.storage import sp
 from vdsm.storage import storageServer
 from vdsm.storage import taskManager
 from vdsm.storage import types
+from vdsm.storage import udev
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.constants import SECTOR_SIZE
 from vdsm.storage.misc import deprecated
@@ -390,6 +391,9 @@ class HSM(object):
             self.__cleanStorageRepository()
         except Exception:
             self.log.warn("Failed to clean Storage Repository.", exc_info=True)
+
+        self.multipathListener = udev.MultipathListener()
+        self.multipathListener.start()
 
         def storageRefresh():
             sdCache.refreshStorage()
@@ -3324,6 +3328,7 @@ class HSM(object):
 
             self.taskMng.prepareForShutdown()
             oop.stop()
+            self.multipathListener.stop()
         except:
             pass
 
