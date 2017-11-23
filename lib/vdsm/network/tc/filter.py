@@ -96,6 +96,8 @@ def _parse_u32(tokens):
     for token in tokens:
         if token in ('fh', 'link'):
             data[token] = _parser.parse_str(tokens)
+        elif token == 'chain':
+            data['chain'] = _parser.parse_int(tokens)
         elif token == 'order':
             data[token] = _parser.parse_int(tokens)
         elif token in ('*flowid', 'flowid'):
