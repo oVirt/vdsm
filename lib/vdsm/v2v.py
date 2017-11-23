@@ -791,25 +791,20 @@ class PipelineProc(object):
 
         If timeout is provided, it is set as the upper limit for the wait
         period.
-        Note that the timeout granularity is 1 sec, therefore, the actual
-        applied timeout may drift by 1 sec.
         """
         if timeout is not None:
             deadline = monotonic_time() + timeout
-            # NOTE: we do not want to use Popen's auto-killing timeout
-            if self.returncode is not None:
-                return True
-            while monotonic_time() < deadline:
-                time.sleep(1)
-                if self.returncode is not None:
-                    return True
 
+            for p in self._procs:
+                try:
+                    p.wait(deadline - monotonic_time())
+                except subprocess.TimeoutExpired:
+                    return False
         else:
             for p in self._procs:
                 p.wait()
-            return True
 
-        return False
+        return True
 
 
 class ImportVm(object):
