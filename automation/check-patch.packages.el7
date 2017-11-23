@@ -22,9 +22,9 @@ python-ipaddress
 python-mock
 python-magic
 python-netaddr
+python-pip
 python-pthreading
 python-pyudev
-python-setuptools
 python-six
 python-subprocess32
 python-requests

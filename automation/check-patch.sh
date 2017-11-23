@@ -50,7 +50,6 @@ set -xe
 # For skipping known failures on jenkins using @broken_on_ci
 export OVIRT_CI=1
 
-easy_install pip
 pip install -U tox==2.5.0 'pluggy<0.5.0'
 
 ./autogen.sh --system --enable-hooks --enable-vhostmd
