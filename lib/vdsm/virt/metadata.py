@@ -404,9 +404,11 @@ class Descriptor(object):
         # custom properties may be missing, and that's fine.
         # per-device metadata may be missing too: unusual,
         # but still legitimate.
-        return (
-            bool(self._values) or bool(self._devices) or bool(self._custom)
-        )
+        with self._lock:
+            return (
+                bool(self._values) or bool(self._devices) or
+                bool(self._custom)
+            )
 
     def __nonzero__(self):  # TODO: drop when py2 is no longer needed
         return self.__bool__()
@@ -548,12 +550,14 @@ class Descriptor(object):
         :rtype: Python dict, whose keys are always strings.
                 No nested objects are allowed.
         """
-        self._log.debug('values: %s', self._values)
-        data = self._values.copy()
+        with self._lock:
+            data = self._values.copy()
+        self._log.debug('values: %s', data)
         yield data
-        self._values.clear()
-        self._values.update(data)
-        self._log.debug('values updated: %s', self._values)
+        with self._lock:
+            self._values.clear()
+            self._values.update(data)
+        self._log.debug('values updated: %s', data)
 
     @property
     def custom(self):
