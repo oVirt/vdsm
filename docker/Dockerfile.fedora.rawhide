@@ -22,6 +22,7 @@ RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     make \
     mom \
     openvswitch \
+    ovirt-imageio-common \
     psmisc \
     python-blivet1 \
     python-decorator \
@@ -56,6 +57,5 @@ RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     systemd-udev \
     which \
     && \
-  dnf install -y --nogpgcheck --repofrompath fc26,http://resources.ovirt.org/pub/ovirt-master-snapshot/rpm/fc26 ovirt-imageio-common && \
   pip install nose==1.3.7 tox==2.5.0 yappi==0.93 && \
   dnf clean all
