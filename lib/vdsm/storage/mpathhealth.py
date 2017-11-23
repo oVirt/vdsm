@@ -1,0 +1,133 @@
+# Copyright 2017 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+from __future__ import absolute_import
+
+import collections
+import logging
+import threading
+
+import six
+
+from vdsm.storage import udev
+
+log = logging.getLogger("storage.mpathhealth")
+
+
+class MultipathStatus(object):
+
+    def __init__(self):
+        self.failed_paths = set()
+        self.valid_paths = None
+
+    def info(self):
+        res = {"failed_paths": sorted(self.failed_paths)}
+        if self.valid_paths is not None:
+            res["valid_paths"] = self.valid_paths
+        return res
+
+
+class Monitor(udev.MultipathMonitor):
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._status = collections.defaultdict(MultipathStatus)
+
+    def status(self):
+        """
+        Returns a dictionary containing the faulty paths and the number of
+        valid paths for each device, with the mpath device UUID as the key.
+        For example:
+        {
+            "uuid-2": {
+                "valid_paths": 1,
+                "failed_paths": [
+                    "sdba",
+                    "sdbb"
+                ]
+            }
+        }
+
+        """
+        res = {}
+        with self._lock:
+            for uuid, status in six.iteritems(self._status):
+                res[uuid] = status.info()
+        return res
+
+    def start(self):
+        """
+        Implementation of the interface udev.MultipathMonitor.start()
+        This method is called by the udev.MultipathListener and should not
+        be called by others.
+
+        The initial status of the mpath devices is built here.
+        The data is updated through callbacks received in the handle method.
+        """
+        pass
+
+    def handle(self, event):
+        """
+        Implementation of the interface udev.MultipathMonitor.handle()
+        This method is called by the udev.MultipathListener and should not
+        be called by others.
+
+        This method receives a udev.MultipathEvent and updates the internal
+        data structure according to the event.
+        """
+        if event.type == udev.MPATH_REMOVED:
+            self._mpath_removed(event)
+        elif event.type == udev.PATH_FAILED:
+            self._path_failed(event)
+        elif event.type == udev.PATH_REINSTATED:
+            self._path_reinstated(event)
+
+    def _path_reinstated(self, event):
+        with self._lock:
+            mpath = self._status[event.mpath_uuid]
+            mpath.failed_paths.discard(event.path)
+            mpath.valid_paths = event.valid_paths
+            if not mpath.failed_paths:
+                self._status.pop(event.mpath_uuid)
+                log.info("Path '%r' reinstated for multipath device '%r',"
+                         " all paths are valid",
+                         event.path, event.mpath_uuid)
+            else:
+                log.info("Path '%r' reinstated for multipath device '%r',"
+                         " %d valid paths left",
+                         event.path, event.mpath_uuid, event.valid_paths)
+
+    def _path_failed(self, event):
+        with self._lock:
+            mpath = self._status[event.mpath_uuid]
+            mpath.failed_paths.add(event.path)
+            mpath.valid_paths = event.valid_paths
+            if event.valid_paths == 0:
+                log.warn("Path '%r' failed for multipath device '%r',"
+                         " no valid paths left",
+                         event.path, event.mpath_uuid)
+            else:
+                log.info("Path '%r' failed for multipath device '%r',"
+                         " %d valid paths left",
+                         event.path, event.mpath_uuid, event.valid_paths)
+
+    def _mpath_removed(self, event):
+        with self._lock:
+            log.info("Multipath device %r was removed", event.mpath_uuid)
+            self._status.pop(event.mpath_uuid, None)
