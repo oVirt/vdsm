@@ -13,6 +13,7 @@ env:
   matrix:
     - DOCKER_IMAGE=ovirtorg/vdsm-test-centos
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-26
+    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-27
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-rawhide
 
 before_install:
