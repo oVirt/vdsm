@@ -25,6 +25,7 @@ import os
 from testlib import VdsmTestCase
 from testlib import namedTemporaryDir
 from testValidation import ValidateRunningAsRoot, stresstest
+from testValidation import broken_on_ci
 
 import loopback
 
@@ -34,6 +35,7 @@ class TestDevice(VdsmTestCase):
     BEFORE = b"a" * 10
     AFTER = b"b" * 10
 
+    @broken_on_ci("Fails randomly on oVirt CI", name="OVIRT_CI")
     @ValidateRunningAsRoot
     def test_with_device(self):
         with namedTemporaryDir(dir="/tmp") as tmpdir:
