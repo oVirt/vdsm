@@ -22,6 +22,7 @@ import os.path
 
 from vdsm.common import response
 from vdsm import constants
+import vdsm
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
 from vdsm.virt.domain_descriptor import DomainDescriptor
@@ -674,6 +675,122 @@ class TestDeviceHelpers(TestCaseBase):
             self.assertRaises(LookupError,
                               vmdevices.common.lookup_device_by_alias,
                               vm._devices, dev_type, alias)
+
+
+class BrokenSuperVdsm(fake.SuperVdsm):
+
+    def setPortMirroring(self, network, nic_name):
+        if self.mirrored_networks:
+            raise Exception("Too many networks")
+        super(BrokenSuperVdsm, self).setPortMirroring(network, nic_name)
+
+
+class TestHotplug(TestCaseBase):
+
+    NIC_HOTPLUG = '''<?xml version='1.0' encoding='UTF-8'?>
+<hotplug>
+  <devices>
+    <interface type="bridge">
+      <mac address="66:55:44:33:22:11"/>
+      <model type="virtio" />
+      <source bridge="ovirtmgmt" />
+      <filterref filter="vdsm-no-mac-spoofing" />
+      <link state="up" />
+      <bandwidth />
+    </interface>
+  </devices>
+  <metadata xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-vm:vm>
+      <ovirt-vm:device mac_address='66:55:44:33:22:11'>
+        <ovirt-vm:network>test</ovirt-vm:network>
+        <ovirt-vm:portMirroring>
+          <ovirt-vm:network>network1</ovirt-vm:network>
+          <ovirt-vm:network>network2</ovirt-vm:network>
+        </ovirt-vm:portMirroring>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</hotplug>
+'''
+
+    def setUp(self):
+        devices = [{'nicModel': 'virtio', 'network': 'ovirtmgmt',
+                    'macAddr': "11:22:33:44:55:66",
+                    'device': 'bridge', 'type': 'interface',
+                    'alias': 'net1', 'name': 'net1',
+                    'linkActive': 'true',
+                    }]
+        with fake.VM(devices=devices, create_device_objects=True) as vm:
+            vm._dom = fake.Domain()
+            self.vm = vm
+        self.supervdsm = fake.SuperVdsm()
+
+    def test_nic_hotplug(self):
+        vm = self.vm
+        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        params = {'xml': self.NIC_HOTPLUG}
+        with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
+                                self.supervdsm.getProxy)]):
+            vm.hotplugNic(params)
+        self.assertEqual(len(vm._devices[hwclass.NIC]), 2)
+        for dev in vm._devices[hwclass.NIC]:
+            if dev.macAddr == "66:55:44:33:22:11":
+                break
+        else:
+            raise Exception("Hot plugged device not found")
+        self.assertEqual(dev.macAddr, "66:55:44:33:22:11")
+        self.assertEqual(dev.network, "test")
+        # TODO: Make sure metadata of the original device is initialized in the
+        # fake VM.
+        # with vm._md_desc.device(mac_address="11:22:33:44:55:66") as dev:
+        #     self.assertEqual(dev['network'], "ovirtmgmt")
+        with vm._md_desc.device(mac_address="66:55:44:33:22:11") as dev:
+            self.assertEqual(dev['network'], "test")
+        self.assertEqual(self.supervdsm.mirrored_networks,
+                         [('network1', '',),
+                          ('network2', '',)])
+
+    def test_nic_hotplug_mirroring_failure(self):
+        vm = self.vm
+        supervdsm = BrokenSuperVdsm()
+        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        params = {'xml': self.NIC_HOTPLUG}
+        with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
+                                supervdsm.getProxy)]):
+            vm.hotplugNic(params)
+        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        dev = vm._devices[hwclass.NIC][0]
+        self.assertEqual(dev.macAddr, "11:22:33:44:55:66")
+        self.assertEqual(dev.network, "ovirtmgmt")
+        # TODO: Make sure metadata of the original device is initialized in the
+        # fake VM.
+        # with vm._md_desc.device(mac_address="11:22:33:44:55:66") as dev:
+        #     self.assertEqual(dev['network'], "ovirtmgmt")
+        with vm._md_desc.device(dev_type=hwclass.NIC,
+                                mac_address="66:55:44:33:22:11") as dev:
+            self.assertNotIn('network', dev)
+        self.assertEqual(supervdsm.mirrored_networks, [])
+
+    def test_nic_hotunplug(self):
+        vm = self.vm
+        self.test_nic_hotplug()
+        self.assertEqual(len(vm._devices[hwclass.NIC]), 2)
+        params = {'xml': self.NIC_HOTPLUG}
+        with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
+                                self.supervdsm.getProxy)]):
+            vm.hotunplugNic(params)
+        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        dev = vm._devices[hwclass.NIC][0]
+        self.assertEqual(dev.macAddr, "11:22:33:44:55:66")
+        self.assertEqual(dev.network, "ovirtmgmt")
+        # TODO: Make sure metadata of the original device is initialized in the
+        # fake VM.
+        # with vm._md_desc.device(mac_address="11:22:33:44:55:66") as dev:
+        #     self.assertEqual(dev['network'], "ovirtmgmt")
+        with vm._md_desc.device(dev_type=hwclass.NIC,
+                                mac_addres="66:55:44:33:22:11") as dev:
+            self.assertNotIn('network', dev)
+        self.assertEqual(self.supervdsm.mirrored_networks, [])
 
 
 class MockedProxy(object):

@@ -2797,9 +2797,16 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def hotplugNic(self, params):
-        nicParams = params['nic']
-        nic = vmdevices.network.Interface(self.log, **nicParams)
-        nicXml = vmxml.format_xml(nic.getXML(), pretty=True)
+        if 'xml' in params:
+            xml = params['xml']
+            nic = vmdevices.common.dev_from_xml(self, xml)
+            dom = vmxml.parse_xml(xml)
+            nic_dom = next(iter(vmxml.find_first(dom, 'devices')))
+            nicXml = vmxml.format_xml(nic_dom)
+        else:
+            nicParams = params['nic']
+            nic = vmdevices.network.Interface(self.log, **nicParams)
+            nicXml = vmxml.format_xml(nic.getXML(), pretty=True)
         nicXml = hooks.before_nic_hotplug(
             nicXml, self._custom, params=nic.custom
         )
@@ -2825,8 +2832,9 @@ class Vm(object):
             # the libvirt during recovery process.
             device_conf = self._devices[hwclass.NIC]
             device_conf.append(nic)
-            with self._confLock:
-                self.conf['devices'].append(nicParams)
+            if 'xml' not in params:
+                with self._confLock:
+                    self.conf['devices'].append(nicParams)
             self._hotplug_device_metadata(hwclass.NIC, nic)
             self._updateDomainDescriptor()
             vmdevices.network.Interface.update_device_info(self, device_conf)
@@ -2847,8 +2855,12 @@ class Vm(object):
             except Exception as e:
                 self.log.exception("setPortMirroring for network %s failed",
                                    network)
-                nicParams['portMirroring'] = mirroredNetworks
-                self.hotunplugNic({'nic': nicParams})
+                if 'xml' in params:
+                    hotunplug_params = {'xml': params['xml']}
+                else:
+                    hotunplug_params = {'nic': nicParams}
+                self.hotunplugNic(hotunplug_params,
+                                  port_mirroring=mirroredNetworks)
                 return response.error('hotplugNic', str(e))
 
         return {'status': doneCode, 'vmList': self.status()}
@@ -3118,8 +3130,17 @@ class Vm(object):
             return response.error('noimpl')
 
     @api.guard(_not_migrating)
-    def hotunplugNic(self, params):
-        nicParams = params['nic']
+    def hotunplugNic(self, params, port_mirroring=None):
+        if 'xml' in params:
+            nicXml = params['xml']
+            dev = vmdevices.common.dev_from_xml(self, nicXml)
+            nicParams = {'macAddr': dev.macAddr}
+            if port_mirroring is None and getattr(dev, 'portMirroring', None):
+                port_mirroring = dev.portMirroring
+        else:
+            nicParams = params['nic']
+            if port_mirroring is not None:
+                port_mirroring = nicParams['portMirroring']
 
         # Find NIC object in vm's NICs list
         nic = None
@@ -3129,8 +3150,8 @@ class Vm(object):
                 break
 
         if nic:
-            if 'portMirroring' in nicParams:
-                for network in nicParams['portMirroring']:
+            if port_mirroring is not None:
+                for network in port_mirroring:
                     supervdsm.getProxy().unsetPortMirroring(network, nic.name)
 
             nicXml = vmxml.format_xml(nic.getXML(), pretty=True)
@@ -3149,15 +3170,14 @@ class Vm(object):
             self._devices[hwclass.NIC].remove(nic)
         # Find and remove NIC device from vm's conf
         nicDev = None
-        for dev in self.conf['devices'][:]:
-            if (dev['type'] == hwclass.NIC and
-                    dev['macAddr'].lower() == nicParams['macAddr'].lower()):
-                with self._confLock:
-                    self.conf['devices'].remove(dev)
-                nicDev = dev
-                break
-
-        self._hotunplug_device_metadata(hwclass.NIC, nic)
+        if 'xml' not in params:
+            for dev in self.conf['devices'][:]:
+                if dev['type'] == hwclass.NIC and \
+                   dev['macAddr'].lower() == nicParams['macAddr'].lower():
+                    with self._confLock:
+                        self.conf['devices'].remove(dev)
+                    nicDev = dev
+                    break
 
         self._updateDomainDescriptor()
 
@@ -3180,6 +3200,7 @@ class Vm(object):
                                            params=nic.custom)
             return response.error('hotunplugNic', str(e))
 
+        self._hotunplug_device_metadata(hwclass.NIC, nic)
         self._updateDomainDescriptor()
         hooks.after_nic_hotunplug(nicXml, self._custom,
                                   params=nic.custom)

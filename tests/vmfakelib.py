@@ -230,6 +230,12 @@ class Domain(object):
     def undefine(self):
         pass
 
+    def attachDevice(self, device):
+        pass
+
+    def detachDevice(self, device):
+        pass
+
 
 class GuestAgent(object):
     def __init__(self):
@@ -276,6 +282,7 @@ def VM(params=None, devices=None, runCpu=False,
             cif.vmContainer[fake.id] = fake
             fake._update_metadata = lambda: None
             fake.send_status_event = lambda **kwargs: None
+            fake._waitForDeviceRemoval = lambda device: None
             fake.arch = arch
             fake.guestAgent = GuestAgent()
             fake.conf['devices'] = [] if devices is None else devices
@@ -303,6 +310,7 @@ class SuperVdsm(object):
         self._exception = exception
         self.prepared_path = None
         self.prepared_path_group = None
+        self.mirrored_networks = []
 
     def getProxy(self):
         return self
@@ -310,6 +318,18 @@ class SuperVdsm(object):
     def prepareVmChannel(self, path, group=None):
         self.prepared_path = path
         self.prepared_path_group = group
+
+    def ovs_bridge(self, network_name):
+        return None
+
+    def remove_ovs_port(bridge, port):
+        pass
+
+    def setPortMirroring(self, network, nic_name):
+        self.mirrored_networks.append((network, nic_name,))
+
+    def unsetPortMirroring(self, network, nic_name):
+        self.mirrored_networks.remove((network, nic_name,))
 
 
 class SampleWindow:

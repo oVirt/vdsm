@@ -2949,6 +2949,16 @@ types:
         -   description: The network device specification
             name: nic
             type: *VmInterfaceDevice
+            defaultvalue: null
+
+        -   name: xml
+            type: string
+            defaultvalue: null
+            added: '4.2'
+            description: XML snippet containing <devices> element with exactly
+                    one device. <metadata> element may be optionally present,
+                    providing device metadata. Used in hot plugs and hot
+                    unplugs.
         type: object
 
     PreparedImageInfo: &PreparedImageInfo

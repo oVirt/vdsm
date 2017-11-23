@@ -374,7 +374,7 @@ class VM(APIBase):
     @api.logged(on="api.virt")
     @api.method
     def hotplugNic(self, params):
-        validate.require_keys(params, ('vmId', 'nic'))
+        validate.require_keys(params, ('vmId',))
         return self.vm.hotplugNic(params)
 
     @api.logged(on="api.virt")
@@ -390,7 +390,7 @@ class VM(APIBase):
     @api.logged(on="api.virt")
     @api.method
     def hotunplugNic(self, params):
-        validate.require_keys(params, ('vmId', 'nic'))
+        validate.require_keys(params, ('vmId',))
         return self.vm.hotunplugNic(params)
 
     @api.logged(on="api.virt")

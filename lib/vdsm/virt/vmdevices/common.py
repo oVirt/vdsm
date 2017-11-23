@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 
 from vdsm.config import config
+from vdsm.virt import metadata
 from vdsm.virt import vmxml
 
 from . import core
@@ -242,6 +243,61 @@ def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
             dev_map[dev_type].append(dev_obj)
     log.debug('Initialized %d device classes from domain XML', len(dev_map))
     return dev_map
+
+
+def dev_from_xml(vm, xml):
+    """
+    Create and return device instance from provided XML.
+
+    The XML must contain <devices> element with a single device subelement, the
+    one to create the instance for.  Depending on the device kind <metadata>
+    element may be required to provide device metadata; the element may and
+    needn't contain unrelated metadata.  This function is used in device
+    hot(un)plugs.
+
+    Example `xml` value (top element tag may be arbitrary):
+
+      <?xml version='1.0' encoding='UTF-8'?>
+      <hotplug>
+        <devices>
+          <interface type="bridge">
+            <mac address="66:55:44:33:22:11"/>
+            <model type="virtio" />
+            <source bridge="ovirtmgmt" />
+            <filterref filter="vdsm-no-mac-spoofing" />
+            <link state="up" />
+            <bandwidth />
+          </interface>
+        </devices>
+        <metadata xmlns:ns0="http://ovirt.org/vm/tune/1.0"
+                  xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+          <ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+            <ovirt-vm:device mac_address='66:55:44:33:22:11'>
+              <ovirt-vm:network>test</ovirt-vm:network>
+              <ovirt-vm:portMirroring>
+                <ovirt-vm:network>network1</ovirt-vm:network>
+                <ovirt-vm:network>network2</ovirt-vm:network>
+              </ovirt-vm:portMirroring>
+            </ovirt-vm:device>
+          </ovirt-vm:vm>
+        </metadata>
+      </hotplug>
+
+    :param xml: XML specifying the device as described above.
+    :type xml: basestring
+    :returns: Device instance created from the provided XML.
+    """
+    dom = vmxml.parse_xml(xml)
+    devices = vmxml.find_first(dom, 'devices')
+    dev_elem = next(vmxml.children(devices))
+    _dev_type, dev_class = identify_from_xml_elem(dev_elem)
+    meta = vmxml.find_first(dom, 'metadata', None)
+    if meta is None:
+        md_desc = metadata.Descriptor()
+    else:
+        md_desc = metadata.Descriptor.from_xml(vmxml.format_xml(meta))
+    dev_meta = _get_metadata_from_elem_xml(vm.id, md_desc, dev_class, dev_elem)
+    return dev_class.from_xml_tree(vm.log, dev_elem, dev_meta)
 
 
 def storage_device_params_from_domain_xml(vmid, dom_desc, md_desc, log):

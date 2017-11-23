@@ -613,17 +613,18 @@ class Descriptor(object):
 
     def _parse_xml(self, xml_str):
         root = vmxml.parse_xml(xml_str)
-        md_elem = root.find(
-            './metadata/{%s}%s' % (
-                self._namespace_uri,
-                self._name
-            )
-        )
+        selector = '{%s}%s' % (self._namespace_uri, self._name)
+        if root.tag == 'metadata':
+            md_elem = root.find('./' + selector)
+        else:
+            md_elem = root.find('./metadata/' + selector)
         if md_elem is not None:
             md_uuid = root.find('./uuid')
+            # UUID may not be present in hotplug/hotunplug metadata snippets
+            uuid_text = '?' if md_uuid is None else md_uuid.text
             self._log.debug(
                 'parsing metadata for %s: %s',
-                md_uuid.text, vmxml.format_xml(md_elem, pretty=True))
+                uuid_text, vmxml.format_xml(md_elem, pretty=True))
             self._load(md_elem, self._namespace, self._namespace_uri)
 
     def _load(self, md_elem, namespace=None, namespace_uri=None):
