@@ -43,6 +43,9 @@ from . import hwclass
 VHOST_SOCK_DIR = os.path.join(constants.P_VDSM_RUN, 'vhostuser')
 
 
+METADATA_NESTED_KEYS = ('custom', 'portMirroring')
+
+
 class UnsupportedAddress(Exception):
     pass
 
@@ -60,6 +63,12 @@ class Interface(core.Base):
     @classmethod
     def get_identifying_attrs(cls, dev_elem):
         return core.get_xml_elem(dev_elem, 'mac_address', 'mac', 'address')
+
+    def get_metadata(self):
+        attrs = {'mac_address': self.macAddr}
+        data = {'network': self.network}
+        core.get_nested_metadata(data, self, METADATA_NESTED_KEYS)
+        return attrs, data
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):

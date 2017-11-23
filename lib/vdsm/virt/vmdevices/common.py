@@ -260,6 +260,36 @@ def storage_device_params_from_domain_xml(vmid, dom_desc, md_desc, log):
     return params
 
 
+def _get_metadata(dev_class, dev_obj):
+    # storage devices are special, and they need separate treatment
+    if dev_class != hwclass.DISK:
+        return dev_obj.get_metadata()
+    return storagexml.get_metadata(dev_obj)
+
+
+def save_device_metadata(md_desc, dev_map, log):
+    log.debug('Saving the device metadata into domain XML')
+    count = 0
+    for dev_class, dev_objs in dev_map.items():
+        for dev_obj in dev_objs:
+            attrs, data = _get_metadata(dev_class, dev_obj)
+            if not data:
+                # the device doesn't want to save anything.
+                # let's go ahead.
+                continue
+            elif not attrs:
+                # data with no attrs? most likely a bug.
+                log.warning('No metadata attrs for %s', dev_obj)
+                continue
+
+            with md_desc.device(**attrs) as dev:
+                dev.clear()
+                dev.update(data)
+                count += 1
+
+    log.debug('Saved %d device metadata', count)
+
+
 def get_refreshable_device_classes():
     config_value = config.get('devel', 'device_xml_refresh_enable').strip()
     if config_value == 'ALL':

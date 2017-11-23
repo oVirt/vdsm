@@ -26,6 +26,7 @@ import os.path
 from vdsm.host import rngsources
 from vdsm import constants
 from vdsm import supervdsm
+from vdsm import utils
 from vdsm.common import conv
 from vdsm.virt import vmxml
 from vdsm.virt.utils import cleanup_guest_socket
@@ -60,6 +61,19 @@ class Base(vmxml.Device):
          values must be one of: basestring, int, float
         """
         raise NotImplementedError(cls.__name__)
+
+    def get_metadata(self):
+        """
+        Returns two dictionaries: one contains the device attrs, to be
+        fed to metadata.Descriptor.device() to match this device
+        to its metadata. The other contains the attributes which need
+        to be stored in the device metadata area.
+
+        NOTE: the metadata infrastructure ensures that the "vmid" key
+        is automatically given to device, so to store it is redundant
+        and should be avoided.
+        """
+        return {}, {}
 
     def __init__(self, log, **kwargs):
         self.log = log
@@ -908,3 +922,10 @@ def update_device_params(params, dev, attrs=None):
 def get_xml_elem(dev, key, elem, attr):
     value = vmxml.find_attr(dev, elem, attr)
     return {key: value} if value else {}
+
+
+def get_nested_metadata(data, dev_obj, keys):
+    for key in keys:
+        value = getattr(dev_obj, key, None)
+        if value is not None:
+            data[key] = utils.picklecopy(value)

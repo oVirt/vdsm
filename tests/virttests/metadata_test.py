@@ -20,7 +20,13 @@
 
 from __future__ import absolute_import
 
+import logging
+
 from vdsm.virt.vmdevices import common
+from vdsm.virt.vmdevices import core
+from vdsm.virt.vmdevices import hwclass
+from vdsm.virt.vmdevices import network
+from vdsm.virt.vmdevices import storage
 from vdsm.virt import metadata
 from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
@@ -679,6 +685,107 @@ class DescriptorTests(XMLTestCase):
         desc.dump(dom)
         for produced_xml in dom.xml.values():
             self.assertXMLEqual(produced_xml, expected_xml)
+
+
+class SaveDeviceMetadataTests(XMLTestCase):
+
+    EMPTY_XML = """<?xml version='1.0' encoding='UTF-8'?>
+<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0" />"""
+
+    def setUp(self):
+        # empty descriptor
+        self.md_desc = metadata.Descriptor()
+        self.log = logging.getLogger('test')
+
+    def test_no_devices(self):
+        dev_map = common.empty_dev_map()
+        common.save_device_metadata(self.md_desc, dev_map, self.log)
+        self.assertXMLEqual(self.md_desc.to_xml(), self.EMPTY_XML)
+
+    def test_device_no_metadata(self):
+        dev_map = common.empty_dev_map()
+        dev_map[hwclass.SOUND].append(core.Sound(self.log))
+        common.save_device_metadata(self.md_desc, dev_map, self.log)
+        self.assertXMLEqual(self.md_desc.to_xml(), self.EMPTY_XML)
+
+    def test_devices_network(self):
+        nic_params = {
+            'device': hwclass.NIC,
+            'macAddr': '00:00:00:00:00:00',
+            'network': 'test',
+        }
+        expected_xml = """<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-vm:device mac_address="00:00:00:00:00:00">
+        <ovirt-vm:network>test</ovirt-vm:network>
+        <ovirt-vm:specParams />
+        <ovirt-vm:vm_custom />
+    </ovirt-vm:device>
+</ovirt-vm:vm>"""
+        dev_map = common.empty_dev_map()
+        dev_map[hwclass.NIC].append(network.Interface(self.log, **nic_params))
+        common.save_device_metadata(self.md_desc, dev_map, self.log)
+        self.assertXMLEqual(self.md_desc.to_xml(), expected_xml)
+
+    def test_devices_storage(self):
+        drive_params = {
+            'device': hwclass.DISK,
+            'iface': 'sata',
+            'index': 0,
+            # *ID are not validated by the Drive class
+            'domainID': 'domainID',
+            'imageID': 'imageID',
+            'poolID': 'poolID',
+            'volumeID': 'volumeID',
+        }
+        expected_xml = """<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-vm:device devtype="disk" name="sda">
+        <ovirt-vm:domainID>domainID</ovirt-vm:domainID>
+        <ovirt-vm:imageID>imageID</ovirt-vm:imageID>
+        <ovirt-vm:poolID>poolID</ovirt-vm:poolID>
+        <ovirt-vm:volumeID>volumeID</ovirt-vm:volumeID>
+        <ovirt-vm:specParams />
+        <ovirt-vm:vm_custom />
+    </ovirt-vm:device>
+</ovirt-vm:vm>"""
+        dev_map = common.empty_dev_map()
+        dev_map[hwclass.DISK].append(storage.Drive(self.log, **drive_params))
+        common.save_device_metadata(self.md_desc, dev_map, self.log)
+        self.assertXMLEqual(self.md_desc.to_xml(), expected_xml)
+
+    def test_overwrite_existing_data(self):
+        test_xml = u'''<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>68c1f97c-9336-4e7a-a8a9-b4f052ababf1</uuid>
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:device mac_address='00:1a:4a:16:20:30'>
+        <ovirt-vm:custom>
+  <ovirt-vm:vnic_id>da688238-8b79-4a5f-9f0e-0b207463ff1f</ovirt-vm:vnic_id>
+  <ovirt-vm:provider_type>EXTERNAL_NETWORK</ovirt-vm:provider_type>
+        </ovirt-vm:custom>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+        md_desc = metadata.Descriptor.from_xml(test_xml)
+        nic_params = {
+            'device': hwclass.NIC,
+            'macAddr': '00:1a:4a:16:20:30',
+            'network': 'test',
+        }
+        expected_xml = """<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-vm:device mac_address="00:1a:4a:16:20:30">
+        <ovirt-vm:network>test</ovirt-vm:network>
+        <ovirt-vm:specParams />
+        <ovirt-vm:vm_custom />
+    </ovirt-vm:device>
+</ovirt-vm:vm>"""
+        dev_map = common.empty_dev_map()
+        dev_map[hwclass.NIC].append(network.Interface(self.log, **nic_params))
+        common.save_device_metadata(md_desc, dev_map, self.log)
+        self.assertXMLEqual(md_desc.to_xml(), expected_xml)
+
+    # TODO: simulate read-create-write cycle with network or storage device
 
 
 BLANK_UUID = '00000000-0000-0000-0000-000000000000'

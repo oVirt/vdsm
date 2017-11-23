@@ -2379,6 +2379,8 @@ class Vm(object):
                         supervdsm.getProxy().setPortMirroring(network,
                                                               nic.name)
 
+            vmdevices.common.save_device_metadata(
+                self._md_desc, self._devices, self.log)
             self._sync_metadata()
 
         try:

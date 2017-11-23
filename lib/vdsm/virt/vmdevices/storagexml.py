@@ -24,6 +24,7 @@ from vdsm import utils
 
 from . import core
 from . import drivename
+from . import hwclass
 
 
 _PAYLOAD_PATH = 'PAYLOAD:'
@@ -90,6 +91,20 @@ def _update_meta_params(params, meta):
     for key in METADATA_NESTED_KEYS:
         if key in meta:
             params[key] = utils.picklecopy(meta[key])
+
+
+def get_metadata(drive):
+    attrs = {'devtype': hwclass.DISK, 'name': drive.name}
+    data = {}
+
+    for key in METADATA_KEYS:
+        value = getattr(drive, key, None)
+        if value is not None:
+            data[key] = value
+
+    core.get_nested_metadata(data, drive, METADATA_NESTED_KEYS)
+
+    return attrs, data
 
 
 def _update_source_params(params, disk_type, source):
