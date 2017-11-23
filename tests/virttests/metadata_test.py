@@ -247,6 +247,26 @@ class DescriptorTests(XMLTestCase):
         # empty descriptor
         self.md_desc = metadata.Descriptor()
 
+    @permutations([
+        # snippet_xml, expected
+        ("<ovirt-vm:vm><ovirt-vm:foo>bar</ovirt-vm:foo></ovirt-vm:vm>",
+         True),
+        ("""<ovirt-vm:vm>
+         <ovirt-vm:custom><ovirt-vm:foo>bar</ovirt-vm:foo></ovirt-vm:custom>
+         </ovirt-vm:vm>""", True),
+        ("", False),
+    ])
+    def test_bool(self, snippet_xml, expected):
+        test_xml = u"""<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>68c1f97c-9336-4e7a-a8a9-b4f052ababf1</uuid>
+  <metadata>
+    {snippet}
+  </metadata>
+</domain>""".format(snippet=snippet_xml)
+        md_desc = metadata.Descriptor.from_xml(test_xml)
+        self.assertEqual(bool(md_desc), expected)
+
     def test_from_xml(self):
         test_xml = u"""<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">

@@ -402,6 +402,17 @@ class Descriptor(object):
         self._custom = {}
         self._devices = []
 
+    def __bool__(self):
+        # custom properties may be missing, and that's fine.
+        # per-device metadata may be missing too: unusual,
+        # but still legitimate.
+        return (
+            bool(self._values) or bool(self._devices) or bool(self._custom)
+        )
+
+    def __nonzero__(self):  # TODO: drop when py2 is no longer needed
+        return self.__bool__()
+
     @classmethod
     def from_xml(
         cls,
