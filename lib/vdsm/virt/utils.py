@@ -31,6 +31,8 @@ import threading
 
 from vdsm.common.fileutils import rm_file
 from vdsm.common.time import monotonic_time
+from . import metadata
+
 
 log = logging.getLogger('virt.utils')
 
@@ -213,6 +215,21 @@ class DynamicBoundedSemaphore(object):
 
 def is_kvm(vm_custom):
     return 'containerType' not in vm_custom
+
+
+def has_xml_configuration(params):
+    if 'xml' in params:
+        # fresh startup from Engine >= 4.2
+        return True
+
+    if '_srcDomXML' in params:
+        # inbound migration (live or dehibernation).
+        # Could be either from VM created with Engine <= 4.1
+        # or from VM created with Engine >= 4.2
+        md_desc = metadata.Descriptor.from_xml(params['_srcDomXML'])
+        return bool(md_desc)
+
+    return False
 
 
 class TeardownError(Exception):

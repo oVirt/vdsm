@@ -59,6 +59,7 @@ from vdsm.common.compat import pickle
 from vdsm.common.define import doneCode, errCode
 from vdsm.config import config
 from vdsm.virt import sampling
+from vdsm.virt import utils as virtutils
 import vdsm.virt.jobs
 from vdsm.virt.jobs import seal
 from vdsm.virt.vmdevices import graphics
@@ -201,7 +202,7 @@ class VM(APIBase):
                     self.log.error("Error restoring VM parameters",
                                    exc_info=True)
 
-            if 'xml' not in vmParams:
+            if not virtutils.has_xml_configuration(vmParams):
                 self._validate_vm_params(vmParams)
                 self._fix_vm_params(vmParams)
             # else we don't need any other parameter, the XML data
