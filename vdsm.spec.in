@@ -105,7 +105,6 @@ Requires: iproute >= 3.10.0
 Requires: iproute-tc
 %endif
 Requires: PyYAML
-Requires: python-dateutil
 Requires: python-netaddr
 Requires: python-inotify
 Requires: python-ioprocess >= 0.16.1-1
@@ -238,14 +237,6 @@ Requires: %{name}-hook-vmfex-dev = %{version}-%{release}
 Requires: NetworkManager-config-server
 Requires: lldpad
 
-%if 0%{?rhel}
-Requires: python-decorator
-%endif
-
-%if 0%{?fedora}
-Requires: python2-decorator
-%endif
-
 Requires(post): /usr/sbin/saslpasswd2
 
 %if 0%{?fedora}
@@ -312,12 +303,32 @@ Requires:       python >= 2.6
 %description yajsonrpc
 A JSON RPC server and client implementation.
 
+%package common
+Summary:        common VDSM python libraries, required by all subsystems
+BuildArch:      noarch
+Requires:       systemd
+Requires:       glibc
+Requires:       python-dateutil
+Requires:       python-six >= 1.9.0
+Requires:       python-subprocess32
+%if 0%{?rhel}
+Requires:       python-decorator
+Requires:       libvirt-python >= 3.2.0-3.el7_4.1
+%endif
+%if 0%{?fedora}
+Requires:       python2-decorator
+Requires:       libvirt-python >= 3.7.0
+%endif
+
+%description common
+VDSM libraries that are imported by all subsystems
+
 %package python
 Summary:        VDSM python libraries
 Requires:       %{name}-api = %{version}-%{release}
 BuildArch:      noarch
 Requires:       python-ioprocess >= 0.16.1-1
-Requires:       python-subprocess32
+Requires:       %{name}-common = %{version}-%{release}
 
 %description python
 Shared libraries between the various VDSM packages.
@@ -339,6 +350,7 @@ fi
 Summary:        VDSM Test Suite
 BuildArch:      noarch
 Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}-common = %{version}-%{release}
 Requires:       dracut
 Requires:       python-nose python-ipaddress
 
@@ -1014,12 +1026,17 @@ exit 0
 %{_datadir}/%{vdsm_name}/autounattend/Win2012R2.xml
 %{_datadir}/%{vdsm_name}/autounattend/Win2016.xml
 
-%files python
-%{_mandir}/man1/vdsm-tool.1*
-%{_bindir}/vdsm-tool
+%files common
 %dir %{python_sitelib}/%{vdsm_name}
 %dir %{python_sitelib}/%{vdsm_name}/common
 %dir %{python_sitelib}/%{vdsm_name}/common/network
+%{python_sitelib}/%{vdsm_name}/__init__.py*
+%{python_sitelib}/%{vdsm_name}/common/*.py*
+%{python_sitelib}/%{vdsm_name}/common/network/*.py*
+
+%files python
+%{_mandir}/man1/vdsm-tool.1*
+%{_bindir}/vdsm-tool
 %dir %{python_sitelib}/%{vdsm_name}/gluster
 %dir %{python_sitelib}/%{vdsm_name}/host
 %dir %{python_sitelib}/%{vdsm_name}/network
@@ -1048,15 +1065,12 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/supervdsm_api
 %dir %{python_sitelib}/%{vdsm_name}/virt
 %dir %{python_sitelib}/%{vdsm_name}/virt/vmdevices
-%{python_sitelib}/%{vdsm_name}/__init__.py*
 %{python_sitelib}/%{vdsm_name}/alignmentScan.py*
 %{python_sitelib}/%{vdsm_name}/API.py*
 %{python_sitelib}/%{vdsm_name}/client.py*
 %{python_sitelib}/%{vdsm_name}/clientIF.py*
-%{python_sitelib}/%{vdsm_name}/common/*.py*
 %{python_sitelib}/%{vdsm_name}/hook/*.py*
 %{python_sitelib}/%{vdsm_name}/host/*.py*
-%{python_sitelib}/%{vdsm_name}/common/network/*.py*
 %{python_sitelib}/%{vdsm_name}/config.py*
 %{python_sitelib}/%{vdsm_name}/constants.py*
 %{python_sitelib}/%{vdsm_name}/containersconnection.py*
