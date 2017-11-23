@@ -35,6 +35,7 @@ from nose.plugins.skip import SkipTest
 from monkeypatch import Patch
 from testlib import VdsmTestCase, permutations, expandPermutations
 from testValidation import checkSudo, ValidateRunningAsRoot
+from testValidation import broken_on_ci
 
 from vdsm.commands import execCmd
 from vdsm.constants import EXT_MKFS_MSDOS
@@ -161,6 +162,7 @@ class MkimageTestCase(VdsmTestCase):
         mkimage._decodeFilesIntoDir(self.files, self.workdir)
         self._check_content()
 
+    @broken_on_ci("random failure mounting loop devices")
     @ValidateRunningAsRoot
     @permutations([['vfat'], ['auto']])
     def test_injectFilesToFs(self, fstype):
@@ -201,6 +203,7 @@ class MkimageTestCase(VdsmTestCase):
         finally:
             rm_file(floppy)
 
+    @broken_on_ci("random failure mounting loop devices")
     @ValidateRunningAsRoot
     @permutations([[None], ['FSLABEL']])
     def test_mkFloppyFs(self, label):
@@ -218,6 +221,7 @@ class MkimageTestCase(VdsmTestCase):
         finally:
             m.umount()
 
+    @broken_on_ci("random failure mounting loop devices")
     @ValidateRunningAsRoot
     @permutations([[None], ['FSLABEL']])
     def test_mkFloppyFs_overwrite(self, label):
@@ -240,6 +244,7 @@ class MkimageTestCase(VdsmTestCase):
         finally:
             m.umount()
 
+    @broken_on_ci("random failure mounting loop devices")
     @ValidateRunningAsRoot
     @permutations([[None], ['fslabel']])
     def test_mkIsoFs(self, label):
