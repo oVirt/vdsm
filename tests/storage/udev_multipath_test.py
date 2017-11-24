@@ -58,6 +58,16 @@ class Monitor(udev.MultipathMonitor):
         self.calls.append(event)
 
 
+class MonitorError(Exception):
+    """ Raised by bad monitors. """
+
+
+class BadMonitor(Monitor):
+
+    def handle(self, event):
+        raise MonitorError("No event for you!")
+
+
 def fake_block_device_name(dev):
     return "sda"
 
@@ -199,25 +209,20 @@ def test_monitor_already_registered():
 
 def test_monitor_exception():
 
-    class BadMonitor(Monitor):
-        def handle(self, event):
-            raise RuntimeError("bad monitor")
+    def check(*monitors):
+        mp_listener = udev.MultipathListener()
+        for m in monitors:
+            mp_listener.register(m)
+        mp_listener._callback(DEVICE)
 
     bad_mon = BadMonitor()
-
-    mp_listener = udev.MultipathListener()
     good_mon = Monitor()
-    mp_listener.register(bad_mon)
-    mp_listener.register(good_mon)
-    mp_listener._callback(DEVICE)
+    check(good_mon, bad_mon)
     assert good_mon.calls == [EVENT]
 
-    # Call again, after registering in a different order
-    mp_listener = udev.MultipathListener()
+    bad_mon = BadMonitor()
     good_mon = Monitor()
-    mp_listener.register(good_mon)
-    mp_listener.register(bad_mon)
-    mp_listener._callback(DEVICE)
+    check(bad_mon, good_mon)
     assert good_mon.calls == [EVENT]
 
 
