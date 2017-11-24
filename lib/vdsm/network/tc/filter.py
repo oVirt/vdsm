@@ -116,6 +116,8 @@ def _parse_u32(tokens):
             data['key_bkt'] = _parser.parse_int(tokens, 16)
         elif token == '???':
             continue
+        elif token == 'not_in_hw':
+            continue
         elif token == _parser.LINE_DELIMITER:  # line break
             continue
         elif token == 'match':
