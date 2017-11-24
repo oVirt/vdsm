@@ -28,6 +28,7 @@ import threading
 import pytest
 
 from vdsm.storage import udev
+from vdsm.utils import running
 
 import loopback
 
@@ -297,8 +298,7 @@ def test_loopback_event(tmpdir):
         received.set()
 
     mp_listener._callback = callback
-    mp_listener.start()
-    try:
+    with running(mp_listener):
         # Create a backing file
         filename = str(tmpdir.join("file"))
         with open(filename, "wb") as f:
@@ -312,5 +312,3 @@ def test_loopback_event(tmpdir):
 
             # We expect an event about our loop device
             assert devices[0].get("DEVNAME") == loop.path
-    finally:
-        mp_listener.stop()
