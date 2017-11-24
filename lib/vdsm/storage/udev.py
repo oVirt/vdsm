@@ -55,18 +55,34 @@ def create_observer(monitor, callback, name):
         return pyudev.MonitorObserver(monitor, event_handler, name=name)
 
 
+class MultipathMonitor(object):
+    """
+    Handle events received by the MultipathListener.
+    """
+
+    def handle(self, event):
+        """
+        Handle a multipath event. Must be implemented by objects registered
+        with MultipathListener.
+
+        Arguments:
+            A MultipathEvent namedtuple.
+        """
+        raise NotImplementedError
+
+
 class MultipathListener(object):
     log = logging.getLogger("storage.udev")
 
     def __init__(self):
         self._lock = threading.Lock()
-        self._callbacks = set()
+        self._monitors = set()
         self._observer = None
 
     def start(self):
         """
         Start listening to udev events asynchronously in an observer thread.
-        Received events will be forwarded to registered callbacks.
+        Received events will be forwarded to registered monitors.
         Once the MultipathListener is started, it is safe to check the current
         system state, as events won't be lost.
         """
@@ -96,34 +112,35 @@ class MultipathListener(object):
             self._observer.stop()
             self._observer = None
 
-    def register(self, callback):
+    def register(self, monitor):
         """
-        The callback will be invoked with a MultipathEvent instance
-        when receiving an event.
+        Register a monitor with the listener. The monitor.handle() method will
+        be invoked with a MultipathEvent instance when receiving an event from
+        udev.
 
-        The callback must never block, blocking will delay receiving
-        multipath events for the entire system.
-        If the callback need to block, it should add the events to a queue
-        and do the blocking operation in another thread.
+        The monitor.handle() method must never block, blocking will delay
+        receiving multipath events for the entire system.  If the monitor need
+        to block, it should add the events to a queue and do the blocking
+        operation in another thread.
 
-        The caller is responsible to remove the callback when it is not needed.
+        The caller is responsible to remove the monitor when it is not needed.
 
         Arguments:
-            callback: A callable that will be invoked with a MultipathEvent
+            monitor: An object implementing the MultipathMonitor interface.
 
         """
-        self.log.info("Registering multipath event callback %s", callback)
+        self.log.info("Registering multipath event monitor %s", monitor)
         with self._lock:
-            if callback in self._callbacks:
-                raise AssertionError("Callback already registered")
-            self._callbacks.add(callback)
+            if monitor in self._monitors:
+                raise AssertionError("Monitor %s already registered" % monitor)
+            self._monitors.add(monitor)
 
-    def unregister(self, callback):
-        self.log.info("Unregistering multipath event callback %s", callback)
+    def unregister(self, monitor):
+        self.log.info("Unregistering multipath event monitor %s", monitor)
         with self._lock:
-            if callback not in self._callbacks:
-                raise AssertionError("Callback not registered")
-            self._callbacks.remove(callback)
+            if monitor not in self._monitors:
+                raise AssertionError("Monitor %s not registered" % monitor)
+            self._monitors.remove(monitor)
 
     def _block_device_name(self, dev):
         """
@@ -143,7 +160,7 @@ class MultipathListener(object):
             return
 
         if event:
-            self._notify_observers(event)
+            self._notify_monitors(event)
 
     def _detect_event(self, device):
         mpath_uuid = device.get("DM_UUID", "")
@@ -173,12 +190,12 @@ class MultipathListener(object):
         self.log.debug("Sending %s", event)
         return event
 
-    def _notify_observers(self, event):
+    def _notify_monitors(self, event):
         with self._lock:
-            callbacks = list(self._callbacks)
+            monitors = list(self._monitors)
 
-        for cb in callbacks:
+        for m in monitors:
             try:
-                cb(event)
+                m.handle(event)
             except Exception as e:
-                self.log.exception("Unhandled exception in %s: %s", cb, e)
+                self.log.exception("Unhandled exception in %s: %s", m, e)

@@ -46,11 +46,15 @@ DEVICE = FakeDevice(DM_UUID="mpath-fake-uuid-3",
                     action="remove")
 
 
-class Callback(object):
+class Monitor(udev.MultipathMonitor):
+    """
+    A testing monitor, keeping received events.
+    """
+
     def __init__(self):
         self.calls = []
 
-    def __call__(self, event):
+    def handle(self, event):
         self.calls.append(event)
 
 
@@ -140,11 +144,11 @@ def test_report_events(device, expected):
     mp_listener = udev.MultipathListener()
     # Avoid accessing non-existing devices
     mp_listener._block_device_name = fake_block_device_name
-    cb = Callback()
-    mp_listener.register(cb)
+    mon = Monitor()
+    mp_listener.register(mon)
     mp_listener._callback(device)
 
-    assert cb.calls == [expected]
+    assert mon.calls == [expected]
 
 
 @pytest.mark.parametrize("device", [
@@ -162,85 +166,90 @@ def test_report_events(device, expected):
 ])
 def test_filter_event(device):
     mp_listener = udev.MultipathListener()
-    cb = Callback()
-    mp_listener.register(cb)
+    mon = Monitor()
+    mp_listener.register(mon)
     mp_listener._callback(device)
 
-    assert cb.calls == []
+    assert mon.calls == []
 
 
-def test_cb_unregistered():
+def test_monitor_unregistered():
     mp_listener = udev.MultipathListener()
-    cb = Callback()
-    mp_listener.register(cb)
+    mon = Monitor()
+    mp_listener.register(mon)
     mp_listener._callback(DEVICE)
-    assert cb.calls == [EVENT]
-    mp_listener.unregister(cb)
+    assert mon.calls == [EVENT]
+    mp_listener.unregister(mon)
     mp_listener._callback(DEVICE)
-    assert cb.calls == [EVENT]
+    assert mon.calls == [EVENT]
 
 
-def test_cb_not_registered():
+def test_monitor_not_registered():
     mp_listener = udev.MultipathListener()
     with pytest.raises(AssertionError):
         mp_listener.unregister(None)
 
 
-def test_cb_already_registered():
+def test_monitor_already_registered():
     mp_listener = udev.MultipathListener()
     mp_listener.register(None)
     with pytest.raises(AssertionError):
         mp_listener.register(None)
 
 
-def test_cb_exception():
+def test_monitor_exception():
+
+    class BadMonitor(Monitor):
+        def handle(self, event):
+            raise RuntimeError("bad monitor")
+
+    bad_mon = BadMonitor()
+
     mp_listener = udev.MultipathListener()
-
-    def bad_cb(event):
-        raise RuntimeError("bad callback")
-
-    mp_listener.register(bad_cb)
-    good_cb = Callback()
-    mp_listener.register(good_cb)
+    good_mon = Monitor()
+    mp_listener.register(bad_mon)
+    mp_listener.register(good_mon)
     mp_listener._callback(DEVICE)
-    assert good_cb.calls == [EVENT]
+    assert good_mon.calls == [EVENT]
 
     # Call again, after registering in a different order
     mp_listener = udev.MultipathListener()
-    mp_listener.register(bad_cb)
-    cb = Callback()
-    mp_listener.register(cb)
+    good_mon = Monitor()
+    mp_listener.register(good_mon)
+    mp_listener.register(bad_mon)
     mp_listener._callback(DEVICE)
-    assert cb.calls == [EVENT]
+    assert good_mon.calls == [EVENT]
 
 
-def test_add_cb2_from_cb1():
+def test_register_from_callback():
     mp_listener = udev.MultipathListener()
-    cb2 = Callback()
+    mon2 = Monitor()
 
-    def cb1(device):
-        mp_listener.register(cb2)
+    class Adder(Monitor):
+        def handle(self, event):
+            mp_listener.register(mon2)
 
-    mp_listener.register(cb1)
+    mon1 = Adder()
+    mp_listener.register(mon1)
     mp_listener._callback(DEVICE)
     mp_listener._callback(DEVICE)
-    assert cb2.calls == [EVENT]
+    assert mon2.calls == [EVENT]
 
 
-def test_remove_cb1_from_cb2():
+def test_unregister_from_callback():
     mp_listener = udev.MultipathListener()
 
-    calls = []
+    class Remover(Monitor):
+        def handle(self, event):
+            self.calls.append(event)
+            mp_listener.unregister(self)
 
-    def cb(e):
-        calls.append(e)
-        mp_listener.unregister(cb)
-
-    mp_listener.register(cb)
+    mon = Remover()
+    mp_listener.register(mon)
     mp_listener._callback(DEVICE)
     mp_listener._callback(DEVICE)
 
-    assert calls == [EVENT]
+    assert mon.calls == [EVENT]
 
 
 def test_failing_event():
@@ -251,12 +260,12 @@ def test_failing_event():
         DM_PATH="sda",
         DM_NR_VALID_PATHS="sfsdfs")
     mp_listener = udev.MultipathListener()
-    cb = Callback()
-    mp_listener.register(cb)
+    mon = Monitor()
+    mp_listener.register(mon)
     mp_listener._callback(fd)
 
     mp_listener._callback(DEVICE)
-    assert cb.calls == [EVENT]
+    assert mon.calls == [EVENT]
 
 
 def test_block_device_name():
