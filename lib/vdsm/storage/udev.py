@@ -57,18 +57,38 @@ def create_observer(monitor, callback, name):
 
 class MultipathMonitor(object):
     """
-    Handle events received by the MultipathListener.
+    Interface for multipath monitors.
     """
+
+    def start(self):
+        """
+        Called when starting multipath listener, after udev events were
+        registered with the kernel, but the listener is not reading the events
+        yet.
+
+        When all registered monitors were started, the listener starts to
+        receive udev events, and the montior handle() method may be called.
+
+        Should be implemented by a monitor if it needs to check the current
+        system state before receiving events.
+        """
 
     def handle(self, event):
         """
-        Handle a multipath event. Must be implemented by objects registered
-        with MultipathListener.
+        Must be implemented by objects registered with MultipathListener.
 
         Arguments:
             A MultipathEvent namedtuple.
         """
         raise NotImplementedError
+
+    def stop(self):
+        """
+        Called when the listener was stopped.
+
+        May be implemented by a montior if it wants to do some cleanup when
+        stopping monitoring.
+        """
 
 
 class MultipathListener(object):
@@ -81,15 +101,22 @@ class MultipathListener(object):
 
     def start(self):
         """
-        Start listening to udev events asynchronously in an observer thread.
-        Received events will be forwarded to registered monitors.
-        Once the MultipathListener is started, it is safe to check the current
-        system state, as events won't be lost.
+        Start listening for events and start registered monitors.
+
+        Registered monitors are started after registring events with the
+        kernel, but before strarting the observer thread.
+
+        Listening is done in a new observer thread. Event received the observer
+        thread are forwarded to registerd monitors in the observer thread.
+
+        Raise:
+            Exception if a registered monitor failed to start.
         """
         self.log.info("Starting multipath event listener")
         with self._lock:
             if self._observer is not None:
                 raise AssertionError("Listener already started")
+
             # The monitor is created here so that when the observer is stopped,
             # it will remove the last reference to the monitor,
             # closing the udev connection.
@@ -99,18 +126,32 @@ class MultipathListener(object):
             self._observer = create_observer(monitor,
                                              self._callback,
                                              name="mpathlistener")
-            # The monitor is started in order to make sure
-            # that no events are lost
+
+            # NOTE: order is important!
+
+            # Start the udev monitor, registreing events with the kernel, but
+            # do not start the observer yet.
             monitor.start()
+
+            # Start the registered monitors. At this point the monitors can
+            # check the initial state of the system, without lossing events.
+            self._start_monitors(self._monitors)
+
+            # Once all the monitors started, we can start receiving events from
+            # the kernel.
             self._observer.start()
 
     def stop(self):
+        """
+        Stop listening for events and stop registerd monitors.
+        """
         self.log.info("Stopping multipath event listener")
         with self._lock:
             if self._observer is None:
                 return
             self._observer.stop()
             self._observer = None
+            self._stop_monitors(self._monitors)
 
     def register(self, monitor):
         """
@@ -199,3 +240,22 @@ class MultipathListener(object):
                 m.handle(event)
             except Exception as e:
                 self.log.exception("Unhandled exception in %s: %s", m, e)
+
+    def _start_monitors(self, monitors):
+        started = []
+        try:
+            for m in monitors:
+                self.log.debug("Starting monitor %s", m)
+                m.start()
+                started.append(m)
+        except:
+            self._stop_monitors(started)
+            raise
+
+    def _stop_monitors(self, monitors):
+        for m in monitors:
+            self.log.debug("Stopping monitor %s", m)
+            try:
+                m.stop()
+            except Exception:
+                self.log.exception("Unhandled exception stopping %s", m)

@@ -50,23 +50,52 @@ DEVICE = FakeDevice(DM_UUID="mpath-fake-uuid-3",
 class Monitor(udev.MultipathMonitor):
     """
     A testing monitor, keeping received events.
+
+    This monitor is very strict - can be started and stopped only once, for
+    verifing correct monitor lifecycle managment. Real monitor may support
+    starting and stopping multiple times.
     """
+
+    CREATED = "created"
+    STARTED = "started"
+    STOPPED = "stopped"
 
     def __init__(self):
         self.calls = []
+        self.state = self.CREATED
+
+    def start(self):
+        assert self.state == self.CREATED
+        self.state = self.STARTED
 
     def handle(self, event):
         self.calls.append(event)
+
+    def stop(self):
+        assert self.state == self.STARTED
+        self.state = self.STOPPED
 
 
 class MonitorError(Exception):
     """ Raised by bad monitors. """
 
 
+class UnstartableMonitor(Monitor):
+
+    def start(self):
+        raise MonitorError("No start for you!")
+
+
 class BadMonitor(Monitor):
 
     def handle(self, event):
         raise MonitorError("No event for you!")
+
+
+class UnstopableMonitor(Monitor):
+
+    def stop(self):
+        raise MonitorError("No stop for you!")
 
 
 def fake_block_device_name(dev):
@@ -108,6 +137,66 @@ def test_stop_twice():
         mp_listener.stop()
     except Exception as e:
         pytest.fail("Unexpected Exception: %s", e)
+
+
+def test_monitor_lifecycle():
+    mp_listener = udev.MultipathListener()
+    monitors = [Monitor(), Monitor()]
+    for m in monitors:
+        mp_listener.register(m)
+
+    # Starting the listener starts the monitors.
+    with running(mp_listener):
+        for m in monitors:
+            assert m.state == Monitor.STARTED
+
+    # Stopping the listener stops the monitors.
+    for m in monitors:
+        assert m.state == Monitor.STOPPED
+
+
+def test_monitor_lifecycle_start_error():
+
+    def check(*monitors):
+        mp_listener = udev.MultipathListener()
+        for m in monitors:
+            mp_listener.register(m)
+        with pytest.raises(MonitorError):
+            mp_listener.start()
+
+    bad_mon = UnstartableMonitor()
+    good_mon = Monitor()
+    check(good_mon, bad_mon)
+    assert bad_mon.state == Monitor.CREATED
+    assert good_mon.state in (Monitor.CREATED, Monitor.STOPPED)
+
+    bad_mon = UnstartableMonitor()
+    good_mon = Monitor()
+    check(bad_mon, good_mon)
+    assert bad_mon.state == Monitor.CREATED
+    assert good_mon.state in (Monitor.CREATED, Monitor.STOPPED)
+
+
+def test_monitor_lifecycle_stop_error():
+
+    def check(*monitors):
+        mp_listener = udev.MultipathListener()
+        for m in monitors:
+            mp_listener.register(m)
+        with running(mp_listener):
+            pass
+
+    bad_mon = UnstopableMonitor()
+    good_mon = Monitor()
+    check(good_mon, bad_mon)
+    assert bad_mon.state == Monitor.STARTED
+    assert good_mon.state == Monitor.STOPPED
+
+    bad_mon = UnstopableMonitor()
+    good_mon = Monitor()
+    check(bad_mon, good_mon)
+    assert bad_mon.state == Monitor.STARTED
+    assert good_mon.state == Monitor.STOPPED
 
 
 @pytest.mark.parametrize("device,expected", [
