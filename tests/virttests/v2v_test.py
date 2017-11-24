@@ -534,7 +534,7 @@ class v2vTests(TestCaseBase):
         self.assertEqual('1.1', cmd._base_command[i + 1])
 
 
-SHORT_SLEEP = 1
+SHORT_SLEEP = 0.3
 
 
 @expandPermutations
