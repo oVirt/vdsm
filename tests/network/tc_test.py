@@ -576,7 +576,7 @@ class TestConfigureOutbound(TestCaseBase):
         self.assertTrue(all(f['protocol'] == 'all' for f in tagged_filters))
         self._assert_parent_handle(tagged_filters + untagged_filters,
                                    qos._ROOT_QDISC_HANDLE)
-        self.assertEqual(len(untagged_filters), 1)
+        self.assertEqual(len(untagged_filters), 1, msg=untagged_filters)
         self.assertEqual(untagged_filters[0]['protocol'], 'all')
 
     def _assert_upper_limit(self, default_class):
