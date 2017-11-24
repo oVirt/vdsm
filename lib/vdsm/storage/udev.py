@@ -164,17 +164,45 @@ class MultipathListener(object):
         to block, it should add the events to a queue and do the blocking
         operation in another thread.
 
-        The caller is responsible to remove the monitor when it is not needed.
+        The caller is responsible to unregister the monitor when it is not
+        needed.
+
+        If the listener was arlready started, the monitor will be started at
+        this point. The monitor must be able to handle events while it is
+        starting.
 
         Arguments:
             monitor: An object implementing the MultipathMonitor interface.
 
+        Raises:
+            Exception if the listener has already started, and the monitor
+                failed to start.
         """
         self.log.info("Registering multipath event monitor %s", monitor)
+
+        # NOTE: order is important!
+
+        # First register the monitor, so it will not loose any event while we
+        # start it.
         with self._lock:
             if monitor in self._monitors:
                 raise AssertionError("Monitor %s already registered" % monitor)
+
             self._monitors.add(monitor)
+
+            # Not started yet, we are done.
+            if self._observer is None:
+                return
+
+        # Now start the monitor for checking the initial system state. The
+        # monitor must handle events while it is starting.
+        self.log.debug("Starting monitor %s", monitor)
+        try:
+            monitor.start()
+        except:
+            with self._lock:
+                self._monitors.remove(monitor)
+            raise
 
     def unregister(self, monitor):
         self.log.info("Unregistering multipath event monitor %s", monitor)
@@ -182,6 +210,7 @@ class MultipathListener(object):
             if monitor not in self._monitors:
                 raise AssertionError("Monitor %s not registered" % monitor)
             self._monitors.remove(monitor)
+            self._stop_monitors([monitor])
 
     def _block_device_name(self, dev):
         """

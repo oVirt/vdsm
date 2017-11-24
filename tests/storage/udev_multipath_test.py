@@ -199,6 +199,47 @@ def test_monitor_lifecycle_stop_error():
     assert good_mon.state == Monitor.STOPPED
 
 
+def test_hotplug_monitor():
+    # Registering a monitor after the listenr was started will start the
+    # monitor after registering it. The monitor must be able to handle events
+    # while the monitor is starting.
+    mp_listener = udev.MultipathListener()
+    with running(mp_listener):
+        mon = Monitor()
+        mp_listener.register(mon)
+        assert mon.state == Monitor.STARTED
+
+        mp_listener._callback(DEVICE)
+        assert mon.calls == [EVENT]
+
+
+def test_hotplug_monitor_error():
+
+    mp_listener = udev.MultipathListener()
+    with running(mp_listener):
+        mon = UnstartableMonitor()
+        # Monitor start() error should raised
+        with pytest.raises(MonitorError):
+            mp_listener.register(mon)
+
+        assert mon.state == Monitor.CREATED
+
+        # Monitor should not be registered.
+        mp_listener._callback(DEVICE)
+        assert mon.calls == []
+
+
+def test_hotunplug_monitor():
+    # When unregistring a monitor while the listener is running, we should stop
+    # it, since the listener started it.
+    mp_listener = udev.MultipathListener()
+    with running(mp_listener):
+        mon = Monitor()
+        mp_listener.register(mon)
+        mp_listener.unregister(mon)
+        assert mon.state == Monitor.STOPPED
+
+
 @pytest.mark.parametrize("device,expected", [
     (
         # Multipath path is restored
