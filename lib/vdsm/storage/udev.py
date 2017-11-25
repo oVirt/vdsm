@@ -230,8 +230,8 @@ class MultipathListener(object):
             return
 
         if event:
-            self.log.debug("Sending %s", event)
-            self._notify_monitors(event)
+            self.log.debug("Forwarding %s", event)
+            self._forward_event(event)
 
     def _detect_event(self, device):
         mpath_uuid = device.get("DM_UUID", "")
@@ -259,7 +259,7 @@ class MultipathListener(object):
 
         return MultipathEvent(event_type, mpath_uuid, path, valid_paths)
 
-    def _notify_monitors(self, event):
+    def _forward_event(self, event):
         with self._lock:
             monitors = list(self._monitors)
 
