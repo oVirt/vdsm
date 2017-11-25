@@ -57,6 +57,11 @@ EXT_WHOAMI = "whoami"
 
 SUDO_USER = "root"
 
+# Time to wait for a trivial operation on another thread. This can be low as
+# 0.005 second on an idle laptop. Set to higher value so it will not fail too
+# quickly on an overloaded nested CI slave.
+TIMEOUT = 0.25
+
 
 class TestEvent(VdsmTestCase):
 
@@ -70,7 +75,7 @@ class TestEvent(VdsmTestCase):
         event = misc.Event("EndOfTheWorld")
         event.register(callback)
         event.emit()
-        ev.wait(5)
+        ev.wait(TIMEOUT)
         self.assertTrue(ev.isSet())
 
     def testEmitStale(self):
@@ -80,7 +85,7 @@ class TestEvent(VdsmTestCase):
         event.register(callback)
         del callback
         event.emit()
-        ev.wait(5)
+        ev.wait(TIMEOUT)
         self.assertFalse(ev.isSet())
 
     def testUnregister(self):
@@ -90,7 +95,7 @@ class TestEvent(VdsmTestCase):
         event.register(callback)
         event.unregister(callback)
         event.emit()
-        ev.wait(5)
+        ev.wait(TIMEOUT)
         self.assertFalse(ev.isSet())
 
     def testOneShot(self):
@@ -103,11 +108,11 @@ class TestEvent(VdsmTestCase):
         event = misc.Event("EndOfTheWorld")
         event.register(callback, oneshot=True)
         event.emit()
-        ev.wait(5)
+        ev.wait(TIMEOUT)
         self.assertTrue(ev.isSet())
         ev.clear()
         event.emit()
-        ev.wait(5)
+        ev.wait(TIMEOUT)
         self.assertFalse(ev.isSet())
 
     def testEmitCallbackException(self):
@@ -123,7 +128,7 @@ class TestEvent(VdsmTestCase):
         event.register(callback1)
         event.register(callback2)
         event.emit()
-        ev.wait(5)
+        ev.wait(TIMEOUT)
         self.assertTrue(ev.isSet())
 
     def testInstanceMethod(self):
@@ -132,7 +137,7 @@ class TestEvent(VdsmTestCase):
         receiver = Receiver(event, ev)
         print(event._registrar)
         event.emit()
-        ev.wait(5)
+        ev.wait(TIMEOUT)
         self.assertTrue(ev.isSet())
         receiver  # Makes pyflakes happy
 
@@ -144,7 +149,7 @@ class TestEvent(VdsmTestCase):
         del receiver
         print(event._registrar)
         event.emit()
-        ev.wait(1)
+        ev.wait(TIMEOUT)
         self.assertFalse(ev.isSet())
 
 
@@ -163,7 +168,7 @@ class TestITMap(VdsmTestCase):
 
     def testMoreArgsThanThreads(self):
         def dummy(arg):
-            time.sleep(0.5)
+            time.sleep(TIMEOUT)
             return arg
         data = frozenset([1, 2, 3, 4])
         currentTime = time.time()
@@ -171,15 +176,15 @@ class TestITMap(VdsmTestCase):
         # need to wait for 1 thread to finish before processing all input.
         ret = frozenset(misc.itmap(dummy, data, 3))
         afterTime = time.time()
-        # the time should take at least 0.5sec to wait for 1 of the first 3 to
-        # finish and another 0.5sec for the last operation,
-        # not more than 2 seconds (and I'm large here..)
-        self.assertFalse(afterTime - currentTime > 2,
+        # the time should take at least TIMEOUT seconds to wait for 1 of the
+        # first 3 to finish and another TIMEOUT seconds for the last operation,
+        # not more than 4 TIMEOUTs (and I'm large here..)
+        self.assertFalse(afterTime - currentTime > TIMEOUT * 4,
                          msg=("Operation took too long (more than 2 second). "
                               "starts: %s ends: %s") %
                          (currentTime, afterTime))
         # Verify the operation waits at least for 1 thread to finish
-        self.assertFalse(afterTime - currentTime < 1,
+        self.assertFalse(afterTime - currentTime < TIMEOUT * 2,
                          msg="Operation was too fast, not all threads were "
                              "initiated as desired (with 1 thread delay)")
         self.assertEqual(ret, data)
