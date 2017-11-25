@@ -63,17 +63,15 @@ class TestOopWrapper(VdsmTestCase):
         self.assertNotEquals(pids[0], pids[1])
 
     def testAmountOfInstancesPerPoolName(self):
-        with MonkeyPatchScope([(oop, 'IOPROC_IDLE_TIME', 5)]):
+        with MonkeyPatchScope([(oop, 'IOPROC_IDLE_TIME', 0.5)]):
             poolA = "A"
             poolB = "B"
             wrapper = ref(oop.getProcessPool(poolA))
             ioproc = ref(oop.getProcessPool(poolA)._ioproc)
             oop.getProcessPool(poolA)
-            time.sleep(oop.IOPROC_IDLE_TIME + 1)
+            time.sleep(oop.IOPROC_IDLE_TIME + 0.5)
             oop.getProcessPool(poolB)
             self.assertEqual(wrapper(), None)
-            gc.collect()
-            time.sleep(1)
             gc.collect()
             try:
                 self.assertEqual(ioproc(), None)
