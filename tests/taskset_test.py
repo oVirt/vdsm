@@ -52,6 +52,7 @@ class AffinityTests(VdsmTestCase):
         self.stop.set()
         if self.proc is not None:
             self.proc.terminate()
+            self.proc.join()
 
     def test_get(self):
 
