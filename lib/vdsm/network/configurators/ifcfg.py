@@ -51,6 +51,7 @@ from vdsm.network.link import iface as link_iface
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NAME_TO_NUMBER
+from vdsm.network.link.bond.sysfs_options import numerize_bond_mode
 from vdsm.network.link.setup import parse_bond_options
 from vdsm.network.link.setup import remove_custom_bond_option
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
@@ -378,9 +379,11 @@ class Ifcfg(Configurator):
         Therefore, following the VLAN ifup command, its mac address is compared
         with the first bond slave. In case they differ, the vlan device is
         recreated.
+        Bond mode 5 & 6 is excluded from the mac sync check.
         """
         bond = vlan.device
-        if not bond.slaves:
+        bond_mode = Ifcfg._get_bond_mode(bond)
+        if not bond.slaves or bond_mode == '5' or bond_mode == '6':
             _ifup(vlan)
             return
 
@@ -404,6 +407,14 @@ class Ifcfg(Configurator):
             'While adding vlan {} over bond {}, '
             'the bond hwaddr was not in sync '
             'whith its slaves.'.format(vlan.name, vlan.device.name))
+
+    @staticmethod
+    def _get_bond_mode(bond):
+        for option in bond.options.split():
+            key, value = option.split('=', 1)
+            if key == 'mode':
+                return numerize_bond_mode(value)
+        return '0'
 
 
 class ConfigWriter(object):
