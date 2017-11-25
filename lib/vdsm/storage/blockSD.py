@@ -25,7 +25,6 @@ import logging
 import signal
 import errno
 import re
-from StringIO import StringIO
 import time
 import functools
 import sys
@@ -324,7 +323,9 @@ class LvMetadataRW(object):
         lvm.activateLVs(self._vgName, [self._lvName])
 
         # Write `metadata' to metadata volume
-        metaStr = StringIO()
+        # TODO StringIO is broken on Python 3, we should properly encode to
+        # bytes.
+        metaStr = six.StringIO()
 
         for line in lines:
             metaStr.write(line)
