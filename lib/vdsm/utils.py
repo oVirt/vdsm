@@ -529,7 +529,7 @@ def unique(iterable):
     Return unique items from iterable of hashable objects, keeping the
     original order.
     """
-    return OrderedDict.fromkeys(iterable).keys()
+    return list(OrderedDict.fromkeys(iterable).keys())
 
 
 class InvalidatedWeakRef(Exception):
