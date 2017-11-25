@@ -62,6 +62,9 @@ SUDO_USER = "root"
 # quickly on an overloaded nested CI slave.
 TIMEOUT = 0.25
 
+# When using wait() on an async command, minimal value seems to be 1.0 seconds.
+EXECCMD_TIMEOUT = 1.0
+
 
 class TestEvent(VdsmTestCase):
 
@@ -291,23 +294,21 @@ class TestAsyncProc(VdsmTestCase):
         self.assertEqual(p.stdout.read(len(data)), data)
 
     def testWaitTimeout(self):
-        ttl = 2
-        p = commands.execCmd([EXT_SLEEP, str(ttl + 10)], sync=False)
+        p = commands.execCmd([EXT_SLEEP, str(EXECCMD_TIMEOUT + 1)], sync=False)
         startTime = time.time()
-        p.wait(ttl)
+        p.wait(TIMEOUT)
         duration = time.time() - startTime
-        self.assertTrue(duration < (ttl + 1))
-        self.assertTrue(duration > (ttl))
+        self.assertLess(duration, EXECCMD_TIMEOUT + TIMEOUT)
+        self.assertGreater(duration, EXECCMD_TIMEOUT)
         p.kill()
 
     def testWaitCond(self):
-        ttl = 2
-        p = commands.execCmd([EXT_SLEEP, str(ttl + 10)], sync=False)
+        p = commands.execCmd([EXT_SLEEP, str(EXECCMD_TIMEOUT + 1)], sync=False)
         startTime = time.time()
-        p.wait(cond=lambda: time.time() - startTime > ttl)
+        p.wait(cond=lambda: time.time() - startTime > TIMEOUT)
         duration = time.time() - startTime
-        self.assertTrue(duration < (ttl + 2))
-        self.assertTrue(duration > (ttl))
+        self.assertLess(duration, EXECCMD_TIMEOUT + TIMEOUT)
+        self.assertGreater(duration, EXECCMD_TIMEOUT)
         p.kill()
 
     def testCommunicate(self):
