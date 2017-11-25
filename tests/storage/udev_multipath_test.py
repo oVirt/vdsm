@@ -103,50 +103,50 @@ def fake_block_device_name(dev):
 
 
 def test_start():
-    mp_listener = udev.MultipathListener()
+    listener = udev.MultipathListener()
     try:
-        mp_listener.start()
+        listener.start()
     except Exception as e:
         pytest.fail("Unexpected Exception: %s", e)
     else:
-        mp_listener.stop()
+        listener.stop()
 
 
 def test_start_twice():
-    mp_listener = udev.MultipathListener()
-    mp_listener.start()
+    listener = udev.MultipathListener()
+    listener.start()
     with pytest.raises(AssertionError):
-        mp_listener.start()
-    mp_listener.stop()
+        listener.start()
+    listener.stop()
 
 
 def test_stop():
-    mp_listener = udev.MultipathListener()
-    mp_listener.start()
+    listener = udev.MultipathListener()
+    listener.start()
     try:
-        mp_listener.stop()
+        listener.stop()
     except Exception as e:
         pytest.fail("Unexpected Exception: %s", e)
 
 
 def test_stop_twice():
-    mp_listener = udev.MultipathListener()
-    mp_listener.start()
-    mp_listener.stop()
+    listener = udev.MultipathListener()
+    listener.start()
+    listener.stop()
     try:
-        mp_listener.stop()
+        listener.stop()
     except Exception as e:
         pytest.fail("Unexpected Exception: %s", e)
 
 
 def test_monitor_lifecycle():
-    mp_listener = udev.MultipathListener()
+    listener = udev.MultipathListener()
     monitors = [Monitor(), Monitor()]
     for m in monitors:
-        mp_listener.register(m)
+        listener.register(m)
 
     # Starting the listener starts the monitors.
-    with running(mp_listener):
+    with running(listener):
         for m in monitors:
             assert m.state == Monitor.STARTED
 
@@ -158,11 +158,11 @@ def test_monitor_lifecycle():
 def test_monitor_lifecycle_start_error():
 
     def check(*monitors):
-        mp_listener = udev.MultipathListener()
+        listener = udev.MultipathListener()
         for m in monitors:
-            mp_listener.register(m)
+            listener.register(m)
         with pytest.raises(MonitorError):
-            mp_listener.start()
+            listener.start()
 
     bad_mon = UnstartableMonitor()
     good_mon = Monitor()
@@ -180,10 +180,10 @@ def test_monitor_lifecycle_start_error():
 def test_monitor_lifecycle_stop_error():
 
     def check(*monitors):
-        mp_listener = udev.MultipathListener()
+        listener = udev.MultipathListener()
         for m in monitors:
-            mp_listener.register(m)
-        with running(mp_listener):
+            listener.register(m)
+        with running(listener):
             pass
 
     bad_mon = UnstopableMonitor()
@@ -203,40 +203,40 @@ def test_hotplug_monitor():
     # Registering a monitor after the listenr was started will start the
     # monitor after registering it. The monitor must be able to handle events
     # while the monitor is starting.
-    mp_listener = udev.MultipathListener()
-    with running(mp_listener):
+    listener = udev.MultipathListener()
+    with running(listener):
         mon = Monitor()
-        mp_listener.register(mon)
+        listener.register(mon)
         assert mon.state == Monitor.STARTED
 
-        mp_listener._callback(DEVICE)
+        listener._callback(DEVICE)
         assert mon.calls == [EVENT]
 
 
 def test_hotplug_monitor_error():
 
-    mp_listener = udev.MultipathListener()
-    with running(mp_listener):
+    listener = udev.MultipathListener()
+    with running(listener):
         mon = UnstartableMonitor()
         # Monitor start() error should raised
         with pytest.raises(MonitorError):
-            mp_listener.register(mon)
+            listener.register(mon)
 
         assert mon.state == Monitor.CREATED
 
         # Monitor should not be registered.
-        mp_listener._callback(DEVICE)
+        listener._callback(DEVICE)
         assert mon.calls == []
 
 
 def test_hotunplug_monitor():
     # When unregistring a monitor while the listener is running, we should stop
     # it, since the listener started it.
-    mp_listener = udev.MultipathListener()
-    with running(mp_listener):
+    listener = udev.MultipathListener()
+    with running(listener):
         mon = Monitor()
-        mp_listener.register(mon)
-        mp_listener.unregister(mon)
+        listener.register(mon)
+        listener.unregister(mon)
         assert mon.state == Monitor.STOPPED
 
 
@@ -282,12 +282,12 @@ def test_hotunplug_monitor():
     ),
 ])
 def test_report_events(device, expected):
-    mp_listener = udev.MultipathListener()
+    listener = udev.MultipathListener()
     # Avoid accessing non-existing devices
-    mp_listener._block_device_name = fake_block_device_name
+    listener._block_device_name = fake_block_device_name
     mon = Monitor()
-    mp_listener.register(mon)
-    mp_listener._callback(device)
+    listener.register(mon)
+    listener._callback(device)
 
     assert mon.calls == [expected]
 
@@ -306,45 +306,45 @@ def test_report_events(device, expected):
                DM_UUID="mpath-fake-uuid-3")
 ])
 def test_filter_event(device):
-    mp_listener = udev.MultipathListener()
+    listener = udev.MultipathListener()
     mon = Monitor()
-    mp_listener.register(mon)
-    mp_listener._callback(device)
+    listener.register(mon)
+    listener._callback(device)
 
     assert mon.calls == []
 
 
 def test_monitor_unregistered():
-    mp_listener = udev.MultipathListener()
+    listener = udev.MultipathListener()
     mon = Monitor()
-    mp_listener.register(mon)
-    mp_listener._callback(DEVICE)
+    listener.register(mon)
+    listener._callback(DEVICE)
     assert mon.calls == [EVENT]
-    mp_listener.unregister(mon)
-    mp_listener._callback(DEVICE)
+    listener.unregister(mon)
+    listener._callback(DEVICE)
     assert mon.calls == [EVENT]
 
 
 def test_monitor_not_registered():
-    mp_listener = udev.MultipathListener()
+    listener = udev.MultipathListener()
     with pytest.raises(AssertionError):
-        mp_listener.unregister(None)
+        listener.unregister(None)
 
 
 def test_monitor_already_registered():
-    mp_listener = udev.MultipathListener()
-    mp_listener.register(None)
+    listener = udev.MultipathListener()
+    listener.register(None)
     with pytest.raises(AssertionError):
-        mp_listener.register(None)
+        listener.register(None)
 
 
 def test_monitor_exception():
 
     def check(*monitors):
-        mp_listener = udev.MultipathListener()
+        listener = udev.MultipathListener()
         for m in monitors:
-            mp_listener.register(m)
-        mp_listener._callback(DEVICE)
+            listener.register(m)
+        listener._callback(DEVICE)
 
     bad_mon = BadMonitor()
     good_mon = Monitor()
@@ -358,32 +358,32 @@ def test_monitor_exception():
 
 
 def test_register_from_callback():
-    mp_listener = udev.MultipathListener()
+    listener = udev.MultipathListener()
     mon2 = Monitor()
 
     class Adder(Monitor):
         def handle(self, event):
-            mp_listener.register(mon2)
+            listener.register(mon2)
 
     mon1 = Adder()
-    mp_listener.register(mon1)
-    mp_listener._callback(DEVICE)
-    mp_listener._callback(DEVICE)
+    listener.register(mon1)
+    listener._callback(DEVICE)
+    listener._callback(DEVICE)
     assert mon2.calls == [EVENT]
 
 
 def test_unregister_from_callback():
-    mp_listener = udev.MultipathListener()
+    listener = udev.MultipathListener()
 
     class Remover(Monitor):
         def handle(self, event):
             self.calls.append(event)
-            mp_listener.unregister(self)
+            listener.unregister(self)
 
     mon = Remover()
-    mp_listener.register(mon)
-    mp_listener._callback(DEVICE)
-    mp_listener._callback(DEVICE)
+    listener.register(mon)
+    listener._callback(DEVICE)
+    listener._callback(DEVICE)
 
     assert mon.calls == [EVENT]
 
@@ -395,12 +395,12 @@ def test_failing_event():
         DM_UUID="mpath-fake-uuid-1",
         DM_PATH="sda",
         DM_NR_VALID_PATHS="sfsdfs")
-    mp_listener = udev.MultipathListener()
+    listener = udev.MultipathListener()
     mon = Monitor()
-    mp_listener.register(mon)
-    mp_listener._callback(fd)
+    listener.register(mon)
+    listener._callback(fd)
 
-    mp_listener._callback(DEVICE)
+    listener._callback(DEVICE)
     assert mon.calls == [EVENT]
 
 
@@ -409,8 +409,8 @@ def test_block_device_name():
     dev_name = os.path.basename(os.path.dirname(devs[0]))
     with open(devs[0], 'r') as f:
         major_minor = f.readline().rstrip()
-        mp_listener = udev.MultipathListener()
-        assert mp_listener._block_device_name(major_minor) == dev_name
+        listener = udev.MultipathListener()
+        assert listener._block_device_name(major_minor) == dev_name
 
 
 @pytest.mark.xfail(
@@ -418,7 +418,7 @@ def test_block_device_name():
     reason="Requires real env")
 @pytest.mark.skipif(os.geteuid() != 0, reason="Requires root")
 def test_loopback_event(tmpdir):
-    mp_listener = udev.MultipathListener()
+    listener = udev.MultipathListener()
     received = threading.Event()
     devices = []
 
@@ -427,8 +427,8 @@ def test_loopback_event(tmpdir):
         devices.append(device)
         received.set()
 
-    mp_listener._callback = callback
-    with running(mp_listener):
+    listener._callback = callback
+    with running(listener):
         # Create a backing file
         filename = str(tmpdir.join("file"))
         with open(filename, "wb") as f:
