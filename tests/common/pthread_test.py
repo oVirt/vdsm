@@ -27,10 +27,6 @@ from testlib import VdsmTestCase as TestCaseBase
 
 class PthreadNameTests(TestCaseBase):
 
-    def setUp(self):
-        self.ready = threading.Event()
-        self.done = threading.Event()
-
     def test_name_too_long(self):
         self.assertRaises(ValueError,
                           pthread.setname,
@@ -43,28 +39,33 @@ class PthreadNameTests(TestCaseBase):
         def run():
             pthread.setname(NAME)
             names[0] = pthread.getname()
-            self.ready.set()
-            self.done.wait()
 
-        threading.Thread(target=run).start()
-        self.ready.wait()
+        t = threading.Thread(target=run)
+        t.daemon = True
+        t.start()
+        t.join()
 
         self.assertEqual(names[0], NAME)
-
-        self.done.set()
 
     def test_name_set_doesnt_change_parent(self):
         HELPER_NAME = "helper-name"
         parent_name = pthread.getname()
+        ready = threading.Event()
+        done = threading.Event()
 
         def run():
             pthread.setname(HELPER_NAME)
-            self.ready.set()
-            self.done.wait()
+            ready.set()
+            done.wait()
 
-        threading.Thread(target=run).start()
-        self.ready.wait()
-
-        self.assertEqual(parent_name, pthread.getname())
-
-        self.done.set()
+        t = threading.Thread(target=run)
+        t.daemon = True
+        t.start()
+        try:
+            ready.wait()
+            try:
+                self.assertEqual(parent_name, pthread.getname())
+            finally:
+                done.set()
+        finally:
+            t.join()
