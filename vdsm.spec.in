@@ -174,6 +174,16 @@ Requires: device-mapper-multipath >= 0.4.9-84.el7
 Requires: device-mapper-multipath >= 0.4.9-80
 %endif
 
+# augeas
+
+%if 0%{?rhel}
+Requires: python-augeas
+%endif
+
+%if 0%{?fedora}
+Requires: python2-augeas
+%endif
+
 %if 0%{?rhel}
 Requires: e2fsprogs
 Requires: fence-agents-all

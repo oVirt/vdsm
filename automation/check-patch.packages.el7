@@ -11,6 +11,7 @@ openvswitch
 ovirt-imageio-common
 policycoreutils-python
 PyYAML
+python-augeas
 python-blivet
 python-coverage
 python-dateutil
