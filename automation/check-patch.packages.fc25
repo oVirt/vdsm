@@ -16,6 +16,7 @@ policycoreutils-python
 PyYAML
 python-blivet1
 python-coverage
+python2-augeas
 python2-decorator
 python2-dateutil
 python3-dateutil
@@ -30,6 +31,7 @@ python-pthreading
 python-setuptools
 python-six
 python-requests
+python3-augeas
 python3-dbus
 python3-decorator
 python2-pyudev

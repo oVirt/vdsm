@@ -10,6 +10,7 @@ make
 mom
 openvswitch
 policycoreutils-python
+python-augeas
 python-blivet
 python-coverage
 python-dateutil
