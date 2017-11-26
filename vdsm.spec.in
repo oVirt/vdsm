@@ -1267,6 +1267,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/imagetickets.py*
 %{python_sitelib}/%{vdsm_name}/storage/iscsi.py*
 %{python_sitelib}/%{vdsm_name}/storage/iscsiadm.py*
+%{python_sitelib}/%{vdsm_name}/storage/lvmconf.py*
 %{python_sitelib}/%{vdsm_name}/storage/lvmfilter.py*
 %{python_sitelib}/%{vdsm_name}/storage/misc.py*
 %{python_sitelib}/%{vdsm_name}/storage/mount.py*
