@@ -58,6 +58,7 @@ dist_vdsmstorage_PYTHON = \
 	iscsiadm.py \
 	localFsSD.py \
 	lvm.py \
+	lvmconf.py \
 	lvmfilter.py \
 	mailbox.py \
 	merge.py \
