@@ -61,6 +61,7 @@ from vdsm.storage import iscsi
 from vdsm.storage import localFsSD
 from vdsm.storage import lvm
 from vdsm.storage import merge
+from vdsm.storage import mpathhealth
 from vdsm.storage import misc
 from vdsm.storage import monitor
 from vdsm.storage import mount
@@ -393,6 +394,8 @@ class HSM(object):
             self.log.warn("Failed to clean Storage Repository.", exc_info=True)
 
         self.multipathListener = udev.MultipathListener()
+        self.mpathhealth_monitor = mpathhealth.Monitor()
+        self.multipathListener.register(self.mpathhealth_monitor)
         self.multipathListener.start()
 
         def storageRefresh():
