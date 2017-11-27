@@ -541,8 +541,9 @@ class clientIF(object):
     def getAllVmIoTunePolicies(self):
         vm_io_tune_policies = {}
         for v in self.vmContainer.values():
-                vm_io_tune_policies[v.id] = {'policy': v.getIoTunePolicy(),
-                                             'current_values': v.getIoTune()}
+            info = v.io_tune_policy_values()
+            if info:
+                vm_io_tune_policies[v.id] = info
         return vm_io_tune_policies
 
     def createStompClient(self, client_socket):

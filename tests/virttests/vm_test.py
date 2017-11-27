@@ -2186,6 +2186,29 @@ class BlockIoTuneTests(TestCaseBase):
             self.assertEqual(stats['exitReason'],
                              vmexitreason.DESTROYED_ON_RESUME)
 
+    @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
+    def test_io_tune_policy_values(self):
+        with fake.VM() as testvm:
+            testvm._dom = self.dom
+            testvm._devices[hwclass.DISK] = (self.drive,)
+            self.assertEqual(
+                testvm.io_tune_policy_values(),
+                {
+                    'current_values': [{
+                        'ioTune': self.iotune_low,
+                        'name': self.drive.name,
+                        'path': self.drive.path,
+                    }],
+                    'policy': []
+                })
+
+    @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
+    def test_io_tune_policy_values_handle_exceptions(self):
+        with fake.VM() as testvm:
+            testvm._dom = virdomain.Disconnected(testvm.id)
+            testvm._devices[hwclass.DISK] = (self.drive,)
+            self.assertEqual(testvm.io_tune_policy_values(), {})
+
     def assert_nth_call_to_dom_is(self, nth, call):
         self.assertEqual(self.dom.__calls__[nth][0], call)
 
