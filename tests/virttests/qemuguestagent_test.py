@@ -49,6 +49,11 @@ def _fake_qemuAgentCommand(domain, command, timeout, flags):
                         "success-response": True
                     }]
             }})
+    if command == '{"execute": "guest-get-host-name"}':
+        return json.dumps(
+            {"return": {
+                "host-name": "test-host",
+            }})
     # Unknow command
     logging.error("Fake QEMU-GA cannot handle: %r", command)
     return '{"error": {"class": "CommandNotFound", "desc": "..."}}'
@@ -78,6 +83,15 @@ class QemuGuestAgentTests(TestCaseBase):
         self.qga_poller = qemuguestagent.QemuGuestAgentPoller(
             self.cif, self.log, self.scheduler)
         self.vm = FakeVM()
+        self.qga_poller.update_caps(
+            self.vm.id,
+            {
+                'version': '0.0-test',
+                'commands': [
+                    qemuguestagent._QEMU_GUEST_INFO_COMMAND,
+                    qemuguestagent._QEMU_HOST_NAME_COMMAND,
+                ]
+            })
 
     def test_caps(self):
         """
@@ -133,3 +147,13 @@ class QemuGuestAgentTests(TestCaseBase):
         self.assertEqual(c['version'], '1.2.3')
         self.assertTrue('guest-info' in c['commands'])
         self.assertFalse('guest-exec' in c['commands'])
+
+    def test_system_info(self):
+        c = qemuguestagent.SystemInfoCheck(self.vm, self.qga_poller)
+        c._execute()
+        self.assertEqual(
+            self.qga_poller.get_guest_info(self.vm.id),
+            {
+                'guestName': 'test-host',
+                'guestFQDN': 'test-host',
+            })

@@ -51,6 +51,9 @@ from vdsm.config import config
 from vdsm.virt import periodic
 
 _QEMU_GUEST_INFO_COMMAND = 'guest-info'
+_QEMU_HOST_NAME_COMMAND = 'guest-get-host-name'
+
+_HOST_NAME_FIELD = 'host-name'
 
 _WORKERS = config.getint('guest_agent', 'periodic_workers')
 _TASK_PER_WORKER = config.getint('guest_agent', 'periodic_task_per_worker')
@@ -107,6 +110,11 @@ class QemuGuestAgentPoller(object):
             per_vm_operation(
                 CapabilityCheck,
                 config.getint('guest_agent', 'qga_info_period')),
+
+            # Basic system information
+            per_vm_operation(
+                SystemInfoCheck,
+                config.getint('guest_agent', 'qga_sysinfo_period')),
         ]
 
         self.log.info("Starting QEMU-GA poller")
@@ -265,3 +273,26 @@ class CapabilityCheck(_RunnableOnVmGuestAgent):
         self._qga_poller.log.debug('QEMU-GA caps (vm_id=%s): %r',
                                    self._vm.id, caps)
         self._qga_poller.update_caps(self._vm.id, caps)
+
+
+class SystemInfoCheck(_RunnableOnVmGuestAgent):
+    """
+    Get the information about system configuration that does not change
+    too often.
+    """
+    def _execute(self):
+        guest_info = {}
+
+        # Host name
+        ret = self._qga_poller.call_qga_command(
+            self._vm, _QEMU_HOST_NAME_COMMAND)
+        if ret is not None:
+            if _HOST_NAME_FIELD not in ret:
+                self._qga_poller.log.warning(
+                    'Invalid message returned to call \'%s\': %r',
+                    _QEMU_HOST_NAME_COMMAND, ret)
+            else:
+                guest_info['guestName'] = ret[_HOST_NAME_FIELD]
+                guest_info['guestFQDN'] = ret[_HOST_NAME_FIELD]
+
+        self._qga_poller.update_guest_info(self._vm.id, guest_info)
