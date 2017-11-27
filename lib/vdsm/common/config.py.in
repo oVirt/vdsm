@@ -668,6 +668,11 @@ parameters = [
         ('qga_info_period', '300',
             'Period (in sec) with which to query the information about'
             '  installed QEMU Guest Agent.'),
+
+        ('qga_sysinfo_period', '120',
+            'Period (in sec) for gathering information about system version,'
+            ' installed applications, and some configuration that does not'
+            ' change too often.'),
     ]),
 ]
 
