@@ -24,13 +24,18 @@ import errno
 import os
 import re
 
+from collections import namedtuple
 from glob import glob
 
 from vdsm.common.supervdsm import getProxy
+from vdsm.common import cmdutils
 from vdsm.constants import EXT_DMSETUP
 from vdsm.storage import misc
 
 DMPATH_PREFIX = "/dev/mapper/"
+
+
+PathStatus = namedtuple("PathStatus", "name, status")
 
 
 def getDmId(deviceMultipathName):
@@ -178,3 +183,37 @@ def _getPathsStatus():
 
 def getPathsStatus():
     return getProxy().getPathsStatus()
+
+
+def _multipath_status():
+    cmd = [EXT_DMSETUP, "status", "--target", "multipath"]
+    rc, out, err = misc.execCmd(cmd, raw=True)
+    if rc != 0:
+        raise cmdutils.Error(cmd, rc, out, err)
+
+    res = {}
+    lines = out.decode("utf-8").splitlines()
+    for line in lines:
+        try:
+            guid, paths = line.split(":", 1)
+        except ValueError:
+            # TODO check if this output is relevant
+            if len(lines) != 1:
+                raise
+            # return an empty dict when status output is: No devices found
+            return res
+
+        statuses = []
+        for m in PATH_STATUS_RE.finditer(paths):
+            major_minor, status = m.groups()
+            # TODO refactor findev to get a string instead of two integers
+            name = findDev(*[int(i) for i in major_minor.split(":")])
+            statuses.append(PathStatus(name, status))
+
+        res[guid] = statuses
+
+    return res
+
+
+def multipath_status():
+    return getProxy().multipath_status()
