@@ -49,11 +49,17 @@ from vdsm import executor
 from vdsm.common.time import monotonic_time
 from vdsm.config import config
 from vdsm.virt import periodic
+from vdsm.virt import guestagenthelpers
 
 _QEMU_GUEST_INFO_COMMAND = 'guest-info'
 _QEMU_HOST_NAME_COMMAND = 'guest-get-host-name'
+_QEMU_OSINFO_COMMAND = 'guest-get-osinfo'
 
 _HOST_NAME_FIELD = 'host-name'
+_OS_ID_FIELD = 'id'
+
+_GUEST_OS_LINUX = 'linux'
+_GUEST_OS_WINDOWS = 'mswindows'
 
 _WORKERS = config.getint('guest_agent', 'periodic_workers')
 _TASK_PER_WORKER = config.getint('guest_agent', 'periodic_task_per_worker')
@@ -294,5 +300,15 @@ class SystemInfoCheck(_RunnableOnVmGuestAgent):
             else:
                 guest_info['guestName'] = ret[_HOST_NAME_FIELD]
                 guest_info['guestFQDN'] = ret[_HOST_NAME_FIELD]
+
+        # OS version and architecture
+        ret = self._qga_poller.call_qga_command(self._vm, _QEMU_OSINFO_COMMAND)
+        if ret is not None:
+            if ret.get(_OS_ID_FIELD) == _GUEST_OS_WINDOWS:
+                guest_info.update(
+                    guestagenthelpers.translate_windows_osinfo(ret))
+            else:
+                guest_info.update(
+                    guestagenthelpers.translate_linux_osinfo(ret))
 
         self._qga_poller.update_guest_info(self._vm.id, guest_info)
