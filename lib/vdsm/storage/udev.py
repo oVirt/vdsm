@@ -222,7 +222,7 @@ class MultipathListener(object):
 
     def _callback(self, device):
         self.log.debug("Received udev event (action=%s, device=%s)",
-                       device.action, device)
+                       device["ACTION"], device)
         try:
             event = self._detect_event(device)
         except Exception as e:
@@ -239,7 +239,7 @@ class MultipathListener(object):
             return None
         mpath_uuid = mpath_uuid[6:]
 
-        if device.action == "change":
+        if device["ACTION"] == "change":
             dm_action = device.get("DM_ACTION")
             if dm_action == "PATH_FAILED":
                 event_type = PATH_FAILED
@@ -250,7 +250,7 @@ class MultipathListener(object):
                 return
             valid_paths = int(device.get("DM_NR_VALID_PATHS"))
             path = self._block_device_name(device.get("DM_PATH"))
-        elif device.action == "remove":
+        elif device["ACTION"] == "remove":
             event_type = MPATH_REMOVED
             valid_paths = None
             path = None

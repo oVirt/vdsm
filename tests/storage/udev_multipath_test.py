@@ -41,10 +41,10 @@ EVENT = udev.MultipathEvent(type=udev.MPATH_REMOVED,
 class FakeDevice(dict):
     @property
     def action(self):
-        return self["action"]
+        return self["ACTION"]
 
 DEVICE = FakeDevice(DM_UUID="mpath-fake-uuid-3",
-                    action="remove")
+                    ACTION="remove")
 
 
 class Monitor(udev.MultipathMonitor):
@@ -244,7 +244,7 @@ def test_hotunplug_monitor():
     (
         # Multipath path is restored
         FakeDevice(
-            action="change",
+            ACTION="change",
             DM_ACTION="PATH_REINSTATED",
             DM_UUID="mpath-fake-uuid-1",
             DM_PATH="sda",
@@ -258,7 +258,7 @@ def test_hotunplug_monitor():
     (
         # Multipath path has failed
         FakeDevice(
-            action="change",
+            ACTION="change",
             DM_ACTION="PATH_FAILED",
             DM_UUID="mpath-fake-uuid-2",
             DM_PATH="66:32",
@@ -272,7 +272,7 @@ def test_hotunplug_monitor():
     (
         # Multipath device has been removed
         FakeDevice(
-            action="remove",
+            ACTION="remove",
             DM_UUID="mpath-fake-uuid-3"),
         udev.MultipathEvent(
             type=udev.MPATH_REMOVED,
@@ -294,15 +294,15 @@ def test_report_events(device, expected):
 
 @pytest.mark.parametrize("device", [
     # the DM_UUID does not start with "mpath"
-    FakeDevice(action="change",
+    FakeDevice(ACTION="change",
                DM_UUID="usb-fake-uuid-1"),
     # the DM_ACTION is not supported
-    FakeDevice(action="change",
+    FakeDevice(ACTION="change",
                DM_UUID="mpath-fake-uuid-2",
                DM_ACTION="PATH_DISINTEGRATED",
                DM_NR_VALID_PATHS="4"),
     # the "action" is not supported
-    FakeDevice(action="update",
+    FakeDevice(ACTION="update",
                DM_UUID="mpath-fake-uuid-3")
 ])
 def test_filter_event(device):
@@ -390,7 +390,7 @@ def test_unregister_from_callback():
 
 def test_failing_event():
     fd = FakeDevice(
-        action="change",
+        ACTION="change",
         DM_ACTION="PATH_REINSTATED",
         DM_UUID="mpath-fake-uuid-1",
         DM_PATH="sda",
