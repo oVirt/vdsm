@@ -54,6 +54,20 @@ def _fake_qemuAgentCommand(domain, command, timeout, flags):
             {"return": {
                 "host-name": "test-host",
             }})
+    if command == '{"execute": "guest-get-osinfo"}':
+        return json.dumps(
+            {"return": {
+                "id": "fedora",
+                "kernel-release": "4.13.9-300.fc27.x86_64",
+                "kernel-version": "#1 SMP Mon Oct 23 13:41:58 UTC 2017",
+                "machine": "x86_64",
+                "name": "Fedora",
+                "pretty-name": "Fedora 27 (Cloud Edition)",
+                "variant": "Cloud Edition",
+                "variant-id": "cloud",
+                "version": "27 (Cloud Edition)",
+                "version-id": "27",
+            }})
     # Unknow command
     logging.error("Fake QEMU-GA cannot handle: %r", command)
     return '{"error": {"class": "CommandNotFound", "desc": "..."}}'
@@ -90,6 +104,7 @@ class QemuGuestAgentTests(TestCaseBase):
                 'commands': [
                     qemuguestagent._QEMU_GUEST_INFO_COMMAND,
                     qemuguestagent._QEMU_HOST_NAME_COMMAND,
+                    qemuguestagent._QEMU_OSINFO_COMMAND,
                 ]
             })
 
@@ -156,4 +171,13 @@ class QemuGuestAgentTests(TestCaseBase):
             {
                 'guestName': 'test-host',
                 'guestFQDN': 'test-host',
+                'guestOs': '4.13.9-300.fc27.x86_64',
+                'guestOsInfo': {
+                    'kernel': '4.13.9-300.fc27.x86_64',
+                    'arch': 'x86_64',
+                    'version': '27',
+                    'distribution': 'Fedora',
+                    'type': 'linux',
+                    'codename': 'Cloud Edition'
+                },
             })
