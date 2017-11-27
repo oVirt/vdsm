@@ -49,9 +49,9 @@ def getDmId(deviceMultipathName):
     return "dm-%d" % os.minor(devStat.st_rdev)
 
 
-def findDev(major, minor):
-    return os.path.basename(os.path.realpath('/sys/dev/block/%d:%d' %
-                                             (major, minor)))
+def device_name(major_minor):
+    return os.path.basename(os.path.realpath('/sys/dev/block/%s' %
+                                             major_minor))
 
 
 def getSysfsPath(devName):
@@ -175,7 +175,7 @@ def _getPathsStatus():
 
         for m in PATH_STATUS_RE.finditer(statusLine):
             devNum, status = m.groups()
-            physdevName = findDev(*[int(i) for i in devNum.split(":")])
+            physdevName = device_name(devNum)
             res[physdevName] = {"A": "active", "F": "failed"}[status]
 
     return res
@@ -206,8 +206,7 @@ def _multipath_status():
         statuses = []
         for m in PATH_STATUS_RE.finditer(paths):
             major_minor, status = m.groups()
-            # TODO refactor findev to get a string instead of two integers
-            name = findDev(*[int(i) for i in major_minor.split(":")])
+            name = device_name(major_minor)
             statuses.append(PathStatus(name, status))
 
         res[guid] = statuses

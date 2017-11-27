@@ -32,7 +32,7 @@ def test_dm_status(monkeypatch):
     monkeypatch.setattr(devicemapper, "EXT_DMSETUP", FAKE_DMSETUP)
     monkeypatch.setenv("FAKE_STDOUT", FAKE_DMSETUP + ".status.out")
     monkeypatch.setattr(
-        devicemapper, "findDev", lambda major, minor: "%d:%d" % (major, minor))
+        devicemapper, "device_name", lambda major_minor: major_minor)
 
     res = devicemapper._multipath_status()
     expected = {
