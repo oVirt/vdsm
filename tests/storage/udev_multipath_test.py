@@ -20,13 +20,13 @@
 
 from __future__ import print_function
 
-import glob
 import os
 import pprint
 import threading
 
 import pytest
 
+from vdsm.storage import devicemapper
 from vdsm.storage import udev
 from vdsm.utils import running
 
@@ -96,10 +96,6 @@ class UnstopableMonitor(Monitor):
 
     def stop(self):
         raise MonitorError("No stop for you!")
-
-
-def fake_block_device_name(dev):
-    return "sda"
 
 
 def test_start():
@@ -281,10 +277,10 @@ def test_hotunplug_monitor():
             valid_paths=None)
     ),
 ])
-def test_report_events(device, expected):
-    listener = udev.MultipathListener()
+def test_report_events(monkeypatch, device, expected):
     # Avoid accessing non-existing devices
-    listener._block_device_name = fake_block_device_name
+    monkeypatch.setattr(devicemapper, "device_name", lambda x: "sda")
+    listener = udev.MultipathListener()
     mon = Monitor()
     listener.register(mon)
     listener._callback(device)
@@ -402,15 +398,6 @@ def test_failing_event():
 
     listener._callback(DEVICE)
     assert mon.calls == [EVENT]
-
-
-def test_block_device_name():
-    devs = glob.glob("/sys/block/*/dev")
-    dev_name = os.path.basename(os.path.dirname(devs[0]))
-    with open(devs[0], 'r') as f:
-        major_minor = f.readline().rstrip()
-        listener = udev.MultipathListener()
-        assert listener._block_device_name(major_minor) == dev_name
 
 
 @pytest.mark.xfail(

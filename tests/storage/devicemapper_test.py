@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import glob
 import os
 import pytest
 
@@ -51,3 +52,11 @@ def test_dm_status(monkeypatch):
     }
 
     assert res == expected
+
+
+def test_block_device_name():
+    devs = glob.glob("/sys/block/*/dev")
+    dev_name = os.path.basename(os.path.dirname(devs[0]))
+    with open(devs[0], 'r') as f:
+        major_minor = f.readline().rstrip()
+        assert devicemapper.device_name(major_minor) == dev_name

@@ -22,12 +22,13 @@ from __future__ import absolute_import
 
 import inspect
 import logging
-import os
 import threading
 
 import pyudev
 
 from collections import namedtuple
+
+from vdsm.storage import devicemapper
 
 MultipathEvent = namedtuple("MultipathEvent",
                             "type, mpath_uuid, path, valid_paths")
@@ -212,14 +213,6 @@ class MultipathListener(object):
             self._monitors.remove(monitor)
             self._stop_monitors([monitor])
 
-    def _block_device_name(self, dev):
-        """
-        'dev' is a string in the following format: 'major:minor', as received
-        from the multipath event 'DM_PATH' property.
-        This method will return the friendly name of the path, e.g. "sda"
-        """
-        return os.path.basename(os.readlink("/sys/dev/block/" + dev))
-
     def _callback(self, device):
         self.log.debug("Received udev event (action=%s, device=%s)",
                        device["ACTION"], device)
@@ -249,7 +242,7 @@ class MultipathListener(object):
                 self.log.debug("Unsupported DM_ACTION %r", dm_action)
                 return
             valid_paths = int(device.get("DM_NR_VALID_PATHS"))
-            path = self._block_device_name(device.get("DM_PATH"))
+            path = devicemapper.device_name(device.get("DM_PATH"))
         elif device["ACTION"] == "remove":
             event_type = MPATH_REMOVED
             valid_paths = None
