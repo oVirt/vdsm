@@ -252,7 +252,8 @@ class DataVerificationTests(TestCaseBase):
                u"cpuIdle": u"99.03",
                u"vmActive": 0,
                u"v2vJobs": {},
-               u"cpuSysVdsmd": u"0.53"}
+               u"cpuSysVdsmd": u"0.53",
+               u"multipathHealth": {}}
 
         _schema.schema().verify_retval(
             vdsmapi.MethodRep('Host', 'getStats'), ret)
