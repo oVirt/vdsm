@@ -105,11 +105,11 @@ class Monitor(udev.MultipathMonitor):
             mpath.valid_paths = event.valid_paths
             if not mpath.failed_paths:
                 self._status.pop(event.mpath_uuid)
-                log.info("Path '%r' reinstated for multipath device '%r',"
+                log.info("Path %r reinstated for multipath device %r,"
                          " all paths are valid",
                          event.path, event.mpath_uuid)
             else:
-                log.info("Path '%r' reinstated for multipath device '%r',"
+                log.info("Path %r reinstated for multipath device %r,"
                          " %d valid paths left",
                          event.path, event.mpath_uuid, event.valid_paths)
 
@@ -119,11 +119,11 @@ class Monitor(udev.MultipathMonitor):
             mpath.failed_paths.add(event.path)
             mpath.valid_paths = event.valid_paths
             if event.valid_paths == 0:
-                log.warn("Path '%r' failed for multipath device '%r',"
+                log.warn("Path %r failed for multipath device %r,"
                          " no valid paths left",
                          event.path, event.mpath_uuid)
             else:
-                log.info("Path '%r' failed for multipath device '%r',"
+                log.info("Path %r failed for multipath device %r,"
                          " %d valid paths left",
                          event.path, event.mpath_uuid, event.valid_paths)
 
