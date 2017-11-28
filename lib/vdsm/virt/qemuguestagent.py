@@ -54,9 +54,12 @@ from vdsm.virt import guestagenthelpers
 _QEMU_GUEST_INFO_COMMAND = 'guest-info'
 _QEMU_HOST_NAME_COMMAND = 'guest-get-host-name'
 _QEMU_OSINFO_COMMAND = 'guest-get-osinfo'
+_QEMU_TIMEZONE_COMMAND = 'guest-get-timezone'
 
 _HOST_NAME_FIELD = 'host-name'
 _OS_ID_FIELD = 'id'
+_TIMEZONE_OFFSET_FIELD = 'offset'
+_TIMEZONE_ZONE_FIELD = 'zone'
 
 _GUEST_OS_LINUX = 'linux'
 _GUEST_OS_WINDOWS = 'mswindows'
@@ -310,5 +313,19 @@ class SystemInfoCheck(_RunnableOnVmGuestAgent):
             else:
                 guest_info.update(
                     guestagenthelpers.translate_linux_osinfo(ret))
+
+        # Timezone
+        ret = self._qga_poller.call_qga_command(
+            self._vm, _QEMU_TIMEZONE_COMMAND)
+        if ret is not None:
+            if _TIMEZONE_OFFSET_FIELD not in ret:
+                self._qga_poller.log.warning(
+                    'Invalid message returned to call \'%s\': %r',
+                    _QEMU_TIMEZONE_COMMAND, ret)
+            else:
+                guest_info['guestTimezone'] = {
+                    'offset': ret[_TIMEZONE_OFFSET_FIELD] // 60,
+                    'zone': ret.get(_TIMEZONE_ZONE_FIELD, 'unknown'),
+                }
 
         self._qga_poller.update_guest_info(self._vm.id, guest_info)

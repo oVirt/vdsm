@@ -68,6 +68,12 @@ def _fake_qemuAgentCommand(domain, command, timeout, flags):
                 "version": "27 (Cloud Edition)",
                 "version-id": "27",
             }})
+    if command == '{"execute": "guest-get-timezone"}':
+        return json.dumps(
+            {"return": {
+                "zone": "CET",
+                "offset": 3600
+            }})
     # Unknow command
     logging.error("Fake QEMU-GA cannot handle: %r", command)
     return '{"error": {"class": "CommandNotFound", "desc": "..."}}'
@@ -105,6 +111,7 @@ class QemuGuestAgentTests(TestCaseBase):
                     qemuguestagent._QEMU_GUEST_INFO_COMMAND,
                     qemuguestagent._QEMU_HOST_NAME_COMMAND,
                     qemuguestagent._QEMU_OSINFO_COMMAND,
+                    qemuguestagent._QEMU_TIMEZONE_COMMAND,
                 ]
             })
 
@@ -179,5 +186,9 @@ class QemuGuestAgentTests(TestCaseBase):
                     'distribution': 'Fedora',
                     'type': 'linux',
                     'codename': 'Cloud Edition'
+                },
+                'guestTimezone': {
+                    'offset': 60,
+                    'zone': 'CET',
                 },
             })
