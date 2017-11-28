@@ -80,6 +80,8 @@ _OVF_RESOURCE_MEMORY = 4
 _OVF_RESOURCE_NETWORK = 10
 _QCOW2_COMPAT_SUPPORTED = ('0.10', '1.1')
 
+_OVF_ORIGIN_OVIRT = 3
+
 # OVF Specification:
 # https://www.iso.org/obp/ui/#iso:std:iso-iec:17203:ed-1:v1:en
 _OVF_NS = 'http://schemas.dmtf.org/ovf/envelope/1'
@@ -231,12 +233,14 @@ def convert_ova(ova_path, vminfo, job_id, irs):
 def get_ova_info(ova_path):
     ns = {'ovf': _OVF_NS, 'rasd': _RASD_NS}
 
+    ovf_str = _read_ovf_from_ova(ova_path)
     try:
-        root = ET.fromstring(_read_ovf_from_ova(ova_path))
+        root = ET.fromstring(ovf_str)
     except ET.ParseError as e:
         raise V2VError('Error reading ovf from ova, position: %r' % e.position)
 
     vm = {}
+    _add_origin_ovf_info(vm, root, ovf_str)
     _add_general_ovf_info(vm, root, ns, ova_path)
     _add_disks_ovf_info(vm, root, ns)
     _add_networks_ovf_info(vm, root, ns)
@@ -1108,6 +1112,28 @@ def _add_vm_info(vm, params):
         params['status'] = "Up"
     else:
         params['status'] = "Down"
+
+
+def _extract_ns_map(xml_str):
+    # there is no easy way to extract the detected namespaces from ET,
+    # so the only reliable option is parse the XML twice. Ugh.
+    try:
+        xml_str = xml_str.decode('utf-8')
+    except AttributeError:
+        pass  # already unicode
+    xml_src = io.StringIO(xml_str)
+    events = ("start-ns",)
+    return {
+        name: uri
+        for event, (name, uri) in ET.iterparse(xml_src, events)
+        if event == "start-ns"
+    }
+
+
+def _add_origin_ovf_info(vm, root, ovf_str):
+    ns_map = _extract_ns_map(ovf_str)
+    if 'ovirt' in ns_map:
+        vm['originType'] = _OVF_ORIGIN_OVIRT
 
 
 def _add_general_info(root, params):
