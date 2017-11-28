@@ -18,6 +18,8 @@
 #
 from __future__ import absolute_import
 
+import errno
+
 import six
 
 from vdsm.network import cmd
@@ -57,7 +59,14 @@ SHARED_NETWORK_ATTRIBUTES = [
 
 
 def is_ovs_service_running():
-    rc, _, _ = cmd.exec_sync([OVS_CTL, 'status'])
+    try:
+        rc, _, _ = cmd.exec_sync([OVS_CTL, 'status'])
+    except OSError as err:
+        # Silently ignore the missing file and consider the service as down.
+        if err.errno == errno.ENOENT:
+            rc = errno.ENOENT
+        else:
+            raise
     return rc == 0
 
 
