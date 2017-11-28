@@ -108,3 +108,97 @@ def test_real_build_filter():
         for dev in mnt.devices:
             match = "'a|^%s$|'" % dev
             assert match in lvm_filter
+
+
+def test_analyze_no_filter():
+    # Trivial case: host does not have any filter.
+    wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
+    current_filter = None
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.CONFIGURE
+    assert advice.filter == wanted_filter
+
+
+def test_analyze_configured():
+    # Trivial case: host was already configured, no action needed.
+    current_filter = wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.UNNEEDED
+    assert advice.filter is None
+
+
+def test_analyze_different_order():
+    # Same filter, order of devices does not matter.
+    wanted_filter = ["a|^/dev/sda2$|", "a|^/dev/sdb2$|", "r|.*|"]
+    current_filter = ["a|^/dev/sdb2$|", "a|^/dev/sda2$|", "r|.*|"]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.UNNEEDED
+    assert advice.filter is None
+
+
+def test_analyze_no_anchorces():
+    # Curent filter uses non-strict regex witout anchores. This should work in
+    # general, but we like to have a more strict filter.
+    wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
+    current_filter = ["a|/dev/sda2|", "r|.*|"]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.RECOMMEND
+    assert advice.filter == wanted_filter
+
+
+def test_analyze_missing_device():
+    # Current filter is missing a device. Probably a user error, but the user
+    # will have to resolve this.
+    wanted_filter = ["a|^/dev/sda2$|", "a|^/dev/sdb2$|", "r|.*|"]
+    current_filter = ["a|^/dev/sda2$|", "r|.*|"]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.RECOMMEND
+    assert advice.filter == wanted_filter
+
+
+def test_analyze_unknown_device():
+    # Current filter includes an unknown device. This may be a user error,
+    # removing a device without updating the filter, or maybe the user knows
+    # better.
+    wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
+    current_filter = ["a|^/dev/sda2$|", "a|^/dev/sdb2$|", "r|.*|"]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.RECOMMEND
+    assert advice.filter == wanted_filter
+
+
+def test_analyze_extra_reject():
+    # User wants to reject another device - does not make sense, but the user
+    # knows better.
+    wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
+    current_filter = ["a|^/dev/sda2$|", "r|.*|", "r|/dev/foo|"]
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+    assert advice.action == lvmfilter.RECOMMEND
+    assert advice.filter == wanted_filter
+
+
+def test_analyze_invalid_filter_no_action():
+    # Current filter is invalid - since LVM will reject this filter anyway, we
+    # can configure a correct filter.
+    wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
+    current_filter = ["invalid", "filter"]
+    with pytest.raises(lvmfilter.InvalidFilter):
+        lvmfilter.analyze(current_filter, wanted_filter)
+
+
+def test_analyze_invalid_filter_no_delimeter():
+    # Current filter is invalid - since LVM will reject this filter anyway, we
+    # can configure a correct filter.
+    wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
+    current_filter = ["a|invalid", "r|filter/"]
+    with pytest.raises(lvmfilter.InvalidFilter):
+        lvmfilter.analyze(current_filter, wanted_filter)
+
+
+def test_analyze_invalid_filter_empty_item():
+    # Current filter is invalid - since LVM will reject this filter anyway, we
+    # can configure a correct filter.
+    wanted_filter = ["a|^/dev/sda2$|", "r|.*|"]
+    current_filter = ["a|invalid|", "r||"]
+    with pytest.raises(lvmfilter.InvalidFilter):
+        lvmfilter.analyze(current_filter, wanted_filter)
