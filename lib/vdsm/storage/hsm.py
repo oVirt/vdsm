@@ -3513,6 +3513,10 @@ class HSM(object):
 
         return result
 
+    @public
+    def multipath_health(self):
+        return self.mpathhealth_monitor.status()
+
     @deprecated
     @public
     def startMonitoringDomain(self, sdUUID, hostID, options=None):

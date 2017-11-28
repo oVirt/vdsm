@@ -50,8 +50,11 @@ def get_stats(cif, sample):
     if cif.irs:
         decStats['storageDomains'] = cif.irs.repoStats()
         del decStats['storageDomains']['status']
+        decStats['multipathHealth'] = cif.irs.multipath_health()
+        del decStats['multipathHealth']['status']
     else:
         decStats['storageDomains'] = {}
+        decStats['multipathHealth'] = {}
 
     for var in decStats:
         ret[var] = utils.convertToStr(decStats[var])
