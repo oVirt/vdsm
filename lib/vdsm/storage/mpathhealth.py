@@ -25,6 +25,7 @@ import threading
 
 import six
 
+from vdsm.storage import devicemapper
 from vdsm.storage import udev
 
 log = logging.getLogger("storage.mpathhealth")
@@ -32,9 +33,9 @@ log = logging.getLogger("storage.mpathhealth")
 
 class MultipathStatus(object):
 
-    def __init__(self):
-        self.failed_paths = set()
-        self.valid_paths = None
+    def __init__(self, failed_paths=(), valid_paths=None):
+        self.failed_paths = set(failed_paths)
+        self.valid_paths = valid_paths
 
     def info(self):
         res = {"failed_paths": sorted(self.failed_paths)}
@@ -80,7 +81,20 @@ class Monitor(udev.MultipathMonitor):
         The initial status of the mpath devices is built here.
         The data is updated through callbacks received in the handle method.
         """
-        pass
+        for guid, paths in devicemapper.multipath_status().items():
+            failed_paths = [p.name for p in paths if p.status == "F"]
+            if failed_paths:
+                valid_paths = len(paths) - len(failed_paths)
+                mpath_status = MultipathStatus(failed_paths, valid_paths)
+                self._status[guid] = mpath_status
+                if valid_paths == 0:
+                    log.warn("Multipath device %r has failed paths %r,"
+                             " no valid paths",
+                             guid, failed_paths)
+                else:
+                    log.info("Multipath device %r has failed paths %r,"
+                             " %r valid paths",
+                             guid, failed_paths, valid_paths)
 
     def handle(self, event):
         """
