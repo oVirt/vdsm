@@ -39,7 +39,9 @@ https://bugzilla.redhat.com/1449968
 from __future__ import absolute_import
 
 import collections
+import itertools
 import logging
+import operator
 
 import subprocess
 
@@ -50,6 +52,33 @@ log = logging.getLogger("lvmfilter")
 
 
 MountInfo = collections.namedtuple("MountInfo", "lv,mountpoint,devices")
+FilterItem = collections.namedtuple("FilterItem", "action,path")
+Advice = collections.namedtuple("Advice", "action,filter")
+
+# Advice actions
+
+# The host is already configured, no action is needed.
+UNNEEDED = "unneeded"
+
+# We could determine a new configuration for this host, adding or replacing the
+# current LVM filter. Configuring the filter automatically is safe.
+CONFIGURE = "configure"
+
+# We do not fully understand the current filter, so we are not going to replace
+# it. The user need to configure the filter manually, possibly modifying the
+# filter, or consult support.
+RECOMMEND = "recommend"
+
+
+class InvalidFilter(Exception):
+    msg = "Invalid LVM filter regex {self.regex!r}: {self.reason}"
+
+    def __init__(self, regex, reason):
+        self.regex = regex
+        self.reason = reason
+
+    def __str__(self):
+        return self.msg.format(self=self)
 
 
 def find_lvm_mounts():
@@ -131,6 +160,100 @@ def build_filter(mounts):
     items.append("r|.*|")
 
     return items
+
+
+def analyze(current_filter, wanted_filter):
+    """
+    Analyze LVM filter wanted and current configuruation, and advice how to
+    proceed.
+
+    Returns:
+        An Advice object
+    """
+
+    # This is the expected condition when running on a host for the first time.
+    if not current_filter:
+        return Advice(CONFIGURE, wanted_filter)
+
+    if current_filter == wanted_filter:
+        # Same filter, ignoring whitespace and quoting difference.
+        return Advice(UNNEEDED, None)
+
+    # Is this a syntax difference?
+    wanted_items = [parse_item(r) for r in wanted_filter]
+
+    # This may raise if the current filter is invalid. We are not going to
+    # touch invalid LVM configuration.
+    current_items = [parse_item(r) for r in current_filter]
+
+    if current_items == wanted_items:
+        # Same filter, different delimeter syntax. For example:
+        # "a|^/dev/sda2$|" == "a/^dev/sda2$/".
+        return Advice(UNNEEDED, None)
+
+    # Is this order difference?
+    wanted_items = normalize_items(wanted_items)
+    current_items = normalize_items(current_items)
+
+    if current_items == wanted_items:
+        # This filters are the same, using different order.
+        return Advice(UNNEEDED, None)
+
+    # The currnet filter intent is different. We take the safe way - the user
+    # knows better. We will recommend to configure our filter, but the user
+    # will have to do this, or maybe contact support.
+    return Advice(RECOMMEND, wanted_filter)
+
+
+def normalize_items(items):
+    """
+    Sort consecutive items of same type, normalizing equivalent filters with
+    different order, that have the same intent.
+
+    Example input:
+
+        [
+            FilterItem("a", "/dev/c"),
+            FilterItem("a", "/dev/a"),
+            FilterItem("a", "/dev/b"),
+            FilterItem("r", ".*"),
+        ]
+
+    Example output:
+
+        [
+            FilterItem("a", "/dev/a"),
+            FilterItem("a", "/dev/b"),
+            FilterItem("a", "/dev/c"),
+            FilterItem("r", ".*"),
+        ]
+    """
+    res = []
+    for k, g in itertools.groupby(items, operator.attrgetter("action")):
+        res.extend(sorted(g))
+    return res
+
+
+def parse_item(regex):
+    action = regex[0]
+    if action not in ("a", "r"):
+        raise InvalidFilter(
+            regex,
+            "regex must be preceded by 'a' to accept the path, or by 'r' "
+            "to reject the path")
+
+    path = regex[1:]
+    if path[0] != path[-1]:
+        raise InvalidFilter(
+            regex,
+            "regex must be delimited by a vertical bar '|' (or any "
+            "character)")
+
+    path = path[1:-1]
+    if not path:
+        raise InvalidFilter(regex, "Empty path")
+
+    return FilterItem(action, path)
 
 
 def format_option(items):
