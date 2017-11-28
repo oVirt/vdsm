@@ -725,7 +725,7 @@ def _dump_device(md_obj, data, node_name=_DEVICE):
             continue
 
         if key == _PORT_MIRRORING:
-            elems.extend(_dump_port_mirroring(md_obj, value))
+            elems.append(_dump_port_mirroring(md_obj, value))
         elif key == _REPLICA:
             elems.append(_dump_device(md_obj, value, _REPLICA))
         elif key in _LAYERED_KEYS:

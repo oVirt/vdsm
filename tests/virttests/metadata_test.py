@@ -713,10 +713,15 @@ class SaveDeviceMetadataTests(XMLTestCase):
             'device': hwclass.NIC,
             'macAddr': '00:00:00:00:00:00',
             'network': 'test',
+            'portMirroring': ['net1', 'net2'],
         }
         expected_xml = """<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
     <ovirt-vm:device mac_address="00:00:00:00:00:00">
         <ovirt-vm:network>test</ovirt-vm:network>
+        <ovirt-vm:portMirroring>
+          <ovirt-vm:network>net1</ovirt-vm:network>
+          <ovirt-vm:network>net2</ovirt-vm:network>
+        </ovirt-vm:portMirroring>
         <ovirt-vm:specParams />
         <ovirt-vm:vm_custom />
     </ovirt-vm:device>
