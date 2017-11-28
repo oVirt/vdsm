@@ -19,9 +19,12 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-from . import expose
+from six.moves import input
 
+from vdsm.storage import lvmconf
 from vdsm.storage import lvmfilter
+
+from . import expose
 
 _NAME = 'config-lvm-filter'
 
@@ -30,10 +33,26 @@ _NAME = 'config-lvm-filter'
 def main(*args):
     """
     config-lvm-filter
-    Configure LVM filter allowing LVM to access only the local storage needed
-    by the hypervisor, but not shared storage owned by Vdsm.
+    Configure LVM filter allowing LVM to access only the local storage
+    needed by the hypervisor, but not shared storage owned by Vdsm.
     """
+
+    print("Analyzing host...")
+
     mounts = lvmfilter.find_lvm_mounts()
+    wanted_filter = lvmfilter.build_filter(mounts)
+
+    with lvmconf.LVMConfig() as config:
+        current_filter = config.getlist("devices", "filter")
+
+    advice = lvmfilter.analyze(current_filter, wanted_filter)
+
+    # This is the expected condition on a correctly configured host.
+    if advice.action == lvmfilter.UNNEEDED:
+        print("LVM filter is already configured for Vdsm")
+        return
+
+    # We need to configure LVM filter.
 
     print("Found these mounted logical volumes on this host:")
     print()
@@ -44,19 +63,59 @@ def main(*args):
         print("  devices:        ", ", ".join(mnt.devices))
         print()
 
-    lvm_filter = lvmfilter.build_filter(mounts)
-
     print("This is the recommended LVM filter for this host:")
     print()
-    print("  " + lvmfilter.format_option(lvm_filter))
+    print("  " + lvmfilter.format_option(wanted_filter))
     print()
+    print("""\
+This filter will allow LVM to access the local devices used by the
+hypervisor, but not shared storage owned by Vdsm. If you add a new
+device to the volume group, you will need to edit the filter manually.
+""")
 
-    print("To use this LVM filter please edit /etc/lvm/lvm.conf\n"
-          "and set the 'filter' option in the 'devices' section.\n"
-          "It is recommended to reboot the hypervisor to verify the\n"
-          "filter.\n"
-          "\n"
-          "This filter will allow LVM to access the local devices used\n"
-          "by the hypervisor, but not shared storage owned by Vdsm.\n"
-          "If you want to add another local device you will have to\n"
-          "add the device manually to the LVM filter.\n")
+    if current_filter:
+        print("This is the current LVM filter:")
+        print()
+        print("  " + lvmfilter.format_option(current_filter))
+        print()
+
+    if advice.action == lvmfilter.CONFIGURE:
+
+        if not confirm("Configure LVM filter? [NO/yes] "):
+            return
+
+        with lvmconf.LVMConfig() as config:
+            config.setlist("devices", "filter", advice.filter)
+            config.save()
+
+        print("""\
+Configuration completed successfully!
+
+Please reboot to verify the LVM configuration.
+""")
+
+    elif advice.action == lvmfilter.RECOMMEND:
+
+        print("""\
+WARNING: The current LVM filter does not match the recommended filter,
+Vdsm cannot configure the filter automatically.
+
+Please edit /etc/lvm/lvm.conf and set the 'filter' option in the
+'devices' section to the recommended value.
+
+It is recommend to reboot after changing LVM filter.
+""")
+
+
+def confirm(msg):
+    while True:
+        try:
+            res = input("{}? [yes,NO] ".format(msg))
+            res = res.strip().lower()
+        except KeyboardInterrupt:
+            print()
+            return False
+        if res in ("no", ""):
+            return False
+        if res == "yes":
+            return True
