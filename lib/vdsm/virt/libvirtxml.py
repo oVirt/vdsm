@@ -94,13 +94,14 @@ class Domain(object):
         Add <clock> element to domain:
 
         <clock offset="variable" adjustment="-3600">
-            <timer name="rtc" tickpolicy="catchup">
+            <timer name="rtc" tickpolicy="catchup"/>
         </clock>
 
-        for hyperv:
+        for hyperv (on x86):
         <clock offset="variable" adjustment="-3600">
-            <timer name="hypervclock" present="yes">
-            <timer name="rtc" tickpolicy="catchup">
+            <timer name="hypervclock" present="yes"/>
+            <timer name="rtc" tickpolicy="catchup"/>
+            <timer name="hpet" present="no"/>
         </clock>
         """
 
