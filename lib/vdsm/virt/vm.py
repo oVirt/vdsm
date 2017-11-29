@@ -3058,7 +3058,8 @@ class Vm(object):
             with self.setLinkAndNetwork(netDev, netConf, linkValue, network,
                                         custom, specParams):
                 with self.updatePortMirroring(netConf, netsToMirror):
-                    return {'status': doneCode, 'vmList': self.status()}
+                    self._hotplug_device_metadata(hwclass.NIC, netDev)
+                    return response.success(vmList=self.status())
         except (LookupError,
                 SetLinkAndNetworkError,
                 UpdatePortMirroringError) as e:
