@@ -95,7 +95,11 @@ class DriveMonitor(object):
         # so we just compute
         #    threshold = physical - limit
 
-        threshold = apparentsize - drive.watermarkLimit
+        # 1  is the minimum meaningful threshold.
+        # 0  is valid, but should be used only in clear_threshold
+        # <0 means that apparentsize is too low, likely storage issue
+        # that should be already handled -or at least notified- elsewhere.
+        threshold = max(1, apparentsize - drive.watermarkLimit)
 
         self._log.info(
             'setting block threshold to %d bytes for drive %r '

@@ -28,7 +28,6 @@ from vdsm.virt import drivemonitor
 
 from monkeypatch import MonkeyPatchScope
 
-from testValidation import xfail
 from testlib import make_config
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
@@ -374,7 +373,6 @@ class TestDrivemonitor(VdsmTestCase):
             expected = apparentsize - threshold
             self.assertEqual(vm._dom.thresholds, [('vda', expected)])
 
-    @xfail("set_threshold doesn't yet enforce a minimum threshold")
     def test_set_threshold_drive_too_small(self):
         # We seen the storage subsystem creating drive too small,
         # less than the minimum supported size, 1GiB.
