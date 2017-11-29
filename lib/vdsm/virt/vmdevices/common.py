@@ -397,3 +397,23 @@ def _get_metadata_from_elem_xml(vmid, md_desc, dev_class, dev_elem):
         with md_desc.device(**attrs) as dev_data:
             dev_meta.update(dev_data)
     return dev_meta
+
+
+def update_guest_disk_mapping(md_desc, disk_devices, guest_disk_mapping, log):
+    for serial, value in guest_disk_mapping:
+        for d in disk_devices:
+            image_id = storage.image_id(d.path)
+            if image_id and image_id[:20] in serial:
+                d.guestName = value['name']
+                log.debug("Guest name of drive %s: %s",
+                          image_id, d.guestName)
+                attrs, data = storagexml.get_metadata(d)
+                with md_desc.device(**attrs) as dev:
+                    dev.update(data)
+                break
+        else:
+            if serial[:20]:
+                # Silently skip devices that don't appear to have a serial
+                # number, such as CD-ROMs or direct LUN devices.
+                log.warning("Unidentified guest drive %s: %s",
+                            serial, value['name'])

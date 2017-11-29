@@ -30,7 +30,8 @@ from . import hwclass
 _PAYLOAD_PATH = 'PAYLOAD:'
 
 
-METADATA_KEYS = ('GUID', 'domainID', 'imageID', 'poolID', 'volumeID')
+METADATA_KEYS = ('GUID', 'domainID', 'imageID', 'poolID', 'volumeID',
+                 'guestName',)
 
 
 METADATA_NESTED_KEYS = ('diskReplicate', 'volumeChain', 'volumeInfo')

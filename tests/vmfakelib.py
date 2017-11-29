@@ -281,6 +281,7 @@ def VM(params=None, devices=None, runCpu=False,
             fake = vm.Vm(cif, vmParams, recover=recover)
             cif.vmContainer[fake.id] = fake
             fake._update_metadata = lambda: None
+            fake._sync_metadata = lambda: None
             fake.send_status_event = lambda **kwargs: None
             fake._waitForDeviceRemoval = lambda device: None
             fake.arch = arch

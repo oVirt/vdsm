@@ -123,7 +123,7 @@ class Drive(core.Base):
                  'extSharedState', 'drv', 'sgio', 'GUID', 'diskReplicate',
                  '_diskType', 'hosts', 'protocol', 'auth', 'discard',
                  'vm_custom', 'blockinfo', '_threshold_state', '_lock',
-                 '_monitorable')
+                 '_monitorable', 'guestName',)
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         constants.MEGAB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -891,6 +891,16 @@ def chain_index(actual_chain, vol_id, drive_name):
         if entry.uuid == vol_id:
             return entry.index
     raise VolumeNotFound(drive_name=drive_name, vol_id=vol_id)
+
+
+def image_id(path):
+    """
+    Retrieve and return image ID from drive path.
+    """
+    if not os.path.basename(path):
+        path = os.path.dirname(path)
+    image_path = os.path.dirname(path)
+    return os.path.basename(image_path)
 
 
 def _getSourceXML(drive):

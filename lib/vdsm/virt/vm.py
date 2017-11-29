@@ -441,6 +441,7 @@ class Vm(object):
         self._monitorable = False
         self._migration_downtime = None
         self._pause_code = None
+        self._last_disk_mapping_hash = None
 
     @property
     def _hugepages_shared(self):
@@ -1891,7 +1892,25 @@ class Vm(object):
         else:
             memUsage = 0
         stats['memUsage'] = utils.convertToStr(int(memUsage))
+        self._update_guest_disk_mapping()
         return stats
+
+    def _update_guest_disk_mapping(self):
+        disk_mapping_hash = self._last_disk_mapping_hash
+        if self.guestAgent.diskMappingHash == disk_mapping_hash:
+            return
+        guest_disk_mapping = self.guestAgent.guestDiskMapping.items()
+        with self._confLock:
+            disk_devices = list(self.getDiskDevices())
+            vmdevices.common.update_guest_disk_mapping(
+                self._md_desc, disk_devices, guest_disk_mapping, self.log
+            )
+        try:
+            self._sync_metadata()
+        except libvirt.libvirtError as e:
+            self.log.warning("Couldn't update metadata: %s", e)
+            return
+        self._last_disk_mapping_hash = disk_mapping_hash
 
     def isMigrating(self):
         return self._migrationSourceThread.migrating()
