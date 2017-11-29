@@ -1,5 +1,7 @@
 #!/bin/bash -xe
 
+readonly TEST_RUN_TIMEOUT=3600
+
 export LIBGUESTFS_BACKEND=direct
 
 # ensure /dev/kvm exists, otherwise it will still use
@@ -55,7 +57,7 @@ function fake_ksm_in_vm {
 
 function run_infra_tests {
     local res=0
-    lago shell "$VM_NAME" -c \
+    timeout $TEST_RUN_TIMEOUT lago shell "$VM_NAME" -c \
         " \
             cd /usr/share/vdsm/tests
             ./run_tests.sh \
@@ -70,7 +72,7 @@ function run_infra_tests {
 
 function run_network_tests {
     local res=0
-    lago shell "$VM_NAME" -c \
+    timeout $TEST_RUN_TIMEOUT lago shell "$VM_NAME" -c \
         " \
             pip install -U pytest==3.1.2
             systemctl stop NetworkManager
