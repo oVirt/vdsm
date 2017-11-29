@@ -28,6 +28,7 @@ from vdsm.virt import drivemonitor
 
 from monkeypatch import MonkeyPatchScope
 
+from testValidation import xfail
 from testlib import make_config
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
@@ -372,6 +373,23 @@ class TestDrivemonitor(VdsmTestCase):
             mon.set_threshold(vda, apparentsize)
             expected = apparentsize - threshold
             self.assertEqual(vm._dom.thresholds, [('vda', expected)])
+
+    @xfail("set_threshold doesn't yet enforce a minimum threshold")
+    def test_set_threshold_drive_too_small(self):
+        # We seen the storage subsystem creating drive too small,
+        # less than the minimum supported size, 1GiB.
+        # While this is a storage issue, the drive monitor should
+        # be fixed no never set negative thresholds.
+        with make_env(events_enabled=True) as (mon, vm):
+            vda = make_drive(self.log, index=0, iface='virtio')
+            vm.drives.append(vda)
+
+            apparentsize = 128 * MB
+
+            mon.set_threshold(vda, apparentsize)
+            drive_name, value = vm._dom.thresholds[0]
+            self.assertEqual(drive_name, 'vda')
+            self.assertGreaterEqual(value, 1)
 
     def test_clear_with_index_equal_none(self):
         with make_env(events_enabled=True) as (mon, vm):
