@@ -412,6 +412,11 @@ parameters = [
             '- dd - uses a "dd" command. '
             'Note that blkdiscard is more efficient than dd, in particular '
             'when the underlying storage supports "write same".'),
+
+        ('zero_block_size_mb', '1',
+            'The size of the chunk in MiB that is zeroed in each iteration by '
+            'the zero method. A legal value is an integer between 1 and 64 '
+            '(default 1).'),
     ]),
 
     # Section: [jobs]

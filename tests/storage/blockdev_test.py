@@ -29,13 +29,14 @@ from testlib import make_config
 from testlib import namedTemporaryDir
 import loopback
 
+from vdsm import constants
 from vdsm.common import exception
 from vdsm.storage import blockdev
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 
-OPTIMAL_BLOCK_SIZE = blockdev.OPTIMAL_BLOCK_SIZE
-FILE_SIZE = 2 * OPTIMAL_BLOCK_SIZE
+DEFAULT_BLOCK_SIZE = blockdev.zero_block_size()
+FILE_SIZE = 2 * DEFAULT_BLOCK_SIZE
 
 
 @pytest.fixture
@@ -67,21 +68,21 @@ class TestZero:
 
     @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
     def test_size(self, loop_device, zero_method):
-        # Zero the first OPTIMAL_BLOCK_SIZE
-        blockdev.zero(loop_device.path, size=OPTIMAL_BLOCK_SIZE)
+        # Zero the first DEFAULT_BLOCK_SIZE
+        blockdev.zero(loop_device.path, size=DEFAULT_BLOCK_SIZE)
         with io.open(loop_device.backing_file, "rb") as f:
-            # Verify that the first OPTIMAL_BLOCK_SIZE is zeroed
-            data = f.read(OPTIMAL_BLOCK_SIZE)
-            assert data == b"\0" * OPTIMAL_BLOCK_SIZE
+            # Verify that the first DEFAULT_BLOCK_SIZE is zeroed
+            data = f.read(DEFAULT_BLOCK_SIZE)
+            assert data == b"\0" * DEFAULT_BLOCK_SIZE
             # And the rest was not modified
-            data = f.read(OPTIMAL_BLOCK_SIZE)
-            assert data == b"x" * OPTIMAL_BLOCK_SIZE
+            data = f.read(DEFAULT_BLOCK_SIZE)
+            assert data == b"x" * DEFAULT_BLOCK_SIZE
 
     @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
     @pytest.mark.parametrize("size", [
         (sc.BLOCK_SIZE),
-        (blockdev.OPTIMAL_BLOCK_SIZE - sc.BLOCK_SIZE),
-        (blockdev.OPTIMAL_BLOCK_SIZE + sc.BLOCK_SIZE),
+        (DEFAULT_BLOCK_SIZE - sc.BLOCK_SIZE),
+        (DEFAULT_BLOCK_SIZE + sc.BLOCK_SIZE),
     ])
     def test_special_volumes(self, size, loop_device, zero_method):
         # Zero size bytes
@@ -113,6 +114,20 @@ class TestZero:
     def test_unaligned_size(self, size):
         with pytest.raises(se.InvalidParameterException):
             blockdev.zero("/no/such/path", size=size)
+
+    @pytest.mark.parametrize("block_size_mb", ["1", "30", "64"])
+    def test_zero_block_size_valid(self, block_size_mb, monkeypatch):
+        cfg = make_config([('irs', 'zero_block_size_mb', block_size_mb)])
+        monkeypatch.setattr(blockdev, "config", cfg)
+        block_size = int(block_size_mb) * constants.MEGAB
+        assert blockdev.zero_block_size() == block_size
+
+    @pytest.mark.parametrize("block_size_mb", ["0", "5.5", "65", "str", ""])
+    def test_zero_block_size_invalid(self, block_size_mb, monkeypatch):
+        cfg = make_config([('irs', 'zero_block_size_mb', block_size_mb)])
+        monkeypatch.setattr(blockdev, "config", cfg)
+        with pytest.raises(exception.InvalidConfiguration):
+            blockdev.zero_block_size()
 
 
 class TestDiscard:

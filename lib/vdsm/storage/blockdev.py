@@ -42,10 +42,8 @@ from vdsm.storage import exception as se
 
 log = logging.getLogger("storage.blockdev")
 
-# Keeping the old value for now.
-# TODO: In my tests, 8m gives better performance. Test with different
-# storage backends and transport to determine the best value.
-OPTIMAL_BLOCK_SIZE = constants.MEGAB
+MIN_BLOCK_SIZE_MB = 1
+MAX_BLOCK_SIZE_MB = 64
 
 
 class _NullTask(object):
@@ -102,7 +100,7 @@ def zero(device_path, size=None, task=_NullTask()):
 
 
 def _zero_blkdiscard(device_path, size, task):
-    op = blkdiscard.zeroout_operation(device_path, OPTIMAL_BLOCK_SIZE, size)
+    op = blkdiscard.zeroout_operation(device_path, zero_block_size(), size)
     with task.abort_callback(op.abort):
         op.run()
 
@@ -110,15 +108,16 @@ def _zero_blkdiscard(device_path, size, task):
 def _zero_dd(device_path, size, task):
     # Write optimal size blocks. Images are always aligned to
     # optimal size blocks, so we typically have only one call.
-    blocks = size // OPTIMAL_BLOCK_SIZE
+    block_size = zero_block_size()
+    blocks = size // block_size
     if blocks > 0:
-        _run_dd(device_path, 0, OPTIMAL_BLOCK_SIZE, blocks, task)
+        _run_dd(device_path, 0, block_size, blocks, task)
 
     # When zeroing special volumes size may not be aligned to
     # optimal block size, so we need to write the last block.
-    rest = size % OPTIMAL_BLOCK_SIZE
+    rest = size % block_size
     if rest > 0:
-        offset = blocks * OPTIMAL_BLOCK_SIZE
+        offset = blocks * block_size
         _run_dd(device_path, offset, rest, 1, task)
 
 
@@ -135,6 +134,24 @@ def _run_dd(path, offset, block_size, count, task):
     ])
     with task.abort_callback(op.abort):
         op.run()
+
+
+def zero_block_size():
+    value = config.get('irs', 'zero_block_size_mb')
+    try:
+        value = int(value)
+    except ValueError:
+        raise exception.InvalidConfiguration(
+            reason="Unsupported value for irs:zero_block_size_mb",
+            zero_block_size_mb=value)
+    if value < MIN_BLOCK_SIZE_MB or value > MAX_BLOCK_SIZE_MB:
+        raise exception.InvalidConfiguration(
+            reason="Out of range value for irs:zero_block_size_mb",
+            zero_block_size_mb=value,
+            min=MIN_BLOCK_SIZE_MB,
+            max=MAX_BLOCK_SIZE_MB)
+
+    return value * constants.MEGAB
 
 
 def discard(device_path):
