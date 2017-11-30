@@ -43,6 +43,7 @@ from vdsm.network.link.setup import SetupBonds
 from vdsm.network.netinfo import bridges
 from vdsm.network.netinfo.cache import (networks_base_info, get as netinfo_get,
                                         CachingNetInfo, NetInfo)
+from vdsm.network.netinfo.cache import get_net_iface_from_config
 
 from . import validator
 
@@ -427,6 +428,18 @@ def ovs_net2bridge(network_name):
         return None
 
     return ovs_info.bridge_info(network_name)
+
+
+def net2northbound(network_name):
+    nb_device = network_name
+
+    # Using RunningConfig avoids the need to require root access.
+    net_attr = RunningConfig().networks.get(network_name)
+    is_legacy = net_attr['switch'] == legacy_switch.SWITCH_TYPE
+    if not net_attr['bridged'] and is_legacy:
+        nb_device = get_net_iface_from_config(network_name, net_attr)
+
+    return nb_device
 
 
 def net2vlan(network_name):

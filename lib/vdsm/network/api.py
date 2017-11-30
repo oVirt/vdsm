@@ -90,6 +90,16 @@ def net2vlan(network_name):
     return netswitch.configurator.net2vlan(network_name)
 
 
+def network_northbound(network_name):
+    """
+    Return the northbound iface of a given network if exists, None otherwise.
+    On a legacy network, the NB is either the bridge or the NIC/Bond/VLAN.
+    On an OVS network, the NB is a dedicated internal iface connected to the
+    OVS switch, named as the network.
+    """
+    return netswitch.configurator.net2northbound(network_name)
+
+
 def ovs_bridge(network_name):
     """
     If network_name is an OVS based network, return a dict with OVS (real)

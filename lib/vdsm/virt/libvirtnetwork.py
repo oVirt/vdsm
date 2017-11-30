@@ -76,7 +76,7 @@ def createNetworkDef(network, bridged=True, iface=None):
     return etree.tostring(root)
 
 
-def create_network(netname, user_reference=None):
+def create_network(netname, iface, user_reference=None):
     """
     Create a libvirt network if it does not yet exist.
     The user_reference argument is a unique identifier of the caller,
@@ -84,7 +84,9 @@ def create_network(netname, user_reference=None):
     """
     with _libvirt_net_lock:
         if not is_libvirt_network(netname):
-            _createNetwork(createNetworkDef(netname))
+            bridged = netname == iface
+            iface = None if bridged else iface
+            _createNetwork(createNetworkDef(netname, bridged, iface))
 
         NetworksUsersCache.add(netname, user_reference)
 

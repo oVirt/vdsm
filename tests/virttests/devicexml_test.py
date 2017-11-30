@@ -1018,9 +1018,9 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         meta['vmid'] = 'VMID'
         with MonkeyPatchScope([
             (vmdevices.graphics, '_getNetworkIp', lambda net: display_ip),
-            (vmdevices.graphics.libvirtnetwork,
+            (vmdevices.graphics.displaynetwork,
                 'create_network', lambda net, vmid: None),
-            (vmdevices.graphics.libvirtnetwork,
+            (vmdevices.graphics.displaynetwork,
                 'delete_network', lambda net, vmid: None),
             (vmdevices.graphics, 'config',
                 make_config([('vars', 'ssl', 'true')])),

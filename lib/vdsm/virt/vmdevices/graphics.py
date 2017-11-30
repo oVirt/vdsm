@@ -25,6 +25,7 @@ import libvirt
 
 from vdsm.common import conv
 from vdsm.network import api as net_api
+from vdsm.virt import displaynetwork
 from vdsm.virt import libvirtnetwork
 from vdsm.config import config
 from vdsm.virt import vmxml
@@ -63,7 +64,7 @@ class Graphics(Base):
     def setup(self):
         display_network = self.specParams['displayNetwork']
         if display_network:
-            libvirtnetwork.create_network(display_network, self.vmid)
+            displaynetwork.create_network(display_network, self.vmid)
             display_ip = _getNetworkIp(display_network)
         else:
             display_ip = '0'
@@ -72,7 +73,7 @@ class Graphics(Base):
     def teardown(self):
         display_network = self.specParams['displayNetwork']
         if display_network:
-            libvirtnetwork.delete_network(display_network, self.vmid)
+            displaynetwork.delete_network(display_network, self.vmid)
 
     def getSpiceVmcChannelsXML(self):
         vmc = vmxml.Element('channel', type='spicevmc')
