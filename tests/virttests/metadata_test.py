@@ -33,9 +33,9 @@ from vdsm.virt import xmlconstants
 
 import libvirt
 
-from vmfakecon import Error
 from testlib import permutations, expandPermutations
 from testlib import XMLTestCase
+from fakemetadatalib import FakeDomain
 
 
 # NOTE:
@@ -791,42 +791,3 @@ class SaveDeviceMetadataTests(XMLTestCase):
         self.assertXMLEqual(md_desc.to_xml(), expected_xml)
 
     # TODO: simulate read-create-write cycle with network or storage device
-
-
-BLANK_UUID = '00000000-0000-0000-0000-000000000000'
-
-
-class FakeDomain(object):
-
-    @classmethod
-    def with_metadata(
-        cls,
-        xml_string,
-        prefix=xmlconstants.METADATA_VM_VDSM_PREFIX,
-        uri=xmlconstants.METADATA_VM_VDSM_URI
-    ):
-        dom = cls()
-        if xml_string:
-            dom.setMetadata(
-                libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                xml_string, prefix, uri, 0
-            )
-        return dom
-
-    def __init__(self, vmid=BLANK_UUID):
-        self.xml = {}
-        self._uuid = vmid
-
-    def UUIDString(self):
-        return self._uuid
-
-    def metadata(self, xml_type, uri, flags):
-        # we only support METADATA_ELEMENT
-        assert xml_type == libvirt.VIR_DOMAIN_METADATA_ELEMENT
-        xml_string = self.xml.get(uri, None)
-        if xml_string is None:
-            raise Error(libvirt.VIR_ERR_NO_DOMAIN_METADATA)
-        return xml_string
-
-    def setMetadata(self, xml_type, xml_string, prefix, uri, flags):
-        self.xml[uri] = xml_string
