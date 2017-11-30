@@ -83,6 +83,7 @@ from testlib import recorded
 
 from vmTestsData import CONF_TO_DOMXML_PPC64
 from vmTestsData import CONF_TO_DOMXML_X86_64
+from fakelib import FakeLogger
 import vmfakelib as fake
 
 
@@ -1769,6 +1770,27 @@ class ChangeBlockDevTests(TestCaseBase):
 
             expected_status = define.errCode['changeDisk']['status']
             self.assertEqual(res['status'], expected_status)
+
+    def test_update_drive_parameters_failure(self):
+        with fake.VM() as testvm:
+            testvm.log = FakeLogger()
+
+            # to make the update fail, the simplest way is to have
+            # no devices whatsoever
+            self.assertEqual(testvm._devices,
+                             vmdevices.common.empty_dev_map())
+            self.assertEqual(testvm.conf['devices'], [])
+
+            # the method will swallow all the errors
+            testvm.updateDriveParameters({'name': 'vda'})
+
+            # nothing should be added...
+            self.assertEqual(testvm._devices,
+                             vmdevices.common.empty_dev_map())
+            self.assertEqual(testvm.conf['devices'], [])
+
+            # ... and the reason for no update should be logged
+            self.assertTrue(testvm.log.messages)
 
 
 class TestingVm(vm.Vm):

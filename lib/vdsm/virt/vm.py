@@ -4061,7 +4061,7 @@ class Vm(object):
         try:
             conf = self._findDriveConfigByName(driveParams["name"])
         except LookupError:
-            self.log.error("Unable to update the device configuration ",
+            self.log.error("Unable to update the device configuration "
                            "for disk %s", driveParams["name"])
         else:
             with self._confLock:
