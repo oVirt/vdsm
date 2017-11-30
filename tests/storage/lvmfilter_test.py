@@ -106,7 +106,7 @@ def test_real_build_filter():
     log.info("LVM filter for this host:\n%r", lvm_filter)
     for mnt in mounts:
         for dev in mnt.devices:
-            match = "'a|^%s$|'" % dev
+            match = "a|^%s$|" % dev
             assert match in lvm_filter
 
 
