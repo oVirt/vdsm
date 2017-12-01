@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 
 import copy
+import logging
 import xml.etree.ElementTree as etree
 
 from vdsm.common import xmlutils
@@ -322,6 +323,12 @@ class Device(object):
                 continue
 
             attr = getattr(self, attrName)
+            if attr is None:
+                log = logging.getLogger('devel')
+                log.debug("Attribute '%s' of '%s' device element '%s' is None",
+                          attrName, deviceType, elemType)
+                continue
+
             if isinstance(attr, dict):
                 element.appendChildWithArgs(attrName, **attr)
             else:
