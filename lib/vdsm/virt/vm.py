@@ -4966,7 +4966,7 @@ class Vm(object):
             self.cif.teardownVolumePath(self.conf[vmDev])
 
         self.conf[vmDev] = path
-        return {'status': doneCode, 'vmList': self.status()}
+        return response.success(vmList=self.status())
 
     def setTicket(self, otp, seconds, connAct, params):
         """
