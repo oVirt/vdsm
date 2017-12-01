@@ -4970,6 +4970,8 @@ class Vm(object):
         diskelem.appendChildWithArgs('target', **target)
         diskelem_xml = xmlutils.tostring(diskelem)
 
+        self.log.info("changeBlockDev: using disk XML: %s", diskelem_xml)
+
         changed = False
         if not force:
             try:
