@@ -1852,8 +1852,9 @@ class ChangeBlockDevTests(TestCaseBase):
             cdromspec = {'path': '',
                          'iface': 'ide',
                          'index': '2'}
-            res = fakevm.changeCD(cdromspec)
-            self.assertFalse(response.is_error(res))
+            self.assertNotRaises(
+                fakevm.changeCD,
+                cdromspec)
 
     def test_change_cd_failure(self):
         with fake.VM() as fakevm:
@@ -1865,10 +1866,11 @@ class ChangeBlockDevTests(TestCaseBase):
                          'iface': 'ide',
                          'index': '2',
                          }
-            res = fakevm.changeCD(cdromspec)
 
-            expected_status = define.errCode['changeDisk']['status']
-            self.assertEqual(res['status'], expected_status)
+            self.assertRaises(
+                exception.ChangeDiskFailed,
+                fakevm.changeCD,
+                cdromspec)
 
     def test_update_drive_parameters_failure(self):
         with fake.VM() as testvm:

@@ -4933,7 +4933,8 @@ class Vm(object):
         try:
             path = self.cif.prepareVolumePath(drivespec)
         except VolumeError:
-            return response.error('imageErr')
+            raise exception.ImageFileNotFound()
+
         diskelem = vmxml.Element('disk', type='file', device=vmDev)
         diskelem.appendChildWithArgs('source', file=path)
 
@@ -4961,11 +4962,12 @@ class Vm(object):
             except libvirt.libvirtError:
                 self.log.exception("forceful updateDeviceFlags failed")
                 self.cif.teardownVolumePath(drivespec)
-                return response.error('changeDisk')
+                raise exception.ChangeDiskFailed()
+
         if vmDev in self.conf:
             self.cif.teardownVolumePath(self.conf[vmDev])
 
-        return response.success(vmList=self.status())
+        return {'vmList': self.status()}
 
     def setTicket(self, otp, seconds, connAct, params):
         """
