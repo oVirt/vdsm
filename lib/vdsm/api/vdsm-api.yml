@@ -223,12 +223,12 @@ types:
             name: discard_max_bytes
             type: ulong
 
-        -   description: Indicates whether or not the device deterministically
-                returns zeroes when a discarded area is read.
-                1 means it does, 0 mesans that the result is undefined (can be
-                stale or random data).
+        -   description: Deprecated by the kernel since version 4.12 (see
+                https://patchwork.kernel.org/patch/9641263/).
+                Always returns 0 for backward compatibility.
             name: discard_zeroes_data
             type: uint
+            deprecated: '4.1.8'
 
         -   description: A string identifying the device model
             name: productID
