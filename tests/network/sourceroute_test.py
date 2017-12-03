@@ -90,6 +90,15 @@ class TestSourceRoute(TestCaseBase):
                 self.assertEqual(IPv4_NET, rules[1].src)
                 self.assertEqual(IPV4_TABLE, rules[1].table)
 
+    @ValidateRunningAsRoot
+    def test_sourceroute_add_over_existing_route(self):
+        with dummy_device() as nic:
+            addrAdd(nic, IPV4_ADDRESS, IPV4_MASK)
+
+            with create_sourceroute(device=nic, ip=IPV4_ADDRESS,
+                                    mask=IPV4_MASK, gateway=IPV4_GW):
+                sourceroute.add(nic, IPV4_ADDRESS, IPV4_MASK, IPV4_GW)
+
 
 @contextmanager
 def create_sourceroute(device, ip, mask, gateway):

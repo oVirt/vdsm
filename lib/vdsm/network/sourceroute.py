@@ -191,12 +191,17 @@ def add(device, ip, mask, gateway):
     try:
         for route in routes:
             IPRoute.add(route)
+    except IPRouteError as e:
+        if 'RTNETLINK answers: File exists' in e.args:
+            logging.debug('Route already exists, addition failed,: %s', e.args)
+        else:
+            logging.error('Failed source route addition: %s', e.args)
 
+    try:
         for rule in rules:
             IPRule.add(rule)
-
-    except (IPRouteError, IPRuleError) as e:
-        logging.error('Failed source route addition: %s', e.args)
+    except IPRuleError as e:
+        logging.error('Failed source rule addition: %s', e.args)
 
 
 def remove(device):
