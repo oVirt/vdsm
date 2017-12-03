@@ -21,12 +21,11 @@
 from __future__ import absolute_import
 import json
 import os
-from shutil import rmtree
 import tempfile
 
 from nose.plugins.attrib import attr
 
-from vdsm.common.fileutils import rm_file
+from vdsm.common import fileutils
 from vdsm.network import errors as ne
 from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network.netconfpersistence import Config, Transaction
@@ -62,7 +61,7 @@ class NetConfPersistenceTests(TestCaseBase):
         self.tempdir = _create_netconf()
 
     def tearDown(self):
-        rmtree(self.tempdir)
+        fileutils.rm_tree(self.tempdir)
 
     def testInit(self):
         filePath = os.path.join(self.tempdir, 'nets', NETWORK)
@@ -73,7 +72,7 @@ class NetConfPersistenceTests(TestCaseBase):
             persistence = Config(self.tempdir)
             self.assertEqual(persistence.networks[NETWORK], NETWORK_ATTRIBUTES)
         finally:
-            rm_file(filePath)
+            fileutils.rm_file(filePath)
 
     def testSetAndRemoveNetwork(self):
         persistence = Config(self.tempdir)
@@ -133,7 +132,8 @@ class TransactionTests(TestCaseBase):
         self.config = Config(self.tempdir)
 
     def tearDown(self):
-        rmtree(self.tempdir)
+        self.config.delete()
+        self.assertFalse(os.path.exists(self.tempdir))
 
     def test_successful_setup(self):
         with Transaction(config=self.config) as _config:

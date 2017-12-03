@@ -18,9 +18,13 @@
 #
 from __future__ import absolute_import
 
+from contextlib import contextmanager
+import os
+import tempfile
+
 from nose.plugins.attrib import attr
 
-from testlib import VdsmTestCase, mock, namedTemporaryDir
+from testlib import VdsmTestCase, mock
 
 from vdsm.network import netconfpersistence as netconf
 from vdsm.network import netupgrade
@@ -153,18 +157,27 @@ class NetCreateUnifiedConfigTest(VdsmTestCase):
 class NetUpgradeVolatileRunConfig(VdsmTestCase):
 
     def test_upgrade_volatile_running_config(self):
-        with namedTemporaryDir() as pdir, namedTemporaryDir() as vdir:
-            with mock.patch.object(netconf, 'CONF_RUN_DIR', pdir),\
-                    mock.patch.object(netconf, 'CONF_VOLATILE_RUN_DIR', vdir):
 
-                vol_rconfig = netconf.RunningConfig(volatile=True)
+        with create_running_config(volatile=True) as vol_rconfig:
+            with create_running_config(volatile=False) as pers_rconfig:
                 vol_rconfig.save()
-
                 netupgrade.upgrade()
 
-                pers_rconfig = netconf.RunningConfig()
                 self.assertFalse(vol_rconfig.config_exists())
                 self.assertTrue(pers_rconfig.config_exists())
+
+
+@contextmanager
+def create_running_config(volatile):
+    conf_dir_to_mock = 'CONF_VOLATILE_RUN_DIR' if volatile else 'CONF_RUN_DIR'
+    tempdir = tempfile.mkdtemp()
+    with mock.patch.object(netconf, conf_dir_to_mock, tempdir):
+        try:
+            rconfig = netconf.RunningConfig(volatile)
+            yield rconfig
+        finally:
+            rconfig.delete()
+            assert not os.path.exists(tempdir)
 
 
 DEFAULT_NET_ATTRS = {'bootproto': 'none',

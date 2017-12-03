@@ -34,6 +34,9 @@ from vdsm.common import fileutils
 from vdsm.network.link.iface import random_iface_name
 from . import errors as ne
 
+NETCONF_BONDS = 'bonds'
+NETCONF_NETS = 'nets'
+
 CONF_VOLATILE_RUN_DIR = constants.P_VDSM_RUN + 'netconf'
 CONF_RUN_DIR = constants.P_VDSM_LIB + 'staging/netconf'
 CONF_PERSIST_DIR = constants.P_VDSM_LIB + 'persistence/netconf'
@@ -116,8 +119,9 @@ class BaseConfig(object):
 
 class Config(BaseConfig):
     def __init__(self, savePath):
-        self.networksPath = os.path.join(savePath, 'nets')
-        self.bondingsPath = os.path.join(savePath, 'bonds')
+        self._netconf_path = savePath
+        self.networksPath = os.path.join(savePath, NETCONF_NETS)
+        self.bondingsPath = os.path.join(savePath, NETCONF_BONDS)
         nets = self._getConfigs(self.networksPath)
         for net_attrs in six.viewvalues(nets):
             _filter_out_volatile_net_attrs(net_attrs)
@@ -130,13 +134,25 @@ class Config(BaseConfig):
         self._clearDisk()
 
     def save(self):
-        self._clearConfigs()
-        for bond, attrs in six.iteritems(self.bonds):
-            self._setConfig(attrs, self._bondingPath(bond))
-        for network, attrs in six.iteritems(self.networks):
-            self._setConfig(attrs, self._networkPath(network))
+        self._clearDisk()
+        rand_suffix = random_iface_name(max_length=8)
+        rand_netconf_path = self._netconf_path + '.' + rand_suffix
+        rand_nets_path = os.path.join(rand_netconf_path, NETCONF_NETS)
+        rand_bonds_path = os.path.join(rand_netconf_path, NETCONF_BONDS)
+
+        self._save_config(self.networks, rand_nets_path)
+        self._save_config(self.bonds, rand_bonds_path)
+
+        _atomic_copytree(
+            rand_netconf_path, self._netconf_path, remove_src=True)
+
         logging.info('Saved new config %r to %s and %s' %
                      (self, self.networksPath, self.bondingsPath))
+
+    def _save_config(self, configs, configpath):
+        os.makedirs(configpath)
+        for configname, attrs in six.iteritems(configs):
+            self._setConfig(attrs, os.path.join(configpath, configname))
 
     def config_exists(self):
         return (os.path.exists(self.networksPath) or
@@ -184,16 +200,22 @@ class Config(BaseConfig):
         with open(path, 'w') as configurationFile:
             json.dump(config, configurationFile, indent=4)
 
-    def _clearConfigs(self):
-        self._clearDisk()
-        os.makedirs(self.networksPath)
-        os.makedirs(self.bondingsPath)
-
     def _clearDisk(self):
-        logging.info('Clearing %s and %s',
-                     self.networksPath, self.bondingsPath)
-        fileutils.rm_tree(self.networksPath)
-        fileutils.rm_tree(self.bondingsPath)
+        logging.info('Clearing netconf: %s', self._netconf_path)
+        self._clear_config(self._netconf_path)
+
+    @staticmethod
+    def _clear_config(confpath):
+        try:
+            real_confpath = os.path.realpath(confpath)
+            fileutils.rm_file(confpath)
+            fileutils.rm_tree(real_confpath)
+        except OSError as e:
+            # Support the "old" non-symlink config path.
+            if e.errno == errno.EISDIR:
+                fileutils.rm_tree(confpath)
+            else:
+                raise
 
 
 class RunningConfig(Config):
