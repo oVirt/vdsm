@@ -34,9 +34,9 @@ from vdsm.common import fileutils
 from vdsm.network.link.iface import random_iface_name
 from . import errors as ne
 
-CONF_VOLATILE_RUN_DIR = constants.P_VDSM_RUN + 'netconf/'
-CONF_RUN_DIR = constants.P_VDSM_LIB + 'staging/netconf/'
-CONF_PERSIST_DIR = constants.P_VDSM_LIB + 'persistence/netconf/'
+CONF_VOLATILE_RUN_DIR = constants.P_VDSM_RUN + 'netconf'
+CONF_RUN_DIR = constants.P_VDSM_LIB + 'staging/netconf'
+CONF_PERSIST_DIR = constants.P_VDSM_LIB + 'persistence/netconf'
 
 VOLATILE_NET_ATTRS = ('blockingdhcp',)
 
@@ -116,8 +116,8 @@ class BaseConfig(object):
 
 class Config(BaseConfig):
     def __init__(self, savePath):
-        self.networksPath = os.path.join(savePath, 'nets', '')
-        self.bondingsPath = os.path.join(savePath, 'bonds', '')
+        self.networksPath = os.path.join(savePath, 'nets')
+        self.bondingsPath = os.path.join(savePath, 'bonds')
         nets = self._getConfigs(self.networksPath)
         for net_attrs in six.viewvalues(nets):
             _filter_out_volatile_net_attrs(net_attrs)
@@ -143,10 +143,10 @@ class Config(BaseConfig):
                 os.path.exists(self.bondingsPath))
 
     def _networkPath(self, network):
-        return self.networksPath + network
+        return os.path.join(self.networksPath, network)
 
     def _bondingPath(self, bonding):
-        return self.bondingsPath + bonding
+        return os.path.join(self.bondingsPath, bonding)
 
     @staticmethod
     def _getConfigDict(path):
@@ -168,7 +168,7 @@ class Config(BaseConfig):
         networkEntities = {}
 
         for fileName in os.listdir(path):
-            fullPath = path + fileName
+            fullPath = os.path.join(path, fileName)
             networkEntities[fileName] = Config._getConfigDict(fullPath)
 
         return networkEntities
@@ -210,7 +210,7 @@ class RunningConfig(Config):
         It is implemented by copying the running config to the
         persistent (safe) config in an atomic manner.
         """
-        _atomic_copytree(CONF_RUN_DIR[:-1], CONF_PERSIST_DIR[:-1])
+        _atomic_copytree(CONF_RUN_DIR, CONF_PERSIST_DIR)
 
 
 class PersistentConfig(Config):
