@@ -203,7 +203,14 @@ class RunningConfig(Config):
 
     @staticmethod
     def store():
-        _store_net_config()
+        """
+        Declare the current running config as 'safe' and persist this safe
+        config.
+
+        It is implemented by copying the running config to the
+        persistent (safe) config in an atomic manner.
+        """
+        _atomic_copytree(CONF_RUN_DIR[:-1], CONF_PERSIST_DIR[:-1])
 
 
 class PersistentConfig(Config):
@@ -261,25 +268,31 @@ def _filter_out_volatile_net_attrs(net_attrs):
         net_attrs.pop(attr, None)
 
 
-def _store_net_config():
+def _atomic_copytree(srcpath, dstpath, remove_src=False):
     """
-    Declare the current running config as 'safe' and persist this safe config.
+    Copy srcpath to dstpatch in an atomic manner.
 
-    It is implemented by copying the running config to the persistent (safe)
-    config in an atomic manner.
     It applies atomic directory copy by using the atomicity of overwriting a
     link (rename syscall).
+
+    In case the remove_src flag argument is True, the srcpath is deleted.
+
+    Note: In case of an interruption, it is assured that the destination is
+    intact, pointing to the previous data or the new one. Intermediate
+    temporary files  or the srcpath may still exists on the filesystem.
     """
-    safeconf_dir = CONF_PERSIST_DIR[:-1]
     rand_suffix = random_iface_name(max_length=8)
-    new_safeconf_dir = safeconf_dir + '.' + rand_suffix
-    new_safeconf_symlink = new_safeconf_dir + '.ln'
+    rand_dstpath = dstpath + '.' + rand_suffix
+    rand_dstpath_symlink = rand_dstpath + '.ln'
 
-    shutil.copytree(CONF_RUN_DIR[:-1], new_safeconf_dir)
-    os.symlink(new_safeconf_dir, new_safeconf_symlink)
+    shutil.copytree(srcpath, rand_dstpath)
+    os.symlink(rand_dstpath, rand_dstpath_symlink)
 
-    real_old_safeconf_dir = os.path.realpath(safeconf_dir)
-    os.rename(new_safeconf_symlink, safeconf_dir)
-    real_old_safeconf_dir_existed = real_old_safeconf_dir != safeconf_dir
-    if real_old_safeconf_dir_existed:
-        fileutils.rm_tree(real_old_safeconf_dir)
+    old_realdstpath = os.path.realpath(dstpath)
+    old_realdstpath_existed = old_realdstpath != dstpath
+
+    os.rename(rand_dstpath_symlink, dstpath)
+    if old_realdstpath_existed:
+        fileutils.rm_tree(old_realdstpath)
+    if remove_src:
+        fileutils.rm_tree(srcpath)
