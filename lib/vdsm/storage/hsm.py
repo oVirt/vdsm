@@ -2015,7 +2015,8 @@ class HSM(object):
                 'vendorID': dev.get("vendor", ""),
                 'vgUUID': vguuid,
                 "discard_max_bytes": dev["discard_max_bytes"],
-                "discard_zeroes_data": dev["discard_zeroes_data"],
+                # For backward compatibility with old engines.
+                "discard_zeroes_data": 0,
             }
             if not checkStatus:
                 devInfo["status"] = "unknown"
@@ -2812,7 +2813,8 @@ class HSM(object):
         info["pe_alloc_count"] = str(pv.pe_alloc_count)
         info["GUID"] = str(pv.guid)
         info["discard_max_bytes"] = devInfo["discard_max_bytes"]
-        info["discard_zeroes_data"] = devInfo["discard_zeroes_data"]
+        # For backward compatibility with old engines.
+        info["discard_zeroes_data"] = 0
         return info
 
     @deprecated
