@@ -147,7 +147,6 @@ test_modules = \
 	storage_volume_metadata_test.py \
 	storage_volume_test.py \
 	storage_workarounds_test.py \
-	storage_xlease_test.py \
 	tasksetTests.py \
 	testlibTests.py \
 	toolTests.py \

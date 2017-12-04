@@ -22,11 +22,14 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import io
+import mmap
 import os
 import time
 import timeit
 
 from contextlib import contextmanager
+
+import pytest
 
 from fakesanlock import FakeSanlock
 from monkeypatch import MonkeyPatch
@@ -352,6 +355,69 @@ def bench():
             # resource.
             print("%d adds in %.6f seconds (%.6f seconds per add)"
                   % (count, elapsed, elapsed / count))
+
+
+class TestDirectFile:
+
+    def test_name(self):
+        with make_leases() as path:
+            file = xlease.DirectFile(path)
+            with utils.closing(file):
+                assert file.name == path
+
+    @pytest.mark.parametrize("offset,size", [
+        (0, 1024),      # some content
+        (0, 2048),      # all content
+        (512, 1024),    # offset, some content
+        (1024, 1024),   # offset, all content
+    ])
+    def test_pread(self, tmpdir, offset, size):
+        data = b"a" * 512 + b"b" * 512 + b"c" * 512 + b"d" * 512
+        path = tmpdir.join("file")
+        path.write(data)
+        file = xlease.DirectFile(str(path))
+        with utils.closing(file):
+            buf = mmap.mmap(-1, size)
+            with utils.closing(buf):
+                n = file.pread(offset, buf)
+                assert n == size
+                assert buf[:] == data[offset:offset + size]
+
+    @pytest.mark.skip(reason="Short read blocks forever, misshandling EOF")
+    def test_pread_short(self, tmpdir):
+        data = b"a" * 1024
+        path = tmpdir.join("file")
+        path.write(data)
+        file = xlease.DirectFile(str(path))
+        with utils.closing(file):
+            buf = mmap.mmap(-1, 1024)
+            with utils.closing(buf):
+                n = file.pread(512, buf)
+                assert n == 512
+                assert buf[:] == data[512:]
+
+    @pytest.mark.parametrize("offset,size", [
+        (0, 1024),      # some content
+        (0, 2048),      # all content
+        (512, 1024),    # offset, some content
+        (1024, 1024),   # offset, all content
+    ])
+    def test_pwrite(self, tmpdir, offset, size):
+        # Create a file full of "a"s
+        path = tmpdir.join("file")
+        path.write(b"a" * 2048)
+        buf = mmap.mmap(-1, size)
+        with utils.closing(buf):
+            # Write "b"s
+            buf.write(b"b" * size)
+            file = xlease.DirectFile(str(path))
+            with utils.closing(file):
+                file.pwrite(offset, buf)
+        data = path.read()
+        expected = ("a" * offset +
+                    "b" * size +
+                    "a" * (2048 - offset - size))
+        assert data == expected
 
 
 @contextmanager
