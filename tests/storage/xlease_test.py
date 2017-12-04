@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import functools
 import io
 import mmap
 import os
@@ -29,6 +30,7 @@ import timeit
 
 from contextlib import contextmanager
 
+import six
 import pytest
 
 from fakesanlock import FakeSanlock
@@ -39,6 +41,7 @@ from testlib import namedTemporaryDir
 
 from vdsm import constants
 from vdsm import utils
+from vdsm.storage import outOfProcess as oop
 from vdsm.storage import xlease
 
 
@@ -357,17 +360,40 @@ def bench():
                   % (count, elapsed, elapsed / count))
 
 
+@pytest.fixture(params=[
+    xlease.DirectFile,
+    pytest.param(
+        xlease.InterruptibleDirectFile,
+        marks=pytest.mark.skipif(
+            six.PY3,
+            reason="ioprocess is not availale on python 3"))
+])
+def direct_file(request):
+    """
+    Returns a direct file factory function accpting a path. Test for
+    xlease.*DirectFile can use this fixture for testing both implemntations.
+    """
+    if request.param == xlease.InterruptibleDirectFile:
+        try:
+            test_oop = oop.getProcessPool("test")
+            yield functools.partial(request.param, oop=test_oop)
+        finally:
+            oop.stop()
+    else:
+        yield request.param
+
+
 class TestDirectFile:
 
-    def test_name(self):
+    def test_name(self, direct_file):
         with make_leases() as path:
-            file = xlease.DirectFile(path)
+            file = direct_file(path)
             with utils.closing(file):
                 assert file.name == path
 
-    def test_size(self):
+    def test_size(self, direct_file):
         with make_leases() as path:
-            file = xlease.DirectFile(path)
+            file = direct_file(path)
             with utils.closing(file):
                 assert file.size() == constants.GIB
 
@@ -377,11 +403,11 @@ class TestDirectFile:
         (512, 1024),    # offset, some content
         (1024, 1024),   # offset, all content
     ])
-    def test_pread(self, tmpdir, offset, size):
+    def test_pread(self, tmpdir, direct_file, offset, size):
         data = b"a" * 512 + b"b" * 512 + b"c" * 512 + b"d" * 512
         path = tmpdir.join("file")
         path.write(data)
-        file = xlease.DirectFile(str(path))
+        file = direct_file(str(path))
         with utils.closing(file):
             buf = mmap.mmap(-1, size)
             with utils.closing(buf):
@@ -390,11 +416,11 @@ class TestDirectFile:
                 assert buf[:] == data[offset:offset + size]
 
     @pytest.mark.skip(reason="Short read blocks forever, misshandling EOF")
-    def test_pread_short(self, tmpdir):
+    def test_pread_short(self, tmpdir, direct_file):
         data = b"a" * 1024
         path = tmpdir.join("file")
         path.write(data)
-        file = xlease.DirectFile(str(path))
+        file = direct_file(str(path))
         with utils.closing(file):
             buf = mmap.mmap(-1, 1024)
             with utils.closing(buf):
@@ -408,7 +434,7 @@ class TestDirectFile:
         (512, 1024),    # offset, some content
         (1024, 1024),   # offset, all content
     ])
-    def test_pwrite(self, tmpdir, offset, size):
+    def test_pwrite(self, tmpdir, direct_file, offset, size):
         # Create a file full of "a"s
         path = tmpdir.join("file")
         path.write(b"a" * 2048)
@@ -416,7 +442,7 @@ class TestDirectFile:
         with utils.closing(buf):
             # Write "b"s
             buf.write(b"b" * size)
-            file = xlease.DirectFile(str(path))
+            file = direct_file(str(path))
             with utils.closing(file):
                 file.pwrite(offset, buf)
         data = path.read()
