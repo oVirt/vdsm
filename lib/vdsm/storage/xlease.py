@@ -736,8 +736,7 @@ class VolumeIndex(object):
         """
         Read index from file, replacing current contents of the index.
         """
-        file.seek(INDEX_BASE)
-        file.readinto(self._buf)
+        file.pread(INDEX_BASE, self._buf)
 
     def dump(self, file):
         """
@@ -745,8 +744,7 @@ class VolumeIndex(object):
         storage. This is not atomic operation; if the operation fail, some
         blocks may not be written.
         """
-        file.seek(INDEX_BASE)
-        file.write(self._buf)
+        file.pwrite(INDEX_BASE, self._buf)
 
     def copy_record_block(self, recnum):
         offset = self._record_offset(recnum)
@@ -825,8 +823,7 @@ class ChangeBlock(object):
         This is atomic operation, the block is either fully written to storage
         or not.
         """
-        file.seek(INDEX_BASE + self._offset)
-        file.write(self._buf)
+        file.pwrite(INDEX_BASE + self._offset, self._buf)
 
     def close(self):
         self._buf.close()
@@ -853,7 +850,14 @@ class DirectFile(object):
     def name(self):
         return self._path
 
-    def readinto(self, buf):
+    def pread(self, offset, buf):
+        """
+        Read len(buf) bytes from storage at offset into mmap buf.
+
+        Returns:
+            The number bytes read (int).
+        """
+        self._file.seek(offset, os.SEEK_SET)
         pos = 0
         if six.PY2:
             # There is no way to create a writable memoryview on mmap object in
@@ -876,11 +880,12 @@ class DirectFile(object):
                 pos += nread
         return pos
 
-    def write(self, buf):
+    def pwrite(self, offset, buf):
         """
-        Write mmap buf to storage, and wait until the device reports that the
-        transfer has completed.
+        Write mmap buf to storage at offset, and wait until the device reports
+        that the transfer has completed.
         """
+        self._file.seek(offset, os.SEEK_SET)
         pos = 0
         while pos < len(buf):
             if six.PY2:
@@ -889,9 +894,6 @@ class DirectFile(object):
                 wbuf = memoryview(buf)[pos:]
             pos += uninterruptible(self._file.write, wbuf)
         os.fsync(self._file.fileno())
-
-    def seek(self, offset, whence=os.SEEK_SET):
-        return self._file.seek(offset, whence)
 
     def size(self):
         return fsutils.size(self._path)
