@@ -175,25 +175,35 @@ class TestAcquireNicsWithStaticIP(NetFuncTestCase):
 @pytest.mark.legacy_switch
 class TestIfacesWithMultiplesUsers(NetFuncTestCase):
 
-    def test_remove_network_from_a_nic_used_by_a_vlan_network(self):
+    @nftestlib.parametrize_bonded
+    def test_remove_ip_from_an_iface_used_by_a_vlan_network(self, bonded):
         with dummy_device() as nic:
             netcreate = {
                 NETWORK_NAME: {
                     'bridged': False,
-                    'nic': nic,
                     'ipaddr': IPv4_ADDRESS,
                     'netmask': IPv4_NETMASK
                 },
                 NETWORK2_NAME: {
                     'bridged': False,
-                    'nic': nic,
                     'vlan': VLAN
                 }
             }
 
-            with self.setupNetworks(netcreate, {}, NOCHK):
+            bondcreate = {}
+            if bonded:
+                bondcreate[BOND_NAME] = {'nics': [nic]}
+                netcreate[NETWORK_NAME]['bonding'] = BOND_NAME
+                netcreate[NETWORK2_NAME]['bonding'] = BOND_NAME
+            else:
+                netcreate[NETWORK_NAME]['nic'] = nic
+                netcreate[NETWORK2_NAME]['nic'] = nic
+
+            with self.setupNetworks(netcreate, bondcreate, NOCHK):
                 netremove = {NETWORK_NAME: {'remove': True}}
                 self.setupNetworks(netremove, {}, NOCHK)
+                if bonded:
+                    self.assertDisabledIPv4(self.netinfo.bondings[BOND_NAME])
                 self.assertDisabledIPv4(self.netinfo.nics[nic])
 
 
