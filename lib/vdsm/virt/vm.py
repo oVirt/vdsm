@@ -2700,7 +2700,7 @@ class Vm(object):
 
             # TODO: this is debug information. For 3.6.x we still need to
             # see the XML even with 'info' as default level.
-            self.log.info(srcDomXML)
+            self.log.info("%s", srcDomXML)
 
             self._connection.defineXML(srcDomXML)
             restore_path = self._altered_state.path
@@ -2738,7 +2738,7 @@ class Vm(object):
 
                 # TODO: this is debug information. For 3.6.x we still need to
                 # see the XML even with 'info' as default level.
-                self.log.info(domxml)
+                self.log.info("%s", domxml)
 
                 dom = self._connection.defineXML(domxml)
                 self._dom = virdomain.Defined(self.id, dom)
@@ -4364,7 +4364,7 @@ class Vm(object):
         snapxml = vmxml.format_xml(snap)
         # TODO: this is debug information. For 3.6.x we still need to
         # see the XML even with 'info' as default level.
-        self.log.info(snapxml)
+        self.log.info("%s", snapxml)
 
         # We need to stop the drive monitoring for two reasons, one is to
         # prevent spurious libvirt errors about missing drive paths (since
