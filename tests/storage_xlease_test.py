@@ -48,12 +48,12 @@ class WriteError(Exception):
 
 
 class FailingReader(xlease.DirectFile):
-    def readinto(self, buf):
+    def pread(self, offset, buf):
         raise ReadError
 
 
 class FailingWriter(xlease.DirectFile):
-    def write(self, buf):
+    def pwrite(self, offset, buf):
         raise WriteError
 
 
