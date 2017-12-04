@@ -763,7 +763,6 @@ class VolumeIndex(object):
         """
         file.seek(INDEX_BASE)
         file.write(self._buf)
-        os.fsync(file.fileno())
 
     def copy_record_block(self, recnum):
         offset = self._record_offset(recnum)
@@ -821,7 +820,6 @@ class ChangeBlock(object):
         """
         file.seek(INDEX_BASE + self._offset)
         file.write(self._buf)
-        os.fsync(file.fileno())
 
     def close(self):
         self._buf.close()
@@ -872,6 +870,10 @@ class DirectFile(object):
         return pos
 
     def write(self, buf):
+        """
+        Write mmap buf to storage, and wait until the device reports that the
+        transfer has completed.
+        """
         pos = 0
         while pos < len(buf):
             if six.PY2:
@@ -879,9 +881,7 @@ class DirectFile(object):
             else:
                 wbuf = memoryview(buf)[pos:]
             pos += uninterruptible(self._file.write, wbuf)
-
-    def fileno(self):
-        return self._file.fileno()
+        os.fsync(self._file.fileno())
 
     def seek(self, offset, whence=os.SEEK_SET):
         return self._file.seek(offset, whence)
