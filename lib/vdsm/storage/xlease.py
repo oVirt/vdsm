@@ -147,6 +147,9 @@ except ImportError:
     # with fakesanlock and keep this code python 3 compatible.
     sanlock = None
 
+from vdsm import cmdutils
+from vdsm import commands
+from vdsm import constants
 from vdsm import utils
 from vdsm.common import errors
 from vdsm.common.osutils import uninterruptible
@@ -890,3 +893,95 @@ class DirectFile(object):
 
     def close(self):
         self._file.close()
+
+
+class InterruptibleDirectFile(object):
+    """
+    This implementation performs all syscalls in a child process, preventing
+    the current process from becoming uninterruptible (D state).
+
+    If the underlying child process is stuck in D state on non-responsive NFS
+    server, the calling thread will be blocked writing to the child process
+    stdin, or reading from the child process stdout, or waiting for the child
+    process termination. However, restarting the current process is still
+    possible and systemd will take care of the stuck child process.
+    """
+
+    def __init__(self, path, oop):
+        """
+        Arguments:
+            path (str): path to file or block device.
+            oop: object implementing the ioprocess interface. See
+                storage.outOfProcess module for more info.
+        """
+        self._path = path
+        self._oop = oop
+
+    @property
+    def name(self):
+        return self._path
+
+    def pread(self, offset, buf):
+        # Nothing fancy - skip to the offset, and read one block.
+        args = [
+            constants.EXT_DD,
+            "if=%s" % self._path,
+            "iflag=direct,skip_bytes",
+            "skip=%d" % offset,
+            "bs=%d" % len(buf),
+            "count=1",
+        ]
+        out = self._run(args)
+        buf.write(out)
+        return len(out)
+
+    def pwrite(self, offset, buf):
+        # Writing is more tricky to get right. Please pay attention to the
+        # comments bellow.
+        args = [
+            constants.EXT_DD,
+            # We send the data to dd using Popen.communicate(); it sends data
+            # to the child process in PIPE_BUF (4k) bytes chunkes to avoid risk
+            # of blocking. I'm not sure this is really needed on Linux, but
+            # this should be improved in Python, not in vdsm. Since we send
+            # small chunks, dd will read one or more chunks and write it
+            # immediately to storage, returning after the first write. Using
+            # ``fullblock``, dd will read bs bytes and write them to storage in
+            # one write().
+            "iflag=fullblock",
+            "of=%s" % self._path,
+            "oflag=direct,seek_bytes",
+            "seek=%d" % offset,
+            "bs=%d" % len(buf),
+            "count=1",
+            # The conv flags bellow are critical:
+            # - notrunc: ensure that dd will not truncate the file before
+            #   writing. This will delete all index entries after the modified
+            #   block and all sanlock leases in the volume, even leases which
+            #   are currently used. This is bad, very bad!
+            # - nocreat: do not create the volume if missing, write must fail
+            #   if a volume is missing.
+            # - fsync: dd will call fsync() before returning, ensuring that the
+            #   underlying driver has completed the transfer, and the data
+            #   reached physical storage.
+            "conv=notrunc,nocreat,fsync",
+        ]
+        self._run(args, data=buf[:])
+
+    def size(self):
+        return self._oop.os.stat(self._path).st_size
+
+    def close(self):
+        pass
+
+    def _run(self, args, data=None):
+        rc, out, err = commands.execCmd(
+            args,
+            data=data,
+            raw=True,
+            # We do tiny io, no need to run this on another CPU.
+            resetCpuAffinity=False)
+        if rc != 0:
+            # Do not spam the log with received binary data
+            raise cmdutils.Error(args, rc, "[suppressed]", err)
+        return out
