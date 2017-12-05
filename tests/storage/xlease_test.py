@@ -121,6 +121,14 @@ class TestIndex(VdsmTestCase):
                 f.write(md.bytes())
             self.check_invalid_index(vol.path)
 
+    def test_truncated_index(self):
+        with make_volume() as vol:
+            # Truncate index, reading it should fail.
+            with io.open(vol.path, "r+b") as f:
+                f.truncate(
+                    xlease.INDEX_BASE + xlease.INDEX_SIZE - xlease.BLOCK_SIZE)
+            self.check_invalid_index(vol.path)
+
     def check_invalid_index(self, path):
         file = xlease.DirectFile(path)
         with utils.closing(file):
@@ -415,7 +423,6 @@ class TestDirectFile:
                 assert n == size
                 assert buf[:] == data[offset:offset + size]
 
-    @pytest.mark.skip(reason="Short read blocks forever, misshandling EOF")
     def test_pread_short(self, tmpdir, direct_file):
         data = b"a" * 1024
         path = tmpdir.join("file")
@@ -426,7 +433,7 @@ class TestDirectFile:
             with utils.closing(buf):
                 n = file.pread(512, buf)
                 assert n == 512
-                assert buf[:] == data[512:]
+                assert buf[:n] == data[512:]
 
     @pytest.mark.parametrize("offset,size", [
         (0, 1024),      # some content

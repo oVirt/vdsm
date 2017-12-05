@@ -264,6 +264,15 @@ class InvalidMetadata(InvalidIndex):
         self.data = data
 
 
+class TruncatedIndex(InvalidIndex):
+    msg = ("Couuld not read index, expected {self.expected} bytes, available "
+           "{self.available} bytes")
+
+    def __init__(self, expected, available):
+        self.expected = expected
+        self.available = available
+
+
 LeaseInfo = namedtuple("LeaseInfo", (
     "lockspace",        # Sanlock lockspace name
     "resource",         # Sanlock resource name
@@ -739,7 +748,9 @@ class VolumeIndex(object):
         """
         Read index from file, replacing current contents of the index.
         """
-        file.pread(INDEX_BASE, self._buf)
+        nread = file.pread(INDEX_BASE, self._buf)
+        if nread < len(self._buf):
+            raise TruncatedIndex(len(self._buf), nread)
 
     def dump(self, file):
         """
@@ -871,6 +882,8 @@ class DirectFile(object):
                 while pos < len(buf):
                     # TODO: Handle EOF
                     nread = uninterruptible(self._file.readinto, rbuf)
+                    if nread == 0:
+                        break  # EOF
                     buf.write(rbuf[:nread])
                     pos += nread
         else:
@@ -880,6 +893,8 @@ class DirectFile(object):
                 rbuf = memoryview(buf)[pos:]
                 # TODO: Handle EOF
                 nread = uninterruptible(self._file.readinto, rbuf)
+                if nread == 0:
+                    break  # EOF
                 pos += nread
         return pos
 
