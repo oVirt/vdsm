@@ -116,7 +116,8 @@ class TestVmXmlHelpers(XMLTestCase):
         xml = re.sub(' *\n *', '', self._XML)
         dom = vmxml.parse_xml(xml)
         pretty = vmxml.format_xml(dom, pretty=True)
-        self.assertEqual(pretty, '''<topelement>
+        self.assertEqual(pretty, '''<?xml version='1.0' encoding='utf-8'?>
+<topelement>
     <hello lang="english">hello</hello>
     <hello cyrillic="yes" lang="русский">здра́вствуйте</hello>
     <bye>good bye<hello lang="čeština">dobrý den</hello>

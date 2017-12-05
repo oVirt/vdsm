@@ -118,14 +118,15 @@ class TestVmDevices(XMLTestCase):
 
     def test_createXmlElem(self):
         dev = {'type': 'graphics', 'device': 'spice'}
-        expected_xml = '<graphics device="spice" type="test" />'
+        expected_xml = '''<?xml version=\'1.0\' encoding=\'utf-8\'?>
+        <graphics device="spice" type="test" />'''
         with fake.VM(self.conf, devices=(dev,),
                      create_device_objects=True) as testvm:
             graphics = testvm._devices[hwclass.GRAPHICS][0]
             element = graphics.createXmlElem('graphics', 'test',
                                              attributes=('device', 'foo',))
             result = vmxml.format_xml(element).decode('utf-8')
-            self.assertEqual(result, expected_xml)
+            self.assertXMLEqual(result, expected_xml)
 
     def testGraphicsDevice(self):
         for dev in self.confDeviceGraphics:

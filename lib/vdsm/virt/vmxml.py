@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 
 import copy
+import io
 import logging
 import xml.etree.ElementTree as etree
 
@@ -63,7 +64,12 @@ def format_xml(element, pretty=False):
     if pretty:
         element = copy.deepcopy(element)
         xmlutils.indent(element, 0)
-    return etree.tostring(element, encoding='utf-8')
+    # amended version of the implementation of tostring()
+    # found in python 3.6
+    stream = io.BytesIO()
+    etree.ElementTree(element).write(
+        stream, encoding='utf-8', xml_declaration=True)
+    return stream.getvalue()
 
 
 def find_all(element, tag_):
