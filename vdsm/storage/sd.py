@@ -602,6 +602,21 @@ class StorageDomainManifest(object):
         """
         return self._external_leases_lock
 
+    @contextmanager
+    def external_leases_volume(self):
+        """
+        Context manager returning the external leases volume.
+
+        The caller is responsible for holding the external_leases_lock in the
+        correct mode.
+        """
+        path = self.external_leases_path()
+        backend = xlease.DirectFile(path)
+        with utils.closing(backend):
+            vol = xlease.LeasesVolume(backend)
+            with utils.closing(vol):
+                yield vol
+
     def lease_info(self, lease_id):
         """
         Return information about external lease that can be used to acquire or
@@ -610,8 +625,7 @@ class StorageDomainManifest(object):
         May be called on any host.
         """
         with self.external_leases_lock.shared:
-            path = self.external_leases_path()
-            with _external_leases_volume(path) as vol:
+            with self.external_leases_volume() as vol:
                 return vol.lookup(lease_id)
 
 
@@ -1159,8 +1173,7 @@ class StorageDomain(object):
         Must be called only on the SPM.
         """
         with self._manifest.external_leases_lock.exclusive:
-            path = self.external_leases_path()
-            with _external_leases_volume(path) as vol:
+            with self._manifest.external_leases_volume() as vol:
                 vol.add(lease_id)
 
     def delete_lease(self, lease_id):
@@ -1170,21 +1183,5 @@ class StorageDomain(object):
         Must be called only on the SPM.
         """
         with self._manifest.external_leases_lock.exclusive:
-            path = self.external_leases_path()
-            with _external_leases_volume(path) as vol:
+            with self._manifest.external_leases_volume() as vol:
                 vol.remove(lease_id)
-
-
-@contextmanager
-def _external_leases_volume(path):
-    """
-    Context manager returning the external leases volume.
-
-    The caller is responsible for holding the external_leases_lock in the
-    correct mode.
-    """
-    backend = xlease.DirectFile(path)
-    with utils.closing(backend):
-        vol = xlease.LeasesVolume(backend)
-        with utils.closing(vol):
-            yield vol
