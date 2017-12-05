@@ -589,6 +589,24 @@ class StorageDomainManifest(object):
         """
         return version >= 4
 
+    @classmethod
+    @contextmanager
+    def external_leases_backend(cls, lockspace, path):
+        """
+        Return a context manager for performing I/O to the extenal leases
+        volume.
+
+        Arguments:
+            lockspace (str): Sanlock lockspace name, storage domain uuid.
+            path (str): Path to the external leases volume
+
+        Returns:
+            context manager.
+        """
+        backend = xlease.DirectFile(path)
+        with utils.closing(backend):
+            yield backend
+
     def external_leases_path(self):
         """
         Return the path to the external leases volume.
@@ -611,8 +629,7 @@ class StorageDomainManifest(object):
         correct mode.
         """
         path = self.external_leases_path()
-        backend = xlease.DirectFile(path)
-        with utils.closing(backend):
+        with self.external_leases_backend(self.sdUUID, path) as backend:
             vol = xlease.LeasesVolume(backend)
             with utils.closing(vol):
                 yield vol
@@ -1149,8 +1166,8 @@ class StorageDomain(object):
 
         Must be called only on the SPM.
         """
-        backend = xlease.DirectFile(path)
-        with utils.closing(backend):
+        with cls.manifestClass.external_leases_backend(
+                lockspace, path) as backend:
             xlease.format_index(lockspace, backend)
 
     def external_leases_path(self):
