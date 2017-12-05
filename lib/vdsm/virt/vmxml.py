@@ -62,7 +62,7 @@ def format_xml(element, pretty=False):
     if pretty:
         element = copy.deepcopy(element)
         xmlutils.indent(element, 0)
-    return etree.tostring(element, encoding='UTF-8')
+    return etree.tostring(element, encoding='utf-8')
 
 
 def find_all(element, tag_):
