@@ -1493,6 +1493,7 @@ class Global(APIBase):
         return secret.unregister(uuids)
 
     # Networking-related functions
+    @api.logged(on="api.network")
     def setupNetworks(self, networks, bondings, options):
         """Add a new network to this vds, replacing an old one."""
 
