@@ -27,6 +27,9 @@ import glob
 import fnmatch
 import re
 
+from contextlib import contextmanager
+
+from vdsm import utils
 from vdsm.common import supervdsm
 from vdsm.common.compat import glob_escape
 from vdsm.storage import clusterlock
@@ -38,6 +41,7 @@ from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import sd
+from vdsm.storage import xlease
 from vdsm.storage.persistent import PersistentDict, DictValidator
 from vdsm.storage.sdm import volume_artifacts
 
@@ -354,6 +358,22 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         return clusterlock.Lease(volUUID, path, fileVolume.LEASE_FILEOFFSET)
 
     # External leases support
+
+    @classmethod
+    @contextmanager
+    def external_leases_backend(cls, lockspace, path):
+        """
+        Overrides StorageDomainManifest method to use an interruptible direct
+        file implementation that will not make the processs uninterruptible if
+        the storage becomes non-responsive. See
+        https://bugzilla.redhat.com/1518676.
+
+        See StorageDomainManifest.external_leases_backend for more info.
+        """
+        dom_oop = oop.getProcessPool(lockspace)
+        backend = xlease.InterruptibleDirectFile(path, dom_oop)
+        with utils.closing(backend):
+            yield backend
 
     def external_leases_path(self):
         return os.path.join(self.getMDPath(), sd.XLEASES)
