@@ -249,6 +249,29 @@ def run():
         hello = hello[:1] + hello[2:]
         self.assertEqual(updated_hello, hello)
 
+    def test_replace_child(self):
+        expected = '''<topelement>
+    <hello lang="english">hello</hello>
+    <hello cyrillic="yes" lang="русский">здра́вствуйте</hello>
+    <bye>good bye<hello lang="čeština">dobrý den</hello>
+    </bye>
+    <container>
+        <foo>
+            <bar>baz</bar>
+        </foo>
+    </container>
+    <container>
+        <subelement>some content</subelement>
+    </container>
+    <empty />
+</topelement>
+'''
+        new_element = '<foo><bar>baz</bar></foo>'
+        new_child = vmxml.parse_xml(new_element)
+        container = vmxml.find_first(self._dom, 'container')
+        vmxml.replace_first_child(container, new_child)
+        self.assertXMLEqual(vmxml.format_xml(self._dom, pretty=True), expected)
+
     def test_namespaces(self):
         expected_xml = '''
         <domain xmlns:ovirt-tune="http://ovirt.org/vm/tune/1.0">

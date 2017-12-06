@@ -2833,7 +2833,8 @@ class Vm(object):
             xml = params['xml']
             nic = vmdevices.common.dev_from_xml(self, xml)
             dom = vmxml.parse_xml(xml)
-            nic_dom = next(iter(vmxml.find_first(dom, 'devices')))
+            dom_devices = vmxml.find_first(dom, 'devices')
+            nic_dom = next(iter(dom_devices))
             nicXml = vmxml.format_xml(nic_dom)
         else:
             nicParams = params['nic']
@@ -2888,7 +2889,9 @@ class Vm(object):
                 self.log.exception("setPortMirroring for network %s failed",
                                    network)
                 if 'xml' in params:
-                    hotunplug_params = {'xml': params['xml']}
+                    nic_element = vmxml.parse_xml(nicXml)
+                    vmxml.replace_first_child(dom_devices, nic_element)
+                    hotunplug_params = {'xml': vmxml.format_xml(dom)}
                 else:
                     hotunplug_params = {'nic': nicParams}
                 self.hotunplugNic(hotunplug_params,

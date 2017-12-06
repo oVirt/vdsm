@@ -256,6 +256,21 @@ def remove_child(element, child):
     element.remove(child)
 
 
+def replace_first_child(element, new_child):
+    """
+    Replace the first child of `element` with `new_child`.
+
+    :param element: element to replace the child in
+    :type element: DOM element
+    :param new_child: new child element to insert to `element`
+    :type new_child: DOM element
+
+    """
+    old_child = next(iter(element))
+    element.remove(old_child)
+    element.insert(0, new_child)
+
+
 def has_channel(domXML, name):
     domObj = etree.fromstring(domXML)
     devices = domObj.findall('devices')
