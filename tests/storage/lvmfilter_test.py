@@ -55,7 +55,15 @@ def test_find_lvm_mounts(monkeypatch, plat, expected):
 
     # Monkeypatch lvm helper, requires real devices on the host. We are testing
     # the helpers in other tests when running as root.
-    monkeypatch.setattr(lvmfilter, "find_lv_devices", lambda x: FAKE_DEVICES)
+
+    def fake_vg_info(lv_path):
+        if lv_path.endswith("-master"):
+            return "vg_name", ["tag", lvmfilter.OVIRT_VG_TAG, "another"]
+        else:
+            return "vg_name", ["no,ovirt,tag"]
+
+    monkeypatch.setattr(lvmfilter, "vg_info", fake_vg_info)
+    monkeypatch.setattr(lvmfilter, "vg_devices", lambda x: FAKE_DEVICES)
 
     mounts = lvmfilter.find_lvm_mounts()
     log.info("found mounts %s", mounts)
