@@ -29,7 +29,7 @@ lvm /dev/mapper/d4ad5a78--1d75--457b--8caf--400d2d7917a6-leases
 lvm /dev/mapper/6ffbc483--0031--403a--819b--3bb2f0f8de0a-outbox 
 lvm /dev/mapper/6ffbc483--0031--403a--819b--3bb2f0f8de0a-xleases 
 lvm /dev/mapper/6ffbc483--0031--403a--819b--3bb2f0f8de0a-inbox 
-lvm /dev/mapper/6ffbc483--0031--403a--819b--3bb2f0f8de0a-master 
+lvm /dev/mapper/6ffbc483--0031--403a--819b--3bb2f0f8de0a-master /rhev/data-center/mnt/blockSD/6ffbc483-0031-403a-819b-3bb2f0f8de0a/master
 lvm /dev/mapper/373e8c55--283f--41d4--8433--95c1ef1bbd1a-outbox 
 lvm /dev/mapper/373e8c55--283f--41d4--8433--95c1ef1bbd1a-xleases 
 lvm /dev/mapper/373e8c55--283f--41d4--8433--95c1ef1bbd1a-inbox 

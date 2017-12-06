@@ -55,6 +55,10 @@ MountInfo = collections.namedtuple("MountInfo", "lv,mountpoint,devices")
 FilterItem = collections.namedtuple("FilterItem", "action,path")
 Advice = collections.namedtuple("Advice", "action,filter")
 
+# We use this tag to detect a mounted ovirt storage domain - typically the
+# master lv of a block storage domain.
+OVIRT_VG_TAG = "RHAT_storage_domain"
+
 # Advice actions
 
 # The host is already configured, no action is needed.
@@ -125,7 +129,11 @@ def find_lvm_mounts():
     for devtype, name, mountpoint in rows:
         if devtype != "lvm" or mountpoint == "":
             continue
-        devices = find_lv_devices(name)
+        vg_name, tags = vg_info(name)
+        if OVIRT_VG_TAG in tags:
+            log.debug("Skipping oVirt logical volume %r", name)
+            continue
+        devices = vg_devices(vg_name)
         mounts.append(MountInfo(name, mountpoint, devices))
 
     # Keep sorted for easy testing.
@@ -270,27 +278,43 @@ def format_option(items):
     return "filter = [ {} ]".format(", ".join(quoted))
 
 
-def find_lv_devices(lv_path):
+def vg_info(lv_path):
     """
     Returns list of devices used by lv lv_path.
     """
-    log.debug("Looking up volume group for logical volume %r", lv_path)
+    log.debug("Looking up information for logical volume %r", lv_path)
     out = _run([
         LVM,
         "lvs",
         "--noheadings",
         "--readonly",
-        "--options",
-        "vg_name",
+        # If the host was already configured, the lvm filter hides the devices
+        # of the mounted master lv, and lvs will fail. Use a permissive filter
+        # to avoid this.
+        "--config", 'devices {filter=["a|.*|"]}',
+        "--options", "vg_name,vg_tags",
         lv_path
     ])
-    vg_name = out.strip()
+    # Format is: space space vg_name space tag,tag... newline
+    out = out.lstrip().rstrip("\n")
+    vg_name, vg_tags = out.split(" ", 1)
+    vg_tags = vg_tags.split(",")
+    return vg_name, vg_tags
+
+
+def vg_devices(vg_name):
+    """
+    Returns list of devices used by vg vg_name.
+    """
     log.debug("Looking up volume group %r devices", vg_name)
     out = _run([
         LVM,
         "vgs",
         "--noheadings",
         "--readonly",
+        # If the host has an incorrect filter, some devices needed by the host
+        # may be hidden, preventing creating of a new correct filter.
+        "--config", 'devices {filter=["a|.*|"]}',
         "--options", "pv_name",
         vg_name
     ])
