@@ -4065,7 +4065,7 @@ class Vm(object):
                 with self._md_desc.device(
                         devtype=vmDrive.type, name=vmDrive.name
                 ) as dev:
-                    for k, v in driveParams.iteritems():
+                    for k, v in six.iteritems(driveParams):
                         setattr(vmDrive, k, v)
                         # only a subset of driveParams is relevant to
                         # metadata (e.g. drive IDs). Skip fields that
@@ -4191,7 +4191,7 @@ class Vm(object):
         def _rollbackDrives(newDrives):
             """Rollback the prepared volumes for the snapshot"""
 
-            for vmDevName, drive in newDrives.iteritems():
+            for vmDevName, drive in six.iteritems(newDrives):
                 try:
                     self.cif.teardownVolumePath(drive)
                 except Exception:
@@ -4273,7 +4273,7 @@ class Vm(object):
 
         preparedDrives = {}
 
-        for vmDevName, vmDevice in newDrives.iteritems():
+        for vmDevName, vmDevice in six.iteritems(newDrives):
             # Adding the device before requesting to prepare it as we want
             # to be sure to teardown it down even when prepareVolumePath
             # failed for some unknown issue that left the volume active.
