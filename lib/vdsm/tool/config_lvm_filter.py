@@ -81,7 +81,7 @@ device to the volume group, you will need to edit the filter manually.
 
     if advice.action == lvmfilter.CONFIGURE:
 
-        if not confirm("Configure LVM filter? [NO/yes] "):
+        if not confirm("Configure LVM filter? [yes,NO] "):
             return
 
         with lvmconf.LVMConfig() as config:
@@ -110,7 +110,7 @@ It is recommend to reboot after changing LVM filter.
 def confirm(msg):
     while True:
         try:
-            res = input("{}? [yes,NO] ".format(msg))
+            res = input(msg)
             res = res.strip().lower()
         except KeyboardInterrupt:
             print()
