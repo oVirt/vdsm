@@ -41,7 +41,7 @@ class SkipDevice(Exception):
 class Base(vmxml.Device):
     __slots__ = ('deviceType', 'device', 'alias', 'specParams', 'deviceId',
                  'log', '_deviceXML', 'type', 'custom',
-                 'is_hostdevice', 'vmid')
+                 'is_hostdevice', 'vmid', '_kwargs',)
 
     @classmethod
     def get_identifying_attrs(cls, dev_elem):
@@ -77,6 +77,7 @@ class Base(vmxml.Device):
 
     def __init__(self, log, **kwargs):
         self.log = log
+        self._kwargs = kwargs
         self.specParams = {}
         self.custom = kwargs.pop('custom', {})
         for attr, value in kwargs.items():
@@ -92,6 +93,9 @@ class Base(vmxml.Device):
         attrs = [':'.join((a, str(getattr(self, a, None)))) for a in dir(self)
                  if not a.startswith('__')]
         return ' '.join(attrs)
+
+    def conf_parameters(self):
+        return self._kwargs
 
     def is_attached_to(self, xml_string):
         raise NotImplementedError(
