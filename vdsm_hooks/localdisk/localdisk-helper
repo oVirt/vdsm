@@ -41,7 +41,7 @@ def list(args):
 
 
 def create(args):
-    cmd = ["lvcreate", "-n", args.lv_name]
+    cmd = ["-n", args.lv_name]
     for tag in args.addtag:
         cmd.extend(("--addtag", tag))
     if args.size:
@@ -51,7 +51,7 @@ def create(args):
     if args.thinpool:
         cmd.extend(("--thinpool", args.thinpool))
     cmd.append(OVIRT_LOCAL_VG)
-    lvm(*cmd)
+    lvm("lvcreate", *cmd)
 
 
 def remove(args):
@@ -59,7 +59,7 @@ def remove(args):
 
 
 def change(args):
-    cmd = ["lvchange"]
+    cmd = []
     for tag in args.addtag:
         cmd.extend(("--addtag", tag))
     for tag in args.deltag:
@@ -67,11 +67,14 @@ def change(args):
     if args.activate is not None:
         cmd.extend(("--activate", args.activate))
     cmd.append(OVIRT_LOCAL_VG + "/" + args.lv_name)
-    lvm(*cmd)
+    lvm("lvchange", *cmd)
 
 
-def lvm(*args):
-    cmd = ["/usr/sbin/lvm"]
+def lvm(command, *args):
+    cmd = ["/usr/sbin/lvm", command]
+    # Use a permissive filter to allow access on a host with a strict LVM
+    # filter including only the mounted LVs.
+    cmd.extend(("--config", 'devices { filter=["a|.*|"] }'))
     cmd.extend(args)
     rc, out, err = commands.execCmd(cmd, raw=True)
     if rc != 0:
