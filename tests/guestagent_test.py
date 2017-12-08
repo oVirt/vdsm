@@ -21,9 +21,11 @@
 from __future__ import print_function
 from collections import namedtuple
 import json
+import logging
 import timeit
 
 from vdsm.virt import guestagent
+from vdsm.virt import qemuguestagent
 
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
@@ -311,3 +313,43 @@ class DiskMappingTests(TestCaseBase):
         old_hash = self.agent.diskMappingHash
         self.agent.guestDiskMapping = {'/dev/vda': 'xxx'}
         self.assertNotEqual(self.agent.diskMappingHash, old_hash)
+
+
+class FakeClientIF(object):
+    def __init__(self, vmContainer):
+        self.vmContainer = vmContainer
+
+
+@expandPermutations
+class QemuGuestAgentTests(TestCaseBase):
+
+    @permutations([
+        [set(['vm1', 'vm2']), set(['vm1']), set(['vm2'])],
+        [set(['vm1', 'vm2']), set(['vm2']), set(['vm2'])],
+        [set(['vm1', 'vm2']), set(['vm1']), set([])]
+    ])
+    def test_cleanup(self, init_vms, failed_vms, removed_vms):
+        capabilities = {'version': 1, 'commands': True}
+        vm_container = {vm: True for vm in init_vms}
+        cif = FakeClientIF(vm_container)
+        log = logging.getLogger('test')
+        scheduler = None
+        poller = qemuguestagent.QemuGuestAgentPoller(cif, log, scheduler)
+        for vm in init_vms:
+            poller.update_caps(vm, capabilities)
+            poller.update_guest_info(vm, set())
+        for vm in failed_vms:
+            poller.set_failure(vm)
+        for vm in removed_vms:
+            del vm_container[vm]
+        poller._cleanup()
+        for vm in init_vms:
+            if vm in removed_vms:
+                self.assertIsNone(poller.get_caps(vm))
+                self.assertIsNone(poller.get_guest_info(vm))
+                self.assertIsNone(poller.last_failure(vm))
+            else:
+                self.assertIsNotNone(poller.get_caps(vm))
+                self.assertIsNotNone(poller.get_guest_info(vm))
+                if vm in failed_vms:
+                    self.assertIsNotNone(poller.last_failure(vm))

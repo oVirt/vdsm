@@ -24,6 +24,7 @@ Periodic scheduler that polls QEMU Guest Agent for information.
 """
 
 from collections import defaultdict
+import copy
 import json
 import libvirt
 #
@@ -73,9 +74,11 @@ class QemuGuestAgentPoller(object):
                                            scheduler=scheduler,
                                            max_workers=_MAX_WORKERS)
         self._operations = []
+        self._capabilities_lock = threading.Lock()
         self._capabilities = {}
         self._guest_info_lock = threading.Lock()
         self._guest_info = defaultdict(dict)
+        self._last_failure_lock = threading.Lock()
         self._last_failure = {}
 
     def start(self):
@@ -125,7 +128,8 @@ class QemuGuestAgentPoller(object):
             self.log.info(
                 "New QEMU-GA capabilities for vm_id=%s, qemu-ga=%s,"
                 " commands=%r", vm_id, caps['version'], caps['commands'])
-        self._capabilities[vm_id] = caps
+            with self._capabilities_lock:
+                self._capabilities[vm_id] = caps
 
     def get_guest_info(self, vm_id):
         with self._guest_info_lock:
@@ -140,7 +144,8 @@ class QemuGuestAgentPoller(object):
         return self._last_failure.get(vm_id, None)
 
     def set_failure(self, vm_id):
-        self._last_failure[vm_id] = monotonic_time()
+        with self._last_failure_lock:
+            self._last_failure[vm_id] = monotonic_time()
 
     def call_qga_command(self, vm, command, args=None):
         """
@@ -197,20 +202,22 @@ class QemuGuestAgentPoller(object):
         the information could reappear. Hence the reason for periodic cleaner.
         """
         removed = set()
-        vms = set([vm_id for vm_id, vm_obj in self._cif.getVMs()])
-        for vm_id in self._capabilities:
-            if vm_id not in vms:
-                del self._capabilities[vm_id]
-                removed.add(vm_id)
+        vm_container = self._cif.vmContainer
+        with self._capabilities_lock:
+            for vm_id in copy.copy(self._capabilities):
+                if vm_id not in vm_container:
+                    del self._capabilities[vm_id]
+                    removed.add(vm_id)
         with self._guest_info_lock:
-            for vm_id in self._guest_info:
-                if vm_id not in vms:
+            for vm_id in copy.copy(self._guest_info):
+                if vm_id not in vm_container:
                     del self._guest_info[vm_id]
                     removed.add(vm_id)
-        for vm_id in self._last_failure:
-            if vm_id not in vms:
-                del self._last_failure[vm_id]
-                removed.add(vm_id)
+        with self._last_failure_lock:
+            for vm_id in copy.copy(self._last_failure):
+                if vm_id not in vm_container:
+                    del self._last_failure[vm_id]
+                    removed.add(vm_id)
         self.log.debug('Cleaned up old data for VMs: %s', removed)
 
 
