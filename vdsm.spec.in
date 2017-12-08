@@ -137,6 +137,14 @@ Requires: ovirt-imageio-daemon >= 1.2.0
 Requires: ovirt-vmconsole >= 1.0.0-0
 %endif
 
+# Python
+# For https://bugzilla.redhat.com/1518676
+%if 0%{?rhel}
+Requires: python >= 2.7.5-65.el7
+%else
+Requires: python >= 2.7.14-4
+%endif
+
 Requires: libvirt-client
 Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-lock-sanlock
@@ -191,16 +199,10 @@ Requires: lvm2 >= 2.02.145
 %if 0%{?rhel}
 # CVE-2018-3639
 Requires: kernel >= 3.10.0-862.3.2.el7
-
 Requires: e2fsprogs
-Requires: python >= 2.7.5-18.el7_1.1
-
 Requires: selinux-policy-targeted >= 3.13.1-166.el7_4.3
-
 %else
 Requires: kernel >= 4.1.6
-# Subprocess and thread bug was found on python 2.7.2
-Requires: python >= 2.7.3
 Requires: e2fsprogs >= 1.41.14
 Requires: policycoreutils-python-utils
 Requires: sed >= 4.2.1-10
