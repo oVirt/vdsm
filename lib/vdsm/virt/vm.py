@@ -93,6 +93,7 @@ from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound, SOURCE_ATTR
 from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
+from vdsm.virt.utils import has_xml_configuration
 
 
 # A libvirt constant for undefined cpu quota
@@ -327,6 +328,8 @@ class Vm(object):
         self._src_domain_xml = params.get('_srcDomXML')
         if self._src_domain_xml is not None:
             self._domain = DomainDescriptor(self._src_domain_xml)
+            if has_xml_configuration(params):
+                self.conf['xml'] = self._src_domain_xml
         elif 'xml' in params:
             self._domain = DomainDescriptor(params['xml'])
         else:
@@ -345,8 +348,8 @@ class Vm(object):
         self._exit_info = {}
         self._cluster_version = None
         self._pause_time = None
-        if 'xml' in params:
-            self._md_desc = metadata.Descriptor.from_xml(params['xml'])
+        if 'xml' in self.conf:
+            self._md_desc = metadata.Descriptor.from_xml(self.conf['xml'])
             self._init_from_metadata()
         else:
             self._md_desc = metadata.Descriptor()
@@ -375,7 +378,7 @@ class Vm(object):
         self._guestEventTime = 0
         self._guestCpuRunning = False
         self._guestCpuLock = threading.Lock()
-        if recover and 'xml' in params:
+        if recover and 'xml' in self.conf:
             with self._md_desc.values() as md:
                 if 'startTime' in md:
                     self._startTime = md['startTime']
