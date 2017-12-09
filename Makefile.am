@@ -135,7 +135,7 @@ check-unit:
 
 .PHONY: tests
 tests:
-	tox -e tests
+	tox -e tests,storage-py27
 
 all-local: \
 	vdsm.spec
