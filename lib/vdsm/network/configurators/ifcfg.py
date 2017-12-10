@@ -142,10 +142,12 @@ class Ifcfg(Configurator):
         with waitfor.waitfor_linkup(bond.name):
             pass
 
-        self.runningConfig.setBonding(
-            bond.name, {'options': bond.options,
-                        'nics': sorted(s.name for s in bond.slaves),
-                        'switch': 'legacy'})
+        bond_attr = {'options': bond.options,
+                     'nics': sorted(s.name for s in bond.slaves),
+                     'switch': 'legacy'}
+        if bond.hwaddr:
+            bond_attr['hwaddr'] = bond.hwaddr
+        self.runningConfig.setBonding(bond.name, bond_attr)
 
     def editBonding(self, bond, _netinfo):
         """
@@ -190,10 +192,13 @@ class Ifcfg(Configurator):
             ifdown(bond.name)
             _restore_default_bond_options(bond.name, bond.options)
             _exec_ifup(bond)
-        self.runningConfig.setBonding(
-            bond.name, {'options': bond.options,
-                        'nics': sorted(slave.name for slave in bond.slaves),
-                        'switch': 'legacy'})
+
+        bond_attr = {'options': bond.options,
+                     'nics': sorted(s.name for s in bond.slaves),
+                     'switch': 'legacy'}
+        if bond.hwaddr:
+            bond_attr['hwaddr'] = bond.hwaddr
+        self.runningConfig.setBonding(bond.name, bond_attr)
 
     def configureNic(self, nic, **opts):
         if not self.owned_device(nic.name):
