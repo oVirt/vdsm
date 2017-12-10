@@ -159,7 +159,8 @@ class Ifcfg(Configurator):
         currentNics = frozenset(_netinfo.getNicsForBonding(bond.name))
         nicsToAdd = nicsToSet - currentNics
 
-        if not self.owned_device(bond.name):
+        owned_bond = self.owned_device(bond.name)
+        if not owned_bond:
             IfcfgAcquire.acquire_device(bond.name)
 
         # Create bond configuration in case it was a non ifcfg controlled bond.
@@ -168,7 +169,7 @@ class Ifcfg(Configurator):
         bondIfcfgWritten = False
         isIfcfgControlled = os.path.isfile(NET_CONF_PREF + bond.name)
         areOptionsApplied = bond.areOptionsApplied()
-        if not isIfcfgControlled or not areOptionsApplied:
+        if not isIfcfgControlled or not areOptionsApplied or not owned_bond:
             bridgeName = _netinfo.getBridgedNetworkForIface(bond.name)
             if isIfcfgControlled and bridgeName:
                 bond.master = Bridge(bridgeName, self, port=bond)
