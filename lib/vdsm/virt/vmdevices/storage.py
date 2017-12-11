@@ -494,7 +494,7 @@ class Drive(core.Base):
         """
         if self._diskType is None:
             if (self.device in ("cdrom", "floppy") or not
-                    utils.isBlockDevice(self.path)):
+                    utils.isBlockDevice(self._path)):
                 self.diskType = DISK_TYPE.FILE
             else:
                 self.diskType = DISK_TYPE.BLOCK
