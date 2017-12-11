@@ -487,25 +487,6 @@ class Drive(core.Base):
 
     @property
     def diskType(self):
-        """
-        Return diskType sent by engine, or try to check the disk type by
-        looking at storage.
-
-        If storage is not available at this point, this will fail with OSError,
-        and diskType will remain undefined. Drive cannot be functional at this
-        state until storage becomes available, and diskType initialized.
-
-        From Engine 4.2 with cluster version 4.2 onwards we always send the
-        disk type for cdrom and floppy, in 4.2 we can have a cdrom of type
-        block but we always send the disk type from engine and this block will
-        not be relevant.
-        """
-        if self._diskType is None:
-            if self.device == "floppy" or not utils.isBlockDevice(self._path):
-                self.diskType = DISK_TYPE.FILE
-            else:
-                self.diskType = DISK_TYPE.BLOCK
-
         return self._diskType
 
     @diskType.setter

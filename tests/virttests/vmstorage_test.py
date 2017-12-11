@@ -20,7 +20,6 @@
 from __future__ import absolute_import
 
 import os
-import errno
 import xml.etree.cElementTree as etree
 
 from collections import namedtuple
@@ -424,9 +423,9 @@ class DriveExSharedStatusTests(VdsmTestCase):
 @expandPermutations
 class DriveDiskTypeTests(VdsmTestCase):
 
-    def test_floppy_no_disktype(self):
-        conf = drive_config(device='floppy')
-        drive = Drive(self.log, **conf)
+    def test_floppy_file(self):
+        conf = drive_config(device="floppy")
+        drive = Drive(self.log, diskType=DISK_TYPE.FILE, **conf)
         self.assertEqual(DISK_TYPE.FILE, drive.diskType)
 
     @permutations([[DISK_TYPE.BLOCK], [DISK_TYPE.NETWORK]])
@@ -511,46 +510,6 @@ class DriveDiskTypeTests(VdsmTestCase):
         with self.assertRaises(exception.UnsupportedOperation):
             Drive(self.log, **conf)
 
-    @MonkeyPatch(utils, 'isBlockDevice', lambda path: True)
-    def test_create_cdrom_device_no_disktype(self):
-        conf = drive_config(device='cdrom')
-        drive = Drive(self.log, **conf)
-        self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
-
-    @MonkeyPatch(utils, 'isBlockDevice', lambda path: True)
-    def test_create_missing_type_block(self):
-        conf = drive_config(path='/blockdomain/volume')
-        drive = Drive(self.log, **conf)
-        self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
-
-    @MonkeyPatch(utils, 'isBlockDevice', lambda path: False)
-    def test_create_missing_type_file(self):
-        conf = drive_config(path='/filedomain/volume')
-        drive = Drive(self.log, **conf)
-        self.assertEqual(DISK_TYPE.FILE, drive.diskType)
-
-    def test_inaccessble_storage(self):
-        conf = drive_config(path='/no/such/path')
-        drive = Drive(self.log, **conf)
-        with self.assertRaises(OSError):
-            drive.diskType
-
-    @MonkeyPatch(utils, 'isBlockDevice', lambda path: True)
-    def test_inaccessble_storage_after_disk_type_initialized(self):
-        conf = drive_config(path='/no/such/path')
-        # When creating the drive, storage is accessible...
-        drive = Drive(self.log, **conf)
-        self.assertEqual(drive.diskType, DISK_TYPE.BLOCK)
-
-        # But later it become inaccessible.
-        def fail(path):
-            raise OSError(errno.EIO, "Bad storage!", path)
-
-        utils.isBlockDevice = fail
-
-        # Drive is not affected at this point
-        self.assertEqual(drive.diskType, DISK_TYPE.BLOCK)
-
     def test_path_change_reset_threshold_state(self):
         conf = drive_config(diskType=DISK_TYPE.BLOCK, path='/old/path')
         drive = Drive(self.log, **conf)
@@ -607,17 +566,6 @@ class ChunkedTests(VdsmTestCase):
         )
         drive = Drive(self.log, **conf)
         self.assertEqual(drive.chunked, False)
-
-    def test_unset_disk_type(self):
-        # Simulate legacy behavior in cluster version < 4.2, vdsm discover the
-        # disk type by checking if the path is a block device.
-        with namedTemporaryDir() as tmpdir:
-            path = os.path.join(tmpdir, "vol")
-            open(path, "w").close()
-            conf = drive_config(device="disk", format="cow", path=path)
-            drive = Drive(self.log, **conf)
-            self.assertFalse(drive.chunked,
-                             "File based drive cannot be chunked")
 
 
 @expandPermutations
@@ -1247,14 +1195,6 @@ class TestNeedsMonitoring(VdsmTestCase):
 
     # Monitoring not needed
 
-    def test_disk_type_unset(self):
-        with namedTemporaryDir() as tmpdir:
-            path = os.path.join(tmpdir, "vol")
-            open(path, "w").close()
-            conf = drive_config(format="cow", path=path)
-            drive = Drive(self.log, **conf)
-            self.assertFalse(drive.needs_monitoring(events_enabled=False))
-
     def test_no_need_readonly(self):
         conf = drive_config(diskType=DISK_TYPE.BLOCK, format="cow",
                             readonly=True)
@@ -1295,14 +1235,6 @@ class TestNeedsMonitoring(VdsmTestCase):
 class TestNeedsMonitoringEvents(VdsmTestCase):
 
     # Monitoring not needed.
-
-    def test_disk_type_unset(self):
-        with namedTemporaryDir() as tmpdir:
-            path = os.path.join(tmpdir, "vol")
-            open(path, "w").close()
-            conf = drive_config(format="cow", path=path)
-            drive = Drive(self.log, **conf)
-            self.assertFalse(drive.needs_monitoring(events_enabled=True))
 
     def test_no_need_chunked_threshold_set(self):
         conf = drive_config(diskType=DISK_TYPE.BLOCK, format="cow")

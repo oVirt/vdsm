@@ -396,15 +396,23 @@ class clientIF(object):
                 drive['volumeChain'] = res['imgVolumesInfo']
                 drive['volumeInfo'] = res['info']
 
-                # Not applicable for Ceph network disk as
-                # Ceph disks are not vdsm images
                 if drive.get('diskType') == DISK_TYPE.NETWORK:
                     if device == "cdrom":
                         raise exception.UnsupportedOperation(
                             "A cdrom device is not supported as network disk",
                             drive=drive)
+
+                    # Not applicable for Ceph network disk as
+                    # Ceph disks are not vdsm images
                     volPath = self._prepare_network_drive(drive, res)
                 else:
+                    if 'diskType' not in drive:
+                        if res['info']['type'] == DISK_TYPE.BLOCK:
+                            drive['diskType'] = DISK_TYPE.BLOCK
+                        else:
+                            # Volume type may be 'network', but if engine did
+                            # not speicfy the type, we must use 'file'.
+                            drive['diskType'] = DISK_TYPE.FILE
                     volPath = res['path']
             # GUID drive format
             elif "GUID" in drive:
@@ -419,6 +427,9 @@ class clientIF(object):
                 # Update size for LUN volume
                 drive["truesize"] = res['truesize']
                 drive["apparentsize"] = res['apparentsize']
+
+                if 'diskType' not in drive:
+                    drive['diskType'] = DISK_TYPE.BLOCK
 
                 volPath = res['path']
 
@@ -441,6 +452,10 @@ class clientIF(object):
 
             else:
                 raise vm.VolumeError(drive)
+
+            # Noramalize the missing diskType when cluster version < 4.2.
+            if 'diskType' not in drive:
+                drive['diskType'] = DISK_TYPE.FILE
 
         # For BC sake: None as argument
         elif not drive:
