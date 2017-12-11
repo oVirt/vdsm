@@ -604,6 +604,17 @@ class ChunkedTests(VdsmTestCase):
         drive = Drive(self.log, **conf)
         self.assertEqual(drive.chunked, False)
 
+    def test_unset_disk_type(self):
+        # Simulate legacy behavior in cluster version < 4.2, vdsm discover the
+        # disk type by checking if the path is a block device.
+        with namedTemporaryDir() as tmpdir:
+            path = os.path.join(tmpdir, "vol")
+            open(path, "w").close()
+            conf = drive_config(device="disk", format="cow", path=path)
+            drive = Drive(self.log, **conf)
+            self.assertFalse(drive.chunked,
+                             "File based drive cannot be chunked")
+
 
 @expandPermutations
 class ReplicaChunkedTests(VdsmTestCase):
