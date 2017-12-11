@@ -92,29 +92,19 @@ Requires: virt-v2v
 %endif
 
 Requires: chrony
-Requires: dhclient
-Requires: dbus-python
-Requires: ethtool
 Requires: which
 Requires: sudo >= 1.7.3
 Requires: logrotate
 Requires: lshw
 Requires: xz
-Requires: iproute >= 3.10.0
-%if 0%{?fedora} >= 25
-Requires: iproute-tc
-%endif
 Requires: PyYAML
 Requires: python-netaddr
-Requires: python-inotify
 Requires: python-ioprocess >= 0.16.1-1
-Requires: python-ipaddress
 Requires: python-pthreading >= 0.1.3-3
 Requires: python-six >= 1.9.0
 Requires: python-requests
 Requires: rpm-python
 Requires: nfs-utils
-Requires: libnl3
 Requires: abrt-cli
 Requires: abrt-addon-vmcore
 Requires: abrt-addon-ccpp
@@ -127,10 +117,6 @@ Requires: mom >= 0.5.8
 Requires(pre): shadow-utils
 
 Obsoletes: %{name}-infra < 4.19
-
-%if 0%{?with_openvswitch}
-Requires: openvswitch >= 2.7.0
-%endif
 
 %if 0%{?with_ovirt_imageio}
 Requires: ovirt-imageio-common
@@ -234,8 +220,6 @@ Requires: genisoimage
 Requires: libselinux-python >= 2.5-2
 Requires: %{name}-python = %{version}-%{release}
 Requires: %{name}-hook-vmfex-dev = %{version}-%{release}
-Requires: NetworkManager-config-server
-Requires: lldpad
 
 Requires(post): /usr/sbin/saslpasswd2
 
@@ -323,12 +307,42 @@ Requires:       libvirt-python >= 3.7.0
 %description common
 VDSM libraries that are imported by all subsystems
 
+%package network
+Summary:        VDSM network python libraries
+BuildArch:      noarch
+Requires:       NetworkManager-config-server
+Requires:       bridge-utils
+Requires:       dbus-python
+Requires:       dhclient
+Requires:       ethtool
+Requires:       initscripts
+Requires:       iproute
+%if 0%{?fedora} >= 25
+Requires:       iproute-tc
+%endif
+Requires:       libnl3
+Requires:       libselinux-python
+Requires:       lldpad
+%if 0%{?with_openvswitch}
+Requires:       openvswitch >= 2.7.0
+%endif
+Requires:       python-inotify
+Requires:       python-ipaddress
+Requires:       python-netaddr
+Requires:       python-six
+Requires:       systemd
+Requires:       %{name}-common = %{version}-%{release}
+
+%description network
+VDSM network python libraries
+
 %package python
 Summary:        VDSM python libraries
 Requires:       %{name}-api = %{version}-%{release}
 BuildArch:      noarch
 Requires:       python-ioprocess >= 0.16.1-1
 Requires:       %{name}-common = %{version}-%{release}
+Requires:       %{name}-network = %{version}-%{release}
 
 %description python
 Shared libraries between the various VDSM packages.
@@ -351,6 +365,7 @@ Summary:        VDSM Test Suite
 BuildArch:      noarch
 Requires:       %{name} = %{version}-%{release}
 Requires:       %{name}-common = %{version}-%{release}
+Requires:       %{name}-network = %{version}-%{release}
 Requires:       dracut
 Requires:       python-nose python-ipaddress
 
@@ -1034,11 +1049,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/common/*.py*
 %{python_sitelib}/%{vdsm_name}/common/network/*.py*
 
-%files python
-%{_mandir}/man1/vdsm-tool.1*
-%{_bindir}/vdsm-tool
-%dir %{python_sitelib}/%{vdsm_name}/gluster
-%dir %{python_sitelib}/%{vdsm_name}/host
+%files network
 %dir %{python_sitelib}/%{vdsm_name}/network
 %dir %{python_sitelib}/%{vdsm_name}/network/configurators
 %dir %{python_sitelib}/%{vdsm_name}/network/ip
@@ -1057,6 +1068,16 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs/driver
 %dir %{python_sitelib}/%{vdsm_name}/network/tc
+%{python_sitelib}/%{vdsm_name}/__init__.py*
+%{python_sitelib}/%{vdsm_name}/network/*.py*
+%{python_sitelib}/%{vdsm_name}/network/*/*.py*
+%{python_sitelib}/%{vdsm_name}/network/*/*/*.py*
+
+%files python
+%{_mandir}/man1/vdsm-tool.1*
+%{_bindir}/vdsm-tool
+%dir %{python_sitelib}/%{vdsm_name}/gluster
+%dir %{python_sitelib}/%{vdsm_name}/host
 %dir %{python_sitelib}/%{vdsm_name}/metrics
 %dir %{python_sitelib}/%{vdsm_name}/tool
 %dir %{python_sitelib}/%{vdsm_name}/tool/configurators
@@ -1093,9 +1114,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/moduleloader.py*
 %{python_sitelib}/%{vdsm_name}/momIF.py*
 %{python_sitelib}/%{vdsm_name}/mkimage.py*
-%{python_sitelib}/%{vdsm_name}/network/*.py*
-%{python_sitelib}/%{vdsm_name}/network/*/*.py*
-%{python_sitelib}/%{vdsm_name}/network/*/*/*.py*
 %{python_sitelib}/%{vdsm_name}/numa.py*
 %{python_sitelib}/%{vdsm_name}/osinfo.py*
 %{python_sitelib}/%{vdsm_name}/ppc64HardwareInfo.py*
