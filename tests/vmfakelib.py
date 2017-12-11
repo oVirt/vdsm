@@ -100,8 +100,8 @@ class ClientIF(object):
     def getInstance(self):
         return self
 
-    def prepareVolumePath(self, paramFilespec):
-        return paramFilespec
+    def prepareVolumePath(self, drive, vmId=None):
+        return drive
 
     def teardownVolumePath(self, paramFilespec):
         pass

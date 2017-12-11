@@ -253,7 +253,7 @@ class Drive(core.Base):
         self._customize()
         self._setExtSharedState()
 
-    def conf_parameters(self):
+    def config(self):
         return None
 
     def _setExtSharedState(self):

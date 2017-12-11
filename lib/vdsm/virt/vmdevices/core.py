@@ -41,7 +41,7 @@ class SkipDevice(Exception):
 class Base(vmxml.Device):
     __slots__ = ('deviceType', 'device', 'alias', 'specParams', 'deviceId',
                  'log', '_deviceXML', 'type', 'custom',
-                 'is_hostdevice', 'vmid', '_kwargs',)
+                 'is_hostdevice', 'vmid', '_conf',)
 
     @classmethod
     def get_identifying_attrs(cls, dev_elem):
@@ -77,7 +77,7 @@ class Base(vmxml.Device):
 
     def __init__(self, log, **kwargs):
         self.log = log
-        self._kwargs = kwargs
+        self._conf = kwargs
         self.specParams = {}
         self.custom = kwargs.pop('custom', {})
         for attr, value in kwargs.items():
@@ -94,7 +94,7 @@ class Base(vmxml.Device):
                  if not a.startswith('__')]
         return ' '.join(attrs)
 
-    def conf_parameters(self):
+    def config(self):
         """
         Return dictionary of constructor kwargs or None.
 
@@ -102,7 +102,7 @@ class Base(vmxml.Device):
         Return None in case `update_device_info` already adds the legacy
         configuration.
         """
-        return self._kwargs
+        return self._conf
 
     def is_attached_to(self, xml_string):
         raise NotImplementedError(
@@ -428,9 +428,9 @@ class Controller(Base):
                      'address': address,
                      'alias': alias})
 
-    def conf_parameters(self):
+    def config(self):
         if not hasattr(self, 'address'):
-            return super(Controller, self).conf_parameters()
+            return super(Controller, self).config()
         return None
 
 

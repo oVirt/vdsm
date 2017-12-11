@@ -460,7 +460,7 @@ class Interface(core.Base):
                     nicDev['network'] = network
                 vm.conf['devices'].append(nicDev)
 
-    def conf_parameters(self):
+    def config(self):
         return None
 
     def __repr__(self):

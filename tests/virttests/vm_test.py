@@ -1205,6 +1205,42 @@ class TestVmDeviceHandling(TestCaseBase):
         'vmId': '9ffe28b6-6134-4b1e-beef-1185f49c436f',
         'vmName': 'testVm',
     }
+    xml_conf = '''<?xml version="1.0" encoding="utf-8"?>
+       <domain type="kvm"
+               xmlns:ovirt-tune="http://ovirt.org/vm/tune/1.0"
+               xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+         <name>testVm</name>
+         <uuid>1234</uuid>
+         <memory>1048576</memory>
+         <currentMemory>1048576</currentMemory>
+         <vcpu current="1">160</vcpu>
+         <devices>
+           <disk type='file' device='disk' snapshot='no'>
+             <source file='/path/1234'/>
+             <target dev='sda' bus='scsi'/>
+             <serial>9876</serial>
+             <address type='drive' controller='0' bus='0' target='0' unit='0'/>
+           </disk>
+           <controller type='scsi' index='0' model='virtio-scsi'>
+             <address type='pci' domain='0x0000' bus='0x00' slot='0x05'
+                      function='0x0'/>
+           </controller>
+           <controller type='pci' index='0' model='pci-root'/>
+           <interface type='bridge'>
+             <mac address='00:11:22:33:44:55'/>
+             <source bridge='ovirtmgmt'/>
+             <target dev='vnet0'/>
+             <model type='virtio'/>
+             <filterref filter='vdsm-no-mac-spoofing'/>
+             <address type='pci' domain='0x0000' bus='0x00' slot='0x03'
+                      function='0x0'/>
+           </interface>
+         </devices>
+         <metadata>
+             <ovirt-tune:qos/>
+             <ovirt-vm:vm/>
+         </metadata>
+       </domain>'''
 
     def test_device_setup_success(self):
         devices = [fake.Device('device_{}'.format(i)) for i in range(3)]
@@ -1340,6 +1376,11 @@ class TestVmDeviceHandling(TestCaseBase):
     def test_normalizeDrivesIndices(self, drives, expected):
         with fake.VM(self.conf) as testvm:
             self.assertEqual(testvm.normalizeDrivesIndices(drives), expected)
+
+    def test_xml_device_processing(self):
+        with fake.VM({'xml': self.xml_conf}) as vm:
+            devices = vm._make_devices()
+            self.assertEqual(sum([len(v) for v in devices.values()]), 4)
 
 
 @expandPermutations

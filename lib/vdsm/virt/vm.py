@@ -2612,9 +2612,9 @@ class Vm(object):
         if 'xml' in self.conf:
             for devices in dev_objs_from_xml.values():
                 for dev in devices:
-                    conf_parameters = dev.conf_parameters()
-                    if conf_parameters is not None:
-                        self.conf['devices'].append(conf_parameters)
+                    dev_conf = dev.config()
+                    if dev_conf is not None:
+                        self.conf['devices'].append(dev_conf)
 
         self.log.debug('Built %d devices', len(dev_objs_from_xml))
         return dev_objs_from_xml
