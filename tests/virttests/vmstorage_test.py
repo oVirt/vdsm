@@ -1239,6 +1239,107 @@ class DriveConfigurationTests(VdsmTestCase):
         self.assertIs(drive.readonly, expected)
 
 
+class TestNeedsMonitoring(VdsmTestCase):
+
+    # Monitoring not needed
+
+    def test_disk_type_unset(self):
+        with namedTemporaryDir() as tmpdir:
+            path = os.path.join(tmpdir, "vol")
+            open(path, "w").close()
+            conf = drive_config(format="cow", path=path)
+            drive = Drive(self.log, **conf)
+            self.assertFalse(drive.needs_monitoring(events_enabled=False))
+
+    def test_no_need_readonly(self):
+        conf = drive_config(diskType=DISK_TYPE.BLOCK, format="cow",
+                            readonly=True)
+        drive = Drive(self.log, **conf)
+        self.assertFalse(drive.needs_monitoring(events_enabled=False))
+
+    def test_no_need_monitoring_disabled(self):
+        conf = drive_config(diskType=DISK_TYPE.BLOCK, format="cow")
+        drive = Drive(self.log, **conf)
+        drive.monitorable = False
+        self.assertFalse(drive.needs_monitoring(events_enabled=False))
+
+    def test_no_need_not_chunked(self):
+        conf = drive_config(diskType=DISK_TYPE.FILE, format="cow")
+        drive = Drive(self.log, **conf)
+        self.assertFalse(drive.needs_monitoring(events_enabled=False))
+
+    def test_no_need_replica_not_chunked(self):
+        conf = drive_config(diskType=DISK_TYPE.FILE, format="cow")
+        drive = Drive(self.log, **conf)
+        drive.diskReplicate = replica(DISK_TYPE.FILE, format="cow")
+        self.assertFalse(drive.needs_monitoring(events_enabled=False))
+
+    # Monitoring needed
+
+    def test_need_chunked(self):
+        conf = drive_config(diskType=DISK_TYPE.BLOCK, format="cow")
+        drive = Drive(self.log, **conf)
+        self.assertTrue(drive.needs_monitoring(events_enabled=False))
+
+    def test_need_replica_chunked(self):
+        conf = drive_config(diskType=DISK_TYPE.FILE, format="cow")
+        drive = Drive(self.log, **conf)
+        drive.diskReplicate = replica(DISK_TYPE.BLOCK, format="cow")
+        self.assertTrue(drive.needs_monitoring(events_enabled=False))
+
+
+class TestNeedsMonitoringEvents(VdsmTestCase):
+
+    # Monitoring not needed.
+
+    def test_disk_type_unset(self):
+        with namedTemporaryDir() as tmpdir:
+            path = os.path.join(tmpdir, "vol")
+            open(path, "w").close()
+            conf = drive_config(format="cow", path=path)
+            drive = Drive(self.log, **conf)
+            self.assertFalse(drive.needs_monitoring(events_enabled=True))
+
+    def test_no_need_chunked_threshold_set(self):
+        conf = drive_config(diskType=DISK_TYPE.BLOCK, format="cow")
+        drive = Drive(self.log, **conf)
+        drive.threshold_state = BLOCK_THRESHOLD.SET
+        self.assertFalse(drive.needs_monitoring(events_enabled=True))
+
+    def test_no_need_replica_chunked_threshold_set(self):
+        conf = drive_config(diskType=DISK_TYPE.FILE, format="cow")
+        drive = Drive(self.log, **conf)
+        drive.diskReplicate = replica(DISK_TYPE.BLOCK, format="cow")
+        drive.threshold_state = BLOCK_THRESHOLD.SET
+        self.assertFalse(drive.needs_monitoring(events_enabled=True))
+
+    # Monitoring needed.
+
+    def test_need_chunked_threshold_unset(self):
+        conf = drive_config(diskType=DISK_TYPE.BLOCK, format="cow")
+        drive = Drive(self.log, **conf)
+        self.assertTrue(drive.needs_monitoring(events_enabled=True))
+
+    def test_need_chunked_threshold_exceeded(self):
+        conf = drive_config(diskType=DISK_TYPE.BLOCK, format="cow")
+        drive = Drive(self.log, **conf)
+        drive.threshold_state = BLOCK_THRESHOLD.EXCEEDED
+        self.assertTrue(drive.needs_monitoring(events_enabled=True))
+
+    def test_need_replica_chunked_threshold_unset(self):
+        conf = drive_config(diskType=DISK_TYPE.FILE, format="cow")
+        drive = Drive(self.log, **conf)
+        drive.diskReplicate = replica(DISK_TYPE.BLOCK, format="cow")
+        self.assertTrue(drive.needs_monitoring(events_enabled=True))
+
+    def test_need_replica_chunked_threshold_exceeded(self):
+        conf = drive_config(diskType=DISK_TYPE.FILE, format="cow")
+        drive = Drive(self.log, **conf)
+        drive.diskReplicate = replica(DISK_TYPE.BLOCK, format="cow")
+        drive.threshold_state = BLOCK_THRESHOLD.EXCEEDED
+        self.assertTrue(drive.needs_monitoring(events_enabled=True))
+
+
 def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):
     return [{"leasePath": path,
              "leaseOffset": offset,
