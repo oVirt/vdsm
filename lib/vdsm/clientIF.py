@@ -584,6 +584,13 @@ class clientIF(object):
                 self._unknown_vm_ids.add(vmid)
                 return
 
+            # pylint cannot tell that unpacking the args tuple is safe, so we
+            # must disbale this check here.
+            # TODO: The real solution is to create a method per callback with
+            # fixed number of arguments, and register the callbacks separately
+            # in libvirt.
+            # pylint: disable=unbalanced-tuple-unpacking
+
             if eventid == libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE:
                 event, detail = args[:-1]
                 v.onLibvirtLifecycleEvent(event, detail, None)
