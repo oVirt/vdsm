@@ -1364,7 +1364,8 @@ def _read_ovf_from_tar_ova(ova_path):
     with tarfile.open(ova_path) as tar:
         for member in tar:
             if member.name.endswith('.ovf'):
-                with closing(tar.extractfile(member)) as ovf:
+                ovf = tar.extractfile(member)
+                with closing(ovf):
                     return ovf.read()
         raise ClientError('OVA does not contains file with .ovf suffix')
 

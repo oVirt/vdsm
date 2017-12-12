@@ -153,7 +153,8 @@ class Monitor(object):
 
     def _scan(self):
         try:
-            with closing(select.epoll()) as epoll:
+            epoll = select.epoll()
+            with closing(epoll):
                 with _monitoring_socket(
                         self._queue, self._groups, epoll) as sock:
                     with _pipetrick(epoll) as self._pipetrick:
