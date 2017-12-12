@@ -58,8 +58,10 @@ class KernelConfig(BaseConfig):
             yield net, attrs
 
     def _analyze_netinfo_bonds(self, netinfo):
+        rconfig = RunningConfig()
         for bond, bond_attr in six.viewitems(netinfo.bondings):
-            yield bond, _translate_netinfo_bond(bond_attr)
+            bond_rconf = rconfig.bonds.get(bond)
+            yield bond, _translate_netinfo_bond(bond_attr, bond_rconf)
 
 
 def normalize(running_config):
@@ -161,12 +163,17 @@ def _translate_bridged(attributes, net_attr):
         attributes['stp'] = bridges.stp_booleanize(net_attr['stp'])
 
 
-def _translate_netinfo_bond(bond_attr):
-    return {
+def _translate_netinfo_bond(bond_attr, bond_running_config):
+    bond_conf = {
         'nics': sorted(bond_attr['slaves']),
         'options': bonding.bondOptsForIfcfg(bond_attr['opts']),
         'switch': bond_attr['switch']
     }
+    hwaddr_explicitly_set = (bond_running_config and
+                             'hwaddr' in bond_running_config)
+    if hwaddr_explicitly_set:
+        bond_conf['hwaddr'] = bond_attr['hwaddr']
+    return bond_conf
 
 
 def _translate_hostqos(attributes, net_attr):
