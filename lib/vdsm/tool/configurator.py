@@ -1,4 +1,4 @@
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -272,7 +272,8 @@ def _sort_modules(modulesNames):
     return sortedModules
 
 
-def _parse_args(action, *args):
+def _parse_args(*args):
+    action = args[0]
     parser = argparse.ArgumentParser('vdsm-tool %s' % (action))
     parser.add_argument(
         '--module',
@@ -297,7 +298,7 @@ def _parse_args(action, *args):
             help='Force configuration, trigger services restart',
         )
 
-    pargs = parser.parse_args(args)
+    pargs = parser.parse_args(args[1:])
     if not pargs.modules:
         pargs.modules = _CONFIGURATORS.keys()
 
