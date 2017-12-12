@@ -56,6 +56,9 @@ def getDomUuidFromVolumePath(volPath):
 
 class FileVolumeManifest(volume.VolumeManifest):
 
+    # How this volume is presented to a vm.
+    DISK_TYPE = "file"
+
     # Raw volumes should be aligned to sector size, which is 512 or 4096
     # (not supported yet). qcow2 images should be aligned to cluster size
     # (64K default). To simplify, we use 1M alignment.

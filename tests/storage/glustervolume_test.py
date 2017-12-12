@@ -73,6 +73,7 @@ class TestVolumeInfo(VdsmTestCase):
 
     def test_no_data(self):
         expected = {
+            "type": "network",
             "path": "volume/sd_id/images/img_id/vol_id",
             "protocol": "gluster",
             "hosts": [
@@ -98,6 +99,7 @@ class TestVolumeInfo(VdsmTestCase):
         }
 
         expected = {
+            "type": "network",
             "path": "volume/sd_id/images/img_id/vol_id",
             "protocol": "gluster",
             "hosts": [
@@ -142,6 +144,7 @@ class TestVolumeInfo(VdsmTestCase):
         }
 
         expected = {
+            "type": "network",
             "path": "volume/sd_id/images/img_id/vol_id",
             "protocol": "gluster",
             "hosts": [
@@ -178,6 +181,7 @@ class TestVolumeInfo(VdsmTestCase):
         }
 
         expected = {
+            "type": "network",
             "path": "volume/sd_id/images/img_id/vol_id",
             "protocol": "gluster",
             "hosts": [

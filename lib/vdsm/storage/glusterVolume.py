@@ -95,6 +95,9 @@ class GlusterVolume(fileVolume.FileVolume):
         hosts.extend(dict(name=brickServer, port=volPort, transport=transport)
                      for brickServer in brickServers)
 
-        return {'path': glusterPath,
-                'protocol': 'gluster',
-                'hosts': hosts}
+        return {
+            'type': 'network',
+            'path': glusterPath,
+            'protocol': 'gluster',
+            'hosts': hosts,
+        }

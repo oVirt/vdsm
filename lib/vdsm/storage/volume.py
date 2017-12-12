@@ -60,13 +60,12 @@ def _next_generation(current_generation):
     return (current_generation + 1) % (sc.MAX_GENERATION + 1)
 
 
-class VmVolumeInfo(object):
-    TYPE_PATH = "path"
-    TYPE_NETWORK = "network"
-
-
 class VolumeManifest(object):
     log = logging.getLogger('storage.VolumeManifest')
+
+    # How this volume is presented to a vm.  Must be overriden in derived
+    # classes.
+    DISK_TYPE = None
 
     # The miminal allocation unit; implemented in concrete classes
     align_size = None
@@ -301,13 +300,12 @@ class VolumeManifest(object):
 
     def getVmVolumeInfo(self):
         """
-        Get volume path/info as dict.
-        Derived classes can use this if they want to represent the
-        volume to the VM in a different way than the standard 'path' way.
+        Return VM volume information.
+
+        Derived classes may override this if additional information is required
+        by the virt layer to present the volume to a VM.
         """
-        # By default, send path
-        return {'volType': VmVolumeInfo.TYPE_PATH,
-                'path': self.getVolumePath()}
+        return {"type": self.DISK_TYPE, "path": self.getVolumePath()}
 
     def setMetaParam(self, key, value):
         """
