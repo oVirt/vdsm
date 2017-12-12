@@ -990,7 +990,7 @@ class Vm(object):
                 if isVdsmImage(drive):
                     # This is the only place we support manipulation of a
                     # prepared image, required for the localdisk hook. The hook
-                    # may change drive parameters like path and format.
+                    # may change drive's diskType, path and format.
                     modified = hooks.after_disk_prepare(drive, self._custom)
                     drive.update(modified)
         else:

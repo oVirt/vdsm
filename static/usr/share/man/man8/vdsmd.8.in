@@ -138,6 +138,7 @@ key with a filename where the disk info is stored in JSON format:
 .nf
 {
     "disk": {
+        "diskType": "file",
         "device": "disk",
         "domainID": "uuid",
         "format": "cow",
@@ -152,8 +153,9 @@ key with a filename where the disk info is stored in JSON format:
 See the VmDiskDevice type in vdsm schema for the complete contents of
 the disk info dict.
 
-If the after_disk_prepare hook modify the disk, vdsm will use the
-modified disk instead of the original disk.
+If the after_disk_prepare hook modify the disk, vdsm will use the modified disk
+instead of the original disk. See vdsm_hooks/localdisk for example for
+converting a shared disk of any type to a local block device.
 
 Hooks that handle NIC hotplug, hotunplug and update device
 have the _hook_domxml variable but it contains the representation of the NIC

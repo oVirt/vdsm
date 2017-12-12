@@ -55,6 +55,10 @@ TAG_PREFIX_VM = "VM_"
 # The LV/local disk are copied as RAW format for best performance.
 LOCAL_FORMAT = "raw"
 
+# LV/local are block devices, but the original drive may be a 'file' or
+# 'network' disk.
+LOCAL_DISK_TYPE = "block"
+
 # Supported backends
 BACKEND_LVM = "lvm"
 BACKEND_LVM_THIN = "lvmthin"
@@ -109,6 +113,7 @@ def replace_disk(disk, thin):
 
     disk["path"] = lv_path(lv_name)
     disk["format"] = LOCAL_FORMAT
+    disk["diskType"] = LOCAL_DISK_TYPE
 
 
 def create_local_disk(orig_path, lv_name, vm_id, img_id, src_format, thin):
