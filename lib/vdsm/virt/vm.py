@@ -3173,7 +3173,7 @@ class Vm(object):
         else:
             nicParams = params['nic']
             if port_mirroring is None:
-                port_mirroring = nicParams['portMirroring']
+                port_mirroring = nicParams.get('portMirroring')
 
         # Find NIC object in vm's NICs list
         nic = None
