@@ -2321,7 +2321,7 @@ class HSM(object):
                                     caseSensitive=caseSensitive)
         return {'fileStats': fileStats}
 
-    def __getSDTypeFindMethod(self, domType):
+    def _getSDTypeFindMethod(self, domType):
         # TODO: make sd.domain_types a real dictionary and remove this.
         # Storage Domain Types find methods
         SDTypeFindMethod = {sd.NFS_DOMAIN: nfsSD.findDomain,
@@ -2364,7 +2364,7 @@ class HSM(object):
             self.log.warn("domType %s does not support prefetch")
 
         self.log.debug("Found SD uuids: %s", uuids)
-        findMethod = self.__getSDTypeFindMethod(domType)
+        findMethod = self._getSDTypeFindMethod(domType)
         return dict.fromkeys(uuids, findMethod)
 
     @deprecated
@@ -2590,7 +2590,7 @@ class HSM(object):
         newSD = create(sdUUID, domainName, domClass, typeSpecificArg,
                        storageType, domVersion)
 
-        findMethod = self.__getSDTypeFindMethod(storageType)
+        findMethod = self._getSDTypeFindMethod(storageType)
         sdCache.knownSDs[sdUUID] = findMethod
         self.log.debug("knownSDs: {%s}", ", ".join("%s: %s.%s" %
                        (k, v.__module__, v.__name__)
