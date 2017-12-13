@@ -143,11 +143,14 @@ class Device(core.Base):
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
         params = {
+            'type': dev.tag,
+            'device': core.find_device_type(dev),
             'lease_id': vmxml.text(vmxml.find_first(dev, 'key')),
             'sd_id': vmxml.text(vmxml.find_first(dev, 'lockspace')),
             'path': vmxml.find_attr(dev, 'target', 'path'),
             'offset': vmxml.find_attr(dev, 'target', 'offset'),
         }
+        core.update_device_params(params, dev)
         return cls(log, **params)
 
     @classmethod

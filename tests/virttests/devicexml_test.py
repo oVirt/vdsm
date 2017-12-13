@@ -34,6 +34,7 @@ from vdsm.common import hostdev
 from monkeypatch import MonkeyPatchScope, MonkeyPatch
 from testlib import make_config
 from testlib import permutations, expandPermutations
+from testlib import read_data
 from testlib import XMLTestCase
 
 import vmfakecon as fake
@@ -1376,6 +1377,19 @@ class DeviceFromXMLTests(XMLTestCase):
 
         md_desc = metadata.Descriptor.from_xml(_DRIVE_PAYLOAD_XML)
         self.assertXMLEqual(md_desc.to_xml(), expected_xml)
+
+    def test_device_core_attributes_present_and_never_none(self):
+        he_xml = read_data('hostedengine.xml')
+        dom_desc = DomainDescriptor(he_xml)
+        md_desc = metadata.Descriptor.from_xml(he_xml)
+        dev_objs = vmdevices.common.dev_map_from_domain_xml(
+            'HE', dom_desc, md_desc, self.log
+        )
+        for devices in dev_objs.values():
+            for dev in devices:
+                print(dev)  # debug aid
+                self.assertIsNot(dev.type, None)
+                self.assertIsNot(dev.device, None)
 
 
 # invalid domain with only the relevant sections added
