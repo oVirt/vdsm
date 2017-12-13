@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,14 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-vdsmvirttestsdir = ${vdsmtestsdir}/virttests
+vdsmvirtdatatestsdir = ${vdsmtestsdir}/virttests/data
 
-SUBDIRS = \
-	  data \
-	  $(NULL)
-
-dist_vdsmvirttests_PYTHON = \
-	*_test.py \
-	collectdlib.py \
+dist_vdsmvirtdatatests_DATA = \
+	*.xml \
 	$(NULL)
 

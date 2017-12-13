@@ -439,6 +439,7 @@ AC_OUTPUT([
 	tests/network/static/Makefile
 	tests/storage/Makefile
 	tests/virttests/Makefile
+	tests/virttests/data/Makefile
 	vdsm_hooks/Makefile
 	vdsm_hooks/allocate_net/Makefile
 	vdsm_hooks/checkimages/Makefile
