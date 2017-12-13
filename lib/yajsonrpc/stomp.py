@@ -523,7 +523,7 @@ class AsyncDispatcher(object):
         return False
 
     def readable(self, dispatcher):
-        return True
+        return not self._on_timeout
 
     def _milis(self):
         return int(round(self._clock() * 1000))
