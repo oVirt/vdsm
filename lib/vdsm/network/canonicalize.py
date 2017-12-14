@@ -39,12 +39,7 @@ def canonicalize_networks(nets):
     Given networks configuration, explicitly add missing defaults.
     :param nets: The network configuration
     """
-    for attrs in six.itervalues(nets):
-        # If net is marked for removal, normalize the mark to boolean and
-        # ignore all other attributes canonization.
-        if _canonicalize_remove(attrs):
-            continue
-
+    for _, attrs in _entities_to_canonicalize(nets):
         _canonicalize_mtu(attrs)
         _canonicalize_vlan(attrs)
         _canonicalize_bridged(attrs)
@@ -63,15 +58,23 @@ def canonicalize_bondings(bonds):
     Given bondings configuration, explicitly add missing defaults.
     :param bonds: The bonding configuration
     """
-    for bondname, attrs in six.viewitems(bonds):
-        # If bond is marked for removal, normalize the mark to boolean and
-        # ignore all other attributes canonization.
-        if _canonicalize_remove(attrs):
-            continue
-
+    for bondname, attrs in _entities_to_canonicalize(bonds):
         _canonicalize_bond_slaves(attrs)
         _canonicalize_switch_type_bond(attrs)
         _canonicalize_bond_hwaddress(bondname, attrs)
+
+
+def _entities_to_canonicalize(entities):
+    """
+    Returns an interator of all entities which should be canonicalized.
+
+    If net/bond is marked for removal, normalize the mark to boolean and
+    do not return it for further processing.
+
+    :param entities: Network or Bond requested configuration dicts
+    """
+    return ((name, attrs) for name, attrs in six.viewitems(entities)
+            if not _canonicalize_remove(attrs))
 
 
 def canonicalize_external_bonds_used_by_nets(nets, bonds):
