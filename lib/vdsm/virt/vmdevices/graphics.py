@@ -62,7 +62,7 @@ class Graphics(Base):
         self.tlsPort = LIBVIRT_PORT_AUTOSELECT
 
     def setup(self):
-        display_network = self.specParams['displayNetwork']
+        display_network = self.specParams.get('displayNetwork')
         if display_network:
             displaynetwork.create_network(display_network, self.vmid)
             display_ip = _getNetworkIp(display_network)
@@ -71,7 +71,7 @@ class Graphics(Base):
         self.specParams['displayIp'] = display_ip
 
     def teardown(self):
-        display_network = self.specParams['displayNetwork']
+        display_network = self.specParams.get('displayNetwork')
         if display_network:
             displaynetwork.delete_network(display_network, self.vmid)
 
@@ -161,7 +161,7 @@ class Graphics(Base):
                 graphics.appendChildWithArgs('channel', name=chan,
                                              mode='secure')
 
-        display_network = self.specParams['displayNetwork']
+        display_network = self.specParams.get('displayNetwork')
         if display_network:
             graphics.appendChildWithArgs(
                 'listen', type='network',
