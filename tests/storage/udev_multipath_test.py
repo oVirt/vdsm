@@ -35,7 +35,8 @@ import loopback
 EVENT = udev.MultipathEvent(type=udev.MPATH_REMOVED,
                             mpath_uuid="fake-uuid-3",
                             path=None,
-                            valid_paths=None)
+                            valid_paths=None,
+                            dm_seqnum=None)
 
 
 class FakeDevice(dict):
@@ -244,12 +245,14 @@ def test_hotunplug_monitor():
             DM_ACTION="PATH_REINSTATED",
             DM_UUID="mpath-fake-uuid-1",
             DM_PATH="sda",
-            DM_NR_VALID_PATHS="1"),
+            DM_NR_VALID_PATHS="1",
+            DM_SEQNUM="10"),
         udev.MultipathEvent(
             type=udev.PATH_REINSTATED,
             mpath_uuid="fake-uuid-1",
             path="sda",
-            valid_paths=1)
+            valid_paths=1,
+            dm_seqnum=10)
     ),
     (
         # Multipath path has failed
@@ -258,12 +261,14 @@ def test_hotunplug_monitor():
             DM_ACTION="PATH_FAILED",
             DM_UUID="mpath-fake-uuid-2",
             DM_PATH="66:32",
-            DM_NR_VALID_PATHS="4"),
+            DM_NR_VALID_PATHS="4",
+            DM_SEQNUM="11"),
         udev.MultipathEvent(
             type=udev.PATH_FAILED,
             mpath_uuid="fake-uuid-2",
             path="sda",
-            valid_paths=4)
+            valid_paths=4,
+            dm_seqnum=11)
     ),
     (
         # Multipath device has been removed
@@ -274,7 +279,8 @@ def test_hotunplug_monitor():
             type=udev.MPATH_REMOVED,
             mpath_uuid="fake-uuid-3",
             path=None,
-            valid_paths=None)
+            valid_paths=None,
+            dm_seqnum=None)
     ),
 ])
 def test_report_events(monkeypatch, device, expected):

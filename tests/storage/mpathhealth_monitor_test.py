@@ -34,7 +34,7 @@ def test_no_events():
 
 def test_failed_path():
     monitor = mpathhealth.Monitor()
-    event = udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sda", 1)
+    event = udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sda", 1, 10)
     monitor.handle(event)
     expected = {
         "uuid-1": {
@@ -49,16 +49,16 @@ def test_failed_path():
 
 def test_removed():
     monitor = mpathhealth.Monitor()
-    event = udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sda", 1)
+    event = udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sda", 1, 10)
     monitor.handle(event)
-    event = udev.MultipathEvent(udev.MPATH_REMOVED, "uuid-1", None, None)
+    event = udev.MultipathEvent(udev.MPATH_REMOVED, "uuid-1", None, None, None)
     monitor.handle(event)
     assert monitor.status() == {}
 
 
 def test_removed_not_existing():
     monitor = mpathhealth.Monitor()
-    event = udev.MultipathEvent(udev.MPATH_REMOVED, "uuid-1", None, None)
+    event = udev.MultipathEvent(udev.MPATH_REMOVED, "uuid-1", None, None, None)
     monitor.handle(event)
     assert monitor.status() == {}
 
@@ -66,8 +66,8 @@ def test_removed_not_existing():
 def test_multiple_mpath():
     monitor = mpathhealth.Monitor()
     events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdaa", 1),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "sdba", 2)
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdaa", 1, 10),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "sdba", 2, 11)
     ]
     for e in events:
         monitor.handle(e)
@@ -91,10 +91,10 @@ def test_multiple_mpath():
 def test_multiple_mpath_paths():
     monitor = mpathhealth.Monitor()
     events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdaa", 1),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "sdba", 2),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdab", 0),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "sdbb", 1)
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdaa", 1, 10),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "sdba", 2, 11),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdab", 0, 12),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-2", "sdbb", 1, 13)
     ]
     for e in events:
         monitor.handle(e)
@@ -119,7 +119,7 @@ def test_multiple_mpath_paths():
 
 def test_reinstated_path_no_mpath():
     monitor = mpathhealth.Monitor()
-    event = udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "sdaa", 1)
+    event = udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "sdaa", 1, 10)
     monitor.handle(event)
     assert monitor.status() == {}
 
@@ -127,8 +127,8 @@ def test_reinstated_path_no_mpath():
 def test_reinstated_last_path():
     monitor = mpathhealth.Monitor()
     events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdaa", 1),
-        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "sdaa", 2)
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdaa", 1, 10),
+        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "sdaa", 2, 11)
     ]
     for e in events:
         monitor.handle(e)
@@ -138,9 +138,9 @@ def test_reinstated_last_path():
 def test_reinstated__path():
     monitor = mpathhealth.Monitor()
     events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdaa", 2),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdab", 1),
-        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "sdaa", 2)
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdaa", 2, 10),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdab", 1, 11),
+        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "sdaa", 2, 12)
     ]
     for e in events:
         monitor.handle(e)
@@ -248,9 +248,9 @@ def test_events_after_start(monkeypatch):
     monitor.start()
 
     events = [
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdb", 1),
-        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdc", 0),
-        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "sda", 1)
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdb", 1, 10),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdc", 0, 11),
+        udev.MultipathEvent(udev.PATH_REINSTATED, "uuid-1", "sda", 1, 12)
     ]
     for e in events:
         monitor.handle(e)

@@ -31,7 +31,7 @@ from collections import namedtuple
 from vdsm.storage import devicemapper
 
 MultipathEvent = namedtuple("MultipathEvent",
-                            "type, mpath_uuid, path, valid_paths")
+                            "type, mpath_uuid, path, valid_paths, dm_seqnum")
 
 MPATH_REMOVED = "removed"
 PATH_FAILED = "failed"
@@ -242,15 +242,18 @@ class MultipathListener(object):
                 self.log.debug("Unsupported DM_ACTION %r", dm_action)
                 return
             valid_paths = int(device.get("DM_NR_VALID_PATHS"))
+            dm_seqnum = int(device.get("DM_SEQNUM"))
             path = devicemapper.device_name(device.get("DM_PATH"))
         elif device["ACTION"] == "remove":
             event_type = MPATH_REMOVED
             valid_paths = None
             path = None
+            dm_seqnum = None
         else:
             return None
 
-        return MultipathEvent(event_type, mpath_uuid, path, valid_paths)
+        return MultipathEvent(event_type, mpath_uuid, path, valid_paths,
+                              dm_seqnum)
 
     def _forward_event(self, event):
         with self._lock:
