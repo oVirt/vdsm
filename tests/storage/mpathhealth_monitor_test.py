@@ -20,6 +20,8 @@
 
 from __future__ import print_function
 
+import pytest
+
 from vdsm.storage import devicemapper
 from vdsm.storage import mpathhealth
 from vdsm.storage import udev
@@ -260,6 +262,63 @@ def test_events_after_start(monkeypatch):
             "failed_paths": [
                 "sdb",
                 "sdc"
+            ]
+        }
+    }
+    assert monitor.status() == expected
+
+
+@pytest.mark.xfail(reason="Unordered event from udev BZ# 1526010")
+def test_multiple_mpath_paths_unordered():
+    monitor = mpathhealth.Monitor()
+    events = [
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sda", 2, 13),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdb", 3, 12),
+    ]
+    for e in events:
+        monitor.handle(e)
+    expected = {
+        "uuid-1": {
+            "valid_paths": 2,
+            "failed_paths": [
+                "sda",
+                "sdb",
+            ]
+        }
+    }
+    assert monitor.status() == expected
+
+
+@pytest.mark.xfail(reason="Unordered event from udev BZ# 1526010")
+def test_multiple_mpath_paths_unordered_with_initial_status(monkeypatch):
+    def fake_status():
+        return {
+            'uuid-1':
+                [
+                    PathStatus('sda', 'F'),
+                    PathStatus('sdb', 'A'),
+                    PathStatus('sdc', 'A'),
+                    PathStatus('sdd', 'A'),
+                ]
+        }
+
+    monkeypatch.setattr(devicemapper, 'multipath_status', fake_status)
+
+    monitor = mpathhealth.Monitor()
+    monitor.start()
+
+    events = [
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdb", 1, 13),
+        udev.MultipathEvent(udev.PATH_FAILED, "uuid-1", "sdb", 2, 12),
+    ]
+    for e in events:
+        monitor.handle(e)
+    expected = {
+        "uuid-1": {
+            "valid_paths": 1,
+            "failed_paths": [
+                "sda",
+                "sdb",
             ]
         }
     }
