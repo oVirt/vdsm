@@ -57,6 +57,9 @@ class IRS(object):
     def inappropriateDevices(self, ident):
         pass
 
+    def getVolumeSize(self, domainID, poolID, imageID, volumeID):
+        return response.success(apparentsize=1024, truesize=1024)
+
 
 class _Server(object):
     def __init__(self, notifications):

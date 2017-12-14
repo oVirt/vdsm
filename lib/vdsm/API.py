@@ -396,13 +396,13 @@ class VM(APIBase):
     @api.logged(on="api.virt")
     @api.method
     def hotplugDisk(self, params):
-        validate.require_keys(params, ('vmId', 'drive'))
+        validate.require_keys(params, ('vmId',))
         return self.vm.hotplugDisk(params)
 
     @api.logged(on="api.virt")
     @api.method
     def hotunplugDisk(self, params):
-        validate.require_keys(params, ('vmId', 'drive'))
+        validate.require_keys(params, ('vmId',))
         return self.vm.hotunplugDisk(params)
 
     @api.logged(on="api.virt")

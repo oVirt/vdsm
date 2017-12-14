@@ -738,6 +738,44 @@ class TestHotplug(TestCaseBase):
   </metadata>
 </hotplug>
 '''
+    DISK_HOTPLUG = '''<?xml version='1.0' encoding='UTF-8'?>
+<hotplug>
+  <devices>
+    <disk type='file' device='disk' snapshot='no'>
+      <driver name='qemu' type='raw' cache='none' error_policy='stop'
+              io='threads'/>
+      <source file='/path/to/file'/>
+      <backingStore/>
+      <target dev='sda' bus='scsi'/>
+      <serial>1234</serial>
+      <boot order='1'/>
+      <address type='drive' controller='0' bus='0' target='0' unit='0'/>
+    </disk>
+  </devices>
+  <metadata xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-vm:vm>
+      <ovirt-vm:device devtype="disk" name="sda">
+        <ovirt-vm:domainID>1111</ovirt-vm:domainID>
+        <ovirt-vm:imageID>1234</ovirt-vm:imageID>
+        <ovirt-vm:poolID>2222</ovirt-vm:poolID>
+        <ovirt-vm:volumeID>3333</ovirt-vm:volumeID>
+        <ovirt-vm:specParams/>
+        <ovirt-vm:vm_custom/>
+        <ovirt-vm:volumeChain>
+            <ovirt-vm:volumeChainNode>
+              <ovirt-vm:domainID>1111</ovirt-vm:domainID>
+              <ovirt-vm:imageID>1234</ovirt-vm:imageID>
+              <ovirt-vm:leaseOffset type="int">0</ovirt-vm:leaseOffset>
+              <ovirt-vm:leasePath>/path/to.lease</ovirt-vm:leasePath>
+              <ovirt-vm:path>/path/to/disk</ovirt-vm:path>
+              <ovirt-vm:volumeID>3333</ovirt-vm:volumeID>
+            </ovirt-vm:volumeChainNode>
+        </ovirt-vm:volumeChain>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</hotplug>
+'''
 
     def setUp(self):
         devices = [{'nicModel': 'virtio', 'network': 'ovirtmgmt',
@@ -750,6 +788,24 @@ class TestHotplug(TestCaseBase):
             vm._dom = fake.Domain()
             self.vm = vm
         self.supervdsm = fake.SuperVdsm()
+
+    def test_disk_hotplug(self):
+        vm = self.vm
+        params = {'xml': self.DISK_HOTPLUG}
+        supervdsm = fake.SuperVdsm()
+        with MonkeyPatchScope([(vmdevices.network, 'supervdsm', supervdsm)]):
+            vm.hotplugDisk(params)
+        self.assertEqual(len(vm.getDiskDevices()), 1)
+        dev = vm._devices[hwclass.DISK][0]
+        self.assertEqual(dev.serial, '1234')
+        self.assertEqual(dev.domainID, '1111')
+        self.assertEqual(dev.name, 'sda')
+
+    def test_disk_hotunplug(self):
+        vm = self.vm
+        params = {'xml': self.DISK_HOTPLUG}
+        vm.hotunplugDisk(params)
+        self.assertEqual(len(vm.getDiskDevices()), 0)
 
     def test_nic_hotplug(self):
         vm = self.vm

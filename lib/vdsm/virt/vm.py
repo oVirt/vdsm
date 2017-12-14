@@ -88,6 +88,7 @@ from vdsm.virt.domain_descriptor import find_first_domain_device_by_type
 from vdsm.virt import vmdevices
 from vdsm.virt.vmdevices import drivename
 from vdsm.virt.vmdevices import hwclass
+from vdsm.virt.vmdevices import storagexml
 from vdsm.virt.vmdevices.common import get_metadata
 from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound, SOURCE_ATTR
 from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD
@@ -3676,7 +3677,12 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def hotplugDisk(self, params):
-        diskParams = params.get('drive', {})
+        xml = params.get('xml')
+        if xml is None:
+            diskParams = params.get('drive', {})
+        else:
+            _cls, elem, meta = vmdevices.common.dev_elems_from_xml(self, xml)
+            diskParams = storagexml.parse(elem, meta)
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
 
         if isVdsmImage(diskParams):
@@ -3725,7 +3731,12 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def hotunplugDisk(self, params):
-        diskParams = params.get('drive', {})
+        xml = params.get('xml')
+        if xml is None:
+            diskParams = params.get('drive', {})
+        else:
+            _cls, elem, meta = vmdevices.common.dev_elems_from_xml(self, xml)
+            diskParams = storagexml.parse(elem, meta)
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
 
         try:

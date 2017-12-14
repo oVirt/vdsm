@@ -2706,13 +2706,23 @@ types:
         description: Parameters for VM.hotplugDisk.
         name: HotplugDiskParams
         properties:
-        -   description: The disk device specification
-            name: drive
-            type: *VmDiskDevice
-
         -   description: The UUID of the VM to modify
             name: vmId
             type: *UUID
+
+        -   description: The disk device specification
+            name: drive
+            type: *VmDiskDevice
+            defaultvalue: null
+
+        -   name: xml
+            type: string
+            defaultvalue: null
+            added: '4.2'
+            description: XML snippet containing <devices> element with exactly
+                    one device. <metadata> element may be optionally present,
+                    providing device metadata. Used in hot plugs and hot
+                    unplugs.
         type: object
 
     VmLeaseDevice: &VmLeaseDevice
