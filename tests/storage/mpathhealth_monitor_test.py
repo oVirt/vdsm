@@ -20,7 +20,6 @@
 
 from __future__ import print_function
 
-import pytest
 
 from vdsm.storage import devicemapper
 from vdsm.storage import mpathhealth
@@ -268,7 +267,6 @@ def test_events_after_start(monkeypatch):
     assert monitor.status() == expected
 
 
-@pytest.mark.xfail(reason="Unordered event from udev BZ# 1526010")
 def test_multiple_mpath_paths_unordered():
     monitor = mpathhealth.Monitor()
     events = [
@@ -289,7 +287,6 @@ def test_multiple_mpath_paths_unordered():
     assert monitor.status() == expected
 
 
-@pytest.mark.xfail(reason="Unordered event from udev BZ# 1526010")
 def test_multiple_mpath_paths_unordered_with_initial_status(monkeypatch):
     def fake_status():
         return {

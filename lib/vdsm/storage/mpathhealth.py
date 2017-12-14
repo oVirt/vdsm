@@ -33,9 +33,10 @@ log = logging.getLogger("storage.mpathhealth")
 
 class MultipathStatus(object):
 
-    def __init__(self, failed_paths=(), valid_paths=None):
+    def __init__(self, failed_paths=(), valid_paths=None, dm_seqnum=-1):
         self.failed_paths = set(failed_paths)
         self.valid_paths = valid_paths
+        self.dm_seqnum = dm_seqnum
 
     def info(self):
         res = {"failed_paths": sorted(self.failed_paths)}
@@ -116,7 +117,9 @@ class Monitor(udev.MultipathMonitor):
         with self._lock:
             mpath = self._status[event.mpath_uuid]
             mpath.failed_paths.discard(event.path)
-            mpath.valid_paths = event.valid_paths
+            if event.dm_seqnum > mpath.dm_seqnum:
+                mpath.valid_paths = event.valid_paths
+                mpath.dm_seqnum = event.dm_seqnum
             if not mpath.failed_paths:
                 self._status.pop(event.mpath_uuid)
                 log.info("Path %r reinstated for multipath device %r,"
@@ -131,7 +134,9 @@ class Monitor(udev.MultipathMonitor):
         with self._lock:
             mpath = self._status[event.mpath_uuid]
             mpath.failed_paths.add(event.path)
-            mpath.valid_paths = event.valid_paths
+            if event.dm_seqnum > mpath.dm_seqnum:
+                mpath.valid_paths = event.valid_paths
+                mpath.dm_seqnum = event.dm_seqnum
             if event.valid_paths == 0:
                 log.warn("Path %r failed for multipath device %r,"
                          " no valid paths left",
