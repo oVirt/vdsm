@@ -19,6 +19,8 @@
 
 from __future__ import absolute_import
 
+import logging
+
 import six
 
 from .netinfo import bonding, bridges, dns
@@ -181,6 +183,8 @@ def _canonicalize_ip_default_route(data):
 
     custom_default_route = _rget(data, ('custom', 'default_route'))
     if custom_default_route is not None:
+        logging.warning('Custom property default_route is deprecated. '
+                        'please use default route role.')
         data['defaultRoute'] = tobool(custom_default_route)
 
 
