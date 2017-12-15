@@ -66,7 +66,9 @@ class Interface(core.Base):
 
     def get_metadata(self):
         attrs = {'mac_address': self.macAddr}
-        data = {'network': self.network}
+        data = {}
+        if hasattr(self, 'network'):
+            data['network'] = self.network
         core.get_nested_metadata(data, self, METADATA_NESTED_KEYS)
         return attrs, data
 
