@@ -418,9 +418,10 @@ parameters = [
             'when the underlying storage supports "write same".'),
 
         ('zero_block_size_mb', '1',
-            'The size of the chunk in MiB that is zeroed in each iteration by '
-            'the zero method. A legal value is an integer between 1 and 64 '
-            '(default 1).'),
+            'The block size used when zeroing a device using the "dd" '
+            'zero_method. This does not affect the "blkdiscard" '
+            'zero_method which uses a constant block size. A legal value '
+            'is an integer between 1 and 64 (default 1).'),
     ]),
 
     # Section: [jobs]
