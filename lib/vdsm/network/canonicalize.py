@@ -39,6 +39,8 @@ def canonicalize_networks(nets):
     Given networks configuration, explicitly add missing defaults.
     :param nets: The network configuration
     """
+    _canonicalize_ip_default_route(nets)
+
     for _, attrs in _entities_to_canonicalize(nets):
         _canonicalize_mtu(attrs)
         _canonicalize_vlan(attrs)
@@ -48,7 +50,6 @@ def canonicalize_networks(nets):
         _canonicalize_dhcpv4(attrs)
         _canonicalize_ipv6(attrs)
         _canonicalize_switch_type_net(attrs)
-        _canonicalize_ip_default_route(attrs)
         _canonicalize_nameservers(attrs)
         _canonicalize_ipv4_netmask(attrs)
 
@@ -180,15 +181,41 @@ def _canonicalize_bond_slaves(data):
         data['nics'].sort()
 
 
-def _canonicalize_ip_default_route(data):
-    if 'defaultRoute' not in data:
-        data['defaultRoute'] = False
+def _canonicalize_ip_default_route(nets):
+    default_route_nets = []
+    for net, data in _entities_to_canonicalize(nets):
+        if 'defaultRoute' not in data:
+            data['defaultRoute'] = False
 
-    custom_default_route = _rget(data, ('custom', 'default_route'))
-    if custom_default_route is not None:
-        logging.warning('Custom property default_route is deprecated. '
-                        'please use default route role.')
-        data['defaultRoute'] = tobool(custom_default_route)
+        custom_default_route = _rget(data, ('custom', 'default_route'))
+        if custom_default_route is not None:
+            logging.warning('Custom property default_route is deprecated. '
+                            'please use default route role.')
+            data['defaultRoute'] = tobool(custom_default_route)
+
+        if data['defaultRoute']:
+            default_route_nets.append(net)
+
+    if len(default_route_nets) > 1:
+        raise ne.ConfigNetworkError(
+            ne.ERR_BAD_PARAMS,
+            'Only a single default route network is allowed.')
+    elif default_route_nets:
+        existing_net_with_default_route = _net_with_default_route_from_config()
+        if existing_net_with_default_route:
+            netname, attrs = existing_net_with_default_route
+            if netname not in nets:
+                # Copy config from running and add to setup
+                attrs.pop('nameservers', None)
+                nets[netname] = attrs
+                nets[netname]['defaultRoute'] = False
+
+
+def _net_with_default_route_from_config():
+    for net, attrs in six.iteritems(RunningConfig().networks):
+        if attrs['defaultRoute']:
+            return net, attrs
+    return None
 
 
 def _canonicalize_nameservers(data):

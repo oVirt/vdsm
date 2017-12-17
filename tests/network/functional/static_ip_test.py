@@ -37,9 +37,11 @@ BOND_NAME = 'bond1'
 VLAN = 10
 
 IPv4_ADDRESS = '192.0.2.1'
+IPv4_ADDRESS2 = '192.0.3.1'
 IPv4_NETMASK = '255.255.255.0'
 IPv4_PREFIX_LEN = '24'
 IPv4_GATEWAY = '192.0.2.254'
+IPv4_GATEWAY2 = '192.0.3.254'
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
 
 
@@ -70,20 +72,6 @@ class TestNetworkStaticIpBasic(NetFuncTestCase):
     @parametrize_ip_families
     def test_add_net_with_ip_based_on_vlan(self, switch, families):
         self._test_add_net_with_ip(families, switch, vlaned=True)
-
-    def test_add_net_with_ipv4_default_gateway(self, switch):
-        with dummy_device() as nic:
-            network_attrs = {'nic': nic,
-                             'ipaddr': IPv4_ADDRESS,
-                             'netmask': IPv4_NETMASK,
-                             'gateway': IPv4_GATEWAY,
-                             'defaultRoute': True,
-                             'switch': switch}
-            netcreate = {NETWORK_NAME: network_attrs}
-
-            with restore_resolv_conf(), preserve_default_route():
-                with self.setupNetworks(netcreate, {}, NOCHK):
-                    self.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
 
     def _test_add_net_with_ip(self, families, switch,
                               bonded=False, vlaned=False, bridged=False):
@@ -122,6 +110,48 @@ class TestNetworkStaticIpBasic(NetFuncTestCase):
 
             with self.setupNetworks(netcreate, {}, NOCHK):
                 self.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
+
+
+@nftestlib.parametrize_switch
+class TestNetworkIPDefaultGateway(NetFuncTestCase):
+
+    def test_add_net_with_ipv4_default_gateway(self, switch):
+        with dummy_device() as nic:
+            network_attrs = {'nic': nic,
+                             'ipaddr': IPv4_ADDRESS,
+                             'netmask': IPv4_NETMASK,
+                             'gateway': IPv4_GATEWAY,
+                             'defaultRoute': True,
+                             'switch': switch}
+            netcreate = {NETWORK_NAME: network_attrs}
+
+            with restore_resolv_conf(), preserve_default_route():
+                with self.setupNetworks(netcreate, {}, NOCHK):
+                    self.assertNetworkIp(NETWORK_NAME, network_attrs)
+
+    def test_add_net_and_move_ipv4_default_gateway(self, switch):
+        with dummy_devices(2) as (nic1, nic2):
+            net1_attrs = {'nic': nic1,
+                          'ipaddr': IPv4_ADDRESS,
+                          'netmask': IPv4_NETMASK,
+                          'gateway': IPv4_GATEWAY,
+                          'defaultRoute': True,
+                          'switch': switch}
+            net2_attrs = {'nic': nic2,
+                          'ipaddr': IPv4_ADDRESS2,
+                          'netmask': IPv4_NETMASK,
+                          'gateway': IPv4_GATEWAY2,
+                          'defaultRoute': True,
+                          'switch': switch}
+            net1create = {NETWORK_NAME: net1_attrs}
+            net2create = {NETWORK2_NAME: net2_attrs}
+
+            with restore_resolv_conf(), preserve_default_route():
+                with self.setupNetworks(net1create, {}, NOCHK):
+                    with self.setupNetworks(net2create, {}, NOCHK):
+                        net1_attrs['defaultRoute'] = False
+                        self.assertNetworkIp(NETWORK_NAME, net1_attrs)
+                        self.assertNetworkIp(NETWORK2_NAME, net2_attrs)
 
 
 @nftestlib.parametrize_switch
