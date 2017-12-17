@@ -100,7 +100,7 @@ def zero(device_path, size=None, task=_NullTask()):
 
 
 def _zero_blkdiscard(device_path, size, task):
-    op = blkdiscard.zeroout_operation(device_path, zero_block_size(), size)
+    op = blkdiscard.zeroout_operation(device_path, size)
     with task.abort_callback(op.abort):
         op.run()
 
