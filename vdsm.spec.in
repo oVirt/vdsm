@@ -145,7 +145,11 @@ Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-lock-sanlock
 
 %if 0%{?rhel}
+%if 0%{?centos}
 Requires: libvirt-daemon-kvm >= 1.2.17-13.el7_2.5
+%else
+Requires: libvirt-daemon-kvm >= 2.0.0-10.el7_3.10
+%endif
 Requires: libvirt-python >= 1.2.17-2
 %endif # rhel
 
@@ -188,7 +192,11 @@ Requires: device-mapper-multipath >= 0.4.9-80.fc23
 %if 0%{?rhel}
 Requires: e2fsprogs
 Requires: fence-agents-all
+%if 0%{?centos}
 Requires: kernel >= 3.10.0-327.18.1.el7
+%else
+Requires: kernel >= 3.10.0-514.36.5.el7
+%endif
 Requires: lvm2 >= 7:2.02.130-5.el7_2.5
 Requires: python >= 2.7.5-18.el7_1.1
 Requires: policycoreutils-python
@@ -215,8 +223,13 @@ Requires: systemd >= 197-1.fc18.2
 %endif
 
 %if 0%{?rhel}
+%if 0%{?centos}
 Requires: qemu-kvm-rhev >= 10:2.3.0-31.el7_2.16
 Requires: qemu-img-rhev >= 10:2.3.0-31.el7_2.16
+%else
+Requires: qemu-kvm-rhev >= 10:2.6.0-28.el7_3.15
+Requires: qemu-img-rhev >= 10:2.6.0-28.el7_3.15
+%endif
 %else
 Requires: qemu-kvm >= 2:2.3.1-1
 Requires: qemu-img >= 2:2.3.1-1
