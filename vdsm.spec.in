@@ -134,8 +134,7 @@ Requires: libvirt-lock-sanlock
 
 %if 0%{?rhel}
 Requires: libvirt-python >= 3.2.0-3.el7_4.1
-# For https://bugzilla.redhat.com/1509675
-Requires: libvirt-daemon-kvm >= 3.2.0-14.el7_4.5
+Requires: libvirt-daemon-kvm >= 3.2.0-14.el7_4.7
 # Require the latest version on Fedora 26 that contain the fixes as in RHEL
 %else # fedora
 Requires: libvirt-daemon-kvm >= 3.7.0
@@ -176,7 +175,7 @@ Requires: lvm2 >= 2.02.145
 
 %if 0%{?rhel}
 Requires: e2fsprogs
-Requires: kernel >= 3.10.0-693.2.1.el7
+Requires: kernel >= 3.10.0-693.11.6.el7
 Requires: python >= 2.7.5-18.el7_1.1
 
 %if 0%{?centos}
@@ -200,7 +199,7 @@ Requires: policycoreutils >= 2.1.13-55
 %endif
 
 %if 0%{?rhel}
-Requires: qemu-kvm-rhev >= 10:2.6.0-28.el7_3.3
+Requires: qemu-kvm-rhev >= 10:2.9.0-16.el7_4.13
 %else # fedora
 Requires: qemu-kvm >= 2:2.7.0-7
 %endif
