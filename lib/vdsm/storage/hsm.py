@@ -46,6 +46,7 @@ from vdsm.common.threadlocal import vars
 from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import supervdsm
+from vdsm.common.time import monotonic_time
 from vdsm.config import config
 from vdsm.storage import blockSD
 from vdsm.storage import clusterlock
@@ -360,7 +361,9 @@ class HSM(object):
                            for this thread
         :type defExcFun: function
         """
+        self._start_time = monotonic_time()
         self._ready = False
+        self.log.info("START HSM init")
         rm.registerNamespace(STORAGE, rm.SimpleResourceFactory())
         self.storage_repository = config.get('irs', 'repository')
         self.taskMng = taskManager.TaskManager()
@@ -402,7 +405,8 @@ class HSM(object):
             sdCache.refreshStorage()
             lvm.bootstrap(refreshlvs=blockSD.SPECIAL_LVS_V4)
             self._ready = True
-            self.log.debug("HSM is ready")
+            self.log.info("FINISH HSM init succeeded in %.2f seconds",
+                          monotonic_time() - self._start_time)
 
         storageRefreshThread = concurrent.thread(storageRefresh,
                                                  name="hsm/init",
