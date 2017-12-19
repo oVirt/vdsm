@@ -235,7 +235,10 @@ class GuestAgent(object):
     @guestDiskMapping.setter
     def guestDiskMapping(self, value):
         self._guestDiskMapping = value
-        self._diskMappingHash = hash(json.dumps(value, sort_keys=True))
+        if value:
+            self._diskMappingHash = hash(json.dumps(value, sort_keys=True))
+        else:
+            self._diskMappingHash = None
 
     @property
     def diskMappingHash(self):

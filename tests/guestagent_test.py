@@ -307,12 +307,13 @@ class DiskMappingTests(TestCaseBase):
 
     def test_init(self):
         self.assertEqual(self.agent.guestDiskMapping, {})
-        self.assertTrue(isinstance(self.agent.diskMappingHash, int))
+        self.assertIsNone(self.agent.diskMappingHash)
 
     def test_change_disk_mapping(self):
         old_hash = self.agent.diskMappingHash
         self.agent.guestDiskMapping = {'/dev/vda': 'xxx'}
         self.assertNotEqual(self.agent.diskMappingHash, old_hash)
+        self.assertTrue(isinstance(self.agent.diskMappingHash, int))
 
 
 class FakeClientIF(object):
