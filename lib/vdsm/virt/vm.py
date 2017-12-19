@@ -1892,7 +1892,8 @@ class Vm(object):
         else:
             memUsage = 0
         stats['memUsage'] = utils.convertToStr(int(memUsage))
-        self._update_guest_disk_mapping()
+        if self.lastStatus == vmstatus.UP:
+            self._update_guest_disk_mapping()
         return stats
 
     def _update_guest_disk_mapping(self):
