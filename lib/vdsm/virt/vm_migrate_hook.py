@@ -52,7 +52,7 @@ class VmMigrationMissingDisplayConf(Exception):
     pass
 
 
-def main(domain, event, phase, stdin=sys.stdin, stdout=sys.stdout, *args):
+def main(domain, event, phase, stdin=sys.stdin, stdout=sys.stdout):
     if not tobool(config.get('vars', 'migration_ovs_hook_enabled')):
         sys.exit(0)
 
@@ -196,4 +196,7 @@ def _logging(debug_mode=False):
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    domain = sys.argv[1]
+    event = sys.argv[2]
+    phase = sys.argv[3]
+    main(domain, event, phase)
