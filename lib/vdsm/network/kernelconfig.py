@@ -68,6 +68,7 @@ def normalize(running_config):
     config_copy = copy.deepcopy(running_config)
 
     _normalize_bonding_opts(config_copy)
+    _normalize_ovs_gateway(config_copy)
 
     return config_copy
 
@@ -224,6 +225,18 @@ def _normalize_bonding_opts(config_copy):
     # REQUIRED_FOR upgrade from vdsm<=4.16.20
     for net_attr in six.viewvalues(config_copy.networks):
         net_attr.pop('bondingOptions', None)
+
+
+# TODO: Remove when OVS networks will support sourceroute.
+def _normalize_ovs_gateway(config_copy):
+    """
+    OVS networks do not yet support sourceroute, consequently, requesting a
+    gateway on such a network (which is not a default route) will be ignored.
+    """
+    for netattrs in six.viewvalues(config_copy.networks):
+        if not netattrs.get('remove') and netattrs['switch'] == 'ovs':
+            if 'gateway' in netattrs and not netattrs.get('defaultRoute'):
+                netattrs.pop('gateway')
 
 
 def _parse_bond_options(opts):
