@@ -25,7 +25,9 @@ from vdsm.network.errors import ERR_BAD_PARAMS
 import pytest
 
 from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
-from network.nettestlib import dummy_device, restore_resolv_conf
+from network.nettestlib import dummy_device
+from network.nettestlib import preserve_default_route
+from network.nettestlib import restore_resolv_conf
 
 NETWORK_NAME = 'test-network'
 NAMESERVERS = ['1.2.3.4', '2.3.4.5']
@@ -50,7 +52,7 @@ class TestNetworkDNS(NetFuncTestCase):
                                         'netmask': IPv4_NETMASK,
                                         'gateway': IPv4_GATEWAY,
                                         }}
-            with restore_resolv_conf():
+            with restore_resolv_conf(), preserve_default_route():
                 with self.setupNetworks(NETCREATE, {}, NOCHK):
                     self.assertNameservers(NAMESERVERS)
 
@@ -64,7 +66,7 @@ class TestNetworkDNS(NetFuncTestCase):
                                         'netmask': IPv4_NETMASK,
                                         'gateway': IPv4_GATEWAY,
                                         }}
-            with restore_resolv_conf():
+            with restore_resolv_conf(), preserve_default_route():
                 with self.setupNetworks(NETCREATE, {}, NOCHK):
                     self.assertNameservers(original_nameservers)
 

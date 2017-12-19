@@ -28,6 +28,8 @@ from vdsm.network.ipwrapper import addrAdd
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
 from network.nettestlib import dummy_device, dummy_devices
+from network.nettestlib import preserve_default_route
+from network.nettestlib import restore_resolv_conf
 
 NETWORK_NAME = 'test-network'
 NETWORK2_NAME = 'test-network2'
@@ -79,8 +81,9 @@ class TestNetworkStaticIpBasic(NetFuncTestCase):
                              'switch': switch}
             netcreate = {NETWORK_NAME: network_attrs}
 
-            with self.setupNetworks(netcreate, {}, NOCHK):
-                self.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
+            with restore_resolv_conf(), preserve_default_route():
+                with self.setupNetworks(netcreate, {}, NOCHK):
+                    self.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
 
     def _test_add_net_with_ip(self, families, switch,
                               bonded=False, vlaned=False, bridged=False):
