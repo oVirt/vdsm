@@ -1907,7 +1907,7 @@ class Vm(object):
             )
         try:
             self._sync_metadata()
-        except libvirt.libvirtError as e:
+        except (libvirt.libvirtError, virdomain.NotConnectedError) as e:
             self.log.warning("Couldn't update metadata: %s", e)
             return
         self._last_disk_mapping_hash = disk_mapping_hash
