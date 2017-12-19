@@ -64,6 +64,17 @@ Default timeout can be set during connection::
 
     cli = client.connect('localhost', 54321, use_tls=True, timeout=180)
 
+The client supports reconnecting in case VDSM connection is lost.
+Default number of attempts to reconnect is 1. In order to cancel the reconnect
+mechanism, please change nr_retries to 0:
+
+    cli = client.connect('localhost', 54321, use_tls=True, nr_retries=0)
+
+In order to support a higher number of attempts, please pass number of retries
+when creating the client::
+
+    cli = client.connect('localhost', 54321, use_tls=True, nr_retries=10)
+
 Setting timeout per command::
 
     cli.Host.getVMList(_timeout=180)
