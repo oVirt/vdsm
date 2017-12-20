@@ -461,10 +461,7 @@ class Interface(core.Base):
                 vm.conf['devices'].append(nicDev)
 
     def conf_parameters(self):
-        parameters = super(Interface, self).conf_parameters()
-        if parameters.get('nicModel') == 'virtio':
-            parameters['nicModel'] = 'pv'
-        return parameters
+        return None
 
     def __repr__(self):
         s = ('<Interface name={name}, type={self.device}, mac={self.macAddr} '

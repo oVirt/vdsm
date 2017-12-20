@@ -95,6 +95,13 @@ class Base(vmxml.Device):
         return ' '.join(attrs)
 
     def conf_parameters(self):
+        """
+        Return dictionary of constructor kwargs or None.
+
+        This is used to make a legacy device configuration for this instance.
+        Return None in case `update_device_info` already adds the legacy
+        configuration.
+        """
         return self._kwargs
 
     def is_attached_to(self, xml_string):
@@ -420,6 +427,11 @@ class Controller(Base):
                      'device': device,
                      'address': address,
                      'alias': alias})
+
+    def conf_parameters(self):
+        if not hasattr(self, 'address'):
+            return super(Controller, self).conf_parameters()
+        return None
 
 
 class Smartcard(Base):
