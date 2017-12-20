@@ -3203,14 +3203,13 @@ class Vm(object):
             self._devices[hwclass.NIC].remove(nic)
         # Find and remove NIC device from vm's conf
         nicDev = None
-        if 'xml' not in params:
-            for dev in self.conf['devices'][:]:
-                if dev['type'] == hwclass.NIC and \
-                   dev['macAddr'].lower() == nicParams['macAddr'].lower():
-                    with self._confLock:
-                        self.conf['devices'].remove(dev)
-                    nicDev = dev
-                    break
+        for dev in self.conf['devices'][:]:
+            if dev['type'] == hwclass.NIC and \
+               dev['macAddr'].lower() == nicParams['macAddr'].lower():
+                with self._confLock:
+                    self.conf['devices'].remove(dev)
+                nicDev = dev
+                break
 
         self._updateDomainDescriptor()
 
