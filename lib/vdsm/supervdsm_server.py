@@ -34,7 +34,9 @@ import logging.config
 from contextlib import closing
 
 from vdsm.common import concurrent
+from vdsm.common import constants
 from vdsm.common import fileutils
+from vdsm.common import lockfile
 from vdsm.common import sigutils
 from vdsm.common import time
 from vdsm.common import zombiereaper
@@ -237,8 +239,16 @@ def terminate(signo, frame):
     _running = False
 
 
+def __assertSingleInstance():
+    try:
+        lockfile.lock(os.path.join(constants.P_VDSM_RUN, 'supervdsmd.lock'))
+    except Exception as e:
+        raise FatalError(str(e))
+
+
 def main(args):
     try:
+        __assertSingleInstance()
         try:
             logging.config.fileConfig(LOG_CONF_PATH,
                                       disable_existing_loggers=False)

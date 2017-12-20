@@ -37,6 +37,7 @@ from vdsm import taskset
 from vdsm import metrics
 from vdsm.common import commands
 from vdsm.common import dsaversion
+from vdsm.common import lockfile
 from vdsm.common import libvirtconnection
 from vdsm.common import sigutils
 from vdsm.common import time
@@ -206,6 +207,13 @@ def __assertLogPermission():
         raise FatalError("Cannot access vdsm log file")
 
 
+def __assertSingleInstance():
+    try:
+        lockfile.lock(os.path.join(constants.P_VDSM_RUN, 'vdsmd.lock'))
+    except Exception as e:
+        raise FatalError(str(e))
+
+
 def __assertVdsmUser():
     username = getpass.getuser()
     if username != constants.VDSM_USER:
@@ -257,6 +265,7 @@ def __set_cpu_affinity():
 
 def main():
     try:
+        __assertSingleInstance()
         __assertVdsmUser()
         __assertLogPermission()
         __assertSudoerPermissions()
