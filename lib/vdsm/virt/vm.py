@@ -1896,8 +1896,8 @@ class Vm(object):
         return stats
 
     def _update_guest_disk_mapping(self):
-        disk_mapping_hash = self._last_disk_mapping_hash
-        if self.guestAgent.diskMappingHash == disk_mapping_hash:
+        disk_mapping_hash = self.guestAgent.diskMappingHash
+        if disk_mapping_hash == self._last_disk_mapping_hash:
             return
         guest_disk_mapping = self.guestAgent.guestDiskMapping.items()
         with self._confLock:
