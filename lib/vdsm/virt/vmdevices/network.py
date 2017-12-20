@@ -405,6 +405,9 @@ class Interface(core.Base):
             else:
                 name = vmxml.find_attr(x, 'target', 'dev')
                 model = vmxml.find_attr(x, 'model', 'type')
+            if model == 'virtio':
+                # Reverse action of the conversion in __init__.
+                model = 'pv'
 
             network = None
             try:
@@ -456,6 +459,12 @@ class Interface(core.Base):
                 if network:
                     nicDev['network'] = network
                 vm.conf['devices'].append(nicDev)
+
+    def conf_parameters(self):
+        parameters = super(Interface, self).conf_parameters()
+        if parameters.get('nicModel') == 'virtio':
+            parameters['nicModel'] = 'pv'
+        return parameters
 
     def __repr__(self):
         s = ('<Interface name={name}, type={self.device}, mac={self.macAddr} '
