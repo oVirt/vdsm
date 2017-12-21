@@ -588,6 +588,8 @@ class Vm(object):
 
     def send_status_event(self, **kwargs):
         stats = {'status': self._getVmStatus()}
+        if stats['status'] == vmstatus.DOWN:
+            stats.update(self._getDownVmStats())
         stats.update(kwargs)
         self._notify('VM_status', stats)
 
@@ -1685,7 +1687,8 @@ class Vm(object):
         attribute. Use the periodic operations instead!
         """
         stats = {'statusTime': self._get_status_time()}
-        if self.lastStatus == vmstatus.DOWN:
+        stats['status'] = self._getVmStatus()
+        if stats['status'] == vmstatus.DOWN:
             stats.update(self._getDownVmStats())
         else:
             stats.update(self._getConfigVmStats())
@@ -1701,7 +1704,6 @@ class Vm(object):
                     # prefer balloon stats over OGA stats
                     oga_stats['memoryStats'].update(stats['memoryStats'])
                 stats.update(oga_stats)
-            stats['status'] = self._getVmStatus()
         return stats
 
     def _getDownVmStats(self):
