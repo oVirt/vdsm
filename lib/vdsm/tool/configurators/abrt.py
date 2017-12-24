@@ -50,6 +50,10 @@ def isconfigured():
     return ret
 
 
+def removeConf():
+    confutils.remove_conf(FILES, CONF_VERSION)
+
+
 FILES = {
     'ABRT_CONF': {
         'path': os.path.join(
