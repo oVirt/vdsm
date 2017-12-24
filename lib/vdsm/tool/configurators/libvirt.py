@@ -89,6 +89,10 @@ def isconfigured():
     return ret
 
 
+def removeConf():
+    confutils.remove_conf(FILES, CONF_VERSION)
+
+
 def _isSslConflict():
     """
     return True if libvirt configuration files match ssl configuration of
