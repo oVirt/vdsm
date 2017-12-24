@@ -27,6 +27,7 @@ from vdsm.virt.vmdevices import core
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices import network
 from vdsm.virt.vmdevices import storage
+from vdsm.virt.vmdevices import storagexml
 from vdsm.virt import metadata
 from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
@@ -737,16 +738,18 @@ class SaveDeviceMetadataTests(XMLTestCase):
             'iface': 'sata',
             'index': 0,
             # *ID are not validated by the Drive class
+            'shared': 'transient',
             'domainID': 'domainID',
             'imageID': 'imageID',
             'poolID': 'poolID',
-            'volumeID': 'volumeID',
+            'volumeID': 'volumeID'
         }
         expected_xml = """<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
     <ovirt-vm:device devtype="disk" name="sda">
         <ovirt-vm:domainID>domainID</ovirt-vm:domainID>
         <ovirt-vm:imageID>imageID</ovirt-vm:imageID>
         <ovirt-vm:poolID>poolID</ovirt-vm:poolID>
+        <ovirt-vm:shared>transient</ovirt-vm:shared>
         <ovirt-vm:volumeID>volumeID</ovirt-vm:volumeID>
         <ovirt-vm:specParams />
         <ovirt-vm:vm_custom />
@@ -791,3 +794,48 @@ class SaveDeviceMetadataTests(XMLTestCase):
         self.assertXMLEqual(md_desc.to_xml(), expected_xml)
 
     # TODO: simulate read-create-write cycle with network or storage device
+
+_DRIVE_TRANSIENT_DISK_XML = u"""<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>68c1f97c-9336-4e7a-a8a9-b4f052ababf1</uuid>
+  <devices>
+      <disk device="disk" snapshot="no" type="block">
+        <source dev="/var/lib/vdsm/transient"/>
+        <target bus="scsi" dev="sda"/>
+        <serial>54-a672-23e5b495a9ea</serial>
+        <driver cache="writethrough" error_policy="stop"
+                io="native" name="qemu" type="qcow2"/>
+      </disk>
+  </devices>
+  <metadata>
+    <ovirt-vm:vm>
+        <ovirt-vm:device devtype="disk" name="sda">
+            <ovirt-vm:domainID>domainID</ovirt-vm:domainID>
+            <ovirt-vm:imageID>imageID</ovirt-vm:imageID>
+            <ovirt-vm:poolID>poolID</ovirt-vm:poolID>
+            <ovirt-vm:shared>transient</ovirt-vm:shared>
+            <ovirt-vm:volumeID>volumeID</ovirt-vm:volumeID>
+            <ovirt-vm:specParams />
+            <ovirt-vm:vm_custom />
+        </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>"""
+
+
+class MetadataFromXMLTests(XMLTestCase):
+
+    def test_shared_from_metadata(self):
+
+        md_desc = metadata.Descriptor.from_xml(_DRIVE_TRANSIENT_DISK_XML)
+        root = vmxml.parse_xml(_DRIVE_TRANSIENT_DISK_XML)
+
+        dev_xml = root.find('./devices/disk')
+
+        with md_desc.device(devtype='disk', name='sda') as meta:
+            dev_obj = storage.Drive(
+                self.log, **storagexml.parse(dev_xml, meta)
+            )
+            self.assertEqual(
+                dev_obj['shared'], storage.DRIVE_SHARED_TYPE.TRANSIENT
+            )

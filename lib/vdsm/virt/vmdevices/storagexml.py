@@ -31,7 +31,7 @@ _PAYLOAD_PATH = 'PAYLOAD:'
 
 
 METADATA_KEYS = ('GUID', 'domainID', 'imageID', 'poolID', 'volumeID',
-                 'guestName',)
+                 'guestName', 'shared')
 
 
 METADATA_NESTED_KEYS = ('diskReplicate', 'volumeChain', 'volumeInfo')

@@ -695,6 +695,26 @@ _GRAPHICS_DATA = [
     ],
 
 ]
+_TRANSIENT_STORAGE_TEST_DATA = [
+    [u'''<disk device="disk" snapshot="no" type="block">
+        <source dev="/var/lib/vdsm/transient"/>
+        <target bus="scsi" dev="sda"/>
+        <serial>54-a672-23e5b495a9ea</serial>
+        <driver cache="writethrough" error_policy="stop"
+                io="native" name="qemu" type="qcow2"/>
+    </disk>''',
+     True,
+     {'shared': 'transient'}],
+    [u'''<disk device="disk" snapshot="no" type="file">
+            <source file="/var/lib/vdsm/transient"/>
+            <target bus="scsi" dev="sda"/>
+            <serial>54-a672-23e5b495a9ea</serial>
+            <driver cache="writethrough" error_policy="stop"
+                    io="threads" name="qemu" type="qcow2"/>
+        </disk>''',
+     False,
+     {'shared': 'transient'}]
+]
 
 _STORAGE_TEST_DATA = [
     [u'''<disk device="disk" snapshot="no" type="block">
@@ -1247,6 +1267,18 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             )
         )
         self._check_device_xml(dev, storage_xml)
+
+    @permutations(_TRANSIENT_STORAGE_TEST_DATA)
+    def test_transient_storage_from_xml(self, storage_xml, is_block, meta):
+        dev = vmdevices.storage.Drive(
+            self.log, **vmdevices.storagexml.parse(
+                vmxml.parse_xml(storage_xml),
+                {} if meta is None else meta
+            )
+        )
+        self.assertEqual(
+            dev.shared, vmdevices.storage.DRIVE_SHARED_TYPE.TRANSIENT
+        )
 
     def test_storage_from_incomplete_xml(self):
         storage_xml = '''<disk device="disk" snapshot="no" type="file">
