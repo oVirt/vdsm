@@ -130,7 +130,7 @@ def _run_dd(path, offset, block_size, count, task):
         "count=%d" % count,
         "seek=%d" % offset,
         "oflag=direct,seek_bytes",
-        "conv=notrunc",
+        "conv=notrunc,fsync",
     ])
     with task.abort_callback(op.abort):
         op.run()
