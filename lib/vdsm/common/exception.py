@@ -119,7 +119,7 @@ class CopyFailed(VdsmException):
 
 class CannotCreateSparse(VdsmException):
     code = 8
-    message = 'Sparse creation faild'
+    message = 'Sparse creation failed'
 
 
 class CannotCreateVM(VdsmException):
