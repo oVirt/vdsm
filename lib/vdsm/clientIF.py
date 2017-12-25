@@ -35,6 +35,7 @@ from yajsonrpc.stompreactor import StompClient, StompRpcServer
 from yajsonrpc import Notification
 from vdsm import sslutils
 from vdsm.config import config
+from vdsm.common import exception
 from vdsm.common.define import doneCode, errCode
 import vdsm.common.time
 from vdsm.protocoldetector import MultiProtocolAcceptor
@@ -382,7 +383,8 @@ class clientIF(object):
         if type(drive) is dict:
             device = drive['device']
             # PDIV drive format
-            if device == 'disk' and isVdsmImage(drive):
+            # Since version 4.2 cdrom may use a PDIV format
+            if device in ("cdrom", "disk") and isVdsmImage(drive):
                 res = self.irs.prepareImage(
                     drive['domainID'], drive['poolID'],
                     drive['imageID'], drive['volumeID'])
@@ -397,6 +399,10 @@ class clientIF(object):
                 # Not applicable for Ceph network disk as
                 # Ceph disks are not vdsm images
                 if drive.get('diskType') == DISK_TYPE.NETWORK:
+                    if device == "cdrom":
+                        raise exception.UnsupportedOperation(
+                            "A cdrom device is not supported as network disk",
+                            drive=drive)
                     volPath = self._prepare_network_drive(drive, res)
                 else:
                     volPath = res['path']

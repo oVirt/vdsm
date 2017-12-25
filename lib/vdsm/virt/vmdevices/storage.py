@@ -491,10 +491,14 @@ class Drive(core.Base):
         If storage is not available at this point, this will fail with OSError,
         and diskType will remain undefined. Drive cannot be functional at this
         state until storage becomes available, and diskType initialized.
+
+        From Engine 4.2 with cluster version 4.2 onwards we always send the
+        disk type for cdrom and floppy, in 4.2 we can have a cdrom of type
+        block but we always send the disk type from engine and this block will
+        not be relevant.
         """
         if self._diskType is None:
-            if (self.device in ("cdrom", "floppy") or not
-                    utils.isBlockDevice(self._path)):
+            if self.device == "floppy" or not utils.isBlockDevice(self._path):
                 self.diskType = DISK_TYPE.FILE
             else:
                 self.diskType = DISK_TYPE.BLOCK
@@ -506,9 +510,14 @@ class Drive(core.Base):
         if value not in SOURCE_ATTR:
             raise exception.UnsupportedOperation(
                 "Unsupported diskType %r" % value)
-        if self.device in ['cdrom', 'floppy'] and value != DISK_TYPE.FILE:
+        if self.device == 'floppy' and value != DISK_TYPE.FILE:
             raise exception.UnsupportedOperation(
-                "diskType of %r can only be 'file'" % self.device)
+                "diskType of device 'floppy' can only be 'file'")
+
+        # TODO: Check if a cdrom can be on network device
+        if self.device == 'cdrom' and value == DISK_TYPE.NETWORK:
+            raise exception.UnsupportedOperation(
+                "diskType of device 'cdrom' can not be 'network'")
 
         if self._diskType is not None and self._diskType != value:
             self.log.debug("Drive %s type changed from %r to %r",

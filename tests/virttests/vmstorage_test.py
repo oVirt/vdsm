@@ -424,27 +424,20 @@ class DriveExSharedStatusTests(VdsmTestCase):
 @expandPermutations
 class DriveDiskTypeTests(VdsmTestCase):
 
-    @permutations([['cdrom'], ['floppy']])
-    def test_non_disk(self, device):
-        conf = drive_config(device=device)
+    def test_floppy_no_disktype(self):
+        conf = drive_config(device='floppy')
         drive = Drive(self.log, **conf)
         self.assertEqual(DISK_TYPE.FILE, drive.diskType)
 
-    @permutations([(device, diskType)
-                   for device in ["cdrom", "floppy"]
-                   for diskType in [DISK_TYPE.BLOCK, DISK_TYPE.NETWORK]
-                   ])
-    def test_non_disk_create_invalid_diskType(self, device, diskType):
-        conf = drive_config(device=device, diskType=diskType)
+    @permutations([[DISK_TYPE.BLOCK], [DISK_TYPE.NETWORK]])
+    def test_floppy_create_invalid_diskType(self, diskType):
+        conf = drive_config(device='floppy', diskType=diskType)
         with self.assertRaises(exception.UnsupportedOperation):
             Drive(self.log, **conf)
 
-    @permutations([(device, diskType)
-                   for device in ["cdrom", "floppy"]
-                   for diskType in [DISK_TYPE.BLOCK, DISK_TYPE.NETWORK]
-                   ])
-    def test_non_disk_set_invalid_diskType(self, device, diskType):
-        conf = drive_config(device=device)
+    @permutations([[DISK_TYPE.BLOCK], [DISK_TYPE.NETWORK]])
+    def test_floppy_set_invalid_diskType(self, diskType):
+        conf = drive_config(device='floppy')
         drive = Drive(self.log, **conf)
         with self.assertRaises(exception.UnsupportedOperation):
             drive.diskType = diskType
@@ -456,6 +449,11 @@ class DriveDiskTypeTests(VdsmTestCase):
 
     def test_block_disk(self):
         conf = drive_config(device='disk')
+        drive = Drive(self.log, diskType=DISK_TYPE.BLOCK, **conf)
+        self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
+
+    def test_block_cdrom(self):
+        conf = drive_config(device='cdrom')
         drive = Drive(self.log, diskType=DISK_TYPE.BLOCK, **conf)
         self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
 
@@ -512,6 +510,12 @@ class DriveDiskTypeTests(VdsmTestCase):
         conf = drive_config(diskType='bad', path='pool/volume')
         with self.assertRaises(exception.UnsupportedOperation):
             Drive(self.log, **conf)
+
+    @MonkeyPatch(utils, 'isBlockDevice', lambda path: True)
+    def test_create_cdrom_device_no_disktype(self):
+        conf = drive_config(device='cdrom')
+        drive = Drive(self.log, **conf)
+        self.assertEqual(DISK_TYPE.BLOCK, drive.diskType)
 
     @MonkeyPatch(utils, 'isBlockDevice', lambda path: True)
     def test_create_missing_type_block(self):
