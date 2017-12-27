@@ -206,6 +206,10 @@ def send_metrics(vms_stats):
                 data[prefix + '.balloon.cur'] = \
                     stat['balloonInfo']['balloon_cur']
 
+            if 'memoryStats' in stat:
+                for k, v in six.iteritems(stat['memoryStats']):
+                    data[prefix + '.mem.' + k] = v
+
             if 'disks' in stat:
                 for disk in stat['disks']:
                     diskprefix = prefix + '.disk.' + disk
