@@ -41,19 +41,20 @@ for line in sys.stdin:
     line = line.strip()
     # lv vg attr size [tags] device
     fields = line.split()
-    lv, vg, attr, size = fields[:4]
+    lv_name, vg_name, lv_attr, lv_size = fields[:4]
     if len(fields) == 5:
-        tags, device = "", fields[4]
+        lv_tags, lv_device = "", fields[4]
     else:
-        tags, device = fields[4:6]
+        lv_tags, lv_device = fields[4:6]
     # If an lv exists on more then one device, we will get multiple entries,
     # each with different device.
     try:
-        lv_info = vgs[vg][lv]
+        lv_info = vgs[vg_name][lv_name]
     except KeyError:
-        vgs[vg][lv] = dict(attr=attr, size=size, tags=tags, devices=[device])
+        vgs[vg_name][lv_name] = dict(
+            attr=lv_attr, size=lv_size, tags=lv_tags, devices=[lv_device])
     else:
-        lv_info["devices"].append(device)
+        lv_info["devices"].append(lv_device)
 
 stats = list(reversed(sorted((len(lvs), vg, lvs) for vg, lvs in vgs.items())))
 
