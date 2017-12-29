@@ -90,4 +90,4 @@ except ImportError:
 try:
     from glob import escape as glob_escape
 except ImportError:
-    from vdsm.common.glob import escape as glob_escape  # NOQA: F401 (unused import)
+    from vdsm.common.glob import escape as glob_escape  # NOQA: F401

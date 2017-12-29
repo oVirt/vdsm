@@ -29,5 +29,7 @@ to users).
 """
 from __future__ import absolute_import
 
-from vdsm.common.logutils import TimezoneFormatter  # NOQA: F401 (unused import)
-from vdsm.common.logutils import UserGroupEnforcingHandler  # NOQA: F401 (unused import)
+from vdsm.common.logutils import (  # NOQA: F401 (unused import)
+    TimezoneFormatter,
+    UserGroupEnforcingHandler,
+)
