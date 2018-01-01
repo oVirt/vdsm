@@ -4456,17 +4456,13 @@ class Vm(object):
             return response.error('replicaErr')
 
         try:
+            diskType = replica.get("diskType")
             replica['path'] = self.cif.prepareVolumePath(replica)
+            if diskType != replica["diskType"]:
+                # Disk type was detected or modified when preparing the volume.
+                # Persist it so migration can continue after vdsm crash.
+                self._updateDiskReplica(drive)
             try:
-                # Add information required during replication, and persist it
-                # so migration can continue after vdsm crash.
-                if "diskType" not in replica:
-                    if utils.isBlockDevice(replica['path']):
-                        replica['diskType'] = DISK_TYPE.BLOCK
-                    else:
-                        replica['diskType'] = DISK_TYPE.FILE
-                    self._updateDiskReplica(drive)
-
                 self._startDriveReplication(drive)
             except Exception:
                 self.cif.teardownVolumePath(replica)
