@@ -3322,12 +3322,10 @@ class HSM(object):
             self.__releaseLocks()
 
             try:
-                # Stop spmMailer thread
                 if self._pool.spmMailer:
                     self._pool.spmMailer.stop()
                     self._pool.spmMailer.tp.joinAll(waitForTasks=False)
 
-                # Stop hsmMailer thread
                 if self._pool.hsmMailer:
                     self._pool.hsmMailer.stop()
             except se.StoragePoolNotConnected:
