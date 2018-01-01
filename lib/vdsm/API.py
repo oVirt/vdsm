@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2012 Adam Litke, IBM Corporation
-# Copyright (C) 2012-2017 Red Hat, Inc.
+# Copyright (C) 2012-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1526,6 +1526,16 @@ class Global(APIBase):
             return {'status': doneCode}
         finally:
             self._cif._networkSemaphore.release()
+
+    @api.logged(on="api.network")
+    def getNetworkCapabilities(self):
+        """
+        Report host network capabilities.
+        """
+        net_caps = supervdsm.getProxy().network_caps()
+        net_caps['netConfigDirty'] = str(self._cif._netConfigDirty)
+
+        return {'status': doneCode, 'info': net_caps}
 
     def getLldp(self, filter):
         return response.success(

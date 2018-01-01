@@ -7020,6 +7020,47 @@ types:
             added: '4.2'
         type: object
 
+    VdsmNetworkCapabilities: &VdsmNetworkCapabilities
+        added: '4.2'
+        description: Host network information and capabilities.
+        name: VdsmNetworkCapabilities
+        properties:
+        -   description: Information about configured VDSM networks
+            name: networks
+            type: *NetInfoNetworkMap
+
+        -   description: Information about the network bridges on the host
+            name: bridges
+            type: *NetInfoBridgeMap
+
+        -   description: Information about configured vlans
+            name: vlans
+            type: *NetInfoVlanMap
+
+        -   description: Information about configured bonding devices
+            name: bondings
+            type: *NetInfoBondMap
+
+        -   description: Information about the network cards on the host
+            name: nics
+            type: *NetInfoNicMap
+
+        -   description: Indicates if there are uncommitted changes to the
+                network configuration
+            name: netConfigDirty
+            type: string
+            datatype: boolean
+
+        -   description: Whether IPv6 is enabled in the kernel
+            name: supportsIPv6
+            type: boolean
+
+        -   description: Provides host DNS servers from /etc/resolve.conf
+            name: nameservers
+            type:
+            - string
+        type: object
+
     VmShortStatus: &VmShortStatus
         added: '3.1'
         description: Abbreviated virtual machine status.
@@ -8046,6 +8087,13 @@ Host.getCapabilities:
     return:
         description: Host capabilities information
         type: *VdsmCapabilities
+
+Host.getNetworkCapabilities:
+    added: '4.2'
+    description: Get host network capabilities.
+    return:
+        description: Host network capabilities information
+        type: *VdsmNetworkCapabilities
 
 Host.getHardwareInfo:
     added: '3.2'

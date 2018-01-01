@@ -1,5 +1,5 @@
 # Copyright (C) 2012 - 2017 Adam Litke, IBM Corporation
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as
@@ -333,6 +333,7 @@ command_info = {
     'Host_getAllTasksInfo': {'ret': 'allTasksInfo'},
     'Host_getAllTasksStatuses': {'ret': 'allTasksStatus'},
     'Host_getCapabilities': {'ret': Host_getCapabilities_Ret},
+    'Host_getNetworkCapabilities': {'ret': 'info'},
     'Host_getConnectedStoragePools': {'ret': 'poollist'},
     'Host_getDeviceList': {'ret': 'devList'},
     'Host_getDevicesVisibility': {'ret': 'visible'},
