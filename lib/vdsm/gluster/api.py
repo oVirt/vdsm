@@ -793,9 +793,9 @@ class GlusterApi(object):
 
 
 def getGlusterMethods(gluster):
-    l = []
+    methods = []
     for name in dir(gluster):
         func = getattr(gluster, name)
         if getattr(func, 'exportAsVerb', False) is True:
-            l.append((func, 'gluster%s%s' % (name[0].upper(), name[1:])))
-    return tuple(l)
+            methods.append((func, 'gluster%s%s' % (name[0].upper(), name[1:])))
+    return tuple(methods)
