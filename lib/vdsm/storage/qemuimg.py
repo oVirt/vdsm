@@ -375,6 +375,17 @@ def _get_preallocation(value, format):
     return value
 
 
+def _supports_option(command, option):
+    """
+    Required for qemu-img 2.10, where -u/-U options added.
+    """
+    out = _run_cmd([_qemuimg.cmd, "--help"])
+    # Line to match:
+    #   command ... [-option] ...
+    pattern = r"^\s+%s .+ \[-%s\] .+$" % (command, option)
+    return re.search(pattern, out, re.MULTILINE) is not None
+
+
 def _run_cmd(cmd, cwd=None):
     rc, out, err = commands.execCmd(cmd, raw=True, cwd=cwd)
     if rc != 0:
