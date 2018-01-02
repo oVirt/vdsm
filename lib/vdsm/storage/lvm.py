@@ -1288,7 +1288,7 @@ def activateLVs(vgName, lvNames, refresh=True):
 
     if refresh and active:
         log.info("Refreshing active lvs: vg=%s lvs=%s", vgName, active)
-        refreshLVs(vgName, active)
+        _refreshLVs(vgName, active)
 
     if inactive:
         log.info("Activating lvs: vg=%s lvs=%s", vgName, inactive)
@@ -1316,6 +1316,10 @@ def renameLV(vg, oldlv, newlv):
 
 def refreshLVs(vgName, lvNames):
     log.info("Refreshing LVs (vg=%s, lvs=%s)", vgName, lvNames)
+    _refreshLVs(vgName, lvNames)
+
+
+def _refreshLVs(vgName, lvNames):
     # If  the  logical  volumes  are active, reload their metadata.
     cmd = ['lvchange', '--refresh']
     cmd.extend("%s/%s" % (vgName, lv) for lv in lvNames)
