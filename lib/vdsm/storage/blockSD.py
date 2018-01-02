@@ -310,6 +310,8 @@ class LvMetadataRW(object):
 
     def readlines(self):
         # Fetch the metadata from metadata volume
+        # TODO: refresh lv only if the block we want to read is after the end
+        # of the lv.
         lvm.activateLVs(self._vgName, [self._lvName])
 
         m = misc.readblock(self.metavol, self._offset, self._size)
@@ -320,6 +322,8 @@ class LvMetadataRW(object):
         return metadata
 
     def writelines(self, lines):
+        # TODO: refresh lv only if the block we want to write is after the end
+        # of the lv.
         lvm.activateLVs(self._vgName, [self._lvName])
 
         # Write `metadata' to metadata volume
@@ -444,12 +448,12 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     def getLeasesFilePath(self):
         # TODO: Determine the path without activating the LV
-        lvm.activateLVs(self.sdUUID, [sd.LEASES])
+        lvm.activateLVs(self.sdUUID, [sd.LEASES], refresh=False)
         return lvm.lvPath(self.sdUUID, sd.LEASES)
 
     def getIdsFilePath(self):
         # TODO: Determine the path without activating the LV
-        lvm.activateLVs(self.sdUUID, [sd.IDS])
+        lvm.activateLVs(self.sdUUID, [sd.IDS], refresh=False)
         return lvm.lvPath(self.sdUUID, sd.IDS)
 
     def getMetadataLVDevice(self):
@@ -774,7 +778,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         fileUtils.createdir(domMD)
 
         special_lvs = self.special_volumes(self.getVersion())
-        lvm.activateLVs(self.sdUUID, special_lvs)
+        lvm.activateLVs(self.sdUUID, special_lvs, refresh=False)
         for lvName in special_lvs:
             dst = os.path.join(domMD, lvName)
             if not os.path.lexists(dst):
@@ -940,7 +944,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
         # TODO: Move this to manifest.activate_special_lvs
         special_lvs = manifest.special_volumes(manifest.getVersion())
-        lvm.activateLVs(self.sdUUID, special_lvs)
+        lvm.activateLVs(self.sdUUID, special_lvs, refresh=False)
 
         self.metavol = lvm.lvPath(self.sdUUID, sd.METADATA)
 
@@ -1354,7 +1358,7 @@ class BlockStorageDomain(sd.StorageDomain):
         """
         Mount the master metadata file system. Should be called only by SPM.
         """
-        lvm.activateLVs(self.sdUUID, [MASTERLV])
+        lvm.activateLVs(self.sdUUID, [MASTERLV], refresh=False)
         masterDir = os.path.join(self.domaindir, sd.MASTER_FS_DIR)
         fileUtils.createdir(masterDir)
 
@@ -1577,7 +1581,7 @@ class BlockStorageDomain(sd.StorageDomain):
             lvm.createLV(self.sdUUID, sd.XLEASES, size)
         else:
             self.log.info("Reusing external leases volume %s", path)
-            lvm.activateLVs(self.sdUUID, [sd.XLEASES])
+            lvm.activateLVs(self.sdUUID, [sd.XLEASES], refresh=False)
 
 
 def _external_leases_path(sdUUID):

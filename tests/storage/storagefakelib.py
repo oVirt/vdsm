@@ -153,7 +153,7 @@ class FakeLVM(object):
 
         self._create_lv_file(vgName, lvName, activate, size)
 
-    def activateLVs(self, vgName, lvNames):
+    def activateLVs(self, vgName, lvNames, refresh=True):
         for lv in lvNames:
             try:
                 lv_md = self.lvmd[(vgName, lv)]

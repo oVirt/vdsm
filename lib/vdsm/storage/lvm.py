@@ -1277,13 +1277,14 @@ def reduceLV(vgName, lvName, size_mb, force=False):
     _lvminfo._invalidatelvs(vgName, lvName)
 
 
-def activateLVs(vgName, lvNames):
+def activateLVs(vgName, lvNames, refresh=True):
     """
     Ensure that all lvNames are active and reflect the current mapping on
     storage.
 
     Active lvs may not reflect the current mapping on storage if the lv was
-    extended or removed on another host, so they are refreshed.
+    extended or removed on another host. By default, active lvs are refreshed.
+    To skip refresh, call with refresh=False.
     """
     active = []
     inactive = []
@@ -1293,8 +1294,8 @@ def activateLVs(vgName, lvNames):
         else:
             inactive.append(lvName)
 
-    if active:
-        log.info("Refreshing lvs: vg=%s lvs=%s", vgName, active)
+    if refresh and active:
+        log.info("Refreshing active lvs: vg=%s lvs=%s", vgName, active)
         refreshLVs(vgName, active)
 
     if inactive:
