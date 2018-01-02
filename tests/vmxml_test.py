@@ -328,6 +328,10 @@ class TestDomainDescriptor(VmXmlTestCase):
             self.assertNotEquals(sorted(dom.all_channels()),
                                  sorted(vmchannels.AGENT_DEVICE_NAMES))
 
+    def test_no_channels(self):
+        dom = domain_descriptor.MutableDomainDescriptor('<domain/>')
+        self.assertEqual(list(dom.all_channels()), [])
+
 
 @expandPermutations
 class TestVmXmlMetadata(XMLTestCase):

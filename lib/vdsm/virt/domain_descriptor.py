@@ -68,7 +68,7 @@ class MutableDomainDescriptor(object):
         return hash(vmxml.format_xml(devices) if devices is not None else '')
 
     def all_channels(self):
-        if self.devices:
+        if self.devices is not None:
             for channel in vmxml.find_all(self.devices, 'channel'):
                 name = vmxml.find_attr(channel, 'target', 'name')
                 path = vmxml.find_attr(channel, 'source', 'path')
