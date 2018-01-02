@@ -309,11 +309,10 @@ class LvMetadataRW(object):
         self.metavol = lvm.lvPath(vgName, lvName)
 
     def readlines(self):
-        # Fetch the metadata from metadata volume
-        # TODO: refresh lv only if the block we want to read is after the end
-        # of the lv.
-        lvm.activateLVs(self._vgName, [self._lvName])
+        lvm.activateLVs(self._vgName, [self._lvName],
+                        refresh=self._needs_refresh())
 
+        # Fetch the metadata from metadata volume
         m = misc.readblock(self.metavol, self._offset, self._size)
         # Read from metadata volume will bring a load of zeroes trailing
         # actual metadata. Strip it out.
@@ -322,10 +321,6 @@ class LvMetadataRW(object):
         return metadata
 
     def writelines(self, lines):
-        # TODO: refresh lv only if the block we want to write is after the end
-        # of the lv.
-        lvm.activateLVs(self._vgName, [self._lvName])
-
         # Write `metadata' to metadata volume
         # TODO StringIO is broken on Python 3, we should properly encode to
         # bytes.
@@ -341,10 +336,28 @@ class LvMetadataRW(object):
         # Clear out previous data - it is a volume, not a file
         metaStr.write('\0' * (self._size - metaStr.pos))
 
+        lvm.activateLVs(self._vgName, [self._lvName],
+                        refresh=self._needs_refresh())
+
         data = metaStr.getvalue()
         with directio.DirectFile(self.metavol, "r+") as f:
             f.seek(self._offset)
             f.write(data)
+
+    def _needs_refresh(self):
+        try:
+            lv_size = fsutils.size(self.metavol)
+        except EnvironmentError as e:
+            if e.errno != errno.ENOENT:
+                raise
+            # Inactive volume, nothing to refresh.
+            return False
+        else:
+            # Active lv - we need to refresh if we try to access location after
+            # the end of the device. Can happen if the metadata lv was extended
+            # on the SPM, and we try to access the metadata lv on another host.
+            return self._offset + self._size > lv_size
+
 
 LvBasedSDMetadata = lambda vg, lv: DictValidator(
     PersistentDict(LvMetadataRW(vg, lv, 0, SD_METADATA_SIZE)),
