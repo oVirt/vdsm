@@ -686,6 +686,7 @@ class BrokenSuperVdsm(fake.SuperVdsm):
         super(BrokenSuperVdsm, self).setPortMirroring(network, nic_name)
 
 
+@expandPermutations
 class TestHotplug(TestCaseBase):
 
     NIC_HOTPLUG = '''<?xml version='1.0' encoding='UTF-8'?>
@@ -792,6 +793,25 @@ class TestHotplug(TestCaseBase):
                                 mac_addres="66:55:44:33:22:11") as dev:
             self.assertNotIn('network', dev)
         self.assertEqual(self.supervdsm.mirrored_networks, [])
+
+    @permutations([
+        ['virtio', 'pv'],
+        ['novirtio', 'novirtio'],
+    ])
+    def test_legacy_conf_conversion(self, xml_model, conf_model):
+        xml = self.NIC_HOTPLUG.replace('virtio', xml_model)
+        vm = self.vm
+        params = {'xml': xml}
+        with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
+                                self.supervdsm.getProxy)]):
+            vm.hotplugNic(params)
+        dev_conf = vm.status()['devices']
+        for conf in dev_conf:
+            if conf.get('macAddr') == '66:55:44:33:22:11':
+                self.assertEqual(conf.get('nicModel'), conf_model)
+                break
+        else:
+            raise Exception("Hot plugged device not found")
 
 
 class MockedProxy(object):
