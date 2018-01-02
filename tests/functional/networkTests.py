@@ -1855,39 +1855,6 @@ class NetworkTest(TestCaseBase):
             self.assertNetworkDoesntExist(NET1)
             self.assertBondDoesntExist(BONDING_NAME, nics)
 
-    @cleanupNet
-    def test_setupNetworks_swap_slaves_between_bonds(self):
-        with dummyIf(4) as nics:
-            nics0 = nics[0:2]
-            nics1 = nics[2:4]
-            bondings = {
-                'bond0': {'nics': nics0},
-                'bond1': {'nics': nics1}
-            }
-            status, msg = self.setupNetworks({}, bondings, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertBondExists('bond0', nics0)
-            self.assertBondExists('bond1', nics1)
-
-            bondings = {
-                'bond1': {'nics': nics0},
-                'bond0': {'nics': nics1}
-            }
-            status, msg = self.setupNetworks({}, bondings, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertBondExists('bond0', nics1)
-            self.assertBondExists('bond1', nics0)
-
-            # cleanup
-            bondings = {
-                'bond0': {'remove': True},
-                'bond1': {'remove': True},
-            }
-            status, msg = self.setupNetworks({}, bondings, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertBondDoesntExist('bond0')
-            self.assertBondDoesntExist('bond1')
-
     @contextmanager
     def setup_bonds_with_veth_pair(self, bond_options):
         with veth_pair() as (n1, n2), veth_pair() as (n3, n4):
