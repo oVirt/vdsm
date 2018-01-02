@@ -66,7 +66,7 @@ def produce(first_sample, last_sample):
                         config.getint('vars', 'host_sample_stats_interval'))
         return stats
 
-    stats.update(_get_interfaces_stats(first_sample, last_sample))
+    stats.update(_get_interfaces_stats(last_sample))
 
     jiffies = (
         last_sample.pidcpu.user - first_sample.pidcpu.user
@@ -147,24 +147,11 @@ class MissingSample(Exception):
     pass
 
 
-def _get_interfaces_stats(first_sample, last_sample):
-    rx = tx = rxDropped = txDropped = 0
+def _get_interfaces_stats(last_sample):
+    rxDropped = txDropped = 0
     stats = {'network': {}}
     for ifid in last_sample.interfaces:
-        # it skips hot-plugged devices if we haven't enough information
-        # to count stats from it
-        if ifid not in first_sample.interfaces:
-            continue
-
         ifrate = last_sample.interfaces[ifid].speed or 1000
-        thisRx = (
-            last_sample.interfaces[ifid].rx -
-            first_sample.interfaces[ifid].rx
-        ) % NETSTATS_BOUND
-        thisTx = (
-            last_sample.interfaces[ifid].tx -
-            first_sample.interfaces[ifid].tx
-        ) % NETSTATS_BOUND
         iface = last_sample.interfaces[ifid]
         stats['network'][ifid] = {
             'name': ifid, 'speed': str(ifrate),
@@ -177,8 +164,7 @@ def _get_interfaces_stats(first_sample, last_sample):
             'tx': str(iface.tx),
             'sampleTime': last_sample.timestamp,
         }
-        rx += thisRx
-        tx += thisTx
+
         rxDropped += last_sample.interfaces[ifid].rxDropped
         txDropped += last_sample.interfaces[ifid].txDropped
 
