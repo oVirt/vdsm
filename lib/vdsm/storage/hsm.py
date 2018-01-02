@@ -403,7 +403,7 @@ class HSM(object):
 
         def storageRefresh():
             sdCache.refreshStorage()
-            lvm.bootstrap(refreshlvs=blockSD.SPECIAL_LVS_V4)
+            lvm.bootstrap(skiplvs=blockSD.SPECIAL_LVS_V4)
             self._ready = True
             self.log.info("FINISH HSM init succeeded in %.2f seconds",
                           monotonic_time() - self._start_time)
