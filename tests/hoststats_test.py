@@ -208,8 +208,7 @@ class HostStatsThreadTests(TestCaseBase):
 class HostStatsNetworkTests(TestCaseBase):
 
     def test_report_format(self):
-        sample = fake.HostSample(timestamp=1.0, samples=None)
-        stats = hoststats.get_interfaces_stats(sample)
+        stats = hoststats.get_interfaces_stats()
         netstats = stats['network']
 
         self.assertIn('lo', netstats)

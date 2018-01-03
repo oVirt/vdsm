@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2017 Red Hat, Inc.
+# Copyright 2008-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@ Support for VM and host statistics sampling.
 """
 
 from collections import defaultdict, deque, namedtuple
-import errno
 import logging
 import os
 import re
@@ -41,10 +40,6 @@ import vdsm.common.time
 from vdsm.config import config
 from vdsm.constants import P_VDSM_RUN
 from vdsm.host import api as hostapi
-from vdsm.network import ipwrapper
-from vdsm.network.link import bond
-from vdsm.network.link import nic
-from vdsm.network.link import vlan
 from vdsm.virt import vmstats
 from vdsm.virt.utils import ExpiringCache
 
@@ -53,61 +48,6 @@ _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
     _THP_STATE_PATH = '/sys/kernel/mm/redhat_transparent_hugepage/enabled'
 _METRICS_ENABLED = config.getboolean('metrics', 'enabled')
-
-
-class InterfaceSample(object):
-    """
-    A network interface sample.
-
-    The sample is set at the time of initialization and can't be updated.
-    """
-    def readIfaceStat(self, ifid, stat):
-        """
-        Get and interface's stat.
-
-        .. note::
-            Really ugly implementation; from time to time, Linux returns an
-            empty line. TODO: understand why this happens and fix it!
-
-        :param ifid: The ID of the interface you want to query.
-        :param stat: The type of statistic you want get.
-
-        :returns: The value of the statistic you asked for.
-        :type: int
-        """
-        f = '/sys/class/net/%s/statistics/%s' % (ifid, stat)
-        tries = 5
-        while tries:
-            tries -= 1
-            try:
-                with open(f) as fi:
-                    s = fi.read()
-            except IOError as e:
-                # silently ignore missing wifi stats
-                if e.errno != errno.ENOENT:
-                    logging.debug("Could not read %s", f, exc_info=True)
-                return 0
-            try:
-                return int(s)
-            except:
-                if s != '':
-                    logging.warning("Could not parse statistics (%s) from %s",
-                                    f, s, exc_info=True)
-                logging.debug('bad %s: (%s)', f, s)
-                if not tries:
-                    raise
-
-    def __init__(self, link):
-        ifid = link.name
-        self.rx = self.readIfaceStat(ifid, 'rx_bytes')
-        self.tx = self.readIfaceStat(ifid, 'tx_bytes')
-        self.rxDropped = self.readIfaceStat(ifid, 'rx_dropped')
-        self.txDropped = self.readIfaceStat(ifid, 'tx_dropped')
-        self.rxErrors = self.readIfaceStat(ifid, 'rx_errors')
-        self.txErrors = self.readIfaceStat(ifid, 'tx_errors')
-        self.operstate = 'up' if link.oper_up else 'down'
-        self.speed = _getLinkSpeed(link)
-        self.duplex = _getDuplex(ifid)
 
 
 class TotalCpuSample(object):
@@ -195,20 +135,6 @@ class TimedSample(object):
         self.timestamp = time.time()
 
 
-def _get_interfaces_and_samples():
-    links_and_samples = {}
-    for link in ipwrapper.getLinks():
-        try:
-            links_and_samples[link.name] = InterfaceSample(link)
-        except IOError as e:
-            # this handles a race condition where the device is now no
-            # longer exists and netlink fails to fetch it
-            if e.errno == errno.ENODEV:
-                continue
-            raise
-    return links_and_samples
-
-
 class HostSample(TimedSample):
     """
     A sample of host-related statistics.
@@ -237,7 +163,6 @@ class HostSample(TimedSample):
         :type pid: int
         """
         super(HostSample, self).__init__()
-        self.interfaces = _get_interfaces_and_samples()
         self.pidcpu = PidCpuSample(pid)
         self.ncpus = os.sysconf('SC_NPROCESSORS_ONLN')
         self.totcpu = TotalCpuSample()
@@ -577,28 +502,6 @@ class HostMonitor(object):
         if self._cif and _METRICS_ENABLED:
             stats = hostapi.get_stats(self._cif, self._samples.stats())
             hostapi.send_metrics(stats)
-
-
-def _getLinkSpeed(dev):
-    if dev.isNIC():
-        speed = nic.speed(dev.name)
-    elif dev.isBOND():
-        speed = bond.speed(dev.name)
-    elif dev.isVLAN():
-        speed = vlan.speed(dev.name)
-    else:
-        speed = 0
-    return speed
-
-
-def _getDuplex(ifid):
-    """Return whether a device is connected in full-duplex. Return 'unknown' if
-    duplex state is not known"""
-    try:
-        with open('/sys/class/net/%s/duplex' % ifid) as src:
-            return src.read().strip()
-    except IOError:
-        return 'unknown'
 
 
 def _translate(bulk_stats):

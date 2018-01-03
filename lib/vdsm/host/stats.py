@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 
 import logging
+from time import time as current_time_since_epoch
 
 import six
 
@@ -29,6 +30,7 @@ from vdsm.common import time
 from vdsm.config import config
 
 from vdsm import v2v
+from vdsm.network import api as net_api
 
 
 JIFFIES_BOUND = 2 ** 32
@@ -66,7 +68,7 @@ def produce(first_sample, last_sample):
                         config.getint('vars', 'host_sample_stats_interval'))
         return stats
 
-    stats.update(get_interfaces_stats(last_sample))
+    stats.update(get_interfaces_stats())
 
     jiffies = (
         last_sample.pidcpu.user - first_sample.pidcpu.user
@@ -147,31 +149,39 @@ class MissingSample(Exception):
     pass
 
 
-def get_interfaces_stats(last_sample):
-    rxDropped = txDropped = 0
-    stats = {'network': {}}
-    for ifid in last_sample.interfaces:
-        ifrate = last_sample.interfaces[ifid].speed or 1000
-        iface = last_sample.interfaces[ifid]
-        stats['network'][ifid] = {
-            'name': ifid, 'speed': str(ifrate),
-            'rxDropped': str(iface.rxDropped),
-            'txDropped': str(iface.txDropped),
-            'rxErrors': str(iface.rxErrors),
-            'txErrors': str(iface.txErrors),
-            'state': iface.operstate,
-            'rx': str(iface.rx),
-            'tx': str(iface.tx),
-            'sampleTime': last_sample.timestamp,
-        }
+def get_interfaces_stats():
+    rx_dropped = tx_dropped = 0
+    net_stats = net_api.network_stats()
+    timestamp = current_time_since_epoch()
+    for iface_stats in six.viewvalues(net_stats):
+        iface_stats['sampleTime'] = timestamp
 
-        rxDropped += last_sample.interfaces[ifid].rxDropped
-        txDropped += last_sample.interfaces[ifid].txDropped
+        rx_dropped += iface_stats['rxDropped']
+        tx_dropped += iface_stats['txDropped']
 
-    stats['rxDropped'] = rxDropped
-    stats['txDropped'] = txDropped
+        _normalize_network_stats(iface_stats)
 
-    return stats
+    return {
+        'network': net_stats,
+        'rxDropped': tx_dropped,
+        'txDropped': rx_dropped
+    }
+
+
+def _normalize_network_stats(iface_stats):
+    """
+    For backward compatability, the network stats are normalized to fit
+    expected format/type on Engine side.
+    """
+    iface_stats['speed'] = iface_stats['speed'] or 1000
+    for stat_name in ('speed',
+                      'tx',
+                      'rx',
+                      'rxErrors',
+                      'txErrors',
+                      'rxDropped',
+                      'txDropped'):
+        iface_stats[stat_name] = str(iface_stats[stat_name])
 
 
 _PROC_STAT_PATH = '/proc/stat'

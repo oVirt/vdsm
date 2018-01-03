@@ -31,7 +31,6 @@ from vdsm import containersconnection
 from vdsm.common import cpuarch
 from vdsm.common import libvirtconnection
 from vdsm.common import response
-from vdsm.network import ipwrapper
 from vdsm.virt import sampling
 from vdsm.virt import vm
 from vdsm.virt.domain_descriptor import DomainDescriptor
@@ -377,8 +376,6 @@ class HostSample(object):
     def __init__(self, timestamp, samples):
         self.timestamp = timestamp
         self.cpuCores = CpuCoreSample(samples)
-        self.interfaces = {
-            'lo': sampling.InterfaceSample(ipwrapper.getLink('lo'))}
 
 
 CREATED = "created"

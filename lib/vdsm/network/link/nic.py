@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,3 +51,15 @@ def read_speed_using_sysfs(nic_name):
     if s in (2 ** 16 - 1, 2 ** 32 - 1) or s <= 0:
         raise ReadSpeedValueError(s)
     return s
+
+
+def duplex(nic_name):
+    """
+    Return whether a device is connected in full-duplex.
+    Return 'unknown' if duplex state is not known
+    """
+    try:
+        with open('/sys/class/net/%s/duplex' % nic_name) as f:
+            return f.read().strip()
+    except IOError:
+        return 'unknown'

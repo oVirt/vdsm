@@ -1,4 +1,4 @@
-# Copyright 2011-2017 Red Hat, Inc.
+# Copyright 2011-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ from vdsm.network.configurators.ifcfg import ConfigWriter
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 from vdsm.network.link import iface as link_iface
 from vdsm.network.link import sriov
+from vdsm.network.link import stats as link_stats
 from vdsm.network.lldp import info as lldp_info
 
 from . import canonicalize
@@ -54,6 +55,11 @@ def network_caps():
     """
     # TODO: Version requests by engine to ease handling of compatibility.
     return netswitch.configurator.netcaps(compatibility=30600)
+
+
+def network_stats():
+    """Report network statistics"""
+    return link_stats.report()
 
 
 def change_numvfs(pci_path, numvfs, net_name):

@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import abc
 import errno
 import itertools
+import logging
 import os
 import random
 import string
@@ -118,6 +119,10 @@ class IfaceAPI(object):
     def type(self):
         pass
 
+    @abc.abstractmethod
+    def statistics(self):
+        pass
+
 
 class IfaceHybrid(IfaceAPI):
     """
@@ -207,6 +212,18 @@ class IfaceHybrid(IfaceAPI):
     def type(self):
         return self.properties().get('type', get_alternative_type(self._dev))
 
+    def statistics(self):
+        return {
+            'name': self.device,
+            'rx': _get_stat(self.device, 'rx_bytes'),
+            'tx': _get_stat(self.device, 'tx_bytes'),
+            'state': 'up' if self.is_oper_up() else 'down',
+            'rxDropped': _get_stat(self.device, 'rx_dropped'),
+            'txDropped': _get_stat(self.device, 'tx_dropped'),
+            'rxErrors': _get_stat(self.device, 'rx_errors'),
+            'txErrors': _get_stat(self.device, 'tx_errors'),
+        }
+
     def _up_blocking(self, link_blocking):
         with waitfor_linkup(self._dev, link_blocking):
             ipwrapper.linkSet(self._dev, [STATE_UP])
@@ -260,3 +277,27 @@ def get_alternative_type(device):
         else:
             raise
     return iface_type
+
+
+def _get_stat(device, stat_name):
+    # From time to time, Linux returns an empty line, therefore, retry.
+    TRIES = 5
+    stat_path = '/sys/class/net/{}/statistics/{}'.format(device, stat_name)
+    for attempt in reversed(range(TRIES)):
+        try:
+            with open(stat_path) as f:
+                stat_val = f.read()
+        except IOError as e:
+            # silently ignore missing wifi stats
+            if e.errno != errno.ENOENT:
+                logging.debug('Could not read %s', stat_path, exc_info=True)
+            return 0
+        try:
+            return int(stat_val)
+        except ValueError:
+            if stat_val != '':
+                logging.warning('Could not parse stats (%s) from %s',
+                                stat_path, stat_val)
+            logging.debug('bad %s: (%s)', stat_path, stat_val)
+            if attempt == 0:
+                raise
