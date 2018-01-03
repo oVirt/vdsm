@@ -24,6 +24,7 @@ import logging
 
 from vdsm.virt.vmdevices import common
 from vdsm.virt.vmdevices import core
+from vdsm.virt.vmdevices import drivename
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices import network
 from vdsm.virt.vmdevices import storage
@@ -677,8 +678,9 @@ class DescriptorTests(XMLTestCase):
 </vm>"""
 
         desc = metadata.Descriptor()
-        attrs = common.get_drive_conf_identifying_attrs(conf)
-        with desc.device(**attrs) as dev:
+        with desc.device(
+                devtype=conf['type'],
+                name=drivename.make(conf['iface'], conf['index'])) as dev:
             dev.update(conf)
         dom = FakeDomain()
         desc.dump(dom)

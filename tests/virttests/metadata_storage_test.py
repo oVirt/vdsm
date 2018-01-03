@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from collections import namedtuple
 import copy
 
-from vdsm.virt.vmdevices import common
+from vdsm.virt.vmdevices import drivename
 from vdsm.virt import metadata
 from vdsm.virt import vmxml
 
@@ -614,13 +614,13 @@ class DescriptorStorageMetadataTests(XMLTestCase):
         desc = metadata.Descriptor()
         dom = FakeDomain.with_metadata(data.metadata_xml)
         desc.load(dom)
-        attrs = common.get_drive_conf_identifying_attrs(data.conf)
+        attrs = _get_drive_conf_identifying_attrs(data.conf)
         with desc.device(**attrs) as dev:
             self.assertEqual(dev, data.conf)
 
     def _check_drive_to_metadata_xml(self, data):
         desc = metadata.Descriptor()
-        attrs = common.get_drive_conf_identifying_attrs(data.conf)
+        attrs = _get_drive_conf_identifying_attrs(data.conf)
         with desc.device(**attrs) as dev:
             dev.update(data.conf)
         dom = FakeDomain()
@@ -629,3 +629,10 @@ class DescriptorStorageMetadataTests(XMLTestCase):
             list(dom.xml.values())[0],
             data.metadata_xml
         )
+
+
+def _get_drive_conf_identifying_attrs(conf):
+    return {
+        'devtype': conf['type'],
+        'name': drivename.make(conf['iface'], conf['index']),
+    }

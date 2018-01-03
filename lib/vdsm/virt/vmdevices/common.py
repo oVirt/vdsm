@@ -24,7 +24,6 @@ from vdsm.virt import metadata
 from vdsm.virt import vmxml
 
 from . import core
-from . import drivename
 from . import graphics
 from . import hostdevice
 from . import hwclass
@@ -143,17 +142,6 @@ _DEVICE_MAPPING = {
 _LIBVIRT_TO_OVIRT_NAME = {
     'memballoon': hwclass.BALLOON,
 }
-
-
-def get_drive_conf_identifying_attrs(dev_conf):
-    attrs = {'devtype': str(dev_conf.get('type', 'disk'))}
-    if 'name' in dev_conf:
-        attrs['name'] = dev_conf['name']
-    elif 'iface' in dev_conf and 'index' in dev_conf:
-        attrs['name'] = drivename.make(dev_conf['iface'], dev_conf['index'])
-    else:
-        raise LookupError('Do not know how to identify drive: %s' % dev_conf)
-    return attrs
 
 
 def identify_from_xml_elem(dev_elem):

@@ -33,30 +33,6 @@ from monkeypatch import MonkeyPatchScope
 class VMDevicesCommonDriveIdentAttrTests(VdsmTestCase):
 
     @permutations([
-        # dev_conf
-        [{}],
-        [{'device': hwclass.DISK}],  # should use 'type'
-        [{'devtype': hwclass.DISK, 'GUID': 'some_guid'}],
-        [{'devtype': hwclass.DISK, 'iface': 'scsi'}],  # missing index
-        [{'devtype': hwclass.DISK, 'index': '0'}],  # missing interface
-    ])
-    def test_drive_not_identifiable(self, dev_conf):
-        self.assertRaises(
-            LookupError,
-            common.get_drive_conf_identifying_attrs,
-            dev_conf
-        )
-
-    @permutations([
-        # dev_conf, name
-        [{'device': 'disk', 'iface': 'scsi', 'index': 0}, 'sda'],
-        [{'device': 'disk', 'name': 'vda'}, 'vda'],
-    ])
-    def test_drive_identified_by_name(self, dev_conf, name):
-        attrs = common.get_drive_conf_identifying_attrs(dev_conf)
-        self.assertEqual({'devtype': hwclass.DISK, 'name': name}, attrs)
-
-    @permutations([
         # whitelist, expected
         ['', set()],
         ['controller', set()],
