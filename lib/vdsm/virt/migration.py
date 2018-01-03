@@ -456,6 +456,7 @@ class SourceThread(object):
 
     def _startUnderlyingMigration(self, startTime):
         if self.hibernating:
+            self._started = True
             self._vm.hibernate(self._dst)
         else:
             self._vm.prepare_migration()

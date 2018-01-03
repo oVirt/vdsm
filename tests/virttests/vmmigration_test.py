@@ -327,6 +327,27 @@ class FakeMigratingDomain(object):
         return True
 
 
+class FakeEvents(object):
+
+    def before_hibernation(*args, **kwargs):
+        pass
+
+    def before_migration(*args, **kwargs):
+        pass
+
+
+class FakeGuestAgent(object):
+
+    def __init__(self):
+        self.events = FakeEvents()
+
+    def isResponsive(self):
+        return True
+
+    def desktopLock(self):
+        pass
+
+
 class FakeVM(object):
 
     def __init__(self, dom=None):
@@ -339,6 +360,8 @@ class FakeVM(object):
         self.post_copy = migration.PostCopyPhase.NONE
         self.stopped_migrated_event_processed = threading.Event()
         self.stopped_migrated_event_processed.set()
+        self.guestAgent = FakeGuestAgent()
+        self.hibernation_attempts = 0
 
     @contextmanager
     def migration_parameters(self, params):
@@ -355,13 +378,21 @@ class FakeVM(object):
         return self.conf
 
     def getStats(self):
-        return {}
+        return {'session': 'LoggedOff'}
 
     def setDownStatus(self, status, reason):
         pass
 
     def destroy(self):
         pass
+
+    def pause(self, *args, **kwargs):
+        pass
+
+    def hibernate(self, dst):
+        self.hibernation_attempts += 1
+        if self.hibernation_attempts > 1:
+            raise Exception("Too many hibernation attempts")
 
     def mem_size_mb(self):
         return self._mem_size_mb
@@ -385,9 +416,9 @@ class FakeMonitorThread(object):
         self.progress = prog
 
 
-def make_env():
+def make_env(mode=migration.MODE_REMOTE):
     dom = FakeMigratingDomain()
-    src = migration.SourceThread(FakeVM(dom))
+    src = migration.SourceThread(FakeVM(dom), mode=mode)
     src.remoteHost = '127.0.0.1'
     src._monitorThread = FakeMonitorThread(FakeProgress())
     src._setupVdsConnection = lambda: None
@@ -470,6 +501,12 @@ class SourceThreadTests(TestCaseBase):
         self.assertEqual(dom.migrations, 1)
         self.assertEqual(serv.attempts, 1)
         self.assertEqual(src.getStat()['progress'], progress)
+
+    def test_do_not_retry_hibernation(self):
+        dom, src = make_env(mode=migration.MODE_FILE)
+        src._finishSuccessfully = lambda: None
+        src.run()
+        self.assertEqual(src._vm.hibernation_attempts, 1)
 
 
 # stolen^Wborrowed from itertools recipes
