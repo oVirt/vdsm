@@ -38,7 +38,6 @@ from vdsm import constants
 from vdsm import host
 from vdsm import hugepages
 from vdsm import osinfo
-from vdsm import utils
 
 from vdsm.common import cpuarch
 from vdsm.common import define
@@ -1434,7 +1433,6 @@ class TestWaitForRemoval(TestCaseBase):
         ("vars", "hotunplug_timeout", "0.25"),
         ("vars", "hotunplug_check_interval", "0.1")
     ]))
-    @MonkeyPatch(utils, "isBlockDevice", lambda x: x == "/block_path")
     @permutations([[drive_file, FILE_DRIVE_XML],
                    [drive_network, NETWORK_DRIVE_XML],
                    [drive_block, BLOCK_DRIVE_XML],
@@ -1451,7 +1449,6 @@ class TestWaitForRemoval(TestCaseBase):
     @MonkeyPatch(vm, "config", make_config([
         ("vars", "hotunplug_timeout", "1")
     ]))
-    @MonkeyPatch(utils, "isBlockDevice", lambda x: x == "/block_path")
     @permutations([[drive_file, FILE_DRIVE_XML],
                    [drive_network, NETWORK_DRIVE_XML],
                    [drive_block, BLOCK_DRIVE_XML],
@@ -1465,7 +1462,6 @@ class TestWaitForRemoval(TestCaseBase):
         ("vars", "hotunplug_timeout", "1"),
         ("vars", "hotunplug_check_interval", "0")
     ]))
-    @MonkeyPatch(utils, "isBlockDevice", lambda x: x == "/block_path")
     @permutations([[drive_file, FILE_DRIVE_XML],
                    [drive_network, NETWORK_DRIVE_XML],
                    [drive_block, BLOCK_DRIVE_XML],
@@ -2062,7 +2058,6 @@ class BlockIoTuneTests(TestCaseBase):
         self.dom.iotunes = {self.drive.name: self.iotune_low.copy()}
 
     @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
-    @MonkeyPatch(utils, 'isBlockDevice', lambda *args: False)
     def test_get_fills_cache(self):
         with fake.VM() as testvm:
             testvm._dom = self.dom
@@ -2087,7 +2082,6 @@ class BlockIoTuneTests(TestCaseBase):
             )
 
     @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
-    @MonkeyPatch(utils, 'isBlockDevice', lambda *args: False)
     def test_set_updates_cache(self):
         with fake.VM() as testvm:
             testvm._dom = self.dom
@@ -2110,7 +2104,6 @@ class BlockIoTuneTests(TestCaseBase):
             self.assert_nth_call_to_dom_is(1, 'setBlockIoTune')
 
     @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
-    @MonkeyPatch(utils, 'isBlockDevice', lambda *args: False)
     def test_set_fills_cache(self):
         with fake.VM() as testvm:
             testvm._dom = self.dom
@@ -2129,7 +2122,6 @@ class BlockIoTuneTests(TestCaseBase):
             self.assert_nth_call_to_dom_is(0, 'setBlockIoTune')
 
     @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
-    @MonkeyPatch(utils, 'isBlockDevice', lambda *args: False)
     def test_cold_cache_set_preempts_get(self):
         with fake.VM() as testvm:
             testvm._dom = self.dom
@@ -2154,7 +2146,6 @@ class BlockIoTuneTests(TestCaseBase):
             )
 
     @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
-    @MonkeyPatch(utils, 'isBlockDevice', lambda *args: False)
     def test_set_iotune_invalid(self):
         with fake.VM() as testvm:
             testvm._dom = self.dom

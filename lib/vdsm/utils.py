@@ -37,7 +37,6 @@ import six
 import sys
 import os
 import socket
-import stat
 import threading
 import time
 
@@ -60,11 +59,6 @@ class IOCLASS:
 class NICENESS:
     NORMAL = 0
     HIGH = 19
-
-
-def isBlockDevice(path):
-    path = os.path.abspath(path)
-    return stat.S_ISBLK(os.stat(path).st_mode)
 
 
 def _parseMemInfo(lines):

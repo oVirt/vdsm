@@ -28,7 +28,6 @@ from vdsm.virt import metadata
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
 from vdsm import constants
-from vdsm import utils
 from vdsm.common import hostdev
 
 from monkeypatch import MonkeyPatchScope, MonkeyPatch
@@ -705,7 +704,6 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" discard="unmap" error_policy="stop"
                     io="native" name="qemu" type="raw"/>
         </disk>''',
-     True,
      {}],
     [u'''<disk device="disk" snapshot="no" type="block">
             <source dev="/path/to/volume"/>
@@ -714,7 +712,6 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" error_policy="stop"
                     io="native" name="qemu" type="raw"/>
         </disk>''',
-     True,
      {}],
     [u'''<disk device="disk" snapshot="no" type="file">
             <source file="/path/to/volume"/>
@@ -723,7 +720,6 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" error_policy="stop"
                     io="threads" name="qemu" type="raw"/>
         </disk>''',
-     False,
      {}],
     [u'''<disk device="lun" sgio="unfiltered" snapshot="no" type="block">
             <source dev="/dev/mapper/lun1"/>
@@ -731,7 +727,6 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" error_policy="stop"
                     io="native" name="qemu" type="raw"/>
         </disk>''',
-     True,
      {}],
     [u'''<disk device="disk" snapshot="no" type="network">
             <source name="poolname/volumename" protocol="rbd">
@@ -743,7 +738,6 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" error_policy="stop"
                     io="threads" name="qemu" type="raw"/>
         </disk>''',
-     False,
      {}],
     [u'''<disk device="disk" snapshot="no" type="network">
             <source name="poolname/volumename" protocol="rbd">
@@ -758,7 +752,6 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" error_policy="stop"
                     io="threads" name="qemu" type="raw"/>
         </disk>''',
-     False,
      {}],
     [u'''<disk device="lun" sgio="unfiltered" snapshot="no" type="block">
             <address bus="0" controller="0" target="0" type="drive" unit="0" />
@@ -767,7 +760,6 @@ _STORAGE_TEST_DATA = [
             <driver cache="none" error_policy="stop" io="native"
                     name="qemu" type="raw" />
         </disk>''',
-     True,
      {}],
     [u'''<disk device="cdrom" snapshot="no" type="file">
             <source file="/var/run/vdsm/payload/{guid}.{hashsum}.img"
@@ -776,7 +768,6 @@ _STORAGE_TEST_DATA = [
             <readonly />
         </disk>'''.format(guid='8a1dc504-9d00-48f3-abdc-c70404e6f7e2',
                           hashsum='4137dc5fb55e021fbfd2653621d9d194'),
-     True,
      {}],
     [u'''<disk device="disk" snapshot="no" type="block">
             <source dev="/path/to/volume"/>
@@ -790,7 +781,6 @@ _STORAGE_TEST_DATA = [
                 <write_iops_sec>100000</write_iops_sec>
             </iotune>
         </disk>''',
-     True,
      {}],
 ]
 
@@ -1249,17 +1239,14 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         )
 
     @permutations(_STORAGE_TEST_DATA)
-    def test_storage_from_xml(self, storage_xml, is_block, meta):
-        with MonkeyPatchScope([
-            (utils, 'isBlockDevice', lambda path: is_block)
-        ]):
-            dev = vmdevices.storage.Drive(
-                self.log, **vmdevices.storagexml.parse(
-                    vmxml.parse_xml(storage_xml),
-                    {} if meta is None else meta
-                )
+    def test_storage_from_xml(self, storage_xml, meta):
+        dev = vmdevices.storage.Drive(
+            self.log, **vmdevices.storagexml.parse(
+                vmxml.parse_xml(storage_xml),
+                {} if meta is None else meta
             )
-            self._check_device_xml(dev, storage_xml)
+        )
+        self._check_device_xml(dev, storage_xml)
 
     def test_storage_from_incomplete_xml(self):
         storage_xml = '''<disk device="disk" snapshot="no" type="file">
@@ -1276,16 +1263,13 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             <driver cache="none" error_policy="stop"
                     io="threads" name="qemu" type="raw"/>
         </disk>'''
-        with MonkeyPatchScope([
-            (utils, 'isBlockDevice', lambda path: False)
-        ]):
-            dev = vmdevices.storage.Drive(
-                self.log, **vmdevices.storagexml.parse(
-                    vmxml.parse_xml(storage_xml),
-                    {}
-                )
+        dev = vmdevices.storage.Drive(
+            self.log, **vmdevices.storagexml.parse(
+                vmxml.parse_xml(storage_xml),
+                {}
             )
-            self._check_device_xml(dev, expected_xml)
+        )
+        self._check_device_xml(dev, expected_xml)
 
     def _check_roundtrip(self, klass, dev_xml, meta=None, expected_xml=None):
         dev = klass.from_xml_tree(
