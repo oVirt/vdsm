@@ -173,25 +173,6 @@ for code, symbol in six.iteritems(errno.errorcode):
     symbolerror[os.strerror(code)] = symbol
 
 
-def listSplit(l, elem, maxSplits=None):
-    splits = []
-    splitCount = 0
-
-    while True:
-        try:
-            splitOffset = l.index(elem)
-        except ValueError:
-            break
-
-        splits.append(l[:splitOffset])
-        l = l[splitOffset + 1:]
-        splitCount += 1
-        if maxSplits is not None and splitCount >= maxSplits:
-            break
-
-    return splits + [l]
-
-
 class closing(object):
     """
     Context Manager that is responsible for closing the object it gets upon
