@@ -309,7 +309,6 @@ VDSM libraries that are imported by all subsystems
 
 %package network
 Summary:        VDSM network python libraries
-BuildArch:      noarch
 Requires:       NetworkManager-config-server
 Requires:       bridge-utils
 Requires:       dbus-python
