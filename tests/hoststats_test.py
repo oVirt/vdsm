@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2016 Red Hat, Inc.
+# Copyright 2014-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -203,3 +203,25 @@ class HostStatsThreadTests(TestCaseBase):
             hoststats.produce(first_sample, last_sample),
             expected
         )
+
+
+class HostStatsNetworkTests(TestCaseBase):
+
+    def test_report_format(self):
+        sample = fake.HostSample(timestamp=1.0, samples=None)
+        stats = hoststats.get_interfaces_stats(sample)
+        netstats = stats['network']
+
+        self.assertIn('lo', netstats)
+
+        iface_stats = netstats['lo']
+        self.assertEqual(iface_stats['name'], 'lo')
+        self.assertEqual(iface_stats['state'], 'up')
+        self.assertEqual(iface_stats['speed'], '1000')
+        self.assertIsInstance(iface_stats['tx'], str)
+        self.assertIsInstance(iface_stats['rx'], str)
+        self.assertIsInstance(iface_stats['rxDropped'], str)
+        self.assertIsInstance(iface_stats['txDropped'], str)
+        self.assertIsInstance(iface_stats['rxErrors'], str)
+        self.assertIsInstance(iface_stats['txErrors'], str)
+        self.assertIsInstance(iface_stats['sampleTime'], float)

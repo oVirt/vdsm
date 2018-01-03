@@ -1,6 +1,6 @@
 #
 # Copyright IBM Corp. 2012
-# Copyright 2013-2017 Red Hat, Inc.
+# Copyright 2013-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ from vdsm import containersconnection
 from vdsm.common import cpuarch
 from vdsm.common import libvirtconnection
 from vdsm.common import response
+from vdsm.network import ipwrapper
 from vdsm.virt import sampling
 from vdsm.virt import vm
 from vdsm.virt.domain_descriptor import DomainDescriptor
@@ -361,6 +362,8 @@ class HostSample(object):
     def __init__(self, timestamp, samples):
         self.timestamp = timestamp
         self.cpuCores = CpuCoreSample(samples)
+        self.interfaces = {
+            'lo': sampling.InterfaceSample(ipwrapper.getLink('lo'))}
 
 
 CREATED = "created"

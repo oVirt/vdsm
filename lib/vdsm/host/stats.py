@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2017 Red Hat, Inc.
+# Copyright 2008-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ def produce(first_sample, last_sample):
                         config.getint('vars', 'host_sample_stats_interval'))
         return stats
 
-    stats.update(_get_interfaces_stats(last_sample))
+    stats.update(get_interfaces_stats(last_sample))
 
     jiffies = (
         last_sample.pidcpu.user - first_sample.pidcpu.user
@@ -147,7 +147,7 @@ class MissingSample(Exception):
     pass
 
 
-def _get_interfaces_stats(last_sample):
+def get_interfaces_stats(last_sample):
     rxDropped = txDropped = 0
     stats = {'network': {}}
     for ifid in last_sample.interfaces:
