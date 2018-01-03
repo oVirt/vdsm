@@ -1468,20 +1468,21 @@ def listPVNames(vgName):
     return pvNames
 
 
-def setrwLV(vg, lv, rw=True):
-    log.info("Changing LV permissions (vg=%s, lv=%s, rw=%s)", vg, lv, rw)
+def setrwLV(vg_name, lv_name, rw=True):
+    log.info(
+        "Changing LV permissions (vg=%s, lv=%s, rw=%s)", vg_name, lv_name, rw)
     permission = {False: 'r', True: 'rw'}[rw]
     try:
-        changelv(vg, lv, ("--permission", permission))
+        changelv(vg_name, lv_name, ("--permission", permission))
     except se.StorageException:
-        l = getLV(vg, lv)
-        if l.writeable == rw:
+        lv = getLV(vg_name, lv_name)
+        if lv.writeable == rw:
             # Ignore the error since lv is now rw, hoping that the error was
             # because lv was already rw, see BZ#654691. We may hide here
             # another lvchange error.
             return
 
-        raise se.CannotSetRWLogicalVolume(vg, lv, permission)
+        raise se.CannotSetRWLogicalVolume(vg_name, lv_name, permission)
 
 
 def lvsByTag(vgName, tag):
