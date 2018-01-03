@@ -732,10 +732,11 @@ class ConfigWriter(object):
     def removeNic(self, nic):
         cf = NET_CONF_PREF + nic
         self._backup(cf)
-        l = [self.CONFFILE_HEADER + '\n', 'DEVICE=%s\n' % nic, 'ONBOOT=yes\n',
-             'MTU=%s\n' % link_iface.DEFAULT_MTU, 'NM_CONTROLLED=no\n']
+        lines = [
+            self.CONFFILE_HEADER + '\n', 'DEVICE=%s\n' % nic, 'ONBOOT=yes\n',
+            'MTU=%s\n' % link_iface.DEFAULT_MTU, 'NM_CONTROLLED=no\n']
         with open(cf, 'w') as nicFile:
-            nicFile.writelines(l)
+            nicFile.writelines(lines)
 
     def removeVlan(self, vlan):
         self._backup(NET_CONF_PREF + vlan)
