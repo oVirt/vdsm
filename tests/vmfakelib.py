@@ -248,7 +248,7 @@ class Domain(object):
     def destroy(self):
         pass
 
-    def undefine(self):
+    def undefineFlags(self, flags=0):
         pass
 
     def attachDevice(self, device):

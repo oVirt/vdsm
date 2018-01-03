@@ -84,7 +84,7 @@ class Connection(object):
     def defineXML(self, domxml, flags):
         return domain.Domain.create(domxml)
 
-    def undefine(self):
+    def undefineFlags(self, flags=0):
         # For libvirt API compatibility, container domains are always transient
         # so this is no-op here.
         pass

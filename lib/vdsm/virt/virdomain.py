@@ -72,8 +72,8 @@ class Defined(Disconnected):
     def setMetadata(self, *args, **kwargs):
         self._dom.setMetadata(*args, **kwargs)
 
-    def undefine(self):
-        self._dom.undefine()
+    def undefineFlags(self, flags=0):
+        self._dom.undefineFlags(flags)
 
 
 class Notifying(object):

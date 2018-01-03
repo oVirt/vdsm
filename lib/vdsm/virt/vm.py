@@ -274,7 +274,7 @@ def _undefine_stale_domain(vm, connection):
         try:
             state, reason = dom.state(0)
             if state in vmstatus.LIBVIRT_DOWN_STATES:
-                dom.undefine()
+                dom.undefineFlags(libvirt.VIR_DOMAIN_UNDEFINE_NVRAM)
                 vm.log.debug("Stale domain removed: %s", (vm.id,))
             else:
                 raise exception.VMExists("VM %s is already running: %s" %
@@ -2362,7 +2362,7 @@ class Vm(object):
 
     def _undefine_domain(self):
         try:
-            self._dom.undefine()
+            self._dom.undefineFlags(libvirt.VIR_DOMAIN_UNDEFINE_NVRAM)
         except libvirt.libvirtError as e:
             self.log.warning("Failed to undefine VM '%s' (error=%i)",
                              self.id, e.get_error_code())

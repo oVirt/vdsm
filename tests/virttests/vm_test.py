@@ -1951,7 +1951,7 @@ class FakePersistentDomain(object):
     def state(self, flags):
         return self._state, 0
 
-    def undefine(self):
+    def undefineFlags(self, flags=0):
         if self.id in self.undefined:
             raise err_no_domain()
         self.undefined.append(self.id)
