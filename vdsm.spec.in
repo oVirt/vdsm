@@ -510,16 +510,6 @@ Hook intercepts VM's stats and randomizes various fields.
 To enable this hook on your host, set vars.fake_vmstats_enable=true in your
 /etc/vdsm/vdsm.conf.
 
-%package hook-fakesriov
-Summary:        Generate fake SR-IOV devices
-Requires:       %{name}
-
-%description hook-fakesriov
-Hook intercepts reported host device by hostdevListByCaps and adds
-1 fake sriov devices and 2 fake virtual function devices
-To enable this hook on your host, set vars.fake_sriov_enable=true in your
-/etc/vdsm/vdsm.conf.
-
 %package hook-fileinject
 Summary:        Allow uploading file to VMs disk
 BuildArch:      noarch
@@ -1487,10 +1477,6 @@ exit 0
 
 %files hook-fakevmstats
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_all_vm_stats/10_fakevmstats
-
-%files hook-fakesriov
-%{_libexecdir}/%{vdsm_name}/hooks/after_hostdev_list_by_caps/10_fakesriov
-%{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/10_fakesriov
 
 %files hook-fileinject
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_fileinject

@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2017 Red Hat, Inc.
+# Copyright 2008-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,6 @@ SUBDIRS += \
 	extnet \
 	extra_ipv4_addrs \
 	fileinject \
-	fakesriov \
 	fakevmstats \
 	fcoe \
 	floppy \
