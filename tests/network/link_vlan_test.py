@@ -18,30 +18,29 @@
 #
 from __future__ import absolute_import
 
-from vdsm.network.link import bond
-from vdsm.network.link import iface
-from vdsm.network.link import nic
+from nose.plugins.attrib import attr
+
+from testlib import VdsmTestCase as TestCaseBase
+
+from .nettestlib import dummy_device, vlan_device
+
+from vdsm.network.link import vlan
 
 
-def speed(dev_name):
-    """Return the vlan's underlying device speed."""
-    dev_speed = 0
-    interface = iface.iface(dev_name)
-    iface_type = interface.type()
-    if iface_type == iface.Type.NIC:
-        # vlans on a nics expose the speed through sysfs
-        dev_speed = nic.read_speed_using_sysfs(dev_name)
-    elif iface_type == iface.Type.BOND:
-        dev_speed = bond.speed(dev_name)
+@attr(type='integration')
+class LinkIfaceTests(TestCaseBase):
 
-    return dev_speed
+    def test_list_vlans_on_base_device(self):
+        with dummy_device() as nic:
+            with vlan_device(nic, tag=999) as vlan_dev:
+                self.assertEqual([vlan_dev.devName],
+                                 list(vlan.get_vlans_on_base_device(nic)))
 
+    def test_identify_vlan_base_device(self):
+        with dummy_device() as nic:
+            with vlan_device(nic, tag=999):
+                self.assertTrue(vlan.is_base_device(nic))
 
-def get_vlans_on_base_device(base_dev_name):
-    return (iface_properties['name'] for iface_properties in iface.list()
-            if iface_properties.get('device') == base_dev_name and
-            iface_properties.get('type') == iface.Type.VLAN)
-
-
-def is_base_device(dev_name):
-    return any(get_vlans_on_base_device(dev_name))
+    def test_identify_non_vlan_base_device(self):
+        with dummy_device() as nic:
+            self.assertFalse(vlan.is_base_device(nic))

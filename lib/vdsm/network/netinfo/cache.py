@@ -35,7 +35,6 @@ from . import bonding
 from . import bridges
 from .dns import get_host_nameservers
 from . import nics
-from . import vlans
 from .routes import get_routes, get_gateway, is_default_route
 from .qos import report_network_qos
 
@@ -109,7 +108,8 @@ def _devices_report(ipaddrs, routes):
             devinfo.update(bonding.get_bond_agg_info(dev.name))
             devinfo.update(LEGACY_SWITCH)
         elif dev.isVLAN():
-            devinfo = devs_report['vlans'][dev.name] = vlans.info(dev)
+            devinfo = devs_report['vlans'][dev.name] = {'iface': dev.device,
+                                                        'vlanid': dev.vlanid}
         else:
             continue
         devinfo.update(_devinfo(dev, routes, ipaddrs))

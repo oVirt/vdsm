@@ -47,6 +47,7 @@ from vdsm.network import sysctl
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.link import iface as link_iface
+from vdsm.network.link import vlan as link_vlan
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.bond.sysfs_options import BONDING_MODES_NAME_TO_NUMBER
@@ -54,7 +55,7 @@ from vdsm.network.link.bond.sysfs_options import numerize_bond_mode
 from vdsm.network.link.setup import parse_bond_options
 from vdsm.network.link.setup import remove_custom_bond_option
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
-from vdsm.network.netinfo import nics, vlans, misc, NET_PATH
+from vdsm.network.netinfo import nics, misc, NET_PATH
 from vdsm.network.netlink import waitfor
 
 from . import Configurator, getEthtoolOpts
@@ -128,7 +129,7 @@ class Ifcfg(Configurator):
         if not self.owned_device(bond.name):
             IfcfgAcquire.acquire_device(bond.name)
         self.configApplier.addBonding(bond, self.net_info, **opts)
-        if not vlans.is_vlanned(bond.name):
+        if not link_vlan.is_base_device(bond.name):
             for slave in bond.slaves:
                 ifdown(slave.name)
         for slave in bond.slaves:
@@ -207,7 +208,7 @@ class Ifcfg(Configurator):
         self.configApplier.addNic(nic, self.net_info, **opts)
         self._addSourceRoute(nic)
         if nic.bond is None:
-            if not vlans.is_vlanned(nic.name):
+            if not link_vlan.is_base_device(nic.name):
                 ifdown(nic.name)
             _ifup(nic)
 
@@ -293,8 +294,8 @@ class Ifcfg(Configurator):
                     slave.remove()
                 self.runningConfig.removeBonding(bonding.name)
         else:
-            set_mtu = self._setNewMtu(bonding,
-                                      vlans.vlan_devs_for_iface(bonding.name))
+            vlans = link_vlan.get_vlans_on_base_device(bonding.name)
+            set_mtu = self._setNewMtu(bonding, vlans)
             # Since we are not taking the device up again, ifcfg will not be
             # read at this point and we need to set the live mtu value.
             # Note that ip link set dev bondX mtu Y sets Y on all its links
@@ -326,7 +327,8 @@ class Ifcfg(Configurator):
             else:
                 logging.warning('host interface %s missing', nic.name)
         else:
-            set_mtu = self._setNewMtu(nic, vlans.vlan_devs_for_iface(nic.name))
+            vlans = link_vlan.get_vlans_on_base_device(nic.name)
+            set_mtu = self._setNewMtu(nic, vlans)
             # Since we are not taking the device up again, ifcfg will not be
             # read at this point and we need to set the live mtu value
             if set_mtu is not None:
