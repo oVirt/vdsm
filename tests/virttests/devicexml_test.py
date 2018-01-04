@@ -703,7 +703,6 @@ _TRANSIENT_STORAGE_TEST_DATA = [
         <driver cache="writethrough" error_policy="stop"
                 io="native" name="qemu" type="qcow2"/>
     </disk>''',
-     True,
      {'shared': 'transient'}],
     [u'''<disk device="disk" snapshot="no" type="file">
             <source file="/var/lib/vdsm/transient"/>
@@ -712,7 +711,6 @@ _TRANSIENT_STORAGE_TEST_DATA = [
             <driver cache="writethrough" error_policy="stop"
                     io="threads" name="qemu" type="qcow2"/>
         </disk>''',
-     False,
      {'shared': 'transient'}]
 ]
 
@@ -1269,7 +1267,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         self._check_device_xml(dev, storage_xml)
 
     @permutations(_TRANSIENT_STORAGE_TEST_DATA)
-    def test_transient_storage_from_xml(self, storage_xml, is_block, meta):
+    def test_transient_storage_from_xml(self, storage_xml, meta):
         dev = vmdevices.storage.Drive(
             self.log, **vmdevices.storagexml.parse(
                 vmxml.parse_xml(storage_xml),
