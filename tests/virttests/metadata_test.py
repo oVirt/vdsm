@@ -742,7 +742,7 @@ class SaveDeviceMetadataTests(XMLTestCase):
             'domainID': 'domainID',
             'imageID': 'imageID',
             'poolID': 'poolID',
-            'volumeID': 'volumeID'
+            'volumeID': 'volumeID',
         }
         expected_xml = """<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
     <ovirt-vm:device devtype="disk" name="sda">
