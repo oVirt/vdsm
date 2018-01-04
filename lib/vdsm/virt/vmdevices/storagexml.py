@@ -30,11 +30,22 @@ from . import hwclass
 _PAYLOAD_PATH = 'PAYLOAD:'
 
 
-METADATA_KEYS = ('GUID', 'domainID', 'imageID', 'poolID', 'volumeID',
-                 'guestName', 'shared')
+METADATA_KEYS = (
+    'GUID',
+    'domainID',
+    'guestName',
+    'imageID',
+    'poolID',
+    'shared',
+    'volumeID',
+)
 
 
-METADATA_NESTED_KEYS = ('diskReplicate', 'volumeChain', 'volumeInfo')
+METADATA_NESTED_KEYS = (
+    'diskReplicate',
+    'volumeChain',
+    'volumeInfo',
+)
 
 
 def parse(dev, meta):
