@@ -246,6 +246,16 @@ Requires(post): hostname
 Requires(post): /bin/hostname
 %endif
 
+# SecureBoot & q35, supported by x86_64 and aarch64; no ppc64le support at
+# the moment.
+%ifarch x86_64 %{arm}
+%if 0%{?rhel}
+Requires: OVMF
+%else # fedora
+Requires: edk2-ovmf
+%endif
+%endif
+
 Conflicts: vdsm-hook-sriov
 
 %description
