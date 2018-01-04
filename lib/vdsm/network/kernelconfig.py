@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,10 +21,10 @@ from __future__ import absolute_import
 import copy
 import six
 
+from vdsm.network import dns
 from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
 from vdsm.network.netinfo import bonding
 from vdsm.network.netinfo import bridges
-from vdsm.network.netinfo import dns
 from vdsm.network.netinfo import routes
 from vdsm.network.netconfpersistence import BaseConfig, RunningConfig
 

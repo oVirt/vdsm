@@ -26,7 +26,6 @@ dist_vdsmnetinfo_PYTHON = \
 	bonding.py \
 	bridges.py \
 	cache.py \
-	dns.py \
 	misc.py \
 	nics.py \
 	qos.py \

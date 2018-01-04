@@ -23,6 +23,7 @@ import logging
 import errno
 import six
 
+from vdsm.network import dns
 from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import getLinks
@@ -33,7 +34,6 @@ from vdsm.network.netconfpersistence import RunningConfig
 from .addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
 from . import bonding
 from . import bridges
-from .dns import get_host_nameservers
 from . import nics
 from .routes import get_routes, get_gateway, is_default_route
 from .qos import report_network_qos
@@ -65,7 +65,7 @@ def _get(vdsmnets=None):
     networking_report = {'networks': nets_info}
     networking_report.update(devices_info)
 
-    networking_report['nameservers'] = get_host_nameservers()
+    networking_report['nameservers'] = dns.get_host_nameservers()
     networking_report['supportsIPv6'] = ipv6_supported()
 
     return networking_report
