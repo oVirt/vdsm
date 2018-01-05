@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Red Hat, Inc.
+# Copyright 2015-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,22 +32,31 @@ from vdsm.common import concurrent
 
 class TestFormatTraceback(VdsmTestCase):
 
-    @slowtest
     def test_get_running_trace(self):
+        ready = threading.Event()
+        done = threading.Event()
+
         def worker():
-            time.sleep(2)
+            inner()
+
+        def inner():
+            ready.set()
+            done.wait()
 
         t = concurrent.thread(worker, name="Test")
         t.start()
-
-        # yield control to let the Test thread to start
-        time.sleep(1)
         try:
+            if not ready.wait(1):
+                raise RuntimeError("Timeout waiting for worker thread")
             formatted_traceback = concurrent.format_traceback(t.ident)
-
-            self.assertIn("time.sleep(2)", formatted_traceback)
         finally:
+            done.set()
             t.join()
+
+        # The functions called from the worker thread should appear in the
+        # traceback.
+        self.assertIn("in worker", formatted_traceback)
+        self.assertIn("in inner", formatted_traceback)
 
     def test_get_wrong_id_trace(self):
         self.assertRaises(KeyError, concurrent.format_traceback, None)
