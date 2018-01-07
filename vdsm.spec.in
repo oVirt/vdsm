@@ -1324,6 +1324,7 @@ exit 0
 %endif
 %{_datadir}/%{vdsm_name}/tests/cpuinfo/*.out
 %{_datadir}/%{vdsm_name}/tests/check_distpkg.sh
+%{_datadir}/%{vdsm_name}/tests/check_rpms.sh
 %{_datadir}/%{vdsm_name}/tests/fake-ssh-add
 %{_datadir}/%{vdsm_name}/tests/fake-ssh-agent
 %{_datadir}/%{vdsm_name}/tests/fake-virt-sysprep

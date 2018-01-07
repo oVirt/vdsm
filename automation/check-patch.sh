@@ -32,9 +32,6 @@ pushd tests
 coverage html -d "$EXPORT_DIR/htmlcov"
 popd
 
-# enable complex globs
-shopt -s extglob
-
 # In case of vdsm specfile or any Makefile.am file modification in commit,
 # try to build and install all new created packages
 if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.in|Makefile.am|automation' ; then
@@ -48,11 +45,5 @@ if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.i
 
     yum -y install vdsm-$vr\* vdsm-client-$vr\* vdsm-hook-\*-$vr\* vdsm-tests-$vr\*
 
-    export LC_ALL=C  # no idea why this is suddenly needed
-    rpmlint "$EXPORT_DIR/"*.src.rpm
-
-    # TODO: fix spec to stop ignoring the few current errors
-    ! rpmlint "$EXPORT_DIR/"!(*.src).rpm | grep ': E: ' | grep -v explicit-lib-dependency | \
-        grep -v no-binary | \
-        grep -v non-readable | grep -v non-standard-dir-perm
+    tests/check_rpms.sh $EXPORT_DIR
 fi
