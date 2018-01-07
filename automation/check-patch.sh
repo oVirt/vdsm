@@ -5,10 +5,6 @@ source automation/ovirt.sh
 EXPORT_DIR="$PWD/exported-artifacts"
 mkdir -p $EXPORT_DIR
 
-collect-logs() {
-    cp /var/log/vdsm_tests.log "$EXPORT_DIR"/
-}
-
 set -xe
 
 # For skipping known failures on jenkins using @broken_on_ci
@@ -24,7 +20,6 @@ debuginfo-install -y python
 # Make sure we have enough loop device nodes.
 create_loop_devices 8
 
-trap collect-logs EXIT
 TIMEOUT=600 make --jobs=2 check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 
 # Generate coverage report in HTML format
