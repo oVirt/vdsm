@@ -460,12 +460,12 @@ BuildArch:      noarch
 Requires:       %{name} == %{version}
 
 %description hook-localdisk
-This hook add the ability to use fast local storage instead of shared
+This hook adds the ability to use fast local storage instead of shared
 storage, while using shared storage for managing VM templates.
 To enable this hook, the VM should have a custom property of 'localdisk=lvm'.
 The system administrator will be responsible for creating the host "ovirt-local"
 volume group and extending it with new devices if needed.
-The VM must be pinned to host.
+The VM must be pinned to the host.
 
 %package hook-macbind
 Summary:        Bind a vNIC to a Bridge
