@@ -1974,19 +1974,7 @@ class HSM(object):
                     lambda dev: multipath.devIsFCP(dev.get("devtype"))
 
         devices = []
-        pvs = {}
-        if guids:
-            for guid in guids:
-                try:
-                    pv = lvm.getPV(guid)
-                except se.StorageException:
-                    self.log.warning("getPV failed for guid: %s", guid,
-                                     exc_info=True)
-                else:
-                    pvs[os.path.basename(pv.name)] = pv
-        else:
-            for pv in lvm.getAllPVs():
-                pvs[os.path.basename(pv.name)] = pv
+        pvs = {os.path.basename(pv.name): pv for pv in lvm.getAllPVs()}
 
         # FIXME: pathListIter() should not return empty records
         for dev in multipath.pathListIter(guids):
