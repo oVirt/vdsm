@@ -240,6 +240,7 @@ dist_vdsmtests_PYTHON = \
 	$(NULL)
 
 dist_vdsmtests_SCRIPTS = \
+	check_distpkg.sh \
 	fake-virt-sysprep \
 	fake-virt-v2v \
 	fake-ssh-add \
