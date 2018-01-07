@@ -38,12 +38,11 @@ if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.i
     ./automation/build-artifacts.sh
 
     tests/check_distpkg.sh $(ls $EXPORT_DIR/vdsm*.tar.gz)
+    tests/check_rpms.sh $EXPORT_DIR
 
     create_artifacts_repo $EXPORT_DIR
 
     vr=$(build-aux/pkg-version --version)-$(build-aux/pkg-version --release)
 
     yum -y install vdsm-$vr\* vdsm-client-$vr\* vdsm-hook-\*-$vr\* vdsm-tests-$vr\*
-
-    tests/check_rpms.sh $EXPORT_DIR
 fi
