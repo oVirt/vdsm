@@ -1066,7 +1066,6 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs/driver
 %dir %{python_sitelib}/%{vdsm_name}/network/tc
-%{python_sitelib}/%{vdsm_name}/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/*.py*
 %{python_sitelib}/%{vdsm_name}/network/*/*.py*
 %{python_sitelib}/%{vdsm_name}/network/*/*/*.py*
