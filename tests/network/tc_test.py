@@ -31,19 +31,16 @@ from nose.plugins.attrib import attr
 import six
 from six.moves import zip_longest
 
-from vmfakecon import Connection
 from testlib import (VdsmTestCase as TestCaseBase, permutations,
                      expandPermutations)
 from testlib import mock
 from testValidation import ValidateRunningAsRoot, stresstest
-from monkeypatch import MonkeyClass
 from .nettestlib import (Bridge, Dummy, IperfClient, IperfServer, Tap,
                          bridge_device, network_namespace, requires_iperf3,
                          requires_tc, requires_tun, veth_pair, vlan_device)
 from .nettestlib import running
 from .nettestlib import EXT_TC
 
-from vdsm.common import libvirtconnection
 from vdsm.network import cmd
 from vdsm.network import tc
 from vdsm.network.configurators import qos
@@ -398,7 +395,6 @@ TcQdiscs = namedtuple('TcQdiscs', 'leaf_qdiscs, ingress_qdisc, root_qdisc')
 TcFilters = namedtuple('TcFilters', 'untagged_filters, tagged_filters')
 
 
-@MonkeyClass(libvirtconnection, 'get', Connection)
 @expandPermutations
 class TestConfigureOutbound(TestCaseBase):
     def setUp(self):
