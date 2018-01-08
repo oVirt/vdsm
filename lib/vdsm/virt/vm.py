@@ -2236,7 +2236,11 @@ class Vm(object):
         devices_xml = self._process_devices()
         for dev_type, dev_objs in devices_xml.items():
             for dev in dev_objs:
-                domxml._devices.appendChild(element=dev)
+                if isinstance(dev, vmxml.Element):
+                    kwargs = {'element': dev}
+                else:
+                    kwargs = {'etree_element': dev}
+                domxml._devices.appendChild(**kwargs)
 
         for dev_objs in self._devices.values():
             for dev in dev_objs:
