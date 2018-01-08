@@ -1,5 +1,6 @@
 tested,http://resources.ovirt.org/repos/ovirt/tested/4.1/rpm/$distro
 ovirt-snapshot-static,http://resources.ovirt.org/pub/ovirt-4.1-snapshot-static/rpm/$distro
+ovirt-4.1,http://resources.ovirt.org/pub/ovirt-4.1/rpm/$distro
 centos-glusterfs,http://mirror.centos.org/centos/7/storage/x86_64/gluster-3.8/
 centos-ovirt41-release-x86_64,https://cbs.centos.org/repos/virt7-ovirt-41-release/x86_64/os/
 centos-ovirt41-release-ppc64le,https://cbs.centos.org/repos/virt7-ovirt-41-release/ppc64le/os/
