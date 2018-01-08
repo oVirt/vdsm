@@ -67,6 +67,7 @@ popd
 
 # enable complex globs
 shopt -s extglob
+
 # In case of vdsm specfile or any Makefile.am file modification in commit,
 # try to build and install all new created packages
 if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.in|Makefile.am' ; then
@@ -74,7 +75,20 @@ if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.i
 
     check-distpkg
 
-    yum -y install "$EXPORT_DIR/"!(*.src).rpm
+    createrepo $EXPORT_DIR
+
+    # Some slaves have /etc/dnf/dnf.conf when running el7 build - patch both
+    # yum.conf and dnf.conf to make sure our repo is found.
+    for conf in /etc/yum.conf /etc/dnf/dnf.conf; do
+        if [ -f "$conf" ]; then
+            cat automation/artifacts.repo | sed -e "s#@BASEURL@#file://$EXPORT_DIR#" >> "$conf"
+        fi
+    done
+
+    vr=$(build-aux/pkg-version --version)-$(build-aux/pkg-version --release)
+
+    yum -y install vdsm-$vr\* vdsm-client-$vr\* vdsm-hook-\*-$vr\* vdsm-tests-$vr\*
+
     export LC_ALL=C  # no idea why this is suddenly needed
     rpmlint "$EXPORT_DIR/"*.src.rpm
 
