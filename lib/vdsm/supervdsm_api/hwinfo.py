@@ -17,6 +17,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+
+import errno
+
 from vdsm import cpuarch
 from . import expose
 
@@ -33,3 +36,27 @@ def getHardwareInfo(*args, **kwargs):
     else:
         #  not implemented over other architecture
         return {}
+
+
+def read_debugfs_property(path):
+    try:
+        with open(path) as f:
+            return int(f.read().strip())
+    except IOError as e:
+        if e.errno == errno.ENOENT:
+            return -1
+
+
+@expose
+def get_pti(*args, **kwargs):
+    return read_debugfs_property('/sys/kernel/debug/x86/pti_enabled')
+
+
+@expose
+def get_ibpb(*args, **kwargs):
+    return read_debugfs_property('/sys/kernel/debug/x86/ibpb_enabled')
+
+
+@expose
+def get_ibrs(*args, **kwargs):
+    return read_debugfs_property('/sys/kernel/debug/x86/ibrs_enabled')

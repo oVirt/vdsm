@@ -211,6 +211,7 @@ def get():
         caps['additionalFeatures'].extend(glusterAdditionalFeatures())
     caps['containers'] = containersconnection.is_supported()
     caps['hostedEngineDeployed'] = _isHostedEngineDeployed()
+    caps['kernelFeatures'] = osinfo.kernel_features()
     return caps
 
 

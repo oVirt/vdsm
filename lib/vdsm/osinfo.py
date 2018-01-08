@@ -29,6 +29,7 @@ from collections import namedtuple
 
 from vdsm import cpuarch
 from vdsm import utils
+from vdsm import supervdsm
 
 # For debian systems we can use python-apt if available
 try:
@@ -321,3 +322,12 @@ def nested_virtualization():
             logging.debug('Could not determine status of nested '
                           'virtualization', exc_info=True)
             return NestedVirtualization(False, None)
+    return NestedVirtualization(False, None)
+
+
+def kernel_features():
+    return {
+        'pti': supervdsm.getProxy().get_pti(),
+        'ibpb': supervdsm.getProxy().get_ibpb(),
+        'ibrs': supervdsm.getProxy().get_ibrs(),
+    }
