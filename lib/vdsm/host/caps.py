@@ -214,6 +214,7 @@ def get():
     caps['containers'] = containersconnection.is_supported()
     caps['hostedEngineDeployed'] = _isHostedEngineDeployed()
     caps['hugepages'] = hugepages.supported()
+    caps['kernelFeatures'] = osinfo.kernel_features()
     return caps
 
 
