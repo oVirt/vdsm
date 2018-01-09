@@ -591,7 +591,7 @@ class Drive(core.Base):
         if hasattr(self, 'bootOrder'):
             diskelem.appendChildWithArgs('boot', order=self.bootOrder)
 
-        if self.device == 'disk' or self.device == 'lun':
+        if self.device in ('disk', 'lun', 'cdrom'):
             diskelem.appendChild(_getDriverXML(self))
 
         if self.iotune:
@@ -933,9 +933,13 @@ def _getDriverXML(drive):
     else:
         driverAttrs['io'] = 'threads'
 
-    if drive['format'] == 'cow':
-        driverAttrs['type'] = 'qcow2'
-    elif drive['format']:
+    if drive['device'] != 'cdrom':
+        if drive['format'] == 'cow':
+            driverAttrs['type'] = 'qcow2'
+        elif drive['format']:
+            driverAttrs['type'] = 'raw'
+    else:
+        # non-raw type makes no sense for cdroms
         driverAttrs['type'] = 'raw'
 
     if 'discard' in drive and drive['discard']:
@@ -946,11 +950,15 @@ def _getDriverXML(drive):
     except KeyError:
         pass
 
-    driverAttrs['cache'] = drive['cache']
+    if drive['device'] != 'cdrom':
+        # cache setting is irrelevant for cdroms
+        driverAttrs['cache'] = drive['cache']
 
     if (drive['propagateErrors'] == 'on' or
             conv.tobool(drive['propagateErrors'])):
         driverAttrs['error_policy'] = 'enospace'
+    elif drive['propagateErrors'] == 'report':
+        driverAttrs['error_policy'] = 'report'
     else:
         driverAttrs['error_policy'] = 'stop'
 

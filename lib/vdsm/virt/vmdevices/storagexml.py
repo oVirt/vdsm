@@ -176,6 +176,9 @@ def _update_driver_params(params, dev):
         driver_params, spec_params = _get_driver_params(driver)
         params.update(driver_params)
         params['specParams'].update(spec_params)
+    else:
+        # the initialization code always checks this parameter
+        params['propagateErrors'] = 'off'
 
 
 def _update_interface_params(params, dev):
@@ -218,12 +221,18 @@ def _update_serial_params(params, dev):
 
 def _get_driver_params(driver):
     params = {
-        'propagateErrors': (
-            'on' if driver.attrib.get('error_policy') == 'enospace' else 'off'
-        ),
         'discard': driver.attrib.get('discard') == 'unmap',
         'format': 'cow' if driver.attrib.get('type') == 'qcow2' else 'raw',
     }
+
+    error_policy = driver.attrib.get('error_policy', 'stop')
+    if error_policy == 'report':
+        params['propagateErrors'] = 'report'
+    elif error_policy == 'enospace':
+        params['propagateErrors'] = 'on'
+    else:
+        params['propagateErrors'] = 'off'
+
     cache = driver.attrib.get('cache', None)
     if cache:
         params['cache'] = cache
