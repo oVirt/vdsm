@@ -24,12 +24,15 @@ import pytest
 
 from vdsm.network import errors as ne
 from vdsm.network.configurators.ifcfg import ifup, ifdown
+from vdsm.network.ip import address
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.iface import iface
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestCase, SetupNetworksError, NOCHK
-from network.nettestlib import dummy_device, dummy_devices
+from network.nettestlib import dummy_device, dummy_devices, vlan_device
+
+IPAddress = address.driver(address.Drivers.IPROUTE2)
 
 NETWORK1_NAME = 'test-network1'
 NETWORK2_NAME = 'test-network2'
@@ -212,3 +215,49 @@ class TestReuseBond(NetFuncTestCase):
                                      'hwaddr': HWADDRESS,
                                      'switch': switch})
             self.setupNetworks({}, {BOND_NAME: {'remove': True}}, NOCHK)
+
+
+@pytest.mark.legacy_switch
+class TestReuseBondOnLegacySwitch(NetFuncTestCase):
+
+    def test_add_net_on_existing_external_vlanned_bond(self):
+        ADDRESS1 = '192.168.99.1'
+        ADDRESS2 = '192.168.99.254'
+        PREFIX = '29'
+        with dummy_devices(2) as (nic1, nic2):
+            with Bond(BOND_NAME, slaves=(nic1, nic2)) as bond:
+                bond.create()
+                bond.up()
+                with vlan_device(bond.master) as vlan:
+                    # Make slaves dirty intentionally and check if they recover
+                    self._set_ip_address('1.1.1.1/29', nic1)
+                    self._set_ip_address('1.1.1.2/29', nic2)
+
+                    self._set_ip_address(ADDRESS1 + '/' + PREFIX, bond.master)
+                    self._set_ip_address(ADDRESS2 + '/' + PREFIX, vlan.devName)
+
+                    NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
+                                               'bridged': True,
+                                               'ipaddr': ADDRESS1,
+                                               'prefix': PREFIX,
+                                               'switch': 'legacy'}}
+                    with self.setupNetworks(NETBASE, {}, NOCHK):
+                        self.assertNetwork(NETWORK1_NAME,
+                                           NETBASE[NETWORK1_NAME])
+                        self.assertBond(BOND_NAME,
+                                        {'nics': [nic1, nic2],
+                                         'switch': 'legacy'})
+
+                        nic1_info = self.netinfo.nics[nic1]
+                        nic2_info = self.netinfo.nics[nic2]
+                        vlan_info = self.netinfo.vlans[vlan.devName]
+                        assert nic1_info['ipv4addrs'] == []
+                        assert nic2_info['ipv4addrs'] == []
+                        assert vlan_info['ipv4addrs'] == [
+                            ADDRESS2 + '/' + PREFIX]
+
+            self.setupNetworks({}, {BOND_NAME: {'remove': True}}, NOCHK)
+
+    def _set_ip_address(self, ip_address, iface):
+        ip_data = address.IPAddressData(ip_address, device=iface)
+        IPAddress.add(ip_data)
