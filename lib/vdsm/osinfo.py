@@ -90,8 +90,8 @@ def kdump_status():
                         break
     except (IOError, OSError, ValueError):
         status = KdumpStatus.UNKNOWN
-        logging.debug(
-            'Error detecting fence_kdump configuration status',
+        logging.warning(
+            'Cannot detect fence_kdump configuration, status is unknown',
             exc_info=True,
         )
     return status
