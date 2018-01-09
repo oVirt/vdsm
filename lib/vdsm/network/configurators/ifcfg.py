@@ -721,9 +721,12 @@ class ConfigWriter(object):
             if (any(iface_users_excluding_bonds_and_bridges) and
                     not iface_master_bridge_or_bond):
                 if not ipv4.address and ipv4.bootproto != 'dhcp':
-                    ipv4.address = confParams.get('IPADDR')
-                    ipv4.netmask = confParams.get('NETMASK')
-                    ipv4.gateway = confParams.get('GATEWAY')
+                    try:
+                        ipv4.address = confParams['IPADDR']
+                        ipv4.netmask = confParams['NETMASK']
+                        ipv4.gateway = confParams['GATEWAY']
+                    except KeyError:
+                        ipv4.address = ipv4.netmask = ipv4.gateway = None
                     if not ipv4.bootproto:
                         ipv4.bootproto = confParams.get('BOOTPROTO')
                 if ipv4.defaultRoute is None and confParams.get('DEFROUTE'):
