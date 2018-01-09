@@ -285,7 +285,7 @@ def abort_job(job_id):
 
 def get_jobs_status():
     ret = {}
-    with _lock:
+    with _lock:  # pylint: disable=not-context-manager
         items = tuple(_jobs.items())
     for job_id, job in items:
         ret[job_id] = {
@@ -297,21 +297,21 @@ def get_jobs_status():
 
 
 def _add_job(job_id, job):
-    with _lock:
+    with _lock:  # pylint: disable=not-context-manager
         if job_id in _jobs:
             raise JobExistsError("Job %r exists" % job_id)
         _jobs[job_id] = job
 
 
 def _get_job(job_id):
-    with _lock:
+    with _lock:  # pylint: disable=not-context-manager
         if job_id not in _jobs:
             raise NoSuchJob("No such job %r" % job_id)
         return _jobs[job_id]
 
 
 def _remove_job(job_id):
-    with _lock:
+    with _lock:  # pylint: disable=not-context-manager
         if job_id not in _jobs:
             raise NoSuchJob("No such job %r" % job_id)
         del _jobs[job_id]
