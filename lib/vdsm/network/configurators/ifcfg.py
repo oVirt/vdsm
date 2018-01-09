@@ -705,28 +705,39 @@ class ConfigWriter(object):
         ipv6 = copy.deepcopy(iface.ipv6)
         mtu = iface.mtu
         nameservers = iface.nameservers
-        if net_info.ifaceUsers(iface.name):
+        iface_users = net_info.ifaceUsers(iface.name)
+        iface_users_excluding_bonds_and_bridges = (
+            ifuser for ifuser in iface_users
+            if (ifuser not in net_info.bridges) and
+               (ifuser not in net_info.bondings)
+        )
+        if iface_users:
             confParams = misc.getIfaceCfg(iface.name)
-            if not ipv4.address and ipv4.bootproto != 'dhcp':
-                ipv4.address = confParams.get('IPADDR')
-                ipv4.netmask = confParams.get('NETMASK')
-                ipv4.gateway = confParams.get('GATEWAY')
-                if not ipv4.bootproto:
-                    ipv4.bootproto = confParams.get('BOOTPROTO')
-            if ipv4.defaultRoute is None and confParams.get('DEFROUTE'):
-                ipv4.defaultRoute = _from_ifcfg_bool(confParams['DEFROUTE'])
-            if confParams.get('IPV6INIT') == 'yes':
-                ipv6.address = confParams.get('IPV6ADDR')
-                ipv6.gateway = confParams.get('IPV6_DEFAULTGW')
-                ipv6.ipv6autoconf = confParams.get('IPV6_AUTOCONF') == 'yes'
-                ipv6.dhcpv6 = confParams.get('DHCPV6C') == 'yes'
             if not iface.mtu:
                 mtu = confParams.get('MTU')
                 if mtu:
                     mtu = int(mtu)
-            if iface.nameservers is None:
-                nameservers = [confParams[key] for key in ('DNS1', 'DNS2')
-                               if key in confParams]
+            iface_master_bridge_or_bond = iface.bridge or iface.bond
+            if (any(iface_users_excluding_bonds_and_bridges) and
+                    not iface_master_bridge_or_bond):
+                if not ipv4.address and ipv4.bootproto != 'dhcp':
+                    ipv4.address = confParams.get('IPADDR')
+                    ipv4.netmask = confParams.get('NETMASK')
+                    ipv4.gateway = confParams.get('GATEWAY')
+                    if not ipv4.bootproto:
+                        ipv4.bootproto = confParams.get('BOOTPROTO')
+                if ipv4.defaultRoute is None and confParams.get('DEFROUTE'):
+                    ipv4.defaultRoute = _from_ifcfg_bool(
+                        confParams['DEFROUTE'])
+                if confParams.get('IPV6INIT') == 'yes':
+                    ipv6.address = confParams.get('IPV6ADDR')
+                    ipv6.gateway = confParams.get('IPV6_DEFAULTGW')
+                    ipv6.ipv6autoconf = (
+                        confParams.get('IPV6_AUTOCONF') == 'yes')
+                    ipv6.dhcpv6 = confParams.get('DHCPV6C') == 'yes'
+                if iface.nameservers is None:
+                    nameservers = [confParams[key] for key in ('DNS1', 'DNS2')
+                                   if key in confParams]
         return ipv4, ipv6, mtu, nameservers
 
     def removeNic(self, nic):
