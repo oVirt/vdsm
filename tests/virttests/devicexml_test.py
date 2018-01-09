@@ -727,6 +727,14 @@ _STORAGE_TEST_DATA = [
             <source dev="/path/to/volume"/>
             <target bus="virtio" dev="vda"/>
             <serial>54-a672-23e5b495a9ea</serial>
+            <driver cache="none" discard="unmap" error_policy="enospace"
+                    io="native" name="qemu" type="raw"/>
+        </disk>''',
+     {}],
+    [u'''<disk device="disk" snapshot="no" type="block">
+            <source dev="/path/to/volume"/>
+            <target bus="virtio" dev="vda"/>
+            <serial>54-a672-23e5b495a9ea</serial>
             <driver cache="none" error_policy="stop"
                     io="native" name="qemu" type="raw"/>
         </disk>''',
@@ -798,6 +806,17 @@ _STORAGE_TEST_DATA = [
                 <total_bytes_sec>10000000</total_bytes_sec>
                 <write_iops_sec>100000</write_iops_sec>
             </iotune>
+        </disk>''',
+     {}],
+    # disk from Engine 4.2.0
+    [u'''<disk snapshot="no" type="block" device="disk">
+            <address bus="0" controller="0" unit="0" type="drive" target="0"/>
+            <source dev="/rhev/data-center/mnt/blockSD/a/images/b/c"/>
+            <target dev="sda" bus="scsi"/>
+            <serial>d591482b-eb24-47bd-be07-082c115d11f4</serial>
+            <boot order="1"/>
+            <driver name="qemu" io="native" type="qcow2"
+              error_policy="stop" cache="none"/>
         </disk>''',
      {}],
 ]
