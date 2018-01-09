@@ -157,6 +157,8 @@ def networks_base_info(running_nets, routes=None, ipaddrs=None):
 
     info = {}
     for net, attrs in six.viewitems(running_nets):
+        if attrs.get('switch') != 'legacy':
+            continue
         iface = get_net_iface_from_config(net, attrs)
         try:
             if not link_iface.iface(iface).exists():
