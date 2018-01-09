@@ -130,8 +130,8 @@ class Vlan(Interface):
     def __init__(self, backing_device_name, tag):
         self.tag = tag
         self.backing_device_name = backing_device_name
-        super(Vlan, self).__init__(prefix='{}.{}'.format(
-            backing_device_name, tag))
+        vlan_name = '{}.{}'.format(backing_device_name, tag)
+        super(Vlan, self).__init__(vlan_name, len(vlan_name))
 
     def addDevice(self):
         linkAdd(self.devName, 'vlan', link=self.backing_device_name,
