@@ -271,7 +271,8 @@ def _classify_nets_bonds_config(persistent_config):
     changed_bonds = {bond: persistent_config.bonds[bond]
                      for bond in changed_bonds_names}
     extra_nets = {net: {'remove': True} for net in extra_nets_names}
-    extra_bonds = {bond: {'remove': True} for bond in extra_bonds_names}
+    extra_bonds = {bond: {'remove': True} for bond in extra_bonds_names
+                   if _owned_ifcfg(bond)}
 
     return changed_nets, changed_bonds, extra_nets, extra_bonds
 
