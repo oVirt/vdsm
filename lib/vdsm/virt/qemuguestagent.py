@@ -183,11 +183,14 @@ class QemuGuestAgentPoller(object):
             parsed = json.loads(ret)
         except ValueError:
             self.log.exception(
-                'Failed to parse string returned by QEMU-GA')
+                'Failed to parse string returned by QEMU-GA: %r', ret)
+            return None
+        if 'error' in parsed:
+            self.log.error('Error received from QEMU-GA: %r', ret)
             return None
         if 'return' not in parsed:
             self.log.error(
-                'Error requesting QEMU-GA capabilities: %r', ret)
+                'Invalid response from QEMU-GA: %r', ret)
             return None
         return parsed['return']
 
