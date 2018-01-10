@@ -48,6 +48,12 @@ class IRS(object):
     def __init__(self):
         self.ready = True
 
+    def getDeviceVisibility(self, guid):
+        pass
+
+    def appropriateDevice(self, guid, vmid):
+        pass
+
     def inappropriateDevices(self, ident):
         pass
 

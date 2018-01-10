@@ -418,11 +418,13 @@ class clientIF(object):
             elif "GUID" in drive:
                 res = self.irs.getDevicesVisibility([drive["GUID"]])
                 if not res["visible"][drive["GUID"]]:
-                    raise vm.VolumeError(drive)
+                    raise vm.VolumeError(
+                        "Drive %r not visible" % drive["GUID"])
 
                 res = self.irs.appropriateDevice(drive["GUID"], vmId)
                 if res['status']['code']:
-                    raise vm.VolumeError(drive)
+                    raise vm.VolumeError(
+                        "Cannot appropriate drive %r" % drive["GUID"])
 
                 # Update size for LUN volume
                 drive["truesize"] = res['truesize']

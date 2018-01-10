@@ -210,6 +210,27 @@ class ClientIFTests(TestCaseBase):
         volPath = self.cif.prepareVolumePath(drive)
         self.assertEqual(volPath, ISOFS_PATH)
 
+    def test_lun_drive_not_visible(self):
+        def _not_visible(self, guid):
+            return {
+                "visible": {
+                    guid: False,
+                },
+            }
+        self.cif.irs.getDeviceVisibility = _not_visible
+        self.assertRaisesRegexp(
+            VolumeError,
+            'Drive ^[a-z]*$ not visible')
+
+    def test_lun_drive_not_appropriatable(self):
+        def _not_appropriatable(self, guid, vmid):
+            # any error is actually fine
+            return response.error('unexpected')
+        self.cif.irs.appropriateDevice = _not_appropriatable
+        self.assertRaisesRegexp(
+            VolumeError,
+            'Cannot appropriate drive ^[a-z]*$')
+
     @MonkeyPatch(clientIF, 'supervdsm', FakeSuperVdsm())
     def testSuperVdsmFailure(self):
         def fail(*args):
