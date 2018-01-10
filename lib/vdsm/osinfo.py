@@ -75,25 +75,29 @@ class KdumpStatus(object):
 
 
 def kdump_status():
+    status = KdumpStatus.UNKNOWN
     try:
-        # check if kdump service is running
+        # kdump status is written in kexec_crash_loaded
         with open('/sys/kernel/kexec_crash_loaded', 'r') as f:
             status = int(f.read().strip('\n'))
+    except EnvironmentError:
+        logging.info(
+            'Failed to open kexec_crash_loaded, status is unknown')
 
-        if status == KdumpStatus.ENABLED:
-            # check if fence_kdump is configured
-            status = KdumpStatus.DISABLED
+    if status == KdumpStatus.ENABLED:
+        # check if fence_kdump is configured
+        status = KdumpStatus.DISABLED
+        try:
             with open('/etc/kdump.conf', 'r') as f:
                 for line in f:
                     if line.startswith('fence_kdump_nodes'):
                         status = KdumpStatus.ENABLED
                         break
-    except (IOError, OSError, ValueError):
-        status = KdumpStatus.UNKNOWN
-        logging.warning(
-            'Cannot detect fence_kdump configuration, status is unknown',
-            exc_info=True,
-        )
+        except EnvironmentError:
+            status = KdumpStatus.UNKNOWN
+            logging.exception(
+                'Cannot detect fence_kdump configuration, status is unknown'
+            )
     return status
 
 
