@@ -186,6 +186,7 @@ class TestSupportsOption(TestCaseBase):
 
         with MonkeyPatchScope([(commands, 'execCmd', fake_cmd)]):
             self.assertTrue(qemuimg._supports_option('create', 'u'))
+            self.assertTrue(qemuimg.supports_unsafe_create())
             self.assertTrue(qemuimg._supports_option('info', 'U'))
             self.assertFalse(qemuimg._supports_option('map', 'U'))
 
@@ -202,6 +203,7 @@ class TestSupportsOption(TestCaseBase):
 
         with MonkeyPatchScope([(commands, 'execCmd', fake_cmd)]):
             self.assertFalse(qemuimg._supports_option('create', 'u'))
+            self.assertFalse(qemuimg.supports_unsafe_create())
             self.assertFalse(qemuimg._supports_option('info', 'U'))
 
 
@@ -278,6 +280,15 @@ class CreateTests(TestCaseBase):
         with MonkeyPatchScope([(qemuimg, 'config', config)]):
             with self.assertRaises(exception.InvalidConfiguration):
                 qemuimg.create('image', format='qcow2')
+
+    @MonkeyPatch(qemuimg, 'config', CONFIG)
+    def test_unsafe_create_volume(self):
+        with namedTemporaryDir() as tmpdir:
+            path = os.path.join(tmpdir, 'test.qcow2')
+            # Using unsafe=True to verify that it is possible to create an
+            # image based on a non-existing backing file, like an inactive LV.
+            qemuimg.create(path, size=1048576, format=qemuimg.FORMAT.QCOW2,
+                           backing='no-such-file', unsafe=True)
 
 
 class ConvertTests(TestCaseBase):

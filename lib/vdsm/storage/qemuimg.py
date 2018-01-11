@@ -116,8 +116,12 @@ def info(image, format=None, unsafe=False):
     return info
 
 
+def supports_unsafe_create():
+    return _supports_option('create', 'u')
+
+
 def create(image, size=None, format=None, qcow2Compat=None,
-           backing=None, backingFormat=None, preallocation=None):
+           backing=None, backingFormat=None, preallocation=None, unsafe=False):
     cmd = [_qemuimg.cmd, "create"]
     cwdPath = None
 
@@ -138,6 +142,9 @@ def create(image, size=None, format=None, qcow2Compat=None,
     if preallocation:
         cmd.extend(("-o", "preallocation=" +
                     _get_preallocation(preallocation, format)))
+
+    if unsafe and _supports_option('create', 'u'):
+        cmd.append('-u')
 
     cmd.append(image)
 
