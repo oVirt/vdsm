@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source automation/ovirt.sh
+
 check-distpkg() {
     DIST=$(ls $EXPORT_DIR/vdsm*.tar.gz)
     if test -z "$DIST" ; then
@@ -56,6 +58,9 @@ pip install -U tox==2.5.0 'pluggy<0.5.0'
 make
 
 debuginfo-install -y python
+
+# Make sure we have enough loop device nodes.
+create_loop_devices 8
 
 trap collect-logs EXIT
 TIMEOUT=600 make --jobs=2 check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
