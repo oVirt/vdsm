@@ -428,7 +428,10 @@ class FileVolume(volume.Volume):
         """
         # TODO: Remove _bytes when arguments to _create are fixed.
         size_bytes = size * BLOCK_SIZE
-        initial_size_bytes = initialSize * BLOCK_SIZE if initialSize else None
+        if initialSize is None:
+            initial_size_bytes = None
+        else:
+            initial_size_bytes = initialSize * BLOCK_SIZE
 
         if volFormat == sc.RAW_FORMAT:
             return cls._create_raw_volume(
@@ -446,15 +449,27 @@ class FileVolume(volume.Volume):
         Specific implementation of _create() for RAW volumes.
         All the exceptions are properly handled and logged in volume.create()
         """
-        if initial_size:
-            cls.log.error(
-                "initial size is not supported for file-based volumes")
-            raise se.InvalidParameterException("initial size", initial_size)
+        if initial_size is None:
+            alloc_size = size
+        else:
+            if preallocate == sc.SPARSE_VOL:
+                cls.log.error("initial size is not supported for file-based "
+                              "sparse volumes")
+                raise se.InvalidParameterException(
+                    "initial size", initial_size)
+
+            if initial_size < 0 or initial_size > size:
+                cls.log.error("initial_size %d out of range 0-%s",
+                              initial_size, size)
+                raise se.InvalidParameterException(
+                    "initial size", initial_size)
+
+            alloc_size = initial_size
 
         cls._truncate_volume(vol_path, size, vol_id, dom)
 
-        if preallocate == sc.PREALLOCATED_VOL:
-            cls._fallocate_volume(vol_path, size)
+        if preallocate == sc.PREALLOCATED_VOL and alloc_size != 0:
+            cls._fallocate_volume(vol_path, alloc_size)
 
         cls.log.info("Request to create RAW volume %s with size = %s bytes",
                      vol_path, size)

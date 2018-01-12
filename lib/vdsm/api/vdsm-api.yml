@@ -10943,8 +10943,8 @@ Volume.create:
 
     -   defaultvalue: null
         description: if specified, initial size of volume in bytes (as string).
-            Allowed only when creating thin provisioned volume on block
-            storage.
+            Allowed only when creating cow-sparse volume on block storage or
+            when creating raw preallocated volume on file storage.
         name: initialSize
         type: string
         added: '3.6'
