@@ -302,12 +302,12 @@ class SampleWindow(object):
 
     def last(self, nth=1):
         """
-        Return the nth-last collected sample.
+        Return the nth-last collected sample, and its timestamp.
+        Return (None, None) if the nth-last collected sample doesn't exist.
         """
         if len(self._samples) < nth:
-            return None
-        _, sample = self._samples[-nth]
-        return sample
+            return None, None
+        return self._samples[-nth]
 
 
 _StatsSample = namedtuple('StatsSample',
