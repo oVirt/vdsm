@@ -386,7 +386,8 @@ def verify_qemu_chain(vol_list):
             pattern=0)
 
 
-def make_qemu_chain(env, size, base_vol_fmt, chain_len, qcow2_compat='0.10'):
+def make_qemu_chain(env, size, base_vol_fmt, chain_len,
+                    qcow2_compat='0.10', prealloc=sc.SPARSE_VOL):
     vol_list = []
     img_id = make_uuid()
     parent_vol_id = sc.BLANK_UUID
@@ -398,7 +399,7 @@ def make_qemu_chain(env, size, base_vol_fmt, chain_len, qcow2_compat='0.10'):
         vol_type = sc.LEAF_VOL if i == chain_len - 1 else sc.INTERNAL_VOL
         env.make_volume(size, img_id, vol_id,
                         parent_vol_id=parent_vol_id, vol_format=vol_fmt,
-                        vol_type=vol_type)
+                        vol_type=vol_type, prealloc=prealloc)
         vol = env.sd_manifest.produceVolume(img_id, vol_id)
         if vol_fmt == sc.COW_FORMAT:
             backing = parent_vol_id if parent_vol_id != sc.BLANK_UUID else None

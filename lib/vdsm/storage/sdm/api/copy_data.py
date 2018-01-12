@@ -79,7 +79,8 @@ class Job(base.Job):
                         dstFormat=dst_format,
                         dstQcow2Compat=self._dest.qcow2_compat,
                         backing=self._dest.backing_path,
-                        backingFormat=self._dest.backing_qemu_format)
+                        backingFormat=self._dest.backing_qemu_format,
+                        preallocation=self._dest.preallocation)
                     self._operation.run()
 
 
@@ -149,6 +150,14 @@ class CopyDataDivEndpoint(properties.Owner):
         if not parent_vol:
             return None
         return sc.fmt2str(parent_vol.getFormat())
+
+    @property
+    def preallocation(self):
+        dom = sdCache.produce_manifest(self.sd_id)
+        if (dom.supportsSparseness and
+                self.volume.getType() == sc.PREALLOCATED_VOL):
+            return qemuimg.PREALLOCATION.FALLOC
+        return None
 
     @property
     def volume(self):

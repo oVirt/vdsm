@@ -75,7 +75,8 @@ class TestCopyDataDIV(VdsmTestCase):
 
     @contextmanager
     def make_env(self, storage_type, src_fmt, dst_fmt, chain_length=1,
-                 size=DEFAULT_SIZE, sd_version=3, src_qcow2_compat='0.10'):
+                 size=DEFAULT_SIZE, sd_version=3,
+                 src_qcow2_compat='0.10', prealloc=sc.SPARSE_VOL):
         with fake_env(storage_type, sd_version=sd_version) as env:
             rm = FakeResourceManager()
             with MonkeyPatchScope([
@@ -85,12 +86,14 @@ class TestCopyDataDIV(VdsmTestCase):
             ]):
                 # Create existing volume - may use compat 0.10 or 1.1.
                 src_vols = make_qemu_chain(env, size, src_fmt, chain_length,
-                                           qcow2_compat=src_qcow2_compat)
+                                           qcow2_compat=src_qcow2_compat,
+                                           prealloc=prealloc)
                 # New volumes are always created using the domain
                 # prefered format.
                 sd_compat = env.sd_manifest.qcow2_compat()
                 dst_vols = make_qemu_chain(env, size, dst_fmt, chain_length,
-                                           qcow2_compat=sd_compat)
+                                           qcow2_compat=sd_compat,
+                                           prealloc=prealloc)
                 env.src_chain = src_vols
                 env.dst_chain = dst_vols
                 yield env
@@ -178,6 +181,26 @@ class TestCopyDataDIV(VdsmTestCase):
                 self.assertEqual(sorted(self.expected_locks(src_vol, dst_vol)),
                                  sorted(guarded.context.locks))
             verify_qemu_chain(env.dst_chain)
+
+    def test_preallocated_file_volume_copy(self):
+        job_id = make_uuid()
+
+        with self.make_env('file', sc.RAW_FORMAT, sc.RAW_FORMAT,
+                           prealloc=sc.PREALLOCATED_VOL) as env:
+            write_qemu_chain(env.src_chain)
+            src_vol = env.src_chain[0]
+            dst_vol = env.dst_chain[0]
+
+            source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
+                          img_id=src_vol.imgUUID, vol_id=src_vol.volUUID)
+            dest = dict(endpoint_type='div', sd_id=dst_vol.sdUUID,
+                        img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
+            job = copy_data.Job(job_id, 0, source, dest)
+            job.run()
+            wait_for_job(job)
+            self.assertEqual(
+                qemuimg.info(dst_vol.volumePath)['virtualsize'],
+                qemuimg.info(dst_vol.volumePath)['actualsize'])
 
     @permutations((
         # env_type, src_compat, sd_version
