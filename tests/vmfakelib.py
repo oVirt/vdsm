@@ -108,7 +108,10 @@ class ClientIF(object):
         return self
 
     def prepareVolumePath(self, drive, vmId=None):
-        return drive
+        if isinstance(drive, dict):
+            return drive['path']
+        else:
+            return drive
 
     def teardownVolumePath(self, paramFilespec):
         pass
