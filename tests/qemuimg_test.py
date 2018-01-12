@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import io
 import json
 import os
 import pprint
@@ -362,6 +363,63 @@ class ConvertTests(TestCaseBase):
             qemuimg.convert('image', 'dst', dstFormat='qcow2',
                             backing='bak', backingFormat='qcow2',
                             dstQcow2Compat='1.11')
+
+
+@expandPermutations
+class TestConvertPreallocation(TestCaseBase):
+
+    @permutations([
+        # preallocation, virtual_size, actual_size
+        (None, 10 * 1024**2, 0),
+        (qemuimg.PREALLOCATION.OFF, 10 * 1024**2, 0),
+        (qemuimg.PREALLOCATION.FALLOC, 10 * 1024**2, 10 * 1024**2),
+        (qemuimg.PREALLOCATION.FULL, 10 * 1024**2, 10 * 1024**2),
+    ])
+    def test_raw_to_raw(self, preallocation, virtual_size, actual_size):
+        with namedTemporaryDir() as tmpdir:
+            src = os.path.join(tmpdir, 'src')
+            dst = os.path.join(tmpdir, 'dst')
+
+            with io.open(src, "wb") as f:
+                f.truncate(virtual_size)
+
+            op = qemuimg.convert(src, dst, srcFormat="raw", dstFormat="raw",
+                                 preallocation=preallocation)
+            op.run()
+
+            stat = os.stat(dst)
+            self.assertEqual(stat.st_size, virtual_size)
+            self.assertEqual(stat.st_blocks * 512, actual_size)
+
+    @permutations([
+        # preallocation, virtual_size, actual_size
+        (None, 10 * 1024**2, 0),
+        (qemuimg.PREALLOCATION.OFF, 10 * 1024**2, 0),
+        (qemuimg.PREALLOCATION.FALLOC, 10 * 1024**2, 10 * 1024**2),
+        (qemuimg.PREALLOCATION.FULL, 10 * 1024**2, 10 * 1024**2),
+        (qemuimg.PREALLOCATION.FULL, 10 * 1024**2, 10 * 1024**2),
+    ])
+    def test_qcow2_to_raw(self, preallocation, virtual_size, actual_size):
+        with namedTemporaryDir() as tmpdir:
+            src = os.path.join(tmpdir, 'src')
+            dst = os.path.join(tmpdir, 'dst')
+
+            op = qemuimg.create(src, size=virtual_size, format="qcow2")
+            op.run()
+
+            op = qemuimg.convert(src, dst, srcFormat="qcow2", dstFormat="raw",
+                                 preallocation=preallocation)
+            op.run()
+
+            stat = os.stat(dst)
+            self.assertEqual(stat.st_size, virtual_size)
+            self.assertEqual(stat.st_blocks * 512, actual_size)
+
+    def test_raw_invalid_preallocation(self):
+        with self.assertRaises(ValueError):
+            qemuimg.convert(
+                'src', 'dst', dstFormat="raw",
+                preallocation=qemuimg.PREALLOCATION.METADATA)
 
 
 class CheckTests(TestCaseBase):

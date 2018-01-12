@@ -177,7 +177,8 @@ def check(image, format=None):
 
 
 def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
-            dstQcow2Compat=None, backing=None, backingFormat=None):
+            dstQcow2Compat=None, backing=None, backingFormat=None,
+            preallocation=None):
     cmd = [_qemuimg.cmd, "convert", "-p", "-t", "none", "-T", "none"]
     options = []
     cwdPath = None
@@ -192,6 +193,9 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
         if dstFormat == FORMAT.QCOW2:
             qcow2Compat = _validate_qcow2_compat(dstQcow2Compat)
             options.append('compat=' + qcow2Compat)
+        if preallocation:
+            value = _get_preallocation(preallocation, format)
+            options.append("preallocation=" + value)
 
     if backing:
         if not os.path.isabs(backing):
