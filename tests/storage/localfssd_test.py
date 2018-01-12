@@ -266,13 +266,11 @@ def test_volume_create_raw_prealloc(
     assert int(actual["truesize"]) == qemu_info['actualsize']
 
 
-@pytest.mark.xfail(
-    reason="Create preallocated-raw volume "
-           "with initial size isn't supported yet")
 @pytest.mark.parametrize("domain_version", [4, 5])
+@pytest.mark.parametrize("initial_size", [0, INITIAL_VOL_SIZE])
 def test_volume_create_raw_prealloc_with_initial_size(
         tmpdir, tmp_repo, tmp_db, fake_access, fake_rescan,
-        fake_task, local_fallocate, domain_version):
+        fake_task, local_fallocate, initial_size, domain_version):
     dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
 
     img_uuid = str(uuid.uuid4())
@@ -288,7 +286,7 @@ def test_volume_create_raw_prealloc_with_initial_size(
         desc="Test volume",
         srcImgUUID=sc.BLANK_UUID,
         srcVolUUID=sc.BLANK_UUID,
-        initialSize=INITIAL_VOL_SIZE // sc.BLOCK_SIZE_512)
+        initialSize=initial_size // sc.BLOCK_SIZE_512)
 
     vol = dom.produceVolume(img_uuid, vol_uuid)
 
@@ -301,7 +299,7 @@ def test_volume_create_raw_prealloc_with_initial_size(
         virtual_size=PREALLOCATED_VOL_SIZE,
         qemu_info=qemu_info)
 
-    assert qemu_info['actualsize'] == INITIAL_VOL_SIZE
+    assert qemu_info['actualsize'] == initial_size
 
     # Verify actual volume metadata
     actual = vol.getInfo()
@@ -500,6 +498,32 @@ def test_volume_create_cow_sparse_with_parent(
     # will easily break on CI or when qemu change the implementation.
     assert int(actual["apparentsize"]) < MEGAB
     assert int(actual["truesize"]) == qemu_info['actualsize']
+
+
+@pytest.mark.parametrize("initial_size", [
+    -1,
+    (PREALLOCATED_VOL_SIZE // sc.BLOCK_SIZE_512) + 1
+])
+def test_volume_create_raw_prealloc_invalid_initial_size(
+        tmpdir, tmp_repo, tmp_db, fake_access, fake_task, local_fallocate,
+        fake_rescan, initial_size):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=5)
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    with pytest.raises(se.VolumeCreationError):
+        dom.createVolume(
+            imgUUID=img_uuid,
+            size=PREALLOCATED_VOL_SIZE // sc.BLOCK_SIZE_512,
+            volFormat=sc.RAW_FORMAT,
+            preallocate=sc.PREALLOCATED_VOL,
+            diskType='DATA',
+            volUUID=vol_uuid,
+            desc="Test volume",
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID,
+            initialSize=initial_size)
 
 
 def verify_volume_file(

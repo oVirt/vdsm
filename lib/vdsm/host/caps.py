@@ -129,6 +129,7 @@ def get():
     caps['liveSnapshot'] = 'true'
     caps['liveMerge'] = 'true'
     caps['kdumpStatus'] = osinfo.kdump_status()
+    caps["deferred_preallocation"] = True
 
     caps['hostdevPassthrough'] = str(hostdev.is_supported()).lower()
     # TODO This needs to be removed after adding engine side support
