@@ -25,6 +25,7 @@ from vdsm import utils
 from . import core
 from . import drivename
 from . import hwclass
+from . import storage
 
 
 _PAYLOAD_PATH = 'PAYLOAD:'
@@ -241,3 +242,33 @@ def _get_driver_params(driver):
     if iothread is not None:
         specParams['pinToIoThread'] = iothread
     return params, specParams
+
+
+def change_disk(disk_element, disk_devices):
+    # TODO: Code below is broken and will not work as expected.
+    # Drives of different types require different data to be provided
+    # by the engine. For example file based drives need just
+    # a path to file, while network based drives require host information.
+    # Therefore, replacing disk type on the fly is not safe and
+    # will lead to incorrect drive configuration.
+    # Even more - we do not support snapshots on different types of drives
+    # and have a special check for that in the snapshotting code,
+    # so it should never happen.
+    diskType = vmxml.attr(disk_element, 'type')
+    if diskType not in storage.SOURCE_ATTR:
+        return
+    serial = vmxml.text(vmxml.find_first(disk_element, 'serial'))
+    for vm_drive in disk_devices:
+        if vm_drive.serial == serial:
+            # update the type
+            disk_type = vm_drive.diskType
+            vmxml.set_attr(disk_element, 'type', disk_type)
+            # update the path
+            source = vmxml.find_first(disk_element, 'source')
+            disk_attr = storage.SOURCE_ATTR[disk_type]
+            vmxml.set_attr(source, disk_attr, vm_drive.path)
+            # update the format (the disk might have been collapsed)
+            driver = vmxml.find_first(disk_element, 'driver')
+            drive_format = 'qcow2' if vm_drive.format == 'cow' else 'raw'
+            vmxml.set_attr(driver, 'type', drive_format)
+            break

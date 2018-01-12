@@ -1086,6 +1086,118 @@ class TestHotplug(TestCaseBase):
         self.assertEqual(supervdsm.mirrored_networks, [])
 
 
+class TestRestorePaths(TestCaseBase):
+
+    XML = '''<?xml version='1.0' encoding='UTF-8'?>
+    <domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
+            xmlns:ovirt-vm="http://ovirt.org/vm/1.0" type="kvm">
+    <name>test</name>
+    <uuid>1111</uuid>
+    <memory>1310720</memory>
+    <currentMemory>1310720</currentMemory>
+    <maxMemory slots="16">4194304</maxMemory>
+    <vcpu current="1">16</vcpu>
+    <devices>
+        <rng model="virtio">
+            <backend model="random">{device}</backend>
+        </rng>
+        <disk device="cdrom" snapshot="no" type="file">
+            <address bus="1" controller="0" target="0" type="drive" unit="0" />
+            <source file="" startupPolicy="optional" />
+            <target bus="ide" dev="hdc" />
+            <readonly />
+        </disk>
+        <disk device="disk" snapshot="no" type="file">
+            <address bus="0" controller="0" target="0" type="drive" unit="0" />
+            <source file="{path}" />
+            <target bus="scsi" dev="sda" />
+            <serial>1234</serial>
+            <boot order="1" />
+            <driver cache="none" error_policy="stop" io="threads" name="qemu"
+                    type="qcow2" />
+        </disk>
+        <disk device="disk" snapshot="no" type="file">
+            <address bus="0" controller="0" target="1" type="drive" unit="0" />
+            <source file="{second_disk_path}" />
+            <target bus="scsi" dev="sdb" />
+            <serial>5678</serial>
+            <boot order="2" />
+            <driver cache="none" error_policy="stop" io="threads" name="qemu"
+                    type="qcow2" />
+        </disk>
+    </devices>
+    <metadata>
+        <ns0:qos />
+        <ovirt-vm:vm>
+            <ovirt-vm:device devtype="disk" name="sda">
+                <ovirt-vm:imageID>111</ovirt-vm:imageID>
+                <ovirt-vm:poolID>222</ovirt-vm:poolID>
+                <ovirt-vm:volumeID>{volume_id}</ovirt-vm:volumeID>
+                <ovirt-vm:domainID>333</ovirt-vm:domainID>
+            </ovirt-vm:device>
+        </ovirt-vm:vm>
+    </metadata>
+</domain>'''
+
+    def test_restore_paths(self):
+        xml = self.XML
+        second_disk_path = '/path/secondary-drive'
+        snapshot_params = {'path': '/path/snapshot-path',
+                           'volume_id': 'aaa',
+                           'device': '/dev/random',
+                           'second_disk_path': second_disk_path,
+                           }
+        engine_params = {'path': '/path/engine-path',
+                         'volume_id': 'bbb',
+                         'device': '/dev/urandom',
+                         'second_disk_path': second_disk_path,
+                         }
+        snapshot_xml = xml.format(**snapshot_params)
+        engine_xml = xml.format(**engine_params)
+        params = {'_srcDomXML': snapshot_xml,
+                  'xml': engine_xml,
+                  'restoreState': {
+                      'device': 'disk',
+                      'imageID': u'111',
+                      'poolID': u'222',
+                      'domainID': u'333',
+                      'volumeID': u'bbb',
+                  },
+                  'restoreFromSnapshot': True,
+                  }
+        with fake.VM(params) as vm:
+            vm._normalizeVdsmImg = lambda *args: None
+            devices = vm._make_devices()
+            vm_xml = vm.conf['xml']
+        # Check that unrelated devices are taken from the snapshot untouched,
+        # not from the XML provided from Engine:
+        for d in devices[hwclass.RNG]:
+            self.assertEqual(d.specParams['source'],
+                             os.path.basename(snapshot_params['device']))
+            break
+        else:
+            raise Exception('RNG device not found')
+        tested_drives = (('1234', engine_params['path'],),
+                         ('5678', second_disk_path,),)
+        for serial, path in tested_drives:
+            for d in devices[hwclass.DISK]:
+                if d.serial == serial:
+                    self.assertEqual(d.path, path)
+                    break
+            else:
+                raise Exception('Tested drive not found', serial)
+        dom = vmxml.parse_xml(vm_xml)
+        random = vmxml.find_first(dom, 'backend')
+        self.assertEqual(random.text, snapshot_params['device'])
+        for serial, path in tested_drives:
+            for d in dom.findall(".//disk[serial='{}']".format(serial)):
+                self.assertEqual(vmxml.find_attr(d, 'source', 'file'), path)
+                break
+            else:
+                raise Exception('Tested drive not found', serial)
+        self.assertEqual(vm_xml, vm._domain.xml)
+
+
 class MockedProxy(object):
 
     def __init__(self, ovs_bridge=None):

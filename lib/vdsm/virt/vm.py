@@ -90,11 +90,11 @@ from vdsm.virt.vmdevices import drivename
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices import storagexml
 from vdsm.virt.vmdevices.common import get_metadata
-from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound, SOURCE_ATTR
+from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound
 from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD
+from vdsm.virt.vmdevices.storagexml import change_disk
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
-from vdsm.virt.utils import has_xml_configuration
 
 
 # A libvirt constant for undefined cpu quota
@@ -329,8 +329,6 @@ class Vm(object):
         self._src_domain_xml = params.get('_srcDomXML')
         if self._src_domain_xml is not None:
             self._domain = DomainDescriptor(self._src_domain_xml)
-            if has_xml_configuration(params):
-                self.conf['xml'] = self._src_domain_xml
         elif 'xml' in params:
             self._domain = DomainDescriptor(params['xml'])
         else:
@@ -342,6 +340,17 @@ class Vm(object):
             )
             self._domain = DomainDescriptor(dom.toxml())
         self.id = self._domain.id
+        if self._src_domain_xml is not None:
+            # If Engine provides domain XML, update _src_domain_xml immediately
+            # to use a correct domain XML for initialization.  If only legacy
+            # configuration is provided, _src_domain_xml will be updated later,
+            # after devices are parsed.
+            if self._altered_state.from_snapshot and 'xml' in params:
+                self._src_domain_xml = \
+                    self._correctDiskVolumes(self._src_domain_xml,
+                                             params['xml'])
+                self._domain = DomainDescriptor(self._src_domain_xml)
+            self.conf['xml'] = self._src_domain_xml
         self.log = SimpleLogAdapter(self.log, {"vmId": self.id})
         self._dom = virdomain.Disconnected(self.id)
         self.cif = cif
@@ -2695,7 +2704,13 @@ class Vm(object):
             fromSnapshot = self._altered_state.from_snapshot
             srcDomXML = self._src_domain_xml
             if fromSnapshot:
-                srcDomXML = self._correctDiskVolumes(srcDomXML)
+                # If XML was provided by Engine, disk path have already been
+                # corrected in __init__.  If legacy configuration
+                # (e.g. 'vmName') is present, we use the legacy path here.
+                # Otherwise we leave srcDomXML untouched, since we don't have
+                # anything from Engine (4.2.0) to updated it with.
+                if 'vmName' in self.conf:
+                    srcDomXML = self._correctDiskVolumes(srcDomXML)
                 srcDomXML = self._correctGraphicsConfiguration(srcDomXML)
             hooks.before_vm_dehibernate(srcDomXML, self._custom,
                                         {'FROM_SNAPSHOT': str(fromSnapshot)})
@@ -2773,7 +2788,7 @@ class Vm(object):
         with self._confLock:
             self.conf['devices'] = newDevices
 
-    def _correctDiskVolumes(self, srcDomXML):
+    def _correctDiskVolumes(self, srcDomXML, engine_xml=None):
         """
         Replace each volume in the given XML with the latest volume
         that the image has.
@@ -2783,9 +2798,17 @@ class Vm(object):
         or revert to snapshot.
         """
         domain = MutableDomainDescriptor(srcDomXML)
+        if engine_xml is None:
+            devices = self._devices[hwclass.DISK]
+        else:
+            engine_domain = DomainDescriptor(engine_xml)
+            engine_md = metadata.Descriptor.from_xml(engine_xml)
+            params = vmdevices.common.storage_device_params_from_domain_xml(
+                self.id, engine_domain, engine_md, self.log)
+            devices = [vmdevices.storage.Drive(self.log, **p) for p in params]
         for element in domain.get_device_elements('disk'):
             if vmxml.attr(element, 'device') in ('disk', 'lun', '',):
-                self._changeDisk(element)
+                change_disk(element, devices)
         return domain.xml
 
     def _correctGraphicsConfiguration(self, domXML):
@@ -2806,35 +2829,6 @@ class Vm(object):
             else:
                 devObj.setupPassword(devXml)
         return ET.tostring(domObj)
-
-    def _changeDisk(self, disk_element):
-        # TODO: Code below is broken and will not work as expected.
-        # Drives of different types require different data to be provided
-        # by the engine. For example file based drives need just
-        # a path to file, while network based drives require host information.
-        # Therefore, replacing disk type on the fly is not safe and
-        # will lead to incorrect drive configuration.
-        # Even more - we do not support snapshots on different types of drives
-        # and have a special check for that in the snapshotting code,
-        # so it should never happen.
-        diskType = vmxml.attr(disk_element, 'type')
-        if diskType not in SOURCE_ATTR:
-            return
-        serial = vmxml.text(vmxml.find_first(disk_element, 'serial'))
-        for vm_drive in self._devices[hwclass.DISK]:
-            if vm_drive.serial == serial:
-                # update the type
-                disk_type = vm_drive.diskType
-                vmxml.set_attr(disk_element, 'type', disk_type)
-                # update the path
-                source = vmxml.find_first(disk_element, 'source')
-                disk_attr = SOURCE_ATTR[disk_type]
-                vmxml.set_attr(source, disk_attr, vm_drive.path)
-                # update the format (the disk might have been collapsed)
-                driver = vmxml.find_first(disk_element, 'driver')
-                drive_format = 'qcow2' if vm_drive.format == 'cow' else 'raw'
-                vmxml.set_attr(driver, 'type', drive_format)
-                break
 
     @api.guard(_not_migrating)
     def hotplugNic(self, params):
