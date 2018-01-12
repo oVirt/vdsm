@@ -465,6 +465,12 @@ class Image:
                         backing = None
                         backingFormat = None
 
+                    if (destDom.supportsSparseness and
+                            dstVol.getType() == sc.PREALLOCATED_VOL):
+                        preallocation = qemuimg.PREALLOCATION.FALLOC
+                    else:
+                        preallocation = None
+
                     operation = qemuimg.convert(
                         srcVol.getVolumePath(),
                         dstVol.getVolumePath(),
@@ -472,7 +478,8 @@ class Image:
                         dstFormat=dstFormat,
                         dstQcow2Compat=destDom.qcow2_compat(),
                         backing=backing,
-                        backingFormat=backingFormat)
+                        backingFormat=backingFormat,
+                        preallocation=preallocation)
                     with utils.stopwatch("Copy volume %s"
                                          % srcVol.volUUID):
                         self._run_qemuimg_operation(operation)
