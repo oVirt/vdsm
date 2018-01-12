@@ -186,6 +186,14 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         else:
             return sd.SPECIAL_VOLUMES_V0
 
+    @property
+    def supportsSparseness(self):
+        """
+        This property advertises whether the storage domain supports
+        sparseness or not.
+        """
+        return True
+
     def getMonitoringPath(self):
         return self.metafile
 
@@ -392,14 +400,6 @@ class FileStorageDomain(sd.StorageDomain):
         sd.StorageDomain.__init__(self, manifest)
         self.imageGarbageCollector()
         self._registerResourceNamespaces()
-
-    @property
-    def supportsSparseness(self):
-        """
-        This property advertises whether the storage domain supports
-        sparseness or not.
-        """
-        return True
 
     def setMetadataPermissions(self):
         procPool = oop.getProcessPool(self.sdUUID)

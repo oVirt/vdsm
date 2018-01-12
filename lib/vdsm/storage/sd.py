@@ -335,6 +335,14 @@ class StorageDomainManifest(object):
         raise NotImplementedError
 
     @property
+    def supportsSparseness(self):
+        """
+        This property advertises whether the storage domain supports
+        sparseness or not.
+        """
+        return False
+
+    @property
     def oop(self):
         return oop.getProcessPool(self.sdUUID)
 
@@ -732,7 +740,7 @@ class StorageDomain(object):
         This property advertises whether the storage domain supports
         sparseness or not.
         """
-        return False
+        return self._manifest.supportsSparseness
 
     @property
     def oop(self):

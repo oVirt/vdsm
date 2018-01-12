@@ -57,6 +57,10 @@ class FakeDomainManifest(object):
         pass
 
     @recorded
+    def supportsSparseness(self):
+        pass
+
+    @recorded
     def qcow2_compat(self):
         pass
 
@@ -708,6 +712,7 @@ class DomainTestMixin(object):
         ['getMDPath', 0],
         ['getMetaParam', 1],
         ['getVersion', 0],
+        ['supportsSparseness', 0],
         ['qcow2_compat', 0],
         ['getMetadata', 0],
         ['getFormat', 0],
