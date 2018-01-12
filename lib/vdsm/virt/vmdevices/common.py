@@ -233,9 +233,9 @@ def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
     return dev_map
 
 
-def dev_from_xml(vm, xml):
+def dev_elems_from_xml(vm, xml):
     """
-    Create and return device instance from provided XML.
+    Return device instance building elements from provided XML.
 
     The XML must contain <devices> element with a single device subelement, the
     one to create the instance for.  Depending on the device kind <metadata>
@@ -273,7 +273,10 @@ def dev_from_xml(vm, xml):
 
     :param xml: XML specifying the device as described above.
     :type xml: basestring
-    :returns: Device instance created from the provided XML.
+    :returns: Triplet (device_class, device_element, device_meta) where
+      `device_class` is the class to be used to create the device instance;
+      `device_element` and `device_meta` are objects to be passed as arguments
+      to device_class `from_xml_tree` method.
     """
     dom = vmxml.parse_xml(xml)
     devices = vmxml.find_first(dom, 'devices')
@@ -285,7 +288,22 @@ def dev_from_xml(vm, xml):
     else:
         md_desc = metadata.Descriptor.from_xml(vmxml.format_xml(meta))
     dev_meta = _get_metadata_from_elem_xml(vm.id, md_desc, dev_class, dev_elem)
-    return dev_class.from_xml_tree(vm.log, dev_elem, dev_meta)
+    return dev_class, dev_elem, dev_meta
+
+
+def dev_from_xml(vm, xml):
+    """
+    Create and return device instance from provided XML.
+
+    `dev_elems_from_xml` is called to extract device building elements and then
+    the device instance is created from it and returned.
+
+    :param xml: XML specifying the device as described in `dev_elems_from_xml`.
+    :type xml: basestring
+    :returns: Device instance created from the provided XML.
+    """
+    cls, elem, meta = dev_elems_from_xml(vm, xml)
+    return cls.from_xml_tree(vm.log, elem, meta)
 
 
 def storage_device_params_from_domain_xml(vmid, dom_desc, md_desc, log):
