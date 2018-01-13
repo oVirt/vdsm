@@ -228,6 +228,8 @@ class Drive(core.Base):
         # cause diskType setter uses self.device
         # in diskType validation
         self.device = kwargs.get('device', 'disk')
+        # Must be initialized for getXML.
+        self.propagateErrors = 'off'
         super(Drive, self).__init__(log, **kwargs)
         if not hasattr(self, 'vm_custom'):
             self.vm_custom = {}

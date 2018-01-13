@@ -1287,7 +1287,7 @@ def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):
              "domainID": dom_id}]
 
 
-def drive_config(readonly=None, **kw):
+def drive_config(readonly=None, propagateErrors=None, **kw):
     """ Return drive configuration updated from **kw """
     conf = {
         'device': 'disk',
@@ -1295,12 +1295,13 @@ def drive_config(readonly=None, **kw):
         'iface': 'virtio',
         'index': '0',
         'path': '/path/to/volume',
-        'propagateErrors': 'off',
         'shared': 'none',
         'type': 'disk',
     }
     if readonly is not None:
         conf['readonly'] = readonly
+    if propagateErrors is not None:
+        conf['propagateErrors'] = propagateErrors
     conf.update(kw)
     return conf
 
