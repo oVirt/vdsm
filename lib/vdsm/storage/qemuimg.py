@@ -77,11 +77,14 @@ class InvalidOutput(cmdutils.Error):
         self.reason = reason
 
 
-def info(image, format=None):
+def info(image, format=None, unsafe=False):
     cmd = [_qemuimg.cmd, "info", "--output", "json"]
 
     if format:
         cmd.extend(("-f", format))
+
+    if unsafe and _supports_option('info', 'U'):
+        cmd.append('-U')
 
     cmd.append(image)
     out = _run_cmd(cmd)

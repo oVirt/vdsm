@@ -103,6 +103,20 @@ class InfoTests(TestCaseBase):
             self.assertEqual(base_path, info['backingfile'])
             self.assertEqual('0.10', info['compat'])
 
+    @permutations([
+        # unsafe
+        (True,),
+        (False,),
+    ])
+    def test_unsafe_info(self, unsafe):
+        with namedTemporaryDir() as tmpdir:
+            img = os.path.join(tmpdir, 'img.img')
+            size = 1048576
+            op = qemuimg.create(img, size=size, format=qemuimg.FORMAT.QCOW2)
+            op.run()
+            info = qemuimg.info(img, unsafe=unsafe)
+            self.assertEqual(size, info['virtualsize'])
+
     def test_parse_error(self):
         def call(cmd, **kw):
             out = "image: leaf.img\ninvalid file format line"
