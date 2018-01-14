@@ -276,8 +276,11 @@ class VolumeManifest(object):
         """
         Returns volume information as returned by qemu-img info command
         """
+        # As this helper may be called while the VM is running,
+        # use unsafe=True when calling qemuimg.info()
         return qemuimg.info(self.getVolumePath(),
-                            sc.fmt2str(self.getFormat()))
+                            sc.fmt2str(self.getFormat()),
+                            unsafe=True)
 
     def getVolumeParams(self, bs=sc.BLOCK_SIZE):
         volParams = {}
