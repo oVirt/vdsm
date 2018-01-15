@@ -1331,6 +1331,42 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         )
         self._check_device_xml(dev, expected_xml)
 
+    def test_cdrom_from_xml_without_driver_element(self):
+        # test that we add the 'driver' element with the
+        # defaults in in the XML-based initialization flow
+
+        # this is the common XML template.
+        cdrom_xml = u'''
+            <disk type="file" device="cdrom" snapshot="no">
+                <address bus="1" controller="0" unit="0"
+                         type="drive" target="0"/>
+                <source file="" startupPolicy="optional"/>
+                <target dev="hdc" bus="ide"/>
+                <readonly/>
+                {driver_xml}
+            </disk>'''
+        # simulate we receive a XML snippet without the driver
+        # element. This is unlikely with Engine >= 4.2, but still
+        # supported.
+        source_xml = cdrom_xml.format(driver_xml='')
+        # The output XML must include a "driver" element, built
+        # using the defaults. Everything else should be the same
+        # (see below for more details).
+        expected_xml = cdrom_xml.format(
+            driver_xml=u'''<driver name="qemu" type="raw" io="threads"
+            error_policy="stop"/>''')
+
+        dev = vmdevices.storage.Drive(
+            self.log, **vmdevices.storagexml.parse(
+                vmxml.parse_xml(source_xml),
+                {}
+            )
+        )
+        # everything which is not related to the driver element should be
+        # derived from the source XML, thus the source and the expected
+        # XML snippets should be equal - bar the driver element.
+        self._check_device_xml(dev, expected_xml)
+
     def _check_roundtrip(self, klass, dev_xml, meta=None, expected_xml=None):
         dev = klass.from_xml_tree(
             self.log,

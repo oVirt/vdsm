@@ -48,10 +48,17 @@ VolumeChainEnv = namedtuple(
 )
 
 
+@expandPermutations
 class DriveXMLTests(XMLTestCase):
 
-    def test_cdrom(self):
+    @permutations([
+        # propagateErrors
+        (None,),
+        ('off',),
+    ])
+    def test_cdrom(self, propagateErrors):
         conf = drive_config(
+            propagateErrors=propagateErrors,
             device='cdrom',
             iface='ide',
             index='2',
