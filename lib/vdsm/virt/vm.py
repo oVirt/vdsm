@@ -2841,12 +2841,10 @@ class Vm(object):
             nic = vmdevices.common.dev_from_xml(self, xml)
             dom = vmxml.parse_xml(xml)
             dom_devices = vmxml.find_first(dom, 'devices')
-            nic_dom = next(iter(dom_devices))
-            nicXml = vmxml.format_xml(nic_dom)
         else:
             nicParams = params['nic']
             nic = vmdevices.network.Interface(self.log, **nicParams)
-            nicXml = vmxml.format_xml(nic.getXML(), pretty=True)
+        nicXml = vmxml.format_xml(nic.getXML(), pretty=True)
         nicXml = hooks.before_nic_hotplug(
             nicXml, self._custom, params=nic.custom
         )
