@@ -160,7 +160,7 @@ class Drive(core.Base):
             # such as {key_1: (valueA_1, valueB_1), ...}
             def mergeDicts(deviceDef, dev):
                 return dict((k, (deviceDef[k], getattr(dev, k, None)))
-                            for k in deviceDef.iterkeys())
+                            for k in deviceDef)
 
             vm.log.debug('Looking for drive with attributes %s', deviceDict)
             for d in device_conf:
