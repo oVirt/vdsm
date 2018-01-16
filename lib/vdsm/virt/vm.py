@@ -1911,6 +1911,7 @@ class Vm(object):
             )
         try:
             self._sync_metadata()
+            self._updateDomainDescriptor()
         except (libvirt.libvirtError, virdomain.NotConnectedError) as e:
             self.log.warning("Couldn't update metadata: %s", e)
             return
