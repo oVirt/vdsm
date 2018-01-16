@@ -37,6 +37,7 @@ from vdsm.virt import vmstatus
 from monkeypatch import MonkeyPatchScope
 from testValidation import slowtest
 from testValidation import broken_on_ci
+from testValidation import xfail
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase as TestCaseBase
 import fakelib
@@ -126,6 +127,35 @@ class PeriodicOperationTests(TestCaseBase):
         op.stop()
         self.assertTrue(invoked.is_set())
         self.assertTrue(TIMES <= invocations[0] <= TIMES + 1)
+
+    @xfail("see rhbz#1512547")
+    def test_repeating_exclusive_with_pool_exhausted(self):
+        PERIOD = 0.1
+        TRIES_BEFORE_SUCCESS = 2
+
+        exc = _RecoveringExecutor(tries_before_success=TRIES_BEFORE_SUCCESS)
+
+        attempts = [0]
+        done = threading.Event()
+
+        def _work():
+            attempts[0] = exc.attempts
+            logging.info('_work invoked after %d attempts', attempts[0])
+            done.set()
+
+        op = periodic.Operation(_work, period=PERIOD,
+                                scheduler=self.sched,
+                                executor=exc,
+                                exclusive=True)
+        op.start()
+        timeout = 2  # seconds
+        # We intentionally using a timeout much longer than actually needed
+        # the timeout should be >= PERIOD * (TRIES_BEFORE_SUCCESS + 1).
+        # We use larger value to reduce the chance of false failures
+        # on overloaded CI workers.
+        self.assertTrue(done.wait(timeout))
+        self.assertEqual(attempts[0], TRIES_BEFORE_SUCCESS + 1)
+        op.stop()
 
     @broken_on_ci("Fails occasionally, don't know why",
                   exception=AssertionError)
@@ -441,6 +471,30 @@ class _Nop(periodic._RunnableOnVm):
 
     def _execute(self):
         pass
+
+
+class _RecoveringExecutor(object):
+
+    def __init__(self, tries_before_success=None):
+        self._tries_before_success = max(0, tries_before_success)
+        self.attempts = 0
+
+    def dispatch(self, func, timeout, discard=True):
+        self.attempts += 1
+        exhausted = self._tries_before_success > 0
+        if exhausted:
+            self._tries_before_success -= 1
+            raise executor.TooManyTasks()
+        else:
+            func()
+
+    def __repr__(self):
+        return "<%s attempts=%d tries=%d at 0x%x>" % (
+            self.__class__.__name__,
+            self.attempts,
+            self._tries_before_success,
+            id(self)
+        )
 
 
 class _FakeExecutor(object):
