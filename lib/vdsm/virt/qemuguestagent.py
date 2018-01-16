@@ -255,7 +255,9 @@ class CapabilityCheck(_RunnableOnVmGuestAgent):
             'version': None,
             'commands': [],
         }
-        ret = self._qga_poller.call_qga_command(self._vm, 'guest-info')
+        ret = self._qga_poller.call_qga_command(
+            self._vm,
+            _QEMU_GUEST_INFO_COMMAND)
         if ret is not None:
             caps['version'] = ret['version']
             caps['commands'] = set([
