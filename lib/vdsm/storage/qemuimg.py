@@ -27,6 +27,7 @@ import re
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import exception
+from vdsm.common.cache import memoized
 from vdsm.config import config
 from vdsm.storage import operation
 
@@ -378,6 +379,7 @@ def _get_preallocation(value, format):
     return value
 
 
+@memoized
 def _supports_option(command, option):
     """
     Required for qemu-img 2.10, where -u/-U options added.

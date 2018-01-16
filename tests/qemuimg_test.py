@@ -169,6 +169,9 @@ class InfoTests(TestCaseBase):
 @expandPermutations
 class TestSupportsOption(TestCaseBase):
 
+    def setUp(self):
+        qemuimg._supports_option.invalidate()
+
     def test_supports_option(self):
         def fake_cmd(cmd, **kw):
             # Output copied from qemu-img-2.10.0
