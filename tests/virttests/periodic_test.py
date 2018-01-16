@@ -36,7 +36,6 @@ from vdsm.virt import vmstatus
 from monkeypatch import MonkeyPatchScope
 from testValidation import slowtest
 from testValidation import broken_on_ci
-from testValidation import xfail
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase as TestCaseBase
 import fakelib
@@ -127,7 +126,6 @@ class PeriodicOperationTests(TestCaseBase):
         self.assertTrue(invoked.is_set())
         self.assertTrue(TIMES <= invocations[0] <= TIMES + 1)
 
-    @xfail("see rhbz#1512547")
     def test_repeating_exclusive_with_pool_exhausted(self):
         PERIOD = 0.1
         TRIES_BEFORE_SUCCESS = 2

@@ -238,14 +238,16 @@ class Operation(object):
         """
         state = None
         self._call = None
+        dispatched = False
         try:
             self._executor.dispatch(self, self._timeout, discard=self._discard)
+            dispatched = True
         except exception.ResourceExhausted:
             self._log.warning('could not run %s, executor queue full',
                               self._func)
             state = repr(self._executor)
         finally:
-            if not self._exclusive:
+            if not self._exclusive or not dispatched:
                 self._reschedule()
         if state:
             throttledlog.warning(self._name, 'executor state: %s', state)
