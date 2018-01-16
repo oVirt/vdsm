@@ -80,15 +80,7 @@ if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.i
 
     check-distpkg
 
-    createrepo $EXPORT_DIR
-
-    # Some slaves have /etc/dnf/dnf.conf when running el7 build - patch both
-    # yum.conf and dnf.conf to make sure our repo is found.
-    for conf in /etc/yum.conf /etc/dnf/dnf.conf; do
-        if [ -f "$conf" ]; then
-            cat automation/artifacts.repo | sed -e "s#@BASEURL@#file://$EXPORT_DIR#" >> "$conf"
-        fi
-    done
+    create_artifacts_repo $EXPORT_DIR
 
     vr=$(build-aux/pkg-version --version)-$(build-aux/pkg-version --release)
 
