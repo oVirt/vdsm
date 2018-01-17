@@ -23,16 +23,27 @@ import logging
 
 import six
 
+from vdsm.network.nm import networkmanager
+
 from testlib import mock
 
 from .nettestlib import bonding_default_fpath
+from .nettestlib import nm_is_running
 from . ip_rule_test import IPV4_ADDRESS1, IPRuleTest
 
 
 bonding_dump_patchers = []
+network_manager_patcher = None
 
 
 def setup_package():
+    global network_manager_patcher
+    network_manager_patcher = mock.patch(
+        'vdsm.network.nm.networkmanager.is_running', nm_is_running)
+    network_manager_patcher.start()
+    if networkmanager.is_running():
+        networkmanager.init()
+
     bonding_defaults, bonding_name2numeric = bonding_default_fpath()
     bonding_dump_patchers.append(
         mock.patch('vdsm.network.link.bond.sysfs_options.BONDING_DEFAULTS',
@@ -49,6 +60,8 @@ def setup_package():
 def teardown_package():
     for patcher in bonding_dump_patchers:
         patcher.stop()
+
+    network_manager_patcher.stop()
 
     # TODO: Remove condition when ip.rule becomes PY3 compatible.
     if six.PY2:

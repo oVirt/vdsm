@@ -30,6 +30,7 @@ from vdsm.network import api as net_api
 from vdsm.network import netrestore
 from vdsm.network import netupgrade
 from vdsm.network.link.bond import sysfs_options_mapper
+from vdsm.network.nm import networkmanager
 from vdsm.network.restore_net_config import restore
 
 from . import expose, ExtraArgsError
@@ -91,6 +92,8 @@ def dump_bonding_options(*args):
     if len(args) > 1:
         raise ExtraArgsError()
 
+    if networkmanager.is_running():
+        networkmanager.init()
     sysfs_options_mapper.dump_bonding_options()
 
 

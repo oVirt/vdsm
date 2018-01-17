@@ -18,10 +18,15 @@
 #
 from __future__ import absolute_import
 
+import time
+
 from vdsm.common.cache import memoized
 from vdsm.common.cmdutils import CommandPath
+from vdsm.common.time import monotonic_time
+
 from vdsm.network import cmd
 
+from .errors import NMDeviceNotFoundError
 from .nmdbus import NMDbus, NMDbusIfcfgRH1
 from .nmdbus.active import NMDbusActiveConnections
 from .nmdbus.device import NMDbusDevice
@@ -75,6 +80,29 @@ class Device(object):
             if (not active_connection or
                     connection.connection.uuid != active_connection.uuid):
                 yield self._nm_settings.connection(connection_path)
+
+    @property
+    def managed(self):
+        return self._device.managed
+
+    @managed.setter
+    def managed(self, value):
+        self._device.managed = value
+
+
+def wait_for_device(device_name, timeout=2):
+    time_start = monotonic_time()
+    time_stop = time_start + timeout
+    while True:
+        try:
+            Device(device_name)
+        except NMDeviceNotFoundError:
+            if monotonic_time() < time_stop:
+                time.sleep(0.05)
+            else:
+                raise
+        else:
+            return
 
 
 def ifcfg2connection(ifcfg_file_path):

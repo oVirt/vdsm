@@ -143,6 +143,7 @@ class TestNMDevice(VdsmTestCase):
             assert device.state is not None
             assert device.active_connection_path is not None
             assert device.connections_path is not None
+            assert device.managed is not None
 
             for connection_path in device.connections_path:
                 settings_con = nm_settings.connection(connection_path)

@@ -34,6 +34,7 @@ from vdsm.common import constants
 from vdsm.network.link.bond import sysfs_options
 from vdsm.network.link.bond.sysfs_driver import BONDING_MASTERS
 from vdsm.network.link.iface import random_iface_name
+from vdsm.network.nm import networkmanager
 
 BONDING_NAME2NUMERIC_PATH = constants.P_VDSM_RUN + 'bonding-name2numeric.json'
 
@@ -97,6 +98,8 @@ def _get_bonding_options_name2numeric():
 def _bond_device(bond_name, mode=None):
     with open(BONDING_MASTERS, 'w') as bonds:
         bonds.write('+' + bond_name)
+    if networkmanager.is_running():
+        _unmanage_nm_device(bond_name)
 
     if mode is not None:
         _change_mode(bond_name, mode)
@@ -105,6 +108,12 @@ def _bond_device(bond_name, mode=None):
     finally:
         with open(BONDING_MASTERS, 'w') as bonds:
             bonds.write('-' + bond_name)
+
+
+def _unmanage_nm_device(device_name):
+    networkmanager.wait_for_device(device_name)
+    dev = networkmanager.Device(device_name)
+    dev.managed = False
 
 
 def _change_mode(bond_name, mode):

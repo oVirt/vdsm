@@ -22,6 +22,7 @@ import os
 
 from vdsm import constants
 from vdsm.network.link.bond import sysfs_options_mapper
+from vdsm.network.nm import networkmanager
 
 from . import YES, NO
 
@@ -34,4 +35,6 @@ def isconfigured():
 
 
 def configure():
+    if networkmanager.is_running():
+        networkmanager.init()
     sysfs_options_mapper.dump_bonding_options()
