@@ -115,10 +115,10 @@ class Executor(object):
         self._running = False
 
     def __repr__(self):
-        return "<Executor %s workers=%i max_workers=%i %s at 0x%x>" % (
+        return "<Executor %s workers=%d max_workers=%s %s at 0x%x>" % (
             self._name,
             self._workers_count,
-            self._max_workers,
+            self._max_workers,  # either None or int
             repr(self._tasks),
             id(self)
         )
