@@ -53,6 +53,15 @@ class ExecutorTests(TestCaseBase):
         self.executor.stop()
         self.scheduler.stop()
 
+    def test_repr_defaults(self):
+        # we are using the kwargs syntax, but we are omitting arguments
+        # with default values - thus using their defaults.
+        exc = executor.Executor('test',
+                                workers_count=10,
+                                max_tasks=self.max_tasks,
+                                scheduler=self.scheduler)
+        self.assertTrue(repr(exc))
+
     def test_dispatch_not_running(self):
         self.executor.stop()
         self.assertRaises(executor.NotRunning,
