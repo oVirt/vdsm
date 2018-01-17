@@ -69,7 +69,7 @@ FILES = {
                 'content': {
                     'DumpLocation': '/var/tmp/abrt',
                     'AutoreportingEvent': 'report_uReport',
-                    'MaxCrashReportsSize': '1000',
+                    'MaxCrashReportsSize': '13500',
                     'AutoreportingEnabled': 'yes'
                 },
             },
@@ -90,7 +90,7 @@ FILES = {
                     'MakeCompatCore': 'no',
                     'SaveBinaryImage': 'no',
                     'CreateCoreBacktrace': 'yes',
-                    'SaveFullCore': 'no',
+                    'SaveFullCore': 'yes',
                 },
             },
         ]
