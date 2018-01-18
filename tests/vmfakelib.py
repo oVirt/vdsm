@@ -288,7 +288,10 @@ def VM(params=None, devices=None, runCpu=False,
                                (libvirtconnection, 'get', Connection),
                                (containersconnection, 'get', Connection),
                                ]):
-            vmParams = {'vmId': 'TESTING', 'vmName': 'nTESTING'}
+            if params and 'xml' in params:
+                vmParams = {}
+            else:
+                vmParams = {'vmId': 'TESTING', 'vmName': 'nTESTING'}
             vmParams.update({} if params is None else params)
             cif = ClientIF() if cif is None else cif
             fake = vm.Vm(cif, vmParams, recover=recover)
