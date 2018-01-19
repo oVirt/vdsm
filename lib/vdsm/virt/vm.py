@@ -2560,6 +2560,11 @@ class Vm(object):
                     done.append(dev_object)
 
     def _make_devices(self):
+        if 'xml' not in self.conf:
+            return self._make_devices_from_dict()
+        return self._make_devices_from_xml()
+
+    def _make_devices_from_dict(self):
         dev_spec_map = self._devSpecMapFromConf()
         # recovery flow note:
         # we do not start disk stats collection here since
@@ -2583,13 +2588,10 @@ class Vm(object):
                 self.log.debug("Not storing device metadata now, "
                                "domain not yet available")
 
-        dev_objs_from_conf = vmdevices.common.dev_map_from_dev_spec_map(
-            dev_spec_map, self.log
-        )
+        return vmdevices.common.dev_map_from_dev_spec_map(
+            dev_spec_map, self.log)
 
-        if 'xml' not in self.conf:
-            return dev_objs_from_conf
-
+    def _make_devices_from_xml(self):
         # Engine XML flow note:
         # we expect only storage devices to be sent in vm.conf format,
         # everything else should be taken from the XML.
