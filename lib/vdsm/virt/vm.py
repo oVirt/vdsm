@@ -2614,14 +2614,7 @@ class Vm(object):
                 for params in disk_params
             ]
 
-        if config.getboolean(
-                'devel', 'device_xml_legacy_configuration_enable'):
-            for dev_class in hwclass.LEGACY_INIT_ONLY:
-                dev_objs_from_xml[dev_class] = dev_objs_from_conf[dev_class]
-                self.log.debug("Overridden %d legacy %s devices",
-                               len(dev_objs_from_xml[dev_class]), dev_class)
-        else:
-            self._override_disk_device_config(disk_params)
+        self._override_disk_device_config(disk_params)
 
         # REQUIRED_FOR: vdsm < 4.2
         # We need to create self.conf['devices'] to be able to migrate to hosts

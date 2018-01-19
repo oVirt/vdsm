@@ -46,8 +46,3 @@ WITHOUT_ALIAS = GRAPHICS
 TO_REFRESH = (
     DISK, NIC, GRAPHICS, LEASE
 )
-
-# devices that do not support yet XML-based initialization
-LEGACY_INIT_ONLY = (
-    DISK,
-)
