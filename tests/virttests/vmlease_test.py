@@ -20,9 +20,6 @@
 
 from __future__ import absolute_import
 
-import six
-from nose.plugins.skip import SkipTest
-
 from vdsm.common import exception
 from vdsm.common import response
 from vdsm.virt import vmdevices
@@ -53,11 +50,6 @@ LEASE_DEVICES = (
 
 @expandPermutations
 class TestDevice(XMLTestCase):
-
-    def setUp(self):
-        # TODO: replace with @skipif when available
-        if not six.PY2:
-            raise SkipTest("vmdevices not compatible with python 3")
 
     def test_getxml(self):
         spec = dict(sd_id="sd_id", lease_id="lease_id", path="/path",
@@ -130,11 +122,6 @@ class TestPrepare(VdsmTestCase):
 @expandPermutations
 class TestFindDevice(VdsmTestCase):
 
-    def setUp(self):
-        # TODO: replace with @skipif when available
-        if not six.PY2:
-            raise SkipTest("vmdevices not compatible with python 3")
-
     @permutations([
         ("sd-1", "lease-2"),
         ("sd-2", "lease-1"),
@@ -162,11 +149,6 @@ class TestFindDevice(VdsmTestCase):
 
 @expandPermutations
 class TestFindConf(VdsmTestCase):
-
-    def setUp(self):
-        # TODO: replace with @skipif when available
-        if not six.PY2:
-            raise SkipTest("vmdevices not compatible with python 3")
 
     @permutations([
         ("sd-1", "lease-2", 4194304),
@@ -220,11 +202,6 @@ class TestIsAttahedTo(VdsmTestCase):
       </devices>
     </domain>
     """
-
-    def setUp(self):
-        # TODO: replace with @skipif when available
-        if not six.PY2:
-            raise SkipTest("vmdevices not compatible with python 3")
 
     @permutations([
         ("sd-1", "lease-2", 4194304),
