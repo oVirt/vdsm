@@ -27,7 +27,6 @@ import re
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import exception
-from vdsm.common.cache import memoized
 from vdsm.config import config
 from vdsm.storage import operation
 
@@ -84,7 +83,7 @@ def info(image, format=None, unsafe=False):
     if format:
         cmd.extend(("-f", format))
 
-    if unsafe and _supports_option('info', 'U'):
+    if unsafe:
         cmd.append('-U')
 
     cmd.append(image)
@@ -116,10 +115,6 @@ def info(image, format=None, unsafe=False):
     return info
 
 
-def supports_unsafe_create():
-    return _supports_option('create', 'u')
-
-
 def create(image, size=None, format=None, qcow2Compat=None,
            backing=None, backingFormat=None, preallocation=None, unsafe=False):
     cmd = [_qemuimg.cmd, "create"]
@@ -143,7 +138,7 @@ def create(image, size=None, format=None, qcow2Compat=None,
         cmd.extend(("-o", "preallocation=" +
                     _get_preallocation(preallocation, format)))
 
-    if unsafe and _supports_option('create', 'u'):
+    if unsafe:
         cmd.append('-u')
 
     cmd.append(image)
@@ -388,19 +383,6 @@ def _get_preallocation(value, format):
         raise ValueError("Unsupported preallocation mode %r for format %r" %
                          (value, format))
     return value
-
-
-@memoized
-def _supports_option(command, option):
-    """
-    Required for qemu-img 2.10, where -u/-U options added.
-    """
-    out = _run_cmd([_qemuimg.cmd, "--help"])
-    out = out.decode("utf-8")
-    # Line to match:
-    #   command ... [-option] ...
-    pattern = r"^\s+%s .+ \[-%s\] .+$" % (command, option)
-    return re.search(pattern, out, re.MULTILINE) is not None
 
 
 def _run_cmd(cmd, cwd=None):

@@ -165,49 +165,6 @@ class InfoTests(TestCaseBase):
 
 
 @expandPermutations
-class TestSupportsOption(TestCaseBase):
-
-    def setUp(self):
-        qemuimg._supports_option.invalidate()
-
-    def tearDown(self):
-        qemuimg._supports_option.invalidate()
-
-    def test_supports_option(self):
-        def fake_cmd(cmd, **kw):
-            # Output copied from qemu-img-2.10.0
-            out = b"""
-  check [-q] [-f fmt] [-r [leaks | all]] [-T src_cache] filename
-  create [-q] [--object objectdef] [-f fmt] [-u] [-o options] filename [size]
-  info [-f fmt] [--output=ofmt] [--backing-chain] [-U] filename
-  map [--object objectdef] [--image-opts] [-f fmt] [--output=ofmt] filename
-"""
-            return 0, out, ''
-
-        with MonkeyPatchScope([(commands, 'execCmd', fake_cmd)]):
-            self.assertTrue(qemuimg._supports_option('create', 'u'))
-            self.assertTrue(qemuimg.supports_unsafe_create())
-            self.assertTrue(qemuimg._supports_option('info', 'U'))
-            self.assertFalse(qemuimg._supports_option('map', 'U'))
-
-    def test_does_not_support(self):
-        def fake_cmd(cmd, **kw):
-            # Output copied from qemu-img-2.9.0
-            out = b"""
-  check [-q] [-f fmt] [-r [leaks | all]] [-T src_cache] filename
-  create [-q] [--object objectdef] [-f fmt] [-o options] filename [size]
-  info [-f fmt] [--output=ofmt] [--backing-chain] filename
-  map [--object objectdef] [--image-opts] [-f fmt] [--output=ofmt] filename
-"""
-            return 0, out, ''
-
-        with MonkeyPatchScope([(commands, 'execCmd', fake_cmd)]):
-            self.assertFalse(qemuimg._supports_option('create', 'u'))
-            self.assertFalse(qemuimg.supports_unsafe_create())
-            self.assertFalse(qemuimg._supports_option('info', 'U'))
-
-
-@expandPermutations
 class CreateTests(TestCaseBase):
     @permutations((
         (qemuimg.FORMAT.RAW, qemuimg.PREALLOCATION.OFF, 0),
