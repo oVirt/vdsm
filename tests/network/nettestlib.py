@@ -191,8 +191,8 @@ class Tap(Interface):
     _deviceListener = None
 
     def addDevice(self):
-        self._cloneDevice = open('/dev/net/tun', 'r+b')
-        ifr = struct.pack('16sH', self.devName, self._IFF_TAP |
+        self._cloneDevice = open('/dev/net/tun', 'r+b', buffering=0)
+        ifr = struct.pack(b'16sH', self.devName.encode(), self._IFF_TAP |
                           self._IFF_NO_PI)
         fcntl.ioctl(self._cloneDevice, self._TUNSETIFF, ifr)
         self.up()
