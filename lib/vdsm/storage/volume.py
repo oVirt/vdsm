@@ -1014,12 +1014,6 @@ class Volume(object):
             wasleaf = True
             self.setInternal()
         try:
-            # TODO: remove the prepare logic completely when qemu-img 2.10 is
-            # released and require it in the spec.
-            # See: https://bugzilla.redhat.com/1535582
-            prepare_needed = not qemuimg.supports_unsafe_create()
-            if prepare_needed:
-                self.prepare(rw=False)
             self.log.debug('cloning volume %s to %s', self.volumePath,
                            dstPath)
             parent = getBackingVolumePath(self.imgUUID, self.volUUID)
@@ -1036,16 +1030,12 @@ class Volume(object):
                 backingFormat=sc.fmt2str(self.getFormat()),
                 unsafe=True)
             operation.run()
-            if prepare_needed:
-                self.teardown(self.sdUUID, self.volUUID)
         except Exception as e:
             self.log.exception('cannot clone image %s volume %s to %s',
                                self.imgUUID, self.volUUID, dstPath)
             # FIXME: might race with other clones
             if wasleaf:
                 self.setLeaf()
-            if prepare_needed:
-                self.teardown(self.sdUUID, self.volUUID)
             raise se.CannotCloneVolume(self.volumePath, dstPath, str(e))
 
     def _shareLease(self, dstImgPath):
