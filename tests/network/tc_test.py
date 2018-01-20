@@ -34,7 +34,7 @@ from six.moves import zip_longest
 from testlib import (VdsmTestCase as TestCaseBase, permutations,
                      expandPermutations)
 from testlib import mock
-from testValidation import ValidateRunningAsRoot, stresstest
+from testValidation import ValidateRunningAsRoot, stresstest, skipif
 from .nettestlib import (Bridge, Dummy, IperfClient, IperfServer, Tap,
                          bridge_device, network_namespace, requires_iperf3,
                          requires_tc, requires_tun, veth_pair, vlan_device)
@@ -367,6 +367,7 @@ class TestPortMirror(TestCaseBase):
         else:
             return True
 
+    @skipif(six.PY3, "needs porting to python 3")
     def testMirroring(self):
         tc.setPortMirroring(self._bridge0.devName, self._bridge1.devName)
         self.assertTrue(self._sendPing(), "Bridge received no mirrored ping "
@@ -376,6 +377,7 @@ class TestPortMirror(TestCaseBase):
         self.assertFalse(self._sendPing(), "Bridge received mirrored ping "
                          "requests, but mirroring is unset.")
 
+    @skipif(six.PY3, "needs porting to python 3")
     def testMirroringWithDistraction(self):
         "setting another mirror action should not obstract the first one"
         tc.setPortMirroring(self._bridge0.devName, self._bridge2.devName)
