@@ -201,7 +201,9 @@ Requires: policycoreutils >= 2.1.13-55
 %if 0%{?rhel}
 Requires: qemu-kvm-rhev >= 10:2.9.0-16.el7_4.13
 %else # fedora
-Requires: qemu-kvm >= 2:2.7.0-7
+# qemu-kvm 2.10 comes with support for unsafe operations that we want to use
+# when creating volumes.
+Requires: qemu-kvm >= 2:2.10
 %endif
 
 # GlusterFS client-side RPMs needed for Gluster SD
