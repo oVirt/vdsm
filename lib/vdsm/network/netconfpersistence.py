@@ -158,12 +158,6 @@ class Config(BaseConfig):
         return (os.path.exists(self.networksPath) or
                 os.path.exists(self.bondingsPath))
 
-    def _networkPath(self, network):
-        return os.path.join(self.networksPath, network)
-
-    def _bondingPath(self, bonding):
-        return os.path.join(self.bondingsPath, bonding)
-
     @staticmethod
     def _getConfigDict(path):
         try:
