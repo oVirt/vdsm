@@ -399,8 +399,8 @@ class VdsmTestResult(result.TextTestResult):
                 self.stream.writeln(current_case)
                 self._last_case = current_case
 
-            self.stream.write(
-                '    %s' % str(test.test._testMethodName).ljust(60))
+            method_name = str(test.test._testMethodName).ljust(60)
+            self.stream.write('    %s' % method_name.encode())
             self.stream.flush()
 
 
