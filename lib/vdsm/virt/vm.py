@@ -3657,6 +3657,7 @@ class Vm(object):
         finally:
             os.close(transientHandle)
 
+        diskParams['diskType'] = DISK_TYPE.FILE
         diskParams['path'] = transientPath
         diskParams['format'] = 'cow'
 
