@@ -138,7 +138,6 @@ blacklist_modules_python3 = \
 	stomp_test.py \
 	unicode_test.py \
 	utils_test.py \
-	vmxml_test.py \
 	$(NULL)
 
 CLEANFILES = \

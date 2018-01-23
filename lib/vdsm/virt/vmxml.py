@@ -69,7 +69,7 @@ def format_xml(element, pretty=False):
     stream = io.BytesIO()
     etree.ElementTree(element).write(
         stream, encoding='utf-8', xml_declaration=True)
-    return stream.getvalue()
+    return stream.getvalue().decode('utf-8')
 
 
 def find_all(element, tag_):
