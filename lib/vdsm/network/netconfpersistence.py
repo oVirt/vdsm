@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2017 Red Hat, Inc.
+# Copyright 2013-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -307,8 +307,27 @@ def _atomic_copytree(srcpath, dstpath, remove_src=False):
     old_realdstpath = os.path.realpath(dstpath)
     old_realdstpath_existed = old_realdstpath != dstpath
 
+    _fsynctree(rand_dstpath)
+
     os.rename(rand_dstpath_symlink, dstpath)
     if old_realdstpath_existed:
         fileutils.rm_tree(old_realdstpath)
     if remove_src:
         fileutils.rm_tree(srcpath)
+
+
+def _fsynctree(path):
+    filepaths = (os.path.join(rootdir, filename)
+                 for rootdir, _, file_names in os.walk(path)
+                 for filename in file_names)
+
+    for f in filepaths:
+        _fsyncpath(f)
+
+
+def _fsyncpath(path):
+    fd = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
