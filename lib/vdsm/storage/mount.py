@@ -302,4 +302,4 @@ def _runcmd(cmd):
     if rc == 0:
         return
 
-    raise MountError(rc, ";".join((out, err)))
+    raise MountError(rc, b";".join((out, err)))

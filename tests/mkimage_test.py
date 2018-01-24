@@ -133,7 +133,7 @@ class MkimageTestCase(VdsmTestCase):
                                         ((stat.S_IROTH, False),
                                          (stat.S_IWOTH, False),
                                          (stat.S_IXOTH, False)))
-            with open(filepath, "r") as fd:
+            with open(filepath, "rb") as fd:
                 content = fd.read()
                 self.assertEqual(content, self.expected_results[filename])
 
@@ -150,9 +150,9 @@ class MkimageTestCase(VdsmTestCase):
             raise SkipTest("cannot execute blkid")
 
         self.assertEqual(ret, 0)
-        partitions = out.rpartition('LABEL=')
+        partitions = out.rpartition(b'LABEL=')
         self.assertEqual(len(partitions), 3)
-        self.assertEqual(partitions[2].strip(), '"' + label + '"')
+        self.assertEqual(partitions[2].strip(), b'"' + label.encode() + b'"')
 
     def test__decodeFilesIntoDir(self):
         """

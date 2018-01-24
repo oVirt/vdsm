@@ -129,7 +129,6 @@ blacklist_modules_python3 = \
 	bridge_test.py \
 	guestagent_test.py \
 	hooks_test.py \
-	mkimage_test.py \
 	mompolicy_test.py \
 	mom_test.py \
 	protocoldetector_test.py \

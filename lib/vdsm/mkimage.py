@@ -71,7 +71,7 @@ def _decodeFilesIntoDir(files, parentdir):
             except OSError as e:
                 if e.errno != os.errno.EEXIST:
                     raise
-        with _openFile(filename, 'w', 0o640) as f:
+        with _openFile(filename, 'wb', 0o640) as f:
             f.write(base64.b64decode(content))
 
 
@@ -94,7 +94,7 @@ def getFileName(vmId, files):
         except OSError as e:
             if e.errno != os.errno.EEXIST:
                 raise
-    content = ''.join(files.keys()) + ''.join(files.values())
+    content = ''.join(files.keys()).encode() + b''.join(files.values())
     md5 = hashlib.md5(content).hexdigest()
     path = os.path.join(_P_PAYLOAD_IMAGES, "%s.%s.img" % (vmId, md5))
     return path
