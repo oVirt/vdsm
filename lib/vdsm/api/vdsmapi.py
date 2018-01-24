@@ -63,6 +63,16 @@ class MethodNotFound(Exception):
     pass
 
 
+def _load_yaml_file(file_name):
+    if hasattr(yaml, 'CLoader'):
+        loader = yaml.CLoader
+    else:
+        logging.warning("yaml CLoader not available, using yaml.Loader")
+        loader = yaml.Loader
+    yaml_file = yaml.load(file_name, Loader=loader)
+    return yaml_file
+
+
 def find_schema(schema_name='vdsm-api'):
     """
     Find the API schema file whether we are running from within the source
@@ -127,11 +137,7 @@ class Schema(object):
         try:
             for path in paths:
                 with open(path) as f:
-                    if hasattr(yaml, 'CLoader'):
-                        loader = yaml.CLoader
-                    else:
-                        loader = yaml.Loader
-                    loaded_schema = yaml.load(f, Loader=loader)
+                    loaded_schema = _load_yaml_file(f)
 
                 types = loaded_schema.pop('types')
                 self._types.update(types)
