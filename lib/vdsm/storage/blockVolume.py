@@ -127,6 +127,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
             os.unlink(imageDir)
 
         if not os.path.isdir(imageDir):
+            self.log.info("Creating image directory %r", imageDir)
             try:
                 os.mkdir(imageDir, 0o755)
             except Exception:
@@ -504,7 +505,9 @@ class BlockVolume(volume.Volume):
                      initialTags=(sc.TAG_VOL_UNINIT,))
 
         fileutils.rm_file(volPath)
-        os.symlink(lvm.lvPath(dom.sdUUID, volUUID), volPath)
+        lvPath = lvm.lvPath(dom.sdUUID, volUUID)
+        cls.log.info("Creating volume symlink from %r to %r", lvPath, volPath)
+        os.symlink(lvPath, volPath)
 
         if not volParent:
             cls.log.info("Request to create %s volume %s with size = %s "
@@ -692,6 +695,7 @@ class BlockVolume(volume.Volume):
             self._manifest.validateImagePath()
 
         if os.path.lexists(self.getVolumePath()):
+            self.log.info("Unlinking volume symlink %r", self.getVolumePath())
             os.unlink(self.getVolumePath())
 
         if recovery:

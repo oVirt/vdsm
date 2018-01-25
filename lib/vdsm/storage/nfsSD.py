@@ -88,11 +88,13 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
 
         # create domain images folder
         imagesDir = os.path.join(domainDir, sd.DOMAIN_IMAGES)
+        cls.log.info("Creating domain images directory %r", imagesDir)
         oop.getProcessPool(sdUUID).fileUtils.createdir(imagesDir)
 
         # create special imageUUID for ISO/Floppy volumes
         if domClass is sd.ISO_DOMAIN:
             isoDir = os.path.join(imagesDir, sd.ISO_IMAGE_UUID)
+            cls.log.info("Creating ISO domain images directory %r", isoDir)
             oop.getProcessPool(sdUUID).fileUtils.createdir(isoDir)
 
         fsd = cls(os.path.join(mntPoint, sdUUID))

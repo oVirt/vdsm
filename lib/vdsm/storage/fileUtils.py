@@ -276,18 +276,22 @@ def atomic_symlink(target, name):
 
     tmp_name = name + ".tmp"
     try:
+        log.debug("Creating symlink from %r to %r", target, tmp_name)
         os.symlink(target, tmp_name)
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
         log.debug("Removing stale temporary link %r", tmp_name)
         os.unlink(tmp_name)
+        log.debug("Creating symlink from %r to %r", target, tmp_name)
         os.symlink(target, tmp_name)
 
     try:
+        log.debug("Renaming %r to %r", tmp_name, name)
         os.rename(tmp_name, name)
     except:
         exc_info = sys.exc_info()
+        log.debug("Unlinking %r", tmp_name)
         try:
             os.unlink(tmp_name)
         except OSError as e:

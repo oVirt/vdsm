@@ -101,6 +101,7 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
 
         # create domain images folder
         imagesDir = os.path.join(domainDir, sd.DOMAIN_IMAGES)
+        cls.log.info("Creating domain images directory %r", imagesDir)
         fileUtils.createdir(imagesDir)
 
         # create special imageUUID for ISO/Floppy volumes
@@ -108,6 +109,7 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
         # we can allow it for systems without NFS at all
         if domClass is sd.ISO_DOMAIN:
             isoDir = os.path.join(imagesDir, sd.ISO_IMAGE_UUID)
+            cls.log.info("Creating ISO domain images directory %r", isoDir)
             fileUtils.createdir(isoDir)
 
         fsd = LocalFsStorageDomain(os.path.join(mntPoint, sdUUID))

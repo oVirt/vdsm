@@ -164,7 +164,7 @@ class MountConnection(object):
             return
 
         self.validate()
-
+        self.log.info("Creating directory %r", self._getLocalPath())
         fileUtils.createdir(self._getLocalPath())
 
         try:

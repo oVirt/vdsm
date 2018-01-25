@@ -414,6 +414,7 @@ class FileVolume(volume.Volume):
         metaPath = cls.manifestClass.metaVolumePath(volPath)
         sdUUID = getDomUuidFromVolumePath(volPath)
         if oop.getProcessPool(sdUUID).os.path.lexists(metaPath):
+            cls.log.info("Unlinking metadata volume %r", metaPath)
             oop.getProcessPool(sdUUID).os.unlink(metaPath)
 
     @classmethod
@@ -474,6 +475,7 @@ class FileVolume(volume.Volume):
 
         # Forcing the volume permissions in case one of the tools we use
         # (dd, qemu-img, etc.) will mistakenly change the file permissiosn.
+        cls.log.info("Changing volume %r permission", volPath)
         dom.oop.os.chmod(volPath, sc.FILE_VOLUME_PERMISSIONS)
 
         return (volPath,)

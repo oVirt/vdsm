@@ -1257,6 +1257,7 @@ class StorageDomain(object):
         cls.log.info("create image rollback (image_dir=%s)", image_dir)
         if os.path.exists(image_dir):
             if not len(os.listdir(image_dir)):
+                cls.log.info("Removing image directory %r", image_dir)
                 fileUtils.cleanupdir(image_dir)
             else:
                 cls.log.error("create image rollback: Cannot remove dirty "
