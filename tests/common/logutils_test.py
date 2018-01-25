@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,10 +19,16 @@
 #
 
 import logging
+import threading
+import time
+
+from contextlib import closing
+from contextlib import contextmanager
 
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import forked
 
+from vdsm.common import concurrent
 from vdsm.common import logutils
 
 
@@ -82,3 +88,141 @@ class TestSetLevel(TestCaseBase):
         # The old name should work as well.
         logutils.set_level("ERROR")
         self.assertEqual(logger.getEffectiveLevel(), logging.ERROR)
+
+
+@contextmanager
+def threaded_handler(capacity, target):
+    # Start the handler explicitly for deterministic capacity handling.
+    handler = logutils.ThreadedHandler(capacity, start=False)
+    with closing(handler):
+        handler.setTarget(target)
+        logger = logging.Logger("test")
+        logger.addHandler(handler)
+        yield handler, logger
+
+
+class Handler(object):
+    """
+    A handler for testing composite handlers such as ThreadedHandler.
+    """
+
+    def __init__(self, delay=0):
+        self.lock = threading.Lock()
+        self.level = logging.DEBUG
+        self.messages = []
+        self.delay = delay
+
+    def handle(self, record):
+        with self.lock:
+            msg = record.msg % record.args
+            self.messages.append(msg)
+            if self.delay:
+                time.sleep(self.delay)
+
+
+class TestThreadedHandler(TestCaseBase):
+
+    def test_capacity(self):
+        target = Handler()
+
+        with threaded_handler(100, target) as (handler, logger):
+            for _ in range(100):
+                logger.info("It works!")
+            handler.start()
+
+        # We expect that no message will be dropped.
+        self.assertEqual(target.messages, ["It works!"] * 100)
+
+    def test_drop_new_messages(self):
+        target = Handler()
+
+        # This handler will queue up to 10 messages. Logging 20 messages
+        # will drop the newest 10 messages.
+        with threaded_handler(10, target) as (handler, logger):
+            for i in range(20):
+                logger.info("Message %d", i)
+            handler.start()
+
+        expected = ["Message %d" % i for i in range(10)]
+        self.assertEqual(target.messages, expected)
+
+    def test_level_debug(self):
+        target = Handler()
+        with threaded_handler(10, target) as (handler, logger):
+            handler.start()
+            handler.setLevel(logging.DEBUG)
+            logger.debug("Should be logged")
+
+        self.assertEqual(target.messages, ["Should be logged"])
+
+    def test_level_info(self):
+        target = Handler()
+        with threaded_handler(10, target) as (handler, logger):
+            handler.start()
+            handler.setLevel(logging.INFO)
+            logger.debug("Should not be logged")
+
+        self.assertEqual(target.messages, [])
+
+    def test_blocked_handler(self):
+        # Simulate a handler blocked on storage.
+        target = Handler()
+        target.lock.acquire()
+        with threaded_handler(100, target) as (handler, logger):
+            handler.start()
+            for _ in range(100):
+                logger.info("It works!")
+
+            # Nothing was logged yet, since handler is blocked...
+            self.assertEqual(target.messages, [])
+            target.lock.release()
+
+        # We expect that no message will be dropped.
+        self.assertEqual(target.messages, ["It works!"] * 100)
+
+    def test_slow_handler(self):
+        # Test that logging threads are not delayed by a slow handler.
+        target = Handler(0.1)
+
+        with threaded_handler(10, target) as (handler, logger):
+            handler.start()
+
+            def worker(n):
+                start = time.time()
+                logger.info("thread %02d", n)
+                return time.time() - start
+
+            results = concurrent.tmap(worker, range(10))
+            workers_time = [r.value for r in results]
+
+        # All messages should be logged.
+        self.assertEqual(len(target.messages), 10)
+
+        # No thread should be delayed.
+        # Here is typical (sorted) result:
+        # [0.000039, 0.000071, 0.000076, 0.000086, 0.000112, 0.000191,
+        #  0.000276, 0.000285, 0.000413, 0.000590]
+        self.assertLess(max(workers_time), 0.1)
+
+    def test_slow_handler_sync(self):
+        # Reproduce the issue of loggers blocking on a slow handler.
+        handler = Handler(0.1)
+        logger = logging.Logger("test")
+        logger.addHandler(handler)
+
+        def worker(n):
+            start = time.time()
+            logger.info("thread %02d", n)
+            return time.time() - start
+
+        results = concurrent.tmap(worker, range(10))
+        workers_time = [r.value for r in results]
+
+        # All messages should be logged.
+        self.assertEqual(len(handler.messages), 10)
+
+        # One of the threads will be delayed by about 1 second.
+        # Here is typical (sorted) result:
+        # [0.100438, 0.199917, 0.299876, 0.399604, 0.499133, 0.59935, 0.699196,
+        #  0.79886, 0.898592, 0.998453]
+        self.assertGreater(max(workers_time), 0.9)

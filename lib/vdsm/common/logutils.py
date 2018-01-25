@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2017 Red Hat, Inc.
+# Copyright 2011-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 #
 from __future__ import absolute_import
 
+import collections
 import datetime
 import functools
 import grp
@@ -26,10 +27,14 @@ import logging
 import logging.handlers
 import os
 import pwd
+import threading
+
 from dateutil import tz
 from inspect import ismethod
 
 import six
+
+from . import concurrent
 
 
 def funcName(func):
@@ -138,6 +143,127 @@ class TimezoneFormatter(logging.Formatter):
                 ct.strftime('%z')
             )
         return s
+
+
+class ThreadedHandler(logging.handlers.MemoryHandler):
+    """
+    A handler queuing records and logging them in a background thread using
+    a target handler configured elsewhere.
+
+    This is not a memory handler; the reason we inherit from it is being able
+    to use another handler defined in logger.conf as the target.
+
+    When configuring loggers in logging.config.fileConfig, we have this check:
+
+        if issubclass(klass, logging.handlers.MemoryHandler):
+
+    If the logger inherits from MemoryHandler, the target of the logger will be
+    set later using setTarget, after all handlers are loaded.
+    """
+
+    _CLOSED = object()
+
+    def __init__(self, capacity=10000, start=True):
+        """
+        Arguments:
+            capacity (int): number of records to queue before dropping records.
+                When the queue becomes full, new records are dropped.
+            start (bool): start the handler thread automaticlaly. If False, the
+                thread must be started explicitly.
+        """
+        logging.handlers.MemoryHandler.__init__(self, 0)
+        self._capacity = capacity
+        self._target = _DROPPER
+        self._queue = collections.deque()
+        self._cond = threading.Condition(threading.Lock())
+        self._thread = concurrent.thread(self._run, name="logfile")
+        if start:
+            self.start()
+
+    # Handler interface
+
+    def createLock(self):
+        """
+        Override to avoid unneeded lock. We use a condition to synchronize with
+        the logging thread.
+        """
+        self.lock = None
+
+    def handle(self, record):
+        """
+        Handle a log record.
+
+        If the queue is full, the record is dropped.
+        """
+        if len(self._queue) < self._capacity:
+            self._queue.append(record)
+            with self._cond:
+                self._cond.notify()
+
+    def close(self):
+        """
+        Extend Handler.close to stop the thread during shutdown.
+        """
+        logging.Handler.close(self)
+        self._queue.append(self._CLOSED)
+        with self._cond:
+            self._cond.notify()
+        self._thread.join()
+        self._target = _DROPPER
+
+    # MemoryHandler interface
+
+    def setTarget(self, target):
+        """
+        Override to use our private target.
+
+        Called from logging.config.fileConfig to configure another handler as
+        the target handler.
+
+        Must be called before logging anything to this handler; messages logged
+        before setting the target will be dropped silently.
+        """
+        self._target = target
+
+    def flush(self):
+        pass
+
+    # ThreadedHandler interface
+
+    def start(self):
+        """
+        Start the handler thread, writing queued records to target handler.
+        """
+        self._thread.start()
+
+    # Private
+
+    def _run(self):
+        while True:
+            # Wait for messages.
+            with self._cond:
+                while len(self._queue) == 0:
+                    self._cond.wait()
+
+            # Handle all pending messages before taking the lock again.
+            while len(self._queue):
+                record = self._queue.popleft()
+                if record is self._CLOSED:
+                    return
+                self._target.handle(record)
+
+            # Avoid reference cycles, specially exc_info that may hold a
+            # traceback objects.
+            record = None
+
+
+class _Dropper(object):
+
+    def handle(self, record):
+        pass
+
+
+_DROPPER = _Dropper()
 
 
 class Suppressed(object):
