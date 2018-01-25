@@ -43,20 +43,22 @@ def init():
 class Device(object):
 
     def __init__(self, device_name):
+        self._name = device_name
+
         self._nm_settings = NMDbusSettings()
         self._nm_act_connections = NMDbusActiveConnections()
-
-        nm_device = NMDbusDevice()
-        self._device = nm_device.device(device_name)
+        self._nm_device_service = NMDbusDevice()
 
     def connections(self):
-        for connection_path in self._device.connections_path:
+        device = self._nm_device_service.device(self._name)
+        for connection_path in device.connections_path:
             yield self._nm_settings.connection(connection_path)
 
     @property
     def active_connection(self):
+        device = self._nm_device_service.device(self._name)
+        ac_path = device.active_connection_path
         nm_act_cons = self._nm_act_connections
-        ac_path = self._device.active_connection_path
         return nm_act_cons.connection(ac_path) if ac_path != '/' else None
 
     def cleanup_inactive_connections(self):
@@ -69,7 +71,8 @@ class Device(object):
 
     def _non_active_connections(self):
         active_connection = self.active_connection
-        for connection_path in self._device.connections_path:
+        device = self._nm_device_service.device(self._name)
+        for connection_path in device.connections_path:
             connection = self._nm_settings.connection(connection_path)
             if (not active_connection or
                     connection.connection.uuid != active_connection.uuid):
