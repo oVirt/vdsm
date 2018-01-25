@@ -1,3 +1,9 @@
+# Vdsm logging configuration.
+#
+# Enabling threaded logging:
+# 1. Add "logthread" to [handlers] keys
+# 2. Replace "logfile" with "logthread" in all loggers "handlers" list.
+
 [loggers]
 keys=root,vds,storage,virt,ovirt_hosted_engine_ha,ovirt_hosted_engine_ha_config,IOProcess,devel
 
@@ -59,6 +65,12 @@ level=WARN
 class=handlers.SysLogHandler
 formatter=sysform
 args=('/dev/log', handlers.SysLogHandler.LOG_USER)
+
+[handler_logthread]
+class=vdsm.common.logutils.ThreadedHandler
+args=[]
+level=DEBUG
+target=logfile
 
 [handler_logfile]
 class=vdsm.common.logutils.UserGroupEnforcingHandler
