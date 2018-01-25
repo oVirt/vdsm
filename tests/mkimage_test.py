@@ -32,7 +32,6 @@ import stat
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from nose.plugins.skip import SkipTest
 from monkeypatch import Patch
 from testlib import VdsmTestCase, permutations, expandPermutations
 from testValidation import checkSudo, ValidateRunningAsRoot
@@ -144,10 +143,7 @@ class MkimageTestCase(VdsmTestCase):
         if label is None:
             return
         cmd = ['blkid', '-s', 'LABEL', imgPath]
-        try:
-            (ret, out, err) = execCmd(cmd, raw=True)
-        except OSError:
-            raise SkipTest("cannot execute blkid")
+        (ret, out, err) = execCmd(cmd, raw=True)
 
         self.assertEqual(ret, 0)
         partitions = out.rpartition(b'LABEL=')
