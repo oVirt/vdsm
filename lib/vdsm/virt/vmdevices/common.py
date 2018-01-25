@@ -418,7 +418,7 @@ def update_guest_disk_mapping(md_desc, disk_devices, guest_disk_mapping, log):
                     dev.update(data)
                 break
         else:
-            if serial[:20]:
+            if serial[20:]:
                 # Silently skip devices that don't appear to have a serial
                 # number, such as CD-ROMs or direct LUN devices.
                 log.warning("Unidentified guest drive %s: %s",
