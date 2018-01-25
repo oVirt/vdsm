@@ -636,6 +636,7 @@ class StoragePool(object):
                                              domain.getVersion(), msd.sdUUID,
                                              msdVersion)
 
+        self.log.info("Removing pool directory %r", self.poolPath)
         fileUtils.createdir(self.poolPath)
         self._acquireTemporaryClusterLock(msdUUID, leaseParams)
         try:
@@ -663,6 +664,7 @@ class StoragePool(object):
             except Exception:
                 self.log.error("Create pool %s canceled ", poolName,
                                exc_info=True)
+                self.log.info("Removing pool directory %r", self.poolPath)
                 try:
                     fileUtils.cleanupdir(self.poolPath)
                     self.__cleanupDomains(domList, msdUUID, masterVersion)
@@ -746,6 +748,7 @@ class StoragePool(object):
 
         # Remove all links
         if os.path.exists(self.poolPath):
+            self.log.info("Removing pool directory %r", self.poolPath)
             fileUtils.cleanupdir(self.poolPath)
 
         self.stopMonitoringDomains()
@@ -879,6 +882,7 @@ class StoragePool(object):
 
             # Make sure there is no cruft left over
             for dir in [newmsd.getVMsDir(), newmsd.getTasksDir()]:
+                self.log.info("Removing directory %r", dir)
                 fileUtils.cleanupdir(dir)
 
             # Copy master file system content to the new master
@@ -923,6 +927,7 @@ class StoragePool(object):
 
             # Clean up the old data from previous master fs
             for directory in [curmsd.getVMsDir(), curmsd.getTasksDir()]:
+                self.log.info("Removing directory %r", directory)
                 fileUtils.cleanupdir(directory)
         except Exception:
             self.log.exception('ignoring old master cleanup failure')
@@ -1272,7 +1277,7 @@ class StoragePool(object):
         """
         # master domain must be refreshed first
         self.setMasterDomain(msdUUID, masterVersion)
-
+        self.log.info("Creating pool directory %r", self.poolPath)
         fileUtils.createdir(self.poolPath)
 
         # Find out all domains for future cleanup
@@ -1303,8 +1308,12 @@ class StoragePool(object):
             domaindir = os.path.join(block_mountpoint, domUUID)
             domDirs[domUUID] = domaindir
             # create domain special volumes folder
-            fileUtils.createdir(os.path.join(domaindir, sd.DOMAIN_META_DATA))
-            fileUtils.createdir(os.path.join(domaindir, sd.DOMAIN_IMAGES))
+            md_dir = os.path.join(domaindir, sd.DOMAIN_META_DATA)
+            self.log.info("Creating domain metadata directory %r", md_dir)
+            fileUtils.createdir(md_dir)
+            images_dir = os.path.join(domaindir, sd.DOMAIN_IMAGES)
+            self.log.info("Creating domain images directory %r", images_dir)
+            fileUtils.createdir(images_dir)
         # Add the file domains
         for domUUID, domaindir in fileSD.scanDomains():
             if domUUID in domUUIDs:
@@ -1375,11 +1384,13 @@ class StoragePool(object):
 
             vmPath = os.path.join(vms, vmUUID)
             if fileUtils.pathExists(vmPath):
+                self.log.info("Removing VM directory %r", vmPath)
                 try:
                     fileUtils.cleanupdir(vmPath, ignoreErrors=False)
                 except RuntimeError as e:
                     raise se.MiscDirCleanupFailure(str(e))
 
+            self.log.info("Creating VM directory %r", vmPath)
             try:
                 fileUtils.createdir(vmPath)
                 codecs.open(os.path.join(vmPath, vmUUID + '.ovf'), 'w',
@@ -1400,7 +1411,9 @@ class StoragePool(object):
                       sdUUID)
         vms = self._getVMsPath(sdUUID)
         if os.path.exists(os.path.join(vms, vmUUID)):
-            fileUtils.cleanupdir(os.path.join(vms, vmUUID))
+            vmDirPath = os.path.join(vms, vmUUID)
+            self.log.info("Removing VM directory %r", vmDirPath)
+            fileUtils.cleanupdir(vmDirPath)
 
     def extendVolume(self, sdUUID, volumeUUID, size, isShuttingDown=None):
         # This method is not exposed through the remote API but it's called

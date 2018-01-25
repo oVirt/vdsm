@@ -446,6 +446,7 @@ class FileStorageDomain(sd.StorageDomain):
         metadataDir = os.path.join(domPath, sd.DOMAIN_META_DATA)
 
         procPool = oop.getProcessPool(sdUUID)
+        cls.log.info("Creating domain metadata directory %r", metadataDir)
         procPool.fileUtils.createdir(metadataDir, 0o775)
 
         special_volumes = cls.manifestClass.special_volumes(version)
@@ -572,6 +573,7 @@ class FileStorageDomain(sd.StorageDomain):
         srcImgPath: Dir where the image volumes are.
         """
         sdRunDir = os.path.join(sc.P_VDSM_STORAGE, self.sdUUID)
+        self.log.info("Creating domain run directory %r", sdRunDir)
         fileUtils.createdir(sdRunDir)
         imgRunDir = os.path.join(sdRunDir, imgUUID)
         self.log.debug("Creating symlink from %s to %s", srcImgPath, imgRunDir)

@@ -370,6 +370,7 @@ class HSM(object):
 
         mountBasePath = os.path.join(self.storage_repository,
                                      sd.DOMAIN_MNT_POINT)
+        self.log.info("Creating data-center mount directory %r", mountBasePath)
         fileUtils.createdir(mountBasePath)
         storageServer.MountConnection.setLocalPathBase(mountBasePath)
         storageServer.LocalDirectoryConnection.setLocalPathBase(mountBasePath)
@@ -519,7 +520,7 @@ class HSM(object):
 
                 if isInWhiteList(fullPath):
                     continue
-
+                self.log.info("Unlinking file %r", fullPath)
                 try:
                     os.unlink(os.path.join(base, fullPath))
                 except Exception:
@@ -530,8 +531,10 @@ class HSM(object):
             try:
                 # os.walk() can see a link to a directory as a directory
                 if os.path.islink(directory):
+                    self.log.info("Unlinking symlink %r", directory)
                     os.unlink(directory)
                 else:
+                    self.log.info("Removing directory %r", directory)
                     os.rmdir(directory)
             except Exception:
                 self.log.warn("Cold not delete directory "

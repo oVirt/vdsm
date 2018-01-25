@@ -1087,6 +1087,7 @@ class Volume(object):
         if not pvol or pvol.isShared():
             # Remove image folder with all leftovers
             if os.path.exists(imageDir):
+                cls.log.info("Removing image directory %r", imageDir)
                 fileUtils.cleanupdir(imageDir)
 
     @classmethod

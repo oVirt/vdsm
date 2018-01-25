@@ -696,6 +696,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         for vol in volsImgs:
             lPath = os.path.join(imgPath, vol)
             removedPaths = []
+            self.log.info("Unlink volume symlink %r", lPath)
             try:
                 os.unlink(lPath)
             except OSError as e:
@@ -708,12 +709,11 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
     def rmDCImgDir(self, imgUUID, volsImgs):
         imgPath = os.path.join(self.domaindir, sd.DOMAIN_IMAGES, imgUUID)
         self._rmDCVolLinks(imgPath, volsImgs)
+        self.log.info("Removing image directory %r", imgPath)
         try:
             os.rmdir(imgPath)
         except OSError:
             self.log.warning("Can't rmdir %s", imgPath, exc_info=True)
-        else:
-            self.log.debug("removed image dir: %s", imgPath)
         return imgPath
 
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
@@ -785,10 +785,12 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
     def refreshDirTree(self):
         # create domain images folder
         imagesPath = os.path.join(self.domaindir, sd.DOMAIN_IMAGES)
+        self.log.info("Creating domain images directory %r", imagesPath)
         fileUtils.createdir(imagesPath)
 
         # create domain special volumes folder
         domMD = os.path.join(self.domaindir, sd.DOMAIN_META_DATA)
+        self.log.info("Creating domain special volumes directory %r", domMD)
         fileUtils.createdir(domMD)
 
         special_lvs = self.special_volumes(self.getVersion())
@@ -1204,7 +1206,9 @@ class BlockStorageDomain(sd.StorageDomain):
             # log any other exception, but keep going
             self.log.error("Unexpected error", exc_info=True)
 
-        fileUtils.cleanupdir(os.path.join("/dev", self.sdUUID))
+        vgDir = os.path.join("/dev", self.sdUUID)
+        self.log.info("Removing VG directory %r", vgDir)
+        fileUtils.cleanupdir(vgDir)
 
     @classmethod
     def format(cls, sdUUID):
@@ -1217,6 +1221,7 @@ class BlockStorageDomain(sd.StorageDomain):
         except (se.StorageDomainDoesNotExist):
             pass
         else:
+            cls.log.info("Removing domain directory %r", domaindir)
             fileUtils.cleanupdir(domaindir, ignoreErrors=True)
         # Remove special metadata and service volumes
         # Remove all volumes LV if exists
@@ -1328,6 +1333,7 @@ class BlockStorageDomain(sd.StorageDomain):
         """
         sdRunDir = os.path.join(sc.P_VDSM_STORAGE, self.sdUUID)
         imgRunDir = os.path.join(sdRunDir, imgUUID)
+        self.log.info("Creating image run directory %r", imgRunDir)
         fileUtils.createdir(imgRunDir)
         for volUUID in volUUIDs:
             srcVol = os.path.join(srcImgPath, volUUID)
@@ -1350,6 +1356,8 @@ class BlockStorageDomain(sd.StorageDomain):
 
         Should be called when tearing down an image.
         """
+        imageRundir = self.getImageRundir(imgUUID)
+        self.log.info("Removing image run directory %r", imageRundir)
         fileUtils.cleanupdir(self.getImageRundir(imgUUID))
 
     def activateVolumes(self, imgUUID, volUUIDs):
@@ -1374,6 +1382,7 @@ class BlockStorageDomain(sd.StorageDomain):
         """
         lvm.activateLVs(self.sdUUID, [MASTERLV], refresh=False)
         masterDir = os.path.join(self.domaindir, sd.MASTER_FS_DIR)
+        self.log.info("Creating domain master directory %r", masterDir)
         fileUtils.createdir(masterDir)
 
         masterfsdev = lvm.lvPath(self.sdUUID, MASTERLV)
