@@ -250,10 +250,7 @@ class MkimageTestCase(VdsmTestCase):
         iso_img = mkimage.mkIsoFs("vmId_iso", self.files, label)
         self.assertTrue(os.path.exists(iso_img))
         m = mount.Mount(iso_img, self.workdir)
-        try:
-            m.mount(mntOpts='loop')
-        except mount.MountError as e:
-            raise SkipTest("Error mounting iso image: %s" % e)
+        m.mount(mntOpts='loop')
         try:
             self._check_content()
             self._check_label(iso_img, label)
