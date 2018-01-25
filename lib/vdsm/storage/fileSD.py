@@ -230,7 +230,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
         currImgDir = self.getImagePath(imgUUID)
         toDelDir = self.getDeletedImagePath(imgUUID)
-        self.log.debug("Renaming dir %s to %s", currImgDir, toDelDir)
+        self.log.info("Renaming dir %s to %s", currImgDir, toDelDir)
         try:
             self.oop.os.rename(currImgDir, toDelDir)
         except OSError as e:
@@ -248,7 +248,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
             self._deleteVolumeFile(volPath + fileVolume.META_FILEEXT)
             if self.hasVolumeLeases():
                 self._deleteVolumeFile(volPath + LEASE_FILEEXT)
-        self.log.debug("Removing directory: %s", toDelDir)
+        self.log.info("Removing directory: %s", toDelDir)
         try:
             self.oop.os.rmdir(toDelDir)
         except OSError as e:
@@ -261,7 +261,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
                 raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
 
     def _deleteVolumeFile(self, path):
-        self.log.debug("Removing file: %s", path)
+        self.log.info("Removing file: %s", path)
         try:
             self.oop.os.remove(path)
         except OSError as e:
@@ -576,7 +576,7 @@ class FileStorageDomain(sd.StorageDomain):
         self.log.info("Creating domain run directory %r", sdRunDir)
         fileUtils.createdir(sdRunDir)
         imgRunDir = os.path.join(sdRunDir, imgUUID)
-        self.log.debug("Creating symlink from %s to %s", srcImgPath, imgRunDir)
+        self.log.info("Creating symlink from %s to %s", srcImgPath, imgRunDir)
         try:
             os.symlink(srcImgPath, imgRunDir)
         except OSError as e:
@@ -596,7 +596,7 @@ class FileStorageDomain(sd.StorageDomain):
         Should be called when tearing down an image.
         """
         path = self.getImageRundir(imgUUID)
-        self.log.debug("Removing image rundir link %r", path)
+        self.log.info("Removing image rundir link %r", path)
         try:
             os.unlink(path)
         except OSError as e:
@@ -619,7 +619,7 @@ class FileStorageDomain(sd.StorageDomain):
                               imgUUID)
         volPaths = tuple(os.path.join(imgDir, v) for v in volUUIDs)
         for volPath in volPaths:
-            self.log.debug("Fixing permissions on %s", volPath)
+            self.log.info("Fixing permissions on %s", volPath)
             self.oop.fileUtils.copyUserModeToGroup(volPath)
 
         return self.createImageLinks(imgDir, imgUUID)
@@ -693,7 +693,7 @@ class FileStorageDomain(sd.StorageDomain):
         """
         masterdir = os.path.join(self.domaindir, sd.MASTER_FS_DIR)
         if not self.oop.fileUtils.pathExists(masterdir):
-            self.log.debug("Creating master directory: %s", masterdir)
+            self.log.info("Creating master directory: %s", masterdir)
             self.oop.os.mkdir(masterdir, 0o755)
 
     def unmountMaster(self):
@@ -714,8 +714,8 @@ class FileStorageDomain(sd.StorageDomain):
                 # measures and unmounting this NFS resource. Chances are
                 # that is the most intelligent thing we can do in this
                 # situation anyway.
-                self.log.debug("Unmounting stale file system %s",
-                               self.mountpoint)
+                self.log.info("Unmounting stale file system %s",
+                              self.mountpoint)
                 mount.getMountFromTarget(self.mountpoint).umount()
                 raise se.FileStorageDomainStaleNFSHandle()
             raise
@@ -729,8 +729,8 @@ class FileStorageDomain(sd.StorageDomain):
         removedPattern = os.path.join(self.domaindir, sd.DOMAIN_IMAGES,
                                       sd.REMOVED_IMAGE_PREFIX + '*')
         removedImages = self.oop.glob.glob(removedPattern)
-        self.log.debug("Removing remnants of deleted images %s" %
-                       removedImages)
+        self.log.info("Removing remnants of deleted images %s",
+                      removedImages)
         for imageDir in removedImages:
             self.oop.fileUtils.cleanupdir(imageDir)
 
@@ -760,7 +760,7 @@ class FileStorageDomain(sd.StorageDomain):
             for volFile in volFiles:
                 tLink = os.path.join(basePath, rImg, volFile)
                 tVol = os.path.join(basePath, templateImage, volFile)
-                self.log.debug("Force linking %s to %s", tVol, tLink)
+                self.log.info("Force linking %s to %s", tVol, tLink)
                 self.oop.utils.forceLink(tVol, tLink)
 
     def getVolumeClass(self):

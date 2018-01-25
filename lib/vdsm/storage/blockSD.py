@@ -702,7 +702,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                 self.log.warning("Can't unlink %s. %s", lPath, e)
             else:
                 removedPaths.append(lPath)
-        self.log.debug("removed: %s", removedPaths)
+        self.log.info("removed: %s", removedPaths)
         return tuple(removedPaths)
 
     def rmDCImgDir(self, imgUUID, volsImgs):
@@ -798,7 +798,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             dst = os.path.join(domMD, lvName)
             if not os.path.lexists(dst):
                 src = lvm.lvPath(self.sdUUID, lvName)
-                self.log.debug("Creating symlink from %s to %s", src, dst)
+                self.log.info("Creating symlink from %s to %s", src, dst)
                 os.symlink(src, dst)
 
     def refresh(self):
@@ -1302,7 +1302,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
     def linkBCImage(self, imgPath, imgUUID):
         dst = self.getLinkBCImagePath(imgUUID)
-        self.log.debug("Creating symlink from %s to %s", imgPath, dst)
+        self.log.info("Creating symlink from %s to %s", imgPath, dst)
         try:
             os.symlink(imgPath, dst)
         except OSError as e:
@@ -1316,7 +1316,7 @@ class BlockStorageDomain(sd.StorageDomain):
     def unlinkBCImage(self, imgUUID):
         img_path = self.getLinkBCImagePath(imgUUID)
         if os.path.islink(img_path):
-            self.log.debug("Removing image directory link %r", img_path)
+            self.log.info("Removing image directory link %r", img_path)
             os.unlink(img_path)
 
     def createImageLinks(self, srcImgPath, imgUUID, volUUIDs):
@@ -1337,7 +1337,7 @@ class BlockStorageDomain(sd.StorageDomain):
         for volUUID in volUUIDs:
             srcVol = os.path.join(srcImgPath, volUUID)
             dstVol = os.path.join(imgRunDir, volUUID)
-            self.log.debug("Creating symlink from %s to %s", srcVol, dstVol)
+            self.log.info("Creating symlink from %s to %s", srcVol, dstVol)
             try:
                 os.symlink(srcVol, dstVol)
             except OSError as e:

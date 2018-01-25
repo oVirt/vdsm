@@ -984,10 +984,10 @@ class StorageDomain(object):
         Make tasks and vms directories on master directory.
         """
         vmsDir = self.getVMsDir()
-        self.log.debug("creating vms dir: %s" % vmsDir)
+        self.log.info("Creating vms dir: %s" % vmsDir)
         self.oop.fileUtils.createdir(vmsDir)
         tasksDir = self.getTasksDir()
-        self.log.debug("creating task dir: %s" % tasksDir)
+        self.log.info("Creating task dir: %s" % tasksDir)
         self.oop.fileUtils.createdir(tasksDir)
 
     def activate(self):

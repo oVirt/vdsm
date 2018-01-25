@@ -1249,13 +1249,13 @@ class StoragePool(object):
         tmp_link_name = os.path.join(self.storage_repository,
                                      str(uuid.uuid4()))
         os.symlink(linkTarget, tmp_link_name)  # make tmp_link
-        self.log.debug("Creating symlink from %s to %s", linkTarget, linkName)
+        self.log.info("Creating symlink from %s to %s", linkTarget, linkName)
         os.rename(tmp_link_name, linkName)
 
     @unsecured
     def _cleanupDomainLinks(self, domain):
         linkPath = os.path.join(self.poolPath, domain)
-        self.log.debug("Removing: %s", linkPath)
+        self.log.info("Removing: %s", linkPath)
         try:
             os.remove(linkPath)
         except (OSError, IOError):
@@ -1336,7 +1336,7 @@ class StoragePool(object):
 
         # Cleanup old trash from the pool
         for oldie in oldLinks:
-            self.log.debug('collecting stale storage domain link %s', oldie)
+            self.log.info('collecting stale storage domain link %s', oldie)
             try:
                 os.remove(oldie)
             except OSError as e:
