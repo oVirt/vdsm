@@ -266,7 +266,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         """
         metaPath = self._getMetaVolumePath()
         if self.oop.os.path.lexists(metaPath):
-            self.log.debug("Removing: %s", metaPath)
+            self.log.info("Removing: %s", metaPath)
             self.oop.os.unlink(metaPath)
 
     @classmethod
@@ -590,7 +590,7 @@ class FileVolume(volume.Volume):
                                                  "FileVolume",
                                                  "renameVolumeRollback",
                                                  [volPath, self.volumePath]))
-        self.log.debug("Renaming %s to %s", self.volumePath, volPath)
+        self.log.info("Renaming %s to %s", self.volumePath, volPath)
         self.oop.os.rename(self.volumePath, volPath)
         if recovery:
             name = "Rename meta-volume rollback: " + metaPath
@@ -598,7 +598,7 @@ class FileVolume(volume.Volume):
                                                  "FileVolume",
                                                  "renameVolumeRollback",
                                                  [metaPath, prevMetaPath]))
-        self.log.debug("Renaming %s to %s", prevMetaPath, metaPath)
+        self.log.info("Renaming %s to %s", prevMetaPath, metaPath)
         self.oop.os.rename(prevMetaPath, metaPath)
         if recovery:
             name = "Rename lease-volume rollback: " + leasePath
@@ -606,7 +606,7 @@ class FileVolume(volume.Volume):
                                                  "FileVolume",
                                                  "renameVolumeRollback",
                                                  [leasePath, prevLeasePath]))
-        self.log.debug("Renaming %s to %s", prevLeasePath, leasePath)
+        self.log.info("Renaming %s to %s", prevLeasePath, leasePath)
         try:
             self.oop.os.rename(prevLeasePath, leasePath)
         except OSError as e:

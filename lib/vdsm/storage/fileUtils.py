@@ -175,7 +175,7 @@ def cleanupdir(dirPath, ignoreErrors=True):
     def logit(func, path, exc_info):
         cleanupdir_errors.append('%s: %s' % (func.__name__, exc_info[1]))
 
-    log.debug("Removing directory: %s", dirPath)
+    log.info("Removing directory: %s", dirPath)
     shutil.rmtree(dirPath, onerror=logit)
     if not ignoreErrors and cleanupdir_errors:
         raise RuntimeError("%s %s" % (dirPath, cleanupdir_errors))
@@ -193,8 +193,8 @@ def createdir(dirPath, mode=None):
     else:
         params = (dirPath,)
 
-    log.debug("Creating directory: %s mode: %s", dirPath,
-              mode if mode is None else oct(mode))
+    log.info("Creating directory: %s mode: %s", dirPath,
+             mode if mode is None else oct(mode))
     try:
         os.makedirs(*params)
     except OSError as e:
@@ -243,7 +243,7 @@ def chown(path, user=-1, group=-1):
     if ((uid == currentUid or user == -1) and
             (gid == currentGid or group == -1)):
         return True
-    log.debug("Changing owner for %s, to (%s:%s)", path, uid, gid)
+    log.info("Changing owner for %s, to (%s:%s)", path, uid, gid)
     os.chown(path, uid, gid)
     return True
 
@@ -281,7 +281,7 @@ def atomic_symlink(target, name):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
-        log.debug("Removing stale temporary link %r", tmp_name)
+        log.info("Removing stale temporary link %r", tmp_name)
         os.unlink(tmp_name)
         log.debug("Creating symlink from %r to %r", target, tmp_name)
         os.symlink(target, tmp_name)
@@ -314,7 +314,7 @@ def copyUserModeToGroup(path):
     if (mode & 0o070) != newGroupMode:  # group mode mask
         # setting the new group mode masking out the original one
         newMode = (mode & 0o707) | newGroupMode
-        log.debug("Changing mode for %s to %#o", path, newMode)
+        log.info("Changing mode for %s to %#o", path, newMode)
         os.chmod(path, newMode)
 
 
@@ -322,5 +322,5 @@ def padToBlockSize(path):
     with open(path, 'a') as f:
         size = os.fstat(f.fileno()).st_size
         newSize = 512 * ((size + 511) / 512)
-        log.debug("Truncating file %s to %d bytes", path, newSize)
+        log.info("Truncating file %s to %d bytes", path, newSize)
         os.ftruncate(f.fileno(), newSize)

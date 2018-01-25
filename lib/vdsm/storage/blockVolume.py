@@ -146,7 +146,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         volPath = os.path.join(self._imagePath, self.volUUID)
         if not os.path.lexists(volPath):
             srcPath = lvm.lvPath(self.sdUUID, self.volUUID)
-            self.log.debug("Creating symlink from %s to %s", srcPath, volPath)
+            self.log.info("Creating symlink from %s to %s", srcPath, volPath)
             os.symlink(srcPath, volPath)
         self._volumePath = volPath
 
@@ -312,7 +312,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         """
         dstPath = os.path.join(dstImgPath, self.volUUID)
 
-        self.log.debug("Share volume %s to %s", self.volUUID, dstImgPath)
+        self.log.info("Share volume %s to %s", self.volUUID, dstImgPath)
         os.symlink(self.getDevPath(), dstPath)
 
     @classmethod
@@ -481,7 +481,7 @@ class BlockVolume(volume.Volume):
                                     sdUUID, volUUID, str(e))
 
                 if os.path.lexists(volPath):
-                    cls.log.debug("Unlinking half baked volume: %s", volPath)
+                    cls.log.info("Unlinking half baked volume: %s", volPath)
                     os.unlink(volPath)
 
     @classmethod
@@ -639,7 +639,7 @@ class BlockVolume(volume.Volume):
                            self.volUUID, exc_info=True)
 
         try:
-            self.log.debug("Unlinking %s", vol_path)
+            self.log.info("Unlinking %s", vol_path)
             os.unlink(vol_path)
             return True
         except Exception as e:
