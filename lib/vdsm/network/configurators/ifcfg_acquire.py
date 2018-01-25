@@ -52,12 +52,11 @@ class IfcfgAcquireNMonline(object):
     def acquire_device(device):
         try:
             dev = networkmanager.Device(device)
+            dev.cleanup_inactive_connections()
+            active_connection = dev.active_connection
         except NMDeviceNotFoundError:
             return
 
-        dev.cleanup_inactive_connections()
-
-        active_connection = dev.active_connection
         if not active_connection:
             return
 
