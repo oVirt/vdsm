@@ -25,8 +25,6 @@ import uuid
 import libvirt
 from six.moves import zip
 
-from nose.plugins.skip import SkipTest
-
 from vdsm.common import define
 from vdsm.common import hooks
 from vdsm.common import libvirtconnection
@@ -253,10 +251,6 @@ class TestVmOperations(XMLTestCase):
             self.assertEqual(testvm._readPauseCode(), 'NOERR')
 
     def testReadPauseCodeDomainPausedCrash(self):
-        # REQUIRED_FOR: el6
-        if not hasattr(libvirt, 'VIR_DOMAIN_PAUSED_CRASHED'):
-            raise SkipTest('libvirt.VIR_DOMAIN_PAUSED_CRASHED undefined')
-
         with fake.VM() as testvm:
             # if paused for different reason we must not extend the disk
             # so anything else is ok
