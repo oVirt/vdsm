@@ -396,14 +396,14 @@ def requires_nm_stopped(message):
     def decorator(function):
         @functools.wraps(function)
         def wrapper(*args, **kwargs):
-            if nm_is_running():
+            if _nm_is_running():
                 raise SkipTest(message)
             return function(*args, **kwargs)
         return wrapper
     return decorator
 
 
-def nm_is_running():
+def _nm_is_running():
     return len(pgrep('NetworkManager')) > 0
 
 

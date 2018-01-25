@@ -58,31 +58,19 @@ class _NMDbusDeviceProperties(object):
 
     @property
     def interface(self):
-        return self._get_property('Interface')
+        return self._property('Interface')
 
     @property
     def state(self):
-        return self._get_property('State')
+        return self._property('State')
 
     @property
     def active_connection_path(self):
-        return self._get_property('ActiveConnection')
+        return self._property('ActiveConnection')
 
     @property
     def connections_path(self):
-        return self._get_property('AvailableConnections')
+        return self._property('AvailableConnections')
 
-    @property
-    def managed(self):
-        return self._get_property('Managed')
-
-    @managed.setter
-    def managed(self, value):
-        return self._set_property('Managed', value)
-
-    def _get_property(self, property_name):
+    def _property(self, property_name):
         return self._properties.Get(self.IF_NAME, property_name)
-
-    def _set_property(self, property_name, property_value):
-        return self._properties.Set(
-            self.IF_NAME, property_name, property_value)
