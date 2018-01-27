@@ -60,7 +60,6 @@ SUBDIRS += \
 	smbios \
 	spiceoptions \
 	vmdisk \
-	vmfex \
 	$(NULL)
 endif
 

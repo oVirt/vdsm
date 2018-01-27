@@ -475,6 +475,5 @@ AC_OUTPUT([
 	vdsm_hooks/vfio_mdev/Makefile
 	vdsm_hooks/vhostmd/Makefile
 	vdsm_hooks/vmdisk/Makefile
-	vdsm_hooks/vmfex/Makefile
 	vdsm_hooks/vmfex_dev/Makefile
 ])

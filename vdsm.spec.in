@@ -632,14 +632,6 @@ BuildArch:      noarch
 This vdsm hook can be used to configure some of
 the spice optimization attributes and values..
 
-%package hook-vmfex
-Summary:        vmfex support for VDSM
-BuildArch:      noarch
-Conflicts:      hook-vmfex-dev
-
-%description hook-vmfex
-Hook for vmfex.
-
 %package hook-vmfex-dev
 Summary:        VM-FEX vNIC support for VDSM
 BuildArch:      noarch
@@ -1544,10 +1536,6 @@ exit 0
 
 %files hook-vmdisk
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vmdisk
-
-%files hook-vmfex
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vmfex
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vmfex
 %endif
 
 %files http
