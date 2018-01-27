@@ -95,7 +95,6 @@ test_modules = \
 	passwords_test.py \
 	permutation_test.py \
 	protocoldetector_test.py \
-	qemuimg_test.py \
 	response_test.py \
 	rngsources_test.py \
 	schedule_test.py \
@@ -132,7 +131,6 @@ blacklist_modules_python3 = \
 	mompolicy_test.py \
 	mom_test.py \
 	protocoldetector_test.py \
-	qemuimg_test.py \
 	stompasyncdispatcher_test.py \
 	stomp_test.py \
 	unicode_test.py \
