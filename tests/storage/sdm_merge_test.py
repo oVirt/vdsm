@@ -36,7 +36,7 @@ from storage.storagetestlib import (
     write_qemu_chain,
 )
 
-from . qemuio import qemu_pattern_verify
+from . qemuio import verify_pattern
 
 from testlib import expandPermutations, make_uuid, permutations
 from testlib import VdsmTestCase
@@ -121,13 +121,22 @@ class TestMergeSubchain(VdsmTestCase):
             for i in range(base_index, top_index + 1):
                 offset = i * 1024
                 pattern = 0xf0 + i
+
                 # We expect to read all data from top
-                qemu_pattern_verify(top_vol.volumePath, qemuimg.FORMAT.QCOW2,
-                                    offset=offset, len=1024, pattern=pattern)
+                verify_pattern(
+                    top_vol.volumePath,
+                    qemuimg.FORMAT.QCOW2,
+                    offset=offset,
+                    len=1024,
+                    pattern=pattern)
+
                 # And base, since top was merged into base
-                qemu_pattern_verify(base_vol.volumePath,
-                                    sc.fmt2str(base_vol.getFormat()),
-                                    offset=offset, len=1024, pattern=pattern)
+                verify_pattern(
+                    base_vol.volumePath,
+                    sc.fmt2str(base_vol.getFormat()),
+                    offset=offset,
+                    len=1024,
+                    pattern=pattern)
 
             self.assertEqual(sorted(self.expected_locks(base_vol)),
                              sorted(guarded.context.locks))
@@ -207,6 +216,6 @@ class TestMergeSubchain(VdsmTestCase):
             # the chain data was *not* merged
             offset = base_index * 1024
             pattern = 0xf0 + base_index
-            qemu_pattern_verify(base_vol.volumePath, qemuimg.FORMAT.RAW,
-                                offset=offset, len=1024, pattern=pattern)
+            verify_pattern(base_vol.volumePath, qemuimg.FORMAT.RAW,
+                           offset=offset, len=1024, pattern=pattern)
             self.assertEqual(base_vol.getMetaParam(sc.GENERATION), 0)

@@ -29,8 +29,8 @@ from storage.storagefakelib import (
 )
 
 from . qemuio import (
-    qemu_pattern_verify,
-    qemu_pattern_write,
+    verify_pattern,
+    write_pattern,
 )
 
 from monkeypatch import MonkeyPatchScope
@@ -338,8 +338,8 @@ def write_qemu_chain(vol_list):
         vol_fmt = sc.fmt2str(vol.getFormat())
         offset = i * 1024
         pattern = 0xf0 + i
-        qemu_pattern_write(vol.volumePath, vol_fmt, offset=offset,
-                           len=1024, pattern=pattern)
+        write_pattern(vol.volumePath, vol_fmt, offset=offset, len=1024,
+                      pattern=pattern)
 
 
 def verify_qemu_chain(vol_list):
@@ -353,20 +353,28 @@ def verify_qemu_chain(vol_list):
         pattern = 0xf0 + i
 
         # Check that the correct pattern can be read through the top volume
-        qemu_pattern_verify(top_vol.volumePath, top_vol_fmt, offset=offset,
-                            len=1024, pattern=pattern)
+        verify_pattern(
+            top_vol.volumePath,
+            top_vol_fmt,
+            offset=offset,
+            len=1024,
+            pattern=pattern)
 
         # Check the volume where the pattern was originally written
         vol_fmt = sc.fmt2str(vol.getFormat())
-        qemu_pattern_verify(vol.volumePath, vol_fmt, offset=offset, len=1024,
-                            pattern=pattern)
+        verify_pattern(
+            vol.volumePath,
+            vol_fmt,
+            offset=offset,
+            len=1024,
+            pattern=pattern)
 
         # Check that the next offset contains zeroes.  If we know this layer
         # has zeroes at next_offset we can be sure that data read at the same
         # offset in the next layer belongs to that layer.
         next_offset = (i + 1) * 1024
-        qemu_pattern_verify(vol.volumePath, vol_fmt, offset=next_offset,
-                            len=1024, pattern=0)
+        verify_pattern(vol.volumePath, vol_fmt, offset=next_offset,
+                       len=1024, pattern=0)
 
 
 def make_qemu_chain(env, size, base_vol_fmt, chain_len, qcow2_compat='0.10'):

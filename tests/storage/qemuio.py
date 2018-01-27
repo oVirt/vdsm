@@ -29,11 +29,11 @@ from vdsm.common import commands
 from vdsm.common import cmdutils
 
 
-class ChainVerificationError(AssertionError):
+class VerificationError(AssertionError):
     pass
 
 
-def qemu_pattern_write(path, format, offset=512, len=1024, pattern=5):
+def write_pattern(path, format, offset=512, len=1024, pattern=5):
     write_cmd = 'write -P %d %d %d' % (pattern, offset, len)
     cmd = ['qemu-io', '-f', format, '-c', write_cmd, path]
     rc, out, err = commands.execCmd(cmd, raw=True)
@@ -41,13 +41,14 @@ def qemu_pattern_write(path, format, offset=512, len=1024, pattern=5):
         raise cmdutils.Error(cmd, rc, out, err)
 
 
-def qemu_pattern_verify(path, format, offset=512, len=1024, pattern=5):
+def verify_pattern(path, format, offset=512, len=1024, pattern=5):
     read_cmd = 'read -P %d -s 0 -l %d %d %d' % (pattern, len, offset, len)
     cmd = ['qemu-io', '-f', format, '-c', read_cmd, path]
     rc, out, err = commands.execCmd(cmd, raw=True)
     if rc != 0 or err != b"":
         raise cmdutils.Error(cmd, rc, out, err)
     if b"Pattern verification failed" in out:
-        raise ChainVerificationError("Verification of volume %s failed. "
-                                     "Pattern 0x%x not found at offset %s" %
-                                     (path, pattern, offset))
+        raise VerificationError(
+            "Verification of volume %s failed. Pattern 0x%x not found at "
+            "offset %s"
+            % (path, pattern, offset))

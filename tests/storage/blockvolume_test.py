@@ -40,7 +40,7 @@ from storage.storagetestlib import (
     make_qemu_chain,
 )
 
-from . qemuio import qemu_pattern_write
+from . qemuio import write_pattern
 
 from testlib import make_config
 from testlib import make_uuid
@@ -147,9 +147,10 @@ class TestBlockVolumeManifest(VdsmTestCase):
     def test_optimal_size_cow_leaf_not_empty(self):
         # verify that optimal size is limited to max size.
         with self.make_volume(size=GIB, format=sc.COW_FORMAT) as vol:
-            qemu_pattern_write(path=vol.volumePath,
-                               format=sc.fmt2str(vol.getFormat()),
-                               len=200 * MEGAB)
+            write_pattern(
+                path=vol.volumePath,
+                format=sc.fmt2str(vol.getFormat()),
+                len=200 * MEGAB)
             max_size = vol.max_size(GIB, vol.getFormat())
             self.assertEqual(vol.optimal_size(), max_size)
 

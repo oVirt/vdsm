@@ -37,8 +37,8 @@ from storage.storagetestlib import (
 )
 
 from . qemuio import (
-    qemu_pattern_verify,
-    qemu_pattern_write,
+    verify_pattern,
+    write_pattern,
 )
 
 from testValidation import brokentest
@@ -545,10 +545,12 @@ class TestFinalizeMerge(VdsmTestCase):
             offset = 0
             pattern = 0xf0
             length = 1024
-            qemu_pattern_write(base_vol.volumePath,
-                               sc.fmt2str(base_vol.getFormat()),
-                               offset=offset,
-                               len=length, pattern=pattern)
+            write_pattern(
+                base_vol.volumePath,
+                sc.fmt2str(base_vol.getFormat()),
+                offset=offset,
+                len=length,
+                pattern=pattern)
 
             top_vol = env.chain[1]
             child_vol = env.chain[2]
@@ -562,10 +564,12 @@ class TestFinalizeMerge(VdsmTestCase):
 
             merge.finalize(subchain)
 
-            qemu_pattern_verify(child_vol.volumePath,
-                                sc.fmt2str(child_vol.getFormat()),
-                                offset=offset,
-                                len=length, pattern=pattern)
+            verify_pattern(
+                child_vol.volumePath,
+                sc.fmt2str(child_vol.getFormat()),
+                offset=offset,
+                len=length,
+                pattern=pattern)
 
     def check_sync_volume_chain(self, subchain, removed_vol_id):
         sync = image.Image.syncVolumeChain

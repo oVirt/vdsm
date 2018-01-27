@@ -23,9 +23,9 @@ from vdsm.common import cmdutils
 from vdsm.storage import qemuimg
 
 from . qemuio import (
-    ChainVerificationError,
-    qemu_pattern_verify,
-    qemu_pattern_write,
+    VerificationError,
+    verify_pattern,
+    write_pattern,
 )
 
 
@@ -38,8 +38,8 @@ def test_match(tmpdir, image_format):
     path = str(tmpdir.join('test.' + image_format))
     op = qemuimg.create(path, '1m', image_format)
     op.run()
-    qemu_pattern_write(path, image_format)
-    qemu_pattern_verify(path, image_format)
+    write_pattern(path, image_format)
+    verify_pattern(path, image_format)
 
 
 @pytest.mark.parametrize("offset,len", [(0, 128), (10 * 1024, 5 * 1024)])
@@ -47,31 +47,29 @@ def test_match_custom_offset_and_len(tmpdir, offset, len):
     path = str(tmpdir.join('test.qcow2'))
     op = qemuimg.create(path, '1m', qemuimg.FORMAT.QCOW2)
     op.run()
-    qemu_pattern_write(path, qemuimg.FORMAT.QCOW2,
-                       offset=offset, len=len)
-    qemu_pattern_verify(path, qemuimg.FORMAT.QCOW2, offset=offset,
-                        len=len)
+    write_pattern(path, qemuimg.FORMAT.QCOW2, offset=offset, len=len)
+    verify_pattern(path, qemuimg.FORMAT.QCOW2, offset=offset, len=len)
 
 
 def test_no_match(tmpdir, image_format):
     path = str(tmpdir.join('test.' + image_format))
     op = qemuimg.create(path, '1m', image_format)
     op.run()
-    qemu_pattern_write(path, image_format, pattern=2)
-    with pytest.raises(ChainVerificationError):
-        qemu_pattern_verify(path, image_format, pattern=4)
+    write_pattern(path, image_format, pattern=2)
+    with pytest.raises(VerificationError):
+        verify_pattern(path, image_format, pattern=4)
 
 
 def test_read_missing_file_raises(image_format):
     with pytest.raises(cmdutils.Error):
-        qemu_pattern_verify("/no/such/file", image_format)
+        verify_pattern("/no/such/file", image_format)
 
 
 def test_read_wrong_format_raises(tmpdir):
     path = str(tmpdir.join('test.raw'))
     qemuimg.create(path, "1m", qemuimg.FORMAT.RAW)
     with pytest.raises(cmdutils.Error):
-        qemu_pattern_verify(path, qemuimg.FORMAT.QCOW2)
+        verify_pattern(path, qemuimg.FORMAT.QCOW2)
 
 
 def test_read_bad_chain_raises(tmpdir):
@@ -97,4 +95,4 @@ def test_read_bad_chain_raises(tmpdir):
                                unsafe=True)
     operation.run()
     with pytest.raises(cmdutils.Error):
-        qemu_pattern_verify(top, qemuimg.FORMAT.QCOW2)
+        verify_pattern(top, qemuimg.FORMAT.QCOW2)

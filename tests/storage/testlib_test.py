@@ -37,7 +37,7 @@ from storage.storagetestlib import (
     write_qemu_chain,
 )
 
-from . qemuio import ChainVerificationError
+from . qemuio import VerificationError
 
 from vdsm import utils
 from vdsm.storage import blockSD
@@ -289,7 +289,7 @@ class TestChainVerification(VdsmTestCase):
         with fake_env(storage_type) as env:
             vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
             write_qemu_chain(reversed(vol_list))
-            self.assertRaises(ChainVerificationError,
+            self.assertRaises(VerificationError,
                               verify_qemu_chain, vol_list)
 
     @permutations((('file',), ('block',)))
@@ -300,7 +300,7 @@ class TestChainVerification(VdsmTestCase):
             # Writes the entire pattern into the base volume
             bad_list = vol_list[:1] * 3
             write_qemu_chain(bad_list)
-            self.assertRaises(ChainVerificationError,
+            self.assertRaises(VerificationError,
                               verify_qemu_chain, vol_list)
 
 
