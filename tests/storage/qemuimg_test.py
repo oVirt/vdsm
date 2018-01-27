@@ -47,7 +47,7 @@ CONFIG = make_config([('irs', 'qcow2_compat', '0.10')])
 
 
 def fake_json_call(data, cmd, **kw):
-    return 0, json.dumps(data), []
+    return 0, json.dumps(data).encode("utf-8"), []
 
 
 @expandPermutations
@@ -120,7 +120,7 @@ class InfoTests(TestCaseBase):
 
     def test_parse_error(self):
         def call(cmd, **kw):
-            out = "image: leaf.img\ninvalid file format line"
+            out = b"image: leaf.img\ninvalid file format line"
             return 0, out, ""
 
         with MonkeyPatchScope([(commands, "execCmd", call)]):
@@ -179,7 +179,7 @@ class TestSupportsOption(TestCaseBase):
     def test_supports_option(self):
         def fake_cmd(cmd, **kw):
             # Output copied from qemu-img-2.10.0
-            out = """
+            out = b"""
   check [-q] [-f fmt] [-r [leaks | all]] [-T src_cache] filename
   create [-q] [--object objectdef] [-f fmt] [-u] [-o options] filename [size]
   info [-f fmt] [--output=ofmt] [--backing-chain] [-U] filename
@@ -196,7 +196,7 @@ class TestSupportsOption(TestCaseBase):
     def test_does_not_support(self):
         def fake_cmd(cmd, **kw):
             # Output copied from qemu-img-2.9.0
-            out = """
+            out = b"""
   check [-q] [-f fmt] [-r [leaks | all]] [-T src_cache] filename
   create [-q] [--object objectdef] [-f fmt] [-o options] filename [size]
   info [-f fmt] [--output=ofmt] [--backing-chain] filename
@@ -457,7 +457,7 @@ class CheckTests(TestCaseBase):
 
     def test_parse_error(self):
         def call(cmd, **kw):
-            out = "image: leaf.img\ninvalid file format line"
+            out = b"image: leaf.img\ninvalid file format line"
             return 0, out, ""
 
         with MonkeyPatchScope([(commands, "execCmd", call)]):

@@ -265,7 +265,7 @@ def amend(image, compat):
 
 class ProgressCommand(object):
 
-    REGEXPR = re.compile(r'\s*\(([\d.]+)/100%\)\s*')
+    REGEXPR = re.compile(br'\s*\(([\d.]+)/100%\)\s*')
 
     def __init__(self, cmd, cwd=None):
         self._operation = operation.Command(cmd, cwd=cwd)
@@ -303,7 +303,7 @@ class ProgressCommand(object):
         # Checking the presence of '\r' before splitting will prevent
         # generating the array when it's not needed.
         try:
-            idx = out.rindex('\r')
+            idx = out.rindex(b'\r')
         except ValueError:
             return
 
@@ -311,7 +311,7 @@ class ProgressCommand(object):
         # The output could end with a partial progress so we must discard
         # everything after the last \r and then try to parse a progress record.
         valid_progress = out[:idx]
-        last_progress = valid_progress.rsplit('\r', 1)[-1]
+        last_progress = valid_progress.rsplit(b'\r', 1)[-1]
 
         # No need to keep old progress information around
         del out[:idx + 1]
@@ -396,6 +396,7 @@ def _supports_option(command, option):
     Required for qemu-img 2.10, where -u/-U options added.
     """
     out = _run_cmd([_qemuimg.cmd, "--help"])
+    out = out.decode("utf-8")
     # Line to match:
     #   command ... [-option] ...
     pattern = r"^\s+%s .+ \[-%s\] .+$" % (command, option)
