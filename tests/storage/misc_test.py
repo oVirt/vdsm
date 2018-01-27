@@ -783,12 +783,9 @@ class TestExecCmd(VdsmTestCase):
         Tests that execCmd correctly returns the standard error of the prog it
         executes.
         """
-        line = "Hey Scully, is this display of boyish agility " + \
-               "turning you on at all?"
-        # (C) Fox - The X Files
-        code = "import sys; sys.stderr.write('%s')" % line
-        ret, stdout, stderr = commands.execCmd([EXT_PYTHON, "-c", code])
-        self.assertEqual(stderr[0].decode("ascii"), line)
+        cmd = ["sh", "-c", "echo it works! >&2"]
+        ret, stdout, stderr = commands.execCmd(cmd)
+        self.assertEqual(stderr[0].decode("ascii"), "it works!")
 
     def testSudo(self):
         """
