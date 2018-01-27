@@ -26,10 +26,7 @@ from functools import partial
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
-from . qemuio import (
-    write_pattern,
-    verify_pattern,
-)
+from . import qemuio
 
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
@@ -567,8 +564,13 @@ class TestCommit(TestCaseBase):
                 pattern = 0xf0 + i
                 # The base volume must have the data from all the volumes
                 # merged into it.
-                verify_pattern(base_vol, base_fmt, offset=offset, len=1024,
-                               pattern=pattern)
+                qemuio.verify_pattern(
+                    base_vol,
+                    base_fmt,
+                    offset=offset,
+                    len=1024,
+                    pattern=pattern)
+
                 if i > base:
                     # internal and top volumes should keep the data, we
                     # may want to wipe this data when deleting the volumes
@@ -636,8 +638,13 @@ class TestMap(TestCaseBase):
             op = qemuimg.create(image, size=size, format=self.FORMAT,
                                 qcow2Compat=qcow2_compat)
             op.run()
-            write_pattern(image, self.FORMAT, offset=offset, len=length,
-                          pattern=0xf0)
+
+            qemuio.write_pattern(
+                image,
+                self.FORMAT,
+                offset=offset,
+                len=length,
+                pattern=0xf0)
 
             expected = [
                 # run 1 - empty
@@ -710,7 +717,12 @@ def make_image(path, size, format, index, qcow2_compat, backing=None):
                         backing=backing)
     op.run()
     offset = index * 1024
-    write_pattern(path, format, offset=offset, len=1024, pattern=0xf0 + index)
+    qemuio.write_pattern(
+        path,
+        format,
+        offset=offset,
+        len=1024,
+        pattern=0xf0 + index)
 
 
 class MapMismatch(AssertionError):

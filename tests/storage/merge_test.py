@@ -36,10 +36,7 @@ from storage.storagetestlib import (
     make_qemu_chain,
 )
 
-from . qemuio import (
-    verify_pattern,
-    write_pattern,
-)
+from . import qemuio
 
 from testValidation import brokentest
 from testlib import make_uuid
@@ -545,7 +542,7 @@ class TestFinalizeMerge(VdsmTestCase):
             offset = 0
             pattern = 0xf0
             length = 1024
-            write_pattern(
+            qemuio.write_pattern(
                 base_vol.volumePath,
                 sc.fmt2str(base_vol.getFormat()),
                 offset=offset,
@@ -564,7 +561,7 @@ class TestFinalizeMerge(VdsmTestCase):
 
             merge.finalize(subchain)
 
-            verify_pattern(
+            qemuio.verify_pattern(
                 child_vol.volumePath,
                 sc.fmt2str(child_vol.getFormat()),
                 offset=offset,

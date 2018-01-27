@@ -28,10 +28,7 @@ from storage.storagefakelib import (
     FakeStorageDomainCache,
 )
 
-from . qemuio import (
-    verify_pattern,
-    write_pattern,
-)
+from . import qemuio
 
 from monkeypatch import MonkeyPatchScope
 
@@ -338,8 +335,12 @@ def write_qemu_chain(vol_list):
         vol_fmt = sc.fmt2str(vol.getFormat())
         offset = i * 1024
         pattern = 0xf0 + i
-        write_pattern(vol.volumePath, vol_fmt, offset=offset, len=1024,
-                      pattern=pattern)
+        qemuio.write_pattern(
+            vol.volumePath,
+            vol_fmt,
+            offset=offset,
+            len=1024,
+            pattern=pattern)
 
 
 def verify_qemu_chain(vol_list):
@@ -353,7 +354,7 @@ def verify_qemu_chain(vol_list):
         pattern = 0xf0 + i
 
         # Check that the correct pattern can be read through the top volume
-        verify_pattern(
+        qemuio.verify_pattern(
             top_vol.volumePath,
             top_vol_fmt,
             offset=offset,
@@ -362,7 +363,7 @@ def verify_qemu_chain(vol_list):
 
         # Check the volume where the pattern was originally written
         vol_fmt = sc.fmt2str(vol.getFormat())
-        verify_pattern(
+        qemuio.verify_pattern(
             vol.volumePath,
             vol_fmt,
             offset=offset,
@@ -373,8 +374,12 @@ def verify_qemu_chain(vol_list):
         # has zeroes at next_offset we can be sure that data read at the same
         # offset in the next layer belongs to that layer.
         next_offset = (i + 1) * 1024
-        verify_pattern(vol.volumePath, vol_fmt, offset=next_offset,
-                       len=1024, pattern=0)
+        qemuio.verify_pattern(
+            vol.volumePath,
+            vol_fmt,
+            offset=next_offset,
+            len=1024,
+            pattern=0)
 
 
 def make_qemu_chain(env, size, base_vol_fmt, chain_len, qcow2_compat='0.10'):

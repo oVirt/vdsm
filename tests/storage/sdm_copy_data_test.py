@@ -38,7 +38,7 @@ from storage.storagetestlib import (
     write_qemu_chain,
 )
 
-from . qemuio import VerificationError
+from . import qemuio
 
 from testValidation import broken_on_ci
 from testlib import make_uuid
@@ -128,7 +128,7 @@ class TestCopyDataDIV(VdsmTestCase):
             src_vol = env.src_chain[0]
             dst_vol = env.dst_chain[0]
             write_qemu_chain(env.src_chain)
-            self.assertRaises(VerificationError,
+            self.assertRaises(qemuio.VerificationError,
                               verify_qemu_chain, env.dst_chain)
 
             source = dict(endpoint_type='div', sd_id=src_vol.sdUUID,
