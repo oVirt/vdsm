@@ -33,9 +33,10 @@ from storage.storagefakelib import (
 from storage.storagetestlib import (
     fake_env,
     make_qemu_chain,
-    qemu_pattern_verify,
     write_qemu_chain,
 )
+
+from . qemuio import qemu_pattern_verify
 
 from testlib import expandPermutations, make_uuid, permutations
 from testlib import VdsmTestCase

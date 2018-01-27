@@ -21,13 +21,11 @@ import os
 
 from testlib import expandPermutations, permutations
 from testlib import make_uuid
-from testlib import namedTemporaryDir
 from testlib import VdsmTestCase
 from testlib import TEMPDIR
 
 from storage.storagetestlib import (
     Aborting,
-    ChainVerificationError,
     FakeGuardedLock,
     fake_block_env,
     fake_env,
@@ -35,19 +33,17 @@ from storage.storagetestlib import (
     make_block_volume,
     make_file_volume,
     make_qemu_chain,
-    qemu_pattern_verify,
-    qemu_pattern_write,
     verify_qemu_chain,
     write_qemu_chain,
 )
 
+from . qemuio import ChainVerificationError
+
 from vdsm import utils
-from vdsm.common import cmdutils
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
 from vdsm.storage import fileSD
 from vdsm.storage import fileVolume
-from vdsm.storage import qemuimg
 from vdsm.storage import sd
 
 MB = 1024 ** 2
@@ -262,40 +258,7 @@ class TestFakeBlockEnv(VdsmTestCase):
 
 
 @expandPermutations
-class TestQemuPatternVerification(VdsmTestCase):
-
-    @permutations(((qemuimg.FORMAT.QCOW2,), (qemuimg.FORMAT.RAW,)))
-    def test_match(self, img_format):
-        with namedTemporaryDir() as tmpdir:
-            path = os.path.join(tmpdir, 'test')
-            op = qemuimg.create(path, '1m', img_format)
-            op.run()
-            qemu_pattern_write(path, img_format)
-            qemu_pattern_verify(path, img_format)
-
-    @permutations((
-        (0, 128),
-        (10 * 1024, 5 * 1024)
-    ))
-    def test_match_custom_offset_and_len(self, offset, len):
-        with namedTemporaryDir() as tmpdir:
-            path = os.path.join(tmpdir, 'test')
-            op = qemuimg.create(path, '1m', qemuimg.FORMAT.QCOW2)
-            op.run()
-            qemu_pattern_write(path, qemuimg.FORMAT.QCOW2,
-                               offset=offset, len=len)
-            qemu_pattern_verify(path, qemuimg.FORMAT.QCOW2, offset=offset,
-                                len=len)
-
-    @permutations(((qemuimg.FORMAT.QCOW2,), (qemuimg.FORMAT.RAW,)))
-    def test_no_match(self, img_format):
-        with namedTemporaryDir() as tmpdir:
-            path = os.path.join(tmpdir, 'test')
-            op = qemuimg.create(path, '1m', img_format)
-            op.run()
-            qemu_pattern_write(path, img_format, pattern=2)
-            self.assertRaises(ChainVerificationError,
-                              qemu_pattern_verify, path, img_format, pattern=4)
+class TestChainVerification(VdsmTestCase):
 
     @permutations((
         # storage_type
@@ -339,44 +302,6 @@ class TestQemuPatternVerification(VdsmTestCase):
             write_qemu_chain(bad_list)
             self.assertRaises(ChainVerificationError,
                               verify_qemu_chain, vol_list)
-
-    @permutations([(qemuimg.FORMAT.QCOW2,), (qemuimg.FORMAT.RAW,)])
-    def test_read_missing_file_raises(self, format):
-        with self.assertRaises(cmdutils.Error):
-            qemu_pattern_verify("/no/such/file", format)
-
-    def test_read_wrong_format_raises(self):
-        with namedTemporaryDir() as tmpdir:
-            path = os.path.join(tmpdir, "test.qcow2")
-            qemuimg.create(path, "1m", qemuimg.FORMAT.RAW)
-            with self.assertRaises(cmdutils.Error):
-                qemu_pattern_verify(path, qemuimg.FORMAT.QCOW2)
-
-    def test_read_bad_chain_raises(self):
-        with namedTemporaryDir() as tmpdir:
-            # Create a good chain.
-            base_qcow2 = os.path.join(tmpdir, "base.qcow2")
-            op = qemuimg.create(base_qcow2, "1m", qemuimg.FORMAT.QCOW2)
-            op.run()
-            top = os.path.join(tmpdir, "top.qcow2")
-            op = qemuimg.create(top, "1m", qemuimg.FORMAT.QCOW2,
-                                backing=base_qcow2,
-                                backingFormat=qemuimg.FORMAT.QCOW2)
-            op.run()
-
-            # Create a broken chain using unsafe rebase with the wrong backing
-            # format.
-            base_raw = os.path.join(tmpdir, "base.raw")
-            op = qemuimg.create(base_raw, "1m", qemuimg.FORMAT.RAW)
-            op.run()
-            operation = qemuimg.rebase(top,
-                                       backing=base_raw,
-                                       format=qemuimg.FORMAT.QCOW2,
-                                       backingFormat=qemuimg.FORMAT.QCOW2,
-                                       unsafe=True)
-            operation.run()
-            with self.assertRaises(cmdutils.Error):
-                qemu_pattern_verify(top, qemuimg.FORMAT.QCOW2)
 
 
 def set_domain_metaparams(manifest, params):

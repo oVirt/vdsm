@@ -32,12 +32,13 @@ from storage.storagefakelib import (
 )
 
 from storage.storagetestlib import (
-    ChainVerificationError,
     fake_env,
     make_qemu_chain,
     verify_qemu_chain,
     write_qemu_chain,
 )
+
+from . qemuio import ChainVerificationError
 
 from testValidation import broken_on_ci
 from testlib import make_uuid

@@ -28,10 +28,13 @@ from storage.storagefakelib import (
     FakeStorageDomainCache,
 )
 
+from . qemuio import (
+    qemu_pattern_verify,
+    qemu_pattern_write,
+)
+
 from monkeypatch import MonkeyPatchScope
 
-from vdsm.common import cmdutils
-from vdsm.common import commands
 from vdsm.storage import blockSD
 from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
@@ -319,30 +322,6 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
         disk_type,
         desc,
         sc.LEGAL_VOL)
-
-
-class ChainVerificationError(AssertionError):
-    pass
-
-
-def qemu_pattern_write(path, format, offset=512, len=1024, pattern=5):
-    write_cmd = 'write -P %d %d %d' % (pattern, offset, len)
-    cmd = ['qemu-io', '-f', format, '-c', write_cmd, path]
-    rc, out, err = commands.execCmd(cmd, raw=True)
-    if rc != 0:
-        raise cmdutils.Error(cmd, rc, out, err)
-
-
-def qemu_pattern_verify(path, format, offset=512, len=1024, pattern=5):
-    read_cmd = 'read -P %d -s 0 -l %d %d %d' % (pattern, len, offset, len)
-    cmd = ['qemu-io', '-f', format, '-c', read_cmd, path]
-    rc, out, err = commands.execCmd(cmd, raw=True)
-    if rc != 0 or err != "":
-        raise cmdutils.Error(cmd, rc, out, err)
-    if "Pattern verification failed" in out:
-        raise ChainVerificationError("Verification of volume %s failed. "
-                                     "Pattern 0x%x not found at offset %s" %
-                                     (path, pattern, offset))
 
 
 def write_qemu_chain(vol_list):

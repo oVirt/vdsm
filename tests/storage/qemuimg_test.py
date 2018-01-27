@@ -26,7 +26,7 @@ from functools import partial
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
-from storage.storagetestlib import (
+from . qemuio import (
     qemu_pattern_write,
     qemu_pattern_verify,
 )

@@ -38,8 +38,9 @@ from monkeypatch import MonkeyPatchScope
 from storage.storagetestlib import (
     fake_env,
     make_qemu_chain,
-    qemu_pattern_write,
 )
+
+from . qemuio import qemu_pattern_write
 
 from testlib import make_config
 from testlib import make_uuid

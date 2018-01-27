@@ -34,6 +34,9 @@ from storage.storagetestlib import (
     FakeVolume,
     fake_env,
     make_qemu_chain,
+)
+
+from . qemuio import (
     qemu_pattern_verify,
     qemu_pattern_write,
 )

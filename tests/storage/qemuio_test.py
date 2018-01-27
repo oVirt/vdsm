@@ -1,0 +1,100 @@
+# Copyright 2018 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+import pytest
+
+from vdsm.common import cmdutils
+from vdsm.storage import qemuimg
+
+from . qemuio import (
+    ChainVerificationError,
+    qemu_pattern_verify,
+    qemu_pattern_write,
+)
+
+
+@pytest.fixture(params=[qemuimg.FORMAT.QCOW2, qemuimg.FORMAT.RAW])
+def image_format(request):
+    return request.param
+
+
+def test_match(tmpdir, image_format):
+    path = str(tmpdir.join('test.' + image_format))
+    op = qemuimg.create(path, '1m', image_format)
+    op.run()
+    qemu_pattern_write(path, image_format)
+    qemu_pattern_verify(path, image_format)
+
+
+@pytest.mark.parametrize("offset,len", [(0, 128), (10 * 1024, 5 * 1024)])
+def test_match_custom_offset_and_len(tmpdir, offset, len):
+    path = str(tmpdir.join('test.qcow2'))
+    op = qemuimg.create(path, '1m', qemuimg.FORMAT.QCOW2)
+    op.run()
+    qemu_pattern_write(path, qemuimg.FORMAT.QCOW2,
+                       offset=offset, len=len)
+    qemu_pattern_verify(path, qemuimg.FORMAT.QCOW2, offset=offset,
+                        len=len)
+
+
+def test_no_match(tmpdir, image_format):
+    path = str(tmpdir.join('test.' + image_format))
+    op = qemuimg.create(path, '1m', image_format)
+    op.run()
+    qemu_pattern_write(path, image_format, pattern=2)
+    with pytest.raises(ChainVerificationError):
+        qemu_pattern_verify(path, image_format, pattern=4)
+
+
+def test_read_missing_file_raises(image_format):
+    with pytest.raises(cmdutils.Error):
+        qemu_pattern_verify("/no/such/file", image_format)
+
+
+def test_read_wrong_format_raises(tmpdir):
+    path = str(tmpdir.join('test.raw'))
+    qemuimg.create(path, "1m", qemuimg.FORMAT.RAW)
+    with pytest.raises(cmdutils.Error):
+        qemu_pattern_verify(path, qemuimg.FORMAT.QCOW2)
+
+
+def test_read_bad_chain_raises(tmpdir):
+    # Create a good chain.
+    base_qcow2 = str(tmpdir.join("base.qcow2"))
+    op = qemuimg.create(base_qcow2, "1m", qemuimg.FORMAT.QCOW2)
+    op.run()
+    top = str(tmpdir.join("top.qcow2"))
+    op = qemuimg.create(top, "1m", qemuimg.FORMAT.QCOW2,
+                        backing=base_qcow2,
+                        backingFormat=qemuimg.FORMAT.QCOW2)
+    op.run()
+
+    # Create a broken chain using unsafe rebase with the wrong backing
+    # format.
+    base_raw = str(tmpdir.join("base.raw"))
+    op = qemuimg.create(base_raw, "1m", qemuimg.FORMAT.RAW)
+    op.run()
+    operation = qemuimg.rebase(top,
+                               backing=base_raw,
+                               format=qemuimg.FORMAT.QCOW2,
+                               backingFormat=qemuimg.FORMAT.QCOW2,
+                               unsafe=True)
+    operation.run()
+    with pytest.raises(cmdutils.Error):
+        qemu_pattern_verify(top, qemuimg.FORMAT.QCOW2)
