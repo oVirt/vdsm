@@ -174,8 +174,11 @@ Requires: cyrus-sasl-scram
 Requires: lvm2 >= 2.02.145
 
 %if 0%{?rhel}
+# Required for safe usage of blkdiscard on arrays that misreport their limits
+# See https://bugzilla.redhat.com/1507043 for details
+Requires: kernel >= 3.10.0-693.14.1.el7
+
 Requires: e2fsprogs
-Requires: kernel >= 3.10.0-693.11.6.el7
 Requires: python >= 2.7.5-18.el7_1.1
 
 %if 0%{?centos}
