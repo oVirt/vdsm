@@ -792,8 +792,7 @@ _STORAGE_TEST_DATA = [
                 startupPolicy="optional" />
             <target bus="ide" dev="hdd" />
             <readonly />
-            <driver error_policy="report" io="threads"
-                name="qemu" type="raw" />
+            <driver error_policy="report" name="qemu" type="raw" />
         </disk>'''.format(guid='8a1dc504-9d00-48f3-abdc-c70404e6f7e2',
                           hashsum='4137dc5fb55e021fbfd2653621d9d194'),
      {}],
@@ -803,7 +802,7 @@ _STORAGE_TEST_DATA = [
             <source file="" startupPolicy="optional"/>
             <target dev="hdc" bus="ide"/>
             <readonly/>
-            <driver name="qemu" type="raw" io="threads" error_policy="report"/>
+            <driver name="qemu" type="raw" error_policy="report"/>
          </disk>''',
      {}],
     [u'''<disk device="disk" snapshot="no" type="block">
@@ -1353,7 +1352,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         # using the defaults. Everything else should be the same
         # (see below for more details).
         expected_xml = cdrom_xml.format(
-            driver_xml=u'''<driver name="qemu" type="raw" io="threads"
+            driver_xml=u'''<driver name="qemu" type="raw"
             error_policy="stop"/>''')
 
         dev = vmdevices.storage.Drive(
@@ -1412,7 +1411,7 @@ _DRIVE_PAYLOAD_XML = u"""<domain type='kvm' id='2'>
       <source startupPolicy='optional'/>
       <target dev='hdd' bus='ide'/>
       <readonly/>
-      <driver error_policy="report" io="threads" name="qemu" type="raw" />
+      <driver error_policy="report" name="qemu" type="raw" />
     </disk>
   </devices>
 </domain>"""
@@ -1507,7 +1506,7 @@ _DOMAIN_MD_MATCH_XML = u"""<domain type='kvm' id='2'>
       <backingStore/>
       <target dev='hdc' bus='ide'/>
       <readonly/>
-      <driver error_policy="report" io="threads" name="qemu" type="raw" />
+      <driver error_policy="report" name="qemu" type="raw" />
     </disk>
     <controller type='virtio-serial' index='0' ports='16'>
       <alias name='virtio-serial0'/>

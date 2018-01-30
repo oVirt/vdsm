@@ -930,12 +930,12 @@ def _getDriverXML(drive):
     driver = vmxml.Element('driver')
     driverAttrs = {'name': 'qemu'}
 
-    if drive['diskType'] == DISK_TYPE.BLOCK:
-        driverAttrs['io'] = 'native'
-    else:
-        driverAttrs['io'] = 'threads'
-
     if drive['device'] != 'cdrom':
+        if drive['diskType'] == DISK_TYPE.BLOCK:
+            driverAttrs['io'] = 'native'
+        else:
+            driverAttrs['io'] = 'threads'
+
         if drive['format'] == 'cow':
             driverAttrs['type'] = 'qcow2'
         elif drive['format']:

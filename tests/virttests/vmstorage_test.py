@@ -73,7 +73,7 @@ class DriveXMLTests(XMLTestCase):
                 <target bus="ide" dev="hdc"/>
                 <readonly/>
                 <serial>54-a672-23e5b495a9ea</serial>
-                <driver error_policy="stop" io="threads"
+                <driver error_policy="stop"
                     name="qemu" type="raw" />
             </disk>
             """
@@ -265,8 +265,7 @@ class DriveXMLTests(XMLTestCase):
                 <source file="/path/to/fedora.iso" startupPolicy="optional"/>
                 <target bus="ide" dev="hdc"/>
                 <readonly/>
-                <driver error_policy="stop" io="threads"
-                    name="qemu" type="raw" />
+                <driver error_policy="stop" name="qemu" type="raw" />
             </disk>
             """
         self.check(conf, xml)
