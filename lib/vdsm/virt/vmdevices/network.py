@@ -76,7 +76,7 @@ class Interface(core.Base):
     def from_xml_tree(cls, log, dev, meta):
         params = {
             'device': core.find_device_type(dev),
-            'type': core.find_device_type(dev),
+            'type': dev.tag,
             'custom': meta.get('custom', {}),
             'vmid': meta['vmid'],
             'vm_custom': {},
