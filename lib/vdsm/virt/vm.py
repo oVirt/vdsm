@@ -4519,9 +4519,9 @@ class Vm(object):
             return response.error('transientErr')
 
         if not drive.isDiskReplicationInProgress():
-            self.log.error("No replication in progress (drive: %r, "
-                           "srcDisk: %r)", drive.name, srcDisk)
-            return response.error('replicaErr')
+            raise exception.ReplicationNotInProgress(vmId=self.id,
+                                                     driveName=drive.name,
+                                                     srcDisk=srcDisk)
 
         # Looking for the replication blockJob info (checking its presence)
         blkJobInfo = self._dom.blockJobInfo(drive.name, 0)
