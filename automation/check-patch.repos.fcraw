@@ -1,1 +1,2 @@
+tested,http://resources.ovirt.org/repos/ovirt/tested/master/rpm/fc28
 virt-preview,http://fedorapeople.org/groups/virt/virt-preview/fedora-$releasever/$basearch
