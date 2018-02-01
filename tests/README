@@ -19,7 +19,7 @@ Running the tests
 
 Run storage tests with all installed python versions:
 
-    tox -e storage-py27,storage-py35,storage-py36
+    tox -e storage-py27,storage-py36
 
 Decreasing test verbosity:
 
@@ -28,7 +28,7 @@ Decreasing test verbosity:
 You can also use environment variables
 
    export PYTEST_ADDOPTS=-qq
-   tox -e storage-py35
+   tox -e storage-py36
 
 Profiling tests, showing 10 slowest tests:
 
@@ -36,7 +36,7 @@ Profiling tests, showing 10 slowest tests:
 
 Running specific storage tests modules with both multiple python versions:
 
-   tox -e storage-py27,storage-py35,storage-py36 -- storage/qcow2_test.py
+   tox -e storage-py27,storage-py36 -- storage/qcow2_test.py
 
 
 Using tox virtual environment
