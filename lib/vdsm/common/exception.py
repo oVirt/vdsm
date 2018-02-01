@@ -417,6 +417,11 @@ class HotunplugLeaseFailed(ContextException):
     message = 'Failed to hotunplug lease'
 
 
+class ReplicationNotInProgress(ContextException):
+    code = 88
+    message = "Replication not in progress."
+
+
 class RecoveryInProgress(VdsmException):
     code = 99
     message = 'Recovering from crash or Initializing'
