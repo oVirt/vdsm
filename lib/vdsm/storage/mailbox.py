@@ -56,7 +56,7 @@ EXTEND_CODE = b"xtnd"
 BLOCK_SIZE = 512
 REPLY_OK = 1
 EMPTYMAILBOX = MAILBOX_SIZE * b"\0"
-SLOTS_PER_MAILBOX = int(MAILBOX_SIZE / MESSAGE_SIZE)
+SLOTS_PER_MAILBOX = int(MAILBOX_SIZE // MESSAGE_SIZE)
 # Last message slot is reserved for metadata (checksum, extendable mailbox,
 # etc)
 MESSAGES_PER_MAILBOX = SLOTS_PER_MAILBOX - 1
@@ -230,7 +230,7 @@ class HSM_MailMonitor(object):
 
     def __init__(self, inbox, outbox, hostID, queue, monitorInterval):
         # Save arguments
-        tpSize = config.getint('irs', 'thread_pool_size') / 2
+        tpSize = config.getint('irs', 'thread_pool_size') // 2
         waitTimeout = wait_timeout(monitorInterval)
         maxTasks = config.getint('irs', 'max_tasks')
         self.tp = ThreadPool("mailbox-hsm", tpSize, waitTimeout, maxTasks)
@@ -525,7 +525,7 @@ class SPM_MailMonitor:
         self._stop = False
         self._stopped = False
         self._poolID = poolID
-        tpSize = config.getint('irs', 'thread_pool_size') / 2
+        tpSize = config.getint('irs', 'thread_pool_size') // 2
         waitTimeout = wait_timeout(monitorInterval)
         maxTasks = config.getint('irs', 'max_tasks')
         self.tp = ThreadPool("mailbox-spm", tpSize, waitTimeout, maxTasks)
@@ -742,11 +742,11 @@ class SPM_MailMonitor:
             self._outgoingMail = \
                 self._outgoingMail[0:msgOffset] + msg.payload + \
                 self._outgoingMail[msgOffset + MESSAGE_SIZE:self._outMailLen]
-            mailboxOffset = (msgID / SLOTS_PER_MAILBOX) * MAILBOX_SIZE
+            mailboxOffset = (msgID // SLOTS_PER_MAILBOX) * MAILBOX_SIZE
             mailbox = self._outgoingMail[mailboxOffset:
                                          mailboxOffset + MAILBOX_SIZE]
             cmd = self._outCmd + ['bs=' + str(MAILBOX_SIZE),
-                                  'seek=' + str(mailboxOffset / MAILBOX_SIZE)]
+                                  'seek=' + str(mailboxOffset // MAILBOX_SIZE)]
             # self.log.debug("Running command: %s, for message id: %s",
             #               str(cmd), str(msgID))
             (rc, out, err) = _mboxExecCmd(cmd, data=mailbox)
@@ -775,4 +775,4 @@ def wait_timeout(monitor_interval):
     seconds, keeping the behaivor in runtime the same as it was in the last 8
     years, while allowing shorter times for testing.
     """
-    return monitor_interval * 3 / 2
+    return monitor_interval * 3 // 2
