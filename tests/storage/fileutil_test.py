@@ -134,10 +134,8 @@ class TestAtomicSymlink(VdsmTestCase):
             target = os.path.join(tmpdir, "target")
             link = os.path.join(tmpdir, "link")
             fileUtils.atomic_symlink(target, link)
-            current = os.lstat(link)
             fileUtils.atomic_symlink(target, link)
-            new = os.lstat(link)
-            self.assertEqual(current, new)
+            self.assertEqual(os.readlink(link), target)
             self.assertFalse(os.path.exists(link + ".tmp"))
 
     def test_replace_stale(self):
