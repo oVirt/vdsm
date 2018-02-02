@@ -93,11 +93,11 @@ def make_spm_mailbox(mboxfiles):
 
 @contextlib.contextmanager
 def xtnd_message(spm_mm, callback):
-    spm_mm.registerMessageType("xtnd", callback)
+    spm_mm.registerMessageType(b"xtnd", callback)
     try:
         yield
     finally:
-        spm_mm.unregisterMessageType("xtnd")
+        spm_mm.unregisterMessageType(b"xtnd")
 
 
 class TestSPMMailMonitor:
@@ -185,9 +185,9 @@ class TestCommunicate:
 
         assert not expired, 'message was not processed on time'
         assert received_messages == [(449, (
-            "1xtnd\xe1_\xfeeT\x8a\x18\xb3\xe0JT\xe5^\xc8\xdb\x8a_Z%"
-            "\xd8\xfcs.\xa4\xc3C\xbb>\xc6\xf1r\xd700000000000000640"
-            "0000000000"))]
+            b"1xtnd\xe1_\xfeeT\x8a\x18\xb3\xe0JT\xe5^\xc8\xdb\x8a_Z%"
+            b"\xd8\xfcs.\xa4\xc3C\xbb>\xc6\xf1r\xd700000000000000640"
+            b"0000000000"))]
 
     def test_send_reply(self, mboxfiles):
         HOST_ID = 3
@@ -267,19 +267,19 @@ class TestValidation:
         assert not sm.SPM_MailMonitor.validateMailbox(mailbox, 7)
 
     def test_good_checksum(self):
-        msg = "x" * sm.MESSAGE_SIZE
+        msg = b"x" * sm.MESSAGE_SIZE
         padding = sm.MAILBOX_SIZE - sm.MESSAGE_SIZE - sm.CHECKSUM_BYTES
-        data = msg + padding * "\0"
+        data = msg + padding * b"\0"
         n = sm.checksum(data, sm.CHECKSUM_BYTES)
         checksum = struct.pack('<l', n)
         mailbox = data + checksum
         assert sm.SPM_MailMonitor.validateMailbox(mailbox, 7)
 
     def test_bad_checksum(self):
-        msg = "x" * sm.MESSAGE_SIZE
+        msg = b"x" * sm.MESSAGE_SIZE
         padding = sm.MAILBOX_SIZE - sm.MESSAGE_SIZE - sm.CHECKSUM_BYTES
-        data = msg + padding * "\0"
-        mailbox = data + "bad!"
+        data = msg + padding * b"\0"
+        mailbox = data + b"bad!"
         assert not sm.SPM_MailMonitor.validateMailbox(mailbox, 7)
 
 
