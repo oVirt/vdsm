@@ -676,14 +676,11 @@ class SPM_MailMonitor:
                 if newMsg == CLEAN_MESSAGE:
                     # Should probably put a setter on outgoingMail which would
                     # take the lock
-                    self._outLock.acquire()
-                    try:
+                    with self._outLock:
                         self._outgoingMail = \
                             self._outgoingMail[0:msgOffset] + CLEAN_MESSAGE + \
                             self._outgoingMail[msgOffset + MESSAGE_SIZE:
                                                self._outMailLen]
-                    finally:
-                        self._outLock.release()
                     send = True
                     continue
 
@@ -735,8 +732,7 @@ class SPM_MailMonitor:
     def _checkForMail(self):
         # Lock is acquired in order to make sure that neither _numHosts nor
         # incomingMail are changed during checkForMail
-        self._inLock.acquire()
-        try:
+        with self._inLock:
             # self.log.debug("SPM_MailMonitor -_checking for mail")
             cmd = self._inCmd + ['bs=' + str(self._outMailLen)]
             # self.log.debug("SPM_MailMonitor - reading incoming mail, "
@@ -755,24 +751,18 @@ class SPM_MailMonitor:
                                    "read mailbox")
             # self.log.debug("Parsing inbox content: %s", in_mail)
             if self._handleRequests(in_mail):
-                self._outLock.acquire()
-                try:
+                with self._outLock:
                     cmd = self._outCmd + ['bs=' + str(self._outMailLen)]
                     (rc, out, err) = _mboxExecCmd(cmd,
                                                   data=self._outgoingMail)
                     if rc:
                         self.log.warning("SPM_MailMonitor couldn't write "
                                          "outgoing mail, dd failed")
-                finally:
-                    self._outLock.release()
-        finally:
-            self._inLock.release()
 
     def sendReply(self, msgID, msg):
         # Lock is acquired in order to make sure that neither _numHosts nor
         # outgoingMail are changed while used
-        self._outLock.acquire()
-        try:
+        with self._outLock:
             msgOffset = msgID * MESSAGE_SIZE
             self._outgoingMail = \
                 self._outgoingMail[0:msgOffset] + msg.payload + \
@@ -788,8 +778,6 @@ class SPM_MailMonitor:
             if rc:
                 self.log.error("SPM_MailMonitor: sendReply - couldn't send "
                                "reply, dd failed")
-        finally:
-            self._outLock.release()
 
     def _run(self):
         try:
