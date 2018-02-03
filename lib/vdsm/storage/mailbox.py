@@ -594,24 +594,6 @@ class SPM_MailMonitor:
     def isStopped(self):
         return self._stopped
 
-    def getMaxHostID(self):
-        return self._numHosts
-
-    def setMaxHostID(self, newMaxId):
-        with self._inLock:
-            with self._outLock:
-                diff = newMaxId - self._numHosts
-                if diff > 0:
-                    delta = MAILBOX_SIZE * diff * "\0"
-                    self._outgoingMail += delta
-                    self._incomingMail += delta
-                elif diff < 0:
-                    delta = MAILBOX_SIZE * diff
-                    self._outgoingMail = self._outgoingMail[:-delta]
-                    self._incomingMail = self._incomingMail[:-delta]
-                self._numHosts = newMaxId
-                self._outMailLen = MAILBOX_SIZE * self._numHosts
-
     @classmethod
     def validateMailbox(self, mailbox, mailboxIndex):
         """
@@ -730,8 +712,8 @@ class SPM_MailMonitor:
         return send
 
     def _checkForMail(self):
-        # Lock is acquired in order to make sure that neither _numHosts nor
-        # incomingMail are changed during checkForMail
+        # Lock is acquired in order to make sure that
+        # incomingMail is not changed during checkForMail
         with self._inLock:
             # self.log.debug("SPM_MailMonitor -_checking for mail")
             cmd = self._inCmd + ['bs=' + str(self._outMailLen)]
@@ -760,8 +742,8 @@ class SPM_MailMonitor:
                                          "outgoing mail, dd failed")
 
     def sendReply(self, msgID, msg):
-        # Lock is acquired in order to make sure that neither _numHosts nor
-        # outgoingMail are changed while used
+        # Lock is acquired in order to make sure that
+        # outgoingMail is not changed while used
         with self._outLock:
             msgOffset = msgID * MESSAGE_SIZE
             self._outgoingMail = \

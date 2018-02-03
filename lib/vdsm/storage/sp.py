@@ -1998,15 +1998,6 @@ class StoragePool(object):
         """
         domain.deleteImage(domain.sdUUID, imgUUID, volsByImg)
 
-    def setMaxHostID(self, spUUID, maxID):
-        """
-        Set maximum host ID
-        """
-        self.log.error("TODO: Implement")
-        self._maxHostID
-        self.spmMailer.setMaxHostID(maxID)
-        raise se.MiscNotImplementedException
-
     def setVolumeDescription(self, sdUUID, imgUUID, volUUID, description):
         self.validatePoolSD(sdUUID)
         img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
