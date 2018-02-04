@@ -331,7 +331,6 @@ class StoragePool(object):
 
                 self._backend.setSpmStatus(self.lver, self.id,
                                            __securityOverride=True)
-                self._maxHostID = maxHostID
 
                 # Upgrade the master domain now if needed
                 # __securityOverride is added by the @secured decorator
