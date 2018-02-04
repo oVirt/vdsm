@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2017 Red Hat Inc.
+# Copyright (C) 2014-2019 Red Hat Inc.
 # Copyright (C) 2014 Saggi Mizrahi, Red Hat Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -46,7 +46,7 @@ class JsonRpcRequest(object):
     @classmethod
     def decode(cls, msg):
         try:
-            obj = json.loads(msg, encoding='utf-8')
+            obj = json.loads(msg)
         except:
             raise exception.JsonRpcParseError()
 
@@ -92,7 +92,7 @@ class JsonRpcRequest(object):
 
     def encode(self):
         res = self.toDict()
-        return json.dumps(res, 'utf-8')
+        return json.dumps(res)
 
     def isNotification(self):
         return (self.id is None)
@@ -118,11 +118,11 @@ class JsonRpcResponse(object):
 
     def encode(self):
         res = self.toDict()
-        return json.dumps(res, 'utf-8')
+        return json.dumps(res)
 
     @staticmethod
     def decode(msg):
-        obj = json.loads(msg, encoding='utf-8')
+        obj = json.loads(msg)
         return JsonRpcResponse.fromRawObject(obj)
 
     @staticmethod
