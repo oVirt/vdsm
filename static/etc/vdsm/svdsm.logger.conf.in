@@ -1,32 +1,28 @@
 # supervdsm logging configuration.
-#
-# Enabling threaded logging:
-# 1. Add "logthread" to [handlers] keys
-# 2. Replace "logfile" with "logthread" in all loggers "handlers" list.
 
 [loggers]
 keys=root,SuperVdsm,Gluster
 
 [handlers]
-keys=logfile
+keys=logfile,logthread
 
 [formatters]
 keys=long
 
 [logger_root]
 level=DEBUG
-handlers=logfile
+handlers=logthread
 propagate=0
 
 [logger_SuperVdsm]
 level=DEBUG
-handlers=logfile
+handlers=logthread
 qualname=SuperVdsm
 propagate=0
 
 [logger_Gluster]
 level=DEBUG
-handlers=logfile
+handlers=logthread
 qualname=Gluster
 propagate=0
 
