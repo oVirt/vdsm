@@ -11,23 +11,16 @@ vNIC to a dummy bridge, and a post-creation hook will disconnect it so that
 the agent can connect it to the correct bridge.
 
 For the OVS plugin, the current implementation will connect the vNIC to the
-default integration bridge, named "br_int" if no Security Groups are required.
-In case Securtiy Groups are required, the tap will be connected to a dedicated
-Linux Bridge which will be connected by veth pair to the OVS integration
-bridge. The reason for this is that currently the Security Groups
-implementation (iptables) doesn't work on the OVS bridge, so a workaround had
-to be taken (same as OpenStack Compute does it).
+default integration bridge, named "br_int".
 
 Syntax:
     { 'provider_type': 'OPENSTACK_NETWORK', 'vnic_id': 'port_id',
-      'plugin_type': 'plugin_type_value', 'security_groups': .* }
+      'plugin_type': 'plugin_type_value' }
 Where:
     port_id should be replaced with the port id of the virtual NIC to be
     connected to OpenStack Network.
     plugin_type_value should be replaced with with OPEN_VSWITCH for OVS plugin
     of anything else for Linux Bridge plugin.
-    security_groups if present, will trigger correct behavior for enabling
-    security groups support, mainly when using OVS. The value is unimportant.
 '''
 from __future__ import print_function
 
@@ -46,16 +39,13 @@ from openstacknet_utils import PLUGIN_TYPE_KEY
 from openstacknet_utils import PROVIDER_TYPE_KEY
 from openstacknet_utils import PT_BRIDGE
 from openstacknet_utils import PT_OVS
-from openstacknet_utils import SECURITY_GROUPS_KEY
 from openstacknet_utils import VM_ID_KEY
 from openstacknet_utils import VNIC_ID_KEY
 from openstacknet_utils import devName
-from openstacknet_utils import setUpSecurityGroupVnic
 
 HELP_ARG = "-h"
 TEST_ARG = "-t"
 OVS_ARG = "-o"
-SECGROUPS_ARG = "-s"
 HELP_TEXT = """usage: %(prog)s [%(help)s] [%(test)s [%(ovs)s]]
 
 OpenStack Network Hook.
@@ -64,11 +54,9 @@ optional arguments:
   %(help)s  show this help message and exit
   %(test)s  run a dry test for the hook
   %(ovs)s  run the test with OVS
-  %(secgroups)s  run the test with security groups
 """ % {'help': HELP_ARG,
        'test': TEST_ARG,
        'ovs': OVS_ARG,
-       'secgroups': SECGROUPS_ARG,
        'prog': sys.argv[0]}
 
 
@@ -85,20 +73,8 @@ def addLinuxBridgeVnic(domxml, iface, portId):
     defineLinuxBridge(domxml, iface, portId, DUMMY_BRIDGE)
 
 
-def addOvsVnic(domxml, iface, portId, hasSecurityGroups):
-    if hasSecurityGroups:
-        addOvsHybridVnic(domxml, iface, portId)
-    else:
-        addOvsDirectVnic(domxml, iface, portId)
-
-
-def addOvsHybridVnic(domxml, iface, portId):
-    setUpSecurityGroupVnic(
-        iface.getElementsByTagName('mac')[0].getAttribute('address'),
-        portId)
-
-    brName = devName("qbr", portId)
-    defineLinuxBridge(domxml, iface, portId, brName)
+def addOvsVnic(domxml, iface, portId):
+    addOvsDirectVnic(domxml, iface, portId)
 
 
 def addOvsDirectVnic(domxml, iface, portId):
@@ -113,12 +89,12 @@ def addOvsDirectVnic(domxml, iface, portId):
     iface.appendChild(virtualPort)
 
 
-def addOpenstackVnic(domxml, pluginType, portId, hasSecurityGroups):
+def addOpenstackVnic(domxml, pluginType, portId):
     iface = domxml.getElementsByTagName('interface')[0]
     if pluginType == PT_BRIDGE:
         addLinuxBridgeVnic(domxml, iface, portId)
     elif pluginType == PT_OVS:
-        addOvsVnic(domxml, iface, portId, hasSecurityGroups)
+        addOvsVnic(domxml, iface, portId)
     else:
         hooking.exit_hook("Unknown plugin type: %s" % pluginType)
 
@@ -142,10 +118,9 @@ def main():
         domxml = hooking.read_domxml()
         vNicId = os.environ[VNIC_ID_KEY]
         pluginType = os.environ[PLUGIN_TYPE_KEY]
-        hasSecurityGroups = SECURITY_GROUPS_KEY in os.environ
         sys.stderr.write('Adding vNIC %s for provider type %s and plugin %s'
                          % (vNicId, providerType, pluginType))
-        addOpenstackVnic(domxml, pluginType, vNicId, hasSecurityGroups)
+        addOpenstackVnic(domxml, pluginType, vNicId)
         hooking.write_domxml(domxml)
 
         vm_id = os.environ[VM_ID_KEY]
@@ -158,7 +133,7 @@ def main():
             mark_for_unpause(vm_id)
 
 
-def test(ovs, withSecurityGroups):
+def test(ovs):
     domxml = minidom.parseString("""<?xml version="1.0" encoding="utf-8"?>
     <interface type="bridge">
         <mac address="00:1a:4a:16:01:51"/>
@@ -176,8 +151,7 @@ def test(ovs, withSecurityGroups):
     openstacknet_utils.deviceExists = openstacknet_utils.mockDeviceExists
     addOpenstackVnic(domxml,
                      pluginType,
-                     'test_port_id',
-                     withSecurityGroups)
+                     'test_port_id')
     print(domxml.toxml(encoding='utf-8'))
 
 
@@ -188,8 +162,7 @@ if __name__ == '__main__':
     try:
         if TEST_ARG in sys.argv:
             useOvs = OVS_ARG in sys.argv
-            useSecGroups = SECGROUPS_ARG in sys.argv
-            test(useOvs, useSecGroups)
+            test(useOvs)
         else:
             main()
     except:

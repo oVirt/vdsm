@@ -14,7 +14,6 @@ PROVIDER_TYPE_KEY = 'provider_type'
 OPENSTACK_NET_PROVIDER_TYPE = 'OPENSTACK_NETWORK'
 VNIC_ID_KEY = 'vnic_id'
 PLUGIN_TYPE_KEY = 'plugin_type'
-SECURITY_GROUPS_KEY = 'security_groups'
 PT_BRIDGE = 'LINUX_BRIDGE'
 PT_OVS = 'OPEN_VSWITCH'
 
@@ -65,35 +64,3 @@ def deviceExists(dev):
 
 def mockDeviceExists(dev):
     return False
-
-
-def setUpSecurityGroupVnic(macAddr, portId):
-    hooking.log('Setting up vNIC (portId %s) security groups' % portId)
-    brName = devName("qbr", portId)
-
-    # TODO: Remove this check after bz 1045626 is fixed
-    if not deviceExists(brName):
-        executeOrExit([EXT_BRCTL, 'addbr', brName])
-        executeOrExit([EXT_BRCTL, 'setfd', brName, '0'])
-        executeOrExit([EXT_BRCTL, 'stp', brName, 'off'])
-
-    vethBr = devName("qvb", portId)
-    vethOvs = devName("qvo", portId)
-
-    # TODO: Remove this check after bz 1045626 is fixed
-    if not deviceExists(vethOvs):
-        executeOrExit([EXT_IP, 'link', 'add', vethBr, 'type', 'veth', 'peer',
-                      'name', vethOvs])
-        for dev in [vethBr, vethOvs]:
-            executeOrExit([EXT_IP, 'link', 'set', dev, 'up'])
-            executeOrExit([EXT_IP, 'link', 'set', dev, 'promisc', 'on'])
-
-        executeOrExit([EXT_IP, 'link', 'set', brName, 'up'])
-        executeOrExit([EXT_BRCTL, 'addif', brName, vethBr])
-
-        executeOrExit([ovs_vsctl.cmd, '--', '--may-exist', 'add-port',
-                       INTEGRATION_BRIDGE, vethOvs,
-                       '--', 'set', 'Interface', vethOvs,
-                       'external-ids:iface-id=%s' % portId,
-                       'external-ids:iface-status=active',
-                       'external-ids:attached-mac=%s' % macAddr])
