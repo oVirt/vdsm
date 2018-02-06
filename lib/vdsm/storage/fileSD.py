@@ -727,7 +727,7 @@ class FileStorageDomain(sd.StorageDomain):
         removedPattern = os.path.join(self.domaindir, sd.DOMAIN_IMAGES,
                                       sd.REMOVED_IMAGE_PREFIX + '*')
         removedImages = self.oop.glob.glob(removedPattern)
-        self.log.debug("Removing remnants of deleted images %s" %
+        self.log.debug("Removing remnants of deleted images %s",
                        removedImages)
         for imageDir in removedImages:
             self.oop.fileUtils.cleanupdir(imageDir)
