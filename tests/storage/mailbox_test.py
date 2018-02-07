@@ -51,6 +51,12 @@ def mboxfiles(tmpdir):
     yield MboxFiles(str(inbox), str(outbox))
 
 
+def read_mbox(mboxfiles):
+    with io.open(mboxfiles.inbox, 'rb') as inf, \
+            io.open(mboxfiles.outbox, 'rb') as outf:
+        return inf.read(), outf.read()
+
+
 @contextlib.contextmanager
 def make_hsm_mailbox(mboxfiles, host_id):
     mailbox = sm.HSM_Mailbox(
@@ -181,6 +187,32 @@ class TestCommunicate:
             "1xtnd\xe1_\xfeeT\x8a\x18\xb3\xe0JT\xe5^\xc8\xdb\x8a_Z%"
             "\xd8\xfcs.\xa4\xc3C\xbb>\xc6\xf1r\xd700000000000000640"
             "0000000000"))]
+
+    def test_send_reply(self, mboxfiles):
+        HOST_ID = 3
+        MSG_ID = HOST_ID * sm.SLOTS_PER_MAILBOX + 12
+
+        with make_hsm_mailbox(mboxfiles, HOST_ID):
+            with make_spm_mailbox(mboxfiles) as spm_mm:
+                VOL_DATA = dict(
+                    poolID=SPUUID,
+                    domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
+                    volumeID='d772f1c6-3ebb-43c3-a42e-73fcd8255a5f')
+                msg = sm.SPM_Extend_Message(VOL_DATA, 0)
+                spm_mm.sendReply(MSG_ID, msg)
+
+        inbox, outbox = read_mbox(mboxfiles)
+        assert inbox == b'\0' * 0x1000 * MAX_HOSTS
+
+        # proper MSG_ID is written, anything else is intact
+        msg_offset = 0x40 * MSG_ID
+        assert outbox[:msg_offset] == b'\0' * msg_offset
+        assert outbox[msg_offset:msg_offset + 0x40] == (
+            b'1xtnd\xe1_\xfeeT\x8a\x18\xb3\xe0JT\xe5^\xc8\xdb\x8a_Z%'
+            b'\xd8\xfcs.\xa4\xc3C\xbb>\xc6\xf1r\xd700000000000000000'
+            b'0000000000')
+        assert outbox[msg_offset + 0x40:] == b'\0' * (
+            0x1000 * MAX_HOSTS - 0x40 - msg_offset)
 
 
 class TestValidation:
