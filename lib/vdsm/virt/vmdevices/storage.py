@@ -255,9 +255,6 @@ class Drive(core.Base):
         self._customize()
         self._setExtSharedState()
 
-    def config(self):
-        return None
-
     def _setExtSharedState(self):
         # We cannot use tobool here as shared can take several values
         # (e.g. none, exclusive) that would be all mapped to False.

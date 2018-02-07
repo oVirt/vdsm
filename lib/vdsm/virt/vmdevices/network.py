@@ -462,9 +462,6 @@ class Interface(core.Base):
                     nicDev['network'] = network
                 vm.conf['devices'].append(nicDev)
 
-    def config(self):
-        return None
-
     def __repr__(self):
         s = ('<Interface name={name}, type={self.device}, mac={self.macAddr} '
              'at {addr:#x}>')

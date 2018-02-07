@@ -1682,6 +1682,8 @@ class Vm(object):
         if event_data:
             self.send_status_event(**event_data)
 
+    # REQUIRED_FOR: oVirt <= 4.1
+    # DEPRECATED_SINCE: oVirt >= 4.2
     def status(self, fullStatus=True):
         # used by vdsm.API.Global.getVMList
         if not fullStatus:
@@ -1699,7 +1701,24 @@ class Vm(object):
             status['statusTime'] = self._get_status_time()
             status['arch'] = self.arch
             status['memGuaranteedSize'] = self._mem_guaranteed_size_mb
-            return utils.picklecopy(status)
+            ret = utils.picklecopy(status)
+            if 'xml' in self.conf:
+                # If Vdsm 4.2 runs in a 4.1 environment, it will receive
+                # and keep the vm.conf received by Engine (or source side of
+                # migration) up until it is restarted. The recovery uses
+                # the domain XML + metadata - we have no other option.
+                # The idea is to keep the original data as much as we can,
+                # hence we use this if. This is also useful to crosscheck
+                # that we convert back the data in the right way.
+                #
+                # We trust only the disk configuration: we need to store
+                # it early in the initialization flow to properly support
+                # live merge.
+                ret['devices'] = [
+                    utils.picklecopy(dev) for dev in self.conf['devices']
+                    if dev.get('type', '') == hwclass.DISK
+                ] + self._build_device_conf_from_objects(self._devices)
+            return ret
 
     def getStats(self):
         """
@@ -2634,16 +2653,6 @@ class Vm(object):
 
         self._override_disk_device_config(disk_params)
 
-        # REQUIRED_FOR: vdsm < 4.2
-        # We need to create self.conf['devices'] to be able to migrate to hosts
-        # running Vdsm < 4.2.
-        if 'xml' in self.conf:
-            for devices in dev_objs_from_xml.values():
-                for dev in devices:
-                    dev_conf = dev.config()
-                    if dev_conf is not None:
-                        self.conf['devices'].append(dev_conf)
-
         self.log.debug('Built %d devices', len(dev_objs_from_xml))
         return dev_objs_from_xml
 
@@ -2659,8 +2668,31 @@ class Vm(object):
             disk_devs.append(dev)
         self.conf['devices'] = disk_devs
 
-        self.log.debug("Overridden %d legacy device configurations",
+        self.log.debug("Overridden %d legacy drive configurations",
                        len(disk_params))
+
+    def _build_device_conf_from_objects(self, dev_map):
+        # REQUIRED_FOR: vdsm < 4.2
+        # We need to create self.conf['devices'] to be able to migrate to hosts
+        # running Vdsm < 4.2.
+        if 'xml' not in self.conf:
+            return []
+
+        devices_conf = []
+        for dev_class, dev_objs in dev_map.items():
+            if dev_class == hwclass.DISK:
+                # disk conf is stored when VM starts
+                continue
+
+            for dev in dev_objs:
+                dev_params = dev.config()
+                if dev_params is None:
+                    self.log.debug('No parameters for device %s', dev)
+                    continue
+
+                devices_conf.append(dev_params)
+
+        return devices_conf
 
     def _run(self):
         self.log.info("VM wrapper has started")

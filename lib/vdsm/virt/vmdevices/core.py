@@ -452,11 +452,6 @@ class Controller(Base):
                      'address': address,
                      'alias': alias})
 
-    def config(self):
-        if not hasattr(self, 'address'):
-            return super(Controller, self).config()
-        return None
-
 
 class Smartcard(Base):
     __slots__ = ('address',)
