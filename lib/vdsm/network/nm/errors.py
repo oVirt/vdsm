@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,12 @@
 #
 from __future__ import absolute_import
 
+import functools
+import sys
+
+from dbus.exceptions import DBusException
+import six
+
 
 class NMDeviceNotFoundError(Exception):
     pass
@@ -25,3 +31,25 @@ class NMDeviceNotFoundError(Exception):
 
 class NMConnectionNotFoundError(Exception):
     pass
+
+
+def nmerror_dev_not_found():
+    return nmerror(src_exception=DBusException,
+                   dst_exception=NMDeviceNotFoundError,
+                   predicate=lambda ex: ex.args[0] == 'No device found for '
+                                                      'the requested iface.')
+
+
+def nmerror(src_exception, dst_exception, predicate):
+    def wrapper(func):
+        @functools.wraps(func)
+        def wrapped_func(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except src_exception as ex:
+                if predicate(ex):
+                    _, value, tb = sys.exc_info()
+                    six.reraise(dst_exception, dst_exception(*value.args), tb)
+                raise
+        return wrapped_func
+    return wrapper
