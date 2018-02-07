@@ -32,7 +32,9 @@ from vdsm.virt import vmxml
 
 from . import hwclass
 from .core import Base
-from .core import update_device_params, find_device_type
+from .core import update_device_params
+from .core import update_device_params_from_meta
+from .core import find_device_type
 from .core import get_metadata_values
 
 import re
@@ -117,6 +119,7 @@ class Graphics(Base):
         }
         update_device_params(params, dev, attrs=('port', 'tlsPort'))
         params['specParams'] = _make_spec_params(dev, meta)
+        update_device_params_from_meta(params, meta)
         params['vmid'] = meta['vmid']
         return cls(log, **params)
 

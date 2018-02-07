@@ -380,6 +380,7 @@ class HostDevice(core.Base):
         dev_type = params.get('type')
         dev_name = _get_device_name(dev, dev_type)
         params['device'] = dev_name
+        core.update_device_params_from_meta(params, meta)
         device_params = get_device_params(dev_name)
         device_class = cls._DEVICE_MAPPING[device_params['capability']]
         return device_class(log, **params)

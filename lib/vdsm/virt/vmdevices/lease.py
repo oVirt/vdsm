@@ -141,6 +141,13 @@ class Device(core.Base):
     __slots__ = ("lease_id", "sd_id", "path", "offset")
 
     @classmethod
+    def get_identifying_attrs(cls, dev_elem):
+        return {
+            'devtype': core.dev_class_from_dev_elem(dev_elem),
+            'name': vmxml.text(vmxml.find_first(dev_elem, 'key')),
+        }
+
+    @classmethod
     def from_xml_tree(cls, log, dev, meta):
         params = {
             'type': dev.tag,
@@ -151,6 +158,7 @@ class Device(core.Base):
             'offset': vmxml.find_attr(dev, 'target', 'offset'),
         }
         core.update_device_params(params, dev)
+        core.update_device_params_from_meta(params, meta)
         return cls(log, **params)
 
     @classmethod
