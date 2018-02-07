@@ -940,6 +940,13 @@ def get_xml_elem(dev, key, elem, attr):
     return {key: value} if value else {}
 
 
+def get_simple_metadata(data, dev_obj, keys):
+    for key in keys:
+        value = getattr(dev_obj, key, None)
+        if value is not None:
+            data[key] = value
+
+
 def get_nested_metadata(data, dev_obj, keys):
     for key in keys:
         value = getattr(dev_obj, key, None)
