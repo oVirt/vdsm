@@ -36,6 +36,7 @@ from .core import update_device_params
 from .core import update_device_params_from_meta
 from .core import find_device_type
 from .core import get_metadata_values
+from .core import dev_class_from_dev_elem
 
 import re
 
@@ -59,10 +60,18 @@ class Graphics(Base):
 
     __slots__ = ('port', 'tlsPort',)
 
-    def get_metadata(self, dev_class):
+    @classmethod
+    def get_identifying_attrs(cls, dev_elem):
         # libvirt (3.2.0) doesn't give alias for graphics devices.
         # But since, only one graphics type per VM is supported,
         # we can safely use the type in lieu of the alias.
+        return {
+            'devtype': dev_class_from_dev_elem(dev_elem),
+            'name': find_device_type(dev_elem),
+        }
+
+    def get_metadata(self, dev_class):
+        # see the comment in get_identifying_attrs
         attrs = {
             'devtype': dev_class,
             'name': self.device,
