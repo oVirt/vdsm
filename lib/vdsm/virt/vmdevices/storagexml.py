@@ -105,6 +105,8 @@ def _update_meta_params(params, meta):
         if key in meta:
             params[key] = utils.picklecopy(meta[key])
 
+    core.update_device_params_from_meta(params, meta)
+
 
 def get_metadata(drive):
     attrs = {'devtype': hwclass.DISK, 'name': drive.name}

@@ -126,6 +126,7 @@ class Interface(core.Base):
             raise MissingNetwork("no network to join")
         params['network'] = net
         _update_port_mirroring(params, meta)
+        core.update_device_params_from_meta(params, meta)
         return cls(log, **params)
 
     def __init__(self, log, **kwargs):

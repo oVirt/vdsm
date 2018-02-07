@@ -45,7 +45,10 @@ class Base(vmxml.Device):
 
     @classmethod
     def get_identifying_attrs(cls, dev_elem):
-        return {}
+        return {
+            'devtype': dev_class_from_dev_elem(dev_elem),
+            'name': find_device_alias(dev_elem),
+        }
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
@@ -187,6 +190,7 @@ class Generic(Base):
             'device': find_device_type(dev),
             'type': dev.tag,
         }
+        update_device_params_from_meta(params, meta)
         update_device_params(params, dev)
         return cls(log, **params)
 
@@ -206,6 +210,7 @@ class Balloon(Base):
             'device': dev.tag,
             'type': dev.tag,
         }
+        update_device_params_from_meta(params, meta)
         update_device_params(params, dev)
         params['specParams'] = parse_device_attrs(dev, ('model',))
         return cls(log, **params)
@@ -268,6 +273,7 @@ class Console(Base):
             'consoleType': vmxml.find_attr(dev, 'target', 'type'),
             'enableSocket': has_sock,
         }
+        update_device_params_from_meta(params, meta)
         params['vmid'] = meta['vmid']
         return cls(log, **params)
 
@@ -381,6 +387,7 @@ class Controller(Base):
             'device': find_device_type(dev),
             'type': dev.tag,
         }
+        update_device_params_from_meta(params, meta)
         update_device_params(
             params, dev, attrs=('index', 'model', 'ports')
         )
@@ -460,6 +467,7 @@ class Smartcard(Base):
             'device': dev.tag,
             'type': find_device_type(dev),
         }
+        update_device_params_from_meta(params, meta)
         update_device_params(params, dev)
         params['specParams'] = parse_device_attrs(dev, ('mode', 'type'))
         return cls(log, **params)
@@ -508,6 +516,7 @@ class Sound(Base):
             'device': dev.attrib.get('model'),
             'type': find_device_type(dev),
         }
+        update_device_params_from_meta(params, meta)
         update_device_params(params, dev)
         return cls(log, **params)
 
@@ -552,6 +561,7 @@ class Redir(Base):
             'device': find_device_type(dev),
             'type': find_device_type(dev),
         }
+        update_device_params_from_meta(params, meta)
         update_device_params(params, dev, attrs=('bus', 'type'))
         return cls(log, **params)
 
@@ -585,6 +595,7 @@ class Rng(Base):
         params['specParams']['source'] = rngsources.get_source_name(
             vmxml.text(vmxml.find_first(dev, 'backend'))
         )
+        update_device_params_from_meta(params, meta)
         params['vmid'] = meta['vmid']
         return cls(log, **params)
 
@@ -672,6 +683,7 @@ class Tpm(Base):
         specParams['path'] = vmxml.find_attr(
             dev, 'device', 'path')
         params['specParams'] = specParams
+        update_device_params_from_meta(params, meta)
         return cls(log, **params)
 
     def getXML(self):
@@ -708,6 +720,7 @@ class Video(Base):
             vmxml.find_first(dev, 'model'),
             ('vram', 'heads', 'vgamem', 'ram')
         )
+        update_device_params_from_meta(params, meta)
         return cls(log, **params)
 
     def getXML(self):
@@ -759,6 +772,7 @@ class Watchdog(Base):
         }
         update_device_params(params, dev)
         params['specParams'] = parse_device_attrs(dev, ('model', 'action'))
+        update_device_params_from_meta(params, meta)
         return cls(log, **params)
 
     def __init__(self, *args, **kwargs):
@@ -816,6 +830,7 @@ class Memory(Base):
             int(vmxml.text(vmxml.find_first(target, 'size'))) / 1024
         )
         params['node'] = vmxml.text(vmxml.find_first(target, 'node'))
+        update_device_params_from_meta(params, meta)
         return cls(log, **params)
 
     def __init__(self, log, **kwargs):
@@ -964,6 +979,16 @@ def find_device_type(dev):
     return dev.attrib.get('type', None) or dev.tag
 
 
+_LIBVIRT_TO_OVIRT_NAME = {
+    'memballoon': hwclass.BALLOON,
+}
+
+
+def dev_class_from_dev_elem(dev_elem):
+    dev_type = dev_elem.tag
+    return _LIBVIRT_TO_OVIRT_NAME.get(dev_type, dev_type)
+
+
 def update_device_params(params, dev, attrs=None):
     alias = find_device_alias(dev)
     if alias:
@@ -992,3 +1017,9 @@ def get_nested_metadata(data, dev_obj, keys):
         value = getattr(dev_obj, key, None)
         if value is not None:
             data[key] = utils.picklecopy(value)
+
+
+def update_device_params_from_meta(params, meta):
+    device_id = meta.get('deviceId')
+    if device_id is not None:
+        params['deviceId'] = device_id

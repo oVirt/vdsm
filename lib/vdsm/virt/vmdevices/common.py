@@ -139,14 +139,8 @@ _DEVICE_MAPPING = {
 }
 
 
-_LIBVIRT_TO_OVIRT_NAME = {
-    'memballoon': hwclass.BALLOON,
-}
-
-
 def identify_from_xml_elem(dev_elem):
-    dev_type = dev_elem.tag
-    dev_name = _LIBVIRT_TO_OVIRT_NAME.get(dev_type, dev_type)
+    dev_name = core.dev_class_from_dev_elem(dev_elem)
     if dev_name not in _DEVICE_MAPPING:
         raise core.SkipDevice()
     return dev_name, _DEVICE_MAPPING[dev_name]

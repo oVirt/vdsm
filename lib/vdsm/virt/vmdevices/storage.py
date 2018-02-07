@@ -555,7 +555,7 @@ class Drive(core.Base):
 
     @classmethod
     def get_identifying_attrs(cls, dev_elem):
-        return dict(devtype=hwclass.DISK,
+        return dict(devtype=core.dev_class_from_dev_elem(dev_elem),
                     **core.get_xml_elem(dev_elem, 'name', 'target', 'dev'))
 
     def getXML(self):
