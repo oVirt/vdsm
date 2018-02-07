@@ -42,6 +42,7 @@ from . import hwclass
 
 VHOST_SOCK_DIR = os.path.join(constants.P_VDSM_RUN, 'vhostuser')
 
+METADATA_KEYS = ('network',)
 
 METADATA_NESTED_KEYS = ('custom', 'portMirroring')
 
@@ -68,8 +69,7 @@ class Interface(core.Base):
         # dev_class unused
         attrs = {'mac_address': self.macAddr}
         data = core.get_metadata_values(self)
-        if hasattr(self, 'network'):
-            data['network'] = self.network
+        core.get_simple_metadata(data, self, METADATA_KEYS)
         core.get_nested_metadata(data, self, METADATA_NESTED_KEYS)
         return attrs, data
 
