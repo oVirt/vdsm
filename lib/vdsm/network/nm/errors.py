@@ -29,6 +29,10 @@ class NMDeviceNotFoundError(Exception):
     pass
 
 
+class NMPropertiesNotFoundError(Exception):
+    pass
+
+
 class NMConnectionNotFoundError(Exception):
     pass
 
@@ -38,6 +42,15 @@ def nmerror_dev_not_found():
                    dst_exception=NMDeviceNotFoundError,
                    predicate=lambda ex: ex.args[0] == 'No device found for '
                                                       'the requested iface.')
+
+
+def nmerror_properties_not_found():
+    return nmerror(
+        src_exception=DBusException,
+        dst_exception=NMPropertiesNotFoundError,
+        predicate=lambda ex: ex.args[0].startswith(
+            "No such interface 'org.freedesktop.DBus.Properties' on object")
+    )
 
 
 def nmerror(src_exception, dst_exception, predicate):
