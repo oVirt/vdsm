@@ -29,6 +29,8 @@ import struct
 
 import pytest
 
+from testlib import mock
+
 import vdsm.storage.mailbox as sm
 
 MAX_HOSTS = 10
@@ -212,6 +214,50 @@ class TestCommunicate:
             b'0000000000')
         assert outbox[msg_offset + 0x40:] == b'\0' * (
             0x1000 * MAX_HOSTS - 0x40 - msg_offset)
+
+
+class TestExtendMessage:
+
+    VOL_DATA = dict(
+        poolID=SPUUID,
+        domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
+        volumeID='d772f1c6-3ebb-43c3-a42e-73fcd8255a5f')
+
+    def test_no_domain(self):
+        vol_data = dict(self.VOL_DATA)
+        del vol_data['domainID']
+        with pytest.raises(sm.InvalidParameterException):
+            sm.SPM_Extend_Message(vol_data, 0)
+
+    def test_bad_size(self):
+        with pytest.raises(sm.InvalidParameterException):
+            sm.SPM_Extend_Message(self.VOL_DATA, -1)
+
+    def test_process_request(self):
+        PAYLOAD = (
+            b'1xtnd\xe1_\xfeeT\x8a\x18\xb3\xe0JT\xe5^\xc8\xdb\x8a_Z%'
+            b'\xd8\xfcs.\xa4\xc3C\xbb>\xc6\xf1r\xd7'
+            b'000000000000109200000000000')
+        MSG_ID = 7
+        pool = mock.MagicMock()
+        pool.spUUID = SPUUID
+
+        ret = sm.SPM_Extend_Message.processRequest(
+            pool=pool, msgID=MSG_ID, payload=PAYLOAD)
+
+        assert ret == {'status': {'code': 0, 'message': 'Done'}}
+        pool.extendVolume.assert_called_with(
+            self.VOL_DATA['domainID'], self.VOL_DATA['volumeID'], 4242)
+
+        called_name, called_args, called_kwargs = pool.mock_calls[1]
+        assert called_name == 'spmMailer.sendReply'
+        called_msgid, called_msg = called_args
+        assert called_msgid == MSG_ID
+        assert called_msg.payload == (
+            b'1xtnd\xe1_\xfeeT\x8a\x18\xb3\xe0JT\xe5^\xc8\xdb\x8a_Z%'
+            b'\xd8\xfcs.\xa4\xc3C\xbb>\xc6\xf1r\xd700000000000010920'
+            b'0000000000')
+        assert called_msg.callback is None
 
 
 class TestValidation:
