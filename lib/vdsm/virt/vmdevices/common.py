@@ -325,7 +325,7 @@ def storage_device_params_from_domain_xml(vmid, dom_desc, md_desc, log):
 def get_metadata(dev_class, dev_obj):
     # storage devices are special, and they need separate treatment
     if dev_class != hwclass.DISK:
-        return dev_obj.get_metadata()
+        return dev_obj.get_metadata(dev_class)
     return storagexml.get_metadata(dev_obj)
 
 

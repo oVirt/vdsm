@@ -108,7 +108,7 @@ def _update_meta_params(params, meta):
 
 def get_metadata(drive):
     attrs = {'devtype': hwclass.DISK, 'name': drive.name}
-    data = {}
+    data = core.get_metadata_values(drive)
 
     core.get_simple_metadata(data, drive, METADATA_KEYS)
 

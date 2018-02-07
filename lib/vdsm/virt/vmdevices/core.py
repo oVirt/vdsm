@@ -62,18 +62,35 @@ class Base(vmxml.Device):
         """
         raise NotImplementedError(cls.__name__)
 
-    def get_metadata(self):
+    def get_metadata(self, dev_class):
         """
         Returns two dictionaries: one contains the device attrs, to be
         fed to metadata.Descriptor.device() to match this device
         to its metadata. The other contains the attributes which need
         to be stored in the device metadata area.
 
+        We use one explicit dev_class argument because of
+        - oVirt and libvirt use slightly different mapping for device class
+          names, and that can't be easily unified for historical reasons;
+          (e.g. memballoon vs balloon).
+        - using a device instance field (e.g dev.type) instead of dev_class
+          works, but it is fragile due to the intricacies of mapping between
+          device class parameters and libvirt XML
+        - we can use the very same set of value (hwclass.*) for both
+          get_metadata() and get_identifying_attrs(), making it obvious and
+          more robust.
+
         NOTE: the metadata infrastructure ensures that the "vmid" key
         is automatically given to device, so to store it is redundant
         and should be avoided.
+
+        NOTE: you should call this method once the device has been
+        updated from libvirt data, e.g. when the Device is fully initialized.
         """
-        return {}, {}
+        return (
+            get_metadata_attrs(self, dev_class),
+            get_metadata_values(self),
+        )
 
     def __init__(self, log, **kwargs):
         self.log = log
@@ -918,6 +935,29 @@ def parse_device_attrs(dev, attrs):
         for key in attrs
         if dev.attrib.get(key)
     }
+
+
+def get_metadata_attrs(dev_obj, dev_class):
+    try:
+        name = dev_obj.alias
+    except AttributeError:
+        # 'log' is a mandatory argument in devices' __init__,
+        # so it is good to blow up if that is missing.
+        # Everything else is formally optional, even though
+        # 'alias' is expected to be present when we call this function.
+        dev_obj.log.warning('Cannot find device alias for %s', dev_obj)
+        return {}
+    else:
+        return {'devtype': dev_class, 'name': name}
+
+
+def get_metadata_values(dev):
+    data = {}
+    ATTRS = (
+        'deviceId',
+    )
+    get_simple_metadata(data, dev, ATTRS)
+    return data
 
 
 def find_device_type(dev):
