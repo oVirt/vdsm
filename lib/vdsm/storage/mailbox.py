@@ -218,13 +218,6 @@ class HSM_Mailbox:
     def wait(self, timeout=None):
         return self._mailman.wait(timeout)
 
-    def flushMessages(self):
-        if self._mailman:
-            self._mailman.immFlush()
-        else:
-            self.log.warning("HSM_MailboxMonitor - No mail monitor object "
-                             "available to flush")
-
 
 class HSM_MailMonitor(object):
     log = logging.getLogger('storage.MailBox.HsmMailMonitor')
@@ -236,7 +229,6 @@ class HSM_MailMonitor(object):
         maxTasks = config.getint('irs', 'max_tasks')
         self.tp = ThreadPool("mailbox-hsm", tpSize, waitTimeout, maxTasks)
         self._stop = False
-        self._flush = False
         self._queue = queue
         self._activeMessages = {}
         self._monitorInterval = monitorInterval
@@ -282,9 +274,6 @@ class HSM_MailMonitor(object):
 
     def immStop(self):
         self._stop = True
-
-    def immFlush(self):
-        self._flush = True
 
     def wait(self, timeout=None):
         self._thread.join(timeout=timeout)
@@ -476,10 +465,6 @@ class HSM_MailMonitor(object):
                             sendMail = True
                         except queue.Empty:
                             empty = True
-
-                    if self._flush:
-                        self._flush = False
-                        sendMail = True
 
                     try:
                         sendMail |= self._checkForMail()
