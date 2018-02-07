@@ -110,10 +110,7 @@ def get_metadata(drive):
     attrs = {'devtype': hwclass.DISK, 'name': drive.name}
     data = {}
 
-    for key in METADATA_KEYS:
-        value = getattr(drive, key, None)
-        if value is not None:
-            data[key] = value
+    core.get_simple_metadata(data, drive, METADATA_KEYS)
 
     core.get_nested_metadata(data, drive, METADATA_NESTED_KEYS)
 
