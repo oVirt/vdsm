@@ -362,7 +362,7 @@ class Controller(Base):
     def from_xml_tree(cls, log, dev, meta):
         params = {
             'device': find_device_type(dev),
-            'type': find_device_type(dev),
+            'type': dev.tag,
         }
         update_device_params(
             params, dev, attrs=('index', 'model', 'ports')
