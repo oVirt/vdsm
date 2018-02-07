@@ -64,9 +64,10 @@ class Interface(core.Base):
     def get_identifying_attrs(cls, dev_elem):
         return core.get_xml_elem(dev_elem, 'mac_address', 'mac', 'address')
 
-    def get_metadata(self):
+    def get_metadata(self, dev_class):
+        # dev_class unused
         attrs = {'mac_address': self.macAddr}
-        data = {}
+        data = core.get_metadata_values(self)
         if hasattr(self, 'network'):
             data['network'] = self.network
         core.get_nested_metadata(data, self, METADATA_NESTED_KEYS)

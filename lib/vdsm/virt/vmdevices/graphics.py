@@ -33,6 +33,7 @@ from vdsm.virt import vmxml
 from . import hwclass
 from .core import Base
 from .core import update_device_params, find_device_type
+from .core import get_metadata_values
 
 import re
 
@@ -55,6 +56,19 @@ class Graphics(Base):
         'record', 'smartcard', 'usbredir')
 
     __slots__ = ('port', 'tlsPort',)
+
+    def get_metadata(self, dev_class):
+        # libvirt (3.2.0) doesn't give alias for graphics devices.
+        # But since, only one graphics type per VM is supported,
+        # we can safely use the type in lieu of the alias.
+        attrs = {
+            'devtype': dev_class,
+            'name': self.device,
+        }
+        return (
+            attrs,
+            get_metadata_values(self),
+        )
 
     def __init__(self, log, **kwargs):
         super(Graphics, self).__init__(log, **kwargs)
