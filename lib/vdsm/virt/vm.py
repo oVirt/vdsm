@@ -5333,7 +5333,10 @@ class Vm(object):
         elif event == libvirt.VIR_DOMAIN_EVENT_SUSPENDED:
             self._setGuestCpuRunning(False)
             self._logGuestCpuStatus('onSuspend')
-            if detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_PAUSED:
+            if detail in (
+                    libvirt.VIR_DOMAIN_EVENT_SUSPENDED_PAUSED,
+                    libvirt.VIR_DOMAIN_EVENT_SUSPENDED_IOERROR,
+            ):
                 # Libvirt sometimes send the SUSPENDED/SUSPENDED_PAUSED event
                 # after RESUMED/RESUMED_MIGRATED (when VM status is PAUSED
                 # when migration completes, see qemuMigrationFinish function).
