@@ -82,7 +82,7 @@ def online_cpus():
     as non-negative integers.
     """
     with open(_SYS_ONLINE_CPUS, 'r') as src:
-        return _cpulist_parse(src.readline())
+        return cpulist_parse(src.readline())
 
 
 def pick_cpu(cpu_set):
@@ -106,7 +106,7 @@ def _cpu_set_from_output(line):
     return frozenset(i for i in range(mask.bit_length()) if mask & (1 << i))
 
 
-def _cpulist_parse(cpu_range):
+def cpulist_parse(cpu_range):
     """
     Expand the kernel cpulist syntax (e.g. 0-2,5) into a plain
     frozenset of integers (e.g. frozenset([0,1,2,5]))
