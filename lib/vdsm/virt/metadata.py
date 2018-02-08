@@ -568,6 +568,20 @@ class Descriptor(object):
         """
         return self._custom.copy()
 
+    def add_custom(self, values):
+        """
+        Add the custom properties.
+        Usually Vdsm never needs to set custom variables, only
+        to write them. The only exception is when Vdsm >= 4.2
+        is deployed on a 4.1 cluster. We need to store what
+        Engine sent as parameters.
+
+        :param values: values to add to custom properties.
+        :type values: dict, whose keys and values are strings.
+                      No nesting allowed.
+        """
+        self._custom.update(values)
+
     def all_devices(self, **kwargs):
         """
         Return all the devices which match the given attributes.
