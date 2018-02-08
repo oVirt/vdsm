@@ -293,6 +293,23 @@ class DescriptorTests(XMLTestCase):
             self.assertEqual(vals, {'version': 4.2})
         self.assertEqual(md_desc.custom, {'foo': 'bar'})
 
+    def test_add_custom(self):
+        test_xml = u"""<?xml version="1.0" encoding="utf-8"?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <uuid>68c1f97c-9336-4e7a-a8a9-b4f052ababf1</uuid>
+  <metadata>
+    <ovirt-vm:vm>
+      <ovirt-vm:custom>
+        <ovirt-vm:foo>bar</ovirt-vm:foo>
+      </ovirt-vm:custom>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>"""
+        md_desc = metadata.Descriptor.from_xml(test_xml)
+        md_desc.add_custom({'bee': 'bop'})
+        self.assertEqual(md_desc.custom,
+                         {'foo': 'bar', 'bee': 'bop'})
+
     def test_load_overwrites_content(self):
         test_xml = u"""<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">

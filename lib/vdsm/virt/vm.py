@@ -2470,6 +2470,7 @@ class Vm(object):
 
             vmdevices.common.save_device_metadata(
                 self._md_desc, self._devices, self.log)
+            self.save_custom_properties()
             self._sync_metadata()
 
         try:
@@ -5057,6 +5058,14 @@ class Vm(object):
                 vm['pauseTime'] = self._pause_time
             vm.update(self._exit_info)
         self._sync_metadata()
+
+    def save_custom_properties(self):
+        if self.min_cluster_version(4, 2):
+            return
+        # In cluster versions 4.1 and before, we stored the
+        # custom variables in the recovery file. Moving them
+        # in the XML metadata.
+        self._md_desc.add_custom(self._custom['custom'])
 
     def _sync_metadata(self):
         if self._external:
