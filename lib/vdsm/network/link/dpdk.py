@@ -179,7 +179,14 @@ def _normalize_lshw_result(result):
     `lshw -json` does not return a valid JSON in case of several results for
      the same device class, [] brackets are missing in the result.
     """
-    return json.loads('[' + result + ']')
+    # TODO: On fc27, output in json format is faulty, remove when resolved.
+    # BZ#1543320
+    try:
+        return json.loads('[' + result + ']')
+    except ValueError:
+        if os.path.exists('/etc/fedora-release'):
+            return json.loads('[]')
+        raise
 
 
 def _get_hw_addr(dev_name):
