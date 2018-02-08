@@ -536,7 +536,15 @@ class Vm(object):
                 if value is not None:
                     exit_info[key] = value
             self._exit_info.update(exit_info)
-            self._mem_guaranteed_size_mb = md.get('minGuaranteedMemoryMb', 0)
+            # start with sane defaults:
+            self._mem_guaranteed_size_mb = 0
+            mem_guaranteed_size = md.get('minGuaranteedMemoryMb')
+            if mem_guaranteed_size is not None:
+                # data from Engine prevails:
+                self._mem_guaranteed_size_mb = mem_guaranteed_size
+            else:
+                # if this is missing, let's try using what we may have saved
+                self._mem_guaranteed_size_mb = md.get('memGuaranteedSize', 0)
             self.conf['_blockJobs'] = json.loads(md.get('block_jobs', '{}'))
             cluster_version = md.get('clusterVersion')
             if cluster_version is not None:
@@ -1686,6 +1694,7 @@ class Vm(object):
             status['guestDiskMapping'] = self.guestAgent.guestDiskMapping
             status['statusTime'] = self._get_status_time()
             status['arch'] = self.arch
+            status['memGuaranteedSize'] = self._mem_guaranteed_size_mb
             return utils.picklecopy(status)
 
     def getStats(self):
