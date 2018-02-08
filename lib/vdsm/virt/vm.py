@@ -2384,11 +2384,14 @@ class Vm(object):
                 # to an unexpected stop of VDSM therefore We're going to clean
                 # it up now
                 if os.path.islink(uuidPath):
+                    self.log.info("Unlinking %r", uuidPath)
                     os.unlink(uuidPath)
 
                 # We don't want an exception to be thrown when the path already
                 # exists
                 if not os.path.exists(uuidPath):
+                    self.log.info("Creating symlink from %r to %r",
+                                  path, uuidPath)
                     os.symlink(path, uuidPath)
                 else:
                     self.log.error("Failed to make a agent channel symlink "
@@ -3669,6 +3672,7 @@ class Vm(object):
             operation.run()
             os.fchmod(transientHandle, 0o660)
         except Exception:
+            self.log.info("Unlinking transient disk volume %r", transientPath)
             os.unlink(transientPath)  # Closing after deletion is correct
             self.log.exception("Failed to create the transient disk for "
                                "volume %s", diskParams['volumeID'])
@@ -3681,6 +3685,7 @@ class Vm(object):
 
     def _removeTransientDisk(self, drive):
         if drive.transientDisk:
+            self.log.info("Unlinking transient disk %r", drive.path)
             os.unlink(drive.path)
 
     @api.guard(_not_migrating)
