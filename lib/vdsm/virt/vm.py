@@ -95,6 +95,7 @@ from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD
 from vdsm.virt.vmdevices.storagexml import change_disk
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
+from vdsm.virt.utils import extract_cluster_version
 
 
 # A libvirt constant for undefined cpu quota
@@ -546,10 +547,7 @@ class Vm(object):
                 # if this is missing, let's try using what we may have saved
                 self._mem_guaranteed_size_mb = md.get('memGuaranteedSize', 0)
             self.conf['_blockJobs'] = json.loads(md.get('block_jobs', '{}'))
-            cluster_version = md.get('clusterVersion')
-            if cluster_version is not None:
-                self._cluster_version = [int(v)
-                                         for v in cluster_version.split('.')]
+            self._cluster_version = extract_cluster_version(md)
             self._launch_paused = conv.tobool(md.get('launchPaused', False))
             self._resume_behavior = md.get('resumeBehavior',
                                            ResumeBehavior.AUTO_RESUME)

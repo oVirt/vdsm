@@ -227,9 +227,24 @@ def has_xml_configuration(params):
         # Could be either from VM created with Engine <= 4.1
         # or from VM created with Engine >= 4.2
         md_desc = metadata.Descriptor.from_xml(params['_srcDomXML'])
-        return bool(md_desc)
+        if not bool(md_desc):
+            return False
+
+        with md_desc.values() as md:
+            cver = extract_cluster_version(md)
+
+        # TODO: actually compare the cluster version like we do
+        # in Vm.min_cluster_version()
+        return cver is not None
 
     return False
+
+
+def extract_cluster_version(md_values):
+    cluster_version = md_values.get('clusterVersion')
+    if cluster_version is not None:
+        return [int(v) for v in cluster_version.split('.')]
+    return None
 
 
 class TeardownError(Exception):

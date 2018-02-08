@@ -224,3 +224,63 @@ class TestIsKvm(TestCaseBase):
         self.assertFalse(utils.is_kvm({
             'containerType': container_type,
         }))
+
+
+XML_TEMPLATE = u'''<domain type='kvm' id='1'>
+  <name>a0_41</name>
+  <uuid>13070562-2ee7-4092-a746-7975ff5b3993</uuid>
+  <metadata
+        xmlns:ovirt-tune="http://ovirt.org/vm/tune/1.0"
+        xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-tune:qos/>
+    <ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+      <ovirt-vm:destroy_on_reboot type="bool">False
+        </ovirt-vm:destroy_on_reboot>
+      <ovirt-vm:guestAgentAPIVersion type="int">0
+        </ovirt-vm:guestAgentAPIVersion>
+      <ovirt-vm:memGuaranteedSize type="int">4096
+        </ovirt-vm:memGuaranteedSize>
+      <ovirt-vm:startTime type="float">1518107638.94
+        </ovirt-vm:startTime>
+      {cluster_version}
+    </ovirt-vm:vm>
+  </metadata>
+</domain>'''
+
+
+@expandPermutations
+class TestHasXmlConfiguration(TestCaseBase):
+
+    @permutations([
+        # tag, expected_result
+        ['xml', True],
+        ['_srcDomXML', False],
+    ])
+    def test_no_metadata(self, tag, expected_result):
+        test_xml = u'''<domain type='kvm' id='1'>
+          <name>a0_41</name>
+          <uuid>13070562-2ee7-4092-a746-7975ff5b3993</uuid>
+        </domain>'''
+        params = {tag: test_xml}
+        self.assertEqual(
+            utils.has_xml_configuration(params),
+            expected_result)
+
+    def test_detects_creation(self):
+        test_xml = XML_TEMPLATE.format(cluster_version='')
+        params = {'xml': test_xml}
+        self.assertTrue(utils.has_xml_configuration(params))
+
+    @permutations([
+        # cluster_version, expected_result
+        ('', False),
+        ('<clusterVersion>4.2</clusterVersion>', True),
+        ('<ovirt-vm:clusterVersion>4.2</ovirt-vm:clusterVersion>', True),
+        ('<ovirt-vm:clusterVersion>4.3</ovirt-vm:clusterVersion>', True),
+    ])
+    def test_detects_migration(self, cluster_version, expected_result):
+        test_xml = XML_TEMPLATE.format(cluster_version=cluster_version)
+        params = {'_srcDomXML': test_xml}
+        self.assertEqual(
+            utils.has_xml_configuration(params),
+            expected_result)
