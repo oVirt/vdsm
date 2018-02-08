@@ -242,8 +242,9 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs, discard):
         try:
             log.debug('Removing volume %s task %s', volUUID, taskid)
             deleteVolumes(sdUUID, volUUID)
-        except se.CannotRemoveLogicalVolume:
-            log.exception("Removing volume %s task %s failed", volUUID, taskid)
+        except se.CannotRemoveLogicalVolume as e:
+            log.exception("Removing volume %s task %s failed: %s",
+                          volUUID, taskid, e)
 
         log.debug('Zero volume thread finished for '
                   'volume %s task %s', volUUID, taskid)

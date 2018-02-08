@@ -1198,7 +1198,7 @@ def removeLVs(vgName, lvNames):
     else:
         # Otherwise LV info needs to be refreshed
         _lvminfo._invalidatelvs(vgName, lvNames)
-        raise se.CannotRemoveLogicalVolume(vgName, str(lvNames))
+        raise se.CannotRemoveLogicalVolume(vgName, str(lvNames), err)
 
 
 def extendLV(vgName, lvName, size_mb):
