@@ -96,6 +96,7 @@ from vdsm.virt.vmdevices.storagexml import change_disk
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
 from vdsm.virt.utils import extract_cluster_version
+from vdsm.virt.utils import has_xml_configuration
 
 
 # A libvirt constant for undefined cpu quota
@@ -344,16 +345,21 @@ class Vm(object):
             )
             self._domain = DomainDescriptor(dom.toxml())
         self.id = self._domain.id
-        if self._src_domain_xml is not None:
+        if self._src_domain_xml is not None and has_xml_configuration(params):
             # If Engine provides domain XML, update _src_domain_xml immediately
             # to use a correct domain XML for initialization.  If only legacy
             # configuration is provided, _src_domain_xml will be updated later,
             # after devices are parsed.
+            # We need to do this only if we are migrating from 4.2 source.
+            # In the backward-compatible 4.1 path, we will correct the paths
+            # later in the flow.
             if self._altered_state.from_snapshot and 'xml' in params:
                 self._src_domain_xml = \
                     self._correctDiskVolumes(self._src_domain_xml,
                                              params['xml'])
                 self._domain = DomainDescriptor(self._src_domain_xml)
+            # Pretend we received XML definition only if
+            # we migrated from >= 4.2
             self.conf['xml'] = self._src_domain_xml
         self.log = SimpleLogAdapter(self.log, {"vmId": self.id})
         self._dom = virdomain.Disconnected(self.id)
