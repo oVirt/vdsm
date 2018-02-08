@@ -124,7 +124,7 @@ class Graphics(Base):
         # AUTOSELECT (-1)
         params = {
             'device': find_device_type(dev),
-            'type': find_device_type(dev),
+            'type': dev.tag,
         }
         update_device_params(params, dev, attrs=('port', 'tlsPort'))
         params['specParams'] = _make_spec_params(dev, meta)

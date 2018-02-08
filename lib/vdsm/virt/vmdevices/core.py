@@ -208,7 +208,7 @@ class Balloon(Base):
     def from_xml_tree(cls, log, dev, meta):
         params = {
             'device': dev.tag,
-            'type': dev.tag,
+            'type': hwclass.BALLOON,
         }
         update_device_params_from_meta(params, meta)
         update_device_params(params, dev)
@@ -580,11 +580,9 @@ class Rng(Base):
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
-        params = {
-            'device': dev.tag,
-            'type': find_device_type(dev),
-        }
+        params = {'type': find_device_type(dev)}
         update_device_params(params, dev, attrs=('model', ))
+        params['device'] = params['model']
         rate = vmxml.find_first(dev, 'rate', None)
         if rate is not None:
             params['specParams'] = parse_device_attrs(
