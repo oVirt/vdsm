@@ -1402,6 +1402,9 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/openstacknet_utils.py*
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/openstacknet_utils.py*
+%{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/50_openstacknet
+%{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/openstacknet_utils.py*
+%{_libexecdir}/%{vdsm_name}/hooks/openstacknet-get-config
 
 %files hook-macspoof
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macspoof
