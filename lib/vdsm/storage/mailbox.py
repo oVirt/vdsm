@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+import array
 import os
 import errno
 import time
@@ -60,7 +61,16 @@ SLOTS_PER_MAILBOX = int(MAILBOX_SIZE / MESSAGE_SIZE)
 # etc)
 MESSAGES_PER_MAILBOX = SLOTS_PER_MAILBOX - 1
 
-_zeroCheck = misc.checksum(EMPTYMAILBOX, CHECKSUM_BYTES)
+
+def checksum(string, numBytes):
+    bits = 8 * numBytes
+    tmpArray = array.array('B')
+    tmpArray.fromstring(string)
+    csum = sum(tmpArray)
+    return csum - (csum >> bits << bits)
+
+
+_zeroCheck = checksum(EMPTYMAILBOX, CHECKSUM_BYTES)
 # Assumes CHECKSUM_BYTES equals 4!!!
 pZeroChecksum = struct.pack('<l', _zeroCheck)
 
@@ -374,7 +384,7 @@ class HSM_MailMonitor(object):
     def _sendMail(self):
         self.log.info("HSM_MailMonitor sending mail to SPM - " +
                       str(self._outCmd))
-        chk = misc.checksum(
+        chk = checksum(
             self._outgoingMail[0:MAILBOX_SIZE - CHECKSUM_BYTES],
             CHECKSUM_BYTES)
         pChk = struct.pack('<l', chk)  # Assumes CHECKSUM_BYTES equals 4!!!
@@ -589,10 +599,10 @@ class SPM_MailMonitor:
         """
         assert len(mailbox) == MAILBOX_SIZE
         data = mailbox[:-CHECKSUM_BYTES]
-        checksum = mailbox[-CHECKSUM_BYTES:]
-        n = misc.checksum(data, CHECKSUM_BYTES)
+        csum = mailbox[-CHECKSUM_BYTES:]
+        n = checksum(data, CHECKSUM_BYTES)
         expected = struct.pack('<l', n)  # Assumes CHECKSUM_BYTES equals 4!!!
-        if checksum != expected:
+        if csum != expected:
             self.log.error(
                 "mailbox %s checksum failed, not clearing mailbox, clearing "
                 "new mail (data=%r, checksum=%r, expected=%r)",

@@ -506,18 +506,6 @@ def test_pack_uuid_random():
         assert misc.unpackUuid(packed) == u
 
 
-class TestChecksum(VdsmTestCase):
-
-    def testConsistency(self):
-        """
-        Test if when given the same input in different times the user will get
-        the same checksum.
-        """
-        with open("/dev/urandom", "rb") as f:
-            data = f.read(50)
-        self.assertEqual(misc.checksum(data, 16), misc.checksum(data, 16))
-
-
 class TestParseBool(VdsmTestCase):
 
     def testValidInput(self):

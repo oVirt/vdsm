@@ -41,7 +41,6 @@ import threading
 import uuid
 import weakref
 
-from array import array
 from functools import wraps, partial
 
 from six.moves import map
@@ -176,14 +175,6 @@ def parseBool(var):
         return True
     else:
         return False
-
-
-def checksum(string, numBytes):
-    bits = 8 * numBytes
-    tmpArray = array('B')
-    tmpArray.fromstring(string)
-    csum = sum(tmpArray)
-    return csum - (csum >> bits << bits)
 
 
 def packUuid(s):

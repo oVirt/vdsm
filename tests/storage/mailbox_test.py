@@ -30,7 +30,6 @@ import struct
 import pytest
 
 import vdsm.storage.mailbox as sm
-from vdsm.storage import misc
 
 MAX_HOSTS = 10
 MAILER_TIMEOUT = 6
@@ -225,7 +224,7 @@ class TestValidation:
         msg = "x" * sm.MESSAGE_SIZE
         padding = sm.MAILBOX_SIZE - sm.MESSAGE_SIZE - sm.CHECKSUM_BYTES
         data = msg + padding * "\0"
-        n = misc.checksum(data, sm.CHECKSUM_BYTES)
+        n = sm.checksum(data, sm.CHECKSUM_BYTES)
         checksum = struct.pack('<l', n)
         mailbox = data + checksum
         assert sm.SPM_MailMonitor.validateMailbox(mailbox, 7)
@@ -236,3 +235,15 @@ class TestValidation:
         data = msg + padding * "\0"
         mailbox = data + "bad!"
         assert not sm.SPM_MailMonitor.validateMailbox(mailbox, 7)
+
+
+class TestChecksum:
+
+    def test_consistency(self):
+        """
+        Test if when given the same input in different times the user will get
+        the same checksum.
+        """
+        with open("/dev/urandom", "rb") as f:
+            data = f.read(50)
+        assert sm.checksum(data, 16) == sm.checksum(data, 16)
