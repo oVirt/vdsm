@@ -22,6 +22,7 @@ vmdevicesdir = $(vdsmpylibdir)/virt/vmdevices
 dist_vmdevices_PYTHON = \
 	__init__.py \
 	common.py \
+	compat.py \
 	core.py \
 	drivename.py \
 	graphics.py \

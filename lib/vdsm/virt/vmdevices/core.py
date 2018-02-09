@@ -32,6 +32,7 @@ from vdsm.virt import vmxml
 from vdsm.virt.utils import cleanup_guest_socket
 
 from . import hwclass
+from . import compat
 
 
 class SkipDevice(Exception):
@@ -122,7 +123,7 @@ class Base(vmxml.Device):
         Return None in case `update_device_info` already adds the legacy
         configuration.
         """
-        return self._conf
+        return compat.device_config(utils.picklecopy(self._conf))
 
     def is_attached_to(self, xml_string):
         raise NotImplementedError(

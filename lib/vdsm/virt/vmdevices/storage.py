@@ -36,6 +36,7 @@ from vdsm import utils
 from vdsm.virt import vmtune
 from vdsm.virt import vmxml
 
+from . import compat
 from . import core
 from . import drivename
 from . import hwclass
@@ -554,6 +555,9 @@ class Drive(core.Base):
     def get_identifying_attrs(cls, dev_elem):
         return dict(devtype=core.dev_class_from_dev_elem(dev_elem),
                     **core.get_xml_elem(dev_elem, 'name', 'target', 'dev'))
+
+    def config(self):
+        return compat.drive_config(super(Drive, self).config(), self)
 
     def getXML(self):
         """

@@ -37,6 +37,7 @@ from vdsm.network import api as net_api
 from vdsm.virt import libvirtnetwork
 from vdsm.virt import vmxml
 
+from . import compat
 from . import core
 from . import hwclass
 
@@ -461,6 +462,9 @@ class Interface(core.Base):
                 if network:
                     nicDev['network'] = network
                 vm.conf['devices'].append(nicDev)
+
+    def config(self):
+        return compat.interface_config(super(Interface, self).config())
 
     def __repr__(self):
         s = ('<Interface name={name}, type={self.device}, mac={self.macAddr} '
