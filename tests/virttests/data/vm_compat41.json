@@ -1,0 +1,278 @@
+[
+    {
+        "acpiEnable": "true",
+        "arch": "x86_64",
+        "bootMenuEnable": "false",
+        "clientIp": "",
+        "cpuType": "Nehalem",
+        "custom": {
+            "device_0f60872b-599c-4c9f-9596-3245e5f248f6": "VmDevice:{id='VmDeviceId:{deviceId='0f60872b-599c-4c9f-9596-3245e5f248f6', vmId='13070562-2ee7-4092-a746-7975ff5b3993'}', device='ide', type='CONTROLLER', specParams='[]', address='{slot=0x01, bus=0x00, domain=0x0000, type=pci, function=0x1}', managed='false', plugged='true', readOnly='false', deviceAlias='ide', customProperties='[]', snapshotId='null', logicalName='null', hostDevice='null'}",
+            "device_0f60872b-599c-4c9f-9596-3245e5f248f6device_3d6952d0-9074-4216-a837-7b09cf8c1334": "VmDevice:{id='VmDeviceId:{deviceId='3d6952d0-9074-4216-a837-7b09cf8c1334', vmId='13070562-2ee7-4092-a746-7975ff5b3993'}', device='virtio-serial', type='CONTROLLER', specParams='[]', address='{slot=0x04, bus=0x00, domain=0x0000, type=pci, function=0x0}', managed='false', plugged='true', readOnly='false', deviceAlias='virtio-serial0', customProperties='[]', snapshotId='null', logicalName='null', hostDevice=''}"
+        },
+        "devices": [
+            {
+                "alias": "balloon0",
+                "device": "memballoon",
+                "specParams": {
+                    "model": "none"
+                },
+                "type": "balloon"
+            },
+            {
+                "device": "spice",
+                "deviceId": "9a2c7e4f-b101-441c-a57f-c5801aa438c9",
+                "specParams": {
+                    "copyPasteEnable": "true",
+                    "displayIp": "192.168.60.51",
+                    "displayNetwork": "ovirtmgmt",
+                    "fileTransferEnable": "true",
+                    "spiceSecureChannels": "smain,sinputs,scursor,splayback,srecord,sdisplay,ssmartcard,susbredir"
+                },
+                "tlsPort": "5900",
+                "type": "graphics",
+                "vmid": "13070562-2ee7-4092-a746-7975ff5b3993"
+            },
+            {
+                "address": {
+                    "bus": "0x00",
+                    "domain": "0x0000",
+                    "function": "0x0",
+                    "slot": "0x05",
+                    "type": "pci"
+                },
+                "alias": "rng0",
+                "device": "virtio",
+                "deviceId": "6fd96b61-ed99-4441-81c5-a011a701b136",
+                "model": "virtio",
+                "specParams": {
+                    "source": "urandom"
+                },
+                "type": "rng",
+                "vmid": "13070562-2ee7-4092-a746-7975ff5b3993"
+            },
+            {
+                "address": {
+                    "bus": "0x00",
+                    "domain": "0x0000",
+                    "function": "0x2",
+                    "slot": "0x01",
+                    "type": "pci"
+                },
+                "alias": "usb",
+                "device": "usb",
+                "deviceId": "87517a79-ebc3-485d-9daf-ac26209f6c89",
+                "index": "0",
+                "model": "piix3-uhci",
+                "specParams": {},
+                "type": "controller",
+                "vmid": "13070562-2ee7-4092-a746-7975ff5b3993"
+            },
+            {
+                "address": {
+                    "bus": "0x00",
+                    "domain": "0x0000",
+                    "function": "0x0",
+                    "slot": "0x03",
+                    "type": "pci"
+                },
+                "alias": "scsi0",
+                "device": "scsi",
+                "deviceId": "26a6ca10-64b8-46f1-8938-f73dda60562a",
+                "index": "0",
+                "model": "virtio-scsi",
+                "specParams": {},
+                "type": "controller",
+                "vmid": "13070562-2ee7-4092-a746-7975ff5b3993"
+            },
+            {
+                "address": {
+                    "bus": "0x00",
+                    "domain": "0x0000",
+                    "function": "0x0",
+                    "slot": "0x04",
+                    "type": "pci"
+                },
+                "alias": "virtio-serial0",
+                "device": "virtio-serial",
+                "deviceId": "3d6952d0-9074-4216-a837-7b09cf8c1334",
+                "specParams": {},
+                "type": "controller",
+                "vmid": "13070562-2ee7-4092-a746-7975ff5b3993"
+            },
+            {
+                "address": {
+                    "bus": "0x00",
+                    "domain": "0x0000",
+                    "function": "0x0",
+                    "slot": "0x02",
+                    "type": "pci"
+                },
+                "alias": "video0",
+                "device": "qxl",
+                "deviceId": "90806216-7e0d-4ab3-b935-17738b8fb1cb",
+                "specParams": {
+                    "heads": "1",
+                    "ram": "65536",
+                    "vgamem": "16384",
+                    "vram": "8192"
+                },
+                "type": "video",
+                "vmid": "13070562-2ee7-4092-a746-7975ff5b3993"
+            },
+            {
+                "address": {
+                    "bus": "1",
+                    "controller": "0",
+                    "target": "0",
+                    "type": "drive",
+                    "unit": "0"
+                },
+                "alias": "ide0-1-0",
+                "device": "cdrom",
+                "deviceId": "3c70e4dc-ba82-4008-b768-26142df9fe9d",
+                "diskType": "file",
+                "iface": "ide",
+                "index": "2",
+                "name": "hdc",
+                "path": "",
+                "readonly": "True",
+                "shared": "false",
+                "specParams": {
+                    "path": ""
+                },
+                "type": "disk",
+                "vm_custom": {
+                    "device_0f60872b-599c-4c9f-9596-3245e5f248f6": "VmDevice:{id='VmDeviceId:{deviceId='0f60872b-599c-4c9f-9596-3245e5f248f6', vmId='13070562-2ee7-4092-a746-7975ff5b3993'}', device='ide', type='CONTROLLER', specParams='[]', address='{slot=0x01, bus=0x00, domain=0x0000, type=pci, function=0x1}', managed='false', plugged='true', readOnly='false', deviceAlias='ide', customProperties='[]', snapshotId='null', logicalName='null', hostDevice='null'}",
+                    "device_0f60872b-599c-4c9f-9596-3245e5f248f6device_3d6952d0-9074-4216-a837-7b09cf8c1334": "VmDevice:{id='VmDeviceId:{deviceId='3d6952d0-9074-4216-a837-7b09cf8c1334', vmId='13070562-2ee7-4092-a746-7975ff5b3993'}', device='virtio-serial', type='CONTROLLER', specParams='[]', address='{slot=0x04, bus=0x00, domain=0x0000, type=pci, function=0x0}', managed='false', plugged='true', readOnly='false', deviceAlias='virtio-serial0', customProperties='[]', snapshotId='null', logicalName='null', hostDevice=''}"
+                },
+                "vmid": "13070562-2ee7-4092-a746-7975ff5b3993"
+            },
+            {
+                "address": {
+                    "bus": "0",
+                    "controller": "0",
+                    "target": "0",
+                    "type": "drive",
+                    "unit": "0"
+                },
+                "alias": "scsi0-0-0-0",
+                "apparentsize": "10737418240",
+                "bootOrder": "1",
+                "device": "disk",
+                "deviceId": "13134458-7b83-408d-a1cf-973d4bc48728",
+                "discard": false,
+                "diskType": "file",
+                "domainID": "0c63acb9-1cd2-4ebc-b6eb-8bc7e1e95cbd",
+                "format": "raw",
+                "iface": "scsi",
+                "imageID": "13134458-7b83-408d-a1cf-973d4bc48728",
+                "index": 0,
+                "name": "sda",
+                "optional": "false",
+                "path": "/rhev/data-center/mnt/192.168.1.20:_srv_virtstore_nfs_snapgine_data41/0c63acb9-1cd2-4ebc-b6eb-8bc7e1e95cbd/images/13134458-7b83-408d-a1cf-973d4bc48728/fb3ec8e5-a817-4dbf-9492-82873ccdaf9b",
+                "poolID": "c1c105fb-d4a7-4009-bae7-cbbbf02da1e5",
+                "propagateErrors": "off",
+                "readonly": "False",
+                "reqsize": "0",
+                "shared": "false",
+                "specParams": {},
+                "truesize": "0",
+                "type": "disk",
+                "vm_custom": {
+                    "device_0f60872b-599c-4c9f-9596-3245e5f248f6": "VmDevice:{id='VmDeviceId:{deviceId='0f60872b-599c-4c9f-9596-3245e5f248f6', vmId='13070562-2ee7-4092-a746-7975ff5b3993'}', device='ide', type='CONTROLLER', specParams='[]', address='{slot=0x01, bus=0x00, domain=0x0000, type=pci, function=0x1}', managed='false', plugged='true', readOnly='false', deviceAlias='ide', customProperties='[]', snapshotId='null', logicalName='null', hostDevice='null'}",
+                    "device_0f60872b-599c-4c9f-9596-3245e5f248f6device_3d6952d0-9074-4216-a837-7b09cf8c1334": "VmDevice:{id='VmDeviceId:{deviceId='3d6952d0-9074-4216-a837-7b09cf8c1334', vmId='13070562-2ee7-4092-a746-7975ff5b3993'}', device='virtio-serial', type='CONTROLLER', specParams='[]', address='{slot=0x04, bus=0x00, domain=0x0000, type=pci, function=0x0}', managed='false', plugged='true', readOnly='false', deviceAlias='virtio-serial0', customProperties='[]', snapshotId='null', logicalName='null', hostDevice=''}"
+                },
+                "vmid": "13070562-2ee7-4092-a746-7975ff5b3993",
+                "volumeChain": [
+                    {
+                        "domainID": "0c63acb9-1cd2-4ebc-b6eb-8bc7e1e95cbd",
+                        "imageID": "13134458-7b83-408d-a1cf-973d4bc48728",
+                        "leaseOffset": 0,
+                        "leasePath": "/rhev/data-center/mnt/192.168.1.20:_srv_virtstore_nfs_snapgine_data41/0c63acb9-1cd2-4ebc-b6eb-8bc7e1e95cbd/images/13134458-7b83-408d-a1cf-973d4bc48728/fb3ec8e5-a817-4dbf-9492-82873ccdaf9b.lease",
+                        "path": "/rhev/data-center/mnt/192.168.1.20:_srv_virtstore_nfs_snapgine_data41/0c63acb9-1cd2-4ebc-b6eb-8bc7e1e95cbd/images/13134458-7b83-408d-a1cf-973d4bc48728/fb3ec8e5-a817-4dbf-9492-82873ccdaf9b",
+                        "volumeID": "fb3ec8e5-a817-4dbf-9492-82873ccdaf9b"
+                    }
+                ],
+                "volumeID": "fb3ec8e5-a817-4dbf-9492-82873ccdaf9b",
+                "volumeInfo": {
+                    "path": "/rhev/data-center/mnt/192.168.1.20:_srv_virtstore_nfs_snapgine_data41/0c63acb9-1cd2-4ebc-b6eb-8bc7e1e95cbd/images/13134458-7b83-408d-a1cf-973d4bc48728/fb3ec8e5-a817-4dbf-9492-82873ccdaf9b",
+                    "type": "file"
+                }
+            },
+            {
+                "address": {
+                    "bus": "0x00",
+                    "domain": "0x0000",
+                    "function": "0x1",
+                    "slot": "0x01",
+                    "type": "pci"
+                },
+                "alias": "ide",
+                "device": "ide",
+                "type": "controller"
+            },
+            {
+                "address": {
+                    "bus": "0",
+                    "controller": "0",
+                    "port": "1",
+                    "type": "virtio-serial"
+                },
+                "alias": "channel0",
+                "device": "unix",
+                "type": "channel"
+            },
+            {
+                "address": {
+                    "bus": "0",
+                    "controller": "0",
+                    "port": "2",
+                    "type": "virtio-serial"
+                },
+                "alias": "channel1",
+                "device": "unix",
+                "type": "channel"
+            },
+            {
+                "address": {
+                    "bus": "0",
+                    "controller": "0",
+                    "port": "3",
+                    "type": "virtio-serial"
+                },
+                "alias": "channel2",
+                "device": "spicevmc",
+                "type": "channel"
+            }
+        ],
+        "displayNetwork": "ovirtmgmt",
+        "emulatedMachine": "pc-i440fx-rhel7.3.0",
+        "guestDiskMapping": {},
+        "guestNumaNodes": [
+            {
+                "cpus": "0,1",
+                "memory": "4096",
+                "nodeIndex": 0
+            }
+        ],
+        "kvmEnable": "true",
+        "maxMemSize": 16384,
+        "maxMemSlots": 16,
+        "maxVCpus": "16",
+        "memGuaranteedSize": 4096,
+        "memSize": 4096,
+        "nice": "0",
+        "pitReinjection": "false",
+        "smartcardEnable": "false",
+        "smp": "2",
+        "smpCoresPerSocket": "1",
+        "smpThreadsPerCore": "1",
+        "status": "Up",
+        "statusTime": "4672571550",
+        "timeOffset": "0",
+        "transparentHugePages": "true",
+        "vmId": "13070562-2ee7-4092-a746-7975ff5b3993",
+        "vmName": "a0_41",
+        "vmType": "kvm"
+    }
+]
