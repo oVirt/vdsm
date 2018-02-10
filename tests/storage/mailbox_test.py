@@ -25,7 +25,6 @@ import os
 import threading
 import struct
 
-from testlib import VdsmTestCase
 from testlib import namedTemporaryDir
 
 import vdsm.storage.mailbox as sm
@@ -93,7 +92,7 @@ def xtnd_message(spm_mm, callback):
         spm_mm.unregisterMessageType("xtnd")
 
 
-class TestSPMMailMonitor(VdsmTestCase):
+class TestSPMMailMonitor:
 
     def testThreadLeak(self):
         threadCount = len(threading.enumerate())
@@ -106,13 +105,12 @@ class TestSPMMailMonitor(VdsmTestCase):
             try:
                 mailer.stop()
             finally:
-                self.assertTrue(
-                    mailer.wait(timeout=MAILER_TIMEOUT),
-                    msg='mailer.wait: Timeout expired')
-        self.assertEqual(threadCount, len(threading.enumerate()))
+                assert mailer.wait(timeout=MAILER_TIMEOUT), \
+                    'mailer.wait: Timeout expired'
+        assert threadCount == len(threading.enumerate())
 
 
-class TestSPMMailbox(VdsmTestCase):
+class TestSPMMailbox:
 
     def test_clear_outbox(self):
         with make_env() as env:
@@ -121,10 +119,10 @@ class TestSPMMailbox(VdsmTestCase):
             with make_spm_mailbox(env):
                 with io.open(env.outbox, "rb") as f:
                     data = f.read()
-                self.assertEqual(data, sm.EMPTYMAILBOX * MAX_HOSTS)
+                assert data == sm.EMPTYMAILBOX * MAX_HOSTS
 
 
-class TestHSMMailbox(VdsmTestCase):
+class TestHSMMailbox:
 
     def test_clear_host_outbox(self):
         host_id = 7
@@ -138,10 +136,10 @@ class TestHSMMailbox(VdsmTestCase):
                 start = host_id * sm.MAILBOX_SIZE
                 end = start + sm.MAILBOX_SIZE
                 # Host mailbox must be cleared
-                self.assertEqual(data[start:end], sm.EMPTYMAILBOX)
+                assert data[start:end] == sm.EMPTYMAILBOX
                 # Other mailboxes must not be modifed
-                self.assertEqual(data[:start], b"x" * start)
-                self.assertEqual(data[end:], b"x" * (len(data) - end))
+                assert data[:start] == b"x" * start
+                assert data[end:] == b"x" * (len(data) - end)
 
     def test_keep_outbox(self):
         host_id = 7
@@ -153,10 +151,10 @@ class TestHSMMailbox(VdsmTestCase):
             with make_hsm_mailbox(env, host_id):
                 with io.open(env.outbox, "rb") as f:
                     data = f.read()
-                self.assertEqual(data, dirty_outbox)
+                assert data == dirty_outbox
 
 
-class TestCommunicate(VdsmTestCase):
+class TestCommunicate:
 
     def test_send_receive(self):
         msg_processed = threading.Event()
@@ -182,18 +180,18 @@ class TestCommunicate(VdsmTestCase):
                         if not msg_processed.wait(10 * MONITOR_INTERVAL):
                             expired = True
 
-        self.assertFalse(expired, 'message was not processed on time')
-        self.assertEqual(received_messages, [(449, (
+        assert not expired, 'message was not processed on time'
+        assert received_messages == [(449, (
             "1xtnd\xe1_\xfeeT\x8a\x18\xb3\xe0JT\xe5^\xc8\xdb\x8a_Z%"
             "\xd8\xfcs.\xa4\xc3C\xbb>\xc6\xf1r\xd700000000000000640"
-            "0000000000"))])
+            "0000000000"))]
 
 
-class TestValidation(VdsmTestCase):
+class TestValidation:
 
     def test_empty_mailbox(self):
         mailbox = sm.EMPTYMAILBOX
-        self.assertFalse(sm.SPM_MailMonitor.validateMailbox(mailbox, 7))
+        assert not sm.SPM_MailMonitor.validateMailbox(mailbox, 7)
 
     def test_good_checksum(self):
         msg = "x" * sm.MESSAGE_SIZE
@@ -202,11 +200,11 @@ class TestValidation(VdsmTestCase):
         n = misc.checksum(data, sm.CHECKSUM_BYTES)
         checksum = struct.pack('<l', n)
         mailbox = data + checksum
-        self.assertTrue(sm.SPM_MailMonitor.validateMailbox(mailbox, 7))
+        assert sm.SPM_MailMonitor.validateMailbox(mailbox, 7)
 
     def test_bad_checksum(self):
         msg = "x" * sm.MESSAGE_SIZE
         padding = sm.MAILBOX_SIZE - sm.MESSAGE_SIZE - sm.CHECKSUM_BYTES
         data = msg + padding * "\0"
         mailbox = data + "bad!"
-        self.assertFalse(sm.SPM_MailMonitor.validateMailbox(mailbox, 7))
+        assert not sm.SPM_MailMonitor.validateMailbox(mailbox, 7)
