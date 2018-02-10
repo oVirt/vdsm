@@ -27,6 +27,7 @@ from vdsm.virt import metadata
 from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
 from vdsm import constants
+from vdsm import taskset
 
 
 _BOOT_MENU_TIMEOUT = 10000  # milliseconds
@@ -523,6 +524,141 @@ class Domain(object):
 
     def _getMaxVCpus(self):
         return self.conf.get('maxVCpus', self._getSmp())
+
+
+def parse_domain(dom_xml, arch):
+    """
+    Rebuild a conf dictionary out of a dom_xml
+    """
+    conf = {'kvmEnable': 'true'}
+    dom = vmxml.parse_xml(dom_xml)
+    _parse_domain_init(dom, conf)
+    _parse_domain_clock(dom, conf)
+    _parse_domain_os(dom, conf)
+    _parse_domain_cpu(dom, conf, arch)
+    _parse_domain_input(dom, conf)
+    # TODO: numatune
+    return conf
+
+
+def _parse_domain_init(dom, conf):
+    iothreads = dom.findtext('./iothreads', default=None)
+    if iothreads is not None:
+        conf['numOfIoThreads'] = iothreads
+    max_mem = dom.find('./maxMemory')
+    if max_mem is not None:
+        conf['maxMemSize'] = int(max_mem.text) / 1024
+        conf['maxMemSlots'] = int(max_mem.attrib.get('slots', 16))
+    vcpu = dom.find('./vcpu')
+    if vcpu is not None:
+        conf['smp'] = vcpu.attrib.get('current')
+
+
+def _parse_domain_clock(dom, conf):
+    clock = dom.find('./clock')
+    if clock is not None:
+        conf['timeOffset'] = clock.attrib.get('adjustment', 0)
+    if dom.find("./clock/timer[@name='hypervclock']"):
+        conf['hypervEnable'] = 'true'
+
+
+def _parse_domain_os(dom, conf):
+    os = dom.find('./os/type')
+    if os is not None:
+        conf['emulatedMachine'] = os.attrib['machine']
+
+    # TODO: do we need 'boot'?
+    for param in ('initrd', 'kernel', 'kernelArgs'):
+        value = dom.findtext('./os/%s' % param)
+        if value is not None:
+            conf[param] = value
+
+    if dom.find("./os/bootmenu[@enable='yes']") is not None:
+        conf['bootMenuEnable'] = 'true'
+    else:
+        conf['bootMenuEnable'] = 'false'
+
+
+def _parse_domain_cpu(dom, conf, arch):
+    cpu_topology = dom.find('./cpu/topology')
+    if cpu_topology is not None:
+        cores = cpu_topology.attrib['cores']
+        threads = cpu_topology.attrib['threads']
+        sockets = cpu_topology.attrib['sockets']
+        conf['smpCoresPerSocket'] = cores
+        conf['smpThreadsPerCore'] = threads
+        conf['maxVCpus'] = str(int(sockets) * int(cores) * int(threads))
+
+    cpu_tune = dom.find('./cputune')
+    if cpu_tune is not None:
+        cpu_pinning = {}
+        for cpu_pin in dom.findall('./cputune/vcpupin'):
+            cpu_pinning[cpu_pin.attrib['vcpu']] = cpu_pin.attrib['cpuset']
+        if cpu_pinning:
+            conf['cpuPinning'] = cpu_pinning
+
+    cpu_numa = dom.find('./cpu/numa')
+    if cpu_numa is not None:
+        guest_numa_nodes = []
+        for index, cell in enumerate(dom.findall('./cpu/numa/cell')):
+            guest_numa_nodes.append({
+                'nodeIndex': index,
+                'cpus': ','.join(_expand_list(cell.attrib['cpus'])),
+                'memory': str(int(cell.attrib['memory']) // 1024),
+            })
+        conf['guestNumaNodes'] = guest_numa_nodes
+
+    if cpuarch.is_x86(arch):
+        _parse_domain_cpu_x86(dom, conf)
+    elif cpuarch.is_ppc(arch):
+        _parse_domain_cpu_ppc(dom, conf)
+
+
+def _parse_domain_cpu_x86(dom, conf):
+    cpu = dom.find('./cpu')
+    if cpu is None:
+        return
+    features = []
+    cpu_mode = cpu.attrib.get('mode')
+    if cpu_mode == 'host-passthrough':
+        model = 'hostPassthrough'
+    elif cpu_mode == 'host-model':
+        model = 'hostModel'
+    else:
+        model = dom.findtext('./cpu/model')
+        features = [
+            _parse_domain_cpu_x86_feature(feature)
+            for feature in dom.findall('./cpu/features')
+        ]
+
+    conf['cpuType'] = ','.join([model] + features)
+
+
+def _parse_domain_cpu_x86_feature(feature):
+    policy = feature.attrib.get('policy', '')
+    flag = ''
+    if policy == 'require':
+        flag = '+'
+    elif policy == 'disable':
+        flag = '-'
+    name = feature.attrib['name']
+    return flag + name.replace('sse4.', 'sse4_')
+
+
+def _parse_domain_cpu_ppc(dom, conf):
+    model = dom.findtext('./cpu/model')
+    if model is not None:
+        conf['cpuType'] = model
+
+
+def _expand_list(cpuset):
+    cpulist = sorted(taskset.cpulist_parse(cpuset))
+    return [str(cpu) for cpu in cpulist]
+
+
+def _parse_domain_input(dom, conf):
+    if dom.find("./devices/input[@type='tablet']") is not None:
+        conf['tabletEnable'] = 'true'
 
 
 def make_minimal_domain(dom):

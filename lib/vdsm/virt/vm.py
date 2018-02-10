@@ -1710,7 +1710,12 @@ class Vm(object):
                 # The idea is to keep the original data as much as we can,
                 # hence we use this if. This is also useful to crosscheck
                 # that we convert back the data in the right way.
-                #
+                ret['acpiEnable'] = (
+                    'true' if self._domain.acpi_enabled() else 'false'
+                )
+                ret['custom'] = utils.picklecopy(self._custom['custom'])
+                ret.update(
+                    libvirtxml.parse_domain(self._domain.xml, self.arch))
                 # We trust only the disk configuration: we need to store
                 # it early in the initialization flow to properly support
                 # live merge.
