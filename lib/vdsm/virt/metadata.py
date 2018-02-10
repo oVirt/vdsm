@@ -120,9 +120,7 @@ class UnsupportedType(Error):
 
 
 class MissingDevice(Error):
-    """
-    Failed to uniquely identify one device using the given attributes.
-    """
+    msg = 'Failed to uniquely identify one device using the given attributes'
 
 
 class Metadata(object):
