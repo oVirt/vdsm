@@ -37,6 +37,10 @@ class NMConnectionNotFoundError(Exception):
     pass
 
 
+class NMTimeoutError(Exception):
+    pass
+
+
 def nmerror_dev_not_found():
     return nmerror(src_exception=DBusException,
                    dst_exception=NMDeviceNotFoundError,

@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,12 +18,23 @@
 #
 from __future__ import absolute_import
 
+import time
+
 import dbus
 
 from vdsm.network.nm import errors
 
 from . import DBUS_STD_PROPERTIES_IFNAME
 from . import NMDbus, NMDbusManager
+from . import types
+
+
+WAITFOR_RESOLUTION = 0.2
+WAITFOR_TIMEOUT = 2
+
+
+class NMTimeoutDeviceStateNotReached(errors.NMTimeoutError):
+    pass
 
 
 class NMDbusDevice(object):
@@ -51,6 +62,7 @@ class _NMDbusDeviceProperties(object):
 
     def __init__(self, device_properties):
         self._properties = device_properties
+        self.syncoper = _NMDbusDeviceSyncOperations(self)
 
     @property
     def interface(self):
@@ -71,3 +83,25 @@ class _NMDbusDeviceProperties(object):
     @errors.nmerror_properties_not_found()
     def _property(self, property_name):
         return self._properties.Get(self.IF_NAME, property_name)
+
+
+class _NMDbusDeviceSyncOperations(object):
+    def __init__(self, device):
+        self._device = device
+
+    def waitfor_activated_state(self, timeout=WAITFOR_TIMEOUT):
+        self.waitfor_state(types.NMDeviceState.ACTIVATED, timeout)
+
+    def waitfor_state(self, state, timeout=WAITFOR_TIMEOUT):
+        for _ in range(_round_up(timeout / WAITFOR_RESOLUTION)):
+            actual_state = self._device.state
+            if actual_state == state:
+                return
+            time.sleep(WAITFOR_RESOLUTION)
+
+        raise NMTimeoutDeviceStateNotReached(
+            'Actual: {}, Desired: {}', actual_state, state)
+
+
+def _round_up(number):
+    return int(number) if number == int(number) else int(number + 1)

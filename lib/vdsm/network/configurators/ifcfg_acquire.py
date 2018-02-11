@@ -24,7 +24,7 @@ import os
 from vdsm.common import fileutils
 from vdsm.network.netinfo import misc
 from vdsm.network.nm import networkmanager
-from vdsm.network.nm.errors import NMDeviceNotFoundError
+from vdsm.network.nm import errors as nmerrors
 
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
@@ -52,9 +52,10 @@ class IfcfgAcquireNMonline(object):
     def acquire_device(device):
         try:
             dev = networkmanager.Device(device)
+            dev.syncoper.waitfor_activated_state()
             dev.cleanup_inactive_connections()
             active_connection = dev.active_connection
-        except NMDeviceNotFoundError:
+        except (nmerrors.NMDeviceNotFoundError, nmerrors.NMTimeoutError):
             return
 
         if not active_connection:
