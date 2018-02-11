@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,6 +69,11 @@ class Device(object):
         """
         for connection in self._non_active_connections():
             connection.delete()
+
+    @property
+    def syncoper(self):
+        device = self._nm_device_service.device(self._name)
+        return device.syncoper
 
     def _non_active_connections(self):
         active_connection = self.active_connection

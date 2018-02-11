@@ -193,6 +193,7 @@ class TestNMConnectionCreation(VdsmTestCase):
         with dummy_devices(1) as nics:
             with nm_connections(iface, IPV4ADDR, slaves=nics):
                 device = nm_device.device(iface)
+                device.syncoper.waitfor_activated_state()
                 active_con_path = device.active_connection_path
                 active_con = nm_act_cons.connection(active_con_path)
 
