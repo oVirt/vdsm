@@ -3889,7 +3889,7 @@ class Vm(object):
         else:
             with self._confLock:
                 self.conf['devices'].remove(conf)
-            self._updateDomainDescriptor()
+        self._updateDomainDescriptor()
 
         return response.success(vmList=self.status())
 
