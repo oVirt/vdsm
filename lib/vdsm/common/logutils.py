@@ -163,16 +163,29 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
 
     _CLOSED = object()
 
-    def __init__(self, capacity=10000, start=True):
+    def __init__(self, capacity=10000, adaptive=True, start=True):
         """
         Arguments:
             capacity (int): number of records to queue before dropping records.
                 When the queue becomes full, new records are dropped.
-            start (bool): start the handler thread automaticlaly. If False, the
+            adaptive (bool): adapt log level to number of queued messages,
+                dropping lower priority messages.
+            start (bool): start the handler thread automatically. If False, the
                 thread must be started explicitly.
         """
         logging.handlers.MemoryHandler.__init__(self, 0)
-        self._capacity = capacity
+        if adaptive:
+            # Use list instead of dict, so we can support custom log message
+            # like TRACING, used in some parts of vdsm.
+            self._limits = [
+                (logging.DEBUG, int(capacity * 0.6)),
+                (logging.INFO, int(capacity * 0.7)),
+                (logging.WARNING, int(capacity * 0.8)),
+                (logging.ERROR, int(capacity * 0.9)),
+                (logging.CRITICAL, capacity),
+            ]
+        else:
+            self._limits = [(logging.CRITICAL, capacity)]
         self._target = _DROPPER
         self._queue = collections.deque()
         self._cond = threading.Condition(threading.Lock())
@@ -195,7 +208,7 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
 
         If the queue is full, the record is dropped.
         """
-        if len(self._queue) < self._capacity:
+        if self._can_handle(record):
             self._queue.append(record)
             with self._cond:
                 self._cond.notify()
@@ -237,6 +250,13 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
         self._thread.start()
 
     # Private
+
+    def _can_handle(self, record):
+        size = len(self._queue)
+        for level, limit in self._limits:
+            if record.levelno <= level:
+                return size < limit
+        return True
 
     def _run(self):
         while True:

@@ -26,6 +26,7 @@ from contextlib import closing
 from contextlib import contextmanager
 
 from testlib import VdsmTestCase as TestCaseBase
+from testlib import expandPermutations, permutations
 from testlib import forked
 
 from vdsm.common import concurrent
@@ -91,9 +92,10 @@ class TestSetLevel(TestCaseBase):
 
 
 @contextmanager
-def threaded_handler(capacity, target):
+def threaded_handler(capacity, target, adaptive=True):
     # Start the handler explicitly for deterministic capacity handling.
-    handler = logutils.ThreadedHandler(capacity, start=False)
+    handler = logutils.ThreadedHandler(
+        capacity, adaptive=adaptive, start=False)
     with closing(handler):
         handler.setTarget(target)
         logger = logging.Logger("test")
@@ -120,27 +122,45 @@ class Handler(object):
                 time.sleep(self.delay)
 
 
+@expandPermutations
 class TestThreadedHandler(TestCaseBase):
 
-    def test_capacity(self):
+    # Notes:
+    # - When using adaptive log level, we start to drop debug messages when
+    #   queue is 60% full, so we want to check critical messages, which are
+    #   dropped only when the queue is 100% full.
+
+    @permutations([
+        # adaptive, level
+        (False, logging.DEBUG),
+        (True, logging.CRITICAL),
+    ])
+    def test_capacity(self, adaptive, level):
         target = Handler()
 
-        with threaded_handler(100, target) as (handler, logger):
+        with threaded_handler(
+                100, target, adaptive=adaptive) as (handler, logger):
             for _ in range(100):
-                logger.info("It works!")
+                logger.log(level, "It works!")
             handler.start()
 
         # We expect that no message will be dropped.
         self.assertEqual(target.messages, ["It works!"] * 100)
 
-    def test_drop_new_messages(self):
+    @permutations([
+        # adaptive, level
+        (False, logging.DEBUG),
+        (True, logging.CRITICAL),
+    ])
+    def test_drop_new_messages(self, adaptive, level):
         target = Handler()
 
         # This handler will queue up to 10 messages. Logging 20 messages
         # will drop the newest 10 messages.
-        with threaded_handler(10, target) as (handler, logger):
+        with threaded_handler(
+                10, target, adaptive=adaptive) as (handler, logger):
             for i in range(20):
-                logger.info("Message %d", i)
+                logger.log(level, "Message %d", i)
             handler.start()
 
         expected = ["Message %d" % i for i in range(10)]
@@ -164,14 +184,61 @@ class TestThreadedHandler(TestCaseBase):
 
         self.assertEqual(target.messages, [])
 
-    def test_blocked_handler(self):
+    def test_adaptive_log_level(self):
+        target = Handler()
+
+        with threaded_handler(100, target) as (handler, logger):
+            # The first 60 debug messages will be logged.
+            for i in range(70):
+                logger.debug("debug %d", i)
+            # The first 10 info messages will be logged.
+            for i in range(20):
+                logger.info("info %d", i)
+            # The first 10 warning messages will be logged.
+            for i in range(20):
+                logger.warning("warning %d", i)
+            # The first 10 errors messages will be logged.
+            for i in range(20):
+                logger.error("error %d", i)
+            # The first 10 critical messages will be logged.
+            for i in range(20):
+                logger.critical("critical %d", i)
+            # At this point the queue is full - any message will be dropped.
+            for i in range(10):
+                logger.critical("will be dropped")
+            handler.start()
+
+        debug_messages = ["debug %d" % i for i in range(60)]
+        self.assertEqual(target.messages[:60], debug_messages)
+
+        info_messages = ["info %d" % i for i in range(10)]
+        self.assertEqual(target.messages[60:70], info_messages)
+
+        warning_messages = ["warning %d" % i for i in range(10)]
+        self.assertEqual(target.messages[70:80], warning_messages)
+
+        error_messages = ["error %d" % i for i in range(10)]
+        self.assertEqual(target.messages[80:90], error_messages)
+
+        critical_messages = ["critical %d" % i for i in range(10)]
+        self.assertEqual(target.messages[90:100], critical_messages)
+
+        self.assertEqual(target.messages[100:], [])
+
+    @permutations([
+        # adaptive, level
+        (False, logging.DEBUG),
+        (True, logging.CRITICAL),
+    ])
+    def test_blocked_handler(self, adaptive, level):
         # Simulate a handler blocked on storage.
         target = Handler()
         target.lock.acquire()
-        with threaded_handler(100, target) as (handler, logger):
+        with threaded_handler(
+                100, target, adaptive=adaptive) as (handler, logger):
             handler.start()
             for _ in range(100):
-                logger.info("It works!")
+                logger.log(level, "It works!")
 
             # Nothing was logged yet, since handler is blocked...
             self.assertEqual(target.messages, [])
@@ -180,16 +247,22 @@ class TestThreadedHandler(TestCaseBase):
         # We expect that no message will be dropped.
         self.assertEqual(target.messages, ["It works!"] * 100)
 
-    def test_slow_handler(self):
+    @permutations([
+        # adaptive, level
+        (False, logging.DEBUG),
+        (True, logging.CRITICAL),
+    ])
+    def test_slow_handler(self, adaptive, level):
         # Test that logging threads are not delayed by a slow handler.
         target = Handler(0.1)
 
-        with threaded_handler(10, target) as (handler, logger):
+        with threaded_handler(
+                10, target, adaptive=adaptive) as (handler, logger):
             handler.start()
 
             def worker(n):
                 start = time.time()
-                logger.info("thread %02d", n)
+                logger.log(level, "thread %02d", n)
                 return time.time() - start
 
             results = concurrent.tmap(worker, range(10))
