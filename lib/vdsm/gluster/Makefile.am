@@ -40,6 +40,7 @@ gluster_mgmt = \
 	services.py \
 	storagedev.py \
 	tasks.py \
+	thinstorage.py \
 	$(NULL)
 endif
 
