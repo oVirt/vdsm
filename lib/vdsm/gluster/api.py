@@ -803,6 +803,11 @@ class GlusterApi(object):
         self.svdsmProxy.glusterVolumeResetBrickCommitForce(volumeName,
                                                            existingBrick)
 
+    @exportAsVerb
+    def logicalVolumeList(self, options=None):
+        status = self.svdsmProxy.glusterLogicalVolumeList()
+        return {'logicalVolumeList': status}
+
 
 def getGlusterMethods(gluster):
     methods = []

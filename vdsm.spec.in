@@ -1628,6 +1628,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/gluster/services.py*
 %{python_sitelib}/%{vdsm_name}/gluster/storagedev.py*
 %{python_sitelib}/%{vdsm_name}/gluster/tasks.py*
+%{python_sitelib}/%{vdsm_name}/gluster/thinstorage.py*
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.yml
 %endif
 

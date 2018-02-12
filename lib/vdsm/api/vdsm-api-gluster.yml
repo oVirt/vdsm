@@ -397,6 +397,27 @@ types:
             type: *HostStatus
         type: object
 
+    LocalLogicalVolumeList: &LocalLogicalVolumeList
+        added: '4.2.2'
+        description: List of local logical LVM volumes
+        name: LocalLogicalVolumeList
+        properties:
+        -   description: Logical volume name
+            name: lv_name
+            type: string
+        -   description: Owning volume group name
+            name: vg_name
+            type: string
+        -   description: Name of volume's thin pool
+            name: pool_lv
+            type: string
+        -   description: Reported size of logical volume in bytes
+            name: lv_size
+            type: int
+        -   description: Thinpool available space in bytes, where applicable
+            name: lv_free
+            type: int
+
     RaidDevice: &RaidDevice
         added: '3.6'
         description: Raid storage devices.
@@ -1116,6 +1137,14 @@ GlusterHost.storageDevicesList:
         description: List of gluster storage devices list
         type:
         - *StorageDevicesList
+
+GlusterHost.logicalVolumeList:
+    added: '4.2.2'
+    description: List local LVM logical volumes
+    return:
+        description: List of local LVM logical volumes
+        type:
+        - *LocalLogicalVolumeList
 
 GlusterHost.uuid:
     added: '3.2'

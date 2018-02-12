@@ -75,6 +75,7 @@ test_modules = \
 	gluster_exception_test.py \
 	glusterTestData.py \
 	guestagent_test.py \
+	gluster_thinstorage_test.py \
 	hooks_test.py \
 	hostdev_test.py \
 	hoststats_test.py \
