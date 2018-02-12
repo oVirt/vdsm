@@ -37,7 +37,7 @@ except ImportError:
     pass
 
 
-def get_stats(cif, sample):
+def get_stats(cif, sample, multipath=False):
     """
     Retreive host internal statistics
     """
@@ -50,8 +50,9 @@ def get_stats(cif, sample):
     if cif.irs:
         decStats['storageDomains'] = cif.irs.repoStats()
         del decStats['storageDomains']['status']
-        decStats['multipathHealth'] = cif.irs.multipath_health()
-        del decStats['multipathHealth']['status']
+        if multipath:
+            decStats['multipathHealth'] = cif.irs.multipath_health()
+            del decStats['multipathHealth']['status']
     else:
         decStats['storageDomains'] = {}
 

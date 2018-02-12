@@ -1378,7 +1378,8 @@ class Global(APIBase):
         """
         return {'status': doneCode,
                 'info': hostapi.get_stats(self._cif,
-                                          sampling.host_samples.stats())}
+                                          sampling.host_samples.stats(),
+                                          multipath=True)}
 
     @api.logged(on="api.host")
     def setLogLevel(self, level, name=''):
