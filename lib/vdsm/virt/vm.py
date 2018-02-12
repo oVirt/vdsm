@@ -3764,10 +3764,8 @@ class Vm(object):
             device_conf = self._devices[hwclass.DISK]
             device_conf.append(drive)
 
-            update_conf = 'xml' not in self.conf
-            if update_conf:
-                with self._confLock:
-                    self.conf['devices'].append(diskParams)
+            with self._confLock:
+                self.conf['devices'].append(diskParams)
 
             self._hotplug_device_metadata(hwclass.DISK, drive)
 
