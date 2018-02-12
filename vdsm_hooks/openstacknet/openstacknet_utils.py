@@ -24,7 +24,6 @@ INTEGRATION_BRIDGE = 'br-int'
 DEV_MAX_LENGTH = 14
 
 EXT_BRCTL = CommandPath('brctl', '/sbin/brctl', '/usr/sbin/brctl').cmd
-EXT_IP = CommandPath('ip', '/sbin/ip').cmd
 ovs_vsctl = CommandPath('ovs-vsctl',
                         '/usr/sbin/ovs-vsctl',
                         '/usr/bin/ovs-vsctl')
@@ -54,13 +53,3 @@ def mockExecuteOrExit(command):
 
 def devName(prefix, name):
     return (prefix + name)[:DEV_MAX_LENGTH]
-
-
-def deviceExists(dev):
-    command = [EXT_IP, 'link', 'show', 'dev', dev]
-    retcode, out, err = hooking.execCmd(command, raw=True)
-    return retcode == 0
-
-
-def mockDeviceExists(dev):
-    return False

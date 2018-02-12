@@ -148,7 +148,6 @@ def test(ovs):
 
     import openstacknet_utils
     openstacknet_utils.executeOrExit = openstacknet_utils.mockExecuteOrExit
-    openstacknet_utils.deviceExists = openstacknet_utils.mockDeviceExists
     addOpenstackVnic(domxml,
                      pluginType,
                      'test_port_id')
