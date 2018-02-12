@@ -119,6 +119,13 @@ def start(cif, scheduler):
             discard=False),
 
         Operation(
+            lambda: _kill_long_paused_vms(cif),
+            config.getint('vars', 'vm_kill_paused_time') // 2,
+            scheduler,
+            exclusive=True,
+            discard=False),
+
+        Operation(
             containersconnection.monitor,
             config.getint('vars', 'vm_sample_interval'),
             scheduler),
@@ -427,3 +434,12 @@ class DriveWatermarkMonitor(_RunnableOnVm):
 
     def _execute(self):
         self._vm.monitor_drives()
+
+
+def _kill_long_paused_vms(cif):
+    log = logging.getLogger("virt.periodic")
+    log.debug("Looking for stale paused VMs")
+    for vm in cif.getVMs().values():
+        if vm.lastStatus == vmstatus.PAUSED and \
+           vm.pause_code in ('EIO', 'EOTHER',):
+            vm.maybe_kill_paused()

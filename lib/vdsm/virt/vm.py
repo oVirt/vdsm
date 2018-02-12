@@ -1048,7 +1048,7 @@ class Vm(object):
                 else:
                     reason = vmexitreason.HOST_SHUTDOWN
                     exit_code = ERROR
-        if reason == vmexitreason.DESTROYED_ON_RESUME:
+        if reason == vmexitreason.DESTROYED_ON_PAUSE_TIMEOUT:
             exit_code = ERROR
         return exit_code, reason
 
@@ -1428,7 +1428,7 @@ class Vm(object):
         except DestroyedOnResumeError:
             self.log.debug("Cannot resume VM: paused for too long, destroyed")
 
-    def maybe_resume(self, resume_behavior=None):
+    def maybe_resume(self):
         """
         Handle resume request according to auto-resume value of the VM.
 
@@ -1437,23 +1437,14 @@ class Vm(object):
 
         :raises: `DestroyedOnResumeError` if the VM is destroyed.
         """
-        if resume_behavior is None:
-            resume_behavior = self._resume_behavior
-
+        resume_behavior = self._resume_behavior
         if resume_behavior == ResumeBehavior.AUTO_RESUME:
             self.cont()
             self.log.info("VM resumed")
         elif resume_behavior == ResumeBehavior.LEAVE_PAUSED:
             self.log.info("Auto-resume disabled for the VM")
         elif resume_behavior == ResumeBehavior.KILL:
-            pause_time = self._pause_time
-            now = vdsm.common.time.monotonic_time()
-            if pause_time is not None and \
-               now - pause_time > \
-               config.getint('vars', 'vm_kill_paused_time'):
-                self.log.info("VM paused for too long, will be destroyed")
-                self.destroy(gracefulAttempts=0,
-                             reason=vmexitreason.DESTROYED_ON_RESUME)
+            if self.maybe_kill_paused():
                 raise DestroyedOnResumeError()
             else:
                 self.cont()
@@ -1461,6 +1452,29 @@ class Vm(object):
         else:
             raise Exception("Unsupported resume behavior value: %s",
                             (resume_behavior,))
+
+    def maybe_kill_paused(self):
+        self.log.debug("Considering to kill a paused VM")
+        if self._resume_behavior != ResumeBehavior.KILL:
+            self.log.debug("VM not permitted to be killed")
+            return False
+        # TODO: The following should prevent other threads from running actions
+        # on the VM until VM status is set to Down.  Engine and libvirt are
+        # unaware about what's happening and may trigger concurrent operations
+        # (such as resume, migration, destroy, ...) on the VM while we check
+        # its status and possibly destroy it.
+        pause_time = self._pause_time
+        now = vdsm.common.time.monotonic_time()
+        if pause_time is not None and \
+           now - pause_time > \
+           config.getint('vars', 'vm_kill_paused_time'):
+            self.log.info("VM paused for too long, will be destroyed")
+            self.destroy(gracefulAttempts=0,
+                         reason=vmexitreason.DESTROYED_ON_PAUSE_TIMEOUT)
+            return True
+        else:
+            self.log.debug("VM not paused long enough, not killing it")
+            return False
 
     def _acquireCpuLockWithTimeout(self):
         timeout = self._loadCorrectedTimeout(
@@ -1540,6 +1554,10 @@ class Vm(object):
             self._pause_time = vdsm.common.time.monotonic_time()
             self._update_metadata()
         return response.success()
+
+    @property
+    def pause_code(self):
+        return self._pause_code
 
     def _setGuestCpuRunning(self, isRunning, guestCpuLocked=False):
         """
