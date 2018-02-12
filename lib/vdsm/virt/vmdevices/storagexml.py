@@ -68,7 +68,7 @@ def parse(dev, meta):
     disk_type = core.find_device_type(dev)
     params = {
         'device': dev.attrib.get('device', None) or dev.tag,
-        'type': disk_type,
+        'type': dev.tag,
         'diskType': disk_type,
         'specParams': {},
     }
