@@ -161,6 +161,9 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
     set later using setTarget, after all handlers are loaded.
     """
 
+    # Interval for warning about dropped messages in seconds.
+    WARN_INTERVAL = 60
+
     _CLOSED = object()
 
     def __init__(self, capacity=10000, adaptive=True, start=True):
@@ -189,6 +192,10 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
         self._target = _DROPPER
         self._queue = collections.deque()
         self._cond = threading.Condition(threading.Lock())
+        # The time of the last warning.
+        self._last_warning = 0
+        # Number of dropped records since last warning.
+        self._dropped_records = 0
         self._thread = concurrent.thread(self._run, name="logfile")
         if start:
             self.start()
@@ -206,12 +213,37 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
         """
         Handle a log record.
 
-        If the queue is full, the record is dropped.
+        If the queue is full, the record is dropped.  If check interval was
+        completed, warn about messages dropped during this interval.
         """
-        if self._can_handle(record):
-            self._queue.append(record)
-            with self._cond:
+        with self._cond:
+            # First, handle this record.
+            if self._can_handle(record):
+                self._queue.append(record)
                 self._cond.notify()
+            else:
+                self._dropped_records += 1
+
+            # Anything to report?
+            if not self._dropped_records:
+                return
+
+            # Is time to warn?
+            if record.created < self._last_warning + self.WARN_INTERVAL:
+                return
+
+            # Warn and recent counts.
+            dropped = self._dropped_records
+            self._dropped_records = 0
+            self._last_warning = record.created
+
+        # Notes:
+        # - Log outside of the locked region to avoid deadlock.
+        # - Use critical level for better visibility and to prevent filtering
+        #   out of this warning.
+        logging.critical("Handler is overloaded, dropping messages "
+                         "(dropped %d messages in the last %d seconds)",
+                         dropped, self.WARN_INTERVAL)
 
     def close(self):
         """
