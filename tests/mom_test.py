@@ -24,10 +24,11 @@ import tempfile
 import threading
 from vdsm.common.define import Mbytes
 from vdsm.momIF import MomClient
-from mom import unixrpc
 from six.moves import configparser
 import os.path
 import monkeypatch
+
+import unixrpc_testlib
 
 from vdsm.common import cpuarch
 
@@ -92,7 +93,7 @@ class MomPolicyTests(TestCase):
 
     def _getMomServer(self, api_class=DummyMomApi):
         port = self._getMomPort()
-        server = unixrpc.UnixXmlRpcServer(port)
+        server = unixrpc_testlib.UnixXmlRpcServer(port)
         api = api_class()
         server.register_instance(api)
         t = threading.Thread(target=server.serve_forever)

@@ -27,13 +27,14 @@ from vdsm.config import config
 from vdsm import throttledlog
 
 from vdsm.common.cpuarch import PAGE_SIZE_BYTES
+from vdsm.common import unixrpc
 
 try:
     import mom
-    from mom import unixrpc
     _momAvailable = True
 except ImportError:
     _momAvailable = False
+
 
 throttledlog.throttle('MomNotAvailable', 100)
 throttledlog.throttle('MomNotAvailableKSM', 100)
