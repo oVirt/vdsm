@@ -32,6 +32,9 @@ log = logging.getLogger("Gluster")
 _lvsCommandPath = cmdutils.CommandPath("lvs",
                                        "/sbin/lvs",
                                        "/usr/sbin/lvs",)
+_pvsCommandPath = cmdutils.CommandPath("pvs",
+                                       "/sbin/pvs",
+                                       "/usr/sbin/pvs",)
 
 
 @gluster_mgmt_api
@@ -46,10 +49,8 @@ def logicalVolumeList():
     if rc:
         raise ge.GlusterCmdExecFailedException(rc, out, err)
 
-    jsonOut = json.loads("".join(out))
-    lvs = jsonOut["report"][0]["lv"]
     volumes = []
-    for lv in lvs:
+    for lv in json.loads("".join(out))["report"][0]["lv"]:
         lv["lv_size"] = int(lv["lv_size"])
         if not lv["pool_lv"] and lv["data_percent"]:
             lv["lv_free"] = int(
@@ -60,3 +61,15 @@ def logicalVolumeList():
             lv.pop("data_percent")
         volumes.append(lv)
     return volumes
+
+
+@gluster_mgmt_api
+def physicalVolumeList():
+    rc, out, err = commands.execCmd([_pvsCommandPath.cmd,
+                                     "--reportformat", "json",
+                                     "--units", "b",
+                                     "--nosuffix",
+                                     "-o", "pv_name,vg_name"])
+    if rc:
+        raise ge.GlusterCmdExecFailedException(rc, out, err)
+    return json.loads("".join(out))["report"][0]["pv"]

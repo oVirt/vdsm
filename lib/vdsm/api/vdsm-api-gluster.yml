@@ -418,6 +418,18 @@ types:
             name: lv_free
             type: int
 
+    LocalPhysicalVolumeList: &LocalPhysicalVolumeList
+        added: '4.2.2'
+        description: List of local physical LVM volumes
+        name: LocalPhysicalVolumeList
+        properties:
+        -   description: Physical volume name
+            name: pv_name
+            type: string
+        -   description: Owning volume group name
+            name: vg_name
+            type: string
+
     RaidDevice: &RaidDevice
         added: '3.6'
         description: Raid storage devices.
@@ -1145,6 +1157,14 @@ GlusterHost.logicalVolumeList:
         description: List of local LVM logical volumes
         type:
         - *LocalLogicalVolumeList
+
+GlusterHost.physicalVolumeList:
+    added: '4.2.2'
+    description: List local LVM physical volumes
+    return:
+        description: List of local LVM physical volumes
+        type:
+        - *LocalPhysicalVolumeList
 
 GlusterHost.uuid:
     added: '3.2'

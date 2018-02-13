@@ -808,6 +808,11 @@ class GlusterApi(object):
         status = self.svdsmProxy.glusterLogicalVolumeList()
         return {'logicalVolumeList': status}
 
+    @exportAsVerb
+    def physicalVolumeList(self, options=None):
+        status = self.svdsmProxy.glusterPhysicalVolumeList()
+        return {'physicalVolumeList': status}
+
 
 def getGlusterMethods(gluster):
     methods = []
