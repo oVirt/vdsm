@@ -92,3 +92,32 @@ class GlusterStorageDevTest(TestCaseBase):
                                 partial(fake_json_call, data))]):
             actual = thinstorage.logicalVolumeList()
             self.assertEqual(expected, actual)
+
+    def test_physical_volume_list(self):
+        data = {
+            "report": [
+                {
+                    "pv": [
+                        {
+                            "pv_name": "/dev/mapper/vdodata",
+                            "vg_name": "INTERNAL"
+                        },
+                        {
+                            "pv_name": "/dev/sdb1",
+                            "vg_name": "vg0"
+                        }
+                    ]
+                }
+            ]
+
+        }
+
+        expected = [
+            {"pv_name": "/dev/mapper/vdodata", "vg_name": "INTERNAL"},
+            {"pv_name": "/dev/sdb1", "vg_name": "vg0"}
+        ]
+
+        with MonkeyPatchScope([(commands, "execCmd",
+                                partial(fake_json_call, data))]):
+            actual = thinstorage.physicalVolumeList()
+            self.assertEqual(expected, actual)

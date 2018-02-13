@@ -84,6 +84,9 @@ class GlusterHost(GlusterApiBase):
     def logicalVolumeList(self, options=None):
         return self._gluster.logicalVolumeList()
 
+    def physicalVolumeList(self, options=None):
+        return self._gluster.physicalVolumeList()
+
     def createBrick(self, name, mountPoint, devList, fsType=None,
                     raidParams={}):
         return self._gluster.createBrick(name, mountPoint,
