@@ -54,7 +54,6 @@ def get_stats(cif, sample):
         del decStats['multipathHealth']['status']
     else:
         decStats['storageDomains'] = {}
-        decStats['multipathHealth'] = {}
 
     for var in decStats:
         ret[var] = utils.convertToStr(decStats[var])
