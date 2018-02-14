@@ -813,6 +813,11 @@ class GlusterApi(object):
         status = self.svdsmProxy.glusterPhysicalVolumeList()
         return {'physicalVolumeList': status}
 
+    @exportAsVerb
+    def vdoVolumeList(self, options=None):
+        status = self.svdsmProxy.glusterVdoVolumeList()
+        return {'vdoVolumeList': status}
+
 
 def getGlusterMethods(gluster):
     methods = []

@@ -737,6 +737,11 @@ Requires: python-blivet1
 Requires: python-blivet
 %endif
 Requires: xfsprogs
+%ifarch x86_64
+Requires: vdo
+Requires: kmod-kvdo
+%endif
+
 
 %description gluster
 Gluster plugin enables VDSM to serve Gluster functionalities.

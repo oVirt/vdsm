@@ -22,9 +22,13 @@ import json
 from functools import partial
 
 from testlib import VdsmTestCase as TestCaseBase
-from monkeypatch import MonkeyPatchScope
+from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from vdsm.common import commands
+from vdsm.common import cmdutils
 from vdsm.gluster import thinstorage
+
+_fake_vdoCommandPath = cmdutils.CommandPath("true",
+                                            "/bin/true",)
 
 
 def fake_json_call(data, cmd, **kw):
@@ -120,4 +124,68 @@ class GlusterStorageDevTest(TestCaseBase):
         with MonkeyPatchScope([(commands, "execCmd",
                                 partial(fake_json_call, data))]):
             actual = thinstorage.physicalVolumeList()
+            self.assertEqual(expected, actual)
+
+    @MonkeyPatch(thinstorage, '_vdoCommandPath', _fake_vdoCommandPath)
+    def test_vdo_volume_list(self):
+        data = [
+            "VDO status:",
+            "  Date: '2018-03-02 15:55:12+02:00'",
+            "  Node: hc-tiger.eng.lab.tlv.redhat.com",
+            "Kernel module:",
+            "  Loaded: true",
+            "  Name: kvdo",
+            "  Version information:",
+            "    kvdo version: 6.1.0.124",
+            "Configuration:",
+            "  File: /etc/vdoconf.yml",
+            "  Last modified: '2018-02-14 16:34:08'",
+            "VDOs:",
+            "  vdodata:",
+            "    Compression: enabled",
+            "    Configured write policy: auto",
+            "    Deduplication: enabled",
+            "    Device mapper status: 0 104857600 dedupe",
+            "    Emulate 512 byte: enabled",
+            "    Storage device: /dev/vg0/vdobase",
+            "    VDO statistics:",
+            "      /dev/mapper/vdodata:",
+            "        1K-blocks: 10485760",
+            "        1K-blocks available: 6265428",
+            "        1K-blocks used: 4220332",
+            "        512 byte emulation: true",
+            "        write policy: async",
+            "  vdonext:",
+            "    Compression: enabled",
+            "    Deduplication: enabled",
+            "    Device mapper status: 0 104857600 dedupe",
+            "    Emulate 512 byte: enabled",
+            "    Storage device: /dev/vg0/vdosecond",
+            "    VDO statistics:",
+            "      /dev/mapper/vdonext:",
+            "        1K-blocks: 10485760",
+            "        1K-blocks available: 6287208",
+            "        1K-blocks used: 4198552",
+            "        512 byte emulation: true",
+            "        write policy: async"
+        ]
+
+        expected = [
+            {
+                "device": "/dev/vg0/vdobase",
+                "name": "/dev/mapper/vdodata",
+                "size": 10737418240,
+                "free": 6415798272
+            },
+            {
+                "device": "/dev/vg0/vdosecond",
+                "name": "/dev/mapper/vdonext",
+                "size": 10737418240,
+                "free": 6438100992
+            }
+        ]
+
+        with MonkeyPatchScope([(commands, "execCmd",
+                                partial(lambda x: (0, data, [])))]):
+            actual = thinstorage.vdoVolumeList()
             self.assertEqual(expected, actual)
