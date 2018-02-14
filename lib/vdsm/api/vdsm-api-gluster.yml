@@ -430,6 +430,24 @@ types:
             name: vg_name
             type: string
 
+    LocalVDOVolumeList: &LocalVDOVolumeList
+        added: '4.2.2'
+        description: List of local VDO volumes
+        name: LocalVDOVolumeList
+        properties:
+        -   description: VDO volume name
+            name: name
+            type: string
+        -   description: VDO underlying device name
+            name: device
+            type: string
+        -   description: Reported size of VDO volume in bytes
+            name: size
+            type: int
+        -   description: Available space in bytes, where applicable
+            name: free
+            type: int
+
     RaidDevice: &RaidDevice
         added: '3.6'
         description: Raid storage devices.
@@ -1165,6 +1183,14 @@ GlusterHost.physicalVolumeList:
         description: List of local LVM physical volumes
         type:
         - *LocalPhysicalVolumeList
+
+GlusterHost.vdoVolumeList:
+    added: '4.2.2'
+    description: List local VDO volumes
+    return:
+        description: List of local VDO volumes
+        type:
+        - *LocalVDOVolumeList
 
 GlusterHost.uuid:
     added: '3.2'

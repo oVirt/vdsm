@@ -21,6 +21,8 @@ from __future__ import absolute_import
 
 import json
 import logging
+from six import iteritems
+
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.gluster import exception as ge
@@ -35,6 +37,9 @@ _lvsCommandPath = cmdutils.CommandPath("lvs",
 _pvsCommandPath = cmdutils.CommandPath("pvs",
                                        "/sbin/pvs",
                                        "/usr/sbin/pvs",)
+_vdoCommandPath = cmdutils.CommandPath("vdo",
+                                       "/bin/vdo",
+                                       "/usr/bin/vdo",)
 
 
 @gluster_mgmt_api
@@ -73,3 +78,41 @@ def physicalVolumeList():
     if rc:
         raise ge.GlusterCmdExecFailedException(rc, out, err)
     return json.loads("".join(out))["report"][0]["pv"]
+
+
+def _parseVdoOutput(out, depth):
+    result = {}
+    while out:
+        item = out[0]
+        item_depth = len(item) - len(item.strip())
+        if item_depth < depth:
+            return result
+        out.pop(0)
+        kv = item.split(":")
+        key = kv[0].replace(" ", "")
+        if not kv[1]:
+            result[key] = _parseVdoOutput(out, depth + 2)
+        else:
+            value = kv[1].replace(" ", "")
+            result[key] = value
+    return result
+
+
+@gluster_mgmt_api
+def vdoVolumeList():
+    rc, out, err = commands.execCmd([_vdoCommandPath.cmd, "status"])
+    if rc:
+        raise ge.GlusterCmdExecFailedException(rc, out, err)
+    vdoData = _parseVdoOutput(out, 0)
+
+    result = []
+    for vdo, data in iteritems(vdoData["VDOs"]):
+        entry = {}
+        entry["device"] = data["Storagedevice"]
+        for mapper, stats in iteritems(data["VDOstatistics"]):
+            entry["name"] = mapper
+            entry["size"] = int(stats["1K-blocks"]) * 1024
+            entry["free"] = int(stats["1K-blocksavailable"]) * 1024
+        result.append(entry)
+
+    return result
