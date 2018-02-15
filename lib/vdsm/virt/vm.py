@@ -5414,6 +5414,12 @@ class Vm(object):
                     libvirt.VIR_DOMAIN_EVENT_SUSPENDED_PAUSED,
                     libvirt.VIR_DOMAIN_EVENT_SUSPENDED_IOERROR,
             ):
+                if detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_IOERROR:
+                    try:
+                        self._pause_code = self._readPauseCode()
+                    except libvirt.libvirtError as e:
+                        self.log.warning(
+                            "Couldn't retrieve pause code from libvirt: %s", e)
                 # Libvirt sometimes send the SUSPENDED/SUSPENDED_PAUSED event
                 # after RESUMED/RESUMED_MIGRATED (when VM status is PAUSED
                 # when migration completes, see qemuMigrationFinish function).
