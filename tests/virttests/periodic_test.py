@@ -84,6 +84,12 @@ class PeriodicOperationTests(TestCaseBase):
         invoked.wait(0.5)
         self.assertTrue(invoked.is_set())
 
+    def test_invalid_period(self):
+        op = periodic.Operation(lambda: None, period=0,
+                                scheduler=self.sched,
+                                executor=self.exc)
+        self.assertRaises(periodic.InvalidValue, op.start)
+
     def test_start_twice(self):
 
         def _work():

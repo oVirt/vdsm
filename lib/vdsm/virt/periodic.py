@@ -33,6 +33,7 @@ from vdsm import containersconnection
 from vdsm import executor
 from vdsm import host
 from vdsm import throttledlog
+from vdsm.common import errors
 from vdsm.common import exception
 from vdsm.common import libvirtconnection
 from vdsm.config import config
@@ -53,6 +54,19 @@ _THROTTLING_INTERVAL = 10  # seconds
 
 _operations = []
 _executor = None
+
+
+class Error(errors.Base):
+    msg = 'Generic error for periodic infrastructure'
+
+
+class InvalidValue(Error):
+    msg = 'Invalid {self.value} for {self.key} for Operation {self.op_desc}'
+
+    def __init__(self, op_desc, key, value):
+        self.op_desc = op_desc
+        self.key = key
+        self.value = value
 
 
 def _timeout_from(interval):
@@ -134,7 +148,10 @@ def start(cif, scheduler):
         host.stats.start()
 
     for op in _operations:
-        op.start()
+        try:
+            op.start()
+        except Error as e:
+            logging.warning('Operation not started: %s', e)
 
 
 def stop():
@@ -191,6 +208,8 @@ class Operation(object):
     def start(self):
         throttledlog.throttle(self._name, _THROTTLING_INTERVAL)
         with self._lock:
+            if self._period <= 0:
+                raise InvalidValue(repr(self), 'period', self._period)
             if self._running:
                 raise AssertionError("Operation already running")
             self._log.debug("starting operation %s", self._func)
