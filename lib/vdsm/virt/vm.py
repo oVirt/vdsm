@@ -3963,11 +3963,9 @@ class Vm(object):
                     self.log.warning('device %s out of space', device)
                     return 'ENOSPC'
                 elif error == libvirt.VIR_DOMAIN_DISK_ERROR_UNSPEC:
-                    # Mapping to 'EOTHER' may not be exact.
-                    # It is still safer than EIO given the VDSM mechanics.
                     self.log.warning('device %s reported I/O error',
                                      device)
-                    return 'EOTHER'
+                    return 'EIO'
                 # else error == libvirt.VIR_DOMAIN_DISK_ERROR_NONE
                 # so no worries.
 
