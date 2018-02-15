@@ -36,6 +36,7 @@ from vdsm.virt import vmstatus
 from monkeypatch import MonkeyPatchScope
 from testValidation import slowtest
 from testValidation import broken_on_ci
+from testlib import make_config
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase as TestCaseBase
 import fakelib
@@ -50,10 +51,10 @@ class TimeoutTests(TestCaseBase):
         self.assertTrue(periodic._timeout_from(interval) <= interval)
 
 
-@expandPermutations
-class PeriodicOperationTests(TestCaseBase):
+class _PeriodicBase(TestCaseBase):
 
     def setUp(self):
+        self.tasks = 2
         self.sched = schedule.Scheduler(name="test.Scheduler",
                                         clock=monotonic_time)
         self.sched.start()
@@ -70,6 +71,58 @@ class PeriodicOperationTests(TestCaseBase):
 
         self.sched.stop(wait=True)
         self.sched = None
+
+
+class PeriodicFunctionsTests(_PeriodicBase):
+
+    def test_start_with_invalid_operation(self):
+        """
+        periodic.start() should swallow any error that
+        periodic.Operation.start() may raise, and keep starting
+        the other operations after the failed one.
+        """
+        lock = threading.Lock()
+        done = threading.Event()
+
+        def _work():
+            with lock:
+                self.tasks -= 1
+                if not self.tasks:
+                    done.set()
+
+        ops = [
+            periodic.Operation(_work,
+                               period=1.0,
+                               scheduler=self.sched,
+                               executor=self.exc),
+
+            # will raise periodic.InvalidValue
+            periodic.Operation(lambda: None, period=0,
+                               scheduler=self.sched,
+                               executor=self.exc),
+
+            periodic.Operation(_work,
+                               period=1.0,
+                               scheduler=self.sched,
+                               executor=self.exc),
+        ]
+
+        with MonkeyPatchScope([
+            (periodic, 'config',
+                make_config([('sampling', 'enable', 'false')])),
+            (periodic, '_create', lambda cif, sched: ops),
+        ]):
+            # Don't assume operations are started in order,
+            # we just know all of them will be start()ed.
+            # See the documentation of periodic.start()
+            periodic.start(fake.ClientIF(), self.sched)
+
+        done.wait(0.5)
+        self.assertTrue(done.is_set())
+
+
+@expandPermutations
+class PeriodicOperationTests(_PeriodicBase):
 
     def test_start(self):
         invoked = threading.Event()

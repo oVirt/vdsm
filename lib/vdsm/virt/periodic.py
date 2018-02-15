@@ -77,81 +77,27 @@ def _timeout_from(interval):
 
 
 def start(cif, scheduler):
-    global _operations
+    """
+    Starts all the periodic Operations, to be run in one executor.Executor
+    instance owned by the `periodic` module.
+    There is no guarantee on the order on which the operations will be
+    started; this function only guarantees that it will attempt to
+    start every known Operation.
+    """
     global _executor
+    global _operations
 
     _executor = executor.Executor(name="periodic",
                                   workers_count=_WORKERS,
                                   max_tasks=_TASKS,
                                   scheduler=scheduler,
                                   max_workers=_MAX_WORKERS)
+
     _executor.start()
 
-    def per_vm_operation(func, period):
-        disp = VmDispatcher(
-            cif.getVMs, _executor, func, _timeout_from(period))
-        return Operation(disp, period, scheduler)
-
-    _operations = [
-        # Needs dispatching because updating the volume stats needs
-        # access to the storage, thus can block.
-        per_vm_operation(
-            UpdateVolumes,
-            config.getint('irs', 'vol_size_sample_interval')),
-
-        # Job monitoring need QEMU monitor access.
-        per_vm_operation(
-            BlockjobMonitor,
-            config.getint('vars', 'vm_sample_jobs_interval')),
-
-        # We do this only until we get high water mark notifications
-        # from QEMU. It accesses storage and/or QEMU monitor, so can block,
-        # thus we need dispatching.
-        per_vm_operation(
-            DriveWatermarkMonitor,
-            config.getint('vars', 'vm_watermark_interval')),
-
-        Operation(
-            lambda: recovery.lookup_external_vms(cif),
-            config.getint('sampling', 'external_vm_lookup_interval'),
-            scheduler,
-            exclusive=True,
-            discard=False),
-
-        Operation(
-            lambda: _kill_long_paused_vms(cif),
-            config.getint('vars', 'vm_kill_paused_time') // 2,
-            scheduler,
-            exclusive=True,
-            discard=False),
-
-        Operation(
-            containersconnection.monitor,
-            config.getint('vars', 'vm_sample_interval'),
-            scheduler),
-    ]
+    _operations = _create(cif, scheduler)
 
     if config.getboolean('sampling', 'enable'):
-        _operations.extend([
-            # libvirt sampling using bulk stats can block, but unresponsive
-            # domains are handled inside VMBulkstatsMonitor for performance
-            # reasons; thus, does not need dispatching.
-            Operation(
-                sampling.VMBulkstatsMonitor(
-                    libvirtconnection.get(cif),
-                    cif.getVMs,
-                    sampling.stats_cache),
-                config.getint('vars', 'vm_sample_interval'),
-                scheduler),
-
-            Operation(
-                sampling.HostMonitor(cif=cif),
-                config.getint('vars', 'host_sample_stats_interval'),
-                scheduler,
-                timeout=config.getint('vars', 'host_sample_stats_interval'),
-                exclusive=True,
-                discard=False),
-        ])
         host.stats.start()
 
     for op in _operations:
@@ -443,3 +389,73 @@ def _kill_long_paused_vms(cif):
         if vm.lastStatus == vmstatus.PAUSED and \
            vm.pause_code in ('EIO', 'EOTHER',):
             vm.maybe_kill_paused()
+
+
+def _create(cif, scheduler):
+    def per_vm_operation(func, period):
+        disp = VmDispatcher(
+            cif.getVMs, _executor, func, _timeout_from(period))
+        return Operation(disp, period, scheduler)
+
+    ops = [
+        # Needs dispatching because updating the volume stats needs
+        # access to the storage, thus can block.
+        per_vm_operation(
+            UpdateVolumes,
+            config.getint('irs', 'vol_size_sample_interval')),
+
+        # Job monitoring need QEMU monitor access.
+        per_vm_operation(
+            BlockjobMonitor,
+            config.getint('vars', 'vm_sample_jobs_interval')),
+
+        # We do this only until we get high water mark notifications
+        # from QEMU. It accesses storage and/or QEMU monitor, so can block,
+        # thus we need dispatching.
+        per_vm_operation(
+            DriveWatermarkMonitor,
+            config.getint('vars', 'vm_watermark_interval')),
+
+        Operation(
+            lambda: recovery.lookup_external_vms(cif),
+            config.getint('sampling', 'external_vm_lookup_interval'),
+            scheduler,
+            exclusive=True,
+            discard=False),
+
+        Operation(
+            lambda: _kill_long_paused_vms(cif),
+            config.getint('vars', 'vm_kill_paused_time') // 2,
+            scheduler,
+            exclusive=True,
+            discard=False),
+
+        Operation(
+            containersconnection.monitor,
+            config.getint('vars', 'vm_sample_interval'),
+            scheduler),
+    ]
+
+    if config.getboolean('sampling', 'enable'):
+        ops.extend([
+            # libvirt sampling using bulk stats can block, but unresponsive
+            # domains are handled inside VMBulkstatsMonitor for performance
+            # reasons; thus, does not need dispatching.
+            Operation(
+                sampling.VMBulkstatsMonitor(
+                    libvirtconnection.get(cif),
+                    cif.getVMs,
+                    sampling.stats_cache),
+                config.getint('vars', 'vm_sample_interval'),
+                scheduler),
+
+            Operation(
+                sampling.HostMonitor(cif=cif),
+                config.getint('vars', 'host_sample_stats_interval'),
+                scheduler,
+                timeout=config.getint('vars', 'host_sample_stats_interval'),
+                exclusive=True,
+                discard=False),
+        ])
+
+    return ops
