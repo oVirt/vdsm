@@ -155,13 +155,13 @@ def check(image, format=None):
     cmd.append(image)
     try:
         out = _run_cmd(cmd)
-    except cmdutils.Error as e:
+    except QImgError as e:
         # Return code 3 means that leaked clusters were found on the image.
         # This means waste of disk space, but no harm to data. Despite this
         # return code, we still get the check info in the stdout.
-        if e.rc != 3:
+        if e.ecode != 3:
             raise
-        out = e.out
+        out = e.stdout
     try:
         qemu_check = _parse_qemuimg_json(out)
     except ValueError:
