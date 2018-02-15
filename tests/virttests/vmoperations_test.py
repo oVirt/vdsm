@@ -275,7 +275,7 @@ class TestVmOperations(XMLTestCase):
             dom.setDiskErrors({'vda': libvirt.VIR_DOMAIN_DISK_ERROR_NONE,
                                'hdc': libvirt.VIR_DOMAIN_DISK_ERROR_UNSPEC})
             testvm._dom = dom
-            self.assertEqual(testvm._readPauseCode(), 'EOTHER')
+            self.assertEqual(testvm._readPauseCode(), 'EIO')
 
     @permutations([[1000, 24], [900, 0], [1200, -128]])
     def testSetCpuTuneQuote(self, quota, offset):
