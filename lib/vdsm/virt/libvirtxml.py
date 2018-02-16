@@ -549,9 +549,20 @@ def _parse_domain_init(dom, conf):
     if max_mem is not None:
         conf['maxMemSize'] = int(max_mem.text) / 1024
         conf['maxMemSlots'] = int(max_mem.attrib.get('slots', 16))
-    vcpu = dom.find('./vcpu')
+    smp = _parse_vcpu_element(dom.find('./vcpu'))
+    if smp is not None:
+        conf['smp'] = smp
+
+
+def _parse_vcpu_element(vcpu):
+    smp = None
     if vcpu is not None:
-        conf['smp'] = vcpu.attrib.get('current')
+        smp = vcpu.attrib.get('current')
+        if smp is None:
+            # we expect the 'current' attribute, but we can still
+            # extract meaningful information, so we go ahead.
+            smp = vcpu.text
+    return smp
 
 
 def _parse_domain_clock(dom, conf):

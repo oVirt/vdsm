@@ -28,6 +28,7 @@ from vdsm import osinfo
 
 from vdsm.common.compat import json
 from vdsm.virt.vmdevices import hwclass
+from vdsm.virt import libvirtxml
 from vdsm.virt import recovery
 from vdsm.virt import vm
 
@@ -123,6 +124,19 @@ class VMConfFromXMLTests(VdsmTestCase):
                 actual[key], expected[key],
                 "comparing key %s: actual=%s expected=%s" % (
                     key, actual[key], expected[key]))
+
+
+class ParseDomainXMLTests(VdsmTestCase):
+
+    def test_vm_compat_41(self):
+        dom_xml = read_data('vm_compat41.xml')
+        conf = libvirtxml.parse_domain(dom_xml, cpuarch.X86_64)
+        self.assertEqual(int(conf['smp']), 2)
+
+    def test_hosted_engine_42(self):
+        dom_xml = read_data('vm_hosted_engine_42.xml')
+        conf = libvirtxml.parse_domain(dom_xml, cpuarch.X86_64)
+        self.assertEqual(int(conf['smp']), 2)
 
 
 def find_match_attrs(dev_conf):
