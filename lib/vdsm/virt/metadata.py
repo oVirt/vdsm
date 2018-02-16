@@ -306,6 +306,13 @@ class Metadata(object):
         return tag.replace(self._prefix, '') if self._prefix else tag
 
 
+def replace_device(dst_md, src_md, attrs):
+    with dst_md.device(**attrs) as dst_dev_meta:
+        with src_md.device(**attrs) as src_dev_meta:
+            dst_dev_meta.clear()
+            dst_dev_meta.update(src_dev_meta)
+
+
 def create(name, namespace, namespace_uri, **kwargs):
     """
     Create one `name` element.
