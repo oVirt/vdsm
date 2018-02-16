@@ -90,6 +90,7 @@ from vdsm.virt.vmdevices import drivename
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices import storagexml
 from vdsm.virt.vmdevices.common import get_metadata
+from vdsm.virt.vmdevices.common import identify_from_xml_elem
 from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound
 from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD
 from vdsm.virt.vmdevices.storagexml import change_disk
@@ -352,8 +353,8 @@ class Vm(object):
             # later in the flow.
             if self._altered_state.from_snapshot and 'xml' in params:
                 self._src_domain_xml = \
-                    self._correctDiskVolumes(self._src_domain_xml,
-                                             params['xml'])
+                    self._correct_disk_volumes_from_xml(
+                        self._src_domain_xml, params['xml'])
                 self._domain = DomainDescriptor(self._src_domain_xml)
             # Pretend we received XML definition only if
             # we migrated from >= 4.2
@@ -2759,7 +2760,7 @@ class Vm(object):
                 # Otherwise we leave srcDomXML untouched, since we don't have
                 # anything from Engine (4.2.0) to updated it with.
                 if 'vmName' in self.conf:
-                    srcDomXML = self._correctDiskVolumes(srcDomXML)
+                    srcDomXML = self._correct_disk_volumes_from_conf(srcDomXML)
                 srcDomXML = self._correctGraphicsConfiguration(srcDomXML)
             hooks.before_vm_dehibernate(srcDomXML, self._custom,
                                         {'FROM_SNAPSHOT': str(fromSnapshot)})
@@ -2837,7 +2838,7 @@ class Vm(object):
         with self._confLock:
             self.conf['devices'] = newDevices
 
-    def _correctDiskVolumes(self, srcDomXML, engine_xml=None):
+    def _correct_disk_volumes_from_conf(self, srcDomXML):
         """
         Replace each volume in the given XML with the latest volume
         that the image has.
@@ -2847,17 +2848,45 @@ class Vm(object):
         or revert to snapshot.
         """
         domain = MutableDomainDescriptor(srcDomXML)
-        if engine_xml is None:
-            devices = self._devices[hwclass.DISK]
-        else:
-            engine_domain = DomainDescriptor(engine_xml)
-            engine_md = metadata.Descriptor.from_xml(engine_xml)
-            params = vmdevices.common.storage_device_params_from_domain_xml(
-                self.id, engine_domain, engine_md, self.log)
-            devices = [vmdevices.storage.Drive(self.log, **p) for p in params]
+        devices = self._devices[hwclass.DISK]
+
         for element in domain.get_device_elements('disk'):
             if vmxml.attr(element, 'device') in ('disk', 'lun', '',):
                 change_disk(element, devices)
+
+        return domain.xml
+
+    def _correct_disk_volumes_from_xml(self, srcDomXML, engine_xml):
+        """
+        Replace each volume in the given XML with the latest volume
+        that the image has.
+        Each image has a newer volume than the one that appears in the
+        XML, which was the latest volume of the image at the time the
+        snapshot was taken, since we create new volume when we preview
+        or revert to snapshot.
+        """
+        domain = MutableDomainDescriptor(srcDomXML)
+        engine_domain = DomainDescriptor(engine_xml)
+        engine_md = metadata.Descriptor.from_xml(engine_xml)
+        params = vmdevices.common.storage_device_params_from_domain_xml(
+            self.id, engine_domain, engine_md, self.log)
+        devices = [vmdevices.storage.Drive(self.log, **p) for p in params]
+
+        with domain.metadata_descriptor() as domain_md:
+            for element in domain.get_device_elements('disk'):
+                if vmxml.attr(element, 'device') in ('disk', 'lun', '',):
+                    change_disk(element, devices)
+
+                    _, dev_class = identify_from_xml_elem(element)
+                    attrs = dev_class.get_identifying_attrs(element)
+                    if not attrs:
+                        self.log.warning(
+                            'cannot update metadata for disk %s: '
+                            'missing attributes', vmxml.format_xml(element))
+                        continue
+
+                    metadata.replace_device(domain_md, engine_md, attrs)
+
         return domain.xml
 
     def _correctGraphicsConfiguration(self, domXML):
