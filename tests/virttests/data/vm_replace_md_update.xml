@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<domain type="kvm" xmlns:ovirt-tune="http://ovirt.org/vm/tune/1.0" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <name>a7</name>
+  <uuid>627f1f31-752b-4e7c-bfb5-4313d191ed7b</uuid>
+  <memory>4194304</memory>
+  <currentMemory>4194304</currentMemory>
+  <maxMemory slots="16">16777216</maxMemory>
+  <vcpu current="2">16</vcpu>
+  <devices>
+    <disk device="disk" snapshot="no" type="block">
+      <target bus="scsi" dev="sda"></target>
+      <source dev="/rhev/data-center/path/updated"></source>
+      <driver cache="none" error_policy="stop" io="native" name="qemu" type="qcow2"></driver>
+      <address bus="0" controller="0" target="0" type="drive" unit="0"></address>
+      <boot order="1"></boot>
+      <serial>a97d431a-7266-40e5-944c-10c63f18ce23</serial>
+    </disk>
+  </devices>
+  <metadata>
+    <ovirt-vm:vm>
+      <minGuaranteedMemoryMb type="int">4096</minGuaranteedMemoryMb>
+      <clusterVersion>4.2</clusterVersion>
+      <ovirt-vm:custom></ovirt-vm:custom>
+      <ovirt-vm:device devtype="disk" name="sda">
+        <ovirt-vm:imageID>imageID_updated</ovirt-vm:imageID>
+        <ovirt-vm:poolID>poolID_updated</ovirt-vm:poolID>
+        <ovirt-vm:volumeID>volumeID_updated</ovirt-vm:volumeID>
+        <ovirt-vm:domainID>domainID_updated</ovirt-vm:domainID>
+      </ovirt-vm:device>
+      <launchPaused>false</launchPaused>
+      <resumeBehavior>auto_resume</resumeBehavior>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>

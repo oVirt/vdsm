@@ -27,6 +27,9 @@ from vdsm.virt import metadata
 from vdsm.virt import vmdevices
 
 from testlib import VdsmTestCase
+from testlib import read_data
+
+import vmfakelib as fake
 
 
 class DevicesFromXMLTests(VdsmTestCase):
@@ -128,3 +131,45 @@ class DevicesFromXMLTests(VdsmTestCase):
     def _assert_empty_dev_map(self, dev_map):
         for dev_type, dev_objs in dev_map.items():
             self.assertEqual(dev_objs, [])
+
+
+class RestoreStateTests(VdsmTestCase):
+
+    _log = logging.getLogger('test.vm_create')
+
+    def test_correct_disk_and_metadata(self):
+        vmParams = {
+            'vmId': '627f1f31-752b-4e7c-bfb5-4313d191ed7b',  # from XML
+            'restoreState': '/dev/null',  # unused here
+            'restoreFromSnapshot': True,
+            '_srcDomXML': read_data('vm_replace_md_base.xml'),
+            'xml': read_data('vm_replace_md_update.xml'),
+        }
+        with fake.VM(vmParams) as testvm:
+            updated_dom_xml = testvm.conf['xml']
+
+        # shortcut
+        make_params = vmdevices.common.storage_device_params_from_domain_xml
+
+        dom_desc = domain_descriptor.DomainDescriptor(updated_dom_xml)
+        with dom_desc.metadata_descriptor() as md_desc:
+
+            disk_params = make_params(
+                dom_desc.id, dom_desc, md_desc, self._log)
+
+        sda = find_drive_conf_by_name(disk_params, 'sda')
+
+        self.assertIsNotNone(sda)
+        self.assertEqual(sda['path'], '/rhev/data-center/path/updated')
+        self.assertEqual(sda['imageID'], 'imageID_updated')
+        self.assertEqual(sda['poolID'], 'poolID_updated')
+        self.assertEqual(sda['domainID'], 'domainID_updated')
+        self.assertEqual(sda['volumeID'], 'volumeID_updated')
+
+
+# TODO: almost dupe of Vm._findDriveConfigByName
+def find_drive_conf_by_name(disk_params, name):
+    for disk_param in disk_params:
+        if disk_param['name'] == name:
+            return disk_param
+    return None
