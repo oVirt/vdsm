@@ -439,6 +439,32 @@ class Descriptor(object):
         obj._parse_xml(xml_str)
         return obj
 
+    @classmethod
+    def from_tree(
+        cls,
+        root,
+        name=xmlconstants.METADATA_VM_VDSM_ELEMENT,
+        namespace=xmlconstants.METADATA_VM_VDSM_PREFIX,
+        namespace_uri=xmlconstants.METADATA_VM_VDSM_URI
+    ):
+        """
+        Initializes one descriptor given the root Element, obtained
+        from vmxml.parse_xml() or similar function.
+        Useful for the integration with the DomainDescriptor.
+
+        :param root: root XML Element.
+        :type root: DOM element
+        :param name: metadata group to access
+        :type name: text string
+        :param namespace: metadata namespace to use
+        :type namespace: text string
+        :param namespace_uri: metadata namespace URI to use
+        :type namespace_uri: text string
+        """
+        obj = cls(name, namespace, namespace_uri)
+        obj._parse_tree(root)
+        return obj
+
     def load(self, dom):
         """
         Reads the content of the metadata section from the given libvirt
@@ -490,6 +516,16 @@ class Descriptor(object):
         :rtype: string
         """
         return self._build_xml(self._namespace, self._namespace_uri)
+
+    def to_tree(self):
+        """
+        Produces a tree of Element representing the full content
+        of this Descriptor.
+
+        :rtype: DOM element
+        """
+        with self._lock:
+            return self._build_tree(self._namespace, self._namespace_uri)
 
     @contextmanager
     def device(self, **kwargs):
@@ -628,7 +664,9 @@ class Descriptor(object):
                 yield dev_data
 
     def _parse_xml(self, xml_str):
-        root = vmxml.parse_xml(xml_str)
+        self._parse_tree(vmxml.parse_xml(xml_str))
+
+    def _parse_tree(self, root):
         selector = '{%s}%s' % (self._namespace_uri, self._name)
         if root.tag == 'metadata':
             md_elem = root.find('./' + selector)
@@ -660,19 +698,23 @@ class Descriptor(object):
             md_data.pop(_DEVICE, None)
             self._values = md_data
 
-    def _build_xml(self, namespace=None, namespace_uri=None):
+    def _build_tree(self, namespace=None, namespace_uri=None):
         metadata_obj = Metadata(namespace, namespace_uri)
+        md_elem = metadata_obj.dump(self._name, **self._values)
+        for (attrs, data) in self._devices:
+            if data:
+                dev_elem = _dump_device(metadata_obj, data)
+                dev_elem.attrib.update(attrs)
+                vmxml.append_child(md_elem, etree_child=dev_elem)
+        if self._custom:
+            custom_elem = metadata_obj.dump(_CUSTOM, **self._custom)
+            vmxml.append_child(md_elem, etree_child=custom_elem)
+        return md_elem
+
+    def _build_xml(self, namespace=None, namespace_uri=None):
         with self._lock:
-            md_elem = metadata_obj.dump(self._name, **self._values)
-            for (attrs, data) in self._devices:
-                if data:
-                    dev_elem = _dump_device(metadata_obj, data)
-                    dev_elem.attrib.update(attrs)
-                    vmxml.append_child(md_elem, etree_child=dev_elem)
-            if self._custom:
-                custom_elem = metadata_obj.dump(_CUSTOM, **self._custom)
-                vmxml.append_child(md_elem, etree_child=custom_elem)
-        return vmxml.format_xml(md_elem, pretty=True)
+            md_elem = self._build_tree(namespace, namespace_uri)
+            return vmxml.format_xml(md_elem, pretty=True)
 
     def _find_device(self, kwargs):
         devices = list(self._matching_devices(kwargs))
