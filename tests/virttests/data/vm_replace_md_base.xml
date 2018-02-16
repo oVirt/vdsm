@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<domain type="kvm" xmlns:ovirt-tune="http://ovirt.org/vm/tune/1.0" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <name>a7</name>
+  <uuid>627f1f31-752b-4e7c-bfb5-4313d191ed7b</uuid>
+  <memory>4194304</memory>
+  <currentMemory>4194304</currentMemory>
+  <maxMemory slots="16">16777216</maxMemory>
+  <vcpu current="2">16</vcpu>
+  <sysinfo type="smbios">
+    <system>
+      <entry name="manufacturer">oVirt</entry>
+      <entry name="product">OS-NAME:</entry>
+      <entry name="version">OS-VERSION:</entry>
+      <entry name="serial">HOST-SERIAL:</entry>
+      <entry name="uuid">627f1f31-752b-4e7c-bfb5-4313d191ed7b</entry>
+    </system>
+  </sysinfo>
+  <clock adjustment="0" offset="variable">
+    <timer name="rtc" tickpolicy="catchup"></timer>
+    <timer name="pit" tickpolicy="delay"></timer>
+    <timer name="hpet" present="no"></timer>
+  </clock>
+  <features>
+    <acpi></acpi>
+  </features>
+  <cpu match="exact">
+    <model>Haswell-noTSX</model>
+    <topology cores="1" sockets="16" threads="1"></topology>
+    <numa>
+      <cell cpus="0,1" memory="4194304"></cell>
+    </numa>
+  </cpu>
+  <cputune></cputune>
+  <devices>
+    <input bus="ps2" type="mouse"></input>
+    <channel type="unix">
+      <target name="ovirt-guest-agent.0" type="virtio"></target>
+      <source mode="bind" path="/var/lib/libvirt/qemu/channels/627f1f31-752b-4e7c-bfb5-4313d191ed7b.ovirt-guest-agent.0"></source>
+    </channel>
+    <channel type="unix">
+      <target name="org.qemu.guest_agent.0" type="virtio"></target>
+      <source mode="bind" path="/var/lib/libvirt/qemu/channels/627f1f31-752b-4e7c-bfb5-4313d191ed7b.org.qemu.guest_agent.0"></source>
+    </channel>
+    <rng model="virtio">
+      <backend model="random">/dev/urandom</backend>
+    </rng>
+    <controller index="0" model="piix3-uhci" type="usb">
+      <address bus="0x00" domain="0x0000" function="0x2" slot="0x01" type="pci"></address>
+    </controller>
+    <video>
+      <model heads="1" ram="65536" type="qxl" vgamem="16384" vram="8192"></model>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x02" type="pci"></address>
+    </video>
+    <controller index="0" ports="16" type="virtio-serial">
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x05" type="pci"></address>
+    </controller>
+    <graphics autoport="yes" passwd="*****" passwdValidTo="1970-01-01T00:00:01" port="-1" tlsPort="-1" type="spice">
+      <channel mode="secure" name="main"></channel>
+      <channel mode="secure" name="inputs"></channel>
+      <channel mode="secure" name="cursor"></channel>
+      <channel mode="secure" name="playback"></channel>
+      <channel mode="secure" name="record"></channel>
+      <channel mode="secure" name="display"></channel>
+      <channel mode="secure" name="smartcard"></channel>
+      <channel mode="secure" name="usbredir"></channel>
+      <listen network="vdsm-ovirtmgmt" type="network"></listen>
+    </graphics>
+    <controller index="0" model="virtio-scsi" type="scsi">
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x04" type="pci"></address>
+    </controller>
+    <controller index="0" type="ide">
+      <address bus="0x00" domain="0x0000" function="0x1" slot="0x01" type="pci"></address>
+    </controller>
+    <memballoon model="none"></memballoon>
+    <channel type="spicevmc">
+      <target name="com.redhat.spice.0" type="virtio"></target>
+    </channel>
+    <interface type="bridge">
+      <model type="virtio"></model>
+      <link state="up"></link>
+      <source bridge="ovirtmgmt"></source>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x03" type="pci"></address>
+      <mac address="00:1a:4a:16:01:12"></mac>
+      <filterref filter="vdsm-no-mac-spoofing"></filterref>
+      <bandwidth></bandwidth>
+    </interface>
+    <disk device="cdrom" snapshot="no" type="file">
+      <driver error_policy="report" name="qemu" type="raw"></driver>
+      <source file="" startupPolicy="optional"></source>
+      <target bus="ide" dev="hdc"></target>
+      <readonly></readonly>
+      <address bus="1" controller="0" target="0" type="drive" unit="0"></address>
+    </disk>
+    <disk device="disk" snapshot="no" type="block">
+      <target bus="scsi" dev="sda"></target>
+      <source dev="/rhev/data-center/path/base"></source>
+      <driver cache="none" error_policy="stop" io="native" name="qemu" type="qcow2"></driver>
+      <address bus="0" controller="0" target="0" type="drive" unit="0"></address>
+      <boot order="1"></boot>
+      <serial>a97d431a-7266-40e5-944c-10c63f18ce23</serial>
+    </disk>
+  </devices>
+  <pm>
+    <suspend-to-disk enabled="no"></suspend-to-disk>
+    <suspend-to-mem enabled="no"></suspend-to-mem>
+  </pm>
+  <os>
+    <type arch="x86_64" machine="pc-i440fx-rhel7.3.0">hvm</type>
+    <smbios mode="sysinfo"></smbios>
+  </os>
+  <metadata>
+    <ovirt-tune:qos></ovirt-tune:qos>
+    <ovirt-vm:vm>
+      <minGuaranteedMemoryMb type="int">4096</minGuaranteedMemoryMb>
+      <clusterVersion>4.2</clusterVersion>
+      <ovirt-vm:custom></ovirt-vm:custom>
+      <ovirt-vm:device mac_address="00:1a:4a:16:01:12">
+        <ovirt-vm:custom></ovirt-vm:custom>
+      </ovirt-vm:device>
+      <ovirt-vm:device devtype="disk" name="sda">
+        <ovirt-vm:imageID>imageID_base</ovirt-vm:imageID>
+        <ovirt-vm:poolID>poolID_base</ovirt-vm:poolID>
+        <ovirt-vm:volumeID>volumeID_base</ovirt-vm:volumeID>
+        <ovirt-vm:domainID>domainID_base</ovirt-vm:domainID>
+      </ovirt-vm:device>
+      <launchPaused>false</launchPaused>
+      <resumeBehavior>auto_resume</resumeBehavior>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>
