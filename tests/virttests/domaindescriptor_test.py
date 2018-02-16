@@ -21,6 +21,7 @@
 
 from vdsm.virt.domain_descriptor import (DomainDescriptor,
                                          MutableDomainDescriptor)
+from vdsm.virt import vmxml
 from testlib import VdsmTestCase, XMLTestCase, permutations, expandPermutations
 
 
@@ -153,6 +154,36 @@ class DomainDescriptorTests(XMLTestCase):
         desc = DomainDescriptor(xml_data)
         found = desc.metadata is not None
         self.assertEqual(found, expected)
+
+    @permutations([
+        # values, expected_metadata
+        [{'foo': 'baz'},
+         """<?xml version='1.0' encoding='utf-8'?>
+         <metadata xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+           <ovirt-vm:vm>
+             <ovirt-vm:foo>baz</ovirt-vm:foo>
+           </ovirt-vm:vm>
+         </metadata>"""],
+        [{'foo': 'bar', 'answer': 42},
+         """<?xml version='1.0' encoding='utf-8'?>
+         <metadata xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+           <ovirt-vm:vm>
+             <ovirt-vm:answer type="int">42</ovirt-vm:answer>
+             <ovirt-vm:foo>bar</ovirt-vm:foo>
+           </ovirt-vm:vm>
+         </metadata>"""],
+    ])
+    def test_metadata_descriptor(self, values, expected_metadata):
+        desc = MutableDomainDescriptor(METADATA)
+        with desc.metadata_descriptor() as md:
+            with md.values() as vals:
+                vals.update(values)
+
+        desc2 = DomainDescriptor(desc.xml)
+        self.assertXMLEqual(
+            expected_metadata,
+            vmxml.format_xml(desc2.metadata, pretty=True)
+        )
 
     @permutations([
         [ON_REBOOT_DESTROY, 'destroy'],

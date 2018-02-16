@@ -19,6 +19,10 @@
 #
 from __future__ import absolute_import
 
+from contextlib import contextmanager
+import xml.etree.ElementTree as etree
+
+from vdsm.virt import metadata
 from vdsm.virt import vmxml
 
 
@@ -39,7 +43,7 @@ class MutableDomainDescriptor(object):
 
     @property
     def xml(self):
-        return vmxml.format_xml(self._dom)
+        return vmxml.format_xml(self._dom, pretty=True)
 
     @property
     def id(self):
@@ -61,6 +65,17 @@ class MutableDomainDescriptor(object):
 
     def get_device_elements(self, tagName):
         return vmxml.find_all(self.devices, tagName)
+
+    @contextmanager
+    def metadata_descriptor(self):
+        md_desc = metadata.Descriptor.from_tree(self._dom)
+        yield md_desc
+        old_md = vmxml.find_first(self._dom, 'metadata', None)
+        if old_md is not None:
+            vmxml.remove_child(self._dom, old_md)
+        md_elem = etree.Element('metadata')
+        vmxml.append_child(self._dom, etree_child=md_elem)
+        vmxml.append_child(md_elem, etree_child=md_desc.to_tree())
 
     @property
     def devices_hash(self):
@@ -120,6 +135,10 @@ class DomainDescriptor(MutableDomainDescriptor):
     @property
     def devices_hash(self):
         return self._devices_hash
+
+    @contextmanager
+    def metadata_descriptor(self):
+        yield metadata.Descriptor.from_tree(self._dom)
 
 
 def find_first_domain_device_by_type(domain, device_class, device_type):
