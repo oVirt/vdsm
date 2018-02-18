@@ -43,16 +43,12 @@ def canonicalize_networks(nets):
     _canonicalize_ip_default_route(nets)
 
     for _, attrs in _entities_to_canonicalize(nets):
-        _canonicalize_mtu(attrs)
-        _canonicalize_vlan(attrs)
-        _canonicalize_bridged(attrs)
-        _canonicalize_bridge_opts(attrs)
-        _canonicalize_stp(attrs)
-        _canonicalize_dhcpv4(attrs)
+        _canonicalize_link(attrs)
+        _canonicalize_bridge(attrs)
+        _canonicalize_ipv4(attrs)
         _canonicalize_ipv6(attrs)
-        _canonicalize_switch_type_net(attrs)
         _canonicalize_nameservers(attrs)
-        _canonicalize_ipv4_netmask(attrs)
+        _canonicalize_switch_type_net(attrs)
 
 
 def canonicalize_bondings(bonds):
@@ -101,6 +97,11 @@ def _canonicalize_remove(data):
     return False
 
 
+def _canonicalize_link(data):
+    _canonicalize_mtu(data)
+    _canonicalize_vlan(data)
+
+
 def _canonicalize_mtu(data):
     data['mtu'] = int(data['mtu']) if 'mtu' in data else iface.DEFAULT_MTU
 
@@ -113,11 +114,31 @@ def _canonicalize_vlan(data):
         data['vlan'] = int(vlan)
 
 
+def _canonicalize_bridge(data):
+    _canonicalize_bridged(data)
+    _canonicalize_bridge_opts(data)
+    _canonicalize_stp(data)
+
+
 def _canonicalize_bridged(data):
     if 'bridged' in data:
         data['bridged'] = tobool(data['bridged'])
     else:
         data['bridged'] = True
+
+
+def _canonicalize_stp(data):
+    if data['bridged']:
+        stp = False
+        if 'stp' in data:
+            stp = data['stp']
+        elif 'STP' in data:
+            stp = data.pop('STP')
+        try:
+            data['stp'] = bridges.stp_booleanize(stp)
+        except ValueError:
+            raise ConfigNetworkError(ne.ERR_BAD_PARAMS, '"%s" is not '
+                                     'a valid bridge STP value.' % stp)
 
 
 def _canonicalize_bridge_opts(data):
@@ -139,23 +160,26 @@ def bridge_opts_dict_to_sorted_str(opts_dict):
     return ' '.join(opts_pairs)
 
 
-def _canonicalize_stp(data):
-    if data['bridged']:
-        stp = False
-        if 'stp' in data:
-            stp = data['stp']
-        elif 'STP' in data:
-            stp = data.pop('STP')
-        try:
-            data['stp'] = bridges.stp_booleanize(stp)
-        except ValueError:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS, '"%s" is not '
-                                     'a valid bridge STP value.' % stp)
+def _canonicalize_ipv4(data):
+    _canonicalize_dhcpv4(data)
+    _canonicalize_ipv4_netmask(data)
 
 
 def _canonicalize_dhcpv4(data):
     if 'bootproto' not in data:
         data['bootproto'] = 'none'
+
+
+def _canonicalize_ipv4_netmask(data):
+    prefix = data.pop('prefix', None)
+    if prefix:
+        if 'netmask' in data:
+            raise ConfigNetworkError(
+                ne.ERR_BAD_PARAMS, 'Both PREFIX and NETMASK supplied')
+        try:
+            data['netmask'] = prefix2netmask(int(prefix))
+        except ValueError as ve:
+            raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Bad prefix: %s' % ve)
 
 
 def _canonicalize_ipv6(data):
@@ -227,18 +251,6 @@ def _canonicalize_nameservers(data):
             data['nameservers'] = dns.get_host_nameservers()
         else:
             data['nameservers'] = []
-
-
-def _canonicalize_ipv4_netmask(data):
-    prefix = data.pop('prefix', None)
-    if prefix:
-        if 'netmask' in data:
-            raise ConfigNetworkError(
-                ne.ERR_BAD_PARAMS, 'Both PREFIX and NETMASK supplied')
-        try:
-            data['netmask'] = prefix2netmask(int(prefix))
-        except ValueError as ve:
-            raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Bad prefix: %s' % ve)
 
 
 def _rget(dict, keys, default=None):
