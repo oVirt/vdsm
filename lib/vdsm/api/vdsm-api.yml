@@ -10429,6 +10429,7 @@ VM.diskReplicateFinish:
 
 VM.getDiskAlignment:
     added: '3.2'
+    deprecated: '4.2'
     description: Check alignment of virtual machine disk partitions.
     params:
     -   description: The UUID of the VM
