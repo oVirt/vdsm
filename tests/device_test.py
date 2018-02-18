@@ -262,6 +262,7 @@ class TestVmDevices(XMLTestCase):
               <source bridge="ovirtmgmt2"/>
               <virtualport type="openvswitch"/>
               <link state="up"/>
+              <alias name="net1"/>
               <bandwidth/>
             </interface>
         '''

@@ -148,6 +148,24 @@ class DriveXMLTests(XMLTestCase):
             """
         self.check(conf, xml)
 
+    def test_disk_with_user_alias(self):
+        conf = drive_config(
+            serial='54-a672-23e5b495a9ea',
+            diskType=DISK_TYPE.BLOCK,
+            alias='ua-58ca6050-03d7-00e7-0062-00000000018f',
+        )
+        xml = """
+            <disk device="disk" snapshot="no" type="block">
+                <source dev="/path/to/volume"/>
+                <target bus="virtio" dev="vda"/>
+                <serial>54-a672-23e5b495a9ea</serial>
+                <driver cache="none" error_policy="stop"
+                        io="native" name="qemu" type="raw"/>
+                <alias name="ua-58ca6050-03d7-00e7-0062-00000000018f"/>
+            </disk>
+            """
+        self.check(conf, xml)
+
     def test_disk_with_discard_on(self):
         conf = drive_config(
             serial='54-a672-23e5b495a9ea',
