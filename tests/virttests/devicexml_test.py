@@ -827,6 +827,7 @@ _STORAGE_TEST_DATA = [
             <boot order="1"/>
             <driver name="qemu" io="native" type="qcow2"
               error_policy="stop" cache="none"/>
+            <alias name="ua-58ca6050-0134-00d6-0053-000000000388"/>
         </disk>''',
      {}],
     # cache attribute taken from XML for non-transient disks

@@ -572,6 +572,7 @@ class Drive(core.Base):
           <source file='/path/to/image'/>
           <target dev='hda' bus='ide'/>
           <serial>54-a672-23e5b495a9ea</serial>
+          [<alias name="ua-2b418ef2-91d8-4479-88b1-98461192a54e/>]
         </disk>
         """
         self._validate()
@@ -603,6 +604,9 @@ class Drive(core.Base):
 
         if self.iotune:
             diskelem.appendChild(self._getIotuneXML())
+
+        if hasattr(self, 'alias'):
+            diskelem.appendChildWithArgs('alias', name=self.alias)
 
         return diskelem
 

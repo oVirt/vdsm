@@ -209,6 +209,7 @@ class Interface(core.Base):
               [<inbound average="int" [burst="int"]  [peak="int"]/>]
               [<outbound average="int" [burst="int"]  [peak="int"]/>]
              </bandwidth>]
+            [<alias name="ua-2b418ef2-91d8-4479-88b1-98461192a54e/>]
         </interface>
 
         -- or -- a slightly different SR-IOV network interface
@@ -225,6 +226,7 @@ class Interface(core.Base):
           <address type='pci' domain='0x0000' bus='0x00' slot='0x07'
           function='0x0'/>
           <boot order='1'/>
+          [<alias name="ua-2b418ef2-91d8-4479-88b1-98461192a54e/>]
          </interface>
 
          -- In case of an ovs dpdk bridge --
@@ -291,6 +293,9 @@ class Interface(core.Base):
 
         if 'inbound' in self.specParams or 'outbound' in self.specParams:
             iface.appendChild(self.get_bandwidth_xml(self.specParams))
+
+        if hasattr(self, 'alias'):
+            iface.appendChildWithArgs('alias', name=self.alias)
 
         return iface
 
