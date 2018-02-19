@@ -1358,7 +1358,7 @@ class BlockStorageDomain(sd.StorageDomain):
         """
         imageRundir = self.getImageRundir(imgUUID)
         self.log.info("Removing image run directory %r", imageRundir)
-        fileUtils.cleanupdir(self.getImageRundir(imgUUID))
+        fileUtils.cleanupdir(imageRundir)
 
     def activateVolumes(self, imgUUID, volUUIDs):
         """

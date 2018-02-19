@@ -636,7 +636,7 @@ class StoragePool(object):
                                              domain.getVersion(), msd.sdUUID,
                                              msdVersion)
 
-        self.log.info("Removing pool directory %r", self.poolPath)
+        self.log.info("Creating pool directory %r", self.poolPath)
         fileUtils.createdir(self.poolPath)
         self._acquireTemporaryClusterLock(msdUUID, leaseParams)
         try:
