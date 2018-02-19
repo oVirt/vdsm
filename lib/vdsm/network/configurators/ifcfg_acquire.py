@@ -61,7 +61,8 @@ class IfcfgAcquireNMonline(object):
         if not active_connection:
             return
 
-        fpath = IfcfgAcquireNMonline._ifcfg_file_lookup(active_connection.uuid)
+        con_uuid = active_connection.uuid()
+        fpath = IfcfgAcquireNMonline._ifcfg_file_lookup(con_uuid)
         if fpath:
             os.rename(fpath, NET_CONF_PREF + device)
 

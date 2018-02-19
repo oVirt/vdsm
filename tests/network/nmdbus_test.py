@@ -123,11 +123,12 @@ class TestNMActiveConnections(VdsmTestCase):
         with dummy_devices(1) as nics:
             with nm_connections(iface, IPV4ADDR, slaves=nics):
                 for active_con in nm_active_cons.connections():
-                    settings_con = nm_settings.connection(active_con.con_path)
+                    connection_path = active_con.con_path()
+                    settings_con = nm_settings.connection(connection_path)
 
-                    assert active_con.uuid == settings_con.connection.uuid
-                    assert active_con.type == settings_con.connection.type
-                    assert active_con.id == settings_con.connection.id
+                    assert active_con.uuid() == settings_con.connection.uuid
+                    assert active_con.type() == settings_con.connection.type
+                    assert active_con.id() == settings_con.connection.id
 
 
 @attr(type='integration')
@@ -176,7 +177,7 @@ class TestNMDevice(VdsmTestCase):
                     configured_connections.add(settings_con.connection.id)
 
                 ac = nm_act_cons.connection(device.active_connection_path)
-                active_connections.add(ac.id)
+                active_connections.add(ac.id())
 
         self.assertEqual(con_count, len(configured_connections))
         self.assertEqual(set([iface + '0']), active_connections)
@@ -197,9 +198,9 @@ class TestNMConnectionCreation(VdsmTestCase):
                 active_con_path = device.active_connection_path
                 active_con = nm_act_cons.connection(active_con_path)
 
-                self.assertEqual(TEST_LINK_TYPE, str(active_con.type))
+                self.assertEqual(TEST_LINK_TYPE, str(active_con.type()))
                 self.assertEqual(types.NMActiveConnectionState.ACTIVATED,
-                                 active_con.state)
+                                 active_con.state())
 
         self._assert_no_device(iface)
 

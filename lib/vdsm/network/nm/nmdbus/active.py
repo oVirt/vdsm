@@ -50,55 +50,42 @@ class _NMDbusActiveConnectionProperties(object):
     def __init__(self, connection_properties):
         self._properties = connection_properties
 
-    @property
     def uuid(self):
         return self._property('Uuid')
 
-    @property
     def con_path(self):
         return self._property('Connection')
 
-    @property
     def id(self):
         return self._property('Id')
 
-    @property
     def type(self):
         return self._property('Type')
 
-    @property
     def devices_path(self):
         return self._property('Devices')
 
-    @property
     def state(self):
         return self._property('State')
 
-    @property
     def default(self):
         return self._property('Default')
 
-    @property
     def ip4config(self):
         return self._property('Ip4Config')
 
-    @property
     def dhcp4config(self):
         return self._property('Dhcp4Config')
 
-    @property
     def default6(self):
         return self._property('Default6')
 
-    @property
     def ip6config(self):
         return self._property('Ip6Config')
 
-    @property
     def dhcp6config(self):
         return self._property('Dhcp6Config')
 
-    @property
     def master_con_path(self):
         return self._property('Master')
 

@@ -81,7 +81,7 @@ class Device(object):
         for connection_path in device.connections_path:
             connection = self._nm_settings.connection(connection_path)
             if (not active_connection or
-                    connection.connection.uuid != active_connection.uuid):
+                    connection.connection.uuid != active_connection.uuid()):
                 yield self._nm_settings.connection(connection_path)
 
 
