@@ -475,7 +475,8 @@ class FileVolume(volume.Volume):
 
         # Forcing the volume permissions in case one of the tools we use
         # (dd, qemu-img, etc.) will mistakenly change the file permissiosn.
-        cls.log.info("Changing volume %r permission", volPath)
+        cls.log.info("Changing volume %r permission to %04o",
+                     volPath, sc.FILE_VOLUME_PERMISSIONS)
         dom.oop.os.chmod(volPath, sc.FILE_VOLUME_PERMISSIONS)
 
         return (volPath,)
