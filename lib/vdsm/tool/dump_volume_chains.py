@@ -190,7 +190,9 @@ def _print_volume_chains(image_chains, volumes_info):
 def _print_vol_info(volume_info):
     robust_volume_info = defaultdict(lambda: '(missing)', volume_info)
     info_fmt = "status: {d[status]}, voltype: {d[voltype]}, " \
-               "format: {d[format]}, legality: {d[legality]}, type: {d[type]}"
+               "format: {d[format]}, legality: {d[legality]}, " \
+               "type: {d[type]}, capacity: {d[capacity]}, " \
+               "truesize: {d[truesize]}"
     formatted_info = info_fmt.format(d=robust_volume_info)
     _print_line('  ' + formatted_info)
 
