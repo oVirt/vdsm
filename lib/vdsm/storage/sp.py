@@ -31,6 +31,7 @@ from functools import partial
 from weakref import proxy
 
 from vdsm.common import concurrent
+from vdsm.common.contextlib import suppress
 from vdsm.common.panic import panic
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
@@ -47,7 +48,7 @@ from vdsm.storage import sd
 from vdsm.storage import xlease
 from vdsm.storage.formatconverter import DefaultFormatConverter
 from vdsm.storage.sdc import sdCache
-from vdsm.storage.securable import secured, unsecured
+from vdsm.storage.securable import secured, unsecured, SecureError
 
 from vdsm.config import config
 
@@ -178,6 +179,11 @@ class StoragePool(object):
                 self.log.debug("Refreshing domain links for %s", sdUUID)
                 self._refreshDomainLinks(domain)
 
+            with rm.acquireResource(sc.STORAGE, sdUUID, rm.EXCLUSIVE):
+                # Only SPM should update the domain role
+                with suppress(SecureError):
+                    self._maybe_fix_domain_role(domain)
+
     def _upgradePoolDomain(self, sdUUID, isValid):
         # This method is called everytime the onDomainStateChange
         # event is emitted, this event is emitted even when a domain goes
@@ -246,21 +252,11 @@ class StoragePool(object):
         # domVersion == targetDomVersion
         return False
 
-    def _updateDomainsRole(self):
-        for sdUUID in self.getDomains(activeOnly=True):
-            if sdUUID == self.masterDomain.sdUUID:
-                continue
-            try:
-                domain = sdCache.produce(sdUUID)
-            except se.StorageDomainDoesNotExist:
-                self.log.exception("Error producing domain %s, ignoring",
-                                   sdUUID)
-                continue
-
-            if domain.getDomainRole() == sd.REGULAR_DOMAIN:
-                continue
-
-            self._backend.setDomainRegularRole(domain)
+    def _maybe_fix_domain_role(self, dom):
+        if (dom.sdUUID != self.masterDomain.sdUUID and
+                dom.getDomainRole() == sd.MASTER_DOMAIN):
+            self.log.info("Fixing domain %s role to regular", dom.sdUUID)
+            self._backend.setDomainRegularRole(dom)
 
     @unsecured
     def startSpm(self, prevID, prevLVER, maxHostID, expectedDomVersion=None):
@@ -357,7 +353,6 @@ class StoragePool(object):
 
                 # Once setSecure completes we are running as SPM
                 self._setSecure()
-                self._updateDomainsRole()
 
                 # Mailbox issues SPM commands, therefore we start it AFTER spm
                 # commands are allowed to run to prevent a race between the
