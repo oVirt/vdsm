@@ -70,8 +70,8 @@ class Interface(core.Base):
         # dev_class unused
         attrs = {'mac_address': self.macAddr}
         data = core.get_metadata_values(self)
-        core.get_simple_metadata(data, self, METADATA_KEYS)
-        core.get_nested_metadata(data, self, METADATA_NESTED_KEYS)
+        core.update_metadata_from_object(
+            data, self, METADATA_KEYS + METADATA_NESTED_KEYS)
         return attrs, data
 
     @classmethod

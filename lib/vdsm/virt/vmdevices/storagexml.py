@@ -111,11 +111,8 @@ def _update_meta_params(params, meta):
 def get_metadata(drive):
     attrs = {'devtype': hwclass.DISK, 'name': drive.name}
     data = core.get_metadata_values(drive)
-
-    core.get_simple_metadata(data, drive, METADATA_KEYS)
-
-    core.get_nested_metadata(data, drive, METADATA_NESTED_KEYS)
-
+    core.update_metadata_from_object(
+        data, drive, METADATA_KEYS + METADATA_NESTED_KEYS)
     return attrs, data
 
 
