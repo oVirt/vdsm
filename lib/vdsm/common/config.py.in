@@ -293,6 +293,10 @@ parameters = [
 
         ('conf', '@CONFDIR@/mom.conf', 'mom configuration file'),  # NOQA: E501 (potentially long line)
 
+        ('socket_path', '/var/run/vdsm/mom-vdsm.sock',
+            'path of the UNIX domain socket used to '
+            'communicate with MOM'),
+
         ('tuning_policy', '01-parameters',
             'name of the mom policy to be updated from '
             'updatePolicyParameters API call'),

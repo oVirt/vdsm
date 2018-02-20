@@ -118,7 +118,8 @@ class clientIF(object):
             self.lastRemoteAccess = 0
             self._enabled = True
             self._netConfigDirty = False
-            self._prepareMOM()
+            self.mom = MomClient(config.get("mom", "socket_path"))
+            self.mom.connect()
             secret.clear()
             concurrent.thread(self._recoverThread, name='vmrecovery').start()
             self.channelListener.settimeout(
@@ -313,11 +314,6 @@ class clientIF(object):
                 self.servers['jsonrpc'] = json_binding
                 stomp_detector = StompDetector(json_binding)
                 self._acceptor.add_detector(stomp_detector)
-
-    def _prepareMOM(self):
-        momconf = config.get("mom", "conf")
-
-        self.mom = MomClient(momconf)
 
     def _wait_for_shutting_down_vms(self):
         """
