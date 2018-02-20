@@ -31,9 +31,8 @@ from vdsm.common import unixrpc
 
 try:
     import mom
-    _momAvailable = True
 except ImportError:
-    _momAvailable = False
+    mom = None
 
 
 throttledlog.throttle('MomNotAvailable', 100)
@@ -47,11 +46,12 @@ class MomNotAvailableError(RuntimeError):
 class MomClient(object):
 
     def __init__(self, momconf, conf_overrides=None):
-        if not _momAvailable:
-            raise MomNotAvailableError()
-
         self.log = logging.getLogger("MOM")
         self.log.info("Preparing MOM interface")
+
+        if mom is None:
+            self.log.error("MOM's RPC interface is disabled")
+            raise MomNotAvailableError()
 
         # MOM instance is needed to load the config file and get the RPC port
         _mom = mom.MOM(momconf, conf_overrides)
