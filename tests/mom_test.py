@@ -23,8 +23,8 @@ import shutil
 import tempfile
 import threading
 from vdsm.common.define import Mbytes
+from vdsm.momIF import MomNotAvailableError
 from vdsm.momIF import MomClient
-from six.moves import configparser
 import os.path
 import monkeypatch
 
@@ -75,25 +75,16 @@ class MomPolicyTests(TestCase):
 
     def setUp(self):
         self._tmp_dir = tempfile.mkdtemp(dir=self._TMP_DIR)
-        self.config_overrides = configparser.SafeConfigParser()
-        self.config_overrides.add_section("logging")
-        self.config_overrides.set("logging", "log", "stdio")
-        self.config_overrides.add_section("main")
-        self.config_overrides.set("main", "rpc-port",
-                                  os.path.join(self._tmp_dir, MOM_SOCK))
+        self._sock_path = os.path.join(self._tmp_dir, MOM_SOCK)
 
     def tearDown(self):
         shutil.rmtree(self._tmp_dir)
 
     def _getMomClient(self):
-        return MomClient(MOM_CONF, self.config_overrides)
-
-    def _getMomPort(self):
-        return self.config_overrides.get('main', 'rpc-port')
+        return MomClient(self._sock_path)
 
     def _getMomServer(self, api_class=DummyMomApi):
-        port = self._getMomPort()
-        server = unixrpc_testlib.UnixXmlRpcServer(port)
+        server = unixrpc_testlib.UnixXmlRpcServer(self._sock_path)
         api = api_class()
         server.register_instance(api)
         t = threading.Thread(target=server.serve_forever)
@@ -153,9 +144,7 @@ class MomPolicyTests(TestCase):
             self._stopMomServer(server, thread)
 
     def testGetConnectionRefused(self):
-        client = self._getMomClient()
-        # Server is not running
-        client.setPolicy("")
+        self.assertRaises(MomNotAvailableError, self._getMomClient)
 
     def testGetKsmStats(self):
         server, thread, api = self._getMomServer()
