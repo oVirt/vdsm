@@ -170,6 +170,16 @@ class VM(APIBase):
         """
         Start up a virtual machine.
 
+        Virtual machine creation with memory volumes parameters:
+        - In 4.1 and lower the paramater hiberVolHandle is used and contains a
+          string of comma separated UUIDs representing the domain ID, pool ID,
+          memory dump image ID, memory dump volume ID, memory conf image ID,
+          memory conf volume ID
+        - In 4.2 two paramters are used:
+          memoryDumpVolume and memoryConfVolume which contains a dict with
+          the memory dump and the memory conf in PDIV format with the keys
+          poolID, domainID, imageID, volumeID
+
         :param vmParams: required and optional VM parameters.
         :type vmParams: dict
         """
@@ -179,9 +189,9 @@ class VM(APIBase):
                 self.log.warning('vm %s already exists' % vmParams['vmId'])
                 raise exception.VMExists()
 
-            if 'hiberVolHandle' in vmParams:
+            if 'hiberVolHandle' in vmParams or 'memoryDumpVolume' in vmParams:
                 vmParams['restoreState'], paramFilespec = \
-                    self._getHibernationPaths(vmParams.pop('hiberVolHandle'))
+                    self._getHibernationPaths(vmParams)
                 try:   # restore saved vm parameters
                     # NOTE: pickled params override command-line params. this
                     # might cause problems if an upgrade took place since the
@@ -476,7 +486,7 @@ class VM(APIBase):
         if params.get('mode') == 'file':
             if 'dst' not in params:
                 params['dst'], params['dstparams'] = \
-                    self._getHibernationPaths(params['hiberVolHandle'])
+                    self._getHibernationPaths(params)
         else:
             params['mode'] = 'remote'
         return vm.migrate(params)
@@ -635,13 +645,23 @@ class VM(APIBase):
     def setDestroyOnReboot(self):
         return self.vm.set_destroy_on_reboot()
 
-    def _getHibernationPaths(self, hiberVolHandle):
+    def _getHibernationPaths(self, vmParams):
+        if 'hiberVolHandle' in vmParams:
+            return self._getHibernationPathsFromString(
+                vmParams.pop('hiberVolHandle'))
+        if 'memoryDumpVolume' in vmParams:
+            memoryDumpVolume = vmParams.pop('memoryDumpVolume')
+            memoryDumpVolume['device'] = 'disk'
+            memoryConfVolume = vmParams.pop('memoryConfVolume')
+            memoryConfVolume['device'] = 'disk'
+            return memoryDumpVolume, memoryConfVolume
+
+    def _getHibernationPathsFromString(self, hibernationStr):
         """
-        Break *hiberVolHandle* into the "quartets" of hibernation images.
+        Break *hibernationStr* into two PDIVs of hibernation images.
         """
         domainID, poolID, stateImageID, stateVolumeID, \
-            paramImageID, paramVolumeID = hiberVolHandle.split(',')
-
+            paramImageID, paramVolumeID = hibernationStr.split(',')
         return dict(domainID=domainID, poolID=poolID, imageID=stateImageID,
                     volumeID=stateVolumeID, device='disk'), \
             dict(domainID=domainID, poolID=poolID,
@@ -668,7 +688,7 @@ class VM(APIBase):
         memoryParams = {}
         if snapMemory:
             memoryParams['dst'], memoryParams['dstparams'] = \
-                self._getHibernationPaths(snapMemory)
+                self._getHibernationPathsFromString(snapMemory)
 
         return vm.snapshot(snapDrives, memoryParams, frozen=frozen)
 
