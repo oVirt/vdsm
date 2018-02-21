@@ -388,7 +388,7 @@ class FileVolume(volume.Volume):
     def newVolumeLease(cls, metaId, sdUUID, volUUID):
         cls.log.debug("Initializing volume lease volUUID=%s sdUUID=%s, "
                       "metaId=%s", volUUID, sdUUID, metaId)
-        volPath, = metaId
+        volPath = metaId[0]
         leasePath = cls.__leaseVolumePath(volPath)
         oop.getProcessPool(sdUUID).truncateFile(leasePath, LEASE_FILEOFFSET)
         cls.file_setrw(leasePath, rw=True)
@@ -479,6 +479,10 @@ class FileVolume(volume.Volume):
         except OSError as e:
             if e.errno != os.errno.ENOENT:
                 raise
+
+        self.renameLease((volPath, LEASE_FILEOFFSET), newUUID,
+                         recovery=recovery)
+
         self.volUUID = newUUID
         self.volumePath = volPath
 
