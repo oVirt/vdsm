@@ -26,15 +26,18 @@ from vdsm.common import api
 from vdsm.common import conv
 from vdsm.common import response
 from vdsm.common import threadlocal
-from vdsm.common.compat import pickle
 
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
-from testlib import temporaryPath
 from testlib import recorded
 
 
 class TestVMCreate(TestCaseBase):
+    # An old hibernation volume (<4.2) format, consists of 6 UUIDs:
+    # storage domain ID, storage pool ID,
+    # memory dump image ID, memory dump volume ID,
+    # memory conf image ID, memory conf volume ID
+    _hibernation_volume_old_format = "0,1,2,3,4,5"
 
     def setUp(self):
         self.uuid = API.VM.BLANK_UUID
@@ -51,7 +54,6 @@ class TestVMCreate(TestCaseBase):
         with MonkeyPatchScope([(API, 'clientIF', self.cif)]):
             self.vm = API.VM(self.uuid)
         # to make testing easier
-        self.vm._getHibernationPaths = lambda handle: (True, handle)
         threadlocal.vars.context = api.Context("flow_id", "1.2.3.4", 5678)
 
     def tearDown(self):
@@ -145,50 +147,47 @@ class TestVMCreate(TestCaseBase):
         res = self.vm.create(vmParams)
         self.assertTrue(response.is_error(res, 'createErr'))
 
-    def test_hibernation_params_requested_but_missing(self):
+    def test_hibernation_params_map_memory_dump(self):
+        vmParams = {'hiberVolHandle': self._hibernation_volume_old_format}
+        vmParams.update(self.vmParams)
+
+        res = self.vm.create(vmParams)
+        self.assertFalse(response.is_error(res))
+        expected_memory_dump = {'device': 'disk', 'domainID': '0',
+                                'poolID': '1', 'imageID': '2', 'volumeID': '3'}
+        self.assertEqual(expected_memory_dump, vmParams['restoreState'])
+
+    def test_get_hibernation_paths_from_old_params(self):
         vmParams = {
-            'hiberVolHandle': '/this/path/does/not/exist/'
+            'hiberVolHandle': self._hibernation_volume_old_format
         }
         vmParams.update(self.vmParams)
 
-        refParams = copy.deepcopy(vmParams)
-        del refParams['hiberVolHandle']  # must go away
-        refParams['restoreState'] = True  # to be added BY TESTS
+        memory_dump, memory_conf = self.vm._getHibernationPaths(vmParams)
+        expected_memory_dump = {'device': 'disk', 'domainID': '0',
+                                'poolID': '1', 'imageID': '2', 'volumeID': '3'}
+        expected_memory_conf = {'device': 'disk', 'domainID': '0',
+                                'poolID': '1', 'imageID': '4', 'volumeID': '5'}
+        self.assertEqual(expected_memory_dump, memory_dump)
+        self.assertEqual(expected_memory_conf, memory_conf)
 
-        res = self.vm.create(vmParams)
-        self.assertFalse(response.is_error(res))
-        self.assertEqual(refParams, vmParams)
-
-    def test_hibernation_params_wrong_format(self):
-        vmParams = {}
-        vmParams.update(self.vmParams)
-
-        refParams = copy.deepcopy(vmParams)
-        refParams['restoreState'] = True  # to be added BY TESTS
-
-        extraParams = ['a', 42]
-        with temporaryPath(data=pickle.dumps(extraParams)) as path:
-            vmParams['hiberVolHandle'] = path
-            res = self.vm.create(vmParams)
-
-        res = self.vm.create(vmParams)
-        self.assertFalse(response.is_error(res))
-        self.assertEqual(refParams, vmParams)
-
-    def test_hibernation_params(self):
-        vmParams = {}
-        vmParams.update(self.vmParams)
-        extraParams = {
-            'a': 42,
-            'foo': ['bar'],
+    def test_get_hibernation_paths_from_new_params(self):
+        vmParams = {
+            'memoryDumpVolume': {'domainID': '0', 'poolID': '1',
+                                 'imageID': '2', 'volumeID': '3'},
+            'memoryConfVolume': {'domainID': '0', 'poolID': '1',
+                                 'imageID': '2', 'volumeID': '3'}
         }
-        with temporaryPath(data=pickle.dumps(extraParams)) as path:
-            vmParams['hiberVolHandle'] = path
-            res = self.vm.create(vmParams)
+        vmParams.update(self.vmParams)
 
-        self.assertFalse(response.is_error(res))
-        for param in extraParams:
-            self.assertEqual(extraParams[param], vmParams[param])
+        expected_memory_dump = copy.deepcopy(vmParams['memoryDumpVolume'])
+        expected_memory_dump['device'] = 'disk'
+        expected_memory_conf = copy.deepcopy(vmParams['memoryConfVolume'])
+        expected_memory_conf['device'] = 'disk'
+
+        memory_dump, memory_conf = self.vm._getHibernationPaths(vmParams)
+        self.assertEqual(expected_memory_dump, memory_dump)
+        self.assertEqual(expected_memory_conf, memory_conf)
 
 
 class FakeClientIF(object):
