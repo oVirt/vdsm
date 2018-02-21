@@ -409,13 +409,15 @@ parameters = [
             'See https://bugzilla.redhat.com/1139707 '
             '(supported versions: 0.10, 1.1)'),
 
-        ('zero_method', 'dd',
+        ('zero_method', 'blkdiscard',
             'The name of the method that is used to zero volumes. '
             'The options are: '
             '- blkdiscard - uses a "blkdiscard --zeroout" command. '
-            '- dd - uses a "dd" command. '
-            'Note that blkdiscard is more efficient than dd, in particular '
-            'when the underlying storage supports "write same".'),
+            '- dd - uses a "dd" command. Recommended only if there are issues '
+            'with "blkdiscard". '
+            'Note that when the underlying storage supports "write same", '
+            'blkdiscard is more efficient than dd in terms of zeroing '
+            'duration and network usage.'),
 
         ('zero_block_size_mb', '1',
             'The block size used when zeroing a device using the "dd" '
