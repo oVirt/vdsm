@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2016 Red Hat, Inc.
+# Copyright 2008-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -147,7 +147,7 @@ check-unit:
 
 .PHONY: tests
 tests:
-	tox -e tests,storage-py27,storage-py36,lib-py27
+	tox -e tests,storage-py27,storage-py36,lib-py27,network-py27,network-py36
 
 all-local: \
 	vdsm.spec

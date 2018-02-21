@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,16 +19,14 @@
 #
 from __future__ import absolute_import
 
-from nose.plugins.attrib import attr
+import unittest
 
-from testlib import VdsmTestCase
-from .nettestlib import requires_systemdrun
+from network.nettestlib import requires_systemdrun
 
 from vdsm.network import cmd
 
 
-@attr(type='integration')
-class CmdTest(VdsmTestCase):
+class CmdTest(unittest.TestCase):
 
     def test_exec_sync_with_no_output(self):
         rc, out, err = cmd.exec_sync(('true',))

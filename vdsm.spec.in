@@ -1392,6 +1392,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/network/netmaskconversions
 %{_datadir}/%{vdsm_name}/tests/network/tc_filter_show.out
 %{_datadir}/%{vdsm_name}/tests/network/functional/*.py*
+%{_datadir}/%{vdsm_name}/tests/network/integration/*.py*
 %{_datadir}/%{vdsm_name}/tests/network/static/*.json
 %{_datadir}/%{vdsm_name}/tests/storage/*.py*
 %{_datadir}/%{vdsm_name}/tests/storage/*.out

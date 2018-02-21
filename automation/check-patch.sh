@@ -24,7 +24,7 @@ TIMEOUT=600 make --jobs=2 check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vd
 
 # Generate coverage report in HTML format
 pushd tests
-coverage combine -a .coverage-storage-py27
+coverage combine -a .coverage-storage-py27 .coverage-network-py27
 coverage html -d "$EXPORT_DIR/htmlcov"
 popd
 
