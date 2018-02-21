@@ -42,7 +42,7 @@ def logged(on=""):
     @decorator
     def method(func, *args, **kwargs):
         log = logging.getLogger(on)
-        ctx = context_string()
+        ctx = context_string(args[0])
         log.info('START %s %s', logutils.call2str(func, args, kwargs), ctx)
         try:
             ret = func(*args, **kwargs)
@@ -54,7 +54,7 @@ def logged(on=""):
     return method
 
 
-def context_string():
+def context_string(api_object):
     items = []
 
     # Internal threads never set vars.context, so we will not have a context
@@ -72,6 +72,11 @@ def context_string():
     task = getattr(vars, "task", None)
     if task:
         items.append(("task_id", task.id))
+
+    attributes = getattr(api_object, 'LOG_ATTRIBUTES', {})
+    if attributes:
+        items.extend([(name, getattr(api_object, attr, '') or '',)
+                      for name, attr in attributes.items()])
 
     return ", ".join(k + "=" + v for k, v in items)
 
