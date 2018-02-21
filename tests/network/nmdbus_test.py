@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -140,12 +140,12 @@ class TestNMDevice(VdsmTestCase):
 
         device_count = 0
         for device in nm_device.devices():
-            assert device.interface is not None
-            assert device.state is not None
-            assert device.active_connection_path is not None
-            assert device.connections_path is not None
+            assert device.interface() is not None
+            assert device.state() is not None
+            assert device.active_connection_path() is not None
+            assert device.connections_path() is not None
 
-            for connection_path in device.connections_path:
+            for connection_path in device.connections_path():
                 settings_con = nm_settings.connection(connection_path)
                 assert settings_con.connection.uuid is not None
 
@@ -172,11 +172,11 @@ class TestNMDevice(VdsmTestCase):
             with nm_connections(iface, IPV4ADDR, slaves=nics,
                                 con_count=con_count):
                 device = nm_device.device(iface)
-                for connection_path in device.connections_path:
+                for connection_path in device.connections_path():
                     settings_con = nm_settings.connection(connection_path)
                     configured_connections.add(settings_con.connection.id)
 
-                ac = nm_act_cons.connection(device.active_connection_path)
+                ac = nm_act_cons.connection(device.active_connection_path())
                 active_connections.add(ac.id())
 
         self.assertEqual(con_count, len(configured_connections))
@@ -195,7 +195,7 @@ class TestNMConnectionCreation(VdsmTestCase):
             with nm_connections(iface, IPV4ADDR, slaves=nics):
                 device = nm_device.device(iface)
                 device.syncoper.waitfor_activated_state()
-                active_con_path = device.active_connection_path
+                active_con_path = device.active_connection_path()
                 active_con = nm_act_cons.connection(active_con_path)
 
                 self.assertEqual(TEST_LINK_TYPE, str(active_con.type()))

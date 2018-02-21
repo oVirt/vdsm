@@ -64,19 +64,15 @@ class _NMDbusDeviceProperties(object):
         self._properties = device_properties
         self.syncoper = _NMDbusDeviceSyncOperations(self)
 
-    @property
     def interface(self):
         return self._property('Interface')
 
-    @property
     def state(self):
         return self._property('State')
 
-    @property
     def active_connection_path(self):
         return self._property('ActiveConnection')
 
-    @property
     def connections_path(self):
         return self._property('AvailableConnections')
 
@@ -94,7 +90,7 @@ class _NMDbusDeviceSyncOperations(object):
 
     def waitfor_state(self, state, timeout=WAITFOR_TIMEOUT):
         for _ in range(_round_up(timeout / WAITFOR_RESOLUTION)):
-            actual_state = self._device.state
+            actual_state = self._device.state()
             if actual_state == state:
                 return
             time.sleep(WAITFOR_RESOLUTION)

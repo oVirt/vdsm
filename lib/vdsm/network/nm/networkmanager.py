@@ -52,13 +52,13 @@ class Device(object):
 
     def connections(self):
         device = self._nm_device_service.device(self._name)
-        for connection_path in device.connections_path:
+        for connection_path in device.connections_path():
             yield self._nm_settings.connection(connection_path)
 
     @property
     def active_connection(self):
         device = self._nm_device_service.device(self._name)
-        ac_path = device.active_connection_path
+        ac_path = device.active_connection_path()
         nm_act_cons = self._nm_act_connections
         return nm_act_cons.connection(ac_path) if ac_path != '/' else None
 
@@ -78,7 +78,7 @@ class Device(object):
     def _non_active_connections(self):
         active_connection = self.active_connection
         device = self._nm_device_service.device(self._name)
-        for connection_path in device.connections_path:
+        for connection_path in device.connections_path():
             connection = self._nm_settings.connection(connection_path)
             if (not active_connection or
                     connection.connection.uuid != active_connection.uuid()):
