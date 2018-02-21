@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,11 +23,13 @@ import logging
 
 import six
 
-from testlib import mock
+from vdsm.network.ip import rule as ip_rule
 
+from .compat import mock
 from .nettestlib import bonding_default_fpath
-from . ip_rule_test import IPV4_ADDRESS1, IPRuleTest
 
+
+IPV4_ADDRESS1 = '192.168.99.1'    # Tracking the address used in ip_rule_test
 
 bonding_dump_patchers = []
 
@@ -67,11 +69,12 @@ def _cleanup_stale_iprules():
     In case any stale entries have been detected, attempt to clean everything
     and raise an error.
     """
-    rules = [r for r in IPRuleTest.IPRule.rules() if r.to == IPV4_ADDRESS1]
+    IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)
+    rules = [r for r in IPRule.rules() if r.to == IPV4_ADDRESS1]
     if rules:
         for rule in rules:
             try:
-                IPRuleTest.IPRule.delete(rule)
+                IPRule.delete(rule)
                 logging.warning('Rule (%s) has been removed', rule)
             except Exception as e:
                 logging.error('Error removing rule (%s): %s', rule, e)
