@@ -120,6 +120,7 @@ class Task(APIBase):
 # TODO: use a class decorator instead of decorating each method.
 class VM(APIBase):
     BLANK_UUID = '00000000-0000-0000-0000-000000000000'
+    LOG_ATTRIBUTES = {'vmId': '_UUID'}
     ctorArgs = ['vmID']
 
     def __init__(self, UUID):
