@@ -21,15 +21,18 @@
 from __future__ import absolute_import
 
 import logging
-import os
 import socket
-
 from vdsm.common.define import Mbytes
 from vdsm.config import config
 from vdsm import throttledlog
 
 from vdsm.common.cpuarch import PAGE_SIZE_BYTES
 from vdsm.common import unixrpc
+
+try:
+    import mom
+except ImportError:
+    mom = None
 
 
 throttledlog.throttle('MomNotAvailable', 100)
@@ -42,16 +45,23 @@ class MomNotAvailableError(RuntimeError):
 
 class MomClient(object):
 
-    def __init__(self, sock_path):
+    def __init__(self, momconf, conf_overrides=None):
         self.log = logging.getLogger("MOM")
         self.log.info("Preparing MOM interface")
 
-        if not os.access(sock_path, os.W_OK):
+        if mom is None:
             self.log.error("MOM's RPC interface is disabled")
             raise MomNotAvailableError()
 
-        self.log.info("MOM: Using named unix socket: %s", sock_path)
-        self._mom = unixrpc.UnixXmlRpcClient(sock_path)
+        # MOM instance is needed to load the config file and get the RPC port
+        _mom = mom.MOM(momconf, conf_overrides)
+        port = _mom.config.get('main', 'rpc-port')
+        if port == "-1":
+            self.log.error("MOM's RPC interface is disabled")
+            raise MomNotAvailableError()
+
+        self.log.info("Using named unix socket " + port)
+        self._mom = unixrpc.UnixXmlRpcClient(port)
         self._policy = {}
 
     def getKsmStats(self):
