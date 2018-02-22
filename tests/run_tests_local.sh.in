@@ -16,7 +16,7 @@ export \
     LC_ALL=C \
     NOSE_EVAL_ATTR \
     NOSE_LOGFORMAT='%(asctime)s %(levelname)-5s (%(threadName)s) [%(name)s] %(message)s (%(module)s:%(lineno)d)' \
-    NOSE_VERBOSE=${NOSE_VERBOSE:-3} \
+    NOSE_VERBOSE=${NOSE_VERBOSE:-1} \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH="@top_srcdir@/static/usr/share/vdsm:@top_srcdir@/lib:@top_srcdir@/vdsm_api:$PYTHONPATH" \
     $NULL

@@ -217,8 +217,8 @@ To run the entire test suit with file leak detection:
 Control verbose level:
 ---------------------
 
-By default, tests run with verbose level 3.
-To run without verbose output, set verbose level to 1.
+By default, tests run without verbose level 1.
+To run with verbose output, set verbose level to 3.
 
 To set verbose level:
     make check NOSE_VERBOSE=<VERBOSE LEVEL>
