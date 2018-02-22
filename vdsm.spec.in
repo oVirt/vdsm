@@ -709,8 +709,8 @@ Requires: python-magic
 # existing customers
 Requires: glusterfs-gnfs
 %endif
-%if 0%{?fedora} >= 25
-Requires: python-blivet1
+%if 0%{?fedora}
+Requires: python-blivet1 >= 1.20.4-1
 %else
 Requires: python-blivet
 %endif

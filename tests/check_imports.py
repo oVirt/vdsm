@@ -27,7 +27,6 @@ import importlib
 import pkgutil
 import pytest
 
-from vdsm import osinfo
 from vdsm.common import compat
 
 
@@ -36,12 +35,6 @@ def find_modules():
     Yields fully qualified modules names in the vdsm package.
     """
     expected_to_fail = set()
-
-    # blivet fails on import, see https://bugzilla.redhat.com/1450607
-    info = osinfo.version()
-    if (info["name"] == osinfo.OSName.FEDORA and
-            info["version"] in ("26", "27", "28")):
-        expected_to_fail.add("vdsm.gluster.storagedev")
 
     def error(name):
         raise

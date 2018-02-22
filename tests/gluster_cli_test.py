@@ -21,10 +21,9 @@
 import six
 
 from testlib import VdsmTestCase as TestCaseBase
-from vdsm import osinfo
+from testValidation import skipif
 from vdsm.gluster import cli as gcli
 import xml.etree.cElementTree as etree
-from nose.plugins.skip import SkipTest
 import glusterTestData
 
 
@@ -1119,21 +1118,10 @@ class GlusterCliTests(TestCaseBase):
         status = gcli._parseVolumeStatusMem(tree)
         self.assertEqual(status, ostatus)
 
+    @skipif(six.PY3, "Needs porting to python 3")
     def test_parseStorageDevices(self):
-        try:
-            from vdsm.gluster.storagedev import _parseDevices \
-                as parseStorageDevices
-        except ImportError as e:
-            raise SkipTest('%s' % e)
-        except ValueError as e:
-            # On Fedora 26 and 27 importing blivet fail with:
-            # ValueError: Namespace BlockDev not available for version 1.0
-            # See https://bugzilla.redhat.com/1450607
-            info = osinfo.version()
-            if (info["name"] == osinfo.OSName.FEDORA and
-                    info["version"] in ("26", "27", "28")):
-                raise SkipTest('%s' % e)
-            raise
+        from vdsm.gluster.storagedev import _parseDevices \
+            as parseStorageDevices
 
         status = parseStorageDevices(glusterTestData.glusterStorageDevData())
         self.assertEqual(status, glusterTestData.GLUSTER_STORAGE_DEVICES)
