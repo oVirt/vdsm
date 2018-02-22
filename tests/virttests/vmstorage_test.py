@@ -112,6 +112,26 @@ class DriveXMLTests(XMLTestCase):
             """
         self.check(conf, xml)
 
+    def test_disk_param_cache(self):
+        conf = drive_config(
+            format='raw',
+            iface='sata',  # virtio has special treatment - don't use it here
+            propagateErrors='on',
+            serial='54-a672-23e5b495a9ea',
+            cache='writethrough',
+            diskType=DISK_TYPE.FILE,
+        )
+        xml = """
+            <disk device="disk" snapshot="no" type="file">
+                <source file="/path/to/volume"/>
+                <target bus="sata" dev="sda"/>
+                <serial>54-a672-23e5b495a9ea</serial>
+                <driver cache="writethrough" error_policy="enospace"
+                        io="threads" name="qemu" type="raw"/>
+            </disk>
+            """
+        self.check(conf, xml)
+
     def test_disk_block(self):
         conf = drive_config(
             serial='54-a672-23e5b495a9ea',

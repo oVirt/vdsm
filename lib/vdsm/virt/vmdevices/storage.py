@@ -241,7 +241,8 @@ class Drive(core.Base):
         self.truesize = int(kwargs.get('truesize', '0'))
         self.apparentsize = int(kwargs.get('apparentsize', '0'))
         self.name = drivename.make(self.iface, self.index)
-        self.cache = config.get('vars', 'qemu_drive_cache')
+        if not hasattr(self, 'cache'):
+            self._set_cache()
         self.discard = kwargs.get('discard', False)
 
         # Engine can send 'true' and 'false' as strings
@@ -253,8 +254,26 @@ class Drive(core.Base):
         # Used for chunked drives or drives replicating to chunked replica.
         self.blockinfo = None
 
-        self._customize()
         self._setExtSharedState()
+
+    def _set_cache(self):
+        # default
+        self.cache = config.get('vars', 'qemu_drive_cache')
+
+        # do we need overrides?
+        if self.transientDisk:
+            # Force the cache to be writethrough, which is qemu's default.
+            # This is done to ensure that we don't ever use cache=none for
+            # transient disks, since we create them in /var/run/vdsm which
+            # may end up on tmpfs and don't support O_DIRECT, and qemu uses
+            # O_DIRECT when cache=none and hence hotplug might fail with
+            # error that one can take eternity to debug the reason behind it!
+            self.cache = "writethrough"
+        elif self.iface == 'virtio':
+            try:
+                self.cache = self.vm_custom['viodiskcache']
+            except KeyError:
+                pass  # Ignore if custom disk cache is missing
 
     def _setExtSharedState(self):
         # We cannot use tobool here as shared can take several values
@@ -513,21 +532,6 @@ class Drive(core.Base):
     def transientDisk(self):
         # Using getattr to handle legacy and removable drives.
         return getattr(self, 'shared', None) == DRIVE_SHARED_TYPE.TRANSIENT
-
-    def _customize(self):
-        if self.transientDisk:
-            # Force the cache to be writethrough, which is qemu's default.
-            # This is done to ensure that we don't ever use cache=none for
-            # transient disks, since we create them in /var/run/vdsm which
-            # may end up on tmpfs and don't support O_DIRECT, and qemu uses
-            # O_DIRECT when cache=none and hence hotplug might fail with
-            # error that one can take eternity to debug the reason behind it!
-            self.cache = "writethrough"
-        elif self.iface == 'virtio':
-            try:
-                self.cache = self.vm_custom['viodiskcache']
-            except KeyError:
-                pass  # Ignore if custom disk cache is missing
 
     def getLeasesXML(self):
         """
