@@ -829,6 +829,15 @@ _STORAGE_TEST_DATA = [
               error_policy="stop" cache="none"/>
         </disk>''',
      {}],
+    # cache attribute taken from XML for non-transient disks
+    [u'''<disk device="disk" snapshot="no" type="file">
+            <source file="/path/to/volume"/>
+            <target bus="sata" dev="sda"/>
+            <serial>54-a672-23e5b495a9ea</serial>
+            <driver cache="writethrough" error_policy="enospace"
+                    io="threads" name="qemu" type="raw"/>
+        </disk>''',
+     {}],
 ]
 
 
