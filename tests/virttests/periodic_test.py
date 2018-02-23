@@ -496,6 +496,8 @@ class _FakeVM(object):
         self.lastStatus = vmstatus.UP
         self.monitorable = True
         self.post_copy = migration.PostCopyPhase.NONE
+        self.disk_devices = []
+        self.updated_drives = []
 
     def isDomainReadyForCommands(self):
         return True
@@ -505,3 +507,27 @@ class _FakeVM(object):
 
     def updateNumaInfo(self):
         pass
+
+    def getDiskDevices(self):
+        return self.disk_devices
+
+    def updateDriveVolume(self, vmDrive):
+        self.updated_drives.append(vmDrive)
+
+
+class _FakeDrive(object):
+
+    def __init__(self, name, readonly=False):
+        self.name = name
+        self.readonly = readonly
+
+
+class PeriodicActionTests(TestCaseBase):
+
+    def test_update_volumes(self):
+        ro_drive = _FakeDrive('ro', readonly=True)
+        rw_drive = _FakeDrive('rw', readonly=False)
+        vm = _FakeVM('123', 'test')
+        vm.disk_devices = [ro_drive, rw_drive]
+        periodic.UpdateVolumes(vm)._execute()
+        self.assertEqual([d.name for d in vm.updated_drives], [rw_drive.name])
