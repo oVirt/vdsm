@@ -47,7 +47,7 @@ class ChainError(DumpChainsError):
 
 
 class DuplicateParentError(ChainError):
-    description = ("More than one volume pointing to the same parent volume "
+    description = ("more than one volume pointing to the same parent volume "
                    "e.g: (_BLANK_UUID<-a), (a<-b), (a<-c)")
 
 
@@ -57,13 +57,13 @@ class NoBaseVolume(ChainError):
 
 
 class ChainLoopError(ChainError):
-    description = ("A loop found in the volume chain. This happens if a "
+    description = ("a loop found in the volume chain. This happens if a "
                    "volume points to one of it's parent volume e.g.: "
                    "(BLANK_UUID<-a), (a<-b), (b<-c), (c<-a)")
 
 
 class OrphanVolumes(ChainError):
-    description = ("There are volumes that are part of an image and are "
+    description = ("there are volumes that are part of an image and are "
                    "pointing to volumes which are not part of the chain e.g: "
                    "(BLANK_UUID<-a), (a<-b), (c<-d)")
 
@@ -173,8 +173,9 @@ def _print_volume_chains(image_chains, volumes_info):
         print()
         if isinstance(vol_chain, ChainError):
             chain_err = vol_chain
-            _print_line(chain_err.description)
-            _print_line('Volumes and children:')
+            _print_error(chain_err.description)
+            print()
+            _print_line('Unordered volumes and children:')
             print()
             for parent, child in chain_err.volumes_children:
                 _print_line('- %s <- %s' % (parent, child))
@@ -199,3 +200,7 @@ def _print_vol_info(volume_info):
 
 def _print_line(body, title=''):
     print('{0:^13}{1}'.format(title, body))
+
+
+def _print_error(body, title=''):
+    print('{0:^13}Error: {1}'.format(title, body))
