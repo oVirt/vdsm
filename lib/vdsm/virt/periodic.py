@@ -385,10 +385,10 @@ class UpdateVolumes(_RunnableOnVm):
 
     def _execute(self):
         for drive in self._vm.getDiskDevices():
-            # TODO: If this blocks (is it actually possible?)
-            # we must make sure we don't overwrite good data
-            # with stale old data.
-            self._vm.updateDriveVolume(drive)
+            if not drive.readonly:
+                # TODO: If this blocks we must make sure we don't overwrite
+                # good data with stale old data.
+                self._vm.updateDriveVolume(drive)
 
 
 class BlockjobMonitor(_RunnableOnVm):
