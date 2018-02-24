@@ -21,11 +21,10 @@
 import collections
 import contextlib
 import io
-import os
 import threading
 import struct
 
-from testlib import namedTemporaryDir
+import pytest
 
 import vdsm.storage.mailbox as sm
 from vdsm.storage import misc
@@ -36,28 +35,26 @@ MONITOR_INTERVAL = 0.1
 SPUUID = '5d928855-b09b-47a7-b920-bd2d2eb5808c'
 
 
-Env = collections.namedtuple("Env", "inbox, outbox")
+MboxFiles = collections.namedtuple("MboxFiles", "inbox, outbox")
+
+
+@pytest.fixture()
+def mboxfiles(tmpdir):
+    data = sm.EMPTYMAILBOX * MAX_HOSTS
+    inbox = tmpdir.join('inbox')
+    outbox = tmpdir.join('outbox')
+    inbox.write(data)
+    outbox.write(data)
+    yield MboxFiles(str(inbox), str(outbox))
 
 
 @contextlib.contextmanager
-def make_env():
-    with namedTemporaryDir() as tmpdir:
-        inbox = os.path.join(tmpdir, "inbox")
-        outbox = os.path.join(tmpdir, "outbox")
-        data = sm.EMPTYMAILBOX * MAX_HOSTS
-        for path in (inbox, outbox):
-            with io.open(path, "wb") as f:
-                f.write(data)
-        yield Env(inbox, outbox)
-
-
-@contextlib.contextmanager
-def make_hsm_mailbox(env, host_id):
+def make_hsm_mailbox(mboxfiles, host_id):
     mailbox = sm.HSM_Mailbox(
         hostID=host_id,
         poolID=SPUUID,
-        inbox=env.outbox,
-        outbox=env.inbox,
+        inbox=mboxfiles.outbox,
+        outbox=mboxfiles.inbox,
         monitorInterval=MONITOR_INTERVAL)
     try:
         yield mailbox
@@ -68,12 +65,12 @@ def make_hsm_mailbox(env, host_id):
 
 
 @contextlib.contextmanager
-def make_spm_mailbox(env):
+def make_spm_mailbox(mboxfiles):
     mailbox = sm.SPM_MailMonitor(
         SPUUID,
         MAX_HOSTS,
-        inbox=env.inbox,
-        outbox=env.outbox,
+        inbox=mboxfiles.inbox,
+        outbox=mboxfiles.outbox,
         monitorInterval=MONITOR_INTERVAL)
     try:
         yield mailbox
@@ -94,69 +91,64 @@ def xtnd_message(spm_mm, callback):
 
 class TestSPMMailMonitor:
 
-    def testThreadLeak(self):
-        threadCount = len(threading.enumerate())
-        with make_env() as env:
-            mailer = sm.SPM_MailMonitor(
-                SPUUID, 100,
-                inbox=env.inbox,
-                outbox=env.outbox,
-                monitorInterval=MONITOR_INTERVAL)
-            try:
-                mailer.stop()
-            finally:
-                assert mailer.wait(timeout=MAILER_TIMEOUT), \
-                    'mailer.wait: Timeout expired'
-        assert threadCount == len(threading.enumerate())
+    def test_thread_leak(self, mboxfiles):
+        thread_count = len(threading.enumerate())
+        mailer = sm.SPM_MailMonitor(
+            SPUUID, 100,
+            inbox=mboxfiles.inbox,
+            outbox=mboxfiles.outbox,
+            monitorInterval=MONITOR_INTERVAL)
+        try:
+            mailer.stop()
+        finally:
+            assert mailer.wait(timeout=MAILER_TIMEOUT), \
+                'mailer.wait: Timeout expired'
+        assert thread_count == len(threading.enumerate())
 
-
-class TestSPMMailbox:
-
-    def test_clear_outbox(self):
-        with make_env() as env:
-            with io.open(env.outbox, "wb") as f:
-                f.write(b"x" * sm.MAILBOX_SIZE * MAX_HOSTS)
-            with make_spm_mailbox(env):
-                with io.open(env.outbox, "rb") as f:
-                    data = f.read()
-                assert data == sm.EMPTYMAILBOX * MAX_HOSTS
+    def test_clear_outbox(self, mboxfiles):
+        with io.open(mboxfiles.outbox, "wb") as f:
+            f.write(b"x" * sm.MAILBOX_SIZE * MAX_HOSTS)
+        with make_spm_mailbox(mboxfiles):
+            with io.open(mboxfiles.outbox, "rb") as f:
+                data = f.read()
+            assert data == sm.EMPTYMAILBOX * MAX_HOSTS
 
 
 class TestHSMMailbox:
 
-    def test_clear_host_outbox(self):
+    def test_clear_host_outbox(self, mboxfiles):
         host_id = 7
-        with make_env() as env:
-            # Dirty the inbox
-            with io.open(env.inbox, "wb") as f:
-                f.write(b"x" * sm.MAILBOX_SIZE * MAX_HOSTS)
-            with make_hsm_mailbox(env, host_id):
-                with io.open(env.inbox, "rb") as f:
-                    data = f.read()
-                start = host_id * sm.MAILBOX_SIZE
-                end = start + sm.MAILBOX_SIZE
-                # Host mailbox must be cleared
-                assert data[start:end] == sm.EMPTYMAILBOX
-                # Other mailboxes must not be modifed
-                assert data[:start] == b"x" * start
-                assert data[end:] == b"x" * (len(data) - end)
 
-    def test_keep_outbox(self):
+        # Dirty the inbox
+        with io.open(mboxfiles.inbox, "wb") as f:
+            f.write(b"x" * sm.MAILBOX_SIZE * MAX_HOSTS)
+        with make_hsm_mailbox(mboxfiles, host_id):
+            with io.open(mboxfiles.inbox, "rb") as f:
+                data = f.read()
+            start = host_id * sm.MAILBOX_SIZE
+            end = start + sm.MAILBOX_SIZE
+            # Host mailbox must be cleared
+            assert data[start:end] == sm.EMPTYMAILBOX
+            # Other mailboxes must not be modifed
+            assert data[:start] == b"x" * start
+            assert data[end:] == b"x" * (len(data) - end)
+
+    def test_keep_outbox(self, mboxfiles):
         host_id = 7
-        with make_env() as env:
-            # Dirty the outbox
-            dirty_outbox = b"x" * sm.MAILBOX_SIZE * MAX_HOSTS
-            with io.open(env.outbox, "wb") as f:
-                f.write(dirty_outbox)
-            with make_hsm_mailbox(env, host_id):
-                with io.open(env.outbox, "rb") as f:
-                    data = f.read()
-                assert data == dirty_outbox
+
+        # Dirty the outbox
+        dirty_outbox = b"x" * sm.MAILBOX_SIZE * MAX_HOSTS
+        with io.open(mboxfiles.outbox, "wb") as f:
+            f.write(dirty_outbox)
+        with make_hsm_mailbox(mboxfiles, host_id):
+            with io.open(mboxfiles.outbox, "rb") as f:
+                data = f.read()
+            assert data == dirty_outbox
 
 
 class TestCommunicate:
 
-    def test_send_receive(self):
+    def test_send_receive(self, mboxfiles):
         msg_processed = threading.Event()
         expired = False
         received_messages = []
@@ -165,20 +157,19 @@ class TestCommunicate:
             received_messages.append((msg_id, data))
             msg_processed.set()
 
-        with make_env() as env:
-            with make_hsm_mailbox(env, 7) as hsm_mb:
-                with make_spm_mailbox(env) as spm_mm:
-                    with xtnd_message(spm_mm, spm_callback):
-                        VOL_DATA = dict(
-                            poolID=SPUUID,
-                            domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
-                            volumeID='d772f1c6-3ebb-43c3-a42e-73fcd8255a5f')
-                        REQUESTED_SIZE = 100
+        with make_hsm_mailbox(mboxfiles, 7) as hsm_mb:
+            with make_spm_mailbox(mboxfiles) as spm_mm:
+                with xtnd_message(spm_mm, spm_callback):
+                    VOL_DATA = dict(
+                        poolID=SPUUID,
+                        domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
+                        volumeID='d772f1c6-3ebb-43c3-a42e-73fcd8255a5f')
+                    REQUESTED_SIZE = 100
 
-                        hsm_mb.sendExtendMsg(VOL_DATA, REQUESTED_SIZE)
+                    hsm_mb.sendExtendMsg(VOL_DATA, REQUESTED_SIZE)
 
-                        if not msg_processed.wait(10 * MONITOR_INTERVAL):
-                            expired = True
+                    if not msg_processed.wait(10 * MONITOR_INTERVAL):
+                        expired = True
 
         assert not expired, 'message was not processed on time'
         assert received_messages == [(449, (
