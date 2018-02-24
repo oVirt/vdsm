@@ -72,6 +72,7 @@ def make_spm_mailbox(mboxfiles):
         inbox=mboxfiles.inbox,
         outbox=mboxfiles.outbox,
         monitorInterval=MONITOR_INTERVAL)
+    mailbox.start()
     try:
         yield mailbox
     finally:
@@ -98,6 +99,7 @@ class TestSPMMailMonitor:
             inbox=mboxfiles.inbox,
             outbox=mboxfiles.outbox,
             monitorInterval=MONITOR_INTERVAL)
+        mailer.start()
         try:
             mailer.stop()
         finally:

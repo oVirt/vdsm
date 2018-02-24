@@ -364,6 +364,7 @@ class StoragePool(object):
                     outbox = self._master_volume_path("outbox")
                     self.spmMailer = mailbox.SPM_MailMonitor(
                         self, maxHostID, inbox, outbox)
+                    self.spmMailer.start()
                     self.spmMailer.registerMessageType('xtnd', partial(
                         mailbox.SPM_Extend_Message.processRequest,
                         self))

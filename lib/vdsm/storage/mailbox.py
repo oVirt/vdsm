@@ -566,8 +566,10 @@ class SPM_MailMonitor:
 
         self._thread = concurrent.thread(
             self._run, name="mailbox-spm", log=self.log)
-        self._thread.start()
         self.log.debug('SPM_MailMonitor created for pool %s' % self._poolID)
+
+    def start(self):
+        self._thread.start()
 
     def wait(self, timeout=None):
         self._thread.join(timeout=timeout)
