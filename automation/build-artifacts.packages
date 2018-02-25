@@ -6,6 +6,7 @@ libguestfs-tools-c
 m2crypto
 make
 mom
+openssl
 policycoreutils-python
 pyflakes
 python-blivet
