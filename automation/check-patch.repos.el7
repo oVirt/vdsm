@@ -1,4 +1,5 @@
 ovirt-3.6,http://resources.ovirt.org/pub/ovirt-3.6/rpm/$distro
 centos-glusterfs,http://mirror.centos.org/centos/7/storage/x86_64/gluster-3.7/
-centos-ovirt36,http://mirror.centos.org/centos/7/virt/x86_64/ovirt-3.6/
+centos-ovirt36,http://vault.centos.org/7.2.1511/virt/x86_64/ovirt-3.6/
 centos-qemu-ev-release,http://mirror.centos.org/centos/7/virt/x86_64/kvm-common/
+epel-snap-2017-02-03-04-43,http://mirrors.phx.ovirt.org/repos/yum/epel-el7/2018-02-03-04-41/
