@@ -74,8 +74,9 @@ _CONF_DATA = """\
 # This file is managed by vdsm.
 #
 # The recommended way to add configuration for your storage is to add a
-# drop-in configuration in /etc/conf.d/<mydevice>.conf. Settings in
-# drop-in configuration files overrides settings in main multipath.conf.
+# drop-in configuration file in "/etc/multipath/conf.d/<mydevice>.conf".
+# Settings in drop-in configuration files override settings in this
+# file.
 #
 # If you want to modify this file, you must make it private so vdsm will
 # never modify it. To make the file private, set the second line of this
