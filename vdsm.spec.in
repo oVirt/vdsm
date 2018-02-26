@@ -112,7 +112,7 @@ Requires: curl
 Requires: %{name}-http = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: safelease >= 1.0-7
-Requires: mom >= 0.5.8
+Requires: mom >= 0.5.12
 Requires(pre): shadow-utils
 
 Obsoletes: %{name}-infra < 4.19
