@@ -227,6 +227,7 @@ Requires: genisoimage
 Requires: libselinux-python >= 2.5-2
 Requires: %{name}-python = %{version}-%{release}
 Requires: %{name}-hook-vmfex-dev = %{version}-%{release}
+Requires: libguestfs-tools-c
 
 Requires(post): /usr/sbin/saslpasswd2
 
