@@ -17,7 +17,7 @@ guest-manager-interval: 15
 
 # The interface MOM using to discover active guests and collect guest memory
 # statistics. There're two choices for it: libvirt or vdsm.
-hypervisor-interface: vdsmjsonrpcbulk
+hypervisor-interface: vdsmjsonrpcclient
 
 # The wake up frequency of the policy engine (in seconds).  During each
 # interval the policy engine evaluates the policy and passes the results
