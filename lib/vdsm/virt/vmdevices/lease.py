@@ -296,15 +296,36 @@ def _is_prepared(device):
     return "path" in device and "offset" in device
 
 
-def fixLeases(storage, xml_str):
+def fixLeases(storage, xml_str, drive_objs):
     leases = set(re.findall('(?<=LEASE-PATH:)[\w:-]+', xml_str))
     for lease in leases:
         lease_id, lease_sd_id = lease.split(':')
-        res = storage.lease_info(dict(sd_id=lease_sd_id,
-                                      lease_id=lease_id))
-        lease_info = res["result"]
+
+        lease_info = _find_drive_lease_info(lease_sd_id, lease_id, drive_objs)
+        if lease_info is None:
+            # not a drive lease, must be a vm lease
+            res = storage.lease_info(
+                dict(sd_id=lease_sd_id, lease_id=lease_id))
+            lease_info = res["result"]
+
         xml_str = xml_str.replace('LEASE-PATH:' + lease,
                                   lease_info["path"])
         xml_str = xml_str.replace('LEASE-OFFSET:' + lease,
                                   str(lease_info["offset"]))
     return xml_str
+
+
+def _find_drive_lease_info(sd_id, lease_id, drive_objs):
+    for drive_obj in drive_objs:
+        volume_chain = getattr(drive_obj, "volumeChain", [])
+        for vol_info in volume_chain[-1:]:
+            # TODO: is this matching safe enough?
+            # vm._findDriveByUUIDs uses also the imageID
+            if (vol_info['domainID'] == sd_id and
+                    vol_info['volumeID'] == lease_id):
+                drive_obj.log.info('Using drive lease: %s', vol_info)
+                return {
+                    'path': vol_info['leasePath'],
+                    'offset': vol_info['leaseOffset'],
+                }
+    return None

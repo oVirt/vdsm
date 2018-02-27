@@ -2212,7 +2212,8 @@ class Vm(object):
         if 'xml' in self.conf:
             xml_str = self.conf['xml']
             xml_str = vmdevices.graphics.fixDisplayNetworks(xml_str)
-            xml_str = vmdevices.lease.fixLeases(self.cif.irs, xml_str)
+            xml_str = vmdevices.lease.fixLeases(
+                self.cif.irs, xml_str, self._devices.get(hwclass.DISK, []))
             xml_str = vmdevices.network.fixNetworks(xml_str)
             if cpuarch.is_x86(self.arch):
                 osd = osinfo.version()
