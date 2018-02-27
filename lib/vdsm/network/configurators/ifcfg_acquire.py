@@ -55,7 +55,9 @@ class IfcfgAcquireNMonline(object):
             dev.syncoper.waitfor_activated_state()
             dev.cleanup_inactive_connections()
             active_connection = dev.active_connection
-        except (nmerrors.NMDeviceNotFoundError, nmerrors.NMTimeoutError):
+        except (nmerrors.NMDeviceNotFoundError,
+                nmerrors.NMPropertiesNotFoundError,
+                nmerrors.NMTimeoutError):
             return
 
         if not active_connection:
