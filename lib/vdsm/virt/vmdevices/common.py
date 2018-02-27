@@ -19,7 +19,6 @@
 #
 from __future__ import absolute_import
 
-from vdsm.config import config
 from vdsm.virt import metadata
 from vdsm.virt import vmxml
 
@@ -346,25 +345,9 @@ def save_device_metadata(md_desc, dev_map, log):
     log.debug('Saved %d device metadata', count)
 
 
-def get_refreshable_device_classes():
-    config_value = config.get('devel', 'device_xml_refresh_enable').strip()
-    if config_value == 'ALL':
-        return set(hwclass.TO_REFRESH)
-
-    refresh_whitelist = set(
-        dev_class.strip().lower()
-        for dev_class in config_value.split(',')
-    )
-    return set(
-        dev_class for dev_class in hwclass.TO_REFRESH
-        if dev_class in refresh_whitelist
-    )
-
-
 def replace_devices_xml(domxml, devices_xml):
     devices = vmxml.find_first(domxml, 'devices', None)
-
-    refreshable = get_refreshable_device_classes()
+    refreshable = (hwclass.DISK,)
 
     old_devs = [
         dev for dev in vmxml.children(devices)
