@@ -24,6 +24,8 @@ import json
 import logging
 import timeit
 
+import six
+
 from vdsm.virt import guestagent
 from vdsm.virt import qemuguestagent
 
@@ -197,7 +199,7 @@ class TestGuestIF(TestCaseBase):
         for t in zip(_MSG_TYPES, _INPUTS, _OUTPUTS):
             t = testCase(*t)
             fakeGuestAgent._handleMessage(t.msgType, t.message)
-            for (k, v) in t.assertDict.iteritems():
+            for (k, v) in six.iteritems(t.assertDict):
                 self.assertEqual(fakeGuestAgent.guestInfo[k], v)
 
     def test_guestinfo_encapsulation(self):
@@ -218,7 +220,7 @@ class TestGuestIF(TestCaseBase):
                     value = 'modified'
                 guest_info[k] = value
             guest_info = fake_guest_agent.getGuestInfo()
-            for (k, v) in _OUTPUTS[0].iteritems():
+            for (k, v) in six.iteritems(_OUTPUTS[0]):
                 self.assertEqual(guest_info[k], v)
 
 
@@ -259,7 +261,7 @@ class TestGuestIFHandleData(TestCaseBase):
             msgStr = self.dataToMessage(t.msgType, t.message)
             input += msgStr
             isOverSize = len(msgStr) > self.maxMessageSize
-            for (k, v) in t.assertDict.iteritems():
+            for (k, v) in six.iteritems(t.assertDict):
                 if not isOverSize:
                     expected[k] = v
 
@@ -267,7 +269,7 @@ class TestGuestIFHandleData(TestCaseBase):
         for chunk in self.messageChunks(input, (self.maxMessageSize / 2) + 1):
             self.fakeGuestAgent._handleData(chunk)
 
-        for (k, v) in expected.iteritems():
+        for (k, v) in six.iteritems(expected):
             self.assertEqual(self.fakeGuestAgent.guestInfo[k], expected[k])
 
     def testMixed(self):
@@ -287,7 +289,7 @@ class TestGuestIFHandleData(TestCaseBase):
             self.assertEqual(self.fakeGuestAgent._messageState,
                              guestagent.MessageState.NORMAL)
 
-            for (k, v) in t.assertDict.iteritems():
+            for (k, v) in six.iteritems(t.assertDict):
                 if isOverLimit:
                     # If the message size was over the allowed limit
                     # the message should contain the default value

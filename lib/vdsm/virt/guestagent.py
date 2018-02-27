@@ -29,6 +29,8 @@ import threading
 import uuid
 import weakref
 
+import six
+
 from vdsm import utils
 from vdsm.common import filecontrol
 from vdsm.common import supervdsm
@@ -90,7 +92,7 @@ def _filterObject(obj):
     """
     def filt(o):
         if isinstance(o, dict):
-            return {filt(k): filt(v) for k, v in o.iteritems()}
+            return {filt(k): filt(v) for k, v in six.iteritems(o)}
         elif isinstance(o, list):
             return [filt(i) for i in o]
         elif isinstance(o, basestring):
