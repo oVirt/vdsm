@@ -549,13 +549,6 @@ parameters = [
 
         ('api_strict_mode', 'false',
             'Enable exception throwing when rpc data is not correct.'),
-
-        ('device_xml_refresh_enable', 'ALL',
-            'Comma-separated list of device classes. '
-            'When a VM configured with Engine XML is started, Vdsm will '
-            'update the `devices` XML section for all the classes matching '
-            'the provided list. Use empty list to avoid any update. '
-            'Use the special value "ALL" to use Vdsm current defaults. '),
     ]),
 
     # Section: [gluster]
