@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<domain type="kvm" xmlns:ovirt-tune="http://ovirt.org/vm/tune/1.0" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <name>HostedEngine</name>
+  <uuid>ac698e04-d30b-426a-9f3c-0e95641b2b79</uuid>
+  <memory>2096128</memory>
+  <currentMemory>2096128</currentMemory>
+  <maxMemory slots="16">8388608</maxMemory>
+  <vcpu current="2">32</vcpu>
+  <sysinfo type="smbios">
+    <system>
+      <entry name="manufacturer">oVirt</entry>
+      <entry name="product">OS-NAME:</entry>
+      <entry name="version">OS-VERSION:</entry>
+      <entry name="serial">HOST-SERIAL:</entry>
+      <entry name="uuid">ac698e04-d30b-426a-9f3c-0e95641b2b79</entry>
+    </system>
+  </sysinfo>
+  <clock adjustment="0" offset="variable">
+    <timer name="rtc" tickpolicy="catchup"></timer>
+    <timer name="pit" tickpolicy="delay"></timer>
+    <timer name="hpet" present="no"></timer>
+  </clock>
+  <features>
+    <acpi></acpi>
+  </features>
+  <cpu match="exact">
+    <model>Nehalem</model>
+    <topology cores="2" sockets="16" threads="1"></topology>
+    <numa>
+      <cell cpus="0,1" memory="2096128"></cell>
+    </numa>
+  </cpu>
+  <cputune></cputune>
+  <devices>
+    <input bus="ps2" type="mouse"></input>
+    <channel type="unix">
+      <target name="ovirt-guest-agent.0" type="virtio"></target>
+      <source mode="bind" path="/var/lib/libvirt/qemu/channels/ac698e04-d30b-426a-9f3c-0e95641b2b79.ovirt-guest-agent.0"></source>
+    </channel>
+    <channel type="unix">
+      <target name="org.qemu.guest_agent.0" type="virtio"></target>
+      <source mode="bind" path="/var/lib/libvirt/qemu/channels/ac698e04-d30b-426a-9f3c-0e95641b2b79.org.qemu.guest_agent.0"></source>
+    </channel>
+    <video>
+      <model heads="1" ram="65536" type="qxl" vgamem="16384" vram="32768"></model>
+      <alias name="ua-159b53ad-f013-47b1-a1c8-7bdf13c5a8f1"></alias>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x02" type="pci"></address>
+    </video>
+    <controller index="0" model="virtio-scsi" type="scsi">
+      <alias name="ua-3c17cece-9446-493a-a17a-a75feed16b68"></alias>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x04" type="pci"></address>
+    </controller>
+    <controller index="0" ports="16" type="virtio-serial">
+      <alias name="ua-47f81b24-ae70-4984-b9ae-38557a79c910"></alias>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x05" type="pci"></address>
+    </controller>
+    <controller index="0" model="piix3-uhci" type="usb">
+      <alias name="ua-57f96d0b-879a-459c-89d3-911fc272209d"></alias>
+      <address bus="0x00" domain="0x0000" function="0x2" slot="0x01" type="pci"></address>
+    </controller>
+    <memballoon model="virtio">
+      <stats period="5"></stats>
+      <alias name="ua-669913ea-db1b-4e44-8a83-c9e147df23ce"></alias>
+    </memballoon>
+    <controller index="0" type="ide">
+      <alias name="ua-9dfa12e0-08a1-4b7e-960c-441b59749001"></alias>
+      <address bus="0x00" domain="0x0000" function="0x1" slot="0x01" type="pci"></address>
+    </controller>
+    <graphics autoport="yes" passwd="*****" passwdValidTo="1970-01-01T00:00:01" port="-1" tlsPort="-1" type="spice">
+      <channel mode="secure" name="main"></channel>
+      <channel mode="secure" name="inputs"></channel>
+      <channel mode="secure" name="cursor"></channel>
+      <channel mode="secure" name="playback"></channel>
+      <channel mode="secure" name="record"></channel>
+      <channel mode="secure" name="display"></channel>
+      <channel mode="secure" name="smartcard"></channel>
+      <channel mode="secure" name="usbredir"></channel>
+      <listen network="vdsm-ovirtmgmt" type="network"></listen>
+    </graphics>
+    <rng model="virtio">
+      <backend model="random">/dev/urandom</backend>
+      <alias name="ua-db08dbb9-f376-40d3-acfc-e5203afbebd3"></alias>
+    </rng>
+    <channel type="spicevmc">
+      <target name="com.redhat.spice.0" type="virtio"></target>
+    </channel>
+    <interface type="bridge">
+      <model type="virtio"></model>
+      <link state="up"></link>
+      <source bridge="ovirtmgmt"></source>
+      <alias name="ua-7d7b11a5-ccd5-4528-9273-4b9d328e61e8"></alias>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x03" type="pci"></address>
+      <mac address="00:1a:4c:10:3f:15"></mac>
+      <filterref filter="vdsm-no-mac-spoofing"></filterref>
+      <bandwidth></bandwidth>
+    </interface>
+    <disk device="cdrom" snapshot="no" type="file">
+      <driver error_policy="report" name="qemu" type="raw"></driver>
+      <source file="" startupPolicy="optional"></source>
+      <target bus="ide" dev="hdc"></target>
+      <readonly></readonly>
+      <alias name="ua-276e6c78-1956-48d1-98bd-714c93882432"></alias>
+      <address bus="1" controller="0" target="0" type="drive" unit="0"></address>
+    </disk>
+    <disk device="disk" snapshot="no" type="file">
+      <target bus="virtio" dev="vda"></target>
+      <source file="/rhev/data-center/00000000-0000-0000-0000-000000000000/4f0a775f-ed16-4832-ab9f-f0427f33ab92/images/7d4e6225-c548-4d76-bbf0-48a247bd1418/9eaa286e-37d6-429e-a46b-63bec1dd4868"></source>
+      <driver cache="none" error_policy="stop" io="threads" name="qemu" type="raw"></driver>
+      <alias name="ua-7d4e6225-c548-4d76-bbf0-48a247bd1418"></alias>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x06" type="pci"></address>
+      <serial>7d4e6225-c548-4d76-bbf0-48a247bd1418</serial>
+    </disk>
+    <lease>
+      <key>9eaa286e-37d6-429e-a46b-63bec1dd4868</key>
+      <lockspace>4f0a775f-ed16-4832-ab9f-f0427f33ab92</lockspace>
+      <target offset="LEASE-OFFSET:9eaa286e-37d6-429e-a46b-63bec1dd4868:4f0a775f-ed16-4832-ab9f-f0427f33ab92" path="LEASE-PATH:9eaa286e-37d6-429e-a46b-63bec1dd4868:4f0a775f-ed16-4832-ab9f-f0427f33ab92"></target>
+    </lease>
+  </devices>
+  <pm>
+    <suspend-to-disk enabled="no"></suspend-to-disk>
+    <suspend-to-mem enabled="no"></suspend-to-mem>
+  </pm>
+  <os>
+    <type arch="x86_64" machine="pc-i440fx-rhel7.3.0">hvm</type>
+    <smbios mode="sysinfo"></smbios>
+  </os>
+  <metadata>
+    <ovirt-tune:qos></ovirt-tune:qos>
+    <ovirt-vm:vm>
+      <minGuaranteedMemoryMb type="int">2048</minGuaranteedMemoryMb>
+      <clusterVersion>4.2</clusterVersion>
+      <ovirt-vm:custom></ovirt-vm:custom>
+      <ovirt-vm:device mac_address="00:1a:4c:10:3f:15">
+        <ovirt-vm:custom></ovirt-vm:custom>
+      </ovirt-vm:device>
+      <ovirt-vm:device devtype="disk" name="vda">
+        <ovirt-vm:shared>exclusive</ovirt-vm:shared>
+        <ovirt-vm:imageID>7d4e6225-c548-4d76-bbf0-48a247bd1418</ovirt-vm:imageID>
+        <ovirt-vm:poolID>00000000-0000-0000-0000-000000000000</ovirt-vm:poolID>
+        <ovirt-vm:volumeID>9eaa286e-37d6-429e-a46b-63bec1dd4868</ovirt-vm:volumeID>
+        <ovirt-vm:domainID>4f0a775f-ed16-4832-ab9f-f0427f33ab92</ovirt-vm:domainID>
+      </ovirt-vm:device>
+      <launchPaused>false</launchPaused>
+      <resumeBehavior>auto_resume</resumeBehavior>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>
