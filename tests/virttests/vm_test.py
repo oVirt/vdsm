@@ -20,6 +20,7 @@
 #
 from __future__ import absolute_import
 
+import functools
 import logging
 import os.path
 import threading
@@ -49,6 +50,7 @@ from vdsm.common import response
 import vdsm.common.time
 
 from vdsm.virt import libvirtxml
+from vdsm.virt import periodic
 from vdsm.virt import virdomain
 from vdsm.virt import vm
 from vdsm.virt import vmchannels
@@ -2167,13 +2169,13 @@ class BlockIoTuneTests(TestCaseBase):
         with fake.VM() as testvm:
             pretime = vdsm.common.time.monotonic_time() - 30.0
             testvm._pause_time = pretime
+            testvm._resume_behavior = vm.ResumeBehavior.KILL
 
             testvm._dom = fake.Domain()
 
             self.assertRaises(
                 vm.DestroyedOnResumeError,
-                testvm.maybe_resume,
-                resume_behavior=vm.ResumeBehavior.KILL)
+                testvm.maybe_resume)
 
             testvm.onLibvirtLifecycleEvent(
                 libvirt.VIR_DOMAIN_EVENT_STOPPED,
@@ -2184,7 +2186,74 @@ class BlockIoTuneTests(TestCaseBase):
             self.assertEqual(stats['status'], vmstatus.DOWN)
             self.assertEqual(stats['exitCode'], define.ERROR)
             self.assertEqual(stats['exitReason'],
-                             vmexitreason.DESTROYED_ON_RESUME)
+                             vmexitreason.DESTROYED_ON_PAUSE_TIMEOUT)
+
+    _PAUSED_VMS = {'auto_resume':
+                   {'pause_time_offset': 81.0,
+                    'resume_behavior': vm.ResumeBehavior.AUTO_RESUME,
+                    'pause': True, 'pause_code': 'EIO',
+                    'expected_status': vmstatus.PAUSED},
+                   'leave_paused':
+                   {'pause_time_offset': 81.0,
+                    'resume_behavior': vm.ResumeBehavior.LEAVE_PAUSED,
+                    'pause': True, 'pause_code': 'EIO',
+                    'expected_status': vmstatus.PAUSED},
+                   'kill':
+                   {'pause_time_offset': 81.0,
+                    'resume_behavior': vm.ResumeBehavior.KILL,
+                    'pause': True, 'pause_code': 'EIO',
+                    'expected_status': vmstatus.DOWN},
+                   'paused':
+                   {'pause_time_offset': 81.0,
+                    'pause': True,
+                    'expected_status': vmstatus.PAUSED},
+                   'paused_now':
+                   {'pause_time_offset': 0.0,
+                    'resume_behavior': vm.ResumeBehavior.KILL,
+                    'pause': True, 'pause_code': 'EIO',
+                    'expected_status': vmstatus.PAUSED},
+                   'paused_later':
+                   {'pause_time_offset': 70.0,
+                    'resume_behavior': vm.ResumeBehavior.KILL,
+                    'pause': True, 'pause_code': 'EIO',
+                    'expected_status': vmstatus.PAUSED},
+                   'running':
+                   {'pause_time_offset': 81.0,
+                    'pause': False,
+                    'expected_status': vmstatus.WAIT_FOR_LAUNCH},
+                   }
+
+    def test_kill_long_paused(self):
+        cif = fake.ClientIF()
+        test = functools.partial(self._kill_long_paused, cif)
+        vm_params = []
+        for vmid, params in self._PAUSED_VMS.items():
+            params = {name: value for name, value in params.items()
+                      if name in ('pause_time_offset', 'resume_behavior',)}
+            params['cif'] = cif
+            params['vmid'] = vmid
+            vm_params.append(params)
+        fake.run_with_vms(test, vm_params)
+
+    def _kill_long_paused(self, cif, vms):
+        spec = self._PAUSED_VMS
+        for vm_ in cif.getVMs().values():
+            vm_._dom = fake.Domain()
+        for vm_ in cif.getVMs().values():
+            if not spec[vm_.id]['pause']:
+                continue
+            vm_.set_last_status(vmstatus.PAUSED)
+            pause_code = spec[vm_.id].get('pause_code')
+            if pause_code is not None:
+                vm_._pause_code = pause_code
+        periodic._kill_long_paused_vms(cif)
+        for vm_ in cif.getVMs().values():
+            expected_status = spec[vm_.id]['expected_status']
+            self.assertEqual(
+                vm_.lastStatus, expected_status,
+                msg=("Wrong status of `%s': actual=%s, expected=%s" %
+                     (vm_.id, vm_.lastStatus, expected_status,))
+            )
 
     @MonkeyPatch(vm, 'isVdsmImage', lambda *args: True)
     def test_io_tune_policy_values(self):

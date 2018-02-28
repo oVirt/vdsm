@@ -31,6 +31,7 @@ from vdsm import containersconnection
 from vdsm.common import cpuarch
 from vdsm.common import libvirtconnection
 from vdsm.common import response
+import vdsm.common.time
 from vdsm.network import ipwrapper
 from vdsm.virt import sampling
 from vdsm.virt import vm
@@ -282,7 +283,8 @@ class ConfStub(object):
 def VM(params=None, devices=None, runCpu=False,
        arch=cpuarch.X86_64, status=None,
        cif=None, create_device_objects=False,
-       post_copy=None, recover=False):
+       post_copy=None, recover=False, vmid=None,
+       resume_behavior=None, pause_time_offset=None):
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir),
                                (libvirtconnection, 'get', Connection),
@@ -291,7 +293,9 @@ def VM(params=None, devices=None, runCpu=False,
             if params and 'xml' in params:
                 vmParams = {}
             else:
-                vmParams = {'vmId': 'TESTING', 'vmName': 'nTESTING'}
+                if vmid is None:
+                    vmid = 'TESTING'
+                vmParams = {'vmId': vmid, 'vmName': 'n%s' % vmid}
             vmParams.update({} if params is None else params)
             cif = ClientIF() if cif is None else cif
             fake = vm.Vm(cif, vmParams, recover=recover)
@@ -312,6 +316,11 @@ def VM(params=None, devices=None, runCpu=False,
                 fake._lastStatus = status
             if post_copy is not None:
                 fake._post_copy = post_copy
+            if resume_behavior is not None:
+                fake._resume_behavior = resume_behavior
+            if pause_time_offset is not None:
+                fake._pause_time = (vdsm.common.time.monotonic_time() -
+                                    pause_time_offset)
             sampling.stats_cache.add(fake.id)
 
             def _updateDomainDescriptor():
@@ -320,6 +329,20 @@ def VM(params=None, devices=None, runCpu=False,
             fake._updateDomainDescriptor = _updateDomainDescriptor
 
             yield fake
+
+
+def run_with_vms(func, vm_specs):
+    vm_kwargs = list(vm_specs)
+    vms = []
+
+    def make_vms():
+        if not vm_kwargs:
+            return func(vms)
+        kwargs = vm_kwargs.pop(0)
+        with VM(**kwargs) as vm:
+            vms.append(vm)
+            make_vms()
+    make_vms()
 
 
 class SuperVdsm(object):
