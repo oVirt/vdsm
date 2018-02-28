@@ -138,8 +138,8 @@ Requires: libvirt-daemon-kvm >= 3.2.0-14.el7_4.7
 %else # fedora
 # Required for preventing an HotPlug disk failure due to cgroups.
 # See https://bugzilla.redhat.com/1540872 for details.
-Requires: libvirt-daemon-kvm >= 3.10.0-132
-Requires: libvirt-python >= 3.10.0
+Requires: libvirt-python >= 3.7.0
+Requires: libvirt-daemon-kvm >= 3.7.0-4
 %endif
 
 # iscsi-intiator versions
