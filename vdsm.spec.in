@@ -1250,6 +1250,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virt/displaynetwork.py*
 %{python_sitelib}/%{vdsm_name}/virt/drivemonitor.py*
 %{python_sitelib}/%{vdsm_name}/virt/domain_descriptor.py*
+%{python_sitelib}/%{vdsm_name}/virt/domxml_preprocess.py*
 %{python_sitelib}/%{vdsm_name}/virt/events.py*
 %{python_sitelib}/%{vdsm_name}/virt/guestagent.py*
 %{python_sitelib}/%{vdsm_name}/virt/guestagenthelpers.py*

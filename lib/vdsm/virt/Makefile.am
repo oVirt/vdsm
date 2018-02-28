@@ -30,6 +30,7 @@ dist_vdsmvirt_PYTHON = \
 	collectd.py \
 	displaynetwork.py \
 	domain_descriptor.py \
+	domxml_preprocess.py \
 	drivemonitor.py \
 	events.py \
 	guestagent.py \
