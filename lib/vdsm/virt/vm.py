@@ -68,6 +68,7 @@ from vdsm.storage import qemuimg
 from vdsm.storage import sd
 from vdsm.storage import sdc
 
+from vdsm.virt import domxml_preprocess
 from vdsm.virt import drivemonitor
 from vdsm.virt import guestagent
 from vdsm.virt import libvirtxml
@@ -2225,22 +2226,9 @@ class Vm(object):
 
     def _buildDomainXML(self):
         if 'xml' in self.conf:
-            xml_str = self.conf['xml']
-            xml_str = vmdevices.graphics.fixDisplayNetworks(xml_str)
-            xml_str = vmdevices.lease.fixLeases(
-                self.cif.irs, xml_str, self._devices.get(hwclass.DISK, []))
-            xml_str = vmdevices.network.fixNetworks(xml_str)
-            if cpuarch.is_x86(self.arch):
-                osd = osinfo.version()
-                osVersion = osd.get('version', '') + '-' + \
-                    osd.get('release', '')
-                serialNumber = self.conf.get('serial', host.uuid())
-                xml_str = xml_str.replace('OS-NAME:',
-                                          constants.SMBIOS_OSNAME)
-                xml_str = xml_str.replace('OS-VERSION:',
-                                          osVersion)
-                xml_str = xml_str.replace('HOST-SERIAL:',
-                                          serialNumber)
+            xml_str = domxml_preprocess.replace_placeholders(
+                self.conf['xml'], self.cif, self.arch,
+                self.conf.get('serial'), self._devices)
 
             # Do DOM-dependent xml transformations
             dom = vmxml.parse_xml(xml_str)
