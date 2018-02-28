@@ -335,6 +335,8 @@ class GlusterFSConnection(MountConnection):
 class NFSConnection(object):
     DEFAULT_OPTIONS = ["soft", "nosharecache"]
 
+    log = logging.getLogger("storage.Server.NFS")
+
     @property
     def id(self):
         return self._mountCon._id
@@ -399,7 +401,29 @@ class NFSConnection(object):
             options.append("nfsvers=%d" % vers[0])
             if len(vers) > 1:
                 options.append("minorversion=%d" % vers[1])
-        optionsString = ",".join(filter(None, options + [extraOptions]))
+
+        extraOptions = [opt for opt in extraOptions.split(",") if opt]
+
+        if version in (None, "3"):
+            # This is NFSv3 mount, or auto-negotiate, which may become one.
+            # Disable NFSv3 remote locks since they break HA VMs failover, and
+            # may prevent starting a VM on another host after a host is lost.
+            # Locks on this mount will use local locks.
+            #
+            # If users need NFSv3 remote locks, and do not care about this
+            # issue, they can override this by specifying the 'lock' option in
+            # engine mount options.
+            #
+            # See https://bugzilla.redhat.com/1550127
+
+            if "lock" in extraOptions:
+                self.log.warning("Using remote locks for NFSv3 locks, HA VMs "
+                                 "should not be used with this mount")
+            elif "nolock" not in extraOptions:
+                self.log.debug("Using local locks for NFSv3 locks")
+                extraOptions.append("nolock")
+
+        optionsString = ",".join(options + extraOptions)
         self._mountCon = MountConnection(id, export, "nfs", optionsString)
 
     def connect(self):
