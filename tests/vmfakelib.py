@@ -60,6 +60,14 @@ class IRS(object):
     def getVolumeSize(self, domainID, poolID, imageID, volumeID):
         return response.success(apparentsize=1024, truesize=1024)
 
+    def lease_info(storage_id, lease_id):
+        return {
+            'result': {
+                'path': '/fake/path',
+                'offset': 0
+            }
+        }
+
 
 class _Server(object):
     def __init__(self, notifications):
