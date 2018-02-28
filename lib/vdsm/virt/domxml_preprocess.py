@@ -90,21 +90,26 @@ from vdsm import constants
 from vdsm import host
 from vdsm import osinfo
 
+from vdsm.virt import domain_descriptor
+from vdsm.virt import metadata
 from vdsm.virt import vmdevices
 
 
-def replace_placeholders(xml_str, cif, arch, serial, devices):
+def replace_placeholders(xml_str, cif, arch, serial, devices=None):
     """
     Replace the placeholders, if any, in the domain XML.
     This is the entry point orchestration function.
     See the documentation of the specific functions
     for the supported placeholders.
     """
+    if devices is None:
+        disk_devices = _make_disk_devices(xml_str, cif.log)
+    else:
+        disk_devices = devices.get(vmdevices.hwclass.DISK, [])
 
     xml_str = vmdevices.graphics.fixDisplayNetworks(xml_str)
 
-    xml_str = vmdevices.lease.fixLeases(
-        cif.irs, xml_str, devices.get(vmdevices.hwclass.DISK, []))
+    xml_str = vmdevices.lease.fixLeases(cif.irs, xml_str, disk_devices)
 
     xml_str = vmdevices.network.fixNetworks(xml_str)
 
@@ -117,3 +122,19 @@ def replace_placeholders(xml_str, cif, arch, serial, devices):
         xml_str = xml_str.replace('HOST-SERIAL:', serial_number)
 
     return xml_str
+
+
+def _make_disk_devices(engine_xml, log):
+    """
+    Build disk devices, the same way VM class does.
+    To process placeholders, we actually need the disk device parameters,
+    but we use device instances out of convenience.
+
+    Performance-wise the hardest part is the parsing of the XML, so
+    using device instances is almost free.
+    """
+    engine_domain = domain_descriptor.DomainDescriptor(engine_xml)
+    engine_md = metadata.Descriptor.from_xml(engine_xml)
+    params = vmdevices.common.storage_device_params_from_domain_xml(
+        engine_domain.id, engine_domain, engine_md, log)
+    return [vmdevices.storage.Drive(log, **p) for p in params]
