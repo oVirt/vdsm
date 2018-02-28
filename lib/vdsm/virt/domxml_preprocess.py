@@ -69,4 +69,51 @@ in the storage devices.
 This may happen if some snapshots of the VMs where previewed and now
 committed.
 Vdsm needs to amend the restored XML to use those new leaf nodes.
+
+= Placeholders
+
+Starting with version 4.2, Engine may send in the domain XML special values
+for VM-specific data it doesn't know, or that it know it is more updated
+on the host when the VM is started.
+A domain XML with placeholders must be syntactically valid, even though
+the values which are actually placeholders will make no sense (e.g.
+specifying one offset with the string OFFSET rather than with one unsigned
+integer).
+
+Vdsm will replace those special values with actual data.
+Please check the documentation of the functions in this module to learn
+about the supported placeholders and their meaning.
 """
+
+from vdsm.common import cpuarch
+from vdsm import constants
+from vdsm import host
+from vdsm import osinfo
+
+from vdsm.virt import vmdevices
+
+
+def replace_placeholders(xml_str, cif, arch, serial, devices):
+    """
+    Replace the placeholders, if any, in the domain XML.
+    This is the entry point orchestration function.
+    See the documentation of the specific functions
+    for the supported placeholders.
+    """
+
+    xml_str = vmdevices.graphics.fixDisplayNetworks(xml_str)
+
+    xml_str = vmdevices.lease.fixLeases(
+        cif.irs, xml_str, devices.get(vmdevices.hwclass.DISK, []))
+
+    xml_str = vmdevices.network.fixNetworks(xml_str)
+
+    if cpuarch.is_x86(arch):
+        osd = osinfo.version()
+        os_version = osd.get('version', '') + '-' + osd.get('release', '')
+        serial_number = host.uuid() if serial is None else serial
+        xml_str = xml_str.replace('OS-NAME:', constants.SMBIOS_OSNAME)
+        xml_str = xml_str.replace('OS-VERSION:', os_version)
+        xml_str = xml_str.replace('HOST-SERIAL:', serial_number)
+
+    return xml_str
