@@ -3,8 +3,13 @@
 from __future__ import print_function
 import sys
 
-from oslo_config import cfg
-from neutron.common import config as common_config
+try:
+    from oslo_config import cfg
+    from neutron.common import config as common_config
 
-common_config.init([])
-print(getattr(cfg.CONF, sys.argv[1]), end='')
+    common_config.init([])
+    print(getattr(cfg.CONF, sys.argv[1]), end='')
+    sys.exit(0)
+except ImportError as e:
+    print('cannot import openstack module: %s' % (e, ), file=sys.stderr)
+    sys.exit(1)
