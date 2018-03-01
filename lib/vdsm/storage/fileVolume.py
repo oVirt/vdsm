@@ -367,8 +367,7 @@ class FileVolumeManifest(volume.VolumeManifest):
             format is COW.
 
         Note:
-            the volume must be prepared must be prepared when calling this
-            helper.
+            the volume must be prepared when calling this helper.
         """
         if self.getFormat() == sc.RAW_FORMAT:
             return self.getSize() * sc.BLOCK_SIZE
