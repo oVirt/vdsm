@@ -39,13 +39,13 @@ class IPRule(IPRuleApi):
     def add(rule_data):
         r = rule_data
         with _translate_iproute2_exception(IPRuleAddError, rule_data):
-            ruleAdd(Rule(r.table, r.src, r.to, r.iif))
+            ruleAdd(Rule(r.table, r.src, r.to, r.iif, prio=r.prio))
 
     @staticmethod
     def delete(rule_data):
         r = rule_data
         with _translate_iproute2_exception(IPRuleDeleteError, rule_data):
-            ruleDel(Rule(r.table, r.src, r.to, r.iif))
+            ruleDel(Rule(r.table, r.src, r.to, r.iif, prio=r.prio))
 
     @staticmethod
     def rules():
@@ -53,7 +53,8 @@ class IPRule(IPRuleApi):
         for rule_data in rules_data:
             try:
                 r = Rule.fromText(rule_data)
-                yield IPRuleData(r.destination, r.source, r.srcDevice, r.table)
+                yield IPRuleData(
+                    r.destination, r.source, r.srcDevice, r.table, r.prio)
             except ValueError:
                 logging.warning('Could not parse rule %s', rule_data)
 

@@ -43,13 +43,14 @@ class IPRuleTest(VdsmTestCase):
     IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)
 
     def test_add_delete_and_read_rule(self):
-        rule = IPRuleData(to=IPV4_ADDRESS1, iif='lo', table='main')
+        rule = IPRuleData(to=IPV4_ADDRESS1, iif='lo', table='main', prio=999)
         with self.create_rule(rule):
             rules = [r for r in IPRuleTest.IPRule.rules()
                      if r.to == IPV4_ADDRESS1]
             self.assertEqual(1, len(rules))
             self.assertEqual(rules[0].iif, 'lo')
             self.assertEqual(rules[0].table, 'main')
+            self.assertEqual(rules[0].prio, 999)
 
     def test_delete_non_existing_rule(self):
         rule = IPRuleData(to=IPV4_ADDRESS1, iif='lo', table='main')
