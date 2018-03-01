@@ -76,18 +76,18 @@ class TestIpwrapper(TestCaseBase):
 
     def testRuleFromText(self):
         _getRuleAttrs = lambda x: (x.table, x.source, x.destination,
-                                   x.srcDevice, x.detached)
+                                   x.srcDevice, x.detached, x.prio)
         good_rules = {
             '1:    from all lookup main':
-            ('main', None, None, None, False),
+            ('main', None, None, None, False, 1),
             '2:    from 10.0.0.0/8 to 20.0.0.0/8 lookup table_100':
-            ('table_100', '10.0.0.0/8', '20.0.0.0/8', None, False),
+            ('table_100', '10.0.0.0/8', '20.0.0.0/8', None, False, 2),
             '3:    from all to 8.8.8.8 lookup table_200':
-            ('table_200', None, '8.8.8.8', None, False),
+            ('table_200', None, '8.8.8.8', None, False, 3),
             '4:    from all to 5.0.0.0/8 iif dummy0 [detached] lookup 500':
-            ('500', None, '5.0.0.0/8', 'dummy0', True),
+            ('500', None, '5.0.0.0/8', 'dummy0', True, 4),
             '5:    from all to 5.0.0.0/8 dev dummy0 lookup 500':
-            ('500', None, '5.0.0.0/8', 'dummy0', False)}
+            ('500', None, '5.0.0.0/8', 'dummy0', False, 5)}
         for text, attributes in six.viewitems(good_rules):
             rule = Rule.fromText(text)
             self.assertEqual(_getRuleAttrs(rule), attributes)

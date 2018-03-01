@@ -373,7 +373,7 @@ class Route(object):
 @equals
 class Rule(object):
     def __init__(self, table, source=None, destination=None, srcDevice=None,
-                 detached=False):
+                 detached=False, prio=None):
         if source:
             if not (_isValid(source, IPAddress) or
                     _isValid(source, IPNetwork)):
@@ -391,11 +391,13 @@ class Rule(object):
         self.destination = destination
         self.srcDevice = srcDevice
         self.detached = detached
+        self.prio = prio
 
     @classmethod
     def parse(cls, text):
         isDetached = '[detached]' in text
         rule = [entry for entry in text.split() if entry != '[detached]']
+        prio = int(rule[0][:-1])
         parameters = rule[1:]
 
         if len(rule) % 2 == 0:
@@ -405,6 +407,7 @@ class Rule(object):
         values = \
             dict(parameters[i:i + 2] for i in range(0, len(parameters), 2))
         values['detached'] = isDetached
+        values['prio'] = prio
         return values
 
     @classmethod
@@ -439,9 +442,10 @@ class Rule(object):
             destination = None
         srcDevice = data.get('dev') or data.get('iif')
         detached = data['detached']
+        prio = data['prio']
 
         return cls(table, source=source, destination=destination,
-                   srcDevice=srcDevice, detached=detached)
+                   srcDevice=srcDevice, detached=detached, prio=prio)
 
     def __str__(self):
         output = 'from '
@@ -453,6 +457,8 @@ class Rule(object):
             output += ' to %s' % self.destination
         if self.srcDevice:
             output += ' dev %s' % self.srcDevice
+        if self.prio:
+            output += ' prio %s' % self.prio
 
         output += ' table %s' % self.table
 

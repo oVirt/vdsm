@@ -46,11 +46,12 @@ class IPRuleApi(object):
 class IPRuleData(object):
     """ A data structure used to keep rule information """
 
-    def __init__(self, to=None, src=None, iif=None, table=None):
+    def __init__(self, to=None, src=None, iif=None, table=None, prio=None):
         self._to = to
         self._src = src
         self._iif = iif
         self._table = table
+        self._prio = prio
 
     @property
     def to(self):
@@ -68,9 +69,13 @@ class IPRuleData(object):
     def table(self):
         return self._table
 
+    @property
+    def prio(self):
+        return self._prio
+
     def __repr__(self):
-        return 'IPRuleData(to={!r} src={!r} iif={!r} table={!r})'.format(
-            self.to, self.src, self.iif, self.table)
+        return ('IPRuleData(to={!r} src={!r} iif={!r} table={!r} prio={!r})'
+                .format(self.to, self.src, self.iif, self.table, self.prio))
 
 
 class IPRuleError(Exception):
