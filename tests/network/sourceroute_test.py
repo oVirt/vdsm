@@ -87,8 +87,10 @@ class TestSourceRoute(TestCaseBase):
                 self.assertEqual(IPv4_NET, rules[0].to)
                 self.assertEqual(IPV4_TABLE, rules[0].table)
                 self.assertEqual(nic, rules[0].iif)
+                self.assertEqual(rules[0].prio, sourceroute.RULE_PRIORITY)
                 self.assertEqual(IPv4_NET, rules[1].src)
                 self.assertEqual(IPV4_TABLE, rules[1].table)
+                self.assertEqual(rules[1].prio, sourceroute.RULE_PRIORITY)
 
     @ValidateRunningAsRoot
     def test_sourceroute_add_over_existing_route(self):

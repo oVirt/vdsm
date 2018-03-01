@@ -41,6 +41,8 @@ IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)
 
 TRACKED_INTERFACES_FOLDER = P_VDSM_RUN + 'trackedInterfaces'
 
+RULE_PRIORITY = 32000
+
 
 class StaticSourceRoute(object):
     def __init__(self, device, ipaddr, mask, gateway):
@@ -68,9 +70,10 @@ class StaticSourceRoute(object):
                       device=self.device, table=self._table)]
 
     def _buildRules(self):
-        return [Rule(source=self._network, table=self._table),
+        return [Rule(source=self._network, table=self._table,
+                     prio=RULE_PRIORITY),
                 Rule(destination=self._network, table=self._table,
-                     srcDevice=self.device)]
+                     srcDevice=self.device, prio=RULE_PRIORITY)]
 
     def requested_config(self):
         return self._buildRoutes(), self._buildRules(), self.device
@@ -165,9 +168,10 @@ class DynamicSourceRoute(StaticSourceRoute):
                               device=self.device, table=self._table),
                   IPRouteData(to=self._network, via=self._ipaddr, family=4,
                               device=self.device, table=self._table)]
-        rules = [IPRuleData(src=self._network, table=self._table),
+        rules = [IPRuleData(src=self._network, table=self._table,
+                            prio=RULE_PRIORITY),
                  IPRuleData(to=self._network, table=self._table,
-                            iif=self.device)]
+                            iif=self.device, prio=RULE_PRIORITY)]
         return routes, rules
 
     def _sourceroute_rules(self):
