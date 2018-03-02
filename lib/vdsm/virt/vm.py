@@ -2477,7 +2477,14 @@ class Vm(object):
         self._logGuestCpuStatus('domain initialization')
         if self.lastStatus not in (vmstatus.MIGRATION_DESTINATION,
                                    vmstatus.RESTORING_STATE):
-            self._initTimePauseCode = self._readPauseCode()
+            try:
+                self._initTimePauseCode = self._readPauseCode()
+            except libvirt.libvirtError as e:
+                if self.recovering:
+                    self.log.warning("Couldn't retrieve initial pause code "
+                                     "from libvirt: %s", e)
+                else:
+                    raise
         if not self.recovering and self._initTimePauseCode:
             self._pause_code = self._initTimePauseCode
             if self._pause_code != 'NOERR' and self._pause_time is None:
