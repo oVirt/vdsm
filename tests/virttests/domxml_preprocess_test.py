@@ -50,6 +50,16 @@ class TestFixLease(VdsmTestCase):
             'leaseOffset': 'vm-lease-offset',
         }
 
+    def test_passthrough(self):
+        """
+        test that without placeholders, the output is the same as the input.
+        """
+        # any XML without placeholders (need to check manually) is fine
+        xml_str_in = read_data('vm_compat41.xml')
+        xml_str_out = domxml_preprocess.replace_placeholders(
+            xml_str_in, self.cif, cpuarch.X86_64, '0000')
+        self.assertEqual(xml_str_out, xml_str_in)
+
     def test_drive_lease(self):
         """
         test that we fill the drive lease. Happy path.
