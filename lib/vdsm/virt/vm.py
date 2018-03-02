@@ -2726,11 +2726,11 @@ class Vm(object):
             fromSnapshot = self._altered_state.from_snapshot
             srcDomXML = self._src_domain_xml
             if fromSnapshot:
-                # If XML was provided by Engine, disk path have already been
+                # If XML was provided by Engine, disk paths have already been
                 # corrected in __init__.  If legacy configuration
                 # (e.g. 'vmName') is present, we use the legacy path here.
                 # Otherwise we leave srcDomXML untouched, since we don't have
-                # anything from Engine (4.2.0) to updated it with.
+                # anything from Engine (4.2.0) to update it with.
                 if 'vmName' in self.conf:
                     srcDomXML = self._correct_disk_volumes_from_conf(srcDomXML)
                 srcDomXML = self._correctGraphicsConfiguration(srcDomXML)
