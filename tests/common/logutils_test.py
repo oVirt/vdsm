@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import print_function
+
 import logging
 import threading
 import time
@@ -113,13 +115,23 @@ class Handler(object):
         self.level = logging.DEBUG
         self.messages = []
         self.delay = delay
+        self.buffering = False
 
     def handle(self, record):
         with self.lock:
             msg = record.msg % record.args
             self.messages.append(msg)
-            if self.delay:
-                time.sleep(self.delay)
+            self.flush()
+
+    def flush(self):
+        """
+        This triggers the actual write() syscall, possibly blocking on
+        slow file system.
+        """
+        if self.buffering:
+            return
+        if self.delay:
+            time.sleep(self.delay)
 
 
 @expandPermutations
@@ -299,3 +311,37 @@ class TestThreadedHandler(TestCaseBase):
         # [0.100438, 0.199917, 0.299876, 0.399604, 0.499133, 0.59935, 0.699196,
         #  0.79886, 0.898592, 0.998453]
         self.assertGreater(max(workers_time), 0.9)
+
+    @permutations([
+        # adaptive, level
+        (False, logging.DEBUG),
+        (True, logging.CRITICAL),
+    ])
+    def test_deferred_flushing(self, adaptive, level):
+        # Time logging of 1000 messages with slow handler. This should take at
+        # least 10 seconds with standard logging handlers, but only fraction of
+        # the time with deferred flushing.
+        target = Handler(0.01)
+
+        with threaded_handler(
+                1000, target, adaptive=adaptive) as (handler, logger):
+            handler.start()
+
+            def worker(n):
+                for i in range(100):
+                    logger.log(level, "thread %02d:%03d", n, i)
+
+            start = time.time()
+            concurrent.tmap(worker, range(10))
+
+        elapsed = time.time() - start
+
+        # All messages should be logged.
+        self.assertEqual(len(target.messages), 1000)
+
+        # This takes 0.09 seconds on my laptop. Use more time to avoid random
+        # failures on overloaded slave.
+        self.assertLess(elapsed, 1.0)
+
+        print("Logged %d messages in %.2f seconds" % (
+              len(target.messages), elapsed))

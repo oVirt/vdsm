@@ -117,6 +117,9 @@ class UserGroupEnforcingHandler(logging.handlers.WatchedFileHandler):
         self._gid = grp.getgrnam(group).gr_gid
         logging.handlers.WatchedFileHandler.__init__(self, *args, **kwargs)
 
+        # Used to defer flushing when used by ThreadedHandler.
+        self.buffering = False
+
         # To trigger cred check:
         self._open()
 
@@ -125,6 +128,14 @@ class UserGroupEnforcingHandler(logging.handlers.WatchedFileHandler):
             raise RuntimeError(
                 "Attempt to open log with incorrect credentials")
         return logging.handlers.WatchedFileHandler._open(self)
+
+    def flush(self):
+        """
+        Extend super implementation to allow deferred flushing.
+        """
+        if self.buffering:
+            return
+        logging.handlers.WatchedFileHandler.flush(self)
 
 
 class TimezoneFormatter(logging.Formatter):
@@ -166,11 +177,14 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
 
     _CLOSED = object()
 
-    def __init__(self, capacity=10000, adaptive=True, start=True):
+    def __init__(self, capacity=2000, adaptive=True, start=True):
         """
         Arguments:
             capacity (int): number of records to queue before dropping records.
-                When the queue becomes full, new records are dropped.
+                When the queue becomes full, new records are dropped. Testing
+                shows that 2000 is large enough to avoid dropping messages when
+                using DEBUG log level, and extremely slow storage that takes
+                0.4 seconds for every write.
             adaptive (bool): adapt log level to number of queued messages,
                 dropping lower priority messages.
             start (bool): start the handler thread automatically. If False, the
@@ -297,12 +311,20 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
                 while len(self._queue) == 0:
                     self._cond.wait()
 
-            # Handle all pending messages before taking the lock again.
-            while len(self._queue):
-                record = self._queue.popleft()
-                if record is self._CLOSED:
-                    return
-                self._target.handle(record)
+            # Handle all pending messages before taking the lock again. Disable
+            # flushing while handling pending messages so we do one write()
+            # syscall per cycle instead of one write() syscall per record. This
+            # improves throuput significantly.
+            self._target.buffering = True
+            try:
+                while len(self._queue):
+                    record = self._queue.popleft()
+                    if record is self._CLOSED:
+                        return
+                    self._target.handle(record)
+            finally:
+                self._target.buffering = False
+                self._target.flush()
 
             # Avoid reference cycles, specially exc_info that may hold a
             # traceback objects.
