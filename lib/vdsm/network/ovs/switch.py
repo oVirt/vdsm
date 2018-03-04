@@ -52,14 +52,6 @@ def validate_network_setup(nets, bonds):
             bond, attrs, nets, ovs_networks, kernel_nics)
 
 
-def create_network_removal_setup(ovs_info):
-    return NetsRemovalSetup(ovs_info)
-
-
-def create_network_addition_setup(ovs_info):
-    return NetsAdditionSetup(ovs_info)
-
-
 def add_vhostuser_port(bridge, port, socket_path):
     with ovsdb.transaction() as t:
         t.add(ovsdb.add_port(bridge, port))
