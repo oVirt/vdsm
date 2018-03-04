@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 #
 from __future__ import absolute_import
 
-from vdsm.network.ovs import driver
 from vdsm.network.ovs import switch
 
 from testlib import VdsmTestCase, mock
@@ -48,14 +47,12 @@ class ListOVSAcquiredIfacesTests(VdsmTestCase):
     def _assert_acquired_ifaces_post_switch_setup(
             self, _ovs_info, nets2add, expected_ifaces):
 
-        ovsdb = driver.create(driver.Drivers.VSCTL)
-
         with mock.patch('vdsm.network.ovs.driver.vsctl.Transaction.commit',
                         return_value=None), \
             mock.patch('vdsm.network.ovs.switch.link.get_link',
                        return_value={'address': '01:23:45:67:89:ab'}):
 
-            setup = switch.NetsAdditionSetup(ovsdb, _ovs_info)
+            setup = switch.NetsAdditionSetup(_ovs_info)
             with setup.add(nets2add):
                 pass
 
