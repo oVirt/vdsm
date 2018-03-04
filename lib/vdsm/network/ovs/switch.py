@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,6 +37,9 @@ SWITCH_TYPE = 'ovs'
 BRIDGE_PREFIX = 'vdsmbr_'
 
 
+ovsdb = driver.create()
+
+
 def validate_network_setup(nets, bonds):
     ovs_networks = info.create_netinfo(info.OvsInfo())['networks']
     kernel_nics = nics()
@@ -50,31 +53,26 @@ def validate_network_setup(nets, bonds):
 
 
 def create_network_removal_setup(ovs_info):
-    ovsdb = driver.create()
-    return NetsRemovalSetup(ovsdb, ovs_info)
+    return NetsRemovalSetup(ovs_info)
 
 
 def create_network_addition_setup(ovs_info):
-    ovsdb = driver.create()
-    return NetsAdditionSetup(ovsdb, ovs_info)
+    return NetsAdditionSetup(ovs_info)
 
 
 def add_vhostuser_port(bridge, port, socket_path):
-    ovsdb = driver.create()
     with ovsdb.transaction() as t:
         t.add(ovsdb.add_port(bridge, port))
         t.add(ovsdb.set_vhostuser_iface(port, socket_path))
 
 
 def remove_port(bridge, port):
-    ovsdb = driver.create()
     with ovsdb.transaction() as t:
         t.add(ovsdb.del_port(port, bridge))
 
 
 class NetsRemovalSetup(object):
-    def __init__(self, ovsdb, ovs_info):
-        self._ovsdb = ovsdb
+    def __init__(self, ovs_info):
         self._ovs_info = ovs_info
         self._transaction = ovsdb.transaction()
 
@@ -91,7 +89,7 @@ class NetsRemovalSetup(object):
         bridge = self._ovs_info.bridges_by_sb[sb]
         self._ovs_info.bridges[bridge]['ports'].pop(net)
         self._ovs_info.northbounds_by_sb[sb].discard(net)
-        self._transaction.add(self._ovsdb.del_port(net))
+        self._transaction.add(ovsdb.del_port(net))
 
     def _detach_unused_southbound(self, sb):
         if sb and not self._ovs_info.northbounds_by_sb[sb]:
@@ -99,8 +97,8 @@ class NetsRemovalSetup(object):
             bridge_without_sb = self._ovs_info.bridges_by_sb.pop(sb)
             self._ovs_info.bridges.pop(bridge_without_sb)
 
-            self._transaction.add(self._ovsdb.del_port(sb))
-            self._transaction.add(self._ovsdb.del_br(bridge_without_sb))
+            self._transaction.add(ovsdb.del_port(sb))
+            self._transaction.add(ovsdb.del_br(bridge_without_sb))
 
     @staticmethod
     def _get_southbound(net, running_networks):
@@ -111,8 +109,7 @@ class NetsRemovalSetup(object):
 
 
 class NetsAdditionSetup(object):
-    def __init__(self, ovsdb, ovs_info):
-        self._ovsdb = ovsdb
+    def __init__(self, ovs_info):
         self._ovs_info = ovs_info
         self._transaction = ovsdb.transaction()
         self._acquired_ifaces = set()
@@ -162,26 +159,26 @@ class NetsAdditionSetup(object):
         return bridge
 
     def _create_nb(self, bridge, port):
-        self._transaction.add(self._ovsdb.add_port(bridge, port))
-        self._transaction.add(self._ovsdb.set_port_attr(
+        self._transaction.add(ovsdb.add_port(bridge, port))
+        self._transaction.add(ovsdb.set_port_attr(
             port, 'other_config:vdsm_level', info.NORTHBOUND))
-        self._transaction.add(self._ovsdb.set_interface_attr(
+        self._transaction.add(ovsdb.set_interface_attr(
             port, 'type', 'internal'))
 
     def _set_vlan(self, net, vlan):
-        self._transaction.add(self._ovsdb.set_port_attr(net, 'tag', vlan))
+        self._transaction.add(ovsdb.set_port_attr(net, 'tag', vlan))
 
     def _copy_nic_hwaddr_to_nb(self, net, nic):
         nic_mac = _get_mac(nic)
-        self._transaction.add(self._ovsdb.set_interface_attr(
+        self._transaction.add(ovsdb.set_interface_attr(
             net, 'mac', nic_mac))
 
     def _create_bridge(self, dpdk_enabled=False):
         bridge = self._create_br_name()
-        self._transaction.add(self._ovsdb.add_br(bridge))
+        self._transaction.add(ovsdb.add_br(bridge))
         if dpdk_enabled:
-            self._transaction.add(self._ovsdb.set_dpdk_bridge(bridge))
-        self._transaction.add(self._ovsdb.set_bridge_attr(
+            self._transaction.add(ovsdb.set_dpdk_bridge(bridge))
+        self._transaction.add(ovsdb.set_bridge_attr(
             bridge, 'other-config:hwaddr', _random_unicast_local_mac()))
         return bridge
 
@@ -190,11 +187,11 @@ class NetsAdditionSetup(object):
         return random_iface_name(prefix=BRIDGE_PREFIX)
 
     def _create_sb_nic(self, bridge, nic, dpdk_enabled=False):
-        self._transaction.add(self._ovsdb.add_port(bridge, nic))
+        self._transaction.add(ovsdb.add_port(bridge, nic))
         if dpdk_enabled:
             pci_addr = dpdk.pci_addr(nic)
-            self._transaction.add(self._ovsdb.set_dpdk_port(nic, pci_addr))
-        self._transaction.add(self._ovsdb.set_port_attr(
+            self._transaction.add(ovsdb.set_dpdk_port(nic, pci_addr))
+        self._transaction.add(ovsdb.set_port_attr(
             nic, 'other_config:vdsm_level', info.SOUTHBOUND))
 
 
@@ -204,7 +201,6 @@ def update_network_to_bridge_mappings(ovs_info):
         for network in networks:
             net2bridge_mappings_pairs.append('{}:{}'.format(network, bridge))
     net2bridge_mappings = ','.join(net2bridge_mappings_pairs) or '""'
-    ovsdb = driver.create()
     ovsdb.set_db_entry(
         'open', '.', 'external-ids:ovn-bridge-mappings', net2bridge_mappings
     ).execute()

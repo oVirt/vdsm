@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 from __future__ import absolute_import
 
 from vdsm.network import errors as ne
-from vdsm.network.ovs import driver as ovs_driver
 from vdsm.network.ovs import info as ovs_info
 from vdsm.network.ovs import switch as ovs_switch
 from vdsm.network.ovs import validator as ovs_validator
@@ -212,16 +211,16 @@ class SetupTransactionTests(TestCaseBase):
 
     @ValidateRunningAsRoot
     def setUp(self):
-        self.ovsdb = ovs_driver.create()
+        pass
 
     def tearDown(self):
         cleanup_bridges()
 
     def test_dry_run(self):
         ovs_info = MockedOvsInfo()
-        net_rem_setup = ovs_switch.NetsRemovalSetup(self.ovsdb, ovs_info)
+        net_rem_setup = ovs_switch.NetsRemovalSetup(ovs_info)
         net_rem_setup.remove({})
 
-        net_add_setup = ovs_switch.NetsAdditionSetup(self.ovsdb, ovs_info)
+        net_add_setup = ovs_switch.NetsAdditionSetup(ovs_info)
         with net_add_setup.add({}):
             pass
