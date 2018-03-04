@@ -219,8 +219,9 @@ class SetupTransactionTests(TestCaseBase):
     def test_dry_run(self):
         ovs_info = MockedOvsInfo()
         net_rem_setup = ovs_switch.NetsRemovalSetup(ovs_info)
-        net_rem_setup.remove({})
+        net_rem_setup.prepare_setup({})
+        net_rem_setup.commit_setup()
 
         net_add_setup = ovs_switch.NetsAdditionSetup(ovs_info)
-        with net_add_setup.add({}):
-            pass
+        net_add_setup.prepare_setup({})
+        net_add_setup.commit_setup()
