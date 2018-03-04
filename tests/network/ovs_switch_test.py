@@ -53,8 +53,8 @@ class ListOVSAcquiredIfacesTests(VdsmTestCase):
                        return_value={'address': '01:23:45:67:89:ab'}):
 
             setup = switch.NetsAdditionSetup(_ovs_info)
-            with setup.add(nets2add):
-                pass
+            setup.prepare_setup(nets2add)
+            setup.commit_setup()
 
             self.assertEqual(setup.acquired_ifaces, expected_ifaces)
 

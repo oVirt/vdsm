@@ -18,7 +18,6 @@
 #
 from __future__ import absolute_import
 
-from contextlib import contextmanager
 import random
 
 import six
@@ -68,14 +67,17 @@ class NetsRemovalSetup(object):
         self._ovs_info = ovs_info
         self._transaction = ovsdb.transaction()
 
-    def remove(self, nets):
+    def prepare_setup(self, nets):
+        """Prepare setup for networks removal"""
         ovs_netinfo = info.create_netinfo(self._ovs_info)
         running_networks = ovs_netinfo['networks']
-        with self._transaction:
-            for net in nets:
-                sb = self._get_southbound(net, running_networks)
-                self._remove_northbound(net, sb)
-                self._detach_unused_southbound(sb)
+        for net in nets:
+            sb = self._get_southbound(net, running_networks)
+            self._remove_northbound(net, sb)
+            self._detach_unused_southbound(sb)
+
+    def commit_setup(self):
+        self._transaction.commit()
 
     def _remove_northbound(self, net, sb):
         bridge = self._ovs_info.bridges_by_sb[sb]
@@ -106,30 +108,31 @@ class NetsAdditionSetup(object):
         self._transaction = ovsdb.transaction()
         self._acquired_ifaces = set()
 
-    @contextmanager
-    def add(self, nets):
-        with self._transaction:
-            for net, attrs in six.iteritems(nets):
-                nic = attrs.get('nic')
-                bond = attrs.get('bonding')
-                sb = nic or bond
-                if not dpdk.is_dpdk(sb):
-                    self._acquired_ifaces.add(sb)
+    def prepare_setup(self, nets):
+        """Prepare networks for creation"""
+        for net, attrs in six.iteritems(nets):
+            nic = attrs.get('nic')
+            bond = attrs.get('bonding')
+            sb = nic or bond
+            if not dpdk.is_dpdk(sb):
+                self._acquired_ifaces.add(sb)
 
-                bridge = self._get_ovs_bridge(sb)
-                self._create_nb(bridge, net)
+            bridge = self._get_ovs_bridge(sb)
+            self._create_nb(bridge, net)
 
-                vlan = attrs.get('vlan')
-                if vlan is not None:
-                    self._set_vlan(net, vlan)
+            vlan = attrs.get('vlan')
+            if vlan is not None:
+                self._set_vlan(net, vlan)
 
-                # FIXME: What about an existing bond?
-                if nic is not None and vlan is None:
-                    self._copy_nic_hwaddr_to_nb(net, nic)
+            # FIXME: What about an existing bond?
+            if nic is not None and vlan is None:
+                self._copy_nic_hwaddr_to_nb(net, nic)
 
-                self._ovs_info.northbounds_by_sb.setdefault(sb, set())
-                self._ovs_info.northbounds_by_sb[sb].add(net)
-            yield
+            self._ovs_info.northbounds_by_sb.setdefault(sb, set())
+            self._ovs_info.northbounds_by_sb[sb].add(net)
+
+    def commit_setup(self):
+        self._transaction.commit()
 
     @property
     def acquired_ifaces(self):

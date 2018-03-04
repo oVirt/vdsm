@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -220,15 +220,17 @@ def _get_kernel_bonds_slaves():
 
 def _remove_networks(nets2remove, ovs_info, config):
     net_rem_setup = ovs_switch.NetsRemovalSetup(ovs_info)
-    net_rem_setup.remove(nets2remove)
+    net_rem_setup.prepare_setup(nets2remove)
+    net_rem_setup.commit_setup()
     for net, attrs in six.iteritems(nets2remove):
         config.removeNetwork(net)
 
 
 def _add_networks(nets2add, ovs_info, config, acq):
     net_add_setup = ovs_switch.NetsAdditionSetup(ovs_info)
-    with net_add_setup.add(nets2add):
-        acq.acquire(net_add_setup.acquired_ifaces)
+    net_add_setup.prepare_setup(nets2add)
+    acq.acquire(net_add_setup.acquired_ifaces)
+    net_add_setup.commit_setup()
     for net, attrs in six.iteritems(nets2add):
         config.setNetwork(net, attrs)
 
