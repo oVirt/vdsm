@@ -116,6 +116,7 @@ def cpu(stats, first_sample, last_sample, interval):
     """
     stats['cpuUser'] = 0.0
     stats['cpuSys'] = 0.0
+    stats['cpuUsage'] = 0.0
 
     if first_sample is None or last_sample is None:
         return None
