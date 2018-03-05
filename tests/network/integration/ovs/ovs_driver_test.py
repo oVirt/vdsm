@@ -116,6 +116,39 @@ class TestOvsApiWithSingleRealBridge(unittest.TestCase):
                 self.assertEqual(1, len(bond_data))
                 self.assertEqual(2, len(bond_data[0]['interfaces']))
 
+    def test_create_remove_port_mirroring(self):
+        with dummy_device() as dev0:
+            with ovs_port(self.ovsdb, TEST_BRIDGE, dev0),\
+                    ovs_mirror(self.ovsdb, TEST_BRIDGE, 'm0', dev0):
+                mirror_data = self.ovsdb.list_mirror_info().execute()
+                port_data = self.ovsdb.list_port_info(dev0).execute()
+
+                self.assertEqual(1, len(mirror_data))
+                self.assertEqual(port_data[0]['_uuid'],
+                                 mirror_data[0]['output_port'])
+
+            bridge_data = self.ovsdb.list_bridge_info(TEST_BRIDGE).execute()
+            self.assertNotIn(mirror_data[0]['_uuid'],
+                             bridge_data[0]['mirrors'])
+
+    def test_set_mirrored_port(self):
+        with dummy_device() as dev0, dummy_device() as dev1:
+            with ovs_port(self.ovsdb, TEST_BRIDGE, dev0),\
+                    ovs_port(self.ovsdb, TEST_BRIDGE, dev1),\
+                    ovs_mirror(self.ovsdb, TEST_BRIDGE, 'm0', dev0):
+                mirror_data = self.ovsdb.list_mirror_info().execute()
+                port_data = self.ovsdb.list_port_info(dev1).execute()
+
+                mirror_id = mirror_data[0]['_uuid']
+                port_id = port_data[0]['_uuid']
+
+                self.ovsdb.set_mirror_attr(str(mirror_id),
+                                           'select-dst-port',
+                                           str(port_id)).execute()
+
+                mirror_data = self.ovsdb.list_mirror_info().execute()
+                self.assertEqual(port_id, mirror_data[0]['select_dst_port'])
+
 
 # TODO: We may want to move it to a more common location, per need.
 @contextmanager
@@ -123,3 +156,23 @@ def ovs_bond(ovsdb, bridge, bond, ports):
     ovsdb.add_bond(bridge, bond, ports).execute()
     yield bond
     ovsdb.del_port(bond, bridge=bridge).execute()
+
+
+@contextmanager
+def ovs_port(ovsdb, bridge, port):
+    ovsdb.add_port(bridge, port).execute()
+    try:
+        yield port
+    finally:
+        ovsdb.del_port(port, bridge).execute()
+
+
+@contextmanager
+def ovs_mirror(ovsdb, bridge, mirror, port):
+    with ovsdb.transaction() as t:
+        t.add(*ovsdb.add_mirror(bridge, mirror, port))
+    try:
+        yield mirror
+    finally:
+        with ovsdb.transaction() as t:
+            t.add(*ovsdb.del_mirror(bridge, mirror))

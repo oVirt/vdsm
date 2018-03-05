@@ -120,6 +120,14 @@ class OvsApi(object):
         pass
 
     @abc.abstractmethod
+    def add_mirror(self, bridge, mirror, output_port):
+        pass
+
+    @abc.abstractmethod
+    def del_mirror(self, bridge, mirror):
+        pass
+
+    @abc.abstractmethod
     def do_nothing(self):
         """None equivalent for Command."""
 
@@ -148,6 +156,12 @@ class OvsApi(object):
 
     def set_interface_attr(self, iface, key, value):
         return self.set_db_entry('Interface', iface, key, value)
+
+    def list_mirror_info(self, mirror=None):
+        return self.list_db_table('Mirror', mirror)
+
+    def set_mirror_attr(self, mirror, key, value):
+        return self.set_db_entry('Mirror', mirror, key, value)
 
 
 class Drivers(object):

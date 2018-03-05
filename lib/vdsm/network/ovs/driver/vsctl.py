@@ -224,6 +224,19 @@ class Ovs(OvsApi):
     def list_ports(self, bridge):
         return Command(['list-ports', bridge])
 
+    def add_mirror(self, bridge, mirror, output_port):
+        port_cmd = ['--id=@p_id', 'get', 'port', output_port]
+        mirror_cmd = ['--id=@m_id', 'create', 'mirror',
+                      'name=%s' % mirror, 'select-all=true',
+                      'output-port=@p_id']
+        set_mirror_cmd = ['set', 'bridge', bridge, 'mirrors=@m_id']
+        return Command(port_cmd), Command(mirror_cmd), Command(set_mirror_cmd)
+
+    def del_mirror(self, bridge, mirror):
+        mirror_cmd = ['--id=@m', 'get', 'mirror', mirror]
+        del_mirror_cmd = ['remove', 'bridge', bridge, 'mirror', '@m']
+        return Command(mirror_cmd), Command(del_mirror_cmd)
+
     def set_db_entry(self, table, row, key, value):
         if type(value) is str and ':' in value:
             value = _escape_value(value)
