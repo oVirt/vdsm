@@ -116,6 +116,10 @@ class IfaceAPI(object):
         pass
 
     @abc.abstractmethod
+    def set_mtu(self, mtu):
+        pass
+
+    @abc.abstractmethod
     def type(self):
         pass
 
@@ -208,6 +212,10 @@ class IfaceHybrid(IfaceAPI):
 
     def mtu(self):
         return self.properties()['mtu']
+
+    def set_mtu(self, mtu):
+        link_set_args = ['mtu', str(mtu)]
+        ipwrapper.linkSet(self._dev, link_set_args)
 
     def type(self):
         return self.properties().get('type', get_alternative_type(self._dev))
