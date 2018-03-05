@@ -326,6 +326,11 @@ def networks(vm, stats, first_sample, last_sample, interval):
         if nic.is_hostdevice:
             continue
 
+        # If Engine doesn't send `name' it's missing until we read the
+        # updated XML from libvirt.
+        if not hasattr(nic, 'name'):
+            continue
+
         # may happen if nic is a new hot-plugged one
         if nic.name not in first_indexes or nic.name not in last_indexes:
             continue
