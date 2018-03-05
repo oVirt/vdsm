@@ -527,8 +527,10 @@ class CpuStatsTests(VmStatsTestCase):
     def test_empty_samples(self, first, last):
         stats = {}
         res = vmstats.cpu(stats, {}, {}, self.INTERVAL)
-        self.assertEqual(stats,
-                         {'cpuUser': 0.0, 'cpuSys': 0.0})
+        self.assertEqual(
+            stats,
+            {'cpuUsage': 0.0, 'cpuUser': 0.0, 'cpuSys': 0.0}
+        )
         self.assertEqual(res, None)
 
     def test_only_cpu_user_system(self):
