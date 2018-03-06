@@ -347,7 +347,7 @@ def save_device_metadata(md_desc, dev_map, log):
 
 def replace_devices_xml(domxml, devices_xml):
     devices = vmxml.find_first(domxml, 'devices', None)
-    refreshable = (hwclass.DISK,)
+    refreshable = hwclass.TO_REFRESH
 
     old_devs = [
         dev for dev in vmxml.children(devices)
