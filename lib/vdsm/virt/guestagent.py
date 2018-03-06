@@ -81,7 +81,7 @@ _filter_chars_re = re.compile(u'[%s]' % _FILTERED_CHARS)
 
 
 def _filterXmlChars(u):
-    if not isinstance(u, unicode):
+    if not isinstance(u, six.text_type):
         raise TypeError
     return _filter_chars_re.sub(_REPLACEMENT_CHAR, u)
 
@@ -95,7 +95,7 @@ def _filterObject(obj):
             return {filt(k): filt(v) for k, v in six.iteritems(o)}
         elif isinstance(o, list):
             return [filt(i) for i in o]
-        elif isinstance(o, basestring):
+        elif isinstance(o, six.text_type):
             return _filterXmlChars(o)
         return o
     return filt(obj)
@@ -568,9 +568,9 @@ class GuestAgent(object):
             self.log.error("%s: %s" % (err, repr(line)))
 
     def _handleData(self, data):
-        while (not self._stopped) and '\n' in data:
-            line, data = data.split('\n', 1)
-            line = ''.join(self._buffer) + line
+        while (not self._stopped) and b'\n' in data:
+            line, data = data.split(b'\n', 1)
+            line = b''.join(self._buffer) + line
             self._clearReadBuffer()
             if self._messageState is MessageState.TOO_BIG:
                 self._messageState = MessageState.NORMAL

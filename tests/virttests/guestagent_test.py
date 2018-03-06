@@ -266,8 +266,8 @@ class TestGuestIFHandleData(TestCaseBase):
                     expected[k] = v
 
         # Performing the test
-        for chunk in self.messageChunks(input, (self.maxMessageSize / 2) + 1):
-            self.fakeGuestAgent._handleData(chunk)
+        for chunk in self.messageChunks(input, (self.maxMessageSize // 2) + 1):
+            self.fakeGuestAgent._handleData(chunk.encode('utf-8'))
 
         for (k, v) in six.iteritems(expected):
             self.assertEqual(self.fakeGuestAgent.guestInfo[k], expected[k])
@@ -280,7 +280,7 @@ class TestGuestIFHandleData(TestCaseBase):
             isOverLimit = len(msgStr) > self.maxMessageSize
 
             for chunk in self.messageChunks(msgStr, self.maxMessageSize):
-                self.fakeGuestAgent._handleData(chunk)
+                self.fakeGuestAgent._handleData(chunk.encode('utf-8'))
                 if chunk[-1] != '\n':
                     self.assertEqual(self.fakeGuestAgent._messageState,
                                      guestagent.MessageState.TOO_BIG)

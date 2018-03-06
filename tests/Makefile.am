@@ -74,7 +74,6 @@ test_modules = \
 	gluster_cli_test.py \
 	gluster_exception_test.py \
 	glusterTestData.py \
-	guestagent_test.py \
 	hooks_test.py \
 	hostdev_test.py \
 	hoststats_test.py \
@@ -126,7 +125,6 @@ test_modules = \
 
 blacklist_modules_python3 = \
 	bridge_test.py \
-	guestagent_test.py \
 	hooks_test.py \
 	mompolicy_test.py \
 	protocoldetector_test.py \
