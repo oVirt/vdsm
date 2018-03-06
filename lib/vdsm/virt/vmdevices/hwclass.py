@@ -44,5 +44,6 @@ WITHOUT_ALIAS = GRAPHICS
 
 # devices that needs updates per-host basis from Vdsm
 TO_REFRESH = (
-    DISK, NIC, GRAPHICS, LEASE
+    DISK,  # needed because of local preparation, localdisk hook
+    NIC,  # needed by many network-related hooks (vmfex, ovn)
 )
