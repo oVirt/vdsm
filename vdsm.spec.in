@@ -148,10 +148,12 @@ Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-lock-sanlock
 
 %if 0%{?rhel}
+# Required for preventing an HotPlug disk failure due to cgroups.
+# See https://bugzilla.redhat.com/1532183 for details.
+Requires: libvirt-daemon-kvm >= 3.2.0-14.el7_4.8
 Requires: libvirt-python >= 3.2.0-3.el7_4.1
-Requires: libvirt-daemon-kvm >= 3.2.0-14.el7_4.7
-# Require the latest version on Fedora 26 that contain the fixes as in RHEL
 %else # fedora
+# Require the latest version on Fedora 26 that contain the fixes as in RHEL
 Requires: libvirt-daemon-kvm >= 2.2.0-1
 Requires: libvirt-python >= 2.2.0-1
 %endif
