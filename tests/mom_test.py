@@ -108,7 +108,7 @@ class MomPolicyTests(TestCase):
         expected = "(set a 5)\n(set c 'test')\n(set b True)"
 
         self.assertEqual(api.last_policy_name, "01-parameters")
-        self.assertEqual(api.last_policy_content, expected)
+        self._check_policy_equal(api.last_policy_content, expected)
 
     def testSetPolicy(self):
         server, thread, api = self._getMomServer()
@@ -167,3 +167,8 @@ class MomPolicyTests(TestCase):
         }
 
         self.assertEqual(stats, expected)
+
+    def _check_policy_equal(self, policy_a, policy_b):
+        self.assertEqual(
+            sorted(set(policy_a.split('\n'))),
+            sorted(set(policy_b.split('\n'))))

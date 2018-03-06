@@ -129,7 +129,6 @@ blacklist_modules_python3 = \
 	guestagent_test.py \
 	hooks_test.py \
 	mompolicy_test.py \
-	mom_test.py \
 	protocoldetector_test.py \
 	stompasyncdispatcher_test.py \
 	stomp_test.py \

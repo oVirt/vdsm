@@ -24,6 +24,8 @@ import logging
 import os
 import socket
 
+import six
+
 from vdsm.common.define import Mbytes
 from vdsm.config import config
 from vdsm import throttledlog
@@ -99,7 +101,7 @@ class MomClient(object):
         # Python bool values are defined in 00-defines.policy so need no
         # conversion here
         policy_string = "\n".join(["(set %s %r)" % (k, v)
-                                   for k, v in self._policy.iteritems()])
+                                   for k, v in six.iteritems(self._policy)])
 
         try:
             self._mom.setNamedPolicy(config.get("mom", "tuning_policy"),
