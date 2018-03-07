@@ -90,9 +90,89 @@ from vdsm import constants
 from vdsm import host
 from vdsm import osinfo
 
+from vdsm.common import hooks
 from vdsm.virt import domain_descriptor
 from vdsm.virt import metadata
 from vdsm.virt import vmdevices
+from vdsm.virt import vmxml
+
+
+def replace_disks_xml(dom, disk_devices):
+    """
+    Replace the XML snippet of all disk devices with fresh
+    configuration obtained from Vdsm.
+    Vdsm initializes its disk device objects from the XML.
+    Vdsm also needs to do some per-host adjustments on
+    the disk devices (e.g. prepare the paths), so we can't
+    avoid this replacement.
+    """
+    # 'devices' MUST be present, so let's fail loudly if it isn't.
+    devs = vmxml.find_first(dom, 'devices')
+
+    to_remove = [
+        dev_elem
+        for dev_elem in vmxml.children(devs)
+        if dev_elem.tag == vmdevices.hwclass.DISK
+    ]
+    for dev_elem in to_remove:
+        vmxml.remove_child(devs, dev_elem)
+
+    for dev in disk_devices:
+        vmxml.append_child(devs, child=dev.getXML())
+
+    return dom
+
+
+def replace_device_xml_with_hooks_xml(dom, vm_id, vm_custom, md_desc=None):
+    """
+    Process the before_device_create hook point. This means that
+    some device XML snippet may be entirely replaced by the output
+    of one hook.
+    Hook are invoked only if a given device has custom properties.
+    Please note that this explicitely required by the contract of
+    the hook point, so we can't really do better than that.
+    """
+    if md_desc is None:
+        md_desc = metadata.Descriptor.from_tree(dom)
+    # 'devices' MUST be present, so let's fail loudly if it isn't.
+    devs = vmxml.find_first(dom, 'devices')
+
+    to_remove = []
+    to_append = []
+
+    for dev_elem in vmxml.children(devs):
+        if dev_elem.tag == vmdevices.hwclass.DISK:
+            # disk devices need special processing, to be done separately
+            continue
+
+        try:
+            dev_meta = vmdevices.common.dev_meta_from_elem(
+                dev_elem, vm_id, md_desc)
+        except vmdevices.core.SkipDevice:
+            # metadata is optional, so it is ok to just skip devices
+            # with no metadata attached.
+            continue
+
+        try:
+            dev_custom = dev_meta['custom']
+        except KeyError:
+            # custom properties are optional, and mostly used for
+            # network devices. It is OK to just go ahead.
+            continue
+
+        hook_xml = hooks.before_device_create(
+            vmxml.format_xml(dev_elem, pretty=True),
+            vm_custom,
+            dev_custom)
+
+        to_remove.append(dev_elem)
+        to_append.append(vmxml.parse_xml(hook_xml))
+
+    for dev_elem in to_remove:
+        vmxml.remove_child(devs, dev_elem)
+
+    for dev_elem in to_append:
+        vmxml.append_child(devs, etree_child=dev_elem)
 
 
 def replace_placeholders(xml_str, cif, arch, serial, devices=None):

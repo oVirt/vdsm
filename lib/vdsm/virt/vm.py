@@ -2240,10 +2240,10 @@ class Vm(object):
             if on_reboot is not None:
                 vmxml.remove_child(dom, on_reboot)
 
-            vmdevices.common.replace_devices_xml(
-                dom,
-                self._process_devices()
-            )
+            domxml_preprocess.replace_disks_xml(
+                dom, self._devices[hwclass.DISK])
+            domxml_preprocess.replace_device_xml_with_hooks_xml(
+                dom, self.id, self._custom['custom'])
 
             return vmxml.format_xml(dom, pretty=True)
 
