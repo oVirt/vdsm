@@ -25,23 +25,30 @@ from nose.plugins.attrib import attr
 
 
 @attr(type='unit')
+@mock.patch('vdsm.network.ovs.switch.link_iface')
+@mock.patch('vdsm.network.ovs.switch.ovsdb')
 @mock.patch('vdsm.network.ovs.info.OvsInfo')
 class ListOVSAcquiredIfacesTests(VdsmTestCase):
 
-    def test_add_network_with_nic(self, mock_ovs_info):
+    def test_add_network_with_nic(self, mock_ovs_info, mock_ovsdb, mock_iface):
         _init_ovs_info(mock_ovs_info)
+        _init_ovsdb_mock(mock_ovsdb)
+        _init_iface_mock(mock_iface)
 
         self._assert_acquired_ifaces_post_switch_setup(
             mock_ovs_info,
-            nets2add={'net': {'nic': 'eth0'}},
+            nets2add={'net': {'nic': 'eth0', 'mtu': 1500}},
             expected_ifaces={'eth0'})
 
-    def test_add_network_with_bond(self, mock_ovs_info):
+    def test_add_network_with_bond(
+            self, mock_ovs_info, mock_ovsdb, mock_iface):
         _init_ovs_info(mock_ovs_info)
+        _init_ovsdb_mock(mock_ovsdb)
+        _init_iface_mock(mock_iface)
 
         self._assert_acquired_ifaces_post_switch_setup(
             mock_ovs_info,
-            nets2add={'net': {'bonding': 'bond1'}},
+            nets2add={'net': {'bonding': 'bond1', 'mtu': 1500}},
             expected_ifaces={'bond1'})
 
     def _assert_acquired_ifaces_post_switch_setup(
@@ -63,3 +70,13 @@ def _init_ovs_info(mock_ovs_info):
     mock_ovs_info.bridges = {}
     mock_ovs_info.bridges_by_sb = {}
     mock_ovs_info.northbounds_by_sb = {}
+
+
+def _init_ovsdb_mock(mock_ovsdb):
+    mock_ovsdb.list_interface_info.return_value.execute.return_value = [
+        {'mtu': 1500}
+    ]
+
+
+def _init_iface_mock(mock_iface):
+    mock_iface.return_value.mtu.return_value = 1500
