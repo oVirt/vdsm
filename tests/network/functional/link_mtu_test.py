@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,8 +19,6 @@
 #
 from __future__ import absolute_import
 
-import pytest
-
 from network.nettestlib import dummy_devices
 
 from . import netfunctestlib as nftestlib
@@ -39,8 +37,6 @@ class TestNetworkMtu(nftestlib.NetFuncTestCase):
 
     @nftestlib.parametrize_bridged
     def test_add_net_with_mtu(self, switch, bridged):
-        if switch == 'ovs':
-            pytest.xfail('MTU editation is not supported on OVS switches.')
         with dummy_devices(1) as (nic,):
             NETCREATE = {NETWORK_NAME: {'nic': nic,
                                         'bridged': bridged,
@@ -53,8 +49,6 @@ class TestNetworkMtu(nftestlib.NetFuncTestCase):
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_removing_a_net_updates_the_mtu(self, switch, bridged, bonded):
-        if switch == 'ovs':
-            pytest.xfail('MTU editation is not supported on OVS switches.')
         with dummy_devices(1) as (nic,):
             NETWORK1_ATTRS = {'bridged': bridged,
                               'vlan': VLAN1,
@@ -90,8 +84,6 @@ class TestNetworkMtu(nftestlib.NetFuncTestCase):
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
     def test_adding_a_net_updates_the_mtu(self, switch, bridged, bonded):
-        if switch == 'ovs':
-            pytest.xfail('MTU editation is not supported on OVS switches.')
         with dummy_devices(1) as (nic,):
             NETWORK1_ATTRS = {'bridged': bridged,
                               'vlan': VLAN1,
@@ -124,8 +116,6 @@ class TestNetworkMtu(nftestlib.NetFuncTestCase):
                             self.assertLinkMtu(BOND_NAME, NETWORK2_ATTRS)
 
     def test_add_slave_to_a_bonded_network_with_non_default_mtu(self, switch):
-        if switch == 'ovs':
-            pytest.xfail('MTU editation is not supported on OVS switches.')
         with dummy_devices(2) as (nic1, nic2):
             NETBASE = {NETWORK_NAME: {'bonding': BOND_NAME,
                                       'bridged': False,

@@ -24,6 +24,7 @@ import six
 
 from vdsm.network.link import dpdk
 from vdsm.network.link.bond import Bond
+from vdsm.network.link.iface import iface as link_iface
 from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo.nics import nics
 from vdsm.network.netlink import link
@@ -76,6 +77,8 @@ class NetsRemovalSetup(object):
             self._remove_northbound(net, sb)
             self._detach_unused_southbound(sb)
 
+        self._set_network_mtu()
+
     def commit_setup(self):
         self._transaction.commit()
 
@@ -101,6 +104,19 @@ class NetsRemovalSetup(object):
         nic = running_attrs['nics'][0] if not bond else None
         return nic or bond
 
+    def _set_network_mtu(self):
+        for sb, nbs in six.viewitems(self._ovs_info.northbounds_by_sb):
+            if dpdk.is_dpdk(sb):
+                continue
+            max_nb_mtu = max(_get_mtu(nb) for nb in nbs)
+            sb_mtu = _get_mtu(sb)
+            if max_nb_mtu and sb_mtu != max_nb_mtu:
+                self._set_mtu(sb, max_nb_mtu)
+
+    def _set_mtu(self, port, mtu):
+        self._transaction.add(
+            ovsdb.set_interface_attr(port, 'mtu_request', mtu))
+
 
 class NetsAdditionSetup(object):
     def __init__(self, ovs_info):
@@ -110,6 +126,7 @@ class NetsAdditionSetup(object):
 
     def prepare_setup(self, nets):
         """Prepare networks for creation"""
+        sb_max_mtu_map = {}
         for net, attrs in six.iteritems(nets):
             nic = attrs.get('nic')
             bond = attrs.get('bonding')
@@ -117,12 +134,17 @@ class NetsAdditionSetup(object):
             if not dpdk.is_dpdk(sb):
                 self._acquired_ifaces.add(sb)
 
-            bridge = self._get_ovs_bridge(sb)
+            sb_exists = sb in self._ovs_info.bridges_by_sb
+
+            bridge = self._get_ovs_bridge(sb, sb_exists)
             self._create_nb(bridge, net)
 
             vlan = attrs.get('vlan')
             if vlan is not None:
                 self._set_vlan(net, vlan)
+
+            self._prepare_network_sb_mtu(
+                sb, sb_exists, attrs['mtu'], sb_max_mtu_map)
 
             # FIXME: What about an existing bond?
             if nic is not None and vlan is None:
@@ -130,6 +152,8 @@ class NetsAdditionSetup(object):
 
             self._ovs_info.northbounds_by_sb.setdefault(sb, set())
             self._ovs_info.northbounds_by_sb[sb].add(net)
+
+        self._set_networks_mtu(nets, sb_max_mtu_map)
 
     def commit_setup(self):
         self._transaction.commit()
@@ -143,8 +167,8 @@ class NetsAdditionSetup(object):
         """
         return self._acquired_ifaces
 
-    def _get_ovs_bridge(self, sb):
-        if sb in self._ovs_info.bridges_by_sb:
+    def _get_ovs_bridge(self, sb, sb_exists):
+        if sb_exists:
             bridge = self._ovs_info.bridges_by_sb[sb]
         else:
             dpdk_enabled = dpdk.is_dpdk(sb)
@@ -159,6 +183,27 @@ class NetsAdditionSetup(object):
             port, 'other_config:vdsm_level', info.NORTHBOUND))
         self._transaction.add(ovsdb.set_interface_attr(
             port, 'type', 'internal'))
+
+    @staticmethod
+    def _prepare_network_sb_mtu(sb, sb_exists, desired_mtu, sb_max_mtu_map):
+        if sb not in sb_max_mtu_map:
+            mtu = _get_mtu(sb) if sb_exists else link_iface(sb).mtu()
+            sb_max_mtu_map[sb] = mtu
+
+        if not sb_max_mtu_map[sb] or sb_max_mtu_map[sb] < desired_mtu:
+            sb_max_mtu_map[sb] = desired_mtu
+
+    def _set_networks_mtu(self, nets, sb_max_mtu_map):
+        for net, netattrs in six.viewitems(nets):
+            self._set_mtu(net, netattrs['mtu'])
+
+        for sb, mtu in six.viewitems(sb_max_mtu_map):
+            if mtu:
+                self._set_mtu(sb, mtu)
+
+    def _set_mtu(self, port, mtu):
+        self._transaction.add(
+            ovsdb.set_interface_attr(port, 'mtu_request', mtu))
 
     def _set_vlan(self, net, vlan):
         self._transaction.add(ovsdb.set_port_attr(net, 'tag', vlan))
@@ -214,3 +259,8 @@ def _get_mac(iface):
     if dpdk.is_dpdk(iface):
         return dpdk.link_info(iface)['address']
     return link.get_link(iface)['address']
+
+
+def _get_mtu(port):
+    interface_data = ovsdb.list_interface_info(port).execute()
+    return interface_data[0]['mtu']
