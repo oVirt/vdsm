@@ -284,6 +284,11 @@ def dev_elems_from_xml(vm, xml):
     return dev_class, dev_elem, dev_meta
 
 
+def dev_meta_from_elem(dev_elem, vmid, md_desc):
+    _dev_type, dev_class = identify_from_xml_elem(dev_elem)
+    return _get_metadata_from_elem_xml(vmid, md_desc, dev_class, dev_elem)
+
+
 def dev_from_xml(vm, xml):
     """
     Create and return device instance from provided XML.
@@ -343,24 +348,6 @@ def save_device_metadata(md_desc, dev_map, log):
                 count += 1
 
     log.debug('Saved %d device metadata', count)
-
-
-def replace_devices_xml(domxml, devices_xml):
-    devices = vmxml.find_first(domxml, 'devices', None)
-    refreshable = hwclass.TO_REFRESH
-
-    old_devs = [
-        dev for dev in vmxml.children(devices)
-        if dev.tag in refreshable
-    ]
-    for old_dev in old_devs:
-        vmxml.remove_child(devices, old_dev)
-
-    for dev_class in refreshable:
-        for dev in devices_xml[dev_class]:
-            vmxml.append_child(devices, etree_child=dev)
-
-    return domxml
 
 
 def _device_elements(dom_desc, log):

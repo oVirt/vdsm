@@ -1,0 +1,193 @@
+<domain xmlns:ns0="http://ovirt.org/vm/tune/1.0" xmlns:ovirt-vm="http://ovirt.org/vm/1.0" id='2' type='kvm'>
+  <name>a2</name>
+  <uuid>69b6b942-b5bf-4740-bb95-6752ffbd3bcf</uuid>
+  <metadata>
+    <ns0:qos/>
+    <ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-vm:clusterVersion>4.2</ovirt-vm:clusterVersion>
+    <ovirt-vm:destroy_on_reboot type="bool">False</ovirt-vm:destroy_on_reboot>
+    <ovirt-vm:launchPaused>false</ovirt-vm:launchPaused>
+    <ovirt-vm:memGuaranteedSize type="int">4096</ovirt-vm:memGuaranteedSize>
+    <ovirt-vm:minGuaranteedMemoryMb type="int">4096</ovirt-vm:minGuaranteedMemoryMb>
+    <ovirt-vm:resumeBehavior>auto_resume</ovirt-vm:resumeBehavior>
+    <ovirt-vm:startTime type="float">1521453447.17</ovirt-vm:startTime>
+    <ovirt-vm:device mac_address="00:1a:4a:16:01:00">
+        <ovirt-vm:network>ovirtmgmt</ovirt-vm:network>
+        <ovirt-vm:specParams/>
+        <ovirt-vm:vm_custom/>
+    </ovirt-vm:device>
+    <ovirt-vm:device devtype="disk" name="sda">
+        <ovirt-vm:domainID>a67a8671-05fc-4e42-b147-f7d3a0496cd6</ovirt-vm:domainID>
+        <ovirt-vm:imageID>b07a37de-95d6-4682-84cd-c8c9201327e3</ovirt-vm:imageID>
+        <ovirt-vm:poolID>59c4c3ee-0205-0227-0229-000000000155</ovirt-vm:poolID>
+        <ovirt-vm:volumeID>b3335e60-6d27-46e0-bed8-50e75cca6786</ovirt-vm:volumeID>
+        <ovirt-vm:specParams/>
+        <ovirt-vm:vm_custom/>
+        <ovirt-vm:volumeChain>
+            <ovirt-vm:volumeChainNode>
+                <ovirt-vm:domainID>a67a8671-05fc-4e42-b147-f7d3a0496cd6</ovirt-vm:domainID>
+                <ovirt-vm:imageID>b07a37de-95d6-4682-84cd-c8c9201327e3</ovirt-vm:imageID>
+                <ovirt-vm:leaseOffset type="int">115343360</ovirt-vm:leaseOffset>
+                <ovirt-vm:leasePath>/dev/a67a8671-05fc-4e42-b147-f7d3a0496cd6/leases</ovirt-vm:leasePath>
+                <ovirt-vm:path>/rhev/data-center/mnt/blockSD/a67a8671-05fc-4e42-b147-f7d3a0496cd6/images/b07a37de-95d6-4682-84cd-c8c9201327e3/b3335e60-6d27-46e0-bed8-50e75cca6786</ovirt-vm:path>
+                <ovirt-vm:volumeID>b3335e60-6d27-46e0-bed8-50e75cca6786</ovirt-vm:volumeID>
+            </ovirt-vm:volumeChainNode>
+        </ovirt-vm:volumeChain>
+    </ovirt-vm:device>
+</ovirt-vm:vm>
+  </metadata>
+  <maxMemory slots='16' unit='KiB'>16777216</maxMemory>
+  <memory unit='KiB'>4194304</memory>
+  <currentMemory unit='KiB'>4194304</currentMemory>
+  <vcpu placement='static' current='2'>16</vcpu>
+  <resource>
+    <partition>/machine</partition>
+  </resource>
+  <sysinfo type='smbios'>
+    <system>
+      <entry name='manufacturer'>oVirt</entry>
+      <entry name='product'>oVirt Node</entry>
+      <entry name='version'>7-4.1708.el7.centos</entry>
+      <entry name='serial'>ccd79775-c888-4789-975a-fde1143dffc9</entry>
+      <entry name='uuid'>69b6b942-b5bf-4740-bb95-6752ffbd3bcf</entry>
+    </system>
+  </sysinfo>
+  <os>
+    <type arch='x86_64' machine='pc-i440fx-rhel7.3.0'>hvm</type>
+    <smbios mode='sysinfo'/>
+  </os>
+  <features>
+    <acpi/>
+  </features>
+  <cpu mode='custom' match='exact' check='full'>
+    <model fallback='forbid'>Haswell-noTSX</model>
+    <topology sockets='16' cores='1' threads='1'/>
+    <feature policy='require' name='vme'/>
+    <feature policy='require' name='f16c'/>
+    <feature policy='require' name='rdrand'/>
+    <feature policy='require' name='hypervisor'/>
+    <feature policy='require' name='arat'/>
+    <feature policy='require' name='xsaveopt'/>
+    <feature policy='require' name='abm'/>
+    <numa>
+      <cell id='0' cpus='0-1' memory='4194304' unit='KiB'/>
+    </numa>
+  </cpu>
+  <clock offset='variable' adjustment='0' basis='utc'>
+    <timer name='rtc' tickpolicy='catchup'/>
+    <timer name='pit' tickpolicy='delay'/>
+    <timer name='hpet' present='no'/>
+  </clock>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>destroy</on_crash>
+  <pm>
+    <suspend-to-mem enabled='no'/>
+    <suspend-to-disk enabled='no'/>
+  </pm>
+  <devices>
+    <emulator>/usr/libexec/qemu-kvm</emulator>
+    <controller type='ide' index='0'>
+      <alias name='ide'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x1'/>
+    </controller>
+    <controller type='virtio-serial' index='0' ports='16'>
+      <alias name='virtio-serial0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x0'/>
+    </controller>
+    <controller type='scsi' index='0' model='virtio-scsi'>
+      <alias name='scsi0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
+    </controller>
+    <controller type='usb' index='0' model='piix3-uhci'>
+      <alias name='usb'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x2'/>
+    </controller>
+    <controller type='pci' index='0' model='pci-root'>
+      <alias name='pci.0'/>
+    </controller>
+    <interface type='bridge'>
+      <mac address='00:1a:4a:16:01:00'/>
+      <source bridge='ovirtmgmt'/>
+      <target dev='vnet0'/>
+      <model type='virtio'/>
+      <filterref filter='vdsm-no-mac-spoofing'/>
+      <link state='up'/>
+      <alias name='net0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
+    </interface>
+    <channel type='unix'>
+      <source mode='bind' path='/var/lib/libvirt/qemu/channels/69b6b942-b5bf-4740-bb95-6752ffbd3bcf.ovirt-guest-agent.0'/>
+      <target type='virtio' name='ovirt-guest-agent.0' state='disconnected'/>
+      <alias name='channel0'/>
+      <address type='virtio-serial' controller='0' bus='0' port='1'/>
+    </channel>
+    <channel type='unix'>
+      <source mode='bind' path='/var/lib/libvirt/qemu/channels/69b6b942-b5bf-4740-bb95-6752ffbd3bcf.org.qemu.guest_agent.0'/>
+      <target type='virtio' name='org.qemu.guest_agent.0' state='disconnected'/>
+      <alias name='channel1'/>
+      <address type='virtio-serial' controller='0' bus='0' port='2'/>
+    </channel>
+    <channel type='spicevmc'>
+      <target type='virtio' name='com.redhat.spice.0' state='disconnected'/>
+      <alias name='channel2'/>
+      <address type='virtio-serial' controller='0' bus='0' port='3'/>
+    </channel>
+    <input type='mouse' bus='ps2'>
+      <alias name='input0'/>
+    </input>
+    <input type='keyboard' bus='ps2'>
+      <alias name='input1'/>
+    </input>
+    <graphics type='spice' port='5900' tlsPort='5901' autoport='yes' listen='192.168.60.53' passwdValidTo='1970-01-01T00:00:01'>
+      <listen type='network' address='192.168.60.53' network='vdsm-ovirtmgmt'/>
+      <channel name='main' mode='secure'/>
+      <channel name='display' mode='secure'/>
+      <channel name='inputs' mode='secure'/>
+      <channel name='cursor' mode='secure'/>
+      <channel name='playback' mode='secure'/>
+      <channel name='record' mode='secure'/>
+      <channel name='smartcard' mode='secure'/>
+      <channel name='usbredir' mode='secure'/>
+    </graphics>
+    <video>
+      <model type='qxl' ram='65536' vram='8192' vgamem='16384' heads='1' primary='yes'/>
+      <alias name='video0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>
+    </video>
+    <memballoon model='none'>
+      <alias name='balloon0'/>
+    </memballoon>
+    <rng model='virtio'>
+      <backend model='random'>/dev/urandom</backend>
+      <alias name='rng0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x06' function='0x0'/>
+    </rng>
+    <disk device='cdrom' snapshot='no' type='file'>
+      <address type='drive' controller='0' bus='1' target='0' unit='0'/>
+      <source file="" startupPolicy='optional'/>
+      <target dev='hdc' bus='ide'/>
+      <readonly/>
+      <driver name='qemu' type='raw' error_policy='report'/>
+      <alias name='ide0-1-0'/>
+    </disk>
+    <disk device='disk' snapshot='no' type='file'>
+      <address type='drive' controller='0' bus='0' target='0' unit='0'/>
+      <source file='/rhev/data-center/mnt/blockSD/a67a8671-05fc-4e42-b147-f7d3a0496cd6/images/b07a37de-95d6-4682-84cd-c8c9201327e3/b3335e60-6d27-46e0-bed8-50e75cca6786'/>
+      <target dev='sda' bus='scsi'/>
+      <serial>b07a37de-95d6-4682-84cd-c8c9201327e3</serial>
+      <boot order='1'/>
+      <driver name='qemu' type='raw' cache='none' error_policy='stop' io='threads'/>
+      <alias name='scsi0-0-0-0'/>
+    </disk>
+  </devices>
+  <seclabel type='dynamic' model='selinux' relabel='yes'>
+    <label>system_u:system_r:svirt_t:s0:c195,c484</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c195,c484</imagelabel>
+  </seclabel>
+  <seclabel type='dynamic' model='dac' relabel='yes'>
+    <label>+107:+107</label>
+    <imagelabel>+107:+107</imagelabel>
+  </seclabel>
+</domain>
+
