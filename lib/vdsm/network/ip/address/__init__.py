@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -272,8 +272,8 @@ def add(iface, ipv4, ipv6):
     if ipv4:
         _add_ipv4_address(iface, ipv4)
     if ipv6:
-        sysctl.enable_ipv6(iface)
-        flush(iface, family=6)
+        if sysctl.is_disabled_ipv6(iface):
+            sysctl.enable_ipv6(iface)
         _add_ipv6_address(iface, ipv6)
     elif ipv6_supported():
         sysctl.disable_ipv6(iface)
@@ -289,7 +289,12 @@ def _add_ipv4_address(iface, ipv4):
 def _add_ipv6_address(iface, ipv6):
     if ipv6.address:
         ipv6addr, ipv6netmask = ipv6.address.split('/')
-        ipwrapper.addrAdd(iface, ipv6addr, ipv6netmask, family=6)
+        try:
+            ipwrapper.addrAdd(iface, ipv6addr, ipv6netmask, family=6)
+        except ipwrapper.IPRoute2AlreadyExistsError:
+            logging.warning(
+                'IP address already exists: %s/%s', iface, ipv6addr)
+
         if ipv6.gateway and ipv6.defaultRoute:
             set_default_route(ipv6.gateway, family=6, dev=iface)
     if ipv6.ipv6autoconf is not None:
