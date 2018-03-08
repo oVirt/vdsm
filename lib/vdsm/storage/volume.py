@@ -251,9 +251,16 @@ class VolumeManifest(object):
             # 'lease' is an optional property with null as the default value.
             # If volume doesn't have 'lease', we will not return it as part
             # of the volume info.
-            leasestatus = self.getLeaseStatus()
-            if leasestatus:
-                info['lease'] = leasestatus
+            sd_manifest = sdCache.produce_manifest(self.sdUUID)
+            _, path, offset = sd_manifest.getVolumeLease(self.imgUUID,
+                                                         self.volUUID)
+            if path is not None:
+                leaseinfo = {"path": path, "offset": offset}
+                leasestatus = self.getLeaseStatus()
+                # If the lease needs repair, its will not be available
+                if leasestatus:
+                    leaseinfo.update(leasestatus)
+                info['lease'] = leaseinfo
         except se.StorageException as e:
             self.log.debug("exception: %s:%s" % (str(e.message), str(e.value)))
             info['apparentsize'] = "0"

@@ -6506,23 +6506,39 @@ types:
             description: The offset of the lease in the lease file. Set when a
                          lease is created and valid until the lease is removed.
 
-    LeaseStatus: &LeaseStatus
+    VolumeLeaseStatus: &VolumeLeaseStatus
         added: '4.1'
         description: The status of a sanlock lease
-        name: LeaseStatus
+        name: VolumeLeaseStatus
         properties:
-        -   description: The host ids of the hosts owning this lease. If
+        -   description: The path to the lease file. Set when a lease is
+                         created and valid until the lease is removed.
+            name: path
+            type: string
+
+        -   description: The offset of the lease in the lease file. Set when a
+                         lease is created and valid until the lease is removed.
+            name: offset
+            type: ulong
+
+        -   defaultvalue: null
+            description: The host ids of the hosts owning this lease. If
                 empty, the lease is free; otherwise the lease is acquired.
                 If a lease is exclusive, contains the host id of the
                 single host owning this lease. If a lease is shared,
                 there may be multiple host ids.
+                If the lease needs repair, this key will not be available.
+                (optional)
             name: owners
             type:
             - uint
 
-        -   description: A monotonically increasing unsigned 64 bit
+        -   defaultvalue: null
+            description: A monotonically increasing unsigned 64 bit
                 integer, incremented each time a lease is acquired
                 successfully.
+                If the lease needs repair, this key will not be available.
+                (optional)
             name: version
             type: int
 
@@ -7634,7 +7650,7 @@ types:
             description: The status of the Volume lease, or null if this
                          storage domains does not support volume leases.
             name: lease
-            type: *LeaseStatus
+            type: *VolumeLeaseStatus
 
         -   description: A monotonically increasing number, incremented each
                          time a volume operation is completed successfully.
@@ -9076,7 +9092,7 @@ Lease.status:
 
     return:
         description: Information about the sanlock lease status
-        type: *LeaseStatus
+        type: *VolumeLeaseStatus
 
 LVMVolumeGroup.create:
     added: '3.1'
