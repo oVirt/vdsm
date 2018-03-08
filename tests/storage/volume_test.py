@@ -144,7 +144,7 @@ class TestVolumeManifest(VdsmTestCase):
     @permutations(((None, 0), (100, 100)))
     def test_get_info_generation_id(self, orig_gen, info_gen):
         with self.volume() as vol:
-            vol.getLeaseStatus = lambda: 'unused'
+            vol.getLeaseStatus = lambda: {}
             if orig_gen is not None:
                 vol.setMetaParam(sc.GENERATION, orig_gen)
             self.assertEqual(info_gen, vol.getInfo()['generation'])
