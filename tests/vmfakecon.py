@@ -117,7 +117,7 @@ class Connection(object):
         return self.secrets[uuid]
 
     def lookupByUUIDString(self, uuid):
-        return FakeRunningVm()
+        return FakeRunningVm(uuid)
 
     def listAllSecrets(self, flags=0):
         return list(self.secrets.values())
@@ -245,11 +245,17 @@ class VirNodeDeviceStub(object):
 
 class FakeRunningVm(object):
 
+    def __init__(self, uuid):
+        self.uuid = uuid
+
     def jobStats(self):
         return {}
 
     def state(self, flags):
         return libvirt.VIR_DOMAIN_RUNNING, ''
+
+    def XMLDesc(self, flags):
+        return "<domain type='kvm'><uuid>%s</uuid></domain>" % (self.uuid,)
 
 
 def parse_secret(xml):

@@ -18,20 +18,26 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import collections
 import json
+import libvirt
 import logging
 import os.path
 import threading
+import xml.etree.ElementTree as etree
 
 from vdsm import clientIF
-from vdsm.common import response
+from vdsm.common import libvirtconnection, response
+from vdsm.virt import recovery
 from vdsm.virt.vm import VolumeError
 
 from testlib import VdsmTestCase as TestCaseBase
+from testlib import mock
 from testlib import temporaryPath
-from monkeypatch import MonkeyPatch
+from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
 import vmfakelib as fake
+import vmfakecon
 
 
 INEXISTENT_PATH = '/no/such/path'
@@ -320,3 +326,113 @@ class TestPrepareNetworkDrive(TestCaseBase):
         self.assertEqual(drive['protocol'], 'gluster')
         self.assertEqual(drive['hosts'], ['host_one'])
         self.assertEqual(drive['volumeChain'], expected_chain)
+
+
+class FakeConnection(vmfakecon.Connection):
+
+    def __init__(self, known_uuids, error=libvirt.VIR_ERR_NO_DOMAIN):
+        self.known_uuids = known_uuids
+        self.error = error
+
+    def lookupByUUIDString(self, uuid):
+        if uuid in self.known_uuids:
+            return vmfakecon.FakeRunningVm(uuid)
+        else:
+            error = libvirt.libvirtError("error")
+            error.err = [self.error]
+            raise error
+
+
+class NotSoFakeClientIF(clientIF.clientIF):
+
+    def __init__(self):
+        irs = None
+        log = logging.getLogger('test.ClientIF')
+        scheduler = None
+        fake_start = mock.Mock()
+        with MonkeyPatchScope([
+                (clientIF, '_glusterEnabled', False),
+                (clientIF, 'secret', {}),
+                (clientIF, 'MomClient', lambda *args: mock.Mock()),
+                (clientIF, 'QemuGuestAgentPoller', lambda *args: fake_start),
+                (clientIF, 'Listener', lambda *args: mock.Mock()),
+                (clientIF.concurrent, 'thread',
+                 lambda *args, **kwargs: fake_start),
+        ]):
+            super(NotSoFakeClientIF, self).__init__(irs, log, scheduler)
+
+    def _createAcceptor(self, host, port):
+        pass
+
+    def _prepareHttpServer(self):
+        pass
+
+    def _prepareJSONRPCServer(self):
+        pass
+
+    def _connectToBroker(self):
+        pass
+
+
+class FakeVm(object):
+
+    def __init__(self, cif, vmParams, vmRecover=False):
+        dom = etree.fromstring(vmParams['xml'])
+        self.id = dom.find('.//uuid').text
+
+    def run(self):
+        return response.success()
+
+
+class TestExternalVMTracking(TestCaseBase):
+
+    def setUp(self):
+        self.cif = NotSoFakeClientIF()
+        self.dom_class = collections.namedtuple('Dom', 'UUIDString')
+        self._dispatch_events([
+            ('1', libvirt.VIR_DOMAIN_EVENT_DEFINED),
+            ('2', libvirt.VIR_DOMAIN_EVENT_DEFINED),
+            ('2', libvirt.VIR_DOMAIN_EVENT_DEFINED),
+            ('3', libvirt.VIR_DOMAIN_EVENT_UNDEFINED),
+            ('1', libvirt.VIR_DOMAIN_EVENT_STARTED),
+        ])
+
+    def _dispatch_events(self, vm_events):
+        for vm_id, event in vm_events:
+            dom = self.dom_class(UUIDString=lambda: vm_id)
+            self.cif.dispatchLibvirtEvents(None, dom, event, 0, 0)
+
+    def test_external_vms_lookup(self):
+        self.assertEqual(sorted(self.cif.pop_unknown_vm_ids()),
+                         ['1', '2', '3'])
+        self.assertEqual(self.cif.pop_unknown_vm_ids(), [])
+
+    @MonkeyPatch(libvirtconnection, 'get', lambda: FakeConnection(['2', '3']))
+    def test_external_vm_ids_removal(self):
+        with MonkeyPatchScope([
+                (clientIF, 'Vm', FakeVm)
+        ]):
+            recovery.lookup_external_vms(self.cif)
+        self.assertEqual(sorted(self.cif.pop_unknown_vm_ids()), [])
+        self.assertEqual(sorted(self.cif.vmContainer.keys()), ['2', '3'])
+
+    @MonkeyPatch(
+        libvirtconnection, 'get',
+        lambda: FakeConnection(['2', '3'], error=libvirt.VIR_ERR_ERROR)
+    )
+    def test_external_vm_ids_errors(self):
+        with MonkeyPatchScope([
+                (clientIF, 'Vm', None)
+        ]):
+            recovery.lookup_external_vms(self.cif)
+        self.assertEqual(sorted(self.cif.pop_unknown_vm_ids()), ['1'])
+        self.assertEqual(sorted(self.cif.vmContainer.keys()), [])
+
+    @MonkeyPatch(libvirtconnection, 'get', lambda: FakeConnection(['2', '3']))
+    def test_external_vm_recovery_errors(self):
+        with MonkeyPatchScope([
+                (clientIF, 'Vm', FakeVm)
+        ]):
+            recovery.lookup_external_vms(self.cif)
+        self.assertEqual(sorted(self.cif.pop_unknown_vm_ids()), [])
+        self.assertEqual(sorted(self.cif.vmContainer.keys()), ['2', '3'])

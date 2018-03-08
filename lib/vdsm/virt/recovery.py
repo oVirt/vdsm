@@ -246,7 +246,7 @@ def all_domains(cif):
 
 def lookup_external_vms(cif):
     conn = libvirtconnection.get()
-    for vm_id in cif.get_unknown_vm_ids():
+    for vm_id in cif.pop_unknown_vm_ids():
         try:
             dom_obj = conn.lookupByUUIDString(vm_id)
             dom_xml = dom_obj.XMLDesc(0)
@@ -255,7 +255,9 @@ def lookup_external_vms(cif):
                 logging.debug("External domain %s not found", vm_id)
                 continue
             else:
-                raise
+                logging.exception("Failed to retrieve external VM: %s", vm_id)
+                cif.add_unknown_vm_id(vm_id)
+                continue
         if _is_ignored_vm(vm_id, dom_obj, dom_xml):
             continue
         logging.debug("Recovering external domain: %s", vm_id)
