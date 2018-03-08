@@ -214,7 +214,7 @@ Requires: policycoreutils >= 2.1.13-55
 %endif
 
 %if 0%{?rhel}
-Requires: qemu-kvm-rhev >= 10:2.9.0-16.el7_4.13
+Requires: qemu-kvm-rhev >= 10:2.9.0-16.el7_4.14
 %else # fedora
 # qemu-kvm 2.10 comes with support for unsafe operations that we want to use
 # when creating volumes.
