@@ -404,7 +404,7 @@ class TestExternalVMTracking(TestCaseBase):
 
     def test_external_vms_lookup(self):
         self.assertEqual(sorted(self.cif.pop_unknown_vm_ids()),
-                         ['1', '2', '3'])
+                         ['1', '2'])
         self.assertEqual(self.cif.pop_unknown_vm_ids(), [])
 
     @MonkeyPatch(libvirtconnection, 'get', lambda: FakeConnection(['2', '3']))
@@ -414,7 +414,7 @@ class TestExternalVMTracking(TestCaseBase):
         ]):
             recovery.lookup_external_vms(self.cif)
         self.assertEqual(sorted(self.cif.pop_unknown_vm_ids()), [])
-        self.assertEqual(sorted(self.cif.vmContainer.keys()), ['2', '3'])
+        self.assertEqual(sorted(self.cif.vmContainer.keys()), ['2'])
 
     @MonkeyPatch(
         libvirtconnection, 'get',
@@ -435,4 +435,4 @@ class TestExternalVMTracking(TestCaseBase):
         ]):
             recovery.lookup_external_vms(self.cif)
         self.assertEqual(sorted(self.cif.pop_unknown_vm_ids()), [])
-        self.assertEqual(sorted(self.cif.vmContainer.keys()), ['2', '3'])
+        self.assertEqual(sorted(self.cif.vmContainer.keys()), ['2'])
