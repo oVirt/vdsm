@@ -160,20 +160,30 @@ class clientIF(object):
         with self.vmContainerLock:
             return self.vmContainer.copy()
 
-    def get_unknown_vm_ids(self):
+    def pop_unknown_vm_ids(self):
         """
         Return iterable of unknown VM ids that were spotted.
+        Only VM ids spotted since the last call of this method or since
+        creation of this instance (in case this method hasn't been called yet)
+        are returned.
 
         This is intended to serve for detection of external VMs.
         """
-        unknown_vm_ids = []
         with self.vmContainerLock:
-            for vm_id in self._unknown_vm_ids.copy():
-                if vm_id in self.vmContainer:
-                    self._unknown_vm_ids.remove(vm_id)
-                else:
-                    unknown_vm_ids.append(vm_id)
+            unknown_vm_ids = [vm_id for vm_id in self._unknown_vm_ids
+                              if vm_id not in self.vmContainer]
+            self._unknown_vm_ids = set()
         return unknown_vm_ids
+
+    def add_unknown_vm_id(self, vm_id):
+        """
+        Add `vm_id` to the set of unknown VM ids.
+
+        :param vm_id: VM id to add
+        :type vm_id: basestring
+        """
+        with self.vmContainerLock:
+            self._unknown_vm_ids.add(vm_id)
 
     @property
     def ready(self):
