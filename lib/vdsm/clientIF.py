@@ -609,7 +609,9 @@ class clientIF(object):
             vmid = dom.UUIDString()
             v = self.vmContainer.get(vmid)
 
-            if not v:
+            if (not v and
+                (eventid != libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE or
+                 args[0] != libvirt.VIR_DOMAIN_EVENT_UNDEFINED)):
                 self.log.debug('unknown vm %s event %s args %s',
                                vmid, events.event_name(eventid), args)
                 self._unknown_vm_ids.add(vmid)
