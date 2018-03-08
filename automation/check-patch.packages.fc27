@@ -47,4 +47,4 @@ rpmlint
 sanlock-python
 sudo
 yum
-yum-utils
+dnf-utils

@@ -32,4 +32,4 @@ rpm-build
 sanlock-python
 sudo
 yum
-yum-utils
+dnf-utils
