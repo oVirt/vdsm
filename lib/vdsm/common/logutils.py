@@ -28,6 +28,7 @@ import logging.handlers
 import os
 import pwd
 import threading
+import time
 
 from dateutil import tz
 from inspect import ismethod
@@ -172,8 +173,8 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
     set later using setTarget, after all handlers are loaded.
     """
 
-    # Interval for warning about dropped messages in seconds.
-    WARN_INTERVAL = 60
+    # Interval for reporting handler stats.
+    STATS_INTERVAL = 60
 
     _CLOSED = object()
 
@@ -206,10 +207,12 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
         self._target = _DROPPER
         self._queue = collections.deque()
         self._cond = threading.Condition(threading.Lock())
-        # The time of the last warning.
-        self._last_warning = 0
-        # Number of dropped records since last warning.
+        # The time of the last report.
+        self._last_report = time.time()
+        # Number of dropped records for last interval.
         self._dropped_records = 0
+        # The maximum number of pending records for the last interval.
+        self._max_pending = 0
         self._thread = concurrent.thread(self._run, name="logfile")
         if start:
             self.start()
@@ -238,26 +241,20 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
             else:
                 self._dropped_records += 1
 
-            # Anything to report?
-            if not self._dropped_records:
+            # Is time to report stats?
+            interval = record.created - self._last_report
+            if interval < self.STATS_INTERVAL:
                 return
 
-            # Is time to warn?
-            if record.created < self._last_warning + self.WARN_INTERVAL:
-                return
-
-            # Warn and recent counts.
-            dropped = self._dropped_records
+            # Prepare stats and reset counters.
+            dropped_records = self._dropped_records
+            max_pending = self._max_pending
+            self._last_report = record.created
             self._dropped_records = 0
-            self._last_warning = record.created
+            self._max_pending = 0
 
-        # Notes:
-        # - Log outside of the locked region to avoid deadlock.
-        # - Use critical level for better visibility and to prevent filtering
-        #   out of this warning.
-        logging.critical("Handler is overloaded, dropping messages "
-                         "(dropped %d messages in the last %d seconds)",
-                         dropped, self.WARN_INTERVAL)
+        # Report outside of the locked region to avoid deadlock.
+        self._report_stats(interval, dropped_records, max_pending)
 
     def close(self):
         """
@@ -299,10 +296,25 @@ class ThreadedHandler(logging.handlers.MemoryHandler):
 
     def _can_handle(self, record):
         size = len(self._queue)
+        self._max_pending = max(size, self._max_pending)
         for level, limit in self._limits:
             if record.levelno <= level:
                 return size < limit
         return True
+
+    def _report_stats(self, interval, dropped_records, max_pending):
+        if dropped_records:
+            # Note: use critical level for better visibility and to prevent
+            # filtering out of the message.
+            logging.critical(
+                "ThreadedHandler is overloaded, dropped %d log messages in "
+                "the last %d seconds (max pending: %d)",
+                dropped_records, interval, max_pending)
+        else:
+            logging.debug(
+                "ThreadedHandler is ok in the last %d seconds "
+                "(max pending: %d)",
+                interval, max_pending)
 
     def _run(self):
         while True:
