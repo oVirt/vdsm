@@ -10,3 +10,4 @@ lago,http://resources.ovirt.org/repos/lago/stable/0.0/rpm/$distro
 epel,http://download.fedoraproject.org/pub/epel/7/$basearch/
 centos-debuginfo,http://debuginfo.centos.org/7/x86_64/
 centos-ovirt-common-candidate,http://cbs.centos.org/repos/virt7-ovirt-common-candidate/$basearch/os/
+kvm-common,http://mirror.centos.org/centos/7/virt/x86_64/kvm-common/
