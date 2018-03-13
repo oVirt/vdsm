@@ -48,5 +48,5 @@ if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.i
 
     vr=$(build-aux/pkg-version --version)-$(build-aux/pkg-version --release)
 
-    yum -y install vdsm-$vr\* vdsm-client-$vr\* vdsm-hook-\*-$vr\* vdsm-tests-$vr\*
+    yum -y install vdsm-$vr\* vdsm-client-$vr\* vdsm-hook-\*-$vr\* vdsm-tests-$vr\* vdsm-gluster-$vr\*
 fi
