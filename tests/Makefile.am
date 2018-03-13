@@ -24,7 +24,6 @@ SUBDIRS = \
 	  common \
 	  cpuinfo \
 	  functional \
-	  data \
 	  devices \
 	  integration \
 	  network \
@@ -60,7 +59,6 @@ test_modules = \
 	config_test.py \
 	cpu_profile_test.py \
 	cpuinfo_test.py \
-	device_test.py \
 	domcaps_test.py \
 	encoding_test.py \
 	exception_test.py \
@@ -120,7 +118,6 @@ test_modules = \
 	vmapi_test.py \
 	vmfakelib_test.py \
 	vmTestsData.py \
-	vmxml_test.py \
 	zombiereaper_test.py \
 	$(NULL)
 
