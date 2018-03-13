@@ -725,8 +725,11 @@ Requires: python-blivet
 %endif
 Requires: xfsprogs
 %ifarch x86_64
+%if 0%{?centos}
+%else
 Requires: vdo
 Requires: kmod-kvdo
+%endif
 %endif
 
 
