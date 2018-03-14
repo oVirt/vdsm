@@ -2583,7 +2583,9 @@ class Vm(object):
     def _make_devices(self):
         if 'xml' not in self.conf:
             return self._make_devices_from_dict()
-        return self._make_devices_from_xml()
+
+        disk_objs = self._perform_host_local_adjustment()
+        return self._make_devices_from_xml(disk_objs)
 
     def _make_devices_from_dict(self):
         dev_spec_map = self._devSpecMapFromConf()
@@ -2612,7 +2614,60 @@ class Vm(object):
         return vmdevices.common.dev_map_from_dev_spec_map(
             dev_spec_map, self.log)
 
-    def _make_devices_from_xml(self):
+    def _perform_host_local_adjustment(self):
+        """
+        Perform the per-host adjustments we need to make to the XML
+        configuration received by Engine. Needed in the transitional phase
+        on which the VM run flow is adjusting from vm.conf to xml.
+
+        Starting a VM using XML is not just about sending the configuration
+        in a different format. We need to address all the steps we need
+        to set up the host and secure the resources needed by VM.
+
+        This method collects those steps. It is expected to be dissolved
+        once the flow is fully migrated to the XML.
+        """
+        # First, we need to set up storage. Storage still needs per-host
+        # customizations/preparation. We will need new verbs and to integrate
+        # into the Engine flow to get rid of this code.
+        disk_objs = []
+        disk_params = vmdevices.common.storage_device_params_from_domain_xml(
+            self.id, self._domain, self._md_desc, self.log)
+
+        if not disk_params:
+            # unlikely but possible. Nothing else to do.
+            return disk_objs
+
+        self._normalize_storage_params(disk_params)
+
+        # We need to prepare the images we are given. This includes
+        # learning about the paths, getting drive leases and run the
+        # drive-specific device hooks. In the future all of this should
+        # be done explicitely by Engine before to invoke VM.create, so
+        # before this flow.
+        #
+        # When recovering, we trust the path were already prepared in the
+        # other flows.
+        if not self.recovering:
+            self._preparePathsForDrives(disk_params)
+            self._prepareTransientDisks(disk_params)
+
+        # we need Drive objects to correctly handle the lease placeholders.
+        # so we make them in advance.
+        disk_objs = [
+            vmdevices.storage.Drive(self.log, **params)
+            for params in disk_params
+        ]
+
+        # To properly support live merge, we still need to have meaningful
+        # data in vm.conf['devices'] about the drives. We will need to fix
+        # live merge (and possibly other storage flows, like snapshot) to
+        # NOT use it and use only Drive objects instead. Once that is done,
+        # we can get rid of this code.
+        self._override_disk_device_config(disk_params)
+        return disk_objs
+
+    def _make_devices_from_xml(self, disk_objs=None):
         # Engine XML flow note:
         # we expect only storage devices to be sent in vm.conf format,
         # everything else should be taken from the XML.
@@ -2621,23 +2676,9 @@ class Vm(object):
             self.id, self.domain, self._md_desc, self.log
         )
 
-        disk_params = vmdevices.common.storage_device_params_from_domain_xml(
-            self.id, self.domain, self._md_desc, self.log)
-
-        if disk_params:
-            self._normalize_storage_params(disk_params)
-
-            if not self.recovering:
-                self._preparePathsForDrives(disk_params)
-                self._prepareTransientDisks(disk_params)
-                # TODO: save the conf here?
-
-            dev_objs_from_xml[hwclass.DISK] = [
-                vmdevices.storage.Drive(self.log, **params)
-                for params in disk_params
-            ]
-
-        self._override_disk_device_config(disk_params)
+        if disk_objs:
+            # overridden because of per-host adjustement
+            dev_objs_from_xml[hwclass.DISK] = disk_objs
 
         self.log.debug('Built %d devices', len(dev_objs_from_xml))
         return dev_objs_from_xml
