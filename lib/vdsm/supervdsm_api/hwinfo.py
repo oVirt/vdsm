@@ -53,8 +53,8 @@ def get_pti(*args, **kwargs):
 
 
 @expose
-def get_ibpb(*args, **kwargs):
-    return read_debugfs_property('/sys/kernel/debug/x86/ibpb_enabled')
+def get_retp(*args, **kwargs):
+    return read_debugfs_property('/sys/kernel/debug/x86/retp_enabled')
 
 
 @expose

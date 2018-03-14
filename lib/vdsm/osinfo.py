@@ -359,6 +359,6 @@ def nested_virtualization():
 def kernel_features():
     return {
         'PTI': supervdsm.getProxy().get_pti(),
-        'IBPB': supervdsm.getProxy().get_ibpb(),
+        'RETP': supervdsm.getProxy().get_retp(),
         'IBRS': supervdsm.getProxy().get_ibrs(),
     }
