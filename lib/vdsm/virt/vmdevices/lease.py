@@ -301,7 +301,7 @@ def fixLeases(storage, xml_str, drive_objs):
     for lease in leases:
         lease_id, lease_sd_id = lease.split(':')
 
-        lease_info = _find_drive_lease_info(lease_sd_id, lease_id, drive_objs)
+        lease_info = find_drive_lease_info(lease_sd_id, lease_id, drive_objs)
         if lease_info is None:
             # not a drive lease, must be a vm lease
             res = storage.lease_info(
@@ -315,7 +315,7 @@ def fixLeases(storage, xml_str, drive_objs):
     return xml_str
 
 
-def _find_drive_lease_info(sd_id, lease_id, drive_objs):
+def find_drive_lease_info(sd_id, lease_id, drive_objs):
     for drive_obj in drive_objs:
         volume_chain = getattr(drive_obj, "volumeChain", [])
         for vol_info in volume_chain[-1:]:
