@@ -22,6 +22,7 @@ from __future__ import absolute_import
 import libvirt
 
 from vdsm.config import config
+from vdsm.virt.vmdevices import lookup
 from vdsm.virt.vmdevices import storage
 
 
@@ -161,7 +162,7 @@ class DriveMonitor(object):
         self._log.info('block threshold %d exceeded on %r (%s)',
                        threshold, dev, path)
         try:
-            drive = self._vm.findDriveByName(dev)
+            drive = lookup.drive_by_name(self._vm.getDiskDevices()[:], dev)
         except LookupError:
             self._log.warning(
                 'Unknown drive %r for vm %s - ignored block threshold event',

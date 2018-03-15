@@ -1312,6 +1312,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/hostdevice.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/hwclass.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/lease.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmdevices/lookup.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/network.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/storage.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmdevices/storagexml.py*

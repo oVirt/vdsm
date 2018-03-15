@@ -88,6 +88,7 @@ from vdsm.virt.domain_descriptor import MutableDomainDescriptor
 from vdsm.virt.domain_descriptor import find_first_domain_device_by_type
 from vdsm.virt import vmdevices
 from vdsm.virt.vmdevices import drivename
+from vdsm.virt.vmdevices import lookup
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices import storagexml
 from vdsm.virt.vmdevices.common import get_metadata
@@ -1322,7 +1323,8 @@ class Vm(object):
             self.__refreshDriveVolume(volInfo)
 
         self.__verifyVolumeExtension(volInfo)
-        vmDrive = self.findDriveByName(volInfo['name'])
+        vmDrive = lookup.drive_by_name(
+            self.getDiskDevices()[:], volInfo['name'])
         if not vmDrive.chunked:
             # This was a replica only extension, we are done.
             clock.stop("total")
@@ -1391,7 +1393,8 @@ class Vm(object):
 
         # Only update apparentsize and truesize if we've resized the leaf
         if not volInfo['internal']:
-            drive = self.findDriveByName(volInfo['name'])
+            drive = lookup.drive_by_name(
+                self.getDiskDevices()[:], volInfo['name'])
             self._update_drive_volume_size(drive, volSize)
 
         self._resume_if_needed()
@@ -4138,12 +4141,6 @@ class Vm(object):
         hooks.before_vm_pause(self._dom.XMLDesc(0), self._custom)
         self._dom.suspend()
 
-    def findDriveByName(self, name):
-        for device in self._devices[hwclass.DISK][:]:
-            if device.name == name:
-                return device
-        raise LookupError("No such drive: '%s'" % name)
-
     def _findDriveByUUIDs(self, drive):
         """Find a drive given its definition"""
 
@@ -4514,7 +4511,8 @@ class Vm(object):
                     self.log.exception("Failed to update drive information"
                                        " for '%s'", drive)
 
-                drive_obj = self.findDriveByName(drive["name"])
+                drive_obj = lookup.drive_by_name(
+                    self.getDiskDevices()[:], drive["name"])
                 self.clear_drive_threshold(drive_obj, old_volume_id)
 
                 try:
