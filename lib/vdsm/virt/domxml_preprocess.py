@@ -85,13 +85,14 @@ Please check the documentation of the functions in this module to learn
 about the supported placeholders and their meaning.
 """
 
-from vdsm.common import cpuarch
 from vdsm import constants
 from vdsm import host
 from vdsm import osinfo
 
+from vdsm.common import cpuarch
 from vdsm.common import hooks
 from vdsm.virt import domain_descriptor
+from vdsm.virt import libvirtxml
 from vdsm.virt import metadata
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
@@ -248,26 +249,19 @@ def replace_device_xml_with_hooks_xml(dom, vm_id, vm_custom, md_desc=None):
         vmxml.append_child(devs, etree_child=dev_elem)
 
 
-def replace_placeholders(xml_str, cif, arch, serial):
+def replace_placeholders(dom, arch, serial=None):
     """
     Replace the placeholders, if any, in the domain XML.
     This is the entry point orchestration function.
     See the documentation of the specific functions
     for the supported placeholders.
     """
-    xml_str = vmdevices.graphics.fixDisplayNetworks(xml_str)
-
-    xml_str = vmdevices.network.fixNetworks(xml_str)
-
     if cpuarch.is_x86(arch):
         osd = osinfo.version()
         os_version = osd.get('version', '') + '-' + osd.get('release', '')
         serial_number = host.uuid() if serial is None else serial
-        xml_str = xml_str.replace('OS-NAME:', constants.SMBIOS_OSNAME)
-        xml_str = xml_str.replace('OS-VERSION:', os_version)
-        xml_str = xml_str.replace('HOST-SERIAL:', serial_number)
-
-    return xml_str
+        libvirtxml.update_sysinfo(
+            dom, constants.SMBIOS_OSNAME, os_version, serial_number)
 
 
 def _make_disk_devices(engine_xml, log):

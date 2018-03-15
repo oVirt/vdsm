@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<domain id="109" type="kvm">
+    <name>sysinfo_snippet</name>
+    <uuid>8386df52-d717-4353-93ad-2c72d20eccaf</uuid>
+    <memory unit="KiB">5242880</memory>
+    <currentMemory unit="KiB">5242880</currentMemory>
+    <vcpu current="2" placement="static">16</vcpu>
+    <sysinfo type="smbios">
+        <system>
+            <entry name="manufacturer">Red Hat</entry>
+            <entry name="product">oVirt Node</entry>
+            <entry name="version">42-1</entry>
+            <entry name="serial">test-serial</entry>
+            <entry name="uuid">346b8d80-b4f2-4a81-bf60-a662220c27a4</entry>
+        </system>
+    </sysinfo>
+</domain>

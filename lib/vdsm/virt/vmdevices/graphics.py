@@ -38,7 +38,6 @@ from .core import find_device_type
 from .core import get_metadata_values
 from .core import dev_class_from_dev_elem
 
-import re
 
 LIBVIRT_PORT_AUTOSELECT = '-1'
 
@@ -273,14 +272,6 @@ def _getNetworkIp(network):
         if ip == '':
             ip = '0'
     return ip
-
-
-def fixDisplayNetworks(xml_str):
-    networks = set(re.findall('(?<=DISPLAY-NETWORK:)[\w:-]+', xml_str))
-    for network in networks:
-        xml_str = xml_str.replace('DISPLAY-NETWORK:' + network,
-                                  libvirtnetwork.netname_o2l(network))
-    return xml_str
 
 
 def _make_spec_params(dev, meta):

@@ -1,0 +1,16 @@
+<domain type='kvm' id='109'>
+  <name>sysinfo_snippet</name>
+  <uuid>8386df52-d717-4353-93ad-2c72d20eccaf</uuid>
+  <memory unit='KiB'>5242880</memory>
+  <currentMemory unit='KiB'>5242880</currentMemory>
+  <vcpu placement='static' current='2'>16</vcpu>
+  <sysinfo type='smbios'>
+    <system>
+      <entry name='manufacturer'>Red Hat</entry>
+      <entry name='product'>OS-NAME:NAME</entry>
+      <entry name='version'>OS-VERSION:VERSION</entry>
+      <entry name='serial'>HOST-SERIAL:SERIAL</entry>
+      <entry name='uuid'>346b8d80-b4f2-4a81-bf60-a662220c27a4</entry>
+    </system>
+  </sysinfo>
+</domain>

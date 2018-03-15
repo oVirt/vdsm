@@ -20,10 +20,12 @@
 #
 from __future__ import absolute_import
 
+from vdsm.common import cpuarch
 from vdsm.common import hooks
 from vdsm.virt import domxml_preprocess
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
+from vdsm import osinfo
 
 from testlib import VdsmTestCase
 from testlib import XMLTestCase
@@ -32,6 +34,42 @@ from testlib import read_data
 import vmfakelib as fake
 
 from monkeypatch import MonkeyPatchScope
+
+
+class TestReplacePlaceholders(XMLTestCase):
+
+    def test_replace_values(self):
+        xml_str = read_data('sysinfo_snippet_template.xml')
+        dom = vmxml.parse_xml(xml_str)
+        with MonkeyPatchScope([
+            (osinfo, 'version', self._version),
+        ]):
+            domxml_preprocess.replace_placeholders(
+                dom, cpuarch.X86_64, serial='test-serial')
+        self.assertXMLEqual(
+            vmxml.format_xml(dom, pretty=True),
+            read_data('sysinfo_snippet_filled.xml')
+        )
+
+    def test_skip_without_placeholders(self):
+        # any domain without placeholders is fine, picked random one
+        xml_str = read_data('vm_hosted_engine_42.xml')
+        dom = vmxml.parse_xml(xml_str)
+        with MonkeyPatchScope([
+            (osinfo, 'version', self._version),
+        ]):
+            domxml_preprocess.replace_placeholders(
+                dom, cpuarch.X86_64, serial='test-serial')
+        self.assertXMLEqual(
+            vmxml.format_xml(dom, pretty=True),
+            xml_str
+        )
+
+    def _version(self):
+        return {
+            'version': '42',
+            'release': '1',
+        }
 
 
 class TestReplaceDiskXML(XMLTestCase):
