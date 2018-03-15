@@ -57,6 +57,7 @@ from vdsm.common import hooks
 from vdsm.common import supervdsm
 from vdsm.common.compat import pickle
 from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
+from vdsm.common.hostutils import host_in_shutdown
 from vdsm.common.logutils import SimpleLogAdapter, volume_chain_to_str
 from vdsm.network import api as net_api
 
@@ -1044,13 +1045,14 @@ class Vm(object):
                 # BZ on libvirt: https://bugzilla.redhat.com/1384007
                 seen_shutdown = not self.guestAgent or \
                     self.guestAgent.has_seen_shutdown()
-                if seen_shutdown:
+                if seen_shutdown and not host_in_shutdown():
                     reason = vmexitreason.USER_SHUTDOWN
                 else:
                     reason = vmexitreason.HOST_SHUTDOWN
                     exit_code = ERROR
         if reason == vmexitreason.DESTROYED_ON_PAUSE_TIMEOUT:
             exit_code = ERROR
+        self.log.debug('shutdown reason: %s', reason)
         return exit_code, reason
 
     def _onQemuDeath(self, exit_code, reason):

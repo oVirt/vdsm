@@ -261,10 +261,13 @@ parameters = [
             'topology. Explicit settings sent from engine override '
             'the option.'),
 
-        ('timeout_engine_clear_vms', '5',
+        ('timeout_engine_clear_vms', '15',
             'How many seconds should VDSM arbitrarily hold the '
             'shutdown sequence and wait for Engine confirming '
-            'that VMs are down.'),
+            'that VMs are down. The timeout is split into two'
+            'parts: two seconds are used in the very end to'
+            'allow for passing final state from host to engine,'
+            'the rest is used to wait when VMs are shutting down.'),
 
         ('vm_kill_paused_time', '80',
             'How many seconds to wait before killing VMs paused due to an I/O '

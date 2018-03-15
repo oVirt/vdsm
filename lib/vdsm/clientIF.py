@@ -38,6 +38,7 @@ from vdsm import sslutils
 from vdsm.config import config
 from vdsm.common import exception
 from vdsm.common.define import doneCode, errCode
+from vdsm.common.hostutils import host_in_shutdown
 import vdsm.common.time
 from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.momIF import MomClient
@@ -336,17 +337,30 @@ class clientIF(object):
         The VMs are shutdown by external service: libvirt-guests
         The service pauses system shutdown on systemd shutdown
         and gracefully shutdowns the running VMs.
+
+        This method applies only when the host is in shutdown.
+        If the host is running, the method ends immediately.
         """
         # how long to wait before release shutdown
         # we are waiting in whole seconds
         # if config is not present, do not wait
         timeout = config.getint('vars', 'timeout_engine_clear_vms')
+        # time to wait in the final phase in seconds
+        # it allows host to flush its final state to the engine
+        final_wait = 2
 
-        for _ in range(timeout * 10):
+        if not host_in_shutdown():
+            return
+
+        self.log.info('host in shutdown waiting')
+
+        for _ in range((timeout - final_wait) * 10):
             if not self.vmContainer:
                 # once all VMs are cleared exit
                 break
             time.sleep(0.1)
+
+        time.sleep(final_wait)
 
     def prepareForShutdown(self):
         """
