@@ -90,6 +90,12 @@ class Interface(core.Base):
         params.update(core.get_xml_elem(dev, 'bootOrder', 'boot', 'order'))
         if params['device'] == 'hostdev':
             params.update(_get_hostdev_params(dev))
+        link = vmxml.find_first(dev, 'link', None)
+        if link is not None:
+            if link.attrib.get('state', 'down') == 'down':
+                params['linkActive'] = False
+            else:
+                params['linkActive'] = True
         vlan = vmxml.find_first(dev, 'vlan', None)
         if vlan is not None:
             params['specParams']['vlanid'] = vmxml.find_attr(

@@ -1108,6 +1108,28 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         self._check_roundtrip(
             vmdevices.network.Interface, interface_xml, meta=meta)
 
+    @permutations([
+        # link state
+        ('up',),
+        ('down',),
+    ])
+    @MonkeyPatch(vmdevices.network.supervdsm,
+                 'getProxy', lambda: FakeProxy())
+    def test_interface_link_state(self, link_state):
+        interface_xml = u'''
+            <interface type="bridge">
+                <address bus="0x00" domain="0x0000"
+                    function="0x0" slot="0x03" type="pci"/>
+                <mac address="52:54:00:59:F5:3F"/>
+                <model type="virtio"/>
+                <source bridge="ovirtmgmt"/>
+                <link state="{link_state}"/>
+                <boot order="1"/>
+            </interface>'''.format(link_state=link_state)
+        meta = {'vmid': 'VMID'}
+        self._check_roundtrip(
+            vmdevices.network.Interface, interface_xml, meta=meta)
+
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: FakeProxy())
     def test_interface_empty_bridge(self):
@@ -1118,6 +1140,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 <mac address="52:54:00:59:F5:3F"/>
                 <model type="virtio"/>
                 <source bridge=""/>
+                <link state="down"/>
                 <boot order="1"/>
             </interface>'''
         meta = {'vmid': 'VMID'}
@@ -1128,6 +1151,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 <mac address="52:54:00:59:F5:3F" />
                 <model type="virtio" />
                 <source bridge=";vdsmdummy;" />
+                <link state="down"/>
                 <boot order="1" />
             </interface>'''
         self._check_roundtrip(
