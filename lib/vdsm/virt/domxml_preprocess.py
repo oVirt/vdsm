@@ -123,6 +123,31 @@ def replace_disks_xml(dom, disk_devices):
     return dom
 
 
+def update_leases_xml_from_disk_objs(vm, dom, disk_devices):
+    # 'devices' MUST be present, so let's fail loudly if it isn't.
+    devs = vmxml.find_first(dom, 'devices')
+
+    for dev_elem in vmxml.children(devs):
+        if dev_elem.tag != vmdevices.hwclass.LEASE:
+            continue
+
+        params = vmdevices.lease.parse_xml(dev_elem, {})
+        if not params:
+            vm.log.warning('could not parse lease: %s',
+                           vmxml.format_xml(dev_elem))
+            continue
+
+        info = vmdevices.lease.find_drive_lease_info(
+            params['sd_id'], params['lease_id'], disk_devices)
+        if info is None:
+            vm.log.debug('lease with not corresponding drive info, skipped')
+            # must be a vm lease, let's skip it
+            continue
+
+        vmdevices.lease.update_lease_element_from_info(
+            dev_elem, info)
+
+
 def update_disks_xml_from_objs(vm, dom, disk_devices):
     """
     Perform host-local changes to the XML disk configuration.
@@ -223,21 +248,14 @@ def replace_device_xml_with_hooks_xml(dom, vm_id, vm_custom, md_desc=None):
         vmxml.append_child(devs, etree_child=dev_elem)
 
 
-def replace_placeholders(xml_str, cif, arch, serial, devices=None):
+def replace_placeholders(xml_str, cif, arch, serial):
     """
     Replace the placeholders, if any, in the domain XML.
     This is the entry point orchestration function.
     See the documentation of the specific functions
     for the supported placeholders.
     """
-    if devices is None:
-        disk_devices = _make_disk_devices(xml_str, cif.log)
-    else:
-        disk_devices = devices.get(vmdevices.hwclass.DISK, [])
-
     xml_str = vmdevices.graphics.fixDisplayNetworks(xml_str)
-
-    xml_str = vmdevices.lease.fixLeases(cif.irs, xml_str, disk_devices)
 
     xml_str = vmdevices.network.fixNetworks(xml_str)
 

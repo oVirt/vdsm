@@ -20,7 +20,6 @@
 #
 from __future__ import absolute_import
 
-from vdsm.common import cpuarch
 from vdsm.common import hooks
 from vdsm.virt import domxml_preprocess
 from vdsm.virt import vmdevices
@@ -167,11 +166,13 @@ class TestReplaceDeviceXMLWithHooksXML(VdsmTestCase):
         )
 
 
-class TestFixLease(VdsmTestCase):
+class TestReplaceLeaseXML(XMLTestCase):
 
     def setUp(self):
+        self.vm = FakeVM(self.log)
         self.cif = fake.ClientIF()
         self.xml_str = read_data('hostedengine_lease.xml')
+        self.dom = vmxml.parse_xml(self.xml_str)
         self.disk_devs = domxml_preprocess._make_disk_devices(
             self.xml_str, self.log)
 
@@ -180,56 +181,66 @@ class TestFixLease(VdsmTestCase):
             'leaseOffset': 'drive-lease-offset',
         }
         self.vmVolInfo = {
-            'leasePath': 'vm-lease-path',
-            'leaseOffset': 'vm-lease-offset',
+            # from XML
+            'leasePath': 'LEASE-PATH:'
+                         '9eaa286e-37d6-429e-a46b-63bec1dd4868:'
+                         '4f0a775f-ed16-4832-ab9f-f0427f33ab92',
+            'leaseOffset': 'LEASE-OFFSET:'
+                           '9eaa286e-37d6-429e-a46b-63bec1dd4868:'
+                           '4f0a775f-ed16-4832-ab9f-f0427f33ab92',
         }
 
-    def test_passthrough(self):
+    def test_no_leases(self):
         """
-        test that without placeholders, the output is the same as the input.
+        without leases, do nothing
         """
-        # any XML without placeholders (need to check manually) is fine
-        xml_str_in = read_data('vm_compat41.xml')
-        xml_str_out = domxml_preprocess.replace_placeholders(
-            xml_str_in, self.cif, cpuarch.X86_64, '0000')
-        self.assertEqual(xml_str_out, xml_str_in)
+        # any VM without leases is fine
+        xml_str = read_data('vm_compat41.xml')
+        self.assertXMLEqual(
+            extract_device_snippet('lease', xml_str=xml_str),
+            u'''<?xml version='1.0' encoding='utf-8'?><devices />'''
+        )
+
+        dom = vmxml.parse_xml(xml_str)
+        disk_devs = domxml_preprocess._make_disk_devices(
+            xml_str, self.log)
+        disk_devs = self._inject_volume_chain(
+            disk_devs, self.driveVolInfo,
+            domainID='unknwonDomainID',
+            volumeID='unknownVolumeID')
+
+        domxml_preprocess.update_leases_xml_from_disk_objs(
+            self.vm, dom, disk_devs)
+
+        self.assertXMLEqual(
+            extract_device_snippet('lease', dom=dom),
+            u'''<?xml version='1.0' encoding='utf-8'?><devices />'''
+        )
 
     def test_drive_lease(self):
         """
-        test that we fill the drive lease. Happy path.
+        we fill the drive lease. Happy path.
         """
         disk_devs = self._inject_volume_chain(
             self.disk_devs, self.driveVolInfo)
 
-        xml_str = domxml_preprocess.replace_placeholders(
-            self.xml_str, self.cif, cpuarch.X86_64, '0000',
-            {vmdevices.hwclass.DISK: disk_devs})
+        domxml_preprocess.update_leases_xml_from_disk_objs(
+            self.vm, self.dom, disk_devs)
 
+        xml_str = vmxml.format_xml(self.dom)
         self._check_leases(xml_str, [self.driveVolInfo])
 
     def test_drive_lease_without_volume_chain(self):
         """
-        Should we lack volumeChain attribute (like cdroms), this
-        should not raise.
+        Lacking volumeChain attribute (like cdroms), don't raise.
         We treat leases like VM lease, because we cannot distinguish
         this case.
         """
 
-        def _fake_lease_info(*args, **kwargs):
-            return {
-                'result': {
-                    'path': self.vmVolInfo['leasePath'],
-                    'offset': self.vmVolInfo['leaseOffset'],
-                }
-            }
+        domxml_preprocess.update_leases_xml_from_disk_objs(
+            self.vm, self.dom, self.disk_devs)
 
-        with MonkeyPatchScope([
-            (self.cif.irs, 'lease_info', _fake_lease_info),
-        ]):
-            xml_str = domxml_preprocess.replace_placeholders(
-                self.xml_str, self.cif, cpuarch.X86_64, '0000',
-                {vmdevices.hwclass.DISK: self.disk_devs})
-
+        xml_str = vmxml.format_xml(self.dom)
         self._check_leases(xml_str, [self.vmVolInfo])
 
     def test_drive_lease_chain_not_matches(self):
@@ -242,21 +253,10 @@ class TestFixLease(VdsmTestCase):
             domainID='unknwonDomainID',
             volumeID='unknownVolumeID')
 
-        def _fake_lease_info(*args, **kwargs):
-            return {
-                'result': {
-                    'path': self.vmVolInfo['leasePath'],
-                    'offset': self.vmVolInfo['leaseOffset'],
-                }
-            }
+        domxml_preprocess.update_leases_xml_from_disk_objs(
+            self.vm, self.dom, disk_devs)
 
-        with MonkeyPatchScope([
-            (self.cif.irs, 'lease_info', _fake_lease_info),
-        ]):
-            xml_str = domxml_preprocess.replace_placeholders(
-                self.xml_str, self.cif, cpuarch.X86_64, '0000',
-                {vmdevices.hwclass.DISK: disk_devs})
-
+        xml_str = vmxml.format_xml(self.dom)
         self._check_leases(xml_str, [self.vmVolInfo])
 
     def _check_leases(self, xml_str, vol_infos):
