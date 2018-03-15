@@ -2234,7 +2234,7 @@ class Vm(object):
         if 'xml' in self.conf:
             xml_str = domxml_preprocess.replace_placeholders(
                 self.conf['xml'], self.cif, self.arch,
-                self.conf.get('serial'), self._devices)
+                self.conf.get('serial'))
 
             # Do DOM-dependent xml transformations
             dom = vmxml.parse_xml(xml_str)
@@ -2250,6 +2250,8 @@ class Vm(object):
                 domxml_preprocess.replace_disks_xml(
                     dom, self._devices[hwclass.DISK])
 
+            domxml_preprocess.update_leases_xml_from_disk_objs(
+                self, dom, self._devices[hwclass.DISK])
             domxml_preprocess.replace_device_xml_with_hooks_xml(
                 dom, self.id, self._custom['custom'])
 

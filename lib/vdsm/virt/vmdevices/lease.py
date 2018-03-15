@@ -109,7 +109,6 @@ from vdsm.virt import vmxml
 from . import core
 from . import hwclass
 
-import re
 
 log = logging.getLogger("virt.lease")
 
@@ -301,23 +300,14 @@ def _is_prepared(device):
     return "path" in device and "offset" in device
 
 
-def fixLeases(storage, xml_str, drive_objs):
-    leases = set(re.findall('(?<=LEASE-PATH:)[\w:-]+', xml_str))
-    for lease in leases:
-        lease_id, lease_sd_id = lease.split(':')
-
-        lease_info = find_drive_lease_info(lease_sd_id, lease_id, drive_objs)
-        if lease_info is None:
-            # not a drive lease, must be a vm lease
-            res = storage.lease_info(
-                dict(sd_id=lease_sd_id, lease_id=lease_id))
-            lease_info = res["result"]
-
-        xml_str = xml_str.replace('LEASE-PATH:' + lease,
-                                  lease_info["path"])
-        xml_str = xml_str.replace('LEASE-OFFSET:' + lease,
-                                  str(lease_info["offset"]))
-    return xml_str
+def update_lease_element_from_info(lease_element, info):
+    target = vmxml.find_first(lease_element, 'target')
+    for (key, placeholder) in (
+            ('path', 'LEASE-PATH'),
+            ('offset', 'LEASE-OFFSET')):
+        value = target.attrib.get(key, None)
+        if value is None or value.startswith(placeholder):
+            target.attrib[key] = info[key]
 
 
 def find_drive_lease_info(sd_id, lease_id, drive_objs):
