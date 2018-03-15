@@ -2243,8 +2243,13 @@ class Vm(object):
             if on_reboot is not None:
                 vmxml.remove_child(dom, on_reboot)
 
-            domxml_preprocess.replace_disks_xml(
-                dom, self._devices[hwclass.DISK])
+            if config.getboolean('devel', 'xml_minimal_changes'):
+                domxml_preprocess.update_disks_xml_from_objs(
+                    self, dom, self._devices[hwclass.DISK])
+            else:
+                domxml_preprocess.replace_disks_xml(
+                    dom, self._devices[hwclass.DISK])
+
             domxml_preprocess.replace_device_xml_with_hooks_xml(
                 dom, self.id, self._custom['custom'])
 

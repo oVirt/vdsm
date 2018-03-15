@@ -37,10 +37,29 @@ from monkeypatch import MonkeyPatchScope
 
 class TestReplaceDiskXML(XMLTestCase):
 
-    def test_replace_disk(self):
+    def test_update_disks_xml(self):
         """
         Replace one disk, moving from file to block; no changes to CDROM
         """
+        dom, disk_devs = self._make_env()
+        domxml_preprocess.update_disks_xml_from_objs(
+            FakeVM(self.log), dom, disk_devs)
+        self.assertXMLEqual(
+            extract_device_snippet(
+                'disk',
+                dom=dom),
+            read_data('disk_updated_snippet.xml')
+        )
+
+    def test_replace_disks_xml(self):
+        dom, disk_devs = self._make_env()
+        domxml_preprocess.replace_disks_xml(dom, disk_devs)
+        self.assertXMLEqual(
+            vmxml.format_xml(dom, pretty=True),
+            read_data('domain_disk_block.xml')
+        )
+
+    def _make_env(self):
         dom_disk_file_str = read_data('domain_disk_file.xml')
         dom = vmxml.parse_xml(dom_disk_file_str)
         # taken from domain_disk_file.xml
@@ -87,11 +106,7 @@ class TestReplaceDiskXML(XMLTestCase):
             vmdevices.storage.Drive(self.log, **cdrom_params),
             vmdevices.storage.Drive(self.log, **disk_params)
         ]
-        domxml_preprocess.replace_disks_xml(dom, disk_devs)
-        self.assertXMLEqual(
-            vmxml.format_xml(dom, pretty=True),
-            read_data('domain_disk_block.xml')
-        )
+        return dom, disk_devs
 
 
 class TestReplaceDeviceXMLWithHooksXML(VdsmTestCase):
@@ -283,3 +298,17 @@ class TestFixLease(VdsmTestCase):
             break  # assume only one disk
 
         return drives
+
+
+def extract_device_snippet(device_type, xml_str=None, dom=None):
+    if dom is None:
+        dom = vmxml.parse_xml(xml_str)
+    devs = vmxml.Element('devices')
+    for dev in dom.findall('./devices/%s' % device_type):
+        vmxml.append_child(devs, etree_child=dev)
+    return vmxml.format_xml(devs, pretty=True)
+
+
+class FakeVM(object):
+    def __init__(self, log):
+        self.log = log
