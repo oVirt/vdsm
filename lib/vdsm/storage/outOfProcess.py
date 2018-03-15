@@ -86,7 +86,8 @@ def getProcessPool(clientName):
             log.debug("Creating ioprocess %s", clientName)
             proc = ioprocess.IOProcess(max_threads=HELPERS_PER_DOMAIN,
                                        timeout=DEFAULT_TIMEOUT,
-                                       max_queued_requests=MAX_QUEUED)
+                                       max_queued_requests=MAX_QUEUED,
+                                       name=clientName)
             proc = _IOProcWrapper("oop", proc)
             _refProcPool[clientName] = weakref.ref(proc)
 
