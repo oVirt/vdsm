@@ -548,6 +548,9 @@ parameters = [
 
         ('api_strict_mode', 'false',
             'Enable exception throwing when rpc data is not correct.'),
+
+        ('xml_minimal_changes', 'true',
+            'Perform minimal updates to the domain XML when starting a VM.'),
     ]),
 
     # Section: [gluster]

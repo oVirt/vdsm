@@ -259,15 +259,26 @@ def change_disk(disk_element, disk_devices):
     serial = vmxml.text(vmxml.find_first(disk_element, 'serial'))
     for vm_drive in disk_devices:
         if vm_drive.serial == serial:
-            # update the type
-            disk_type = vm_drive.diskType
-            vmxml.set_attr(disk_element, 'type', disk_type)
-            # update the path
-            source = vmxml.find_first(disk_element, 'source')
-            disk_attr = storage.SOURCE_ATTR[disk_type]
-            vmxml.set_attr(source, disk_attr, vm_drive.path)
-            # update the format (the disk might have been collapsed)
-            driver = vmxml.find_first(disk_element, 'driver')
-            drive_format = 'qcow2' if vm_drive.format == 'cow' else 'raw'
-            vmxml.set_attr(driver, 'type', drive_format)
+            update_disk_element_from_object(disk_element, vm_drive)
             break
+
+
+def update_disk_element_from_object(disk_element, vm_drive,
+                                    replace_attribs=False):
+    old_disk_type = disk_element.attrib.get('type')
+    # update the type
+    disk_type = vm_drive.diskType
+    vmxml.set_attr(disk_element, 'type', disk_type)
+
+    # update the path
+    source = vmxml.find_first(disk_element, 'source')
+    if replace_attribs:
+        old_disk_attr = storage.SOURCE_ATTR[old_disk_type]
+        source.attrib.pop(old_disk_attr)
+    disk_attr = storage.SOURCE_ATTR[disk_type]
+    vmxml.set_attr(source, disk_attr, vm_drive.path)
+
+    # update the format (the disk might have been collapsed)
+    driver = vmxml.find_first(disk_element, 'driver')
+    drive_format = 'qcow2' if vm_drive.format == 'cow' else 'raw'
+    vmxml.set_attr(driver, 'type', drive_format)

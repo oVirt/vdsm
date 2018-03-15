@@ -123,6 +123,54 @@ def replace_disks_xml(dom, disk_devices):
     return dom
 
 
+def update_disks_xml_from_objs(vm, dom, disk_devices):
+    """
+    Perform host-local changes to the XML disk configuration.
+
+    The XML may change because of the following:
+
+    - the after_disk_prepare hook point (aka the localdisk hook)
+      The hook may change:
+      * diskType
+      * path
+      * format
+    - Vdsm itself needs to prepare the images.
+      Vdsm may change:
+      * path
+
+    Engine can sometimes predict the path, but Vdsm is in charge
+    to set up the images locally, so it can (and should be expected to)
+    change the image path.
+    """
+    # 'devices' MUST be present, so let's fail loudly if it isn't.
+    devs = vmxml.find_first(dom, 'devices')
+    for dev_elem in vmxml.children(devs):
+        if dev_elem.tag != vmdevices.hwclass.DISK:
+            continue
+
+        # we use the device name because
+        # - `path` uniquely identifies a device, but it is expected to change
+        # - `serial` uniquely identifies a device, but it is not available
+        #   for LUN devices
+        # TODO: user-provided aliases are the best solution, we need to
+        # switch to them.
+        attrs = vmdevices.storage.Drive.get_identifying_attrs(dev_elem)
+        if not attrs:
+            vm.log.warning('could not identify drive: %s',
+                           vmxml.format_xml(dev_elem))
+            continue
+
+        try:
+            disk_obj = vmdevices.lookup.drive_by_name(disk_devices,
+                                                      attrs['name'])
+        except LookupError:
+            vm.log.warning('unknown drive %r, skipped', attrs['name'])
+            continue
+
+        vmdevices.storagexml.update_disk_element_from_object(
+            dev_elem, disk_obj, replace_attribs=True)
+
+
 def replace_device_xml_with_hooks_xml(dom, vm_id, vm_custom, md_desc=None):
     """
     Process the before_device_create hook point. This means that
