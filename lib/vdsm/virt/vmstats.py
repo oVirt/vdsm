@@ -408,7 +408,13 @@ def disk_info(vm_drive):
         'apparentsize': str(vm_drive.apparentsize),
         'readLatency': '0',
         'writeLatency': '0',
-        'flushLatency': '0'
+        'flushLatency': '0',
+        'writtenBytes': '0',
+        'writeOps': '0',
+        'readOps': '0',
+        'readBytes': '0',
+        'readRate': '0.0',
+        'writeRate': '0.0',
     }
     if isVdsmImage(vm_drive):
         drive_stats['imageID'] = vm_drive.imageID
