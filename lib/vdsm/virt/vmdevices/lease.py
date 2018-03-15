@@ -149,16 +149,7 @@ class Device(core.Base):
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
-        params = {
-            'type': dev.tag,
-            'device': core.find_device_type(dev),
-            'lease_id': vmxml.text(vmxml.find_first(dev, 'key')),
-            'sd_id': vmxml.text(vmxml.find_first(dev, 'lockspace')),
-            'path': vmxml.find_attr(dev, 'target', 'path'),
-            'offset': vmxml.find_attr(dev, 'target', 'offset'),
-        }
-        core.update_device_params(params, dev)
-        core.update_device_params_from_meta(params, meta)
+        params = parse_xml(dev, meta)
         return cls(log, **params)
 
     @classmethod
@@ -219,6 +210,20 @@ class Device(core.Base):
                 "path={self.path}, "
                 "offset={self.offset} "
                 "at {addr:#x}>").format(self=self, addr=id(self))
+
+
+def parse_xml(dev, meta):
+    params = {
+        'type': dev.tag,
+        'device': core.find_device_type(dev),
+        'lease_id': vmxml.text(vmxml.find_first(dev, 'key')),
+        'sd_id': vmxml.text(vmxml.find_first(dev, 'lockspace')),
+        'path': vmxml.find_attr(dev, 'target', 'path'),
+        'offset': vmxml.find_attr(dev, 'target', 'offset'),
+    }
+    core.update_device_params(params, dev)
+    core.update_device_params_from_meta(params, meta)
+    return params
 
 
 def find_device(vm_devices, query):
