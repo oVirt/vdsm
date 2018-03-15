@@ -717,3 +717,25 @@ def parse_drive_mapping(custom):
         name, drive = mapping.strip().split(':', 1)
         drive_mapping[name.strip()] = drive.strip()
     return drive_mapping
+
+
+def update_sysinfo(dom, osname, osversion, hostserial):
+    sys_info = vmxml.find_first(dom, 'sysinfo/system', None)
+    if sys_info is None:
+        # TODO: log?
+        return
+
+    replaceables = {
+        'product': ('OS-NAME:', osname),
+        'version': ('OS-VERSION:', osversion),
+        'serial': ('HOST-SERIAL:', hostserial),
+    }
+
+    for entry in vmxml.children(sys_info):
+        name = entry.attrib.get('name', None)
+        if name not in replaceables:
+            continue
+
+        placeholder, value = replaceables[name]
+        if entry.text.startswith(placeholder):
+            entry.text = value

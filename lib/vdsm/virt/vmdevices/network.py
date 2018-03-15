@@ -25,7 +25,6 @@ import os
 import uuid
 
 import xml.etree.ElementTree as ET
-import re
 
 from vdsm import constants
 from vdsm.common import conv
@@ -488,28 +487,6 @@ def update_bandwidth_xml(iface, vnicXML, specParams=None):
         if oldBandwidth is not None:
             vmxml.remove_child(vnicXML, oldBandwidth)
         vmxml.append_child(vnicXML, newBandwidth)
-
-
-def fixNetworks(xml_str):
-    networks = set(re.findall('(?<=NIC-BRIDGE:)[\w:-]+', xml_str))
-    for network in networks:
-        ovs_bridge = supervdsm.getProxy().ovs_bridge(network)
-        if ovs_bridge:
-            new_str = "<source bridge='{bridge}'/>" +  \
-                "<virtualport type='openvswitch'/>" \
-                .format(bridge=ovs_bridge)
-            vlan_tag = net_api.net2vlan(network)
-            if vlan_tag:
-                new_str = new_str + \
-                    "<vlan><tag id='{tag_id}'/></vlan>" \
-                    .format(tag_id=str(vlan_tag))
-            xml_str = xml_str.replace('<source bridge="NIC-BRIDGE:' +
-                                      network + '"/>',
-                                      new_str)
-        else:
-            xml_str = xml_str.replace('NIC-BRIDGE:' + network,
-                                      network)
-    return xml_str
 
 
 def _update_port_mirroring(params, meta):

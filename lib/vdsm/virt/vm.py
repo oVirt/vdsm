@@ -2229,16 +2229,15 @@ class Vm(object):
 
     def _buildDomainXML(self):
         if 'xml' in self.conf:
-            xml_str = domxml_preprocess.replace_placeholders(
-                self.conf['xml'], self.cif, self.arch,
-                self.conf.get('serial'))
-
             # Do DOM-dependent xml transformations
-            dom = vmxml.parse_xml(xml_str)
+            dom = vmxml.parse_xml(self.conf['xml'])
 
             on_reboot = vmxml.find_first(dom, 'on_reboot', None)
             if on_reboot is not None:
                 vmxml.remove_child(dom, on_reboot)
+
+            domxml_preprocess.replace_placeholders(
+                dom, self.arch, self.conf.get('serial'))
 
             if config.getboolean('devel', 'xml_minimal_changes'):
                 domxml_preprocess.update_disks_xml_from_objs(
