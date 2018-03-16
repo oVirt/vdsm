@@ -149,6 +149,7 @@ def create_cache():
 
             mod_time = os.stat(path).st_mtime
             os.utime(pickle_schema_path, (mod_time, mod_time))
+            os.chmod(pickle_schema_path, 0o444)
 
 
 def remove_cache():
