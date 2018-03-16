@@ -79,8 +79,8 @@ def dump_chains(*args):
     cli = client.connect(parsed_args.host, parsed_args.port,
                          use_tls=parsed_args.use_ssl)
     with utils.closing(cli):
-        image_chains, volumes_info = _get_volumes_chains(
-            cli, parsed_args.sd_uuid)
+        volumes_info = _get_volumes_info(cli, parsed_args.sd_uuid)
+        image_chains = _get_volumes_chains(volumes_info)
         _print_volume_chains(image_chains, volumes_info)
 
 
@@ -97,7 +97,7 @@ def _parse_args(args):
     return parser.parse_args(args=args[1:])
 
 
-def _get_volumes_chains(cli, sd_uuid):
+def _get_volumes_info(cli, sd_uuid):
     """there can be only one storage pool in a single VDSM context"""
     pools = cli.Host.getConnectedStoragePools()
     if not pools:
@@ -106,33 +106,43 @@ def _get_volumes_chains(cli, sd_uuid):
     sp_uuid, = pools
     images_uuids = cli.StorageDomain.getImages(storagedomainID=sd_uuid)
 
-    image_chains = {}  # {image_uuid -> vol_chain}
-    volumes_info = {}  # {vol_uuid-> vol_info}
+    volumes_info = {}
 
     for img_uuid in images_uuids:
-        volumes = cli.StorageDomain.getVolumes(
+        img_volumes_info = {}
+
+        volumes_uuids = cli.StorageDomain.getVolumes(
             storagedomainID=sd_uuid, storagepoolID=sp_uuid,
             imageID=img_uuid)
 
-        # to avoid 'double parent' bug here we don't use a dictionary
-        volumes_children = []  # [(parent_vol_uuid, child_vol_uuid),]
-
-        for vol_uuid in volumes:
+        for vol_uuid in volumes_uuids:
             vol_info = cli.Volume.getInfo(
                 volumeID=vol_uuid, storagepoolID=sp_uuid,
                 storagedomainID=sd_uuid, imageID=img_uuid)
 
-            volumes_info[vol_uuid] = vol_info
+            img_volumes_info[vol_uuid] = vol_info
 
-            parent_uuid = vol_info['parent']
-            volumes_children.append((parent_uuid, vol_uuid))
+        volumes_info[img_uuid] = img_volumes_info
+
+    return volumes_info
+
+
+def _get_volumes_chains(volumes_info):
+    image_chains = {}
+
+    for img_uuid, volumes in volumes_info.iteritems():
+
+        # to avoid 'double parent' bug here we don't use a dictionary
+        volumes_children = []  # [(parent_vol_uuid, child_vol_uuid),]
+        for vol_uuid, vol_info in volumes.iteritems():
+            volumes_children.append((vol_info['parent'], vol_uuid))
 
         try:
             image_chains[img_uuid] = _build_volume_chain(volumes_children)
         except ChainError as e:
             image_chains[img_uuid] = e
 
-    return image_chains, volumes_info
+    return image_chains
 
 
 def _build_volume_chain(volumes_children):
@@ -168,6 +178,7 @@ def _print_volume_chains(image_chains, volumes_info):
     print()
     print('Images volume chains (base volume first)')
     for img_uuid, vol_chain in image_chains.iteritems():
+        img_volumes_info = volumes_info[img_uuid]
         print()
         _print_line(img_uuid, 'image:')
         print()
@@ -179,12 +190,12 @@ def _print_volume_chains(image_chains, volumes_info):
             print()
             for parent, child in chain_err.volumes_children:
                 _print_line('- %s <- %s' % (parent, child))
-                _print_vol_info(volumes_info[child])
+                _print_vol_info(img_volumes_info[child])
                 print()
         else:
             for vol in vol_chain:
                 _print_line('- ' + vol)
-                _print_vol_info(volumes_info[vol])
+                _print_vol_info(img_volumes_info[vol])
                 print()
 
 
