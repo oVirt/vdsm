@@ -20,6 +20,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 from collections import defaultdict
 import argparse
+import json
+import sys
 
 from . import expose
 
@@ -74,14 +76,21 @@ def dump_chains(*args):
     dump-volume-chains
     Query VDSM about the existing structure of image volumes and prints
     them in an ordered fashion with optional additional info per volume.
+    Alternatively, dumps the volumes information in json format without
+    analysis.
     """
     parsed_args = _parse_args(args)
     cli = client.connect(parsed_args.host, parsed_args.port,
                          use_tls=parsed_args.use_ssl)
     with utils.closing(cli):
         volumes_info = _get_volumes_info(cli, parsed_args.sd_uuid)
-        image_chains = _get_volumes_chains(volumes_info)
-        _print_volume_chains(image_chains, volumes_info)
+        if parsed_args.output == 'text':
+            # perform analysis and print in human readable format
+            image_chains = _get_volumes_chains(volumes_info)
+            _print_volume_chains(image_chains, volumes_info)
+        else:
+            # no analysis, dump chains in json format
+            json.dump(volumes_info, sys.stdout, indent=2)
 
 
 def _parse_args(args):
@@ -91,6 +100,8 @@ def _parse_args(args):
                         dest='use_ssl', default=True,
                         help="use unsecured connection")
     parser.add_argument('-H', '--host', default='localhost')
+    parser.add_argument('-o', '--output', choices=['text', 'json'],
+                        default='text', help="select output format")
     parser.add_argument(
         '-p', '--port', default=config.getint('addresses', 'management_port'))
 
