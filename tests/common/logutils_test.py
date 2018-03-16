@@ -131,7 +131,11 @@ class Handler(object):
         if self.buffering:
             return
         if self.delay:
-            time.sleep(self.delay)
+            now = time.time()
+            deadline = now + self.delay
+            while now < deadline:
+                time.sleep(deadline - now)
+                now = time.time()
 
 
 @expandPermutations
@@ -287,6 +291,7 @@ class TestThreadedHandler(TestCaseBase):
         # Here is typical (sorted) result:
         # [0.000039, 0.000071, 0.000076, 0.000086, 0.000112, 0.000191,
         #  0.000276, 0.000285, 0.000413, 0.000590]
+        print("workers_time %s" % workers_time)
         self.assertLess(max(workers_time), 0.1)
 
     def test_slow_handler_sync(self):
@@ -310,6 +315,7 @@ class TestThreadedHandler(TestCaseBase):
         # Here is typical (sorted) result:
         # [0.100438, 0.199917, 0.299876, 0.399604, 0.499133, 0.59935, 0.699196,
         #  0.79886, 0.898592, 0.998453]
+        print("workers_time %s" % workers_time)
         self.assertGreater(max(workers_time), 0.9)
 
     @permutations([
