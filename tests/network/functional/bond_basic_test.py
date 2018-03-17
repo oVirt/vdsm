@@ -28,7 +28,7 @@ from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestAdapter, NOCHK, SetupNetworksError
 from network.nettestlib import dummy_devices
 
-BOND_NAME = 'bond1'
+BOND_NAME = 'bond1_name'
 
 
 adapter = NetFuncTestAdapter()
@@ -107,8 +107,7 @@ class TestBondBasic(object):
 
     def test_add_bond_with_bad_name_fails(self, switch):
         INVALID_BOND_NAMES = ('bond',
-                              'bonda',
-                              'bond0a',
+                              'bond bad',
                               'jamesbond007')
 
         with dummy_devices(2) as (nic1, nic2):

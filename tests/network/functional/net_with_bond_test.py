@@ -122,8 +122,7 @@ class TestNetworkWithBond(object):
 
     def test_add_net_with_invalid_bond_name_fails(self, switch):
         INVALID_BOND_NAMES = ('bond',
-                              'bonda',
-                              'bond0a',
+                              'bond bad',
                               'jamesbond007')
 
         for bond_name in INVALID_BOND_NAMES:

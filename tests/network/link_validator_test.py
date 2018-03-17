@@ -26,7 +26,7 @@ from testlib import VdsmTestCase as TestCaseBase
 from nose.plugins.attrib import attr
 
 
-BOND_NAME = 'bond1'
+BOND_NAME = 'bond_name'
 NETWORK1_NAME = 'test-network1'
 VLANID = 10
 
@@ -35,9 +35,7 @@ VLANID = 10
 class TestBondNameValidation(TestCaseBase):
 
     INVALID_BOND_NAMES = ('bond',
-                          'bonda'
-                          'bond0a',
-                          'bond0 1',
+                          'bond bad',
                           'jamesbond007')
 
     def test_name_validation_of_net_sb_bond(self):

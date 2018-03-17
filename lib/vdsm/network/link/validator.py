@@ -33,10 +33,10 @@ def validate(nets, bonds):
 
 def validate_bond_names(nets, bonds):
     bad_bond_names = {bond for bond in bonds if
-                      not re.match('^bond[0-9]+$', bond)}
+                      not re.match('^bond\w+$', bond)}
     bad_bond_names |= {net_attrs['bonding'] for net_attrs in
                        six.viewvalues(nets) if 'bonding' in net_attrs and
-                       not re.match('^bond[0-9]+$', net_attrs['bonding'])}
+                       not re.match('^bond\w+$', net_attrs['bonding'])}
 
     if bad_bond_names:
         raise ne.ConfigNetworkError(ne.ERR_BAD_BONDING,
