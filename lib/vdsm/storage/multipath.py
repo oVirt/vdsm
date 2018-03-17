@@ -59,6 +59,14 @@ _MULTIPATHD = cmdutils.CommandPath("multipathd",
                                    "/usr/sbin/multipathd",  # Fedora, EL7
                                    "/sbin/multipathd")      # Ubuntu
 
+# List of multipath devices that should never be handled by vdsm. The
+# main use case is to filter out the multipath devices the host is
+# booting from when configuring hypervisor to boot from SAN. This device
+# must have a special rule to queue I/O when all paths have failed, and
+# accessing it in vdsm commands may hang vdsm.
+BLACKLIST = frozenset(
+    d.strip() for d in config.get("multipath", "blacklist").split(",") if d)
+
 
 class Error(Exception):
     """ multipath operation failed """
@@ -356,7 +364,9 @@ def getMPDevNamesIter():
 
 def getMPDevsIter():
     """
-    Collect the list of all the multipath block devices.
+    Collect the list of all the multipath block devices, except devices
+    blacklisted in vdsm configuration.
+
     Return the list of device identifiers w/o "/dev/mapper" prefix
     """
     for dmInfoDir in glob(SYS_BLOCK + "/dm-*/dm/"):
@@ -375,6 +385,10 @@ def getMPDevsIter():
             with open(nameFile, "r") as nf:
                 guid = nf.read().rstrip("\n")
         except (OSError, IOError):
+            continue
+
+        if guid in BLACKLIST:
+            log.debug("Blacklisted device %r discarded", guid)
             continue
 
         if TOXIC_REGEX.match(guid):

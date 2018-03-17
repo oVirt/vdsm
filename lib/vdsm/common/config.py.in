@@ -426,6 +426,17 @@ parameters = [
             'is an integer between 1 and 64 (default 1).'),
     ]),
 
+    # Section: [multipath]
+    ('multipath', [
+
+        ('blacklist', '',
+            'Comma-separated list of multipath devices WWIDs that should '
+            'not be managed by vdsm. When a hypervisor boots from SAN, the '
+            'multipath devices used by the hypervisor must be configured '
+            'to queue I/O when all paths have failed, and vdsm must not '
+            'manage them. Example: 36001405472912345,360014054954321'),
+    ]),
+
     # Section: [jobs]
     ('jobs', [
         ('autodelete_delay', '3600',
