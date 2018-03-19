@@ -1754,7 +1754,7 @@ class TestVmBalloon(TestCaseBase):
         devices = [{
             'type': hwclass.BALLOON,
             'device': 'memballoon',
-            'specParams': {'model': 'none'}
+            'specParams': {'model': 'virtio'}
         }]
 
         with fake.VM(
@@ -1769,7 +1769,16 @@ class TestVmBalloon(TestCaseBase):
                              [('setMemory', (target,), {})])
 
     def testVmWithoutDom(self):
-        with fake.VM() as testvm:
+        devices = [{
+            'type': hwclass.BALLOON,
+            'device': 'memballoon',
+            'specParams': {'model': 'virtio'}
+        }]
+
+        with fake.VM(
+            devices=devices,
+            create_device_objects=True
+        ) as testvm:
             self.assertRaises(
                 exception.BalloonError,
                 testvm.setBalloonTarget,
@@ -1777,7 +1786,16 @@ class TestVmBalloon(TestCaseBase):
             )
 
     def testTargetValueNotInteger(self):
-        with fake.VM() as testvm:
+        devices = [{
+            'type': hwclass.BALLOON,
+            'device': 'memballoon',
+            'specParams': {'model': 'virtio'}
+        }]
+
+        with fake.VM(
+            devices=devices,
+            create_device_objects=True
+        ) as testvm:
             self.assertRaises(
                 exception.BalloonError,
                 testvm.setBalloonTarget,
@@ -1785,7 +1803,16 @@ class TestVmBalloon(TestCaseBase):
             )
 
     def testLibvirtFailure(self):
-        with fake.VM() as testvm:
+        devices = [{
+            'type': hwclass.BALLOON,
+            'device': 'memballoon',
+            'specParams': {'model': 'virtio'}
+        }]
+
+        with fake.VM(
+            devices=devices,
+            create_device_objects=True
+        ) as testvm:
             testvm._dom = fake.Domain(virtError=libvirt.VIR_ERR_INTERNAL_ERROR)
             # we don't care about the error code as long as is != NO_DOMAIN
             self.assertRaises(
@@ -1799,9 +1826,25 @@ class TestVmBalloon(TestCaseBase):
             self.assertEqual(testvm._devices[hwclass.BALLOON], [])
             self.assertEqual(testvm.get_balloon_info(), {})
 
+    def testSkipBalloonModelNone(self):
+        devices = [{
+            'type': hwclass.BALLOON,
+            'device': 'memballoon',
+            'specParams': {'model': 'none'}
+        }]
+
+        with fake.VM(
+            params={'memSize': 128 * 1024},
+            devices=devices,
+            create_device_objects=True
+        ) as testvm:
+            testvm._dom = fake.Domain()
+            target = 256 * 1024
+            testvm.setBalloonTarget(target)
+            self.assertFalse(hasattr(testvm._dom, '__calls__'))
+
 
 class ChangeBlockDevTests(TestCaseBase):
-
     def test_change_cd_eject(self):
         with fake.VM() as fakevm:
             fakevm._dom = fake.Domain()
