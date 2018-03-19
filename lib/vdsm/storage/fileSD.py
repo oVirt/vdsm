@@ -812,16 +812,26 @@ def scanDomains(pattern="*"):
     log = logging.getLogger("storage.scanDomains")
 
     mntList = _getMountsList(pattern)
+    mount_prefix = os.path.join(
+        sd.StorageDomain.storage_repository, sd.DOMAIN_MNT_POINT)
 
-    def collectMetaFiles(possibleDomain):
+    def collectMetaFiles(mountPoint):
         try:
+            # removes the path to the data center's mount directory from
+            # the mount point.
+            if mountPoint.startswith(mount_prefix):
+                client_name = mountPoint[len(mount_prefix):]
+
             # Since glob treats values between brackets as character ranges,
             # and since IPV6 addresses contain brackets, we should escape the
-            # possibleDomain that we pass to glob.
-            metaFiles = oop.getProcessPool(possibleDomain).glob.glob(
-                os.path.join(glob_escape(possibleDomain),
-                             UUID_GLOB_PATTERN,
-                             sd.DOMAIN_META_DATA))
+            # mountPoint that we pass to glob.
+            # <data-center>/mnt/mountpoint/<uuid>/dom_mdm
+            mdPattern = os.path.join(
+                glob_escape(mountPoint),
+                UUID_GLOB_PATTERN,
+                sd.DOMAIN_META_DATA)
+
+            metaFiles = oop.getProcessPool(client_name).glob.glob(mdPattern)
 
             for metaFile in metaFiles:
                 if (os.path.basename(os.path.dirname(metaFile)) !=
@@ -832,7 +842,7 @@ def scanDomains(pattern="*"):
 
         except Exception:
             log.warn("Could not collect metadata file for domain path %s",
-                     possibleDomain, exc_info=True)
+                     mountPoint, exc_info=True)
 
     # Run collectMetaFiles in extenral processes.
     # The amount of processes that can be initiated in the same time is the
