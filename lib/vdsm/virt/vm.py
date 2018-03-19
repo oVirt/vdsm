@@ -5322,6 +5322,10 @@ class Vm(object):
 
     def setBalloonTarget(self, target):
 
+        dev = self._devices[hwclass.BALLOON][0]
+        if dev.specParams['model'] == 'none':
+            return
+
         if not self._dom.connected:
             raise exception.BalloonError()
         try:
