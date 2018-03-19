@@ -22,7 +22,10 @@ from __future__ import print_function
 from collections import defaultdict
 import argparse
 import json
+import sqlite3
 import sys
+
+import six
 
 from . import expose
 
@@ -89,9 +92,14 @@ def dump_chains(*args):
             # perform analysis and print in human readable format
             image_chains = _get_volumes_chains(volumes_info)
             _print_volume_chains(image_chains, volumes_info)
-        else:
+        elif parsed_args.output == 'json':
             # no analysis, dump chains in json format
             json.dump(volumes_info, sys.stdout, indent=2)
+        elif parsed_args.output == 'sqlite':
+            # no analysis, dump chains in sql format
+            _dump_sql(volumes_info, parsed_args.sqlite_file)
+        else:
+            raise ValueError('unknown output format %s' % parsed_args.output)
 
 
 def _parse_args(args):
@@ -101,12 +109,59 @@ def _parse_args(args):
                         dest='use_ssl', default=True,
                         help="use unsecured connection")
     parser.add_argument('-H', '--host', default='localhost')
-    parser.add_argument('-o', '--output', choices=['text', 'json'],
+    parser.add_argument('-o', '--output', choices=['text', 'json', 'sqlite'],
                         default='text', help="select output format")
     parser.add_argument(
         '-p', '--port', default=config.getint('addresses', 'management_port'))
+    parser.add_argument('-f', '--sqlite-file', help="sqlite3 db output file")
 
-    return parser.parse_args(args=args[1:])
+    parsed_args = parser.parse_args(args=args[1:])
+
+    if parsed_args.output == 'sqlite' and parsed_args.sqlite_file is None:
+        parser.error("--output sqlite requires --sqlite-file.")
+
+    return parsed_args
+
+
+def _dump_sql(volumes_info, sql_file):
+    with sqlite3.connect(sql_file) as con:
+        con.executescript("""
+            DROP TABLE IF EXISTS volumes;
+            CREATE TABLE volumes(
+                uuid UUID,
+                parent UUID,
+                image UUID,
+                status TEXT,
+                voltype TEXT,
+                format TEXT,
+                legality TEXT,
+                capacity UNSIGNED INTEGER,
+                apparentsize UNSIGNED INTEGER,
+                truesize UNSIGNED INTEGER,
+                ctime UNSIGNED INTEGER
+            );
+            """)
+        con.executemany("""
+            INSERT INTO volumes VALUES (
+                :uuid,
+                :parent,
+                :image,
+                :status,
+                :voltype,
+                :format,
+                :legality,
+                :capacity,
+                :apparentsize,
+                :truesize,
+                :ctime
+            );
+            """, _iter_volumes_info(volumes_info))
+
+
+def _iter_volumes_info(volumes_info):
+    for _, img_volumes in six.iteritems(volumes_info):
+        for _, vol_info in six.iteritems(img_volumes):
+            yield vol_info
 
 
 def _get_volumes_info(cli, sd_uuid):
