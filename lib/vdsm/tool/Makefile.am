@@ -37,6 +37,7 @@ dist_vdsmtool_PYTHON = \
 	transient.py \
 	upgrade.py \
 	vdsm-id.py \
+	common.py \
 	$(NULL)
 
 CLEANFILES = \

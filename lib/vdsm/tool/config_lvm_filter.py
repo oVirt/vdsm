@@ -19,12 +19,11 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-from six.moves import input
-
 from vdsm.storage import lvmconf
 from vdsm.storage import lvmfilter
 
 from . import expose
+from . import common
 
 _NAME = 'config-lvm-filter'
 
@@ -81,7 +80,7 @@ device to the volume group, you will need to edit the filter manually.
 
     if advice.action == lvmfilter.CONFIGURE:
 
-        if not confirm("Configure LVM filter? [yes,NO] "):
+        if not common.confirm("Configure LVM filter? [yes,NO] "):
             return
 
         with lvmconf.LVMConfig() as config:
@@ -105,17 +104,3 @@ Please edit /etc/lvm/lvm.conf and set the 'filter' option in the
 
 It is recommend to reboot after changing LVM filter.
 """)
-
-
-def confirm(msg):
-    while True:
-        try:
-            res = input(msg)
-            res = res.strip().lower()
-        except KeyboardInterrupt:
-            print()
-            return False
-        if res in ("no", ""):
-            return False
-        if res == "yes":
-            return True
