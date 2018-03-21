@@ -25,6 +25,7 @@ from vdsm import utils
 from . import core
 from . import drivename
 from . import hwclass
+from . import lookup
 from . import storage
 
 
@@ -240,7 +241,7 @@ def _get_driver_params(driver):
     return params, specParams
 
 
-def change_disk(disk_element, disk_devices):
+def change_disk(disk_element, disk_devices, log):
     # TODO: Code below is broken and will not work as expected.
     # Drives of different types require different data to be provided
     # by the engine. For example file based drives need just
@@ -254,10 +255,12 @@ def change_disk(disk_element, disk_devices):
     if diskType not in storage.SOURCE_ATTR:
         return
     serial = vmxml.text(vmxml.find_first(disk_element, 'serial'))
-    for vm_drive in disk_devices:
-        if vm_drive.serial == serial:
-            update_disk_element_from_object(disk_element, vm_drive)
-            break
+    try:
+        vm_drive = lookup.drive_by_serial(disk_devices, serial)
+    except LookupError as exc:
+        log.warning('%s', str(exc))
+    else:
+        update_disk_element_from_object(disk_element, vm_drive)
 
 
 def update_disk_element_from_object(disk_element, vm_drive,
