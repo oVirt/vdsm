@@ -2909,7 +2909,7 @@ class Vm(object):
 
         for element in domain.get_device_elements('disk'):
             if vmxml.attr(element, 'device') in ('disk', 'lun', '',):
-                change_disk(element, devices)
+                change_disk(element, devices, self.log)
 
         return domain.xml
 
@@ -2932,7 +2932,7 @@ class Vm(object):
         with domain.metadata_descriptor() as domain_md:
             for element in domain.get_device_elements('disk'):
                 if vmxml.attr(element, 'device') in ('disk', 'lun', '',):
-                    change_disk(element, devices)
+                    change_disk(element, devices, self.log)
 
                     _, dev_class = identify_from_xml_elem(element)
                     attrs = dev_class.get_identifying_attrs(element)

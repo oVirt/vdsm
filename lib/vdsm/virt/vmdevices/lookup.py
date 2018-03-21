@@ -20,6 +20,13 @@
 from __future__ import absolute_import
 
 
+def drive_by_serial(disk_devices, serial):
+    for device in disk_devices:
+        if device.serial == serial:
+            return device
+    raise LookupError("No such drive: '%s'" % serial)
+
+
 def drive_by_name(disk_devices, name):
     for device in disk_devices:
         if device.name == name:

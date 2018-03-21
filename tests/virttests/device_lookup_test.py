@@ -27,23 +27,30 @@ from testlib import VdsmTestCase
 
 class TestLookup(VdsmTestCase):
 
-    def test_lookup_drive_by_name_found(self):
-        drives = [
-            FakeDrive('sda'),
-            FakeDrive('vdb'),
+    def setUp(self):
+        self.drives = [
+            FakeDrive(name='sda', serial='scsi0000'),
+            FakeDrive(name='vdb', serial='virtio0000'),
         ]
-        drive = lookup.drive_by_name(drives, 'sda')
-        assert drive is drives[0]
+
+    def test_lookup_drive_by_name_found(self):
+        drive = lookup.drive_by_name(self.drives, 'sda')
+        assert drive is self.drives[0]
 
     def test_lookup_drive_by_name_missing(self):
-        drives = [
-            FakeDrive('sda'),
-            FakeDrive('vdb'),
-        ]
+        self.assertRaises(
+            LookupError, lookup.drive_by_name, self.drives, 'hdd')
 
-        self.assertRaises(LookupError, lookup.drive_by_name, drives, 'hdd')
+    def test_lookup_drive_by_serial_found(self):
+        drive = lookup.drive_by_serial(self.drives, 'scsi0000')
+        assert drive is self.drives[0]
+
+    def test_lookup_drive_by_serial_missing(self):
+        self.assertRaises(
+            LookupError, lookup.drive_by_serial, self.drives, 'ide0002')
 
 
 class FakeDrive(object):
-    def __init__(self, name):
+    def __init__(self, name='vda', serial='0000'):
         self.name = name
+        self.serial = serial
