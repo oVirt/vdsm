@@ -194,7 +194,7 @@ def update_disks_xml_from_objs(vm, dom, disk_devices):
             continue
 
         vmdevices.storagexml.update_disk_element_from_object(
-            dev_elem, disk_obj, replace_attribs=True)
+            dev_elem, disk_obj, vm.log, replace_attribs=True)
 
 
 def replace_device_xml_with_hooks_xml(dom, vm_id, vm_custom, md_desc=None):
