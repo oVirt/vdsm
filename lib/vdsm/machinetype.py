@@ -89,7 +89,7 @@ def cpu_models(capfile=CPU_MAP_FILE, arch=None):
 
     arch_element = _caps_arch_element(capfile, arch)
 
-    if not arch_element:
+    if arch_element is None:
         logging.error('Error while getting all CPU models: the host '
                       'architecture is not supported', exc_info=True)
         return {}
@@ -238,7 +238,7 @@ def _emulated_machines_from_caps_node(node):
 
 def _emulated_machines_from_caps_arch(arch, caps):
     arch_tag = caps.find('.//guest/arch[@name="%s"]' % arch)
-    if not arch_tag:
+    if arch_tag is None:
         logging.error('Error while looking for architecture '
                       '"%s" in libvirt capabilities', arch)
         return []
@@ -249,7 +249,7 @@ def _emulated_machines_from_caps_arch(arch, caps):
 def _emulated_machines_from_caps_domain(arch, caps):
     domain_tag = caps.find(
         './/guest/arch[@name="%s"]/domain[@type="kvm"]' % arch)
-    if not domain_tag:
+    if domain_tag is None:
         logging.error('Error while looking for kvm domain (%s) '
                       'libvirt capabilities', arch)
         return []
