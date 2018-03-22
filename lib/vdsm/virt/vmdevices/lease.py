@@ -300,14 +300,20 @@ def _is_prepared(device):
     return "path" in device and "offset" in device
 
 
-def update_lease_element_from_info(lease_element, info):
+def update_lease_element_from_info(lease_element, info, params, log):
     target = vmxml.find_first(lease_element, 'target')
     for (key, placeholder) in (
             ('path', 'LEASE-PATH'),
             ('offset', 'LEASE-OFFSET')):
         value = target.attrib.get(key, None)
         if value is None or value.startswith(placeholder):
+            old_value = target.attrib[key]
             target.attrib[key] = info[key]
+            if old_value != info[key]:
+                log.info(
+                    'lease %s:%s %s: %r -> %r',
+                    params['sd_id'], params['lease_id'],
+                    key, old_value, info[key])
 
 
 def find_drive_lease_info(sd_id, lease_id, drive_objs):

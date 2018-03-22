@@ -146,7 +146,7 @@ def update_leases_xml_from_disk_objs(vm, dom, disk_devices):
             continue
 
         vmdevices.lease.update_lease_element_from_info(
-            dev_elem, info)
+            dev_elem, info, params, vm.log)
 
 
 def update_disks_xml_from_objs(vm, dom, disk_devices):
