@@ -58,7 +58,6 @@ from vdsm.common import supervdsm
 from vdsm.common.compat import pickle
 from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.common.logutils import SimpleLogAdapter, volume_chain_to_str
-from vdsm.host import caps
 from vdsm.network import api as net_api
 
 # TODO: remove these imports, code using this should use storage apis.
@@ -5787,10 +5786,6 @@ class Vm(object):
         return jobsRet
 
     def merge(self, driveSpec, baseVolUUID, topVolUUID, bandwidth, jobUUID):
-        if not caps.getLiveMergeSupport():
-            self.log.error("Live merge is not supported on this host")
-            return response.error('mergeErr')
-
         bandwidth = int(bandwidth)
         if jobUUID is None:
             jobUUID = str(uuid.uuid4())

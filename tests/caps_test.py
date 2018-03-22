@@ -22,7 +22,6 @@
 import os
 import platform
 import tempfile
-import xml.etree.ElementTree as ET
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 
@@ -186,78 +185,6 @@ class TestCaps(TestCaseBase):
     def testAutoNumaBalancingInfo(self):
         t = numa.autonuma_status()
         self.assertEqual(t, 0)
-
-    def testLiveSnapshotNoElementX86_64(self):
-        '''old libvirt, backward compatibility'''
-        capsData = self._readCaps("caps_libvirt_amd_6274.out")
-        support = caps._getLiveSnapshotSupport(cpuarch.X86_64,
-                                               capsData)
-        self.assertTrue(support is None)
-
-    def testLiveSnapshotX86_64(self):
-        capsData = self._readCaps("caps_libvirt_intel_i73770.out")
-        support = caps._getLiveSnapshotSupport(cpuarch.X86_64,
-                                               capsData)
-        self.assertEqual(support, True)
-
-    def testLiveSnapshotDisabledX86_64(self):
-        capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
-        support = caps._getLiveSnapshotSupport(cpuarch.X86_64,
-                                               capsData)
-        self.assertEqual(support, False)
-
-    def test_findLiveSnapshotSupport(self):
-        capsFile = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
-        capsData = ET.fromstring(capsFile)
-
-        guests = capsData.findall('guest')
-
-        result = caps._findLiveSnapshotSupport(guests[0])
-        self.assertIsNone(result)
-
-        result = caps._findLiveSnapshotSupport(guests[1])
-        self.assertFalse(result)
-
-        capsFile = self._readCaps("caps_libvirt_intel_i73770.out")
-        capsData = ET.fromstring(capsFile)
-
-        guests = capsData.findall('guest')
-
-        result = caps._findLiveSnapshotSupport(guests[0])
-        self.assertIsNone(result)
-
-        result = caps._findLiveSnapshotSupport(guests[1])
-        self.assertTrue(result)
-
-    def test_findLiveSnapshotSupport_badData(self):
-        # XML which completely does not fit the schema expected
-        caps_string = "<a><b></b></a>"
-        caps_data = ET.fromstring(caps_string)
-        result = caps._findLiveSnapshotSupport(caps_data)
-        self.assertIsNone(result)
-
-    def test_getLiveSnapshotSupport(self):
-        # Using any caps file to test the correctness of parsing
-        capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
-        UNSUPPORTED_ARCHITECTURE = 'i686'
-
-        result = caps._getLiveSnapshotSupport(UNSUPPORTED_ARCHITECTURE,
-                                              capsData)
-        self.assertIsNone(result)
-
-        result = caps._getLiveSnapshotSupport(cpuarch.X86_64,
-                                              capsData)
-        self.assertFalse(result)
-
-        capsData = self._readCaps("caps_libvirt_intel_i73770.out")
-
-        result = caps._getLiveSnapshotSupport(UNSUPPORTED_ARCHITECTURE,
-                                              capsData)
-        self.assertIsNone(result)
-
-        result = caps._getLiveSnapshotSupport(cpuarch.X86_64,
-                                              capsData)
-        self.assertTrue(result)
 
     def test_getAllCpuModels(self):
         result = machinetype.cpu_models(capfile=self.CPU_MAP_FILE,
