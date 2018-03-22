@@ -260,25 +260,53 @@ def change_disk(disk_element, disk_devices, log):
     except LookupError as exc:
         log.warning('%s', str(exc))
     else:
-        update_disk_element_from_object(disk_element, vm_drive)
+        update_disk_element_from_object(disk_element, vm_drive, log)
 
 
-def update_disk_element_from_object(disk_element, vm_drive,
+def update_disk_element_from_object(disk_element, vm_drive, log,
                                     replace_attribs=False):
+    # key: (old_value, new_value)
+    changes = {}
+
     old_disk_type = disk_element.attrib.get('type')
     # update the type
     disk_type = vm_drive.diskType
     vmxml.set_attr(disk_element, 'type', disk_type)
+    changes['type'] = (old_disk_type, disk_type)
 
     # update the path
     source = vmxml.find_first(disk_element, 'source')
+    old_disk_attr = storage.SOURCE_ATTR[old_disk_type]
+    old_path = source.attrib[old_disk_attr]
     if replace_attribs:
-        old_disk_attr = storage.SOURCE_ATTR[old_disk_type]
-        source.attrib.pop(old_disk_attr)
+        del source.attrib[old_disk_attr]
     disk_attr = storage.SOURCE_ATTR[disk_type]
     vmxml.set_attr(source, disk_attr, vm_drive.path)
+    changes['path'] = (
+        '%s=%s' % (old_disk_attr, old_path),
+        # We intentionally create the new value using a different format
+        # - note leading asterisk - to force the _log_changes function to
+        # always log this information.
+        # We want to see how good is Engine at predicting drive paths,
+        # and how often Vdsm needs to correct that.
+        '*%s=%s' % (disk_attr, vm_drive.path),
+    )
 
     # update the format (the disk might have been collapsed)
     driver = vmxml.find_first(disk_element, 'driver')
     drive_format = 'qcow2' if vm_drive.format == 'cow' else 'raw'
+    old_drive_format = driver.attrib['type']
     vmxml.set_attr(driver, 'type', drive_format)
+    changes['format'] = (old_drive_format, drive_format)
+
+    _log_changes(log, 'drive', vm_drive.name, changes)
+
+
+def _log_changes(log, device, device_id, changes):
+    for key, (old_value, new_value) in changes.items():
+        if old_value == new_value:
+            continue
+
+        log.info(
+            '%s %r %s: %r -> %r',
+            device, device_id, key, old_value, new_value)
