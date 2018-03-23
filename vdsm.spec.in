@@ -221,7 +221,13 @@ Requires: policycoreutils >= 2.1.13-55
 %endif
 
 %if 0%{?rhel}
+%if 0%{?centos}
 Requires: qemu-kvm-rhev >= 10:2.9.0-16.el7_4.14
+%else # RHEL
+# Required for delete VM's snapshot regression fix
+# See https://bugzilla.redhat.com/show_bug.cgi?id=1554946 for details
+Requires: qemu-kvm-rhev >= 10:2.10.0-21.el7_5.1
+%endif
 %else # fedora
 # qemu-kvm 2.10 comes with support for unsafe operations that we want to use
 # when creating volumes.
