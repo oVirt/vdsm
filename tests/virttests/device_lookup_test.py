@@ -21,16 +21,27 @@
 from __future__ import absolute_import
 
 from vdsm.virt.vmdevices import lookup
+from vdsm.virt import vmxml
 
 from testlib import VdsmTestCase
+from testlib import expandPermutations, permutations
 
 
+@expandPermutations
 class TestLookup(VdsmTestCase):
 
     def setUp(self):
         self.drives = [
-            FakeDrive(name='sda', serial='scsi0000'),
-            FakeDrive(name='vdb', serial='virtio0000'),
+            FakeDrive(
+                name='sda',
+                serial='scsi0000',
+                alias='ua-0000'
+            ),
+            FakeDrive(
+                name='vdb',
+                serial='virtio0000',
+                alias='ua-2001'
+            ),
         ]
 
     def test_lookup_drive_by_name_found(self):
@@ -49,8 +60,44 @@ class TestLookup(VdsmTestCase):
         self.assertRaises(
             LookupError, lookup.drive_by_serial, self.drives, 'ide0002')
 
+    def test_lookup_device_by_alias_found(self):
+        device = lookup.device_by_alias(self.drives, 'ua-0000')
+        assert device is self.drives[0]
+
+    def test_lookup_device_by_alias_missing(self):
+        self.assertRaises(
+            LookupError, lookup.device_by_alias, self.drives, 'ua-UNKNOWN')
+
+    @permutations([
+        # drive_xml, dev_name - if None, we expect LookupError
+        (u'''<disk device="disk" snapshot="no" type="file" />''', None),
+        (u'''<disk device="disk" snapshot="no" type="file">
+              <serial>virtio0000</serial>
+            </disk>''', 'vdb'),
+        # TODO: check it is valid for user aliases too
+        (u'''<disk device="disk" snapshot="no" type="file">
+              <alias name='ua-0000' />
+            </disk>''', 'sda'),
+    ])
+    def test_lookup_drive_by_element(self, drive_xml, dev_name):
+        # intentionally without serial and alias
+        if dev_name is None:
+            self.assertRaises(
+                LookupError,
+                lookup.drive_from_element,
+                vmxml.parse_xml(drive_xml),
+                self.drives
+            )
+        else:
+            drive = lookup.drive_from_element(
+                vmxml.parse_xml(drive_xml),
+                self.drives
+            )
+            self.assertEqual(drive.name, dev_name)
+
 
 class FakeDrive(object):
-    def __init__(self, name='vda', serial='0000'):
+    def __init__(self, name='vda', serial='0000', alias='ua-0'):
         self.name = name
         self.serial = serial
+        self.alias = alias

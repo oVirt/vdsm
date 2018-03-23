@@ -257,9 +257,9 @@ def change_disk(disk_element, disk_devices, log):
     diskType = vmxml.attr(disk_element, 'type')
     if diskType not in storage.SOURCE_ATTR:
         return
-    serial = vmxml.text(vmxml.find_first(disk_element, 'serial'))
+
     try:
-        vm_drive = lookup.drive_by_serial(disk_devices, serial)
+        vm_drive = lookup.drive_from_element(disk_element, disk_devices)
     except LookupError as exc:
         log.warning('%s', str(exc))
     else:
