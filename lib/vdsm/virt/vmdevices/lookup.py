@@ -20,6 +20,32 @@
 from __future__ import absolute_import
 
 
+from vdsm.virt.vmdevices import core
+from vdsm.virt import vmxml
+
+
+def drive_from_element(disk_element, disk_devices):
+    # we try serial first for backward compatibility
+    # REQUIRED_FOR: vdsm <= 4.2
+    serial_elem = vmxml.find_first(disk_element, 'serial', None)
+    if serial_elem is not None:
+        serial = vmxml.text(serial_elem)
+        try:
+            return drive_by_serial(disk_devices, serial)
+        except LookupError:
+            pass  # try again by alias before to give up
+
+    alias = core.find_device_alias(disk_element)
+    return device_by_alias(disk_devices, alias)
+
+
+def device_by_alias(devices, alias):
+    for device in devices:
+        if getattr(device, 'alias', None) == alias:
+            return device
+    raise LookupError("No such device: alias=%r" % alias)
+
+
 def drive_by_serial(disk_devices, serial):
     for device in disk_devices:
         if device.serial == serial:
