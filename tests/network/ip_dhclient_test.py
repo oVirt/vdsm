@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,9 +39,9 @@ DHCLIENT_CMDLINE_WITH_HOST_AT_TAIL = '\0'.join([
 class IPDhclientTest(VdsmTestCase):
 
     @mock.patch.object(
-        dhclient,
-        'open',
-        mock.mock_open(read_data=DHCLIENT_CMDLINE_WITH_HOST_AT_TAIL))
+        dhclient, 'open',
+        mock.mock_open(read_data=DHCLIENT_CMDLINE_WITH_HOST_AT_TAIL),
+        create=True)
     @mock.patch.object(dhclient, 'pgrep', lambda x: (0,))
     def test_daemon_cmdline_with_last_arg_as_hostname(self):
         """
