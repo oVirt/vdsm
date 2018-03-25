@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,12 +22,11 @@ from contextlib import contextmanager
 import errno
 import os
 
-from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
+import unittest
 
-from testlib import VdsmTestCase as TestCaseBase, mock
-
-from .nettestlib import dummy_devices, check_sysfs_bond_permission
+from network.compat import mock
+from network.nettestlib import dummy_devices, check_sysfs_bond_permission
 
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.bond import sysfs_options
@@ -40,8 +39,7 @@ def setup_module():
     check_sysfs_bond_permission()
 
 
-@attr(type='integration')
-class LinkBondTests(TestCaseBase):
+class LinkBondTests(unittest.TestCase):
 
     def test_bond_without_slaves(self):
         with bond_device() as bond:
@@ -201,8 +199,7 @@ class LinkBondTests(TestCaseBase):
             self.assertTrue('active_slave' in bond.properties)
 
 
-@attr(type='integration')
-class LinkBondSysFSTests(TestCaseBase):
+class LinkBondSysFSTests(unittest.TestCase):
 
     def test_do_not_detach_slaves_while_changing_options(self):
         OPTIONS = {'miimon': '110'}
@@ -231,7 +228,7 @@ class LinkBondSysFSTests(TestCaseBase):
             self.assertGreater(len(properties), 1)
 
 
-class TestBondingSysfsOptionsMapper(TestCaseBase):
+class TestBondingSysfsOptionsMapper(unittest.TestCase):
 
     def test_dump_bonding_name2numeric(self):
         BOND_MODE = '0'

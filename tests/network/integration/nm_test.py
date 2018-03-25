@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,16 +21,13 @@ from __future__ import absolute_import
 
 import glob
 
-from nose.plugins.attrib import attr
+import unittest
 
 from dbus.exceptions import DBusException
 
-from testlib import VdsmTestCase
-from testValidation import ValidateRunningAsRoot
-
-from .nettestlib import dummy_devices
-from .nettestlib import requires_systemctl
-from .nmnettestlib import iface_name, NMService, nm_connections
+from network.nettestlib import dummy_devices
+from network.nettestlib import requires_systemctl
+from network.nmnettestlib import iface_name, NMService, nm_connections
 
 from vdsm.network.nm import networkmanager
 
@@ -40,7 +37,6 @@ IPV4ADDR = '10.1.1.1/29'
 _nm_service = None
 
 
-@ValidateRunningAsRoot
 @requires_systemctl
 def setup_module():
     global _nm_service
@@ -59,15 +55,13 @@ def teardown_module():
     _nm_service.teardown()
 
 
-@attr(type='integration')
-class TestNMService(VdsmTestCase):
+class TestNMService(unittest.TestCase):
 
     def test_network_manager_service_is_running(self):
         self.assertTrue(networkmanager.is_running())
 
 
-@attr(type='integration')
-class TestNMConnectionCleanup(VdsmTestCase):
+class TestNMConnectionCleanup(unittest.TestCase):
 
     def test_remove_all_non_active_connection_from_a_device(self):
         iface = iface_name()
@@ -80,8 +74,7 @@ class TestNMConnectionCleanup(VdsmTestCase):
                 self.assertEqual(1, sum(1 for _ in device.connections()))
 
 
-@attr(type='integration')
-class TestNMIfcfg2Connection(VdsmTestCase):
+class TestNMIfcfg2Connection(unittest.TestCase):
 
     NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
     NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'

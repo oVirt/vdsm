@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,10 +20,7 @@ from __future__ import absolute_import
 
 from contextlib import contextmanager
 
-from nose.plugins.attrib import attr
-
-from testlib import VdsmTestCase
-from testValidation import ValidateRunningAsRoot
+import unittest
 
 from vdsm.network.ip import route as ip_route
 from vdsm.network.ip.route import IPRouteData
@@ -32,13 +29,7 @@ from vdsm.network.ip.route import IPRouteAddError, IPRouteDeleteError
 IPV4_ADDRESS = '192.168.99.1'
 
 
-@ValidateRunningAsRoot
-def setup_module():
-    pass
-
-
-@attr(type='integration')
-class IPRouteTest(VdsmTestCase):
+class IPRouteTest(unittest.TestCase):
     IPRoute = ip_route.driver(ip_route.Drivers.IPROUTE2)
 
     def test_add_delete_and_read_route(self):

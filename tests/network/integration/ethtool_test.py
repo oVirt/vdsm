@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,20 +19,15 @@
 #
 from __future__ import absolute_import
 
-from nose.plugins.attrib import attr
+import unittest
 
 from vdsm.network import ethtool
 
-from testlib import VdsmTestCase
-from testValidation import ValidateRunningAsRoot
-
-from .nettestlib import bridge_device
+from network.nettestlib import bridge_device
 
 
-@attr(type='integration')
-class TestEthtoolDeviceInfo(VdsmTestCase):
+class TestEthtoolDeviceInfo(unittest.TestCase):
 
-    @ValidateRunningAsRoot
     def test_detect_device_driver(self):
         with bridge_device() as br:
             self.assertEqual('bridge', ethtool.driver_name(br.devName))

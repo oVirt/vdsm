@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,10 +21,7 @@ from __future__ import absolute_import
 
 from contextlib import contextmanager
 
-from nose.plugins.attrib import attr
-
-from testlib import VdsmTestCase
-from testValidation import ValidateRunningAsRoot
+import unittest
 
 from vdsm.network.ip import rule as ip_rule
 from vdsm.network.ip.rule import IPRuleData
@@ -33,13 +30,7 @@ from vdsm.network.ip.rule import IPRuleAddError, IPRuleDeleteError
 IPV4_ADDRESS1 = '192.168.99.1'
 
 
-@ValidateRunningAsRoot
-def setup_module():
-    pass
-
-
-@attr(type='integration')
-class IPRuleTest(VdsmTestCase):
+class IPRuleTest(unittest.TestCase):
     IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)
 
     def test_add_delete_and_read_rule(self):

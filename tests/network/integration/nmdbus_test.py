@@ -18,16 +18,14 @@
 #
 from __future__ import absolute_import
 
-from nose.plugins.attrib import attr
+import unittest
 
 from dbus.exceptions import DBusException
 
-from testlib import VdsmTestCase
-from testValidation import ValidateRunningAsRoot
-
-from .nettestlib import dummy_devices
-from .nettestlib import requires_systemctl
-from .nmnettestlib import iface_name, TEST_LINK_TYPE, NMService, nm_connections
+from network.nettestlib import dummy_devices
+from network.nettestlib import requires_systemctl
+from network.nmnettestlib import iface_name, TEST_LINK_TYPE, NMService
+from network.nmnettestlib import nm_connections
 
 from vdsm.network.nm.errors import NMDeviceNotFoundError
 from vdsm.network.nm.nmdbus import NMDbus
@@ -42,7 +40,6 @@ IPV4ADDR = '10.1.1.1/29'
 _nm_service = None
 
 
-@ValidateRunningAsRoot
 @requires_systemctl
 def setup_module():
     global _nm_service
@@ -61,8 +58,7 @@ def teardown_module():
     _nm_service.teardown()
 
 
-@attr(type='integration')
-class TestNMConnectionSettings(VdsmTestCase):
+class TestNMConnectionSettings(unittest.TestCase):
 
     def setUp(self):
         self.nm_settings = NMDbusSettings()
@@ -95,8 +91,7 @@ class TestNMConnectionSettings(VdsmTestCase):
                 return nm_con
 
 
-@attr(type='integration')
-class TestNMActiveConnections(VdsmTestCase):
+class TestNMActiveConnections(unittest.TestCase):
 
     def test_active_connections_properties_existence(self):
         nm_active_cons = NMDbusActiveConnections()
@@ -131,8 +126,7 @@ class TestNMActiveConnections(VdsmTestCase):
                     assert active_con.id() == settings_con.connection.id
 
 
-@attr(type='integration')
-class TestNMDevice(VdsmTestCase):
+class TestNMDevice(unittest.TestCase):
 
     def test_device_attributes_existence(self):
         nm_device = NMDbusDevice()
@@ -183,8 +177,7 @@ class TestNMDevice(VdsmTestCase):
         self.assertEqual(set([iface + '0']), active_connections)
 
 
-@attr(type='integration')
-class TestNMConnectionCreation(VdsmTestCase):
+class TestNMConnectionCreation(unittest.TestCase):
 
     def test_nm_connection_lifetime(self):
         nm_act_cons = NMDbusActiveConnections()
