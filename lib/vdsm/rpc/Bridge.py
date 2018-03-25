@@ -334,6 +334,7 @@ command_info = {
     'Host_getAllTasksStatuses': {'ret': 'allTasksStatus'},
     'Host_getCapabilities': {'ret': Host_getCapabilities_Ret},
     'Host_getNetworkCapabilities': {'ret': 'info'},
+    'Host_getNetworkStatistics': {'ret': 'info'},
     'Host_getConnectedStoragePools': {'ret': 'poollist'},
     'Host_getDeviceList': {'ret': 'devList'},
     'Host_getDevicesVisibility': {'ret': 'visible'},

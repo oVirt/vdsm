@@ -1559,6 +1559,13 @@ class Global(APIBase):
 
         return {'status': doneCode, 'info': net_caps}
 
+    @api.logged(on="api.network")
+    def getNetworkStatistics(self):
+        """
+        Report host network statistics.
+        """
+        return response.success(info=supervdsm.getProxy().network_stats())
+
     def getLldp(self, filter):
         return response.success(
             info=supervdsm.getProxy().get_lldp_info(filter))

@@ -7071,6 +7071,26 @@ types:
             - string
         type: object
 
+    HostNetworkStatistics: &HostNetworkStatistics
+        added: '4.3'
+        description: Host network statistics.
+        name: HostNetworkStatistics
+        properties:
+        -   description: Per-interface network statistics
+            name: network
+            type: *HostNetworkInterfaceStatsMap
+
+        -   description: The number of outgoing packets dropped
+            name: txDropped
+            type: string
+            datatype: uint
+
+        -   description: The number of incoming packets dropped
+            name: rxDropped
+            type: string
+            datatype: uint
+        type: object
+
     VmShortStatus: &VmShortStatus
         added: '3.1'
         description: Abbreviated virtual machine status.
@@ -8104,6 +8124,13 @@ Host.getNetworkCapabilities:
     return:
         description: Host network capabilities information
         type: *VdsmNetworkCapabilities
+
+Host.getNetworkStatistics:
+    added: '4.3'
+    description: Get host network statistics.
+    return:
+        description: Host network statistics
+        type: *HostNetworkStatistics
 
 Host.getHardwareInfo:
     added: '3.2'

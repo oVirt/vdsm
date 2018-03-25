@@ -22,7 +22,7 @@ from . import expose
 
 from vdsm.network.api import (setSafeNetworkConfig, setupNetworks,
                               change_numvfs, add_ovs_vhostuser_port,
-                              network_caps, ovs_bridge,
+                              network_caps, network_stats, ovs_bridge,
                               add_sourceroute, remove_sourceroute,
                               remove_ovs_port, get_lldp_info)
 from vdsm.network.restore_net_config import restore
@@ -38,6 +38,7 @@ def restoreNetworks(*args, **kwrags):
 expose(setSafeNetworkConfig)
 expose(setupNetworks)
 expose(network_caps)
+expose(network_stats)
 expose(change_numvfs)
 expose(add_ovs_vhostuser_port)
 expose(ovs_bridge)
