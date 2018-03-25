@@ -28,6 +28,7 @@ import six
 from vdsm.common import hooks
 
 from vdsm.network import connectivity
+from vdsm.network import netstats
 from vdsm.network import netswitch
 from vdsm.network import sourceroute
 from vdsm.network import validator
@@ -35,7 +36,6 @@ from vdsm.network.configurators.ifcfg import ConfigWriter
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 from vdsm.network.link import iface as link_iface
 from vdsm.network.link import sriov
-from vdsm.network.link import stats as link_stats
 from vdsm.network.lldp import info as lldp_info
 
 from . import canonicalize
@@ -59,7 +59,7 @@ def network_caps():
 
 def network_stats():
     """Report network statistics"""
-    return link_stats.report()
+    return netstats.report()
 
 
 def change_numvfs(pci_path, numvfs, net_name):

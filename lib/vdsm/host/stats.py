@@ -20,7 +20,6 @@
 from __future__ import absolute_import
 
 import logging
-from time import time as current_time_since_epoch
 
 import six
 
@@ -150,38 +149,7 @@ class MissingSample(Exception):
 
 
 def get_interfaces_stats():
-    rx_dropped = tx_dropped = 0
-    net_stats = net_api.network_stats()
-    timestamp = current_time_since_epoch()
-    for iface_stats in six.viewvalues(net_stats):
-        iface_stats['sampleTime'] = timestamp
-
-        rx_dropped += iface_stats['rxDropped']
-        tx_dropped += iface_stats['txDropped']
-
-        _normalize_network_stats(iface_stats)
-
-    return {
-        'network': net_stats,
-        'rxDropped': tx_dropped,
-        'txDropped': rx_dropped
-    }
-
-
-def _normalize_network_stats(iface_stats):
-    """
-    For backward compatability, the network stats are normalized to fit
-    expected format/type on Engine side.
-    """
-    iface_stats['speed'] = iface_stats['speed'] or 1000
-    for stat_name in ('speed',
-                      'tx',
-                      'rx',
-                      'rxErrors',
-                      'txErrors',
-                      'rxDropped',
-                      'txDropped'):
-        iface_stats[stat_name] = str(iface_stats[stat_name])
+    return net_api.network_stats()
 
 
 _PROC_STAT_PATH = '/proc/stat'
