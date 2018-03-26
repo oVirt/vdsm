@@ -843,6 +843,15 @@ export LC_ALL=C
 # We keep the previous rpm version number in a file for managing upgrade flow
 if [ "$1" -gt 1 ]; then
     rpm -q %{vdsm_name} > "%{_localstatedir}/lib/%{vdsm_name}/upgraded_version"
+    # Both vdsm and supervdsm should be managed here and must be restarted if
+    # ran before the upgrade
+    if /bin/systemctl status vdsmd >/dev/null 2>&1; then
+        /usr/bin/touch "%{_localstatedir}/lib/%{vdsm_name}/vdsmd_start_required"
+    fi
+    if /bin/systemctl status supervdsmd >/dev/null 2>&1; then
+        /usr/bin/touch "%{_localstatedir}/lib/%{vdsm_name}/supervdsmd_start_required"
+    fi
+
 fi
 
 %post
@@ -895,19 +904,20 @@ exit 0
 
 %posttrans
 if  [ -f "%{_localstatedir}/lib/%{vdsm_name}/upgraded_version" ]; then
-    supervdsmd_start_required='no'
-    vdsmd_start_required='no'
-
-    # Both vdsm and supervdsm should be managed here and must be restarted if
-    # ran before (code might changed)
-    if /bin/systemctl status vdsmd >/dev/null 2>&1; then
-        /bin/systemctl stop vdsmd >/dev/null 2>&1 || :
+    # removing temporary files at first to avoid leaving upgrade leftovers
+    /bin/rm -f "%{_localstatedir}/lib/%{vdsm_name}/upgraded_version"
+    if [ -f "%{_localstatedir}/lib/%{vdsm_name}/vdsmd_start_required" ]; then
         vdsmd_start_required='yes'
+        /bin/rm -f "%{_localstatedir}/lib/%{vdsm_name}/vdsmd_start_required"
+        /bin/systemctl stop vdsmd >/dev/null 2>&1 || :
     fi
-    if /bin/systemctl status supervdsmd >/dev/null 2>&1; then
-        /bin/systemctl stop supervdsmd >/dev/null 2>&1 || :
+
+    if [ -f "%{_localstatedir}/lib/%{vdsm_name}/supervdsmd_start_required" ]; then
         supervdsmd_start_required='yes'
+        /bin/rm -f "%{_localstatedir}/lib/%{vdsm_name}/supervdsmd_start_required"
+        /bin/systemctl stop supervdsmd >/dev/null 2>&1 || :
     fi
+
     if /bin/systemctl status vdsm-network >/dev/null 2>&1; then
         /bin/systemctl stop vdsm-network >/dev/null 2>&1 || :
     fi
@@ -922,7 +932,6 @@ if  [ -f "%{_localstatedir}/lib/%{vdsm_name}/upgraded_version" ]; then
     if [ "${vdsmd_start_required}" = 'yes' ]; then
         /bin/systemctl start vdsmd >/dev/null 2>&1 || :
     fi
-    /bin/rm -f "%{_localstatedir}/lib/%{vdsm_name}/upgraded_version"
 fi
 exit 0
 
