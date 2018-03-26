@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ import pytest
 from vdsm.network.ipwrapper import linkSet, addrAdd
 
 from . import netfunctestlib as nftestlib
-from .netfunctestlib import NetFuncTestCase, NOCHK
+from .netfunctestlib import NetFuncTestAdapter, NOCHK
 from network.nettestlib import veth_pair, dnsmasq_run, dhclient_run
 
 NETWORK_NAME = 'test-network'
@@ -43,6 +43,9 @@ DHCPv6_RANGE_FROM = 'fdb3:84e5:4ff4:55e3::a'
 DHCPv6_RANGE_TO = 'fdb3:84e5:4ff4:55e3::64'
 
 
+adapter = NetFuncTestAdapter()
+
+
 class IpFamily(object):
     IPv4 = 4
     IPv6 = 6
@@ -58,7 +61,7 @@ parametrize_ip_families = pytest.mark.parametrize(
 @nftestlib.parametrize_switch
 @parametrize_ip_families
 @nftestlib.parametrize_bridged
-class TestNetworkDhcpBasic(NetFuncTestCase):
+class TestNetworkDhcpBasic(object):
 
     def test_add_net_with_dhcp(self, switch, families, bridged):
 
@@ -85,13 +88,13 @@ class TestNetworkDhcpBasic(NetFuncTestCase):
 
                 netcreate = {NETWORK_NAME: network_attrs}
 
-                with self.setupNetworks(netcreate, {}, NOCHK):
-                    self.assertNetworkIp(
+                with adapter.setupNetworks(netcreate, {}, NOCHK):
+                    adapter.assertNetworkIp(
                         NETWORK_NAME, netcreate[NETWORK_NAME])
 
 
 @nftestlib.parametrize_switch
-class TestStopDhclientOnUsedNics(NetFuncTestCase):
+class TestStopDhclientOnUsedNics(object):
 
     def test_attach_dhcp_nic_to_ipless_network(self, switch):
         with veth_pair() as (server, client):
@@ -100,15 +103,15 @@ class TestStopDhclientOnUsedNics(NetFuncTestCase):
             with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
                              router=DHCPv4_GATEWAY):
                 with dhclient_run(client):
-                    self.assertDhclient(client, family=4)
+                    adapter.assertDhclient(client, family=4)
 
                     NETCREATE = {NETWORK_NAME: {
                         'nic': client, 'switch': switch}}
-                    with self.setupNetworks(NETCREATE, {}, NOCHK):
-                        nic_netinfo = self.netinfo.nics[client]
-                        self.assertDisabledIPv4(nic_netinfo)
-                        net_netinfo = self.netinfo.networks[NETWORK_NAME]
-                        self.assertDisabledIPv4(net_netinfo)
+                    with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                        nic_netinfo = adapter.netinfo.nics[client]
+                        adapter.assertDisabledIPv4(nic_netinfo)
+                        net_netinfo = adapter.netinfo.networks[NETWORK_NAME]
+                        adapter.assertDisabledIPv4(net_netinfo)
 
     def test_attach_dhcp_nic_to_dhcp_bridged_network(self, switch):
         with veth_pair() as (server, client):
@@ -117,15 +120,15 @@ class TestStopDhclientOnUsedNics(NetFuncTestCase):
             with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
                              router=DHCPv4_GATEWAY):
                 with dhclient_run(client):
-                    self.assertDhclient(client, family=4)
+                    adapter.assertDhclient(client, family=4)
 
                     NETCREATE = {NETWORK_NAME: {
                         'nic': client, 'bootproto': 'dhcp',
                         'blockingdhcp': True, 'switch': switch}}
-                    with self.setupNetworks(NETCREATE, {}, NOCHK):
-                        nic_netinfo = self.netinfo.nics[client]
-                        self.assertDisabledIPv4(nic_netinfo)
-                        self.assertNoDhclient(client, family=4)
-                        net_netinfo = self.netinfo.networks[NETWORK_NAME]
-                        self.assertDHCPv4(net_netinfo)
-                        self.assertDhclient(NETWORK_NAME, family=4)
+                    with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                        nic_netinfo = adapter.netinfo.nics[client]
+                        adapter.assertDisabledIPv4(nic_netinfo)
+                        adapter.assertNoDhclient(client, family=4)
+                        net_netinfo = adapter.netinfo.networks[NETWORK_NAME]
+                        adapter.assertDHCPv4(net_netinfo)
+                        adapter.assertDhclient(NETWORK_NAME, family=4)

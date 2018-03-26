@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ from __future__ import absolute_import
 import pytest
 
 from . import netfunctestlib as nftestlib
-from .netfunctestlib import SetupNetworksError, NetFuncTestCase, NOCHK
+from .netfunctestlib import SetupNetworksError, NetFuncTestAdapter, NOCHK
 from network.nettestlib import dummy_devices
 
 NETWORK_NAME = 'test-network'
@@ -34,8 +34,11 @@ IPv4_ADDRESS = '192.0.2.1'
 IPv4_NETMASK = '255.255.255.0'
 
 
+adapter = NetFuncTestAdapter()
+
+
 @nftestlib.parametrize_switch
-class TestNetworkRollback(NetFuncTestCase):
+class TestNetworkRollback(object):
 
     def test_remove_broken_network(self, switch):
         with dummy_devices(2) as (nic1, nic2):
@@ -46,11 +49,11 @@ class TestNetworkRollback(NetFuncTestCase):
             BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
 
             with pytest.raises(SetupNetworksError):
-                self.setupNetworks(BROKEN_NETCREATE, BONDCREATE, NOCHK)
+                adapter.setupNetworks(BROKEN_NETCREATE, BONDCREATE, NOCHK)
 
-            self.update_netinfo()
-            self.assertNoNetwork(NETWORK_NAME)
-            self.assertNoBond(BOND_NAME)
+                adapter.update_netinfo()
+                adapter.assertNoNetwork(NETWORK_NAME)
+                adapter.assertNoBond(BOND_NAME)
 
     def test_rollback_to_initial_basic_network(self, switch):
         self._test_rollback_to_initial_network(switch)
@@ -71,11 +74,13 @@ class TestNetworkRollback(NetFuncTestCase):
                 'switch': switch}}
             BONDCREATE = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
 
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
 
                 with pytest.raises(SetupNetworksError):
-                    self.setupNetworks(BROKEN_NETCREATE, BONDCREATE, NOCHK)
+                    adapter.setupNetworks(BROKEN_NETCREATE, BONDCREATE,
+                                          NOCHK)
 
-                self.update_netinfo()
-                self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
-                self.assertNoBond(BOND_NAME)
+                    adapter.update_netinfo()
+                    adapter.assertNetwork(NETWORK_NAME,
+                                          NETCREATE[NETWORK_NAME])
+                    adapter.assertNoBond(BOND_NAME)

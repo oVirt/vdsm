@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ from vdsm.network import errors as ne
 from vdsm.network.link import iface as link_iface
 
 from . import netfunctestlib as nftestlib
-from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
+from .netfunctestlib import NetFuncTestAdapter, NOCHK, SetupNetworksError
 from network import nmnettestlib
 from network.nettestlib import dummy_device, dummy_devices
 
@@ -40,22 +40,25 @@ NET_2 = NETWORK_NAME + '2'
 VLANID = 100
 
 
+adapter = NetFuncTestAdapter()
+
+
 @nftestlib.parametrize_switch
-class TestNetworkBasic(NetFuncTestCase):
+class TestNetworkBasic(object):
 
     def test_add_net_based_on_nic(self, switch):
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': switch}}
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
-                self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
     def test_remove_net_based_on_nic(self, switch):
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': switch}}
             NETREMOVE = {NETWORK_NAME: {'remove': True}}
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
-                self.setupNetworks(NETREMOVE, {}, NOCHK)
-                self.assertNoNetwork(NETWORK_NAME)
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                adapter.setupNetworks(NETREMOVE, {}, NOCHK)
+                adapter.assertNoNetwork(NETWORK_NAME)
 
     @nftestlib.parametrize_bridged
     def test_add_net_twice(self, switch, bridged):
@@ -63,9 +66,9 @@ class TestNetworkBasic(NetFuncTestCase):
             NETCREATE = {NETWORK_NAME: {'nic': nic,
                                         'bridged': bridged,
                                         'switch': switch}}
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
-                self.setupNetworks(NETCREATE, {}, NOCHK)
-                self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                adapter.setupNetworks(NETCREATE, {}, NOCHK)
+                adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
     @nftestlib.parametrize_bridged
     def test_add_net_missing_nic_fails(self, switch, bridged):
@@ -73,14 +76,14 @@ class TestNetworkBasic(NetFuncTestCase):
                                     'bridged': bridged,
                                     'switch': switch}}
         with pytest.raises(SetupNetworksError) as cm:
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                 pass
         assert cm.value.status == ne.ERR_BAD_NIC
 
     def test_remove_missing_net_fails(self, switch):
         NETREMOVE = {NETWORK_NAME: {'remove': True}}
         with pytest.raises(SetupNetworksError) as cm:
-            with self.setupNetworks(NETREMOVE, {}, NOCHK):
+            with adapter.setupNetworks(NETREMOVE, {}, NOCHK):
                 pass
         assert cm.value.status == ne.ERR_BAD_BRIDGE
 
@@ -88,18 +91,18 @@ class TestNetworkBasic(NetFuncTestCase):
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLANID,
                                         'switch': switch}}
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
-                self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
     def test_remove_net_based_on_vlan(self, switch):
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLANID,
                                         'switch': switch}}
             NETREMOVE = {NETWORK_NAME: {'remove': True}}
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
-                self.setupNetworks(NETREMOVE, {}, NOCHK)
-                self.assertNoNetwork(NETWORK_NAME)
-                self.assertNoVlan(nic, VLANID)
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                adapter.setupNetworks(NETREMOVE, {}, NOCHK)
+                adapter.assertNoNetwork(NETWORK_NAME)
+                adapter.assertNoVlan(nic, VLANID)
 
     @nftestlib.parametrize_bridged
     def test_add_net_with_multi_vlans_over_a_nic(self, switch, bridged):
@@ -114,22 +117,22 @@ class TestNetworkBasic(NetFuncTestCase):
                                      'switch': switch,
                                      'bridged': bridged}
 
-            with self.setupNetworks(netsetup, {}, NOCHK):
+            with adapter.setupNetworks(netsetup, {}, NOCHK):
                 for netname, netattrs in six.viewitems(netsetup):
-                    self.assertNetwork(netname, netattrs)
+                    adapter.assertNetwork(netname, netattrs)
 
     def test_add_bridged_net_missing_sb_device(self, switch):
         if switch == 'ovs':
             pytest.skip('nicless bridged ovs network is currently broken.')
 
         NETCREATE = {NETWORK_NAME: {'bridged': True, 'switch': switch}}
-        with self.setupNetworks(NETCREATE, {}, NOCHK):
-            self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+        with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+            adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
     def test_add_bridgeless_net_missing_sb_device_fails(self, switch):
         NETCREATE = {NETWORK_NAME: {'bridged': False, 'switch': switch}}
         with pytest.raises(SetupNetworksError) as err:
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                 pass
         assert err.value.status == ne.ERR_BAD_PARAMS
 
@@ -138,7 +141,7 @@ class TestNetworkBasic(NetFuncTestCase):
                                     'vlan': VLANID,
                                     'switch': switch}}
         with pytest.raises(SetupNetworksError) as err:
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                 pass
         assert err.value.status == ne.ERR_BAD_VLAN
 
@@ -147,7 +150,7 @@ class TestNetworkBasic(NetFuncTestCase):
                                     'vlan': VLANID,
                                     'switch': switch}}
         with pytest.raises(SetupNetworksError) as err:
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                 pass
         assert err.value.status == ne.ERR_BAD_VLAN
 
@@ -191,11 +194,11 @@ class TestNetworkBasic(NetFuncTestCase):
                 }
             }
 
-            with self.setupNetworks(netcreate, {}, NOCHK):
+            with adapter.setupNetworks(netcreate, {}, NOCHK):
                 netremove = {NET_1: {'remove': True}}
-                self.setupNetworks(netremove, {}, NOCHK)
-                self.assertNoNetwork(NET_1)
-                self.assertNetwork(NET_2, netcreate[NET_2])
+                adapter.setupNetworks(netremove, {}, NOCHK)
+                adapter.assertNoNetwork(NET_1)
+                adapter.assertNetwork(NET_2, netcreate[NET_2])
 
     def test_switch_between_bridgeless_and_bridged_vlaned_net(self, switch):
         with dummy_device() as nic:
@@ -204,29 +207,30 @@ class TestNetworkBasic(NetFuncTestCase):
                         'bridged': False,
                         'switch': switch}
             netsetup = {NETWORK_NAME: netattrs}
-            with self.setupNetworks(netsetup, {}, NOCHK):
+            with adapter.setupNetworks(netsetup, {}, NOCHK):
                 netattrs['bridged'] = True
-                self.setupNetworks(netsetup, {}, NOCHK)
-                self.assertNetwork(NETWORK_NAME, netattrs)
+                adapter.setupNetworks(netsetup, {}, NOCHK)
+                adapter.assertNetwork(NETWORK_NAME, netattrs)
                 netattrs['bridged'] = False
-                self.setupNetworks(netsetup, {}, NOCHK)
-                self.assertNetwork(NETWORK_NAME, netattrs)
+                adapter.setupNetworks(netsetup, {}, NOCHK)
+                adapter.assertNetwork(NETWORK_NAME, netattrs)
 
     def _test_add_multiple_nets_fails(self, switch, bridged, vlan_id=None):
         with dummy_device() as nic:
             net_1_attrs = net_2_attrs = self._create_net_attrs(
                 nic, bridged, switch, vlan_id)
-            with self.setupNetworks({NET_1: net_1_attrs}, {}, NOCHK):
+            with adapter.setupNetworks({NET_1: net_1_attrs}, {}, NOCHK):
                 with pytest.raises(SetupNetworksError) as cm:
-                    with self.setupNetworks({NET_2: net_2_attrs}, {}, NOCHK):
+                    with adapter.setupNetworks(
+                            {NET_2: net_2_attrs}, {}, NOCHK):
                         pass
                 assert cm.value.status == ne.ERR_BAD_PARAMS
 
     def _assert_nets(self, net_1_attrs, net_2_attrs):
-        with self.setupNetworks({NET_1: net_1_attrs}, {}, NOCHK):
-            with self.setupNetworks({NET_2: net_2_attrs}, {}, NOCHK):
-                self.assertNetwork(NET_1, net_1_attrs)
-                self.assertNetwork(NET_2, net_2_attrs)
+        with adapter.setupNetworks({NET_1: net_1_attrs}, {}, NOCHK):
+            with adapter.setupNetworks({NET_2: net_2_attrs}, {}, NOCHK):
+                adapter.assertNetwork(NET_1, net_1_attrs)
+                adapter.assertNetwork(NET_2, net_2_attrs)
 
     def _create_net_attrs(self, nic, bridged, switch, vlan_id=None):
         attrs = {'nic': nic,
@@ -239,7 +243,7 @@ class TestNetworkBasic(NetFuncTestCase):
 
 
 @pytest.mark.legacy_switch
-class TestNetworkBasicLegacy(NetFuncTestCase):
+class TestNetworkBasicLegacy(object):
 
     NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
     NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
@@ -251,18 +255,19 @@ class TestNetworkBasicLegacy(NetFuncTestCase):
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': 'legacy'}}
             NETREMOVE = {NETWORK_NAME: {'remove': True}}
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
-                self.setupNetworks(NETREMOVE, {}, NOCHK)
-                self.assertNoNetwork(NETWORK_NAME)
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                adapter.setupNetworks(NETREMOVE, {}, NOCHK)
+                adapter.assertNoNetwork(NETWORK_NAME)
 
-                nic_ifcfg_file = self.NET_CONF_PREF + nic
+                nic_ifcfg_file = adapter.NET_CONF_PREF + nic
                 assert os.path.exists(nic_ifcfg_file)
                 nic_ifcfg_badname_file = nic_ifcfg_file + 'tail123'
                 os.rename(nic_ifcfg_file, nic_ifcfg_badname_file)
 
                 # Up until now, we have set the test setup, now start the test.
-                with self.setupNetworks(NETCREATE, {}, NOCHK):
-                    self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+                with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                    adapter.assertNetwork(NETWORK_NAME,
+                                          NETCREATE[NETWORK_NAME])
                     assert os.path.exists(nic_ifcfg_file)
                     assert not os.path.exists(nic_ifcfg_badname_file)
 
@@ -273,7 +278,7 @@ class TestNetworkBasicLegacy(NetFuncTestCase):
         with dummy_device() as nic:
             NETCREATE = {net_name: {'nic': nic, 'switch': 'legacy'}}
             with pytest.raises(SetupNetworksError) as err:
-                with self.setupNetworks(NETCREATE, {}, NOCHK):
+                with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                     pass
             assert err.value.status == ne.ERR_BAD_BRIDGE
 
@@ -281,26 +286,26 @@ class TestNetworkBasicLegacy(NetFuncTestCase):
 @pytest.mark.legacy_switch
 @pytest.mark.skipif(not nmnettestlib.is_networkmanager_running(),
                     reason='NetworkManager is not running')
-class TestNetworkManagerLegacy(NetFuncTestCase):
+class TestNetworkManagerLegacy(object):
     switch = 'legacy'
 
     def setup_method(self, m):
-        super(TestNetworkManagerLegacy, self).setup_method(m)
         self.iface = nmnettestlib.iface_name()
 
     def teardown_method(self, m):
         # The bond was acquired, therefore VDSM needs to clean it.
         BONDREMOVE = {self.iface: {'remove': True}}
-        self.setupNetworks({}, BONDREMOVE, NOCHK)
+        adapter.setupNetworks({}, BONDREMOVE, NOCHK)
 
     def test_add_net_based_on_device_with_multiple_nm_connections(self):
         IPv4_ADDRESS = '192.0.2.1'
-        NET = {NETWORK_NAME: {'bonding': self.iface, 'switch': self.switch}}
+        NET = {NETWORK_NAME: {
+            'bonding': self.iface, 'switch': self.switch}}
         with dummy_devices(1) as nics:
             with nmnettestlib.nm_connections(
                     self.iface, IPv4_ADDRESS, con_count=3, slaves=nics):
-                with self.setupNetworks(NET, {}, NOCHK):
-                    self.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
+                with adapter.setupNetworks(NET, {}, NOCHK):
+                    adapter.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
 
     def test_add_net_based_on_existing_vlan_bond_nm_setup(self):
         vlan_id = '101'
@@ -314,8 +319,8 @@ class TestNetworkManagerLegacy(NetFuncTestCase):
                 vlan_hwaddress = link_iface.iface(vlan_iface).address()
                 assert vlan_hwaddress == bond_hwaddress
 
-                with self.setupNetworks(NET, {}, NOCHK):
-                    self.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
+                with adapter.setupNetworks(NET, {}, NOCHK):
+                    adapter.assertNetwork(NETWORK_NAME, NET[NETWORK_NAME])
 
                     # Check if the mac has been preserved.
                     bridge_hwaddress = link_iface.iface(NETWORK_NAME).address()

@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -73,10 +73,12 @@ def requires_ipaddress():
         pytest.skip('ipaddress package is not installed')
 
 
-class NetFuncTestCase(object):
+class NetFuncTestAdapter(object):
 
-    def setup_method(self, m):
+    def __init__(self):
         self.vdsm_proxy = getProxy()
+        self.netinfo = None
+        self.running_config = None
 
     def update_netinfo(self):
         self.netinfo = self.vdsm_proxy.netinfo

@@ -32,8 +32,11 @@ VLAN1 = 10
 VLAN2 = 20
 
 
+adapter = nftestlib.NetFuncTestAdapter()
+
+
 @nftestlib.parametrize_switch
-class TestNetworkMtu(nftestlib.NetFuncTestCase):
+class TestNetworkMtu(object):
 
     @nftestlib.parametrize_bridged
     def test_add_net_with_mtu(self, switch, bridged):
@@ -42,9 +45,9 @@ class TestNetworkMtu(nftestlib.NetFuncTestCase):
                                         'bridged': bridged,
                                         'mtu': 2000,
                                         'switch': switch}}
-            with self.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
-                self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
-                self.assertLinkMtu(nic, NETCREATE[NETWORK_NAME])
+            with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
+                adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+                adapter.assertLinkMtu(nic, NETCREATE[NETWORK_NAME])
 
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
@@ -71,15 +74,14 @@ class TestNetworkMtu(nftestlib.NetFuncTestCase):
                 BONDBASE = {}
                 link2monitor = nic
 
-            with self.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
+            with adapter.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
                 with nftestlib.monitor_stable_link_state(link2monitor):
-                    self.setupNetworks({NETWORK2_NAME: {'remove': True}},
-                                       {},
-                                       nftestlib.NOCHK)
-                    self.assertNetwork(NETWORK1_NAME, NETWORK1_ATTRS)
-                    self.assertLinkMtu(nic, NETWORK1_ATTRS)
+                    adapter.setupNetworks(
+                        {NETWORK2_NAME: {'remove': True}}, {}, nftestlib.NOCHK)
+                    adapter.assertNetwork(NETWORK1_NAME, NETWORK1_ATTRS)
+                    adapter.assertLinkMtu(nic, NETWORK1_ATTRS)
                     if bonded:
-                        self.assertLinkMtu(BOND_NAME, NETWORK1_ATTRS)
+                        adapter.assertLinkMtu(BOND_NAME, NETWORK1_ATTRS)
 
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
@@ -107,13 +109,13 @@ class TestNetworkMtu(nftestlib.NetFuncTestCase):
                 BONDBASE = {}
                 link2monitor = nic
 
-            with self.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
+            with adapter.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
                 with nftestlib.monitor_stable_link_state(link2monitor):
-                    with self.setupNetworks(NETNEW, {}, nftestlib.NOCHK):
-                        self.assertNetwork(NETWORK2_NAME, NETWORK2_ATTRS)
-                        self.assertLinkMtu(nic, NETWORK2_ATTRS)
+                    with adapter.setupNetworks(NETNEW, {}, nftestlib.NOCHK):
+                        adapter.assertNetwork(NETWORK2_NAME, NETWORK2_ATTRS)
+                        adapter.assertLinkMtu(nic, NETWORK2_ATTRS)
                         if bonded:
-                            self.assertLinkMtu(BOND_NAME, NETWORK2_ATTRS)
+                            adapter.assertLinkMtu(BOND_NAME, NETWORK2_ATTRS)
 
     def test_add_slave_to_a_bonded_network_with_non_default_mtu(self, switch):
         with dummy_devices(2) as (nic1, nic2):
@@ -123,7 +125,7 @@ class TestNetworkMtu(nftestlib.NetFuncTestCase):
                                       'switch': switch}}
             BONDBASE = {BOND_NAME: {'nics': [nic1], 'switch': switch}}
 
-            with self.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
+            with adapter.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
                 BONDBASE[BOND_NAME]['nics'].append(nic2)
-                self.setupNetworks({}, BONDBASE, nftestlib.NOCHK)
-                self.assertLinkMtu(nic2, NETBASE[NETWORK_NAME])
+                adapter.setupNetworks({}, BONDBASE, nftestlib.NOCHK)
+                adapter.assertLinkMtu(nic2, NETBASE[NETWORK_NAME])

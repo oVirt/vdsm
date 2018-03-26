@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ from vdsm.network.errors import ERR_BAD_PARAMS
 
 import pytest
 
-from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
+from .netfunctestlib import NetFuncTestAdapter, NOCHK, SetupNetworksError
 from network.nettestlib import dummy_device
 from network.nettestlib import preserve_default_route
 from network.nettestlib import restore_resolv_conf
@@ -36,12 +36,15 @@ IPv4_GATEWAY = '192.0.2.254'
 IPv4_NETMASK = '255.255.255.0'
 
 
+adapter = NetFuncTestAdapter()
+
+
 @pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy')])
-class TestNetworkDNS(NetFuncTestCase):
+class TestNetworkDNS(object):
 
     def test_set_host_nameservers(self, switch):
-        self.update_netinfo()
-        original_nameservers = self.netinfo.nameservers
+        adapter.update_netinfo()
+        original_nameservers = adapter.netinfo.nameservers
         assert original_nameservers != NAMESERVERS, (
             'Current nameservers must differ from tested ones')
         with dummy_device() as nic:
@@ -53,12 +56,12 @@ class TestNetworkDNS(NetFuncTestCase):
                                         'gateway': IPv4_GATEWAY,
                                         }}
             with restore_resolv_conf(), preserve_default_route():
-                with self.setupNetworks(NETCREATE, {}, NOCHK):
-                    self.assertNameservers(NAMESERVERS)
+                with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                    adapter.assertNameservers(NAMESERVERS)
 
     def test_preserve_host_nameservers(self, switch):
-        self.update_netinfo()
-        original_nameservers = self.netinfo.nameservers
+        adapter.update_netinfo()
+        original_nameservers = adapter.netinfo.nameservers
         with dummy_device() as nic:
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': switch,
                                         'defaultRoute': True,
@@ -67,8 +70,8 @@ class TestNetworkDNS(NetFuncTestCase):
                                         'gateway': IPv4_GATEWAY,
                                         }}
             with restore_resolv_conf(), preserve_default_route():
-                with self.setupNetworks(NETCREATE, {}, NOCHK):
-                    self.assertNameservers(original_nameservers)
+                with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                    adapter.assertNameservers(original_nameservers)
 
     def test_set_nameservers_on_non_default_network(self, switch):
         with dummy_device() as nic:
@@ -80,5 +83,5 @@ class TestNetworkDNS(NetFuncTestCase):
                                         'gateway': IPv4_GATEWAY,
                                         }}
             with pytest.raises(SetupNetworksError) as err:
-                self.setupNetworks(NETCREATE, {}, NOCHK)
+                adapter.setupNetworks(NETCREATE, {}, NOCHK)
             assert err.value.status == ERR_BAD_PARAMS

@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,20 +20,23 @@ from __future__ import absolute_import
 
 import pytest
 
-from .netfunctestlib import NetFuncTestCase, NOCHK
+from .netfunctestlib import NetFuncTestAdapter, NOCHK
 
 
 NETWORK_NAME = 'test-network'
 
 
+adapter = NetFuncTestAdapter()
+
+
 @pytest.mark.ovsdpdk_switch
-class TestOvsDpdk(NetFuncTestCase):
+class TestOvsDpdk(object):
 
     def test_dpdk0_device_exists(self):
-        self.update_netinfo()
-        self.assertIn('dpdk0', self.netinfo.nics)
+        adapter.update_netinfo()
+        adapter.assertIn('dpdk0', adapter.netinfo.nics)
 
     def test_setup_ovs_dpdk(self):
         NETCREATE = {NETWORK_NAME: {'nic': 'dpdk0', 'switch': 'ovs'}}
-        with self.setupNetworks(NETCREATE, {}, NOCHK):
-            self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+        with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+            adapter.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])

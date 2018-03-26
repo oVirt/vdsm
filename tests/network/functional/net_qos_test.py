@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ from __future__ import absolute_import
 
 import pytest
 
-from .netfunctestlib import NetFuncTestCase, NOCHK
+from .netfunctestlib import NetFuncTestAdapter, NOCHK
 from network.nettestlib import dummy_device
 
 NETWORK1_NAME = 'test-network1'
@@ -30,9 +30,12 @@ VLAN2 = 20
 _100USEC = 100 * 1000
 
 
+adapter = NetFuncTestAdapter()
+
+
 # TODO: When QoS will be available on OVS, enable the tests.
 @pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy')])
-class TestNetworkHostQos(NetFuncTestCase):
+class TestNetworkHostQos(object):
 
     def test_add_vlan_network_with_qos(self, switch):
         HOST_QOS_CONFIG = {'out': {'ls': {'m1': rate(rate_in_mbps=4),
@@ -43,8 +46,9 @@ class TestNetworkHostQos(NetFuncTestCase):
             NETCREATE = {NETWORK1_NAME: {'nic': nic, 'vlan': VLAN1,
                                          'hostQos': HOST_QOS_CONFIG,
                                          'switch': switch}}
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
-                self.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                adapter.assertHostQos(NETWORK1_NAME,
+                                      NETCREATE[NETWORK1_NAME])
 
     def test_add_two_networks_with_qos_on_shared_nic(self, switch):
         HOST_QOS_CONFIG1 = {'out': {'ls': {'m2': rate(rate_in_mbps=1)}}}
@@ -56,9 +60,11 @@ class TestNetworkHostQos(NetFuncTestCase):
                          NETWORK2_NAME: {'nic': nic, 'vlan': VLAN1,
                                          'hostQos': HOST_QOS_CONFIG2,
                                          'switch': switch}}
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
-                self.assertHostQos(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
-                self.assertHostQos(NETWORK2_NAME, NETCREATE[NETWORK2_NAME])
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                adapter.assertHostQos(NETWORK1_NAME,
+                                      NETCREATE[NETWORK1_NAME])
+                adapter.assertHostQos(NETWORK2_NAME,
+                                      NETCREATE[NETWORK2_NAME])
 
     def test_add_two_networks_with_qos_on_shared_nic_in_two_steps(self,
                                                                   switch):
@@ -71,10 +77,12 @@ class TestNetworkHostQos(NetFuncTestCase):
             NETVLAN = {NETWORK2_NAME: {'nic': nic, 'vlan': VLAN1,
                                        'hostQos': HOST_QOS_CONFIG2,
                                        'switch': switch}}
-            with self.setupNetworks(NETBASE, {}, NOCHK):
-                with self.setupNetworks(NETVLAN, {}, NOCHK):
-                    self.assertHostQos(NETWORK1_NAME, NETBASE[NETWORK1_NAME])
-                    self.assertHostQos(NETWORK2_NAME, NETVLAN[NETWORK2_NAME])
+            with adapter.setupNetworks(NETBASE, {}, NOCHK):
+                with adapter.setupNetworks(NETVLAN, {}, NOCHK):
+                    adapter.assertHostQos(NETWORK1_NAME,
+                                          NETBASE[NETWORK1_NAME])
+                    adapter.assertHostQos(NETWORK2_NAME,
+                                          NETVLAN[NETWORK2_NAME])
 
 
 def rate(rate_in_mbps):

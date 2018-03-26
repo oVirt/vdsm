@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,22 +25,25 @@ import pytest
 from vdsm.network import errors as ne
 
 from . import netfunctestlib as nftestlib
-from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
+from .netfunctestlib import NetFuncTestAdapter, NOCHK, SetupNetworksError
 from network.nettestlib import dummy_devices
 
 BOND_NAME = 'bond1'
 
 
+adapter = NetFuncTestAdapter()
+
+
 @nftestlib.parametrize_switch
-class TestBondBasic(NetFuncTestCase):
+class TestBondBasic(object):
 
     def test_add_bond_with_two_nics(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             BONDCREATE = {
                 BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
 
-            with self.setupNetworks({}, BONDCREATE, NOCHK):
-                self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
     def test_add_bond_with_two_nics_and_options(self, switch):
         with dummy_devices(2) as (nic1, nic2):
@@ -48,8 +51,8 @@ class TestBondBasic(NetFuncTestCase):
                 'nics': [nic1, nic2], 'options': 'mode=3 miimon=150',
                 'switch': switch}}
 
-            with self.setupNetworks({}, BONDCREATE, NOCHK):
-                self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
     def test_remove_bond(self, switch):
         with dummy_devices(2) as (nic1, nic2):
@@ -57,9 +60,9 @@ class TestBondBasic(NetFuncTestCase):
                 BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
             BONDREMOVE = {BOND_NAME: {'remove': True}}
 
-            with self.setupNetworks({}, BONDCREATE, NOCHK):
-                self.setupNetworks({}, BONDREMOVE, NOCHK)
-                self.assertNoBond(BOND_NAME)
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                adapter.setupNetworks({}, BONDREMOVE, NOCHK)
+                adapter.assertNoBond(BOND_NAME)
 
     def test_change_bond_slaves(self, switch):
         with dummy_devices(3) as (nic1, nic2, nic3):
@@ -68,10 +71,10 @@ class TestBondBasic(NetFuncTestCase):
             BONDEDIT = {
                 BOND_NAME: {'nics': [nic1, nic3], 'switch': switch}}
 
-            with self.setupNetworks({}, BONDCREATE, NOCHK):
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
                 with nftestlib.monitor_stable_link_state(BOND_NAME):
-                    self.setupNetworks({}, BONDEDIT, NOCHK)
-                self.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
+                    adapter.setupNetworks({}, BONDEDIT, NOCHK)
+                    adapter.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
 
     def test_swap_slaves_between_bonds(self, switch):
         BOND1 = BOND_NAME + '1'
@@ -84,24 +87,23 @@ class TestBondBasic(NetFuncTestCase):
             BONDEDIT = {
                 BOND1: {'nics': [nic1, nic3], 'switch': switch},
                 BOND2: {'nics': [nic2, nic4], 'switch': switch}}
-            with self.setupNetworks({}, BONDCREATE, NOCHK):
-                self.setupNetworks({}, BONDEDIT, NOCHK)
-                self.assertBond(BOND1, BONDEDIT[BOND1])
-                self.assertBond(BOND2, BONDEDIT[BOND2])
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                adapter.setupNetworks({}, BONDEDIT, NOCHK)
+                adapter.assertBond(BOND1, BONDEDIT[BOND1])
+                adapter.assertBond(BOND2, BONDEDIT[BOND2])
 
     def test_resize_bond(self, switch):
         with dummy_devices(4) as (nic1, nic2, nic3, nic4):
             bond = {BOND_NAME: {'nics': [nic1, nic2],
                                 'switch': switch}}
-
-            with self.setupNetworks({}, bond, NOCHK):
+            with adapter.setupNetworks({}, bond, NOCHK):
                 bond[BOND_NAME]['nics'] += [nic3, nic4]
-                self.setupNetworks({}, bond, NOCHK)
-                self.assertBond(BOND_NAME, bond[BOND_NAME])
+                adapter.setupNetworks({}, bond, NOCHK)
+                adapter.assertBond(BOND_NAME, bond[BOND_NAME])
 
                 bond[BOND_NAME]['nics'].remove(nic4)
-                self.setupNetworks({}, bond, NOCHK)
-                self.assertBond(BOND_NAME, bond[BOND_NAME])
+                adapter.setupNetworks({}, bond, NOCHK)
+                adapter.assertBond(BOND_NAME, bond[BOND_NAME])
 
     def test_add_bond_with_bad_name_fails(self, switch):
         INVALID_BOND_NAMES = ('bond',
@@ -114,7 +116,7 @@ class TestBondBasic(NetFuncTestCase):
                 BONDCREATE = {bond_name: {'nics': [nic1, nic2],
                                           'switch': switch}}
                 with pytest.raises(SetupNetworksError) as cm:
-                    with self.setupNetworks({}, BONDCREATE, NOCHK):
+                    with adapter.setupNetworks({}, BONDCREATE, NOCHK):
                         pass
                 assert cm.value.status == ne.ERR_BAD_BONDING
 
@@ -122,7 +124,7 @@ class TestBondBasic(NetFuncTestCase):
         BONDCREATE = {BOND_NAME: {'nics': [], 'switch': switch}}
 
         with pytest.raises(SetupNetworksError) as err:
-            with self.setupNetworks({}, BONDCREATE, NOCHK):
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
                 pass
         assert err.value.status == ne.ERR_BAD_PARAMS
 
@@ -137,24 +139,24 @@ class TestBondBasic(NetFuncTestCase):
                             'hwaddr': HWADDRESS,
                             'switch': switch}}
 
-            with self.setupNetworks({}, BONDCREATE, NOCHK):
-                self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
     def test_bond_slaves_order_does_not_affect_the_mac_address(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             bond1 = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
             bond2 = {BOND_NAME: {'nics': [nic2, nic1], 'switch': switch}}
 
-            with self.setupNetworks({}, bond1, NOCHK):
-                bond1_hwaddr = self.netinfo.bondings[BOND_NAME]['hwaddr']
-            with self.setupNetworks({}, bond2, NOCHK):
-                bond2_hwaddr = self.netinfo.bondings[BOND_NAME]['hwaddr']
+            with adapter.setupNetworks({}, bond1, NOCHK):
+                bond1_hwaddr = adapter.netinfo.bondings[BOND_NAME]['hwaddr']
+            with adapter.setupNetworks({}, bond2, NOCHK):
+                bond2_hwaddr = adapter.netinfo.bondings[BOND_NAME]['hwaddr']
 
             assert bond1_hwaddr == bond2_hwaddr
 
 
 @nftestlib.parametrize_switch
-class TestBondOptions(NetFuncTestCase):
+class TestBondOptions(object):
 
     def test_bond_mode_1(self, switch):
         with dummy_devices(2) as (nic1, nic2):
@@ -163,8 +165,8 @@ class TestBondOptions(NetFuncTestCase):
                 'options': 'mode=1 primary=' + nic1,
                 'switch': switch}}
 
-            with self.setupNetworks({}, BONDCREATE, NOCHK):
-                self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
     def test_bond_mode_change(self, switch):
         with dummy_devices(2) as nics:
@@ -174,9 +176,9 @@ class TestBondOptions(NetFuncTestCase):
             BONDEDIT = {BOND_NAME: {'nics': nics,
                                     'switch': switch,
                                     'options': 'mode=3'}}
-            with self.setupNetworks({}, BONDCREATE, NOCHK):
-                self.setupNetworks({}, BONDEDIT, NOCHK)
-                self.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                adapter.setupNetworks({}, BONDEDIT, NOCHK)
+                adapter.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
 
     def test_bond_options_with_the_mode_specified_last(self, switch):
         with dummy_devices(2) as (nic1, nic2):
@@ -185,8 +187,8 @@ class TestBondOptions(NetFuncTestCase):
                 'options': 'lacp_rate=fast mode=802.3ad',
                 'switch': switch}}
 
-            with self.setupNetworks({}, BONDCREATE, NOCHK):
-                self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
     def test_bond_arp_ip_target_change(self, switch):
         with dummy_devices(2) as nics:
@@ -200,6 +202,6 @@ class TestBondOptions(NetFuncTestCase):
             BONDEDIT = {BOND_NAME: {'nics': nics,
                                     'switch': switch,
                                     'options': edit_options}}
-            with self.setupNetworks({}, BONDCREATE, NOCHK):
-                self.setupNetworks({}, BONDEDIT, NOCHK)
-                self.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])
+            with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                adapter.setupNetworks({}, BONDEDIT, NOCHK)
+                adapter.assertBond(BOND_NAME, BONDEDIT[BOND_NAME])

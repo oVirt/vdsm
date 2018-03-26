@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,7 +34,10 @@ from network.nettestlib import dummy_devices
 NETWORK_NAME = 'test-network'
 
 
-class TestBridge(nftestlib.NetFuncTestCase):
+adapter = nftestlib.NetFuncTestAdapter()
+
+
+class TestBridge(object):
     @nftestlib.parametrize_switch
     def test_add_bridge_with_stp(self, switch):
         if switch == 'ovs':
@@ -44,10 +47,11 @@ class TestBridge(nftestlib.NetFuncTestCase):
             NETCREATE = {NETWORK_NAME: {'nic': nic,
                                         'switch': switch,
                                         'stp': True}}
-            with self.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
-                self.assertNetworkExists(NETWORK_NAME)
-                self.assertNetworkBridged(NETWORK_NAME)
-                self.assertBridgeOpts(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+            with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
+                adapter.assertNetworkExists(NETWORK_NAME)
+                adapter.assertNetworkBridged(NETWORK_NAME)
+                adapter.assertBridgeOpts(NETWORK_NAME,
+                                         NETCREATE[NETWORK_NAME])
 
     @pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy')])
     def test_add_bridge_with_custom_opts(self, switch):
@@ -57,15 +61,16 @@ class TestBridge(nftestlib.NetFuncTestCase):
                 'switch': switch,
                 'custom': {
                     'bridge_opts': 'multicast_snooping=0 multicast_router=0'}}}
-            with self.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
-                self.assertBridgeOpts(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+            with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
+                adapter.assertBridgeOpts(NETWORK_NAME,
+                                         NETCREATE[NETWORK_NAME])
 
     @pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy')])
     def test_create_network_over_an_existing_unowned_bridge(self, switch):
         with _create_linux_bridge(NETWORK_NAME) as brname:
             NETCREATE = {brname: {'bridged': True, 'switch': switch}}
-            with self.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
-                self.assertNetwork(brname, NETCREATE[brname])
+            with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
+                adapter.assertNetwork(brname, NETCREATE[brname])
 
     @pytest.mark.skip(reason='Unstable link while NM is running (BZ#1498022) '
                              'and on CI even with NM down')
@@ -74,13 +79,13 @@ class TestBridge(nftestlib.NetFuncTestCase):
         with dummy_devices(2) as (nic1, nic2):
             NETSETUP1 = {NETWORK_NAME: {'nic': nic1, 'switch': switch}}
             NETSETUP2 = {NETWORK_NAME: {'nic': nic2, 'switch': switch}}
-            with self.setupNetworks(NETSETUP1, {}, nftestlib.NOCHK):
+            with adapter.setupNetworks(NETSETUP1, {}, nftestlib.NOCHK):
                 with _create_tap() as tapdev:
                     _attach_dev_to_bridge(tapdev, NETWORK_NAME)
                     with nftestlib.monitor_stable_link_state(NETWORK_NAME):
-                        self.setupNetworks(NETSETUP2, {}, nftestlib.NOCHK)
-                        self.assertNetwork(NETWORK_NAME,
-                                           NETSETUP2[NETWORK_NAME])
+                        adapter.setupNetworks(NETSETUP2, {}, nftestlib.NOCHK)
+                        adapter.assertNetwork(NETWORK_NAME,
+                                              NETSETUP2[NETWORK_NAME])
 
 
 def _attach_dev_to_bridge(tapdev, bridge):

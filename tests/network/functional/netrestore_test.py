@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ from __future__ import absolute_import
 
 import pytest
 
-from .netfunctestlib import NetFuncTestCase, NOCHK
+from .netfunctestlib import NetFuncTestAdapter, NOCHK
 from network.nettestlib import dummy_devices
 from testlib import mock
 
@@ -30,8 +30,11 @@ from vdsm.network.link.bond import Bond
 BOND_NAME = 'bond1'
 
 
+adapter = NetFuncTestAdapter()
+
+
 @pytest.mark.ovs_switch
-class TestRestoreOvsBond(NetFuncTestCase):
+class TestRestoreOvsBond(object):
 
     @mock.patch.object(netrestore, 'NETS_RESTORED_MARK', 'does/not/exist')
     def test_restore_bond(self):
@@ -39,13 +42,13 @@ class TestRestoreOvsBond(NetFuncTestCase):
             BONDCREATE = {
                 BOND_NAME: {'nics': [nic1, nic2], 'switch': 'ovs'}}
 
-            with self.reset_persistent_config():
-                with self.setupNetworks({}, BONDCREATE, NOCHK):
-                    self.vdsm_proxy.setSafeNetworkConfig()
+            with adapter.reset_persistent_config():
+                with adapter.setupNetworks({}, BONDCREATE, NOCHK):
+                    adapter.vdsm_proxy.setSafeNetworkConfig()
 
                     Bond(BOND_NAME).destroy()
 
                     netrestore.init_nets()
 
-                    self.update_netinfo()
-                    self.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
+                    adapter.update_netinfo()
+                    adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])

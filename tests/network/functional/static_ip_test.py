@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ from vdsm.network import errors as ne
 from vdsm.network.ipwrapper import addrAdd
 
 from . import netfunctestlib as nftestlib
-from .netfunctestlib import NetFuncTestCase, NOCHK, SetupNetworksError
+from .netfunctestlib import NetFuncTestAdapter, NOCHK, SetupNetworksError
 from network.nettestlib import dummy_device, dummy_devices
 from network.nettestlib import preserve_default_route
 from network.nettestlib import restore_resolv_conf
@@ -44,6 +44,8 @@ IPv4_GATEWAY = '192.0.2.254'
 IPv4_GATEWAY2 = '192.0.3.254'
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
 
+adapter = NetFuncTestAdapter()
+
 
 class IpFamily(object):
     IPv4 = 4
@@ -58,7 +60,7 @@ parametrize_ip_families = pytest.mark.parametrize(
 
 
 @nftestlib.parametrize_switch
-class TestNetworkStaticIpBasic(NetFuncTestCase):
+class TestNetworkStaticIpBasic(object):
 
     @nftestlib.parametrize_bridged
     @parametrize_ip_families
@@ -97,8 +99,9 @@ class TestNetworkStaticIpBasic(NetFuncTestCase):
 
             netcreate = {NETWORK_NAME: network_attrs}
 
-            with self.setupNetworks(netcreate, bondcreate, NOCHK):
-                self.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
+            with adapter.setupNetworks(netcreate, bondcreate, NOCHK):
+                adapter.assertNetworkIp(NETWORK_NAME,
+                                        netcreate[NETWORK_NAME])
 
     def test_add_net_with_prefix(self, switch):
         with dummy_device() as nic:
@@ -108,12 +111,13 @@ class TestNetworkStaticIpBasic(NetFuncTestCase):
                              'switch': switch}
             netcreate = {NETWORK_NAME: network_attrs}
 
-            with self.setupNetworks(netcreate, {}, NOCHK):
-                self.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
+            with adapter.setupNetworks(netcreate, {}, NOCHK):
+                adapter.assertNetworkIp(NETWORK_NAME,
+                                        netcreate[NETWORK_NAME])
 
 
 @nftestlib.parametrize_switch
-class TestNetworkIPDefaultGateway(NetFuncTestCase):
+class TestNetworkIPDefaultGateway(object):
 
     def test_add_net_with_ipv4_default_gateway(self, switch):
         with dummy_device() as nic:
@@ -126,8 +130,8 @@ class TestNetworkIPDefaultGateway(NetFuncTestCase):
             netcreate = {NETWORK_NAME: network_attrs}
 
             with restore_resolv_conf(), preserve_default_route():
-                with self.setupNetworks(netcreate, {}, NOCHK):
-                    self.assertNetworkIp(NETWORK_NAME, network_attrs)
+                with adapter.setupNetworks(netcreate, {}, NOCHK):
+                    adapter.assertNetworkIp(NETWORK_NAME, network_attrs)
 
     def test_add_net_and_move_ipv4_default_gateway(self, switch):
         with dummy_devices(2) as (nic1, nic2):
@@ -147,24 +151,24 @@ class TestNetworkIPDefaultGateway(NetFuncTestCase):
             net2create = {NETWORK2_NAME: net2_attrs}
 
             with restore_resolv_conf(), preserve_default_route():
-                with self.setupNetworks(net1create, {}, NOCHK):
-                    with self.setupNetworks(net2create, {}, NOCHK):
+                with adapter.setupNetworks(net1create, {}, NOCHK):
+                    with adapter.setupNetworks(net2create, {}, NOCHK):
                         net1_attrs['defaultRoute'] = False
-                        self.assertNetworkIp(NETWORK_NAME, net1_attrs)
-                        self.assertNetworkIp(NETWORK2_NAME, net2_attrs)
+                        adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
+                        adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
 
 
 @nftestlib.parametrize_switch
-class TestAcquireNicsWithStaticIP(NetFuncTestCase):
+class TestAcquireNicsWithStaticIP(object):
 
     def test_attach_nic_with_ip_to_ipless_network(self, switch):
         with dummy_device() as nic:
             addrAdd(nic, IPv4_ADDRESS, IPv4_PREFIX_LEN)
 
             NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': switch}}
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
-                nic_netinfo = self.netinfo.nics[nic]
-                self.assertDisabledIPv4(nic_netinfo)
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                nic_netinfo = adapter.netinfo.nics[nic]
+                adapter.assertDisabledIPv4(nic_netinfo)
 
     def test_attach_nic_with_ip_to_ip_network(self, switch):
         with dummy_device() as nic:
@@ -173,10 +177,11 @@ class TestAcquireNicsWithStaticIP(NetFuncTestCase):
             NETCREATE = {
                 NETWORK_NAME: {'nic': nic, 'ipaddr': IPv4_ADDRESS,
                                'netmask': IPv4_NETMASK, 'switch': switch}}
-            with self.setupNetworks(NETCREATE, {}, NOCHK):
-                nic_netinfo = self.netinfo.nics[nic]
-                self.assertDisabledIPv4(nic_netinfo)
-                self.assertNetworkIp(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+            with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                nic_netinfo = adapter.netinfo.nics[nic]
+                adapter.assertDisabledIPv4(nic_netinfo)
+                adapter.assertNetworkIp(NETWORK_NAME,
+                                        NETCREATE[NETWORK_NAME])
 
     def test_attach_nic_with_ip_as_a_slave_to_ipless_network(self, switch):
         with dummy_devices(2) as (nic1, nic2):
@@ -186,9 +191,9 @@ class TestAcquireNicsWithStaticIP(NetFuncTestCase):
                 NETWORK_NAME: {'bonding': BOND_NAME, 'switch': switch}}
             BONDCREATE = {
                 BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
-            with self.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
-                nic_netinfo = self.netinfo.nics[nic1]
-                self.assertDisabledIPv4(nic_netinfo)
+            with adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
+                nic_netinfo = adapter.netinfo.nics[nic1]
+                adapter.assertDisabledIPv4(nic_netinfo)
 
     def test_attach_nic_with_ip_as_a_slave_to_ip_network(self, switch):
         with dummy_devices(2) as (nic1, nic2):
@@ -199,14 +204,15 @@ class TestAcquireNicsWithStaticIP(NetFuncTestCase):
                                'netmask': IPv4_NETMASK, 'switch': switch}}
             BONDCREATE = {
                 BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
-            with self.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
-                nic_netinfo = self.netinfo.nics[nic1]
-                self.assertDisabledIPv4(nic_netinfo)
-                self.assertNetworkIp(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+            with adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
+                nic_netinfo = adapter.netinfo.nics[nic1]
+                adapter.assertDisabledIPv4(nic_netinfo)
+                adapter.assertNetworkIp(NETWORK_NAME,
+                                        NETCREATE[NETWORK_NAME])
 
 
 @pytest.mark.legacy_switch
-class TestIfacesWithMultiplesUsers(NetFuncTestCase):
+class TestIfacesWithMultiplesUsers(object):
 
     @nftestlib.parametrize_bonded
     def test_remove_ip_from_an_iface_used_by_a_vlan_network(self, bonded):
@@ -232,16 +238,17 @@ class TestIfacesWithMultiplesUsers(NetFuncTestCase):
                 netcreate[NETWORK_NAME]['nic'] = nic
                 netcreate[NETWORK2_NAME]['nic'] = nic
 
-            with self.setupNetworks(netcreate, bondcreate, NOCHK):
+            with adapter.setupNetworks(netcreate, bondcreate, NOCHK):
                 netremove = {NETWORK_NAME: {'remove': True}}
-                self.setupNetworks(netremove, {}, NOCHK)
+                adapter.setupNetworks(netremove, {}, NOCHK)
                 if bonded:
-                    self.assertDisabledIPv4(self.netinfo.bondings[BOND_NAME])
-                self.assertDisabledIPv4(self.netinfo.nics[nic])
+                    adapter.assertDisabledIPv4(
+                        adapter.netinfo.bondings[BOND_NAME])
+                adapter.assertDisabledIPv4(adapter.netinfo.nics[nic])
 
 
 @nftestlib.parametrize_switch
-class TestIPValidation(NetFuncTestCase):
+class TestIPValidation(object):
 
     def test_add_net_ip_missing_addresses_fails(self, switch):
         with dummy_device() as nic:
@@ -272,6 +279,6 @@ class TestIPValidation(NetFuncTestCase):
     def _test_invalid_ip_config_fails(self, switch, nic, **ip_config):
         ip_config.update(switch=switch, nic=nic)
         with pytest.raises(SetupNetworksError) as err:
-            with self.setupNetworks({NETWORK_NAME: ip_config}, {}, NOCHK):
+            with adapter.setupNetworks({NETWORK_NAME: ip_config}, {}, NOCHK):
                 pass
         assert err.value.status == ne.ERR_BAD_ADDR

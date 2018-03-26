@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ from vdsm.network.ipwrapper import linkSet, addrAdd
 from network.nettestlib import (dummy_device, dummy_devices,
                                 veth_pair, dnsmasq_run)
 
-from .netfunctestlib import NetFuncTestCase, SetupNetworksError, NOCHK
+from .netfunctestlib import NetFuncTestAdapter, SetupNetworksError, NOCHK
 
 
 NET1_NAME = 'test-network1'
@@ -47,6 +47,8 @@ IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
 DHCPv4_RANGE_FROM = '192.0.3.2'
 DHCPv4_RANGE_TO = '192.0.3.253'
 
+adapter = NetFuncTestAdapter()
+
 
 pytestmark = pytest.mark.ovs_switch
 
@@ -56,7 +58,7 @@ parametrize_switch_change = pytest.mark.parametrize(
 
 
 @parametrize_switch_change
-class TestBasicSwitchChange(NetFuncTestCase):
+class TestBasicSwitchChange(object):
 
     def test_switch_change_basic_network(self, sw_src, sw_dst):
         with dummy_device() as nic:
@@ -64,9 +66,9 @@ class TestBasicSwitchChange(NetFuncTestCase):
                 'nic': nic, 'switch': sw_src}}
             NETSETUP_TARGET = _change_switch_type(NETSETUP_SOURCE, sw_dst)
 
-            with self.setupNetworks(NETSETUP_SOURCE, {}, NOCHK):
-                self.setupNetworks(NETSETUP_TARGET, {}, NOCHK)
-                self.assertNetwork(NET1_NAME, NETSETUP_TARGET[NET1_NAME])
+            with adapter.setupNetworks(NETSETUP_SOURCE, {}, NOCHK):
+                adapter.setupNetworks(NETSETUP_TARGET, {}, NOCHK)
+                adapter.assertNetwork(NET1_NAME, NETSETUP_TARGET[NET1_NAME])
 
     def test_switch_change_basic_vlaned_network(self, sw_src, sw_dst):
         with dummy_device() as nic:
@@ -74,9 +76,9 @@ class TestBasicSwitchChange(NetFuncTestCase):
                 'nic': nic, 'vlan': VLAN, 'switch': sw_src}}
             NETSETUP_TARGET = _change_switch_type(NETSETUP_SOURCE, sw_dst)
 
-            with self.setupNetworks(NETSETUP_SOURCE, {}, NOCHK):
-                self.setupNetworks(NETSETUP_TARGET, {}, NOCHK)
-                self.assertNetwork(NET1_NAME, NETSETUP_TARGET[NET1_NAME])
+            with adapter.setupNetworks(NETSETUP_SOURCE, {}, NOCHK):
+                adapter.setupNetworks(NETSETUP_TARGET, {}, NOCHK)
+                adapter.assertNetwork(NET1_NAME, NETSETUP_TARGET[NET1_NAME])
 
     def test_switch_change_bonded_network(self, sw_src, sw_dst):
         with dummy_devices(2) as (nic1, nic2):
@@ -87,14 +89,16 @@ class TestBasicSwitchChange(NetFuncTestCase):
                 'nics': [nic1, nic2], 'switch': sw_src}}
             BONDSETUP_TARGET = _change_switch_type(BONDSETUP_SOURCE, sw_dst)
 
-            with self.setupNetworks(NETSETUP_SOURCE, BONDSETUP_SOURCE, NOCHK):
-                self.setupNetworks(NETSETUP_TARGET, BONDSETUP_TARGET, NOCHK)
-                self.assertNetwork(NET1_NAME, NETSETUP_TARGET[NET1_NAME])
-                self.assertBond(BOND_NAME, BONDSETUP_TARGET[BOND_NAME])
+            with adapter.setupNetworks(
+                    NETSETUP_SOURCE, BONDSETUP_SOURCE, NOCHK):
+                adapter.setupNetworks(
+                    NETSETUP_TARGET, BONDSETUP_TARGET, NOCHK)
+                adapter.assertNetwork(NET1_NAME, NETSETUP_TARGET[NET1_NAME])
+                adapter.assertBond(BOND_NAME, BONDSETUP_TARGET[BOND_NAME])
 
 
 @parametrize_switch_change
-class TestIpSwitch(NetFuncTestCase):
+class TestIpSwitch(object):
 
     def test_switch_change_bonded_network_with_static_ip(self, sw_src, sw_dst):
         with dummy_devices(2) as (nic1, nic2):
@@ -109,10 +113,12 @@ class TestIpSwitch(NetFuncTestCase):
                 'nics': [nic1, nic2], 'switch': sw_src}}
             BONDSETUP_TARGET = _change_switch_type(BONDSETUP_SOURCE, sw_dst)
 
-            with self.setupNetworks(NETSETUP_SOURCE, BONDSETUP_SOURCE, NOCHK):
-                self.setupNetworks(NETSETUP_TARGET, BONDSETUP_TARGET, NOCHK)
-                self.assertNetwork(NET1_NAME, NETSETUP_TARGET[NET1_NAME])
-                self.assertBond(BOND_NAME, BONDSETUP_TARGET[BOND_NAME])
+            with adapter.setupNetworks(
+                    NETSETUP_SOURCE, BONDSETUP_SOURCE, NOCHK):
+                adapter.setupNetworks(
+                    NETSETUP_TARGET, BONDSETUP_TARGET, NOCHK)
+                adapter.assertNetwork(NET1_NAME, NETSETUP_TARGET[NET1_NAME])
+                adapter.assertBond(BOND_NAME, BONDSETUP_TARGET[BOND_NAME])
 
     def test_switch_change_bonded_network_with_dhclient(self, sw_src, sw_dst):
         with veth_pair() as (server, nic1):
@@ -133,17 +139,18 @@ class TestIpSwitch(NetFuncTestCase):
 
                 with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
                                  router=IPv4_ADDRESS):
-                    with self.setupNetworks(
+                    with adapter.setupNetworks(
                             NETSETUP_SOURCE, BONDSETUP_SOURCE, NOCHK):
-                        self.setupNetworks(
+                        adapter.setupNetworks(
                             NETSETUP_TARGET, BONDSETUP_TARGET, NOCHK)
-                        self.assertNetwork(
+                        adapter.assertNetwork(
                             NET1_NAME, NETSETUP_TARGET[NET1_NAME])
-                        self.assertBond(BOND_NAME, BONDSETUP_TARGET[BOND_NAME])
+                        adapter.assertBond(BOND_NAME,
+                                           BONDSETUP_TARGET[BOND_NAME])
 
 
 @parametrize_switch_change
-class TestSwitchRollback(NetFuncTestCase):
+class TestSwitchRollback(object):
 
     def test_rollback_target_configuration_with_invalid_ip(self,
                                                            sw_src,
@@ -157,11 +164,11 @@ class TestSwitchRollback(NetFuncTestCase):
                 'netmask': IPv4_NETMASK,
                 'switch': sw_dst}}
 
-            with self.setupNetworks(NETSETUP_SOURCE, {}, NOCHK):
+            with adapter.setupNetworks(NETSETUP_SOURCE, {}, NOCHK):
                 with pytest.raises(SetupNetworksError) as e:
-                    self.setupNetworks(NETSETUP_TARGET, {}, NOCHK)
+                    adapter.setupNetworks(NETSETUP_TARGET, {}, NOCHK)
                 assert e.value.status == ne.ERR_BAD_ADDR
-                self.assertNetwork(NET1_NAME, NETSETUP_SOURCE[NET1_NAME])
+                adapter.assertNetwork(NET1_NAME, NETSETUP_SOURCE[NET1_NAME])
 
     def test_rollback_target_bond_configuration_with_invalid_ip(self,
                                                                 sw_src,
@@ -179,13 +186,14 @@ class TestSwitchRollback(NetFuncTestCase):
             BONDSETUP_TARGET = {BOND_NAME: {
                 'nics': [nic2, nic3], 'switch': sw_dst}}
 
-            with self.setupNetworks(NETSETUP_SOURCE, BONDSETUP_SOURCE, NOCHK):
+            with adapter.setupNetworks(
+                    NETSETUP_SOURCE, BONDSETUP_SOURCE, NOCHK):
                 with pytest.raises(SetupNetworksError) as e:
-                    self.setupNetworks(
+                    adapter.setupNetworks(
                         NETSETUP_TARGET, BONDSETUP_TARGET, NOCHK)
                 assert e.value.status == ne.ERR_BAD_ADDR
-                self.assertNetwork(NET1_NAME, NETSETUP_SOURCE[NET1_NAME])
-                self.assertBond(BOND_NAME, BONDSETUP_SOURCE[BOND_NAME])
+                adapter.assertNetwork(NET1_NAME, NETSETUP_SOURCE[NET1_NAME])
+                adapter.assertBond(BOND_NAME, BONDSETUP_SOURCE[BOND_NAME])
 
     def test_rollback_target_configuration_failed_connectivity_check(self,
                                                                      sw_src,
@@ -199,18 +207,18 @@ class TestSwitchRollback(NetFuncTestCase):
                     'switch': sw_src}}
             NETSETUP_TARGET = _change_switch_type(NETSETUP_SOURCE, sw_dst)
 
-            with self.setupNetworks(NETSETUP_SOURCE, {}, NOCHK):
+            with adapter.setupNetworks(NETSETUP_SOURCE, {}, NOCHK):
                 with pytest.raises(SetupNetworksError) as e:
-                    self.setupNetworks(NETSETUP_TARGET, {},
-                                       {'connectivityCheck': True,
-                                        'connectivityTimeout': 0.1})
+                    adapter.setupNetworks(
+                        NETSETUP_TARGET, {}, {'connectivityCheck': True,
+                                              'connectivityTimeout': 0.1})
                 assert e.value.status == ne.ERR_LOST_CONNECTION
-                self.assertNetwork(NET1_NAME, NETSETUP_SOURCE[NET1_NAME])
-                self.assertNetwork(NET2_NAME, NETSETUP_SOURCE[NET2_NAME])
+                adapter.assertNetwork(NET1_NAME, NETSETUP_SOURCE[NET1_NAME])
+                adapter.assertNetwork(NET2_NAME, NETSETUP_SOURCE[NET2_NAME])
 
 
 @parametrize_switch_change
-class TestSwitchValidation(NetFuncTestCase):
+class TestSwitchValidation(object):
 
     def test_switch_change_with_not_all_existing_networks_specified(self,
                                                                     sw_src,
@@ -223,12 +231,12 @@ class TestSwitchValidation(NetFuncTestCase):
             NETSETUP_TARGET = {
                 NET1_NAME: {'nic': nic, 'switch': sw_dst}}
 
-            with self.setupNetworks(NETSETUP_SOURCE, {}, NOCHK):
+            with adapter.setupNetworks(NETSETUP_SOURCE, {}, NOCHK):
                 with pytest.raises(SetupNetworksError) as e:
-                    self.setupNetworks(NETSETUP_TARGET, {}, NOCHK)
+                    adapter.setupNetworks(NETSETUP_TARGET, {}, NOCHK)
                 assert e.value.status == ne.ERR_BAD_PARAMS
-                self.assertNetwork(NET1_NAME, NETSETUP_SOURCE[NET1_NAME])
-                self.assertNetwork(NET2_NAME, NETSETUP_SOURCE[NET2_NAME])
+                adapter.assertNetwork(NET1_NAME, NETSETUP_SOURCE[NET1_NAME])
+                adapter.assertNetwork(NET2_NAME, NETSETUP_SOURCE[NET2_NAME])
 
     def test_switch_change_setup_includes_a_network_removal(self,
                                                             sw_src,
@@ -242,12 +250,12 @@ class TestSwitchValidation(NetFuncTestCase):
                 NET1_NAME: {'nic': nic, 'switch': sw_dst},
                 NET2_NAME: {'remove': True}}
 
-            with self.setupNetworks(NETSETUP_SOURCE, {}, NOCHK):
+            with adapter.setupNetworks(NETSETUP_SOURCE, {}, NOCHK):
                 with pytest.raises(SetupNetworksError) as e:
-                    self.setupNetworks(NETSETUP_TARGET, {}, NOCHK)
+                    adapter.setupNetworks(NETSETUP_TARGET, {}, NOCHK)
                 assert e.value.status == ne.ERR_BAD_PARAMS
-                self.assertNetwork(NET1_NAME, NETSETUP_SOURCE[NET1_NAME])
-                self.assertNetwork(NET2_NAME, NETSETUP_SOURCE[NET2_NAME])
+                adapter.assertNetwork(NET1_NAME, NETSETUP_SOURCE[NET1_NAME])
+                adapter.assertNetwork(NET2_NAME, NETSETUP_SOURCE[NET2_NAME])
 
 
 def _change_switch_type(requests, target_switch):
