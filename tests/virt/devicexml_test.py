@@ -632,12 +632,6 @@ class FakeProxy(object):
     def rmAppropriateHwrngDevice(self, vmid):
         pass
 
-    def appropriateIommuGroup(self, group):
-        pass
-
-    def rmAppropriateIommuGroup(self, group):
-        pass
-
 
 # the alias is not rendered by getXML, so having it would make
 # the test fail
@@ -707,7 +701,9 @@ _GRAPHICS_DATA = [
 ]
 _TRANSIENT_STORAGE_TEST_DATA = [
     [u'''<disk device="disk" snapshot="no" type="block">
-        <source dev="/var/lib/vdsm/transient"/>
+        <source dev="/var/lib/vdsm/transient">
+            <seclabel model="dac" relabel="no" type="none" />
+        </source>
         <target bus="scsi" dev="sda"/>
         <serial>54-a672-23e5b495a9ea</serial>
         <driver cache="writethrough" error_policy="stop"
@@ -726,7 +722,9 @@ _TRANSIENT_STORAGE_TEST_DATA = [
 
 _STORAGE_TEST_DATA = [
     [u'''<disk device="disk" snapshot="no" type="block">
-            <source dev="/path/to/volume"/>
+            <source dev="/path/to/volume">
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <target bus="virtio" dev="vda"/>
             <serial>54-a672-23e5b495a9ea</serial>
             <driver cache="none" discard="unmap" error_policy="stop"
@@ -734,7 +732,9 @@ _STORAGE_TEST_DATA = [
         </disk>''',
      {}],
     [u'''<disk device="disk" snapshot="no" type="block">
-            <source dev="/path/to/volume"/>
+            <source dev="/path/to/volume">
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <target bus="virtio" dev="vda"/>
             <serial>54-a672-23e5b495a9ea</serial>
             <driver cache="none" discard="unmap" error_policy="enospace"
@@ -742,7 +742,9 @@ _STORAGE_TEST_DATA = [
         </disk>''',
      {}],
     [u'''<disk device="disk" snapshot="no" type="block">
-            <source dev="/path/to/volume"/>
+            <source dev="/path/to/volume">
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <target bus="virtio" dev="vda"/>
             <serial>54-a672-23e5b495a9ea</serial>
             <driver cache="none" error_policy="stop"
@@ -750,7 +752,9 @@ _STORAGE_TEST_DATA = [
         </disk>''',
      {}],
     [u'''<disk device="disk" snapshot="no" type="file">
-            <source file="/path/to/volume"/>
+            <source file="/path/to/volume">
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <target bus="virtio" dev="vda"/>
             <serial>54-a672-23e5b495a9ea</serial>
             <driver cache="none" error_policy="stop"
@@ -758,7 +762,9 @@ _STORAGE_TEST_DATA = [
         </disk>''',
      {}],
     [u'''<disk device="lun" sgio="unfiltered" snapshot="no" type="block">
-            <source dev="/dev/mapper/lun1"/>
+            <source dev="/dev/mapper/lun1">
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <target bus="scsi" dev="sda"/>
             <driver cache="none" error_policy="stop"
                     io="native" name="qemu" type="raw"/>
@@ -770,7 +776,6 @@ _STORAGE_TEST_DATA = [
                 <host name="1.2.3.42" port="6789" transport="tcp"/>
             </source>
             <target bus="virtio" dev="vda"/>
-            <serial>54-a672-23e5b495a9ea</serial>
             <driver cache="none" error_policy="stop"
                     io="threads" name="qemu" type="raw"/>
         </disk>''',
@@ -791,7 +796,9 @@ _STORAGE_TEST_DATA = [
      {}],
     [u'''<disk device="lun" sgio="unfiltered" snapshot="no" type="block">
             <address bus="0" controller="0" target="0" type="drive" unit="0" />
-            <source dev="/dev/mapper/36001405b3b7829f14c1400d925eefebb" />
+            <source dev="/dev/mapper/36001405b3b7829f14c1400d925eefebb">
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <target bus="scsi" dev="sda" />
             <driver cache="none" error_policy="stop" io="native"
                     name="qemu" type="raw" />
@@ -799,7 +806,9 @@ _STORAGE_TEST_DATA = [
      {}],
     [u'''<disk device="cdrom" snapshot="no" type="file">
             <source file="/var/run/vdsm/payload/{guid}.{hashsum}.img"
-                startupPolicy="optional" />
+                startupPolicy="optional">
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <target bus="ide" dev="hdd" />
             <readonly />
             <driver error_policy="report" name="qemu" type="raw" />
@@ -809,14 +818,18 @@ _STORAGE_TEST_DATA = [
     # cdrom from Engine 4.2.0, using error_policy="report"
     [u'''<disk type="file" device="cdrom" snapshot="no">
             <address bus="1" controller="0" unit="0" type="drive" target="0"/>
-            <source file="" startupPolicy="optional"/>
+            <source file="" startupPolicy="optional">
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <target dev="hdc" bus="ide"/>
             <readonly/>
             <driver name="qemu" type="raw" error_policy="report"/>
          </disk>''',
      {}],
     [u'''<disk device="disk" snapshot="no" type="block">
-            <source dev="/path/to/volume"/>
+            <source dev="/path/to/volume">
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <target bus="virtio" dev="vda"/>
             <serial>54-a672-23e5b495a9ea</serial>
             <driver cache="none" discard="unmap" error_policy="stop"
@@ -831,7 +844,9 @@ _STORAGE_TEST_DATA = [
     # disk from Engine 4.2.0
     [u'''<disk snapshot="no" type="block" device="disk">
             <address bus="0" controller="0" unit="0" type="drive" target="0"/>
-            <source dev="/rhev/data-center/mnt/blockSD/a/images/b/c"/>
+            <source dev="/rhev/data-center/mnt/blockSD/a/images/b/c">
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <target dev="sda" bus="scsi"/>
             <serial>d591482b-eb24-47bd-be07-082c115d11f4</serial>
             <boot order="1"/>
@@ -842,7 +857,9 @@ _STORAGE_TEST_DATA = [
      {}],
     # cache attribute taken from XML for non-transient disks
     [u'''<disk device="disk" snapshot="no" type="file">
-            <source file="/path/to/volume"/>
+            <source file="/path/to/volume">
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <target bus="sata" dev="sda"/>
             <serial>54-a672-23e5b495a9ea</serial>
             <driver cache="writethrough" error_policy="enospace"
@@ -1429,14 +1446,18 @@ class DeviceXMLRoundTripTests(XMLTestCase):
 
     def test_storage_from_incomplete_xml(self):
         storage_xml = '''<disk device="disk" snapshot="no" type="file">
-            <source/>
+            <source>
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <target bus="virtio" dev="vda"/>
             <serial>54-a672-23e5b495a9ea</serial>
             <driver cache="none" error_policy="stop"
                     io="threads" name="qemu" type="raw"/>
         </disk>'''
         expected_xml = '''<disk device="disk" snapshot="no" type="file">
-            <source file=""/>
+            <source file="">
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <target bus="virtio" dev="vda"/>
             <serial>54-a672-23e5b495a9ea</serial>
             <driver cache="none" error_policy="stop"
@@ -1459,7 +1480,9 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             <disk type="file" device="cdrom" snapshot="no">
                 <address bus="1" controller="0" unit="0"
                          type="drive" target="0"/>
-                <source file="" startupPolicy="optional"/>
+                <source file="" startupPolicy="optional">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <target dev="hdc" bus="ide"/>
                 <readonly/>
                 {driver_xml}
@@ -1497,7 +1520,9 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         expected_xml = u'''
           <disk type="file" device="cdrom" snapshot="no">
             <address type='drive' controller='0' bus='1' target='0' unit='0'/>
-            <source file="" startupPolicy="optional"/>
+            <source file="" startupPolicy="optional">
+              <seclabel model="dac" relabel="no" type="none"/>
+            </source>
             <target dev='hdc' bus='ide'/>
             <readonly/>
             <driver name='qemu' type='raw' error_policy='report'/>

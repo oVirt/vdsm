@@ -100,12 +100,14 @@ class TestReplaceDiskXML(XMLTestCase):
             read_data('domain_disk_block.xml')
         )
 
-    def test_replace_cdrom_without_source_file(self):
+    def test_replace_cdrom_withoutource_file(self):
         dom_str = read_data('vm_hibernated.xml')
         dom = xmlutils.fromstring(dom_str)
         cdrom_xml = u'''<disk device="cdrom" type="file">
             <driver error_policy="report" name="qemu" type="raw" />
-            <source {file_src}startupPolicy="optional" />
+            <source {file_src}startupPolicy="optional">
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <backingStore />
             <target bus="ide" dev="hdc" />
             <readonly />
@@ -136,7 +138,9 @@ class TestReplaceDiskXML(XMLTestCase):
         # - the 'driver' elements lack name="qemu" (default)
         cdrom_xml = u'''<disk device="cdrom" type="file">
             <driver error_policy="report" type="raw" />
-            <source file="" startupPolicy="optional" />
+            <source file="" startupPolicy="optional">
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <target bus="ide" dev="hdc" />
             <readonly />
             <alias name="ua-096534a7-5fbd-4bd1-add0-65501bce51f9" />

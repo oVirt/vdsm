@@ -1,7 +1,9 @@
 <devices>
     <disk device="cdrom" snapshot="no" type="file">
         <address bus="1" controller="0" target="0" type="drive" unit="0" />
-        <source file="" startupPolicy="optional" />
+        <source file="" startupPolicy="optional">
+            <seclabel model="dac" relabel="no" type="none" />
+        </source>
         <target bus="ide" dev="hdc" />
         <readonly />
         <driver error_policy="report" name="qemu" type="raw" />
@@ -9,7 +11,9 @@
     </disk>
     <disk device="disk" snapshot="no" type="block">
         <address bus="0" controller="0" target="0" type="drive" unit="0" />
-        <source dev="/rhev/data-center/mnt/blockSD/a67a8671-05fc-4e42-b147-f7d3a0496cd6/images/b07a37de-95d6-4682-84cd-c8c9201327e3/b3335e60-6d27-46e0-bed8-50e75cca6786" />
+        <source dev="/rhev/data-center/mnt/blockSD/a67a8671-05fc-4e42-b147-f7d3a0496cd6/images/b07a37de-95d6-4682-84cd-c8c9201327e3/b3335e60-6d27-46e0-bed8-50e75cca6786">
+            <seclabel model="dac" relabel="no" type="none" />
+        </source>
         <target bus="scsi" dev="sda" />
         <serial>b07a37de-95d6-4682-84cd-c8c9201327e3</serial>
         <boot order="1" />

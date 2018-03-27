@@ -617,12 +617,6 @@ def _suitable_device_for_mdev_type(target_mdev_type):
     return target_device
 
 
-def _mdev_iommu_group(device, mdev_uuid):
-    return os.path.basename(os.path.realpath(
-        os.path.join(_MDEV_PATH, device, mdev_uuid, 'iommu_group'))
-    )
-
-
 def device_name_from_address(address_type, device_address):
     _, address_to_name = _get_devices_from_libvirt()
     return address_to_name[
@@ -663,22 +657,10 @@ def detach_detachable(device_name):
 
     if capability == 'pci' and conv.tobool(
             device_params['is_assignable']):
-        try:
-            iommu_group = device_params['iommu_group']
-        except KeyError:
-            raise NoIOMMUSupportException('hostdev passthrough without iommu')
-        supervdsm.getProxy().appropriateIommuGroup(iommu_group)
         libvirt_device.detachFlags(None)
-    elif capability == 'usb':
-        supervdsm.getProxy().appropriateUSBDevice(
-            device_params['address']['bus'],
-            device_params['address']['device'])
     elif capability == 'scsi':
         if 'udev_path' not in device_params:
             raise UnsuitableSCSIDevice
-
-        supervdsm.getProxy().appropriateSCSIDevice(device_name,
-                                                   device_params['udev_path'])
 
     return device_params
 
@@ -691,18 +673,9 @@ def reattach_detachable(device_name, pci_reattach=True):
             device_params['is_assignable']):
         if pci_reattach:
             libvirt_device.reAttach()
-        supervdsm.getProxy().rmAppropriateIommuGroup(
-            device_params['iommu_group'])
-    elif capability == 'usb':
-        supervdsm.getProxy().rmAppropriateUSBDevice(
-            device_params['address']['bus'],
-            device_params['address']['device'])
     elif capability == 'scsi':
         if 'udev_path' not in device_params:
             raise UnsuitableSCSIDevice
-
-        supervdsm.getProxy().rmAppropriateSCSIDevice(
-            device_name, device_params['udev_path'])
 
 
 def change_numvfs(device_name, numvfs):
@@ -723,9 +696,6 @@ def spawn_mdev(mdev_type, mdev_uuid, log):
         message = 'vgpu: Failed to create mdev type {}'.format(mdev_type)
         log.error(message)
         raise exception.ResourceUnavailable(message)
-    supervdsm.getProxy().appropriateIommuGroup(
-        _mdev_iommu_group(device, mdev_uuid)
-    )
 
 
 def despawn_mdev(mdev_uuid):
@@ -736,9 +706,6 @@ def despawn_mdev(mdev_uuid):
             break
     if device is None or mdev_uuid is None:
         raise exception.ResourceUnavailable('vgpu: No mdev found')
-    supervdsm.getProxy().rmAppropriateIommuGroup(
-        _mdev_iommu_group(device, mdev_uuid)
-    )
     try:
         supervdsm.getProxy().mdev_delete(device, mdev_uuid)
     except IOError:

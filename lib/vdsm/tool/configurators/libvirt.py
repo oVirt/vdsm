@@ -226,8 +226,10 @@ FILES = {
             {
                 'conditions': {},
                 'content': {
-                    'dynamic_ownership': 0,
+                    'dynamic_ownership': 1,
                     'save_image_format': '"gzip"',
+                    'user': '"qemu"',
+                    'group': '"qemu"',
                     'remote_display_port_min': 5900,
                     'remote_display_port_max': 6923,
                     'max_core': '"unlimited"',

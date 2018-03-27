@@ -383,9 +383,6 @@ class Interface(core.Base):
                                    'due to missing IOMMU support.',
                                    self.hostdev)
 
-            supervdsm.getProxy().rmAppropriateIommuGroup(
-                self._device_params['iommu_group'])
-
         if self._is_vhostuser:
             bridge_info = supervdsm.getProxy().ovs_bridge(self.network)
             if bridge_info:

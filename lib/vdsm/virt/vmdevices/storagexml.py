@@ -311,6 +311,14 @@ def update_disk_element_from_object(disk_element, vm_drive, log,
         vmxml.set_attr(driver, 'type', drive_format)
         changes['format'] = (old_drive_format, drive_format)
 
+    # dynamic_ownership workaround
+    if (disk_type == storage.DISK_TYPE.FILE or
+            disk_type == storage.DISK_TYPE.BLOCK):
+        try:
+            vmxml.find_first(source, 'seclabel')
+        except vmxml.NotFound:
+            storage.disable_dynamic_ownership(source)
+
     _log_changes(log, 'drive', vm_drive.name, changes)
 
 

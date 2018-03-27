@@ -70,7 +70,9 @@ class DriveXMLTests(XMLTestCase):
         )
         xml = """
             <disk device="cdrom" snapshot="no" type="file">
-                <source file="/path/to/fedora.iso" startupPolicy="optional"/>
+                <source file="/path/to/fedora.iso" startupPolicy="optional">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <target bus="ide" dev="hdc"/>
                 <readonly/>
                 <serial>54-a672-23e5b495a9ea</serial>
@@ -97,7 +99,9 @@ class DriveXMLTests(XMLTestCase):
         )
         xml = """
             <disk device="disk" snapshot="no" type="file">
-                <source file="/path/to/volume"/>
+                <source file="/path/to/volume">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <target bus="virtio" dev="vda"/>
                 <shareable/>
                 <serial>54-a672-23e5b495a9ea</serial>
@@ -122,7 +126,9 @@ class DriveXMLTests(XMLTestCase):
         )
         xml = """
             <disk device="disk" snapshot="no" type="file">
-                <source file="/path/to/volume"/>
+                <source file="/path/to/volume">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <target bus="sata" dev="sda"/>
                 <serial>54-a672-23e5b495a9ea</serial>
                 <driver cache="writethrough" error_policy="enospace"
@@ -138,7 +144,9 @@ class DriveXMLTests(XMLTestCase):
         )
         xml = """
             <disk device="disk" snapshot="no" type="block">
-                <source dev="/path/to/volume"/>
+                <source dev="/path/to/volume">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <target bus="virtio" dev="vda"/>
                 <serial>54-a672-23e5b495a9ea</serial>
                 <driver cache="none" error_policy="stop"
@@ -155,7 +163,9 @@ class DriveXMLTests(XMLTestCase):
         )
         xml = """
             <disk device="disk" snapshot="no" type="block">
-                <source dev="/path/to/volume"/>
+                <source dev="/path/to/volume">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <target bus="virtio" dev="vda"/>
                 <serial>54-a672-23e5b495a9ea</serial>
                 <driver cache="none" error_policy="stop"
@@ -173,7 +183,9 @@ class DriveXMLTests(XMLTestCase):
         )
         xml = """
             <disk device="disk" snapshot="no" type="block">
-                <source dev="/path/to/volume"/>
+                <source dev="/path/to/volume">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <target bus="virtio" dev="vda"/>
                 <serial>54-a672-23e5b495a9ea</serial>
                 <driver cache="none" discard="unmap" error_policy="stop"
@@ -190,7 +202,9 @@ class DriveXMLTests(XMLTestCase):
         )
         xml = """
             <disk device="disk" snapshot="no" type="block">
-                <source dev="/path/to/volume"/>
+                <source dev="/path/to/volume">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <target bus="virtio" dev="vda"/>
                 <serial>54-a672-23e5b495a9ea</serial>
                 <driver cache="none" error_policy="stop"
@@ -206,7 +220,9 @@ class DriveXMLTests(XMLTestCase):
         )
         xml = """
             <disk device="disk" snapshot="no" type="file">
-                <source file="/path/to/volume"/>
+                <source file="/path/to/volume">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <target bus="virtio" dev="vda"/>
                 <serial>54-a672-23e5b495a9ea</serial>
                 <driver cache="none" error_policy="stop"
@@ -226,7 +242,9 @@ class DriveXMLTests(XMLTestCase):
         )
         xml = """
             <disk device="lun" sgio="unfiltered" snapshot="no" type="block">
-                <source dev="/dev/mapper/lun1"/>
+                <source dev="/dev/mapper/lun1">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <target bus="scsi" dev="sda"/>
                 <driver cache="none" error_policy="stop"
                         io="native" name="qemu" type="raw"/>
@@ -299,7 +317,9 @@ class DriveXMLTests(XMLTestCase):
         )
         xml = """
             <disk device="cdrom" snapshot="no" type="file">
-                <source file="/path/to/fedora.iso" startupPolicy="optional"/>
+                <source file="/path/to/fedora.iso" startupPolicy="optional">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <target bus="ide" dev="hdc"/>
                 <readonly/>
                 <driver error_policy="stop" name="qemu" type="raw" />
@@ -311,7 +331,9 @@ class DriveXMLTests(XMLTestCase):
         conf = drive_config(diskType=DISK_TYPE.FILE)
         xml = """
             <disk device="disk" snapshot="no" type="file">
-                <source file="/path/to/volume"/>
+                <source file="/path/to/volume">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <target bus="virtio" dev="vda"/>
                 <driver cache="none" error_policy="stop"
                         io="threads" name="qemu" type="raw"/>
@@ -340,7 +362,9 @@ class DriveReplicaXML(XMLTestCase):
         # driver: io=native
         xml = """
             <disk device="disk" snapshot="no" type="block">
-                <source dev="/path/to/replica"/>
+                <source dev="/path/to/replica">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <driver cache="none" error_policy="stop"
                         io="native" name="qemu" type="qcow2"/>
             </disk>
@@ -356,7 +380,9 @@ class DriveReplicaXML(XMLTestCase):
         # driver: io=threads
         xml = """
             <disk device="disk" snapshot="no" type="file">
-                <source file="/path/to/replica"/>
+                <source file="/path/to/replica">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <driver cache="none" error_policy="stop"
                         io="threads" name="qemu" type="qcow2"/>
             </disk>
@@ -372,7 +398,9 @@ class DriveReplicaXML(XMLTestCase):
         # driver: io=threads
         xml = """
             <disk device="disk" snapshot="no" type="file">
-                <source file="/path/to/replica"/>
+                <source file="/path/to/replica">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <driver cache="none" error_policy="stop"
                         io="threads" name="qemu" type="qcow2"/>
             </disk>
@@ -388,7 +416,9 @@ class DriveReplicaXML(XMLTestCase):
         # driver: io=native
         xml = """
             <disk device="disk" snapshot="no" type="block">
-                <source dev="/path/to/replica"/>
+                <source dev="/path/to/replica">
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <driver cache="none" error_policy="stop"
                         io="native" name="qemu" type="qcow2"/>
             </disk>
@@ -938,7 +968,9 @@ class TestVolumeChain(VdsmTestCase):
         with self.make_env(DISK_TYPE.BLOCK) as env:
             disk_xml = etree.fromstring("""
             <disk>
-                <source dev='%(top)s'/>
+                <source dev='%(top)s'>
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <backingStore type='block' index='1'>
                     <source dev='%(base)s'/>
                     <backingStore/>
@@ -967,7 +999,9 @@ class TestVolumeChain(VdsmTestCase):
         with self.make_env(DISK_TYPE.FILE) as env:
             disk_xml = etree.fromstring("""
             <disk>
-                <source file='%(top)s'/>
+                <source file='%(top)s'>
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <backingStore type='file' index='1'>
                     <source file='%(base)s'/>
                     <backingStore/>
@@ -1004,7 +1038,9 @@ class TestVolumeChain(VdsmTestCase):
 
         disk_xml = etree.fromstring("""
         <disk>
-            <source name='server:/vol/11111111-1111-1111-1111-111111111111'/>
+            <source name='server:/vol/11111111-1111-1111-1111-111111111111'>
+                <seclabel model="dac" relabel="no" type="none" />
+            </source>
             <backingStore type='network' index='1'>
                 <source
                     name='server:/vol/22222222-2222-2222-2222-222222222222'/>
@@ -1031,7 +1067,9 @@ class TestVolumeChain(VdsmTestCase):
         with self.make_env(DISK_TYPE.BLOCK) as env:
             disk_xml = etree.fromstring("""
             <disk>
-                <source dev='/top'/>
+                <source dev='/top'>
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <backingStore type='block' index='1'>
                     <format type='raw'/>
                     <source dev='/base'/>
@@ -1054,7 +1092,9 @@ class TestVolumeChain(VdsmTestCase):
         with self.make_env(DISK_TYPE.BLOCK) as env:
             disk_xml = etree.fromstring("""
             <disk>
-                <source dev='%s'/>
+                <source dev='%s'>
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
             </disk>""" % env.top)
 
             chain = env.drive.parse_volume_chain(disk_xml)
@@ -1070,7 +1110,9 @@ class TestVolumeChain(VdsmTestCase):
         with self.make_env(DISK_TYPE.BLOCK) as env:
             disk_xml = etree.fromstring("""
             <disk>
-                <source dev='%(top)s'/>
+                <source dev='%(top)s'>
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <backingStore type='block'>
                     <source dev='%(base)s'/>
                     <backingStore/>
@@ -1087,7 +1129,9 @@ class TestVolumeChain(VdsmTestCase):
         with self.make_env(DISK_TYPE.BLOCK) as env:
             disk_xml = etree.fromstring("""
             <disk>
-                <source dev='%(top)s'/>
+                <source dev='%(top)s'>
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
                 <backingStore type='block' index='fail'>
                     <source dev='%(base)s'/>
                     <backingStore/>
@@ -1109,7 +1153,9 @@ class TestDiskSnapshotXml(XMLTestCase):
 
         expected = """
             <disk name='vda' snapshot='external' type='file'>
-                <source file='/image' type='file'/>
+                <source file='/image' type='file'>
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
             </disk>
             """
         snap_info = {'path': '/image', 'device': 'disk'}
@@ -1121,7 +1167,9 @@ class TestDiskSnapshotXml(XMLTestCase):
 
         expected = """
             <disk name='vda' snapshot='external' type='block'>
-                <source dev='/dev/dm-1' type='block'/>
+                <source dev='/dev/dm-1' type='block'>
+                    <seclabel model="dac" relabel="no" type="none" />
+                </source>
             </disk>
             """
         snap_info = {'path': '/dev/dm-1', 'device': 'disk'}

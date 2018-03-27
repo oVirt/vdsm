@@ -909,6 +909,31 @@ def image_id(path):
     return os.path.basename(image_path)
 
 
+def disable_dynamic_ownership(element):
+    """
+    Disable dynamic ownership in the given device element.
+
+    Generally all devices should be put under dynamic ownership.  However it's
+    more complicated with storage devices.  Vdsm handles volumes throughout
+    their lifetimes, and lifetime of a volume exceeds lifetime of a VM.  It's
+    therefore not possible for VDSM to forgive all the permission handling.
+
+    Arguments:
+      element: etree element representing the device
+    """
+    # We need to make sure that libvirt DAC (fs permission driver) is
+    # disabled. The libvirt spec may be hard to read at times, so just as a
+    # help:
+    #  model='dac' -- dac is the FS permissions driver
+    #  type='none' -- type is currently used for SELinux/AppArmor drivers
+    #  relabel='no' -- disable the change of permissions itself
+    seclabel = ET.Element('seclabel')
+    seclabel.set('type', 'none')
+    seclabel.set('relabel', 'no')
+    seclabel.set('model', 'dac')
+    element.append(seclabel)
+
+
 def _getSourceXML(drive):
     """
     Makes a libvirt <source> element for specified drive.
@@ -921,19 +946,27 @@ def _getSourceXML(drive):
         Element: libvirt source element in a form of
                  <source file='/image'/>
     """
+    needs_seclabel = False
+
     source = vmxml.Element('source')
     if drive["diskType"] == DISK_TYPE.BLOCK:
+        needs_seclabel = True
         source.setAttrs(dev=drive["path"])
     elif drive["diskType"] == DISK_TYPE.NETWORK:
         source.setAttrs(protocol=drive["protocol"], name=drive["path"])
         for host in drive["hosts"]:
             source.appendChildWithArgs('host', **host)
     elif drive["diskType"] == DISK_TYPE.FILE:
+        needs_seclabel = True
         source.setAttrs(file=drive["path"])
         if drive["device"] == 'cdrom' or drive["device"] == 'floppy':
             source.setAttrs(startupPolicy='optional')
     else:
         raise RuntimeError("Unsupported diskType %r", drive["diskType"])
+
+    if needs_seclabel:
+        disable_dynamic_ownership(source)
+
     return source
 
 
