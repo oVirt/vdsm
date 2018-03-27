@@ -89,14 +89,29 @@ def _fake_qemuAgentCommand(domain, command, timeout, flags):
     return '{"error": {"class": "CommandNotFound", "desc": "..."}}'
 
 
+class FakeDomain(object):
+    def interfaceAddresses(self, source):
+        if source != libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT:
+            return None
+        ifdata = {
+            'ens2': {'addrs': [
+                {'addr': '192.168.124.216', 'prefix': 24, 'type': 0},
+                {'addr': 'fe80::5054:ff:feed:9976', 'prefix': 64, 'type': 1}],
+                'hwaddr': '52:54:00:ed:99:76'},
+            'lo': {'addrs': [
+                {'addr': '127.0.0.1', 'prefix': 8, 'type': 0},
+                {'addr': '::1', 'prefix': 128, 'type': 1}],
+                'hwaddr': '00:00:00:00:00:00'}}
+        return ifdata
+
+
 class FakeVM(object):
+    def __init__(self):
+        self._dom = FakeDomain()
+
     @property
     def id(self):
         return "00000000-0000-0000-0000-000000000001"
-
-    @property
-    def _dom(self):
-        return None
 
 
 @MonkeyClass(libvirt_qemu, "qemuAgentCommand", _fake_qemuAgentCommand)
@@ -209,4 +224,28 @@ class QemuGuestAgentTests(TestCaseBase):
                     'offset': 60,
                     'zone': 'CET',
                 },
+            })
+
+    def test_network_interfaces(self):
+        c = qemuguestagent.NetworkInterfacesCheck(self.vm, self.qga_poller)
+        c._execute()
+        info = self.qga_poller.get_guest_info(self.vm.id)
+        ifaces = info['netIfaces']
+        iflo = [x for x in ifaces if x['name'] == 'lo'][0]
+        ifens2 = [x for x in ifaces if x['name'] == 'ens2'][0]
+        self.assertEqual(
+            iflo,
+            {
+                'hw': '00:00:00:00:00:00',
+                'inet': ['127.0.0.1'],
+                'inet6': ['::1'],
+                'name': 'lo'
+            })
+        self.assertEqual(
+            ifens2,
+            {
+                'hw': '52:54:00:ed:99:76',
+                'inet': ['192.168.124.216'],
+                'inet6': ['fe80::5054:ff:feed:9976'],
+                'name': 'ens2'
             })
