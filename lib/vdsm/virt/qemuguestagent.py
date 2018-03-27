@@ -42,6 +42,7 @@ import libvirt
 #
 # [1] https://wiki.libvirt.org/page/Qemu_guest_agent
 import libvirt_qemu
+import six
 import threading
 
 from vdsm import utils
@@ -124,6 +125,9 @@ class QemuGuestAgentPoller(object):
             # Basic system information
             per_vm_operation(
                 SystemInfoCheck,
+                config.getint('guest_agent', 'qga_sysinfo_period')),
+            per_vm_operation(
+                NetworkInterfacesCheck,
                 config.getint('guest_agent', 'qga_sysinfo_period')),
 
             # List of active users
@@ -360,4 +364,43 @@ class SystemInfoCheck(_RunnableOnVmGuestAgent):
                     'zone': ret.get(_TIMEZONE_ZONE_FIELD, 'unknown'),
                 }
 
+        self._qga_poller.update_guest_info(self._vm.id, guest_info)
+
+
+class NetworkInterfacesCheck(_RunnableOnVmGuestAgent):
+    """
+    Get the information about network interfaces. There is a libvirt call
+    around the QEMU-GA command that we can use. But it still uses the QEMU-GA
+    so it makes sense to do all the pre-checks as if we were calling QEMU-GA
+    directly.
+    """
+    def _execute(self):
+        # NOTE: The field guestIPs is not used in oVirt Engine since 4.2
+        #       so don't even bother filling it.
+        guest_info = {'netIfaces': [], 'guestIPs': ''}
+        interfaces = []
+        try:
+            interfaces = self._vm._dom.interfaceAddresses(
+                libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT)
+        except libvirt.libvirtError:
+            self._qga_poller.set_failure(self._vm.id)
+
+        for ifname, ifparams in six.iteritems(interfaces):
+            iface = {
+                'hw': ifparams.get('hwaddr', ''),
+                'inet': [],
+                'inet6': [],
+                'name': ifname,
+            }
+            addrs = ifparams.get('addrs')
+            for addr in (addrs if addrs is not None else []):
+                address = addr.get('addr')
+                if address is None:
+                    continue
+                iftype = addr.get('type')
+                if iftype == libvirt.VIR_IP_ADDR_TYPE_IPV4:
+                    iface['inet'].append(address)
+                elif iftype == libvirt.VIR_IP_ADDR_TYPE_IPV6:
+                    iface['inet6'].append(address)
+            guest_info['netIfaces'].append(iface)
         self._qga_poller.update_guest_info(self._vm.id, guest_info)
