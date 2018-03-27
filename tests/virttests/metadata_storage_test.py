@@ -58,7 +58,6 @@ _CDROM_DATA = _TestData(
         'shared': 'false',
         'specParams': {'path': ''},
         'type': 'disk',
-        'vm_custom': {},
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
@@ -81,7 +80,6 @@ _CDROM_DATA = _TestData(
         <specParams>
             <path />
         </specParams>
-        <vm_custom />
     </device>
     </vm>""",
 )
@@ -106,7 +104,6 @@ _CDROM_PAYLOAD_DATA = _TestData(
         'device': 'cdrom',
         'shared': 'false',
         'type': 'disk',
-        'vm_custom': {},
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
@@ -127,7 +124,6 @@ _CDROM_PAYLOAD_DATA = _TestData(
                 <file path='openstack/latest/user_data'>something</file>
             </vmPayload>
         </specParams>
-        <vm_custom />
     </device>
     </vm>""",
 )
@@ -155,10 +151,8 @@ _DISK_DATA = _TestData(
         'propagateErrors': 'off',
         'readonly': 'false',
         'shared': 'false',
-        'specParams': {},
         'type': 'disk',
         'volumeID': '5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc',
-        'vm_custom': {},
         'volumeChain': [{
             'domainID': 'c578566d-bc61-420c-8f1e-8dfa0a18efd5',
             'imageID': '66441539-f7ac-4946-8a25-75e422f939d4',
@@ -193,8 +187,6 @@ _DISK_DATA = _TestData(
             <slot>0x05</slot>
             <type>pci</type>
         </address>
-        <specParams />
-        <vm_custom />
         <volumeChain>
             <volumeChainNode>
                 <domainID>c578566d-bc61-420c-8f1e-8dfa0a18efd5</domainID>
@@ -233,7 +225,6 @@ _DISK_DATA_IOTUNE = _TestData(
         },
         'type': 'disk',
         'volumeID': '5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc',
-        'vm_custom': {},
         'volumeChain': [{
             'domainID': 'c578566d-bc61-420c-8f1e-8dfa0a18efd5',
             'imageID': '66441539-f7ac-4946-8a25-75e422f939d4',
@@ -268,7 +259,6 @@ _DISK_DATA_IOTUNE = _TestData(
                 <write_bytes_sec type='int'>1</write_bytes_sec>
             </ioTune>
         </specParams>
-        <vm_custom />
         <volumeChain>
             <volumeChainNode>
                 <domainID>c578566d-bc61-420c-8f1e-8dfa0a18efd5</domainID>
@@ -306,7 +296,6 @@ _DISK_DATA_CUSTOM = _TestData(
         'propagateErrors': 'off',
         'readonly': 'false',
         'shared': 'false',
-        'specParams': {},
         'type': 'disk',
         'volumeID': '845e57e7-3b16-4cf3-a812-7175f956d2bb',
         'vm_custom': {'viodiskcache': 'writethrough'}
@@ -336,7 +325,6 @@ _DISK_DATA_CUSTOM = _TestData(
             <slot>0x04</slot>
             <type>pci</type>
         </address>
-        <specParams />
         <vm_custom>
           <viodiskcache>writethrough</viodiskcache>
         </vm_custom>
@@ -351,7 +339,6 @@ _DISK_DATA_SGIO = _TestData(
         'shared': 'false',
         'type': 'disk',
         'readonly': 'false',
-        'specParams': {},
         'sgio': 'unfiltered',
         'index': 1,
         'iface': 'scsi',
@@ -367,7 +354,6 @@ _DISK_DATA_SGIO = _TestData(
         'discard': False,
         'GUID': '36001405e9bebaa680864c98a280e6544',
         'optional': 'false',
-        'vm_custom': {},
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
@@ -392,8 +378,6 @@ _DISK_DATA_SGIO = _TestData(
             <type>drive</type>
             <unit>0</unit>
         </address>
-        <specParams />
-        <vm_custom />
     </device>
     </vm>""",
 )
@@ -429,8 +413,6 @@ _DISK_DATA_NETWORK = _TestData(
         'path': 'poolname/volumename',
         'protocol': 'rbd',
         'serial': '54-a672-23e5b495a9ea',
-        'specParams': {},
-        'vm_custom': {},
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
@@ -464,8 +446,6 @@ _DISK_DATA_NETWORK = _TestData(
                 <transport>tcp</transport>
             </hostInfo>
         </hosts>
-        <specParams />
-        <vm_custom />
     </device>
     </vm>"""
 )
@@ -481,7 +461,6 @@ _DISK_DATA_REPLICA = _TestData(
         'readonly': 'False',
         'shared': 'none',
         'type': 'disk',
-        'specParams': {},
         'vm_custom': {'viodiskcache': 'writethrough'},
         'diskReplicate': {
             'cache': 'none',
@@ -497,7 +476,6 @@ _DISK_DATA_REPLICA = _TestData(
                     'write_bytes_sec': 1,
                 },
             },
-            'vm_custom': {},
         }
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
@@ -526,9 +504,7 @@ _DISK_DATA_REPLICA = _TestData(
                     <write_bytes_sec type="int">1</write_bytes_sec>
                 </ioTune>
             </specParams>
-            <vm_custom />
         </diskReplicate>
-        <specParams />
         <vm_custom>
             <viodiskcache>writethrough</viodiskcache>
         </vm_custom>

@@ -1435,7 +1435,14 @@ class DeviceXMLRoundTripTests(XMLTestCase):
             vmxml.parse_xml(dev_xml),
             {} if meta is None else meta
         )
+        self._check_device_attrs(dev)
         self._check_device_xml(dev, dev_xml, expected_xml)
+
+    def _check_device_attrs(self, dev):
+        self.assertTrue(hasattr(dev, 'specParams'))
+        if (isinstance(dev, vmdevices.network.Interface) or
+                isinstance(dev, vmdevices.storage.Drive)):
+            self.assertTrue(hasattr(dev, 'vm_custom'))
 
     def _check_device_xml(self, dev, dev_xml, expected_xml=None):
         dev.setup()
@@ -1513,8 +1520,6 @@ class DeviceFromXMLTests(XMLTestCase):
       <ovirt-vm:file path='openstack/latest/meta_data.json'>BBB</ovirt-vm:file>
       <ovirt-vm:file path='openstack/latest/user_data'>CCC</ovirt-vm:file>
     </ovirt-vm:payload>
-    <ovirt-vm:specParams />
-    <ovirt-vm:vm_custom />
   </ovirt-vm:device>
 </ovirt-vm:vm>'''
 

@@ -2412,7 +2412,6 @@ _DISK_CONF = {
                 'write_bytes_sec': 1,
             },
         },
-        'vm_custom': {},
     }
 }
 

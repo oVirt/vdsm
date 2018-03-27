@@ -690,7 +690,6 @@ class DescriptorTests(XMLTestCase):
         <file path='openstack/latest/user_data'>something</file>
       </vmPayload>
     </specParams>
-    <vm_custom />
   </device>
 </vm>"""
 
@@ -742,8 +741,6 @@ class SaveDeviceMetadataTests(XMLTestCase):
           <ovirt-vm:network>net1</ovirt-vm:network>
           <ovirt-vm:network>net2</ovirt-vm:network>
         </ovirt-vm:portMirroring>
-        <ovirt-vm:specParams />
-        <ovirt-vm:vm_custom />
     </ovirt-vm:device>
 </ovirt-vm:vm>"""
         dev_map = common.empty_dev_map()
@@ -770,8 +767,6 @@ class SaveDeviceMetadataTests(XMLTestCase):
         <ovirt-vm:poolID>poolID</ovirt-vm:poolID>
         <ovirt-vm:shared>transient</ovirt-vm:shared>
         <ovirt-vm:volumeID>volumeID</ovirt-vm:volumeID>
-        <ovirt-vm:specParams />
-        <ovirt-vm:vm_custom />
     </ovirt-vm:device>
 </ovirt-vm:vm>"""
         dev_map = common.empty_dev_map()
@@ -803,8 +798,6 @@ class SaveDeviceMetadataTests(XMLTestCase):
         expected_xml = """<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
     <ovirt-vm:device mac_address="00:1a:4a:16:20:30">
         <ovirt-vm:network>test</ovirt-vm:network>
-        <ovirt-vm:specParams />
-        <ovirt-vm:vm_custom />
     </ovirt-vm:device>
 </ovirt-vm:vm>"""
         dev_map = common.empty_dev_map()
@@ -834,8 +827,6 @@ _DRIVE_TRANSIENT_DISK_XML = u"""<?xml version="1.0" encoding="utf-8"?>
             <ovirt-vm:poolID>poolID</ovirt-vm:poolID>
             <ovirt-vm:shared>transient</ovirt-vm:shared>
             <ovirt-vm:volumeID>volumeID</ovirt-vm:volumeID>
-            <ovirt-vm:specParams />
-            <ovirt-vm:vm_custom />
         </ovirt-vm:device>
     </ovirt-vm:vm>
   </metadata>

@@ -761,8 +761,6 @@ class TestHotplug(TestCaseBase):
         <ovirt-vm:imageID>1234</ovirt-vm:imageID>
         <ovirt-vm:poolID>2222</ovirt-vm:poolID>
         <ovirt-vm:volumeID>3333</ovirt-vm:volumeID>
-        <ovirt-vm:specParams/>
-        <ovirt-vm:vm_custom/>
         <ovirt-vm:volumeChain>
             <ovirt-vm:volumeChainNode>
               <ovirt-vm:domainID>1111</ovirt-vm:domainID>
