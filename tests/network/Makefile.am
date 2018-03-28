@@ -25,7 +25,7 @@ vdsmnetworktestsdir = ${vdsmtestsdir}/network
 dist_vdsmnetworktests_PYTHON = \
 	__init__.py \
 	*_test.py \
-	compat.py
+	compat.py \
 	dhcp.py \
 	firewall.py \
 	nettestlib.py \
