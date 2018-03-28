@@ -18,12 +18,92 @@
 
 from __future__ import absolute_import
 
+import errno
+import logging
 import os
+import tempfile
 
 import pytest
+
+from vdsm.network.ip import rule as ip_rule
+from vdsm.network.link.bond import sysfs_options_mapper
+
+import network as network_tests
+from network.compat import mock
+from network.nettestlib import has_sysfs_bond_permission
+
+
+IPV4_ADDRESS1 = '192.168.99.1'    # Tracking the address used in ip_rule_test
 
 
 @pytest.fixture(scope='session', autouse=True)
 def requires_root():
     if os.geteuid() != 0:
         pytest.skip('Integration tests require root')
+
+
+@pytest.fixture(scope='session', autouse=True)
+def bond_option_mapping():
+    file1 = tempfile.NamedTemporaryFile()
+    file2 = tempfile.NamedTemporaryFile()
+    with file1 as f_bond_defaults, file2 as f_bond_name2numeric:
+
+        if has_sysfs_bond_permission():
+            ALTERNATIVE_BONDING_DEFAULTS = f_bond_defaults.name
+            ALTERNATIVE_BONDING_NAME2NUMERIC_PATH = f_bond_name2numeric.name
+        else:
+            ALTERNATIVE_BONDING_DEFAULTS = os.path.join(
+                os.path.dirname(network_tests.__file__),
+                'static', 'bonding-defaults.json'
+            )
+            ALTERNATIVE_BONDING_NAME2NUMERIC_PATH = os.path.join(
+                os.path.dirname(network_tests.__file__),
+                'static', 'bonding-name2numeric.json'
+            )
+
+        patch_bonding_defaults = mock.patch(
+            'vdsm.network.link.bond.sysfs_options.BONDING_DEFAULTS',
+            ALTERNATIVE_BONDING_DEFAULTS
+        )
+        patch_bonding_name2num = mock.patch(
+            'vdsm.network.link.bond.sysfs_options_mapper.'
+            'BONDING_NAME2NUMERIC_PATH',
+            ALTERNATIVE_BONDING_NAME2NUMERIC_PATH
+        )
+
+        with patch_bonding_defaults, patch_bonding_name2num:
+            if has_sysfs_bond_permission():
+                try:
+                    sysfs_options_mapper.dump_bonding_options()
+                except EnvironmentError as e:
+                    raise
+                    if e.errno != errno.ENOENT:
+                        raise
+            yield
+
+
+class StaleIPRulesError(Exception):
+    pass
+
+
+@pytest.fixture(scope='session', autouse=True)
+def cleanup_stale_iprules():
+    """
+    Clean test ip rules that may have been left by the test run.
+    They may exists on the system due to some buggy test that ran
+    and has not properly cleaned after itself.
+    In case any stale entries have been detected, attempt to clean everything
+    and raise an error.
+    """
+    yield
+
+    IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)
+    rules = [r for r in IPRule.rules() if r.to == IPV4_ADDRESS1]
+    if rules:
+        for rule in rules:
+            try:
+                IPRule.delete(rule)
+                logging.warning('Rule (%s) has been removed', rule)
+            except Exception as e:
+                logging.error('Error removing rule (%s): %s', rule, e)
+        raise StaleIPRulesError()

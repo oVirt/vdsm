@@ -19,33 +19,48 @@
 #
 from __future__ import absolute_import
 
+import errno
 import logging
+import os
 
 import six
 
 from vdsm.network.ip import rule as ip_rule
+from vdsm.network.link.bond import sysfs_options_mapper
 
 from .compat import mock
-from .nettestlib import bonding_default_fpath
+from .nettestlib import has_sysfs_bond_permission
 
 
 IPV4_ADDRESS1 = '192.168.99.1'    # Tracking the address used in ip_rule_test
+
+ALTERNATIVE_BONDING_DEFAULTS = os.path.join(
+    os.path.dirname(__file__), 'static', 'bonding-defaults.json')
+
+ALTERNATIVE_BONDING_NAME2NUMERIC_PATH = os.path.join(
+    os.path.dirname(__file__), 'static', 'bonding-name2numeric.json')
 
 bonding_dump_patchers = []
 
 
 def setup_package():
-    bonding_defaults, bonding_name2numeric = bonding_default_fpath()
     bonding_dump_patchers.append(
         mock.patch('vdsm.network.link.bond.sysfs_options.BONDING_DEFAULTS',
-                   bonding_defaults))
+                   ALTERNATIVE_BONDING_DEFAULTS))
     bonding_dump_patchers.append(
         mock.patch('vdsm.network.link.bond.sysfs_options_mapper.'
                    'BONDING_NAME2NUMERIC_PATH',
-                   bonding_name2numeric))
+                   ALTERNATIVE_BONDING_NAME2NUMERIC_PATH))
 
     for patcher in bonding_dump_patchers:
         patcher.start()
+
+    if has_sysfs_bond_permission():
+        try:
+            sysfs_options_mapper.dump_bonding_options()
+        except EnvironmentError as e:
+            if e.errno != errno.ENOENT:
+                raise
 
 
 def teardown_package():

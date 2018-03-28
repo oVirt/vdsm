@@ -41,8 +41,6 @@ from vdsm.network.ipwrapper import (
     addrAdd, linkSet, linkAdd, linkDel, IPRoute2Error, netns_add, netns_delete,
     netns_exec)
 from vdsm.network.link import iface as linkiface, bond as linkbond
-from vdsm.network.link.bond import sysfs_options_mapper
-from vdsm.network.link.bond.sysfs_options import BONDING_DEFAULTS
 from vdsm.network.link.iface import random_iface_name
 from vdsm.network.lldpad import lldptool
 from vdsm.network.netinfo import routes
@@ -54,12 +52,6 @@ from vdsm.common.proc import pgrep
 from . import dhcp
 from . import firewall
 
-
-ALTERNATIVE_BONDING_DEFAULTS = os.path.join(
-    os.path.dirname(__file__), 'static', 'bonding-defaults.json')
-
-ALTERNATIVE_BONDING_NAME2NUMERIC_PATH = os.path.join(
-    os.path.dirname(__file__), 'static', 'bonding-name2numeric.json')
 
 EXT_IP = "/sbin/ip"
 EXT_TC = "/sbin/tc"
@@ -552,29 +544,8 @@ def restore_resolv_conf():
 
 
 def check_sysfs_bond_permission():
-    if not _has_sysfs_bond_permission():
+    if not has_sysfs_bond_permission():
         raise SkipTest('This test requires sysfs bond write access')
-
-
-@memoized
-def bonding_default_fpath():
-    bonding_defaults_fpath = ALTERNATIVE_BONDING_DEFAULTS
-    bonding_name2num_fpath = ALTERNATIVE_BONDING_NAME2NUMERIC_PATH
-
-    if _has_sysfs_bond_permission():
-        try:
-            sysfs_options_mapper.dump_bonding_options()
-        except EnvironmentError as e:
-            if e.errno != errno.ENOENT:
-                raise
-
-    if os.path.exists(BONDING_DEFAULTS):
-        bonding_defaults_fpath = BONDING_DEFAULTS
-
-    if os.path.exists(sysfs_options_mapper.BONDING_NAME2NUMERIC_PATH):
-        bonding_name2num_fpath = sysfs_options_mapper.BONDING_NAME2NUMERIC_PATH
-
-    return bonding_defaults_fpath, bonding_name2num_fpath
 
 
 @contextmanager
@@ -607,7 +578,7 @@ def running(runnable):
 
 
 @memoized
-def _has_sysfs_bond_permission():
+def has_sysfs_bond_permission():
     BondSysFS = linkbond.sysfs_driver.BondSysFS
     bond = BondSysFS(random_iface_name('check_', max_length=11))
     try:
