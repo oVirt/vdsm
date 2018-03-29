@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,6 +43,19 @@ TEST_VLANED_NIC = '%s.%s' % (TEST_NIC, TEST_VLAN)
 TEST_VLANED_NETWORK = 'test-network' + str(TEST_VLAN)
 
 
+ovs_service = None
+
+
+def setup_module():
+    global ovs_service
+    ovs_service = OvsService()
+    ovs_service.setup()
+
+
+def teardown_module():
+    ovs_service.teardown()
+
+
 @contextmanager
 def _setup_ovs_network(ovsdb, sb_iface):
 
@@ -83,13 +96,10 @@ class TestOvsInfo(VdsmTestCase):
 
     @ValidateRunningAsRoot
     def setUp(self):
-        self.ovs_service = OvsService()
-        self.ovs_service.setup()
         self.ovsdb = create()
 
     def tearDown(self):
         cleanup_bridges()
-        self.ovs_service.teardown()
 
     def test_ovs_info_with_sb_nic(self):
         with dummy_device() as nic:

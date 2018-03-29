@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,6 +30,19 @@ from testValidation import ValidateRunningAsRoot
 
 from vdsm.network.ovs.driver import create, Drivers as OvsDrivers
 from vdsm.network.ovs.driver import vsctl
+
+
+ovs_service = None
+
+
+def setup_module():
+    global ovs_service
+    ovs_service = OvsService()
+    ovs_service.setup()
+
+
+def teardown_module():
+    ovs_service.teardown()
 
 
 @attr(type='unit')
@@ -174,12 +187,10 @@ class TestOvsApiBase(VdsmTestCase):
 
     @ValidateRunningAsRoot
     def setUp(self):
-        self.ovs_service = OvsService()
-        self.ovs_service.setup()
+        pass
 
     def tearDown(self):
         cleanup_bridges()
-        self.ovs_service.teardown()
 
     def test_instantiate_vsctl_implementation(self):
         self.assertIsNotNone(create(OvsDrivers.VSCTL))
@@ -217,16 +228,12 @@ class TestOvsApiWithSingleRealBridge(VdsmTestCase):
 
     @ValidateRunningAsRoot
     def setUp(self):
-        self.ovs_service = OvsService()
-        self.ovs_service.setup()
-
         self.ovsdb = create()
         self.ovsdb.add_br(TEST_BRIDGE).execute()
 
     def tearDown(self):
         self.ovsdb.del_br(TEST_BRIDGE).execute()
         cleanup_bridges()
-        self.ovs_service.teardown()
 
     def test_create_vlan_as_fake_bridge(self):
         with self.ovsdb.transaction() as t:
