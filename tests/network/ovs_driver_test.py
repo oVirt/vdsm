@@ -24,7 +24,7 @@ from uuid import UUID
 from nose.plugins.attrib import attr
 
 from .nettestlib import dummy_device
-from .ovsnettestlib import OvsService, TEST_BRIDGE, TEST_BOND
+from .ovsnettestlib import OvsService, cleanup_bridges, TEST_BRIDGE, TEST_BOND
 from testlib import VdsmTestCase
 from testValidation import ValidateRunningAsRoot
 
@@ -178,6 +178,7 @@ class TestOvsApiBase(VdsmTestCase):
         self.ovs_service.setup()
 
     def tearDown(self):
+        cleanup_bridges()
         self.ovs_service.teardown()
 
     def test_instantiate_vsctl_implementation(self):
@@ -224,6 +225,7 @@ class TestOvsApiWithSingleRealBridge(VdsmTestCase):
 
     def tearDown(self):
         self.ovsdb.del_br(TEST_BRIDGE).execute()
+        cleanup_bridges()
         self.ovs_service.teardown()
 
     def test_create_vlan_as_fake_bridge(self):

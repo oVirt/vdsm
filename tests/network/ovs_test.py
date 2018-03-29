@@ -24,7 +24,7 @@ from vdsm.network.ovs import info as ovs_info
 from vdsm.network.ovs import switch as ovs_switch
 from vdsm.network.ovs import validator as ovs_validator
 
-from .ovsnettestlib import OvsService
+from .ovsnettestlib import OvsService, cleanup_bridges
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
 from nose.plugins.attrib import attr
@@ -217,6 +217,7 @@ class SetupTransactionTests(TestCaseBase):
         self.ovsdb = ovs_driver.create()
 
     def tearDown(self):
+        cleanup_bridges()
         self.ovs_service.teardown()
 
     def test_dry_run(self):

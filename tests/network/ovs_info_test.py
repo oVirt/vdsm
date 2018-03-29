@@ -24,7 +24,7 @@ from copy import deepcopy
 from nose.plugins.attrib import attr
 
 from .nettestlib import dummy_device, bond_device
-from .ovsnettestlib import OvsService, TEST_BRIDGE
+from .ovsnettestlib import OvsService, cleanup_bridges, TEST_BRIDGE
 from monkeypatch import MonkeyPatch
 from testValidation import ValidateRunningAsRoot
 from testlib import VdsmTestCase
@@ -88,6 +88,7 @@ class TestOvsInfo(VdsmTestCase):
         self.ovsdb = create()
 
     def tearDown(self):
+        cleanup_bridges()
         self.ovs_service.teardown()
 
     def test_ovs_info_with_sb_nic(self):
