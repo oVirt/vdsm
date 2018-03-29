@@ -8,7 +8,7 @@
     <sysinfo type="smbios">
         <system>
             <entry name="manufacturer">Red Hat</entry>
-            <entry name="product">oVirt Node</entry>
+            <entry name="product">test-product</entry>
             <entry name="version">42-1</entry>
             <entry name="serial">test-serial</entry>
             <entry name="uuid">346b8d80-b4f2-4a81-bf60-a662220c27a4</entry>

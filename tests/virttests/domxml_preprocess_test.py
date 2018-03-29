@@ -25,6 +25,7 @@ from vdsm.common import hooks
 from vdsm.virt import domxml_preprocess
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
+from vdsm import constants
 from vdsm import osinfo
 
 from testlib import VdsmTestCase
@@ -43,6 +44,7 @@ class TestReplacePlaceholders(XMLTestCase):
         dom = vmxml.parse_xml(xml_str)
         with MonkeyPatchScope([
             (osinfo, 'version', self._version),
+            (constants, 'SMBIOS_OSNAME', 'test-product'),
         ]):
             domxml_preprocess.replace_placeholders(
                 dom, cpuarch.X86_64, serial='test-serial')
