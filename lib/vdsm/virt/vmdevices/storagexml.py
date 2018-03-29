@@ -280,13 +280,14 @@ def update_disk_element_from_object(disk_element, vm_drive, log,
     # update the path
     source = vmxml.find_first(disk_element, 'source')
     old_disk_attr = storage.SOURCE_ATTR[old_disk_type]
-    old_path = source.attrib[old_disk_attr]
-    if replace_attribs:
+    # on resume, empty CDroms may lack the 'file' attribute
+    old_path = source.attrib.get(old_disk_attr, None)
+    if old_path is not None and replace_attribs:
         del source.attrib[old_disk_attr]
     disk_attr = storage.SOURCE_ATTR[disk_type]
     vmxml.set_attr(source, disk_attr, vm_drive.path)
     changes['path'] = (
-        '%s=%s' % (old_disk_attr, old_path),
+        '%s=%s' % (old_disk_attr, '' if old_path is None else old_path),
         # We intentionally create the new value using a different format
         # - note leading asterisk - to force the _log_changes function to
         # always log this information.
