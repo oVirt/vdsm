@@ -39,9 +39,10 @@ class OvsService(object):
 
     def teardown(self):
         ovsdb = create()
-        bridges = ovsdb.list_bridge_info().execute()
+        bridges = ovsdb.list_bridge_info().execute(timeout=5)
 
         with ovsdb.transaction() as t:
+            t.timeout = 5
             for bridge in bridges:
                 if bridge in TEST_BRIDGES:
                     t.add(ovsdb.del_br(bridge['name']))
