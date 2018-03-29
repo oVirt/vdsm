@@ -30,6 +30,19 @@ from testValidation import ValidateRunningAsRoot
 from nose.plugins.attrib import attr
 
 
+ovs_service = None
+
+
+def setup_module():
+    global ovs_service
+    ovs_service = OvsService()
+    ovs_service.setup()
+
+
+def teardown_module():
+    ovs_service.teardown()
+
+
 @attr(type='unit')
 class ValidationTests(TestCaseBase):
 
@@ -212,13 +225,10 @@ class SetupTransactionTests(TestCaseBase):
 
     @ValidateRunningAsRoot
     def setUp(self):
-        self.ovs_service = OvsService()
-        self.ovs_service.setup()
         self.ovsdb = ovs_driver.create()
 
     def tearDown(self):
         cleanup_bridges()
-        self.ovs_service.teardown()
 
     def test_dry_run(self):
         ovs_info = MockedOvsInfo()
