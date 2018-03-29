@@ -98,6 +98,33 @@ class TestReplaceDiskXML(XMLTestCase):
             read_data('domain_disk_block.xml')
         )
 
+    def test_replace_cdrom_without_source_file(self):
+        dom_str = read_data('vm_hibernated.xml')
+        dom = vmxml.parse_xml(dom_str)
+        cdrom_xml = u'''<disk device="cdrom" type="file">
+            <driver error_policy="report" name="qemu" type="raw" />
+            <source {file_src}startupPolicy="optional" />
+            <backingStore />
+            <target bus="ide" dev="hdc" />
+            <readonly />
+            <alias name="ide0-1-0" />
+            <address bus="1" controller="0" target="0"
+                type="drive" unit="0" />
+        </disk>'''
+        cdrom_params = vmdevices.storagexml.parse(
+            vmxml.parse_xml(cdrom_xml.format(file_src='')), {}
+        )
+        disk_devs = [
+            vmdevices.storage.Drive(self.log, **cdrom_params),
+        ]
+        domxml_preprocess.update_disks_xml_from_objs(
+            FakeVM(self.log), dom, disk_devs)
+        cdrom_elem = dom.find('./devices/disk[@device="cdrom"]')
+        self.assertXMLEqual(
+            vmxml.format_xml(cdrom_elem, pretty=True),
+            cdrom_xml.format(file_src="file='' ")
+        )
+
     def _make_env(self):
         dom_disk_file_str = read_data('domain_disk_file.xml')
         dom = vmxml.parse_xml(dom_disk_file_str)
