@@ -203,9 +203,9 @@ class VM(APIBase):
                             pickledMachineParams = pickle.load(f)
 
                         if type(pickledMachineParams) == dict:
-                            self.log.debug('loaded pickledMachineParams ' +
-                                           str(pickledMachineParams))
-                            self.log.debug('former conf ' + str(vmParams))
+                            self.log.info('loaded pickledMachineParams: %s',
+                                          pickledMachineParams)
+                            self.log.debug('former conf: %s', vmParams)
                             vmParams.update(pickledMachineParams)
                     finally:
                         self._cif.teardownVolumePath(paramFilespec)
