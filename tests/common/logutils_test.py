@@ -294,30 +294,6 @@ class TestThreadedHandler(TestCaseBase):
         print("workers_time %s" % workers_time)
         self.assertLess(max(workers_time), 0.1)
 
-    def test_slow_handler_sync(self):
-        # Reproduce the issue of loggers blocking on a slow handler.
-        handler = Handler(0.1)
-        logger = logging.Logger("test")
-        logger.addHandler(handler)
-
-        def worker(n):
-            start = time.time()
-            logger.info("thread %02d", n)
-            return time.time() - start
-
-        results = concurrent.tmap(worker, range(10))
-        workers_time = [r.value for r in results]
-
-        # All messages should be logged.
-        self.assertEqual(len(handler.messages), 10)
-
-        # One of the threads will be delayed by about 1 second.
-        # Here is typical (sorted) result:
-        # [0.100438, 0.199917, 0.299876, 0.399604, 0.499133, 0.59935, 0.699196,
-        #  0.79886, 0.898592, 0.998453]
-        print("workers_time %s" % workers_time)
-        self.assertGreater(max(workers_time), 0.9)
-
     @permutations([
         # adaptive, level
         (False, logging.DEBUG),
