@@ -49,7 +49,7 @@ class Transaction(object):
 class Command(object):
     """An OVS Command which is to be executed in Transaction."""
     @abc.abstractmethod
-    def execute(self):
+    def execute(self, timeout=None):
         pass
 
 

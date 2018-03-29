@@ -41,20 +41,27 @@ _DB_ENTRIES_WHICH_SHOULD_BE_LIST = {'ports', 'interfaces'}
 _DB_ENTRIES_WHICH_SHOULD_NOT_BE_LIST = {
     'tag', 'bond_active_slave', 'bond_mode', 'lacp', 'mac_in_use'}
 
+OUTPUT_FORMAT = ['--oneline', '--format=json']
+
 
 class Transaction(DriverTransaction):
 
     def __init__(self):
         self.commands = []
+        self.timeout = None
 
     def commit(self):
         if not self.commands:
             return
 
+        timeout_option = []
+        if self.timeout:
+            timeout_option = ['--timeout=' + str(self.timeout)]
+
         args = []
         for command in self.commands:
             args += ['--'] + command.cmd
-        exec_line = [_ovs_vsctl_cmd()] + ['--oneline', '--format=json'] + args
+        exec_line = [_ovs_vsctl_cmd()] + timeout_option + OUTPUT_FORMAT + args
         logging.debug('Executing commands: %s' % ' '.join(exec_line))
 
         rc, out, err = netcmd.exec_sync(exec_line)
@@ -83,8 +90,9 @@ class Command(DriverCommand):
         self.cmd = cmd
         self._result = None
 
-    def execute(self):
+    def execute(self, timeout=None):
         with Transaction() as t:
+            t.timeout = timeout
             t.add(self)
         return self.result
 
