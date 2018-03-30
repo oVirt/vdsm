@@ -19,27 +19,10 @@
 from __future__ import absolute_import
 
 from vdsm.network import errors as ne
-from vdsm.network.ovs import info as ovs_info
-from vdsm.network.ovs import switch as ovs_switch
 from vdsm.network.ovs import validator as ovs_validator
 
-from .ovsnettestlib import OvsService, cleanup_bridges
 from testlib import VdsmTestCase as TestCaseBase
-from testValidation import ValidateRunningAsRoot
 from nose.plugins.attrib import attr
-
-
-ovs_service = None
-
-
-def setup_module():
-    global ovs_service
-    ovs_service = OvsService()
-    ovs_service.setup()
-
-
-def teardown_module():
-    ovs_service.teardown()
 
 
 @attr(type='unit')
@@ -210,31 +193,3 @@ class ValidationTests(TestCaseBase):
                 'bond1', {'remove': True}, nets, running_nets,
                 fake_kernel_nics)
         self.assertEqual(e.exception.args[0], ne.ERR_USED_BOND)
-
-
-class MockedOvsInfo(ovs_info.OvsInfo):
-    def __init__(self):
-        self._bridges = {}
-        self._bridges_by_sb = {}
-        self._northbounds_by_sb = {}
-
-
-@attr(type='integration')
-class SetupTransactionTests(TestCaseBase):
-
-    @ValidateRunningAsRoot
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        cleanup_bridges()
-
-    def test_dry_run(self):
-        ovs_info = MockedOvsInfo()
-        net_rem_setup = ovs_switch.NetsRemovalSetup(ovs_info)
-        net_rem_setup.prepare_setup({})
-        net_rem_setup.commit_setup()
-
-        net_add_setup = ovs_switch.NetsAdditionSetup(ovs_info)
-        net_add_setup.prepare_setup({})
-        net_add_setup.commit_setup()

@@ -18,31 +18,13 @@
 #
 from __future__ import absolute_import
 
-from contextlib import contextmanager
 from uuid import UUID
 
 from nose.plugins.attrib import attr
 
-from .nettestlib import dummy_device
-from .ovsnettestlib import OvsService, cleanup_bridges, TEST_BRIDGE, TEST_BOND
 from testlib import VdsmTestCase
-from testValidation import ValidateRunningAsRoot
 
-from vdsm.network.ovs.driver import create, Drivers as OvsDrivers
 from vdsm.network.ovs.driver import vsctl
-
-
-ovs_service = None
-
-
-def setup_module():
-    global ovs_service
-    ovs_service = OvsService()
-    ovs_service.setup()
-
-
-def teardown_module():
-    ovs_service.teardown()
 
 
 @attr(type='unit')
@@ -180,110 +162,3 @@ class TestOvsVsctlCommand(VdsmTestCase):
 
         self.assertEqual(
             TestOvsVsctlCommand.PROCESSED_VSCTL_LIST_BRIDGE_OUTPUT, cmd.result)
-
-
-@attr(type='integration')
-class TestOvsApiBase(VdsmTestCase):
-
-    @ValidateRunningAsRoot
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        cleanup_bridges()
-
-    def test_instantiate_vsctl_implementation(self):
-        self.assertIsNotNone(create(OvsDrivers.VSCTL))
-
-    def test_execute_a_single_command(self):
-        ovsdb = create()
-        out = ovsdb.list_bridge_info().execute()
-
-        # No bridges defined
-        self.assertEqual([], out)
-
-    def test_execute_a_transaction(self):
-        ovsdb = create()
-        cmd_add_br = ovsdb.add_br(TEST_BRIDGE)
-        cmd_list_bridge_info = ovsdb.list_bridge_info()
-        t = ovsdb.transaction()
-        t.add(cmd_add_br)
-        t.add(cmd_list_bridge_info)
-        t.commit()
-
-        self.assertEqual(1, len(cmd_list_bridge_info.result))
-        bridge_name = cmd_list_bridge_info.result[0]['name']
-        self.assertIn(TEST_BRIDGE, bridge_name)
-
-        cmd_del_br = ovsdb.del_br(TEST_BRIDGE)
-        with ovsdb.transaction() as trans:
-            trans.add(cmd_del_br)
-            trans.add(cmd_list_bridge_info)
-
-        self.assertEqual([], cmd_list_bridge_info.result)
-
-
-@attr(type='integration')
-class TestOvsApiWithSingleRealBridge(VdsmTestCase):
-
-    @ValidateRunningAsRoot
-    def setUp(self):
-        self.ovsdb = create()
-        self.ovsdb.add_br(TEST_BRIDGE).execute()
-
-    def tearDown(self):
-        self.ovsdb.del_br(TEST_BRIDGE).execute()
-        cleanup_bridges()
-
-    def test_create_vlan_as_fake_bridge(self):
-        with self.ovsdb.transaction() as t:
-            t.add(self.ovsdb.add_vlan(TEST_BRIDGE, 100))
-            t.add(self.ovsdb.add_vlan(TEST_BRIDGE, 101))
-
-        bridges = self.ovsdb.list_br().execute()
-        self.assertEqual(3, len(bridges))
-
-        with self.ovsdb.transaction() as t:
-            t.add(self.ovsdb.del_vlan(101))
-            t.add(self.ovsdb.del_vlan(100))
-
-    def test_create_remove_bond(self):
-        with dummy_device() as dev0, dummy_device() as dev1:
-            with ovs_bond(self.ovsdb, TEST_BRIDGE, TEST_BOND, [dev0, dev1]):
-                self.assertEqual([TEST_BOND],
-                                 self.ovsdb.list_ports(TEST_BRIDGE).execute())
-
-            self.assertEqual([], self.ovsdb.list_ports(TEST_BRIDGE).execute())
-
-    def test_add_slave_to_bond(self):
-        with dummy_device() as dev0,\
-                dummy_device() as dev1,\
-                dummy_device() as dev2:
-            with ovs_bond(self.ovsdb, TEST_BRIDGE, TEST_BOND, [dev0, dev1]):
-                with self.ovsdb.transaction() as t:
-                    t.add(*self.ovsdb.attach_bond_slave(TEST_BOND, dev2))
-
-                bond_data = self.ovsdb.list_port_info(TEST_BOND).execute()
-                self.assertEqual(1, len(bond_data))
-                self.assertEqual(3, len(bond_data[0]['interfaces']))
-
-    def test_remove_slave_from_bond(self):
-        with dummy_device() as dev0,\
-                dummy_device() as dev1,\
-                dummy_device() as dev2:
-            with ovs_bond(self.ovsdb, TEST_BRIDGE, TEST_BOND,
-                          [dev0, dev1, dev2]):
-                with self.ovsdb.transaction() as t:
-                    t.add(*self.ovsdb.detach_bond_slave(TEST_BOND, dev2))
-
-                bond_data = self.ovsdb.list_port_info(TEST_BOND).execute()
-                self.assertEqual(1, len(bond_data))
-                self.assertEqual(2, len(bond_data[0]['interfaces']))
-
-
-# TODO: We may want to move it to a more common location, per need.
-@contextmanager
-def ovs_bond(ovsdb, bridge, bond, ports):
-    ovsdb.add_bond(bridge, bond, ports).execute()
-    yield bond
-    ovsdb.del_port(bond, bridge=bridge).execute()

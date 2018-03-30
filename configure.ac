@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2017 Red Hat, Inc.
+# Copyright 2008-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -436,6 +436,7 @@ AC_OUTPUT([
 	tests/network/Makefile
 	tests/network/functional/Makefile
 	tests/network/integration/Makefile
+	tests/network/integration/ovs/Makefile
 	tests/network/static/Makefile
 	tests/storage/Makefile
 	tests/virttests/Makefile

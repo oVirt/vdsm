@@ -18,13 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = ovs
+vdsmnetworkintegrationovstestsdir = ${vdsmtestsdir}/network/integration/ovs
 
-vdsmnetworkintegrationtestsdir = ${vdsmtestsdir}/network/integration
-
-dist_vdsmnetworkintegrationtests_PYTHON = \
+dist_vdsmnetworkintegrationovstests_PYTHON = \
 	__init__.py \
 	*_test.py \
 	conftest.py \
 	$(NULL)
-

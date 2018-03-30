@@ -13,18 +13,31 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
-SUBDIRS = ovs
+import pytest
 
-vdsmnetworkintegrationtestsdir = ${vdsmtestsdir}/network/integration
+from network.ovsnettestlib import OvsService
+from network.ovsnettestlib import cleanup_bridges
 
-dist_vdsmnetworkintegrationtests_PYTHON = \
-	__init__.py \
-	*_test.py \
-	conftest.py \
-	$(NULL)
 
+@pytest.fixture(scope='session', autouse=True)
+def ovs_service():
+    service = OvsService()
+    service.setup()
+    try:
+        yield
+    finally:
+        service.teardown()
+
+
+@pytest.fixture(scope='function', autouse=True)
+def ovs_cleanup_bridges():
+    try:
+        yield
+    finally:
+        cleanup_bridges()

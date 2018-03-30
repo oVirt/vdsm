@@ -18,19 +18,15 @@
 #
 from __future__ import absolute_import
 
-from contextlib import contextmanager
 from copy import deepcopy
 
 from nose.plugins.attrib import attr
 
-from .nettestlib import dummy_device, bond_device
-from .ovsnettestlib import OvsService, cleanup_bridges, TEST_BRIDGE
+from .ovsnettestlib import TEST_BRIDGE
 from monkeypatch import MonkeyPatch
-from testValidation import ValidateRunningAsRoot
 from testlib import VdsmTestCase
 
 from vdsm.network.ovs import info
-from vdsm.network.ovs.driver import create
 
 
 TEST_NETWORK = 'test-network'
@@ -41,131 +37,6 @@ TEST_NIC = 'eth0'
 TEST_VLAN = 10
 TEST_VLANED_NIC = '%s.%s' % (TEST_NIC, TEST_VLAN)
 TEST_VLANED_NETWORK = 'test-network' + str(TEST_VLAN)
-
-
-ovs_service = None
-
-
-def setup_module():
-    global ovs_service
-    ovs_service = OvsService()
-    ovs_service.setup()
-
-
-def teardown_module():
-    ovs_service.teardown()
-
-
-@contextmanager
-def _setup_ovs_network(ovsdb, sb_iface):
-
-    def _bridge():
-        return ovsdb.add_br(TEST_BRIDGE)
-
-    def _attach_southbound():
-        commands = []
-        commands.append(ovsdb.add_port(TEST_BRIDGE, sb_iface))
-        commands.append(ovsdb.set_port_attr(
-            sb_iface, 'other_config:vdsm_level', info.SOUTHBOUND))
-        return commands
-
-    def _northbound_port():
-        commands = []
-        commands.append(ovsdb.add_port(TEST_BRIDGE, TEST_VLANED_NETWORK))
-        commands.append(ovsdb.set_port_attr(
-            TEST_VLANED_NETWORK, 'tag', TEST_VLAN))
-        commands.append(ovsdb.set_port_attr(
-            TEST_VLANED_NETWORK, 'other_config:vdsm_level', info.NORTHBOUND))
-        commands.append(ovsdb.set_interface_attr(
-            TEST_VLANED_NETWORK, 'type', 'internal'))
-        return commands
-
-    with ovsdb.transaction() as t:
-        t.add(_bridge())
-        t.add(*_attach_southbound())
-        t.add(*_northbound_port())
-
-    try:
-        yield
-    finally:
-        ovsdb.del_br(TEST_BRIDGE).execute()
-
-
-@attr(type='integration')
-class TestOvsInfo(VdsmTestCase):
-
-    @ValidateRunningAsRoot
-    def setUp(self):
-        self.ovsdb = create()
-
-    def tearDown(self):
-        cleanup_bridges()
-
-    def test_ovs_info_with_sb_nic(self):
-        with dummy_device() as nic:
-            with _setup_ovs_network(self.ovsdb, nic):
-                expected_bridges = {
-                    TEST_BRIDGE: {
-                        'stp': False,
-                        'dpdk_enabled': False,
-                        'ports': {
-                            nic: {
-                                'level': info.SOUTHBOUND,
-                                'tag': None
-                            },
-                            TEST_VLANED_NETWORK: {
-                                'level': info.NORTHBOUND,
-                                'tag': TEST_VLAN
-                            },
-                            TEST_BRIDGE: {
-                                'level': None,
-                                'tag': None
-                            }
-                        }
-                    }
-                }
-
-                ovs_info = info.OvsInfo()
-
-                obtained_bridges = ovs_info.bridges
-                self.assertEqual(obtained_bridges, expected_bridges)
-
-                obtained_bridges_by_sb = ovs_info.bridges_by_sb
-                self.assertEqual(obtained_bridges_by_sb, {nic: TEST_BRIDGE})
-
-    def test_ovs_info_with_sb_bond(self):
-        with dummy_device() as nic:
-            with bond_device([nic]) as bond:
-                with _setup_ovs_network(self.ovsdb, bond):
-                    expected_bridges = {
-                        TEST_BRIDGE: {
-                            'stp': False,
-                            'dpdk_enabled': False,
-                            'ports': {
-                                TEST_VLANED_NETWORK: {
-                                    'level': info.NORTHBOUND,
-                                    'tag': TEST_VLAN
-                                },
-                                TEST_BRIDGE: {
-                                    'level': None,
-                                    'tag': None
-                                },
-                                bond: {
-                                    'level': info.SOUTHBOUND,
-                                    'tag': None
-                                }
-                            }
-                        }
-                    }
-
-                    ovs_info = info.OvsInfo()
-
-                    obtained_bridges = ovs_info.bridges
-                    self.assertEqual(obtained_bridges, expected_bridges)
-
-                    obtained_bridges_by_sb = ovs_info.bridges_by_sb
-                    self.assertEqual(obtained_bridges_by_sb,
-                                     {bond: TEST_BRIDGE})
 
 
 class MockedOvsInfo(info.OvsInfo):
