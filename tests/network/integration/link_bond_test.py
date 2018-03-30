@@ -39,6 +39,13 @@ def setup_module():
     check_sysfs_bond_permission()
 
 
+def _sorted_arp_ip_target(options):
+    arp_ip_target = options.get('arp_ip_target')
+    if arp_ip_target is not None:
+        options['arp_ip_target'] = ','.join(sorted(arp_ip_target.split(',')))
+    return options
+
+
 class LinkBondTests(unittest.TestCase):
 
     def test_bond_without_slaves(self):
@@ -156,7 +163,9 @@ class LinkBondTests(unittest.TestCase):
         with bond_device() as bond:
             bond.set_options(OPTIONS)
             bond.refresh()
-            self.assertEqual(bond.options, OPTIONS)
+            self.assertEqual(
+                _sorted_arp_ip_target(bond.options),
+                _sorted_arp_ip_target(OPTIONS))
 
     def test_bond_clear_arp_ip_target(self):
         OPTIONS_A = {
