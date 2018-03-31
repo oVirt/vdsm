@@ -29,6 +29,5 @@ dist_configurators_PYTHON = \
 	multipath.py \
 	passwd.py \
 	sanlock.py \
-	schema.py \
 	sebool.py \
 	$(NULL)
