@@ -291,6 +291,12 @@ Obsoletes: %{name}-cli < %{version}-%{release}
 %description client
 Access vdsm API from the command line.
 
+%post client
+# Generating api schema caches each installation or update of
+# vdsm client package in case the api schema files were changed since last
+# installation.
+/usr/bin/python -c 'from vdsm.api.vdsmapi import create_cache; create_cache()'
+
 %package api
 Summary:        VDSM API
 BuildArch:      noarch
@@ -1266,7 +1272,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/configurators/multipath.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/passwd.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sanlock.py*
-%{python_sitelib}/%{vdsm_name}/tool/configurators/schema.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sebool.py*
 %{python_sitelib}/%{vdsm_name}/tool/dump_volume_chains.py*
 %{python_sitelib}/%{vdsm_name}/tool/network.py*

@@ -17,7 +17,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from vdsm.api import vdsmapi
 from vdsm.common import cpuarch
 from vdsm.common import fileutils
 from vdsm.tool import configurator
@@ -26,7 +25,6 @@ from vdsm.tool.configfile import ConfigFile, ParserWrapper
 from vdsm.tool.configurators import abrt
 from vdsm.tool.configurators import libvirt
 from vdsm.tool.configurators import passwd
-from vdsm.tool.configurators import schema
 from vdsm.tool import UsageError
 from vdsm.tool import upgrade
 from vdsm import cpuinfo
@@ -874,21 +872,3 @@ class UpgradeTests(TestCase):
         upgrade.apply_upgrade(upgrade_obj, 'test')
         self.assertFalse(upgrade_obj.ns.foo)
         self.assertSealed('test_again')
-
-
-class SchemaConfiguratorTest(TestCase):
-    def setUp(self):
-        self.tmp_dir = tempfile.mkdtemp()
-
-    def tearDown(self):
-        shutil.rmtree(self.tmp_dir)
-
-    def test_schema_created_and_removed(self):
-        with monkeypatch.MonkeyPatchScope(
-                [(vdsmapi, 'VDSM_CACHE_DIR', self.tmp_dir), ]):
-            schema.configure()
-            self.assertTrue(os.path.isfile(
-                os.path.join(self.tmp_dir, 'vdsm-api.pickle')))
-            schema.removeConf()
-            self.assertFalse(
-                os.path.exists(os.path.join(self.tmp_dir, 'vdsm-api.pickle')))
