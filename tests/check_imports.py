@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
 """
 Ensure that lib/vdsm modules do not depend on private modules in

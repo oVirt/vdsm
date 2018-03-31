@@ -65,7 +65,7 @@ CLEANFILES = \
 
 ABS_IMPORT_WHITELIST = \
 	lib \
-	tests/network \
+	tests \
 	$(NULL)
 
 .PHONY: gitignore

@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
 CONF_TO_DOMXML_X86_64 = [({
     'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',

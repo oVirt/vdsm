@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 import subprocess
 from vdsm.tool.service import service_start, service_status, service_stop
 
