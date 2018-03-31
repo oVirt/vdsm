@@ -437,6 +437,8 @@ AC_OUTPUT([
 	tests/network/functional/Makefile
 	tests/network/integration/Makefile
 	tests/network/integration/ovs/Makefile
+	tests/network/unit/Makefile
+	tests/network/unit/ovs/Makefile
 	tests/network/static/Makefile
 	tests/storage/Makefile
 	tests/virttests/Makefile

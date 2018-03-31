@@ -1353,6 +1353,8 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/tests/network/functional
 %dir %{_datadir}/%{vdsm_name}/tests/network/integration
 %dir %{_datadir}/%{vdsm_name}/tests/network/integration/ovs
+%dir %{_datadir}/%{vdsm_name}/tests/network/unit
+%dir %{_datadir}/%{vdsm_name}/tests/network/unit/ovs
 %dir %{_datadir}/%{vdsm_name}/tests/network/static
 %dir %{_datadir}/%{vdsm_name}/tests/storage
 %{_datadir}/%{vdsm_name}/tests/*.py*
@@ -1398,6 +1400,8 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/network/functional/*.py*
 %{_datadir}/%{vdsm_name}/tests/network/integration/*.py*
 %{_datadir}/%{vdsm_name}/tests/network/integration/ovs/*.py*
+%{_datadir}/%{vdsm_name}/tests/network/unit/*.py*
+%{_datadir}/%{vdsm_name}/tests/network/unit/ovs/*.py*
 %{_datadir}/%{vdsm_name}/tests/network/static/*.json
 %{_datadir}/%{vdsm_name}/tests/storage/*.py*
 %{_datadir}/%{vdsm_name}/tests/storage/*.out

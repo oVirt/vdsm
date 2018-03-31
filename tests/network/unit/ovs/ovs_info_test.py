@@ -19,12 +19,10 @@
 from __future__ import absolute_import
 
 from copy import deepcopy
+import unittest
 
-from nose.plugins.attrib import attr
-
-from .ovsnettestlib import TEST_BRIDGE
-from monkeypatch import MonkeyPatch
-from testlib import VdsmTestCase
+from network.compat import mock
+from network.ovsnettestlib import TEST_BRIDGE
 
 from vdsm.network.ovs import info
 
@@ -74,8 +72,7 @@ class fake_iflink(object):
         return 1500
 
 
-@attr(type='unit')
-class TestOvsNetInfo(VdsmTestCase):
+class TestOvsNetInfo(unittest.TestCase):
 
     TEST_OVS_NETINFO = {
         'networks': {
@@ -274,15 +271,15 @@ class TestOvsNetInfo(VdsmTestCase):
         }
     }
 
-    @MonkeyPatch(info, 'iflink', fake_iflink)
-    @MonkeyPatch(info, 'is_ipv6_local_auto', lambda *args: True)
-    @MonkeyPatch(info, 'get_gateway',
-                 lambda *args, **kwargs: ('' if kwargs.get('family') == 4
-                                          else '::'))
-    @MonkeyPatch(info, 'getIpInfo',
-                 lambda *args: (TEST_ADDRESS, TEST_NETMASK,
-                                [TEST_ADDRESS_WITH_PREFIX], []))
-    @MonkeyPatch(info, 'OvsInfo', MockedOvsInfo)
+    @mock.patch.object(info, 'iflink', fake_iflink)
+    @mock.patch.object(info, 'is_ipv6_local_auto', lambda *args: True)
+    @mock.patch.object(
+        info, 'get_gateway',
+        lambda *args, **kwargs: ('' if kwargs.get('family') == 4 else '::'))
+    @mock.patch.object(info, 'getIpInfo',
+                       lambda *args: (TEST_ADDRESS, TEST_NETMASK,
+                                      [TEST_ADDRESS_WITH_PREFIX], []))
+    @mock.patch.object(info, 'OvsInfo', MockedOvsInfo)
     def test_ovs_netinfo(self):
         obtained_netinfo = info.get_netinfo()
         self.assertEqual(obtained_netinfo, self.TEST_OVS_NETINFO)

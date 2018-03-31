@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,24 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = functional integration static unit
+vdsmnetworkunitovstestsdir = ${vdsmtestsdir}/network/unit/ovs
 
-vdsmnetworktestsdir = ${vdsmtestsdir}/network
-
-dist_vdsmnetworktests_PYTHON = \
+dist_vdsmnetworkunitovstests_PYTHON = \
 	__init__.py \
 	*_test.py \
-	compat.py \
-	dhcp.py \
-	firewall.py \
-	nettestlib.py \
-	nmnettestlib.py \
-	ovsnettestlib.py \
 	$(NULL)
-
-dist_vdsmnetworktests_DATA = \
-	ip_route_show_table_all.out \
-	netmaskconversions \
-	tc_filter_show.out \
-	$(NULL)
-

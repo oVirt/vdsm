@@ -18,17 +18,17 @@
 #
 from __future__ import absolute_import
 
+import unittest
+
 from vdsm.network.ovs import switch
 
-from testlib import VdsmTestCase, mock
-from nose.plugins.attrib import attr
+from network.compat import mock
 
 
-@attr(type='unit')
 @mock.patch('vdsm.network.ovs.switch.link_iface')
 @mock.patch('vdsm.network.ovs.switch.ovsdb')
 @mock.patch('vdsm.network.ovs.info.OvsInfo')
-class ListOVSAcquiredIfacesTests(VdsmTestCase):
+class ListOVSAcquiredIfacesTests(unittest.TestCase):
 
     def test_add_network_with_nic(self, mock_ovs_info, mock_ovsdb, mock_iface):
         _init_ovs_info(mock_ovs_info)

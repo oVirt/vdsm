@@ -18,17 +18,13 @@
 #
 from __future__ import absolute_import
 
+import unittest
 from uuid import UUID
-
-from nose.plugins.attrib import attr
-
-from testlib import VdsmTestCase
 
 from vdsm.network.ovs.driver import vsctl
 
 
-@attr(type='unit')
-class TestOvsVsctlCommand(VdsmTestCase):
+class TestOvsVsctlCommand(unittest.TestCase):
 
     RAW_VSCTL_LIST_BRIDGE_OUTPUT = """
     {"data":

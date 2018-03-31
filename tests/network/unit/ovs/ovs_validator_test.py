@@ -18,42 +18,40 @@
 #
 from __future__ import absolute_import
 
+import unittest
+
 from vdsm.network import errors as ne
 from vdsm.network.ovs import validator as ovs_validator
 
-from testlib import VdsmTestCase as TestCaseBase
-from nose.plugins.attrib import attr
 
-
-@attr(type='unit')
-class ValidationTests(TestCaseBase):
+class ValidationTests(unittest.TestCase):
 
     def test_adding_a_new_single_untagged_net(self):
         fake_running_bonds = {}
         fake_to_be_added_bonds = {}
         fake_kernel_nics = ['eth0']
-        with self.assertNotRaises():
-            ovs_validator.validate_net_configuration(
-                'net2', {'nic': 'eth0', 'switch': 'ovs'},
-                fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
+
+        ovs_validator.validate_net_configuration(
+            'net2', {'nic': 'eth0', 'switch': 'ovs'},
+            fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
 
     def test_edit_single_untagged_net_nic(self):
         fake_running_bonds = {}
         fake_to_be_added_bonds = {}
         fake_kernel_nics = ['eth0', 'eth1']
-        with self.assertNotRaises():
-            ovs_validator.validate_net_configuration(
-                'net1', {'nic': 'eth1', 'switch': 'ovs'},
-                fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
+
+        ovs_validator.validate_net_configuration(
+            'net1', {'nic': 'eth1', 'switch': 'ovs'},
+            fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
 
     def test_adding_a_second_untagged_net(self):
         fake_running_bonds = {}
         fake_to_be_added_bonds = {}
         fake_kernel_nics = ['eth0', 'eth1']
-        with self.assertNotRaises():
-            ovs_validator.validate_net_configuration(
-                'net2', {'nic': 'eth1', 'switch': 'ovs'},
-                fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
+
+        ovs_validator.validate_net_configuration(
+            'net2', {'nic': 'eth1', 'switch': 'ovs'},
+            fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
 
     def test_add_network_with_non_existing_nic(self):
         fake_running_bonds = {}
@@ -79,19 +77,19 @@ class ValidationTests(TestCaseBase):
         fake_running_bonds = {}
         fake_to_be_added_bonds = {'bond1': {}}
         fake_kernel_nics = []
-        with self.assertNotRaises():
-            ovs_validator.validate_net_configuration(
-                'net1', {'bonding': 'bond1', 'switch': 'ovs'},
-                fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
+
+        ovs_validator.validate_net_configuration(
+            'net1', {'bonding': 'bond1', 'switch': 'ovs'},
+            fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
 
     def test_add_network_with_running_bond(self):
         fake_running_bonds = {'bond1': {}}
         fake_to_be_added_bonds = {}
         fake_kernel_nics = []
-        with self.assertNotRaises():
-            ovs_validator.validate_net_configuration(
-                'net1', {'bonding': 'bond1', 'switch': 'ovs'},
-                fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
+
+        ovs_validator.validate_net_configuration(
+            'net1', {'bonding': 'bond1', 'switch': 'ovs'},
+            fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
 
     def test_add_bond_with_no_slaves(self):
         fake_kernel_nics = []
@@ -106,28 +104,28 @@ class ValidationTests(TestCaseBase):
         fake_kernel_nics = ['eth0']
         nets = {}
         running_nets = {}
-        with self.assertNotRaises():
-            ovs_validator.validate_bond_configuration(
-                'bond1', {'nics': ['eth0'], 'switch': 'ovs'}, nets,
-                running_nets, fake_kernel_nics)
+
+        ovs_validator.validate_bond_configuration(
+            'bond1', {'nics': ['eth0'], 'switch': 'ovs'}, nets,
+            running_nets, fake_kernel_nics)
 
     def test_add_bond_with_one_slave_twice(self):
         fake_kernel_nics = ['eth0']
         nets = {}
         running_nets = {}
-        with self.assertNotRaises():
-            ovs_validator.validate_bond_configuration(
-                'bond1', {'nics': ['eth0', 'eth0'], 'switch': 'ovs'}, nets,
-                running_nets, fake_kernel_nics)
+
+        ovs_validator.validate_bond_configuration(
+            'bond1', {'nics': ['eth0', 'eth0'], 'switch': 'ovs'}, nets,
+            running_nets, fake_kernel_nics)
 
     def test_add_bond_with_two_slaves(self):
         fake_kernel_nics = ['eth0', 'eth1']
         nets = {}
         running_nets = {}
-        with self.assertNotRaises():
-            ovs_validator.validate_bond_configuration(
-                'bond1', {'nics': ['eth0', 'eth1'], 'switch': 'ovs'}, nets,
-                running_nets, fake_kernel_nics)
+
+        ovs_validator.validate_bond_configuration(
+            'bond1', {'nics': ['eth0', 'eth1'], 'switch': 'ovs'}, nets,
+            running_nets, fake_kernel_nics)
 
     def test_add_bond_with_not_existing_slaves(self):
         fake_kernel_nics = []
@@ -151,19 +149,19 @@ class ValidationTests(TestCaseBase):
         fake_kernel_nics = ['eth0', 'eth1']
         nets = {}
         running_nets = {}
-        with self.assertNotRaises():
-            ovs_validator.validate_bond_configuration(
-                'bond1', {'remove': True}, nets, running_nets,
-                fake_kernel_nics)
+
+        ovs_validator.validate_bond_configuration(
+            'bond1', {'remove': True}, nets, running_nets,
+            fake_kernel_nics)
 
     def test_remove_bond_attached_to_network_that_was_removed(self):
         fake_kernel_nics = ['eth0', 'eth1']
         nets = {'net1': {'remove': True}}
         running_nets = {'net1': {'bond': 'bond1'}}
-        with self.assertNotRaises():
-            ovs_validator.validate_bond_configuration(
-                'bond1', {'remove': True}, nets, running_nets,
-                fake_kernel_nics)
+
+        ovs_validator.validate_bond_configuration(
+            'bond1', {'remove': True}, nets, running_nets,
+            fake_kernel_nics)
 
     def test_remove_bond_attached_to_network_that_was_not_removed(self):
         fake_kernel_nics = ['eth0', 'eth1']
@@ -179,10 +177,10 @@ class ValidationTests(TestCaseBase):
         fake_kernel_nics = ['eth0', 'eth1']
         nets = {'net1': {'nic': 'eth0'}}
         running_nets = {'net1': {'bond': 'bond1'}}
-        with self.assertNotRaises():
-            ovs_validator.validate_bond_configuration(
-                'bond1', {'remove': True}, nets, running_nets,
-                fake_kernel_nics)
+
+        ovs_validator.validate_bond_configuration(
+            'bond1', {'remove': True}, nets, running_nets,
+            fake_kernel_nics)
 
     def test_remove_bond_reattached_to_another_network(self):
         fake_kernel_nics = ['eth0', 'eth1', 'eth2']
