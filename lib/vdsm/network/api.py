@@ -213,15 +213,18 @@ def setupNetworks(networks, bondings, options):
                                                               bondings)
         canonicalize.canonicalize_bondings(bondings)
 
+        net_info = netswitch.configurator.netinfo()
+
         logging.debug('Validating configuration')
-        validator.validate(networks, bondings)
+        validator.validate(networks, bondings, net_info)
 
         running_config = netconfpersistence.RunningConfig()
         if netswitch.configurator.switch_type_change_needed(
                 networks, bondings, running_config):
-            _change_switch_type(networks, bondings, options, running_config)
+            _change_switch_type(
+                networks, bondings, options, running_config, net_info)
         else:
-            _setup_networks(networks, bondings, options)
+            _setup_networks(networks, bondings, options, net_info)
     except:
         # TODO: it might be useful to pass failure description in 'response'
         # field
@@ -236,16 +239,17 @@ def setupNetworks(networks, bondings, options):
             _build_setup_hook_dict(networks, bondings, options))
 
 
-def _setup_networks(networks, bondings, options):
+def _setup_networks(networks, bondings, options, net_info):
     bondings, networks, options = _apply_hook(bondings, networks, options)
 
     logging.debug('Applying...')
     in_rollback = options.get('_inRollback', False)
     with _rollback():
-        netswitch.configurator.setup(networks, bondings, options, in_rollback)
+        netswitch.configurator.setup(
+            networks, bondings, options, net_info, in_rollback)
 
 
-def _change_switch_type(networks, bondings, options, running_config):
+def _change_switch_type(networks, bondings, options, running_config, net_info):
     logging.debug('Applying switch type change')
 
     netswitch.configurator.validate_switch_type_change(
@@ -255,32 +259,43 @@ def _change_switch_type(networks, bondings, options, running_config):
 
     logging.debug('Removing current switch configuration')
     with _rollback():
-        _remove_nets_and_bonds(networks, bondings, in_rollback)
+        _remove_nets_and_bonds(networks, bondings, net_info, in_rollback)
 
     logging.debug('Setting up requested switch configuration')
     try:
         with _rollback():
+            net_info = netswitch.configurator.netinfo()
             netswitch.configurator.setup(
-                networks, bondings, options, in_rollback)
+                networks, bondings, options, net_info, in_rollback)
     except:
         logging.exception('Requested switch setup failed, rolling back to '
                           'initial configuration')
         diff = running_config.diffFrom(netconfpersistence.RunningConfig())
         try:
+            net_info = netswitch.configurator.netinfo()
             netswitch.configurator.setup(
-                diff.networks, diff.bonds, {'connectivityCheck': False},
-                in_rollback=True)
+                diff.networks,
+                diff.bonds,
+                {'connectivityCheck': False},
+                net_info,
+                in_rollback=True
+            )
         except:
             logging.exception('Failed during rollback')
             raise
         raise
 
 
-def _remove_nets_and_bonds(nets, bonds, in_rollback):
+def _remove_nets_and_bonds(nets, bonds, net_info, in_rollback):
     nets_removal = {name: {'remove': True} for name in six.iterkeys(nets)}
     bonds_removal = {name: {'remove': True} for name in six.iterkeys(bonds)}
     netswitch.configurator.setup(
-        nets_removal, bonds_removal, {'connectivityCheck': False}, in_rollback)
+        nets_removal,
+        bonds_removal,
+        {'connectivityCheck': False},
+        net_info,
+        in_rollback
+    )
 
 
 def setSafeNetworkConfig():

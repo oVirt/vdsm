@@ -101,20 +101,19 @@ def _split_switch_type_entries(entries, running_entries):
     return legacy_entries, ovs_entries
 
 
-def _split_switch_type(nets, bonds):
-    _netinfo = netinfo()
+def _split_switch_type(nets, bonds, net_info):
     legacy_nets, ovs_nets = _split_switch_type_entries(
-        nets, _netinfo['networks'])
+        nets, net_info['networks'])
     legacy_bonds, ovs_bonds = _split_switch_type_entries(
-        bonds, _netinfo['bondings'])
+        bonds, net_info['bondings'])
     return legacy_nets, ovs_nets, legacy_bonds, ovs_bonds
 
 
-def validate(networks, bondings):
-    validator.validate_southbound_devices_usages(networks, NetInfo(netinfo()))
+def validate(networks, bondings, net_info):
+    validator.validate_southbound_devices_usages(networks, NetInfo(net_info))
 
     legacy_nets, ovs_nets, legacy_bonds, ovs_bonds = _split_switch_type(
-        networks, bondings)
+        networks, bondings, net_info)
 
     use_legacy_switch = legacy_nets or legacy_bonds
     use_ovs_switch = ovs_nets or ovs_bonds
@@ -130,21 +129,22 @@ def validate(networks, bondings):
         ovs_switch.validate_network_setup(ovs_nets, ovs_bonds)
 
 
-def setup(networks, bondings, options, in_rollback):
+def setup(networks, bondings, options, net_info, in_rollback):
     legacy_nets, ovs_nets, legacy_bonds, ovs_bonds = _split_switch_type(
-        networks, bondings)
+        networks, bondings, net_info)
 
     use_legacy_switch = legacy_nets or legacy_bonds
     use_ovs_switch = ovs_nets or ovs_bonds
 
     if use_legacy_switch:
-        _setup_legacy(legacy_nets, legacy_bonds, options, in_rollback)
+        _setup_legacy(
+            legacy_nets, legacy_bonds, options, net_info, in_rollback)
     elif use_ovs_switch:
-        _setup_ovs(ovs_nets, ovs_bonds, options, in_rollback)
+        _setup_ovs(ovs_nets, ovs_bonds, options, net_info, in_rollback)
 
 
-def _setup_legacy(networks, bondings, options, in_rollback):
-    _netinfo = CachingNetInfo()
+def _setup_legacy(networks, bondings, options, net_info, in_rollback):
+    _netinfo = CachingNetInfo(net_info)
 
     with Ifcfg(_netinfo, in_rollback) as configurator:
         # from this point forward, any exception thrown will be handled by
@@ -162,15 +162,14 @@ def _setup_legacy(networks, bondings, options, in_rollback):
         connectivity.check(options)
 
 
-def _setup_ovs(networks, bondings, options, in_rollback):
+def _setup_ovs(networks, bondings, options, net_info, in_rollback):
     _ovs_info = ovs_info.OvsInfo()
     ovs_nets = ovs_info.create_netinfo(_ovs_info)['networks']
-    _netinfo = netinfo()
 
     nets2add, nets2edit, nets2remove = _split_setup_actions(
         networks, ovs_nets)
     bonds2add, bonds2edit, bonds2remove = _split_setup_actions(
-        bondings, _netinfo['bondings'])
+        bondings, net_info['bondings'])
 
     # TODO: If a nework is to be edited, we remove it and recreate again.
     # We should implement editation.

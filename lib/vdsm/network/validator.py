@@ -24,7 +24,7 @@ from vdsm.network.link import validator as link_validator
 from vdsm.network import netswitch
 
 
-def validate(networks, bondings):
+def validate(networks, bondings, net_info):
     link_validator.validate(networks, bondings)
     ip_validator.validate(networks)
-    netswitch.configurator.validate(networks, bondings)
+    netswitch.configurator.validate(networks, bondings, net_info)
