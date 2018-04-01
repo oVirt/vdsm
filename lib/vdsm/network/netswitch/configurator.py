@@ -42,7 +42,7 @@ from vdsm.network.ovs import switch as ovs_switch
 from vdsm.network.link import bond
 from vdsm.network.link.setup import SetupBonds
 from vdsm.network.netinfo import bridges
-from vdsm.network.netinfo.cache import (networks_base_info, get as netinfo_get,
+from vdsm.network.netinfo.cache import (get as netinfo_get,
                                         CachingNetInfo, NetInfo)
 from vdsm.network.netinfo.cache import get_net_iface_from_config
 
@@ -144,8 +144,7 @@ def setup(networks, bondings, options, in_rollback):
 
 
 def _setup_legacy(networks, bondings, options, in_rollback):
-    running_nets = RunningConfig().networks
-    _netinfo = CachingNetInfo(netinfo_get(networks_base_info(running_nets)))
+    _netinfo = CachingNetInfo()
 
     with Ifcfg(_netinfo, in_rollback) as configurator:
         # from this point forward, any exception thrown will be handled by
