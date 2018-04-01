@@ -41,8 +41,7 @@ BRIDGE_PREFIX = 'vdsmbr_'
 ovsdb = driver.create()
 
 
-def validate_network_setup(nets, bonds):
-    ovs_networks = info.create_netinfo(info.OvsInfo())['networks']
+def validate_network_setup(nets, bonds, net_info):
     kernel_nics = nics()
     kernel_bonds = Bond.bonds()
     for net, attrs in six.iteritems(nets):
@@ -50,7 +49,7 @@ def validate_network_setup(nets, bonds):
             net, attrs, bonds, kernel_bonds, kernel_nics)
     for bond, attrs in six.iteritems(bonds):
         validator.validate_bond_configuration(
-            bond, attrs, nets, ovs_networks, kernel_nics)
+            bond, attrs, nets, net_info['networks'], kernel_nics)
 
 
 def add_vhostuser_port(bridge, port, socket_path):

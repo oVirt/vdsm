@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,8 @@ from vdsm.network import errors as ne
 from vdsm.network.link import dpdk
 
 
-def validate_net_configuration(net, attrs, bonds, running_bonds, kernel_nics):
+def validate_net_configuration(
+        net, netattrs, desired_bonds, current_bonds, current_nics):
     """Test if network meets logical Vdsm requiremets.
 
     Bridgeless networks are allowed in order to support Engine requirements.
@@ -33,27 +34,23 @@ def validate_net_configuration(net, attrs, bonds, running_bonds, kernel_nics):
     Checked by OVS:
         - only one vlan per tag
     """
-    nic = attrs.get('nic')
-    bond = attrs.get('bonding')
-    vlan = attrs.get('vlan')
+    nic = netattrs.get('nic')
+    bond = netattrs.get('bonding')
+    vlan = netattrs.get('vlan')
 
     if vlan is None:
-        if nic and nic not in kernel_nics:
-            raise ne.ConfigNetworkError(
-                ne.ERR_BAD_NIC, 'Nic %s does not exist' % nic)
-        running_bond = bond in running_bonds
-        bond2setup = bond in bonds and 'remove' not in bonds[bond]
-        if bond and not running_bond and not bond2setup:
-            raise ne.ConfigNetworkError(
-                ne.ERR_BAD_BONDING, 'Bond %s does not exist' % bond)
+        if nic:
+            _validate_nic_exists(nic, current_nics)
+        if bond:
+            _validate_bond_exists(bond, desired_bonds, current_bonds)
 
 
-# TODO: Pass all nets and bonds to validator at once, not one by one.
-def validate_bond_configuration(bond, attrs, nets, running_nets, kernel_nics):
-    if 'remove' in attrs:
-        _validate_bond_removal(bond, nets, running_nets)
-    elif 'nics' in attrs:
-        _validate_bond_addition(attrs['nics'], kernel_nics)
+def validate_bond_configuration(
+        bond, bondattrs, desired_nets, current_nets, current_nics):
+    if 'remove' in bondattrs:
+        _validate_bond_removal(bond, desired_nets, current_nets)
+    elif 'nics' in bondattrs:
+        _validate_bond_addition(bondattrs['nics'], current_nics)
     else:
         raise ne.ConfigNetworkError(ne.ERR_BAD_NIC, 'Missing nics attribute')
 
@@ -79,11 +76,17 @@ def validate_nic_usage(req_nets, req_bonds,
             ne.ERR_USED_NIC, 'Nics with multiple usages: %s' % shared_nics)
 
 
-def _validate_bond_addition(nics, kernel_nics):
+def _validate_bond_exists(bond, desired_bonds, running_bonds):
+    running_bond = bond in running_bonds
+    bond2setup = bond in desired_bonds and 'remove' not in desired_bonds[bond]
+    if not running_bond and not bond2setup:
+        raise ne.ConfigNetworkError(
+            ne.ERR_BAD_BONDING, 'Bond %s does not exist' % bond)
+
+
+def _validate_bond_addition(nics, current_nics):
     for nic in nics:
-        if nic not in kernel_nics:
-            raise ne.ConfigNetworkError(
-                ne.ERR_BAD_NIC, 'Nic %s does not exist' % nic)
+        _validate_nic_exists(nic, current_nics)
         if dpdk.is_dpdk(nic):
             raise ne.ConfigNetworkError(
                 ne.ERR_BAD_NIC,
@@ -91,28 +94,35 @@ def _validate_bond_addition(nics, kernel_nics):
                 % nic)
 
 
-def _validate_bond_removal(bond, nets, running_nets):
-    running_nets_with_bond = set([
-        net for net, attrs in six.iteritems(running_nets)
-        if attrs['southbound'] == bond])
+def _validate_nic_exists(nic, current_nics):
+    if nic not in current_nics:
+        raise ne.ConfigNetworkError(
+            ne.ERR_BAD_NIC, 'Nic %s does not exist' % nic)
+
+
+def _validate_bond_removal(bond, desired_nets, current_nets):
+    current_nets_with_bond = {net for net, attrs in six.iteritems(current_nets)
+                              if attrs['southbound'] == bond}
 
     add_nets_with_bond = set()
     remove_nets_with_bond = set()
-    for net, attrs in six.iteritems(nets):
+    for net, attrs in six.iteritems(desired_nets):
         if 'remove' in attrs:
-            if net in running_nets_with_bond:
+            if net in current_nets_with_bond:
                 remove_nets_with_bond.add(net)
-        elif net in running_nets:
-            if net in running_nets_with_bond:
+        elif net in current_nets:
+            if net in current_nets_with_bond:
                 remove_nets_with_bond.add(net)
             if attrs.get('bonding') == bond:
                 add_nets_with_bond.add(net)
-        else:
-            if attrs.get('bonding') == bond:
+        elif attrs.get('bonding') == bond:
                 add_nets_with_bond.add(net)
 
-    if (add_nets_with_bond or
-            (running_nets_with_bond - remove_nets_with_bond)):
+    nets_with_bond = add_nets_with_bond or (current_nets_with_bond -
+                                            remove_nets_with_bond)
+    if nets_with_bond:
         raise ne.ConfigNetworkError(
             ne.ERR_USED_BOND,
-            'Cannot remove bonding {}: used by network.'.format(bond))
+            'Cannot remove bonding {}: used by network ({}).'.format(
+                bond, nets_with_bond)
+        )
