@@ -27,7 +27,7 @@ from network.nettestlib import requires_systemctl
 from network.nmnettestlib import iface_name, TEST_LINK_TYPE, NMService
 from network.nmnettestlib import nm_connections
 
-from vdsm.network.nm.errors import NMDeviceNotFoundError
+from vdsm.network.nm import errors
 from vdsm.network.nm.nmdbus import NMDbus
 from vdsm.network.nm.nmdbus import types
 from vdsm.network.nm.nmdbus.active import NMDbusActiveConnections
@@ -133,17 +133,23 @@ class TestNMDevice(unittest.TestCase):
         nm_settings = NMDbusSettings()
 
         device_count = 0
-        for device in nm_device.devices():
-            assert device.interface() is not None
-            assert device.state() is not None
-            assert device.active_connection_path() is not None
-            assert device.connections_path() is not None
+        iface = iface_name()
+        with dummy_devices(1) as nics:
+            with nm_connections(iface, IPV4ADDR, slaves=nics):
+                for device in nm_device.devices():
+                    try:
+                        assert device.interface() is not None
+                        assert device.state() is not None
+                        assert device.active_connection_path() is not None
+                        assert device.connections_path() is not None
+                    except errors.NMPropertiesNotFoundError:
+                        continue
 
-            for connection_path in device.connections_path():
-                settings_con = nm_settings.connection(connection_path)
-                assert settings_con.connection.uuid is not None
+                    for connection_path in device.connections_path():
+                        settings_con = nm_settings.connection(connection_path)
+                        assert settings_con.connection.uuid is not None
 
-            device_count += 1
+                    device_count += 1
 
         self.assertGreaterEqual(device_count, 1)
 
@@ -199,5 +205,5 @@ class TestNMConnectionCreation(unittest.TestCase):
 
     def _assert_no_device(self, iface):
         nm_device = NMDbusDevice()
-        with self.assertRaises(NMDeviceNotFoundError):
+        with self.assertRaises(errors.NMDeviceNotFoundError):
             nm_device.device(iface)
