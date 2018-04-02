@@ -1,6 +1,6 @@
 #
 # Copyright 2012 IBM, Inc.
-# Copyright 2012-2017 Red Hat, Inc.
+# Copyright 2012-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ from vdsm.network.configurators import ifcfg
 from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network import legacy_switch
 from vdsm.network.models import Bond, Bridge, Nic, Vlan
-from vdsm.network.ovs import validator
+from vdsm.network.netswitch import validator
 
 
 def _raiseInvalidOpException(*args, **kwargs):

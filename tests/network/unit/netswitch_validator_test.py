@@ -22,7 +22,7 @@ from __future__ import division
 import unittest
 
 from vdsm.network import errors as ne
-from vdsm.network.ovs import validator as ovs_validator
+from vdsm.network.netswitch import validator
 
 
 class ValidationTests(unittest.TestCase):
@@ -32,7 +32,7 @@ class ValidationTests(unittest.TestCase):
         fake_to_be_added_bonds = {}
         fake_kernel_nics = ['eth0']
 
-        ovs_validator.validate_net_configuration(
+        validator.validate_net_configuration(
             'net2', {'nic': 'eth0', 'switch': 'ovs'},
             fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
 
@@ -41,7 +41,7 @@ class ValidationTests(unittest.TestCase):
         fake_to_be_added_bonds = {}
         fake_kernel_nics = ['eth0', 'eth1']
 
-        ovs_validator.validate_net_configuration(
+        validator.validate_net_configuration(
             'net1', {'nic': 'eth1', 'switch': 'ovs'},
             fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
 
@@ -50,7 +50,7 @@ class ValidationTests(unittest.TestCase):
         fake_to_be_added_bonds = {}
         fake_kernel_nics = ['eth0', 'eth1']
 
-        ovs_validator.validate_net_configuration(
+        validator.validate_net_configuration(
             'net2', {'nic': 'eth1', 'switch': 'ovs'},
             fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
 
@@ -59,7 +59,7 @@ class ValidationTests(unittest.TestCase):
         fake_to_be_added_bonds = {}
         fake_kernel_nics = []
         with self.assertRaises(ne.ConfigNetworkError) as e:
-            ovs_validator.validate_net_configuration(
+            validator.validate_net_configuration(
                 'net1', {'nic': 'eth0', 'switch': 'ovs'},
                 fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
         self.assertEqual(e.exception.args[0], ne.ERR_BAD_NIC)
@@ -69,7 +69,7 @@ class ValidationTests(unittest.TestCase):
         fake_to_be_added_bonds = {}
         fake_kernel_nics = []
         with self.assertRaises(ne.ConfigNetworkError) as e:
-            ovs_validator.validate_net_configuration(
+            validator.validate_net_configuration(
                 'net1', {'bonding': 'bond1', 'switch': 'ovs'},
                 fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
         self.assertEqual(e.exception.args[0], ne.ERR_BAD_BONDING)
@@ -79,7 +79,7 @@ class ValidationTests(unittest.TestCase):
         fake_to_be_added_bonds = {'bond1': {}}
         fake_kernel_nics = []
 
-        ovs_validator.validate_net_configuration(
+        validator.validate_net_configuration(
             'net1', {'bonding': 'bond1', 'switch': 'ovs'},
             fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
 
@@ -88,7 +88,7 @@ class ValidationTests(unittest.TestCase):
         fake_to_be_added_bonds = {}
         fake_kernel_nics = []
 
-        ovs_validator.validate_net_configuration(
+        validator.validate_net_configuration(
             'net1', {'bonding': 'bond1', 'switch': 'ovs'},
             fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
 
@@ -97,7 +97,7 @@ class ValidationTests(unittest.TestCase):
         nets = {}
         running_nets = {}
         with self.assertRaises(ne.ConfigNetworkError):
-            ovs_validator.validate_bond_configuration(
+            validator.validate_bond_configuration(
                 'bond1', {'switch': 'ovs'}, nets, running_nets,
                 fake_kernel_nics)
 
@@ -106,7 +106,7 @@ class ValidationTests(unittest.TestCase):
         nets = {}
         running_nets = {}
 
-        ovs_validator.validate_bond_configuration(
+        validator.validate_bond_configuration(
             'bond1', {'nics': ['eth0'], 'switch': 'ovs'}, nets,
             running_nets, fake_kernel_nics)
 
@@ -115,7 +115,7 @@ class ValidationTests(unittest.TestCase):
         nets = {}
         running_nets = {}
 
-        ovs_validator.validate_bond_configuration(
+        validator.validate_bond_configuration(
             'bond1', {'nics': ['eth0', 'eth0'], 'switch': 'ovs'}, nets,
             running_nets, fake_kernel_nics)
 
@@ -124,7 +124,7 @@ class ValidationTests(unittest.TestCase):
         nets = {}
         running_nets = {}
 
-        ovs_validator.validate_bond_configuration(
+        validator.validate_bond_configuration(
             'bond1', {'nics': ['eth0', 'eth1'], 'switch': 'ovs'}, nets,
             running_nets, fake_kernel_nics)
 
@@ -133,7 +133,7 @@ class ValidationTests(unittest.TestCase):
         nets = {}
         running_nets = {}
         with self.assertRaises(ne.ConfigNetworkError):
-            ovs_validator.validate_bond_configuration(
+            validator.validate_bond_configuration(
                 'bond1', {'nics': ['eth0', 'eth1'], 'switch': 'ovs'},
                 nets, running_nets, fake_kernel_nics)
 
@@ -142,7 +142,7 @@ class ValidationTests(unittest.TestCase):
         nets = {}
         running_nets = {}
         with self.assertRaises(ne.ConfigNetworkError):
-            ovs_validator.validate_bond_configuration(
+            validator.validate_bond_configuration(
                 'bond1', {'nics': ['eth0', 'dpdk0'], 'switch': 'ovs'},
                 nets, running_nets, fake_kernel_nics)
 
@@ -151,7 +151,7 @@ class ValidationTests(unittest.TestCase):
         nets = {}
         running_nets = {}
 
-        ovs_validator.validate_bond_configuration(
+        validator.validate_bond_configuration(
             'bond1', {'remove': True}, nets, running_nets,
             fake_kernel_nics)
 
@@ -160,7 +160,7 @@ class ValidationTests(unittest.TestCase):
         nets = {'net1': {'remove': True}}
         running_nets = {'net1': {'southbound': 'bond1'}}
 
-        ovs_validator.validate_bond_configuration(
+        validator.validate_bond_configuration(
             'bond1', {'remove': True}, nets, running_nets,
             fake_kernel_nics)
 
@@ -169,7 +169,7 @@ class ValidationTests(unittest.TestCase):
         nets = {}
         running_nets = {'net1': {'southbound': 'bond1'}}
         with self.assertRaises(ne.ConfigNetworkError) as e:
-            ovs_validator.validate_bond_configuration(
+            validator.validate_bond_configuration(
                 'bond1', {'remove': True}, nets, running_nets,
                 fake_kernel_nics)
         self.assertEqual(e.exception.args[0], ne.ERR_USED_BOND)
@@ -179,7 +179,7 @@ class ValidationTests(unittest.TestCase):
         nets = {'net1': {'nic': 'eth0'}}
         running_nets = {'net1': {'southbound': 'bond1'}}
 
-        ovs_validator.validate_bond_configuration(
+        validator.validate_bond_configuration(
             'bond1', {'remove': True}, nets, running_nets,
             fake_kernel_nics)
 
@@ -188,7 +188,7 @@ class ValidationTests(unittest.TestCase):
         nets = {'net1': {'nic': 'eth0'}, 'net2': {'bonding': 'bond1'}}
         running_nets = {'net1': {'southbound': 'bond1'}}
         with self.assertRaises(ne.ConfigNetworkError) as e:
-            ovs_validator.validate_bond_configuration(
+            validator.validate_bond_configuration(
                 'bond1', {'remove': True}, nets, running_nets,
                 fake_kernel_nics)
         self.assertEqual(e.exception.args[0], ne.ERR_USED_BOND)

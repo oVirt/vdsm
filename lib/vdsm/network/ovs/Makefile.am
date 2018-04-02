@@ -27,5 +27,4 @@ dist_vdsmnetworkovs_PYTHON = \
 	__init__.py \
 	info.py \
 	switch.py \
-	validator.py \
 	$(NULL)
