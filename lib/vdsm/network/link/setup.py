@@ -1,4 +1,4 @@
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import logging
 import six
 
 from vdsm.network.ip import address
@@ -36,6 +37,7 @@ class SetupBonds(object):
         self._acquired_ifaces = set()
 
     def remove_bonds(self):
+        logging.debug('Removing bonds: %s', list(self._bonds2remove))
         for bond_name in self._bonds2remove:
             with Bond(bond_name) as bond:
                 bond.destroy()
@@ -55,6 +57,7 @@ class SetupBonds(object):
         In case the slave-add transaction fails, it is up to the upper level
         to revert the change.
         """
+        logging.debug('Editing bonds: %s', list(self._bonds2edit))
         # TODO: Create a SetupBonds transaction.
         init_bond_pool = [(Bond(bond_name), attrs)
                           for bond_name, attrs in self._bonds2edit.items()]
@@ -85,6 +88,7 @@ class SetupBonds(object):
             _ip_flush(slaves2add)
 
     def add_bonds(self):
+        logging.debug('Creating bonds: %s', list(self._bonds2add))
         for bond_name, attrs in six.iteritems(self._bonds2add):
             requested_slaves = set(attrs['nics'])
             if 'options' in attrs:

@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import itertools
+import logging
 import os
 import re
 
@@ -65,10 +66,13 @@ class Transaction(object):
             self._rollback()
 
     def acquire(self, ifaces):
+        logging.debug('Acquiring ifaces: %s', ifaces)
         self._backup(ifaces)
         self._release_ifaces()
 
     def _rollback(self):
+        logging.debug('Acquiring transaction failed, '
+                      'reverting ifaces: %s', list(self._ifaces))
         for iface, ifcfg_lines in six.iteritems(self._ifaces):
             if ifcfg_lines:
                 _rollback_ifcfg_iface(iface, ifcfg_lines)

@@ -20,6 +20,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import itertools
+import logging
 
 import six
 
@@ -218,6 +219,7 @@ def _get_kernel_bonds_slaves(kernel_bonds):
 
 
 def _remove_networks(nets2remove, ovs_info, config):
+    logging.debug('Removing networks: %s', list(nets2remove))
     net_rem_setup = ovs_switch.NetsRemovalSetup(ovs_info)
     net_rem_setup.prepare_setup(nets2remove)
     net_rem_setup.commit_setup()
@@ -226,6 +228,7 @@ def _remove_networks(nets2remove, ovs_info, config):
 
 
 def _add_networks(nets2add, ovs_info, config, acq):
+    logging.debug('Adding networks: %s', list(nets2add))
     net_add_setup = ovs_switch.NetsAdditionSetup(ovs_info)
     net_add_setup.prepare_setup(nets2add)
     acq.acquire(net_add_setup.acquired_ifaces)
