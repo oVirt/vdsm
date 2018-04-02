@@ -30,12 +30,14 @@ from vdsm.network.link.iface import DEFAULT_MTU
 
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
+from network.compat import mock
 
 from vdsm.network import errors
 from vdsm.network.configurators import ifcfg
 from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network import legacy_switch
 from vdsm.network.models import Bond, Bridge, Nic, Vlan
+from vdsm.network.ovs import validator
 
 
 def _raiseInvalidOpException(*args, **kwargs):
@@ -81,15 +83,20 @@ class TestConfigNetwork(TestCaseBase):
         self._addNetworkWithExc('test', dict(nic='eth6', mtu=DEFAULT_MTU),
                                 errors.ERR_USED_NIC)
 
-    @MonkeyPatch(netinfo.cache, 'CachingNetInfo', lambda: None)
-    def testValidateNetSetupRemoveParamValidation(self):
-        attrs = dict(nic='dummy', remove=True,
-                     bridged=True)
-        networks = {'test-netowrk': attrs}
+    @mock.patch.object(validator, 'nics', lambda: [])
+    @mock.patch.object(validator, 'Bond')
+    def testValidateNetSetupRemoveParamValidation(self, bond_mock):
+        bond_mock.return_value.bonds.return_value = []
+        networks = {
+            'test-network': {
+                'nic': 'dummy',
+                'remove': True,
+                'bridged': True
+            }
+        }
         with self.assertRaises(errors.ConfigNetworkError) as cneContext:
-            legacy_switch.validate_network_setup(networks, {})
-        self.assertEqual(cneContext.exception.errCode,
-                         errors.ERR_BAD_PARAMS)
+            validator.validate_network_setup(networks, {}, {})
+        self.assertEqual(cneContext.exception.errCode, errors.ERR_BAD_PARAMS)
 
 
 FAKE_NETINFO = {

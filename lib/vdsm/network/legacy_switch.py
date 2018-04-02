@@ -35,7 +35,6 @@ from vdsm.network.link import iface as link_iface
 from vdsm.network.configurators.ifcfg import Ifcfg
 from vdsm.network.netinfo import NET_PATH
 from vdsm.network.netinfo import bridges
-from vdsm.network.netinfo import nics as netinfo_nics
 from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network.netinfo.cache import get_net_iface_from_config
 from vdsm.network.ip.address import IPv4, IPv6
@@ -576,32 +575,9 @@ def _bonds_add(bonds, configurator, _netinfo):
         configurator.configureBond(bond)
 
 
-def validate_network_setup(networks, bondings):
-    for network, networkAttrs in six.iteritems(networks):
-        if networkAttrs.get('remove', False):
-            _validate_network_remove(networkAttrs)
-        elif 'vlan' in networkAttrs:
-            Vlan.validateTag(networkAttrs['vlan'])
-
-        _validate_nic_not_dpdk(networkAttrs.get('nic', None))
-
-    currentNicsSet = set(netinfo_nics.nics())
-    for bonding, bondingAttrs in six.iteritems(bondings):
-        if 'options' in bondingAttrs:
-            Bond.validateOptions(bondingAttrs['options'])
-
-        if bondingAttrs.get('remove', False):
-            continue
-
-        nics = bondingAttrs['nics']
-        if not set(nics).issubset(currentNicsSet):
-            raise ConfigNetworkError(ne.ERR_BAD_NIC,
-                                     'Unknown nics in: %r' % list(nics))
-        for nic in nics:
-            if dpdk.is_dpdk(nic):
-                raise ConfigNetworkError(
-                    ne.ERR_BAD_NIC, '%s is a dpdk device and not supported as '
-                    'a slave of bond' % nic)
+def validate_network_setup(networks):
+    for netattrs in six.viewvalues(networks):
+        _validate_nic_not_dpdk(netattrs.get('nic', None))
 
 
 def _validate_nic_not_dpdk(nic):
@@ -609,14 +585,3 @@ def _validate_nic_not_dpdk(nic):
         raise ConfigNetworkError(
             ne.ERR_BAD_NIC,
             '%s is a dpdk device and supported only with OVS' % nic)
-
-
-def _validate_network_remove(networkAttrs):
-    net_attr_keys = set(networkAttrs)
-    if 'remove' in net_attr_keys and net_attr_keys - set(
-            ['remove', 'custom']):
-        raise ConfigNetworkError(
-            ne.ERR_BAD_PARAMS,
-            'Cannot specify any attribute when removing (other '
-            'than custom properties). specified attributes: %s' % (
-                networkAttrs,))

@@ -23,6 +23,20 @@ import six
 
 from vdsm.network import errors as ne
 from vdsm.network.link import dpdk
+from vdsm.network.link.bond import Bond
+from vdsm.network.link.bond import sysfs_options
+from vdsm.network.netinfo.nics import nics
+
+
+def validate_network_setup(nets, bonds, net_info):
+    kernel_nics = nics()
+    kernel_bonds = Bond.bonds()
+    for net, attrs in six.iteritems(nets):
+        validate_net_configuration(
+            net, attrs, bonds, kernel_bonds, kernel_nics)
+    for bond, attrs in six.iteritems(bonds):
+        validate_bond_configuration(
+            bond, attrs, nets, net_info['networks'], kernel_nics)
 
 
 def validate_net_configuration(
@@ -34,6 +48,8 @@ def validate_net_configuration(
     Checked by OVS:
         - only one vlan per tag
     """
+    _validate_network_remove(netattrs)
+
     nic = netattrs.get('nic')
     bond = netattrs.get('bonding')
     vlan = netattrs.get('vlan')
@@ -43,6 +59,35 @@ def validate_net_configuration(
             _validate_nic_exists(nic, current_nics)
         if bond:
             _validate_bond_exists(bond, desired_bonds, current_bonds)
+    else:
+        _validate_vlan_id(vlan)
+
+
+def _validate_vlan_id(id):
+    MAX_ID = 4094
+
+    try:
+        vlan_id = int(id)
+    except ValueError:
+        raise ne.ConfigNetworkError(
+            ne.ERR_BAD_VLAN,
+            'VLAN id must be a number between 0 and ' + MAX_ID
+        )
+
+    if not 0 <= vlan_id <= MAX_ID:
+        raise ne.ConfigNetworkError(
+            ne.ERR_BAD_VLAN,
+            'VLAN id out of range: %r, must be 0..%s' % (id, MAX_ID)
+        )
+
+
+def _validate_network_remove(netattrs):
+    netattrs_set = set(netattrs)
+    if 'remove' in netattrs_set and netattrs_set - set(['remove', 'custom']):
+        raise ne.ConfigNetworkError(
+            ne.ERR_BAD_PARAMS,
+            'Cannot specify any attribute when removing (except custom)).'
+        )
 
 
 def validate_bond_configuration(
@@ -54,26 +99,31 @@ def validate_bond_configuration(
     else:
         raise ne.ConfigNetworkError(ne.ERR_BAD_NIC, 'Missing nics attribute')
 
+    if 'options' in bondattrs:
+        _validate_bond_options(bondattrs['options'])
 
-def validate_nic_usage(req_nets, req_bonds,
-                       kernel_nets_nics, kernel_bonds_slaves):
-    request_bonds_slaves = set()
-    for bond_attr in six.itervalues(req_bonds):
-        if 'remove' in bond_attr:
-            continue
-        request_bonds_slaves |= set(bond_attr['nics'])
 
-    request_nets_nics = set()
-    for net_attr in six.itervalues(req_nets):
-        if 'remove' in net_attr:
-            continue
-        request_nets_nics |= set([net_attr.get('nic')] or [])
-
-    shared_nics = ((request_bonds_slaves | kernel_bonds_slaves) &
-                   (request_nets_nics | kernel_nets_nics))
-    if shared_nics:
+def _validate_bond_options(bond_options):
+    mode = 'balance-rr'
+    try:
+        for option in bond_options.split():
+            key, value = option.split('=', 1)
+            if key == 'mode':
+                mode = value
+    except ValueError:
         raise ne.ConfigNetworkError(
-            ne.ERR_USED_NIC, 'Nics with multiple usages: %s' % shared_nics)
+            ne.ERR_BAD_BONDING,
+            'Error parsing bonding options: %r' % bond_options
+        )
+
+    mode = sysfs_options.numerize_bond_mode(mode)
+    defaults = sysfs_options.getDefaultBondingOptions(mode)
+
+    for option in bond_options.split():
+        key, _ = option.split('=', 1)
+        if key not in defaults and key != 'custom':
+            raise ne.ConfigNetworkError(
+                ne.ERR_BAD_BONDING, '%r is not a valid bonding option' % key)
 
 
 def _validate_bond_exists(bond, desired_bonds, running_bonds):
@@ -92,12 +142,6 @@ def _validate_bond_addition(nics, current_nics):
                 ne.ERR_BAD_NIC,
                 '%s is a dpdk device and not supported as a slave of bond'
                 % nic)
-
-
-def _validate_nic_exists(nic, current_nics):
-    if nic not in current_nics:
-        raise ne.ConfigNetworkError(
-            ne.ERR_BAD_NIC, 'Nic %s does not exist' % nic)
 
 
 def _validate_bond_removal(bond, desired_nets, current_nets):
@@ -126,3 +170,30 @@ def _validate_bond_removal(bond, desired_nets, current_nets):
             'Cannot remove bonding {}: used by network ({}).'.format(
                 bond, nets_with_bond)
         )
+
+
+def validate_nic_usage(req_nets, req_bonds,
+                       kernel_nets_nics, kernel_bonds_slaves):
+    request_bonds_slaves = set()
+    for bond_attr in six.itervalues(req_bonds):
+        if 'remove' in bond_attr:
+            continue
+        request_bonds_slaves |= set(bond_attr['nics'])
+
+    request_nets_nics = set()
+    for net_attr in six.itervalues(req_nets):
+        if 'remove' in net_attr:
+            continue
+        request_nets_nics |= set([net_attr.get('nic')] or [])
+
+    shared_nics = ((request_bonds_slaves | kernel_bonds_slaves) &
+                   (request_nets_nics | kernel_nets_nics))
+    if shared_nics:
+        raise ne.ConfigNetworkError(
+            ne.ERR_USED_NIC, 'Nics with multiple usages: %s' % shared_nics)
+
+
+def _validate_nic_exists(nic, current_nics):
+    if nic not in current_nics:
+        raise ne.ConfigNetworkError(
+            ne.ERR_BAD_NIC, 'Nic %s does not exist' % nic)

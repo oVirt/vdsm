@@ -39,6 +39,7 @@ from vdsm.network.netconfpersistence import RunningConfig, Transaction
 from vdsm.network.netlink import waitfor
 from vdsm.network.ovs import info as ovs_info
 from vdsm.network.ovs import switch as ovs_switch
+from vdsm.network.ovs import validator as ovs_validator
 from vdsm.network.link import bond
 from vdsm.network.link.setup import SetupBonds
 from vdsm.network.netinfo import bridges
@@ -123,10 +124,9 @@ def validate(networks, bondings, net_info):
             'Mixing of legacy and OVS networks is not supported inside one '
             'setupNetworks() call.')
 
+    ovs_validator.validate_network_setup(networks, bondings, net_info)
     if use_legacy_switch:
-        legacy_switch.validate_network_setup(legacy_nets, legacy_bonds)
-    elif use_ovs_switch:
-        ovs_switch.validate_network_setup(ovs_nets, ovs_bonds, net_info)
+        legacy_switch.validate_network_setup(legacy_nets)
 
 
 def setup(networks, bondings, options, net_info, in_rollback):
@@ -187,7 +187,7 @@ def _setup_ovs(networks, bondings, options, net_info, in_rollback):
             # Post removal of nets, update ovs_nets.
             ovs_nets = ovs_info.create_netinfo(_ovs_info)['networks']
             kernel_bonds = bond.Bond.bonds()
-            ovs_switch.validator.validate_nic_usage(
+            ovs_validator.validate_nic_usage(
                 nets2add, bonds2add,
                 _get_kernel_nets_nics(ovs_nets, kernel_bonds),
                 _get_kernel_bonds_slaves(kernel_bonds))
