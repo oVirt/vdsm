@@ -919,7 +919,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         """
         vol_run_link = os.path.join(sc.P_VDSM_STORAGE,
                                     self.sdUUID, imgUUID, volUUID)
-        self.log.info("Unlinking volme runtime link: %r", vol_run_link)
+        self.log.info("Unlinking volume runtime link: %r", vol_run_link)
         try:
             os.unlink(vol_run_link)
         except OSError as e:
