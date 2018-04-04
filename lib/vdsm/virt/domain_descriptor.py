@@ -145,11 +145,3 @@ class DomainDescriptor(MutableDomainDescriptor):
     @contextmanager
     def metadata_descriptor(self):
         yield metadata.Descriptor.from_tree(self._dom)
-
-
-def find_first_domain_device_by_type(domain, device_class, device_type):
-    try:
-        return next(domain.get_device_elements_with_attrs(
-            device_class, type=device_type))
-    except StopIteration:
-        return None

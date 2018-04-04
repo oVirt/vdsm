@@ -85,7 +85,6 @@ from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.domain_descriptor import MutableDomainDescriptor
-from vdsm.virt.domain_descriptor import find_first_domain_device_by_type
 from vdsm.virt import vmdevices
 from vdsm.virt.vmdevices import drivename
 from vdsm.virt.vmdevices import lookup
@@ -5021,9 +5020,13 @@ class Vm(object):
         """
         libvirt (as in 1.2.3) supports only one graphic device per type
         """
-        desc = self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_SECURE)
-        return find_first_domain_device_by_type(
-            DomainDescriptor(desc), hwclass.GRAPHICS, deviceType)
+        dom_desc = DomainDescriptor(
+            self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_SECURE))
+        try:
+            return next(dom_desc.get_device_elements_with_attrs(
+                hwclass.GRAPHICS, type=deviceType))
+        except StopIteration:
+            return None
 
     def onIOError(self, blockDevAlias, err, action):
         """
@@ -5080,8 +5083,8 @@ class Vm(object):
                 for dev in self.conf.get('devices', [])
                 if dev['type'] == hwclass.GRAPHICS)):
             return True
-        return find_first_domain_device_by_type(
-            self._domain, hwclass.GRAPHICS, 'spice') is not None
+        return bool(list(self._domain.get_device_elements_with_attrs(
+            hwclass.GRAPHICS, type='spice')))
 
     @property
     def name(self):
