@@ -23,6 +23,7 @@ AC_INIT([vdsm],
         [m4_esyscmd([build-aux/pkg-version --version])],
         [vdsm-devel@lists.fedorahosted.org])
 AC_CONFIG_AUX_DIR([build-aux])
+AC_CANONICAL_HOST
 
 m4_include([m4/ax_python_module.m4])
 
@@ -264,8 +265,11 @@ AC_SUBST([SNLKUSER], [sanlock])
 AC_SUBST([SNLKGROUP], [sanlock])
 AC_SUBST([CDROMGROUP], [cdrom])
 
-# Systemd units default path
+# Systemd units
 AC_SUBST([SYSTEMD_UNIT_DIR], ['${prefix}/lib/systemd/system'])
+AS_IF([test "$host_cpu" = powerpc64le],
+      AC_SUBST([SYSTEMD_LIMIT_MEMLOCK], [LimitMEMLOCK=64M]),
+      AC_SUBST([SYSTEMD_LIMIT_MEMLOCK], []))
 
 # VDSM default paths
 AC_SUBST([vdsmdir], ['${datarootdir}/vdsm'])

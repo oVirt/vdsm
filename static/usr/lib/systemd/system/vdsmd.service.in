@@ -24,6 +24,7 @@ PermissionsStartOnly=true
 TimeoutStopSec=@SERVICE_STOP_TIMEOUT@
 KillMode=mixed
 LimitNOFILE=4096
+@SYSTEMD_LIMIT_MEMLOCK@
 
 [Install]
 WantedBy=multi-user.target
