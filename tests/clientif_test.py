@@ -38,6 +38,7 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
 import vmfakelib as fake
 import vmfakecon
+import fakelib
 
 
 INEXISTENT_PATH = '/no/such/path'
@@ -401,6 +402,28 @@ class TestExternalVMTracking(TestCaseBase):
         for vm_id, event in vm_events:
             dom = self.dom_class(UUIDString=lambda: vm_id)
             self.cif.dispatchLibvirtEvents(None, dom, event, 0, 0)
+
+    def test_lookup_unknown_vm(self):
+        vmid = '0000'
+        dom = self.dom_class(UUIDString=lambda: vmid)
+        self.assertEqual(self.cif.getVMs(), {})
+        eventid, v = self.cif.lookup_vm_from_event(
+            dom, libvirt.VIR_DOMAIN_EVENT_ID_REBOOT, 0, 0)
+        self.assertIs(v, None)
+        self.assertNotIn(vmid, self.cif.pop_unknown_vm_ids())
+
+    def test_dispatch_unknown_vm(self):
+        cif = NotSoFakeClientIF()
+        cif.log = fakelib.FakeLogger()
+
+        dom = self.dom_class(UUIDString=lambda: '0000')
+        self.assertEqual(cif.getVMs(), {})
+
+        cif.dispatchLibvirtEvents(
+            None, dom, 0, 0, libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE)
+
+        for level, fmt, args in cif.log.messages:
+            self.assertNotEqual(level, logging.ERROR)
 
     def test_external_vms_lookup(self):
         self.assertEqual(sorted(self.cif.pop_unknown_vm_ids()),

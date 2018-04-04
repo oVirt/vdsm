@@ -620,20 +620,27 @@ class clientIF(object):
             self.log.exception("recovery: failed")
             raise
 
-    def dispatchLibvirtEvents(self, conn, dom, *args):
-        try:
-            eventid = args[-1]
-            vmid = dom.UUIDString()
-            v = self.vmContainer.get(vmid)
+    def lookup_vm_from_event(self, dom, *args):
+        eventid = args[-1]
+        vmid = dom.UUIDString()
+        v = self.vmContainer.get(vmid)
 
-            if (not v and
-                (eventid != libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE or
-                 args[0] != libvirt.VIR_DOMAIN_EVENT_UNDEFINED)):
-                self.log.debug('unknown vm %s event %s args %s',
-                               vmid, events.event_name(eventid), args)
+        if v is None:
+            self.log.debug('unknown vm %s event %s args %s',
+                           vmid, events.event_name(eventid), args)
+
+            if (eventid != libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE or
+                    args[0] != libvirt.VIR_DOMAIN_EVENT_UNDEFINED):
                 self._unknown_vm_ids.add(vmid)
-                return
 
+        return eventid, v
+
+    def dispatchLibvirtEvents(self, conn, dom, *args):
+        eventid, v = self.lookup_vm_from_event(dom, *args)
+        if v is None:
+            return
+
+        try:
             # pylint cannot tell that unpacking the args tuple is safe, so we
             # must disbale this check here.
             # TODO: The real solution is to create a method per callback with
