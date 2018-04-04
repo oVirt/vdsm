@@ -44,7 +44,7 @@ class TestRestoreOvsBond(object):
 
             with adapter.reset_persistent_config():
                 with adapter.setupNetworks({}, BONDCREATE, NOCHK):
-                    adapter.vdsm_proxy.setSafeNetworkConfig()
+                    adapter.setSafeNetworkConfig()
 
                     Bond(BOND_NAME).destroy()
 

@@ -76,19 +76,23 @@ def requires_ipaddress():
 class NetFuncTestAdapter(object):
 
     def __init__(self):
-        self.vdsm_proxy = getProxy()
+        self._vdsm_proxy = getProxy()
         self.netinfo = None
         self.running_config = None
 
     def update_netinfo(self):
-        self.netinfo = self.vdsm_proxy.netinfo
+        self.netinfo = self._vdsm_proxy.netinfo
 
     def update_running_config(self):
-        self.running_config = self.vdsm_proxy.config
+        self.running_config = self._vdsm_proxy.config
+
+    def setSafeNetworkConfig(self):
+        self._vdsm_proxy.setSafeNetworkConfig()
 
     @property
     def setupNetworks(self):
-        return SetupNetworks(self.vdsm_proxy, self._setup_networks_post_hook())
+        return SetupNetworks(self._vdsm_proxy,
+                             self._setup_networks_post_hook())
 
     def _setup_networks_post_hook(self):
         def assert_kernel_vs_running():
@@ -458,7 +462,7 @@ class NetFuncTestAdapter(object):
         try:
             yield
         finally:
-            self.vdsm_proxy.setSafeNetworkConfig()
+            self._vdsm_proxy.setSafeNetworkConfig()
 
 
 def _extend_with_bridge_opts(kernel_config, running_config):
