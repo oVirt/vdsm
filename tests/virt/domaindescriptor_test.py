@@ -50,6 +50,18 @@ SOME_DEVICES = """
 </domain>
 """
 
+# made-up XML similar to libvirt domain XML
+SOME_DISK_DEVICES = """
+<domain>
+    <uuid>xyz</uuid>
+    <devices>
+        <disk device="disk" name="vda"/>
+        <disk device="disk"/>
+        <disk device="cdrom"/>
+    </devices>
+</domain>
+"""
+
 REORDERED_DEVICES = """
 <domain>
     <uuid>xyz</uuid>
@@ -146,6 +158,38 @@ class DomainDescriptorTests(XMLTestCase):
     def test_device_elements(self, descriptor, tag, result):
         desc = descriptor(SOME_DEVICES)
         self.assertEqual(len(list(desc.get_device_elements(tag))), result)
+
+    @permutations([
+        [DomainDescriptor, 'device', {}, 2],
+        [DomainDescriptor, 'device', {'name': 'foo'}, 1],
+        [DomainDescriptor, 'device', {'inexistent': 'attr'}, 0],
+        [DomainDescriptor, 'nonexistent', {}, 0],
+        [MutableDomainDescriptor, 'device', {}, 2],
+        [MutableDomainDescriptor, 'device', {'name': 'foo'}, 1],
+        [MutableDomainDescriptor, 'device', {'inexistent': 'attr'}, 0],
+        [MutableDomainDescriptor, 'nonexistent', {}, 0]
+    ])
+    def test_device_elements_with_attrs(self, descriptor, tag, attrs,
+                                        expected):
+        desc = descriptor(SOME_DEVICES)
+        self.assertEqual(
+            len(list(desc.get_device_elements_with_attrs(tag, **attrs))),
+            expected
+        )
+
+    @permutations([
+        # attrs, expected_devs
+        [{}, 3],
+        [{'device': 'disk'}, 2],
+        [{'device': 'cdrom'}, 1],
+        [{'device': 'disk', 'name': 'vda'}, 1],
+    ])
+    def test_device_element_with_attrs_selection(self, attrs, expected_devs):
+        desc = DomainDescriptor(SOME_DISK_DEVICES)
+        self.assertEqual(
+            len(list(desc.get_device_elements_with_attrs('disk', **attrs))),
+            expected_devs
+        )
 
     @permutations([
         # xml_data, expected

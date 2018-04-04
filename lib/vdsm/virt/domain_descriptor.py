@@ -66,6 +66,12 @@ class MutableDomainDescriptor(object):
     def get_device_elements(self, tagName):
         return vmxml.find_all(self.devices, tagName)
 
+    def get_device_elements_with_attrs(self, tag_name, **kwargs):
+        for element in vmxml.find_all(self.devices, tag_name):
+            if all(vmxml.attr(element, key) == value
+                    for key, value in kwargs.items()):
+                yield element
+
     @contextmanager
     def metadata_descriptor(self):
         md_desc = metadata.Descriptor.from_tree(self._dom)
@@ -142,7 +148,8 @@ class DomainDescriptor(MutableDomainDescriptor):
 
 
 def find_first_domain_device_by_type(domain, device_class, device_type):
-    for dev in domain.get_device_elements(device_class):
-        if vmxml.attr(dev, 'type') == device_type:
-            return dev
-    return None
+    try:
+        return next(domain.get_device_elements_with_attrs(
+            device_class, type=device_type))
+    except StopIteration:
+        return None
