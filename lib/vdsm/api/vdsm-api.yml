@@ -5344,6 +5344,7 @@ types:
         -   description: A space separated string of assigned IPv4 addresses
             name: guestIPs
             type: string
+            deprecated: '4.3'
 
         -   defaultvalue: 0
             description: Setting for libvirt cpu_period.
@@ -6764,6 +6765,7 @@ types:
         -   description: A space separated string of assigned IPv4 addresses
             name: guestIPs
             type: string
+            deprecated: '4.3'
 
         -   description: The amount of memory guaranteed to the VM in MB
             name: memGuaranteedSize
