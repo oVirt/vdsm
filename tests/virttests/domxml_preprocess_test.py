@@ -244,8 +244,8 @@ class TestReplaceLeaseXML(XMLTestCase):
             self.xml_str, self.log)
 
         self.driveVolInfo = {
-            'leasePath': 'drive-lease-path',
-            'leaseOffset': 'drive-lease-offset',
+            'leasePath': '/fake/drive/lease/path',
+            'leaseOffset': 42,
         }
         self.vmVolInfo = {
             # from XML
@@ -334,9 +334,9 @@ class TestReplaceLeaseXML(XMLTestCase):
         for lease_elem, vol_info in zip(lease_elems, vol_infos):
             target = vmxml.find_first(lease_elem, 'target')
             self.assertEqual(
-                target.attrib['path'], vol_info['leasePath'])
+                target.attrib['path'], str(vol_info['leasePath']))
             self.assertEqual(
-                target.attrib['offset'], vol_info['leaseOffset'])
+                target.attrib['offset'], str(vol_info['leaseOffset']))
 
     def _inject_volume_chain(self, disk_devs, volInfo,
                              domainID=None, volumeID=None):

@@ -308,7 +308,7 @@ def update_lease_element_from_info(lease_element, info, params, log):
         value = target.attrib.get(key, None)
         if value is None or value.startswith(placeholder):
             old_value = target.attrib[key]
-            target.attrib[key] = info[key]
+            target.attrib[key] = str(info[key])
             if old_value != info[key]:
                 log.info(
                     'lease %s:%s %s: %r -> %r',
