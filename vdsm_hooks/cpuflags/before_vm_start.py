@@ -25,6 +25,15 @@ VDSM cpuflags hook
 This hook allows selection of CPU features that should (not) be visible to the
 guest OS. Feature names can be found in /usr/share/libvirt/cpu_map.xml.
 
+Installation:
+* Use engine-config to define the appropriate custom properties:
+
+Custom property for cpuflags in a VM:
+    sudo engine-config -s "UserDefinedVMProperties=cpuflags=^.*$"
+
+* Verify that the custom properties were added properly:
+    sudo engine-config -g UserDefinedVMProperties
+
 Usage:
 Set the custom property
 
@@ -57,6 +66,8 @@ Examples (the chosen flags are arbitrary):
 '+mmx,-mmx' ~> error, conflicting choice
 'mmx' ~> error, missing (ex/in)clusion information
 
+Notes:
+The hook is also activated when 'sap_agent' custom property is chosen.
 '''
 
 import os
@@ -147,12 +158,16 @@ def _test():
 
 
 def _main(domxml):
-    if 'cpuflags' not in os.environ:
+    if 'cpuflags' in os.environ:
+        flags = os.environ['cpuflags']
+    elif hooking.tobool(os.environ.get('sap_agent', False)):
+        flags = 'SAP'
+    else:
         return
 
     cpu_element = domxml.getElementsByTagName('cpu')[0]
 
-    flags = _extract_flags(os.environ['cpuflags'])
+    flags = _extract_flags(flags)
 
     # Let's check if each flag begins with '+' or '-' and bail out if it
     # doesn't. Due to importance of the flags for certain applications,
