@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 from storage.storagetestlib import FakeGuardedLock
 from testlib import VdsmTestCase

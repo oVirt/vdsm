@@ -69,15 +69,7 @@ ABS_IMPORT_WHITELIST = \
 	$(NULL)
 
 PY3DIVISION_WHITELIST = \
-	tests/common \
-	tests/containers \
-	tests/cpuinfo \
-	tests/data \
-	tests/devices \
-	tests/functional \
-	tests/integration \
-	tests/network \
-	tests/virt \
+	tests \
 	$(NULL)
 
 .PHONY: gitignore

@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 from vdsm.common.exception import GeneralException
 from vdsm.storage import exception as storage_exception

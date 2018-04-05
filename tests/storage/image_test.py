@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 from monkeypatch import MonkeyPatch
 from testlib import expandPermutations, permutations

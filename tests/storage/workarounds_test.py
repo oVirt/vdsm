@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 from testlib import make_uuid
 from testlib import VdsmTestCase

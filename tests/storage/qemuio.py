@@ -24,6 +24,7 @@ This module provides helpers for wiritng and verifying qcow2 files data.
 """
 
 from __future__ import absolute_import
+from __future__ import division
 
 from vdsm.common import commands
 from vdsm.common import cmdutils
