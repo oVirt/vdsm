@@ -20,6 +20,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 from collections import namedtuple
 import time
 import os
@@ -241,12 +242,12 @@ class TestFilters(TestCaseBase):
             'class hfsc 1:5000 parent 1: leaf 5000: ls m1 0bit d 0us '
             'm2 {0}Kbit'.format(cmd_line_ls_m2_5000),  # end of previous line
         ))
-        reported_ls_10 = cmd_line_ls_10 * 1000 / 8
-        reported_ls_m1_20 = cmd_line_ls_m1_20 * 1024 / 8
-        reported_ls_d_20 = cmd_line_ls_d_20 / 8
-        reported_ls_m2_20 = cmd_line_ls_m2_20 * 1000 / 8
-        reported_ls_30 = cmd_line_ls_30 / 8
-        reported_ls_5000 = cmd_line_ls_m2_5000 * 1000 / 8
+        reported_ls_10 = cmd_line_ls_10 * 1000 // 8
+        reported_ls_m1_20 = cmd_line_ls_m1_20 * 1024 // 8
+        reported_ls_d_20 = cmd_line_ls_d_20 // 8
+        reported_ls_m2_20 = cmd_line_ls_m2_20 * 1000 // 8
+        reported_ls_30 = cmd_line_ls_30 // 8
+        reported_ls_5000 = cmd_line_ls_m2_5000 * 1000 // 8
         classes = (
             {'kind': 'hfsc', 'root': True, 'handle': '1:'},
             {'kind': 'hfsc', 'handle': '1:10', 'parent': '1:', 'leaf': '10:',
@@ -512,7 +513,7 @@ class TestConfigureOutbound(TestCaseBase):
                 client = IperfClient(server_ip, client_ip, test_time=60)
                 client.start()
                 max_rate = max([float(
-                    interval['streams'][0]['bits_per_second']) / (2**10)
+                    interval['streams'][0]['bits_per_second']) // (2**10)
                     for interval in client.out['intervals']])
                 self.assertTrue(0 < max_rate < limit_kbps * 1.5)
 

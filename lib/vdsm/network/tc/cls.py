@@ -1,4 +1,4 @@
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+from __future__ import division
+
 from copy import deepcopy
 
 import six
@@ -123,7 +125,7 @@ def _adapt_qos_options_link_share_for_reporting(qos_opts):
     hfsc = adapted_qos_ops.get('hfsc', {})
     link_share = hfsc.get('ls', {})
     for k in six.iterkeys(link_share):
-        link_share[k] /= 8
+        link_share[k] //= 8
     return adapted_qos_ops
 
 
