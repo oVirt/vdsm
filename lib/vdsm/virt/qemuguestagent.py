@@ -55,6 +55,7 @@ from vdsm.virt import guestagenthelpers
 _QEMU_ACTIVE_USERS_COMMAND = 'guest-get-users'
 _QEMU_GUEST_INFO_COMMAND = 'guest-info'
 _QEMU_HOST_NAME_COMMAND = 'guest-get-host-name'
+_QEMU_NETWORK_INTERFACES_COMMAND = 'guest-network-get-interfaces'
 _QEMU_OSINFO_COMMAND = 'guest-get-osinfo'
 _QEMU_TIMEZONE_COMMAND = 'guest-get-timezone'
 
@@ -375,15 +376,24 @@ class NetworkInterfacesCheck(_RunnableOnVmGuestAgent):
     directly.
     """
     def _execute(self):
+        caps = self._qga_poller.get_caps(self._vm.id)
+        if caps is None or \
+                _QEMU_NETWORK_INTERFACES_COMMAND not in caps['commands']:
+            self._qga_poller.log.debug(
+                'Not querying network interfaces for vm_id=\'%s\'',
+                self._vm.id)
+            return
+
         # NOTE: The field guestIPs is not used in oVirt Engine since 4.2
         #       so don't even bother filling it.
         guest_info = {'netIfaces': [], 'guestIPs': ''}
-        interfaces = []
+        interfaces = {}
         try:
             interfaces = self._vm._dom.interfaceAddresses(
                 libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT)
         except libvirt.libvirtError:
             self._qga_poller.set_failure(self._vm.id)
+            return
 
         for ifname, ifparams in six.iteritems(interfaces):
             iface = {

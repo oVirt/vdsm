@@ -138,6 +138,7 @@ class QemuGuestAgentTests(TestCaseBase):
                     qemuguestagent._QEMU_ACTIVE_USERS_COMMAND,
                     qemuguestagent._QEMU_GUEST_INFO_COMMAND,
                     qemuguestagent._QEMU_HOST_NAME_COMMAND,
+                    qemuguestagent._QEMU_NETWORK_INTERFACES_COMMAND,
                     qemuguestagent._QEMU_OSINFO_COMMAND,
                     qemuguestagent._QEMU_TIMEZONE_COMMAND,
                 ]
