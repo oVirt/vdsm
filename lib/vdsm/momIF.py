@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 import logging
 import os
@@ -74,7 +75,7 @@ class MomClient(object):
             ret['ksmPages'] = stats['ksm_pages_to_scan']
             ret['ksmMergeAcrossNodes'] = bool(stats['ksm_merge_across_nodes'])
             ret['memShared'] = stats['ksm_pages_sharing'] * PAGE_SIZE_BYTES
-            ret['memShared'] /= Mbytes
+            ret['memShared'] //= Mbytes
             ret['ksmCpu'] = stats['ksmd_cpu_usage']
         except (AttributeError, socket.error):
             throttledlog.warning('MomNotAvailableKSM',
