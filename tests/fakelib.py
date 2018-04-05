@@ -44,17 +44,17 @@ class FakeLogger(object):
             # Will fail if fmt does not match args
             self.messages.append((level, fmt % args, kwargs))
 
-    def debug(self, fmt, *args):
-        self.log(logging.DEBUG, fmt, *args)
+    def debug(self, fmt, *args, **kwargs):
+        self.log(logging.DEBUG, fmt, *args, **kwargs)
 
-    def info(self, fmt, *args):
-        self.log(logging.INFO, fmt, *args)
+    def info(self, fmt, *args, **kwargs):
+        self.log(logging.INFO, fmt, *args, **kwargs)
 
-    def warning(self, fmt, *args):
-        self.log(logging.WARNING, fmt, *args)
+    def warning(self, fmt, *args, **kwargs):
+        self.log(logging.WARNING, fmt, *args, **kwargs)
 
-    def error(self, fmt, *args):
-        self.log(logging.ERROR, fmt, *args)
+    def error(self, fmt, *args, **kwargs):
+        self.log(logging.ERROR, fmt, *args, **kwargs)
 
     def exception(self, fmt, *args):
         self.log(logging.ERROR, fmt, *args, exc_info=True)
