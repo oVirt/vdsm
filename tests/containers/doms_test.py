@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 #
 # Copyright 2015-2016 Red Hat, Inc.
 #

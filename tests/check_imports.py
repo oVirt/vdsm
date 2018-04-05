@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+from __future__ import division
 
 """
 Ensure that lib/vdsm modules do not depend on private modules in

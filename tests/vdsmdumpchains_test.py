@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+from __future__ import division
 
 from testlib import VdsmTestCase as TestCaseBase
 from vdsm.tool.dump_volume_chains import (_build_volume_chain, _BLANK_UUID,
