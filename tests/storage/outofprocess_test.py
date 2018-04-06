@@ -21,6 +21,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import pytest
+
 from vdsm.storage import outOfProcess as oop
 
 from testlib import VdsmTestCase
@@ -33,6 +35,24 @@ import tempfile
 import time
 import re
 from weakref import ref
+
+
+@pytest.fixture
+def oop_ns():
+    try:
+        yield oop.getProcessPool("test")
+    finally:
+        oop.stop()
+
+
+def test_os_path_islink(oop_ns, tmpdir):
+    link = str(tmpdir.join("link"))
+    os.symlink("/no/such/file", link)
+    assert oop_ns.os.path.islink(link)
+
+
+def test_os_path_islink_not_link(oop_ns, tmpdir):
+    assert not oop_ns.os.path.islink(str(tmpdir))
 
 
 class TestOopWrapper(VdsmTestCase):
