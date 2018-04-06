@@ -18,13 +18,13 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-vdsmvirttestsdir = ${vdsmtestsdir}/virttests
+vdsmtestsvirtdir = ${vdsmtestsdir}/virt
 
 SUBDIRS = \
 	  data \
 	  $(NULL)
 
-dist_vdsmvirttests_PYTHON = \
+dist_vdsmtestsvirt_PYTHON = \
 	*_test.py \
 	collectdlib.py \
 	$(NULL)

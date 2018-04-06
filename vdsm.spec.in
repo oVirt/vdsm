@@ -1410,8 +1410,8 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/network/static/*.json
 %{_datadir}/%{vdsm_name}/tests/storage/*.py*
 %{_datadir}/%{vdsm_name}/tests/storage/*.out
-%{_datadir}/%{vdsm_name}/tests/virttests/*.py*
-%{_datadir}/%{vdsm_name}/tests/virttests/data/*.xml
+%{_datadir}/%{vdsm_name}/tests/virt/*.py*
+%{_datadir}/%{vdsm_name}/tests/virt/data/*.xml
 %{_datadir}/%{vdsm_name}/tests/run_tests.sh
 %{_datadir}/%{vdsm_name}/tests/toolTests_abrt-action-save-package-data.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_CCPP.conf

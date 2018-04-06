@@ -445,8 +445,8 @@ AC_OUTPUT([
 	tests/network/unit/ovs/Makefile
 	tests/network/static/Makefile
 	tests/storage/Makefile
-	tests/virttests/Makefile
-	tests/virttests/data/Makefile
+	tests/virt/Makefile
+	tests/virt/data/Makefile
 	vdsm_hooks/Makefile
 	vdsm_hooks/allocate_net/Makefile
 	vdsm_hooks/boot_hostdev/Makefile

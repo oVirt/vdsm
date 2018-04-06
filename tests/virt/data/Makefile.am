@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-vdsmvirtdatatestsdir = ${vdsmtestsdir}/virttests/data
+vdsmvirtdatatestsdir = ${vdsmtestsdir}/virt/data
 
 dist_vdsmvirtdatatests_DATA = \
 	*.xml \

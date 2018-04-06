@@ -70,7 +70,7 @@ ABS_IMPORT_WHITELIST = \
 
 PY3DIVISION_WHITELIST = \
 	tests/network \
-	tests/virttests \
+	tests/virt \
 	$(NULL)
 
 .PHONY: gitignore

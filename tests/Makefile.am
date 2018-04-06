@@ -28,7 +28,7 @@ SUBDIRS = \
 	  integration \
 	  network \
 	  storage \
-	  virttests \
+	  virt \
 	  $(NULL)
 
 if CONTAINERS
@@ -45,7 +45,7 @@ device_modules = \
 
 network_modules = network/*_test.py
 
-virt_modules = virttests/*_test.py
+virt_modules = virt/*_test.py
 
 test_modules = \
 	API_test.py \
