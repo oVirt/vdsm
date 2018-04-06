@@ -305,7 +305,7 @@ Access vdsm API from the command line.
 # Generating api schema caches each installation or update of
 # vdsm client package in case the api schema files were changed since last
 # installation.
-/usr/bin/python -c 'from vdsm.api.vdsmapi import create_cache; create_cache()'
+/usr/bin/python -c 'from vdsm.api import vdsmapi; vdsmapi.create_cache()'
 
 %package api
 Summary:        VDSM API
