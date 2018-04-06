@@ -262,8 +262,10 @@ class _IOProcessOs(object):
                 return stat.S_ISDIR(res.st_mode)
 
         def islink(self, path):
+            # Note: islink does not follow symlinks. This is not documented
+            # excplicitly, but it deos not make sense otherwise.
             try:
-                res = self._iop.stat(path)
+                res = self._iop.lstat(path)
             except OSError as e:
                 if e.errno == errno.ENOENT:
                     return False
