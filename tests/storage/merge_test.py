@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+
 from contextlib import contextmanager
 from collections import namedtuple
 from functools import partial

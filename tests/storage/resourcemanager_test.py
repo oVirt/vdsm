@@ -17,7 +17,9 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+
 from __future__ import absolute_import
+
 import time
 from weakref import proxy
 from random import Random

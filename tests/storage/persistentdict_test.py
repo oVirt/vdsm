@@ -17,7 +17,9 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+
 from __future__ import absolute_import
+
 from testlib import VdsmTestCase
 from vdsm.storage import persistent as persistentDict
 
