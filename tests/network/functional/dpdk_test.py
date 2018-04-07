@@ -35,7 +35,7 @@ class TestOvsDpdk(object):
 
     def test_dpdk0_device_exists(self):
         adapter.update_netinfo()
-        adapter.assertIn('dpdk0', adapter.netinfo.nics)
+        assert 'dpdk0' in adapter.netinfo.nics
 
     def test_setup_ovs_dpdk(self):
         NETCREATE = {NETWORK_NAME: {'nic': 'dpdk0', 'switch': 'ovs'}}
