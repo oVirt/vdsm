@@ -31,7 +31,13 @@ from vdsm.network.link.bond import Bond
 BOND_NAME = 'bond1'
 
 
-adapter = NetFuncTestAdapter()
+adapter = None
+
+
+@pytest.fixture(scope='module', autouse=True)
+def create_adapter():
+    global adapter
+    adapter = NetFuncTestAdapter()
 
 
 @pytest.mark.ovs_switch

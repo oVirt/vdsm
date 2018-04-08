@@ -44,7 +44,13 @@ DHCPv6_RANGE_FROM = 'fdb3:84e5:4ff4:55e3::a'
 DHCPv6_RANGE_TO = 'fdb3:84e5:4ff4:55e3::64'
 
 
-adapter = NetFuncTestAdapter()
+adapter = None
+
+
+@pytest.fixture(scope='module', autouse=True)
+def create_adapter():
+    global adapter
+    adapter = NetFuncTestAdapter()
 
 
 class IpFamily(object):

@@ -37,7 +37,13 @@ IPv4_GATEWAY = '192.0.2.254'
 IPv4_NETMASK = '255.255.255.0'
 
 
-adapter = NetFuncTestAdapter()
+adapter = None
+
+
+@pytest.fixture(scope='module', autouse=True)
+def create_adapter():
+    global adapter
+    adapter = NetFuncTestAdapter()
 
 
 @pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy')])

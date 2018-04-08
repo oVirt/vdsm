@@ -35,7 +35,13 @@ from network.nettestlib import dummy_devices
 NETWORK_NAME = 'test-network'
 
 
-adapter = nftestlib.NetFuncTestAdapter()
+adapter = None
+
+
+@pytest.fixture(scope='module', autouse=True)
+def create_adapter():
+    global adapter
+    adapter = nftestlib.NetFuncTestAdapter()
 
 
 class TestBridge(object):

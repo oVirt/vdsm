@@ -27,7 +27,13 @@ from .netfunctestlib import NetFuncTestAdapter, NOCHK
 NETWORK_NAME = 'test-network'
 
 
-adapter = NetFuncTestAdapter()
+adapter = None
+
+
+@pytest.fixture(scope='module', autouse=True)
+def create_adapter():
+    global adapter
+    adapter = NetFuncTestAdapter()
 
 
 @pytest.mark.ovsdpdk_switch

@@ -45,7 +45,13 @@ IPv4_GATEWAY = '192.0.2.254'
 IPv4_GATEWAY2 = '192.0.3.254'
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
 
-adapter = NetFuncTestAdapter()
+adapter = None
+
+
+@pytest.fixture(scope='module', autouse=True)
+def create_adapter():
+    global adapter
+    adapter = NetFuncTestAdapter()
 
 
 class IpFamily(object):

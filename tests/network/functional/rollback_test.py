@@ -35,7 +35,13 @@ IPv4_ADDRESS = '192.0.2.1'
 IPv4_NETMASK = '255.255.255.0'
 
 
-adapter = NetFuncTestAdapter()
+adapter = None
+
+
+@pytest.fixture(scope='module', autouse=True)
+def create_adapter():
+    global adapter
+    adapter = NetFuncTestAdapter()
 
 
 @nftestlib.parametrize_switch

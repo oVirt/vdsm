@@ -41,7 +41,13 @@ NET_2 = NETWORK_NAME + '2'
 VLANID = 100
 
 
-adapter = NetFuncTestAdapter()
+adapter = None
+
+
+@pytest.fixture(scope='module', autouse=True)
+def create_adapter():
+    global adapter
+    adapter = NetFuncTestAdapter()
 
 
 @nftestlib.parametrize_switch

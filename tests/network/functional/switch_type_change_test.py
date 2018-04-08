@@ -48,7 +48,7 @@ IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
 DHCPv4_RANGE_FROM = '192.0.3.2'
 DHCPv4_RANGE_TO = '192.0.3.253'
 
-adapter = NetFuncTestAdapter()
+adapter = None
 
 
 pytestmark = pytest.mark.ovs_switch
@@ -56,6 +56,12 @@ pytestmark = pytest.mark.ovs_switch
 parametrize_switch_change = pytest.mark.parametrize(
     'sw_src, sw_dst',
     [('legacy', 'ovs'), ('ovs', 'legacy')])
+
+
+@pytest.fixture(scope='module', autouse=True)
+def create_adapter():
+    global adapter
+    adapter = NetFuncTestAdapter()
 
 
 @parametrize_switch_change

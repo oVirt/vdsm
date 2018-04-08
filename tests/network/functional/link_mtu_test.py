@@ -20,6 +20,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import pytest
+
 from network.nettestlib import dummy_devices
 
 from . import netfunctestlib as nftestlib
@@ -33,7 +35,13 @@ VLAN1 = 10
 VLAN2 = 20
 
 
-adapter = nftestlib.NetFuncTestAdapter()
+adapter = None
+
+
+@pytest.fixture(scope='module', autouse=True)
+def create_adapter():
+    global adapter
+    adapter = nftestlib.NetFuncTestAdapter()
 
 
 @nftestlib.parametrize_switch

@@ -32,7 +32,13 @@ from network.nettestlib import dummy_devices
 BOND_NAME = 'bond1_name'
 
 
-adapter = NetFuncTestAdapter()
+adapter = None
+
+
+@pytest.fixture(scope='module', autouse=True)
+def create_adapter():
+    global adapter
+    adapter = NetFuncTestAdapter()
 
 
 @nftestlib.parametrize_switch
