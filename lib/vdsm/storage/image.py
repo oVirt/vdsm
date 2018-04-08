@@ -805,13 +805,20 @@ class Image:
                 # Start the actual copy image procedure
                 dstVol.prepare(rw=True, setrw=True)
 
+                if (destDom.supportsSparseness and
+                        dstVol.getType() == sc.PREALLOCATED_VOL):
+                    preallocation = qemuimg.PREALLOCATION.FALLOC
+                else:
+                    preallocation = None
+
                 try:
                     operation = qemuimg.convert(
                         volParams['path'],
                         dstPath,
                         srcFormat=sc.fmt2str(volParams['volFormat']),
                         dstFormat=sc.fmt2str(dstVolFormat),
-                        dstQcow2Compat=destDom.qcow2_compat())
+                        dstQcow2Compat=destDom.qcow2_compat(),
+                        preallocation=preallocation)
                     with utils.stopwatch("Copy volume %s"
                                          % srcVol.volUUID):
                         self._run_qemuimg_operation(operation)
