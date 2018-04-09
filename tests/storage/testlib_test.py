@@ -18,6 +18,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 import os
 
@@ -205,7 +206,7 @@ class TestFakeBlockEnv(VdsmTestCase):
 
             extent_size = sc.VG_EXTENT_SIZE_MB * MB
             expected_size = utils.round(size_param, extent_size)
-            self.assertEqual(expected_size / sc.BLOCK_SIZE, vol.getSize())
+            self.assertEqual(expected_size // sc.BLOCK_SIZE, vol.getSize())
             self.assertEqual(expected_size,
                              int(env.lvm.getLV(sd_id, vol_id).size))
             lv_file_size = os.stat(env.lvm.lvPath(sd_id, vol_id)).st_size
@@ -218,7 +219,7 @@ class TestFakeBlockEnv(VdsmTestCase):
             vol_id = make_uuid()
             size_mb = sc.VG_EXTENT_SIZE_MB
             size = size_mb * MB
-            size_blk = size_mb * MB / sc.BLOCK_SIZE
+            size_blk = size_mb * MB // sc.BLOCK_SIZE
             make_block_volume(env.lvm, env.sd_manifest, size,
                               img_id, vol_id)
 

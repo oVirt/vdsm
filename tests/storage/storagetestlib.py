@@ -18,6 +18,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 import os
 from contextlib import contextmanager
@@ -265,7 +266,7 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
     for mdfile in mdfiles:
         make_file(mdfile)
 
-    size_blk = size / sc.BLOCK_SIZE
+    size_blk = size // sc.BLOCK_SIZE
     vol_class = sd_manifest.getVolumeClass()
     vol_class.newMetadata(
         (volpath,),
@@ -293,12 +294,12 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
     if not os.path.exists(imagedir):
         os.makedirs(imagedir)
 
-    size_blk = (size + sc.BLOCK_SIZE - 1) / sc.BLOCK_SIZE
+    size_blk = (size + sc.BLOCK_SIZE - 1) // sc.BLOCK_SIZE
     lv_size = sd_manifest.getVolumeClass().calculate_volume_alloc_size(
         prealloc, size_blk, None)
     lvm.createLV(sduuid, voluuid, lv_size)
     # LVM may create the volume with a larger size due to extent granularity
-    lv_size_blk = int(lvm.getLV(sduuid, voluuid).size) / sc.BLOCK_SIZE
+    lv_size_blk = int(lvm.getLV(sduuid, voluuid).size) // sc.BLOCK_SIZE
     if lv_size_blk > size_blk:
         size_blk = lv_size_blk
 

@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 import os
 
@@ -159,7 +160,7 @@ class VolumeArtifactsTestsMixin(object):
             self.assertEqual(sc.type2name(sc.LEAF_VOL), vol.getVolType())
             self.assertEqual(desc, vol.getDescription())
             self.assertEqual(sc.LEGAL_VOL, vol.getLegality())
-            self.assertEqual(size / sc.BLOCK_SIZE, vol.getSize())
+            self.assertEqual(size // sc.BLOCK_SIZE, vol.getSize())
             self.assertEqual(size, os.stat(artifacts.volume_path).st_size)
             self.assertEqual(vol_format, vol.getFormat())
             self.assertEqual(str(disk_type), vol.getDiskType())
@@ -419,7 +420,7 @@ class TestBlockVolumeArtifacts(VolumeArtifactsTestsMixin, VdsmTestCase):
                              image.SYSTEM_DISK_TYPE, 'raw_volume')
             artifacts.commit()
             vol = env.sd_manifest.produceVolume(self.img_id, self.vol_id)
-            self.assertEqual(expected_size / sc.BLOCK_SIZE, vol.getSize())
+            self.assertEqual(expected_size // sc.BLOCK_SIZE, vol.getSize())
             self.assertEqual(expected_size,
                              int(env.lvm.getLV(sd_id, self.vol_id).size))
 

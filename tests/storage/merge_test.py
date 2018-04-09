@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 from contextlib import contextmanager
 from collections import namedtuple
@@ -64,7 +65,7 @@ GB = 1024 ** 3
 # the Volume class and use SPM rollbacks so we cannot use them.
 def fake_blockVolume_extendSize(env, vol_instance, new_size_blk):
     new_size = new_size_blk * sc.BLOCK_SIZE
-    new_size_mb = (new_size + MB - 1) / MB
+    new_size_mb = (new_size + MB - 1) // MB
     env.lvm.extendLV(env.sd_manifest.sdUUID, vol_instance.volUUID, new_size_mb)
     vol_instance.setSize(new_size_blk)
 
@@ -105,9 +106,9 @@ def make_env(env_type, base, top):
         if env_type == 'block':
             # Simulate allocation by adjusting the LV sizes
             env.lvm.extendLV(env.sd_manifest.sdUUID, base_id,
-                             base.physical * GB / MB)
+                             base.physical * GB // MB)
             env.lvm.extendLV(env.sd_manifest.sdUUID, top_id,
-                             top.physical * GB / MB)
+                             top.physical * GB // MB)
 
         rm = FakeResourceManager()
         with MonkeyPatchScope([

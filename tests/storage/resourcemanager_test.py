@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 import time
 from weakref import proxy
@@ -611,7 +612,7 @@ class TestResourceManager(VdsmTestCase):
         lockTranslator = [rm.EXCLUSIVE, rm.SHARED]
 
         threads = []
-        for i in range(procLimit / 2):
+        for i in range(procLimit // 2):
             t = threading.Thread(target=register)
             try:
                 t.start()

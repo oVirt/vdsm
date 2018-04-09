@@ -20,6 +20,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 import collections
 import os
@@ -40,7 +41,7 @@ TESTDIR = os.path.dirname(__file__)
 
 class TestMetadataValidity(VdsmTestCase):
 
-    MIN_MD_SIZE = blockSD.VG_METADATASIZE * constants.MEGAB / 2
+    MIN_MD_SIZE = blockSD.VG_METADATASIZE * constants.MEGAB // 2
     MIN_MD_FREE = MIN_MD_SIZE * blockSD.VG_MDA_MIN_THRESHOLD
 
     def test_valid_ok(self):

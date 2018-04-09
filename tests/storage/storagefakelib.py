@@ -18,6 +18,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 import os
 import string
@@ -287,7 +288,7 @@ class FakeLVM(object):
         # pe_start is difficult to calculate correctly but since it's not
         # currently needed by users of FakeLVM, set it to None.
         pe_start = None
-        pe_count = (size - self._PV_UNUSABLE) / self._PV_PE_SIZE
+        pe_count = (size - self._PV_UNUSABLE) // self._PV_PE_SIZE
         pv_md = dict(uuid=fake_lvm_uuid(),
                      name='/dev/mapper/%s' % pv_name,
                      guid=pv_name,

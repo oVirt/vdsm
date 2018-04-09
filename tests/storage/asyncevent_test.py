@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 from __future__ import print_function
 
 import asyncore
@@ -461,7 +462,7 @@ class TestEventLoopTiming(VdsmTestCase):
         self.loop.run_forever()
         latency.sort()
         min_lat = min(latency)
-        avg_lat = sum(latency) / len(latency)
+        avg_lat = sum(latency) // len(latency)
         med_lat = latency[len(latency) // 2 - 1]
         max_lat = max(latency)
         print("avg=%f, min=%f, med=%f, max=%f" %

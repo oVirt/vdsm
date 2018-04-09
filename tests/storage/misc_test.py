@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 from __future__ import print_function
 
 import os
@@ -258,7 +259,7 @@ class TestAsyncProc(VdsmTestCase):
                   The Doctor: ...I don't remember.
                               I'm pretty sure it wasn't the future. """
         # (C) BBC - Doctor Who
-        halfPoint = len(data) / 2
+        halfPoint = len(data) // 2
         p = commands.execCmd([EXT_CAT], sync=False)
         self.log.info("Writing data to std out")
         p.stdin.write(data[:halfPoint])

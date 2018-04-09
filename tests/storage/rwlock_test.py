@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 from __future__ import print_function
 
 import threading
@@ -315,5 +316,5 @@ class TestRWLockStress(VdsmTestCase):
 def stats(seq):
     seq = sorted(seq)
     avg = sum(seq) / float(len(seq))
-    med = seq[len(seq) / 2]
+    med = seq[len(seq) // 2]
     return avg, med, seq[0], seq[-1]

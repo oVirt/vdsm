@@ -18,6 +18,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 import os
 import uuid
@@ -138,7 +139,7 @@ class TestBlockManifest(ManifestMixin, VdsmTestCase):
         with self.env() as env:
             vg_name = env.sd_manifest.sdUUID
             lv_name = str(uuid.uuid4())
-            env.lvm.createLV(vg_name, lv_name, VOLSIZE / MB)
+            env.lvm.createLV(vg_name, lv_name, VOLSIZE // MB)
             env.lvm.fake_lv_symlink_create(vg_name, lv_name)
             self.assertEqual(VOLSIZE,
                              env.sd_manifest.getVSize('<imgUUID>', lv_name))
@@ -147,7 +148,7 @@ class TestBlockManifest(ManifestMixin, VdsmTestCase):
         # Tests the path when the device file is not present
         with self.env() as env:
             lv_name = str(uuid.uuid4())
-            env.lvm.createLV(env.sd_manifest.sdUUID, lv_name, VOLSIZE / MB)
+            env.lvm.createLV(env.sd_manifest.sdUUID, lv_name, VOLSIZE // MB)
             self.assertEqual(VOLSIZE,
                              env.sd_manifest.getVSize('<imgUUID>', lv_name))
 
@@ -197,7 +198,7 @@ class TestBlockDomainMetadataSlot(VdsmTestCase):
             for offset in used_slots:
                 lv = make_uuid()
                 sduuid = env.sd_manifest.sdUUID
-                env.lvm.createLV(sduuid, lv, VOLSIZE / MB)
+                env.lvm.createLV(sduuid, lv, VOLSIZE // MB)
                 tag = sc.TAG_PREFIX_MD + str(offset)
                 env.lvm.addtag(sduuid, lv, tag)
             with env.sd_manifest.acquireVolumeMetadataSlot(None, 1) as mdSlot:
