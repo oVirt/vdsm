@@ -31,6 +31,7 @@ native Python manner.
 """
 
 from __future__ import absolute_import
+from __future__ import division
 
 from ctypes import CDLL, CFUNCTYPE, sizeof, get_errno, byref
 from ctypes import c_char, c_char_p, c_int, c_void_p, c_size_t, py_object

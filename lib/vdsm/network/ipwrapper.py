@@ -18,6 +18,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 from fnmatch import fnmatch
 from glob import iglob

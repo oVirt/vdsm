@@ -18,6 +18,7 @@
 #
 # The implementation has been inspired by openstack OVS access
 from __future__ import absolute_import
+from __future__ import division
 
 import collections
 import json
