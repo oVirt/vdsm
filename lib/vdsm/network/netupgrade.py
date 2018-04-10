@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import os
+import shutil
 import string
 
 import six
@@ -30,7 +32,9 @@ from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network.configurators.ifcfg import ConfigWriter
 from vdsm.network.configurators.ifcfg import Ifcfg
 from vdsm.network.kernelconfig import KernelConfig
+from vdsm.network.link import sriov
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
+from vdsm.network.netconfpersistence import CONF_PERSIST_DIR
 from vdsm.network.netinfo.cache import NetInfo, libvirt_vdsm_nets
 from vdsm.network.netswitch.configurator import netinfo
 from vdsm.network.ovs import info as ovs_info
@@ -97,6 +101,8 @@ def _upgrade_unified_configuration(config):
     Process an unified configuration file and normalize it to an up do date
     format.
     """
+    save_changes = False
+
     if config.networks:
         _normalize_net_address(config.networks)
         _normalize_net_ifcfg_keys(config.networks)
@@ -104,6 +110,15 @@ def _upgrade_unified_configuration(config):
         canonicalize_networks(config.networks)
         canonicalize_bondings(config.bonds)
 
+        save_changes = True
+
+    # Upgrading based on the persisted (safe) configuration.
+    old_sriov_confpath = os.path.join(CONF_PERSIST_DIR, 'virtual_functions')
+    if os.path.exists(old_sriov_confpath):
+        _upgrade_sriov_config(config.devices, old_sriov_confpath)
+        save_changes = True
+
+    if save_changes:
         config.save()
 
 
@@ -125,6 +140,17 @@ def _normalize_net_ifcfg_keys(networks):
     for netname, netattrs in six.viewitems(networks):
         networks[netname] = {k: v for k, v in six.viewitems(netattrs)
                              if not _is_unsupported_ifcfg_key(k)}
+
+
+def _upgrade_sriov_config(devices, old_sriov_confpath):
+
+    old_config = sriov.get_old_persisted_devices_numvfs(old_sriov_confpath)
+    new_config = sriov.upgrade_devices_sriov_config(old_config)
+
+    for devname in new_config:
+        devices.setdefault(devname, {}).update(new_config[devname])
+
+    shutil.rmtree(old_sriov_confpath)
 
 
 def _is_unsupported_ifcfg_key(key):

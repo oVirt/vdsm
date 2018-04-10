@@ -40,7 +40,7 @@ class KernelConfig(BaseConfig):
     # TODO: The only real dependency is on the products of
     # TODO: NetInfo.getNicsVlanAndBondingForNetwork and on NetInfo.Bondings
     def __init__(self, netinfo):
-        super(KernelConfig, self).__init__({}, {})
+        super(KernelConfig, self).__init__({}, {}, {})
         self._netinfo = netinfo
         for net, net_attr in self._analyze_netinfo_nets(netinfo):
             self.setNetwork(net, net_attr)

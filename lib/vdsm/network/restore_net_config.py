@@ -1,4 +1,4 @@
-# Copyright 2011-2017 Red Hat, Inc.
+# Copyright 2011-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,11 +36,12 @@ from vdsm.network import kernelconfig
 from vdsm.network import netswitch
 from vdsm.network import sysctl
 from vdsm.network.ip.address import ipv6_supported
+from vdsm.network.link import sriov
 from vdsm.network.netinfo import nics, misc
 from vdsm.network.netinfo.cache import NetInfo
 from vdsm.network.netrestore import NETS_RESTORED_MARK
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig, \
-    CONF_PERSIST_DIR, BaseConfig
+    BaseConfig
 from vdsm.network.nm import networkmanager
 
 # Ifcfg persistence restoration
@@ -52,8 +53,6 @@ from vdsm.network.api import setupNetworks, change_numvfs
 
 _ALL_DEVICES_UP_TIMEOUT = 5
 
-_VIRTUAL_FUNCTIONS_PATH = os.path.join(CONF_PERSIST_DIR, 'virtual_functions')
-
 
 def _get_sriov_devices():
     devices = hostdev.list_by_caps()
@@ -62,48 +61,36 @@ def _get_sriov_devices():
             if 'totalvfs' in device_info['params']]
 
 
-def _get_persisted_numvfs(existing_sriov_devices):
-    if not os.path.exists(_VIRTUAL_FUNCTIONS_PATH):
-        return {}
+def _restore_sriov_config():
+    persistent_config = PersistentConfig()
 
-    numvfs_by_device = {}
-    sriov_devices_file_names = frozenset(
-        hostdev.name_to_pci_path(device_name)
-        for device_name in existing_sriov_devices)
+    current_sriov_pci_devs = sriov.list_sriov_pci_devices()
+    desired_sriov_pci_devs = {
+        sriov.devname2pciaddr(devname)
+        for devname, devattrs in six.viewitems(persistent_config.devices)
+        if 'sriov' in devattrs
+    }
 
-    for file_name in os.listdir(_VIRTUAL_FUNCTIONS_PATH):
-        if file_name not in sriov_devices_file_names:
-            logging.error('Physical device in %s no longer exists. Skipping '
-                          'numvfs restoration.', file_name)
-        else:
-            with open(os.path.join(
-                    _VIRTUAL_FUNCTIONS_PATH, file_name)) as f:
-                numvfs_by_device[file_name] = int(f.read().strip())
+    non_persisted_devs = current_sriov_pci_devs - desired_sriov_pci_devs
+    if non_persisted_devs:
+        logging.info('Non persisted SRIOV devices found: %s',
+                     non_persisted_devs)
+    missing_current_devs = desired_sriov_pci_devs - current_sriov_pci_devs
+    if missing_current_devs:
+        logging.error('Persisted SRIOV devices could not be found: %s',
+                      missing_current_devs)
 
-    return numvfs_by_device
-
-
-def _restore_sriov_numvfs():
-    sriov_devices = _get_sriov_devices()
-    persisted_numvfs = _get_persisted_numvfs(sriov_devices)
-
-    for device_libvirt_name in sriov_devices:
-        pci_path = hostdev.name_to_pci_path(device_libvirt_name)
-        desired_numvfs = persisted_numvfs.get(pci_path)
-        if desired_numvfs is None:
-            logging.info('SRIOV network device which is not persisted found '
-                         'at: %s.', pci_path)
-        else:
-            logging.info('Changing number of virtual functions for device %s '
-                         '-> %s', pci_path, desired_numvfs)
-            try:
-                net_name = hostdev.physical_function_net_name(
-                    device_libvirt_name)
-                change_numvfs(pci_path, desired_numvfs, net_name)
-            except:
-                logging.exception('restoring vf configuration for device %s '
-                                  'failed. Persisted networks built on this '
-                                  'device will fail to restore.', pci_path)
+    for sriov_devpci in (current_sriov_pci_devs & desired_sriov_pci_devs):
+        devname = sriov.pciaddr2devname(sriov_devpci)
+        numvfs = persistent_config.devices[devname]['sriov']['numvfs']
+        try:
+            change_numvfs(sriov_devpci, numvfs, devname)
+        except Exception:
+            logging.exception(
+                'Restoring VF configuration for device %s failed. '
+                'Persisted nets built on this device will fail to restore.',
+                devname
+            )
 
 
 def ifcfg_restoration():
@@ -248,7 +235,7 @@ def _filter_available(persistent_config):
         available_nics,
         persistent_config.bonds,
         persistent_config.networks)
-    return BaseConfig(available_nets, available_bonds)
+    return BaseConfig(available_nets, available_bonds, {})
 
 
 def _classify_nets_bonds_config(persistent_config):
@@ -442,7 +429,7 @@ def restore(force):
         logging.info('networks already restored. doing nothing.')
         return
 
-    _restore_sriov_numvfs()
+    _restore_sriov_config()
     unified = config.get('vars', 'net_persistence') == 'unified'
     logging.info('starting network restoration.')
     try:
