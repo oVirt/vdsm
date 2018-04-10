@@ -330,7 +330,7 @@ def _disconnect_bridge_port(port):
 def remove_networks(networks, bondings, configurator, _netinfo):
     kernel_config = kernelconfig.KernelConfig(_netinfo)
     normalized_config = kernelconfig.normalize(
-        netconfpersistence.BaseConfig(networks, bondings))
+        netconfpersistence.BaseConfig(networks, bondings, {}))
     running_nets = configurator.runningConfig.networks
 
     for network, attrs in networks.items():

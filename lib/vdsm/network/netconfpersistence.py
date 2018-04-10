@@ -36,6 +36,7 @@ from . import errors as ne
 
 NETCONF_BONDS = 'bonds'
 NETCONF_NETS = 'nets'
+NETCONF_DEVS = 'devices'
 
 CONF_VOLATILE_RUN_DIR = constants.P_VDSM_RUN + 'netconf'
 CONF_RUN_DIR = constants.P_VDSM_LIB + 'staging/netconf'
@@ -45,9 +46,10 @@ VOLATILE_NET_ATTRS = ('blockingdhcp',)
 
 
 class BaseConfig(object):
-    def __init__(self, networks, bonds):
+    def __init__(self, networks, bonds, devices):
         self.networks = networks
         self.bonds = bonds
+        self.devices = devices
 
     def setNetwork(self, network, attrs):
         cleanAttrs = BaseConfig._filter_out_net_attrs(attrs)
@@ -72,21 +74,36 @@ class BaseConfig(object):
         except KeyError:
             logging.debug('%s not found for removal', bonding)
 
+    def set_device(self, devname, devattrs):
+        self.devices[devname] = devattrs
+        logging.info('Setting device %s(%s)', devname, devattrs)
+
+    def remove_device(self, devname):
+        try:
+            del self.devices[devname]
+            logging.info('Removing device %s', devname)
+        except KeyError:
+            logging.debug('Device %s not found for removal', devname)
+
     def diffFrom(self, other):
-        """Returns a diff Config that shows the what should be changed for
+        """Returns a diff Config that shows what should be changed for
         going from other to self."""
+        # TODO: The new devices config is not handled
         diff = BaseConfig(self._confDictDiff(self.networks, other.networks),
-                          self._confDictDiff(self.bonds, other.bonds))
+                          self._confDictDiff(self.bonds, other.bonds),
+                          {})
         return diff
 
     def __eq__(self, other):
+        # TODO: The new devices config is not handled
         return self.networks == other.networks and self.bonds == other.bonds
 
     def __repr__(self):
-        return '%s(%s, %s)' % (self.__class__.__name__, self.networks,
-                               self.bonds)
+        return '%s(%s, %s, %s)' % (
+            self.__class__.__name__, self.networks, self.bonds, self.devices)
 
     def __bool__(self):
+        # TODO: The new devices config is not handled
         return True if self.networks or self.bonds else False
 
     def __nonzero__(self):  # TODO: drop when py2 is no longer needed
@@ -105,6 +122,7 @@ class BaseConfig(object):
         return result
 
     def as_unicode(self):
+        # TODO: The new devices config is not handled
         return {'networks': json.loads(json.dumps(self.networks)),
                 'bonds': json.loads(json.dumps(self.bonds))}
 
@@ -122,15 +140,18 @@ class Config(BaseConfig):
         self._netconf_path = savePath
         self.networksPath = os.path.join(savePath, NETCONF_NETS)
         self.bondingsPath = os.path.join(savePath, NETCONF_BONDS)
+        self.devicesPath = os.path.join(savePath, NETCONF_DEVS)
         nets = self._getConfigs(self.networksPath)
         for net_attrs in six.viewvalues(nets):
             _filter_out_volatile_net_attrs(net_attrs)
         bonds = self._getConfigs(self.bondingsPath)
-        super(Config, self).__init__(nets, bonds)
+        devices = self._getConfigs(self.devicesPath)
+        super(Config, self).__init__(nets, bonds, devices)
 
     def delete(self):
         self.networks = {}
         self.bonds = {}
+        self.devices = {}
         self._clearDisk()
 
     def save(self):
@@ -139,15 +160,23 @@ class Config(BaseConfig):
         rand_netconf_path = self._netconf_path + '.' + rand_suffix
         rand_nets_path = os.path.join(rand_netconf_path, NETCONF_NETS)
         rand_bonds_path = os.path.join(rand_netconf_path, NETCONF_BONDS)
+        rand_devs_path = os.path.join(rand_netconf_path, NETCONF_DEVS)
 
         self._save_config(self.networks, rand_nets_path)
         self._save_config(self.bonds, rand_bonds_path)
+        self._save_config(self.devices, rand_devs_path)
 
         _atomic_copytree(
             rand_netconf_path, self._netconf_path, remove_src=True)
 
-        logging.info('Saved new config %r to %s and %s' %
-                     (self, self.networksPath, self.bondingsPath))
+        logging.info(
+            'Saved new config %r to [%s,%s,%s]' % (
+                self,
+                self.networksPath,
+                self.bondingsPath,
+                self.devicesPath
+            )
+        )
 
     def _save_config(self, configs, configpath):
         os.makedirs(configpath)

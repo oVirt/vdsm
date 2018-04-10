@@ -56,7 +56,7 @@ def network_caps():
     return netswitch.configurator.netcaps(compatibility=30600)
 
 
-def change_numvfs(pci_path, numvfs, net_name):
+def change_numvfs(pci_path, numvfs, devname):
     """Change number of virtual functions of a device.
 
     The persistence is stored in the same place as other network persistence is
@@ -68,9 +68,9 @@ def change_numvfs(pci_path, numvfs, net_name):
     logging.info('Changing number of vfs on device %s -> %s.',
                  pci_path, numvfs)
     sriov.update_numvfs(pci_path, numvfs)
-    sriov.persist_numvfs(pci_path, numvfs)
+    sriov.persist_numvfs(devname, numvfs)
 
-    link_iface.iface(net_name).up()
+    link_iface.iface(devname).up()
 
 
 def ip_addrs_info(device):

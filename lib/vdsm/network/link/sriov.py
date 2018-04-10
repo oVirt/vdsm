@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,9 +18,12 @@
 #
 from __future__ import absolute_import
 
-import errno
+from glob import glob
+import logging
 import os
 import time
+
+import six
 
 from vdsm.common import udevadm
 from vdsm.network import netconfpersistence
@@ -47,15 +50,12 @@ def update_numvfs(pci_path, numvfs):
 
 
 def persist_numvfs(device_name, numvfs):
-    dir_path = os.path.join(netconfpersistence.CONF_RUN_DIR,
-                            'virtual_functions')
-    try:
-        os.makedirs(dir_path)
-    except OSError as ose:
-        if errno.EEXIST != ose.errno:
-            raise
-    with open(os.path.join(dir_path, device_name), 'w') as f:
-        f.write(str(numvfs))
+    running_config = netconfpersistence.RunningConfig()
+    running_config.set_device(
+        device_name,
+        {'sriov': {'numvfs': numvfs}}
+    )
+    running_config.save()
 
 
 def _set_valid_vf_macs(pci_path, numvfs):
@@ -92,7 +92,7 @@ def _is_zeromac_limited_driver(pci_path):
 def _modify_mac_addresses(pci_path, numvfs):
     TARGET_MAC = '02:00:00:00:00:01'
 
-    pf = os.listdir('/sys/bus/pci/devices/{}/net/'.format(pci_path))[0]
+    pf = pciaddr2devname(pci_path)
     for vf_num in range(numvfs):
         iface(pf, vfid=vf_num).set_address(TARGET_MAC)
 
@@ -107,3 +107,62 @@ def _wait_for_udev_events():
     # new devices.
     time.sleep(0.5)
     udevadm.settle(timeout=10)
+
+
+def list_sriov_pci_devices():
+    sysfs_devs_path = glob('/sys/bus/pci/devices/*/sriov_totalvfs')
+    return {sysfs_dev_path.rsplit('/', 2)[-2]
+            for sysfs_dev_path in sysfs_devs_path}
+
+
+def upgrade_devices_sriov_config(cfg):
+    """
+    Given an old SRIOV PF configuration (containing numvfs per device), convert
+    it to the new device configuration and return it.
+    """
+    devices = {}
+    for dev_pci_path, numvfs in six.viewitems(cfg):
+        try:
+            pf_devname = pciaddr2devname(dev_pci_path)
+        except OSError:
+            logging.error(
+                'Device %s does not exist, skipping its config upgrade.' %
+                dev_pci_path)
+            continue
+        devices[pf_devname] = {
+            'sriov': {
+                'numvfs': numvfs
+            }
+        }
+
+    return devices
+
+
+def get_old_persisted_devices_numvfs(devs_vfs_path):
+    """
+    Reads the persisted SRIOV VFs old configuration and returns a dict where
+    the device PCI is the key and the number of VF/s is the value.
+    """
+    numvfs_by_device = {}
+
+    for file_name in os.listdir(devs_vfs_path):
+        with open(os.path.join(devs_vfs_path, file_name)) as f:
+            numvfs_by_device[file_name] = int(f.read().strip())
+
+    return numvfs_by_device
+
+
+def pciaddr2devname(pci_path):
+    return os.listdir('/sys/bus/pci/devices/{}/net/'.format(pci_path))[0]
+
+
+def devname2pciaddr(devname):
+    with open('/sys/class/net/{}/device/uevent'.format(devname)) as f:
+        data = [line for line in f if line.startswith('PCI_SLOT_NAME')]
+        if not data:
+            raise DeviceHasNoPciAddress('device: {}'.format(devname))
+        return data[0].strip().split('=', 1)[-1]
+
+
+class DeviceHasNoPciAddress(Exception):
+    pass
