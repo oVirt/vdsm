@@ -255,7 +255,6 @@ endif
 run_modules += $(network_modules)
 run_modules += $(device_modules)
 run_modules += $(common_modules)
-run_modules += $(virt_modules)
 
 # Disable builtin (recursive) check target.
 check-recursive:
