@@ -60,6 +60,7 @@ import six
 
 from vdsm.common import conv
 from vdsm.common import errors
+from vdsm.common import xmlutils
 from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
 from vdsm import utils
@@ -168,7 +169,7 @@ class Metadata(object):
             <b type="int">1</b>
         </example>
 
-        elem = vmxml.parse_xml(...)
+        elem = xmlutils.fromstring(...)
 
         md = Metadata()
         md.load(elem) -> {'a': 'some value', 'b': 1}
@@ -453,7 +454,7 @@ class Descriptor(object):
     ):
         """
         Initializes one descriptor given the root Element, obtained
-        from vmxml.parse_xml() or similar function.
+        from xmlutils.fromstring() or similar function.
         Useful for the integration with the DomainDescriptor.
 
         :param root: root XML Element.
@@ -493,7 +494,7 @@ class Descriptor(object):
 
         self._log.debug(
             'loading metadata for %s: %s', dom.UUIDString(), md_xml)
-        self._load(vmxml.parse_xml(md_xml))
+        self._load(xmlutils.fromstring(md_xml))
 
     def dump(self, dom):
         """
@@ -668,7 +669,7 @@ class Descriptor(object):
                 yield dev_data
 
     def _parse_xml(self, xml_str):
-        self._parse_tree(vmxml.parse_xml(xml_str))
+        self._parse_tree(xmlutils.fromstring(xml_str))
 
     def _parse_tree(self, root):
         selector = '{%s}%s' % (self._namespace_uri, self._name)

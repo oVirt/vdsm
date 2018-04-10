@@ -91,6 +91,7 @@ from vdsm import osinfo
 
 from vdsm.common import cpuarch
 from vdsm.common import hooks
+from vdsm.common import xmlutils
 from vdsm.virt import domain_descriptor
 from vdsm.virt import libvirtxml
 from vdsm.virt import metadata
@@ -240,7 +241,7 @@ def replace_device_xml_with_hooks_xml(dom, vm_id, vm_custom, md_desc=None):
             dev_custom)
 
         to_remove.append(dev_elem)
-        to_append.append(vmxml.parse_xml(hook_xml))
+        to_append.append(xmlutils.fromstring(hook_xml))
 
     for dev_elem in to_remove:
         vmxml.remove_child(devs, dev_elem)

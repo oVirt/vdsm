@@ -47,6 +47,7 @@ from vdsm.common import exception
 from vdsm.common import libvirtconnection
 from vdsm.common import password
 from vdsm.common import response
+from vdsm.common import xmlutils
 
 import vdsm.common.time
 
@@ -2342,7 +2343,7 @@ class FakeBlockIoTuneDrive(object):
         self._deviceXML = ''
 
     def getXML(self):
-        return vmxml.parse_xml('<fake />')
+        return xmlutils.fromstring('<fake />')
 
 
 class FakeBlockIoTuneDomain(object):

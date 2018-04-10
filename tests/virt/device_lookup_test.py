@@ -21,8 +21,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from vdsm.common import xmlutils
 from vdsm.virt.vmdevices import lookup
-from vdsm.virt import vmxml
 
 from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
@@ -86,12 +86,12 @@ class TestLookup(VdsmTestCase):
             self.assertRaises(
                 LookupError,
                 lookup.drive_from_element,
-                vmxml.parse_xml(drive_xml),
+                xmlutils.fromstring(drive_xml),
                 self.drives
             )
         else:
             drive = lookup.drive_from_element(
-                vmxml.parse_xml(drive_xml),
+                xmlutils.fromstring(drive_xml),
                 self.drives
             )
             self.assertEqual(drive.name, dev_name)

@@ -24,6 +24,7 @@ from __future__ import division
 from collections import namedtuple
 import copy
 
+from vdsm.common import xmlutils
 from vdsm.virt.vmdevices import drivename
 from vdsm.virt import metadata
 from vdsm.virt import vmxml
@@ -559,9 +560,9 @@ class DescriptorStorageMetadataTests(XMLTestCase):
             <volType>path</volType>
         </volumeInfo>'''
 
-        root = vmxml.parse_xml(_DISK_DATA.metadata_xml)
+        root = xmlutils.fromstring(_DISK_DATA.metadata_xml)
         dev = vmxml.find_first(root, 'device')
-        vmxml.append_child(dev, etree_child=vmxml.parse_xml(xml_snippet))
+        vmxml.append_child(dev, etree_child=xmlutils.fromstring(xml_snippet))
         data = _TestData(
             copy.deepcopy(_DISK_DATA.conf), vmxml.format_xml(root))
         self._check_drive_from_metadata_xml(data)

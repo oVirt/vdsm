@@ -28,6 +28,7 @@ import timeit
 import xml.etree.ElementTree as etree
 
 from vdsm.common import cpuarch
+from vdsm.common import xmlutils
 from vdsm.virt import domain_descriptor
 from vdsm.virt import vmchannels
 from vdsm.virt import vmxml
@@ -107,7 +108,7 @@ class TestVmXmlHelpers(XMLTestCase):
     '''
 
     def setUp(self):
-        self._dom = vmxml.parse_xml(self._XML)
+        self._dom = xmlutils.fromstring(self._XML)
 
     def test_import_export(self):
         xml = vmxml.format_xml(self._dom)
@@ -115,7 +116,7 @@ class TestVmXmlHelpers(XMLTestCase):
 
     def test_pretty_format_formatting(self):
         xml = re.sub(' *\n *', '', self._XML)
-        dom = vmxml.parse_xml(xml)
+        dom = xmlutils.fromstring(xml)
         pretty = vmxml.format_xml(dom, pretty=True)
         self.assertEqual(pretty, '''<?xml version='1.0' encoding='utf-8'?>
 <topelement>
@@ -138,7 +139,7 @@ class TestVmXmlHelpers(XMLTestCase):
         # comparing the exported forms of `dom' created before and after
         # format_xml call.
         xml = re.sub(' *\n *', '', self._XML)
-        dom = vmxml.parse_xml(xml)
+        dom = xmlutils.fromstring(xml)
         exported_1 = etree.tostring(dom)
         vmxml.format_xml(dom, pretty=True)
         exported_2 = etree.tostring(dom)
@@ -155,7 +156,7 @@ class TestVmXmlHelpers(XMLTestCase):
 import re
 from vdsm.virt import vmxml
 xml = re.sub(' *\\n *', '', '''%s''')
-dom = vmxml.parse_xml(xml)
+dom = xmlutils.fromstring(xml)
 def run():
     vmxml.format_xml(dom, pretty=%%s)""" % (xml,)
         repetitions = 100
@@ -218,7 +219,7 @@ def run():
 
     def test_append_child_etree(self):
         empty = vmxml.find_first(self._dom, 'empty')
-        vmxml.append_child(empty, etree_child=vmxml.parse_xml('<new/>'))
+        vmxml.append_child(empty, etree_child=xmlutils.fromstring('<new/>'))
         self.assertIsNotNone(vmxml.find_first(self._dom, 'new', None))
         empty = vmxml.find_first(self._dom, 'empty')
         self.assertIsNotNone(vmxml.find_first(empty, 'new', None))
@@ -231,7 +232,7 @@ def run():
         empty = vmxml.find_first(self._dom, 'empty')
         self.assertRaises(RuntimeError, vmxml.append_child, empty,
                           vmxml.Element('new'),
-                          vmxml.parse_xml('<new/>'))
+                          xmlutils.fromstring('<new/>'))
 
     def test_remove_child(self):
         top = vmxml.find_first(self._dom, 'topelement')
@@ -260,7 +261,7 @@ def run():
 </topelement>
 '''
         new_element = '<foo><bar>baz</bar></foo>'
-        new_child = vmxml.parse_xml(new_element)
+        new_child = xmlutils.fromstring(new_element)
         container = vmxml.find_first(self._dom, 'container')
         vmxml.replace_first_child(container, new_child)
         self.assertXMLEqual(vmxml.format_xml(self._dom, pretty=True), expected)
@@ -290,7 +291,7 @@ def run():
           </subelement>
         </topelement>
         '''
-        dom = vmxml.parse_xml(XML)
+        dom = xmlutils.fromstring(XML)
         sub1 = vmxml.find_first(dom, 'subelement')  # outermost
         sub2 = vmxml.find_first(sub1, 'subelement')  # innermost
         last = vmxml.find_first(sub2, 'subelement')

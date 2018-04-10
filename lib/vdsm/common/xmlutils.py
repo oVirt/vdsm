@@ -21,6 +21,20 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import xml.etree.ElementTree as etree
+
+import six
+
+
+def fromstring(data):
+    parser = etree.XMLParser()
+    if isinstance(data, six.binary_type):
+        parser.feed(data)
+    else:
+        # ElementTree prefers binary type
+        parser.feed(data.encode('utf-8'))
+    return parser.close()
+
 
 def indent(element, level=0, s="    "):
     """

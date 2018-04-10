@@ -38,18 +38,6 @@ class NotFound(Exception):
     pass
 
 
-def parse_xml(xml_string):
-    """
-    Parse given XML string to DOM element and return the element.
-
-    :param xml_string: XML string to parse
-    :type xml_string: str
-    :returns: DOM element created by parsing `xml_string`
-    :rtype: DOM element
-    """
-    return etree.fromstring(xml_string)
-
-
 def format_xml(element, pretty=False):
     """
     Export given DOM element to XML string.

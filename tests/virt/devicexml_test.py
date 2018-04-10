@@ -30,6 +30,7 @@ from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
 from vdsm import constants
 from vdsm.common import hostdev
+from vdsm.common import xmlutils
 
 from monkeypatch import MonkeyPatchScope, MonkeyPatch
 from testlib import make_config
@@ -489,7 +490,7 @@ class ParsingHelperTests(XMLTestCase):
             slot='{slot}' function='{function}'/>
           <alias name='{alias}'/>
         </device>""".format(**params)
-        dev = vmxml.parse_xml(XML)
+        dev = xmlutils.fromstring(XML)
         found_addr = vmdevices.core.find_device_guest_address(dev)
         found_alias = vmdevices.core.find_device_alias(dev)
         self.assertEqual(found_addr, self.ADDR)
@@ -499,7 +500,7 @@ class ParsingHelperTests(XMLTestCase):
         XML = u"""<device type='fake'>
           <alias name='{alias}'/>
         </device>""".format(alias=self.ALIAS)
-        dev = vmxml.parse_xml(XML)
+        dev = xmlutils.fromstring(XML)
         found_addr = vmdevices.core.find_device_guest_address(dev)
         found_alias = vmdevices.core.find_device_alias(dev)
         self.assertIs(found_addr, None)
@@ -511,7 +512,7 @@ class ParsingHelperTests(XMLTestCase):
           <address domain='{domain}' bus='{bus}'
             slot='{slot}' function='{function}'/>
         </device>""".format(**params)
-        dev = vmxml.parse_xml(XML)
+        dev = xmlutils.fromstring(XML)
         found_addr = vmdevices.core.find_device_guest_address(dev)
         found_alias = vmdevices.core.find_device_alias(dev)
         self.assertEqual(found_addr, self.ADDR)
@@ -519,7 +520,7 @@ class ParsingHelperTests(XMLTestCase):
 
     def test_missing_address_alias(self):
         XML = u"<device type='fake' />"
-        dev = vmxml.parse_xml(XML)
+        dev = xmlutils.fromstring(XML)
         found_addr = vmdevices.core.find_device_guest_address(dev)
         found_alias = vmdevices.core.find_device_alias(dev)
         self.assertIs(found_addr, None)
@@ -528,21 +529,21 @@ class ParsingHelperTests(XMLTestCase):
     def test_attrs(self):
         XML = u"<device type='fake' />"
         attrs = vmdevices.core.parse_device_attrs(
-            vmxml.parse_xml(XML), ('type',)
+            xmlutils.fromstring(XML), ('type',)
         )
         self.assertEqual(attrs, {'type': 'fake'})
 
     def test_attrs_missing(self):
         XML = u"<device type='fake' />"
         attrs = vmdevices.core.parse_device_attrs(
-            vmxml.parse_xml(XML), ('type', 'foo')
+            xmlutils.fromstring(XML), ('type', 'foo')
         )
         self.assertEqual(attrs, {'type': 'fake'})
 
     def test_attrs_partial(self):
         XML = u"<device foo='bar' ans='42' fizz='buzz' />"
         attrs = vmdevices.core.parse_device_attrs(
-            vmxml.parse_xml(XML), ('foo', 'fizz')
+            xmlutils.fromstring(XML), ('foo', 'fizz')
         )
         self.assertEqual(attrs, {'foo': 'bar', 'fizz': 'buzz'})
 
@@ -557,7 +558,7 @@ class ParsingHelperTests(XMLTestCase):
     def test_find_device_type(self, xml_data, dev_type):
         self.assertEqual(
             dev_type,
-            vmdevices.core.find_device_type(vmxml.parse_xml(xml_data))
+            vmdevices.core.find_device_type(xmlutils.fromstring(xml_data))
         )
 
     @permutations([
@@ -571,7 +572,7 @@ class ParsingHelperTests(XMLTestCase):
     def test_find_device_alias(self, xml_data, alias):
         self.assertEqual(
             alias,
-            vmdevices.core.find_device_alias(vmxml.parse_xml(xml_data))
+            vmdevices.core.find_device_alias(xmlutils.fromstring(xml_data))
         )
 
     @permutations([
@@ -604,7 +605,7 @@ class ParsingHelperTests(XMLTestCase):
         self.assertEqual(
             address,
             vmdevices.core.find_device_guest_address(
-                vmxml.parse_xml(xml_data)
+                xmlutils.fromstring(xml_data)
             )
         )
 
@@ -881,7 +882,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         try:
             vmdevices.core.Base.from_xml_tree(
                 self.log,
-                vmxml.parse_xml(generic_xml),
+                xmlutils.fromstring(generic_xml),
                 meta={'vmid': 'VMID'}
             )
         except NotImplementedError as exc:
@@ -939,7 +940,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         </console>''' % console_type
         dev = vmdevices.core.Console.from_xml_tree(
             self.log,
-            vmxml.parse_xml(console_xml),
+            xmlutils.fromstring(console_xml),
             meta={'vmid': 'VMID'}
         )
         self.assertEqual(dev.isSerial, is_serial)
@@ -978,7 +979,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         )
         dev = vmdevices.core.Console.from_xml_tree(
             self.log,
-            vmxml.parse_xml(console_xml),
+            xmlutils.fromstring(console_xml),
             meta={'vmid': vmid}
         )
         self.assertEqual(dev.isSerial, is_serial)
@@ -1353,7 +1354,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
     def test_storage_from_xml(self, storage_xml, meta):
         dev = vmdevices.storage.Drive(
             self.log, **vmdevices.storagexml.parse(
-                vmxml.parse_xml(storage_xml),
+                xmlutils.fromstring(storage_xml),
                 {} if meta is None else meta
             )
         )
@@ -1363,7 +1364,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
     def test_transient_storage_from_xml(self, storage_xml, meta):
         dev = vmdevices.storage.Drive(
             self.log, **vmdevices.storagexml.parse(
-                vmxml.parse_xml(storage_xml),
+                xmlutils.fromstring(storage_xml),
                 {} if meta is None else meta
             )
         )
@@ -1388,7 +1389,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         </disk>'''
         dev = vmdevices.storage.Drive(
             self.log, **vmdevices.storagexml.parse(
-                vmxml.parse_xml(storage_xml),
+                xmlutils.fromstring(storage_xml),
                 {}
             )
         )
@@ -1421,7 +1422,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
 
         dev = vmdevices.storage.Drive(
             self.log, **vmdevices.storagexml.parse(
-                vmxml.parse_xml(source_xml),
+                xmlutils.fromstring(source_xml),
                 {}
             )
         )
@@ -1433,7 +1434,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
     def _check_roundtrip(self, klass, dev_xml, meta=None, expected_xml=None):
         dev = klass.from_xml_tree(
             self.log,
-            vmxml.parse_xml(dev_xml),
+            xmlutils.fromstring(dev_xml),
             {} if meta is None else meta
         )
         self._check_device_attrs(dev)
@@ -1501,7 +1502,7 @@ class DeviceFromXMLTests(XMLTestCase):
         }
 
         md_desc = metadata.Descriptor.from_xml(_DRIVE_PAYLOAD_XML)
-        root = vmxml.parse_xml(_DRIVE_PAYLOAD_XML)
+        root = xmlutils.fromstring(_DRIVE_PAYLOAD_XML)
 
         dev_xml = root.find('./devices/disk')
 

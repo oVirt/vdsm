@@ -23,6 +23,7 @@ from __future__ import division
 
 from vdsm.common import cpuarch
 from vdsm.common import hooks
+from vdsm.common import xmlutils
 from vdsm.virt import domxml_preprocess
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
@@ -42,7 +43,7 @@ class TestReplacePlaceholders(XMLTestCase):
 
     def test_replace_values(self):
         xml_str = read_data('sysinfo_snippet_template.xml')
-        dom = vmxml.parse_xml(xml_str)
+        dom = xmlutils.fromstring(xml_str)
         with MonkeyPatchScope([
             (osinfo, 'version', self._version),
             (constants, 'SMBIOS_OSNAME', 'test-product'),
@@ -57,7 +58,7 @@ class TestReplacePlaceholders(XMLTestCase):
     def test_skip_without_placeholders(self):
         # any domain without placeholders is fine, picked random one
         xml_str = read_data('vm_hosted_engine_42.xml')
-        dom = vmxml.parse_xml(xml_str)
+        dom = xmlutils.fromstring(xml_str)
         with MonkeyPatchScope([
             (osinfo, 'version', self._version),
         ]):
@@ -101,7 +102,7 @@ class TestReplaceDiskXML(XMLTestCase):
 
     def test_replace_cdrom_without_source_file(self):
         dom_str = read_data('vm_hibernated.xml')
-        dom = vmxml.parse_xml(dom_str)
+        dom = xmlutils.fromstring(dom_str)
         cdrom_xml = u'''<disk device="cdrom" type="file">
             <driver error_policy="report" name="qemu" type="raw" />
             <source {file_src}startupPolicy="optional" />
@@ -113,7 +114,7 @@ class TestReplaceDiskXML(XMLTestCase):
                 type="drive" unit="0" />
         </disk>'''
         cdrom_params = vmdevices.storagexml.parse(
-            vmxml.parse_xml(cdrom_xml.format(file_src='')), {}
+            xmlutils.fromstring(cdrom_xml.format(file_src='')), {}
         )
         disk_devs = [
             vmdevices.storage.Drive(self.log, **cdrom_params),
@@ -128,7 +129,7 @@ class TestReplaceDiskXML(XMLTestCase):
 
     def _make_env(self):
         dom_disk_file_str = read_data('domain_disk_file.xml')
-        dom = vmxml.parse_xml(dom_disk_file_str)
+        dom = xmlutils.fromstring(dom_disk_file_str)
         # taken from domain_disk_file.xml
         disk_meta = {
             'domainID': 'f3f6e278-47a1-4048-b9a5-0cf4d6ba455f',
@@ -154,7 +155,7 @@ class TestReplaceDiskXML(XMLTestCase):
           <address type='drive' controller='0' bus='0' target='0' unit='0'/>
         </disk>'''.format(path=disk_path)
         disk_params = vmdevices.storagexml.parse(
-            vmxml.parse_xml(disk_xml), disk_meta
+            xmlutils.fromstring(disk_xml), disk_meta
         )
         cdrom_xml = u'''<disk device="cdrom" type="file">
             <driver error_policy="report" name="qemu" type="raw" />
@@ -167,7 +168,7 @@ class TestReplaceDiskXML(XMLTestCase):
                 type="drive" unit="0" />
         </disk>'''
         cdrom_params = vmdevices.storagexml.parse(
-            vmxml.parse_xml(cdrom_xml), {}
+            xmlutils.fromstring(cdrom_xml), {}
         )
         disk_devs = [
             vmdevices.storage.Drive(self.log, **cdrom_params),
@@ -189,7 +190,7 @@ class TestReplaceDeviceXMLWithHooksXML(VdsmTestCase):
         """
         Don't replace devices if they lack custom properties
         """
-        dom = vmxml.parse_xml(read_data('domain_disk_file.xml'))
+        dom = xmlutils.fromstring(read_data('domain_disk_file.xml'))
 
         with MonkeyPatchScope([
             (hooks, 'before_device_create', self._hook),
@@ -205,7 +206,7 @@ class TestReplaceDeviceXMLWithHooksXML(VdsmTestCase):
         """
         # invoked even if custom properties exist, but are empty.
         dom_disk_file_str = read_data('vm_replace_md_base.xml')
-        dom = vmxml.parse_xml(dom_disk_file_str)
+        dom = xmlutils.fromstring(dom_disk_file_str)
 
         with MonkeyPatchScope([
             (hooks, 'before_device_create', self._hook),
@@ -240,7 +241,7 @@ class TestReplaceLeaseXML(XMLTestCase):
         self.vm = FakeVM(self.log)
         self.cif = fake.ClientIF()
         self.xml_str = read_data('hostedengine_lease.xml')
-        self.dom = vmxml.parse_xml(self.xml_str)
+        self.dom = xmlutils.fromstring(self.xml_str)
         self.disk_devs = domxml_preprocess._make_disk_devices(
             self.xml_str, self.log)
 
@@ -269,7 +270,7 @@ class TestReplaceLeaseXML(XMLTestCase):
             u'''<?xml version='1.0' encoding='utf-8'?><devices />'''
         )
 
-        dom = vmxml.parse_xml(xml_str)
+        dom = xmlutils.fromstring(xml_str)
         disk_devs = domxml_preprocess._make_disk_devices(
             xml_str, self.log)
         disk_devs = self._inject_volume_chain(
@@ -328,7 +329,7 @@ class TestReplaceLeaseXML(XMLTestCase):
         self._check_leases(xml_str, [self.vmVolInfo])
 
     def _check_leases(self, xml_str, vol_infos):
-        xml_dom = vmxml.parse_xml(xml_str)
+        xml_dom = xmlutils.fromstring(xml_str)
         lease_elems = xml_dom.findall('./devices/lease')
         self.assertEqual(len(lease_elems), len(vol_infos))
 
@@ -370,7 +371,7 @@ class TestReplaceLeaseXML(XMLTestCase):
 
 def extract_device_snippet(device_type, xml_str=None, dom=None):
     if dom is None:
-        dom = vmxml.parse_xml(xml_str)
+        dom = xmlutils.fromstring(xml_str)
     devs = vmxml.Element('devices')
     for dev in dom.findall('./devices/%s' % device_type):
         vmxml.append_child(devs, etree_child=dev)

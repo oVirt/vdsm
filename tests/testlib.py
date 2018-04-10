@@ -306,11 +306,11 @@ class XMLTestCase(VdsmTestCase):
         In case of a mismatch, display normalized xmls to make it easier to
         find the differences.
         """
-        actual = ET.fromstring(xml)
+        actual = xmlutils.fromstring(xml)
         xmlutils.indent(actual)
         actualXML = ET.tostring(actual)
 
-        expected = ET.fromstring(expectedXML)
+        expected = xmlutils.fromstring(expectedXML)
         xmlutils.indent(expected)
         expectedXML = ET.tostring(expected)
 

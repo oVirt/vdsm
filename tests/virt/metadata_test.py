@@ -23,6 +23,7 @@ from __future__ import division
 
 import logging
 
+from vdsm.common import xmlutils
 from vdsm.virt.vmdevices import common
 from vdsm.virt.vmdevices import core
 from vdsm.virt.vmdevices import drivename
@@ -119,7 +120,7 @@ class MetadataTests(XMLTestCase):
             'ovirt-vm', 'http://ovirt.org/vm/1.0'
         )
         self.assertEqual(
-            metadata_obj.load(vmxml.parse_xml(test_xml)),
+            metadata_obj.load(xmlutils.fromstring(test_xml)),
             {'version': 4.2}
         )
 
@@ -168,7 +169,7 @@ class MetadataTests(XMLTestCase):
             'ovirt-vm', 'http://ovirt.org/vm/1.0'
         )
         self.assertEqual(
-            metadata_obj.load(vmxml.parse_xml(test_xml)),
+            metadata_obj.load(xmlutils.fromstring(test_xml)),
             {'param': ''}
         )
 
@@ -188,7 +189,7 @@ class MetadataTests(XMLTestCase):
         self.assertRaises(
             ValueError,
             metadata_obj.load,
-            vmxml.parse_xml(test_xml)
+            xmlutils.fromstring(test_xml)
         )
 
     @permutations([
@@ -214,7 +215,7 @@ class MetadataTests(XMLTestCase):
         metadata_dst = metadata.Metadata(
             'ovirt-vm', 'http://ovirt.org/vm/1.0'
         )
-        data = metadata_src.load(vmxml.parse_xml(test_xml))
+        data = metadata_src.load(xmlutils.fromstring(test_xml))
         out_xml = vmxml.format_xml(metadata_dst.dump('vm', **data))
         self.assertXMLEqual(out_xml, expected_xml)
 
@@ -244,7 +245,7 @@ class MetadataTests(XMLTestCase):
             'ovirt-vm', 'http://ovirt.org/vm/1.0'
         )
         self.assertEqual(
-            metadata_obj.load(vmxml.parse_xml(test_xml)),
+            metadata_obj.load(xmlutils.fromstring(test_xml)),
             {}
         )
 
@@ -839,7 +840,7 @@ class MetadataFromXMLTests(XMLTestCase):
     def test_shared_from_metadata(self):
 
         md_desc = metadata.Descriptor.from_xml(_DRIVE_TRANSIENT_DISK_XML)
-        root = vmxml.parse_xml(_DRIVE_TRANSIENT_DISK_XML)
+        root = xmlutils.fromstring(_DRIVE_TRANSIENT_DISK_XML)
 
         dev_xml = root.find('./devices/disk')
 

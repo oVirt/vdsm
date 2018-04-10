@@ -22,6 +22,7 @@ from __future__ import absolute_import
 from contextlib import contextmanager
 import xml.etree.ElementTree as etree
 
+from vdsm.common import xmlutils
 from vdsm.virt import metadata
 from vdsm.virt import vmxml
 
@@ -29,7 +30,7 @@ from vdsm.virt import vmxml
 class MutableDomainDescriptor(object):
 
     def __init__(self, xmlStr):
-        self._dom = vmxml.parse_xml(xmlStr)
+        self._dom = xmlutils.fromstring(xmlStr)
         self._id = self._dom.findtext('uuid')
         self._name = self._dom.findtext('name')
 

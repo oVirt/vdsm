@@ -23,6 +23,7 @@ from operator import itemgetter
 
 from vdsm.common import conv
 from vdsm.common import cpuarch
+from vdsm.common import xmlutils
 from vdsm.virt import metadata
 from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
@@ -504,7 +505,8 @@ class Domain(object):
         self._devices.appendChild(emulator)
 
     def appendDeviceXML(self, deviceXML):
-        self._devices.appendChild(etree_element=vmxml.parse_xml(deviceXML))
+        self._devices.appendChild(
+            etree_element=xmlutils.fromstring(deviceXML))
 
     def appendMemoryBacking(self, hugepagesz):
         memorybacking = vmxml.Element('memoryBacking',)
@@ -531,7 +533,7 @@ def parse_domain(dom_xml, arch):
     Rebuild a conf dictionary out of a dom_xml
     """
     conf = {'kvmEnable': 'true'}
-    dom = vmxml.parse_xml(dom_xml)
+    dom = xmlutils.fromstring(dom_xml)
     _parse_domain_init(dom, conf)
     _parse_domain_clock(dom, conf)
     _parse_domain_os(dom, conf)

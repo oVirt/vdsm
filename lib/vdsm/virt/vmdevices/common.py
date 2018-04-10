@@ -19,6 +19,7 @@
 #
 from __future__ import absolute_import
 
+from vdsm.common import xmlutils
 from vdsm.virt import metadata
 from vdsm.virt import vmxml
 
@@ -271,7 +272,7 @@ def dev_elems_from_xml(vm, xml):
       `device_element` and `device_meta` are objects to be passed as arguments
       to device_class `from_xml_tree` method.
     """
-    dom = vmxml.parse_xml(xml)
+    dom = xmlutils.fromstring(xml)
     devices = vmxml.find_first(dom, 'devices')
     dev_elem = next(vmxml.children(devices))
     _dev_type, dev_class = identify_from_xml_elem(dev_elem)

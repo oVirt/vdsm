@@ -55,6 +55,7 @@ from vdsm.common import concurrent
 from vdsm.common import conv
 from vdsm.common import hooks
 from vdsm.common import supervdsm
+from vdsm.common import xmlutils
 from vdsm.common.compat import pickle
 from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.common.hostutils import host_in_shutdown
@@ -2197,7 +2198,7 @@ class Vm(object):
                     if getattr(dev, "custom", {}):
                         deviceXML = hooks.before_device_create(
                             deviceXML, self._custom, dev.custom)
-                        dev_xml = vmxml.parse_xml(deviceXML)
+                        dev_xml = xmlutils.fromstring(deviceXML)
 
                     dev._deviceXML = deviceXML
 
@@ -2233,7 +2234,7 @@ class Vm(object):
     def _buildDomainXML(self):
         if 'xml' in self.conf:
             # Do DOM-dependent xml transformations
-            dom = vmxml.parse_xml(self.conf['xml'])
+            dom = xmlutils.fromstring(self.conf['xml'])
 
             on_reboot = vmxml.find_first(dom, 'on_reboot', None)
             if on_reboot is not None:
@@ -2942,7 +2943,7 @@ class Vm(object):
         if 'xml' in params:
             xml = params['xml']
             nic = vmdevices.common.dev_from_xml(self, xml)
-            dom = vmxml.parse_xml(xml)
+            dom = xmlutils.fromstring(xml)
             dom_devices = vmxml.find_first(dom, 'devices')
         else:
             nicParams = params['nic']
@@ -2997,7 +2998,7 @@ class Vm(object):
                 self.log.exception("setPortMirroring for network %s failed",
                                    network)
                 if 'xml' in params:
-                    nic_element = vmxml.parse_xml(nicXml)
+                    nic_element = xmlutils.fromstring(nicXml)
                     vmxml.replace_first_child(dom_devices, nic_element)
                     hotunplug_params = {'xml': vmxml.format_xml(dom)}
                 else:
@@ -3605,7 +3606,7 @@ class Vm(object):
                 self.log.exception("getVmPolicy failed")
                 return None
 
-        metadata = vmxml.parse_xml(metadata_xml)
+        metadata = xmlutils.fromstring(metadata_xml)
         return vmxml.find_first(
             metadata,
             xmlconstants.METADATA_VM_TUNE_ELEMENT,

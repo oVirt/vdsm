@@ -23,6 +23,7 @@ from __future__ import division
 import os.path
 
 from vdsm.common import response
+from vdsm.common import xmlutils
 from vdsm import constants
 import vdsm
 from vdsm.network.api import DUMMY_BRIDGE
@@ -848,7 +849,7 @@ class TestHotplug(TestCaseBase):
         else:
             raise Exception("Hot plugged device not found")
         self.assertEqual(dev.network, DUMMY_BRIDGE)
-        dom = vmxml.parse_xml(hotplugged_xml[0])
+        dom = xmlutils.fromstring(hotplugged_xml[0])
         bridge = vmxml.find_attr(dom, 'source', 'bridge')
         self.assertEqual(bridge, DUMMY_BRIDGE)
 
@@ -1187,7 +1188,7 @@ class TestRestorePaths(TestCaseBase):
                     break
             else:
                 raise Exception('Tested drive not found', serial)
-        dom = vmxml.parse_xml(vm_xml)
+        dom = xmlutils.fromstring(vm_xml)
         random = vmxml.find_first(dom, 'backend')
         self.assertEqual(random.text, snapshot_params['device'])
         for serial, path in tested_drives:
