@@ -21,6 +21,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import copy
+import io
 import xml.etree.ElementTree as etree
 
 import six
@@ -34,6 +36,18 @@ def fromstring(data):
         # ElementTree prefers binary type
         parser.feed(data.encode('utf-8'))
     return parser.close()
+
+
+def tostring(element, pretty=False):
+    if pretty:
+        element = copy.deepcopy(element)
+        indent(element, 0)
+    # amended version of the implementation of tostring()
+    # found in python 3.6
+    stream = io.BytesIO()
+    etree.ElementTree(element).write(
+        stream, encoding='utf-8', xml_declaration=True)
+    return stream.getvalue().decode('utf-8')
 
 
 def indent(element, level=0, s="    "):

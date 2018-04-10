@@ -20,8 +20,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from vdsm.common import xmlutils
 from vdsm.virt import libvirtxml
-from vdsm.virt import vmxml
 from vdsm.virt.vmdevices import hostdevice, network, hwclass
 
 from testlib import VdsmTestCase as TestCaseBase, XMLTestCase
@@ -178,7 +178,7 @@ class HostdevCreationTests(XMLTestCase):
     def testCreateHostDevice(self, device_name):
         dev_spec = {'type': 'hostdev', 'device': device_name}
         device = hostdevice.HostDevice(self.log, **dev_spec)
-        self.assertXMLEqual(vmxml.format_xml(device.getXML()),
+        self.assertXMLEqual(xmlutils.tostring(device.getXML()),
                             hostdevlib.DEVICE_XML[device_name] % ('',))
 
     @permutations([
@@ -190,7 +190,7 @@ class HostdevCreationTests(XMLTestCase):
                     self._PCI_ADDRESS}
         device = hostdevice.HostDevice(self.log, **dev_spec)
         self.assertXMLEqual(
-            vmxml.format_xml(device.getXML()),
+            xmlutils.tostring(device.getXML()),
             hostdevlib.DEVICE_XML[device_name] %
             (self._PCI_ADDRESS_XML))
 
@@ -203,7 +203,7 @@ class HostdevCreationTests(XMLTestCase):
                     'bootOrder': '9'}
         device = network.Interface(self.log, **dev_spec)
         self.assertXMLEqual(
-            vmxml.format_xml(device.getXML()),
+            xmlutils.tostring(device.getXML()),
             hostdevlib.DEVICE_XML[hostdevlib.SRIOV_VF] % ('',))
 
     def testCreateSRIOVVFWithAddress(self):
@@ -216,7 +216,7 @@ class HostdevCreationTests(XMLTestCase):
                      'function': '0x0', 'type': 'pci'}}
         device = network.Interface(self.log, **dev_spec)
         self.assertXMLEqual(
-            vmxml.format_xml(device.getXML()),
+            xmlutils.tostring(device.getXML()),
             hostdevlib.DEVICE_XML[hostdevlib.SRIOV_VF] % (
                 self._PCI_ADDRESS_XML
             )
@@ -237,7 +237,7 @@ class HostdevCreationTests(XMLTestCase):
             self.log, **{'type': 'hostdev', 'device': device}) for
             device in devices]
         domxml.appendHostdevNumaTune(devices)
-        xml = vmxml.format_xml(domxml.dom)
+        xml = xmlutils.tostring(domxml.dom)
         self.assertXMLEqual(find_xml_element(xml, './numatune'), numatuneXML)
 
     def testNumaTuneXMLMultiNode(self):
@@ -250,6 +250,6 @@ class HostdevCreationTests(XMLTestCase):
             ]
         ]
         domxml.appendHostdevNumaTune(devices)
-        xml = vmxml.format_xml(domxml.dom)
+        xml = xmlutils.tostring(domxml.dom)
         self.assertRaises(AssertionError,
                           lambda: find_xml_element(xml, './numatune'))

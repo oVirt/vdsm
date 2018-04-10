@@ -2193,7 +2193,7 @@ class Vm(object):
                         self.log.info('Skipping device %s.', dev.device)
                         continue
 
-                    deviceXML = vmxml.format_xml(dev_xml)
+                    deviceXML = xmlutils.tostring(dev_xml)
 
                     if getattr(dev, "custom", {}):
                         deviceXML = hooks.before_device_create(
@@ -2255,7 +2255,7 @@ class Vm(object):
             domxml_preprocess.replace_device_xml_with_hooks_xml(
                 dom, self.id, self._custom['custom'])
 
-            return vmxml.format_xml(dom, pretty=True)
+            return xmlutils.tostring(dom, pretty=True)
 
         return self._make_domain_xml()
 
@@ -2912,7 +2912,7 @@ class Vm(object):
                     if not attrs:
                         self.log.warning(
                             'cannot update metadata for disk %s: '
-                            'missing attributes', vmxml.format_xml(element))
+                            'missing attributes', xmlutils.tostring(element))
                         continue
 
                     metadata.replace_device(domain_md, engine_md, attrs)
@@ -2948,7 +2948,7 @@ class Vm(object):
         else:
             nicParams = params['nic']
             nic = vmdevices.network.Interface(self.log, **nicParams)
-        nicXml = vmxml.format_xml(nic.getXML(), pretty=True)
+        nicXml = xmlutils.tostring(nic.getXML(), pretty=True)
         nicXml = hooks.before_nic_hotplug(
             nicXml, self._custom, params=nic.custom
         )
@@ -3000,7 +3000,7 @@ class Vm(object):
                 if 'xml' in params:
                     nic_element = xmlutils.fromstring(nicXml)
                     vmxml.replace_first_child(dom_devices, nic_element)
-                    hotunplug_params = {'xml': vmxml.format_xml(dom)}
+                    hotunplug_params = {'xml': xmlutils.tostring(dom)}
                 else:
                     hotunplug_params = {'nic': nicParams}
                 self.hotunplugNic(hotunplug_params,
@@ -3038,7 +3038,7 @@ class Vm(object):
         # We now have to add devices to the VM while ignoring placeholders.
         for dev_spec, dev_object in zip(dev_specs, dev_objects):
             try:
-                dev_xml = vmxml.format_xml(dev_object.getXML())
+                dev_xml = xmlutils.tostring(dev_object.getXML())
             except vmdevices.core.SkipDevice:
                 self.log.info('Skipping device %s.', dev_object.device)
                 continue
@@ -3078,7 +3078,7 @@ class Vm(object):
                     break
 
             if dev_object:
-                device_xml = vmxml.format_xml(dev_object.getXML())
+                device_xml = xmlutils.tostring(dev_object.getXML())
                 self.log.debug('Hotunplug hostdev xml: %s', device_xml)
             else:
                 self.log.error('Hotunplug hostdev failed (continuing) - '
@@ -3189,7 +3189,7 @@ class Vm(object):
             link = vnicXML.appendChildWithArgs('link')
         vmxml.set_attr(link, 'state', linkValue)
         vmdevices.network.update_bandwidth_xml(dev, vnicXML, specParams)
-        vnicStrXML = vmxml.format_xml(vnicXML, pretty=True)
+        vnicStrXML = xmlutils.tostring(vnicXML, pretty=True)
         try:
             try:
                 vnicStrXML = hooks.before_update_device(
@@ -3210,7 +3210,7 @@ class Vm(object):
             # Rollback link and network.
             self.log.warn('Rolling back link and net for: %s', dev.alias,
                           exc_info=True)
-            self._dom.updateDeviceFlags(vmxml.format_xml(vnicXML),
+            self._dom.updateDeviceFlags(xmlutils.tostring(vnicXML),
                                         libvirt.VIR_DOMAIN_AFFECT_LIVE)
             raise
         else:
@@ -3299,7 +3299,7 @@ class Vm(object):
                 for network in port_mirroring:
                     supervdsm.getProxy().unsetPortMirroring(network, nic.name)
 
-            nicXml = vmxml.format_xml(nic.getXML(), pretty=True)
+            nicXml = xmlutils.tostring(nic.getXML(), pretty=True)
             hooks.before_nic_hotunplug(nicXml, self._custom,
                                        params=nic.custom)
             # TODO: this is debug information. For 3.6.x we still need to
@@ -3371,7 +3371,7 @@ class Vm(object):
         memParams = params.get('memory', {})
         device = vmdevices.core.Memory(self.log, **memParams)
 
-        deviceXml = vmxml.format_xml(device.getXML())
+        deviceXml = xmlutils.tostring(device.getXML())
         deviceXml = hooks.before_memory_hotplug(deviceXml)
         device._deviceXML = deviceXml
         self.log.debug("Hotplug memory xml: %s", deviceXml)
@@ -3399,7 +3399,7 @@ class Vm(object):
     def hotunplugMemory(self, params):
         device = vmdevices.common.lookup_device_by_alias(
             self._devices, hwclass.MEMORY, params['memory']['alias'])
-        device_xml = vmxml.format_xml(device.getXML())
+        device_xml = xmlutils.tostring(device.getXML())
         self.log.info("Hotunplug memory xml: %s", device_xml)
 
         try:
@@ -3562,7 +3562,7 @@ class Vm(object):
         # Save modified metadata
 
         if metadata_modified:
-            metadata_xml = vmxml.format_xml(qos)
+            metadata_xml = xmlutils.tostring(qos)
 
             try:
                 self._dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
@@ -3731,7 +3731,7 @@ class Vm(object):
             found_device.iotune = io_tune
 
             # Make sure the cached XML representation is valid as well
-            xml = vmxml.format_xml(found_device.getXML())
+            xml = xmlutils.tostring(found_device.getXML())
             # TODO: this is debug information. For 3.6.x we still need to
             # see the XML even with 'info' as default level.
             self.log.info("New device XML for %s: %s",
@@ -3802,7 +3802,7 @@ class Vm(object):
         if drive.hasVolumeLeases:
             return response.error('noimpl')
 
-        driveXml = vmxml.format_xml(drive.getXML(), pretty=True)
+        driveXml = xmlutils.tostring(drive.getXML(), pretty=True)
         # TODO: this is debug information. For 3.6.x we still need to
         # see the XML even with 'info' as default level.
         self.log.info("Hotplug disk xml: %s" % (driveXml))
@@ -3854,7 +3854,7 @@ class Vm(object):
         if drive.hasVolumeLeases:
             return response.error('noimpl')
 
-        driveXml = vmxml.format_xml(drive.getXML(), pretty=True)
+        driveXml = xmlutils.tostring(drive.getXML(), pretty=True)
         # TODO: this is debug information. For 3.6.x we still need to
         # see the XML even with 'info' as default level.
         self.log.info("Hotunplug disk xml: %s", driveXml)
@@ -3896,7 +3896,7 @@ class Vm(object):
         vmdevices.lease.prepare(self.cif.irs, [params])
         lease = vmdevices.lease.Device(self.log, **params)
 
-        leaseXml = vmxml.format_xml(lease.getXML(), pretty=True)
+        leaseXml = xmlutils.tostring(lease.getXML(), pretty=True)
         self.log.info("Hotplug lease xml: %s", leaseXml)
 
         try:
@@ -3923,7 +3923,7 @@ class Vm(object):
             raise exception.HotunplugLeaseFailed(reason="No such lease",
                                                  lease=params)
 
-        leaseXml = vmxml.format_xml(lease.getXML(), pretty=True)
+        leaseXml = xmlutils.tostring(lease.getXML(), pretty=True)
         self.log.info("Hotunplug lease xml: %s", leaseXml)
 
         try:
@@ -4478,7 +4478,7 @@ class Vm(object):
         # When creating memory snapshot libvirt will pause the vm
         should_freeze = not (memoryParams or frozen)
 
-        snapxml = vmxml.format_xml(snap)
+        snapxml = xmlutils.tostring(snap)
         # TODO: this is debug information. For 3.6.x we still need to
         # see the XML even with 'info' as default level.
         self.log.info("%s", snapxml)
@@ -4716,7 +4716,7 @@ class Vm(object):
         return {'status': doneCode}
 
     def _startDriveReplication(self, drive):
-        destxml = vmxml.format_xml(drive.getReplicaXML())
+        destxml = xmlutils.tostring(drive.getReplicaXML())
         self.log.debug("Replicating drive %s to %s", drive.name, destxml)
 
         flags = (libvirt.VIR_DOMAIN_BLOCK_COPY_SHALLOW |
@@ -4943,7 +4943,7 @@ class Vm(object):
             target['bus'] = iface
 
         diskelem.appendChildWithArgs('target', **target)
-        diskelem_xml = vmxml.format_xml(diskelem)
+        diskelem_xml = xmlutils.tostring(diskelem)
 
         changed = False
         if not force:
@@ -4993,7 +4993,7 @@ class Vm(object):
             vmxml.set_attr(graphics, 'connected', connAct)
         hooks.before_vm_set_ticket(self._domain.xml, self._custom, params)
         try:
-            self._dom.updateDeviceFlags(vmxml.format_xml(graphics), 0)
+            self._dom.updateDeviceFlags(xmlutils.tostring(graphics), 0)
             self._consoleDisconnectAction = disconnectAction or \
                 ConsoleDisconnectAction.LOCK_SCREEN
         except virdomain.TimeoutError as tmo:
@@ -5015,7 +5015,7 @@ class Vm(object):
         vmxml.set_attr(graphics, 'passwdValidTo',
                        time.strftime('%Y-%m-%dT%H:%M:%S', validto))
         vmxml.set_attr(graphics, 'connected', 'keep')
-        self._dom.updateDeviceFlags(vmxml.format_xml(graphics), 0)
+        self._dom.updateDeviceFlags(xmlutils.tostring(graphics), 0)
 
     def _findGraphicsDeviceXMLByType(self, deviceType):
         """
@@ -5553,13 +5553,13 @@ class Vm(object):
         for deviceXML in vmxml.children(DomainDescriptor(xml).devices):
             alias = vmdevices.core.find_device_alias(deviceXML)
             if alias in aliasToDevice:
-                aliasToDevice[alias]._deviceXML = vmxml.format_xml(deviceXML)
+                aliasToDevice[alias]._deviceXML = xmlutils.tostring(deviceXML)
             elif vmxml.tag(deviceXML) == hwclass.GRAPHICS:
                 # graphics device do not have aliases, must match by type
                 graphicsType = vmxml.attr(deviceXML, 'type')
                 for devObj in self._devices[hwclass.GRAPHICS]:
                     if devObj.device == graphicsType:
-                        devObj._deviceXML = vmxml.format_xml(deviceXML)
+                        devObj._deviceXML = xmlutils.tostring(deviceXML)
 
     def waitForMigrationDestinationPrepare(self):
         """Wait until paths are prepared for migration destination"""

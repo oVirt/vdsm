@@ -27,7 +27,6 @@ import os.path
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt import metadata
 from vdsm.virt import vmdevices
-from vdsm.virt import vmxml
 from vdsm import constants
 from vdsm.common import hostdev
 from vdsm.common import xmlutils
@@ -72,7 +71,7 @@ class DeviceToXMLTests(XMLTestCase):
             'vmid': self.conf['vmId'],
         }
         console = vmdevices.core.Console(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(console.getXML()), consoleXML)
+        self.assertXMLEqual(xmlutils.tostring(console.getXML()), consoleXML)
 
     def test_console_serial(self):
         consoleXML = """
@@ -85,7 +84,7 @@ class DeviceToXMLTests(XMLTestCase):
             'vmid': self.conf['vmId'],
         }
         console = vmdevices.core.Console(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(console.getXML()), consoleXML)
+        self.assertXMLEqual(xmlutils.tostring(console.getXML()), consoleXML)
 
     def test_console_default(self):
         consoleXML = """
@@ -97,7 +96,7 @@ class DeviceToXMLTests(XMLTestCase):
             'vmid': self.conf['vmId'],
         }
         console = vmdevices.core.Console(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(console.getXML()), consoleXML)
+        self.assertXMLEqual(xmlutils.tostring(console.getXML()), consoleXML)
 
     def test_serial_device(self):
         serialXML = """
@@ -109,7 +108,7 @@ class DeviceToXMLTests(XMLTestCase):
             'vmid': self.conf['vmId'],
         }
         console = vmdevices.core.Console(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(console.getSerialDeviceXML()),
+        self.assertXMLEqual(xmlutils.tostring(console.getSerialDeviceXML()),
                             serialXML)
 
     def test_unix_socket_serial_device(self):
@@ -127,7 +126,7 @@ class DeviceToXMLTests(XMLTestCase):
             }
         }
         console = vmdevices.core.Console(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(console.getSerialDeviceXML()),
+        self.assertXMLEqual(xmlutils.tostring(console.getSerialDeviceXML()),
                             serialXML)
 
     def test_smartcard(self):
@@ -135,7 +134,7 @@ class DeviceToXMLTests(XMLTestCase):
         dev = {'device': 'smartcard',
                'specParams': {'mode': 'passthrough', 'type': 'spicevmc'}}
         smartcard = vmdevices.core.Smartcard(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(smartcard.getXML()),
+        self.assertXMLEqual(xmlutils.tostring(smartcard.getXML()),
                             smartcardXML)
 
     def test_tpm(self):
@@ -150,7 +149,7 @@ class DeviceToXMLTests(XMLTestCase):
                'specParams': {'mode': 'passthrough',
                               'path': '/dev/tpm0', 'model': 'tpm-tis'}}
         tpm = vmdevices.core.Tpm(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(tpm.getXML()), tpmXML)
+        self.assertXMLEqual(xmlutils.tostring(tpm.getXML()), tpmXML)
 
     @permutations([[None], [{}], [{'enableSocket': False}]])
     def test_console_pty(self, specParams):
@@ -162,7 +161,7 @@ class DeviceToXMLTests(XMLTestCase):
         if specParams is not None:
             dev['specParams'] = specParams
         console = vmdevices.core.Console(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(console.getXML()), consoleXML)
+        self.assertXMLEqual(xmlutils.tostring(console.getXML()), consoleXML)
 
     def test_console_socket(self):
         consoleXML = """
@@ -174,14 +173,14 @@ class DeviceToXMLTests(XMLTestCase):
         dev = {'device': 'console', 'specParams': {'enableSocket': True}}
         dev['vmid'] = self.conf['vmId']
         console = vmdevices.core.Console(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(console.getXML()), consoleXML)
+        self.assertXMLEqual(xmlutils.tostring(console.getXML()), consoleXML)
 
     def test_balloon(self):
         balloonXML = '<memballoon model="virtio"/>'
         dev = {'device': 'memballoon', 'type': 'balloon',
                'specParams': {'model': 'virtio'}}
         balloon = vmdevices.core.Balloon(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(balloon.getXML()), balloonXML)
+        self.assertXMLEqual(xmlutils.tostring(balloon.getXML()), balloonXML)
 
     def test_rng(self):
         rngXML = """
@@ -194,20 +193,20 @@ class DeviceToXMLTests(XMLTestCase):
                {'period': '2000', 'bytes': '1234', 'source': 'random'}}
 
         rng = vmdevices.core.Rng(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(rng.getXML()), rngXML)
+        self.assertXMLEqual(xmlutils.tostring(rng.getXML()), rngXML)
 
     def test_watchdog(self):
         watchdogXML = '<watchdog action="none" model="i6300esb"/>'
         dev = {'device': 'watchdog', 'type': 'watchdog',
                'specParams': {'model': 'i6300esb', 'action': 'none'}}
         watchdog = vmdevices.core.Watchdog(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(watchdog.getXML()), watchdogXML)
+        self.assertXMLEqual(xmlutils.tostring(watchdog.getXML()), watchdogXML)
 
     def test_sound(self):
         soundXML = '<sound model="ac97"/>'
         dev = {'device': 'ac97'}
         sound = vmdevices.core.Sound(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(sound.getXML()), soundXML)
+        self.assertXMLEqual(xmlutils.tostring(sound.getXML()), soundXML)
 
     @permutations([
         [{'device': 'vga',
@@ -229,7 +228,7 @@ class DeviceToXMLTests(XMLTestCase):
     ])
     def test_video(self, dev_spec, video_xml):
         video = vmdevices.core.Video(self.log, **dev_spec)
-        self.assertXMLEqual(vmxml.format_xml(video.getXML()), video_xml)
+        self.assertXMLEqual(xmlutils.tostring(video.getXML()), video_xml)
 
     def test_controller(self):
         devConfs = [
@@ -288,7 +287,7 @@ class DeviceToXMLTests(XMLTestCase):
 
         for devConf, xml in zip(devConfs, expectedXMLs):
             device = vmdevices.core.Controller(self.log, **devConf)
-            self.assertXMLEqual(vmxml.format_xml(device.getXML()),
+            self.assertXMLEqual(xmlutils.tostring(device.getXML()),
                                 xml % self.PCI_ADDR)
 
     def test_redir(self):
@@ -300,7 +299,7 @@ class DeviceToXMLTests(XMLTestCase):
         dev = {'device': 'spicevmc', 'address': self.PCI_ADDR_DICT}
 
         redir = vmdevices.core.Redir(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(redir.getXML()), redirXML)
+        self.assertXMLEqual(xmlutils.tostring(redir.getXML()), redirXML)
 
     def test_memory_device(self):
         memoryXML = """<memory model='dimm'>
@@ -313,7 +312,7 @@ class DeviceToXMLTests(XMLTestCase):
         params = {'device': 'memory', 'type': 'memory',
                   'size': 1024, 'node': 0}
         memory = vmdevices.core.Memory(self.log, **params)
-        self.assertXMLEqual(vmxml.format_xml(memory.getXML()), memoryXML)
+        self.assertXMLEqual(xmlutils.tostring(memory.getXML()), memoryXML)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: FakeProxy())
@@ -346,7 +345,7 @@ class DeviceToXMLTests(XMLTestCase):
                'vm_custom': {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'},
                }
         iface = vmdevices.network.Interface(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(iface.getXML()), interfaceXML)
+        self.assertXMLEqual(xmlutils.tostring(iface.getXML()), interfaceXML)
 
     @MonkeyPatch(vmdevices.network.supervdsm,
                  'getProxy', lambda: FakeProxy())
@@ -380,7 +379,7 @@ class DeviceToXMLTests(XMLTestCase):
         }
 
         iface = vmdevices.network.Interface(self.log, **dev)
-        self.assertXMLEqual(vmxml.format_xml(iface.getXML()), interfaceXML)
+        self.assertXMLEqual(xmlutils.tostring(iface.getXML()), interfaceXML)
 
     @MonkeyPatch(vmdevices.network.net_api, 'net2vlan', lambda x: 101)
     def test_interface_on_ovs_with_vlan(self):
@@ -424,7 +423,8 @@ class DeviceToXMLTests(XMLTestCase):
             (vmdevices.network.supervdsm, 'getProxy', lambda: proxy)
         ]):
             iface = vmdevices.network.Interface(self.log, **dev)
-            self.assertXMLEqual(vmxml.format_xml(iface.getXML()), interfaceXML)
+            self.assertXMLEqual(xmlutils.tostring(iface.getXML()),
+                                interfaceXML)
 
     @permutations([
         # base_spec_params:
@@ -467,7 +467,7 @@ class DeviceToXMLTests(XMLTestCase):
             dev = vmdevices.network.Interface(self.log, **conf)
             vnic_xml = dev.getXML()
             vmdevices.network.update_bandwidth_xml(dev, vnic_xml, specParams)
-            self.assertXMLEqual(vmxml.format_xml(vnic_xml), XML)
+            self.assertXMLEqual(xmlutils.tostring(vnic_xml), XML)
 
 
 @expandPermutations
@@ -1449,7 +1449,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
     def _check_device_xml(self, dev, dev_xml, expected_xml=None):
         dev.setup()
         try:
-            rebuilt_xml = vmxml.format_xml(dev.getXML(), pretty=True)
+            rebuilt_xml = xmlutils.tostring(dev.getXML(), pretty=True)
             # make troubleshooting easier
             print(rebuilt_xml)
             result_xml = dev_xml if expected_xml is None else expected_xml

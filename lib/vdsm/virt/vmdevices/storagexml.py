@@ -54,10 +54,10 @@ def parse(dev, meta):
     """Parse the XML configuration of a storage device and returns
     the corresponding params, such as
 
-    vmxml.format_xml(dev) is equivalent to
+    xmlutils.tostring(dev) is equivalent to
 
     params = parse(dev, meta)
-    vmxml.format_xml(vmdevices.storage.Drive(log, **params).getXML())
+    xmlutils.tostring(vmdevices.storage.Drive(log, **params).getXML())
 
     Args:
         dev (ElementTree.Element): Root of the XML configuration snippet.

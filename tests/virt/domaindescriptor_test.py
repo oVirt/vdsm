@@ -21,9 +21,9 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from vdsm.common import xmlutils
 from vdsm.virt.domain_descriptor import (DomainDescriptor,
                                          MutableDomainDescriptor)
-from vdsm.virt import vmxml
 from testlib import VdsmTestCase, XMLTestCase, permutations, expandPermutations
 
 
@@ -228,7 +228,7 @@ class DomainDescriptorTests(XMLTestCase):
         desc2 = DomainDescriptor(desc.xml)
         self.assertXMLEqual(
             expected_metadata,
-            vmxml.format_xml(desc2.metadata, pretty=True)
+            xmlutils.tostring(desc2.metadata, pretty=True)
         )
 
     @permutations([

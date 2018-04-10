@@ -129,7 +129,7 @@ class TestVmDevices(XMLTestCase):
             graphics = testvm._devices[hwclass.GRAPHICS][0]
             element = graphics.createXmlElem('graphics', 'test',
                                              attributes=('device', 'foo',))
-            result = vmxml.format_xml(element)
+            result = xmlutils.tostring(element)
             self.assertXMLEqual(result, expected_xml)
 
     def testGraphicsDevice(self):

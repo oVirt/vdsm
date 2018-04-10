@@ -564,7 +564,7 @@ class DescriptorStorageMetadataTests(XMLTestCase):
         dev = vmxml.find_first(root, 'device')
         vmxml.append_child(dev, etree_child=xmlutils.fromstring(xml_snippet))
         data = _TestData(
-            copy.deepcopy(_DISK_DATA.conf), vmxml.format_xml(root))
+            copy.deepcopy(_DISK_DATA.conf), xmlutils.tostring(root))
         self._check_drive_from_metadata_xml(data)
 
     def test_disk_ignore_volumeinfo_to_metadata_xml(self):

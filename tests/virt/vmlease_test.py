@@ -23,8 +23,8 @@ from __future__ import division
 
 from vdsm.common import exception
 from vdsm.common import response
+from vdsm.common import xmlutils
 from vdsm.virt import vmdevices
-from vdsm.virt import vmxml
 
 from testlib import VdsmTestCase
 from testlib import XMLTestCase
@@ -56,7 +56,7 @@ class TestDevice(XMLTestCase):
         spec = dict(sd_id="sd_id", lease_id="lease_id", path="/path",
                     offset=1048576)
         lease = vmdevices.lease.Device(self.log, **spec)
-        lease_xml = vmxml.format_xml(lease.getXML())
+        lease_xml = xmlutils.tostring(lease.getXML())
         xml = """
         <lease>
             <key>lease_id</key>

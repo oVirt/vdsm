@@ -37,8 +37,8 @@ from testValidation import xfail
 
 from vdsm import constants
 from vdsm.common import exception
+from vdsm.common import xmlutils
 from vdsm import utils
-from vdsm.virt import vmxml
 from vdsm.virt.vmdevices import storage
 from vdsm.virt.vmdevices.storage import Drive, DISK_TYPE, DRIVE_SHARED_TYPE
 from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD
@@ -323,7 +323,7 @@ class DriveXMLTests(XMLTestCase):
 
     def check(self, device_conf, xml):
         drive = Drive(self.log, **device_conf)
-        self.assertXMLEqual(vmxml.format_xml(drive.getXML()), xml)
+        self.assertXMLEqual(xmlutils.tostring(drive.getXML()), xml)
 
 
 class DriveReplicaXML(XMLTestCase):
@@ -399,7 +399,7 @@ class DriveReplicaXML(XMLTestCase):
 
     def check(self, device_conf, xml, diskType=DISK_TYPE.FILE):
         drive = Drive(self.log, diskType=diskType, **device_conf)
-        self.assertXMLEqual(vmxml.format_xml(drive.getReplicaXML()), xml)
+        self.assertXMLEqual(xmlutils.tostring(drive.getReplicaXML()), xml)
 
 
 @expandPermutations
@@ -758,7 +758,7 @@ class TestDriveLeases(XMLTestCase):
             <target offset="0" path="path" />
         </lease>
         """
-        self.assertXMLEqual(vmxml.format_xml(leases[0]), xml)
+        self.assertXMLEqual(xmlutils.tostring(leases[0]), xml)
 
 
 @expandPermutations
@@ -1116,7 +1116,7 @@ class TestDiskSnapshotXml(XMLTestCase):
             """
         snap_info = {'path': '/image', 'device': 'disk'}
         actual = drive.get_snapshot_xml(snap_info)
-        self.assertXMLEqual(vmxml.format_xml(actual), expected)
+        self.assertXMLEqual(xmlutils.tostring(actual), expected)
 
     def test_block(self):
         drive = Drive(self.log, diskType=DISK_TYPE.BLOCK, **self.conf)
@@ -1128,7 +1128,7 @@ class TestDiskSnapshotXml(XMLTestCase):
             """
         snap_info = {'path': '/dev/dm-1', 'device': 'disk'}
         actual = drive.get_snapshot_xml(snap_info)
-        self.assertXMLEqual(vmxml.format_xml(actual), expected)
+        self.assertXMLEqual(xmlutils.tostring(actual), expected)
 
     def test_network(self):
         drive = Drive(self.log, diskType=DISK_TYPE.NETWORK,
@@ -1165,7 +1165,7 @@ class TestDiskSnapshotXml(XMLTestCase):
             ]
         }
         actual = drive.get_snapshot_xml(snap_info)
-        self.assertXMLEqual(vmxml.format_xml(actual), expected)
+        self.assertXMLEqual(xmlutils.tostring(actual), expected)
 
     def test_incorrect_disk_type(self):
         drive = Drive(self.log, diskType=DISK_TYPE.FILE, **self.conf)

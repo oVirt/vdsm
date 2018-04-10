@@ -44,7 +44,7 @@ class MutableDomainDescriptor(object):
 
     @property
     def xml(self):
-        return vmxml.format_xml(self._dom, pretty=True)
+        return xmlutils.tostring(self._dom, pretty=True)
 
     @property
     def id(self):
@@ -87,7 +87,7 @@ class MutableDomainDescriptor(object):
     @property
     def devices_hash(self):
         devices = self.devices
-        return hash(vmxml.format_xml(devices) if devices is not None else '')
+        return hash(xmlutils.tostring(devices) if devices is not None else '')
 
     def all_channels(self):
         if self.devices is not None:

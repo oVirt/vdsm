@@ -204,7 +204,7 @@ class Metadata(object):
         md = Metadata()
         md.dump('test', bar=42) -> elem
 
-        vmxml.format_xml(elem) ->
+        xmlutils.tostring(elem) ->
 
         <test>
           <bar type="int">42</bar>
@@ -266,7 +266,7 @@ class Metadata(object):
         md = Metadata()
         md.dump_sequence('test', 'item', (bar, baz, 42)) -> elem
 
-        vmxml.format_xml(elem) ->
+        xmlutils.tostring(elem) ->
 
         <test>
           <item>bar</item>
@@ -320,7 +320,7 @@ def create(name, namespace, namespace_uri, **kwargs):
     metadata.create('vm', 'ovirt-vm', 'http://ovirt.org/vm/1.0',
                     version=4.2) -> elem
 
-    vmxml.format_xml(elem) ->
+    xmlutils.tostring(elem) ->
 
     <ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
       <ovirt-vm:version type="float">4.2</ovirt-vm:version>
@@ -683,7 +683,7 @@ class Descriptor(object):
             uuid_text = '?' if md_uuid is None else md_uuid.text
             self._log.debug(
                 'parsing metadata for %s: %s',
-                uuid_text, vmxml.format_xml(md_elem, pretty=True))
+                uuid_text, xmlutils.tostring(md_elem, pretty=True))
             self._load(md_elem, self._namespace, self._namespace_uri)
 
     def _load(self, md_elem, namespace=None, namespace_uri=None):
@@ -719,7 +719,7 @@ class Descriptor(object):
     def _build_xml(self, namespace=None, namespace_uri=None):
         with self._lock:
             md_elem = self._build_tree(namespace, namespace_uri)
-            return vmxml.format_xml(md_elem, pretty=True)
+            return xmlutils.tostring(md_elem, pretty=True)
 
     def _find_device(self, kwargs):
         devices = list(self._matching_devices(kwargs))

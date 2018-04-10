@@ -32,7 +32,6 @@ from vdsm.virt.vmdevices import network
 from vdsm.virt.vmdevices import storage
 from vdsm.virt.vmdevices import storagexml
 from vdsm.virt import metadata
-from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
 
 import libvirt
@@ -132,7 +131,7 @@ class MetadataTests(XMLTestCase):
             'ovirt-vm', 'http://ovirt.org/vm/1.0'
         )
         self.assertXMLEqual(
-            vmxml.format_xml(metadata_obj.dump('vm', version=4.2)),
+            xmlutils.tostring(metadata_obj.dump('vm', version=4.2)),
             expected_xml
         )
 
@@ -216,7 +215,7 @@ class MetadataTests(XMLTestCase):
             'ovirt-vm', 'http://ovirt.org/vm/1.0'
         )
         data = metadata_src.load(xmlutils.fromstring(test_xml))
-        out_xml = vmxml.format_xml(metadata_dst.dump('vm', **data))
+        out_xml = xmlutils.tostring(metadata_dst.dump('vm', **data))
         self.assertXMLEqual(out_xml, expected_xml)
 
     def test_dump_all(self):
@@ -231,7 +230,7 @@ class MetadataTests(XMLTestCase):
             'ovirt-vm', 'http://ovirt.org/vm/1.0'
         )
         self.assertXMLEqual(
-            vmxml.format_xml(
+            xmlutils.tostring(
                 metadata_obj.dump_sequence(
                     'sequence', 'item', ('foo', 'bar', True, 42, 0.25,)
                 )

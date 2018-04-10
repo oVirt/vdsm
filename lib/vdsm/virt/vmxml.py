@@ -19,12 +19,9 @@
 #
 from __future__ import absolute_import
 
-import copy
-import io
 import logging
 import xml.etree.ElementTree as etree
 
-from vdsm.common import xmlutils
 from vdsm.virt import xmlconstants
 
 
@@ -36,28 +33,6 @@ class NotFound(Exception):
     Raised when vmxml helpers can't find some requested entity.
     """
     pass
-
-
-def format_xml(element, pretty=False):
-    """
-    Export given DOM element to XML string.
-
-    :param element: DOM element to export
-    :type element: DOM element
-    :param pretty: whether to make the output more human readable
-    :type pretty: boolean
-    :returns: XML corresponding to `element` content
-    :rtype: string
-    """
-    if pretty:
-        element = copy.deepcopy(element)
-        xmlutils.indent(element, 0)
-    # amended version of the implementation of tostring()
-    # found in python 3.6
-    stream = io.BytesIO()
-    etree.ElementTree(element).write(
-        stream, encoding='utf-8', xml_declaration=True)
-    return stream.getvalue().decode('utf-8')
 
 
 def find_all(element, tag_):

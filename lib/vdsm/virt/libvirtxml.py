@@ -519,7 +519,7 @@ class Domain(object):
         self.dom.appendChild(memorybacking)
 
     def toxml(self):
-        return vmxml.format_xml(self.dom, pretty=True)
+        return xmlutils.tostring(self.dom, pretty=True)
 
     def _getSmp(self):
         return self.conf.get('smp', '1')

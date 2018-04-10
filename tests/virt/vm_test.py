@@ -60,7 +60,6 @@ from vdsm.virt import vmdevices
 from vdsm.virt import vmexitreason
 from vdsm.virt import vmstats
 from vdsm.virt import vmstatus
-from vdsm.virt import vmxml
 from vdsm.virt import xmlconstants
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.vm import HotunplugTimeout
@@ -627,14 +626,14 @@ class TestVm(XMLTestCase):
     def testGetVmPolicySucceded(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain()
-            self.assertXMLEqual(vmxml.format_xml(testvm._getVmPolicy()),
+            self.assertXMLEqual(xmlutils.tostring(testvm._getVmPolicy()),
                                 '<qos/>')
 
     def testGetVmPolicyEmptyOnNoMetadata(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(
                 virtError=libvirt.VIR_ERR_NO_DOMAIN_METADATA)
-            self.assertXMLEqual(vmxml.format_xml(testvm._getVmPolicy()),
+            self.assertXMLEqual(xmlutils.tostring(testvm._getVmPolicy()),
                                 '<qos/>')
 
     def testGetVmPolicyFailOnNoDomain(self):

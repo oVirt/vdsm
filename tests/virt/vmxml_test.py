@@ -111,13 +111,13 @@ class TestVmXmlHelpers(XMLTestCase):
         self._dom = xmlutils.fromstring(self._XML)
 
     def test_import_export(self):
-        xml = vmxml.format_xml(self._dom)
+        xml = xmlutils.tostring(self._dom)
         self.assertXMLEqual(xml, self._XML)
 
     def test_pretty_format_formatting(self):
         xml = re.sub(' *\n *', '', self._XML)
         dom = xmlutils.fromstring(xml)
-        pretty = vmxml.format_xml(dom, pretty=True)
+        pretty = xmlutils.tostring(dom, pretty=True)
         self.assertEqual(pretty, '''<?xml version='1.0' encoding='utf-8'?>
 <topelement>
     <hello lang="english">hello</hello>
@@ -135,13 +135,13 @@ class TestVmXmlHelpers(XMLTestCase):
 ''')
 
     def test_pretty_format_safety(self):
-        # Check that dom is not modified in format_xml; we check that by
+        # Check that dom is not modified in tostring; we check that by
         # comparing the exported forms of `dom' created before and after
-        # format_xml call.
+        # tostring call.
         xml = re.sub(' *\n *', '', self._XML)
         dom = xmlutils.fromstring(xml)
         exported_1 = etree.tostring(dom)
-        vmxml.format_xml(dom, pretty=True)
+        xmlutils.tostring(dom, pretty=True)
         exported_2 = etree.tostring(dom)
         self.assertEqual(exported_1, exported_2)
 
@@ -158,7 +158,7 @@ from vdsm.virt import vmxml
 xml = re.sub(' *\\n *', '', '''%s''')
 dom = xmlutils.fromstring(xml)
 def run():
-    vmxml.format_xml(dom, pretty=%%s)""" % (xml,)
+    xmlutils.tostring(dom, pretty=%%s)""" % (xml,)
         repetitions = 100
         elapsed = timeit.timeit('run()', setup=(setup % ('False',)),
                                 number=repetitions)
@@ -264,7 +264,8 @@ def run():
         new_child = xmlutils.fromstring(new_element)
         container = vmxml.find_first(self._dom, 'container')
         vmxml.replace_first_child(container, new_child)
-        self.assertXMLEqual(vmxml.format_xml(self._dom, pretty=True), expected)
+        self.assertXMLEqual(xmlutils.tostring(self._dom, pretty=True),
+                            expected)
 
     def test_namespaces(self):
         expected_xml = '''
@@ -280,7 +281,7 @@ def run():
         qos = vmxml.Element('qos', namespace='ovirt-tune',
                             namespace_uri='http://ovirt.org/vm/tune/1.0')
         metadata.appendChild(qos)
-        self.assertXMLEqual(vmxml.format_xml(domain), expected_xml)
+        self.assertXMLEqual(xmlutils.tostring(domain), expected_xml)
 
     @brokentest('find_first returns the innermost nested element')
     def test_find_first_nested(self):
@@ -460,4 +461,4 @@ class StrippedDomain(libvirtxml.Domain):
         self.dom = vmxml.Element('domain', type='kvm')
 
     def toxml(self):
-        return vmxml.format_xml(self.dom)
+        return xmlutils.tostring(self.dom)

@@ -51,7 +51,7 @@ class TestReplacePlaceholders(XMLTestCase):
             domxml_preprocess.replace_placeholders(
                 dom, cpuarch.X86_64, serial='test-serial')
         self.assertXMLEqual(
-            vmxml.format_xml(dom, pretty=True),
+            xmlutils.tostring(dom, pretty=True),
             read_data('sysinfo_snippet_filled.xml')
         )
 
@@ -65,7 +65,7 @@ class TestReplacePlaceholders(XMLTestCase):
             domxml_preprocess.replace_placeholders(
                 dom, cpuarch.X86_64, serial='test-serial')
         self.assertXMLEqual(
-            vmxml.format_xml(dom, pretty=True),
+            xmlutils.tostring(dom, pretty=True),
             xml_str
         )
 
@@ -96,7 +96,7 @@ class TestReplaceDiskXML(XMLTestCase):
         dom, disk_devs = self._make_env()
         domxml_preprocess.replace_disks_xml(dom, disk_devs)
         self.assertXMLEqual(
-            vmxml.format_xml(dom, pretty=True),
+            xmlutils.tostring(dom, pretty=True),
             read_data('domain_disk_block.xml')
         )
 
@@ -123,7 +123,7 @@ class TestReplaceDiskXML(XMLTestCase):
             FakeVM(self.log), dom, disk_devs)
         cdrom_elem = dom.find('./devices/disk[@device="cdrom"]')
         self.assertXMLEqual(
-            vmxml.format_xml(cdrom_elem, pretty=True),
+            xmlutils.tostring(cdrom_elem, pretty=True),
             cdrom_xml.format(file_src="file='' ")
         )
 
@@ -296,7 +296,7 @@ class TestReplaceLeaseXML(XMLTestCase):
         domxml_preprocess.update_leases_xml_from_disk_objs(
             self.vm, self.dom, disk_devs)
 
-        xml_str = vmxml.format_xml(self.dom)
+        xml_str = xmlutils.tostring(self.dom)
         self._check_leases(xml_str, [self.driveVolInfo])
 
     def test_drive_lease_without_volume_chain(self):
@@ -309,7 +309,7 @@ class TestReplaceLeaseXML(XMLTestCase):
         domxml_preprocess.update_leases_xml_from_disk_objs(
             self.vm, self.dom, self.disk_devs)
 
-        xml_str = vmxml.format_xml(self.dom)
+        xml_str = xmlutils.tostring(self.dom)
         self._check_leases(xml_str, [self.vmVolInfo])
 
     def test_drive_lease_chain_not_matches(self):
@@ -325,7 +325,7 @@ class TestReplaceLeaseXML(XMLTestCase):
         domxml_preprocess.update_leases_xml_from_disk_objs(
             self.vm, self.dom, disk_devs)
 
-        xml_str = vmxml.format_xml(self.dom)
+        xml_str = xmlutils.tostring(self.dom)
         self._check_leases(xml_str, [self.vmVolInfo])
 
     def _check_leases(self, xml_str, vol_infos):
@@ -375,7 +375,7 @@ def extract_device_snippet(device_type, xml_str=None, dom=None):
     devs = vmxml.Element('devices')
     for dev in dom.findall('./devices/%s' % device_type):
         vmxml.append_child(devs, etree_child=dev)
-    return vmxml.format_xml(devs, pretty=True)
+    return xmlutils.tostring(devs, pretty=True)
 
 
 class FakeVM(object):

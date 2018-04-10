@@ -280,7 +280,7 @@ def dev_elems_from_xml(vm, xml):
     if meta is None:
         md_desc = metadata.Descriptor()
     else:
-        md_desc = metadata.Descriptor.from_xml(vmxml.format_xml(meta))
+        md_desc = metadata.Descriptor.from_xml(xmlutils.tostring(meta))
     dev_meta = _get_metadata_from_elem_xml(vm.id, md_desc, dev_class, dev_elem)
     return dev_class, dev_elem, dev_meta
 

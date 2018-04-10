@@ -57,7 +57,6 @@ from vdsm.common import cache
 from vdsm.common import osutils
 from vdsm.common import xmlutils
 import vdsm.common.time
-from vdsm.virt import vmxml
 
 from monkeypatch import Patch
 from testValidation import (
@@ -319,7 +318,7 @@ class XMLTestCase(VdsmTestCase):
                          (actualXML, expectedXML))
 
     def assert_dom_xml_equal(self, dom, expected_xml):
-        xml = vmxml.format_xml(dom)
+        xml = xmlutils.tostring(dom)
         self.assertXMLEqual(xml, expected_xml)
 
 

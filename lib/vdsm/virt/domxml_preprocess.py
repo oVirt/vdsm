@@ -136,7 +136,7 @@ def update_leases_xml_from_disk_objs(vm, dom, disk_devices):
         params = vmdevices.lease.parse_xml(dev_elem, {})
         if not params:
             vm.log.warning('could not parse lease: %s',
-                           vmxml.format_xml(dev_elem))
+                           xmlutils.tostring(dev_elem))
             continue
 
         info = vmdevices.lease.find_drive_lease_info(
@@ -184,7 +184,7 @@ def update_disks_xml_from_objs(vm, dom, disk_devices):
         attrs = vmdevices.storage.Drive.get_identifying_attrs(dev_elem)
         if not attrs:
             vm.log.warning('could not identify drive: %s',
-                           vmxml.format_xml(dev_elem))
+                           xmlutils.tostring(dev_elem))
             continue
 
         try:
@@ -236,7 +236,7 @@ def replace_device_xml_with_hooks_xml(dom, vm_id, vm_custom, md_desc=None):
             continue
 
         hook_xml = hooks.before_device_create(
-            vmxml.format_xml(dev_elem, pretty=True),
+            xmlutils.tostring(dev_elem, pretty=True),
             vm_custom,
             dev_custom)
 
