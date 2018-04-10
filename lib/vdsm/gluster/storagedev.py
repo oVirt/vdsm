@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+from __future__ import division
 
 import errno
 import logging
@@ -236,7 +237,7 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         alignment = raidParams['stripeSize'] * count
         chunkSize = alignment
     elif raidType == '10':
-        count = raidParams['pdCount'] / 2
+        count = raidParams['pdCount'] // 2
         alignment = raidParams['stripeSize'] * count
         chunkSize = DEFAULT_CHUNK_SIZE_KB
     else:  # Device type is JBOD

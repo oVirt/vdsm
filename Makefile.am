@@ -70,6 +70,7 @@ ABS_IMPORT_WHITELIST = \
 
 PY3DIVISION_WHITELIST = \
 	lib/vdsm/common \
+	lib/vdsm/gluster \
 	lib/vdsm/network \
 	tests \
 	$(NULL)

@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+from __future__ import division
 
 import math
 import logging
@@ -52,7 +53,7 @@ def can_fence_host(vdsmProxy, hostUuid, skipFencingIfGlusterBricksUp,
 
 def _is_gluster_quorum_met(volumeInfo, volStatus, hostUuid):
         replicaCount = int(volumeInfo.get('replicaCount'))
-        subVolumes = int(volumeInfo.get('brickCount')) / replicaCount
+        subVolumes = int(volumeInfo.get('brickCount')) // replicaCount
         quorumType = volumeInfo.get('options').get('cluster.quorum-type')
         if quorumType == "fixed":
             quorumCount = volumeInfo.get('cluster.quorum-count')
