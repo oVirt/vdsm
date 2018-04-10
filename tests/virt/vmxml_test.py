@@ -192,14 +192,6 @@ def run():
         value = vmxml.find_attr(self._dom, tag, attribute)
         self.assertEqual(value, result)
 
-    @permutations([['hello', 1, {'cyrillic': 'yes', 'lang': 'русский'}],
-                   ['topelement', 0, {}],
-                   ['empty', 0, {}],
-                   ])
-    def test_attributes(self, tag, index, result):
-        element = list(vmxml.find_all(self._dom, tag))[index]
-        self.assertEqual(vmxml.attributes(element), result)
-
     @permutations([['hello', 'hello'],
                    ['empty', '']])
     def test_text(self, tag, result):

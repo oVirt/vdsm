@@ -163,19 +163,6 @@ def attr(element, attribute):
     return element.get(attribute, '')
 
 
-def attributes(element):
-    """
-    Return dictionary of all the `element` attributes.
-
-    :param element: the element to look the attributes in
-    :type element: DOM element
-    :returns: dictionary of attribute names (basestrings) and their values
-      (basestrings)
-    :rtype: dictionary
-    """
-    return {a: attr(element, a) for a in element.keys()}
-
-
 def set_attr(element, attribute, value):
     """
     Set `attribute` of `element` to `value`.
@@ -320,7 +307,7 @@ def parse_address_element(address_element):
     """
     return {
         key.strip(): value.strip()
-        for key, value in attributes(address_element).items()
+        for key, value in address_element.attrib.items()
     }
 
 
