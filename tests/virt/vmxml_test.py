@@ -96,7 +96,7 @@ class TestVmXmlFunctions(VmXmlTestCase):
 @expandPermutations
 class TestVmXmlHelpers(XMLTestCase):
 
-    _XML = u'''<?xml version="1.0" ?>
+    _XML = u'''<?xml version="1.0" encoding="utf-8"?>
     <topelement>
       <hello lang="english">hello</hello>
       <hello cyrillic="yes" lang="русский">здра́вствуйте</hello>
@@ -118,7 +118,7 @@ class TestVmXmlHelpers(XMLTestCase):
         xml = re.sub(' *\n *', '', self._XML)
         dom = xmlutils.fromstring(xml)
         pretty = xmlutils.tostring(dom, pretty=True)
-        self.assertEqual(pretty, '''<?xml version='1.0' encoding='utf-8'?>
+        self.assertEqual(pretty, u'''<?xml version='1.0' encoding='utf-8'?>
 <topelement>
     <hello lang="english">hello</hello>
     <hello cyrillic="yes" lang="русский">здра́вствуйте</hello>
@@ -244,7 +244,7 @@ def run():
         self.assertEqual(updated_hello, hello)
 
     def test_replace_child(self):
-        expected = '''<topelement>
+        expected = u'''<topelement>
     <hello lang="english">hello</hello>
     <hello cyrillic="yes" lang="русский">здра́вствуйте</hello>
     <bye>good bye<hello lang="čeština">dobrý den</hello>
