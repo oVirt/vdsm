@@ -15,6 +15,7 @@
 # MA  02110-1301, USA.  A copy of the GNU General Public License is
 # also available at http://www.gnu.org/copyleft/gpl.html.
 from __future__ import absolute_import
+from __future__ import division
 import argparse
 import getpass
 import hashlib

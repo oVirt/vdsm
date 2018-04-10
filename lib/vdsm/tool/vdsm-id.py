@@ -18,6 +18,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 from .. import host
 from . import expose, ExtraArgsError
 import sys

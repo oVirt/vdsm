@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+from __future__ import division
 """I handle vdsm's configuration life cycle.
 
 This is achieved by utilizing modules from configurators package to:

@@ -69,9 +69,13 @@ ABS_IMPORT_WHITELIST = \
 	$(NULL)
 
 PY3DIVISION_WHITELIST = \
+	lib/vdsm/api \
 	lib/vdsm/common \
 	lib/vdsm/gluster \
 	lib/vdsm/network \
+	lib/vdsm/rpc \
+	lib/vdsm/supervdsm_api \
+	lib/vdsm/tool \
 	tests \
 	$(NULL)
 

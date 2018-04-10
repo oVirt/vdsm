@@ -18,6 +18,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 from . import YES, NO, MAYBE
 from vdsm import utils
 
