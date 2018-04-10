@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+from __future__ import division
 
 """
 Functions to encode and decode base 10 values to base 26, which are used

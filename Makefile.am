@@ -69,6 +69,7 @@ ABS_IMPORT_WHITELIST = \
 	$(NULL)
 
 PY3DIVISION_WHITELIST = \
+	lib/vdsm/common \
 	lib/vdsm/network \
 	tests \
 	$(NULL)

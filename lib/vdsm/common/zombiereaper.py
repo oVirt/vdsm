@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+from __future__ import division
 """
 ZombieReaper is a module to handle the annoying problem of cleaning up child
 processes. Specifically, for cases where the result of the child process is not

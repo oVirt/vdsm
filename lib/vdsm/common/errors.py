@@ -26,6 +26,7 @@ error handling. For public vdsm errors see vdsm.common.exception.
 """
 
 from __future__ import absolute_import
+from __future__ import division
 
 
 class Base(Exception):
