@@ -24,7 +24,6 @@ import json
 import pickle
 import os
 import shutil
-import six
 import tempfile
 import yaml
 
@@ -32,7 +31,6 @@ from vdsm.api import vdsmapi
 from yajsonrpc.exception import JsonRpcErrorBase
 
 from monkeypatch import MonkeyPatchScope
-from testValidation import skipif
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import namedTemporaryDir
 
@@ -86,7 +84,6 @@ _schema = SchemaWrapper()
 
 class DataVerificationTests(TestCaseBase):
 
-    @skipif(six.PY3, reason="should use binary mode on python 3")
     def test_cached_schema(self):
         with namedTemporaryDir() as dir:
             with MonkeyPatchScope([(vdsmapi, "VDSM_CACHE_DIR", dir)]):

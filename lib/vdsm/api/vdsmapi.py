@@ -21,6 +21,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import glob
+import io
 import json
 import logging
 import os
@@ -129,7 +130,7 @@ def create_cache():
     if not os.path.exists(VDSM_CACHE_DIR):
         os.makedirs(VDSM_CACHE_DIR)
     for path in find_all_schemas():
-        with open(path) as f:
+        with io.open(path, 'rb') as f:
             loaded_schema = _load_yaml_file(f)
             pickle_schema_path = os.path.join(
                 VDSM_CACHE_DIR, _get_pickle_schema_path(path))
@@ -143,7 +144,7 @@ def create_cache():
 
             logging.info('Writing new schema {}'.format(
                 os.path.basename(pickle_schema_path)))
-            with open(pickle_schema_path, 'wb') as pickled_schema:
+            with io.open(pickle_schema_path, 'wb') as pickled_schema:
                 pickle.dump(loaded_schema,
                             pickled_schema,
                             protocol=pickle.HIGHEST_PROTOCOL)
@@ -209,7 +210,7 @@ class Schema(object):
                     with open(path) as f:
                         loaded_schema = _load_yaml_file(f)
                 else:
-                    with open(pickle_path) as f:
+                    with io.open(pickle_path, 'rb') as f:
                         loaded_schema = pickle.load(f)
 
                 types = loaded_schema.pop('types')
