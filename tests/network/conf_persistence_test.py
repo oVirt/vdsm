@@ -29,7 +29,10 @@ from nose.plugins.attrib import attr
 from vdsm.common import fileutils
 from vdsm.network import errors as ne
 from vdsm.network.canonicalize import canonicalize_networks
-from vdsm.network.netconfpersistence import Config, Transaction
+from vdsm.network.netconfpersistence import Config
+from vdsm.network.netconfpersistence import Transaction
+from vdsm.network.netconfpersistence import NETCONF_NETS
+from vdsm.network.netconfpersistence import NETCONF_BONDS
 
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -47,8 +50,8 @@ class TestException(Exception):
 
 def _create_netconf():
     tempdir = tempfile.mkdtemp()
-    os.mkdir(os.path.join(tempdir, 'nets'))
-    os.mkdir(os.path.join(tempdir, 'bonds'))
+    os.mkdir(os.path.join(tempdir, NETCONF_NETS))
+    os.mkdir(os.path.join(tempdir, NETCONF_BONDS))
     return tempdir
 
 
@@ -65,15 +68,16 @@ class NetConfPersistenceTests(TestCaseBase):
         fileutils.rm_tree(self.tempdir)
 
     def testInit(self):
-        filePath = os.path.join(self.tempdir, 'nets', NETWORK)
-        try:
-            with open(filePath, 'w') as networkFile:
-                json.dump(NETWORK_ATTRIBUTES, networkFile)
+        net_path = os.path.join(self.tempdir, NETCONF_NETS, NETWORK)
+        bond_path = os.path.join(self.tempdir, NETCONF_BONDS, BONDING)
+        with open(net_path, 'w') as f:
+            json.dump(NETWORK_ATTRIBUTES, f)
+        with open(bond_path, 'w') as f:
+            json.dump(BONDING_ATTRIBUTES, f)
 
-            persistence = Config(self.tempdir)
-            self.assertEqual(persistence.networks[NETWORK], NETWORK_ATTRIBUTES)
-        finally:
-            fileutils.rm_file(filePath)
+        persistence = Config(self.tempdir)
+        self.assertEqual(persistence.networks[NETWORK], NETWORK_ATTRIBUTES)
+        self.assertEqual(persistence.bonds[BONDING], BONDING_ATTRIBUTES)
 
     def testSetAndRemoveNetwork(self):
         persistence = Config(self.tempdir)
@@ -92,12 +96,20 @@ class NetConfPersistenceTests(TestCaseBase):
     def testSaveAndDelete(self):
         persistence = Config(self.tempdir)
         persistence.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
-        filePath = os.path.join(self.tempdir, 'nets', NETWORK)
-        self.assertFalse(os.path.exists(filePath))
+        persistence.setBonding(BONDING, BONDING_ATTRIBUTES)
+
+        net_path = os.path.join(self.tempdir, NETCONF_NETS, NETWORK)
+        bond_path = os.path.join(self.tempdir, NETCONF_BONDS, BONDING)
+        self.assertFalse(os.path.exists(net_path))
+        self.assertFalse(os.path.exists(bond_path))
+
         persistence.save()
-        self.assertTrue(os.path.exists(filePath))
+        self.assertTrue(os.path.exists(net_path))
+        self.assertTrue(os.path.exists(bond_path))
+
         persistence.delete()
-        self.assertFalse(os.path.exists(filePath))
+        self.assertFalse(os.path.exists(net_path))
+        self.assertFalse(os.path.exists(bond_path))
 
     def testDiff(self):
         configA = Config(self.tempdir)
@@ -131,6 +143,8 @@ class TransactionTests(TestCaseBase):
     def setUp(self):
         self.tempdir = _create_netconf()
         self.config = Config(self.tempdir)
+        self.net_path = os.path.join(self.tempdir, NETCONF_NETS, NETWORK)
+        self.bond_path = os.path.join(self.tempdir, NETCONF_BONDS, BONDING)
 
     def tearDown(self):
         self.config.delete()
@@ -139,28 +153,32 @@ class TransactionTests(TestCaseBase):
     def test_successful_setup(self):
         with Transaction(config=self.config) as _config:
             _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
+            _config.setBonding(BONDING, BONDING_ATTRIBUTES)
 
-        file_path = os.path.join(self.tempdir, 'nets', NETWORK)
-        self.assertTrue(os.path.exists(file_path))
+        self.assertTrue(os.path.exists(self.net_path))
+        self.assertTrue(os.path.exists(self.bond_path))
 
     def test_successful_non_persistent_setup(self):
         with Transaction(config=self.config, persistent=False) as _config:
             _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
+            _config.setBonding(BONDING, BONDING_ATTRIBUTES)
 
-        file_path = os.path.join(self.tempdir, 'nets', NETWORK)
-        self.assertFalse(os.path.exists(file_path))
+        self.assertFalse(os.path.exists(self.net_path))
+        self.assertFalse(os.path.exists(self.bond_path))
 
     def test_failed_setup(self):
         with self.assertRaises(ne.RollbackIncomplete) as roi:
             with Transaction(config=self.config) as _config:
                 _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
+                _config.setBonding(BONDING, BONDING_ATTRIBUTES)
                 raise TestException()
 
         diff, ex_type, _ = roi.exception.args
         self.assertEqual(diff.networks[NETWORK], {'remove': True})
+        self.assertEqual(diff.bonds[BONDING], {'remove': True})
         self.assertEqual(ex_type, TestException)
-        file_path = os.path.join(self.tempdir, 'nets', NETWORK)
-        self.assertFalse(os.path.exists(file_path))
+        self.assertFalse(os.path.exists(self.net_path))
+        self.assertFalse(os.path.exists(self.bond_path))
 
     def test_failed_setup_with_no_diff(self):
         with self.assertRaises(TestException):
@@ -171,7 +189,8 @@ class TransactionTests(TestCaseBase):
         with self.assertRaises(TestException):
             with Transaction(config=self.config, in_rollback=True) as _config:
                 _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
+                _config.setBonding(BONDING, BONDING_ATTRIBUTES)
                 raise TestException()
 
-        file_path = os.path.join(self.tempdir, 'nets', NETWORK)
-        self.assertFalse(os.path.exists(file_path))
+        self.assertFalse(os.path.exists(self.net_path))
+        self.assertFalse(os.path.exists(self.bond_path))
