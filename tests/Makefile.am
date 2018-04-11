@@ -272,6 +272,9 @@ check:
 	@echo '=== Running tests.  To skip this step place NOSE_EXCLUDE=.* ==='
 	@echo '=== into your environment.  Do not submit untested code!    ==='
 	$(top_srcdir)/tests/run_tests_local.sh $(run_modules)
+	pwd
+	ls .cov*
+	mv .coverage .coverage-nose-py2
 	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then \
 		all_modules=`mktemp`; \
 		blacklist=`mktemp`; \
@@ -282,6 +285,7 @@ check:
 		rm -f "$$all_modules" "$$blacklist"; \
 		PYTHON_EXE="$(PYTHON3)" \
 			$(top_srcdir)/tests/run_tests_local.sh "$$modules"; \
+		mv .coverage .coverage-nose-py3; \
 	fi
 
 # Disable builtin %.out rule, overrwriting out files

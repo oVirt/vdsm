@@ -33,6 +33,7 @@ python2-dateutil
 python2-decorator
 python2-pyudev
 python3-augeas
+python3-coverage
 python3-dateutil
 python3-dbus
 python3-decorator
