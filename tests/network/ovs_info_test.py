@@ -24,7 +24,7 @@ from copy import deepcopy
 from nose.plugins.attrib import attr
 
 from .nettestlib import dummy_device, bond_device
-from .ovsnettestlib import OvsService, cleanup_bridges, TEST_BRIDGE
+from .ovsnettestlib import cleanup_bridges, TEST_BRIDGE
 from monkeypatch import MonkeyPatch
 from testValidation import ValidateRunningAsRoot
 from testlib import VdsmTestCase
@@ -41,19 +41,6 @@ TEST_NIC = 'eth0'
 TEST_VLAN = 10
 TEST_VLANED_NIC = '%s.%s' % (TEST_NIC, TEST_VLAN)
 TEST_VLANED_NETWORK = 'test-network' + str(TEST_VLAN)
-
-
-ovs_service = None
-
-
-def setup_module():
-    global ovs_service
-    ovs_service = OvsService()
-    ovs_service.setup()
-
-
-def teardown_module():
-    ovs_service.teardown()
 
 
 @contextmanager

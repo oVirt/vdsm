@@ -24,25 +24,12 @@ from uuid import UUID
 from nose.plugins.attrib import attr
 
 from .nettestlib import dummy_device
-from .ovsnettestlib import OvsService, cleanup_bridges, TEST_BRIDGE, TEST_BOND
+from .ovsnettestlib import cleanup_bridges, TEST_BRIDGE, TEST_BOND
 from testlib import VdsmTestCase
 from testValidation import ValidateRunningAsRoot
 
 from vdsm.network.ovs.driver import create, Drivers as OvsDrivers
 from vdsm.network.ovs.driver import vsctl
-
-
-ovs_service = None
-
-
-def setup_module():
-    global ovs_service
-    ovs_service = OvsService()
-    ovs_service.setup()
-
-
-def teardown_module():
-    ovs_service.teardown()
 
 
 @attr(type='unit')

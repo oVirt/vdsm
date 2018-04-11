@@ -24,23 +24,10 @@ from vdsm.network.ovs import info as ovs_info
 from vdsm.network.ovs import switch as ovs_switch
 from vdsm.network.ovs import validator as ovs_validator
 
-from .ovsnettestlib import OvsService, cleanup_bridges
+from .ovsnettestlib import cleanup_bridges
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
 from nose.plugins.attrib import attr
-
-
-ovs_service = None
-
-
-def setup_module():
-    global ovs_service
-    ovs_service = OvsService()
-    ovs_service.setup()
-
-
-def teardown_module():
-    ovs_service.teardown()
 
 
 @attr(type='unit')

@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,13 +26,19 @@ import six
 from testlib import mock
 
 from .nettestlib import bonding_default_fpath
+from .ovsnettestlib import OvsService
 from . ip_rule_test import IPV4_ADDRESS1, IPRuleTest
 
 
 bonding_dump_patchers = []
+ovs_service = None
 
 
 def setup_package():
+    global ovs_service
+    ovs_service = OvsService()
+    ovs_service.setup()
+
     bonding_defaults, bonding_name2numeric = bonding_default_fpath()
     bonding_dump_patchers.append(
         mock.patch('vdsm.network.link.bond.sysfs_options.BONDING_DEFAULTS',
@@ -53,6 +59,8 @@ def teardown_package():
     # TODO: Remove condition when ip.rule becomes PY3 compatible.
     if six.PY2:
         _cleanup_stale_iprules()
+
+    ovs_service.teardown()
 
 
 class StaleIPRulesError(Exception):
