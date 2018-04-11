@@ -24,13 +24,17 @@ import json
 import pickle
 import os
 import shutil
+import six
 import tempfile
 import yaml
 
 from vdsm.api import vdsmapi
 from yajsonrpc.exception import JsonRpcErrorBase
 
+from monkeypatch import MonkeyPatchScope
+from testValidation import skipif
 from testlib import VdsmTestCase as TestCaseBase
+from testlib import namedTemporaryDir
 
 try:
     import vdsm.gluster.apiwrapper as gapi
@@ -81,6 +85,34 @@ _schema = SchemaWrapper()
 
 
 class DataVerificationTests(TestCaseBase):
+
+    @skipif(six.PY3, reason="should use binary mode on python 3")
+    def test_cached_schema(self):
+        with namedTemporaryDir() as dir:
+            with MonkeyPatchScope([(vdsmapi, "VDSM_CACHE_DIR", dir)]):
+                paths = vdsmapi.find_all_schemas()
+                # creates the schema files from yaml
+                uncached_schema = vdsmapi.Schema(paths, True)
+                # creates the schema files from cache
+                vdsmapi.create_cache()
+                cached_schema = vdsmapi.Schema(paths, True)
+        self.assertEqual(cached_schema._methods, uncached_schema._methods)
+        self.assertEqual(cached_schema._types, uncached_schema._types)
+
+    def test_create_cache(self):
+        with namedTemporaryDir() as dir:
+            with MonkeyPatchScope([(vdsmapi, "VDSM_CACHE_DIR", dir)]):
+                vdsmapi.create_cache()
+
+            vdsm_api_yml = "../lib/vdsm/api/vdsm-api.yml"
+            vdsm_api_cache = os.path.join(dir, "vdsm-api.pickle")
+            self.assertEqual(round(os.stat(vdsm_api_yml).st_mtime, 2),
+                             round(os.stat(vdsm_api_cache).st_mtime, 2))
+
+            vdsm_events_yml = "../lib/vdsm/api/vdsm-events.yml"
+            vdsm_events_cache = os.path.join(dir, "vdsm-events.pickle")
+            self.assertEqual(round(os.stat(vdsm_events_yml).st_mtime, 2),
+                             round(os.stat(vdsm_events_cache).st_mtime, 2))
 
     def test_optional_params(self):
         params = {u"addr": u"rack05-pdu01-lab4.tlv.redhat.com", u"port": 54321,
