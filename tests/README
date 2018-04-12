@@ -144,16 +144,21 @@ Nose based tests
 Running the tests
 -----------------
 
-From within the source directory you can execute some test modules:
+Running the tests from the tests directory, using vdsm code from the source
+directory (lib/vdsm):
+
     ./run_tests_local.sh *.py
 
-From within an installed directory:
-    ./run_tests.sh *.py
+Running individual test module, test cases class or test function:
 
-Individual files, test cases class or test function can be specified:
-    ./run_tests.sh foo_test.py
-    ./run_tests.sh foo_test:TestBar
-    ./run_tests.sh foo_test:TestBar.test_baz
+    ./run_tests_local.sh foo_test.py
+    ./run_tests_local.sh foo_test:TestBar
+    ./run_tests_local.sh foo_test:TestBar.test_baz
+
+Running the tests from the test directory, using installed vdsm package
+(/usr/lib/python2.7/site-packages/vdsm).
+
+    ./run_tests.sh *.py
 
 Enabling slow tests:
 -------------------
