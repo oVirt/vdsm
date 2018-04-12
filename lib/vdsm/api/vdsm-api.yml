@@ -3213,7 +3213,7 @@ types:
         added: '4.1'
         description: A mapping from interface name to LLDP information
         key-type: string
-        name: *LldpMap
+        name: LldpMap
         type: map
         value-type: *Lldp
 
