@@ -42,6 +42,7 @@ from vdsm.virt.utils import DynamicBoundedSemaphore
 
 from vdsm.virt import vmexitreason
 from vdsm.virt import vmstatus
+from six.moves import range
 
 
 MODE_REMOTE = 'remote'

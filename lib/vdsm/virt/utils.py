@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import logging
 import sys
 import six
+from six.moves import range
 
 """
 shared utilities and common code for the virt package

@@ -26,6 +26,7 @@ import socket
 from vdsm.config import config
 
 import six
+from six.moves import range
 
 
 class Error(Exception):

@@ -100,6 +100,8 @@ from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
 from vdsm.virt.utils import extract_cluster_version
 from vdsm.virt.utils import has_xml_configuration
+from six.moves import range
+from six.moves import zip
 
 
 # A libvirt constant for undefined cpu quota

@@ -21,6 +21,7 @@ from __future__ import absolute_import
 
 import libvirt
 import six
+from six.moves import map
 
 """
 Support for VM and host statistics sampling.
