@@ -734,7 +734,6 @@ Hook that modifies guest's CPU flags using custom properties.
 %if 0%{?with_gluster_mgmt}
 %package gluster
 Summary:        Gluster Plugin for VDSM
-BuildArch:      noarch
 Requires: %{name} = %{version}-%{release}
 Requires: glusterfs-server >= %{gluster_version}
 Requires: glusterfs-api >= %{gluster_version}
