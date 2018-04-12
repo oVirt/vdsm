@@ -93,32 +93,35 @@ _OUTPUTS = [
             'used': '153149440'}]}]
 
 
-@expandPermutations
+# do not use permutations here: otherwise pytest with python3 will
+# fail to set up the test environment, because we need to use the C locale,
+# thus the test name will contain bad utf-8 data.
 class TestFiltering(TestCaseBase):
 
-    @permutations([
-        [u"\u0009 \u000a"],
-        [u"\u000d"],
-        [u"\u0020 \u007e"],
-        [u"\u0085"],
-        [u"\u00a0 \ud7ff"],
-        [u"\ue000 \ufffd"],
-        [u"\U00010000 \U0010ffff"],
-    ])
-    def test_filter_xml_chars_valid(self, value):
-        self.assertEqual(value, guestagent._filterXmlChars(value))
+    def test_filter_xml_chars_valid(self):
+        for value in [
+            u"\u0009 \u000a",
+            u"\u000d",
+            u"\u0020 \u007e",
+            u"\u0085",
+            u"\u00a0 \ud7ff",
+            u"\ue000 \ufffd",
+            u"\U00010000 \U0010ffff",
+        ]:
+            self.assertEqual(value, guestagent._filterXmlChars(value))
 
-    @permutations([
-        [u"\u0000 \u0008"],
-        [u"\u000b \u000c"],
-        [u"\u000e \u001f"],
-        [u"\u007f \u0084"],
-        [u"\u0086 \u009f"],
-        [u"\ud800 \udfff"],
-        [u"\ufffe \uffff"],
-    ])
-    def test_filter_xml_chars_invalid(self, value):
-        self.assertEqual(u'\ufffd \ufffd', guestagent._filterXmlChars(value))
+    def test_filter_xml_chars_invalid(self):
+        for value in [
+            u"\u0000 \u0008",
+            u"\u000b \u000c",
+            u"\u000e \u001f",
+            u"\u007f \u0084",
+            u"\u0086 \u009f",
+            u"\ud800 \udfff",
+            u"\ufffe \uffff",
+        ]:
+            self.assertEqual(
+                u'\ufffd \ufffd', guestagent._filterXmlChars(value))
 
     @slowtest
     def test_filter_xml_chars_timing(self):
