@@ -1,30 +1,65 @@
-#!/bin/sh
-# Watch a python process and terminated it with a backtrace after a timeout.
-#
-# Usage:
-#     py-watch PID TIMEOUT
+#!/usr/bin/python2
 
-watched_pid=$1
-timeout=$2
+"""
+Spawn a command, and terminate it with a backtrace after a timeout.
 
-function terminate_jobs {
-    running_jobs=$(jobs -pr)
-    if [ -n "$running_jobs" ]; then
-        kill $running_jobs
-    fi
-}
+Usage:
+    py-watch TIMEOUT command args
+"""
 
-trap terminate_jobs EXIT
+from __future__ import print_function
 
-sleep $timeout
-echo
-echo "========================================================================"
-echo "=                       Watched process timed out                      ="
-echo "========================================================================"
-echo
-gdb -p $watched_pid --batch -ex "thread apply all py-bt"
-echo
-echo "========================================================================"
-echo "=                      Terminating watched process                     ="
-echo "========================================================================"
-kill -KILL $watched_pid
+import os
+import sys
+import signal
+import threading
+
+import six
+
+if six.PY2:
+    import subprocess32 as subprocess
+else:
+    import subprocess
+
+
+def parse_args(argv):
+    return float(argv[1]), argv[2:]
+
+
+def dump_trace(proc):
+    subprocess.call([
+        'gdb', '-p', str(proc.pid), '--batch', '-ex',
+        'thread apply all py-bt'])
+
+
+def run_in_new_session(argv):
+    return subprocess.Popen(['setsid'] + argv)
+
+
+def kill_proc_session(proc):
+    os.killpg(proc.pid, signal.SIGTERM)
+    try:
+        proc.wait(2)
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        return 128 + signal.SIGKILL
+    else:
+        return 128 + signal.SIGTERM
+
+
+if __name__ == '__main__':
+    timeout, watched_argv = parse_args(sys.argv)
+    watched_proc = run_in_new_session(watched_argv)
+    try:
+        rc = watched_proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        print("=============================================================\n"
+              "=                 Watched process timed out                 =\n"
+              "=============================================================")
+        dump_trace(watched_proc)
+        print("=============================================================\n"
+              "=                Terminating watched process                =\n"
+              "=============================================================")
+        sys.exit(kill_proc_session(watched_proc))
+    else:
+        sys.exit(rc)

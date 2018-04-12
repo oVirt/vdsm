@@ -21,11 +21,8 @@ export \
     PYTHONPATH="@top_srcdir@/static/usr/share/vdsm:@top_srcdir@/lib:@top_srcdir@/vdsm_api:$PYTHONPATH" \
     $NULL
 
-"$PYTHON_EXE" @top_srcdir@/tests/testrunner.py --local-modules $@ &
-runner_pid=$!
-
 if [ -n "$TIMEOUT" ]; then
-    ./py-watch $runner_pid $TIMEOUT &
+    PYTHON_EXE="./py-watch $TIMEOUT $PYTHON_EXE"
 fi
 
-wait $runner_pid
+$PYTHON_EXE "@top_srcdir@"/tests/testrunner.py --local-modules "$@"
