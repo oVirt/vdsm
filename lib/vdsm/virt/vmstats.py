@@ -64,7 +64,7 @@ def translate(vm_stats):
                 for ioTune in value:
                     ioTune["ioTune"] = dict(
                         (k, convertToStr(v)) for k, v
-                        in ioTune["ioTune"].iteritems())
+                        in six.iteritems(ioTune["ioTune"]))
                 stats[var] = vm_stats[var]
         elif type(vm_stats[var]) is not dict:
             stats[var] = convertToStr(vm_stats[var])
@@ -534,7 +534,7 @@ def memory(stats, first_sample, last_sample, interval):
             'majflt': 'balloon.major_fault',
             'minflt': 'balloon.minor_fault',
         }
-        for (k, v) in stats_map.iteritems():
+        for (k, v) in six.iteritems(stats_map):
             mem_stats[k] = int(round((
                 last_sample.get(v, 0) - first_sample.get(v, 0)
             ) / interval))

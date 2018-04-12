@@ -3556,7 +3556,7 @@ class Vm(object):
 
         if params:
             self.log.warn("updateVmPolicy got unknown parameters: %s",
-                          ", ".join(params.iterkeys()))
+                          ", ".join(six.iterkeys(params)))
 
         #
         # Save modified metadata

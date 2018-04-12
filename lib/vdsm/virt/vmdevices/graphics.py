@@ -37,6 +37,7 @@ from .core import update_device_params_from_meta
 from .core import find_device_type
 from .core import get_metadata_values
 from .core import dev_class_from_dev_elem
+import six
 
 
 LIBVIRT_PORT_AUTOSELECT = '-1'
@@ -252,7 +253,7 @@ def isSupportedDisplayType(vmParams):
 
 def makeSpecParams(conf):
     return dict((newName, conf[oldName])
-                for oldName, newName in _LEGACY_MAP.iteritems()
+                for oldName, newName in six.iteritems(_LEGACY_MAP)
                 if oldName in conf)
 
 
