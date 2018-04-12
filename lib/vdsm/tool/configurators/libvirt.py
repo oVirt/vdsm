@@ -227,7 +227,7 @@ FILES = {
                 'conditions': {},
                 'content': {
                     'dynamic_ownership': 0,
-                    'save_image_format': '"lzop"',
+                    'save_image_format': '"gzip"',
                     'remote_display_port_min': 5900,
                     'remote_display_port_max': 6923,
                     'max_core': '"unlimited"',
