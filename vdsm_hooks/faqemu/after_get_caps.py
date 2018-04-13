@@ -37,9 +37,14 @@ _TESTS = []
 
 _PPC64LE_MACHINES = ['pseries',
                      'pseries-rhel7.2.0',
-                     'pseries-rhel7.3.0']
+                     'pseries-rhel7.3.0',
+                     'pseries-rhel7.4.0',
+                     'pseries-rhel7.5.0',
+                     'pseries-rhel7.5.0-sxxm']
 _X86_64_MACHINES = ['pc-i440fx-rhel7.1.0',
                     'rhel6.3.0',
+                    'pc-q35-rhel7.5.0',
+                    'pc-q35-rhel7.4.0',
                     'pc-q35-rhel7.3.0',
                     'pc-i440fx-rhel7.0.0',
                     'pc-i440fx-2.6',
@@ -47,6 +52,8 @@ _X86_64_MACHINES = ['pc-i440fx-rhel7.1.0',
                     'rhel6.6.0',
                     'rhel6.2.0',
                     'pc',
+                    'pc-i440fx-rhel7.5.0',
+                    'pc-i440fx-rhel7.4.0',
                     'pc-i440fx-rhel7.3.0',
                     'q35',
                     'pc-i440fx-rhel7.2.0',
@@ -54,7 +61,9 @@ _X86_64_MACHINES = ['pc-i440fx-rhel7.1.0',
                     'rhel6.0.0',
                     'rhel6.5.0']
 _AARCH64_MACHINES = ['virt',
-                     'virt-rhel7.3.0']
+                     'virt-rhel7.3.0',
+                     'virt-rhel7.4.0',
+                     'virt-rhel7.5.0']
 
 
 def _usage():
