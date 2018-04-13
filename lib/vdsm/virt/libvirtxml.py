@@ -698,7 +698,7 @@ def make_minimal_domain(dom):
 
 
 def make_placeholder_domain_xml(vm):
-    return '''<domain type='kvm'>
+    return '''<domain type='qemu'>
   <name>{name}</name>
   <uuid>{id}</uuid>
   <memory unit='KiB'>{memory}</memory>
