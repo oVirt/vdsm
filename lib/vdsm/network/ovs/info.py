@@ -25,7 +25,6 @@ import six
 
 from vdsm.network import cmd
 from vdsm.network.ip import dhclient
-from vdsm.network.link.bond import Bond
 from vdsm.network.netinfo.addresses import (
     getIpAddrs, getIpInfo, is_ipv6_local_auto)
 from vdsm.network.netinfo.routes import (get_routes, get_gateway,
@@ -219,7 +218,7 @@ def _fake_bridge(net_attrs):
 
 
 def _fake_vlan(net_attrs, vlanid):
-    iface = net_attrs['bond'] or net_attrs['nics'][0]
+    iface = net_attrs['southbound']
     vlan_info = {
         'vlanid': vlanid,
         'iface': iface
@@ -252,21 +251,11 @@ def create_netinfo(ovs_info):
 
 def _get_network_info(northbound, bridge, southbound, ports, stp, addresses,
                       routes):
-    # OVS networks do not use the OVS bonds, they use external linux bonds.
-    bond = Bond(southbound)
-    if bond.exists():
-        bond_name = bond.master
-        nics = list(bond.slaves)
-    else:
-        bond_name = ''
-        nics = [southbound]
-
     tag = ports[northbound]['tag']
     network_info = {
         'iface': northbound,
         'bridged': True,
-        'bond': bond_name,
-        'nics': nics,
+        'southbound': southbound,
         'ports': _get_net_ports(bridge, northbound, southbound, tag, ports),
         'stp': stp,
         'switch': 'ovs'
@@ -322,7 +311,8 @@ def fake_bridgeless(ovs_netinfo, kernel_netinfo, running_bridgeless_networks):
 
     for net in running_bridgeless_networks:
         net_attrs = ovs_netinfo['networks'][net]
-        iface_type, iface_name = _bridgeless_fake_iface(net_attrs)
+        iface_type, iface_name = _bridgeless_fake_iface(net_attrs,
+                                                        bonds_netinfo)
 
         # NICs and BONDs are kernel devices, VLANs are OVS devices.
         if iface_type == 'nics':
@@ -340,20 +330,19 @@ def fake_bridgeless(ovs_netinfo, kernel_netinfo, running_bridgeless_networks):
         ovs_netinfo['networks'][net]['bridged'] = False
 
 
-def _bridgeless_fake_iface(net_attrs):
+def _bridgeless_fake_iface(net_attrs, bonds_info):
     vlanid = net_attrs.get('vlanid')
-    bond = net_attrs['bond']
-    nics = net_attrs['nics']
+    sb = net_attrs['southbound']
 
     if vlanid is not None:
         iface_type = 'vlans'
-        iface_name = '{}.{}'.format(bond or nics[0], vlanid)
-    elif bond:
+        iface_name = '{}.{}'.format(sb, vlanid)
+    elif sb in bonds_info:
         iface_type = 'bondings'
-        iface_name = bond
+        iface_name = sb
     else:
         iface_type = 'nics'
-        iface_name = nics[0]
+        iface_name = sb
 
     return iface_type, iface_name
 

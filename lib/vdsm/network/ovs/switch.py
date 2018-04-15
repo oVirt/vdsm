@@ -74,7 +74,7 @@ class NetsRemovalSetup(object):
         ovs_netinfo = info.create_netinfo(self._ovs_info)
         running_networks = ovs_netinfo['networks']
         for net in nets:
-            sb = self._get_southbound(net, running_networks)
+            sb = running_networks[net]['southbound']
             self._remove_northbound(net, sb)
             self._detach_unused_southbound(sb)
 
@@ -97,13 +97,6 @@ class NetsRemovalSetup(object):
 
             self._transaction.add(ovsdb.del_port(sb))
             self._transaction.add(ovsdb.del_br(bridge_without_sb))
-
-    @staticmethod
-    def _get_southbound(net, running_networks):
-        running_attrs = running_networks[net]
-        bond = running_attrs['bond']
-        nic = running_attrs['nics'][0] if not bond else None
-        return nic or bond
 
     def _set_network_mtu(self):
         for sb, nbs in six.viewitems(self._ovs_info.northbounds_by_sb):

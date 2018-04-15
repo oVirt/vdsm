@@ -187,9 +187,11 @@ def _setup_ovs(networks, bondings, options, in_rollback):
 
             # Post removal of nets, update ovs_nets.
             ovs_nets = ovs_info.create_netinfo(_ovs_info)['networks']
+            kernel_bonds = bond.Bond.bonds()
             ovs_switch.validator.validate_nic_usage(
                 nets2add, bonds2add,
-                _get_kernel_nets_nics(ovs_nets), _get_kernel_bonds_slaves())
+                _get_kernel_nets_nics(ovs_nets, kernel_bonds),
+                _get_kernel_bonds_slaves(kernel_bonds))
 
             acq.acquire(setup_bonds.ifaces_for_acquirement)
             setup_bonds.edit_bonds()
@@ -206,14 +208,14 @@ def _setup_ovs(networks, bondings, options, in_rollback):
             connectivity.check(options)
 
 
-def _get_kernel_nets_nics(ovs_networks):
-    return {netattr['nics'][0] for netattr in six.itervalues(ovs_networks)
-            if netattr['nics'] and not netattr['bond']}
+def _get_kernel_nets_nics(ovs_networks, kernel_bonds):
+    return {netattr['southbound'] for netattr in six.itervalues(ovs_networks)
+            if netattr['southbound'] not in kernel_bonds}
 
 
-def _get_kernel_bonds_slaves():
+def _get_kernel_bonds_slaves(kernel_bonds):
     kernel_bonds_slaves = set()
-    for bond_name in bond.Bond.bonds():
+    for bond_name in kernel_bonds:
         kernel_bonds_slaves |= bond.Bond(bond_name).slaves
     return kernel_bonds_slaves
 

@@ -94,18 +94,16 @@ def _validate_bond_addition(nics, kernel_nics):
 def _validate_bond_removal(bond, nets, running_nets):
     running_nets_with_bond = set([
         net for net, attrs in six.iteritems(running_nets)
-        if attrs['bond'] == bond])
+        if attrs['southbound'] == bond])
 
     add_nets_with_bond = set()
     remove_nets_with_bond = set()
     for net, attrs in six.iteritems(nets):
         if 'remove' in attrs:
-            running_bond = running_nets.get(net, {}).get('bond')
-            if running_bond == bond:
+            if net in running_nets_with_bond:
                 remove_nets_with_bond.add(net)
         elif net in running_nets:
-            running_bond = running_nets[net].get('bond')
-            if running_bond == bond:
+            if net in running_nets_with_bond:
                 remove_nets_with_bond.add(net)
             if attrs.get('bonding') == bond:
                 add_nets_with_bond.add(net)
@@ -118,8 +116,3 @@ def _validate_bond_removal(bond, nets, running_nets):
         raise ne.ConfigNetworkError(
             ne.ERR_USED_BOND,
             'Cannot remove bonding {}: used by network.'.format(bond))
-
-
-def _nets_with_bond(running_nets, bond):
-    return (net for net, attrs in six.iteritems(running_nets)
-            if attrs['bond'] == bond)

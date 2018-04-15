@@ -309,8 +309,8 @@ class NetInfo(object):
 
         if self.networks[network]['switch'] == 'legacy':
             # TODO: CachingNetInfo should not use external resources in its
-            # methods. Drop this branch when legacy netinfo report 'bond',
-            # 'nics' and 'vlanid' as a part of network entries.
+            # methods. Drop this branch when legacy netinfo report
+            # 'southbound' and 'vlanid' as a part of network entries.
             if self.networks[network]['bridged']:
                 ports = self.networks[network]['ports']
             else:
@@ -330,8 +330,12 @@ class NetInfo(object):
                 elif port in self.nics:
                     lnics.append(port)
         else:
-            bonding = self.networks[network]['bond']
-            lnics = self.networks[network]['nics']
+            sb = self.networks[network]['southbound']
+            if sb in self.bondings:
+                bonding = sb
+                lnics = self.bondings[bonding]['slaves']
+            elif sb in self.nics:
+                lnics = [sb]
             vlanid = self.networks[network].get('vlanid')
             vlan = ('%s.%s' % (bonding or lnics[0], vlanid)
                     if vlanid is not None else None)

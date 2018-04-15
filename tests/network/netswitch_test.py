@@ -130,12 +130,19 @@ def _create_fake_netinfo(switch):
 
     fake_netinfo = {
         'networks':
-            {'fakebrnet1': dict(iface='eth0', bond='', bridged=False,
-                                nics=['eth0'], **common_net_attrs),
-             'fakevlannet1': dict(iface='eth1.1', bond='', bridged=False,
-                                  nics=['eth1'], vlanid=1, **common_net_attrs),
-             'fakebondnet1': dict(iface='bond0', bond='bond0', bridged=False,
-                                  nics=['eth2', 'eth3'], **common_net_attrs)},
+            {'fakebrnet1': dict(iface='eth0',
+                                bridged=False,
+                                southbound='eth0',
+                                **common_net_attrs),
+             'fakevlannet1': dict(iface='eth1.1',
+                                  bridged=False,
+                                  southbound='eth1',
+                                  vlanid=1,
+                                  **common_net_attrs),
+             'fakebondnet1': dict(iface='bond0',
+                                  bridged=False,
+                                  southbound='bond0',
+                                  **common_net_attrs)},
         'vlans':
             {'eth1.1': {'iface': 'eth1', 'addr': '10.10.10.10',
                         'netmask': '255.255.0.0', 'mtu': 1500,

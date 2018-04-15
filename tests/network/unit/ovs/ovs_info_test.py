@@ -79,7 +79,6 @@ class TestOvsNetInfo(unittest.TestCase):
         'networks': {
             TEST_NETWORK: {
                 'addr': TEST_ADDRESS,
-                'bond': '',
                 'bridged': True,
                 'dhcpv4': False,
                 'dhcpv6': False,
@@ -92,14 +91,13 @@ class TestOvsNetInfo(unittest.TestCase):
                 'ipv6gateway': '::',
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
-                'nics': [TEST_NIC],
+                'southbound': TEST_NIC,
                 'ports': [TEST_NIC],
                 'stp': False,
                 'switch': 'ovs'
             },
             TEST_VLANED_NETWORK: {
                 'addr': TEST_ADDRESS,
-                'bond': '',
                 'bridged': True,
                 'dhcpv4': False,
                 'dhcpv6': False,
@@ -112,7 +110,7 @@ class TestOvsNetInfo(unittest.TestCase):
                 'ipv6gateway': '::',
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
-                'nics': [TEST_NIC],
+                'southbound': TEST_NIC,
                 'ports': [TEST_VLANED_NIC],
                 'stp': False,
                 'switch': 'ovs',
@@ -174,7 +172,6 @@ class TestOvsNetInfo(unittest.TestCase):
         'networks': {
             TEST_NETWORK: {
                 'addr': TEST_ADDRESS,
-                'bond': '',
                 'bridged': False,
                 'dhcpv4': False,
                 'dhcpv6': False,
@@ -187,14 +184,13 @@ class TestOvsNetInfo(unittest.TestCase):
                 'ipv6gateway': '::',
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
-                'nics': [TEST_NIC],
+                'southbound': TEST_NIC,
                 'ports': [TEST_NIC],
                 'stp': False,
                 'switch': 'ovs'
             },
             TEST_VLANED_NETWORK: {
                 'addr': TEST_ADDRESS,
-                'bond': '',
                 'bridged': False,
                 'dhcpv4': False,
                 'dhcpv6': False,
@@ -207,7 +203,7 @@ class TestOvsNetInfo(unittest.TestCase):
                 'ipv6gateway': '::',
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
-                'nics': [TEST_NIC],
+                'southbound': TEST_NIC,
                 'ports': [TEST_VLANED_NIC],
                 'stp': False,
                 'switch': 'ovs',
