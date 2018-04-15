@@ -6,7 +6,7 @@ VDSM_SOURCE_DIR="${VDSM_SOURCE_DIR:-~/code/vdsm}"
 RPMDIR=`rpm --eval %_rpmdir`
 
 _latest_version() {
-    ls "$RPMDIR"/*/vdsm* -t -w 1 | head -1 | sed 's/.*vdsm-[a-z]*-//;s/.noarch.rpm//'
+    ls "$RPMDIR"/*/vdsm-python* -t -w 1 | head -1 | sed 's/.*vdsm-[a-z]*-//;s/.noarch.rpm//'
 }
 
 _latest_rpms() {
