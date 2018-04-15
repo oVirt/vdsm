@@ -72,10 +72,16 @@ PY3DIVISION_WHITELIST = \
 	lib/vdsm/api \
 	lib/vdsm/common \
 	lib/vdsm/gluster \
+	lib/vdsm/hook \
+	lib/vdsm/host \
+	lib/vdsm/metrics \
 	lib/vdsm/network \
+	lib/vdsm/profiling \
 	lib/vdsm/rpc \
+	# lib/vdsm/storage \
 	lib/vdsm/supervdsm_api \
 	lib/vdsm/tool \
+	# lib/vdsm/virt \
 	tests \
 	$(NULL)
 

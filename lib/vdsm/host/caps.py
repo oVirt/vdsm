@@ -19,6 +19,7 @@
 #
 """Collect host capabilities"""
 from __future__ import absolute_import
+from __future__ import division
 
 import os
 import logging
@@ -110,7 +111,7 @@ def get():
     caps['HBAInventory'] = hba.HBAInventory()
     caps['vmTypes'] = ['kvm']
 
-    caps['memSize'] = str(utils.readMemInfo()['MemTotal'] / 1024)
+    caps['memSize'] = str(utils.readMemInfo()['MemTotal'] // 1024)
     caps['reservedMem'] = str(config.getint('vars', 'host_mem_reserve') +
                               config.getint('vars', 'extra_mem_reserve'))
     caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')

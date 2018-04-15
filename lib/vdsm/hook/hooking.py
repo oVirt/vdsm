@@ -36,6 +36,7 @@ Return codes:
 >2 - reserved
 """
 from __future__ import absolute_import
+from __future__ import division
 
 import io
 import json

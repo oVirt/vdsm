@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+from __future__ import division
 
 import errno
 import logging
@@ -101,7 +102,7 @@ def send_metrics(hoststats):
 
 def _readSwapTotalFree():
     meminfo = utils.readMemInfo()
-    return meminfo['SwapTotal'] / 1024, meminfo['SwapFree'] / 1024
+    return meminfo['SwapTotal'] // 1024, meminfo['SwapFree'] // 1024
 
 
 # take a rough estimate on how much free mem is available for new vm
