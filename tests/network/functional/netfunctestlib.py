@@ -119,6 +119,7 @@ class NetFuncTestAdapter(object):
 
         self.assertHostQos(netname, netattrs)
 
+        self.assertNorthboundIface(netname, netattrs)
         self.assertSouthboundIface(netname, netattrs)
         self.assertVlan(netattrs)
         self.assertNetworkIp(netname, netattrs)
@@ -145,7 +146,7 @@ class NetFuncTestAdapter(object):
         assert not network_caps['bridged']
         assert netname not in self.netinfo.bridges
 
-    def assertSouthboundIface(self, netname, netattrs):
+    def assertNorthboundIface(self, netname, netattrs):
         nic = netattrs.get('nic')
         bond = netattrs.get('bonding')
         vlan = netattrs.get('vlan')
@@ -160,6 +161,19 @@ class NetFuncTestAdapter(object):
 
         network_caps = self.netinfo.networks[netname]
         assert iface == network_caps['iface']
+
+    def assertSouthboundIface(self, netname, netattrs):
+        nic = netattrs.get('nic')
+        bond = netattrs.get('bonding')
+        vlan = netattrs.get('vlan')
+
+        if vlan is not None and netattrs['switch'] == 'legacy':
+            sb_iface = '{}.{}'.format(nic or bond, vlan)
+        else:
+            sb_iface = nic or bond
+
+        network_caps = self.netinfo.networks[netname]
+        assert sb_iface == network_caps['southbound']
 
     def assertVlan(self, netattrs):
         vlan = netattrs.get('vlan')

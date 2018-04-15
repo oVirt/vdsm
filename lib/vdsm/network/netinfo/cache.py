@@ -85,10 +85,24 @@ def _networks_report(vdsmnets, routes, ipaddrs, devices_info):
     for network_info in six.itervalues(nets_info):
         network_info.update(dhcp_info[network_info['iface']])
         network_info.update(LEGACY_SWITCH)
+        _update_net_southbound_info(network_info, devices_info)
 
     report_network_qos(nets_info, devices_info)
 
     return nets_info
+
+
+def _update_net_southbound_info(network_info, devices_info):
+    if network_info['bridged']:
+        ports = set(network_info['ports'])
+        for dev_type in ('bondings', 'nics', 'vlans'):
+            sb_set = ports & set(devices_info[dev_type])
+            if len(sb_set) == 1:
+                network_info['southbound'], = sb_set
+                return
+        network_info['southbound'] = None
+    else:
+        network_info['southbound'] = network_info['iface']
 
 
 def _devices_report(ipaddrs, routes):
