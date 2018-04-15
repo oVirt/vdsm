@@ -103,6 +103,8 @@ def info(image, format=None, unsafe=False):
     except KeyError as key:
         raise InvalidOutput(cmd, out, "Missing field: %r" % key)
 
+    if 'actual-size' in qemu_info:
+        info['actualsize'] = qemu_info['actual-size']
     if 'cluster-size' in qemu_info:
         info['clustersize'] = qemu_info['cluster-size']
     if 'backing-filename' in qemu_info:
