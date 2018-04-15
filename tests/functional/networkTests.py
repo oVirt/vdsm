@@ -67,7 +67,7 @@ from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
 from testValidation import brokentest, slowtest, ValidateRunningAsRoot
 from network.nettestlib import Dummy, veth_pair, dnsmasq_run, running
 from network import dhcp
-from utils import SUCCESS, getProxy
+from .utils import SUCCESS, getProxy
 
 
 NETWORK_NAME = 'test-network'
