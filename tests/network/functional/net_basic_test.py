@@ -260,7 +260,7 @@ class TestNetworkBasicLegacy(object):
                 adapter.setupNetworks(NETREMOVE, {}, NOCHK)
                 adapter.assertNoNetwork(NETWORK_NAME)
 
-                nic_ifcfg_file = adapter.NET_CONF_PREF + nic
+                nic_ifcfg_file = TestNetworkBasicLegacy.NET_CONF_PREF + nic
                 assert os.path.exists(nic_ifcfg_file)
                 nic_ifcfg_badname_file = nic_ifcfg_file + 'tail123'
                 os.rename(nic_ifcfg_file, nic_ifcfg_badname_file)
