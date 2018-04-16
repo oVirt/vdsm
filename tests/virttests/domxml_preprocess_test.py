@@ -125,6 +125,36 @@ class TestReplaceDiskXML(XMLTestCase):
             cdrom_xml.format(file_src="file='' ")
         )
 
+    def test_replace_cdrom_with_minimal_drive(self):
+        dom_str = read_data('vm_hibernated_390.xml')
+        dom = vmxml.parse_xml(dom_str)
+        # taken from the test XML and amended manually
+        # please note:
+        # - the lack of empty 'backingStore' element
+        # - the 'driver' elements lack name="qemu" (default)
+        cdrom_xml = u'''<disk device="cdrom" type="file">
+            <driver error_policy="report" type="raw" />
+            <source file="" startupPolicy="optional" />
+            <target bus="ide" dev="hdc" />
+            <readonly />
+            <alias name="ua-096534a7-5fbd-4bd1-add0-65501bce51f9" />
+            <address bus="1" controller="0" target="0"
+                type="drive" unit="0" />
+        </disk>'''
+        cdrom_params = vmdevices.storagexml.parse(
+            vmxml.parse_xml(cdrom_xml), {}
+        )
+        disk_devs = [
+            vmdevices.storage.Drive(self.log, **cdrom_params),
+        ]
+        domxml_preprocess.update_disks_xml_from_objs(
+            FakeVM(self.log), dom, disk_devs)
+        cdrom_elem = dom.find('./devices/disk[@device="cdrom"]')
+        self.assertXMLEqual(
+            vmxml.format_xml(cdrom_elem, pretty=True),
+            cdrom_xml
+        )
+
     def _make_env(self):
         dom_disk_file_str = read_data('domain_disk_file.xml')
         dom = vmxml.parse_xml(dom_disk_file_str)

@@ -1,0 +1,209 @@
+<domain id="90" type="kvm">
+  <name>suspend_resume_vm</name>
+  <uuid>d6a8fd3f-6bdf-4030-9e31-ae193543e1c6</uuid>
+  <metadata xmlns:ns0="http://ovirt.org/vm/tune/1.0" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ns0:qos/>
+    <ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+      <ovirt-vm:clusterVersion>4.2</ovirt-vm:clusterVersion>
+      <ovirt-vm:destroy_on_reboot type="bool">False</ovirt-vm:destroy_on_reboot>
+      <ovirt-vm:launchPaused>false</ovirt-vm:launchPaused>
+      <ovirt-vm:memGuaranteedSize type="int">1024</ovirt-vm:memGuaranteedSize>
+      <ovirt-vm:minGuaranteedMemoryMb type="int">1024</ovirt-vm:minGuaranteedMemoryMb>
+      <ovirt-vm:resumeBehavior>auto_resume</ovirt-vm:resumeBehavior>
+      <ovirt-vm:startTime type="float">1523801666.38</ovirt-vm:startTime>
+      <ovirt-vm:device mac_address="00:1a:4a:16:10:5f">
+        <ovirt-vm:network>ovirtmgmt</ovirt-vm:network>
+        <ovirt-vm:specParams/>
+        <ovirt-vm:vm_custom/>
+      </ovirt-vm:device>
+      <ovirt-vm:device devtype="disk" name="vda">
+        <ovirt-vm:domainID>e030832d-48ef-4f79-8fd6-6fc8a990f83c</ovirt-vm:domainID>
+        <ovirt-vm:guestName>/dev/vda</ovirt-vm:guestName>
+        <ovirt-vm:imageID>4351c1d2-0d5e-469e-ab98-a0b31d7780e4</ovirt-vm:imageID>
+        <ovirt-vm:poolID>f53a3c55-843f-4cf8-8f7e-410ffbae73b2</ovirt-vm:poolID>
+        <ovirt-vm:volumeID>32f04728-7e05-4ef1-82e1-c9feb569587f</ovirt-vm:volumeID>
+        <ovirt-vm:specParams/>
+        <ovirt-vm:vm_custom/>
+        <ovirt-vm:volumeChain>
+          <ovirt-vm:volumeChainNode>
+            <ovirt-vm:domainID>e030832d-48ef-4f79-8fd6-6fc8a990f83c</ovirt-vm:domainID>
+            <ovirt-vm:imageID>4351c1d2-0d5e-469e-ab98-a0b31d7780e4</ovirt-vm:imageID>
+            <ovirt-vm:leaseOffset type="int">0</ovirt-vm:leaseOffset>
+            <ovirt-vm:leasePath>/rhev/data-center/mnt/testbox/e030832d-48ef-4f79-8fd6-6fc8a990f83c/images/4351c1d2-0d5e-469e-ab98-a0b31d7780e4/0ad717a6-caac-450c-ae50-e41bc78a9ab5.lease</ovirt-vm:leasePath>
+            <ovirt-vm:path>/rhev/data-center/mnt/testbox/e030832d-48ef-4f79-8fd6-6fc8a990f83c/images/4351c1d2-0d5e-469e-ab98-a0b31d7780e4/0ad717a6-caac-450c-ae50-e41bc78a9ab5</ovirt-vm:path>
+            <ovirt-vm:volumeID>0ad717a6-caac-450c-ae50-e41bc78a9ab5</ovirt-vm:volumeID>
+          </ovirt-vm:volumeChainNode>
+          <ovirt-vm:volumeChainNode>
+            <ovirt-vm:domainID>e030832d-48ef-4f79-8fd6-6fc8a990f83c</ovirt-vm:domainID>
+            <ovirt-vm:imageID>4351c1d2-0d5e-469e-ab98-a0b31d7780e4</ovirt-vm:imageID>
+            <ovirt-vm:leaseOffset type="int">0</ovirt-vm:leaseOffset>
+            <ovirt-vm:leasePath>/rhev/data-center/mnt/testbox/e030832d-48ef-4f79-8fd6-6fc8a990f83c/images/4351c1d2-0d5e-469e-ab98-a0b31d7780e4/32f04728-7e05-4ef1-82e1-c9feb569587f.lease</ovirt-vm:leasePath>
+            <ovirt-vm:path>/rhev/data-center/mnt/testbox/e030832d-48ef-4f79-8fd6-6fc8a990f83c/images/4351c1d2-0d5e-469e-ab98-a0b31d7780e4/32f04728-7e05-4ef1-82e1-c9feb569587f</ovirt-vm:path>
+            <ovirt-vm:volumeID>32f04728-7e05-4ef1-82e1-c9feb569587f</ovirt-vm:volumeID>
+          </ovirt-vm:volumeChainNode>
+        </ovirt-vm:volumeChain>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+  <maxMemory slots="16" unit="KiB">4194304</maxMemory>
+  <memory unit="KiB">1048576</memory>
+  <currentMemory unit="KiB">1048576</currentMemory>
+  <vcpu current="1" placement="static">16</vcpu>
+  <resource>
+    <partition>/machine</partition>
+  </resource>
+  <sysinfo type="smbios">
+    <system>
+      <entry name="manufacturer">oVirt</entry>
+      <entry name="product">RHEV Hypervisor</entry>
+      <entry name="version">7.5-8.el7</entry>
+      <entry name="serial">4C4C4544-004B-4210-804E-B8C04F465931</entry>
+      <entry name="uuid">d6a8fd3f-6bdf-4030-9e31-ae193543e1c6</entry>
+    </system>
+  </sysinfo>
+  <os>
+    <type arch="x86_64" machine="pc-i440fx-rhel7.3.0">hvm</type>
+    <smbios mode="sysinfo"/>
+  </os>
+  <features>
+    <acpi/>
+  </features>
+  <cpu check="full" match="exact" mode="custom">
+    <model fallback="forbid">SandyBridge</model>
+    <topology cores="1" sockets="16" threads="1"/>
+    <feature name="vme" policy="require"/>
+    <feature name="hypervisor" policy="require"/>
+    <feature name="arat" policy="require"/>
+    <feature name="xsaveopt" policy="require"/>
+    <numa>
+      <cell cpus="0" id="0" memory="1048576" unit="KiB"/>
+    </numa>
+  </cpu>
+  <clock adjustment="0" basis="utc" offset="variable">
+    <timer name="rtc" tickpolicy="catchup"/>
+    <timer name="pit" tickpolicy="delay"/>
+    <timer name="hpet" present="no"/>
+  </clock>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>destroy</on_crash>
+  <pm>
+    <suspend-to-mem enabled="no"/>
+    <suspend-to-disk enabled="no"/>
+  </pm>
+  <devices>
+    <emulator>/usr/libexec/qemu-kvm</emulator>
+    <disk device="cdrom" type="file">
+      <driver error_policy="report"/>
+      <source startupPolicy="optional"/>
+      <target bus="ide" dev="hdc"/>
+      <readonly/>
+      <alias name="ua-096534a7-5fbd-4bd1-add0-65501bce51f9"/>
+      <address bus="1" controller="0" target="0" type="drive" unit="0"/>
+    </disk>
+    <disk device="disk" snapshot="no" type="file">
+      <driver cache="none" error_policy="stop" io="threads" name="qemu" type="qcow2"/>
+      <source file="/rhev/data-center/mnt/testbox/e030832d-48ef-4f79-8fd6-6fc8a990f83c/images/4351c1d2-0d5e-469e-ab98-a0b31d7780e4/32f04728-7e05-4ef1-82e1-c9feb569587f"/>
+      <backingStore index="1" type="file">
+        <format type="qcow2"/>
+        <source file="/rhev/data-center/mnt/testbox/e030832d-48ef-4f79-8fd6-6fc8a990f83c/images/4351c1d2-0d5e-469e-ab98-a0b31d7780e4/0ad717a6-caac-450c-ae50-e41bc78a9ab5"/>
+        <backingStore/>
+      </backingStore>
+      <target bus="virtio" dev="vda"/>
+      <serial>4351c1d2-0d5e-469e-ab98-a0b31d7780e4</serial>
+      <boot order="1"/>
+      <alias name="ua-4351c1d2-0d5e-469e-ab98-a0b31d7780e4"/>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x07" type="pci"/>
+    </disk>
+    <controller index="0" model="piix3-uhci" type="usb">
+      <alias name="usb"/>
+      <address bus="0x00" domain="0x0000" function="0x2" slot="0x01" type="pci"/>
+    </controller>
+    <controller index="0" ports="16" type="virtio-serial">
+      <alias name="ua-4d8fbd4a-7a64-4ecb-901c-9e923b9b3e7b"/>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x05" type="pci"/>
+    </controller>
+    <controller index="0" model="virtio-scsi" type="scsi">
+      <alias name="ua-8919833c-1cd8-4d08-bec3-4a9ea3d443dd"/>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x06" type="pci"/>
+    </controller>
+    <controller index="0" model="pci-root" type="pci">
+      <alias name="pci.0"/>
+    </controller>
+    <controller index="0" type="ide">
+      <alias name="ide"/>
+      <address bus="0x00" domain="0x0000" function="0x1" slot="0x01" type="pci"/>
+    </controller>
+    <interface type="bridge">
+      <mac address="00:1a:4a:16:10:5f"/>
+      <source bridge="ovirtmgmt"/>
+      <target dev="vnet2"/>
+      <model type="virtio"/>
+      <filterref filter="vdsm-no-mac-spoofing"/>
+      <link state="up"/>
+      <alias name="ua-5f8454a5-2fc5-409a-a936-e0aa61122a08"/>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x03" type="pci"/>
+    </interface>
+    <channel type="unix">
+      <source mode="bind" path="/var/lib/libvirt/qemu/channels/d6a8fd3f-6bdf-4030-9e31-ae193543e1c6.ovirt-guest-agent.0"/>
+      <target name="ovirt-guest-agent.0" state="connected" type="virtio"/>
+      <alias name="channel0"/>
+      <address bus="0" controller="0" port="1" type="virtio-serial"/>
+    </channel>
+    <channel type="unix">
+      <source mode="bind" path="/var/lib/libvirt/qemu/channels/d6a8fd3f-6bdf-4030-9e31-ae193543e1c6.org.qemu.guest_agent.0"/>
+      <target name="org.qemu.guest_agent.0" state="connected" type="virtio"/>
+      <alias name="channel1"/>
+      <address bus="0" controller="0" port="2" type="virtio-serial"/>
+    </channel>
+    <channel type="spicevmc">
+      <target name="com.redhat.spice.0" state="disconnected" type="virtio"/>
+      <alias name="channel2"/>
+      <address bus="0" controller="0" port="3" type="virtio-serial"/>
+    </channel>
+    <input bus="ps2" type="mouse">
+      <alias name="input0"/>
+    </input>
+    <input bus="ps2" type="keyboard">
+      <alias name="input1"/>
+    </input>
+    <graphics autoport="yes" listen="10.35.160.165" passwdValidTo="1970-01-01T00:00:01" port="5904" tlsPort="5905" type="spice">
+      <listen address="10.35.160.165" network="vdsm-ovirtmgmt" type="network"/>
+      <channel mode="secure" name="main"/>
+      <channel mode="secure" name="display"/>
+      <channel mode="secure" name="inputs"/>
+      <channel mode="secure" name="cursor"/>
+      <channel mode="secure" name="playback"/>
+      <channel mode="secure" name="record"/>
+      <channel mode="secure" name="smartcard"/>
+      <channel mode="secure" name="usbredir"/>
+    </graphics>
+    <sound model="ich6">
+      <alias name="ua-ccf6ecc8-b25c-418f-9163-dbb6d4ae323f"/>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x04" type="pci"/>
+    </sound>
+    <video>
+      <model heads="1" primary="yes" ram="65536" type="qxl" vgamem="16384" vram="32768"/>
+      <alias name="ua-6799f347-bd30-4a32-96bc-bea668053e0a"/>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x02" type="pci"/>
+    </video>
+    <memballoon model="virtio">
+      <stats period="5"/>
+      <alias name="ua-41a8f396-3702-4edc-95ac-4d474c37b185"/>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x08" type="pci"/>
+    </memballoon>
+    <rng model="virtio">
+      <backend model="random">/dev/urandom</backend>
+      <alias name="ua-f1deb131-99cd-452c-b2ca-6caf391b15b1"/>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x09" type="pci"/>
+    </rng>
+  </devices>
+  <seclabel model="selinux" relabel="yes" type="dynamic">
+    <label>system_u:system_r:svirt_t:s0:c430,c589</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c430,c589</imagelabel>
+  </seclabel>
+  <seclabel model="dac" relabel="yes" type="dynamic">
+    <label>+107:+107</label>
+    <imagelabel>+107:+107</imagelabel>
+  </seclabel>
+</domain>

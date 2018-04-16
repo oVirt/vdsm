@@ -299,7 +299,8 @@ def update_disk_element_from_object(disk_element, vm_drive, log,
     # update the format (the disk might have been collapsed)
     driver = vmxml.find_first(disk_element, 'driver')
     drive_format = 'qcow2' if vm_drive.format == 'cow' else 'raw'
-    old_drive_format = driver.attrib['type']
+    # on resume, CDroms may have minimal 'driver' attribute
+    old_drive_format = driver.attrib.get('type')
     vmxml.set_attr(driver, 'type', drive_format)
     changes['format'] = (old_drive_format, drive_format)
 
