@@ -271,11 +271,15 @@ def update_disk_element_from_object(disk_element, vm_drive, log,
     # key: (old_value, new_value)
     changes = {}
 
+    # the only change relevant for floppies is the path,
+    # because their only usage left is sysprep - aka payload devices.
+    device = disk_element.attrib.get('device')
     old_disk_type = disk_element.attrib.get('type')
-    # update the type
     disk_type = vm_drive.diskType
-    vmxml.set_attr(disk_element, 'type', disk_type)
-    changes['type'] = (old_disk_type, disk_type)
+
+    if device != 'floppy':
+        vmxml.set_attr(disk_element, 'type', disk_type)
+        changes['type'] = (old_disk_type, disk_type)
 
     # update the path
     source = vmxml.find_first(disk_element, 'source')
@@ -296,13 +300,14 @@ def update_disk_element_from_object(disk_element, vm_drive, log,
         '*%s=%s' % (disk_attr, vm_drive.path),
     )
 
-    # update the format (the disk might have been collapsed)
-    driver = vmxml.find_first(disk_element, 'driver')
-    drive_format = 'qcow2' if vm_drive.format == 'cow' else 'raw'
-    # on resume, CDroms may have minimal 'driver' attribute
-    old_drive_format = driver.attrib.get('type')
-    vmxml.set_attr(driver, 'type', drive_format)
-    changes['format'] = (old_drive_format, drive_format)
+    if device != 'floppy':
+        # update the format (the disk might have been collapsed)
+        driver = vmxml.find_first(disk_element, 'driver')
+        drive_format = 'qcow2' if vm_drive.format == 'cow' else 'raw'
+        # on resume, CDroms may have minimal 'driver' attribute
+        old_drive_format = driver.attrib.get('type')
+        vmxml.set_attr(driver, 'type', drive_format)
+        changes['format'] = (old_drive_format, drive_format)
 
     _log_changes(log, 'drive', vm_drive.name, changes)
 

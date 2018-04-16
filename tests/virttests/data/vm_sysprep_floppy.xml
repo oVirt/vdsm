@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<domain type="kvm" xmlns:ovirt-tune="http://ovirt.org/vm/tune/1.0" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+  <name>windows_10</name>
+  <uuid>e9252f48-6b22-4c9b-8d9a-8531fcf71f4c</uuid>
+  <memory>4194304</memory>
+  <currentMemory>4194304</currentMemory>
+  <maxMemory slots="16">10485760</maxMemory>
+  <vcpu current="1">16</vcpu>
+  <sysinfo type="smbios">
+    <system>
+      <entry name="manufacturer">oVirt</entry>
+      <entry name="product">OS-NAME:</entry>
+      <entry name="version">OS-VERSION:</entry>
+      <entry name="serial">HOST-SERIAL:</entry>
+      <entry name="uuid">e9252f48-6b22-4c9b-8d9a-8531fcf71f4c</entry>
+    </system>
+  </sysinfo>
+  <clock adjustment="3600" offset="variable">
+    <timer name="hypervclock" present="yes"></timer>
+    <timer name="rtc" tickpolicy="catchup"></timer>
+    <timer name="pit" tickpolicy="delay"></timer>
+    <timer name="hpet" present="no"></timer>
+  </clock>
+  <features>
+    <acpi></acpi>
+    <hyperv>
+      <relaxed state="on"></relaxed>
+      <vapic state="on"></vapic>
+      <spinlocks retries="8191" state="on"></spinlocks>
+    </hyperv>
+  </features>
+  <cpu match="exact">
+    <model>SandyBridge</model>
+    <topology cores="1" sockets="16" threads="1"></topology>
+    <numa>
+      <cell cpus="0" id="0" memory="4194304"></cell>
+    </numa>
+  </cpu>
+  <cputune></cputune>
+  <devices>
+    <input bus="ps2" type="mouse"></input>
+    <channel type="unix">
+      <target name="ovirt-guest-agent.0" type="virtio"></target>
+      <source mode="bind" path="/var/lib/libvirt/qemu/channels/e9252f48-6b22-4c9b-8d9a-8531fcf71f4c.ovirt-guest-agent.0"></source>
+    </channel>
+    <channel type="unix">
+      <target name="org.qemu.guest_agent.0" type="virtio"></target>
+      <source mode="bind" path="/var/lib/libvirt/qemu/channels/e9252f48-6b22-4c9b-8d9a-8531fcf71f4c.org.qemu.guest_agent.0"></source>
+    </channel>
+    <controller index="0" model="piix3-uhci" type="usb">
+      <address bus="0x00" domain="0x0000" function="0x2" slot="0x01" type="pci"></address>
+    </controller>
+    <sound model="ich6">
+      <alias name="ua-7fae5b09-de27-4da8-bb61-7aa85fbea07e"></alias>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x04" type="pci"></address>
+    </sound>
+    <controller type="ide">
+      <address bus="0x00" domain="0x0000" function="0x1" slot="0x01" type="pci"></address>
+    </controller>
+    <controller index="0" ports="16" type="virtio-serial">
+      <alias name="ua-8288e128-01c2-4501-bc91-7cce925fbfcd"></alias>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x06" type="pci"></address>
+    </controller>
+    <rng model="virtio">
+      <backend model="random">/dev/urandom</backend>
+      <alias name="ua-85b5e1a8-c3f8-4967-b810-4d3a2dbc8abe"></alias>
+    </rng>
+    <memballoon model="virtio">
+      <stats period="5"></stats>
+      <alias name="ua-94e9e773-d680-4b66-b392-78036f2ad4b1"></alias>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x07" type="pci"></address>
+    </memballoon>
+    <video>
+      <model heads="1" ram="65536" type="qxl" vgamem="16384" vram="8192"></model>
+      <alias name="ua-983f07b0-e20c-4be0-8027-645bd1d4562e"></alias>
+    </video>
+    <graphics autoport="yes" passwd="*****" passwdValidTo="1970-01-01T00:00:01" port="-1" tlsPort="-1" type="spice">
+      <channel mode="secure" name="main"></channel>
+      <channel mode="secure" name="inputs"></channel>
+      <channel mode="secure" name="cursor"></channel>
+      <channel mode="secure" name="playback"></channel>
+      <channel mode="secure" name="record"></channel>
+      <channel mode="secure" name="display"></channel>
+      <channel mode="secure" name="smartcard"></channel>
+      <channel mode="secure" name="usbredir"></channel>
+      <listen network="vdsm-ovirtmgmt" type="network"></listen>
+    </graphics>
+    <channel type="spicevmc">
+      <target name="com.redhat.spice.0" type="virtio"></target>
+    </channel>
+    <interface type="bridge">
+      <model type="virtio"></model>
+      <link state="up"></link>
+      <source bridge="ovirtmgmt"></source>
+      <alias name="ua-3271f509-8691-4233-9df7-d62521d74424"></alias>
+      <address bus="0x00" domain="0x0000" function="0x0" slot="0x03" type="pci"></address>
+      <mac address="00:1a:4a:16:88:8b"></mac>
+      <filterref filter="vdsm-no-mac-spoofing"></filterref>
+      <bandwidth></bandwidth>
+    </interface>
+    <disk device="cdrom" snapshot="no" type="file">
+      <driver error_policy="report" name="qemu" type="raw"></driver>
+      <source file="" startupPolicy="optional"></source>
+      <target bus="ide" dev="hdc"></target>
+      <readonly></readonly>
+      <alias name="ua-783269ab-f956-4aab-80a1-b32b6f6cfb7e"></alias>
+      <address bus="1" controller="0" target="0" type="drive" unit="0"></address>
+    </disk>
+    <disk device="floppy" snapshot="no" type="file">
+      <source file="PAYLOAD:" startupPolicy="optional"></source>
+      <target bus="fdc" dev="fda"></target>
+      <readonly></readonly>
+      <alias name="ua-cc9acd76-7b44-4adf-881d-e98e1cf4e639"></alias>
+    </disk>
+    <disk device="disk" snapshot="no" type="file">
+      <target bus="ide" dev="hda"></target>
+      <source file="/rhev/data-center/d5e3519f-fdfc-46a6-899c-77b12393dc08/b1504dab-e92b-43cb-963e-df14bbda9e33/images/93b063d7-d508-4e42-a8b0-c0d0f8f3b2c6/06a0064d-3d25-4a0f-ac2d-c9a7fe956f59"></source>
+      <driver cache="none" error_policy="stop" io="threads" name="qemu" type="qcow2"></driver>
+      <alias name="ua-93b063d7-d508-4e42-a8b0-c0d0f8f3b2c6"></alias>
+      <address bus="0" controller="0" target="0" type="drive" unit="0"></address>
+      <boot order="1"></boot>
+      <serial>93b063d7-d508-4e42-a8b0-c0d0f8f3b2c6</serial>
+    </disk>
+  </devices>
+  <pm>
+    <suspend-to-disk enabled="no"></suspend-to-disk>
+    <suspend-to-mem enabled="no"></suspend-to-mem>
+  </pm>
+  <os>
+    <type arch="x86_64" machine="pc-i440fx-rhel7.5.0">hvm</type>
+    <smbios mode="sysinfo"></smbios>
+  </os>
+  <metadata>
+    <ovirt-tune:qos></ovirt-tune:qos>
+    <ovirt-vm:vm>
+      <minGuaranteedMemoryMb type="int">4096</minGuaranteedMemoryMb>
+      <clusterVersion>4.2</clusterVersion>
+      <ovirt-vm:custom></ovirt-vm:custom>
+      <ovirt-vm:device mac_address="00:1a:4a:16:88:8b">
+        <ovirt-vm:custom></ovirt-vm:custom>
+      </ovirt-vm:device>
+      <ovirt-vm:device devtype="disk" name="hda">
+        <ovirt-vm:poolID>d5e3519f-fdfc-46a6-899c-77b12393dc08</ovirt-vm:poolID>
+        <ovirt-vm:volumeID>06a0064d-3d25-4a0f-ac2d-c9a7fe956f59</ovirt-vm:volumeID>
+        <ovirt-vm:imageID>93b063d7-d508-4e42-a8b0-c0d0f8f3b2c6</ovirt-vm:imageID>
+        <ovirt-vm:domainID>b1504dab-e92b-43cb-963e-df14bbda9e33</ovirt-vm:domainID>
+      </ovirt-vm:device>
+      <launchPaused>false</launchPaused>
+      <ovirt-vm:device devtype="disk" name="fda">
+        <ovirt-vm:payload>
+          <ovirt-vm:file path="Unattend.xml">PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjx1bmF0dGVuZCB4bWxucz0idXJuOnNjaGVtYXMtbWljcm9zb2Z0LWNvbTp1bmF0dGVuZCI+DQogICAgPHNldHRpbmdzIHBhc3M9IndpbmRvd3NQRSI+DQogICAgICAgIDxjb21wb25lbnQgbmFtZT0iTWljcm9zb2Z0LVdpbmRvd3MtU2V0dXAiIHByb2Nlc3NvckFyY2hpdGVjdHVyZT0iYW1kNjQiIHB1YmxpY0tleVRva2VuPSIzMWJmMzg1NmFkMzY0ZTM1IiBsYW5ndWFnZT0ibmV1dHJhbCIgdmVyc2lvblNjb3BlPSJub25TeFMiIHhtbG5zOndjbT0iaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS9XTUlDb25maWcvMjAwMi9TdGF0ZSIgeG1sbnM6eHNpPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYS1pbnN0YW5jZSI+DQogICAgICAgICAgICA8VXNlckRhdGE+DQogICAgICAgICAgICAgICAgPFByb2R1Y3RLZXk+DQogICAgICAgICAgICAgICAgICAgIDxLZXk+PCFbQ0RBVEFbWUhHUE4tM0hZUUgtSllHR0YtQjJDSFEtN1Q5UjRdXT48L0tleT4NCiAgICAgICAgICAgICAgICA8L1Byb2R1Y3RLZXk+DQogICAgICAgICAgICAgICAgPEFjY2VwdEV1bGE+dHJ1ZTwvQWNjZXB0RXVsYT4NCiAgICAgICAgICAgICAgICA8RnVsbE5hbWU+InVzZXIiPC9GdWxsTmFtZT4NCiAgICAgICAgICAgICAgICA8T3JnYW5pemF0aW9uPjwhW0NEQVRBW2xhYi5lbmcudGx2Mi5yZWRoYXQuY29tXV0+PC9Pcmdhbml6YXRpb24+DQogICAgICAgICAgICA8L1VzZXJEYXRhPg0KICAgICAgICAgICAgPEltYWdlSW5zdGFsbD4NCiAgICAgICAgICAgICAgICA8T1NJbWFnZT4NCiAgICAgICAgICAgICAgICAgICAgPEluc3RhbGxUb0F2YWlsYWJsZVBhcnRpdGlvbj50cnVlPC9JbnN0YWxsVG9BdmFpbGFibGVQYXJ0aXRpb24+DQogICAgICAgICAgICAgICAgPC9PU0ltYWdlPg0KICAgICAgICAgICAgPC9JbWFnZUluc3RhbGw+DQogICAgICAgIDwvY29tcG9uZW50Pg0KICAgICAgICA8Y29tcG9uZW50IG5hbWU9Ik1pY3Jvc29mdC1XaW5kb3dzLUludGVybmF0aW9uYWwtQ29yZS1XaW5QRSIgcHJvY2Vzc29yQXJjaGl0ZWN0dXJlPSJhbWQ2NCIgcHVibGljS2V5VG9rZW49IjMxYmYzODU2YWQzNjRlMzUiIGxhbmd1YWdlPSJuZXV0cmFsIiB2ZXJzaW9uU2NvcGU9Im5vblN4UyIgeG1sbnM6d2NtPSJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL1dNSUNvbmZpZy8yMDAyL1N0YXRlIiB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIj4NCiAgICAgICAgICAgIDxTZXR1cFVJTGFuZ3VhZ2U+DQogICAgICAgICAgICAgICAgPFVJTGFuZ3VhZ2U+PCFbQ0RBVEFbZW5fVVNdXT48L1VJTGFuZ3VhZ2U+DQogICAgICAgICAgICA8L1NldHVwVUlMYW5ndWFnZT4NCiAgICAgICAgICAgIDxJbnB1dExvY2FsZT48IVtDREFUQVtlbl9VU11dPjwvSW5wdXRMb2NhbGU+DQogICAgICAgICAgICA8VUlMYW5ndWFnZT48IVtDREFUQVtlbl9VU11dPjwvVUlMYW5ndWFnZT4NCiAgICAgICAgICAgIDxTeXN0ZW1Mb2NhbGU+PCFbQ0RBVEFbZW5fVVNdXT48L1N5c3RlbUxvY2FsZT4NCiAgICAgICAgICAgIDxVc2VyTG9jYWxlPjwhW0NEQVRBW2VuX1VTXV0+PC9Vc2VyTG9jYWxlPg0KICAgICAgICA8L2NvbXBvbmVudD4NCiAgICA8L3NldHRpbmdzPg0KICAgIDxzZXR0aW5ncyBwYXNzPSJzcGVjaWFsaXplIj4NCiAgICAgICAgPGNvbXBvbmVudCBuYW1lPSJNaWNyb3NvZnQtV2luZG93cy1VbmF0dGVuZGVkSm9pbiIgcHJvY2Vzc29yQXJjaGl0ZWN0dXJlPSJhbWQ2NCIgcHVibGljS2V5VG9rZW49IjMxYmYzODU2YWQzNjRlMzUiIGxhbmd1YWdlPSJuZXV0cmFsIiB2ZXJzaW9uU2NvcGU9Im5vblN4UyIgeG1sbnM6d2NtPSJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL1dNSUNvbmZpZy8yMDAyL1N0YXRlIiB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIj4NCiAgICAgICAgICAgIDxJZGVudGlmaWNhdGlvbj4NCiAgICAgICAgICAgICAgICA8Q3JlZGVudGlhbHM+DQogICAgICAgICAgICAgICAgICAgIDxEb21haW4+PCFbQ0RBVEFbXV0+PC9Eb21haW4+DQogICAgICAgICAgICAgICAgICAgIDxQYXNzd29yZD48IVtDREFUQVtdXT48L1Bhc3N3b3JkPg0KICAgICAgICAgICAgICAgICAgICA8VXNlcm5hbWU+PCFbQ0RBVEFbXV0+PC9Vc2VybmFtZT4NCiAgICAgICAgICAgICAgICA8L0NyZWRlbnRpYWxzPg0KICAgICAgICAgICAgICAgIDxKb2luRG9tYWluPjwhW0NEQVRBW11dPjwvSm9pbkRvbWFpbj4NCiAgICAgICAgICAgICAgICA8TWFjaGluZU9iamVjdE9VPjwhW0NEQVRBW11dPjwvTWFjaGluZU9iamVjdE9VPg0KICAgICAgICAgICAgPC9JZGVudGlmaWNhdGlvbj4NCiAgICAgICAgPC9jb21wb25lbnQ+DQogICAgICAgIDxjb21wb25lbnQgbmFtZT0iTWljcm9zb2Z0LVdpbmRvd3MtU2hlbGwtU2V0dXAiIHByb2Nlc3NvckFyY2hpdGVjdHVyZT0iYW1kNjQiIHB1YmxpY0tleVRva2VuPSIzMWJmMzg1NmFkMzY0ZTM1IiBsYW5ndWFnZT0ibmV1dHJhbCIgdmVyc2lvblNjb3BlPSJub25TeFMiIHhtbG5zOndjbT0iaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS9XTUlDb25maWcvMjAwMi9TdGF0ZSIgeG1sbnM6eHNpPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYS1pbnN0YW5jZSI+DQogICAgICAgICAgICA8RGlzcGxheT4NCiAgICAgICAgICAgICAgICA8Q29sb3JEZXB0aD4zMjwvQ29sb3JEZXB0aD4NCiAgICAgICAgICAgICAgICA8RFBJPjk2PC9EUEk+DQogICAgICAgICAgICAgICAgPEhvcml6b250YWxSZXNvbHV0aW9uPjEwMjQ8L0hvcml6b250YWxSZXNvbHV0aW9uPg0KICAgICAgICAgICAgICAgIDxSZWZyZXNoUmF0ZT43NTwvUmVmcmVzaFJhdGU+DQogICAgICAgICAgICAgICAgPFZlcnRpY2FsUmVzb2x1dGlvbj43Njg8L1ZlcnRpY2FsUmVzb2x1dGlvbj4NCiAgICAgICAgICAgIDwvRGlzcGxheT4NCiAgICAgICAgICAgIDxDb21wdXRlck5hbWU+PCFbQ0RBVEFbd2luZG93c18xMF1dPjwvQ29tcHV0ZXJOYW1lPg0KICAgICAgICAgICAgPFRpbWVab25lPjwhW0NEQVRBW0dNVCBTdGFuZGFyZCBUaW1lXV0+PC9UaW1lWm9uZT4NCiAgICAgICAgPC9jb21wb25lbnQ+DQogICAgICAgIDxjb21wb25lbnQgbmFtZT0iTWljcm9zb2Z0LVdpbmRvd3MtSW50ZXJuYXRpb25hbC1Db3JlIiBwcm9jZXNzb3JBcmNoaXRlY3R1cmU9ImFtZDY0IiBwdWJsaWNLZXlUb2tlbj0iMzFiZjM4NTZhZDM2NGUzNSIgbGFuZ3VhZ2U9Im5ldXRyYWwiIHZlcnNpb25TY29wZT0ibm9uU3hTIiB4bWxuczp3Y209Imh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vV01JQ29uZmlnLzIwMDIvU3RhdGUiIHhtbG5zOnhzaT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEtaW5zdGFuY2UiPg0KICAgICAgICAgICAgPElucHV0TG9jYWxlPjwhW0NEQVRBW2VuX1VTXV0+PC9JbnB1dExvY2FsZT4NCiAgICAgICAgICAgIDxVc2VyTG9jYWxlPjwhW0NEQVRBW2VuX1VTXV0+PC9Vc2VyTG9jYWxlPg0KICAgICAgICAgICAgPFN5c3RlbUxvY2FsZT48IVtDREFUQVtlbl9VU11dPjwvU3lzdGVtTG9jYWxlPg0KICAgICAgICAgICAgPFVJTGFuZ3VhZ2U+PCFbQ0RBVEFbZW5fVVNdXT48L1VJTGFuZ3VhZ2U+DQogICAgICAgIDwvY29tcG9uZW50Pg0KICAgIDwvc2V0dGluZ3M+DQogICAgPHNldHRpbmdzIHBhc3M9Im9vYmVTeXN0ZW0iPg0KICAgICAgICA8Y29tcG9uZW50IG5hbWU9Ik1pY3Jvc29mdC1XaW5kb3dzLVNoZWxsLVNldHVwIiBwcm9jZXNzb3JBcmNoaXRlY3R1cmU9ImFtZDY0IiBwdWJsaWNLZXlUb2tlbj0iMzFiZjM4NTZhZDM2NGUzNSIgbGFuZ3VhZ2U9Im5ldXRyYWwiIHZlcnNpb25TY29wZT0ibm9uU3hTIiB4bWxuczp3Y209Imh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vV01JQ29uZmlnLzIwMDIvU3RhdGUiIHhtbG5zOnhzaT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEtaW5zdGFuY2UiPg0KICAgICAgICAgICAgPFVzZXJBY2NvdW50cz4NCiAgICAgICAgICAgICAgICA8QWRtaW5pc3RyYXRvclBhc3N3b3JkPg0KICAgICAgICAgICAgICAgICAgICA8VmFsdWU+PCFbQ0RBVEFbXV0+PC9WYWx1ZT4NCiAgICAgICAgICAgICAgICAgICAgPFBsYWluVGV4dD50cnVlPC9QbGFpblRleHQ+DQogICAgICAgICAgICAgICAgPC9BZG1pbmlzdHJhdG9yUGFzc3dvcmQ+DQogICAgICAgICAgICAgICAgPExvY2FsQWNjb3VudHM+DQogICAgICAgICAgICAgICAgICAgIDxMb2NhbEFjY291bnQgd2NtOmFjdGlvbj0iYWRkIj4NCiAgICAgICAgICAgICAgICAgICAgICAgIDxQYXNzd29yZD4NCiAgICAgICAgICAgICAgICAgICAgICAgICAgICA8VmFsdWU+PCFbQ0RBVEFbXV0+PC9WYWx1ZT4NCiAgICAgICAgICAgICAgICAgICAgICAgICAgICA8UGxhaW5UZXh0PnRydWU8L1BsYWluVGV4dD4NCiAgICAgICAgICAgICAgICAgICAgICAgIDwvUGFzc3dvcmQ+DQogICAgICAgICAgICAgICAgICAgICAgICA8RGlzcGxheU5hbWU+dXNlcjwvRGlzcGxheU5hbWU+DQogICAgICAgICAgICAgICAgICAgICAgICA8R3JvdXA+YWRtaW5pc3RyYXRvcnM8L0dyb3VwPg0KICAgICAgICAgICAgICAgICAgICAgICAgPE5hbWU+dXNlcjwvTmFtZT4NCiAgICAgICAgICAgICAgICAgICAgPC9Mb2NhbEFjY291bnQ+DQogICAgICAgICAgICAgICAgPC9Mb2NhbEFjY291bnRzPg0KICAgICAgICAgICAgPC9Vc2VyQWNjb3VudHM+DQogICAgICAgICAgICA8T09CRT4NCiAgICAgICAgICAgICAgICA8SGlkZUVVTEFQYWdlPnRydWU8L0hpZGVFVUxBUGFnZT4NCiAgICAgICAgICAgICAgICA8TmV0d29ya0xvY2F0aW9uPldvcms8L05ldHdvcmtMb2NhdGlvbj4NCiAgICAgICAgICAgICAgICA8UHJvdGVjdFlvdXJQQz4yPC9Qcm90ZWN0WW91clBDPg0KICAgICAgICAgICAgPC9PT0JFPg0KICAgICAgICA8L2NvbXBvbmVudD4NCiAgICAgICAgPGNvbXBvbmVudCBuYW1lPSJNaWNyb3NvZnQtV2luZG93cy1JbnRlcm5hdGlvbmFsLUNvcmUiIHByb2Nlc3NvckFyY2hpdGVjdHVyZT0iYW1kNjQiIHB1YmxpY0tleVRva2VuPSIzMWJmMzg1NmFkMzY0ZTM1IiBsYW5ndWFnZT0ibmV1dHJhbCIgdmVyc2lvblNjb3BlPSJub25TeFMiIHhtbG5zOndjbT0iaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS9XTUlDb25maWcvMjAwMi9TdGF0ZSIgeG1sbnM6eHNpPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYS1pbnN0YW5jZSI+DQogICAgICAgICAgICA8SW5wdXRMb2NhbGU+PCFbQ0RBVEFbZW5fVVNdXT48L0lucHV0TG9jYWxlPg0KICAgICAgICAgICAgPFVzZXJMb2NhbGU+PCFbQ0RBVEFbZW5fVVNdXT48L1VzZXJMb2NhbGU+DQogICAgICAgICAgICA8U3lzdGVtTG9jYWxlPjwhW0NEQVRBW2VuX1VTXV0+PC9TeXN0ZW1Mb2NhbGU+DQogICAgICAgICAgICA8VUlMYW5ndWFnZT48IVtDREFUQVtlbl9VU11dPjwvVUlMYW5ndWFnZT4NCiAgICAgICAgPC9jb21wb25lbnQ+DQogICAgPC9zZXR0aW5ncz4NCiAgICA8Y3BpOm9mZmxpbmVJbWFnZSBjcGk6c291cmNlPSJ3aW06ZDovc291cmNlcy9pbnN0YWxsLndpbSNXaW5kb3dzIDEwIEVOVEVSUFJJU0UiIHhtbG5zOmNwaT0idXJuOnNjaGVtYXMtbWljcm9zb2Z0LWNvbTpjcGkiLz4NCjwvdW5hdHRlbmQ+DQo=</ovirt-vm:file>
+        </ovirt-vm:payload>
+      </ovirt-vm:device>
+      <resumeBehavior>auto_resume</resumeBehavior>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>
