@@ -129,7 +129,7 @@ class TestReplaceDiskXML(XMLTestCase):
 
     def test_replace_cdrom_with_minimal_drive(self):
         dom_str = read_data('vm_hibernated_390.xml')
-        dom = vmxml.parse_xml(dom_str)
+        dom = xmlutils.fromstring(dom_str)
         # taken from the test XML and amended manually
         # please note:
         # - the lack of empty 'backingStore' element
@@ -144,7 +144,7 @@ class TestReplaceDiskXML(XMLTestCase):
                 type="drive" unit="0" />
         </disk>'''
         cdrom_params = vmdevices.storagexml.parse(
-            vmxml.parse_xml(cdrom_xml), {}
+            xmlutils.fromstring(cdrom_xml), {}
         )
         disk_devs = [
             vmdevices.storage.Drive(self.log, **cdrom_params),
@@ -153,7 +153,7 @@ class TestReplaceDiskXML(XMLTestCase):
             FakeVM(self.log), dom, disk_devs)
         cdrom_elem = dom.find('./devices/disk[@device="cdrom"]')
         self.assertXMLEqual(
-            vmxml.format_xml(cdrom_elem, pretty=True),
+            xmlutils.tostring(cdrom_elem, pretty=True),
             cdrom_xml
         )
 
