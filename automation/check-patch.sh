@@ -53,3 +53,12 @@ if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.i
 
     yum -y install vdsm-$vr\* vdsm-client-$vr\* vdsm-hook-\*-$vr\* vdsm-tests-$vr\* vdsm-gluster-$vr\*
 fi
+
+function collect_logs {
+    cd /var/log
+    tar -cvzf "$EXPORT_DIR/mock_varlogs.tar.gz" *
+    cd /var/host_log
+    tar -cvzf "$EXPORT_DIR/host_varlogs.tar.gz" *
+}
+
+collect_logs
