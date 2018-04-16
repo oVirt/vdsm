@@ -5,8 +5,11 @@ source automation/ovirt.sh
 EXPORT_DIR="$PWD/exported-artifacts"
 mkdir -p $EXPORT_DIR
 
-collect-logs() {
-    cp /var/log/vdsm_tests.log "$EXPORT_DIR"/
+function collect_logs {
+    cd /var/log
+    tar -cvzf "$EXPORT_DIR/mock_varlogs.tar.gz" *
+    cd /var/host_log
+    tar -cvzf "$EXPORT_DIR/host_varlogs.tar.gz" *
 }
 
 set -xe
@@ -24,7 +27,7 @@ debuginfo-install -y python
 # Make sure we have enough loop device nodes.
 create_loop_devices 8
 
-trap collect-logs EXIT
+trap collect_logs EXIT
 TIMEOUT=600 make --jobs=2 check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 
 # Generate coverage report in HTML format
