@@ -157,6 +157,34 @@ class TestReplaceDiskXML(XMLTestCase):
             cdrom_xml
         )
 
+    def test_with_sysprep_floppy(self):
+        dom_str = read_data('vm_sysprep_floppy.xml')
+        dom = xmlutils.fromstring(dom_str)
+        # taken and amended from vm_sysprep_floppy.xml
+        floppy_params = {
+            'index': 0,
+            'iface': 'fdc',
+            'name': 'fda',
+            'alias': 'ua-cc9acd76-7b44-4adf-881d-e98e1cf4e639',
+            'vmid': 'e9252f48-6b22-4c9b-8d9a-8531fcf71f4c',
+            'diskType': 'file',
+            'readonly': True,
+            'device': 'floppy',
+            'path': 'PAYLOAD:',
+            'propagateErrors': 'off',
+            'type': 'disk'
+        }
+        floppy_obj = vmdevices.storage.Drive(self.log, **floppy_params)
+        disk_devs = [floppy_obj]
+        domxml_preprocess.update_disks_xml_from_objs(
+            FakeVM(self.log), dom, disk_devs)
+
+        floppy_elem = dom.find('./devices/disk[@device="floppy"]')
+        self.assertXMLEqual(
+            xmlutils.tostring(floppy_elem, pretty=True),
+            xmlutils.tostring(floppy_obj.getXML(), pretty=True),
+        )
+
     def _make_env(self):
         dom_disk_file_str = read_data('domain_disk_file.xml')
         dom = xmlutils.fromstring(dom_disk_file_str)
