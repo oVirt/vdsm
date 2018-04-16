@@ -44,12 +44,14 @@ _DB_ENTRIES_WHICH_SHOULD_NOT_BE_LIST = {
 
 OUTPUT_FORMAT = ['--oneline', '--format=json']
 
+DEFAULT_TIMEOUT = 5
+
 
 class Transaction(DriverTransaction):
 
     def __init__(self):
         self.commands = []
-        self.timeout = None
+        self.timeout = DEFAULT_TIMEOUT
 
     def commit(self):
         if not self.commands:
@@ -91,7 +93,7 @@ class Command(DriverCommand):
         self.cmd = cmd
         self._result = None
 
-    def execute(self, timeout=None):
+    def execute(self, timeout=DEFAULT_TIMEOUT):
         with Transaction() as t:
             t.timeout = timeout
             t.add(self)
