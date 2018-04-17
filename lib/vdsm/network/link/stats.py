@@ -20,6 +20,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 from vdsm.network.link import bond
+from vdsm.network.link import dpdk
 from vdsm.network.link import iface
 from vdsm.network.link import nic
 from vdsm.network.link import vlan
@@ -38,6 +39,8 @@ def report():
             speed = bond.speed(i.device)
         elif i.type() == iface.Type.VLAN:
             speed = vlan.speed(i.device)
+        elif i.type() == iface.Type.DPDK:
+            speed = dpdk.speed(i.device)
 
         stats[i.device]['speed'] = speed
         stats[i.device]['duplex'] = nic.duplex(i.device)
