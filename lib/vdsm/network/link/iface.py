@@ -219,6 +219,8 @@ class IfaceHybrid(IfaceAPI):
         ipwrapper.linkSet(self._dev, link_set_args)
 
     def type(self):
+        if self._is_dpdk_type:
+            return Type.DPDK
         return self.properties().get('type', get_alternative_type(self._dev))
 
     def statistics(self):
