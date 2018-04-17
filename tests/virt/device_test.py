@@ -26,7 +26,6 @@ from vdsm.common import response
 from vdsm.common import xmlutils
 from vdsm import constants
 import vdsm
-from vdsm.network.api import DUMMY_BRIDGE
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
 from vdsm.virt.domain_descriptor import DomainDescriptor
@@ -719,29 +718,6 @@ class TestHotplug(TestCaseBase):
   </metadata>
 </hotplug>
 '''
-    NIC_HOTPLUG_EMPTY_NET = '''<?xml version='1.0' encoding='UTF-8'?>
-<hotplug>
-  <devices>
-    <interface type="bridge">
-      <mac address="66:55:44:33:22:11"/>
-      <model type="virtio" />
-      <source bridge="" />
-      <link state="up" />
-      <bandwidth />
-    </interface>
-  </devices>
-  <metadata xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
-    <ovirt-vm:vm>
-      <ovirt-vm:device mac_address='66:55:44:33:22:11'>
-        <ovirt-vm:portMirroring>
-          <ovirt-vm:network>network1</ovirt-vm:network>
-          <ovirt-vm:network>network2</ovirt-vm:network>
-        </ovirt-vm:portMirroring>
-      </ovirt-vm:device>
-    </ovirt-vm:vm>
-  </metadata>
-</hotplug>
-'''
     DISK_HOTPLUG = '''<?xml version='1.0' encoding='UTF-8'?>
 <hotplug>
   <devices>
@@ -834,25 +810,6 @@ class TestHotplug(TestCaseBase):
                          [('network1', '',),
                           ('network2', '',)])
 
-    def test_nic_hotplug_empty_net(self):
-        vm = self.vm
-        params = {'xml': self.NIC_HOTPLUG_EMPTY_NET}
-        hotplugged_xml = []
-        with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
-                                self.supervdsm.getProxy)]):
-            vm._dom.attachDevice = lambda xml: hotplugged_xml.append(xml)
-            vm.hotplugNic(params)
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 2)
-        for dev in vm._devices[hwclass.NIC]:
-            if dev.macAddr == "66:55:44:33:22:11":
-                break
-        else:
-            raise Exception("Hot plugged device not found")
-        self.assertEqual(dev.network, DUMMY_BRIDGE)
-        dom = xmlutils.fromstring(hotplugged_xml[0])
-        bridge = vmxml.find_attr(dom, 'source', 'bridge')
-        self.assertEqual(bridge, DUMMY_BRIDGE)
-
     def test_nic_hotplug_mirroring_failure(self):
         vm = self.vm
         supervdsm = BrokenSuperVdsm()
@@ -874,15 +831,6 @@ class TestHotplug(TestCaseBase):
             self.assertNotIn('network', dev)
         self.assertEqual(supervdsm.mirrored_networks, [])
 
-    def test_nic_hotplug_empty_net_mirroring_failure(self):
-        vm = self.vm
-        supervdsm = BrokenSuperVdsm()
-        params = {'xml': self.NIC_HOTPLUG_EMPTY_NET}
-        with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
-                                supervdsm.getProxy)]):
-            vm.hotplugNic(params)
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
-
     def test_nic_hotunplug(self):
         vm = self.vm
         self.test_nic_hotplug()
@@ -903,15 +851,6 @@ class TestHotplug(TestCaseBase):
                                 mac_addres="66:55:44:33:22:11") as dev:
             self.assertNotIn('network', dev)
         self.assertEqual(self.supervdsm.mirrored_networks, [])
-
-    def test_nic_hotunplug_empty_net(self):
-        vm = self.vm
-        self.test_nic_hotplug_empty_net()
-        params = {'xml': self.NIC_HOTPLUG_EMPTY_NET}
-        with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
-                                self.supervdsm.getProxy)]):
-            vm.hotunplugNic(params)
-        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
 
     @permutations([
         ['virtio', 'pv'],
