@@ -5,7 +5,16 @@ source automation/ovirt.sh
 EXPORT_DIR="$PWD/exported-artifacts"
 mkdir -p $EXPORT_DIR
 
+function collect_logs {
+    cd /var/log
+    tar -cvzf "$EXPORT_DIR/mock_varlogs.tar.gz" *
+    cd /var/host_log
+    tar -cvzf "$EXPORT_DIR/host_varlogs.tar.gz" *
+}
+
 set -xe
+
+trap collect_logs EXIT
 
 # For skipping known failures on jenkins using @broken_on_ci
 export OVIRT_CI=1
@@ -53,12 +62,3 @@ if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.i
 
     yum -y install vdsm-$vr\* vdsm-client-$vr\* vdsm-hook-\*-$vr\* vdsm-tests-$vr\* vdsm-gluster-$vr\*
 fi
-
-function collect_logs {
-    cd /var/log
-    tar -cvzf "$EXPORT_DIR/mock_varlogs.tar.gz" *
-    cd /var/host_log
-    tar -cvzf "$EXPORT_DIR/host_varlogs.tar.gz" *
-}
-
-collect_logs
