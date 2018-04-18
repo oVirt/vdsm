@@ -45,6 +45,7 @@ METADATA_KEYS = (
 
 METADATA_NESTED_KEYS = (
     'diskReplicate',
+    'specParams',
     'volumeChain',
     'volumeInfo',
 )

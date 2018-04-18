@@ -837,10 +837,6 @@ def _load_device_spec_params(md_obj, elem):
     payload_elem = md_obj.find(elem, _VM_PAYLOAD)
     if payload_elem is not None:
         spec_params[_VM_PAYLOAD] = _load_payload(md_obj, payload_elem)
-    iotune_elem = md_obj.find(elem, _IO_TUNE)
-    if iotune_elem is not None:
-        iotune = md_obj.load(iotune_elem)
-        spec_params[_IO_TUNE] = iotune
     return spec_params
 
 
@@ -867,17 +863,9 @@ def _dump_device_spec_params(md_obj, value):
     else:
         payload_elem = None
 
-    iotune = value.pop(_IO_TUNE, None)
-    if iotune is not None:
-        iotune_elem = md_obj.dump(_IO_TUNE, **iotune)
-    else:
-        iotune_elem = None
-
     spec_params_elem = md_obj.dump(_SPEC_PARAMS, **value)
     if payload_elem is not None:
         vmxml.append_child(spec_params_elem, etree_child=payload_elem)
-    if iotune_elem is not None:
-        vmxml.append_child(spec_params_elem, etree_child=iotune_elem)
 
     return spec_params_elem
 

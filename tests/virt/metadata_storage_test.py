@@ -218,13 +218,6 @@ _DISK_DATA_IOTUNE = _TestData(
         'propagateErrors': 'off',
         'readonly': 'false',
         'shared': 'false',
-        'specParams': {
-            'ioTune': {
-                'read_bytes_sec': 2,
-                'total_bytes_sec': 0,
-                'write_bytes_sec': 1,
-            },
-        },
         'type': 'disk',
         'volumeID': '5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc',
         'volumeChain': [{
@@ -254,13 +247,6 @@ _DISK_DATA_IOTUNE = _TestData(
         <shared>false</shared>
         <type>disk</type>
         <volumeID>5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc</volumeID>
-        <specParams>
-            <ioTune>
-                <read_bytes_sec type='int'>2</read_bytes_sec>
-                <total_bytes_sec type='int'>0</total_bytes_sec>
-                <write_bytes_sec type='int'>1</write_bytes_sec>
-            </ioTune>
-        </specParams>
         <volumeChain>
             <volumeChainNode>
                 <domainID>c578566d-bc61-420c-8f1e-8dfa0a18efd5</domainID>
@@ -471,13 +457,6 @@ _DISK_DATA_REPLICA = _TestData(
             'format': 'cow',
             'path': '/path/to/replica',
             'propagateErrors': 'off',
-            'specParams': {
-                'ioTune': {
-                    'read_bytes_sec': 2,
-                    'total_bytes_sec': 0,
-                    'write_bytes_sec': 1,
-                },
-            },
         }
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
@@ -499,13 +478,6 @@ _DISK_DATA_REPLICA = _TestData(
             <format>cow</format>
             <path>/path/to/replica</path>
             <propagateErrors>off</propagateErrors>
-            <specParams>
-                <ioTune>
-                    <read_bytes_sec type="int">2</read_bytes_sec>
-                    <total_bytes_sec type="int">0</total_bytes_sec>
-                    <write_bytes_sec type="int">1</write_bytes_sec>
-                </ioTune>
-            </specParams>
         </diskReplicate>
         <vm_custom>
             <viodiskcache>writethrough</viodiskcache>
@@ -529,12 +501,6 @@ class DescriptorStorageMetadataTests(XMLTestCase):
 
     def test_disk_custom_to_metadata_xml(self):
         self._check_drive_to_metadata_xml(_DISK_DATA_CUSTOM)
-
-    def test_disk_iotune_from_metadata_xml(self):
-        self._check_drive_from_metadata_xml(_DISK_DATA_IOTUNE)
-
-    def test_disk_iotune_to_metadata_xml(self):
-        self._check_drive_to_metadata_xml(_DISK_DATA_IOTUNE)
 
     def test_disk_sgio_from_metadata_xml(self):
         self._check_drive_from_metadata_xml(_DISK_DATA_SGIO)
