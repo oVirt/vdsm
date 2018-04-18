@@ -36,7 +36,7 @@ class OvsService(object):
 
     def setup(self):
         if not self.ovs_init_state_is_up:
-            cmd.exec_sync([OVS_CTL, 'start'])
+            cmd.exec_sync([OVS_CTL, '--system-id=random', 'start'])
 
     def teardown(self):
         if not self.ovs_init_state_is_up:
