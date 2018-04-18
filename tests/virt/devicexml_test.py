@@ -871,6 +871,13 @@ _HOSTDEV_XML = [
     </hostdev>'''],
 ]
 
+_MDEV_XML = u'''<hostdev mode="subsystem" model="vfio-pci" type="mdev">
+  <source>
+    <address uuid="8cb81aac-0c99-3e14-8f48-17c7c7d1c538"/>
+  </source>
+</hostdev>
+'''
+
 
 @expandPermutations
 class DeviceXMLRoundTripTests(XMLTestCase):
@@ -1340,6 +1347,23 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 lambda *args, **kwargs: None),
         ]):
             self._check_roundtrip(vmdevices.hostdevice.HostDevice, hostdev_xml)
+
+    def test_hostdev_mdev(self):
+        with MonkeyPatchScope([
+            (hostdev.libvirtconnection, 'get', hostdevlib.Connection),
+            (vmdevices.hostdevice, 'detach_detachable',
+                lambda *args, **kwargs: None),
+            (vmdevices.hostdevice, 'reattach_detachable',
+                lambda *args, **kwargs: None),
+        ]):
+            try:
+                self._check_roundtrip(
+                    vmdevices.hostdevice.HostDevice, _MDEV_XML
+                )
+            except NotImplementedError:
+                pass
+            else:
+                raise AssertionError('unknown hostdev initialized')
 
     def test_storage(self):
         self.assertRaises(
