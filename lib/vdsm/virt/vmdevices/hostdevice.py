@@ -375,10 +375,15 @@ class HostDevice(core.Base):
             'device': dev.tag,
             'type': core.find_device_type(dev),
         }
+        dev_type = params.get('type')
+
+        try:
+            dev_name = _get_device_name(dev, dev_type)
+        except KeyError:
+            raise NotImplementedError
+
         core.update_device_params(params, dev)
         _update_hostdev_params(params, dev)
-        dev_type = params.get('type')
-        dev_name = _get_device_name(dev, dev_type)
         params['device'] = dev_name
         core.update_device_params_from_meta(params, meta)
         device_params = get_device_params(dev_name)
