@@ -209,80 +209,6 @@ _DISK_DATA = _TestData(
     </vm>""",
 )
 
-_DISK_DATA_IOTUNE = _TestData(
-    conf={
-        'bootOrder': '1',
-        'device': 'disk',
-        'deviceId': '66441539-f7ac-4946-8a25-75e422f939d4',
-        'domainID': 'c578566d-bc61-420c-8f1e-8dfa0a18efd5',
-        'format': 'raw',
-        'iface': 'virtio',
-        'imageID': '66441539-f7ac-4946-8a25-75e422f939d4',
-        'index': '0',
-        'optional': 'false',
-        'poolID': '5890a292-0390-01d2-01ed-00000000029a',
-        'propagateErrors': 'off',
-        'readonly': 'false',
-        'shared': 'false',
-        'specParams': {
-            'ioTune': {
-                'read_bytes_sec': 2,
-                'total_bytes_sec': 0,
-                'write_bytes_sec': 1,
-            },
-        },
-        'type': 'disk',
-        'volumeID': '5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc',
-        'vm_custom': {},
-        'volumeChain': [{
-            'domainID': 'c578566d-bc61-420c-8f1e-8dfa0a18efd5',
-            'imageID': '66441539-f7ac-4946-8a25-75e422f939d4',
-            'leaseOffset': 109051904,
-            'leasePath': '/dev/UUID/leases',
-            'path': '/rhev/data-center/omitted/for/brevity',
-            'volumeID': '5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc',
-        }],
-    },
-    metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
-    <vm>
-    <device name="vda" devtype="disk">
-        <bootOrder>1</bootOrder>
-        <device>disk</device>
-        <deviceId>66441539-f7ac-4946-8a25-75e422f939d4</deviceId>
-        <domainID>c578566d-bc61-420c-8f1e-8dfa0a18efd5</domainID>
-        <format>raw</format>
-        <iface>virtio</iface>
-        <imageID>66441539-f7ac-4946-8a25-75e422f939d4</imageID>
-        <index>0</index>
-        <optional>false</optional>
-        <poolID>5890a292-0390-01d2-01ed-00000000029a</poolID>
-        <propagateErrors>off</propagateErrors>
-        <readonly>false</readonly>
-        <shared>false</shared>
-        <type>disk</type>
-        <volumeID>5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc</volumeID>
-        <specParams>
-            <ioTune>
-                <read_bytes_sec type='int'>2</read_bytes_sec>
-                <total_bytes_sec type='int'>0</total_bytes_sec>
-                <write_bytes_sec type='int'>1</write_bytes_sec>
-            </ioTune>
-        </specParams>
-        <vm_custom />
-        <volumeChain>
-            <volumeChainNode>
-                <domainID>c578566d-bc61-420c-8f1e-8dfa0a18efd5</domainID>
-                <imageID>66441539-f7ac-4946-8a25-75e422f939d4</imageID>
-                <leaseOffset type="int">109051904</leaseOffset>
-                <leasePath>/dev/UUID/leases</leasePath>
-                <path>/rhev/data-center/omitted/for/brevity</path>
-                <volumeID>5c4eeed4-f2a7-490a-ab57-a0d6f3a711cc</volumeID>
-            </volumeChainNode>
-        </volumeChain>
-    </device>
-    </vm>""",
-)
-
 
 _DISK_DATA_CUSTOM = _TestData(
     conf={
@@ -490,15 +416,9 @@ _DISK_DATA_REPLICA = _TestData(
             'format': 'cow',
             'path': '/path/to/replica',
             'propagateErrors': 'off',
-            'specParams': {
-                'ioTune': {
-                    'read_bytes_sec': 2,
-                    'total_bytes_sec': 0,
-                    'write_bytes_sec': 1,
-                },
-            },
+            'specParams': {},
             'vm_custom': {},
-        }
+        },
     },
     metadata_xml="""<?xml version='1.0' encoding='UTF-8'?>
     <vm>
@@ -519,13 +439,7 @@ _DISK_DATA_REPLICA = _TestData(
             <format>cow</format>
             <path>/path/to/replica</path>
             <propagateErrors>off</propagateErrors>
-            <specParams>
-                <ioTune>
-                    <read_bytes_sec type="int">2</read_bytes_sec>
-                    <total_bytes_sec type="int">0</total_bytes_sec>
-                    <write_bytes_sec type="int">1</write_bytes_sec>
-                </ioTune>
-            </specParams>
+            <specParams />
             <vm_custom />
         </diskReplicate>
         <specParams />
@@ -551,12 +465,6 @@ class DescriptorStorageMetadataTests(XMLTestCase):
 
     def test_disk_custom_to_metadata_xml(self):
         self._check_drive_to_metadata_xml(_DISK_DATA_CUSTOM)
-
-    def test_disk_iotune_from_metadata_xml(self):
-        self._check_drive_from_metadata_xml(_DISK_DATA_IOTUNE)
-
-    def test_disk_iotune_to_metadata_xml(self):
-        self._check_drive_to_metadata_xml(_DISK_DATA_IOTUNE)
 
     def test_disk_sgio_from_metadata_xml(self):
         self._check_drive_from_metadata_xml(_DISK_DATA_SGIO)

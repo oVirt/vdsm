@@ -812,7 +812,50 @@ class SaveDeviceMetadataTests(XMLTestCase):
         common.save_device_metadata(md_desc, dev_map, self.log)
         self.assertXMLEqual(md_desc.to_xml(), expected_xml)
 
+    def test_disk_specParams_payload_device(self):
+        payload_params = {
+            u'index': u'3',
+            u'iface': u'ide',
+            u'specParams': {
+                u'vmPayload': {
+                    u'volId': u'config-2',
+                    u'file': {
+                        u'openstack/content/0000': u'A',
+                        u'openstack/latest/meta_data.json': u'B',
+                        u'openstack/latest/user_data': u'C',
+                    }
+                }
+            },
+            u'readonly': u'true',
+            u'deviceId': u'e5cd57aa-6eb6-424b-b16b-83ef07bf9cca',
+            u'shared': u'false',
+            u'device': u'cdrom',
+            u'path': u'',
+            u'type': u'disk'
+        }
+        expected_xml = """<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+<ovirt-vm:device name="hdd" devtype="disk">
+  <ovirt-vm:deviceId>e5cd57aa-6eb6-424b-b16b-83ef07bf9cca</ovirt-vm:deviceId>
+    <ovirt-vm:shared>false</ovirt-vm:shared>
+    <ovirt-vm:specParams>
+     <ovirt-vm:vmPayload>
+       <ovirt-vm:volId>config-2</ovirt-vm:volId>
+       <ovirt-vm:file path='openstack/content/0000'>A</ovirt-vm:file>
+       <ovirt-vm:file path='openstack/latest/meta_data.json'>B</ovirt-vm:file>
+       <ovirt-vm:file path='openstack/latest/user_data'>C</ovirt-vm:file>
+     </ovirt-vm:vmPayload>
+    </ovirt-vm:specParams>
+    <ovirt-vm:vm_custom/>
+  </ovirt-vm:device>
+</ovirt-vm:vm>"""
+        dev_map = common.empty_dev_map()
+        dev_map[hwclass.DISK].append(
+            storage.Drive(self.log, **payload_params))
+        common.save_device_metadata(self.md_desc, dev_map, self.log)
+        self.assertXMLEqual(self.md_desc.to_xml(), expected_xml)
+
     # TODO: simulate read-create-write cycle with network or storage device
+
 
 _DRIVE_TRANSIENT_DISK_XML = u"""<?xml version="1.0" encoding="utf-8"?>
 <domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
