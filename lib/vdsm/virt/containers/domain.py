@@ -22,6 +22,7 @@ This module implements the replacement for libvirt.virDomain objects.
 """
 
 from __future__ import absolute_import
+from __future__ import division
 
 import logging
 import uuid

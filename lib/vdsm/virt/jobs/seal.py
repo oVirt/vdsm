@@ -43,6 +43,7 @@ parameter is passed to prepareImage().
 """
 
 from __future__ import absolute_import
+from __future__ import division
 
 from vdsm import virtsysprep
 from vdsm.common import properties

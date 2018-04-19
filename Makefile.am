@@ -81,7 +81,7 @@ PY3DIVISION_WHITELIST = \
 	# lib/vdsm/storage \
 	lib/vdsm/supervdsm_api \
 	lib/vdsm/tool \
-	# lib/vdsm/virt \
+	lib/vdsm/virt \
 	tests \
 	$(NULL)
 

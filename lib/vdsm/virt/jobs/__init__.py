@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 from vdsm import jobs
 from vdsm.common import concurrent

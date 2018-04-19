@@ -22,6 +22,7 @@ System commands facade
 """
 
 from __future__ import absolute_import
+from __future__ import division
 
 from vdsm.common import cmdutils
 from vdsm.common import commands

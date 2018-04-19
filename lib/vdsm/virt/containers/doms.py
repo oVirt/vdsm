@@ -24,6 +24,7 @@ use a singleton approach, with module data and module functions to access it.
 """
 
 from __future__ import absolute_import
+from __future__ import division
 
 # TODO: this module has an ugly name. Suggestions welcome!
 # discarded alternatives:
