@@ -772,7 +772,7 @@ class MonitorThread(object):
         memSize = self._vm.mem_size_mb()
         maxTimePerGiB = config.getint('vars',
                                       'migration_max_time_per_gib_mem')
-        migrationMaxTime = (maxTimePerGiB * memSize + 1023) / 1024
+        migrationMaxTime = (maxTimePerGiB * memSize + 1023) // 1024
         progress_timeout = config.getint('vars', 'migration_progress_timeout')
         lastProgressTime = time.time()
         lowmark = None
@@ -835,7 +835,7 @@ class MonitorThread(object):
                 self._vm.log.warn(
                     'Migration stalling: remaining (%sMiB)'
                     ' > lowmark (%sMiB).',
-                    progress.data_remaining / Mbytes, lowmark / Mbytes)
+                    progress.data_remaining // Mbytes, lowmark // Mbytes)
 
             if not self._vm.post_copy and\
                     lastDataRemaining is not None and\
@@ -948,12 +948,12 @@ class Progress(_Progress):
             ' memory iteration: %i' % (
                 (self.time_elapsed / 1000),
                 self.percentage,
-                (self.data_total / Mbytes),
-                (self.data_processed / Mbytes),
-                (self.data_remaining / Mbytes),
-                (self.mem_bps / Mbytes),
+                (self.data_total // Mbytes),
+                (self.data_processed // Mbytes),
+                (self.data_remaining // Mbytes),
+                (self.mem_bps // Mbytes),
                 self.mem_constant,
-                (self.compression_bytes / Mbytes),
+                (self.compression_bytes // Mbytes),
                 self.dirty_rate,
                 self.mem_iteration,
             )
@@ -965,7 +965,7 @@ class Progress(_Progress):
             return 100
         progress = 0
         if self.data_total:
-            progress = 100 - 100 * self.data_remaining / self.data_total
+            progress = 100 - 100 * self.data_remaining // self.data_total
         if progress < 100:
             return progress
         return 99

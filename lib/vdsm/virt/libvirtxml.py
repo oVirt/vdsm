@@ -549,7 +549,7 @@ def _parse_domain_init(dom, conf):
         conf['numOfIoThreads'] = iothreads
     max_mem = dom.find('./maxMemory')
     if max_mem is not None:
-        conf['maxMemSize'] = int(max_mem.text) / 1024
+        conf['maxMemSize'] = int(max_mem.text) // 1024
         conf['maxMemSlots'] = int(max_mem.attrib.get('slots', 16))
     smp = _parse_vcpu_element(dom.find('./vcpu'))
     if smp is not None:

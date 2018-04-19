@@ -340,7 +340,7 @@ class Drive(core.Base):
         When the LV usage reaches this limit an extension is in order (thin
         provisioning on block devices).
         """
-        return self.VOLWM_FREE_PCT * self.volExtensionChunk / 100
+        return self.VOLWM_FREE_PCT * self.volExtensionChunk // 100
 
     def getNextVolumeSize(self, curSize, capacity):
         """

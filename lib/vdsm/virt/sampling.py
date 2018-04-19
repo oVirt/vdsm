@@ -115,7 +115,7 @@ class NumaNodeMemorySample(object):
             nodeMemSample['memPercent'] = 100
             if int(memInfo['total']) != 0:
                 nodeMemSample['memPercent'] = 100 - \
-                    int(100.0 * int(memInfo['free']) / int(memInfo['total']))
+                    int(100.0 * int(memInfo['free']) // int(memInfo['total']))
             self.nodesMemSample[nodeIndex] = nodeMemSample
 
 
@@ -150,7 +150,7 @@ class HostSample(TimedSample):
             free = 0
             try:
                 stat = os.statvfs(p)
-                free = stat.f_bavail * stat.f_bsize / (2 ** 20)
+                free = stat.f_bavail * stat.f_bsize // (2 ** 20)
             except:
                 pass
             d[p] = {'free': str(free)}
@@ -171,7 +171,7 @@ class HostSample(TimedSample):
         freeOrCached = (meminfo['MemFree'] +
                         meminfo['Cached'] + meminfo['Buffers'])
         self.memUsed = 100 - int(100.0 * (freeOrCached) / meminfo['MemTotal'])
-        self.anonHugePages = meminfo.get('AnonHugePages', 0) / 1024
+        self.anonHugePages = meminfo.get('AnonHugePages', 0) // 1024
         try:
             with open('/proc/loadavg') as loadavg:
                 self.cpuLoad = loadavg.read().split()[1]

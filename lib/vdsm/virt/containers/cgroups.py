@@ -52,8 +52,8 @@ class Memory(Reader):
     def update(self):
         data = _read_keyvalue(os.path.join(self._path, 'memory.stat'))
         return Memory.Stats(
-            rss=int(data['rss']) / 1024.,
-            swap=int(data['swap']) / 1024.,
+            rss=int(data['rss']) // 1024.,
+            swap=int(data['swap']) // 1024.,
         )
 
 

@@ -821,7 +821,7 @@ class Memory(Base):
         update_device_params(params, dev)
         target = vmxml.find_first(dev, 'target')
         params['size'] = (
-            int(vmxml.text(vmxml.find_first(target, 'size'))) / 1024
+            int(vmxml.text(vmxml.find_first(target, 'size'))) // 1024
         )
         params['node'] = vmxml.text(vmxml.find_first(target, 'node'))
         update_device_params_from_meta(params, meta)

@@ -95,7 +95,7 @@ class DomainParser(object):
     def memory(self):
         mem_node = self._xml_tree.find('./maxMemory')
         if mem_node is not None:
-            mem = int(mem_node.text) / 1024
+            mem = int(mem_node.text) // 1024
             self._log.debug('runtime %r found memory = %i MiB',
                             self.uuid, mem)
             return mem
