@@ -24,6 +24,7 @@ import logging
 import threading
 
 from vdsm.config import config
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage.task import Task, Job, TaskCleanType
 from vdsm.storage.threadPool import ThreadPool
@@ -36,7 +37,7 @@ class TaskManager:
                  tpSize=config.getint('irs', 'thread_pool_size'),
                  waitTimeout=3,
                  maxTasks=config.getint('irs', 'max_tasks')):
-        self.storage_repository = config.get('irs', 'repository')
+        self.storage_repository = sc.REPO_DATA_CENTER
         self.tp = ThreadPool("tasks", tpSize, waitTimeout, maxTasks)
         self._tasks = {}
         self._unqueuedTasks = []

@@ -24,6 +24,7 @@ import os
 
 from vdsm import constants
 from vdsm.storage import qemuimg
+from vdsm.common.config import config
 
 
 # ResourceManager Lock Namespaces
@@ -206,3 +207,4 @@ P_VDSM_STORAGE = os.path.join(constants.P_VDSM_RUN, 'storage/')
 
 # Storage repository
 DOMAIN_MNT_POINT = 'mnt'
+REPO_DATA_CENTER = config.get('irs', 'repository')

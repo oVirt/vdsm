@@ -92,7 +92,7 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
     """
     This factory produce resources for images
     """
-    storage_repository = config.get('irs', 'repository')
+    storage_repository = sc.REPO_DATA_CENTER
     # Resource timeouts are in seconds. It's written in ms in the config for
     # backward competability reasons
     resource_default_timeout = config.getint('irs',

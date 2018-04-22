@@ -27,7 +27,7 @@ from __future__ import absolute_import
 import logging
 import threading
 
-from vdsm.config import config
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage import misc
@@ -202,5 +202,4 @@ class StorageDomainCache:
                 pass
 
 
-storage_repository = config.get('irs', 'repository')
-sdCache = StorageDomainCache(storage_repository)
+sdCache = StorageDomainCache(sc.REPO_DATA_CENTER)

@@ -365,7 +365,7 @@ class HSM(object):
         self._ready = False
         self.log.info("START HSM init")
         rm.registerNamespace(STORAGE, rm.SimpleResourceFactory())
-        self.storage_repository = config.get('irs', 'repository')
+        self.storage_repository = sc.REPO_DATA_CENTER
         self.taskMng = taskManager.TaskManager()
 
         mountBasePath = os.path.join(self.storage_repository,

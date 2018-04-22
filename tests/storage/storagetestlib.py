@@ -93,7 +93,7 @@ def fake_file_env(obj=None, sd_version=3):
         sd_manifest = make_filesd_manifest(tmpdir, sd_version=sd_version)
         fake_sdc = FakeStorageDomainCache()
         with MonkeyPatchScope([
-            [sd, 'storage_repository', tmpdir],
+            [sc, 'REPO_DATA_CENTER', tmpdir],
             [volume, 'sdCache', fake_sdc],
             [fileVolume, 'sdCache', fake_sdc],
             [hsm, 'sdCache', fake_sdc],
@@ -115,7 +115,7 @@ def fake_block_env(obj=None, sd_version=3):
             (blockVolume, 'lvm', lvm),
             (blockVolume, 'sdCache', fake_sdc),
             (volume_artifacts, 'lvm', lvm),
-            (sd, 'storage_repository', tmpdir),
+            (sc, 'REPO_DATA_CENTER', tmpdir),
             (volume, 'sdCache', fake_sdc),
             (hsm, 'sdCache', fake_sdc),
         ]):

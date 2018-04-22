@@ -27,7 +27,6 @@ import os
 from storage.storagetestlib import fake_env
 from testlib import VdsmTestCase
 from testlib import make_uuid
-from vdsm.config import config
 from vdsm.constants import GIB
 from vdsm.storage import constants as sc
 from vdsm.storage import fileVolume
@@ -35,7 +34,7 @@ from vdsm.storage import fileVolume
 
 class TestGetDomUuidFromVolumePath(VdsmTestCase):
     def test(self):
-        testPath = os.path.join(config.get('irs', 'repository'),
+        testPath = os.path.join(sc.REPO_DATA_CENTER,
                                 "spUUID/sdUUID/images/imgUUID/volUUID")
         self.assertEqual(fileVolume.getDomUuidFromVolumePath(testPath),
                          "sdUUID")

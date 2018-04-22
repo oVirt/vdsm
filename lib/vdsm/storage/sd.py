@@ -164,9 +164,6 @@ UNICODE_MINIMAL_VERSION = 3
 SDM_LEASE_NAME = 'SDM'
 SDM_LEASE_OFFSET = 512 * 2048
 
-storage_repository = config.get('irs', 'repository')
-mountBasePath = os.path.join(storage_repository, sc.DOMAIN_MNT_POINT)
-
 
 def getVolsOfImage(allVols, imgUUID):
     """ Filter allVols dict for volumes related to imgUUID.
@@ -377,7 +374,7 @@ class StorageDomainManifest(object):
 
         # Get the datacenter ID.  When using storage pools this will be the
         # spUUID.  Else, it's just a UUID to establish a storage namespace.
-        return os.path.join(storage_repository, self.getPools()[0])
+        return os.path.join(sc.REPO_DATA_CENTER, self.getPools()[0])
 
     def getImageDir(self, imgUUID):
         return os.path.join(self.domaindir, DOMAIN_IMAGES, imgUUID)
@@ -663,7 +660,7 @@ class StorageDomainManifest(object):
 
 class StorageDomain(object):
     log = logging.getLogger("storage.StorageDomain")
-    storage_repository = config.get('irs', 'repository')
+    storage_repository = sc.REPO_DATA_CENTER
     mdBackupVersions = config.get('irs', 'md_backup_versions')
     mdBackupDir = config.get('irs', 'md_backup_dir')
     manifestClass = StorageDomainManifest

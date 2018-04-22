@@ -50,8 +50,6 @@ from vdsm.storage.formatconverter import DefaultFormatConverter
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.securable import secured, unsecured, SecureError
 
-from vdsm.config import config
-
 POOL_MASTER_DOMAIN = 'mastersd'
 
 SPM_ACQUIRED = 'SPM'
@@ -94,7 +92,7 @@ class StoragePool(object):
     '''
 
     log = logging.getLogger('storage.StoragePool')
-    storage_repository = config.get('irs', 'repository')
+    storage_repository = sc.REPO_DATA_CENTER
 
     def __init__(self, spUUID, domainMonitor, taskManager):
         self._secured = threading.Event()
