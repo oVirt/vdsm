@@ -412,6 +412,7 @@ def fake_repo():
         os.mkdir(mnt_glustersd_dir)
         with monkeypatch.MonkeyPatchScope([
             (sc, 'REPO_DATA_CENTER', repo),
+            (sc, 'REPO_MOUNT_DIR', mnt_dir),
         ]):
             yield repo
 

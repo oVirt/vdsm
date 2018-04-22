@@ -789,9 +789,7 @@ class FileStorageDomain(sd.StorageDomain):
 
 
 def _getMountsList(pattern="*"):
-    fileDomPattern = os.path.join(
-        sc.REPO_DATA_CENTER, sc.DOMAIN_MNT_POINT,
-        pattern)
+    fileDomPattern = os.path.join(sc.REPO_MOUNT_DIR, pattern)
 
     # For pattern='*' in mixed pool (block and file domains)
     # glob will return sd.BLOCKSD_DIR and sd.GLUSTERSD_DIR among
@@ -800,8 +798,7 @@ def _getMountsList(pattern="*"):
                if not mnt.endswith(_MOUNTLIST_IGNORE)]
 
     glusterDomPattern = os.path.join(
-        sc.REPO_DATA_CENTER, sc.DOMAIN_MNT_POINT,
-        sd.GLUSTERSD_DIR, pattern)
+        sc.REPO_MOUNT_DIR, sd.GLUSTERSD_DIR, pattern)
 
     mntList.extend(glob.glob(glusterDomPattern))
 
@@ -812,15 +809,13 @@ def scanDomains(pattern="*"):
     log = logging.getLogger("storage.scanDomains")
 
     mntList = _getMountsList(pattern)
-    mount_prefix = os.path.join(
-        sc.REPO_DATA_CENTER, sc.DOMAIN_MNT_POINT)
 
     def collectMetaFiles(mountPoint):
         try:
             # removes the path to the data center's mount directory from
             # the mount point.
-            if mountPoint.startswith(mount_prefix):
-                client_name = mountPoint[len(mount_prefix):]
+            if mountPoint.startswith(sc.REPO_MOUNT_DIR):
+                client_name = mountPoint[len(sc.REPO_MOUNT_DIR):]
 
             # Since glob treats values between brackets as character ranges,
             # and since IPV6 addresses contain brackets, we should escape the

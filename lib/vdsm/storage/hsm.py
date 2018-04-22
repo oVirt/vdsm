@@ -367,12 +367,12 @@ class HSM(object):
         rm.registerNamespace(STORAGE, rm.SimpleResourceFactory())
         self.taskMng = taskManager.TaskManager()
 
-        mountBasePath = os.path.join(sc.REPO_DATA_CENTER,
-                                     sc.DOMAIN_MNT_POINT)
-        self.log.info("Creating data-center mount directory %r", mountBasePath)
-        fileUtils.createdir(mountBasePath)
-        storageServer.MountConnection.setLocalPathBase(mountBasePath)
-        storageServer.LocalDirectoryConnection.setLocalPathBase(mountBasePath)
+        self.log.info("Creating data-center mount directory %r",
+                      sc.REPO_MOUNT_DIR)
+        fileUtils.createdir(sc.REPO_MOUNT_DIR)
+        storageServer.MountConnection.setLocalPathBase(sc.REPO_MOUNT_DIR)
+        storageServer.LocalDirectoryConnection.setLocalPathBase(
+            sc.REPO_MOUNT_DIR)
 
         sp.StoragePool.cleanupMasterMount()
         self.__releaseLocks()
@@ -465,8 +465,7 @@ class HSM(object):
         mountList = []
         whiteList = [
             self.tasksDir,
-            os.path.join(self.tasksDir, "*"),
-            os.path.join(sc.REPO_DATA_CENTER, sc.DOMAIN_MNT_POINT),
+            os.path.join(self.tasksDir, "*"), sc.REPO_MOUNT_DIR,
         ]
 
         def isInWhiteList(path):
