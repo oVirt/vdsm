@@ -34,6 +34,7 @@ from testlib import expandPermutations
 from testlib import namedTemporaryDir
 from testlib import permutations
 
+from vdsm.storage import constants as sc
 from vdsm.storage import fileSD
 from vdsm.storage import fileUtils
 from vdsm.storage import outOfProcess as oop
@@ -246,7 +247,7 @@ class TestVolumeOperations(VdsmTestCase):
 
 def add_filesd(repo, remote_path, sd_uuid, subdir=""):
     # Create mount direcotry in the repo
-    mnt_dir = os.path.join(repo, sd.DOMAIN_MNT_POINT, subdir)
+    mnt_dir = os.path.join(repo, sc.DOMAIN_MNT_POINT, subdir)
     local_path = fileUtils.transformPath(remote_path)
     mountpoint = os.path.join(mnt_dir, local_path)
     os.makedirs(mountpoint)
@@ -255,7 +256,7 @@ def add_filesd(repo, remote_path, sd_uuid, subdir=""):
 
 def add_localsd(repo, tmpdir, sd_uuid):
     # Link local directory into the repo
-    mnt_dir = os.path.join(repo, sd.DOMAIN_MNT_POINT)
+    mnt_dir = os.path.join(repo, sc.DOMAIN_MNT_POINT)
     local_path = fileUtils.transformPath(tmpdir)
     mountpoint = os.path.join(mnt_dir, local_path)
     os.symlink(tmpdir, mountpoint)

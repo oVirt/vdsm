@@ -369,7 +369,7 @@ class HSM(object):
         self.taskMng = taskManager.TaskManager()
 
         mountBasePath = os.path.join(self.storage_repository,
-                                     sd.DOMAIN_MNT_POINT)
+                                     sc.DOMAIN_MNT_POINT)
         self.log.info("Creating data-center mount directory %r", mountBasePath)
         fileUtils.createdir(mountBasePath)
         storageServer.MountConnection.setLocalPathBase(mountBasePath)
@@ -467,7 +467,7 @@ class HSM(object):
         whiteList = [
             self.tasksDir,
             os.path.join(self.tasksDir, "*"),
-            os.path.join(self.storage_repository, 'mnt'),
+            os.path.join(self.storage_repository, sc.DOMAIN_MNT_POINT),
         ]
 
         def isInWhiteList(path):

@@ -21,6 +21,7 @@ from __future__ import absolute_import
 
 import os
 
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileSD
 from vdsm.storage import glusterVolume
@@ -34,7 +35,7 @@ class GlusterStorageDomain(nfsSD.NfsStorageDomain):
     @classmethod
     def getMountPoint(cls, mountPath):
         return os.path.join(cls.storage_repository,
-                            sd.DOMAIN_MNT_POINT, sd.GLUSTERSD_DIR, mountPath)
+                            sc.DOMAIN_MNT_POINT, sd.GLUSTERSD_DIR, mountPath)
 
     def getVolumeClass(self):
         return glusterVolume.GlusterVolume

@@ -31,6 +31,7 @@ import monkeypatch
 from testlib import make_file, recorded
 from testlib import namedTemporaryDir
 
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm as real_lvm
 from vdsm.storage import resourceManager as rm
@@ -395,7 +396,7 @@ def fake_repo():
     """
     with namedTemporaryDir() as repo:
         # /rhev/data-center/mnt
-        mnt_dir = os.path.join(repo, sd.DOMAIN_MNT_POINT)
+        mnt_dir = os.path.join(repo, sc.DOMAIN_MNT_POINT)
         os.mkdir(mnt_dir)
         # /rhev/data-center/mnt/blockSD
         mnt_blocksd_dir = os.path.join(mnt_dir, sd.BLOCKSD_DIR)

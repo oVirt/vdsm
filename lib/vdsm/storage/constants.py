@@ -203,3 +203,6 @@ DOMAIN_VERSIONS = (0, 2, 3, 4)
 SUPPORTED_DOMAIN_VERSIONS = DOMAIN_VERSIONS
 
 P_VDSM_STORAGE = os.path.join(constants.P_VDSM_RUN, 'storage/')
+
+# Storage repository
+DOMAIN_MNT_POINT = 'mnt'

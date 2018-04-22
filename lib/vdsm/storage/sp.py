@@ -407,7 +407,7 @@ class StoragePool(object):
         Check whether there are any dangling master file systems still mounted
         and unmount them if found.
         """
-        masters = os.path.join(cls.storage_repository, sd.DOMAIN_MNT_POINT,
+        masters = os.path.join(cls.storage_repository, sc.DOMAIN_MNT_POINT,
                                sd.BLOCKSD_DIR, "*", sd.MASTER_FS_DIR)
         for master in glob(masters):
             if mount.isMounted(master):
@@ -1296,7 +1296,7 @@ class StoragePool(object):
         # We want to avoid looking up (vgs) of unknown block domains.
         # domUUIDs includes all the domains, file or block.
         block_mountpoint = os.path.join(sd.StorageDomain.storage_repository,
-                                        sd.DOMAIN_MNT_POINT, sd.BLOCKSD_DIR)
+                                        sc.DOMAIN_MNT_POINT, sd.BLOCKSD_DIR)
         blockDomUUIDs = [vg.name for vg in blockSD.lvm.getVGs(domUUIDs)]
         domDirs = {}  # {domUUID: domaindir}
         # Add the block domains

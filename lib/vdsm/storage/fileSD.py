@@ -790,7 +790,7 @@ class FileStorageDomain(sd.StorageDomain):
 
 def _getMountsList(pattern="*"):
     fileDomPattern = os.path.join(
-        sd.StorageDomain.storage_repository, sd.DOMAIN_MNT_POINT,
+        sd.StorageDomain.storage_repository, sc.DOMAIN_MNT_POINT,
         pattern)
 
     # For pattern='*' in mixed pool (block and file domains)
@@ -800,7 +800,7 @@ def _getMountsList(pattern="*"):
                if not mnt.endswith(_MOUNTLIST_IGNORE)]
 
     glusterDomPattern = os.path.join(
-        sd.StorageDomain.storage_repository, sd.DOMAIN_MNT_POINT,
+        sd.StorageDomain.storage_repository, sc.DOMAIN_MNT_POINT,
         sd.GLUSTERSD_DIR, pattern)
 
     mntList.extend(glob.glob(glusterDomPattern))
@@ -813,7 +813,7 @@ def scanDomains(pattern="*"):
 
     mntList = _getMountsList(pattern)
     mount_prefix = os.path.join(
-        sd.StorageDomain.storage_repository, sd.DOMAIN_MNT_POINT)
+        sd.StorageDomain.storage_repository, sc.DOMAIN_MNT_POINT)
 
     def collectMetaFiles(mountPoint):
         try:

@@ -23,6 +23,7 @@ import os
 from glob import glob
 
 from vdsm.storage import clusterlock
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileSD
 from vdsm.storage import fileUtils
@@ -91,7 +92,7 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
         mntPath = fileUtils.transformPath(remotePath)
 
         mntPoint = os.path.join(cls.storage_repository,
-                                sd.DOMAIN_MNT_POINT, mntPath)
+                                sc.DOMAIN_MNT_POINT, mntPath)
 
         cls._preCreateValidation(sdUUID, mntPoint, remotePath, version)
 

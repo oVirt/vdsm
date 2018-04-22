@@ -40,8 +40,6 @@ from vdsm.storage.misc import deprecated
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.volumemetadata import VolumeMetadata
 
-DOMAIN_MNT_POINT = 'mnt'
-
 log = logging.getLogger('storage.Volume')
 
 

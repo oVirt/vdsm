@@ -45,7 +45,6 @@ from vdsm.storage import task
 from vdsm.storage import xlease
 from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
 
-DOMAIN_MNT_POINT = 'mnt'
 DOMAIN_META_DATA = 'dom_md'
 DOMAIN_IMAGES = 'images'
 # Domain's metadata volume name
@@ -166,7 +165,7 @@ SDM_LEASE_NAME = 'SDM'
 SDM_LEASE_OFFSET = 512 * 2048
 
 storage_repository = config.get('irs', 'repository')
-mountBasePath = os.path.join(storage_repository, DOMAIN_MNT_POINT)
+mountBasePath = os.path.join(storage_repository, sc.DOMAIN_MNT_POINT)
 
 
 def getVolsOfImage(allVols, imgUUID):

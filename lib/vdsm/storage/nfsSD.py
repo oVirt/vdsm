@@ -21,6 +21,7 @@ from __future__ import absolute_import
 
 import os
 
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileSD
 from vdsm.storage import fileUtils
@@ -104,7 +105,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
 
     @classmethod
     def getMountPoint(cls, mountPath):
-        return os.path.join(cls.storage_repository, sd.DOMAIN_MNT_POINT,
+        return os.path.join(cls.storage_repository, sc.DOMAIN_MNT_POINT,
                             mountPath)
 
     @staticmethod
