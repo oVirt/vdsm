@@ -20,14 +20,11 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import contextlib
-import os
 import threading
 
 from vdsm.common import cpuarch
 from vdsm.common import libvirtconnection
 from vdsm.common import response
-from vdsm.common.compat import pickle
 from vdsm.virt import recovery
 from vdsm.virt import vmstatus
 from vdsm import constants
@@ -50,102 +47,6 @@ def _createVm_fails(*args, **kwargs):
 
 def _createVm_raises(*args, **kwargs):
     raise RuntimeError("fake error")
-
-
-@expandPermutations
-class RecoveryFileTests(TestCaseBase):
-
-    def test_save(self):
-
-        with self.setup_env() as (testvm, tmpdir):
-            rec = recovery.File(testvm.id)
-            rec.save(testvm)
-
-            with open(os.path.join(tmpdir, rec.name), 'rb') as f:
-                self.assertTrue(pickle.load(f))
-
-    def test_save_after_cleanup(self):
-
-        with self.setup_env() as (testvm, tmpdir):
-            rec = recovery.File(testvm.id)
-            rec.save(testvm)
-
-            rec.cleanup()
-            self.assertEqual(os.listdir(tmpdir), [])
-
-            rec.save(testvm)  # must silently fail
-            self.assertEqual(os.listdir(tmpdir), [])
-
-    def test_load(self):
-
-        with self.setup_env() as (testvm, tmpdir):
-            stored = recovery.File(testvm.id)
-            stored.save(testvm)
-
-            loaded = recovery.File(testvm.id)
-            fakecif = fake.ClientIF()
-            res = loaded.load(fakecif)
-            self.assertTrue(res)
-
-            self.assertVmStatus(testvm, fakecif.vmRequests[testvm.id][0])
-
-    @permutations([[_createVm_raises], [_createVm_fails]])
-    def test_load_with_createVm_error(self, createVm):
-
-        with self.setup_env() as (testvm, tmpdir):
-            stored = recovery.File(testvm.id)
-            stored.save(testvm)
-
-            loaded = recovery.File(testvm.id)
-            fakecif = fake.ClientIF()
-
-            fakecif.createVm = createVm
-            res = loaded.load(fakecif)
-
-            self.assertFalse(res)
-            self.assertEqual(fakecif.vmContainer, {})
-            self.assertEqual(fakecif.vmRequests, {})
-
-    def test_cleanup(self):
-
-        with self.setup_env() as (testvm, tmpdir):
-            stored = recovery.File(testvm.id)
-            stored.save(testvm)
-
-            self.assertEqual(len(os.listdir(tmpdir)), 1)
-            stored.cleanup()
-            self.assertEqual(len(os.listdir(tmpdir)), 0)
-
-    def test_name(self):
-
-        with self.setup_env() as (testvm, tmpdir):
-            state = recovery.File(testvm.id)
-            self.assertIn(testvm.id, state.name)
-            self.assertTrue(state.name.endswith(recovery.File.EXTENSION))
-
-    def test_vmid(self):
-
-        with self.setup_env() as (testvm, tmpdir):
-            state = recovery.File(testvm.id)
-            self.assertEqual(testvm.id, state.vmid)
-
-    def assertVmStatus(self, testvm, params):
-        status = testvm.status()
-        # reloaded status must be a superset of Vm' status()
-        # return value.
-        for key in status:
-            if key == 'statusTime':
-                # monotically increasing, it is fine if changes.
-                continue
-            expected, recovered = status[key], params[key]
-            msg = 'item %s status=%s params=%s' % (key, expected, recovered)
-            self.assertEqual(recovered, expected, msg)
-
-    @contextlib.contextmanager
-    def setup_env(self):
-        with fake.VM() as testvm, namedTemporaryDir() as tmpdir:
-            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir)]):
-                yield testvm, tmpdir
 
 
 class FakeConnection(object):

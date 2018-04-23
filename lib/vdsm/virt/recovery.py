@@ -21,26 +21,16 @@ from __future__ import absolute_import
 from __future__ import division
 
 import logging
-import os
-import os.path
-import tempfile
-import threading
-import time
 
 import libvirt
 
-from vdsm.common import fileutils
 from vdsm.common import libvirtconnection
 from vdsm.common import response
-from vdsm.common.compat import pickle
-from vdsm import constants
 from vdsm import containersconnection
-from vdsm import utils
 from vdsm.virt import vmchannels
 from vdsm.virt import vmstatus
 from vdsm.virt import vmxml
 from vdsm.virt.domain_descriptor import DomainDescriptor
-from vdsm.virt.utils import isVdsmImage
 
 
 def _is_external_vm(dom_xml):
@@ -119,107 +109,6 @@ def _recovery_params(vm_id, dom_xml, external):
     params['smp'] = dom.get_number_of_cpus()
     params['memSize'] = dom.get_memory_size()
     return params
-
-
-class File(object):
-    """
-    "pickle" for vm state.
-    """
-
-    EXTENSION = ".recovery"
-
-    _log = logging.getLogger("virt.recovery.file")
-
-    def __init__(self, vmid):
-        self._vmid = vmid
-        self._name = '%s%s' % (vmid, self.EXTENSION)
-        self._path = os.path.join(constants.P_VDSM_RUN, self._name)
-        self._lock = threading.Lock()
-
-    @property
-    def vmid(self):
-        return self._vmid
-
-    @property
-    def name(self):
-        return self._name
-
-    def cleanup(self):
-        with self._lock:
-            fileutils.rm_file(self._path)
-            self._path = None
-
-    def save(self, vm):
-        data = self._collect(vm)
-        with self._lock:
-            if self._path is None:
-                self._log.debug('save after cleanup')
-            else:
-                self._dump(data)
-
-    def load(self, cif, dom_xml=None):
-        self._log.debug("recovery: trying with VM %s", self._vmid)
-        try:
-            with open(self._path, 'rb') as src:
-                params = pickle.load(src)
-            self._set_elapsed_time(params)
-            self._update_domain_xml(params, dom_xml)
-            res = cif.createVm(params, vmRecover=True)
-        except Exception:
-            self._log.exception("Error recovering VM: %s", self._vmid)
-            return False
-        else:
-            if response.is_error(res):
-                return False
-            return True
-
-    def _dump(self, data):
-        with tempfile.NamedTemporaryFile(
-            dir=constants.P_VDSM_RUN,
-            delete=False
-        ) as f:
-            pickle.dump(data, f)
-
-        os.rename(f.name, self._path)
-
-    def _collect(self, vm):
-        data = vm.status()
-        data['startTime'] = vm.start_time
-        if vm.lastStatus != vmstatus.DOWN:
-            guestInfo = vm.guestAgent.getGuestInfo()
-            data['username'] = guestInfo['username']
-            data['guestIPs'] = guestInfo['guestIPs']
-            data['guestFQDN'] = guestInfo['guestFQDN']
-        else:
-            data['username'] = ""
-            data['guestIPs'] = ""
-            data['guestFQDN'] = ""
-        if 'sysprepInf' in data:
-            del data['sysprepInf']
-            if 'floppy' in data:
-                del data['floppy']
-        for drive in data.get('drives', []):
-            for d in vm.getDiskDevices():
-                if isVdsmImage(d) and drive.get('volumeID') == d.volumeID:
-                    drive['truesize'] = str(d.truesize)
-                    drive['apparentsize'] = str(d.apparentsize)
-
-        data['_blockJobs'] = utils.picklecopy(
-            vm.conf.get('_blockJobs', {}))
-
-        return data
-
-    def _set_elapsed_time(self, params):
-        now = time.time()
-        pt = float(params.pop('startTime', now))
-        params['elapsedTimeOffset'] = now - pt
-        return params
-
-    def _update_domain_xml(self, params, dom_xml):
-        if dom_xml is not None and 'xml' in params:
-            params['xml'] = dom_xml
-            self._log.info("Recovered XML from libvirt: %s", dom_xml)
-        return params
 
 
 def all_domains(cif):
