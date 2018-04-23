@@ -4720,21 +4720,24 @@ class Vm(object):
             return response.error('changeDisk')  # Finally is evaluated
         else:
             try:
-                self.cif.teardownVolumePath(diskToTeardown)
-            except Exception:
-                # There is nothing we can do at this point other than logging
-                self.log.exception("Unable to teardown the previous chain: %s",
-                                   diskToTeardown)
-            self.updateDriveParameters(dstDiskCopy)
-            try:
-                self.updateDriveVolume(drive)
-            except StorageUnavailableError as e:
-                # Will be recovered on the next monitoring cycle
-                self.log.error("Unable to update drive %r volume size: %s",
-                               drive.name, e)
+                try:
+                    self.cif.teardownVolumePath(diskToTeardown)
+                except Exception:
+                    # There is nothing we can do at this point other
+                    # than logging
+                    self.log.exception("Unable to teardown the previous chain:"
+                                       " %s", diskToTeardown)
+                self.updateDriveParameters(dstDiskCopy)
+                try:
+                    self.updateDriveVolume(drive)
+                except StorageUnavailableError as e:
+                    # Will be recovered on the next monitoring cycle
+                    self.log.error("Unable to update drive %r volume size: "
+                                   "%s", drive.name, e)
+            finally:
+                self._delDiskReplica(drive)
 
         finally:
-            self._delDiskReplica(drive)
             self.drive_monitor.enable()
 
         return {'status': doneCode}
