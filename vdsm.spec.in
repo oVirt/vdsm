@@ -269,6 +269,8 @@ Requires: edk2-ovmf
 %endif
 %endif
 
+Requires: python-pyudev
+
 Conflicts: vdsm-hook-sriov
 
 %description
