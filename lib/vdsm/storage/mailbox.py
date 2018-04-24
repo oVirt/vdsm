@@ -49,13 +49,13 @@ MAILBOX_SIZE = 4096
 PACKED_UUID_SIZE = 16
 VOLUME_MAX_SIZE = 0xFFFFFFFF  # 64 bit unsigned max size
 SIZE_CHARS = 16
-MESSAGE_VERSION = "1"
+MESSAGE_VERSION = b"1"
 MESSAGE_SIZE = 64
-CLEAN_MESSAGE = "\1" * MESSAGE_SIZE
-EXTEND_CODE = "xtnd"
+CLEAN_MESSAGE = b"\1" * MESSAGE_SIZE
+EXTEND_CODE = b"xtnd"
 BLOCK_SIZE = 512
 REPLY_OK = 1
-EMPTYMAILBOX = MAILBOX_SIZE * "\0"
+EMPTYMAILBOX = MAILBOX_SIZE * b"\0"
 SLOTS_PER_MAILBOX = int(MAILBOX_SIZE / MESSAGE_SIZE)
 # Last message slot is reserved for metadata (checksum, extendable mailbox,
 # etc)
@@ -121,9 +121,9 @@ class SPM_Extend_Message:
         volume = misc.packUuid(volumeData['volumeID'])
         # Build base payload
         payload = MESSAGE_VERSION + EXTEND_CODE + domain + volume + \
-            self.newSize.rjust(SIZE_CHARS, "0")
+            self.newSize.rjust(SIZE_CHARS, b"0")
         # Pad payload with zeros
-        self.payload = payload.ljust(MESSAGE_SIZE, "0")
+        self.payload = payload.ljust(MESSAGE_SIZE, b"0")
 
         self.log.debug('new extend msg created: domain: %s, volume: %s',
                        volumeData['domainID'], volumeData['volumeID'])
@@ -545,7 +545,7 @@ class SPM_MailMonitor:
         self._outMailLen = MAILBOX_SIZE * self._numHosts
         self._monitorInterval = monitorInterval
         # TODO: add support for multiple paths (multiple mailboxes)
-        self._outgoingMail = self._outMailLen * "\0"
+        self._outgoingMail = self._outMailLen * b"\0"
         self._incomingMail = self._outgoingMail
         self._inCmd = ['dd',
                        'if=' + str(self._inbox),
