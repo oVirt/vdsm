@@ -171,9 +171,9 @@ Requires: sanlock >= 3.5.0-1, sanlock-python
 # device-mapper-multipath
 
 %if 0%{?rhel}
-# Required for proper handling of unprivileged SGIO (e.g., SCSI reservations)
-# See https://bugzilla.redhat.com/1510834 for details.
-Requires: device-mapper-multipath >= 0.4.9-111.el7.2
+# Required for blacklisting local devices.
+# See https://bugzilla.redhat.com/1016535
+Requires: device-mapper-multipath >= 0.4.9-119.el7_5.1
 %endif #rhel
 
 %if 0%{?fedora}

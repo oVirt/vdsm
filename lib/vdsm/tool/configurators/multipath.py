@@ -38,9 +38,10 @@ _CONF_FILE = "/etc/multipath.conf"
 # "VDSM REVISION X.Y" tag.  Note that older version used "RHEV REVISION X.Y"
 # format.
 
-_CURRENT_TAG = "# VDSM REVISION 1.5"
+_CURRENT_TAG = "# VDSM REVISION 1.6"
 
 _OLD_TAGS = (
+    "# VDSM REVISION 1.5",
     "# VDSM REVISION 1.4",
     "# VDSM REVISION 1.3",
     "# VDSM REVISION 1.2",
@@ -170,6 +171,15 @@ defaults {
     # paths plus 32.
 
     max_fds                     4096
+}
+
+# Whitelist FCP and iSCSI devices.
+blacklist {
+        protocol ".*"
+}
+
+blacklist_exceptions {
+        protocol "(scsi:fcp|scsi:iscsi)"
 }
 
 # Remove devices entries when overrides section is available.
