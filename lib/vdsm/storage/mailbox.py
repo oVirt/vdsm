@@ -75,10 +75,6 @@ _zeroCheck = checksum(EMPTYMAILBOX, CHECKSUM_BYTES)
 pZeroChecksum = struct.pack('<l', _zeroCheck)
 
 
-def dec2hex(n):
-    return "%x" % n
-
-
 def runTask(args):
     if type(args) == tuple:
         cmd = args[0]
@@ -114,7 +110,7 @@ class SPM_Extend_Message:
 
         self.pool = volumeData['poolID']
         self.volumeData = volumeData
-        self.newSize = str(dec2hex(newSize))
+        self.newSize = hex(newSize)[2:]
         self.callback = callbackFunction
 
         # Message structure is rigid (order must be kept and is relied upon):
