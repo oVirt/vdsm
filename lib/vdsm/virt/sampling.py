@@ -413,18 +413,20 @@ class VMBulkstatsMonitor(object):
         # *is* costly so we should avoid it if we can.
         fast_path = acquired and not self._skip_doms
         doms = []  # whitelist, meaningful only in the slow path
+        flags = libvirt.VIR_CONNECT_GET_ALL_DOMAINS_STATS_RUNNING  # shortcut
         try:
             if fast_path:
                 # This is expected to be the common case.
                 # If everything's ok, we can skip all the costly checks.
-                bulk_stats = self._conn.getAllDomainStats(self._stats_types)
+                bulk_stats = self._conn.getAllDomainStats(
+                    stats=self._stats_types, flags=flags)
             else:
                 # A previous call got stuck, or not every domain
                 # has properly recovered. Thus we must whitelist domains.
                 doms = self._get_responsive_doms()
                 if doms:
                     bulk_stats = self._conn.domainListGetStats(
-                        doms, self._stats_types)
+                        doms, stats=self._stats_types, flags=flags)
                 else:
                     bulk_stats = []
         except Exception:

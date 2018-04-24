@@ -242,7 +242,7 @@ class FakeConnection(object):
         return self.vms
 
     @recorded
-    def getAllDomainStats(self, flags=0):
+    def getAllDomainStats(self, stats=0, flags=0):
         if not self._block.wait(self._delay):
             return []
         return [
@@ -253,7 +253,7 @@ class FakeConnection(object):
         ]
 
     @recorded
-    def domainListGetStats(self, doms, flags=0):
+    def domainListGetStats(self, doms, stats=0, flags=0):
         return [
             (dom, {
                 'vmid': dom.UUIDString()
