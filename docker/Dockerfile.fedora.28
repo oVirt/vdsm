@@ -5,7 +5,6 @@ RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     PyYAML \
     autoconf \
     automake \
-    bridge-utils \
     dbus-python \
     dnf-utils \
     dosfstools \

@@ -249,7 +249,6 @@ Requires: glusterfs-fuse >= %{gluster_version}
 %endif
 
 Requires: psmisc >= 22.6-15
-Requires: bridge-utils
 Requires: sos
 Requires: tree
 Requires: dosfstools
@@ -364,7 +363,6 @@ VDSM libraries that are imported by all subsystems
 %package network
 Summary:        VDSM network python libraries
 Requires:       NetworkManager-config-server
-Requires:       bridge-utils
 Requires:       dbus-python
 Requires:       dhclient
 Requires:       ethtool

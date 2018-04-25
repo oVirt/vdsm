@@ -24,7 +24,6 @@ INTEGRATION_BRIDGE = 'br-int'
 # The maximum device name length in Linux
 DEV_MAX_LENGTH = 14
 
-EXT_BRCTL = CommandPath('brctl', '/sbin/brctl', '/usr/sbin/brctl').cmd
 ovs_vsctl = CommandPath('ovs-vsctl',
                         '/usr/sbin/ovs-vsctl',
                         '/usr/bin/ovs-vsctl')
