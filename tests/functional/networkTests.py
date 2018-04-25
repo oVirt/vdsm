@@ -30,7 +30,7 @@ from nose.plugins.skip import SkipTest
 import six
 
 import vdsm.config
-from vdsm.network.configurators.ifcfg import EXT_BRCTL, EXT_IFDOWN, EXT_IFUP
+from vdsm.network.configurators.ifcfg import EXT_IFDOWN, EXT_IFUP
 from vdsm.network import ipwrapper
 from vdsm.network import netswitch
 from vdsm.network.ip import dhclient
@@ -605,8 +605,7 @@ class NetworkTest(TestCaseBase):
                 self.vdsm_net.save_config()
 
                 addrFlush(NET_CHANGED)
-                linkSet(NET_MISSING, ['down'])
-                execCmd([EXT_BRCTL, 'delbr', NET_MISSING])
+                linkDel(NET_MISSING)
                 linkDel(BOND_MISSING)
                 self.vdsm_net.refreshNetinfo()
                 self.assertEqual(
@@ -1311,7 +1310,7 @@ class NetworkTest(TestCaseBase):
             self.assertNetworkExists(NETWORK_NAME)
 
             # Remove the nic from the bridge
-            execCmd([EXT_BRCTL, 'delif', NETWORK_NAME, nic])
+            linkSet(nic, ['nomaster'])
             self.vdsm_net.refreshNetinfo()
             self.assertEqual(len(
                 self.vdsm_net.netinfo.networks[NETWORK_NAME]['ports']), 0)
