@@ -475,9 +475,9 @@ class GuestAgent(object):
             info.update(self.guestInfo)
         else:
             if len(self.guestInfo['appsList']) > 0:
-                info['appsList'] = self.guestInfo['appsList'],
+                info['appsList'] = self.guestInfo['appsList']
             if len(self.guestInfo['guestIPs']) > 0:
-                info['guestIPs'] = self.guestInfo['guestIPs'],
+                info['guestIPs'] = self.guestInfo['guestIPs']
             if len(self.guestInfo['guestFQDN']) > 0:
                 info['guestFQDN'] = self.guestInfo['guestFQDN']
         return utils.picklecopy(info)
