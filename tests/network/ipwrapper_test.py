@@ -36,7 +36,7 @@ from vdsm.network.ipwrapper import Rule
 from vdsm.network.netlink import monitor
 from vdsm.network.netlink.libnl import IfaceStatus
 
-from .nettestlib import Bridge, bridge_device, requires_brctl
+from .nettestlib import Bridge, bridge_device
 from testlib import VdsmTestCase as TestCaseBase
 
 
@@ -104,7 +104,6 @@ class TestIpwrapper(TestCaseBase):
 class TestLinks(TestCaseBase):
 
     @ValidateRunningAsRoot
-    @requires_brctl
     def testGetLink(self):
         with bridge_device() as bridge:
             link = ipwrapper.getLink(bridge.devName)
@@ -122,7 +121,6 @@ class TestLinks(TestCaseBase):
 class TestDrvinfo(TestCaseBase):
 
     @ValidateRunningAsRoot
-    @requires_brctl
     def setUp(self):
         self._bridge = Bridge()
         self._bridge.addDevice()
@@ -154,7 +152,6 @@ class TestDrvinfo(TestCaseBase):
 class TestUnicodeDrvinfo(TestCaseBase):
 
     @ValidateRunningAsRoot
-    @requires_brctl
     def setUp(self):
         if six.PY3:
             raise SkipTest(

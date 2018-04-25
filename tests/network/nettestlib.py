@@ -19,7 +19,6 @@
 
 from __future__ import absolute_import
 from __future__ import division
-import errno
 import fcntl
 import functools
 import json
@@ -35,7 +34,6 @@ from nose.plugins.skip import SkipTest
 
 from vdsm.common import cpuarch
 from vdsm.network import cmd as cmd
-from vdsm.network.configurators.ifcfg import EXT_BRCTL
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
@@ -398,24 +396,6 @@ def requires_nm_stopped(message):
 
 def _nm_is_running():
     return len(pgrep('NetworkManager')) > 0
-
-
-def check_brctl():
-    try:
-        cmd.exec_sync([EXT_BRCTL, 'show'])
-    except OSError as e:
-        if e.errno == errno.ENOENT:
-            raise SkipTest('Cannot run %r: %s\nDo you have bridge-utils '
-                           'installed?' % (EXT_BRCTL, e))
-        raise
-
-
-def requires_brctl(f):
-    @functools.wraps(f)
-    def wrapper(*a, **kw):
-        check_brctl()
-        return f(*a, **kw)
-    return wrapper
 
 
 def check_tc():
