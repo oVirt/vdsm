@@ -133,9 +133,8 @@ del_bonds() {
 }
 
 del_bridges() {
-    for bridge in `brctl show | awk '{print $1;}' | grep test-network`; do
-        sudo ip link set dev $bridge down
-        sudo brctl delbr $bridge
+    for bridge in `ip -o link show type bridge | awk -F ': ' '{print $2}' | grep test-network`; do
+        sudo ip link delete dev $bridge
         sudo rm /etc/sysconfig/network-scripts/ifcfg-$bridge
     done
 }
