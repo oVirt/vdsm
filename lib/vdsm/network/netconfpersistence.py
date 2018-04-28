@@ -138,7 +138,7 @@ class BaseConfig(object):
 
 class Config(BaseConfig):
     def __init__(self, savePath):
-        self._netconf_path = savePath
+        self.netconf_path = savePath
         self.networksPath = os.path.join(savePath, NETCONF_NETS)
         self.bondingsPath = os.path.join(savePath, NETCONF_BONDS)
         self.devicesPath = os.path.join(savePath, NETCONF_DEVS)
@@ -158,7 +158,7 @@ class Config(BaseConfig):
     def save(self):
         self._clearDisk()
         rand_suffix = random_iface_name(max_length=8)
-        rand_netconf_path = self._netconf_path + '.' + rand_suffix
+        rand_netconf_path = self.netconf_path + '.' + rand_suffix
         rand_nets_path = os.path.join(rand_netconf_path, NETCONF_NETS)
         rand_bonds_path = os.path.join(rand_netconf_path, NETCONF_BONDS)
         rand_devs_path = os.path.join(rand_netconf_path, NETCONF_DEVS)
@@ -168,7 +168,7 @@ class Config(BaseConfig):
         self._save_config(self.devices, rand_devs_path)
 
         _atomic_copytree(
-            rand_netconf_path, self._netconf_path, remove_src=True)
+            rand_netconf_path, self.netconf_path, remove_src=True)
 
         logging.info(
             'Saved new config %r to [%s,%s,%s]' % (
@@ -225,8 +225,8 @@ class Config(BaseConfig):
             json.dump(config, configurationFile, indent=4)
 
     def _clearDisk(self):
-        logging.info('Clearing netconf: %s', self._netconf_path)
-        self._clear_config(self._netconf_path)
+        logging.info('Clearing netconf: %s', self.netconf_path)
+        self._clear_config(self.netconf_path)
 
     @staticmethod
     def _clear_config(confpath):
