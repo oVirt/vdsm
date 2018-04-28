@@ -33,7 +33,6 @@ from vdsm.network.configurators.ifcfg import Ifcfg
 from vdsm.network.kernelconfig import KernelConfig
 from vdsm.network.link import sriov
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
-from vdsm.network.netconfpersistence import CONF_PERSIST_DIR
 from vdsm.network.netinfo.cache import NetInfo, libvirt_vdsm_nets
 from vdsm.network.netswitch.configurator import netinfo
 from vdsm.network.ovs import info as ovs_info
@@ -112,7 +111,7 @@ def _upgrade_unified_configuration(config):
         save_changes = True
 
     # Upgrading based on the persisted (safe) configuration.
-    old_sriov_confpath = os.path.join(CONF_PERSIST_DIR, 'virtual_functions')
+    old_sriov_confpath = os.path.join(config.netconf_path, 'virtual_functions')
     if os.path.exists(old_sriov_confpath):
         _upgrade_sriov_config(config.devices, old_sriov_confpath)
         save_changes = True

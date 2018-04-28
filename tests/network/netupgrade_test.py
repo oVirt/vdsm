@@ -81,6 +81,8 @@ class NetUpgradeUnifiedConfigTest(VdsmTestCase):
             self, raw_config, normalized_config, rconfig, pconfig):
         rconfig.networks = raw_config
         pconfig.networks = raw_config
+        rconfig.netconf_path = ''
+        pconfig.netconf_path = ''
 
         netupgrade.upgrade()
 
