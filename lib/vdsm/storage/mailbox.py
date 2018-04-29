@@ -110,7 +110,6 @@ class SPM_Extend_Message:
 
         self.pool = volumeData['poolID']
         self.volumeData = volumeData
-        self.newSize = b'%x' % newSize
         self.callback = callbackFunction
 
         # Message structure is rigid (order must be kept and is relied upon):
@@ -120,8 +119,9 @@ class SPM_Extend_Message:
         domain = misc.packUuid(volumeData['domainID'])
         volume = misc.packUuid(volumeData['volumeID'])
         # Build base payload
+        padded_new_size = (b'%x' % newSize).rjust(SIZE_CHARS, b"0")
         payload = MESSAGE_VERSION + EXTEND_CODE + domain + volume + \
-            self.newSize.rjust(SIZE_CHARS, b"0")
+            padded_new_size
         # Pad payload with zeros
         self.payload = payload.ljust(MESSAGE_SIZE, b"0")
 
