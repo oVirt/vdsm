@@ -25,6 +25,7 @@ from contextlib import contextmanager
 
 from vdsm import utils
 from vdsm.common import cmdutils
+from vdsm.common import exception
 from vdsm.common.threadlocal import vars
 
 from vdsm.storage import clusterlock
@@ -205,6 +206,8 @@ class VolumeManifest(object):
         except clusterlock.InvalidLeaseName as e:
             self.log.warning("Cannot get lease status: %s", e)
             return None
+        except clusterlock.TemporaryFailure as e:
+            raise exception.expected(e)
 
         # TODO: Move this logic to clusterlock and fix callers to handle list
         # of owners instead of None.

@@ -183,12 +183,8 @@ def test_inquire_lease(fake_sanlock):
     (sanlock.HOST_LIVE, HOST_ID),
     (sanlock.HOST_FAIL, HOST_ID),
     (sanlock.HOST_UNKNOWN, HOST_ID),
-    pytest.param(sanlock.HOST_FREE, None,
-                 marks=pytest.mark.xfail(reason="owner generation is "
-                                                "ignored")),
-    pytest.param(sanlock.HOST_DEAD, None,
-                 marks=pytest.mark.xfail(reason="owner generation is "
-                                                "ignored"))
+    (sanlock.HOST_FREE, None),
+    (sanlock.HOST_DEAD, None)
 ])
 def test_inquire_owner_status(fake_sanlock, status, expected_owner_id):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
@@ -201,7 +197,6 @@ def test_inquire_owner_status(fake_sanlock, status, expected_owner_id):
     assert owner == expected_owner_id
 
 
-@pytest.mark.xfail(reason="owner generation is ignored")
 def test_inquire_owner_reconnected(fake_sanlock):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
     # This simulates a host reconnecting to the lockspace.
@@ -216,7 +211,6 @@ def test_inquire_owner_reconnected(fake_sanlock):
     assert owner is None
 
 
-@pytest.mark.xfail(reason="owner generation is ignored")
 def test_inquire_smaller_host_generation(fake_sanlock):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
     sl.acquireHostId(HOST_ID, async=False)
