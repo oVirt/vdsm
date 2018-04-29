@@ -22,7 +22,9 @@ from __future__ import absolute_import
 import logging
 import weakref
 
+from vdsm.common import exception
 from vdsm.storage import blockSD
+from vdsm.storage import clusterlock
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage import sd
@@ -429,7 +431,10 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
     @unsecured
     def getSpmStatus(self):
         # FIXME: unify with StoragePoolDiskBackend
-        lVer, spmId = self.masterDomain.inquireClusterLock()
+        try:
+            lVer, spmId = self.masterDomain.inquireClusterLock()
+        except clusterlock.TemporaryFailure as e:
+            raise exception.expected(e)
         return lVer or LVER_INVALID, spmId or SPM_ID_FREE
 
     def setSpmStatus(self, lVer, spmId):

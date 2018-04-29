@@ -111,6 +111,15 @@ class MultipleLeasesNotSupported(Error):
         self.lease = lease
 
 
+class TemporaryFailure(Error):
+    msg = "Cannot {self.action} {self.lease}: {self.reason}"
+
+    def __init__(self, action, lease, reason):
+        self.action = action
+        self.lease = lease
+        self.reason = reason
+
+
 Lease = collections.namedtuple("Lease", "name, path, offset")
 
 
@@ -422,14 +431,49 @@ class SANLock(object):
         owners = sanlock.read_resource_owners(self._sdUUID, lease.name,
                                               [(lease.path, lease.offset)])
 
-        if len(owners) == 1:
-            return resource.get("version"), owners[0].get("host_id")
-        elif len(owners) > 1:
+        if len(owners) > 1:
             self.log.error("Cluster lock is reported to have more than "
                            "one owner: %s", owners)
             raise RuntimeError("Multiple owners for %s" % (lease,))
 
-        return None, None
+        elif not owners:
+            return None, None
+
+        resource_owner = owners[0]
+        resource_version = resource["version"]
+        host_id = resource_owner["host_id"]
+        try:
+            host = sanlock.get_hosts(self._sdUUID, host_id)[0]
+        except sanlock.SanlockException as e:
+            # get_hosts might throw an exception (-EAGAIN) if it's
+            # called before lockspace initialization and the
+            # querying of the delta leases
+            # we might also get ENONET if the storage has not completed
+            # calling acquireHostId yet
+            if e.errno not in (errno.ENONET, errno.EAGAIN):
+                raise
+            raise TemporaryFailure("inquire", lease, str(e))
+
+        host_status = self.STATUS_NAME[host["flags"]]
+
+        if resource_owner["generation"] != host["generation"]:
+            # The lease is considered free by sanlock because
+            # the host reconnected to the storage but it no
+            # longer has the lease
+            self.log.debug("host %r generation %r does not match resource "
+                           "generation %r, lease %s is free", host_id,
+                           host, resource_owner["generation"], lease)
+            return resource_version, None
+
+        if host_status in (HOST_STATUS_DEAD, HOST_STATUS_FREE):
+            # These are the only states that mean the host cannot hold
+            # this lease. Any other state means the host either holding the
+            # lease or could be holding the lease.
+            self.log.debug("host %s cannot hold %s is effectively free",
+                           host, lease)
+            return resource_version, None
+
+        return resource_version, host_id
 
     def release(self, lease):
         self.log.info("Releasing %s", lease)
