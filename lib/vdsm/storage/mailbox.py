@@ -110,7 +110,7 @@ class SPM_Extend_Message:
 
         self.pool = volumeData['poolID']
         self.volumeData = volumeData
-        self.newSize = hex(newSize)[2:]
+        self.newSize = b'%x' % newSize
         self.callback = callbackFunction
 
         # Message structure is rigid (order must be kept and is relied upon):
