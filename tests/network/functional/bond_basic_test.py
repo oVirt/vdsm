@@ -27,6 +27,7 @@ from vdsm.network import errors as ne
 
 from . import netfunctestlib as nftestlib
 from .netfunctestlib import NetFuncTestAdapter, NOCHK, SetupNetworksError
+from .netfunctestlib import Target
 from network.nettestlib import dummy_devices
 
 BOND_NAME = 'bond1_name'
@@ -38,7 +39,7 @@ adapter = None
 @pytest.fixture(scope='module', autouse=True)
 def create_adapter():
     global adapter
-    adapter = NetFuncTestAdapter()
+    adapter = NetFuncTestAdapter(target=Target.LIB)
 
 
 @nftestlib.parametrize_switch

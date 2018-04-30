@@ -29,6 +29,9 @@ import six
 import pytest
 
 from vdsm.common import fileutils
+from vdsm.network import api
+from vdsm.network import errors
+from vdsm.network import initializer
 from vdsm.network import kernelconfig
 from vdsm.network.canonicalize import bridge_opts_dict_to_sorted_str
 from vdsm.network.canonicalize import bridge_opts_str_to_dict
@@ -37,7 +40,9 @@ from vdsm.network.ip.address import ipv6_supported, prefix2netmask
 from vdsm.network.link.iface import iface
 from vdsm.network.link.bond import sysfs_options as bond_options
 from vdsm.network.link.bond import sysfs_options_mapper as bond_opts_mapper
+from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo import bridges
+from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network.netlink import monitor
 from vdsm.network.netlink import waitfor
 
@@ -53,7 +58,6 @@ NOCHK = {'connectivityCheck': False}
 IFCFG_DIR = '/etc/sysconfig/network-scripts/'
 IFCFG_PREFIX = IFCFG_DIR + 'ifcfg-'
 
-
 parametrize_switch = pytest.mark.parametrize(
     'switch', [pytest.mark.legacy_switch('legacy'),
                pytest.mark.ovs_switch('ovs')])
@@ -63,6 +67,8 @@ parametrize_bridged = pytest.mark.parametrize('bridged', [False, True],
 
 parametrize_bonded = pytest.mark.parametrize('bonded', [False, True],
                                              ids=['unbonded', 'bonded'])
+
+initializer.init_privileged_network_components()
 
 
 def requires_ipaddress():
@@ -74,12 +80,44 @@ def requires_ipaddress():
         pytest.skip('ipaddress package is not installed')
 
 
+class Target(object):
+    SERVICE = 1
+    LIB = 0
+
+
+class LibProxy(object):
+    def __init__(self):
+        self.netinfo = None
+        self.config = None
+
+    def setSafeNetworkConfig(self):
+        api.setSafeNetworkConfig()
+
+    def setupNetworks(self, networks, bonds, options):
+        try:
+            api.setupNetworks(networks, bonds, options)
+            caps = api.network_caps()
+            self.netinfo = CachingNetInfo(caps)
+            self.config = RunningConfig()
+        except errors.ConfigNetworkError as e:
+            status = e.errCode
+            msg = e.message
+        else:
+            status = SUCCESS
+            msg = ''
+
+        return status, msg
+
+
 class NetFuncTestAdapter(object):
 
-    def __init__(self):
-        self._vdsm_proxy = getProxy()
+    def __init__(self, target=Target.SERVICE):
         self.netinfo = None
         self.running_config = None
+        if target == Target.SERVICE:
+            self._vdsm_proxy = getProxy()
+        else:
+            self._vdsm_proxy = LibProxy()
 
     def update_netinfo(self):
         self.netinfo = self._vdsm_proxy.netinfo
