@@ -298,7 +298,7 @@ class UpdateVMPolicyFailed(VdsmException):
     message = 'Failed to update VM SLA policy'
 
 
-class UpdateIOTuneError(VdsmException):
+class UpdateIOTuneError(ContextException):
     code = 64
     message = 'Failed to update ioTune values'
 

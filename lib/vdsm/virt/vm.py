@@ -3640,10 +3640,12 @@ class Vm(object):
         return utils.picklecopy(self._ioTuneInfo)
 
     def getIoTune(self):
-        result = self.getIoTuneResponse()
-        if response.is_error(result):
+        try:
+            result = self.getIoTuneResponse()
+        except exception.VdsmException:
             return []
-        return result.get('ioTuneList', [])
+        else:
+            return result.get('ioTuneList', [])
 
     def getIoTuneResponse(self):
         resultList = []
@@ -3686,7 +3688,7 @@ class Vm(object):
                     raise exception.NoSuchVM()
                 else:
                     self.log.error('updateIoTuneErr', str(e))
-                    return response.error('updateIoTuneErr', str(e))
+                    raise exception.UpdateIOTuneError(str(e))
 
         return response.success(ioTuneList=resultList)
 
