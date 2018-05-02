@@ -3636,10 +3636,6 @@ class Vm(object):
             # race on shutdown
             return {}
 
-    def getIoTunePolicyResponse(self):
-        tunables = self.getIoTunePolicy()
-        return response.success(ioTunePolicyList=tunables)
-
     def getIoTunePolicy(self):
         return self._ioTuneInfo
 

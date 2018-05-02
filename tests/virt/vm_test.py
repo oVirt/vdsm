@@ -944,7 +944,7 @@ class TestVm(XMLTestCase):
             machine._dom = dom
             machine._updateIoTuneInfo()
 
-            tunables = machine.getIoTunePolicyResponse()
+            tunables = machine.getIoTunePolicy()
             expected = [
                 {'name': u'test-device-by-name',
                  'maximum': {
@@ -955,7 +955,7 @@ class TestVm(XMLTestCase):
                      u'total_bytes_sec': 9999
                  }}
             ]
-            self.assertEqual(tunables['ioTunePolicyList'], expected)
+            self.assertEqual(tunables, expected)
 
     @permutations([['<empty/>'], [None]])
     def testNoIoTunePolicy(self, metadata):
@@ -964,8 +964,8 @@ class TestVm(XMLTestCase):
             dom._metadata = metadata
             machine._dom = dom
 
-            tunables = machine.getIoTunePolicyResponse()
-            self.assertEqual(tunables['ioTunePolicyList'], [])
+            tunables = machine.getIoTunePolicy()
+            self.assertEqual(tunables, [])
 
     @brokentest("the test expects overwrite, the code incrementally updates")
     @permutations([
