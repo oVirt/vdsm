@@ -3648,6 +3648,9 @@ class Vm(object):
             return result.get('ioTuneList', [])
 
     def getIoTuneResponse(self):
+        return response.success(ioTuneList=self.io_tune_values())
+
+    def io_tune_values(self):
         resultList = []
 
         for device in self.getDiskDevices():
@@ -3690,7 +3693,7 @@ class Vm(object):
                     self.log.error('updateIoTuneErr', str(e))
                     raise exception.UpdateIOTuneError(str(e))
 
-        return response.success(ioTuneList=resultList)
+        return resultList
 
     def setIoTune(self, tunables):
         for io_tune_change in tunables:
