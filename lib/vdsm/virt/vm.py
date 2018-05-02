@@ -3630,20 +3630,16 @@ class Vm(object):
         try:
             return {
                 'policy': self.io_tune_policy(),
-                'current_values': self.getIoTune(),
+                'current_values': self.io_tune_values(),
             }
         except virdomain.NotConnectedError:
             # race on shutdown
             return {}
+        except exception.UpdateIOTuneError:
+            return {}
 
     def io_tune_policy(self):
         return utils.picklecopy(self._ioTuneInfo)
-
-    def getIoTune(self):
-        try:
-            return self.io_tune_values()
-        except exception.VdsmException:
-            return []
 
     def io_tune_values(self):
         resultList = []
