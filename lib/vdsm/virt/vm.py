@@ -3629,15 +3629,15 @@ class Vm(object):
     def io_tune_policy_values(self):
         try:
             return {
-                'policy': self.getIoTunePolicy(),
+                'policy': self.io_tune_policy(),
                 'current_values': self.getIoTune(),
             }
         except virdomain.NotConnectedError:
             # race on shutdown
             return {}
 
-    def getIoTunePolicy(self):
-        return self._ioTuneInfo
+    def io_tune_policy(self):
+        return utils.picklecopy(self._ioTuneInfo)
 
     def getIoTune(self):
         result = self.getIoTuneResponse()

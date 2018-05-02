@@ -944,7 +944,7 @@ class TestVm(XMLTestCase):
             machine._dom = dom
             machine._updateIoTuneInfo()
 
-            tunables = machine.getIoTunePolicy()
+            tunables = machine.io_tune_policy()
             expected = [
                 {'name': u'test-device-by-name',
                  'maximum': {
@@ -964,7 +964,7 @@ class TestVm(XMLTestCase):
             dom._metadata = metadata
             machine._dom = dom
 
-            tunables = machine.getIoTunePolicy()
+            tunables = machine.io_tune_policy()
             self.assertEqual(tunables, [])
 
     @brokentest("the test expects overwrite, the code incrementally updates")

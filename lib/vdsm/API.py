@@ -717,7 +717,7 @@ class VM(APIBase):
     @api.method
     def getIoTunePolicy(self):
         return {
-            'ioTunePolicyList': self.vm.getIoTunePolicy()
+            'ioTunePolicyList': self.vm.io_tune_policy()
         }
 
     @api.logged(on="api.virt")
