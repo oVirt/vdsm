@@ -3641,14 +3641,9 @@ class Vm(object):
 
     def getIoTune(self):
         try:
-            result = self.getIoTuneResponse()
+            return self.io_tune_values()
         except exception.VdsmException:
             return []
-        else:
-            return result.get('ioTuneList', [])
-
-    def getIoTuneResponse(self):
-        return response.success(ioTuneList=self.io_tune_values())
 
     def io_tune_values(self):
         resultList = []

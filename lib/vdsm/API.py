@@ -706,7 +706,9 @@ class VM(APIBase):
     @api.logged(on="api.virt")
     @api.method
     def getIoTune(self):
-        return self.vm.getIoTuneResponse()
+        return {
+            'ioTuneList': self.vm.io_tune_values()
+        }
 
     @api.logged(on="api.virt")
     @api.method

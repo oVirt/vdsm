@@ -2111,8 +2111,8 @@ class BlockIoTuneTests(TestCaseBase):
             testvm._dom = self.dom
             testvm._devices[hwclass.DISK] = (self.drive,)
 
-            res = testvm.getIoTuneResponse()
-            self.assertFalse(response.is_error(res))
+            res = testvm.io_tune_values()
+            self.assertTrue(res)
             self.assertEqual(
                 self.dom.__calls__,
                 [('blockIoTune',
@@ -2120,8 +2120,8 @@ class BlockIoTuneTests(TestCaseBase):
                     {})]
             )
 
-            res = testvm.getIoTuneResponse()
-            self.assertFalse(response.is_error(res))
+            res = testvm.io_tune_values()
+            self.assertTrue(res)
             self.assertEqual(
                 self.dom.__calls__,
                 [('blockIoTune',
@@ -2139,12 +2139,12 @@ class BlockIoTuneTests(TestCaseBase):
                 {"name": self.drive.name, "ioTune": self.iotune_high}
             ]
 
-            res = testvm.getIoTuneResponse()
+            res = testvm.io_tune_values()
             self.assert_iotune_in_response(res, self.iotune_low)
 
             testvm.setIoTune(tunables)
 
-            res = testvm.getIoTuneResponse()
+            res = testvm.io_tune_values()
             self.assert_iotune_in_response(res, self.iotune_high)
 
             self.assertEqual(len(self.dom.__calls__), 2)
@@ -2163,7 +2163,7 @@ class BlockIoTuneTests(TestCaseBase):
 
             testvm.setIoTune(tunables)
 
-            res = testvm.getIoTuneResponse()
+            res = testvm.io_tune_values()
             self.assert_iotune_in_response(res, self.iotune_high)
 
             self.assertEqual(len(self.dom.__calls__), 1)
@@ -2176,7 +2176,7 @@ class BlockIoTuneTests(TestCaseBase):
             testvm._devices[hwclass.DISK] = (self.drive,)
 
             def _interleaved_update():
-                # this will run in the middle of getIoTuneResponse()
+                # this will run in the middle of io_tune_values()
                 tunables = [
                     {"name": self.drive.name, "ioTune": self.iotune_high}
                 ]
@@ -2184,7 +2184,7 @@ class BlockIoTuneTests(TestCaseBase):
 
             self.dom.callback = _interleaved_update
             self.assert_iotune_in_response(
-                testvm.getIoTuneResponse(),
+                testvm.io_tune_values(),
                 self.iotune_low
             )
 
@@ -2329,7 +2329,7 @@ class BlockIoTuneTests(TestCaseBase):
 
     def assert_iotune_in_response(self, res, iotune):
         self.assertEqual(
-            res['ioTuneList'][0]['ioTune'], iotune
+            res[0]['ioTune'], iotune
         )
 
 
