@@ -1441,8 +1441,8 @@ class TestWaitForRemoval(TestCaseBase):
                    [drive_block, BLOCK_DRIVE_XML],
                    [interface, NIC_XML]])
     def test_timeout(self, device, matching_xml):
-        testvm = TestingVm(WaitForRemovalFakeVmDom(matching_xml,
-                                                   times_to_match=9))
+        testvm = FakeVm(WaitForRemovalFakeVmDom(matching_xml,
+                                                times_to_match=9))
         self.assertRaises(HotunplugTimeout, testvm._waitForDeviceRemoval,
                           device)
 
@@ -1457,7 +1457,7 @@ class TestWaitForRemoval(TestCaseBase):
                    [drive_block, BLOCK_DRIVE_XML],
                    [interface, NIC_XML]])
     def test_removed_on_first_check(self, device, matching_xml):
-        testvm = TestingVm(WaitForRemovalFakeVmDom(matching_xml))
+        testvm = FakeVm(WaitForRemovalFakeVmDom(matching_xml))
         testvm._waitForDeviceRemoval(device)
         self.assertEqual(testvm._dom.xmldesc_fetched, 1)
 
@@ -1470,8 +1470,8 @@ class TestWaitForRemoval(TestCaseBase):
                    [drive_block, BLOCK_DRIVE_XML],
                    [interface, NIC_XML]])
     def test_removed_on_x_check(self, device, matching_xml):
-        testvm = TestingVm(WaitForRemovalFakeVmDom(matching_xml,
-                                                   times_to_match=2))
+        testvm = FakeVm(WaitForRemovalFakeVmDom(matching_xml,
+                                                times_to_match=2))
         testvm._waitForDeviceRemoval(device)
         self.assertEqual(testvm._dom.xmldesc_fetched, 3)
 
@@ -1894,7 +1894,7 @@ class ChangeBlockDevTests(TestCaseBase):
             self.assertTrue(testvm.log.messages)
 
 
-class TestingVm(vm.Vm):
+class FakeVm(vm.Vm):
     """
     Fake Vm required for testing code that does not care about vm state,
     invoking libvirt apis via Vm._dom, and logging via Vm.log.
@@ -1910,7 +1910,7 @@ class FreezingTests(TestCaseBase):
 
     def setUp(self):
         self.dom = fake.Domain()
-        self.vm = TestingVm(self.dom)
+        self.vm = FakeVm(self.dom)
 
     def test_freeze(self):
         res = self.vm.freeze()
@@ -1931,7 +1931,7 @@ class FreezingGuestAgentUnresponsiveTests(TestCaseBase):
         self.dom = fake.Domain(
             virtError=libvirt.VIR_ERR_AGENT_UNRESPONSIVE,
             errorMessage="fake error")
-        self.vm = TestingVm(self.dom)
+        self.vm = FakeVm(self.dom)
 
     def test_freeze(self):
         res = self.vm.freeze()
@@ -1950,7 +1950,7 @@ class FreezingUnsupportedTests(TestCaseBase):
         self.dom = fake.Domain(
             virtError=libvirt.VIR_ERR_NO_SUPPORT,
             errorMessage="fake error")
-        self.vm = TestingVm(self.dom)
+        self.vm = FakeVm(self.dom)
 
     def test_freeze(self):
         res = self.vm.freeze()
@@ -1967,7 +1967,7 @@ class FreezingUnexpectedErrorTests(TestCaseBase):
         self.dom = fake.Domain(
             virtError=libvirt.VIR_ERR_INTERNAL_ERROR,
             errorMessage="fake error")
-        self.vm = TestingVm(self.dom)
+        self.vm = FakeVm(self.dom)
 
     def test_freeze(self):
         res = self.vm.freeze()
@@ -2368,7 +2368,7 @@ class SyncGuestTimeTests(TestCaseBase):
 
     def _make_vm(self, virt_error=None):
         dom = fake.Domain(virtError=virt_error)
-        return TestingVm(dom)
+        return FakeVm(dom)
 
     @MonkeyPatch(time, 'time', lambda: 1234567890.125)
     def test_success(self):
