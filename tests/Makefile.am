@@ -284,7 +284,7 @@ check:
 		modules=$$(comm -2 -3 "$$all_modules" "$$blacklist"); \
 		rm -f "$$all_modules" "$$blacklist"; \
 		PYTHON_EXE="$(PYTHON3)" \
-			$(top_srcdir)/tests/run_tests_local.sh "$$modules"; \
+			$(top_srcdir)/tests/run_tests_local.sh $$modules; \
 		mv .coverage .coverage-nose-py3; \
 	fi
 
