@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,8 @@ import os
 import tempfile
 
 MODULE_LIST = ('cli', 'hooks', 'services', 'tasks',
-               'gfapi', 'storagedev', 'api', 'events')
+               'gfapi', 'storagedev', 'api', 'events',
+               'thinstorage')
 
 
 def gluster_mgmt_api(func):
