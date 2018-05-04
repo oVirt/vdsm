@@ -37,9 +37,6 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     python-setuptools \
     python-six \
     python-subprocess32 \
-    python34 \
-    python34-nose \
-    python34-six \
     redhat-rpm-config \
     rpm-python \
     sanlock-python \
