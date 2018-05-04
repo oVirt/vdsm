@@ -26,9 +26,6 @@ python-pthreading
 python-six
 python-subprocess32
 python-requests
-python34-nose
-python34-six
-python34
 rpm-build
 sanlock-python
 sudo
