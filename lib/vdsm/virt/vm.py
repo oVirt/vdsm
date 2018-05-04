@@ -4095,7 +4095,7 @@ class Vm(object):
     def _timeoutExperienced(self, timeout):
         if timeout:
             self._monitorResponse = -1
-        else:
+        elif self._monitorable:
             self._monitorResponse = 0
 
     def _completeIncomingMigration(self):
