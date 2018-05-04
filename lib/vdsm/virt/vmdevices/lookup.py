@@ -59,3 +59,14 @@ def drive_by_name(disk_devices, name):
         if device.name == name:
             return device
     raise LookupError("No such drive: '%s'" % name)
+
+
+def conf_by_alias(conf, dev_type, alias):
+    for dev_conf in conf[:]:
+        try:
+            if dev_conf['alias'] == alias and dev_conf['type'] == dev_type:
+                return dev_conf
+        except KeyError:
+            continue
+    raise LookupError('Configuration of device identified by alias %s '
+                      'and type %s not found' % (alias, dev_type,))

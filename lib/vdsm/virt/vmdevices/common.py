@@ -97,17 +97,6 @@ def update_device_info(vm, devices):
     _update_unknown_device_info(vm)
 
 
-def lookup_conf_by_alias(conf, dev_type, alias):
-    for dev_conf in conf[:]:
-        try:
-            if dev_conf['alias'] == alias and dev_conf['type'] == dev_type:
-                return dev_conf
-        except KeyError:
-            continue
-    raise LookupError('Configuration of device identified by alias %s '
-                      'and type %s not found' % (alias, dev_type,))
-
-
 _DEVICE_MAPPING = {
     hwclass.DISK: storage.Drive,
     hwclass.NIC: network.Interface,

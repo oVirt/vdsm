@@ -3147,7 +3147,7 @@ class Vm(object):
         try:
             netDev = vmdevices.lookup.device_by_alias(
                 self._devices[hwclass.NIC][:], params['alias'])
-            netConf = vmdevices.common.lookup_conf_by_alias(
+            netConf = vmdevices.lookup.conf_by_alias(
                 self.conf['devices'], hwclass.NIC, params['alias'])
 
             linkValue = 'up' if conv.tobool(
@@ -6092,7 +6092,7 @@ class Vm(object):
         device_hwclass = hwclass.MEMORY
 
         try:
-            conf = vmdevices.common.lookup_conf_by_alias(
+            conf = vmdevices.lookup.conf_by_alias(
                 self.conf['devices'], device_hwclass, device_alias)
         except LookupError:
             self.log.warning("Removed device not found in conf: %s",

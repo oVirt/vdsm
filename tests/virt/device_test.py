@@ -637,31 +637,6 @@ class RngTests(TestCaseBase):
         self.assertTrue(rng.uses_source(source))
 
 
-@expandPermutations
-class TestDeviceHelpers(TestCaseBase):
-
-    _DEVICES = [{'alias': 'dimm0', 'type': hwclass.MEMORY, 'size': 1024},
-                {'alias': 'ac97', 'type': hwclass.SOUND}]
-
-    @permutations([
-        [hwclass.MEMORY, 'dimm0', 0],
-        [hwclass.SOUND, 'ac97', 1],
-    ])
-    def test_lookup_conf(self, dev_type, alias, index):
-        conf = vmdevices.common.lookup_conf_by_alias(self._DEVICES,
-                                                     dev_type, alias)
-        self.assertEqual(conf, self._DEVICES[index])
-
-    @permutations([
-        [hwclass.MEMORY, 'dimm1'],
-        [hwclass.SOUND, 'dimm0'],
-    ])
-    def test_lookup_conf_error(self, dev_type, alias):
-        self.assertRaises(LookupError,
-                          vmdevices.common.lookup_conf_by_alias,
-                          self._DEVICES, dev_type, alias)
-
-
 class BrokenSuperVdsm(fake.SuperVdsm):
 
     def setPortMirroring(self, network, nic_name):
