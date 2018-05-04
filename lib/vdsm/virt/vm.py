@@ -3145,8 +3145,8 @@ class Vm(object):
 
     def _updateInterfaceDevice(self, params):
         try:
-            netDev = vmdevices.common.lookup_device_by_alias(
-                self._devices, hwclass.NIC, params['alias'])
+            netDev = vmdevices.lookup.device_by_alias(
+                self._devices[hwclass.NIC][:], params['alias'])
             netConf = vmdevices.common.lookup_conf_by_alias(
                 self.conf['devices'], hwclass.NIC, params['alias'])
 
@@ -3402,8 +3402,8 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def hotunplugMemory(self, params):
-        device = vmdevices.common.lookup_device_by_alias(
-            self._devices, hwclass.MEMORY, params['memory']['alias'])
+        device = vmdevices.lookup.device_by_alias(
+            self._devices[hwclass.MEMORY][:], params['memory']['alias'])
         device_xml = xmlutils.tostring(device.getXML())
         self.log.info("Hotunplug memory xml: %s", device_xml)
 
@@ -5064,8 +5064,8 @@ class Vm(object):
     def _send_ioerror_status_event(self, reason, alias):
         io_error_info = {'alias': alias}
         try:
-            drive = vmdevices.common.lookup_device_by_alias(
-                self._devices, hwclass.DISK, alias)
+            drive = vmdevices.lookup.device_by_alias(
+                self._devices[hwclass.DISK][:], alias)
         except LookupError:
             self.log.warning('unknown disk alias: %s', alias)
         else:
@@ -6102,8 +6102,8 @@ class Vm(object):
                 self.conf['devices'].remove(conf)
 
         try:
-            device = vmdevices.common.lookup_device_by_alias(
-                self._devices, device_hwclass, device_alias)
+            device = vmdevices.lookup.device_by_alias(
+                self._devices[device_hwclass][:], device_alias)
         except LookupError:
             self.log.warning("Removed device not found in devices: %s",
                              device_alias)

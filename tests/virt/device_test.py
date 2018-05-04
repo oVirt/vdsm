@@ -661,26 +661,6 @@ class TestDeviceHelpers(TestCaseBase):
                           vmdevices.common.lookup_conf_by_alias,
                           self._DEVICES, dev_type, alias)
 
-    @permutations([
-        [hwclass.MEMORY, 'dimm0'],
-        [hwclass.SOUND, 'ac97'],
-    ])
-    def test_lookup_device(self, dev_type, alias):
-        with fake.VM(devices=self._DEVICES, create_device_objects=True) as vm:
-            dev = vmdevices.common.lookup_device_by_alias(vm._devices,
-                                                          dev_type, alias)
-            self.assertEqual(dev.alias, alias)
-
-    @permutations([
-        [hwclass.MEMORY, 'dimm1'],
-        [hwclass.SOUND, 'dimm0'],
-    ])
-    def test_lookup_device_error(self, dev_type, alias):
-        with fake.VM(devices=self._DEVICES, create_device_objects=True) as vm:
-            self.assertRaises(LookupError,
-                              vmdevices.common.lookup_device_by_alias,
-                              vm._devices, dev_type, alias)
-
 
 class BrokenSuperVdsm(fake.SuperVdsm):
 
