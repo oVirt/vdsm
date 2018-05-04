@@ -111,6 +111,7 @@ class ClientIF(object):
         self.vmRequests = {}
         self.bindings = {}
         self._recovery = False
+        self.unknown_vm_ids = []
 
     def createVm(self, vmParams, vmRecover=False):
         self.vmRequests[vmParams['vmId']] = (vmParams, vmRecover)
@@ -131,6 +132,11 @@ class ClientIF(object):
     def getVMs(self):
         with self.vmContainerLock:
             return self.vmContainer.copy()
+
+    def pop_unknown_vm_ids(self):
+        ret = self.unknown_vm_ids
+        self.unknown_vm_ids = []
+        return ret
 
 
 class Domain(object):

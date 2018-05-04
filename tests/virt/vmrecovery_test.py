@@ -232,11 +232,49 @@ class TestAllDomains(TestCaseBase):
             expect_destroy = not vm_is_ext
             self.assertEqual(vm_obj.destroyed, expect_destroy)
 
+    def test_lookup_external_vms(self):
+        vm_uuids = ('a', 'b',)
+        vm_ext = [True] * len(vm_uuids)
+        self.conn.domains = _make_domains_collection(
+            zip(vm_uuids, vm_ext))
+        self.cif.unknown_vm_ids = list(vm_uuids)
+        recovery.lookup_external_vms(self.cif)
+        self.assertEqual(
+            set(self.cif.vmRequests.keys()),
+            set(vm_uuids)
+        )
+        self.assertEqual(
+            vm_ext,
+            [conf['external'] for conf, _ in self.cif.vmRequests.values()]
+        )
+
+    def test_lookup_external_vms_fails(self):
+        """
+        Failure to get the XML of an external VM while trying lookup
+        """
+        vm_uuids = ('a', 'b',)
+        vm_ext = [True] * len(vm_uuids)
+        self.conn.domains = _make_domains_collection(
+            zip(vm_uuids, vm_ext))
+        self.conn.domains['a'].XMLDesc = _raise
+        self.cif.unknown_vm_ids = list(vm_uuids)
+        recovery.lookup_external_vms(self.cif)
+        self.assertEqual(
+            set(self.cif.vmRequests.keys()),
+            set(('b',))
+        )
+
 
 class FakeConnection(object):
 
     def __init__(self):
         self.domains = {}
+
+    def lookupByUUIDString(self, vmid):
+        try:
+            return self.domains[vmid]
+        except KeyError:
+            raise err_no_domain()
 
     def listAllDomains(self):
         return list(self.domains.values())
