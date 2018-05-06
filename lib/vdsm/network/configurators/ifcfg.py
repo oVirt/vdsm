@@ -979,7 +979,7 @@ def _ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP, blocking=None):
             elif iface.ipv6:
                 wait_for_ip = waitfor.waitfor_ipv6_addr
 
-            with wait_for_ip(iface.name):
+            with wait_for_ip(iface.name, timeout=60):
                 _exec_ifup(iface, cgroup)
         else:
             with waitfor.waitfor_linkup(iface.name):
