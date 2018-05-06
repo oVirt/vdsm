@@ -91,15 +91,6 @@ def make_spm_mailbox(mboxfiles):
             raise RuntimeError('Timemout waiting for spm mailbox')
 
 
-@contextlib.contextmanager
-def xtnd_message(spm_mm, callback):
-    spm_mm.registerMessageType(b"xtnd", callback)
-    try:
-        yield
-    finally:
-        spm_mm.unregisterMessageType(b"xtnd")
-
-
 class TestSPMMailMonitor:
 
     def test_thread_leak(self, mboxfiles):
@@ -171,17 +162,17 @@ class TestCommunicate:
 
         with make_hsm_mailbox(mboxfiles, 7) as hsm_mb:
             with make_spm_mailbox(mboxfiles) as spm_mm:
-                with xtnd_message(spm_mm, spm_callback):
-                    VOL_DATA = dict(
-                        poolID=SPUUID,
-                        domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
-                        volumeID='d772f1c6-3ebb-43c3-a42e-73fcd8255a5f')
-                    REQUESTED_SIZE = 100
+                spm_mm.registerMessageType(b"xtnd", spm_callback)
+                VOL_DATA = dict(
+                    poolID=SPUUID,
+                    domainID='8adbc85e-e554-4ae0-b318-8a5465fe5fe1',
+                    volumeID='d772f1c6-3ebb-43c3-a42e-73fcd8255a5f')
+                REQUESTED_SIZE = 100
 
-                    hsm_mb.sendExtendMsg(VOL_DATA, REQUESTED_SIZE)
+                hsm_mb.sendExtendMsg(VOL_DATA, REQUESTED_SIZE)
 
-                    if not msg_processed.wait(10 * MONITOR_INTERVAL):
-                        expired = True
+                if not msg_processed.wait(10 * MONITOR_INTERVAL):
+                    expired = True
 
         assert not expired, 'message was not processed on time'
         assert received_messages == [(449, (
