@@ -774,4 +774,4 @@ def wait_timeout(monitor_interval):
     seconds, keeping the behaivor in runtime the same as it was in the last 8
     years, while allowing shorter times for testing.
     """
-    return monitor_interval * 3 // 2
+    return monitor_interval * 3 / 2

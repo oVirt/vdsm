@@ -284,3 +284,12 @@ class TestChecksum:
         with open("/dev/urandom", "rb") as f:
             data = f.read(50)
         assert sm.checksum(data, 16) == sm.checksum(data, 16)
+
+
+class TestWaitTimeout:
+
+    def test_production_config(self):
+        assert pytest.approx(3.0) == sm.wait_timeout(2)
+
+    def test_testing_config(self):
+        assert pytest.approx(0.15) == sm.wait_timeout(0.1)
