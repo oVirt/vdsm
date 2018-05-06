@@ -118,10 +118,8 @@ class SPM_Extend_Message:
         # bytes)
         domain = misc.packUuid(volumeData['domainID'])
         volume = misc.packUuid(volumeData['volumeID'])
-        # Build base payload
-        padded_new_size = (b'%x' % newSize).rjust(SIZE_CHARS, b"0")
-        payload = MESSAGE_VERSION + EXTEND_CODE + domain + volume + \
-            padded_new_size
+        size = b'%0*x' % (SIZE_CHARS, newSize)
+        payload = MESSAGE_VERSION + EXTEND_CODE + domain + volume + size
         # Pad payload with zeros
         self.payload = payload.ljust(MESSAGE_SIZE, b"0")
 
