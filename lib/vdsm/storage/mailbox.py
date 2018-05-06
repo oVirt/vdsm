@@ -102,8 +102,10 @@ class SPM_Extend_Message:
                            ' %d', '-'.join(volumeData.values()), newSize)
             raise InvalidParameterException('volumeData dictionary',
                                             volumeData)
+
         if (newSize < 0) or (newSize > VOLUME_MAX_SIZE):
-                raise InvalidParameterException('volumeSize', newSize)
+            raise InvalidParameterException('volumeSize', newSize)
+
         misc.validateUUID(volumeData['domainID'], 'domainID')
         misc.validateUUID(volumeData['volumeID'], 'volumeID')
 
