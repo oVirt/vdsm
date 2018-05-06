@@ -95,14 +95,13 @@ class SPM_Extend_Message:
     log = logging.getLogger('storage.SPM.Messages.Extend')
 
     def __init__(self, volumeData, newSize, callbackFunction=None):
-
-        if ('poolID' not in volumeData) or \
-           ('domainID' not in volumeData) or \
-           ('volumeID' not in volumeData):
-                self.log.error('create extend msg failed for volume: %s, size:'
-                               ' %d', '-'.join(volumeData.values()), newSize)
-                raise InvalidParameterException('volumeData dictionary',
-                                                volumeData)
+        if ('poolID' not in volumeData or
+                'domainID' not in volumeData or
+                'volumeID' not in volumeData):
+            self.log.error('create extend msg failed for volume: %s, size:'
+                           ' %d', '-'.join(volumeData.values()), newSize)
+            raise InvalidParameterException('volumeData dictionary',
+                                            volumeData)
         if (newSize < 0) or (newSize > VOLUME_MAX_SIZE):
                 raise InvalidParameterException('volumeSize', newSize)
         misc.validateUUID(volumeData['domainID'], 'domainID')
