@@ -39,9 +39,10 @@ class TestPyWatch(object):
         rc, _, _ = exec_cmd(['./py-watch', '0.2', 'false'])
         assert rc == 1
 
-    def test_timeout(self):
+    def test_timeout_output(self):
         rc, out, err = exec_cmd(['./py-watch', '0.1', 'sleep', '10'])
         assert b'Watched process timed out' in out
+        assert b'Terminating watched process' in out
         assert rc == 128 + signal.SIGTERM
 
     def test_kill_grandkids(self):

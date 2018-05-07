@@ -56,10 +56,12 @@ if __name__ == '__main__':
         print("=============================================================\n"
               "=                 Watched process timed out                 =\n"
               "=============================================================")
+        sys.stdout.flush()
         dump_trace(watched_proc)
         print("=============================================================\n"
               "=                Terminating watched process                =\n"
               "=============================================================")
+        sys.stdout.flush()
         sys.exit(kill_proc_session(watched_proc))
     else:
         sys.exit(rc)
