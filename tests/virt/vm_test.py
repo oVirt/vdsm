@@ -114,7 +114,7 @@ _GRAPHICS_DEVICE_PARAMS = {
 class TestVm(XMLTestCase):
 
     def __init__(self, *args, **kwargs):
-        TestCaseBase.__init__(self, *args, **kwargs)
+        super(TestVm, self).__init__(*args, **kwargs)
         self.channelListener = None
         self.conf = {'vmName': 'testVm',
                      'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
