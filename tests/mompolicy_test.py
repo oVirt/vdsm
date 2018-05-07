@@ -1,142 +1,93 @@
 from __future__ import absolute_import
 from __future__ import division
-import os.path
-from six.moves import configparser
 
-from mom.Policy.Policy import Policy
-from mom.Entity import Entity
-from mom.Monitor import Monitor
-from unittest import TestCase
+import json
+import os
+import unittest
 
-# This is a very hacky way of implementing the test scenario
-# we should update MOM to offer test capability and use it here.
-# Unfortunately bug #1207610 has very high priority and won't
-# wait for MOM to appear in Fedora repositories
-# TODO replace with proper test API once it appears
+from vdsm.common.compat import subprocess
+
+MOM_POLICY_VALIDATOR = 'mom_policy_validator.py'
 
 
-class MomPolicyTests(TestCase):
-    def _getPolicyContent(self, name):
-        path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                            "../static/etc/vdsm/mom.d",
-                            name)
-        return open(path, "r").read()
+def setupModule():
+    if not os.path.exists(MOM_POLICY_VALIDATOR):
+        raise unittest.case.SkipTest()
 
-    def _loadPolicyFile(self, policy, filename):
-        """Load MOM policy from static/etc/vdsm/mom.d/+filename and apply it
-           under the 'basename without extension' policy name.
 
-           Example:
-           00-constants.policy is loaded from
-           static/etc/vdsm/mom.d/00-constants.policy
-           and inserted as 00-costants policy.
-        """
+def read_vm_controls(host_data, vm_data, *policy_files):
+    cmd = [
+        'python', MOM_POLICY_VALIDATOR,
+        json.dumps(host_data),
+        json.dumps(vm_data),
+    ]
+    cmd.extend(
+        os.path.join('../static/etc/vdsm/mom.d/', pfile)
+        for pfile in policy_files)
+    out = subprocess.check_output(cmd)
+    return json.loads(out)
 
-        policy_string = self._getPolicyContent(filename)
-        policy_name = os.path.splitext(os.path.basename(filename))[0]
-        self.assertTrue(policy.set_policy(policy_name, policy_string))
 
-    def _prepareEntity(self, name, data):
-        cfg = configparser.SafeConfigParser()
-        cfg.add_section("__int__")
-        cfg.set("__int__", "plot-subdir", "")
-
-        ent = Entity(Monitor(cfg, name))
-        ent.statistics.append(data)
-        ent.monitor.fields = set(ent.statistics[-1].keys())
-        ent.monitor.optional_fields = []
-        ent._finalize()
-
-        return ent
+class MomPolicyTests(unittest.TestCase):
 
     def testCpuTuneBasicTest(self):
-        p = Policy()
+        controls = read_vm_controls(
+            {"cpu_count": 1},
+            {
+                "vcpu_count": 1,
+                "vcpu_user_limit": 50,
+                "vcpu_quota": None,
+                "vcpu_period": None,
+            },
+            "00-defines.policy",
+            "04-cputune.policy",
+        )
 
-        host = self._prepareEntity("host", {
-            "cpu_count": 1
-        })
-
-        vm = self._prepareEntity("vm", {
-            "vcpu_count": 1,
-            "vcpu_user_limit": 50,
-
-            "vcpu_quota": None,
-            "vcpu_period": None
-        })
-
-        self._loadPolicyFile(p, "00-defines.policy")
-        self._loadPolicyFile(p, "04-cputune.policy")
-
-        p.evaluate(host, [vm])
-
-        self.assertEqual(vm.controls["vcpu_quota"], 50000)
-        self.assertEqual(vm.controls["vcpu_period"], 100000)
+        self.assertEqual(controls["vcpu_quota"], 50000)
+        self.assertEqual(controls["vcpu_period"], 100000)
 
     def testCpuTuneHundredCpus(self):
-        p = Policy()
+        controls = read_vm_controls(
+            {"cpu_count": 120},
+            {
+                "vcpu_count": 100,
+                "vcpu_user_limit": 50,
+                "vcpu_quota": None,
+                "vcpu_period": None,
+            },
+            "00-defines.policy",
+            "04-cputune.policy",
+        )
 
-        host = self._prepareEntity("host", {
-            "cpu_count": 120
-        })
-
-        vm = self._prepareEntity("vm", {
-            "vcpu_count": 100,
-            "vcpu_user_limit": 50,
-
-            "vcpu_quota": None,
-            "vcpu_period": None
-        })
-
-        self._loadPolicyFile(p, "00-defines.policy")
-        self._loadPolicyFile(p, "04-cputune.policy")
-
-        p.evaluate(host, [vm])
-
-        self.assertEqual(vm.controls["vcpu_quota"], 60000)
-        self.assertEqual(vm.controls["vcpu_period"], 100000)
+        self.assertEqual(controls["vcpu_quota"], 60000)
+        self.assertEqual(controls["vcpu_period"], 100000)
 
     def testCpuTuneNoLimit(self):
-        p = Policy()
-
-        host = self._prepareEntity("host", {
-            "cpu_count": 120
-        })
-
-        vm = self._prepareEntity("vm", {
-            "vcpu_count": 100,
-            "vcpu_user_limit": 100,
-
-            "vcpu_quota": None,
-            "vcpu_period": None
-        })
-
-        self._loadPolicyFile(p, "00-defines.policy")
-        self._loadPolicyFile(p, "04-cputune.policy")
-
-        p.evaluate(host, [vm])
-
-        self.assertEqual(vm.controls["vcpu_quota"], -1)
-        self.assertEqual(vm.controls["vcpu_period"], 100000)
+        controls = read_vm_controls(
+            {"cpu_count": 120},
+            {
+                "vcpu_count": 100,
+                "vcpu_user_limit": 100,
+                "vcpu_quota": None,
+                "vcpu_period": None,
+            },
+            "00-defines.policy",
+            "04-cputune.policy",
+        )
+        self.assertEqual(controls["vcpu_quota"], -1)
+        self.assertEqual(controls["vcpu_period"], 100000)
 
     def testCpuTuneTooSmall(self):
-        p = Policy()
-
-        host = self._prepareEntity("host", {
-            "cpu_count": 1
-        })
-
-        vm = self._prepareEntity("vm", {
-            "vcpu_count": 100,
-            "vcpu_user_limit": 10,
-
-            "vcpu_quota": None,
-            "vcpu_period": None
-        })
-
-        self._loadPolicyFile(p, "00-defines.policy")
-        self._loadPolicyFile(p, "04-cputune.policy")
-
-        p.evaluate(host, [vm])
-
-        self.assertEqual(vm.controls["vcpu_quota"], 1100)
-        self.assertEqual(vm.controls["vcpu_period"], 1100000)
+        controls = read_vm_controls(
+            {"cpu_count": 1},
+            {
+                "vcpu_count": 100,
+                "vcpu_user_limit": 10,
+                "vcpu_quota": None,
+                "vcpu_period": None,
+            },
+            "00-defines.policy",
+            "04-cputune.policy",
+        )
+        self.assertEqual(controls["vcpu_quota"], 1100)
+        self.assertEqual(controls["vcpu_period"], 1100000)

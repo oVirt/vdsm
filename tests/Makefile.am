@@ -124,7 +124,6 @@ test_modules = \
 blacklist_modules_python3 = \
 	bridge_test.py \
 	hooks_test.py \
-	mompolicy_test.py \
 	protocoldetector_test.py \
 	stompasyncdispatcher_test.py \
 	stomp_test.py \
@@ -236,6 +235,7 @@ dist_vdsmtests_SCRIPTS = \
 	fake-virt-v2v \
 	fake-ssh-add \
 	fake-ssh-agent \
+	mom_policy_validator.py \
 	run_tests.sh \
 	$(NULL)
 
