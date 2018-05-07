@@ -387,7 +387,7 @@ def metadataValidity(vg):
     mda_size = int(vg.vg_mda_size)
     mda_free = int(vg.vg_mda_free)
 
-    mda_size_ok = mda_size >= VG_METADATASIZE * constants.MEGAB / 2
+    mda_size_ok = mda_size >= VG_METADATASIZE * constants.MEGAB // 2
     mda_free_ok = mda_free >= mda_size * VG_MDA_MIN_THRESHOLD
 
     return {'mdathreshold': mda_free_ok, 'mdavalid': mda_size_ok}
