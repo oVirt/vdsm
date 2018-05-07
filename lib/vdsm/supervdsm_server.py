@@ -93,7 +93,7 @@ def logDecorator(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         callbackLogger.debug('call %s with %s %s',
-                             func.__name__, args[1:], kwargs)
+                             func.__name__, args, kwargs)
         try:
             res = func(*args, **kwargs)
         except:
