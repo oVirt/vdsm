@@ -53,6 +53,24 @@ class TestLibvirtxml(XMLTestCase):
                      'smp': '8', 'maxVCpus': '160',
                      'memSize': '1024', 'memGuaranteedSize': '512'}
 
+    def test_placeholder_domain(self):
+        expected_xml = """<domain type="qemu">
+            <name>fake-vm</name>
+            <uuid>00-000</uuid>
+            <memory unit="KiB">262144</memory>
+            <os>
+                <type arch="x86_64" machine="pc">hvm</type>
+            </os>
+        </domain>"""
+        self.assertXMLEqual(
+            libvirtxml.make_placeholder_domain_xml(
+                FakeMinimalVm(
+                    name='fake-vm',
+                    id='00-000',
+                    mem_size_mb=256 * 1024)),
+            expected_xml
+        )
+
     @permutations([
         # user_conf, domain_type
         [{}, 'kvm'],
@@ -155,6 +173,46 @@ class TestLibvirtxml(XMLTestCase):
             libvirtxml.Domain(conf, self.log, cpuarch.X86_64)
         )
         self.assertXMLEqual(domxml.toxml(), expected_xml)
+
+    def test_parse_minimal_domain_xml(self):
+        dom_xml = """
+          <domain type="kvm"
+                  xmlns:ns0="http://ovirt.org/vm/tune/1.0"
+                  xmlns:ns1="http://ovirt.org/vm/1.0">
+              <name>testVm</name>
+              <uuid>9ffe28b6-6134-4b1e-8804-1185f49c436f</uuid>
+              <iothreads>2</iothreads>
+              <memory>1048576</memory>
+              <currentMemory>1048576</currentMemory>
+              <maxMemory slots="2">2097152</maxMemory>
+              <vcpu current="8">160</vcpu>
+              <devices/>
+              <metadata>
+                <ns0:qos/>
+                <ns1:vm/>
+              </metadata>
+              <clock adjustment="0" offset="variable">
+                <timer name="rtc" tickpolicy="catchup" />
+                <timer name="pit" tickpolicy="delay" />
+                <timer name="hpet" present="no" />
+              </clock>
+              <features>
+                <acpi />
+              </features>
+           </domain>"""
+        expected_conf = {
+            'bootMenuEnable': 'false',
+            'kvmEnable': 'true',
+            'maxMemSize': 2048,
+            'maxMemSlots': 2,
+            'numOfIoThreads': '2',
+            'smp': '8',
+            'timeOffset': '0'
+        }
+        self.assertEqual(
+            libvirtxml.parse_domain(dom_xml, cpuarch.X86_64),
+            expected_conf
+        )
 
     def testOSXMLBootMenu(self):
         vmConfs = (
@@ -539,3 +597,14 @@ class TestLibvirtxml(XMLTestCase):
         domxml.appendMemoryBacking(1048576)
         xml = find_xml_element(domxml.toxml(), './memoryBacking')
         self.assertXMLEqual(xml, memorybacking_xml)
+
+
+class FakeMinimalVm(object):
+    def __init__(self, id='00-0000', name='fake-vm', mem_size_mb=256):
+        self.arch = cpuarch.X86_64
+        self.id = id
+        self.name = name
+        self._mem_size_mb = mem_size_mb
+
+    def mem_size_mb(self):
+        return self._mem_size_mb
