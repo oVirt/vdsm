@@ -184,6 +184,12 @@ class MockVirDomain(object):
             <target dev='hdb' bus='ide'/>
             <readonly/>
         </disk>
+        <disk type='file' device='floppy'>
+            <driver name='qemu' type='raw' cache='none'/>
+            <source file='/floppy.vfd'/>
+            <target dev='fda' bus='fdc'/>
+        </disk>
+
         <disk type='block' device='cdrom'>
             <source file='/dev/sr0' />
             <target dev='hdc' bus='ide'/>
