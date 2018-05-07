@@ -204,9 +204,9 @@ def setupNetworks(networks, bondings, options):
         the attachment in the network's attributes). Similarly, if you edit
         a bonding, it's not necessary to specify its networks.
     """
-    logging.debug('Setting up network according to configuration: '
-                  'networks:%r, bondings:%r, options:%r' % (networks,
-                                                            bondings, options))
+    logging.info('Setting up network according to configuration: '
+                 'networks:%r, bondings:%r, options:%r' % (networks,
+                                                           bondings, options))
     try:
         canonicalize.canonicalize_networks(networks)
         canonicalize.canonicalize_external_bonds_used_by_nets(networks,
@@ -215,7 +215,6 @@ def setupNetworks(networks, bondings, options):
 
         net_info = netswitch.configurator.netinfo()
 
-        logging.debug('Validating configuration')
         validator.validate(networks, bondings, net_info)
 
         running_config = netconfpersistence.RunningConfig()
@@ -242,7 +241,6 @@ def setupNetworks(networks, bondings, options):
 def _setup_networks(networks, bondings, options, net_info):
     bondings, networks, options = _apply_hook(bondings, networks, options)
 
-    logging.debug('Applying...')
     in_rollback = options.get('_inRollback', False)
     with _rollback():
         netswitch.configurator.setup(
