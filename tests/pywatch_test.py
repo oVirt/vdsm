@@ -29,6 +29,11 @@ import pytest
 from vdsm.common.cmdutils import exec_cmd
 
 
+def on_fedora():
+    with open("/etc/redhat-release") as f:
+        return "Fedora release 27" in f.readline()
+
+
 class TestPyWatch(object):
 
     def test_short_success(self):
@@ -44,6 +49,23 @@ class TestPyWatch(object):
         assert b'Watched process timed out' in out
         assert b'Terminating watched process' in out
         assert rc == 128 + signal.SIGTERM
+
+    @pytest.mark.xfail(on_fedora(), reason="py-bt is broken on Fedora 27")
+    def test_timeout_backtrace(self):
+        script = '''
+import time
+
+def outer():
+    inner()
+
+def inner():
+    time.sleep(10)
+
+outer()
+'''
+        rc, out, err = exec_cmd(['./py-watch', '0.1', 'python', '-c', script])
+        assert b'in inner ()' in out
+        assert b'in outer ()' in out
 
     def test_kill_grandkids(self):
         # watch a bash process that starts a grandchild bash process.
