@@ -168,8 +168,18 @@ def compatible_cpu_models():
     def compatible(model, vendor):
         if not vendor:
             return False
-        xml = '<cpu match="minimum"><model>%s</model>' \
-              '<vendor>%s</vendor></cpu>' % (model, vendor)
+
+        mode_xml = ''
+        # POWER CPUs are special case because we run them using versioned
+        # compat mode (aka host-model). Libvirt's compareCPU call uses the
+        # selected mode - we have to be sure to tell it to compare CPU
+        # capabilities based on the compat features, not the CPU itself.
+        if cpuarch.is_ppc(cpuarch.real()):
+            mode_xml = " mode='host-model'"
+            model = model.lower()
+
+        xml = '<cpu match="minimum"%s><model>%s</model>' \
+              '<vendor>%s</vendor></cpu>' % (mode_xml, model, vendor)
         try:
             return c.compareCPU(xml, 0) in (libvirt.VIR_CPU_COMPARE_SUPERSET,
                                             libvirt.VIR_CPU_COMPARE_IDENTICAL)
@@ -194,7 +204,7 @@ def compatible_cpu_models():
                              in six.iteritems(all_models)
                              if compatible(model, vendor)]
 
-    return ["model_" + model for model in compatible_models]
+    return list(set(["model_" + model for model in compatible_models]))
 
 
 def _caps_arch_element(capfile, arch):
