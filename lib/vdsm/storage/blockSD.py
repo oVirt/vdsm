@@ -581,19 +581,25 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         # case of 512 bytes per volume metadata, 2K for domain metadata and
         # extent size of 128MB. In any case we compute the right size on line.
         vg = lvm.getVG(vgroup)
-        minmetasize = (SD_METADATA_SIZE / sc.METADATA_SIZE *
-                       int(vg.extent_size) + (1024 * 1024 - 1)) / (1024 * 1024)
-        metaratio = int(vg.extent_size) / sc.METADATA_SIZE
-        metasize = (int(vg.extent_count) * sc.METADATA_SIZE +
-                    (1024 * 1024 - 1)) / (1024 * 1024)
-        metasize = max(minmetasize, metasize)
-        if metasize > int(vg.free) / (1024 * 1024):
+        sd_metadata_blocks = SD_METADATA_SIZE // sc.METADATA_SIZE
+        # TODO - Remove this unneeded rounding, the minimal lvm extent size
+        # is 4M, and we use 128M so Rounding extent size to 1 MiB is irellevant
+        rounded_extent_size_mb = utils.round(
+            int(vg.extent_size), constants.MEGAB) // constants.MEGAB
+        min_metasize_mb = sd_metadata_blocks * rounded_extent_size_mb
+        metaratio = int(vg.extent_size) // sc.METADATA_SIZE
+        max_volume_slots_size = int(vg.extent_count) * sc.METADATA_SIZE
+        max_volume_slots_size_mb = utils.round(
+            max_volume_slots_size, constants.MEGAB) // constants.MEGAB
+        max_metasize_mb = max(min_metasize_mb, max_volume_slots_size_mb)
+        if max_metasize_mb > int(vg.free) // constants.MEGAB:
             raise se.VolumeGroupSizeError(
                 "volume group has not enough extents %s (Minimum %s), VG may "
-                "be too small" % (vg.extent_count,
-                                  (1024 * 1024) / sc.METADATA_SIZE))
-        cls.log.info("size %s MB (metaratio %s)" % (metasize, metaratio))
-        return metasize
+                "be too small" % (
+                    vg.extent_count, constants.MEGAB // sc.METADATA_SIZE))
+        cls.log.info(
+            "size %s MB (metaratio %s)" % (max_metasize_mb, metaratio))
+        return max_metasize_mb
 
     def extend(self, devlist, force):
         with self.metadata_lock:
