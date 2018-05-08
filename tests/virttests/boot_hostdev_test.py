@@ -247,7 +247,7 @@ class BootHostdevHookTests(XMLTestCase):
     def test_ignore_unrelated_hostdev(self, dev_name):
         xml, rc, out, err = self._run_hook(_HOSTDEV_XML, boot_hostdev=dev_name)
         self.assertXMLEqual(xml, _HOSTDEV_XML)
-        self.assertEqual(rc, 0)
+        self.assertEqual(rc, 1)
 
     @permutations(_DEV_NAMES)
     def test_boot_order_hostdev(self, dev_name):
