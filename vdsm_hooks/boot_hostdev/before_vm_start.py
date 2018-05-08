@@ -43,7 +43,8 @@ def main():
                 boot.setAttribute('order', '1')
                 hostdev.appendChild(boot)
                 hooking.write_domxml(domxml)
-                break
+                return
+        raise RuntimeError("Could not find device %s" % dev)
 
 
 def get_user_device_attrs(dev):
