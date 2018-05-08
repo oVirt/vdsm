@@ -25,7 +25,6 @@ import os
 import stat
 
 import pytest
-import six
 
 from vdsm.storage import constants as sc
 from vdsm.storage import fileUtils
@@ -214,10 +213,8 @@ class TestNormalizePath(VdsmTestCase):
 
 
 @pytest.mark.parametrize("orig_size, expected_size", [
-    pytest.param(4096 - 1, 4096, marks=pytest.mark.xfail(
-        six.PY3, reason="needs integer division")),
-    pytest.param(4096, 4096, marks=pytest.mark.xfail(
-        six.PY3, reason="needs integer division")),
+    (4096 - 1, 4096),
+    (4096, 4096),
     (4096 + 1, 4096 + sc.BLOCK_SIZE),
 ])
 def test_pad_to_block_size(tmpdir, orig_size, expected_size):
