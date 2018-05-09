@@ -25,7 +25,6 @@ from vdsm.common import xmlutils
 from vdsm.virt import vmdevices
 
 from testlib import XMLTestCase
-from testValidation import brokentest
 
 
 class TestDeviceCompat(XMLTestCase):
@@ -50,7 +49,6 @@ class TestDeviceCompat(XMLTestCase):
             vmdevices.core.Rng, dev_xml, dev_conf, dev_meta
         )
 
-    @brokentest("bug in vmdevices.Core.__init__")
     def test_interface(self):
         dev_xml = u"""<interface type="bridge">
             <address bus="0x00" domain="0x0000"

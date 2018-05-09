@@ -100,8 +100,9 @@ class Base(vmxml.Device):
     def __init__(self, log, **kwargs):
         self.log = log
         self._conf = kwargs
+        # ensure the following attributes are added
         self.specParams = {}
-        self.custom = kwargs.pop('custom', {})
+        self.custom = {}
         for attr, value in kwargs.items():
             try:
                 setattr(self, attr, value)
