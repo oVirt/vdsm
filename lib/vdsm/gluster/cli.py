@@ -207,9 +207,9 @@ def _parseVolumeStatusDetail(tree):
         for ch in el.getchildren():
             value[ch.tag] = ch.text or ''
 
-        sizeTotal = int(value['sizeTotal'])
+        sizeTotal = int(value.get('sizeTotal', '0'))
         value['sizeTotal'] = sizeTotal / (1024.0 * 1024.0)
-        sizeFree = int(value['sizeFree'])
+        sizeFree = int(value.get('sizeFree', '0'))
         value['sizeFree'] = sizeFree / (1024.0 * 1024.0)
         status['bricks'].append({'brick': '%s:%s' % (value['hostname'],
                                                      value['path']),
@@ -217,7 +217,7 @@ def _parseVolumeStatusDetail(tree):
                                  'sizeTotal': '%.3f' % (value['sizeTotal'],),
                                  'sizeFree': '%.3f' % (value['sizeFree'],),
                                  'device': value.get('device', ''),
-                                 'blockSize': value.get('blockSize', ''),
+                                 'blockSize': value.get('blockSize', '0'),
                                  'mntOptions': value.get('mntOptions', ''),
                                  'fsName': value.get('fsName', '')})
     return status
