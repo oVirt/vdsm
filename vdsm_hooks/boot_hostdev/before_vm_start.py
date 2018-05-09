@@ -68,7 +68,12 @@ def get_user_device_attrs(dev):
                 <address bus="7" device="1"/>
             </source>
         </hostdev>
-
+    USB: usb_2_8
+        <hostdev managed="no" mode="subsystem" type="usb">
+            <source>
+                <address bus="2" device="8"/>
+            </source>
+        </hostdev>
     """
     attrs = set()
     split_dev = dev.split('_')
@@ -86,11 +91,12 @@ def get_user_device_attrs(dev):
         attrs.add(('function', '0x' + split_dev[4]))
     elif dev.startswith('usb'):
         attrs.add(('type', 'usb'))
-        device = split_dev[0][3:]
-        if not device:
-            device = '1'
-        attrs.add(('device', device))
-        attrs.add(('bus', split_dev[1][3:]))
+        if len(split_dev) == 2:
+            attrs.add(('bus', split_dev[1][3:]))
+            attrs.add(('device', "1"))
+        else:
+            attrs.add(('bus', split_dev[1]))
+            attrs.add(('device', split_dev[2]))
     return attrs
 
 
