@@ -103,6 +103,12 @@ def info(image, format=None, unsafe=False):
     except KeyError as key:
         raise InvalidOutput(cmd, out, "Missing field: %r" % key)
 
+    # In qemu-img info, actual-size means:
+    # File storage: the number of allocated blocks multiplied by
+    #               the block size 512.
+    # Block storage: always 0
+    # This behavior isn't documented -
+    # https://bugzilla.redhat.com/1578259
     if 'actual-size' in qemu_info:
         info['actualsize'] = qemu_info['actual-size']
     if 'cluster-size' in qemu_info:
