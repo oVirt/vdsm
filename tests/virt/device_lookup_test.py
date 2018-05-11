@@ -29,6 +29,23 @@ from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 
 
+_DRIVES_XML = [
+    # drive_xml, dev_name - if None, we expect LookupError, alias
+    (u'''<disk device="disk" snapshot="no" type="file" />''', None, None),
+    (u'''<disk device="disk" snapshot="no" type="file">
+          <serial>virtio0000</serial>
+        </disk>''', 'vdb', None),
+    # TODO: check it is valid for user aliases too
+    (u'''<disk device="disk" snapshot="no" type="file">
+          <alias name='ua-0000' />
+        </disk>''', 'sda', 'ua-0000'),
+    (u'''<disk device="disk" snapshot="no" type="file">
+          <serial>virtio1111</serial>
+          <alias name='ua-0000' />
+        </disk>''', 'sda', 'ua-0000'),
+]
+
+
 @expandPermutations
 class TestLookup(VdsmTestCase):
 
@@ -74,22 +91,8 @@ class TestLookup(VdsmTestCase):
         self.assertRaises(
             LookupError, lookup.device_by_alias, self.drives, 'ua-UNKNOWN')
 
-    @permutations([
-        # drive_xml, dev_name - if None, we expect LookupError
-        (u'''<disk device="disk" snapshot="no" type="file" />''', None),
-        (u'''<disk device="disk" snapshot="no" type="file">
-              <serial>virtio0000</serial>
-            </disk>''', 'vdb'),
-        # TODO: check it is valid for user aliases too
-        (u'''<disk device="disk" snapshot="no" type="file">
-              <alias name='ua-0000' />
-            </disk>''', 'sda'),
-        (u'''<disk device="disk" snapshot="no" type="file">
-              <serial>virtio1111</serial>
-              <alias name='ua-0000' />
-            </disk>''', 'sda'),
-    ])
-    def test_lookup_drive_by_element(self, drive_xml, dev_name):
+    @permutations(_DRIVES_XML)
+    def test_lookup_drive_by_element(self, drive_xml, dev_name, alias_name):
         # intentionally without serial and alias
         if dev_name is None:
             self.assertRaises(
@@ -102,6 +105,24 @@ class TestLookup(VdsmTestCase):
             drive = lookup.drive_from_element(
                 xmlutils.fromstring(drive_xml),
                 self.drives
+            )
+            self.assertEqual(drive.name, dev_name)
+
+    @permutations(_DRIVES_XML)
+    def test_lookup_device_from_xml_alias(
+            self, drive_xml, dev_name, alias_name):
+        # intentionally without serial and alias
+        if dev_name is None or alias_name is None:
+            self.assertRaises(
+                LookupError,
+                lookup.device_from_xml_alias,
+                self.drives,
+                drive_xml
+            )
+        else:
+            drive = lookup.device_from_xml_alias(
+                self.drives,
+                drive_xml
             )
             self.assertEqual(drive.name, dev_name)
 

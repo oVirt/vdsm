@@ -21,8 +21,15 @@ from __future__ import absolute_import
 from __future__ import division
 
 
+from vdsm.common import xmlutils
 from vdsm.virt.vmdevices import core
 from vdsm.virt import vmxml
+
+
+def device_from_xml_alias(devices, device_xml):
+    dev = xmlutils.fromstring(device_xml)
+    alias = core.find_device_alias(dev)
+    return device_by_alias(devices, alias)
 
 
 def drive_from_element(disk_element, disk_devices):

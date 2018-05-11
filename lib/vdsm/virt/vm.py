@@ -3281,23 +3281,29 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def hotunplugNic(self, params, port_mirroring=None):
-        if 'xml' in params:
-            nicXml = params['xml']
-            dev = vmdevices.common.dev_from_xml(self, nicXml)
-            nicParams = {'macAddr': dev.macAddr}
-            if port_mirroring is None and getattr(dev, 'portMirroring', None):
-                port_mirroring = dev.portMirroring
+        xml = params.get('xml')
+
+        if xml is not None:
+            try:
+                nic = lookup.device_from_xml_alias(
+                    self._devices[hwclass.NIC][:], xml)
+            except LookupError:
+                nic = vmdevices.common.dev_from_xml(self, xml)
+
+            nicParams = {'macAddr': nic.macAddr}
+            if port_mirroring is None and getattr(nic, 'portMirroring', None):
+                port_mirroring = nic.portMirroring
         else:
             nicParams = params['nic']
             if port_mirroring is None:
                 port_mirroring = nicParams.get('portMirroring')
 
-        # Find NIC object in vm's NICs list
-        nic = None
-        for dev in self._devices[hwclass.NIC][:]:
-            if dev.macAddr.lower() == nicParams['macAddr'].lower():
-                nic = dev
-                break
+            # Find NIC object in vm's NICs list
+            nic = None
+            for dev in self._devices[hwclass.NIC][:]:
+                if dev.macAddr.lower() == nicParams['macAddr'].lower():
+                    nic = dev
+                    break
 
         if nic:
             if port_mirroring is not None:
@@ -3402,8 +3408,19 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def hotunplugMemory(self, params):
-        device = vmdevices.lookup.device_by_alias(
-            self._devices[hwclass.MEMORY][:], params['memory']['alias'])
+        xml = params.get('xml')
+        try:
+            if xml is not None:
+                device = lookup.device_from_xml_alias(
+                    self._devices[hwclass.MEMORY][:],
+                    xml)
+            else:
+                device = lookup.device_by_alias(
+                    self._devices[hwclass.MEMORY][:],
+                    params['memory']['alias'])
+        except LookupError as e:
+            raise exception.HotunplugMemFailed(str(e), vmId=self.id)
+
         device_xml = xmlutils.tostring(device.getXML())
         self.log.info("Hotunplug memory xml: %s", device_xml)
 
@@ -3833,20 +3850,28 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def hotunplugDisk(self, params):
+        diskParams = {}
+        drive = None
         xml = params.get('xml')
-        if xml is None:
-            diskParams = params.get('drive', {})
+        if xml is not None:
+            try:
+                drive = lookup.device_from_xml_alias(
+                    self._devices[hwclass.DISK][:], xml)
+            except LookupError:
+                _, elem, meta = vmdevices.common.dev_elems_from_xml(self, xml)
+                diskParams = storagexml.parse(elem, meta)
         else:
-            _cls, elem, meta = vmdevices.common.dev_elems_from_xml(self, xml)
-            diskParams = storagexml.parse(elem, meta)
-        diskParams['path'] = self.cif.prepareVolumePath(diskParams)
+            diskParams = params.get('drive', {})
 
-        try:
-            drive = self._findDriveByUUIDs(diskParams)
-        except LookupError:
-            self.log.error("Hotunplug disk failed - Disk not found: %s",
-                           diskParams)
-            return response.error('hotunplugDisk', "Disk not found")
+        if drive is None:
+            # needed to find network drives
+            diskParams['path'] = self.cif.prepareVolumePath(diskParams)
+            try:
+                drive = self._findDriveByUUIDs(diskParams)
+            except LookupError:
+                self.log.error("Hotunplug disk failed - Disk not found: %s",
+                               diskParams)
+                return response.error('hotunplugDisk', "Disk not found")
 
         if drive.hasVolumeLeases:
             return response.error('noimpl')
