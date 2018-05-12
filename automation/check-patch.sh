@@ -6,6 +6,8 @@ EXPORT_DIR="$PWD/exported-artifacts"
 mkdir -p $EXPORT_DIR
 
 function collect_logs {
+    res=$?
+    [ "$res" -ne 0 ] && echo "*** err: $res"
     cd /var/log
     tar -cvzf "$EXPORT_DIR/mock_varlogs.tar.gz" *
     cd /var/host_log
