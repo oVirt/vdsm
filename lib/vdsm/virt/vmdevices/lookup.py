@@ -32,7 +32,7 @@ def device_from_xml_alias(devices, device_xml):
     return device_by_alias(devices, alias)
 
 
-def drive_from_element(disk_element, disk_devices):
+def drive_from_element(disk_devices, disk_element):
     # we try serial first for backward compatibility
     # REQUIRED_FOR: vdsm <= 4.2
     serial_elem = vmxml.find_first(disk_element, 'serial', None)

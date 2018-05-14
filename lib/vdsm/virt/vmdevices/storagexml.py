@@ -258,7 +258,7 @@ def change_disk(disk_element, disk_devices, log):
         return
 
     try:
-        vm_drive = lookup.drive_from_element(disk_element, disk_devices)
+        vm_drive = lookup.drive_from_element(disk_devices, disk_element)
     except LookupError as exc:
         log.warning('%s', str(exc))
     else:

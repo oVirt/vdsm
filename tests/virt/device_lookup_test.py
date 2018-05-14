@@ -98,13 +98,13 @@ class TestLookup(VdsmTestCase):
             self.assertRaises(
                 LookupError,
                 lookup.drive_from_element,
-                xmlutils.fromstring(drive_xml),
-                self.drives
+                self.drives,
+                xmlutils.fromstring(drive_xml)
             )
         else:
             drive = lookup.drive_from_element(
-                xmlutils.fromstring(drive_xml),
-                self.drives
+                self.drives,
+                xmlutils.fromstring(drive_xml)
             )
             self.assertEqual(drive.name, dev_name)
 
