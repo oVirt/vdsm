@@ -161,6 +161,16 @@ dist_systemdunit_DATA = \
 	./usr/lib/systemd/system/dev-hugepages1G.mount \
 	$(NULL)
 
+yumpluginconfdir = $(sysconfdir)/yum/pluginconf.d
+yumpluginconf_DATA = \
+	./etc/yum/pluginconf.d/vdsm.conf \
+	$(NULL)
+
+yumplugindir = $(datarootdir)/yum-plugins
+yumplugin_DATA = \
+	./usr/share/yum-plugins/vdsm.py \
+	$(NULL)
+
 CLEANFILES = \
 	$(sudoers_DATA) \
 	$(systemdunit_DATA) \
@@ -179,6 +189,8 @@ EXTRA_DIST = \
 	$(vdsmconfrotate_DATA) \
 	$(vdsm_DATA) \
 	$(vdsm_autounattend_DATA) \
+	$(yumpluginconf_DATA) \
+	$(yumplugin_DATA) \
 	./etc/sudoers.d/50_vdsm.in \
 	./etc/vdsm/logger.conf.in \
 	./etc/vdsm/mom.conf.in \
