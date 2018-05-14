@@ -109,6 +109,10 @@ class LibProxy(object):
         return status, msg
 
 
+class TargetNotDefinedError(Exception):
+    pass
+
+
 class NetFuncTestAdapter(object):
 
     def __init__(self, target=Target.SERVICE):
@@ -116,8 +120,10 @@ class NetFuncTestAdapter(object):
         self.running_config = None
         if target == Target.SERVICE:
             self._vdsm_proxy = getProxy()
-        else:
+        elif target == Target.LIB:
             self._vdsm_proxy = LibProxy()
+        else:
+            raise TargetNotDefinedError()
 
     def update_netinfo(self):
         self.netinfo = self._vdsm_proxy.netinfo

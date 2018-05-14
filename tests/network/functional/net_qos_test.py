@@ -30,14 +30,13 @@ VLAN1 = 10
 VLAN2 = 20
 _100USEC = 100 * 1000
 
-
 adapter = None
 
 
 @pytest.fixture(scope='module', autouse=True)
-def create_adapter():
+def create_adapter(target):
     global adapter
-    adapter = NetFuncTestAdapter()
+    adapter = NetFuncTestAdapter(target)
 
 
 # TODO: When QoS will be available on OVS, enable the tests.
