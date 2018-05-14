@@ -62,6 +62,17 @@ class PowerDownTests(TestCaseBase):
         res = obj.start()
         self.assertFalse(response.is_error(res))
 
+    def test_with_forced_callback(self):
+        vm = FakeVM(
+            self.dom,
+            FakeGuestAgent(responsive=True),
+            acpiEnable='true'
+        )
+        obj = make_object('VmPowerDown', vm, self.event, force=True)
+        self.assertIn(
+            obj.forceCallback,
+            [cb.func for cb in obj.chain.callbacks])
+
 
 class ShutdownTests(TestCaseBase):
 
@@ -95,11 +106,10 @@ class RebootTests(TestCaseBase):
         self.assertFalse(obj.qemuGuestAgentCallback())
 
 
-def make_object(name, vm, event):
+def make_object(name, vm, event, force=False):
     message = 'testing'
     delay = 1.0
     timeout = 1.0
-    force = False
     klass = getattr(vmpowerdown, name)
     return klass(vm, delay, message, timeout, force, event)
 
