@@ -142,34 +142,35 @@ class Domain(object):
                  vmId=''):
         self._xml = xml
         self.devXml = ''
-        self._virtError = virtError
+        self.virtError = virtError
         self._errorMessage = errorMessage
         self._metadata = ""
         self._io_tune = {}
-        self._domState = domState
-        self._domReason = domReason
+        self.domState = domState
+        self.domReason = domReason
         self._vmId = vmId
         self._diskErrors = {}
         self._downtimes = []
+        self.destroyed = False
 
     @property
     def connected(self):
         return True
 
     def _failIfRequested(self):
-        if self._virtError != libvirt.VIR_ERR_OK:
-            raise Error(self._virtError, self._errorMessage)
+        if self.virtError != libvirt.VIR_ERR_OK:
+            raise Error(self.virtError, self._errorMessage)
 
     def UUIDString(self):
         return self._vmId
 
     def state(self, unused):
         self._failIfRequested()
-        return (self._domState, self._domReason)
+        return (self.domState, self.domReason)
 
     def info(self):
         self._failIfRequested()
-        return (self._domState, )
+        return (self.domState, )
 
     def XMLDesc(self, unused):
         return self._xml
@@ -247,7 +248,7 @@ class Domain(object):
         }
 
     def destroy(self):
-        pass
+        self.destroyed = True
 
     def undefineFlags(self, flags=0):
         pass

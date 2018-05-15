@@ -106,6 +106,7 @@ def _recovery_params(vm_id, dom_xml, external):
     dom = DomainDescriptor(dom_xml)
     params['vmType'] = dom.vm_type()
     params['vmName'] = dom.name
+    params['vmId'] = dom.id
     params['smp'] = dom.get_number_of_cpus()
     params['memSize'] = dom.get_memory_size()
     return params
