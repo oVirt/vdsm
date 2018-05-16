@@ -3432,7 +3432,6 @@ class Vm(object):
             raise exception.HotunplugMemFailed(str(e), vmId=self.id)
 
         self._update_mem_guaranteed_size(params)
-        return response.success()
 
     @api.guard(_not_migrating)
     def setNumberOfCpus(self, numberOfCpus):
