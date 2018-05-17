@@ -148,7 +148,7 @@ Requires: libvirt-lock-sanlock
 %if 0%{?centos}
 Requires: libvirt-daemon-kvm >= 1.2.17-13.el7_2.5
 %else
-Requires: libvirt-daemon-kvm >= 2.0.0-10.el7_3.10
+Requires: libvirt-daemon-kvm >= 2.0.0-10.el7_3.12
 %endif
 Requires: libvirt-python >= 1.2.17-2
 %endif # rhel
@@ -195,7 +195,7 @@ Requires: fence-agents-all
 %if 0%{?centos}
 Requires: kernel >= 3.10.0-327.18.1.el7
 %else
-Requires: kernel >= 3.10.0-514.36.5.el7
+Requires: kernel >= 3.10.0-514.48.4.el7
 %endif
 Requires: lvm2 >= 7:2.02.130-5.el7_2.5
 Requires: python >= 2.7.5-18.el7_1.1
@@ -227,8 +227,8 @@ Requires: systemd >= 197-1.fc18.2
 Requires: qemu-kvm-rhev >= 10:2.3.0-31.el7_2.16
 Requires: qemu-img-rhev >= 10:2.3.0-31.el7_2.16
 %else
-Requires: qemu-kvm-rhev >= 10:2.6.0-28.el7_3.15
-Requires: qemu-img-rhev >= 10:2.6.0-28.el7_3.15
+Requires: qemu-kvm-rhev >= 10:2.6.0-28.el7_3.17
+Requires: qemu-img-rhev >= 10:2.6.0-28.el7_3.17
 %endif
 %else
 Requires: qemu-kvm >= 2:2.3.1-1
