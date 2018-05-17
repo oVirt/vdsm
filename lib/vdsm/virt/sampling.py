@@ -132,12 +132,7 @@ class PidCpuSample(object):
                 map(int, stat.read().split()[13:15])
 
 
-class TimedSample(object):
-    def __init__(self):
-        self.timestamp = time.time()
-
-
-class HostSample(TimedSample):
+class HostSample(object):
     """
     A sample of host-related statistics.
 
@@ -164,7 +159,7 @@ class HostSample(TimedSample):
         :param pid: The PID of this vdsm host.
         :type pid: int
         """
-        super(HostSample, self).__init__()
+        self.timestamp = time.time()
         self.pidcpu = PidCpuSample(pid)
         self.ncpus = os.sysconf('SC_NPROCESSORS_ONLN')
         self.totcpu = TotalCpuSample()
