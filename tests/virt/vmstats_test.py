@@ -502,6 +502,23 @@ class DiskStatsTests(VmStatsTestCase):
                              partial_stats, partial_stats,
                              interval)
 
+    def test_iotune(self):
+        iotune = {
+            'total_bytes_sec': 0,
+            'read_bytes_sec': 1000,
+            'write_bytes_sec': 1000,
+            'total_iops_sec': 0,
+            'write_iops_sec': 0,
+            'read_iops_sec': 0
+        }
+        drive = FakeDrive(name='sda', size=8 * 1024 * 1024 * 1024)
+        drive.path = '/fake/path'
+        drive.iotune = iotune
+        testvm = FakeVM(drives=(drive,))
+        stats = {}
+        self.assertNotRaises(vmstats.tune_io, testvm, stats)
+        self.assertTrue(stats)
+
     def _drop_stats(self, keys):
         partial_stats = copy.deepcopy(self.bulk_stats)
         for key in keys:
@@ -559,6 +576,28 @@ class CpuStatsTests(VmStatsTestCase):
                          'cpuUsage': '11260000000',
                          })
         self.assertNotEquals(res, None)
+
+    @permutations([
+        # interval
+        (-1,),
+        (0,),
+    ])
+    def test_bad_interval(self, interval):
+        stats = {}
+        res = vmstats.cpu(stats, FIRST_CPU_SAMPLE, LAST_CPU_SAMPLE, interval)
+        self.assertIs(res, None)
+
+    @permutations([
+        # sample, expected
+        (None, {}),
+        ({}, {}),
+        ({'vcpu.current': -1}, {}),
+        ({'vcpu.current': 4}, {'vcpuCount': 4}),
+    ])
+    def test_cpu_count(self, sample, expected):
+        stats = {}
+        self.assertNotRaises(vmstats.cpu_count, stats, sample)
+        self.assertEqual(stats, expected)
 
 
 class BalloonStatsTests(VmStatsTestCase):
