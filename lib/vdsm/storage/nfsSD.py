@@ -105,7 +105,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
 
     @classmethod
     def getMountPoint(cls, mountPath):
-        return os.path.join(cls.storage_repository, sc.DOMAIN_MNT_POINT,
+        return os.path.join(sc.REPO_DATA_CENTER, sc.DOMAIN_MNT_POINT,
                             mountPath)
 
     @staticmethod

@@ -92,7 +92,6 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
     """
     This factory produce resources for images
     """
-    storage_repository = sc.REPO_DATA_CENTER
     # Resource timeouts are in seconds. It's written in ms in the config for
     # backward competability reasons
     resource_default_timeout = config.getint('irs',
@@ -116,7 +115,7 @@ class ImageResourceFactory(rm.SimpleResourceFactory):
         template = None
         dom = sdCache.produce(sdUUID=self.sdUUID)
         # Get the list of the volumes
-        repoPath = os.path.join(self.storage_repository, dom.getPools()[0])
+        repoPath = os.path.join(sc.REPO_DATA_CENTER, dom.getPools()[0])
         try:
             chain = image.Image(repoPath).getChain(sdUUID=self.sdUUID,
                                                    imgUUID=resourceName)

@@ -92,7 +92,6 @@ class StoragePool(object):
     '''
 
     log = logging.getLogger('storage.StoragePool')
-    storage_repository = sc.REPO_DATA_CENTER
 
     def __init__(self, spUUID, domainMonitor, taskManager):
         self._secured = threading.Event()
@@ -101,7 +100,7 @@ class StoragePool(object):
         self.lock = threading.RLock()
         self._setUnsecure()
         self.spUUID = str(spUUID)
-        self.poolPath = os.path.join(self.storage_repository, self.spUUID)
+        self.poolPath = os.path.join(sc.REPO_DATA_CENTER, self.spUUID)
         self.id = SPM_ID_FREE
         self.taskMng = taskManager
         self.hsmMailer = None
@@ -405,7 +404,7 @@ class StoragePool(object):
         Check whether there are any dangling master file systems still mounted
         and unmount them if found.
         """
-        masters = os.path.join(cls.storage_repository, sc.DOMAIN_MNT_POINT,
+        masters = os.path.join(sc.REPO_DATA_CENTER, sc.DOMAIN_MNT_POINT,
                                sd.BLOCKSD_DIR, "*", sd.MASTER_FS_DIR)
         for master in glob(masters):
             if mount.isMounted(master):
@@ -1240,7 +1239,7 @@ class StoragePool(object):
                                'for %s', linkName)
                 return  # Nothing to do
         # Rebuild the link
-        tmp_link_name = os.path.join(self.storage_repository,
+        tmp_link_name = os.path.join(sc.REPO_DATA_CENTER,
                                      str(uuid.uuid4()))
         os.symlink(linkTarget, tmp_link_name)  # make tmp_link
         self.log.info("Creating symlink from %s to %s", linkTarget, linkName)
@@ -1293,7 +1292,7 @@ class StoragePool(object):
         # TODO: Consider to remove this whole block. UGLY!
         # We want to avoid looking up (vgs) of unknown block domains.
         # domUUIDs includes all the domains, file or block.
-        block_mountpoint = os.path.join(sd.StorageDomain.storage_repository,
+        block_mountpoint = os.path.join(sc.REPO_DATA_CENTER,
                                         sc.DOMAIN_MNT_POINT, sd.BLOCKSD_DIR)
         blockDomUUIDs = [vg.name for vg in blockSD.lvm.getVGs(domUUIDs)]
         domDirs = {}  # {domUUID: domaindir}
@@ -2080,5 +2079,5 @@ class StoragePool(object):
     @unsecured
     def _master_volume_path(self, vol):
         return os.path.join(
-            self.storage_repository, self.spUUID,
+            sc.REPO_DATA_CENTER, self.spUUID,
             POOL_MASTER_DOMAIN, sd.DOMAIN_META_DATA, vol)

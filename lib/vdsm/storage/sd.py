@@ -660,7 +660,6 @@ class StorageDomainManifest(object):
 
 class StorageDomain(object):
     log = logging.getLogger("storage.StorageDomain")
-    storage_repository = sc.REPO_DATA_CENTER
     mdBackupVersions = config.get('irs', 'md_backup_versions')
     mdBackupDir = config.get('irs', 'md_backup_dir')
     manifestClass = StorageDomainManifest

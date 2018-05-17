@@ -31,13 +31,13 @@ import monkeypatch
 from testlib import make_file, recorded
 from testlib import namedTemporaryDir
 
+from vdsm import utils
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm as real_lvm
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import sd
 from vdsm.storage.constants import VG_EXTENT_SIZE_MB
-from vdsm import utils
 
 
 VG = collections.namedtuple("VG", ['vg_mda_size', 'vg_mda_free'])
@@ -405,7 +405,7 @@ def fake_repo():
         mnt_glustersd_dir = os.path.join(mnt_dir, sd.GLUSTERSD_DIR)
         os.mkdir(mnt_glustersd_dir)
         with monkeypatch.MonkeyPatchScope([
-            (sd.StorageDomain, 'storage_repository', repo),
+            (sc, 'REPO_DATA_CENTER', repo),
         ]):
             yield repo
 

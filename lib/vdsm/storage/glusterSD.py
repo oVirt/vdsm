@@ -34,7 +34,7 @@ class GlusterStorageDomain(nfsSD.NfsStorageDomain):
 
     @classmethod
     def getMountPoint(cls, mountPath):
-        return os.path.join(cls.storage_repository,
+        return os.path.join(sc.REPO_DATA_CENTER,
                             sc.DOMAIN_MNT_POINT, sd.GLUSTERSD_DIR, mountPath)
 
     def getVolumeClass(self):

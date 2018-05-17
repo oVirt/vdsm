@@ -22,7 +22,6 @@ from __future__ import absolute_import
 import logging
 from functools import wraps
 
-from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import task
 
@@ -43,7 +42,6 @@ class Dispatcher(object):
 
     def __init__(self, obj):
         self._obj = obj
-        self.storage_repository = sc.REPO_DATA_CENTER
         self._exposeFunctions(obj)
         self.log.info("Starting StorageDispatcher...")
 

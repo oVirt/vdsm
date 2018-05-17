@@ -91,7 +91,7 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
         # Create local path
         mntPath = fileUtils.transformPath(remotePath)
 
-        mntPoint = os.path.join(cls.storage_repository,
+        mntPoint = os.path.join(sc.REPO_DATA_CENTER,
                                 sc.DOMAIN_MNT_POINT, mntPath)
 
         cls._preCreateValidation(sdUUID, mntPoint, remotePath, version)

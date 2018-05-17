@@ -365,10 +365,9 @@ class HSM(object):
         self._ready = False
         self.log.info("START HSM init")
         rm.registerNamespace(STORAGE, rm.SimpleResourceFactory())
-        self.storage_repository = sc.REPO_DATA_CENTER
         self.taskMng = taskManager.TaskManager()
 
-        mountBasePath = os.path.join(self.storage_repository,
+        mountBasePath = os.path.join(sc.REPO_DATA_CENTER,
                                      sc.DOMAIN_MNT_POINT)
         self.log.info("Creating data-center mount directory %r", mountBasePath)
         fileUtils.createdir(mountBasePath)
@@ -461,13 +460,13 @@ class HSM(object):
         """
 
         self.log.debug("Started cleaning storage "
-                       "repository at '%s'", self.storage_repository)
+                       "repository at '%s'", sc.REPO_DATA_CENTER)
 
         mountList = []
         whiteList = [
             self.tasksDir,
             os.path.join(self.tasksDir, "*"),
-            os.path.join(self.storage_repository, sc.DOMAIN_MNT_POINT),
+            os.path.join(sc.REPO_DATA_CENTER, sc.DOMAIN_MNT_POINT),
         ]
 
         def isInWhiteList(path):
@@ -490,7 +489,7 @@ class HSM(object):
         # Add mounted folders to mountlist
         for mnt in mount.iterMounts():
             mountPoint = os.path.abspath(mnt.fs_file)
-            if mountPoint.startswith(self.storage_repository):
+            if mountPoint.startswith(sc.REPO_DATA_CENTER):
                 mountList.append(mountPoint)
 
         self.log.debug("White list: %s", whiteList)
@@ -505,7 +504,7 @@ class HSM(object):
         # mounts anyway using out of process file operations is useless.
         # We just clean all directories before removing them from the
         # innermost to the outermost.
-        for base, dirs, files in misc.walk(self.storage_repository,
+        for base, dirs, files in misc.walk(sc.REPO_DATA_CENTER,
                                            blacklist=mountList):
             for directory in dirs:
                 fullPath = os.path.join(base, directory)
@@ -541,7 +540,7 @@ class HSM(object):
                               "'%s'", directory, exc_info=True)
 
         self.log.debug("Finished cleaning storage "
-                       "repository at '%s'", self.storage_repository)
+                       "repository at '%s'", sc.REPO_DATA_CENTER)
 
     @public
     def getConnectedStoragePoolsList(self, options=None):
@@ -1527,8 +1526,7 @@ class HSM(object):
                     getVolumeParams()
             pool.deleteImage(dom, imgUUID, volsByImg)
             if fakeTUUID:
-                img = image.Image(os.path.join(self.storage_repository,
-                                               spUUID))
+                img = image.Image(os.path.join(sc.REPO_DATA_CENTER, spUUID))
                 img.createFakeTemplate(sdUUID=sdUUID, volParams=tParams)
             self._spmSchedule(spUUID, "purgeImage_%s" % imgUUID,
                               pool.purgeImage, sdUUID, imgUUID, volsByImg,
@@ -1629,7 +1627,7 @@ class HSM(object):
                 tImgUUID = e.absentTemplateImageUUID
                 tParams = srcDom.produceVolume(tImgUUID,
                                                tName).getVolumeParams()
-                image.Image(os.path.join(self.storage_repository, spUUID)
+                image.Image(os.path.join(sc.REPO_DATA_CENTER, spUUID)
                             ).createFakeTemplate(dstDom.sdUUID, tParams)
 
         domains = [srcDomUUID, dstDomUUID]
@@ -1816,7 +1814,7 @@ class HSM(object):
                    (sdUUID, imgUUID, volUUID, newChain))
         vars.task.setDefaultException(se.StorageException("%s" % argsStr))
         sdDom = sdCache.produce(sdUUID=sdUUID)
-        repoPath = os.path.join(self.storage_repository, sdDom.getPools()[0])
+        repoPath = os.path.join(sc.REPO_DATA_CENTER, sdDom.getPools()[0])
 
         imageResourcesNamespace = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         with rm.acquireResource(imageResourcesNamespace, imgUUID, rm.SHARED):

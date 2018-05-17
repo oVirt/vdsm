@@ -246,8 +246,8 @@ class TestVolumeOperations(VdsmTestCase):
 
 
 def add_filesd(repo, remote_path, sd_uuid, subdir=""):
-    # Create mount direcotry in the repo
-    mnt_dir = os.path.join(repo, sc.DOMAIN_MNT_POINT, subdir)
+    # Create mount directory in the repo
+    mnt_dir = os.path.join(sc.REPO_DATA_CENTER, sc.DOMAIN_MNT_POINT, subdir)
     local_path = fileUtils.transformPath(remote_path)
     mountpoint = os.path.join(mnt_dir, local_path)
     os.makedirs(mountpoint)
@@ -256,7 +256,7 @@ def add_filesd(repo, remote_path, sd_uuid, subdir=""):
 
 def add_localsd(repo, tmpdir, sd_uuid):
     # Link local directory into the repo
-    mnt_dir = os.path.join(repo, sc.DOMAIN_MNT_POINT)
+    mnt_dir = os.path.join(sc.REPO_DATA_CENTER, sc.DOMAIN_MNT_POINT)
     local_path = fileUtils.transformPath(tmpdir)
     mountpoint = os.path.join(mnt_dir, local_path)
     os.symlink(tmpdir, mountpoint)

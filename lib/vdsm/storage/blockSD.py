@@ -394,7 +394,7 @@ def metadataValidity(vg):
 
 
 class BlockStorageDomainManifest(sd.StorageDomainManifest):
-    mountpoint = os.path.join(sd.StorageDomain.storage_repository,
+    mountpoint = os.path.join(sc.REPO_DATA_CENTER,
                               sc.DOMAIN_MNT_POINT, sd.BLOCKSD_DIR)
 
     def __init__(self, sdUUID, metadata=None):
