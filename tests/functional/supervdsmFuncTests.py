@@ -26,6 +26,8 @@ from vdsm.constants import VDSM_USER
 from pwd import getpwnam
 import os
 
+import six
+
 
 def dropPrivileges():
         vdsm_uid, vdsm_gid = getpwnam(VDSM_USER)[2:4:]
@@ -55,6 +57,6 @@ class TestSuperVdsmRemotly(TestCaseBase):
                      "pages_to_scan": 0xffff}
         proxy.ksmTune(ksmParams)
 
-        for k, v in ksmParams.iteritems():
+        for k, v in six.iteritems(ksmParams):
             self.assertEqual(str(v),
                              open("/sys/kernel/mm/ksm/%s" % k, "r").read())

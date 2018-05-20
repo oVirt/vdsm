@@ -19,6 +19,8 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import six
+
 from . import expose
 
 
@@ -32,8 +34,8 @@ def ksmTune(tuningParams):
     KSM_PARAMS = {'run': 3, 'merge_across_nodes': 3,
                   'sleep_millisecs': 0x100000000,
                   'pages_to_scan': 0x100000000}
-    for (k, v) in tuningParams.iteritems():
-        if k not in KSM_PARAMS.iterkeys():
+    for (k, v) in six.iteritems(tuningParams):
+        if k not in six.iterkeys(KSM_PARAMS):
             raise Exception('Invalid key in KSM parameter: %s=%s' % (k, v))
         if int(v) < 0 or int(v) >= KSM_PARAMS[k]:
             raise Exception('Invalid value in KSM parameter: %s=%s' %
