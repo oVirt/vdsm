@@ -28,6 +28,7 @@ import os
 import xml.etree.cElementTree as etree
 
 import libvirt
+import six
 
 from vdsm.common import conv
 from vdsm.common import cpuarch
@@ -255,7 +256,7 @@ def physical_function_net_name(pf_pci_name):
     the network interface name associated with it (e.g. enp2s0f0)
     """
     devices = list_by_caps()
-    libvirt_device_names = [name for name, device in devices.iteritems()
+    libvirt_device_names = [name for name, device in six.iteritems(devices)
                             if device['params'].get('parent') == pf_pci_name]
     if len(libvirt_device_names) > 1:
         raise Exception('could not determine network name for %s. Possible'
