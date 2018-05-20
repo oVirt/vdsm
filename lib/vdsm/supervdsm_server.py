@@ -33,6 +33,8 @@ import logging
 import logging.config
 from contextlib import closing
 
+import six
+
 from vdsm.common import concurrent
 from vdsm.common import constants
 from vdsm.common import fileutils
@@ -279,7 +281,7 @@ def main(args):
             module = importlib.import_module('%s.%s' %
                                              (supervdsm_api.__name__,
                                               module_name))
-            api_funcs = [f for _, f in module.__dict__.iteritems()
+            api_funcs = [f for _, f in six.iteritems(module.__dict__)
                          if callable(f) and getattr(f, 'exposed_api', False)]
             for func in api_funcs:
                 setattr(_SuperVdsm, func.__name__, bind(logDecorator(func)))
