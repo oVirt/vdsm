@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 from collections import defaultdict
 import argparse
 import json
@@ -197,11 +198,11 @@ def _get_volumes_info(cli, sd_uuid):
 def _get_volumes_chains(volumes_info):
     image_chains = {}
 
-    for img_uuid, volumes in volumes_info.iteritems():
+    for img_uuid, volumes in six.iteritems(volumes_info):
 
         # to avoid 'double parent' bug here we don't use a dictionary
         volumes_children = []  # [(parent_vol_uuid, child_vol_uuid),]
-        for vol_uuid, vol_info in volumes.iteritems():
+        for vol_uuid, vol_info in six.iteritems(volumes):
             volumes_children.append((vol_info['parent'], vol_uuid))
 
         try:
@@ -244,7 +245,7 @@ def _print_volume_chains(image_chains, volumes_info):
         return
     print()
     print('Images volume chains (base volume first)')
-    for img_uuid, vol_chain in image_chains.iteritems():
+    for img_uuid, vol_chain in six.iteritems(image_chains):
         img_volumes_info = volumes_info[img_uuid]
         print()
         _print_line(img_uuid, 'image:')
