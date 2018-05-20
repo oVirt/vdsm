@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Red Hat, Inc.
+# Copyright 2012-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import errno
 import fcntl
 import os
 import selinux
+import six
 from functools import wraps
 
 from vdsm.common import cmdutils
@@ -109,7 +110,7 @@ def glusterAdditionalFeatures():
         'volumeGeoRepSessionCreate': 'GLUSTER_GEO_REPLICATION',
         'storageDevicesList': 'GLUSTER_BRICK_MANAGEMENT'}
     additionalFeatures = []
-    for feature, code in glusterfeatureSampleVerbs.iteritems():
+    for feature, code in six.iteritems(glusterfeatureSampleVerbs):
         if feature in dir(GlusterApi):
             additionalFeatures.append(code)
     return additionalFeatures
@@ -721,7 +722,7 @@ class GlusterApi(object):
             mountBrokerOptions = {'mountbroker-root': MOUNT_BROKER_ROOT,
                                   'geo-replication-log-group': remoteGroupName,
                                   'rpc-auth-allow-insecure': 'on'}
-            for optionName, optionValue in mountBrokerOptions.iteritems():
+            for optionName, optionValue in six.iteritems(mountBrokerOptions):
                 self.svdsmProxy.glusterExecuteMountBrokerOpt(optionName,
                                                              optionValue)
             self.svdsmProxy.glusterExecuteMountBrokerUserAdd(remoteUserName,
