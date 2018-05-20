@@ -34,6 +34,8 @@ import pkgutil
 import sys
 import tempfile
 
+import six
+
 from vdsm.common import commands
 from vdsm.common import exception
 from vdsm.common.constants import P_VDSM_HOOKS, P_VDSM_RUN
@@ -80,8 +82,8 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, params={},
         scriptenv = os.environ.copy()
 
         # Update the environment using params and custom configuration
-        env_update = [params.iteritems(),
-                      vmconf.get('custom', {}).iteritems()]
+        env_update = [six.iteritems(params),
+                      six.iteritems(vmconf.get('custom', {}))]
 
         # Encode custom properties to UTF-8 and save them to scriptenv
         # Pass str objects (byte-strings) without any conversion
