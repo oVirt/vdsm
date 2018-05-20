@@ -20,6 +20,8 @@
 
 from __future__ import absolute_import
 
+import six
+
 from vdsm.common import cache
 
 
@@ -29,7 +31,7 @@ from vdsm.common import cache
 # (and those keys are irrelevant for us in dmidecode output)
 def __leafDict(d):
     ret = {}
-    for k, v in d.iteritems():
+    for k, v in six.iteritems(d):
         if isinstance(v, dict):
             ret.update(__leafDict(v))
         else:
