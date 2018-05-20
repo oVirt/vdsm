@@ -27,6 +27,8 @@ import os
 
 from collections import namedtuple
 
+import six
+
 from vdsm import utils
 from vdsm.common import cache
 from vdsm.common import cpuarch
@@ -273,7 +275,7 @@ def package_versions():
         try:
             ts = rpm.TransactionSet()
 
-            for pkg, names in KEY_PACKAGES.iteritems():
+            for pkg, names in six.iteritems(KEY_PACKAGES):
                 try:
                     mi = next(itertools.chain(
                         *[ts.dbMatch('name', name) for name in names]))
