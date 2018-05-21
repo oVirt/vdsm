@@ -838,6 +838,10 @@ def _load_device_spec_params(md_obj, elem):
     payload_elem = md_obj.find(elem, _VM_PAYLOAD)
     if payload_elem is not None:
         spec_params[_VM_PAYLOAD] = _load_payload(md_obj, payload_elem)
+    # ignore the IO tune settings if present (they should not), and
+    # never deserialize it: we should read them from the libvirt
+    # domain XML
+    spec_params.pop(_IO_TUNE, None)
     return spec_params
 
 
@@ -857,6 +861,9 @@ def _dump_payload(md_obj, tag, value):
 
 
 def _dump_device_spec_params(md_obj, value):
+    # ignore if present, never serialize it: we should read the
+    # IO tune settings from the libvirt domain XML
+    value.pop(_IO_TUNE, None)
     payload = value.pop(_VM_PAYLOAD, None)
     if payload is not None:
         # mandatory for vmPayload

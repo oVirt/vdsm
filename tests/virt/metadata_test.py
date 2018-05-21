@@ -706,6 +706,45 @@ class DescriptorTests(XMLTestCase):
         for produced_xml in dom.xml.values():
             self.assertXMLEqual(produced_xml, expected_xml)
 
+    def test_specParams_ignore_iotune(self):
+        conf = {
+            'device': 'cdrom',
+            'iface': 'ide',
+            'index': '3',
+            'path': '',
+            'readonly': 'true',
+            'type': 'disk',
+        }
+        source_xml = """<?xml version='1.0' encoding='UTF-8'?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+<metadata>
+  <ovirt-vm:vm>
+    <ovirt-vm:device name="hdd" devtype="disk">
+      <ovirt-vm:specParams>
+        <ovirt-vm:ioTune>
+          <ovirt-vm:read_iops_sec>100</ovirt-vm:read_iops_sec>
+        </ovirt-vm:ioTune>
+      </ovirt-vm:specParams>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>"""
+        desc = metadata.Descriptor.from_xml(source_xml)
+        with desc.device(
+                devtype=conf['type'],
+                name=drivename.make(conf['iface'], conf['index'])) as dev:
+            # test we ignore IO tune settings from metadata, should we
+            # (unexpectedly) found it (see below to learn why)
+            self.assertEqual(dev, {'specParams': {}})
+
+        expected_xml = u"""<?xml version='1.0' encoding='utf-8'?>
+<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-vm:device devtype="disk" name="hdd" />
+</ovirt-vm:vm>"""
+        # test we never serialize IO tune settings - they belong
+        # in the plain regular libvirt domain XML.
+        self.assertXMLEqual(desc.to_xml(), expected_xml)
+
 
 class SaveDeviceMetadataTests(XMLTestCase):
 
@@ -768,6 +807,53 @@ class SaveDeviceMetadataTests(XMLTestCase):
         <ovirt-vm:poolID>poolID</ovirt-vm:poolID>
         <ovirt-vm:shared>transient</ovirt-vm:shared>
         <ovirt-vm:volumeID>volumeID</ovirt-vm:volumeID>
+    </ovirt-vm:device>
+</ovirt-vm:vm>"""
+        dev_map = common.empty_dev_map()
+        dev_map[hwclass.DISK].append(storage.Drive(self.log, **drive_params))
+        common.save_device_metadata(self.md_desc, dev_map, self.log)
+        self.assertXMLEqual(self.md_desc.to_xml(), expected_xml)
+
+    def test_devices_storage_iotune(self):
+        drive_params = {
+            'index': 0,
+            'cache': 'none',
+            'name': 'vda',
+            'format': 'raw',
+            'bootOrder': '1',
+            'discard': False,
+            'diskType': 'block',
+            'specParams': {
+                'ioTune': {
+                    'write_bytes_sec': 0,
+                    'total_iops_sec': 0,
+                    'read_iops_sec': 100,
+                    'read_bytes_sec': 0,
+                    'write_iops_sec': 100,
+                    'total_bytes_sec': 0
+                }
+            },
+            'iface': 'virtio',
+            'device': 'disk',
+            'path': '/some/path',
+            'serial': 'random-serial',
+            'propagateErrors': 'off',
+            'type': 'disk',
+            # *ID are not validated by the Drive class
+            'shared': 'transient',
+            'domainID': 'domainID',
+            'imageID': 'imageID',
+            'poolID': 'poolID',
+            'volumeID': 'volumeID',
+        }
+        expected_xml = """<ovirt-vm:vm xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-vm:device devtype="disk" name="vda">
+        <ovirt-vm:domainID>domainID</ovirt-vm:domainID>
+        <ovirt-vm:imageID>imageID</ovirt-vm:imageID>
+        <ovirt-vm:poolID>poolID</ovirt-vm:poolID>
+        <ovirt-vm:shared>transient</ovirt-vm:shared>
+        <ovirt-vm:volumeID>volumeID</ovirt-vm:volumeID>
+        <ovirt-vm:specParams />
     </ovirt-vm:device>
 </ovirt-vm:vm>"""
         dev_map = common.empty_dev_map()
