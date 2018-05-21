@@ -37,7 +37,6 @@ from vdsm.storage import exception as se
 from vdsm.storage import lvm as real_lvm
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import sd
-from vdsm.storage.constants import VG_EXTENT_SIZE_MB
 
 
 VG = collections.namedtuple("VG", [
@@ -53,7 +52,7 @@ class FakeLVM(object):
     # We pretend all PVs are 10G in size
     _PV_SIZE = 10 << 30
     # Found via inspection of real environment
-    _PV_PE_SIZE = VG_EXTENT_SIZE_MB << 20
+    _PV_PE_SIZE = sc.VG_EXTENT_SIZE_MB << 20
     # The number of PEs used for metadata areas
     _PV_MDA_COUNT = 2
     # 2 PE for metadata + 1 PE to hold a header
@@ -69,7 +68,7 @@ class FakeLVM(object):
     def createVG(self, vgName, devices, initialTag, metadataSize, force=False):
         # Convert params from MB to bytes to match other fields
         metadataSize <<= 20
-        extentsize = VG_EXTENT_SIZE_MB << 20
+        extentsize = sc.VG_EXTENT_SIZE_MB << 20
 
         for dev in devices:
             self._create_pv(dev, vgName, self._PV_SIZE)
@@ -111,7 +110,7 @@ class FakeLVM(object):
     def _size_param_to_bytes(self, size):
         # Size is received as a string in MB.  We need to convert it to bytes
         # and round it up to a multiple of the VG extent size.
-        extent_size = VG_EXTENT_SIZE_MB << 20
+        extent_size = sc.VG_EXTENT_SIZE_MB << 20
         size = int(size) << 20
         return utils.round(size, extent_size)
 
