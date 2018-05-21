@@ -44,3 +44,7 @@ class TestOsinfo(VdsmTestCase):
             f.flush()
             self.assertEqual(osinfo.kernel_args(f.name),
                              expected_result)
+
+    def test_package_versions(self):
+        pkgs = osinfo.package_versions()
+        self.assertIn('kernel', pkgs)
