@@ -86,11 +86,9 @@ class DriveXMLTests(XMLTestCase):
             propagateErrors='on',
             serial='54-a672-23e5b495a9ea',
             shared='shared',
-            specParams={
-                'ioTune': {
-                    'read_bytes_sec': 6120000,
-                    'total_iops_sec': 800,
-                }
+            iotune={
+                'read_bytes_sec': 6120000,
+                'total_iops_sec': 800,
             },
             vm_custom={
                 'viodiskcache': 'writethrough'

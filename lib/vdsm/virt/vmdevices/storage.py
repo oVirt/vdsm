@@ -125,7 +125,7 @@ class Drive(core.Base):
                  'extSharedState', 'drv', 'sgio', 'GUID', 'diskReplicate',
                  '_diskType', 'hosts', 'protocol', 'auth', 'discard',
                  'vm_custom', 'blockinfo', '_threshold_state', '_lock',
-                 '_monitorable', 'guestName',)
+                 '_monitorable', 'guestName', '_iotune')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         constants.MEGAB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -232,6 +232,7 @@ class Drive(core.Base):
         self.device = kwargs.get('device', 'disk')
         # Must be initialized for getXML.
         self.propagateErrors = 'off'
+        self._iotune = {}
         super(Drive, self).__init__(log, **kwargs)
         if not hasattr(self, 'vm_custom'):
             self.vm_custom = {}
@@ -683,13 +684,13 @@ class Drive(core.Base):
 
     @property
     def iotune(self):
-        return self.specParams.get('ioTune', {}).copy()
+        return self._iotune.copy()
 
     @iotune.setter
     def iotune(self, value):
         iotune = value.copy()
         vmtune.validate_io_tune_params(iotune)
-        self.specParams['ioTune'] = iotune
+        self._iotune = iotune
 
     def volume_target_index(self, vol_id, actual_chain):
         """

@@ -194,14 +194,15 @@ def _update_interface_params(params, dev):
 
 def _update_iotune_params(params, dev):
     iotune = vmxml.find_first(dev, 'iotune', None)
-    if iotune is not None:
-        iotune_params = {
-            'ioTune': {
-                setting.tag: int(setting.text)
-                for setting in iotune
-            }
-        }
-        params['specParams'].update(iotune_params)
+    if iotune is None:
+        return
+
+    iotune_params = {
+        setting.tag: int(setting.text)
+        for setting in iotune
+    }
+    if iotune_params:
+        params['iotune'] = iotune_params
 
 
 def _update_readonly_params(params, dev):
