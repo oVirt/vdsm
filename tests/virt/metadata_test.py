@@ -706,6 +706,33 @@ class DescriptorTests(XMLTestCase):
         for produced_xml in dom.xml.values():
             self.assertXMLEqual(produced_xml, expected_xml)
 
+    def test_specParams_ignore_empty(self):
+        conf = {
+            'device': 'cdrom',
+            'iface': 'ide',
+            'index': '3',
+            'path': '',
+            'readonly': 'true',
+            'type': 'disk',
+        }
+        source_xml = """<?xml version='1.0' encoding='UTF-8'?>
+<domain type="kvm" xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+<metadata>
+  <ovirt-vm:vm>
+    <ovirt-vm:device name="hdd" devtype="disk">
+      <ovirt-vm:specParams />
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>"""
+        desc = metadata.Descriptor.from_xml(source_xml)
+        with desc.device(
+                devtype=conf['type'],
+                name=drivename.make(conf['iface'], conf['index'])) as dev:
+            # test we ignore IO tune settings from metadata, should we
+            # (unexpectedly) found it (see below to learn why)
+            self.assertEqual(dev, {'specParams': {}})
+
     def test_specParams_ignore_iotune(self):
         conf = {
             'device': 'cdrom',
