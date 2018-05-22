@@ -31,7 +31,6 @@ import pytest
 from vdsm.common import fileutils
 from vdsm.network import api
 from vdsm.network import errors
-from vdsm.network import initializer
 from vdsm.network import kernelconfig
 from vdsm.network.canonicalize import bridge_opts_dict_to_sorted_str
 from vdsm.network.canonicalize import bridge_opts_str_to_dict
@@ -67,8 +66,6 @@ parametrize_bridged = pytest.mark.parametrize('bridged', [False, True],
 
 parametrize_bonded = pytest.mark.parametrize('bonded', [False, True],
                                              ids=['unbonded', 'bonded'])
-
-initializer.init_privileged_network_components()
 
 
 def requires_ipaddress():

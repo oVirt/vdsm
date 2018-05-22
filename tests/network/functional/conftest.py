@@ -24,6 +24,8 @@ import pytest
 
 from .netfunctestlib import Target
 
+from vdsm.network import initializer
+
 
 def pytest_addoption(parser):
     parser.addoption('--target-service', action='store_const',
@@ -47,3 +49,8 @@ def target():
         target_proxy = Target.LIB
 
     return target_proxy
+
+
+@pytest.fixture(scope='session', autouse=True)
+def init_lib():
+    initializer.init_privileged_network_components()
