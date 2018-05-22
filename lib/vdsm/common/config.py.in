@@ -233,6 +233,12 @@ parameters = [
             'By default tlv1, tlsv1.1 and tlsv1.2 are '
             'enabled.'),
 
+        ('ssl_ciphers', '',
+            'By default we use empty to use python default ciphers set. '
+            'If one is willing to use more secure ciphers one can use '
+            'HIGH or other cipher strings as defined in '
+            'https://www.openssl.org/docs/man1.0.2/apps/ciphers.html.'),
+
         ('verify_client_cert', 'false',
             'Enables whether to verify client fqdn or ip stored '
             'in a certificate.'),

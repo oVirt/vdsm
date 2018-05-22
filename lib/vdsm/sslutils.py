@@ -88,6 +88,7 @@ class SSLContext(object):
         self.protocol = protocol
 
     def wrapSocket(self, sock):
+        ciphers = config.get('vars', 'ssl_ciphers')
         return SSLSocket(
             ssl.wrap_socket(sock,
                             keyfile=self.key_file,
@@ -95,7 +96,8 @@ class SSLContext(object):
                             server_side=False,
                             cert_reqs=ssl.CERT_REQUIRED,
                             ssl_version=self.protocol,
-                            ca_certs=self.ca_certs)
+                            ca_certs=self.ca_certs,
+                            ciphers=ciphers if ciphers else None)
         )
 
 
@@ -133,6 +135,9 @@ class SSLHandshakeDispatcher(object):
         client_socket = dispatcher.socket
 
         context = ssl.SSLContext(self._sslctx.protocol)
+        ciphers = config.get('vars', 'ssl_ciphers')
+        if ciphers:
+            context.set_ciphers(ciphers)
         # pylint: disable=no-member
         context.options |= ssl.OP_NO_SSLv3
 
