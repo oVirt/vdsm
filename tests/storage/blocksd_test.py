@@ -25,10 +25,14 @@ from __future__ import division
 import os
 
 from monkeypatch import MonkeyPatch
+
+import pytest
+
 from storage.storagefakelib import fake_vg
 from testValidation import xfail
 from testlib import VdsmTestCase
 from vdsm.storage import blockSD
+from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm import constants
 
@@ -117,3 +121,45 @@ class TestDecodeValidity(VdsmTestCase):
     def test_decode_pv_comma(self):
         pvinfo = blockSD.decodePVInfo('pv:my,name')
         self.assertEqual(pvinfo["guid"], 'my,name')
+
+
+# VG size 10 GB
+def test_meta_size_enough_free_space(monkeypatch):
+    monkeypatch.setattr(lvm, 'getVG', lambda x: fake_vg(
+        extent_size=str(128 * constants.MEGAB),
+        extent_count='77',
+        free=str(512 * constants.MEGAB)))
+    meta_size = blockSD.BlockStorageDomain.metaSize('sd-uuid')
+    assert meta_size == 512
+
+
+# VG size 10 GB
+def test_meta_size_vg_too_small(monkeypatch):
+    # Creating a VG with size=10GB and 512MB - 1 byte of free space
+    # Should raise an exception - VG too small
+    monkeypatch.setattr(lvm, 'getVG', lambda x: fake_vg(
+        extent_size=(128 * constants.MEGAB),
+        extent_count='77',
+        free=str((512 - 1) * constants.MEGAB)))
+    with pytest.raises(se.VolumeGroupSizeError):
+        blockSD.BlockStorageDomain.metaSize('sd-uuid')
+
+
+# VG size 128.002 TB
+def test_meta_size_min_val(monkeypatch):
+    monkeypatch.setattr(lvm, 'getVG', lambda x: fake_vg(
+        extent_size=(128 * constants.MEGAB),
+        extent_count='1048576',
+        free=str(512 * constants.MEGAB)))
+    meta_size = blockSD.BlockStorageDomain.metaSize('sd-uuid')
+    assert meta_size == 512
+
+
+# VG size is 128.003 TB
+def test_meta_size_max_val(monkeypatch):
+    monkeypatch.setattr(lvm, 'getVG', lambda x: fake_vg(
+        extent_size=(128 * constants.MEGAB),
+        extent_count='1048577',
+        free=str(1024 * constants.MEGAB)))
+    meta_size = blockSD.BlockStorageDomain.metaSize('sd-uuid')
+    assert meta_size == 513

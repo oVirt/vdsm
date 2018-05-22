@@ -40,7 +40,13 @@ from vdsm.storage import sd
 from vdsm.storage.constants import VG_EXTENT_SIZE_MB
 
 
-VG = collections.namedtuple("VG", ['vg_mda_size', 'vg_mda_free'])
+VG = collections.namedtuple("VG", [
+    'vg_mda_size',
+    'vg_mda_free',
+    'extent_size',
+    'extent_count',
+    'free'
+])
 
 
 class FakeLVM(object):
@@ -410,5 +416,6 @@ def fake_repo():
             yield repo
 
 
-def fake_vg(vg_mda_size=None, vg_mda_free=None):
-    return VG(vg_mda_size, vg_mda_free)
+def fake_vg(vg_mda_size=None, vg_mda_free=None, extent_size=None,
+            extent_count=None, free=None):
+    return VG(vg_mda_size, vg_mda_free, extent_size, extent_count, free)
