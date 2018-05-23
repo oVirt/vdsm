@@ -153,8 +153,6 @@ TASKS_DIR = 'tasks'
 ImgsPar = namedtuple("ImgsPar", "imgs,parent")
 ISO_IMAGE_UUID = '11111111-1111-1111-1111-111111111111'
 BLANK_UUID = '00000000-0000-0000-0000-000000000000'
-REMOVED_IMAGE_PREFIX = "_remove_me_"
-ZEROED_IMAGE_PREFIX = REMOVED_IMAGE_PREFIX + "ZERO_"
 
 # Blocks used for each lease (valid on all domain types)
 LEASE_BLOCKS = 2048
