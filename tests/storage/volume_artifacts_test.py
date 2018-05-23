@@ -311,7 +311,7 @@ class TestFileVolumeArtifacts(VolumeArtifactsTestsMixin, VdsmTestCase):
                                 has_lease=False, has_volume=False):
         path = artifacts.artifacts_dir
         self.assertTrue(
-            os.path.basename(path).startswith(sd.REMOVED_IMAGE_PREFIX))
+            os.path.basename(path).startswith(sc.REMOVED_IMAGE_PREFIX))
         self.assertTrue(os.path.exists(path))
         self.assertFalse(os.path.exists(artifacts._image_dir))
         self.assertEqual(has_md, os.path.exists(artifacts.meta_volatile_path))
@@ -345,7 +345,7 @@ class TestFileVolumeArtifactVisibility(VdsmTestCase):
         # The current behavior of getAllImages is to report garbage image
         # directories (perhaps this should be changed).
         with fake_file_env() as env:
-            garbage_img_id = sd.REMOVED_IMAGE_PREFIX + self.img_id
+            garbage_img_id = sc.REMOVED_IMAGE_PREFIX + self.img_id
             self.assertEqual(set(), env.sd_manifest.getAllImages())
             artifacts = env.sd_manifest.get_volume_artifacts(
                 self.img_id, self.vol_id)

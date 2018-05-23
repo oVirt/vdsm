@@ -232,7 +232,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
     def getDeletedImagePath(self, imgUUID):
         currImgDir = self.getImagePath(imgUUID)
         dirName, baseName = os.path.split(currImgDir)
-        toDelDir = os.path.join(dirName, sd.REMOVED_IMAGE_PREFIX + baseName)
+        toDelDir = os.path.join(dirName, sc.REMOVED_IMAGE_PREFIX + baseName)
         return toDelDir
 
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
@@ -727,7 +727,7 @@ class FileStorageDomain(sd.StorageDomain):
         (on NFS mostly) due to lazy file removal
         """
         removedPattern = os.path.join(self.domaindir, sd.DOMAIN_IMAGES,
-                                      sd.REMOVED_IMAGE_PREFIX + '*')
+                                      sc.REMOVED_IMAGE_PREFIX + '*')
         removedImages = self.oop.glob.glob(removedPattern)
         self.log.info("Removing remnants of deleted images %s",
                       removedImages)

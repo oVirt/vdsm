@@ -118,7 +118,7 @@ class Image:
         Create REMOVED_IMAGE_PREFIX + <random> + uuid string.
         """
         randomStr = misc.randomStr(RENAME_RANDOM_STRING_LEN)
-        return "%s%s_%s" % (sd.REMOVED_IMAGE_PREFIX, randomStr, uuid)
+        return "%s%s_%s" % (sc.REMOVED_IMAGE_PREFIX, randomStr, uuid)
 
     def estimate_qcow2_size(self, src_vol_params, dst_sd_id):
         """

@@ -718,7 +718,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
         toDel = self._getImgExclusiveVols(imgUUID, volsImgs)
-        self._markForDelVols(sdUUID, imgUUID, toDel, sd.REMOVED_IMAGE_PREFIX)
+        self._markForDelVols(sdUUID, imgUUID, toDel, sc.REMOVED_IMAGE_PREFIX)
 
     def purgeImage(self, sdUUID, imgUUID, volsImgs, discard):
         taskid = vars.task.id
@@ -758,13 +758,13 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         remnants = {}  # Volumes which are part of failed image deletes.
         allVols = getAllVolumes(self.sdUUID)
         for volName, ip in allVols.iteritems():
-            if (volName.startswith(sd.REMOVED_IMAGE_PREFIX) or
-                    ip.imgs[0].startswith(sd.REMOVED_IMAGE_PREFIX)):
+            if (volName.startswith(sc.REMOVED_IMAGE_PREFIX) or
+                    ip.imgs[0].startswith(sc.REMOVED_IMAGE_PREFIX)):
                 remnants[volName] = ip
             else:
                 # Deleted images are not dependencies of valid volumes.
                 images = [img for img in ip.imgs
-                          if not img.startswith(sd.REMOVED_IMAGE_PREFIX)]
+                          if not img.startswith(sc.REMOVED_IMAGE_PREFIX)]
                 vols[volName] = sd.ImgsPar(images, ip.parent)
         return vols, remnants
 
@@ -1283,7 +1283,7 @@ class BlockStorageDomain(sd.StorageDomain):
     def zeroImage(self, sdUUID, imgUUID, volsImgs, discard):
         toZero = self._manifest._getImgExclusiveVols(imgUUID, volsImgs)
         self._manifest._markForDelVols(sdUUID, imgUUID, toZero,
-                                       sd.ZEROED_IMAGE_PREFIX)
+                                       sc.ZEROED_IMAGE_PREFIX)
         zeroImgVolumes(sdUUID, imgUUID, toZero, discard)
         self.rmDCImgDir(imgUUID, volsImgs)
 
