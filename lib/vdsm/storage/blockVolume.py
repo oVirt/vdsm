@@ -624,6 +624,17 @@ class BlockVolume(volume.Volume):
             self.log.warning("cannot finalize parent volume %s", puuid,
                              exc_info=True)
 
+        # Basically, we want to mark the volume _remove_me at the beginning of
+        # the delete; however, with the current delete logic, if marking the
+        # volume fails, and the deleted volume is a leaf, we end up with a
+        # chain with a valid leaf volume.
+        # The ultimate solution of volume deletion requires changes in
+        # image.syncVolumeChain to disconnect the volume from the chain,
+        # and probably there mark it as _remove_me.
+        manifest = sdCache.produce_manifest(self.sdUUID)
+        manifest.markForDelVols(self.sdUUID, self.imgUUID, [self.volUUID],
+                                sc.REMOVED_IMAGE_PREFIX)
+
         try:
             lvm.removeLVs(self.sdUUID, self.volUUID)
         except se.CannotRemoveLogicalVolume as e:
