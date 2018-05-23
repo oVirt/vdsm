@@ -670,7 +670,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                           if v.imgs[0] == imgUUID)
         return exclusives
 
-    def _markForDelVols(self, sdUUID, imgUUID, volUUIDs, opTag):
+    def markForDelVols(self, sdUUID, imgUUID, volUUIDs, opTag):
         """
         Mark volumes that will be zeroed or removed.
 
@@ -718,7 +718,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
         toDel = self._getImgExclusiveVols(imgUUID, volsImgs)
-        self._markForDelVols(sdUUID, imgUUID, toDel, sc.REMOVED_IMAGE_PREFIX)
+        self.markForDelVols(sdUUID, imgUUID, toDel, sc.REMOVED_IMAGE_PREFIX)
 
     def purgeImage(self, sdUUID, imgUUID, volsImgs, discard):
         taskid = vars.task.id
@@ -1282,8 +1282,8 @@ class BlockStorageDomain(sd.StorageDomain):
 
     def zeroImage(self, sdUUID, imgUUID, volsImgs, discard):
         toZero = self._manifest._getImgExclusiveVols(imgUUID, volsImgs)
-        self._manifest._markForDelVols(sdUUID, imgUUID, toZero,
-                                       sc.ZEROED_IMAGE_PREFIX)
+        self._manifest.markForDelVols(sdUUID, imgUUID, toZero,
+                                      sc.ZEROED_IMAGE_PREFIX)
         zeroImgVolumes(sdUUID, imgUUID, toZero, discard)
         self.rmDCImgDir(imgUUID, volsImgs)
 
