@@ -2834,13 +2834,17 @@ class Vm(object):
             try:
                 domxml = hooks.before_vm_start(self._buildDomainXML(),
                                                self._custom)
+
+                # At this point, the VM is not defined yet.
+                self._updateDomainDescriptor(domxml)
+
                 flags = hooks.load_vm_launch_flags_from_file(self.id)
 
                 # TODO: this is debug information. For 3.6.x we still need to
                 # see the XML even with 'info' as default level.
-                self.log.info("%s", domxml)
+                self.log.info("%s", self._domain.xml)
 
-                dom = self._connection.defineXML(domxml)
+                dom = self._connection.defineXML(self._domain.xml)
                 self._dom = virdomain.Defined(self.id, dom)
                 self._update_metadata()
                 dom.createWithFlags(flags)
@@ -5112,9 +5116,9 @@ class Vm(object):
     def name(self):
         return self._domain.name
 
-    def _updateDomainDescriptor(self):
-        domainXML = self._dom.XMLDesc(0)
-        self._domain = DomainDescriptor(domainXML)
+    def _updateDomainDescriptor(self, xml=None):
+        domxml = self._dom.XMLDesc(0) if xml is None else xml
+        self._domain = DomainDescriptor(domxml)
 
     def _updateMetadataDescriptor(self):
         # load will overwrite any existing content, as per doc.
