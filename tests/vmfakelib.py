@@ -331,7 +331,7 @@ def VM(params=None, devices=None, runCpu=False,
                                     pause_time_offset)
             sampling.stats_cache.add(fake.id)
 
-            def _updateDomainDescriptor():
+            def _updateDomainDescriptor(_=None):
                 fake._domain = DomainDescriptor(fake._buildDomainXML())
 
             fake._updateDomainDescriptor = _updateDomainDescriptor

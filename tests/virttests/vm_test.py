@@ -2528,6 +2528,9 @@ class FakeLeaseDomain(object):
     def attachDevice(self, device_xml):
         pass
 
+    def XMLDesc(flags=0):
+        pass
+
 
 class FakeLeaseIRS(object):
     def __init__(self, conf):
