@@ -42,7 +42,6 @@ import vdsm.common.time
 from vdsm.config import config
 from vdsm.constants import P_VDSM_RUN
 from vdsm.host import api as hostapi
-from vdsm.virt import vmstats
 from vdsm.virt.utils import ExpiringCache
 
 
@@ -442,27 +441,6 @@ class VMBulkstatsMonitor(object):
                 'sampled timestamp %r elapsed %.3f acquired %r domains %s',
                 timestamp, self._stats_cache.clock() - timestamp, acquired,
                 'all' if fast_path else len(doms))
-        if _METRICS_ENABLED:
-            self._send_metrics()
-
-    def _send_metrics(self):
-        vms = self._get_vms()
-        vm_samples = self._stats_cache.get_batch()
-        if vm_samples is None:
-            return
-        stats = {}
-        for vm_id, vm_sample in six.iteritems(vm_samples):
-            vm_obj = vms.get(vm_id)
-            if vm_obj is None:
-                # unknown VM, such as an external VM
-                continue
-            vm_data = vmstats.produce(vm_obj,
-                                      vm_sample.first_value,
-                                      vm_sample.last_value,
-                                      vm_sample.interval)
-            vm_data["vmName"] = vm_obj.name
-            stats[vm_id] = vm_data
-        vmstats.send_metrics(stats)
 
     def _get_responsive_doms(self):
         vms = self._get_vms()

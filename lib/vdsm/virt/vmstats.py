@@ -25,7 +25,6 @@ import logging
 
 import six
 
-from vdsm import metrics
 from vdsm.common.time import monotonic_time
 from vdsm.utils import convertToStr
 
@@ -186,84 +185,6 @@ def cpu_count(stats, sample):
             stats['vcpuCount'] = vcpu_count
         else:
             _log.error('Failed to get VM cpu count')
-
-
-def send_metrics(vms_stats):
-    data = {}
-    try:
-        for vm_uuid in vms_stats:
-            stat = vms_stats[vm_uuid]
-            prefix = "vms." + stat['vmName']
-            data[prefix + '.cpu.user'] = stat['cpuUser']
-            data[prefix + '.cpu.sys'] = stat['cpuSys']
-            data[prefix + '.cpu.usage'] = stat['cpuUsage']
-
-            if stat['balloonInfo']:
-                data[prefix + '.balloon.max'] = \
-                    stat['balloonInfo']['balloon_max']
-                data[prefix + '.balloon.min'] = \
-                    stat['balloonInfo']['balloon_min']
-                data[prefix + '.balloon.target'] = \
-                    stat['balloonInfo']['balloon_target']
-                data[prefix + '.balloon.cur'] = \
-                    stat['balloonInfo']['balloon_cur']
-
-            if 'memoryStats' in stat:
-                for k, v in six.iteritems(stat['memoryStats']):
-                    data[prefix + '.mem.' + k] = v
-
-            if 'disks' in stat:
-                for disk in stat['disks']:
-                    diskprefix = prefix + '.disk.' + disk
-                    diskinfo = stat['disks'][disk]
-
-                    data[diskprefix + '.read_latency'] = \
-                        diskinfo['readLatency']
-                    data[diskprefix + '.read_ops'] = \
-                        diskinfo['readOps']
-                    data[diskprefix + '.read_bytes'] = \
-                        diskinfo['readBytes']
-                    data[diskprefix + '.read_rate'] = \
-                        diskinfo['readRate']
-
-                    data[diskprefix + '.write_bytes'] = \
-                        diskinfo['writtenBytes']
-                    data[diskprefix + '.write_ops'] = \
-                        diskinfo['writeOps']
-                    data[diskprefix + '.write_latency'] = \
-                        diskinfo['writeLatency']
-                    data[diskprefix + '.write_rate'] = \
-                        diskinfo['writeRate']
-
-                    data[diskprefix + '.apparent_size'] = \
-                        diskinfo['apparentsize']
-                    data[diskprefix + '.flush_latency'] = \
-                        diskinfo['flushLatency']
-                    data[diskprefix + '.true_size'] = \
-                        diskinfo['truesize']
-
-            if 'network' in stat:
-                for interface in stat['network']:
-                    netprefix = prefix + '.nic.' + interface
-                    if_info = stat['network'][interface]
-                    data[netprefix + '.speed'] = if_info['speed']
-                    data[netprefix + '.rx_bytes'] = if_info['rx']
-                    data[netprefix + '.rx_errors'] = if_info['rxErrors']
-                    data[netprefix + '.rx_dropped'] = if_info['rxDropped']
-
-                    data[netprefix + '.tx_bytes'] = if_info['tx']
-                    data[netprefix + '.tx_errors'] = if_info['txErrors']
-                    data[netprefix + '.tx_dropped'] = if_info['txDropped']
-
-        # Guest cpu-count,apps list, status, mac addr, client IP,
-        # display type, kvm enabled, username, vcpu info, vm jobs,
-        # displayinfo, hash, acpi, fqdn, vm uuid, pid,
-        #
-        # are all meta-data that should be published separately
-
-        metrics.send(data)
-    except KeyError:
-        _log.exception('VM metrics collection failed')
 
 
 def _nic_traffic(vm_obj, nic,
