@@ -62,6 +62,8 @@ def _get(vdsmnets=None):
     devices_info = _devices_report(ipaddrs, routes)
     nets_info = _networks_report(vdsmnets, routes, ipaddrs, devices_info)
 
+    _update_dhcp_info(nets_info, devices_info)
+
     networking_report = {'networks': nets_info}
     networking_report.update(devices_info)
 
@@ -71,6 +73,24 @@ def _get(vdsmnets=None):
     return networking_report
 
 
+def _update_dhcp_info(nets_info, devices_info):
+    """Update DHCP info for both networks and devices"""
+
+    net_ifaces = {net_info['iface'] for net_info in six.viewvalues(nets_info)}
+    flat_devs_info = {
+        devname: devinfo
+        for sub_devs in six.viewvalues(devices_info)
+        for devname, devinfo in six.viewitems(sub_devs)
+    }
+    dhcp_info = dhclient.dhcp_info(net_ifaces | frozenset(flat_devs_info))
+
+    for net_info in six.viewvalues(nets_info):
+        net_info.update(dhcp_info[net_info['iface']])
+
+    for devname, devinfo in six.viewitems(flat_devs_info):
+        devinfo.update(dhcp_info[devname])
+
+
 def _networks_report(vdsmnets, routes, ipaddrs, devices_info):
     if vdsmnets is None:
         running_nets = RunningConfig().networks
@@ -78,11 +98,7 @@ def _networks_report(vdsmnets, routes, ipaddrs, devices_info):
     else:
         nets_info = vdsmnets
 
-    ifaces = {net_info['iface'] for net_info in six.itervalues(nets_info)}
-    dhcp_info = dhclient.dhcp_info(ifaces)
-
     for network_info in six.itervalues(nets_info):
-        network_info.update(dhcp_info[network_info['iface']])
         network_info.update(LEGACY_SWITCH)
 
     report_network_qos(nets_info, devices_info)
@@ -93,7 +109,6 @@ def _networks_report(vdsmnets, routes, ipaddrs, devices_info):
 def _devices_report(ipaddrs, routes):
     devs_report = {'bondings': {}, 'bridges': {}, 'nics': {}, 'vlans': {}}
 
-    devinfo_by_devname = {}
     for dev in (link for link in getLinks() if not link.isHidden()):
         if dev.isBRIDGE():
             devinfo = devs_report['bridges'][dev.name] = bridges.info(dev)
@@ -113,11 +128,6 @@ def _devices_report(ipaddrs, routes):
         else:
             continue
         devinfo.update(_devinfo(dev, routes, ipaddrs))
-        devinfo_by_devname[dev.name] = devinfo
-
-    dhcp_info = dhclient.dhcp_info(frozenset(devinfo_by_devname))
-    for devname, devinfo in devinfo_by_devname.items():
-        devinfo.update(dhcp_info[devname])
 
     _permanent_hwaddr_info(devs_report)
 
