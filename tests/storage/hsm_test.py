@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,11 +23,11 @@ from __future__ import division
 
 from contextlib import contextmanager
 
+import pytest
+
 from monkeypatch import MonkeyPatchScope
 from testlib import make_config
 from testlib import make_uuid
-from testlib import VdsmTestCase
-from testlib import permutations, expandPermutations
 
 from storage.storagetestlib import (
     fake_file_env,
@@ -46,11 +46,10 @@ class FakeHSM(hsm.HSM):
         pass
 
 
-@expandPermutations
-class TestVerifyUntrustedVolume(VdsmTestCase):
+class TestVerifyUntrustedVolume(object):
     SIZE = 1024 * 1024
 
-    @permutations(((sc.RAW_FORMAT,), (sc.COW_FORMAT,)))
+    @pytest.mark.parametrize('vol_fmt,', [sc.RAW_FORMAT, sc.COW_FORMAT])
     def test_ok(self, vol_fmt):
         with self.fake_volume(vol_fmt) as vol:
             qemu_fmt = sc.FMT2STR[vol_fmt]
@@ -58,36 +57,36 @@ class TestVerifyUntrustedVolume(VdsmTestCase):
                                 format=qemu_fmt)
             op.run()
             h = FakeHSM()
-            self.assertNotRaises(h.verify_untrusted_volume,
-                                 'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
+            h.verify_untrusted_volume(
+                'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
-    @permutations((
+    @pytest.mark.parametrize('vol_fmt,qemu_fmt', [
         (sc.RAW_FORMAT, qemuimg.FORMAT.QCOW2),
         (sc.COW_FORMAT, qemuimg.FORMAT.RAW),
-    ))
+    ])
     def test_wrong_format_raises(self, vol_fmt, qemu_fmt):
         with self.fake_volume(vol_fmt) as vol:
             op = qemuimg.create(vol.volumePath, size=self.SIZE,
                                 format=qemu_fmt)
             op.run()
             h = FakeHSM()
-            self.assertRaises(se.ImageVerificationError,
-                              h.verify_untrusted_volume,
-                              'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
+            with pytest.raises(se.ImageVerificationError):
+                h.verify_untrusted_volume(
+                    'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
     def test_valid_with_backingfile(self):
         with fake_file_env() as env:
             vol = make_qemu_chain(env, self.SIZE, sc.COW_FORMAT, 2)[1]
             h = FakeHSM()
-            self.assertNotRaises(h.verify_untrusted_volume,
-                                 'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
+            h.verify_untrusted_volume(
+                'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
     def test_valid_without_backingfile(self):
         with fake_file_env() as env:
             vol = make_qemu_chain(env, self.SIZE, sc.COW_FORMAT, 2)[0]
             h = FakeHSM()
-            self.assertNotRaises(h.verify_untrusted_volume,
-                                 'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
+            h.verify_untrusted_volume(
+                'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
     def test_wrong_backingfile(self):
         with fake_file_env() as env:
@@ -98,9 +97,9 @@ class TestVerifyUntrustedVolume(VdsmTestCase):
                                 backing='wrong-uuid')
             op.run()
             h = FakeHSM()
-            self.assertRaises(se.ImageVerificationError,
-                              h.verify_untrusted_volume,
-                              'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
+            with pytest.raises(se.ImageVerificationError):
+                h.verify_untrusted_volume(
+                    'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
     def test_unexpected_backing_file(self):
         with self.fake_volume(sc.COW_FORMAT) as vol:
@@ -110,9 +109,9 @@ class TestVerifyUntrustedVolume(VdsmTestCase):
                                 backing='unexpected')
             op.run()
             h = FakeHSM()
-            self.assertRaises(se.ImageVerificationError,
-                              h.verify_untrusted_volume,
-                              'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
+            with pytest.raises(se.ImageVerificationError):
+                h.verify_untrusted_volume(
+                    'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
     def test_missing_backing_file(self):
         with fake_file_env() as env:
@@ -122,27 +121,27 @@ class TestVerifyUntrustedVolume(VdsmTestCase):
                                 format=qemuimg.FORMAT.QCOW2)
             op.run()
             h = FakeHSM()
-            self.assertRaises(se.ImageVerificationError,
-                              h.verify_untrusted_volume,
-                              'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
+            with pytest.raises(se.ImageVerificationError):
+                h.verify_untrusted_volume(
+                    'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
     def test_unsupported_compat(self):
         with self.fake_volume(sc.COW_FORMAT) as vol:
             info = {"format": qemuimg.FORMAT.QCOW2, "compat": "BAD"}
             with MonkeyPatchScope([(qemuimg, 'info', lambda unused: info)]):
                 h = FakeHSM()
-                self.assertRaises(se.ImageVerificationError,
-                                  h.verify_untrusted_volume, 'sp',
-                                  vol.sdUUID, vol.imgUUID, vol.volUUID)
+                with pytest.raises(se.ImageVerificationError):
+                    h.verify_untrusted_volume(
+                        'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
-    @permutations((
+    @pytest.mark.parametrize('hsm_compat,config_compat,sd_version', [
         ('0.10', '0.10', 4),
         ('1.1', '0.10', 4),
         ('0.10', '1.1', 4),
         ('1.1', '1.1', 4),
         ('0.10', '0.10', 3),
         ('1.1', '1.1', 3),
-    ))
+    ])
     def test_valid_qcow2_compat(self, hsm_compat, config_compat, sd_version):
         with self.fake_volume(vol_fmt=sc.COW_FORMAT,
                               sd_version=sd_version) as vol:
@@ -154,12 +153,12 @@ class TestVerifyUntrustedVolume(VdsmTestCase):
                                     format=qemuimg.FORMAT.QCOW2)
                 op.run()
                 h = FakeHSM()
-                self.assertNotRaises(h.verify_untrusted_volume, 'sp',
-                                     vol.sdUUID, vol.imgUUID, vol.volUUID)
+                h.verify_untrusted_volume(
+                    'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
-    @permutations((
+    @pytest.mark.parametrize('hsm_compat,config_compat,sd_version', [
         ('1.1', '0.10', 3),
-    ))
+    ])
     def test_disabled_compat_raises(self, hsm_compat, config_compat,
                                     sd_version):
         with self.fake_volume(vol_fmt=sc.COW_FORMAT,
@@ -172,17 +171,17 @@ class TestVerifyUntrustedVolume(VdsmTestCase):
                                     format=qemuimg.FORMAT.QCOW2)
                 op.run()
                 h = FakeHSM()
-                self.assertRaises(se.ImageVerificationError,
-                                  h.verify_untrusted_volume, 'sp',
-                                  vol.sdUUID, vol.imgUUID, vol.volUUID)
+                with pytest.raises(se.ImageVerificationError):
+                    h.verify_untrusted_volume(
+                        'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
     def test_compat_not_checked_for_raw(self):
         with self.fake_volume(sc.RAW_FORMAT) as vol:
             info = {"format": qemuimg.FORMAT.RAW, "compat": "BAD"}
             with MonkeyPatchScope([(qemuimg, 'info', lambda unused: info)]):
                 h = FakeHSM()
-                self.assertNotRaises(h.verify_untrusted_volume, 'sp',
-                                     vol.sdUUID, vol.imgUUID, vol.volUUID)
+                h.verify_untrusted_volume(
+                    'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
     @contextmanager
     def fake_volume(self, vol_fmt, sd_version=3):
