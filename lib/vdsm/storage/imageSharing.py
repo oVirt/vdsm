@@ -96,7 +96,7 @@ def copyFromImage(dstImgPath, methodArgs):
     fileObj = methodArgs['fileObj']
     bytes_left = total_size = methodArgs['length']
     cmd = [constants.EXT_DD, "if=%s" % dstImgPath, "bs=%s" % constants.MEGAB,
-           "count=%s" % (total_size / constants.MEGAB + 1)]
+           "count=%s" % (total_size // constants.MEGAB + 1)]
 
     p = commands.execCmd(cmd, sync=False)
     p.blocking = True
