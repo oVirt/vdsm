@@ -4666,12 +4666,6 @@ class Vm(object):
         except Exception:
             self.log.exception("Unable to stop the replication for"
                                " the drive: %s", drive.name)
-            try:
-                self.cif.teardownVolumePath(drive.diskReplicate)
-            except Exception:
-                # There is nothing we can do at this point other than logging
-                self.log.exception("Unable to teardown the replication "
-                                   "destination disk")
             return response.error('changeDisk')  # Finally is evaluated
         else:
             try:
