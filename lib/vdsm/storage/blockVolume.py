@@ -627,10 +627,10 @@ class BlockVolume(volume.Volume):
         try:
             try:
                 lvm.removeLVs(self.sdUUID, self.volUUID)
-            except se.CannotRemoveLogicalVolume:
-                # At this point LV is already marked as illegal, we will
-                # try to cleanup whatever we can...
-                pass
+            except se.CannotRemoveLogicalVolume as e:
+                self.log.exception("Failed to delete volume %s/%s. The "
+                                   "logical volume must be removed manually.",
+                                   self.sdUUID, self.volUUID)
 
             self.removeMetadata([self.sdUUID, offs])
         except Exception as e:
