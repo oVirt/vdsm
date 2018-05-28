@@ -625,18 +625,23 @@ class BlockVolume(volume.Volume):
                              exc_info=True)
 
         try:
+            lvm.removeLVs(self.sdUUID, self.volUUID)
+        except se.CannotRemoveLogicalVolume as e:
+            self.log.exception("Failed to delete volume %s/%s. The "
+                               "logical volume must be removed manually.",
+                               self.sdUUID, self.volUUID)
+        else:
+            # If removing the LV fails, we don't want to remove the
+            # metadata. As the volume still exists on the storage, and is
+            # accessible, removing the metadata will cause unexpected
+            # errors when accessing the metadata that was wiped.  This is a
+            # minimal solution for: https://bugzilla.redhat.com/1574631
             try:
-                lvm.removeLVs(self.sdUUID, self.volUUID)
-            except se.CannotRemoveLogicalVolume as e:
-                self.log.exception("Failed to delete volume %s/%s. The "
-                                   "logical volume must be removed manually.",
+                self.removeMetadata([self.sdUUID, offs])
+            except se.VolumeMetadataWriteError as e:
+                eFound = e
+                self.log.exception("Failed to delete volume %s/%s metadata.",
                                    self.sdUUID, self.volUUID)
-
-            self.removeMetadata([self.sdUUID, offs])
-        except Exception as e:
-            eFound = e
-            self.log.error("cannot remove volume %s/%s", self.sdUUID,
-                           self.volUUID, exc_info=True)
 
         try:
             self.log.info("Unlinking %s", vol_path)
