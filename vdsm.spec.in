@@ -1082,7 +1082,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/autounattend/Win2012R2.xml
 %{_datadir}/%{vdsm_name}/autounattend/Win2016.xml
 
-%{_sysconfdir}/yum/pluginconf.d/vdsm.conf
+%{_sysconfdir}/yum/pluginconf.d/vdsmupgrade.conf
 %{_datadir}/yum-plugins/*.py*
 
 %files common
