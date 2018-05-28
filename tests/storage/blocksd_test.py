@@ -22,19 +22,16 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import collections
 import os
 
 from monkeypatch import MonkeyPatch
+from storage.storagefakelib import fake_vg
 from testValidation import xfail
 from testlib import VdsmTestCase
-
 from vdsm.storage import blockSD
 from vdsm.storage import lvm
 from vdsm import constants
 
-# Make it easy to test the values we care about
-VG = collections.namedtuple("VG", ['vg_mda_size', 'vg_mda_free'])
 
 TESTDIR = os.path.dirname(__file__)
 
@@ -45,19 +42,23 @@ class TestMetadataValidity(VdsmTestCase):
     MIN_MD_FREE = MIN_MD_SIZE * blockSD.VG_MDA_MIN_THRESHOLD
 
     def test_valid_ok(self):
-        vg = VG(self.MIN_MD_SIZE, self.MIN_MD_FREE)
+        vg = fake_vg(
+            vg_mda_size=self.MIN_MD_SIZE, vg_mda_free=self.MIN_MD_FREE)
         self.assertEqual(True, blockSD.metadataValidity(vg)['mdavalid'])
 
     def test_valid_bad(self):
-        vg = VG(self.MIN_MD_SIZE - 1, self.MIN_MD_FREE)
+        vg = fake_vg(
+            vg_mda_size=self.MIN_MD_SIZE - 1, vg_mda_free=self.MIN_MD_FREE)
         self.assertEqual(False, blockSD.metadataValidity(vg)['mdavalid'])
 
     def test_threshold_ok(self):
-        vg = VG(self.MIN_MD_SIZE, self.MIN_MD_FREE + 1)
+        vg = fake_vg(
+            vg_mda_size=self.MIN_MD_SIZE, vg_mda_free=self.MIN_MD_FREE + 1)
         self.assertEqual(True, blockSD.metadataValidity(vg)['mdathreshold'])
 
     def test_threshold_bad(self):
-        vg = VG(self.MIN_MD_SIZE, self.MIN_MD_FREE)
+        vg = fake_vg(
+            vg_mda_size=self.MIN_MD_SIZE, vg_mda_free=self.MIN_MD_FREE)
         self.assertEqual(False, blockSD.metadataValidity(vg)['mdathreshold'])
 
 

@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import collections
 import os
 import string
 import random
@@ -36,6 +37,9 @@ from vdsm.storage import resourceManager as rm
 from vdsm.storage import sd
 from vdsm.storage.constants import VG_EXTENT_SIZE_MB
 from vdsm import utils
+
+
+VG = collections.namedtuple("VG", ['vg_mda_size', 'vg_mda_free'])
 
 
 class FakeLVM(object):
@@ -403,3 +407,7 @@ def fake_repo():
             (sd.StorageDomain, 'storage_repository', repo),
         ]):
             yield repo
+
+
+def fake_vg(vg_mda_size=None, vg_mda_free=None):
+    return VG(vg_mda_size, vg_mda_free)
