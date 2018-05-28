@@ -163,12 +163,12 @@ dist_systemdunit_DATA = \
 
 yumpluginconfdir = $(sysconfdir)/yum/pluginconf.d
 yumpluginconf_DATA = \
-	./etc/yum/pluginconf.d/vdsm.conf \
+	./etc/yum/pluginconf.d/vdsmupgrade.conf \
 	$(NULL)
 
 yumplugindir = $(datarootdir)/yum-plugins
 yumplugin_DATA = \
-	./usr/share/yum-plugins/vdsm.py \
+	./usr/share/yum-plugins/vdsmupgrade.py \
 	$(NULL)
 
 CLEANFILES = \
