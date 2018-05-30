@@ -195,11 +195,7 @@ Requires: kernel >= 3.10.0-862.3.2.el7
 Requires: e2fsprogs
 Requires: python >= 2.7.5-18.el7_1.1
 
-%if 0%{?centos}
-Requires: selinux-policy-targeted >= 3.13.1-60.el7
-%else
 Requires: selinux-policy-targeted >= 3.13.1-166.el7_4.3
-%endif
 
 %else
 Requires: kernel >= 4.1.6
@@ -733,11 +729,8 @@ Requires: python-blivet
 %endif
 Requires: xfsprogs
 %ifarch x86_64
-%if 0%{?centos}
-%else
 Requires: vdo
 Requires: kmod-kvdo
-%endif
 %endif
 
 
