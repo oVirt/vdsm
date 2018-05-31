@@ -846,8 +846,8 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         # to tags. But this is here because domain metadata and volume metadata
         # look the same. The domain might get confused and think it has lv
         # metadata if it finds something is written in that area.
-        freeSlot = (SD_METADATA_SIZE + self.logBlkSize - 1) / self.logBlkSize
-
+        freeSlot = (utils.round(SD_METADATA_SIZE, self.logBlkSize) //
+                    self.logBlkSize)
         for offset, size in occupiedSlots:
             if offset >= freeSlot + slotSize:
                 break
