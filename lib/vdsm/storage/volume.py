@@ -420,8 +420,8 @@ class VolumeManifest(object):
 
     def update_attributes(self, generation, vol_attr):
         """
-        If generation is given check that the volume's generation matches, and
-        raise se.GenerationMismatch if not.
+        The required generation argument must match the volume generation.
+        Raises se.GenerationMismatch if not.
 
         When the operation ends, increase the generation of the volume, unless
         it was provided. In this case the generation passed will be used.
