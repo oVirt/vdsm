@@ -22,6 +22,7 @@ from __future__ import division
 
 import errno
 import os
+import re
 import signal
 
 import pytest
@@ -31,7 +32,7 @@ from vdsm.common.cmdutils import exec_cmd
 
 def on_fedora():
     with open("/etc/redhat-release") as f:
-        return "Fedora release 27" in f.readline()
+        return re.search(r"Fedora release 2[78]", f.readline())
 
 
 class TestPyWatch(object):
