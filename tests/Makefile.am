@@ -66,7 +66,6 @@ test_modules = \
 	exception_test.py \
 	executor_test.py \
 	eventfd_test.py \
-	fakesanlock_test.py \
 	fallocate_test.py \
 	filecontrol_test.py \
 	fuser_test.py \
@@ -224,7 +223,6 @@ dist_vdsmtests_PYTHON = \
 	check_imports.py \
 	hookValidation.py \
 	fakelib.py \
-	fakesanlock.py \
 	hostdevlib.py \
 	loopback.py \
 	monkeypatch.py \

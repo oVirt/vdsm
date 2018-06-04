@@ -21,7 +21,7 @@
 from __future__ import absolute_import
 
 import errno
-from fakesanlock import FakeSanlock
+from .fakesanlock import FakeSanlock
 from vdsm.common import concurrent
 from testlib import VdsmTestCase
 

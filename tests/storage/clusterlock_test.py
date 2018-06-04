@@ -20,7 +20,7 @@
 
 import time
 import pytest
-from fakesanlock import FakeSanlock
+from .fakesanlock import FakeSanlock
 from vdsm.common import concurrent
 from vdsm.storage import clusterlock
 from vdsm.storage import exception as se
