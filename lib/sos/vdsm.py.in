@@ -90,7 +90,7 @@ class vdsm(Plugin, RedHatPlugin):
     """VDSM server related information
     """
 
-    optionList = [("logsize", 'max size (MiB) to collect per log file', '',
+    option_list = [("logsize", 'max size (MiB) to collect per log file', '',
                    False)]
 
     # Make compatible com sos version >= 3
