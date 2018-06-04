@@ -91,7 +91,9 @@ class vdsm(Plugin, RedHatPlugin):
     """
 
     option_list = [("logsize", 'max size (MiB) to collect per log file', '',
-                   False)]
+                    False),
+                   ("dump-volume-chains", 'Collect volume chains info', '',
+                    False)]
 
     # Make compatible com sos version >= 3
     if not hasattr(Plugin, 'addCopySpec'):
@@ -192,10 +194,11 @@ class vdsm(Plugin, RedHatPlugin):
                     cli.StoragePool.getSpmStatus,
                     storagepoolID=pool)
 
-            sd_uuids = cli.Host.getStorageDomains()
-
-        for sd_uuid in sd_uuids:
-            self.collectExtOutput("vdsm-tool dump-volume-chains %s" % sd_uuid)
+            if self.getOption('dump-volume-chains'):
+                sd_uuids = cli.Host.getStorageDomains()
+                for sd_uuid in sd_uuids:
+                    self.collectExtOutput("vdsm-tool dump-volume-chains %s" %
+                                          sd_uuid)
 
     def _addVdsmRunDir(self):
         """Add everything under /var/run/vdsm except possibly confidential
