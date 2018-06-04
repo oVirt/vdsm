@@ -34,7 +34,7 @@ from contextlib import contextmanager
 import six
 import pytest
 
-from fakesanlock import FakeSanlock
+from .fakesanlock import FakeSanlock
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase
 from testlib import make_uuid

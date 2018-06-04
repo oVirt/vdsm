@@ -22,7 +22,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import errno
-from fakesanlock import FakeSanlock
+from .fakesanlock import FakeSanlock
 from vdsm.common import concurrent
 from testlib import VdsmTestCase
 
