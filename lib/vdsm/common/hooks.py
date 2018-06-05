@@ -59,7 +59,7 @@ _DOMXML_HOOK = 1
 _JSON_HOOK = 2
 
 
-def _runHooksDir(data, dir, vmconf={}, raiseError=True, params={},
+def _runHooksDir(data, dir, vmconf={}, raiseError=True, errors=None, params={},
                  hookType=_DOMXML_HOOK):
 
     scripts = _scriptsPerDir(dir)
@@ -110,6 +110,8 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, params={},
             logging.info('%s: rc=%s err=%s', s, rc, err)
             if rc != 0:
                 errorSeen = True
+                if errors is not None:
+                    errors.append(err)
 
             if rc == 2:
                 break
@@ -149,8 +151,15 @@ def after_device_destroy(devicexml, vmconf={}, customProperties={}):
                         params=customProperties, raiseError=False)
 
 
-def before_vm_start(domxml, vmconf={}):
-    return _runHooksDir(domxml, 'before_vm_start', vmconf=vmconf)
+def before_vm_start(domxml, vmconf={}, final_callback=None):
+    errors = []
+    final_xml = _runHooksDir(domxml, 'before_vm_start', vmconf=vmconf,
+                             raiseError=False, errors=errors)
+    if final_callback is not None:
+        final_callback(final_xml)
+    if len(errors) > 0:
+        raise exception.HookError(errors[-1])
+    return final_xml
 
 
 def after_vm_start(domxml, vmconf={}):
