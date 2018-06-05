@@ -2832,11 +2832,10 @@ class Vm(object):
                 self._prepare_hugepages()
 
             try:
-                domxml = hooks.before_vm_start(self._buildDomainXML(),
-                                               self._custom)
-
-                # At this point, the VM is not defined yet.
-                self._updateDomainDescriptor(domxml)
+                hooks.before_vm_start(
+                    self._buildDomainXML(),
+                    self._custom,
+                    final_callback=self._updateDomainDescriptor)
 
                 flags = hooks.load_vm_launch_flags_from_file(self.id)
 
