@@ -29,6 +29,8 @@ import uuid
 
 import pytest
 
+from vdsm.constants import GIB
+from vdsm.constants import MEGAB
 from vdsm.storage import localFsSD
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -38,6 +40,10 @@ from vdsm.storage import sd
 from vdsm.storage.sdc import sdCache
 
 from . import qemuio
+
+PREALLOCATED_VOL_SIZE = 10 * MEGAB
+SPARSE_VOL_SIZE = GIB
+INITIAL_VOL_SIZE = 1 * MEGAB
 
 
 def test_incorrect_block_rejected():
@@ -216,3 +222,202 @@ def test_volume_metadata(tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
     with open(meta_path) as f:
         data = f.read()
     assert data == md.storage_format(4, CAP=md.capacity)
+
+
+@pytest.mark.parametrize("domain_version", [4, 5])
+def test_volume_create_raw_prealloc(
+        tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db, fake_task,
+        local_fallocate, domain_version):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        size=PREALLOCATED_VOL_SIZE // sc.BLOCK_SIZE_512,
+        volFormat=sc.RAW_FORMAT,
+        preallocate=sc.PREALLOCATED_VOL,
+        diskType='DATA',
+        volUUID=vol_uuid,
+        desc="Test volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        initialSize=None)
+
+    vol = dom.produceVolume(img_uuid, vol_uuid)
+
+    path = vol.getVolumePath()
+    qemu_info = qemuimg.info(path)
+
+    verify_volume_file(
+        path=path,
+        format=qemuimg.FORMAT.RAW,
+        virtual_size=PREALLOCATED_VOL_SIZE,
+        qemu_info=qemu_info)
+
+    assert qemu_info['actualsize'] == PREALLOCATED_VOL_SIZE
+
+
+@pytest.mark.parametrize("domain_version", [4, 5])
+@pytest.mark.parametrize("vol_format", [sc.RAW_FORMAT, sc.COW_FORMAT])
+def test_volume_create_raw_cow_prealloc_with_initial_size(
+        tmpdir, tmp_repo, tmp_db, fake_access, fake_task, local_fallocate,
+        fake_rescan, vol_format, domain_version):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    with pytest.raises(se.VolumeCreationError):
+        dom.createVolume(
+            imgUUID=img_uuid,
+            size=PREALLOCATED_VOL_SIZE // sc.BLOCK_SIZE_512,
+            volFormat=vol_format,
+            preallocate=sc.PREALLOCATED_VOL,
+            diskType='DATA',
+            volUUID=vol_uuid,
+            desc="Test volume",
+            srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID,
+            initialSize=INITIAL_VOL_SIZE // sc.BLOCK_SIZE_512)
+
+
+@pytest.mark.parametrize("domain_version", [4, 5])
+def test_volume_create_raw_sparse(
+        tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
+        fake_task, local_fallocate, domain_version):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        size=SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        volFormat=sc.RAW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=vol_uuid,
+        desc="Test volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        initialSize=None)
+
+    vol = dom.produceVolume(img_uuid, vol_uuid)
+
+    path = vol.getVolumePath()
+    qemu_info = qemuimg.info(path)
+
+    verify_volume_file(
+        path=path,
+        format=qemuimg.FORMAT.RAW,
+        virtual_size=SPARSE_VOL_SIZE,
+        qemu_info=qemu_info)
+
+    assert qemu_info['actualsize'] == 0
+
+
+@pytest.mark.parametrize("domain_version", [4, 5])
+def test_volume_create_cow_sparse(
+        tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
+        fake_task, local_fallocate, domain_version):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
+
+    img_uuid = str(uuid.uuid4())
+    vol_uuid = str(uuid.uuid4())
+
+    dom.createVolume(
+        imgUUID=img_uuid,
+        size=SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=vol_uuid,
+        desc="Test volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        initialSize=None)
+
+    vol = dom.produceVolume(img_uuid, vol_uuid)
+
+    path = vol.getVolumePath()
+    qemu_info = qemuimg.info(path)
+
+    verify_volume_file(
+        path=path,
+        format=qemuimg.FORMAT.QCOW2,
+        virtual_size=SPARSE_VOL_SIZE,
+        qemu_info=qemu_info)
+
+    # Check the volume specific actual size is fragile,
+    # will easily break on CI or when qemu change the implementation.
+    assert qemu_info['actualsize'] < MEGAB
+
+
+@pytest.mark.parametrize("domain_version", [4, 5])
+def test_volume_create_cow_sparse_with_parent(
+        tmpdir, tmp_repo, fake_access, fake_rescan, tmp_db,
+        fake_task, local_fallocate, domain_version):
+    dom = tmp_repo.create_localfs_domain(name="domain", version=domain_version)
+
+    parent_img_uuid = str(uuid.uuid4())
+    parent_vol_uuid = str(uuid.uuid4())
+
+    dom.createVolume(
+        imgUUID=parent_img_uuid,
+        size=SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        volFormat=sc.RAW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=parent_vol_uuid,
+        desc="Test volume",
+        srcImgUUID=sc.BLANK_UUID,
+        srcVolUUID=sc.BLANK_UUID,
+        initialSize=None)
+
+    parent_vol = dom.produceVolume(parent_img_uuid, parent_vol_uuid)
+    parent_vol.setShared()
+
+    vol_uuid = str(uuid.uuid4())
+
+    dom.createVolume(
+        imgUUID=parent_img_uuid,
+        size=SPARSE_VOL_SIZE // sc.BLOCK_SIZE_512,
+        volFormat=sc.COW_FORMAT,
+        preallocate=sc.SPARSE_VOL,
+        diskType='DATA',
+        volUUID=vol_uuid,
+        desc="Test volume",
+        srcImgUUID=parent_vol.imgUUID,
+        srcVolUUID=parent_vol.volUUID,
+        initialSize=None)
+    vol = dom.produceVolume(parent_img_uuid, vol_uuid)
+
+    path = vol.getVolumePath()
+    qemu_info = qemuimg.info(path)
+
+    verify_volume_file(
+        path=path,
+        format=qemuimg.FORMAT.QCOW2,
+        virtual_size=SPARSE_VOL_SIZE,
+        qemu_info=qemu_info,
+        backing_file=parent_vol.volUUID)
+
+    # Check the volume specific actual size is fragile,
+    # will easily break on CI or when qemu change the implementation.
+    assert qemu_info['actualsize'] < MEGAB
+
+
+def verify_volume_file(
+        path, format, virtual_size, qemu_info, backing_file=None):
+    assert qemu_info['format'] == format
+    assert qemu_info['virtualsize'] == virtual_size
+
+    vol_mode = os.stat(path).st_mode
+    assert stat.S_IMODE(vol_mode) == sc.FILE_VOLUME_PERMISSIONS
+
+    if backing_file:
+        assert qemu_info['backingfile'] == backing_file
+    else:
+        assert 'backingfile' not in qemu_info
