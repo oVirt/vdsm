@@ -23,6 +23,7 @@ import os
 import logging
 
 from vdsm import constants
+from vdsm import utils
 from vdsm.common import fileutils
 from vdsm.common.threadlocal import vars
 from vdsm.config import config
@@ -206,7 +207,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         # we need. We consider incurred overhead of producing the object
         # to be a small price for code de-duplication.
         manifest = sdCache.produce_manifest(self.sdUUID)
-        return int(manifest.getVSize(self.imgUUID, self.volUUID) / bs)
+        return int(manifest.getVSize(self.imgUUID, self.volUUID) // bs)
 
     getVolumeTrueSize = getVolumeSize
 
@@ -350,13 +351,13 @@ class BlockVolumeManifest(volume.VolumeManifest):
         if preallocate == sc.SPARSE_VOL:
             if initial_size:
                 initial_size = int(initial_size * QCOW_OVERHEAD_FACTOR)
-                alloc_size = ((initial_size + SECTORS_TO_MB - 1) /
+                alloc_size = (utils.round(initial_size, SECTORS_TO_MB) //
                               SECTORS_TO_MB)
             else:
                 alloc_size = config.getint("irs",
                                            "volume_utilization_chunk_mb")
         else:
-            alloc_size = (capacity + SECTORS_TO_MB - 1) / SECTORS_TO_MB
+            alloc_size = utils.round(capacity, SECTORS_TO_MB) // SECTORS_TO_MB
 
         return alloc_size
 
@@ -674,7 +675,7 @@ class BlockVolume(volume.Volume):
                       newSize)
         # we should return: Success/Failure
         # Backend APIs:
-        sizemb = (newSize + SECTORS_TO_MB - 1) / SECTORS_TO_MB
+        sizemb = utils.round(newSize, SECTORS_TO_MB) // SECTORS_TO_MB
         lvm.extendLV(self.sdUUID, self.volUUID, sizemb)
 
     def reduce(self, newSize, allowActive=False):
@@ -688,7 +689,7 @@ class BlockVolume(volume.Volume):
         self.log.info("Request to reduce LV %s of image %s in VG %s with "
                       "size = %s allowActive = %s", self.volUUID, self.imgUUID,
                       self.sdUUID, newSize, allowActive)
-        sizemb = (newSize + SECTORS_TO_MB - 1) / SECTORS_TO_MB
+        sizemb = utils.round(newSize, SECTORS_TO_MB) // SECTORS_TO_MB
         lvm.reduceLV(self.sdUUID, self.volUUID, sizemb, force=allowActive)
 
     @classmethod
@@ -765,7 +766,7 @@ class BlockVolume(volume.Volume):
         # Since this method relies on lvm.extendLV (lvextend) when the
         # requested size is equal or smaller than the current size, the
         # request is siliently ignored.
-        newSizeMb = (newSize + SECTORS_TO_MB - 1) / SECTORS_TO_MB
+        newSizeMb = utils.round(newSize, SECTORS_TO_MB) // SECTORS_TO_MB
         lvm.extendLV(self.sdUUID, self.volUUID, newSizeMb)
 
 
