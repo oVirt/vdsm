@@ -21,8 +21,10 @@
 from __future__ import absolute_import
 
 import errno
+import pytest
 from .fakesanlock import FakeSanlock
 from vdsm.common import concurrent
+from vdsm.storage.compat import sanlock
 from testlib import VdsmTestCase
 
 
@@ -172,6 +174,8 @@ class TestFakeSanlock(VdsmTestCase):
         fs.acquire("lockspace", "resource", [("path", 1048576)], slkfd=fd)
         res = fs.read_resource("path", 1048576)
         self.assertTrue(res["acquired"], "resource is not acquired")
+        self.assertEqual(fs.spaces["lockspace"]["host_id"], res["host_id"])
+        self.assertEqual(fs.hosts[1]["generation"], res["generation"])
 
     def test_acquire_no_lockspace(self):
         fs = FakeSanlock()
@@ -211,6 +215,9 @@ class TestFakeSanlock(VdsmTestCase):
         fs.release("lockspace", "resource", [("path", 1048576)], slkfd=fd)
         res = fs.read_resource("path", 1048576)
         self.assertFalse(res["acquired"], "resource is not acquired")
+        # The resource has been released and the owner is zeroed
+        self.assertEqual(res["host_id"], 0)
+        self.assertEqual(fs.hosts[1]["generation"], res["generation"])
 
     def test_release_not_acquired(self):
         fs = FakeSanlock()
@@ -220,3 +227,68 @@ class TestFakeSanlock(VdsmTestCase):
         with self.assertRaises(fs.SanlockException) as e:
             fs.release("lockspace", "resource", [("path", 1048576)], slkfd=fd)
         self.assertEqual(e.exception.errno, errno.EPERM)
+
+    def test_release_no_lockspace(self):
+        fs = FakeSanlock()
+        with pytest.raises(fs.SanlockException) as e:
+            fs.release("lockspace", "resource", [("path", 1048576)])
+        assert e.value.errno == errno.ENOSPC
+
+    def test_read_resource_owners_no_owner(self):
+        fs = FakeSanlock()
+        fs.write_resource("lockspace", "resource", [("path", 1048576)])
+        fs.add_lockspace("lockspace", 1, "path")
+        owners = fs.read_resource_owners("lockspace",
+                                         "resource",
+                                         [("path", 1048576)])
+        assert len(owners) == 0
+
+    def test_read_resource_owners(self):
+        fs = FakeSanlock()
+        fs.write_resource("lockspace", "resource", [("path", 1048576)])
+        fs.add_lockspace("lockspace", 1, "path")
+        fd = fs.register()
+        fs.acquire("lockspace", "resource", [("path", 1048576)], slkfd=fd)
+        owners = fs.read_resource_owners("lockspace",
+                                         "resource",
+                                         [("path", 1048576)])
+        assert len(owners) == 1
+        assert owners[0]["host_id"] == 1
+        assert owners[0]["generation"] == 0
+
+    def test_read_resource_owners_no_lockspace(self):
+        fs = FakeSanlock()
+        fs.write_resource("lockspace", "resource", [("path", 1048576)])
+        fs.add_lockspace("lockspace", 1, "path")
+        fd = fs.register()
+        fs.acquire("lockspace", "resource", [("path", 1048576)], slkfd=fd)
+        fs.rem_lockspace("lockspace", 1, "path")
+        with pytest.raises(fs.SanlockException) as e:
+            fs.read_resource_owners("lockspace",
+                                    "resource",
+                                    [("path", 1048576)])
+        assert e.value.errno == errno.ENOSPC
+
+    def test_get_hosts(self):
+        fs = FakeSanlock()
+        fs.add_lockspace("lockspace", 1, "path")
+        host = fs.get_hosts("lockspace", 1)
+        assert host[0]["id"] == 1
+        assert host[0]["generation"] == 0
+
+    def test_get_hosts_no_lockspace(self):
+        fs = FakeSanlock()
+        with pytest.raises(fs.SanlockException) as e:
+            fs.get_hosts("lockspace", 1)
+        assert e.value.errno == errno.ENOSPC
+
+    def test_add_lockspace_generation_increase(selfs):
+        fs = FakeSanlock()
+        fs.write_resource("lockspace", "resource", [("path", 1048576)])
+        fs.add_lockspace("lockspace", 1, "path")
+        fs.rem_lockspace("lockspace", 1, "path")
+        fs.add_lockspace("lockspace", 1, "path")
+        host = fs.get_hosts("lockspace", 1)
+        assert host[0]["id"] == 1
+        assert host[0]["generation"] == 1
+        assert host[0]["flags"] == sanlock.HOST_LIVE
