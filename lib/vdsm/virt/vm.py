@@ -3917,6 +3917,15 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def hotplugLease(self, params):
+        # REQUIRED_FOR: Vdsm and Engine < 4.2, for the migration flow.
+        # Why it breaks: on destination side we call
+        # vmdevices.common.update_device_info
+        # Vdsm looks for the key, Engine doesn't send it - but according to
+        # the schema, Engine is not required to do so.
+        # See rhbz#1590063 for more details.
+        if 'device' not in params:
+            params['device'] = hwclass.LEASE
+
         vmdevices.lease.prepare(self.cif.irs, [params])
         lease = vmdevices.lease.Device(self.log, **params)
 
