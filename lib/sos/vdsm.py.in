@@ -30,6 +30,9 @@ import re
 import stat
 import subprocess
 
+# Hardcode data comain storage class until this is properly exposed
+# by the vdsm api.
+DATA_DOMAIN = 1
 
 # This configuration is based on vdsm.storage.lvm.LVM_CONF_TEMPLATE.
 #
@@ -195,7 +198,7 @@ class vdsm(Plugin, RedHatPlugin):
                     storagepoolID=pool)
 
             if self.getOption('dump-volume-chains'):
-                sd_uuids = cli.Host.getStorageDomains()
+                sd_uuids = cli.Host.getStorageDomains(domainClass=DATA_DOMAIN)
                 for sd_uuid in sd_uuids:
                     self.collectExtOutput("vdsm-tool dump-volume-chains %s" %
                                           sd_uuid)
