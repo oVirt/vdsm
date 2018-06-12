@@ -25,6 +25,8 @@ import errno
 import threading
 from testlib import maybefail
 
+from vdsm.storage.compat import sanlock
+
 
 class FakeSanlock(object):
     """
@@ -56,6 +58,7 @@ class FakeSanlock(object):
         self.spaces = {}
         self.resources = {}
         self.errors = {}
+        self.hosts = {}
 
     @maybefail
     def add_lockspace(self, lockspace, host_id, path, offset=0, iotimeout=0,
@@ -67,6 +70,16 @@ class FakeSanlock(object):
         timeout for the specific lockspace, overriding the default value
         (see the sanlock daemon parameter -o).
         """
+        generation = 0
+        host = self.hosts.get(host_id)
+        if host:
+            generation = host["generation"] + 1
+
+        host = {"id": host_id,
+                "generation": generation,
+                "flags": sanlock.HOST_LIVE}
+        self.hosts[host_id] = host
+
         # Mark the locksapce as not ready, so callers of inq_lockspace will
         # wait until it is added.
         ls = {"host_id": host_id,
@@ -202,6 +215,12 @@ class FakeSanlock(object):
                 errno.EEXIST, 'Sanlock resource not acquired', 'File exists')
 
         res["acquired"] = True
+        host_id = ls["host_id"]
+        res["host_id"] = host_id
+        res["generation"] = self.hosts[host_id]["generation"]
+        # The actual sanlock uses a timestamp field as well, but for current
+        # testing purposes it is not needed since it is not used by the tested
+        # code
 
     def release(self, lockspace, resource, disks, slkfd=None, pid=None):
         """
@@ -223,3 +242,35 @@ class FakeSanlock(object):
                 'Operation not permitted')
 
         res["acquired"] = False
+        res["host_id"] = 0
+        res["generation"] = 0
+
+    def read_resource_owners(self, lockspace, resource, disks):
+        try:
+            self.spaces[lockspace]
+        except KeyError:
+            raise self.SanlockException(
+                errno.ENOSPC, "No such lockspace %r" % lockspace)
+
+        key = disks[0]
+        res = self.resources[key]
+
+        # The lease is not owned, return empty list
+        if res.get("host_id") is None:
+            return []
+
+        # The actual sanlock also returns timestamp and host flags but we do
+        # not use these fields in the tested code so they are not added
+        return [{
+            "host_id": res["host_id"],
+            "generation": res["generation"]
+        }]
+
+    def get_hosts(self, lockspace, host_id=0):
+        try:
+            self.spaces[lockspace]
+        except KeyError:
+            raise self.SanlockException(
+                errno.ENOSPC, "No such lockspace %r" % lockspace)
+
+        return [self.hosts[host_id]]
