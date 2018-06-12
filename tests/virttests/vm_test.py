@@ -1184,23 +1184,57 @@ class TestVm(XMLTestCase):
 
     def test_hotplug_lease(self):
         params = {
+            'type': hwclass.LEASE,
             'sd_id': 'sd_id',
             'lease_id': 'lease_id',
         }
         expected_conf = {
+            'device': hwclass.LEASE,
             'path': '/path',
             'offset': 1048576,
         }
         expected_conf.update(params)
 
-        with fake.VM(params={}, arch=cpuarch.X86_64) as testvm:
+        # we add a serial console device to the minimal XML,
+        # because this is the simplest way to trigger the
+        # flow that broke in rhbz#1590063
+        devices = [{
+            u'device': u'console',
+            u'specParams': {
+                u'consoleType': u'serial',
+                u'enableSocket': u'true'
+            },
+            u'type': u'console',
+            u'deviceId': u'd0fac53d-68cf-4cbb-8c9d-5f18625f04e7',
+            u'alias': u'serial0'
+        }]
+
+        with fake.VM(
+                params={},
+                devices=devices,
+                create_device_objects=True,
+                arch=cpuarch.X86_64
+        ) as testvm:
             testvm._dom = FakeLeaseDomain()
             testvm.cif = FakeLeaseClientIF(expected_conf)
             res = testvm.hotplugLease(params)
 
             vmspec = res.pop('vmList')
             self.assertEqual(res, response.success())
-            self.assertEqual(vmspec['devices'][0], expected_conf)
+            # temporary object needed to fulfill the find_conf API
+            dev = vmdevices.lease.Device(self.log, **expected_conf)
+            conf = vmdevices.lease.find_conf(vmspec, dev)
+            self.assertEqual(conf, expected_conf)
+            # Up until here we verified the hotplugLease proper.
+
+            # Let's now verify what happens on migration destination,
+            # when migrating in 4.1 clusters - here Vdsm must use the 4.1
+            # compatibility mode.
+            self.assertNotRaises(
+                vmdevices.common.update_device_info,
+                testvm,
+                testvm._devices
+            )
 
 
 class ExpectedError(Exception):
