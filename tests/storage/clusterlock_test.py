@@ -25,6 +25,8 @@ from vdsm.common import concurrent
 from vdsm.storage import clusterlock
 from vdsm.storage import exception as se
 
+from vdsm.storage.compat import sanlock
+
 LS_NAME = "sd-uuid"
 LS_PATH = "ids"
 LS_OFF = 0
@@ -166,3 +168,73 @@ def test_acquire_after_relases_host_id(fake_sanlock):
     sl.acquireHostId(HOST_ID, async=False)
     sl.releaseHostId(HOST_ID, async=False, unused=False)
     pytest.raises(concurrent.InvalidEvent, sl.acquire, HOST_ID, LEASE)
+
+
+def test_inquire_lease(fake_sanlock):
+    sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
+    sl.acquireHostId(HOST_ID, async=False)
+    sl.acquire(HOST_ID, LEASE)
+    version, owner = sl.inquire(LEASE)
+    assert version == 0
+    assert owner == HOST_ID
+
+
+@pytest.mark.parametrize("status,expected_owner_id", [
+    (sanlock.HOST_LIVE, HOST_ID),
+    (sanlock.HOST_FAIL, HOST_ID),
+    (sanlock.HOST_UNKNOWN, HOST_ID),
+    pytest.param(sanlock.HOST_FREE, None,
+                 marks=pytest.mark.xfail(reason="owner generation is "
+                                                "ignored")),
+    pytest.param(sanlock.HOST_DEAD, None,
+                 marks=pytest.mark.xfail(reason="owner generation is "
+                                                "ignored"))
+])
+def test_inquire_owner_status(fake_sanlock, status, expected_owner_id):
+    sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
+    sl.acquireHostId(HOST_ID, async=False)
+    sl.acquire(HOST_ID, LEASE)
+    # we are simulating another host inquiring the lease
+    fake_sanlock.hosts[HOST_ID]["flags"] = status
+    version, owner = sl.inquire(LEASE)
+    assert version == 0
+    assert owner == expected_owner_id
+
+
+@pytest.mark.xfail(reason="owner generation is ignored")
+def test_inquire_owner_reconnected(fake_sanlock):
+    sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
+    # This simulates a host reconnecting to the lockspace.
+    # The lease should have no owner since the generation
+    # increases each time a host reconnects to the lockspace
+    sl.acquireHostId(HOST_ID, async=False)
+    sl.acquire(HOST_ID, LEASE)
+    sl.releaseHostId(HOST_ID, async=False, unused=True)
+    sl.acquireHostId(HOST_ID, async=False)
+    version, owner = sl.inquire(LEASE)
+    assert version == 0
+    assert owner is None
+
+
+@pytest.mark.xfail(reason="owner generation is ignored")
+def test_inquire_smaller_host_generation(fake_sanlock):
+    sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
+    sl.acquireHostId(HOST_ID, async=False)
+    sl.releaseHostId(HOST_ID, async=False, unused=True)
+    sl.acquireHostId(HOST_ID, async=False)
+    sl.acquire(HOST_ID, LEASE)
+    # Setting the host generation to be smaller than the
+    # generation on the lease (an invalid state), the
+    # lease should have no owner
+    fake_sanlock.hosts[HOST_ID]["generation"] = 0
+    version, owner = sl.inquire(LEASE)
+    assert version == 0
+    assert owner is None
+
+
+def test_inquire_lease_has_no_owner(fake_sanlock):
+    sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
+    sl.acquireHostId(HOST_ID, async=False)
+    version, owner = sl.inquire(LEASE)
+    assert version is None
+    assert owner is None
