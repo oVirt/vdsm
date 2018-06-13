@@ -177,14 +177,6 @@ task_validate_configuration(){
 }
 
 
-task_ngn_configure(){
-    local need_configure=/var/lib/ngn-vdsm-need-configure
-    if [ -e "${need_configure}" ]; then
-        "$VDSM_TOOL" configure --force
-        "@RM_PATH@" "${need_configure}"
-    fi
-}
-
 #### pre-start tasks end ####
 
 
@@ -222,7 +214,6 @@ case "$1" in
             configure_vdsm_logs \
             wait_for_network \
             run_init_hooks \
-            ngn_configure \
             check_is_configured \
             validate_configuration \
             prepare_transient_repository \
