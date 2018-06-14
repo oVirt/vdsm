@@ -19,6 +19,7 @@
 #
 from __future__ import absolute_import
 
+import xml.etree.ElementTree as ET
 from operator import itemgetter
 
 from vdsm.common import conv
@@ -739,3 +740,14 @@ def update_sysinfo(dom, osname, osversion, hostserial):
         placeholder, value = replaceables[name]
         if entry.text.startswith(placeholder):
             entry.text = value
+
+
+def make_mdev_element(mdev_uuid):
+    hostdev = ET.Element('hostdev')
+    hostdev.set('mode', 'subsystem')
+    hostdev.set('type', 'mdev')
+    hostdev.set('model', 'vfio-pci')
+    source = ET.SubElement(hostdev, 'source')
+    address = ET.SubElement(source, 'address')
+    address.set('uuid', mdev_uuid)
+    return hostdev

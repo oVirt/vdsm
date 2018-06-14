@@ -27,7 +27,6 @@ SUBDIRS = \
 	macspoof \
 	openstacknet \
 	qemucmdline \
-	vfio_mdev \
 	vhostmd \
 	vmfex_dev
 

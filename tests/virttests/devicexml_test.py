@@ -25,6 +25,7 @@ import os.path
 import xml.etree.ElementTree as ET
 
 from vdsm.virt.domain_descriptor import DomainDescriptor
+from vdsm.virt.vmdevices import hwclass
 from vdsm.virt import metadata
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
@@ -38,6 +39,7 @@ from testlib import read_data
 from testlib import XMLTestCase
 
 import vmfakecon as fake
+import vmfakelib
 import hostdevlib
 
 
@@ -1350,19 +1352,18 @@ class DeviceXMLRoundTripTests(XMLTestCase):
     def test_hostdev_mdev(self):
         with MonkeyPatchScope([
             (hostdev.libvirtconnection, 'get', hostdevlib.Connection),
+            (vmdevices.hostdevice, 'spawn_mdev',
+                lambda *args, **kwargs: None),
+            (vmdevices.hostdevice, 'despawn_mdev',
+                lambda *args, **kwargs: None),
             (vmdevices.hostdevice, 'detach_detachable',
                 lambda *args, **kwargs: None),
             (vmdevices.hostdevice, 'reattach_detachable',
                 lambda *args, **kwargs: None),
         ]):
-            try:
-                self._check_roundtrip(
-                    vmdevices.hostdevice.HostDevice, _MDEV_XML
-                )
-            except NotImplementedError:
-                pass
-            else:
-                raise AssertionError('unknown hostdev initialized')
+            self._check_roundtrip(
+                vmdevices.hostdevice.HostDevice, _MDEV_XML
+            )
 
     def test_storage(self):
         self.assertRaises(
@@ -1713,6 +1714,130 @@ class DeviceMetadataMatchTests(XMLTestCase):
             if nic.macAddr == mac_addr:
                 return nic
         raise AssertionError('no nic with mac=%s found' % mac_addr)
+
+
+_VM_MDEV_XML = """<?xml version='1.0' encoding='utf-8'?>
+<domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
+        xmlns:ovirt-vm="http://ovirt.org/vm/1.0" type="kvm">
+  <name>vm</name>
+  <uuid>6a28e9f6-6627-49b8-8c24-741ab810ecc0</uuid>
+  <devices>
+    <hostdev mode="subsystem" model="vfio-pci" type="mdev">
+      <source>
+        <address uuid="c1f343ae-99a5-4d82-9d5c-203cd4b7dac0" />
+      </source>
+    </hostdev>
+  </devices>
+  <metadata>
+    <ovirt-vm:vm>
+      <clusterVersion>4.2</clusterVersion>
+      <ovirt-vm:device devtype="hostdev"
+                       uuid="c1f343ae-99a5-4d82-9d5c-203cd4b7dac0">
+        <ovirt-vm:mdevType>graphics-card-1</ovirt-vm:mdevType>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>
+"""
+
+_VM_METADATA_MDEV_XML = """<?xml version='1.0' encoding='utf-8'?>
+<domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
+        xmlns:ovirt-vm="http://ovirt.org/vm/1.0" type="kvm">
+  <name>vm</name>
+  <uuid>6a28e9f6-6627-49b8-8c24-741ab810ecc0</uuid>
+  <devices/>
+  <metadata>
+    <ovirt-vm:vm>
+      <clusterVersion>4.2</clusterVersion>
+      <ovirt-vm:custom>
+        <ovirt-vm:mdev_type>graphics-card-1</ovirt-vm:mdev_type>
+      </ovirt-vm:custom>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>
+"""
+
+_VM_NO_MDEV_XML = """<?xml version='1.0' encoding='utf-8'?>
+<domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
+        xmlns:ovirt-vm="http://ovirt.org/vm/1.0" type="kvm">
+  <name>vm</name>
+  <uuid>6a28e9f6-6627-49b8-8c24-741ab810ecc0</uuid>
+  <devices/>
+  <metadata>
+    <ovirt-vm:vm>
+      <clusterVersion>4.2</clusterVersion>
+    </ovirt-vm:vm>
+  </metadata>
+</domain>
+"""
+
+_MDEV_CUSTOM = {'mdev_type': 'graphics-card-1'}
+
+_MDEV_XML_WITH_ALIAS = '''<devices>
+  <hostdev mode="subsystem" model="vfio-pci" type="mdev">
+    <source>
+      <address uuid="c1f343ae-99a5-4d82-9d5c-203cd4b7dac0"/>
+    </source>
+    <alias name="hostdev0"/>
+  </hostdev>
+</devices>
+'''
+
+
+class MdevTests(XMLTestCase):
+
+    def test_mdev_creation(self):
+        params = {'xml': _VM_MDEV_XML}
+        with vmfakelib.VM(params=params, create_device_objects=True) as vm:
+            self.assertNotRaises(vm._buildDomainXML)
+            self._check_mdev_device(vm, 'c1f343ae-99a5-4d82-9d5c-203cd4b7dac0')
+
+    def test_legacy_mdev_creation_4_2_parameter(self):
+        params = {'xml': _VM_NO_MDEV_XML,
+                  'custom': _MDEV_CUSTOM}
+        with vmfakelib.VM(params=params, create_device_objects=True) as vm:
+            self._legacy_mdev_checks(vm)
+
+    def test_legacy_mdev_creation_4_2_metadata(self):
+        params = {'xml': _VM_METADATA_MDEV_XML}
+        with vmfakelib.VM(params=params, create_device_objects=True) as vm:
+            self._legacy_mdev_checks(vm)
+
+    def test_legacy_mdev_creation_4_1(self):
+        params = {'custom': _MDEV_CUSTOM,
+                  'vmId': '6a28e9f6-6627-49b8-8c24-741ab810ecc0'}
+        with vmfakelib.VM(params=params, create_device_objects=True) as vm:
+            self._legacy_mdev_checks(vm)
+
+    def _legacy_mdev_checks(self, vm):
+        xml = vm._buildDomainXML()
+        dom = ET.fromstring(xml)
+        expected = """
+        <hostdev mode="subsystem" model="vfio-pci" type="mdev">
+          <source>
+            <address uuid="67d496a0-d7d9-30f7-9c2d-4844b2d3c76e" />
+          </source>
+        </hostdev>"""
+        hostdevs = dom.findall('*//hostdev')
+        self.assertEqual(len(hostdevs), 1)
+        self.assertXMLEqual(ET.tostring(hostdevs[0]), expected)
+        self._check_mdev_device(vm, '67d496a0-d7d9-30f7-9c2d-4844b2d3c76e')
+
+    def test_update_from_xml(self):
+        params = {'xml': _VM_MDEV_XML}
+        dom = ET.fromstring(_MDEV_XML_WITH_ALIAS)
+        with vmfakelib.VM(params=params, create_device_objects=True) as vm:
+            mdev = self._mdev_device(vm)
+            vmdevices.hostdevice.MdevDevice.update_from_xml(vm, [mdev], dom)
+            self.assertEqual(mdev.alias, 'hostdev0')
+
+    def _check_mdev_device(self, vm, mdev_uuid):
+        mdev = self._mdev_device(vm)
+        self.assertEqual(mdev.mdev_type, 'graphics-card-1')
+        self.assertEqual(mdev.mdev_uuid, mdev_uuid)
+
+    def _mdev_device(self, vm):
+        return vm._devices[hwclass.HOSTDEV][0]
 
 
 class FakeLibvirtConnection(object):

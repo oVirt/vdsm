@@ -36,7 +36,6 @@ from vdsm.network import ipwrapper
 from vdsm.virt import sampling
 from vdsm.virt import vm
 from vdsm.virt.domain_descriptor import DomainDescriptor
-from vdsm.virt.vmdevices import common
 
 from testlib import namedTemporaryDir
 from testlib import recorded
@@ -316,9 +315,7 @@ def VM(params=None, devices=None, runCpu=False,
             fake.guestAgent = GuestAgent()
             fake.conf['devices'] = [] if devices is None else devices
             if create_device_objects:
-                fake._devices = common.dev_map_from_dev_spec_map(
-                    fake._devSpecMapFromConf(), fake.log
-                )
+                fake._devices = fake._make_devices()
             fake._guestCpuRunning = runCpu
             if status is not None:
                 fake._lastStatus = status

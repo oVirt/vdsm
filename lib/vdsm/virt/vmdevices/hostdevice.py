@@ -29,7 +29,8 @@ from vdsm.common import conv
 from vdsm.common import validate
 from vdsm.common.hostdev import get_device_params, detach_detachable, \
     pci_address_to_name, scsi_address_to_adapter, reattach_detachable, \
-    device_name_from_address
+    device_name_from_address, spawn_mdev, despawn_mdev, get_mdev_uuid
+from vdsm.virt import libvirtxml
 from vdsm.virt import vmxml
 
 from . import core
@@ -339,11 +340,39 @@ class ScsiDevice(core.Base):
 
 
 class MdevDevice(core.Base):
+    __slots__ = ('address', 'mdev_type', 'mdev_uuid')
+
     def __init__(self, log, **kwargs):
         super(MdevDevice, self).__init__(log, **kwargs)
 
+        self.mdev_uuid = self.device
+
     def getXML(self):
-        raise core.SkipDevice
+        return libvirtxml.make_mdev_element(self.mdev_uuid)
+
+    @classmethod
+    def get_identifying_attrs(cls, dev_elem):
+        return {
+            'devtype': core.dev_class_from_dev_elem(dev_elem),
+            'uuid': vmxml.device_address(dev_elem)['uuid']
+        }
+
+    @classmethod
+    def update_from_xml(cls, vm, device_conf, device_xml):
+        alias = core.find_device_alias(device_xml)
+        source = vmxml.find_first(device_xml, 'source')
+        address = vmxml.find_first(source, 'address')
+        uuid = address.attrib['uuid']
+        for dev in device_conf:
+            if uuid == dev.mdev_uuid:
+                dev.alias = alias
+                return
+
+    def setup(self):
+        spawn_mdev(self.mdev_type, self.mdev_uuid, self.log)
+
+    def teardown(self):
+        despawn_mdev(self.mdev_uuid)
 
 
 class HostDevice(core.Base):
@@ -354,6 +383,7 @@ class HostDevice(core.Base):
         'usb_device': UsbDevice,
         'usb': UsbDevice,
         'scsi': ScsiDevice,
+        'mdev': MdevDevice,
     }
 
     def __new__(cls, log, **kwargs):
@@ -368,6 +398,14 @@ class HostDevice(core.Base):
         device = cls._DEVICE_MAPPING[
             device_params['capability']](log, **kwargs)
         return device
+
+    @classmethod
+    def get_identifying_attrs(cls, dev_elem):
+        if core.find_device_type(dev_elem) == 'mdev':
+            identifying_class = MdevDevice
+        else:
+            identifying_class = super(HostDevice, cls)
+        return identifying_class.get_identifying_attrs(dev_elem)
 
     @classmethod
     def from_xml_tree(cls, log, dev, meta):
@@ -386,8 +424,13 @@ class HostDevice(core.Base):
         _update_hostdev_params(params, dev)
         params['device'] = dev_name
         core.update_device_params_from_meta(params, meta)
-        device_params = get_device_params(dev_name)
-        device_class = cls._DEVICE_MAPPING[device_params['capability']]
+        # We cannot access mdev device as it doesn't exist yet.
+        if dev_type != 'mdev':
+            device_params = get_device_params(dev_name)
+            device_class = cls._DEVICE_MAPPING[device_params['capability']]
+        else:
+            params['mdev_type'] = meta.get('mdevType')
+            device_class = MdevDevice
         return device_class(log, **params)
 
     @classmethod
@@ -409,6 +452,9 @@ def _get_device_name(dev, dev_type):
         src_addr = _normalize_scsi_address(dev, src_addr)
     elif dev_type == 'pci':
         src_addr = _normalize_pci_address(**src_addr)
+    elif dev_type == 'mdev':
+        return src_addr['uuid']
+
     return device_name_from_address(dev_type, src_addr)
 
 
@@ -438,3 +484,26 @@ def _update_hostdev_params(params, dev):
     driver = vmxml.find_attr(dev, 'driver', 'name')
     if driver:
         params['driver'] = driver
+
+
+def append_mediated_device(devices, log, mdev_type, vm_id):
+    mdev_uuid = get_mdev_uuid(vm_id)
+    old_device_id = None
+    for dev in devices[hwclass.HOSTDEV]:
+        # REQUIRED_FOR: Engine < 4.2
+        # Legacy Engine tracks the mdev device once it is created and sends it
+        # in device parameters on the next VM run.  However the sent device is
+        # incomplete and inaccurate (and we must handle devices created by
+        # former vfio-mdev hook) and the easiest way to deal with that is to
+        # replace it.  We must be careful not to change the device id,
+        # otherwise Engine would track it as an additional device together with
+        # the original device.
+        if getattr(dev, 'address', {}).get('uuid') == mdev_uuid:
+            old_device_id = dev.deviceId
+            devices[hwclass.HOSTDEV].remove(dev)
+            break
+    mdev_dom = libvirtxml.make_mdev_element(mdev_uuid)
+    mdev = HostDevice.from_xml_tree(log, mdev_dom, {'mdevType': mdev_type})
+    if old_device_id is not None:
+        mdev.deviceId = old_device_id
+    devices[hwclass.HOSTDEV].append(mdev)
