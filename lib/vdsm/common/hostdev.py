@@ -25,6 +25,7 @@ import functools
 import hashlib
 import operator
 import os
+import uuid
 import xml.etree.cElementTree as etree
 
 import libvirt
@@ -32,11 +33,19 @@ import six
 
 from vdsm.common import conv
 from vdsm.common import cpuarch
+from vdsm.common import exception
 from vdsm.common import hooks
 from vdsm.common import libvirtconnection
 from vdsm.common import supervdsm
 from vdsm.common import validate
 from vdsm.common.cache import memoized
+
+_MDEV_PATH = '/sys/class/mdev_bus'
+_MDEV_FIELDS = ('name', 'description', 'available_instances', 'device_api')
+# Arbitrary value (generated on development machine).
+_OVIRT_MDEV_NAMESPACE = uuid.UUID('8524b17c-f0ca-44a5-9ce4-66fe261e5986')
+_MdevDetail = collections.namedtuple('_MdevDetail', _MDEV_FIELDS)
+
 
 CAPABILITY_TO_XML_ATTR = collections.defaultdict(
     lambda: 'unknown',
@@ -548,6 +557,65 @@ def _update_address_to_name_map(address_to_name, device_name, device_params):
         address_to_name[device_address] = device_name
 
 
+def _each_mdev_device():
+    for pci_device in sorted(os.listdir(_MDEV_PATH)):
+        yield pci_device
+
+
+def _each_supported_mdev_type(pci_device):
+    path = os.path.join(_MDEV_PATH, pci_device, 'mdev_supported_types')
+    for mdev_type in os.listdir(path):
+        yield mdev_type, path
+
+
+def _mdev_type_details(mdev_type, path):
+    ret = []
+    for field in _MDEV_FIELDS:
+        syspath = os.path.join(path, mdev_type, field)
+        with open(syspath, 'r') as f:
+            ret.append(f.read().strip())
+
+    return _MdevDetail(*ret)
+
+
+def _suitable_device_for_mdev_type(target_mdev_type):
+    target_device = None
+
+    for device in _each_mdev_device():
+        vendor = None
+        with open(os.path.join(_MDEV_PATH, device, 'vendor'), 'r') as f:
+            vendor = f.read().strip()
+
+        for mdev_type, path in _each_supported_mdev_type(device):
+            if mdev_type != target_mdev_type:
+                # If different type is already allocated and the vendor doesn't
+                # support different types, skip the device.
+                if vendor == '0x10de' and len(
+                        os.listdir(os.path.join(path, mdev_type, 'devices'))
+                ) > 0:
+                    target_device = None
+                    break
+                continue
+            # Make sure to cast to int as the value is read from sysfs.
+            if int(
+                    _mdev_type_details(mdev_type, path).available_instances
+            ) < 1:
+                continue
+
+            target_device = device
+
+        if target_device is not None:
+            return target_device
+
+    return target_device
+
+
+def _mdev_iommu_group(device, mdev_uuid):
+    return os.path.basename(os.path.realpath(
+        os.path.join(_MDEV_PATH, device, mdev_uuid, 'iommu_group'))
+    )
+
+
 def device_name_from_address(address_type, device_address):
     _, address_to_name = _get_devices_from_libvirt()
     return address_to_name[
@@ -634,6 +702,45 @@ def change_numvfs(device_name, numvfs):
     net_name = physical_function_net_name(device_name)
     supervdsm.getProxy().change_numvfs(name_to_pci_path(device_name), numvfs,
                                        net_name)
+
+
+def spawn_mdev(mdev_type, mdev_uuid, log):
+    device = _suitable_device_for_mdev_type(mdev_type)
+    if device is None:
+        message = 'vgpu: No device with type {} is available'.format(mdev_type)
+        log.error(message)
+        raise exception.ResourceUnavailable(message)
+    try:
+        supervdsm.getProxy().mdev_create(device, mdev_type, mdev_uuid)
+    except IOError:
+        message = 'vgpu: Failed to create mdev type {}'.format(mdev_type)
+        log.error(message)
+        raise exception.ResourceUnavailable(message)
+    supervdsm.getProxy().appropriateIommuGroup(
+        _mdev_iommu_group(device, mdev_uuid)
+    )
+
+
+def despawn_mdev(mdev_uuid):
+    device = None
+    for dev in _each_mdev_device():
+        if mdev_uuid in os.listdir(os.path.join(_MDEV_PATH, dev)):
+            device = dev
+            break
+    if device is None or mdev_uuid is None:
+        raise exception.ResourceUnavailable('vgpu: No mdev found')
+    supervdsm.getProxy().rmAppropriateIommuGroup(
+        _mdev_iommu_group(device, mdev_uuid)
+    )
+    try:
+        supervdsm.getProxy().mdev_delete(device, mdev_uuid)
+    except IOError:
+        # This is destroy flow, we can't really fail
+        pass
+
+
+def get_mdev_uuid(vm_id):
+    return str(uuid.uuid3(_OVIRT_MDEV_NAMESPACE, vm_id))
 
 
 def _format_address(dev_type, address):

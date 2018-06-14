@@ -266,6 +266,12 @@ def replace_placeholders(dom, arch, serial=None):
             dom, constants.SMBIOS_OSNAME, os_version, serial_number)
 
 
+def add_mediated_device(dom, mdev_uuid):
+    devs = vmxml.find_first(dom, 'devices')
+    hostdev = libvirtxml.make_mdev_element(mdev_uuid)
+    devs.append(hostdev)
+
+
 def _make_disk_devices(engine_xml, log):
     """
     Build disk devices, the same way VM class does.
