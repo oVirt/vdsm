@@ -831,7 +831,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                     int(ext) in range(pestart, pestart + pecount)):
 
                 offs = int(ext) + int(pv["mapoffset"])
-                if offs < SD_METADATA_SIZE / sc.METADATA_SIZE:
+                if offs < SD_METADATA_SIZE // sc.METADATA_SIZE:
                     raise se.MetaDataMappingError(
                         "domain %s: vol %s MD offset %s is bad - will "
                         "overwrite SD's MD" % (self.sdUUID, vol_name, offs))
