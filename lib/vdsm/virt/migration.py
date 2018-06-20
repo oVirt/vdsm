@@ -113,8 +113,6 @@ class SourceThread(object):
         self._machineParams = {}
         # TODO: conv.tobool shouldn't be used in this constructor, the
         # conversions should be handled properly in the API layer
-        self._tunneled = conv.tobool(tunneled)
-        self._abortOnError = conv.tobool(abortOnError)
         self._consoleAddress = consoleAddress
         self._dstqemu = dstqemu
         self._downtime = kwargs.get('downtime') or \
@@ -123,8 +121,6 @@ class SourceThread(object):
             kwargs.get('maxBandwidth') or
             config.getint('vars', 'migration_max_bandwidth')
         )
-        self._autoConverge = conv.tobool(autoConverge)
-        self._compressed = conv.tobool(compressed)
         self._incomingLimit = kwargs.get('incomingLimit')
         self._outgoingLimit = kwargs.get('outgoingLimit')
         self.status = {
@@ -153,6 +149,14 @@ class SourceThread(object):
         self._started = False
         self._failed = False
         self._recovery = recovery
+        tunneled = conv.tobool(tunneled)
+        abortOnError = conv.tobool(abortOnError)
+        compressed = conv.tobool(compressed)
+        autoConverge = conv.tobool(autoConverge)
+        self._migration_flags = self._calculate_migration_flags(tunneled,
+                                                                abortOnError,
+                                                                compressed,
+                                                                autoConverge)
 
     def start(self):
         self._thread.start()
@@ -534,7 +538,7 @@ class SourceThread(object):
 
     def _migration_params(self, muri):
         params = {libvirt.VIR_MIGRATE_PARAM_BANDWIDTH: self._maxBandwidth}
-        if not self._tunneled:
+        if not self.tunneled:
             params[libvirt.VIR_MIGRATE_PARAM_URI] = str(muri)
         if self._consoleAddress:
             graphics = 'spice' if self._vm.hasSpice else 'vnc'
@@ -544,15 +548,23 @@ class SourceThread(object):
         return params
 
     @property
-    def _migration_flags(self):
+    def tunneled(self):
+        return self.migration_flags & libvirt.VIR_MIGRATE_TUNNELLED
+
+    @property
+    def migration_flags(self):
+        return self._migration_flags
+
+    def _calculate_migration_flags(self, tunneled, abort_on_error,
+                                   compressed, auto_converge):
         flags = libvirt.VIR_MIGRATE_LIVE | libvirt.VIR_MIGRATE_PEER2PEER
-        if self._tunneled:
+        if tunneled:
             flags |= libvirt.VIR_MIGRATE_TUNNELLED
-        if self._abortOnError:
+        if abort_on_error:
             flags |= libvirt.VIR_MIGRATE_ABORT_ON_ERROR
-        if self._compressed:
+        if compressed:
             flags |= libvirt.VIR_MIGRATE_COMPRESSED
-        if self._autoConverge:
+        if auto_converge:
             flags |= libvirt.VIR_MIGRATE_AUTO_CONVERGE
         if self._vm.min_cluster_version(4, 2):
             flags |= libvirt.VIR_MIGRATE_PERSIST_DEST
@@ -563,8 +575,8 @@ class SourceThread(object):
         # - Huge pages are used (doesn't apply to transparent huge pages).
         # - QEMU uses a file as a backing for memory.
         # - Perhaps non-shared block storage may cause some trouble.
-        for s in self._convergence_schedule.get('stalling', []):
-            action = s.get('action', {}).get('name')
+        for stalling in self._convergence_schedule.get('stalling', []):
+            action = stalling.get('action', {}).get('name')
             if action == CONVERGENCE_SCHEDULE_POST_COPY:
                 flags |= libvirt.VIR_MIGRATE_POSTCOPY
                 break

@@ -509,6 +509,34 @@ class SourceThreadTests(TestCaseBase):
         src.run()
         self.assertEqual(src._vm.hibernation_attempts, 1)
 
+    def test_has_migration_flags(self):
+        src = migration.SourceThread(FakeVM())
+        self.assertTrue(src.migration_flags is not None)
+        self.assertTrue(src.migration_flags & libvirt.VIR_MIGRATE_LIVE)
+        self.assertTrue(src.migration_flags & libvirt.VIR_MIGRATE_PEER2PEER)
+
+    def test_sets_migration_flags(self):
+        src = migration.SourceThread(FakeVM(),
+                                     tunneled=True,
+                                     abortOnError=True,
+                                     compressed=True,
+                                     autoConverge=True)
+        flags = src.migration_flags
+        self.assertTrue(flags & libvirt.VIR_MIGRATE_TUNNELLED)
+        self.assertTrue(flags & libvirt.VIR_MIGRATE_ABORT_ON_ERROR)
+        self.assertTrue(flags & libvirt.VIR_MIGRATE_COMPRESSED)
+        self.assertTrue(flags & libvirt.VIR_MIGRATE_AUTO_CONVERGE)
+
+    def test_tunneled_property(self):
+        fake_vm = FakeVM()
+
+        src = migration.SourceThread(fake_vm)
+        self.assertTrue(src.tunneled is not None)
+        self.assertFalse(src.tunneled)
+
+        src = migration.SourceThread(fake_vm, tunneled=True)
+        self.assertTrue(src.tunneled)
+
 
 # stolen^Wborrowed from itertools recipes
 def pairwise(iterable):
