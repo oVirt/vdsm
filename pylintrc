@@ -50,10 +50,22 @@ optimize-ast=no
 # all. Valid levels: HIGH, INFERENCE, INFERENCE_FAILURE, UNDEFINED
 confidence=
 
+# The documentation of pylint is too terse, so we have to dig into the
+# pylint source code (!!), to get the longer aliases for the message
+# categories. Apparently, the pylint UI doesn't support the aliases.
+# I = info
+# C = convention
+# R = refactor
+# W = warning
+# E = error
+# F = fatal
+
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifiers separated by comma (,) or put this option
 # multiple time. See also the "--disable" option for examples.
-#enable=
+#
+# Enable *E*rror and *F*atal categories only
+enable=E,F
 
 # Disable the message, report, category or checker with the given id(s). You
 # can either give multiple identifiers separated by comma (,) or put this
@@ -64,7 +76,11 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=
+#
+# Disable *C*onvention, *I*info, *R*efactor, *W*arnings and individual faulty checks.
+# see https://github.com/PyCQA/pylint/issues/782
+# remove once we upgrade to pylint 2.0+
+disable=C,I,R,W,not-context-manager
 
 [REPORTS]
 
