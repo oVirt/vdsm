@@ -123,7 +123,9 @@ def get_metadata(drive):
 
 def _update_source_params(params, disk_type, source):
     path = None
-    if disk_type == 'block':
+    if source is None:
+        path = ''
+    elif disk_type == 'block':
         path = source.attrib.get('dev')
     elif disk_type == 'file':
         path = source.attrib.get('file', '')

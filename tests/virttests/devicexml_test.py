@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 import logging
 import os.path
+import xml.etree.ElementTree as ET
 
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt import metadata
@@ -1451,6 +1452,28 @@ class DeviceXMLRoundTripTests(XMLTestCase):
         # everything which is not related to the driver element should be
         # derived from the source XML, thus the source and the expected
         # XML snippets should be equal - bar the driver element.
+        self._check_device_xml(dev, expected_xml)
+
+    def test_cdrom_from_xml_without_source_element(self):
+        cdrom_xml = u'''
+          <disk type="file" device="cdrom">
+            <address type='drive' controller='0' bus='1' target='0' unit='0'/>
+            <target dev='hdc' bus='ide' tray='open'/>
+            <readonly/>
+            <driver name='qemu' type='raw' error_policy='report'/>
+         </disk>'''
+        expected_xml = u'''
+          <disk type="file" device="cdrom" snapshot="no">
+            <address type='drive' controller='0' bus='1' target='0' unit='0'/>
+            <source file="" startupPolicy="optional"/>
+            <target dev='hdc' bus='ide'/>
+            <readonly/>
+            <driver name='qemu' type='raw' error_policy='report'/>
+         </disk>'''
+        dom = ET.fromstring(cdrom_xml)
+        dev = vmdevices.storage.Drive(
+            self.log, **vmdevices.storagexml.parse(dom, {})
+        )
         self._check_device_xml(dev, expected_xml)
 
     def _check_roundtrip(self, klass, dev_xml, meta=None, expected_xml=None):
