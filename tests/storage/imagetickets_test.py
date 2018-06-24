@@ -132,6 +132,24 @@ class TestImageTickets(VdsmTestCase):
 
     @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
     def test_remove_ticket(self):
+        # New imageio daemon will not return Content-Length header, as
+        # specified in RFC 7230.
+        imagetickets.uhttp.response = FakeResponse(
+            status=204, reason="No Content", headers={})
+        imagetickets.remove_ticket("uuid")
+        expected = [
+            ("request", ("DELETE", "/tickets/uuid"), {"body": None}),
+        ]
+
+        self.assertEqual(imagetickets.uhttp.__calls__, expected)
+        self.assertTrue(imagetickets.uhttp.closed)
+
+    @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
+    def test_remove_ticket_with_content_length(self):
+        # Legacy imageio daemon used to return "Content-Length: 0". This is not
+        # correct according to RFC 7230, but we must support it.
+        imagetickets.uhttp.response = FakeResponse(
+            status=204, reason="No Content")
         imagetickets.remove_ticket("uuid")
         expected = [
             ("request", ("DELETE", "/tickets/uuid"), {"body": None}),

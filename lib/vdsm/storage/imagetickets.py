@@ -95,6 +95,11 @@ def request(method, uuid, body=None):
 
 
 def _read_content(response):
+    # See https://tools.ietf.org/html/rfc7230#section-3.3.2
+    if response.status == http_client.NO_CONTENT:
+        response.read()
+        return {}
+
     try:
         content_length = int(response.getheader("content-length",
                                                 default=""))
