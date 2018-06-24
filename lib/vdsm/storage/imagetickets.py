@@ -95,28 +95,21 @@ def request(method, uuid, body=None):
 
 
 def _read_content(response):
-    # See https://tools.ietf.org/html/rfc7230#section-3.3.2
-    if response.status == http_client.NO_CONTENT:
-        response.read()
-        return {}
-
+    # We must consume the entire response, otherwise we cannot use keep-alive
+    # connections. HTTPResponse.read() is doing the right thing, handling
+    # request content length or chunked encoding.
     try:
-        content_length = int(response.getheader("content-length",
-                                                default=""))
-    except ValueError as e:
-        error_info = {"explanation": "Invalid content-length",
-                      "detail": str(e)}
-        raise se.ImageDaemonError(response.status, response.reason, error_info)
-
-    if content_length == 0:
-        return {}
-
-    try:
-        res_data = response.read(content_length)
+        res_data = response.read()
     except EnvironmentError as e:
         error_info = {"explanation": "Error reading response",
                       "detail": str(e)}
         raise se.ImageDaemonError(response.status, response.reason, error_info)
+
+    # This can be a "200 OK" with "Content-Length: 0", or "204 No Content"
+    # without Content-Length header.
+    # See https://tools.ietf.org/html/rfc7230#section-3.3.2
+    if not res_data:
+        return {}
 
     try:
         return json.loads(res_data.decode("utf8"))
