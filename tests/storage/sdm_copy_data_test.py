@@ -248,7 +248,7 @@ class TestCopyDataDIV(VdsmTestCase):
         """
         job_id = make_uuid()
         vm_conf_size = workarounds.VM_CONF_SIZE_BLK * sc.BLOCK_SIZE
-        vm_conf_data = "VM Configuration"
+        vm_conf_data = "VM Configuration".ljust(512)
 
         with self.make_env('file', sc.COW_FORMAT, sc.COW_FORMAT,
                            size=vm_conf_size) as env:
