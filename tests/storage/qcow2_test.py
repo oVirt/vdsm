@@ -68,9 +68,9 @@ class TestCountClusters:
         filename = str(tmpdir.join("test"))
         with io.open(filename, "wb") as f:
             f.write(b"x")
-            f.seek(16 * 1024)
+            f.seek(16 * 1024 - 1)
             f.write(b"x")
-            f.seek(42 * 1024)
+            f.seek(42 * 1024 - 1)
             f.write(b"x")
         runs = qemuimg.map(filename)
         assert qcow2.count_clusters(runs) == 1
