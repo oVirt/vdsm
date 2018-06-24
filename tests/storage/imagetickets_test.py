@@ -41,7 +41,9 @@ class FakeResponse(object):
     def __init__(self, status=200, reason="OK", headers=None, data=b""):
         self.status = status
         self.reason = reason
-        self.headers = headers or {"content-length": len(data)}
+        if headers is None:
+            headers = {"content-length": str(len(data))}
+        self.headers = headers
         self.file = io.BytesIO(data)
 
     def getheader(self, name, default=None):
