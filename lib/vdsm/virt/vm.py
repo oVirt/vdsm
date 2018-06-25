@@ -1788,8 +1788,6 @@ class Vm(object):
             'vmType': self._domain.vm_type(),
             'kvmEnable': 'true',
             'acpiEnable': 'true' if self.acpi_enabled() else 'false'}
-        if 'cdrom' in self.conf:
-            stats['cdrom'] = self.conf['cdrom']
         return stats
 
     def _getRunningVmStats(self):
