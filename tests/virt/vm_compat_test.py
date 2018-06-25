@@ -56,6 +56,8 @@ VM_KEYS_BLACKLIST = (
     'pitReinjection', 'smartcardEnable', 'transparentHugePages',
     # Engine ignores these when reading the response from Vdsm
     'displayNetwork', 'nice',
+    # Always added by Vdsm >= 4.3
+    'clientIp',
     # tested separately
     'devices',
 )

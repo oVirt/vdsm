@@ -333,7 +333,7 @@ class Vm(object):
             self._altered_state = _AlteredState()
         # we need to make sure the 'devices' key exists in vm.conf regardless
         # how the Vm is initialized, either through XML or from conf.
-        self.conf = {'_blockJobs': {}, 'clientIp': '', 'devices': []}
+        self.conf = {'_blockJobs': {}, 'devices': []}
         self.conf.update(params)
         self._external = params.get('external', False)
         self.arch = cpuarch.effective()
@@ -463,6 +463,7 @@ class Vm(object):
         self._ioTuneInfo = []
         self._ioTuneValues = {}
         self._vmJobs = None
+        self._clientIp = ''
         self._clientPort = ''
         self._monitorable = False
         self._migration_downtime = None
@@ -1082,8 +1083,7 @@ class Vm(object):
 
     def onConnect(self, clientIp='', clientPort=''):
         if clientIp:
-            with self._confLock:
-                self.conf['clientIp'] = clientIp
+            self._clientIp = clientIp
             self._clientPort = clientPort
 
     def set_destroy_on_reboot(self):
@@ -1097,8 +1097,7 @@ class Vm(object):
         # This is not a definite fix, we're aware that there is still the
         # possibility of a race condition, however this covers more cases
         # than before and a quick gain
-        if (not self.conf.get('clientIp', '') and
-           not self._destroy_requested.is_set()):
+        if not self._clientIp and not self._destroy_requested.is_set():
             delay = config.get('vars', 'user_shutdown_timeout')
             timeout = config.getint('vars', 'sys_shutdown_timeout')
             CDA = ConsoleDisconnectAction
@@ -1116,14 +1115,14 @@ class Vm(object):
                               force=True)
 
     def onDisconnect(self, detail=None, clientIp='', clientPort=''):
-        if self.conf['clientIp'] != clientIp:
+        if self._clientIp != clientIp:
             self.log.debug('Ignoring disconnect event because ip differs')
             return
         if self._clientPort and self._clientPort != clientPort:
             self.log.debug('Ignoring disconnect event because ports differ')
             return
 
-        self.conf['clientIp'] = ''
+        self._clientIp = ''
         # This is a hack to mitigate the issue of spice-gtk not respecting the
         # configured secure channels. Spice-gtk is always connecting first to
         # a non-secure channel and the server tells the client then to connect
@@ -1798,7 +1797,7 @@ class Vm(object):
             'elapsedTime': str(int(time.time() - self._startTime)),
             'monitorResponse': str(self._monitorResponse),
             'timeOffset': self.conf.get('timeOffset', '0'),
-            'clientIp': self.conf.get('clientIp', ''),
+            'clientIp': self._clientIp,
         }
 
         stats.update(self._getVmPauseCodeStats())
