@@ -334,7 +334,7 @@ class Vm(object):
         elapsedTimeOffset = float(params.pop('elapsedTimeOffset', 0))
         # we need to make sure the 'devices' key exists in vm.conf regardless
         # how the Vm is initialized, either through XML or from conf.
-        self.conf = {'_blockJobs': {}, 'devices': []}
+        self.conf = {'devices': []}
         self.conf.update(params)
         self._external = params.get('external', False)
         self.arch = cpuarch.effective()
@@ -376,6 +376,7 @@ class Vm(object):
         self._cluster_version = None
         self._pause_time = None
         self._guest_agent_api_version = None
+        self._blockJobs = {}
         if 'xml' in self.conf:
             self._md_desc = metadata.Descriptor.from_xml(self.conf['xml'])
             self._init_from_metadata()
@@ -566,7 +567,7 @@ class Vm(object):
             else:
                 # if this is missing, let's try using what we may have saved
                 self._mem_guaranteed_size_mb = md.get('memGuaranteedSize', 0)
-            self.conf['_blockJobs'] = json.loads(md.get('block_jobs', '{}'))
+            self._blockJobs = json.loads(md.get('block_jobs', '{}'))
             self._cluster_version = extract_cluster_version(md)
             self._launch_paused = conv.tobool(md.get('launchPaused', False))
             self._resume_behavior = md.get('resumeBehavior',
@@ -5566,7 +5567,7 @@ class Vm(object):
         return True
 
     def getBlockJob(self, drive):
-        for job in self.conf['_blockJobs'].values():
+        for job in self._blockJobs.values():
             if all([bool(drive[x] == job['disk'][x])
                     for x in ('imageID', 'domainID', 'volumeID')]):
                 return job
@@ -5582,7 +5583,7 @@ class Vm(object):
                 newJob = {'jobID': jobID, 'disk': driveSpec,
                           'baseVolume': base, 'topVolume': top,
                           'strategy': strategy, 'blockJobType': 'commit'}
-                self.conf['_blockJobs'][jobID] = newJob
+                self._blockJobs[jobID] = newJob
             else:
                 self.log.error("Cannot add block job %s.  A block job with id "
                                "%s already exists for image %s", jobID,
@@ -5595,7 +5596,7 @@ class Vm(object):
     def untrackBlockJob(self, jobID):
         with self._confLock:
             try:
-                del self.conf['_blockJobs'][jobID]
+                del self._blockJobs[jobID]
             except KeyError:
                 # If there was contention on the confLock, this may have
                 # already been removed
@@ -5609,7 +5610,7 @@ class Vm(object):
 
     def _sync_block_job_info(self):
         with self._md_desc.values() as vm:
-            vm['block_jobs'] = json.dumps(self.conf['_blockJobs'])
+            vm['block_jobs'] = json.dumps(self._blockJobs)
 
     def _sync_disk_metadata(self):
         for drive in self._devices[hwclass.DISK]:
@@ -5665,7 +5666,7 @@ class Vm(object):
             # we always do a full check the first time we run.
             # This may be wasteful on normal flow,
             # but covers pretty nicely the recovering flow.
-            return self._vmJobs is None or bool(self.conf['_blockJobs'])
+            return self._vmJobs is None or bool(self._blockJobs)
 
     def updateVmJobs(self):
         try:
@@ -5684,7 +5685,7 @@ class Vm(object):
         # another call to merge() where the job has been recorded but not yet
         # started.
         with self._jobsLock:
-            for storedJob in self.conf['_blockJobs'].values():
+            for storedJob in self._blockJobs.values():
                 jobID = storedJob['jobID']
                 self.log.debug("Checking job %s", jobID)
                 cleanThread = self._liveMergeCleanupThreads.get(jobID)
