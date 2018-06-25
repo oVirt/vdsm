@@ -5082,11 +5082,6 @@ class Vm(object):
 
     @property
     def hasSpice(self):
-        if (self.conf.get('display') == 'qxl' or
-            any(dev['device'] == 'spice'
-                for dev in self.conf.get('devices', [])
-                if dev['type'] == hwclass.GRAPHICS)):
-            return True
         return bool(list(self._domain.get_device_elements_with_attrs(
             hwclass.GRAPHICS, type='spice')))
 

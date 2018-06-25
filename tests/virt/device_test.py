@@ -146,15 +146,6 @@ class TestVmDevices(XMLTestCase):
         conf.update(self.conf)
         self.assertTrue(vmdevices.graphics.isSupportedDisplayType(conf))
 
-    def testHasSpice(self):
-        for dev in self.confDeviceGraphicsSpice:
-            with fake.VM(self.conf, dev) as testvm:
-                self.assertTrue(testvm.hasSpice)
-
-        for dev in self.confDeviceGraphicsVnc:
-            with fake.VM(self.conf, dev) as testvm:
-                self.assertFalse(testvm.hasSpice)
-
     def testHasSpiceEngineXML(self):
         conf = {}
         conf.update(self.conf)
