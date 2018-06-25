@@ -1,10 +1,10 @@
 [Unit]
 Description=Virtual Desktop Server Manager
-Requires=multipathd.service libvirtd.service time-sync.target \
+Requires=multipathd.service time-sync.target \
          iscsid.service rpcbind.service supervdsmd.service sanlock.service \
          vdsm-network.service
-After=multipathd.service libvirtd.service iscsid.service rpcbind.service \
-      supervdsmd.service sanlock.service vdsm-network.service
+After=multipathd.service iscsid.service rpcbind.service supervdsmd.service \
+      sanlock.service vdsm-network.service
 Before=libvirt-guests.service
 Wants=mom-vdsm.service ovirt-imageio-daemon.service abrtd.service \
       dev-hugepages1G.mount libvirt-guests.service
