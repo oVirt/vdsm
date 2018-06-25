@@ -399,7 +399,10 @@ class Vm(object):
         self._incoming_migration_vm_running = threading.Event()
         self._volPrepareLock = threading.Lock()
         self._initTimePauseCode = None
-        self._initTimeRTC = int(self.conf.get('timeOffset', 0))
+        self._timeOffset = params.get('timeOffset')
+        self._initTimeRTC = int(
+            0 if self._timeOffset is None else self._timeOffset
+        )
         self._guestEvent = vmstatus.POWERING_UP
         self._guestEventTime = 0
         self._guestCpuRunning = False
@@ -1142,8 +1145,7 @@ class Vm(object):
     def onRTCUpdate(self, timeOffset):
         newTimeOffset = str(self._initTimeRTC + int(timeOffset))
         self.log.debug('new rtc offset %s', newTimeOffset)
-        with self._confLock:
-            self.conf['timeOffset'] = newTimeOffset
+        self._timeOffset = newTimeOffset
 
     def getChunkedDrives(self):
         """
@@ -1771,8 +1773,8 @@ class Vm(object):
 
     def _getExitedVmStats(self):
         stats = self._exit_info.copy()
-        if 'timeOffset' in self.conf:
-            stats['timeOffset'] = self.conf['timeOffset']
+        if self._timeOffset is not None:
+            stats['timeOffset'] = self._timeOffset
         return stats
 
     def _getConfigVmStats(self):
@@ -1796,8 +1798,10 @@ class Vm(object):
         stats = {
             'elapsedTime': str(int(time.time() - self._startTime)),
             'monitorResponse': str(self._monitorResponse),
-            'timeOffset': self.conf.get('timeOffset', '0'),
             'clientIp': self._clientIp,
+            'timeOffset': str(
+                '0' if self._timeOffset is None else self._timeOffset
+            ),
         }
 
         stats.update(self._getVmPauseCodeStats())
