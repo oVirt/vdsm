@@ -3097,13 +3097,6 @@ class Vm(object):
         raise LookupError('Device instance for device with path {0} not found'
                           ''.format(path))
 
-    def _lookupConfByPath(self, path):
-        for devConf in self.conf['devices'][:]:
-            if devConf.get('path') == path:
-                return devConf
-        raise LookupError('Configuration of device with path {0} not found'
-                          ''.format(path))
-
     def _updateInterfaceDevice(self, params):
         try:
             netDev = vmdevices.lookup.device_by_alias(
@@ -5972,9 +5965,6 @@ class Vm(object):
             raise RuntimeError("Unable to get volume info")
         driveFormat = res['info']['format'].lower()
 
-        # Sync this VM's data strctures.  Ugh, we're storing the same info in
-        # two places so we need to change it twice.
-        device = self._lookupConfByPath(drive['path'])
         if drive.volumeID != volumeID:
             # If the active layer changed:
             #  Update the disk path, volumeID, volumeInfo, and format members
@@ -5987,34 +5977,8 @@ class Vm(object):
             drive.volumeInfo = volInfo
             update_active_path(drive.volumeChain, volumeID, activePath)
 
-            self._sync_drive_conf(device, drive)
-
         # Remove any components of the volumeChain which are no longer present
         drive.volumeChain = clean_volume_chain(drive.volumeChain, volumes)
-        device['volumeChain'] = clean_volume_chain(
-            device['volumeChain'], volumes)
-        if drive.volumeChain != device['volumeChain']:
-            self.log.warning(
-                'VolumeChain mismatch: conf %s drive %s - using conf',
-                device['volumeChain'], drive.volumeChain)
-            drive.volumeChain = device['volumeChain']
-
-    def _sync_drive_conf(self, device, drive):
-        confVolInfo = find_chain_node(
-            device['volumeChain'], drive.volumeID)
-        confVolInfo['path'] = drive.path
-        device['path'] = drive.path
-        device['format'] = drive.format
-        device['volumeID'] = drive.volumeID
-        device['volumeInfo'] = confVolInfo
-        update_active_path(
-            device['volumeChain'], drive.volumeID, drive.path)
-
-        if confVolInfo != drive.volumeInfo:
-            self.log.warning(
-                'VolumeInfo mismatch: conf %s drive %s - using conf',
-                confVolInfo, drive.volumeInfo)
-            drive.volumeInfo = confVolInfo
 
     def getDiskDevices(self):
         return self._devices[hwclass.DISK]
