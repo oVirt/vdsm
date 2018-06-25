@@ -2,7 +2,7 @@
 Description=Auxiliary vdsm service for running helper functions as root
 Requires=libvirtd.service
 Wants=lldpad.service
-After=lldpad.service
+After=lldpad.service libvirtd.service
 
 [Service]
 Type=simple
