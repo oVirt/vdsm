@@ -2416,13 +2416,6 @@ class Vm(object):
         self._updateDomainDescriptor()
         self._updateMetadataDescriptor()
 
-        # REQUIRED_FOR migrate from vdsm-4.16
-        #
-        # We need to clean out unknown devices that are created for
-        # RNG devices by VDSM 3.5 and are left in the configuration
-        # after upgrade to 3.6.
-        self._fixLegacyRngConf()
-
         self._getUnderlyingVmDevicesInfo()
 
         # Currently there is no protection agains mirroring a network twice,
@@ -6046,25 +6039,6 @@ class Vm(object):
                 'VolumeInfo mismatch: conf %s drive %s - using conf',
                 confVolInfo, drive.volumeInfo)
             drive.volumeInfo = confVolInfo
-
-    def _fixLegacyRngConf(self):
-        def _is_legacy_rng_device_conf(dev):
-            """
-            Returns True if dev is a legacy (3.5) RNG device conf,
-            False otherwise.
-            """
-            return dev['type'] == hwclass.RNG and (
-                'specParams' not in dev or
-                'source' not in dev['specParams']
-            )
-
-        with self._confLock:
-            self._devices[hwclass.RNG] = [dev for dev
-                                          in self._devices[hwclass.RNG]
-                                          if 'source' in dev.specParams]
-            self.conf['devices'] = [dev for dev
-                                    in self.conf['devices']
-                                    if not _is_legacy_rng_device_conf(dev)]
 
     def getDiskDevices(self):
         return self._devices[hwclass.DISK]
