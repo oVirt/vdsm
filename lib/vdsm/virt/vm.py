@@ -331,6 +331,7 @@ class Vm(object):
         else:
             self._lastStatus = vmstatus.WAIT_FOR_LAUNCH
             self._altered_state = _AlteredState()
+        elapsedTimeOffset = float(params.pop('elapsedTimeOffset', 0))
         # we need to make sure the 'devices' key exists in vm.conf regardless
         # how the Vm is initialized, either through XML or from conf.
         self.conf = {'_blockJobs': {}, 'devices': []}
@@ -414,8 +415,7 @@ class Vm(object):
                 else:
                     self._startTime = time.time()
         else:
-            self._startTime = time.time() - \
-                float(self.conf.pop('elapsedTimeOffset', 0))
+            self._startTime = time.time() - elapsedTimeOffset
 
         self._usedIndices = defaultdict(list)  # {'ide': [], 'virtio' = []}
 
