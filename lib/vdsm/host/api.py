@@ -105,29 +105,22 @@ def _readSwapTotalFree():
     return meminfo['SwapTotal'] // 1024, meminfo['SwapFree'] // 1024
 
 
-# take a rough estimate on how much free mem is available for new vm
-# memTotal = memFree + memCached + mem_used_by_non_qemu + resident  .
-# simply returning (memFree + memCached) is not good enough, as the
-# resident set size of qemu processes may grow - up to  memCommitted.
-# Thus, we deduct the growth potential of qemu processes, which is
-# (memCommitted - resident)
-
 def _memUsageInfo(cif):
     """
     Return an approximation of available memory for new VMs.
     """
+    # These values are not used by Engine >= 4.2 anymore, but they are still
+    # processed, stored to the database and must be present.  Let's return
+    # something very roughly meaningful until it's removed from Engine
+    # completely -- that means just free memory and sum of VM sizes.
     committed = 0
-    resident = 0
     for v in cif.vmContainer.values():
-        mem_info = v.memory_info()
-        resident += mem_info.get('rss', 0) * Kbytes
-        committed += mem_info.get('commit', 0) * Kbytes
+        committed += v.mem_size_mb() * Mbytes
     meminfo = utils.readMemInfo()
     freeOrCached = (meminfo['MemFree'] +
                     meminfo['Cached'] + meminfo['Buffers']) * Kbytes
     available = (
-        freeOrCached + resident - committed -
-        config.getint('vars', 'host_mem_reserve') * Mbytes
+        freeOrCached + config.getint('vars', 'host_mem_reserve') * Mbytes
     )
     return available, committed
 
