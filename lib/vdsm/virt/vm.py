@@ -463,6 +463,7 @@ class Vm(object):
         self._migration_downtime = None
         self._pause_code = None
         self._last_disk_mapping_hash = None
+        self._pid = 0
 
     @property
     def _hugepages_shared(self):
@@ -826,16 +827,14 @@ class Vm(object):
         memory = self.mem_size_mb()
         memory += config.getint('vars', 'guest_ram_overhead')
         mem_stats = {'commit': 2 ** 10 * memory}
-        try:
-            dom_stats = self._dom.memoryStats()
-        except libvirt.libvirtError:
-            # just skip for this cycle, no real harm
-            pass
-        except virdomain.NotConnectedError:
-            # race on startup/shutdown, no real harm
-            pass
-        else:
-            mem_stats['rss'] = dom_stats['rss']
+        resident = 0
+        if self._pid > 0:
+            try:
+                with open('/proc/' + str(self._pid) + '/statm') as statmfile:
+                    resident = int(statmfile.read().split()[1])
+            except:
+                pass
+        mem_stats['rss'] = resident * cpuarch.PAGE_SIZE_BYTES // 1024
         return mem_stats
 
     def hibernate(self, dst):
@@ -2530,6 +2529,9 @@ class Vm(object):
                 self._pause_time = vdsm.common.time.monotonic_time()
             if self._initTimePauseCode == 'ENOSPC':
                 self.cont()
+
+        with self._confLock:
+            self._pid = self._get_pid()
 
         self._dom_vcpu_setup()
         self._updateIoTuneInfo()
@@ -5157,6 +5159,18 @@ class Vm(object):
     @property
     def name(self):
         return self._domain.name
+
+    def _get_pid(self):
+        try:
+            pid = supervdsm.getProxy().getVmPid(
+                self.name.encode('utf-8'))
+        except (IOError, ValueError):
+            self.log.error('cannot read pid')
+            raise
+        else:
+            if pid <= 0:
+                raise ValueError('read invalid pid: %i' % pid)
+            return pid
 
     def _updateDomainDescriptor(self, xml=None):
         domxml = self._dom.XMLDesc(0) if xml is None else xml

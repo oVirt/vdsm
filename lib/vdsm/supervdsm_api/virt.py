@@ -44,6 +44,13 @@ def prepareVmChannel(socketFile, group=None):
 
 
 @expose
+def getVmPid(vmName):
+    pidFile = "/var/run/libvirt/qemu/%s.pid" % vmName
+    with open(pidFile) as pid:
+        return int(pid.read())
+
+
+@expose
 def hugepages_alloc(count, path):
     """
     Function to allocate hugepages. Thread-safety not guaranteed.
