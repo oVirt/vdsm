@@ -325,6 +325,7 @@ class DeviceToXMLTests(XMLTestCase):
                 <model type="virtio"/>
                 <source bridge="ovirtmgmt"/>
                 <filterref filter="no-mac-spoofing"/>
+                <link state="up"/>
                 <boot order="1"/>
                 <driver name="vhost" queues="7"/>
                 <tune>
@@ -361,6 +362,7 @@ class DeviceToXMLTests(XMLTestCase):
                     <parameter name='IP' value='10.0.0.1'/>
                     <parameter name='IP' value='10.0.0.2'/>
                 </filterref>
+                <link state="up"/>
                 <boot order="1"/>
                 <driver name="vhost"/>
                 <tune>
@@ -402,6 +404,7 @@ class DeviceToXMLTests(XMLTestCase):
                     <tag id="101" />
                 </vlan>
                 <filterref filter="no-mac-spoofing"/>
+                <link state="up"/>
                 <boot order="1"/>
                 <driver name="vhost" queues="7"/>
                 <tune>
@@ -456,6 +459,7 @@ class DeviceToXMLTests(XMLTestCase):
         <interface type='network'>
           <mac address="fake" />
           <source bridge='default'/>
+          <link state="up"/>
           <bandwidth>
             <inbound average='1000' peak='5000' floor='200' burst='1024'/>
             <outbound average='128' peak='256' burst='256'/>
@@ -1104,6 +1108,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                     <parameter name='IP' value='10.0.0.1'/>
                     <parameter name='IP' value='10.0.0.2'/>
                 </filterref>
+                <link state="up"/>
                 <boot order="1"/>
                 <driver name="vhost" queues="7"/>
                 <tune>
@@ -1191,6 +1196,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 <mac address="52:54:00:59:F5:3F" />
                 <model type="virtio" />
                 <source bridge="ovirttest" />
+                <link state="up" />
             </interface>'''
         self._check_roundtrip(
             vmdevices.network.Interface,
@@ -1217,6 +1223,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 <vlan>
                     <tag id="3"/>
                 </vlan>
+                <link state="up"/>
                 <boot order="9"/>
                 <driver name="vfio"/>
             </interface>'''
@@ -1247,6 +1254,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 <vlan>
                     <tag id="3"/>
                 </vlan>
+                <link state="up"/>
                 <boot order="9"/>
                 <driver name="vfio"/>
             </interface>'''
@@ -1269,6 +1277,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 <address type='pci' domain='0x0000' bus='0x05'
                     slot='0x00' function='0x1'/>
               </source>
+              <link state="up"/>
               <driver name='vfio'/>
             </interface>'''
         meta = {'vmid': 'VMID'}
@@ -1316,6 +1325,7 @@ class DeviceXMLRoundTripTests(XMLTestCase):
                 <vlan>
                     <tag id="101" />
                 </vlan>
+                <link state="up"/>
                 <boot order="1"/>
                 <driver name="vhost" queues="4"/>
                 <tune>
@@ -1607,6 +1617,9 @@ _DOMAIN_MD_MATCH_XML = u"""<domain type='kvm' id='2'>
       <ovirt-vm:device mac_address='00:1a:55:ff:20:26'>
         <ovirt-vm:network>ovirtmgmt2</ovirt-vm:network>
       </ovirt-vm:device>
+      <ovirt-vm:device mac_address='00:1a:55:ff:30:36'>
+        <ovirt-vm:network>ovirtmgmt2</ovirt-vm:network>
+      </ovirt-vm:device>
     </ovirt-vm:vm>
   </metadata>
   <devices>
@@ -1663,6 +1676,13 @@ _DOMAIN_MD_MATCH_XML = u"""<domain type='kvm' id='2'>
       <filterref filter='vdsm-no-mac-spoofing'/>
       <link state='up'/>
     </interface>
+    <interface type='bridge'>
+      <mac address='00:1a:55:ff:30:36'/>
+      <source bridge='network4'/>
+      <target dev='vnet4'/>
+      <model type='virtio'/>
+      <link state='up'/>
+    </interface>
   </devices>
 </domain>"""
 
@@ -1704,10 +1724,19 @@ class DeviceMetadataMatchTests(XMLTestCase):
         )
         # random MAC, any nic with portMirroring configured is fine
         nic1 = self._find_nic_by_mac(dev_objs, '00:1a:55:ff:20:26')
-        self.assertFalse(hasattr(nic1, 'portMirroring'))
+        self.assertEqual(nic1.portMirroring, [])
 
         nic2 = self._find_nic_by_mac(dev_objs, '00:1a:4a:16:01:00')
         self.assertEqual(nic2.portMirroring, ['network1', 'network2'])
+
+    def test_attributes_present(self):
+        dev_objs = vmdevices.common.dev_map_from_domain_xml(
+            'TESTING', self.dom_desc, self.md_desc, self.log
+        )
+        nic = self._find_nic_by_mac(dev_objs, '00:1a:55:ff:30:36')
+        self.assertEqual(nic.filterParameters, [])
+        self.assertEqual(nic.portMirroring, [])
+        self.assertEqual(nic.vm_custom, {})
 
     def _find_nic_by_mac(self, dev_objs, mac_addr):
         for nic in dev_objs[vmdevices.hwclass.NIC]:

@@ -136,6 +136,7 @@ DEVICE_XML = {
             <vlan>
                     <tag id="3"/>
             </vlan>
+            <link state="up"/>
             <boot order="9"/>
             <driver name="vfio"/>
     </interface>

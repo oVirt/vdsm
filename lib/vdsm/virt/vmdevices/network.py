@@ -144,11 +144,11 @@ class Interface(core.Base):
                 kwargs[attr] = 'virtio'
             elif attr == 'network' and value == '':
                 kwargs[attr] = net_api.DUMMY_BRIDGE
+        self.portMirroring = []
+        self.filterParameters = []
+        self.vm_custom = {}
+        self.linkActive = True
         super(Interface, self).__init__(log, **kwargs)
-        if not hasattr(self, 'filterParameters'):
-            self.filterParameters = []
-        if not hasattr(self, 'vm_custom'):
-            self.vm_custom = {}
         self.sndbufParam = False
         self.is_hostdevice = self.device == hwclass.HOSTDEV
         self.vlanId = self.specParams.get('vlanid')
