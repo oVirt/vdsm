@@ -369,6 +369,7 @@ class TestVmDevices(XMLTestCase):
             <source mode="server" path="{rundir}vhostuser/{vmid}"
                 type="unix" />
             <filterref filter="no-mac-spoofing"/>
+            <link state="up"/>
             <boot order="1"/>
         </interface>""".format(
             pciaddr=self.PCI_ADDR,
@@ -400,6 +401,7 @@ class TestVmDevices(XMLTestCase):
             <source mode="server" path="{rundir}vhostuser/{vmid}"
                 type="unix" />
             <filterref filter="no-mac-spoofing"/>
+            <link state="up"/>
             <boot order="1"/>
         </interface>""".format(
             pciaddr=self.PCI_ADDR,
