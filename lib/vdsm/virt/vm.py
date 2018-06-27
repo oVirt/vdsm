@@ -3121,8 +3121,6 @@ class Vm(object):
         try:
             netDev = vmdevices.lookup.device_by_alias(
                 self._devices[hwclass.NIC][:], params['alias'])
-            netConf = vmdevices.lookup.conf_by_alias(
-                self.conf['devices'], hwclass.NIC, params['alias'])
 
             linkValue = 'up' if conv.tobool(
                 params.get('linkActive', netDev.linkActive)) else 'down'
@@ -3133,12 +3131,11 @@ class Vm(object):
             custom = params.get('custom', {})
             specParams = params.get('specParams')
 
-            netsToMirror = params.get('portMirroring',
-                                      netConf.get('portMirroring', []))
+            netsToMirror = params.get('portMirroring', netDev.portMirroring)
 
-            with self.setLinkAndNetwork(netDev, netConf, linkValue, network,
+            with self.setLinkAndNetwork(netDev, linkValue, network,
                                         custom, specParams):
-                with self.updatePortMirroring(netConf, netsToMirror):
+                with self.updatePortMirroring(netDev, netsToMirror):
                     self._hotplug_device_metadata(hwclass.NIC, netDev)
                     return response.success(vmList=self.status())
         except (LookupError,
@@ -3157,7 +3154,7 @@ class Vm(object):
                 del self.conf['_migrationParams']
 
     @contextmanager
-    def setLinkAndNetwork(self, dev, conf, linkValue, networkValue, custom,
+    def setLinkAndNetwork(self, dev, linkValue, networkValue, custom,
                           specParams=None):
         vnicXML = dev.getXML()
         source = vmxml.find_first(vnicXML, 'source')
@@ -3194,18 +3191,17 @@ class Vm(object):
             raise
         else:
             # Update the device and the configuration.
-            dev.network = conf['network'] = networkValue
-            conf['linkActive'] = linkValue == 'up'
-            setattr(dev, 'linkActive', linkValue == 'up')
+            dev.network = networkValue
+            dev.linkActive = linkValue == 'up'
             dev.custom = custom
 
     @contextmanager
-    def updatePortMirroring(self, conf, networks):
-        devName = conf['name']
-        netsToDrop = [net for net in conf.get('portMirroring', [])
+    def updatePortMirroring(self, nic, networks):
+        devName = nic.name
+        netsToDrop = [net for net in nic.portMirroring
                       if net not in networks]
         netsToAdd = [net for net in networks
-                     if net not in conf.get('portMirroring', [])]
+                     if net not in nic.portMirroring]
         mirroredNetworks = []
         droppedNetworks = []
         try:
@@ -3230,7 +3226,7 @@ class Vm(object):
             raise UpdatePortMirroringError(str(e))
         else:
             # Update the conf with the new mirroring.
-            conf['portMirroring'] = networks
+            nic.portMirroring = networks
 
     def _updateGraphicsDevice(self, params):
         graphics = self._findGraphicsDeviceXMLByType(params['graphicsType'])
