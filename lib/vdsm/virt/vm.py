@@ -2424,10 +2424,8 @@ class Vm(object):
         # Currently there is no protection agains mirroring a network twice,
         if not self.recovering:
             for nic in self._devices[hwclass.NIC]:
-                if hasattr(nic, 'portMirroring'):
-                    for network in nic.portMirroring:
-                        supervdsm.getProxy().setPortMirroring(network,
-                                                              nic.name)
+                for network in nic.portMirroring:
+                    supervdsm.getProxy().setPortMirroring(network, nic.name)
 
             vmdevices.common.save_device_metadata(
                 self._md_desc, self._devices, self.log)
@@ -2964,29 +2962,28 @@ class Vm(object):
             hooks.after_nic_hotplug(nicXml, self._custom,
                                     params=nic.custom)
 
-        if hasattr(nic, 'portMirroring'):
-            mirroredNetworks = []
-            try:
-                # pylint: disable=no-member
-                for network in nic.portMirroring:
-                    supervdsm.getProxy().setPortMirroring(network, nic.name)
-                    mirroredNetworks.append(network)
-            # The better way would be catch the proper exception.
-            # One of such exceptions is TrafficControlException, but
-            # I am not sure that we'll get it for all traffic control errors.
-            # In any case we need below rollback for all kind of failures.
-            except Exception as e:
-                self.log.exception("setPortMirroring for network %s failed",
-                                   network)
-                if 'xml' in params:
-                    nic_element = xmlutils.fromstring(nicXml)
-                    vmxml.replace_first_child(dom_devices, nic_element)
-                    hotunplug_params = {'xml': xmlutils.tostring(dom)}
-                else:
-                    hotunplug_params = {'nic': nicParams}
-                self.hotunplugNic(hotunplug_params,
-                                  port_mirroring=mirroredNetworks)
-                return response.error('hotplugNic', str(e))
+        mirroredNetworks = []
+        try:
+            # pylint: disable=no-member
+            for network in nic.portMirroring:
+                supervdsm.getProxy().setPortMirroring(network, nic.name)
+                mirroredNetworks.append(network)
+        # The better way would be catch the proper exception.
+        # One of such exceptions is TrafficControlException, but
+        # I am not sure that we'll get it for all traffic control errors.
+        # In any case we need below rollback for all kind of failures.
+        except Exception as e:
+            self.log.exception("setPortMirroring for network %s failed",
+                               network)
+            if 'xml' in params:
+                nic_element = xmlutils.fromstring(nicXml)
+                vmxml.replace_first_child(dom_devices, nic_element)
+                hotunplug_params = {'xml': xmlutils.tostring(dom)}
+            else:
+                hotunplug_params = {'nic': nicParams}
+            self.hotunplugNic(hotunplug_params,
+                              port_mirroring=mirroredNetworks)
+            return response.error('hotplugNic', str(e))
 
         return {'status': doneCode, 'vmList': self.status()}
 
@@ -3267,7 +3264,7 @@ class Vm(object):
                 nic = vmdevices.common.dev_from_xml(self, xml)
 
             nicParams = {'macAddr': nic.macAddr}
-            if port_mirroring is None and getattr(nic, 'portMirroring', None):
+            if port_mirroring is None:
                 port_mirroring = nic.portMirroring
         else:
             nicParams = params['nic']
@@ -5158,7 +5155,7 @@ class Vm(object):
             # unsetting mirror network will clear both mirroring
             # (on the same network).
             for nic in self._devices[hwclass.NIC]:
-                if hasattr(nic, 'portMirroring') and hasattr(nic, 'name'):
+                if hasattr(nic, 'name'):
                     for network in nic.portMirroring[:]:
                         supervdsm.getProxy().unsetPortMirroring(network,
                                                                 nic.name)
