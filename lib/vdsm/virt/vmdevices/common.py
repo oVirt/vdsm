@@ -171,7 +171,7 @@ def dev_map_from_dev_spec_map(dev_spec_map, log):
 #          </ovirt-vm:device>
 #        </ovirt-vm:vm>
 #      </metadata>
-def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
+def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log, noerror=False):
     """
     Create a device map - same format as empty_dev_map from a domain XML
     representation. The domain XML is accessed through a Domain Descriptor.
@@ -186,6 +186,9 @@ def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
     :param log: logger instance to use for messages, and to pass to device
     objects.
     :type log: logger instance, as returned by logging.getLogger()
+    :param noerror: Iff true, don't raise unexpected exceptions on device
+      object initialization, just log them.
+    :type noerror: bool
     :return: map of initialized devices, map of devices needing refresh.
     :rtype: A device map, in the same format as empty_dev_map() would return.
     """
@@ -200,6 +203,14 @@ def dev_map_from_domain_xml(vmid, dom_desc, md_desc, log):
         except NotImplementedError:
             log.debug('Cannot initialize %s device: not implemented',
                       dev_type)
+        except Exception:
+            if noerror:
+                log.exception("Device initialization from XML failed")
+                dev_elem_xml = xmlutils.tostring(dev_elem, pretty=True)
+                log.error("Failed XML: %s", dev_elem_xml)
+                log.error("Failed metadata: %s", dev_meta)
+            else:
+                raise
         else:
             dev_map[dev_type].append(dev_obj)
     log.debug('Initialized %d device classes from domain XML', len(dev_map))

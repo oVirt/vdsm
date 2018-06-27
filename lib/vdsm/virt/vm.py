@@ -2657,7 +2657,8 @@ class Vm(object):
         # everything else should be taken from the XML.
         # We don't expect any storage device to be sent in the XML.
         dev_objs_from_xml = vmdevices.common.dev_map_from_domain_xml(
-            self.id, self.domain, self._md_desc, self.log
+            self.id, self.domain, self._md_desc, self.log,
+            noerror=self.recovering
         )
 
         if disk_objs:

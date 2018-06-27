@@ -27,6 +27,7 @@ import os.path
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt import metadata
 from vdsm.virt import vmdevices
+from vdsm.virt import vmxml
 from vdsm import constants
 from vdsm.common import hostdev
 from vdsm.common import xmlutils
@@ -1545,6 +1546,15 @@ _DRIVE_PAYLOAD_XML = u"""<domain type='kvm' id='2'>
 </domain>"""
 
 
+_INVALID_DEVICE_XML = u"""<domain type='kvm' id='2'>
+  <uuid>1234</uuid>
+  <devices>
+    <tpm/>
+  </devices>
+</domain>
+"""
+
+
 class DeviceFromXMLTests(XMLTestCase):
 
     def test_payload_from_metadata(self):
@@ -1596,6 +1606,20 @@ class DeviceFromXMLTests(XMLTestCase):
                 print(dev)  # debug aid
                 self.assertIsNot(dev.type, None)
                 self.assertIsNot(dev.device, None)
+
+    def test_erroneous_device_init(self):
+        dom_desc = DomainDescriptor(_INVALID_DEVICE_XML)
+        md_desc = metadata.Descriptor.from_xml(_INVALID_DEVICE_XML)
+        with self.assertRaises(vmxml.NotFound):
+            vmdevices.common.dev_map_from_domain_xml(
+                '1234', dom_desc, md_desc, self.log
+            )
+
+    def test_erroneous_device_init_ignored(self):
+        dom_desc = DomainDescriptor(_INVALID_DEVICE_XML)
+        md_desc = metadata.Descriptor.from_xml(_INVALID_DEVICE_XML)
+        self.assertNotRaises(vmdevices.common.dev_map_from_domain_xml,
+                             '1234', dom_desc, md_desc, self.log, noerror=True)
 
 
 # invalid domain with only the relevant sections added
