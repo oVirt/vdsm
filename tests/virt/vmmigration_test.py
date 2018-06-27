@@ -20,7 +20,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from contextlib import contextmanager
 from itertools import tee, product
 import logging
 import socket
@@ -141,30 +140,6 @@ class TestVmMigrationDowntimeSequence(TestCaseBase):
 
     def _linear(self, downtime, steps):
         return list(_linear_downtime(downtime, steps))
-
-
-class MigrationParamsTests(TestCaseBase):
-
-    def setUp(self):
-        # random values, no real meaning
-        self.params = {
-            'foo': 'bar',
-            'answer': 42,
-            'hyperv': ['qemu', 'kvm'],
-        }
-
-    def test_params_stored(self):
-        with fake.VM() as testvm:
-            with testvm.migration_parameters(self.params):
-                self.assertEqual(testvm.conf['_migrationParams'],
-                                 self.params)
-
-    def test_params_removed(self):
-        with fake.VM() as testvm:
-            with testvm.migration_parameters(self.params):
-                pass
-
-            self.assertNotIn('_migrationParams', testvm.conf)
 
 
 @expandPermutations
@@ -363,14 +338,6 @@ class FakeVM(object):
         self.stopped_migrated_event_processed.set()
         self.guestAgent = FakeGuestAgent()
         self.hibernation_attempts = 0
-
-    @contextmanager
-    def migration_parameters(self, params):
-        self.conf['_migrationParams'] = params
-        try:
-            yield
-        finally:
-            del self.conf['_migrationParams']
 
     def min_cluster_version(self, major, minor):
         return False

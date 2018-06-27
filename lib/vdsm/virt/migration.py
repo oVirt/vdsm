@@ -439,9 +439,8 @@ class SourceThread(object):
                             'dstparams': self._dstparams,
                             'dstqemu': self._dstqemu,
                         }
-                        with self._vm.migration_parameters(params):
-                            self._startUnderlyingMigration(time.time())
-                            self._finishSuccessfully()
+                        self._startUnderlyingMigration(time.time(), params)
+                        self._finishSuccessfully()
                 except libvirt.libvirtError as e:
                     if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
                         self.status = response.error(
@@ -460,7 +459,7 @@ class SourceThread(object):
             self._recover(str(e))
             self.log.exception("Failed to migrate")
 
-    def _startUnderlyingMigration(self, startTime):
+    def _startUnderlyingMigration(self, startTime, migrationParams):
         if self.hibernating:
             self._started = True
             self._vm.hibernate(self._dst)
@@ -496,7 +495,7 @@ class SourceThread(object):
             duri = 'qemu+{}://{}/system'.format(
                 transport, normalize_literal_addr(self.remoteHost))
 
-            dstqemu = self._vm.conf['_migrationParams']['dstqemu']
+            dstqemu = migrationParams['dstqemu']
             if dstqemu:
                 muri = 'tcp://{}'.format(
                     normalize_literal_addr(dstqemu))
