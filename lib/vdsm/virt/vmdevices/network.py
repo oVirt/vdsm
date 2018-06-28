@@ -410,9 +410,12 @@ class Interface(core.Base):
             mac = vmxml.find_attr(x, 'mac', 'address')
             alias = core.find_device_alias(x)
             xdrivers = vmxml.find_first(x, 'driver', None)
-            driver = ({'name': vmxml.attr(xdrivers, 'name'),
-                       'queues': vmxml.attr(xdrivers, 'queues')}
-                      if xdrivers is not None else {})
+            if xdrivers is not None:
+                driver = core.parse_device_attrs(
+                    xdrivers, ('name', 'queues',)
+                )
+            else:
+                driver = {}
             if devType == 'hostdev':
                 name = alias
                 model = 'passthrough'
@@ -449,7 +452,7 @@ class Interface(core.Base):
                     if driver:
                         # If a driver was reported, pass it back to libvirt.
                         # Engine (vm's conf) is not interested in this value.
-                        nic.driver = driver
+                        nic.driver.update(driver)
             # Update vm's conf with address for known nic devices
             knownDev = False
             for dev in vm.conf['devices']:

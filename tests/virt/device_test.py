@@ -311,6 +311,53 @@ class TestVmDevices(XMLTestCase):
             self.assertEqual(interface_dev.driver,
                              {'queues': '10', 'name': 'vfio'})
 
+    def test_interface_update_disappear_queues(self):
+        interface_xml = """<interface type="bridge">
+          <model type="virtio" />
+          <link state="up" />
+          <source bridge="ovirtmgmt" />
+          <driver name="vhost" queues="1" />
+          <alias name="ua-604c7957-9aaf-4e86-bcaa-87e12571449b" />
+          <mac address="00:1a:4a:16:01:50" />
+          <mtu size="1500" />
+          <filterref filter="vdsm-no-mac-spoofing" />
+          <bandwidth />
+        </interface>
+        """
+        updated_xml = """<?xml version="1.0" encoding="utf-8"?>
+        <domain type="kvm"
+          xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
+          <devices>
+            <interface type='bridge'>
+              <mac address='00:1a:4a:16:01:50'/>
+              <source bridge='ovirtmgmt'/>
+              <target dev='vnet0'/>
+              <model type='virtio'/>
+              <driver name='vhost'/>
+              <filterref filter='vdsm-no-mac-spoofing'/>
+              <link state='up'/>
+              <mtu size='1500'/>
+              <alias name='ua-604c7957-9aaf-4e86-bcaa-87e12571449b'/>
+              <address type='pci' domain='0x0000'
+                       bus='0x00' slot='0x03' function='0x0'/>
+            </interface>
+          </devices>
+        </domain>"""
+        meta = {'vmid': 'VMID'}  # noone cares about the actual ID
+        with fake.VM() as testvm:
+            nic = vmdevices.network.Interface.from_xml_tree(
+                self.log, xmlutils.fromstring(interface_xml), meta=meta
+            )
+            saved_driver = nic.driver.copy()
+            testvm._devices[hwclass.NIC].append(nic)
+            testvm._domain = DomainDescriptor(updated_xml)
+
+            vmdevices.network.Interface.update_device_info(
+                testvm, testvm._devices[hwclass.NIC]
+            )
+
+            self.assertEqual(nic.driver, saved_driver)
+
     @MonkeyPatch(vmdevices.network.supervdsm, 'getProxy',
                  lambda: MockedProxy(ovs_bridge={'name': 'test',
                                                  'dpdk_enabled': True}))
