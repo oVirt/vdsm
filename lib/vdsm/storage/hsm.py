@@ -2748,7 +2748,7 @@ class HSM(object):
         Returns a List of all or pool specific storage domains.
         If remotePath is specified, storageType is required.
 
-        :param spUUID: The UUID of the the the storage pool you want to list.
+        :param spUUID: The UUID of the storage pool you want to list.
                        If spUUID equals to :attr:`~volume.BLANK_UUID` all
                        pools will be listed.
         :type spUUID: UUID
