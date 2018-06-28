@@ -1487,6 +1487,10 @@ exit 0
 %files hook-ethtool-options
 %{_libexecdir}/%{vdsm_name}/hooks/after_network_setup/30_ethtool_options
 
+%files hook-fcoe
+%{_presetdir}/85-vdsm-hook-fcoe.preset
+%{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_fcoe
+
 %files hook-ipv6
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_ipv6
 
@@ -1518,10 +1522,6 @@ exit 0
 
 %files hook-checkimages
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/60_checkimages
-
-%files hook-fcoe
-%{_presetdir}/85-vdsm-hook-fcoe.preset
-%{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_fcoe
 
 %files hook-checkips
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/10_checkips

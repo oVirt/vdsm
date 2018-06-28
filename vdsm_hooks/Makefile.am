@@ -22,6 +22,7 @@ SUBDIRS = \
 	cpuflags \
 	ethtool_options \
 	faqemu \
+	fcoe \
 	ipv6 \
 	localdisk \
 	macspoof \
@@ -45,7 +46,6 @@ SUBDIRS += \
 	extra_ipv4_addrs \
 	fileinject \
 	fakevmstats \
-	fcoe \
 	floppy \
 	httpsisoboot \
 	isolatedprivatevlan \
