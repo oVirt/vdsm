@@ -22,6 +22,7 @@ from __future__ import division
 
 import os.path
 
+from vdsm.common import hostdev
 from vdsm.common import xmlutils
 from vdsm import constants
 import vdsm
@@ -529,6 +530,12 @@ class TestVmDevices(XMLTestCase):
 
             vmdevices.hostdevice.HostDevice.update_device_info(testvm,
                                                                device_conf)
+
+    def test_mdev_details_(self):
+        details = hostdev._mdev_type_details('graphics-card-1', '/nonexistent')
+        for f in hostdev._MDEV_FIELDS:
+            self.assertEqual(getattr(details, f),
+                             'graphics-card-1' if f == 'name' else '')
 
     def testGraphicsNoDisplayNetwork(self):
         with fake.VM() as testvm:

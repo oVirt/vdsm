@@ -313,7 +313,9 @@ def _process_mdev_params(device_xml):
 
     for mdev_type in mdev.findall('type'):
         name = mdev_type.attrib['id']
-        supported_types[name]['name'] = mdev_type.find('name').text
+        name_elem = mdev_type.find('name')
+        supported_types[name]['name'] = \
+            name if name_elem is None else name_elem.text
         try:
             supported_types[name]['available_instances'] = \
                 mdev_type.find('availableInstances').text
@@ -569,13 +571,18 @@ def _each_supported_mdev_type(pci_device):
 
 
 def _mdev_type_details(mdev_type, path):
-    ret = []
+    kwargs = {}
     for field in _MDEV_FIELDS:
         syspath = os.path.join(path, mdev_type, field)
-        with open(syspath, 'r') as f:
-            ret.append(f.read().strip())
-
-    return _MdevDetail(*ret)
+        try:
+            with open(syspath, 'r') as f:
+                value = f.read().strip()
+        except IOError:
+            value = ''
+        kwargs[field] = value
+    if not kwargs['name']:
+        kwargs['name'] = mdev_type
+    return _MdevDetail(**kwargs)
 
 
 def _suitable_device_for_mdev_type(target_mdev_type):
