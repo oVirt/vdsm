@@ -214,6 +214,57 @@ class TestLibvirtxml(XMLTestCase):
             expected_conf
         )
 
+    def test_parse_domain_fake_cpu_xml(self):
+        dom_xml = """
+          <domain type="kvm"
+                  xmlns:ns0="http://ovirt.org/vm/tune/1.0"
+                  xmlns:ns1="http://ovirt.org/vm/1.0">
+              <name>testVm</name>
+              <uuid>9ffe28b6-6134-4b1e-8804-1185f49c436f</uuid>
+              <iothreads>2</iothreads>
+              <memory>1048576</memory>
+              <currentMemory>1048576</currentMemory>
+              <maxMemory slots="2">2097152</maxMemory>
+              <vcpu current="8">160</vcpu>
+              <devices/>
+              <metadata>
+                <ns0:qos/>
+                <ns1:vm/>
+              </metadata>
+              <clock adjustment="0" offset="variable">
+                <timer name="rtc" tickpolicy="catchup" />
+                <timer name="pit" tickpolicy="delay" />
+                <timer name="hpet" present="no" />
+              </clock>
+              <features>
+                <acpi />
+              </features>
+              <cpu match="exact">
+                <topology cores="1" sockets="16" threads="1"/>
+                  <numa>
+                     <cell cpus="0" id="0" memory="1048576"/>
+                  </numa>
+              </cpu>
+           </domain>"""
+        expected_conf = {
+            'bootMenuEnable': 'false',
+            'kvmEnable': 'true',
+            'maxMemSize': 2048,
+            'maxMemSlots': 2,
+            'numOfIoThreads': '2',
+            'smp': '8',
+            'timeOffset': '0',
+            'cpuType': 'Unknown or Fake',
+            'maxVCpus': '16',
+            'smpCoresPerSocket': '1',
+            'smpThreadsPerCore': '1',
+            'guestNumaNodes': [{'cpus': '0', 'memory': '1024', 'nodeIndex': 0}]
+        }
+        self.assertEqual(
+            libvirtxml.parse_domain(dom_xml, cpuarch.X86_64),
+            expected_conf
+        )
+
     def testOSXMLBootMenu(self):
         vmConfs = (
             # trivial cases first

@@ -640,6 +640,8 @@ def _parse_domain_cpu_x86(dom, conf):
         model = 'hostModel'
     else:
         model = dom.findtext('./cpu/model')
+        if model is None:
+            model = 'Unknown or Fake'
         features = [
             _parse_domain_cpu_x86_feature(feature)
             for feature in dom.findall('./cpu/features')
