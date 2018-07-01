@@ -185,7 +185,15 @@ class GlusterStorageDevTest(TestCaseBase):
             }
         ]
 
-        with MonkeyPatchScope([(commands, "execCmd",
-                                partial(lambda x: (0, data, [])))]):
+        def fake_execcmd(command, raw=False, **kwargs):
+            if raw:
+                out = "\n".join(data)
+                err = ""
+            else:
+                out = data
+                err = []
+            return 0, out, err
+
+        with MonkeyPatchScope([(commands, "execCmd", fake_execcmd)]):
             actual = thinstorage.vdoVolumeList()
             self.assertEqual(expected, actual)

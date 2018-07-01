@@ -21,6 +21,7 @@ from __future__ import absolute_import
 
 import json
 import logging
+import yaml
 from six import iteritems
 
 from vdsm.common import cmdutils
@@ -80,39 +81,21 @@ def physicalVolumeList():
     return json.loads("".join(out))["report"][0]["pv"]
 
 
-def _parseVdoOutput(out, depth):
-    result = {}
-    while out:
-        item = out[0]
-        item_depth = len(item) - len(item.strip())
-        if item_depth < depth:
-            return result
-        out.pop(0)
-        kv = item.split(":")
-        key = kv[0].replace(" ", "")
-        if not kv[1]:
-            result[key] = _parseVdoOutput(out, depth + 2)
-        else:
-            value = kv[1].replace(" ", "")
-            result[key] = value
-    return result
-
-
 @gluster_mgmt_api
 def vdoVolumeList():
-    rc, out, err = commands.execCmd([_vdoCommandPath.cmd, "status"])
+    rc, out, err = commands.execCmd([_vdoCommandPath.cmd, "status"], raw=True)
     if rc:
         raise ge.GlusterCmdExecFailedException(rc, out, err)
-    vdoData = _parseVdoOutput(out, 0)
+    vdoData = yaml.safe_load(out)
 
     result = []
     for vdo, data in iteritems(vdoData["VDOs"]):
         entry = {}
-        entry["device"] = data["Storagedevice"]
-        for mapper, stats in iteritems(data["VDOstatistics"]):
+        entry["device"] = data["Storage device"]
+        for mapper, stats in iteritems(data["VDO statistics"]):
             entry["name"] = mapper
             entry["size"] = int(stats["1K-blocks"]) * 1024
-            entry["free"] = int(stats["1K-blocksavailable"]) * 1024
+            entry["free"] = int(stats["1K-blocks available"]) * 1024
         result.append(entry)
 
     return result
