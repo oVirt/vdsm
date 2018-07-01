@@ -154,7 +154,10 @@ class GlusterStorageDevTest(TestCaseBase):
             "        1K-blocks available: 6265428",
             "        1K-blocks used: 4220332",
             "        512 byte emulation: true",
+            "        block size: 4096",
             "        write policy: async",
+            "        logical blocks used: 20",
+            "        data blocks used: 10",
             "  vdonext:",
             "    Compression: enabled",
             "    Deduplication: enabled",
@@ -167,6 +170,9 @@ class GlusterStorageDevTest(TestCaseBase):
             "        1K-blocks available: 6287208",
             "        1K-blocks used: 4198552",
             "        512 byte emulation: true",
+            "        block size: 1024",
+            "        logical blocks used: 40",
+            "        data blocks used: 15",
             "        write policy: async"
         ]
 
@@ -175,11 +181,15 @@ class GlusterStorageDevTest(TestCaseBase):
                 "device": "/dev/vg0/vdobase",
                 "name": "/dev/mapper/vdodata",
                 "size": 10737418240,
-                "free": 6415798272
+                "free": 6415798272,
+                'logicalBytesUsed': 81920,
+                'physicalBytesUsed': 40960
             },
             {
                 "device": "/dev/vg0/vdosecond",
                 "name": "/dev/mapper/vdonext",
+                'logicalBytesUsed': 40960,
+                'physicalBytesUsed': 15360,
                 "size": 10737418240,
                 "free": 6438100992
             }
