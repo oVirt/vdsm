@@ -94,9 +94,16 @@ def vdoVolumeList():
         entry = {}
         entry["device"] = data["Storage device"]
         for mapper, stats in iteritems(data["VDO statistics"]):
+            blockSize = stats["block size"]
             entry["name"] = mapper
             entry["size"] = int(stats["1K-blocks"]) * 1024
             entry["free"] = int(stats["1K-blocks available"]) * 1024
+            entry["logicalBytesUsed"] = (
+                stats["logical blocks used"] * blockSize
+            )
+            entry["physicalBytesUsed"] = (
+                stats["data blocks used"] * blockSize
+            )
         result.append(entry)
 
     return result

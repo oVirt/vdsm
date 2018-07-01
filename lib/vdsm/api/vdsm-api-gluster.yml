@@ -447,6 +447,14 @@ types:
         -   description: Available space in bytes, where applicable
             name: free
             type: int
+        -   description: Number of used logical bytes on the VDO device
+            name: logicalBytesUsed
+            type: int
+            added: '4.2.5'
+        -   description: Number of used physical bytes on the VDO device
+            name: physicalBytesUsed
+            type: int
+            added: '4.2.5'
 
     RaidDevice: &RaidDevice
         added: '3.6'
