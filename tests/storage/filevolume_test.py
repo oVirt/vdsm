@@ -25,22 +25,20 @@ from contextlib import contextmanager
 import os
 
 from storage.storagetestlib import fake_env
-from testlib import VdsmTestCase
 from testlib import make_uuid
 from vdsm.constants import GIB
 from vdsm.storage import constants as sc
 from vdsm.storage import fileVolume
 
 
-class TestGetDomUuidFromVolumePath(VdsmTestCase):
+class TestGetDomUuidFromVolumePath(object):
     def test(self):
         testPath = os.path.join(sc.REPO_DATA_CENTER,
                                 "spUUID/sdUUID/images/imgUUID/volUUID")
-        self.assertEqual(fileVolume.getDomUuidFromVolumePath(testPath),
-                         "sdUUID")
+        assert fileVolume.getDomUuidFromVolumePath(testPath) == "sdUUID"
 
 
-class TestFileVolumeManifest(VdsmTestCase):
+class TestFileVolumeManifest(object):
 
     @contextmanager
     def make_volume(self, size, storage_type='file', format=sc.RAW_FORMAT):
@@ -54,21 +52,20 @@ class TestFileVolumeManifest(VdsmTestCase):
     def test_max_size_raw(self):
         max_size = fileVolume.FileVolume.max_size(1 * GIB, sc.RAW_FORMAT)
         # verify that max size equals to virtual size.
-        self.assertEqual(max_size, 1 * GIB)
+        assert max_size == 1 * GIB
 
     def test_max_size_cow(self):
         max_size = fileVolume.FileVolume.max_size(10 * GIB, sc.COW_FORMAT)
         # verify that max size equals to virtual size with estimated cow
         # overhead, aligned to MiB.
-        self.assertEqual(max_size, 11811160064)
+        assert max_size == 11811160064
 
     def test_optimal_size_raw(self):
         size = 5 * 1048576
         with self.make_volume(size=size) as vol:
-            self.assertEqual(vol.optimal_size(), size)
+            assert vol.optimal_size() == size
 
     def test_optimal_size_cow(self):
         size = 5 * 1048576
         with self.make_volume(size=size, format=sc.COW_FORMAT) as vol:
-            self.assertEqual(vol.optimal_size(),
-                             vol.getVolumeSize() * sc.BLOCK_SIZE)
+            assert vol.optimal_size() == vol.getVolumeSize() * sc.BLOCK_SIZE
