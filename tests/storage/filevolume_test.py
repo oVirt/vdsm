@@ -27,6 +27,7 @@ import os
 from storage.storagetestlib import fake_env
 from testlib import make_uuid
 from vdsm.constants import GIB
+from vdsm.constants import MEGAB
 from vdsm.storage import constants as sc
 from vdsm.storage import fileVolume
 
@@ -61,11 +62,11 @@ class TestFileVolumeManifest(object):
         assert max_size == 11811160064
 
     def test_optimal_size_raw(self):
-        size = 5 * 1048576
+        size = 5 * MEGAB
         with self.make_volume(size=size) as vol:
             assert vol.optimal_size() == size
 
     def test_optimal_size_cow(self):
-        size = 5 * 1048576
+        size = 5 * MEGAB
         with self.make_volume(size=size, format=sc.COW_FORMAT) as vol:
             assert vol.optimal_size() == vol.getVolumeSize() * sc.BLOCK_SIZE
