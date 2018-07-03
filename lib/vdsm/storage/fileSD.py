@@ -287,7 +287,8 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         Template volumes have no parent, and thus we report BLANK_UUID as their
         parentUUID.
         """
-        volMetaPattern = os.path.join(self.mountpoint, self.sdUUID,
+        volMetaPattern = os.path.join(glob_escape(self.mountpoint),
+                                      self.sdUUID,
                                       sd.DOMAIN_IMAGES, "*", "*.meta")
         volMetaPaths = self.oop.glob.glob(volMetaPattern)
 
