@@ -35,6 +35,7 @@ python2-requests
 python2-setuptools
 python2-six
 python2-subprocess32
+python3-PyYAML
 python3-augeas
 python3-coverage
 python3-dateutil
@@ -43,7 +44,6 @@ python3-decorator
 python3-netaddr
 python3-nose
 python3-pyudev
-python3-PyYAML
 python3-six
 python3-yaml
 rpm-build

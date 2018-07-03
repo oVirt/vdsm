@@ -1,5 +1,7 @@
+PyYAML
 autoconf
 automake
+dnf-utils
 git
 libguestfs-tools-c
 libselinux-python3
@@ -27,9 +29,7 @@ python3-dateutil
 python3-decorator
 python3-netaddr
 python3-nose
-PyYAML
 rpm-build
 sanlock-python
 sudo
 yum
-dnf-utils

@@ -20,12 +20,12 @@ python-inotify
 python-ioprocess
 python-ipaddress
 python-mock
-python-pyudev
 python-netaddr
 python-pthreading
+python-pyudev
+python-requests
 python-six
 python-subprocess32
-python-requests
 rpm-build
 sanlock-python
 sudo

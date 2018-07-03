@@ -1,3 +1,4 @@
+PyYAML
 autoconf
 automake
 createrepo
@@ -11,7 +12,6 @@ mom
 openvswitch
 ovirt-imageio-common
 policycoreutils-python
-PyYAML
 python-augeas
 python-blivet
 python-coverage
@@ -21,15 +21,15 @@ python-devel
 python-inotify
 python-ioprocess
 python-ipaddress
-python-mock
 python-magic
+python-mock
 python-netaddr
 python-pip
 python-pthreading
 python-pyudev
+python-requests
 python-six
 python-subprocess32
-python-requests
 rpm-build
 rpmlint
 sanlock-python

@@ -26,11 +26,11 @@ python2-pyyaml
 python2-setuptools
 python2-six
 python2-subprocess32
+python3-PyYAML
 python3-dateutil
 python3-decorator
 python3-netaddr
 python3-nose
-python3-PyYAML
 rpm-build
 sanlock-python
 sudo
