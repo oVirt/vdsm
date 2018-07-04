@@ -59,7 +59,7 @@ class MissingNetwork(Exception):
 class Interface(core.Base):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
                  'linkActive', 'portMirroring', 'filter', 'filterParameters',
-                 'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev',
+                 'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev', 'mtu',
                  'numa_node', '_device_params', 'vm_custom', '_is_vhostuser')
 
     @classmethod
@@ -101,6 +101,9 @@ class Interface(core.Base):
             params['specParams']['vlanid'] = vmxml.find_attr(
                 vlan, 'tag', 'id'
             )
+        mtu = vmxml.find_first(dev, "mtu", None)
+        if mtu is not None:
+            params['mtu'] = int(vmxml.attr(mtu, 'size'))
         filterref = vmxml.find_first(dev, 'filterref', None)
         if filterref is not None:
             params['filter'] = vmxml.attr(filterref, 'filter')
@@ -149,6 +152,7 @@ class Interface(core.Base):
         self.filterParameters = []
         self.vm_custom = {}
         self.linkActive = True
+        self.mtu = None
         super(Interface, self).__init__(log, **kwargs)
         self.sndbufParam = False
         self.is_hostdevice = self.device == hwclass.HOSTDEV
@@ -275,6 +279,9 @@ class Interface(core.Base):
                     self._source_ovs_bridge(iface, ovs_bridge['name'])
             else:
                 iface.appendChildWithArgs('source', bridge=self.network)
+
+        if self.mtu is not None:
+            iface.appendChildWithArgs('mtu', size=str(self.mtu))
 
         if hasattr(self, 'filter'):
             filter = iface.appendChildWithArgs('filterref', filter=self.filter)
@@ -487,6 +494,22 @@ class Interface(core.Base):
         return s.format(self=self,
                         name=getattr(self, 'name', None),
                         addr=id(self))
+
+    def update_params(self):
+        params = {
+            'alias': self.alias,
+            'linkActive': self.linkActive,
+            'network': self.network,
+            'custom': self.custom,
+            'specParams': self.specParams,
+            'portMirroring': self.portMirroring,
+        }
+        if self.network == '':
+            params['network'] = net_api.DUMMY_BRIDGE
+            params['linkActive'] = False
+        if self.mtu is not None:
+            params['mtu'] = self.mtu
+        return params
 
 
 def update_bandwidth_xml(iface, vnicXML, specParams=None):

@@ -7783,6 +7783,16 @@ types:
             type: string
         type: object
 
+    vmUpdateXMLDeviceParams: &vmUpdateXMLDeviceParams
+        added: '4.3'
+        description: Parameters for VM.updateDevice
+        name: vmUpdateXMLDeviceParams
+        properties:
+        -   description: XML snippet about the device to update
+            name: xml
+            type: string
+        type: object
+
     vmUpdateDeviceParams: &vmUpdateDeviceParams
         added: '3.2'
         description: A discriminated record of update parameters for a VM
@@ -7797,6 +7807,7 @@ types:
         values:
         - *vmUpdateInterfaceDeviceParams
         - *vmUpdateGraphicsDeviceParams
+        - *vmUpdateXMLDeviceParams
 
     CopyDataEndpointType: &CopyDataEndpointType
         added: '4.1'

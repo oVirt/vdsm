@@ -1011,6 +1011,83 @@ class TestHotplug(TestCaseBase):
         self.assertEqual(supervdsm.mirrored_networks, [])
 
 
+@expandPermutations
+class TestUpdateDevice(TestCaseBase):
+
+    NIC_UPDATE = '''<?xml version='1.0' encoding='UTF-8'?>
+<hotplug>
+  <devices>
+    <interface type="bridge">
+      <mac address="11:22:33:44:55:66"/>
+      <model type="virtio" />
+      <source bridge="ovirtmgmt" />
+      <filterref filter="vdsm-no-mac-spoofing" />
+      <link state="up" />
+      <bandwidth />
+      <alias name="net1" />
+      {mtu}
+    </interface>
+  </devices>
+  <metadata xmlns:ovirt-vm="http://ovirt.org/vm/1.0">
+    <ovirt-vm:vm>
+      <ovirt-vm:device mac_address='11:22:33:44:55:66'>
+        <ovirt-vm:network>test</ovirt-vm:network>
+        <ovirt-vm:portMirroring>
+          <ovirt-vm:network>network1</ovirt-vm:network>
+          <ovirt-vm:network>network2</ovirt-vm:network>
+        </ovirt-vm:portMirroring>
+      </ovirt-vm:device>
+    </ovirt-vm:vm>
+  </metadata>
+</hotplug>
+'''
+
+    def setUp(self):
+        devices = [{'nicModel': 'virtio', 'network': 'ovirtmgmt',
+                    'macAddr': "11:22:33:44:55:66",
+                    'device': 'bridge', 'type': 'interface',
+                    'alias': 'net1', 'name': 'net1',
+                    'linkActive': False,
+                    }]
+        with fake.VM(devices=devices, create_device_objects=True) as vm:
+            vm._dom = fake.Domain()
+            self.vm = vm
+        self.supervdsm = fake.SuperVdsm()
+
+    @permutations([
+        # mtu_old, mtu_new
+        (None, None),
+        (1492, 1492),
+    ])
+    def test_nic_update(self, mtu_old, mtu_new):
+        vm = self.vm
+        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        vm._devices[hwclass.NIC][0].mtu = mtu_old
+        mtu = ''
+        if mtu_new is not None:
+            mtu = '<mtu size="%d" />' % mtu_new
+        params = {
+            'deviceType': 'interface',
+            'xml': self.NIC_UPDATE.format(mtu=mtu),
+        }
+        with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
+                                self.supervdsm.getProxy)]):
+            vm.updateDevice(params)
+        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+        for dev in vm._devices[hwclass.NIC]:
+            if dev.macAddr == "11:22:33:44:55:66":
+                break
+        else:
+            raise Exception("Hot plugged device not found")
+        self.assertTrue(dev.linkActive)
+        self.assertEqual(dev.network, 'test')
+        self.assertEqual(
+            sorted(dev.portMirroring),
+            sorted(['network1', 'network2'])
+        )
+        self.assertEqual(dev.mtu, mtu_new)
+
+
 class TestRestorePaths(TestCaseBase):
 
     XML = '''<?xml version='1.0' encoding='UTF-8'?>
