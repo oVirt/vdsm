@@ -3207,12 +3207,12 @@ class Vm(object):
                 linkValue = 'down'
             custom = params.get('custom', {})
             specParams = params.get('specParams')
-
+            MTU = params.get('mtu', netDev.mtu)
             netsToMirror = params.get('portMirroring',
                                       netConf.get('portMirroring', []))
 
             with self.setLinkAndNetwork(netDev, netConf, linkValue, network,
-                                        custom, specParams):
+                                        custom, specParams, MTU):
                 with self.updatePortMirroring(netConf, netsToMirror):
                     self._hotplug_device_metadata(hwclass.NIC, netDev)
                     return {'vmList': self.status()}
@@ -3233,7 +3233,7 @@ class Vm(object):
 
     @contextmanager
     def setLinkAndNetwork(self, dev, conf, linkValue, networkValue, custom,
-                          specParams=None):
+                          specParams=None, MTU=None):
         vnicXML = dev.getXML()
         source = vmxml.find_first(vnicXML, 'source')
         vmxml.set_attr(source, 'bridge', networkValue)
@@ -3242,6 +3242,12 @@ class Vm(object):
         except vmxml.NotFound:
             link = vnicXML.appendChildWithArgs('link')
         vmxml.set_attr(link, 'state', linkValue)
+        if MTU is not None:
+            try:
+                mtu = vmxml.find_first(vnicXML, 'mtu')
+            except vmxml.NotFound:
+                mtu = vnicXML.appendChildWithArgs('mtu')
+            vmxml.set_attr(mtu, 'size', str(MTU))
         vmdevices.network.update_bandwidth_xml(dev, vnicXML, specParams)
         vnicStrXML = vmxml.format_xml(vnicXML, pretty=True)
         try:
@@ -3273,6 +3279,7 @@ class Vm(object):
             conf['linkActive'] = linkValue == 'up'
             setattr(dev, 'linkActive', linkValue == 'up')
             dev.custom = custom
+            dev.mtu = MTU
 
     @contextmanager
     def updatePortMirroring(self, conf, networks):
@@ -3325,10 +3332,25 @@ class Vm(object):
         return result
 
     def updateDevice(self, params):
+        # this is not optimal, but to properly support XML, we would need
+        # to rewrite the flow from the ground up.
+        desired_xml = params.get('xml', None)
+        dev_params = params
+
         if params.get('deviceType') == hwclass.NIC:
-            return self._updateInterfaceDevice(params)
+            if desired_xml is not None:
+                nic = vmdevices.common.dev_from_xml(self, desired_xml)
+                dev_params = nic.update_params()
+            return self._updateInterfaceDevice(dev_params)
+
         if params.get('deviceType') == hwclass.GRAPHICS:
+            if desired_xml is not None:
+                # problem here is `params', which can be anything.
+                # to support this with XML, we need to figure out
+                # how to pass them.
+                raise exception.MethodNotImplemented()
             return self._updateGraphicsDevice(params)
+
         raise exception.MethodNotImplemented()
 
     @api.guard(_not_migrating)

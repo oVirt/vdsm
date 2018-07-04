@@ -380,8 +380,9 @@ class VM(APIBase):
     @api.method
     def updateDevice(self, params):
         validate.require_keys(params, ('deviceType',))
-        if params['deviceType'] == hwclass.NIC:
-            validate.require_keys(params, ('alias',))
+        if 'xml' not in params:
+            if params['deviceType'] == hwclass.NIC:
+                validate.require_keys(params, ('alias',))
         return self.vm.updateDevice(params)
 
     @api.logged(on="api.virt")
