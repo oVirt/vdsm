@@ -270,12 +270,16 @@ check:
 	@echo '=== Running tests.  To skip this step place NOSE_EXCLUDE=.* ==='
 	@echo '=== into your environment.  Do not submit untested code!    ==='
 	$(top_srcdir)/tests/run_tests_local.sh $(run_modules)
-	[ -n "$$NOSE_WITH_COVERAGE" ] && mv .coverage .coverage-nose-py2
+	if [ -n "$$NOSE_WITH_COVERAGE" ]; then \
+		mv .coverage .coverage-nose-py2; \
+	fi
 	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then \
 		PYTHON_EXE="$(PYTHON3)" \
 			$(top_srcdir)/tests/run_tests_local.sh \
 			$(filter-out $(blacklist_modules_python3),$(run_modules)) && \
-		[ -n "$$NOSE_WITH_COVERAGE" ] && mv .coverage .coverage-nose-py3; \
+		if [ -n "$$NOSE_WITH_COVERAGE" ]; then \
+		    mv .coverage .coverage-nose-py3; \
+		fi \
 	fi
 
 # Disable builtin %.out rule, overrwriting out files
