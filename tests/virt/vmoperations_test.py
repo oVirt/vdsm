@@ -25,6 +25,7 @@ import libvirt
 from six.moves import zip
 
 from vdsm.common import define
+from vdsm.common import exception
 from vdsm.common import hooks
 from vdsm.common import libvirtconnection
 from vdsm.common import password
@@ -331,11 +332,13 @@ class TestVmOperations(XMLTestCase):
             domain.updateDeviceFlags = _fail
             testvm._dom = domain
 
-            res = self._updateGraphicsDevice(testvm, device,
-                                             _GRAPHICS_DEVICE_PARAMS)
-
-            self.assertEqual(res,
-                             response.error('ticketErr', message))
+            self.assertRaises(
+                exception.SpiceTicketError,
+                self._updateGraphicsDevice,
+                testvm,
+                device,
+                _GRAPHICS_DEVICE_PARAMS
+            )
 
     def testAcpiShutdownDisconnected(self):
         with fake.VM() as testvm:
