@@ -3215,11 +3215,11 @@ class Vm(object):
                                         custom, specParams):
                 with self.updatePortMirroring(netConf, netsToMirror):
                     self._hotplug_device_metadata(hwclass.NIC, netDev)
-                    return response.success(vmList=self.status())
+                    return {'vmList': self.status()}
         except (LookupError,
                 SetLinkAndNetworkError,
                 UpdatePortMirroringError) as e:
-            return response.error('updateDevice', str(e))
+            raise exception.UpdateDeviceFailed(str(e))
 
     @contextmanager
     def migration_parameters(self, params):
@@ -3309,24 +3309,27 @@ class Vm(object):
 
     def _updateGraphicsDevice(self, params):
         graphics = self._findGraphicsDeviceXMLByType(params['graphicsType'])
-        if graphics is not None:
-            result = self._setTicketForGraphicDev(
-                graphics, params['password'], params['ttl'],
-                params.get('existingConnAction'),
-                params.get('disconnectAction'), params['params'])
-            if result['status']['code'] == 0:
-                result['vmList'] = self.status()
-            return result
-        else:
-            return response.error('updateDevice')
+        if graphics is None:
+            raise exception.UpdateDeviceFailed()
+
+        result = self._setTicketForGraphicDev(
+            graphics,
+            params['password'],
+            params['ttl'],
+            params.get('existingConnAction'),
+            params.get('disconnectAction'),
+            params['params']
+        )
+
+        result['vmList'] = self.status()
+        return result
 
     def updateDevice(self, params):
         if params.get('deviceType') == hwclass.NIC:
             return self._updateInterfaceDevice(params)
-        elif params.get('deviceType') == hwclass.GRAPHICS:
+        if params.get('deviceType') == hwclass.GRAPHICS:
             return self._updateGraphicsDevice(params)
-        else:
-            return response.error('noimpl')
+        raise exception.MethodNotImplemented()
 
     @api.guard(_not_migrating)
     def hotunplugNic(self, params, port_mirroring=None):
@@ -5068,8 +5071,8 @@ class Vm(object):
         try:
             graphics = next(self._domain.get_device_elements('graphics'))
         except StopIteration:
-            return response.error('ticketErr',
-                                  'no graphics devices configured')
+            raise exception.SpiceTicketError(
+                'no graphics devices configured')
         return self._setTicketForGraphicDev(
             graphics, otp, seconds, connAct, None, params)
 
@@ -5088,11 +5091,10 @@ class Vm(object):
             self._consoleDisconnectAction = disconnectAction or \
                 ConsoleDisconnectAction.LOCK_SCREEN
         except virdomain.TimeoutError as tmo:
-            res = response.error('ticketErr', six.text_type(tmo))
+            raise exception.SpiceTicketError(six.text_type(tmo))
         else:
             hooks.after_vm_set_ticket(self._domain.xml, self._custom, params)
-            res = {'status': doneCode}
-        return res
+            return {}
 
     def _reviveTicket(self, newlife):
         """

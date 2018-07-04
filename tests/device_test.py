@@ -21,7 +21,6 @@
 import os.path
 
 from vdsm.common import hostdev
-from vdsm.common import response
 from vdsm import constants
 import vdsm
 from vdsm.virt import vmdevices
@@ -269,7 +268,7 @@ class TestVmDevices(XMLTestCase):
         with fake.VM(devices=devices, create_device_objects=True) as testvm:
             testvm._dom = fake.Domain()
             res = testvm.updateDevice(params)
-            self.assertFalse(response.is_error(res))
+            self.assertIn('vmList', res)
             self.assertXMLEqual(testvm._dom.devXml, updated_xml)
 
     def testUpdateDriverInSriovInterface(self):
