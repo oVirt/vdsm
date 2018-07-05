@@ -516,7 +516,7 @@ class LockingThread(object):
     the thread was started.  Then you should sleep some time to make sure the
     thread tried to acquire the context.
 
-    To check if the thread did acquire the context, wait on the the thread
+    To check if the thread did acquire the context, wait on the thread
     acquired event with timeout=0.
 
     To check that the thread is blocked on the context, wait on the acquired

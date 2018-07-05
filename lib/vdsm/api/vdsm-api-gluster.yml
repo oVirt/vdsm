@@ -1422,7 +1422,7 @@ GlusterVolume.geoRepConfigList:
 
 GlusterVolume.geoRepConfigReset:
     added: '3.6'
-    description: Resets the the config option to default value
+    description: Resets the config option to default value
     params:
     -   description: Is an existing volume name in the local node
         name: volumeName

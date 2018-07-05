@@ -526,7 +526,7 @@ BuildArch:      noarch
 
 %description hook-noipspoof
 VDSM hook which allows to enable strict anti-spoofing filtering
-on all of the the VM's interfaces.
+on all of the VM's interfaces.
 
 %package hook-extnet
 Summary:        Force a vNIC to connect to a specific libvirt network

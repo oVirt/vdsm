@@ -189,7 +189,7 @@ class DynamicBoundedSemaphore(object):
     def bound(self, value):
         """ Dynamically updates semaphore bound.
 
-        When the the specified value is larger than the previous bound,
+        When the specified value is larger than the previous bound,
         it releases the semaphore the required number of times (and possibly
         wakes that number of waiting threads).
 

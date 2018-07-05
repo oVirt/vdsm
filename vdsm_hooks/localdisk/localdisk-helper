@@ -86,7 +86,7 @@ parser = argparse.ArgumentParser(description="oVirt local disk hook helper")
 subparsers = parser.add_subparsers(title="commands")
 
 list_parser = subparsers.add_parser("list",
-                                    help="return a json with the the lv "
+                                    help="return a json with the lv "
                                          "attributes, tags, and size")
 list_parser.set_defaults(command=list)
 list_parser.add_argument("lv_name", help="LV name to get attributes "
