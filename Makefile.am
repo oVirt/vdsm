@@ -171,7 +171,8 @@ check-unit:
 
 .PHONY: tests
 tests:
-	tox -e tests,storage-py27,storage-py36,lib-py27,lib-py36,network-py27,network-py36,virt-py27,virt-py36
+	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then py=py27,py36; else py=py27; fi; \
+	tox -e "tests,{storage,lib,network,virt}-{$$py}"
 
 all-local: \
 	vdsm.spec
