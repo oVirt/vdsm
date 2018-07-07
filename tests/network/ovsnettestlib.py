@@ -31,16 +31,20 @@ TEST_BOND = 'bond.ovs.test'
 
 class OvsService(object):
     def __init__(self):
-        rc, out, err = cmd.exec_sync([OVS_CTL, 'status'])
-        self.ovs_init_state_is_up = (rc == 0)
+        self.ovs_init_state_is_up = self.is_service_running()
 
     def setup(self):
         if not self.ovs_init_state_is_up:
             cmd.exec_sync([OVS_CTL, '--system-id=random', 'start'])
+        assert self.is_service_running()
 
     def teardown(self):
         if not self.ovs_init_state_is_up:
             cmd.exec_sync([OVS_CTL, 'stop'])
+
+    def is_service_running(self):
+        rc, out, err = cmd.exec_sync([OVS_CTL, 'status'])
+        return rc == 0
 
 
 def cleanup_bridges():
