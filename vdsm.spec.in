@@ -194,7 +194,12 @@ Requires: fence-agents-all
 Requires: systemd >= 219-11
 Requires: initscripts >= 9.49.31
 Requires: cyrus-sasl-scram
+%if 0%{?fedora}
+# Required for solving bug 1575762
+Requires: lvm2 >= 2.02.177-5
+%else
 Requires: lvm2 >= 2.02.145
+%endif
 
 %if 0%{?rhel}
 # CVE-2018-3639
