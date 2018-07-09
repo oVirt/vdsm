@@ -22,6 +22,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import threading
+import logging
 
 from vdsm.common import exception
 from vdsm.common import response
@@ -120,6 +121,7 @@ class FakeVM(object):
         self._dom = dom
         self.guestAgent = ga
         self.conf = {'acpiEnable': acpiEnable}
+        self.log = logging.getLogger("fake.virt.vm")
 
     @recorded
     def doDestroy(self):

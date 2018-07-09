@@ -66,6 +66,7 @@ class VmPowerDown(object):
             self.chain.addCallback(self.forceCallback)
 
     def start(self):
+        self.vm.log.info("Starting powerdown")
         # are there any available methods for power-down?
         if self.chain.callbacks:
             # flag for successful power-down event detection
@@ -106,24 +107,53 @@ class VmShutdown(VmPowerDown):
         #       now, but it may get this functionality in the future. When
         #       the feature is implemented in the future it should be also
         #       added here.
+        self.vm.log.debug("Shutting down with guest agent")
         try:
             self.vm.qemuGuestAgentShutdown()
         except exception.VdsmException:
+            self.vm.log.warn("Shutting down with guest agent FAILED")
             return False
-        return self.event.wait(self.timeout)
+
+        return utils.log_success(
+            self.event.wait(self.timeout),
+            self.vm.log,
+            "Shutting down with guest agent succeeded",
+            "Shutting down with guest agent timeout out"
+        )
 
     def ovirtGuestAgentCallback(self):
+        self.vm.log.debug("Shutting down with oVirt agent")
         self.vm.guestAgent.desktopShutdown(self.delay, self.message, False)
-        return self.event.wait(self.delay + self.timeout)
+        return utils.log_success(
+            self.event.wait(self.delay + self.timeout),
+            self.vm.log,
+            "Shutting down with oVirt agent succeeded",
+            "Shutting down with oVirt agent timed out"
+        )
 
     def acpiCallback(self):
+        self.vm.log.debug("Shutting down with ACPI")
         if response.is_error(self.vm.acpiShutdown()):
+            self.vm.log.warn("Shutting down with ACPI FAILED")
             return False
-        return self.event.wait(self.timeout)
+
+        return utils.log_success(
+            self.event.wait(self.timeout),
+            self.vm.log,
+            "Shutting down with ACPI succeeded",
+            "Shutting down with ACPI timed out"
+        )
 
     def forceCallback(self):
+        self.vm.log.debug("Shutting down with FORCE")
         self.vm.doDestroy()
-        return self.event.wait(self.timeout)
+
+        return utils.log_success(
+            self.event.wait(self.timeout),
+            self.vm.log,
+            "Shutting down with FORCE succeeded",
+            "Shutting down with FORCE timed out"
+        )
 
 
 class VmReboot(VmPowerDown):
@@ -134,22 +164,52 @@ class VmReboot(VmPowerDown):
         #       now, but it may get this functionality in the future. When
         #       the feature is implemented in the future it should be also
         #       added here.
+        self.vm.log.debug("Rebooting with guest agent")
         try:
             self.vm.qemuGuestAgentReboot()
         except exception.VdsmException:
+            self.vm.log.warn("Rebooting with guest agent FAILED")
             return False
-        return self.event.wait(self.timeout)
+
+        return utils.log_success(
+            self.event.wait(self.timeout),
+            self.vm.log,
+            "Shutting down with FORCE succeeded",
+            "Shutting down with FORCE timed out"
+        )
 
     def ovirtGuestAgentCallback(self):
+        self.vm.log.debug("Rebooting with oVirt agent")
         self.vm.guestAgent.desktopShutdown(self.delay, self.message, True)
-        return self.event.wait(self.delay + self.timeout)
+
+        return utils.log_success(
+            self.event.wait(self.delay + self.timeout),
+            self.vm.log,
+            "Rebooting with oVirt agent succeeded",
+            "Rebooting with oVirt agent timed out",
+        )
 
     def acpiCallback(self):
+        self.vm.log.debug("Rebooting with ACPI")
         if response.is_error(self.vm.acpiReboot()):
+            self.vm.log.warn("Rebooting with ACPI FAILED")
             return False
-        return self.event.wait(self.timeout)
+
+        return utils.log_success(
+            self.event.wait(self.timeout),
+            self.vm.log,
+            "Rebooting with ACPI succeeded",
+            "Rebooting with ACPI timed out"
+        )
 
     def forceCallback(self):
         # TODO: fix like acpiShutdown
+        self.vm.log.debug("Rebooting with force")
         self.vm._dom.reset(0)
-        return self.event.wait(self.timeout)
+
+        return utils.log_success(
+            self.event.wait(self.timeout),
+            self.vm.log,
+            "Rebooting with force succeeded",
+            "Rebooting with force timed out",
+        )

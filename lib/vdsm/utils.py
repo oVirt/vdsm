@@ -460,3 +460,11 @@ def unique(iterable):
     original order.
     """
     return list(OrderedDict.fromkeys(iterable).keys())
+
+
+def log_success(success, log, msg_ok, msg_fail):
+    if success:
+        log.info(msg_ok)
+    else:
+        log.warn(msg_fail)
+    return success
