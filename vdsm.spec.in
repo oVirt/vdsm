@@ -274,6 +274,10 @@ Requires: %{name}-yajsonrpc = %{version}-%{release}
 Requires: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-cli < %{version}-%{release}
 
+# Required to generate schema cache in post step
+Requires(post): %{name}-api = %{version}-%{release}
+Requires(post): python
+
 %description client
 Access vdsm API from the command line.
 
