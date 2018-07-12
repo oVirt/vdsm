@@ -153,8 +153,8 @@ Requires: libvirt-lock-sanlock
 # Required for preventing an HotPlug disk failure due to cgroups.
 # See https://bugzilla.redhat.com/1532183 for details.
 Requires: libvirt-python >= 3.2.0-3.el7_4.1
-# CVE-2018-3639
-Requires: libvirt-daemon-kvm >= 3.9.0-14.el7_5.5
+# CVE-2018-3639 (EPYC)
+Requires: libvirt-daemon-kvm >= 3.9.0-14.el7_5.6
 %else # fedora
 # Required for preventing an HotPlug disk failure due to cgroups.
 # See https://bugzilla.redhat.com/1540872 for details.
@@ -202,8 +202,8 @@ Requires: lvm2 >= 2.02.145
 %endif
 
 %if 0%{?rhel}
-# CVE-2018-3639
-Requires: kernel >= 3.10.0-862.3.2.el7
+# CVE-2018-3639 (EPYC)
+Requires: kernel >= 3.10.0-862.6.3.el7
 Requires: e2fsprogs
 Requires: selinux-policy-targeted >= 3.13.1-166.el7_4.3
 %else
@@ -219,8 +219,8 @@ Requires: policycoreutils >= 2.1.13-55
 %endif
 
 %if 0%{?rhel}
-# CVE-2018-3639
-Requires: qemu-kvm-rhev >= 10:2.10.0-21.el7_5.3
+# CVE-2018-3639 (EPYC)
+Requires: qemu-kvm-rhev >= 10:2.10.0-21.el7_5.4
 %else # fedora
 # qemu-kvm 2.10 comes with support for unsafe operations that we want to use
 # when creating volumes.
