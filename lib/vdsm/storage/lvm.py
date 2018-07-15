@@ -1147,7 +1147,7 @@ def extendVG(vgName, devices, force):
         raise se.VolumeGroupExtendError(vgName, pvs)
 
     # Format extension PVs as all the other already in the VG
-    _initpvs(pvs, int(vg.vg_mda_size) / 2 ** 20, force)
+    _initpvs(pvs, int(vg.vg_mda_size) // constants.MEGAB, force)
 
     cmd = ["vgextend", vgName] + pvs
     devs = tuple(_lvminfo._getVGDevs((vgName, )) + tuple(pvs))
