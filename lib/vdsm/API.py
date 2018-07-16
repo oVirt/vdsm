@@ -66,6 +66,7 @@ import vdsm.virt.jobs
 from vdsm.virt.jobs import seal
 from vdsm.virt.vmdevices import graphics
 from vdsm.virt.vmdevices import hwclass
+from vdsm.virt.vmdevices import lease
 
 
 haClient = None  # Define here to work around pyflakes issue #13
@@ -218,6 +219,7 @@ class VM(APIBase):
             if not virtutils.has_xml_configuration(vmParams):
                 self._validate_vm_params(vmParams)
                 self._fix_vm_params(vmParams)
+                lease.fix_parameters(vmParams)
             # else we don't need any other parameter, the XML data
             # contains everything we need.
 

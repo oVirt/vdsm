@@ -61,6 +61,7 @@ from vdsm.virt import xmlconstants
 from vdsm.virt.domain_descriptor import DomainDescriptor
 from vdsm.virt.vm import HotunplugTimeout
 from vdsm.virt.vmdevices import hwclass
+from vdsm.virt.vmdevices import lease
 from vdsm.virt.vmdevices.network import Interface
 from vdsm.virt.vmdevices.storage import DISK_TYPE
 from vdsm.virt.vmdevices.storage import Drive
@@ -809,6 +810,67 @@ class TestVm(XMLTestCase):
             conf = vmdevices.lease.find_conf(vmspec, dev)
             self.assertEqual(conf, expected_conf)
             # Up until here we verified the hotplugLease proper.
+
+            # Let's now verify what happens on migration destination,
+            # when migrating in 4.1 clusters - here Vdsm must use the 4.1
+            # compatibility mode.
+            self.assertNotRaises(
+                vmdevices.common.update_device_info,
+                testvm,
+                testvm._devices
+            )
+
+    def test_fix_lease_parameters(self):
+        params = {
+            'type': hwclass.LEASE,
+            'sd_id': 'sd_id',
+            'lease_id': 'lease_id',
+        }
+        expected_conf = {
+            'device': hwclass.LEASE,
+            'path': '/path',
+            'offset': 1048576,
+        }
+        expected_conf.update(params)
+
+        # we add a serial console device to the minimal XML,
+        # because this is the simplest way to trigger the
+        # flow that broke in rhbz#1590063
+        devices = [
+            {
+                u'device': u'console',
+                u'specParams': {
+                    u'consoleType': u'serial',
+                    u'enableSocket': u'true'
+                },
+                u'type': u'console',
+                u'deviceId': u'd0fac53d-68cf-4cbb-8c9d-5f18625f04e7',
+                u'alias': u'serial0'
+            },
+            {
+                'path': '/rhev/data-center/.../dom_md/xleases',
+                'sd_id': 'fac101e1-52a5-44c9-9700-8fd015e19edf',
+                'type': 'lease',
+                'lease_id': '27d7e484-3dad-4ba4-ad37-8f19f518ef52',
+                'offset': 3145728
+            },
+        ]
+        conf = {
+            'devices': devices
+        }
+        conf.update(self.conf)
+
+        lease.fix_parameters(conf)
+
+        with fake.VM(
+                params={},
+                devices=devices,
+                create_device_objects=True,
+                arch=cpuarch.X86_64
+        ) as testvm:
+            testvm._dom = FakeLeaseDomain()
+            testvm.cif = FakeLeaseClientIF(expected_conf)
+            testvm._updateDomainDescriptor()
 
             # Let's now verify what happens on migration destination,
             # when migrating in 4.1 clusters - here Vdsm must use the 4.1
