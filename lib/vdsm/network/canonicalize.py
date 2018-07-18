@@ -239,7 +239,7 @@ def _canonicalize_ip_default_route(nets):
 
 def _net_with_default_route_from_config():
     for net, attrs in six.iteritems(RunningConfig().networks):
-        if attrs['defaultRoute']:
+        if attrs.get('defaultRoute', False):
             return net, attrs
     return None
 
