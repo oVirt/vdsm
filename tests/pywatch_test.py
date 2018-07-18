@@ -35,6 +35,10 @@ def on_fedora():
         return re.search(r"Fedora release 2[78]", f.readline())
 
 
+def on_ovirt_ci():
+    return 'OVIRT_CI' in os.environ
+
+
 class TestPyWatch(object):
 
     def test_short_success(self):
@@ -52,6 +56,8 @@ class TestPyWatch(object):
         assert rc == 128 + signal.SIGTERM
 
     @pytest.mark.xfail(on_fedora(), reason="py-bt is broken on Fedora 27")
+    @pytest.mark.xfail(on_ovirt_ci(),
+                       reason="py-bt randomly unavailable on EL7 nodes")
     def test_timeout_backtrace(self):
         script = '''
 import time
