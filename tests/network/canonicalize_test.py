@@ -55,6 +55,18 @@ class TestDefaultRouteCanonicalization(VdsmTestCase):
         self._assert_default_route_keys(original_requested_nets,
                                         requested_nets)
 
+    def test_request_one_defroute_no_existing_defroute_key(self, mockRConfig):
+        running_config = self._nets_config(NET1_SETUP, default_route=None)
+        requested_nets = self._nets_config(NET0_SETUP, default_route=True)
+        original_requested_nets = copy.deepcopy(requested_nets)
+
+        mockRConfig.return_value.networks = running_config
+
+        canonicalize.canonicalize_networks(requested_nets)
+
+        self._assert_default_route_keys(original_requested_nets,
+                                        requested_nets)
+
     def test_request_no_defroute_no_existing_defroute(self, mockRConfig):
         running_config = self._nets_config(NET1_SETUP, default_route=False)
         requested_nets = self._nets_config(NET0_SETUP, default_route=False)
@@ -137,7 +149,8 @@ class TestDefaultRouteCanonicalization(VdsmTestCase):
     def _nets_config(self, nets_config, default_route):
         config = copy.deepcopy(nets_config)
         for net_attrs in six.itervalues(config):
-            net_attrs['defaultRoute'] = default_route
+            if default_route is not None:
+                net_attrs['defaultRoute'] = default_route
 
         return config
 
