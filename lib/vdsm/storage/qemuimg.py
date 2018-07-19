@@ -77,7 +77,7 @@ class InvalidOutput(cmdutils.Error):
         self.reason = reason
 
 
-def info(image, format=None, unsafe=False):
+def info(image, format=None, unsafe=False, trusted_image=True):
     cmd = [_qemuimg.cmd, "info", "--output", "json"]
 
     if format:
@@ -87,6 +87,29 @@ def info(image, format=None, unsafe=False):
         cmd.append('-U')
 
     cmd.append(image)
+
+    if not trusted_image:
+        # NOQA (long urls)
+        #
+        # Turns out qemu image parser is not hardened against malicious input
+        # and can be abused to allocate an arbitrary amount of memory and/or
+        # dump a lot of information when used with "--output=json".
+        #
+        # These values were recommended by Daniel P. Berrange in:
+        # http://lists.nongnu.org/archive/html/qemu-block/2018-07/msg00488.html
+        #
+        # Richard W.M. Jones adds more info here:
+        # http://lists.nongnu.org/archive/html/qemu-block/2018-07/msg00547.html
+        #
+        # The 30 seconds cpu_time value came from this bug:
+        # https://bugs.launchpad.net/nova/+bug/1705340
+        # Showing qemu-img info take more then 8 seconds with 120G snapshot.
+        #
+        # TODO: It does not make sense that qemu-img will need 30 seconds of
+        # cpu time for reading valid image qcow2 header, or checking the size
+        # of a raw image. Investigate why we need these values.
+        cmd = cmdutils.prlimit(cmd, cpu_time=30, address_space=1024**3)
+
     out = _run_cmd(cmd)
 
     try:

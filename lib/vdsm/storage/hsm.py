@@ -1535,7 +1535,7 @@ class HSM(object):
     def verify_untrusted_volume(self, spUUID, sdUUID, imgUUID, volUUID):
         dom = sdCache.produce(sdUUID=sdUUID).manifest
         vol = dom.produceVolume(imgUUID, volUUID)
-        qemu_info = qemuimg.info(vol.getVolumePath())
+        qemu_info = qemuimg.info(vol.getVolumePath(), trusted_image=False)
 
         meta_format = sc.FMT2STR[vol.getFormat()]
         qemu_format = qemu_info["format"]

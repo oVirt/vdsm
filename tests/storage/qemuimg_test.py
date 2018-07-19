@@ -37,6 +37,7 @@ from testlib import make_config
 from testlib import namedTemporaryDir
 from vdsm.common import cmdutils
 from vdsm.common import commands
+from vdsm.common import constants
 from testlib import temporaryPath
 from vdsm.common import exception
 from vdsm.storage import qemuimg
@@ -165,6 +166,30 @@ class InfoTests(TestCaseBase):
                                 partial(fake_json_call, data))]):
             info = qemuimg.info('unused')
             self.assertNotIn('compat', info)
+
+    def test_untrusted_image(self):
+        with namedTemporaryDir() as tmpdir:
+            img = os.path.join(tmpdir, 'untrusted.img')
+            size = 500 * 1024**3
+            op = qemuimg.create(img, size=size, format=qemuimg.FORMAT.QCOW2)
+            op.run()
+            info = qemuimg.info(img, trusted_image=False)
+            self.assertEqual(size, info['virtualsize'])
+
+    def test_untrusted_image_call(self):
+        command = []
+
+        def call(cmd, *args, **kwargs):
+            command.extend(cmd)
+            out = json.dumps(self._fake_info()).encode("utf-8")
+            return 0, out, b""
+
+        with MonkeyPatchScope([(commands, "execCmd", call)]):
+            qemuimg.info('unused', trusted_image=False)
+
+        assert command[:3] == [constants.EXT_PRLIMIT,
+                               '--cpu=30',
+                               '--as=1073741824']
 
 
 @expandPermutations
