@@ -375,6 +375,7 @@ class Vm(object):
         self._exit_info = {}
         self._cluster_version = None
         self._pause_time = None
+        self._guest_agent_api_version = None
         if 'xml' in self.conf:
             self._md_desc = metadata.Descriptor.from_xml(self.conf['xml'])
             self._init_from_metadata()
@@ -387,6 +388,9 @@ class Vm(object):
             )
             self._launch_paused = self.conf.get('launchPaused', False)
             self._resume_behavior = ResumeBehavior.AUTO_RESUME
+            # REQUIRED_FOR: oVirt <= 4.1
+            self._guest_agent_api_version = params.pop(
+                'guestAgentAPIVersion', None)
         self._destroy_requested = threading.Event()
         self._monitorResponse = 0
         self._post_copy = migration.PostCopyPhase.NONE
@@ -446,8 +450,6 @@ class Vm(object):
         self._guestSocketFile = self._makeChannelPath(self._agent_channel_name)
         self._qemuguestSocketFile = self._makeChannelPath(
             vmchannels.QEMU_GA_DEVICE_NAME)
-        self._guest_agent_api_version = self.conf.pop('guestAgentAPIVersion',
-                                                      None)
         self.guestAgent = guestagent.GuestAgent(
             self._guestSocketFile, self.cif.channelListener, self.log,
             self._onGuestStatusChange,
@@ -547,9 +549,8 @@ class Vm(object):
                 md.get('destroy_on_reboot', False) or
                 self._domain.on_reboot_config() == 'destroy'
             )
-            value = md.get('guestAgentAPIVersion')
-            if value:
-                self.conf['guestAgentAPIVersion'] = value
+            # can be None, and it is fine.
+            self._guest_agent_api_version = md.get('guestAgentAPIVersion')
             exit_info = {}
             for key in ('exitCode', 'exitMessage', 'exitReason',):
                 value = md.get(key)
@@ -3339,6 +3340,11 @@ class Vm(object):
             self._devices[hwclass.BALLOON][0].minimum = \
                 self._mem_guaranteed_size_mb * 1024
             self._update_metadata()
+
+    def update_guest_agent_api_version(self):
+        self._guest_agent_api_version = self.guestAgent.effectiveApiVersion
+        self._update_metadata()
+        return self._guest_agent_api_version
 
     @api.guard(_not_migrating)
     def hotplugMemory(self, params):

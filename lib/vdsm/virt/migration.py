@@ -256,13 +256,14 @@ class SourceThread(object):
             self._machineParams['guestIPs'] = vmStats['guestIPs']
         if 'guestFQDN' in vmStats:
             self._machineParams['guestFQDN'] = vmStats['guestFQDN']
-        self._machineParams['guestAgentAPIVersion'] = \
-            self._vm.guestAgent.effectiveApiVersion
         for k in ('_migrationParams', 'pid', 'launchPaused'):
             if k in self._machineParams:
                 del self._machineParams[k]
         if not self.hibernating:
             self._machineParams['migrationDest'] = 'libvirt'
+        version = self._vm.update_guest_agent_api_version()
+        # REQUIRED_FOR: oVirt <= 4.1
+        self._machineParams['guestAgentAPIVersion'] = version
         self._machineParams['_srcDomXML'] = self._vm._dom.XMLDesc(0)
         self._machineParams['enableGuestEvents'] = self._enableGuestEvents
 
