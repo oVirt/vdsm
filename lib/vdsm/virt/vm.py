@@ -682,10 +682,6 @@ class Vm(object):
         if dev['type'] == hwclass.GRAPHICS:
             if 'specParams' not in dev:
                 dev['specParams'] = {}
-            if 'displayNetwork' not in dev['specParams']:
-                display_network = self.conf.get('displayNetwork')
-                if display_network is not None:
-                    dev['specParams']['displayNetwork'] = display_network
         if dev['type'] in (hwclass.DISK, hwclass.NIC):
             vm_custom = self._custom['custom']
             self.log.debug('device %s: adding VM custom properties %s',

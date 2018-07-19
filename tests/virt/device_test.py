@@ -545,16 +545,6 @@ class TestVmDevices(XMLTestCase):
             self.assertEqual(graphDev.specParams['displayNetwork'],
                              'vmDisplaySpecParams')
 
-    def testGraphicsDisplayNetworkFromVmConf(self):
-        conf = {'displayNetwork': 'vmDisplayConf'}
-        conf.update(self.conf)
-        with fake.VM(conf) as testvm:
-            dev = {'type': hwclass.GRAPHICS, 'specParams': {}}
-            testvm._dev_spec_update_with_vm_conf(dev)
-            graphDev = vmdevices.graphics.Graphics(testvm.log, **dev)
-            self.assertEqual(graphDev.specParams['displayNetwork'],
-                             'vmDisplayConf')
-
 
 class ConsoleTests(TestCaseBase):
 

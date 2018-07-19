@@ -32,7 +32,6 @@ from vdsm import hugepages
 from vdsm.common import cpuarch
 
 from vdsm.virt import libvirtxml
-from vdsm.virt.vmdevices import hwclass
 
 from monkeypatch import MonkeyPatch
 from testlib import XMLTestCase
@@ -446,22 +445,6 @@ class TestLibvirtxml(XMLTestCase):
                 xpath += "[@useserial='yes']"
             element = tree.find(xpath)
             self.assertEqual(element is not None, use_serial)
-
-    @permutations([
-        # display_network, spec_params
-        (None, {}),
-        ('testnet', {'displayNetwork': 'testnet'}),
-    ])
-    def testDisplayNetwork(self, display_network, spec_params):
-        params = {}
-        params.update(self.conf)
-        if display_network is not None:
-            params['displayNetwork'] = display_network
-        devices = [{'type': 'graphics', 'device': 'spice', 'port': '-1'}]
-        with fake.VM(params=params, devices=devices, arch=cpuarch.X86_64,
-                     create_device_objects=True) as fakevm:
-            graph_dev = fakevm._devices[hwclass.GRAPHICS][0]
-            self.assertEqual(graph_dev.specParams, spec_params)
 
     def testClockXML(self):
         clockXML = """
