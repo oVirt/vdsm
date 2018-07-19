@@ -369,3 +369,27 @@ def taskset(cmd, cpu_list):
     command = [constants.EXT_TASKSET, "--cpu-list", ",".join(cpu_list)]
     command.extend(cmd)
     return command
+
+
+def prlimit(cmd, cpu_time=None, address_space=None):
+    """
+    Wrap cmd with prlimit, limiting resource usage.
+
+    Arguments:
+        cpu_time (int): Limit command cpu time in seconds. If the command
+            exceeds this value it will be terminated by SIGKILL.
+        address_space (int): Limit command address space size in bytes. If the
+            command tries to allocate too much memory, the allocation will
+            fail.
+
+    NOTE: Limiting command resident size (--rss=N) seems to be broken with
+    prlimit. The limit is applied but has no effect on memory usage.
+    """
+    command = [constants.EXT_PRLIMIT]
+    # NOTE: long options require --key=value format.
+    if cpu_time:
+        command.append("--cpu=%d" % cpu_time)
+    if address_space:
+        command.append("--as=%d" % address_space)
+    command.extend(cmd)
+    return command
