@@ -71,6 +71,41 @@ class TestVerifyUntrustedVolume(object):
                 h.verify_untrusted_volume(
                     'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
+    @pytest.mark.xfail(reason="image size is not verified yet")
+    @pytest.mark.parametrize('vol_fmt,qemu_fmt', [
+        (sc.RAW_FORMAT, qemuimg.FORMAT.RAW),
+        (sc.COW_FORMAT, qemuimg.FORMAT.QCOW2),
+    ])
+    def test_bigger_size_raises(self, vol_fmt, qemu_fmt):
+        with self.fake_volume(vol_fmt) as vol:
+            op = qemuimg.create(
+                vol.volumePath,
+                size=self.SIZE + sc.BLOCK_SIZE,
+                format=qemu_fmt)
+            op.run()
+            h = FakeHSM()
+            with pytest.raises(se.ImageVerificationError):
+                h.verify_untrusted_volume(
+                    'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
+
+    @pytest.mark.parametrize('vol_fmt,qemu_fmt', [
+        (sc.RAW_FORMAT, qemuimg.FORMAT.RAW),
+        (sc.COW_FORMAT, qemuimg.FORMAT.QCOW2),
+    ])
+    def test_smaller_size_ok(self, vol_fmt, qemu_fmt):
+        # Engine < 4.2.6 rounds disk size to a multiple of 1G, creating disks
+        # with incorrect virtual size. To be compatible with old engines we
+        # cannot fail verification in this case.
+        with self.fake_volume(vol_fmt) as vol:
+            op = qemuimg.create(
+                vol.volumePath,
+                size=self.SIZE - sc.BLOCK_SIZE,
+                format=qemu_fmt)
+            op.run()
+            h = FakeHSM()
+            h.verify_untrusted_volume(
+                'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
+
     def test_valid_with_backingfile(self):
         with fake_file_env() as env:
             vol = make_qemu_chain(env, self.SIZE, sc.COW_FORMAT, 2)[1]
