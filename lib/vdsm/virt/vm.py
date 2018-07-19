@@ -1927,17 +1927,7 @@ class Vm(object):
             getInfo(dev) for dev in self._devices[hwclass.GRAPHICS]
         ]
 
-        stats = {'displayInfo': display_info}
-        if 'display' in self.conf and display_info:
-            dev = display_info[0]
-            stats['displayType'] = (
-                'qxl' if dev['type'] == 'spice' else 'vnc'
-            )
-            stats['displayPort'] = dev['port']
-            stats['displaySecurePort'] = dev['tlsPort']
-            stats['displayIp'] = dev['ipAddress']
-        # else headless VM
-        return stats
+        return {'displayInfo': display_info}
 
     def _getGuestStats(self):
         stats = self.guestAgent.getGuestInfo()

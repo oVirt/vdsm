@@ -1293,10 +1293,6 @@ class TestVmStats(TestCaseBase):
                 dev_spec_map, testvm.log
             )
             res = testvm.getStats()
-            self.assertIn('displayPort', res)
-            self.assertEqual(res['displayType'],
-                             'qxl' if devices[0]['device'] == 'spice' else
-                             'vnc')
             self.assertTrue(res['displayInfo'])
             for statsDev, confDev in zip(res['displayInfo'], devices):
                 self.assertIn(statsDev['type'], confDev['device'])
