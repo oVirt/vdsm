@@ -71,7 +71,6 @@ class TestVerifyUntrustedVolume(object):
                 h.verify_untrusted_volume(
                     'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
-    @pytest.mark.xfail(reason="image size is not verified yet")
     @pytest.mark.parametrize('vol_fmt,qemu_fmt', [
         (sc.RAW_FORMAT, qemuimg.FORMAT.RAW),
         (sc.COW_FORMAT, qemuimg.FORMAT.QCOW2),

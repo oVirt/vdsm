@@ -1548,6 +1548,23 @@ class HSM(object):
                 "specified in VDSM metadata is %s" %
                 (qemu_format, meta_format))
 
+        # NOTE: Volume size is in sectors.
+        meta_size = vol.getSize() * sc.BLOCK_SIZE
+        qemu_size = qemu_info["virtualsize"]
+        if meta_size < qemu_size:
+            raise se.ImageVerificationError(
+                "Image virtual size %r is bigger than volume size %r"
+                % (qemu_size, meta_size))
+        elif meta_size > qemu_size:
+            # Engine < 4.2.6 rounds up disk size to a multiple of 1G, creating
+            # disk size that does not match the undelying image. We cannot
+            # fail verification for this case.
+            # See https://bugzilla.redhat.com/1608716.
+            self.log.warning(
+                "Image virtual size %r is smaller than volume size %r, image "
+                "should be resized",
+                qemu_size, meta_size)
+
         meta_parent = vol.getParent()
         qemu_parent = qemu_info.get("backingfile", sc.BLANK_UUID)
         if meta_parent != qemu_parent:
