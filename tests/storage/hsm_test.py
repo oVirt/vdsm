@@ -134,11 +134,10 @@ class TestVerifyUntrustedVolume(object):
         with self.fake_volume(vol_fmt=sc.COW_FORMAT,
                               sd_version=sd_version) as vol:
             create_conf = make_config([('irs', 'qcow2_compat', config_compat)])
-            info = {"format": qemuimg.FORMAT.QCOW2, "compat": hsm_compat}
-            with MonkeyPatchScope([(qemuimg, 'config', create_conf),
-                                   (qemuimg, 'info', lambda unused: info)]):
+            with MonkeyPatchScope([(qemuimg, 'config', create_conf)]):
                 op = qemuimg.create(vol.volumePath, size=self.SIZE,
-                                    format=qemuimg.FORMAT.QCOW2)
+                                    format=qemuimg.FORMAT.QCOW2,
+                                    qcow2Compat=hsm_compat)
                 op.run()
                 h = FakeHSM()
                 h.verify_untrusted_volume(
@@ -152,11 +151,10 @@ class TestVerifyUntrustedVolume(object):
         with self.fake_volume(vol_fmt=sc.COW_FORMAT,
                               sd_version=sd_version) as vol:
             create_conf = make_config([('irs', 'qcow2_compat', config_compat)])
-            info = {"format": qemuimg.FORMAT.QCOW2, "compat": hsm_compat}
-            with MonkeyPatchScope([(qemuimg, 'config', create_conf),
-                                   (qemuimg, 'info', lambda unused: info)]):
+            with MonkeyPatchScope([(qemuimg, 'config', create_conf)]):
                 op = qemuimg.create(vol.volumePath, size=self.SIZE,
-                                    format=qemuimg.FORMAT.QCOW2)
+                                    format=qemuimg.FORMAT.QCOW2,
+                                    qcow2Compat=hsm_compat)
                 op.run()
                 h = FakeHSM()
                 with pytest.raises(se.ImageVerificationError):
