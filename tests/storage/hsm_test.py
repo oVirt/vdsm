@@ -122,15 +122,6 @@ class TestVerifyUntrustedVolume(object):
                 h.verify_untrusted_volume(
                     'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
-    def test_unsupported_compat(self):
-        with self.fake_volume(sc.COW_FORMAT) as vol:
-            info = {"format": qemuimg.FORMAT.QCOW2, "compat": "BAD"}
-            with MonkeyPatchScope([(qemuimg, 'info', lambda unused: info)]):
-                h = FakeHSM()
-                with pytest.raises(se.ImageVerificationError):
-                    h.verify_untrusted_volume(
-                        'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
-
     @pytest.mark.parametrize('hsm_compat,config_compat,sd_version', [
         ('0.10', '0.10', 4),
         ('1.1', '0.10', 4),
@@ -171,14 +162,6 @@ class TestVerifyUntrustedVolume(object):
                 with pytest.raises(se.ImageVerificationError):
                     h.verify_untrusted_volume(
                         'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
-
-    def test_compat_not_checked_for_raw(self):
-        with self.fake_volume(sc.RAW_FORMAT) as vol:
-            info = {"format": qemuimg.FORMAT.RAW, "compat": "BAD"}
-            with MonkeyPatchScope([(qemuimg, 'info', lambda unused: info)]):
-                h = FakeHSM()
-                h.verify_untrusted_volume(
-                    'sp', vol.sdUUID, vol.imgUUID, vol.volUUID)
 
     @contextmanager
     def fake_volume(self, vol_fmt, sd_version=3):
