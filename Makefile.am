@@ -69,6 +69,7 @@ ABS_IMPORT_WHITELIST = \
 	$(NULL)
 
 PY3DIVISION_WHITELIST = \
+	lib/sos \
 	lib/vdsm/api \
 	lib/vdsm/common \
 	lib/vdsm/gluster \
