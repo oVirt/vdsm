@@ -116,6 +116,7 @@ Use the --host/-a option to connect to the target host:
 """
 
 from __future__ import absolute_import
+from __future__ import division
 from __future__ import print_function
 
 import argparse
