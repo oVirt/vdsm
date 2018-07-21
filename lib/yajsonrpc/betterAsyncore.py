@@ -17,6 +17,8 @@
 # us to use. This does tries to reuse enough code from the original asyncore
 # while enabling compositing instead of inheritance.
 from __future__ import absolute_import
+from __future__ import division
+
 import asyncore
 import errno
 import logging
