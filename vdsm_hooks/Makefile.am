@@ -23,7 +23,6 @@ SUBDIRS = \
 	ethtool_options \
 	faqemu \
 	fcoe \
-	ipv6 \
 	localdisk \
 	macspoof \
 	openstacknet \

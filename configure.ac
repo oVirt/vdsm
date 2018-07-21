@@ -463,7 +463,6 @@ AC_OUTPUT([
 	vdsm_hooks/fileinject/Makefile
 	vdsm_hooks/floppy/Makefile
 	vdsm_hooks/httpsisoboot/Makefile
-	vdsm_hooks/ipv6/Makefile
 	vdsm_hooks/isolatedprivatevlan/Makefile
 	vdsm_hooks/localdisk/Makefile
 	vdsm_hooks/macbind/Makefile

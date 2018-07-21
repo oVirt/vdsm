@@ -693,15 +693,6 @@ BuildArch:      noarch
 %description hook-vmdisk
 Hook adds additional disk image for a VM (raw or qcow2)
 
-%package hook-ipv6
-Summary:        Set IPv6 configuration through custom network properties
-BuildArch:      noarch
-Requires:       %{name} >= 4.16.7
-
-%description hook-ipv6
-VDSM hook used for applying IPv6 configuration through custom network
-properties
-
 %package hook-fcoe
 Summary:        Hook to enable FCoE support
 BuildArch:      noarch
@@ -1501,9 +1492,6 @@ exit 0
 %files hook-fcoe
 %{_presetdir}/85-vdsm-hook-fcoe.preset
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_fcoe
-
-%files hook-ipv6
-%{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_ipv6
 
 %files hook-localdisk
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_localdisk
