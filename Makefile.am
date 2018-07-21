@@ -100,14 +100,14 @@ gitignore:
 
 .PHONY: abs_imports
 abs_imports: all
-	@for f in `git ls-files $(ABS_IMPORT_WHITELIST) |grep '.py$$'`; do\
+	@for f in `git ls-files $(ABS_IMPORT_WHITELIST) |grep '\.py$$\|\.py\.in$$'`; do\
 	  if ! grep -q '^from __future__ import absolute_import$$' "$$f"; then \
 	    echo "Missing absolute_import in $$f"; exit 1; fi; \
 	done;
 
 .PHONY: py3division
 py3division: all
-	@for f in `git ls-files $(PY3DIVISION_WHITELIST) |grep '.py$$'`; do\
+	@for f in `git ls-files $(PY3DIVISION_WHITELIST) |grep '\.py$$\|\.py\.in$$'`; do\
 	  if ! grep -q '^from __future__ import division$$' "$$f"; then \
 	    echo "Missing __future__.division in $$f"; exit 1; fi; \
 	done;

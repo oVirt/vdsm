@@ -21,6 +21,9 @@
 This module provides DSA software versioning information for
 python based components
 """
+from __future__ import absolute_import
+from __future__ import division
+
 version_name = "Snow Man"
 # FIXME: As soon as we can provide a long version/release to oVirt-Engine
 #        remove from vdsm.spec the sed to replace the below macros
