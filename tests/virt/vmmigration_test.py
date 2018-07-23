@@ -461,7 +461,7 @@ class SourceThreadTests(TestCaseBase):
 
         dom, src = make_env()
         src._destServer = serv
-        src._finishSuccessfully = lambda: None
+        src._finishSuccessfully = lambda *args: None
         src._progress = progress
 
         src.run()
@@ -472,7 +472,7 @@ class SourceThreadTests(TestCaseBase):
 
     def test_do_not_retry_hibernation(self):
         dom, src = make_env(mode=migration.MODE_FILE)
-        src._finishSuccessfully = lambda: None
+        src._finishSuccessfully = lambda *args: None
         src.run()
         self.assertEqual(src._vm.hibernation_attempts, 1)
 

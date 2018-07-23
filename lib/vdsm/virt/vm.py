@@ -1912,6 +1912,30 @@ class Vm(object):
         else:
             return self.lastStatus
 
+    def migration_parameters(self):
+        params = {
+            '_srcDomXML': self._dom.XMLDesc(0),
+            'elapsedTimeOffset': (
+                time.time() - self._startTime
+            ),
+        }
+
+        vm_conf = self.status()
+        for key, value in vm_conf.items():
+            if key == 'launchPaused':
+                continue
+            params[key] = value
+
+        vmStats = self.getStats()
+        for key in ('username', 'guestIPs', 'guestFQDN'):
+            if key in vmStats:
+                params[key] = vmStats[key]
+
+        version = self.update_guest_agent_api_version()
+        # REQUIRED_FOR: oVirt <= 4.1
+        params['guestAgentAPIVersion'] = version
+        return params
+
     def _get_vm_migration_progress(self):
         return self.migrateStatus()['progress']
 

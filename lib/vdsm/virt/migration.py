@@ -110,7 +110,6 @@ class SourceThread(object):
                 method)
         self._dstparams = dstparams
         self._enableGuestEvents = kwargs.get('enableGuestEvents', False)
-        self._machineParams = {}
         # TODO: conv.tobool shouldn't be used in this constructor, the
         # conversions should be handled properly in the API layer
         self._consoleAddress = consoleAddress
@@ -246,26 +245,11 @@ class SourceThread(object):
         self.log.debug('Destination server is: ' + hostPort)
 
     def _setupRemoteMachineParams(self):
-        self._machineParams.update(self._vm.status())
-        self._machineParams['elapsedTimeOffset'] = \
-            time.time() - self._vm._startTime
-        vmStats = self._vm.getStats()
-        if 'username' in vmStats:
-            self._machineParams['username'] = vmStats['username']
-        if 'guestIPs' in vmStats:
-            self._machineParams['guestIPs'] = vmStats['guestIPs']
-        if 'guestFQDN' in vmStats:
-            self._machineParams['guestFQDN'] = vmStats['guestFQDN']
-        for k in ('_migrationParams', 'pid', 'launchPaused'):
-            if k in self._machineParams:
-                del self._machineParams[k]
+        machineParams = self._vm.migration_parameters()
+        machineParams['enableGuestEvents'] = self._enableGuestEvents
         if not self.hibernating:
-            self._machineParams['migrationDest'] = 'libvirt'
-        version = self._vm.update_guest_agent_api_version()
-        # REQUIRED_FOR: oVirt <= 4.1
-        self._machineParams['guestAgentAPIVersion'] = version
-        self._machineParams['_srcDomXML'] = self._vm._dom.XMLDesc(0)
-        self._machineParams['enableGuestEvents'] = self._enableGuestEvents
+            machineParams['migrationDest'] = 'libvirt'
+        return machineParams
 
     def _prepareGuest(self):
         if self.hibernating:
@@ -322,7 +306,7 @@ class SourceThread(object):
         self._started = False
         self._vm.send_status_event()
 
-    def _finishSuccessfully(self):
+    def _finishSuccessfully(self, machineParams):
         with self._lock:
             self._progress = 100
         if not self.hibernating:
@@ -337,14 +321,14 @@ class SourceThread(object):
         else:
             # don't pickle transient params
             for ignoreParam in ('displayIp', 'display', 'pid'):
-                if ignoreParam in self._machineParams:
-                    del self._machineParams[ignoreParam]
+                if ignoreParam in machineParams:
+                    del machineParams[ignoreParam]
 
             fname = self._vm.cif.prepareVolumePath(self._dstparams)
             try:
                 # Use r+ to avoid truncating the file, see BZ#1282239
                 with io.open(fname, "r+b") as f:
-                    pickle.dump(self._machineParams, f)
+                    pickle.dump(machineParams, f)
             finally:
                 self._vm.cif.teardownVolumePath(self._dstparams)
 
@@ -413,8 +397,8 @@ class SourceThread(object):
         self._update_outgoing_limit()
         try:
             startTime = time.time()
+            machineParams = self._setupRemoteMachineParams()
             self._setupVdsConnection()
-            self._setupRemoteMachineParams()
             self._prepareGuest()
 
             while not self._started:
@@ -433,15 +417,17 @@ class SourceThread(object):
                         self.log.debug("migration semaphore acquired "
                                        "after %d seconds",
                                        time.time() - startTime)
-                        params = {
+                        migrationParams = {
                             'dst': self._dst,
                             'mode': self._mode,
                             'method': METHOD_ONLINE,
                             'dstparams': self._dstparams,
                             'dstqemu': self._dstqemu,
                         }
-                        self._startUnderlyingMigration(time.time(), params)
-                        self._finishSuccessfully()
+                        self._startUnderlyingMigration(
+                            time.time(), migrationParams, machineParams
+                        )
+                        self._finishSuccessfully(machineParams)
                 except libvirt.libvirtError as e:
                     if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
                         self.status = response.error(
@@ -460,7 +446,8 @@ class SourceThread(object):
             self._recover(str(e))
             self.log.exception("Failed to migrate")
 
-    def _startUnderlyingMigration(self, startTime, migrationParams):
+    def _startUnderlyingMigration(self, startTime, migrationParams,
+                                  machineParams):
         if self.hibernating:
             self._started = True
             self._vm.hibernate(self._dst)
@@ -471,7 +458,7 @@ class SourceThread(object):
             # destination. In some cases some expensive operations can cause
             # the migration to get cancelled right after the transfer started.
             destCreateStartTime = time.time()
-            result = self._destServer.migrationCreate(self._machineParams,
+            result = self._destServer.migrationCreate(machineParams,
                                                       self._incomingLimit)
             destCreationTime = time.time() - destCreateStartTime
             startTime += destCreationTime
