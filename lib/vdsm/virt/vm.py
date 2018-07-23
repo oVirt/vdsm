@@ -4689,7 +4689,7 @@ class Vm(object):
         finally:
             self.drive_monitor.enable()
 
-        return {'status': doneCode}
+        return response.success()
 
     def _startDriveReplication(self, drive):
         destxml = xmlutils.tostring(drive.getReplicaXML())
