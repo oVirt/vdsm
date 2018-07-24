@@ -31,6 +31,7 @@ import errno
 import os
 import re
 import pwd
+import glob
 import grp
 import logging
 from collections import namedtuple
@@ -669,10 +670,17 @@ def bootstrap(skiplvs=()):
     for vg in _lvminfo.getAllVgs():
         deactivate = []
 
+        # List prepared images LVs if any
+        pattern = "/run/vdsm/storage/{}/*/*".format(vg.name)
+        prepared = frozenset(os.path.basename(n) for n in glob.iglob(pattern))
+
         for lv in _lvminfo.getLv(vg.name):
             if lv.active:
                 if lv.name in skiplvs:
                     log.debug("Skipping active lv: vg=%s lv=%s",
+                              vg.name, lv.name)
+                elif lv.name in prepared:
+                    log.debug("Skipping prepared volume lv: vg=%s lv=%s",
                               vg.name, lv.name)
                 elif lv.opened:
                     log.debug("Skipping open lv: vg=%s lv=%s", vg.name,
