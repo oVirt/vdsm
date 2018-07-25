@@ -46,6 +46,11 @@ from vdsm.storage import operation
 # kernels.
 SAFE_WRITE_SAME_SIZE = 2 * 1024**2
 
+# From tests that we've run on netapp, 32M is the most optimal discard step
+# size in terms of total discard time and minimal starvation of other processes
+# that run in parallel.
+OPTIMAL_DISCARD_STEP = 32 * 1024**2
+
 _blkdiscard = CommandPath("blkdiscard", "/sbin/blkdiscard")
 
 
@@ -59,7 +64,10 @@ def discard(device):
     Raises:
         cmdutils.Error if an error has occurred in blkdiscard.
     """
-    cmd = [_blkdiscard.cmd]
+    cmd = [
+        _blkdiscard.cmd,
+        "--step", "%d" % OPTIMAL_DISCARD_STEP,
+    ]
     cmd.append(device)
 
     rc, out, err = commands.execCmd(cmd)
