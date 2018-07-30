@@ -2966,9 +2966,6 @@ class Vm(object):
             # the libvirt during recovery process.
             device_conf = self._devices[hwclass.NIC]
             device_conf.append(nic)
-            if 'xml' not in params:
-                with self._confLock:
-                    self.conf['devices'].append(nicParams)
             self._hotplug_device_metadata(hwclass.NIC, nic)
             self._updateDomainDescriptor()
             vmdevices.network.Interface.update_device_info(self, device_conf)
@@ -3047,8 +3044,6 @@ class Vm(object):
 
             self._devices[hwclass.HOSTDEV].append(dev_object)
 
-            with self._confLock:
-                self.conf['devices'].append(dev_spec)
             self._updateDomainDescriptor()
             vmdevices.hostdevice.HostDevice.update_device_info(
                 self, self._devices[hwclass.HOSTDEV])
@@ -3077,15 +3072,6 @@ class Vm(object):
                 continue
 
             self._devices[hwclass.HOSTDEV].remove(dev_object)
-            dev_spec = None
-            for dev in self.conf['devices'][:]:
-                if (dev['type'] == hwclass.HOSTDEV and
-                        dev['device'] == dev_object.device):
-                    dev_spec = dev
-                    with self._confLock:
-                        self.conf['devices'].remove(dev)
-                    break
-
             self._updateDomainDescriptor()
 
             try:
@@ -3093,11 +3079,11 @@ class Vm(object):
                 self._waitForDeviceRemoval(dev_object)
             except HotunplugTimeout as e:
                 self.log.error('%s', e)
-                self._hostdev_hotunplug_restore(dev_object, dev_spec)
+                self._hostdev_hotunplug_restore(dev_object)
                 continue
             except libvirt.libvirtError as e:
                 self.log.exception('Hotunplug failed (continuing)')
-                self._hostdev_hotunplug_restore(dev_object, dev_spec)
+                self._hostdev_hotunplug_restore(dev_object)
                 continue
 
             self._updateDomainDescriptor()
@@ -3106,9 +3092,7 @@ class Vm(object):
 
         return response.success(unpluggedDevices=unplugged_devices)
 
-    def _hostdev_hotunplug_restore(self, dev_object, dev_spec):
-        with self._confLock:
-            self.conf['devices'].append(dev_spec)
+    def _hostdev_hotunplug_restore(self, dev_object):
         self._devices[hwclass.HOSTDEV].append(dev_object)
         self._updateDomainDescriptor()
 
@@ -3292,15 +3276,6 @@ class Vm(object):
         # Remove found NIC from vm's NICs list
         if nic:
             self._devices[hwclass.NIC].remove(nic)
-        # Find and remove NIC device from vm's conf
-        nicDev = None
-        for dev in self.conf['devices'][:]:
-            if dev['type'] == hwclass.NIC and \
-               dev['macAddr'].lower() == nicParams['macAddr'].lower():
-                with self._confLock:
-                    self.conf['devices'].remove(dev)
-                nicDev = dev
-                break
 
         self._updateDomainDescriptor()
 
@@ -3310,7 +3285,7 @@ class Vm(object):
             nic.teardown()
         except HotunplugTimeout as e:
             self.log.error("%s", e)
-            self._rollback_nic_hotunplug(nicDev, nic)
+            self._rollback_nic_hotunplug(nic)
             hooks.after_nic_hotunplug_fail(nicXml, self._custom,
                                            params=nic.custom)
             return response.error('hotunplugNic', "%s" % e)
@@ -3318,7 +3293,7 @@ class Vm(object):
             self.log.exception("Hotunplug failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 raise exception.NoSuchVM()
-            self._rollback_nic_hotunplug(nicDev, nic)
+            self._rollback_nic_hotunplug(nic)
             hooks.after_nic_hotunplug_fail(nicXml, self._custom,
                                            params=nic.custom)
             return response.error('hotunplugNic', str(e))
@@ -3330,10 +3305,7 @@ class Vm(object):
         return {'status': doneCode, 'vmList': self.status()}
 
     # Restore NIC device in vm's conf and _devices
-    def _rollback_nic_hotunplug(self, nic_dev, nic):
-        if nic_dev:
-            with self._confLock:
-                self.conf['devices'].append(nic_dev)
+    def _rollback_nic_hotunplug(self, nic):
         if nic:
             self._devices[hwclass.NIC].append(nic)
         self._updateDomainDescriptor()
@@ -3369,8 +3341,6 @@ class Vm(object):
             return response.error('hotplugMem', str(e))
 
         self._devices[hwclass.MEMORY].append(device)
-        with self._confLock:
-            self.conf['devices'].append(memParams)
         self._updateDomainDescriptor()
         device.update_device_info(self, self._devices[hwclass.MEMORY])
         self._update_mem_guaranteed_size(params)
@@ -3419,7 +3389,6 @@ class Vm(object):
                 raise exception.NoSuchVM()
             return response.error('setNumberOfCpusErr', str(e))
 
-        self.conf['smp'] = str(numberOfCpus)
         self._updateDomainDescriptor()
         hooks.after_set_num_of_cpus()
         return {'status': doneCode, 'vmList': self.status()}
@@ -3911,11 +3880,7 @@ class Vm(object):
             raise exception.HotplugLeaseFailed(reason=str(e), lease=lease)
 
         self._devices[hwclass.LEASE].append(lease)
-
-        with self._confLock:
-            self.conf['devices'].append(params)
         self._updateDomainDescriptor()
-
         return response.success(vmList=self.status())
 
     @api.guard(_not_migrating)
@@ -3942,14 +3907,6 @@ class Vm(object):
 
         self._devices[hwclass.LEASE].remove(lease)
 
-        try:
-            conf = vmdevices.lease.find_conf(self.conf, lease)
-        except LookupError:
-            # Unepected, but should not break successful unplug.
-            self.log.warning("No conf for lease %s", lease)
-        else:
-            with self._confLock:
-                self.conf['devices'].remove(conf)
         self._updateDomainDescriptor()
 
         return response.success(vmList=self.status())
@@ -5344,12 +5301,6 @@ class Vm(object):
             raise exception.BalloonError(str(e))
         else:
             # TODO: update metadata once we build devices with engine XML
-
-            for dev in self.conf['devices']:
-                if dev['type'] == hwclass.BALLOON and \
-                        dev['specParams']['model'] != 'none':
-                    dev['target'] = target
-
             self._devices[hwclass.BALLOON][0].target = target
 
     def get_balloon_info(self):
@@ -6041,16 +5992,6 @@ class Vm(object):
 
         # We currently hotunplug all devices synchronously, except for memory.
         device_hwclass = hwclass.MEMORY
-
-        try:
-            conf = vmdevices.lookup.conf_by_alias(
-                self.conf['devices'], device_hwclass, device_alias)
-        except LookupError:
-            self.log.warning("Removed device not found in conf: %s",
-                             device_alias)
-        else:
-            with self._confLock:
-                self.conf['devices'].remove(conf)
 
         try:
             device = vmdevices.lookup.device_by_alias(

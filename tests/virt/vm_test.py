@@ -803,12 +803,8 @@ class TestVm(XMLTestCase):
             testvm.cif = FakeLeaseClientIF(expected_conf)
             res = testvm.hotplugLease(params)
 
-            vmspec = res.pop('vmList')
+            self.assertTrue(res.pop('vmList'))
             self.assertEqual(res, response.success())
-            # temporary object needed to fulfill the find_conf API
-            dev = vmdevices.lease.Device(self.log, **expected_conf)
-            conf = vmdevices.lease.find_conf(vmspec, dev)
-            self.assertEqual(conf, expected_conf)
             # Up until here we verified the hotplugLease proper.
 
             # Let's now verify what happens on migration destination,
@@ -1377,8 +1373,6 @@ class TestLibVirtCallbacks(TestCaseBase):
                      create_device_objects=True) as testvm:
             testvm._domain = DomainDescriptor('<devices/>')
             testvm.onDeviceRemoved(alias)
-            self.assertEqual(set([d['alias'] for d in testvm.conf['devices']]),
-                             kept_aliases)
             self.assertEqual(
                 set([d.alias for group in testvm._devices.values()
                      for d in group]),
