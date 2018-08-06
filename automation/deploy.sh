@@ -32,7 +32,7 @@ systemctl restart libvirtd.service || :
 cat > /etc/yum.repos.d/local-ovirt.repo <<EOF
 [localsync]
 name=VDSM artifacts
-baseurl=http://$ADDR:8585/$DIST/
+baseurl=http://$ADDR:8585/default/$DIST/
 enabled=1
 skip_if_unavailable=0
 gpgcheck=0
