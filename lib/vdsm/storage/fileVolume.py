@@ -59,7 +59,7 @@ class FileVolumeManifest(volume.VolumeManifest):
     # How this volume is presented to a vm.
     DISK_TYPE = "file"
 
-    # Raw volumes should be aligned to sector size, which is 512 or 4096
+    # Raw volumes should be aligned to block size, which is 512 or 4096
     # (not supported yet). qcow2 images should be aligned to cluster size
     # (64K default). To simplify, we use 1M alignment.
     align_size = constants.MEGAB
@@ -457,7 +457,7 @@ class FileVolume(volume.Volume):
 
         if not volParent:
             cls.log.info("Request to create %s volume %s with size = %s "
-                         "sectors", sc.type2name(volFormat), volPath,
+                         "blocks", sc.type2name(volFormat), volPath,
                          size)
             if volFormat == sc.COW_FORMAT:
                 operation = qemuimg.create(volPath,

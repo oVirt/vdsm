@@ -1545,7 +1545,7 @@ class HSM(object):
                 "specified in VDSM metadata is %s" %
                 (qemu_format, meta_format))
 
-        # NOTE: Volume size is in sectors.
+        # NOTE: Volume size is in blocks.
         meta_size = vol.getSize() * sc.BLOCK_SIZE
         qemu_size = qemu_info["virtualsize"]
         if meta_size < qemu_size:

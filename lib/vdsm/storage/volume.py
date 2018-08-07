@@ -1127,13 +1127,13 @@ class Volume(object):
                initialSize=None):
         """
         Create a new volume with given size or snapshot
-            'size' - in sectors
+            'size' - in blocks
             'volFormat' - volume format COW / RAW
             'preallocate' - Preallocate / Sparse
             'diskType' - enum (vdsm.API.Image.DiskTypes)
             'srcImgUUID' - source image UUID
             'srcVolUUID' - source volume UUID
-            'initialSize' - initial volume size in sectors,
+            'initialSize' - initial volume size in blocks,
                             in case of thin provisioning
         """
         dom = sdCache.produce(sdUUID)

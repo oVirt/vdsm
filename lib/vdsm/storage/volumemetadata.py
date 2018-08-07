@@ -46,7 +46,7 @@ class VolumeMetadata(object):
         self.image = image
         # UUID of the parent volume or BLANK_UUID
         self.puuid = puuid
-        # Volume size in sectors
+        # Volume size in blocks
         self.size = size
         # Format (RAW or COW)
         self.format = format

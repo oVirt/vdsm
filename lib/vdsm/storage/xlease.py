@@ -57,7 +57,7 @@ format in a future sanlock version that will manage the internal index
 itself.
 
 The volume is composed of "slots" where each slot is 1MiB for 512 bytes
-sector size, and 8MiB for 4K sectors.
+block size, and 8MiB for 4K blocks.
 
 1. Lockspace slot
 2. Index slot
@@ -75,7 +75,7 @@ The index slot
 --------------
 
 The index keeps the mapping between lease id and lease offset. The index
-is composed of sectors, 512 bytes or 4K bytes depending on the
+is composed of blocks, 512 bytes or 4K bytes depending on the
 underlying storage.
 
 The first block of the index is the metadata block, using this format:
@@ -92,8 +92,8 @@ The first block of the index is the metadata block, using this format:
 - padding
 - newline
 
-The next blocks are record blocks containing 8 records for sector size
-of 512 bytes, or 64 records for sector size of 4K.
+The next blocks are record blocks containing 8 records for block size
+of 512 bytes, or 64 records for block size of 4K.
 
 Each record contain these fields:
 

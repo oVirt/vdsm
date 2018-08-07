@@ -402,7 +402,7 @@ class TestValidateSize(VdsmTestCase):
 
     @permutations([
         # size
-        [2097152],  # 1GiB in sectors
+        [2097152],  # 1GiB in blocks
         [1000.14],
         ["one"],
         ["nan"],

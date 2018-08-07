@@ -74,7 +74,7 @@ OP_TYPES = {UNKNOWN_OP: 'UNKNOWN', COPY_OP: 'COPY', MOVE_OP: 'MOVE'}
 RENAME_RANDOM_STRING_LEN = 8
 
 # Temporary size of a volume when we optimize out the prezeroing
-TEMPORARY_VOLUME_SIZE = 20480  # in sectors (10M)
+TEMPORARY_VOLUME_SIZE = 20480  # in blocks (10M)
 
 
 def _deleteImage(dom, imgUUID, postZero, discard):
@@ -778,7 +778,7 @@ class Image:
                 # To avoid 'prezeroing' preallocated volume on NFS domain,
                 # we create the target volume with minimal size and after that
                 # we'll change its metadata back to the original size.
-                tmpSize = TEMPORARY_VOLUME_SIZE  # in sectors (10M)
+                tmpSize = TEMPORARY_VOLUME_SIZE  # in blocks (10M)
                 destDom.createVolume(
                     imgUUID=dstImgUUID, size=tmpSize, volFormat=dstVolFormat,
                     preallocate=volParams['prealloc'],
