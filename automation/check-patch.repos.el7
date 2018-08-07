@@ -1,6 +1,6 @@
 epel-snap-2017-02-03-04-43,http://mirrors.phx.ovirt.org/repos/yum/epel-el7/2017-02-03-04-43
-tested,http://resources.ovirt.org/repos/ovirt/tested/master/rpm/$distro
-ovirt-snapshot-static,http://resources.ovirt.org/pub/ovirt-master-snapshot-static/rpm/$distro
+tested,http://plain.resources.ovirt.org/repos/ovirt/tested/4.2/rpm/$distro
+ovirt-snapshot-static,http://plain.resources.ovirt.org/pub/ovirt-4.2-snapshot-static/rpm/$distro
 centos-glusterfs,http://mirror.centos.org/centos/7/storage/x86_64/gluster-3.12/
 centos-ovirt42-testing-x86_64,https://cbs.centos.org/repos/virt7-ovirt-42-testing/x86_64/os/
 centos-ovirt-common-testing-x86_64,https://cbs.centos.org/repos/virt7-ovirt-common-testing/x86_64/os/
