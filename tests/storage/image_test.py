@@ -35,7 +35,7 @@ from testlib import VdsmTestCase
 from vdsm.common import constants
 from vdsm.storage import constants as sc
 from vdsm.storage import image
-from vdsm.storage import qcow2
+from vdsm.storage import qemuimg
 
 GB_IN_BLK = 1024**3 // 512
 CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
@@ -118,8 +118,8 @@ class TestEstimateQcow2Size:
             self, monkeypatch, sd_class):
         monkeypatch.setattr(image, "config", CONFIG)
         monkeypatch.setattr(
-            qcow2,
-            'estimate_size',
+            qemuimg,
+            'measure',
             # the estimated size for converting 1 gb
             # raw empty volume to qcow2 format
             # cmd:
@@ -127,7 +127,7 @@ class TestEstimateQcow2Size:
             # output:
             #   required size: 393216
             #   fully allocated size: 1074135040
-            lambda path: 393216)
+            lambda **args: {"required": 393216})
         monkeypatch.setattr(image, 'sdCache', FakeStorageDomainCache())
 
         image.sdCache.domains['sdUUID'] = sd_class("fake manifest")
@@ -146,8 +146,8 @@ class TestEstimateQcow2Size:
             self, monkeypatch, sd_class):
         monkeypatch.setattr(image, "config", CONFIG)
         monkeypatch.setattr(
-            qcow2,
-            'estimate_size',
+            qemuimg,
+            'measure',
             # the estimated size for converting 1 gb
             # qcow2 empty volume to qcow2 format
             # cmd:
@@ -155,7 +155,7 @@ class TestEstimateQcow2Size:
             # output:
             #   required size: 393216
             #   fully allocated size: 1074135040
-            lambda path: 393216)
+            lambda **args: {"required": 393216})
         monkeypatch.setattr(image, 'sdCache', FakeStorageDomainCache())
 
         image.sdCache.domains['sdUUID'] = sd_class("fake manifest")

@@ -36,7 +36,7 @@ Profiling tests, showing 10 slowest tests:
 
 Running specific storage tests modules with both multiple python versions:
 
-   tox -e storage-py27,storage-py36 -- storage/qcow2_test.py
+   tox -e storage-py27,storage-py36 -- storage/image_test.py
 
 
 Using tox virtual environment
@@ -61,7 +61,7 @@ module for example:
 
     (storage-py27) [user@fedora vdsm (storage-tests)]$ cd tests
 
-    (storage-py27) [user@fedora vdsm (storage-tests)]$ pytest storage/qcow2_test.py -qq
+    (storage-py27) [user@fedora vdsm (storage-tests)]$ pytest storage/image_test.py -qq
     ========================== test session starts ==========================
     platform linux2 -- Python 2.7.13, pytest-3.1.2, py-1.4.34, pluggy-0.4.0
     rootdir: /home/user/src/vdsm, inifile: tox.ini

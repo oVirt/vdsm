@@ -36,7 +36,6 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import imageSharing
 from vdsm.storage import misc
-from vdsm.storage import qcow2
 from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import sd
@@ -122,8 +121,8 @@ class Image:
 
     def estimate_qcow2_size(self, src_vol_params, dst_sd_id):
         """
-        Calculate volume allocation size for converting RAW
-        source volume to QCOW2 volume on destination storage domain.
+        Calculate volume allocation size for converting raw/qcow2
+        source volume to qcow2 volume on destination storage domain.
 
         Arguments:
             src_vol_params(dict): Dictionary returned from
@@ -133,15 +132,17 @@ class Image:
         Returns:
             Volume allocation in blocks
         """
-        # Estimate required size.
-        estimated_size = qcow2.estimate_size(src_vol_params['path'])
+        # measure required size.
+        qemu_measure = qemuimg.measure(
+            image=src_vol_params['path'],
+            format=sc.fmt2str(src_vol_params['volFormat']),
+            output_format=qemuimg.FORMAT.QCOW2)
 
         # Adds extra room so we don't have to extend this disk immediately
         # when a vm is started.
         chunk_size_mb = config.getint("irs", "volume_utilization_chunk_mb")
         chunk_size = chunk_size_mb * constants.MEGAB
-        size_blk = (estimated_size + chunk_size) // sc.BLOCK_SIZE
-
+        size_blk = (qemu_measure["required"] + chunk_size) // sc.BLOCK_SIZE
         # Limit estimates size by maximum size.
         vol_class = sdCache.produce(dst_sd_id).getVolumeClass()
         max_size = vol_class.max_size(src_vol_params['size'] * sc.BLOCK_SIZE,
