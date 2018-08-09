@@ -7784,7 +7784,7 @@ types:
         type: object
 
     vmUpdateXMLDeviceParams: &vmUpdateXMLDeviceParams
-        added: '4.3'
+        added: '4.2.6'
         description: Parameters for VM.updateDevice
         name: vmUpdateXMLDeviceParams
         properties:
