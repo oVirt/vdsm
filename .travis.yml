@@ -15,6 +15,11 @@ env:
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-28
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-rawhide
 
+matrix:
+  fast_finish: true
+  allow_failures:
+    - env: DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-rawhide
+
 before_install:
   - docker --version
   - docker pull $DOCKER_IMAGE
