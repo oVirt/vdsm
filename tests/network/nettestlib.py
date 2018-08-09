@@ -580,3 +580,12 @@ def _requires_systemctl():
 def _requires_root(msg='This test must be run as root'):
     if os.geteuid() != 0:
         raise SkipTest(msg)
+
+
+def running_on_centos():
+    with open('/etc/redhat-release') as f:
+        return 'CentOS Linux release' in f.readline()
+
+
+def running_on_travis_ci():
+    return 'TRAVIS_CI' in os.environ
