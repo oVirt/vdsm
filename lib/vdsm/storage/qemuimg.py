@@ -211,7 +211,7 @@ def check(image, format=None):
 
 def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
             dstQcow2Compat=None, backing=None, backingFormat=None,
-            preallocation=None):
+            preallocation=None, compressed=False):
     cmd = [_qemuimg.cmd, "convert", "-p", "-t", "none", "-T", "none"]
     options = []
     cwdPath = None
@@ -241,6 +241,9 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
 
     if options:
         cmd.extend(('-o', ','.join(options)))
+
+    if compressed:
+        cmd.append('-c')
 
     cmd.append(dstImage)
 

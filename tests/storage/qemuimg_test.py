@@ -40,6 +40,8 @@ from vdsm.common import commands
 from vdsm.common import constants
 from testlib import temporaryPath
 from vdsm.common import exception
+from vdsm.common.constants import GIB
+from vdsm.common.constants import MEGAB
 from vdsm.storage import qemuimg
 
 QEMU_IMG = qemuimg._qemuimg.cmd
@@ -359,6 +361,55 @@ class ConvertTests(TestCaseBase):
             qemuimg.convert('image', 'dst', dstFormat='qcow2',
                             backing='bak', backingFormat='qcow2',
                             dstQcow2Compat='1.11')
+
+
+class TestConvertCompressed(object):
+
+    def test_raw_to_compressed_qcow2(self, tmpdir):
+        src_file = str(tmpdir.join("test.raw"))
+        dst_file = str(tmpdir.join("test.qcow2"))
+        with io.open(src_file, "wb") as f:
+            f.truncate(1 * GIB)
+            f.write(b"x" * MEGAB)
+
+        src_file_size = qemuimg.info(src_file)["actualsize"]
+        op = qemuimg.convert(
+            src_file,
+            dst_file,
+            srcFormat=qemuimg.FORMAT.RAW,
+            dstFormat=qemuimg.FORMAT.QCOW2,
+            compressed=True)
+        op.run()
+        dst_file_size = qemuimg.info(dst_file)["actualsize"]
+
+        assert src_file_size > dst_file_size
+
+    def test_qcow2_to_compressed_qcow2(self, tmpdir):
+        src_file = str(tmpdir.join("test_src.qcow2"))
+        dst_file = str(tmpdir.join("test_dst.qcow2"))
+
+        op = qemuimg.create(
+            src_file,
+            size=1 * GIB,
+            format=qemuimg.FORMAT.QCOW2)
+        op.run()
+        qemuio.write_pattern(
+            src_file,
+            qemuimg.FORMAT.QCOW2,
+            len=1 * MEGAB,
+            pattern=0xf0)
+
+        src_file_size = qemuimg.info(src_file)["actualsize"]
+        op = qemuimg.convert(
+            src_file,
+            dst_file,
+            srcFormat=qemuimg.FORMAT.QCOW2,
+            dstFormat=qemuimg.FORMAT.QCOW2,
+            compressed=True)
+        op.run()
+        dst_file_size = qemuimg.info(dst_file)["actualsize"]
+
+        assert src_file_size > dst_file_size
 
 
 @expandPermutations
