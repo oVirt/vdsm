@@ -958,20 +958,15 @@ class LVMVolumeGroup(APIBase):
 
 
 class ISCSIConnection(APIBase):
-    ctorArgs = ['host', 'port', 'user', 'password', 'ipv6_enabled']
+    ctorArgs = []
 
-    def __init__(self, host, port, user="", password="", ipv6_enabled=False):
+    def __init__(self):
         APIBase.__init__(self)
-        self._host = host
-        self._port = port
-        self._user = user
-        self._pass = password
-        self._ipv6_enabled = ipv6_enabled
 
-    def discoverSendTargets(self):
-        params = {'connection': self._host, 'port': self._port,
-                  'user': self._user, 'password': self._pass,
-                  'ipv6_enabled': self._ipv6_enabled}
+    def discoverSendTargets(self, host, port, user="", password="",
+                            ipv6_enabled=False):
+        params = {'connection': host, 'port': port, 'user': user,
+                  'password': password, 'ipv6_enabled': ipv6_enabled}
         return self._irs.discoverSendTargets(params)
 
 
