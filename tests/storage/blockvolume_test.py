@@ -51,37 +51,37 @@ from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
 
 CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
-GIB_IN_SECTORS = GIB // sc.BLOCK_SIZE
+GIB_IN_BLOCKS = GIB // sc.BLOCK_SIZE
 
 
 @expandPermutations
 class TestBlockVolumeSize(VdsmTestCase):
 
     @permutations([
-        # (preallocate, capacity in sectors, initial size in sectors),
+        # (preallocate, capacity in blocks, initial size in blocks),
         #   allocation size in MB
-        # Preallocate, capacity 2048 sectors, No initial size.
+        # Preallocate, capacity 2048 blocks, No initial size.
         #      Expected 1 Mb allocated
         [(sc.PREALLOCATED_VOL, 2048, None), 1],
-        # Preallocate, capacity 2049 sectors, No initial size.
+        # Preallocate, capacity 2049 blocks, No initial size.
         #      Expected 2 Mb allocated
         [(sc.PREALLOCATED_VOL, 2049, None), 2],
-        # Preallocate, capacity 2097152 sectors, No initial size.
+        # Preallocate, capacity 2097152 blocks, No initial size.
         #      Expected 1024 Mb allocated
         [(sc.PREALLOCATED_VOL, 2097152, None), 1024],
-        # Sparse, capacity 9999 sectors, No initial size.
+        # Sparse, capacity 9999 blocks, No initial size.
         #      Expected 1024 Mb allocated
         [(sc.SPARSE_VOL, 9999, None),
          config.getint("irs", "volume_utilization_chunk_mb")],
-        # Sparse, capacity 8388608 sectors, initial size 1860.
+        # Sparse, capacity 8388608 blocks, initial size 1860.
         #      Expected 1 Mb allocated
         [(sc.SPARSE_VOL, 8388608, 1860), 1],
-        # Sparse, capacity 8388608 sectors, initial size 1870.
+        # Sparse, capacity 8388608 blocks, initial size 1870.
         #      Expected 2 Mb allocated
         [(sc.SPARSE_VOL, 8388608, 1870), 2],
-        # Sparse, capacity 2097152 sectors, initial size 2359296.
+        # Sparse, capacity 2097152 blocks, initial size 2359296.
         #      Expected 1268 Mb allocated
-        [(sc.SPARSE_VOL, GIB_IN_SECTORS,
+        [(sc.SPARSE_VOL, GIB_IN_BLOCKS,
           BlockVolume.max_size(GIB, sc.COW_FORMAT) // sc.BLOCK_SIZE),
          1268],
     ])
@@ -99,7 +99,7 @@ class TestBlockVolumeSize(VdsmTestCase):
             max_size = BlockVolume.max_size(GIB, sc.COW_FORMAT)
             max_size_blk = max_size // sc.BLOCK_SIZE
             BlockVolume.calculate_volume_alloc_size(preallocate,
-                                                    GIB_IN_SECTORS,
+                                                    GIB_IN_BLOCKS,
                                                     max_size_blk + 1)
 
 
