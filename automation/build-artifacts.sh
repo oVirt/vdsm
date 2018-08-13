@@ -2,13 +2,6 @@
 
 set -xe
 
-# a horrible hack around CentOS's ppc dist name change
-# instead of this hack, ovirt ci must not bundle x86 and ppc packages together,
-# following CentOS's annoying standards.
-if [ -f /etc/rpm/macros.dist ]; then
-    sed -i s/.centos.p// /etc/rpm/macros.dist
-fi
-
 # prepare env
 BUILDS=$PWD/rpmbuild
 EXPORTS=$PWD/exported-artifacts
