@@ -78,7 +78,7 @@ from vdsm.storage import taskManager
 from vdsm.storage import types
 from vdsm.storage import udev
 from vdsm.storage.constants import STORAGE
-from vdsm.storage.constants import SECTOR_SIZE
+from vdsm.storage.constants import BLOCK_SIZE
 from vdsm.storage.misc import deprecated
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.spbackends import MAX_POOL_DESCRIPTION_SIZE, MAX_DOMAINS
@@ -712,11 +712,11 @@ class HSM(object):
     def extendVolumeSize(self, spUUID, sdUUID, imgUUID, volUUID, newSize):
         pool = self.getPool(spUUID)
         newSizeBytes = misc.validateN(newSize, "newSize")
-        newSizeSectors = (newSizeBytes + SECTOR_SIZE - 1) / SECTOR_SIZE
+        newSizeBlocks = (newSizeBytes + BLOCK_SIZE - 1) / BLOCK_SIZE
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(
             spUUID, "extendVolumeSize", pool.extendVolumeSize, sdUUID,
-            imgUUID, volUUID, newSizeSectors)
+            imgUUID, volUUID, newSizeBlocks)
 
     @public
     def updateVolumeSize(self, spUUID, sdUUID, imgUUID, volUUID, newSize):
@@ -760,7 +760,7 @@ class HSM(object):
             volToExtend.teardown(sdUUID, volUUID)
 
         volToExtend.setSize(
-            (roundedSizeBytes + SECTOR_SIZE - 1) / SECTOR_SIZE)
+            (roundedSizeBytes + BLOCK_SIZE - 1) / BLOCK_SIZE)
 
         return dict(size=str(roundedSizeBytes))
 
@@ -3059,10 +3059,10 @@ class HSM(object):
         # Values lower than 1 are used to uncommit (marking as inconsisent
         # during a transaction) the volume size.
         if capacity > 0:
-            sectors = (capacity + SECTOR_SIZE - 1) / SECTOR_SIZE
+            blocks = (capacity + BLOCK_SIZE - 1) / BLOCK_SIZE
         else:
-            sectors = capacity
-        vol.setSize(sectors)
+            blocks = capacity
+        vol.setSize(blocks)
 
     @public
     def getVolumeInfo(self, sdUUID, spUUID, imgUUID, volUUID, options=None):
