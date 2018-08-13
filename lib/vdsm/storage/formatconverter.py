@@ -134,7 +134,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
     log.debug("Acquiring the host id %s for domain %s", hostId, domain.sdUUID)
     newClusterLock.acquireHostId(hostId, async=False)
 
-    V2META_SECTORSIZE = 512
+    V2META_BLOCKSIZE = 512
 
     def v3ResetMetaVolSize(vol):
         # BZ811880 Verifiying that the volume size is the same size advertised
@@ -146,7 +146,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
         if vol.getFormat() == sc.COW_FORMAT:
             qemuVolInfo = qemuimg.info(vol.getVolumePath(),
                                        qemuimg.FORMAT.QCOW2)
-            virtVolSize = qemuVolInfo["virtualsize"] / V2META_SECTORSIZE
+            virtVolSize = qemuVolInfo["virtualsize"] / V2META_BLOCKSIZE
         else:
             virtVolSize = vol.getVolumeSize()
 
