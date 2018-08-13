@@ -44,7 +44,7 @@ from vdsm.storage.volumemetadata import VolumeMetadata
 
 BLOCK_SIZE = sc.BLOCK_SIZE
 
-SECTORS_TO_MB = 2048
+BLOCKS_TO_MB = 2048
 
 QCOW_OVERHEAD_FACTOR = 1.1
 
@@ -329,9 +329,9 @@ class BlockVolumeManifest(volume.VolumeManifest):
     def calculate_volume_alloc_size(cls, preallocate, capacity, initial_size):
         """ Calculate the allocation size in mb of the volume
         'preallocate' - Sparse or Preallocated
-        'capacity' - the volume size in sectors
+        'capacity' - the volume size in blocks
         'initial_size' - optional, if provided the initial allocated
-                         size in sectors for sparse volumes
+                         size in blocks for sparse volumes
          """
         if initial_size and preallocate == sc.PREALLOCATED_VOL:
             log.error("Initial size is not supported for preallocated volumes")
@@ -351,13 +351,13 @@ class BlockVolumeManifest(volume.VolumeManifest):
         if preallocate == sc.SPARSE_VOL:
             if initial_size:
                 initial_size = int(initial_size * QCOW_OVERHEAD_FACTOR)
-                alloc_size = (utils.round(initial_size, SECTORS_TO_MB) //
-                              SECTORS_TO_MB)
+                alloc_size = (utils.round(initial_size, BLOCKS_TO_MB) //
+                              BLOCKS_TO_MB)
             else:
                 alloc_size = config.getint("irs",
                                            "volume_utilization_chunk_mb")
         else:
-            alloc_size = utils.round(capacity, SECTORS_TO_MB) // SECTORS_TO_MB
+            alloc_size = utils.round(capacity, BLOCKS_TO_MB) // BLOCKS_TO_MB
 
         return alloc_size
 
@@ -512,7 +512,7 @@ class BlockVolume(volume.Volume):
 
         if not volParent:
             cls.log.info("Request to create %s volume %s with size = %s "
-                         "sectors", sc.type2name(volFormat), volPath,
+                         "blocks", sc.type2name(volFormat), volPath,
                          size)
             if volFormat == sc.COW_FORMAT:
                 operation = qemuimg.create(volPath,
@@ -675,7 +675,7 @@ class BlockVolume(volume.Volume):
                       newSize)
         # we should return: Success/Failure
         # Backend APIs:
-        sizemb = utils.round(newSize, SECTORS_TO_MB) // SECTORS_TO_MB
+        sizemb = utils.round(newSize, BLOCKS_TO_MB) // BLOCKS_TO_MB
         lvm.extendLV(self.sdUUID, self.volUUID, sizemb)
 
     def reduce(self, newSize, allowActive=False):
@@ -689,7 +689,7 @@ class BlockVolume(volume.Volume):
         self.log.info("Request to reduce LV %s of image %s in VG %s with "
                       "size = %s allowActive = %s", self.volUUID, self.imgUUID,
                       self.sdUUID, newSize, allowActive)
-        sizemb = utils.round(newSize, SECTORS_TO_MB) // SECTORS_TO_MB
+        sizemb = utils.round(newSize, BLOCKS_TO_MB) // BLOCKS_TO_MB
         lvm.reduceLV(self.sdUUID, self.volUUID, sizemb, force=allowActive)
 
     @classmethod
@@ -766,7 +766,7 @@ class BlockVolume(volume.Volume):
         # Since this method relies on lvm.extendLV (lvextend) when the
         # requested size is equal or smaller than the current size, the
         # request is siliently ignored.
-        newSizeMb = utils.round(newSize, SECTORS_TO_MB) // SECTORS_TO_MB
+        newSizeMb = utils.round(newSize, BLOCKS_TO_MB) // BLOCKS_TO_MB
         lvm.extendLV(self.sdUUID, self.volUUID, newSizeMb)
 
 
