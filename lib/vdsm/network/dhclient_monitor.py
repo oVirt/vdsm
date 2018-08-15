@@ -91,7 +91,7 @@ def _dhcp_response_handler(data_filepath):
             logging.warning('DHCP response with no device')
             return
 
-        logging.debug('Received DHCP response: %s', dhcp_response)
+        logging.info('Received DHCP response: %s', dhcp_response)
 
         if _is_vdsm_interface(device):
             _process_dhcp_response_actions(action, dhcp_response)
