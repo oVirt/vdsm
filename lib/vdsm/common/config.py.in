@@ -284,6 +284,14 @@ parameters = [
             'The value should be close to sanlock kill interval and in any '
             'case greater than 0 (to tolerate short disturbances) and '
             'less than 300 (Engine monitoring interval).'),
+
+        ('time_sync_snapshot_enable', 'false',
+            'Enable guest time synchronization after snapshot.'),
+
+        ('time_sync_cont_enable', 'false',
+            'Enable guest time synchronization after un-pausing. '
+            'Please note: The guest time is always synchronized after manual '
+            'suspension / resume, regardless of this option value.'),
     ]),
 
     # Section: [rpc]
