@@ -1495,7 +1495,7 @@ class Vm(object):
                                    timeout)
 
     def cont(self, afterState=vmstatus.UP, guestCpuLocked=False,
-             ignoreStatus=False):
+             ignoreStatus=False, guestTimeSync=False):
         """
         Continue execution of the VM.
 
@@ -1534,6 +1534,9 @@ class Vm(object):
             self._lastStatus = afterState
             self._pause_code = None
             self._pause_time = None
+            if guestTimeSync or \
+               config.getboolean('vars', 'time_sync_cont_enable'):
+                self._syncGuestTime()
         finally:
             if not guestCpuLocked:
                 self._guestCpuLock.release()
@@ -1600,7 +1603,9 @@ class Vm(object):
             template = "Failed to set time: %s"
             code = e.get_error_code()
             if code == libvirt.VIR_ERR_AGENT_UNRESPONSIVE:
-                self.log.debug(template, "QEMU agent unresponsive")
+                self.log.warn(template,
+                              "QEMU agent unresponsive during "
+                              "guest time synchronization")
             elif code == libvirt.VIR_ERR_NO_SUPPORT:
                 self.log.debug(template, "Not supported")
             else:
@@ -4145,12 +4150,11 @@ class Vm(object):
 
     def _completeIncomingMigration(self):
         if self._altered_state.origin == _FILE_ORIGIN:
-            self.cont()
+            self.cont(guestTimeSync=True)
             fromSnapshot = self._altered_state.from_snapshot
             self._altered_state = _AlteredState()
             hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self._custom,
                                        {'FROM_SNAPSHOT': fromSnapshot})
-            self._syncGuestTime()
         elif self._altered_state.origin == _MIGRATION_ORIGIN:
             if self._needToWaitForMigrationToComplete():
                 finished, timeout = self._waitForUnderlyingMigration()
@@ -4658,6 +4662,8 @@ class Vm(object):
             self.drive_monitor.enable()
             if memoryParams:
                 self.cif.teardownVolumePath(memoryVol)
+            if config.getboolean('vars', 'time_sync_snapshot_enable'):
+                self._syncGuestTime()
 
         # Returning quiesce to notify the manager whether the guest agent
         # froze and flushed the filesystems or not.
