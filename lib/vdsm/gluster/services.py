@@ -32,7 +32,8 @@ SUPPORTED_SERVICES = frozenset(("glusterd",
                                 "gluster-swift-container",
                                 "gluster-swift-object",
                                 "gluster-swift-account",
-                                "smb"))
+                                "smb",
+                                "vdo"))
 
 
 class StatusTypes:
