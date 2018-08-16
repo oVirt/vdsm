@@ -445,14 +445,22 @@ class SANLock(object):
         try:
             host = sanlock.get_hosts(self._sdUUID, host_id)[0]
         except sanlock.SanlockException as e:
-            # get_hosts might throw an exception (-EAGAIN) if it's
-            # called before lockspace initialization and the
-            # querying of the delta leases
-            # we might also get ENONET if the storage has not completed
-            # calling acquireHostId yet
-            if e.errno not in (errno.ENONET, errno.EAGAIN):
+            if e.errno == errno.ENOENT:
+                # add_lockspace has not been completed yet,
+                # the inquiry has to be retried.
+                raise TemporaryFailure("inquire", lease, str(e))
+            elif e.errno == errno.EAGAIN:
+                # The host status is not available yet.
+                # Normally, we'd raise it to the caller, but this
+                # breaks the "Remove DC" flow in engine, so we assume
+                # the lease is currently held by the host
+                # See: https://bugzilla.redhat.com/1613838
+                self.log.debug("host %s status in not available yet, "
+                               "it may hold the lease %s",
+                               host_id, lease)
+                return resource_version, host_id
+            else:
                 raise
-            raise TemporaryFailure("inquire", lease, str(e))
 
         host_status = self.STATUS_NAME[host["flags"]]
 
