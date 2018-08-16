@@ -203,7 +203,13 @@ def check(image, format=None):
 
 def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
             dstQcow2Compat=None, backing=None, backingFormat=None,
-            preallocation=None):
+            preallocation=None, unordered_writes=False):
+    """
+    Arguments:
+        unordered_writes (bool): Allow out-of-order writes to the destination.
+            This option improves performance, but is only recommended for
+            preallocated devices like host devices or other raw block devices.
+    """
     cmd = [_qemuimg.cmd, "convert", "-p", "-t", "none", "-T", "none"]
     options = []
     cwdPath = None
@@ -233,6 +239,9 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
 
     if options:
         cmd.extend(('-o', ','.join(options)))
+
+    if unordered_writes:
+        cmd.append('-W')
 
     cmd.append(dstImage)
 
