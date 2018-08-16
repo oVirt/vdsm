@@ -80,7 +80,9 @@ class Job(base.Job):
                         dstQcow2Compat=self._dest.qcow2_compat,
                         backing=self._dest.backing_path,
                         backingFormat=self._dest.backing_qemu_format,
-                        preallocation=self._dest.preallocation)
+                        preallocation=self._dest.preallocation,
+                        unordered_writes=self._dest
+                            .recommends_unordered_writes)
                     self._operation.run()
 
 
@@ -158,6 +160,11 @@ class CopyDataDivEndpoint(properties.Owner):
                 self.volume.getType() == sc.PREALLOCATED_VOL):
             return qemuimg.PREALLOCATION.FALLOC
         return None
+
+    @property
+    def recommends_unordered_writes(self):
+        dom = sdCache.produce_manifest(self.sd_id)
+        return dom.recommends_unordered_writes(self.volume.getFormat())
 
     @property
     def volume(self):

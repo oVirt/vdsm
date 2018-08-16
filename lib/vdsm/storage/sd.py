@@ -336,6 +336,16 @@ class StorageDomainManifest(object):
         """
         return False
 
+    def recommends_unordered_writes(self, format):
+        """
+        Return True if unordered writes are recommended for copying an image
+        using format to this storage domain.
+
+        Unordered writes improve copy performance but are recommended only for
+        preallocated devices and raw format.
+        """
+        return format == sc.RAW_FORMAT and not self.supportsSparseness
+
     @property
     def oop(self):
         return oop.getProcessPool(self.sdUUID)
@@ -734,6 +744,9 @@ class StorageDomain(object):
         sparseness or not.
         """
         return self._manifest.supportsSparseness
+
+    def recommends_unordered_writes(self, format):
+        return self._manifest.recommends_unordered_writes(format)
 
     @property
     def oop(self):
