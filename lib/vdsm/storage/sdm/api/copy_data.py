@@ -79,7 +79,9 @@ class Job(base.Job):
                         dstFormat=dst_format,
                         dstQcow2Compat=self._dest.qcow2_compat,
                         backing=self._dest.backing_path,
-                        backingFormat=self._dest.backing_qemu_format)
+                        backingFormat=self._dest.backing_qemu_format,
+                        unordered_writes=self._dest
+                            .recommends_unordered_writes)
                     self._operation.run()
 
 
@@ -149,6 +151,11 @@ class CopyDataDivEndpoint(properties.Owner):
         if not parent_vol:
             return None
         return sc.fmt2str(parent_vol.getFormat())
+
+    @property
+    def recommends_unordered_writes(self):
+        dom = sdCache.produce_manifest(self.sd_id)
+        return dom.recommends_unordered_writes(self.volume.getFormat())
 
     @property
     def volume(self):

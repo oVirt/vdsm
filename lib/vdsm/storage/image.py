@@ -479,7 +479,9 @@ class Image:
                         dstQcow2Compat=destDom.qcow2_compat(),
                         backing=backing,
                         backingFormat=backingFormat,
-                        preallocation=preallocation)
+                        preallocation=preallocation,
+                        unordered_writes=destDom.recommends_unordered_writes(
+                            dstVol.getFormat()))
                     with utils.stopwatch("Copy volume %s"
                                          % srcVol.volUUID):
                         self._run_qemuimg_operation(operation)
@@ -818,7 +820,9 @@ class Image:
                         srcFormat=sc.fmt2str(volParams['volFormat']),
                         dstFormat=sc.fmt2str(dstVolFormat),
                         dstQcow2Compat=destDom.qcow2_compat(),
-                        preallocation=preallocation)
+                        preallocation=preallocation,
+                        unordered_writes=destDom.recommends_unordered_writes(
+                            dstVolFormat))
                     with utils.stopwatch("Copy volume %s"
                                          % srcVol.volUUID):
                         self._run_qemuimg_operation(operation)
@@ -1107,7 +1111,9 @@ class Image:
                         newVol.getVolumePath(),
                         srcFormat=sc.fmt2str(srcVolParams['volFormat']),
                         dstFormat=sc.fmt2str(volParams['volFormat']),
-                        dstQcow2Compat=sdDom.qcow2_compat())
+                        dstQcow2Compat=sdDom.qcow2_compat(),
+                        unordered_writes=sdDom.recommends_unordered_writes(
+                            volParams['volFormat']))
                     with utils.stopwatch("Copy volume %s"
                                          % srcVol.volUUID):
                         self._run_qemuimg_operation(operation)

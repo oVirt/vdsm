@@ -58,6 +58,10 @@ class FakeDomainManifest(object):
         pass
 
     @recorded
+    def recommends_unordered_writes(self, format):
+        pass
+
+    @recorded
     def qcow2_compat(self):
         pass
 
@@ -710,6 +714,7 @@ class DomainTestMixin(object):
         ['getMetaParam', 1],
         ['getVersion', 0],
         ['supportsSparseness', 0],
+        ['recommends_unordered_writes', 1],
         ['qcow2_compat', 0],
         ['getMetadata', 0],
         ['getFormat', 0],
