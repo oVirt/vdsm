@@ -27,6 +27,8 @@ import os
 import pprint
 from functools import partial
 
+import pytest
+
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
 from . import qemuio
@@ -410,6 +412,68 @@ class TestConvertCompressed(object):
         dst_file_size = qemuimg.info(dst_file)["actualsize"]
 
         assert src_file_size > dst_file_size
+
+
+class TestConvertUnorderedWrites:
+    """
+    Unordered writes are recommended only for raw format on block device, so we
+    test only convert to raw.
+    """
+
+    @pytest.mark.parametrize(
+        "format", [qemuimg.FORMAT.RAW, qemuimg.FORMAT.QCOW2])
+    def test_single(self, tmpdir, format):
+        src = str(tmpdir.join("src"))
+        dst = str(tmpdir.join("dst"))
+        offset = 4 * 64 * 1024
+
+        op = qemuimg.create(
+            src, size=10 * 64 * 1024, format=format, qcow2Compat="1.1")
+        op.run()
+        qemuio.write_pattern(src, format, offset=offset)
+
+        op = qemuimg.convert(
+            src,
+            dst,
+            srcFormat=format,
+            dstFormat=qemuimg.FORMAT.RAW,
+            unordered_writes=True)
+        op.run()
+
+        qemuio.verify_pattern(dst, qemuimg.FORMAT.RAW, offset=offset)
+
+    def test_chain(self, tmpdir):
+        base = str(tmpdir.join("base"))
+        top = str(tmpdir.join("top"))
+        dst = str(tmpdir.join("dst"))
+
+        base_offset = 4 * 64 * 1024
+        top_offset = 5 * 64 * 1024
+
+        # Create base image with pattern.
+        op = qemuimg.create(
+            base, size=10 * 64 * 1024, format=qemuimg.FORMAT.RAW)
+        op.run()
+        qemuio.write_pattern(base, qemuimg.FORMAT.RAW, offset=base_offset)
+
+        # Create top image with pattern.
+        op = qemuimg.create(
+            top, format=qemuimg.FORMAT.QCOW2, qcow2Compat="1.1", backing=base)
+        op.run()
+        qemuio.write_pattern(top, qemuimg.FORMAT.QCOW2, offset=top_offset)
+
+        # Convert, collpasing top and base into dst.
+        op = qemuimg.convert(
+            top,
+            dst,
+            srcFormat=qemuimg.FORMAT.QCOW2,
+            dstFormat=qemuimg.FORMAT.RAW,
+            unordered_writes=True)
+        op.run()
+
+        # Verify patterns
+        qemuio.verify_pattern(dst, qemuimg.FORMAT.RAW, offset=base_offset)
+        qemuio.verify_pattern(dst, qemuimg.FORMAT.RAW, offset=top_offset)
 
 
 @expandPermutations
