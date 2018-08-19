@@ -89,8 +89,14 @@ class TestNetworkMtu(object):
                         {NETWORK2_NAME: {'remove': True}}, {}, nftestlib.NOCHK)
                     adapter.assertNetwork(NETWORK1_NAME, NETWORK1_ATTRS)
                     adapter.assertLinkMtu(nic, NETWORK1_ATTRS)
+
                     if bonded:
+                        vlan = BOND_NAME + '.' + str(NETWORK1_ATTRS['vlan'])
                         adapter.assertLinkMtu(BOND_NAME, NETWORK1_ATTRS)
+                    else:
+                        vlan = nic + '.' + str(NETWORK1_ATTRS['vlan'])
+
+                    adapter.assertLinkMtu(vlan, NETWORK1_ATTRS)
 
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
@@ -123,8 +129,19 @@ class TestNetworkMtu(object):
                     with adapter.setupNetworks(NETNEW, {}, nftestlib.NOCHK):
                         adapter.assertNetwork(NETWORK2_NAME, NETWORK2_ATTRS)
                         adapter.assertLinkMtu(nic, NETWORK2_ATTRS)
+
                         if bonded:
+                            vlan1 = BOND_NAME + '.' + str(
+                                NETWORK1_ATTRS['vlan'])
+                            vlan2 = BOND_NAME + '.' + str(
+                                NETWORK2_ATTRS['vlan'])
                             adapter.assertLinkMtu(BOND_NAME, NETWORK2_ATTRS)
+                        else:
+                            vlan1 = nic + '.' + str(NETWORK1_ATTRS['vlan'])
+                            vlan2 = nic + '.' + str(NETWORK2_ATTRS['vlan'])
+
+                        adapter.assertLinkMtu(vlan1, NETWORK1_ATTRS)
+                        adapter.assertLinkMtu(vlan2, NETWORK2_ATTRS)
 
     def test_add_slave_to_a_bonded_network_with_non_default_mtu(self, switch):
         with dummy_devices(2) as (nic1, nic2):
