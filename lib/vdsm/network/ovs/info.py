@@ -40,7 +40,6 @@ NORTHBOUND = 'northbound'
 SOUTHBOUND = 'southbound'
 
 EMPTY_PORT_INFO = {
-    'mtu': 1500,
     'addr': '',
     'ipv4addrs': [],
     'gateway': '',
@@ -221,7 +220,8 @@ def _fake_vlan(net_attrs, vlanid):
     iface = net_attrs['bond'] or net_attrs['nics'][0]
     vlan_info = {
         'vlanid': vlanid,
-        'iface': iface
+        'iface': iface,
+        'mtu': net_attrs['mtu']
     }
     vlan_info.update(EMPTY_PORT_INFO)
     vlan_name = '%s.%s' % (iface, vlanid)
