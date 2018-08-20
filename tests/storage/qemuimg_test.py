@@ -46,9 +46,15 @@ from vdsm.common.constants import GIB
 from vdsm.common.constants import MEGAB
 from vdsm.storage import qemuimg
 
+CLUSTER_SIZE = 64 * 1024
+
 QEMU_IMG = qemuimg._qemuimg.cmd
 
 CONFIG = make_config([('irs', 'qcow2_compat', '0.10')])
+
+xfail_on_travis = pytest.mark.xfail(
+    "TRAVIS_CI" in os.environ,
+    reason="File system does not support sparseness")
 
 
 def fake_json_call(data, cmd, **kw):
@@ -809,6 +815,116 @@ class TestAmend(TestCaseBase):
             qemuimg.amend(leaf_path, desired_qcow2_compat)
             self.assertEqual(qemuimg.info(leaf_path)['compat'],
                              desired_qcow2_compat)
+
+
+class TestMeasure:
+
+    @pytest.mark.parametrize("format,compressed", [
+        pytest.param(qemuimg.FORMAT.RAW, False, marks=xfail_on_travis),
+        (qemuimg.FORMAT.QCOW2, False),
+        (qemuimg.FORMAT.QCOW2, True),
+    ])
+    @pytest.mark.parametrize("compat", ['0.10', '1.1'])
+    @pytest.mark.parametrize("size", [1, 100])
+    def test_empty(self, tmpdir, compat, size, format, compressed):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.truncate(size * GIB)
+        self.check_measure(filename, compat, format, compressed)
+
+    @pytest.mark.parametrize("format,compressed", [
+        pytest.param(qemuimg.FORMAT.RAW, False, marks=xfail_on_travis),
+        (qemuimg.FORMAT.QCOW2, False),
+        (qemuimg.FORMAT.QCOW2, True),
+    ])
+    @pytest.mark.parametrize("compat", ['0.10', '1.1'])
+    @pytest.mark.parametrize("size", [1, 100])
+    def test_best_small(self, tmpdir, compat, size, format, compressed):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.truncate(size * GIB)
+            f.write(b"x" * MEGAB)
+        self.check_measure(filename, compat, format, compressed)
+
+    @pytest.mark.parametrize("format,compressed", [
+        pytest.param(qemuimg.FORMAT.RAW, False, marks=xfail_on_travis),
+        (qemuimg.FORMAT.QCOW2, False),
+        (qemuimg.FORMAT.QCOW2, True),
+    ])
+    @pytest.mark.parametrize("compat", ['0.10', '1.1'])
+    @pytest.mark.parametrize("size", [1, 100])
+    def test_big(self, tmpdir, compat, size, format, compressed):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.truncate(size * GIB)
+            f.write(b"x" * MEGAB)
+            f.seek(512 * MEGAB)
+            f.write(b"x" * MEGAB)
+        self.check_measure(filename, compat, format, compressed)
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("format,compressed", [
+        pytest.param(qemuimg.FORMAT.RAW, False, marks=xfail_on_travis),
+        (qemuimg.FORMAT.QCOW2, False),
+        (qemuimg.FORMAT.QCOW2, True),
+    ])
+    @pytest.mark.parametrize("compat", ['0.10', '1.1'])
+    def test_worst(self, tmpdir, compat, format, compressed):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.truncate(1 * GIB)
+            for off in range(0, GIB, CLUSTER_SIZE):
+                f.seek(off)
+        self.check_measure(filename, compat, format, compressed)
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("format,compressed", [
+        pytest.param(qemuimg.FORMAT.RAW, False, marks=xfail_on_travis),
+        (qemuimg.FORMAT.QCOW2, False),
+        (qemuimg.FORMAT.QCOW2, True),
+    ])
+    @pytest.mark.parametrize("compat", ['0.10', '1.1'])
+    def test_full(self, tmpdir, compat, format, compressed):
+        filename = str(tmpdir.join("test"))
+        with io.open(filename, "wb") as f:
+            f.truncate(1 * GIB)
+            for _ in range(1024):
+                f.write(b"x" * MEGAB)
+        self.check_measure(filename, compat, format, compressed)
+
+    def check_measure(self, filename, compat, format, compressed):
+        if format != qemuimg.FORMAT.RAW:
+            filename = convert_to_qcow2(filename, compressed=compressed,
+                                        compat=compat)
+        qemu_info = qemuimg.info(filename)
+        virtual_size = qemu_info["virtualsize"]
+        qemu_measure = qemuimg.measure(
+            filename,
+            format=format,
+            output_format=qemuimg.FORMAT.QCOW2)
+        estimated_size = qemu_measure["required"]
+        actual_size = converted_size(filename, compat=compat)
+        error_pct = 100 * float(estimated_size - actual_size) / virtual_size
+        assert estimated_size >= actual_size
+        assert error_pct <= 0.1, error_pct
+
+
+def converted_size(filename, compat):
+    converted = convert_to_qcow2(filename, compat=compat)
+    return os.stat(converted).st_size
+
+
+def convert_to_qcow2(src, compressed=False, compat="1.1"):
+    dst = src + ".qcow2"
+    convert_cmd = qemuimg.convert(
+        src,
+        dst,
+        dstFormat=qemuimg.FORMAT.QCOW2,
+        dstQcow2Compat=compat,
+        compressed=compressed)
+    convert_cmd.run()
+    os.remove(src)
+    return dst
 
 
 def make_image(path, size, format, index, qcow2_compat, backing=None):

@@ -146,6 +146,29 @@ def info(image, format=None, unsafe=False, trusted_image=True):
     return info
 
 
+def measure(image, format=None, output_format=None):
+    cmd = [_qemuimg.cmd, "measure", "--output", "json"]
+
+    if format:
+        cmd.extend(("-f", format))
+
+    if output_format:
+        cmd.extend(("-O", output_format))
+
+    cmd.append(image)
+    out = _run_cmd(cmd)
+    try:
+        qemu_measure = _parse_qemuimg_json(out)
+    except ValueError:
+        raise InvalidOutput(cmd, out, "Failed to process qemu-img output")
+
+    for key in ("required", "fully-allocated"):
+        if key not in qemu_measure:
+            raise InvalidOutput(cmd, out, "Missing field: %r" % key)
+
+    return qemu_measure
+
+
 def create(image, size=None, format=None, qcow2Compat=None,
            backing=None, backingFormat=None, preallocation=None, unsafe=False):
     cmd = [_qemuimg.cmd, "create"]
