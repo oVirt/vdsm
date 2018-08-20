@@ -32,8 +32,10 @@ from testlib import make_file, recorded
 from testlib import namedTemporaryDir
 
 from vdsm import utils
+from vdsm.storage import blockVolume
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import fileVolume
 from vdsm.storage import lvm as real_lvm
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import sd
@@ -348,6 +350,30 @@ class FakeResourceManager(object):
 
     def getNamespace(self, *args):
         return "_".join(args)
+
+
+class FakeFileSD(object):
+    def __init__(self, sd_manifest):
+        self._manifest = sd_manifest
+
+    @property
+    def manifest(self):
+        return self._manifest
+
+    def getVolumeClass(self):
+        return fileVolume.FileVolumeManifest
+
+
+class FakeBlockSD(object):
+    def __init__(self, sd_manifest):
+        self._manifest = sd_manifest
+
+    @property
+    def manifest(self):
+        return self._manifest
+
+    def getVolumeClass(self):
+        return blockVolume.BlockVolumeManifest
 
 
 class FakeStorageDomainCache(object):

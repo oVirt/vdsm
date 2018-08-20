@@ -22,13 +22,23 @@ from __future__ import absolute_import
 from __future__ import division
 
 from monkeypatch import MonkeyPatch
+import pytest
+
+from storage.storagefakelib import FakeBlockSD
+from storage.storagefakelib import FakeFileSD
+from storage.storagefakelib import FakeStorageDomainCache
+
 from testlib import expandPermutations, permutations
+from testlib import make_config
 from testlib import VdsmTestCase
 
+from vdsm.common import constants
 from vdsm.storage import constants as sc
 from vdsm.storage import image
+from vdsm.storage import qcow2
 
 GB_IN_BLK = 1024**3 // 512
+CONFIG = make_config([('irs', 'volume_utilization_chunk_mb', '1024')])
 
 
 def fakeEstimateChainSize(self, sdUUID, imgUUID, volUUID, size):
@@ -99,3 +109,62 @@ class TestCalculateVolAlloc(VdsmTestCase):
         alloc_blk = img.calculate_vol_alloc("src_sd_id", src_params,
                                             "dst_sd_id", dest_format)
         self.assertEqual(alloc_blk, expected_blk)
+
+
+class TestEstimateQcow2Size:
+
+    @pytest.mark.parametrize('sd_class', [FakeFileSD, FakeBlockSD])
+    def test_raw_to_qcow2_estimated_size(
+            self, monkeypatch, sd_class):
+        monkeypatch.setattr(image, "config", CONFIG)
+        monkeypatch.setattr(
+            qcow2,
+            'estimate_size',
+            # the estimated size for converting 1 gb
+            # raw empty volume to qcow2 format
+            # cmd:
+            #   qemu-img measure -f raw -O qcow2 test.raw
+            # output:
+            #   required size: 393216
+            #   fully allocated size: 1074135040
+            lambda path: 393216)
+        monkeypatch.setattr(image, 'sdCache', FakeStorageDomainCache())
+
+        image.sdCache.domains['sdUUID'] = sd_class("fake manifest")
+        img = image.Image("/path/to/repo")
+
+        vol_params = dict(
+            size=constants.GIB,
+            volFormat=sc.RAW_FORMAT,
+            path='path')
+        estimated_size = img.estimate_qcow2_size(vol_params, "sdUUID")
+
+        assert estimated_size == 2097920
+
+    @pytest.mark.parametrize('sd_class', [FakeFileSD, FakeBlockSD])
+    def test_qcow2_to_qcow2_estimated_size(
+            self, monkeypatch, sd_class):
+        monkeypatch.setattr(image, "config", CONFIG)
+        monkeypatch.setattr(
+            qcow2,
+            'estimate_size',
+            # the estimated size for converting 1 gb
+            # qcow2 empty volume to qcow2 format
+            # cmd:
+            #   qemu-img measure -f qcow2 -O qcow2 test.qcow2
+            # output:
+            #   required size: 393216
+            #   fully allocated size: 1074135040
+            lambda path: 393216)
+        monkeypatch.setattr(image, 'sdCache', FakeStorageDomainCache())
+
+        image.sdCache.domains['sdUUID'] = sd_class("fake manifest")
+        img = image.Image("/path/to/repo")
+
+        vol_params = dict(
+            size=constants.GIB,
+            volFormat=sc.COW_FORMAT,
+            path='path')
+        estimated_size = img.estimate_qcow2_size(vol_params, "sdUUID")
+
+        assert estimated_size == 2097920
