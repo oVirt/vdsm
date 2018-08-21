@@ -155,3 +155,67 @@ class TestNetworkMtu(object):
                 BONDBASE[BOND_NAME]['nics'].append(nic2)
                 adapter.setupNetworks({}, BONDBASE, nftestlib.NOCHK)
                 adapter.assertLinkMtu(nic2, NETBASE[NETWORK_NAME])
+
+    @nftestlib.parametrize_bridged
+    @nftestlib.parametrize_bonded
+    def test_mtu_default_value_of_base_nic_after_all_nets_are_removed(self,
+                                                                      switch,
+                                                                      bridged,
+                                                                      bonded):
+        with dummy_devices(1) as (nic,):
+            NETWORK1_ATTRS = {'bridged': bridged,
+                              'vlan': VLAN1,
+                              'mtu': 1600,
+                              'switch': switch}
+            NETBASE = {NETWORK1_NAME: NETWORK1_ATTRS}
+            DEFAULT_MTU = {'mtu': 1500}
+            if bonded:
+                NETWORK1_ATTRS['bonding'] = BOND_NAME
+                BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
+                link2monitor = BOND_NAME
+            else:
+                NETWORK1_ATTRS['nic'] = nic
+                BONDBASE = {}
+                link2monitor = nic
+
+            with adapter.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
+                with nftestlib.monitor_stable_link_state(link2monitor):
+                    adapter.setupNetworks(
+                        {NETWORK1_NAME: {'remove': True}}, {}, nftestlib.NOCHK)
+
+                    adapter.assertLinkMtu(nic, DEFAULT_MTU)
+                    if bonded:
+                        adapter.assertLinkMtu(BOND_NAME, DEFAULT_MTU)
+
+    @nftestlib.parametrize_bridged
+    @nftestlib.parametrize_bonded
+    def test_adding_a_net_with_mtu_lower_than_base_nic_mtu(self, switch,
+                                                           bridged, bonded):
+        with dummy_devices(1) as (nic,):
+            NETWORK1_ATTRS = {'bridged': bridged,
+                              'vlan': VLAN1,
+                              'mtu': 1000,
+                              'switch': switch}
+            NETNEW = {NETWORK1_NAME: NETWORK1_ATTRS}
+
+            if bonded:
+                NETWORK1_ATTRS['bonding'] = BOND_NAME
+                BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
+                link2monitor = BOND_NAME
+            else:
+                NETWORK1_ATTRS['nic'] = nic
+                BONDBASE = {}
+                link2monitor = nic
+
+            with adapter.setupNetworks(NETNEW, BONDBASE, nftestlib.NOCHK):
+                with nftestlib.monitor_stable_link_state(link2monitor):
+                    adapter.assertLinkMtu(nic, NETWORK1_ATTRS)
+
+                    if bonded:
+                        vlan1 = BOND_NAME + '.' + str(
+                            NETWORK1_ATTRS['vlan'])
+                        adapter.assertLinkMtu(BOND_NAME, NETWORK1_ATTRS)
+                    else:
+                        vlan1 = nic + '.' + str(NETWORK1_ATTRS['vlan'])
+
+                    adapter.assertLinkMtu(vlan1, NETWORK1_ATTRS)
