@@ -51,8 +51,14 @@ def disable_ipv6(dev, disable=True):
 
 
 def is_disabled_ipv6(dev='default'):
-    with open('/proc/sys/net/ipv6/conf/%s/disable_ipv6' % dev) as f:
-        return int(f.read())
+    try:
+        with open('/proc/sys/net/ipv6/conf/%s/disable_ipv6' % dev) as f:
+            return int(f.read())
+    except IOError as e:
+        if e.errno == errno.ENOENT:
+            return 1
+        else:
+            raise
 
 
 def is_ipv6_local_auto(dev):
