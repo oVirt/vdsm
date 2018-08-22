@@ -24,6 +24,7 @@ import six
 
 from vdsm.network.link import dpdk
 from vdsm.network.link.bond import Bond
+from vdsm.network.link.iface import DEFAULT_MTU
 from vdsm.network.link.iface import iface as link_iface
 from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo.nics import nics
@@ -96,6 +97,7 @@ class NetsRemovalSetup(object):
 
             self._transaction.add(ovsdb.del_port(sb))
             self._transaction.add(ovsdb.del_br(bridge_without_sb))
+            ovsdb.set_interface_attr(sb, 'mtu_request', DEFAULT_MTU).execute()
 
     @staticmethod
     def _get_southbound(net, running_networks):
