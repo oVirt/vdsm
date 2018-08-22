@@ -24,6 +24,7 @@ import random
 import six
 
 from vdsm.network.link import dpdk
+from vdsm.network.link.iface import DEFAULT_MTU
 from vdsm.network.link.iface import iface as link_iface
 from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netlink import link
@@ -82,6 +83,7 @@ class NetsRemovalSetup(object):
 
             self._transaction.add(ovsdb.del_port(sb))
             self._transaction.add(ovsdb.del_br(bridge_without_sb))
+            ovsdb.set_interface_attr(sb, 'mtu_request', DEFAULT_MTU).execute()
 
     def _set_network_mtu(self):
         for sb, nbs in six.viewitems(self._ovs_info.northbounds_by_sb):
