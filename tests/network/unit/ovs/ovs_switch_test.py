@@ -26,26 +26,22 @@ from vdsm.network.ovs import switch
 from network.compat import mock
 
 
-@mock.patch('vdsm.network.ovs.switch.link_iface')
 @mock.patch('vdsm.network.ovs.switch.ovsdb')
 @mock.patch('vdsm.network.ovs.info.OvsInfo')
 class ListOVSAcquiredIfacesTests(unittest.TestCase):
 
-    def test_add_network_with_nic(self, mock_ovs_info, mock_ovsdb, mock_iface):
+    def test_add_network_with_nic(self, mock_ovs_info, mock_ovsdb):
         _init_ovs_info(mock_ovs_info)
         _init_ovsdb_mock(mock_ovsdb)
-        _init_iface_mock(mock_iface)
 
         self._assert_acquired_ifaces_post_switch_setup(
             mock_ovs_info,
             nets2add={'net': {'nic': 'eth0', 'mtu': 1500}},
             expected_ifaces={'eth0'})
 
-    def test_add_network_with_bond(
-            self, mock_ovs_info, mock_ovsdb, mock_iface):
+    def test_add_network_with_bond(self, mock_ovs_info, mock_ovsdb):
         _init_ovs_info(mock_ovs_info)
         _init_ovsdb_mock(mock_ovsdb)
-        _init_iface_mock(mock_iface)
 
         self._assert_acquired_ifaces_post_switch_setup(
             mock_ovs_info,
@@ -77,7 +73,3 @@ def _init_ovsdb_mock(mock_ovsdb):
     mock_ovsdb.list_interface_info.return_value.execute.return_value = [
         {'mtu': 1500}
     ]
-
-
-def _init_iface_mock(mock_iface):
-    mock_iface.return_value.mtu.return_value = 1500
