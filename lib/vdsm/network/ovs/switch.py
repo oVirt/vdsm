@@ -25,7 +25,6 @@ import six
 from vdsm.network.link import dpdk
 from vdsm.network.link.bond import Bond
 from vdsm.network.link.iface import DEFAULT_MTU
-from vdsm.network.link.iface import iface as link_iface
 from vdsm.network.link.iface import random_iface_name
 from vdsm.network.netinfo.nics import nics
 from vdsm.network.netlink import link
@@ -188,11 +187,7 @@ class NetsAdditionSetup(object):
 
     @staticmethod
     def _prepare_network_sb_mtu(sb, sb_exists, desired_mtu, sb_max_mtu_map):
-        if sb not in sb_max_mtu_map:
-            mtu = _get_mtu(sb) if sb_exists else link_iface(sb).mtu()
-            sb_max_mtu_map[sb] = mtu
-
-        if not sb_max_mtu_map[sb] or sb_max_mtu_map[sb] < desired_mtu:
+        if sb not in sb_max_mtu_map or sb_max_mtu_map[sb] < desired_mtu:
             sb_max_mtu_map[sb] = desired_mtu
 
     def _set_networks_mtu(self, nets, sb_max_mtu_map):
