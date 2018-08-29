@@ -164,6 +164,114 @@ class TestNetworkIPDefaultGateway(object):
                         adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
                         adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
 
+    def test_add_net_without_default_route(self, switch):
+        with dummy_devices(2) as (nic1, nic2):
+
+            net1_attrs = {'nic': nic1,
+                          'ipaddr': IPv4_ADDRESS,
+                          'netmask': IPv4_NETMASK,
+                          'gateway': IPv4_GATEWAY,
+                          'defaultRoute': True,
+                          'switch': switch}
+            net2_attrs = {'nic': nic2,
+                          'ipaddr': IPv4_ADDRESS2,
+                          'netmask': IPv4_NETMASK,
+                          'gateway': IPv4_GATEWAY2,
+                          'defaultRoute': False,
+                          'switch': switch}
+
+            net1create = {NETWORK_NAME: net1_attrs}
+            net2create = {NETWORK2_NAME: net2_attrs}
+
+            with restore_resolv_conf(), preserve_default_route():
+                with adapter.setupNetworks(net1create, {}, NOCHK):
+                    with adapter.setupNetworks(net2create, {}, NOCHK):
+                        adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
+                        adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
+                    adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
+
+    def test_add_net_without_gateway_and_default_route(self, switch):
+        with dummy_devices(2) as (nic1, nic2):
+            net1_attrs = {'nic': nic1,
+                          'ipaddr': IPv4_ADDRESS,
+                          'netmask': IPv4_NETMASK,
+                          'gateway': IPv4_GATEWAY,
+                          'defaultRoute': True,
+                          'switch': switch}
+            net2_attrs = {'nic': nic2,
+                          'ipaddr': IPv4_ADDRESS2,
+                          'netmask': IPv4_NETMASK,
+                          'defaultRoute': False,
+                          'switch': switch}
+
+            net1create = {NETWORK_NAME: net1_attrs}
+            net2create = {NETWORK2_NAME: net2_attrs}
+
+            with restore_resolv_conf(), preserve_default_route():
+                with adapter.setupNetworks(net1create, {}, NOCHK):
+                    with adapter.setupNetworks(net2create, {}, NOCHK):
+                        adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
+                        adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
+
+    def test_create_net_without_default_route(self, switch):
+        with dummy_devices(1) as (nic1,):
+            net1_attrs = {'nic': nic1,
+                          'ipaddr': IPv4_ADDRESS,
+                          'netmask': IPv4_NETMASK,
+                          'gateway': IPv4_GATEWAY,
+                          'switch': switch}
+            net1create = {NETWORK_NAME: net1_attrs}
+
+            with restore_resolv_conf(), preserve_default_route():
+                with adapter.setupNetworks(net1create, {}, NOCHK):
+                    adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
+
+    def test_remove_net_without_default_route(self, switch):
+        with dummy_devices(2) as (nic1, nic2):
+            net1_attrs = {'nic': nic1,
+                          'ipaddr': IPv4_ADDRESS,
+                          'netmask': IPv4_NETMASK,
+                          'gateway': IPv4_GATEWAY,
+                          'defaultRoute': True,
+                          'switch': switch}
+            net2_attrs = {'nic': nic2,
+                          'ipaddr': IPv4_ADDRESS2,
+                          'netmask': IPv4_NETMASK,
+                          'gateway': IPv4_GATEWAY,
+                          'defaultRoute': False,
+                          'switch': switch}
+
+            net1create = {NETWORK_NAME: net1_attrs}
+            net2create = {NETWORK2_NAME: net2_attrs}
+
+            with restore_resolv_conf(), preserve_default_route():
+                with adapter.setupNetworks(net1create, {}, NOCHK):
+                    with adapter.setupNetworks(net2create, {}, NOCHK):
+                        adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
+                    adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
+
+    def test_remove_net_with_default_route_and_gateway(self, switch):
+        with dummy_devices(2) as (nic1, nic2):
+            net1_attrs = {'nic': nic1,
+                          'ipaddr': IPv4_ADDRESS,
+                          'netmask': IPv4_NETMASK,
+                          'gateway': IPv4_GATEWAY,
+                          'defaultRoute': True,
+                          'switch': switch}
+            net2_attrs = {'nic': nic2,
+                          'ipaddr': IPv4_ADDRESS2,
+                          'netmask': IPv4_NETMASK,
+                          'switch': switch}
+
+            net1create = {NETWORK_NAME: net1_attrs}
+            net2create = {NETWORK2_NAME: net2_attrs}
+
+            with restore_resolv_conf(), preserve_default_route():
+                with adapter.setupNetworks(net2create, {}, NOCHK):
+                    with adapter.setupNetworks(net1create, {}, NOCHK):
+                        adapter.assertNetworkIp(NETWORK_NAME, net1_attrs)
+                    adapter.assertNetworkIp(NETWORK2_NAME, net2_attrs)
+
 
 @nftestlib.parametrize_switch
 class TestAcquireNicsWithStaticIP(object):
