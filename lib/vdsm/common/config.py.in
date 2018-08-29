@@ -286,12 +286,28 @@ parameters = [
             'less than 300 (Engine monitoring interval).'),
 
         ('time_sync_snapshot_enable', 'false',
-            'Enable guest time synchronization after snapshot.'),
+            'Enable guest time synchronization after snapshot.'
+            'This flag can be set when creating snapshots of large Virtual '
+            'Machines where the delay that occurs during processing is large.'
+            'When this flag is enabled an attempt shall be made to '
+            'synchronize the Guest Time  during these types of lengthy '
+            'pauses. Currently the default value is false for backward '
+            'compatibility and for those users who may not want Guest Time '
+            'Synchronization enabled due to concerns pertaining to '
+            'performance, etc.'),
 
         ('time_sync_cont_enable', 'false',
             'Enable guest time synchronization after un-pausing. '
-            'Please note: The guest time is always synchronized after manual '
-            'suspension / resume, regardless of this option value.'),
+            'This flag can be set when various operations cause large '
+            'delays during processing not including creating snapshots '
+            'which has a separate flag nor resumption after suspension '
+            'which always attempts to synchronize the Guest Time. Relevant '
+            'operations may include Replication, out of disk space '
+            'scenarios, Domain State Change Monitoring delays, etc.'
+            'Currently the default value is false for backward '
+            'compatibility and for those users who may not want Guest Time '
+            'Synchronization enabled due to concerns pertaining to '
+            'performance, etc.'),
     ]),
 
     # Section: [rpc]
