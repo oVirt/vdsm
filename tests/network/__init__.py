@@ -24,8 +24,6 @@ import errno
 import logging
 import os
 
-import six
-
 from vdsm.network import cmd
 from vdsm.network import sourceroute
 from vdsm.network.ip import rule as ip_rule
@@ -72,9 +70,7 @@ def teardown_package():
     for patcher in bonding_dump_patchers:
         patcher.stop()
 
-    # TODO: Remove condition when ip.rule becomes PY3 compatible.
-    if six.PY2:
-        _post_cleanup_stale_iprules()
+    _post_cleanup_stale_iprules()
 
 
 class StaleIPRulesError(Exception):
