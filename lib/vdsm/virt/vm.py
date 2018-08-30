@@ -418,7 +418,7 @@ class Vm(object):
         self._vmAsyncStartError = None
         self._vmCreationEvent = threading.Event()
         self.stopped_migrated_event_processed = threading.Event()
-        self._pathsPreparedEvent = threading.Event()
+        self._incoming_migration_prepared = threading.Event()
         self._devices = vmdevices.common.empty_dev_map()
 
         self.drive_monitor = drivemonitor.DriveMonitor(
@@ -2803,9 +2803,6 @@ class Vm(object):
         # We (re)initialize the balloon values in all the flows.
         self._initialize_balloon(self._devices[hwclass.BALLOON])
 
-        # We should set this event as a last part of drives initialization
-        self._pathsPreparedEvent.set()
-
         initDomain = self._altered_state.origin != _MIGRATION_ORIGIN
         # we need to complete the initialization, including
         # domDependentInit, after the migration is completed.
@@ -2823,7 +2820,8 @@ class Vm(object):
             for dev in self._devices[hwclass.NIC]:
                 dev.recover()
         elif self._altered_state.origin == _MIGRATION_ORIGIN:
-            pass  # self._dom will be disconnected until migration ends.
+            self._incoming_migration_prepared.set()
+            # self._dom will be disconnected until migration ends.
         elif self._altered_state.origin == _FILE_ORIGIN:
             if self.hugepages:
                 self._prepare_hugepages()
@@ -5700,8 +5698,8 @@ class Vm(object):
             config.getint('vars', 'migration_listener_timeout'), doubler=5)
         self.log.debug('migration destination: waiting %ss '
                        'for path preparation', prepareTimeout)
-        self._pathsPreparedEvent.wait(prepareTimeout)
-        if not self._pathsPreparedEvent.isSet():
+        self._incoming_migration_prepared.wait(prepareTimeout)
+        if not self._incoming_migration_prepared.isSet():
             self.log.debug('Timeout while waiting for path preparation')
             return False
         srcDomXML = self._src_domain_xml
