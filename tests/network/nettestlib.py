@@ -587,5 +587,10 @@ def running_on_centos():
         return 'CentOS Linux release' in f.readline()
 
 
+def running_on_fedora(ver=''):
+    with open('/etc/redhat-release') as f:
+        return 'Fedora release {} '.format(ver) in f.readline()
+
+
 def running_on_travis_ci():
     return 'TRAVIS_CI' in os.environ
