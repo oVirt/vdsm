@@ -26,6 +26,8 @@ import tempfile
 
 import pytest
 
+from vdsm.network import cmd
+from vdsm.network import sourceroute
 from vdsm.network.ip import rule as ip_rule
 from vdsm.network.link.bond import sysfs_options_mapper
 
@@ -96,6 +98,14 @@ def cleanup_stale_iprules():
     In case any stale entries have been detected, attempt to clean everything
     and raise an error.
     """
+    commands = [
+        'bash',
+        '-c',
+        'while ip rule delete prio {} 2>/dev/null; do true; done'.format(
+            sourceroute.RULE_PRIORITY)
+    ]
+    cmd.exec_sync(commands)
+
     yield
 
     IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)

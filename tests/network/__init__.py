@@ -26,6 +26,8 @@ import os
 
 import six
 
+from vdsm.network import cmd
+from vdsm.network import sourceroute
 from vdsm.network.ip import rule as ip_rule
 from vdsm.network.link.bond import sysfs_options_mapper
 
@@ -63,6 +65,8 @@ def setup_package():
             if e.errno != errno.ENOENT:
                 raise
 
+    _pre_cleanup_stale_iprules()
+
 
 def teardown_package():
     for patcher in bonding_dump_patchers:
@@ -70,14 +74,24 @@ def teardown_package():
 
     # TODO: Remove condition when ip.rule becomes PY3 compatible.
     if six.PY2:
-        _cleanup_stale_iprules()
+        _post_cleanup_stale_iprules()
 
 
 class StaleIPRulesError(Exception):
     pass
 
 
-def _cleanup_stale_iprules():
+def _pre_cleanup_stale_iprules():
+    commands = [
+        'bash',
+        '-c',
+        'while ip rule delete prio {} 2>/dev/null; do true; done'.format(
+            sourceroute.RULE_PRIORITY)
+    ]
+    cmd.exec_sync(commands)
+
+
+def _post_cleanup_stale_iprules():
     """
     Clean test ip rules that may have been left by the test run.
     They may exists on the system due to some buggy test that ran
