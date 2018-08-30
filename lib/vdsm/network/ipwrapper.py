@@ -460,8 +460,8 @@ class Rule(object):
             output += ' dev %s' % self.srcDevice
         if self.prio:
             output += ' prio %s' % self.prio
-
-        output += ' table %s' % self.table
+        if self.table:
+            output += ' table %s' % self.table
 
         return output
 
