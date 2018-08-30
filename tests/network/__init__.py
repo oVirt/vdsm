@@ -100,7 +100,8 @@ def _post_cleanup_stale_iprules():
     and raise an error.
     """
     IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)
-    rules = [r for r in IPRule.rules() if r.to == IPV4_ADDRESS1]
+    rules = [r for r in IPRule.rules()
+             if r.to == IPV4_ADDRESS1 or r.prio == sourceroute.RULE_PRIORITY]
     if rules:
         for rule in rules:
             try:
