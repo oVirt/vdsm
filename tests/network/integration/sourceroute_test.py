@@ -24,6 +24,7 @@ from contextlib import contextmanager
 import os
 import unittest
 
+import netaddr
 import pytest
 
 from network import TESTS_STATIC_PATH
@@ -32,9 +33,12 @@ from network.nettestlib import dummy_device
 from network.nettestlib import running_on_fedora
 
 from vdsm.network import sourceroute
+from vdsm.network.ip import rule as iprule
 from vdsm.network.ipwrapper import addrAdd
 from vdsm.network.sourceroute import DynamicSourceRoute
 
+
+IPRule = iprule.driver(iprule.Drivers.IPROUTE2)
 
 TABLE = '4026531841'
 DEVICE = 'test-network'
@@ -73,34 +77,38 @@ class TestSourceRoute(unittest.TestCase):
         with dummy_device() as nic:
             addrAdd(nic, IPV4_ADDRESS, IPV4_MASK)
 
-            with create_sourceroute(device=nic, ip=IPV4_ADDRESS,
-                                    mask=IPV4_MASK, gateway=IPV4_GW):
-                dsroute = DynamicSourceRoute(nic, None, None, None)
-                routes, rules = dsroute.current_srconfig()
+            with force_cleanup_of_stale_rules_due_to_bz1623488(
+                    IPV4_ADDRESS, IPV4_MASK):
+                with create_sourceroute(device=nic, ip=IPV4_ADDRESS,
+                                        mask=IPV4_MASK, gateway=IPV4_GW):
+                    dsroute = DynamicSourceRoute(nic, None, None, None)
+                    routes, rules = dsroute.current_srconfig()
 
-                self.assertEqual(2, len(routes), routes)
-                self.assertEqual(2, len(rules), rules)
+                    self.assertEqual(2, len(routes), routes)
+                    self.assertEqual(2, len(rules), rules)
 
-                self.assertEqual('0.0.0.0/0', routes[0].to)
-                self.assertEqual(nic, routes[0].device)
-                self.assertEqual(IPv4_NET, routes[1].to)
-                self.assertEqual(nic, routes[1].device)
+                    self.assertEqual('0.0.0.0/0', routes[0].to)
+                    self.assertEqual(nic, routes[0].device)
+                    self.assertEqual(IPv4_NET, routes[1].to)
+                    self.assertEqual(nic, routes[1].device)
 
-                self.assertEqual(IPv4_NET, rules[0].to)
-                self.assertEqual(IPV4_TABLE, rules[0].table)
-                self.assertEqual(nic, rules[0].iif)
-                self.assertEqual(rules[0].prio, sourceroute.RULE_PRIORITY)
-                self.assertEqual(IPv4_NET, rules[1].src)
-                self.assertEqual(IPV4_TABLE, rules[1].table)
-                self.assertEqual(rules[1].prio, sourceroute.RULE_PRIORITY)
+                    self.assertEqual(IPv4_NET, rules[0].to)
+                    self.assertEqual(IPV4_TABLE, rules[0].table)
+                    self.assertEqual(nic, rules[0].iif)
+                    self.assertEqual(rules[0].prio, sourceroute.RULE_PRIORITY)
+                    self.assertEqual(IPv4_NET, rules[1].src)
+                    self.assertEqual(IPV4_TABLE, rules[1].table)
+                    self.assertEqual(rules[1].prio, sourceroute.RULE_PRIORITY)
 
     def test_sourceroute_add_over_existing_route(self):
         with dummy_device() as nic:
             addrAdd(nic, IPV4_ADDRESS, IPV4_MASK)
 
-            with create_sourceroute(device=nic, ip=IPV4_ADDRESS,
-                                    mask=IPV4_MASK, gateway=IPV4_GW):
-                sourceroute.add(nic, IPV4_ADDRESS, IPV4_MASK, IPV4_GW)
+            with force_cleanup_of_stale_rules_due_to_bz1623488(
+                    IPV4_ADDRESS, IPV4_MASK):
+                with create_sourceroute(device=nic, ip=IPV4_ADDRESS,
+                                        mask=IPV4_MASK, gateway=IPV4_GW):
+                    sourceroute.add(nic, IPV4_ADDRESS, IPV4_MASK, IPV4_GW)
 
 
 @contextmanager
@@ -110,3 +118,23 @@ def create_sourceroute(device, ip, mask, gateway):
         yield
     finally:
         sourceroute.remove(device)
+
+
+@contextmanager
+def force_cleanup_of_stale_rules_due_to_bz1623488(ipaddr, mask):
+    try:
+        yield
+    finally:
+        nettxt = parse_network(ipaddr, mask)
+        rule_to = iprule.IPRuleData(to=nettxt)
+        rule_from = iprule.IPRuleData(src=nettxt)
+        try:
+            IPRule.delete(rule_to)
+            IPRule.delete(rule_from)
+        except iprule.IPRuleDeleteError:
+            pass
+
+
+def parse_network(ipaddr, mask):
+    network = netaddr.IPNetwork('%s/%s' % (ipaddr, mask))
+    return "%s/%s" % (network.network, network.prefixlen)
