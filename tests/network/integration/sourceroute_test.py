@@ -22,14 +22,11 @@ from __future__ import division
 
 from contextlib import contextmanager
 import os
+import unittest
 
-from nose.plugins.attrib import attr
-
-from testlib import VdsmTestCase as TestCaseBase
-from testValidation import ValidateRunningAsRoot
-from monkeypatch import MonkeyPatch
-
-from .nettestlib import dummy_device
+from network import TESTS_STATIC_PATH
+from network.compat import mock
+from network.nettestlib import dummy_device
 
 from vdsm.network import sourceroute
 from vdsm.network.ipwrapper import addrAdd
@@ -47,14 +44,13 @@ IPV4_TABLE = '3232260865'
 
 
 def _routeShowTableAll(table):
-    dirName = os.path.dirname(os.path.realpath(__file__))
-    with open(os.path.join(dirName, "ip_route_show_table_all.out")) as tabFile:
+    f_iproute = os.path.join(TESTS_STATIC_PATH, 'ip_route_show_table_all.out')
+    with open(f_iproute) as tabFile:
         return tabFile.readlines()
 
 
-@attr(type='unit')
-class TestFilters(TestCaseBase):
-    @MonkeyPatch(sourceroute, 'routeShowTable', _routeShowTableAll)
+class TestFilters(unittest.TestCase):
+    @mock.patch.object(sourceroute, 'routeShowTable', _routeShowTableAll)
     def test_source_route_retrieval(self):
         routes = sourceroute.DynamicSourceRoute._getRoutes(TABLE)
         self.assertEqual(len(routes), 2)
@@ -64,10 +60,8 @@ class TestFilters(TestCaseBase):
                 self.assertEqual(route.device, DEVICE)
 
 
-@attr(type='integration')
-class TestSourceRoute(TestCaseBase):
+class TestSourceRoute(unittest.TestCase):
 
-    @ValidateRunningAsRoot
     def test_sourceroute_add_remove_and_read(self):
         with dummy_device() as nic:
             addrAdd(nic, IPV4_ADDRESS, IPV4_MASK)
@@ -93,7 +87,6 @@ class TestSourceRoute(TestCaseBase):
                 self.assertEqual(IPV4_TABLE, rules[1].table)
                 self.assertEqual(rules[1].prio, sourceroute.RULE_PRIORITY)
 
-    @ValidateRunningAsRoot
     def test_sourceroute_add_over_existing_route(self):
         with dummy_device() as nic:
             addrAdd(nic, IPV4_ADDRESS, IPV4_MASK)

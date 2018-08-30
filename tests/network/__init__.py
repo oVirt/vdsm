@@ -35,11 +35,13 @@ from .nettestlib import has_sysfs_bond_permission
 
 IPV4_ADDRESS1 = '192.168.99.1'    # Tracking the address used in ip_rule_test
 
+TESTS_STATIC_PATH = os.path.join(os.path.dirname(__file__), 'static')
+
 ALTERNATIVE_BONDING_DEFAULTS = os.path.join(
-    os.path.dirname(__file__), 'static', 'bonding-defaults.json')
+    TESTS_STATIC_PATH, 'bonding-defaults.json')
 
 ALTERNATIVE_BONDING_NAME2NUMERIC_PATH = os.path.join(
-    os.path.dirname(__file__), 'static', 'bonding-name2numeric.json')
+    TESTS_STATIC_PATH, 'bonding-name2numeric.json')
 
 bonding_dump_patchers = []
 

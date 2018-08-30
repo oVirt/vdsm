@@ -34,7 +34,6 @@ dist_vdsmnetworktests_PYTHON = \
 	$(NULL)
 
 dist_vdsmnetworktests_DATA = \
-	ip_route_show_table_all.out \
 	netmaskconversions \
 	tc_filter_show.out \
 	$(NULL)

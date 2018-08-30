@@ -1393,7 +1393,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/devices/data/*.xml
 %{_datadir}/%{vdsm_name}/tests/mem_info.out
 %{_datadir}/%{vdsm_name}/tests/network/*.py*
-%{_datadir}/%{vdsm_name}/tests/network/ip_route_show_table_all.out
 %{_datadir}/%{vdsm_name}/tests/network/netmaskconversions
 %{_datadir}/%{vdsm_name}/tests/network/tc_filter_show.out
 %{_datadir}/%{vdsm_name}/tests/network/functional/*.py*
@@ -1402,6 +1401,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/network/unit/*.py*
 %{_datadir}/%{vdsm_name}/tests/network/unit/ovs/*.py*
 %{_datadir}/%{vdsm_name}/tests/network/static/*.json
+%{_datadir}/%{vdsm_name}/tests/network/static/ip_route_show_table_all.out
 %{_datadir}/%{vdsm_name}/tests/storage/*.py*
 %{_datadir}/%{vdsm_name}/tests/storage/*.out
 %{_datadir}/%{vdsm_name}/tests/virt/*.py*

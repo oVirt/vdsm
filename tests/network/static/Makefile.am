@@ -23,4 +23,5 @@ vdsmnetworktestsstaticdir = ${vdsmtestsdir}/network/static
 dist_vdsmnetworktestsstatic_DATA = \
 	bonding-defaults.json \
 	bonding-name2numeric.json \
+	ip_route_show_table_all.out \
 	$(NULL)
