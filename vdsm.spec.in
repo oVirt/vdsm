@@ -724,12 +724,6 @@ Requires: glusterfs-api >= %{gluster_version}
 Requires: glusterfs-geo-replication >= %{gluster_version}
 Requires: glusterfs-events >= %{gluster_version}
 Requires: python-magic
-%if 0%{?centos} || 0%{?fedora}
-# gnfs is no longer part of glusterfs > 3.12, customers to move to nfs-ganesha
-# Installing for upstream alone in order to avoid breaking
-# existing customers
-Requires: glusterfs-gnfs
-%endif
 %if 0%{?fedora}
 Requires: python-blivet1 >= 1.20.4-1
 %else
