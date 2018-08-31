@@ -40,7 +40,7 @@ from vdsm.common.define import NORMAL, Mbytes
 from vdsm.common.network.address import normalize_literal_addr
 from vdsm.virt.utils import DynamicBoundedSemaphore
 
-
+from vdsm.virt import virdomain
 from vdsm.virt import vmexitreason
 from vdsm.virt import vmstatus
 from six.moves import range
@@ -759,6 +759,14 @@ class MonitorThread(object):
             self._vm.log.debug('starting migration monitor thread')
             try:
                 self.monitor_migration()
+            except virdomain.NotConnectedError as e:
+                # In case the VM is stopped during migration, there is a race
+                # between domain disconnection and stopping the monitoring
+                # thread. Then the domain may no longer be connected when
+                # monitor_migration loop tries to access it. That's harmless
+                # and shouldn't bubble up, let's just finish the thread.
+                self._vm.log.debug('domain disconnected in monitor thread: %s',
+                                   e)
             finally:
                 self.downtime_thread.stop()
             if self.downtime_thread.is_alive():
