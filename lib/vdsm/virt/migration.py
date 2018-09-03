@@ -403,7 +403,9 @@ class SourceThread(object):
 
             while not self._started:
                 try:
+                    self.log.info("Migration semaphore: acquiring")
                     with SourceThread.ongoingMigrations:
+                        self.log.info("Migration semaphore: acquired")
                         timeout = config.getint(
                             'vars', 'guest_lifecycle_event_reply_timeout')
                         if self.hibernating:
