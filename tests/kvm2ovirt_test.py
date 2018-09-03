@@ -77,7 +77,8 @@ class TestKvm2Ovirt(TestCaseBase):
                     '--source', '/fake/source',
                     '--dest', env.destination,
                     '--storage-type', 'volume',
-                    '--vm-name', self._vms[0].name()]
+                    '--vm-name', self._vms[0].name(),
+                    '--allocation', 'sparse']
 
             kvm2ovirt.main(args)
 
@@ -101,7 +102,8 @@ class TestKvm2Ovirt(TestCaseBase):
                     '--source', '/fake/source',
                     '--dest', env.destination,
                     '--storage-type', 'path',
-                    '--vm-name', self._vms[0].name()]
+                    '--vm-name', self._vms[0].name(),
+                    '--allocation', 'preallocated']
 
             kvm2ovirt.main(args)
 
