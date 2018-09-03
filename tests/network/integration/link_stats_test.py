@@ -19,17 +19,14 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from nose.plugins.attrib import attr
+import unittest
 
-from testlib import VdsmTestCase as TestCaseBase
-
-from .nettestlib import dummy_device
+from network.nettestlib import dummy_device
 
 from vdsm.network.link import stats as link_stats
 
 
-@attr(type='integration')
-class LinkStatsTests(TestCaseBase):
+class LinkStatsTests(unittest.TestCase):
 
     def test_report(self):
         with dummy_device() as nic:
