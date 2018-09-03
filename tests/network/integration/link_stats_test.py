@@ -19,27 +19,25 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import unittest
-
 from network.nettestlib import dummy_device
 
 from vdsm.network.link import stats as link_stats
 
 
-class LinkStatsTests(unittest.TestCase):
-
-    def test_report(self):
-        with dummy_device() as nic:
-            stats = link_stats.report()
-            self.assertIn(nic, stats)
-            expected_stat_names = set(['name',
-                                       'rx',
-                                       'tx',
-                                       'state',
-                                       'rxDropped',
-                                       'txDropped',
-                                       'rxErrors',
-                                       'txErrors',
-                                       'speed',
-                                       'duplex'])
-            self.assertEqual(expected_stat_names, set(stats[nic]))
+def test_report():
+    with dummy_device() as nic:
+        stats = link_stats.report()
+        assert nic in stats
+        expected_stat_names = {
+            'name',
+            'rx',
+            'tx',
+            'state',
+            'rxDropped',
+            'txDropped',
+            'rxErrors',
+            'txErrors',
+            'speed',
+            'duplex'
+        }
+        assert expected_stat_names == set(stats[nic])
