@@ -694,6 +694,9 @@ class KVMCommand(V2VCommand):
         cmd.extend(fmt)
         cmd.append('--vm-name')
         cmd.append(self._vminfo['vmName'])
+        cmd.append('--allocation')
+        # Per API schema, Engine is supposed to send an uppercase value
+        cmd.append(self._vminfo.get('allocation', 'sparse').lower())
         return cmd
 
     @contextmanager

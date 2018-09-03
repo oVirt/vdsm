@@ -22,7 +22,9 @@ from __future__ import absolute_import
 import argparse
 from contextlib import contextmanager
 import itertools
+import libvirt
 import sys
+import os
 import threading
 
 from ovirt_imageio_common import directio
@@ -59,6 +61,27 @@ class StreamAdapter(object):
         self._stream.finish()
 
 
+class Sparseness(object):
+    def __init__(self, opaque, estimated_size):
+        self.done = 0
+        self.opaque = opaque
+        self.estimated_size = estimated_size
+
+
+def bytesWriteHandler(stream, buf, opaque):
+    fd = opaque.opaque
+    return os.write(fd, buf)
+
+
+def recvSkipHandler(stream, length, opaque):
+    opaque.done += length
+    progress = min(99, opaque.done * 100 // opaque.estimated_size)
+    write_progress(progress)
+    fd = opaque.opaque
+    cur = os.lseek(fd, length, os.SEEK_CUR)
+    return os.ftruncate(fd, cur)
+
+
 def arguments(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('args')
@@ -81,6 +104,9 @@ def arguments(args):
                         '1048676')
     parser.add_argument('--verbose', action='store_true',
                         help='verbose output')
+    parser.add_argument('--allocation', dest='allocation', default='',
+                        help='Allocation Policy')
+
     return parser.parse_args(args)
 
 
@@ -126,6 +152,15 @@ def download_disk(adapter, estimated_size, size, dest, bufsize):
     adapter.finish()
 
 
+def download_disk_sparse(stream, estimated_size, size, dest, bufsize):
+    fd = os.open(dest, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+    op = Sparseness(fd, estimated_size)
+    with progress(op, estimated_size):
+        stream.sparseRecvAll(bytesWriteHandler, recvSkipHandler, op)
+    stream.finish()
+    os.close(fd)
+
+
 def get_password(options):
     if not options.password_file:
         return None
@@ -147,11 +182,20 @@ def handle_volume(con, diskno, src, dst, options):
 
     estimated_size = capacity
     stream = con.newStream()
-    vol.download(stream, 0, 0, 0)
-    sr = StreamAdapter(stream)
-    # No need to pass the size, volume download will return -1
-    # when stream finish
-    download_disk(sr, estimated_size, None, dst, options.bufsize)
+
+    if options.allocation == "sparse":
+        vol.download(stream, 0, 0,
+                     libvirt.VIR_STORAGE_VOL_DOWNLOAD_SPARSE_STREAM)
+        # No need to pass the size, volume download will return -1
+        # when the stream finishes
+        download_disk_sparse(stream, estimated_size, None, dst,
+                             options.bufsize)
+    elif options.allocation == "preallocated":
+        vol.download(stream, 0, 0, 0)
+        sr = StreamAdapter(stream)
+        # No need to pass the size, volume download will return -1
+        # when the stream finishes
+        download_disk(sr, estimated_size, None, dst, options.bufsize)
 
 
 def handle_path(con, diskno, src, dst, options):
@@ -177,6 +221,11 @@ def validate_disks(options):
         sys.exit(1)
     elif not all(st in ("volume", "path") for st in options.storagetype):
         write_output('>>> unsupported storage type. (supported: volume, path)')
+        sys.exit(1)
+    elif not options.allocation == "sparse" and \
+            not options.allocation == "preallocated":
+        write_output('>>> unsupported allocation policy. (supported: sparse, '
+                     'preallocated)')
         sys.exit(1)
 
 
