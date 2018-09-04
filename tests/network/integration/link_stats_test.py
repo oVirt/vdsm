@@ -19,15 +19,42 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from network.nettestlib import dummy_device
+from contextlib import contextmanager
+
+import pytest
+
+from network import nettestlib
 
 from vdsm.network.link import stats as link_stats
 
 
-def test_report():
-    with dummy_device() as nic:
+@contextmanager
+def _vlan_device():
+    with nettestlib.dummy_device() as nic:
+        with nettestlib.vlan_device(nic, 101) as vlan:
+            yield vlan.devName
+
+
+@contextmanager
+def _bridge_device():
+    with nettestlib.bridge_device() as bridge:
+        yield bridge.devName
+
+
+@pytest.mark.parametrize(
+    'device_ctx, device_ctx_args',
+    [
+        (nettestlib.dummy_device, {}),
+        (nettestlib.bond_device, {'slaves': []}),
+        (_vlan_device, {}),
+        (_bridge_device, {}),
+    ],
+    ids=['nic', 'bond', 'vlan', 'bridge']
+)
+def test_report(device_ctx, device_ctx_args):
+    with device_ctx(**device_ctx_args) as dev:
         stats = link_stats.report()
-        assert nic in stats
+        assert dev in stats
         expected_stat_names = {
             'name',
             'rx',
@@ -40,4 +67,4 @@ def test_report():
             'speed',
             'duplex'
         }
-        assert expected_stat_names == set(stats[nic])
+        assert expected_stat_names == set(stats[dev])
