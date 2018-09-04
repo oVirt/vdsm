@@ -61,7 +61,8 @@ def setup_package():
             if e.errno != errno.ENOENT:
                 raise
 
-    _pre_cleanup_stale_iprules()
+    if os.geteuid() == 0:
+        _pre_cleanup_stale_iprules()
 
 
 def teardown_package():
