@@ -21,19 +21,15 @@ from __future__ import absolute_import
 from __future__ import division
 
 import errno
-import logging
 import os
 
 from vdsm.network import cmd
 from vdsm.network import sourceroute
-from vdsm.network.ip import rule as ip_rule
 from vdsm.network.link.bond import sysfs_options_mapper
 
 from .compat import mock
 from .nettestlib import has_sysfs_bond_permission
 
-
-IPV4_ADDRESS1 = '192.168.99.1'    # Tracking the address used in ip_rule_test
 
 TESTS_STATIC_PATH = os.path.join(os.path.dirname(__file__), 'static')
 
@@ -72,12 +68,6 @@ def teardown_package():
     for patcher in bonding_dump_patchers:
         patcher.stop()
 
-    _post_cleanup_stale_iprules()
-
-
-class StaleIPRulesError(Exception):
-    pass
-
 
 def _pre_cleanup_stale_iprules():
     commands = [
@@ -87,24 +77,3 @@ def _pre_cleanup_stale_iprules():
             sourceroute.RULE_PRIORITY)
     ]
     cmd.exec_sync(commands)
-
-
-def _post_cleanup_stale_iprules():
-    """
-    Clean test ip rules that may have been left by the test run.
-    They may exists on the system due to some buggy test that ran
-    and has not properly cleaned after itself.
-    In case any stale entries have been detected, attempt to clean everything
-    and raise an error.
-    """
-    IPRule = ip_rule.driver(ip_rule.Drivers.IPROUTE2)
-    rules = [r for r in IPRule.rules()
-             if r.to == IPV4_ADDRESS1 or r.prio == sourceroute.RULE_PRIORITY]
-    if rules:
-        for rule in rules:
-            try:
-                IPRule.delete(rule)
-                logging.warning('Rule (%s) has been removed', rule)
-            except Exception as e:
-                logging.error('Error removing rule (%s): %s', rule, e)
-        raise StaleIPRulesError()
