@@ -48,6 +48,7 @@ RUN dnf install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     python3-dateutil \
     python3-dbus \
     python3-decorator \
+    python3-magic \
     python3-netaddr \
     python3-nose \
     python3-pyudev \
