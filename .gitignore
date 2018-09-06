@@ -1,5 +1,6 @@
 *.iml
 *.o
+*.pickle
 *.pyc
 *.swp
 *.tmp

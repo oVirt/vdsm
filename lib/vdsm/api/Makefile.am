@@ -28,6 +28,9 @@ dist_vdsmapi_PYTHON = \
 
 CLEANFILES = \
 	vdsm-api.html \
+	vdsm-api.pickle \
+	vdsm-api-gluster.pickle \
+	vdsm-events.pickle \
 	$(NULL)
 
 EXTRA_DIST = \
@@ -38,6 +41,9 @@ dist_vdsmrpc_DATA = \
 	vdsm-api.yml \
 	vdsm-api-gluster.yml \
 	vdsm-events.yml \
+	vdsm-api.pickle \
+	vdsm-api-gluster.pickle \
+	vdsm-events.pickle \
 	$(NULL)
 
 nodist_noinst_DATA = \
@@ -49,3 +55,12 @@ vdsm-api.html: schema_to_html.py vdsm-api.yml
 	chmod u+w $(srcdir)
 	PYTHONPATH=$(srcdir)/../../:$(srcdir)/../../vdsm \
 		./schema_to_html.py vdsm-api.yml $@
+
+%.pickle: %.yml schema_to_pickle.py
+	@echo "  Generate $@"
+	chmod u+w $(srcdir)
+	PYTHONPATH=$(srcdir)/../../:$(srcdir)/../../vdsm \
+		./schema_to_pickle.py $< $@
+
+install-data-local: install-dist_vdsmrpcDATA
+	chmod 444 "$(DESTDIR)$(vdsmrpcdir)"/*.pickle
