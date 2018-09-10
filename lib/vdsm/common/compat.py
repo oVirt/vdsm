@@ -92,3 +92,7 @@ try:
     from glob import escape as glob_escape
 except ImportError:
     from vdsm.common.glob import escape as glob_escape  # NOQA: F401
+
+
+# python2-enum34 or Python's 3 std library version
+from enum import Enum  # NOQA: F401

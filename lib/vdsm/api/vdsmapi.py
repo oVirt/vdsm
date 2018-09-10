@@ -29,7 +29,7 @@ import six
 import yaml
 
 from vdsm import utils
-from vdsm.common.compat import pickle
+from vdsm.common.compat import Enum, pickle
 from vdsm.common.logutils import Suppressed
 from yajsonrpc.exception import JsonRpcInvalidParamsError
 
@@ -98,11 +98,9 @@ def caches_up_to_date():
 
 def find_all_schemas():
     schema_paths = []
-    localpath = os.path.dirname(__file__)
-    installedpath = os.path.join(localpath, '..', 'rpc')
-    for path in (localpath, installedpath):
-        for f in glob.glob(path + '/*.yml'):
-            schema_paths.append(os.path.join(path, f))
+    for dir_path in SchemaType.schema_dirs():
+        for f in glob.glob(dir_path + '/*.yml'):
+            schema_paths.append(os.path.join(dir_path, f))
 
     return schema_paths
 
@@ -113,17 +111,17 @@ def find_schema(schema_name='vdsm-api'):
     dir or from an installed location
     """
 
-    localpath = os.path.dirname(__file__)
-    installedpath = os.path.join(localpath, '..', 'rpc')
-    for directory in (localpath, installedpath):
+    potential_paths = []
+    for directory in SchemaType.schema_dirs():
         path = os.path.join(directory, schema_name + '.yml')
         # we use source tree and deployment directory
         # so we need to check whether file exists
         if os.path.exists(path):
             return path
+        potential_paths.append(path)
 
-    raise SchemaNotFound("Unable to find API schema file in %s or %s" %
-                         (localpath, installedpath))
+    raise SchemaNotFound("Unable to find API schema file, tried: %s" %
+                         ", ".join(potential_paths))
 
 
 def create_cache():
@@ -158,6 +156,35 @@ def remove_cache():
     for f in glob.glob(VDSM_CACHE_DIR + '/*.pickle'):
         logging.info("Removing schema file {}".format(f))
         os.remove(os.path.join(VDSM_CACHE_DIR, f))
+
+
+class SchemaType(Enum):
+    VDSM_API = "vdsm-api"
+    VDSM_API_GLUSTER = "vdsm-api-gluster"
+    VDSM_EVENTS = "vdsm-events"
+
+    @staticmethod
+    def schema_dirs():
+        """
+        Schema dir can be one of: source dir, if we're running directly
+        within the source tree, or the directory in which they can be
+        found after installation.
+        """
+        local_path = os.path.dirname(__file__)
+        installed_path = os.path.join(local_path, '..', 'rpc')
+        return (local_path, installed_path)
+
+    def path(self):
+        filename = self.value + ".pickle"
+        potential_paths = [os.path.join(dir_path, filename)
+                           for dir_path in self.schema_dirs()]
+
+        for path in potential_paths:
+            if os.path.exists(path):
+                return path
+
+        raise SchemaNotFound("Unable to find API schema file, tried: %s" %
+                             ", ".join(potential_paths))
 
 
 class MethodRep(object):
