@@ -154,8 +154,14 @@ Requires: libvirt-lock-sanlock
 # Required for preventing an HotPlug disk failure due to cgroups.
 # See https://bugzilla.redhat.com/1532183 for details.
 Requires: libvirt-python >= 3.2.0-3.el7_4.1
+%if 0%{?centos}
 # CVE-2018-3639 (EPYC)
 Requires: libvirt-daemon-kvm >= 3.9.0-14.el7_5.6
+%else # RHEL
+# Required for device updates without providing user aliases.
+# See https://bugzilla.redhat.com/1621910 for details.
+Requires: libvirt-daemon-kvm >= 4.5.0-9.el7
+%endif
 %else # fedora
 # Required for preventing an HotPlug disk failure due to cgroups.
 # See https://bugzilla.redhat.com/1540872 for details.
