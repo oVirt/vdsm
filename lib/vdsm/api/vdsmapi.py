@@ -19,20 +19,16 @@
 #
 from __future__ import absolute_import
 
-import glob
+import io
 import json
 import logging
 import os
 import six
-import yaml
 
 from vdsm import utils
 from vdsm.common.compat import Enum, pickle
 from vdsm.common.logutils import Suppressed
 from yajsonrpc.exception import JsonRpcInvalidParamsError
-
-
-VDSM_CACHE_DIR = '/var/cache/vdsm/schema'
 
 
 PRIMITIVE_TYPES = {'boolean': lambda value: isinstance(value, bool),
@@ -68,94 +64,6 @@ class MethodNotFound(Exception):
     pass
 
 
-def _load_yaml_file(file_name):
-    if hasattr(yaml, 'CLoader'):
-        loader = yaml.CLoader
-    else:
-        logging.warning("yaml CLoader not available, using yaml.Loader")
-        loader = yaml.Loader
-    yaml_file = yaml.load(file_name, Loader=loader)
-    return yaml_file
-
-
-def _get_pickle_schema_path(yaml_schema_path):
-    basename = os.path.basename(yaml_schema_path)
-    file_name = os.path.splitext(basename)[0]
-    return os.path.join(VDSM_CACHE_DIR, file_name + '.pickle')
-
-
-def caches_up_to_date():
-    for path in find_all_schemas():
-        pickle_path = _get_pickle_schema_path(path)
-        if (not os.path.exists(pickle_path) or
-            round(os.stat(path).st_mtime, 2) !=
-                round(os.stat(pickle_path).st_mtime, 2)):
-            return False
-    return True
-
-
-def find_all_schemas():
-    schema_paths = []
-    for dir_path in SchemaType.schema_dirs():
-        for f in glob.glob(dir_path + '/*.yml'):
-            schema_paths.append(os.path.join(dir_path, f))
-
-    return schema_paths
-
-
-def find_schema(schema_name='vdsm-api'):
-    """
-    Find the API schema file whether we are running from within the source
-    dir or from an installed location
-    """
-
-    potential_paths = []
-    for directory in SchemaType.schema_dirs():
-        path = os.path.join(directory, schema_name + '.yml')
-        # we use source tree and deployment directory
-        # so we need to check whether file exists
-        if os.path.exists(path):
-            return path
-        potential_paths.append(path)
-
-    raise SchemaNotFound("Unable to find API schema file, tried: %s" %
-                         ", ".join(potential_paths))
-
-
-def create_cache():
-    if not os.path.exists(VDSM_CACHE_DIR):
-        os.makedirs(VDSM_CACHE_DIR)
-    for path in find_all_schemas():
-        with open(path) as f:
-            loaded_schema = _load_yaml_file(f)
-            pickle_schema_path = os.path.join(
-                VDSM_CACHE_DIR, _get_pickle_schema_path(path))
-            if (os.path.exists(pickle_schema_path) and
-                    round(os.stat(path).st_mtime, 2) ==
-                    round(os.stat(pickle_schema_path).st_mtime, 2)):
-                logging.info(
-                    'Pickled schema {} already exists and up to date'.format(
-                        os.path.basename(pickle_schema_path)))
-                continue
-
-            logging.info('Writing new schema {}'.format(
-                os.path.basename(pickle_schema_path)))
-            with open(pickle_schema_path, 'wb') as pickled_schema:
-                pickle.dump(loaded_schema,
-                            pickled_schema,
-                            protocol=pickle.HIGHEST_PROTOCOL)
-
-            mod_time = os.stat(path).st_mtime
-            os.utime(pickle_schema_path, (mod_time, mod_time))
-            os.chmod(pickle_schema_path, 0o444)
-
-
-def remove_cache():
-    for f in glob.glob(VDSM_CACHE_DIR + '/*.pickle'):
-        logging.info("Removing schema file {}".format(f))
-        os.remove(os.path.join(VDSM_CACHE_DIR, f))
-
-
 class SchemaType(Enum):
     VDSM_API = "vdsm-api"
     VDSM_API_GLUSTER = "vdsm-api-gluster"
@@ -175,7 +83,7 @@ class SchemaType(Enum):
     def path(self):
         filename = self.value + ".pickle"
         potential_paths = [os.path.join(dir_path, filename)
-                           for dir_path in self.schema_dirs()]
+                           for dir_path in SchemaType.schema_dirs()]
 
         for path in potential_paths:
             if os.path.exists(path):
@@ -217,10 +125,10 @@ class Schema(object):
 
     log = logging.getLogger("SchemaCache")
 
-    def __init__(self, paths, strict_mode):
+    def __init__(self, schema_types, strict_mode):
         """
-        Constructs schema object based on yaml files provided as
-        list of paths and a mode which determines request/response
+        Constructs schema object based on an iterable of schema type
+        enumerations and a mode which determines request/response
         validation behavior. Usually it is based on api_strict_mode
         property from config.py
         """
@@ -228,21 +136,26 @@ class Schema(object):
         self._methods = {}
         self._types = {}
         try:
-            for path in paths:
-                pickle_path = _get_pickle_schema_path(path)
-
-                if not os.path.exists(pickle_path):
-                    with open(path) as f:
-                        loaded_schema = _load_yaml_file(f)
-                else:
-                    with open(pickle_path) as f:
-                        loaded_schema = pickle.load(f)
+            for schema_type in schema_types:
+                with io.open(schema_type.path(), 'rb') as f:
+                    loaded_schema = pickle.load(f)
 
                 types = loaded_schema.pop('types')
                 self._types.update(types)
                 self._methods.update(loaded_schema)
         except EnvironmentError:
             raise SchemaNotFound("Unable to find API schema file")
+
+    @staticmethod
+    def vdsm_api(with_gluster=False, *args, **kwargs):
+        schema_types = {SchemaType.VDSM_API}
+        if with_gluster:
+            schema_types.add(SchemaType.VDSM_API_GLUSTER)
+        return Schema(schema_types, *args, **kwargs)
+
+    @staticmethod
+    def vdsm_events(*args, **kwargs):
+        return Schema((SchemaType.VDSM_EVENTS,), *args, **kwargs)
 
     def get_args(self, rep):
         method = self.get_method(rep)

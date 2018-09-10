@@ -20,11 +20,9 @@
 from __future__ import absolute_import
 
 import json
-import pickle
 import os
 import shutil
 import tempfile
-import yaml
 
 from nose.plugins.attrib import attr
 from vdsm.api import vdsmapi
@@ -41,20 +39,6 @@ except ImportError:
     _glusterEnabled = False
 
 
-def _create_pickle_schema(base_dir):
-    paths = [vdsmapi.find_schema()]
-    if _glusterEnabled:
-        paths.append(vdsmapi.find_schema('vdsm-api-gluster'))
-    paths.append(vdsmapi.find_schema('vdsm-events'))
-
-    for path in paths:
-        file_path = os.path.join(
-            base_dir, os.path.splitext(os.path.basename(path))[0])
-        with open(path) as f:
-            loaded_schema = yaml.load(f)
-            pickle.dump(loaded_schema, open(file_path, 'wb'))
-
-
 class SchemaWrapper(object):
 
     def __init__(self):
@@ -63,20 +47,16 @@ class SchemaWrapper(object):
 
     def schema(self):
         if self._schema is None:
-            paths = [vdsmapi.find_schema()]
-            if _glusterEnabled:
-                paths.append(vdsmapi.find_schema('vdsm-api-gluster'))
-            self._schema = vdsmapi.Schema(paths, True)
+            self._schema = vdsmapi.Schema.vdsm_api(_glusterEnabled,
+                                                   strict_mode=True)
         return self._schema
 
     def events_schema(self):
         if self._events_schema is None:
-            path = [vdsmapi.find_schema('vdsm-events')]
-            self._events_schema = vdsmapi.Schema(path, True)
+            self._events_schema = vdsmapi.Schema.vdsm_events(strict_mode=True)
         return self._events_schema
 
 basedir = tempfile.mkdtemp(dir='/var/tmp')
-_create_pickle_schema(basedir)
 _events_schema = SchemaWrapper()
 _schema = SchemaWrapper()
 
