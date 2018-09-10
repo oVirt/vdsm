@@ -22,6 +22,7 @@ python2-coverage
 python2-dateutil
 python2-decorator
 python2-devel
+python2-enum34
 python2-inotify
 python2-ioprocess
 python2-ipaddress
