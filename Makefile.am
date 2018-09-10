@@ -122,6 +122,9 @@ pylint: tox
 		lib/yajsonrpc \
 		$(NULL)
 
+pylint-py3k: tox
+	tox -e pylint-py3k `build-aux/pylint-py3k-whitelist`
+
 .PHONY: pylint-diff
 pylint-diff: tox
 	modules=`git diff-tree --no-commit-id --name-only -r HEAD | egrep '\.py$$'`; \

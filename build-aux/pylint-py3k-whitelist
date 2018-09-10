@@ -1,0 +1,6 @@
+#!/bin/sh
+
+PYTHON_MODULES=$(find . -not -path '*/\.tox*' -type f -name '*.py')
+PYTHON_SCRIPTS=$(grep --color=never -rl "#\!/usr/bin/python" . | grep -v -e "^\./\.tox*" -e "\.pyc\?$" -e ChangeLog)
+VALID_PYTHON_FILES=$(echo -e "${PYTHON_MODULES}\n${PYTHON_SCRIPTS}" | grep -v -x -F -f py3-blacklist.txt)
+echo "${VALID_PYTHON_FILES}"
