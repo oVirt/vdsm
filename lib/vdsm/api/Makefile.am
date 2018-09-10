@@ -38,9 +38,6 @@ EXTRA_DIST = \
 	$(NULL)
 
 dist_vdsmrpc_DATA = \
-	vdsm-api.yml \
-	vdsm-api-gluster.yml \
-	vdsm-events.yml \
 	vdsm-api.pickle \
 	vdsm-api-gluster.pickle \
 	vdsm-events.pickle \

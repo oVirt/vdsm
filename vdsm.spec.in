@@ -1611,12 +1611,9 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/rpc
 %{python_sitelib}/%{vdsm_name}/api/*.py*
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api.pickle
-%{python_sitelib}/%{vdsm_name}/rpc/vdsm-api.yml
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-events.pickle
-%{python_sitelib}/%{vdsm_name}/rpc/vdsm-events.yml
 %if ! 0%{?with_gluster_mgmt}
 %exclude %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.pickle
-%exclude %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.yml
 %endif
 
 %files yajsonrpc
@@ -1650,7 +1647,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/gluster/tasks.py*
 %{python_sitelib}/%{vdsm_name}/gluster/thinstorage.py*
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.pickle
-%{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.yml
 %endif
 
 %if 0%{?with_containers}
