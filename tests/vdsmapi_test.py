@@ -26,9 +26,11 @@ import shutil
 import tempfile
 import yaml
 
+from nose.plugins.attrib import attr
 from vdsm.api import vdsmapi
 from yajsonrpc.exception import JsonRpcErrorBase
 
+from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase as TestCaseBase
 
 try:
@@ -655,6 +657,29 @@ class DataVerificationTests(TestCaseBase):
         complex_type = {'vmID': {'UUID': 'UUID'}}
         self.assertEqual(_schema.schema().get_args_dict(
             'VM', 'getStats'), json.dumps(complex_type, indent=4))
+
+
+@attr(type='unit')
+class SchemaTypeTest(TestCaseBase):
+
+    @MonkeyPatch(os.path, "dirname", lambda _: "/a/b/c")
+    def test_schema_dirs(self):
+        schema_dirs = set(vdsmapi.SchemaType.schema_dirs())
+        self.assertEqual(schema_dirs, {"/a/b/c", "/a/b/c/../rpc"})
+
+    @MonkeyPatch(vdsmapi.SchemaType, "schema_dirs", lambda: ("/a/b/c",))
+    @MonkeyPatch(os.path, "exists", lambda _: False)
+    def test_path_should_raise_in(self):
+        expected_msg = ("Unable to find API schema file, tried: "
+                        "/a/b/c/vdsm-api.pickle")
+        with self.assertRaisesRegexp(vdsmapi.SchemaNotFound, expected_msg):
+            vdsmapi.SchemaType.VDSM_API.path()
+
+    @MonkeyPatch(vdsmapi.SchemaType, "schema_dirs", lambda: ("/a/b/c",))
+    @MonkeyPatch(os.path, "exists", lambda _: True)
+    def test_path_should_give_existing_path_in(self):
+        expected_path = "/a/b/c/vdsm-api.pickle"
+        self.assertEqual(vdsmapi.SchemaType.VDSM_API.path(), expected_path)
 
 
 shutil.rmtree(basedir)
