@@ -50,11 +50,11 @@ nodist_noinst_DATA = \
 	vdsm-api.html \
 	$(NULL)
 
-vdsm-api.html: schema_to_html.py vdsm-api.yml
+vdsm-api.html: schema_to_html.py vdsm-api.pickle
 	@echo "  Generate $@"
 	chmod u+w $(srcdir)
 	PYTHONPATH=$(srcdir)/../../:$(srcdir)/../../vdsm \
-		./schema_to_html.py vdsm-api.yml $@
+		./schema_to_html.py vdsm-api $@
 
 %.pickle: %.yml schema_to_pickle.py
 	@echo "  Generate $@"

@@ -229,14 +229,9 @@ class _Client(object):
     # Will be overriden during unit testing
     def _init_schema(self, gluster_enabled):
         try:
-            schema_paths = [vdsmapi.find_schema()]
-            if gluster_enabled:
-                schema_paths.append(vdsmapi.find_schema('vdsm-api-gluster'))
-            self._schema = vdsmapi.Schema(schema_paths, False)
-            self._event_schema = vdsmapi.Schema(
-                [vdsmapi.find_schema('vdsm-events')],
-                False
-            )
+            self._schema = vdsmapi.Schema.vdsm_api(gluster_enabled,
+                                                   strict_mode=False)
+            self._event_schema = vdsmapi.Schema.vdsm_events(strict_mode=False)
         except vdsmapi.SchemaNotFound as e:
             raise MissingSchemaError(e)
 

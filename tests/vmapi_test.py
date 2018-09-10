@@ -38,8 +38,7 @@ import vmfakelib as fake
 class TestSchemaCompliancyBase(TestCaseBase):
     @cache.memoized
     def _getAPI(self):
-        paths = [vdsmapi.find_schema()]
-        return vdsmapi.Schema(paths, True)
+        return vdsmapi.Schema.vdsm_api(strict_mode=True)
 
     def assertVmStatsSchemaCompliancy(self, schema, stats):
         api = self._getAPI()

@@ -97,9 +97,8 @@ class SchemaValidation(TestCaseBase):
 
     def _validate(self, api_mod):
         with schema_not_found():
-            path = vdsmapi.find_schema()
-            gluster_path = vdsmapi.find_schema('vdsm-api-gluster')
-            schema = vdsmapi.Schema([path, gluster_path], True)
+            schema = vdsmapi.Schema.vdsm_api(with_gluster=True,
+                                             strict_mode=True)
 
             for class_name, class_obj in self._get_api_classes(api_mod):
                 apiObj = getattr(api_mod, class_name)

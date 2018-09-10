@@ -21,19 +21,16 @@ from __future__ import absolute_import
 from __future__ import division
 
 import json
-import pickle
 import os
 import shutil
 import tempfile
-import yaml
 
 from nose.plugins.attrib import attr
 from vdsm.api import vdsmapi
 from yajsonrpc.exception import JsonRpcErrorBase
 
-from monkeypatch import MonkeyPatch, MonkeyPatchScope
+from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase as TestCaseBase
-from testlib import namedTemporaryDir
 
 try:
     import vdsm.gluster.apiwrapper as gapi
@@ -41,20 +38,6 @@ try:
     gapi
 except ImportError:
     _glusterEnabled = False
-
-
-def _create_pickle_schema(base_dir):
-    paths = [vdsmapi.find_schema()]
-    if _glusterEnabled:
-        paths.append(vdsmapi.find_schema('vdsm-api-gluster'))
-    paths.append(vdsmapi.find_schema('vdsm-events'))
-
-    for path in paths:
-        file_path = os.path.join(
-            base_dir, os.path.splitext(os.path.basename(path))[0])
-        with open(path) as f:
-            loaded_schema = yaml.load(f)
-            pickle.dump(loaded_schema, open(file_path, 'wb'))
 
 
 class SchemaWrapper(object):
@@ -65,52 +48,21 @@ class SchemaWrapper(object):
 
     def schema(self):
         if self._schema is None:
-            paths = [vdsmapi.find_schema()]
-            if _glusterEnabled:
-                paths.append(vdsmapi.find_schema('vdsm-api-gluster'))
-            self._schema = vdsmapi.Schema(paths, True)
+            self._schema = vdsmapi.Schema.vdsm_api(_glusterEnabled,
+                                                   strict_mode=True)
         return self._schema
 
     def events_schema(self):
         if self._events_schema is None:
-            path = [vdsmapi.find_schema('vdsm-events')]
-            self._events_schema = vdsmapi.Schema(path, True)
+            self._events_schema = vdsmapi.Schema.vdsm_events(strict_mode=True)
         return self._events_schema
 
 basedir = tempfile.mkdtemp(dir='/var/tmp')
-_create_pickle_schema(basedir)
 _events_schema = SchemaWrapper()
 _schema = SchemaWrapper()
 
 
 class DataVerificationTests(TestCaseBase):
-
-    def test_cached_schema(self):
-        with namedTemporaryDir() as dir:
-            with MonkeyPatchScope([(vdsmapi, "VDSM_CACHE_DIR", dir)]):
-                paths = vdsmapi.find_all_schemas()
-                # creates the schema files from yaml
-                uncached_schema = vdsmapi.Schema(paths, True)
-                # creates the schema files from cache
-                vdsmapi.create_cache()
-                cached_schema = vdsmapi.Schema(paths, True)
-        self.assertEqual(cached_schema._methods, uncached_schema._methods)
-        self.assertEqual(cached_schema._types, uncached_schema._types)
-
-    def test_create_cache(self):
-        with namedTemporaryDir() as dir:
-            with MonkeyPatchScope([(vdsmapi, "VDSM_CACHE_DIR", dir)]):
-                vdsmapi.create_cache()
-
-            vdsm_api_yml = "../lib/vdsm/api/vdsm-api.yml"
-            vdsm_api_cache = os.path.join(dir, "vdsm-api.pickle")
-            self.assertEqual(round(os.stat(vdsm_api_yml).st_mtime, 2),
-                             round(os.stat(vdsm_api_cache).st_mtime, 2))
-
-            vdsm_events_yml = "../lib/vdsm/api/vdsm-events.yml"
-            vdsm_events_cache = os.path.join(dir, "vdsm-events.pickle")
-            self.assertEqual(round(os.stat(vdsm_events_yml).st_mtime, 2),
-                             round(os.stat(vdsm_events_cache).st_mtime, 2))
 
     def test_optional_params(self):
         params = {u"addr": u"rack05-pdu01-lab4.tlv.redhat.com", u"port": 54321,

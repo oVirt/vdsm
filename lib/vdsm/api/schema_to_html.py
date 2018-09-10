@@ -22,9 +22,11 @@
 
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import print_function
 import sys
 from contextlib import contextmanager
 
+import argparse
 import six
 
 from vdsm.api import vdsmapi
@@ -232,12 +234,16 @@ def create_doc(api_schema, filename):
 
 
 def main():
-    schema = sys.argv[1]
-    output = sys.argv[2]
+    parser = argparse.ArgumentParser(
+        "A schema definition to HTML documentation converter")
+    parser.add_argument("schema_type",
+                        choices=[st.value for st in vdsmapi.SchemaType])
+    parser.add_argument("html_path")
+    args = parser.parse_args(sys.argv[1:])
 
-    api_schema = vdsmapi.Schema([schema], False)
-
-    create_doc(api_schema, output)
+    schema_type = vdsmapi.SchemaType(args.schema_type)
+    api_schema = vdsmapi.Schema((schema_type,), strict_mode=False)
+    create_doc(api_schema, args.html_path)
 
 
 if __name__ == '__main__':
