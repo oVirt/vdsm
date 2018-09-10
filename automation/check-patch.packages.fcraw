@@ -31,6 +31,7 @@ python-six
 python2-augeas
 python2-dateutil
 python2-decorator
+python2-enum34
 python2-pyudev
 python3-augeas
 python3-dateutil

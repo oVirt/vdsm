@@ -15,6 +15,7 @@ python-coverage
 python-dateutil
 python-decorator
 python-devel
+python-enum34
 python-nose
 python-inotify
 python-ioprocess

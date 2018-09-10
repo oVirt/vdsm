@@ -26,6 +26,7 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     python-dateutil \
     python-decorator \
     python-devel \
+    python-enum34 \
     python-inotify \
     python-ioprocess \
     python-ipaddress \
