@@ -31,8 +31,7 @@ def speed(dev_name):
     dev_base = iface.iface(dev_base_name)
     dev_base_type = dev_base.type()
     if dev_base_type == iface.Type.NIC:
-        # vlans on a nic expose the speed through sysfs
-        dev_speed = nic.read_speed_using_sysfs(dev_name)
+        dev_speed = nic.speed(dev_name)
     elif dev_base_type == iface.Type.BOND:
         dev_speed = bond.speed(dev_base_name)
 
