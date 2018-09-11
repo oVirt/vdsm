@@ -210,7 +210,11 @@ class BlockVolumeManifest(volume.VolumeManifest):
         manifest = sdCache.produce_manifest(self.sdUUID)
         return int(manifest.getVSize(self.imgUUID, self.volUUID) // bs)
 
-    getVolumeTrueSize = getVolumeSize
+    def getVolumeTrueSize(self):
+        """
+        Return the true volume size in bytes
+        """
+        return self.getVolumeSize(bs=1)
 
     def setMetadata(self, meta, metaId=None):
         """

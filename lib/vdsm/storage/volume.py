@@ -246,7 +246,7 @@ class VolumeManifest(object):
             del info["size"]
             # Get the image actual size on disk
             vsize = self.getVolumeSize(bs=1)
-            avsize = self.getVolumeTrueSize(bs=1)
+            avsize = self.getVolumeTrueSize()
             info['apparentsize'] = str(vsize)
             info['truesize'] = str(avsize)
             info['status'] = "OK"
@@ -304,7 +304,6 @@ class VolumeManifest(object):
         # only at the end
         volParams['size'] = self.getSize()
         volParams['apparentsize'] = self.getVolumeSize(bs=bs)
-        volParams['truesize'] = self.getVolumeTrueSize(bs=bs)
         volParams['parent'] = self.getParent()
         volParams['descr'] = self.getDescription()
         volParams['legality'] = self.getLegality()
@@ -736,7 +735,7 @@ class VolumeManifest(object):
     def getVolumeSize(self, bs=sc.BLOCK_SIZE):
         raise NotImplementedError
 
-    def getVolumeTrueSize(self, bs=sc.BLOCK_SIZE):
+    def getVolumeTrueSize(self):
         raise NotImplementedError
 
     def setMetadata(self, meta, metaId=None):
@@ -1392,8 +1391,8 @@ class Volume(object):
     def getVolumeSize(self, bs=sc.BLOCK_SIZE):
         return self._manifest.getVolumeSize(bs)
 
-    def getVolumeTrueSize(self, bs=sc.BLOCK_SIZE):
-        return self._manifest.getVolumeTrueSize(bs)
+    def getVolumeTrueSize(self):
+        return self._manifest.getVolumeTrueSize()
 
     def setSize(self, size):
         self._manifest.setSize(size)

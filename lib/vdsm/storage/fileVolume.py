@@ -204,13 +204,13 @@ class FileVolumeManifest(volume.VolumeManifest):
         volPath = self.getVolumePath()
         return int(int(self.oop.os.stat(volPath).st_size) / bs)
 
-    def getVolumeTrueSize(self, bs=BLOCK_SIZE):
+    def getVolumeTrueSize(self):
         """
-        Return the size of the storage allocated for this volume
+        Return the in bytes size of the storage allocated for this volume
         on underlying storage
         """
         volPath = self.getVolumePath()
-        return int(int(self.oop.os.stat(volPath).st_blocks) * BLOCK_SIZE / bs)
+        return int(int(self.oop.os.stat(volPath).st_blocks) * BLOCK_SIZE)
 
     def setMetadata(self, meta, metaId=None):
         """
