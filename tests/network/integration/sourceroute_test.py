@@ -25,12 +25,10 @@ import os
 import unittest
 
 import netaddr
-import pytest
 
 from network import TESTS_STATIC_PATH
 from network.compat import mock
 from network.nettestlib import dummy_device
-from network.nettestlib import running_on_fedora
 
 from vdsm.network import sourceroute
 from vdsm.network.ip import rule as iprule
@@ -69,10 +67,6 @@ class TestFilters(unittest.TestCase):
 
 class TestSourceRoute(unittest.TestCase):
 
-    @pytest.mark.xfail(
-        condition=running_on_fedora(ver='28'),
-        reason='BZ#1623488',
-        strict=True)
     def test_sourceroute_add_remove_and_read(self):
         with dummy_device() as nic:
             addrAdd(nic, IPV4_ADDRESS, IPV4_MASK)
