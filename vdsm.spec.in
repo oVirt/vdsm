@@ -322,10 +322,12 @@ Requires:       python-six >= 1.9.0
 Requires:       python-subprocess32
 %if 0%{?rhel}
 Requires:       python-decorator
+Requires:       python-enum34
 Requires:       libvirt-python >= 3.2.0-3.el7_4.1
 %endif
 %if 0%{?fedora}
 Requires:       python2-decorator
+Requires:       python2-enum34
 Requires:       libvirt-python >= 3.7.0
 %endif
 
