@@ -61,6 +61,24 @@ class Patch(object):
         self.what = what
         self.old = []
 
+    @staticmethod
+    def _is_static_method(cls, method_name, method):
+        is_static_py2 = six.PY2 and inspect.isfunction(method)
+        # In Python 3, static methods are returned as 'function' and lose
+        # 'staticmethod' class relationship when returned by 'getattr'
+        # so we have to reach to __dict__ directly. Calling 'inspect.ismethod'
+        # to differentiate between a regular method and a static method won't
+        # work without referring to *bound* method and thus, creating
+        # an instance of a class.
+        is_static_py3 = six.PY3 and isinstance(cls.__dict__[method_name],
+                                               staticmethod)
+        return is_static_py2 or is_static_py3
+
+    @staticmethod
+    def _is_class_method(method):
+        return (inspect.ismethod(method) and
+                getattr(method, '__self__', None) is not None)
+
     def apply(self):
         assert self.old == []
         for module, name, that in self.what:
@@ -70,10 +88,9 @@ class Patch(object):
             # patching in, that it will have the same type as the method it
             # replaced.
             if inspect.isclass(module):
-                if inspect.isfunction(old):
+                if self._is_static_method(module, name, old):
                     that = staticmethod(that)
-                elif (inspect.ismethod(old) and
-                      getattr(old, '__self__', None) is not None):
+                elif self._is_class_method(old):
                     that = classmethod(that)
             setattr(module, name, that)
 
@@ -83,9 +100,9 @@ class Patch(object):
             module, name, that = self.old.pop()
             # Python 2 wrongly sets the function `that' as an instancemethod
             # instead of keeping it as staticmethod.
-            if six.PY2 and inspect.isclass(module):
-                if inspect.isfunction(that):
-                    that = staticmethod(that)
+            if inspect.isclass(module) and self._is_static_method(module,
+                                                                  name, that):
+                that = staticmethod(that)
 
             setattr(module, name, that)
 

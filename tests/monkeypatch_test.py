@@ -161,50 +161,80 @@ class Class:
 
     @classmethod
     def class_method(cls):
-        return 'clean'
+        return (cls, 'clean')
 
     def instance_method(self):
-        return 'clean'
+        return (self, 'clean')
+
+
+def patched_static():
+    return 'patched'
+
+
+def patched_method(self):
+    return (self, 'patched')
+
+
+def patched_clsmethod(cls):
+    return (cls, 'patched')
 
 
 class TestMonkeyPatchClass(VdsmTestCase):
 
     def testInstanceMethodReplacement(self):
-        patch = monkeypatch.Patch([(Class, 'instance_method', patched)])
-        self.assertEqual(Class().instance_method(), 'clean')
+        patch = monkeypatch.Patch([(Class, 'instance_method', patched_method)])
+        instance = Class()
+        self.assertEqual(instance.instance_method(), (instance, 'clean'))
+        self.assertEqual(Class().instance_method()[1], 'clean')
         old = Class.instance_method
         patch.apply()
         try:
-            self.assertEqual(Class().instance_method(), 'patched')
+            self.assertEqual(instance.instance_method(), (instance, 'patched'))
+            self.assertEqual(Class().instance_method()[1], 'patched')
         finally:
             patch.revert()
-        self.assertEqual(Class().instance_method(), 'clean')
+        self.assertEqual(instance.instance_method(), (instance, 'clean'))
+        self.assertEqual(Class().instance_method()[1], 'clean')
         self.assertEqual(old, Class.instance_method)
 
     def testStaticMethodReplacement(self):
-        patch = monkeypatch.Patch([(Class, 'static_method', patched)])
+        patch = monkeypatch.Patch([(Class, 'static_method', patched_static)])
+        instance = Class()
+        self.assertEqual(instance.static_method(), 'clean')
         self.assertEqual(Class.static_method(), 'clean')
+        self.assertEqual(Class().static_method(), 'clean')
         old = Class.static_method
         patch.apply()
         try:
+            self.assertEqual(instance.static_method(), 'patched')
             self.assertEqual(Class.static_method(), 'patched')
+            self.assertEqual(Class().static_method(), 'patched')
             self.assertFalse(hasattr(Class.static_method, '__self__'))
         finally:
             patch.revert()
+        self.assertEqual(instance.static_method(), 'clean')
         self.assertEqual(Class.static_method(), 'clean')
+        self.assertEqual(Class().static_method(), 'clean')
         self.assertEqual(old, Class.static_method)
         self.assertFalse(hasattr(Class.static_method, '__self__'))
 
     def testClassMethodReplacement(self):
-        patch = monkeypatch.Patch([(Class, 'class_method', patched)])
-        self.assertEqual(Class.class_method(), 'clean')
+        patch = monkeypatch.Patch([(Class, 'class_method', patched_clsmethod)])
+        instance = Class()
+        self.assertEqual(instance.class_method(), (Class, 'clean'))
+        self.assertEqual(Class.class_method(), (Class, 'clean'))
+        self.assertEqual(Class().class_method(), (Class, 'clean'))
         old = Class.class_method
         patch.apply()
         try:
-            self.assertEqual(Class.class_method(), 'patched')
+            self.assertEqual(instance.class_method(), (Class, 'patched'))
+            self.assertEqual(Class.class_method(), (Class, 'patched'))
+            self.assertEqual(Class().class_method(), (Class, 'patched'))
             self.assertEqual(getattr(Class.class_method, '__self__'), Class)
         finally:
             patch.revert()
-        self.assertEqual(Class.class_method(), 'clean')
+        self.assertEqual(instance.class_method(), (Class, 'clean'))
+        self.assertEqual(Class.class_method(), (Class, 'clean'))
+        self.assertEqual(Class().class_method(), (Class, 'clean'))
         self.assertEqual(old, Class.class_method)
         self.assertEqual(getattr(Class.class_method, '__self__'), Class)
