@@ -249,7 +249,8 @@ def parse_file(filename):
 
 def find_schema(gluster_enabled=False):
     try:
-        schema = vdsmapi.Schema.vdsm_api(gluster_enabled, strict_mode=False)
+        schema = vdsmapi.Schema.vdsm_api(strict_mode=False,
+                                         with_gluster=gluster_enabled)
     except vdsmapi.SchemaNotFound as e:
         raise client.MissingSchemaError(e)
     return schema
