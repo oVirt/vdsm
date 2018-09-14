@@ -148,15 +148,15 @@ class Schema(object):
             raise SchemaNotFound("Unable to find API schema file")
 
     @staticmethod
-    def vdsm_api(with_gluster=False, *args, **kwargs):
+    def vdsm_api(strict_mode, *args, **kwargs):
         schema_types = {SchemaType.VDSM_API}
-        if with_gluster:
+        if kwargs.pop('with_gluster', False):
             schema_types.add(SchemaType.VDSM_API_GLUSTER)
-        return Schema(schema_types, *args, **kwargs)
+        return Schema(schema_types, strict_mode, *args, **kwargs)
 
     @staticmethod
-    def vdsm_events(*args, **kwargs):
-        return Schema((SchemaType.VDSM_EVENTS,), *args, **kwargs)
+    def vdsm_events(strict_mode, *args, **kwargs):
+        return Schema((SchemaType.VDSM_EVENTS,), strict_mode, *args, **kwargs)
 
     def get_args(self, rep):
         method = self.get_method(rep)

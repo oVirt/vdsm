@@ -62,8 +62,8 @@ class InvalidCall(Exception):
 class DynamicBridge(object):
     def __init__(self):
         api_strict_mode = config.getboolean('devel', 'api_strict_mode')
-        self._schema = vdsmapi.Schema.vdsm_api(_glusterEnabled,
-                                               api_strict_mode)
+        self._schema = vdsmapi.Schema.vdsm_api(api_strict_mode,
+                                               with_gluster=_glusterEnabled)
 
         self._event_schema = vdsmapi.Schema.vdsm_events(api_strict_mode)
 

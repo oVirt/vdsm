@@ -48,8 +48,8 @@ class SchemaWrapper(object):
 
     def schema(self):
         if self._schema is None:
-            self._schema = vdsmapi.Schema.vdsm_api(_glusterEnabled,
-                                                   strict_mode=True)
+            self._schema = vdsmapi.Schema.vdsm_api(
+                strict_mode=True, with_gluster=_glusterEnabled)
         return self._schema
 
     def events_schema(self):
