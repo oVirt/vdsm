@@ -848,30 +848,6 @@ class NetworkTest(TestCaseBase):
                 self.assertRuleDoesNotExist(rule)
 
     @cleanupNet
-    def testAddVlanedBridgeless_oneCommand(self):
-        vlan_name = 'vlan_net'
-        with dummyIf(1) as nics:
-            nic, = nics
-            # net NETWORK_NAME has bootproto:none because we can't use dhcp
-            # on dummyIf
-            networks = {NETWORK_NAME: {'nic': nic, 'bridged': False,
-                                       'bootproto': 'none'},
-                        vlan_name: {'nic': nic, 'bridged': True,
-                                    'vlan': VLAN_ID, 'bootproto': 'none'}}
-            with self.vdsm_net.pinger():
-                status, msg = self.setupNetworks(networks, {}, {})
-                self.assertEqual(status, SUCCESS, msg)
-                self.assertNetworkExists(NETWORK_NAME)
-                self.assertNetworkExists(vlan_name)
-                status, msg, info = self.vdsm_net.getVdsCapabilities()
-                self.assertFalse(info['nics'][nic]['dhcpv4'])
-
-                delete_networks = {NETWORK_NAME: {'remove': True},
-                                   vlan_name: {'remove': True}}
-                status, msg = self.setupNetworks(delete_networks, {}, {})
-                self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
     @ValidatesHook('before_network_setup', 'testBeforeNetworkSetup.py', True,
                    "#!/usr/bin/python2\n"
                    "import json\n"
