@@ -925,59 +925,6 @@ class NetworkTest(TestCaseBase):
                 status, msg = self.setupNetworks(delete_networks, {}, {})
                 self.assertEqual(status, SUCCESS, msg)
 
-    def test_static_ip_configuration_v4_to_dual(self):
-        self._test_static_ip_configuration(([4], [4, 6]))
-
-    def test_static_ip_configuration_dual_to_v4(self):
-        self._test_static_ip_configuration(([4, 6], [4]))
-
-    def test_static_ip_configuration_dual_to_v6_and_back(self):
-        self._test_static_ip_configuration(([4, 6], [6], [4, 6]))
-
-    @cleanupNet
-    def _test_static_ip_configuration(self, use_case):
-        """
-        Show that configuring IPv4 and/or IPv6 works. This is shown by going
-        e.g. from v4 to v6 (or dual-stack), depending on the given use-case.
-        At each step it is checked that IPv6 is disabled (by sysctl) when not
-        requested, and that IPv6 link-local address doesn't exist in that case.
-        """
-        with dummyIf(1) as nics:
-            nic, = nics
-            IPv4 = dict(nic=nic, bootproto='none', ipaddr=IP_ADDRESS,
-                        netmask=IP_MASK, gateway=IP_GATEWAY)
-            IPv6 = dict(nic=nic, bootproto='none', ipv6gateway=IPv6_GATEWAY,
-                        ipv6addr=IPv6_ADDRESS_AND_CIDR)
-
-            def change_ip_configuration_and_verify(families):
-                netdict = dict(IPv4) if 4 in families else {}
-                if 6 in families:
-                    netdict.update(IPv6)
-                status, msg = self.setupNetworks(
-                    {NETWORK_NAME: netdict}, {}, {})
-                self.assertEqual(status, SUCCESS, msg)
-                self.assertNetworkExists(NETWORK_NAME)
-                test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
-                if 4 in families:
-                    self.assertEqual(IP_ADDRESS, test_net['addr'])
-                    self.assertEqual(IP_MASK, test_net['netmask'])
-                    self.assertIn(IP_ADDRESS_AND_CIDR, test_net['ipv4addrs'])
-                    self.assertEqual(IP_GATEWAY, test_net['gateway'])
-                if 6 in families:
-                    self.assertIn(IPv6_ADDRESS_AND_CIDR, test_net['ipv6addrs'])
-                    self.assertEqual(IPv6_GATEWAY, test_net['ipv6gateway'])
-                else:
-                    self.assertEqual([], test_net['ipv6addrs'])
-                    self.assertTrue(sysctl.is_disabled_ipv6(nic))
-
-            with self.vdsm_net.pinger():
-                for ip_families in use_case:
-                    change_ip_configuration_and_verify(ip_families)
-
-                delete = {NETWORK_NAME: {'remove': True}}
-                status, msg = self.setupNetworks(delete, {}, {})
-                self.assertEqual(status, SUCCESS, msg)
-
     @cleanupNet
     def testIpLinkWrapper(self):
         """Tests that the created devices are properly parsed by the ipwrapper

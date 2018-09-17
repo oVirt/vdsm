@@ -128,6 +128,26 @@ class TestNetworkStaticIpBasic(object):
                 adapter.assertNetworkIp(NETWORK_NAME,
                                         netcreate[NETWORK_NAME])
 
+    def test_static_ip_configuration_v4_to_v6_and_back(self, switch):
+        with dummy_devices(1) as (nic1,):
+            net_ipv4_atts = {'nic': nic1,
+                             'ipaddr': IPv4_ADDRESS,
+                             'netmask': IPv4_NETMASK,
+                             'switch': switch}
+            net_ipv6_atts = {'nic': nic1,
+                             'ipv6addr': IPv6_ADDRESS,
+                             'switch': switch}
+
+            net_ipv4 = {NETWORK_NAME: net_ipv4_atts}
+            net_ipv6 = {NETWORK_NAME: net_ipv6_atts}
+
+            with adapter.setupNetworks(net_ipv4, {}, NOCHK):
+                adapter.assertNetworkIp(NETWORK_NAME, net_ipv4_atts)
+                adapter.setupNetworks(net_ipv6, {}, NOCHK)
+                adapter.assertNetworkIp(NETWORK_NAME, net_ipv6_atts)
+                adapter.setupNetworks(net_ipv4, {}, NOCHK)
+                adapter.assertNetworkIp(NETWORK_NAME, net_ipv4_atts)
+
 
 @nftestlib.parametrize_switch
 class TestNetworkIPDefaultGateway(object):
