@@ -79,6 +79,7 @@ _FILTERED_CHARS = (
 )
 
 _filter_chars_re = re.compile(u'[%s]' % _FILTERED_CHARS)
+_qga_re = re.compile(r'\bqemu[ -](guest[ -]agent|ga)\b', re.IGNORECASE)
 
 
 def _filterXmlChars(u):
@@ -156,7 +157,8 @@ class GuestAgent(object):
     SEEN_SHUTDOWN_TIMEOUT = config.getint('vars', 'sys_shutdown_timeout') * 2
 
     def __init__(self, socketName, channelListener, log, onStatusChange,
-                 qgaGuestInfo, api_version=None, user='Unknown', ips=''):
+                 qgaCaps, qgaGuestInfo, api_version=None, user='Unknown',
+                 ips=''):
         self.effectiveApiVersion = min(
             api_version or _IMPLICIT_API_VERSION_ZERO,
             _MAX_SUPPORTED_API_VERSION)
@@ -186,6 +188,7 @@ class GuestAgent(object):
         self._completion_events = {}
         self._first_connect = threading.Event()
         self._seen_shutdown = None
+        self._qgaCaps = qgaCaps
         self._qgaGuestInfo = qgaGuestInfo
 
     def has_seen_shutdown(self):
@@ -391,6 +394,15 @@ class GuestAgent(object):
             self.guestInfo['guestIPs'] = old_ips.strip()
         elif message == 'applications':
             self.guestInfo['appsList'] = tuple(args['applications'])
+            # Fake QEMU-GA if it is not reported
+            if not any(bool(_qga_re.match(x))
+                       for x in self.guestInfo['appsList']):
+                qga_caps = self._qgaCaps()
+                if qga_caps is not None and qga_caps['version'] is not None:
+                    # NOTE: this is a tuple
+                    self.guestInfo['appsList'] = \
+                        self.guestInfo['appsList'] + \
+                        ('qemu-guest-agent-%s' % qga_caps['version'],)
         elif message == 'active-user':
             currentUser = args['name']
             if ((currentUser != self.guestInfo['username']) and

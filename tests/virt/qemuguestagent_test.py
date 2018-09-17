@@ -223,6 +223,10 @@ class QemuGuestAgentTests(TestCaseBase):
                     'type': 'linux',
                     'codename': 'Cloud Edition'
                 },
+                'appsList': (
+                    'kernel-4.13.9-300.fc27.x86_64',
+                    'qemu-guest-agent-0.0-test'
+                ),
                 'guestTimezone': {
                     'offset': 60,
                     'zone': 'CET',

@@ -225,6 +225,29 @@ class QemuGuestAgentPoller(object):
             return None
         return parsed['return']
 
+    def fake_appsList(self, vm_id, os_info=None):
+        """ Create fake appsList entry in guest info """
+        guest_info = {}
+        if os_info is not None:
+            if os_info.get(_OS_ID_FIELD) == _GUEST_OS_WINDOWS:
+                guest_info['appsList'] = (
+                    'QEMU guest agent',
+                )
+            else:
+                caps = self.get_caps(vm_id)
+                if caps is not None and caps['version'] is not None:
+                    guest_info['appsList'] = (
+                        'kernel-%s' % os_info["kernel-release"],
+                        'qemu-guest-agent-%s' % caps['version'],
+                    )
+        else:
+            caps = self.get_caps(vm_id)
+            if caps is not None and caps['version'] is not None:
+                guest_info['appsList'] = (
+                    'qemu-guest-agent-%s' % caps['version'],
+                )
+        self.update_guest_info(vm_id, guest_info)
+
     def _cleanup(self):
         """
         This method is meant to be run periodically to clean up stale
@@ -322,6 +345,9 @@ class CapabilityCheck(_RunnableOnVmGuestAgent):
         self._qga_poller.log.debug('QEMU-GA caps (vm_id=%s): %r',
                                    self._vm.id, caps)
         self._qga_poller.update_caps(self._vm.id, caps)
+        info = self._qga_poller.get_caps(self._vm.id)
+        if 'appsList' not in info:
+            self._qga_poller.fake_appsList(self._vm.id)
 
 
 class SystemInfoCheck(_RunnableOnVmGuestAgent):
@@ -353,6 +379,7 @@ class SystemInfoCheck(_RunnableOnVmGuestAgent):
             else:
                 guest_info.update(
                     guestagenthelpers.translate_linux_osinfo(ret))
+            self._qga_poller.fake_appsList(self._vm.id, ret)
 
         # Timezone
         ret = self._qga_poller.call_qga_command(
