@@ -21,13 +21,12 @@ from __future__ import absolute_import
 from __future__ import division
 
 import json
-import os
 
 from nose.plugins.attrib import attr
 from vdsm.api import vdsmapi
 from yajsonrpc.exception import JsonRpcErrorBase
 
-from monkeypatch import MonkeyPatch
+from testlib import mock
 from testlib import VdsmTestCase as TestCaseBase
 
 try:
@@ -620,21 +619,24 @@ class DataVerificationTests(TestCaseBase):
 @attr(type='unit')
 class SchemaTypeTest(TestCaseBase):
 
-    @MonkeyPatch(os.path, "dirname", lambda _: "/a/b/c")
-    def test_schema_dirs(self):
+    @mock.patch.object(vdsmapi.os.path, "dirname", return_value="/a/b/c")
+    def test_schema_dirs(self, dirname_mock):
         schema_dirs = set(vdsmapi.SchemaType.schema_dirs())
         self.assertEqual(schema_dirs, {"/a/b/c", "/a/b/c/../rpc"})
 
-    @MonkeyPatch(vdsmapi.SchemaType, "schema_dirs", lambda: ("/a/b/c",))
-    @MonkeyPatch(os.path, "exists", lambda _: False)
-    def test_path_should_raise_in(self):
+    @mock.patch.object(vdsmapi.SchemaType, "schema_dirs",
+                       return_value=("/a/b/c",))
+    @mock.patch.object(vdsmapi.os.path, "exists", return_value=False)
+    def test_path_should_raise_in(self, exists_mock, schema_dirs_mock):
         expected_msg = ("Unable to find API schema file, tried: "
                         "/a/b/c/vdsm-api.pickle")
         with self.assertRaisesRegexp(vdsmapi.SchemaNotFound, expected_msg):
             vdsmapi.SchemaType.VDSM_API.path()
 
-    @MonkeyPatch(vdsmapi.SchemaType, "schema_dirs", lambda: ("/a/b/c",))
-    @MonkeyPatch(os.path, "exists", lambda _: True)
-    def test_path_should_give_existing_path_in(self):
+    @mock.patch.object(vdsmapi.SchemaType, "schema_dirs",
+                       return_value=("/a/b/c",))
+    @mock.patch.object(vdsmapi.os.path, "exists", return_value=True)
+    def test_path_should_give_existing_path_in(self, exists_mock,
+                                               schema_dirs_mock):
         expected_path = "/a/b/c/vdsm-api.pickle"
         self.assertEqual(vdsmapi.SchemaType.VDSM_API.path(), expected_path)
