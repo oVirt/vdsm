@@ -150,7 +150,9 @@ class QemuGuestAgentPoller(object):
             op.stop()
 
     def get_caps(self, vm_id):
-        return self._capabilities.get(vm_id, None)
+        with self._capabilities_lock:
+            # Return a copy so the caller has a stable representation
+            return utils.picklecopy(self._capabilities.get(vm_id, None))
 
     def update_caps(self, vm_id, caps):
         if self._capabilities.get(vm_id, None) != caps:
