@@ -38,25 +38,9 @@ except ImportError:
     _glusterEnabled = False
 
 
-class SchemaWrapper(object):
-
-    def __init__(self):
-        self._schema = None
-        self._events_schema = None
-
-    def schema(self):
-        if self._schema is None:
-            self._schema = vdsmapi.Schema.vdsm_api(
-                strict_mode=True, with_gluster=_glusterEnabled)
-        return self._schema
-
-    def events_schema(self):
-        if self._events_schema is None:
-            self._events_schema = vdsmapi.Schema.vdsm_events(strict_mode=True)
-        return self._events_schema
-
-_events_schema = SchemaWrapper()
-_schema = SchemaWrapper()
+_events_schema = vdsmapi.Schema.vdsm_events(strict_mode=True)
+_schema = vdsmapi.Schema.vdsm_api(strict_mode=True,
+                                  with_gluster=_glusterEnabled)
 
 
 class DataVerificationTests(TestCaseBase):
@@ -67,20 +51,18 @@ class DataVerificationTests(TestCaseBase):
                   u"password": u"pass", u"action": u"off",
                   u"options": u"port=15"}
 
-        _schema.schema().verify_args(
-            vdsmapi.MethodRep('Host', 'fenceNode'), params)
+        _schema.verify_args(vdsmapi.MethodRep('Host', 'fenceNode'), params)
 
     def test_ok_response(self):
         ret = {u'power': u'on'}
 
-        _schema.schema().verify_retval(
-            vdsmapi.MethodRep('Host', 'fenceNode'), ret)
+        _schema.verify_retval(vdsmapi.MethodRep('Host', 'fenceNode'), ret)
 
     def test_unknown_response_type(self):
         with self.assertRaises(JsonRpcErrorBase) as e:
             ret = {u'My caps': u'My capabilites'}
 
-            _schema.schema().verify_retval(
+            _schema.verify_retval(
                 vdsmapi.MethodRep('Host', 'getCapabilities'), ret)
 
         self.assertIn('My caps', str(e.exception))
@@ -91,7 +73,7 @@ class DataVerificationTests(TestCaseBase):
                   u"storagedomainID": u"773adfc7-10d4-4e60-b700-3272ee1871f9"}
 
         with self.assertRaises(JsonRpcErrorBase) as e:
-            _schema.schema().verify_args(
+            _schema.verify_args(
                 vdsmapi.MethodRep('StorageDomain', 'detach'), params)
 
         self.assertIn('onlyForce', str(e.exception))
@@ -105,7 +87,7 @@ class DataVerificationTests(TestCaseBase):
                                          u"retrans": 1}]}
 
         with self.assertRaises(JsonRpcErrorBase) as e:
-            _schema.schema().verify_args(
+            _schema.verify_args(
                 vdsmapi.MethodRep('StoragePool', 'disconnectStorageServer'),
                 params)
 
@@ -114,7 +96,7 @@ class DataVerificationTests(TestCaseBase):
     def test_list_ret(self):
         ret = [{u"status": 0, u"id": u"f6de012c-be35-47cb-94fb-f01074a5f9ef"}]
 
-        _schema.schema().verify_retval(
+        _schema.verify_retval(
             vdsmapi.MethodRep('StoragePool', 'disconnectStorageServer'), ret)
 
     def test_complex_ret_type(self):
@@ -255,8 +237,7 @@ class DataVerificationTests(TestCaseBase):
                u"cpuSysVdsmd": u"0.53",
                u"multipathHealth": {}}
 
-        _schema.schema().verify_retval(
-            vdsmapi.MethodRep('Host', 'getStats'), ret)
+        _schema.verify_retval(vdsmapi.MethodRep('Host', 'getStats'), ret)
 
     def test_allvmstats(self):
         ret = [{'vcpuCount': '1',
@@ -403,17 +384,16 @@ class DataVerificationTests(TestCaseBase):
                 'vmName': u'vm2',
                 'vcpuPeriod': 100000}]
 
-        _schema.schema().verify_retval(
-            vdsmapi.MethodRep('Host', 'getAllVmStats'), ret)
+        _schema.verify_retval(vdsmapi.MethodRep('Host', 'getAllVmStats'), ret)
 
     def test_missing_method(self):
         with self.assertRaises(vdsmapi.MethodNotFound):
-            _schema.schema().get_method(
+            _schema.get_method(
                 vdsmapi.MethodRep('missing_class', 'missing_method'))
 
     def test_missing_type(self):
         with self.assertRaises(vdsmapi.TypeNotFound):
-            _schema.schema().get_type('Missing_type')
+            _schema.get_type('Missing_type')
 
     def test_events_params(self):
         params = {u"notify_time": 4303947020,
@@ -439,7 +419,7 @@ class DataVerificationTests(TestCaseBase):
                        u"vcpuPeriod": 100000}}
         sub_id = '|virt|VM_status|426aef82-ea1d-4442-91d3-fd876540e0f0'
 
-        _events_schema.events_schema().verify_event_params(sub_id, params)
+        _events_schema.verify_event_params(sub_id, params)
 
     def test_get_caps(self):
         ret = {'HBAInventory': {'iSCSI': [{'InitiatorName': 'iqn.1994-05.co'}],
@@ -618,22 +598,22 @@ class DataVerificationTests(TestCaseBase):
                                    'name': 'Fedora',
                                    'pretty_name': 'Fedora 24 (Workstation)'}}
 
-        _schema.schema().verify_retval(
+        _schema.verify_retval(
             vdsmapi.MethodRep('Host', 'getCapabilities'), ret)
 
     def test_create_complex_params(self):
         complex_type = {'lease': {'sd_id': 'UUID', 'lease_id': 'UUID'}}
         self.assertEqual(
-            _schema.schema().get_args_dict('Lease', 'create'),
+            _schema.get_args_dict('Lease', 'create'),
             json.dumps(complex_type, indent=4))
 
     def test_no_params(self):
-        self.assertEqual(_schema.schema().get_args_dict(
+        self.assertEqual(_schema.get_args_dict(
             'Host', 'getCapabilities'), None)
 
     def test_single_param(self):
         complex_type = {'vmID': {'UUID': 'UUID'}}
-        self.assertEqual(_schema.schema().get_args_dict(
+        self.assertEqual(_schema.get_args_dict(
             'VM', 'getStats'), json.dumps(complex_type, indent=4))
 
 
