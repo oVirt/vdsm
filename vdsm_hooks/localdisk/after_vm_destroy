@@ -1,0 +1,106 @@
+#!/usr/bin/python2
+#
+# Hook written by Kevin van Hoorn
+#
+# This hook should remove the disk once the VM is stopped (shutdown)
+# Logging added so tracing is possible
+#
+
+import json
+import os
+import time
+
+from vdsm import cmdutils
+from vdsm import qemuimg
+from vdsm import utils
+from vdsm.storage import constants as sc
+
+import hooking
+
+# Name of vg used for lvm based local disks
+OVIRT_LOCAL_VG = "ovirt-local"
+
+# The thin pool name in case of thin LV
+LOCAL_POOL = "pool0"
+
+# Helper to execute LVM command as super user
+HELPER = "/usr/libexec/vdsm/localdisk-helper"
+
+# The LV/local disk is created with the UPDATING tag.
+# This tag will be cleared, once the copying of the data from the template
+# is finished.
+# When the hook is called, and the tag is present on an existing LV, it means
+# that the copy data process failed. In that case, the LV will be removed,
+# then recreated and the copy process will run again.
+TAG_UPDATING = "UPDATING"
+
+# Supported backends
+BACKEND_LVM = "lvm"
+BACKEND_LVM_THIN = "lvmthin"
+
+
+class NoSuchLV(Exception):
+    """ Raised when lv does not exists """
+
+
+class LVIsUpdating(Exception):
+    """ Raised when lv has an UPDATING """
+
+def main():
+    backend = os.environ.get('localdisk')
+    if backend is None:
+        return
+    if backend not in [BACKEND_LVM, BACKEND_LVM_THIN]:
+        hooking.log("localdisk-hook: unsupported backend: %r" % backend)
+        return
+
+    hooking.log("localdisk-hook: invoke after_vm_destory/localdisk")
+
+    domvm = hooking.read_domxml()
+    domdevices = domvm.getElementsByTagName('disk')
+
+    for d in domdevices:
+      if d.getAttribute('device') == 'disk':
+        lv_name = d.getElementsByTagName('source')[0].getAttribute('dev').split('/')[-1]
+        hooking.log("localdisk-hook: found disk (dev=%s) "
+                    "on vm, start looking for local disk" % lv_name)
+
+        try:
+            lv_info(lv_name)
+        except NoSuchLV:
+            hooking.log("localdisk-hook: local disk not found, "
+                        "nothing to do, exiting now (name=%s)" % lv_name)
+            return
+        except LVIsUpdating:
+            hooking.log("localdisk-hook: found unfinished disk, "
+                        "removing unfinished disk (name=%s)" % lv_name)
+            remove_local_disk(lv_name)
+        else:
+            hooking.log("localdisk-hook: found disk, "
+                        "removing disk (name=%s)" % lv_name)
+            remove_local_disk(lv_name)
+
+def remove_local_disk(lv_name):
+    helper("remove", lv_name)
+
+# LVM helper operation
+
+def lv_info(lv_name):
+    out = helper("list", lv_name)
+    lvs = json.loads(out)["report"][0]["lv"]
+    if not lvs:
+        raise NoSuchLV
+    lv = lvs[0]
+    if TAG_UPDATING in lv["lv_tags"].split(","):
+        raise LVIsUpdating
+    return lv
+
+def helper(*args):
+    cmd = [HELPER]
+    cmd.extend(args)
+    rc, out, err = hooking.execCmd(cmd, sudo=True, raw=True)
+    if rc != 0:
+        raise cmdutils.Error(cmd=HELPER, rc=rc, out=out, err=err)
+    return out
+
+main()
