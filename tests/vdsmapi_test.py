@@ -21,13 +21,18 @@ from __future__ import absolute_import
 from __future__ import division
 
 import json
+import yaml
+
+from textwrap import dedent
 
 from nose.plugins.attrib import attr
 from vdsm.api import vdsmapi
+from vdsm.common.compat import pickle
 from yajsonrpc.exception import JsonRpcErrorBase
 
 from testlib import mock
 from testlib import VdsmTestCase as TestCaseBase
+from testValidation import xfail
 
 try:
     import vdsm.gluster.apiwrapper as gapi
@@ -640,3 +645,287 @@ class SchemaTypeTest(TestCaseBase):
                                                schema_dirs_mock):
         expected_path = "/a/b/c/vdsm-api.pickle"
         self.assertEqual(vdsmapi.SchemaType.VDSM_API.path(), expected_path)
+
+
+@attr(type='unit')
+class MethodArgumentsParsingTests(TestCaseBase):
+
+    @staticmethod
+    def schema_from(yaml_str):
+        pickled_yaml = pickle.dumps(yaml.load(yaml_str))
+        mocked_open = mock.mock_open(read_data=pickled_yaml)
+        with mock.patch('{}.io.open'.format(vdsmapi.__name__),
+                        mocked_open,
+                        create=True):
+            return vdsmapi.Schema.vdsm_api(strict_mode=False)
+
+    def check_with_own_types(self, types_yaml, arguments_yaml, expected_args):
+        """Checks whether method's arguments representation obtained by calling
+        'Schema.get_args_dict' is consistent with 'expected_args' by creating
+        a method stub, with types defined as in 'types_yaml' and method
+        parameters defined as in 'arguments_yaml'."""
+
+        def fix_yaml_indentation(yaml_str, indentation_multiplier):
+            dedented = dedent(yaml_str)
+            split = dedented.split("\n")
+            indentation = "    " * indentation_multiplier
+            return indentation + ("\n" + indentation).join(split[1:])
+
+        types_header = "types:\n"
+        types_yaml = fix_yaml_indentation(types_yaml, 1)
+        method_header = "\n\nNamespace.Method:\n    params:\n"
+        arguments_yaml = fix_yaml_indentation(arguments_yaml, 2)
+        schema_yaml = (types_header + types_yaml + method_header +
+                       arguments_yaml)
+        schema = self.schema_from(schema_yaml)
+        actual_args = schema.get_args_dict("Namespace", "Method")
+        expected_args = json.dumps(expected_args, indent=4)
+        msg = "Expected args:\n{}\nActual args:\n{}".format(expected_args,
+                                                            actual_args)
+        self.assertEqual(actual_args, expected_args, msg)
+
+    def check_without_types(self, arguments_yaml, expected_args):
+        dummy_types = \
+            """
+            DummyType: &DummyType
+                name: DummyType
+                sourcetype: string
+                type: alias
+            """
+        return self.check_with_own_types(dummy_types, arguments_yaml,
+                                         expected_args)
+
+    def test_primitive_types(self):
+        self.check_without_types(
+            """
+            -   description: An int argument
+                name: some_int
+                type: int
+            """,
+            {"some_int": "int"})
+
+        self.check_without_types(
+            """
+            -   description: An uint argument
+                name: some_uint
+                type: uint
+            """,
+            {"some_uint": "uint"})
+
+        self.check_without_types(
+            """
+            -   description: A long argument
+                name: some_long
+                type: long
+            """,
+            {"some_long": "long"})
+
+        self.check_without_types(
+            """
+            -   description: An ulong argument
+                name: some_ulong
+                type: ulong
+            """,
+            {"some_ulong": "ulong"})
+
+        self.check_without_types(
+            """
+            -   description: A boolean argument
+                name: some_bool
+                type: bool
+            """,
+            {"some_bool": "bool"})
+
+        self.check_without_types(
+            """
+            -   description: A float argument
+                name: some_float
+                type: float
+            """,
+            {"some_float": "float"})
+
+        self.check_without_types(
+            """
+            -   description: A string argument
+                name: some_string
+                type: string
+            """,
+            {"some_string": "string"})
+
+    @xfail("Enable after fixing argument parsing")
+    def test_list_type(self):
+        self.check_without_types(
+            """
+            -   description: A list argument
+                name: list_argument
+                type:
+                - string
+            """,
+            {"list_argument": ["string"]})
+
+        self.check_without_types(
+            """
+            -   description: A list argument
+                name: list_argument
+                type:
+                - int
+            """,
+            {"list_argument": ["int"]})
+
+    def test_enum_type(self):
+        helper = list({"abra": 0, "ka": 1, "dabra": 2}.keys())
+        # "enum ['abra', 'ka', 'dabra']"
+        enum_representation = "enum " + str(helper)
+        self.check_with_own_types(
+            """
+            EnumType: &EnumType
+                name: EnumType
+                type: enum
+                values:
+                    abra: Abra
+                    ka: Ka
+                    dabra: Dabra
+            """,
+            """
+            -   description: An enum argument
+                name: enum_argument
+                type: *EnumType
+            """,
+            {"enum_argument": {"EnumType": enum_representation}})
+
+    def test_union_type(self):
+        self.check_with_own_types(
+            """
+            UnionType: &UnionType
+                name: UnionType
+                type: union
+                values:
+                - int
+                - string
+                - boolean
+            """,
+            """
+            -   description: An union argument
+                name: union_argument
+                type: *UnionType
+            """,
+            {"union_argument": {"UnionType": ["int", "string", "boolean"]}})
+
+    @xfail("Enable after fixing argument parsing")
+    def test_alias_type(self):
+        self.check_with_own_types(
+            """
+            AliasType: &AliasType
+                name: AliasType
+                sourcetype: string
+                type: alias
+            """,
+            """
+            -   description: An alias argument
+                name: alias_argument
+                type: *AliasType
+            """,
+            {"alias_argument": "AliasType"})
+
+    def test_object_type(self):
+        self.check_with_own_types(
+            """
+            ObjectType: &ObjectType
+                name: ObjectType
+                type: object
+                properties:
+                -   some_int: An int property
+                    name: some_int
+                    type: int
+                -   some_bool: A bool property
+                    name: some_bool
+                    type: bool
+            """,
+            """
+            -   description: An object argument
+                name: object_argument
+                type: *ObjectType
+            """,
+            {"object_argument": {"some_int": "int", "some_bool": "bool"}})
+
+    @xfail("Enable after fixing argument parsing")
+    def test_nested_object_type(self):
+        self.check_with_own_types(
+            """
+            NestedObjectType: &NestedObjectType
+                name: NestedObjectType
+                type: object
+                properties:
+                -   some_int: An int property
+                    name: some_int
+                    type: int
+                -   some_bool: A bool property
+                    name: some_bool
+                    type: bool
+
+            ObjectType: &ObjectType
+                name: ObjectType
+                type: object
+                properties:
+                -   nested_object: A nested object property
+                    name: nested_object
+                    type: *NestedObjectType
+            """,
+            """
+            -   description: An object argument
+                name: object_argument
+                type: *ObjectType
+            """,
+            {
+                "object_argument": {
+                    "nested_object": {
+                        "some_int": "int", "some_bool": "bool"
+                    }
+                }
+            })
+
+    @xfail("Enable after fixing argument parsing")
+    def test_two_level_nested_object_type(self):
+        self.check_with_own_types(
+            """
+            InnerObjectType: &InnerObjectType
+                name: InnerObjectType
+                type: object
+                properties:
+                -   some_int: An int property
+                    name: some_int
+                    type: int
+                -   some_bool: A bool property
+                    name: some_bool
+                    type: bool
+
+            MiddleObjectType: &MiddleObjectType
+                name: MiddleObjectType
+                type: object
+                properties:
+                -   inner_object: An inner object property
+                    name: inner_object
+                    type: *InnerObjectType
+
+            ObjectType: &ObjectType
+                name: ObjectType
+                type: object
+                properties:
+                -   middle_object: A middle object property
+                    name: middle_object
+                    type: *MiddleObjectType
+            """,
+            """
+            -   description: An object argument
+                name: object_argument
+                type: *ObjectType
+            """,
+            {
+                "object_argument": {
+                    "middle_object": {
+                        "inner_object": {
+                            "some_int": "int", "some_bool": "bool"
+                        }
+                    }
+                }
+            })

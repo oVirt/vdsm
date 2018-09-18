@@ -139,7 +139,7 @@ class Schema(object):
         try:
             for schema_type in schema_types:
                 with io.open(schema_type.path(), 'rb') as f:
-                    loaded_schema = pickle.load(f)
+                    loaded_schema = pickle.loads(f.read())
 
                 types = loaded_schema.pop('types')
                 self._types.update(types)
