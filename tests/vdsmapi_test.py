@@ -22,8 +22,6 @@ from __future__ import division
 
 import json
 import os
-import shutil
-import tempfile
 
 from nose.plugins.attrib import attr
 from vdsm.api import vdsmapi
@@ -57,7 +55,6 @@ class SchemaWrapper(object):
             self._events_schema = vdsmapi.Schema.vdsm_events(strict_mode=True)
         return self._events_schema
 
-basedir = tempfile.mkdtemp(dir='/var/tmp')
 _events_schema = SchemaWrapper()
 _schema = SchemaWrapper()
 
@@ -661,6 +658,3 @@ class SchemaTypeTest(TestCaseBase):
     def test_path_should_give_existing_path_in(self):
         expected_path = "/a/b/c/vdsm-api.pickle"
         self.assertEqual(vdsmapi.SchemaType.VDSM_API.path(), expected_path)
-
-
-shutil.rmtree(basedir)
