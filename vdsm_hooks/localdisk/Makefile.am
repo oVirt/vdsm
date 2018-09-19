@@ -22,6 +22,7 @@
 EXTRA_DIST = \
 	12-vdsm-localdisk.rules \
 	after_disk_prepare \
+	after_vm_destroy \
 	localdisk-helper \
 	sudoers.vdsm_hook_localdisk \
 	before_vm_migrate_source \
@@ -33,6 +34,9 @@ install-data-local: install-data-sudoers
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_disk_prepare
 	$(INSTALL_SCRIPT) $(srcdir)/after_disk_prepare \
 		$(DESTDIR)$(vdsmhooksdir)/after_disk_prepare/localdisk
+	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_vm_destroy
+	$(INSTALL_SCRIPT) $(srcdir)/after_vm_destroy \
+		$(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/localdisk
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_source
 	$(INSTALL_SCRIPT) $(srcdir)/before_vm_migrate_source \
 		$(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_source/localdisk
@@ -44,6 +48,7 @@ install-data-local: install-data-sudoers
 
 uninstall-local: uninstall-data-sudoers
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_disk_prepare/localdisk
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_vm_destroy/localdisk
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_vm_migrate_source/localdisk
 	$(RM) $(DESTDIR)$(vdsmexecdir)/localdisk-helper
 	$(RM) $(DESTDIR)$(UDEV_RULES_DIR)/12-vdsm-localdisk.rules
