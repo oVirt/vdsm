@@ -365,7 +365,7 @@ class MdevDevice(core.Base):
         address = vmxml.find_first(source, 'address')
         uuid = address.attrib['uuid']
         for dev in device_conf:
-            if uuid == dev.mdev_uuid:
+            if isinstance(dev, MdevDevice) and uuid == dev.mdev_uuid:
                 dev.alias = alias
                 return
 
