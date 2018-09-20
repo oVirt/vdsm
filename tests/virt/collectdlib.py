@@ -111,7 +111,7 @@ class CollectdHandler(socketserver.StreamRequestHandler):
         logging.info('handling listval with%s replies data...' % (
             'out' if _REPLIES is None else '')
         )
-        vals = [] if _REPLIES is None else _REPLIES.keys()
+        vals = [] if _REPLIES is None else list(_REPLIES.keys())
         ret = ['%i Values found\n' % len(vals)]
         ret.extend(val for val in vals)
         return '\n'.join(ret) + '\n'

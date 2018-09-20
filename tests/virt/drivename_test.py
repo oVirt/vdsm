@@ -27,10 +27,13 @@ from testlib import permutations
 from vdsm.virt.vmdevices import drivename
 
 
+_ITEMS = list(drivename._DEVIFACES.items())
+
+
 @expandPermutations
 class TestDriveNameFunctions(VdsmTestCase):
 
-    @permutations(drivename._DEVIFACES.items())
+    @permutations(_ITEMS)
     def test_make_name(self, prefix, iface):
         for index, value in _CONVERTED_VALUES:
             computed = drivename.make(iface, index)
@@ -40,7 +43,7 @@ class TestDriveNameFunctions(VdsmTestCase):
                 "mismatch for %s: computed=%s expected=%s" % (
                     (iface, index), computed, expected))
 
-    @permutations(drivename._DEVIFACES.items())
+    @permutations(_ITEMS)
     def test_split_name(self, prefix, iface):
         for index, value in _CONVERTED_VALUES:
             computed = drivename.split(prefix + value)

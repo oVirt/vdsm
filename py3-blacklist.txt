@@ -112,12 +112,7 @@
 ./tests/common/logutils_test.py
 ./tests/common/function.py
 ./tests/virt/vmmigration_test.py
-./tests/virt/devicexml_test.py
-./tests/virt/metadata_test.py
-./tests/virt/drivename_test.py
-./tests/virt/vmstats_test.py
 ./tests/virt/vmrecovery_test.py
-./tests/virt/collectdlib.py
 ./tests/executor_test.py
 ./tests/functional/utils.py
 ./tests/functional/virtTests.py

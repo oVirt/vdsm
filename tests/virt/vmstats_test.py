@@ -305,8 +305,7 @@ class UtilsFunctionsTests(VmStatsTestCase):
             [(vmstats, '_log', log)]
         ):
             with vmstats._skip_if_missing_stats(vm):
-                foobar = sample[KEY]
-                print(foobar)  # just to silence pyflakes
+                sample[KEY]
         self.assertEqual(len(log.messages), 1)
         self.assertEqual(log.messages[0][0], logging.WARNING)
         self.assertIn(KEY, log.messages[0][1])
