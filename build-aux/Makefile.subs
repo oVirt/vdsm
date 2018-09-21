@@ -38,4 +38,5 @@ PATHSUBST = sed \
 CONFIGSUBST = $(top_builddir)/config.status --file=-
 
 %: %.in
+	@echo "  MKDIR_P $(dir $@)"; $(MKDIR_P) $(dir $@)
 	@echo "  SED $@"; $(PATHSUBST) $< |$(CONFIGSUBST) >$@
