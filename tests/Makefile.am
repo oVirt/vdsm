@@ -244,7 +244,7 @@ $(server_certificates) $(other_certificates): make_certificates
 
 .PHONY: make_certificates
 make_certificates: makecert.sh
-	./makecert.sh
+	$(srcdir)/makecert.sh
 
 run_modules  = $(test_modules)
 if CONTAINERS
