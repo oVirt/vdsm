@@ -24,3 +24,4 @@ dist_vdsmvirtdatatests_DATA = \
 	*.xml \
 	$(NULL)
 
+%.xml: ;
