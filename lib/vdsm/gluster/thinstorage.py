@@ -83,6 +83,45 @@ def physicalVolumeList():
     return json.loads(out)["report"][0]["pv"]
 
 
+def _process_vdo_statistics(data):
+    """
+    Return some fields from VDO device statistics
+    Example output:
+            {
+                "device": "/dev/vg0/vdobase",
+                "name": "/dev/mapper/vdodata",
+                "size": 10737418240,
+                "free": 6415798272,
+                'logicalBytesUsed': 81920,
+                'physicalBytesUsed': 40960
+            },
+            {
+                "device": "/dev/vg0/vdosecond",
+                "name": "/dev/mapper/vdonext",
+                'logicalBytesUsed': 40960,
+                'physicalBytesUsed': 15360,
+                "size": 10737418240,
+                "free": 6438100992
+            }
+    """
+    entry = {}
+    try:
+        for name, stats in iteritems(data):
+            blockSize = stats["block size"]
+            entry["name"] = name
+            entry["size"] = stats["1K-blocks"] * KiB
+            entry["free"] = stats["1K-blocks available"] * KiB
+            entry["logicalBytesUsed"] = (stats["logical blocks used"]
+                                         * blockSize)
+            entry["physicalBytesUsed"] = (stats["data blocks used"]
+                                          * blockSize)
+    except KeyError as e:
+        log.error("Missing or invalid values in vdo data,skipping. %s", e)
+        # Returning an empty object so as not to add to the device list
+        return {}
+    return entry
+
+
 @gluster_mgmt_api
 def vdoVolumeList():
     try:
@@ -92,19 +131,19 @@ def vdoVolumeList():
     vdoData = yaml.safe_load(out)
     result = []
     for vdo, data in iteritems(vdoData["VDOs"]):
-        entry = {}
+        if data["VDO statistics"] == "not available":
+            log.debug("VDO statistics data not available, skipping device ")
+            continue
+        entry = _process_vdo_statistics(data["VDO statistics"])
+
+        # This is a case where the vdo device does not have a corresponding
+        # device mapper entry, skipping this condition without adding the
+        # device to the output.
+        if not entry:
+            log.debug("No device mapper entry for vdo device skipping")
+            continue
+
         entry["device"] = data["Storage device"]
-        for mapper, stats in iteritems(data["VDO statistics"]):
-            blockSize = stats["block size"]
-            entry["name"] = mapper
-            entry["size"] = stats["1K-blocks"] * KiB
-            entry["free"] = stats["1K-blocks available"] * KiB
-            entry["logicalBytesUsed"] = (
-                stats["logical blocks used"] * blockSize
-            )
-            entry["physicalBytesUsed"] = (
-                stats["data blocks used"] * blockSize
-            )
         result.append(entry)
 
     return result
