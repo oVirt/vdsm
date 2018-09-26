@@ -353,15 +353,21 @@ class NetFuncTestAdapter(object):
         assert bond not in self.running_config.bonds
 
     def assertNetworkIp(self, net, attrs):
+        bridged = attrs.get('bridged', True)
+        vlan = attrs.get('vlan')
+        bond = attrs.get('bonding')
+        nic = attrs.get('nic')
+        switch = attrs.get('switch')
+        is_valid_attrs = (nic is not None or
+                          bond is not None or
+                          switch is not None)
+        assert is_valid_attrs
+
         if _ipv4_is_unused(attrs) and _ipv6_is_unused(attrs):
             return
 
         network_netinfo = self.netinfo.networks[net]
 
-        bridged = attrs.get('bridged', True)
-        vlan = attrs.get('vlan')
-        bond = attrs.get('bonding')
-        nic = attrs.get('nic')
         if bridged:
             topdev_netinfo = self.netinfo.bridges[net]
         elif vlan is not None:
