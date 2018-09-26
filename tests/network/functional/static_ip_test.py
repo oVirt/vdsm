@@ -148,6 +148,29 @@ class TestNetworkStaticIpBasic(object):
                 adapter.setupNetworks(net_ipv4, {}, NOCHK)
                 adapter.assertNetworkIp(NETWORK_NAME, net_ipv4_atts)
 
+    def test_edit_ipv4_address_on_bonded_network(self, switch):
+        with dummy_devices(2) as (nic1, nic2):
+            net_attrs_ip1 = {'bonding': BOND_NAME,
+                             'bridged': False,
+                             'ipaddr': '1.1.1.1',
+                             'prefix': '24',
+                             'switch': switch}
+            net_attrs_ip2 = {'bonding': BOND_NAME,
+                             'bridged': False,
+                             'ipaddr': '1.1.1.2',
+                             'prefix': '24',
+                             'switch': switch}
+
+            bond = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}
+
+            net1 = {NETWORK_NAME: net_attrs_ip1}
+            net2 = {NETWORK_NAME: net_attrs_ip2}
+
+            with adapter.setupNetworks(net1, bond, NOCHK):
+                adapter.assertNetworkIp(NETWORK_NAME, net_attrs_ip1)
+                adapter.setupNetworks(net2, bond, NOCHK)
+                adapter.assertNetworkIp(NETWORK_NAME, net_attrs_ip2)
+
 
 @nftestlib.parametrize_switch
 class TestNetworkIPDefaultGateway(object):

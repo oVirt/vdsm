@@ -30,7 +30,9 @@ from .netfunctestlib import NetFuncTestAdapter, NOCHK, SetupNetworksError
 from network.nettestlib import dummy_devices
 
 BOND_NAME = 'bond1_name'
-
+NETWORK_NAME = 'test-network'
+NETWORK2_NAME = 'test-network2'
+NETWORK3_NAME = 'test-network3'
 
 adapter = None
 
