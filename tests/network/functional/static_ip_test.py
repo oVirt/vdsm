@@ -240,7 +240,7 @@ class TestNetworkIPDefaultGateway(object):
             net2_attrs = {'nic': nic2,
                           'ipaddr': IPv4_ADDRESS2,
                           'netmask': IPv4_NETMASK,
-                          'gateway': IPv4_GATEWAY,
+                          'gateway': IPv4_GATEWAY2,
                           'defaultRoute': False,
                           'switch': switch}
 
