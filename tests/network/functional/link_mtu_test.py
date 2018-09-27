@@ -162,6 +162,8 @@ class TestNetworkMtu(object):
                                                                       switch,
                                                                       bridged,
                                                                       bonded):
+        if switch == 'legacy' and bonded:
+            pytest.xfail('BZ#1633528')
         with dummy_devices(1) as (nic,):
             NETWORK1_ATTRS = {'bridged': bridged,
                               'vlan': VLAN1,
