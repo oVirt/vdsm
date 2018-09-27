@@ -172,20 +172,17 @@ class TestNetworkMtu(object):
             if bonded:
                 NETWORK1_ATTRS['bonding'] = BOND_NAME
                 BONDBASE = {BOND_NAME: {'nics': [nic], 'switch': switch}}
-                link2monitor = BOND_NAME
             else:
                 NETWORK1_ATTRS['nic'] = nic
                 BONDBASE = {}
-                link2monitor = nic
 
             with adapter.setupNetworks(NETBASE, BONDBASE, nftestlib.NOCHK):
-                with nftestlib.monitor_stable_link_state(link2monitor):
-                    adapter.setupNetworks(
-                        {NETWORK1_NAME: {'remove': True}}, {}, nftestlib.NOCHK)
+                adapter.setupNetworks(
+                    {NETWORK1_NAME: {'remove': True}}, {}, nftestlib.NOCHK)
 
-                    adapter.assertLinkMtu(nic, DEFAULT_MTU)
-                    if bonded:
-                        adapter.assertLinkMtu(BOND_NAME, DEFAULT_MTU)
+                adapter.assertLinkMtu(nic, DEFAULT_MTU)
+                if bonded:
+                    adapter.assertLinkMtu(BOND_NAME, DEFAULT_MTU)
 
     @nftestlib.parametrize_bridged
     @nftestlib.parametrize_bonded
