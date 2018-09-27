@@ -63,6 +63,8 @@ def _update_openstack_binding_host_ids(caps):
         openstack_binding_host_ids = caps.get(CAPS_BINDING_KEY, {})
         openstack_binding_host_ids[openstacknet_utils.PT_OVS] = \
             openstack_binding_host_id
+        openstack_binding_host_ids[openstacknet_utils.PT_OPENSTACK_OVN] = \
+            openstack_binding_host_id
         caps[CAPS_BINDING_KEY] = openstack_binding_host_ids
     return caps
 

@@ -38,6 +38,7 @@ from openstacknet_utils import OPENSTACK_NET_PROVIDER_TYPE
 from openstacknet_utils import PLUGIN_TYPE_KEY
 from openstacknet_utils import PROVIDER_TYPE_KEY
 from openstacknet_utils import PT_BRIDGE
+from openstacknet_utils import PT_OPENSTACK_OVN
 from openstacknet_utils import PT_OVS
 from openstacknet_utils import VM_ID_KEY
 from openstacknet_utils import VNIC_ID_KEY
@@ -93,7 +94,7 @@ def addOpenstackVnic(domxml, pluginType, portId):
     iface = domxml.getElementsByTagName('interface')[0]
     if pluginType == PT_BRIDGE:
         addLinuxBridgeVnic(domxml, iface, portId)
-    elif pluginType == PT_OVS:
+    elif pluginType in (PT_OVS, PT_OPENSTACK_OVN):
         addOvsVnic(domxml, iface, portId)
     else:
         hooking.exit_hook("Unknown plugin type: %s" % pluginType)

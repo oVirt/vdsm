@@ -16,6 +16,7 @@ VNIC_ID_KEY = 'vnic_id'
 PLUGIN_TYPE_KEY = 'plugin_type'
 PT_BRIDGE = 'LINUX_BRIDGE'
 PT_OVS = 'OPEN_VSWITCH'
+PT_OPENSTACK_OVN = 'OPENSTACK_OVN'
 
 # Default integration bridge name to use for OVS
 INTEGRATION_BRIDGE = 'br-int'
