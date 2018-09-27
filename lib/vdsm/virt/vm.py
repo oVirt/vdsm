@@ -2264,7 +2264,7 @@ class Vm(object):
                 mdev_uuid = hostdev.get_mdev_uuid(self.id)
                 domxml_preprocess.add_mediated_device(dom, mdev_uuid)
             domxml_preprocess.replace_device_xml_with_hooks_xml(
-                dom, self.id, self._custom['custom'])
+                dom, self.id, self._custom)
 
             return xmlutils.tostring(dom, pretty=True)
 
