@@ -552,7 +552,6 @@ AC_OUTPUT([
 	vdsm_hooks/httpsisoboot/Makefile
 	vdsm_hooks/localdisk/Makefile
 	vdsm_hooks/macbind/Makefile
-	vdsm_hooks/macspoof/Makefile
 	vdsm_hooks/nestedvt/Makefile
 	vdsm_hooks/numa/Makefile
 	vdsm_hooks/openstacknet/Makefile

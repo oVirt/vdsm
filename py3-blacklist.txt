@@ -62,8 +62,6 @@
 ./vdsm_hooks/localdisk/before_vm_migrate_source
 ./vdsm_hooks/localdisk/localdisk-helper
 ./vdsm_hooks/macbind/before_vm_start.py
-./vdsm_hooks/macspoof/before_vm_start.py
-./vdsm_hooks/macspoof/macspoof_vnic.py
 ./vdsm_hooks/nestedvt/before_vm_start.py
 ./vdsm_hooks/numa/before_vm_start.py
 ./vdsm_hooks/pincpu/before_vm_start.py

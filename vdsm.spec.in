@@ -525,15 +525,6 @@ Requires:       %{name} >= 4.14
 %description hook-macbind
 VDSM hooks which allow to bind a vNIC to a Bridge, managed or not by engine.
 
-%package hook-macspoof
-Summary:        Disables MAC spoofing filtering
-BuildArch:      noarch
-
-%description hook-macspoof
-VDSM hooks which allow to disable mac spoof filtering
-either on all the of the VM's interfaces or on
-specific vnics.
-
 %package hook-extnet
 Summary:        Force a vNIC to connect to a specific libvirt network
 BuildArch:      noarch
@@ -1010,11 +1001,6 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/openstacknet_utils.py*
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_caps/openstacknet_utils.py*
-
-%files hook-macspoof
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macspoof
-%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_macspoof
-%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_macspoof
 
 %if 0%{?with_vhostmd}
 %files hook-vhostmd

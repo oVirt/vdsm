@@ -24,7 +24,6 @@ SUBDIRS = \
 	faqemu \
 	fcoe \
 	localdisk \
-	macspoof \
 	openstacknet \
 	qemucmdline \
 	vhostmd \
