@@ -53,7 +53,6 @@ SUBDIRS += \
 	numa \
 	pincpu \
 	promisc \
-	qos \
 	scratchpad \
 	smbios \
 	spiceoptions \

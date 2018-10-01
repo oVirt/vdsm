@@ -652,13 +652,6 @@ Provides support for injecting QEMU cmdline via VDSM hook.
 It exploits libvirt's qemu:commandline facility available in the
 qemu xml namespace.
 
-%package hook-qos
-Summary:        QoS network in/out traffic support for VDSM
-BuildArch:      noarch
-
-%description hook-qos
-Hook adds QoS in/out traffic to VMs interfaces
-
 %package hook-scratchpad
 Summary:        One time disk creation for VDSM
 BuildArch:      noarch
@@ -1541,9 +1534,6 @@ exit 0
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_promisc
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_start/50_promisc
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_destroy/50_promisc
-
-%files hook-qos
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_qos
 
 %files hook-scratchpad
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_scratchpad

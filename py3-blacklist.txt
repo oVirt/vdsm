@@ -73,7 +73,6 @@
 ./vdsm_hooks/floppy/before_vm_migrate_source.py
 ./vdsm_hooks/macbind/before_vm_start.py
 ./vdsm_hooks/ethtool_options/ethtool_options.py
-./vdsm_hooks/qos/before_vm_start.py
 ./vdsm_hooks/fcoe/fcoe_before_network_setup.py
 ./vdsm_hooks/macspoof/macspoof_vnic.py
 ./vdsm_hooks/macspoof/before_vm_start.py
