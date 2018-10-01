@@ -595,16 +595,6 @@ Let the VM boot from an ISO image made available via an https URL without
 the need to import the ISO into an ISO storage domain.
 It doesn't support plain http.
 
-%package hook-isolatedprivatevlan
-Summary:        Isolated network environment for VMs
-BuildArch:      noarch
-
-%description hook-isolatedprivatevlan
-limit VM traffic to a specific gateway by its mac address,
-hook prevent VM from spoofing its mac or  ip address
-by using <filterref filter='clean-traffic'/> libvirt filter
-and by adding custom filter: isolatedprivatevlan-vdsm.xml
-
 %package hook-nestedvt
 Summary:        Nested Virtualization support for VDSM
 BuildArch:      noarch
@@ -1499,10 +1489,6 @@ exit 0
 
 %files hook-httpsisoboot
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_httpsisoboot
-
-%files hook-isolatedprivatevlan
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_isolatedprivatevlan
-%{_sysconfdir}/libvirt/nwfilter/isolatedprivatevlan-vdsm.xml
 
 %files hook-macbind
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macbind

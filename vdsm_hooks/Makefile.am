@@ -46,7 +46,6 @@ SUBDIRS += \
 	fakevmstats \
 	floppy \
 	httpsisoboot \
-	isolatedprivatevlan \
 	macbind \
 	nestedvt \
 	noipspoof \
