@@ -86,7 +86,6 @@
 ./vdsm_hooks/macspoof/before_vm_start.py
 ./vdsm_hooks/macspoof/macspoof_vnic.py
 ./vdsm_hooks/nestedvt/before_vm_start.py
-./vdsm_hooks/noipspoof/noipspoof.py
 ./vdsm_hooks/numa/before_vm_start.py
 ./vdsm_hooks/openstacknet/after_device_create.py
 ./vdsm_hooks/openstacknet/after_get_caps.py

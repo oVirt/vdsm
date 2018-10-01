@@ -48,7 +48,6 @@ SUBDIRS += \
 	httpsisoboot \
 	macbind \
 	nestedvt \
-	noipspoof \
 	numa \
 	pincpu \
 	promisc \

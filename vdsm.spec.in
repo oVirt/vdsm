@@ -540,14 +540,6 @@ VDSM hooks which allow to disable mac spoof filtering
 either on all the of the VM's interfaces or on
 specific vnics.
 
-%package hook-noipspoof
-Summary:        Enables strict anti-spoofing filtering
-BuildArch:      noarch
-
-%description hook-noipspoof
-VDSM hook which allows to enable strict anti-spoofing filtering
-on all of the VM's interfaces.
-
 %package hook-extnet
 Summary:        Force a vNIC to connect to a specific libvirt network
 BuildArch:      noarch
@@ -1492,10 +1484,6 @@ exit 0
 
 %files hook-macbind
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macbind
-
-%files hook-noipspoof
-%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_noipspoof
-%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_noipspoof
 
 %files hook-extnet
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_extnet
