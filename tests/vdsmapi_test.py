@@ -48,6 +48,46 @@ _schema = vdsmapi.Schema.vdsm_api(strict_mode=True,
                                   with_gluster=_glusterEnabled)
 
 
+class FakeSchema(object):
+
+    @staticmethod
+    def with_types(types_yaml, arguments_yaml):
+        types_header = "types:\n"
+        types_yaml = FakeSchema._fix_yaml_indentation(types_yaml, 1)
+        method_header = "\n\nNamespace.Method:\n    params:\n"
+        arguments_yaml = FakeSchema._fix_yaml_indentation(arguments_yaml, 2)
+        schema_yaml = (types_header + types_yaml + method_header +
+                       arguments_yaml)
+        return FakeSchema._schema_from(schema_yaml)
+
+    @staticmethod
+    def with_dummy_types(arguments_yaml):
+        dummy_types = \
+            """
+            DummyType: &DummyType
+                name: DummyType
+                sourcetype: string
+                type: alias
+            """
+        return FakeSchema.with_types(dummy_types, arguments_yaml)
+
+    @staticmethod
+    def _fix_yaml_indentation(yaml_str, indentation_multiplier):
+        dedented = dedent(yaml_str)
+        split = dedented.split("\n")
+        indentation = "    " * indentation_multiplier
+        return indentation + ("\n" + indentation).join(split[1:])
+
+    @staticmethod
+    def _schema_from(yaml_str):
+        pickled_yaml = pickle.dumps(yaml.load(yaml_str))
+        mocked_open = mock.mock_open(read_data=pickled_yaml)
+        with mock.patch('{}.io.open'.format(vdsmapi.__name__),
+                        mocked_open,
+                        create=True):
+            return vdsmapi.Schema.vdsm_api(strict_mode=False)
+
+
 class DataVerificationTests(TestCaseBase):
 
     def test_optional_params(self):
@@ -651,34 +691,15 @@ class SchemaTypeTest(TestCaseBase):
 @attr(type='unit')
 class MethodArgumentsParsingTests(TestCaseBase):
 
-    @staticmethod
-    def schema_from(yaml_str):
-        pickled_yaml = pickle.dumps(yaml.load(yaml_str))
-        mocked_open = mock.mock_open(read_data=pickled_yaml)
-        with mock.patch('{}.io.open'.format(vdsmapi.__name__),
-                        mocked_open,
-                        create=True):
-            return vdsmapi.Schema.vdsm_api(strict_mode=False)
-
     def check_with_own_types(self, types_yaml, arguments_yaml, expected_args):
         """Checks whether method's arguments representation obtained by calling
         'Schema.get_args_dict' is consistent with 'expected_args' by creating
-        a method stub, with types defined as in 'types_yaml' and method
+        a fake schema with types defined as in 'types_yaml' and method
         parameters defined as in 'arguments_yaml'."""
-
-        def fix_yaml_indentation(yaml_str, indentation_multiplier):
-            dedented = dedent(yaml_str)
-            split = dedented.split("\n")
-            indentation = "    " * indentation_multiplier
-            return indentation + ("\n" + indentation).join(split[1:])
-
-        types_header = "types:\n"
-        types_yaml = fix_yaml_indentation(types_yaml, 1)
-        method_header = "\n\nNamespace.Method:\n    params:\n"
-        arguments_yaml = fix_yaml_indentation(arguments_yaml, 2)
-        schema_yaml = (types_header + types_yaml + method_header +
-                       arguments_yaml)
-        schema = self.schema_from(schema_yaml)
+        if types_yaml is None:
+            schema = FakeSchema.with_dummy_types(arguments_yaml)
+        else:
+            schema = FakeSchema.with_types(types_yaml, arguments_yaml)
         actual_args = schema.get_args_dict("Namespace", "Method")
         expected_args = json.dumps(expected_args, indent=4)
         msg = "Expected args:\n{}\nActual args:\n{}".format(expected_args,
@@ -686,15 +707,7 @@ class MethodArgumentsParsingTests(TestCaseBase):
         self.assertEqual(actual_args, expected_args, msg)
 
     def check_without_types(self, arguments_yaml, expected_args):
-        dummy_types = \
-            """
-            DummyType: &DummyType
-                name: DummyType
-                sourcetype: string
-                type: alias
-            """
-        return self.check_with_own_types(dummy_types, arguments_yaml,
-                                         expected_args)
+        return self.check_with_own_types(None, arguments_yaml, expected_args)
 
     def test_primitive_types(self):
         self.check_without_types(
