@@ -42,8 +42,6 @@
 ./lib/vdsm/common/commands.py
 ./lib/vdsm/common/hooks.py
 ./lib/vdsm/common/exception.py
-./lib/vdsm/virt/metadata.py
-./lib/vdsm/virt/utils.py
 ./lib/vdsm/virt/vmstats.py
 ./lib/vdsm/virt/vm.py
 ./lib/vdsm/jobs.py
