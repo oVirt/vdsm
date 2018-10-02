@@ -50,7 +50,7 @@ DEFAULT_VALUES = {'{}': {},
                   '[]': []}
 
 
-_log_devel = logging.getLogger("devel")
+_log_inconsistency = logging.getLogger("schema.inconsistency")
 
 
 class SchemaNotFound(Exception):
@@ -213,7 +213,7 @@ class Schema(object):
         if self._strict_mode:
             raise JsonRpcInvalidParamsError(message)
         else:
-            _log_devel.warning('%s', message)
+            _log_inconsistency.warning('%s', message)
 
     def verify_args(self, rep, args):
         try:
