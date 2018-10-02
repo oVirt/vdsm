@@ -111,8 +111,6 @@
 ./tests/common/concurrent_test.py
 ./tests/common/logutils_test.py
 ./tests/common/function.py
-./tests/virt/vmmigration_test.py
-./tests/virt/vmrecovery_test.py
 ./tests/executor_test.py
 ./tests/functional/utils.py
 ./tests/functional/virtTests.py
@@ -145,10 +143,8 @@
 ./init/wait_for_ipv4s
 ./init/daemonAdapter
 ./tests/fake-ssh-agent
-./tests/fake-virt-sysprep
 ./tests/py-watch
 ./tests/fake-ssh-add
-./tests/fake-virt-v2v
 ./tests/containers/fake/bin/systemctl
 ./tests/containers/fake/bin/systemd-run
 ./tests/containers/fake/bin/docker

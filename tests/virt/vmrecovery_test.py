@@ -71,6 +71,8 @@ def _error(*args, **kwargs):
 class TestAllDomains(TestCaseBase):
 
     def setUp(self):
+        self.vm_uuids = ('a', 'b',)
+        self.vm_is_ext = [False] * len(self.vm_uuids)
         self.cif = fake.ClientIF()
         self.conn = FakeConnection()
 
@@ -80,26 +82,27 @@ class TestAllDomains(TestCaseBase):
         ])
         self.patch.apply()
 
+        # must be after patch.apply()
+        self.conn.domains = _make_domains_collection(
+            list(zip(self.vm_uuids, self.vm_is_ext))
+        )
+
     def tearDown(self):
         self.patch.revert()
 
     def test_recover_no_domains(self):
+        self.conn.domains = {}
         recovery.all_domains(self.cif)
         self.assertEqual(self.cif.vmRequests, {})
 
     def test_recover_few_domains(self):
-        vm_uuids = ('a', 'b',)
-        vm_is_ext = [False] * len(vm_uuids)
-        self.conn.domains = _make_domains_collection(
-            zip(vm_uuids, vm_is_ext)
-        )
         recovery.all_domains(self.cif)
         self.assertEqual(
             set(self.cif.vmRequests.keys()),
-            set(vm_uuids)
+            set(self.vm_uuids)
         )
         self.assertEqual(
-            vm_is_ext,
+            self.vm_is_ext,
             [conf['external'] for conf, _ in self.cif.vmRequests.values()]
         )
 
@@ -113,11 +116,6 @@ class TestAllDomains(TestCaseBase):
         We find VMs to recover through libvirt, but Vdsm fail to create
         its Vm objects. We should then destroy those VMs.
         """
-        vm_uuids = ('a', 'b',)
-        vm_is_ext = [False] * len(vm_uuids)
-        self.conn.domains = _make_domains_collection(
-            zip(vm_uuids, vm_is_ext)
-        )
         with MonkeyPatchScope([
             (self.cif, 'createVm', create_fn)
         ]):
@@ -135,11 +133,6 @@ class TestAllDomains(TestCaseBase):
         We find VMs to recover through libvirt, but we get a failure trying
         to identify (UUIDString, XMLDesc) a domain being recovered
         """
-        vm_uuids = ('a', 'b',)
-        vm_is_ext = [False] * len(vm_uuids)
-        self.conn.domains = _make_domains_collection(
-            zip(vm_uuids, vm_is_ext)
-        )
         self.conn.domains['a'].XMLDesc = _raise
         recovery.all_domains(self.cif)
         self.assertEqual(
@@ -154,11 +147,6 @@ class TestAllDomains(TestCaseBase):
         the domains can't complete that. We should handle this case
         gracefully
         """
-        vm_uuids = ('a', 'b',)
-        vm_is_ext = [False] * len(vm_uuids)
-        self.conn.domains = _make_domains_collection(
-            zip(vm_uuids, vm_is_ext)
-        )
         self.conn.domains['b'].destroy = _raise
         with MonkeyPatchScope([
             (self.cif, 'createVm', _error)
@@ -185,10 +173,9 @@ class TestAllDomains(TestCaseBase):
             self.assertEqual(vm_is_ext, conf['external'])
 
     def test_recover_external_vm_down(self):
-        vm_uuids = ('a', 'b',)
-        vm_is_ext = [True] * len(vm_uuids)
+        vm_is_ext = [True] * len(self.vm_uuids)
         self.conn.domains = _make_domains_collection(
-            zip(vm_uuids, vm_is_ext)
+            list(zip(self.vm_uuids, vm_is_ext))
         )
         for dom in self.conn.domains.values():
             dom.domState = libvirt.VIR_DOMAIN_SHUTOFF
@@ -200,10 +187,9 @@ class TestAllDomains(TestCaseBase):
         """
         handle gracefully error while getting the state of external VM
         """
-        vm_uuids = ('a', 'b',)
-        vm_is_ext = [True] * len(vm_uuids)
+        vm_is_ext = [True] * len(self.vm_uuids)
         self.conn.domains = _make_domains_collection(
-            zip(vm_uuids, vm_is_ext)
+            list(zip(self.vm_uuids, vm_is_ext))
         )
         for dom in self.conn.domains.values():
             dom.state = _raise
@@ -233,15 +219,14 @@ class TestAllDomains(TestCaseBase):
             self.assertEqual(vm_obj.destroyed, expect_destroy)
 
     def test_lookup_external_vms(self):
-        vm_uuids = ('a', 'b',)
-        vm_ext = [True] * len(vm_uuids)
+        vm_ext = [True] * len(self.vm_uuids)
         self.conn.domains = _make_domains_collection(
-            zip(vm_uuids, vm_ext))
-        self.cif.unknown_vm_ids = list(vm_uuids)
+            list(zip(self.vm_uuids, vm_ext)))
+        self.cif.unknown_vm_ids = list(self.vm_uuids)
         recovery.lookup_external_vms(self.cif)
         self.assertEqual(
             set(self.cif.vmRequests.keys()),
-            set(vm_uuids)
+            set(self.vm_uuids)
         )
         self.assertEqual(
             vm_ext,
@@ -252,12 +237,11 @@ class TestAllDomains(TestCaseBase):
         """
         Failure to get the XML of an external VM while trying lookup
         """
-        vm_uuids = ('a', 'b',)
-        vm_ext = [True] * len(vm_uuids)
+        vm_ext = [True] * len(self.vm_uuids)
         self.conn.domains = _make_domains_collection(
-            zip(vm_uuids, vm_ext))
+            list(zip(self.vm_uuids, vm_ext)))
         self.conn.domains['a'].XMLDesc = _raise
-        self.cif.unknown_vm_ids = list(vm_uuids)
+        self.cif.unknown_vm_ids = list(self.vm_uuids)
         recovery.lookup_external_vms(self.cif)
         self.assertEqual(
             set(self.cif.vmRequests.keys()),
