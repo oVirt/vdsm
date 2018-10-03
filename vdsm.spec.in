@@ -80,6 +80,13 @@ BuildRequires: libtool
 BuildRequires: util-linux
 %endif
 
+%if 0%{?rhel}
+BuildRequires: python-enum34
+%endif
+
+%if 0%{?fedora}
+BuildRequires: python2-enum34
+%endif
 
 # Numactl is not available on s390[x] and ARM
 %ifnarch s390 s390x %{arm}
