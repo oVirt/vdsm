@@ -1491,8 +1491,9 @@ class Vm(object):
         while not self._guestCpuLock.acquire(False):
             time.sleep(0.1)
             if time.time() > end:
-                raise RuntimeError('waiting more than %ss for _guestCpuLock' %
-                                   timeout)
+                raise RuntimeError(
+                    'waiting more than %ss for _guestCpuLock for VM %s' % (
+                        timeout, self.id))
 
     def cont(self, afterState=vmstatus.UP, guestCpuLocked=False,
              ignoreStatus=False, guestTimeSync=False):
