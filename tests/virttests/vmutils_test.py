@@ -284,3 +284,42 @@ class TestHasXmlConfiguration(TestCaseBase):
         self.assertEqual(
             utils.has_xml_configuration(params),
             expected_result)
+
+
+class TestTimedAcquireLock(TestCaseBase):
+
+    def setUp(self):
+        self.lockid = 'test'
+        self.lock = utils.TimedAcquireLock(self.lockid)
+
+    def test_acquire_free_not_raises(self):
+        flow = 'external'
+        self.assertIs(self.lock.holder, None)
+        self.assertNotRaises(self.lock.acquire, 0.0, flow)
+        self.assertEqual(self.lock.holder, flow)
+        self.lock.release()
+        self.assertIs(self.lock.holder, None)
+
+    def test_acquire_raises_timeout(self):
+        self.lock.acquire(0.0, flow='external')
+        try:
+            self.assertRaises(
+                utils.LockTimeout,
+                self.lock.acquire,
+                0.0, 'internal')
+        finally:
+            self.lock.release()
+
+    def test_exception_context(self):
+        exc = None
+        self.lock.acquire(0.0, flow='external')
+        try:
+            self.lock.acquire(0.0, flow='internal')
+        except utils.LockTimeout as x:
+            exc = x
+        finally:
+            self.lock.release()
+
+        self.assertIsNot(exc, None)
+        self.assertEqual(exc.lockid, self.lockid)
+        self.assertEqual(exc.flow, 'external')

@@ -20,6 +20,8 @@
 from __future__ import absolute_import
 import logging
 import sys
+import time
+
 import six
 
 """
@@ -303,3 +305,42 @@ class prepared(object):
                 errors.append(e)
         if errors:
             raise TeardownError(errors)
+
+
+class LockTimeout(RuntimeError):
+
+    def __init__(self, timeout, lockid, flow):
+        self.timeout = timeout
+        self.lockid = lockid
+        self.flow = flow
+
+    def __str__(self):
+        msg = 'waiting more than {elapsed}s for lock {lockid} held by {flow}'
+        return msg.format(
+            elapsed=self.timeout, lockid=self.lockid, flow=self.flow
+        )
+
+
+class TimedAcquireLock(object):
+
+    def __init__(self, lockid):
+        self._lockid = lockid
+        self._lock = threading.Lock()
+        self._flow = None
+
+    @property
+    def holder(self):
+        return self._flow
+
+    def acquire(self, timeout, flow=None):
+        end = time.time() + timeout
+        while not self._lock.acquire(False):
+            time.sleep(0.1)
+            if time.time() > end:
+                raise LockTimeout(timeout, self._lockid, self._flow)
+
+        self._flow = flow
+
+    def release(self):
+        self._flow = None
+        self._lock.release()
