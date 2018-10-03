@@ -29,6 +29,7 @@ import libvirt
 from vdsm.common import response
 from vdsm.virt.vmdevices.storage import Drive, DISK_TYPE, BLOCK_THRESHOLD
 from vdsm.virt.vmdevices import hwclass
+from vdsm.virt.utils import TimedAcquireLock
 from vdsm.virt import drivemonitor
 from vdsm.virt import vm
 from vdsm.virt import vmstatus
@@ -576,7 +577,7 @@ class FakeVM(vm.Vm):
         self._custom = {}
         self._confLock = threading.Lock()
         self.conf = {}
-        self._guestCpuLock = threading.Lock()
+        self._guestCpuLock = TimedAcquireLock(self.id)
         self._resume_behavior = 'auto_resume'
         self._pause_time = None
 

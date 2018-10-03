@@ -102,6 +102,7 @@ from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
 from vdsm.virt.utils import extract_cluster_version
 from vdsm.virt.utils import has_xml_configuration
+from vdsm.virt.utils import TimedAcquireLock
 from six.moves import range
 from six.moves import zip
 
@@ -415,7 +416,7 @@ class Vm(object):
         self._guestEvent = vmstatus.POWERING_UP
         self._guestEventTime = 0
         self._guestCpuRunning = False
-        self._guestCpuLock = threading.Lock()
+        self._guestCpuLock = TimedAcquireLock(self.id)
         if recover and 'xml' in self.conf:
             with self._md_desc.values() as md:
                 if 'startTime' in md:
@@ -1469,16 +1470,10 @@ class Vm(object):
             self.log.debug("VM not paused long enough, not killing it")
             return False
 
-    def _acquireCpuLockWithTimeout(self):
+    def _acquireCpuLockWithTimeout(self, flow):
         timeout = self._loadCorrectedTimeout(
             config.getint('vars', 'vm_command_timeout'))
-        end = time.time() + timeout
-        while not self._guestCpuLock.acquire(False):
-            time.sleep(0.1)
-            if time.time() > end:
-                raise RuntimeError(
-                    'waiting more than %ss for _guestCpuLock for VM %s' % (
-                        timeout, self.id))
+        self._guestCpuLock.acquire(timeout, flow)
 
     def cont(self, afterState=vmstatus.UP, guestCpuLocked=False,
              ignoreStatus=False, guestTimeSync=False):
@@ -1505,7 +1500,7 @@ class Vm(object):
                                  this state.
         """
         if not guestCpuLocked:
-            self._acquireCpuLockWithTimeout()
+            self._acquireCpuLockWithTimeout(flow='cont')
         try:
             if (not ignoreStatus and
                     self.lastStatus in (vmstatus.MIGRATION_SOURCE,
@@ -1534,7 +1529,7 @@ class Vm(object):
     def pause(self, afterState=vmstatus.PAUSED, guestCpuLocked=False,
               pauseCode='NOERR'):
         if not guestCpuLocked:
-            self._acquireCpuLockWithTimeout()
+            self._acquireCpuLockWithTimeout(flow='pause')
         self._pause_code = pauseCode
         try:
             self._underlyingPause()
@@ -1556,14 +1551,14 @@ class Vm(object):
     def pause_code(self):
         return self._pause_code
 
-    def _setGuestCpuRunning(self, isRunning, guestCpuLocked=False):
+    def _setGuestCpuRunning(self, isRunning, guestCpuLocked=False, flow=None):
         """
         here we want to synchronize the access to guestCpuRunning
         made by callback with the pause/cont methods.
         To do so we reuse guestCpuLocked.
         """
         if not guestCpuLocked:
-            self._acquireCpuLockWithTimeout()
+            self._acquireCpuLockWithTimeout(flow=flow)
         try:
             self._guestCpuRunning = isRunning
         finally:
@@ -2018,7 +2013,7 @@ class Vm(object):
 
     @api.guard(_not_migrating)
     def migrate(self, params):
-        self._acquireCpuLockWithTimeout()
+        self._acquireCpuLockWithTimeout(flow='migrate')
         try:
             # It is unlikely, but we could receive migrate()
             # request right after a VM was started or right
@@ -2092,7 +2087,7 @@ class Vm(object):
                              "%s, %s", state, reason)
 
     def migrateCancel(self):
-        self._acquireCpuLockWithTimeout()
+        self._acquireCpuLockWithTimeout(flow='migrate.cancel')
         try:
             self._migrationSourceThread.stop()
             self._migrationSourceThread.status['status']['message'] = \
@@ -2119,7 +2114,7 @@ class Vm(object):
         return None
 
     def migrateChangeParams(self, params):
-        self._acquireCpuLockWithTimeout()
+        self._acquireCpuLockWithTimeout(flow='migrate.change_params')
 
         try:
             if self._migrationSourceThread.hibernating:
@@ -5051,7 +5046,7 @@ class Vm(object):
                           blockDevAlias, err)
             self._pause_code = reason
             self._pause_time = vdsm.common.time.monotonic_time()
-            self._setGuestCpuRunning(False)
+            self._setGuestCpuRunning(False, flow='IOError')
             self._logGuestCpuStatus('onIOError')
             if reason == 'ENOSPC':
                 if not self.monitor_drives():
@@ -5449,7 +5444,7 @@ class Vm(object):
                     detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN)
                 self._onQemuDeath(exit_code, reason)
         elif event == libvirt.VIR_DOMAIN_EVENT_SUSPENDED:
-            self._setGuestCpuRunning(False)
+            self._setGuestCpuRunning(False, flow='event.suspend')
             self._logGuestCpuStatus('onSuspend')
             if detail in (
                     libvirt.VIR_DOMAIN_EVENT_SUSPENDED_PAUSED,
@@ -5482,7 +5477,7 @@ class Vm(object):
                 self.handle_failed_post_copy()
 
         elif event == libvirt.VIR_DOMAIN_EVENT_RESUMED:
-            self._setGuestCpuRunning(True)
+            self._setGuestCpuRunning(True, flow='event.resume')
             self._logGuestCpuStatus('onResume')
             if detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_UNPAUSED:
                 # This is not a real solution however the safest way to handle
