@@ -209,24 +209,6 @@ class DynamicSemaphoreTests(TestCaseBase):
         self.assertNotAcquirable()
 
 
-@expandPermutations
-class TestIsKvm(TestCaseBase):
-
-    def test_empty(self):
-        # ensure backward compatibility
-        self.assertTrue(utils.is_kvm({}))
-
-    @permutations([
-        # container_type
-        ['rkt'],
-        ['foobar'],  # we don't validate the value
-    ])
-    def test_detects_container_type(self, container_type):
-        self.assertFalse(utils.is_kvm({
-            'containerType': container_type,
-        }))
-
-
 XML_TEMPLATE = u'''<domain type='kvm' id='1'>
   <name>a0_41</name>
   <uuid>13070562-2ee7-4092-a746-7975ff5b3993</uuid>

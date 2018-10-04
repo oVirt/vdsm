@@ -152,44 +152,7 @@ class Domain(object):
             )
         )
 
-        self._appendMetadataContainer(metadata_elem)
         self.dom.appendChild(metadata_elem)
-
-    def _appendMetadataContainer(self, metadata_elem):
-        custom = self.conf.get('custom', {})
-        # container{Type,Image} are mandatory: if either
-        # one is missing, no container-related extradata
-        # should be present at all.
-        container_type = custom.get('containerType')
-        container_image = custom.get('containerImage')
-        if not container_type or not container_image:
-            return
-
-        vmxml.append_child(
-            metadata_elem,
-            etree_child=metadata.create(
-                xmlconstants.METADATA_CONTAINERS_ELEMENT,
-                namespace=xmlconstants.METADATA_CONTAINERS_PREFIX,
-                namespace_uri=xmlconstants.METADATA_CONTAINERS_URI,
-                runtime=container_type,
-                image=container_image
-            )
-        )
-
-        # drive mapping is optional. It is totally fine for a container
-        # not to use any drive, this just means it will not have any
-        # form of persistency.
-        drive_map = parse_drive_mapping(self.conf.get('custom', {}))
-        if drive_map:
-            vmxml.append_child(
-                metadata_elem,
-                etree_child=metadata.create(
-                    xmlconstants.METADATA_VM_DRIVE_MAP_ELEMENT,
-                    namespace=xmlconstants.METADATA_VM_DRIVE_MAP_PREFIX,
-                    namespace_uri=xmlconstants.METADATA_VM_DRIVE_MAP_URI,
-                    **drive_map
-                )
-            )
 
     def appendOs(self, use_serial_console=False):
         """

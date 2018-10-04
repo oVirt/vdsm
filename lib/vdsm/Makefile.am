@@ -30,7 +30,6 @@ dist_vdsmpylib_PYTHON = \
 	clientIF.py \
 	constants.py \
 	config.py \
-	containersconnection.py \
 	cpuinfo.py \
 	dmidecodeUtil.py \
 	executor.py \

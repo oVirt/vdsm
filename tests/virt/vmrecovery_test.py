@@ -25,7 +25,6 @@ import libvirt
 from vdsm.common import libvirtconnection
 from vdsm.common import response
 from vdsm.virt import recovery
-from vdsm import containersconnection
 
 
 from monkeypatch import MonkeyPatchScope
@@ -77,7 +76,6 @@ class TestAllDomains(TestCaseBase):
         self.conn = FakeConnection()
 
         self.patch = Patch([
-            (containersconnection, 'recovery', lambda *args: []),
             (libvirtconnection, 'get', lambda *args, **kwargs: self.conn),
         ])
         self.patch.apply()

@@ -35,7 +35,6 @@ from vdsm.common import supervdsm
 from vdsm.config import config
 from vdsm.host import rngsources
 from vdsm.storage import hba
-from vdsm import containersconnection
 from vdsm import cpuinfo
 from vdsm import host
 from vdsm import hugepages
@@ -135,7 +134,6 @@ def get():
     if osinfo.glusterEnabled:
         from vdsm.gluster.api import glusterAdditionalFeatures
         caps['additionalFeatures'].extend(glusterAdditionalFeatures())
-    caps['containers'] = containersconnection.is_supported()
     caps['hostedEngineDeployed'] = _isHostedEngineDeployed()
     caps['hugepages'] = hugepages.supported()
     caps['kernelFeatures'] = osinfo.kernel_features()

@@ -385,68 +385,6 @@ class TestVmXmlMetadata(XMLTestCase):
         result = domxml.toxml()
         self.assertXMLEqual(result, expected)
 
-    def test_container_data(self):
-        expected = """
-          <domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
-                  xmlns:ns1="http://ovirt.org/vm/1.0"
-                  xmlns:ns2="http://ovirt.org/vm/containers/1.0"
-                  type="kvm">
-            <metadata>
-              <ns0:qos />
-              <ns1:vm/>
-              <ns2:container>
-                <ns2:image>foobar</ns2:image>
-                <ns2:runtime>foobar</ns2:runtime>
-              </ns2:container>
-            </metadata>
-          </domain>
-        """
-        conf = {
-            'custom': {
-                'containerImage': 'foobar',
-                'containerType': 'foobar',
-            }
-        }
-        conf.update(self.conf)
-        domxml = StrippedDomain(conf, self.log, cpuarch.X86_64)
-        domxml.appendMetadata()
-        result = domxml.toxml()
-        self.assertXMLEqual(result, expected)
-
-    def test_container_data_drive_map(self):
-        expected = """
-          <domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
-                  xmlns:ns1="http://ovirt.org/vm/1.0"
-                  xmlns:ns2="http://ovirt.org/vm/containers/1.0"
-                  xmlns:ns3="http://ovirt.org/vm/containers/drivemap/1.0"
-                  type="kvm">
-            <metadata>
-              <ns0:qos />
-              <ns1:vm/>
-              <ns2:container>
-                <ns2:image>foobar</ns2:image>
-                <ns2:runtime>foobar</ns2:runtime>
-              </ns2:container>
-              <ns3:drivemap>
-                <ns3:data1>vda</ns3:data1>
-                <ns3:data2>vdb</ns3:data2>
-              </ns3:drivemap>
-            </metadata>
-          </domain>
-        """
-        conf = {
-            'custom': {
-                'containerImage': 'foobar',
-                'containerType': 'foobar',
-                'volumeMap': 'data1:vda,data2:vdb',
-            }
-        }
-        conf.update(self.conf)
-        domxml = StrippedDomain(conf, self.log, cpuarch.X86_64)
-        domxml.appendMetadata()
-        result = domxml.toxml()
-        self.assertXMLEqual(result, expected)
-
 
 class StrippedDomain(libvirtxml.Domain):
     """

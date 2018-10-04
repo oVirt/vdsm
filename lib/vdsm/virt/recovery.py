@@ -26,7 +26,6 @@ import libvirt
 
 from vdsm.common import libvirtconnection
 from vdsm.common import response
-from vdsm import containersconnection
 from vdsm.virt import vmchannels
 from vdsm.virt import vmstatus
 from vdsm.virt import vmxml
@@ -113,7 +112,7 @@ def _recovery_params(vm_id, dom_xml, external):
 
 
 def all_domains(cif):
-    doms = _list_domains() + containersconnection.recovery()
+    doms = _list_domains()
     num_doms = len(doms)
     for idx, (dom_obj, dom_xml, external) in enumerate(doms):
         vm_id = dom_obj.UUIDString()

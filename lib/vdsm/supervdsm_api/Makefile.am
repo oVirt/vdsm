@@ -31,7 +31,3 @@ dist_supervdsm_api_PYTHON = \
 	udev.py \
 	virt.py \
 	$(NULL)
-
-if CONTAINERS
-dist_supervdsm_api_PYTHON += containers.py
-endif

@@ -7026,13 +7026,6 @@ types:
             type: boolean
             added: '4.1'
 
-        -   defaultvalue: no-default
-            description: Indication whether the system is capable of running
-                 containers alongside virtual machines.
-            name: containers
-            type: boolean
-            added: '4.1'
-
         -   defaultvalue: false
             description: Indicates whether hosted engine has been deployed on
                 the host

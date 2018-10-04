@@ -611,42 +611,6 @@ parameters = [
             'development only. Value is comma delimeted.'),
     ]),
 
-    # Section: [containers]
-    ('containers', [
-
-        ('cgroup_slice', 'machine',
-            'The cgroup slice where containers will be started. '
-            'PROVISIONAL. This parameter is not part of the stable API and '
-            'could be renamed or removed in the next releases.'),
-
-        ('network_name', 'bridge',
-            'The container-engine specific identifier of the network where '
-            'containers will be placed, if no explicit configuration is '
-            'received from Engine. '
-            'PROVISIONAL. This parameter is not part of the stable API and '
-            'could be renamed or removed in the next releases.'),
-
-        ('network_gateway', '10.1.0.1',
-            'The network gateway for the containers network. '
-            'PROVISIONAL. This parameter is not part of the stable API and '
-            'could be renamed or removed in the next releases.'),
-
-        ('network_interface', 'eth1',
-            'NIC to use for containers network. '
-            'PROVISIONAL. This parameter is not part of the stable API and '
-            'could be renamed or removed in the next releases.'),
-
-        ('network_subnet', '10.1.0.0',
-            'Private subnet address for the containers network. '
-            'PROVISIONAL. This parameter is not part of the stable API and '
-            'could be renamed or removed in the next releases.'),
-
-        ('network_mask', '20',
-            'The net mask for the containers network. '
-            'PROVISIONAL. This parameter is not part of the stable API and '
-            'could be renamed or removed in the next releases.'),
-    ]),
-
     # Section: [performance]
     ('performance', [
 

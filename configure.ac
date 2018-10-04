@@ -170,20 +170,6 @@ AS_IF([test "${enable_openvswitch}" = "yes"],
       AC_SUBST([OPENVSWITCHSERVICE], ['openvswitch.service']),
       AC_SUBST([OPENVSWITCHSERVICE], []))
 
-AC_ARG_ENABLE(
-    [containers],
-    [AS_HELP_STRING(
-        [--enable-containers],
-        [build containers packages @<:@default=no@:>@]
-    )],
-    ,
-    [enable_hooks="no"]
-)
-AM_CONDITIONAL([CONTAINERS], [test "${enable_containers}" = "yes"])
-AS_IF([test "${enable_containers}" = "yes"],
-      AC_SUBST([CONTAINERS], ['1']),
-      AC_SUBST([CONTAINERS], ['0']))
-
 AC_ARG_WITH(
     [qemu-user],
     [AS_HELP_STRING(
@@ -420,7 +406,6 @@ AC_OUTPUT([
 	lib/vdsm/tool/Makefile
 	lib/vdsm/tool/configurators/Makefile
 	lib/vdsm/virt/Makefile
-	lib/vdsm/virt/containers/Makefile
 	lib/vdsm/virt/jobs/Makefile
 	lib/vdsm/virt/vmdevices/Makefile
 	lib/vdsmclient/Makefile
@@ -428,10 +413,6 @@ AC_OUTPUT([
 	static/Makefile
 	tests/Makefile
 	tests/common/Makefile
-	tests/containers/Makefile
-	tests/containers/data/Makefile
-	tests/containers/fake/Makefile
-	tests/containers/fake/bin/Makefile
 	tests/cpuinfo/Makefile
 	tests/devices/Makefile
 	tests/devices/data/Makefile

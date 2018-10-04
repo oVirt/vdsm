@@ -30,7 +30,6 @@ import threading
 import libvirt
 import six
 
-from vdsm import containersconnection
 from vdsm import executor
 from vdsm import host
 from vdsm import throttledlog
@@ -430,11 +429,6 @@ def _create(cif, scheduler):
             scheduler,
             exclusive=True,
             discard=False),
-
-        Operation(
-            containersconnection.monitor,
-            config.getint('vars', 'vm_sample_interval'),
-            scheduler),
     ]
 
     if config.getboolean('sampling', 'enable'):

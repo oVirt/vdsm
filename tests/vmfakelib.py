@@ -28,7 +28,6 @@ import threading
 import libvirt
 
 from vdsm import constants
-from vdsm import containersconnection
 from vdsm.common import cpuarch
 from vdsm.common import libvirtconnection
 from vdsm.common import response
@@ -302,7 +301,6 @@ def VM(params=None, devices=None, runCpu=False,
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir),
                                (libvirtconnection, 'get', Connection),
-                               (containersconnection, 'get', Connection),
                                ]):
             if params and 'xml' in params:
                 vmParams = {}

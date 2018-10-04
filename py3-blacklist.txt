@@ -145,6 +145,3 @@
 ./tests/fake-ssh-agent
 ./tests/py-watch
 ./tests/fake-ssh-add
-./tests/containers/fake/bin/systemctl
-./tests/containers/fake/bin/systemd-run
-./tests/containers/fake/bin/docker

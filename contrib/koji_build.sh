@@ -8,7 +8,6 @@ make distclean
     --disable-ovirt-vmconsole \
     --enable-vhostmd \
     --enable-hooks \
-    --enable-containers \
     --with-data-center='/run/vdsm/data-center'
 make srpm
 

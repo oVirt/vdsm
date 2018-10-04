@@ -1,8 +1,0 @@
-#!/usr/bin/python2
-
-import json
-import sys
-
-print json.dumps(sys.argv)
-
-sys.exit(0)

@@ -47,7 +47,6 @@ from vdsm.common import logutils
 from vdsm.common import response
 import vdsm.common.time
 from vdsm import constants
-from vdsm import containersconnection
 from vdsm import host
 from vdsm import hugepages
 from vdsm import osinfo
@@ -99,7 +98,7 @@ from vdsm.virt.vmdevices.storage import DISK_TYPE, VolumeNotFound
 from vdsm.virt.vmdevices.storage import BLOCK_THRESHOLD
 from vdsm.virt.vmdevices.storagexml import change_disk
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
-from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
+from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket
 from vdsm.virt.utils import extract_cluster_version
 from vdsm.virt.utils import has_xml_configuration
 from vdsm.virt.utils import TimedAcquireLock
@@ -437,10 +436,7 @@ class Vm(object):
 
         self.drive_monitor = drivemonitor.DriveMonitor(
             self, self.log, enabled=False)
-        if is_kvm(self._custom):
-            self._connection = libvirtconnection.get(cif)
-        else:
-            self._connection = containersconnection.get(cif)
+        self._connection = libvirtconnection.get(cif)
         if (recover and
             # status retrieved from the recovery file (legacy style)
             (params.get('status') == vmstatus.MIGRATION_SOURCE or
@@ -2426,10 +2422,7 @@ class Vm(object):
         sampling.stats_cache.add(self.id)
         self._monitorable = config.getboolean('sampling', 'enable')
 
-        if is_kvm(self._custom):
-            self._vmDependentInit()
-        else:
-            self._containerDependentInit()
+        self._vmDependentInit()
 
     def _vmDependentInit(self):
         """
@@ -2502,11 +2495,6 @@ class Vm(object):
 
         self._dom_vcpu_setup()
         self._updateIoTuneInfo()
-
-    def _containerDependentInit(self):
-        self._guestEventTime = self._startTime
-        self._guestCpuRunning = self._isDomainRunning()
-        self._logGuestCpuStatus('domain initialization')
 
     def _hotplug_device_metadata(self, dev_class, dev_obj):
         attrs, data = get_metadata(dev_class, dev_obj)
@@ -6018,9 +6006,6 @@ class Vm(object):
         if stats_age < config.getint('vars', 'vm_command_timeout'):
             return
         if stats['monitorResponse'] == '-1':
-            return
-        # TODO: remove once we have real monitoring for containers
-        if not is_kvm(self._custom):
             return
 
         self.log.warning('monitor became unresponsive'

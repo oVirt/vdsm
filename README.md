@@ -40,59 +40,6 @@ restart services that were configured (if were already running)
 The 'vdsm.spec' file demonstrates how to distribute Vdsm as an RPM
 package.
 
-## Containers support
-
-While Vdsm focus is on managing KVM virtual machines, it could also run
-containers alongside virtual machines, using docker.
-
-Containers are reported as special-purpose VMs to the clients, and respond
-to the Vdsm API invoked on them.
-If a particular container runtime doesn't support an operation, this will
-fail with a standard Vdsm error.
-
-To try this out, you just need to install the 'vdsm-containers subpackage'.
-Make sure to restart *both* supervdsmd and vdsmd once that package is installed.
-You'll also need to have the container runtime you wish to use installed on
-the same host which runs Vdsm. At the moment, only docker is supported.
-
-To check if the Vdsm is properly configured to run containers, just do:
-
-    # vdsm-client Host getCapabilities | grep containers
-            "containers": true,
-
-This means that this Vdsm could also run docker containers.
-
-Any Engine >= 3.6 could handle containers - they are just VMs from its perspective.
-You just need to set a few custom properties. Run this command
-on your Engine host:
-
-    # engine-config -s UserDefinedVMProperties='volumeMap=^[a-zA-Z_-]+:[a-zA-Z_-]+$;containerImage=^[a-zA-Z]+(://|)[a-zA-Z]+$;containerType=^docker$' --cver=4.1
-
-replace --cver=4.1 with the version of the Engine you are using.
-There is no need to configure the regular expressions to match your environment,
-they should be used verbatim.
-Now restart Ovirt Engine, and log in.
-
-You can now run any container. The user defined VM properties define
-the key settings which are not (yet) exposed in the engine UI.
-You can change those values freely using the "edit VM" window in the
-Engine webadmin UI.
-
-- volumeMap allows you to mount any disk inside the container, should you
-  need any persistence. It is a mapping between disks (e.g. vda)
-  and mountpoint (e.g. data). The mountpoints are just container-dependent labels.
-
-- containerImage is the URL of any container image supported by your
-  runtime. E.g. 'redis'. You must use the [same format docker uses](https://docs.docker.com/engine/reference/run/)
-
-- containerType allows to select the runtime you want to use. Currently only
-  the docker runtime is supported. This variable actually enables all the container
-  support infrastructure, on a per-VM basis.
-  Without this property set, the default is to ignore any container setting.
-
-Please be aware that many settings are ignored by containers, like all
-the device configurations. Only memory and CPU settings are honoured.
-
 
 ## Getting Help
 

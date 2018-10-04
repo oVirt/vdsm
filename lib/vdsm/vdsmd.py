@@ -32,7 +32,6 @@ from vdsm import constants
 from vdsm import health
 from vdsm import jobs
 from vdsm import schedule
-from vdsm import containersconnection
 from vdsm import taskset
 from vdsm import metrics
 from vdsm.common import commands
@@ -85,7 +84,6 @@ def serve_clients(log):
     profile.start()
     metrics.start()
 
-    containersconnection.prepare()
     libvirtconnection.start_event_loop()
 
     try:

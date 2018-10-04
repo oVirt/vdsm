@@ -8,10 +8,6 @@
 	<vcpu current="2">16</vcpu>
   <metadata>
     <ovirt:qos/>
-    <ovirtcnt:container xmlns:ovirtcnt="http://ovirt.org/vm/containers/1.0">
-      <ovirtcnt:runtime>docker</ovirtcnt:runtime>
-      <ovirtcnt:image>redis</ovirtcnt:image>
-    </ovirtcnt:container>
   </metadata>
   <devices>
     <emulator>kvm</emulator>

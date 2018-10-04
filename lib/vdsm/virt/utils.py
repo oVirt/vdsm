@@ -218,10 +218,6 @@ class DynamicBoundedSemaphore(object):
                 self.release()
 
 
-def is_kvm(vm_custom):
-    return 'containerType' not in vm_custom
-
-
 def has_xml_configuration(params):
     if 'xml' in params:
         # fresh startup from Engine >= 4.2

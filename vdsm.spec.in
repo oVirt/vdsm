@@ -20,7 +20,6 @@
 %global with_hooks @HOOKS@
 %global with_vhostmd @VHOSTMD@
 %global with_python3 @PYTHON3_SUPPORT@
-%global with_containers @CONTAINERS@
 
 %ifarch ppc64le
 %global with_openvswitch 0
@@ -747,14 +746,6 @@ Requires: kmod-kvdo
 Gluster plugin enables VDSM to serve Gluster functionalities.
 %endif
 
-%package containers
-Summary: Container support for Vdsm
-BuildArch: noarch
-Requires: %{name} = %{version}-%{release}
-
-%description containers
-Enables VDSM to manage containers alongside virtual machines.
-
 %prep
 %setup -q
 
@@ -786,9 +777,6 @@ autoreconf -if
 %else
         --with-ovirt-vmconsole-user='@VDSMUSER@' \
         --with-ovirt-vmconsole-group='@VDSMGROUP@' \
-%endif
-%if 0%{?with_containers}
-        --enable-containers \
 %endif
         --with-data-center='@VDSMREPO@' \
         --with-polkitdir=%{_polkitdir}
@@ -1127,7 +1115,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/host/*.py*
 %{python_sitelib}/%{vdsm_name}/config.py*
 %{python_sitelib}/%{vdsm_name}/constants.py*
-%{python_sitelib}/%{vdsm_name}/containersconnection.py*
 %{python_sitelib}/%{vdsm_name}/cpuinfo.py*
 %{python_sitelib}/%{vdsm_name}/dmidecodeUtil.py*
 %{python_sitelib}/%{vdsm_name}/executor.py*
@@ -1334,12 +1321,6 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/tests
 %dir %{_datadir}/%{vdsm_name}/tests/common
-%if 0%{?with_containers}
-%dir %{_datadir}/%{vdsm_name}/tests/containers
-%dir %{_datadir}/%{vdsm_name}/tests/containers/data
-%dir %{_datadir}/%{vdsm_name}/tests/containers/fake
-%dir %{_datadir}/%{vdsm_name}/tests/containers/fake/bin
-%endif
 %dir %{_datadir}/%{vdsm_name}/tests/cpuinfo
 %dir %{_datadir}/%{vdsm_name}/tests/functional
 %dir %{_datadir}/%{vdsm_name}/tests/devices
@@ -1369,13 +1350,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/caps_numactl_4_nodes.out
 %{_datadir}/%{vdsm_name}/tests/domcaps_libvirt_s390x.out
 %{_datadir}/%{vdsm_name}/tests/common/*.py*
-%if 0%{?with_containers}
-%{_datadir}/%{vdsm_name}/tests/containers/*.py*
-%{_datadir}/%{vdsm_name}/tests/containers/data/*.txt
-%{_datadir}/%{vdsm_name}/tests/containers/data/*.xml
-%{_datadir}/%{vdsm_name}/tests/containers/fake/bin/*
-%{_datadir}/%{vdsm_name}/tests/containers/fake/cgroups.tgz
-%endif
 %{_datadir}/%{vdsm_name}/tests/cpuinfo/*.out
 %{_datadir}/%{vdsm_name}/tests/check_distpkg.sh
 %{_datadir}/%{vdsm_name}/tests/check_rpms.sh
@@ -1650,27 +1624,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/gluster/tasks.py*
 %{python_sitelib}/%{vdsm_name}/gluster/thinstorage.py*
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.pickle
-%endif
-
-%if 0%{?with_containers}
-%files containers
-%defattr(-, root, root, -)
-%dir %{_datadir}/%{vdsm_name}
-%dir %{python_sitelib}/%{vdsm_name}
-%dir %{python_sitelib}/%{vdsm_name}/virt/containers
-%{python_sitelib}/%{vdsm_name}/supervdsm_api/containers.py*
-%{python_sitelib}/%{vdsm_name}/virt/containers/__init__.py*
-%{python_sitelib}/%{vdsm_name}/virt/containers/cgroups.py*
-%{python_sitelib}/%{vdsm_name}/virt/containers/command.py*
-%{python_sitelib}/%{vdsm_name}/virt/containers/connection.py*
-%{python_sitelib}/%{vdsm_name}/virt/containers/docker.py*
-%{python_sitelib}/%{vdsm_name}/virt/containers/domain.py*
-%{python_sitelib}/%{vdsm_name}/virt/containers/doms.py*
-%{python_sitelib}/%{vdsm_name}/virt/containers/errors.py*
-%{python_sitelib}/%{vdsm_name}/virt/containers/events.py*
-%{python_sitelib}/%{vdsm_name}/virt/containers/monitoring.py*
-%{python_sitelib}/%{vdsm_name}/virt/containers/runner.py*
-%{python_sitelib}/%{vdsm_name}/virt/containers/xmlfile.py*
 %endif
 
 

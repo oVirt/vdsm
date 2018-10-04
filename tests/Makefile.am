@@ -31,13 +31,7 @@ SUBDIRS = \
 	  virt \
 	  $(NULL)
 
-if CONTAINERS
-SUBDIRS += containers
-endif
-
 common_modules = common/*_test.py
-
-containers_modules = containers/*_test.py
 
 device_modules = \
 	devices/parsing/complex_vm_test.py \
@@ -247,9 +241,6 @@ make_certificates: makecert.sh
 	$(srcdir)/makecert.sh
 
 run_modules  = $(test_modules)
-if CONTAINERS
-run_modules += $(containers_modules)
-endif
 run_modules += $(network_modules)
 run_modules += $(device_modules)
 run_modules += $(common_modules)
