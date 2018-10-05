@@ -22,12 +22,16 @@ from __future__ import absolute_import
 from __future__ import division
 
 import json
+import logging
 import yaml
 
+from io import StringIO
 from textwrap import dedent
 
 from nose.plugins.attrib import attr
 from vdsm.api import vdsmapi
+from vdsm.api.schema_inconsistency_formatter \
+    import SchemaInconsistencyFormatter
 from vdsm.common.compat import pickle
 from yajsonrpc.exception import JsonRpcErrorBase
 
@@ -49,6 +53,9 @@ _schema = vdsmapi.Schema.vdsm_api(strict_mode=True,
 
 
 class FakeSchema(object):
+
+    METHOD_NAME = "Namespace.Method"
+    METHOD_REP = vdsmapi.MethodRep("Namespace", "Method")
 
     @staticmethod
     def with_types(types_yaml, arguments_yaml):
@@ -943,3 +950,117 @@ class MethodArgumentsParsingTests(TestCaseBase):
                     }
                 }
             })
+
+
+@attr(type='unit')
+class SchemaInconsistencyFormatterTest(TestCaseBase):
+
+    def run(self, result=None):
+        self.buffer = StringIO()
+        formatter = SchemaInconsistencyFormatter(fmt="%(message)s")
+        handler = logging.StreamHandler(self.buffer)
+        handler.setFormatter(formatter)
+        self.logger = logging.getLogger(type(self).__name__)
+        self.logger.addHandler(handler)
+        self.logger.setLevel(logging.DEBUG)
+        with mock.patch.object(vdsmapi, "_log_inconsistency",
+                               new=self.logger.debug):
+            super(SchemaInconsistencyFormatterTest, self).run(result)
+
+    def test_warnings_should_have_no_debugging_info_in(self):
+        self.logger.warning(u"zorro")
+        self.assertIn(u"zorro", self.buffer.getvalue())
+        self.assertNotIn("With message:", self.buffer.getvalue())
+
+    def log_entries_for(self, types_yaml, parameters_yaml, call_args):
+        if types_yaml is None:
+            schema = FakeSchema.with_dummy_types(parameters_yaml)
+        else:
+            schema = FakeSchema.with_types(types_yaml, parameters_yaml)
+        schema.verify_args(FakeSchema.METHOD_REP, call_args)
+        return self.buffer.getvalue()
+
+    def test_with_message_only(self):
+        types = None
+        parameters = """
+            -   description: An int argument
+                name: some_int
+                type: int
+            """
+        call_args = {"invalid": 6, "some_int": 7}
+        log_entries = self.log_entries_for(types, parameters, call_args)
+
+        self.assertIn(FakeSchema.METHOD_NAME, log_entries)
+        self.assertIn(u"With message:", log_entries)
+        self.assertIn(u"Following parameters ['invalid'] were not recognized",
+                      log_entries)
+        self.assertNotIn(u"With backtrace:", log_entries)
+
+    def test_primitive_type_visitor(self):
+        types = None
+        parameters = """
+            -   description: An uint argument
+                name: some_uint
+                type: uint
+            """
+        call_args = {"some_uint": -20}
+        log_entries = self.log_entries_for(types, parameters, call_args)
+
+        self.assertIn(FakeSchema.METHOD_NAME, log_entries)
+        self.assertIn(u"Parameter some_uint is not uint type", log_entries)
+        self.assertIn(u"With backtrace:", log_entries)
+        self.assertIn(u"_check_primitive_type", log_entries)
+        self.assertIn(u'"schema_type_type":"uint"', log_entries)
+
+    def test_complex_type_visitor(self):
+        types = """
+            MyEnum: &MyEnum
+                name: MyEnum
+                type: enum
+                values:
+                    0: one
+                    1: two
+                    2: three
+            """
+        parameters = """
+            -   description: An enum argument
+                name: my_enum
+                type: *MyEnum
+            """
+        call_args = {"my_enum": 42}
+        log_entries = self.log_entries_for(types, parameters, call_args)
+
+        self.assertIn(FakeSchema.METHOD_NAME, log_entries)
+        self.assertIn(u'Provided value "42" not defined in MyEnum enum',
+                      log_entries)
+        self.assertIn(u"With backtrace:", log_entries)
+        self.assertIn(u"_verify_complex_type", log_entries)
+        self.assertIn(u'"schema_type_type":"enum"', log_entries)
+
+    def test_object_type_visitor(self):
+        types = """
+            MyObject: &MyObject
+                name: MyObject
+                properties:
+                -   name: a
+                    type: uint
+                -   name: b
+                    type: str
+                type: object
+            """
+        parameters = """
+            -   description: An object argument
+                name: my_object
+                type: *MyObject
+            """
+        call_args = {"my_object": {"a": "should_be_an_uint", "b": "fine"}}
+        log_entries = self.log_entries_for(types, parameters, call_args)
+
+        self.assertIn(FakeSchema.METHOD_NAME, log_entries)
+        self.assertIn(u'Parameter a is not uint type', log_entries)
+        self.assertIn(u"With backtrace:", log_entries)
+        self.assertIn(u"_verify_object_type", log_entries)
+        self.assertIn(u'"schema_type_name":"MyObject"', log_entries)
+        self.assertIn(u'call_arg_keys":[', log_entries)
+        self.assertIn(u'\t"a",', log_entries)
+        self.assertIn(u'\t"b"', log_entries)

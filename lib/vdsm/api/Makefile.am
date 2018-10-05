@@ -23,6 +23,7 @@ vdsmrpcdir = $(vdsmpylibdir)/rpc
 
 dist_vdsmapi_PYTHON = \
 	__init__.py \
+	schema_inconsistency_formatter.py \
 	vdsmapi.py \
 	$(NULL)
 

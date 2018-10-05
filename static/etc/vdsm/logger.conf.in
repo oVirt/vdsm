@@ -7,7 +7,7 @@ keys=root,vds,storage,virt,ovirt_hosted_engine_ha,ovirt_hosted_engine_ha_config,
 keys=console,syslog,logfile,logthread,schema_inconsistency
 
 [formatters]
-keys=long,simple,none,sysform
+keys=long,simple,none,sysform,schema_inconsistency
 
 [logger_root]
 level=INFO
@@ -84,7 +84,7 @@ formatter=long
 class=vdsm.common.logutils.UserGroupEnforcingHandler
 args=('@VDSMUSER@', '@VDSMGROUP@', '@VDSMLOGDIR@/vdsm-schema-error.log',)
 level=DEBUG
-formatter=long
+formatter=schema_inconsistency
 
 [handler_console]
 class: StreamHandler
@@ -103,3 +103,7 @@ class: vdsm.common.logutils.TimezoneFormatter
 
 [formatter_sysform]
 format: vdsm[%(process)d]: %(levelname)s %(message)s
+
+[formatter_schema_inconsistency]
+format: %(message)s
+class: vdsm.api.schema_inconsistency_formatter.SchemaInconsistencyFormatter
