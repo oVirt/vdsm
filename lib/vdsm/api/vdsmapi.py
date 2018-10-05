@@ -51,7 +51,7 @@ DEFAULT_VALUES = {'{}': {},
                   '[]': []}
 
 
-_log_inconsistency = logging.getLogger("schema.inconsistency").warning
+_log_inconsistency = logging.getLogger("schema.inconsistency").debug
 
 
 class SchemaNotFound(Exception):
