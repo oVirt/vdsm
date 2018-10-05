@@ -138,6 +138,3 @@
 ./automation/exclude_from_conf
 ./init/wait_for_ipv4s
 ./init/daemonAdapter
-./tests/fake-ssh-agent
-./tests/py-watch
-./tests/fake-ssh-add

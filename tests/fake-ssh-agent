@@ -18,6 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import absolute_import
+from __future__ import print_function
+
 print('''SSH_AUTH_SOCK=/tmp/ssh-IWWQReDk7XZp/agent.31069; export SSH_AUTH_SOCK;
 SSH_AGENT_PID=31070; export SSH_AGENT_PID;
 echo Agent pid 31070;''')
