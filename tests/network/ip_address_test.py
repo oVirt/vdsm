@@ -62,12 +62,14 @@ class TestAddressIP(VdsmTestCase):
 
     def test_ipv4_clean_init(self):
         ip = address.IPv4()
+        self.assertFalse(ip)
         self._assert_ip_clean_init(ip)
         self.assertEqual(None, ip.bootproto)
         self.assertEqual(None, ip.netmask)
 
     def test_ipv6_clean_init(self):
         ip = address.IPv6()
+        self.assertFalse(ip)
         self._assert_ip_clean_init(ip)
         self.assertEqual(None, ip.ipv6autoconf)
         self.assertEqual(None, ip.dhcpv6)

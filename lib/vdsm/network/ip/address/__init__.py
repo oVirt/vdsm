@@ -152,8 +152,8 @@ class IPv4(object):
     def __bool__(self):
         return bool(self.address or self.bootproto)
 
-    def __nonzero__(self):  # TODO: drop when py2 is no longer needed
-        return self.__bool__()
+    # TODO: drop when py2 is no longer needed
+    __nonzero__ = __bool__
 
     def __repr__(self):
         return 'IPv4(%s, %s, %s, %s, %s)' % (self.address, self.netmask,
@@ -213,8 +213,8 @@ class IPv6(object):
     def __bool__(self):
         return bool(self.address or self.ipv6autoconf or self.dhcpv6)
 
-    def __nonzero__(self):  # TODO: drop when py2 is no longer needed
-        return self.__bool__()
+    # TODO: drop when py2 is no longer needed
+    __nonzero__ = __bool__
 
     def __repr__(self):
         return 'IPv6(%s, %s, %s, %s, %s)' % (
