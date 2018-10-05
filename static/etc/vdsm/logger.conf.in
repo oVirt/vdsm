@@ -4,7 +4,7 @@
 keys=root,vds,storage,virt,ovirt_hosted_engine_ha,ovirt_hosted_engine_ha_config,IOProcess,schema_inconsistency,devel
 
 [handlers]
-keys=console,syslog,logfile,logthread
+keys=console,syslog,logfile,logthread,schema_inconsistency
 
 [formatters]
 keys=long,simple,none,sysform
@@ -52,7 +52,7 @@ propagate=0
 
 [logger_schema_inconsistency]
 level=ERROR
-handlers=logthread
+handlers=schema_inconsistency
 qualname=schema.inconsistency
 propagate=0
 
@@ -77,6 +77,12 @@ target=logfile
 [handler_logfile]
 class=vdsm.common.logutils.UserGroupEnforcingHandler
 args=('@VDSMUSER@', '@VDSMGROUP@', '@VDSMLOGDIR@/vdsm.log',)
+level=DEBUG
+formatter=long
+
+[handler_schema_inconsistency]
+class=vdsm.common.logutils.UserGroupEnforcingHandler
+args=('@VDSMUSER@', '@VDSMGROUP@', '@VDSMLOGDIR@/vdsm-schema-error.log',)
 level=DEBUG
 formatter=long
 
