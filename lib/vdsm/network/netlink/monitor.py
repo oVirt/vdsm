@@ -117,7 +117,7 @@ class Monitor(object):
                 raise AttributeError('Invalid groups: %s' % (unknown_groups,))
             self._groups = groups
         else:
-            self._groups = libnl.GROUPS.keys()
+            self._groups = frozenset(libnl.GROUPS.keys())
         self._queue = queue.Queue()
         self._scan_thread = concurrent.thread(self._scan,
                                               name="netlink/events")
