@@ -3014,6 +3014,23 @@ class Vm(object):
         raise LookupError('Device object for device identified as %s '
                           'of type %s not found' % (devIdent, devType))
 
+    def _hotunplug_device(self, device_xml, device, metadata_hwclass=None):
+        try:
+            self._dom.detachDevice(device_xml)
+            self._waitForDeviceRemoval(device)
+        except HotunplugTimeout as e:
+            self.log.error('%s', e)
+            raise
+        except libvirt.libvirtError as e:
+            self.log.exception('Hotunplug failed: %s', device_xml)
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                raise exception.NoSuchVM(vmId=self.id)
+            raise
+        if metadata_hwclass is not None:
+            self._hotunplug_device_metadata(metadata_hwclass, device)
+        device.teardown()
+        self._updateDomainDescriptor()
+
     @api.guard(_not_migrating)
     def hostdevHotplug(self, dev_specs):
         dev_objects = []
@@ -3082,19 +3099,14 @@ class Vm(object):
             self._updateDomainDescriptor()
 
             try:
-                self._dom.detachDevice(device_xml)
-                self._waitForDeviceRemoval(dev_object)
-            except HotunplugTimeout as e:
-                self.log.error('%s', e)
+                self._dom._hotunplug_device(device_xml, dev_object)
+            except HotunplugTimeout:
                 self._hostdev_hotunplug_restore(dev_object)
                 continue
-            except libvirt.libvirtError as e:
-                self.log.exception('Hotunplug failed (continuing)')
+            except libvirt.libvirtError:
                 self._hostdev_hotunplug_restore(dev_object)
                 continue
 
-            self._updateDomainDescriptor()
-            dev_object.teardown()
             unplugged_devices.append(dev_name)
 
         return response.success(unpluggedDevices=unplugged_devices)
@@ -3309,26 +3321,18 @@ class Vm(object):
         self._updateDomainDescriptor()
 
         try:
-            self._dom.detachDevice(nicXml)
-            self._waitForDeviceRemoval(nic)
-            nic.teardown()
+            self._hotunplug_device(nicXml, nic, metadata_hwclass=hwclass.NIC)
         except HotunplugTimeout as e:
-            self.log.error("%s", e)
             self._rollback_nic_hotunplug(nic)
             hooks.after_nic_hotunplug_fail(nicXml, self._custom,
                                            params=nic.custom)
             return response.error('hotunplugNic', "%s" % e)
         except libvirt.libvirtError as e:
-            self.log.exception("Hotunplug failed")
-            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                raise exception.NoSuchVM()
             self._rollback_nic_hotunplug(nic)
             hooks.after_nic_hotunplug_fail(nicXml, self._custom,
                                            params=nic.custom)
             return response.error('hotunplugNic', str(e))
 
-        self._hotunplug_device_metadata(hwclass.NIC, nic)
-        self._updateDomainDescriptor()
         hooks.after_nic_hotunplug(nicXml, self._custom,
                                   params=nic.custom)
         return {'status': doneCode, 'vmList': self.status()}
@@ -3854,15 +3858,11 @@ class Vm(object):
         hooks.before_disk_hotunplug(driveXml, self._custom,
                                     params=drive.custom)
         try:
-            self._dom.detachDevice(driveXml)
-            self._waitForDeviceRemoval(drive)
+            self._hotunplug_device(driveXml, drive,
+                                   metadata_hwclass=hwclass.DISK)
         except HotunplugTimeout as e:
-            self.log.error("%s", e)
             return response.error('hotunplugDisk', "%s" % e)
         except libvirt.libvirtError as e:
-            self.log.exception("Hotunplug failed")
-            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                raise exception.NoSuchVM()
             return response.error('hotunplugDisk', str(e))
         else:
             self._devices[hwclass.DISK].remove(drive)
@@ -3874,9 +3874,6 @@ class Vm(object):
                         self.conf['devices'].remove(dev)
                     break
 
-            self._hotunplug_device_metadata(hwclass.DISK, drive)
-
-            self._updateDomainDescriptor()
             hooks.after_disk_hotunplug(driveXml, self._custom,
                                        params=drive.custom)
             self._cleanupDrives(drive)
@@ -3924,19 +3921,13 @@ class Vm(object):
         self.log.info("Hotunplug lease xml: %s", leaseXml)
 
         try:
-            self._dom.detachDevice(leaseXml)
-            self._waitForDeviceRemoval(lease)
+            self._hotunplug_device(leaseXml, lease)
         except HotunplugTimeout as e:
             raise exception.HotunplugLeaseFailed(reason=str(e), lease=lease)
         except libvirt.libvirtError as e:
-            # TODO: repeated in many places, move to domain wrapper?
-            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                raise exception.NoSuchVM(vmId=self.id)
             raise exception.HotunplugLeaseFailed(reason=str(e), lease=lease)
 
         self._devices[hwclass.LEASE].remove(lease)
-
-        self._updateDomainDescriptor()
 
         return response.success(vmList=self.status())
 
