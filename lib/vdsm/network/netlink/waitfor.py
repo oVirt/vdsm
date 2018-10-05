@@ -110,7 +110,7 @@ def _wait_for_event(iface, expected_event, groups, timeout):
                     if _is_subdict(expected_event, event):
                         return
             except monitor.MonitorError as e:
-                if e[0] == monitor.E_TIMEOUT:
+                if e.args[0] == monitor.E_TIMEOUT:
                     logging.warning('Expected event "%s" of interface "%s" '
                                     'was not caught within %ssec. '
                                     'Caught events: %s',

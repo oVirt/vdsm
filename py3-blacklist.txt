@@ -48,7 +48,6 @@
 ./lib/vdsm/tool/configurator.py
 ./lib/vdsm/tool/service.py
 ./lib/vdsm/network/kernelconfig.py
-./lib/vdsm/network/netlink/waitfor.py
 ./lib/vdsm/network/ip/address/__init__.py
 ./lib/vdsm/network/netconfpersistence.py
 ./contrib/nfs-check.py
