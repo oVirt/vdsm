@@ -3,7 +3,10 @@
 # Access python's config files from bash.
 # Usage: get-conf-item filename.conf section item default
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
+
 try:
     from vdsm.config import config
 except:
@@ -13,6 +16,6 @@ except:
 (dummy, file, section, item, default) = sys.argv
 config.read(file)
 try:
-    print config.get(section, item)
+    print(config.get(section, item))
 except:
-    print default
+    print(default)
