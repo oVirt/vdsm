@@ -129,7 +129,6 @@
 ./static/usr/bin/vdsm-tool
 ./static/usr/bin/vdsm-client
 ./helpers/kvm2ovirt
-./helpers/fallocate
 ./vdsm_hooks/checkips/checkipsd
 ./vdsm_hooks/localdisk/before_vm_migrate_source
 ./vdsm_hooks/localdisk/localdisk-helper
