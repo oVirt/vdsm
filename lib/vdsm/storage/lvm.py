@@ -372,6 +372,12 @@ class LVMCache(object):
 
         with self._lock:
             if rc != 0:
+                # This may be a real error (failure to reload existing VG) or
+                # no error at all (failure to reload non-existing VG), so we
+                # cannot make this an error.
+                log.warning(
+                    "Reloading VGs failed (vgs=%s rc=%s out=%r err=%r)",
+                    vgNames, rc, out, err)
                 vgNames = vgNames if vgNames else self._vgs.keys()
                 for v in vgNames:
                     if isinstance(self._vgs.get(v), Stub):
@@ -427,8 +433,12 @@ class LVMCache(object):
 
         with self._lock:
             if rc != 0:
-                log.warning("lvm lvs failed: %s %s %s", str(rc), str(out),
-                            str(err))
+                # This may be a real error (failure to reload existing LV) or
+                # no error at all (failure to reload non-existing LV), so we
+                # cannot make this an error.
+                log.warning(
+                    "Reloading LVs failed (vg=%s lvs=%s rc=%s out=%r err=%r)",
+                    vgName, lvNames, rc, out, err)
                 lvNames = lvNames if lvNames else self._lvs.keys()
                 for l in lvNames:
                     if isinstance(self._lvs.get(l), Stub):
