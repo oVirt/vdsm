@@ -1024,7 +1024,6 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_ifcfg_write
 
 %{_libexecdir}/%{vdsm_name}/get-conf-item
-%{_libexecdir}/%{vdsm_name}/set-conf-item
 %{python_sitelib}/sos/plugins/vdsm.py*
 %{_udevrulesdir}/12-vdsm-lvm.rules
 /etc/security/limits.d/99-vdsm.conf

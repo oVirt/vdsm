@@ -127,7 +127,6 @@ dist_cronhourly_SCRIPTS = \
 
 dist_vdsmexec_SCRIPTS = \
 	./libexec/vdsm/get-conf-item \
-	./libexec/vdsm/set-conf-item \
 	./libexec/vdsm/vdsm-gencerts.sh \
 	$(NULL)
 

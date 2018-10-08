@@ -128,7 +128,6 @@
 ./static/usr/sbin/supervdsmd
 ./static/usr/bin/vdsm-tool
 ./static/usr/bin/vdsm-client
-./static/libexec/vdsm/set-conf-item
 ./static/libexec/vdsm/get-conf-item
 ./helpers/kvm2ovirt
 ./helpers/fallocate
