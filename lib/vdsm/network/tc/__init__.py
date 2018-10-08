@@ -33,6 +33,7 @@ from . import qdisc
 from ._wrapper import TrafficControlException
 
 QDISC_INGRESS = 'ffff:'
+MISSING_OBJ_ERR_CODES = (errno.EINVAL, errno.ENOENT, errno.EOPNOTSUPP)
 
 
 def _addTarget(network, parent, target):
@@ -143,7 +144,7 @@ def _qdisc_del(*args, **kwargs):
     try:
         qdisc.delete(*args, **kwargs)
     except TrafficControlException as e:
-        if e.errCode != errno.ENOENT:
+        if e.errCode not in MISSING_OBJ_ERR_CODES:
             raise
 
 
