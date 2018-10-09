@@ -1,4 +1,4 @@
-# Copyright 2013-2017 Red Hat, Inc.
+# Copyright 2013-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,15 +19,19 @@
 
 from __future__ import absolute_import
 from __future__ import division
+
+import os
+import six
+
+from pwd import getpwnam
+
 from testlib import forked
 from testlib import VdsmTestCase as TestCaseBase
+
 import testValidation
+
 from vdsm.common import supervdsm
 from vdsm.constants import VDSM_USER
-from pwd import getpwnam
-import os
-
-import six
 
 
 def dropPrivileges():
@@ -59,5 +63,5 @@ class TestSuperVdsmRemotly(TestCaseBase):
         proxy.ksmTune(ksmParams)
 
         for k, v in six.iteritems(ksmParams):
-            self.assertEqual(str(v),
-                             open("/sys/kernel/mm/ksm/%s" % k, "r").read())
+            with open("/sys/kernel/mm/ksm/%s" % k, "r") as f:
+                self.assertEqual(str(v), f.read().rstrip())
