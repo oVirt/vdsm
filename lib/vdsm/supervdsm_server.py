@@ -176,7 +176,7 @@ class _SuperVdsm(object):
             try:
                 uid = resolveUid(user)
                 if groups:
-                    gids = map(resolveGid, groups)
+                    gids = [resolveGid(g) for g in groups]
 
                     os.setgid(gids[0])
                     os.setgroups(gids)

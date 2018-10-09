@@ -3,7 +3,6 @@
 ./lib/vdsm/clientIF.py
 ./lib/vdsm/rpc/http.py
 ./lib/vdsm/kvm2ovirt.py
-./lib/vdsm/supervdsm_server.py
 ./lib/vdsm/hugepages.py
 ./lib/vdsm/numa.py
 ./lib/vdsm/API.py
@@ -120,7 +119,6 @@
 ./contrib/repoplot
 ./build-aux/vercmp
 ./static/usr/sbin/vdsmd
-./static/usr/sbin/supervdsmd
 ./static/usr/bin/vdsm-tool
 ./static/usr/bin/vdsm-client
 ./helpers/kvm2ovirt
