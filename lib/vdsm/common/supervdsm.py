@@ -77,7 +77,7 @@ class SuperVdsmProxy(object):
         return self._manager.open(*args, **kwargs)
 
     def _connect(self):
-        self._manager = _SuperVdsmManager(address=ADDRESS, authkey='')
+        self._manager = _SuperVdsmManager(address=ADDRESS, authkey=b'')
         self._manager.register('instance')
         self._manager.register('open')
         self._log.debug("Trying to connect to Super Vdsm")
