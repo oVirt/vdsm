@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 from vdsm.common import xmlutils
+from vdsm.virt.vmdevices import common
 from vdsm.virt.vmdevices import hwclass
 from vdsm.virt.vmdevices import lookup
 
@@ -67,6 +68,7 @@ class TestLookup(VdsmTestCase):
             {'alias': 'dimm0', 'type': hwclass.MEMORY, 'size': 1024},
             {'alias': 'ac97', 'type': hwclass.SOUND}
         ]
+        self.devices = common.empty_dev_map()
 
     def test_lookup_drive_by_name_found(self):
         drive = lookup.drive_by_name(self.drives, 'sda')
@@ -91,6 +93,17 @@ class TestLookup(VdsmTestCase):
     def test_lookup_device_by_alias_missing(self):
         self.assertRaises(
             LookupError, lookup.device_by_alias, self.drives, 'ua-UNKNOWN')
+
+    @permutations([[c] for c in hwclass.HOTPLUGGABLE])
+    def test_hotpluggable_device_by_alias_found(self, device_class):
+        self.devices[device_class] = self.drives
+        device = lookup.hotpluggable_device_by_alias(self.devices, 'ua-0000')
+        assert device is self.drives[0]
+
+    def test_hotpluggable_device_by_alias_missing(self):
+        self.assertRaises(
+            LookupError, lookup.hotpluggable_device_by_alias,
+            self.devices, 'ua-UNKNOWN')
 
     @permutations(_DRIVES_XML)
     def test_lookup_drive_by_element(self, drive_xml, dev_name, alias_name):

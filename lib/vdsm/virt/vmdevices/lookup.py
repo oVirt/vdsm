@@ -24,6 +24,7 @@ from __future__ import division
 
 from vdsm.common import xmlutils
 from vdsm.virt.vmdevices import core
+from vdsm.virt.vmdevices import hwclass
 from vdsm.virt import vmxml
 
 
@@ -52,6 +53,15 @@ def device_by_alias(devices, alias):
     for device in devices:
         if getattr(device, 'alias', None) == alias:
             return device
+    raise LookupError("No such device: alias=%r" % alias)
+
+
+def hotpluggable_device_by_alias(device_dict, alias):
+    for device_hwclass in hwclass.HOTPLUGGABLE:
+        try:
+            return device_by_alias(device_dict[device_hwclass][:], alias)
+        except LookupError:
+            pass
     raise LookupError("No such device: alias=%r" % alias)
 
 

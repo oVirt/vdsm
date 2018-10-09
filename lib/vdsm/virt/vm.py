@@ -6007,22 +6007,18 @@ class Vm(object):
 
     def onDeviceRemoved(self, device_alias):
         self.log.info("Device removal reported: %s", device_alias)
-
-        # We currently hotunplug all devices synchronously, except for memory.
-        device_hwclass = hwclass.MEMORY
-
         try:
-            device = vmdevices.lookup.device_by_alias(
-                self._devices[device_hwclass][:], device_alias)
+            device = vmdevices.lookup.hotpluggable_device_by_alias(
+                self._devices, device_alias)
         except LookupError:
             self.log.warning("Removed device not found in devices: %s",
                              device_alias)
             return
-        self._devices[device_hwclass].remove(device)
-
-        device.teardown()
-
-        self._updateDomainDescriptor()
+        if isinstance(device, vmdevices.core.Memory):
+            # Other devices are handled in their synchronous hot unplug methods
+            self._devices[hwclass.MEMORY].remove(device)
+            device.teardown()
+            self._updateDomainDescriptor()
 
     # Accessing storage
 

@@ -49,3 +49,5 @@ TO_REFRESH = (
     DISK,  # needed because of local preparation, localdisk hook
     NIC,  # needed by many network-related hooks (vmfex, ovn)
 )
+
+HOTPLUGGABLE = (DISK, NIC, HOSTDEV, MEMORY, LEASE,)
