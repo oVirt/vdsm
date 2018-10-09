@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright 2012-2017 Red Hat, Inc.
 #
@@ -130,8 +131,10 @@ class TestCaps(TestCaseBase):
         self.assertEqual(machines, expectedMachines)
 
     def test_parseKeyVal(self):
-        lines = ["x=&2", "y& = 2", " z = 2 ", " s=3=&'5", " w=", "4&"]
-        expectedRes = [{'x': '&2', 'y&': '2', 'z': '2', 's': "3=&'5", 'w': ''},
+        lines = ["x=&2", "y& = 2", " z = 2 ", " s=3=&'5", " w=", "4&",
+                 u"v=1", u"temperature=”1°C”"]
+        expectedRes = [{'x': '&2', 'y&': '2', 'z': '2', 's': "3=&'5", 'w': '',
+                        u'v': u'1', u'temperature': u'”1°C”'},
                        {'x=': '2', 'y': '= 2', 's=3=': "'5", '4': ''}]
         sign = ["=", "&"]
         for res, s in zip(expectedRes, sign):

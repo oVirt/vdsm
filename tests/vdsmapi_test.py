@@ -648,7 +648,8 @@ class DataVerificationTests(TestCaseBase):
                'operatingSystem': {'release': '1',
                                    'version': '23',
                                    'name': 'Fedora',
-                                   'pretty_name': 'Fedora 24 (Workstation)'}}
+                                   'pretty_name': 'Fedora 24 (Workstation)'},
+               'vncEncrypted': 'false'}
 
         _schema.verify_retval(
             vdsmapi.MethodRep('Host', 'getCapabilities'), ret)

@@ -7039,6 +7039,13 @@ types:
             type:
                 - int
             added: '4.2'
+
+        -   description: Indicates whether libvirt is configured to encrypt
+                VNC connections
+            name: vncEncrypted
+            type: string
+            datatype: boolean
+            added: '4.3'
         type: object
 
     VdsmNetworkCapabilities: &VdsmNetworkCapabilities

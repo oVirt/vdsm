@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import io
 import os
 import logging
 
@@ -48,6 +49,8 @@ try:
 except ImportError:
     haClient = None
 
+QEMU_CONFIG_FILE = '/var/lib/vdsm/persistence/vnc.conf'
+
 
 def _parseKeyVal(lines, delim='='):
     d = {}
@@ -55,7 +58,7 @@ def _parseKeyVal(lines, delim='='):
         kv = line.split(delim, 1)
         if len(kv) != 2:
             continue
-        k, v = map(str.strip, kv)
+        k, v = map(lambda x: x.strip(), kv)
         d[k] = v
     return d
 
@@ -137,6 +140,7 @@ def get():
     caps['hostedEngineDeployed'] = _isHostedEngineDeployed()
     caps['hugepages'] = hugepages.supported()
     caps['kernelFeatures'] = osinfo.kernel_features()
+    caps['vncEncrypted'] = _isVncEncrypted()
     return caps
 
 
@@ -191,3 +195,18 @@ def _isHostedEngineDeployed():
         return False
 
     return is_deployed()
+
+
+def _isVncEncrypted():
+    """
+    If VNC is configured to use encrypted connections, libvirt's qemu.conf
+    contains the following flag:
+        vnc_tls = 1
+    """
+    try:
+        with io.open(QEMU_CONFIG_FILE) as f:
+            kvs = _parseKeyVal(f)
+        return kvs.get('vnc_tls', '0') == '1'
+    except:
+        logging.exception('Could not check for vnc_tls')
+    return False
