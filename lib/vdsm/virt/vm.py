@@ -3920,7 +3920,8 @@ class Vm(object):
             # libvirt doesn't generate a device removal event on lease hot
             # unplug.
             time.sleep(sleep_time)
-            return not device.is_attached_to(self._dom.XMLDesc(0))
+            return not vmdevices.lease.is_attached_to(device,
+                                                      self._dom.XMLDesc(0))
         else:
             return device.hotunplug_event.wait(sleep_time)
 

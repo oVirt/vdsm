@@ -673,10 +673,6 @@ class Drive(core.Base):
         return ("./devices/disk/source[@%s='%s']" %
                 (source_key[self.diskType], self.path))
 
-    def is_attached_to(self, xml_string):
-        dom = ET.fromstring(xml_string)
-        return bool(dom.findall(self._xpath))
-
     def __repr__(self):
         return ("<Drive name={self.name}, type={self.diskType}, "
                 "path={self.path} threshold={self.threshold_state} "

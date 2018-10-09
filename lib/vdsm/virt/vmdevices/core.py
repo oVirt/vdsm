@@ -129,10 +129,6 @@ class Base(vmxml.Device):
         """
         return compat.device_config(utils.picklecopy(self._conf))
 
-    def is_attached_to(self, xml_string):
-        raise NotImplementedError(
-            "%s does not implement is_attached_to", self.__class__.__name__)
-
     @classmethod
     def update_device_info(cls, vm, device_conf):
         """

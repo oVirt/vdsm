@@ -22,8 +22,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import xml.etree.ElementTree as ET
-
 import libvirt
 
 from vdsm.common import conv
@@ -79,10 +77,6 @@ class PciDevice(core.Base):
 
         return './devices/hostdev/source/address{}'.format(
             ''.join(address_fields))
-
-    def is_attached_to(self, xml_string):
-        dom = ET.fromstring(xml_string)
-        return bool(dom.findall(self._xpath))
 
     def getXML(self):
         """
@@ -192,10 +186,6 @@ class UsbDevice(core.Base):
         return './devices/hostdev/source/address{}'.format(
             ''.join(address_fields))
 
-    def is_attached_to(self, xml_string):
-        dom = ET.fromstring(xml_string)
-        return bool(dom.findall(self._xpath))
-
     def getXML(self):
         """
         Create domxml for a host device.
@@ -266,22 +256,6 @@ class ScsiDevice(core.Base):
 
     def teardown(self):
         reattach_detachable(self.device)
-
-    def is_attached_to(self, xml_string):
-        address_fields = []
-        for key, value in self.bus_address.items():
-            address_fields.append('[@{key}="{value}"]'.format(
-                key=key, value=int(value)))
-
-        dom = ET.fromstring(xml_string)
-        for src in dom.findall('./devices/hostdev/source'):
-            address = src.find('address{}'.format(''.join(address_fields)))
-            adapter = src.find('adapter[@name="{}"]'.format(self.adapter))
-
-            if (address is not None and adapter is not None):
-                return True
-
-        return False
 
     def getXML(self):
         """

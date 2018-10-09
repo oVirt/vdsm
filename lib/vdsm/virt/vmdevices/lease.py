@@ -195,21 +195,22 @@ class Device(core.Base):
                                   offset=str(self.offset))
         return lease
 
-    def is_attached_to(self, xml_string):
-        # TODO: verify also path and offset? not sure what should we do it we
-        # find a lease with correct sd_id and lease_id, but wrong path and
-        # offset.
-        xpath = ("./devices/lease[key='{self.lease_id}']"
-                 "[lockspace='{self.sd_id}']").format(self=self)
-        dom = ET.fromstring(xml_string)
-        return bool(dom.findall(xpath))
-
     def __repr__(self):
         return ("<lease.Device sd_id={self.sd_id}, "
                 "lease_id={self.lease_id}, "
                 "path={self.path}, "
                 "offset={self.offset} "
                 "at {addr:#x}>").format(self=self, addr=id(self))
+
+
+def is_attached_to(device, xml_string):
+    # TODO: verify also path and offset? not sure what should we do it we
+    # find a lease with correct sd_id and lease_id, but wrong path and
+    # offset.
+    xpath = ("./devices/lease[key='{device.lease_id}']"
+             "[lockspace='{device.sd_id}']").format(device=device)
+    dom = ET.fromstring(xml_string)
+    return bool(dom.findall(xpath))
 
 
 def parse_xml(dev, meta):

@@ -25,8 +25,6 @@ from __future__ import division
 import os
 import uuid
 
-import xml.etree.ElementTree as ET
-
 from vdsm import constants
 from vdsm.common import conv
 from vdsm.common import supervdsm
@@ -402,10 +400,6 @@ class Interface(core.Base):
         The path is relative to the root element
         """
         return "./devices/interface/mac[@address='%s']" % self.macAddr
-
-    def is_attached_to(self, xml_string):
-        dom = ET.fromstring(xml_string)
-        return bool(dom.findall(self._xpath))
 
     @classmethod
     def update_device_info(cls, vm, device_conf):
