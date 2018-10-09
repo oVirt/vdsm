@@ -812,7 +812,6 @@ class TestHotplug(TestCaseBase):
         params = {'xml': self.NIC_HOTPLUG}
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 supervdsm.getProxy)]):
-            vm._waitForDeviceRemoval = lambda device: None
             vm.hotplugNic(params)
         self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
         dev = vm._devices[hwclass.NIC][0]
@@ -834,7 +833,6 @@ class TestHotplug(TestCaseBase):
         params = {'xml': self.NIC_HOTPLUG}
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 self.supervdsm.getProxy)]):
-            vm._waitForDeviceRemoval = lambda device: None
             vm.hotunplugNic(params)
         self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
         dev = vm._devices[hwclass.NIC][0]
@@ -985,13 +983,13 @@ class TestHotplug(TestCaseBase):
                           'network': 'test',
                           'device': 'bridge',
                           'type': 'interface',
+                          'alias': 'ua-nic-hotplugged',
                           }}
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 self.supervdsm.getProxy)]):
             vm.hotplugNic(params)
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 self.supervdsm.getProxy)]):
-            vm._waitForDeviceRemoval = lambda device: None
             vm.hotunplugNic(params)
         self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
         dev = vm._devices[hwclass.NIC][0]
@@ -1005,11 +1003,11 @@ class TestHotplug(TestCaseBase):
                           'network': 'test',
                           'device': 'bridge',
                           'type': 'interface',
+                          'alias': 'ua-nic-hotplugged',
                           'portMirroring': port_mirroring,
                           }}
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 self.supervdsm.getProxy)]):
-            vm._waitForDeviceRemoval = lambda device: None
             vm.hotplugNic(params)
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 self.supervdsm.getProxy)]):
@@ -1027,10 +1025,10 @@ class TestHotplug(TestCaseBase):
                           'network': 'test',
                           'device': 'bridge',
                           'type': 'interface',
+                          'alias': 'ua-nic-hotplugged',
                           'portMirroring': ['network1', 'network2']}}
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 supervdsm.getProxy)]):
-            vm._waitForDeviceRemoval = lambda device: None
             vm.hotplugNic(params)
         self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
         dev = vm._devices[hwclass.NIC][0]
