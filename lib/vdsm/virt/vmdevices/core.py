@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os.path
+import threading
 
 from vdsm.host import rngsources
 from vdsm import constants
@@ -43,7 +44,7 @@ class SkipDevice(Exception):
 class Base(vmxml.Device):
     __slots__ = ('deviceType', 'device', 'alias', 'specParams', 'deviceId',
                  'log', '_deviceXML', 'type', 'custom',
-                 'is_hostdevice', 'vmid', '_conf',)
+                 'is_hostdevice', 'vmid', '_conf', 'hotunplug_event')
 
     @classmethod
     def get_identifying_attrs(cls, dev_elem):
@@ -111,6 +112,7 @@ class Base(vmxml.Device):
                                self.__class__.__name__)
         self._deviceXML = None
         self.is_hostdevice = False
+        self.hotunplug_event = threading.Event()
 
     def __str__(self):
         attrs = [':'.join((a, str(getattr(self, a, None)))) for a in dir(self)

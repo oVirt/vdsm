@@ -3915,30 +3915,22 @@ class Vm(object):
 
         return response.success(vmList=self.status())
 
+    def _device_removed(self, device, sleep_time):
+        if isinstance(device, vmdevices.lease.Device):
+            # libvirt doesn't generate a device removal event on lease hot
+            # unplug.
+            time.sleep(sleep_time)
+            return not device.is_attached_to(self._dom.XMLDesc(0))
+        else:
+            return device.hotunplug_event.wait(sleep_time)
+
     def _waitForDeviceRemoval(self, device):
-        """
-        As stated in libvirt documentary, after detaching a device using
-        virDomainDetachDeviceFlags, we need to verify that this device
-        has actually been detached:
-        libvirt.org/html/libvirt-libvirt-domain.html#virDomainDetachDeviceFlags
-
-        This function waits for the device to be detached.
-
-        Currently we use virDomainDetachDevice. However- That function behaves
-        the same in that matter. (Currently it is not documented at libvirt's
-        API docs- but after contacting libvirt's guys it turned out that this
-        is true. Bug 1257280 opened for fixing the documentation.)
-        TODO: remove this comment when the documentation will be fixed.
-
-        :param device: Device to wait for
-        """
         self.log.debug("Waiting for hotunplug to finish")
         with utils.stopwatch("Hotunplug %r" % device):
             deadline = (vdsm.common.time.monotonic_time() +
                         config.getfloat('vars', 'hotunplug_timeout'))
             sleep_time = config.getfloat('vars', 'hotunplug_check_interval')
-            while device.is_attached_to(self._dom.XMLDesc(0)):
-                time.sleep(sleep_time)
+            while not self._device_removed(device, sleep_time):
                 if vdsm.common.time.monotonic_time() > deadline:
                     raise HotunplugTimeout("Timeout detaching %r" % device)
 
@@ -5998,6 +5990,7 @@ class Vm(object):
             self.log.warning("Removed device not found in devices: %s",
                              device_alias)
             return
+        device.hotunplug_event.set()
         if isinstance(device, vmdevices.core.Memory):
             # Other devices are handled in their synchronous hot unplug methods
             self._devices[hwclass.MEMORY].remove(device)

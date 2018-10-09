@@ -33,9 +33,11 @@ from vdsm.common import cpuarch
 from vdsm.common import libvirtconnection
 from vdsm.common import response
 import vdsm.common.time
+from vdsm.common import xmlutils
 from vdsm.virt import sampling
 from vdsm.virt import vm
 from vdsm.virt.domain_descriptor import DomainDescriptor
+from vdsm.virt.vmdevices import core
 
 from testlib import namedTemporaryDir
 from testlib import recorded
@@ -144,7 +146,7 @@ class Domain(object):
                  errorMessage="",
                  domState=libvirt.VIR_DOMAIN_RUNNING,
                  domReason=0,
-                 vmId=''):
+                 vmId='', vm=None):
         self._xml = xml
         self.devXml = ''
         self.virtError = virtError
@@ -154,6 +156,7 @@ class Domain(object):
         self.domState = domState
         self.domReason = domReason
         self._vmId = vmId
+        self.vm = vm
         self._diskErrors = {}
         self._downtimes = []
         self.destroyed = False
@@ -258,11 +261,14 @@ class Domain(object):
     def undefineFlags(self, flags=0):
         pass
 
-    def attachDevice(self, device):
+    def attachDevice(self, device_xml):
         pass
 
-    def detachDevice(self, device):
-        pass
+    def detachDevice(self, device_xml):
+        if self.vm is not None:
+            dev = xmlutils.fromstring(device_xml)
+            alias = core.find_device_alias(dev)
+            self.vm.onDeviceRemoved(alias)
 
 
 class GuestAgent(object):
@@ -316,7 +322,6 @@ def VM(params=None, devices=None, runCpu=False,
             fake._update_metadata = lambda: None
             fake._sync_metadata = lambda: None
             fake.send_status_event = lambda **kwargs: None
-            fake._waitForDeviceRemoval = lambda device: None
             fake.arch = arch
             fake.guestAgent = GuestAgent()
             fake.conf['devices'] = [] if devices is None else devices

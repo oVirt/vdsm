@@ -24,9 +24,11 @@ from __future__ import division
 import os.path
 
 from vdsm.common import hostdev
+from vdsm.common import response
 from vdsm.common import xmlutils
 from vdsm import constants
 import vdsm
+import vdsm.virt
 from vdsm.virt import vmdevices
 from vdsm.virt import vmxml
 from vdsm.virt.domain_descriptor import DomainDescriptor
@@ -689,6 +691,7 @@ class TestHotplug(TestCaseBase):
 <hotplug>
   <devices>
     <interface type="bridge">
+      <alias name="ua-nic-hotplugged"/>
       <mac address="66:55:44:33:22:11"/>
       <model type="virtio" />
       <source bridge="ovirtmgmt" />
@@ -755,7 +758,7 @@ class TestHotplug(TestCaseBase):
                     'linkActive': 'true',
                     }]
         with fake.VM(devices=devices, create_device_objects=True) as vm:
-            vm._dom = fake.Domain()
+            vm._dom = fake.Domain(vm=vm)
             self.vm = vm
         self.supervdsm = fake.SuperVdsm()
 
@@ -809,6 +812,7 @@ class TestHotplug(TestCaseBase):
         params = {'xml': self.NIC_HOTPLUG}
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 supervdsm.getProxy)]):
+            vm._waitForDeviceRemoval = lambda device: None
             vm.hotplugNic(params)
         self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
         dev = vm._devices[hwclass.NIC][0]
@@ -830,6 +834,7 @@ class TestHotplug(TestCaseBase):
         params = {'xml': self.NIC_HOTPLUG}
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 self.supervdsm.getProxy)]):
+            vm._waitForDeviceRemoval = lambda device: None
             vm.hotunplugNic(params)
         self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
         dev = vm._devices[hwclass.NIC][0]
@@ -843,6 +848,21 @@ class TestHotplug(TestCaseBase):
                                 mac_addres="66:55:44:33:22:11") as dev:
             self.assertNotIn('network', dev)
         self.assertEqual(self.supervdsm.mirrored_networks, [])
+
+    def test_nic_hotunplug_timeout(self):
+        vm = self.vm
+        self.test_nic_hotplug()
+        self.assertEqual(len(vm._devices[hwclass.NIC]), 2)
+        params = {'xml': self.NIC_HOTPLUG}
+        with MonkeyPatchScope([
+                (vdsm.common.supervdsm, 'getProxy', self.supervdsm.getProxy),
+                (vdsm.virt.vm, 'config',
+                 make_config([('vars', 'hotunplug_timeout', '0'),
+                              ('vars', 'hotunplug_check_interval', '0.01')])),
+        ]):
+            self.vm._dom.vm = None
+            self.assertTrue(response.is_error(vm.hotunplugNic(params)))
+        self.assertEqual(len(vm._devices[hwclass.NIC]), 2)
 
     @permutations([
         ['virtio', 'pv'],
@@ -971,6 +991,7 @@ class TestHotplug(TestCaseBase):
             vm.hotplugNic(params)
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 self.supervdsm.getProxy)]):
+            vm._waitForDeviceRemoval = lambda device: None
             vm.hotunplugNic(params)
         self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
         dev = vm._devices[hwclass.NIC][0]
@@ -988,6 +1009,7 @@ class TestHotplug(TestCaseBase):
                           }}
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 self.supervdsm.getProxy)]):
+            vm._waitForDeviceRemoval = lambda device: None
             vm.hotplugNic(params)
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 self.supervdsm.getProxy)]):
@@ -1008,6 +1030,7 @@ class TestHotplug(TestCaseBase):
                           'portMirroring': ['network1', 'network2']}}
         with MonkeyPatchScope([(vdsm.common.supervdsm, 'getProxy',
                                 supervdsm.getProxy)]):
+            vm._waitForDeviceRemoval = lambda device: None
             vm.hotplugNic(params)
         self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
         dev = vm._devices[hwclass.NIC][0]
