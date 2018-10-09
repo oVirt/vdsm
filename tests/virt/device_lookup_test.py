@@ -98,7 +98,8 @@ class TestLookup(VdsmTestCase):
     def test_hotpluggable_device_by_alias_found(self, device_class):
         self.devices[device_class] = self.drives
         device = lookup.hotpluggable_device_by_alias(self.devices, 'ua-0000')
-        assert device is self.drives[0]
+        self.assertIs(device[0], self.drives[0])
+        self.assertEqual(device[1], device_class)
 
     def test_hotpluggable_device_by_alias_missing(self):
         self.assertRaises(

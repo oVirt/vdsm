@@ -59,7 +59,8 @@ def device_by_alias(devices, alias):
 def hotpluggable_device_by_alias(device_dict, alias):
     for device_hwclass in hwclass.HOTPLUGGABLE:
         try:
-            return device_by_alias(device_dict[device_hwclass][:], alias)
+            return device_by_alias(device_dict[device_hwclass][:], alias), \
+                device_hwclass
         except LookupError:
             pass
     raise LookupError("No such device: alias=%r" % alias)

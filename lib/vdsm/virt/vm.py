@@ -3029,9 +3029,7 @@ class Vm(object):
             raise
         if update_metadata:
             self._hotunplug_device_metadata(device_hwclass, device)
-        self._devices[device_hwclass].remove(device)
-        device.teardown()
-        self._updateDomainDescriptor()
+            self._updateDomainDescriptor()
 
     @api.guard(_not_migrating)
     def hostdevHotplug(self, dev_specs):
@@ -3908,12 +3906,17 @@ class Vm(object):
         except libvirt.libvirtError as e:
             raise exception.HotunplugLeaseFailed(reason=str(e), lease=lease)
 
+        # libvirt doesn't generate a device removal event on lease hot
+        # unplug, so we must update domain descriptor here.
+        # See https://bugzilla.redhat.com/1639228.
+        self._updateDomainDescriptor()
+
         return response.success(vmList=self.status())
 
     def _device_removed(self, device, sleep_time):
         if isinstance(device, vmdevices.lease.Device):
             # libvirt doesn't generate a device removal event on lease hot
-            # unplug.
+            # unplug.  See https://bugzilla.redhat.com/1639228.
             time.sleep(sleep_time)
             return not vmdevices.lease.is_attached_to(device,
                                                       self._dom.XMLDesc(0))
@@ -5980,18 +5983,17 @@ class Vm(object):
     def onDeviceRemoved(self, device_alias):
         self.log.info("Device removal reported: %s", device_alias)
         try:
-            device = vmdevices.lookup.hotpluggable_device_by_alias(
-                self._devices, device_alias)
+            device, device_hwclass = \
+                vmdevices.lookup.hotpluggable_device_by_alias(
+                    self._devices, device_alias)
         except LookupError:
             self.log.warning("Removed device not found in devices: %s",
                              device_alias)
             return
         device.hotunplug_event.set()
-        if isinstance(device, vmdevices.core.Memory):
-            # Other devices are handled in their synchronous hot unplug methods
-            self._devices[hwclass.MEMORY].remove(device)
-            device.teardown()
-            self._updateDomainDescriptor()
+        self._devices[device_hwclass].remove(device)
+        device.teardown()
+        self._updateDomainDescriptor()
 
     # Accessing storage
 

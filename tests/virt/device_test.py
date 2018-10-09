@@ -847,6 +847,22 @@ class TestHotplug(TestCaseBase):
             self.assertNotIn('network', dev)
         self.assertEqual(self.supervdsm.mirrored_networks, [])
 
+    def test_delayed_nic_hotunplug(self):
+        vm = self.vm
+        self.test_nic_hotplug()
+        self.assertEqual(len(vm._devices[hwclass.NIC]), 2)
+        params = {'xml': self.NIC_HOTPLUG}
+        with MonkeyPatchScope([
+                (vdsm.common.supervdsm, 'getProxy', self.supervdsm.getProxy),
+                (vdsm.virt.vm, 'config',
+                 make_config([('vars', 'hotunplug_timeout', '0'),
+                              ('vars', 'hotunplug_check_interval', '0.01')])),
+        ]):
+            self.vm._dom.vm = None
+            self.assertTrue(response.is_error(vm.hotunplugNic(params)))
+            self.vm.onDeviceRemoved('ua-nic-hotplugged')
+        self.assertEqual(len(vm._devices[hwclass.NIC]), 1)
+
     def test_nic_hotunplug_timeout(self):
         vm = self.vm
         self.test_nic_hotplug()
