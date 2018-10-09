@@ -310,7 +310,7 @@ def main(args):
             signal.signal(signal.SIGINT, terminate)
 
             log.debug("Creating remote object manager")
-            manager = _SuperVdsmManager(address=address, authkey='')
+            manager = _SuperVdsmManager(address=address, authkey=b'')
             manager.register('instance', callable=_SuperVdsm)
 
             server = manager.get_server()
