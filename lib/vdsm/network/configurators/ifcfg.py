@@ -307,8 +307,10 @@ class Ifcfg(Configurator):
             if bonding.bridge:
                 self.configApplier.dropBridgeParameter(bonding.name)
 
+            bond_used_by_net = self.net_info.getNetworkForIface(bonding.name)
             bond_info = self.net_info.bondings[bonding.name]
-            if bond_info['ipv4addrs'] or bond_info['ipv6addrs']:
+            if (not bond_used_by_net and
+                    (bond_info['ipv4addrs'] or bond_info['ipv6addrs'])):
                 ipwrapper.addrFlush(bonding.name)
 
     def removeNic(self, nic, remove_even_if_used=False):
