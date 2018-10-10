@@ -53,6 +53,9 @@ class KernelConfig(BaseConfig):
         return (self.networks == normalized_other.networks and
                 self.bonds == normalized_other.bonds)
 
+    def __hash__(self):
+        return hash((self.networks, self.bonds))
+
     def _analyze_netinfo_nets(self, netinfo):
         _routes = routes.get_routes()
         for net, net_attr in six.viewitems(netinfo.networks):
