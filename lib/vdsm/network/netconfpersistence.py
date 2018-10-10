@@ -99,6 +99,9 @@ class BaseConfig(object):
         # TODO: The new devices config is not handled
         return self.networks == other.networks and self.bonds == other.bonds
 
+    def __hash__(self):
+        return hash((self.networks, self.bonds))
+
     def __repr__(self):
         return '%s(%s, %s, %s)' % (
             self.__class__.__name__, self.networks, self.bonds, self.devices)
@@ -107,8 +110,8 @@ class BaseConfig(object):
         # TODO: The new devices config is not handled
         return True if self.networks or self.bonds else False
 
-    def __nonzero__(self):  # TODO: drop when py2 is no longer needed
-        return self.__bool__()
+    # TODO: drop when py2 is no longer needed
+    __nonzero__ = __bool__
 
     @staticmethod
     def _confDictDiff(lhs, rhs):

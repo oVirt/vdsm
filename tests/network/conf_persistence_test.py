@@ -29,6 +29,7 @@ from nose.plugins.attrib import attr
 from vdsm.common import fileutils
 from vdsm.network import errors as ne
 from vdsm.network.canonicalize import canonicalize_networks
+from vdsm.network.netconfpersistence import BaseConfig
 from vdsm.network.netconfpersistence import Config
 from vdsm.network.netconfpersistence import Transaction
 from vdsm.network.netconfpersistence import NETCONF_NETS
@@ -61,6 +62,13 @@ def _create_netconf():
 
 def setup_module():
     canonicalize_networks({'net': NETWORK_ATTRIBUTES})
+
+
+@attr(type='unit')
+class TestNetConfBaseConfig(TestCaseBase):
+    def test_empty_config(self):
+        config = BaseConfig({}, {}, {})
+        self.assertFalse(config)
 
 
 @attr(type='unit')
