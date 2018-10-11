@@ -23,21 +23,22 @@ import stat
 import uuid
 
 from vdsm.constants import P_LIBVIRT_VMCHANNELS, P_OVIRT_VMCONSOLES
-from vdsm.storage.fileUtils import resolveGid
+from vdsm.storage.fileUtils import resolveGid, resolveUid
 
 from . import expose
 
 
 @expose
-def prepareVmChannel(socketFile, group=None):
+def prepareVmChannel(socketFile, group=None, user=None):
     if (socketFile.startswith(P_LIBVIRT_VMCHANNELS) or
        socketFile.startswith(P_OVIRT_VMCONSOLES)):
         fsinfo = os.stat(socketFile)
         mode = fsinfo.st_mode | stat.S_IWGRP
         os.chmod(socketFile, mode)
+        uid = fsinfo.st_uid if user is None else resolveUid(user)
         if group is not None:
             os.chown(socketFile,
-                     fsinfo.st_uid,
+                     uid,
                      resolveGid(group))
     else:
         raise Exception("Incorporate socketFile")

@@ -30,6 +30,7 @@ import uuid
 import weakref
 
 from vdsm import utils
+from vdsm import constants
 from vdsm.common import filecontrol
 from vdsm.common import supervdsm
 from vdsm.config import config
@@ -288,7 +289,10 @@ class GuestAgent(object):
                 self._forward('api-version', {'apiVersion': commonVersion})
 
     def _prepare_socket(self):
-        supervdsm.getProxy().prepareVmChannel(self._socketName)
+        supervdsm.getProxy().prepareVmChannel(
+            self._socketName, user=constants.VDSM_USER,
+            group=constants.QEMU_PROCESS_GROUP
+        )
 
     def _create(self):
         self._sock.close()
