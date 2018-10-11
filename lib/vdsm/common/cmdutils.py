@@ -34,6 +34,7 @@ from vdsm.common import errors
 from vdsm.common import osutils
 from vdsm.common.compat import subprocess
 from vdsm.common.config import config
+from vdsm.common.password import ProtectedPassword
 from vdsm.common.time import monotonic_time
 
 SYSTEMD_RUN = "/usr/bin/systemd-run"
@@ -93,11 +94,14 @@ def retcode_log_line(code, err=None):
 
 def _list2cmdline(args):
     """
-    Convert argument list for exeCmd to string for logging. The purpose of this
+    Convert argument list for exeCmd to string for logging. 'ProtectedPassword'
+    arguments are obfuscated so that no secrets leak. The purpose of this
     log is make it easy to run vdsm commands in the shell for debugging.
     """
     parts = []
     for arg in args:
+        if isinstance(arg, ProtectedPassword):
+            arg = str(arg)
         if _needs_quoting(arg) or arg == '':
             arg = "'" + arg.replace("'", r"'\''") + "'"
         parts.append(arg)

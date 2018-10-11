@@ -27,6 +27,7 @@ import signal
 from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common.compat import subprocess
+from vdsm.common.password import ProtectedPassword
 
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -88,6 +89,11 @@ class List2CmdlineeTests(TestCaseBase):
 
     def test_empty(self):
         self.assertEqual(cmdutils._list2cmdline([]), "")
+
+    def test_protected_password(self):
+        secret = ProtectedPassword("secret!")
+        line = "'" + str(secret) + "'"
+        self.assertEqual(cmdutils._list2cmdline([secret]), line)
 
 
 class SystemdRunTests(TestCaseBase):
