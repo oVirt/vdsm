@@ -182,17 +182,23 @@ def handle_volume(con, diskno, src, dst, options):
 
     estimated_size = capacity
     stream = con.newStream()
+    preallocated = True
 
     if options.allocation == "sparse" and \
             con.getLibVersion() >= 3004000:
-        vol.download(stream, 0, 0,
-                     libvirt.VIR_STORAGE_VOL_DOWNLOAD_SPARSE_STREAM)
-        # No need to pass the size, volume download will return -1
-        # when the stream finishes
-        download_disk_sparse(stream, estimated_size, None, dst,
-                             options.bufsize)
-    elif options.allocation == "sparse" or \
-            options.allocation == "preallocated":
+        try:
+            preallocated = False
+            vol.download(stream, 0, 0,
+                         libvirt.VIR_STORAGE_VOL_DOWNLOAD_SPARSE_STREAM)
+            # No need to pass the size, volume download will return -1
+            # when the stream finishes
+            download_disk_sparse(stream, estimated_size, None, dst,
+                                 options.bufsize)
+        except libvirt.libvirtError:
+            preallocated = True
+            write_output('WARN: sparseness is not supported')
+
+    if preallocated:
         vol.download(stream, 0, 0, 0)
         sr = StreamAdapter(stream)
         # No need to pass the size, volume download will return -1
