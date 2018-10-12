@@ -3314,34 +3314,18 @@ class Vm(object):
                            nicParams)
             return response.error('hotunplugNic', "NIC not found")
 
-        # Remove found NIC from vm's NICs list
-        if nic:
-            self._devices[hwclass.NIC].remove(nic)
-
-        self._updateDomainDescriptor()
-
         try:
             self._hotunplug_device(nicXml, nic, metadata_hwclass=hwclass.NIC)
-        except HotunplugTimeout as e:
-            self._rollback_nic_hotunplug(nic)
-            hooks.after_nic_hotunplug_fail(nicXml, self._custom,
-                                           params=nic.custom)
-            return response.error('hotunplugNic', "%s" % e)
-        except libvirt.libvirtError as e:
-            self._rollback_nic_hotunplug(nic)
+        except (HotunplugTimeout, libvirt.libvirtError) as e:
             hooks.after_nic_hotunplug_fail(nicXml, self._custom,
                                            params=nic.custom)
             return response.error('hotunplugNic', str(e))
+        else:
+            self._devices[hwclass.NIC].remove(nic)
 
         hooks.after_nic_hotunplug(nicXml, self._custom,
                                   params=nic.custom)
         return {'status': doneCode, 'vmList': self.status()}
-
-    # Restore NIC device in vm's conf and _devices
-    def _rollback_nic_hotunplug(self, nic):
-        if nic:
-            self._devices[hwclass.NIC].append(nic)
-        self._updateDomainDescriptor()
 
     def _update_mem_guaranteed_size(self, params):
         if 'memGuaranteedSize' in params:
