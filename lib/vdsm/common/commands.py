@@ -36,6 +36,7 @@ from vdsm.common import cmdutils
 from vdsm.common import constants
 from vdsm.common.cmdutils import command_log_line, retcode_log_line
 from vdsm.common.compat import subprocess
+from vdsm.common.marks import deprecated
 from vdsm.common.osutils import uninterruptible_poll
 
 # Buffsize is 1K because I tested it on some use cases and 1K was fastest. If
@@ -94,6 +95,7 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
     return p.returncode, out, err
 
 
+@deprecated
 class AsyncProc(object):
     """
     AsyncProc is a funky class. It wraps a standard subprocess.Popen

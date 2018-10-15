@@ -43,6 +43,7 @@ import time
 from vdsm.common import zombiereaper
 from vdsm.common import time as vdsm_time
 from vdsm.common.compat import pickle
+from vdsm.common.marks import deprecated
 from vdsm.common.proc import pidstat
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
@@ -193,6 +194,7 @@ class closing(object):
             log.exception("Error closing %s", self.obj)
 
 
+@deprecated
 class AsyncProcessOperation(object):
     def __init__(self, proc, resultParser=None):
         """
