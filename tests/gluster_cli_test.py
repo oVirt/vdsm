@@ -26,6 +26,7 @@ import six
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import skipif
 from vdsm.gluster import cli as gcli
+from vdsm.gluster import exception
 import xml.etree.cElementTree as etree
 import glusterTestData
 
@@ -1247,3 +1248,18 @@ class GlusterCliTests(TestCaseBase):
         tree = etree.fromstring(out)
         healInfo = gcli._parseVolumeHealInfo(tree)
         self.assertEqual(healInfo, glusterTestData.GLUSTER_VOLUME_HEAL_INFO)
+
+    def test_execGlusterXml(self):
+        tree = gcli._execGlusterXml(["./fake-gluster-cli"])
+        el = tree.find('volStatus/volumes/volume/volName').text
+        self.assertEqual(el, 'vol-2')
+
+    def test_execGlusterXmlWithTimeout(self):
+        tree = gcli._execGlusterXmlWithTimeout(["./slow-gluster-cli"],
+                                               timeout=20)
+        el = tree.find('volStatus/volumes/volume/volName').text
+        self.assertEqual(el, 'vol-2')
+
+    def test_execGlusterXmlWithTimeoutFail(self):
+        with self.assertRaises(exception.GlusterCommandTimeoutException):
+            gcli._execGlusterXmlWithTimeout(["./slow-gluster-cli"], timeout=5)

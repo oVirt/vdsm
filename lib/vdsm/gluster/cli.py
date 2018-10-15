@@ -30,9 +30,9 @@ import xml.etree.cElementTree as etree
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
+from vdsm.common.compat import subprocess
 from vdsm.gluster import exception as ge
 from vdsm.network.netinfo import addresses
-
 from . import gluster_mgmt_api, gluster_api
 
 _glusterCommandPath = cmdutils.CommandPath("gluster",
@@ -40,6 +40,7 @@ _glusterCommandPath = cmdutils.CommandPath("gluster",
                                            )
 _TIME_ZONE = time.tzname[0]
 
+_DEFAULT_TIMEOUT = 120  # secs
 
 if hasattr(etree, 'ParseError'):
     _etreeExceptions = (etree.ParseError, AttributeError, ValueError)
@@ -106,13 +107,11 @@ def _execGluster(cmd):
     return commands.execCmd(cmd)
 
 
-def _execGlusterXml(cmd):
-    cmd.append('--xml')
-    rc, out, err = commands.execCmd(cmd)
+def _getTree(rc, out, err):
     if rc != 0:
         raise ge.GlusterCmdExecFailedException(rc, out, err)
     try:
-        tree = etree.fromstring('\n'.join(out))
+        tree = etree.fromstring(out)
         rv = int(tree.find('opRet').text)
         msg = tree.find('opErrstr').text
         errNo = int(tree.find('opErrno').text)
@@ -124,6 +123,32 @@ def _execGlusterXml(cmd):
         if errNo != 0:
             rv = errNo
         raise ge.GlusterCmdFailedException(rc=rv, err=[msg])
+
+
+def _execGlusterXml(cmd):
+    cmd.append('--xml')
+    rc, out, err = commands.execCmd(cmd, raw=True)
+    return _getTree(rc, out, err)
+
+
+def _execGlusterXmlWithTimeout(cmd, timeout=_DEFAULT_TIMEOUT):
+    cmd.append('--xml')
+    cmd = cmdutils.wrap_command(cmd)
+    logging.debug(cmdutils.command_log_line(cmd))
+    proc = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        with commands.terminating(proc):
+            out, err = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        raise ge.GlusterCommandTimeoutException(proc.returncode)
+
+    logging.debug(cmdutils.retcode_log_line(proc.returncode, err))
+    if proc.returncode != 0:
+        raise ge.GlusterCmdExecFailedException(
+            proc.returncode, out, err)
+
+    return _getTree(proc.returncode, out, err)
 
 
 def _getLocalIpAddress():
@@ -1596,7 +1621,7 @@ def volumeGeoRepSessionDelete(volumeName, remoteHost, remoteVolumeName,
 def volumeHealInfo(volumeName=None):
     command = _getGlusterVolCmd() + ["heal", volumeName, 'info']
     try:
-        xmltree = _execGlusterXml(command)
+        xmltree = _execGlusterXmlWithTimeout(command, timeout=_DEFAULT_TIMEOUT)
         return _parseVolumeHealInfo(xmltree)
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeHealInfoFailedException(rc=e.rc, err=e.err)

@@ -828,3 +828,8 @@ class GlusterVolumeResetBrickCommitForceFailedException(
         GlusterVolumeException):
     code = 4148
     message = "Volume reset brick commit force failed"
+
+
+class GlusterCommandTimeoutException(GlusterGeneralException):
+    code = 4108
+    message = "Gluster command failed with to execute within timeout"
