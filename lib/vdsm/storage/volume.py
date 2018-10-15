@@ -27,6 +27,7 @@ from contextlib import contextmanager
 from vdsm import utils
 from vdsm.common import cmdutils
 from vdsm.common import exception
+from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
 
 from vdsm.storage import clusterlock
@@ -38,7 +39,6 @@ from vdsm.storage import misc
 from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import task
-from vdsm.storage.misc import deprecated
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.volumemetadata import VolumeMetadata
 

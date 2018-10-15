@@ -27,6 +27,7 @@ from vdsm import constants
 from vdsm import utils
 from vdsm.common import exception
 from vdsm.common.commands import grepCmd
+from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -36,7 +37,6 @@ from vdsm.storage import qemuimg
 from vdsm.storage import task
 from vdsm.storage import volume
 from vdsm.storage.compat import sanlock
-from vdsm.storage.misc import deprecated
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.volumemetadata import VolumeMetadata
 

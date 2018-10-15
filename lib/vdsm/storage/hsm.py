@@ -46,6 +46,7 @@ from vdsm.common.threadlocal import vars
 from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import supervdsm
+from vdsm.common.marks import deprecated
 from vdsm.common.time import monotonic_time
 from vdsm.config import config
 from vdsm.storage import blockSD
@@ -79,7 +80,6 @@ from vdsm.storage import types
 from vdsm.storage import udev
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.constants import BLOCK_SIZE
-from vdsm.storage.misc import deprecated
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.spbackends import MAX_POOL_DESCRIPTION_SIZE, MAX_DOMAINS
 from vdsm.storage.spbackends import StoragePoolDiskBackend

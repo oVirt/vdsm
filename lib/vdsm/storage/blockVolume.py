@@ -26,6 +26,7 @@ import logging
 from vdsm import constants
 from vdsm import utils
 from vdsm.common import fileutils
+from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
 from vdsm.config import config
 from vdsm.storage import blockdev
@@ -38,7 +39,6 @@ from vdsm.storage import qemuimg
 from vdsm.storage import resourceManager as rm
 from vdsm.storage import task
 from vdsm.storage import volume
-from vdsm.storage.misc import deprecated
 from vdsm.storage.sdc import sdCache
 from vdsm.storage.volumemetadata import VolumeMetadata
 
