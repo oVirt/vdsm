@@ -32,7 +32,6 @@ from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.gluster import exception as ge
 from vdsm.network.netinfo import addresses
-from vdsm.utils import AsyncProcessOperation
 
 from . import gluster_mgmt_api, gluster_api
 
@@ -41,7 +40,6 @@ _glusterCommandPath = cmdutils.CommandPath("gluster",
                                            )
 _TIME_ZONE = time.tzname[0]
 
-_DEFAULT_TIMEOUT = 120  # secs
 
 if hasattr(etree, 'ParseError'):
     _etreeExceptions = (etree.ParseError, AttributeError, ValueError)
@@ -108,7 +106,9 @@ def _execGluster(cmd):
     return commands.execCmd(cmd)
 
 
-def _getTree(rc, out, err):
+def _execGlusterXml(cmd):
+    cmd.append('--xml')
+    rc, out, err = commands.execCmd(cmd)
     if rc != 0:
         raise ge.GlusterCmdExecFailedException(rc, out, err)
     try:
@@ -124,20 +124,6 @@ def _getTree(rc, out, err):
         if errNo != 0:
             rv = errNo
         raise ge.GlusterCmdFailedException(rc=rv, err=[msg])
-
-
-def _execGlusterXml(cmd):
-    cmd.append('--xml')
-    rc, out, err = commands.execCmd(cmd)
-    return _getTree(rc, out, err)
-
-
-def _execGlusterXmlAsync(cmd, timeout=_DEFAULT_TIMEOUT):
-    cmd.append('--xml')
-    proc = commands.execCmd(cmd, sync=False)
-    aop = AsyncProcessOperation(proc, _getTree)
-    xmltree = aop.wait(timeout=timeout)
-    return xmltree
 
 
 def _getLocalIpAddress():
@@ -1610,9 +1596,8 @@ def volumeGeoRepSessionDelete(volumeName, remoteHost, remoteVolumeName,
 def volumeHealInfo(volumeName=None):
     command = _getGlusterVolCmd() + ["heal", volumeName, 'info']
     try:
-        xmltree = _execGlusterXmlAsync(command, timeout=_DEFAULT_TIMEOUT)
-        if xmltree is not None:
-            return _parseVolumeHealInfo(xmltree)
+        xmltree = _execGlusterXml(command)
+        return _parseVolumeHealInfo(xmltree)
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeHealInfoFailedException(rc=e.rc, err=e.err)
     except _etreeExceptions:
