@@ -23,6 +23,7 @@ from __future__ import division
 import inspect
 import logging
 
+from vdsm.common import api
 from vdsm.common.compat import json
 
 
@@ -41,16 +42,17 @@ class SchemaInconsistencyFormatter(logging.Formatter):
 
     @staticmethod
     def _format_debug_msg(rep_id, relevant_frames, msg):
-        header = u"{}\n".format(rep_id)
-        message = u"With message: {}".format(msg)
+        header = u"{}".format(rep_id)
+        message = u"With message: {}".format(msg).rstrip()
+        ctx_string = u"With context: {}".format(api.context_string(None))
         if len(relevant_frames) > 0:
             backtrace_json = json.dumps(relevant_frames, indent=2,
                                         separators=(",", ":"))
             backtrace_dump = backtrace_json.replace("  ", "\t")
-            backtrace = u"\nWith backtrace: {}".format(backtrace_dump)
+            backtrace = u"With backtrace: {}".format(backtrace_dump)
         else:
             backtrace = ""
-        return header + message + backtrace
+        return "\n".join((header, ctx_string, message, backtrace))
 
     @staticmethod
     def _find_rep_id():
