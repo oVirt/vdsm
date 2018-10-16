@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import threading
 
 from vdsm import utils
 from vdsm.common import cmdutils
+from vdsm.common import commands
 from vdsm.common.compat import subprocess
 from vdsm.common import exception
 
@@ -56,9 +57,10 @@ class Command(object):
 
     def __init__(self, cmd, cwd=None, nice=utils.NICENESS.HIGH,
                  ioclass=utils.IOCLASS.IDLE):
-        self._cmd = cmdutils.wrap_command(cmd, with_nice=nice,
-                                          with_ioclass=ioclass)
+        self._cmd = cmd
         self._cwd = cwd
+        self._nice = nice
+        self._ioclass = ioclass
         self._lock = threading.Lock()
         self._state = CREATED
         self._proc = None
@@ -146,14 +148,13 @@ class Command(object):
                 raise exception.ActionStopped
             if self._state != CREATED:
                 raise RuntimeError("Attempt to run an operation twice")
-            log.debug(
-                cmdutils.command_log_line(self._cmd, cwd=self._cwd))
-            self._proc = subprocess.Popen(
+            self._proc = commands.start(
                 self._cmd,
                 cwd=self._cwd,
-                stdin=None,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
+                stderr=subprocess.PIPE,
+                nice=self._nice,
+                ioclass=self._ioclass)
             self._state = RUNNING
 
     def _finalize(self, out, err):
