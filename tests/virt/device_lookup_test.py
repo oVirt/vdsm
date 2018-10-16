@@ -169,6 +169,29 @@ class TestLookup(VdsmTestCase):
                           lookup.conf_by_alias,
                           devices_conf, hwclass.MEMORY, 'dimm0')
 
+    @permutations([
+        # devices_conf
+        [[]],
+        [[{}]],
+        [[{'alias': 'ac97', 'type': hwclass.SOUND}]],
+    ])
+    def test_lookup_conf_by_path_missing(self, devices_conf):
+        self.assertRaises(LookupError,
+                          lookup.conf_by_path,
+                          devices_conf, '/fake/test/path')
+
+    @permutations([
+        # devices_conf, path, dev_index
+        [
+            [{'path': '/foo/bar', 'type': hwclass.DISK}],
+            '/foo/bar',
+            0
+        ],
+    ])
+    def test_lookup_conf_by_path(self, devices_conf, path, dev_index):
+        drive = lookup.conf_by_path(devices_conf, path)
+        self.assertEqual(drive, devices_conf[dev_index])
+
 
 class FakeDrive(object):
     def __init__(self, name='vda', serial='0000', alias='ua-0'):

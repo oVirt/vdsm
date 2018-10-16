@@ -5931,7 +5931,10 @@ class Vm(object):
             raise RuntimeError("Unable to get volume info")
         driveFormat = res['info']['format'].lower()
 
-        if drive.volumeID != volumeID:
+        old_path = drive.path
+        must_update_drive = drive.volumeID != volumeID
+        # drive object fields must always be updated
+        if must_update_drive:
             # If the active layer changed:
             #  Update the disk path, volumeID, volumeInfo, and format members
             # Path must be set with the value being used by libvirt
@@ -5945,6 +5948,15 @@ class Vm(object):
 
         # Remove any components of the volumeChain which are no longer present
         drive.volumeChain = clean_volume_chain(drive.volumeChain, volumes)
+
+        # we store disk infos in self.conf for backward compatibility.
+        # We need to fix that data too.
+        dev_conf = vmdevices.lookup.conf_by_path(
+            self.conf['devices'], old_path)
+        if must_update_drive:
+            sync_drive_conf(dev_conf, drive)
+        dev_conf['volumeChain'] = clean_volume_chain(
+            dev_conf['volumeChain'], volumes)
 
     def getDiskDevices(self):
         return self._devices[hwclass.DISK]
@@ -6186,3 +6198,14 @@ def find_chain_node(volume_chain, volumeID):
         if info['volumeID'] == volumeID:
             return utils.picklecopy(info)
     return None
+
+
+def sync_drive_conf(dev_conf, drive):
+    conf_vol_info = find_chain_node(dev_conf['volumeChain'], drive.volumeID)
+    conf_vol_info['path'] = drive.path
+    dev_conf['path'] = drive.path
+    dev_conf['format'] = drive.format
+    dev_conf['volumeID'] = drive.volumeID
+    dev_conf['volumeInfo'] = conf_vol_info
+    update_active_path(
+        dev_conf['volumeChain'], drive.volumeID, drive.path)

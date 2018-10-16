@@ -89,3 +89,11 @@ def conf_by_alias(conf, dev_type, alias):
             continue
     raise LookupError('Configuration of device identified by alias %s '
                       'and type %s not found' % (alias, dev_type,))
+
+
+def conf_by_path(conf, path):
+    for dev_conf in conf[:]:
+        if dev_conf.get('path') == path:
+            return dev_conf
+    raise LookupError(
+        'Configuration of device with path %r not found' % path)
