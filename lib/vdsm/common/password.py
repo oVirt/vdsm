@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -66,6 +66,16 @@ def unprotect_passwords(obj):
     for d, key, value in _walk(obj):
         if isinstance(value, ProtectedPassword):
             d[key] = value.value
+    return obj
+
+
+def unprotect(obj):
+    """
+    If obj is a protected password, return the protected value. Otherwise
+    returns obj.
+    """
+    if isinstance(obj, ProtectedPassword):
+        return obj.value
     return obj
 
 
