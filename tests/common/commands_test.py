@@ -21,8 +21,10 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import logging
 import os
 import os.path
+import signal
 import six
 import sys
 import threading
@@ -30,8 +32,161 @@ import time
 
 import pytest
 
+from vdsm import utils
+from vdsm.common import cmdutils
 from vdsm.common import constants
 from vdsm.common import commands
+from vdsm.common.compat import subprocess
+from vdsm.common.password import ProtectedPassword
+
+import fakelib
+
+from testlib import mock
+
+
+class TestStart:
+
+    def test_start_cat_out(self):
+        p = commands.start(["cat"], stdin=subprocess.PIPE,
+                           stdout=subprocess.PIPE)
+        out, err = p.communicate(b"data")
+        assert out == b"data"
+        assert err == b""
+
+    def test_start_nonexisting(self):
+        with pytest.raises(OSError):
+            args = ["doesn't exist"]
+            commands.start(args, reset_cpu_affinity=False)
+
+    def test_child_terminated(self):
+        p = commands.start(["sleep", "1"])
+        commands.run(["kill", "-%d" % signal.SIGTERM, "%d" % p.pid])
+        assert p.wait() == -signal.SIGTERM
+
+    def test_terminate(self):
+        p = commands.start(["sleep", "1"])
+        p.terminate()
+        assert p.wait() == -signal.SIGTERM
+
+    def test_kill(self):
+        p = commands.start(["sleep", "1"])
+        p.kill()
+        assert p.wait() == -signal.SIGKILL
+
+    def test_start_should_log_args(self, monkeypatch):
+        monkeypatch.setattr(cmdutils, "command_log_line", mock.MagicMock())
+        monkeypatch.setattr(commands, "log", fakelib.FakeLogger())
+        cmdutils.command_log_line.return_value = "zorro"
+        args = ["true"]
+        commands.start(args)
+        assert (logging.DEBUG, "zorro", {}) in commands.log.messages
+
+    @pytest.mark.skipif(os.geteuid() != 0, reason="Requires root")
+    def test_sudo_kill(self):
+        p = commands.start(["sleep", "1"], sudo=True)
+        p.kill()
+        assert p.wait() == -signal.SIGKILL
+
+    @pytest.mark.skipif(os.geteuid() != 0, reason="Requires root")
+    def test_sudo_terminate(self):
+        p = commands.start(["sleep", "1"], sudo=True)
+        p.terminate()
+        assert p.wait() == -signal.SIGTERM
+
+
+class TestRun:
+
+    def test_run(self):
+        assert commands.run(["true"]) == b""
+
+    def test_run_out(self):
+        out = commands.run(["echo", "-n", "out"])
+        assert out == b"out"
+
+    def test_run_out_err(self):
+        out = commands.run(["sh", "-c", "echo -n out >&1; echo -n err >&2"])
+        assert out == b"out"
+
+    def test_run_input(self):
+        out = commands.run(["cat"], input=b"data")
+        assert out == b"data"
+
+    def test_run_nonexisting(self):
+        with pytest.raises(OSError):
+            commands.run(["doesn't exist"], reset_cpu_affinity=False)
+
+    def test_run_error(self):
+        with pytest.raises(cmdutils.Error) as e:
+            commands.run(["false"])
+        assert e.value.rc == 1
+        assert e.value.out == b""
+        assert e.value.err == b""
+
+    def test_run_error_data(self):
+        with pytest.raises(cmdutils.Error) as e:
+            args = ["sh", "-c", "echo -n out >&1; echo -n err >&2; exit 1"]
+            commands.run(args)
+        assert e.value.rc == 1
+        assert e.value.out == b"out"
+        assert e.value.err == b"err"
+
+    def test_setsid(self):
+        args = [sys.executable, '-c',
+                'from __future__ import print_function;'
+                'import os;'
+                'print(os.getsid(os.getpid()))']
+        out = commands.run(args, setsid=True)
+        assert int(out) != os.getsid(os.getpid())
+
+    def test_ioclass(self):
+        out = commands.run(
+            ['ionice'],
+            ioclass=utils.IOCLASS.BEST_EFFORT,
+            ioclassdata=3)
+        assert out.strip() == b"best-effort: prio 3"
+
+    def test_nice(self):
+        out = commands.run(["cat", "/proc/self/stat"], nice=7)
+        assert int(out.split()[18]) == 7
+
+    def test_unprotect_passwords(self):
+        secret = ProtectedPassword("top-secret")
+        args = ["echo", "-n", secret]
+        out = commands.run(args)
+        assert out.decode() == secret.value
+
+    def test_protect_log_passwords(self, monkeypatch):
+        monkeypatch.setattr(commands, "log", fakelib.FakeLogger())
+        secret = ProtectedPassword("top-secret")
+        args = ["echo", "-n", secret]
+        commands.run(args)
+        for level, msg, kwargs in commands.log.messages:
+            assert str(secret.value) not in msg
+
+    def test_protect_password_error(self):
+        secret = ProtectedPassword("top-secret")
+        args = ["false", secret]
+        with pytest.raises(cmdutils.Error) as e:
+            commands.run(args)
+        assert secret.value not in str(e.value)
+
+    def test_run_should_log_result(self, monkeypatch):
+        monkeypatch.setattr(commands, "log", fakelib.FakeLogger())
+        monkeypatch.setattr(cmdutils, "command_log_line", mock.MagicMock())
+        monkeypatch.setattr(cmdutils, "retcode_log_line", mock.MagicMock())
+        cmdutils.command_log_line.return_value = "log line"
+        cmdutils.retcode_log_line.return_value = "error line"
+        args = ["exit 1"]
+        try:
+            commands.run(args)
+        except cmdutils.Error:
+            pass
+        assert (logging.DEBUG, "log line", {}) in commands.log.messages
+        assert (logging.DEBUG, "error line", {}) in commands.log.messages
+
+    @pytest.mark.skipif(os.geteuid() != 0, reason="Requires root")
+    def test_run_sudo(self):
+        assert commands.run(["whoami"], sudo=True) == b"root\n"
 
 
 class TestExecCmd:
