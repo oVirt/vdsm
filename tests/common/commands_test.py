@@ -33,49 +33,47 @@ import pytest
 from vdsm.common import constants
 from vdsm.common import commands
 
-from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 
 
-@expandPermutations
-class ExecCmdTest(TestCaseBase):
-    CMD_TYPES = ((tuple,), (list,), (iter,))
+class TestExecCmd:
+    CMD_TYPES = [tuple, list, iter]
 
-    @permutations(CMD_TYPES)
-    def testNormal(self, cmd):
+    @pytest.mark.parametrize("cmd", CMD_TYPES)
+    def test_normal(self, cmd):
         rc, out, _ = commands.execCmd(cmd(('echo', 'hello world')))
-        self.assertEqual(rc, 0)
-        self.assertEqual(out[0].decode(), 'hello world')
+        assert rc == 0
+        assert out[0].decode() == 'hello world'
 
-    @permutations(CMD_TYPES)
-    def testIoClass(self, cmd):
+    @pytest.mark.parametrize("cmd", CMD_TYPES)
+    def test_io_class(self, cmd):
         rc, out, _ = commands.execCmd(cmd(('ionice',)), ioclass=2,
                                       ioclassdata=3)
-        self.assertEqual(rc, 0)
-        self.assertEqual(out[0].decode().strip(), 'best-effort: prio 3')
+        assert rc == 0
+        assert out[0].decode().strip() == 'best-effort: prio 3'
 
-    @permutations(CMD_TYPES)
-    def testNice(self, cmd):
+    @pytest.mark.parametrize("cmd", CMD_TYPES)
+    def test_nice(self, cmd):
         rc, out, _ = commands.execCmd(cmd(('cat', '/proc/self/stat')), nice=7)
-        self.assertEqual(rc, 0)
-        self.assertEqual(int(out[0].split()[18]), 7)
+        assert rc == 0
+        assert int(out[0].split()[18]) == 7
 
-    @permutations(CMD_TYPES)
-    def testSetSid(self, cmd):
+    @pytest.mark.parametrize("cmd", CMD_TYPES)
+    def test_set_sid(self, cmd):
         cmd_args = (sys.executable, '-c',
                     'from __future__ import print_function;import os;'
                     'print(os.getsid(os.getpid()))')
         rc, out, _ = commands.execCmd(cmd(cmd_args), setsid=True)
-        self.assertNotEquals(int(out[0]), os.getsid(os.getpid()))
+        assert int(out[0]) != os.getsid(os.getpid())
 
-    @permutations(CMD_TYPES)
+    @pytest.mark.parametrize("cmd", CMD_TYPES)
     @pytest.mark.skipif(os.getuid() != 0, reason="Requires root")
-    def testSudo(self, cmd):
+    def test_sudo(self, cmd):
         rc, out, _ = commands.execCmd(cmd(('grep',
                                       'Uid', '/proc/self/status')),
                                       sudo=True)
-        self.assertEqual(rc, 0)
-        self.assertEqual(int(out[0].split()[2]), 0)
+        assert rc == 0
+        assert int(out[0].split()[2]) == 0
 
 
 class ExecCmdStressTest(TestCaseBase):
