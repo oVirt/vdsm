@@ -33,8 +33,6 @@ import pytest
 from vdsm.common import constants
 from vdsm.common import commands
 
-from testlib import VdsmTestCase as TestCaseBase
-
 
 class TestExecCmd:
     CMD_TYPES = [tuple, list, iter]
@@ -76,7 +74,7 @@ class TestExecCmd:
         assert int(out[0].split()[2]) == 0
 
 
-class ExecCmdStressTest(TestCaseBase):
+class TestExecCmdStress:
 
     CONCURRENCY = 50
     FUNC_DELAY = 0.01
@@ -84,7 +82,7 @@ class ExecCmdStressTest(TestCaseBase):
     BLOCK_SIZE = 4096
     BLOCK_COUNT = 256
 
-    def setUp(self):
+    def setup_method(self, test_method):
         self.data = None  # Written to process stdin
         self.workers = []
         self.resume = threading.Event()
@@ -131,9 +129,7 @@ class ExecCmdStressTest(TestCaseBase):
                 'count=%d' % self.BLOCK_COUNT]
         out = self.run_dd(args)
         size = self.BLOCK_SIZE * self.BLOCK_COUNT
-        if len(out) < size:
-            raise self.failureException("Partial read: %d/%d" % (
-                                        len(out), size))
+        assert len(out) == size, "Partial read: {}/{}".format(len(out), size)
 
     def write_stdin_read_stderr(self):
         args = ['of=/dev/null',
@@ -145,11 +141,8 @@ class ExecCmdStressTest(TestCaseBase):
         cmd = [constants.EXT_DD]
         cmd.extend(args)
         rc, out, err = commands.execCmd(cmd, raw=True, data=self.data)
-        if rc != 0:
-            raise self.failureException("Process failed: rc=%d err=%r" %
-                                        (rc, err))
-        if err == '':
-            raise self.failureException("No data from stderr")
+        assert rc == 0, "Process failed: rc={} err={}".format(rc, err)
+        assert err != '', "No data from stderr"
         return out
 
 
