@@ -31,7 +31,23 @@ SUBDIRS = \
 	  virt \
 	  $(NULL)
 
-common_modules = common/*_test.py
+common_modules = \
+	common/cache_test.py \
+	common/cmdutils_test.py \
+	common/concurrent_test.py \
+	common/contextlib_test.py \
+	common/fileutils_tests.py \
+	common/hostutils_test.py \
+	common/libvirtconnection_test.py \
+	common/logutils_test.py \
+	common/network_test.py \
+	common/osutils_test.py \
+	common/proc_test.py \
+	common/properties_test.py \
+	common/pthread_test.py \
+	common/time_test.py \
+	common/validate_test.py \
+	$(NULL)
 
 device_modules = \
 	devices/parsing/complex_vm_test.py \
