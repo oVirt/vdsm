@@ -35,7 +35,6 @@ from vdsm.common import commands
 
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
-from testValidation import stresstest
 
 
 @expandPermutations
@@ -92,15 +91,15 @@ class ExecCmdStressTest(TestCaseBase):
         self.workers = []
         self.resume = threading.Event()
 
-    @stresstest
+    @pytest.mark.stress
     def test_read_stderr(self):
         self.check(self.read_stderr)
 
-    @stresstest
+    @pytest.mark.stress
     def test_read_stdout_stderr(self):
         self.check(self.read_stdout_stderr)
 
-    @stresstest
+    @pytest.mark.stress
     def test_write_stdin_read_stderr(self):
         self.data = 'x' * self.BLOCK_SIZE * self.BLOCK_COUNT
         self.check(self.write_stdin_read_stderr)
