@@ -20,6 +20,7 @@
 
 from __future__ import absolute_import
 from __future__ import division
+
 import os
 import os.path
 import six
@@ -27,12 +28,13 @@ import sys
 import threading
 import time
 
+import pytest
+
 from vdsm.common import constants
 from vdsm.common import commands
 
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
-from testValidation import checkSudo
 from testValidation import stresstest
 
 
@@ -68,8 +70,8 @@ class ExecCmdTest(TestCaseBase):
         self.assertNotEquals(int(out[0]), os.getsid(os.getpid()))
 
     @permutations(CMD_TYPES)
+    @pytest.mark.skipif(os.getuid() != 0, reason="Requires root")
     def testSudo(self, cmd):
-        checkSudo(['echo'])
         rc, out, _ = commands.execCmd(cmd(('grep',
                                       'Uid', '/proc/self/status')),
                                       sudo=True)
