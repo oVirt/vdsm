@@ -20,7 +20,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import unittest
+import pytest
 
 from vdsm.network import errors as ne
 from vdsm.network.link import validator
@@ -31,7 +31,7 @@ NETWORK1_NAME = 'test-network1'
 VLANID = 10
 
 
-class TestBondNameValidation(unittest.TestCase):
+class TestBondNameValidation():
 
     INVALID_BOND_NAMES = ('bond',
                           'bond bad',
@@ -39,13 +39,11 @@ class TestBondNameValidation(unittest.TestCase):
 
     def test_name_validation_of_net_sb_bond(self):
         NETSETUP = {NETWORK1_NAME: {'bonding': BOND_NAME}}
-        self.assertEqual(
-            validator.validate_bond_names(NETSETUP, {}), None)
+        assert validator.validate_bond_names(NETSETUP, {}) is None
 
     def test_name_validation_of_created_bond(self):
         BONDSETUP = {BOND_NAME: {}}
-        self.assertEqual(
-            validator.validate_bond_names({}, BONDSETUP), None)
+        assert validator.validate_bond_names({}, BONDSETUP) is None
 
     def test_bad_name_validation_of_net_sb_bond_fails(self):
         for bond_name in self.INVALID_BOND_NAMES:
@@ -57,23 +55,23 @@ class TestBondNameValidation(unittest.TestCase):
             self._test_bad_name_validation_fails({}, {bond_name: {}})
 
     def _test_bad_name_validation_fails(self, nets, bonds):
-        with self.assertRaises(ne.ConfigNetworkError) as cne:
+        with pytest.raises(ne.ConfigNetworkError) as cne:
             validator.validate_bond_names(nets, bonds)
-        self.assertEqual(cne.exception.errCode, ne.ERR_BAD_BONDING)
+        assert cne.value.errCode == ne.ERR_BAD_BONDING
 
 
-class TestBondConfigValidation(unittest.TestCase):
+class TestBondConfigValidation():
 
     def test_bond_without_nics_fails(self):
-        with self.assertRaises(ne.ConfigNetworkError) as cne:
+        with pytest.raises(ne.ConfigNetworkError) as cne:
             validator.validate_bond_configuration({BOND_NAME: {'nics': []}})
-        self.assertEqual(cne.exception.errCode, ne.ERR_BAD_PARAMS)
+        assert cne.value.errCode == ne.ERR_BAD_PARAMS
 
 
-class TestVlanConfigValidation(unittest.TestCase):
+class TestVlanConfigValidation():
 
     def test_vlan_without_sb_device_fails(self):
-        with self.assertRaises(ne.ConfigNetworkError) as cne:
+        with pytest.raises(ne.ConfigNetworkError) as cne:
             validator.validate_vlan_configuration(
                 {NETWORK1_NAME: {'vlan': VLANID}})
-        self.assertEqual(cne.exception.errCode, ne.ERR_BAD_VLAN)
+        assert cne.value.errCode == ne.ERR_BAD_VLAN
