@@ -59,13 +59,18 @@ function run_infra_tests {
     local res=0
     timeout $TEST_RUN_TIMEOUT lago shell "$VM_NAME" -c \
         " \
+            pip install -U pytest==3.1.2 xunitmerge==1.0.4
             cd /usr/share/vdsm/tests
             ./run_tests.sh \
                 --with-xunit \
-                --xunit-file=$TESTS_OUT/nosetests-${DISTRO}-infra.junit.xml \
+                --xunit-file=$TESTS_OUT/nosetests-${DISTRO}-infra-supervdsm.junit.xml \
                 -s \
-                functional/supervdsmFuncTests.py \
-                functional/upgrade_vdsm_test.py \
+                functional/supervdsmFuncTests.py
+            pytest \
+                --junitxml=$TESTS_OUT/nosetests-${DISTRO}-infra-upgrade-vdsm.junit.xml \
+                functional/upgrade_vdsm_test.py
+            xunitmerge $TESTS_OUT/nosetests-${DISTRO}-infra-*.xml \
+                $TESTS_OUT/nosetests-${DISTRO}-infra.junit.xml
         " || res=$?
     return $res
 }

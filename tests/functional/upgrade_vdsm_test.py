@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@ from __future__ import division
 from vdsm.common import commands
 from vdsm.tool.service import service_start, service_status, service_stop
 
-from testlib import VdsmTestCase
 
 el7_ovirt36_repo = 'http://resources.ovirt.org/pub/ovirt-3.6/rpm/el7/'
 
@@ -40,31 +39,32 @@ def upgrade_vdsm():
     commands.run(['yum', 'update', '-y', 'vdsm'])
 
 
-class UpgradeTest(VdsmTestCase):
-    def setUp(self):
+class TestUpgrade(object):
+
+    def setup_method(self, test_method):
         commands.run(['yum-config-manager', '--disable', 'localsync'])
 
-    def tearDown(self):
+    def teardown_method(self, method):
         commands.run(['yum-config-manager', '--disable', '*ovirt-3.6*'])
         commands.run(['yum-config-manager', '--enable', 'localsync'])
         # make sure vdsm is installed and running
         commands.run(['yum', 'install', '-y', 'vdsm'])
         service_start('vdsmd')
 
-    def service_up_test(self):
+    def test_service_up(self):
         service_start('vdsmd')
         vdsm_version = commands.run(['rpm', '-q', 'vdsm'])
         downgrade_vdsm(el7_ovirt36_repo)
         upgrade_vdsm()
 
-        self.assertEqual(commands.run(['rpm', '-q', 'vdsm']), vdsm_version)
-        self.assertEqual(service_status('vdsmd'), 0)
+        assert commands.run(['rpm', '-q', 'vdsm']) == vdsm_version
+        assert service_status('vdsmd') == 0
 
-    def service_down_test(self):
+    def test_service_down(self):
         service_stop('vdsmd')
         vdsm_version = commands.run(['rpm', '-q', 'vdsm'])
         downgrade_vdsm(el7_ovirt36_repo)
         upgrade_vdsm()
 
-        self.assertEqual(commands.run(['rpm', '-q', 'vdsm']), vdsm_version)
-        self.assertEqual(service_status('vdsmd'), 1)
+        assert commands.run(['rpm', '-q', 'vdsm']) == vdsm_version
+        assert service_status('vdsmd') == 1
