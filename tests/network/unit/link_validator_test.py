@@ -20,12 +20,10 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import unittest
+
 from vdsm.network import errors as ne
 from vdsm.network.link import validator
-
-from testlib import VdsmTestCase as TestCaseBase
-
-from nose.plugins.attrib import attr
 
 
 BOND_NAME = 'bond_name'
@@ -33,8 +31,7 @@ NETWORK1_NAME = 'test-network1'
 VLANID = 10
 
 
-@attr(type='unit')
-class TestBondNameValidation(TestCaseBase):
+class TestBondNameValidation(unittest.TestCase):
 
     INVALID_BOND_NAMES = ('bond',
                           'bond bad',
@@ -65,8 +62,7 @@ class TestBondNameValidation(TestCaseBase):
         self.assertEqual(cne.exception.errCode, ne.ERR_BAD_BONDING)
 
 
-@attr(type='unit')
-class TestBondConfigValidation(TestCaseBase):
+class TestBondConfigValidation(unittest.TestCase):
 
     def test_bond_without_nics_fails(self):
         with self.assertRaises(ne.ConfigNetworkError) as cne:
@@ -74,8 +70,7 @@ class TestBondConfigValidation(TestCaseBase):
         self.assertEqual(cne.exception.errCode, ne.ERR_BAD_PARAMS)
 
 
-@attr(type='unit')
-class TestVlanConfigValidation(TestCaseBase):
+class TestVlanConfigValidation(unittest.TestCase):
 
     def test_vlan_without_sb_device_fails(self):
         with self.assertRaises(ne.ConfigNetworkError) as cne:
