@@ -25,43 +25,36 @@ import six
 
 from pwd import getpwnam
 
-from testlib import forked
-from testlib import VdsmTestCase as TestCaseBase
-
-import testValidation
+import pytest
 
 from vdsm.common import supervdsm
 from vdsm.constants import VDSM_USER
 
 
-def dropPrivileges():
+@pytest.fixture
+def dropped_privileges():
         vdsm_uid, vdsm_gid = getpwnam(VDSM_USER)[2:4:]
         os.setgroups([])
         os.setgid(vdsm_gid)
         os.setuid(vdsm_uid)
 
 
-class TestSuperVdsmRemotly(TestCaseBase):
+@pytest.mark.skipif(os.geteuid() != 0, reason="Requires root")
+def test_ping_call(dropped_privileges):
+    proxy = supervdsm.getProxy()
+    assert bool(proxy.ping())
 
-    @forked
-    @testValidation.ValidateRunningAsRoot
-    def testPingCall(self):
-        dropPrivileges()
-        proxy = supervdsm.getProxy()
-        self.assertTrue(proxy.ping())
 
-    # This requires environment with tmpfs mounted to /sys/kernel/mm/ksm
-    @forked
-    @testValidation.ValidateRunningAsRoot
-    def testKsmAction(self):
-        dropPrivileges()
-        proxy = supervdsm.getProxy()
-        ksmParams = {"run": 0,
-                     "merge_across_nodes": 1,
-                     "sleep_millisecs": 0xffff,
-                     "pages_to_scan": 0xffff}
-        proxy.ksmTune(ksmParams)
+# This requires environment with tmpfs mounted to /sys/kernel/mm/ksm
+@pytest.mark.skipif(os.geteuid() != 0, reason="Requires root")
+def test_ksm_action(dropped_privileges):
+    proxy = supervdsm.getProxy()
+    ksmParams = {"run": 0,
+                 "merge_across_nodes": 1,
+                 "sleep_millisecs": 0xffff,
+                 "pages_to_scan": 0xffff}
+    proxy.ksmTune(ksmParams)
 
-        for k, v in six.iteritems(ksmParams):
-            with open("/sys/kernel/mm/ksm/%s" % k, "r") as f:
-                self.assertEqual(str(v), f.read().rstrip())
+    for k, v in six.iteritems(ksmParams):
+        with open("/sys/kernel/mm/ksm/%s" % k, "r") as f:
+            assert str(v) == f.read().rstrip()

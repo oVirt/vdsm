@@ -61,6 +61,7 @@ function install_test_dependencies {
         " \
             pip install -U \
                 pytest==3.1.2 \
+                pytest-forked==0.2 \
                 xunitmerge==1.0.4
         " || res=$?
     return $res
@@ -71,10 +72,9 @@ function run_infra_tests {
     timeout $TEST_RUN_TIMEOUT lago shell "$VM_NAME" -c \
         " \
             cd /usr/share/vdsm/tests
-            ./run_tests.sh \
-                --with-xunit \
-                --xunit-file=$TESTS_OUT/nosetests-${DISTRO}-infra-supervdsm.junit.xml \
-                -s \
+            pytest \
+                --forked \
+                --junitxml=$TESTS_OUT/nosetests-${DISTRO}-infra-supervdsm.junit.xml \
                 functional/supervdsmFuncTests.py
             pytest \
                 --junitxml=$TESTS_OUT/nosetests-${DISTRO}-infra-upgrade-vdsm.junit.xml \
