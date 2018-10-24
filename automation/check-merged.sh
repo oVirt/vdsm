@@ -55,11 +55,21 @@ function fake_ksm_in_vm {
     lago shell "$VM_NAME" -c "mount -t tmpfs tmpfs /sys/kernel/mm/ksm"
 }
 
+function install_test_dependencies {
+    local res=0
+    lago shell "$VM_NAME" -c \
+        " \
+            pip install -U \
+                pytest==3.1.2 \
+                xunitmerge==1.0.4
+        " || res=$?
+    return $res
+}
+
 function run_infra_tests {
     local res=0
     timeout $TEST_RUN_TIMEOUT lago shell "$VM_NAME" -c \
         " \
-            pip install -U pytest==3.1.2 xunitmerge==1.0.4
             cd /usr/share/vdsm/tests
             ./run_tests.sh \
                 --with-xunit \
@@ -79,7 +89,6 @@ function run_network_tests {
     local res=0
     timeout $TEST_RUN_TIMEOUT lago shell "$VM_NAME" -c \
         " \
-            pip install -U pytest==3.1.2
             systemctl stop NetworkManager
             systemctl mask NetworkManager
             cd /usr/share/vdsm/tests
@@ -111,6 +120,11 @@ function run {
 
 function run_all_tests {
     local res=0
+
+    install_test_dependencies | tee "$EXPORTS/functional_tests_dependencies_stdout.$DISTRO.log"
+    local dependencies_ret="${PIPESTATUS[0]}"
+    [ "$dependencies_ret" -ne 0 ] && return "$dependencies_ret"
+
     run_infra_tests | tee "$EXPORTS/functional_tests_stdout.$DISTRO.log"
     local infra_ret="${PIPESTATUS[0]}"
     [ "$infra_ret" -ne 0 ] && res="$infra_ret"
