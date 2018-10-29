@@ -20,12 +20,14 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import logging
 import os
 import stat
 import uuid
 
 from vdsm.constants import P_LIBVIRT_VMCHANNELS, P_OVIRT_VMCONSOLES
 from vdsm.storage.fileUtils import resolveGid
+from vdsm.common.fileutils import parse_key_val_file
 
 from . import expose
 
@@ -131,3 +133,20 @@ def mdev_delete(device, mdev_uuid):
 
     with open(path, 'w') as f:
         f.write('1')
+
+
+QEMU_CONFIG_FILE = '/etc/libvirt/qemu.conf'
+
+
+@expose
+def check_qemu_conf_contains(key, value):
+    """
+    Checks if qemu.conf contains the given key-value config.
+    """
+    try:
+        kvs = parse_key_val_file(QEMU_CONFIG_FILE)
+        return kvs.get(key, '0') == value
+    except:
+        logging.error('Could not check %s for %s', QEMU_CONFIG_FILE, key)
+        # re-raised exception will be logged, no need to log it here
+        raise

@@ -21,7 +21,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import io
 import os
 import logging
 
@@ -48,8 +47,6 @@ try:
     import ovirt_hosted_engine_ha.client.client as haClient
 except ImportError:
     haClient = None
-
-QEMU_CONFIG_FILE = '/var/lib/vdsm/persistence/vnc.conf'
 
 
 def _parseKeyVal(lines, delim='='):
@@ -204,9 +201,8 @@ def _isVncEncrypted():
         vnc_tls = 1
     """
     try:
-        with io.open(QEMU_CONFIG_FILE) as f:
-            kvs = _parseKeyVal(f)
-        return kvs.get('vnc_tls', '0') == '1'
+        return supervdsm.getProxy().check_qemu_conf_contains('vnc_tls', '1')
     except:
-        logging.exception('Could not check for vnc_tls')
+        logging.error("Supervdsm was not able to read VNC TLS config. "
+                      "Check supervdsmd log for details.")
     return False

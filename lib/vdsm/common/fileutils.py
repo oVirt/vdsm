@@ -22,6 +22,7 @@ from __future__ import division
 
 import errno
 import logging
+import io
 
 from contextlib import contextmanager
 import os
@@ -98,3 +99,17 @@ def rm_tree(dir_to_remove):
             logging.warning("Directory: %s already removed", dir_to_remove)
         else:
             raise
+
+
+def parse_key_val_file(file_name, delim='='):
+    d = {}
+    with io.open(file_name) as f:
+        for line in f:
+            if line.startswith("#"):
+                continue
+            kv = line.split(delim, 1)
+            if len(kv) != 2:
+                continue
+            k, v = map(lambda x: x.strip(), kv)
+            d[k] = v
+    return d

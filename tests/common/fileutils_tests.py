@@ -75,3 +75,21 @@ class AtomicFileWriteTest(TestCaseBase):
         with open(path) as f:
             content = f.read()
             self.assertEqual(content, expected_content)
+
+
+class ParseKeyValFileTest(TestCaseBase):
+
+    src_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+    def test_parse_kvs(self):
+        path_to_fake_conf = os.path.join(self.src_path, 'common',
+                                         'fileutils_tests_qemu.conf')
+        kvs = fileutils.parse_key_val_file(path_to_fake_conf)
+        self.assertTrue('vnc_tls' in kvs)
+        self.assertEqual('1', kvs.get('vnc_tls'))
+
+    def test_ignore_commented(self):
+        path_to_fake_conf = os.path.join(self.src_path, 'common',
+                                         'fileutils_tests_qemu.conf')
+        kvs = fileutils.parse_key_val_file(path_to_fake_conf)
+        self.assertFalse('vnc_commented' in kvs)
