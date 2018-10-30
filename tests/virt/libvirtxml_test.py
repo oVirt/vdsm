@@ -52,19 +52,24 @@ class TestLibvirtxml(XMLTestCase):
                      'smp': '8', 'maxVCpus': '160',
                      'memSize': '1024', 'memGuaranteedSize': '512'}
 
-    def test_placeholder_domain(self):
+    @permutations([
+        # vm_name, escaped_name
+        ['fake-vm', 'fake-vm'],
+        ['r&d', 'r&amp;d'],
+    ])
+    def test_placeholder_domain(self, vm_name, escaped_name):
         expected_xml = """<domain type="qemu">
-            <name>fake-vm</name>
+            <name>%s</name>
             <uuid>00-000</uuid>
             <memory unit="KiB">262144</memory>
             <os>
                 <type arch="x86_64" machine="pc">hvm</type>
             </os>
-        </domain>"""
+        </domain>""" % (escaped_name,)
         self.assertXMLEqual(
             libvirtxml.make_placeholder_domain_xml(
                 FakeMinimalVm(
-                    name='fake-vm',
+                    name=vm_name,
                     id='00-000',
                     mem_size_mb=256 * 1024)),
             expected_xml
