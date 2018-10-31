@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Red Hat, Inc.
+# Copyright 2012-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ import errno
 import os
 import re
 import socket
-import subprocess
 import ssl
 import tempfile
 import threading
@@ -40,8 +39,9 @@ from integration.sslhelper import get_server_socket, \
     KEY_FILE, CRT_FILE
 
 from vdsm import utils
+from vdsm.common import cmdutils
 from vdsm.common import concurrent
-from vdsm.common.commands import execCmd
+from vdsm.common import commands
 from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.sslutils import CLIENT_PROTOCOL, SSLContext, SSLHandshakeDispatcher
 from yajsonrpc.betterAsyncore import Reactor
@@ -173,42 +173,6 @@ class SSLTests(TestCaseBase):
         self.server.close()
         del self.server
 
-    def runSClient(self, args=None, input=None):
-        """This method runs the OpenSSL s_client command.
-
-        The address parameter is a tuple containg the address
-        of the host and the port number that will be used to
-        build the -connect option of the command.
-
-        The args parameter is the list of additional parameters
-        to pass to the command.
-
-        The input parameter is the data that will be piped to the
-        standard input of the command.
-
-        The method returns a tuple containing the exit code of the
-        command and the data generated in the standard output.
-        """
-
-        command = [
-            "openssl",
-            "s_client",
-            "-connect", "%s:%d" % self.address,
-        ]
-        if args:
-            command += args
-        print("command=%s" % command)
-        process = subprocess.Popen(command,
-                                   stdin=subprocess.PIPE,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-        out, err = process.communicate(input)
-        rc = process.wait()
-        print("rc=%d" % rc)
-        print("out=%s" % out)
-        print("err=%s" % err)
-        return rc, out
-
     def extractField(self, name, text):
         """
         Extracts the value of one of the informative fields provided in
@@ -239,8 +203,9 @@ class SSLTests(TestCaseBase):
         fails.
         """
 
-        rc, _ = self.runSClient()
-        self.assertNotEquals(rc, 0)
+        with self.assertRaises(cmdutils.Error):
+            args = ["openssl", "s_client", "-connect", "%s:%d" % self.address]
+            commands.run(args)
 
     def testConnectWithCertificateSucceeds(self):
         """
@@ -248,11 +213,9 @@ class SSLTests(TestCaseBase):
         works correctly.
         """
 
-        rc, _ = self.runSClient([
-            "-cert", self.certfile,
-            "-key", self.keyfile,
-        ])
-        self.assertEqual(rc, 0)
+        args = ["openssl", "s_client", "-connect", "%s:%d" % self.address,
+                "-cert", self.certfile, "-key", self.keyfile]
+        commands.run(args)
 
 
 class CompareNameTest(TestCaseBase):
@@ -300,24 +263,27 @@ class CompareNameTest(TestCaseBase):
 class TlsProtocolTest(TestCaseBase):
 
     def test_sslv2(self):
-        with(self.listen()) as (host, port):
-            self.assertEqual(self.run_client(host, port, '-ssl2'), 1)
+        with self.assertRaises(cmdutils.Error), self.listen() as (host, port):
+            self.run_client(host, port, '-ssl2')
 
     def test_sslv3(self):
-        with(self.listen()) as (host, port):
-            self.assertEqual(self.run_client(host, port, '-ssl3'), 1)
+        with self.assertRaises(cmdutils.Error), self.listen() as (host, port):
+            self.run_client(host, port, '-ssl3')
 
     def test_tlsv1(self):
         with(self.listen()) as (host, port):
-            self.assertEqual(self.run_client(host, port, '-tls1'), 0)
+            self.assertIn(b"Verify return code: 0 (ok)",
+                          self.run_client(host, port, '-tls1'))
 
     def test_tlsv11(self):
         with(self.listen()) as (host, port):
-            self.assertEqual(self.run_client(host, port, '-tls1_1'), 0)
+            self.assertIn(b"Verify return code: 0 (ok)",
+                          self.run_client(host, port, '-tls1_1'))
 
     def test_tlsv12(self):
         with(self.listen()) as (host, port):
-            self.assertEqual(self.run_client(host, port, '-tls1_2'), 0)
+            self.assertIn(b"Verify return code: 0 (ok)",
+                          self.run_client(host, port, '-tls1_2'))
 
     def test_client_tlsv1(self):
         with(self.listen()) as (host, port):
@@ -364,8 +330,7 @@ class TlsProtocolTest(TestCaseBase):
         cmd = ['openssl', 's_client', '-connect', '%s:%s' % (host, port),
                '-CAfile', CRT_FILE, '-cert', CRT_FILE, '-key', KEY_FILE,
                protocol]
-        rc, _, _ = execCmd(cmd)
-        return rc
+        return commands.run(cmd)
 
     def use_client(self, host, port, protocol):
         sslctx = SSLContext(cert_file=CRT_FILE, key_file=KEY_FILE,
