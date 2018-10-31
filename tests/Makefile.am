@@ -108,7 +108,6 @@ test_modules = \
 	schemavalidation_test.py \
 	sigutils_test.py \
 	sparsify_test.py \
-	ssl_test.py \
 	stompadapter_test.py \
 	stompasyncclient_test.py \
 	stompasyncdispatcher_test.py \
