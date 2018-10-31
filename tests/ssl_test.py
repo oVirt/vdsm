@@ -20,8 +20,8 @@
 
 from __future__ import absolute_import
 from __future__ import division
-
 from __future__ import print_function
+
 import errno
 import os
 import socket
@@ -29,8 +29,8 @@ import ssl
 import tempfile
 import threading
 
-from contextlib import contextmanager
-from monkeypatch import MonkeyPatch
+import pytest
+
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import mock
 
@@ -226,82 +226,88 @@ class CompareNameTest(TestCaseBase):
             '::ffff:127.0.0.1', 'example.com'))
 
 
-class TlsProtocolTest(TestCaseBase):
+@pytest.fixture
+def dummy_register_protocol_detector(monkeypatch):
+    monkeypatch.setattr(MultiProtocolAcceptor, '_register_protocol_detector',
+                        lambda d: d.close())
 
-    def test_sslv2(self):
-        with self.assertRaises(cmdutils.Error), self.listen() as (host, port):
-            self.run_client(host, port, '-ssl2')
 
-    def test_sslv3(self):
-        with self.assertRaises(cmdutils.Error), self.listen() as (host, port):
-            self.run_client(host, port, '-ssl3')
+@pytest.fixture
+def listener(dummy_register_protocol_detector, request):
+    reactor = Reactor()
 
-    def test_tlsv1(self):
-        with(self.listen()) as (host, port):
-            self.assertIn(b"Verify return code: 0 (ok)",
-                          self.run_client(host, port, '-tls1'))
+    excludes = getattr(request, 'param', 0)
+    sslctx = SSLContext(cert_file=CRT_FILE, key_file=KEY_FILE,
+                        ca_certs=CRT_FILE, excludes=excludes,
+                        protocol=CLIENT_PROTOCOL)
 
-    def test_tlsv11(self):
-        with(self.listen()) as (host, port):
-            self.assertIn(b"Verify return code: 0 (ok)",
-                          self.run_client(host, port, '-tls1_1'))
+    acceptor = MultiProtocolAcceptor(
+        reactor,
+        '127.0.0.1',
+        0,
+        sslctx=sslctx
+    )
 
-    def test_tlsv12(self):
-        with(self.listen()) as (host, port):
-            self.assertIn(b"Verify return code: 0 (ok)",
-                          self.run_client(host, port, '-tls1_2'))
+    try:
+        t = concurrent.thread(reactor.process_requests)
+        t.start()
+        (host, port) = acceptor._acceptor.socket.getsockname()[0:2]
+        yield (host, port)
+    finally:
+        acceptor.stop()
+        t.join()
 
-    def test_client_tlsv1(self):
-        with(self.listen()) as (host, port):
-            self.use_client(host, port, ssl.PROTOCOL_SSLv23)
 
-    def test_client_tlsv12(self):
-        with self.assertRaises(ssl.SSLError) as ssle:
-            with(self.listen(ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2)) \
-                    as (host, port):
-                self.use_client(host, port, ssl.PROTOCOL_TLSv1_2)
+@pytest.fixture
+def client_cmd(listener):
 
-        # WRONG_VERSION_NUMBER
-        self.assertEqual(ssle.exception.errno, 1)
-
-    @contextmanager
-    @MonkeyPatch(MultiProtocolAcceptor, '_register_protocol_detector',
-                 lambda d: d.close())
-    def listen(self, excludes=0, protocol=CLIENT_PROTOCOL):
-        reactor = Reactor()
-
-        sslctx = SSLContext(cert_file=CRT_FILE, key_file=KEY_FILE,
-                            ca_certs=CRT_FILE, excludes=excludes,
-                            protocol=protocol)
-
-        acceptor = MultiProtocolAcceptor(
-            reactor,
-            '127.0.0.1',
-            0,
-            sslctx=sslctx
-        )
-
-        try:
-            t = concurrent.thread(reactor.process_requests)
-            t.start()
-            yield self.get_address(acceptor)
-        finally:
-            acceptor.stop()
-            t.join()
-
-    def get_address(self, acceptor):
-        return acceptor._acceptor.socket.getsockname()[0:2]
-
-    def run_client(self, host, port, protocol):
+    def wrapper(protocol):
+        (host, port) = listener
         cmd = ['openssl', 's_client', '-connect', '%s:%s' % (host, port),
                '-CAfile', CRT_FILE, '-cert', CRT_FILE, '-key', KEY_FILE,
                protocol]
         return commands.run(cmd)
 
-    def use_client(self, host, port, protocol):
+    return wrapper
+
+
+@pytest.mark.parametrize('protocol', ['-ssl2', '-ssl3'])
+def test_tls_unsupported_protocols(client_cmd, protocol):
+    with pytest.raises(cmdutils.Error):
+        client_cmd(protocol)
+
+
+@pytest.mark.parametrize('protocol', ['-tls1', '-tls1_1', '-tls1_2'])
+def test_tls_protocols(client_cmd, protocol):
+    assert b"Verify return code: 0 (ok)" in client_cmd(protocol)
+
+
+@pytest.fixture
+def use_client(listener):
+
+    def wrapper(protocol):
+        (host, port) = listener
         sslctx = SSLContext(cert_file=CRT_FILE, key_file=KEY_FILE,
                             ca_certs=CRT_FILE, protocol=protocol)
-        utils.create_connected_socket(host, port, sslctx=sslctx)
+        return utils.create_connected_socket(host, port, sslctx=sslctx)
+
+    return wrapper
+
+
+def test_client_tlsv1(use_client):
+    assert bool(use_client(ssl.PROTOCOL_SSLv23))
+
+
+@pytest.mark.parametrize('listener',
+                         [ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2],
+                         indirect=True)
+def test_client_tlsv12(use_client):
+    with pytest.raises(ssl.SSLError) as e:
+        use_client(ssl.PROTOCOL_TLSv1_2)
+
+    # WRONG_VERSION_NUMBER
+    assert e.value.errno == 1
+
 
 # The address of the tests server:
 ADDRESS = ("127.0.0.1", 8443)
