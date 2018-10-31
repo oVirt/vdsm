@@ -89,7 +89,7 @@ class Nic(NetDevice):
             raise ConfigNetworkError(ne.ERR_BAD_NIC, 'unknown nic: %s' % name)
 
         if _netinfo.ifaceUsers(name):
-            mtu = max(mtu, link_iface.iface(name).mtu())
+            mtu = max(mtu or 0, link_iface.iface(name).mtu())
 
         super(Nic, self).__init__(name, configurator, ipv4, ipv6, blockingdhcp,
                                   mtu)
