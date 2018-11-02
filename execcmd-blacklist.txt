@@ -16,7 +16,6 @@ lib/vdsm/hook/hooking.py
 lib/vdsm/host/__init__.py
 lib/vdsm/mkimage.py
 lib/vdsm/numa.py
-lib/vdsm/storage/blkdiscard.py
 lib/vdsm/storage/blockSD.py
 lib/vdsm/storage/clusterlock.py
 lib/vdsm/storage/curl-img-wrap

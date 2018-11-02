@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 from __future__ import absolute_import
 
-from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common.cmdutils import CommandPath
 
@@ -69,11 +68,7 @@ def discard(device):
         "--step", "%d" % OPTIMAL_DISCARD_STEP,
     ]
     cmd.append(device)
-
-    rc, out, err = commands.execCmd(cmd)
-
-    if rc != 0:
-        raise cmdutils.Error(cmd, rc, out, err)
+    commands.run(cmd)
 
 
 def zeroout_operation(device, size):
