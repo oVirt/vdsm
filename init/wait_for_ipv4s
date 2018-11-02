@@ -6,6 +6,8 @@ their address. It should be called because `service network restart` may return
 asynchronously, before addresses have been applied to devices.
 """
 
+from __future__ import absolute_import
+
 from os import listdir
 from os.path import isfile, join
 import sys

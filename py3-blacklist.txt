@@ -9,7 +9,6 @@
 ./doc/conf.py
 ./helpers/kvm2ovirt
 ./init/daemonAdapter
-./init/wait_for_ipv4s
 ./lib/vdsm/API.py
 ./lib/vdsm/clientIF.py
 ./lib/vdsm/common/cmdutils.py
