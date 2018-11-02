@@ -586,21 +586,26 @@ def _mdev_type_details(mdev_type, path):
     return _MdevDetail(**kwargs)
 
 
+def _mdev_device_vendor(device):
+    with open(os.path.join(_MDEV_PATH, device, 'vendor'), 'r') as f:
+        return f.read().strip()
+
+
+def _mdev_type_devices(mdev_type, path):
+    return os.listdir(os.path.join(path, mdev_type, 'devices'))
+
+
 def _suitable_device_for_mdev_type(target_mdev_type):
     target_device = None
 
     for device in _each_mdev_device():
-        vendor = None
-        with open(os.path.join(_MDEV_PATH, device, 'vendor'), 'r') as f:
-            vendor = f.read().strip()
-
+        vendor = _mdev_device_vendor(device)
         for mdev_type, path in _each_supported_mdev_type(device):
             if mdev_type != target_mdev_type:
                 # If different type is already allocated and the vendor doesn't
                 # support different types, skip the device.
-                if vendor == '0x10de' and len(
-                        os.listdir(os.path.join(path, mdev_type, 'devices'))
-                ) > 0:
+                if vendor == '0x10de' and \
+                   len(_mdev_type_devices(mdev_type, path)) > 0:
                     target_device = None
                     break
                 continue

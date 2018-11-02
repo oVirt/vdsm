@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from collections import namedtuple
 from contextlib import contextmanager
 
 from vdsm.common import hostdev
@@ -465,3 +466,51 @@ def fake_totalvfs(device_name):
         return 7
 
     raise IOError
+
+
+class FakeMdevType(object):
+
+    def __init__(self, name, available_instances):
+        self.name = name
+        self.available_instances = available_instances
+        self.instances = []
+
+    def mdev_create(self, mdev_uuid):
+        if self.available_instances <= 0:
+            raise IOError("No available instance")
+        self.instances.append(mdev_uuid)
+        self.available_instances -= 1
+
+FakeMdevDevice = namedtuple('FakeMdevDevice', ['name', 'vendor', 'mdev_types'])
+
+
+def fake_mdev_vendor(device):
+    return device.vendor
+
+
+def fake_mdev_types(device):
+    for t in device.mdev_types:
+        yield t.name, t
+
+
+def fake_mdev_instances(mdev_type, path):
+    return path.instances
+
+
+def fake_mdev_details(mdev_type, path):
+    return hostdev._MdevDetail(
+        available_instances=path.available_instances,
+        name='', description='', device_api=''
+    )
+
+
+class FakeSuperVdsm:
+
+    def getProxy(self):
+        return self
+
+    def mdev_create(self, device, mdev_type, mdev_uuid):
+        for device_type in device.mdev_types:
+            if device_type.name == mdev_type:
+                break
+        device_type.mdev_create(mdev_uuid)
