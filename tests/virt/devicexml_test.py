@@ -1838,7 +1838,7 @@ _VM_MDEV_XML = """<?xml version='1.0' encoding='utf-8'?>
       <clusterVersion>4.2</clusterVersion>
       <ovirt-vm:device devtype="hostdev"
                        uuid="c1f343ae-99a5-4d82-9d5c-203cd4b7dac0">
-        <ovirt-vm:mdevType>graphics-card-1</ovirt-vm:mdevType>
+        <ovirt-vm:mdevType>graphics-card-1%(placement)s</ovirt-vm:mdevType>
       </ovirt-vm:device>
     </ovirt-vm:vm>
   </metadata>
@@ -1889,13 +1889,21 @@ _MDEV_XML_WITH_ALIAS = '''<devices>
 '''
 
 
+@expandPermutations
 class MdevTests(XMLTestCase):
 
-    def test_mdev_creation(self):
-        params = {'xml': _VM_MDEV_XML}
+    @permutations([
+        # placement_string, placement
+        ['', hostdev.MdevPlacement.COMPACT],
+        ['|compact', hostdev.MdevPlacement.COMPACT],
+        ['|separate', hostdev.MdevPlacement.SEPARATE],
+    ])
+    def test_mdev_creation(self, placement_string, placement):
+        params = {'xml': _VM_MDEV_XML % {'placement': placement_string}}
         with vmfakelib.VM(params=params, create_device_objects=True) as vm:
             self.assertNotRaises(vm._buildDomainXML)
-            self._check_mdev_device(vm, 'c1f343ae-99a5-4d82-9d5c-203cd4b7dac0')
+            self._check_mdev_device(vm, 'c1f343ae-99a5-4d82-9d5c-203cd4b7dac0',
+                                    placement)
 
     def test_legacy_mdev_creation_4_2_parameter(self):
         params = {'xml': _VM_NO_MDEV_XML,
@@ -1926,20 +1934,22 @@ class MdevTests(XMLTestCase):
         hostdevs = dom.findall('*//hostdev')
         self.assertEqual(len(hostdevs), 1)
         self.assertXMLEqual(ET.tostring(hostdevs[0]), expected)
-        self._check_mdev_device(vm, '67d496a0-d7d9-30f7-9c2d-4844b2d3c76e')
+        self._check_mdev_device(vm, '67d496a0-d7d9-30f7-9c2d-4844b2d3c76e',
+                                hostdev.MdevPlacement.COMPACT)
 
     def test_update_from_xml(self):
-        params = {'xml': _VM_MDEV_XML}
+        params = {'xml': _VM_MDEV_XML % {'placement': ''}}
         dom = ET.fromstring(_MDEV_XML_WITH_ALIAS)
         with vmfakelib.VM(params=params, create_device_objects=True) as vm:
             mdev = self._mdev_device(vm)
             vmdevices.hostdevice.MdevDevice.update_from_xml(vm, [mdev], dom)
             self.assertEqual(mdev.alias, 'hostdev0')
 
-    def _check_mdev_device(self, vm, mdev_uuid):
+    def _check_mdev_device(self, vm, mdev_uuid, placement):
         mdev = self._mdev_device(vm)
         self.assertEqual(mdev.mdev_type, 'graphics-card-1')
         self.assertEqual(mdev.mdev_uuid, mdev_uuid)
+        self.assertEqual(mdev.mdev_placement, placement)
 
     def _mdev_device(self, vm):
         return vm._devices[hwclass.HOSTDEV][0]

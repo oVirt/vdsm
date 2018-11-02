@@ -278,28 +278,48 @@ class TestMdev(TestCaseBase):
         self.devices = [make_device(name) for name in ('card-1', 'card-2',)]
 
     @permutations([
-        # (mdev_type, mdev_uuid)*, instances
-        [[('4q', '4q-1')], [['4q-1'], []]],
-        [[('8q', '8q-1')], [['8q-1'], []]],
+        # (mdev_type, mdev_uuid)*, mdev_placement, instances
+        [[('4q', '4q-1')],
+         hostdev.MdevPlacement.COMPACT, [['4q-1'], []]],
+        [[('8q', '8q-1')],
+         hostdev.MdevPlacement.SEPARATE, [['8q-1'], []]],
+        [[('4q', '4q-1'), ('4q', '4q-2')],
+         hostdev.MdevPlacement.COMPACT, [['4q-1', '4q-2'], []]],
+        [[('4q', '4q-1'), ('8q', '8q-1')],
+         hostdev.MdevPlacement.COMPACT, [['4q-1'], ['8q-1']]],
+        [[('4q', '4q-1'), ('4q', '4q-2')],
+         hostdev.MdevPlacement.SEPARATE, [['4q-1'], ['4q-2']]],
         [[('4q', '4q-1'), ('8q', '8q-1'), ('4q', '4q-2')],
-         [['4q-1', '4q-2'], ['8q-1']]],
+         hostdev.MdevPlacement.COMPACT, [['4q-1', '4q-2'], ['8q-1']]],
+        [[('8q', '8q-1'), ('4q', '4q-1'), ('4q', '4q-2')],
+         hostdev.MdevPlacement.COMPACT, [['8q-1'], ['4q-1', '4q-2']]],
+        [[('4q', '4q-1'), ('4q', '4q-2'), ('8q', '8q-1')],
+         hostdev.MdevPlacement.COMPACT, [['4q-1', '4q-2'], ['8q-1']]],
+        [[('4q', '4q-1'), ('8q', '8q-1'), ('4q', '4q-2')],
+         hostdev.MdevPlacement.SEPARATE, [['4q-1', '4q-2'], ['8q-1']]],
     ])
-    def test_vgpu_placement(self, mdev_specs, instances):
+    def test_vgpu_placement(self, mdev_specs, mdev_placement, instances):
         with MonkeyPatchScope([
                 (hostdev, '_each_mdev_device', lambda: self.devices)
         ]):
             for mdev_type, mdev_uuid in mdev_specs:
-                hostdev.spawn_mdev(mdev_type, mdev_uuid, self.log)
+                hostdev.spawn_mdev(mdev_type, mdev_uuid, mdev_placement,
+                                   self.log)
         for inst, dev in zip(instances, self.devices):
             dev_inst = []
             for mdev_type in dev.mdev_types:
                 dev_inst.extend(mdev_type.instances)
             self.assertEqual(inst, dev_inst)
 
-    def test_unsupported_vgpu_placement(self):
+    @permutations([
+        [hostdev.MdevPlacement.COMPACT],
+        [hostdev.MdevPlacement.SEPARATE],
+    ])
+    def test_unsupported_vgpu_placement(self, placement):
         with MonkeyPatchScope([
                 (hostdev, '_each_mdev_device', lambda: self.devices)
         ]):
-            self.assertRaises(exception.ResourceUnavailable,
-                              hostdev.spawn_mdev,
-                              'unsupported', '1234', self.log)
+            self.assertRaises(
+                exception.ResourceUnavailable,
+                hostdev.spawn_mdev, 'unsupported', '1234', placement, self.log
+            )

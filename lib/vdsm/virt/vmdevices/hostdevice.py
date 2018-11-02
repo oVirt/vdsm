@@ -28,7 +28,8 @@ from vdsm.common import conv
 from vdsm.common import validate
 from vdsm.common.hostdev import get_device_params, detach_detachable, \
     pci_address_to_name, scsi_address_to_adapter, reattach_detachable, \
-    device_name_from_address, spawn_mdev, despawn_mdev, get_mdev_uuid
+    device_name_from_address, spawn_mdev, despawn_mdev, get_mdev_uuid, \
+    MdevPlacement
 from vdsm.virt import libvirtxml
 from vdsm.virt import vmxml
 
@@ -315,7 +316,7 @@ class ScsiDevice(core.Base):
 
 
 class MdevDevice(core.Base):
-    __slots__ = ('address', 'mdev_type', 'mdev_uuid')
+    __slots__ = ('address', 'mdev_type', 'mdev_uuid', 'mdev_placement',)
 
     def __init__(self, log, **kwargs):
         super(MdevDevice, self).__init__(log, **kwargs)
@@ -344,7 +345,8 @@ class MdevDevice(core.Base):
                 return
 
     def setup(self):
-        spawn_mdev(self.mdev_type, self.mdev_uuid, self.log)
+        spawn_mdev(self.mdev_type, self.mdev_uuid, self.mdev_placement,
+                   self.log)
 
     def teardown(self):
         despawn_mdev(self.mdev_uuid)
@@ -404,7 +406,14 @@ class HostDevice(core.Base):
             device_params = get_device_params(dev_name)
             device_class = cls._DEVICE_MAPPING[device_params['capability']]
         else:
-            params['mdev_type'] = meta.get('mdevType')
+            params['mdev_type'] = None
+            params['mdev_placement'] = MdevPlacement.COMPACT
+            mdev_metadata = meta.get('mdevType')
+            if mdev_metadata:
+                mdev_info = mdev_metadata.split('|')
+                params['mdev_type'] = mdev_info[0]
+                if len(mdev_info) > 1:
+                    params['mdev_placement'] = mdev_info[1]
             device_class = MdevDevice
         return device_class(log, **params)
 

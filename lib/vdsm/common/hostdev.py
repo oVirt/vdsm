@@ -93,6 +93,11 @@ class Vendor:
     NVIDIA = '0x10de'
 
 
+class MdevPlacement:
+    COMPACT = 'compact'
+    SEPARATE = 'separate'
+
+
 class NoIOMMUSupportException(Exception):
     pass
 
@@ -595,7 +600,7 @@ def _mdev_type_devices(mdev_type, path):
     return os.listdir(os.path.join(path, mdev_type, 'devices'))
 
 
-def _suitable_device_for_mdev_type(target_mdev_type):
+def _suitable_device_for_mdev_type(target_mdev_type, mdev_placement, log):
     target_device = None
 
     for device in _each_mdev_device():
@@ -609,6 +614,10 @@ def _suitable_device_for_mdev_type(target_mdev_type):
                     target_device = None
                     break
                 continue
+            elif mdev_placement == MdevPlacement.SEPARATE:
+                if len(_mdev_type_devices(mdev_type, path)) > 0:
+                    target_device = None
+                    break
             # Make sure to cast to int as the value is read from sysfs.
             if int(
                     _mdev_type_details(mdev_type, path).available_instances
@@ -620,6 +629,11 @@ def _suitable_device_for_mdev_type(target_mdev_type):
         if target_device is not None:
             return target_device
 
+    if target_device is None and mdev_placement == MdevPlacement.SEPARATE:
+        log.info("Separate mdev placement failed, trying compact placement.")
+        return _suitable_device_for_mdev_type(
+            target_mdev_type, MdevPlacement.COMPACT, log
+        )
     return target_device
 
 
@@ -690,8 +704,8 @@ def change_numvfs(device_name, numvfs):
                                        net_name)
 
 
-def spawn_mdev(mdev_type, mdev_uuid, log):
-    device = _suitable_device_for_mdev_type(mdev_type)
+def spawn_mdev(mdev_type, mdev_uuid, mdev_placement, log):
+    device = _suitable_device_for_mdev_type(mdev_type, mdev_placement, log)
     if device is None:
         message = 'vgpu: No device with type {} is available'.format(mdev_type)
         log.error(message)
