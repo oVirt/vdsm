@@ -56,9 +56,7 @@
 ./lib/vdsm/virt/vmstats.py
 ./lib/yajsonrpc/jsonrpcclient.py
 ./lib/yajsonrpc/stomp.py
-./tests/common/concurrent_test.py
 ./tests/common/function.py
-./tests/common/logutils_test.py
 ./tests/exception_test.py
 ./tests/executor_test.py
 ./tests/functional/momTests.py

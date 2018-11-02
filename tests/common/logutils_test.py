@@ -284,6 +284,7 @@ class TestThreadedHandler(TestCaseBase):
                 logger.log(level, "thread %02d", n)
                 return time.time() - start
 
+            # pylint: disable=range-builtin-not-iterating
             results = concurrent.tmap(worker, range(10))
             workers_time = [r.value for r in results]
 
@@ -317,6 +318,7 @@ class TestThreadedHandler(TestCaseBase):
                     logger.log(level, "thread %02d:%03d", n, i)
 
             start = time.time()
+            # pylint: disable=range-builtin-not-iterating
             concurrent.tmap(worker, range(10))
 
         elapsed = time.time() - start

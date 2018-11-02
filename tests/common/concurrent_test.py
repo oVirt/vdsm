@@ -220,6 +220,7 @@ class TMapTests(VdsmTestCase):
         def func(x):
             raise error
 
+        # pylint: disable=range-builtin-not-iterating
         results = concurrent.tmap(func, range(10))
         expected = [concurrent.Result(False, error)] * 10
         self.assertEqual(results, expected)
