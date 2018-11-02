@@ -1,12 +1,16 @@
 #!/usr/bin/python2
+
+from __future__ import absolute_import
+
 import sys
-import ConfigParser
+
+from six.moves import configpaser
 
 
 def main():
     _, exclude_term = sys.argv
 
-    config = ConfigParser.ConfigParser()
+    config = configpaser.ConfigParser()
     config.readfp(sys.stdin)
 
     for section in config.sections():

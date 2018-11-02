@@ -1,4 +1,3 @@
-./automation/exclude_from_conf
 ./build-aux/vercmp
 ./contrib/logdb
 ./contrib/logstat
