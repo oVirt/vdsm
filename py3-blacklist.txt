@@ -1,4 +1,3 @@
-./build-aux/vercmp
 ./contrib/logdb
 ./contrib/logstat
 ./contrib/lvs-stats
