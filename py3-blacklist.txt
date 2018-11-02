@@ -45,7 +45,6 @@
 ./lib/vdsm/jobs.py
 ./lib/vdsm/tool/configurator.py
 ./lib/vdsm/tool/service.py
-./contrib/nfs-check.py
 ./static/usr/share/yum-plugins/vdsmupgrade.py
 ./static/usr/share/vdsm/sitecustomize.py
 ./doc/conf.py
