@@ -24,6 +24,7 @@ import pytest
 
 from .netfunctestlib import NetFuncTestAdapter, NOCHK
 from network.nettestlib import dummy_device
+from network.nettestlib import running_on_fedora
 
 NETWORK1_NAME = 'test-network1'
 NETWORK2_NAME = 'test-network2'
@@ -42,6 +43,7 @@ def create_adapter(target):
 
 # TODO: When QoS will be available on OVS, enable the tests.
 @pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy')])
+@pytest.mark.xfail(running_on_fedora(), reason='BZ#1645113', strict=True)
 class TestNetworkHostQos(object):
 
     def test_add_vlan_network_with_qos(self, switch):
