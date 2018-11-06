@@ -24,7 +24,6 @@ from __future__ import division
 from __future__ import print_function
 import errno
 import os
-import re
 import socket
 import ssl
 import tempfile
@@ -45,15 +44,6 @@ from vdsm.common import commands
 from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.sslutils import CLIENT_PROTOCOL, SSLContext, SSLHandshakeDispatcher
 from yajsonrpc.betterAsyncore import Reactor
-
-
-HOST = '127.0.0.1'
-
-
-class MathService():
-
-    def add(self, x, y):
-        return x + y
 
 
 class SSLServerThread(threading.Thread):
@@ -172,30 +162,6 @@ class SSLTests(TestCaseBase):
         self.server.shutdown(socket.SHUT_RDWR)
         self.server.close()
         del self.server
-
-    def extractField(self, name, text):
-        """
-        Extracts the value of one of the informative fields provided in
-        the output of the s_client command.
-
-        The name parameter is the name of the field, for example
-        Session-ID for the SSL session identifier.
-
-        The text parameter should be the output of the execution of the
-        s_client command.
-
-        Returns the value of the given field or None if that field can't
-        be fond in the provided output of the s_client command.
-        """
-
-        pattern = r"^\s*%s\s*:\s*(?P<value>[^\s]*)\s*$" % name
-        expression = re.compile(pattern, flags=re.MULTILINE)
-        match = expression.search(text)
-        if not match:
-            return None
-        value = match.group("value")
-        print("%s=%s" % (name, value))
-        return value
 
     def testConnectWithoutCertificateFails(self):
         """
