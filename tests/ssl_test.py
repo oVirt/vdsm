@@ -32,7 +32,6 @@ import threading
 import pytest
 
 from testlib import VdsmTestCase as TestCaseBase
-from testlib import mock
 
 from integration.sslhelper import get_server_socket, \
     KEY_FILE, CRT_FILE
@@ -184,46 +183,58 @@ class SSLTests(TestCaseBase):
         commands.run(args)
 
 
-class CompareNameTest(TestCaseBase):
-    @mock.patch('vdsm.sslutils.socket.gethostbyaddr', return_value=(
-        'example.com', [], ['10.0.0.1']))
-    def test_same_string(self, mock_gethostbyaddr):
-        self.assertTrue(SSLHandshakeDispatcher.compare_names(
-            '10.0.0.1', 'example.com'))
+@pytest.fixture
+def fake_gethostbyaddr(monkeypatch, request):
+    entry = getattr(request, 'param', None)
+    if entry is not None:
+        hostname, ipaddrlist = entry
 
-    def test_src_mapped_address(self):
-        self.assertTrue(SSLHandshakeDispatcher.compare_names(
-            '::ffff:127.0.0.1', '127.0.0.1'))
+        def impl(addr):
+            if addr not in ipaddrlist:
+                raise socket.herror()
+            return (hostname, [], ipaddrlist)
 
-    def test_cert_mapped_address(self):
-        self.assertTrue(SSLHandshakeDispatcher.compare_names(
-            '127.0.0.1', '::ffff:127.0.0.1'))
+        monkeypatch.setattr('vdsm.sslutils.socket.gethostbyaddr', impl)
 
-    @mock.patch('vdsm.sslutils.socket.gethostbyaddr', return_value=(
-        'example.com', [], ['10.0.0.1']))
-    def test_failed_mapped_address(self, mock_gethostbyaddr):
-        self.assertFalse(SSLHandshakeDispatcher.compare_names(
-            '10.0.0.1', '::ffff:127.0.0.1'))
 
-    @mock.patch('vdsm.sslutils.socket.gethostbyaddr', return_value=(
-        'example.com', [], ['10.0.0.1', '10.0.0.2']))
-    def test_multiple(self, mock_gethostbyaddr):
-        self.assertTrue(SSLHandshakeDispatcher.compare_names(
-            '10.0.0.2', 'example.com'))
+@pytest.mark.parametrize('fake_gethostbyaddr', [('example.com', ['10.0.0.1'])],
+                         indirect=True)
+def test_same_string(fake_gethostbyaddr):
+    assert SSLHandshakeDispatcher.compare_names('10.0.0.1', 'example.com')
 
-    @mock.patch('vdsm.sslutils.socket.gethostbyaddr', return_value=(
-        'evil.imposter.com', [], ['11.0.0.1']))
-    def test_imposter(self, mock_gethostbyaddr):
-        self.assertFalse(SSLHandshakeDispatcher.compare_names(
-            '10.0.0.1', 'example.com'))
 
-    def test_local_addresses(self):
-        self.assertTrue(SSLHandshakeDispatcher.compare_names(
-            '127.0.0.1', 'example.com'))
-        self.assertTrue(SSLHandshakeDispatcher.compare_names(
-            '::1', 'example.com'))
-        self.assertTrue(SSLHandshakeDispatcher.compare_names(
-            '::ffff:127.0.0.1', 'example.com'))
+@pytest.mark.parametrize('lhs,rhs', [('::ffff:127.0.0.1', '127.0.0.1'),
+                                     ('127.0.0.1', '::ffff:127.0.0.1')])
+def test_mapped_address(lhs, rhs):
+    assert SSLHandshakeDispatcher.compare_names(lhs, rhs)
+
+
+@pytest.mark.parametrize('fake_gethostbyaddr', [('example.com', ['10.0.0.1'])],
+                         indirect=True)
+def test_failed_mapped_address(fake_gethostbyaddr):
+    assert not SSLHandshakeDispatcher.compare_names('10.0.0.1',
+                                                    '::ffff:127.0.0.1')
+
+
+@pytest.mark.parametrize('fake_gethostbyaddr',
+                         [('example.com', ['10.0.0.1', '10.0.0.2'])],
+                         indirect=True)
+def test_multiple(fake_gethostbyaddr):
+    assert SSLHandshakeDispatcher.compare_names('10.0.0.2', 'example.com')
+
+
+@pytest.mark.parametrize('fake_gethostbyaddr',
+                         [('evil.imposter.com', ['10.0.0.1'])],
+                         indirect=True)
+def test_imposter(fake_gethostbyaddr):
+    assert not SSLHandshakeDispatcher.compare_names('10.0.0.1', 'example.com')
+
+
+@pytest.mark.parametrize('lhs,rhs', [('127.0.0.1', 'example.com'),
+                                     ('::1', 'example.com'),
+                                     ('::ffff:127.0.0.1', 'example.com')])
+def test_local_addresses(lhs, rhs):
+    assert SSLHandshakeDispatcher.compare_names(lhs, rhs)
 
 
 @pytest.fixture
