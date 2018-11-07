@@ -589,7 +589,7 @@ def running_on_centos():
 
 def running_on_fedora(ver=''):
     with open('/etc/redhat-release') as f:
-        return 'Fedora release {} '.format(ver) in f.readline()
+        return 'Fedora release {}'.format(ver) in f.readline()
 
 
 def running_on_travis_ci():
