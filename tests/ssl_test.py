@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2018 Red Hat, Inc.
+# Copyright 2012-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,19 +22,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import errno
-import os
 import socket
 import ssl
-import tempfile
-import threading
 
 import pytest
 
-from testlib import VdsmTestCase as TestCaseBase
-
-from integration.sslhelper import get_server_socket, \
-    KEY_FILE, CRT_FILE
+from integration.sslhelper import KEY_FILE, CRT_FILE
 
 from vdsm import utils
 from vdsm.common import cmdutils
@@ -43,144 +36,6 @@ from vdsm.common import commands
 from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.sslutils import CLIENT_PROTOCOL, SSLContext, SSLHandshakeDispatcher
 from yajsonrpc.betterAsyncore import Reactor
-
-
-class SSLServerThread(threading.Thread):
-    """A very simple server thread.
-
-    This server waits for SSL connections in a serial
-    fashion and then echoes whatever the client sends.
-    """
-
-    def __init__(self, server):
-        threading.Thread.__init__(self)
-        self.server = server
-        self.stop = threading.Event()
-
-    def run(self):
-        # It is important to set a timeout in the server thread to be
-        # able to check periodically the stop flag:
-        self.server.settimeout(1)
-
-        # Accept client connections:
-        while not self.stop.isSet():
-            try:
-                client, address = self.server.accept()
-                client.settimeout(1)
-                try:
-                    while True:
-                        data = client.recv(1024)
-                        if data:
-                            client.sendall(data)
-                        else:
-                            break
-                except:
-                    # We don't care about exceptions here, only on the
-                    # client side:
-                    pass
-                finally:
-                    client.close()
-            except:
-                # Nothing to do here, we will check the stop flag in the
-                # next iteration of the loop:
-                pass
-
-    def shutdown(self):
-        # Note that this doesn't stop the thready immediately, it just
-        # indicates that stopping is requested, the thread will stop
-        # with next iteration of the accept loop:
-        self.stop.set()
-
-
-class SSLTests(TestCaseBase):
-    """Tests of SSL communication"""
-
-    def setUp(self):
-        """Prepares to run the tests.
-
-        The preparation consist on creating temporary files containing
-        the keys and certificates and starting a thread that runs a
-        simple SSL server.
-        """
-
-        # Save the key to a file:
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(KEY)
-            self.keyfile = tmp.name
-
-        # Save the certificate to a file:
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(CERTIFICATE)
-            self.certfile = tmp.name
-
-        # Create the server socket:
-        self.server = socket.socket()
-        self.server = get_server_socket(self.keyfile, self.certfile,
-                                        self.server)
-        self.address = self.tryBind(ADDRESS)
-        self.server.listen(5)
-
-        # Start the server thread:
-        self.thread = SSLServerThread(self.server)
-        self.thread.deamon = True
-        self.thread.start()
-
-    def tryBind(self, address):
-        ipadd, port = address
-        while True:
-            try:
-                self.server.bind((ipadd, port))
-                return (ipadd, port)
-            except socket.error as ex:
-                if ex.errno == errno.EADDRINUSE:
-                    port += 1
-                    if port > 65535:
-                        raise socket.error(
-                            errno.EADDRINUSE,
-                            "Can not find available port to bind")
-                else:
-                    raise
-
-    def tearDown(self):
-        """Release the resources used by the tests.
-
-        Removes the temporary files containing the keys and certifites,
-        stops the server thread and closes the server socket.
-        """
-
-        # Delete the temporary files:
-        os.remove(self.keyfile)
-        os.remove(self.certfile)
-
-        # Stop the server thread and wait for it to finish:
-        self.thread.shutdown()
-        self.thread.join()
-        del self.thread
-
-        # Close the server socket:
-        self.server.shutdown(socket.SHUT_RDWR)
-        self.server.close()
-        del self.server
-
-    def testConnectWithoutCertificateFails(self):
-        """
-        Verify that the connection without a client certificate
-        fails.
-        """
-
-        with self.assertRaises(cmdutils.Error):
-            args = ["openssl", "s_client", "-connect", "%s:%d" % self.address]
-            commands.run(args)
-
-    def testConnectWithCertificateSucceeds(self):
-        """
-        Verify that the connection with a valid client certificate
-        works correctly.
-        """
-
-        args = ["openssl", "s_client", "-connect", "%s:%d" % self.address,
-                "-cert", self.certfile, "-key", self.keyfile]
-        commands.run(args)
 
 
 @pytest.fixture
@@ -318,10 +173,6 @@ def test_client_tlsv12(use_client):
 
     # WRONG_VERSION_NUMBER
     assert e.value.errno == 1
-
-
-# The address of the tests server:
-ADDRESS = ("127.0.0.1", 8443)
 
 
 # Private key used for the tests:
