@@ -17,6 +17,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 
+from __future__ import absolute_import
+
 from yum.Errors import PackageSackError
 from yum.plugins import PluginYumExit, TYPE_CORE, TYPE_INTERACTIVE
 

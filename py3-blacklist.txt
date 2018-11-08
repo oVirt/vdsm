@@ -58,11 +58,6 @@
 ./lib/vdsm/virt/vmstats.py
 ./lib/yajsonrpc/jsonrpcclient.py
 ./lib/yajsonrpc/stomp.py
-./static/usr/bin/vdsm-client
-./static/usr/bin/vdsm-tool
-./static/usr/sbin/vdsmd
-./static/usr/share/vdsm/sitecustomize.py
-./static/usr/share/yum-plugins/vdsmupgrade.py
 ./tests/common/concurrent_test.py
 ./tests/common/function.py
 ./tests/common/logutils_test.py
