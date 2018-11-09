@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2017 Red Hat, Inc. and/or its affiliates.
+# Copyright 2009-2018 Red Hat, Inc. and/or its affiliates.
 #
 # Licensed to you under the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -35,6 +35,7 @@ from vdsm import jobs
 from vdsm import schedule
 from vdsm import taskset
 from vdsm import metrics
+from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import dsaversion
 from vdsm.common import lockfile
@@ -225,18 +226,17 @@ def __assertVdsmUser():
 
 
 def __assertSudoerPermissions():
-    rc = 1
     with tempfile.NamedTemporaryFile() as dst:
-        # This cmd choice is arbitrary to validate that sudoes.d/50_vdsm file
+        # This cmd choice is arbitrary to validate that sudoers.d/50_vdsm file
         # is read properly
         cmd = [constants.EXT_CHOWN, "%s:%s" %
                (constants.VDSM_USER, constants.QEMU_PROCESS_GROUP), dst.name]
-        rc, _, stderr = commands.execCmd(cmd, sudo=True)
-
-    if rc != 0:
-        raise FatalError("Vdsm user could not manage to run sudo operation: "
-                         "(stderr: %s). Verify sudoer rules configuration" %
-                         (stderr))
+        try:
+            commands.run(cmd, sudo=True)
+        except cmdutils.Error as e:
+            msg = ("Vdsm user could not manage to run sudo operation: "
+                   "(stderr: %s). Verify sudoer rules configuration" % e.err)
+            raise FatalError(msg)
 
 
 def __set_cpu_affinity():

@@ -43,7 +43,6 @@ lib/vdsm/tool/dummybr.py
 lib/vdsm/tool/service.py
 lib/vdsm/tool/transient.py
 lib/vdsm/v2v.py
-lib/vdsm/vdsmd.py
 lib/vdsm/virtsparsify.py
 lib/vdsm/virtsysprep.py
 tests/alignmentscan_test.py
