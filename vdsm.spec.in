@@ -158,21 +158,16 @@ Requires: libvirt-lock-sanlock
 # Required for preventing an HotPlug disk failure due to cgroups.
 # See https://bugzilla.redhat.com/1532183 for details.
 Requires: libvirt-python >= 3.2.0-3.el7_4.1
-%if 0%{?centos}
-# CVE-2018-3639 (EPYC)
-Requires: libvirt-daemon-kvm >= 3.9.0-14.el7_5.6
-%else # RHEL
-# Required to fix QEMU guest agent permissions and
-# live migration on GlusterFS storage.
-# See https://bugzilla.redhat.com/1635228 and
-# https://bugzilla.redhat.com/1635705 for details.
-Requires: libvirt-daemon-kvm >= 4.5.0-10.el7_6.2
-%endif
+# Required to fix order of VM life cycle events.
+# See https://bugzilla.redhat.com/1612943 for details.
+Requires: libvirt-daemon-kvm >= 4.5.0-10.el7_6.3
 %else # fedora
 # Required for preventing an HotPlug disk failure due to cgroups.
 # See https://bugzilla.redhat.com/1540872 for details.
 Requires: libvirt-python >= 3.7.0
-Requires: libvirt-daemon-kvm >= 3.7.0-4
+# Required to fix order of VM life cycle events.
+# See https://bugzilla.redhat.com/1612943 for details.
+Requires: libvirt-daemon-kvm >= 4.9.0-1
 %endif
 
 # iscsi-intiator versions
