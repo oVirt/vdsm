@@ -9,7 +9,6 @@
 ./doc/conf.py
 ./helpers/kvm2ovirt
 ./init/daemonAdapter
-./lib/vdsm/API.py
 ./lib/vdsm/clientIF.py
 ./lib/vdsm/common/cmdutils.py
 ./lib/vdsm/common/commands.py

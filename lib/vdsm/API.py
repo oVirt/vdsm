@@ -231,7 +231,7 @@ class VM(APIBase):
         except OSError as e:
             self.log.debug("OS Error creating VM", exc_info=True)
             raise exception.CannotCreateVM(
-                'Failed to create VM. No space on /tmp? %s' % e.message)
+                'Failed to create VM. No space on /tmp? %s' % str(e))
         except exception.VdsmException:
             # TODO: remove when the transition to @api.method is completed.
             raise  # do not interfer with api.method()
