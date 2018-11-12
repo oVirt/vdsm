@@ -47,7 +47,6 @@
 ./lib/vdsm/storage/sdm/api/create_volume.py
 ./lib/vdsm/storage/sdm/volume_artifacts.py
 ./lib/vdsm/storage/sd.py
-./lib/vdsm/storage/sp.py
 ./lib/vdsm/storage/task.py
 ./lib/vdsm/storage/volume.py
 ./lib/vdsm/tool/configurator.py

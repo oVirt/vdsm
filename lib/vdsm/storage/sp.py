@@ -30,6 +30,8 @@ import codecs
 from functools import partial
 from weakref import proxy
 
+import six
+
 from vdsm.common import concurrent
 from vdsm.common.contextlib import suppress
 from vdsm.common.panic import panic
@@ -1312,7 +1314,7 @@ class StoragePool(object):
                 domDirs[domUUID] = domaindir
 
         # Link all the domains to the pool
-        for domUUID, domaindir in domDirs.iteritems():
+        for domUUID, domaindir in six.iteritems(domDirs):
             linkName = os.path.join(self.poolPath, domUUID)
             self._linkStorageDomain(domaindir, linkName)
             oldLinks.discard(linkName)
