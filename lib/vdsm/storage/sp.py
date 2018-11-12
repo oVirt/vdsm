@@ -27,7 +27,6 @@ import threading
 import errno
 import uuid
 import codecs
-from contextlib import nested
 from functools import partial
 from weakref import proxy
 
@@ -1720,15 +1719,14 @@ class StoragePool(object):
         srcImgResNs = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         dstImgResNs = rm.getNamespace(sc.IMAGE_NAMESPACE, dstSdUUID)
 
-        # Preparing the ordered resource list to be acquired
-        resList = (rm.acquireResource(*x) for x in sorted((
+        first_resource, second_resource = sorted((
             (srcImgResNs, imgUUID, rm.SHARED),
             (dstImgResNs, imgUUID, rm.EXCLUSIVE),
-        )))
-
-        with nested(*resList):
-            img = image.Image(self.poolPath)
-            img.cloneStructure(sdUUID, imgUUID, dstSdUUID)
+        ))
+        with rm.acquireResource(*first_resource):
+            with rm.acquireResource(*second_resource):
+                img = image.Image(self.poolPath)
+                img.cloneStructure(sdUUID, imgUUID, dstSdUUID)
 
     def syncImageData(self, sdUUID, imgUUID, dstSdUUID, syncType):
         """
@@ -1748,15 +1746,14 @@ class StoragePool(object):
         srcImgResNs = rm.getNamespace(sc.IMAGE_NAMESPACE, sdUUID)
         dstImgResNs = rm.getNamespace(sc.IMAGE_NAMESPACE, dstSdUUID)
 
-        # Preparing the ordered resource list to be acquired
-        resList = (rm.acquireResource(*x) for x in sorted((
+        first_resource, second_resource = sorted((
             (srcImgResNs, imgUUID, rm.SHARED),
             (dstImgResNs, imgUUID, rm.EXCLUSIVE),
-        )))
-
-        with nested(*resList):
-            img = image.Image(self.poolPath)
-            img.syncData(sdUUID, imgUUID, dstSdUUID, syncType)
+        ))
+        with rm.acquireResource(*first_resource):
+            with rm.acquireResource(*second_resource):
+                img = image.Image(self.poolPath)
+                img.syncData(sdUUID, imgUUID, dstSdUUID, syncType)
 
     def uploadImage(self, methodArgs, sdUUID, imgUUID, volUUID=None):
         """
