@@ -49,7 +49,6 @@
 ./lib/vdsm/storage/volume.py
 ./lib/vdsm/tool/configurator.py
 ./lib/vdsm/tool/service.py
-./lib/vdsm/v2v.py
 ./lib/vdsm/virt/vm.py
 ./lib/vdsm/virt/vmstats.py
 ./lib/yajsonrpc/jsonrpcclient.py

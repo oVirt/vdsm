@@ -1,4 +1,4 @@
-# Copyright 2014-2017 Red Hat, Inc.
+# Copyright 2014-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ status is a way to feedback information on the job (init, error etc)
 """
 
 from __future__ import absolute_import
+from __future__ import division
 
 from collections import namedtuple
 from contextlib import closing, contextmanager
@@ -856,7 +857,7 @@ class ImportVm(object):
         0-50 and the second 50-100
         '''
         completed = (self._disk_count - 1) * 100
-        return (completed + self._disk_progress) / self._disk_count
+        return (completed + self._disk_progress) // self._disk_count
 
     @traceback(msg="Error importing vm")
     def _run(self):
@@ -1001,9 +1002,9 @@ class OutputParser(object):
 def _mem_to_mib(size, unit):
     lunit = unit.lower()
     if lunit in ('bytes', 'b'):
-        return size / 1024 / 1024
+        return size // 1024 // 1024
     elif lunit in ('kib', 'k'):
-        return size / 1024
+        return size // 1024
     elif lunit in ('mib', 'm'):
         return size
     elif lunit in ('gib', 'g'):
