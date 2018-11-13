@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 from collections import defaultdict, namedtuple
 import xml.etree.cElementTree as ET
@@ -115,8 +116,8 @@ def memory_by_cell(index):
     '''
     conn = libvirtconnection.get()
     meminfo = conn.getMemoryStats(index, 0)
-    meminfo['total'] = str(meminfo['total'] / 1024)
-    meminfo['free'] = str(meminfo['free'] / 1024)
+    meminfo['total'] = str(meminfo['total'] // 1024)
+    meminfo['free'] = str(meminfo['free'] // 1024)
     return meminfo
 
 

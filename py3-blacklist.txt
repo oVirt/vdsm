@@ -20,7 +20,6 @@
 ./lib/vdsm/hugepages.py
 ./lib/vdsm/jobs.py
 ./lib/vdsm/kvm2ovirt.py
-./lib/vdsm/numa.py
 ./lib/vdsm/rpc/http.py
 ./lib/vdsm/storage/asyncevent.py
 ./lib/vdsm/storage/blockSD.py
