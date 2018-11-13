@@ -17,7 +17,6 @@
 ./lib/vdsm/common/sigutils.py
 ./lib/vdsm/gluster/exception.py
 ./lib/vdsm/gluster/storagedev.py
-./lib/vdsm/health.py
 ./lib/vdsm/hugepages.py
 ./lib/vdsm/jobs.py
 ./lib/vdsm/kvm2ovirt.py

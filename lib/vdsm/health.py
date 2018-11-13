@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Red Hat, Inc.
+# Copyright 2016-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
+
 import gc
 import logging
 import os
@@ -142,10 +144,10 @@ class ProcStat(object):
         with open(self._PATH, "rb") as f:
             fields = f.readline().split()
         # See proc(5) for available fields and their semantics.
-        self.utime = int(fields[13], 10) / float(self._TICKS_PER_SEC)
-        self.stime = int(fields[14], 10) / float(self._TICKS_PER_SEC)
+        self.utime = int(fields[13], 10) / self._TICKS_PER_SEC
+        self.stime = int(fields[14], 10) / self._TICKS_PER_SEC
         self.threads = int(fields[19], 10)
-        self.rss = int(fields[23], 10) * cpuarch.PAGE_SIZE_BYTES / 1024
+        self.rss = int(fields[23], 10) * cpuarch.PAGE_SIZE_BYTES // 1024
 
 
 def saferepr(obj):
