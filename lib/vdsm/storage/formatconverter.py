@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Red Hat, Inc.
+# Copyright 2012-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -99,6 +99,39 @@ def v2DomainConverter(repoPath, hostId, domain, isMsd):
                   "for the domain %s", targetVersion, domain.sdUUID)
 
 
+def _v3_reset_meta_volsize(vol):
+    """
+    This function should only be used inside of v2->v3 domain format
+    conversion flow.
+    It measures size of a volume and updates metadata to match it.
+    We usually use metadata as a authoritative source, but in
+    this case we break that rule.
+
+    Arguments:
+        vol (Volume): Volume to reset
+    """
+    V2META_BLOCKSIZE = 512
+
+    # BZ811880 Verifiying that the volume size is the same size advertised
+    # by the metadata
+    log.debug("Checking the volume size for the volume %s", vol.volUUID)
+
+    metaVolSize = int(vol.getMetaParam(sc.SIZE))
+
+    if vol.getFormat() == sc.COW_FORMAT:
+        qemuVolInfo = qemuimg.info(vol.getVolumePath(),
+                                   qemuimg.FORMAT.QCOW2)
+        virtVolSize = qemuVolInfo["virtualsize"] / V2META_BLOCKSIZE
+    else:
+        virtVolSize = vol.getVolumeSize()
+
+    if metaVolSize != virtVolSize:
+        log.warn("Fixing the mismatch between the metadata volume size "
+                 "(%s) and the volume virtual size (%s) for the volume "
+                 "%s", vol.volUUID, metaVolSize, virtVolSize)
+        vol.setMetaParam(sc.SIZE, str(virtVolSize))
+
+
 def v3DomainConverter(repoPath, hostId, domain, isMsd):
     targetVersion = 3
     currentVersion = domain.getVersion()
@@ -133,28 +166,6 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
 
     log.debug("Acquiring the host id %s for domain %s", hostId, domain.sdUUID)
     newClusterLock.acquireHostId(hostId, async=False)
-
-    V2META_BLOCKSIZE = 512
-
-    def v3ResetMetaVolSize(vol):
-        # BZ811880 Verifiying that the volume size is the same size advertised
-        # by the metadata
-        log.debug("Checking the volume size for the volume %s", vol.volUUID)
-
-        metaVolSize = int(vol.getMetaParam(sc.SIZE))
-
-        if vol.getFormat() == sc.COW_FORMAT:
-            qemuVolInfo = qemuimg.info(vol.getVolumePath(),
-                                       qemuimg.FORMAT.QCOW2)
-            virtVolSize = qemuVolInfo["virtualsize"] / V2META_BLOCKSIZE
-        else:
-            virtVolSize = vol.getVolumeSize()
-
-        if metaVolSize != virtVolSize:
-            log.warn("Fixing the mismatch between the metadata volume size "
-                     "(%s) and the volume virtual size (%s) for the volume "
-                     "%s", vol.volUUID, metaVolSize, virtVolSize)
-            vol.setMetaParam(sc.SIZE, str(virtVolSize))
 
     def v3UpgradeVolumePermissions(vol):
         log.debug("Changing permissions (read-write) for the "
@@ -286,7 +297,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
                 for volUUID in imgVolumes:
                     try:
                         vol = domain.produceVolume(imgUUID, volUUID)
-                        v3ResetMetaVolSize(vol)  # BZ#811880
+                        _v3_reset_meta_volsize(vol)  # BZ#811880
                     except cmdutils.Error:
                         log.error("It is not possible to read the volume %s "
                                   "using qemu-img, the content looks damaged",
