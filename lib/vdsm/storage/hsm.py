@@ -88,7 +88,6 @@ from vdsm.storage.spbackends import StoragePoolMemoryBackend
 
 from vdsm.storage.sdm.api import (
     amend_volume,
-    create_volume,
     copy_data,
     merge as api_merge,
     move_device,
@@ -3593,14 +3592,6 @@ class HSM(object):
         jobs.add(job)
         self.taskMng.scheduleJob("sdm", None, vars.task,
                                  job.description, job.run)
-
-    @public
-    def sdm_create_volume(self, job_id, vol_info):
-        host_id = self._pool.id
-        vol_info = create_volume.CreateVolumeInfo(vol_info)
-        dom_manifest = sdCache.produce_manifest(vol_info.sd_id)
-        job = create_volume.Job(job_id, host_id, dom_manifest, vol_info)
-        self.sdm_schedule(job)
 
     @public
     def sdm_copy_data(self, job_id, source, destination):

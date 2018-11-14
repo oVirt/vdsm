@@ -26,6 +26,5 @@ vdsmsdmdir = $(vdsmpylibdir)/storage/sdm
 
 dist_vdsmsdm_PYTHON = \
 	__init__.py \
-	volume_artifacts.py \
 	volume_info.py \
 	$(NULL)

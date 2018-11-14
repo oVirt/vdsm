@@ -1204,13 +1204,11 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/workarounds.py*
 %{python_sitelib}/%{vdsm_name}/storage/xlease.py*
 %{python_sitelib}/%{vdsm_name}/storage/sdm/__init__.py*
-%{python_sitelib}/%{vdsm_name}/storage/sdm/volume_artifacts.py*
 %{python_sitelib}/%{vdsm_name}/storage/sdm/volume_info.py*
 %{python_sitelib}/%{vdsm_name}/storage/sdm/api/__init__.py*
 %{python_sitelib}/%{vdsm_name}/storage/sdm/api/amend_volume.py*
 %{python_sitelib}/%{vdsm_name}/storage/sdm/api/base.py*
 %{python_sitelib}/%{vdsm_name}/storage/sdm/api/copy_data.py*
-%{python_sitelib}/%{vdsm_name}/storage/sdm/api/create_volume.py*
 %{python_sitelib}/%{vdsm_name}/storage/sdm/api/merge.py*
 %{python_sitelib}/%{vdsm_name}/storage/sdm/api/move_device.py*
 %{python_sitelib}/%{vdsm_name}/storage/sdm/api/reduce_domain.py*

@@ -61,7 +61,6 @@ from vdsm.storage import sd
 from vdsm.storage.compat import sanlock
 from vdsm.storage.mailbox import MAILBOX_SIZE
 from vdsm.storage.persistent import PersistentDict, DictValidator
-from vdsm.storage.sdm import volume_artifacts
 
 import vdsm.common.supervdsm as svdsm
 
@@ -667,9 +666,6 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         Return a type specific volume generator object
         """
         return blockVolume.BlockVolumeManifest
-
-    def get_volume_artifacts(self, img_id, vol_id):
-        return volume_artifacts.BlockVolumeArtifacts(self, img_id, vol_id)
 
     def _getImgExclusiveVols(self, imgUUID, volsImgs):
         """Filter vols belonging to imgUUID only."""

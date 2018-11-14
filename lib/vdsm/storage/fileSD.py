@@ -46,7 +46,6 @@ from vdsm.storage import outOfProcess as oop
 from vdsm.storage import sd
 from vdsm.storage import xlease
 from vdsm.storage.persistent import PersistentDict, DictValidator
-from vdsm.storage.sdm import volume_artifacts
 
 from vdsm import constants
 from vdsm.utils import stripNewLines
@@ -228,9 +227,6 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         Return a type specific volume generator object
         """
         return fileVolume.FileVolumeManifest
-
-    def get_volume_artifacts(self, img_id, vol_id):
-        return volume_artifacts.FileVolumeArtifacts(self, img_id, vol_id)
 
     def getDeletedImagePath(self, imgUUID):
         currImgDir = self.getImagePath(imgUUID)

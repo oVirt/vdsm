@@ -11061,20 +11061,6 @@ VM.updateVmPolicy:
         name: params
         type: *UpdateVmPolicyParams
 
-SDM.create_volume:
-    added: '4.0'
-    deprecated: '4.2'
-    description: Create a new volume. This was never used and will be removed
-        in 4.3.
-    params:
-    -   description: A UUID to be used for tracking the job progress
-        name: job_id
-        type: *UUID
-
-    -   description: Information about the new volume to be created
-        name: vol_info
-        type: *CreateVolumeInfo
-
 SDM.copy_data:
     added: '4.1'
     description: Copy data from one volume to another.

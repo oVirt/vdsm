@@ -49,7 +49,6 @@ from vdsm.storage import outOfProcess as oop
 from vdsm.storage import qemuimg
 from vdsm.storage import sd
 from vdsm.storage import volume
-from vdsm.storage.sdm import volume_artifacts
 
 
 NR_PVS = 2       # The number of fake PVs we use to make a fake VG by default
@@ -114,7 +113,6 @@ def fake_block_env(obj=None, sd_version=3):
             (blockSD, 'lvm', lvm),
             (blockVolume, 'lvm', lvm),
             (blockVolume, 'sdCache', fake_sdc),
-            (volume_artifacts, 'lvm', lvm),
             (sc, 'REPO_DATA_CENTER', tmpdir),
             (volume, 'sdCache', fake_sdc),
             (hsm, 'sdCache', fake_sdc),

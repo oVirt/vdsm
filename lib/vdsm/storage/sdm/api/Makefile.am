@@ -27,7 +27,6 @@ dist_vdsmsdmapi_PYTHON = \
 	amend_volume.py \
 	base.py \
 	copy_data.py \
-	create_volume.py \
 	merge.py \
 	move_device.py \
 	reduce_domain.py \
