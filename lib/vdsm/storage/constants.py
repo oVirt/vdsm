@@ -22,6 +22,8 @@ from __future__ import absolute_import
 
 import os
 
+import six
+
 from vdsm import constants
 from vdsm.storage import qemuimg
 from vdsm.common.config import config
@@ -112,7 +114,7 @@ def type2name(volType):
 
 
 def name2type(name):
-    for (k, v) in VOLUME_TYPES.iteritems():
+    for (k, v) in six.iteritems(VOLUME_TYPES):
         if v == name.upper():
             return k
     return None
