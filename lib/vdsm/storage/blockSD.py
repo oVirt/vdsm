@@ -193,10 +193,10 @@ def getAllVolumes(sdUUID):
     """
     vols = _getVolsTree(sdUUID)
     res = {}
-    for volName in vols.iterkeys():
+    for volName in vols:
         res[volName] = {'imgs': [], 'parent': None}
 
-    for volName, vImg, parentVol in vols.itervalues():
+    for volName, vImg, parentVol in six.itervalues(vols):
         res[volName]['parent'] = parentVol
         if vImg not in res[volName]['imgs']:
             res[volName]['imgs'].insert(0, vImg)
@@ -211,7 +211,7 @@ def getAllVolumes(sdUUID):
                     res[parentVol]['imgs'].append(vImg)
 
     return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
-                for k, v in res.iteritems())
+                for k, v in six.iteritems(res))
 
 
 def deleteVolumes(sdUUID, vols):
