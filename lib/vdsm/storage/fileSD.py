@@ -30,6 +30,8 @@ import re
 
 from contextlib import contextmanager
 
+import six
+
 from vdsm import utils
 from vdsm.common import supervdsm
 from vdsm.common.compat import glob_escape
@@ -326,7 +328,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         #    image.
 
         volumes = {}
-        for imgUUID, volUUIDs in images.iteritems():
+        for imgUUID, volUUIDs in six.iteritems(images):
             for volUUID in volUUIDs:
                 if volUUID in volumes:
                     # This must be a template volume (rule 2)
@@ -341,7 +343,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
                     volumes[volUUID] = {'imgs': [imgUUID], 'parent': None}
 
         return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
-                    for k, v in volumes.iteritems())
+                    for k, v in six.iteritems(volumes))
 
     def getAllImages(self):
         """

@@ -36,6 +36,7 @@ import math
 import numbers
 import stat
 
+import six
 from six.moves import map
 
 from vdsm import constants
@@ -2433,13 +2434,13 @@ class HSM(object):
                 # Any pre-existing domains in sdCache stand the chance of
                 # being invalid, since there is no way to know what happens
                 # to them while the storage is disconnected.
-                for sdUUID in doms.iterkeys():
+                for sdUUID in doms:
                     sdCache.manuallyRemoveDomain(sdUUID)
                 sdCache.knownSDs.update(doms)
 
         self.log.debug("knownSDs: {%s}", ", ".join("%s: %s.%s" %
                        (k, v.__module__, v.__name__)
-                       for k, v in sdCache.knownSDs.iteritems()))
+                       for k, v in six.iteritems(sdCache.knownSDs)))
 
         # Connecting new device may change the visible storage domain list
         # so invalidate caches
