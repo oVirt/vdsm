@@ -199,8 +199,8 @@ def run(iface, family=4, default_route=False, duid_source=None,
             ne.ERR_FAILED_IFUP, 'dhclient%s failed' % family)
 
 
-def stop(iface):
-    dhclient = DhcpClient(iface)
+def stop(iface, family):
+    dhclient = DhcpClient(iface, family)
     dhclient.shutdown()
 
 

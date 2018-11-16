@@ -510,7 +510,7 @@ def dhclient_run(iface):
     try:
         yield
     finally:
-        dhclient.stop(iface)
+        dhclient.stop(iface, 4)
 
 
 @contextmanager

@@ -254,7 +254,7 @@ def setup_ovs_ip_config(nets2add, nets2remove):
 
 
 def _drop_dhcp_config(iface):
-    dhclient.stop(iface)
+    dhclient.stop(iface, 4)
 
 
 def _set_dhcp_config(iface, attrs):
