@@ -72,9 +72,6 @@ class TestNetworkDhcpBasic(object):
 
     def test_add_net_with_dhcp(self, switch, families, bridged):
 
-        if switch == 'ovs' and IpFamily.IPv6 in families:
-            pytest.xfail('DHCPv6 is not supported with OVS yet.')
-
         with veth_pair() as (server, client):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
             addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, IpFamily.IPv6)
@@ -106,28 +103,33 @@ class TestStopDhclientOnUsedNics(object):
     def test_attach_dhcp_nic_to_ipless_network(self, switch):
         with veth_pair() as (server, client):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
+            addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, IpFamily.IPv6)
             linkSet(server, ['up'])
             with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
+                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO,
                              router=DHCPv4_GATEWAY):
                 with dhclient_run(client):
-                    adapter.assertDhclient(client, family=4)
+                    adapter.assertDhclient(client, family=IpFamily.IPv4)
+                    adapter.assertDhclient(client, family=IpFamily.IPv6)
 
                     NETCREATE = {NETWORK_NAME: {
                         'nic': client, 'switch': switch}}
                     with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                         nic_netinfo = adapter.netinfo.nics[client]
                         adapter.assertDisabledIPv4(nic_netinfo)
+                        adapter.assertDisabledIPv6(nic_netinfo)
                         net_netinfo = adapter.netinfo.networks[NETWORK_NAME]
                         adapter.assertDisabledIPv4(net_netinfo)
+                        adapter.assertDisabledIPv6(nic_netinfo)
 
-    def test_attach_dhcp_nic_to_dhcp_bridged_network(self, switch):
+    def test_attach_dhcp_nic_to_dhcpv4_bridged_network(self, switch):
         with veth_pair() as (server, client):
             addrAdd(server, IPv4_ADDRESS, IPv4_PREFIX_LEN)
             linkSet(server, ['up'])
             with dnsmasq_run(server, DHCPv4_RANGE_FROM, DHCPv4_RANGE_TO,
                              router=DHCPv4_GATEWAY):
                 with dhclient_run(client):
-                    adapter.assertDhclient(client, family=4)
+                    adapter.assertDhclient(client, family=IpFamily.IPv4)
 
                     NETCREATE = {NETWORK_NAME: {
                         'nic': client, 'bootproto': 'dhcp',
@@ -135,7 +137,28 @@ class TestStopDhclientOnUsedNics(object):
                     with adapter.setupNetworks(NETCREATE, {}, NOCHK):
                         nic_netinfo = adapter.netinfo.nics[client]
                         adapter.assertDisabledIPv4(nic_netinfo)
-                        adapter.assertNoDhclient(client, family=4)
+                        adapter.assertNoDhclient(client, family=IpFamily.IPv4)
                         net_netinfo = adapter.netinfo.networks[NETWORK_NAME]
                         adapter.assertDHCPv4(net_netinfo)
-                        adapter.assertDhclient(NETWORK_NAME, family=4)
+                        adapter.assertDhclient(NETWORK_NAME,
+                                               family=IpFamily.IPv4)
+
+    def test_attach_dhcp_nic_to_dhcpv6_bridged_network(self, switch):
+        with veth_pair() as (server, client):
+            addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, IpFamily.IPv6)
+            linkSet(server, ['up'])
+            with dnsmasq_run(server, DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO):
+                with dhclient_run(client, family=IpFamily.IPv6):
+                    adapter.assertDhclient(client, family=IpFamily.IPv6)
+
+                    NETCREATE = {NETWORK_NAME: {
+                        'nic': client, 'dhcpv6': True,
+                        'blockingdhcp': True, 'switch': switch}}
+                    with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                        nic_netinfo = adapter.netinfo.nics[client]
+                        adapter.assertDisabledIPv6(nic_netinfo)
+                        adapter.assertNoDhclient(client, family=IpFamily.IPv6)
+                        net_netinfo = adapter.netinfo.networks[NETWORK_NAME]
+                        adapter.assertDHCPv6(net_netinfo)
+                        adapter.assertDhclient(NETWORK_NAME,
+                                               family=IpFamily.IPv6)

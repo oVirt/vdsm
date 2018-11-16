@@ -255,16 +255,20 @@ def setup_ovs_ip_config(nets2add, nets2remove):
 
 def _drop_dhcp_config(iface):
     dhclient.stop(iface, 4)
+    dhclient.stop(iface, 6)
 
 
 def _set_dhcp_config(iface, attrs):
-    # TODO: DHCPv6
     blocking_dhcp = attrs.get('blockingdhcp', False)
     duid_source = attrs.get('bonding') or attrs.get('nic')
 
     ipv4 = address.IPv4(*_ipv4_conf_params(attrs))
     if ipv4.bootproto == 'dhcp':
         dhclient.run(iface, 4, ipv4.defaultRoute, duid_source, blocking_dhcp)
+
+    ipv6 = address.IPv6(*_ipv6_conf_params(attrs))
+    if ipv6.dhcpv6:
+        dhclient.run(iface, 6, ipv6.defaultRoute, duid_source, blocking_dhcp)
 
 
 def _set_static_ip_config(iface, attrs):

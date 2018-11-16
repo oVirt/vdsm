@@ -505,12 +505,12 @@ def wait_for_ipv6(iface, wait_for_scopes=None):
 
 
 @contextmanager
-def dhclient_run(iface):
-    dhclient.run(iface, blocking_dhcp=True)
+def dhclient_run(iface, family=4):
+    dhclient.run(iface, family, blocking_dhcp=True)
     try:
         yield
     finally:
-        dhclient.stop(iface, 4)
+        dhclient.stop(iface, family)
 
 
 @contextmanager
