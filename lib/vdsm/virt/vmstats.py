@@ -458,6 +458,7 @@ def memory(stats, first_sample, last_sample, interval):
             'minflt': 'balloon.minor_fault',
         }
         for (k, v) in six.iteritems(stats_map):
+            # pylint: disable=round-builtin
             mem_stats[k] = int(round((
                 last_sample.get(v, 0) - first_sample.get(v, 0)
             ) / interval))

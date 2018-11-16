@@ -50,7 +50,6 @@
 ./lib/vdsm/tool/configurator.py
 ./lib/vdsm/tool/service.py
 ./lib/vdsm/virt/vm.py
-./lib/vdsm/virt/vmstats.py
 ./lib/yajsonrpc/jsonrpcclient.py
 ./lib/yajsonrpc/stomp.py
 ./tests/common/function.py
