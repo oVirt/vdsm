@@ -24,6 +24,8 @@ from __future__ import division
 from contextlib import contextmanager
 import os
 
+import pytest
+
 from storage.storagetestlib import fake_env
 from testlib import make_uuid
 from vdsm.constants import GIB
@@ -70,3 +72,19 @@ class TestFileVolumeManifest(object):
         size = 5 * MEGAB
         with self.make_volume(size=size, format=sc.COW_FORMAT) as vol:
             assert vol.optimal_size() == vol.getVolumeSize() * sc.BLOCK_SIZE
+
+    @pytest.mark.xfail(reason="Wrong parsing of ipv6 address (see BZ#1641960)")
+    def test_get_image_volumes(self):
+        img_id = make_uuid()
+        vol_id = make_uuid()
+        mnt_dir = "[2001:db8:85a3::8a2e:370:7334]:1234:_path"
+        size = 5 * MEGAB
+
+        # Simulate a domain with an ipv6 address
+        with fake_env(storage_type='file', mnt_dir=mnt_dir) as env:
+            env.make_volume(size, img_id, vol_id)
+            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+            vol_path = vol.getVolumePath()
+            sduuid = fileVolume.getDomUuidFromVolumePath(vol_path)
+
+            assert vol.getImageVolumes(sduuid, img_id) == [vol_id]

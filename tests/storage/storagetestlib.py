@@ -88,9 +88,11 @@ class FakeBlockEnv(object):
 
 
 @contextmanager
-def fake_file_env(obj=None, sd_version=3):
+def fake_file_env(obj=None, sd_version=3, mnt_dir="server:_path"):
     with namedTemporaryDir() as tmpdir:
-        sd_manifest = make_filesd_manifest(tmpdir, sd_version=sd_version)
+        mountpoint = os.path.join(tmpdir, mnt_dir)
+        os.mkdir(mountpoint)
+        sd_manifest = make_filesd_manifest(mountpoint, sd_version=sd_version)
         fake_sdc = FakeStorageDomainCache()
         with MonkeyPatchScope([
             [sc, 'REPO_DATA_CENTER', tmpdir],
@@ -127,9 +129,9 @@ def fake_block_env(obj=None, sd_version=3):
                 oop.stop()
 
 
-def fake_env(storage_type, sd_version=3):
+def fake_env(storage_type, sd_version=3, mnt_dir="server:_path"):
     if storage_type == 'file':
-        return fake_file_env(sd_version=sd_version)
+        return fake_file_env(sd_version=sd_version, mnt_dir=mnt_dir)
     elif storage_type == 'block':
         return fake_block_env(sd_version=sd_version)
     else:
@@ -246,11 +248,11 @@ def get_metafile_path(domaindir):
     return os.path.join(domaindir, sd.DOMAIN_META_DATA, sd.METADATA)
 
 
-def make_filesd_manifest(tmpdir, sd_version=3):
+def make_filesd_manifest(mnt_dir, sd_version=3):
     spuuid = make_uuid()
     sduuid = make_uuid()
 
-    domain_path = os.path.join(tmpdir, spuuid, sduuid)
+    domain_path = os.path.join(mnt_dir, sduuid)
     metafile = get_metafile_path(domain_path)
     make_file(metafile)
     metadata = fileSD.FileSDMetadata(metafile)
