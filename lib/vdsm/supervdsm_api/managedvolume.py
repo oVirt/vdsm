@@ -1,5 +1,4 @@
-#
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2018-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,23 +12,18 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
-include $(top_srcdir)/build-aux/Makefile.subs
 
-supervdsm_apidir = $(vdsmpylibdir)/supervdsm_api
-dist_supervdsm_api_PYTHON = \
-	__init__.py \
-	hwinfo.py \
-	ksm.py \
-	managedvolume.py \
-	mkimage.py \
-	network.py \
-	systemctl.py \
-	systemd.py \
-	test.py \
-	udev.py \
-	virt.py \
-	$(NULL)
+from __future__ import absolute_import
+from __future__ import division
+
+from vdsm.storage import managedvolume
+from . import expose
+
+
+@expose
+def managedvolume_run_helper(cmd):
+    return managedvolume.run_helper(cmd)

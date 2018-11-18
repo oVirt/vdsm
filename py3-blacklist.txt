@@ -35,6 +35,7 @@
 ./lib/vdsm/storage/iscsi.py
 ./lib/vdsm/storage/lvm.py
 ./lib/vdsm/storage/mailbox.py
+./lib/vdsm/storage/managedvolume-helper
 ./lib/vdsm/storage/merge.py
 ./lib/vdsm/storage/misc.py
 ./lib/vdsm/storage/monitor.py

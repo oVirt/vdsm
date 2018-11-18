@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc.
+# Copyright 2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,19 +17,20 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-include $(top_srcdir)/build-aux/Makefile.subs
 
-supervdsm_apidir = $(vdsmpylibdir)/supervdsm_api
-dist_supervdsm_api_PYTHON = \
-	__init__.py \
-	hwinfo.py \
-	ksm.py \
-	managedvolume.py \
-	mkimage.py \
-	network.py \
-	systemctl.py \
-	systemd.py \
-	test.py \
-	udev.py \
-	virt.py \
-	$(NULL)
+from __future__ import absolute_import
+from __future__ import division
+
+import os
+
+
+def get_connector_properties(*args, **kwargs):
+    res = os.environ["FAKE_OS_BRICK_RESULT"]
+    if res == "OK":
+        return {"fake": "True"}
+    elif res == "FAIL_JSON":
+        return object
+    elif res == "FAIL":
+        exit(1)
+    elif res == "RAISE":
+        raise RuntimeError("error message from os_brick")

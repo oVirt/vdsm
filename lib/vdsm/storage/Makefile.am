@@ -61,6 +61,7 @@ dist_vdsmstorage_PYTHON = \
 	lvmconf.py \
 	lvmfilter.py \
 	mailbox.py \
+	managedvolume.py \
 	merge.py \
 	misc.py \
 	monitor.py \
@@ -97,6 +98,7 @@ dist_vdsmstorage_PYTHON = \
 dist_vdsmexec_SCRIPTS = \
 	curl-img-wrap \
 	fc-scan \
+	managedvolume-helper
 	$(NULL)
 
 nodist_vdsmstorage_DATA = \

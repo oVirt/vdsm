@@ -892,6 +892,7 @@ exit 0
 %{_sysconfdir}/libvirt/hooks/qemu
 %{_libexecdir}/%{vdsm_name}/curl-img-wrap
 %{_libexecdir}/%{vdsm_name}/fc-scan
+%{_libexecdir}/%{vdsm_name}/managedvolume-helper
 %{_libexecdir}/%{vdsm_name}/vdsm-gencerts.sh
 %{_libexecdir}/%{vdsm_name}/vdsmd_init_common.sh
 %{_libexecdir}/%{vdsm_name}/vm_migrate_hook.py*
@@ -1087,6 +1088,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/blockdev.py*
 %{python_sitelib}/%{vdsm_name}/storage/blockSD.py*
 %{python_sitelib}/%{vdsm_name}/storage/blockVolume.py*
+%{python_sitelib}/%{vdsm_name}/storage/managedvolume.py*
 %{python_sitelib}/%{vdsm_name}/storage/check.py*
 %{python_sitelib}/%{vdsm_name}/storage/clusterlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/compat.py*
@@ -1162,6 +1164,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/sdm/api/sparsify_volume.py*
 %{python_sitelib}/%{vdsm_name}/storage/sdm/api/update_volume.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/__init__.py*
+%{python_sitelib}/%{vdsm_name}/supervdsm_api/managedvolume.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/hwinfo.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/mkimage.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm_api/ksm.py*
