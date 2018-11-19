@@ -1894,3 +1894,46 @@ class UnexpectedVolumeState(StorageException):
     def __init__(self, base_vol_id, expected, actual):
         self.value = ("vol_id=%s, expected=%s, actual=%s" % (
                       base_vol_id, expected, actual))
+
+
+#################################################
+#  Managed Volume Errors
+#  Range: 925-929
+#################################################
+
+
+class ManagedVolumeNotSupported(StorageException):
+    code = 925
+    message = ("Managed Volume Not Supported. "
+               "Missing package os-brick.")
+
+
+class ManagedVolumeHelperFailed(StorageException):
+    code = 926
+    message = "Managed Volume Helper failed."
+
+
+class ManagedVolumeAlreadyAttached(StorageException):
+    code = 927
+    message = "Managed Volume is already attached."
+
+    def __init__(self, vol_id, path, attachment):
+        self.value = "vol_id=%s path=%s attachment=%s" % (
+            vol_id, path, attachment)
+
+
+class ManagedVolumeUnsupportedDevice(StorageException):
+    code = 928
+    message = "Unsupported Device: missing multipath_id"
+
+    def __init__(self, vol_id, attachment):
+        self.value = "vol_id=%s attachment=%s" % (vol_id, attachment)
+
+
+class ManagedVolumeConnectionMismatch(StorageException):
+    code = 928
+    message = "Attach existing volume with different connection information"
+
+    def __init__(self, vol_id, expected, actual):
+        self.value = "vol_id=%s expected=%s actual=%s" % (
+            vol_id, expected, actual)

@@ -25,5 +25,5 @@ from . import expose
 
 
 @expose
-def managedvolume_run_helper(cmd):
-    return managedvolume.run_helper(cmd)
+def managedvolume_run_helper(cmd, cmd_input=None):
+    return managedvolume.run_helper(cmd, cmd_input=cmd_input)

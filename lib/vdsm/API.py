@@ -53,6 +53,7 @@ from vdsm.host import caps
 import vdsm.storage.sd
 from vdsm.storage import clusterlock
 from vdsm.storage import image
+from vdsm.storage import managedvolume
 from vdsm.storage import misc
 from vdsm.storage import constants as sc
 from vdsm.virt import migration
@@ -1759,7 +1760,7 @@ class ManagedVolume(APIBase):
         """
         attach volume and return attached device information
         """
-        raise exception.MethodNotImplemented
+        return managedvolume.attach_volume(vol_id, connection_info)
 
     @api.logged(on="api.storage")
     @api.method

@@ -34,6 +34,7 @@ from vdsm.common import hostdev
 from vdsm.common import supervdsm
 from vdsm.config import config
 from vdsm.host import rngsources
+from vdsm.storage import exception as se
 from vdsm.storage import hba
 from vdsm.storage import managedvolume
 from vdsm import cpuinfo
@@ -142,9 +143,9 @@ def get():
 
     try:
         caps["connector_info"] = managedvolume.connector_info()
-    except managedvolume.NotSupported as e:
+    except se.ManagedVolumeNotSupported as e:
         logging.info("managedvolume not supported: %s", e)
-    except managedvolume.Error as e:
+    except se.ManagedVolumeHelperFailed as e:
         logging.exception("Error getting managedvolume connector info: %s", e)
 
     return caps

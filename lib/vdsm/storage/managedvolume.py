@@ -43,37 +43,31 @@ except ImportError:
 
 from vdsm.common import cmdutils
 from vdsm.common import commands
+from vdsm.storage import managedvolumedb
 from vdsm.common import supervdsm
+from vdsm.storage import exception as se
 
 HELPER = '/usr/libexec/vdsm/managedvolume-helper'
+DEV_MAPPER = "/dev/mapper"
+DEV_RBD = "/dev/rbd"
 
 log = logging.getLogger("storage.managedvolume")
 
 
-class Error(Exception):
-    """ managed volume operation failed """
-
-
-class NotSupported(Error):
-    """ managed volume operation not supported """
-
-
-class HelperFailed(Error):
-    """ managed volume operation helper failed """
-
-
-def run_helper(sub_cmd):
+def run_helper(sub_cmd, cmd_input=None):
     if os.geteuid() != 0:
-        return supervdsm.getProxy().managedvolume_run_helper(sub_cmd)
-
+        return supervdsm.getProxy().managedvolume_run_helper(
+            sub_cmd, cmd_input=cmd_input)
     try:
-        result = commands.run([HELPER, sub_cmd])
+        if cmd_input:
+            cmd_input = json.dumps(cmd_input).encode("utf-8")
+        result = commands.run([HELPER, sub_cmd], input=cmd_input)
     except cmdutils.Error as e:
-        raise HelperFailed("Error executing helper: %s" % e)
+        raise se.ManagedVolumeHelperFailed("Error executing helper: %s" % e)
     try:
         return json.loads(result)
     except ValueError as e:
-        raise HelperFailed("Error loading result: %s" % e)
+        raise se.ManagedVolumeHelperFailed("Error loading result: %s" % e)
 
 
 def connector_info():
@@ -82,7 +76,71 @@ def connector_info():
         If not running as root, use supervdsm to invoke this function as root.
     """
     if os_brick is None:
-        raise NotSupported("Cannot import os_brick.initiator")
+        raise se.ManagedVolumeNotSupported("Cannot import os_brick.initiator")
 
     log.debug("Starting get connector_info")
     return run_helper("connector_info")
+
+
+def _resolve_path(vol_id, connection_info, attachment):
+    vol_type = connection_info['driver_volume_type']
+    if vol_type in ("iscsi", "fibre_channel"):
+        if "multipath_id" not in attachment:
+            raise se.ManagedVolumeUnsupportedDevice(vol_id, attachment)
+        # /dev/mapper/xxxyyy
+        return os.path.join(DEV_MAPPER, attachment["multipath_id"])
+    elif vol_type == "rbd":
+        # /dev/rbd/poolname/volume-vol-id
+        return os.path.join(DEV_RBD, connection_info['data']['name'])
+    else:
+        log.warning("Managed Volume without multipath info: %s",
+                    attachment)
+        return attachment["path"]
+
+
+def attach_volume(vol_id, connection_info):
+    """
+    Attach volume with os-brick.
+    """
+    if os_brick is None:
+        raise se.ManagedVolumeNotSupported("Cannot import os_brick.initiator")
+
+    try:
+        vol_info = managedvolumedb.get(vol_id)
+    except managedvolumedb.NotFound:
+        vol_info = {"connection_info": connection_info}
+        managedvolumedb.add(vol_id, vol_info)
+    else:
+        if vol_info["connection_info"] != connection_info:
+            raise se.ManagedVolumeConnectionMismatch(
+                vol_id, vol_info["connection_info"], connection_info)
+
+        if "path" in vol_info and os.path.exists(vol_info["path"]):
+            raise se.ManagedVolumeAlreadyAttached(
+                vol_id, vol_info["path"], vol_info.get('attachment'))
+
+    log.debug("Starting Attach volume with os-brick")
+
+    try:
+        attachment = run_helper("attach", connection_info)
+        path = _resolve_path(vol_id, connection_info, attachment)
+        try:
+            managedvolumedb.update(
+                vol_id,
+                path=path,
+                attachment=attachment,
+                multipath_id=attachment.get("multipath_id"))
+        except:
+            # TODO detach
+            raise
+    except:
+        try:
+            managedvolumedb.remove(vol_id)
+        except Exception:
+            log.exception("Failed to remove managed volume from DB")
+        raise
+
+    log.debug("Attached volume: %s", attachment)
+
+    ret = {'attachment': attachment, 'path': path}
+    return {'result': ret}
