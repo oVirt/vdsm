@@ -1979,7 +1979,8 @@ class Vm(object):
         disk_mapping_hash = self.guestAgent.diskMappingHash
         if disk_mapping_hash == self._last_disk_mapping_hash:
             return
-        guest_disk_mapping = self.guestAgent.guestDiskMapping.items()
+        guest_disk_mapping = list(six.iteritems(
+            self.guestAgent.guestDiskMapping))
         with self._confLock:
             disk_devices = list(self.getDiskDevices())
             vmdevices.common.update_guest_disk_mapping(
