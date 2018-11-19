@@ -256,8 +256,11 @@ class _AlteredState(object):
         self.from_snapshot = from_snapshot
         self.destination = destination
 
-    def __nonzero__(self):
+    def __bool__(self):
         return self.origin is not None
+
+    # TODO: drop when py2 is no longer needed
+    __nonzero__ = __bool__
 
 
 def _undefine_stale_domain(vm, connection):
