@@ -5,9 +5,8 @@ centos-ovirt-common-testing-ppc64le,https://cbs.centos.org/repos/virt7-ovirt-com
 centos-ovirt-common-testing-x86_64,https://cbs.centos.org/repos/virt7-ovirt-common-testing/x86_64/os/
 centos-ovirt42-testing-ppc64le,https://cbs.centos.org/repos/virt7-ovirt-42-testing/ppc64le/os/
 centos-ovirt42-testing-x86_64,https://cbs.centos.org/repos/virt7-ovirt-42-testing/x86_64/os/
-epel-snap-2017-02-03-04-43,http://mirrors.phx.ovirt.org/repos/yum/epel-el7/2017-02-03-04-43
-kvm-common,http://mirror.centos.org/centos/7/virt/x86_64/kvm-common/
-kvm-common-ppc64le,https://cbs.centos.org/repos/virt7-kvm-common-release/ppc64le/os/
+centos-ovirt43-testing,https://cbs.centos.org/repos/virt7-ovirt-43-testing/$basearch/os/
+kvm-common,https://cbs.centos.org/repos/virt7-kvm-common-release/$basearch/os/
 lago,http://resources.ovirt.org/repos/lago/stable/0.0/rpm/$distro
 ovirt-ci-tools,http://resources.ovirt.org/repos/ci-tools/$distro
 ovirt-snapshot-static,http://resources.ovirt.org/pub/ovirt-master-snapshot-static/rpm/$distro

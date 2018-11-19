@@ -227,12 +227,11 @@ Requires: policycoreutils >= 2.1.13-55
 %endif
 
 %if 0%{?rhel}
-# CVE-2018-3639 (EPYC)
-Requires: qemu-kvm-rhev >= 10:2.10.0-21.el7_5.4
+# 7.6 baseline
+Requires: qemu-kvm-rhev >= 10:2.12.0-18.el7_6.1
 %else # fedora
-# qemu-kvm 2.10 comes with support for unsafe operations that we want to use
-# when creating volumes.
-Requires: qemu-kvm >= 2:2.10
+# qemu-kvm 2.12 is Fedora 28 virt-preview baseline
+Requires: qemu-kvm >= 2:2.12
 %endif
 
 # GlusterFS client-side RPMs needed for Gluster SD
