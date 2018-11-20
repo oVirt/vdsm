@@ -70,29 +70,6 @@ class TestVmXmlFunctions(VmXmlTestCase):
             self.assertEqual(True, vmxml.has_channel(
                 dom_xml, vmchannels.LEGACY_DEVICE_NAME))
 
-    @permutations([
-        # custom, mapping
-        [{}, {}],
-        [{'volumeMap': 'data:vda'}, {'data': 'vda'}],
-        [{'volumeMap': 'data:vda,extra:vdb'},
-         {'data': 'vda', 'extra': 'vdb'}],
-        [{'volumeMap': 'data1:vda, data2:vdb'},
-         {'data1': 'vda', 'data2': 'vdb'}],
-    ])
-    def test_parse_drive_mapping(self, custom, mapping):
-        result = libvirtxml.parse_drive_mapping(custom)
-        self.assertEqual(result, mapping)
-
-    @permutations([
-        # custom, exc
-        [{'volumeMap': ''}, ValueError],
-        [{'volumeMap': 'foobar'}, ValueError],
-    ])
-    def test_explode_parsing_drive_mapping(self, custom, exc):
-        self.assertRaises(exc,
-                          libvirtxml.parse_drive_mapping,
-                          custom)
-
 
 @expandPermutations
 class TestVmXmlHelpers(XMLTestCase):

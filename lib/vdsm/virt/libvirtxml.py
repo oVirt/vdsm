@@ -678,18 +678,6 @@ def make_placeholder_domain_xml(vm):
                     arch=vm.arch, machine=_DEFAULT_MACHINES[vm.arch])
 
 
-def parse_drive_mapping(custom):
-    mappings = custom.get('volumeMap', None)
-    if mappings is None:
-        return {}
-
-    drive_mapping = {}
-    for mapping in mappings.split(','):
-        name, drive = mapping.strip().split(':', 1)
-        drive_mapping[name.strip()] = drive.strip()
-    return drive_mapping
-
-
 def update_sysinfo(dom, osname, osversion, hostserial):
     sys_info = vmxml.find_first(dom, 'sysinfo/system', None)
     if sys_info is None:
