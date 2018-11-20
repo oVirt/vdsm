@@ -1,0 +1,28 @@
+archs:
+  - ppc64le:
+      distributions:
+        - el7
+  - s390x:
+      distributions:
+        - fc28
+  - x86_64:
+      distributions:
+        - el7
+        - fc28
+
+release_branches:
+  master:
+    - ovirt-master
+  ovirt-4.2:
+    - ovirt-4.2
+
+stages:
+  - build-artifacts
+  - check-merged:
+      archs:
+        - x86_64
+      distributions:
+        - el7
+  - check-patch:
+      archs:
+        - x86_64
