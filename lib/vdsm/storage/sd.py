@@ -22,11 +22,12 @@ from __future__ import absolute_import
 
 import os
 import logging
-import types
 import threading
 from collections import namedtuple
 import codecs
 from contextlib import contextmanager
+
+import six
 
 from vdsm import utils
 from vdsm.common import exception
@@ -214,7 +215,7 @@ def validateSDStatus(status):
 
 
 def storageType(t):
-    if isinstance(t, types.StringTypes):
+    if isinstance(t, (six.text_type, six.binary_type)):
         t = t.upper()
     if t in DOMAIN_TYPES.values():
         return t
