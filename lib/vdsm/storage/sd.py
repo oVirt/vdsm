@@ -230,7 +230,7 @@ def type2name(domType):
 
 
 def name2type(name):
-    for (k, v) in DOMAIN_TYPES.iteritems():
+    for (k, v) in six.iteritems(DOMAIN_TYPES):
         if v == name.upper():
             return k
     raise KeyError(name)
@@ -241,7 +241,7 @@ def class2name(domClass):
 
 
 def name2class(name):
-    for (k, v) in DOMAIN_CLASSES.iteritems():
+    for (k, v) in six.iteritems(DOMAIN_CLASSES):
         if v == name:
             return k
     raise KeyError(name)
