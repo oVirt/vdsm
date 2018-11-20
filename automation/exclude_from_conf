@@ -4,13 +4,13 @@ from __future__ import absolute_import
 
 import sys
 
-from six.moves import configpaser
+from six.moves import configparser
 
 
 def main():
     _, exclude_term = sys.argv
 
-    config = configpaser.ConfigParser()
+    config = configparser.ConfigParser()
     config.readfp(sys.stdin)
 
     for section in config.sections():
