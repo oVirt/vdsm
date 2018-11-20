@@ -67,7 +67,6 @@ BuildRequires: python-six >= 1.9.0
 BuildRequires: python-dateutil
 BuildRequires: python-subprocess32
 BuildRequires: python2-devel
-BuildRequires: PyYAML
 BuildRequires: rpm-build
 BuildRequires: systemd-units
 
@@ -105,7 +104,6 @@ Requires: sudo >= 1.7.3
 Requires: logrotate
 Requires: lshw
 Requires: xz
-Requires: PyYAML
 Requires: python-netaddr
 # Requires lstat() support, see https://bugzilla.redhat.com/1560460
 Requires: python2-ioprocess >= 1.1.1
@@ -298,6 +296,7 @@ Access vdsm API from the command line.
 %package api
 Summary:        VDSM API
 BuildArch:      noarch
+BuildRequires:  PyYAML
 
 %description api
 Contains api schema files
@@ -723,6 +722,7 @@ Requires: glusterfs-api >= %{gluster_version}
 Requires: glusterfs-geo-replication >= %{gluster_version}
 Requires: glusterfs-events >= %{gluster_version}
 Requires: python-magic
+Requires: PyYAML
 %if 0%{?centos} || 0%{?fedora}
 # gnfs is no longer part of glusterfs > 3.12, customers to move to nfs-ganesha
 # Installing for upstream alone in order to avoid breaking
