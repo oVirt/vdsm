@@ -36,7 +36,6 @@ import pytest
 
 from .fakesanlock import FakeSanlock
 from monkeypatch import MonkeyPatch
-from testlib import VdsmTestCase
 from testlib import make_uuid
 from testlib import namedTemporaryDir
 
@@ -64,21 +63,21 @@ class FailingWriter(xlease.DirectFile):
         raise WriteError
 
 
-class TestIndex(VdsmTestCase):
+class TestIndex:
 
     @MonkeyPatch(time, 'time', lambda: 123456789)
     def test_metadata(self):
         with make_volume() as vol:
             lockspace = os.path.basename(os.path.dirname(vol.path))
-            self.assertEqual(vol.version, 1)
-            self.assertEqual(vol.lockspace, lockspace)
-            self.assertEqual(vol.mtime, 123456789)
+            assert vol.version == 1
+            assert vol.lockspace == lockspace
+            assert vol.mtime == 123456789
 
     def test_magic_big_endian(self):
         with make_volume() as vol:
             with io.open(vol.path, "rb") as f:
                 f.seek(xlease.INDEX_BASE)
-                self.assertEqual(f.read(4), b"\x12\x15\x20\x16")
+                assert f.read(4) == b"\x12\x15\x20\x16"
 
     def test_bad_magic(self):
         with make_leases() as path:
@@ -133,32 +132,32 @@ class TestIndex(VdsmTestCase):
     def check_invalid_index(self, path):
         file = xlease.DirectFile(path)
         with utils.closing(file):
-            with self.assertRaises(xlease.InvalidIndex):
+            with pytest.raises(xlease.InvalidIndex):
                 vol = xlease.LeasesVolume(file)
                 vol.close()
 
     def test_format(self):
         with make_volume() as vol:
-            self.assertEqual(vol.leases(), {})
+            assert vol.leases() == {}
 
     def test_create_read_failure(self):
         with make_leases() as path:
             file = FailingReader(path)
             with utils.closing(file):
-                with self.assertRaises(ReadError):
+                with pytest.raises(ReadError):
                     xlease.LeasesVolume(file)
 
     def test_lookup_missing(self):
         with make_volume() as vol:
-            with self.assertRaises(xlease.NoSuchLease):
+            with pytest.raises(xlease.NoSuchLease):
                 vol.lookup(make_uuid())
 
     def test_lookup_updating(self):
         record = xlease.Record(make_uuid(), 0, updating=True)
         with make_volume((42, record)) as vol:
             leases = vol.leases()
-            self.assertTrue(leases[record.resource]["updating"])
-            with self.assertRaises(xlease.LeaseUpdating):
+            assert leases[record.resource]["updating"]
+            with pytest.raises(xlease.LeaseUpdating):
                 vol.lookup(record.resource)
 
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
@@ -166,13 +165,13 @@ class TestIndex(VdsmTestCase):
         with make_volume() as vol:
             lease_id = make_uuid()
             lease = vol.add(lease_id)
-            self.assertEqual(lease.lockspace, vol.lockspace)
-            self.assertEqual(lease.resource, lease_id)
-            self.assertEqual(lease.path, vol.path)
+            assert lease.lockspace == vol.lockspace
+            assert lease.resource == lease_id
+            assert lease.path == vol.path
             sanlock = xlease.sanlock
             res = sanlock.read_resource(lease.path, lease.offset)
-            self.assertEqual(res["lockspace"], lease.lockspace)
-            self.assertEqual(res["resource"], lease.resource)
+            assert res["lockspace"] == lease.lockspace
+            assert res["resource"] == lease.resource
 
     def test_add_write_failure(self):
         with make_volume() as base:
@@ -181,10 +180,10 @@ class TestIndex(VdsmTestCase):
                 vol = xlease.LeasesVolume(file)
                 with utils.closing(vol):
                     lease_id = make_uuid()
-                    with self.assertRaises(WriteError):
+                    with pytest.raises(WriteError):
                         vol.add(lease_id)
                     # Must succeed becuase writng to storage failed
-                    self.assertNotIn(lease_id, vol.leases())
+                    assert lease_id not in vol.leases()
 
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_add_sanlock_failure(self):
@@ -193,15 +192,15 @@ class TestIndex(VdsmTestCase):
             sanlock = xlease.sanlock
             # Make sanlock fail to write a resource
             sanlock.errors["write_resource"] = sanlock.SanlockException
-            with self.assertRaises(sanlock.SanlockException):
+            with pytest.raises(sanlock.SanlockException):
                 vol.add(lease_id)
             # We should have an updating lease record
             lease = vol.leases()[lease_id]
-            self.assertTrue(lease["updating"])
+            assert lease["updating"]
             # There should be no lease on storage
-            with self.assertRaises(sanlock.SanlockException) as e:
+            with pytest.raises(sanlock.SanlockException) as e:
                 sanlock.read_resource(vol.path, lease["offset"])
-            self.assertEqual(e.exception.errno, sanlock.SANLK_LEADER_MAGIC)
+                assert e.exception.errno == sanlock.SANLK_LEADER_MAGIC
 
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_leases(self):
@@ -215,19 +214,19 @@ class TestIndex(VdsmTestCase):
                     "updating": False,
                 }
             }
-            self.assertEqual(leases, expected)
+            assert leases == expected
 
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_add_exists(self):
         with make_volume() as vol:
             lease_id = make_uuid()
             lease = vol.add(lease_id)
-            with self.assertRaises(xlease.LeaseExists):
+            with pytest.raises(xlease.LeaseExists):
                 vol.add(lease_id)
             sanlock = xlease.sanlock
             res = sanlock.read_resource(lease.path, lease.offset)
-            self.assertEqual(res["lockspace"], lease.lockspace)
-            self.assertEqual(res["resource"], lease.resource)
+            assert res["lockspace"] == lease.lockspace
+            assert res["resource"] == lease.resource
 
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_lookup_exists(self):
@@ -235,7 +234,7 @@ class TestIndex(VdsmTestCase):
             lease_id = make_uuid()
             add_info = vol.add(lease_id)
             lookup_info = vol.lookup(lease_id)
-            self.assertEqual(add_info, lookup_info)
+            assert add_info == lookup_info
 
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_remove_exists(self):
@@ -245,18 +244,18 @@ class TestIndex(VdsmTestCase):
                 vol.add(lease)
             lease = vol.lookup(leases[1])
             vol.remove(lease.resource)
-            self.assertNotIn(lease.resource, vol.leases())
+            assert lease.resource not in vol.leases()
             sanlock = xlease.sanlock
             res = sanlock.read_resource(lease.path, lease.offset)
             # There is no sanlock api for removing a resource, so we mark a
             # removed resource with empty (invalid) lockspace and lease id.
-            self.assertEqual(res["lockspace"], "")
-            self.assertEqual(res["resource"], "")
+            assert res["lockspace"] == ""
+            assert res["resource"] == ""
 
     def test_remove_missing(self):
         with make_volume() as vol:
             lease_id = make_uuid()
-            with self.assertRaises(xlease.NoSuchLease):
+            with pytest.raises(xlease.NoSuchLease):
                 vol.remove(lease_id)
 
     def test_remove_write_failure(self):
@@ -266,10 +265,10 @@ class TestIndex(VdsmTestCase):
             with utils.closing(file):
                 vol = xlease.LeasesVolume(file)
                 with utils.closing(vol):
-                    with self.assertRaises(WriteError):
+                    with pytest.raises(WriteError):
                         vol.remove(record.resource)
                     # Must succeed becuase writng to storage failed
-                    self.assertIn(record.resource, vol.leases())
+                    assert record.resource in vol.leases()
 
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_remove_sanlock_failure(self):
@@ -280,15 +279,15 @@ class TestIndex(VdsmTestCase):
             # Make sanlock fail to remove a resource (currnently removing a
             # resouce by writing invalid lockspace and resoruce name).
             sanlock.errors["write_resource"] = sanlock.SanlockException
-            with self.assertRaises(sanlock.SanlockException):
+            with pytest.raises(sanlock.SanlockException):
                 vol.remove(lease_id)
             # We should have an updating lease record
             lease = vol.leases()[lease_id]
-            self.assertTrue(lease["updating"])
+            assert lease["updating"]
             # There lease should still be on storage
             res = sanlock.read_resource(vol.path, lease["offset"])
-            self.assertEqual(res["lockspace"], vol.lockspace)
-            self.assertEqual(res["resource"], lease_id)
+            assert res["lockspace"] == vol.lockspace
+            assert res["resource"] == lease_id
 
     @MonkeyPatch(xlease, "sanlock", FakeSanlock())
     def test_add_first_free_slot(self):
@@ -300,15 +299,14 @@ class TestIndex(VdsmTestCase):
             vol.add(uuids[3])
             leases = vol.leases()
             # The first lease in the first slot
-            self.assertEqual(leases[uuids[0]]["offset"],
-                             xlease.USER_RESOURCE_BASE)
+            assert leases[uuids[0]]["offset"] == xlease.USER_RESOURCE_BASE
             # The forth lease was added in the second slot after the second
             # lease was removed.
-            self.assertEqual(leases[uuids[3]]["offset"],
-                             xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE)
+            assert (leases[uuids[3]]["offset"] ==
+                    xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE)
             # The third lease in the third slot
-            self.assertEqual(leases[uuids[2]]["offset"],
-                             xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 2)
+            assert (leases[uuids[2]]["offset"] ==
+                    xlease.USER_RESOURCE_BASE + xlease.SLOT_SIZE * 2)
 
     @pytest.mark.slow
     def test_time_lookup(self):
