@@ -131,7 +131,9 @@ def attach_volume(vol_id, connection_info):
                 attachment=attachment,
                 multipath_id=attachment.get("multipath_id"))
         except:
-            # TODO detach
+            vol_info = {"connection_info": connection_info,
+                        "attachment": attachment}
+            run_helper("detach", vol_info)
             raise
     except:
         try:
@@ -144,3 +146,22 @@ def attach_volume(vol_id, connection_info):
 
     ret = {'attachment': attachment, 'path': path}
     return {'result': ret}
+
+
+def detach_volume(vol_id):
+    """
+    Detach volume with os-brick.
+    """
+    if os_brick is None:
+        raise se.ManagedVolumeNotSupported("Cannot import os_brick.initiator")
+
+    try:
+        vol_info = managedvolumedb.get(vol_id)
+    except managedvolumedb.NotFound:
+        return
+
+    log.debug("Starting Detach volume with os-brick")
+    if "path" in vol_info and os.path.exists(vol_info["path"]):
+        run_helper("detach", vol_info)
+
+    managedvolumedb.remove(vol_id)

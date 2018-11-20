@@ -66,9 +66,14 @@ class FakeConnector(object):
         else:
             return fake_error(res)
 
+    def disconnect_volume(self, connection_properties, device_info,
+                          force=False, ignore_errors=False):
+        log_action("disconnect_volume",
+                   connection_properties, device_info, force, ignore_errors)
 
-def log_action(action, *argument):
+
+def log_action(action, *args):
     log_path = os.environ["FAKE_OS_BRICK_LOG"]
-    entry = {"action": action, "arguments": argument}
+    entry = {"action": action, "arguments": args}
     with open(log_path, "a") as f:
         f.write(json.dumps(entry) + "\n")

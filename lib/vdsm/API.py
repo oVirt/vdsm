@@ -1765,7 +1765,7 @@ class ManagedVolume(APIBase):
     @api.logged(on="api.storage")
     @api.method
     def detach_volume(self, vol_id):
-        raise exception.MethodNotImplemented
+        return managedvolume.detach_volume(vol_id)
 
     @api.logged(on="api.storage")
     @api.method

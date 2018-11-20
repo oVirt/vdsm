@@ -227,7 +227,6 @@ def test_reattach_volume_ok_iscsi(monkeypatch, fake_os_brick, tmpdir):
 
 
 @requires_root
-@pytest.mark.xfail(reason="not implemented")
 def test_attach_volume_fail_update(monkeypatch, fake_os_brick, tmpdir):
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
     monkeypatch.setattr(managedvolume, "DEV_MAPPER", str(tmpdir))
@@ -271,3 +270,58 @@ def test_reattach_volume_other_connection(monkeypatch, fake_os_brick):
     entries = fake_os_brick.log()
     assert len(entries) == 1
     assert entries[0]["action"] == "connect_volume"
+
+
+@requires_root
+def test_detach_volume_iscsi_not_attached(monkeypatch, fake_os_brick):
+    monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
+    connection_info = {
+        "driver_volume_type": "iscsi",
+        "data": {"some_info": 26}
+    }
+    managedvolume.attach_volume("fake_vol_id", connection_info)
+    managedvolume.detach_volume("fake_vol_id")
+
+    with pytest.raises(managedvolumedb.NotFound):
+        managedvolumedb.get("fake_vol_id")
+
+    entries = fake_os_brick.log()
+    assert len(entries) == 1
+    assert entries[0]["action"] == "connect_volume"
+
+
+@requires_root
+def test_detach_volume_not_installed(monkeypatch, fake_os_brick):
+    # Simulate missing os_brick.
+    monkeypatch.setattr(managedvolume, "os_brick", None)
+    with pytest.raises(se.ManagedVolumeNotSupported):
+        managedvolume.detach_volume("vol_id")
+
+
+@requires_root
+def test_detach_not_in_db(monkeypatch, fake_os_brick):
+    managedvolume.detach_volume("fake_vol_id")
+    with pytest.raises(managedvolumedb.NotFound):
+        managedvolumedb.get("fake_vol_id")
+    assert [] == fake_os_brick.log()
+
+
+@requires_root
+def test_detach_volume_iscsi_attached(monkeypatch, fake_os_brick, tmpdir):
+    monkeypatch.setenv("FAKE_ATTACH_RESULT", "OK")
+    monkeypatch.setattr(managedvolume, "DEV_MAPPER", str(tmpdir))
+    connection_info = {
+        "driver_volume_type": "iscsi",
+        "data": {"some_info": 26}
+    }
+    managedvolume.attach_volume("fake_vol_id", connection_info)
+    tmpdir.join("fakemultipathid").write("")
+    managedvolume.detach_volume("fake_vol_id")
+
+    entries = fake_os_brick.log()
+    assert len(entries) == 2
+    assert entries[0]["action"] == "connect_volume"
+    assert entries[1]["action"] == "disconnect_volume"
+
+    with pytest.raises(managedvolumedb.NotFound):
+        managedvolumedb.get("fake_vol_id")

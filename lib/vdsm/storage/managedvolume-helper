@@ -27,6 +27,7 @@ The available commands are:
  - "connector_info" - returns the connector information of the host
  - "attach" - attach a volume according to the connection info and return
               the device attached.
+ - "detach" - detach a volume according to the device info provided.
 """
 
 from __future__ import absolute_import
@@ -62,6 +63,11 @@ def main(args):
         help="Attach volume. Returns attachment information")
     attach_parser.set_defaults(command=attach)
 
+    detach_parser = subparsers.add_parser(
+        "detach",
+        help="Detach volume.")
+    detach_parser.set_defaults(command=detach)
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -94,10 +100,7 @@ def read_input():
     return json.loads(data)
 
 
-def attach(args):
-    conn_info = read_input()
-    log.debug("Connection info: %s", conn_info)
-
+def get_connector(conn_info):
     connector_properties = connector.get_connector_properties(
         root_helper=None,
         my_ip=None,
@@ -112,9 +115,28 @@ def attach(args):
         use_multipath=connector_properties['multipath'],
         device_scan_attempts=conn_info.get('scan_attempts', 3),
         conn=connector_properties)
+
+    return conn
+
+
+def attach(args):
+    conn_info = read_input()
+    log.debug("Connection info: %s", conn_info)
+    conn = get_connector(conn_info)
     attachment = conn.connect_volume(conn_info['data'])
     log.debug("Attachment %s", attachment)
     write_output(attachment)
+
+
+def detach(args):
+    volume_info = read_input()
+    log.debug("Volume info: %s", volume_info)
+    conn = get_connector(volume_info["connection_info"])
+    conn.disconnect_volume(volume_info['connection_info']['data'],
+                           volume_info['attachment'],
+                           force=False,
+                           ignore_errors=False)
+    write_output({})
 
 
 if __name__ == '__main__':
