@@ -11063,7 +11063,9 @@ VM.updateVmPolicy:
 
 SDM.create_volume:
     added: '4.0'
-    description: Create a new volume.
+    deprecated: '4.2'
+    description: Create a new volume. This was never used and will be removed
+        in 4.3.
     params:
     -   description: A UUID to be used for tracking the job progress
         name: job_id
