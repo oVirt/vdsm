@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import os
 import pytest
 
 from storage.storagefakelib import FakeStorageDomainCache
@@ -183,6 +184,30 @@ class TestVolumeManifest:
         # Metadata changes inside the context should not be overriden by
         # wirting the new generation.
         assert "description" == vol.getMetaParam(sc.DESCRIPTION)
+
+
+class TestVolumeSize:
+
+    @pytest.fixture(params=[sc.RAW_FORMAT, sc.COW_FORMAT])
+    def vol(self, request):
+        with fake_volume("file", size=MB, format=request.param) as vol:
+            yield vol
+
+    def test_get_info_size(self, monkeypatch, vol):
+        # Avoid calling sanlock during tests.
+
+        def getVolumeLease(img_id, vol_id):
+            return None, None, None
+
+        sd = volume.sdCache.produce_manifest(vol.sdUUID)
+        sd.getVolumeLease = getVolumeLease
+
+        info = vol.getInfo()
+        assert info["capacity"] == str(MB)
+
+        st = os.stat(vol.getVolumePath())
+        assert info["apparentsize"] == str(st.st_size)
+        assert info["truesize"] == str(st.st_blocks * 512)
 
 
 class CountedInstanceMethod(object):
