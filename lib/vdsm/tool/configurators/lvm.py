@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@ import sys
 import time
 
 from vdsm.tool import confmeta
-from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common.cmdutils import CommandPath
 
@@ -186,10 +185,7 @@ def _backup_file(path):
 def _systemctl(*args):
     cmd = [_SYSTEMCTL.cmd]
     cmd.extend(args)
-    rc, out, err = commands.execCmd(cmd, raw=True)
-    if rc != 0:
-        raise cmdutils.Error(cmd=cmd, rc=rc, out=out, err=err)
-    return out
+    return commands.run(cmd)
 
 
 # TODO: use standad logging
