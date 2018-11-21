@@ -25,7 +25,6 @@ from contextlib import contextmanager
 
 import pytest
 
-from monkeypatch import MonkeyPatchScope
 from storage.storagefakelib import FakeStorageDomainCache
 
 from storage.storagetestlib import (
@@ -88,18 +87,18 @@ class TestVolumeLease:
         b = volume.VolumeLease(1, 'dom', 'img', 'vol')
         assert a == b
 
-    def test_acquire_release(self):
+    def test_acquire_release(self, monkeypatch):
         sdcache = FakeStorageDomainCache()
         manifest = FakeSDManifest()
         sdcache.domains['dom'] = FakeSD(manifest)
         expected = [('acquireVolumeLease', (HOST_ID, 'img', 'vol'), {}),
                     ('releaseVolumeLease', ('img', 'vol'), {})]
-        with MonkeyPatchScope([(volume, 'sdCache', sdcache)]):
-            lock = volume.VolumeLease(HOST_ID, 'dom', 'img', 'vol')
-            lock.acquire()
-            assert expected[:1] == manifest.__calls__
-            lock.release()
-            assert expected == manifest.__calls__
+        monkeypatch.setattr(volume, 'sdCache', sdcache)
+        lock = volume.VolumeLease(HOST_ID, 'dom', 'img', 'vol')
+        lock.acquire()
+        assert expected[:1] == manifest.__calls__
+        lock.release()
+        assert expected == manifest.__calls__
 
     def test_repr(self):
         lock = volume.VolumeLease(HOST_ID, 'dom', 'img', 'vol')
