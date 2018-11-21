@@ -27,10 +27,9 @@ from storage.storagefakelib import FakeStorageDomainCache
 
 from storage.storagetestlib import (
     FakeSD,
-    fake_env,
+    fake_volume
 )
 
-from testlib import make_uuid
 from testlib import recorded
 
 from vdsm.storage import constants as sc
@@ -112,11 +111,7 @@ class TestVolumeManifest:
 
     @pytest.fixture
     def vol(self):
-        img_id = make_uuid()
-        vol_id = make_uuid()
-        with fake_env('file') as env:
-            env.make_volume(MB, img_id, vol_id)
-            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        with fake_volume('file') as vol:
             yield vol
 
     def test_operation(self, vol):

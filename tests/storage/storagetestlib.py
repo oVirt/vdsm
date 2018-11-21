@@ -135,6 +135,16 @@ def fake_env(storage_type, sd_version=3):
         raise ValueError("Invalid storage_type: %r" % storage_type)
 
 
+@contextmanager
+def fake_volume(storage_type='file', size=MB, format=sc.RAW_FORMAT):
+    img_id = make_uuid()
+    vol_id = make_uuid()
+    with fake_env(storage_type) as env:
+        env.make_volume(size, img_id, vol_id, vol_format=format)
+        vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        yield vol
+
+
 class FakeMetadata(dict):
     @contextmanager
     def transaction(self):
