@@ -2380,6 +2380,16 @@ class Vm(object):
                                    'inconsistent state', device.device)
 
     def _undefine_domain(self):
+        if self._external:
+            # This is a grey area, see rhbz#1610917;
+            # we never really decided what is the standard here, so we
+            # restore the < 4.2 behaviour (do not mess with external VM
+            # *definition*) that we changed by side effect when switching
+            # to persistent domains.
+            self.log.info(
+                "Will not undefine external VM %s", self.id)
+            return
+
         try:
             self._dom.undefineFlags(libvirt.VIR_DOMAIN_UNDEFINE_NVRAM)
         except libvirt.libvirtError as e:
