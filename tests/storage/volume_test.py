@@ -21,8 +21,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from contextlib import contextmanager
-
 import pytest
 
 from storage.storagefakelib import FakeStorageDomainCache
@@ -112,8 +110,8 @@ class TestVolumeLease:
 
 class TestVolumeManifest:
 
-    @contextmanager
-    def volume(self):
+    @pytest.fixture
+    def vol(self):
         img_id = make_uuid()
         vol_id = make_uuid()
         with fake_env('file') as env:
@@ -121,83 +119,75 @@ class TestVolumeManifest:
             vol = env.sd_manifest.produceVolume(img_id, vol_id)
             yield vol
 
-    def test_operation(self):
-        with self.volume() as vol:
-            vol.setMetadata = CountedInstanceMethod(vol.setMetadata)
-            assert sc.LEGAL_VOL == vol.getLegality()
-            with vol.operation():
-                assert sc.ILLEGAL_VOL == vol.getLegality()
-                assert 1 == vol.setMetadata.nr_calls
-            assert sc.LEGAL_VOL == vol.getLegality()
-            assert 2 == vol.setMetadata.nr_calls
-
-    def test_operation_fail_inside_context(self):
-        with self.volume() as vol:
-            assert sc.LEGAL_VOL == vol.getLegality()
-            with pytest.raises(ValueError):
-                with vol.operation():
-                    raise ValueError()
+    def test_operation(self, vol):
+        vol.setMetadata = CountedInstanceMethod(vol.setMetadata)
+        assert sc.LEGAL_VOL == vol.getLegality()
+        with vol.operation():
             assert sc.ILLEGAL_VOL == vol.getLegality()
+            assert 1 == vol.setMetadata.nr_calls
+        assert sc.LEGAL_VOL == vol.getLegality()
+        assert 2 == vol.setMetadata.nr_calls
+
+    def test_operation_fail_inside_context(self, vol):
+        assert sc.LEGAL_VOL == vol.getLegality()
+        with pytest.raises(ValueError):
+            with vol.operation():
+                raise ValueError()
+        assert sc.ILLEGAL_VOL == vol.getLegality()
 
     @pytest.mark.parametrize("orig_gen, info_gen", [(None, 0), (100, 100)])
-    def test_get_info_generation_id(self, orig_gen, info_gen):
-        with self.volume() as vol:
-            vol.getLeaseStatus = lambda: {}
-            if orig_gen is not None:
-                vol.setMetaParam(sc.GENERATION, orig_gen)
-            assert info_gen == vol.getInfo()['generation']
+    def test_get_info_generation_id(self, vol, orig_gen, info_gen):
+        vol.getLeaseStatus = lambda: {}
+        if orig_gen is not None:
+            vol.setMetaParam(sc.GENERATION, orig_gen)
+        assert info_gen == vol.getInfo()['generation']
 
-    def test_operation_valid_generation(self):
+    def test_operation_valid_generation(self, vol):
         generation = 100
-        with self.volume() as vol:
-            vol.setMetaParam(sc.GENERATION, generation)
-            with vol.operation(generation):
-                pass
-            assert generation + 1 == vol.getMetaParam(sc.GENERATION)
+        vol.setMetaParam(sc.GENERATION, generation)
+        with vol.operation(generation):
+            pass
+        assert generation + 1 == vol.getMetaParam(sc.GENERATION)
 
     @pytest.mark.parametrize("actual_generation, requested_generation", [
         (100, 99), (100, 101)
     ])
-    def test_operation_invalid_generation_raises(self, actual_generation,
+    def test_operation_invalid_generation_raises(self, vol, actual_generation,
                                                  requested_generation):
-        with self.volume() as vol:
-            vol.setMetaParam(sc.GENERATION, actual_generation)
-            with pytest.raises(se.GenerationMismatch):
-                with vol.operation(requested_generation):
-                    pass
-            assert actual_generation == vol.getMetaParam(sc.GENERATION)
+        vol.setMetaParam(sc.GENERATION, actual_generation)
+        with pytest.raises(se.GenerationMismatch):
+            with vol.operation(requested_generation):
+                pass
+        assert actual_generation == vol.getMetaParam(sc.GENERATION)
 
     @pytest.mark.parametrize("first_gen, next_gen", [
         (sc.MAX_GENERATION, 0),
         (sc.MAX_GENERATION - 1, sc.MAX_GENERATION)
     ])
-    def test_generation_wrapping(self, first_gen, next_gen):
-        with self.volume() as vol:
-            vol.setMetaParam(sc.GENERATION, first_gen)
-            with vol.operation(first_gen):
-                pass
-            assert next_gen == vol.getMetaParam(sc.GENERATION)
+    def test_generation_wrapping(self, vol, first_gen, next_gen):
+        vol.setMetaParam(sc.GENERATION, first_gen)
+        with vol.operation(first_gen):
+            pass
+        assert next_gen == vol.getMetaParam(sc.GENERATION)
 
-    def test_operation_on_illegal_volume(self):
-        with self.volume() as vol:
-            # This volume was illegal before the operation
-            vol.setMetaParam(sc.LEGALITY, sc.ILLEGAL_VOL)
-            vol.setMetaParam(sc.GENERATION, 0)
-            with vol.operation(requested_gen=0, set_illegal=False):
-                # It should remain illegal during the operation
-                assert sc.ILLEGAL_VOL == vol.getMetaParam(sc.LEGALITY)
-                pass
-            assert 1 == vol.getMetaParam(sc.GENERATION)
-            # It should remain illegal after the operation
+    def test_operation_on_illegal_volume(self, vol):
+        # This volume was illegal before the operation
+        vol.setMetaParam(sc.LEGALITY, sc.ILLEGAL_VOL)
+        vol.setMetaParam(sc.GENERATION, 0)
+        with vol.operation(requested_gen=0, set_illegal=False):
+            # It should remain illegal during the operation
             assert sc.ILLEGAL_VOL == vol.getMetaParam(sc.LEGALITY)
+            pass
+        assert 1 == vol.getMetaParam(sc.GENERATION)
+        # It should remain illegal after the operation
+        assert sc.ILLEGAL_VOL == vol.getMetaParam(sc.LEGALITY)
 
-    def test_operation_modifying_metadata(self):
-        with self.volume() as vol:
-            with vol.operation(requested_gen=0, set_illegal=False):
-                vol.setMetaParam(sc.DESCRIPTION, "description")
-            # Metadata changes inside the context should not be overriden by
-            # wirting the new generation.
-            assert "description" == vol.getMetaParam(sc.DESCRIPTION)
+    def test_operation_modifying_metadata(self, vol):
+        with vol.operation(requested_gen=0, set_illegal=False):
+            vol.setMetaParam(sc.DESCRIPTION, "description")
+        # Metadata changes inside the context should not be overriden by
+        # wirting the new generation.
+        assert "description" == vol.getMetaParam(sc.DESCRIPTION)
 
 
 class CountedInstanceMethod(object):
