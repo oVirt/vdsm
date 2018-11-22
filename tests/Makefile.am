@@ -112,6 +112,7 @@ test_modules = \
 	stompasyncclient_test.py \
 	stompasyncdispatcher_test.py \
 	stomp_test.py \
+	sysprep_test.py \
 	taskset_test.py \
 	testlib_test.py \
 	tool_confmeta_test.py \

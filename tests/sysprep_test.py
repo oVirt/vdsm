@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,27 +13,34 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
-from vdsm.common import commands
-from vdsm.common.cmdutils import CommandPath
+from vdsm import virtsysprep
+from vdsm.common import cmdutils
 
-_VIRTSYSPREP = CommandPath("virt-sysprep", "/usr/bin/virt-sysprep")
+from monkeypatch import MonkeyPatch
+from testlib import VdsmTestCase as TestCaseBase
 
 
-def sysprep(vol_paths):
-    """
-    Run virt-sysprep on the list of volumes
+FAKE_VOLUME = '/we/dont/care/about/this/path'
 
-    :param vol_paths: list of volume paths
-    """
-    cmd = [_VIRTSYSPREP.cmd]
-    for vol_path in vol_paths:
-        cmd.extend(('-a', vol_path))
 
-    commands.run(cmd)
+class FakeCommand(object):
+    # as per manpage, false ignores any argument
+    cmd = '/bin/false'
+
+
+class VirtSysprepTests(TestCaseBase):
+
+    @MonkeyPatch(virtsysprep, '_VIRTSYSPREP', FakeCommand())
+    def test_raise_error_on_failure(self):
+
+        self.assertRaises(cmdutils.Error,
+                          virtsysprep.sysprep,
+                          [FAKE_VOLUME])
