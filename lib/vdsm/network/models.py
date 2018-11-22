@@ -291,14 +291,14 @@ class Bond(NetDevice):
                                             mtu, _netinfo)
             if name in _netinfo.bondings:
                 if _netinfo.ifaceUsers(name):
-                    mtu = max(mtu, link_iface.iface(name).mtu())
+                    mtu = max(mtu or 0, link_iface.iface(name).mtu())
 
                 if not options:
                     options = _netinfo.bondings[name].get('opts')
                     options = Bond._dict2list(options)
         elif name in _netinfo.bondings:  # Implicit bonding.
             if _netinfo.ifaceUsers(name):
-                mtu = max(mtu, link_iface.iface(name).mtu())
+                mtu = max(mtu or 0, link_iface.iface(name).mtu())
 
             slaves = [Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
                       for nic in _netinfo.getNicsForBonding(name)]
