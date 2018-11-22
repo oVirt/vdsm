@@ -26,7 +26,6 @@ import xml.etree.cElementTree as ET
 
 from vdsm import taskset
 from vdsm.common import cache
-from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import libvirtconnection
 from vdsm.common.cmdutils import CommandPath
@@ -94,7 +93,7 @@ def autonuma_status():
         AUTONUMA_STATUS_ENABLE = 1
         AUTONUMA_STATUS_UNKNOWN = 2
     '''
-    out = _run_command(['-n', '-e', 'kernel.numa_balancing'])
+    out = commands.run([_SYSCTL.cmd, '-n', '-e', 'kernel.numa_balancing'])
 
     if not out:
         return AUTONUMA_STATUS_UNKNOWN
@@ -180,13 +179,3 @@ def _numa(capabilities=None):
 def _get_libvirt_caps():
     conn = libvirtconnection.get()
     return conn.getCapabilities()
-
-
-def _run_command(args):
-    cmd = [_SYSCTL.cmd]
-    cmd.extend(args)
-    rc, out, err = commands.execCmd(cmd, raw=True)
-    if rc != 0:
-        raise cmdutils.Error(cmd, rc, out, err)
-
-    return out
