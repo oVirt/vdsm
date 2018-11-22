@@ -27,7 +27,6 @@ dist_supervdsm_api_PYTHON = \
 	ksm.py \
 	mkimage.py \
 	network.py \
-	systemd.py \
 	udev.py \
 	virt.py \
 	$(NULL)
