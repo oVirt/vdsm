@@ -20,7 +20,6 @@
 
 from __future__ import absolute_import
 
-from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common.cmdutils import CommandPath
 
@@ -50,10 +49,7 @@ def sparsify(src_vol, tmp_vol, dst_vol, src_format=None, dst_format=None):
 
     cmd.extend((src_vol, dst_vol))
 
-    rc, out, err = commands.execCmd(cmd)
-
-    if rc != 0:
-        raise cmdutils.Error(cmd, rc, out, err)
+    commands.run(cmd)
 
 
 def sparsify_inplace(vol_path):
@@ -65,7 +61,4 @@ def sparsify_inplace(vol_path):
     """
     cmd = [_VIRTSPARSIFY.cmd, '--machine-readable', '--in-place', vol_path]
 
-    rc, out, err = commands.execCmd(cmd)
-
-    if rc != 0:
-        raise cmdutils.Error(cmd, rc, out, err)
+    commands.run(cmd)
