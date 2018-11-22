@@ -125,6 +125,10 @@ pylint: tox
 pylint-py3k: tox
 	tox -e pylint-py3k `build-aux/pylint-py3k-whitelist`
 
+execcmd:
+	! git --no-pager grep execCmd `git ls-files | grep -v -F -f execcmd-blacklist.txt`
+
+
 .PHONY: pylint-diff
 pylint-diff: tox
 	modules=`git diff-tree --no-commit-id --name-only -r HEAD | egrep '\.py$$'`; \
@@ -163,7 +167,7 @@ python3: all
 	fi
 
 # Note: dependencies ordered by time needed to run them
-check: gitignore abs_imports py3division imports python3 flake8 pylint tests
+check: gitignore execcmd abs_imports py3division imports python3 flake8 pylint tests
 
 check-recursive:
 	@true
