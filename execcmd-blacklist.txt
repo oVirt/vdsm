@@ -51,7 +51,6 @@ tests/caps_test.py
 tests/cmdutils_test.py
 tests/common/cmdutils_test.py
 tests/common/commands_test.py
-tests/functional/networkTests.py
 tests/functional/virtTests.py
 tests/gluster_thinstorage_test.py
 tests/loopback.py

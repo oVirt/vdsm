@@ -55,7 +55,7 @@ from vdsm.network import sysctl
 from vdsm.network import tc
 
 from vdsm.common.cmdutils import CommandPath
-from vdsm.common.commands import execCmd
+from vdsm.common import commands
 from vdsm.common.proc import pgrep
 from vdsm.tool import service
 from vdsm.utils import RollbackContext
@@ -481,10 +481,11 @@ class NetworkTest(TestCaseBase):
 
             prevTxStat, prevTime = getStatsFromInterface(left)
             # running ARP from the interface
-            rc, out, err = execCmd([_ARPPING_COMMAND.cmd, '-D', '-I', left,
-                                    '-c', '1', IP_ADDRESS_IN_NETWORK])
-            if rc != 0:
-                raise SkipTest('Could not run arping', out, err)
+            try:
+                commands.run([_ARPPING_COMMAND.cmd, '-D', '-I', left,
+                              '-c', '1', IP_ADDRESS_IN_NETWORK])
+            except Exception as e:
+                raise SkipTest('Could not run arping: %s' % e)
 
             # wait for Vdsm to update statistics
             self.retryAssert(assertStatsInRange, timeout=3)
@@ -1740,18 +1741,14 @@ HOTPLUG=no"""
         with open(NET_CONF_PREF + bond_name + '.' + vlan_id, 'w') as f:
             f.write(IFCFG_VLAN_TEMPLATE % (bond_name, vlan_id))
 
-        rc, _, err = execCmd([EXT_IFUP, bond_name])
-        self.assertEqual(rc, SUCCESS, err)
-        rc, _, err = execCmd([EXT_IFUP, bond_name + '.' + vlan_id])
-        self.assertEqual(rc, SUCCESS, err)
+        commands.run([EXT_IFUP, bond_name])
+        commands.run([EXT_IFUP, bond_name + '.' + vlan_id])
 
         try:
             yield
         finally:
-            rc, _, err = execCmd([EXT_IFDOWN, bond_name + '.' + vlan_id])
-            self.assertEqual(rc, SUCCESS, err)
-            rc, _, err = execCmd([EXT_IFDOWN, bond_name])
-            self.assertEqual(rc, SUCCESS, err)
+            commands.run([EXT_IFDOWN, bond_name + '.' + vlan_id])
+            commands.run([EXT_IFDOWN, bond_name])
 
             # The bond needs to be removed by force
             with open(BONDING_MASTERS, 'w') as bonds:
