@@ -25,6 +25,7 @@ from contextlib import contextmanager
 import sys
 import logging
 import six
+import copy
 
 from vdsm.common import hooks
 
@@ -204,6 +205,10 @@ def setupNetworks(networks, bondings, options):
         the attachment in the network's attributes). Similarly, if you edit
         a bonding, it's not necessary to specify its networks.
     """
+    networks = copy.deepcopy(networks)
+    bondings = copy.deepcopy(bondings)
+    options = copy.deepcopy(options)
+
     logging.info('Setting up network according to configuration: '
                  'networks:%r, bondings:%r, options:%r' % (networks,
                                                            bondings, options))
