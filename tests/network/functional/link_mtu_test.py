@@ -40,9 +40,9 @@ adapter = None
 
 
 @pytest.fixture(scope='module', autouse=True)
-def create_adapter():
+def create_adapter(target):
     global adapter
-    adapter = nftestlib.NetFuncTestAdapter()
+    adapter = nftestlib.NetFuncTestAdapter(target)
 
 
 @nftestlib.parametrize_switch
