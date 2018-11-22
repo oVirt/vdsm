@@ -64,10 +64,10 @@ class FakeFileEnv(object):
     def make_volume(self, size, imguuid, voluuid, parent_vol_id=sc.BLANK_UUID,
                     vol_format=sc.RAW_FORMAT, vol_type=sc.LEAF_VOL,
                     prealloc=sc.SPARSE_VOL, disk_type=image.UNKNOWN_DISK_TYPE,
-                    desc='fake volume'):
+                    desc='fake volume', qcow2_compat='0.10'):
         return make_file_volume(self.sd_manifest, size, imguuid, voluuid,
                                 parent_vol_id, vol_format, vol_type,
-                                prealloc, disk_type, desc)
+                                prealloc, disk_type, desc, qcow2_compat)
 
 
 class FakeBlockEnv(object):
@@ -80,10 +80,11 @@ class FakeBlockEnv(object):
     def make_volume(self, size, imguuid, voluuid, parent_vol_id=sc.BLANK_UUID,
                     vol_format=sc.RAW_FORMAT, vol_type=sc.LEAF_VOL,
                     prealloc=sc.SPARSE_VOL, disk_type=image.UNKNOWN_DISK_TYPE,
-                    desc='fake volume'):
+                    desc='fake volume', qcow2_compat='0.10'):
         return make_block_volume(self.lvm, self.sd_manifest, size, imguuid,
                                  voluuid, parent_vol_id, vol_format,
-                                 vol_type, prealloc, disk_type, desc)
+                                 vol_type, prealloc, disk_type, desc,
+                                 qcow2_compat)
 
 
 @contextmanager
@@ -267,10 +268,25 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
                      vol_type=sc.LEAF_VOL,
                      prealloc=sc.SPARSE_VOL,
                      disk_type=image.UNKNOWN_DISK_TYPE,
-                     desc='fake volume'):
+                     desc='fake volume', qcow2_compat='0.10'):
     volpath = os.path.join(sd_manifest.domaindir, "images", imguuid, voluuid)
-    mdfiles = [volpath + '.meta', volpath + '.lease']
+
+    # Create needed path components.
     make_file(volpath, size)
+
+    # Create qcow2 file if needed.
+    if vol_format == sc.COW_FORMAT:
+        backing = parent_vol_id if parent_vol_id != sc.BLANK_UUID else None
+        op = qemuimg.create(
+            volpath,
+            size=size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat=qcow2_compat,
+            backing=backing)
+        op.run()
+
+    # Create meta files.
+    mdfiles = [volpath + '.meta', volpath + '.lease']
     for mdfile in mdfiles:
         make_file(mdfile)
 
@@ -296,7 +312,7 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
                       vol_type=sc.LEAF_VOL,
                       prealloc=sc.PREALLOCATED_VOL,
                       disk_type=image.UNKNOWN_DISK_TYPE,
-                      desc='fake volume'):
+                      desc='fake volume', qcow2_compat='0.10'):
     sduuid = sd_manifest.sdUUID
     imagedir = sd_manifest.getImageDir(imguuid)
     if not os.path.exists(imagedir):
@@ -310,6 +326,23 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
     lv_size_blk = int(lvm.getLV(sduuid, voluuid).size) // sc.BLOCK_SIZE
     if lv_size_blk > size_blk:
         size_blk = lv_size_blk
+
+    if vol_format == sc.COW_FORMAT:
+        volpath = lvm.lvPath(sduuid, voluuid)
+        backing = parent_vol_id if parent_vol_id != sc.BLANK_UUID else None
+
+        # Write qcow2 image to the fake block device - truncating the file.
+        op = qemuimg.create(
+            volpath,
+            size=size,
+            format=qemuimg.FORMAT.QCOW2,
+            qcow2Compat=qcow2_compat,
+            backing=backing)
+        op.run()
+
+        # Truncate fake block device back ot the proper size.
+        with open(volpath, "r+") as f:
+            f.truncate(int(lvm.getLV(sduuid, voluuid).size))
 
     with sd_manifest.acquireVolumeMetadataSlot(
             voluuid, sc.VOLUME_MDNUMBLKS) as slot:
@@ -407,16 +440,9 @@ def make_qemu_chain(env, size, base_vol_fmt, chain_len,
         vol_type = sc.LEAF_VOL if i == chain_len - 1 else sc.INTERNAL_VOL
         env.make_volume(size, img_id, vol_id,
                         parent_vol_id=parent_vol_id, vol_format=vol_fmt,
-                        vol_type=vol_type, prealloc=prealloc)
+                        vol_type=vol_type, prealloc=prealloc,
+                        qcow2_compat=qcow2_compat)
         vol = env.sd_manifest.produceVolume(img_id, vol_id)
-        if vol_fmt == sc.COW_FORMAT:
-            backing = parent_vol_id if parent_vol_id != sc.BLANK_UUID else None
-            op = qemuimg.create(vol.volumePath,
-                                size=size,
-                                format=qemuimg.FORMAT.QCOW2,
-                                qcow2Compat=qcow2_compat,
-                                backing=backing)
-            op.run()
         vol_list.append(vol)
         parent_vol_id = vol_id
     return vol_list

@@ -116,13 +116,16 @@ class FakeLVM(object):
         size = int(size) << 20
         return utils.round(size, extent_size)
 
-    def _create_lv_file(self, vgName, lvName, activate, size):
+    def _create_lv_file(self, vgName, lvName, active, size):
         # Create an LV as a regular file so we have a place to write data
-        if activate:
-            lv_path = self.lvPath(vgName, lvName)
-        else:
-            lv_path = self._lvPathInactive(vgName, lvName)
+        lv_path = self._fake_lv_path(vgName, lvName, active)
         make_file(lv_path, size)
+
+    def _extend_lv_file(self, vgName, lvName, active, size):
+        # Extend the fake LV regular file so it behaves like a block device.
+        lv_path = self._fake_lv_path(vgName, lvName, active)
+        with open(lv_path, "r+") as f:
+            f.truncate(size)
 
     def createLV(self, vgName, lvName, size, activate=True, contiguous=False,
                  initialTags=()):
@@ -223,6 +226,12 @@ class FakeLVM(object):
     def lvPath(self, vgName, lvName):
         return os.path.join(self.root, "dev", vgName, lvName)
 
+    def _fake_lv_path(self, vgName, lvName, active):
+        if active:
+            return self.lvPath(vgName, lvName)
+        else:
+            return self._lvPathInactive(vgName, lvName)
+
     def _lvPathInactive(self, vgName, lvName):
         # When creating a new LV we simulate it being inactive by adding an
         # extension so that it will not be visible.  We can then simulate
@@ -288,7 +297,7 @@ class FakeLVM(object):
             # lvm is already in the corect size.
             return
         lv['size'] = str(size)
-        self._create_lv_file(vgName, lvName, lv['active'], size)
+        self._extend_lv_file(vgName, lvName, lv['active'], size)
         # TODO: vg free extent accounting
 
     def fake_lv_symlink_create(self, vg_name, lv_name):
