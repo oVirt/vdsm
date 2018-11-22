@@ -943,6 +943,14 @@ types:
             type: int
         type: object
 
+    GlobalVolumeOptionMap: &GlobalVolumeOptionMap
+        added: '4.4'
+        description: Global Volume option map.
+        name: GlobalVolumeOptionMap
+        key-type: string
+        type: map
+        value-type: string
+
 GlusterHook.add:
     added: '3.2'
     description: Add a hook file
@@ -2263,3 +2271,10 @@ GlusterVolume.resetBrickCommitForce:
     -   description: Existing brick path
         name: existingBrick
         type: string
+
+GlusterVolume.globalVolumeOptions:
+    added: '4.4'
+    description: Get the map of global volume options
+    return:
+        description: Global Volume options map
+        type: *GlobalVolumeOptionMap

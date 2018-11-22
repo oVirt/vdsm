@@ -1263,3 +1263,11 @@ class GlusterCliTests(TestCaseBase):
     def test_execGlusterXmlWithTimeoutFail(self):
         with self.assertRaises(exception.GlusterCommandTimeoutException):
             gcli._execGlusterXmlWithTimeout(["./slow-gluster-cli"], timeout=5)
+
+    def test_parseGlobalVolumeOptions(self):
+        with open("glusterGlobalVolumeOptions.xml") as f:
+            out = f.read()
+        tree = etree.fromstring(out)
+        globalVolumeOptions = gcli._parseGlobalVolumeOptions(tree)
+        self.assertEqual(globalVolumeOptions,
+                         glusterTestData.GLUSTER_GLOBAL_VOLUME_OPTIONS)

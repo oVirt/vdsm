@@ -1254,3 +1254,13 @@ GLUSTER_VOLUME_HEAL_INFO = {
             'numberOfEntries': '50'}
     ]
 }
+
+GLUSTER_GLOBAL_VOLUME_OPTIONS = {
+    'cluster.server-quorum-ratio': '51',
+    'cluster.enable-shared-storage': 'disable',
+    'cluster.op-version': '31202',
+    'cluster.max-op-version': '31202',
+    'cluster.brick-multiplex': 'disable',
+    'cluster.max-bricks-per-process': '0',
+    'cluster.localtime-logging': 'disable'
+}

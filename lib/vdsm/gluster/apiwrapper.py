@@ -346,6 +346,9 @@ class GlusterVolume(GlusterApiBase):
         return self._gluster.volumeResetBrickCommitForce(volumeName,
                                                          existingBrick)
 
+    def globalVolumeOptions(self):
+        return self._gluster.globalVolumeOptions()
+
 
 class GlusterSnapshot(GlusterApiBase):
     def __init__(self):

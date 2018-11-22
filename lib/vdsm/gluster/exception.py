@@ -821,3 +821,8 @@ class GlusterVolumeResetBrickCommitForceFailedException(
 class GlusterCommandTimeoutException(GlusterGeneralException):
     code = 4108
     message = "Gluster command failed with to execute within timeout"
+
+
+class GlusterVolumeGetGlobalOptionsFailedException(GlusterVolumeException):
+    code = 4141
+    message = "Failed to retrieve global volume options"

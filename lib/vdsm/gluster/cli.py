@@ -1675,6 +1675,40 @@ def volumeResetBrickCommitForce(volumeName, existingBrick):
                                                                    err=e.err)
 
 
+@gluster_mgmt_api
+def globalVolumeOptions():
+    command = _getGlusterVolCmd() + ["get", "all", "all"]
+
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterVolumeGetGlobalOptionsFailedException(rc=e.rc,
+                                                              err=e.err)
+
+    return _parseGlobalVolumeOptions(xmltree)
+
+
+def _parseGlobalVolumeOptions(tree):
+    """
+    Structure as:
+
+    {'globalOptionMap' : {'global_option_name' : 'global_option_value',...}}
+
+    XML:
+    <Opt>
+      <Option>cluster.server-quorum-ratio</Option>
+      <Value>51</Value>
+    </Opt>
+    parsed as
+
+    {'globalOptionMap' :{'cluster.server-quorum-ratio' : '51'},...}
+    """
+    volumeOptions = {}
+    for el in tree.findall('volGetopts/Opt'):
+        volumeOptions[el.find('Option').text] = el.find('Value').text or ''
+    return volumeOptions
+
+
 def exists():
     try:
         return os.path.exists(_glusterCommandPath.cmd)

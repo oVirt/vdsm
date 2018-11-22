@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cliOutput>
+  <opRet>0</opRet>
+  <opErrno>0</opErrno>
+  <opErrstr/>
+  <volGetopts>
+    <count>7</count>
+    <Opt>
+      <Option>cluster.server-quorum-ratio</Option>
+      <Value>51</Value>
+    </Opt>
+    <Opt>
+      <Option>cluster.enable-shared-storage</Option>
+      <Value>disable</Value>
+    </Opt>
+    <Opt>
+      <Option>cluster.op-version</Option>
+      <Value>31202</Value>
+    </Opt>
+    <Opt>
+      <Option>cluster.max-op-version</Option>
+      <Value>31202</Value>
+    </Opt>
+    <Opt>
+      <Option>cluster.brick-multiplex</Option>
+      <Value>disable</Value>
+    </Opt>
+    <Opt>
+      <Option>cluster.max-bricks-per-process</Option>
+      <Value>0</Value>
+    </Opt>
+    <Opt>
+      <Option>cluster.localtime-logging</Option>
+      <Value>disable</Value>
+    </Opt>
+  </volGetopts>
+</cliOutput>
