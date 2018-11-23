@@ -20,6 +20,7 @@
 #
 from __future__ import print_function
 
+import errno
 import getopt
 import sys
 
@@ -34,6 +35,8 @@ except ImportError:
 import openstacknet_utils
 
 CAPS_BINDING_KEY = 'openstack_binding_host_ids'
+OVS_CTL = '/usr/share/openvswitch/scripts/ovs-ctl'
+OVS_VSCTL = '/usr/bin/ovs-vsctl'
 
 
 def _usage():
@@ -47,14 +50,61 @@ def _test():
 
 
 def _get_openstack_binding_host_id():
-    rc, out, err = hooking.execCmd(
-        ['/usr/libexec/vdsm/hooks/openstacknet-get-config', 'host'],
-        sudo=True, raw=True)
+    return (_get_open_vswitch_odl_os_hostconfig_hostid() or
+            _get_open_vswitch_hostname())
 
-    if rc:
-        return None
 
-    return out.decode()
+def _get_open_vswitch_odl_os_hostconfig_hostid():
+    """
+    Returns the external_ids:odl_os_hostconfig_hostid of the table
+    Open_vSwitch from Open vSwitch's database. This value is used by the
+    OpenStack agent of neutron's ODL plugin to identify the host.
+    """
+    rc, out, err = _get_ovs_external_id('odl_os_hostconfig_hostid')
+    if rc == 0:
+        return out[0].replace('"', '')
+
+    return None
+
+
+def _get_ovs_external_id(key):
+    cmd_line = [
+        OVS_VSCTL,
+        '--no-wait',
+        'get',
+        'Open_vSwitch',
+        '.',
+        'external_ids:{}'.format(key)
+    ]
+    return hooking.execCmd(cmd_line, sudo=True, raw=False)
+
+
+def _get_open_vswitch_hostname():
+    """
+    Returns the external_ids:hostname of the table Open_vSwitch from
+    Open vSwitch's database. This value is used by the OpenStack agents
+    of neutron's OVS and OVN plugin to identify the host.
+    """
+    rc, out, err = _get_ovs_external_id('hostname')
+    if rc == 0:
+        return out[0].replace('"', '')
+
+    if _is_ovs_service_running():
+        hooking.log('Failed to get Open vSwitch hostname. err = %s' % (err))
+
+    return None
+
+
+def _is_ovs_service_running():
+    try:
+        rc, _, _ = hooking.execCmd([OVS_CTL, 'status'])
+    except OSError as err:
+        # Silently ignore the missing file and consider the service as down.
+        if err.errno == errno.ENOENT:
+            rc = errno.ENOENT
+        else:
+            raise
+    return rc == 0
 
 
 def _update_openstack_binding_host_ids(caps):
