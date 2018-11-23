@@ -1,3 +1,2 @@
 vdsm  ALL=(ALL) NOPASSWD: /usr/sbin/ip link set * nomaster
-vdsm  ALL=(ALL) NOPASSWD: /usr/sbin/ovs-vsctl, /usr/bin/ovs-vsctl
-vdsm  ALL=(ALL) NOPASSWD: /usr/libexec/vdsm/hooks/openstacknet-get-config host
+vdsm  ALL=(ALL) NOPASSWD: /usr/bin/ovs-vsctl
