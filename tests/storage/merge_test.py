@@ -242,8 +242,8 @@ class TestPrepareMerge(VdsmTestCase):
     def test_block_cow(self, base, top, expected):
         with make_env('block', base, top) as env:
             merge.prepare(env.subchain)
-            self.assertEqual(sorted(self.expected_locks(env.subchain)),
-                             sorted(guarded.context.locks))
+            self.assertEqual(self.expected_locks(env.subchain),
+                             guarded.context.locks)
             base_vol = env.subchain.base_vol
             self.assertEqual(sc.LEGAL_VOL, base_vol.getLegality())
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
@@ -261,8 +261,8 @@ class TestPrepareMerge(VdsmTestCase):
     def test_block_raw(self, base, top, expected):
         with make_env('block', base, top) as env:
             merge.prepare(env.subchain)
-            self.assertEqual(sorted(self.expected_locks(env.subchain)),
-                             sorted(guarded.context.locks))
+            self.assertEqual(self.expected_locks(env.subchain),
+                             guarded.context.locks)
             base_vol = env.subchain.base_vol
             self.assertEqual(sc.LEGAL_VOL, base_vol.getLegality())
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
