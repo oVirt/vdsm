@@ -25,6 +25,8 @@ from contextlib import contextmanager
 from collections import namedtuple
 from functools import partial
 
+import pytest
+
 from monkeypatch import MonkeyPatchScope
 
 from storage.storagefakelib import (
@@ -43,7 +45,6 @@ from . import qemuio
 from testValidation import brokentest
 from testlib import make_uuid
 from testlib import expandPermutations, permutations
-from testlib import VdsmTestCase
 
 from vdsm.common import cmdutils
 from vdsm.storage import blockVolume
@@ -133,7 +134,7 @@ class FakeImage(object):
 
 
 @expandPermutations
-class TestSubchainInfo(VdsmTestCase):
+class TestSubchainInfo:
 
     # TODO: use one make_env for all tests?
     @contextmanager
@@ -181,7 +182,8 @@ class TestSubchainInfo(VdsmTestCase):
                                  base_generation=0)
 
             subchain = merge.SubchainInfo(subchain_info, 0)
-            self.assertRaises(se.VolumeIsNotInChain, subchain.validate)
+            with pytest.raises(se.VolumeIsNotInChain):
+                subchain.validate()
 
     def test_validate_top_is_not_in_chain(self):
         with self.make_env() as env:
@@ -193,7 +195,8 @@ class TestSubchainInfo(VdsmTestCase):
                                  base_generation=0)
 
             subchain = merge.SubchainInfo(subchain_info, 0)
-            self.assertRaises(se.VolumeIsNotInChain, subchain.validate)
+            with pytest.raises(se.VolumeIsNotInChain):
+                subchain.validate()
 
     def test_validate_vol_is_not_base_parent(self):
         with self.make_env(chain_len=3) as env:
@@ -206,7 +209,8 @@ class TestSubchainInfo(VdsmTestCase):
                                  base_generation=0)
 
             subchain = merge.SubchainInfo(subchain_info, 0)
-            self.assertRaises(se.WrongParentVolume, subchain.validate)
+            with pytest.raises(se.WrongParentVolume):
+                subchain.validate()
 
     @permutations((
         # shared volume
@@ -225,11 +229,12 @@ class TestSubchainInfo(VdsmTestCase):
                                  base_generation=0)
 
             subchain = merge.SubchainInfo(subchain_info, 0)
-            self.assertRaises(se.SharedVolumeNonWritable, subchain.validate)
+            with pytest.raises(se.SharedVolumeNonWritable):
+                subchain.validate()
 
 
 @expandPermutations
-class TestPrepareMerge(VdsmTestCase):
+class TestPrepareMerge:
 
     @permutations((
         # No capacity update, no allocation update
@@ -242,15 +247,14 @@ class TestPrepareMerge(VdsmTestCase):
     def test_block_cow(self, base, top, expected):
         with make_env('block', base, top) as env:
             merge.prepare(env.subchain)
-            self.assertEqual(self.expected_locks(env.subchain),
-                             guarded.context.locks)
+            assert self.expected_locks(env.subchain) == guarded.context.locks
             base_vol = env.subchain.base_vol
-            self.assertEqual(sc.LEGAL_VOL, base_vol.getLegality())
+            assert sc.LEGAL_VOL == base_vol.getLegality()
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
             new_base_alloc = env.sd_manifest.getVSize(base_vol.imgUUID,
                                                       base_vol.volUUID)
-            self.assertEqual(expected.virtual * GB, new_base_size)
-            self.assertEqual(expected.physical * GB, new_base_alloc)
+            assert expected.virtual * GB == new_base_size
+            assert expected.physical * GB == new_base_alloc
 
     @brokentest("Looks like it is impossible to create a domain object in "
                 "the tests")
@@ -261,15 +265,14 @@ class TestPrepareMerge(VdsmTestCase):
     def test_block_raw(self, base, top, expected):
         with make_env('block', base, top) as env:
             merge.prepare(env.subchain)
-            self.assertEqual(self.expected_locks(env.subchain),
-                             guarded.context.locks)
+            assert self.expected_locks(env.subchain) == guarded.context.locks
             base_vol = env.subchain.base_vol
-            self.assertEqual(sc.LEGAL_VOL, base_vol.getLegality())
+            assert sc.LEGAL_VOL == base_vol.getLegality()
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
             new_base_alloc = env.sd_manifest.getVSize(base_vol.imgUUID,
                                                       base_vol.volUUID)
-            self.assertEqual(expected.virtual * GB, new_base_size)
-            self.assertEqual(expected.physical * GB, new_base_alloc)
+            assert expected.virtual * GB == new_base_size
+            assert expected.physical * GB == new_base_alloc
 
     @permutations((
         (Volume('cow', 1, 0), Volume('cow', 1, 0), Expected(1, 0)),
@@ -279,9 +282,9 @@ class TestPrepareMerge(VdsmTestCase):
         with make_env('file', base, top) as env:
             merge.prepare(env.subchain)
             base_vol = env.subchain.base_vol
-            self.assertEqual(sc.LEGAL_VOL, base_vol.getLegality())
+            assert sc.LEGAL_VOL == base_vol.getLegality()
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
-            self.assertEqual(expected.virtual * GB, new_base_size)
+            assert expected.virtual * GB == new_base_size
 
     @brokentest("Looks like it is impossible to create a domain object in "
                 "the tests")
@@ -292,9 +295,9 @@ class TestPrepareMerge(VdsmTestCase):
         with make_env('file', base, top) as env:
             merge.prepare(env.subchain)
             base_vol = env.subchain.base_vol
-            self.assertEqual(sc.LEGAL_VOL, base_vol.getLegality())
+            assert sc.LEGAL_VOL == base_vol.getLegality()
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
-            self.assertEqual(expected.virtual * GB, new_base_size)
+            assert expected.virtual * GB == new_base_size
 
     def expected_locks(self, subchain):
         img_ns = rm.getNamespace(sc.IMAGE_NAMESPACE, subchain.sd_id)
@@ -322,7 +325,7 @@ class FakeSyncVolumeChain(object):
 
 
 @expandPermutations
-class TestFinalizeMerge(VdsmTestCase):
+class TestFinalizeMerge:
 
     # TODO: use one make_env for all tests?
     @contextmanager
@@ -381,18 +384,17 @@ class TestFinalizeMerge(VdsmTestCase):
             if top_vol is not env.chain[-1]:
                 child_vol = env.chain[top_index + 1]
                 info = qemuimg.info(child_vol.volumePath)
-                self.assertEqual(info['backingfile'],
-                                 volume.getBackingVolumePath(subchain.img_id,
-                                                             subchain.base_id))
+                backing_file = volume.getBackingVolumePath(
+                    subchain.img_id, subchain.base_id)
+                assert info['backingfile'] == backing_file
 
             # verify syncVolumeChain arguments
             self.check_sync_volume_chain(subchain, env.chain[-1].volUUID)
             new_chain = [vol.volUUID for vol in env.chain]
             new_chain.remove(top_vol.volUUID)
-            self.assertEqual(image.Image.syncVolumeChain.actual_chain,
-                             new_chain)
+            assert image.Image.syncVolumeChain.actual_chain == new_chain
 
-            self.assertEqual(base_vol.getLegality(), sc.LEGAL_VOL)
+            assert base_vol.getLegality() == sc.LEGAL_VOL
 
     @permutations([
         # volume
@@ -415,7 +417,7 @@ class TestFinalizeMerge(VdsmTestCase):
                                  base_generation=0)
             subchain = merge.SubchainInfo(subchain_info, 0)
 
-            with self.assertRaises(se.prepareIllegalVolumeError):
+            with pytest.raises(se.prepareIllegalVolumeError):
                 merge.finalize(subchain)
 
     def test_qemuimg_rebase_failed(self):
@@ -433,11 +435,11 @@ class TestFinalizeMerge(VdsmTestCase):
                 (qemuimg._qemuimg, '_cmd', '/usr/bin/false')
             ]):
 
-                with self.assertRaises(cmdutils.Error):
+                with pytest.raises(cmdutils.Error):
                     merge.finalize(subchain)
 
-            self.assertEqual(subchain.top_vol.getLegality(), sc.LEGAL_VOL)
-            self.assertEqual(subchain.top_vol.getParent(), base_vol.volUUID)
+            assert subchain.top_vol.getLegality() == sc.LEGAL_VOL
+            assert subchain.top_vol.getParent() == base_vol.volUUID
 
     def test_rollback_volume_legallity_failed(self):
         with self.make_env(sd_type='block', chain_len=4) as env:
@@ -459,10 +461,10 @@ class TestFinalizeMerge(VdsmTestCase):
                 (qemuimg._qemuimg, '_cmd', '/usr/bin/false'),
                 (volume.VolumeManifest, 'setLegality', setLegality),
             ]):
-                with self.assertRaises(cmdutils.Error):
+                with pytest.raises(cmdutils.Error):
                     merge.finalize(subchain)
 
-            self.assertEqual(subchain.top_vol.getLegality(), sc.ILLEGAL_VOL)
+            assert subchain.top_vol.getLegality() == sc.ILLEGAL_VOL
 
     def test_reduce_chunked(self):
         with self.make_env(sd_type='block', format='cow', chain_len=4) as env:
@@ -481,10 +483,10 @@ class TestFinalizeMerge(VdsmTestCase):
             fake_base_vol = fake_sd.produceVolume(subchain.img_id,
                                                   subchain.base_id)
 
-            self.assertEqual(len(fake_base_vol.__calls__), 1)
             optimal_size = base_vol.optimal_size() // sc.BLOCK_SIZE
-            self.assertEqual(fake_base_vol.__calls__[0],
-                             ('reduce', (optimal_size,), {}))
+            assert fake_base_vol.__calls__ == [
+                ('reduce', (optimal_size,), {}),
+            ]
 
     def test_reduce_not_chunked(self):
         with self.make_env(sd_type='file', format='cow', chain_len=4) as env:
@@ -506,7 +508,7 @@ class TestFinalizeMerge(VdsmTestCase):
             calls = getattr(fake_base_vol, "__calls__", {})
             # Verify that 'calls' is empty which means that 'reduce' wasn't
             # called
-            self.assertEqual(len(calls), 0)
+            assert len(calls) == 0
 
     def test_reduce_failure(self):
         with self.make_env(sd_type='block', format='cow', chain_len=4) as env:
@@ -525,7 +527,7 @@ class TestFinalizeMerge(VdsmTestCase):
             fake_base_vol.errors["reduce"] = se.LogicalVolumeExtendError(
                 "vgname", "lvname", base_vol.optimal_size())
 
-            with self.assertRaises(se.LogicalVolumeExtendError):
+            with pytest.raises(se.LogicalVolumeExtendError):
                 merge.finalize(subchain)
 
             # verify syncVolumeChain arguments
@@ -572,6 +574,6 @@ class TestFinalizeMerge(VdsmTestCase):
 
     def check_sync_volume_chain(self, subchain, removed_vol_id):
         sync = image.Image.syncVolumeChain
-        self.assertEqual(sync.sd_id, subchain.sd_id)
-        self.assertEqual(sync.img_id, subchain.img_id)
-        self.assertEqual(sync.vol_id, removed_vol_id)
+        assert sync.sd_id == subchain.sd_id
+        assert sync.img_id == subchain.img_id
+        assert sync.vol_id == removed_vol_id
