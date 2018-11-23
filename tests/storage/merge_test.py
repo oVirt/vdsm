@@ -26,8 +26,7 @@ from collections import namedtuple
 from functools import partial
 
 import pytest
-
-from monkeypatch import MonkeyPatchScope
+from _pytest.monkeypatch import MonkeyPatch
 
 from storage.storagefakelib import (
     FakeResourceManager,
@@ -109,19 +108,21 @@ def make_env(env_type, base, top):
             env.lvm.extendLV(env.sd_manifest.sdUUID, top_id,
                              top.physical * GB // MB)
 
-        rm = FakeResourceManager()
-        with MonkeyPatchScope([
-            (guarded, 'context', fake_guarded_context()),
-            (merge, 'sdCache', env.sdcache),
-            (blockVolume, 'rm', rm),
-            (blockVolume, 'sdCache', env.sdcache),
-            (image.Image, 'getChain', lambda self, sdUUID, imgUUID:
-                [env.subchain.base_vol, env.subchain.top_vol]),
-            (blockVolume.BlockVolume, 'extendSize',
-                partial(fake_blockVolume_extendSize, env)),
-            (fileVolume.FileVolume, 'extendSize',
-                partial(fake_fileVolume_extendSize, env)),
-        ]):
+        with MonkeyPatch().context() as mp:
+            mp.setattr(guarded, 'context', fake_guarded_context())
+            mp.setattr(merge, 'sdCache', env.sdcache)
+            mp.setattr(blockVolume, 'rm', FakeResourceManager())
+            mp.setattr(blockVolume, 'sdCache', env.sdcache)
+            mp.setattr(
+                image.Image, 'getChain',
+                lambda self, sdUUID, imgUUID:
+                    [env.subchain.base_vol, env.subchain.top_vol])
+            mp.setattr(
+                blockVolume.BlockVolume, 'extendSize',
+                partial(fake_blockVolume_extendSize, env))
+            mp.setattr(
+                fileVolume.FileVolume, 'extendSize',
+                partial(fake_fileVolume_extendSize, env))
             yield env
 
 
@@ -140,12 +141,11 @@ class TestSubchainInfo:
         size = 1048576
         base_fmt = sc.name2type(format)
         with fake_env(sd_type) as env:
-            rm = FakeResourceManager()
-            with MonkeyPatchScope([
-                (guarded, 'context', fake_guarded_context()),
-                (merge, 'sdCache', env.sdcache),
-                (blockVolume, 'rm', rm),
-            ]):
+            with MonkeyPatch().context() as mp:
+                mp.setattr(guarded, 'context', fake_guarded_context())
+                mp.setattr(merge, 'sdCache', env.sdcache)
+                mp.setattr(blockVolume, 'rm', FakeResourceManager())
+
                 env.chain = make_qemu_chain(env, size, base_fmt, chain_len)
 
                 def fake_chain(self, sdUUID, imgUUID, volUUID=None):
@@ -322,13 +322,12 @@ class TestFinalizeMerge:
         size = 1048576
         base_fmt = sc.name2type(format)
         with fake_env(sd_type) as env:
-            rm = FakeResourceManager()
-            with MonkeyPatchScope([
-                (guarded, 'context', fake_guarded_context()),
-                (merge, 'sdCache', env.sdcache),
-                (blockVolume, 'rm', rm),
-                (image, 'Image', FakeImage),
-            ]):
+            with MonkeyPatch().context() as mp:
+                mp.setattr(guarded, 'context', fake_guarded_context())
+                mp.setattr(merge, 'sdCache', env.sdcache)
+                mp.setattr(blockVolume, 'rm', FakeResourceManager())
+                mp.setattr(image, 'Image', FakeImage)
+
                 env.chain = make_qemu_chain(env, size, base_fmt, chain_len)
 
                 volumes = {(vol.imgUUID, vol.volUUID): FakeVolume()
@@ -415,9 +414,8 @@ class TestFinalizeMerge:
                                  base_generation=0)
             subchain = merge.SubchainInfo(subchain_info, 0)
 
-            with MonkeyPatchScope([
-                (qemuimg._qemuimg, '_cmd', '/usr/bin/false')
-            ]):
+            with MonkeyPatch().context() as mp:
+                mp.setattr(qemuimg._qemuimg, '_cmd', '/usr/bin/false')
 
                 with pytest.raises(cmdutils.Error):
                     merge.finalize(subchain)
@@ -441,10 +439,9 @@ class TestFinalizeMerge:
                     raise RuntimeError("Rollback volume legality failed")
                 self.setMetaParam(sc.LEGALITY, legality)
 
-            with MonkeyPatchScope([
-                (qemuimg._qemuimg, '_cmd', '/usr/bin/false'),
-                (volume.VolumeManifest, 'setLegality', setLegality),
-            ]):
+            with MonkeyPatch().context() as mp:
+                mp.setattr(qemuimg._qemuimg, '_cmd', '/usr/bin/false')
+                mp.setattr(volume.VolumeManifest, 'setLegality', setLegality)
                 with pytest.raises(cmdutils.Error):
                     merge.finalize(subchain)
 
