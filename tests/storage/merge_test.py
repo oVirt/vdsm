@@ -42,9 +42,7 @@ from storage.storagetestlib import (
 
 from . import qemuio
 
-from testValidation import brokentest
 from testlib import make_uuid
-from testlib import expandPermutations, permutations
 
 from vdsm.common import cmdutils
 from vdsm.storage import blockVolume
@@ -133,7 +131,6 @@ class FakeImage(object):
         pass
 
 
-@expandPermutations
 class TestSubchainInfo:
 
     # TODO: use one make_env for all tests?
@@ -212,11 +209,7 @@ class TestSubchainInfo:
             with pytest.raises(se.WrongParentVolume):
                 subchain.validate()
 
-    @permutations((
-        # shared volume
-        (0,),
-        (1,),
-    ))
+    @pytest.mark.parametrize("shared_vol", [0, 1])
     def test_validate_vol_is_not_shared(self, shared_vol):
         with self.make_env(chain_len=3, shared=True) as env:
             base_vol = env.chain[0]
@@ -233,17 +226,16 @@ class TestSubchainInfo:
                 subchain.validate()
 
 
-@expandPermutations
 class TestPrepareMerge:
 
-    @permutations((
+    @pytest.mark.parametrize("base, top, expected", [
         # No capacity update, no allocation update
         (Volume('raw', 1, 1), Volume('cow', 1, 1), Expected(1, 1)),
         # No capacity update, increase LV size
         (Volume('cow', 10, 2), Volume('cow', 10, 2), Expected(10, 5)),
         # Update capacity and increase LV size
         (Volume('cow', 3, 1), Volume('cow', 5, 1), Expected(5, 3)),
-    ))
+    ])
     def test_block_cow(self, base, top, expected):
         with make_env('block', base, top) as env:
             merge.prepare(env.subchain)
@@ -256,12 +248,11 @@ class TestPrepareMerge:
             assert expected.virtual * GB == new_base_size
             assert expected.physical * GB == new_base_alloc
 
-    @brokentest("Looks like it is impossible to create a domain object in "
-                "the tests")
-    @permutations((
+    @pytest.mark.xfail(reason="cannot create a domain object in the tests")
+    @pytest.mark.parametrize("base, top, expected", [
         # Update capacity and fully allocate LV
         (Volume('raw', 1, 1), Volume('cow', 2, 1), Expected(2, 2)),
-    ))
+    ])
     def test_block_raw(self, base, top, expected):
         with make_env('block', base, top) as env:
             merge.prepare(env.subchain)
@@ -274,10 +265,10 @@ class TestPrepareMerge:
             assert expected.virtual * GB == new_base_size
             assert expected.physical * GB == new_base_alloc
 
-    @permutations((
+    @pytest.mark.parametrize("base, top, expected", [
         (Volume('cow', 1, 0), Volume('cow', 1, 0), Expected(1, 0)),
         (Volume('cow', 1, 0), Volume('cow', 2, 0), Expected(2, 0)),
-    ))
+    ])
     def test_file_cow(self, base, top, expected):
         with make_env('file', base, top) as env:
             merge.prepare(env.subchain)
@@ -286,11 +277,10 @@ class TestPrepareMerge:
             new_base_size = base_vol.getSize() * sc.BLOCK_SIZE
             assert expected.virtual * GB == new_base_size
 
-    @brokentest("Looks like it is impossible to create a domain object in "
-                "the tests")
-    @permutations((
+    @pytest.mark.xfail(reason="cannot create a domain object in the tests")
+    @pytest.mark.parametrize("base, top, expected", [
         (Volume('raw', 1, 0), Volume('cow', 2, 0), Expected(2, 0)),
-    ))
+    ])
     def test_file_raw(self, base, top, expected):
         with make_env('file', base, top) as env:
             merge.prepare(env.subchain)
@@ -324,7 +314,6 @@ class FakeSyncVolumeChain(object):
         self.actual_chain = actual_chain
 
 
-@expandPermutations
 class TestFinalizeMerge:
 
     # TODO: use one make_env for all tests?
@@ -360,8 +349,7 @@ class TestFinalizeMerge:
     # 2. Test a c hain of more than 2 volumes and verify that top's parent is
     #    prepared
 
-    @permutations([
-        # sd_type, chain_len, base_index, top_index
+    @pytest.mark.parametrize("sd_type, chain_len, base_index, top_index", [
         ('file', 2, 0, 1),
         ('block', 2, 0, 1),
         ('file', 4, 1, 2),
@@ -396,11 +384,7 @@ class TestFinalizeMerge:
 
             assert base_vol.getLegality() == sc.LEGAL_VOL
 
-    @permutations([
-        # volume
-        ('base',),
-        ('top',),
-    ])
+    @pytest.mark.parametrize("volume", ["base", "top"])
     def test_finalize_illegal_volume(self, volume):
         with self.make_env(sd_type='block', format='cow', chain_len=4) as env:
             base_vol = env.chain[1]
@@ -533,11 +517,7 @@ class TestFinalizeMerge:
             # verify syncVolumeChain arguments
             self.check_sync_volume_chain(subchain, env.chain[-1].volUUID)
 
-    @permutations([
-        # base_fmt
-        ('raw',),
-        ('cow',),
-    ])
+    @pytest.mark.parametrize("base_fmt", ["raw", "cow"])
     def test_chain_after_finalize(self, base_fmt):
         with self.make_env(format=base_fmt, chain_len=3) as env:
             base_vol = env.chain[0]
