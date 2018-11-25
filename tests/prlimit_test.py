@@ -28,7 +28,7 @@ from vdsm.common import cmdutils
 from vdsm.common import commands
 
 
-@pytest.mark.xfail(
+@pytest.mark.skipif(
     "OVIRT_CI" in os.environ,
     reason="prlimit --cpu does not work in oVirt CI envrinoment")
 def test_limit_cpu():
