@@ -126,6 +126,16 @@ class TestMountHash(VdsmTestCase):
         self.assertNotEqual(hash(m1), hash(m2))
 
 
+@contextmanager
+def loop_mount(m):
+    m.mount(mntOpts="loop")
+    try:
+        yield
+    finally:
+        time.sleep(0.5)
+        m.umount()
+
+
 @expandPermutations
 class TestMount(VdsmTestCase):
 
@@ -137,11 +147,8 @@ class TestMount(VdsmTestCase):
             # two nested with blocks to be python 2.6 friendly
             with createFloppyImage(FLOPPY_SIZE) as path:
                 m = mount.Mount(path, mpath)
-                m.mount(mntOpts="loop")
-                try:
+                with loop_mount(m):
                     self.assertTrue(m.isMounted())
-                finally:
-                    m.umount()
 
     @skipif(six.PY3, "needs porting to python 3")
     @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
@@ -160,11 +167,8 @@ class TestMount(VdsmTestCase):
             os.symlink(backing_image, link_to_image)
             os.mkdir(mountpoint)
             m = mount.Mount(link_to_image, mountpoint)
-            m.mount(mntOpts="loop")
-            try:
+            with loop_mount(m):
                 self.assertTrue(m.isMounted())
-            finally:
-                m.umount()
 
     @permutations([
         # Only fs_spec matches
