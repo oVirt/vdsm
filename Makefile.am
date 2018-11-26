@@ -64,31 +64,6 @@ CLEANFILES = \
 	$(DIST_ARCHIVES) \
 	$(NULL)
 
-ABS_IMPORT_WHITELIST = \
-	lib \
-	tests \
-	$(NULL)
-
-PY3DIVISION_WHITELIST = \
-	lib/sos \
-	lib/vdsm/api \
-	lib/vdsm/common \
-	lib/vdsm/gluster \
-	lib/vdsm/hook \
-	lib/vdsm/host \
-	lib/vdsm/metrics \
-	lib/vdsm/network \
-	lib/vdsm/profiling \
-	lib/vdsm/rpc \
-	# lib/vdsm/storage \
-	lib/vdsm/supervdsm_api \
-	lib/vdsm/tool \
-	lib/vdsm/virt \
-	lib/vdsmclient \
-	lib/yajsonrpc \
-	tests \
-	$(NULL)
-
 .PHONY: gitignore
 gitignore:
 	@echo "Checking that .in files are ignored..."
@@ -98,20 +73,6 @@ gitignore:
 	      echo "Missing $${i%%.in} in .gitignore"; exit 1; fi; \
 	  done; \
 	fi;
-
-.PHONY: abs_imports
-abs_imports: all
-	@for f in `git ls-files $(ABS_IMPORT_WHITELIST) |grep '\.py$$\|\.py\.in$$'`; do\
-	  if ! grep -q '^from __future__ import absolute_import$$' "$$f"; then \
-	    echo "Missing absolute_import in $$f"; exit 1; fi; \
-	done;
-
-.PHONY: py3division
-py3division: all
-	@for f in `git ls-files $(PY3DIVISION_WHITELIST) |grep '\.py$$\|\.py\.in$$'`; do\
-	  if ! grep -q '^from __future__ import division$$' "$$f"; then \
-	    echo "Missing __future__.division in $$f"; exit 1; fi; \
-	done;
 
 .PHONY: pylint
 pylint: tox
@@ -157,15 +118,6 @@ tox:
 		exit 1; \
 	fi
 
-.PHONY: python3
-python3: all
-	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then \
-	    PYTHONDONTWRITEBYTECODE=1 $(PYTHON3) -m compileall \
-		`find -not -path './.tox/*' -name '*.py'` ; \
-	else \
-	    echo "Warning: skipping python3 syntax check"; \
-	fi
-
 # Note: dependencies ordered by time needed to run them
 check: lint tests
 
@@ -182,7 +134,7 @@ check-unit:
 
 .PHONY: lint
 # Note: dependencies ordered by time needed to run them
-lint: gitignore execcmd abs_imports py3division imports python3 flake8 pylint
+lint: gitignore execcmd imports flake8 pylint-py3k pylint
 
 .PHONY: tests
 tests: tests-py27 tests-py36
