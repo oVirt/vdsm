@@ -28,6 +28,8 @@ import os
 import time
 import uuid
 
+import pytest
+
 from storage.storagefakelib import fake_repo
 from testlib import VdsmTestCase
 from testlib import expandPermutations
@@ -142,6 +144,9 @@ class TestGetAllVolumes(VdsmTestCase):
         self.assertEqual(res["volume-4"], (("image-2",), None))
         self.assertEqual(res["volume-5"], (("image-3",), None))
 
+    @pytest.mark.skipif(
+        "OVIRT_CI" in os.environ or "TRAVIS_CI" in os.environ,
+        reason="performance test, unpredictable on CI")
     def test_scale(self):
         # For this test we want real world strings
         images_count = 5000
@@ -171,9 +176,8 @@ class TestGetAllVolumes(VdsmTestCase):
         elapsed = time.time() - start
         print("%f seconds" % elapsed)
 
-        # This takes 0.065 seconds on my laptop, 1 second should be enough even
-        # on overloaded jenkins slave.
-        self.assertTrue(elapsed < 1.0, "Elapsed time: %f seconds" % elapsed)
+        # This takes about 0.11 seconds on T450s.
+        self.assertTrue(elapsed < 0.5, "Elapsed time: %f seconds" % elapsed)
 
 
 SDInfo = collections.namedtuple("SDInfo",
