@@ -170,6 +170,7 @@ class GuestAgent(object):
         self._stopped = True
         self._status = None
         self.guestDiskMapping = {}
+        self.oVirtGuestDiskMapping = {}
         self.guestInfo = {
             'username': user,
             'memUsage': 0,
@@ -442,7 +443,7 @@ class GuestAgent(object):
                 disk['used'] = str(disk['used'])
                 disks.append(disk)
             self.guestInfo['disksUsage'] = disks
-            self.guestDiskMapping = args.get('mapping', {})
+            self.oVirtGuestDiskMapping = args.get('mapping', {})
         elif message == 'number-of-cpus':
             self.guestInfo['guestCPUCount'] = int(args['count'])
         elif message == 'completion':
@@ -481,11 +482,16 @@ class GuestAgent(object):
             'appsList': (),
             'guestIPs': '',
             'guestFQDN': ''}
+        diskMapping = {}
         qga = self._qgaGuestInfo()
         if qga is not None:
+            if 'diskMapping' in qga:
+                diskMapping.update(qga['diskMapping'])
+                del qga['diskMapping']
             info.update(qga)
         if self.isResponsive():
             info.update(self.guestInfo)
+            diskMapping.update(self.oVirtGuestDiskMapping)
         else:
             if len(self.guestInfo['appsList']) > 0:
                 info['appsList'] = self.guestInfo['appsList']
@@ -493,6 +499,7 @@ class GuestAgent(object):
                 info['guestIPs'] = self.guestInfo['guestIPs']
             if len(self.guestInfo['guestFQDN']) > 0:
                 info['guestFQDN'] = self.guestInfo['guestFQDN']
+        self.guestDiskMapping = diskMapping
         return utils.picklecopy(info)
 
     def onReboot(self):

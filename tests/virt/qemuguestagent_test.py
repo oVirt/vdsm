@@ -52,6 +52,36 @@ def _fake_qemuAgentCommand(domain, command, timeout, flags):
                         "success-response": True
                     }]
             }})
+    if command == '{"execute": "guest-get-fsinfo"}':
+        return json.dumps(
+            {"return": [{
+                "name": "dm-3",
+                "total-bytes": 123456,
+                "mountpoint": "/home",
+                "disk": [
+                    {
+                        "serial": "SAMSUNG_MZ7LN512HCHP",
+                        "bus-type": "sata",
+                        "bus": 0,
+                        "unit": 0,
+                        "pci-controller": {
+                            "bus": 0,
+                            "slot": 31,
+                            "domain": 0,
+                            "function": 2
+                        },
+                        "dev": "/dev/sda2",
+                        "target": 0
+                    }
+                ],
+                "used-bytes": 12345,
+                "type": "ext4"
+            }, {
+                "name": "\\\\?\\Volume{6ab8dd61-0000-0000-0000-100000000000}\\",  # NOQA
+                "mountpoint": "System Reserved",
+                "disk": [],
+                "type": "NTFS"
+            }]})
     if command == '{"execute": "guest-get-host-name"}':
         return json.dumps(
             {"return": {
@@ -138,6 +168,7 @@ class QemuGuestAgentTests(TestCaseBase):
                 'commands': [
                     qemuguestagent._QEMU_ACTIVE_USERS_COMMAND,
                     qemuguestagent._QEMU_GUEST_INFO_COMMAND,
+                    qemuguestagent._QEMU_FSINFO_COMMAND,
                     qemuguestagent._QEMU_HOST_NAME_COMMAND,
                     qemuguestagent._QEMU_NETWORK_INTERFACES_COMMAND,
                     qemuguestagent._QEMU_OSINFO_COMMAND,
@@ -206,6 +237,23 @@ class QemuGuestAgentTests(TestCaseBase):
         self.assertEqual(
             self.qga_poller.get_guest_info(self.vm.id),
             {'username': 'Calvin@DESKTOP-NG2EVRF, Hobbes'})
+
+    def test_disk_info(self):
+        c = qemuguestagent.DiskInfoCheck(self.vm, self.qga_poller)
+        c._execute()
+        self.assertEqual(
+            self.qga_poller.get_guest_info(self.vm.id),
+            {
+                'disksUsage': [{
+                    'path': '/home',
+                    'fs': 'ext4',
+                    'total': '123456',
+                    'used': '12345',
+                }],
+                'diskMapping': {
+                    'SAMSUNG_MZ7LN512HCHP': {'name': '/dev/sda2'},
+                },
+            })
 
     def test_system_info(self):
         c = qemuguestagent.SystemInfoCheck(self.vm, self.qga_poller)

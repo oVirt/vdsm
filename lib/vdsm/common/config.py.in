@@ -695,6 +695,11 @@ parameters = [
 
         ('qga_active_users_period', '10',
             'Period (in sec) for gathering information about active users.'),
+
+        ('qga_disk_info_period', '300',
+            'Period (in sec) for gathering filesystem information and disk'
+            ' mapping.'),
+
     ]),
 ]
 

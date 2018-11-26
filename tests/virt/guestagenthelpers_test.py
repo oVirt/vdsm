@@ -120,3 +120,20 @@ class GuestAgentHelpersTest(TestCaseBase):
         self.assertEqual(
             guestagenthelpers.translate_windows_version('6.2', 'server'),
             'Win 2012')
+
+    def test_translate_fsinfo(self):
+        self.assertEqual(
+            guestagenthelpers.translate_fsinfo({
+                'name': 'dm-3',
+                'used-bytes': 123,
+                'total-bytes': 456,
+                'mountpoint': '/home',
+                'disk': [],
+                'type': 'ext4',
+            }),
+            {
+                'fs': 'ext4',
+                'path': '/home',
+                'total': '456',
+                'used': '123',
+            }),

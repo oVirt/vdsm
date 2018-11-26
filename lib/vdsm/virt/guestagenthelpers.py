@@ -77,6 +77,29 @@ def translate_arch(arch):
     return arch_map.get(arch, 'unknown')
 
 
+def translate_fsinfo(filesystem):
+    """
+    Translate dictionary returned by guest-get-fsinfo info dictionary passed on
+    by VDSM.
+    """
+    # Example on Linux:
+    # {
+    #   "name": "dm-3",
+    #   "total-bytes": 442427793408,
+    #   "mountpoint": "/home",
+    #   "disk": [ ... ],
+    #   "used-bytes": 429409058816,
+    #   "type": "ext4"
+    # },
+    filesystem = defaultdict(str, filesystem)
+    return {
+        "path": filesystem['mountpoint'],
+        "total": str(filesystem['total-bytes']),
+        "used": str(filesystem['used-bytes']),
+        "fs": filesystem['type'],
+    }
+
+
 def translate_linux_osinfo(os_info):
     """
     Translate dictionary returned by guest-get-osinfo for Linux guest into

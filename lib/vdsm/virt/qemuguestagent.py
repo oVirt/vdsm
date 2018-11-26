@@ -60,11 +60,15 @@ _QEMU_HOST_NAME_COMMAND = 'guest-get-host-name'
 _QEMU_NETWORK_INTERFACES_COMMAND = 'guest-network-get-interfaces'
 _QEMU_OSINFO_COMMAND = 'guest-get-osinfo'
 _QEMU_TIMEZONE_COMMAND = 'guest-get-timezone'
+_QEMU_FSINFO_COMMAND = 'guest-get-fsinfo'
 
 _HOST_NAME_FIELD = 'host-name'
 _OS_ID_FIELD = 'id'
 _TIMEZONE_OFFSET_FIELD = 'offset'
 _TIMEZONE_ZONE_FIELD = 'zone'
+_FS_DISK_FIELD = 'disk'
+_FS_DISK_DEVICE_FIELD = 'dev'
+_FS_DISK_SERIAL_FIELD = 'serial'
 
 _GUEST_OS_LINUX = 'linux'
 _GUEST_OS_WINDOWS = 'mswindows'
@@ -137,6 +141,11 @@ class QemuGuestAgentPoller(object):
             per_vm_operation(
                 ActiveUsersCheck,
                 config.getint('guest_agent', 'qga_active_users_period')),
+
+            # Filesystem info and disk mapping
+            per_vm_operation(
+                DiskInfoCheck,
+                config.getint('guest_agent', 'qga_disk_info_period')),
         ]
 
         self.log.info("Starting QEMU-GA poller")
@@ -349,6 +358,41 @@ class CapabilityCheck(_RunnableOnVmGuestAgent):
         info = self._qga_poller.get_caps(self._vm.id)
         if 'appsList' not in info:
             self._qga_poller.fake_appsList(self._vm.id)
+
+
+class DiskInfoCheck(_RunnableOnVmGuestAgent):
+    """
+    Get file system information and disk mapping
+    """
+    def _execute(self):
+        disks = []
+        mapping = {}
+        ret = self._qga_poller.call_qga_command(
+            self._vm, _QEMU_FSINFO_COMMAND)
+        if ret is None:
+            return
+        for fs in ret:
+            try:
+                fsinfo = guestagenthelpers.translate_fsinfo(fs)
+            except ValueError:
+                self._qga_poller.log.warning(
+                    'Invalid message returned to call \'%s\': %r',
+                    _QEMU_FSINFO_COMMAND, ret)
+                continue
+            # Skip stats with missing info. This is e.g. the case of System
+            # Reserved volumes on Windows.
+            if fsinfo['total'] != '' and fsinfo['used'] != '':
+                disks.append(fsinfo)
+            if _FS_DISK_FIELD not in fs:
+                continue
+            for d in fs[_FS_DISK_FIELD]:
+                if _FS_DISK_SERIAL_FIELD in d and \
+                        _FS_DISK_DEVICE_FIELD in d:
+                    mapping[d[_FS_DISK_SERIAL_FIELD]] = \
+                        {'name': d[_FS_DISK_DEVICE_FIELD]}
+        self._qga_poller.update_guest_info(
+            self._vm.id,
+            {'disksUsage': disks, 'diskMapping': mapping})
 
 
 class SystemInfoCheck(_RunnableOnVmGuestAgent):
