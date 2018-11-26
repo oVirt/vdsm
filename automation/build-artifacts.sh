@@ -3,13 +3,7 @@
 source automation/common.sh
 
 prepare_env
-
-# autogen may already have been executed by check-patch.sh
-if [ ! -f Makefile ]; then
-  ./autogen.sh --system --enable-hooks --enable-vhostmd
-fi
-
-make
+build_vdsm
 
 cp $PWD/lib/vdsm/api/vdsm-api.html "$EXPORT_DIR"
 

@@ -12,6 +12,14 @@ prepare_env() {
     mkdir -p $EXPORT_DIR
 }
 
+build_vdsm() {
+    if [ ! -f Makefile ]; then
+      ./autogen.sh --system --enable-hooks --enable-vhostmd
+    fi
+
+    make
+}
+
 # oVirt CI helper functions
 
 create_loop_devices() {

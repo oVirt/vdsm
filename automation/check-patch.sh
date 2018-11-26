@@ -17,8 +17,7 @@ trap collect_logs EXIT
 
 pip install -U tox==2.9.1
 
-./autogen.sh --system --enable-hooks --enable-vhostmd
-make
+build_vdsm
 
 debuginfo-install -y python
 
