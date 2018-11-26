@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source automation/ovirt.sh
+source automation/common.sh
 
 EXPORT_DIR="$PWD/exported-artifacts"
 mkdir -p $EXPORT_DIR
