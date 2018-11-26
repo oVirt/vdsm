@@ -33,7 +33,6 @@ EXTRA_DIST = \
 	after_get_caps.py \
 	after_vm_start.py \
 	before_device_create.py \
-	openstacknet-get-config \
 	$(constsfile) \
 	sudoers.in
 
@@ -62,8 +61,6 @@ install-data-local: install-data-consts install-data-sudoers
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_get_caps
 	$(INSTALL_SCRIPT) $(srcdir)/after_get_caps.py \
 		$(DESTDIR)$(vdsmhooksdir)/after_get_caps/50_openstacknet
-	$(INSTALL_SCRIPT) $(srcdir)/openstacknet-get-config \
-		$(DESTDIR)$(vdsmhooksdir)/
 
 uninstall-local: uninstall-data-consts uninstall-data-sudoers
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_device_create/50_openstacknet
@@ -73,7 +70,6 @@ uninstall-local: uninstall-data-consts uninstall-data-sudoers
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_device_create/50_openstacknet
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_nic_hotplug/50_openstacknet
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_get_caps/50_openstacknet
-	$(RM) $(DESTDIR)$(vdsmhooksdir)/openstacknet-get-config
 
 install-data-consts:
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_device_create
