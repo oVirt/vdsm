@@ -12,6 +12,10 @@ prepare_env() {
     mkdir -p $EXPORT_DIR
 }
 
+install_dependencies() {
+    pip install -U tox==2.9.1
+}
+
 build_vdsm() {
     if [ ! -f Makefile ]; then
       ./autogen.sh --system --enable-hooks --enable-vhostmd

@@ -3,6 +3,8 @@
 source automation/common.sh
 
 prepare_env
+install_dependencies
+build_vdsm
 
 function collect_logs {
     res=$?
@@ -14,10 +16,6 @@ function collect_logs {
 }
 
 trap collect_logs EXIT
-
-pip install -U tox==2.9.1
-
-build_vdsm
 
 debuginfo-install -y python
 
