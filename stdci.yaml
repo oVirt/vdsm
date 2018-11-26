@@ -31,4 +31,7 @@ stages:
         - linters:
             distributions:
               - fc28
-        - default
+        - tests-py27
+        - tests-py36:
+            distributions:
+              - fc28
