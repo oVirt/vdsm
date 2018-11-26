@@ -13,11 +13,13 @@ env:
   matrix:
     - DOCKER_IMAGE=ovirtorg/vdsm-test-centos
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-28
+    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-29
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-rawhide
 
 matrix:
   fast_finish: true
   allow_failures:
+    - env: DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-29
     - env: DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-rawhide
 
 before_install:
