@@ -22,7 +22,7 @@ debuginfo-install -y python
 # Make sure we have enough loop device nodes.
 create_loop_devices 8
 
-TIMEOUT=600 make check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
+TIMEOUT=600 make tests NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 
 # Generate coverage report in HTML format
 pushd tests
