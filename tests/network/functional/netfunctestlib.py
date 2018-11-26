@@ -105,6 +105,10 @@ class LibProxy(object):
 
         return status, msg
 
+    def refreshNetworkCapabilities(self):
+        caps = api.network_caps()
+        self.netinfo = CachingNetInfo(caps)
+
 
 class TargetNotDefinedError(Exception):
     pass
@@ -124,6 +128,9 @@ class NetFuncTestAdapter(object):
 
     def update_netinfo(self):
         self.netinfo = self._vdsm_proxy.netinfo
+        if self.netinfo is None:
+            self._vdsm_proxy.refreshNetworkCapabilities()
+            self.netinfo = self._vdsm_proxy.netinfo
 
     def update_running_config(self):
         self.running_config = self._vdsm_proxy.config

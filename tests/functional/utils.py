@@ -135,6 +135,9 @@ class _VdsProxy(object):
     def save_config(self):
         self.vdscli.setSafeNetworkConfig()
 
+    def refreshNetworkCapabilities(self):
+        self.refreshNetinfo()
+
     @netinfo_altering
     def refreshNetinfo(self):
         pass
