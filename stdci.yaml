@@ -21,3 +21,11 @@ stages:
   - check-patch:
       archs:
         - x86_64
+      substages:
+        - install:
+            run-if:
+              file-changed:
+                - 'vdsm.spec.in'
+                - '*Makefile.am'
+                - 'automation/*'
+        - default

@@ -40,9 +40,3 @@ popd
 
 # Export subsystem coverage reports for viewing in jenkins.
 mv tests/htmlcov-* "$EXPORT_DIR"
-
-# In case of vdsm specfile or any Makefile.am file modification in commit,
-# try to build and install all new created packages
-if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.in|Makefile.am|automation' ; then
-    check_install
-fi
