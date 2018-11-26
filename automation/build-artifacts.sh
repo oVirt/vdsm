@@ -1,11 +1,8 @@
 #!/bin/bash
 
-set -xe
+source automation/common.sh
 
-# prepare env
-BUILDS=$PWD/rpmbuild
-EXPORTS=$PWD/exported-artifacts
-mkdir -p "$EXPORTS"
+prepare_env
 
 # autogen may already have been executed by check-patch.sh
 if [ ! -f Makefile ]; then
@@ -14,7 +11,7 @@ fi
 
 make
 
-cp $PWD/lib/vdsm/api/vdsm-api.html "$EXPORTS"
+cp $PWD/lib/vdsm/api/vdsm-api.html "$EXPORT_DIR"
 
 # tests will be done elsewhere
 yum-builddep ./vdsm.spec
@@ -22,8 +19,8 @@ make PYFLAKES="" PEP8="" NOSE_EXCLUDE=.* rpm
 
 find "$BUILDS" \
     -iname \*.rpm \
-    -exec mv {} "$EXPORTS/" \;
+    -exec mv {} "$EXPORT_DIR/" \;
 find "$PWD" \
     -maxdepth 1 \
     -iname vdsm\*.tar.gz \
-    -exec mv {} "$EXPORTS/" \;
+    -exec mv {} "$EXPORT_DIR/" \;

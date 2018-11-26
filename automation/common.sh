@@ -1,3 +1,17 @@
+#!/bin/bash
+
+set -xe
+
+# Common helpers
+
+prepare_env() {
+    # For skipping known failures on jenkins using @broken_on_ci
+    export OVIRT_CI=1
+    export BUILDS=$PWD/rpmbuild
+    export EXPORT_DIR="$PWD/exported-artifacts"
+    mkdir -p $EXPORT_DIR
+}
+
 # oVirt CI helper functions
 
 create_loop_devices() {

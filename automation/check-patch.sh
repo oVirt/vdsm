@@ -2,8 +2,7 @@
 
 source automation/common.sh
 
-EXPORT_DIR="$PWD/exported-artifacts"
-mkdir -p $EXPORT_DIR
+prepare_env
 
 function collect_logs {
     res=$?
@@ -14,12 +13,7 @@ function collect_logs {
     tar -cvzf "$EXPORT_DIR/host_varlogs.tar.gz" *
 }
 
-set -xe
-
 trap collect_logs EXIT
-
-# For skipping known failures on jenkins using @broken_on_ci
-export OVIRT_CI=1
 
 pip install -U tox==2.9.1
 
