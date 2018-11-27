@@ -44,20 +44,5 @@ mv tests/htmlcov-* "$EXPORT_DIR"
 # In case of vdsm specfile or any Makefile.am file modification in commit,
 # try to build and install all new created packages
 if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.in|Makefile.am|automation' ; then
-    ./automation/build-artifacts.sh
-
-    tests/check_distpkg.sh $(ls $EXPORT_DIR/vdsm*.tar.gz)
-    tests/check_rpms.sh $EXPORT_DIR
-
-    create_artifacts_repo $EXPORT_DIR
-
-    vr=$(build-aux/pkg-version --version)-$(build-aux/pkg-version --release)
-
-    if grep -q 'Fedora' /etc/redhat-release; then
-        DNF=dnf
-    else
-        DNF=yum
-    fi
-
-    "$DNF" -y install vdsm-$vr\* vdsm-client-$vr\* vdsm-hook-\*-$vr\* vdsm-tests-$vr\* vdsm-gluster-$vr\*
+    check_install
 fi

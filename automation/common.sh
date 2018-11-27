@@ -51,3 +51,27 @@ create_artifacts_repo() {
         fi
     done
 }
+
+check_install() {
+    if [ -z "$EXPORT_DIR" ]; then
+        (>&2 echo "*** EXPORT_DIR must be set to run check_install!")
+        exit 1
+    fi
+
+    $PWD/automation/build-artifacts.sh
+
+    tests/check_distpkg.sh "$(ls "$EXPORT_DIR"/vdsm*.tar.gz)"
+    tests/check_rpms.sh "$EXPORT_DIR"
+
+    create_artifacts_repo "$EXPORT_DIR"
+
+    local vr=$(build-aux/pkg-version --version)-$(build-aux/pkg-version --release)
+
+    if grep -q 'Fedora' /etc/redhat-release; then
+        DNF=dnf
+    else
+        DNF=yum
+    fi
+
+    "$DNF" -y install vdsm-$vr\* vdsm-client-$vr\* vdsm-hook-\*-$vr\* vdsm-tests-$vr\* vdsm-gluster-$vr\*
+}
