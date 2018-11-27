@@ -1,0 +1,21 @@
+archs:
+  - ppc64le
+  - x86_64
+
+distributions:
+  - el7
+
+release_branches:
+  master:
+    - ovirt-master
+  ovirt-4.2:
+    - ovirt-4.2
+
+stages:
+  - build-artifacts
+  - check-merged:
+      archs:
+        - x86_64
+  - check-patch:
+      archs:
+        - x86_64
