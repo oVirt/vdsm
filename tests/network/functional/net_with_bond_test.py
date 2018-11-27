@@ -273,6 +273,24 @@ class TestReuseBondOnLegacySwitch(object):
 
             adapter.setupNetworks({}, {BOND_NAME: {'remove': True}}, NOCHK)
 
+    def test_add_vlan_network_on_existing_external_bond_with_used_slave(self):
+        with dummy_devices(2) as (nic1, nic2):
+            with Bond(BOND_NAME, slaves=(nic1, nic2)) as bond:
+                bond.create()
+                bond.up()
+                with vlan_device(nic1):
+                    NETBASE = {NETWORK1_NAME: {'bonding': BOND_NAME,
+                                               'bridged': True,
+                                               'switch': 'legacy',
+                                               'vlan': 17}}
+
+                    with pytest.raises(SetupNetworksError) as err:
+                        with adapter.setupNetworks(NETBASE, {}, NOCHK):
+                            pass
+
+                    assert err.value.status == ne.ERR_USED_NIC
+                    assert 'already used by' in err.value.msg
+
     def _set_ip_address(self, ip_address, iface):
         ip_data = address.IPAddressData(ip_address, device=iface)
         IPAddress.add(ip_data)
