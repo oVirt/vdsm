@@ -38,9 +38,10 @@ _CONF_FILE = "/etc/multipath.conf"
 # "VDSM REVISION X.Y" tag.  Note that older version used "RHEV REVISION X.Y"
 # format.
 
-_CURRENT_TAG = "# VDSM REVISION 1.7"
+_CURRENT_TAG = "# VDSM REVISION 1.8"
 
 _OLD_TAGS = (
+    "# VDSM REVISION 1.7",
     "# VDSM REVISION 1.6",
     "# VDSM REVISION 1.5",
     "# VDSM REVISION 1.4",
@@ -172,6 +173,72 @@ defaults {
     # paths plus 32.
 
     max_fds                     4096
+}
+
+# Blacklist local and obsolete protocols which run on devices which are not
+# multipathable.
+#
+# Complete list of protocols recognized by multipath:
+# scsi:fcp        Fibre Channel
+# scsi:spi        Parallel SCSI
+# scsi:ssa        Serial Storage Architecture
+# scsi:sbp        Firewire
+# scsi:srp        Infiniband RDMA
+# scsi:iscsi      Internet SCSI
+# scsi:sas        Serial Attached Storage
+# scsi:adt        Automation Drive Interface
+# scsi:ata        Advanced Technology Attachment
+# scsi:unspec     multipath unable to determine scsi transport
+# ccw             Channel Command Words
+# cciss           Command and Control Interface Subsystem
+# nvme            Non-Volatile Memory Express
+# undef           multipath unable to determine protocol
+#
+# We blacklist following protocols:
+# scsi:adt  local storage protocol
+# scsi:sbp  local storage protocol
+#
+# Other protocols are not blacklisted for following reasons:
+# scsi:fcp      officially supported
+# scsi:iscsi    officially supported
+# scsi:sas      not supported, but not blacklisting it to avoid breaking
+#               existing user setup, known to be used by users
+# cciss         not supported, but not blacklisting it to avoid breaking
+#               existing user setup, known to be used by users
+# scsi:srp      not supported, but not blacklisting it to avoid breaking
+#               existing user setup
+# ccw           not supported, but not blacklisting it to avoid breaking
+#               existing user setup
+# nvme          can be used with multipath setup, protocols like NVMe-oF will
+#               come up as nvme
+# scsi:spi      superseded by scsi:fcp, not a local device, no need to
+#               blacklist it
+# scsi:ssa      superseded by scsi:fcp, not a local device, no need to
+#               blacklist it
+#
+# Devices running scsi:ata and scsi:unspec are quite common and almost always
+# cannot create multipath, so it would be good to blacklist them. But in
+# general multipath can be create on top either of these devices, so we don't
+# black list them to avoid breaking anyone's setup.
+#
+# You can make blacklist more restrictive by creating drop-in config file,
+# e.g. /etc/multipath/conf.d/local.conf, and extend blacklist
+# according to your needs, e.g.
+#
+#   blacklist {
+#       protocol "(scsi:ata|scsi:unspec)"
+#   }
+#
+# You can also add exceptions to blacklist (see man(5) multipath.conf for more
+# details) by adding blacklist_exceptions to your drop-in configuration file,
+# e.g.
+#
+#   blacklist_exceptions {
+#       protocol "(scsi:spi|scsi:ssa)"
+#   }
+
+blacklist {
+        protocol "(scsi:adt|scsi:sbp)"
 }
 
 # Remove devices entries when overrides section is available.
