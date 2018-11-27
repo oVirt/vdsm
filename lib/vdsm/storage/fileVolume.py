@@ -27,6 +27,7 @@ from vdsm import constants
 from vdsm import utils
 from vdsm.common import exception
 from vdsm.common.commands import grepCmd
+from vdsm.common.compat import glob_escape
 from vdsm.common.marks import deprecated
 from vdsm.common.threadlocal import vars
 from vdsm.storage import constants as sc
@@ -330,7 +331,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         """
         sd = sdCache.produce_manifest(sdUUID)
         img_dir = sd.getImageDir(imgUUID)
-        pattern = os.path.join(img_dir, "*.meta")
+        pattern = os.path.join(glob_escape(img_dir), "*.meta")
         files = oop.getProcessPool(sdUUID).glob.glob(pattern)
         volList = []
         for i in files:

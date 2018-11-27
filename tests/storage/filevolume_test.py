@@ -24,8 +24,6 @@ from __future__ import division
 from contextlib import contextmanager
 import os
 
-import pytest
-
 from storage.storagetestlib import fake_env
 from testlib import make_uuid
 from vdsm.constants import GIB
@@ -73,7 +71,6 @@ class TestFileVolumeManifest(object):
         with self.make_volume(size=size, format=sc.COW_FORMAT) as vol:
             assert vol.optimal_size() == vol.getVolumeSize() * sc.BLOCK_SIZE
 
-    @pytest.mark.xfail(reason="Wrong parsing of ipv6 address (see BZ#1641960)")
     def test_get_image_volumes(self):
         img_id = make_uuid()
         vol_id = make_uuid()
