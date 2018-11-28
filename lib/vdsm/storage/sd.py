@@ -676,6 +676,13 @@ class StorageDomain(object):
     mdBackupDir = config.get('irs', 'md_backup_dir')
     manifestClass = StorageDomainManifest
 
+    # Those two variables contain block sizes and sanlock alignments
+    # supported by a storage domain. Values are validated by
+    # _validate_block_and_alignment function.
+    # Concrete storage domain types must override to define supported values.
+    supported_block_size = ()
+    supported_alignment = ()
+
     def __init__(self, manifest):
         self._manifest = manifest
         self._lock = threading.Lock()
@@ -761,13 +768,22 @@ class StorageDomain(object):
         return self._manifest._makeDomainLock(domVersion)
 
     @classmethod
-    def create(cls, sdUUID, domainName, domClass, typeSpecificArg, version):
+    def create(cls, sdUUID, domainName, domClass, typeSpecificArg, version,
+               block_size, alignment):
         """
         Create a storage domain. The initial status is unattached.
         The storage domain underlying storage must be visible (connected)
         at that point.
         """
         pass
+
+    @classmethod
+    def _validate_block_and_alignment(cls, block_size, alignment):
+        if block_size not in cls.supported_block_size:
+            raise se.InvalidParameterException('block_size', block_size)
+
+        if alignment not in cls.supported_alignment:
+            raise se.InvalidParameterException('alignment', alignment)
 
     def _registerResourceNamespaces(self):
         """

@@ -50,6 +50,23 @@ BLOCK_SIZE = 512
 METADATA_SIZE = BLOCK_SIZE
 VOLUME_MDNUMBLKS = 1  # The number of blocks needed to store block vol md
 
+# Supported block sizes in bytes
+BLOCK_SIZE_512 = 512
+BLOCK_SIZE_4K = 4096
+
+# sanlock possible alignment values, that set a lockspace size
+# In combination with a block size (see above)
+# they set a limit of supported number of hosts:
+# - ALIGN1M | BLOCK_SIZE_512: max_hosts 2000
+# - ALIGN1M | BLOCK_SIZE_4K:  max_hosts 250
+# - ALIGN2M | BLOCK_SIZE_4K:  max_hosts 500
+# - ALIGN4M | BLOCK_SIZE_4K:  max_hosts 1000
+# - ALIGN8M | BLOCK_SIZE_4K:  max_hosts 2000
+ALIGN_1M = 1024**2
+ALIGN_2M = 2 * ALIGN_1M
+ALIGN_4M = 4 * ALIGN_1M
+ALIGN_8M = 8 * ALIGN_1M
+
 FILE_VOLUME_PERMISSIONS = 0o660
 LEASE_FILEEXT = ".lease"
 

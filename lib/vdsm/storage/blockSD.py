@@ -957,6 +957,10 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
 
+    # This storage domain supports only 512b block size and 1M alignment.
+    supported_block_size = (sc.BLOCK_SIZE_512,)
+    supported_alignment = (sc.ALIGN_1M,)
+
     def __init__(self, sdUUID):
         manifest = self.manifestClass(sdUUID)
         sd.StorageDomain.__init__(self, manifest)
@@ -1007,7 +1011,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
     @classmethod
     def create(cls, sdUUID, domainName, domClass, vgUUID, storageType,
-               version):
+               version, block_size=sc.BLOCK_SIZE_512, alignment=sc.ALIGN_1M):
         """
         Create new storage domain
 
@@ -1018,10 +1022,17 @@ class BlockStorageDomain(sd.StorageDomain):
             vgUUID (UUID): volume group UUID
             storageType (int): ISCSI_DOMAIN, FCP_DOMAIN, &etc.
             version (int): DOMAIN_VERSIONS,
+            block_size (int): Underlying storage block size.
+                This domain supports only block_size=BLOCK_SIZE_512
+            alignment (int): Sanlock alignment to use for this storage domain.
+                This domain supports only alignment=ALIGN_1M
         """
         cls.log.info("sdUUID=%s domainName=%s domClass=%s vgUUID=%s "
-                     "storageType=%s version=%s", sdUUID, domainName, domClass,
-                     vgUUID, storageType, version)
+                     "storageType=%s version=%s, block_size=%s, alignment=%s",
+                     sdUUID, domainName, domClass, vgUUID, storageType,
+                     version, block_size, version)
+
+        cls._validate_block_and_alignment(block_size, alignment)
 
         if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
             raise se.UnicodeArgumentException()

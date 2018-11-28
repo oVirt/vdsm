@@ -34,6 +34,10 @@ from vdsm.storage import sd
 
 class NfsStorageDomain(fileSD.FileStorageDomain):
 
+    # This storage domain supports only 512b block size and 1M alignment.
+    supported_block_size = (sc.BLOCK_SIZE_512,)
+    supported_alignment = (sc.ALIGN_1M,)
+
     @classmethod
     def _preCreateValidation(cls, sdUUID, domPath, typeSpecificArg,
                              storageType, version):
@@ -58,7 +62,7 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
 
     @classmethod
     def create(cls, sdUUID, domainName, domClass, remotePath, storageType,
-               version):
+               version, block_size=sc.BLOCK_SIZE_512, alignment=sc.ALIGN_1M):
         """
         Create new storage domain
 
@@ -69,9 +73,18 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
             remotePath (str): server:/export_path
             storageType (int): NFS_DOMAIN, GLUSTERFS_DOMAIN, &etc.
             version (int): DOMAIN_VERSIONS,
+            block_size (int): Underlying storage block size.
+                Supported value is BLOCK_SIZE_512
+            alignment (int): Sanlock alignment in bytes to use for
+                this storage domain.
+                Supported value is ALIGN_1M
         """
         cls.log.info("sdUUID=%s domainName=%s remotePath=%s "
-                     "domClass=%s", sdUUID, domainName, remotePath, domClass)
+                     "domClass=%s, block_size=%s, alignment=%s",
+                     sdUUID, domainName, remotePath, domClass,
+                     block_size, alignment)
+
+        cls._validate_block_and_alignment(block_size, alignment)
 
         remotePath = fileUtils.normalize_path(remotePath)
 
