@@ -720,8 +720,8 @@ class Vm(object):
                 devices[dev['type']].append(dev)
             except KeyError:
                 if 'type' not in dev or dev['type'] != 'channel':
-                    self.log.warn("Unknown type found, device: '%s' "
-                                  "found", dev)
+                    self.log.warning(
+                        "Unknown type found, device: '%s' found", dev)
                 devices[hwclass.GENERAL].append(dev)
 
         self._checkDeviceLimits(devices)
@@ -1584,9 +1584,10 @@ class Vm(object):
             template = "Failed to set time: %s"
             code = e.get_error_code()
             if code == libvirt.VIR_ERR_AGENT_UNRESPONSIVE:
-                self.log.warn(template,
-                              "QEMU agent unresponsive during "
-                              "guest time synchronization")
+                self.log.warning(
+                    template,
+                    "QEMU agent unresponsive during "
+                    "guest time synchronization")
             elif code == libvirt.VIR_ERR_NO_SUPPORT:
                 self.log.debug(template, "Not supported")
             else:
@@ -2391,7 +2392,7 @@ class Vm(object):
         try:
             sampling.stats_cache.remove(self.id)
         except KeyError:
-            self.log.warn('timestamp already removed from stats cache')
+            self.log.warning('timestamp already removed from stats cache')
 
     def _isDomainRunning(self):
         try:
@@ -3182,7 +3183,8 @@ class Vm(object):
                 self.log.info("Nic has been updated:\n %s" % vnicStrXML)
                 hooks.after_update_device(vnicStrXML, self._custom, custom)
             except Exception as e:
-                self.log.warn('Request failed: %s', vnicStrXML, exc_info=True)
+                self.log.warning(
+                    'Request failed: %s', vnicStrXML, exc_info=True)
                 hooks.after_update_device_fail(
                     vnicStrXML, self._custom, custom
                 )
@@ -3190,8 +3192,8 @@ class Vm(object):
             yield
         except Exception:
             # Rollback link and network.
-            self.log.warn('Rolling back link and net for: %s', dev.alias,
-                          exc_info=True)
+            self.log.warning('Rolling back link and net for: %s', dev.alias,
+                             exc_info=True)
             self._dom.updateDeviceFlags(xmlutils.tostring(vnicXML),
                                         libvirt.VIR_DOMAIN_AFFECT_LIVE)
             raise
@@ -3536,8 +3538,8 @@ class Vm(object):
         # params to the log
 
         if params:
-            self.log.warn("updateVmPolicy got unknown parameters: %s",
-                          ", ".join(six.iterkeys(params)))
+            self.log.warning("updateVmPolicy got unknown parameters: %s",
+                             ", ".join(six.iterkeys(params)))
 
         #
         # Save modified metadata
@@ -4003,7 +4005,7 @@ class Vm(object):
                         dom = self._connection.lookupByUUIDString(self.id)
                         dom.destroyFlags()
                     except libvirt.libvirtError as e:
-                        self.log.warn("Couldn't destroy incoming VM: %s", e)
+                        self.log.warning("Couldn't destroy incoming VM: %s", e)
                     raise DestroyedOnStartupError()
                 self._attachLibvirtDomainAfterMigration(finished, timeout)
             # else domain connection already established earlier
@@ -4810,7 +4812,7 @@ class Vm(object):
             self._dom.blockResize(drive.name, volSize.apparentsize,
                                   libvirt.VIR_DOMAIN_BLOCK_RESIZE_BYTES)
         except libvirt.libvirtError:
-            self.log.warn(
+            self.log.warning(
                 "Libvirt failed to notify the new size %s to the "
                 "running VM, the change will be available at the ",
                 "reboot", volSize.apparentsize, exc_info=True)

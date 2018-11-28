@@ -112,7 +112,7 @@ class VmShutdown(VmPowerDown):
         try:
             self.vm.qemuGuestAgentShutdown()
         except exception.VdsmException:
-            self.vm.log.warn("Shutting down with guest agent FAILED")
+            self.vm.log.warning("Shutting down with guest agent FAILED")
             return False
 
         return utils.log_success(
@@ -135,7 +135,7 @@ class VmShutdown(VmPowerDown):
     def acpiCallback(self):
         self.vm.log.debug("Shutting down with ACPI")
         if response.is_error(self.vm.acpiShutdown()):
-            self.vm.log.warn("Shutting down with ACPI FAILED")
+            self.vm.log.warning("Shutting down with ACPI FAILED")
             return False
 
         return utils.log_success(
@@ -169,7 +169,7 @@ class VmReboot(VmPowerDown):
         try:
             self.vm.qemuGuestAgentReboot()
         except exception.VdsmException:
-            self.vm.log.warn("Rebooting with guest agent FAILED")
+            self.vm.log.warning("Rebooting with guest agent FAILED")
             return False
 
         return utils.log_success(
@@ -193,7 +193,7 @@ class VmReboot(VmPowerDown):
     def acpiCallback(self):
         self.vm.log.debug("Rebooting with ACPI")
         if response.is_error(self.vm.acpiReboot()):
-            self.vm.log.warn("Rebooting with ACPI FAILED")
+            self.vm.log.warning("Rebooting with ACPI FAILED")
             return False
 
         return utils.log_success(
