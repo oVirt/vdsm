@@ -24,8 +24,6 @@ from __future__ import division
 
 import os
 
-from monkeypatch import MonkeyPatch
-
 import pytest
 
 from storage.storagefakelib import fake_vg
@@ -86,14 +84,14 @@ def fakeGetLV(vgName):
 class TestGetAllVolumes:
     # TODO: add more tests, see fileSDTests.py
 
-    @MonkeyPatch(lvm, 'getLV', fakeGetLV)
-    def test_volumes_count(self):
+    def test_volumes_count(self, monkeypatch):
+        monkeypatch.setattr(lvm, 'getLV', fakeGetLV)
         sdName = "3386c6f2-926f-42c4-839c-38287fac8998"
         allVols = blockSD.getAllVolumes(sdName)
         assert len(allVols) == 23
 
-    @MonkeyPatch(lvm, 'getLV', fakeGetLV)
-    def test_missing_tags(self):
+    def test_missing_tags(self, monkeypatch):
+        monkeypatch.setattr(lvm, 'getLV', fakeGetLV)
         sdName = "f9e55e18-67c4-4377-8e39-5833ca422bef"
         allVols = blockSD.getAllVolumes(sdName)
         assert len(allVols) == 1
