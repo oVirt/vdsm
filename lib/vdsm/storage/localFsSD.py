@@ -75,13 +75,15 @@ class LocalFsStorageDomain(fileSD.FileStorageDomain):
     def create(cls, sdUUID, domainName, domClass, remotePath, storageType,
                version):
         """
-        Create new storage domain.
-            'sdUUID' - Storage Domain UUID
-            'domainName' - storage domain name ("iso" or "data domain name")
-            'domClass' - Data/Iso
-            'remotePath' - /data2
-            'storageType' - NFS_DOMAIN, LOCALFS_DOMAIN, &etc.
-            'version' - DOMAIN_VERSIONS
+        Create new storage domain
+
+        Arguments:
+            sdUUID (UUID): Storage Domain UUID
+            domainName (str): Storage domain name
+            domClass (int): Data/Iso
+            remotePath (str): /data
+            storageType (int): LOCALFS_DOMAIN
+            version (int): DOMAIN_VERSIONS
         """
         cls.log.info("sdUUID=%s domainName=%s remotePath=%s "
                      "domClass=%s", sdUUID, domainName, remotePath, domClass)

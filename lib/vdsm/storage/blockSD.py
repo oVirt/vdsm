@@ -1008,13 +1008,16 @@ class BlockStorageDomain(sd.StorageDomain):
     @classmethod
     def create(cls, sdUUID, domainName, domClass, vgUUID, storageType,
                version):
-        """ Create new storage domain
-            'sdUUID' - Storage Domain UUID
-            'domainName' - storage domain name
-            'domClass' - Data/Iso
-            'vgUUID' - volume group UUID
-            'storageType' - NFS_DOMAIN, LOCALFS_DOMAIN, &etc.
-            'version' - DOMAIN_VERSIONS
+        """
+        Create new storage domain
+
+        Arguments:
+            sdUUID (UUID): Storage Domain UUID
+            domainName (str): Storage domain name
+            domClass (int): Data/Iso
+            vgUUID (UUID): volume group UUID
+            storageType (int): ISCSI_DOMAIN, FCP_DOMAIN, &etc.
+            version (int): DOMAIN_VERSIONS,
         """
         cls.log.info("sdUUID=%s domainName=%s domClass=%s vgUUID=%s "
                      "storageType=%s version=%s", sdUUID, domainName, domClass,
