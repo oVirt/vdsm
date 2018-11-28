@@ -26,6 +26,7 @@ import pytest
 from .fakesanlock import FakeSanlock
 from vdsm.common import concurrent
 from vdsm.storage import clusterlock
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 
 from vdsm.storage.compat import sanlock
@@ -235,3 +236,31 @@ def test_inquire_lease_has_no_owner(fake_sanlock):
     version, owner = sl.inquire(LEASE)
     assert version is None
     assert owner is None
+
+
+@pytest.mark.parametrize('block_size, max_hosts, alignment', [
+    (sc.BLOCK_SIZE_512, 250, sc.ALIGN_1M),
+    (sc.BLOCK_SIZE_512, 2000, sc.ALIGN_1M),
+    (sc.BLOCK_SIZE_4K, 250, sc.ALIGN_1M),
+    (sc.BLOCK_SIZE_4K, 251, sc.ALIGN_2M),
+    (sc.BLOCK_SIZE_4K, 499, sc.ALIGN_2M),
+    (sc.BLOCK_SIZE_4K, 500, sc.ALIGN_2M),
+    (sc.BLOCK_SIZE_4K, 501, sc.ALIGN_4M),
+    (sc.BLOCK_SIZE_4K, 999, sc.ALIGN_4M),
+    (sc.BLOCK_SIZE_4K, 1000, sc.ALIGN_4M),
+    (sc.BLOCK_SIZE_4K, 1001, sc.ALIGN_8M),
+    (sc.BLOCK_SIZE_4K, 1999, sc.ALIGN_8M),
+    (sc.BLOCK_SIZE_4K, 2000, sc.ALIGN_8M),
+])
+def test_sanlock_alignment(block_size, max_hosts, alignment):
+    assert clusterlock.alignment(block_size, max_hosts) == alignment
+
+
+@pytest.mark.parametrize('block_size, max_hosts', [
+    (511, 250),
+    (512, -1),
+    (512, 2001),
+])
+def test_sanlock_invalid_alignment(block_size, max_hosts):
+    with pytest.raises(se.InvalidParameterException):
+        clusterlock.alignment(block_size, max_hosts)

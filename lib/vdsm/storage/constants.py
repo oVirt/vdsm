@@ -67,6 +67,13 @@ ALIGN_2M = 2 * ALIGN_1M
 ALIGN_4M = 4 * ALIGN_1M
 ALIGN_8M = 8 * ALIGN_1M
 
+# block size/alignment mapping to the number of hosts
+HOSTS_512_1M = 2000
+HOSTS_4K_1M = 250
+HOSTS_4K_2M = 500
+HOSTS_4K_4M = 1000
+HOSTS_4K_8M = 2000
+
 FILE_VOLUME_PERMISSIONS = 0o660
 LEASE_FILEEXT = ".lease"
 

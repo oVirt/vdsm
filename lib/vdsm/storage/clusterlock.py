@@ -35,6 +35,7 @@ from vdsm.common import concurrent
 from vdsm.common import errors
 from vdsm.common import osutils
 from vdsm.config import config
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage.compat import sanlock
@@ -650,3 +651,27 @@ class LocalLock(object):
 
             self.log.debug("Local lock for domain %s successfully released",
                            self._sdUUID)
+
+
+def alignment(block_size, max_hosts):
+    # HOSTS_512_1M/HOSTS_4K_8M is a maximum number of hosts
+    if max_hosts < 1 or max_hosts > sc.HOSTS_512_1M:
+        raise se.InvalidParameterException('max_hosts', max_hosts)
+    if block_size not in (sc.BLOCK_SIZE_512, sc.BLOCK_SIZE_4K):
+        raise se.InvalidParameterException('block_size', block_size)
+
+    if block_size == sc.BLOCK_SIZE_512:
+        # Only this block size is supported on 512b blocks
+        # Supports up to 2000 hosts.
+        return sc.ALIGN_1M
+
+    if max_hosts > sc.HOSTS_4K_4M:
+        return sc.ALIGN_8M
+
+    if max_hosts > sc.HOSTS_4K_2M:
+        return sc.ALIGN_4M
+
+    if max_hosts > sc.HOSTS_4K_1M:
+        return sc.ALIGN_2M
+
+    return sc.ALIGN_1M

@@ -1007,9 +1007,11 @@ class StorageDomain(APIBase):
         return self._irs.attachStorageDomain(self._UUID, storagepoolID)
 
     def create(self, domainType, typeArgs, name, domainClass,
-               version=sc.SUPPORTED_DOMAIN_VERSIONS[0]):
+               version=sc.SUPPORTED_DOMAIN_VERSIONS[0],
+               blockSize=sc.BLOCK_SIZE_512, maxHosts=sc.HOSTS_512_1M):
         return self._irs.createStorageDomain(domainType, self._UUID, name,
-                                             typeArgs, domainClass, version)
+                                             typeArgs, domainClass, version,
+                                             blockSize, maxHosts)
 
     def deactivate(self, storagepoolID, masterSdUUID, masterVersion):
         return self._irs.deactivateStorageDomain(self._UUID, storagepoolID,

@@ -9234,6 +9234,31 @@ StorageDomain.create:
         name: version
         type: int
 
+    -   defaultvalue: null
+        description: Underlying storage block size. Valid values are
+            512 and 4096 (only for file based storage domains).
+            In case valid value supplied, but underlying storage can't
+            work with that block size, this call will fail.
+            Setting this value to 'null' means that VDSM will
+            try to autodetect it (supported only on GlusterFS)
+            and will set it to the 512 in case of autodetection
+            failure.
+        name: blockSize
+        type: int
+        added: '4.3'
+
+    -   defaultvalue: 2000
+        description: Maximum number of hosts, supported by this domain.
+            The number of hosts is defined by combination of sanlock
+            alignment and block size. Because of that, handling
+            2000 hosts with 4k/8M lockspaces will require about 30GB
+            of disk space. To decrease that overhead, we support reduced
+            number of hosts per SD, so we can use smaller alignments and
+            allocate less disk space for leases.
+        name: maxHosts
+        type: int
+        added: '4.3'
+
 StorageDomain.deactivate:
     added: '3.1'
     description: Deactivate an active, attached Storage Domain.

@@ -2557,7 +2557,8 @@ class HSM(object):
     def createStorageDomain(self, storageType, sdUUID, domainName,
                             typeSpecificArg, domClass,
                             domVersion=sc.SUPPORTED_DOMAIN_VERSIONS[0],
-                            options=None):
+                            block_size=sc.BLOCK_SIZE_512,
+                            max_hosts=sc.HOSTS_512_1M, options=None):
         """
         Creates a new storage domain.
 
@@ -2572,12 +2573,19 @@ class HSM(object):
                 storage type.
             domClass (int): The class of the new storage domain,
                 as defined in sd.py (eg. iso, data)
+            block_size (int): Underlying storage block size. Valid values are
+                512 and 4096 (only for file based storage domains).
+            max_hosts (int): Number of hosts, supported by that storage domain
+                Valid values are 1 to 2000, bigger number of hosts requires
+                bigger lockspaces with 4096 block.
             options: unused
         """
+        alignment = clusterlock.alignment(block_size, max_hosts)
         msg = ("storageType=%s, sdUUID=%s, domainName=%s, "
-               "domClass=%s, typeSpecificArg=%s domVersion=%s" %
+               "domClass=%s, typeSpecificArg=%s domVersion=%s"
+               "block_size=%s, alignment=%s" %
                (storageType, sdUUID, domainName, domClass,
-                typeSpecificArg, domVersion))
+                typeSpecificArg, domVersion, block_size, alignment))
         domVersion = int(domVersion)
         vars.task.setDefaultException(se.StorageDomainCreationError(msg))
         misc.validateUUID(sdUUID, 'sdUUID')
@@ -2602,7 +2610,7 @@ class HSM(object):
             raise se.StorageDomainTypeError(storageType)
 
         newSD = create(sdUUID, domainName, domClass, typeSpecificArg,
-                       storageType, domVersion)
+                       storageType, domVersion, block_size, alignment)
 
         findMethod = self._getSDTypeFindMethod(storageType)
         sdCache.knownSDs[sdUUID] = findMethod
