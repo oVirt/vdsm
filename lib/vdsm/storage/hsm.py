@@ -2561,19 +2561,18 @@ class HSM(object):
         """
         Creates a new storage domain.
 
-        :param storageType: The storage type of the new storage
-                            domain (eg. NFS).
-        :type storageType: int (as defined in sd.py).
-        :param sdUUID: The UUID of the new storage domain.
-        :type sdUUID: UUID
-        :param domainName: The human readable name of the new storage domain.
-        :type domainName: str
-        :param typeSpecificArg: Arguments that are specific to the
-                                storage type.
-        :type typeSpecificArg: dict
-        :param domClass: The class of the new storage domain (eg. iso, data).
-        :type domClass: int (as defined in sd.py)
-        :param options: unused
+        Arguments:
+
+            storageType (int): The storage type of the new storage
+                domain (eg. NFS) as defined in sd.py.
+            sdUUID (UUID): The UUID of the new storage domain.
+            domainName (str): The human readable name of
+                the new storage domain.
+            typeSpecificArg (dict): Arguments that are specific to the
+                storage type.
+            domClass (int): The class of the new storage domain,
+                as defined in sd.py (eg. iso, data)
+            options: unused
         """
         msg = ("storageType=%s, sdUUID=%s, domainName=%s, "
                "domClass=%s, typeSpecificArg=%s domVersion=%s" %
