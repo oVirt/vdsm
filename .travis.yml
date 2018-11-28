@@ -34,4 +34,4 @@ script:
     --rm \
     -it \
     -v `pwd`:/vdsm:Z $DOCKER_IMAGE \
-    bash -c "cd /vdsm && ./autogen.sh --system && make && make --jobs=2 check"
+    bash -c "cd /vdsm && ./autogen.sh --system && make && make check"
