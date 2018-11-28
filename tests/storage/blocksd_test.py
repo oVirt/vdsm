@@ -30,7 +30,6 @@ import pytest
 
 from storage.storagefakelib import fake_vg
 from testValidation import xfail
-from testlib import VdsmTestCase
 from vdsm.storage import blockSD
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
@@ -40,7 +39,7 @@ from vdsm import constants
 TESTDIR = os.path.dirname(__file__)
 
 
-class TestMetadataValidity(VdsmTestCase):
+class TestMetadataValidity:
 
     MIN_MD_SIZE = blockSD.VG_METADATASIZE * constants.MEGAB // 2
     MIN_MD_FREE = MIN_MD_SIZE * blockSD.VG_MDA_MIN_THRESHOLD
@@ -48,22 +47,22 @@ class TestMetadataValidity(VdsmTestCase):
     def test_valid_ok(self):
         vg = fake_vg(
             vg_mda_size=self.MIN_MD_SIZE, vg_mda_free=self.MIN_MD_FREE)
-        self.assertEqual(True, blockSD.metadataValidity(vg)['mdavalid'])
+        assert blockSD.metadataValidity(vg)['mdavalid']
 
     def test_valid_bad(self):
         vg = fake_vg(
             vg_mda_size=self.MIN_MD_SIZE - 1, vg_mda_free=self.MIN_MD_FREE)
-        self.assertEqual(False, blockSD.metadataValidity(vg)['mdavalid'])
+        assert not blockSD.metadataValidity(vg)['mdavalid']
 
     def test_threshold_ok(self):
         vg = fake_vg(
             vg_mda_size=self.MIN_MD_SIZE, vg_mda_free=self.MIN_MD_FREE + 1)
-        self.assertEqual(True, blockSD.metadataValidity(vg)['mdathreshold'])
+        assert blockSD.metadataValidity(vg)['mdathreshold']
 
     def test_threshold_bad(self):
         vg = fake_vg(
             vg_mda_size=self.MIN_MD_SIZE, vg_mda_free=self.MIN_MD_FREE)
-        self.assertEqual(False, blockSD.metadataValidity(vg)['mdathreshold'])
+        assert not blockSD.metadataValidity(vg)['mdathreshold']
 
 
 def fakeGetLV(vgName):
@@ -85,42 +84,42 @@ def fakeGetLV(vgName):
     return lvs
 
 
-class TestGetAllVolumes(VdsmTestCase):
+class TestGetAllVolumes:
     # TODO: add more tests, see fileSDTests.py
 
     @MonkeyPatch(lvm, 'getLV', fakeGetLV)
     def test_volumes_count(self):
         sdName = "3386c6f2-926f-42c4-839c-38287fac8998"
         allVols = blockSD.getAllVolumes(sdName)
-        self.assertEqual(len(allVols), 23)
+        assert len(allVols) == 23
 
     @MonkeyPatch(lvm, 'getLV', fakeGetLV)
     def test_missing_tags(self):
         sdName = "f9e55e18-67c4-4377-8e39-5833ca422bef"
         allVols = blockSD.getAllVolumes(sdName)
-        self.assertEqual(len(allVols), 1)
+        assert len(allVols) == 1
 
 
-class TestDecodeValidity(VdsmTestCase):
+class TestDecodeValidity:
 
     def test_all_keys(self):
         value = ('pv:myname,uuid:Gk8q,pestart:0,'
                  'pecount:77,mapoffset:0')
         pvinfo = blockSD.decodePVInfo(value)
-        self.assertEqual(pvinfo["guid"], 'myname')
-        self.assertEqual(pvinfo["uuid"], 'Gk8q')
-        self.assertEqual(pvinfo["pestart"], '0')
-        self.assertEqual(pvinfo["pecount"], '77')
-        self.assertEqual(pvinfo["mapoffset"], '0')
+        assert pvinfo["guid"] == 'myname'
+        assert pvinfo["uuid"] == 'Gk8q'
+        assert pvinfo["pestart"] == '0'
+        assert pvinfo["pecount"] == '77'
+        assert pvinfo["mapoffset"] == '0'
 
     def test_decode_pv_colon(self):
         pvinfo = blockSD.decodePVInfo('pv:my:name')
-        self.assertEqual(pvinfo["guid"], 'my:name')
+        assert pvinfo["guid"] == 'my:name'
 
     @xfail('Comma in PV name is not supported yet')
     def test_decode_pv_comma(self):
         pvinfo = blockSD.decodePVInfo('pv:my,name')
-        self.assertEqual(pvinfo["guid"], 'my,name')
+        assert pvinfo["guid"] == 'my,name'
 
 
 # VG size 10 GB
