@@ -1176,8 +1176,8 @@ class TestVmStats(TestCaseBase):
         with fake.VM(_VM_PARAMS) as testvm:
             res = testvm.getStats()
             testvm.guestAgent.diskMappingHash += 1
-            self.assertNotEquals(res['hash'],
-                                 testvm.getStats()['hash'])
+            self.assertNotEqual(
+                res['hash'], testvm.getStats()['hash'])
 
     @MonkeyPatch(vm, 'config',
                  make_config([('vars', 'vm_command_timeout', '10')]))
@@ -1227,7 +1227,7 @@ class TestLibVirtCallbacks(TestCaseBase):
             testvm.onIOError('fakedev', self.FAKE_ERROR,
                              libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT)
             self.assertTrue(testvm._guestCpuRunning)
-            self.assertNotEquals(testvm._pause_code, self.FAKE_ERROR)
+            self.assertNotEqual(testvm._pause_code, self.FAKE_ERROR)
 
     def test_onIOErrorNotSupported(self):
         """action not explicitely handled, must be skipped"""

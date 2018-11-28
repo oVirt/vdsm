@@ -575,7 +575,7 @@ class CpuStatsTests(VmStatsTestCase):
                          'cpuSys': 0.2,
                          'cpuUsage': '11260000000',
                          })
-        self.assertNotEquals(res, None)
+        self.assertIsNotNone(res)
 
     @permutations([
         # interval

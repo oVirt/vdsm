@@ -298,8 +298,8 @@ class TestDomainDescriptor(VmXmlTestCase):
     def test_all_channels_extra_domain(self, descriptor):
         for conf, raw_xml in CONF_TO_DOMXML_NO_VDSM:
             dom = descriptor(raw_xml % conf)
-            self.assertNotEquals(sorted(dom.all_channels()),
-                                 sorted(vmchannels.AGENT_DEVICE_NAMES))
+            self.assertNotEqual(sorted(dom.all_channels()),
+                                sorted(vmchannels.AGENT_DEVICE_NAMES))
 
     def test_no_channels(self):
         dom = domain_descriptor.MutableDomainDescriptor('<domain/>')
