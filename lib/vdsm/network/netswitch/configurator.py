@@ -29,6 +29,7 @@ from vdsm.common.cache import memoized
 from vdsm.common.config import config as vdsm_config
 from vdsm.common.time import monotonic_time
 from vdsm.network import connectivity
+from vdsm.network import dns
 from vdsm.network import ifacquire
 from vdsm.network import legacy_switch
 from vdsm.network import errors as ne
@@ -242,6 +243,8 @@ def _setup_ovs(networks, bondings, options, net_info, in_rollback):
             setup_ipv6autoconf(networks)
             set_ovs_links_up(nets2add, bonds2add, bonds2edit)
             setup_ovs_ip_config(nets2add, nets2remove)
+
+            _setup_ovs_dns(nets2add)
 
             connectivity.check(options)
 
@@ -536,3 +539,29 @@ def validate_switch_type_change(nets, bonds, running_config):
         raise ne.ConfigNetworkError(
             ne.ERR_BAD_PARAMS,
             'All bondings must be reconfigured on switch type change')
+
+
+def _setup_ovs_dns(nets):
+    net_attrs = _lookup_default_route_net(nets)
+    if not net_attrs:
+        return
+
+    if net_attrs.get('bootproto') == 'dhcp' or net_attrs.get('dhcpv6'):
+        # TODO Support for scenario when DHCP client overwrittes our
+        # static configuration.
+        # That would mean to add support for custom dhclient config to place
+        # our DNS settings over dhclient
+        return
+
+    nameservers = net_attrs.get('nameservers')
+    if nameservers:
+        dns.add_host_nameservers(nameservers)
+
+
+def _lookup_default_route_net(nets):
+    # If not found, returns {}
+    # Otherwise network_attr
+    for net, attrs in six.iteritems(nets):
+        if attrs.get('defaultRoute'):
+            return attrs
+    return {}

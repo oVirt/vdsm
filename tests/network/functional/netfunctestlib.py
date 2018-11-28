@@ -134,6 +134,9 @@ class NetFuncTestAdapter(object):
             self._vdsm_proxy.refreshNetworkCapabilities()
             self.netinfo = self._vdsm_proxy.netinfo
 
+    def refresh_netinfo(self):
+        self._vdsm_proxy.refreshNetworkCapabilities()
+
     def update_running_config(self):
         self.running_config = self._vdsm_proxy.config
 
@@ -531,6 +534,7 @@ class NetFuncTestAdapter(object):
         _extend_with_bridge_opts(kernel_config, running_config)
         kernel_config = kernel_config.as_unicode()
 
+        self._assert_inclusive_nameservers(kernel_config, running_config)
         # Do not use KernelConfig.__eq__ to get a better exception if something
         # breaks.
         assert running_config['networks'] == kernel_config['networks']
@@ -561,6 +565,31 @@ class NetFuncTestAdapter(object):
                 running_config['bonds'][k_name].pop('options', ''))
             k_bonds_opts.append(k_attrs.pop('options', ''))
         return r_bonds_opts, k_bonds_opts
+
+    def _assert_inclusive_nameservers(self, kernel_config, running_config):
+        """
+        Assert nameservers in an inclusive manner, between the kernel and the
+        running config.
+        It supports cases where the desired namerservers options are applied in
+        the kernel state, however, additional options exists in the kernel and
+        not specified by the desired config.
+        The func has a side effect of removing the nameservers from the
+        provided dicts, allowing further handling of the remaining data.
+        """
+        r_nameservers_list, k_nameservers_list = self._pop_nameservers(
+            running_config, kernel_config)
+        for r_nameservers, k_nameservers in zip(r_nameservers_list,
+                                                k_nameservers_list):
+            assert r_nameservers == k_nameservers[:len(r_nameservers)]
+
+    def _pop_nameservers(self, running_config, kernel_config):
+        r_nameservers_list = []
+        k_nameservers_list = []
+        for k_name, k_attrs in six.viewitems(kernel_config['networks']):
+            r_nameservers_list.append(
+                running_config['networks'][k_name].pop('nameservers', ''))
+            k_nameservers_list.append(k_attrs.pop('nameservers', ''))
+        return r_nameservers_list, k_nameservers_list
 
     @contextmanager
     def reset_persistent_config(self):

@@ -25,10 +25,11 @@ from vdsm.network.errors import ERR_BAD_PARAMS
 
 import pytest
 
-from .netfunctestlib import NetFuncTestAdapter, NOCHK, SetupNetworksError
 from network.nettestlib import dummy_device
 from network.nettestlib import preserve_default_route
 from network.nettestlib import restore_resolv_conf
+
+from . import netfunctestlib as nftestlib
 
 NETWORK_NAME = 'test-network'
 NAMESERVERS = ['1.2.3.4', '2.3.4.5']
@@ -43,10 +44,16 @@ adapter = None
 @pytest.fixture(scope='module', autouse=True)
 def create_adapter(target):
     global adapter
-    adapter = NetFuncTestAdapter(target)
+    adapter = nftestlib.NetFuncTestAdapter(target)
 
 
-@pytest.mark.parametrize('switch', [pytest.mark.legacy_switch('legacy')])
+@pytest.fixture(autouse=True)
+def refresh_cache():
+    yield
+    adapter.refresh_netinfo()
+
+
+@nftestlib.parametrize_switch
 class TestNetworkDNS(object):
 
     def test_set_host_nameservers(self, switch):
@@ -63,7 +70,7 @@ class TestNetworkDNS(object):
                                         'gateway': IPv4_GATEWAY,
                                         }}
             with restore_resolv_conf(), preserve_default_route():
-                with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                     adapter.assertNameservers(NAMESERVERS)
 
     def test_preserve_host_nameservers(self, switch):
@@ -77,7 +84,7 @@ class TestNetworkDNS(object):
                                         'gateway': IPv4_GATEWAY,
                                         }}
             with restore_resolv_conf(), preserve_default_route():
-                with adapter.setupNetworks(NETCREATE, {}, NOCHK):
+                with adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK):
                     adapter.assertNameservers(original_nameservers)
 
     def test_set_nameservers_on_non_default_network(self, switch):
@@ -89,6 +96,6 @@ class TestNetworkDNS(object):
                                         'netmask': IPv4_NETMASK,
                                         'gateway': IPv4_GATEWAY,
                                         }}
-            with pytest.raises(SetupNetworksError) as err:
-                adapter.setupNetworks(NETCREATE, {}, NOCHK)
+            with pytest.raises(nftestlib.SetupNetworksError) as err:
+                adapter.setupNetworks(NETCREATE, {}, nftestlib.NOCHK)
             assert err.value.status == ERR_BAD_PARAMS
