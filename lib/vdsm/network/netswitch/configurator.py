@@ -31,7 +31,7 @@ from vdsm.network import connectivity
 from vdsm.network import ifacquire
 from vdsm.network import legacy_switch
 from vdsm.network import errors as ne
-from vdsm.network.configurators.ifcfg import Ifcfg
+from vdsm.network.configurators.ifcfg import Ifcfg, ConfigWriter
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.link import dpdk
@@ -141,6 +141,14 @@ def setup(networks, bondings, options, net_info, in_rollback):
             legacy_nets, legacy_bonds, options, net_info, in_rollback)
     elif use_ovs_switch:
         _setup_ovs(ovs_nets, ovs_bonds, options, net_info, in_rollback)
+
+    if options.get('commitOnSuccess'):
+        persist()
+
+
+def persist():
+    ConfigWriter.clearBackups()
+    RunningConfig.store()
 
 
 def _setup_legacy(networks, bondings, options, net_info, in_rollback):

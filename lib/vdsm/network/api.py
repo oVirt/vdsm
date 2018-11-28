@@ -34,7 +34,6 @@ from vdsm.network import netstats
 from vdsm.network import netswitch
 from vdsm.network import sourceroute
 from vdsm.network import validator
-from vdsm.network.configurators.ifcfg import ConfigWriter
 from vdsm.network.ipwrapper import DUMMY_BRIDGE
 from vdsm.network.link import iface as link_iface
 from vdsm.network.link import sriov
@@ -198,6 +197,7 @@ def setupNetworks(networks, bondings, options):
                         connectivityCheck=0|1
                         connectivityTimeout=<int>
                         _inRollback=True|False
+                        commitOnSuccess=True|False
 
     Notes:
         When you edit a network that is attached to a bonding, it's not
@@ -303,8 +303,7 @@ def _remove_nets_and_bonds(nets, bonds, net_info, in_rollback):
 
 def setSafeNetworkConfig():
     """Declare current network configuration as 'safe'"""
-    ConfigWriter.clearBackups()
-    netconfpersistence.RunningConfig.store()
+    netswitch.configurator.persist()
 
 
 def add_sourceroute(iface, ip, mask, route):
