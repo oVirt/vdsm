@@ -29,7 +29,6 @@ from monkeypatch import MonkeyPatch
 import pytest
 
 from storage.storagefakelib import fake_vg
-from testValidation import xfail
 from vdsm.storage import blockSD
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
@@ -116,7 +115,7 @@ class TestDecodeValidity:
         pvinfo = blockSD.decodePVInfo('pv:my:name')
         assert pvinfo["guid"] == 'my:name'
 
-    @xfail('Comma in PV name is not supported yet')
+    @pytest.mark.xfail(reason='Comma in PV name is not supported yet')
     def test_decode_pv_comma(self):
         pvinfo = blockSD.decodePVInfo('pv:my,name')
         assert pvinfo["guid"] == 'my,name'
