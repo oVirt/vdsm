@@ -9,7 +9,7 @@ function collect_logs {
     res=$?
     [ "$res" -ne 0 ] && echo "*** err: $res"
     cd /var/log
-    tar -cvzf "$EXPORT_DIR/mock_varlogs.tar.gz" *
+    tar --exclude "journal/*" -cvzf "$EXPORT_DIR/mock_varlogs.tar.gz" *
     cd /var/host_log
     tar -cvzf "$EXPORT_DIR/host_varlogs.tar.gz" *
 }
