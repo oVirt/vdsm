@@ -7,7 +7,6 @@ BUILDS=$PWD/rpmbuild
 EXPORTS=$PWD/exported-artifacts
 OUTPUT=$PWD/output
 mkdir -p "$EXPORTS"
-cp $PWD/automation/index.html "$EXPORTS"
 
 rm -rf $OUTPUT
 

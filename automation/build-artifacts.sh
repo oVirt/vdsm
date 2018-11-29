@@ -6,7 +6,6 @@ set -xe
 BUILDS=$PWD/rpmbuild
 EXPORTS=$PWD/exported-artifacts
 mkdir -p "$EXPORTS"
-cp $PWD/automation/index.html "$EXPORTS"
 
 # autogen may already have been executed by check-patch.sh
 if [ ! -f Makefile ]; then
