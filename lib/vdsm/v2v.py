@@ -181,6 +181,11 @@ def get_external_vms(uri, username, password, vm_names=None):
             if vm_names is not None and vm.name() not in vm_names:
                 # Skip this VM.
                 continue
+            elif conn.getType() == "ESX" and _vm_has_snapshot(vm):
+                logging.error("vm %r has snapshots and therefore can not be "
+                              "imported since snapshot conversion is not "
+                              "supported for VMware", vm.name())
+                continue
             _add_vm(conn, vms, vm)
         return {'status': doneCode, 'vmList': vms}
 
