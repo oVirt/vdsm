@@ -185,9 +185,10 @@ dist_vdsmtests_DATA = \
 	caps_libvirt_intel_i73770_nosnap.out \
 	caps_libvirt_multiqemu.out \
 	caps_libvirt_s390x.out \
-	cpu_map.xml \
 	caps_numactl_4_nodes.out \
+	domcaps_libvirt_ppc64le.out \
 	domcaps_libvirt_s390x.out \
+	domcaps_libvirt_x86_64.out \
 	fake-virt-v2v.err \
 	fake-virt-v2v.out \
 	glusterGeoRepStatus.xml \

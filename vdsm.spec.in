@@ -1344,7 +1344,9 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_multiqemu.out
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_s390x.out
 %{_datadir}/%{vdsm_name}/tests/caps_numactl_4_nodes.out
+%{_datadir}/%{vdsm_name}/tests/domcaps_libvirt_ppc64le.out
 %{_datadir}/%{vdsm_name}/tests/domcaps_libvirt_s390x.out
+%{_datadir}/%{vdsm_name}/tests/domcaps_libvirt_x86_64.out
 %{_datadir}/%{vdsm_name}/tests/common/*.py*
 %{_datadir}/%{vdsm_name}/tests/cpuinfo/*.out
 %{_datadir}/%{vdsm_name}/tests/check_distpkg.sh
@@ -1355,7 +1357,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/fake-virt-v2v
 %{_datadir}/%{vdsm_name}/tests/fake-virt-v2v.out
 %{_datadir}/%{vdsm_name}/tests/fake-virt-v2v.err
-%{_datadir}/%{vdsm_name}/tests/cpu_map.xml
 %{_datadir}/%{vdsm_name}/tests/devices/*.py*
 %{_datadir}/%{vdsm_name}/tests/devices/parsing/*.py*
 %{_datadir}/%{vdsm_name}/tests/devices/data/*.xml

@@ -52,9 +52,6 @@ def _getCapsNumaDistanceTestData(testFileName):
 
 class TestCaps(TestCaseBase):
 
-    CPU_MAP_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                'cpu_map.xml')
-
     def tearDown(self):
         for name in dir(caps):
             obj = getattr(caps, name)
@@ -191,46 +188,6 @@ class TestCaps(TestCaseBase):
     def testAutoNumaBalancingInfo(self):
         t = numa.autonuma_status()
         self.assertEqual(t, 0)
-
-    def test_getAllCpuModels(self):
-        result = machinetype.cpu_models(capfile=self.CPU_MAP_FILE,
-                                        arch=cpuarch.X86_64)
-        expected = {
-            'qemu32': None,
-            'Haswell': 'Intel',
-            'cpu64-rhel6': None,
-            'cpu64-rhel5': None,
-            'Broadwell': 'Intel',
-            'pentium2': None,
-            'pentiumpro': None,
-            'athlon': 'AMD',
-            'Nehalem': 'Intel',
-            'Conroe': 'Intel',
-            'kvm32': None,
-            'pentium': None,
-            'Opteron_G3': 'AMD',
-            'coreduo': 'Intel',
-            'Opteron_G1': 'AMD',
-            'Opteron_G5': 'AMD',
-            'Opteron_G4': 'AMD',
-            'core2duo': 'Intel',
-            'Penryn': 'Intel',
-            'qemu64': None,
-            'phenom': 'AMD',
-            'Opteron_G2': 'AMD',
-            '486': None,
-            'Westmere': 'Intel',
-            'pentium3': None,
-            'n270': 'Intel',
-            'SandyBridge': 'Intel',
-            'kvm64': None
-        }
-        self.assertEqual(expected, result)
-
-    def test_getAllCpuModels_noArch(self):
-        result = machinetype.cpu_models(capfile=self.CPU_MAP_FILE,
-                                        arch='non_existent_arch')
-        self.assertEqual(dict(), result)
 
     def test_get_emulated_machines(self):
         capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
