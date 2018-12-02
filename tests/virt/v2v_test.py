@@ -185,14 +185,13 @@ class v2vTests(TestCaseBase):
                                        ProtectedPassword('password'),
                                        None)['vmList']
 
-        # Make sure that VM nr. 4 is not in the returned list
+        # Make sure that VM nr. 4 is now in the returned list
         # (the one with snapshot, see setUp())
-        self.assertEqual(len(vms), len(VM_SPECS) - 1)
+        self.assertEqual(len(vms), len(VM_SPECS))
         self.assertNotIn(self._vms_with_snapshot[4].ID,
                          [vm['vmId'] for vm in vms])
 
         specs = list(VM_SPECS)
-        del specs[4]
         for vm, spec in zip(vms, specs):
             self._assertVmMatchesSpec(vm, spec)
             self._assertVmDisksMatchSpec(vm, spec)
@@ -212,7 +211,7 @@ class v2vTests(TestCaseBase):
                                        ProtectedPassword('password'),
                                        names)['vmList']
 
-        self.assertEqual(len(vms), len(vmIDs) - 1)
+        self.assertEqual(len(vms), len(vmIDs))
         self.assertNotIn(self._vms_with_snapshot[4].ID,
                          [vm['vmId'] for vm in vms])
 

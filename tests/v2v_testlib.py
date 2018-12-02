@@ -41,7 +41,7 @@ VM_SPECS = (
     VmSpec("RHEL_3", str(uuid.uuid4()), id=3, active=False,
            has_snapshots=False, has_disk_volume=True, has_disk_block=False),
     VmSpec("RHEL_4", str(uuid.uuid4()), id=4, active=False,
-           has_snapshots=False, has_disk_volume=False, has_disk_block=True),
+           has_snapshots=True, has_disk_volume=False, has_disk_block=True),
     VmSpec("RHEL_5", str(uuid.uuid4()), id=5, active=False,
            has_snapshots=False, has_disk_volume=True, has_disk_block=True),
 )
