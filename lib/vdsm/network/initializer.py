@@ -27,6 +27,7 @@ from vdsm.network import dhclient_monitor
 from vdsm.network import lldp
 from vdsm.network.ipwrapper import getLinks
 from vdsm.network.nm import networkmanager
+from vdsm.config import config
 
 Lldp = lldp.driver()
 
@@ -47,6 +48,10 @@ def _lldp_init():
     Enables receiving of LLDP frames for all nics. If sending or receiving
     LLDP frames is already enabled on a nic, it is not modified.
     """
+    if config.getboolean('vars', 'enable_lldp'):
+        logging.warning('LLDP is disabled')
+        return
+
     if Lldp.is_active():
         for device in (link for link in getLinks() if link.isNIC()):
             if not Lldp.is_lldp_enabled_on_iface(device.name):

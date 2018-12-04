@@ -206,6 +206,8 @@ parameters = [
 
         ('http_enable', 'true', 'Enable the http server'),
 
+        ('enable_lldp', 'true', 'Enable LLDP'),
+
         ('jsonrpc_enable', 'true', 'Enable the JSON RPC server'),
 
         ('broker_enable', 'false', 'Enable outgoing connection to broker'),
