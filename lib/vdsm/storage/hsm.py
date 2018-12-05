@@ -3124,15 +3124,27 @@ class HSM(object):
         return dict(info=info)
 
     @public
-    def appropriateDevice(self, guid, thiefId):
+    def appropriateDevice(self, guid, thiefId, deviceType):
         """
         Change ownership of the guid device to vdsm:qemu
 
         Warning: Internal use only.
         """
-        supervdsm.getProxy().appropriateMultipathDevice(guid, thiefId)
-        supervdsm.getProxy().udevTriggerMultipath(guid)
-        devPath = os.path.join(devicemapper.DMPATH_PREFIX, guid)
+        if deviceType == 'mpath':
+            devPath = os.path.join(devicemapper.DMPATH_PREFIX, guid)
+            supervdsm.getProxy().appropriateDevice(guid, thiefId, deviceType)
+            supervdsm.getProxy().udevTrigger(guid, deviceType)
+            size = str(multipath.getDeviceSize(devicemapper.getDmId(guid)))
+            device = dict(truesize=size, apparentsize=size, path=devPath)
+        elif deviceType == 'rbd':
+            # In case the device is rbd, the entire path will be passed
+            devPath = guid
+            supervdsm.getProxy().appropriateDevice(guid, thiefId, deviceType)
+            supervdsm.getProxy().udevTrigger(devPath, deviceType)
+            device = dict(path=devPath)
+        else:
+            raise RuntimeError("Unsupported device type %r" % deviceType)
+
         function.retry(partial(fileUtils.validateQemuReadable, devPath),
                        expectedException=OSError,
                        timeout=QEMU_READABLE_TIMEOUT)
@@ -3140,9 +3152,8 @@ class HSM(object):
         # Get the size of the logical unit volume.
         # Casting to string for keeping consistency with public methods
         # that use it to overcome xmlrpc integer size limitation issues.
-        size = str(multipath.getDeviceSize(devicemapper.getDmId(guid)))
 
-        return dict(truesize=size, apparentsize=size, path=devPath)
+        return device
 
     @public
     def inappropriateDevices(self, thiefId):

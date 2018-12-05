@@ -57,18 +57,32 @@ _log = logging.getLogger("SuperVdsm.ServerCallback")
 
 
 @expose
-def udevTriggerMultipath(guid):
-    _udevTrigger(property_matches=(('DM_NAME', guid),))
+def udevTrigger(guid, deviceType):
+    if deviceType == "mpath":
+        _udevTrigger(property_matches=(('DM_NAME', guid),))
+    elif deviceType == "rbd":
+        _udevTrigger(property_matches=(('DEVLINKS', guid),))
+    else:
+        raise RuntimeError("Unsupported device type %r" % deviceType)
 
 
 @expose
-def appropriateMultipathDevice(guid, thiefId):
-    ruleFile = _UDEV_RULE_FILE_NAME % (guid, thiefId)
+def appropriateDevice(device, thiefId, deviceType):
+    ruleFile = _UDEV_RULE_FILE_NAME % (device, thiefId)
+    symlink = ""
+    if deviceType == 'mpath':
+        symlink = "mapper/%s" % device
+    elif deviceType == 'rbd':
+        symlink = os.path.relpath(device, '/dev/')
+        ruleFile = _UDEV_RULE_FILE_NAME % (os.path.basename(device), thiefId)
+    else:
+        raise RuntimeError("Unsupported device type %r" % deviceType)
+
     # WARNING: we cannot use USER, GROUP and MODE since using any of them
     # will change the selinux label to the default, causing vms to pause.
     # See https://bugzilla.redhat.com/1147910
-    rule = 'SYMLINK=="mapper/%s", RUN+="%s %s:%s $env{DEVNAME}"\n' % (
-        guid, EXT_CHOWN, DISKIMAGE_USER, DISKIMAGE_GROUP)
+    rule = 'SYMLINK=="%s", RUN+="%s %s:%s $env{DEVNAME}"\n' % (
+        symlink, EXT_CHOWN, DISKIMAGE_USER, DISKIMAGE_GROUP)
     with open(ruleFile, "w") as rf:
         _log.debug("Creating rule %s: %r", ruleFile, rule)
         rf.write(rule)

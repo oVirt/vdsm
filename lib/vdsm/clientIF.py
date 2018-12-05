@@ -443,7 +443,7 @@ class clientIF(object):
                     raise vm.VolumeError(
                         "Drive %r not visible" % drive["GUID"])
 
-                res = self.irs.appropriateDevice(drive["GUID"], vmId)
+                res = self.irs.appropriateDevice(drive["GUID"], vmId, 'mpath')
                 if res['status']['code']:
                     raise vm.VolumeError(
                         "Cannot appropriate drive %r" % drive["GUID"])
@@ -455,6 +455,10 @@ class clientIF(object):
                 if 'diskType' not in drive:
                     drive['diskType'] = DISK_TYPE.BLOCK
 
+                volPath = res['path']
+
+            elif "RBD" in drive:
+                res = self.irs.appropriateDevice(drive["RBD"], vmId, 'rbd')
                 volPath = res['path']
 
             # cdrom and floppy drives

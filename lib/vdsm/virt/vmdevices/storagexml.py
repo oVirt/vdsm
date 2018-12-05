@@ -41,6 +41,7 @@ METADATA_KEYS = (
     'poolID',
     'shared',
     'volumeID',
+    'RBD',
 )
 
 
