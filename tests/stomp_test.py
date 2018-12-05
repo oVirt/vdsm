@@ -28,6 +28,8 @@ from testlib import VdsmTestCase as TestCaseBase, \
     permutations, \
     dummyTextGenerator
 
+from testValidation import broken_on_ci
+
 import yajsonrpc
 from integration.jsonRpcHelper import constructAcceptor
 from yajsonrpc.stompclient import StandAloneRpcClient
@@ -72,6 +74,8 @@ class _SampleBridge(object):
 @expandPermutations
 class StompTests(TestCaseBase):
 
+    @broken_on_ci(
+        "Fails randomly in oVirt CI, see https://gerrit.ovirt.org/c/95899/")
     @permutations([
         # size, use_ssl
         (1024, True),
