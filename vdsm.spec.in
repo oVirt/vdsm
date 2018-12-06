@@ -210,11 +210,16 @@ Requires: lvm2 >= 2.02.145
 %endif
 
 %if 0%{?rhel}
-# CVE-2018-3639 (EPYC)
-Requires: kernel >= 3.10.0-862.6.3.el7
+%if 0%{?centos}
+# 7.6 baseline
+Requires: kernel >= 3.10.0-957.el7
+%else # RHEL
+# Required for new hyperv flags for Windows https://bugzilla.redhat.com/1644693
+Requires: kernel >= 3.10.0-957.3.1.el7
+%endif
 Requires: e2fsprogs
 Requires: selinux-policy-targeted >= 3.13.1-166.el7_4.3
-%else
+%else # fedora
 Requires: kernel >= 4.1.6
 Requires: e2fsprogs >= 1.41.14
 Requires: policycoreutils-python-utils
@@ -227,8 +232,13 @@ Requires: policycoreutils >= 2.1.13-55
 %endif
 
 %if 0%{?rhel}
+%if 0%{?centos}
 # 7.6 baseline
 Requires: qemu-kvm-rhev >= 10:2.12.0-18.el7_6.1
+%else # RHEL
+# Required for new hyperv flags for Windows https://bugzilla.redhat.com/1644693
+Requires: qemu-kvm-rhev >= 10:2.12.0-18.el7_6.3
+%endif
 %else # fedora
 # qemu-kvm 2.12 is Fedora 28 virt-preview baseline
 Requires: qemu-kvm >= 2:2.12
