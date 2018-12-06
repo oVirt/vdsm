@@ -13,9 +13,6 @@ release_branches:
 
 stages:
   - build-artifacts
-  - check-merged:
-      archs:
-        - x86_64
   - check-patch:
       archs:
         - x86_64
