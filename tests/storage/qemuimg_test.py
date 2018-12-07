@@ -65,7 +65,7 @@ def fake_json_call(data, cmd, **kw):
 class GeneralTests(TestCaseBase):
     @permutations((("0.10", True), ("1.1", True), ("10.1", False)))
     def test_supports_compat(self, compat, result):
-        self.assertEqual(result, qemuimg.supports_compat(compat))
+        assert result == qemuimg.supports_compat(compat)
 
 
 @expandPermutations
@@ -109,11 +109,11 @@ class InfoTests(TestCaseBase):
                 op.run()
 
             info = qemuimg.info(leaf_path)
-            self.assertEqual(leaf_fmt, info['format'])
-            self.assertEqual(size, info['virtualsize'])
-            self.assertEqual(self.CLUSTER_SIZE, info['clustersize'])
-            self.assertEqual(base_path, info['backingfile'])
-            self.assertEqual('0.10', info['compat'])
+            assert leaf_fmt == info['format']
+            assert size == info['virtualsize']
+            assert self.CLUSTER_SIZE == info['clustersize']
+            assert base_path == info['backingfile']
+            assert '0.10' == info['compat']
 
     @permutations([
         # unsafe
@@ -127,7 +127,7 @@ class InfoTests(TestCaseBase):
             op = qemuimg.create(img, size=size, format=qemuimg.FORMAT.QCOW2)
             op.run()
             info = qemuimg.info(img, unsafe=unsafe)
-            self.assertEqual(size, info['virtualsize'])
+            assert size == info['virtualsize']
 
     def test_parse_error(self):
         def call(cmd, **kw):
@@ -135,7 +135,8 @@ class InfoTests(TestCaseBase):
             return 0, out, ""
 
         with MonkeyPatchScope([(commands, "execCmd", call)]):
-            self.assertRaises(cmdutils.Error, qemuimg.info, 'leaf.img')
+            with pytest.raises(cmdutils.Error):
+                qemuimg.info('leaf.img')
 
     @permutations((('format',), ('virtual-size',)))
     def test_missing_required_field_raises(self, field):
@@ -143,14 +144,16 @@ class InfoTests(TestCaseBase):
         del data[field]
         with MonkeyPatchScope([(commands, "execCmd",
                                 partial(fake_json_call, data))]):
-            self.assertRaises(cmdutils.Error, qemuimg.info, 'leaf.img')
+            with pytest.raises(cmdutils.Error):
+                qemuimg.info('leaf.img')
 
     def test_missing_compat_for_qcow2_raises(self):
         data = self._fake_info()
         del data['format-specific']['data']['compat']
         with MonkeyPatchScope([(commands, "execCmd",
                                 partial(fake_json_call, data))]):
-            self.assertRaises(cmdutils.Error, qemuimg.info, 'leaf.img')
+            with pytest.raises(cmdutils.Error):
+                qemuimg.info('leaf.img')
 
     @permutations((
         ('backing-filename', 'backingfile'),
@@ -162,7 +165,7 @@ class InfoTests(TestCaseBase):
         with MonkeyPatchScope([(commands, "execCmd",
                                 partial(fake_json_call, data))]):
             info = qemuimg.info('unused')
-            self.assertNotIn(info_field, info)
+            assert info_field not in info
 
     def test_compat_reported_for_qcow2_only(self):
         data = {
@@ -175,7 +178,7 @@ class InfoTests(TestCaseBase):
         with MonkeyPatchScope([(commands, "execCmd",
                                 partial(fake_json_call, data))]):
             info = qemuimg.info('unused')
-            self.assertNotIn('compat', info)
+            assert 'compat' not in info
 
     def test_untrusted_image(self):
         with namedTemporaryDir() as tmpdir:
@@ -184,7 +187,7 @@ class InfoTests(TestCaseBase):
             op = qemuimg.create(img, size=size, format=qemuimg.FORMAT.QCOW2)
             op.run()
             info = qemuimg.info(img, trusted_image=False)
-            self.assertEqual(size, info['virtualsize'])
+            assert size == info['virtualsize']
 
     def test_untrusted_image_call(self):
         command = []
@@ -218,7 +221,7 @@ class CreateTests(TestCaseBase):
                                 preallocation=allocation_mode)
             op.run()
             allocated = os.stat(image).st_blocks * 512
-            self.assertEqual(allocated, allocated_bytes)
+            assert allocated == allocated_bytes
 
     def test_no_format(self):
         size = 4096
@@ -228,8 +231,8 @@ class CreateTests(TestCaseBase):
             op.run()
 
             info = qemuimg.info(image)
-            self.assertEqual(info['format'], qemuimg.FORMAT.RAW)
-            self.assertEqual(info['virtualsize'], size)
+            assert info['format'] == qemuimg.FORMAT.RAW
+            assert info['virtualsize'] == size
 
     def test_zero_size(self):
         with namedTemporaryDir() as tmpdir:
@@ -238,8 +241,8 @@ class CreateTests(TestCaseBase):
             op.run()
 
             info = qemuimg.info(image)
-            self.assertEqual(info['format'], qemuimg.FORMAT.RAW)
-            self.assertEqual(info['virtualsize'], 0)
+            assert info['format'] == qemuimg.FORMAT.RAW
+            assert info['virtualsize'] == 0
 
     def test_qcow2_compat(self):
         with namedTemporaryDir() as tmpdir:
@@ -249,9 +252,9 @@ class CreateTests(TestCaseBase):
             op.run()
 
             info = qemuimg.info(image)
-            self.assertEqual(info['format'], qemuimg.FORMAT.QCOW2)
-            self.assertEqual(info['compat'], "0.10")
-            self.assertEqual(info['virtualsize'], size)
+            assert info['format'] == qemuimg.FORMAT.QCOW2
+            assert info['compat'] == "0.10"
+            assert info['virtualsize'] == size
 
     def test_qcow2_compat_version3(self):
         with namedTemporaryDir() as tmpdir:
@@ -262,18 +265,18 @@ class CreateTests(TestCaseBase):
             op.run()
 
             info = qemuimg.info(image)
-            self.assertEqual(info['format'], qemuimg.FORMAT.QCOW2)
-            self.assertEqual(info['compat'], "1.1")
-            self.assertEqual(info['virtualsize'], size)
+            assert info['format'] == qemuimg.FORMAT.QCOW2
+            assert info['compat'] == "1.1"
+            assert info['virtualsize'] == size
 
     def test_qcow2_compat_invalid(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             qemuimg.create('image', format='qcow2', qcow2Compat='1.11')
 
     def test_invalid_config(self):
         config = make_config([('irs', 'qcow2_compat', '1.2')])
         with MonkeyPatchScope([(qemuimg, 'config', config)]):
-            with self.assertRaises(exception.InvalidConfiguration):
+            with pytest.raises(exception.InvalidConfiguration):
                 qemuimg.create('image', format='qcow2')
 
     @MonkeyPatch(qemuimg, 'config', CONFIG)
@@ -292,7 +295,7 @@ class ConvertTests(TestCaseBase):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
                         'src', 'dst']
-            self.assertEqual(cmd, expected)
+            assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'ProgressCommand', convert)]):
             qemuimg.convert('src', 'dst')
@@ -301,7 +304,7 @@ class ConvertTests(TestCaseBase):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
                         'src', '-O', 'qcow2', '-o', 'compat=0.10', 'dst']
-            self.assertEqual(cmd, expected)
+            assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
                                (qemuimg, 'ProgressCommand', convert)]):
@@ -311,7 +314,7 @@ class ConvertTests(TestCaseBase):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
                         'src', '-O', 'qcow2', '-o', 'compat=1.1', 'dst']
-            self.assertEqual(cmd, expected)
+            assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
                                (qemuimg, 'ProgressCommand', convert)]):
@@ -322,7 +325,7 @@ class ConvertTests(TestCaseBase):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
                         'src', '-O', 'qcow2', '-o', 'compat=0.10', 'dst']
-            self.assertEqual(cmd, expected)
+            assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
                                (qemuimg, 'ProgressCommand', convert)]):
@@ -333,7 +336,7 @@ class ConvertTests(TestCaseBase):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
                         'src', '-O', 'qcow2', '-o',
                         'compat=0.10,backing_file=bak', 'dst']
-            self.assertEqual(cmd, expected)
+            assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
                                (qemuimg, 'ProgressCommand', convert)]):
@@ -344,7 +347,7 @@ class ConvertTests(TestCaseBase):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
                         'src', '-O', 'qcow2', '-o', 'compat=0.10', 'dst']
-            self.assertEqual(cmd, expected)
+            assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
                                (qemuimg, 'ProgressCommand', convert)]):
@@ -357,7 +360,7 @@ class ConvertTests(TestCaseBase):
                         'src', '-O', 'qcow2', '-o',
                         'compat=0.10,backing_file=bak,backing_fmt=qcow2',
                         'dst']
-            self.assertEqual(cmd, expected)
+            assert cmd == expected
 
         with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
                                (qemuimg, 'ProgressCommand', convert)]):
@@ -365,7 +368,7 @@ class ConvertTests(TestCaseBase):
                             backing='bak', backingFormat='qcow2')
 
     def test_qcow2_compat_invalid(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             qemuimg.convert('image', 'dst', dstFormat='qcow2',
                             backing='bak', backingFormat='qcow2',
                             dstQcow2Compat='1.11')
@@ -505,8 +508,8 @@ class TestConvertPreallocation(TestCaseBase):
             op.run()
 
             stat = os.stat(dst)
-            self.assertEqual(stat.st_size, virtual_size)
-            self.assertEqual(stat.st_blocks * 512, actual_size)
+            assert stat.st_size == virtual_size
+            assert stat.st_blocks * 512 == actual_size
 
     @permutations([
         # preallocation, virtual_size, actual_size
@@ -529,11 +532,11 @@ class TestConvertPreallocation(TestCaseBase):
             op.run()
 
             stat = os.stat(dst)
-            self.assertEqual(stat.st_size, virtual_size)
-            self.assertEqual(stat.st_blocks * 512, actual_size)
+            assert stat.st_size == virtual_size
+            assert stat.st_blocks * 512 == actual_size
 
     def test_raw_invalid_preallocation(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             qemuimg.convert(
                 'src', 'dst', dstFormat="raw",
                 preallocation=qemuimg.PREALLOCATION.METADATA)
@@ -551,12 +554,13 @@ class CheckTests(TestCaseBase):
             op.run()
             info = qemuimg.check(path)
             # The exact value depends on qcow2 internals
-            self.assertEqual(int, type(info['offset']))
+            assert isinstance(info['offset'], int)
 
     def test_offset_no_match(self):
         with MonkeyPatchScope([(commands, "execCmd",
                                 partial(fake_json_call, {}))]):
-            self.assertRaises(cmdutils.Error, qemuimg.check, 'unused')
+            with pytest.raises(cmdutils.Error):
+                qemuimg.check('unused')
 
     def test_parse_error(self):
         def call(cmd, **kw):
@@ -564,19 +568,21 @@ class CheckTests(TestCaseBase):
             return 0, out, ""
 
         with MonkeyPatchScope([(commands, "execCmd", call)]):
-            self.assertRaises(cmdutils.Error, qemuimg.check, 'unused')
+            with pytest.raises(cmdutils.Error):
+                qemuimg.check('unused')
 
 
 class TestProgressCommand(TestCaseBase):
 
     def test_failure(self):
         p = qemuimg.ProgressCommand(['false'])
-        self.assertRaises(cmdutils.Error, p.run)
+        with pytest.raises(cmdutils.Error):
+            p.run()
 
     def test_no_progress(self):
         p = qemuimg.ProgressCommand(['true'])
         p.run()
-        self.assertEqual(p.progress, 0.0)
+        assert p.progress == 0.0
 
     def test_progress(self):
         p = qemuimg.ProgressCommand([
@@ -584,31 +590,31 @@ class TestProgressCommand(TestCaseBase):
             "    (0.00/100%)\r    (50.00/100%)\r    (100.00/100%)\r"
         ])
         p.run()
-        self.assertEqual(p.progress, 100.0)
+        assert p.progress == 100.0
 
     def test_partial_progress(self):
         p = qemuimg.ProgressCommand([])
         out = bytearray()
         out += b"    (42.00/100%)\r"
         p._update_progress(out)
-        self.assertEqual(p.progress, 42.0)
-        self.assertEqual(out, b"")
+        assert p.progress == 42.0
+        assert out == b""
         out += b"    (43.00/"
         p._update_progress(out)
-        self.assertEqual(p.progress, 42.0)
-        self.assertEqual(out, b"    (43.00/")
+        assert p.progress == 42.0
+        assert out == b"    (43.00/"
         out += b"100%)\r"
         p._update_progress(out)
-        self.assertEqual(p.progress, 43.0)
-        self.assertEqual(out, b"")
+        assert p.progress == 43.0
+        assert out == b""
 
     def test_use_last_progress(self):
         p = qemuimg.ProgressCommand([])
         out = bytearray()
         out += b"    (11.00/100%)\r    (12.00/100%)\r    (13.00/100%)\r"
         p._update_progress(out)
-        self.assertEqual(p.progress, 13.0)
-        self.assertEqual(out, b"")
+        assert p.progress == 13.0
+        assert out == b""
 
     def test_unexpected_output(self):
         p = qemuimg.ProgressCommand([])
@@ -616,9 +622,9 @@ class TestProgressCommand(TestCaseBase):
         out += b"    (42.00/100%)\r"
         p._update_progress(out)
         out += b"invalid progress\r"
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             p._update_progress(out)
-        self.assertEqual(p.progress, 42.0)
+        assert p.progress == 42.0
 
 
 @expandPermutations
@@ -683,7 +689,7 @@ class TestCommit(TestCaseBase):
                     # later.
                     vol, orig_offset = chain[i]
                     actual_offset = qemuimg.check(vol)["offset"]
-                    self.assertEqual(actual_offset, orig_offset)
+                    assert actual_offset == orig_offset
 
     def test_commit_progress(self):
         with namedTemporaryDir() as tmpdir:
@@ -696,7 +702,7 @@ class TestCommit(TestCaseBase):
 
             op = qemuimg.commit(top, topFormat=qemuimg.FORMAT.QCOW2)
             op.run()
-            self.assertEqual(100, op.progress)
+            assert 100 == op.progress
 
 
 @expandPermutations
@@ -813,8 +819,7 @@ class TestAmend(TestCaseBase):
                                      backing=base_path)
             op_leaf.run()
             qemuimg.amend(leaf_path, desired_qcow2_compat)
-            self.assertEqual(qemuimg.info(leaf_path)['compat'],
-                             desired_qcow2_compat)
+            assert qemuimg.info(leaf_path)['compat'] == desired_qcow2_compat
 
 
 class TestMeasure:
