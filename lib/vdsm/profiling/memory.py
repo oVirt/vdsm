@@ -79,8 +79,8 @@ def _start_profiling():
 
     logging.debug("Starting memory profiling")
 
-    import cherrypy
-    import dowser
+    import cherrypy  # pylint: disable=import-error
+    import dowser  # pylint: disable=import-error
     # this nonsense makes pyflakes happy
     cherrypy
     dowser

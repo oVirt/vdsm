@@ -18,6 +18,7 @@ python-coverage
 python-dateutil
 python-decorator
 python-devel
+python-dmidecode
 python-enum34
 python-inotify
 python-ioprocess

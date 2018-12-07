@@ -55,7 +55,7 @@ class Profiler(object):
         # Lazy import so we do not effect runtime environment if profiling is
         # not used.
         global yappi
-        import yappi
+        import yappi  # pylint: disable=import-error
 
         # yappi start semantics are a bit too liberal, returning success if
         # yappi is already started, happily having two different code paths

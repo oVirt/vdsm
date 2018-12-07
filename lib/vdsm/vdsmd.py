@@ -174,7 +174,7 @@ def install_manhole(locals):
     if not config.getboolean('devel', 'manhole_enable'):
         return
 
-    import manhole
+    import manhole  # pylint: disable=import-error
 
     # locals:             Set the locals in the manhole shell
     # socket_path:        Set to create secure and easy to use manhole socket,
