@@ -22,9 +22,10 @@ from __future__ import absolute_import
 from __future__ import division
 from uuid import uuid4
 
-import yajsonrpc
-
 from testlib import VdsmTestCase as TestCaseBase
+
+from yajsonrpc import stompclient
+
 from yajsonrpc.stompclient import \
     AsyncClient, \
     Command, \
@@ -134,7 +135,7 @@ class AsyncClientTest(TestCaseBase):
         headers = {Headers.REPLY_TO: 'jms.topic.vdsm_responses',
                    Headers.CONTENT_LENGTH: '103'}
 
-        with MonkeyPatchScope([(yajsonrpc, 'CALL_TIMEOUT', 0.5)]):
+        with MonkeyPatchScope([(stompclient, 'CALL_TIMEOUT', 0.5)]):
             client.send('jms.topic.vdsm_requests', data, headers)
             client._connected.set()
             req_frame = client.pop_message()
