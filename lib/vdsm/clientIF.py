@@ -385,6 +385,7 @@ class clientIF(object):
             self._acceptor.stop()
             for binding in self.servers.values():
                 binding.stop()
+            self._reactor.stop()
 
             self._enabled = False
             secret.clear()

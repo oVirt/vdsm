@@ -213,7 +213,6 @@ class MultiProtocolAcceptor:
     def stop(self):
         self.log.debug("Stopping Acceptor")
         self._acceptor.close()
-        self._reactor.stop()
 
     def _create_socket(self, host, port):
         addrinfo = socket.getaddrinfo(host, port,

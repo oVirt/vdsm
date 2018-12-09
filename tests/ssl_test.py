@@ -119,6 +119,7 @@ def listener(dummy_register_protocol_detector, key_cert_pair, request):
         yield (host, port)
     finally:
         acceptor.stop()
+        reactor.stop()
         t.join()
 
 
