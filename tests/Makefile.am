@@ -148,6 +148,7 @@ CLEANFILES = \
 	$(NULL)
 
 EXTRA_DIST = \
+	conf/svdsm.logger.conf \
 	makecert.sh \
 	panic_helper.py \
 	py-watch \

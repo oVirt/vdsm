@@ -252,15 +252,15 @@ def __assertSingleInstance():
 def main(args):
     try:
         __assertSingleInstance()
+        parser = option_parser()
+        args = parser.parse_args(args=args)
         try:
-            logging.config.fileConfig(LOG_CONF_PATH,
+            logging.config.fileConfig(args.logger_conf,
                                       disable_existing_loggers=False)
         except Exception as e:
             raise FatalError("Cannot configure logging: %s" % e)
 
         log = logging.getLogger("SuperVdsm.Server")
-        parser = option_parser()
-        args = parser.parse_args(args=args)
         sockfile = args.sockfile
         pidfile = args.pidfile
         if not config.getboolean('vars', 'core_dump_enable'):
@@ -273,7 +273,7 @@ def main(args):
                 return func(*args, **kwargs)
             return wrapper
 
-        if _glusterEnabled:
+        if args.enable_gluster:
             for name, func in listPublicFunctions(GLUSTER_MGMT_ENABLED):
                 setattr(_SuperVdsm, name, bind(logDecorator(func)))
 
@@ -317,11 +317,12 @@ def main(args):
             servThread = concurrent.thread(server.serve_forever)
             servThread.start()
 
-            chown(address, getpwnam(VDSM_USER).pw_uid, METADATA_GROUP)
+            chown(address, getpwnam(args.sock_user).pw_uid, args.sock_group)
+
+            if args.enable_network:
+                init_privileged_network_components()
 
             log.debug("Started serving super vdsm object")
-
-            init_privileged_network_components()
 
             while _running:
                 sigutils.wait_for_signal()
@@ -339,8 +340,37 @@ def main(args):
 
 def option_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--sockfile', dest='sockfile', required=True,
-                        help="socket file path")
-    parser.add_argument('--pidfile', dest='pidfile', default=None,
-                        help="pid file path")
+    parser.add_argument(
+        '--sockfile',
+        dest='sockfile',
+        required=True,
+        help="socket file path")
+    parser.add_argument(
+        '--pidfile',
+        default=None,
+        help="pid file path")
+    parser.add_argument(
+        '--sock-user',
+        default=VDSM_USER,
+        help="override socket user name (default %s)" % VDSM_USER)
+    parser.add_argument(
+        '--sock-group',
+        default=METADATA_GROUP,
+        help="override socket group name (default %s)" % METADATA_GROUP)
+    parser.add_argument(
+        '--logger-conf',
+        default=LOG_CONF_PATH,
+        help="logger config file path (default %s)" % LOG_CONF_PATH)
+    parser.add_argument(
+        '--disable-gluster',
+        action='store_false',
+        dest='enable_gluster',
+        default=_glusterEnabled,
+        help="disable gluster services (default enabled)")
+    parser.add_argument(
+        '--disable-network',
+        action='store_false',
+        dest='enable_network',
+        default=True,
+        help="disable network initialization (default enabled)")
     return parser
