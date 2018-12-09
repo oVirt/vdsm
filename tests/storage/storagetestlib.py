@@ -45,6 +45,7 @@ from vdsm.storage import fileVolume
 from vdsm.storage import guarded
 from vdsm.storage import hsm
 from vdsm.storage import image
+from vdsm.storage import nbd
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import qemuimg
 from vdsm.storage import sd
@@ -99,6 +100,7 @@ def fake_file_env(obj=None, sd_version=3, mnt_dir="server:_path"):
             [volume, 'sdCache', fake_sdc],
             [fileVolume, 'sdCache', fake_sdc],
             [hsm, 'sdCache', fake_sdc],
+            [nbd, 'sdCache', fake_sdc],
         ]):
             fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
             try:
@@ -119,6 +121,7 @@ def fake_block_env(obj=None, sd_version=3):
             (sc, 'REPO_DATA_CENTER', tmpdir),
             (volume, 'sdCache', fake_sdc),
             (hsm, 'sdCache', fake_sdc),
+            [nbd, 'sdCache', fake_sdc],
         ]):
             sd_manifest = make_blocksd_manifest(tmpdir, lvm,
                                                 sd_version=sd_version)
