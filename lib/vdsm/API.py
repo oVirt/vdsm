@@ -1711,3 +1711,12 @@ class Lease(APIBase):
 
     def rebuild_leases(self, sd_id):
         return self._irs.rebuild_leases(sd_id)
+
+
+class NBD(APIBase):
+
+    def start_server(self, server_id, config):
+        return self._irs.start_nbd_server(server_id, config)
+
+    def stop_server(self, server_id):
+        return self._irs.stop_nbd_server(server_id)

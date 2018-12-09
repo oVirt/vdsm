@@ -69,6 +69,7 @@ from vdsm.storage import misc
 from vdsm.storage import monitor
 from vdsm.storage import mount
 from vdsm.storage import multipath
+from vdsm.storage import nbd
 from vdsm.storage import nfsSD
 from vdsm.storage import outOfProcess as oop
 from vdsm.storage import qemuimg
@@ -3699,6 +3700,18 @@ class HSM(object):
     @public
     def lease_status(self, lease):
         raise NotImplementedError
+
+    # NBD
+
+    @public
+    def start_nbd_server(self, server_id, config):
+        self._check_pool_connected()
+        url = nbd.start_server(server_id, config)
+        return dict(result=url)
+
+    @public
+    def stop_nbd_server(self, server_id):
+        nbd.stop_server(server_id)
 
     # Validations
 

@@ -434,4 +434,5 @@ command_info = {
     'Lease_rebuild_leases': {'ret': 'uuid'},
     'Lease_info': {'ret': 'result'},
     'Lease_status': {'ret': 'result'},
+    'NBD_start_server': {'ret': 'result'},
 }

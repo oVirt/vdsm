@@ -1130,6 +1130,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/mount.py*
 %{python_sitelib}/%{vdsm_name}/storage/mpathhealth.py*
 %{python_sitelib}/%{vdsm_name}/storage/multipath.py*
+%{python_sitelib}/%{vdsm_name}/storage/nbd.py*
 %{python_sitelib}/%{vdsm_name}/storage/nfsSD.py*
 %{python_sitelib}/%{vdsm_name}/storage/operation.py*
 %{python_sitelib}/%{vdsm_name}/storage/outOfProcess.py*

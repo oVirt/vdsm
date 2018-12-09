@@ -7969,6 +7969,34 @@ types:
             type: *UUID
         type: object
 
+    NBDServerConfig: &NBDServerConfig
+        added: '4.3'
+        description: NBD server configuration.
+        name: NBDServerConfig
+        properties:
+        -   description: The storage domain UUID.
+            name: sd_id
+            type: *UUID
+
+        -   description: The image UUID.
+            name: img_id
+            type: *UUID
+
+        -   description: The volume UUID.
+            name: vol_id
+            type: *UUID
+
+        -   defaultvalue: false
+            description: Allow read only access.
+            name: readonly
+            type: boolean
+
+        -   defaultvalue: false
+            description: Pass discard requests to underlying filesystem. By
+                default discard requests are ignored.
+            name: discard
+            type: boolean
+        type: object
 
 Host.setupNetworks:
     added: '3.1'
@@ -11166,3 +11194,29 @@ SDM.update_volume:
                      in a volume.
         name: vol_attr
         type: *VolumeAttributes
+
+NBD.start_server:
+    added: '4.3'
+    description: Start serving a volume using NBD protocol. Fail if the service
+        was already running.
+    params:
+    -   description: NBD server UUID for controlling the server.
+        name: server_id
+        type: *UUID
+
+    -   description: The server configuration.
+        name: config
+        type: *NBDServerConfig
+
+    return:
+        description: NBD URL for accessing the server.
+        type: string
+
+NBD.stop_server:
+    added: '4.3'
+    description: Stop serving a volume. If the service is not running, the call
+        will succeed.
+    params:
+    -   description: server UUID.
+        name: server_id
+        type: *UUID

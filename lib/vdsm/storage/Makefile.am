@@ -67,6 +67,7 @@ dist_vdsmstorage_PYTHON = \
 	mount.py \
 	mpathhealth.py \
 	multipath.py \
+	nbd.py \
 	nfsSD.py \
 	operation.py \
 	outOfProcess.py \
