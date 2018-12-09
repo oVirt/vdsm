@@ -69,9 +69,6 @@ def change_numvfs(pci_path, numvfs, devname):
     The persistence is stored in the same place as other network persistence is
     stored. A call to setSafeNetworkConfig() will persist it across reboots.
     """
-    # TODO: net_name is here only because it is hard to call pf_to_net_name
-    # TODO: from here. once all our code will be under lib/vdsm this should be
-    # TODO: removed.
     logging.info('Changing number of vfs on device %s -> %s.',
                  pci_path, numvfs)
     sriov.update_numvfs(pci_path, numvfs)
