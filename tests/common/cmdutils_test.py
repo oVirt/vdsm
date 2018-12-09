@@ -118,6 +118,11 @@ class SystemdRunTests(TestCaseBase):
         res = [cmdutils.SYSTEMD_RUN, '--slice=slice', 'a', 'b']
         self.assertEqual(cmd, res)
 
+    def test_uid_gid(self):
+        cmd = cmdutils.systemd_run(['a', 'b'], uid=36, gid=36)
+        res = [cmdutils.SYSTEMD_RUN, '--uid=36', '--gid=36', 'a', 'b']
+        self.assertEqual(cmd, res)
+
     def test_accounting(self):
         accounting = (
             cmdutils.Accounting.CPU,
