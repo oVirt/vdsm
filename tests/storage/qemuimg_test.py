@@ -517,7 +517,6 @@ class TestConvertPreallocation(TestCaseBase):
         (qemuimg.PREALLOCATION.OFF, 10 * 1024**2, 0),
         (qemuimg.PREALLOCATION.FALLOC, 10 * 1024**2, 10 * 1024**2),
         (qemuimg.PREALLOCATION.FULL, 10 * 1024**2, 10 * 1024**2),
-        (qemuimg.PREALLOCATION.FULL, 10 * 1024**2, 10 * 1024**2),
     ])
     def test_qcow2_to_raw(self, preallocation, virtual_size, actual_size):
         with namedTemporaryDir() as tmpdir:
