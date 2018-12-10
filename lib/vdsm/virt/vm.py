@@ -6010,7 +6010,20 @@ class Vm(object):
             return
         device.hotunplug_event.set()
         self._devices[device_hwclass].remove(device)
-        device.teardown()
+        try:
+            device.teardown()
+        except libvirt.libvirtError as e:
+            # TODO: This is workaround for https://bugzilla.redhat.com/1655276.
+            # Remove this once https://bugzilla.redhat.com/1658198 is fixed.
+            # libvirt removal event may come before the device is released
+            # from QEMU; let's wait a bit and retry in such a case.
+            if e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
+                self.log.info("Failed to tear down device %s, retrying",
+                              device_alias)
+                time.sleep(1)
+                device.teardown()
+            else:
+                raise
         self._updateDomainDescriptor()
 
     # Accessing storage
