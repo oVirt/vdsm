@@ -48,7 +48,7 @@ def _lldp_init():
     Enables receiving of LLDP frames for all nics. If sending or receiving
     LLDP frames is already enabled on a nic, it is not modified.
     """
-    if config.getboolean('vars', 'enable_lldp'):
+    if not config.getboolean('vars', 'enable_lldp'):
         logging.warning('LLDP is disabled')
         return
 
