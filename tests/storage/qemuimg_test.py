@@ -59,7 +59,8 @@ def fake_json_call(data, cmd, **kw):
     return 0, json.dumps(data).encode("utf-8"), []
 
 
-class GeneralTests:
+class TestCompat:
+
     @pytest.mark.parametrize("compat,result", [
         ("0.10", True),
         ("1.1", True),
@@ -69,7 +70,8 @@ class GeneralTests:
         assert result == qemuimg.supports_compat(compat)
 
 
-class InfoTests:
+class TestInfo:
+
     CLUSTER_SIZE = 65536
 
     def _fake_info(self):
@@ -201,7 +203,8 @@ class InfoTests:
                                '--as=1073741824']
 
 
-class CreateTests:
+class TestCreate:
+
     @pytest.mark.parametrize("image_format,allocation_mode,allocated_bytes", [
         (qemuimg.FORMAT.RAW, qemuimg.PREALLOCATION.OFF, 0),
         (qemuimg.FORMAT.RAW, qemuimg.PREALLOCATION.FALLOC, 16 * 1024 * 1024),
@@ -284,7 +287,7 @@ class CreateTests:
                            backing='no-such-file', unsafe=True)
 
 
-class ConvertTests:
+class TestConvert:
 
     def test_no_format(self):
         def convert(cmd, **kw):
@@ -369,7 +372,7 @@ class ConvertTests:
                             dstQcow2Compat='1.11')
 
 
-class TestConvertCompressed(object):
+class TestConvertCompressed:
 
     def test_raw_to_compressed_qcow2(self, tmpdir):
         src_file = str(tmpdir.join("test.raw"))
@@ -535,7 +538,7 @@ class TestConvertPreallocation:
                 preallocation=qemuimg.PREALLOCATION.METADATA)
 
 
-class CheckTests:
+class TestCheck:
 
     @MonkeyPatch(qemuimg, 'config', CONFIG)
     def test_check(self):
