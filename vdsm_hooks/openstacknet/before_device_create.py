@@ -79,8 +79,7 @@ def addOvsVnic(domxml, iface, portId):
 
 
 def addOvsDirectVnic(domxml, iface, portId):
-    source = iface.getElementsByTagName('source')[0]
-    source.setAttribute('bridge', INTEGRATION_BRIDGE)
+    defineLinuxBridge(domxml, iface, portId, INTEGRATION_BRIDGE)
 
     virtualPort = domxml.createElement('virtualport')
     virtualPort.setAttribute('type', 'openvswitch')
