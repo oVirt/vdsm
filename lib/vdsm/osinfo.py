@@ -263,7 +263,7 @@ def package_versions():
             'libvirt': ('libvirt', 'libvirt-daemon-kvm'),
             'mom': ('mom',),
             'ovirt-hosted-engine-ha': ('ovirt-hosted-engine-ha',),
-            'openvswitch': ('openvswitch',),
+            'openvswitch': ('openvswitch', 'rhv-openvswitch'),
             'qemu-img': ('qemu-img', 'qemu-img-rhev', 'qemu-img-ev'),
             'qemu-kvm': ('qemu-kvm', 'qemu-kvm-rhev', 'qemu-kvm-ev'),
             'spice-server': ('spice-server',),
