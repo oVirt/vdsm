@@ -234,16 +234,22 @@ def check(image, format=None):
 
 def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
             dstQcow2Compat=None, backing=None, backingFormat=None,
-            preallocation=None, compressed=False, unordered_writes=False):
+            preallocation=None, compressed=False, unordered_writes=False,
+            create=True):
     """
     Arguments:
         unordered_writes (bool): Allow out-of-order writes to the destination.
             This option improves performance, but is only recommended for
             preallocated devices like host devices or other raw block devices.
+        create (bool): If True (default) the destination image is created. Must
+            be set to False when convert to NBD.
     """
     cmd = [_qemuimg.cmd, "convert", "-p", "-t", "none", "-T", "none"]
     options = []
     cwdPath = None
+
+    if not create:
+        cmd.append("-n")
 
     if srcFormat:
         cmd.extend(("-f", srcFormat))

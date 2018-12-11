@@ -294,6 +294,15 @@ class TestConvert:
         with MonkeyPatchScope([(qemuimg, 'ProgressCommand', convert)]):
             qemuimg.convert('src', 'dst')
 
+    def test_no_create(self):
+        def convert(cmd, **kw):
+            expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
+                        '-n', 'src', 'dst']
+            assert cmd == expected
+
+        with MonkeyPatchScope([(qemuimg, 'ProgressCommand', convert)]):
+            qemuimg.convert('src', 'dst', create=False)
+
     def test_qcow2_compat(self):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', '-T', 'none',
