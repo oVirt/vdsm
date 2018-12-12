@@ -37,6 +37,7 @@ common_modules = \
 	common/concurrent_test.py \
 	common/contextlib_test.py \
 	common/fileutils_test.py \
+	common/function_test.py \
 	common/hostutils_test.py \
 	common/libvirtconnection_test.py \
 	common/logutils_test.py \
