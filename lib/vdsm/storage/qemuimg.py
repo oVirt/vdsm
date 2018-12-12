@@ -256,7 +256,7 @@ def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
             qcow2Compat = _validate_qcow2_compat(dstQcow2Compat)
             options.append('compat=' + qcow2Compat)
         if preallocation:
-            value = _get_preallocation(preallocation, format)
+            value = _get_preallocation(preallocation, dstFormat)
             options.append("preallocation=" + value)
 
     if backing:

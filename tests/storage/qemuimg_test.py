@@ -537,6 +537,25 @@ class TestConvertPreallocation:
                 'src', 'dst', dstFormat="raw",
                 preallocation=qemuimg.PREALLOCATION.METADATA)
 
+    def test_raw_to_qcow2_metadata_prealloc(self):
+        virtual_size = 10 * 1024**2
+        with namedTemporaryDir() as tmpdir:
+            src = os.path.join(tmpdir, 'src')
+            dst = os.path.join(tmpdir, 'dst')
+
+            op = qemuimg.create(src, size=virtual_size, format="raw")
+            op.run()
+
+            op = qemuimg.convert(src, dst, srcFormat="raw", dstFormat="qcow2",
+                                 preallocation=qemuimg.PREALLOCATION.METADATA)
+            op.run()
+
+            actual_size = os.stat(dst).st_size
+            disk_size = qemuimg.info(dst, format="qcow2")["actualsize"]
+
+            assert actual_size > virtual_size
+            assert disk_size < virtual_size
+
 
 class TestCheck:
 
