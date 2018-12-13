@@ -8,5 +8,5 @@ if sys.version_info[0] == 2:
     sys.setdefaultencoding('utf8')
 
 if config.getboolean('devel', 'coverage_enable'):
-    import coverage
+    import coverage  # pylint: disable=import-error
     coverage.process_startup()
