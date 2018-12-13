@@ -20,12 +20,14 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     mom \
     openvswitch \
     ovirt-imageio-common \
+    policycoreutils-python \
     psmisc \
     python-augeas \
     python-blivet \
     python-dateutil \
     python-decorator \
     python-devel \
+    python-dmidecode \
     python-enum34 \
     python-inotify \
     python-ioprocess \
