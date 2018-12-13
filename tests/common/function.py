@@ -23,9 +23,12 @@ from __future__ import division
 
 import gc
 
+import six
+
 from vdsm.common import function
 
 from testlib import VdsmTestCase as TestCaseBase
+from testValidation import skipif
 
 
 class TestWeakmethod(TestCaseBase):
@@ -44,6 +47,7 @@ class TestWeakmethod(TestCaseBase):
         gc.set_debug(self.saved_flags)
         gc.enable()
 
+    @skipif(six.PY3, "https://docs.python.org/3/library/gc.html#gc.garbage")
     def test_with_reference_cycle(self):
         def _leaking_wrapper(meth):
             def wrapper(*args, **kwargs):
