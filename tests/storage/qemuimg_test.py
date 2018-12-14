@@ -50,10 +50,6 @@ QEMU_IMG = qemuimg._qemuimg.cmd
 
 CONFIG = make_config([('irs', 'qcow2_compat', '0.10')])
 
-xfail_on_travis = pytest.mark.xfail(
-    "TRAVIS_CI" in os.environ,
-    reason="File system does not support sparseness")
-
 
 def fake_json_call(data, cmd, **kw):
     return 0, json.dumps(data).encode("utf-8"), []
@@ -832,7 +828,7 @@ class TestAmend:
 class TestMeasure:
 
     @pytest.mark.parametrize("format,compressed", [
-        pytest.param(qemuimg.FORMAT.RAW, False, marks=xfail_on_travis),
+        (qemuimg.FORMAT.RAW, False),
         (qemuimg.FORMAT.QCOW2, False),
         (qemuimg.FORMAT.QCOW2, True),
     ])
@@ -845,7 +841,7 @@ class TestMeasure:
         self.check_measure(filename, compat, format, compressed)
 
     @pytest.mark.parametrize("format,compressed", [
-        pytest.param(qemuimg.FORMAT.RAW, False, marks=xfail_on_travis),
+        (qemuimg.FORMAT.RAW, False),
         (qemuimg.FORMAT.QCOW2, False),
         (qemuimg.FORMAT.QCOW2, True),
     ])
@@ -859,7 +855,7 @@ class TestMeasure:
         self.check_measure(filename, compat, format, compressed)
 
     @pytest.mark.parametrize("format,compressed", [
-        pytest.param(qemuimg.FORMAT.RAW, False, marks=xfail_on_travis),
+        (qemuimg.FORMAT.RAW, False),
         (qemuimg.FORMAT.QCOW2, False),
         (qemuimg.FORMAT.QCOW2, True),
     ])
@@ -876,7 +872,7 @@ class TestMeasure:
 
     @pytest.mark.slow
     @pytest.mark.parametrize("format,compressed", [
-        pytest.param(qemuimg.FORMAT.RAW, False, marks=xfail_on_travis),
+        (qemuimg.FORMAT.RAW, False),
         (qemuimg.FORMAT.QCOW2, False),
         (qemuimg.FORMAT.QCOW2, True),
     ])
@@ -891,7 +887,7 @@ class TestMeasure:
 
     @pytest.mark.slow
     @pytest.mark.parametrize("format,compressed", [
-        pytest.param(qemuimg.FORMAT.RAW, False, marks=xfail_on_travis),
+        (qemuimg.FORMAT.RAW, False),
         (qemuimg.FORMAT.QCOW2, False),
         (qemuimg.FORMAT.QCOW2, True),
     ])
