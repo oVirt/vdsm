@@ -40,6 +40,7 @@ python3-augeas
 python3-dateutil
 python3-dbus
 python3-decorator
+python3-devel
 python3-magic
 python3-netaddr
 python3-nose
