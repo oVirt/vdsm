@@ -275,15 +275,21 @@ check-virt:
 	@echo '=== Running virt tests. ==='
 	@$(top_srcdir)/tests/run_tests_local.sh $(virt_modules)
 
-check:
+check: check-py27 check-py36
+
+check-py27:
 	@echo '=== Running tests.  To skip this step place NOSE_EXCLUDE=.* ==='
 	@echo '=== into your environment.  Do not submit untested code!    ==='
 	$(top_srcdir)/tests/run_tests_local.sh $(run_modules)
 	if [ -n "$$NOSE_WITH_COVERAGE" ]; then \
 		mv .coverage .coverage-nose-py2; \
 	fi
+
+check-py36:
+	@echo '=== Running tests.  To skip this step place NOSE_EXCLUDE=.* ==='
+	@echo '=== into your environment.  Do not submit untested code!    ==='
 	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then \
-		PYTHON_EXE="$(PYTHON3)" \
+		PYTHON_EXE=python3 \
 			$(top_srcdir)/tests/run_tests_local.sh \
 			$(filter-out $(blacklist_modules_python3),$(run_modules)) && \
 		if [ -n "$$NOSE_WITH_COVERAGE" ]; then \

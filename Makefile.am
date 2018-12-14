@@ -185,12 +185,12 @@ tests: tests-py27 tests-py36
 
 .PHONY: tests-py27
 tests-py27: tox
-	tox -e "tests,{storage,lib,network,virt}-py27"
+	tox -e "{tests,storage,lib,network,virt}-py27"
 
 .PHONY: tests-py36
 tests-py36: tox
 	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then \
-		tox -e "tests,{storage,lib,network,virt}-py36"; \
+		tox -e "{tests,storage,lib,network,virt}-py36"; \
 	else \
 		echo "Skipping tests for Python 3.6"; \
 	fi
