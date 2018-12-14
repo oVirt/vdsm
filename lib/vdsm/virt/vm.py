@@ -4278,6 +4278,22 @@ class Vm(object):
         self.log.info("%d guest filesystems thawed", thawed)
         return response.success()
 
+    def start_backup(self, backup_id, disks,
+                     from_checkpoint_id, to_checkpoint_id):
+        raise exception.MethodNotImplemented()
+
+    def stop_backup(self, backup_id):
+        raise exception.MethodNotImplemented()
+
+    def backup_info(self, backup_id):
+        raise exception.MethodNotImplemented()
+
+    def delete_checkpoints(self, checkpoint_ids):
+        raise exception.MethodNotImplemented()
+
+    def redefine_checkpoints(self, checkpoints):
+        raise exception.MethodNotImplemented()
+
     @api.guard(_not_migrating)
     def snapshot(self, snapDrives, memoryParams, frozen=False):
         """Live snapshot command"""

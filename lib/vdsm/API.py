@@ -686,6 +686,33 @@ class VM(APIBase):
 
     @api.logged(on="api.virt")
     @api.method
+    def start_backup(self, backup_id, disks,
+                     from_checkpoint_id=None, to_checkpoint_id=None):
+        return self.vm.start_backup(backup_id, disks,
+                                    from_checkpoint_id, to_checkpoint_id)
+
+    @api.logged(on="api.virt")
+    @api.method
+    def stop_backup(self, backup_id):
+        return self.vm.stop_backup(backup_id)
+
+    @api.logged(on="api.virt")
+    @api.method
+    def backup_info(self, backup_id):
+        return self.vm.backup_info(backup_id)
+
+    @api.logged(on="api.virt")
+    @api.method
+    def delete_checkpoints(self, checkpoint_ids):
+        return self.vm.delete_checkpoints(checkpoint_ids)
+
+    @api.logged(on="api.virt")
+    @api.method
+    def redefine_checkpoints(self, checkpoints):
+        return self.vm.redefine_checkpoints(checkpoints)
+
+    @api.logged(on="api.virt")
+    @api.method
     def snapshot(self, snapDrives, snapMemory=None, frozen=False):
         # for backward compatibility reasons, we need to
         # do the instance check before to run the hooks.

@@ -7661,10 +7661,10 @@ types:
             LEAF: The Volume is a writable leaf
             SHARED: The Volume is a shared template
 
-    VolumeInfo: &VolumeInfo
+    VolumeInfoResponse: &VolumeInfoResponse
         added: '3.1'
         description: Information about a Volume.
-        name: VolumeInfo
+        name: VolumeInfoResponse
         properties:
         -   description: An advisory code indicating the Volume's planned usage
             name: disktype
@@ -8042,10 +8042,10 @@ types:
             type: *VolumeRole
         type: object
 
-    SealImageInfo: &SealImageInfo
+    VolumeInfo: &VolumeInfo
         added: '4.1'
         description: A descriptor for an Image on a vdsm Storage Domain.
-        name: SealImageInfo
+        name: VolumeInfo
         properties:
         -   description: The UUID of the Storage Domain
             name: sd_id
@@ -8055,8 +8055,7 @@ types:
             name: img_id
             type: *UUID
 
-        -   description: The UUID of the Volume. Must always reference
-                         the leaf Volume of the Image.
+        -   description: The UUID of the Volume
             name: vol_id
             type: *UUID
         type: object
@@ -8088,6 +8087,35 @@ types:
                 default discard requests are ignored.
             name: discard
             type: boolean
+
+    Checkpoint: &Checkpoint
+        added: '4.3'
+        description: Configuration of the checkpoint
+        name: Checkpoint
+        properties:
+            -   description: UUID of the checkpoint
+                name: id
+                type: *UUID
+
+            -   description: List of disks to be backed up
+                name: disks
+                type:
+                - *VolumeInfo
+
+            -   descripton: Timestamp when checkpoint was created
+                name: created
+                type: uint
+        type: object
+
+    BackupInfo: &BackupInfo
+        added: '4.3'
+        description: A backup info entity
+        name: BackupInfo
+        properties:
+            -   description: Mapping of disks in the backup to NBD URLs
+                    (imageId -> "nbd:unix:/path:exportname=sdx")
+                name: disks
+                type: *StringMap
         type: object
 
 Host.setupNetworks:
@@ -10751,10 +10779,11 @@ VM.seal:
         name: sp_id
         type: *UUID
 
-    -   description: List of Images to be processed
+    -   description: List of Images to be processed. Volume must always
+            reference the leaf volume of the image.
         name: images
         type:
-        - *SealImageInfo
+        - *VolumeInfo
 
 Volume.copy:
     added: '3.1'
@@ -10993,7 +11022,7 @@ Volume.getInfo:
         type: *UUID
     return:
         description: Volume information
-        type: *VolumeInfo
+        type: *VolumeInfoResponse
 
 Volume.getQemuImageInfo:
     added: '4.1'
@@ -11373,3 +11402,97 @@ NBD.stop_server:
     -   description: server UUID.
         name: server_id
         type: *UUID
+
+VM.start_backup:
+    added: '4.3'
+    description: Starts a backup for specified VM and selected disks of
+        this VM.
+    params:
+    -   description: A UUID of the VM
+        name: vmID
+        type: *UUID
+
+    -   description: A UUID of the backup
+        name: backup_id
+        type: *UUID
+
+    -   description: List of disks which should be backed up.
+            If 'to_checkpont_id' is specified, these disks will be included
+            in the checkpoint. A new bitmap will be created on all the disks.
+        name: disks
+        type:
+        - *VolumeInfo
+
+    -   defaultvalue: null
+        description: If specified, perform incremental backup including all
+            checkpoints since that checkpoint (including this checkpoint).
+        name: from_checkpoint_id
+        type: *UUID
+
+    -   defaultvalue: null
+        description: If specified, create a new checkpoint when starting
+            the backup. The next backup can use the new checkpoint to
+            perform incremental backup. The backup does not include the
+            data referenced by this checkpoint.
+        name: to_checkpoint_id
+        type: *UUID
+    return:
+        description: Information about the started backup.
+        type: *BackupInfo
+
+VM.stop_backup:
+    added: '4.3'
+    description: Stops a backup with specified UUID.
+    params:
+    -   description: A UUID of the VM
+        name: vmID
+        type: *UUID
+
+    -   description: A UUID of the backup
+        name: backup_id
+        type: *UUID
+
+VM.backup_info:
+    added: '4.3'
+    description: Returns VM backup info.
+    params:
+    -   description: A UUID of the VM
+        name: vmID
+        type: *UUID
+
+    -   description: A UUID of the backup
+        name: backup_id
+        type: *UUID
+    return:
+        description: Information about the backup identified by backup_id.
+        type: *BackupInfo
+
+VM.delete_checkpoints:
+    added: '4.3'
+    description: Deletes specified VM checkpoint ids.
+    params:
+    -   description: A UUID of the VM
+        name: vmID
+        type: *UUID
+
+    -   description: List of checkpoints ids to delete, order from
+            oldest to newest.
+        name: checkpoint_ids
+        type:
+        - string
+
+VM.redefine_checkpoints:
+    added: '4.3'
+    description: Redefines VM checkpoints with specified list.
+    params:
+    -   description: A UUID of the VM
+        name: vmID
+        type: *UUID
+
+    -   description: List of checkpoints ordered by creation order
+            (from oldest to newest). Redefine fails if a checkpoint is
+            missing on storage, or storage contains checkpoint not in
+            this list.
+        name: checkpoints
+        type:
+        - *Checkpoint
