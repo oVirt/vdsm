@@ -13,15 +13,15 @@ prepare_env() {
 }
 
 install_dependencies() {
-    pip install -U tox==2.9.1
+    tests/profile pip-install pip install -U tox==2.9.1
 }
 
 build_vdsm() {
     if [ ! -f Makefile ]; then
-      ./autogen.sh --system --enable-hooks --enable-vhostmd
+      tests/profile autogen ./autogen.sh --system --enable-hooks --enable-vhostmd
     fi
 
-    make
+    tests/profile make make
 }
 
 # oVirt CI helper functions
@@ -58,7 +58,7 @@ check_install() {
         exit 1
     fi
 
-    $PWD/automation/build-artifacts.sh
+    tests/profile build-artifacts $PWD/automation/build-artifacts.sh
 
     tests/check_distpkg.sh "$(ls "$EXPORT_DIR"/vdsm*.tar.gz)"
     tests/check_rpms.sh "$EXPORT_DIR"
@@ -73,5 +73,5 @@ check_install() {
         DNF=yum
     fi
 
-    "$DNF" -y install vdsm-$vr\* vdsm-client-$vr\* vdsm-hook-\*-$vr\* vdsm-tests-$vr\* vdsm-gluster-$vr\*
+    tests/profile install "$DNF" -y install vdsm-$vr\* vdsm-client-$vr\* vdsm-hook-\*-$vr\* vdsm-tests-$vr\* vdsm-gluster-$vr\*
 }

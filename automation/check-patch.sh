@@ -17,7 +17,7 @@ function collect_logs {
 
 trap collect_logs EXIT
 
-debuginfo-install -y python
+tests/profile debuginfo-install debuginfo-install -y python
 
 # Make sure we have enough loop device nodes.
 create_loop_devices 8
@@ -29,12 +29,12 @@ pushd tests
 pwd
 ls .cov*
 coverage combine .coverage-nose-py2 .coverage-storage-py27 .coverage-network-py27 .coverage-virt-py27 .coverage-lib-py27
-coverage html -d "$EXPORT_DIR/htmlcov"
+./profile coverage-py27 coverage html -d "$EXPORT_DIR/htmlcov"
 
 if grep -q 'Fedora' /etc/redhat-release; then
     rm .coverage
     coverage combine .coverage-nose-py3 .coverage-storage-py36 .coverage-network-py36 .coverage-virt-py36 .coverage-lib-py36
-    coverage html -d "$EXPORT_DIR/htmlcov-py36"
+    ./profile coverage-py36 coverage html -d "$EXPORT_DIR/htmlcov-py36"
 fi
 popd
 

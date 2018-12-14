@@ -1,0 +1,61 @@
+#!/usr/bin/python
+"""
+Analyze commands profiled using profile tool.
+"""
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import argparse
+import datetime
+import json
+import operator
+import sys
+
+p = argparse.ArgumentParser("Analyze build time")
+p.add_argument(
+    "-s", "--sort",
+    default="elapsed",
+    help="Sort by property (elapsed, cpu, utime, stime, memory, name, start)")
+args = p.parse_args()
+
+commands = []
+
+for line in sys.stdin:
+    if not line.startswith("PROFILE"):
+        continue
+    data = line.split(" ", 1)[1]
+    info = json.loads(data)
+    commands.append(info)
+
+if not commands:
+    print("No profile data found", file=sys.stderr)
+    sys.exit(1)
+
+total_time = sum(c["elapsed"] for c in commands)
+start_date = datetime.datetime.fromtimestamp(commands[0]["start"])
+
+commands = sorted(
+    commands,
+    key=operator.itemgetter(args.sort),
+    reverse=args.sort not in ("name", "start"))
+
+print(start_date.strftime("%A, %d. %B %Y %I:%M%p"))
+print()
+print("    {} commands in {:.2f} seconds".format(len(commands), total_time))
+print()
+print("  Ordered by: {}".format(args.sort))
+print()
+print("  {:>8s}  {:>8s}  {:>8s}  {:>8s}  {:>8s}  {:>8s}  {:<}".format(
+    "total/%", "elasped", "cpu/%", "utime", "stime", "maxrss/k", "name"))
+
+for c in commands:
+    print("  {:8.2f}  {:8.2f}  {:8.2f}  {:8.2f}  {:8.2f}  {:8d}  {:<}".format(
+        c["elapsed"] / total_time * 100,
+        c["elapsed"],
+        c["cpu"],
+        c["utime"],
+        c["stime"],
+        c["maxrss"],
+        c["name"]))
