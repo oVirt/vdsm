@@ -12,7 +12,7 @@ function collect_logs {
     cd /var/log
     tar --exclude "journal/*" -czf "$EXPORT_DIR/mock_varlogs.tar.gz" *
     cd /var/host_log
-    tar -czf "$EXPORT_DIR/host_varlogs.tar.gz" *
+    tar --exclude "journal/*" -czf "$EXPORT_DIR/host_varlogs.tar.gz" *
 }
 
 trap collect_logs EXIT
