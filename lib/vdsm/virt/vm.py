@@ -3358,7 +3358,7 @@ class Vm(object):
         device = vmdevices.core.Memory(self.log, **memParams)
 
         deviceXml = xmlutils.tostring(device.getXML())
-        deviceXml = hooks.before_memory_hotplug(deviceXml)
+        deviceXml = hooks.before_memory_hotplug(deviceXml, self._custom)
         device._deviceXML = deviceXml
         self.log.debug("Hotplug memory xml: %s", deviceXml)
 
@@ -3375,7 +3375,7 @@ class Vm(object):
         device.update_device_info(self, self._devices[hwclass.MEMORY])
         self._update_mem_guaranteed_size(params)
 
-        hooks.after_memory_hotplug(deviceXml)
+        hooks.after_memory_hotplug(deviceXml, self._custom)
 
         return {'status': doneCode, 'vmList': self.status()}
 
