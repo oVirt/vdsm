@@ -20,11 +20,13 @@
 from __future__ import absolute_import
 from __future__ import division
 
+from contextlib import contextmanager
 import logging
 
 from vdsm.common.config import config
 from vdsm.network import dhclient_monitor
 from vdsm.network import lldp
+from vdsm.network.dhclient_monitor import dhclient_monitor_ctx
 from vdsm.network.ipwrapper import getLinks
 from vdsm.network.nm import networkmanager
 
@@ -40,6 +42,14 @@ def init_unprivileged_network_components(cif, net_api):
     _init_sourceroute(net_api)
     _register_notifications(cif)
     dhclient_monitor.start()
+
+
+@contextmanager
+def init_unpriviliged_dhclient_monitor_ctx(event_sink, net_api):
+    _init_sourceroute(net_api)
+    _register_notifications(event_sink)
+    with dhclient_monitor_ctx():
+        yield
 
 
 def _lldp_init():

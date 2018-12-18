@@ -1,4 +1,4 @@
-# Copyright 2013-2017 Red Hat, Inc.
+# Copyright 2013-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ import threading
 
 import pyinotify
 
+from vdsm.common import fileutils
 from vdsm.common.constants import P_VDSM_RUN
 from vdsm.common import logutils
 from vdsm.network import ifacetracking
@@ -35,6 +36,8 @@ from vdsm.network.kernelconfig import networks_northbound_ifaces
 
 
 MONITOR_FOLDER = os.path.join(P_VDSM_RUN, 'dhclientmon')
+MONITOR_STOP_SIG_FILE = os.path.join(MONITOR_FOLDER,
+                                     'dhclient-stop-monitoring')
 
 _action_handler_db = []
 
@@ -57,6 +60,25 @@ def start():
                               name='dhclient-monitor')
     thread.daemon = True
     thread.start()
+    return thread
+
+
+def stop():
+    fileutils.touch_file(MONITOR_STOP_SIG_FILE)
+
+
+def wait(thread):
+    thread.join()
+
+
+@contextmanager
+def dhclient_monitor_ctx():
+    thread = start()
+    try:
+        yield
+    finally:
+        stop()
+        wait(thread)
 
 
 def register_action_handler(action_type, action_function, required_fields):
@@ -77,8 +99,18 @@ def register_action_handler(action_type, action_function, required_fields):
 
 
 class DHClientEventHandler(pyinotify.ProcessEvent):
+    _stop = False
+
     def process_IN_CLOSE_WRITE(self, event):
         _dhcp_response_handler(event.pathname)
+        if MONITOR_STOP_SIG_FILE in event.pathname:
+            self.set_stop_notifier()
+
+    def set_stop_notifier(self):
+        self._stop = True
+
+    def get_stop_notifier(self, *args):
+        return self._stop
 
 
 def _dhcp_response_handler(data_filepath):
@@ -141,7 +173,7 @@ def _monitor_dhcp_responses():
     for filePath in sorted(os.listdir(MONITOR_FOLDER)):
         _dhcp_response_handler(MONITOR_FOLDER + '/' + filePath)
 
-    notifier.loop()
+    notifier.loop(handler.get_stop_notifier)
 
 
 def _dhcp_response_data(fpath):
