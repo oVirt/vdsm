@@ -1,4 +1,4 @@
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2017-2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@ from __future__ import division
 
 import logging
 
-from vdsm.common import supervdsm
 from vdsm.network import dhclient_monitor
 from vdsm.network import lldp
 from vdsm.network.ipwrapper import getLinks
@@ -37,8 +36,8 @@ def init_privileged_network_components():
     _lldp_init()
 
 
-def init_unprivileged_network_components(cif):
-    _init_sourceroute()
+def init_unprivileged_network_components(cif, net_api):
+    _init_sourceroute(net_api)
     _register_notifications(cif)
     dhclient_monitor.start()
 
@@ -64,12 +63,21 @@ def _lldp_init():
         logging.warning('LLDP is inactive, skipping LLDP initialization')
 
 
-def _init_sourceroute():
+def _init_sourceroute(net_api):
+    """
+    Setup sourceroute with the dhclient monitor.
+
+    The net_api argument represents the exposed network api verbs.
+
+    The net_api can contain:
+    supervdsm proxy - enabling calls through the supervdsm service.
+    api module object - enabling calls directly through the network api.
+    """
     def _add_sourceroute(iface, ip, mask, route):
-        supervdsm.getProxy().add_sourceroute(iface, ip, mask, route)
+        net_api.add_sourceroute(iface, ip, mask, route)
 
     def _remove_sourceroute(iface):
-        supervdsm.getProxy().remove_sourceroute(iface)
+        net_api.remove_sourceroute(iface)
 
     dhclient_monitor.register_action_handler(
         action_type=dhclient_monitor.ActionType.CONFIGURE,

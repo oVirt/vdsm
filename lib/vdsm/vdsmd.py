@@ -41,6 +41,7 @@ from vdsm.common import dsaversion
 from vdsm.common import lockfile
 from vdsm.common import libvirtconnection
 from vdsm.common import sigutils
+from vdsm.common import supervdsm
 from vdsm.common import time
 from vdsm.common import zombiereaper
 from vdsm.common.panic import panic
@@ -108,7 +109,7 @@ def serve_clients(log):
 
         cif.start()
 
-        init_unprivileged_network_components(cif)
+        init_unprivileged_network_components(cif, supervdsm.getProxy())
 
         periodic.start(cif, scheduler)
         health.start()
