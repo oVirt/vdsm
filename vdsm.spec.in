@@ -9,9 +9,6 @@
 %global snlk_group @SNLKGROUP@
 %global snlk_user @SNLKUSER@
 %global cdrom_group @CDROMGROUP@
-# Not configurable because owned by ovirt-vmconsole package
-%global vmcon_user ovirt-vmconsole
-%global vmcon_group ovirt-vmconsole
 
 # Features
 %global with_ovirt_imageio @OVIRT_IMAGEIO@
@@ -733,34 +730,8 @@ Gluster plugin enables VDSM to serve Gluster functionalities.
 %if 0%{?enable_autotools}
 autoreconf -if
 %endif
-%configure \
-%if 0%{?with_hooks}
-        --enable-hooks \
-%endif
-%if ! 0%{?with_gluster_mgmt}
-        --disable-gluster-mgmt \
-%endif
-%if ! 0%{?with_python3}
-        --disable-python3 \
-%endif
-        --with-smbios-manufacturer='@SMBIOS_MANUFACTURER@' \
-        --with-smbios-osname='@SMBIOS_OSNAME@' \
-%if ! 0%{?with_ovirt_imageio}
-        --disable-ovirt-imageio \
-%endif
-%if ! 0%{?with_openvswitch}
-        --disable-openvswitch \
-%endif
-%if 0%{?with_ovirt_vmconsole}
-        --with-ovirt-vmconsole-user=%{vmcon_user} \
-        --with-ovirt-vmconsole-group=%{vmcon_group} \
-%else
-        --with-ovirt-vmconsole-user='@VDSMUSER@' \
-        --with-ovirt-vmconsole-group='@VDSMGROUP@' \
-%endif
-        --with-data-center='@VDSMREPO@' \
-        --with-polkitdir=%{_polkitdir}
 
+%configure @CONFIGURE_FLAGS@
 make
 
 %install

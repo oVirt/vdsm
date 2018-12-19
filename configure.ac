@@ -172,6 +172,9 @@ AS_IF([test "${enable_openvswitch}" = "yes"],
       AC_SUBST([OPENVSWITCH], ['1']),
       AC_SUBST([OPENVSWITCH], ['0']))
 
+AS_IF([test "$host_cpu" = powerpc64le],
+      AC_SUBST([OPENVSWITCH], ['0']),)
+
 AS_IF([test "${enable_openvswitch}" = "yes"],
       AC_SUBST([OPENVSWITCHSERVICE], ['openvswitch.service']),
       AC_SUBST([OPENVSWITCHSERVICE], []))
@@ -240,12 +243,16 @@ AC_ARG_WITH(
     [with_data_center="/rhev/data-center"])
 AC_SUBST([vdsmrepo], [${with_data_center}])
 
+AS_IF([test "${fedora_run}" = "yes"],
+    [_polkitdir="/usr/share/polkit-1/rules.d"],
+    [_polkitdir="/var/lib/polkit-1/localauthority/10-vendor.d"])
+
 AC_ARG_WITH(
     [polkitdir],
     [AS_HELP_STRING([--with-polkitdir=FILE],
                     [where to place polkit rules, @<:@default=/usr/share/polkit-1/rules.d@:>@])],
     [with_polkitdir="${withval}"],
-    [with_polkitdir="/usr/share/polkit-1/rules.d"])
+    [with_polkitdir="${_polkitdir}"])
 AC_SUBST([polkitdir], [${with_polkitdir}])
 
 # Users and groups
@@ -298,6 +305,38 @@ AC_ARG_WITH(
     [SMBIOS_OSNAME="${withval}"],
     [SMBIOS_OSNAME="oVirt Node"])
 AC_SUBST([SMBIOS_OSNAME])
+
+AC_SUBST([VMCON_USER],ovirt-vmconsole)
+AC_SUBST([VMCON_GROUP],ovirt-vmconsole)
+
+configure_flags="--with-data-center=$vdsmrepo\
+ --with-smbios-manufacturer=$SMBIOS_MANUFACTURER\
+ '--with-smbios-osname=$SMBIOS_OSNAME'\
+ --with-polkitdir=$polkitdir"
+if test "$HOOKS" == "1"; then
+    configure_flags+=" --enable-hooks"
+fi
+if test "$GLUSTER_MGMT" == "0"; then
+    configure_flags+=" --disable-gluster-mgmt"
+fi
+if test "$PYTHON3_SUPPORT" == "0"; then
+    configure_flags+=" --disable-python3"
+fi
+if test "$OVIRT_IMAGEIO" == "0"; then
+    configure_flags+=" --disable-ovirt-imageio"
+fi
+if test "$OPENVSWITCH" == "0"; then
+    configure_flags+=" --disable-openvswitch"
+fi
+if test "$OVIRT_VMCONSOLE" == "1"; then
+    configure_flags+=" --with-ovirt-vmconsole-user=$VMCON_USER\
+     --with-ovirt-vmconsole-group=$VMCON_GROUP"
+else
+    configure_flags+=" --with-ovirt-vmconsole-user=$VDSMUSER\
+     --with-ovirt-vmconsole-group=$VDSMGROUP"
+fi
+
+AC_SUBST([CONFIGURE_FLAGS], ["$configure_flags"])
 
 if test "$PYTHON3_SUPPORT" = "1"; then
   AC_PATH_PROG([PYTHON3], [python3])
