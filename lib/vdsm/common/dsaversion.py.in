@@ -25,10 +25,8 @@ from __future__ import absolute_import
 from __future__ import division
 
 version_name = "Snow Man"
-# FIXME: As soon as we can provide a long version/release to oVirt-Engine
-#        remove from vdsm.spec the sed to replace the below macros
-software_version = "@PACKAGE_VERSION@"
-software_revision = "@PACKAGE_RELEASE@"
+software_version = "@PACKAGE_BASE_VERSION@"
+software_revision = "@PACKAGE_BASE_RELEASE@"
 raw_version_revision = "@PACKAGE_VERSION@.@PACKAGE_RELEASE@"
 
 version_info = {

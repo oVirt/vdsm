@@ -37,6 +37,12 @@ AS_IF([test "x$PACKAGE_VERSION" = x],
 AS_IF([test "x$PACKAGE_RELEASE" = x],
       AC_MSG_ERROR([package release not defined]))
 
+AC_SUBST([PACKAGE_BASE_RELEASE],
+         [$(echo "$PACKAGE_RELEASE" | sed 's/\([0-9]\+\(\.[0-9]\+\)\?\).*/\1/')])
+
+AC_SUBST([PACKAGE_BASE_VERSION],
+         [$(echo "$PACKAGE_VERSION" | sed 's/\([0-9]\+\(\.[0-9]\+\)\?\).*/\1/')])
+
 # Automake initialization
 AM_INIT_AUTOMAKE([-Wno-portability])
 
