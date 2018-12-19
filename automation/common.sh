@@ -75,3 +75,22 @@ check_install() {
 
     tests/profile install "$DNF" -y install vdsm-$vr\* vdsm-client-$vr\* vdsm-hook-\*-$vr\* vdsm-tests-$vr\* vdsm-gluster-$vr\*
 }
+
+generate_combined_coverage_report() {
+    local python_version="$1"
+
+    pushd tests
+    pwd
+    ls .cov*
+    coverage combine ".coverage-nose-${python_version::-1}" \
+                     ".coverage-storage-$python_version" \
+                     ".coverage-network-$python_version" \
+                     ".coverage-virt-$python_version" \
+                     ".coverage-lib-$python_version"
+
+    ./profile "coverage-$python_version" coverage html -d "$EXPORT_DIR/htmlcov"
+    popd
+
+    # Export subsystem coverage reports for viewing in jenkins.
+    mv tests/htmlcov-* "$EXPORT_DIR"
+}
