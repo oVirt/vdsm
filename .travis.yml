@@ -9,18 +9,28 @@ services:
 git:
   depth: 9999999
 
+# Notes: we run the linters only on Fedora 28 to save time. This may miss some
+# issues on CentOS but the chance is very low.
 env:
   matrix:
     - DOCKER_IMAGE=ovirtorg/vdsm-test-centos
+      MAKE_TARGET=tests-py27
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-28
+      MAKE_TARGET=tests-py27
+    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-28
+      MAKE_TARGET=tests-py36
+    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-28
+      MAKE_TARGET=lint
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-29
+      MAKE_TARGET=check
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-rawhide
+      MAKE_TARGET=check
 
 matrix:
   fast_finish: true
   allow_failures:
-    - env: DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-29
-    - env: DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-rawhide
+    - env: DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-29 MAKE_TARGET=check
+    - env: DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-rawhide MAKE_TARGET=check
 
 before_install:
   - docker --version
@@ -37,4 +47,4 @@ script:
     --rm \
     -it \
     -v `pwd`:/vdsm:Z $DOCKER_IMAGE \
-    bash -c "cd /vdsm && ./autogen.sh --system && make && make check"
+    bash -c "cd /vdsm && ./autogen.sh --system && make && make $MAKE_TARGET"
