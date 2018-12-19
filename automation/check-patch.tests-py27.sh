@@ -1,3 +1,9 @@
 #!/bin/bash -xe
 
-automation/run-tests.sh py27
+source automation/common.sh
+
+prepare_env
+install_dependencies
+build_vdsm
+run_tests py27
+generate_combined_coverage_report py27
