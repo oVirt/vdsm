@@ -8,15 +8,6 @@ prepare_env
 install_dependencies
 build_vdsm
 
-function collect_logs {
-    res=$?
-    [ "$res" -ne 0 ] && echo "*** err: $res"
-    cd /var/log
-    tar --exclude "journal/*" -czf "$EXPORT_DIR/mock_varlogs.tar.gz" *
-    cd /var/host_log
-    tar --exclude "journal/*" -czf "$EXPORT_DIR/host_varlogs.tar.gz" *
-}
-
 trap collect_logs EXIT
 
 tests/profile debuginfo-install debuginfo-install -y python

@@ -94,3 +94,12 @@ generate_combined_coverage_report() {
     # Export subsystem coverage reports for viewing in jenkins.
     mv tests/htmlcov-* "$EXPORT_DIR"
 }
+
+collect_logs() {
+    res=$?
+    [ "$res" -ne 0 ] && echo "*** err: $res"
+    cd /var/log
+    tar --exclude "journal/*" -czf "$EXPORT_DIR/mock_varlogs.tar.gz" *
+    cd /var/host_log
+    tar --exclude "journal/*" -czf "$EXPORT_DIR/host_varlogs.tar.gz" *
+}
