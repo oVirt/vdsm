@@ -23,14 +23,13 @@ env:
       MAKE_TARGET=lint
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-29
       MAKE_TARGET=check
-    - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-rawhide
-      MAKE_TARGET=check
 
 matrix:
   fast_finish: true
   allow_failures:
+    # Fedora 29 uses python 3.7, breaking compatibility again by making "async"
+    # a keyword.
     - env: DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-29 MAKE_TARGET=check
-    - env: DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-rawhide MAKE_TARGET=check
 
 before_install:
   - docker --version
