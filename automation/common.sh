@@ -103,3 +103,21 @@ collect_logs() {
     cd /var/host_log
     tar --exclude "journal/*" -czf "$EXPORT_DIR/host_varlogs.tar.gz" *
 }
+
+run_tests() {
+    local python_version="$1"
+
+    if [ -z "$EXPORT_DIR" ]; then
+        (>&2 echo "*** EXPORT_DIR must be set to run tests!")
+        exit 1
+    fi
+
+    trap collect_logs EXIT
+
+    tests/profile debuginfo-install debuginfo-install -y python
+
+    # Make sure we have enough loop device nodes.
+    create_loop_devices 8
+
+    TIMEOUT=600 make "tests-$python_version" NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
+}
