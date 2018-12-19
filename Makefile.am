@@ -167,7 +167,7 @@ python3: all
 	fi
 
 # Note: dependencies ordered by time needed to run them
-check: gitignore execcmd abs_imports py3division imports python3 flake8 pylint tests
+check: lint tests
 
 check-recursive:
 	@true
@@ -179,6 +179,10 @@ check-all:
 .PHONY: check-unit
 check-unit:
 	$(MAKE) -C tests/ check NOSE_EVAL_ATTR="type=='unit'"
+
+.PHONY: lint
+# Note: dependencies ordered by time needed to run them
+lint: gitignore execcmd abs_imports py3division imports python3 flake8 pylint
 
 .PHONY: tests
 tests: tests-py27 tests-py36
