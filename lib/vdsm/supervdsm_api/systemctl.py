@@ -20,21 +20,10 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from vdsm.common import cmdutils
-from vdsm.common import commands
-
+from vdsm.common import systemctl
 from . import expose
 
 
 @expose
-def systemd_run(cmd, scope=False, unit=None, slice=None, uid=None, gid=None,
-                accounting=None):
-    cmd = cmdutils.systemd_run(
-        cmd,
-        scope=scope,
-        unit=unit,
-        slice=slice,
-        uid=uid,
-        gid=gid,
-        accounting=accounting)
-    return commands.run(cmd)
+def systemctl_stop(name):
+    return systemctl.stop(name)

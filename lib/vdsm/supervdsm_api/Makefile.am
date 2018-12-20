@@ -22,12 +22,13 @@ include $(top_srcdir)/build-aux/Makefile.subs
 supervdsm_apidir = $(vdsmpylibdir)/supervdsm_api
 dist_supervdsm_api_PYTHON = \
 	__init__.py \
-	test.py \
 	hwinfo.py \
 	ksm.py \
 	mkimage.py \
 	network.py \
+	systemctl.py \
 	systemd.py \
+	test.py \
 	udev.py \
 	virt.py \
 	$(NULL)

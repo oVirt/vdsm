@@ -32,6 +32,7 @@ import time
 
 from vdsm.common import constants
 from vdsm.common import properties
+from vdsm.common import systemctl
 from vdsm.common import supervdsm
 from vdsm.common.time import monotonic_time
 
@@ -122,7 +123,7 @@ def start_server(server_id, config):
 def stop_server(server_id):
     service = _service_name(server_id)
     log.info("Stopping transient service %s", service)
-    supervdsm.getProxy().systemctl_stop(service)
+    systemctl.stop(service)
 
 
 def _service_name(server_id):
