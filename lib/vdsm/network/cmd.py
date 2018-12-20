@@ -22,7 +22,7 @@ from __future__ import division
 
 import uuid
 
-from vdsm.common.cmdutils import systemd_run
+from vdsm.common import systemd
 from vdsm.common.cmdutils import exec_cmd as exec_sync_bytes
 from vdsm.network import py2to3
 
@@ -43,9 +43,9 @@ def exec_sync(cmds):
 
 def exec_systemd_new_unit(cmds, slice_name):
     # TODO: We set unique uuid for every run to not use the same unit twice
-    # and prevent systemd_run race (BZ#1259468). This uuid could be dropped
+    # and prevent systemd-run race (BZ#1259468). This uuid could be dropped
     # when BZ#1272368 will be solved or when we use systemd >= v220.
     unit = uuid.uuid4()
-    cmds = systemd_run(cmds, scope=True, unit=unit, slice=slice_name)
+    cmds = systemd.wrap(cmds, scope=True, unit=unit, slice=slice_name)
 
     return exec_sync(cmds)

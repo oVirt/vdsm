@@ -37,8 +37,6 @@ from vdsm.common.config import config
 from vdsm.common.password import ProtectedPassword
 from vdsm.common.time import monotonic_time
 
-SYSTEMD_RUN = "/usr/bin/systemd-run"
-
 log = logging.getLogger("procutils")
 
 # receive() source names
@@ -112,32 +110,6 @@ def _list2cmdline(args):
 # for including in a command passed to the shell. The safe characters were
 # stolen from pipes._safechars.
 _needs_quoting = re.compile(r'[^A-Za-z0-9_%+,\-./:=@]').search
-
-
-def systemd_run(cmd, scope=False, unit=None, slice=None, uid=None, gid=None,
-                accounting=None):
-    command = [SYSTEMD_RUN]
-    if scope:
-        command.append('--scope')
-    if unit:
-        command.append('--unit=%s' % unit)
-    if slice:
-        command.append('--slice=%s' % slice)
-    if uid is not None:
-        command.append('--uid=%s' % uid)
-    if gid is not None:
-        command.append('--gid=%s' % gid)
-    if accounting is not None:
-        command.extend(['--property={}Accounting=1'.format(acct)
-                        for acct in accounting])
-    command.extend(cmd)
-    return command
-
-
-class Accounting(object):
-    CPU = 'CPU'
-    Memory = 'Memory'
-    BlockIO = 'BlockIO'
 
 
 def exec_cmd(cmd, env=None):

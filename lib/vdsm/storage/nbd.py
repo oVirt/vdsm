@@ -33,7 +33,7 @@ import time
 from vdsm.common import constants
 from vdsm.common import properties
 from vdsm.common import systemctl
-from vdsm.common import supervdsm
+from vdsm.common import systemd
 from vdsm.common.time import monotonic_time
 
 from . import constants as sc
@@ -107,11 +107,7 @@ def start_server(server_id, config):
              "socket %s",
              service, cfg.sd_id, cfg.vol_id, sock)
 
-    supervdsm.getProxy().systemd_run(
-        cmd,
-        unit=service,
-        uid=os.getuid(),
-        gid=os.getgid())
+    systemd.run(cmd, unit=service, uid=os.getuid(), gid=os.getgid())
 
     if not _wait_for_socket(sock, 1.0):
         raise Timeout("Timeout starting NBD server {}: {}"

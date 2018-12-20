@@ -30,9 +30,9 @@ from collections import namedtuple
 
 from vdsm import constants
 from vdsm import utils
-from vdsm.common import cmdutils
 from vdsm.common import commands
 from vdsm.common import supervdsm
+from vdsm.common import systemd
 from vdsm.common import udevadm
 from vdsm.config import config
 from vdsm.storage import fileUtils
@@ -272,7 +272,7 @@ def _mount(fs_spec, fs_file, mntOpts=None, vfstype=None, cgroup=None):
     cmd.extend((fs_spec, fs_file))
 
     if cgroup:
-        cmd = cmdutils.systemd_run(cmd, scope=True, slice=cgroup)
+        cmd = systemd.wrap(cmd, scope=True, slice=cgroup)
 
     _runcmd(cmd)
 
