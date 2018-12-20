@@ -18,10 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 """
-To run this test you must have writable /run/vdsm and running supervdsm serving
-the user running the tests.
+To run this test you must run the tests as root, or have writable /run/vdsm and
+running supervdsm serving the user running the tests.
 
-To easier to way to setup the enviroment is:
+To setup the environment for unprivileged user:
 
     $ sudo mkdir /run/vdsm
 
@@ -63,9 +63,17 @@ PREALLOCATION = {
 }
 
 
-requires_supervdsm = pytest.mark.skipif(
-    not os.access(supervdsm.ADDRESS, os.W_OK),
-    reason="require running supervdsm")
+def have_supervdsm():
+    return os.access(supervdsm.ADDRESS, os.W_OK)
+
+
+def is_root():
+    return os.geteuid() == 0
+
+
+requires_privileges = pytest.mark.skipif(
+    not (is_root() or have_supervdsm()),
+    reason="requires root or running supervdsm")
 
 
 broken_on_ci = pytest.mark.skipif(
@@ -98,7 +106,7 @@ def nbd_env(monkeypatch):
 
 
 @broken_on_ci
-@requires_supervdsm
+@requires_privileges
 @pytest.mark.parametrize("format", [sc.COW_FORMAT, sc.RAW_FORMAT])
 @pytest.mark.parametrize("allocation", [sc.SPARSE_VOL, sc.PREALLOCATED_VOL])
 @pytest.mark.parametrize("discard", [True, False])
@@ -139,7 +147,7 @@ def test_roundtrip(nbd_env, format, allocation, discard):
 
 
 @broken_on_ci
-@requires_supervdsm
+@requires_privileges
 @pytest.mark.parametrize("format", [sc.COW_FORMAT, sc.RAW_FORMAT])
 @pytest.mark.parametrize("allocation", [sc.SPARSE_VOL, sc.PREALLOCATED_VOL])
 def test_readonly(nbd_env, format, allocation):
