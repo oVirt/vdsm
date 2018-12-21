@@ -32,7 +32,7 @@ from vdsm.common.cmdutils import exec_cmd
 
 def on_fedora():
     with open("/etc/redhat-release") as f:
-        return re.search(r"Fedora release 2[78]", f.readline())
+        return re.search(r"Fedora release 2[89]", f.readline())
 
 
 def on_ovirt_ci():
@@ -55,7 +55,7 @@ class TestPyWatch(object):
         assert b'Terminating watched process' in out
         assert rc == 128 + signal.SIGTERM
 
-    @pytest.mark.xfail(on_fedora(), reason="py-bt is broken on Fedora 27")
+    @pytest.mark.xfail(on_fedora(), reason="py-bt is broken on Fedora")
     @pytest.mark.xfail(on_ovirt_ci(),
                        reason="py-bt randomly unavailable on EL7 nodes")
     def test_timeout_backtrace(self):
