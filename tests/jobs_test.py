@@ -32,7 +32,6 @@ from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase, expandPermutations, permutations
 from testlib import make_config
 from testlib import start_thread
-from testlib import wait_for_job
 
 
 class TestingJob(jobs.Job):
@@ -111,7 +110,6 @@ class JobsTests(VdsmTestCase):
     def run_job(self, job):
         self.assertEqual(jobs.STATUS.PENDING, job.status)
         job.run()
-        wait_for_job(job)
 
     def test_job_initial_state(self):
         job = TestingJob()

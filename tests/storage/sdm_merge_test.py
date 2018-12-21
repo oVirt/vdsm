@@ -42,7 +42,6 @@ from . qemuio import verify_pattern
 
 from testlib import expandPermutations, make_uuid, permutations
 from testlib import VdsmTestCase
-from testlib import wait_for_job
 
 from vdsm import jobs
 from vdsm.storage import blockVolume
@@ -116,7 +115,6 @@ class TestMergeSubchain(VdsmTestCase):
             subchain = merge.SubchainInfo(subchain_info, 0)
             job = api_merge.Job(job_id, subchain)
             job.run()
-            wait_for_job(job)
             self.assertEqual(job.status, jobs.STATUS.DONE)
 
             # Verify that the chain data was merged
@@ -210,7 +208,6 @@ class TestMergeSubchain(VdsmTestCase):
             subchain.validate = fail
             job = api_merge.Job(job_id, subchain)
             job.run()
-            wait_for_job(job)
             self.assertEqual(job.status, jobs.STATUS.FAILED)
             self.assertEqual(type(job.error), se.VolumeIsNotInChain)
 

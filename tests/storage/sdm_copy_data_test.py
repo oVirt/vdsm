@@ -46,7 +46,6 @@ from testValidation import broken_on_ci
 from testlib import make_uuid
 from testlib import VdsmTestCase, expandPermutations, permutations
 from testlib import start_thread
-from testlib import wait_for_job
 
 from vdsm import jobs
 from vdsm.common import exception
@@ -143,7 +142,6 @@ class TestCopyDataDIV(VdsmTestCase):
             job = copy_data.Job(job_id, 0, source, dest)
 
             job.run()
-            wait_for_job(job)
             self.assertEqual(sorted(self.expected_locks(src_vol, dst_vol)),
                              sorted(guarded.context.locks))
 
@@ -177,7 +175,6 @@ class TestCopyDataDIV(VdsmTestCase):
                             img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
                 job = copy_data.Job(job_id, 0, source, dest)
                 job.run()
-                wait_for_job(job)
                 self.assertEqual(sorted(self.expected_locks(src_vol, dst_vol)),
                                  sorted(guarded.context.locks))
             verify_qemu_chain(env.dst_chain)
@@ -197,7 +194,6 @@ class TestCopyDataDIV(VdsmTestCase):
                         img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
             job = copy_data.Job(job_id, 0, source, dest)
             job.run()
-            wait_for_job(job)
             self.assertEqual(
                 qemuimg.info(dst_vol.volumePath)['virtualsize'],
                 qemuimg.info(dst_vol.volumePath)['actualsize'])
@@ -230,7 +226,6 @@ class TestCopyDataDIV(VdsmTestCase):
             job = copy_data.Job(job_id, 0, source, dest)
 
             job.run()
-            wait_for_job(job)
 
             actual_compat = qemuimg.info(dst_vol.volumePath)['compat']
             self.assertEqual(actual_compat, env.sd_manifest.qcow2_compat())
@@ -266,7 +261,6 @@ class TestCopyDataDIV(VdsmTestCase):
                         img_id=dst_vol.imgUUID, vol_id=dst_vol.volUUID)
             job = copy_data.Job(job_id, 0, source, dest)
             job.run()
-            wait_for_job(job)
             self.assertEqual(jobs.STATUS.DONE, job.status)
 
             # Verify that the copy succeeded

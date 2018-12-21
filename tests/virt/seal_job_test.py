@@ -33,7 +33,6 @@ from testlib import make_uuid
 from testlib import namedTemporaryDir
 from testlib import recorded
 from testlib import VdsmTestCase
-from testlib import wait_for_job
 from monkeypatch import MonkeyPatch
 
 
@@ -113,7 +112,6 @@ class SealJobTest(VdsmTestCase):
             job = seal.Job(job_id, sp_id, images, irs)
             job.autodelete = False
             job.run()
-            wait_for_job(job)
 
             self.assertEqual(jobs.STATUS.DONE, job.status)
             self.assertEqual(expected, irs.__calls__)
@@ -154,7 +152,6 @@ class SealJobTest(VdsmTestCase):
             job = seal.Job(job_id, sp_id, images, irs)
             job.autodelete = False
             job.run()
-            wait_for_job(job)
 
             self.assertEqual(jobs.STATUS.FAILED, job.status)
             self.assertEqual(expected, irs.__calls__)

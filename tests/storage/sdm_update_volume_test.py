@@ -39,7 +39,6 @@ from storage.storagetestlib import (
 
 from testlib import make_uuid
 from testlib import VdsmTestCase, expandPermutations, permutations
-from testlib import wait_for_job
 
 from vdsm import jobs
 from vdsm.storage import blockVolume
@@ -90,7 +89,6 @@ class TestUpdateVolume(VdsmTestCase):
                                     make_endpoint_from_volume(vol),
                                     dict(legality=expected))
             job.run()
-            wait_for_job(job)
             self.assertEqual(jobs.STATUS.DONE, job.status)
             self.assertEqual(expected, vol.getMetaParam(sc.LEGALITY))
             self.assertEqual(generation + 1,
@@ -111,7 +109,6 @@ class TestUpdateVolume(VdsmTestCase):
                                     make_endpoint_from_volume(vol),
                                     dict(legality=legality))
             job.run()
-            wait_for_job(job)
             self.assertEqual(job.status, jobs.STATUS.FAILED)
             self.assertEqual(type(job.error), se.InvalidVolumeUpdate)
             self.assertEqual(generation,
@@ -127,7 +124,6 @@ class TestUpdateVolume(VdsmTestCase):
                                     make_endpoint_from_volume(vol),
                                     dict(description=description))
             job.run()
-            wait_for_job(job)
             self.assertEqual(jobs.STATUS.DONE, job.status)
             self.assertEqual(description,
                              vol.getMetaParam(sc.DESCRIPTION))
@@ -143,7 +139,6 @@ class TestUpdateVolume(VdsmTestCase):
                                     make_endpoint_from_volume(leaf_vol),
                                     dict(type=sc.type2name(sc.SHARED_VOL)))
             job.run()
-            wait_for_job(job)
             self.assertEqual(jobs.STATUS.DONE, job.status)
             self.assertEqual(sc.type2name(sc.SHARED_VOL),
                              leaf_vol.getMetaParam(sc.VOLTYPE))
@@ -159,7 +154,6 @@ class TestUpdateVolume(VdsmTestCase):
                                     make_endpoint_from_volume(top_vol),
                                     dict(type=sc.type2name(sc.SHARED_VOL)))
             job.run()
-            wait_for_job(job)
             self.assertEqual(job.status, jobs.STATUS.FAILED)
             self.assertEqual(type(job.error), se.InvalidVolumeUpdate)
             self.assertEqual(sc.type2name(sc.LEAF_VOL),
@@ -177,7 +171,6 @@ class TestUpdateVolume(VdsmTestCase):
                                     make_endpoint_from_volume(shared_vol),
                                     dict(type=sc.type2name(sc.SHARED_VOL)))
             job.run()
-            wait_for_job(job)
             self.assertEqual(job.status, jobs.STATUS.FAILED)
             self.assertEqual(type(job.error), se.InvalidVolumeUpdate)
             self.assertEqual(generation,
@@ -193,7 +186,6 @@ class TestUpdateVolume(VdsmTestCase):
                                     make_endpoint_from_volume(internal_vol),
                                     dict(type=sc.type2name(sc.SHARED_VOL)))
             job.run()
-            wait_for_job(job)
             self.assertEqual(job.status, jobs.STATUS.FAILED)
             self.assertEqual(type(job.error), se.InvalidVolumeUpdate)
             self.assertEqual(generation,
@@ -207,7 +199,6 @@ class TestUpdateVolume(VdsmTestCase):
                                     make_endpoint_from_volume(vol),
                                     dict(generation=44))
             job.run()
-            wait_for_job(job)
             self.assertEqual(jobs.STATUS.DONE, job.status)
             self.assertEqual(44, vol.getMetaParam(sc.GENERATION))
 

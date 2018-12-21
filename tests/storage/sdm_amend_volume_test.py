@@ -39,7 +39,6 @@ from storage.storagetestlib import (
 
 from testlib import make_uuid
 from testlib import VdsmTestCase, expandPermutations, permutations
-from testlib import wait_for_job
 
 from vdsm import jobs
 from vdsm.common import cmdutils
@@ -99,7 +98,6 @@ class TestAmendVolume(VdsmTestCase):
             qcow2_attr = dict(compat='1.1')
             job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
             job.run()
-            wait_for_job(job)
             self.assertEqual(jobs.STATUS.DONE, job.status)
             self.assertEqual('1.1', env_vol.getQemuImageInfo()['compat'])
             self.assertEqual(generation + 1,
@@ -118,7 +116,6 @@ class TestAmendVolume(VdsmTestCase):
             qcow2_attr = dict(compat='1.1')
             job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
             job.run()
-            wait_for_job(job)
             self.assertEqual(jobs.STATUS.FAILED, job.status)
             self.assertEqual(type(job.error), se.GeneralException)
             self.assertEqual(sc.LEGAL_VOL, env_vol.getLegality())
@@ -138,7 +135,6 @@ class TestAmendVolume(VdsmTestCase):
             qcow2_attr = dict(compat='1.1')
             job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
             job.run()
-            wait_for_job(job)
             self.assertEqual(jobs.STATUS.FAILED, job.status)
             self.assertEqual(type(job.error), se.GeneralException)
             self.assertEqual(sc.LEGAL_VOL, env_vol.getLegality())
@@ -157,7 +153,6 @@ class TestAmendVolume(VdsmTestCase):
             qcow2_attr = dict(compat='1.1')
             job = amend_volume.Job(job_id, 0, vol, qcow2_attr)
             job.run()
-            wait_for_job(job)
             self.assertEqual(jobs.STATUS.FAILED, job.status)
             self.assertEqual(type(job.error), se.GeneralException)
             self.assertEqual(sc.LEGAL_VOL, env_vol.getLegality())
