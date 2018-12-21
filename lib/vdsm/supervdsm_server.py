@@ -35,7 +35,6 @@ from contextlib import closing
 from functools import wraps
 from multiprocessing import Pipe
 from multiprocessing import Process
-from pwd import getpwnam
 
 import six
 
@@ -319,7 +318,7 @@ def main(args):
             servThread = concurrent.thread(server.serve_forever)
             servThread.start()
 
-            chown(address, getpwnam(args.sock_user).pw_uid, args.sock_group)
+            chown(address, args.sock_user, args.sock_group)
 
             if args.enable_network:
                 init_privileged_network_components()
