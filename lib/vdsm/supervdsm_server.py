@@ -20,19 +20,22 @@
 from __future__ import absolute_import
 
 import argparse
-from pwd import getpwnam
-import sys
-import os
 import errno
 import importlib
-import pkgutil
-from functools import wraps
-import resource
-import signal
-import syslog
 import logging
 import logging.config
+import os
+import pkgutil
+import resource
+import signal
+import sys
+import syslog
+
 from contextlib import closing
+from functools import wraps
+from multiprocessing import Pipe
+from multiprocessing import Process
+from pwd import getpwnam
 
 import six
 
@@ -44,7 +47,6 @@ from vdsm.common import sigutils
 from vdsm.common import time
 from vdsm.common import zombiereaper
 
-from multiprocessing import Pipe, Process
 try:
     from vdsm.gluster import listPublicFunctions
     _glusterEnabled = True
