@@ -38,6 +38,6 @@ info["name"] = name
 info["start"] = start
 info["status"] = status
 
-print("PROFILE " + json.dumps(info))
+print("PROFILE " + json.dumps(info, sort_keys=True))
 
 sys.exit(status)
