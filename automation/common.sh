@@ -98,10 +98,20 @@ generate_combined_coverage_report() {
 collect_logs() {
     res=$?
     [ "$res" -ne 0 ] && echo "*** err: $res"
-    cd /var/log
-    tar --exclude "journal/*" -czf "$EXPORT_DIR/mock_varlogs.tar.gz" *
-    cd /var/host_log
-    tar --exclude "journal/*" -czf "$EXPORT_DIR/host_varlogs.tar.gz" *
+
+    # NOTE: Tar fails randomly when some log file is modified while tar is
+    # reading it, and there is no way to detet and filter this failure.
+    # We also do not want to fail the build if log collections failed.
+
+    tar --directory /var/log \
+        --exclude "journal/*" \
+        -czf "$EXPORT_DIR/mock_varlogs.tar.gz" \
+        . || echo "WARNING: Ignoring error collecting logs in /var/log"
+
+    tar --directory /var/host_log \
+        --exclude "journal/*" \
+        -czf "$EXPORT_DIR/host_varlogs.tar.gz" \
+        . || echo "WARNING: Ignoring error collecting logs in /var/host_log"
 }
 
 run_tests() {
