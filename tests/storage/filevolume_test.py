@@ -24,8 +24,6 @@ from __future__ import division
 from contextlib import contextmanager
 import os
 
-import pytest
-
 from storage.storagetestlib import (
     fake_env,
     make_qemu_chain,
@@ -92,7 +90,6 @@ class TestFileVolumeManifest(object):
 
             assert vol.getImageVolumes(sduuid, img_id) == [vol_id]
 
-    @pytest.mark.xfail(reason="Wrong parsing of ipv6 address")
     def test_get_children(self):
         mnt_dir = "[2001:db8:85a3::8a2e:370:7334]:1234:_path"
         size = 5 * MEGAB
