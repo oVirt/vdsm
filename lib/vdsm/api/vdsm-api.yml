@@ -1105,6 +1105,91 @@ types:
             type: string
         type: object
 
+
+    ConnectorInfo: &ConnectorInfo
+        added: '4.3'
+        description: Connector information. The data structure is according
+            to os-brick output.
+        name: ConnectorInfo
+        properties:
+        -   description: IQN initiator
+            name: initiator
+            type: string
+        -   description: IP address of the host
+            name: ip
+            type: string
+        -   description: Hardware platform
+            name: platform
+            type: string
+        -   description: The operating system type
+            name: os_type
+            type: string
+        -   description: Describe if volume attachment is local (RBD only)
+            name: do_local_attach
+            type: boolean
+        -   description: Host name
+            name: host
+            type: string
+        -   description: Describe if multipath is enabled
+            name: multipath
+            type: boolean
+        type: object
+
+    ManagedVolumeConnection: &ManagedVolumeConnection
+        added: '4.3'
+        description: Managed Volume Connection information. The data structure
+            is according to Cinder output.
+        name: ManagedVolumeConnection
+        properties:
+        -   description: The volume type (iscsi, fibre_channel, rbd)
+            name: driver_volume_type
+            type: string
+        -   description: A map containing needed information about the
+                volume. The specific options change according to the
+                volume type.
+            name: data
+            type: *StringMap
+        type: object
+
+    ManagedVolumeAttachement: &ManagedVolumeAttachement
+        added: '4.3'
+        description: Attached managed volume information.
+        name: ManagedVolumeAttachement
+        properties:
+        -   description: The local volume path
+                (for example /dev/dm-25, /dev/sda, /dev/rbd1)
+            name: path
+            type: string
+        -   description: The volume type (for example block)
+            name: type
+            type: string
+        -   defaultvalue: null
+            description: The WWN scsi ID of the volume (optional)
+            name: scsi_wwn
+            type: string
+        -   defaultvalue: null
+            description: The multipath ID of the volume (optional)
+            name: multipath_id
+            type: string
+        -   defaultvalue: null
+            description: The Ceph local conf file path (optional)
+            name: conf
+            type: string
+        type: object
+
+    ManagedVolumeInformation: &ManagedVolumeInformation
+        added: '4.3'
+        description: Volume information after attachment.
+        name: ManagedVolumeInformation
+        properties:
+        -   description: The volume path to be used in the VM XML
+            name: path
+            type: string
+        -   description: The attached volume information
+            name: attachment
+            type: *ManagedVolumeAttachement
+        type: object
+
     FenceNodeAction: &FenceNodeAction
         added: '3.1'
         description: Specifies the type of fencing operation to perform.
@@ -7046,6 +7131,13 @@ types:
             type: string
             datatype: boolean
             added: '4.3'
+
+        -   defaultvalue: null
+            description: Connector information. Only present if os-brick
+                is installed on the host
+            name: connector_info
+            type: *ConnectorInfo
+            added: '4.3'
         type: object
 
     VdsmNetworkCapabilities: &VdsmNetworkCapabilities
@@ -8647,6 +8739,42 @@ Host.setSafeNetworkConfig:
     added: '3.1'
     description: Mark the current network configuration good and persist any
         changes.
+
+ManagedVolume.attach_volume:
+    added: '4.3'
+    description: Attach a volume. If the volume is already attached an error
+        will be returned.
+    params:
+    -   description: The volume ID
+        name: vol_id
+        type: *UUID
+    -   description: The information needed to attach a volume
+        name: connection_info
+        type: *ManagedVolumeConnection
+    return:
+        description: Information about the attached volume.
+        type: *ManagedVolumeInformation
+
+ManagedVolume.detach_volume:
+    added: '4.3'
+    description: Detach a volume. If the volume is not attached, the operation
+          will succeed.
+    params:
+    -   description: The volume ID
+        name: vol_id
+        type: *UUID
+
+ManagedVolume.volume_info:
+    added: '4.3'
+    description: Get a volume information
+    params:
+    -   description: The volume ID
+        name: vol_id
+        type: *UUID
+    return:
+        description: Information about the attached volume. If the required
+            volume is not attached an ResourceDoesNotExist error is returned.
+        type: *ManagedVolumeInformation
 
 ISCSIConnection.discoverSendTargets:
     added: '3.1'

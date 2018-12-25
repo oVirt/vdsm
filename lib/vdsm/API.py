@@ -1722,3 +1722,24 @@ class NBD(APIBase):
 
     def stop_server(self, server_id):
         return self._irs.stop_nbd_server(server_id)
+
+
+class ManagedVolume(APIBase):
+
+    @api.logged(on="api.storage")
+    @api.method
+    def attach_volume(self, vol_id, connection_info):
+        """
+        attach volume and return attached device information
+        """
+        raise exception.MethodNotImplemented
+
+    @api.logged(on="api.storage")
+    @api.method
+    def detach_volume(self, vol_id):
+        raise exception.MethodNotImplemented
+
+    @api.logged(on="api.storage")
+    @api.method
+    def volume_info(self, vol_id):
+        raise exception.MethodNotImplemented
