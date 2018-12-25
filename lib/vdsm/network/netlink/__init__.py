@@ -20,7 +20,7 @@
 from __future__ import absolute_import
 from contextlib import contextmanager
 from functools import partial
-from threading import BoundedSemaphore
+import threading
 
 from six.moves import queue
 
@@ -31,26 +31,40 @@ _POOL_SIZE = 5
 _NL_SOCKET_BUFF_SIZE = 1024 * 512
 
 
+_tls = threading.local()
+
+
 class NLSocketPool(object):
     """Pool of netlink sockets."""
     def __init__(self, size):
         if size <= 0:
             raise ValueError('Invalid socket pool size %r. Must be positive')
-        self._semaphore = BoundedSemaphore(size)
+        self._semaphore = threading.BoundedSemaphore(size)
         self._sockets = queue.Queue(maxsize=size)
 
     @contextmanager
     def socket(self):
         """Returns a socket from the pool (creating it when needed)."""
-        with self._semaphore:
-            try:
-                sock = self._sockets.get_nowait()
-            except queue.Empty:
-                sock = _open_socket()
-            try:
-                yield sock
-            finally:
-                self._sockets.put_nowait(sock)
+        if hasattr(_tls, 'socket'):
+            yield _tls.socket
+        else:
+            with self._semaphore:
+                _tls.socket = self._get_socket()
+                try:
+                    yield _tls.socket
+                finally:
+                    self._put_socket(_tls.socket)
+                    del _tls.socket
+
+    def _get_socket(self):
+        try:
+            socket = self._sockets.get_nowait()
+        except queue.Empty:
+            socket = _open_socket()
+        return socket
+
+    def _put_socket(self, socket):
+        self._sockets.put_nowait(socket)
 
 
 _pool = NLSocketPool(_POOL_SIZE)
