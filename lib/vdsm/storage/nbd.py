@@ -118,6 +118,17 @@ def start_server(server_id, config):
 
 def stop_server(server_id):
     service = _service_name(server_id)
+
+    # systemctl.stop() does not have a way to detect that a server was not
+    # running, so we need to check the service state before we stop it. This
+    # is racy, but should be fine since service names are random and we start
+    # them only once.
+
+    info = systemctl.show(service, properties=("LoadState",))
+    if info and info[0]["LoadState"] == "not-found":
+        log.info("Transient service %s is not running", service)
+        return
+
     log.info("Stopping transient service %s", service)
     systemctl.stop(service)
 

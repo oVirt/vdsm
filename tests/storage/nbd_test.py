@@ -216,6 +216,12 @@ def test_shared_volume():
             nbd.start_server("no-server", config)
 
 
+@broken_on_ci
+def test_stop_server_not_running():
+    # Stopping non-existing server should succeed.
+    nbd.stop_server("no-such-server-uuid")
+
+
 @contextmanager
 def nbd_server(config):
     server_id = str(uuid.uuid4())
