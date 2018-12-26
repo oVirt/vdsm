@@ -26,6 +26,7 @@ import time
 from vdsm.common.time import monotonic_time
 
 from .nettestlib import Dummy
+from vdsm.network.netlink import NLSocketPool
 from vdsm.network.netlink import monitor
 from vdsm.network.sysctl import is_disabled_ipv6
 
@@ -212,6 +213,17 @@ class NetlinkEventMonitorTests(TestCaseBase):
             monitor.Monitor(groups=('blablabla',))
         with self.assertNotRaises():
             monitor.Monitor(groups=('link',))
+
+
+class TestSocketPool(TestCaseBase):
+
+    def test_reuse_socket_per_thread(self):
+        # The same thread should always get the same socket. Otherwise any
+        # recusion in the code will lead to a deadlock.
+        pool = NLSocketPool(3)
+        with pool.socket() as s1:
+            with pool.socket() as s2:
+                self.assertIs(s1, s2)
 
 
 def _is_subdict(subset, superset):
