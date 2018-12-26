@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@ from __future__ import division
 
 import pytest
 
+from vdsm.network import api as net_api
+from vdsm.network.initializer import init_unpriviliged_dhclient_monitor_ctx
 from vdsm.network.ipwrapper import linkSet, addrAdd
 
 from . import netfunctestlib as nftestlib
@@ -48,9 +50,21 @@ adapter = None
 
 
 @pytest.fixture(scope='module', autouse=True)
-def create_adapter():
+def create_adapter(target):
     global adapter
-    adapter = NetFuncTestAdapter()
+    adapter = NetFuncTestAdapter(target)
+
+
+@pytest.fixture(scope='module', autouse=True)
+def dhclient_monitor():
+    event_sink = FakeNotifier()
+    with init_unpriviliged_dhclient_monitor_ctx(event_sink, net_api):
+        yield
+
+
+class FakeNotifier:
+    def notify(self, event_id, params=None):
+        pass
 
 
 class IpFamily(object):
