@@ -290,6 +290,7 @@ class TestReuseBondOnLegacySwitch(object):
 
                     assert err.value.status == ne.ERR_USED_NIC
                     assert 'already used by' in err.value.msg
+                bond.destroy()
 
     def _set_ip_address(self, ip_address, iface):
         ip_data = address.IPAddressData(ip_address, device=iface)
