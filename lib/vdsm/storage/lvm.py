@@ -41,6 +41,8 @@ from itertools import chain
 from subprocess import list2cmdline
 
 from vdsm import constants
+from vdsm.common import errors
+
 from vdsm.storage import devicemapper
 from vdsm.storage import exception as se
 from vdsm.storage import misc
@@ -53,9 +55,14 @@ log = logging.getLogger("storage.LVM")
 
 PV_FIELDS = ("uuid,name,size,vg_name,vg_uuid,pe_start,pe_count,"
              "pe_alloc_count,mda_count,dev_size,mda_used_count")
+PV_FIELDS_LEN = len(PV_FIELDS.split(","))
+
 VG_FIELDS = ("uuid,name,attr,size,free,extent_size,extent_count,free_count,"
              "tags,vg_mda_size,vg_mda_free,lv_count,pv_count,pv_name")
+VG_FIELDS_LEN = len(VG_FIELDS.split(","))
+
 LV_FIELDS = "uuid,name,vg_name,attr,size,seg_start_pe,devices,tags"
+LV_FIELDS_LEN = len(LV_FIELDS.split(","))
 
 VG_ATTR_BITS = ("permission", "resizeable", "exported",
                 "partial", "allocation", "clustered")
@@ -71,6 +78,14 @@ VG_ATTR = namedtuple("VG_ATTR", VG_ATTR_BITS)
 LV = namedtuple("LV", LV_FIELDS + ",writeable,opened,active")
 LV_ATTR = namedtuple("LV_ATTR", LV_ATTR_BITS)
 Stub = namedtuple("Stub", "name, stale")
+
+
+class InvalidOutputLine(errors.Base):
+    msg = "Invalid {self.command} command ouptut line: {self.line!r}"
+
+    def __init__(self, command, line):
+        self.command = command
+        self.line = line
 
 
 class Unreadable(Stub):
@@ -330,6 +345,9 @@ class LVMCache(object):
             updatedPVs = {}
             for line in out:
                 fields = [field.strip() for field in line.split(SEPARATOR)]
+                if len(fields) != PV_FIELDS_LEN:
+                    raise InvalidOutputLine("pvs", line)
+
                 pv = makePV(*fields)
                 if pv.name == UNKNOWN:
                     log.error("Missing pv: %s in vg: %s", pv.uuid, pv.vg_name)
@@ -390,6 +408,9 @@ class LVMCache(object):
             vgsFields = {}
             for line in out:
                 fields = [field.strip() for field in line.split(SEPARATOR)]
+                if len(fields) != VG_FIELDS_LEN:
+                    raise InvalidOutputLine("vgs", line)
+
                 uuid = fields[VG._fields.index("uuid")]
                 pvNameIdx = VG._fields.index("pv_name")
                 pv_name = fields[pvNameIdx]
@@ -448,6 +469,9 @@ class LVMCache(object):
             updatedLVs = {}
             for line in out:
                 fields = [field.strip() for field in line.split(SEPARATOR)]
+                if len(fields) != LV_FIELDS_LEN:
+                    raise InvalidOutputLine("lvs", line)
+
                 lv = makeLV(*fields)
                 # For LV we are only interested in its first extent
                 if lv.seg_start_pe == "0":
@@ -482,6 +506,9 @@ class LVMCache(object):
             updatedLVs = set()
             for line in out:
                 fields = [field.strip() for field in line.split(SEPARATOR)]
+                if len(fields) != LV_FIELDS_LEN:
+                    raise InvalidOutputLine("lvs", line)
+
                 lv = makeLV(*fields)
                 # For LV we are only interested in its first extent
                 if lv.seg_start_pe == "0":
