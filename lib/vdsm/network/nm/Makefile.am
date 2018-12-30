@@ -21,4 +21,4 @@ SUBDIRS = nmdbus
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmnetworknmdir = $(vdsmpylibdir)/network/nm
-dist_vdsmnetworknm_PYTHON = *.py
+dist_vdsmnetworknm_PYTHON = $(srcdir)/*.py

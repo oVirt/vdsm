@@ -19,4 +19,4 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmmetricsdir = $(vdsmpylibdir)/metrics
-dist_vdsmmetrics_PYTHON = *.py
+dist_vdsmmetrics_PYTHON = $(srcdir)/*.py

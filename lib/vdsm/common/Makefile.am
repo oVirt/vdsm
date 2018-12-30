@@ -23,13 +23,13 @@ SUBDIRS = network
 vdsmcommondir = $(vdsmpylibdir)/common
 
 nodist_vdsmcommon_PYTHON = \
-	config.py \
-	constants.py \
-	dsaversion.py \
+	$(srcdir)/config.py \
+	$(srcdir)/constants.py \
+	$(srcdir)/dsaversion.py \
 	$(NULL)
 
 dist_vdsmcommon_PYTHON = \
-	$(filter-out $(nodist_vdsmcommon_PYTHON), $(wildcard *.py))
+	$(filter-out $(nodist_vdsmcommon_PYTHON), $(wildcard $(srcdir)/*.py))
 	$(NULL)
 
 EXTRA_DIST = \

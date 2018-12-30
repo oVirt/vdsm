@@ -19,4 +19,4 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmnetworklinkbonddir = $(vdsmpylibdir)/network/link/bond
-dist_vdsmnetworklinkbond_PYTHON = *.py
+dist_vdsmnetworklinkbond_PYTHON = $(srcdir)/*.py

@@ -19,4 +19,4 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmnetworkipaddressdir = $(vdsmpylibdir)/network/ip/address
-dist_vdsmnetworkipaddress_PYTHON = *.py
+dist_vdsmnetworkipaddress_PYTHON = $(srcdir)/*.py

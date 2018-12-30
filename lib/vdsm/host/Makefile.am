@@ -19,4 +19,4 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmhostdir = $(vdsmpylibdir)/host
-dist_vdsmhost_PYTHON = *.py
+dist_vdsmhost_PYTHON = $(srcdir)/*.py

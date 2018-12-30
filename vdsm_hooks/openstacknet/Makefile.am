@@ -107,7 +107,7 @@ uninstall-data-consts:
 
 install-data-sudoers:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sudoers.d
-	$(INSTALL_DATA) $(srcdir)/sudoers \
+	$(INSTALL_DATA) ./sudoers \
 		$(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_openstacknet
 
 uninstall-data-sudoers:

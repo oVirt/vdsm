@@ -22,4 +22,4 @@ SUBDIRS = configurators ip link lldp lldpad netinfo netlink ovs tc nm netswitch
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmnetworkdir = $(vdsmpylibdir)/network
-dist_vdsmnetwork_PYTHON = *.py
+dist_vdsmnetwork_PYTHON = $(srcdir)/*.py

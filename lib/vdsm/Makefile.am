@@ -76,8 +76,8 @@ EXTRA_DIST = \
 	vdsm.conf.sample \
 	$(NULL)
 
-vdsm.conf.sample: Makefile common/config.py
-	@echo "  CONFIG $@"; $(PYTHON) < common/config.py > $@
+vdsm.conf.sample: Makefile $(srcdir)/common/config.py
+	@echo "  CONFIG $@"; $(PYTHON) < $(srcdir)/common/config.py > $@
 
 install-data-local: \
 	install-data-sample-vdsm-conf

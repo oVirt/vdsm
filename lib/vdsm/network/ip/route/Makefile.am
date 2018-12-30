@@ -19,4 +19,4 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmnetworkiproutedir = $(vdsmpylibdir)/network/ip/route
-dist_vdsmnetworkiproute_PYTHON = *.py
+dist_vdsmnetworkiproute_PYTHON = $(srcdir)/*.py

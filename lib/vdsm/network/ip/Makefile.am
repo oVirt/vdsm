@@ -26,4 +26,4 @@ SUBDIRS = \
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmnetworkipdir = $(vdsmpylibdir)/network/ip
-dist_vdsmnetworkip_PYTHON = *.py
+dist_vdsmnetworkip_PYTHON = $(srcdir)/*.py

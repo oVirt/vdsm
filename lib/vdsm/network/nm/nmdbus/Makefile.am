@@ -19,4 +19,4 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmnetworknmdbusdir = $(vdsmpylibdir)/network/nm/nmdbus
-dist_vdsmnetworknmdbus_PYTHON = *.py
+dist_vdsmnetworknmdbus_PYTHON = $(srcdir)/*.py

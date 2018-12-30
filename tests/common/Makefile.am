@@ -22,5 +22,5 @@ vdsmcommontestsdir = ${vdsmtestsdir}/common
 
 dist_vdsmcommontests_PYTHON = \
 	__init__.py \
-	*_test.py \
+	$(srcdir)/*_test.py \
 	$(NULL)

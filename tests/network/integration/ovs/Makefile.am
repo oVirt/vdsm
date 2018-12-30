@@ -22,6 +22,6 @@ vdsmnetworkintegrationovstestsdir = ${vdsmtestsdir}/network/integration/ovs
 
 dist_vdsmnetworkintegrationovstests_PYTHON = \
 	__init__.py \
-	*_test.py \
+	$(srcdir)/*_test.py \
 	conftest.py \
 	$(NULL)

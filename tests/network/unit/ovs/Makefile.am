@@ -22,5 +22,5 @@ vdsmnetworkunitovstestsdir = ${vdsmtestsdir}/network/unit/ovs
 
 dist_vdsmnetworkunitovstests_PYTHON = \
 	__init__.py \
-	*_test.py \
+	$(srcdir)/*_test.py \
 	$(NULL)

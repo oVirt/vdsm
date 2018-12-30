@@ -57,7 +57,7 @@ install-data-service:
 
 install-unit-service:
 	$(MKDIR_P) $(DESTDIR)$(SYSTEMD_UNIT_DIR)
-	$(INSTALL_SCRIPT) -Dm 0644 $(srcdir)/$(unitfile) \
+	$(INSTALL_SCRIPT) -Dm 0644 ./$(unitfile) \
 		$(DESTDIR)$(SYSTEMD_UNIT_DIR)/$(unitfile)
 
 uninstall-local: uninstall-data-utils uninstall-data-service uninstall-unit-service

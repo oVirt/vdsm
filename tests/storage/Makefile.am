@@ -21,9 +21,9 @@
 vdsmstoragetestsdir = ${vdsmtestsdir}/storage
 
 dist_vdsmstoragetests_PYTHON = \
-	*.py \
+	$(srcdir)/*.py \
 	$(NULL)
 
 dist_vdsmstoragetests_DATA = \
-	*.out \
+	$(srcdir)/*.out \
 	$(NULL)

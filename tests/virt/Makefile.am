@@ -25,7 +25,7 @@ SUBDIRS = \
 	  $(NULL)
 
 dist_vdsmtestsvirt_PYTHON = \
-	*_test.py \
+	$(srcdir)/*_test.py \
 	collectdlib.py \
 	$(NULL)
 

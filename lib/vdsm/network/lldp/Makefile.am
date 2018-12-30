@@ -20,4 +20,4 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmnetworklldpdir = $(vdsmpylibdir)/network/lldp
-dist_vdsmnetworklldp_PYTHON = *.py
+dist_vdsmnetworklldp_PYTHON = $(srcdir)/*.py

@@ -21,4 +21,4 @@ SUBDIRS = bond
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmnetworklinkdir = $(vdsmpylibdir)/network/link
-dist_vdsmnetworklink_PYTHON = *.py
+dist_vdsmnetworklink_PYTHON = $(srcdir)/*.py

@@ -19,4 +19,4 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmcommonnetworkdir = $(vdsmpylibdir)/common/network
-dist_vdsmcommonnetwork_PYTHON = *.py
+dist_vdsmcommonnetwork_PYTHON = $(srcdir)/*.py

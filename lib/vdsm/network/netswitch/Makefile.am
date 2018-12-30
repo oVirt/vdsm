@@ -19,4 +19,4 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmnetworknetswitchdir = $(vdsmpylibdir)/network/netswitch
-dist_vdsmnetworknetswitch_PYTHON = *.py
+dist_vdsmnetworknetswitch_PYTHON = $(srcdir)/*.py

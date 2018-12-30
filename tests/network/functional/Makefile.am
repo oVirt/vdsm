@@ -22,7 +22,7 @@ vdsmnetworkfunctestsdir = ${vdsmtestsdir}/network/functional
 
 dist_vdsmnetworkfunctests_PYTHON = \
 	__init__.py \
-	*_test.py \
+	$(srcdir)/*_test.py \
 	conftest.py \
 	netfunctestlib.py \
 	$(NULL)

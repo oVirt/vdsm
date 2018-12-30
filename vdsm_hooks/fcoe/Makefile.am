@@ -27,7 +27,7 @@ install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_network_setup
 	$(INSTALL_SCRIPT) $(srcdir)/fcoe_before_network_setup.py \
 		$(DESTDIR)$(vdsmhooksdir)/before_network_setup/50_fcoe
-	$(INSTALL_DATA) ./85-vdsm-hook-fcoe.preset \
+	$(INSTALL_DATA) $(srcdir)/85-vdsm-hook-fcoe.preset \
 	    $(DESTDIR)/usr/lib/systemd/system-preset/
 
 uninstall-local:
