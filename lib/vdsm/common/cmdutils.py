@@ -77,9 +77,6 @@ class CommandPath(object):
     def __str__(self):
         return str(self.cmd)
 
-    def __unicode__(self):
-        return unicode(self.cmd)
-
 
 def command_log_line(args, cwd=None):
     return "{0} (cwd {1})".format(_list2cmdline(args), cwd)
@@ -236,7 +233,7 @@ def receive(p, timeout=None, bufsize=io.DEFAULT_BUFFER_SIZE):
         try:
             ready = poller.poll(remaining_msec)
         except select.error as e:
-            if e[0] != errno.EINTR:
+            if e.args[0] != errno.EINTR:
                 raise
             log.debug("Polling process (pid=%d) interrupted", p.pid)
         else:
