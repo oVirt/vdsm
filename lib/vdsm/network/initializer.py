@@ -22,11 +22,11 @@ from __future__ import division
 
 import logging
 
+from vdsm.common.config import config
 from vdsm.network import dhclient_monitor
 from vdsm.network import lldp
 from vdsm.network.ipwrapper import getLinks
 from vdsm.network.nm import networkmanager
-from vdsm.config import config
 
 Lldp = lldp.driver()
 
