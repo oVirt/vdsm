@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2017 Red Hat, Inc.
+# Copyright 2011-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,8 @@ import threading
 from functools import partial
 from weakref import proxy
 from collections import defaultdict
+
+import six
 
 from yajsonrpc.betterAsyncore import Reactor
 from yajsonrpc.exception import JsonRpcBindingsError
@@ -524,7 +526,7 @@ class clientIF(object):
                                              drive['poolID'], drive['imageID'])
         except TypeError:
             # paths (strings) are not deactivated
-            if not isinstance(drive, basestring):
+            if not isinstance(drive, six.string_types):
                 self.log.warning("Drive is not a vdsm image: %s",
                                  drive, exc_info=True)
 
@@ -710,7 +712,7 @@ class clientIF(object):
             time.sleep(5)
 
     def _preparePathsForRecoveredVMs(self):
-        vm_objects = self.vmContainer.values()
+        vm_objects = list(self.vmContainer.values())
         num_vm_objects = len(vm_objects)
         for idx, vm_obj in enumerate(vm_objects):
             # Let's recover as much VMs as possible

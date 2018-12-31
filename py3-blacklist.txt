@@ -6,7 +6,6 @@
 ./contrib/repoplot
 ./contrib/repostat
 ./contrib/runvm
-./lib/vdsm/clientIF.py
 ./lib/vdsm/common/cmdutils.py
 ./lib/vdsm/common/commands.py
 ./lib/vdsm/common/exception.py
