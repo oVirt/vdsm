@@ -229,3 +229,7 @@ install-data-local: install-libvirtpasswordDATA
 	$(MKDIR_P) $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 	chmod 600 "$(DESTDIR)$(libvirtpassworddir)"/*
 	chmod 775 $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
+	install -dDm 0755 $(DESTDIR)$(vdsmlogdir)
+	touch $(DESTDIR)$(vdsmlogdir)/mom.log
+	touch $(DESTDIR)$(vdsmlogdir)/supervdsm.log
+	touch $(DESTDIR)$(vdsmlogdir)/vdsm.log

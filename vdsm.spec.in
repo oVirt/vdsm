@@ -737,11 +737,6 @@ make
 %install
 make DESTDIR=%{buildroot} install
 
-# Creating VDSM logs in this session to avoid rpmbuild
-# complain during the build
-install -dDm 0755 %{buildroot}@VDSMLOGDIR@
-touch %{buildroot}@VDSMLOGDIR@/{mom.log,supervdsm.log,vdsm.log}
-
 %pre
 # Force standard locale behavior (English)
 export LC_ALL=C
