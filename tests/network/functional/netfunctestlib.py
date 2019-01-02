@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,10 +25,12 @@ from contextlib import contextmanager
 from copy import deepcopy
 
 import six
+from six.moves import zip
 
 import pytest
 
 from vdsm.common import fileutils
+from vdsm.common.config import config as vdsm_config
 from vdsm.network import api
 from vdsm.network import errors
 from vdsm.network import kernelconfig
@@ -524,7 +526,33 @@ class NetFuncTestAdapter(object):
         # Do not use KernelConfig.__eq__ to get a better exception if something
         # breaks.
         assert running_config['networks'] == kernel_config['networks']
+        if vdsm_config.getboolean('vars', 'net_nmstate_enabled'):
+            self._assert_inclusive_bond_options(kernel_config, running_config)
         assert running_config['bonds'] == kernel_config['bonds']
+
+    def _assert_inclusive_bond_options(self, kernel_config, running_config):
+        """
+        Assert bond options in an inclusive manner, between the kernel and the
+        running config.
+        It supports cases where the desired bond options are applied in the
+        kernel state, however, additional options exists in the kernel and not
+        specified by the desired config.
+        The func has a side effect of removing the bond options from the
+        provided dicts, allowing further handling of the remaining data.
+        """
+        r_bonds_opts, k_bonds_opts = self._pop_bonds_options(
+            running_config, kernel_config)
+        for r_opts, k_opts in zip(r_bonds_opts, k_bonds_opts):
+            assert r_opts in k_opts
+
+    def _pop_bonds_options(self, running_config, kernel_config):
+        r_bonds_opts = []
+        k_bonds_opts = []
+        for k_name, k_attrs in six.viewitems(kernel_config['bonds']):
+            r_bonds_opts.append(
+                running_config['bonds'][k_name].pop('options', ''))
+            k_bonds_opts.append(k_attrs.pop('options', ''))
+        return r_bonds_opts, k_bonds_opts
 
     @contextmanager
     def reset_persistent_config(self):

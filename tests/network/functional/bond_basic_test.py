@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ def create_adapter(target):
 @nftestlib.parametrize_switch
 class TestBondBasic(object):
 
+    @pytest.mark.nmstate
     def test_add_bond_with_two_nics(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             BONDCREATE = {
@@ -54,6 +55,7 @@ class TestBondBasic(object):
             with adapter.setupNetworks({}, BONDCREATE, NOCHK):
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
+    @pytest.mark.nmstate
     def test_add_bond_with_two_nics_and_options(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             BONDCREATE = {BOND_NAME: {
@@ -63,6 +65,7 @@ class TestBondBasic(object):
             with adapter.setupNetworks({}, BONDCREATE, NOCHK):
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
+    @pytest.mark.nmstate
     def test_remove_bond(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             BONDCREATE = {
@@ -114,6 +117,7 @@ class TestBondBasic(object):
                 adapter.setupNetworks({}, bond, NOCHK)
                 adapter.assertBond(BOND_NAME, bond[BOND_NAME])
 
+    @pytest.mark.nmstate
     def test_add_bond_with_bad_name_fails(self, switch):
         INVALID_BOND_NAMES = ('bond',
                               'bond bad',
@@ -128,6 +132,7 @@ class TestBondBasic(object):
                         pass
                 assert cm.value.status == ne.ERR_BAD_BONDING
 
+    @pytest.mark.nmstate
     def test_add_bond_with_no_nics_fails(self, switch):
         BONDCREATE = {BOND_NAME: {'nics': [], 'switch': switch}}
 
@@ -150,6 +155,7 @@ class TestBondBasic(object):
             with adapter.setupNetworks({}, BONDCREATE, NOCHK):
                 adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
+    @pytest.mark.nmstate
     def test_bond_slaves_order_does_not_affect_the_mac_address(self, switch):
         with dummy_devices(2) as (nic1, nic2):
             bond1 = {BOND_NAME: {'nics': [nic1, nic2], 'switch': switch}}

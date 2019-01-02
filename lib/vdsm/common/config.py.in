@@ -72,6 +72,9 @@ parameters = [
         ('net_persistence', 'unified',
             'Whether to use "ifcfg" or "unified" persistence for networks.'),
 
+        ('net_nmstate_enabled', 'false',
+            'Control nmstate network backend provider.'),
+
         ('ethtool_opts', '',
             'Which special ethtool options should be applied to NICs after '
             'they are taken up, e.g. "lro off" on buggy devices. '

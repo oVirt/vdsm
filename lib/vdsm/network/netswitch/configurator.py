@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,11 +26,13 @@ import logging
 import six
 
 from vdsm.common.cache import memoized
+from vdsm.common.config import config as vdsm_config
 from vdsm.common.time import monotonic_time
 from vdsm.network import connectivity
 from vdsm.network import ifacquire
 from vdsm.network import legacy_switch
 from vdsm.network import errors as ne
+from vdsm.network import nmstate
 from vdsm.network.configurators.ifcfg import Ifcfg, ConfigWriter
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
@@ -130,17 +132,10 @@ def validate(networks, bondings, net_info):
 
 
 def setup(networks, bondings, options, net_info, in_rollback):
-    legacy_nets, ovs_nets, legacy_bonds, ovs_bonds = _split_switch_type(
-        networks, bondings, net_info)
-
-    use_legacy_switch = legacy_nets or legacy_bonds
-    use_ovs_switch = ovs_nets or ovs_bonds
-
-    if use_legacy_switch:
-        _setup_legacy(
-            legacy_nets, legacy_bonds, options, net_info, in_rollback)
-    elif use_ovs_switch:
-        _setup_ovs(ovs_nets, ovs_bonds, options, net_info, in_rollback)
+    if vdsm_config.getboolean('vars', 'net_nmstate_enabled'):
+        _setup_nmstate(networks, bondings, options, in_rollback)
+    else:
+        _setup(networks, bondings, options, in_rollback, net_info)
 
     if options.get('commitOnSuccess'):
         persist()
@@ -149,6 +144,42 @@ def setup(networks, bondings, options, net_info, in_rollback):
 def persist():
     ConfigWriter.clearBackups()
     RunningConfig.store()
+
+
+def _setup(networks, bondings, options, in_rollback, net_info):
+    legacy_nets, ovs_nets, legacy_bonds, ovs_bonds = _split_switch_type(
+        networks, bondings, net_info)
+    use_legacy_switch = legacy_nets or legacy_bonds
+    use_ovs_switch = ovs_nets or ovs_bonds
+    if use_legacy_switch:
+        _setup_legacy(
+            legacy_nets, legacy_bonds, options, net_info, in_rollback)
+    elif use_ovs_switch:
+        _setup_ovs(ovs_nets, ovs_bonds, options, net_info, in_rollback)
+
+
+def _setup_nmstate(networks, bondings, options, in_rollback):
+    """
+    Setup the networks using nmstate as the backend provider.
+    nmstate handles the rollback by itself in case of an error during the
+    transaction or in case the resulted state does not include the desired one.
+
+    In order to support the connectivity check, the "regular" rollback is
+    used (the Transaction context).
+    """
+    logging.info('Processing setup through nmstate')
+    desired_state = nmstate.generate_state(networks, bondings)
+    nmstate.setup(desired_state, verify_change=not in_rollback)
+    with Transaction(in_rollback=in_rollback) as config:
+        config.networks = {
+            name: attrs for name, attrs in six.viewitems(networks)
+            if not attrs.get('remove')
+        }
+        config.bonds = {
+            name: attrs for name, attrs in six.viewitems(bondings)
+            if not attrs.get('remove')
+        }
+        connectivity.check(options)
 
 
 def _setup_legacy(networks, bondings, options, net_info, in_rollback):
