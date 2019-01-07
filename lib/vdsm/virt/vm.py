@@ -6008,7 +6008,6 @@ class Vm(object):
             self.log.warning("Removed device not found in devices: %s",
                              device_alias)
             return
-        device.hotunplug_event.set()
         self._devices[device_hwclass].remove(device)
         try:
             device.teardown()
@@ -6024,6 +6023,8 @@ class Vm(object):
                 device.teardown()
             else:
                 raise
+        finally:
+            device.hotunplug_event.set()
         self._updateDomainDescriptor()
 
     # Accessing storage
