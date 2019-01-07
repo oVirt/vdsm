@@ -301,4 +301,8 @@ def protocol_name_to_int():
         if no_protocol != '':
             excludes |= getattr(ssl, no_protocol.strip())
 
+    # Forcefully disable no-longer-secure TLSv1 and TLSv1.1 protocols
+    excludes |= getattr(ssl, 'OP_NO_TLSv1')
+    excludes |= getattr(ssl, 'OP_NO_TLSv1_1')
+
     return excludes
