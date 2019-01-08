@@ -25,6 +25,12 @@ from __future__ import division
 from vdsm.storage import lvm
 
 
+def test_build_filter():
+    devices = ("/dev/mapper/a", "/dev/mapper/b")
+    expected = "filter = [ 'a|/dev/mapper/a|/dev/mapper/b|', 'r|.*|' ]"
+    assert expected == lvm._buildFilter(devices)
+
+
 def test_build_filter_quoting():
     devices = (r"\x20\x24\x7c\x22\x28",)
     expected = r"filter = [ 'a|\\x20\\x24\\x7c\\x22\\x28|', 'r|.*|' ]"
