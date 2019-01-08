@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,21 +22,10 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from testlib import VdsmTestCase
-
-import vdsm.storage.lvm as lvm
+from vdsm.storage import lvm
 
 
-class TestLvm(VdsmTestCase):
-    def test_buildFilter(self):
-        chars = [' ', '$', '|', '"', '(']
-        dev = "/dev/mapper/a"
-        signedDev = dev
-        for c in chars:
-            signedDev += '\\' + hex(ord(c))[1:4]
-        devs = [signedDev]
-        filter = lvm._buildFilter(devs)
-        expectedFilter = ("filter = [ \'a|" + dev + "\\\\x20\\\\x24\\\\x7c"
-                          "\\\\x22\\\\x28|\', \'r|.*|\' ]"
-                          )
-        self.assertEqual(expectedFilter, filter)
+def test_build_filter_quoting():
+    devices = (r"\x20\x24\x7c\x22\x28",)
+    expected = r"filter = [ 'a|\\x20\\x24\\x7c\\x22\\x28|', 'r|.*|' ]"
+    assert expected == lvm._buildFilter(devices)
