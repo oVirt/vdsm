@@ -148,13 +148,9 @@ def _buildFilter(devices):
     strippeds = set(d.strip() for d in devices)
     strippeds.discard('')  # Who has put a blank here?
     strippeds = sorted(strippeds)
-    dmPaths = [dev.replace(r'\x', r'\\x') for dev in strippeds]
-    filt = '|'.join(dmPaths)
-    if len(filt) > 0:
-        filt = "'a|" + filt + "|', "
-
-    filt = "filter=[" + filt + "'r|.*|']"
-    return filt
+    patterns = ["^{}$".format(dev.replace(r'\x', r'\\x')) for dev in strippeds]
+    accept = "|".join(patterns)
+    return "filter=['a|{}|', 'r|.*|']".format(accept)
 
 
 def _buildConfig(devList):
