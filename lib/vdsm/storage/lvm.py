@@ -150,7 +150,7 @@ def _buildFilter(devices):
     strippeds = sorted(strippeds)
     patterns = ["^{}$".format(dev.replace(r'\x', r'\\x')) for dev in strippeds]
     accept = "|".join(patterns)
-    return "filter=['a|{}|', 'r|.*|']".format(accept)
+    return 'filter=["a|{}|", "r|.*|"]'.format(accept)
 
 
 def _buildConfig(devList):
