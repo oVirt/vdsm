@@ -22,6 +22,9 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import pytest
+
+from vdsm.common import constants
 from vdsm.storage import lvm
 
 
@@ -66,3 +69,45 @@ def test_build_config():
         '}'
     )
     assert expected == lvm._buildConfig(devices)
+
+
+@pytest.fixture
+def fake_devices(monkeypatch, tmpdir):
+    devices = ["/dev/mapper/a", "/dev/mapper/b"]
+
+    # Initial devices for LVMCache tests.
+    monkeypatch.setattr(
+        lvm.multipath,
+        "getMPDevNamesIter",
+        lambda: tuple(devices))
+
+    # LVMCache try to write the config on every change to this directory.
+    monkeypatch.setattr(lvm, "VDSM_LVM_SYSTEM_DIR", str(tmpdir))
+    monkeypatch.setattr(lvm, "VDSM_LVM_CONF", str(tmpdir.join("lvm.conf")))
+
+    return devices
+
+
+def test_build_command_long_filter(fake_devices):
+    # If the devices are not specified, include all devices reported by
+    # multipath.
+    lc = lvm.LVMCache()
+    cmd = lc._addExtraCfg(["lvs"])
+
+    assert cmd[0] == constants.EXT_LVM
+    assert cmd[1] == "lvs"
+    assert cmd[2] == "--config"
+    assert cmd[3] == lvm._buildConfig(fake_devices)
+
+
+def test_rebuild_filter_after_invaliation(fake_devices):
+    # Check that adding a device and invalidating the filter rebuilds the
+    # config with the correct filter.
+    lc = lvm.LVMCache()
+    lc._addExtraCfg(["lvs"])
+
+    fake_devices.append("/dev/mapper/c")
+    lc.invalidateFilter()
+
+    cmd = lc._addExtraCfg(["lvs"])
+    assert cmd[3] == lvm._buildConfig(fake_devices)
