@@ -123,10 +123,10 @@ devices {
  ignore_suspended_devices=1
  write_cache_state=0
  disable_after_error_count=3
- %s
+ %(filter)s
 }
 global {
- locking_type=1
+ locking_type=%(locking_type)s
  prioritise_write_locks=1
  wait_for_locks=1
  use_lvmetad=0
@@ -154,8 +154,10 @@ def _buildFilter(devices):
 
 
 def _buildConfig(devList):
-    flt = _buildFilter(chain(devList, USER_DEV_LIST))
-    conf = LVMCONF_TEMPLATE % flt
+    conf = LVMCONF_TEMPLATE % {
+        "filter": _buildFilter(chain(devList, USER_DEV_LIST)),
+        "locking_type": "1",
+    }
     return conf.replace("\n", " ").strip()
 
 
