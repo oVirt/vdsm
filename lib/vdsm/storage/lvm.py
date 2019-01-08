@@ -119,23 +119,21 @@ USER_GROUP = constants.DISKIMAGE_USER + ":" + constants.DISKIMAGE_GROUP
 
 LVMCONF_TEMPLATE = """
 devices {
-preferred_names = ["^/dev/mapper/"]
-ignore_suspended_devices=1
-write_cache_state=0
-disable_after_error_count=3
-%s
+ preferred_names=["^/dev/mapper/"]
+ ignore_suspended_devices=1
+ write_cache_state=0
+ disable_after_error_count=3
+ %s
 }
-
 global {
  locking_type=1
  prioritise_write_locks=1
  wait_for_locks=1
  use_lvmetad=0
 }
-
 backup {
- retain_min = 50
- retain_days = 0
+ retain_min=50
+ retain_days=0
 }
 """
 
@@ -155,14 +153,14 @@ def _buildFilter(devices):
     if len(filt) > 0:
         filt = "'a|" + filt + "|', "
 
-    filt = "filter = [ " + filt + "'r|.*|' ]"
+    filt = "filter=[" + filt + "'r|.*|']"
     return filt
 
 
 def _buildConfig(devList):
     flt = _buildFilter(chain(devList, USER_DEV_LIST))
     conf = LVMCONF_TEMPLATE % flt
-    return conf.replace("\n", " ")
+    return conf.replace("\n", " ").strip()
 
 
 def _updateLvmConf(conf):
