@@ -247,6 +247,18 @@ class LVMCache(object):
     Keep all the LVM information.
     """
 
+    def __init__(self):
+        self._filterStale = True
+        self._extraCfg = None
+        self._filterLock = threading.Lock()
+        self._lock = threading.Lock()
+        self._stalepv = True
+        self._stalevg = True
+        self._stalelv = True
+        self._pvs = {}
+        self._vgs = {}
+        self._lvs = {}
+
     def _getCachedExtraCfg(self):
         if not self._filterStale:
             return self._extraCfg
@@ -281,18 +293,6 @@ class LVMCache(object):
     def invalidateCache(self):
         self.invalidateFilter()
         self.flush()
-
-    def __init__(self):
-        self._filterStale = True
-        self._extraCfg = None
-        self._filterLock = threading.Lock()
-        self._lock = threading.Lock()
-        self._stalepv = True
-        self._stalevg = True
-        self._stalelv = True
-        self._pvs = {}
-        self._vgs = {}
-        self._lvs = {}
 
     def cmd(self, cmd, devices=tuple()):
         finalCmd = self._addExtraCfg(cmd, devices)
