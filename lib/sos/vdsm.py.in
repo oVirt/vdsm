@@ -39,20 +39,25 @@ DATA_DOMAIN = 1
 
 # This configuration is based on vdsm.storage.lvm.LVM_CONF_TEMPLATE.
 #
-# locking_type is set to 0 in order to match lvm sos commands. With this
-# configuration we don't take any locks, so we will never block because
-# there is a stuck lvm command.
-# locking_type=0
+# locking_type is set to 0 (disable locks) avoids the possibility of
+# hanging lvm commands when another process holds a conflicting lock, or
+# there is a bug in lvm locking.
 #
-# use_lvmetad is set to 0 in order not to show cached, old lvm metadata.
-# use_lvmetad=0
+# metadata_read_only is set to 1 (disable metadata updates) to ensure
+# that no operations that change on-disk metadata are permitted.
+# Additionally, read-only commands that encounter metadata in need of
+# repair will still be allowed to proceed exactly as if the repair had
+# been performed (except for the unchanged vg_seqno).
 #
-# preferred_names and filter config values are set to capture Vdsm devices.
-# preferred_names=[ '^/dev/mapper/' ]
-# filter=[ 'a|^/dev/mapper/.*|', 'r|.*|' ]
+# use_lvmetad is set to 0 to avoid using lvmetad, which is not
+# compatible with vdsm shared storage.
+#
+# preferred_names and filter config values are set to capture Vdsm
+# devices.
 LVM_CONFIG = """
 global {
     locking_type=0
+    metadata_read_only=1
     use_lvmetad=0
 }
 devices {
