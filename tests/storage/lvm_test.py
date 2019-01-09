@@ -72,7 +72,7 @@ def test_build_config():
 
 
 @pytest.fixture
-def fake_devices(monkeypatch, tmpdir):
+def fake_devices(monkeypatch):
     devices = ["/dev/mapper/a", "/dev/mapper/b"]
 
     # Initial devices for LVMCache tests.
@@ -80,10 +80,6 @@ def fake_devices(monkeypatch, tmpdir):
         lvm.multipath,
         "getMPDevNamesIter",
         lambda: tuple(devices))
-
-    # LVMCache try to write the config on every change to this directory.
-    monkeypatch.setattr(lvm, "VDSM_LVM_SYSTEM_DIR", str(tmpdir))
-    monkeypatch.setattr(lvm, "VDSM_LVM_CONF", str(tmpdir.join("lvm.conf")))
 
     return devices
 

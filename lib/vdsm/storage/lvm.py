@@ -137,10 +137,6 @@ backup {
 }
 """
 
-VAR_RUN_VDSM = constants.P_VDSM_RUN
-VDSM_LVM_SYSTEM_DIR = os.path.join(VAR_RUN_VDSM, "lvm")
-VDSM_LVM_CONF = os.path.join(VDSM_LVM_SYSTEM_DIR, "lvm.conf")
-
 USER_DEV_LIST = filter(None, config.get("irs", "lvm_dev_whitelist").split(","))
 
 
@@ -166,20 +162,6 @@ def _buildConfig(devList):
         "locking_type": "1",
     }
     return conf.replace("\n", " ").strip()
-
-
-def _updateLvmConf(conf):
-    # Make a convenience copy for the debugging purposes
-    try:
-        if not os.path.isdir(VDSM_LVM_SYSTEM_DIR):
-            os.mkdir(VDSM_LVM_SYSTEM_DIR)
-
-        with open(VDSM_LVM_CONF, "w") as lvmconf:
-            lvmconf.write(conf)
-
-    except IOError as e:
-        # We are not interested in exceptions here, note it and
-        log.warning("Cannot create %s file %s", VDSM_LVM_CONF, str(e))
 
 
 #
@@ -275,7 +257,6 @@ class LVMCache(object):
                 return self._extraCfg
 
             self._extraCfg = _buildConfig(multipath.getMPDevNamesIter())
-            _updateLvmConf(self._extraCfg)
             self._filterStale = False
 
             return self._extraCfg

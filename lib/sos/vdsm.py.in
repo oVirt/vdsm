@@ -123,7 +123,6 @@ class vdsm(Plugin, RedHatPlugin):
             self.addStringAsFile(str(e), name)
 
     def setup(self):
-        os.environ["LVM_SYSTEM_DIR"] = "@VDSMRUNDIR@/lvm"  # NOQA: E501 (potentially long line)
         self.addForbiddenPath('/etc/pki/vdsm/keys/*')
         self.addForbiddenPath('/etc/pki/vdsm/libvirt-spice/*-key.*')
         self.addForbiddenPath('/etc/pki/libvirt/private/*')
