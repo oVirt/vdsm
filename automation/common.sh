@@ -126,8 +126,9 @@ run_tests() {
 
     tests/profile debuginfo-install debuginfo-install -y python
 
-    # Make sure we have enough loop device nodes.
-    create_loop_devices 8
+    # Make sure we have enough loop device nodes. Using 16 devices since with 8
+    # devices we have random mount failures.
+    create_loop_devices 16
 
     TIMEOUT=600 make "tests-$python_version" NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 }
