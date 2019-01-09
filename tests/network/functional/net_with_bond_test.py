@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Red Hat, Inc.
+# Copyright 2016-2019 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -157,6 +157,23 @@ class TestNetworkWithBond(object):
             with adapter.setupNetworks(netsetup, BONDCREATE, NOCHK):
                 for netname, netattrs in six.iteritems(netsetup):
                     adapter.assertNetwork(netname, netattrs)
+
+    @nftestlib.parametrize_bridged
+    def test_remove_bond_under_network(self, switch, bridged):
+        with dummy_devices(1) as nics:
+            NETCREATE = {NETWORK1_NAME: {'bonding': BOND_NAME,
+                                         'bridged': bridged,
+                                         'switch': switch}}
+            BONDCREATE = {BOND_NAME: {'nics': nics, 'switch': switch}}
+            with adapter.setupNetworks(NETCREATE, BONDCREATE, NOCHK):
+
+                BONDEDIT = {BOND_NAME: {'remove': True}}
+                with pytest.raises(SetupNetworksError) as err:
+                    adapter.setupNetworks({}, BONDEDIT, NOCHK)
+                assert err.value.status == ne.ERR_USED_BOND
+
+                adapter.assertNetwork(NETWORK1_NAME, NETCREATE[NETWORK1_NAME])
+                adapter.assertBond(BOND_NAME, BONDCREATE[BOND_NAME])
 
 
 @nftestlib.parametrize_switch

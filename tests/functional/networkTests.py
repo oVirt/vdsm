@@ -1537,31 +1537,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @ValidateRunningAsRoot
-    def test_remove_bond_under_network(self):
-        with dummyIf(1) as nics:
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME:
-                    {'bonding': BONDING_NAME, 'bridged': False}},
-                {BONDING_NAME: {'nics': nics}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETWORK_NAME)
-            self.assertBondExists(BONDING_NAME, nics)
-
-            status, msg = self.setupNetworks(
-                {}, {BONDING_NAME: {'remove': True}}, NOCHK)
-            self.assertEqual(status, errors.ERR_USED_BOND, msg)
-            self.assertNetworkExists(NETWORK_NAME)
-            self.assertBondExists(BONDING_NAME, nics)
-
-            status, msg = self.setupNetworks(
-                {NETWORK_NAME: {'remove': True}},
-                {BONDING_NAME: {'remove': True}}, NOCHK)
-            self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkDoesntExist(NETWORK_NAME)
-            self.assertBondDoesntExist(BONDING_NAME, nics)
-
-    @cleanupNet
-    @ValidateRunningAsRoot
     def test_drop_initial_network_nic_ip_config(self):
         with dummyIf(1) as nics:
             nic, = nics
