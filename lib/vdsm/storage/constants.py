@@ -53,6 +53,9 @@ VOLUME_MDNUMBLKS = 1  # The number of blocks needed to store block vol md
 # Supported block sizes in bytes
 BLOCK_SIZE_512 = 512
 BLOCK_SIZE_4K = 4096
+# Vdsm will detect the underlying storage block size if the storage domain
+# supports this.
+BLOCK_SIZE_AUTO = 0
 
 # sanlock possible alignment values, that set a lockspace size
 # In combination with a block size (see above)

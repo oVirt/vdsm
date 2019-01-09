@@ -9395,10 +9395,9 @@ StorageDomain.create:
             512 and 4096 (only for file based storage domains).
             In case valid value supplied, but underlying storage can't
             work with that block size, this call will fail.
-            Setting this value to 'null' means that VDSM will
-            try to autodetect it (supported only on GlusterFS)
-            and will set it to the 512 in case of autodetection
-            failure.
+            Setting to the speical value 0 means that VDSM will try to
+            detect the block size and will set it to the 512 if
+            detection fails.
         name: blockSize
         type: int
         added: '4.3'
