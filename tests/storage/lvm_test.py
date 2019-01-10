@@ -30,26 +30,26 @@ from vdsm.storage import lvm
 
 def test_build_filter():
     devices = ("/dev/mapper/a", "/dev/mapper/b")
-    expected = 'filter=["a|^/dev/mapper/a$|^/dev/mapper/b$|", "r|.*|"]'
+    expected = '["a|^/dev/mapper/a$|^/dev/mapper/b$|", "r|.*|"]'
     assert expected == lvm._buildFilter(devices)
 
 
 def test_build_filter_quoting():
     devices = (r"\x20\x24\x7c\x22\x28",)
-    expected = r'filter=["a|^\\x20\\x24\\x7c\\x22\\x28$|", "r|.*|"]'
+    expected = r'["a|^\\x20\\x24\\x7c\\x22\\x28$|", "r|.*|"]'
     assert expected == lvm._buildFilter(devices)
 
 
 def test_build_filter_no_devices():
     # This special case is possible on a system without any multipath device.
     # LVM commands will succeed, returning no info.
-    expected = 'filter=["r|.*|"]'
+    expected = '["r|.*|"]'
     assert expected == lvm._buildFilter(())
 
 
 def test_build_filter_with_user_devices(monkeypatch):
     monkeypatch.setattr(lvm, "USER_DEV_LIST", ("/dev/b",))
-    expected_filter = 'filter=["a|^/dev/a$|^/dev/b$|^/dev/c$|", "r|.*|"]'
+    expected_filter = '["a|^/dev/a$|^/dev/b$|^/dev/c$|", "r|.*|"]'
     assert expected_filter == lvm._buildFilter(("/dev/a", "/dev/c"))
 
 
@@ -73,8 +73,7 @@ def test_build_config():
         ' retain_days=0 '
         '}'
     )
-    assert expected == lvm._buildConfig(
-        'filter=["a|^/dev/a$|^/dev/b$|", "r|.*|"]')
+    assert expected == lvm._buildConfig('["a|^/dev/a$|^/dev/b$|", "r|.*|"]')
 
 
 @pytest.fixture

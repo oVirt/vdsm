@@ -123,7 +123,7 @@ devices {
  ignore_suspended_devices=1
  write_cache_state=0
  disable_after_error_count=3
- %(filter)s
+ filter=%(filter)s
 }
 global {
  locking_type=%(locking_type)s
@@ -153,7 +153,7 @@ def _buildFilter(devices):
         # Reject all devices.
         # ["r|.*|"]
         accept = ''
-    return 'filter=[{}"r|.*|"]'.format(accept)
+    return '[{}"r|.*|"]'.format(accept)
 
 
 def _buildConfig(dev_filter):
