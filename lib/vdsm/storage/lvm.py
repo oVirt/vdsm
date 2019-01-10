@@ -156,9 +156,9 @@ def _buildFilter(devices):
     return 'filter=[{}"r|.*|"]'.format(accept)
 
 
-def _buildConfig(devList):
+def _buildConfig(dev_filter):
     conf = LVMCONF_TEMPLATE % {
-        "filter": _buildFilter(devList),
+        "filter": dev_filter,
         "locking_type": "1",
     }
     return conf.replace("\n", " ").strip()
@@ -256,7 +256,8 @@ class LVMCache(object):
             if not self._filterStale:
                 return self._extraCfg
 
-            self._extraCfg = _buildConfig(multipath.getMPDevNamesIter())
+            self._extraCfg = _buildConfig(
+                _buildFilter(multipath.getMPDevNamesIter()))
             self._filterStale = False
 
             return self._extraCfg
@@ -264,7 +265,7 @@ class LVMCache(object):
     def _addExtraCfg(self, cmd, devices=tuple()):
         newcmd = [constants.EXT_LVM, cmd[0]]
         if devices:
-            conf = _buildConfig(devices)
+            conf = _buildConfig(_buildFilter(devices))
         else:
             conf = self._getCachedExtraCfg()
 

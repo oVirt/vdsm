@@ -54,7 +54,6 @@ def test_build_filter_with_user_devices(monkeypatch):
 
 
 def test_build_config():
-    devices = ("/dev/a", "/dev/b")
     expected = (
         'devices { '
         ' preferred_names=["^/dev/mapper/"] '
@@ -74,14 +73,8 @@ def test_build_config():
         ' retain_days=0 '
         '}'
     )
-    assert expected == lvm._buildConfig(devices)
-
-
-def test_build_config_with_user_devices(monkeypatch):
-    monkeypatch.setattr(lvm, "USER_DEV_LIST", ("/dev/b",))
-    conf = lvm._buildConfig(("/dev/a", "/dev/c"))
-    expected_filter = ' filter=["a|^/dev/a$|^/dev/b$|^/dev/c$|", "r|.*|"] '
-    assert expected_filter in conf
+    assert expected == lvm._buildConfig(
+        'filter=["a|^/dev/a$|^/dev/b$|", "r|.*|"]')
 
 
 @pytest.fixture
@@ -107,7 +100,7 @@ def test_build_command_long_filter(fake_devices):
         constants.EXT_LVM,
         "lvs",
         "--config",
-        lvm._buildConfig(fake_devices),
+        lvm._buildConfig(lvm._buildFilter(fake_devices)),
         "-o", "+tags",
     ]
 
@@ -122,4 +115,4 @@ def test_rebuild_filter_after_invaliation(fake_devices):
     lc.invalidateFilter()
 
     cmd = lc._addExtraCfg(["lvs"])
-    assert cmd[3] == lvm._buildConfig(fake_devices)
+    assert cmd[3] == lvm._buildConfig(lvm._buildFilter(fake_devices))
