@@ -47,6 +47,12 @@ def test_build_filter_no_devices():
     assert expected == lvm._buildFilter(())
 
 
+def test_build_filter_with_user_devices(monkeypatch):
+    monkeypatch.setattr(lvm, "USER_DEV_LIST", ("/dev/b",))
+    expected_filter = 'filter=["a|^/dev/a$|^/dev/b$|^/dev/c$|", "r|.*|"]'
+    assert expected_filter == lvm._buildFilter(("/dev/a", "/dev/c"))
+
+
 def test_build_config():
     devices = ("/dev/a", "/dev/b")
     expected = (

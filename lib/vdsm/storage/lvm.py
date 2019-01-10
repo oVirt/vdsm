@@ -141,7 +141,7 @@ USER_DEV_LIST = filter(None, config.get("irs", "lvm_dev_whitelist").split(","))
 
 
 def _buildFilter(devices):
-    devices = set(d.strip() for d in devices)
+    devices = set(d.strip() for d in chain(devices, USER_DEV_LIST))
     devices.discard('')
     if devices:
         # Accept specified devices, reject everything else.
@@ -158,7 +158,7 @@ def _buildFilter(devices):
 
 def _buildConfig(devList):
     conf = LVMCONF_TEMPLATE % {
-        "filter": _buildFilter(chain(devList, USER_DEV_LIST)),
+        "filter": _buildFilter(devList),
         "locking_type": "1",
     }
     return conf.replace("\n", " ").strip()
