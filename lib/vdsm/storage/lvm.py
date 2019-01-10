@@ -249,16 +249,10 @@ class LVMCache(object):
         self._lvs = {}
 
     def _getCachedFilter(self):
-        if not self._filterStale:
-            return self._filter
-
         with self._filterLock:
-            if not self._filterStale:
-                return self._filter
-
-            self._filter = _buildFilter(multipath.getMPDevNamesIter())
-            self._filterStale = False
-
+            if self._filterStale:
+                self._filter = _buildFilter(multipath.getMPDevNamesIter())
+                self._filterStale = False
             return self._filter
 
     def _addExtraCfg(self, cmd, devices=tuple()):
