@@ -156,10 +156,10 @@ def _buildFilter(devices):
     return '[{}"r|.*|"]'.format(accept)
 
 
-def _buildConfig(dev_filter):
+def _buildConfig(dev_filter, locking_type):
     conf = LVMCONF_TEMPLATE % {
         "filter": dev_filter,
-        "locking_type": "1",
+        "locking_type": locking_type,
     }
     return conf.replace("\n", " ").strip()
 
@@ -263,7 +263,7 @@ class LVMCache(object):
         else:
             dev_filter = self._getCachedFilter()
 
-        conf = _buildConfig(dev_filter)
+        conf = _buildConfig(dev_filter=dev_filter, locking_type="1")
         newcmd += ["--config", conf]
 
         if len(cmd) > 1:

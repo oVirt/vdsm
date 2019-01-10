@@ -73,7 +73,9 @@ def test_build_config():
         ' retain_days=0 '
         '}'
     )
-    assert expected == lvm._buildConfig('["a|^/dev/a$|^/dev/b$|", "r|.*|"]')
+    assert expected == lvm._buildConfig(
+        dev_filter='["a|^/dev/a$|^/dev/b$|", "r|.*|"]',
+        locking_type="1")
 
 
 @pytest.fixture
@@ -99,7 +101,9 @@ def test_build_command_long_filter(fake_devices):
         constants.EXT_LVM,
         "lvs",
         "--config",
-        lvm._buildConfig(lvm._buildFilter(fake_devices)),
+        lvm._buildConfig(
+            dev_filter=lvm._buildFilter(fake_devices),
+            locking_type="1"),
         "-o", "+tags",
     ]
 
@@ -114,4 +118,6 @@ def test_rebuild_filter_after_invaliation(fake_devices):
     lc.invalidateFilter()
 
     cmd = lc._addExtraCfg(["lvs"])
-    assert cmd[3] == lvm._buildConfig(lvm._buildFilter(fake_devices))
+    assert cmd[3] == lvm._buildConfig(
+        dev_filter=lvm._buildFilter(fake_devices),
+        locking_type="1")
