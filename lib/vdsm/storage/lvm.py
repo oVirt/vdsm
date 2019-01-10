@@ -237,8 +237,8 @@ class LVMCache(object):
     """
 
     def __init__(self):
+        self._filter = None
         self._filterStale = True
-        self._extraCfg = None
         self._filterLock = threading.Lock()
         self._lock = threading.Lock()
         self._stalepv = True
@@ -248,27 +248,28 @@ class LVMCache(object):
         self._vgs = {}
         self._lvs = {}
 
-    def _getCachedExtraCfg(self):
+    def _getCachedFilter(self):
         if not self._filterStale:
-            return self._extraCfg
+            return self._filter
 
         with self._filterLock:
             if not self._filterStale:
-                return self._extraCfg
+                return self._filter
 
-            self._extraCfg = _buildConfig(
-                _buildFilter(multipath.getMPDevNamesIter()))
+            self._filter = _buildFilter(multipath.getMPDevNamesIter())
             self._filterStale = False
 
-            return self._extraCfg
+            return self._filter
 
     def _addExtraCfg(self, cmd, devices=tuple()):
         newcmd = [constants.EXT_LVM, cmd[0]]
-        if devices:
-            conf = _buildConfig(_buildFilter(devices))
-        else:
-            conf = self._getCachedExtraCfg()
 
+        if devices:
+            dev_filter = _buildFilter(devices)
+        else:
+            dev_filter = self._getCachedFilter()
+
+        conf = _buildConfig(dev_filter)
         newcmd += ["--config", conf]
 
         if len(cmd) > 1:
