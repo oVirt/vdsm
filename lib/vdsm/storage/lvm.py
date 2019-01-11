@@ -240,6 +240,11 @@ class LVMCache(object):
     Keep all the LVM information.
     """
 
+    # Maximum number of concurent commands. This is important both for
+    # limiting the I/O caused by lvm comamdns during refreshes, and for
+    # having exponential back-off for read-only commands.
+    MAX_COMMANDS = 10
+
     # Read-only commands may fail if the SPM modified VG metadata while
     # a read-only command was reading the metadata. We retry the command
     # with exponential back-off delay to recover for these failures.
@@ -254,6 +259,7 @@ class LVMCache(object):
         self._filterStale = True
         self._filterLock = threading.Lock()
         self._lock = threading.Lock()
+        self._cmd_sem = threading.BoundedSemaphore(self.MAX_COMMANDS)
         self._stalepv = True
         self._stalevg = True
         self._stalelv = True
@@ -308,7 +314,7 @@ class LVMCache(object):
     def cmd(self, cmd, devices=tuple()):
         # Take a shared lock, so set_read_only() can wait for commands using
         # the previous mode.
-        with self._read_only_lock.shared:
+        with self._cmd_sem, self._read_only_lock.shared:
 
             # 1. Try the command with fast specific filter including the
             # specified devices.
