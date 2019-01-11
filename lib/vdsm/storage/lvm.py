@@ -300,18 +300,28 @@ class LVMCache(object):
         # Take a shared lock, so set_read_only() can wait for commands using
         # the previous mode.
         with self._read_only_lock.shared:
-            finalCmd = self._addExtraCfg(cmd, devices)
-            rc, out, err = misc.execCmd(finalCmd, sudo=True)
-            if rc != 0:
-                # Filter might be stale
-                self.invalidateFilter()
-                newCmd = self._addExtraCfg(cmd)
-                # Before blindly trying again make sure
-                # that the commands are not identical, because
-                # the devlist is sorted there is no fear
-                # of two identical filters looking differently
-                if newCmd != finalCmd:
-                    return misc.execCmd(newCmd, sudo=True)
+
+            # 1. Try the command with fast specific filter including the
+            # specified devices.
+            full_cmd = self._addExtraCfg(cmd, devices)
+            rc, out, err = misc.execCmd(full_cmd, sudo=True)
+            if rc == 0:
+                return rc, out, err
+
+            # 2. Retry the command with a wider filter, in case the
+            # failure was caused by a stale filter.
+            self.invalidateFilter()
+            wider_cmd = self._addExtraCfg(cmd)
+            if wider_cmd != full_cmd:
+                log.warning(
+                    "Command with specific filter failed, retrying with "
+                    "a wider filter, cmd=%r rc=%r err=%r",
+                    full_cmd, rc, err)
+                full_cmd = wider_cmd
+
+                rc, out, err = misc.execCmd(full_cmd, sudo=True)
+                if rc == 0:
+                    return rc, out, err
 
             return rc, out, err
 
