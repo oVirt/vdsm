@@ -131,6 +131,18 @@ def test_rebuild_filter_after_invaliation(fake_devices):
         locking_type="1")
 
 
+def test_build_command_read_only(fake_devices):
+    # When cache in read-write mode, use locking_type=1
+    lc = lvm.LVMCache()
+    cmd = lc._addExtraCfg(["lvs", "-o", "+tags"])
+    assert " locking_type=1 " in cmd[3]
+
+    # When cache in read-only mode, use locking_type=4
+    lc.set_read_only(True)
+    cmd = lc._addExtraCfg(["lvs", "-o", "+tags"])
+    assert " locking_type=4 " in cmd[3]
+
+
 @requires_root
 @xfail_python3
 @pytest.mark.root

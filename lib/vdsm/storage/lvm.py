@@ -48,6 +48,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage import multipath
+from vdsm.storage import rwlock
 from vdsm.storage.constants import VG_EXTENT_SIZE_MB, SUPPORTED_BLOCKSIZE
 
 from vdsm.config import config
@@ -238,6 +239,8 @@ class LVMCache(object):
     """
 
     def __init__(self):
+        self._read_only_lock = rwlock.RWLock()
+        self._read_only = False
         self._filter = None
         self._filterStale = True
         self._filterLock = threading.Lock()
@@ -248,6 +251,17 @@ class LVMCache(object):
         self._pvs = {}
         self._vgs = {}
         self._lvs = {}
+
+    def set_read_only(self, value):
+        """
+        Called when the SPM is started or stopped.
+        """
+        # Take an exclusive lock, so we wait for commands using the previous
+        # mode before switching to the new mode.
+        with self._read_only_lock.exclusive:
+            if self._read_only != value:
+                log.info("Switching to read_only=%s", value)
+                self._read_only = value
 
     def _getCachedFilter(self):
         with self._filterLock:
@@ -264,7 +278,10 @@ class LVMCache(object):
         else:
             dev_filter = self._getCachedFilter()
 
-        conf = _buildConfig(dev_filter=dev_filter, locking_type="1")
+        conf = _buildConfig(
+            dev_filter=dev_filter,
+            locking_type="4" if self._read_only else "1")
+
         newcmd += ["--config", conf]
 
         if len(cmd) > 1:
@@ -280,20 +297,23 @@ class LVMCache(object):
         self.flush()
 
     def cmd(self, cmd, devices=tuple()):
-        finalCmd = self._addExtraCfg(cmd, devices)
-        rc, out, err = misc.execCmd(finalCmd, sudo=True)
-        if rc != 0:
-            # Filter might be stale
-            self.invalidateFilter()
-            newCmd = self._addExtraCfg(cmd)
-            # Before blindly trying again make sure
-            # that the commands are not identical, because
-            # the devlist is sorted there is no fear
-            # of two identical filters looking differently
-            if newCmd != finalCmd:
-                return misc.execCmd(newCmd, sudo=True)
+        # Take a shared lock, so set_read_only() can wait for commands using
+        # the previous mode.
+        with self._read_only_lock.shared:
+            finalCmd = self._addExtraCfg(cmd, devices)
+            rc, out, err = misc.execCmd(finalCmd, sudo=True)
+            if rc != 0:
+                # Filter might be stale
+                self.invalidateFilter()
+                newCmd = self._addExtraCfg(cmd)
+                # Before blindly trying again make sure
+                # that the commands are not identical, because
+                # the devlist is sorted there is no fear
+                # of two identical filters looking differently
+                if newCmd != finalCmd:
+                    return misc.execCmd(newCmd, sudo=True)
 
-        return rc, out, err
+            return rc, out, err
 
     def __str__(self):
         return ("PVS:\n%s\n\nVGS:\n%s\n\nLVS:\n%s" %
