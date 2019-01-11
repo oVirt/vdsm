@@ -37,6 +37,8 @@ import logging
 from collections import namedtuple
 import pprint as pp
 import threading
+import time
+
 from itertools import chain
 from subprocess import list2cmdline
 
@@ -238,6 +240,13 @@ class LVMCache(object):
     Keep all the LVM information.
     """
 
+    # Read-only commands may fail if the SPM modified VG metadata while
+    # a read-only command was reading the metadata. We retry the command
+    # with exponential back-off delay to recover for these failures.
+    READ_ONLY_RETRIES = 10
+    RETRY_DELAY = 0.01
+    RETRY_BACKUP_OFF = 2
+
     def __init__(self):
         self._read_only_lock = rwlock.RWLock()
         self._read_only = False
@@ -322,6 +331,24 @@ class LVMCache(object):
                 rc, out, err = misc.execCmd(full_cmd, sudo=True)
                 if rc == 0:
                     return rc, out, err
+
+            # 3. If we run in read-only mode, retry the command in case it
+            # failed because VG metadata was modified while the command was
+            # reading the metadata.
+            if self._read_only:
+                delay = self.RETRY_DELAY
+                for retry in range(1, self.READ_ONLY_RETRIES + 1):
+                    log.warning(
+                        "Retry %d failed, retrying in %.2f seconds, cmd=%r "
+                        "rc=%r err=%r",
+                        retry, delay, full_cmd, rc, err)
+
+                    time.sleep(delay)
+                    delay *= self.RETRY_BACKUP_OFF
+
+                    rc, out, err = misc.execCmd(full_cmd, sudo=True)
+                    if rc == 0:
+                        return rc, out, err
 
             return rc, out, err
 
