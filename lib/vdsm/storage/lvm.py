@@ -1106,7 +1106,7 @@ def invalidateVG(vgName, invalidateLVs=True, invalidatePVs=False):
 
 
 def _getpvblksize(pv):
-    dev = devicemapper.getDmId(os.path.basename(pv))
+    dev = os.path.realpath(pv)
     return multipath.getDeviceBlockSizes(dev)
 
 
