@@ -172,7 +172,7 @@ def temp_storage(monkeypatch, tmpdir):
 @xfail_python3
 @skipif_fedora_29
 @pytest.mark.root
-def test_vg_create_remove(temp_storage):
+def test_vg_create_remove_single_device(temp_storage):
     dev_size = 20 * 1024**3
     dev = temp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
@@ -201,6 +201,131 @@ def test_vg_create_remove(temp_storage):
     pv = lvm.getPV(dev)
     assert pv.name == dev
     assert pv.vg_name == ""
+
+
+@requires_root
+@xfail_python3
+@skipif_fedora_29
+@pytest.mark.root
+def test_vg_create_multiple_devices(temp_storage):
+    dev_size = 10 * 1024**3
+    dev1 = temp_storage.create_device(dev_size)
+    dev2 = temp_storage.create_device(dev_size)
+    dev3 = temp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lvm.createVG(vg_name, [dev1, dev2, dev3], "initial-tag", 128)
+
+    vg = lvm.getVG(vg_name)
+    assert vg.name == vg_name
+    assert sorted(vg.pv_name) == sorted((dev1, dev2, dev3))
+
+    # The first pv (metadata pv) will have the 2 used metadata areas.
+    pv = lvm.getPV(dev1)
+    assert pv.name == dev1
+    assert pv.vg_name == vg_name
+    assert int(pv.dev_size) == dev_size
+    assert int(pv.mda_count) == 2
+    assert int(pv.mda_used_count) == 2
+
+    # The rest of the pvs will have 2 unused metadata areas.
+    for dev in dev2, dev3:
+        pv = lvm.getPV(dev)
+        assert pv.name == dev
+        assert pv.vg_name == vg_name
+        assert int(pv.dev_size) == dev_size
+        assert int(pv.mda_count) == 2
+        assert int(pv.mda_used_count) == 0
+
+    lvm.removeVG(vg_name)
+
+    # We remove the VG
+    with pytest.raises(se.VolumeGroupDoesNotExist):
+        lvm.getVG(vg_name)
+
+    # But keep the PVs, not sure why.
+    for dev in dev1, dev2, dev3:
+        pv = lvm.getPV(dev)
+        assert pv.name == dev
+        assert pv.vg_name == ""
+
+
+@requires_root
+@xfail_python3
+@skipif_fedora_29
+@pytest.mark.root
+def test_vg_extend_reduce(temp_storage):
+    dev_size = 10 * 1024**3
+    dev1 = temp_storage.create_device(dev_size)
+    dev2 = temp_storage.create_device(dev_size)
+    dev3 = temp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lvm.createVG(vg_name, [dev1], "initial-tag", 128)
+
+    vg = lvm.getVG(vg_name)
+    assert vg.pv_name == (dev1,)
+
+    lvm.extendVG(vg_name, [dev2, dev3], force=False)
+    vg = lvm.getVG(vg_name)
+    assert sorted(vg.pv_name) == sorted((dev1, dev2, dev3))
+
+    # The first pv (metadata pv) will have the 2 used metadata areas.
+    pv = lvm.getPV(dev1)
+    assert pv.name == dev1
+    assert pv.vg_name == vg_name
+    assert int(pv.dev_size) == dev_size
+    assert int(pv.mda_count) == 2
+    assert int(pv.mda_used_count) == 2
+
+    # The rest of the pvs will have 2 unused metadata areas.
+    for dev in dev2, dev3:
+        pv = lvm.getPV(dev)
+        assert pv.name == dev
+        assert pv.vg_name == vg_name
+        assert int(pv.dev_size) == dev_size
+        assert int(pv.mda_count) == 2
+        assert int(pv.mda_used_count) == 0
+
+    lvm.reduceVG(vg_name, dev2)
+    vg = lvm.getVG(vg_name)
+    assert sorted(vg.pv_name) == sorted((dev1, dev3))
+
+    lvm.removeVG(vg_name)
+    with pytest.raises(se.VolumeGroupDoesNotExist):
+        lvm.getVG(vg_name)
+
+
+@requires_root
+@xfail_python3
+@skipif_fedora_29
+@pytest.mark.root
+def test_vg_add_delete_tags(temp_storage):
+    dev_size = 20 * 1024**3
+    dev = temp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+    lvm.changeVGTags(
+        vg_name,
+        delTags=("initial-tag",),
+        addTags=("new-tag-1", "new-tag-2"))
+
+    lvm.changeVGTags(
+        vg_name,
+        delTags=["initial-tag"],
+        addTags=["new-tag-1", "new-tag-2"])
+    vg = lvm.getVG(vg_name)
+    assert sorted(vg.tags) == ["new-tag-1", "new-tag-2"]
+
+
+@requires_root
+@pytest.mark.root
+@skipif_fedora_29
+def test_vg_check(temp_storage):
+    dev_size = 10 * 1024**3
+    dev1 = temp_storage.create_device(dev_size)
+    dev2 = temp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lvm.createVG(vg_name, [dev1, dev2], "initial-tag", 128)
+    assert lvm.chkVG(vg_name)
 
 
 @requires_root
