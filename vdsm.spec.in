@@ -409,19 +409,6 @@ Requires:       %{name}-network = %{version}-%{release}
 %description python
 Shared libraries between the various VDSM packages.
 
-%post python
-# REQUIRED_FOR: Upgrade from 4.14 to 4.17
-# HACK: Remove vdsm python lib __init__ file if installed on old location
-# https://bugzilla.redhat.com/show_bug.cgi?id=1279167
-if [ "$1" -ge 2 ]; then
-    if [ -d "%{python2_sitearch}/%{vdsm_name}" ]; then
-        logger -t '%{vdsm_name}' \
-            'Disabling old vdsm package in %{python2_sitearch}/%{vdsm_name}.' \
-            'Removing %{python2_sitearch}/%{vdsm_name}/init.py*'
-        rm -f %{python2_sitearch}/%{vdsm_name}/__init__.py*
-    fi
-fi
-
 %package tests
 Summary:        VDSM Test Suite
 BuildArch:      noarch
