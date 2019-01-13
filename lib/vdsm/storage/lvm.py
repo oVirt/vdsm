@@ -721,9 +721,12 @@ def invalidateCache():
 
 
 def _fqpvname(pv):
-    if pv and not pv.startswith(PV_PREFIX):
-        pv = os.path.join(PV_PREFIX, pv)
-    return pv
+    if pv[0] == "/":
+        # Absolute path, use as is.
+        return pv
+    else:
+        # Multipath device guid
+        return os.path.join(PV_PREFIX, pv)
 
 
 def _createpv(devices, metadataSize, options=tuple()):
