@@ -49,3 +49,5 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
   easy_install pip && \
   pip install nose==1.3.7 tox==2.9.1 yappi==0.93 mock && \
   yum clean all
+
+COPY lvmlocal.conf /etc/lvm/

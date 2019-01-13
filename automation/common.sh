@@ -114,6 +114,11 @@ collect_logs() {
         . || echo "WARNING: Ignoring error collecting logs in /var/host_log"
 }
 
+install_lvmlocal_conf() {
+    mkdir -p /etc/lvm
+    cp docker/lvmlocal.conf /etc/lvm/
+}
+
 run_tests() {
     local python_version="$1"
 
@@ -129,6 +134,8 @@ run_tests() {
     # Make sure we have enough loop device nodes. Using 16 devices since with 8
     # devices we have random mount failures.
     create_loop_devices 16
+
+    install_lvmlocal_conf
 
     TIMEOUT=600 make "tests-$python_version" NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 }
