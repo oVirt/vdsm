@@ -31,6 +31,7 @@ from contextlib import closing
 import six
 import pytest
 
+from vdsm.common import commands
 from vdsm.common import constants
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
@@ -353,3 +354,130 @@ def test_lv_create_remove(temp_storage):
     lvm.removeLVs(vg_name, [lv_name])
     with pytest.raises(se.LogicalVolumeDoesNotExistError):
         lvm.getLV(vg_name, lv_name)
+
+
+@requires_root
+@xfail_python3
+@skipif_fedora_29
+@pytest.mark.root
+def test_lv_add_delete_tags(temp_storage):
+    dev_size = 20 * 1024**3
+    dev = temp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lv_name = str(uuid.uuid4())
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+    lvm.createLV(vg_name, lv_name, 1024, activate=False)
+    lvm.changeLVTags(
+        vg_name,
+        lv_name,
+        delTags=("initial-tag",),
+        addTags=("new-tag-1", "new-tag-2"))
+
+    lv = lvm.getLV(vg_name, lv_name)
+    assert sorted(lv.tags) == ["new-tag-1", "new-tag-2"]
+
+
+@requires_root
+@xfail_python3
+@skipif_fedora_29
+@pytest.mark.root
+def test_lv_activate_deactivate(temp_storage):
+    dev_size = 20 * 1024**3
+    dev = temp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lv_name = str(uuid.uuid4())
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+    lvm.createLV(vg_name, lv_name, 1024, activate=False)
+
+    lv = lvm.getLV(vg_name, lv_name)
+    assert not lv.active
+
+    # Activate the inactive lv.
+    lvm.activateLVs(vg_name, [lv_name])
+    lv = lvm.getLV(vg_name, lv_name)
+    assert lv.active
+
+    # Deactivate the active lv.
+    lvm.deactivateLVs(vg_name, [lv_name])
+    lv = lvm.getLV(vg_name, lv_name)
+    assert not lv.active
+
+
+@requires_root
+@xfail_python3
+@skipif_fedora_29
+@pytest.mark.root
+def test_lv_extend_reduce(temp_storage):
+    dev_size = 20 * 1024**3
+    dev = temp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lv_name = str(uuid.uuid4())
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+    lvm.createLV(vg_name, lv_name, 1024)
+
+    lvm.extendLV(vg_name, lv_name, 2048)
+    lv = lvm.getLV(vg_name, lv_name)
+    assert int(lv.size) == 2 * 1024**3
+
+    # Reducing active LV requires force.
+    lvm.reduceLV(vg_name, lv_name, 1024, force=True)
+    lv = lvm.getLV(vg_name, lv_name)
+    assert int(lv.size) == 1 * 1024**3
+
+
+@requires_root
+@xfail_python3
+@skipif_fedora_29
+@pytest.mark.root
+def test_lv_refresh(temp_storage):
+    dev_size = 20 * 1024**3
+    dev = temp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lv_name = str(uuid.uuid4())
+    lv_fullname = "{}/{}".format(vg_name, lv_name)
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+    lvm.createLV(vg_name, lv_name, 1024)
+
+    # Simulate extending the LV on the SPM.
+    commands.run([
+        "lvextend",
+        "--config", temp_storage.lvm_config(),
+        "-L+1g",
+        lv_fullname
+    ])
+
+    # Refreshing LV invalidates the cache to pick up changes from storage.
+    lvm.refreshLVs(vg_name, [lv_name])
+    lv = lvm.getLV(vg_name, lv_name)
+    assert int(lv.size) == 2 * 1024**3
+
+    # Simulate extending the LV on the SPM.
+    commands.run([
+        "lvextend",
+        "--config", temp_storage.lvm_config(),
+        "-L+1g",
+        lv_fullname
+    ])
+
+    # Activate active LV refreshes it.
+    lvm.activateLVs(vg_name, [lv_name])
+    lv = lvm.getLV(vg_name, lv_name)
+    assert int(lv.size) == 3 * 1024**3
+
+
+@requires_root
+@xfail_python3
+@skipif_fedora_29
+@pytest.mark.root
+def test_lv_rename(temp_storage):
+    dev_size = 20 * 1024**3
+    dev = temp_storage.create_device(dev_size)
+    vg_name = str(uuid.uuid4())
+    lv_name = str(uuid.uuid4())
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+    lvm.createLV(vg_name, lv_name, 1024)
+
+    new_lv_name = "renamed-" + lv_name
+    lvm.renameLV(vg_name, lv_name, new_lv_name)
+    lv = lvm.getLV(vg_name, new_lv_name)
+    assert lv.name == new_lv_name
