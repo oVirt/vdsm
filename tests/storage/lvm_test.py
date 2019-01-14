@@ -33,6 +33,7 @@ import pytest
 
 from vdsm.common import commands
 from vdsm.common import constants
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import lvm
 from vdsm.storage import multipath
@@ -158,6 +159,12 @@ def temp_storage(monkeypatch, tmpdir):
 
     # Get devices from our temporary storage instead of multipath.
     monkeypatch.setattr(multipath, "getMPDevNamesIter", storage.devices)
+
+    # Use custom /run/vdsm/storage directory, used to keep symlinks to active
+    # lvs.
+    storage_dir = str(tmpdir.join("storage"))
+    os.mkdir(storage_dir)
+    monkeypatch.setattr(sc, "P_VDSM_STORAGE", storage_dir)
 
     with closing(storage):
         # Don't let other test break us...
@@ -502,8 +509,15 @@ def test_bootstrap(temp_storage):
 
     for vg_name in vgs:
         # Create active lvs.
-        for lv_name in ("skip", "opened", "unused"):
+        for lv_name in ("skip", "prepared", "opened", "unused"):
             lvm.createLV(vg_name, lv_name, 1024)
+
+        # Create links to prepared lvs.
+        img_dir = os.path.join(sc.P_VDSM_STORAGE, vg_name, "img")
+        os.makedirs(img_dir)
+        os.symlink(
+            lvm.lvPath(vg_name, "prepared"),
+            os.path.join(img_dir, "prepared"))
 
     # Open some lvs during bootstrap.
     vg1_opened = lvm.lvPath(vg1_name, "opened")
@@ -514,7 +528,7 @@ def test_bootstrap(temp_storage):
 
         # Lvs in skiplvs, prepared lvs, and opened lvs should be active.
         for vg_name in vgs:
-            for lv_name in ("skip", "opened"):
+            for lv_name in ("skip", "prepared", "opened"):
                 lv = lvm.getLV(vg_name, lv_name)
                 assert lv.active
 

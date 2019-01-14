@@ -44,6 +44,7 @@ from vdsm import constants
 from vdsm.common import errors
 
 from vdsm.storage import devicemapper
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage import multipath
@@ -688,7 +689,7 @@ def bootstrap(skiplvs=()):
         deactivate = []
 
         # List prepared images LVs if any
-        pattern = "/run/vdsm/storage/{}/*/*".format(vg.name)
+        pattern = "{}/{}/*/*".format(sc.P_VDSM_STORAGE, vg.name)
         prepared = frozenset(os.path.basename(n) for n in glob.iglob(pattern))
 
         for lv in _lvminfo.getLv(vg.name):
