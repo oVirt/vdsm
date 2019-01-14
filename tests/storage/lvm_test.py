@@ -481,3 +481,44 @@ def test_lv_rename(temp_storage):
     lvm.renameLV(vg_name, lv_name, new_lv_name)
     lv = lvm.getLV(vg_name, new_lv_name)
     assert lv.name == new_lv_name
+
+
+@requires_root
+@xfail_python3
+@skipif_fedora_29
+@pytest.mark.root
+def test_bootstrap(temp_storage):
+    dev_size = 20 * 1024**3
+
+    dev1 = temp_storage.create_device(dev_size)
+    vg1_name = str(uuid.uuid4())
+    lvm.createVG(vg1_name, [dev1], "initial-tag", 128)
+
+    dev2 = temp_storage.create_device(dev_size)
+    vg2_name = str(uuid.uuid4())
+    lvm.createVG(vg2_name, [dev2], "initial-tag", 128)
+
+    vgs = (vg1_name, vg2_name)
+
+    for vg_name in vgs:
+        # Create active lvs.
+        for lv_name in ("skip", "opened", "unused"):
+            lvm.createLV(vg_name, lv_name, 1024)
+
+    # Open some lvs during bootstrap.
+    vg1_opened = lvm.lvPath(vg1_name, "opened")
+    vg2_opened = lvm.lvPath(vg2_name, "opened")
+    with open(vg1_opened), open(vg2_opened):
+
+        lvm.bootstrap(skiplvs=["skip"])
+
+        # Lvs in skiplvs, prepared lvs, and opened lvs should be active.
+        for vg_name in vgs:
+            for lv_name in ("skip", "opened"):
+                lv = lvm.getLV(vg_name, lv_name)
+                assert lv.active
+
+        # Unused lvs should not be active.
+        for vg_name in vgs:
+            lv = lvm.getLV(vg_name, "unused")
+            assert not lv.active
