@@ -536,3 +536,28 @@ def test_bootstrap(temp_storage):
         for vg_name in vgs:
             lv = lvm.getLV(vg_name, "unused")
             assert not lv.active
+
+
+@requires_root
+@xfail_python3
+@skipif_fedora_29
+@pytest.mark.root
+def test_retry_with_wider_filter(temp_storage):
+    # Force reload of the cache. The system does not know about any device at
+    # this point.
+    lvm.getAllPVs()
+
+    # Create a device - this device in not the lvm cached filter yet.
+    dev = temp_storage.create_device(20 * 1024**3)
+
+    # We run vgcreate with explicit devices argument, so the filter is correct
+    # and it succeeds.
+    vg_name = str(uuid.uuid4())
+    lvm.createVG(vg_name, [dev], "initial-tag", 128)
+
+    # The cached filter is stale at this point, and so is the vg metadata in
+    # the cache. Running "vgs vg-name" fails because of the stale filter, so we
+    # invalidate the filter and run it again.
+
+    vg = lvm.getVG(vg_name)
+    assert vg.pv_name == (dev,)
