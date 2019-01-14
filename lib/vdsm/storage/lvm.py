@@ -145,12 +145,19 @@ USER_DEV_LIST = filter(None, config.get("irs", "lvm_dev_whitelist").split(","))
 
 
 def _buildFilter(devices):
-    strippeds = set(d.strip() for d in devices)
-    strippeds.discard('')  # Who has put a blank here?
-    strippeds = sorted(strippeds)
-    patterns = ["^{}$".format(dev.replace(r'\x', r'\\x')) for dev in strippeds]
-    accept = "|".join(patterns)
-    return 'filter=["a|{}|", "r|.*|"]'.format(accept)
+    devices = set(d.strip() for d in devices)
+    devices.discard('')
+    if devices:
+        # Accept specified devices, reject everything else.
+        # ["a|^/dev/1$|^/dev/2$|", "r|.*|"]
+        devices = sorted(d.replace(r'\x', r'\\x') for d in devices)
+        pattern = "|".join("^{}$".format(d) for d in devices)
+        accept = '"a|{}|", '.format(pattern)
+    else:
+        # Reject all devices.
+        # ["r|.*|"]
+        accept = ''
+    return 'filter=[{}"r|.*|"]'.format(accept)
 
 
 def _buildConfig(devList):

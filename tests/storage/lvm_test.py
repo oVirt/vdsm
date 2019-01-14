@@ -37,6 +37,13 @@ def test_build_filter_quoting():
     assert expected == lvm._buildFilter(devices)
 
 
+def test_build_filter_no_devices():
+    # This special case is possible on a system without any multipath device.
+    # LVM commands will succeed, returning no info.
+    expected = 'filter=["r|.*|"]'
+    assert expected == lvm._buildFilter(())
+
+
 def test_build_config():
     devices = ("/dev/a", "/dev/b")
     expected = (
