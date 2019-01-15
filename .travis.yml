@@ -11,6 +11,7 @@ git:
 
 # Notes: we run the linters only on Fedora 28 to save time. This may miss some
 # issues on CentOS but the chance is very low.
+# TODO: add Fedora 29 python 3.7 build.
 env:
   matrix:
     - DOCKER_IMAGE=ovirtorg/vdsm-test-centos
@@ -22,14 +23,7 @@ env:
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-28
       MAKE_TARGET=lint
     - DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-29
-      MAKE_TARGET=check
-
-matrix:
-  fast_finish: true
-  allow_failures:
-    # Fedora 29 uses python 3.7, breaking compatibility again by making "async"
-    # a keyword.
-    - env: DOCKER_IMAGE=ovirtorg/vdsm-test-fedora-29 MAKE_TARGET=check
+      MAKE_TARGET=tests-py27
 
 before_install:
   - docker --version
