@@ -25,7 +25,6 @@ from contextlib import contextmanager
 
 import pytest
 
-from network.nettestlib import running_on_centos
 from network.nettestlib import running_on_travis_ci
 from network.ovsnettestlib import cleanup_bridges
 from network.ovsnettestlib import OvsService
@@ -34,7 +33,7 @@ from network.ovsnettestlib import OvsService
 @pytest.fixture(scope='session', autouse=True)
 def ovs_service():
     service = OvsService()
-    with xfail_when_running_on_travis_with_centos():
+    with xfail_when_running_on_travis():
         service.setup()
     try:
         yield
@@ -51,11 +50,11 @@ def ovs_cleanup_bridges():
 
 
 @contextmanager
-def xfail_when_running_on_travis_with_centos():
+def xfail_when_running_on_travis():
     try:
         yield
     except AssertionError:
-        if running_on_travis_ci() and running_on_centos():
+        if running_on_travis_ci():
             pytest.xfail('Unable to run OVS tests on travis-ci')
         else:
             raise
