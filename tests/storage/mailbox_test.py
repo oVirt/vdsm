@@ -35,7 +35,10 @@ import vdsm.storage.mailbox as sm
 
 MAX_HOSTS = 10
 MAILER_TIMEOUT = 6
-MONITOR_INTERVAL = 0.1
+
+# We used 0.1 seconds for several years, and it proved flaky, failing randomly.
+MONITOR_INTERVAL = 0.2
+
 SPUUID = '5d928855-b09b-47a7-b920-bd2d2eb5808c'
 
 
