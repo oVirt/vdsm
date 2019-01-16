@@ -472,11 +472,11 @@ class StorageDomainManifest(object):
     def getReservedId(self):
         return self._domainLock.getReservedId()
 
-    def acquireHostId(self, hostId, async=False):
-        self._domainLock.acquireHostId(hostId, async)
+    def acquireHostId(self, hostId, wait=True):
+        self._domainLock.acquireHostId(hostId, wait)
 
-    def releaseHostId(self, hostId, async=False, unused=False):
-        self._domainLock.releaseHostId(hostId, async, unused)
+    def releaseHostId(self, hostId, wait=True, unused=False):
+        self._domainLock.releaseHostId(hostId, wait, unused)
 
     def hasHostId(self, hostId):
         return self._domainLock.hasHostId(hostId)
@@ -885,11 +885,11 @@ class StorageDomain(object):
     def getReservedId(self):
         return self._manifest.getReservedId()
 
-    def acquireHostId(self, hostId, async=False):
-        self._manifest.acquireHostId(hostId, async)
+    def acquireHostId(self, hostId, wait=True):
+        self._manifest.acquireHostId(hostId, wait)
 
-    def releaseHostId(self, hostId, async=False, unused=False):
-        self._manifest.releaseHostId(hostId, async, unused)
+    def releaseHostId(self, hostId, wait=True, unused=False):
+        self._manifest.releaseHostId(hostId, wait, unused)
 
     def hasHostId(self, hostId):
         return self._manifest.hasHostId(hostId)

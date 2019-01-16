@@ -563,7 +563,7 @@ class MonitorThread(object):
     @utils.cancelpoint
     def _acquireHostId(self):
         try:
-            self.domain.acquireHostId(self.hostId, async=True)
+            self.domain.acquireHostId(self.hostId, wait=False)
         except:
             log.exception("Error acquiring host id %s for domain %s",
                           self.hostId, self.sdUUID)

@@ -62,7 +62,7 @@ class FakeSanlock(object):
 
     @maybefail
     def add_lockspace(self, lockspace, host_id, path, offset=0, iotimeout=0,
-                      async=False):
+                      **kwargs):
         """
         Add a lockspace, acquiring a host_id in it. If async is True the
         function will return immediatly and the status can be checked
@@ -80,6 +80,7 @@ class FakeSanlock(object):
         # Such check may be added also into other places. Find all relevant
         # places is also TBD.
 
+        wait = not kwargs.get('async', False)
         generation = 0
         host = self.hosts.get(host_id)
         if host:
@@ -103,15 +104,15 @@ class FakeSanlock(object):
             # Wake up threads waiting on inq_lockspace()
             ls["ready"].set()
 
-        if async:
+        if wait:
+            complete()
+        else:
             # The test must call complete_async().
             ls["complete"] = complete
-        else:
-            complete()
 
     @maybefail
-    def rem_lockspace(self, lockspace, host_id, path, offset=0, async=False,
-                      unused=False):
+    def rem_lockspace(self, lockspace, host_id, path, offset=0,
+                      unused=False, **kwargs):
         """
         Remove a lockspace, releasing the acquired host_id. If async is
         True the function will return immediately and the status can be
@@ -119,6 +120,7 @@ class FakeSanlock(object):
         fail (EBUSY) if there is at least one acquired resource in the
         lockspace (instead of automatically release it).
         """
+        wait = not kwargs.get('async', False)
         ls = self.spaces[lockspace]
 
         # Mark the locksapce as not ready, so callers of inq_lockspace will
@@ -131,11 +133,11 @@ class FakeSanlock(object):
             del self.spaces[lockspace]
             ls["ready"].set()
 
-        if async:
+        if wait:
+            complete()
+        else:
             # The test must call complete_async().
             ls["complete"] = complete
-        else:
-            complete()
 
     def complete_async(self, lockspace):
         """

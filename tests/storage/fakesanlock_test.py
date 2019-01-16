@@ -56,7 +56,7 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_add_lockspace_async(self):
         fs = FakeSanlock()
-        fs.add_lockspace("lockspace", 1, "path", async=True)
+        fs.add_lockspace("lockspace", 1, "path", **{'async': True})
         ls = fs.spaces["lockspace"]
         self.assertEqual(ls["iotimeout"], 0)
         self.assertFalse(ls["ready"].is_set(), "lockspace is ready")
@@ -70,7 +70,7 @@ class TestFakeSanlock(VdsmTestCase):
     def test_rem_lockspace_async(self):
         fs = FakeSanlock()
         fs.add_lockspace("lockspace", 1, "path")
-        fs.rem_lockspace("lockspace", 1, "path", async=True)
+        fs.rem_lockspace("lockspace", 1, "path", **{'async': True})
         ls = fs.spaces["lockspace"]
         self.assertFalse(ls["ready"].is_set(), "lockspace is ready")
 
@@ -82,13 +82,13 @@ class TestFakeSanlock(VdsmTestCase):
 
     def test_inq_lockspace_acquring_no_wait(self):
         fs = FakeSanlock()
-        fs.add_lockspace("lockspace", 1, "path", async=True)
+        fs.add_lockspace("lockspace", 1, "path", **{'async': True})
         acquired = fs.inq_lockspace("lockspace", 1, "path")
         self.assertIsNone(acquired, "lockspace is ready")
 
     def test_inq_lockspace_acquiring_wait(self):
         fs = FakeSanlock()
-        fs.add_lockspace("lockspace", 1, "path", async=True)
+        fs.add_lockspace("lockspace", 1, "path", **{'async': True})
 
         t = concurrent.thread(fs.complete_async, args=("lockspace",))
         t.start()
@@ -108,14 +108,14 @@ class TestFakeSanlock(VdsmTestCase):
     def test_inq_lockspace_releasing_no_wait(self):
         fs = FakeSanlock()
         fs.add_lockspace("lockspace", 1, "path")
-        fs.rem_lockspace("lockspace", 1, "path", async=True)
+        fs.rem_lockspace("lockspace", 1, "path", **{'async': True})
         acquired = fs.inq_lockspace("lockspace", 1, "path")
         self.assertFalse(acquired, "lockspace not released")
 
     def test_inq_lockspace_releasing_wait(self):
         fs = FakeSanlock()
         fs.add_lockspace("lockspace", 1, "path")
-        fs.rem_lockspace("lockspace", 1, "path", async=True)
+        fs.rem_lockspace("lockspace", 1, "path", **{'async': True})
 
         t = concurrent.thread(fs.complete_async, args=("lockspace",))
         t.start()
@@ -188,7 +188,7 @@ class TestFakeSanlock(VdsmTestCase):
     def test_acquire_lockspace_adding(self):
         fs = FakeSanlock()
         fs.write_resource("lockspace", "resource", [("path", 1048576)])
-        fs.add_lockspace("lockspace", 1, "path", async=True)
+        fs.add_lockspace("lockspace", 1, "path", **{'async': True})
         fd = fs.register()
         with self.assertRaises(fs.SanlockException) as e:
             fs.acquire("lockspace", "resource", [("path", 1048576)], slkfd=fd)

@@ -164,11 +164,11 @@ class SafeLease(object):
     def getReservedId(self):
         return 1000
 
-    def acquireHostId(self, hostId, async):
+    def acquireHostId(self, hostId, wait):
         self.log.debug("Host id for domain %s successfully acquired (id: %s)",
                        self._sdUUID, hostId)
 
-    def releaseHostId(self, hostId, async, unused):
+    def releaseHostId(self, hostId, wait, unused):
         self.log.debug("Host id for domain %s released successfully (id: %s)",
                        self._sdUUID, hostId)
 
@@ -289,9 +289,9 @@ class SANLock(object):
     def getReservedId(self):
         return MAX_HOST_ID
 
-    def acquireHostId(self, hostId, async):
-        self.log.info("Acquiring host id for domain %s (id=%s, async=%s)",
-                      self._sdUUID, hostId, async)
+    def acquireHostId(self, hostId, wait):
+        self.log.info("Acquiring host id for domain %s (id=%s, wait=%s)",
+                      self._sdUUID, hostId, wait)
 
         # Ensure that future calls to acquire() will wait until host id is
         # acquired.
@@ -301,36 +301,36 @@ class SANLock(object):
             try:
                 with utils.stopwatch("sanlock.add_lockspace"):
                     sanlock.add_lockspace(self._sdUUID, hostId, self._idsPath,
-                                          async=async)
+                                          **{'async': not wait})
             except sanlock.SanlockException as e:
                 if e.errno == errno.EINPROGRESS:
                     # if the request is not asynchronous wait for the ongoing
                     # lockspace operation to complete else silently continue,
                     # the host id has been acquired or it's in the process of
                     # being acquired (async).
-                    if not async:
+                    if wait:
                         if not sanlock.inq_lockspace(self._sdUUID, hostId,
                                                      self._idsPath, wait=True):
                             raise se.AcquireHostIdFailure(self._sdUUID, e)
                         self.log.info("Host id for domain %s successfully "
-                                      "acquired (id=%s, async=%s)",
-                                      self._sdUUID, hostId, async)
+                                      "acquired (id=%s, wait=%s)",
+                                      self._sdUUID, hostId, wait)
                         self._ready.set()
                 elif e.errno == errno.EEXIST:
                     self.log.info("Host id for domain %s already acquired "
-                                  "(id=%s, async=%s)",
-                                  self._sdUUID, hostId, async)
+                                  "(id=%s, wait=%s)",
+                                  self._sdUUID, hostId, wait)
                     self._ready.set()
                 else:
                     raise se.AcquireHostIdFailure(self._sdUUID, e)
             else:
-                if not async:
+                if wait:
                     self.log.info("Host id for domain %s successfully "
-                                  "acquired (id=%s, async=%s)",
-                                  self._sdUUID, hostId, async)
+                                  "acquired (id=%s, wait=%s)",
+                                  self._sdUUID, hostId, wait)
                     self._ready.set()
 
-    def releaseHostId(self, hostId, async, unused):
+    def releaseHostId(self, hostId, wait, unused):
         self.log.info("Releasing host id for domain %s (id: %s)",
                       self._sdUUID, hostId)
 
@@ -340,7 +340,7 @@ class SANLock(object):
         with self._lock:
             try:
                 sanlock.rem_lockspace(self._sdUUID, hostId, self._idsPath,
-                                      async=async, unused=unused)
+                                      unused=unused, **{'async': not wait})
             except sanlock.SanlockException as e:
                 if e.errno != errno.ENOENT:
                     raise se.ReleaseHostIdFailure(self._sdUUID, e)
@@ -533,7 +533,7 @@ class LocalLock(object):
     def _getLease(self):
         return self._globalLockMap.get(self._sdUUID, (None, None))
 
-    def acquireHostId(self, hostId, async):
+    def acquireHostId(self, hostId, wait):
         with self._globalLockMapSync:
             currentHostId, lockFile = self._getLease()
 
@@ -547,7 +547,7 @@ class LocalLock(object):
         self.log.debug("Host id for domain %s successfully acquired (id: %s)",
                        self._sdUUID, hostId)
 
-    def releaseHostId(self, hostId, async, unused):
+    def releaseHostId(self, hostId, wait, unused):
         with self._globalLockMapSync:
             currentHostId, lockFile = self._getLease()
 
