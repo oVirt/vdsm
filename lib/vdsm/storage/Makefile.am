@@ -62,6 +62,7 @@ dist_vdsmstorage_PYTHON = \
 	lvmfilter.py \
 	mailbox.py \
 	managedvolume.py \
+	managedvolumedb.py \
 	merge.py \
 	misc.py \
 	monitor.py \

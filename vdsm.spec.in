@@ -1089,6 +1089,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/blockSD.py*
 %{python_sitelib}/%{vdsm_name}/storage/blockVolume.py*
 %{python_sitelib}/%{vdsm_name}/storage/managedvolume.py*
+%{python_sitelib}/%{vdsm_name}/storage/managedvolumedb.py*
 %{python_sitelib}/%{vdsm_name}/storage/check.py*
 %{python_sitelib}/%{vdsm_name}/storage/clusterlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/compat.py*
