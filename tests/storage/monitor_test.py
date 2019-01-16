@@ -138,8 +138,8 @@ class FakeDomain(object):
         return self.acquired
 
     @maybefail
-    def acquireHostId(self, hostId, async=True):
-        log.debug("Acquiring host id (hostId=%s, async=%s)", hostId, async)
+    def acquireHostId(self, hostId, wait=False):
+        log.debug("Acquiring host id (hostId=%s, wait=%s)", hostId, wait)
         assert not self.acquired, "Attempt to acquire acquired host id"
         self.acquired = True
 

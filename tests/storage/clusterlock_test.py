@@ -51,37 +51,37 @@ def fake_sanlock(monkeypatch):
 
 def test_acquire_host_id_sync(fake_sanlock):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
-    sl.acquireHostId(HOST_ID, async=False)
+    sl.acquireHostId(HOST_ID, wait=True)
     acquired = fake_sanlock.inq_lockspace(LS_NAME, HOST_ID, LS_PATH, LS_OFF)
     assert acquired is True
 
 
 def test_acquire_host_id_async(fake_sanlock):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
-    sl.acquireHostId(HOST_ID, async=True)
+    sl.acquireHostId(HOST_ID, wait=False)
     acquired = fake_sanlock.inq_lockspace(LS_NAME, HOST_ID, LS_PATH, LS_OFF)
     assert acquired is None
 
 
 def test_release_host_id_sync(fake_sanlock):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
-    sl.acquireHostId(HOST_ID, async=False)
-    sl.releaseHostId(HOST_ID, async=False, unused=False)
+    sl.acquireHostId(HOST_ID, wait=True)
+    sl.releaseHostId(HOST_ID, wait=True, unused=False)
     acquired = fake_sanlock.inq_lockspace(LS_NAME, HOST_ID, LS_PATH, LS_OFF)
     assert acquired is False
 
 
 def test_release_host_id_async(fake_sanlock):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
-    sl.acquireHostId(HOST_ID, async=False)
-    sl.releaseHostId(HOST_ID, async=True, unused=False)
+    sl.acquireHostId(HOST_ID, wait=True)
+    sl.releaseHostId(HOST_ID, wait=False, unused=False)
     acquired = fake_sanlock.inq_lockspace(LS_NAME, HOST_ID, LS_PATH, LS_OFF)
     assert acquired is None
 
 
 def test_acquire(fake_sanlock):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
-    sl.acquireHostId(HOST_ID, async=False)
+    sl.acquireHostId(HOST_ID, wait=True)
     sl.acquire(HOST_ID, LEASE)
     res = fake_sanlock.read_resource(LEASE.path, LEASE.offset)
     assert res["acquired"]
@@ -89,7 +89,7 @@ def test_acquire(fake_sanlock):
 
 def test_release(fake_sanlock):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
-    sl.acquireHostId(HOST_ID, async=False)
+    sl.acquireHostId(HOST_ID, wait=True)
     sl.acquire(HOST_ID, LEASE)
     sl.release(LEASE)
     res = fake_sanlock.read_resource(LEASE.path, LEASE.offset)
@@ -99,7 +99,7 @@ def test_release(fake_sanlock):
 def test_acquire_wait_until_host_id_is_acquired(fake_sanlock):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
     # Starts async host id acquire...
-    sl.acquireHostId(HOST_ID, async=True)
+    sl.acquireHostId(HOST_ID, wait=False)
 
     def monitor():
         # Simulate the domain monitor checking if host id was acquire every 10
@@ -127,7 +127,7 @@ def test_acquire_wait_until_host_id_is_acquired(fake_sanlock):
 def test_acquire_after_inq_lockspace_failure(fake_sanlock):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
     # Starts async host id acquire...
-    sl.acquireHostId(HOST_ID, async=True)
+    sl.acquireHostId(HOST_ID, wait=False)
 
     def monitor():
         time.sleep(0.3)
@@ -162,21 +162,21 @@ def test_acquire_timeout_waiting_for_host_id(fake_sanlock, monkeypatch):
     monkeypatch.setattr(clusterlock.SANLock, "ACQUIRE_HOST_ID_TIMEOUT", 0.0)
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
     # Starts async host id acquire that will never complete...
-    sl.acquireHostId(HOST_ID, async=True)
+    sl.acquireHostId(HOST_ID, wait=False)
     # Acquire should time out
     pytest.raises(se.AcquireHostIdFailure, sl.acquire, HOST_ID, LEASE)
 
 
 def test_acquire_after_relases_host_id(fake_sanlock):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
-    sl.acquireHostId(HOST_ID, async=False)
-    sl.releaseHostId(HOST_ID, async=False, unused=False)
+    sl.acquireHostId(HOST_ID, wait=True)
+    sl.releaseHostId(HOST_ID, wait=True, unused=False)
     pytest.raises(concurrent.InvalidEvent, sl.acquire, HOST_ID, LEASE)
 
 
 def test_inquire_lease(fake_sanlock):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
-    sl.acquireHostId(HOST_ID, async=False)
+    sl.acquireHostId(HOST_ID, wait=True)
     sl.acquire(HOST_ID, LEASE)
     version, owner = sl.inquire(LEASE)
     assert version == 0
@@ -192,7 +192,7 @@ def test_inquire_lease(fake_sanlock):
 ])
 def test_inquire_owner_status(fake_sanlock, status, expected_owner_id):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
-    sl.acquireHostId(HOST_ID, async=False)
+    sl.acquireHostId(HOST_ID, wait=True)
     sl.acquire(HOST_ID, LEASE)
     # we are simulating another host inquiring the lease
     fake_sanlock.hosts[HOST_ID]["flags"] = status
@@ -206,10 +206,10 @@ def test_inquire_owner_reconnected(fake_sanlock):
     # This simulates a host reconnecting to the lockspace.
     # The lease should have no owner since the generation
     # increases each time a host reconnects to the lockspace
-    sl.acquireHostId(HOST_ID, async=False)
+    sl.acquireHostId(HOST_ID, wait=True)
     sl.acquire(HOST_ID, LEASE)
-    sl.releaseHostId(HOST_ID, async=False, unused=True)
-    sl.acquireHostId(HOST_ID, async=False)
+    sl.releaseHostId(HOST_ID, wait=True, unused=True)
+    sl.acquireHostId(HOST_ID, wait=True)
     version, owner = sl.inquire(LEASE)
     assert version == 0
     assert owner is None
@@ -217,9 +217,9 @@ def test_inquire_owner_reconnected(fake_sanlock):
 
 def test_inquire_smaller_host_generation(fake_sanlock):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
-    sl.acquireHostId(HOST_ID, async=False)
-    sl.releaseHostId(HOST_ID, async=False, unused=True)
-    sl.acquireHostId(HOST_ID, async=False)
+    sl.acquireHostId(HOST_ID, wait=True)
+    sl.releaseHostId(HOST_ID, wait=True, unused=True)
+    sl.acquireHostId(HOST_ID, wait=True)
     sl.acquire(HOST_ID, LEASE)
     # Setting the host generation to be smaller than the
     # generation on the lease (an invalid state), the
@@ -232,7 +232,7 @@ def test_inquire_smaller_host_generation(fake_sanlock):
 
 def test_inquire_lease_has_no_owner(fake_sanlock):
     sl = clusterlock.SANLock(LS_NAME, LS_PATH, LEASE)
-    sl.acquireHostId(HOST_ID, async=False)
+    sl.acquireHostId(HOST_ID, wait=True)
     version, owner = sl.inquire(LEASE)
     assert version is None
     assert owner is None

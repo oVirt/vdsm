@@ -133,11 +133,11 @@ class FakeDomainManifest(object):
         pass
 
     @recorded
-    def acquireHostId(self, hostId, async=False):
+    def acquireHostId(self, hostId, wait=True):
         pass
 
     @recorded
-    def releaseHostId(self, hostId, async=False, unused=False):
+    def releaseHostId(self, hostId, wait=True, unused=False):
         pass
 
     @recorded

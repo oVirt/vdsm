@@ -165,7 +165,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
     newClusterLock.initLock(domain.getClusterLease())
 
     log.debug("Acquiring the host id %s for domain %s", hostId, domain.sdUUID)
-    newClusterLock.acquireHostId(hostId, async=False)
+    newClusterLock.acquireHostId(hostId, wait=True)
 
     def v3UpgradeVolumePermissions(vol):
         log.debug("Changing permissions (read-write) for the "
@@ -338,7 +338,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
         try:
             log.error("Releasing the host id %s for domain %s", hostId,
                       domain.sdUUID)
-            newClusterLock.releaseHostId(hostId, async=False, unused=True)
+            newClusterLock.releaseHostId(hostId, wait=True, unused=True)
         except:
             log.error("Unable to release the host id %s for domain %s",
                       hostId, domain.sdUUID, exc_info=True)
