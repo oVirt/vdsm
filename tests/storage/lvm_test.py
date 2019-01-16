@@ -31,9 +31,13 @@ from vdsm.common import commands
 from vdsm.common import constants
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage import misc
 from vdsm.storage import lvm
 
 from . marks import requires_root, xfail_python3
+
+
+# TODO: replace the filter tests with cmd tests.
 
 
 def test_build_filter():
@@ -59,6 +63,9 @@ def test_build_filter_with_user_devices(monkeypatch):
     monkeypatch.setattr(lvm, "USER_DEV_LIST", ("/dev/b",))
     expected_filter = '["a|^/dev/a$|^/dev/b$|^/dev/c$|", "r|.*|"]'
     assert expected_filter == lvm._buildFilter(("/dev/a", "/dev/c"))
+
+
+# TODO: replace the build command tests with cmd tests.
 
 
 def test_build_config():
@@ -141,6 +148,241 @@ def test_build_command_read_only(fake_devices):
     lc.set_read_only(True)
     cmd = lc._addExtraCfg(["lvs", "-o", "+tags"])
     assert " locking_type=4 " in cmd[3]
+
+
+class FakeRunner(object):
+    """
+    Simulate a command failing multiple times before suceeding. This is the
+    case when running lvm read-only command with a very busy SPM.
+
+    By default, the first call will succeed, returning the given rc, out, and
+    err.
+
+    If retries is set, requires retires extra failing calls to succeed.
+
+    To validate the call, inspect the calls instance variable.
+    """
+
+    def __init__(self, rc=0, out=b"", err=b"", retries=0):
+        self.rc = rc
+        self.out = out
+        self.err = err
+        self.retries = retries
+        self.calls = []
+
+    def __call__(self, cmd, **kwargs):
+        self.calls.append((cmd, kwargs))
+
+        if self.retries > 0:
+            self.retries -= 1
+            return 1, b"", b"fake error"
+
+        return self.rc, self.out, self.err
+
+
+@pytest.fixture
+def fake_runner(monkeypatch):
+    runner = FakeRunner()
+    monkeypatch.setattr(misc, "execCmd", runner)
+    # Disable delay to speed up testing.
+    monkeypatch.setattr(lvm.LVMCache, "RETRY_DELAY", 0)
+    return runner
+
+
+def test_cmd_success(fake_devices, fake_runner):
+    lc = lvm.LVMCache()
+    rc, out, err = lc.cmd(["lvs", "-o", "+tags"])
+
+    assert rc == 0
+    assert len(fake_runner.calls) == 1
+
+    cmd, kwargs = fake_runner.calls[0]
+    assert cmd == [
+        constants.EXT_LVM,
+        "lvs",
+        "--config",
+        lvm._buildConfig(
+            dev_filter=lvm._buildFilter(fake_devices),
+            locking_type="1"),
+        "-o", "+tags",
+    ]
+
+    assert kwargs == {"sudo": True}
+
+
+def test_cmd_error(fake_devices, fake_runner):
+    lc = lvm.LVMCache()
+
+    # Require 2 calls to succeed.
+    assert lc.READ_ONLY_RETRIES > 1
+    fake_runner.retries = 1
+
+    # Since the filter is correct, the error should be propagated to the caller
+    # after the first call.
+    rc, out, err = lc.cmd(["lvs", "-o", "+tags"])
+
+    assert rc == 1
+    assert len(fake_runner.calls) == 1
+
+
+def test_cmd_retry_filter_stale(fake_devices, fake_runner):
+    # Make a call to load the cache.
+    initial_devices = fake_devices[:]
+    lc = lvm.LVMCache()
+    lc.cmd(["fake"])
+    del fake_runner.calls[:]
+
+    # Add a new device to the system. This will makes the cached filter stale,
+    # so the command will be retried with a new filter.
+    fake_devices.append("/dev/mapper/c")
+
+    # Require 2 calls to succeed.
+    assert lc.READ_ONLY_RETRIES > 1
+    fake_runner.retries = 1
+
+    rc, out, err = lc.cmd(["fake"])
+
+    assert rc == 0
+    assert len(fake_runner.calls) == 2
+
+    # The first call used the stale cache filter.
+    cmd, kwargs = fake_runner.calls[0]
+    assert cmd == [
+        constants.EXT_LVM,
+        "fake",
+        "--config",
+        lvm._buildConfig(
+            dev_filter=lvm._buildFilter(initial_devices),
+            locking_type="1"),
+    ]
+    assert kwargs == {"sudo": True}
+
+    # The seocnd call used a wider filter.
+    cmd, kwargs = fake_runner.calls[1]
+    assert cmd == [
+        constants.EXT_LVM,
+        "fake",
+        "--config",
+        lvm._buildConfig(
+            dev_filter=lvm._buildFilter(fake_devices),
+            locking_type="1"),
+    ]
+    assert kwargs == {"sudo": True}
+
+
+def test_cmd_read_only(fake_devices, fake_runner):
+    lc = lvm.LVMCache()
+    lc.set_read_only(True)
+
+    # Require 3 calls to succeed.
+    assert lc.READ_ONLY_RETRIES > 2
+    fake_runner.retries = 2
+
+    rc, out, err = lc.cmd(["fake"])
+
+    # Call should succeed after 3 identical calls.
+    assert rc == 0
+    assert len(fake_runner.calls) == 3
+    assert len(set(repr(c) for c in fake_runner.calls)) == 1
+
+
+def test_cmd_read_only_max_retries(fake_devices, fake_runner):
+    lc = lvm.LVMCache()
+    lc.set_read_only(True)
+
+    # Require max retries to succeed.
+    fake_runner.retries = lc.READ_ONLY_RETRIES
+    rc, out, err = lc.cmd(["fake"])
+
+    # Call should succeed (1 call + max retries).
+    assert rc == 0
+    assert len(fake_runner.calls) == lc.READ_ONLY_RETRIES + 1
+    assert len(set(repr(c) for c in fake_runner.calls)) == 1
+
+
+def test_cmd_read_only_max_retries_fail(fake_devices, fake_runner):
+    lc = lvm.LVMCache()
+    lc.set_read_only(True)
+
+    # Require max retries + 1 to succeed.
+    fake_runner.retries = lc.READ_ONLY_RETRIES + 1
+
+    rc, out, err = lc.cmd(["fake"])
+
+    # Call should fail (1 call + max retries).
+    assert rc == 1
+    assert len(fake_runner.calls) == lc.READ_ONLY_RETRIES + 1
+
+
+def test_cmd_read_only_filter_stale(fake_devices, fake_runner):
+    # Make a call to load the cache.
+    initial_devices = fake_devices[:]
+    lc = lvm.LVMCache()
+    lc.cmd(["fake"])
+    del fake_runner.calls[:]
+
+    # Add a new device to the system. This will makes the cached filter stale,
+    # so the command will be retried with a new filter.
+    fake_devices.append("/dev/mapper/c")
+
+    # Require max retries + 1 calls to succeed.
+    fake_runner.retries = lc.READ_ONLY_RETRIES + 1
+
+    lc.set_read_only(True)
+    rc, out, err = lc.cmd(["fake"])
+
+    # Call should succeed after one call with stale filter, one call with wider
+    # filter and max retries identical calls.
+    assert rc == 0
+    assert len(fake_runner.calls) == lc.READ_ONLY_RETRIES + 2
+
+    # The first call used the stale cache filter.
+    cmd, kwargs = fake_runner.calls[0]
+    assert cmd == [
+        constants.EXT_LVM,
+        "fake",
+        "--config",
+        lvm._buildConfig(
+            dev_filter=lvm._buildFilter(initial_devices),
+            locking_type="4"),
+    ]
+    assert kwargs == {"sudo": True}
+
+    # The seocnd call used a wider filter.
+    cmd, kwargs = fake_runner.calls[1]
+    assert cmd == [
+        constants.EXT_LVM,
+        "fake",
+        "--config",
+        lvm._buildConfig(
+            dev_filter=lvm._buildFilter(fake_devices),
+            locking_type="4"),
+    ]
+    assert kwargs == {"sudo": True}
+
+    # And then indentical retries with the wider filter.
+    assert len(set(repr(c) for c in fake_runner.calls[1:])) == 1
+
+
+def test_cmd_read_only_filter_stale_fail(fake_devices, fake_runner):
+    # Make a call to load the cache.
+    lc = lvm.LVMCache()
+    lc.cmd(["fake"])
+    del fake_runner.calls[:]
+
+    # Add a new device to the system. This will makes the cached filter stale,
+    # so the command will be retried with a new filter.
+    fake_devices.append("/dev/mapper/c")
+
+    # Require max retries + 2 calls to succeed.
+    fake_runner.retries = lc.READ_ONLY_RETRIES + 2
+
+    lc.set_read_only(True)
+    rc, out, err = lc.cmd(["fake"])
+
+    # Call should fail after max retries + 2 calls.
+    assert rc == 1
+    assert len(fake_runner.calls) == lc.READ_ONLY_RETRIES + 2
 
 
 @requires_root
