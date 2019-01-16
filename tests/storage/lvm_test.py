@@ -23,16 +23,19 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
+import time
 import uuid
 
 import pytest
 
 from vdsm.common import commands
+from vdsm.common import concurrent
 from vdsm.common import constants
+
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
-from vdsm.storage import misc
 from vdsm.storage import lvm
+from vdsm.storage import misc
 
 from . marks import requires_root, xfail_python3
 
@@ -163,15 +166,19 @@ class FakeRunner(object):
     To validate the call, inspect the calls instance variable.
     """
 
-    def __init__(self, rc=0, out=b"", err=b"", retries=0):
+    def __init__(self, rc=0, out=b"", err=b"", retries=0, delay=0.0):
         self.rc = rc
         self.out = out
         self.err = err
         self.retries = retries
+        self.delay = delay
         self.calls = []
 
     def __call__(self, cmd, **kwargs):
         self.calls.append((cmd, kwargs))
+
+        if self.delay:
+            time.sleep(self.delay)
 
         if self.retries > 0:
             self.retries -= 1
@@ -383,6 +390,96 @@ def test_cmd_read_only_filter_stale_fail(fake_devices, fake_runner):
     # Call should fail after max retries + 2 calls.
     assert rc == 1
     assert len(fake_runner.calls) == lc.READ_ONLY_RETRIES + 2
+
+
+class Workers(object):
+
+    def __init__(self):
+        self.threads = []
+
+    def start_thread(self, func, *args):
+        t = concurrent.thread(func, args=args)
+        t.start()
+        self.threads.append(t)
+
+    def join(self):
+        for t in self.threads:
+            t.join()
+
+
+@pytest.fixture
+def workers():
+    workers = Workers()
+    try:
+        yield workers
+    finally:
+        workers.join()
+
+
+@pytest.mark.parametrize("read_only", [True, False])
+def test_command_concurrency(fake_devices, fake_runner, workers, read_only):
+    # Test concurrent commands to reveal locking issues.
+    lc = lvm.LVMCache()
+    lc.set_read_only(read_only)
+
+    fake_runner.delay = 0.2
+    count = 50
+    start = time.time()
+    try:
+        for i in range(count):
+            workers.start_thread(lc.cmd, ["fake", i])
+    finally:
+        workers.join()
+
+    elapsed = time.time() - start
+    assert len(fake_runner.calls) == count
+
+    # This takes about 1 second on my idle laptop. Add more time to avoid
+    # failures on overloaded slave.
+    assert elapsed < fake_runner.delay * count / lc.MAX_COMMANDS + 1.0
+
+
+def test_change_read_only_mode(fake_devices, fake_runner, workers):
+    # Test that changing read only wait for running commands, and new commands
+    # wait for the read only change.
+    lc = lvm.LVMCache()
+
+    def run_after(delay, func, *args):
+        time.sleep(delay)
+        func(*args)
+
+    fake_runner.delay = 0.3
+    start = time.time()
+    try:
+        # Start few commands in read-write mode.
+        for i in range(2):
+            workers.start_thread(run_after, 0.0, lc.cmd, ["read-write"])
+
+        # After 0.1 seconds change read only mode to True. Should wait for the
+        # running commands before changing the mode.
+        workers.start_thread(run_after, 0.1, lc.set_read_only, True)
+
+        # After 0.2 seconds, start new commands. Should wait until the mode is
+        # changed and run in read-only mode.
+        for i in range(2):
+            workers.start_thread(run_after, 0.2, lc.cmd, ["read-only"])
+    finally:
+        workers.join()
+
+    elapsed = time.time() - start
+
+    assert len(fake_runner.calls) == 4
+
+    # The first 2 commands should run in read-write mode.
+    for cmd, kwargs in fake_runner.calls[:2]:
+        assert " locking_type=1 " in cmd[3]
+
+    # The last 2 command should run in not read-only mode.
+    for cmd, kwargs in fake_runner.calls[2:]:
+        assert " locking_type=4 " in cmd[3]
+
+    # The last 2 command can start only after the first 2 command finished.
+    assert elapsed > fake_runner.delay * 2
 
 
 @requires_root
