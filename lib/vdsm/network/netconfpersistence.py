@@ -197,7 +197,7 @@ class Config(BaseConfig):
             with open(path, 'r') as configurationFile:
                 return json.load(configurationFile)
         except IOError as ioe:
-            if ioe.errno == os.errno.ENOENT:
+            if ioe.errno == errno.ENOENT:
                 logging.debug('Network entity at %s not found', path)
                 return {}
             else:

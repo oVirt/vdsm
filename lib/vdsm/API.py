@@ -22,9 +22,9 @@
 
 from __future__ import absolute_import
 
+import errno
 import io
 import logging
-import os
 
 import six
 
@@ -1311,7 +1311,7 @@ class Global(APIBase):
         try:
             rc, out, err = fence(script, inp)
         except OSError as e:
-            if e.errno == os.errno.ENOENT:
+            if e.errno == errno.ENOENT:
                 return errCode['fenceAgent']
             raise
         self.log.debug('rc %s in %s out %s err %s', rc,

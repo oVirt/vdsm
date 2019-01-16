@@ -90,7 +90,7 @@ class DhcpClient(object):
         try:
             pid = int(open(self.pidFile).readline().strip())
         except IOError as e:
-            if e.errno == os.errno.ENOENT:
+            if e.errno == errno.ENOENT:
                 pass
             else:
                 raise
@@ -208,7 +208,7 @@ def _kill_and_rm_pid(pid, pid_file):
     try:
         os.kill(pid, signal.SIGTERM)
     except OSError as e:
-        if e.errno == os.errno.ESRCH:  # Already exited
+        if e.errno == errno.ESRCH:  # Already exited
             pass
         else:
             raise

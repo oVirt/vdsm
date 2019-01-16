@@ -19,6 +19,7 @@
 
 from __future__ import absolute_import
 from __future__ import division
+import errno
 import os
 import glob
 import pwd
@@ -53,7 +54,7 @@ def setup_transient_repository(*args):
     try:
         os.makedirs(TRANSIENT_DISKS_REPO)
     except OSError as e:
-        if e.errno != os.errno.EEXIST:
+        if e.errno != errno.EEXIST:
             raise
 
     os.chown(TRANSIENT_DISKS_REPO, vdsm_uid, vdsm_gid)
@@ -92,5 +93,5 @@ def cleanup_transient_repository(*args):
         try:
             os.unlink(image_path)
         except OSError as e:
-            if e.errno != os.errno.ENOENT:
+            if e.errno != errno.ENOENT:
                 raise

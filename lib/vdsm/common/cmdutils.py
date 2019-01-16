@@ -66,8 +66,8 @@ class CommandPath(object):
                 if self._search_path:
                     self._cmd = distutils.spawn.find_executable(self.name)
                 if self._cmd is None:
-                    raise OSError(os.errno.ENOENT,
-                                  os.strerror(os.errno.ENOENT) + ': ' +
+                    raise OSError(errno.ENOENT,
+                                  os.strerror(errno.ENOENT) + ': ' +
                                   self.name)
         return self._cmd
 

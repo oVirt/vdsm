@@ -487,7 +487,7 @@ class ConfigWriter(object):
                     self._backups[filename] = f.read()
                 logging.debug("Backed up %s", filename)
             except IOError as e:
-                if e.errno == os.errno.ENOENT:
+                if e.errno == errno.ENOENT:
                     self._backups[filename] = None
                 else:
                     raise
@@ -513,7 +513,7 @@ class ConfigWriter(object):
             with open(filename) as f:
                 content = f.read()
         except IOError as e:
-            if e.errno == os.errno.ENOENT:
+            if e.errno == errno.ENOENT:
                 # For non-exists ifcfg-* file use predefined header
                 content = cls.DELETED_HEADER + '\n'
             else:
@@ -887,7 +887,7 @@ def _sort_device_ifcfgs(device_ifcfgs):
             with open(conf_file) as f:
                 content = f.read()
         except IOError as e:
-            if e.errno == os.errno.ENOENT:
+            if e.errno == errno.ENOENT:
                 continue
             else:
                 raise

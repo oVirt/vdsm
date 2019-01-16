@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import errno
 import grp
 import os
 import pwd
@@ -89,7 +90,7 @@ def isconfigured():
                 configured = YES
 
         except IOError as e:
-            if e.errno == os.errno.ENOENT:
+            if e.errno == errno.ENOENT:
                 configured = YES
             else:
                 raise
