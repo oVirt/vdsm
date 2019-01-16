@@ -58,7 +58,7 @@ def supported(path=_PATH):
     Returns:
         A list of supported hugepage sizes available on the system.
     """
-    return state(path).keys()
+    return list(state(path).keys())
 
 
 def alloc(count, size=None,
