@@ -1566,8 +1566,6 @@ class Global(APIBase):
             return {'status': {'code': e.errCode, 'message': e.message}}
         except exception.HookError as e:
             return response.error('hookError', 'Hook error: ' + str(e))
-        except:
-            raise
         finally:
             self._cif._networkSemaphore.release()
 
