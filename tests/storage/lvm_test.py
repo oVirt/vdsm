@@ -485,11 +485,18 @@ def test_change_read_only_mode(fake_devices, fake_runner, workers):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_vg_create_remove_single_device(tmp_storage):
+@pytest.mark.parametrize("read_only", [True, False])
+def test_vg_create_remove_single_device(tmp_storage, read_only):
     dev_size = 20 * 1024**3
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
+
+    lvm.set_read_only(False)
+
+    # TODO: should work also in read-only mode.
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
+
+    lvm.set_read_only(read_only)
 
     vg = lvm.getVG(vg_name)
     assert vg.name == vg_name
@@ -504,7 +511,13 @@ def test_vg_create_remove_single_device(tmp_storage):
     assert int(pv.mda_count) == 2
     assert int(pv.mda_used_count) == 2
 
+    lvm.set_read_only(False)
+
+    # TODO: should work also in read-only mode.
     lvm.removeVG(vg_name)
+
+    # TODO: check this also in read-only mode. vgs fail now after removing the
+    # vg, and this cause 10 retries that take 15 seconds.
 
     # We remove the VG
     with pytest.raises(se.VolumeGroupDoesNotExist):
@@ -519,13 +532,20 @@ def test_vg_create_remove_single_device(tmp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_vg_create_multiple_devices(tmp_storage):
+@pytest.mark.parametrize("read_only", [True, False])
+def test_vg_create_multiple_devices(tmp_storage, read_only):
     dev_size = 10 * 1024**3
     dev1 = tmp_storage.create_device(dev_size)
     dev2 = tmp_storage.create_device(dev_size)
     dev3 = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
+
+    lvm.set_read_only(False)
+
+    # TODO: should work also in read-only mode.
     lvm.createVG(vg_name, [dev1, dev2, dev3], "initial-tag", 128)
+
+    lvm.set_read_only(read_only)
 
     vg = lvm.getVG(vg_name)
     assert vg.name == vg_name
@@ -548,7 +568,13 @@ def test_vg_create_multiple_devices(tmp_storage):
         assert int(pv.mda_count) == 2
         assert int(pv.mda_used_count) == 0
 
+    lvm.set_read_only(False)
+
+    # TODO: should work also in read-only mode.
     lvm.removeVG(vg_name)
+
+    # TODO: check this also in read-only mode. vgs fail now after removing the
+    # vg, and this cause 10 retries that take 15 seconds.
 
     # We remove the VG
     with pytest.raises(se.VolumeGroupDoesNotExist):
@@ -570,6 +596,9 @@ def test_vg_extend_reduce(tmp_storage):
     dev2 = tmp_storage.create_device(dev_size)
     dev3 = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
+
+    lvm.set_read_only(False)
+
     lvm.createVG(vg_name, [dev1], "initial-tag", 128)
 
     vg = lvm.getVG(vg_name)
@@ -612,7 +641,11 @@ def test_vg_add_delete_tags(tmp_storage):
     dev_size = 20 * 1024**3
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
+
+    lvm.set_read_only(False)
+
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
+
     lvm.changeVGTags(
         vg_name,
         delTags=("initial-tag",),
@@ -622,36 +655,52 @@ def test_vg_add_delete_tags(tmp_storage):
         vg_name,
         delTags=["initial-tag"],
         addTags=["new-tag-1", "new-tag-2"])
+
     vg = lvm.getVG(vg_name)
     assert sorted(vg.tags) == ["new-tag-1", "new-tag-2"]
 
 
 @requires_root
 @pytest.mark.root
-def test_vg_check(tmp_storage):
+@pytest.mark.parametrize("read_only", [True, False])
+def test_vg_check(tmp_storage, read_only):
     dev_size = 10 * 1024**3
     dev1 = tmp_storage.create_device(dev_size)
     dev2 = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
+
+    lvm.set_read_only(False)
+
+    # TODO: should work also in read-only mode.
     lvm.createVG(vg_name, [dev1, dev2], "initial-tag", 128)
+
+    lvm.set_read_only(read_only)
+
     assert lvm.chkVG(vg_name)
 
 
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_lv_create_remove(tmp_storage):
+@pytest.mark.parametrize("read_only", [True, False])
+def test_lv_create_remove(tmp_storage, read_only):
     dev_size = 10 * 1024**3
     dev1 = tmp_storage.create_device(dev_size)
     dev2 = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
-    lvm.createVG(vg_name, [dev1, dev2], "initial-tag", 128)
-
     lv_any = "lv-on-any-device"
     lv_specific = "lv-on-device-2"
 
+    # Creating VG and LV requires read-write mode.
+    lvm.set_read_only(False)
+    lvm.createVG(vg_name, [dev1, dev2], "initial-tag", 128)
+
     # Create the first LV on any device.
     lvm.createLV(vg_name, lv_any, 1024)
+
+    # Getting lv must work in both read-only and read-write modes.
+    lvm.set_read_only(read_only)
+
     lv = lvm.getLV(vg_name, lv_any)
     assert lv.name == lv_any
     assert lv.vg_name == vg_name
@@ -666,13 +715,22 @@ def test_lv_create_remove(tmp_storage):
     assert device in dev1, dev2
     assert extent == "0"
 
-    # Create the second LV on dev2.
+    # Create the second LV on dev2 - reuquires read-write mode.
+    lvm.set_read_only(False)
     lvm.createLV(vg_name, lv_specific, 1024, device=dev2)
+
+    # Testing LV must work in both read-only and read-write modes.
+    lvm.set_read_only(read_only)
+
     device, extent = lvm.getFirstExt(vg_name, lv_specific)
     assert device == dev2
 
-    # Remove both LVs.
+    # Remove both LVs - requires read-write mode.
+    lvm.set_read_only(False)
     lvm.removeLVs(vg_name, [lv_any, lv_specific])
+
+    # Testing if lv exists most work in both read-only and read-write.
+    lvm.set_read_only(read_only)
     for lv_name in (lv_any, lv_specific):
         with pytest.raises(se.LogicalVolumeDoesNotExistError):
             lvm.getLV(vg_name, lv_name)
@@ -686,8 +744,13 @@ def test_lv_add_delete_tags(tmp_storage):
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
+
+    lvm.set_read_only(False)
+
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
+
     lvm.createLV(vg_name, lv_name, 1024, activate=False)
+
     lvm.changeLVTags(
         vg_name,
         lv_name,
@@ -701,13 +764,19 @@ def test_lv_add_delete_tags(tmp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_lv_activate_deactivate(tmp_storage):
+@pytest.mark.parametrize("read_only", [True, False])
+def test_lv_activate_deactivate(tmp_storage, read_only):
     dev_size = 20 * 1024**3
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
+
+    lvm.set_read_only(False)
+
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
     lvm.createLV(vg_name, lv_name, 1024, activate=False)
+
+    lvm.set_read_only(read_only)
 
     lv = lvm.getLV(vg_name, lv_name)
     assert not lv.active
@@ -731,10 +800,15 @@ def test_lv_extend_reduce(tmp_storage):
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
+
+    lvm.set_read_only(False)
+
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
+
     lvm.createLV(vg_name, lv_name, 1024)
 
     lvm.extendLV(vg_name, lv_name, 2048)
+
     lv = lvm.getLV(vg_name, lv_name)
     assert int(lv.size) == 2 * 1024**3
 
@@ -747,14 +821,21 @@ def test_lv_extend_reduce(tmp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_lv_refresh(tmp_storage):
+@pytest.mark.parametrize("read_only", [True, False])
+def test_lv_refresh(tmp_storage, read_only):
     dev_size = 20 * 1024**3
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
     lv_fullname = "{}/{}".format(vg_name, lv_name)
+
+    lvm.set_read_only(False)
+
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
+
     lvm.createLV(vg_name, lv_name, 1024)
+
+    lvm.set_read_only(read_only)
 
     # Simulate extending the LV on the SPM.
     commands.run([
@@ -791,11 +872,17 @@ def test_lv_rename(tmp_storage):
     dev = tmp_storage.create_device(dev_size)
     vg_name = str(uuid.uuid4())
     lv_name = str(uuid.uuid4())
+
+    lvm.set_read_only(False)
+
     lvm.createVG(vg_name, [dev], "initial-tag", 128)
+
     lvm.createLV(vg_name, lv_name, 1024)
 
     new_lv_name = "renamed-" + lv_name
+
     lvm.renameLV(vg_name, lv_name, new_lv_name)
+
     lv = lvm.getLV(vg_name, new_lv_name)
     assert lv.name == new_lv_name
 
@@ -803,8 +890,11 @@ def test_lv_rename(tmp_storage):
 @requires_root
 @xfail_python3
 @pytest.mark.root
-def test_bootstrap(tmp_storage):
+@pytest.mark.parametrize("read_only", [True, False])
+def test_bootstrap(tmp_storage, read_only):
     dev_size = 20 * 1024**3
+
+    lvm.set_read_only(False)
 
     dev1 = tmp_storage.create_device(dev_size)
     vg1_name = str(uuid.uuid4())
@@ -833,6 +923,8 @@ def test_bootstrap(tmp_storage):
     vg2_opened = lvm.lvPath(vg2_name, "opened")
     with open(vg1_opened), open(vg2_opened):
 
+        lvm.set_read_only(read_only)
+
         lvm.bootstrap(skiplvs=["skip"])
 
         # Lvs in skiplvs, prepared lvs, and opened lvs should be active.
@@ -851,6 +943,8 @@ def test_bootstrap(tmp_storage):
 @xfail_python3
 @pytest.mark.root
 def test_retry_with_wider_filter(tmp_storage):
+    lvm.set_read_only(False)
+
     # Force reload of the cache. The system does not know about any device at
     # this point.
     lvm.getAllPVs()

@@ -1057,6 +1057,32 @@ def getLV(vgName, lvName=None):
 
 
 #
+# Public configuration
+#
+
+def set_read_only(read_only):
+    """
+    Change lvm module mode to read-only or read-write.
+
+    In read-wite mode, any lvm command may attempt to recover VG metadata if
+    the metadata looks inconsistent. This may happen if the SPM is modifying
+    the VG metadata at the same time. Attempting to recover the metadata may
+    corrupt the metadata.
+
+    In read-only mode, lvm commands that find inconsistant metadata will fail.
+    The module retries read-only commands automaticaly to recover from such
+    errors.
+
+    If there are running lvm commands, this will wait until the commands are
+    finished before changing the mode. New commands started when read-only mode
+    is changed will wait until the change is complete.
+
+    See https://bugzilla.redhat.com/1553133 for more info.
+    """
+    _lvminfo.set_read_only(read_only)
+
+
+#
 # Public Volume Group interface
 #
 
