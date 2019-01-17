@@ -7,7 +7,6 @@
 ./contrib/repostat
 ./contrib/runvm
 ./lib/vdsm/common/commands.py
-./lib/vdsm/common/exception.py
 ./lib/vdsm/common/hooks.py
 ./lib/vdsm/common/sigutils.py
 ./lib/vdsm/gluster/exception.py

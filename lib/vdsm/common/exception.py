@@ -22,6 +22,10 @@ from __future__ import absolute_import
 from __future__ import division
 
 
+# pragma pylint: disable=exception-message-attribute
+# TODO: Rename `message' attribute and remove the pragma above.
+
+
 class VdsmException(Exception):
     code = 0
     message = "Vdsm Exception"
