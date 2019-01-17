@@ -91,7 +91,7 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, errors=None, params={},
         # Pass str objects (byte-strings) without any conversion
         for k, v in itertools.chain(*env_update):
             try:
-                if isinstance(v, unicode):
+                if isinstance(v, six.text_type):
                     scriptenv[k] = v.encode('utf-8')
                 else:
                     scriptenv[k] = v
