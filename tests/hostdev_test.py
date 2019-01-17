@@ -119,7 +119,7 @@ class HostdevTests(TestCaseBase):
 
         for cap in caps:
             self.assertTrue(set(hostdevlib.DEVICES_BY_CAPS[cap].keys()).
-                            issubset(devices.keys()))
+                            issubset(set(devices.keys())))
 
     @permutations([
         # addr_type, addr, name
