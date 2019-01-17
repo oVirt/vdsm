@@ -9,8 +9,6 @@ archs:
       distributions:
         - el7
         - fc28
-      runtime-requirements:
-        host-distro: same
 
 release_branches:
   master:
@@ -33,7 +31,11 @@ stages:
         - linters:
             distributions:
               - fc28
-        - tests-py27
+        - tests-py27:
+            runtime-requirements:
+              host-distro: same
         - tests-py36:
+            runtime-requirements:
+              host-distro: same
             distributions:
               - fc28
