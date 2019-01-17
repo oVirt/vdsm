@@ -89,7 +89,7 @@ def wait_for_signal(timeout=None):
     try:
         cleanup = [] != _signal_poller.poll(timeout)
     except select.error as e:
-        if e[0] != errno.EINTR:
+        if e.args[0] != errno.EINTR:
             raise
         cleanup = True
 
