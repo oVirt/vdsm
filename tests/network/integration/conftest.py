@@ -19,7 +19,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import errno
 import logging
 import os
 import tempfile
@@ -76,12 +75,7 @@ def bond_option_mapping():
 
         with patch_bonding_defaults, patch_bonding_name2num:
             if has_sysfs_bond_permission():
-                try:
-                    sysfs_options_mapper.dump_bonding_options()
-                except EnvironmentError as e:
-                    raise
-                    if e.errno != errno.ENOENT:
-                        raise
+                sysfs_options_mapper.dump_bonding_options()
             yield
 
 
