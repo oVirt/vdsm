@@ -33,7 +33,7 @@ from multiprocessing import Process
 from nose.plugins.skip import SkipTest
 
 from vdsm.common import cpuarch
-from vdsm.network import cmd as cmd
+from vdsm.network import cmd
 from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
 from vdsm.network.ipwrapper import (
