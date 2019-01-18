@@ -19,7 +19,7 @@
 #
 
 """
-types - Vdsm storage types
+validators - Vdsm storage types and validators
 
 This module includes the storage types mentioned in Vdsm schema.
 The purpose of these types is to validate the input and provide an

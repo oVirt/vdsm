@@ -22,7 +22,7 @@
 from __future__ import absolute_import
 
 from vdsm.storage import guarded
-from vdsm.storage import types
+from vdsm.storage import validators
 
 from .copy_data import CopyDataDivEndpoint
 from . import base
@@ -33,7 +33,7 @@ class Job(base.Job):
     def __init__(self, job_id, host_id, vol_info, vol_attr):
         super(Job, self).__init__(job_id, 'update_volume', host_id)
         self._endpoint = CopyDataDivEndpoint(vol_info, host_id, writable=True)
-        self._vol_attr = types.VolumeAttributes(vol_attr)
+        self._vol_attr = validators.VolumeAttributes(vol_attr)
 
     def _run(self):
         with guarded.context(self._endpoint.locks):

@@ -78,8 +78,8 @@ from vdsm.storage import sd
 from vdsm.storage import sp
 from vdsm.storage import storageServer
 from vdsm.storage import taskManager
-from vdsm.storage import types
 from vdsm.storage import udev
+from vdsm.storage import validators
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.constants import BLOCK_SIZE
 from vdsm.storage.sdc import sdCache
@@ -3677,7 +3677,7 @@ class HSM(object):
 
     @public
     def create_lease(self, lease):
-        lease = types.Lease(lease)
+        lease = validators.Lease(lease)
         self._check_pool_connected()
         # TODO: can we move lock into the pool?
         vars.task.getSharedLock(STORAGE, lease.sd_id)
@@ -3686,7 +3686,7 @@ class HSM(object):
 
     @public
     def delete_lease(self, lease):
-        lease = types.Lease(lease)
+        lease = validators.Lease(lease)
         self._check_pool_connected()
         # TODO: can we move lock into the pool?
         vars.task.getSharedLock(STORAGE, lease.sd_id)
@@ -3695,7 +3695,7 @@ class HSM(object):
 
     @public
     def lease_info(self, lease):
-        lease = types.Lease(lease)
+        lease = validators.Lease(lease)
         self._check_pool_connected()
         with rm.acquireResource(STORAGE, lease.sd_id, rm.SHARED):
             dom = sdCache.produce_manifest(lease.sd_id)
