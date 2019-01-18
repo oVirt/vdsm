@@ -31,7 +31,7 @@ from network.nmnettestlib import nm_connections
 
 from vdsm.network.nm import errors
 from vdsm.network.nm.nmdbus import NMDbus
-from vdsm.network.nm.nmdbus import types
+from vdsm.network.nm.nmdbus import nmtypes
 from vdsm.network.nm.nmdbus.active import NMDbusActiveConnections
 from vdsm.network.nm.nmdbus.device import NMDbusDevice
 from vdsm.network.nm.nmdbus.settings import NMDbusSettings
@@ -200,7 +200,7 @@ class TestNMConnectionCreation(unittest.TestCase):
                 active_con = nm_act_cons.connection(active_con_path)
 
                 self.assertEqual(TEST_LINK_TYPE, str(active_con.type()))
-                self.assertEqual(types.NMActiveConnectionState.ACTIVATED,
+                self.assertEqual(nmtypes.NMActiveConnectionState.ACTIVATED,
                                  active_con.state())
 
         self._assert_no_device(iface)

@@ -28,7 +28,7 @@ from vdsm.network.nm import errors
 
 from . import DBUS_STD_PROPERTIES_IFNAME
 from . import NMDbus, NMDbusManager
-from . import types
+from . import nmtypes
 
 
 WAITFOR_RESOLUTION = 0.2
@@ -88,7 +88,7 @@ class _NMDbusDeviceSyncOperations(object):
         self._device = device
 
     def waitfor_activated_state(self, timeout=WAITFOR_TIMEOUT):
-        self.waitfor_state(types.NMDeviceState.ACTIVATED, timeout)
+        self.waitfor_state(nmtypes.NMDeviceState.ACTIVATED, timeout)
 
     def waitfor_state(self, state, timeout=WAITFOR_TIMEOUT):
         for _ in range(_round_up(timeout / WAITFOR_RESOLUTION)):
