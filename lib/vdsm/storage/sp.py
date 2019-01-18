@@ -33,7 +33,6 @@ from weakref import proxy
 import six
 
 from vdsm.common import concurrent
-from vdsm.common.contextlib import suppress
 from vdsm.common.panic import panic
 from vdsm.storage import blockSD
 from vdsm.storage import constants as sc
@@ -180,8 +179,10 @@ class StoragePool(object):
 
             with rm.acquireResource(sc.STORAGE, sdUUID, rm.EXCLUSIVE):
                 # Only SPM should update the domain role
-                with suppress(SecureError):
+                try:
                     self._maybe_fix_domain_role(domain)
+                except SecureError:
+                    pass
 
     def _upgradePoolDomain(self, sdUUID, isValid):
         # This method is called everytime the onDomainStateChange

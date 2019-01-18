@@ -84,11 +84,6 @@ else:
     import subprocess  # NOQA: F401 (unused import)
 
 try:
-    from contextlib import suppress
-except ImportError:
-    from vdsm.common.contextlib import suppress  # NOQA: F401 (unused import)
-
-try:
     from glob import escape as glob_escape
 except ImportError:
     from vdsm.common.glob import escape as glob_escape  # NOQA: F401

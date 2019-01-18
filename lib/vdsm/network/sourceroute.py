@@ -24,7 +24,6 @@ import logging
 import netaddr
 
 from vdsm.common.constants import P_VDSM_RUN
-from vdsm.common.contextlib import suppress
 from vdsm.network.ip import route as ip_route
 from vdsm.network.ip import rule as ip_rule
 from vdsm.network.ip.route import IPRouteData
@@ -216,10 +215,12 @@ def remove(device):
     logging.debug('Removing source route for device %s', device)
     try:
         for route in routes:
-            with suppress(IPRouteDeleteError):
+            try:
                 # The kernel or dhclient has won the race and removed
                 # the route already.
                 IPRoute.delete(route)
+            except IPRouteDeleteError:
+                pass
 
         for rule in rules:
             IPRule.delete(rule)
