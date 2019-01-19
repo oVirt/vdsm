@@ -96,10 +96,7 @@ def attach_volume(vol_id, connection_info):
                 _silent_detach(connection_info, attachment)
                 raise
         except:
-            try:
-                db.remove_volume(vol_id)
-            except Exception:
-                log.exception("Failed to remove managed volume from DB")
+            _silent_remove(db, vol_id)
             raise
 
     log.debug("Attached volume: %s", attachment)
@@ -185,6 +182,16 @@ def _resolve_path(vol_id, connection_info, attachment):
         log.warning("Managed Volume without multipath info: %s",
                     attachment)
         return attachment["path"]
+
+
+def _silent_remove(db, vol_id):
+    """
+    Remove volume from db during cleanup flow, logging errors.
+    """
+    try:
+        db.remove_volume(vol_id)
+    except Exception:
+        log.exception("Failed to remove managed volume %s from DB", vol_id)
 
 
 def _silent_detach(connection_info, attachment):
