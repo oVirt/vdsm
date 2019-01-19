@@ -20,13 +20,17 @@
 
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import print_function
 
+import time
 import uuid
+
 from contextlib import closing
 from datetime import datetime
 
 import pytest
 
+from vdsm.common import concurrent
 from vdsm.storage import managedvolumedb
 
 
@@ -146,3 +150,74 @@ def test_delete(tmp_db):
         db.remove_volume(test_id)
         with pytest.raises(managedvolumedb.NotFound):
             db.get_volume(test_id)
+
+
+@pytest.mark.slow
+def test_concurrency(tmp_db):
+
+    concurrency = 10
+    iterations = 10
+
+    # Sleeping this interval is enough to switch to another thread most of the
+    # time based on the test logs.
+    delay = 0.005
+
+    vol_id_tmp = "%06d-%06d"
+
+    def run(worker_id):
+        for i in range(iterations):
+            vol_id = vol_id_tmp % (worker_id, i)
+
+            db = managedvolumedb.open()
+            with closing(db):
+                # Simulate attach volume flow.
+
+                db.add_volume(vol_id, {"connection": vol_id})
+
+                # Switch to another thread. Real code will wait for os_brick
+                # several seconds here.
+                time.sleep(delay)
+
+                db.update_volume(
+                    vol_id,
+                    path="/dev/mapper/" + vol_id,
+                    multipath_id=vol_id,
+                    attachment={"attachment": vol_id})
+
+            # Switch to another thread. Real code will process another
+            # unrelated request here.
+            time.sleep(delay)
+
+    start = time.time()
+
+    workers = []
+    try:
+        for i in range(concurrency):
+            t = concurrent.thread(run, args=(i,))
+            t.start()
+            workers.append(t)
+    finally:
+        for t in workers:
+            t.join()
+
+    elapsed = time.time() - start
+
+    volumes = concurrency * iterations
+    print("Added %d volumes with %s concurrent threads in %.6f seconds "
+          "(%.6f seconds/op)"
+          % (volumes, concurrency, elapsed, elapsed / volumes))
+
+    db = managedvolumedb.open()
+    with closing(db):
+        for i in range(concurrency):
+            for j in range(iterations):
+                vol_id = vol_id_tmp % (i, j)
+
+                # Verify volume was added.
+                vol_info = db.get_volume(vol_id)
+                assert "connection_info" in vol_info
+
+                # Verify volume was updated.
+                assert "path" in vol_info
+                assert "multipath_id" in vol_info
+                assert "attachment" in vol_info
