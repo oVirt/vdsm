@@ -85,8 +85,8 @@ def attach_volume(vol_id, connection_info):
 
         try:
             attachment = run_helper("attach", connection_info)
-            path = _resolve_path(vol_id, connection_info, attachment)
             try:
+                path = _resolve_path(vol_id, connection_info, attachment)
                 db.update_volume(
                     vol_id,
                     path=path,

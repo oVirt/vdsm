@@ -203,16 +203,24 @@ def test_attach_volume_ok_other(monkeypatch, fake_os_brick, tmp_db):
 
 @requires_root
 @pytest.mark.parametrize("vol_type", ["iscsi", "fibre_channel"])
-def test_attach_volume_no_wwn(monkeypatch, fake_os_brick, vol_type, tmp_db):
+def test_attach_volume_no_multipath_id(monkeypatch, fake_os_brick, tmp_db,
+                                       vol_type):
+    # Simulate attaching iSCSI or FC device without multipath_id.
     monkeypatch.setenv("FAKE_ATTACH_RESULT", "NO_WWN")
     with pytest.raises(se.ManagedVolumeUnsupportedDevice):
         managedvolume.attach_volume("vol_id", {
             "driver_volume_type": vol_type,
             "data": {"some_info": 26}})
 
+    # Verify that we deatch the unsupported device.
     entries = fake_os_brick.log()
-    assert len(entries) == 1
+    assert len(entries) == 2
     assert entries[0]["action"] == "connect_volume"
+    assert entries[1]["action"] == "disconnect_volume"
+
+    # And remove the volume from the db.
+    with pytest.raises(managedvolumedb.NotFound):
+        tmp_db.get_volume("vol_id")
 
 
 @requires_root
