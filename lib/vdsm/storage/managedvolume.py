@@ -81,7 +81,8 @@ def attach_volume(vol_id, connection_info):
     with closing(db):
         _add_volume(db, vol_id, connection_info)
 
-        log.debug("Starting Attach volume with os-brick")
+        log.debug("Starting attach volume %s connection_info=%s",
+                  vol_id, connection_info)
 
         try:
             attachment = run_helper("attach", connection_info)
@@ -99,7 +100,7 @@ def attach_volume(vol_id, connection_info):
             _silent_remove(db, vol_id)
             raise
 
-    log.debug("Attached volume: %s", attachment)
+    log.debug("Attached volume %s attachment=%s", vol_id, attachment)
 
     ret = {'attachment': attachment, 'path': path}
     return {'result': ret}
@@ -119,7 +120,8 @@ def detach_volume(vol_id):
         except managedvolumedb.NotFound:
             return
 
-        log.debug("Starting Detach volume with os-brick")
+        log.debug("Starting detach volume %s vol_info=%s", vol_id, vol_info)
+
         if "path" in vol_info and os.path.exists(vol_info["path"]):
             run_helper("detach", vol_info)
 
