@@ -55,20 +55,7 @@ DEV_RBD = "/dev/rbd"
 log = logging.getLogger("storage.managedvolume")
 
 
-def run_helper(sub_cmd, cmd_input=None):
-    if os.geteuid() != 0:
-        return supervdsm.getProxy().managedvolume_run_helper(
-            sub_cmd, cmd_input=cmd_input)
-    try:
-        if cmd_input:
-            cmd_input = json.dumps(cmd_input).encode("utf-8")
-        result = commands.run([HELPER, sub_cmd], input=cmd_input)
-    except cmdutils.Error as e:
-        raise se.ManagedVolumeHelperFailed("Error executing helper: %s" % e)
-    try:
-        return json.loads(result)
-    except ValueError as e:
-        raise se.ManagedVolumeHelperFailed("Error loading result: %s" % e)
+# Public interface
 
 
 def connector_info():
@@ -81,22 +68,6 @@ def connector_info():
 
     log.debug("Starting get connector_info")
     return run_helper("connector_info")
-
-
-def _resolve_path(vol_id, connection_info, attachment):
-    vol_type = connection_info['driver_volume_type']
-    if vol_type in ("iscsi", "fibre_channel"):
-        if "multipath_id" not in attachment:
-            raise se.ManagedVolumeUnsupportedDevice(vol_id, attachment)
-        # /dev/mapper/xxxyyy
-        return os.path.join(DEV_MAPPER, attachment["multipath_id"])
-    elif vol_type == "rbd":
-        # /dev/rbd/poolname/volume-vol-id
-        return os.path.join(DEV_RBD, connection_info['data']['name'])
-    else:
-        log.warning("Managed Volume without multipath info: %s",
-                    attachment)
-        return attachment["path"]
 
 
 def attach_volume(vol_id, connection_info):
@@ -169,3 +140,44 @@ def detach_volume(vol_id):
             run_helper("detach", vol_info)
 
         db.remove_volume(vol_id)
+
+
+# supervdsm interface
+
+
+def run_helper(sub_cmd, cmd_input=None):
+    if os.geteuid() != 0:
+        return supervdsm.getProxy().managedvolume_run_helper(
+            sub_cmd, cmd_input=cmd_input)
+    try:
+        if cmd_input:
+            cmd_input = json.dumps(cmd_input).encode("utf-8")
+        result = commands.run([HELPER, sub_cmd], input=cmd_input)
+    except cmdutils.Error as e:
+        raise se.ManagedVolumeHelperFailed("Error executing helper: %s" % e)
+    try:
+        return json.loads(result)
+    except ValueError as e:
+        raise se.ManagedVolumeHelperFailed("Error loading result: %s" % e)
+
+
+# Private helpers
+
+
+def _resolve_path(vol_id, connection_info, attachment):
+    """
+    Resolve the path in attached volume.
+    """
+    vol_type = connection_info['driver_volume_type']
+    if vol_type in ("iscsi", "fibre_channel"):
+        if "multipath_id" not in attachment:
+            raise se.ManagedVolumeUnsupportedDevice(vol_id, attachment)
+        # /dev/mapper/xxxyyy
+        return os.path.join(DEV_MAPPER, attachment["multipath_id"])
+    elif vol_type == "rbd":
+        # /dev/rbd/poolname/volume-vol-id
+        return os.path.join(DEV_RBD, connection_info['data']['name'])
+    else:
+        log.warning("Managed Volume without multipath info: %s",
+                    attachment)
+        return attachment["path"]
