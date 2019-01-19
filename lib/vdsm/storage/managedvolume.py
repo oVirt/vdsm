@@ -79,18 +79,7 @@ def attach_volume(vol_id, connection_info):
 
     db = managedvolumedb.open()
     with closing(db):
-        try:
-            vol_info = db.get_volume(vol_id)
-        except managedvolumedb.NotFound:
-            db.add_volume(vol_id, connection_info)
-        else:
-            if vol_info["connection_info"] != connection_info:
-                raise se.ManagedVolumeConnectionMismatch(
-                    vol_id, vol_info["connection_info"], connection_info)
-
-            if "path" in vol_info and os.path.exists(vol_info["path"]):
-                raise se.ManagedVolumeAlreadyAttached(
-                    vol_id, vol_info["path"], vol_info.get('attachment'))
+        _add_volume(db, vol_id, connection_info)
 
         log.debug("Starting Attach volume with os-brick")
 
@@ -162,6 +151,23 @@ def run_helper(sub_cmd, cmd_input=None):
 
 
 # Private helpers
+
+
+def _add_volume(db, vol_id, connection_info):
+    """
+    Add volume to db, verifing existing entry.
+    """
+    try:
+        db.add_volume(vol_id, connection_info)
+    except managedvolumedb.VolumeAlreadyExists:
+        vol_info = db.get_volume(vol_id)
+        if vol_info["connection_info"] != connection_info:
+            raise se.ManagedVolumeConnectionMismatch(
+                vol_id, vol_info["connection_info"], connection_info)
+
+        if "path" in vol_info and os.path.exists(vol_info["path"]):
+            raise se.ManagedVolumeAlreadyAttached(
+                vol_id, vol_info["path"], vol_info.get('attachment'))
 
 
 def _resolve_path(vol_id, connection_info, attachment):
