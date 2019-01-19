@@ -93,9 +93,7 @@ def attach_volume(vol_id, connection_info):
                     attachment=attachment,
                     multipath_id=attachment.get("multipath_id"))
             except:
-                vol_info = {"connection_info": connection_info,
-                            "attachment": attachment}
-                run_helper("detach", vol_info)
+                _silent_detach(connection_info, attachment)
                 raise
         except:
             try:
@@ -187,3 +185,15 @@ def _resolve_path(vol_id, connection_info, attachment):
         log.warning("Managed Volume without multipath info: %s",
                     attachment)
         return attachment["path"]
+
+
+def _silent_detach(connection_info, attachment):
+    """
+    Detach volume during cleanup flow, logging errors.
+    """
+    vol_info = {"connection_info": connection_info,
+                "attachment": attachment}
+    try:
+        run_helper("detach", vol_info)
+    except Exception:
+        log.exception("Failed to detach managed volume %s", vol_info)
