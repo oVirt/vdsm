@@ -102,8 +102,7 @@ def attach_volume(vol_id, connection_info):
 
     log.debug("Attached volume %s attachment=%s", vol_id, attachment)
 
-    ret = {'attachment': attachment, 'path': path}
-    return {'result': ret}
+    return {"result": {'attachment': attachment, 'path': path}}
 
 
 def detach_volume(vol_id):
